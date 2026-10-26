@@ -575,7 +575,7 @@ a.btn { text-decoration: none; display: inline-block; }
     </article>
 
     <article class="panel a-core core-panel">
-      <h2>Chain core <small id="coreSub">next proposer —</small><button class="info" type="button" aria-label="What is this?" data-tip="The ring of diamonds is the validator set; the bright one is proposing the next block. The ringed dots on the middle ring are accounts that run their own Tau rules. The dots orbiting the core are transactions waiting in the mempool. The arc shows how close an open rule change is to the agreement it needs.">i</button></h2>
+      <h2>Chain core <small id="coreSub">next proposer —</small><button class="info" type="button" aria-label="What is this?" data-tip="The ring of diamonds is the validator set; the bright one is proposing the next block. The ringed dots on the middle ring are accounts that run their own Tau rules. The dots orbiting the core are transactions waiting in the mempool. The arc shows how close an open rule change is to the agreement it needs. Lines to the core: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle; the green line from a validator is the proposer sealing a block, and at each seal every validator’s line lights briefly as all rules flow into the block.">i</button></h2>
       <div class="core">
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
@@ -689,6 +689,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v13.9 · 26 Oct 2026</b>Lines to the core now mean something: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle. Said in the hover line and in the panel’s “i”.</li>
           <li><b>v13.8 · 26 Oct 2026</b>Chain core explains itself: hover (or tap) a validator, the agreement ring, a rule account, a mempool dot, the block in the centre or the outer rim for a short line on what it is and what it is doing right now.</li>
           <li><b>v13.7 · 26 Oct 2026</b>Block-card and validator hovers cut to the essentials the card does not already show. The “block accepted” seal sits centred in its own space instead of hugging the corner.</li>
           <li><b>v13.6 · 26 Oct 2026</b>The step row resets in the same instant the activating block is sealed: one short green flash with the block, then empty, ready for the next proposal.</li>
@@ -1310,6 +1311,7 @@ function simTx() {
   const pol = S.clauses.get(sender);
   tx.policy = pol || null;
   if (pol && pol.blocks(tx)) { tx.rejected = `o5 = 0 · ${pol.name}`; tx.note = ""; }
+  if (pol) { pol.lastCheck = performance.now(); pol.lastRefused = !!tx.rejected; }
   admit(tx);
 }
 function simBlock() {
@@ -1456,7 +1458,8 @@ $("btnConnect").onclick = () => { simStop(); liveConnect(); };
    ===================================================================== */
 const cv = $("core"), cx = cv.getContext("2d");
 let burst = 0, sparks = [], t0 = performance.now();
-const KIND_COL = { limit: "236,236,240", whitelist: "57,255,138", timelock: "196,196,204", cosign: "120,120,130" };
+const RULE_HOT_S = 5;
+const ruleState = p => { const age = (performance.now() - (p.lastCheck || 0)) / 1000; return age < RULE_HOT_S ? { hot: true, k: 1 - age / RULE_HOT_S, refused: !!p.lastRefused } : { hot: false, k: 0, refused: false }; };
 const CORE_HITS = [], CORE_RINGS = [];
 function coreHit(e) {
   const b = cv.getBoundingClientRect(); if (!b.width) return null;
@@ -1511,7 +1514,7 @@ function draw(tm) {
     cx.restore();
     cx.fillStyle = `rgba(${cyan},.8)`; cx.font = "500 22px JetBrains Mono, monospace"; cx.textAlign = "center";
     cx.fillText("V" + (i + 1) + " " + v.slice(0, 6), x, y + (y > 0 ? 50 : -34));
-    hit(x, y, 40, () => `V${i + 1} ${short(v)}\n` + explainValidator(v, i));
+    hit(x, y, 40, () => `V${i + 1} ${short(v)}\n` + explainValidator(v, i) + (on ? "\nGreen line to the core: its block being sealed." : ""));
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
 
@@ -1534,12 +1537,12 @@ function draw(tm) {
   const RA = [...S.clauses.keys()];
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
-    const col = KIND_COL[p.kind] || cyan;
-    hit(x, y, 24, () => `${short(RA[i])} runs its own rule: ${p.name}.\n${policyMeaning(p)} Binds the account, not the key.`);
+    const st = ruleState(p), col = st.hot ? (st.refused ? "255,255,255" : "57,255,138") : "170,170,178";
+    hit(x, y, 24, () => `${short(RA[i])} runs its own rule: ${p.name}.\n${policyMeaning(p)} Binds the account, not the key.\n` + (st.hot ? (st.refused ? "White line: the rule just refused a transfer from this account." : "Green line: the rule just checked a transfer from this account and let it pass.") : "Grey line: in force, no transfer from this account checked in the last few seconds."));
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
-    cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = 14; cx.fill();
+    cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
     cx.shadowBlur = 0; cx.beginPath(); cx.arc(x, y, 12, 0, Math.PI * 2); cx.strokeStyle = `rgba(${col},.45)`; cx.lineWidth = 1.5; cx.stroke();
-    cx.shadowBlur = 0; cx.strokeStyle = `rgba(${col},.18)`; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke();
+    cx.shadowBlur = 0; cx.strokeStyle = `rgba(${col},${st.hot ? .25 + st.k * .65 : .18})`; cx.lineWidth = st.hot ? 2.5 : 1.5; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke();
   });
 
   // mempool orbit
