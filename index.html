@@ -194,6 +194,8 @@ body[data-view="simple"] .stack { grid-template-rows: auto minmax(0, 1fr); }
   background: transparent; color: var(--dim); border: 0; padding: 7px 12px; cursor: pointer;
 }
 .seg button[aria-pressed="true"] { background: #fff; color: #000; }
+#liveDot { vertical-align: 0; }
+#liveDot.off { background: var(--dim); box-shadow: none; animation: none; opacity: .6; }
 .btn { border: 1px solid transparent; border-radius: 999px; color: #fff; background: linear-gradient(var(--deck), var(--deck)) padding-box, var(--brand) border-box; }
 .btn:hover { background: #fff; color: #000; }
 .btn:hover, .seg button:hover { color: var(--cyan-hi); }
@@ -526,8 +528,8 @@ a.btn { text-decoration: none; display: inline-block; }
     </div>
     <div class="controls">
       <div class="seg" role="group" aria-label="Data source">
+        <button id="btnLive" aria-pressed="false"><span class="dot none" id="liveDot" aria-hidden="true"></span>Live node</button>
         <button id="btnSim" aria-pressed="true">Simulation</button>
-        <button id="btnLive" aria-pressed="false">Live node</button>
       </div>
       <input id="wsurl" value="wss://node.tauhud.com" aria-label="WebSocket address of your Tau node" spellcheck="false">
       <button class="btn" id="btnConnect">Connect</button>
@@ -689,6 +691,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v14.1 · 26 Oct 2026</b>Live by default: the page opens on the real Tau testnet through the community relay whenever it is running, and shows the simulation only when it is not. The green light on “Live node” says the relay is up, whichever view you are in. Live node now comes first in the switch, and your own choice is remembered on this device.</li>
           <li><b>v14.0 · 26 Oct 2026</b>Live node reachable: the default address is now the community relay wss://node.tauhud.com in front of a Tau testnet node run for this page. Simulation stays the default view until the node has caught up with the chain. The “online” chip now counts every open tab, simulation or live, through a quiet presence socket.</li>
           <li><b>v13.9 · 26 Oct 2026</b>Lines to the core now mean something: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle. Said in the hover line and in the panel’s “i”.</li>
           <li><b>v13.8 · 26 Oct 2026</b>Chain core explains itself: hover (or tap) a validator, the agreement ring, a rule account, a mempool dot, the block in the centre or the outer rim for a short line on what it is and what it is doing right now.</li>
@@ -875,6 +878,11 @@ async function runVerdict(b, live) {
 
 /* ---------- people online: asked from the community relay (node.tauhud.com/status), no analytics ---------- */
 const PRESENCE = { url: "https://node.tauhud.com/status", n: null, timer: null };
+function setRelay(up) {
+  PRESENCE.up = up;
+  $("liveDot").className = "dot " + (up ? "" : "off");
+  $("btnLive").title = up ? "The community relay is online: real testnet data." : "The community relay is not answering right now.";
+}
 function setOnline(n) {
   PRESENCE.n = n;
   $("onlineN").textContent = n == null ? "—" : String(n);
@@ -888,7 +896,9 @@ async function pollOnline() {
     const j = await r.json();
     const n = Number(j.clients ?? j.online ?? j.presence);
     setOnline(Number.isFinite(n) ? n : null);
-  } catch { setOnline(null); }
+    setRelay(!!j.upstream_connected && Number(j.height) > 0);
+    if (PRESENCE.up) autoLive();
+  } catch { setOnline(null); setRelay(false); }
 }
 function presenceFromMessage(d) { const n = Number(d && (d.clients ?? d.online ?? d.presence)); if (Number.isFinite(n)) setOnline(n); }
 addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); presenceOpen(); });
@@ -1382,6 +1392,7 @@ function liveMessage(ev) {
   const d = msg.data || {};
   presenceFromMessage(d);
   if (msg.command === "getblocks") {
+    LIVE.gotData = true; setRelay(true);
     (d.blocks || []).filter(b => !LIVE.seenBlocks.has(b.block_hash)).forEach(raw => {
       LIVE.seenBlocks.add(raw.block_hash);
       const h = raw.header || {}, ids = raw.tx_ids || [];
@@ -1432,6 +1443,7 @@ function liveConnect() {
   try { ws = new WebSocket(url); } catch (e) { liveFail(e.message); return; }
   LIVE.ws = ws;
   ws.onopen = () => {
+    LIVE.everConnected = true; LIVE.retryWait = 5000;
     setMode("live", "Connected");
     ws.send("hello version=1");
     liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool");
@@ -1440,13 +1452,17 @@ function liveConnect() {
   };
   ws.onmessage = liveMessage;
   ws.onerror = () => liveFail("no connection");
-  ws.onclose = () => { if (S.mode === "live") { log("Connection closed", "err"); setMode("live", "Offline"); clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); } };
+  ws.onclose = () => { if (S.mode === "live") { log("Connection closed", "err"); setMode("live", "Offline"); clearInterval(LIVE.poll); clearInterval(LIVE.govPoll);
+    if (LIVE.auto && !LIVE.gotData) { autoBack("connection closed"); return; }
+    if (LIVE.auto) { const w = LIVE.retryWait || 5000; LIVE.retryWait = Math.min(60000, w * 2); log(`Reconnecting in ${w / 1000} s …`, "warn"); LIVE.retry = setTimeout(() => { if (S.mode === "live" && LIVE.auto) liveConnect(); }, w); } } };
 }
 function liveFail(why) {
+  if (LIVE.auto && !LIVE.gotData) { autoBack(why); return; }
   log(`Could not reach ${esc($("wsurl").value)}: ${esc(why)}. Is your node running, and is TAU_WS_ALLOWED_ORIGINS set if this page is hosted?`, "err");
   setMode("live", "Offline");
 }
-function liveStop() { clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); if (LIVE.ws) { LIVE.ws.onclose = null; LIVE.ws.close(); } LIVE.ws = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); }
+function autoBack(why) { LIVE.autoFailedAt = performance.now(); log(`Community relay not reachable (${esc(why)}); showing the simulation instead.`, "warn"); liveStop(); setMode("sim"); simStart(); presenceOpen(); }
+function liveStop() { clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); clearTimeout(LIVE.retry); if (LIVE.ws) { LIVE.ws.onclose = null; LIVE.ws.close(); } LIVE.ws = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); }
 
 /* ---------- mode switching ---------- */
 function setMode(mode, status) {
@@ -1462,9 +1478,9 @@ function setMode(mode, status) {
     : "Reads the node every 3 s (getblocks, getmempool) and governance every 15 s; the relay pushes new blocks as they arrive.";
   $("hint").className = "hint" + (mode === "live" && status === "Offline" ? " err" : "");
 }
-$("btnSim").onclick = () => { liveStop(); setMode("sim"); simStart(); presenceOpen(); };
-$("btnLive").onclick = () => { simStop(); liveConnect(); };
-$("btnConnect").onclick = () => { simStop(); liveConnect(); };
+$("btnSim").onclick = () => { store.set("tau-mode", "sim"); LIVE.auto = false; liveStop(); setMode("sim"); simStart(); presenceOpen(); };
+$("btnLive").onclick = () => { store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveConnect(); };
+$("btnConnect").onclick = () => { store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveConnect(); };
 
 /* =====================================================================
    CORE CANVAS — validator ring, user-rule ring, mempool orbit, block forge
@@ -1727,7 +1743,15 @@ $("chainSub").onclick = () => { selectedBlock = null; const last = S.blocks[S.bl
 $("tourNext").onclick = () => tourShow(tourI + 1); $("tourBack").onclick = () => tourShow(tourI - 1); $("tourClose").onclick = () => tourShow(-1);
 document.addEventListener("keydown", e => { if (e.key === "Escape") tourShow(-1); });
 
+/* boot: simulation at once, then the real chain through the community relay when it is reachable, unless the visitor chose otherwise */
+const RELAY = "wss://node.tauhud.com";
 setMode("sim"); simStart();
+function autoLive() {
+  if (S.mode !== "sim" || !PRESENCE.up || LIVE.autoFailedAt && performance.now() - LIVE.autoFailedAt < 60000) return;
+  const pref = store.get("tau-mode");
+  if (pref === "sim" || (pref !== "live" && $("wsurl").value.trim() !== RELAY)) return;
+  LIVE.auto = true; LIVE.gotData = false; simStop(); liveConnect();
+}
 setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
 /* =====================================================================
    FEEDBACK — opens a pre-filled GitHub issue in the project repo
