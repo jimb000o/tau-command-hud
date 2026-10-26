@@ -689,6 +689,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v13.8 · 26 Oct 2026</b>Chain core explains itself: hover (or tap) a validator, the agreement ring, a rule account, a mempool dot, the block in the centre or the outer rim for a short line on what it is and what it is doing right now.</li>
           <li><b>v13.7 · 26 Oct 2026</b>Block-card and validator hovers cut to the essentials the card does not already show. The “block accepted” seal sits centred in its own space instead of hugging the corner.</li>
           <li><b>v13.6 · 26 Oct 2026</b>The step row resets in the same instant the activating block is sealed: one short green flash with the block, then empty, ready for the next proposal.</li>
           <li><b>v13.5 · 26 Oct 2026</b>The “block accepted” moment: the seal stamps down, the check draws itself, a ring rings out and the panel edge glows for a second. Once a rule change is absorbed into the network, the step boxes reset; the next proposal starts from an empty row.</li>
@@ -1456,11 +1457,25 @@ $("btnConnect").onclick = () => { simStop(); liveConnect(); };
 const cv = $("core"), cx = cv.getContext("2d");
 let burst = 0, sparks = [], t0 = performance.now();
 const KIND_COL = { limit: "236,236,240", whitelist: "57,255,138", timelock: "196,196,204", cosign: "120,120,130" };
+const CORE_HITS = [], CORE_RINGS = [];
+function coreHit(e) {
+  const b = cv.getBoundingClientRect(); if (!b.width) return null;
+  const k = cv.width / b.width, C = cv.width / 2, x = (e.clientX - b.left) * k - C, y = (e.clientY - b.top) * k - C;
+  let best = null, bd = Infinity;
+  for (const h of CORE_HITS) { const d = Math.hypot(h.x - x, h.y - y); if (d <= h.r && d < bd) { best = h; bd = d; } }
+  if (best) return best.fn;
+  const d = Math.hypot(x, y);
+  for (const r of CORE_RINGS) if (Math.abs(d - r.r) <= r.w) return r.fn;
+  return null;
+}
 function draw(tm) {
   const W = cv.width, C = W / 2, t = (tm - t0) / 1000;
   cx.clearRect(0, 0, W, W);
   cx.save(); cx.translate(C, C);
   const cyan = "236,236,240", amber = "255,255,255";
+  CORE_HITS.length = 0; const hit = (x, y, r, fn) => CORE_HITS.push({ x, y, r, fn }); const ring = (r, w, fn) => CORE_RINGS.push({ r, w, fn });
+  CORE_RINGS.length = 0;
+  ring(C * .90, 20, () => `Outer rim: the consensus spec, revision ${S.specRev}. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`);
 
   cx.strokeStyle = `rgba(${cyan},.35)`; cx.lineWidth = 2;
   for (let i = 0; i < 120; i++) {
@@ -1473,6 +1488,9 @@ function draw(tm) {
   // agreement ring: progress of the open rule change toward quorum
   const open = S.updates.find(u => u.status === "voting" || u.status === "scheduled");
   cx.beginPath(); cx.lineWidth = 10; cx.strokeStyle = `rgba(${amber},.1)`; cx.arc(0, 0, C * .70, 0, Math.PI * 2); cx.stroke();
+  ring(C * .70, 18, () => !open ? "Agreement ring: empty. No rule change is being voted on right now; it fills clockwise as validators agree."
+    : open.status === "scheduled" ? `Agreed: “${open.title}” activates at block #${open.activateAt}, in ${Math.max(0, open.activateAt - S.height)} block${open.activateAt - S.height === 1 ? "" : "s"}. Until then the old rules apply.`
+    : `Agreement ring: ${open.votes.size} of ${threshold()} validators agree to “${open.title}”. At ${threshold()} it is scheduled for a later block.`);
   if (open) {
     const frac = Math.min(1, open.votes.size / threshold());
     arc(C * .70, 10, -Math.PI / 2, frac * Math.PI * 2, `rgba(${amber},${open.status === "scheduled" ? .95 : .7})`, 0);
@@ -1493,6 +1511,7 @@ function draw(tm) {
     cx.restore();
     cx.fillStyle = `rgba(${cyan},.8)`; cx.font = "500 22px JetBrains Mono, monospace"; cx.textAlign = "center";
     cx.fillText("V" + (i + 1) + " " + v.slice(0, 6), x, y + (y > 0 ? 50 : -34));
+    hit(x, y, 40, () => `V${i + 1} ${short(v)}\n` + explainValidator(v, i));
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
 
@@ -1512,9 +1531,11 @@ function draw(tm) {
 
   // user-rule ring: every account that runs its own Tau policy
   const R = [...S.clauses.values()], rr = C * .56;
+  const RA = [...S.clauses.keys()];
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
     const col = KIND_COL[p.kind] || cyan;
+    hit(x, y, 24, () => `${short(RA[i])} runs its own rule: ${p.name}.\n${policyMeaning(p)} Binds the account, not the key.`);
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = 14; cx.fill();
     cx.shadowBlur = 0; cx.beginPath(); cx.arc(x, y, 12, 0, Math.PI * 2); cx.strokeStyle = `rgba(${col},.45)`; cx.lineWidth = 1.5; cx.stroke();
@@ -1527,6 +1548,7 @@ function draw(tm) {
     const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
     cx.shadowColor = cx.fillStyle; cx.shadowBlur = 14; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 6, 0, Math.PI * 2); cx.fill();
+    hit(Math.cos(a) * r, Math.sin(a) * r, 20, () => `Mempool: ${tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"} ${short(tx.id)}, admitted after the rule check, waiting for the next block.`);
   });
   cx.shadowBlur = 0;
 
@@ -1535,6 +1557,7 @@ function draw(tm) {
   const g = cx.createRadialGradient(0, 0, 0, 0, 0, C * .32);
   g.addColorStop(0, "rgba(240,246,255,.95)"); g.addColorStop(.25, `rgba(${core},${.55 + Math.max(p, am) * .4})`); g.addColorStop(1, `rgba(${core},0)`);
   cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, C * (.30 + p * .06), 0, Math.PI * 2); cx.fill();
+  hit(0, 0, C * .30, () => `Block #${S.height}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago, judged under spec revision ${S.specRev}.\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`);
   cx.strokeStyle = `rgba(${core},.8)`; cx.lineWidth = 3;
   for (let k = 0; k < 3; k++) { cx.save(); cx.rotate(t * (k % 2 ? -.8 : .6) + k); const r = C * (.17 + k * .04); for (let j = 0; j < 3; j++) { cx.beginPath(); cx.arc(0, 0, r, j * Math.PI * 2 / 3, j * Math.PI * 2 / 3 + 1.75); cx.stroke(); } cx.restore(); }
 
@@ -1624,6 +1647,11 @@ document.addEventListener("click", () => document.querySelectorAll(".info.open")
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
   document.addEventListener("click", e => { if (!touch) return; const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
+  /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
+  const coreShow = e => { const fn = coreHit(e); if (fn) { cur = cv; shownAt = Date.now(); ovl.textContent = fn(); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
+  cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
+  cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; if (cur === cv && !touch) hide(); });
+  cv.addEventListener("click", e => { if (touch) coreShow(e); });
 })();
 
 /* ---------- simple / technical view ---------- */
