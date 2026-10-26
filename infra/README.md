@@ -49,6 +49,7 @@ Connect to `wss://node.tauhud.com`, send a command as text, get the node's JSON 
 | `getmempool` | cache, refreshed every 3 s | |
 | `getgovernance` | cache, refreshed every 15 s | |
 | `gettaustate` | cache, refreshed every 30 s | `{"rules_state": "…"}` |
+| `presence` | relay | `{"online": n}`: pages connected right now |
 | `getbalance <addr>`, `getsequence <addr>`, `getaccountstate <addr>`, `getruleoffers <addr> [in\|out\|all]`, `gettxstatus <hash>` | node, cached 10 s | hex arguments only; global cap 2/s |
 
 Anything else (`sendtx`, `createblock`, `getallaccounts`, `history`, …) gets
@@ -56,7 +57,10 @@ Anything else (`sendtx`, `createblock`, `getallaccounts`, `history`, …) gets
 
 Pushed without asking:
 - `getblocks` envelopes with only the new blocks and `"pushed": true`,
-- full `getmempool` and `getgovernance` envelopes whenever they change.
+- full `getmempool` and `getgovernance` envelopes whenever they change,
+- `presence` envelopes `{"online": n, "pushed": true}` right after connecting, whenever a page
+  joins or leaves, and every 30 s as a heartbeat. It is a connection count only; the relay
+  does not identify or log who is behind a connection.
 
 Clients should de-duplicate blocks by `block_hash` (the HUD already does).
 
@@ -64,7 +68,7 @@ Limits: 20 messages burst then 2/s per connection, 8 connections per IP, 500 in 
 512-byte messages. Browser origins allowed: tauhud.com, www.tauhud.com,
 jimb000o.github.io and localhost (`ALLOWED_ORIGINS` in `.env`).
 
-`GET /status` returns `{"upstream_connected", "height", "total_blocks", "clients", "age_seconds", …}`
+`GET /status` returns `{"upstream_connected", "height", "total_blocks", "online", "age_seconds", …}`
 with CORS `*`; `GET /health` is the same but answers 503 while the node is unreachable.
 
 ## Tests

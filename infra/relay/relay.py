@@ -81,6 +81,9 @@ LOOKUPS = {
     "getruleoffers": lambda a: 1 <= len(a) <= 2 and HEX.match(a[0]) and (len(a) == 1 or a[1].lower() in ("in", "out", "all")),
 }
 CACHED = ("getmempool", "getgovernance", "gettaustate")
+# Presence: how many HUD pages are connected right now. Just a count, pushed on
+# every change and as a heartbeat; nothing about who is behind a connection.
+PRESENCE_HEARTBEAT = _env_float("PRESENCE_HEARTBEAT_SECONDS", 30)
 
 
 def envelope_error(command: str, message: str, code: str) -> str:
@@ -267,6 +270,9 @@ class Relay:
             return envelope_ok(cmd, {"blocks": blocks, "total": self.total_blocks,
                                      "truncated": len(blocks) < self.total_blocks})
 
+        if cmd == "presence":
+            return self.presence_envelope()
+
         if cmd in CACHED:
             if args:
                 return envelope_error(cmd, f"Usage: {cmd}", "INVALID_PARAMS")
@@ -293,6 +299,18 @@ class Relay:
         return envelope_error(cmd, "This relay is read-only. Allowed: getblocks, getmempool, getgovernance, "
                               "gettaustate, " + ", ".join(LOOKUPS), "FORBIDDEN")
 
+    # ---------- presence ----------
+    def presence_envelope(self) -> str:
+        return envelope_ok("presence", {"online": len(self.clients), "pushed": True})
+
+    def push_presence(self):
+        broadcast(self.clients, self.presence_envelope())
+
+    async def presence_loop(self):
+        while True:
+            await asyncio.sleep(PRESENCE_HEARTBEAT)
+            self.push_presence()
+
     # ---------- HTTP side: origin check, limits, /health ----------
     def client_ip(self, connection: ServerConnection, request: Request) -> str:
         if TRUST_PROXY and request.headers.get("X-Forwarded-For"):
@@ -306,6 +324,7 @@ class Relay:
             "height": self.height(),
             "total_blocks": self.total_blocks,
             "clients": len(self.clients),
+            "online": len(self.clients),
             "age_seconds": {k: round(now - v, 1) for k, v in self.updated.items()},
             "uptime_seconds": round(now - self.started),
         }
@@ -341,6 +360,7 @@ class Relay:
         ip = self.client_ip(ws, ws.request)
         self.per_ip[ip] = self.per_ip.get(ip, 0) + 1
         self.clients.add(ws)
+        self.push_presence()
         bucket = TokenBucket(CLIENT_BURST, CLIENT_REFILL)
         try:
             async for message in ws:
@@ -358,6 +378,7 @@ class Relay:
             self.per_ip[ip] -= 1
             if self.per_ip[ip] <= 0:
                 del self.per_ip[ip]
+            self.push_presence()
 
     async def run(self):
         tasks = [
@@ -366,6 +387,7 @@ class Relay:
             asyncio.create_task(self.poll_loop(MEMPOOL_POLL, lambda: self.poll_cached("getmempool", True))),
             asyncio.create_task(self.poll_loop(GOV_POLL, lambda: self.poll_cached("getgovernance", True))),
             asyncio.create_task(self.poll_loop(STATE_POLL, lambda: self.poll_cached("gettaustate", False))),
+            asyncio.create_task(self.presence_loop()),
         ]
         async with serve(self.handler, LISTEN_HOST, LISTEN_PORT, process_request=self.process_request,
                          max_size=512, max_queue=8, ping_interval=30, ping_timeout=30,

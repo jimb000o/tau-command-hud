@@ -73,7 +73,7 @@ async def ask(ws, cmd):
     await ws.send(cmd)
     while True:  # skip pushed messages
         msg = json.loads(await ws.recv())
-        if not msg.get("data", {}).get("pushed") and msg.get("command") in (cmd.split()[0], "rate_limit"):
+        if (not msg.get("data", {}).get("pushed") or cmd == "presence") and msg.get("command") in (cmd.split()[0], "rate_limit"):
             return msg
 
 
@@ -96,6 +96,8 @@ async def main():
         origin = {"Origin": "https://tauhud.com"}
 
         async with connect(url, additional_headers=origin) as ws:
+            first = json.loads(await ws.recv())
+            check(first.get("command") == "presence" and first["data"]["online"] == 1, "presence pushed on connect")
             await ws.send("hello version=1")
             check((await ws.recv()).startswith("ok version=1"), "handshake")
             m = await ask(ws, "getblocks 12")
@@ -136,6 +138,16 @@ async def main():
             replies = [json.loads(await ws.recv()) for _ in range(25)]
             check(any(x.get("error", {}).get("code") == "RATE_LIMITED" for x in replies), "visitor rate limit")
 
+        # presence: a second visitor raises the count for both, leaving lowers it
+        async with connect(url, additional_headers=origin) as a:
+            json.loads(await a.recv())
+            async with connect(url, additional_headers=origin) as b:
+                seen = json.loads(await asyncio.wait_for(a.recv(), 3))
+                check(seen["command"] == "presence" and seen["data"]["online"] == 2, "presence pushed on join")
+                check((await ask(b, "presence"))["data"]["online"] == 2, "presence on request")
+            seen = json.loads(await asyncio.wait_for(a.recv(), 3))
+            check(seen["command"] == "presence" and seen["data"]["online"] == 1, "presence pushed on leave")
+
         # origin check
         try:
             async with connect(url, additional_headers={"Origin": "https://evil.example"}):
@@ -156,6 +168,7 @@ async def main():
 
         # oversized message closes the socket
         async with connect(url, additional_headers=origin) as ws:
+            json.loads(await ws.recv())  # presence push
             await ws.send("getblocks " + "1" * 2000)
             try:
                 await ws.recv()
@@ -169,7 +182,7 @@ async def main():
         raw = (await reader.read(4096)).decode()
         writer.close()
         body = json.loads(raw.split("\r\n\r\n", 1)[1])
-        check(raw.startswith("HTTP/1.1 200") and body["upstream_connected"] and body["height"] >= 1, f"/health {body}")
+        check(raw.startswith("HTTP/1.1 200") and body["upstream_connected"] and body["height"] >= 1 and body["online"] == 0, f"/health {body}")
 
         # keep polling for a while; the node's heavy limit must never trip
         await asyncio.sleep(8)
