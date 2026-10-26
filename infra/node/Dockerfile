@@ -22,14 +22,18 @@ ARG TAU_BUILD_JOBS=2
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash bison build-essential ca-certificates ccache clang cmake curl git \
     libboost-all-dev libcurl4-openssl-dev libgmp-dev lld ninja-build \
-    pkg-config unzip wget \
+    patchelf pkg-config unzip wget \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m venv /opt/tau-build-venv
 ENV PATH=/opt/tau-build-venv/bin:$PATH \
     TAU_PYTHON=/opt/tau-build-venv/bin/python
+# auditwheel: the binding's configure refuses to run unless some interpreter
+# has it (bindings/python/nanobind/CMakeLists.txt), although the wheel target
+# that would use it is never built here.
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir nanobind
+    pip install --no-cache-dir nanobind auditwheel && \
+    python -m auditwheel --version
 
 WORKDIR /app
 RUN set -eux; \
