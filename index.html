@@ -6,7 +6,7 @@
 <meta name="description" content="Unofficial community HUD for the Tau Testnet Alpha: rule changes by agreement, rule sharing, personal Tau policies, live blocks.">
 </head>
 <body>
-<title>TauNet Command HUD</title>
+<title>Tau HUD</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -288,25 +288,29 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .rw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .panel .sub { margin: -6px 0 10px; color: var(--dim); font-size: 11px; }
 .updates, .offers, .clauses { display: grid; gap: 8px; align-content: start; }
-.contrast { display: grid; gap: 10px; margin: 0 0 10px; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.02); flex: 0 0 auto; }
+.contrast { display: grid; gap: 8px; margin: 0 0 10px; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.02); flex: 0 0 auto; }
 .contrast .hd { display: flex; justify-content: space-between; gap: 10px; font: 600 10px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--text); }
 .contrast .hd span { color: var(--dim); font-weight: 400; letter-spacing: .1em; }
-.contrast .crow { position: relative; display: grid; grid-template-columns: 104px repeat(4, minmax(0, 1fr)); gap: 0 8px; align-items: center; }
-.contrast .crow::before { content: ""; position: absolute; left: 112px; right: 0; top: 50%; border-top: 1px dashed var(--hair); }
-.contrast .crow.tau::before { border-top: 2px solid rgba(57,255,138,.45); }
-.contrast .who { display: grid; gap: 2px; font: 600 10px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.contrast .crow { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 0 10px; align-items: stretch; }
+.contrast .who { display: grid; align-content: center; gap: 2px; font: 600 10px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .contrast .who em { font: 10.5px var(--mono); letter-spacing: 0; text-transform: none; font-style: normal; color: var(--dim); }
-.contrast .crow.tau .who { color: var(--ok); }
-.contrast .crow.tau .who em { color: var(--ok); }
-.contrast .st { position: relative; z-index: 1; display: grid; gap: 1px; text-align: center; padding: 5px 6px; border: 1px solid var(--line); border-radius: 3px; background: #121214; font: 500 11px var(--mono); color: var(--dim); min-width: 0; }
-.contrast .st small { font: 9.5px var(--mono); color: var(--dim); opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.contrast .crow:not(.tau) { opacity: .72; }
-.contrast .st.fork { color: var(--bad); border-color: rgba(255,77,109,.4); }
-.contrast .crow.tau .st { color: var(--text); border-color: var(--hair); }
-.contrast .crow.tau .st small { color: var(--ok); opacity: .9; }
-.contrast .crow.tau .st.done { color: var(--ok); border-color: rgba(57,255,138,.5); }
-.contrast .crow.tau .st.on { color: #000; background: var(--ok); border-color: var(--ok); box-shadow: 0 0 14px rgba(57,255,138,.5); }
-.contrast .crow.tau .st.on small { color: #000; }
+.contrast .crow.tau .who, .contrast .crow.tau .who em { color: var(--ok); }
+.contrast .track { display: flex; gap: 3px; min-width: 0; }
+.contrast .seg { display: grid; align-content: center; gap: 2px; padding: 6px 6px; text-align: center; min-width: 0; border: 1px dashed var(--hair); border-radius: 3px; background: rgba(255,255,255,.02); font: 500 11px var(--mono); color: var(--dim); }
+.contrast .seg b { font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contrast .seg small { font: 9.5px var(--mono); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contrast .seg.fork { border-color: rgba(255,77,109,.55); background: repeating-linear-gradient(135deg, rgba(255,77,109,.10) 0 6px, rgba(255,77,109,.02) 6px 12px); }
+.contrast .seg.fork b { color: var(--bad); }
+.contrast .crow:not(.tau) .track { opacity: .8; }
+.contrast .crow.tau .track { align-items: stretch; }
+.contrast .tau-seg { flex: 0 0 52%; display: flex; gap: 3px; padding: 4px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
+.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 4px 3px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 500 10.5px var(--mono); color: var(--text); min-width: 0; }
+.contrast .st small { font: 9px var(--mono); color: var(--ok); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contrast .st.done { color: var(--ok); border-color: rgba(57,255,138,.5); }
+.contrast .st.on { color: #000; background: var(--ok); border-color: var(--ok); box-shadow: 0 0 14px rgba(57,255,138,.5); }
+.contrast .st.on small { color: #000; }
+.contrast .rest { flex: 1 1 auto; display: grid; align-content: center; padding: 6px 10px; font: 10.5px var(--mono); color: var(--dim); min-width: 0; }
+.contrast .rest b { color: var(--ok); font-weight: 500; }
 .contrast .cap { font: 10.5px/1.5 var(--mono); color: var(--dim); }
 .contrast .cap b { color: var(--text); font-weight: 500; }
 .empty { color: var(--dim); font-size: 12px; padding: 10px; border: 1px dashed var(--hair); border-radius: 4px; }
@@ -399,9 +403,9 @@ a.btn { text-decoration: none; display: inline-block; }
 }
 @media (max-width: 720px) {
   .wrap { padding-bottom: 64px; }
-  .contrast .crow { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-  .contrast .crow::before { display: none; }
-  .contrast .who { grid-column: 1 / -1; }
+  .contrast .crow { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .contrast .track { flex-wrap: wrap; }
+  .contrast .tau-seg { flex-basis: 100%; }
   .fb-fab { font-size: 11px; padding: 8px 12px; }
   .tour { bottom: 60px; }
   .deck, .lower, .community, .rw-grid, .principles, .grid { grid-template-columns: minmax(0, 1fr); }
@@ -419,7 +423,7 @@ a.btn { text-decoration: none; display: inline-block; }
 <canvas id="rain" aria-hidden="true"></canvas>
 <div class="wrap">
   <header class="rail">
-    <div class="brand"><h1>TAU//NET</h1><span>Command HUD · Testnet Alpha</span></div>
+    <div class="brand"><h1>TAU HUD</h1><span>where the rules change by agreement · testnet alpha</span></div>
     <button class="chip unoff" type="button" data-open="mAbout" title="Read the full notice">Unofficial community project · not affiliated with IDNI</button>
     <div class="chips">
       <div class="chip" id="chipMode"><span class="dot sim" id="modeDot"></span>Mode<b id="modeTxt">Simulation</b></div>
@@ -508,9 +512,18 @@ a.btn { text-decoration: none; display: inline-block; }
       <h2>Rule changes by agreement <small id="govCount">0 open</small><button class="info" type="button" aria-label="What is this?" data-tip="Validators can propose a change to the consensus rules or validator set. The proposal is compiled in isolation first; one that does not compile is refused at the door. It activates only after a quorum agrees and only at a future height, never in the same block. There is no admin key that can skip this.">i</button></h2>
       <p class="sub">proposed → checked → agreed → scheduled → active</p>
       <div class="contrast" aria-label="How a rule changes: other chains versus Tau">
-        <div class="hd">How a rule changes <span>same four steps · a different clock</span></div>
-        <div class="crow"><span class="who">Other chains<em>months</em></span><span class="st">propose<small>forum post</small></span><span class="st">vote<small>long debate</small></span><span class="st fork">⑂ hard fork<small>chain splits</small></span><span class="st">all upgrade<small>or left out</small></span></div>
-        <div class="crow tau"><span class="who">Tau<em>~1 minute</em></span><span class="st" id="stPropose">propose<small>a transaction</small></span><span class="st" id="stCheck">checked<small>compiled first</small></span><span class="st" id="stAgree">agreed<small id="stAgreeSub">quorum of validators</small></span><span class="st" id="stActive">active<small id="stActiveSub">8 blocks later</small></span></div>
+        <div class="hd">How a rule changes <span>length = time it takes</span></div>
+        <div class="crow"><span class="who">Other chains<em>months, if ever</em></span><div class="track">
+          <span class="seg" style="flex:1.5 1 0" title="Someone writes a proposal in a forum"><b>propose</b></span>
+          <span class="seg" style="flex:2.6 1 0" title="Months of debate; factions form"><b>debate</b><small>months · factions</small></span>
+          <span class="seg" style="flex:1 1 0" title="Signalling votes with no binding effect"><b>vote</b></span>
+          <span class="seg fork" style="flex:1.6 1 0" title="A hard fork: the chain can split in two"><b>⑂ fork</b><small>splits</small></span>
+          <span class="seg" style="flex:1.8 1 0" title="Every node operator upgrades by hand, or is left behind"><b>upgrade</b><small>by hand</small></span>
+        </div></div>
+        <div class="crow tau"><span class="who">Tau<em>~1 minute</em></span><div class="track">
+          <div class="tau-seg"><span class="st" id="stPropose">propose</span><span class="st" id="stCheck">checked</span><span class="st" id="stAgree">agreed</span><span class="st" id="stActive">active</span></div>
+          <span class="rest"><b>done.</b> nothing to upgrade, nothing splits.</span>
+        </div></div>
         <div class="cap" id="contrastCap">On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b></div>
       </div>
       <div class="updates scroll" id="updates"></div>
@@ -583,6 +596,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v11 · 26 Oct 2026</b>Renamed to “Tau HUD”. “How a rule changes” now encodes time as length (Few: compare on one scale): the Other-chains track spans the whole row with its slow, fragmenting steps (months of debate, a fork that can split the chain, manual upgrades), the Tau track is a short green segment followed by “done.”</li>
           <li><b>v10.1 · 26 Oct 2026</b>QR code next to the donation address (scan to donate). No more hexagons: the core is built from rings and the rule-holding accounts are ringed dots. “How a rule changes” laid out on one shared grid: both rows use the same four columns, each step has a one-line note, the clock sits with the row label, and the Tau row shows the live vote count and activation block.</li>
           <li><b>v10 · 26 Oct 2026</b>The contrast is now visual, not just verbal: “How a rule changes” strip in the Rule changes panel (other chains: propose, months of debate, vote, hard fork, everyone upgrades; Tau: propose, checked, agreed, active, lit live from the current proposal), and in the core every sealed block draws the agreement of all validators and rule-holding accounts flowing into it (“the agreed rules of everyone → block”).</li>
           <li><b>v9.1 · 26 Oct 2026</b>Simple/Technical switch moved to the right side of the header, under the status chips.</li>
@@ -795,8 +809,7 @@ function renderUpdates() {
   const cur = S.updates.slice().reverse().find(u => u.status === "voting" || u.status === "scheduled") || S.updates.slice().reverse().find(u => u.status === "active");
   const stage = !cur ? -1 : cur.status === "voting" ? (cur.checked ? 1 : 0) : cur.status === "scheduled" ? 2 : 3;
   ["stPropose", "stCheck", "stAgree", "stActive"].forEach((id, i) => { $(id).className = "st" + (i < stage ? " done" : i === stage ? " on" : ""); });
-  $("stAgreeSub").textContent = cur ? `${cur.votes.size} of ${thr} agree` : `${thr || "quorum"} of ${S.validators.length || "N"} agree`;
-  $("stActiveSub").textContent = cur ? (cur.status === "active" ? `since #${cur.activeAt}` : `at block #${cur.activateAt}`) : "8 blocks later";
+
   $("contrastCap").innerHTML = !cur ? "On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b>"
     : cur.status === "active" ? `<b>“${esc(cur.title)}”</b> went from proposal to law in ${Math.max(1, cur.activeAt - cur.proposedAt)} blocks. No fork, no upgrade, no admin.`
     : cur.status === "scheduled" ? `<b>“${esc(cur.title)}”</b> is agreed and becomes law at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Nobody has to upgrade anything.`
@@ -1356,7 +1369,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v10`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v11`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

@@ -1,5 +1,5 @@
 name: Feedback / idea
-description: Tell us what you would like to see on the Tau Command HUD
+description: Tell us what you would like to see on Tau HUD
 labels: [feedback]
 body:
   - type: dropdown

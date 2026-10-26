@@ -1,4 +1,6 @@
-# TAU//NET Command HUD
+# Tau HUD
+
+*Where the rules change by agreement.* Unofficial community project.
 
 **Unofficial community project.** Not affiliated with, endorsed by or maintained by IDNI or the Tau team.
 
