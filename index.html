@@ -523,8 +523,8 @@ a.btn { text-decoration: none; display: inline-block; }
           <span class="seg" style="flex:1.8 1 0" data-full="Every node operator must upgrade their software by hand; whoever does not is left on the old chain."><b>upgrade</b><small>by hand</small></span>
         </div></div>
         <div class="crow tau"><span class="who">Tau<em>~1 minute</em></span><div class="track">
-          <div class="tau-seg"><span class="st" id="stPropose">propose</span><span class="st" id="stCheck">checked</span><span class="st" id="stAgree">agreed</span><span class="st" id="stActive">active</span></div>
-          <span class="rest"><b>done.</b> nothing to upgrade, nothing splits.</span>
+          <div class="tau-seg"><span class="st" id="stPropose" data-full="Propose: any active validator sends a consensus_rule_update transaction with the new rule text or validator patch. It is an ordinary transaction, visible to everyone, with an activation height a few blocks ahead.">propose</span><span class="st" id="stCheck" data-full="Checked: before the proposal is even admitted, the node compiles the proposed rule on its own against the active spec. If it does not compile or contradicts the live rules, it is refused at the door and never enters the chain.">checked</span><span class="st" id="stAgree" data-full="Agreed: validators vote with consensus_rule_vote transactions. The proposal is scheduled once the quorum policy is met, for example 2 of 3 validators. The quorum rule itself is part of the chain state, so it cannot be changed quietly.">agreed</span><span class="st" id="stActive" data-full="Active: at the scheduled block height the node amends the spec and the spec revision counts up. Every node applies the new rules automatically; nobody upgrades software, nothing forks.">active</span></div>
+          <span class="rest" data-full="After activation nothing else is needed: no software upgrade, no coordination, no chain split. The next block is already judged by the new rules."><b>done.</b> nothing to upgrade, nothing splits.</span>
         </div></div>
         <div class="cap" id="contrastCap">On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b></div>
       </div>
@@ -813,6 +813,10 @@ function renderUpdates() {
   const cur = S.updates.slice().reverse().find(u => u.status === "voting" || u.status === "scheduled") || S.updates.slice().reverse().find(u => u.status === "active");
   const stage = !cur ? -1 : cur.status === "voting" ? (cur.checked ? 1 : 0) : cur.status === "scheduled" ? 2 : 3;
   ["stPropose", "stCheck", "stAgree", "stActive"].forEach((id, i) => { $(id).className = "st" + (i < stage ? " done" : i === stage ? " on" : ""); });
+  if (cur) {
+    $("stAgree").dataset.full = `Agreed: validators vote with consensus_rule_vote transactions. “${cur.title}” has ${cur.votes.size} of ${thr} needed votes (${S.quorum === "majority" ? "majority" : "two thirds"} of ${S.validators.length}). The quorum rule itself is part of the chain state, so it cannot be changed quietly.`;
+    $("stActive").dataset.full = cur.status === "active" ? `Active: “${cur.title}” took effect at block #${cur.activeAt}; the spec revision is now ${S.specRev}. Every node applied the new rules automatically; nobody upgraded software, nothing forked.` : `Active: if agreed, “${cur.title}” takes effect at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Every node will apply it automatically; nobody upgrades software, nothing forks.`;
+  }
 
   $("contrastCap").innerHTML = !cur ? "On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b>"
     : cur.status === "active" ? `<b>“${esc(cur.title)}”</b> went from proposal to law in ${Math.max(1, cur.activeAt - cur.proposedAt)} blocks. No fork, no upgrade, no admin.`
