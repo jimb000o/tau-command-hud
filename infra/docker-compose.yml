@@ -1,0 +1,59 @@
+# Tau HUD live backend: a read-only tau-testnet node, a relay that serves only
+# read commands from a cache, and Caddy for HTTPS.
+#
+# Only 80/443 (Caddy) and 4001 (P2P, so the node can sync and help the network)
+# are published. The node's RPC (65432) and WebSocket (65433) stay on the
+# internal Docker network; the relay is the only thing that talks to them.
+services:
+  tau-node:
+    build:
+      context: https://github.com/IDNI/tau-testnet.git#${TAU_TESTNET_REF}
+      dockerfile: Dockerfile.standalone
+      args:
+        TAU_BUILD_JOBS: ${TAU_BUILD_JOBS:-2}
+    image: tau-testnet-standalone:${TAU_TESTNET_REF}
+    environment:
+      TAU_NETWORK_ID: tau-testnet-v2
+      TAU_BOOTSTRAP_PEERS: '[{"peer_id":"12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC","addrs":["/ip4/34.251.82.246/tcp/4001"]}]'
+      TAU_NETWORK_LISTEN: /ip4/0.0.0.0/tcp/4001
+      TAU_MINING_ENABLED: "false"
+      TAU_LOG_LEVEL: INFO
+    command: ["bash", "-c", "mkdir -p data && cp networks/tau-testnet-v2/genesis.json data/genesis.json && exec python server.py"]
+    volumes:
+      - tau_data:/data
+    ports:
+      - "4001:4001"
+    restart: unless-stopped
+    logging: &logging
+      driver: json-file
+      options: { max-size: "20m", max-file: "3" }
+
+  relay:
+    build: ./relay
+    environment:
+      UPSTREAM_URL: ws://tau-node:65433
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      TRUST_PROXY: "1"
+    depends_on: [tau-node]
+    restart: unless-stopped
+    logging: *logging
+
+  caddy:
+    image: caddy:2.8.4
+    environment:
+      RELAY_DOMAIN: ${RELAY_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [relay]
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  tau_data:
+  caddy_data:
+  caddy_config:
