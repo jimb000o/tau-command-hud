@@ -56,7 +56,51 @@ body::after { /* scanlines */
 #rain { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .3; }
 .wrap, .fb-fab, .modal { position: relative; z-index: 1; }
 .fb-fab { position: fixed; }
-.wrap { max-width: 2400px; margin: 0 auto; display: grid; gap: 10px; grid-template-rows: auto auto minmax(0, 1fr); height: 100%; min-height: 0; }
+.wrap { max-width: 2400px; margin: 0 auto; display: grid; gap: 10px; grid-template-rows: auto auto auto minmax(0, 1fr); height: 100%; min-height: 0; }
+.simbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 5px 12px; border: 1px solid rgba(214,214,220,.5); border-radius: 4px; background: repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 10px, rgba(255,255,255,.015) 10px 20px); font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: #fff; }
+.simbar span { color: var(--dim); font: 11.5px var(--mono); letter-spacing: 0; text-transform: none; flex: 1 1 320px; }
+.simbar button { font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.simbar button:hover { background: #fff; color: #000; }
+body[data-mode="live"] .simbar { display: none; }
+body[data-mode="sim"] #wsurl, body[data-mode="sim"] #btnConnect { display: none; }
+.simtag { position: absolute; top: 6px; right: 8px; font: 600 9px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 5px; }
+body[data-mode="live"] .simtag { display: none; }
+/* simple vs technical view */
+.stream .lbl.plain, body[data-view="simple"] .stream .lbl.tech { display: none; }
+body[data-view="simple"] .stream .lbl.plain { display: block; }
+body[data-view="simple"] .stream code { color: var(--dim); font-weight: 500; font-size: 11px; }
+body[data-view="simple"] .rule.composite, body[data-view="simple"] .logp, body[data-view="simple"] .upd .diff, body[data-view="simple"] .blk .h.hx { display: none; }
+body[data-view="simple"] .pr em { display: none; }
+/* tour */
+.tour { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 55; width: min(560px, calc(100% - 32px)); background: var(--deck); border: 1px solid rgba(57,255,138,.55); border-radius: 8px; padding: 12px 14px 10px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.6); }
+.tour[hidden] { display: none; }
+.tour .t1 { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font: 600 10.5px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--ok); }
+.tour h3 { margin: 4px 0 2px; font: 600 15px var(--display); color: #fff; }
+.tour p { margin: 0 0 10px; font-size: 12.5px; color: var(--text); }
+.tour .t3 { display: flex; gap: 8px; justify-content: flex-end; }
+.tour .t3 button { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; border-radius: 999px; padding: 6px 12px; cursor: pointer; border: 1px solid var(--hair); background: transparent; color: var(--dim); }
+.tour .t3 button.primary { background: #fff; color: #000; border-color: #fff; }
+.tour .t3 button:hover { color: #fff; border-color: #fff; }
+.tour .t3 button.primary:hover { background: var(--ok); border-color: var(--ok); color: #000; }
+body[data-tour] .panel.spot { border-color: var(--ok); box-shadow: 0 0 0 1px rgba(57,255,138,.5), 0 0 40px -6px rgba(57,255,138,.55); z-index: 2; }
+body[data-tour] .panel:not(.spot) { opacity: .45; }
+body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
+#rain.off { display: none; }
+.blk { cursor: pointer; }
+.blk:hover { border-color: var(--cyan); }
+.detail h3 { margin: 14px 0 6px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.detail .kv { font-size: 12px; }
+.detail .kv dd { white-space: normal; overflow-wrap: anywhere; text-align: left; font-family: var(--mono); }
+.detail ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.detail li { overflow-wrap: anywhere; padding: 6px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); font-size: 12px; }
+.detail li.ok { border-left-color: var(--ok); }
+.detail li.rej { border-left-color: var(--bad); }
+.detail li.gov { border-left-color: var(--amber); }
+.detail li b { color: #fff; font-weight: 600; }
+.detail li .muted { color: var(--dim); }
+.detail .rule { margin-top: 6px; }
+.detail .lead { font: 500 15px/1.4 var(--display); color: #fff; margin: 0 0 6px; }
+.btn.state { border-color: rgba(255,255,255,.5); color: #fff; }
 .grid { display: grid; gap: 10px; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr);
   grid-template-areas: "eng core feed pol" "upd chain off val"; }
 .a-eng { grid-area: eng; } .a-core { grid-area: core; } .a-feed { grid-area: feed; } .a-pol { grid-area: pol; }
@@ -129,10 +173,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 
 /* Tau engine streams */
 .streams { display: grid; gap: 6px; }
-.stream { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 4px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; transition: background .3s, border-color .3s; }
+.stream { display: grid; grid-template-columns: 38px minmax(0, 1fr) max-content; gap: 10px; align-items: center; padding: 4px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; transition: background .3s, border-color .3s; }
 .stream code { font: 600 13px var(--mono); color: var(--ok); }
 .stream .lbl { color: var(--dim); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stream .val { font-variant-numeric: tabular-nums; color: var(--text); font-size: 12px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stream .val { display: block; font-variant-numeric: tabular-nums; color: var(--text); font-size: 12px; text-align: right; white-space: nowrap; max-width: 16ch; overflow: hidden; text-overflow: ellipsis; }
 .stream.out code { color: var(--cyan); }
 .stream.flash { background: rgba(236,236,240,.18); border-left-color: var(--cyan); }
 .stream.pass .val { color: var(--ok); }
@@ -257,7 +301,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .clause i.k-timelock { background: #c4c4cc; }
 .clause i.k-cosign { background: #6e6e78; }
 .clause span:last-child { color: var(--dim); }
-.rule.composite { font-size: 10.5px; line-height: 1.55; overflow: auto; white-space: pre; margin-top: 8px; }
+.rule.composite { font-size: 10.5px; line-height: 1.55; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
 .tx.rl { border-left-color: var(--ok); }
 .tx.rl .top em { color: var(--ok); }
 .blk.amended { border-color: var(--amber); box-shadow: inset 0 0 22px rgba(255,255,255,.3); }
@@ -296,9 +340,10 @@ a.btn { text-decoration: none; display: inline-block; }
 @media (max-width: 1599px), (max-height: 820px) {
   html, body { height: auto; min-height: 100%; }
   .wrap { height: auto; grid-template-rows: none; }
-  .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "core core" "eng feed" "upd off" "pol val" "chain chain"; }
-  .scroll { max-height: 420px; }
-  .core canvas { width: 100%; height: auto; max-width: 560px; }
+  .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "eng core" "feed upd" "pol off" "val chain"; }
+  .scroll { max-height: 360px; }
+  .core canvas { width: 100%; height: auto; max-width: 380px; }
+  .core-panel { order: 0; }
   .thesis { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 1100px) {
@@ -307,6 +352,9 @@ a.btn { text-decoration: none; display: inline-block; }
   .core-panel { grid-column: 1 / -1; order: -1; }
 }
 @media (max-width: 720px) {
+  .wrap { padding-bottom: 64px; }
+  .fb-fab { font-size: 11px; padding: 8px 12px; }
+  .tour { bottom: 60px; }
   .deck, .lower, .community, .rw-grid, .principles, .grid { grid-template-columns: minmax(0, 1fr); }
   .grid { grid-template-areas: "core" "eng" "feed" "upd" "off" "pol" "val" "chain"; }
   .controls { width: 100%; }
@@ -328,7 +376,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <div class="chip" id="chipMode"><span class="dot sim" id="modeDot"></span>Mode<b id="modeTxt">Simulation</b></div>
       <div class="chip">Network<b id="netId">tau-testnet-v2</b></div>
       <div class="chip">Height<b id="chipH">0</b></div>
-      <div class="chip">Spec revision<b id="chipRev">1</b></div>
+      <button class="chip" type="button" id="btnState" title="Open the current state of the chain: every rule in force right now">Spec revision<b id="chipRev">1</b></button>
       <div class="chip" title="Base fee per transaction, set by the fee rule (o9) and changeable only by agreement">Base fee<b id="chipFee">10</b></div>
     </div>
     <div class="controls">
@@ -340,11 +388,19 @@ a.btn { text-decoration: none; display: inline-block; }
       <button class="btn" id="btnConnect">Connect</button>
       <button class="btn ghost" type="button" data-open="mAbout">About</button>
       <button class="btn ghost" type="button" data-open="mFeedback">Updates</button>
-      <button class="btn ghost gold" type="button" data-open="mAbout" data-focus="donate">Donate AGRS</button>
+      <div class="seg" role="group" aria-label="Detail level">
+        <button id="btnSimple" aria-pressed="false">Simple</button>
+        <button id="btnTech" aria-pressed="true">Technical</button>
+      </div>
+      <button class="btn state" type="button" id="btnState2">Chain state</button>
+      <button class="btn ghost gold" type="button" id="btnTour">5-step tour</button>
+      <a class="btn ghost" href="https://tau.net" target="_blank" rel="noopener">What is Tau?</a>
+      <button class="btn ghost" type="button" id="btnRain" aria-pressed="true" title="Toggle the glyph rain">Rain</button>
       <span class="hint" id="hint" hidden></span>
     </div>
   </header>
 
+  <div class="simbar" id="simbar" role="status">Simulation · no real chain data<span>What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node.</span><button type="button" id="btnTour2">Take the 5-step tour</button></div>
   <section class="thesis" aria-label="Why Tau is different">
     <div class="thesis-main">
       <span class="eyebrow">Why this is not a normal blockchain</span>
@@ -383,7 +439,7 @@ a.btn { text-decoration: none; display: inline-block; }
     </article>
 
     <article class="panel a-feed">
-      <h2>Transactions <small id="feedSub">waiting → sealed</small><button class="info" type="button" aria-label="What is this?" data-tip="Transactions as they are admitted and later sealed into blocks. Grey: transfers. Green: rule work (an account deploying, offering, accepting or rejecting a Tau rule). White: governance (proposals and votes). Red with ✕: refused, usually because the sender’s own rule (o5) blocked it, which applies even to whoever holds the key.">i</button></h2>
+      <h2>Transactions <small id="feedSub">waiting → sealed</small><button class="info" type="button" aria-label="What is this?" data-tip="Transactions as they are admitted and later sealed into blocks. Grey: transfers. Green: rule work (an account deploying, offering, accepting or rejecting a Tau rule). White: governance (proposals and votes). Red with ✕: refused, usually because the sender’s own rule (o5) blocked it, which applies even to whoever holds the key. Amounts are in τ, the testnet unit (test tokens, not AGRS).">i</button></h2>
       <div class="feed scroll" id="feed"></div>
     </article>
 
@@ -398,12 +454,12 @@ a.btn { text-decoration: none; display: inline-block; }
 
     <article class="panel a-upd">
       <h2>Rule changes by agreement <small id="govCount">0 open</small><button class="info" type="button" aria-label="What is this?" data-tip="Validators can propose a change to the consensus rules or validator set. The proposal is compiled in isolation first; one that does not compile is refused at the door. It activates only after a quorum agrees and only at a future height, never in the same block. There is no admin key that can skip this.">i</button></h2>
-      <p class="sub">proposed → checked → agreed → scheduled → active</p>
+      <p class="sub">proposed → checked → agreed → scheduled → active · τ = testnet unit (test tokens, not AGRS)</p>
       <div class="updates scroll" id="updates"></div>
     </article>
 
     <article class="panel a-chain">
-      <h2>Blockchain <small>newest right · bright card = a rule change took effect</small><button class="info" type="button" aria-label="What is this?" data-tip="Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
+      <h2>Blockchain <small>click a block for details · bright card = a rule change took effect</small><button class="info" type="button" aria-label="What is this?" data-tip="Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
       <div class="ribbon" id="ribbon"></div>
     </article>
 
@@ -427,6 +483,11 @@ a.btn { text-decoration: none; display: inline-block; }
   </main>
 </div>
 <button class="fb-fab" id="fbFab" type="button">Feedback</button>
+<aside class="tour" id="tour" hidden aria-live="polite">
+  <div class="t1"><span id="tourStep">Step 1 of 5</span><button type="button" class="close" id="tourClose" aria-label="End tour" style="position:static">✕</button></div>
+  <h3 id="tourTitle"></h3><p id="tourText"></p>
+  <div class="t3"><button type="button" id="tourBack">Back</button><button type="button" class="primary" id="tourNext">Next</button></div>
+</aside>
 
 <div class="modal" id="mFeedback" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fbTitle">
@@ -458,6 +519,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v8 · 26 Oct 2026</b>From a simulated study with 100 reader personas: simulation is now unmissable (banner, watermark in the core, SIM tag on every block card), a Simple/Technical switch with plain-language stream labels, a 5-step tour that follows one rule from proposal to active, clickable blocks with a full detail view (rules in force and agreed at that block), a “Chain state” view of every rule in force right now, no more clipped values, a compact core on laptops, live-node fields only in Live mode with a checklist on failure, a “What is Tau?” link, symbols per transaction type, τ explained, and a rain switch.</li>
           <li><b>v7 · 26 Oct 2026</b>Wording and hierarchy pass guided by the community’s design library (Made to Stick, Information Dashboard Design, Refactoring UI, Don’t Make Me Think, Albers): one core sentence up top, plain-language panel titles, every number with its context (“7 of 9 needed”), refusals marked ✕ as well as red, stream codes moved into the hover notes, quieter glyph rain.</li>
           <li><b>v6 · 26 Oct 2026</b>Monochrome like the current tau.net: black, white, greys and hairlines, with phosphor green as the only accent, where data is live or true.</li>
           <li><b>v5 · 26 Oct 2026</b>Rebrand: Tau’s near-black and blue-to-violet gradient for structure, phosphor green reserved for data and truth, champagne for agreement. Matrix glyph rain behind the deck, the thesis decodes on load, hairline glass panels, Sora + JetBrains Mono. AGRS donation address under About.</li>
@@ -471,6 +533,18 @@ a.btn { text-decoration: none; display: inline-block; }
   </div>
 </div>
 
+<div class="modal" id="mBlock" hidden>
+  <div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="bkTitle">
+    <button class="close" type="button" data-close aria-label="Close">✕</button>
+    <article class="panel detail"><h2 id="bkTitle">Block</h2><div id="bkBody"></div></article>
+  </div>
+</div>
+<div class="modal" id="mState" hidden>
+  <div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+    <button class="close" type="button" data-close aria-label="Close">✕</button>
+    <article class="panel detail"><h2 id="stTitle">Chain state · the rules in force right now</h2><div id="stBody"></div></article>
+  </div>
+</div>
 <div class="modal" id="mAbout" hidden>
   <div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="abTitle">
     <button class="close" type="button" data-close aria-label="Close">✕</button>
@@ -507,7 +581,7 @@ const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const S = {
   mode: "sim", height: 0, txTotal: 0, mempool: [], blocks: [], validators: [], proposerIdx: 0,
   lastBlockAt: performance.now(), blockTimes: [], fee: 10, quorum: "supermajority", ruleBudget: 8,
-  pulse: 0, amend: 0, specRev: 1,
+  pulse: 0, amend: 0, specRev: 1, byHeight: new Map(),
   updates: [],          // governance: {id,title,diff,votes:Set,proposer,activateAt,status,kind,value}
   offers: [],           // rule sharing: {id,from,to,policy,status,expire}
   clauses: new Map(),   // acceptor -> policy  (the per-user o5 specification)
@@ -556,14 +630,14 @@ function log(msg, cls = "") {
 
 /* ---------- Tau streams panel ---------- */
 const STREAMS = [
-  ["i6", "block height", "in"], ["i7", "block timestamp", "in"], ["i8", "proposer identity", "in"],
-  ["i10", "host BLS proof check", "in"], ["o6", "block validity", "out"], ["o7", "proposer eligibility", "out"],
-  ["o9", "consensus base fee", "out"], ["o5", "user policies (per transfer)", "out"],
+  ["i6", "block height", "in", "which block"], ["i7", "block timestamp", "in", "when it was made"], ["i8", "proposer identity", "in", "who proposed it"],
+  ["i10", "host BLS proof check", "in", "signature verified"], ["o6", "block validity", "out", "is the block valid?"], ["o7", "proposer eligibility", "out", "may this proposer seal it?"],
+  ["o9", "consensus base fee", "out", "fee per transaction"], ["o5", "user policies (per transfer)", "out", "do the senders’ own rules allow it?"],
 ];
-$("streams").innerHTML = STREAMS.map(([c, l, k]) =>
-  `<div class="stream ${k}" id="s_${c}"><code>${c}</code><span class="lbl">${l}</span><span class="val" id="v_${c}">—</span></div>`).join("");
+$("streams").innerHTML = STREAMS.map(([c, l, k, pl]) =>
+  `<div class="stream ${k}" id="s_${c}"><code>${c}</code><span class="lbl tech">${l}</span><span class="lbl plain">${pl}</span><span class="val" id="v_${c}">—</span></div>`).join("");
 function setStream(c, v, state) {
-  const row = $("s_" + c); $("v_" + c).textContent = v;
+  const row = $("s_" + c); const ve = $("v_" + c); ve.textContent = v; ve.title = String(v);
   row.classList.remove("pass", "fail", "flash");
   void row.offsetWidth;
   row.classList.add("flash"); if (state) row.classList.add(state);
@@ -602,9 +676,9 @@ async function runVerdict(b, live) {
 
 /* ---------- tx feed ---------- */
 const TYPE_LABEL = {
-  user_tx: "transfer", rule_deploy: "own rule deployed", rule_offer: "rule offered", rule_offer_accept: "rule accepted",
-  rule_offer_reject: "rule rejected", consensus_rule_update: "rule change proposed", consensus_rule_vote: "vote",
-  retractable_transfer: "retractable transfer",
+  user_tx: "⇄ transfer", rule_deploy: "◆ own rule deployed", rule_offer: "⤳ rule offered", rule_offer_accept: "✓ rule accepted",
+  rule_offer_reject: "✕ rule rejected", consensus_rule_update: "§ rule change proposed", consensus_rule_vote: "☑ vote",
+  retractable_transfer: "↺ retractable transfer",
 };
 function txCard(t) {
   const d = document.createElement("div");
@@ -625,8 +699,9 @@ function markMined(ids) { ids.forEach(id => { const el = $("tx_" + id.slice(0, 1
 function addBlockCard(b) {
   const r = $("ribbon"), d = document.createElement("div");
   d.className = "blk" + (b.amended ? " amended" : "");
+  d.onclick = () => showBlock(b); d.title = "Click for details"; d.tabIndex = 0; d.onkeydown = e => { if (e.key === "Enter") showBlock(b); };
   const rules = b.txs.filter(t => /rule/.test(t.type)).length;
-  d.innerHTML = `<div class="n">#${b.n}</div><div class="h">hash ${short(b.hash)}</div><div class="h">state ${short(b.state)}</div><div class="h">by ${short(b.proposer)}</div><div class="m"><span>${b.txs.length} tx${rules ? ` · ${rules} rule` : ""}</span><span>${b.amended ? "spec rev " + b.amended : "o6 ✓"}</span></div>`;
+  d.innerHTML = `<div class="n">#${b.n}</div><span class="simtag">SIM</span><div class="h hx">hash ${short(b.hash)}</div><div class="h hx">state ${short(b.state)}</div><div class="h">by ${short(b.proposer)}</div><div class="m"><span>${b.txs.length} tx${rules ? ` · ${rules} rule` : ""}</span><span>${b.amended ? "spec rev " + b.amended : "o6 ✓"}</span></div>`;
   r.appendChild(d);
   while (r.children.length > 18) r.firstChild.remove();
   r.scrollLeft = r.scrollWidth;
@@ -678,7 +753,7 @@ function renderRuleWorld() { renderUpdates(); renderOffers(); renderClauses(); }
 /* ---------- validators ---------- */
 function renderGov(extra = {}) {
   $("vals").innerHTML = S.validators.map((v, i) =>
-    `<div class="val ${i === S.proposerIdx ? "on" : ""}"><i></i><span>${v}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
+    `<div class="val ${i === S.proposerIdx ? "on" : ""}" title="${esc(v)}"><i></i><span>${short(v)}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
   const N = S.validators.length;
   const kv = Object.assign({
     "Validators": N ? `${N} active, 1 proposing` : "—",
@@ -700,12 +775,53 @@ function readouts() {
   $("coreSub").textContent = S.validators.length ? "next proposer " + short(S.validators[(S.proposerIdx + 1) % S.validators.length]) : "—";
 }
 
+/* ---------- block detail + chain state ---------- */
+const kvHtml = o => `<dl class="kv">${Object.entries(o).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
+function txLine(t) {
+  const cls = t.rejected ? "rej" : t.kind === "gov" ? "gov" : /rule/.test(t.type) ? "ok" : "";
+  const label = t.rejected ? "✕ " + t.rejected : (TYPE_LABEL[t.type] || t.type);
+  const body = t.transfers && t.transfers.length ? t.transfers.map(([f, to, a]) => `${short(f)} → ${short(to)} ${fmt(a)} τ`).join(" · ") : (t.note || `sender ${short(t.sender)}`);
+  return `<li class="${cls}"><b>${esc(label)}</b> <span class="muted">${short(t.id)} · fee ${t.fee ?? "—"}</span><br>${esc(body)}</li>`;
+}
+function showBlock(b) {
+  const sn = b.snap || {}; const gov = b.txs.filter(t => t.kind === "gov"), rules = b.txs.filter(t => /rule/.test(t.type) && t.kind !== "gov");
+  $("bkTitle").textContent = `Block #${b.n}` + (b.amended ? ` · spec revision ${b.amended} took effect here` : "");
+  $("bkBody").innerHTML =
+    `<p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${short(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? "An agreed rule change became active in this block." : "No rule change took effect in this block."}</p>
+    <h3>Identity</h3>${kvHtml({ Height: b.n, "Block hash": esc(b.hash || "—"), "Previous block": esc(b.prev || "—"), "State hash": esc(b.state || "—"), Proposer: esc(b.proposer || "—"), Time: b.ts ? new Date(b.ts * 1000).toLocaleString("de-DE") : "—" })}
+    <h3>Rules in force at this block</h3>${kvHtml({ "Spec revision": sn.specRev ?? "—", "Base fee": sn.fee != null ? sn.fee + " τ per tx" : "—", "Agreement needed": sn.validators ? `${sn.quorum === "majority" ? Math.floor(sn.validators.length / 2) + 1 : Math.ceil(sn.validators.length * 2 / 3)} of ${sn.validators.length} validators (${sn.quorum === "majority" ? "majority" : "two thirds"})` : "—", "Rule txs per block": sn.budget ?? "—", "Accounts with own rules": sn.rules ?? "—" })}
+    <h3>Rule changes agreed here</h3>${sn.agreed && sn.agreed.length ? `<ul>${sn.agreed.map(a => `<li class="gov"><b>${esc(a.title)}</b> <span class="muted">agreed by ${a.votes} validators</span><br><code>${esc(a.diff)}</code></li>`).join("")}</ul>` : `<p class="small muted" style="color:var(--dim);font-size:12px">None. The rules were unchanged in this block.</p>`}
+    <h3>Governance transactions (${gov.length})</h3>${gov.length ? `<ul>${gov.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
+    <h3>Rule work (${rules.length})</h3>${rules.length ? `<ul>${rules.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
+    <h3>All transactions (${b.txs.length})</h3>${b.txs.length ? `<ul>${b.txs.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">Empty block</p>`}
+    <h3>What the state hash commits to</h3><p style="color:var(--dim);font-size:12px;margin:0">Balances, the consensus rule program, the composite user-rule program, the validator set, pending governance and the quorum policy. Change any of them and the hash changes.</p>`;
+  openModal("mBlock");
+}
+function showState() {
+  const N = S.validators.length, thr = N ? threshold() : "—";
+  const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
+  const last = S.blocks[S.blocks.length - 1] || {};
+  $("stBody").innerHTML =
+    `<p class="lead">At height ${fmt(S.height)} the chain runs on spec revision ${S.specRev}: ${active.length} agreed rule change${active.length === 1 ? "" : "s"} so far, ${open.length} open, ${S.clauses.size} account${S.clauses.size === 1 ? "" : "s"} with their own money rules.</p>
+    <h3>Consensus rules in force</h3>${kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " τ per tx", "Agreement needed": `${thr} of ${N} validators (${S.quorum === "majority" ? "majority" : "two thirds"})`, "Rule txs per block": S.ruleBudget, "State hash (latest)": esc(last.state || "—") })}
+    <pre class="rule">${$("ruleText").innerHTML}</pre>
+    <h3>Validators (${N})</h3><ul>${S.validators.map((v, i) => `<li class="${i === S.proposerIdx ? "ok" : ""}"><b>${i === S.proposerIdx ? "proposing" : "active"}</b> <span class="muted">${esc(v)}</span></li>`).join("")}</ul>
+    <h3>Rule changes agreed (${active.length})</h3>${active.length ? `<ul>${active.slice().reverse().map(u => `<li class="gov"><b>${esc(u.title)}</b> <span class="muted">active since #${u.activeAt} · ${u.votes.size} votes</span><br><code>${esc(u.diff)}</code></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None yet. The chain still runs on its genesis rules.</p>`}
+    <h3>Open proposals (${open.length})</h3>${open.length ? `<ul>${open.map(u => `<li><b>${esc(u.title)}</b> <span class="muted">${STATUS_TXT[u.status]} · ${u.votes.size} of ${thr} · activates at #${u.activateAt}</span></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
+    <h3>Personal money rules (${S.clauses.size})</h3>${S.clauses.size ? `<ul>${[...S.clauses.entries()].map(([a, p]) => `<li class="ok"><b>${esc(p.name)}</b> <span class="muted">${short(a)}</span><br>${esc(p.label || "")}</li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
+    <pre class="rule composite">${$("composite").innerHTML}</pre>`;
+  openModal("mState");
+}
+
 /* ---------- block intake (shared by sim + live) ---------- */
 function ingestBlock(b, live) {
   const t = performance.now();
   if (S.blocks.length) S.blockTimes.push((t - S.lastBlockAt) / 1000);
   if (S.blockTimes.length > 10) S.blockTimes.shift();
   S.lastBlockAt = t;
+  b.snap = { specRev: S.specRev, fee: S.fee, quorum: S.quorum, budget: S.ruleBudget, validators: S.validators.slice(), rules: S.clauses.size,
+    agreed: S.updates.filter(u => u.status === "active" && u.activeAt === b.n).map(u => ({ title: u.title, diff: u.diff, votes: u.votes.size })) };
+  S.byHeight.set(b.n, b); if (S.byHeight.size > 60) S.byHeight.delete(Math.min(...S.byHeight.keys()));
   S.blocks.push(b); if (S.blocks.length > 40) S.blocks.shift();
   S.height = b.n; S.txTotal += b.txs.length;
   const vi = S.validators.indexOf(b.proposer); if (vi >= 0) S.proposerIdx = vi;
@@ -734,7 +850,8 @@ function simInit() {
   for (let i = 0; i < 3; i++) S.clauses.set(SIM.accounts[i], randomPolicy(SIM.accounts));
   $("ribbon").innerHTML = ""; $("feed").innerHTML = "";
   const g = { n: 0, hash: "4bf5ee70" + hex(48) + "fbce", state: hex(64), proposer: "0".repeat(96), ts: Math.floor(Date.now() / 1000) - 60, txs: [] };
-  S.blocks.push(g); addBlockCard(g);
+  g.snap = { specRev: 1, fee: S.fee, quorum: S.quorum, budget: S.ruleBudget, validators: S.validators.slice(), rules: S.clauses.size, agreed: [] };
+  S.byHeight.set(0, g); S.blocks.push(g); addBlockCard(g);
   log("Genesis loaded · block_0.hash 4bf5ee70…fbce · network tau-testnet-v2 (simulated)", "warn");
   log("Tau interpreter ready · consensus spec rev 1 · o6 = i10, o7 = 1, o9 = 10");
   renderConsensusRule(); renderGov(); renderRuleWorld(); readouts();
@@ -924,7 +1041,7 @@ function liveStop() { clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); if 
 
 /* ---------- mode switching ---------- */
 function setMode(mode, status) {
-  S.mode = mode;
+  S.mode = mode; document.body.dataset.mode = mode;
   $("btnSim").setAttribute("aria-pressed", mode === "sim");
   $("btnLive").setAttribute("aria-pressed", mode === "live");
   $("modeDot").className = "dot " + (mode === "sim" ? "sim" : status === "Connected" ? "" : "off");
@@ -932,7 +1049,9 @@ function setMode(mode, status) {
   $("chipMode").className = "chip " + (mode === "sim" ? "warn" : status === "Connected" ? "live" : "warn");
   $("hint").textContent = mode === "sim"
     ? "Simulation follows the documented protocol: validators vote on rule changes, accounts write and share their own Tau rules, every block is checked by Tau. Switch to Live node to read your own node."
+    : status === "Offline" ? "Not connected. Checklist: 1) node running with the WebSocket port 65433 open, 2) TAU_WS_ALLOWED_ORIGINS includes this page’s origin, 3) address above correct, then Connect."
     : "Reads your node every 3 s (getblocks, getmempool) and governance every 15 s. Default port 65433.";
+  $("hint").className = "hint" + (mode === "live" && status === "Offline" ? " err" : "");
 }
 $("btnSim").onclick = () => { liveStop(); setMode("sim"); simStart(); };
 $("btnLive").onclick = () => { simStop(); liveConnect(); };
@@ -1023,6 +1142,7 @@ function draw(tm) {
   cx.font = "600 19px Sora, sans-serif";
   cx.fillText(am > .2 ? "SPEC AMENDED · REV " + S.specRev : since < 1.2 ? "BLOCK SEALED" : "SPEC REV " + S.specRev, 0, 40);
   cx.restore();
+  if (S.mode === "sim") { cx.save(); cx.translate(C, C); cx.fillStyle = "rgba(236,236,240,.42)"; cx.font = "600 30px Sora, sans-serif"; cx.textAlign = "center"; cx.textBaseline = "middle"; cx.fillText("SIMULATION · NO REAL CHAIN DATA", 0, C * .64); cx.restore(); }
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
@@ -1081,6 +1201,39 @@ document.querySelectorAll(".modal").forEach(m => m.addEventListener("click", e =
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModals(); });
 document.querySelectorAll(".info").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); const was = b.classList.contains("open"); document.querySelectorAll(".info.open").forEach(x => x.classList.remove("open")); if (!was) b.classList.add("open"); }));
 document.addEventListener("click", () => document.querySelectorAll(".info.open").forEach(x => x.classList.remove("open")));
+/* ---------- simple / technical view ---------- */
+const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+function setView(v) { document.body.dataset.view = v; $("btnSimple").setAttribute("aria-pressed", v === "simple"); $("btnTech").setAttribute("aria-pressed", v === "tech"); store.set("tau-view", v); }
+$("btnSimple").onclick = () => setView("simple"); $("btnTech").onclick = () => setView("tech");
+setView(store.get("tau-view") || "simple");
+/* ---------- glyph rain toggle ---------- */
+function setRain(on) { $("rain").classList.toggle("off", !on); $("btnRain").setAttribute("aria-pressed", String(on)); store.set("tau-rain", on ? "1" : "0"); }
+$("btnRain").onclick = () => setRain($("btnRain").getAttribute("aria-pressed") !== "true");
+setRain(store.get("tau-rain") !== "0");
+/* ---------- 5-step tour: one rule from proposal to active ---------- */
+const TOUR = [
+  [".a-upd", "A rule change is proposed", "Any validator can propose a change to the chain’s rules, for example a new base fee. The proposal is itself a transaction, visible to everyone. Nobody can skip this step, because there is no admin key."],
+  [".a-eng", "The rule is checked before it can apply", "The proposed rule is compiled on its own first. If it does not hold, it is refused at the door. Every block is judged by the active rules on these streams, not by hidden code."],
+  [".a-val", "The validators must agree", "A change needs an explicit quorum, for example 3 of 4 validators. The threshold is itself part of the chain state, so it cannot be changed quietly."],
+  [".a-chain", "It activates at a later block", "An agreed change is scheduled for a future height, never the same block. The bright card marks the block where the new rules took effect, and the spec revision counts up."],
+  [".a-pol", "Your own rules are enforced the same way", "Every account can write its own rules for its money: spending limits, whitelists, time locks, co-signatures. They bind the account, not the device, so even a stolen key has to obey them. Refused transfers show up with a ✕."],
+];
+let tourI = -1;
+function tourShow(i) {
+  document.querySelectorAll(".panel.spot").forEach(p => p.classList.remove("spot"));
+  if (i < 0 || i >= TOUR.length) { tourI = -1; $("tour").hidden = true; delete document.body.dataset.tour; return; }
+  tourI = i; const [sel, title, text] = TOUR[i];
+  const target = document.querySelector(sel); const panel = target.classList.contains("panel") ? target : target.querySelector(".panel");
+  panel.classList.add("spot"); panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  document.body.dataset.tour = "1"; $("tour").hidden = false;
+  $("tourStep").textContent = `Step ${i + 1} of ${TOUR.length}`; $("tourTitle").textContent = title; $("tourText").textContent = text;
+  $("tourBack").disabled = i === 0; $("tourNext").textContent = i === TOUR.length - 1 ? "Done" : "Next";
+}
+$("btnTour").onclick = $("btnTour2").onclick = () => tourShow(0);
+$("btnState").onclick = $("btnState2").onclick = showState;
+$("tourNext").onclick = () => tourShow(tourI + 1); $("tourBack").onclick = () => tourShow(tourI - 1); $("tourClose").onclick = () => tourShow(-1);
+document.addEventListener("keydown", e => { if (e.key === "Escape") tourShow(-1); });
+
 setMode("sim"); simStart();
 setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
 /* =====================================================================
@@ -1096,7 +1249,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v7`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v8`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
