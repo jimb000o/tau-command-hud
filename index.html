@@ -667,6 +667,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v13.3 · 26 Oct 2026</b>New block cards appear the moment a block is sealed, also while the pointer rests on the strip (before, the strip waited until you moved away).</li>
           <li><b>v13.2 · 26 Oct 2026</b>Mouse wheel over the block strip steps through the chain: down goes back in time, up toward the newest block, the detail below follows. “n online” chip in the status row: how many people have Tau HUD open right now, with a green light when anyone is there. Counted by the community relay, no analytics; shows “—” until the relay is live.</li>
           <li><b>v13.1 · 26 Oct 2026</b>Tau HUD has a mark: a pulse inside the ring of its rules. It beats once per block in the header, in the favicon (animated SVG, and a canvas-drawn beat where browsers show SVG favicons static) and on the share preview.</li>
           <li><b>v13 · 26 Oct 2026</b>Phone layout: compact header (name, view switch, one-line notice, swipeable status chips, main buttons plus a More menu), reading order core → rule changes → rules in force → blocks → detail, comparison rows wrap with every word readable, tap-to-explain works reliably, block details stay short.</li>
@@ -995,15 +996,16 @@ function markMined(ids) { ids.forEach(id => { const k = "tx_" + id.slice(0, 16);
 
 /* ---------- chain ribbon ---------- */
 const ribbonHold = [];
-addEventListener("DOMContentLoaded", () => $("ribbon").addEventListener("mouseleave", () => { const r = $("ribbon"); ribbonHold.splice(0).forEach(d => r.appendChild(d)); while (r.children.length > 18) r.firstChild.remove(); r.scrollLeft = r.scrollWidth; }));
+addEventListener("DOMContentLoaded", () => $("ribbon").addEventListener("mouseleave", () => { const r = $("ribbon"); if (!ribbonHold.length) return; ribbonHold.length = 0; while (r.children.length > 18) r.firstChild.remove(); if (selectedBlock == null) r.scrollLeft = r.scrollWidth; }));
 function addBlockCard(b) {
   const r = $("ribbon"), d = document.createElement("div");
   d.className = "blk" + (b.amended ? " amended" : "");
   d.dataset.n = b.n; d.dataset.ex = exKey(() => explainBlock(b)); d.onclick = () => showBlock(b); d.title = "Click to inspect"; d.tabIndex = 0; d.onkeydown = e => { if (e.key === "Enter") showBlock(b); };
   const rules = b.txs.filter(t => /rule/.test(t.type)).length;
   d.innerHTML = `<div class="n">#${b.n}</div><span class="simtag">SIM</span><div class="h hx">hash ${short(b.hash)}</div><div class="h hx">state ${short(b.state)}</div><div class="h">by ${short(b.proposer)}</div><div class="m"><span>${b.txs.length} tx${rules ? ` · ${rules} rule` : ""}</span><span>${b.amended ? "rev " + b.amended + " ✓" : "o6 ✓"}</span></div>`;
-  if (r.matches(":hover")) { ribbonHold.push(d); return; }
+  // a new block shows the instant it is sealed, even while the pointer rests on the strip; only the auto-scroll and the trim wait
   r.appendChild(d);
+  if (r.matches(":hover")) { ribbonHold.push(d); return; }
   while (r.children.length > 18) r.firstChild.remove();
   r.scrollLeft = r.scrollWidth;
 }
