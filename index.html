@@ -228,7 +228,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .rule { margin: 12px 0 0; padding: 10px; background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 4px; font: 12px/1.6 var(--mono); color: var(--ok); text-shadow: 0 0 8px rgba(57,255,138,.25); white-space: pre-wrap; overflow-x: auto; }
 .rule .k { color: var(--cyan); }
 .rule .c { color: var(--dim); }
-.verdict { margin-top: 8px; flex: 0 0 auto; display: flex; align-items: center; gap: 12px; font: 700 15px var(--display); letter-spacing: .2em; text-transform: uppercase; position: relative; }
+.verdict { margin-top: auto; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 18px 0 8px; font: 700 15px var(--display); letter-spacing: .2em; text-transform: uppercase; position: relative; }
 .verdict .seal { width: 36px; height: 36px; border: 2px solid currentColor; transform: rotate(45deg); display: grid; place-items: center; position: relative; flex: 0 0 auto; border-radius: 3px; }
 .verdict .seal svg { width: 22px; height: 22px; transform: rotate(-45deg); fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .verdict .seal .check, .verdict .seal .cross, .verdict .seal .dia { display: none; }
@@ -689,7 +689,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
-          <li><b>v13.7 · 26 Oct 2026</b>Block-card and validator hovers cut to the essentials the card does not already show.</li>
+          <li><b>v13.7 · 26 Oct 2026</b>Block-card and validator hovers cut to the essentials the card does not already show. The “block accepted” seal sits centred in its own space instead of hugging the corner.</li>
           <li><b>v13.6 · 26 Oct 2026</b>The step row resets in the same instant the activating block is sealed: one short green flash with the block, then empty, ready for the next proposal.</li>
           <li><b>v13.5 · 26 Oct 2026</b>The “block accepted” moment: the seal stamps down, the check draws itself, a ring rings out and the panel edge glows for a second. Once a rule change is absorbed into the network, the step boxes reset; the next proposal starts from an empty row.</li>
           <li><b>v13.4 · 26 Oct 2026</b>“How a rule changes”: one proposal at a time, so every run starts at propose and each step lights up in real time. The Tau row now ends under “vote”; fork, splits and upgrading by hand belong to the other chains only. The “length = time” caption is gone.</li>
@@ -992,10 +992,6 @@ function explainSpec() {
 function explainComposite() {
   const n = S.clauses.size;
   return `The node folds every accepted personal rule into one Tau program for stream o5 (“may this transfer go through?”). It has one guarded branch per account: “if the sender is account X, apply X’s own rule”, and a final branch “everyone else: allow”. ${n} account${n === 1 ? "" : "s"} currently run their own rule. Every transfer is evaluated against this program before it is admitted.`;
-}
-function explainValidator(v, i) {
-  const open = S.updates.find(u => u.status === "voting" || u.status === "scheduled");
-  return `Validator ${i + 1}: ${v}\n${i === S.proposerIdx ? "Proposing the next block." : "Active: seals blocks when it is its turn and votes on rule changes."}` + (open ? `\nOpen proposal “${open.title}”: ${open.votes.has(v) ? "has agreed ✓" : "has not voted yet"}.` : "") + "\nThe validator set lives on the chain and changes only through an agreed rule change.";
 }
 
 
