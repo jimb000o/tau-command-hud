@@ -22,6 +22,10 @@ docker run --rm -it -p 127.0.0.1:65432:65432 -p 127.0.0.1:65433:65433 -p 4001:40
   bash -c 'mkdir -p data && cp networks/tau-testnet-v2/genesis.json data/genesis.json && python server.py'
 ```
 
+## Support
+
+AGRS donations (Ethereum, ERC-20): `0x23fB76A33A8d70f5c51aB558b85e4b93040003eb`
+
 ## Feedback
 
 Use the **Feedback** button on the page or [open an issue](../../issues/new?template=feedback.yml). Ideas with the most 👍 get built first.
