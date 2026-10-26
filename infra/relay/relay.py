@@ -245,6 +245,17 @@ class Relay:
     def height(self) -> int | None:
         return self._height(self.ordered_blocks()[-1]) if self.blocks else None
 
+    def canonical_height(self) -> int | None:
+        """Height of the node's canonical head (getgovernance.head_number).
+
+        getblocks counts every stored block, orphans included, so `height` can
+        read 1999 while the node's real chain still sits at genesis.
+        """
+        try:
+            return int(json.loads(self.cache["getgovernance"])["data"]["head_number"])
+        except (KeyError, TypeError, ValueError):
+            return None
+
     # ---------- visitor commands ----------
     async def answer(self, message: str) -> str:
         parts = message.split()
@@ -322,6 +333,9 @@ class Relay:
         return {
             "upstream_connected": self.upstream.connected.is_set(),
             "height": self.height(),
+            "canonical_height": self.canonical_height(),
+            # the page may make Live the default view only while the node follows a real chain
+            "live_default": bool(self.upstream.connected.is_set() and (self.canonical_height() or 0) > 0),
             "total_blocks": self.total_blocks,
             "clients": len(self.clients),
             "online": len(self.clients),

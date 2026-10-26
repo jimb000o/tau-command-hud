@@ -13,7 +13,7 @@ import sys
 import time
 
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
-                  TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10")
+                  TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4")
 sys.path.insert(0, os.path.dirname(__file__))
 
 from websockets.asyncio.client import connect  # noqa: E402
@@ -52,7 +52,8 @@ async def mock_node(ws):
         elif cmd == "getmempool":
             await ws.send(relay.envelope_ok(cmd, {"count": 0, "transactions": []}))
         elif cmd == "getgovernance":
-            await ws.send(relay.envelope_ok(cmd, {"active_validators": ["ab" * 48], "vote_quorum": 1, "consensus_rules": "o6[t] = 1"}))
+            await ws.send(relay.envelope_ok(cmd, {"active_validators": ["ab" * 48], "vote_quorum": 1, "consensus_rules": "o6[t] = 1",
+                                                   "head_number": len(mock["blocks"]) - 1}))
         elif cmd == "gettaustate":
             await ws.send(relay.envelope_ok(cmd, {"rules_state": "always o1[t] = i1[t]."}))
         elif cmd == "getbalance":
@@ -176,13 +177,18 @@ async def main():
             except Exception:
                 check(True, "oversized message rejected")
 
-        # health endpoint
-        reader, writer = await asyncio.open_connection("127.0.0.1", 18766)
-        writer.write(b"GET /health HTTP/1.1\r\nHost: x\r\n\r\n")
-        raw = (await reader.read(4096)).decode()
-        writer.close()
-        body = json.loads(raw.split("\r\n\r\n", 1)[1])
+        # health endpoint (getgovernance, which carries the canonical head, is re-polled every GOV_POLL_SECONDS)
+        for _ in range(12):
+            reader, writer = await asyncio.open_connection("127.0.0.1", 18766)
+            writer.write(b"GET /health HTTP/1.1\r\nHost: x\r\n\r\n")
+            raw = (await reader.read(4096)).decode()
+            writer.close()
+            body = json.loads(raw.split("\r\n\r\n", 1)[1])
+            if body.get("live_default"):
+                break
+            await asyncio.sleep(1)
         check(raw.startswith("HTTP/1.1 200") and body["upstream_connected"] and body["height"] >= 1 and body["online"] == 0, f"/health {body}")
+        check(body["canonical_height"] >= 1 and body["live_default"] is True, f"/health live_default follows canonical head {body}")
 
         # keep polling for a while; the node's heavy limit must never trip
         await asyncio.sleep(8)
