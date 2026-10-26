@@ -603,6 +603,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v12.2 · 26 Oct 2026</b>Rule sharing, rule changes and personal rules: hovers cut to the essentials. No live panel re-renders while the pointer rests on it, so an open overlay stays until you move away.</li>
           <li><b>v12.1 · 26 Oct 2026</b>Transaction hovers cut to the essentials that the row does not already show; the feed holds still while you hover it.</li>
           <li><b>v12 · 26 Oct 2026</b>Everything explains itself: hover any transaction, rule-change card, shared rule, personal rule, block card, validator, stream row, the active consensus spec and the composite rule for a plain-language explanation with the live numbers. The whole “Rules in force now” panel opens the full chain state.</li>
           <li><b>v11 · 26 Oct 2026</b>Renamed to “Tau HUD”. Tau steps show their state: done (green), in progress (amber, gently pulsing, e.g. “collecting 2/3”), next (dimmed). Disclaimer added (experimental, no claim of accuracy, no advice). Tau step boxes given room. Any clipped text (step notes, hashes, rule names, transaction rows) shows in full as an overlay on hover, or on tap on phones. “How a rule changes” now encodes time as length (Few: compare on one scale): the Other-chains track spans the whole row with its slow, fragmenting steps (months of debate, a fork that can split the chain, manual upgrades), the Tau track is a short green segment followed by “done.”</li>
@@ -807,19 +808,19 @@ function explainTx(t) {
   }
 }
 function explainUpdate(u) {
-  const N = S.validators.length, thr = N ? threshold() : "—";
-  const st = { voting: `Collecting agreement: ${u.votes.size} of ${thr} validators (${N} active) have agreed. It activates at block #${u.activateAt}, in ${Math.max(0, u.activateAt - S.height)} blocks, if the quorum is reached by then.`,
-    scheduled: `Agreed by ${u.votes.size} validators. Scheduled: becomes law at block #${u.activateAt}, in ${Math.max(0, u.activateAt - S.height)} blocks. Nobody has to upgrade anything.`,
-    active: `Active since block #${u.activeAt}. Every block since then is judged by the amended spec.`,
-    expired: `Expired: block #${u.activateAt} passed before ${thr} validators agreed, so it was archived without effect.` }[u.status] || u.status;
-  return `“${u.title}”, proposed by validator ${short(u.proposer)}. ${proposalMeaning(u)}\nChecked: compiled in isolation against the live spec before anyone voted ✓.\n${st}\nTechnical change: ${u.diff}`;
+  const N = S.validators.length, thr = N ? threshold() : "—", left = Math.max(0, u.activateAt - S.height);
+  const st = { voting: `Needs ${thr} of ${N} validators; takes effect at #${u.activateAt} (${left} blocks) if agreed by then, else expires.`,
+    scheduled: `Agreed. Becomes law at #${u.activateAt} (${left} blocks); nobody upgrades anything.`,
+    active: `Law since #${u.activeAt}; every block since is judged by the amended spec.`,
+    expired: `Not enough agreement by #${u.activateAt}; archived without effect.` }[u.status] || u.status;
+  return `${proposalMeaning(u)}\nCompiled in isolation before the vote ✓. ${st}`;
 }
 function explainOffer(o) {
-  const st = { offered: `Waiting: ${short(o.to)} has not answered yet; the offer expires at block #${o.expire}.`, accepted: `Accepted: the rule now binds ${short(o.to)}’s account.`, rejected: `Rejected by ${short(o.to)}; nothing changed.`, expired: "Expired unanswered." }[o.status] || o.status;
-  return `${short(o.from)} offers a rule to ${short(o.to)}: ${policyMeaning(o.policy)}\nConflict report the recipient sees: shape ✓ (well-formed Tau), reserved ✓ (touches no protected streams), widths ✓ (bit widths match), compile ✓ (compiles together with the rules already in force), ${o.collides ? "collision: accepting replaces the recipient’s current rule" : "no collision with an existing rule"}.\n${st}`;
+  const st = { offered: `Waiting for ${short(o.to)}; expires at #${o.expire}.`, accepted: `Now binds ${short(o.to)}’s account.`, rejected: "Declined; nothing changed.", expired: "Expired unanswered." }[o.status] || o.status;
+  return `${policyMeaning(o.policy)}\n${o.collides ? "Accepting replaces the recipient’s current rule. " : ""}${st}`;
 }
 function explainClause(acc, p) {
-  return `Account ${short(acc)} runs its own Tau rule. ${policyMeaning(p)}\nThe node checks it twice: when a transfer is admitted to the mempool and again when the block is applied. It binds the account, not the device, so a stolen key still has to obey it.\nTau: ${p.body}`;
+  return `${policyMeaning(p)}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
 }
 function explainBlock(b) {
   const sn = b.snap || {}, rules = b.txs.filter(t => /rule/.test(t.type)).length, gov = b.txs.filter(t => t.kind === "gov").length;
@@ -848,6 +849,15 @@ const TYPE_LABEL = {
   rule_offer_reject: "✕ rule rejected", consensus_rule_update: "§ rule change proposed", consensus_rule_vote: "☑ vote",
   retractable_transfer: "↺ retractable transfer",
 };
+/* a live panel never re-renders while the pointer rests on it; the pending render runs on mouseleave */
+const HOLD = new Map();
+function hold(id, fn) {
+  const el = $(id); if (!el) return false;
+  if (!el.matches(":hover")) return false;
+  HOLD.set(id, fn);
+  if (!el.dataset.holdBound) { el.dataset.holdBound = "1"; el.addEventListener("mouseleave", () => { const f = HOLD.get(id); HOLD.delete(id); if (f) f(); }); }
+  return true;
+}
 const feedHold = [];
 addEventListener("DOMContentLoaded", () => $("feed").addEventListener("mouseleave", () => { const feed = $("feed"); feedHold.splice(0).forEach(d => feed.prepend(d)); while (feed.children.length > 40) feed.lastChild.remove(); }));
 function txCard(t) {
@@ -869,12 +879,15 @@ function txCard(t) {
 function markMined(ids) { ids.forEach(id => { const k = "tx_" + id.slice(0, 16); const el = $(k) || feedHold.find(d => d.id === k); if (el) el.classList.add("mined"); }); }
 
 /* ---------- chain ribbon ---------- */
+const ribbonHold = [];
+addEventListener("DOMContentLoaded", () => $("ribbon").addEventListener("mouseleave", () => { const r = $("ribbon"); ribbonHold.splice(0).forEach(d => r.appendChild(d)); while (r.children.length > 18) r.firstChild.remove(); r.scrollLeft = r.scrollWidth; }));
 function addBlockCard(b) {
   const r = $("ribbon"), d = document.createElement("div");
   d.className = "blk" + (b.amended ? " amended" : "");
   d.dataset.n = b.n; d.dataset.ex = exKey(() => explainBlock(b)); d.onclick = () => showBlock(b); d.title = "Click to inspect"; d.tabIndex = 0; d.onkeydown = e => { if (e.key === "Enter") showBlock(b); };
   const rules = b.txs.filter(t => /rule/.test(t.type)).length;
   d.innerHTML = `<div class="n">#${b.n}</div><span class="simtag">SIM</span><div class="h hx">hash ${short(b.hash)}</div><div class="h hx">state ${short(b.state)}</div><div class="h">by ${short(b.proposer)}</div><div class="m"><span>${b.txs.length} tx${rules ? ` · ${rules} rule` : ""}</span><span>${b.amended ? "rev " + b.amended + " ✓" : "o6 ✓"}</span></div>`;
+  if (r.matches(":hover")) { ribbonHold.push(d); return; }
   r.appendChild(d);
   while (r.children.length > 18) r.firstChild.remove();
   r.scrollLeft = r.scrollWidth;
@@ -883,6 +896,7 @@ function addBlockCard(b) {
 /* ---------- user-made rules panels ---------- */
 const STATUS_TXT = { voting: "collecting agreement", scheduled: "agreed · scheduled", active: "active", expired: "expired" };
 function renderUpdates() {
+  if (hold("updates", renderUpdates)) return;
   const thr = threshold(), el = $("updates");
   const list = S.updates.slice(-4).reverse();
   el.innerHTML = list.length ? list.map(u => {
@@ -912,6 +926,7 @@ function renderUpdates() {
     : `<b>“${esc(cur.title)}”</b> is collecting agreement: ${cur.votes.size} of ${thr} validators so far. It becomes law at #${cur.activateAt} if enough agree.`;
 }
 function renderOffers() {
+  if (hold("offers", renderOffers)) return;
   const el = $("offers");
   const list = S.offers.slice(-6).reverse();
   el.innerHTML = list.length ? list.map(o => `<div class="offer ${o.status}" data-ex="${exKey(() => explainOffer(o))}">
@@ -922,6 +937,7 @@ function renderOffers() {
   $("offerCount").textContent = `${S.offers.filter(o => o.status === "offered").length} waiting`;
 }
 function renderClauses() {
+  if (hold("clauses", renderClauses)) return;
   const entries = [...S.clauses.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1);
   $("clauseCount").textContent = entries.length + " accounts";
   $("clauses").innerHTML = entries.length ? entries.slice(0, 8).map(([acc, p]) =>
@@ -938,6 +954,7 @@ function renderRuleWorld() { renderUpdates(); renderOffers(); renderClauses(); }
 
 /* ---------- validators ---------- */
 function renderGov(extra = {}) {
+  if (hold("vals", () => renderGov(extra))) return;
   $("vals").innerHTML = S.validators.map((v, i) =>
     `<div class="val ${i === S.proposerIdx ? "on" : ""}" data-ex="${exKey(() => explainValidator(v, i))}"><i></i><span>${short(v)}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
   const N = S.validators.length;
@@ -989,6 +1006,7 @@ function showBlock(b, pinned = true) {
   $("chainSub").textContent = pinned ? `showing #${b.n} · click another block or “newest” to follow the chain` : "click a block to inspect it below · bright card = a rule change took effect";
 }
 function renderStatePanel() {
+  if (hold("statePanel", renderStatePanel)) return;
   const N = S.validators.length, thr = N ? threshold() : "—";
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
   $("statePanel").innerHTML = kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "To change a rule": `${thr} of ${N} validators must agree`, "Rule txs per block": S.ruleBudget, "Accounts with own rules": S.clauses.size, "Open proposals": open.length })
@@ -1427,7 +1445,7 @@ document.addEventListener("click", () => document.querySelectorAll(".info.open")
   const hide = () => { cur = null; ovl.hidden = true; };
   document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur) hide(); });
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
-  document.addEventListener("scroll", hide, true);
+  document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
   document.addEventListener("click", e => { if (!matchMedia("(hover: none)").matches) return; const el = find(e.target); if (el && el !== cur) { e.preventDefault(); show(el, e.clientX, e.clientY); } else hide(); }, true);
 })();
 
@@ -1482,7 +1500,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v12.1`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v12.2`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
