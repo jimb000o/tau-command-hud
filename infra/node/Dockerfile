@@ -20,7 +20,7 @@ ARG TAU_LANG_REF=c3ea334cd1e6612930ea9f404933211858f0009f
 ARG TAU_BUILD_JOBS=2
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash bison build-essential ca-certificates clang cmake curl git \
+    bash bison build-essential ca-certificates ccache clang cmake curl git \
     libboost-all-dev libcurl4-openssl-dev libgmp-dev lld ninja-build \
     pkg-config unzip wget \
     && rm -rf /var/lib/apt/lists/*
@@ -39,14 +39,28 @@ RUN set -eux; \
     git submodule update --init --recursive
 
 WORKDIR /app/tau-lang
-RUN set -eux; \
+# The binding defaults to Python 3.12 (TAU_PYTHON_VERSION in
+# bindings/python/nanobind/CMakeLists.txt); tau-testnet needs 3.14, so the
+# version is passed explicitly, as the tau-testnet README does.
+#
+# The dependency store (/root/.tau: cvc5, Boost, Spot) takes most of the build
+# hour. It lives in a BuildKit cache mount so a failure later in this step, or
+# a change to the tau-lang ref, never recompiles it; a copy is taken at the end
+# for the runtime image, since cache mounts are not part of the layer.
+RUN --mount=type=cache,target=/root/.tau,id=tau-store \
+    --mount=type=cache,target=/root/.ccache,id=tau-ccache \
+    set -eux; \
     ./dev build Release \
       -DTAU_BUILD_JOBS="${TAU_BUILD_JOBS}" \
       -DTAU_BUILD_EXECUTABLE=ON \
       -DTAU_BUILD_BINDING_PYTHON_NANOBIND=ON \
+      -DTAU_PYTHON_VERSION=3.14 \
       -DPython_EXECUTABLE=/opt/tau-build-venv/bin/python \
+      -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
       -DTAU_BUILD_TESTS=OFF; \
-    find /app/tau-lang/build* -name 'tau*.so' -path '*nanobind*' | grep -q .
+    find /app/tau-lang/build* -name 'tau*.so' -path '*nanobind*' | grep -q .; \
+    rm -rf /tau-store; cp -a /root/.tau /tau-store
 
 
 FROM python:3.14-trixie AS testnet-src
@@ -78,7 +92,7 @@ RUN --mount=type=cache,target=/root/.cache/coincurve-wheels \
 COPY --from=testnet-src /src /app/tau-testnet
 COPY --from=testnet-src /src/docker/entrypoint.sh /usr/local/bin/tau-node-entrypoint
 COPY --from=tau-builder /app/tau-lang /app/tau-lang
-COPY --from=tau-builder /root/.tau /root/.tau
+COPY --from=tau-builder /tau-store /root/.tau
 
 # Register every shared-library directory of the built dependencies (cvc5,
 # Boost, Spot) with the dynamic linker, whatever layout the dependency store uses.
