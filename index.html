@@ -182,6 +182,7 @@ body[data-view="simple"] .stack { grid-template-rows: auto minmax(0, 1fr); }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); margin-right: 6px; animation: blink 1.6s infinite; }
 .dot.sim { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
 .dot.off { background: var(--bad); box-shadow: 0 0 8px var(--bad); animation: none; }
+.dot.none { background: var(--dim); box-shadow: none; animation: none; opacity: .6; }
 @keyframes blink { 50% { opacity: .35; } }
 
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex: 1 1 60%; }
@@ -495,6 +496,7 @@ a.btn { text-decoration: none; display: inline-block; }
     <button class="chip unoff" type="button" data-open="mAbout" title="Read the full notice">Unofficial community project · not affiliated with IDNI</button>
     <div class="chips">
       <div class="chip" id="chipMode"><span class="dot sim" id="modeDot"></span>Mode<b id="modeTxt">Simulation</b></div>
+      <div class="chip" id="chipOnline" data-full="People looking at Tau HUD right now. Counted by the community read relay at node.tauhud.com, which every open HUD talks to; no cookies, no analytics, nobody is identified. “—” means the relay has not answered yet."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</div>
       <div class="chip">Network<b id="netId">tau-testnet-v2</b></div>
       <div class="chip">Height<b id="chipH">0</b></div>
       <button class="chip" type="button" id="btnState" title="Open the current state of the chain: every rule in force right now">Spec revision<b id="chipRev">1</b></button>
@@ -599,7 +601,7 @@ a.btn { text-decoration: none; display: inline-block; }
     </article>
 
     <article class="panel a-chain">
-      <h2>Blockchain <small id="chainSub">click a block to inspect it below · bright card = a rule change took effect</small><button class="info" type="button" aria-label="What is this?" data-tip="Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
+      <h2>Blockchain <small id="chainSub">click a block to inspect it below · mouse wheel steps through blocks · bright card = a rule change took effect</small><button class="info" type="button" aria-label="What is this?" data-tip="Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
       <div class="ribbon" id="ribbon"></div>
       <div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div>
     </article>
@@ -665,6 +667,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v13.2 · 26 Oct 2026</b>Mouse wheel over the block strip steps through the chain: down goes back in time, up toward the newest block, the detail below follows. “n online” chip in the status row: how many people have Tau HUD open right now, with a green light when anyone is there. Counted by the community relay, no analytics; shows “—” until the relay is live.</li>
           <li><b>v13.1 · 26 Oct 2026</b>Tau HUD has a mark: a pulse inside the ring of its rules. It beats once per block in the header, in the favicon (animated SVG, and a canvas-drawn beat where browsers show SVG favicons static) and on the share preview.</li>
           <li><b>v13 · 26 Oct 2026</b>Phone layout: compact header (name, view switch, one-line notice, swipeable status chips, main buttons plus a More menu), reading order core → rule changes → rules in force → blocks → detail, comparison rows wrap with every word readable, tap-to-explain works reliably, block details stay short.</li>
           <li><b>v12.3 · 26 Oct 2026</b>The Tau row of “How a rule changes” now moves step by step: propose (in mempool) → checked (compiling) → agreed (votes) → active, each phase visible. When a change takes effect the whole row lights up green for a moment.</li>
@@ -839,6 +842,27 @@ async function runVerdict(b, live) {
   setStream("o5", live ? "enforced" : `${S.clauses.size} user rules · allow`, "pass");
   setVerdict("ok", `Block #${b.n} accepted`);
 }
+
+/* ---------- people online: asked from the community relay (node.tauhud.com/status), no analytics ---------- */
+const PRESENCE = { url: "https://node.tauhud.com/status", n: null, timer: null };
+function setOnline(n) {
+  PRESENCE.n = n;
+  $("onlineN").textContent = n == null ? "—" : String(n);
+  $("onlineDot").className = "dot " + (n == null ? "none" : n > 0 ? "" : "off");
+  $("chipOnline").classList.toggle("live", n != null && n > 0);
+}
+async function pollOnline() {
+  try {
+    const r = await fetch(PRESENCE.url, { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    const n = Number(j.clients ?? j.online ?? j.presence);
+    setOnline(Number.isFinite(n) ? n : null);
+  } catch { setOnline(null); }
+}
+function presenceFromMessage(d) { const n = Number(d && (d.clients ?? d.online ?? d.presence)); if (Number.isFinite(n)) setOnline(n); }
+addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) pollOnline(); });
 
 /* ---------- the mark: beats once per block, and the favicon beats with it ---------- */
 const MARKS = () => document.querySelectorAll(".mark");
@@ -1300,6 +1324,7 @@ function liveMessage(ev) {
   let msg; try { msg = JSON.parse(text); } catch { return; }
   if (msg.status !== "ok") { log(`${esc(msg.command || "rpc")}: ${esc(msg.error?.code)} ${esc(msg.error?.message || "")}`, "err"); return; }
   const d = msg.data || {};
+  presenceFromMessage(d);
   if (msg.command === "getblocks") {
     (d.blocks || []).filter(b => !LIVE.seenBlocks.has(b.block_hash)).forEach(raw => {
       LIVE.seenBlocks.add(raw.block_hash);
@@ -1594,6 +1619,26 @@ $("btnState").onclick = $("btnState2").onclick = $("btnState3").onclick = showSt
 $("btnMore").onclick = () => { const c = $("btnMore").closest(".controls"), open = !c.classList.contains("open"); c.classList.toggle("open", open); $("btnMore").setAttribute("aria-expanded", open); $("btnMore").textContent = open ? "Less ▴" : "More ▾"; };
 $("statePanelCard").addEventListener("click", e => { if (!e.target.closest(".info")) showState(); }); $("statePanelCard").style.cursor = "pointer";
 $("chainSub").onclick = () => { selectedBlock = null; const last = S.blocks[S.blocks.length - 1]; if (last) showBlock(last, false); }; $("chainSub").style.cursor = "pointer";
+/* mouse wheel over the block strip steps through blocks: down = back in time, up = toward the newest; one block per notch */
+(() => {
+  const r = $("ribbon"); let acc = 0, lastStep = 0;
+  r.addEventListener("wheel", e => {
+    if (!S.blocks.length) return;
+    e.preventDefault();
+    acc += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    const now = performance.now();
+    if (Math.abs(acc) < 40 || now - lastStep < 90) return;   // one notch (or one trackpad flick) = one block
+    const dir = acc > 0 ? -1 : 1; acc = 0; lastStep = now;
+    const curN = selectedBlock ?? S.blocks[S.blocks.length - 1].n;
+    const idx = S.blocks.findIndex(b => b.n === curN);
+    const nb = S.blocks[Math.max(0, Math.min(S.blocks.length - 1, (idx < 0 ? S.blocks.length - 1 : idx) + dir))];
+    if (!nb || nb.n === curN) return;
+    const newest = nb.n === S.blocks[S.blocks.length - 1].n;
+    if (newest) selectedBlock = null;
+    showBlock(nb, !newest);
+    const card = r.querySelector(`.blk[data-n="${nb.n}"]`); if (card) card.scrollIntoView({ block: "nearest", inline: "center", behavior: reduced ? "auto" : "smooth" });
+  }, { passive: false });
+})();
 $("tourNext").onclick = () => tourShow(tourI + 1); $("tourBack").onclick = () => tourShow(tourI - 1); $("tourClose").onclick = () => tourShow(-1);
 document.addEventListener("keydown", e => { if (e.key === "Escape") tourShow(-1); });
 
