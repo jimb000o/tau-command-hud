@@ -86,6 +86,8 @@ body[data-tour] .panel.spot { border-color: var(--ok); box-shadow: 0 0 0 1px rgb
 body[data-tour] .panel:not(.spot) { opacity: .45; }
 body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 #rain.off { display: none; }
+#ovl { position: fixed; z-index: 70; max-width: min(440px, 90vw); padding: 8px 11px; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
+#ovl[hidden] { display: none; }
 .blk { cursor: pointer; }
 .blk:hover { border-color: var(--cyan); }
 .detail h3 { margin: 14px 0 6px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
@@ -514,11 +516,11 @@ a.btn { text-decoration: none; display: inline-block; }
       <div class="contrast" aria-label="How a rule changes: other chains versus Tau">
         <div class="hd">How a rule changes <span>length = time it takes</span></div>
         <div class="crow"><span class="who">Other chains<em>months, if ever</em></span><div class="track">
-          <span class="seg" style="flex:1.5 1 0" title="Someone writes a proposal in a forum"><b>propose</b></span>
-          <span class="seg" style="flex:2.6 1 0" title="Months of debate; factions form"><b>debate</b><small>months · factions</small></span>
-          <span class="seg" style="flex:1 1 0" title="Signalling votes with no binding effect"><b>vote</b></span>
-          <span class="seg fork" style="flex:1.6 1 0" title="A hard fork: the chain can split in two"><b>⑂ fork</b><small>splits</small></span>
-          <span class="seg" style="flex:1.8 1 0" title="Every node operator upgrades by hand, or is left behind"><b>upgrade</b><small>by hand</small></span>
+          <span class="seg" style="flex:1.5 1 0" data-full="Someone writes a proposal in a forum"><b>propose</b></span>
+          <span class="seg" style="flex:2.6 1 0" data-full="Months of debate: factions form, forums and social media fill with arguments, and nothing is binding."><b>debate</b><small>months · factions</small></span>
+          <span class="seg" style="flex:1 1 0" data-full="Signalling votes with no binding effect"><b>vote</b></span>
+          <span class="seg fork" style="flex:1.6 1 0" data-full="A hard fork: nodes that disagree keep running the old rules, and the chain can split in two."><b>⑂ fork</b><small>splits</small></span>
+          <span class="seg" style="flex:1.8 1 0" data-full="Every node operator must upgrade their software by hand; whoever does not is left on the old chain."><b>upgrade</b><small>by hand</small></span>
         </div></div>
         <div class="crow tau"><span class="who">Tau<em>~1 minute</em></span><div class="track">
           <div class="tau-seg"><span class="st" id="stPropose">propose</span><span class="st" id="stCheck">checked</span><span class="st" id="stAgree">agreed</span><span class="st" id="stActive">active</span></div>
@@ -596,7 +598,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
-          <li><b>v11 · 26 Oct 2026</b>Renamed to “Tau HUD”. “How a rule changes” now encodes time as length (Few: compare on one scale): the Other-chains track spans the whole row with its slow, fragmenting steps (months of debate, a fork that can split the chain, manual upgrades), the Tau track is a short green segment followed by “done.”</li>
+          <li><b>v11 · 26 Oct 2026</b>Renamed to “Tau HUD”. Any clipped text (step notes, hashes, rule names, transaction rows) shows in full as an overlay on hover, or on tap on phones. “How a rule changes” now encodes time as length (Few: compare on one scale): the Other-chains track spans the whole row with its slow, fragmenting steps (months of debate, a fork that can split the chain, manual upgrades), the Tau track is a short green segment followed by “done.”</li>
           <li><b>v10.1 · 26 Oct 2026</b>QR code next to the donation address (scan to donate). No more hexagons: the core is built from rings and the rule-holding accounts are ringed dots. “How a rule changes” laid out on one shared grid: both rows use the same four columns, each step has a one-line note, the clock sits with the row label, and the Tau row shows the live vote count and activation block.</li>
           <li><b>v10 · 26 Oct 2026</b>The contrast is now visual, not just verbal: “How a rule changes” strip in the Rule changes panel (other chains: propose, months of debate, vote, hard fork, everyone upgrades; Tau: propose, checked, agreed, active, lit live from the current proposal), and in the core every sealed block draws the agreement of all validators and rule-holding accounts flowing into it (“the agreed rules of everyone → block”).</li>
           <li><b>v9.1 · 26 Oct 2026</b>Simple/Technical switch moved to the right side of the header, under the status chips.</li>
@@ -1319,6 +1321,21 @@ document.querySelectorAll(".modal").forEach(m => m.addEventListener("click", e =
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModals(); });
 document.querySelectorAll(".info").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); const was = b.classList.contains("open"); document.querySelectorAll(".info.open").forEach(x => x.classList.remove("open")); if (!was) b.classList.add("open"); }));
 document.addEventListener("click", () => document.querySelectorAll(".info.open").forEach(x => x.classList.remove("open")));
+/* ---------- overflow overlay: hover or tap any clipped text to read all of it ---------- */
+(() => {
+  const ovl = document.createElement("div"); ovl.id = "ovl"; ovl.hidden = true; document.body.appendChild(ovl);
+  const clipped = el => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+  const find = t => { if (!(t instanceof Element)) return null; if (t.closest(".info")) return null; const full = t.closest("[data-full]"); if (full) return full; let el = t; for (let i = 0; el && el !== document.body && i < 5; i++, el = el.parentElement) { const cs = getComputedStyle(el); if (cs.textOverflow === "ellipsis" && clipped(el)) return el; } return null; };
+  let cur = null;
+  const place = (x, y) => { const w = ovl.offsetWidth, h = ovl.offsetHeight; ovl.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px"; ovl.style.top = (y + 18 + h > innerHeight ? y - h - 10 : y + 18) + "px"; };
+  const show = (el, x, y) => { cur = el; ovl.textContent = el.dataset.full || el.getAttribute("title") || el.textContent.trim(); ovl.hidden = false; place(x, y); };
+  const hide = () => { cur = null; ovl.hidden = true; };
+  document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur) hide(); });
+  document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
+  document.addEventListener("scroll", hide, true);
+  document.addEventListener("click", e => { if (!matchMedia("(hover: none)").matches) return; const el = find(e.target); if (el && el !== cur) { e.preventDefault(); show(el, e.clientX, e.clientY); } else hide(); }, true);
+})();
+
 /* ---------- simple / technical view ---------- */
 const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 function setView(v) { document.body.dataset.view = v; $("btnSimple").setAttribute("aria-pressed", v === "simple"); $("btnTech").setAttribute("aria-pressed", v === "tech"); store.set("tau-view", v); }
