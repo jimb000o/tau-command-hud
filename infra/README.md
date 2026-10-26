@@ -17,7 +17,9 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
 
 ## Server
 
-Hetzner Cloud CX23 (2 vCPU, 4 GB RAM, 40 GB, Ubuntu 24.04) or anything similar.
+Hetzner Cloud CAX11 (2 vCPU Ampere ARM, 4 GB RAM, 40 GB, Ubuntu 24.04), CX23 (x86) or
+anything similar. Both arm64 and x86_64 work: the base images are multi-arch and tau-lang
+ships native linux-arm64 dependency recipes, everything else compiles from source.
 4 GB RAM plus swap is needed for the one-time tau-lang compile; the running node needs far less.
 
 ```bash

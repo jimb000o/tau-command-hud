@@ -49,7 +49,7 @@ if [[ ! -f .env ]]; then
   sed -i "s/^RELAY_DOMAIN=.*/RELAY_DOMAIN=${RELAY_DOMAIN}/" .env
 fi
 
-echo "==> Building and starting (first build compiles tau-lang: 30-60 minutes)"
+echo "==> Building and starting (first build compiles tau-lang: 30-90 minutes)"
 docker compose up -d --build
 
 IP=$(curl -fsS4 https://ifconfig.me || echo "<server IP>")
