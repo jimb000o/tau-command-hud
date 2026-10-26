@@ -396,6 +396,9 @@ a.btn { text-decoration: none; display: inline-block; }
 }
 @media (max-width: 720px) {
   .wrap { padding-bottom: 64px; }
+  .contrast .row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .contrast .steps { flex-wrap: wrap; gap: 6px 0; }
+  .contrast .ln.long { flex-basis: 24px; }
   .fb-fab { font-size: 11px; padding: 8px 12px; }
   .tour { bottom: 60px; }
   .deck, .lower, .community, .rw-grid, .principles, .grid { grid-template-columns: minmax(0, 1fr); }
