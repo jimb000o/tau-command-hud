@@ -228,12 +228,34 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .rule { margin: 12px 0 0; padding: 10px; background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 4px; font: 12px/1.6 var(--mono); color: var(--ok); text-shadow: 0 0 8px rgba(57,255,138,.25); white-space: pre-wrap; overflow-x: auto; }
 .rule .k { color: var(--cyan); }
 .rule .c { color: var(--dim); }
-.verdict { margin-top: 8px; flex: 0 0 auto; display: flex; align-items: center; gap: 10px; font: 700 15px var(--display); letter-spacing: .2em; text-transform: uppercase; }
-.verdict .seal { width: 34px; height: 34px; border: 2px solid currentColor; transform: rotate(45deg); display: grid; place-items: center; }
-.verdict .seal i { transform: rotate(-45deg); font-style: normal; font-size: 14px; }
-.verdict.ok { color: var(--ok); text-shadow: 0 0 12px rgba(57,255,138,.5); }
+.verdict { margin-top: 8px; flex: 0 0 auto; display: flex; align-items: center; gap: 12px; font: 700 15px var(--display); letter-spacing: .2em; text-transform: uppercase; position: relative; }
+.verdict .seal { width: 36px; height: 36px; border: 2px solid currentColor; transform: rotate(45deg); display: grid; place-items: center; position: relative; flex: 0 0 auto; border-radius: 3px; }
+.verdict .seal svg { width: 22px; height: 22px; transform: rotate(-45deg); fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.verdict .seal .check, .verdict .seal .cross, .verdict .seal .dia { display: none; }
+.verdict.wait .seal .dia { display: block; stroke-width: 1.8; opacity: .7; }
+.verdict.bad .seal .cross { display: block; }
+.verdict.ok .seal .check { display: block; stroke-dasharray: 24; stroke-dashoffset: 24; animation: vcheck .38s .22s cubic-bezier(.3,.8,.3,1) forwards; }
+.verdict.ok { color: var(--ok); text-shadow: 0 0 12px rgba(57,255,138,.45); }
+.verdict.ok .seal { background: rgba(57,255,138,.1); box-shadow: 0 0 18px rgba(57,255,138,.35), inset 0 0 10px rgba(57,255,138,.2); animation: vstamp .55s cubic-bezier(.2,1.1,.3,1.25); }
+.verdict.ok .seal::after { content: ""; position: absolute; inset: -2px; border: 2px solid var(--ok); border-radius: 3px; opacity: 0; animation: vping 1s .1s ease-out; }
+.verdict.ok span { animation: vsettle .6s cubic-bezier(.2,.8,.3,1); }
+.verdict.ok span b { color: #fff; font-weight: 700; }
 .verdict.bad { color: var(--bad); }
 .verdict.wait { color: var(--dim); }
+.verdict.wait .seal { animation: vspin 2.4s linear infinite; }
+.a-eng.sealed { animation: vpanel 1.2s ease-out; }
+/* the block, felt through the whole HUD: a faint ring that leaves the core and crosses the page, and each panel edge brightening as it passes */
+#wave { position: fixed; left: 0; top: 0; width: 0; height: 0; pointer-events: none; z-index: 30; border-radius: 50%; opacity: 0; transform: translate(-50%, -50%); box-shadow: 0 0 0 1px rgba(57,255,138,.28), 0 0 60px 20px rgba(57,255,138,.05), inset 0 0 40px rgba(57,255,138,.05); }
+#wave.go { animation: hudwave 1.6s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes hudwave { 0% { width: 0; height: 0; opacity: .9; } 100% { width: var(--reach, 2400px); height: var(--reach, 2400px); opacity: 0; } }
+.panel.felt { animation: felt 1.1s ease-out; animation-delay: var(--felt, 0s); }
+@keyframes felt { 0% { border-color: var(--line); } 25% { border-color: rgba(57,255,138,.45); } 100% { border-color: var(--line); } }
+@keyframes vstamp { 0% { transform: rotate(45deg) scale(1.7); opacity: 0; } 55% { transform: rotate(45deg) scale(.94); opacity: 1; } 100% { transform: rotate(45deg) scale(1); } }
+@keyframes vping { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(2.2); opacity: 0; } }
+@keyframes vcheck { to { stroke-dashoffset: 0; } }
+@keyframes vsettle { 0% { opacity: 0; letter-spacing: .45em; transform: translateX(6px); } 100% { opacity: 1; letter-spacing: .2em; transform: none; } }
+@keyframes vspin { to { transform: rotate(405deg); } }
+@keyframes vpanel { 0% { box-shadow: inset 0 0 0 1px rgba(57,255,138,.55), inset 0 0 40px rgba(57,255,138,.12); } 100% { box-shadow: inset 0 0 0 1px rgba(57,255,138,0), inset 0 0 40px rgba(57,255,138,0); } }
 
 /* core */
 .core { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px; justify-items: center; }
@@ -489,6 +511,7 @@ a.btn { text-decoration: none; display: inline-block; }
 </style>
 
 <canvas id="rain" aria-hidden="true"></canvas>
+<div id="wave" aria-hidden="true"></div>
 <div class="wrap">
   <header class="rail">
     <div class="brand"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></div>
@@ -548,7 +571,7 @@ a.btn { text-decoration: none; display: inline-block; }
         <div class="rulehead">Active consensus spec <span id="ruleRev">rev 1</span></div>
         <pre class="rule" id="ruleText"></pre>
       </div>
-      <div class="verdict wait" id="verdict"><div class="seal"><i>◇</i></div><span id="verdictTxt">Awaiting block</span></div>
+      <div class="verdict wait" id="verdict"><div class="seal"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="check" d="M5.5 12.5 L10 17 L18.5 7.5"/><path class="cross" d="M7 7 L17 17 M17 7 L7 17"/><path class="dia" d="M12 6 L18 12 L12 18 L6 12 Z"/></svg></div><span id="verdictTxt">Awaiting block</span></div>
     </article>
 
     <article class="panel a-core core-panel">
@@ -666,6 +689,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v13.5 · 26 Oct 2026</b>The “block accepted” moment: the seal stamps down, the check draws itself, a ring rings out and the panel edge glows for a second. Once a rule change is absorbed into the network, the step boxes reset; the next proposal starts from an empty row.</li>
           <li><b>v13.4 · 26 Oct 2026</b>“How a rule changes”: one proposal at a time, so every run starts at propose and each step lights up in real time. The Tau row now ends under “vote”; fork, splits and upgrading by hand belong to the other chains only. The “length = time” caption is gone.</li>
           <li><b>v13.3 · 26 Oct 2026</b>New block cards appear the moment a block is sealed, also while the pointer rests on the strip (before, the strip waited until you moved away).</li>
           <li><b>v13.2 · 26 Oct 2026</b>Mouse wheel over the block strip steps through the chain: down goes back in time, up toward the newest block, the detail below follows. “n online” chip in the status row: how many people have Tau HUD open right now, with a green light when anyone is there. Counted by the community relay, no analytics; shows “—” until the relay is live.</li>
@@ -813,9 +837,9 @@ function setStream(c, v, state) {
   setTimeout(() => row.classList.remove("flash"), 500);
 }
 function setVerdict(kind, text) {
-  const v = $("verdict"); v.className = "verdict " + kind;
-  v.querySelector("i").textContent = kind === "ok" ? "✓" : kind === "bad" ? "✕" : "◇";
-  $("verdictTxt").textContent = text;
+  const v = $("verdict"); v.className = "verdict"; void v.offsetWidth; v.className = "verdict " + kind;   // restart the stamp every block
+  $("verdictTxt").innerHTML = kind === "ok" ? text.replace(/^(Block #\d+)/, "<b>$1</b>") : esc(text);
+  if (kind === "ok") { const pnl = v.closest(".a-eng"); if (pnl) { pnl.classList.remove("sealed"); void pnl.offsetWidth; pnl.classList.add("sealed"); } }
 }
 function renderConsensusRule(liveText) {
   $("ruleText").dataset.ex = $("ruleText").dataset.ex || exKey(explainSpec);
@@ -869,7 +893,17 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) poll
 const MARKS = () => document.querySelectorAll(".mark");
 function markBeat() {
   MARKS().forEach(m => { m.classList.remove("beat"); void m.getBoundingClientRect(); m.classList.add("beat"); });
-  favBeat();
+  favBeat(); hudWave();
+}
+function hudWave() {
+  if (reduced || document.hidden) return;
+  const core = $("core"), w = $("wave"); if (!core || !w) return;
+  const c = core.getBoundingClientRect(); const cx = c.left + c.width / 2, cy = c.top + c.height / 2;
+  if (cy < -200 || cy > innerHeight + 200) return;                     // core off screen (phone, scrolled away): nothing to radiate from
+  const reach = 2 * Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy));
+  w.style.left = cx + "px"; w.style.top = cy + "px"; w.style.setProperty("--reach", reach + "px");
+  w.classList.remove("go"); void w.offsetWidth; w.classList.add("go");
+  document.querySelectorAll(".panel").forEach(p => { const r = p.getBoundingClientRect(); const d = Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy); p.style.setProperty("--felt", (d / reach * 1.6).toFixed(2) + "s"); p.classList.remove("felt"); void p.offsetWidth; p.classList.add("felt"); });
 }
 const FAV = (() => {
   const link = document.querySelector('link[rel="icon"][type="image/svg+xml"]') || null;
@@ -1030,14 +1064,16 @@ function renderUpdates() {
   $("govCount").textContent = `${S.updates.filter(u => u.status === "voting" || u.status === "scheduled").length} open`;
   const now = Date.now(), CHECK_MS = 3500, CELEBRATE_MS = 3000;
   // the strip follows one proposal to the end: a change that just took effect, else the oldest open one, else the last active one
+  // once a change is absorbed into the network (celebration over) the boxes reset, so the next proposal visibly starts from propose
+  const lastActive = S.updates.slice().reverse().find(u => u.status === "active");
   const cur = S.updates.find(u => u.status === "active" && u.activatedAt && now - u.activatedAt < CELEBRATE_MS)
-    || S.updates.find(u => u.status === "voting" || u.status === "scheduled") || S.updates.slice().reverse().find(u => u.status === "active");
+    || S.updates.find(u => u.status === "voting" || u.status === "scheduled") || null;
   const pend = S.pending && !(cur && (cur.status === "voting" || cur.status === "scheduled")) ? S.pending : null;
   // step by step: propose (in mempool) → checked (compiling) → agreed (votes) → active; every phase gets a visible moment
   const stage = pend ? 0 : !cur ? -1 : cur.status === "voting" ? (now - (cur.minedAt || 0) < CHECK_MS ? 1 : 2) : cur.status === "scheduled" ? 3 : 4;
   const left = cur ? Math.max(0, cur.activateAt - S.height) : 0;
   const words = pend ? ["mempool", "next", "next", "next"]
-    : !cur ? ["—", "—", "—", "—"]
+    : !cur ? (lastActive ? ["next", "next", "next", `last #${lastActive.activeAt}`] : ["—", "—", "—", "—"])
     : ["done", stage === 1 ? "compile" : "done", stage === 1 ? "next" : cur.status === "voting" ? `${cur.votes.size}/${thr} votes` : "done",
        cur.status === "active" ? `since #${cur.activeAt}` : cur.status === "scheduled" ? `in ${left} blk` : `#${cur.activateAt}`];
   ["stPropose", "stCheck", "stAgree", "stActive"].forEach((id, i) => {
@@ -1053,7 +1089,7 @@ function renderUpdates() {
     $("stActive").dataset.full = cur.status === "active" ? `Active: “${cur.title}” took effect at block #${cur.activeAt}; the spec revision is now ${S.specRev}. Every node applied the new rules automatically; nobody upgraded software, nothing forked.` : `Active: if agreed, “${cur.title}” takes effect at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Every node will apply it automatically; nobody upgrades software, nothing forks.`;
   }
 
-  $("contrastCap").innerHTML = !cur ? "On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b>"
+  $("contrastCap").innerHTML = !cur ? (lastActive ? `<b>“${esc(lastActive.title)}”</b> went from proposal to law in ${Math.max(1, lastActive.activeAt - lastActive.proposedAt)} blocks and is absorbed into the network. Waiting for the next proposal.` : "On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b>")
     : cur.status === "active" ? `<b>“${esc(cur.title)}”</b> went from proposal to law in ${Math.max(1, cur.activeAt - cur.proposedAt)} blocks. No fork, no upgrade, no admin.`
     : cur.status === "scheduled" ? `<b>“${esc(cur.title)}”</b> is agreed and becomes law at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Nobody has to upgrade anything.`
     : `<b>“${esc(cur.title)}”</b> is collecting agreement: ${cur.votes.size} of ${thr} validators so far. It becomes law at #${cur.activateAt} if enough agree.`;
