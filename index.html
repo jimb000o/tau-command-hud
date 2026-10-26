@@ -694,6 +694,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v14.3 · 26 Oct 2026</b>Simulation is the default view again for now: the community node sits on an orphan chain until IDNI publishes the current genesis, so its blocks are not the real tip. Live node and its light stay one click away; Live becomes the default again once the node follows the real chain.</li>
           <li><b>v14.2 · 26 Oct 2026</b>The relay light on “Live node” is bigger, ringed in black so it reads on the white selected state too, and pulses while the relay is up.</li>
           <li><b>v14.1 · 26 Oct 2026</b>Live by default: the page opens on the real Tau testnet through the community relay whenever it is running, and shows the simulation only when it is not. The green light on “Live node” says the relay is up, whichever view you are in. Live node now comes first in the switch, and your own choice is remembered on this device.</li>
           <li><b>v14.0 · 26 Oct 2026</b>Live node reachable: the default address is now the community relay wss://node.tauhud.com in front of a Tau testnet node run for this page. Simulation stays the default view until the node has caught up with the chain. The “online” chip now counts every open tab, simulation or live, through a quiet presence socket.</li>
@@ -900,7 +901,7 @@ async function pollOnline() {
     const j = await r.json();
     const n = Number(j.clients ?? j.online ?? j.presence);
     setOnline(Number.isFinite(n) ? n : null);
-    setRelay(!!j.upstream_connected && Number(j.height) > 0);
+    setRelay(!!j.upstream_connected && Number(j.height) > 0); PRESENCE.liveDefault = j.live_default === true;
     if (PRESENCE.up) autoLive();
   } catch { setOnline(null); setRelay(false); }
 }
@@ -1749,10 +1750,15 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") tourShow(-1)
 
 /* boot: simulation at once, then the real chain through the community relay when it is reachable, unless the visitor chose otherwise */
 const RELAY = "wss://node.tauhud.com";
+/* LIVE_DEFAULT: open on the real chain when the relay is up. Off while the community node cannot follow the
+   current testnet chain (it sits on an orphan chain; IDNI has not published the current genesis). Flip to true
+   once it syncs, or let the relay say so with "live_default": true in /status. */
+const LIVE_DEFAULT = false;
 setMode("sim"); simStart();
 function autoLive() {
   if (S.mode !== "sim" || !PRESENCE.up || LIVE.autoFailedAt && performance.now() - LIVE.autoFailedAt < 60000) return;
   const pref = store.get("tau-mode");
+  if (pref !== "live" && !(LIVE_DEFAULT || PRESENCE.liveDefault)) return;
   if (pref === "sim" || (pref !== "live" && $("wsurl").value.trim() !== RELAY)) return;
   LIVE.auto = true; LIVE.gotData = false; simStop(); liveConnect();
 }
