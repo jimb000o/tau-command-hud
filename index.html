@@ -305,13 +305,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .contrast .seg.fork b { color: var(--bad); }
 .contrast .crow:not(.tau) .track { opacity: .8; }
 .contrast .crow.tau .track { align-items: stretch; }
-.contrast .tau-seg { flex: 0 0 52%; display: flex; gap: 3px; padding: 4px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
-.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 4px 3px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 500 10.5px var(--mono); color: var(--text); min-width: 0; }
+.contrast .tau-seg { flex: 0 0 60%; display: flex; gap: 5px; padding: 5px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
+.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 6px 4px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 500 10px var(--mono); letter-spacing: 0; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .contrast .st small { font: 9px var(--mono); color: var(--ok); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .contrast .st.done { color: var(--ok); border-color: rgba(57,255,138,.5); }
 .contrast .st.on { color: #000; background: var(--ok); border-color: var(--ok); box-shadow: 0 0 14px rgba(57,255,138,.5); }
 .contrast .st.on small { color: #000; }
-.contrast .rest { flex: 1 1 auto; display: grid; align-content: center; padding: 6px 10px; font: 10.5px var(--mono); color: var(--dim); min-width: 0; }
+.contrast .rest { flex: 1 1 auto; display: grid; align-content: center; padding: 6px 8px; font: 10px/1.4 var(--mono); color: var(--dim); min-width: 0; }
 .contrast .rest b { color: var(--ok); font-weight: 500; }
 .contrast .cap { font: 10.5px/1.5 var(--mono); color: var(--dim); }
 .contrast .cap b { color: var(--text); font-weight: 500; }
@@ -458,7 +458,7 @@ a.btn { text-decoration: none; display: inline-block; }
     </div>
   </header>
 
-  <div class="simbar" id="simbar" role="status">Simulation · no real chain data<span>What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
+  <div class="simbar" id="simbar" role="status">Simulation · no real chain data<span>What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node. Experimental community project, no claim of accuracy.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
   <section class="thesis" aria-label="Why Tau is different">
     <div class="thesis-main">
       <span class="eyebrow">Why this is not a normal blockchain</span>
@@ -598,7 +598,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
-          <li><b>v11 · 26 Oct 2026</b>Renamed to “Tau HUD”. Any clipped text (step notes, hashes, rule names, transaction rows) shows in full as an overlay on hover, or on tap on phones. “How a rule changes” now encodes time as length (Few: compare on one scale): the Other-chains track spans the whole row with its slow, fragmenting steps (months of debate, a fork that can split the chain, manual upgrades), the Tau track is a short green segment followed by “done.”</li>
+          <li><b>v11 · 26 Oct 2026</b>Renamed to “Tau HUD”. Disclaimer added (experimental, no claim of accuracy, no advice). Tau step boxes given room. Any clipped text (step notes, hashes, rule names, transaction rows) shows in full as an overlay on hover, or on tap on phones. “How a rule changes” now encodes time as length (Few: compare on one scale): the Other-chains track spans the whole row with its slow, fragmenting steps (months of debate, a fork that can split the chain, manual upgrades), the Tau track is a short green segment followed by “done.”</li>
           <li><b>v10.1 · 26 Oct 2026</b>QR code next to the donation address (scan to donate). No more hexagons: the core is built from rings and the rule-holding accounts are ringed dots. “How a rule changes” laid out on one shared grid: both rows use the same four columns, each step has a one-line note, the clock sits with the row label, and the Tau row shows the live vote count and activation block.</li>
           <li><b>v10 · 26 Oct 2026</b>The contrast is now visual, not just verbal: “How a rule changes” strip in the Rule changes panel (other chains: propose, months of debate, vote, hard fork, everyone upgrades; Tau: propose, checked, agreed, active, lit live from the current proposal), and in the core every sealed block draws the agreement of all validators and rule-holding accounts flowing into it (“the agreed rules of everyone → block”).</li>
           <li><b>v9.1 · 26 Oct 2026</b>Simple/Technical switch moved to the right side of the header, under the status chips.</li>
@@ -635,6 +635,8 @@ a.btn { text-decoration: none; display: inline-block; }
     <article class="panel about">
       <h2 id="abTitle">About this page</h2>
       <div class="unofficial" role="note">Unofficial community project<span>Built by Tau community members. Not affiliated with, endorsed by or maintained by IDNI or the Tau team. Data in simulation mode is generated in your browser and is not the real chain.</span></div>
+      <h3>Experimental · no claim of accuracy</h3>
+      <p>Tau HUD is an experimental community approach to visualising the Tau testnet. We do not claim that the information shown is accurate, complete or current, in simulation or live mode. It is not official information, not financial advice and not technical advice. Check anything that matters against the <a href="https://github.com/IDNI/tau-testnet" target="_blank" rel="noopener">tau-testnet repository</a> and your own node.</p>
       <h3>Simulation vs. live node</h3>
       <p>The simulation follows the documented protocol of <a href="https://github.com/IDNI/tau-testnet" target="_blank" rel="noopener">tau-testnet</a>: validators vote on rule changes, accounts write and share their own Tau rules, every block is judged by Tau. It is a model, not the real chain.</p>
       <p>Live mode speaks the node's raw WebSocket protocol (<code>getblocks</code>, <code>getmempool</code>, <code>getgovernance</code>). The public testnet bootnode only exposes P2P, so run your own read node (Docker, see the <a href="https://github.com/IDNI/tau-testnet#join-the-tau-testnet" target="_blank" rel="noopener">README</a>), allow this page's origin with <code>TAU_WS_ALLOWED_ORIGINS</code>, then switch to Live node.</p>

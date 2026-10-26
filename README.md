@@ -4,6 +4,8 @@
 
 **Unofficial community project.** Not affiliated with, endorsed by or maintained by IDNI or the Tau team.
 
+**Experimental, no claim of accuracy.** Tau HUD is an experimental approach to visualising the Tau testnet. We do not claim that the information displayed is accurate, complete or current, in simulation or live mode. Nothing here is official information, financial advice or technical advice. Verify anything that matters against the [tau-testnet repository](https://github.com/IDNI/tau-testnet) and your own node.
+
 A Jarvis-style live view of the [Tau Testnet Alpha](https://github.com/IDNI/tau-testnet): every block checked by Tau logic, rule changes that activate only when validators agree, rules that accounts write and share with each other, and the composite user policy the node builds from them.
 
 **Open it:** https://tauhud.com (mirror: https://jimb000o.github.io/tau-command-hud/)
