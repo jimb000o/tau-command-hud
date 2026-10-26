@@ -53,7 +53,7 @@ body::after { /* scanlines */
   background: repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 1px, transparent 1px 4px);
   mix-blend-mode: multiply;
 }
-#rain { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .42; }
+#rain { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .3; }
 .wrap, .fb-fab, .modal { position: relative; z-index: 1; }
 .fb-fab { position: fixed; }
 .wrap { max-width: 2400px; margin: 0 auto; display: grid; gap: 10px; grid-template-rows: auto auto minmax(0, 1fr); height: 100%; min-height: 0; }
@@ -240,7 +240,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .pips { display: flex; gap: 4px; }
 .pips i { width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid var(--amber); }
 .pips i.on { background: var(--amber); }
-.agree .num { font: 600 12px var(--display); color: var(--amber); font-variant-numeric: tabular-nums; }
+.agree .num { font: 600 12px var(--display); color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .offer { display: grid; gap: 4px; padding: 8px 10px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--ok); font-size: 11.5px; animation: slidein .45s ease-out; }
 .offer.rejected, .offer.expired { border-left-color: var(--dim); opacity: .65; }
 .o1 span:not(.pill) { color: var(--cyan-hi); }
@@ -329,7 +329,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <div class="chip">Network<b id="netId">tau-testnet-v2</b></div>
       <div class="chip">Height<b id="chipH">0</b></div>
       <div class="chip">Spec revision<b id="chipRev">1</b></div>
-      <div class="chip">Base fee o9<b id="chipFee">10</b></div>
+      <div class="chip" title="Base fee per transaction, set by the fee rule (o9) and changeable only by agreement">Base fee<b id="chipFee">10</b></div>
     </div>
     <div class="controls">
       <div class="seg" role="group" aria-label="Data source">
@@ -348,19 +348,19 @@ a.btn { text-decoration: none; display: inline-block; }
   <section class="thesis" aria-label="Why Tau is different">
     <div class="thesis-main">
       <span class="eyebrow">Why this is not a normal blockchain</span>
-      <h2 id="thesisTxt" data-decode>Its users write the rules in logic. Every rule is checked before it applies. The rules change only when the validators agree. There is no admin key.</h2>
+      <h2 id="thesisTxt" data-decode>On other chains, code is law. On Tau, the agreement is law: users write the rules in logic, every rule is checked before it can apply, and nothing changes without the validators’ consent. There is no admin key.</h2>
     </div>
     <div class="principles">
-      <div class="pr"><b>Checked before it applies</b><span>A proposed rule is compiled in isolation and refused if it does not hold.</span><em>staging compile · getruleconflict</em></div>
-      <div class="pr"><b>No admin key</b><span>Consensus rules and validators change only by a vote that reaches quorum, at a future height.</span><em>consensus_rule_update · vote_quorum</em></div>
-      <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. A stolen key still obeys your limits.</span><em>o5 at admission and block apply</em></div>
-      <div class="pr"><b>Money with terms</b><span>Returnable until a release point, locked until a time, co-signed above an amount.</span><em>retractable_transfer · approvals</em></div>
+      <div class="pr"><b>Checked before it applies</b><span>A proposed rule is compiled on its own first. If it does not hold, it never enters the chain.</span><em>see it: Rule changes · “compiled in isolation ✓”</em></div>
+      <div class="pr"><b>No admin key</b><span>Nobody can change the rules alone. A change needs the validators’ agreement and takes effect at a later block.</span><em>see it: Validators · “agreement needed”</em></div>
+      <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. A stolen key still obeys your limits.</span><em>see it: Transactions · red “✕ refused”</em></div>
+      <div class="pr"><b>Money with terms</b><span>A transfer can be returnable until a release point, locked until a time, or co-signed above an amount.</span><em>see it: Personal money rules</em></div>
     </div>
   </section>
 
   <main class="grid">
     <article class="panel a-eng">
-      <h2>Tau consensus engine <small id="engineBlk">block —</small><button class="info" type="button" aria-label="What is this?" data-tip="Every block is judged by a Tau logic program, not by hard-coded Python. The host feeds inputs (i6 height, i7 time, i8 proposer, i10 signature check) and the active spec answers on output streams: o6 says whether the block is valid, o7 whether the proposer may propose, o9 the fee. The spec shown below is the real one that is live.">i</button></h2>
+      <h2>Block check by rules <small id="engineBlk">block —</small><button class="info" type="button" aria-label="What is this?" data-tip="Every block is judged by a Tau logic program, not by hard-coded Python. The host feeds inputs (i6 height, i7 time, i8 proposer, i10 signature check) and the active spec answers on output streams: o6 says whether the block is valid, o7 whether the proposer may propose, o9 the fee. The spec shown below is the real one that is live.">i</button></h2>
       <div class="scroll">
         <div class="streams" id="streams"></div>
         <div class="rulehead">Active consensus spec <span id="ruleRev">rev 1</span></div>
@@ -370,26 +370,26 @@ a.btn { text-decoration: none; display: inline-block; }
     </article>
 
     <article class="panel a-core core-panel">
-      <h2>Chain core <small id="coreSub">next proposer —</small><button class="info" type="button" aria-label="What is this?" data-tip="The ring of diamonds is the validator set; the orange one is proposing the next block. The hexagons on the middle ring are accounts that run their own Tau rules. The dots orbiting the core are transactions waiting in the mempool. The amber arc shows how close an open rule change is to the agreement it needs.">i</button></h2>
+      <h2>Chain core <small id="coreSub">next proposer —</small><button class="info" type="button" aria-label="What is this?" data-tip="The ring of diamonds is the validator set; the bright one is proposing the next block. The hexagons on the middle ring are accounts that run their own Tau rules. The dots orbiting the core are transactions waiting in the mempool. The arc shows how close an open rule change is to the agreement it needs.">i</button></h2>
       <div class="core">
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
           <div><b id="rH">0</b><span>Height</span></div>
-          <div><b id="rM">0</b><span>Mempool</span></div>
-          <div><b id="rT">0</b><span>Tx total</span></div>
+          <div><b id="rM">0</b><span>Waiting</span></div>
+          <div><b id="rT">—</b><span>Block pace</span></div>
           <div><b id="rR">0</b><span>User rules</span></div>
         </div>
       </div>
     </article>
 
     <article class="panel a-feed">
-      <h2>Transaction stream <small id="feedSub">mempool → block</small><button class="info" type="button" aria-label="What is this?" data-tip="Transactions as they are admitted and later sealed into blocks. Blue: transfers. Green: rule work (an account deploying, offering, accepting or rejecting a Tau rule). Orange: governance (proposals and votes). Red: refused, usually because the sender’s own rule (o5) blocked it, which applies even to whoever holds the key.">i</button></h2>
+      <h2>Transactions <small id="feedSub">waiting → sealed</small><button class="info" type="button" aria-label="What is this?" data-tip="Transactions as they are admitted and later sealed into blocks. Grey: transfers. Green: rule work (an account deploying, offering, accepting or rejecting a Tau rule). White: governance (proposals and votes). Red with ✕: refused, usually because the sender’s own rule (o5) blocked it, which applies even to whoever holds the key.">i</button></h2>
       <div class="feed scroll" id="feed"></div>
     </article>
 
     <article class="panel a-pol">
-      <h2>Personal policies <small id="clauseCount">0 accounts</small><button class="info" type="button" aria-label="What is this?" data-tip="Each account can program its own money: spending limits, recipient whitelists, time-locks, co-signature above a threshold. The node combines all accepted rules into one composite rule per stream, with a guarded branch per account and “allow” for everyone else. The network enforces it on every transfer.">i</button></h2>
-      <p class="sub">each account programs its own money; the node folds all rules into one spec</p>
+      <h2>Personal money rules <small id="clauseCount">0 accounts</small><button class="info" type="button" aria-label="What is this?" data-tip="Each account can program its own money: spending limits, recipient whitelists, time-locks, co-signature above a threshold. The node combines all accepted rules into one composite rule per stream, with a guarded branch per account and “allow” for everyone else. The network enforces it on every transfer.">i</button></h2>
+      <p class="sub">each account programs its own money · the node folds every rule into one spec</p>
       <div class="scroll">
         <div class="clauses" id="clauses"></div>
         <pre class="rule composite" id="composite"></pre>
@@ -397,13 +397,13 @@ a.btn { text-decoration: none; display: inline-block; }
     </article>
 
     <article class="panel a-upd">
-      <h2>Rule changes <small id="govCount">0 open</small><button class="info" type="button" aria-label="What is this?" data-tip="Validators can propose a change to the consensus rules or validator set. The proposal is compiled in isolation first; one that does not compile is refused at the door. It activates only after a quorum agrees and only at a future height, never in the same block. There is no admin key that can skip this.">i</button></h2>
-      <p class="sub">proposed → checked → agreement → scheduled → active</p>
+      <h2>Rule changes by agreement <small id="govCount">0 open</small><button class="info" type="button" aria-label="What is this?" data-tip="Validators can propose a change to the consensus rules or validator set. The proposal is compiled in isolation first; one that does not compile is refused at the door. It activates only after a quorum agrees and only at a future height, never in the same block. There is no admin key that can skip this.">i</button></h2>
+      <p class="sub">proposed → checked → agreed → scheduled → active</p>
       <div class="updates scroll" id="updates"></div>
     </article>
 
     <article class="panel a-chain">
-      <h2>Blockchain <small>newest right · state hash commits to rules, accounts, validators, governance</small><button class="info" type="button" aria-label="What is this?" data-tip="Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Orange cards are the blocks where an agreed rule change became active.">i</button></h2>
+      <h2>Blockchain <small>newest right · bright card = a rule change took effect</small><button class="info" type="button" aria-label="What is this?" data-tip="Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
       <div class="ribbon" id="ribbon"></div>
     </article>
 
@@ -458,6 +458,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v7 · 26 Oct 2026</b>Wording and hierarchy pass guided by the community’s design library (Made to Stick, Information Dashboard Design, Refactoring UI, Don’t Make Me Think, Albers): one core sentence up top, plain-language panel titles, every number with its context (“7 of 9 needed”), refusals marked ✕ as well as red, stream codes moved into the hover notes, quieter glyph rain.</li>
           <li><b>v6 · 26 Oct 2026</b>Monochrome like the current tau.net: black, white, greys and hairlines, with phosphor green as the only accent, where data is live or true.</li>
           <li><b>v5 · 26 Oct 2026</b>Rebrand: Tau’s near-black and blue-to-violet gradient for structure, phosphor green reserved for data and truth, champagne for agreement. Matrix glyph rain behind the deck, the thesis decodes on load, hairline glass panels, Sora + JetBrains Mono. AGRS donation address under About.</li>
           <li><b>v4 · 26 Oct 2026</b>Everything on one screen: a 4×2 command grid with a thesis line for newcomers, feedback and about moved into pop-ups.</li>
@@ -610,7 +611,7 @@ function txCard(t) {
   const ruleish = /rule/.test(t.type);
   d.className = "tx" + (t.kind === "gov" ? " gov" : ruleish ? " rl" : "") + (t.rejected ? " rej" : "");
   d.id = "tx_" + t.id.slice(0, 16);
-  const label = t.rejected ? t.rejected : (TYPE_LABEL[t.type] || t.type);
+  const label = t.rejected ? "✕ " + t.rejected : (TYPE_LABEL[t.type] || t.type);
   const body = t.transfers && t.transfers.length
     ? t.transfers.map(([f, to, a]) => `${short(f)} → ${short(to)} <b>${fmt(a)} τ</b>`).join(" · ")
     : (t.note || `sender ${short(t.sender)}`);
@@ -644,7 +645,7 @@ function renderUpdates() {
     return `<div class="upd ${u.status}">
       <div class="u1"><b>${esc(u.title)}</b><span class="pill ${u.status}">${STATUS_TXT[u.status]}</span></div>
       <code class="diff">${u.diff}</code>
-      <div class="agree"><div class="bar"><span style="width:${pct}%"></span><em style="left:100%"></em></div><div class="pips">${pips}</div><span class="num">${v}/${thr}</span></div>
+      <div class="agree"><div class="bar"><span style="width:${pct}%"></span><em style="left:100%"></em></div><div class="pips">${pips}</div><span class="num">${v} of ${thr}</span></div>
       <div class="u3">${short(u.id)} · ${when}${u.checked ? " · compiled in isolation ✓" : ""}</div></div>`;
   }).join("") : `<div class="empty">No rule changes proposed yet. Any active validator can propose one; it activates only after ${thr} of ${S.validators.length || "N"} agree.</div>`;
   $("govCount").textContent = `${S.updates.filter(u => u.status === "voting" || u.status === "scheduled").length} open`;
@@ -680,11 +681,10 @@ function renderGov(extra = {}) {
     `<div class="val ${i === S.proposerIdx ? "on" : ""}"><i></i><span>${v}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
   const N = S.validators.length;
   const kv = Object.assign({
-    "Active validators": N,
-    "Vote quorum": S.quorum + (S.quorum === "majority" ? " (N/2+1)" : " (⌈2N/3⌉)"),
-    "Approval threshold": N ? threshold() : "—",
-    "Rule txs per block": S.ruleBudget,
-    "Fee beneficiary": "block proposer",
+    "Validators": N ? `${N} active, 1 proposing` : "—",
+    "Agreement needed": N ? `${threshold()} of ${N} (${S.quorum === "majority" ? "majority" : "two thirds"})` : "—",
+    "Rule work": `up to ${S.ruleBudget} rule txs per block`,
+    "Fees": "go to the block proposer",
   }, extra);
   $("govkv").innerHTML = Object.entries(kv).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
 }
@@ -693,7 +693,7 @@ function renderGov(extra = {}) {
 function readouts() {
   $("chipH").textContent = $("rH").textContent = fmt(S.height);
   $("rM").textContent = S.mempool.length;
-  $("rT").textContent = fmt(S.txTotal);
+  $("rT").textContent = S.blockTimes.length ? (S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length).toFixed(1) + " s" : "—";
   $("rR").textContent = S.clauses.size;
   $("chipFee").textContent = S.fee;
   $("chipRev").textContent = S.specRev;
@@ -1096,7 +1096,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v6`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v7`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
