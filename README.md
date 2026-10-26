@@ -24,7 +24,7 @@ docker run --rm -it -p 127.0.0.1:65432:65432 -p 127.0.0.1:65433:65433 -p 4001:40
 
 ## Support
 
-AGRS donations (Ethereum, ERC-20): `0x23fB76A33A8d70f5c51aB558b85e4b93040003eb`
+If this is useful to you, AGRS or ETH donations are welcome at `0x23fB76A33A8d70f5c51aB558b85e4b93040003eb`.
 
 ## Feedback
 
