@@ -37,3 +37,7 @@ Use the **Feedback** button on the page or [open an issue](../../issues/new?temp
 ## Development
 
 One static file, `index.html`, no build step. GitHub Pages serves it from the `main` branch root.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
