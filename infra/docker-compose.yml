@@ -6,10 +6,12 @@
 # internal Docker network; the relay is the only thing that talks to them.
 services:
   tau-node:
+    # node/Dockerfile: upstream Dockerfile.standalone with the broken dependency
+    # prefetch removed (see the comment at its top).
     build:
-      context: https://github.com/IDNI/tau-testnet.git#${TAU_TESTNET_REF}
-      dockerfile: Dockerfile.standalone
+      context: ./node
       args:
+        TAU_TESTNET_REF: ${TAU_TESTNET_REF}
         TAU_BUILD_JOBS: ${TAU_BUILD_JOBS:-2}
     image: tau-testnet-standalone:${TAU_TESTNET_REF}
     environment:
