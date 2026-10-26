@@ -80,6 +80,7 @@ RUN git clone --filter=blob:none https://github.com/IDNI/tau-testnet.git /src &&
 # build if the source no longer matches.
 COPY patches/ /patches/
 RUN python3 -I /patches/read-until-eof.py /src
+RUN python3 -I /patches/sync-paginate.py /src
 
 
 FROM python:3.14-slim-trixie AS runtime
