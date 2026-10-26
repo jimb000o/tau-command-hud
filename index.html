@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Unofficial community HUD for the Tau Testnet Alpha: rule changes by agreement, rule sharing, personal Tau policies, live blocks.">
+</head>
+<body>
+<title>TauNet Command HUD</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: holographic command deck. Status rail on top, reactor core in the centre flanked by
+   the Tau engine (left) and the transaction stream (right), the chain ribbon and logs below. */
+:root {
+  --void: #03080d;
+  --deck: #071420;
+  --glass: rgba(10, 34, 52, .55);
+  --line: rgba(84, 214, 255, .22);
+  --cyan: #54d6ff;
+  --cyan-hi: #b9f1ff;
+  --amber: #ffb547;
+  --ok: #43f0a6;
+  --bad: #ff5370;
+  --dim: #6f93a8;
+  --text: #d6f4ff;
+  --display: "Chakra Petch", "Rajdhani", "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0; background: var(--void); color: var(--text);
+  font: 13px/1.45 var(--mono);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px 24px;
+  background-image:
+    radial-gradient(ellipse at 50% 35%, rgba(84,214,255,.10), transparent 60%),
+    linear-gradient(rgba(84,214,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(84,214,255,.035) 1px, transparent 1px);
+  background-size: auto, 32px 32px, 32px 32px;
+  overflow-x: hidden;
+}
+body::after { /* scanlines */
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
+.wrap { max-width: 1480px; margin: 0 auto; display: grid; gap: 14px; }
+
+/* ---------- top rail ---------- */
+.rail { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand h1 { margin: 0; font: 700 22px/1 var(--display); letter-spacing: .18em; color: var(--cyan-hi); text-shadow: 0 0 14px rgba(84,214,255,.6); }
+.brand span { font: 500 11px var(--display); letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.chip { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; padding: 5px 10px; border: 1px solid var(--line); color: var(--dim); clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); background: var(--glass); white-space: nowrap; }
+.chip b { color: var(--cyan-hi); font-weight: 600; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.chip.live b { color: var(--ok); }
+.chip.warn b { color: var(--amber); }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); margin-right: 6px; animation: blink 1.6s infinite; }
+.dot.sim { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.dot.off { background: var(--bad); box-shadow: 0 0 8px var(--bad); animation: none; }
+@keyframes blink { 50% { opacity: .35; } }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: 100%; }
+.seg { display: inline-flex; border: 1px solid var(--line); }
+.seg button, .btn {
+  font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase;
+  background: transparent; color: var(--dim); border: 0; padding: 7px 14px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: rgba(84,214,255,.16); color: var(--cyan-hi); box-shadow: inset 0 -2px 0 var(--cyan); }
+.btn { border: 1px solid var(--cyan); color: var(--cyan-hi); background: rgba(84,214,255,.08); }
+.btn:hover, .seg button:hover { color: var(--cyan-hi); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+#wsurl { flex: 1 1 240px; min-width: 0; max-width: 360px; background: rgba(0,0,0,.4); border: 1px solid var(--line); color: var(--text); font: 13px var(--mono); padding: 7px 10px; }
+.hint { color: var(--dim); font-size: 11px; flex: 1 1 280px; min-width: 0; }
+
+/* ---------- main deck ---------- */
+.deck { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.panel { position: relative; background: var(--glass); border: 1px solid var(--line); padding: 14px; min-width: 0; backdrop-filter: blur(4px); }
+.panel::before, .panel::after { content: ""; position: absolute; width: 14px; height: 14px; border: 2px solid var(--cyan); }
+.panel::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+.panel::after { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
+.panel h2 { margin: 0 0 10px; font: 600 12px var(--display); letter-spacing: .28em; text-transform: uppercase; color: var(--cyan); display: flex; justify-content: space-between; gap: 8px; }
+.panel h2 small { color: var(--dim); letter-spacing: .1em; font-weight: 400; }
+
+/* Tau engine streams */
+.streams { display: grid; gap: 6px; }
+.stream { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 8px; border-left: 2px solid var(--line); background: rgba(0,0,0,.25); transition: background .3s, border-color .3s; }
+.stream code { font: 600 13px var(--mono); color: var(--cyan-hi); }
+.stream .lbl { color: var(--dim); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stream .val { font-variant-numeric: tabular-nums; color: var(--text); font-size: 12px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stream.out code { color: var(--amber); }
+.stream.flash { background: rgba(84,214,255,.18); border-left-color: var(--cyan); }
+.stream.pass .val { color: var(--ok); }
+.stream.fail .val { color: var(--bad); }
+.rule { margin: 12px 0 0; padding: 10px; background: rgba(0,0,0,.4); border: 1px dashed var(--line); font: 12px/1.6 var(--mono); color: var(--cyan-hi); white-space: pre-wrap; overflow-x: auto; }
+.rule .k { color: var(--amber); }
+.rule .c { color: var(--dim); }
+.verdict { margin-top: 12px; display: flex; align-items: center; gap: 10px; font: 700 15px var(--display); letter-spacing: .2em; text-transform: uppercase; }
+.verdict .seal { width: 34px; height: 34px; border: 2px solid currentColor; transform: rotate(45deg); display: grid; place-items: center; }
+.verdict .seal i { transform: rotate(-45deg); font-style: normal; font-size: 14px; }
+.verdict.ok { color: var(--ok); }
+.verdict.bad { color: var(--bad); }
+.verdict.wait { color: var(--dim); }
+
+/* core */
+.core { display: grid; gap: 10px; justify-items: center; padding: 10px; }
+.core canvas { width: 100%; max-width: 560px; aspect-ratio: 1; display: block; }
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: 100%; }
+.readout div { text-align: center; padding: 6px 4px; border-top: 1px solid var(--line); }
+.readout b { display: block; font: 700 22px var(--display); color: var(--cyan-hi); font-variant-numeric: tabular-nums; text-shadow: 0 0 10px rgba(84,214,255,.45); }
+.readout span { font: 500 10px var(--display); color: var(--dim); letter-spacing: .2em; text-transform: uppercase; }
+
+/* tx feed */
+.feed { display: grid; gap: 6px; max-height: 520px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.tx { display: grid; gap: 3px; padding: 7px 9px; background: rgba(0,0,0,.28); border-left: 2px solid var(--cyan); animation: slidein .45s ease-out; min-width: 0; }
+.tx.rej { border-left-color: var(--bad); }
+.tx.gov { border-left-color: var(--amber); }
+.tx.mined { opacity: .55; }
+.tx .top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--dim); }
+.tx .top em { font-style: normal; color: var(--cyan); letter-spacing: .08em; text-transform: uppercase; }
+.tx.gov .top em { color: var(--amber); }
+.tx.rej .top em { color: var(--bad); }
+.tx .mid { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx .mid b { color: var(--cyan-hi); font-weight: 500; }
+@keyframes slidein { from { transform: translateX(16px); opacity: 0; } }
+
+/* chain ribbon */
+.ribbon { display: flex; gap: 0; overflow-x: auto; padding: 6px 2px 10px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.blk { flex: 0 0 170px; position: relative; padding: 10px 12px; margin-right: 26px; background: rgba(0,0,0,.35); border: 1px solid var(--line); clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); animation: drop .6s ease-out; }
+.blk:last-child { border-color: var(--cyan); box-shadow: inset 0 0 22px rgba(84,214,255,.25); }
+.blk .n { font: 700 18px var(--display); color: var(--cyan-hi); font-variant-numeric: tabular-nums; }
+.blk .h { font-size: 10.5px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.blk .m { display: flex; justify-content: space-between; font-size: 11px; margin-top: 6px; }
+.blk .m span:last-child { color: var(--ok); }
+.link { flex: 0 0 26px; align-self: center; margin-left: -26px; margin-right: 0; height: 2px; background: linear-gradient(90deg, var(--cyan), transparent); }
+@keyframes drop { from { transform: translateY(-14px); opacity: 0; } }
+
+.lower { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
+.log { height: 190px; overflow-y: auto; font-size: 11.5px; line-height: 1.6; color: var(--dim); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log .t { color: var(--cyan); }
+.log .ok { color: var(--ok); }
+.log .warn { color: var(--amber); }
+.log .err { color: var(--bad); }
+.gov { display: grid; gap: 10px; }
+.vals { display: grid; gap: 4px; }
+.val { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; }
+.val i { width: 8px; height: 8px; transform: rotate(45deg); background: var(--cyan); }
+.val.on i { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
+.val span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 11.5px; }
+.kv dt { color: var(--dim); }
+.kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.footnote { color: var(--dim); font-size: 11px; max-width: 90ch; }
+.footnote a { color: var(--cyan); }
+
+
+
+/* rules made by users */
+.rulehead { margin-top: 12px; display: flex; justify-content: space-between; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.rulehead span { color: var(--amber); }
+.rule + .verdict, .rulehead + .rule { margin-top: 6px; }
+.rule .chg { color: var(--ok); }
+.rulesworld { display: grid; gap: 12px; }
+.rw-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; }
+.rw-head h2 { margin: 0; font: 700 20px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--amber); text-shadow: 0 0 14px rgba(255,181,71,.35); text-wrap: balance; }
+.rw-head p { margin: 0; flex: 1 1 380px; min-width: 0; max-width: 85ch; color: var(--text); opacity: .85; font-size: 12.5px; }
+.rw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.panel .sub { margin: -6px 0 10px; color: var(--dim); font-size: 11px; }
+.updates, .offers, .clauses { display: grid; gap: 8px; }
+.empty { color: var(--dim); font-size: 12px; padding: 10px; border: 1px dashed var(--line); }
+.upd { display: grid; gap: 6px; padding: 9px 10px; background: rgba(0,0,0,.3); border-left: 2px solid var(--amber); }
+.upd.active { border-left-color: var(--ok); }
+.upd.expired { border-left-color: var(--dim); opacity: .6; }
+.u1, .o1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.u1 b { font: 600 13px var(--display); letter-spacing: .04em; color: var(--cyan-hi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.diff { font: 11.5px var(--mono); color: var(--amber); overflow-wrap: anywhere; }
+.u3 { font-size: 11px; color: var(--dim); }
+.pill { flex: 0 0 auto; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 3px 8px; border: 1px solid currentColor; color: var(--dim); white-space: nowrap; }
+.pill.voting, .pill.offered { color: var(--amber); }
+.pill.scheduled { color: var(--cyan); }
+.pill.active, .pill.accepted { color: var(--ok); }
+.pill.rejected { color: var(--bad); }
+.agree { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
+.bar { position: relative; height: 6px; background: rgba(255,181,71,.12); }
+.bar span { position: absolute; inset: 0 auto 0 0; background: var(--amber); box-shadow: 0 0 10px rgba(255,181,71,.6); transition: width .5s; }
+.upd.active .bar span { background: var(--ok); box-shadow: 0 0 10px rgba(67,240,166,.6); }
+.pips { display: flex; gap: 4px; }
+.pips i { width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid var(--amber); }
+.pips i.on { background: var(--amber); }
+.agree .num { font: 600 12px var(--display); color: var(--amber); font-variant-numeric: tabular-nums; }
+.offer { display: grid; gap: 4px; padding: 8px 10px; background: rgba(0,0,0,.3); border-left: 2px solid var(--ok); font-size: 11.5px; animation: slidein .45s ease-out; }
+.offer.rejected, .offer.expired { border-left-color: var(--dim); opacity: .65; }
+.o1 span:not(.pill) { color: var(--cyan-hi); }
+.o1 .arrow { color: var(--dim); }
+.o1 .pill { margin-left: auto; }
+.o2 { color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.o2 b { color: var(--text); font-weight: 500; }
+.clause { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; }
+.clause i { width: 10px; height: 10px; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: var(--amber); }
+.clause i.k-whitelist { background: var(--ok); }
+.clause i.k-timelock { background: #be96ff; }
+.clause i.k-cosign { background: #ff78aa; }
+.clause span:last-child { color: var(--dim); }
+.rule.composite { font-size: 10.5px; line-height: 1.55; max-height: 190px; overflow: auto; white-space: pre; }
+.tx.rl { border-left-color: var(--ok); }
+.tx.rl .top em { color: var(--ok); }
+.blk.amended { border-color: var(--amber); box-shadow: inset 0 0 22px rgba(255,181,71,.3); }
+.blk.amended .m span:last-child { color: var(--amber); }
+
+/* community banner + feedback */
+.unofficial { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 12px; border: 1px solid rgba(255,181,71,.45); background: repeating-linear-gradient(-45deg, rgba(255,181,71,.10) 0 10px, rgba(255,181,71,.03) 10px 20px); color: var(--amber); font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+.unofficial span { color: var(--text); font: 12px var(--mono); letter-spacing: 0; text-transform: none; flex: 1 1 320px; min-width: 0; }
+.fb-fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 700 13px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--void); background: var(--cyan); border: 0; padding: 12px 18px; cursor: pointer; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); box-shadow: 0 0 24px rgba(84,214,255,.5); }
+.fb-fab:hover { background: var(--cyan-hi); }
+.community { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
+.fb form { display: grid; gap: 10px; }
+.cats { display: flex; flex-wrap: wrap; gap: 6px; border: 0; padding: 0; margin: 0; }
+.cats legend { color: var(--dim); font-size: 11.5px; margin-bottom: 6px; }
+.cats label { cursor: pointer; }
+.cats input { position: absolute; opacity: 0; pointer-events: none; }
+.cats span { display: inline-block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 6px 12px; border: 1px solid var(--line); color: var(--dim); }
+.cats input:checked + span { color: var(--void); background: var(--cyan); border-color: var(--cyan); }
+.cats input:focus-visible + span { outline: 2px solid var(--amber); outline-offset: 2px; }
+.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 11.5px; }
+.fb textarea, .fb input[type=text] { width: 100%; background: rgba(0,0,0,.4); border: 1px solid var(--line); color: var(--text); font: 13px/1.5 var(--mono); padding: 8px 10px; resize: vertical; }
+.fb textarea { min-height: 96px; }
+.fb .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.fb .status { font-size: 12px; color: var(--dim); flex: 1 1 200px; min-width: 0; }
+.fb .status.ok { color: var(--ok); }
+.fb .status.err { color: var(--bad); }
+.btn[disabled], .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+a.btn { text-decoration: none; display: inline-block; }
+.fblink { color: var(--cyan); font-size: 12px; }
+.changes { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.changes li { display: grid; gap: 2px; padding-left: 12px; border-left: 2px solid var(--line); font-size: 12px; }
+.changes li b { font: 600 12px var(--display); letter-spacing: .12em; color: var(--cyan-hi); text-transform: uppercase; }
+.changes li:first-child { border-left-color: var(--cyan); }
+.panel.flash-target { box-shadow: 0 0 0 2px var(--cyan), 0 0 40px rgba(84,214,255,.35); transition: box-shadow .4s; }
+
+@media (max-width: 1100px) {
+  .rw-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .deck { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .core-panel { grid-column: 1 / -1; order: -1; }
+}
+@media (max-width: 720px) {
+  .deck, .lower, .community, .rw-grid { grid-template-columns: minmax(0, 1fr); }
+  .chips { margin-left: 0; }
+  .readout b { font-size: 17px; }
+  .brand h1 { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <div class="unofficial" role="note">Unofficial community project<span>Built by Tau community members. Not affiliated with, endorsed by or maintained by IDNI or the Tau team. Data in simulation mode is generated in your browser and is not the real chain.</span></div>
+  <header class="rail">
+    <div class="brand"><h1>TAU//NET</h1><span>Command HUD · Testnet Alpha</span></div>
+    <div class="chips">
+      <div class="chip" id="chipMode"><span class="dot sim" id="modeDot"></span>Mode<b id="modeTxt">Simulation</b></div>
+      <div class="chip">Network<b id="netId">tau-testnet-v2</b></div>
+      <div class="chip">Height<b id="chipH">0</b></div>
+      <div class="chip">Spec revision<b id="chipRev">1</b></div>
+      <div class="chip">Base fee o9<b id="chipFee">10</b></div>
+      <div class="chip">Rules by<b>agreement</b></div>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Data source">
+        <button id="btnSim" aria-pressed="true">Simulation</button>
+        <button id="btnLive" aria-pressed="false">Live node</button>
+      </div>
+      <input id="wsurl" value="ws://localhost:65433" aria-label="WebSocket address of your Tau node" spellcheck="false">
+      <button class="btn" id="btnConnect">Connect</button>
+      <span class="hint" id="hint">Simulation follows the real protocol: 4 PoA validators, Tau verdicts o6/o7/o9, fee 10 per step. Switch to Live node to read your own node over WebSocket.</span>
+    </div>
+  </header>
+
+  <section class="deck">
+    <article class="panel">
+      <h2>Tau consensus engine <small id="engineBlk">block —</small></h2>
+      <div class="streams" id="streams"></div>
+      <div class="rulehead">Active consensus spec <span id="ruleRev">rev 1</span></div>
+      <pre class="rule" id="ruleText"><span class="c"># genesis_consensus.tau  (active rule)</span>
+<span class="k">always</span> (
+    o6[t]:bv[16] = i10[t]:bv[16] &amp;&amp;
+    o7[t]:bv[16] = { 1 }:bv[16]
+)
+<span class="k">always</span> (o9[t]:bv[24] = { #x00000a }:bv[24]).</pre>
+      <div class="verdict wait" id="verdict"><div class="seal"><i>◇</i></div><span id="verdictTxt">Awaiting block</span></div>
+    </article>
+
+    <article class="panel core-panel">
+      <h2>Chain core <small id="coreSub">next proposer —</small></h2>
+      <div class="core">
+        <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
+        <div class="readout">
+          <div><b id="rH">0</b><span>Height</span></div>
+          <div><b id="rM">0</b><span>Mempool</span></div>
+          <div><b id="rT">0</b><span>Tx total</span></div>
+          <div><b id="rR">0</b><span>User rules</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2>Transaction stream <small id="feedSub">mempool → block</small></h2>
+      <div class="feed" id="feed"></div>
+    </article>
+  </section>
+
+
+  <section class="rulesworld" aria-labelledby="rwTitle">
+    <div class="rw-head">
+      <h2 id="rwTitle">Rules made by its users</h2>
+      <p>On Tau the rules are data on the chain. Validators change the consensus rules only when enough of them agree, and every account can write, share and accept its own rules in Tau logic. The network checks all of it on every block.</p>
+    </div>
+    <div class="rw-grid">
+      <article class="panel">
+        <h2>Rule changes <small id="govCount">0 open</small></h2>
+        <p class="sub">proposed → agreement → scheduled → active</p>
+        <div class="updates" id="updates"></div>
+      </article>
+      <article class="panel">
+        <h2>Rule sharing <small id="offerCount">0 waiting</small></h2>
+        <p class="sub">one account offers a rule, the other accepts or rejects it</p>
+        <div class="offers" id="offers"></div>
+      </article>
+      <article class="panel">
+        <h2>Personal policies <small id="clauseCount">0 accounts</small></h2>
+        <p class="sub">each account's own transfer rule, combined into one spec</p>
+        <div class="clauses" id="clauses"></div>
+        <pre class="rule composite" id="composite"></pre>
+      </article>
+    </div>
+  </section>
+
+  <article class="panel">
+    <h2>Blockchain <small>newest right · SHA-256 header hash · state_hash = BLAKE3(rules ‖ accounts ‖ meta)</small></h2>
+    <div class="ribbon" id="ribbon"></div>
+  </article>
+
+  <section class="lower">
+    <article class="panel">
+      <h2>Node log <small id="logSub">host ↔ tau interpreter</small></h2>
+      <div class="log" id="log"></div>
+    </article>
+    <article class="panel gov">
+      <h2>Validators <small id="govSub">who seals blocks and votes on rules</small></h2>
+      <div class="vals" id="vals"></div>
+      <dl class="kv" id="govkv"></dl>
+    </article>
+  </section>
+
+
+  <section class="community">
+    <article class="panel fb" id="feedback">
+      <h2>Your feedback <small>shapes the next version</small></h2>
+      <form id="fbForm" novalidate>
+        <fieldset class="cats">
+          <legend>What is it about?</legend>
+          <label><input type="radio" name="cat" value="idea" checked><span>Feature idea</span></label>
+          <label><input type="radio" name="cat" value="data"><span>Chain data</span></label>
+          <label><input type="radio" name="cat" value="design"><span>Look &amp; feel</span></label>
+          <label><input type="radio" name="cat" value="bug"><span>Something broken</span></label>
+        </fieldset>
+        <label class="f" for="fbText">What would you like to see on this HUD?
+          <textarea id="fbText" maxlength="2000" placeholder="e.g. show account balances as orbits, add a governance vote timeline, a sound when a block seals…"></textarea>
+        </label>
+        <label class="f" for="fbName">Name or handle (optional)
+          <input type="text" id="fbName" maxlength="80" placeholder="@yourhandle">
+        </label>
+        <div class="row">
+          <a class="btn" id="fbSend" href="#feedback" target="_blank" rel="noopener">Send via GitHub</a>
+          <a class="fblink" id="fbAll" href="#" target="_blank" rel="noopener">See all feedback</a>
+          <span class="status" id="fbStatus" aria-live="polite">Feedback becomes a public GitHub issue (free account needed). Upvote ideas you like with 👍.</span>
+        </div>
+      </form>
+    </article>
+    <article class="panel">
+      <h2>Update log <small>built from your feedback</small></h2>
+      <ul class="changes">
+        <li><b>v2 · 26 Oct 2026</b>Focus on what makes Tau different: rule changes by validator agreement, rule sharing between accounts, personal Tau policies and the composite spec. Feedback inbox, unofficial-project notice, this update log.</li>
+        <li><b>v1 · 26 Oct 2026</b>First HUD: Tau consensus engine, validator core, transaction stream, block ribbon, governance, live-node mode.</li>
+      </ul>
+    </article>
+  </section>
+
+  <p class="footnote" id="foot">Live mode speaks the node's raw WebSocket protocol (<code>getblocks</code>, <code>getmempool</code>, <code>getgovernance</code>). The public testnet bootnode only exposes P2P, so run your own read node (Docker, see the <a href="https://github.com/IDNI/tau-testnet#join-the-tau-testnet" target="_blank" rel="noopener">tau-testnet README</a>) and switch to Live node. Simulated data is clearly marked as such and is not the real chain. TAU//NET Command HUD is an unofficial community project with no connection to IDNI.</p>
+</div>
+<button class="fb-fab" id="fbFab" type="button">Feedback</button>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const hex = n => { let s = ""; const c = "0123456789abcdef"; for (let i = 0; i < n; i++) s += c[(Math.random() * 16) | 0]; return s; };
+const short = h => h ? (h.length > 14 ? h.slice(0, 6) + "…" + h.slice(-4) : h) : "—";
+const now = () => new Date().toLocaleTimeString("de-DE", { hour12: false });
+const pick = a => a[(Math.random() * a.length) | 0];
+const hex6 = n => Math.max(0, Math.min(0xffffff, n | 0)).toString(16).padStart(6, "0");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = n => Number(n).toLocaleString("de-DE");
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- shared view state ---------- */
+const S = {
+  mode: "sim", height: 0, txTotal: 0, mempool: [], blocks: [], validators: [], proposerIdx: 0,
+  lastBlockAt: performance.now(), blockTimes: [], fee: 10, quorum: "supermajority", ruleBudget: 8,
+  pulse: 0, amend: 0, specRev: 1,
+  updates: [],          // governance: {id,title,diff,votes:Set,proposer,activateAt,status,kind,value}
+  offers: [],           // rule sharing: {id,from,to,policy,status,expire}
+  clauses: new Map(),   // acceptor -> policy  (the per-user o5 specification)
+};
+const threshold = () => Math.ceil(2 * Math.max(1, S.validators.length) / 3);
+
+/* ---------- user policy templates (o5), as documented in WALLET_USAGE.md ---------- */
+const POLICIES = {
+  limit: amt => ({
+    kind: "limit", name: "Spending limit", label: `blocks transfers above ${fmt(amt)} τ`,
+    body: `(i1[t]:bv[24] > { #x${hex6(amt)} }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])`,
+    blocks: tx => tx.amount > amt,
+  }),
+  whitelist: to => ({
+    kind: "whitelist", name: "Recipient whitelist", label: `only pays ${short(to)}`,
+    body: `(i4[t]:bv[384] = { #x${to.slice(0, 8)}… }:bv[384]) ? (o5[t]:bv[24] = { #x000001 }:bv[24]) : (o5[t]:bv[24] = { #x000000 }:bv[24])`,
+    blocks: tx => tx.to !== to,
+  }),
+  timelock: ts => ({
+    kind: "timelock", name: "Time-lock", label: `frozen until ${new Date(ts * 1000).toLocaleTimeString("de-DE", { hour12: false })}`,
+    body: `(i5[t]:bv[64] < { ${ts} }:bv[64]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])`,
+    blocks: () => Date.now() / 1000 < ts,
+  }),
+  cosign: (amt, who) => ({
+    kind: "cosign", name: "Co-signature", label: `needs ${short(who)} to sign above ${fmt(amt)} τ`,
+    body: `(i1[t]:bv[24] > { #x${hex6(amt)} }:bv[24] && !(i18[t]:bv[384] = { #x${who.slice(0, 8)}… }:bv[384])) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])`,
+    blocks: tx => tx.amount > amt,
+  }),
+};
+function randomPolicy(accounts) {
+  const k = pick(["limit", "limit", "whitelist", "timelock", "cosign"]);
+  if (k === "limit") return POLICIES.limit(pick([500, 1000, 2500, 4000]));
+  if (k === "whitelist") return POLICIES.whitelist(pick(accounts));
+  if (k === "timelock") return POLICIES.timelock(Math.floor(Date.now() / 1000) + 40 + ((Math.random() * 60) | 0));
+  return POLICIES.cosign(pick([2000, 3000]), pick(accounts));
+}
+
+/* ---------- log ---------- */
+function log(msg, cls = "") {
+  const el = $("log"), d = document.createElement("div");
+  d.innerHTML = `<span class="t">[${now()}]</span> <span class="${cls}">${msg}</span>`;
+  el.appendChild(d);
+  while (el.children.length > 140) el.firstChild.remove();
+  el.scrollTop = el.scrollHeight;
+}
+
+/* ---------- Tau streams panel ---------- */
+const STREAMS = [
+  ["i6", "block height", "in"], ["i7", "block timestamp", "in"], ["i8", "proposer identity", "in"],
+  ["i10", "host BLS proof check", "in"], ["o6", "block validity", "out"], ["o7", "proposer eligibility", "out"],
+  ["o9", "consensus base fee", "out"], ["o5", "user policies (per transfer)", "out"],
+];
+$("streams").innerHTML = STREAMS.map(([c, l, k]) =>
+  `<div class="stream ${k}" id="s_${c}"><code>${c}</code><span class="lbl">${l}</span><span class="val" id="v_${c}">—</span></div>`).join("");
+function setStream(c, v, state) {
+  const row = $("s_" + c); $("v_" + c).textContent = v;
+  row.classList.remove("pass", "fail", "flash");
+  void row.offsetWidth;
+  row.classList.add("flash"); if (state) row.classList.add(state);
+  setTimeout(() => row.classList.remove("flash"), 500);
+}
+function setVerdict(kind, text) {
+  const v = $("verdict"); v.className = "verdict " + kind;
+  v.querySelector("i").textContent = kind === "ok" ? "✓" : kind === "bad" ? "✕" : "◇";
+  $("verdictTxt").textContent = text;
+}
+function renderConsensusRule(liveText) {
+  if (liveText) { $("ruleRev").textContent = "rev " + S.specRev; $("ruleText").textContent = liveText; return; }
+  $("ruleRev").textContent = "rev " + S.specRev;
+  $("ruleText").innerHTML =
+`<span class="c"># active consensus spec · revision ${S.specRev}</span>
+<span class="k">always</span> (
+    o6[t]:bv[16] = i10[t]:bv[16] &amp;&amp;
+    o7[t]:bv[16] = { 1 }:bv[16]
+)
+<span class="k">always</span> (o9[t]:bv[24] = { <span class="${S.specRev > 1 ? "chg" : ""}">#x${hex6(S.fee)}</span> }:bv[24]).   <span class="c"># fee ${S.fee}</span>`;
+}
+async function runVerdict(b, live) {
+  $("engineBlk").textContent = "block #" + b.n;
+  setVerdict("wait", "Evaluating…");
+  const step = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+  setStream("i6", b.n); await step(150);
+  setStream("i7", b.ts); await step(150);
+  setStream("i8", short(b.proposer)); await step(150);
+  setStream("i10", live ? "1 (committed)" : "1", "pass"); await step(240);
+  setStream("o6", "1 valid", "pass"); await step(200);
+  setStream("o7", "1 eligible", "pass"); await step(200);
+  setStream("o9", S.fee + " / step", "pass"); await step(200);
+  setStream("o5", live ? "enforced" : `${S.clauses.size} user rules · allow`, "pass");
+  setVerdict("ok", `Block #${b.n} accepted`);
+}
+
+/* ---------- tx feed ---------- */
+const TYPE_LABEL = {
+  user_tx: "transfer", rule_deploy: "own rule deployed", rule_offer: "rule offered", rule_offer_accept: "rule accepted",
+  rule_offer_reject: "rule rejected", consensus_rule_update: "rule change proposed", consensus_rule_vote: "vote",
+  retractable_transfer: "retractable transfer",
+};
+function txCard(t) {
+  const d = document.createElement("div");
+  const ruleish = /rule/.test(t.type);
+  d.className = "tx" + (t.kind === "gov" ? " gov" : ruleish ? " rl" : "") + (t.rejected ? " rej" : "");
+  d.id = "tx_" + t.id.slice(0, 16);
+  const label = t.rejected ? t.rejected : (TYPE_LABEL[t.type] || t.type);
+  const body = t.transfers && t.transfers.length
+    ? t.transfers.map(([f, to, a]) => `${short(f)} → ${short(to)} <b>${fmt(a)} τ</b>`).join(" · ")
+    : (t.note || `sender ${short(t.sender)}`);
+  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span>${short(t.id)} · fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
+  const feed = $("feed"); feed.prepend(d);
+  while (feed.children.length > 40) feed.lastChild.remove();
+}
+function markMined(ids) { ids.forEach(id => { const el = $("tx_" + id.slice(0, 16)); if (el) el.classList.add("mined"); }); }
+
+/* ---------- chain ribbon ---------- */
+function addBlockCard(b) {
+  const r = $("ribbon"), d = document.createElement("div");
+  d.className = "blk" + (b.amended ? " amended" : "");
+  const rules = b.txs.filter(t => /rule/.test(t.type)).length;
+  d.innerHTML = `<div class="n">#${b.n}</div><div class="h">hash ${short(b.hash)}</div><div class="h">state ${short(b.state)}</div><div class="h">by ${short(b.proposer)}</div><div class="m"><span>${b.txs.length} tx${rules ? ` · ${rules} rule` : ""}</span><span>${b.amended ? "spec rev " + b.amended : "o6 ✓"}</span></div>`;
+  r.appendChild(d);
+  while (r.children.length > 18) r.firstChild.remove();
+  r.scrollLeft = r.scrollWidth;
+}
+
+/* ---------- user-made rules panels ---------- */
+const STATUS_TXT = { voting: "collecting agreement", scheduled: "agreed · scheduled", active: "active", expired: "expired" };
+function renderUpdates() {
+  const thr = threshold(), el = $("updates");
+  const list = S.updates.slice(-4).reverse();
+  el.innerHTML = list.length ? list.map(u => {
+    const v = u.votes.size, pct = Math.min(100, v / thr * 100);
+    const pips = S.validators.map(val => `<i class="${u.votes.has(val) ? "on" : ""}"></i>`).join("");
+    const when = u.status === "voting" || u.status === "scheduled"
+      ? `activates at #${u.activateAt} · in ${Math.max(0, u.activateAt - S.height)} blocks` : u.status === "active" ? `active since #${u.activeAt}` : `missed quorum before #${u.activateAt}`;
+    return `<div class="upd ${u.status}">
+      <div class="u1"><b>${esc(u.title)}</b><span class="pill ${u.status}">${STATUS_TXT[u.status]}</span></div>
+      <code class="diff">${u.diff}</code>
+      <div class="agree"><div class="bar"><span style="width:${pct}%"></span><em style="left:100%"></em></div><div class="pips">${pips}</div><span class="num">${v}/${thr}</span></div>
+      <div class="u3">${short(u.id)} · ${when}</div></div>`;
+  }).join("") : `<div class="empty">No rule changes proposed yet. Any active validator can propose one; it activates only after ${thr} of ${S.validators.length || "N"} agree.</div>`;
+  $("govCount").textContent = `${S.updates.filter(u => u.status === "voting" || u.status === "scheduled").length} open`;
+}
+function renderOffers() {
+  const el = $("offers");
+  const list = S.offers.slice(-6).reverse();
+  el.innerHTML = list.length ? list.map(o => `<div class="offer ${o.status}">
+      <div class="o1"><span>${short(o.from)}</span><span class="arrow">→</span><span>${short(o.to)}</span><span class="pill ${o.status}">${o.status}</span></div>
+      <div class="o2"><b>${o.policy.name}</b> · ${esc(o.policy.label)}</div></div>`).join("")
+    : `<div class="empty">No rules shared yet. Anyone can send a Tau rule to another account; the recipient reviews it and accepts or rejects it.</div>`;
+  $("offerCount").textContent = `${S.offers.filter(o => o.status === "offered").length} waiting`;
+}
+function renderClauses() {
+  const entries = [...S.clauses.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1);
+  $("clauseCount").textContent = entries.length + " accounts";
+  $("clauses").innerHTML = entries.length ? entries.slice(0, 8).map(([acc, p]) =>
+    `<div class="clause"><i class="k-${p.kind}"></i><span>${short(acc)}</span><span>${p.name}</span></div>`).join("")
+    : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`;
+  // The node composes all accepted clauses into ONE rule per stream (README · Rule sharing)
+  const branches = entries.slice(0, 3).map(([acc, p]) => `(i12[t]:bv[384] = { #x${acc.slice(0, 8)}… }:bv[384]) ? ( ${esc(p.body)} )`);
+  if (entries.length > 3) branches.push(`<span class="c">… ${entries.length - 3} more guarded branches</span>`);
+  branches.push(`( o5[t]:bv[24] = { #x000001 }:bv[24] )   <span class="c"># everyone else: allow</span>`);
+  const txt = `<span class="c"># composite o5 · one guarded branch per account</span>\n<span class="k">always</span> (\n    ` + branches.join("\n  : ") + `\n).`;
+  $("composite").innerHTML = txt;
+}
+function renderRuleWorld() { renderUpdates(); renderOffers(); renderClauses(); }
+
+/* ---------- validators ---------- */
+function renderGov(extra = {}) {
+  $("vals").innerHTML = S.validators.map((v, i) =>
+    `<div class="val ${i === S.proposerIdx ? "on" : ""}"><i></i><span>${v}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
+  const N = S.validators.length;
+  const kv = Object.assign({
+    "Active validators": N,
+    "Vote quorum": S.quorum,
+    "Approval threshold": N ? threshold() : "—",
+    "Rule txs per block": S.ruleBudget,
+    "Fee beneficiary": "block proposer",
+  }, extra);
+  $("govkv").innerHTML = Object.entries(kv).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+}
+
+/* ---------- readouts ---------- */
+function readouts() {
+  $("chipH").textContent = $("rH").textContent = fmt(S.height);
+  $("rM").textContent = S.mempool.length;
+  $("rT").textContent = fmt(S.txTotal);
+  $("rR").textContent = S.clauses.size;
+  $("chipFee").textContent = S.fee;
+  $("chipRev").textContent = S.specRev;
+  $("coreSub").textContent = S.validators.length ? "next proposer " + short(S.validators[(S.proposerIdx + 1) % S.validators.length]) : "—";
+}
+
+/* ---------- block intake (shared by sim + live) ---------- */
+function ingestBlock(b, live) {
+  const t = performance.now();
+  if (S.blocks.length) S.blockTimes.push((t - S.lastBlockAt) / 1000);
+  if (S.blockTimes.length > 10) S.blockTimes.shift();
+  S.lastBlockAt = t;
+  S.blocks.push(b); if (S.blocks.length > 40) S.blocks.shift();
+  S.height = b.n; S.txTotal += b.txs.length;
+  const vi = S.validators.indexOf(b.proposer); if (vi >= 0) S.proposerIdx = vi;
+  S.pulse = 1; burst = b.txs.length;
+  addBlockCard(b); markMined(b.txs.map(x => x.id));
+  runVerdict(b, live); renderGov(); renderRuleWorld(); readouts();
+  log(`Added block #${b.n} · ${b.txs.length} tx · proposer ${short(b.proposer)} · state ${short(b.state)}`, "ok");
+}
+
+/* =====================================================================
+   SIMULATION — mirrors the documented protocol of tau-testnet
+   ===================================================================== */
+const SIM = { timer: null, txTimer: null, accounts: [] };
+const PROPOSALS = [
+  () => { const v = pick([6, 8, 12, 15].filter(x => x !== S.fee)); return { kind: "fee", value: v, title: `Change base fee to ${v}`, diff: `o9: #x${hex6(S.fee)} (${S.fee}) → #x${hex6(v)} (${v})` }; },
+  () => { const pk = hex(96); return { kind: "validator", value: pk, title: "Admit a new validator", diff: `host_contract_patch.validator_additions += ${short(pk)}` }; },
+  () => { const v = S.ruleBudget === 8 ? 12 : 8; return { kind: "budget", value: v, title: `Allow ${v} rule txs per block`, diff: `max_rule_txs_per_block: ${S.ruleBudget} → ${v}` }; },
+];
+function simInit() {
+  S.validators = Array.from({ length: 4 }, () => hex(96));
+  SIM.accounts = Array.from({ length: 14 }, () => hex(96));
+  Object.assign(S, { height: 0, blocks: [], mempool: [], txTotal: 0, blockTimes: [], fee: 10, specRev: 1, ruleBudget: 8, updates: [], offers: [] });
+  S.clauses = new Map();
+  // a few accounts start with their own policies so the composite is visible from the first frame
+  for (let i = 0; i < 3; i++) S.clauses.set(SIM.accounts[i], randomPolicy(SIM.accounts));
+  $("ribbon").innerHTML = ""; $("feed").innerHTML = "";
+  const g = { n: 0, hash: "4bf5ee70" + hex(48) + "fbce", state: hex(64), proposer: "0".repeat(96), ts: Math.floor(Date.now() / 1000) - 60, txs: [] };
+  S.blocks.push(g); addBlockCard(g);
+  log("Genesis loaded · block_0.hash 4bf5ee70…fbce · network tau-testnet-v2 (simulated)", "warn");
+  log("Tau interpreter ready · consensus spec rev 1 · o6 = i10, o7 = 1, o9 = 10");
+  renderConsensusRule(); renderGov(); renderRuleWorld(); readouts();
+  for (let i = 0; i < 4; i++) simTx();
+}
+function admit(tx) {
+  txCard(tx);
+  if (tx.rejected) { log(`sendtx ${short(tx.id)} rejected: ${tx.rejected}`, "err"); }
+  else { S.mempool.push(tx); log(`sendtx ${short(tx.id)} admitted · ${tx.type} · est. fee ${tx.fee}`); }
+  readouts();
+}
+function simTx() {
+  const r = Math.random(), A = SIM.accounts;
+  const sender = pick(A);
+  const open = S.updates.find(u => u.status === "voting");
+  const waiting = S.offers.find(o => o.status === "offered" && !o.answering);
+
+  if (open && r < 0.30) {                                   // validators voting on an open proposal
+    const voter = S.validators.find(v => !open.votes.has(v));
+    if (voter) {
+      open.pendingVoters = open.pendingVoters || new Set();
+      if (!open.pendingVoters.has(voter)) {
+        open.pendingVoters.add(voter);
+        return admit({ id: hex(64), type: "consensus_rule_vote", kind: "gov", sender: voter, fee: 0, note: `${short(voter)} agrees to “${open.title}”`,
+          apply: () => { open.votes.add(voter); log(`Vote counted: ${open.votes.size}/${threshold()} for ${short(open.id)}`, "warn"); } });
+      }
+    }
+  }
+  if (!open && r < 0.10 && S.height > 0) {                  // a validator proposes a change to the rules
+    const p = pick(PROPOSALS)(), proposer = pick(S.validators), id = hex(64);
+    return admit({ id: hex(64), type: "consensus_rule_update", kind: "gov", sender: proposer, fee: 0, note: `“${p.title}” · ${p.diff}`,
+      apply: (b) => {
+        S.updates.push({ ...p, id, proposer, votes: new Set([proposer]), activateAt: b.n + 8, status: "voting" });
+        log(`Rule change ${short(id)} proposed: ${p.title} · activates at #${b.n + 8} if ${threshold()} validators agree`, "warn");
+      } });
+  }
+  if (waiting && r < 0.42) {                                // recipient answers a shared rule
+    waiting.answering = true;
+    const yes = Math.random() < 0.72;
+    return admit({ id: hex(64), type: yes ? "rule_offer_accept" : "rule_offer_reject", sender: waiting.to, fee: S.fee,
+      note: `${short(waiting.to)} ${yes ? "accepts" : "rejects"} “${waiting.policy.name}” from ${short(waiting.from)}`,
+      apply: () => {
+        waiting.status = yes ? "accepted" : "rejected";
+        if (yes) { S.clauses.set(waiting.to, waiting.policy); log(`Clause registry: ${short(waiting.to)} now runs “${waiting.policy.name}” · composite o5 rebuilt`, "ok"); }
+      } });
+  }
+  if (r < 0.52) {                                           // someone shares a rule with someone else
+    const to = pick(A.filter(a => a !== sender)), policy = randomPolicy(A), id = hex(64);
+    return admit({ id: hex(64), type: "rule_offer", sender, fee: S.fee, note: `${short(sender)} → ${short(to)} · ${policy.name}: ${policy.label}`,
+      apply: (b) => { S.offers.push({ id, from: sender, to, policy, status: "offered", expire: b.n + 20 }); } });
+  }
+  if (r < 0.60) {                                           // an account writes its own policy
+    const policy = randomPolicy(A);
+    return admit({ id: hex(64), type: "rule_deploy", sender, fee: S.fee, note: `${short(sender)} deploys own rule · ${policy.name}: ${policy.label}`,
+      apply: () => { S.clauses.set(sender, policy); log(`Clause registry: ${short(sender)} deployed “${policy.name}”`, "ok"); } });
+  }
+  // ordinary transfer, checked against the sender's own Tau policy (o5)
+  const to = pick(A.filter(a => a !== sender)), amount = 1 + ((Math.random() * (Math.random() < .3 ? 6000 : 1200)) | 0);
+  const tx = { id: hex(64), type: Math.random() < .12 ? "retractable_transfer" : "user_tx", sender, to, amount, fee: S.fee, transfers: [[sender, to, String(amount)]] };
+  const pol = S.clauses.get(sender);
+  if (pol && pol.blocks(tx)) { tx.rejected = `o5 = 0 · ${pol.name}`; tx.note = ""; }
+  admit(tx);
+}
+function simBlock() {
+  const prev = S.blocks[S.blocks.length - 1];
+  S.proposerIdx = (S.proposerIdx + 1) % S.validators.length;
+  const take = S.mempool.splice(0, Math.min(S.mempool.length, 3 + ((Math.random() * 6) | 0)));
+  const b = { n: prev.n + 1, hash: hex(64), prev: prev.hash, state: hex(64), proposer: S.validators[S.proposerIdx], ts: Math.floor(Date.now() / 1000), txs: take };
+  take.forEach(t => t.apply && t.apply(b));
+  // governance lifecycle at the height transition (after transactions execute)
+  const thr = threshold();
+  S.updates.forEach(u => {
+    if (u.status === "voting" && u.votes.size >= thr) { u.status = "scheduled"; log(`Agreement reached on ${short(u.id)} (${u.votes.size}/${S.validators.length}) → scheduled for #${u.activateAt}`, "warn"); }
+    if (u.status === "voting" && b.n >= u.activateAt) { u.status = "expired"; log(`${short(u.id)} expired before reaching agreement → archived`, "warn"); }
+    if (u.status === "scheduled" && b.n >= u.activateAt) {
+      u.status = "active"; u.activeAt = b.n; S.specRev++; b.amended = S.specRev; S.amend = 1;
+      if (u.kind === "fee") S.fee = u.value;
+      if (u.kind === "validator") S.validators.push(u.value);
+      if (u.kind === "budget") S.ruleBudget = u.value;
+      log(`SPEC AMENDED · revision ${S.specRev} active · “${u.title}” · the chain now runs on the rules its validators agreed on`, "ok");
+      renderConsensusRule();
+    }
+  });
+  S.offers.forEach(o => { if (o.status === "offered" && b.n >= o.expire) o.status = "expired"; });
+  ingestBlock(b, false);
+}
+function simStart() {
+  simStop(); simInit();
+  const loopTx = () => { simTx(); SIM.txTimer = setTimeout(loopTx, 600 + Math.random() * 1300); };
+  const loopBlk = () => { simBlock(); SIM.timer = setTimeout(loopBlk, 4500 + Math.random() * 2000); };
+  SIM.txTimer = setTimeout(loopTx, 800); SIM.timer = setTimeout(loopBlk, 3000);
+}
+function simStop() { clearTimeout(SIM.timer); clearTimeout(SIM.txTimer); }
+
+/* =====================================================================
+   LIVE — raw WebSocket protocol of a tau-testnet node (port 65433)
+   ===================================================================== */
+const LIVE = { ws: null, poll: null, govPoll: null, seenBlocks: new Set(), seenTx: new Set() };
+function liveSend(cmd) { if (LIVE.ws && LIVE.ws.readyState === 1) LIVE.ws.send(cmd); }
+function normTx(raw, idHint) {
+  const ops = (raw && raw.operations) || {};
+  const transfers = Array.isArray(ops["1"]) ? ops["1"] : [];
+  let type = raw.tx_type || "user_tx";
+  if (type === "user_tx" && ops["0"]) type = "rule_deploy";
+  return {
+    id: idHint || raw.tx_hash || hex(64), type, sender: raw.sender_pubkey || raw.sender || "",
+    kind: /consensus_rule/.test(type) ? "gov" : "", fee: raw.estimated_fee ?? raw.fee_limit ?? "—", transfers,
+  };
+}
+function liveMessage(ev) {
+  const text = String(ev.data);
+  if (text.startsWith("ok version")) { log("Handshake: " + esc(text), "ok"); return; }
+  if (text.startsWith("error")) { log("Node: " + esc(text), "err"); return; }
+  let msg; try { msg = JSON.parse(text); } catch { return; }
+  if (msg.status !== "ok") { log(`${esc(msg.command || "rpc")}: ${esc(msg.error?.code)} ${esc(msg.error?.message || "")}`, "err"); return; }
+  const d = msg.data || {};
+  if (msg.command === "getblocks") {
+    (d.blocks || []).filter(b => !LIVE.seenBlocks.has(b.block_hash)).forEach(raw => {
+      LIVE.seenBlocks.add(raw.block_hash);
+      const h = raw.header || {}, ids = raw.tx_ids || [];
+      const txs = (raw.transactions || []).map((t, i) => normTx(t, ids[i]));
+      const b = { n: h.block_number ?? 0, hash: raw.block_hash, state: h.state_hash, proposer: h.proposer_pubkey || "", ts: h.timestamp, txs };
+      if (b.proposer && !/^0+$/.test(b.proposer) && !S.validators.includes(b.proposer)) S.validators.push(b.proposer);
+      txs.forEach(t => { if (!LIVE.seenTx.has(t.id)) { LIVE.seenTx.add(t.id); txCard(t); } });
+      ingestBlock(b, true);
+    });
+  } else if (msg.command === "getmempool") {
+    S.mempool = (d.transactions || []).map(t => normTx({ ...t, sender_pubkey: t.sender }, t.tx_hash));
+    S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } });
+    readouts();
+  } else if (msg.command === "getgovernance") {
+    if (Array.isArray(d.active_validators)) S.validators = d.active_validators.map(v => typeof v === "string" ? v : (v.pubkey || v.validator_pubkey || JSON.stringify(v)));
+    S.quorum = d.vote_quorum || S.quorum;
+    const votes = Array.isArray(d.votes) ? d.votes : [];
+    const asId = u => typeof u === "string" ? u : (u.update_id || "");
+    const mk = (u, status) => {
+      const id = asId(u);
+      return { id, status, title: "Consensus rule update", diff: Array.isArray(u.rule_revisions) ? esc(u.rule_revisions.join(" ")).slice(0, 160) : "rule revision",
+        votes: new Set(votes.filter(v => v.update_id === id).map(v => v.voter_pubkey)), activateAt: u.activate_at_height ?? "—", activeAt: "—" };
+    };
+    S.updates = [...(d.archival_update_details || []).map(u => mk(u, u.lifecycle === "activated" ? "active" : "expired")),
+      ...(d.pending_updates || []).map(u => mk(u, "voting")), ...(d.scheduled_updates || []).map(u => mk(u, "scheduled"))];
+    S.specRev = 1 + (d.archival_update_details || []).filter(u => u.lifecycle === "activated").length;
+    if (d.consensus_rules) {
+      renderConsensusRule(d.consensus_rules);
+      const m = /o9\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]+)/.exec(d.consensus_rules);
+      if (m) S.fee = parseInt(m[1], 16);
+    }
+    renderGov({ "Approval threshold": d.approval_threshold ?? "—", "Next height": d.next_block_height ?? "—", "Eligibility": esc(d.eligibility_mode || "—") });
+    renderRuleWorld(); readouts();
+  }
+}
+function liveConnect() {
+  liveStop();
+  const url = $("wsurl").value.trim();
+  log(`Connecting to ${esc(url)} …`, "warn");
+  setMode("live", "Connecting");
+  Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], height: 0, updates: [], offers: [] });
+  S.clauses = new Map();
+  $("ribbon").innerHTML = ""; $("feed").innerHTML = "";
+  $("offers").innerHTML = `<div class="empty">Rule offers are stored per account. Live mode lists them once account lookups are added.</div>`;
+  renderGov(); renderUpdates(); renderClauses(); readouts();
+  let ws;
+  try { ws = new WebSocket(url); } catch (e) { liveFail(e.message); return; }
+  LIVE.ws = ws;
+  ws.onopen = () => {
+    setMode("live", "Connected");
+    ws.send("hello version=1");
+    liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool");
+    LIVE.poll = setInterval(() => { liveSend("getblocks 6"); liveSend("getmempool"); }, 3000);
+    LIVE.govPoll = setInterval(() => liveSend("getgovernance"), 15000);
+  };
+  ws.onmessage = liveMessage;
+  ws.onerror = () => liveFail("no connection");
+  ws.onclose = () => { if (S.mode === "live") { log("Connection closed", "err"); setMode("live", "Offline"); clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); } };
+}
+function liveFail(why) {
+  log(`Could not reach ${esc($("wsurl").value)}: ${esc(why)}. Is your node running, and is TAU_WS_ALLOWED_ORIGINS set if this page is hosted?`, "err");
+  setMode("live", "Offline");
+}
+function liveStop() { clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); if (LIVE.ws) { LIVE.ws.onclose = null; LIVE.ws.close(); } LIVE.ws = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); }
+
+/* ---------- mode switching ---------- */
+function setMode(mode, status) {
+  S.mode = mode;
+  $("btnSim").setAttribute("aria-pressed", mode === "sim");
+  $("btnLive").setAttribute("aria-pressed", mode === "live");
+  $("modeDot").className = "dot " + (mode === "sim" ? "sim" : status === "Connected" ? "" : "off");
+  $("modeTxt").textContent = mode === "sim" ? "Simulation" : "Live · " + status;
+  $("chipMode").className = "chip " + (mode === "sim" ? "warn" : status === "Connected" ? "live" : "warn");
+  $("hint").textContent = mode === "sim"
+    ? "Simulation follows the documented protocol: validators vote on rule changes, accounts write and share their own Tau rules, every block is checked by Tau. Switch to Live node to read your own node."
+    : "Reads your node every 3 s (getblocks, getmempool) and governance every 15 s. Default port 65433.";
+}
+$("btnSim").onclick = () => { liveStop(); setMode("sim"); simStart(); };
+$("btnLive").onclick = () => { simStop(); liveConnect(); };
+$("btnConnect").onclick = () => { simStop(); liveConnect(); };
+
+/* =====================================================================
+   CORE CANVAS — validator ring, user-rule ring, mempool orbit, block forge
+   ===================================================================== */
+const cv = $("core"), cx = cv.getContext("2d");
+let burst = 0, sparks = [], t0 = performance.now();
+const KIND_COL = { limit: "255,181,71", whitelist: "67,240,166", timelock: "190,150,255", cosign: "255,120,170" };
+function draw(tm) {
+  const W = cv.width, C = W / 2, t = (tm - t0) / 1000;
+  cx.clearRect(0, 0, W, W);
+  cx.save(); cx.translate(C, C);
+  const cyan = "84,214,255", amber = "255,181,71";
+
+  cx.strokeStyle = `rgba(${cyan},.35)`; cx.lineWidth = 2;
+  for (let i = 0; i < 120; i++) {
+    const a = i / 120 * Math.PI * 2 + t * .05, r1 = C * .95, r2 = r1 - (i % 10 === 0 ? 26 : 10);
+    cx.beginPath(); cx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1); cx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2); cx.stroke();
+  }
+  const arc = (r, w, a0, len, col, sp) => { cx.beginPath(); cx.lineWidth = w; cx.strokeStyle = col; cx.arc(0, 0, r, a0 + t * sp, a0 + len + t * sp); cx.stroke(); };
+  for (let k = 0; k < 3; k++) arc(C * .84, 6, k * 2.1, 1.4, `rgba(${cyan},.5)`, .25);
+
+  // agreement ring: progress of the open rule change toward quorum
+  const open = S.updates.find(u => u.status === "voting" || u.status === "scheduled");
+  cx.beginPath(); cx.lineWidth = 10; cx.strokeStyle = `rgba(${amber},.1)`; cx.arc(0, 0, C * .70, 0, Math.PI * 2); cx.stroke();
+  if (open) {
+    const frac = Math.min(1, open.votes.size / threshold());
+    arc(C * .70, 10, -Math.PI / 2, frac * Math.PI * 2, `rgba(${amber},${open.status === "scheduled" ? .95 : .7})`, 0);
+    cx.fillStyle = `rgba(${amber},.9)`; cx.font = "600 22px Chakra Petch, sans-serif"; cx.textAlign = "center";
+    cx.fillText(open.status === "scheduled" ? "AGREED · ACTIVATES #" + open.activateAt : `AGREEMENT ${open.votes.size}/${threshold()}`, 0, -C * .70 + 34);
+  }
+
+  // validators
+  const V = S.validators.length || 1, vr = C * .84;
+  S.validators.forEach((v, i) => {
+    const a = i / V * Math.PI * 2 - Math.PI / 2 + .35, x = Math.cos(a) * vr, y = Math.sin(a) * vr, on = i === S.proposerIdx;
+    const voted = open && open.votes.has(v);
+    cx.save(); cx.translate(x, y); cx.rotate(Math.PI / 4);
+    cx.fillStyle = on ? `rgba(${amber},1)` : `rgba(${cyan},.9)`;
+    cx.shadowColor = on ? `rgb(${amber})` : `rgb(${cyan})`; cx.shadowBlur = on ? 40 : 18;
+    const s = on ? 30 : 22; cx.fillRect(-s / 2, -s / 2, s, s);
+    if (voted) { cx.strokeStyle = `rgba(${amber},.95)`; cx.lineWidth = 3; cx.strokeRect(-s, -s, s * 2, s * 2); }
+    cx.restore();
+    cx.fillStyle = `rgba(${cyan},.8)`; cx.font = "500 22px IBM Plex Mono, monospace"; cx.textAlign = "center";
+    cx.fillText("V" + (i + 1) + " " + v.slice(0, 6), x, y + (y > 0 ? 50 : -34));
+    if (on && S.pulse > 0) { cx.strokeStyle = `rgba(${amber},${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
+  });
+
+  // user-rule ring: every account that runs its own Tau policy
+  const R = [...S.clauses.values()], rr = C * .56;
+  R.forEach((p, i) => {
+    const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+    const col = KIND_COL[p.kind] || cyan;
+    cx.beginPath(); for (let j = 0; j <= 6; j++) { const b = j / 6 * Math.PI * 2, r = 13; j ? cx.lineTo(x + Math.cos(b) * r, y + Math.sin(b) * r) : cx.moveTo(x + Math.cos(b) * r, y + Math.sin(b) * r); }
+    cx.fillStyle = `rgba(${col},.85)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = 14; cx.fill();
+    cx.shadowBlur = 0; cx.strokeStyle = `rgba(${col},.18)`; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke();
+  });
+
+  // mempool orbit
+  const M = S.mempool.length;
+  S.mempool.forEach((tx, i) => {
+    const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
+    cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? `rgba(${amber},.95)` : /rule/.test(tx.type) ? "rgba(67,240,166,.95)" : `rgba(${cyan},.95)`;
+    cx.shadowColor = cx.fillStyle; cx.shadowBlur = 14; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 6, 0, Math.PI * 2); cx.fill();
+  });
+  cx.shadowBlur = 0;
+
+  // reactor
+  const p = S.pulse, am = S.amend, core = am > 0 ? amber : cyan;
+  const g = cx.createRadialGradient(0, 0, 0, 0, 0, C * .32);
+  g.addColorStop(0, "rgba(225,250,255,.92)"); g.addColorStop(.25, `rgba(${core},${.55 + Math.max(p, am) * .4})`); g.addColorStop(1, `rgba(${core},0)`);
+  cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, C * (.30 + p * .06), 0, Math.PI * 2); cx.fill();
+  cx.strokeStyle = `rgba(${core},.8)`; cx.lineWidth = 3;
+  for (let k = 0; k < 3; k++) { cx.save(); cx.rotate(t * (k % 2 ? -.8 : .6) + k); cx.beginPath(); for (let j = 0; j <= 6; j++) { const a = j / 6 * Math.PI * 2, r = C * (.17 + k * .04); j ? cx.lineTo(Math.cos(a) * r, Math.sin(a) * r) : cx.moveTo(Math.cos(a) * r, Math.sin(a) * r); } cx.stroke(); cx.restore(); }
+
+  if (p > 0) { cx.strokeStyle = `rgba(${cyan},${p})`; cx.lineWidth = 6; cx.beginPath(); cx.arc(0, 0, C * (.32 + (1 - p) * .62), 0, Math.PI * 2); cx.stroke(); S.pulse = Math.max(0, p - .012); }
+  if (am > 0) { for (let k = 0; k < 3; k++) { const q = ((1 - am) + k * .18) % 1; cx.strokeStyle = `rgba(${amber},${am * (1 - q)})`; cx.lineWidth = 5; cx.beginPath(); cx.arc(0, 0, C * (.3 + q * .65), 0, Math.PI * 2); cx.stroke(); } S.amend = Math.max(0, am - .005); }
+  if (burst > 0) { for (let i = 0; i < burst * 6 + 12; i++) { const a = Math.random() * Math.PI * 2, v = 4 + Math.random() * 8; sparks.push({ x: 0, y: 0, vx: Math.cos(a) * v, vy: Math.sin(a) * v, l: 1 }); } burst = 0; }
+  sparks = sparks.filter(s => (s.l -= .015) > 0);
+  sparks.forEach(s => { s.x += s.vx; s.y += s.vy; cx.fillStyle = `rgba(185,241,255,${s.l})`; cx.fillRect(s.x, s.y, 4, 4); });
+
+  const since = (performance.now() - S.lastBlockAt) / 1000;
+  cx.fillStyle = "#03080d"; cx.font = "700 60px Chakra Petch, sans-serif"; cx.textAlign = "center"; cx.textBaseline = "middle";
+  cx.fillText("#" + S.height, 0, -8);
+  cx.font = "600 19px Chakra Petch, sans-serif";
+  cx.fillText(am > .2 ? "SPEC AMENDED · REV " + S.specRev : since < 1.2 ? "BLOCK SEALED" : "SPEC REV " + S.specRev, 0, 40);
+  cx.restore();
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+setMode("sim"); simStart();
+setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
+/* =====================================================================
+   FEEDBACK — opens a pre-filled GitHub issue in the project repo
+   ===================================================================== */
+(() => {
+  const REPO = "jimb000o/tau-command-hud";
+  const st = $("fbStatus");
+  const say = (t, c = "") => { st.textContent = t; st.className = "status " + c; };
+  $("fbAll").href = `https://github.com/${REPO}/issues?q=is%3Aissue+label%3Afeedback`;
+  $("fbFab").onclick = () => {
+    const f = $("feedback"); f.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+    f.classList.add("flash-target"); setTimeout(() => f.classList.remove("flash-target"), 1400);
+    setTimeout(() => $("fbText").focus({ preventScroll: true }), reduced ? 0 : 500);
+  };
+  const CAT = { idea: "Feature idea", data: "Chain data", design: "Look & feel", bug: "Something broken" };
+  const build = () => {
+    const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
+    const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v2`;
+    const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
+    return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+  };
+  const link = $("fbSend");
+  const sync = () => { const ok = $("fbText").value.trim().length >= 3; link.href = ok ? build() : "#feedback"; link.setAttribute("aria-disabled", String(!ok)); };
+  ["input", "change"].forEach(ev => $("fbForm").addEventListener(ev, sync)); sync();
+  link.addEventListener("click", e => {
+    if (link.getAttribute("aria-disabled") === "true") { e.preventDefault(); say("Write a few words first.", "err"); $("fbText").focus(); return; }
+    say("GitHub opens in a new tab with your text filled in. Press “Create” there to send it.", "ok");
+  });
+  $("fbForm").addEventListener("submit", e => { e.preventDefault(); link.click(); });
+})();
+
+})();
+
+</script>
+
+</body>
+</html>
