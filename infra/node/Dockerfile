@@ -76,6 +76,10 @@ FROM python:3.14-trixie AS testnet-src
 ARG TAU_TESTNET_REF
 RUN git clone --filter=blob:none https://github.com/IDNI/tau-testnet.git /src && \
     git -C /src checkout "${TAU_TESTNET_REF}" && rm -rf /src/.git
+# Local fixes to the pinned sources; each script explains itself and fails the
+# build if the source no longer matches.
+COPY patches/ /patches/
+RUN python3 -I /patches/read-until-eof.py /src
 
 
 FROM python:3.14-slim-trixie AS runtime
