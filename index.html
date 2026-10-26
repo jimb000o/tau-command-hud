@@ -603,6 +603,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v12.1 · 26 Oct 2026</b>Transaction hovers cut to the essentials that the row does not already show; the feed holds still while you hover it.</li>
           <li><b>v12 · 26 Oct 2026</b>Everything explains itself: hover any transaction, rule-change card, shared rule, personal rule, block card, validator, stream row, the active consensus spec and the composite rule for a plain-language explanation with the live numbers. The whole “Rules in force now” panel opens the full chain state.</li>
           <li><b>v11 · 26 Oct 2026</b>Renamed to “Tau HUD”. Tau steps show their state: done (green), in progress (amber, gently pulsing, e.g. “collecting 2/3”), next (dimmed). Disclaimer added (experimental, no claim of accuracy, no advice). Tau step boxes given room. Any clipped text (step notes, hashes, rule names, transaction rows) shows in full as an overlay on hover, or on tap on phones. “How a rule changes” now encodes time as length (Few: compare on one scale): the Other-chains track spans the whole row with its slow, fragmenting steps (months of debate, a fork that can split the chain, manual upgrades), the Tau track is a short green segment followed by “done.”</li>
           <li><b>v10.1 · 26 Oct 2026</b>QR code next to the donation address (scan to donate). No more hexagons: the core is built from rings and the rule-holding accounts are ringed dots. “How a rule changes” laid out on one shared grid: both rows use the same four columns, each step has a one-line note, the clock sits with the row label, and the Tau row shows the live vote count and activation block.</li>
@@ -776,11 +777,11 @@ async function runVerdict(b, live) {
 /* ---------- plain-language explanations (hover overlays) ---------- */
 const EX = new Map(); let exSeq = 0;
 const exKey = fn => { const k = "x" + (++exSeq); EX.set(k, fn); if (EX.size > 4000) EX.delete(EX.keys().next().value); return k; };
-const policyMeaning = p => !p ? "no personal rule: every transfer is allowed" : ({
-  limit: `Spending limit: any single transfer above the limit is refused by the account’s own rule (${p.label}).`,
-  whitelist: `Recipient whitelist: the account can only pay one approved recipient (${p.label}); everything else is refused.`,
-  timelock: `Time-lock: the funds are frozen (${p.label}); until then every transfer is refused.`,
-  cosign: `Co-signature: large transfers need a second signature (${p.label}); without it they are refused.`,
+const policyMeaning = p => !p ? "No own rule: every transfer is allowed." : ({
+  limit: `Spending limit: ${p.label}; anything above is refused by the account itself.`,
+  whitelist: `Whitelist: ${p.label}; every other recipient is refused.`,
+  timelock: `Time-lock: ${p.label}; until then every transfer is refused.`,
+  cosign: `Co-signature: ${p.label}; without it the transfer is refused.`,
 }[p.kind] || p.label);
 const proposalMeaning = u => ({
   fee: `Every transaction would cost ${u.value} AGRS instead of ${S.fee}; the fee rule (o9) in the consensus spec changes.`,
@@ -790,30 +791,20 @@ const proposalMeaning = u => ({
 }[u.kind] || u.diff);
 function explainTx(t) {
   const N = S.validators.length, thr = N ? threshold() : "—";
-  const where = t.rejected ? "Status: refused, never entered a block." : t.block != null ? `Status: sealed in block #${t.block}.` : "Status: waiting in the mempool for the next block.";
-  const fee = t.fee ? `Fee ${t.fee} AGRS, paid to the block proposer.` : "No fee for governance transactions.";
-  let what;
+  const st = t.rejected ? "Refused at the door, never entered a block." : t.block != null ? `In block #${t.block}.` : "In the mempool, waiting for the next block.";
+  const pol = t.policy ? `Sender’s own rule: ${t.policy.label}.` : "Sender has no own rule.";
   switch (t.type) {
-    case "user_tx": case "retractable_transfer": {
-      const [f, to, a] = (t.transfers && t.transfers[0]) || [t.sender, t.to, t.amount];
-      what = `${t.type === "retractable_transfer" ? "Retractable transfer" : "Transfer"}: ${short(f)} sends ${fmt(a)} AGRS to ${short(to)}.` +
-        (t.type === "retractable_transfer" ? " The sender can pull it back until the release point." : "") +
-        ` Before admission the node ran the sender’s own Tau rule (o5): ${policyMeaning(t.policy)}` + (t.rejected ? " The rule said no, so the node refused the transfer, whoever holds the key." : "");
-      break; }
-    case "rule_deploy": what = `Own rule: ${short(t.sender)} programs its own money. ${policyMeaning(t.policy)} From now on every transfer from this account must pass it, even if the key is stolen.`; break;
-    case "rule_offer": what = `Rule sharing: ${short(t.sender)} offers a rule to ${short(t.to)}. ${policyMeaning(t.policy)} Nothing changes until the recipient reviews the conflict report and accepts.`; break;
-    case "rule_offer_accept": what = `Rule accepted: ${short(t.sender)} accepts “${t.offer ? t.offer.policy.name : "the rule"}” from ${short(t.offer ? t.offer.from : "")}. ${t.offer ? policyMeaning(t.offer.policy) : ""} The rule now binds the recipient’s account and the composite o5 program is rebuilt.`; break;
-    case "rule_offer_reject": what = `Rule rejected: ${short(t.sender)} declines “${t.offer ? t.offer.policy.name : "the rule"}” from ${short(t.offer ? t.offer.from : "")}. Nothing changes for either account.`; break;
-    case "consensus_rule_update": {
-      const u = t.update || t.proposal || {};
-      what = `Rule change proposed by validator ${short(t.sender)}: “${u.title}”. ${proposalMeaning(u)}` +
-        (t.rejected ? " The staging compile found it contradicts the live spec, so it was refused at the door and never reached the chain." :
-          t.update ? ` Compiled in isolation ✓. Needs ${thr} of ${N} validators; ${t.update.votes.size} agree so far. Activates at block #${t.update.activateAt} if agreed.` : ` It will be compiled in isolation first and needs ${thr} of ${N} validators.`);
-      break; }
-    case "consensus_rule_vote": what = `Vote: validator ${short(t.sender)} agrees to “${t.update ? t.update.title : "the open proposal"}”.` + (t.update ? ` ${t.update.votes.size} of ${thr} needed votes so far; it activates at block #${t.update.activateAt} once agreed.` : ""); break;
-    default: what = `${TYPE_LABEL[t.type] || t.type}${t.note ? ": " + t.note : ""}.`;
+    case "user_tx": case "retractable_transfer":
+      return (t.rejected ? `${pol} The rule said no, so the node refused it, whoever holds the key.` : `${pol} Checked and passed before admission.`) + (t.type === "retractable_transfer" ? " Can be pulled back until released." : "") + `\n${st}`;
+    case "rule_deploy": return `${policyMeaning(t.policy)} Binds the account from now on, even with a stolen key.\n${st}`;
+    case "rule_offer": return `${policyMeaning(t.policy)} Takes effect only if the recipient accepts after the conflict report.\n${st}`;
+    case "rule_offer_accept": return `${t.offer ? policyMeaning(t.offer.policy) : ""} Now binds the recipient; the composite o5 rule is rebuilt.\n${st}`;
+    case "rule_offer_reject": return `Declined after the conflict report. Nothing changes.\n${st}`;
+    case "consensus_rule_update": { const u = t.update || t.proposal || {};
+      return `${proposalMeaning(u)}\n` + (t.rejected ? "Contradicts the live spec: the staging compile failed." : t.update ? `Compiled in isolation ✓. ${t.update.votes.size}/${thr} validators agree; active at #${t.update.activateAt} if agreed.` : `Needs ${thr} of ${N} validators.`); }
+    case "consensus_rule_vote": return t.update ? `${t.update.votes.size}/${thr} needed votes; active at #${t.update.activateAt} once agreed.\n${st}` : st;
+    default: return st;
   }
-  return `${what}\n${where} ${fee} Id ${short(t.id)}.`;
 }
 function explainUpdate(u) {
   const N = S.validators.length, thr = N ? threshold() : "—";
@@ -857,6 +848,8 @@ const TYPE_LABEL = {
   rule_offer_reject: "✕ rule rejected", consensus_rule_update: "§ rule change proposed", consensus_rule_vote: "☑ vote",
   retractable_transfer: "↺ retractable transfer",
 };
+const feedHold = [];
+addEventListener("DOMContentLoaded", () => $("feed").addEventListener("mouseleave", () => { const feed = $("feed"); feedHold.splice(0).forEach(d => feed.prepend(d)); while (feed.children.length > 40) feed.lastChild.remove(); }));
 function txCard(t) {
   const d = document.createElement("div");
   const ruleish = /rule/.test(t.type);
@@ -868,10 +861,12 @@ function txCard(t) {
     : (t.note || `sender ${short(t.sender)}`);
   d.innerHTML = `<div class="top"><em>${esc(label)}</em><span>${short(t.id)} · fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
   d.dataset.ex = exKey(() => explainTx(t));
-  const feed = $("feed"); feed.prepend(d);
+  const feed = $("feed");
+  if (feed.matches(":hover")) { feedHold.push(d); return d; }
+  feed.prepend(d);
   while (feed.children.length > 40) feed.lastChild.remove();
 }
-function markMined(ids) { ids.forEach(id => { const el = $("tx_" + id.slice(0, 16)); if (el) el.classList.add("mined"); }); }
+function markMined(ids) { ids.forEach(id => { const k = "tx_" + id.slice(0, 16); const el = $(k) || feedHold.find(d => d.id === k); if (el) el.classList.add("mined"); }); }
 
 /* ---------- chain ribbon ---------- */
 function addBlockCard(b) {
@@ -1487,7 +1482,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v12`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v12.1`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
