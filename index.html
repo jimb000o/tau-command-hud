@@ -35,6 +35,7 @@
   --cyan-hi: #ffffff;
   --amber: #d6d6dc;         /* agreement, governance: light grey, no second hue */
   --ok: #39ff8a;            /* the one accent: phosphor green for data and truth */
+  --behind: #ffb13b;        /* one exception, Kilian 26 Oct: live but not synced with the real chain */
   --bad: #ff4d6d;
   --dim: #7f7f8a;
   --text: #ebebee;
@@ -179,8 +180,10 @@ body[data-view="simple"] .stack { grid-template-rows: auto minmax(0, 1fr); }
 .chip b { color: var(--cyan-hi); font-weight: 600; font-family: var(--mono); letter-spacing: 0; text-transform: none; margin-left: 6px; font-variant-numeric: tabular-nums; }
 .chip.live b { color: var(--ok); }
 .chip.warn b { color: var(--amber); }
+.chip.behind b { color: var(--behind); }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); margin-right: 6px; animation: blink 1.6s infinite; }
 .dot.sim { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.dot.behind { background: var(--behind); box-shadow: 0 0 8px var(--behind); }
 .dot.off { background: var(--bad); box-shadow: 0 0 8px var(--bad); animation: none; }
 .dot.none { background: var(--dim); box-shadow: none; animation: none; opacity: .6; }
 @keyframes blink { 50% { opacity: .35; } }
@@ -196,6 +199,8 @@ body[data-view="simple"] .stack { grid-template-rows: auto minmax(0, 1fr); }
 .seg button[aria-pressed="true"] { background: #fff; color: #000; }
 #liveDot { width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; background: var(--ok); box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 12px 2px rgba(57,255,138,.9); animation: livepulse 1.6s ease-in-out infinite; }
 .seg button[aria-pressed="true"] #liveDot { box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(57,255,138,.95); }
+#liveDot.behind { background: var(--behind); box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 12px 2px rgba(255,177,59,.85); }
+.seg button[aria-pressed="true"] #liveDot.behind { box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,177,59,.9); }
 #liveDot.off { background: #5a5a62; box-shadow: 0 0 0 2px rgba(0,0,0,.35); animation: none; opacity: 1; }
 .seg button[aria-pressed="true"] #liveDot.off { background: #9a9aa2; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
 @keyframes livepulse { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.18); filter: brightness(1.35); } }
@@ -694,6 +699,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v14.4 · 26 Oct 2026</b>A third live state: while the community node is connected but not synced with the real chain, the relay light and the mode chip turn amber and read “Live · Not synced”. Green and “Connected” only when the node follows the network’s tip.</li>
           <li><b>v14.3 · 26 Oct 2026</b>Simulation is the default view again for now: the community node sits on an orphan chain until IDNI publishes the current genesis, so its blocks are not the real tip. Live node and its light stay one click away; Live becomes the default again once the node follows the real chain.</li>
           <li><b>v14.2 · 26 Oct 2026</b>The relay light on “Live node” is bigger, ringed in black so it reads on the white selected state too, and pulses while the relay is up.</li>
           <li><b>v14.1 · 26 Oct 2026</b>Live by default: the page opens on the real Tau testnet through the community relay whenever it is running, and shows the simulation only when it is not. The green light on “Live node” says the relay is up, whichever view you are in. Live node now comes first in the switch, and your own choice is remembered on this device.</li>
@@ -885,8 +891,10 @@ async function runVerdict(b, live) {
 const PRESENCE = { url: "https://node.tauhud.com/status", n: null, timer: null };
 function setRelay(up) {
   PRESENCE.up = up;
-  $("liveDot").className = "dot " + (up ? "" : "off");
-  $("btnLive").title = up ? "The community relay is online: real testnet data." : "The community relay is not answering right now.";
+  const synced = PRESENCE.synced !== false;
+  $("liveDot").className = "dot " + (up ? (synced ? "" : "behind") : "off");
+  $("btnLive").title = !up ? "The community relay is not answering right now." : synced ? "The community relay is online and follows the real testnet chain." : "The community relay is online, but its node is not synced with the real chain yet.";
+  if (S.mode === "live" && LIVE.status) setMode("live", LIVE.status);
 }
 function setOnline(n) {
   PRESENCE.n = n;
@@ -901,7 +909,9 @@ async function pollOnline() {
     const j = await r.json();
     const n = Number(j.clients ?? j.online ?? j.presence);
     setOnline(Number.isFinite(n) ? n : null);
-    setRelay(!!j.upstream_connected && Number(j.height) > 0); PRESENCE.liveDefault = j.live_default === true;
+    PRESENCE.liveDefault = j.live_default === true;
+    PRESENCE.synced = j.live_default === true || (j.live_default === undefined && j.canonical_height === undefined) ? true : Number(j.canonical_height) > 0;
+    setRelay(!!j.upstream_connected && Number(j.height) > 0);
     if (PRESENCE.up) autoLive();
   } catch { setOnline(null); setRelay(false); }
 }
@@ -1474,12 +1484,16 @@ function setMode(mode, status) {
   S.mode = mode; document.body.dataset.mode = mode;
   $("btnSim").setAttribute("aria-pressed", mode === "sim");
   $("btnLive").setAttribute("aria-pressed", mode === "live");
-  $("modeDot").className = "dot " + (mode === "sim" ? "sim" : status === "Connected" ? "" : "off");
-  $("modeTxt").textContent = mode === "sim" ? "Simulation" : "Live · " + status;
-  $("chipMode").className = "chip " + (mode === "sim" ? "warn" : status === "Connected" ? "live" : "warn");
+  LIVE.status = status;
+  const synced = status === "Connected" && PRESENCE.synced !== false, behind = status === "Connected" && !synced;
+  $("modeDot").className = "dot " + (mode === "sim" ? "sim" : synced ? "" : behind ? "behind" : "off");
+  $("modeTxt").textContent = mode === "sim" ? "Simulation" : "Live · " + (behind ? "Not synced" : status);
+  $("chipMode").className = "chip " + (mode === "sim" ? "warn" : synced ? "live" : behind ? "behind" : "warn");
+  $("chipMode").dataset.full = mode === "sim" ? "Simulation: invented but protocol-true activity, no real chain data." : behind ? "Connected to the community node, but the node does not follow the real testnet chain yet (it holds blocks the network does not accept). Real transactions, but not the network’s tip." : synced ? "Connected to the community node, which follows the real testnet chain." : "No connection to a node.";
   $("hint").textContent = mode === "sim"
     ? "Simulation follows the documented protocol: validators vote on rule changes, accounts write and share their own Tau rules, every block is checked by Tau. Switch to Live node to read the real testnet through the community relay, or your own node."
     : status === "Offline" ? "Not connected. The community relay may be down, or for your own node: 1) WebSocket port 65433 open, 2) TAU_WS_ALLOWED_ORIGINS includes this page’s origin, 3) address above correct, then Connect."
+    : behind ? "Connected, but the community node is not synced with the real chain yet: it sits on blocks the network does not accept until the current genesis is published. What you see is real node data, not the network’s tip."
     : "Reads the node every 3 s (getblocks, getmempool) and governance every 15 s; the relay pushes new blocks as they arrive.";
   $("hint").className = "hint" + (mode === "live" && status === "Offline" ? " err" : "");
 }
