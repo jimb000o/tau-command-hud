@@ -319,15 +319,15 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .contrast .who { display: grid; align-content: center; gap: 2px; font: 600 10px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .contrast .who em { font: 10.5px var(--mono); letter-spacing: 0; text-transform: none; font-style: normal; color: var(--dim); }
 .contrast .crow.tau .who, .contrast .crow.tau .who em { color: var(--ok); }
-.contrast .track { display: flex; gap: 3px; min-width: 0; }
+.contrast .track { display: grid; grid-template-columns: 1fr 1.6fr 1fr 1.1fr 1.2fr; gap: 3px; min-width: 0; }
 .contrast .seg { display: grid; align-content: center; gap: 2px; padding: 6px 6px; text-align: center; min-width: 0; border: 1px dashed var(--hair); border-radius: 3px; background: rgba(255,255,255,.02); font: 500 11px var(--mono); color: var(--dim); }
 .contrast .seg b { font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.contrast .seg small { font: 9.5px var(--mono); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contrast .seg small { font: 9.5px var(--mono); color: var(--dim); }
 .contrast .seg.fork { border-color: rgba(255,77,109,.55); background: repeating-linear-gradient(135deg, rgba(255,77,109,.10) 0 6px, rgba(255,77,109,.02) 6px 12px); }
 .contrast .seg.fork b { color: var(--bad); }
 .contrast .crow:not(.tau) .track { opacity: .8; }
 .contrast .crow.tau .track { align-items: stretch; }
-.contrast .tau-seg { flex: 0 0 70%; display: flex; gap: 5px; padding: 5px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
+.contrast .tau-seg { grid-column: 1 / 4; display: flex; gap: 5px; padding: 5px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
 .contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 6px 4px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 500 10px var(--mono); letter-spacing: 0; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .contrast .st small { font: 8.5px var(--mono); letter-spacing: -.01em; color: var(--ok); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .contrast .st { color: var(--dim); border-style: dashed; }
@@ -341,7 +341,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .contrast .tau-seg.complete .st.done small { color: var(--ok); }
 @keyframes complete { 0% { box-shadow: 0 0 0 1px var(--ok), 0 0 0 rgba(57,255,138,0), inset 0 0 0 rgba(57,255,138,0); } 20% { box-shadow: 0 0 0 2px var(--ok), 0 0 40px rgba(57,255,138,.6), inset 0 0 30px rgba(57,255,138,.3); } }
 @keyframes working { 50% { box-shadow: 0 0 0 4px rgba(227,181,90,0), 0 0 16px rgba(227,181,90,.55); } }
-.contrast .rest { flex: 1 1 auto; display: grid; align-content: center; padding: 6px 8px; font: 10px/1.4 var(--mono); color: var(--dim); min-width: 0; }
+.contrast .rest { grid-column: 4 / 6; display: grid; align-content: center; padding: 6px 8px; font: 10px/1.4 var(--mono); color: var(--dim); min-width: 0; }
 .contrast .rest b { color: var(--ok); font-weight: 500; }
 .contrast .cap { font: 10.5px/1.5 var(--mono); color: var(--dim); }
 .contrast .cap b { color: var(--text); font-weight: 500; }
@@ -435,11 +435,10 @@ a.btn { text-decoration: none; display: inline-block; }
   .core canvas { max-width: 440px; }
   /* the comparison strip in a half-width column: every word readable, nothing clipped */
   .contrast .crow { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-  .contrast .track { flex-wrap: wrap; }
-  .contrast .crow:not(.tau) .seg { flex: 1 1 calc(33% - 3px); }
+  .contrast .track { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .contrast .seg b, .contrast .seg small { white-space: normal; overflow: visible; text-overflow: clip; }
-  .contrast .tau-seg { flex-basis: 100%; }
-  .contrast .rest { flex: 1 1 100%; padding: 4px 2px; }
+  .contrast .tau-seg { grid-column: 1 / -1; }
+  .contrast .rest { grid-column: 1 / -1; padding: 4px 2px; }
 }
 @media (max-width: 720px) {
   body { padding-left: 12px; padding-right: 12px; }
@@ -583,13 +582,13 @@ a.btn { text-decoration: none; display: inline-block; }
       <h2>Rule changes by agreement <small id="govCount">0 open</small><button class="info" type="button" aria-label="What is this?" data-tip="Validators can propose a change to the consensus rules or validator set. The proposal is compiled in isolation first; one that does not compile is refused at the door. It activates only after a quorum agrees and only at a future height, never in the same block. There is no admin key that can skip this.">i</button></h2>
       <p class="sub">proposed → checked → agreed → scheduled → active</p>
       <div class="contrast" aria-label="How a rule changes: other chains versus Tau">
-        <div class="hd">How a rule changes <span>length = time it takes</span></div>
+        <div class="hd">How a rule changes <span>what each chain has to do</span></div>
         <div class="crow"><span class="who">Other chains<em>months, if ever</em></span><div class="track">
-          <span class="seg" style="flex:1.5 1 0" data-full="Someone writes a proposal in a forum"><b>propose</b></span>
-          <span class="seg" style="flex:2.6 1 0" data-full="Months of debate: factions form, forums and social media fill with arguments, and nothing is binding."><b>debate</b><small>months · factions</small></span>
-          <span class="seg" style="flex:1 1 0" data-full="Signalling votes with no binding effect"><b>vote</b></span>
-          <span class="seg fork" style="flex:1.6 1 0" data-full="A hard fork: nodes that disagree keep running the old rules, and the chain can split in two."><b>⑂ fork</b><small>splits</small></span>
-          <span class="seg" style="flex:1.8 1 0" data-full="Every node operator must upgrade their software by hand; whoever does not is left on the old chain."><b>upgrade</b><small>by hand</small></span>
+          <span class="seg" data-full="Someone writes a proposal in a forum"><b>propose</b></span>
+          <span class="seg" data-full="Months of debate: factions form, forums and social media fill with arguments, and nothing is binding."><b>debate</b><small>months · factions</small></span>
+          <span class="seg" data-full="Signalling votes with no binding effect"><b>vote</b></span>
+          <span class="seg fork" data-full="A hard fork: nodes that disagree keep running the old rules, and the chain can split in two."><b>⑂ fork</b><small>splits</small></span>
+          <span class="seg" data-full="Every node operator must upgrade their software by hand; whoever does not is left on the old chain."><b>upgrade</b><small>by hand</small></span>
         </div></div>
         <div class="crow tau"><span class="who">Tau<em>~1 minute</em></span><div class="track">
           <div class="tau-seg"><span class="st" id="stPropose" data-full="Propose: any active validator sends a consensus_rule_update transaction with the new rule text or validator patch. It is an ordinary transaction, visible to everyone, with an activation height a few blocks ahead.">propose<small id="stProposeS">—</small></span><span class="st" id="stCheck" data-full="Checked: before the proposal is even admitted, the node compiles the proposed rule on its own against the active spec. If it does not compile or contradicts the live rules, it is refused at the door and never enters the chain.">checked<small id="stCheckS">—</small></span><span class="st" id="stAgree" data-full="Agreed: validators vote with consensus_rule_vote transactions. The proposal is scheduled once the quorum policy is met, for example 2 of 3 validators. The quorum rule itself is part of the chain state, so it cannot be changed quietly.">agreed<small id="stAgreeS">—</small></span><span class="st" id="stActive" data-full="Active: at the scheduled block height the node amends the spec and the spec revision counts up. Every node applies the new rules automatically; nobody upgrades software, nothing forks.">active<small id="stActiveS">—</small></span></div>
@@ -667,6 +666,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v13.4 · 26 Oct 2026</b>“How a rule changes”: one proposal at a time, so every run starts at propose and each step lights up in real time. The Tau row now ends under “vote”; fork, splits and upgrading by hand belong to the other chains only. The “length = time” caption is gone.</li>
           <li><b>v13.3 · 26 Oct 2026</b>New block cards appear the moment a block is sealed, also while the pointer rests on the strip (before, the strip waited until you moved away).</li>
           <li><b>v13.2 · 26 Oct 2026</b>Mouse wheel over the block strip steps through the chain: down goes back in time, up toward the newest block, the detail below follows. “n online” chip in the status row: how many people have Tau HUD open right now, with a green light when anyone is there. Counted by the community relay, no analytics; shows “—” until the relay is live.</li>
           <li><b>v13.1 · 26 Oct 2026</b>Tau HUD has a mark: a pulse inside the ring of its rules. It beats once per block in the header, in the favicon (animated SVG, and a canvas-drawn beat where browsers show SVG favicons static) and on the share preview.</li>
@@ -1230,7 +1230,8 @@ function simTx() {
       }
     }
   }
-  if (!open && r < 0.10 && S.height > 0) {                  // a validator proposes a change to the rules
+  const busy = S.pending || S.updates.some(u => u.status === "voting" || u.status === "scheduled");
+  if (!busy && r < 0.10 && S.height > 0) {                  // a validator proposes a change to the rules; one at a time, so each step can be seen
     const p = pick(PROPOSALS)(), proposer = pick(S.validators), id = hex(64);
     if (Math.random() < 0.18) {                              // the staging compile refuses a contradictory spec
       return admit({ id: hex(64), type: "consensus_rule_update", kind: "gov", sender: proposer, fee: 0, rejected: "refused · spec does not compile", proposal: p,
