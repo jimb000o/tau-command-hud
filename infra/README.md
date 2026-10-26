@@ -8,7 +8,8 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
 ```
 
 - **tau-node**: an unmodified [IDNI/tau-testnet](https://github.com/IDNI/tau-testnet) read node
-  (`Dockerfile.standalone`, pinned commit, mining off) that joins `tau-testnet-v2` through the
+  (pinned commit, mining off), built by `node/Dockerfile`, which is upstream's
+  `Dockerfile.standalone` minus a dependency-prefetch step that fails at the pinned tau-lang commit. It joins `tau-testnet-v2` through the
   public bootnode. Its RPC (65432) and WebSocket (65433) ports are never published.
 - **relay** (`relay/relay.py`): holds one connection to the node, polls it on a fixed
   schedule that stays under the node's own rate limits, and serves every visitor from that
