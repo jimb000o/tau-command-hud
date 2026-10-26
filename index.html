@@ -689,6 +689,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v13.7 · 26 Oct 2026</b>Block-card and validator hovers cut to the essentials the card does not already show.</li>
           <li><b>v13.6 · 26 Oct 2026</b>The step row resets in the same instant the activating block is sealed: one short green flash with the block, then empty, ready for the next proposal.</li>
           <li><b>v13.5 · 26 Oct 2026</b>The “block accepted” moment: the seal stamps down, the check draws itself, a ring rings out and the panel edge glows for a second. Once a rule change is absorbed into the network, the step boxes reset; the next proposal starts from an empty row.</li>
           <li><b>v13.4 · 26 Oct 2026</b>“How a rule changes”: one proposal at a time, so every run starts at propose and each step lights up in real time. The Tau row now ends under “vote”; fork, splits and upgrading by hand belong to the other chains only. The “length = time” caption is gone.</li>
@@ -974,11 +975,15 @@ function explainClause(acc, p) {
   return `${policyMeaning(p)}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
 }
 function explainBlock(b) {
-  const sn = b.snap || {}, rules = b.txs.filter(t => /rule/.test(t.type)).length, gov = b.txs.filter(t => t.kind === "gov").length;
-  if (!b.n) return "Genesis block #0: the starting state of the chain. No transactions, spec revision 1, the initial validator set. Everything after it is judged by the rules in force at that height.";
-  return `Block #${b.n}, sealed by validator ${short(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${b.txs.length} transactions: ${rules} rule work, ${gov} governance, ${b.txs.length - rules - gov} transfers.` +
-    (b.amended ? ` A rule change agreed by the validators took effect in this block: the spec is now revision ${b.amended}.` : " No rule change took effect here.") +
-    ` The block was judged by the Tau spec: o6 (valid) = host signature check, o7 (proposer eligible) = 1.\nClick to inspect it below.`;
+  if (!b.n) return "Genesis: the starting state, spec revision 1, no transactions.";
+  const sn = b.snap || {}, rules = b.txs.filter(t => /rule/.test(t.type)).length, gov = b.txs.filter(t => t.kind === "gov").length, plain = b.txs.length - rules - gov;
+  const mix = [plain && `${plain} transfer${plain === 1 ? "" : "s"}`, rules && `${rules} rule work`, gov && `${gov} governance`].filter(Boolean).join(", ") || "no transactions";
+  return `${mix}; judged under spec revision ${sn.specRev ?? "—"}, signature verified, proposer eligible.` + (b.amended ? `\nA rule change took effect here: spec is now revision ${b.amended}.` : "") + "\nClick to inspect.";
+}
+function explainValidator(v, i) {
+  const open = S.updates.find(u => u.status === "voting" || u.status === "scheduled");
+  const role = i === S.proposerIdx ? "Sealing the next block." : "Seals blocks in turn, votes on rule changes.";
+  return role + (open ? `\n“${open.title}”: ${open.votes.has(v) ? "agreed ✓" : "not voted yet"}.` : "\nNo open proposal to vote on.");
 }
 function explainSpec() {
   const active = S.updates.filter(u => u.status === "active").length;
