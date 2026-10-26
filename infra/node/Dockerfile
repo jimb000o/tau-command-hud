@@ -17,7 +17,7 @@ FROM python:3.14-trixie AS tau-builder
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TAU_LANG_REPO=https://github.com/IDNI/tau-lang.git
 ARG TAU_LANG_REF=c3ea334cd1e6612930ea9f404933211858f0009f
-ARG TAU_BUILD_JOBS=2
+ARG TAU_BUILD_JOBS=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash bison build-essential ca-certificates ccache clang cmake curl git \
@@ -47,6 +47,11 @@ WORKDIR /app/tau-lang
 # bindings/python/nanobind/CMakeLists.txt); tau-testnet needs 3.14, so the
 # version is passed explicitly, as the tau-testnet README does.
 #
+# The node uses tau only through the Python module (tau_native), so the tau
+# executable and its REPL are left out: one fewer multi-GB link on a 4 GB box.
+# One job by default: a single tau translation unit can take over 3 GB; two in
+# parallel froze a 2 vCPU / 4 GB server even with swap.
+#
 # The dependency store (/root/.tau: cvc5, Boost, Spot) takes most of the build
 # hour. It lives in a BuildKit cache mount so a failure later in this step, or
 # a change to the tau-lang ref, never recompiles it; a copy is taken at the end
@@ -56,7 +61,7 @@ RUN --mount=type=cache,target=/root/.tau,id=tau-store \
     set -eux; \
     ./dev build Release \
       -DTAU_BUILD_JOBS="${TAU_BUILD_JOBS}" \
-      -DTAU_BUILD_EXECUTABLE=ON \
+      -DTAU_BUILD_EXECUTABLE=OFF \
       -DTAU_BUILD_BINDING_PYTHON_NANOBIND=ON \
       -DTAU_PYTHON_VERSION=3.14 \
       -DPython_EXECUTABLE=/opt/tau-build-venv/bin/python \
