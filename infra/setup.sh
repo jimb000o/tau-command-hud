@@ -28,11 +28,20 @@ if ! command -v docker >/dev/null; then
 fi
 systemctl enable --now docker
 
-if ! swapon --show | grep -q .; then
-  echo "==> 4 GB swap (compiling tau-lang needs more than 4 GB RAM at peak)"
-  fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+# 8 GB swap: a tau-lang translation unit can need more than 3 GB, and a 4 GB
+# box with 4 GB swap still froze. A smaller /swapfile from an earlier run is
+# grown in place.
+SWAP_GB=8
+swap_bytes=$(stat -c %s /swapfile 2>/dev/null || echo 0)
+if [[ $swap_bytes -lt $((SWAP_GB * 1024 * 1024 * 1024)) ]]; then
+  echo "==> ${SWAP_GB} GB swap"
+  swapoff /swapfile 2>/dev/null || true
+  rm -f /swapfile
+  fallocate -l "${SWAP_GB}G" /swapfile && chmod 600 /swapfile && mkswap -q /swapfile && swapon /swapfile
   grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 fi
+# Compile jobs: the build thrashes with 2 on 4 GB, whatever .env says.
+export TAU_BUILD_JOBS="${TAU_BUILD_JOBS:-1}"
 
 echo "==> Firewall: SSH, HTTP(S), Tau P2P"
 ufw allow OpenSSH >/dev/null
@@ -49,7 +58,7 @@ if [[ ! -f .env ]]; then
   sed -i "s/^RELAY_DOMAIN=.*/RELAY_DOMAIN=${RELAY_DOMAIN}/" .env
 fi
 
-echo "==> Building and starting (first build compiles tau-lang: 30-90 minutes)"
+echo "==> Building and starting (first build compiles tau-lang: 1-2 hours with ${TAU_BUILD_JOBS} job)"
 docker compose up -d --build
 
 IP=$(curl -fsS4 https://ifconfig.me || echo "<server IP>")
