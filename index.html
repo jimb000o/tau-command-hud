@@ -194,8 +194,11 @@ body[data-view="simple"] .stack { grid-template-rows: auto minmax(0, 1fr); }
   background: transparent; color: var(--dim); border: 0; padding: 7px 12px; cursor: pointer;
 }
 .seg button[aria-pressed="true"] { background: #fff; color: #000; }
-#liveDot { vertical-align: 0; }
-#liveDot.off { background: var(--dim); box-shadow: none; animation: none; opacity: .6; }
+#liveDot { width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; background: var(--ok); box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 12px 2px rgba(57,255,138,.9); animation: livepulse 1.6s ease-in-out infinite; }
+.seg button[aria-pressed="true"] #liveDot { box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(57,255,138,.95); }
+#liveDot.off { background: #5a5a62; box-shadow: 0 0 0 2px rgba(0,0,0,.35); animation: none; opacity: 1; }
+.seg button[aria-pressed="true"] #liveDot.off { background: #9a9aa2; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
+@keyframes livepulse { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.18); filter: brightness(1.35); } }
 .btn { border: 1px solid transparent; border-radius: 999px; color: #fff; background: linear-gradient(var(--deck), var(--deck)) padding-box, var(--brand) border-box; }
 .btn:hover { background: #fff; color: #000; }
 .btn:hover, .seg button:hover { color: var(--cyan-hi); }
@@ -691,6 +694,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v14.2 · 26 Oct 2026</b>The relay light on “Live node” is bigger, ringed in black so it reads on the white selected state too, and pulses while the relay is up.</li>
           <li><b>v14.1 · 26 Oct 2026</b>Live by default: the page opens on the real Tau testnet through the community relay whenever it is running, and shows the simulation only when it is not. The green light on “Live node” says the relay is up, whichever view you are in. Live node now comes first in the switch, and your own choice is remembered on this device.</li>
           <li><b>v14.0 · 26 Oct 2026</b>Live node reachable: the default address is now the community relay wss://node.tauhud.com in front of a Tau testnet node run for this page. Simulation stays the default view until the node has caught up with the chain. The “online” chip now counts every open tab, simulation or live, through a quiet presence socket.</li>
           <li><b>v13.9 · 26 Oct 2026</b>Lines to the core now mean something: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle. Said in the hover line and in the panel’s “i”.</li>
