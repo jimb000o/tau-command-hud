@@ -157,7 +157,9 @@ body[data-view="simple"] .stack { grid-template-rows: auto minmax(0, 1fr); }
 .dot.off { background: var(--bad); box-shadow: 0 0 8px var(--bad); animation: none; }
 @keyframes blink { 50% { opacity: .35; } }
 
-.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex: 1 1 60%; }
+.viewctl { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.viewctl span { font: 500 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
 .seg { display: inline-flex; border: 1px solid var(--hair); border-radius: 999px; overflow: hidden; }
 .seg button, .btn {
   font: 600 11.5px var(--display); letter-spacing: .12em; text-transform: uppercase;
@@ -407,15 +409,18 @@ a.btn { text-decoration: none; display: inline-block; }
       <button class="btn" id="btnConnect">Connect</button>
       <button class="btn ghost" type="button" data-open="mAbout">About</button>
       <button class="btn ghost" type="button" data-open="mFeedback">Updates</button>
-      <div class="seg" role="group" aria-label="Detail level">
-        <button id="btnSimple" aria-pressed="false">Simple</button>
-        <button id="btnTech" aria-pressed="true">Technical</button>
-      </div>
       <button class="btn state" type="button" id="btnState2">Chain state</button>
       <button class="btn ghost gold" type="button" id="btnTour">Guided tour</button>
       <a class="btn ghost" href="https://tau.net" target="_blank" rel="noopener">What is Tau?</a>
       <button class="btn ghost" type="button" id="btnRain" aria-pressed="true" title="Toggle the glyph rain">Rain</button>
       <span class="hint" id="hint" hidden></span>
+    </div>
+    <div class="viewctl">
+      <span>View</span>
+      <div class="seg" role="group" aria-label="Detail level">
+        <button id="btnSimple" aria-pressed="false">Simple</button>
+        <button id="btnTech" aria-pressed="true">Technical</button>
+      </div>
     </div>
   </header>
 
@@ -544,6 +549,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v9.1 · 26 Oct 2026</b>Simple/Technical switch moved to the right side of the header, under the status chips.</li>
           <li><b>v9 · 26 Oct 2026</b>Calmer: blocks every ~8 s. A block’s details now open inline under the block cards instead of a pop-up (the newest block is shown until you pick one). New always-visible panel “Rules in force now” on the right; the node log moved below it and only shows in the Technical view. Block-card footer no longer wraps.</li>
           <li><b>v8 · 26 Oct 2026</b>From a simulated study with 100 reader personas: simulation is now unmissable (banner, watermark in the core, SIM tag on every block card), a Simple/Technical switch with plain-language stream labels, a 5-step tour that follows one rule from proposal to active, clickable blocks with a full detail view (rules in force and agreed at that block), a “Chain state” view of every rule in force right now, no more clipped values, a compact core on laptops, live-node fields only in Live mode with a checklist on failure, a “What is Tau?” link, symbols per transaction type, τ explained, and a rain switch.</li>
           <li><b>v7 · 26 Oct 2026</b>Wording and hierarchy pass guided by the community’s design library (Made to Stick, Information Dashboard Design, Refactoring UI, Don’t Make Me Think, Albers): one core sentence up top, plain-language panel titles, every number with its context (“7 of 9 needed”), refusals marked ✕ as well as red, stream codes moved into the hover notes, quieter glyph rain.</li>
