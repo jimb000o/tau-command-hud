@@ -244,10 +244,16 @@ const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
 const REPO = "IDNI/tau-testnet", OURS = "https://github.com/jimb000o/tau-command-hud";
 const pr = n => `<a href="${OURS}/pull/${n}" target="_blank" rel="noopener">PR #${n}</a>`;
 const SAMPLE = new URLSearchParams(location.search).has("sample");
-const CACHE_KEY = "tauhud-findings-v2", CACHE_MS = 10 * 60 * 1000;
+const CACHE_KEY = "tauhud-findings-v3", CACHE_MS = 10 * 60 * 1000;
 
 // Issues we filed with IDNI. Add a new one here; title and status come from GitHub.
 const FINDINGS = [
+  {
+    n: 83, kind: "request", title: "Testnet Alpha: ideas to make governance visible (real rule changes, shorter activation, refusals, second validator)",
+    found: "Not a bug: the live chain has seen three proposals so far, two of them changing nothing, and each takes 3 to 4 days to apply. We suggested real rule changes, shorter activation, visible refusals and a second validator.",
+    impact: "Visitors could watch a rule go from proposal to law within hours and see what gets refused, the parts that make Tau different.",
+    ours: "We offered to send test traffic ourselves, within limits IDNI sets, so the testnet is not spammed.",
+  },
   {
     n: 82, title: "Join profile gaps seen by a fresh read node: open admission, advertised 0.0.0.0 address, restarts on the same genesis",
     found: "Missing from the join profile: the network counts every account's vote, the bootnode advertises 0.0.0.0, and restarts on the same genesis come unannounced.",
@@ -334,11 +340,12 @@ async function fetchIssues() {
 function sampleIssues() {
   const d = n => new Date(Date.now() - n * 3600e3).toISOString();
   return {
-    82: { title: FINDINGS[0].title, state: "open", comments: 0, created_at: d(0.3), updated_at: d(0.3), labels: [] },
-    81: { title: FINDINGS[1].title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
-    80: { title: FINDINGS[2].title, state: "open", comments: 0, created_at: d(2), updated_at: d(2), labels: [] },
-    79: { title: FINDINGS[3].title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
-    78: { title: FINDINGS[4].title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
+    83: { title: FINDINGS[0].title, state: "open", comments: 0, created_at: d(0.1), updated_at: d(0.1), labels: [] },
+    82: { title: FINDINGS[1].title, state: "open", comments: 0, created_at: d(0.3), updated_at: d(0.3), labels: [] },
+    81: { title: FINDINGS[2].title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
+    80: { title: FINDINGS[3].title, state: "open", comments: 0, created_at: d(2), updated_at: d(2), labels: [] },
+    79: { title: FINDINGS[4].title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
+    78: { title: FINDINGS[5].title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
   };
 }
 function status(i, f) {
