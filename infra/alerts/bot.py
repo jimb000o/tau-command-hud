@@ -537,6 +537,8 @@ class Bot:
         chat, user = msg.get("chat") or {}, msg.get("from") or {}
         if not chat or user.get("is_bot") or self.channel_chat(chat):
             return
+        if msg.get("is_automatic_forward") or msg.get("sender_chat"):
+            return  # a channel post copied into its discussion group, or someone writing as a channel
         if time.time() - float(msg.get("date") or 0) > MAX_AGE:
             return  # asked while the bot was down: an old answer would only confuse
         private = chat.get("type") == "private"

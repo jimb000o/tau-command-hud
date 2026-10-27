@@ -266,6 +266,11 @@ gets 5 questions in a row and one more every 8 s (`BOT_USER_BURST`,
 while the bot was down for more than 2 minutes are skipped. Telegram's command menu is
 set on start.
 
+In the channel: a channel has no member messages, so link a discussion group to it
+(channel settings → Discussion) and add the bot to that group as a member. People then
+ask with commands under any post or in the group; the channel's own posts copied into
+the group are ignored. Privacy mode can stay on (it lets commands and mentions through).
+
 - `docker compose run --rm bot python bot.py --ask "/proposals"` prints one answer and sends nothing.
 - `docker compose logs bot | grep answering` shows the bot's username.
 
