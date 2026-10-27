@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.4"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.5"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';
@@ -37,7 +37,7 @@
   const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", chronicle: "learn", findings: "learn", status: "learn", playground: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
-    telegram: "Telegram channel @tauHUDcom: every new proposal, agreement and activation on the testnet, plus HUD updates. Opens Telegram.",
+    telegram: "Join @tauHUDcom on Telegram: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Opens Telegram.",
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
     gear: "Settings: node address and Connect, background rain.",
     gearSub: "Settings: which node this page reads, guided tour, about.",
@@ -233,7 +233,7 @@
     if (!state) { state = el("a", "pill primary", "Chain state"); state.href = ROOT + "#chain-state"; }
     state.classList.add("pill", "primary"); tip(state, TIPS.state);
     left.append(state);
-    const tg = el("a", "pill tg", `${PLANE}<span>Telegram</span>`); tg.href = TELEGRAM; tg.target = "_blank"; tg.rel = "noopener"; tg.setAttribute("aria-label", "Telegram channel tauHUDcom"); tip(tg, TIPS.telegram);
+    const tg = el("a", "pill tg", `${PLANE}<span>Telegram alerts</span>`); tg.href = TELEGRAM; tg.target = "_blank"; tg.rel = "noopener"; tg.setAttribute("aria-label", "Telegram channel tauHUDcom"); tip(tg, TIPS.telegram);
     right.append(tg);
     let upd = slots.updates;
     if (!upd) { upd = el("a", "", "Updates"); upd.href = ROOT + "#updates"; }
@@ -265,7 +265,7 @@
       sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", sec.t);
       sh.append(el("div", "grab"), el("h4", "", esc(sec.t)));
       sec.items.forEach(k => sh.append(item(k, page, isHud)));
-      if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram <span class="ext">↗</span></b><span>Channel @tauHUDcom: proposals, agreements, activations and HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t); }
+      if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram alerts <span class="ext">↗</span></b><span>@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t); }
       bg.addEventListener("click", closeAll);
       b.addEventListener("click", () => { const open = sh.hidden; closeAll(); if (open) { bg.hidden = sh.hidden = false; b.setAttribute("aria-expanded", "true"); openEl = sh; } });
       bar.append(b); sheets.push(bg, sh);
