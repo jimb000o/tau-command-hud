@@ -13,7 +13,7 @@ import sys
 import time
 
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
-                  TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4")
+                  TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 sys.path.insert(0, os.path.dirname(__file__))
 
 from websockets.asyncio.client import connect  # noqa: E402
@@ -191,6 +191,7 @@ async def main():
         check(raw.startswith("HTTP/1.1 200") and body["upstream_connected"] and body["height"] >= 1 and body["online"] == 0, f"/health {body}")
         check(body["canonical_height"] >= 1 and body["live_default"] is True, f"/health live_default follows canonical head {body}")
         check(body["tip_height"] == body["canonical_height"] + 5, f"/health tip_height from network_tip {body}")
+        check(body["open_governance_admission"] is True, f"/health open_governance_admission from env {body}")
 
         # keep polling for a while; the node's heavy limit must never trip
         await asyncio.sleep(8)

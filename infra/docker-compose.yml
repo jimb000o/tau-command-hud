@@ -43,6 +43,7 @@ services:
       UPSTREAM_URL: ws://tau-node:65433
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       TRUST_PROXY: "1"
+      TAU_GOVERNANCE_OPEN_ADMISSION: "true"  # keep equal to the node setting above
     depends_on: [tau-node]
     restart: unless-stopped
     logging: *logging

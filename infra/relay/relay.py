@@ -49,6 +49,9 @@ ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
 # Caddy overwrites X-Forwarded-For with the real client address, so the relay
 # may trust it when it is only reachable through Caddy.
 TRUST_PROXY = os.environ.get("TRUST_PROXY", "1") == "1"
+# Mirrors the node's TAU_GOVERNANCE_OPEN_ADMISSION (docker-compose sets both);
+# the node does not expose it over RPC, so the page learns it from here.
+OPEN_ADMISSION = os.environ.get("TAU_GOVERNANCE_OPEN_ADMISSION", "false").lower() in ("1", "true", "yes")
 
 MAX_CLIENTS = _env_int("MAX_CLIENTS", 500)
 MAX_PER_IP = _env_int("MAX_PER_IP", 8)
@@ -352,6 +355,8 @@ class Relay:
             "tip_height": self.tip_height(),
             # the page may make Live the default view only while the node follows a real chain
             "live_default": bool(self.upstream.connected.is_set() and (self.canonical_height() or 0) > 0),
+            # true: any account's vote counts; false: only active validators may vote
+            "open_governance_admission": OPEN_ADMISSION,
             "total_blocks": self.total_blocks,
             "clients": len(self.clients),
             "online": len(self.clients),
