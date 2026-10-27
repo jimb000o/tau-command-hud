@@ -14,7 +14,8 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
 - **relay** (`relay/relay.py`): holds one connection to the node, polls it on a fixed
   schedule that stays under the node's own rate limits, and serves every visitor from that
   cache. New blocks, mempool and governance changes are pushed to visitors as they happen.
-- **Caddy**: HTTPS with automatic Let's Encrypt certificates.
+- **Caddy**: HTTPS with automatic Let's Encrypt certificates; also serves the tracker's `proposals.json` and `feed.xml`.
+- **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect.
 
 ## Server
 
@@ -134,6 +135,45 @@ still refuses every write command, and the node's RPC stays internal, so the sea
 only blocks the node builds itself. Turn it off with `TAU_VALIDATOR=false` and the same
 `up -d`.
 
+## Proposal tracker and alerts
+
+`alerts/alerts.py` turns governance into news. It reads the chain from the relay over the
+same read-only WebSocket protocol as the pages (`getblockrange`, `getgovernance`), replays
+it block by block like history/ does (`consensus/governance.py` at the pinned commit: update
+ids are BLAKE3 over the node's serialization), and emits one event each when a rule change
+is **proposed**, **agreed** (quorum reached), **active** (its activation block arrived) or
+**dropped** (deadline passed with too few votes), plus **restart** when block 1 changes.
+
+- `https://node.tauhud.com/proposals.json`: every proposal with its votes and status, the
+  rules in force and the last 100 events. Read by tauhud.com/proposals/.
+- `https://node.tauhud.com/feed.xml`: Atom feed of the same events.
+- Telegram and X: each event as a post, when the keys are in `.env`. Without keys that
+  channel is off; the feed and the page work regardless.
+
+What it finds on its very first run is history and is never posted, and neither is an
+event whose block is older than 3 hours (`POST_MAX_AGE_SECONDS`), so a fresh volume or a
+long outage does not flood the channel. A channel switched on later starts from that
+moment. State (seen events, what went where) lives in the `alerts_state` volume, so
+nothing is posted twice across restarts. Failed posts are retried up to 8 times with
+back-off; the token is never logged.
+
+**Telegram** (channel `@tauHUDcom`):
+1. In Telegram, open @BotFather, send `/newbot`, pick a name and a username ending in
+   `bot`. It answers with a token.
+2. Channel → Administrators → Add admin → the bot, with "Post messages".
+3. On the server: `cd /opt/tau-command-hud/infra && nano .env`, add
+   `TELEGRAM_BOT_TOKEN=<token>` (and `TELEGRAM_CHAT_ID=@tauHUDcom` if the channel has
+   another name), save, then `docker compose up -d alerts`.
+4. Test: `docker compose run --rm alerts python alerts.py --test` posts one message.
+
+**X** (optional): an app at developer.x.com with "Read and write" user authentication,
+then its API key and secret and the account's access token and secret (generated after
+switching to Read and write) as `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`,
+`X_ACCESS_SECRET` in `.env`, and `X_PROFILE_URL=https://x.com/<handle>` for the page's
+follow link. Same `up -d alerts` and `--test`.
+
+Logs: `docker compose logs -f alerts`.
+
 ## Tests
 
 ```bash
@@ -148,6 +188,16 @@ commands, refusal of write commands, pushes, origin check, per-IP and per-client
 ```bash
 docker compose run --rm checker python /checker/test_checker.py
 ```
+
+```bash
+pip install websockets==15.0.1 blake3==1.0.5
+python alerts/test_alerts.py
+```
+
+Runs the alerts watcher against a mock relay: history on the first run is not posted, new
+proposals, agreement, activation and a dropped change are posted once each per channel
+(also after a failed post and a watcher restart), the feed and proposals.json are right,
+and a chain restart is reported.
 
 Runs the checker against the real engine: verdicts for sample transfers, refusals by
 the text screens and by the engine.
