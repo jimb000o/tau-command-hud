@@ -123,6 +123,14 @@ COMMUNITY_MAX = _env_int("COMMUNITY_MAX", 200)
 COMMUNITY_PER_IP = _env_int("COMMUNITY_PER_IP", 3)
 COMMUNITY_TTL = _env_float("COMMUNITY_TTL_SECONDS", 15 * 60)
 COMMUNITY_MIN_INTERVAL = _env_float("COMMUNITY_MIN_INTERVAL_SECONDS", 20)
+# The leaderboard (GET /community/board, badges) remembers every node that
+# reported in the last BOARD_KEEP_DAYS, across relay restarts: when it first
+# reported, when last, and in how many distinct minutes (its uptime).
+BOARD_PATH = os.environ.get("BOARD_PATH", "/data/community.json")
+BOARD_KEEP_DAYS = _env_float("BOARD_KEEP_DAYS", 30)
+BOARD_MAX = _env_int("BOARD_MAX", 1000)
+BOARD_SAVE_SECONDS = _env_float("BOARD_SAVE_SECONDS", 60)
+BADGE_PATH = re.compile(r"^/community/badge/([0-9a-f]{12})\.svg$")
 REPORT_FIELDS = {
     "key": re.compile(r"^[0-9a-f]{32}$"),
     "name": re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$"),
@@ -249,6 +257,10 @@ class Relay:
         self.community: dict[str, dict] = {}   # node id -> last report (+ "ip", never shown)
         self.community_text: str | None = None
         self.community_at = 0.0
+        self.board = self._load_board()          # node id -> leaderboard row, kept across restarts
+        self.board_saved_at = 0.0
+        self.board_text: str | None = None
+        self.board_at = 0.0
 
     # ---------- polling ----------
     async def poll_loop(self, every: float, fn):
@@ -337,7 +349,7 @@ class Relay:
             rewrite = True
         self._save_chain(None if rewrite else fresh)
         self.note_chain()
-        self.stats_text = self.community_text = None
+        self.stats_text = self.community_text = self.board_text = None
         if len(fresh) > 5:
             log.info("new blocks: %s..%s (%s)", self._height(fresh[0]), self._height(fresh[-1]), len(fresh))
         else:
@@ -838,11 +850,14 @@ class Relay:
             "id": node_id, "name": fields["name"], "height": int(fields["height"]),
             "tip": int(fields["tip"]) if fields.get("tip", "none") != "none" else None,
             "head": fields["head"], "kit": fields.get("kit"), "ref": fields.get("ref"),
-            "first_seen": known["first_seen"] if known else now, "last_seen": now, "ip": ip,
+            # first_seen survives a silence and a relay restart through the leaderboard
+            "first_seen": known["first_seen"] if known else self.board.get(node_id, {}).get("first_seen", now),
+            "last_seen": now, "ip": ip,
         }
         self.community_text = None
         if not known:
             log.info("community node joined: %s (%s)", fields["name"], node_id)
+        self.note_board(self.community[node_id], now)
         return envelope_ok("report", {"id": node_id, "agrees": self.agreement(self.community[node_id], self.hash_at())})
 
     def hash_at(self) -> dict[int, str]:
@@ -867,7 +882,114 @@ class Relay:
         for node_id in stale:
             del self.community[node_id]
         if stale:
-            self.community_text = None
+            self.community_text = self.board_text = None
+
+    # ---------- leaderboard ----------
+    def _load_board(self) -> dict[str, dict]:
+        try:
+            with open(BOARD_PATH) as f:
+                rows = json.load(f)
+            if isinstance(rows, dict):
+                return {k: v for k, v in rows.items() if isinstance(v, dict) and v.get("first_seen")}
+        except FileNotFoundError:
+            pass
+        except (OSError, ValueError) as exc:
+            log.warning("cannot read %s: %r; starting a new leaderboard", BOARD_PATH, exc)
+        return {}
+
+    def _save_board(self, now: float):
+        self.board_saved_at = now
+        tmp = BOARD_PATH + ".tmp"
+        try:
+            with open(tmp, "w") as f:
+                json.dump(self.board, f, separators=(",", ":"))
+            os.replace(tmp, BOARD_PATH)
+        except OSError as exc:
+            if not getattr(self, "_board_warned", False):
+                log.warning("cannot write %s: %r; the leaderboard lives in memory only", BOARD_PATH, exc)
+                self._board_warned = True
+
+    def note_board(self, node: dict, now: float):
+        row = self.board.get(node["id"])
+        new = row is None
+        if new:
+            row = self.board[node["id"]] = {"id": node["id"], "first_seen": now, "minutes": 0, "counted_at": 0}
+        # one uptime minute per minute with a report, however often it reports
+        if now - row["counted_at"] >= 55:
+            row["minutes"] += 1
+            row["counted_at"] = now
+        row.update(name=node["name"], last_seen=now, height=node["height"], kit=node["kit"], ref=node["ref"])
+        self.board_text = None
+        cutoff = now - BOARD_KEEP_DAYS * 86400
+        for k in [k for k, r in self.board.items() if r["last_seen"] < cutoff]:
+            del self.board[k]
+        if len(self.board) > BOARD_MAX:
+            for k in sorted(self.board, key=lambda k: self.board[k]["last_seen"])[:len(self.board) - BOARD_MAX]:
+                del self.board[k]
+        if new or now - self.board_saved_at >= BOARD_SAVE_SECONDS:
+            self._save_board(now)
+
+    @staticmethod
+    def node_uptime(row: dict, now: float) -> float | None:
+        """Share of the minutes since its first report in which the node
+        reported; None for the first ten minutes (too few to say)."""
+        span = (now - row["first_seen"]) / 60
+        return None if span < 10 else round(min(1.0, row["minutes"] / span), 3)
+
+    def board_rows(self, now: float) -> list[dict]:
+        self.expire_community(now)
+        hashes = self.hash_at()
+        rows = []
+        for r in self.board.values():
+            live = self.community.get(r["id"])
+            rows.append({"id": r["id"], "name": r["name"], "first_seen": round(r["first_seen"]),
+                         "last_seen": round(r["last_seen"]), "online": live is not None,
+                         "days": int((now - r["first_seen"]) // 86400), "uptime": self.node_uptime(r, now),
+                         "height": r.get("height"), "kit": r.get("kit"), "ref": r.get("ref"),
+                         "agrees": self.agreement(live, hashes) if live else None})
+        # online first, then the longest running, then the steadiest
+        rows.sort(key=lambda r: (not r["online"], r["first_seen"], -(r["uptime"] or 0), r["name"].lower()))
+        return rows
+
+    def board_json(self) -> str:
+        """Cached like /community: the endpoint is public and the build indexes the chain."""
+        now = time.time()
+        self.expire_community(now)
+        if self.board_text is None or now - self.board_at >= STATS_CACHE_SECONDS:
+            self.board_at = now
+            self.board_text = json.dumps({"nodes": self.board_rows(now), "keep_days": BOARD_KEEP_DAYS,
+                                          "generated_at": round(now)}, separators=(",", ":"))
+        return self.board_text
+
+    def badge_svg(self, node_id: str) -> str:
+        """A small embeddable badge: "Tau HUD node | running 12 d"."""
+        now = time.time()
+        self.expire_community(now)
+        row = self.board.get(node_id)
+        if row is None:
+            right, online = "unknown node", False
+        else:
+            age = now - row["first_seen"]
+            span = f"{int(age // 86400)} d" if age >= 86400 else f"{int(age // 3600)} h" if age >= 3600 else ""
+            online = node_id in self.community
+            right = (f"running {span}" if span else "new node") if online else \
+                (f"offline · ran {span}" if span else "offline")
+            up = self.node_uptime(row, now)
+            if span and up is not None:  # days alone would flatter a node that was mostly down
+                right += f" · {round(up * 100)} % up"
+        left = "Tau HUD node"
+        # the site's colours: black, white, phosphor green for a node that is up
+        bg, fg = ("#39ff8a", "#000") if online else ("#2a2a2e", "#ebebee")
+        # Verdana 11px averages about 6.6 px per character; padding 6 px each side
+        lw, rw = int(len(left) * 6.6) + 12, int(len(right) * 6.6) + 12
+        esc = lambda t: t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{lw + rw}" height="20" role="img" aria-label="{esc(left)}: {esc(right)}">'
+                f'<title>{esc(left)}: {esc(right)}</title>'
+                f'<rect width="{lw}" height="20" fill="#09090a"/><rect x="{lw}" width="{rw}" height="20" fill="{bg}"/>'
+                f'<g font-family="Verdana,DejaVu Sans,sans-serif" font-size="11" text-anchor="middle">'
+                f'<text x="{lw / 2:.1f}" y="14" fill="#fff">{esc(left)}</text>'
+                f'<text x="{lw + rw / 2:.1f}" y="14" fill="{fg}">{esc(right)}</text>'
+                f'</g></svg>')
 
     def community_json(self) -> str:
         """Cached like /stats: the endpoint is public, the build walks the chain once."""
@@ -959,6 +1081,17 @@ class Relay:
                                ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
+        if path == "/community/board":
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=30")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.board_json().encode())
+        badge = BADGE_PATH.match(path)
+        if badge:
+            headers = Headers([("Content-Type", "image/svg+xml; charset=utf-8"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=300")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.badge_svg(badge.group(1)).encode())
         if path == "/uptime":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),

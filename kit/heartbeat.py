@@ -28,7 +28,7 @@ from websockets.asyncio.client import connect
 
 log = logging.getLogger("tau-kit")
 
-KIT_VERSION = "1"
+KIT_VERSION = "2"
 NODE_URL = os.environ.get("NODE_URL", "ws://tau-node:65433")
 NODE_NAME = os.environ.get("NODE_NAME", "").strip()
 REPORT_URL = os.environ.get("REPORT_URL", "wss://node.tauhud.com")
@@ -102,6 +102,15 @@ def describe(st: dict) -> str:
     return f"height {st['height']} · network tip {st['tip'] if st['tip'] is not None else '?'} · {sync}"
 
 
+def badge_lines(node_id: str) -> str:
+    """Where the operator finds the node on the leaderboard, and its badge."""
+    base = REPORT_URL.replace("wss://", "https://", 1).replace("ws://", "http://", 1).rstrip("/")
+    badge = f"{base}/community/badge/{node_id}.svg"
+    page = f"https://tauhud.com/nodes/#{node_id}"
+    return (f"leaderboard: {page}\n"
+            f"badge for a README or website (Markdown): [![Tau HUD node]({badge})]({page})")
+
+
 AGREES = {"same": "same chain as tauhud.com", "different": "DIFFERENT chain from tauhud.com",
           "ahead": "ahead of tauhud.com", "unknown": "tauhud.com cannot compare yet"}
 
@@ -118,6 +127,9 @@ async def beat():
             reply = await send_report(st)
             if reply.get("status") == "ok":
                 line += f" · reported as {NODE_NAME} ({AGREES.get(reply['data'].get('agrees'), '?')})"
+                if not beat.shown_badge and reply["data"].get("id"):
+                    log.info("%s", badge_lines(reply["data"]["id"]))
+                    beat.shown_badge = True
             else:
                 line += f" · report refused: {(reply.get('error') or {}).get('message')}"
         except Exception as exc:
@@ -125,6 +137,9 @@ async def beat():
     else:
         line += " · not reporting (NODE_NAME empty)"
     log.info("%s", line)
+
+
+beat.shown_badge = False  # the leaderboard and badge links are logged once per start
 
 
 async def main(once: bool):
