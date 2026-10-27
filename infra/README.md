@@ -7,8 +7,8 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
           node.tauhud.com         read-only    65433, internal   4001
 ```
 
-- **tau-node**: an unmodified [IDNI/tau-testnet](https://github.com/IDNI/tau-testnet) read node
-  (pinned commit, mining off), built by `node/Dockerfile`, which is upstream's
+- **tau-node**: an [IDNI/tau-testnet](https://github.com/IDNI/tau-testnet) read node
+  (pinned commit, small patches in `node/patches/`, mining off unless the validator seat is on), built by `node/Dockerfile`, which is upstream's
   `Dockerfile.standalone` minus a dependency-prefetch step that fails at the pinned tau-lang commit. It joins `tau-testnet-v2` through the
   public bootnode. Its RPC (65432) and WebSocket (65433) ports are never published.
 - **relay** (`relay/relay.py`): holds one connection to the node, polls it on a fixed
@@ -103,6 +103,31 @@ request, 8 sample transfers, 16 KB bodies, 8 checks per 5 minutes per address, a
 repeated texts. The container uses the node's image (nothing extra to compile), has no
 outbound network, a read-only filesystem, no capabilities, 512 MB, 1 CPU and 64 processes.
 `GET /check/health` answers `{"ok": true}`.
+
+## Validator seat
+
+tau-testnet-v2 is proof of authority: only keys in the on-chain validator set propose
+blocks, and a key joins only when an existing validator proposes
+`consensus_rule_update` with `host_contract_patch.validator_additions` and the set
+votes it in (today one validator, IDNI's). Steps:
+
+1. Make the key on the server (once; running it again only shows the public key):
+   `cd /opt/tau-command-hud/infra && docker compose exec tau-node tau-validator-key`.
+   The private key goes to `/data/validator.key` in the `tau_data` volume (mode 0600,
+   kept when the node wipes chain data) and is never printed or committed. Back it up
+   off-server only if you want to keep the seat across a lost volume.
+2. Ask IDNI to add the printed public key.
+3. Once the key shows up in the validator set (HUD, or `getgovernance`):
+   `echo TAU_VALIDATOR=true >> .env && docker compose up -d tau-node`.
+   The log says `[start] validator mode, key …`.
+
+Safety: the `validator-gate` patch keeps the node from proposing while its key is not in
+the active set, also under open admission where upstream skips that check, so turning
+the seat on early or after a removal cannot fork the HUD onto a private chain. Without
+the key file the node logs a warning and stays a read node. The relay is unchanged: it
+still refuses every write command, and the node's RPC stays internal, so the seat signs
+only blocks the node builds itself. Turn it off with `TAU_VALIDATOR=false` and the same
+`up -d`.
 
 ## Tests
 
