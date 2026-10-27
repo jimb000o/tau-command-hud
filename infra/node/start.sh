@@ -15,6 +15,14 @@ if [[ -f /data/node.db && "$have" != "$want" ]]; then
   echo "[start] chain data belongs to genesis '${have:-unknown}', image ships '$want': wiping /data (identity kept)"
   find /data -mindepth 1 ! -name identity.key -exec rm -rf {} +
 fi
+# The node leaves this marker (patches/chain-reset.py) when the bootnode runs a
+# chain we do not have below our stored height, i.e. the testnet was restarted
+# on the same genesis. Wipe and resync.
+if [[ -f /data/chain-reset ]]; then
+  echo "[start] chain reset requested: $(cat /data/chain-reset)"
+  echo "[start] wiping /data (identity kept)"
+  find /data -mindepth 1 ! -name identity.key -exec rm -rf {} +
+fi
 echo "$want" > /data/genesis.hash
 echo "[start] genesis $want"
 exec python server.py
