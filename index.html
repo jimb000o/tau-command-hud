@@ -87,6 +87,7 @@ body[data-view="simple"] .pr em { display: none; }
 /* tour */
 .tour { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 55; width: min(560px, calc(100% - 32px)); background: var(--deck); border: 1px solid rgba(57,255,138,.55); border-radius: 8px; padding: 12px 14px 10px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.6); }
 .tour[hidden] { display: none; }
+.tour.top { bottom: auto; top: 64px; }   /* the card moves to the top when the spotlighted panel sits in the lower half */
 .tour .t1 { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font: 600 10.5px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--ok); }
 .tour h3 { margin: 4px 0 2px; font: 600 15px var(--display); color: #fff; }
 .tour p { margin: 0 0 10px; font-size: 12.5px; color: var(--text); }
@@ -96,6 +97,12 @@ body[data-view="simple"] .pr em { display: none; }
 .tour .t3 button:hover { color: #fff; border-color: #fff; }
 .tour .t3 button.primary:hover { background: var(--ok); border-color: var(--ok); color: #000; }
 body[data-tour] .panel.spot { border-color: var(--ok); box-shadow: 0 0 0 1px rgba(57,255,138,.5), 0 0 40px -6px rgba(57,255,138,.55); z-index: 2; }
+body[data-tour] .spot:not(.panel) { outline: 1px solid var(--ok); outline-offset: 4px; border-radius: 6px; box-shadow: 0 0 30px -6px rgba(57,255,138,.55); }
+.tour .bar { height: 2px; background: rgba(255,255,255,.1); margin: 8px 0 10px; border-radius: 1px; overflow: hidden; }
+.tour .bar i { display: block; height: 100%; background: var(--ok); transition: width .3s; }
+.tour .t3 a { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; border-radius: 999px; padding: 6px 12px; border: 1px solid var(--ok); color: var(--ok); text-decoration: none; margin-right: auto; }
+.tour .t3 a:hover { background: var(--ok); color: #000; }
+.tour .t3 a[hidden] { display: none; }
 body[data-tour] .panel:not(.spot) { opacity: .45; }
 body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 #rain.off { display: none; }
@@ -632,8 +639,8 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <button class="btn ghost" type="button" data-open="mAbout" data-full="What this page is, who built it, where each claim comes from, and how to support it.">About</button>
       <button class="btn ghost" type="button" data-open="mFeedback" data-full="What changed on this page and when, built from your feedback. Also where to leave feedback.">Updates</button>
       <button class="btn state" type="button" id="btnState2" data-full="Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.">Chain state</button>
-      <button class="btn ghost gold" type="button" id="btnTour" data-full="Six short steps: one rule change from proposal to law, pointing at the panels where it happens.">Guided tour</button>
-      <a class="btn ghost" href="playground/" data-full="Write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Opens the playground page.">Playground</a>
+      <button class="btn ghost gold" type="button" id="btnTour" data-full="About one minute, eight short steps: how rules on Tau change by agreement, pointing at the panels where it happens.">Guided tour</button>
+      <a class="btn ghost" id="btnPlayground" href="playground/" data-full="Write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Opens the playground page.">Playground</a>
       <a class="btn ghost" href="stats/" data-full="Testnet statistics: block pace, transactions, validators and rule changes over the whole chain. Opens the stats page.">Stats</a>
       <a class="btn ghost" href="history/" data-full="Time travel: step through the chain block by block and see the rules that were in force at any height. Opens the history page.">Time travel</a>
       <a class="btn ghost" href="https://tau.net" target="_blank" rel="noopener" data-full="Opens tau.net, the project behind the testnet, in a new tab.">What is Tau?</a>
@@ -756,9 +763,10 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
 </div>
 <button class="fb-fab" id="fbFab" type="button">Feedback</button>
 <aside class="tour" id="tour" hidden aria-live="polite">
-  <div class="t1"><span id="tourStep">Step 1 of 5</span><button type="button" class="close" id="tourClose" aria-label="End tour" style="position:static">✕</button></div>
+  <div class="t1"><span id="tourStep">Guided tour</span><button type="button" class="close" id="tourClose" aria-label="End tour" style="position:static">✕</button></div>
   <h3 id="tourTitle"></h3><p id="tourText"></p>
-  <div class="t3"><button type="button" id="tourBack">Back</button><button type="button" class="primary" id="tourNext">Next</button></div>
+  <div class="bar" id="tourBar"><i style="width:0"></i></div>
+  <div class="t3"><a id="tourLink" href="playground/" hidden>Open the playground ›</a><button type="button" id="tourBack">Back</button><button type="button" class="primary" id="tourNext">Next</button></div>
 </aside>
 
 <div class="modal" id="mFeedback" hidden>
@@ -791,6 +799,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v16.0 · 27 Oct 2026</b>Guided tour for newcomers: eight short steps, about a minute, from “rules change by agreement” through block check, proposal, votes, the core, activation and personal rules to the playground. Offered once on the first visit (“Not now” is remembered), always available from the header; arrow keys step, Escape ends.</li>
           <li><b>v15.9 · 27 Oct 2026</b>Header: links to the new <a href="stats/">Stats</a> and <a href="history/">Time travel</a> pages; a block’s full detail links to the rules in force at that height. Rule changes by agreement: when an agreed change was scheduled far ahead by the proposal itself, the Tau row says so (“at #5028”, “agreed in n blocks”) instead of counting down the proposer’s wait as if it were Tau’s speed. Block detail: when the full detail would need scrolling at your screen size, a one-glance summary takes its place and a click opens the full detail. Every detail window scrolls inside the screen. Screens up to 900 px tall get the scrolling layout.</li>
           <li><b>v15.8 · 27 Oct 2026</b>Node log: the panel shows whole lines (time in its own column, nothing cut off) with more room, and a click opens the full log in the detail view, newest first, with counts of refusals and governance events. Chain core: every label (agreement, validators, “the agreed rules of everyone”) sits on a dark plate, so no ring crosses the letters. Detail views: every check chip (i10 signature, o6 block valid, o7 proposer eligible, o9 fee, o5 sender rule, the admission checks of a rule offer, the steps of a proposal) explains itself on hover. Live: when the relay reports a chain reset (the node discarded a chain the network abandoned), the page forgets the old blocks and rebuilds from the new ones.</li>
           <li><b>v15.7 · 27 Oct 2026</b>Rule Playground: a new page at <a href="playground/">/playground/</a> where you write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Linked from the header (“Playground”) and from the validators panel.</li>
@@ -2101,25 +2110,43 @@ setView(store.get("tau-view") || "simple");
 function setRain(on) { $("rain").classList.toggle("off", !on); $("btnRain").setAttribute("aria-pressed", String(on)); store.set("tau-rain", on ? "1" : "0"); }
 $("btnRain").onclick = () => setRain($("btnRain").getAttribute("aria-pressed") !== "true");
 setRain(store.get("tau-rain") !== "0");
-/* ---------- 5-step tour: one rule from proposal to active ---------- */
+/* ---------- guided tour for newcomers: how rules change by agreement, about one minute ---------- */
 const TOUR = [
-  [".a-upd", "A rule change is proposed", "Any validator can propose a change to the chain’s rules, for example a new base fee. The proposal is itself a transaction, visible to everyone. Nobody can skip this step, because there is no admin key."],
-  [".a-eng", "The rule is checked before it can apply", "The proposed rule is compiled on its own first. If it does not hold, it is refused at the door. Every block is judged by the active rules on these streams, not by hidden code."],
-  [".a-val", "The validators must agree", "A change needs an explicit quorum, for example 3 of 4 validators. The threshold is itself part of the chain state, so it cannot be changed quietly."],
-  [".a-chain", "It activates at a later block", "An agreed change is scheduled for a future height, never the same block. The bright card marks the block where the new rules took effect; click any card to inspect it below, including the rules in force at that block."],
-  [".statep", "The rules in force are always visible", "This calm panel shows the chain’s current law: the spec revision, the fee, how many validators must agree, and every change agreed so far. It only changes when the chain agrees to change it."],
-  [".a-pol", "Your own rules are enforced the same way", "Every account can write its own rules for its money: spending limits, whitelists, time locks, co-signatures. They bind the account, not the device, so even a stolen key has to obey them. Refused transfers show up with a ✕."],
+  [".thesis", "Rules change by agreement", "On most chains the code is the law and a few developers can change it. On Tau the rules are written in logic, every block is checked against them, and they change only when the validators agree. This tour shows where each part of that happens."],
+  [".a-eng", "Every block is checked by the rules", "Block check by rules: a new block has to answer the active rules stream by stream. Is the proposer eligible? Is the fee paid? Is the signature valid? A block that fails any rule is refused, not patched."],
+  [".a-upd", "A rule change is a transaction", "Any validator can propose a change, for example a new base fee, as an ordinary transaction that everyone can see. Follow the row “How a rule changes”: proposed, checked, agreed, active. Other chains need a fork and an upgrade. Tau needs agreement."],
+  [".a-val", "Validators must agree, explicitly", "A change needs a quorum of votes, and the threshold is itself part of the chain state, so nobody can lower it quietly. No vote, no change."],
+  [".a-core", "The core shows agreement forming", "Validators sit on the outer ring, accounts with their own rules on the inner one, and waiting transactions orbit the block being sealed in the middle. The ring between them fills as votes for an open proposal arrive."],
+  [".a-chain", "Agreed changes activate at a later block", "A scheduled change takes effect at its activation height, never earlier, on every node at once. A bright card marks a block where new rules took effect. Click any block to see the rules that were in force then."],
+  [".a-pol", "Your own money gets the same treatment", "Every account can write its own Tau rule: a spending limit, a whitelist, a time lock, a co-signature. It binds the account, not the key, so even a stolen key has to obey it. Refused transfers show up with a ✕."],
+  ["#btnPlayground", "Try it yourself", "In the playground you write a transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. That is the whole idea of Tau, in your hands."],
 ];
-let tourI = -1;
-function tourShow(i) {
-  document.querySelectorAll(".panel.spot").forEach(p => p.classList.remove("spot"));
-  if (i < 0 || i >= TOUR.length) { tourI = -1; $("tour").hidden = true; delete document.body.dataset.tour; return; }
-  tourI = i; const [sel, title, text] = TOUR[i];
-  const target = document.querySelector(sel); const panel = target.classList.contains("panel") ? target : target.querySelector(".panel");
-  panel.classList.add("spot"); panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+let tourI = -1, tourOffered = false;
+function tourShow(i, from) {
+  document.querySelectorAll(".spot").forEach(p => p.classList.remove("spot"));
+  if (i < 0 || i >= TOUR.length) {
+    if (tourI >= 0 || tourOffered) store.set("tau-tour", i >= TOUR.length ? "done" : "dismissed");
+    tourI = -1; tourOffered = false; $("tour").hidden = true; delete document.body.dataset.tour; return;
+  }
+  tourI = i; tourOffered = false; const [sel, title, text] = TOUR[i];
+  const el = document.querySelector(sel), target = el.classList.contains("panel") ? el : (el.querySelector(".panel") || el);
+  target.classList.add("spot"); target.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
+  const r = target.getBoundingClientRect(); $("tour").classList.toggle("top", r.top + r.height / 2 > innerHeight / 2);
   document.body.dataset.tour = "1"; $("tour").hidden = false;
   $("tourStep").textContent = `Step ${i + 1} of ${TOUR.length}`; $("tourTitle").textContent = title; $("tourText").textContent = text;
-  $("tourBack").disabled = i === 0; $("tourNext").textContent = i === TOUR.length - 1 ? "Done" : "Next";
+  $("tourBar").firstElementChild.style.width = `${(i + 1) / TOUR.length * 100}%`;
+  $("tourBack").textContent = "Back"; $("tourBack").disabled = i === 0; $("tourNext").textContent = i === TOUR.length - 1 ? "Done" : "Next";
+  $("tourLink").hidden = i !== TOUR.length - 1;
+  if (from !== "key") $("tourNext").focus();
+}
+/* first visit: offer the tour once; “Not now” is remembered, as is finishing it */
+function tourOffer() {
+  if (tourI >= 0 || store.get("tau-tour") || innerWidth < 900 || document.querySelector(".modal:not([hidden])")) return;
+  tourOffered = true;
+  $("tour").classList.remove("top"); $("tour").hidden = false; $("tourStep").textContent = "New here?"; $("tourTitle").textContent = "How rules change on Tau, in one minute";
+  $("tourText").textContent = "Eight short steps point at the panels where a rule is proposed, checked, agreed and made law, without a fork or an upgrade. You can stop at any time.";
+  $("tourBar").firstElementChild.style.width = "0"; $("tourLink").hidden = true;
+  $("tourBack").textContent = "Not now"; $("tourBack").disabled = false; $("tourNext").textContent = "Start the tour";
 }
 $("btnTour").onclick = $("btnTour2").onclick = () => tourShow(0);
 $("btnState").onclick = $("btnState2").onclick = $("btnState3").onclick = showState;
@@ -2148,7 +2175,13 @@ $("chainSub").onclick = () => { selectedBlock = null; const last = S.blocks[S.bl
   }, { passive: false });
 })();
 $("tourNext").onclick = () => tourShow(tourI + 1); $("tourBack").onclick = () => tourShow(tourI - 1); $("tourClose").onclick = () => tourShow(-1);
-document.addEventListener("keydown", e => { if (e.key === "Escape") tourShow(-1); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") return tourShow(-1);
+  if (tourI < 0 || e.target.closest("input, textarea")) return;
+  if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); tourShow(tourI + 1, "key"); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); tourShow(tourI - 1, "key"); }
+});
+setTimeout(tourOffer, 2500);
 
 /* boot: simulation at once, then the real chain through the community relay when it is reachable, unless the visitor chose otherwise */
 const RELAY = "wss://node.tauhud.com";
@@ -2178,7 +2211,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.9`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.0`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
