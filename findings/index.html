@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Testnet Findings</title>
+<meta name="description" content="Bugs we found in the Tau Testnet Alpha while running a node for tauhud.com, their live status at IDNI, and how to report your own.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Testnet findings">
+<meta property="og:description" content="Bugs found in the Tau testnet while running a node, with their live status at IDNI. Found one too? Report it.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/findings/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.hdr-right { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.back { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.back:hover { background: #fff; color: #000; }
+.state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 30em; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 60em; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 600 12px var(--display); letter-spacing: .1em; text-transform: uppercase; text-decoration: none; color: #fff; background: transparent; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+.btn svg { width: 15px; height: 15px; fill: currentColor; flex: none; }
+.btn:hover { background: #fff; color: #000; border-color: #fff; }
+.btn.primary { background: var(--ok); color: #000; border-color: var(--ok); }
+.btn.primary:hover { background: #fff; border-color: #fff; }
+.btn.soon { color: var(--dim); border-style: dashed; cursor: default; }
+.btn.soon:hover { background: transparent; color: var(--dim); border-color: var(--hair); }
+.tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-width: 0; }
+.tile h3 { margin: 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.tile .v { font: 600 24px/1.2 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.tile .v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
+.tile p { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
+.main { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } .p-news { grid-column: 1 / -1; } }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; align-content: start; }
+.list > li > button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 8px 12px; border-left: 2px solid var(--hair); background: rgba(255,255,255,.025); border-radius: 0 6px 6px 0; }
+.list > li > button:hover, .list > li > button:focus-visible { background: rgba(255,255,255,.07); }
+.list b { color: #fff; font: 600 13.5px/1.35 var(--display); display: block; overflow-wrap: anywhere; }
+.list .m { display: block; color: var(--dim); font-size: 12px; margin-top: 2px; }
+.badge { display: inline-block; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; margin-right: 6px; vertical-align: 1px; white-space: nowrap; }
+.news { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; align-content: start; }
+.news li { padding: 6px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
+.news li b { color: #fff; font-weight: 600; }
+.news li em { font-style: normal; color: var(--dim); }
+.news li a { color: var(--dim); }
+.empty { color: var(--dim); font-size: 12.5px; padding: 18px 4px; }
+.empty b { color: #fff; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+footer p { margin: 0; }
+
+.main { grid-template-columns: 1fr; }
+@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); } .main { grid-template-areas: "issues report" "fixes report"; } .p-issues { grid-area: issues; } .p-fixes { grid-area: fixes; } .p-report { grid-area: report; } .main .fixes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* one card per issue filed at IDNI */
+.cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; align-content: start; }
+.cards > li > button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 10px 14px; border-left: 2px solid var(--hair); background: rgba(255,255,255,.025); border-radius: 0 6px 6px 0; }
+.cards > li > button:hover, .cards > li > button:focus-visible { background: rgba(255,255,255,.07); }
+.cards > li.s-open > button { border-left-color: #fff; }
+.cards > li.s-fixed > button { border-left-color: var(--ok); }
+.cards .t { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cards b { color: #fff; font: 600 14px/1.35 var(--display); overflow-wrap: anywhere; }
+.cards .num { color: var(--dim); font: 600 13px var(--display); white-space: nowrap; }
+.cards p { margin: 4px 0 0; color: var(--text); font-size: 12.5px; }
+.cards .m { display: block; color: var(--dim); font-size: 12px; margin-top: 4px; }
+.badge { display: inline-block; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.b-open { color: #fff; } .b-fixed { color: var(--ok); } .b-closed, .b-unknown { color: var(--dim); }
+
+/* worked around on our side */
+.fixes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.fixes li { border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; background: rgba(255,255,255,.02); }
+.fixes b { color: #fff; font: 600 13px/1.35 var(--display); display: block; }
+.fixes span { color: var(--dim); font-size: 12px; display: block; margin-top: 2px; }
+.fixes a { color: var(--dim); white-space: nowrap; }
+
+/* report */
+.report h3 { margin: 8px 0 3px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.report h3:first-child { margin-top: 0; }
+.report p { margin: 0 0 8px; color: var(--dim); font-size: 12.5px; }
+.report p b { color: #fff; font-weight: 600; }
+.report .btns { display: grid; gap: 8px; }
+.report .btn { justify-content: center; }
+.report ol { margin: 0; padding-left: 18px; color: var(--dim); font-size: 12.5px; display: grid; gap: 3px; }
+.report ol b { color: #fff; font-weight: 600; }
+.report a:not(.btn) { color: #fff; }
+
+/* one screen on laptops and up (landscape), laid out for 1600×820 and scaled, like the other pages */
+html.fit body { overflow: hidden; height: 100vh; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { max-width: none; zoom: var(--z); height: var(--fitH); display: flex; flex-direction: column; gap: 10px; padding: 6px 0 8px; }
+html.fit .wrap > * { flex: none; }
+html.fit .main { flex: 1 1 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; }
+html.fit .panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px 14px; }
+html.fit .panel > * { flex: none; }
+html.fit .panel > .scroll { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 2px; }
+html.fit .tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+html.fit .lead { font-size: 22px; margin: 0; }
+html.fit .sub { font-size: 12px; margin: 2px 0 0; }
+html.fit header { padding: 4px 0 6px; }
+html.fit .modal .sheet, html.fit .fb-fab { zoom: var(--z); }
+html.fit .modal .sheet { max-height: calc(100% / var(--z)); }
+html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; right: 12px; }
+html.fit .fixes { gap: 5px; }
+html.fit .sub { max-width: none; }
+html.fit .cards { gap: 6px; }
+html.fit .cards > li > button { padding: 8px 12px; }
+html.fit .cards p { margin-top: 2px; }
+html.fit .cards .m { margin-top: 2px; }
+html.fit .fixes li { padding: 6px 10px; }
+
+/* modal */
+.modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
+.sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
+.sheet .panel { padding-right: 48px; background: var(--deck); }
+.sheet h2 { font: 600 17px/1.35 var(--display); letter-spacing: 0; text-transform: none; color: #fff; }
+.sheet h3 { margin: 14px 0 4px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.steps li { padding: 5px 10px; border-left: 2px solid var(--hair); }
+.steps li.ok { border-left-color: var(--ok); } .steps li.now { border-left-color: var(--behind); }
+.steps b { color: #fff; font-weight: 600; }
+.steps a { color: var(--dim); }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 40vh; overflow: auto; }
+.note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
+.fb-fab:hover { background: var(--ok); }
+@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .follow .lbl { width: 100%; } }
+[hidden] { display: none !important; }
+
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Testnet findings</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state"><i></i><span id="stateText">Asking GitHub</span></span>
+    </div>
+  </header>
+  <nav class="tnav" data-page="findings" aria-label="Pages and tools"></nav>
+
+  <div class="top">
+    <div>
+      <p class="lead">A testnet is there to break. Here is what broke for us.</p>
+      <p class="sub">Running a node for tauhud.com, we hit bugs in the Tau Testnet Alpha. Each one is filed with IDNI, the team behind Tau; its status below comes live from GitHub. What we could fix on our side runs in our node today.</p>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <main class="main">
+    <section class="panel p-issues">
+      <h2>Filed with IDNI <small>status live from GitHub · click a finding for details</small></h2>
+      <div class="scroll"><ul class="cards" id="cards"></ul></div>
+    </section>
+    <section class="panel p-fixes">
+      <h2>Also patched in our node <small>no IDNI issue of their own</small></h2>
+      <ul class="fixes" id="fixes"></ul>
+    </section>
+    <section class="panel p-report report">
+      <h3>Found a bug in the testnet?</h3>
+      <p>IDNI runs a <b>bug bounty</b> for the Tau testnet. Real, reproducible bugs go to them as a GitHub issue; one issue per bug.</p>
+      <div class="btns">
+        <a class="btn primary" id="reportIdni" target="_blank" rel="noopener" href="https://github.com/IDNI/tau-testnet/issues/new">Report it to IDNI</a>
+        <a class="btn" href="https://github.com/IDNI/tau-testnet/issues?q=is%3Aissue" target="_blank" rel="noopener">Search known issues first</a>
+      </div>
+      <h3>A good report has</h3>
+      <ol>
+        <li><b>What you did</b>, step by step, so someone else can repeat it.</li>
+        <li><b>What happened</b> and what you expected instead.</li>
+        <li><b>Where</b>: node commit, network (tau-testnet-v2), block height, tx hash.</li>
+        <li><b>Proof</b>: the log lines or RPC replies that show it.</li>
+      </ol>
+      <h3>Something wrong with Tau HUD?</h3>
+      <p>A wrong number, a broken page, an idea: that is ours, not IDNI’s.</p>
+      <div class="btns">
+        <a class="btn" target="_blank" rel="noopener" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BFindings%5D%20">Tell us about it</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Status from the public GitHub API, refreshed every 10 minutes. <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra/node/patches" target="_blank" rel="noopener">Our node patches</a> · <a href="/status/">Status</a> · <a href="/stats/">Stats</a> · <a href="/chronicle/">Chronicle</a></p>
+  </footer>
+</div>
+
+<div class="modal" id="mDetail" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="sheet">
+    <button class="close" data-close type="button" aria-label="Close">✕</button>
+    <article class="panel"><h2 id="dTitle"></h2><div id="dBody"></div></article>
+  </div>
+</div>
+<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BFindings%5D%20" target="_blank" rel="noopener">Feedback</a>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtN = n => Number(n).toLocaleString("en-US");
+const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
+const REPO = "IDNI/tau-testnet", OURS = "https://github.com/jimb000o/tau-command-hud";
+const pr = n => `<a href="${OURS}/pull/${n}" target="_blank" rel="noopener">PR #${n}</a>`;
+const SAMPLE = new URLSearchParams(location.search).has("sample");
+const CACHE_KEY = "tauhud-findings-v1", CACHE_MS = 10 * 60 * 1000;
+
+// Issues we filed with IDNI. Add a new one here; title and status come from GitHub.
+const FINDINGS = [
+  {
+    n: 81, title: "Mempool keeps transactions that are already sealed in canonical blocks",
+    found: "A fully synced node keeps transactions in its mempool as pending after the very same transactions are sealed in a block, until their 60-minute expiry. gettxstatus answers “queued” for them.",
+    impact: "Explorers and wallets show transactions as waiting that are already confirmed. In the HUD, some of the waiting dots in the chain core are such transactions.",
+    ours: "Nothing to patch on our side; the status page and the HUD explain it.",
+  },
+  {
+    n: 79, title: "Dockerfile.standalone does not build from a clean checkout",
+    found: "Four build failures in a row on a fresh 4 GB machine: a dependency prefetch without a compiler, a Python 3.12 pin against a 3.14 venv, a required auditwheel that is never used, and compile jobs that need over 3 GB each.",
+    impact: "Anyone trying to run their own node hits these one after the other; a failed late step repeated a 55-minute dependency build.",
+    ours: `Our own <a href="${OURS}/blob/main/infra/node/Dockerfile" target="_blank" rel="noopener">Dockerfile</a> with build caches, one compile job and the fixes above; the <a href="${OURS}/tree/main/kit" target="_blank" rel="noopener">node operator kit</a> uses it.`,
+  },
+  {
+    n: 78, title: "Cannot join tau-testnet-v2: published genesis does not match the network, plus two sync bugs",
+    found: "The genesis.json in the repo was not the one the network ran, so a new node rejected block 0 and never synced. Header sync read only one 64 KB frame, and it never fetched past the first 2,000 headers.",
+    impact: "Nobody outside IDNI could join the testnet with a fresh node.",
+    ours: `IDNI published the right genesis in commit 539d1e2; our node is pinned to it (${pr(13)}). The two sync bugs are patched in our node (read-until-eof, sync-paginate).`,
+  },
+];
+// Found and worked around on our side; no separate IDNI issue of their own.
+const FIXES = [
+  ["Non-validator votes change the state hash", `The network counts every account’s vote; a node on default settings stops at the first such vote. ${pr(15)}`],
+  ["Bootnode announces 0.0.0.0", `After a restart the node dialled itself and stopped syncing. ${pr(22)}`],
+  ["Testnet restarts silently", `A node keeps the dead chain; ours wipes it and syncs the new one. ${pr(23)}`],
+  ["Sync loop on orphan blocks", `Blocks that did not connect were fetched again and again. ${pr(10)}`],
+];
+
+/* ---------------- one screen on wide displays ---------------- */
+function fit() {
+  const w = innerWidth, h = innerHeight;
+  const on = w >= 1200 && h >= 700 && w / h >= 1.3;
+  const z = on ? Math.max(1, Math.min(2, w / 1600, h / 820)) : 1;
+  const root = document.documentElement;
+  root.classList.toggle("fit", on);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+}
+addEventListener("resize", fit); fit();
+
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const fmtDay = iso => { const d = new Date(iso); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+function ago(iso) {
+  const s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 3600) return plural(Math.max(1, Math.round(s / 60)), "minute") + " ago";
+  if (s < 2 * 86400) return plural(Math.round(s / 3600), "hour") + " ago";
+  return plural(Math.round(s / 86400), "day") + " ago";
+}
+
+/* ---------------- GitHub ---------------- */
+// Unauthenticated GitHub allows 60 requests an hour per address, so answers are kept for 10 minutes.
+function cached() {
+  try { const c = JSON.parse(localStorage.getItem(CACHE_KEY)); if (c && Date.now() - c.at < CACHE_MS) return c.issues; } catch {}
+  return null;
+}
+function keep(issues) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), issues })); } catch {} }
+async function fetchIssues() {
+  if (SAMPLE) return sampleIssues();
+  const hit = cached(); if (hit) return hit;
+  const out = {};
+  await Promise.all(FINDINGS.map(async f => {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${REPO}/issues/${f.n}`, { headers: { Accept: "application/vnd.github+json" } });
+      if (!r.ok) return;
+      const j = await r.json();
+      out[f.n] = { title: j.title, state: j.state, state_reason: j.state_reason, comments: j.comments, created_at: j.created_at,
+        updated_at: j.updated_at, closed_at: j.closed_at, labels: (j.labels || []).map(l => l.name) };
+    } catch {}
+  }));
+  if (Object.keys(out).length === FINDINGS.length) keep(out);
+  return out;
+}
+function sampleIssues() {
+  const d = n => new Date(Date.now() - n * 3600e3).toISOString();
+  return {
+    81: { title: FINDINGS[0].title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
+    79: { title: FINDINGS[1].title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
+    78: { title: FINDINGS[2].title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
+  };
+}
+function status(i) {
+  if (!i) return ["unknown", "Status unknown"];
+  if (i.state === "open") return ["open", "Open"];
+  return i.state_reason === "not_planned" ? ["closed", "Closed, not planned"] : ["fixed", "Fixed"];
+}
+
+/* ---------------- render ---------------- */
+let ISSUES = {};
+function render() {
+  const got = FINDINGS.filter(f => ISSUES[f.n]);
+  const st = FINDINGS.map(f => status(ISSUES[f.n])[0]);
+  $("state").className = "state " + (got.length ? "live" : "off");
+  $("stateText").textContent = got.length ? (SAMPLE ? "Sample data" : "Live from GitHub") : "GitHub unreachable";
+  const tiles = [
+    ["Filed with IDNI", FINDINGS.length, "issues on IDNI/tau-testnet"],
+    ["Open", got.length ? st.filter(s => s === "open").length : "—", "waiting for IDNI"],
+    ["Fixed by IDNI", got.length ? st.filter(s => s === "fixed").length : "—", "closed as done"],
+    ["Patched by us", FIXES.length + 2 /* + the two sync patches from #78 */, "running in our node today"],
+    ["Comments", got.length ? got.reduce((a, f) => a + (ISSUES[f.n].comments || 0), 0) : "—", "on our issues at IDNI"],
+  ];
+  $("tiles").innerHTML = tiles.map(([h, v, p]) => `<div class="tile"><h3>${h}</h3><div class="v">${v}</div><p>${p}</p></div>`).join("");
+  $("cards").innerHTML = FINDINGS.map((f, ix) => {
+    const i = ISSUES[f.n], [cls, label] = status(i);
+    const meta = i ? [`filed ${fmtDay(i.created_at)}`, plural(i.comments || 0, "comment"), i.closed_at ? `closed ${ago(i.closed_at)}` : `last activity ${ago(i.updated_at)}`].join(" · ") : "status could not be read from GitHub right now";
+    return `<li class="s-${cls}"><button type="button" data-ix="${ix}">
+      <span class="t"><span class="badge b-${cls}">${label}</span><span class="num">#${f.n}</span><b>${esc(i ? i.title : f.title)}</b></span>
+      <p>${esc(f.found)}</p><span class="m">${meta}</span></button></li>`;
+  }).join("");
+  $("fixes").innerHTML = FIXES.map(([t, d]) => `<li><b>${t}</b><span>${d}</span></li>`).join("");
+}
+$("cards").addEventListener("click", e => {
+  const b = e.target.closest("button[data-ix]"); if (!b) return;
+  const f = FINDINGS[+b.dataset.ix], i = ISSUES[f.n], [, label] = status(i);
+  $("dTitle").textContent = `#${f.n} · ${i ? i.title : f.title}`;
+  $("dBody").innerHTML = `
+    <h3>What we found</h3><p>${esc(f.found)}</p>
+    <h3>Why it matters</h3><p>${esc(f.impact)}</p>
+    <h3>What we did</h3><p>${f.ours}</p>
+    <h3>At IDNI</h3><p>${i ? `${label}. Filed ${fmtDay(i.created_at)}, ${plural(i.comments || 0, "comment")}${i.closed_at ? `, closed ${fmtDay(i.closed_at)}` : `, last activity ${ago(i.updated_at)}`}.` : "Status could not be read from GitHub right now."}</p>
+    <p><a class="btn" href="https://github.com/${REPO}/issues/${f.n}" target="_blank" rel="noopener">Open on GitHub</a></p>`;
+  $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus();
+});
+function closeModal() { $("mDetail").hidden = true; }
+$("mDetail").addEventListener("click", e => { if (e.target === $("mDetail") || e.target.closest("[data-close]")) closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("mDetail").hidden) closeModal(); });
+
+// pre-filled issue for IDNI; kept short because long URLs get cut off
+const TEMPLATE = `**What I did**\n1. \n\n**What happened**\n\n\n**What I expected**\n\n\n**Where**\nNode commit: \nNetwork: tau-testnet-v2\nBlock height / tx hash: \n\n**Logs or RPC replies**\n\`\`\`\n\n\`\`\``;
+$("reportIdni").href = `https://github.com/${REPO}/issues/new?title=${encodeURIComponent("")}&body=${encodeURIComponent(TEMPLATE)}`;
+
+async function tick() { ISSUES = await fetchIssues(); render(); }
+render();
+tick();
+setInterval(tick, CACHE_MS);
+</script>
+</body>
+</html>

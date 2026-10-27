@@ -415,8 +415,8 @@ async def main():
         r.board[bob_id]["first_seen"] -= 3 * 86400
         svg = (await get(f"/community/badge/{bob_id}.svg"))[1]
         check("running 3 d" in svg and "% up" in svg, "badge counts days and shows the uptime share")
-        check(relay.Relay.uptime({"first_seen": 0, "minutes": 30}, 60 * 60) == 0.5
-              and relay.Relay.uptime({"first_seen": 0, "minutes": 3}, 5 * 60) is None, "uptime share")
+        check(relay.Relay.node_uptime({"first_seen": 0, "minutes": 30}, 60 * 60) == 0.5
+              and relay.Relay.node_uptime({"first_seen": 0, "minutes": 3}, 5 * 60) is None, "uptime share")
         # a node that went silent keeps its start date when it comes back
         alice_first = r.board[alice["id"]]["first_seen"]
         async with connect(url, additional_headers={"X-Forwarded-For": "198.51.100.8"}) as ws:

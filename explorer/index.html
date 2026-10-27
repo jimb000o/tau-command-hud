@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Tau Explorer</title>
+<meta name="description" content="Search the Tau Testnet Alpha: any block, transaction or address, the queue of transactions waiting for a block, and what each transaction did.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Explorer">
+<meta property="og:description" content="Search any block, transaction or address on the Tau testnet, read straight from our own verifying node.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/explorer/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+button { font: inherit; }
+.wrap { max-width: 1480px; margin: 0 auto; display: grid; gap: 12px; }
+
+/* one screen on desktop: the page keeps its design size, scales up on wide screens (--z, set by script) and the
+   three columns take the remaining height, each scrolling inside. Phones and short windows scroll normally. */
+html.fit body { padding: 0; overflow: hidden; height: 100vh; }
+html.fit .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px;
+  transform: scale(var(--z)); transform-origin: 0 0; grid-template-rows: auto auto auto minmax(0, 1fr) auto; }
+html.fit .cols { min-height: 0; }
+html.fit .cols > .panel { min-height: 0; display: flex; flex-direction: column; }
+html.fit .scroll { min-height: 0; flex: 1 1 auto; overflow: auto; }
+html.fit footer { padding-top: 6px; }
+html.fit footer p { margin: 0; }
+html.fit .fb-fab, html.fit #tip { zoom: var(--z); }
+
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.hdr-right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chip { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 12px; white-space: nowrap; background: none; cursor: pointer; }
+.chip:hover { background: #fff; color: #000; }
+.state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.wait { color: var(--behind); border-color: rgba(255,177,59,.4); } .state.wait i { background: var(--behind); }
+.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+.state.sample { color: #fff; border-color: #fff; } .state.sample i { background: #fff; }
+
+/* search + key numbers in one row on desktop */
+.top { display: grid; gap: 10px 16px; align-items: center; }
+@media (min-width: 1100px) { .top { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } }
+.lead { margin: 0 0 6px; font: 500 clamp(17px, 2.2vw, 21px)/1.25 var(--display); color: #fff; }
+.find { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.find input { flex: 1 1 300px; min-width: 0; background: #0c0c0d; border: 1px solid var(--hair); border-radius: 999px; color: #fff; font: 13px var(--mono); padding: 9px 16px; }
+.find input:focus { outline: 1px solid var(--ok); border-color: var(--ok); }
+.find input.bad { border-color: var(--bad); outline-color: var(--bad); }
+.find .msg { flex: 1 0 100%; color: var(--bad); font-size: 12px; margin: 0; }
+.btn { font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; color: #000; background: #fff; border: 1px solid #fff; border-radius: 999px; padding: 9px 18px; cursor: pointer; white-space: nowrap; text-decoration: none; }
+.btn:hover { background: var(--ok); border-color: var(--ok); }
+.btn.ghost { background: none; color: #fff; border-color: var(--hair); }
+.btn.ghost:hover { background: #fff; color: #000; border-color: #fff; }
+
+.tiles { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (min-width: 700px) { .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px; min-width: 0; cursor: default; }
+.tile:hover, .tile:focus-visible { border-color: var(--hair); outline: none; }
+.tile h4 { margin: 0; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.tile .v { font: 600 20px/1.2 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 3px; white-space: nowrap; }
+.tile .v small { font: 500 11px var(--display); color: var(--dim); margin-left: 3px; }
+.tile.a .v { color: var(--behind); }
+
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.panel h3 { margin: 12px 0 4px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #fff; }
+.empty { color: var(--dim); font-size: 12.5px; margin: 4px 0; }
+.note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+.note b { color: #fff; font-weight: 600; }
+
+/* three columns: blocks, transactions, the open item */
+.cols { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .cols { grid-template-columns: minmax(0, .9fr) minmax(0, 1.15fr) minmax(0, 1.25fr); } }
+@media (max-width: 1099px) { #detail { order: -1; } .cols > .panel:not(#detail) .scroll { max-height: 65vh; overflow: auto; } }
+#blocks .d { white-space: nowrap; }
+@media (max-width: 520px) { #blocks .amt { display: none; } }
+
+/* lists */
+ul.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+ul.list li > button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; padding: 5px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); cursor: pointer; font: 12.5px/1.45 var(--mono); color: var(--text); }
+ul.list li > button:hover, ul.list li > button:focus-visible { background: rgba(255,255,255,.07); }
+ul.list li.on > button { background: rgba(255,255,255,.09); border-left-color: #fff; }
+ul.list li.q > button { border-left-color: var(--behind); }
+ul.list li.fresh > button { animation: fresh 2.4s ease-out; }
+@keyframes fresh { from { background: rgba(57,255,138,.18); } }
+.list .h { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.list .d { min-width: 0; overflow-wrap: anywhere; }
+.list .d b { color: #fff; font-weight: 600; }
+.list .d em { font-style: normal; color: var(--dim); }
+.list .amt { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; color: #fff; }
+.list .amt.dim { color: var(--dim); }
+.list .amt.q { color: var(--behind); }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+.filters button { font: 600 10.5px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 11px; cursor: pointer; white-space: nowrap; }
+.filters button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+.filters button:hover:not([aria-pressed="true"]) { color: #fff; border-color: #fff; }
+button.more { all: unset; cursor: pointer; color: var(--dim); font-size: 12px; text-decoration: underline; margin: 8px 0 2px; display: inline-block; }
+button.more:hover { color: #fff; }
+
+/* the open item */
+.kind { font: 600 10px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin: 0; }
+.title { margin: 2px 0 4px; font: 600 19px/1.25 var(--display); color: #fff; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.headline { margin: 0 0 6px; font: 500 13.5px/1.45 var(--display); color: #fff; }
+.headline em { font-style: normal; color: var(--dim); }
+.tag { display: inline-block; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 2px 7px; white-space: nowrap; }
+.tag.g { color: var(--ok); border-color: rgba(57,255,138,.4); }
+.tag.w { color: #fff; border-color: var(--hair); }
+.tag.a { color: var(--behind); border-color: rgba(255,177,59,.4); }
+.tag.r { color: var(--bad); border-color: rgba(255,77,109,.4); }
+.nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
+dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 6px 0 0; font-size: 12.5px; }
+dl.kv dt { color: var(--dim); }
+dl.kv dd { margin: 0; overflow-wrap: anywhere; word-break: break-word; }
+dl.kv code { color: var(--text); }
+@media (max-width: 520px) { dl.kv { grid-template-columns: minmax(0, 1fr); } dl.kv dd { margin-bottom: 4px; } }
+pre, code { font-variant-ligatures: none; }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 22em; overflow: auto; }
+details.raw { margin-top: 10px; } details.raw summary { cursor: pointer; color: var(--dim); font-size: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+a.go { color: #fff; text-decoration: none; border-bottom: 1px dotted var(--hair); cursor: pointer; }
+a.go:hover { border-bottom-color: #fff; }
+.mini { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); margin: 8px 0 2px; }
+.mini div { border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; }
+.mini h4 { margin: 0; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.mini b { display: block; font: 600 16px/1.3 var(--display); color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.how { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; }
+.how li { margin: 3px 0; color: var(--dim); font-size: 12.5px; }
+.how li b { color: #fff; font-weight: 600; }
+.how code { color: #fff; }
+
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(320px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
+.fb-fab:hover { background: var(--ok); }
+html.fit .fb-fab { display: none; }
+@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .tile .v { font-size: 17px; } }
+[hidden] { display: none !important; }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Explorer</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state" tabindex="0" data-tip="Connecting to our node…"><i></i><span id="stateText">Connecting</span></span>
+    </div>
+  </header>
+  <nav class="tnav" data-page="explorer" aria-label="Pages and tools"></nav>
+
+  <div class="top">
+    <div>
+      <p class="lead">Look up anything on the Tau testnet.</p>
+      <form class="find" id="find" autocomplete="off">
+        <input id="q" type="text" spellcheck="false" aria-label="Search" placeholder="Block number, hash or address">
+        <button class="btn" type="submit">Search</button>
+        <p class="msg" id="qMsg" hidden></p>
+      </form>
+    </div>
+    <section class="tiles" id="tiles" aria-label="Key numbers"></section>
+  </div>
+
+  <main class="cols">
+    <section class="panel">
+      <h2>Blocks <small id="blkSub"></small></h2>
+      <div class="scroll"><ul class="list" id="blocks"></ul><button class="more" id="blkMore" type="button" hidden>Show older blocks</button></div>
+    </section>
+    <section class="panel">
+      <h2>Transactions <small id="txSub"></small></h2>
+      <div class="filters" role="group" aria-label="Show">
+        <button type="button" data-f="all" aria-pressed="true">All</button>
+        <button type="button" data-f="queue" aria-pressed="false">Waiting</button>
+        <button type="button" data-f="transfer" aria-pressed="false">Transfers</button>
+        <button type="button" data-f="rule" aria-pressed="false">Rules</button>
+        <button type="button" data-f="gov" aria-pressed="false">Governance</button>
+      </div>
+      <div class="scroll"><ul class="list" id="txs"></ul><button class="more" id="txMore" type="button" hidden>Show older transactions</button></div>
+    </section>
+    <section class="panel" id="detail" aria-live="polite">
+      <div class="scroll" id="dBody"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Data: our node at node.tauhud.com (tau-testnet pinned to commit 539d1e2), which checks every block itself, served by a read-only relay. Amounts in AGRS. <a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">Source</a> · <a href="/account/">Accounts</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a>
+<div id="tip" hidden></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const PARAMS = new URLSearchParams(location.search);
+const NODE = PARAMS.get("node") || "wss://node.tauhud.com";
+const SAMPLE = PARAMS.has("sample");
+const PAGE = 100;
+
+const TX_NAMES = {
+  user_tx: "Transfer", rule_deploy: "Own rule set", retractable_transfer: "Retractable transfer", retract_transfer: "Transfer pulled back",
+  approval_request: "Co-signed transfer", transfer_vote: "Co-sign vote", rule_offer: "Rule offered", rule_offer_accept: "Rule offer accepted",
+  rule_offer_reject: "Rule offer refused", consensus_rule_update: "Rule change proposed", consensus_rule_vote: "Rule change vote",
+};
+// one plain sentence per transaction type, for the detail view
+const TX_SAYS = {
+  user_tx: "Moves AGRS from one account to another. Before it lands, the network asks the receiver's own Tau rule (if it has one) whether to accept it.",
+  rule_deploy: "The sender wrote a Tau rule for its own account, for example who may send it money and how much. The network enforces it from then on.",
+  retractable_transfer: "A transfer the sender can still pull back until it is released, at a block height or a time.",
+  retract_transfer: "The sender pulled back an earlier retractable transfer before it was released.",
+  approval_request: "A transfer that only goes through once the named co-signers approve it.",
+  transfer_vote: "A co-signer's yes or no on a co-signed transfer.",
+  rule_offer: "One account suggests a rule to another. The receiver decides: accept it, and it binds the receiver; refuse it, and nothing changes.",
+  rule_offer_accept: "The receiver took on a rule another account offered it.",
+  rule_offer_reject: "The receiver said no to a rule another account offered it.",
+  consensus_rule_update: "A proposal to change the rules of the whole network. It only takes effect if enough votes agree before its activation block.",
+  consensus_rule_vote: "A vote on a proposed change to the network's rules.",
+};
+const CAT = { user_tx: "transfer", retractable_transfer: "transfer", retract_transfer: "transfer", approval_request: "transfer", transfer_vote: "transfer",
+  rule_deploy: "rule", rule_offer: "rule", rule_offer_accept: "rule", rule_offer_reject: "rule", consensus_rule_update: "gov", consensus_rule_vote: "gov" };
+const STREAMS = { o5: "who may send to it, and how much (its transfer policy)", o8: "an extra fee on its transactions", o6: "block validity", o7: "who may propose blocks", o9: "the network fee" };
+// what gettxstatus answers, in words
+const TX_STATUS = {
+  confirmed: ["In a block", "g", "Sealed in a block on the chain our node follows."],
+  queued: ["Waiting", "a", "In our node's queue, waiting for the next block."],
+  expired: ["Expired", "r", "It waited too long and the network let it go. It never reached a block."],
+  evicted: ["Pushed out", "r", "The queue was full or a newer transaction from the same sender replaced it. It never reached a block."],
+  rejected: ["Refused", "r", "The network refused it on a second check, for example because a rule said no or the balance did not cover it."],
+  unknown: ["Not known", "w", "Our node has not seen a transaction with this hash. It may be on another chain, or not sent yet."],
+};
+
+/* ------------------------------ formatting ------------------------------ */
+const nf = new Intl.NumberFormat("en-US");
+const fmtN = n => n == null || !isFinite(n) ? "—" : nf.format(Math.round(n));
+const fmtA = n => n == null || !isFinite(n) ? "—" : nf.format(n);
+const plural = (n, w) => `${fmtN(n)} ${w}${n === 1 ? "" : "s"}`;
+const pad = n => String(n).padStart(2, "0");
+const fmtTime = ts => { const d = new Date(ts * 1000); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+const fmtDay = ts => new Date(ts * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+const fmtWhen = ts => !ts ? "genesis" : new Date().toDateString() === new Date(ts * 1000).toDateString() ? `today, ${fmtTime(ts)}` : `${fmtDay(ts)}, ${fmtTime(ts)}`;
+function ago(ts) {
+  if (!ts) return "—";
+  const s = Math.max(0, Date.now() / 1000 - ts);
+  if (s < 60) return `${Math.round(s)} s ago`;
+  if (s < 5400) return `${Math.round(s / 60)} min ago`;
+  if (s < 172800) return `${Math.round(s / 3600)} h ago`;
+  return `${Math.round(s / 86400)} days ago`;
+}
+const dur = s => s == null || !isFinite(s) ? "—" : s < 120 ? `${Math.round(s)} s` : s < 7200 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1)} h`;
+const short = h => h ? `${h.slice(0, 6)}…${h.slice(-4)}` : "—";
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const low = s => typeof s === "string" ? s.trim().toLowerCase() : "";
+const num = v => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+const isAddr = s => /^[0-9a-f]{96}$/.test(s);
+const isHash = s => /^[0-9a-f]{64}$/.test(s);
+const isoTs = s => { const t = Date.parse(s || ""); return Number.isFinite(t) ? t / 1000 : null; };
+const qs = SAMPLE ? "&sample" : "";
+const blkHref = h => `?b=${h}${qs}`, txHref = x => `?tx=${x}${qs}`, addrHref = a => `?a=${a}${qs}`;
+const blkLink = h => `<a class="go" href="${blkHref(h)}" data-go="b:${h}">#${fmtN(h)}</a>`;
+const txLink = (x, label) => `<a class="go" href="${txHref(x)}" data-go="tx:${x}">${esc(label || short(x))}</a>`;
+const addrLink = a => isAddr(a) ? `<a class="go" href="${addrHref(a)}" data-go="a:${a}">${esc(short(a))}</a>` : "—";
+const tagHtml = (text, cls) => `<span class="tag ${cls || ""}">${esc(text)}</span>`;
+
+/* ------------------------------ state ------------------------------ */
+// C: the chain as read from the relay, plus indexes built from it. V: what the page shows.
+const C = { ws: null, blocks: [], head: -1, gov: null, mempool: [], dropped: [], droppedTotal: 0, loading: false, nextFrom: 0, retry: 5000, ready: false, legacy: false,
+  byHash: new Map(), txIndex: new Map(), indexedTo: -1, fresh: new Set() };
+const V = { sel: null, filter: "all", blkN: 60, txN: 60, lookups: {}, status: {} };
+
+/* ------------------------------ relay ------------------------------ */
+function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = text; s.dataset.tip = tipText; }
+function send(cmd) { if (C.ws && C.ws.readyState === 1) C.ws.send(cmd); }
+// one random id per browser, shared by every tauhud.com page, so the relay's online counter counts a person once
+function viewerId() {
+  try {
+    let v = localStorage.getItem("tauhud-viewer");
+    if (!/^[0-9a-f]{32}$/.test(v || "")) {
+      v = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem("tauhud-viewer", v);
+    }
+    return v;
+  } catch { return ""; }
+}
+function connect() {
+  clearTimeout(C.retryT);
+  let ws;
+  try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
+  C.ws = ws;
+  setState("wait", "Connecting", `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
+  ws.onopen = () => { C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); send("getmempool"); loadFrom(0); askFor(V.sel); };
+  ws.onmessage = onMessage;
+  ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
+  ws.onerror = () => {};
+  loadDropped();
+}
+function offline(why) {
+  C.ws = null; C.loading = false;
+  const w = C.retry; C.retry = Math.min(60000, w * 2);
+  setState("off", "Offline", `Our node is not reachable (${why}).\nRetrying in ${w / 1000} s.`);
+  C.retryT = setTimeout(connect, w);
+}
+function loadFrom(from) { C.loading = true; C.nextFrom = from; send(`getblockrange ${from} ${PAGE}`); }
+function reset() { C.blocks = []; C.head = -1; C.byHash.clear(); C.txIndex.clear(); C.indexedTo = -1; }
+function store(raw, live) {
+  const h = Number((raw.header || {}).block_number);
+  if (!Number.isFinite(h) || h < 0) return;
+  const old = C.blocks[h];
+  if (old && old.block_hash !== raw.block_hash) { C.byHash.delete(old.block_hash); C.indexedTo = Math.min(C.indexedTo, h - 1); }  // a reorg replaced it
+  if (live && !old) C.fresh.add(h);
+  C.blocks[h] = raw;
+  if (h > C.head) C.head = h;
+}
+// tx hash -> where it sits; block hash -> height. Built once per block.
+function index() {
+  if (C.indexedTo > C.head) C.indexedTo = -1;
+  if (C.indexedTo === -1) { C.byHash.clear(); C.txIndex.clear(); }
+  for (let h = C.indexedTo + 1; h <= C.head; h++) {
+    const b = C.blocks[h]; if (!b) continue;
+    if (b.block_hash) C.byHash.set(low(b.block_hash), h);
+    (b.tx_ids || []).forEach((id, i) => { if (id) C.txIndex.set(low(id), { h, i }); });
+  }
+  C.indexedTo = C.head;
+}
+// transactions that left our node's queue without reaching a block (kept by the relay, see /stats)
+function loadDropped() {
+  fetch(NODE.replace(/^ws/, "http").replace(/\/$/, "") + "/stats", { cache: "no-store" }).then(r => r.ok ? r.json() : null)
+    .then(j => { if (j && Array.isArray(j.dropped)) { C.dropped = j.dropped; C.droppedTotal = j.dropped_total || j.dropped.length; render(); } }).catch(() => {});
+}
+// what the open item needs from the node beyond the blocks
+function askFor(sel) {
+  if (!sel || SAMPLE) return;
+  if (sel.t === "a") for (const cmd of ["getaccountstate", "getsequence"]) send(`${cmd} ${sel.v}`);
+  if (sel.t === "tx" && !C.txIndex.has(sel.v)) send(`gettxstatus ${sel.v}`);
+}
+function onMessage(ev) {
+  const text = String(ev.data);
+  if (/^ok version/.test(text) || /^error/.test(text)) return;
+  let msg; try { msg = JSON.parse(text); } catch { return; }
+  const d = msg.data || {}, cmd = msg.command;
+  if (cmd === "getblockrange") {
+    if (msg.status !== "ok") {
+      if ((msg.error || {}).code === "NOT_READY") setTimeout(() => loadFrom(C.nextFrom), 3000); else { C.legacy = true; send("getblocks 50"); }
+      return;
+    }
+    (d.blocks || []).forEach(b => store(b, false));
+    const head = Number.isFinite(d.head) ? d.head : C.head, next = C.nextFrom + PAGE;
+    setState("wait", "Loading", `Read ${plural(C.head + 1, "block")} of ${fmtN(head + 1)}…`);
+    if ((d.blocks || []).length && next <= head) { loadFrom(next); return; }
+    C.loading = false; live(); render(); askFor(V.sel);
+  } else if (cmd === "getblocks") {
+    if (msg.status !== "ok") return;
+    if (d.reset) { reset(); if (!C.legacy) setTimeout(() => loadFrom(0), 500); }
+    const before = C.head;
+    (d.blocks || []).forEach(b => store(b, C.ready));
+    if (C.loading && !C.legacy) return;
+    if (C.legacy) live();
+    else if (C.head > before + 1 && before >= 0 && !C.blocks[before + 1]) { loadFrom(before + 1); return; }
+    if (C.head !== before || d.reset) { render(); if (V.sel && V.sel.t === "a") askFor(V.sel); }
+  } else if (cmd === "getmempool") {
+    if (msg.status === "ok") { C.mempool = d.transactions || []; render(); }
+  } else if (cmd === "getgovernance") {
+    if (msg.status === "ok") { C.gov = d; render(); }
+  } else if (cmd === "gettxstatus") {
+    if (msg.status !== "ok") { if ((msg.error || {}).code === "BUSY" && V.sel && V.sel.t === "tx") setTimeout(() => askFor(V.sel), 1500); return; }
+    if (d.tx_hash) { V.status[low(d.tx_hash)] = d; render(); }
+  } else if (cmd === "getaccountstate" || cmd === "getsequence") {
+    if (msg.status !== "ok") { if ((msg.error || {}).code === "BUSY" && V.sel && V.sel.t === "a") setTimeout(() => send(`${cmd} ${V.sel.v}`), 1500); return; }
+    if (d.address) { V.lookups[`${cmd} ${low(d.address)}`] = d; render(); }
+  }
+}
+function live() {
+  C.ready = true;
+  setState("live", "Live", `${plural(C.head + 1, "block")} read from our node.\nNew blocks and waiting transactions appear as they come.`);
+  clearInterval(C.poll);
+  C.poll = setInterval(() => { send("getblocks 6"); send("getgovernance"); }, 30000);
+}
+
+/* ------------------------------ reading the chain ------------------------------ */
+function txKind(t) {
+  const ops = t.operations || {};
+  if ((t.tx_type || "user_tx") === "user_tx" && ops["0"]) return "rule_deploy";
+  return t.tx_type || "user_tx";
+}
+const transfersOf = t => Array.isArray((t.operations || {})["1"]) ? t.operations["1"].filter(x => Array.isArray(x) && x.length >= 3) : [];
+const streamOf = text => { const m = /\b(o\d+)\s*\[/.exec(text || ""); return m ? m[1] : null; };
+const ruleOf = t => txKind(t) === "rule_deploy" ? String(t.operations["0"]) : typeof t.rule_text === "string" ? t.rule_text : null;
+const tsOf = b => num((b && b.header || {}).timestamp) || null;
+const amountOf = t => { const tr = transfersOf(t); return tr.length ? tr.reduce((s, x) => s + num(x[2]), 0) : t.amount != null ? num(t.amount) : null; };
+const yes = v => v !== false && String(v).toLowerCase() !== "false";
+// the account on the other side, if there is one
+function toOf(t) {
+  const tr = transfersOf(t);
+  if (tr.length === 1) return low(tr[0][1]);
+  if (tr.length > 1) return null;
+  return low(t.recipient_pubkey) || null;
+}
+function* txsNewestFirst() {
+  for (let h = C.head; h >= 0; h--) {
+    const b = C.blocks[h]; if (!b) continue;
+    const list = b.transactions || [];
+    for (let i = list.length - 1; i >= 0; i--) if (list[i] && typeof list[i] === "object") yield { h, i, t: list[i], id: low((b.tx_ids || [])[i] || ""), ts: tsOf(b) };
+  }
+}
+function txAt(h, i) { const b = C.blocks[h]; const t = b && (b.transactions || [])[i]; return t ? { h, i, t, id: low((b.tx_ids || [])[i] || ""), ts: tsOf(b) } : null; }
+// average gap between the last ten blocks, from their own timestamps
+function pace() {
+  const ts = []; for (let h = C.head; h >= 1 && ts.length < 11; h--) { const t = tsOf(C.blocks[h]); if (t) ts.push(t); }
+  return ts.length >= 2 ? (ts[0] - ts[ts.length - 1]) / (ts.length - 1) : null;
+}
+function chainNumbers() {
+  let txs = 0; const accounts = new Set();
+  for (let h = 0; h <= C.head; h++) {
+    const b = C.blocks[h]; if (!b) continue;
+    for (const t of b.transactions || []) {
+      if (!t || typeof t !== "object") continue;
+      txs++;
+      if (isAddr(low(t.sender_pubkey))) accounts.add(low(t.sender_pubkey));
+      for (const x of transfersOf(t)) if (isAddr(low(x[1]))) accounts.add(low(x[1]));
+    }
+  }
+  return { txs, accounts: accounts.size };
+}
+
+/* ------------------------------ rendering ------------------------------ */
+let renderT = null;
+function render() { clearTimeout(renderT); renderT = setTimeout(draw, 30); }
+function draw() {
+  index();
+  drawTiles(); drawBlocks(); drawTxs(); drawDetail();
+  C.fresh.clear();
+}
+function tile(label, value, unit, tipText, cls) {
+  return `<div class="tile ${cls || ""}" tabindex="0" data-tip="${esc(tipText)}"><h4>${esc(label)}</h4><div class="v">${value}${unit ? `<small>${unit}</small>` : ""}</div></div>`;
+}
+function drawTiles() {
+  const n = chainNumbers(), p = pace(), last = tsOf(C.blocks[C.head]);
+  $("tiles").innerHTML = [
+    tile("Height", C.head >= 0 ? fmtN(C.head) : "—", "", `The newest block our node has checked.${last ? `\nMade ${ago(last)}.` : ""}`),
+    tile("Block pace", p ? dur(p) : "—", "", "Average time between the last ten blocks, from their own timestamps."),
+    tile("Transactions", fmtN(n.txs), "", "Every transaction sealed in a block on this chain."),
+    tile("Accounts", fmtN(n.accounts), "", "Accounts that sent or received something on this chain."),
+    tile("Waiting", fmtN(C.mempool.length), "", "Transactions in our node's queue, waiting for the next block.", C.mempool.length ? "a" : ""),
+    tile("Dropped", fmtN(C.droppedTotal), "", "Transactions that left our node's queue without ever reaching a block: refused on a second check, expired or replaced."),
+  ].join("");
+}
+const isSel = (t, v) => V.sel && V.sel.t === t && String(V.sel.v) === String(v);
+function drawBlocks() {
+  const rows = [];
+  for (let h = C.head; h >= 0 && rows.length < V.blkN; h--) {
+    const b = C.blocks[h]; if (!b) continue;
+    const n = (b.transactions || []).length, ts = tsOf(b);
+    rows.push(`<li class="${isSel("b", h) ? "on" : ""} ${C.fresh.has(h) ? "fresh" : ""}"><button type="button" data-go="b:${h}">
+      <span class="h">#${fmtN(h)}</span><span class="d">${n ? `<b>${plural(n, "transaction")}</b>` : `<em>empty</em>`} <em>· ${h === 0 ? "genesis" : esc(ago(ts))}</em></span><span class="amt dim">${esc(short(b.block_hash))}</span></button></li>`);
+  }
+  $("blocks").innerHTML = rows.join("") || `<li class="empty">${C.ready || SAMPLE ? "No blocks yet." : "Reading the chain…"}</li>`;
+  $("blkSub").textContent = C.head >= 0 ? `newest first · ${plural(C.head + 1, "block")}` : "";
+  $("blkMore").hidden = C.head + 1 <= V.blkN;
+}
+function txLine(t, kind) {
+  const s = low(t.sender_pubkey || t.sender), to = toOf(t), tr = transfersOf(t);
+  if (kind === "user_tx" && tr.length > 1) return `${esc(short(s))} → ${tr.length} accounts`;
+  return `${esc(short(s))}${to ? ` → ${esc(short(to))}` : ""}`;
+}
+function drawTxs() {
+  const f = V.filter, rows = [];
+  if (f === "all" || f === "queue") {
+    for (const m of C.mempool) rows.push(`<li class="q ${isSel("tx", low(m.tx_hash)) ? "on" : ""}"><button type="button" data-go="tx:${esc(low(m.tx_hash))}">
+      <span class="h">waiting</span><span class="d"><b>${esc(short(m.tx_hash))}</b> <em>· from ${esc(short(low(m.sender)))}${m.operation_count ? ` · ${plural(num(m.operation_count), "operation")}` : ""}</em></span><span class="amt q">${esc(ago(isoTs(m.received_at)))}</span></button></li>`);
+  }
+  let total = 0;
+  if (f !== "queue") {
+    for (const x of txsNewestFirst()) {
+      const k = txKind(x.t);
+      if (f !== "all" && (CAT[k] || "transfer") !== f) continue;
+      total++;
+      if (rows.length >= V.txN) continue;
+      const amt = amountOf(x.t);
+      rows.push(`<li class="${isSel("tx", x.id || `${x.h}.${x.i}`) ? "on" : ""} ${C.fresh.has(x.h) ? "fresh" : ""}"><button type="button" data-go="tx:${x.id || `${x.h}.${x.i}`}">
+        <span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${txLine(x.t, k)}</em></span><span class="amt">${amt != null ? `${fmtA(amt)}` : ""}</span></button></li>`);
+    }
+  }
+  $("txs").innerHTML = rows.join("") || `<li class="empty">${f === "queue" ? "Nothing is waiting. New transactions show up here until a block takes them." : C.ready || SAMPLE ? "No transactions of this kind yet." : "Reading the chain…"}</li>`;
+  $("txSub").textContent = f === "queue" ? `${plural(C.mempool.length, "transaction")} waiting` : `newest first${C.mempool.length && f === "all" ? ` · ${fmtN(C.mempool.length)} waiting` : ""}`;
+  $("txMore").hidden = f === "queue" || total <= V.txN;
+}
+
+/* ------------------------------ the open item ------------------------------ */
+function drawDetail() {
+  const s = V.sel, body = $("dBody");
+  const html = !s ? overview() : s.t === "b" ? blockView(Number(s.v)) : s.t === "tx" ? txView(String(s.v)) : s.t === "a" ? addrView(String(s.v)) : s.t === "hits" ? hitsView(s.v) : overview();
+  if (body.dataset.html !== html) { body.innerHTML = html; body.dataset.html = html; }
+}
+function overview() {
+  const g = C.gov || {}, vals = g.active_validators || [];
+  return `<p class="kind">Explorer</p><p class="title">What you can look up</p>
+    <p class="headline">Click any block or transaction on the left, or search above. Every link here is shareable.</p>
+    <ul class="how">
+      <li><b>A block number</b> like <code>${C.head > 0 ? C.head : 42}</code>: when it was made, who sealed it, what it holds.</li>
+      <li><b>A transaction hash</b> (64 hex characters): is it in a block, still waiting, or was it dropped, and what did it do.</li>
+      <li><b>A block hash</b> (64 hex characters): the same as a block number.</li>
+      <li><b>An address</b> (96 hex characters): its balance and everything it sent or received. The start of one works too.</li>
+    </ul>
+    <h3>Right now</h3>
+    <dl class="kv">
+      <dt>Newest block</dt><dd>${C.head >= 0 ? `${blkLink(C.head)} · ${esc(ago(tsOf(C.blocks[C.head])))}` : "—"}</dd>
+      <dt>Validators</dt><dd>${vals.length ? vals.map(v => addrLink(low(typeof v === "string" ? v : (v || {}).pubkey))).join(", ") : "—"}</dd>
+      <dt>Waiting</dt><dd>${plural(C.mempool.length, "transaction")}</dd>
+    </dl>
+    <p class="note">Our node checks every block against the network's Tau rules before it shows up here. Transactions a rule refuses never reach a block; if they waited in our queue first, you can still find them by hash.</p>`;
+}
+function blockView(h) {
+  const b = C.blocks[h];
+  if (!b) return notFound(`Block #${fmtN(h)}`, h > C.head ? `The chain is at #${fmtN(C.head)}, so this block does not exist yet.` : "Our node does not hold this block.");
+  const hd = b.header || {}, ts = tsOf(b), prev = tsOf(C.blocks[h - 1]), txs = b.transactions || [], prop = low(hd.proposer_pubkey);
+  const confirms = C.head - h + 1;
+  const rows = txs.map((t, i) => {
+    if (!t || typeof t !== "object") return "";
+    const k = txKind(t), id = low((b.tx_ids || [])[i] || ""), amt = amountOf(t);
+    return `<tr><td class="n">${i + 1}</td><td><a class="go" href="${txHref(id || `${h}.${i}`)}" data-go="tx:${id || `${h}.${i}`}">${esc(TX_NAMES[k] || k)}</a></td><td>${txLine(t, k)}</td><td class="n">${amt != null ? fmtA(amt) : ""}</td></tr>`;
+  }).join("");
+  return `<p class="kind">Block</p><p class="title">#${fmtN(h)} ${h === 0 ? tagHtml("genesis", "w") : tagHtml(`${fmtN(confirms)} deep`, "g")}</p>
+    <p class="headline">${h === 0 ? "The first block. It sets the starting balances and rules every node agrees on." : `Sealed ${esc(ago(ts))}${prev ? ` <em>· ${dur(ts - prev)} after the one before</em>` : ""}, holding ${plural(txs.length, "transaction")}.`}</p>
+    <dl class="kv">
+      <dt>Time</dt><dd>${esc(fmtWhen(ts))}</dd>
+      <dt>Sealed by</dt><dd>${/^0*$/.test(prop) ? "nobody (genesis)" : `${addrLink(prop)}${isValidator(prop) ? " " + tagHtml("validator", "g") : ""}`}</dd>
+      <dt>Block hash</dt><dd><code>${esc(b.block_hash || "—")}</code></dd>
+      <dt>Previous</dt><dd>${h > 0 ? `${blkLink(h - 1)} <code>${esc(short(hd.previous_hash))}</code>` : "—"}</dd>
+      <dt>Merkle root</dt><dd><code>${esc(hd.merkle_root || "—")}</code></dd>
+      <dt>State hash</dt><dd><code>${esc(hd.state_hash || "—")}</code></dd>
+    </dl>
+    <div class="nav">${h > 0 ? `<a class="chip" href="${blkHref(h - 1)}" data-go="b:${h - 1}">← #${fmtN(h - 1)}</a>` : ""}${h < C.head ? `<a class="chip" href="${blkHref(h + 1)}" data-go="b:${h + 1}">#${fmtN(h + 1)} →</a>` : ""}<a class="chip" href="/history/#${h}">Time travel to here</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + blkHref(h))}">Copy link</button></div>
+    ${txs.length ? `<h3>Transactions</h3><table><thead><tr><th class="n">#</th><th>What</th><th>From → to</th><th class="n">AGRS</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
+    <p class="note">The state hash is a fingerprint of every balance and rule after this block. Two nodes that agree on it agree on the whole state.</p>
+    <details class="raw"><summary>Raw block</summary><pre class="code">${esc(JSON.stringify(b, null, 2))}</pre></details>`;
+}
+function txView(key) {
+  let x = null;
+  if (/^\d+\.\d+$/.test(key)) { const [h, i] = key.split(".").map(Number); x = txAt(h, i); }
+  else { const at = C.txIndex.get(key); if (at) x = txAt(at.h, at.i); }
+  if (x) return sealedTx(x);
+  const m = C.mempool.find(t => low(t.tx_hash) === key);
+  const st = V.status[key], dr = C.dropped.find(d => low(d.tx_hash) === key);
+  if (!m && !st && !dr) return SAMPLE || !isHash(key) ? notFound("Transaction", "No transaction with this hash on this chain.") :
+    `<p class="kind">Transaction</p><p class="title">${esc(short(key))}</p><p class="headline">Asking our node about this hash…</p><dl class="kv"><dt>Hash</dt><dd><code>${esc(key)}</code></dd></dl>`;
+  const status = m ? "queued" : st ? st.status : dr ? "dropped" : "unknown";
+  const [label, cls, says] = TX_STATUS[status] || (status === "dropped" ? ["Dropped", "r", "It waited in our node's queue and then left it without reaching a block."] : [status, "w", ""]);
+  const sender = low((m && m.sender) || (st && st.sender) || (dr && dr.sender) || "");
+  const rows = [["Hash", `<code>${esc(key)}</code>`]];
+  if (sender) rows.push(["Sent by", addrLink(sender)]);
+  if (dr && dr.type) rows.push(["What", esc(TX_NAMES[dr.type] || dr.type)]);
+  const seq = (m && m.sequence_number) ?? (st && st.sequence_number);
+  if (seq != null) rows.push(["Sequence", fmtN(num(seq))]);
+  const recv = isoTs((m && m.received_at) || (st && st.received_at)) || (dr && dr.seen);
+  if (recv) rows.push(["Arrived", `${esc(fmtWhen(recv))} <em>· ${esc(ago(recv))}</em>`]);
+  const exp = isoTs((m && m.expires_at) || (st && st.expires_at));
+  if (exp) rows.push(["Expires", esc(fmtWhen(exp))]);
+  const left = isoTs(st && st.dropped_at) || (dr && dr.left);
+  if (left && status !== "queued") rows.push(["Left the queue", esc(fmtWhen(left))]);
+  if (st && st.reason) rows.push(["Reason", `<code>${esc(st.reason)}</code>`]);
+  const fee = (m && m.estimated_fee) ?? (st && st.estimated_fee);
+  if (fee != null) rows.push(["Fee", `${fmtA(num(fee))} AGRS estimated${(m || st).fee_limit != null ? ` · limit ${fmtA(num((m || st).fee_limit))}` : ""}`]);
+  if (st && st.status === "confirmed" && st.block_number != null) rows.push(["Block", `${blkLink(num(st.block_number))} · ${plural(num(st.confirmations), "confirmation")}`]);
+  return `<p class="kind">Transaction</p><p class="title">${esc(short(key))} ${tagHtml(label, cls)}</p>
+    <p class="headline">${esc(says)}</p>
+    <dl class="kv">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
+    ${status === "queued" ? `<p class="note">Our node only shows a summary while it waits. The full transaction appears here once a block takes it.</p>` : ""}
+    <div class="nav"><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + txHref(key))}">Copy link</button></div>`;
+}
+function sealedTx(x) {
+  const t = x.t, k = txKind(t), s = low(t.sender_pubkey), tr = transfersOf(t), rule = ruleOf(t), st = streamOf(rule);
+  const confirms = C.head - x.h + 1;
+  const rows = [];
+  if (x.id) rows.push(["Hash", `<code>${esc(x.id)}</code>`]);
+  rows.push(["Block", `${blkLink(x.h)} · transaction ${x.i + 1} of ${(C.blocks[x.h].transactions || []).length} · ${esc(fmtWhen(x.ts))}`]);
+  rows.push(["Signed by", `${addrLink(s)}${isValidator(s) ? " " + tagHtml("validator", "g") : ""}`]);
+  if (t.sequence_number != null) rows.push(["Sequence", `${fmtN(num(t.sequence_number))} <em>· this sender's transaction number ${fmtN(num(t.sequence_number) + 1)}</em>`]);
+  if (tr.length === 1) rows.push(["Sent", `<b>${fmtA(num(tr[0][2]))} AGRS</b> ${addrLink(low(tr[0][0]))} → ${addrLink(low(tr[0][1]))}`]);
+  if (t.recipient_pubkey) rows.push([k === "rule_offer" ? "Offered to" : "To", addrLink(low(t.recipient_pubkey))]);
+  if (t.amount != null) rows.push(["Amount", `<b>${fmtA(num(t.amount))} AGRS</b>`]);
+  if (t.release_at_height != null) rows.push(["Released at", blkLink(num(t.release_at_height))]);
+  if (t.release_at_time != null) rows.push(["Released at", esc(fmtWhen(num(t.release_at_time)))]);
+  if (t.expire_at_height != null) rows.push(["Offer ends", blkLink(num(t.expire_at_height))]);
+  if (t.activate_at_height != null) rows.push(["Would apply from", blkLink(num(t.activate_at_height))]);
+  if (t.approve != null) rows.push(["Vote", yes(t.approve) ? tagHtml("yes", "g") : tagHtml("no", "r")]);
+  for (const [f, label] of [["offer_id", "Offer"], ["update_id", "Rule change"], ["request_id", "Request"], ["retractable_id", "Retractable"]])
+    if (t[f]) rows.push([label, `<code>${esc(t[f])}</code>${f === "update_id" ? ` · <a class="go" href="/proposals/">all proposals</a>` : ""}`]);
+  if (t.fee_limit != null) rows.push(["Fee limit", `${fmtA(num(t.fee_limit))} AGRS`]);
+  return `<p class="kind">Transaction</p><p class="title">${esc(TX_NAMES[k] || k)} ${tagHtml(`in block · ${fmtN(confirms)} deep`, "g")}</p>
+    <p class="headline">${esc(TX_SAYS[k] || "")}</p>
+    <dl class="kv">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
+    ${tr.length > 1 ? `<h3>Transfers</h3><table><thead><tr><th>From</th><th>To</th><th class="n">AGRS</th></tr></thead><tbody>${tr.map(([f, to, a]) => `<tr><td>${addrLink(low(f))}</td><td>${addrLink(low(to))}</td><td class="n">${fmtA(num(a))}</td></tr>`).join("")}</tbody></table>` : ""}
+    ${rule ? `<h3>Rule text${st ? ` · ${esc(st)}` : ""}</h3><pre class="code">${esc(rule)}</pre><p class="note">${STREAMS[st] ? `This rule decides ${esc(STREAMS[st])}. ` : ""}Try rules like this in the <a href="/playground/">Rule Playground</a>.</p>` : ""}
+    <div class="nav"><a class="chip" href="/account/?a=${esc(s)}">Sender's account</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + txHref(x.id || `${x.h}.${x.i}`))}">Copy link</button></div>
+    <details class="raw"><summary>Raw transaction</summary><pre class="code">${esc(JSON.stringify(t, null, 2))}</pre></details>`;
+}
+const isValidator = a => ((C.gov || {}).active_validators || []).some(v => low(typeof v === "string" ? v : (v || {}).pubkey) === a);
+function addrView(a) {
+  let sent = 0, inN = 0, outN = 0, inSum = 0, outSum = 0, proposed = 0, last = null;
+  const list = [];
+  for (let h = 0; h <= C.head; h++) if (low(((C.blocks[h] || {}).header || {}).proposer_pubkey) === a) proposed++;
+  for (const x of txsNewestFirst()) {
+    const t = x.t, s = low(t.sender_pubkey), mine = s === a;
+    let touched = mine, dir = mine ? "out" : "", amt = null;
+    for (const [f, to, v] of transfersOf(t)) {
+      if (low(f) === a) { outN++; outSum += num(v); touched = true; dir = "out"; amt = (amt || 0) + num(v); }
+      if (low(to) === a && low(f) !== a) { inN++; inSum += num(v); touched = true; dir = "in"; amt = (amt || 0) + num(v); }
+    }
+    if (!touched && low(t.recipient_pubkey) === a) { touched = true; dir = "in"; }
+    if (!touched) continue;
+    if (mine) sent++;
+    if (last == null) last = x.ts;
+    if (list.length < 40) list.push({ x, dir, amt });
+  }
+  const st = V.lookups[`getaccountstate ${a}`], sq = V.lookups[`getsequence ${a}`];
+  const bal = st && st.chain_balance != null ? num(st.chain_balance) : null;
+  const pending = st ? num(st.pending_outgoing) + num(st.pending_fees) : 0;
+  const waiting = C.mempool.filter(m => low(m.sender) === a);
+  const known = sent || inN || proposed || bal != null;
+  if (!known && (C.ready || SAMPLE) && !st) {
+    return `<p class="kind">Address</p><p class="title">${esc(short(a))}</p><p class="headline">Nothing on this chain mentions this address yet.${SAMPLE ? "" : " Asking our node for its balance…"}</p><dl class="kv"><dt>Address</dt><dd><code>${esc(a)}</code></dd></dl>`;
+  }
+  return `<p class="kind">Address</p><p class="title">${esc(short(a))}${isValidator(a) ? " " + tagHtml("validator", "g") : ""}</p>
+    <div class="mini">
+      <div data-tip="What our node says this account holds now, after every sealed block."><h4>Balance</h4><b>${bal != null ? fmtA(bal) : "…"}</b></div>
+      <div><h4>Sent</h4><b>${fmtN(sent)}</b></div>
+      <div><h4>Received</h4><b>${fmtN(inN)}</b></div>
+      <div><h4>Last active</h4><b>${last ? esc(ago(last)) : "—"}</b></div>
+    </div>
+    <dl class="kv">
+      <dt>Address</dt><dd><code>${esc(a)}</code></dd>
+      <dt>Moved</dt><dd>${fmtA(inSum)} AGRS in · ${fmtA(outSum)} AGRS out</dd>
+      ${proposed ? `<dt>Blocks sealed</dt><dd>${fmtN(proposed)}</dd>` : ""}
+      ${sq && sq.sequence_number != null ? `<dt>Next sequence</dt><dd>${fmtN(num(sq.sequence_number))}</dd>` : ""}
+      ${pending ? `<dt>On hold</dt><dd>${fmtA(pending)} AGRS for transactions still waiting</dd>` : ""}
+      ${waiting.length ? `<dt>Waiting</dt><dd>${waiting.map(m => txLink(low(m.tx_hash))).join(", ")}</dd>` : ""}
+    </dl>
+    <div class="nav"><a class="chip" href="/account/?a=${esc(a)}${qs}">Full account view</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + addrHref(a))}">Copy link</button></div>
+    ${list.length ? `<h3>Latest activity</h3><ul class="list">${list.map(({ x, dir, amt }) => { const k = txKind(x.t); return `<li><button type="button" data-go="tx:${x.id || `${x.h}.${x.i}`}"><span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${dir === "in" ? `from ${esc(short(low(x.t.sender_pubkey)))}` : toOf(x.t) && toOf(x.t) !== a ? `to ${esc(short(toOf(x.t)))}` : esc(ago(x.ts))}</em></span><span class="amt ${dir === "in" ? "" : "dim"}">${amt != null ? `${dir === "in" ? "+" : "−"}${fmtA(amt)}` : ""}</span></button></li>`; }).join("")}</ul>` : ""}
+    <p class="note">Its own rules, rule offers and refusals are in the full account view.</p>`;
+}
+function hitsView(h) {
+  return `<p class="kind">Search</p><p class="title">${plural(h.list.length, "match")} for “${esc(h.q)}”</p>
+    <ul class="list">${h.list.slice(0, 50).map(r => `<li><button type="button" data-go="${r.go}"><span class="h">${esc(r.kind)}</span><span class="d"><code>${esc(r.label)}</code></span><span class="amt dim">${esc(r.sub || "")}</span></button></li>`).join("")}</ul>
+    ${h.list.length > 50 ? `<p class="note">Showing 50. Type a few more characters.</p>` : ""}`;
+}
+function notFound(title, text) {
+  return `<p class="kind">Not found</p><p class="title">${esc(title)}</p><p class="headline">${esc(text)}</p><div class="nav"><button class="chip" type="button" data-go="home">Back to the overview</button></div>`;
+}
+
+/* ------------------------------ navigation ------------------------------ */
+function urlFor(sel) {
+  if (!sel) return `/explorer/${SAMPLE ? "?sample" : ""}`;
+  if (sel.t === "b") return blkHref(sel.v);
+  if (sel.t === "tx") return txHref(sel.v);
+  if (sel.t === "a") return addrHref(sel.v);
+  return `?q=${encodeURIComponent(sel.v.q)}${qs}`;
+}
+function go(sel, push) {
+  V.sel = sel;
+  if (push) history.pushState(null, "", urlFor(sel));
+  document.title = !sel ? "Tau Explorer" : sel.t === "b" ? `Block #${sel.v} · Tau Explorer` : sel.t === "tx" ? `Transaction ${short(sel.v)} · Tau Explorer` : sel.t === "a" ? `Address ${short(sel.v)} · Tau Explorer` : "Search · Tau Explorer";
+  askFor(sel); hideTip(); draw();
+  $("dBody").scrollTop = 0;
+  if (!document.documentElement.classList.contains("fit") && sel) $("detail").scrollIntoView({ block: "start", behavior: "smooth" });
+}
+function parseGo(s) {
+  if (s === "home") return null;
+  const [t, v] = [s.slice(0, s.indexOf(":")), s.slice(s.indexOf(":") + 1)];
+  return t === "b" ? { t, v: Number(v) } : { t, v };
+}
+function fromUrl() {
+  const p = new URLSearchParams(location.search);
+  if (p.has("b") && /^\d+$/.test(p.get("b"))) return { t: "b", v: Number(p.get("b")) };
+  if (p.has("tx")) return { t: "tx", v: low(p.get("tx")) };
+  if (p.has("a") && isAddr(low(p.get("a")))) return { t: "a", v: low(p.get("a")) };
+  if (p.has("q")) { setTimeout(() => search(p.get("q"), false), 0); return null; }
+  return null;
+}
+addEventListener("popstate", () => go(fromUrl(), false));
+// what a typed query can be, checked against the chain we hold
+function search(raw, push) {
+  const q = low(raw).replace(/^0x/, "").replace(/^#/, "").replace(/\s+/g, "");
+  const fail = text => { $("qMsg").textContent = text; $("qMsg").hidden = false; $("q").classList.add("bad"); };
+  $("q").value = raw; $("qMsg").hidden = true; $("q").classList.remove("bad");
+  if (!q) return go(null, push);
+  index();
+  if (/^\d+$/.test(q) && q.length < 12) return go({ t: "b", v: Number(q) }, push);
+  if (!/^[0-9a-f]+$/.test(q)) return fail("Search for a block number, or a hash or address written in hex (the digits 0–9 and the letters a–f).");
+  if (isHash(q)) return go(C.byHash.has(q) ? { t: "b", v: C.byHash.get(q) } : { t: "tx", v: q }, push);
+  if (isAddr(q)) return go({ t: "a", v: q }, push);
+  if (q.length < 4) return fail("Type at least 4 characters of a hash or address.");
+  const list = [], seen = new Set();
+  for (const [hash, h] of C.byHash) if (hash.startsWith(q)) list.push({ kind: "block", label: short(hash), sub: `#${fmtN(h)}`, go: `b:${h}` });
+  for (const [id, at] of C.txIndex) if (id.startsWith(q)) list.push({ kind: "tx", label: short(id), sub: `#${fmtN(at.h)}`, go: `tx:${id}` });
+  for (const m of C.mempool) if (low(m.tx_hash).startsWith(q)) list.push({ kind: "tx", label: short(low(m.tx_hash)), sub: "waiting", go: `tx:${low(m.tx_hash)}` });
+  for (const x of txsNewestFirst()) for (const a of [low(x.t.sender_pubkey), ...transfersOf(x.t).map(r => low(r[1])), low(x.t.recipient_pubkey)])
+    if (isAddr(a) && !seen.has(a) && a.startsWith(q)) { seen.add(a); list.push({ kind: "address", label: short(a), go: `a:${a}` }); }
+  if (list.length === 1) return go(parseGo(list[0].go), push);
+  if (!list.length) return fail(`Nothing on this chain starts with “${q}”. A transaction or block hash has 64 characters, an address 96.`);
+  go({ t: "hits", v: { q, list } }, push);
+}
+$("find").addEventListener("submit", e => { e.preventDefault(); search($("q").value, true); });
+document.addEventListener("click", e => {
+  const c = e.target.closest("[data-copy]");
+  if (c) { navigator.clipboard && navigator.clipboard.writeText(c.dataset.copy).then(() => { const t = c.textContent; c.textContent = "Copied"; setTimeout(() => { c.textContent = t; }, 1500); }).catch(() => {}); return; }
+  const g = e.target.closest("[data-go]");
+  if (g && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); go(parseGo(g.dataset.go), true); return; }
+  const f = e.target.closest("[data-f]");
+  if (f) { V.filter = f.dataset.f; V.txN = 60; document.querySelectorAll("[data-f]").forEach(b => b.setAttribute("aria-pressed", String(b === f))); drawTxs(); return; }
+  if (e.target.id === "blkMore") { V.blkN += 100; drawBlocks(); }
+  if (e.target.id === "txMore") { V.txN += 100; drawTxs(); }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && document.activeElement !== $("q")) { e.preventDefault(); $("q").focus(); $("q").select(); }
+});
+
+/* ------------------------------ tooltip ------------------------------ */
+const tip = $("tip");
+function showTip(ev, text) {
+  tip.innerHTML = text.split("\n").map(l => `<div>${esc(l)}</div>`).join(""); tip.hidden = false;
+  const z = ZOOM, r = tip.getBoundingClientRect(), padv = 12;
+  let left = ev.clientX + 14, top = ev.clientY + 14;
+  if (left + r.width > innerWidth - padv) left = ev.clientX - r.width - 14;
+  if (top + r.height > innerHeight - padv) top = ev.clientY - r.height - 14;
+  tip.style.left = Math.max(padv, left) / z + "px"; tip.style.top = Math.max(padv, top) / z + "px";
+}
+const hideTip = () => { tip.hidden = true; };
+document.addEventListener("pointerover", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d) showTip(e, d.dataset.tip); });
+document.addEventListener("pointerout", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d && !d.contains(e.relatedTarget)) hideTip(); });
+
+/* ------------------------------ fitting ------------------------------ */
+// Desktop: one screen, the three columns scroll inside. From 1700 px wide the whole page scales up (like the HUD),
+// capped by the height so a 21:9 monitor keeps it above the fold. Phones and short windows scroll normally.
+let ZOOM = 1;
+function fit() {
+  const w = innerWidth, h = innerHeight;
+  const one = w >= 1100 && h >= 640;
+  ZOOM = one && w >= 1700 ? Math.max(1, Math.min(2, w / 1560, h / 820)) : 1;
+  document.documentElement.classList.toggle("fit", one);
+  document.documentElement.style.setProperty("--z", ZOOM);
+}
+addEventListener("resize", fit);
+// relative times ("2 min ago") stay current
+setInterval(() => { if (C.head >= 0) { drawTiles(); drawBlocks(); } }, 15000);
+
+/* ------------------------------ sample data (?sample, for previews) ------------------------------ */
+function sampleChain() {
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const hex = n => Array.from({ length: n }, () => Math.floor(rnd() * 16).toString(16)).join("");
+  const accs = Array.from({ length: 9 }, () => hex(96)), prop = hex(96);
+  const now = Math.floor(Date.now() / 1000), N = 242, seq = {};
+  const tx = (s, o) => ({ sender_pubkey: s, sequence_number: (seq[s] = (seq[s] || 0) + 1) - 1, fee_limit: "100", expiration_time: now + 3600, ...o });
+  let prev = "0".repeat(64), ts = now - N * 64;
+  for (let n = 0; n <= N; n++) {
+    const txs = [];
+    if (n === 1) txs.push(tx(accs[0], { operations: { "1": [[accs[0], accs[1], "25000"], [accs[0], accs[2], "25000"], [accs[0], accs[3], "10000"]] } }));
+    else if (n === 40) txs.push(tx(accs[1], { operations: { "0": "o5[t] = i2[t] <= { #x00000000000003E8 }:bv[64]" } }));
+    else if (n === 88) txs.push(tx(accs[2], { tx_type: "rule_offer", recipient_pubkey: accs[3], rule_text: "o5[t] = i2[t] <= { #x0000000000002710 }:bv[64]", expire_at_height: 300 }));
+    else if (n === 150) txs.push(tx(prop, { tx_type: "consensus_rule_update", update_id: hex(64), activate_at_height: 400 }));
+    else if (n === 151) txs.push(tx(accs[4], { tx_type: "consensus_rule_vote", update_id: hex(64), approve: true }));
+    else if (n > 0) for (let k = 0; k < 3; k++) if (rnd() < 0.35) { const f = accs[Math.floor(rnd() * 9)], t = accs[Math.floor(rnd() * 9)]; if (f !== t) txs.push(tx(f, { operations: { "1": [[f, t, String(10 + Math.floor(rnd() * 900))]] } })); }
+    ts += n ? 58 + Math.floor(rnd() * 12) : 0;
+    const hash = hex(64);
+    store({ header: { block_number: n, previous_hash: prev, timestamp: n ? ts : 0, merkle_root: hex(64), proposer_pubkey: n ? prop : "0".repeat(96), state_hash: hex(64) },
+      transactions: txs, tx_ids: txs.map(() => hex(64)), block_hash: hash }, false);
+    prev = hash;
+  }
+  C.gov = { active_validators: [prop] };
+  C.mempool = [{ tx_hash: hex(64), sender: accs[5], sequence_number: 3, received_at: new Date((now - 12) * 1000).toISOString(), expires_at: new Date((now + 3588) * 1000).toISOString(), operation_count: 1, status: "pending", fee_limit: 100, estimated_fee: 3 },
+               { tx_hash: hex(64), sender: accs[2], sequence_number: 9, received_at: new Date((now - 41) * 1000).toISOString(), expires_at: new Date((now + 3559) * 1000).toISOString(), operation_count: 2, status: "pending", fee_limit: 100, estimated_fee: 4 }];
+  C.dropped = [{ tx_hash: hex(64), type: "user_tx", sender: accs[6], seen: now - 5400, left: now - 5330 }]; C.droppedTotal = 1;
+  V.lookups[`getaccountstate ${accs[1]}`] = { address: accs[1], chain_balance: "24120", pending_outgoing: "0", pending_fees: "0" };
+  C.ready = true;
+  setState("sample", "Sample data", "Made-up data for previews.\nRemove ?sample from the address for the live chain.");
+}
+
+/* ------------------------------ start ------------------------------ */
+fit();
+if (SAMPLE) sampleChain(); else connect();
+V.sel = fromUrl();
+go(V.sel, false);
+</script>
+</body>
+</html>

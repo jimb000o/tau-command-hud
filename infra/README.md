@@ -15,7 +15,7 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
   schedule that stays under the node's own rate limits, and serves every visitor from that
   cache. New blocks, mempool and governance changes are pushed to visitors as they happen.
 - **Caddy**: HTTPS with automatic Let's Encrypt certificates; also serves the tracker's `proposals.json` and `feed.xml`.
-- **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect.
+- **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect, plus a weekly recap image.
 
 ## Server
 
@@ -128,6 +128,18 @@ start date through a silence.
 while the node reports, grey when offline, "unknown node" for an id it never saw), cached
 5 minutes. The kit's heartbeat log prints the Markdown snippet for it once per start.
 
+`GET /uptime` (CORS `*`, cached 5 s; used by tauhud.com/status) is the availability
+history for the status page. Once a minute the relay samples whether the node is
+connected and answering (`node_ok`) and whether its verified head is within
+`SYNC_LAG_BLOCKS` (2) of the network tip (`synced`), and folds the samples into hourly
+buckets `[hour, samples, node_ok, synced]` for 31 days. A bucket with fewer than 60
+samples means the relay itself was down for the rest of that hour. `incidents` lists
+outages `{"kind": "relay" | "node" | "sync", "start", "end", "max_lag"}` (`end` null while
+it lasts); `restarts`, `reorgs` and `stalls` (gaps of more than 10 min between two blocks
+of the current chain: the network made no block) cover the same 31 days, and `status` is
+`/status`. Stored in `/data/uptime.json` (volume `relay_data`), so it survives restarts;
+the time between the relay's last sample and its next start counts as a relay outage.
+
 ## Rule Playground checker
 
 `checker/checker.py` answers tauhud.com/playground: `POST https://node.tauhud.com/check`
@@ -207,6 +219,21 @@ switching to Read and write) as `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`,
 `X_ACCESS_SECRET` in `.env`, and `X_PROFILE_URL=https://x.com/<handle>` for the page's
 follow link. Same `up -d alerts` and `--test`.
 
+**Weekly recap**: every Monday 09:00 UTC (`RECAP_WEEKDAY`, `RECAP_HOUR`) `alerts/recap.py`
+draws the past 7 days as one 1200×675 image in the HUD look: blocks and block time,
+transactions and active accounts, blocks per day, rule changes (proposed, agreed, in force,
+dropped), chain restarts, community nodes (new ones this week) and the most active accounts.
+Data: the relay's `/stats` and `/community` plus the tracker's own events. It goes to
+Telegram (and X once its keys are set) as a photo with a short caption, and stays at
+`https://node.tauhud.com/recap/latest.png`, `/recap/<date>.png` and `/recap/index.json`
+(newest first, with the caption lines) for the HUD to link. The first run only notes the
+next slot; a slot missed by more than a day is drawn but not posted. Fonts (Sora,
+JetBrains Mono, SIL OFL) live in `alerts/fonts/`.
+
+- `docker compose run --rm alerts python alerts.py --recap-preview` draws the last 7 days
+  to `/recap/latest.png` and posts nothing.
+- `docker compose run --rm alerts python alerts.py --recap-now` draws it and posts it.
+
 Logs: `docker compose logs -f alerts`.
 
 ## Tests
@@ -214,6 +241,7 @@ Logs: `docker compose logs -f alerts`.
 ```bash
 pip install websockets==15.0.1
 python relay/test_relay.py
+python relay/test_uptime.py
 ```
 
 Runs the relay against a mock node that enforces the real node's rate limits: read
@@ -225,14 +253,14 @@ docker compose run --rm checker python /checker/test_checker.py
 ```
 
 ```bash
-pip install websockets==15.0.1 blake3==1.0.5
+pip install websockets==15.0.1 blake3==1.0.5 pillow==11.3.0
 python alerts/test_alerts.py
 ```
 
 Runs the alerts watcher against a mock relay: history on the first run is not posted, new
 proposals, agreement, activation and a dropped change are posted once each per channel
 (also after a failed post and a watcher restart), the feed and proposals.json are right,
-and a chain restart is reported.
+a chain restart is reported, and the weekly recap is drawn and posted once.
 
 Runs the checker against the real engine: verdicts for sample transfers, refusals by
 the text screens and by the engine.

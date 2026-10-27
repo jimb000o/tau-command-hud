@@ -80,6 +80,15 @@ EVENTS_PATH = os.environ.get("EVENTS_PATH", "/data/events.json")
 # relay restarts (the node only hands out its newest ~900 KB of blocks).
 CHAIN_PATH = os.environ.get("CHAIN_PATH", "/data/chain.jsonl")
 EVENTS_MAX = 5000
+# Availability history for /uptime (the status page): one sample a minute,
+# folded into hourly buckets, plus a list of outages. Kept for 31 days.
+UPTIME_PATH = os.environ.get("UPTIME_PATH", "/data/uptime.json")
+UPTIME_SAMPLE = _env_float("UPTIME_SAMPLE_SECONDS", 60)
+UPTIME_DAYS = _env_int("UPTIME_DAYS", 31)
+# the node counts as in sync while its verified head is at most this far behind the network tip
+SYNC_LAG = _env_int("SYNC_LAG_BLOCKS", 2)
+# a gap between two blocks longer than this is listed as a chain stall
+STALL_SECONDS = _env_int("STALL_SECONDS", 600)
 STATS_CACHE_SECONDS = _env_float("STATS_CACHE_SECONDS", 5)
 # a tx that leaves the mempool counts as dropped only if no block holds it
 # this long afterwards (the block poll may still be catching up)
@@ -237,6 +246,9 @@ class Relay:
         self.full_limit = CHAIN_BLOCKS          # how many blocks a full fetch asks for
         self.chain_file_ok = True
         self.state = self._load_state()         # restarts, dropped txs, last chain seen
+        self.uptime = self._load_uptime()       # hourly availability buckets and outages
+        self.uptime_text: str | None = None
+        self.uptime_at = 0.0
         self._load_chain()
         self.mempool_seen: dict[str, dict] = {}  # tx_hash -> summary, while in the mempool
         self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
@@ -484,6 +496,123 @@ class Relay:
         self.state["restarts"].append({"detected_at": round(time.time()), "old": old, "new_block1_ts": new_block1_ts})
         self.state["restarts"] = self.state["restarts"][-EVENTS_MAX:]
         self._save_state()
+
+    # ---------- availability history: /uptime ----------
+    def _load_uptime(self) -> dict:
+        state = None
+        try:
+            with open(UPTIME_PATH) as f:
+                state = json.load(f)
+        except FileNotFoundError:
+            pass
+        except (OSError, ValueError) as exc:
+            log.warning("cannot read %s: %r; starting a new uptime history", UPTIME_PATH, exc)
+        if not isinstance(state, dict):
+            state = {"since": round(time.time()), "hours": {}, "incidents": [], "last_beat": None}
+        state.setdefault("hours", {})
+        state.setdefault("incidents", [])
+        state.setdefault("last_beat", None)
+        now = round(time.time())
+        last = state.get("last_beat")
+        # still-open outages ended when the relay stopped; the time it was away is a relay outage
+        for inc in state["incidents"]:
+            if inc.get("end") is None:
+                inc["end"] = last or now
+        if last and now - last > 2.5 * UPTIME_SAMPLE:
+            state["incidents"].append({"kind": "relay", "start": last, "end": now})
+        state.pop("open", None)
+        self.uptime_open: dict[str, dict] = {}  # kind -> the incident still going on
+        return state
+
+    def _save_uptime(self):
+        tmp = UPTIME_PATH + ".tmp"
+        try:
+            with open(tmp, "w") as f:
+                json.dump(self.uptime, f, separators=(",", ":"))
+            os.replace(tmp, UPTIME_PATH)
+        except OSError as exc:
+            if not getattr(self, "_uptime_warned", False):
+                log.warning("cannot write %s: %r; uptime lives in memory only", UPTIME_PATH, exc)
+                self._uptime_warned = True
+
+    def sample_uptime(self, now: float | None = None):
+        """One availability sample: is the node connected and answering, and is
+        its verified head at the network tip? Opens and closes outages."""
+        now = round(now if now is not None else time.time())
+        fresh = now - self.updated.get("getblocks", 0) < 3 * max(BLOCK_POLL, UPTIME_SAMPLE / 2)
+        node_ok = self.upstream.connected.is_set() and fresh
+        canon, tip = self.canonical_height(), self.tip_height()
+        lag = (tip - canon) if node_ok and canon is not None and tip is not None else None
+        synced = node_ok and canon is not None and canon > 0 and (lag is None or lag <= SYNC_LAG)
+        hour = str(now - now % 3600)
+        bucket = self.uptime["hours"].setdefault(hour, [0, 0, 0])
+        bucket[0] += 1
+        bucket[1] += node_ok
+        bucket[2] += synced
+        opened = self.uptime_open
+        for kind, bad, detail in (("node", not node_ok, None),
+                                  ("sync", node_ok and not synced, {"canonical": canon, "tip": tip})):
+            inc = opened.get(kind)
+            if bad and inc is None:
+                inc = opened[kind] = {"kind": kind, "start": now, "end": None}
+                self.uptime["incidents"].append(inc)
+            if inc is not None and detail and lag is not None:
+                inc["max_lag"] = max(inc.get("max_lag", 0), lag)
+            if not bad and inc is not None:
+                inc["end"] = now
+                del opened[kind]
+        cutoff = now - UPTIME_DAYS * 86400
+        self.uptime["hours"] = {h: v for h, v in self.uptime["hours"].items() if int(h) >= cutoff - 3600}
+        self.uptime["incidents"] = [i for i in self.uptime["incidents"]
+                                    if i.get("end") is None or i["end"] >= cutoff][-EVENTS_MAX:]
+        self.uptime["last_beat"] = now
+        self.uptime_text = None
+        self._save_uptime()
+
+    async def uptime_loop(self):
+        while True:
+            await asyncio.sleep(UPTIME_SAMPLE)
+            try:
+                self.sample_uptime()
+            except Exception:
+                log.exception("uptime sample failed")
+
+    def chain_stalls(self, since: float) -> list[dict]:
+        """Gaps between consecutive blocks of the current chain longer than
+        STALL_SECONDS: the network itself produced no block for that long."""
+        out, prev = [], None
+        for b in self.ordered_blocks():
+            ts = self._ts(b)
+            if not ts or self._height(b) < 1:
+                continue  # block 0 (genesis) carries timestamp 0
+            if prev and ts - prev[1] > STALL_SECONDS and ts >= since:
+                out.append({"after": prev[0], "start": prev[1], "end": ts})
+            prev = (self._height(b), ts)
+        return out[-200:]
+
+    def uptime_json(self) -> str:
+        now = time.time()
+        if self.uptime_text and now - self.uptime_at < STATS_CACHE_SECONDS:
+            return self.uptime_text
+        cutoff = now - UPTIME_DAYS * 86400
+        hours = sorted(([int(h), *v] for h, v in self.uptime["hours"].items()), key=lambda r: r[0])
+        incidents = [{k: v for k, v in i.items()} for i in self.uptime["incidents"]][-500:]
+        tip_block = self.ordered_blocks()[-1] if self.blocks else None
+        self.uptime_text = json.dumps({
+            "generated_at": round(now), "since": self.uptime.get("since"),
+            "sample_seconds": UPTIME_SAMPLE, "sync_lag_blocks": SYNC_LAG, "stall_seconds": STALL_SECONDS,
+            "fields": ["hour", "samples", "node_ok", "synced"],
+            "hours": hours, "incidents": incidents,
+            "restarts": [{"detected_at": r.get("detected_at"), "old_tip": (r.get("old") or {}).get("tip"),
+                          "old_tip_ts": (r.get("old") or {}).get("tip_ts"), "new_block1_ts": r.get("new_block1_ts")}
+                         for r in self.state["restarts"] if (r.get("detected_at") or 0) >= cutoff],
+            "reorgs": [r for r in self.state["reorgs"] if (r.get("at") or 0) >= cutoff],
+            "stalls": self.chain_stalls(cutoff),
+            "last_block_ts": self._ts(tip_block) if tip_block else None,
+            "status": self.status(),
+        }, separators=(",", ":"))
+        self.uptime_at = now
+        return self.uptime_text
 
     @staticmethod
     def _tx_summary(t: dict) -> dict:
@@ -801,7 +930,7 @@ class Relay:
             self._save_board(now)
 
     @staticmethod
-    def uptime(row: dict, now: float) -> float | None:
+    def node_uptime(row: dict, now: float) -> float | None:
         """Share of the minutes since its first report in which the node
         reported; None for the first ten minutes (too few to say)."""
         span = (now - row["first_seen"]) / 60
@@ -815,7 +944,7 @@ class Relay:
             live = self.community.get(r["id"])
             rows.append({"id": r["id"], "name": r["name"], "first_seen": round(r["first_seen"]),
                          "last_seen": round(r["last_seen"]), "online": live is not None,
-                         "days": int((now - r["first_seen"]) // 86400), "uptime": self.uptime(r, now),
+                         "days": int((now - r["first_seen"]) // 86400), "uptime": self.node_uptime(r, now),
                          "height": r.get("height"), "kit": r.get("kit"), "ref": r.get("ref"),
                          "agrees": self.agreement(live, hashes) if live else None})
         # online first, then the longest running, then the steadiest
@@ -845,7 +974,7 @@ class Relay:
             online = node_id in self.community
             right = (f"running {span}" if span else "new node") if online else \
                 (f"offline · ran {span}" if span else "offline")
-            up = self.uptime(row, now)
+            up = self.node_uptime(row, now)
             if span and up is not None:  # days alone would flatter a node that was mostly down
                 right += f" · {round(up * 100)} % up"
         left = "Tau HUD node"
@@ -963,6 +1092,11 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=300")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.badge_svg(badge.group(1)).encode())
+        if path == "/uptime":
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.uptime_json().encode())
         if path == "/community":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
@@ -1014,6 +1148,7 @@ class Relay:
             asyncio.create_task(self.poll_loop(GOV_POLL, lambda: self.poll_cached("getgovernance", True))),
             asyncio.create_task(self.poll_loop(STATE_POLL, lambda: self.poll_cached("gettaustate", False))),
             asyncio.create_task(self.presence_loop()),
+            asyncio.create_task(self.uptime_loop()),
         ]
         async with serve(self.handler, LISTEN_HOST, LISTEN_PORT, process_request=self.process_request,
                          max_size=512, max_queue=8, ping_interval=15, ping_timeout=15,

@@ -35,6 +35,7 @@ body {
 }
 a { color: #fff; }
 .wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.wrap > *, .wrap > .tnav { flex: none; }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
 .mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -97,7 +98,7 @@ footer a { color: var(--dim); }
 @media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
   body { height: 100vh; overflow: hidden; padding-bottom: 10px; }
   .wrap { height: 100%; }
-  .main { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, 2.2fr) minmax(340px, 1fr); }
+  .wrap > .main { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, 2.2fr) minmax(340px, 1fr); }
   .panel.board { display: flex; flex-direction: column; min-height: 0; }
   .panel.board .tablewrap { flex: 1 1 0; min-height: 0; }
   .side { overflow: auto; min-height: 0; }
@@ -109,16 +110,15 @@ footer a { color: var(--dim); }
 }
 @media (max-width: 700px) { td.hide-s, th.hide-s { display: none; } }
 </style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
 </head>
 <body>
 <div class="wrap">
   <header>
     <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Community nodes</span></a>
-    <div class="hdr-right">
-      <a class="chip" href="/stats/">Stats</a>
-      <a class="chip" href="/">Back to the live HUD</a>
-    </div>
   </header>
+  <nav class="tnav" data-page="nodes" aria-label="Pages and tools"></nav>
   <div>
     <p class="lead">The people who keep the Tau testnet checkable.</p>
     <p class="sub" id="sourceLine">Every node here runs the Tau HUD kit and follows the Tau Testnet Alpha by itself. The longer and steadier a node runs, the higher it ranks. Each one is compared, block for block, with our own node.</p>
