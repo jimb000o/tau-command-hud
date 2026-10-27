@@ -667,7 +667,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     <button class="chip unoff" type="button" data-open="mAbout" data-full="Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Click for the full notice.">Unofficial community project · not affiliated with IDNI</button>
     <div class="chips">
       <div class="chip" id="chipMode"><span class="dot sim" id="modeDot"></span>Mode<b id="modeTxt">Simulation</b></div>
-      <div class="chip" id="chipOnline" data-full="People looking at Tau HUD right now. Counted by the community read relay at node.tauhud.com, which every open HUD talks to; no cookies, no analytics, nobody is identified. “—” means the relay has not answered yet."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</div>
+      <div class="chip" id="chipOnline" data-full="People looking at Tau HUD right now. Counted by the community read relay at node.tauhud.com, which every open HUD talks to; no cookies, no analytics, nobody is identified; a random token in your browser makes sure you count once, even with several tabs or pages open. “—” means the relay has not answered yet."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</div>
       <div class="chip" id="chipNet">Network<b id="netId">tau-testnet-v2</b></div>
       <div class="chip" id="chipHeight">Height<b id="chipH">0</b></div>
       <button class="chip" type="button" id="btnState">Spec revision<b id="chipRev">1</b></button>
@@ -848,6 +848,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v16.7 · 27 Oct 2026</b>The “online” count now counts people, not open connections: a random token in your browser (no cookies, no analytics) tells the relay that your tabs and the subpages are one visitor. Takes effect once the relay is updated.</li>
           <li><b>v16.6 · 27 Oct 2026</b>Chronicle: a new page at <a href="chronicle/">/chronicle/</a> tells the project’s history and milestones; linked from the header.</li>
           <li><b>v16.5 · 27 Oct 2026</b>Live: approval requests and their signatures are read from the blocks themselves (approval_request and transfer_vote transactions), the fork radar also counts the reorgs and restarts the relay remembers.</li>
           <li><b>v16.4 · 27 Oct 2026</b>Personal money rules: the examples now show what Tau itself advertises: a second approval above an amount (the transfer parks as an approval request and executes when the approver signs, with a countdown in blocks), a lock until a block height instead of a clock time, spending limits, whitelists and co-signatures. Live mode shows approval requests only when the node reports them. Validators: the consensus mode (fixed validator list, list in Tau logic, or stake-based) and how often it was switched by agreement. Blockchain: a fork radar counting reorgs (with depth) and testnet restarts.</li>
@@ -1187,11 +1188,22 @@ function presenceFromMessage(d) { const n = Number(d && (d.clients ?? d.online ?
 addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); presenceOpen(); });
 /* a quiet presence socket to the relay: one “hello”, then only its presence pushes, so visitors in simulation count too */
 const PSOCK = { ws: null, wait: 5000, timer: null, url: "wss://node.tauhud.com" };
+function viewerId() {
+  try {
+    let v = localStorage.getItem("tauhud-viewer");
+    if (!/^[0-9a-f]{32}$/.test(v || "")) {
+      v = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem("tauhud-viewer", v);
+    }
+    return v;
+  } catch { return ""; }
+}
+function helloLine() { const v = viewerId(); return "hello version=1" + (v ? " viewer=" + v : ""); }
 function presenceOpen() {
   if (PSOCK.ws || S.mode === "live") return;
   let ws; try { ws = new WebSocket(PSOCK.url); } catch { return; }
   PSOCK.ws = ws;
-  ws.onopen = () => { PSOCK.wait = 5000; ws.send("hello version=1"); ws.send("presence"); };
+  ws.onopen = () => { PSOCK.wait = 5000; ws.send(helloLine()); ws.send("presence"); };
   ws.onmessage = ev => { let m; try { m = JSON.parse(String(ev.data)); } catch { return; } if (m && m.status === "ok") presenceFromMessage(m.data); };
   ws.onclose = ws.onerror = () => { if (PSOCK.ws !== ws) return; PSOCK.ws = null; clearTimeout(PSOCK.timer); PSOCK.timer = setTimeout(presenceOpen, PSOCK.wait); PSOCK.wait = Math.min(60000, PSOCK.wait * 2); };
 }
@@ -1882,7 +1894,7 @@ function liveConnect() {
   ws.onopen = () => {
     LIVE.everConnected = true; LIVE.retryWait = 5000;
     setMode("live", "Connected");
-    ws.send("hello version=1");
+    ws.send(helloLine());
     liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool");
     LIVE.poll = setInterval(() => { liveSend("getblocks 6"); liveSend("getmempool"); }, 3000);
     LIVE.govPoll = setInterval(() => liveSend("getgovernance"), 15000);
@@ -2371,7 +2383,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.6`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.7`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
