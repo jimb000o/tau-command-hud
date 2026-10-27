@@ -132,15 +132,18 @@ async def main():
         await until(lambda: len(tg.sent) == 5, "agree, drop, activate posted")
         kinds = [s.split(":")[0] for s in tg.sent]
         assert kinds == ["proposed", "proposed", "agreed", "dropped", "active"], kinds
-        assert "Base fee → 30 AGRS" in tg.sent[0], tg.sent[0]
+        assert "Base fee 20 → 30 AGRS" in tg.sent[0], tg.sent[0]
         await until(lambda: len(x.sent) == 5, "x catches up after its failure")
 
         data = json.load(open(os.path.join(os.environ["PUBLIC_DIR"], "proposals.json")))
         st = {p["title"]: p["status"] for p in data["proposals"]}
-        assert st == {"Base fee → 20 AGRS": "active", "Base fee → 30 AGRS": "active", "New consensus rule text": "dropped"}, st
+        assert st == {"Base fee 10 → 20 AGRS": "active", "Base fee 20 → 30 AGRS": "active", "New definition of o5": "dropped"}, st
         assert data["rules"]["revision"] == 3 and data["rules"]["base_fee"] == 30, data["rules"]
         feed = ET.parse(os.path.join(os.environ["PUBLIC_DIR"], "feed.xml")).getroot()
         assert len(feed.findall("{http://www.w3.org/2005/Atom}entry")) == 8
+
+        # --preview reads the chain on its own and posts nothing
+        assert await alerts.preview_latest(2) == 0
 
         # weekly recap: the first run only notes the slot; a passed slot draws and posts once
         assert w.state["recap"]["slot"] == alerts.Watcher.recap_slot(time.time()) and not any(x.startswith("recap") for x in tg.sent)

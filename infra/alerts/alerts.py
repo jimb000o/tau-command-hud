@@ -25,6 +25,7 @@ week (recap.py) and keeps a copy at https://node.tauhud.com/recap/latest.png.
 
   python alerts.py                  run the watcher
   python alerts.py --test           send one test post to each configured channel
+  python alerts.py --preview        print how the newest rule changes would be posted, post nothing
   python alerts.py --recap-preview  draw this week's recap and save it, post nothing
   python alerts.py --recap-now      draw the recap and post it to each configured channel
 """
@@ -50,6 +51,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from websockets.asyncio.client import connect
 
+import explain
 import recap
 
 try:
@@ -166,33 +168,6 @@ def short(h: str) -> str:
     return h[:6] + "…" + h[-4:] if len(h) > 14 else (h or "—")
 
 
-def title_parts(revisions: list[str], patch: dict | None) -> list[str]:
-    parts, patch = [], patch or {}
-    for r in revisions:
-        f = fee_of(r)
-        if f is not None:
-            parts.append(f"Base fee → {fmt_n(f)} AGRS")
-    other = sum(1 for r in revisions if fee_of(r) is None)
-    if other:
-        parts.append("New consensus rule text" if other == 1 else f"{other} consensus rule revisions")
-    add, rem = len(patch.get("validator_additions") or []), len(patch.get("validator_removals") or [])
-    if add:
-        parts.append("Admit a validator" if add == 1 else f"Admit {add} validators")
-    if rem:
-        parts.append("Remove a validator" if rem == 1 else f"Remove {rem} validators")
-    if "vote_quorum" in patch:
-        parts.append(f"Quorum → {quorum_txt(patch['vote_quorum'])}")
-    if "max_rule_txs_per_block" in patch:
-        parts.append(f"{patch['max_rule_txs_per_block']} rule txs per block")
-    if "fee_beneficiary" in patch:
-        parts.append("Fees to one account" if patch["fee_beneficiary"] else "Fees to the proposer")
-    if "eligibility_mode" in patch:
-        parts.append(f"Proposers: {patch['eligibility_mode'] or 'default'}")
-    if "approval_slots_active" in patch:
-        parts.append("Turn on approval slots")
-    return parts or ["Empty rule change"]
-
-
 def height_of(b: dict) -> int:
     try:
         return int((b.get("header") or {}).get("block_number"))
@@ -221,6 +196,7 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
     order: list[dict] = []
     events: list[dict] = []
     validators, quorum, fee, rev = list(GENESIS_VALIDATORS), GENESIS_QUORUM, 10, 1
+    spec = explain.clauses(explain.GENESIS_RULES)   # the rules in force, stream -> clause
     if not blocks:
         return [], [], {}
     lo, hi = min(blocks), max(blocks)
@@ -243,8 +219,9 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
                      "patch": t.get("host_contract_patch"), "votes": [], "approved_at": None, "approved_ts": None,
                      "activated_at": None, "activated_ts": None, "expired_at": None, "expired_ts": None,
                      "thr": thr, "rev": None, "dups": [], "tx_id": tx_id}
-                p["parts"] = title_parts(p["revisions"], p["patch"])
-                p["title"] = " + ".join(p["parts"])
+                p["explain"] = explain.explain(p["revisions"], p["patch"], spec)
+                p["title"] = p["explain"]["title"]
+                p["parts"] = [c["topic"] + ": " + c["text"] for c in p["explain"]["changes"]] or [p["title"]]
                 props[uid] = p
                 order.append(p)
                 events.append({"kind": "proposed", "h": h, "ts": ts, "id": uid})
@@ -273,10 +250,10 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
         for p in due:
             rev += 1
             p["activated_at"], p["activated_ts"], p["rev"] = h, ts, rev
-            for r in p["revisions"]:
-                f = fee_of(r)
-                if f is not None:
-                    fee = f
+            spec = explain.apply(spec, p["revisions"])
+            f = fee_of(spec.get("o9", ""))
+            if f is not None:
+                fee = f
             patch = p["patch"] or {}
             if patch.get("validator_additions") or patch.get("validator_removals"):
                 rem = {str(x).lower() for x in patch.get("validator_removals") or []}
@@ -319,59 +296,87 @@ def eta_txt(blocks_left: int, pace: float | None) -> str:
 
 
 def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
-    """Headline, one-line body and link for an event."""
+    """Everything a post says about an event: a headline, what changes, why it
+    matters, the facts, a plain one-paragraph body (feed, page, X) and a link."""
     k = ev["kind"]
     if k == "restart":
         old = ev.get("old_tip")
-        return {"headline": "The Tau testnet restarted",
-                "body": (f"The old chain ended at block #{fmt_n(old)}. " if old else "") +
-                        "A new chain started; our node follows it from its first block.",
-                "link": f"{SITE}/stats/"}
-    title = p["title"] if p else "a rule change"
+        why = "The test network started over: balances, rules and history begin again from the starting state."
+        facts = ([f"The old chain ended at block #{fmt_n(old)}."] if old else []) + ["Tau HUD follows the new chain from block 1."]
+        return {"headline": "The Tau testnet restarted", "what": [], "why": why, "why_title": "What happened", "facts": facts,
+                "body": why + " " + " ".join(facts), "link": f"{SITE}/stats/"}
+    x = (p or {}).get("explain") or {"title": (p or {}).get("title", "a rule change"), "changes": [], "why": ""}
+    title = x["title"]
+    what = [f"{c['topic']}: {c['text']}" for c in x["changes"]]
     link = f"{SITE}/proposals/#{(p or {}).get('id', '')[:16]}"
+    left = p["activate_at"] - head if p else 0
+    when = f"block #{fmt_n(p['activate_at'])}{eta_txt(left, pace)}" if p else ""
     if k == "proposed":
-        left = p["activate_at"] - head
-        return {"headline": f"New rule proposal: {title}",
-                "body": f"Proposed at block #{fmt_n(ev['h'])} by {short(p['proposer'])}. "
-                        f"Needs {plural(p['thr'], 'vote')} by block #{fmt_n(p['activate_at'])}"
-                        f"{eta_txt(left, pace)}, or it is dropped.",
-                "link": link}
-    if k == "agreed":
-        left = p["activate_at"] - head
-        return {"headline": f"Agreed: {title}",
-                "body": f"Reached the quorum at block #{fmt_n(ev['h'])} ({p['counted_votes']} of {p['thr']} votes). "
-                        f"Takes effect at block #{fmt_n(p['activate_at'])}{eta_txt(left, pace)}.",
-                "link": link}
-    if k == "active":
-        return {"headline": f"Now in force: {title}",
-                "body": f"Took effect at block #{fmt_n(ev['h'])}. Consensus rules are at revision {p['rev']} now.",
-                "link": link}
-    if k == "dropped":
-        return {"headline": f"Dropped: {title}",
-                "body": f"Only {p['counted_votes']} of {p['thr']} votes by block #{fmt_n(ev['h'])}. The old rules stay.",
-                "link": link}
-    return {"headline": k, "body": "", "link": SITE}
+        need = max(0, p["thr"] - p["counted_votes"]) if p.get("approved_at") is None else 0
+        headline = f"New proposal: {title}"
+        facts = [f"Needs {plural(p['thr'], 'yes vote')} by {when}, or it is dropped.",
+                 f"Proposed at block #{fmt_n(ev['h'])} by {short(p['proposer'])}."]
+        if need == 0 and p.get("approved_at") is not None:
+            facts[0] = f"Already agreed. Takes effect at {when}."
+    elif k == "agreed":
+        headline = f"Agreed: {title}"
+        facts = [f"Takes effect at {when}. Until then the current rules apply.",
+                 f"Votes: {p['counted_votes']} of {p['thr']} needed, reached at block #{fmt_n(ev['h'])}."]
+    elif k == "active":
+        headline = f"Now in force: {title}"
+        facts = [f"In force since block #{fmt_n(ev['h'])}. The consensus rules are now at revision {p['rev']}."]
+    elif k == "dropped":
+        headline = f"Dropped: {title}"
+        facts = [f"It got {p['counted_votes']} of the {plural(p['thr'], 'vote')} it needed by its deadline, block #{fmt_n(ev['h'])}. "
+                 "Nothing changes."]
+    else:
+        return {"headline": k, "what": [], "why": "", "facts": [], "body": "", "link": SITE}
+    why = x.get("why", "") if k != "dropped" else ""
+    if k == "active":  # it happened: say it in the present
+        for a, b in NOW_TENSE:
+            why = why.replace(a, b)
+    body = " ".join(([("What changes: " + "; ".join(what) + ".")] if what else []) + ([why] if why else []) + facts)
+    return {"headline": headline, "label": x.get("label"), "what": what, "why": why, "facts": facts,
+            "what_title": "What changed" if k == "active" else "What it would change" if k == "dropped" else "What changes",
+            "severity": x.get("severity"), "body": body, "link": link}
 
 
-ICONS = {"proposed": "🆕", "agreed": "✅", "active": "⚡", "dropped": "✖️", "restart": "🔄"}
+NOW_TENSE = [("would cost", "costs"), ("would rest", "rests"), ("could no longer", "can no longer"), ("would be accepted", "are accepted"),
+             ("would make", "make"), ("would follow", "follow"), ("Nothing would change", "Nothing changed"), ("If it takes effect, ", "")]
+ICONS = {"proposed": "🗳️", "agreed": "✅", "active": "⚡", "dropped": "❌", "restart": "🔄"}
 
 
 def telegram_text(item: dict) -> str:
-    return (f"{ICONS.get(item['kind'], '•')} <b>{html.escape(item['headline'])}</b>\n"
-            f"{html.escape(item['body'])}\n\n"
-            f"<a href=\"{html.escape(item['link'])}\">Open in Tau HUD</a>")
+    e = html.escape
+    if "facts" not in item:  # posts recorded before explanations existed
+        return (f"{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>\n{e(item['body'])}\n\n"
+                f"<a href=\"{e(item['link'])}\">Open in Tau HUD</a>")
+    out = [f"{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>"]
+    if item.get("label"):
+        out.append(f"<i>Proposer's title: “{e(item['label'])}”</i>")
+    if item["what"]:
+        out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>"] + [f"• {e(w)}" for w in item["what"]]
+    if item.get("why"):
+        warn = "⚠️ " if item.get("severity") in ("halt", "unsafe") else ""
+        out += ["", f"<b>{e(item.get('why_title', 'Why it matters'))}</b>", warn + e(item["why"])]
+    if item["facts"]:
+        out += [""] + [e(f) for f in item["facts"]]
+    label = "Open in Tau HUD" if item["kind"] == "restart" else "Details and votes on Tau HUD"
+    out += ["", f"<a href=\"{e(item['link'])}\">{label}</a>"]
+    return "\n".join(out)
 
 
 def x_text(item: dict) -> str:
     # X counts every link as 23 characters
     tail = f"\n\n{item['link']} #Tau"
     room = 280 - 23 - len(" #Tau") - 2
-    text = f"{ICONS.get(item['kind'], '')} {item['headline']}\n{item['body']}".strip()
-    if len(text) > room:
-        text = f"{ICONS.get(item['kind'], '')} {item['headline']}".strip()
-        if len(text) > room:
-            text = text[: room - 1] + "…"
-    return text + tail
+    icon = ICONS.get(item["kind"], "")
+    for text in (f"{icon} {item['headline']}\n{item.get('why') or item['body']}",
+                 f"{icon} {item['headline']}"):
+        text = text.strip()
+        if len(text) <= room:
+            return text + tail
+    return text[: room - 1] + "…" + tail
 
 
 # ---------------- outlets ----------------
@@ -686,7 +691,7 @@ class Watcher:
             "proposals": [{k: p[k] for k in ("id", "n", "title", "parts", "status", "proposer", "proposed_at", "proposed_ts",
                                               "activate_at", "approved_at", "approved_ts", "activated_at", "activated_ts",
                                               "expired_at", "expired_ts", "thr", "counted_votes", "rev", "revisions",
-                                              "patch", "dups", "tx_id")}
+                                              "patch", "dups", "tx_id", "explain")}
                           | {"votes": [{"h": v["h"], "voter": v["voter"], "counted": v["counted"], "approve": v["approve"]} for v in p["votes"]]}
                           for p in reversed(props)],
             "events": [{k: it.get(k) for k in ("key", "kind", "h", "ts", "seen", "id", "headline", "body", "link", "chain")}
@@ -848,6 +853,22 @@ def send_test() -> int:
     return code
 
 
+async def preview_latest(n: int = 6) -> int:
+    """Print how the newest events on the chain would be posted now; posts nothing."""
+    w = Watcher([])
+    async with connect(RELAY_URL, max_size=64 * 2**20, open_timeout=20) as ws:
+        w.ws = ws
+        await w.sync()
+    props, events, now = replay(w.blocks, w.gov)
+    by_id, pace = {p["id"]: p for p in props}, block_pace(w.blocks)
+    if not events:
+        print("No rule change on this chain yet.")
+    for ev in events[-n:]:
+        print(telegram_text({"kind": ev["kind"], **describe(ev, by_id.get(ev["id"]), now.get("head", 0), pace)}))
+        print("-" * 60)
+    return 0
+
+
 def recap_cli(post: bool) -> int:
     """Draw the recap of the 7 days up to now; post it too with post=True."""
     w = Watcher()
@@ -874,6 +895,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if "--test" in sys.argv:
         sys.exit(send_test())
+    if "--preview" in sys.argv:
+        sys.exit(asyncio.run(preview_latest()))
     if "--recap-now" in sys.argv or "--recap-preview" in sys.argv:
         sys.exit(recap_cli("--recap-now" in sys.argv))
     asyncio.run(Watcher().run())

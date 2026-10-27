@@ -194,6 +194,12 @@ is **proposed**, **agreed** (quorum reached), **active** (its activation block a
 - `https://node.tauhud.com/proposals.json`: every proposal with its votes and status, the
   rules in force and the last 100 events. Read by tauhud.com/proposals/.
 - `https://node.tauhud.com/feed.xml`: Atom feed of the same events.
+- Each proposal is explained in plain words (`alerts/explain.py`): its rule text is compared
+  stream by stream with the rules in force (o6 valid blocks, o7 who makes blocks, o9 base
+  fee) plus its settings patch, giving "what changes", "why it matters" and a title such as
+  "Base fee 10 → 20 AGRS" or "Same rules as now (no real change)". The tracker page and
+  the recap use the same words. `python alerts.py --preview` prints how the newest rule
+  changes on the chain would be posted, without posting.
 - Telegram and X: each event as a post, when the keys are in `.env`. Without keys that
   channel is off; the feed and the page work regardless.
 

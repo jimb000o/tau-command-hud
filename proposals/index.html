@@ -141,6 +141,9 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
 .fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
 .fb-fab:hover { background: var(--ok); }
 @media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .follow .lbl { width: 100%; } }
+.list .m.why { color: var(--text); }
+ul.what { margin: 0; padding-left: 18px; } ul.what li { margin: 2px 0; } ul.what b { color: #fff; font-weight: 600; }
+p.why { margin: 0; color: var(--text); } p.why.warn { color: #fff; font-weight: 600; }
 [hidden] { display: none !important; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
@@ -265,6 +268,16 @@ function flow(p) {
   const s = p.status;
   return `<div class="flow"><span class="done">proposed</span><span class="${s === "voting" ? "now" : "done"}">votes</span><span class="${s === "agreed" ? "now" : s === "active" ? "done" : ""}">agreed</span><span class="${s === "active" ? "ok" : ""}">in force</span></div>`;
 }
+// plain-words explanation from the tracker (alerts/explain.py): what changes, why it matters
+const whyOf = p => (p.explain && p.explain.why) || "";
+function explainHtml(p) {
+  const x = p.explain; if (!x) return "";
+  const warn = x.severity === "halt" || x.severity === "unsafe";
+  return `${x.label ? `<p class="note" style="margin:0 0 6px">Proposer’s title: “${esc(x.label)}”</p>` : ""}
+    <h3>What changes</h3>${x.changes.length ? `<ul class="what">${x.changes.map(c => `<li><b>${esc(c.topic)}:</b> ${esc(c.text)}</li>`).join("")}</ul>`
+      : `<p class="note" style="margin:0">Nothing: the text equals the rules already in force.</p>`}
+    <h3>Why it matters</h3><p class="why${warn ? " warn" : ""}">${esc(x.why)}</p>`;
+}
 function openCard(p) {
   const need = p.thr, v = p.counted_votes, n = left(p), when = eta(n);
   const line = p.status === "agreed"
@@ -272,6 +285,7 @@ function openCard(p) {
     : `Needs ${need - v > 0 ? plural(need - v, "more vote") : "no more votes"} by #${fmtN(p.activate_at)}${n > 0 ? ` (${plural(n, "block")}${when ? `, ${when}` : ""})` : ""}, or it is dropped.`;
   const pct = Math.min(100, need ? v / need * 100 : 0);
   return `<li class="${p.status}"><button type="button" data-id="${esc(p.id)}"><b>${esc(p.title)}</b>
+    ${whyOf(p) ? `<span class="m why">${esc(whyOf(p))}</span>` : ""}
     <span class="m">proposed at #${fmtN(p.proposed_at)} by ${short(p.proposer)}${p.proposed_ts ? ` · ${ago(p.proposed_ts)}` : ""}</span>
     ${flow(p)}<span class="m">${line}</span>
     <div class="quorum" aria-label="${v} of ${need} votes"><div class="fill" style="width:${pct}%"></div><span>${v} of ${need} votes</span></div></button></li>`;
@@ -325,7 +339,7 @@ function openDetail(p, push) {
   ].filter(Boolean);
   lastFocus = document.activeElement;
   $("dTitle").innerHTML = `<span class="badge b-${p.status}">${STATUS[p.status]}</span> ${esc(p.title)}`;
-  $("dBody").innerHTML = `<ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
+  $("dBody").innerHTML = `${explainHtml(p)}<h3>Timeline</h3><ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
     ${p.revisions.length ? `<h3>Rule text it ${p.status === "active" ? "added" : "would add"}</h3>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}` : ""}
     ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere;margin:0">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
