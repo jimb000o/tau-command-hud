@@ -55,6 +55,25 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .cols { display: grid; gap: 14px; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
 @media (max-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr); } }
 [hidden] { display: none !important; }
+.intro { display: grid; gap: 14px; }
+.seatcols { grid-template-areas: "seat chain" "prop chain"; }
+.seatcols > .panel:first-child { grid-area: seat; } .seatcols .pprop { grid-area: prop; } .seatcols .pchain { grid-area: chain; }
+.ptests { grid-column: 1 / -1; }
+@media (max-width: 900px) { .seatcols { grid-template-areas: "seat" "prop" "chain"; } }
+/* wide screens: three columns side by side, scaled up as a whole (like the HUD) so line lengths and proportions stay
+   and everything fits one screen. --z comes from the script: min(width/1800, height/860), between 1 and 2, and smaller if the content is taller. */
+html.wide body { padding: 0; }
+html.wide .wrap { zoom: var(--z); max-width: none; padding: 10px 24px 56px; gap: 12px; }
+html.wide .fb-fab, html.wide .modal .sheet { zoom: var(--z); }
+html.wide .intro { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 24px; }
+html.wide .cols { grid-template-columns: minmax(0, 1fr) minmax(0, .95fr) minmax(0, 1.35fr); align-items: stretch; }
+html.wide .ptests { grid-column: auto; }
+html.wide .ptests th:nth-child(1), html.wide .ptests th:nth-child(3) { width: 17% !important; }
+html.wide .ptests th:nth-child(2) { width: 13% !important; } html.wide .ptests th:nth-child(4) { width: 19% !important; }
+html.wide .ptests th:nth-child(5) { width: auto; min-width: 12em; }
+html.wide .seatcols { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, .9fr); grid-template-areas: "seat prop chain"; }
+html.wide textarea { min-height: 190px; }
+html.wide .log { max-height: 520px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .chip { font: 12px var(--mono); background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
 .chip:hover { border-color: #fff; color: #fff; }
@@ -172,7 +191,7 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
     <a class="back" href="/">Back to the live HUD</a>
   </header>
 
-  <div>
+  <div class="intro"><div>
     <p class="lead">Write a rule. See what the testnet would say.</p>
     <p class="sub">The checks below are the ones the Tau Testnet Alpha runs before it lets a personal rule in. Nothing you do here is sent to the chain.</p>
   </div>
@@ -180,7 +199,7 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
   <div class="tabs" role="tablist">
     <button role="tab" id="tabPolicy" aria-selected="true" aria-controls="viewPolicy">1 · Your transfer rule</button>
     <button role="tab" id="tabSeat" aria-selected="false" aria-controls="viewSeat">2 · Validator seat</button>
-  </div>
+  </div></div>
 
   <!-- ============ 1 · personal transfer rule (o5 policy) ============ -->
   <section id="viewPolicy" class="cols" role="tabpanel" aria-labelledby="tabPolicy">
@@ -213,7 +232,7 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
       </details>
     </div>
 
-    <div class="panel" style="grid-column: 1 / -1">
+    <div class="panel ptests">
       <h2>Try transfers against it <small id="testSrc">results update as you type</small></h2>
       <table>
         <thead><tr><th style="width:22%">From</th><th style="width:16%">Amount</th><th style="width:20%">To</th><th style="width:16%">Time</th><th>Result</th><th style="width:28px"></th></tr></thead>
@@ -225,12 +244,18 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
   </section>
 
   <!-- ============ 2 · validator seat (simulation) ============ -->
-  <section id="viewSeat" class="cols" role="tabpanel" aria-labelledby="tabSeat" hidden>
+  <section id="viewSeat" class="cols seatcols" role="tabpanel" aria-labelledby="tabSeat" hidden>
     <div class="panel">
       <h2>Take a validator seat <span class="simtag">SIMULATION</span></h2>
       <p class="note" style="margin-top:0">Rules that bind everyone, like the base fee, change only when enough validators agree. Here you hold one of four seats. Pick a change, then vote.</p>
       <div class="seats" id="seats"></div>
       <div class="chips" id="proposals" style="margin-top:12px"></div>
+      <div class="realbox"><b>The real testnet today:</b> one validator (<code>a1fe40…7d2b</code>, most likely run by IDNI), so the quorum is 1. The network also runs with open governance admission: a proposal or a vote from any key counts, so a single yes vote schedules a change. Here the seat is simulated and only validators vote, which is the code’s default. Counting, quorum and the delay before a change takes effect work as on the real node.</div>
+    </div>
+
+    <div class="panel pprop">
+      <h2>The proposal</h2>
+      <p class="note" id="propIdle" style="margin-top:0">Pick a change on the left. Its rule, the votes and the way to activation show up here.</p>
       <div id="propBox" hidden>
         <dl class="kv" id="propKv"></dl>
         <pre class="code" id="propRule"></pre>
@@ -242,10 +267,9 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
           <button class="btn" id="btnNo" type="button">Vote no</button>
         </div>
       </div>
-      <div class="realbox"><b>The real testnet today:</b> one validator (<code>a1fe40…7d2b</code>, most likely run by IDNI), so the quorum is 1. The network also runs with open governance admission: a proposal or a vote from any key counts, so a single yes vote schedules a change. Here the seat is simulated and only validators vote, which is the code’s default. Counting, quorum and the delay before a change takes effect work as on the real node.</div>
     </div>
 
-    <div class="panel">
+    <div class="panel pchain">
       <h2>Simulated chain</h2>
       <dl class="kv">
         <dt>Height</dt><dd class="height" id="simHeight">#0</dd>
@@ -824,7 +848,7 @@ function renderSim() {
   }).join("");
   const busy = sim.prop && (sim.state === "voting" || sim.state === "scheduled");
   $("proposals").innerHTML = PROPOSALS.map(p => `<button type="button" class="chip${sim.prop && sim.prop.id === p.id ? " on" : ""}" data-prop="${p.id}"${busy ? " disabled" : ""}>${p.label}</button>`).join("");
-  $("propBox").hidden = !sim.prop;
+  $("propBox").hidden = !sim.prop; $("propIdle").hidden = !!sim.prop;
   if (sim.prop) {
     const p = sim.prop, yes = Object.values(sim.votes).filter(Boolean).length;
     $("propKv").innerHTML = `<dt>Change</dt><dd>${esc(p.what)}</dd><dt>Proposed</dt><dd>block #${p.at}</dd><dt>Votes needed</dt><dd>${p.threshold} of ${p.n} (⌈2·${p.n}/3⌉)</dd>`;
@@ -897,6 +921,20 @@ simReset();
 if (location.hash === "#seat") showTab(true);
 window.addEventListener("hashchange", () => showTab(location.hash === "#seat"));
 runCheck();
+
+/* wide screens: same idea as the HUD, scale instead of stretching */
+(() => {
+  const apply = () => {
+    const w = innerWidth, h = innerHeight, wide = w >= 1700 && h >= 760;
+    const root = document.documentElement;
+    let z = wide ? Math.max(1, Math.min(2, w / 1800, h / 860)) : 1;
+    root.classList.toggle("wide", wide);
+    root.style.setProperty("--z", z);
+    // a long rule or reason can make the page taller than the design height: shrink once so it still fits the screen
+    if (wide && root.scrollHeight > h) { z = Math.max(.85, z * h / root.scrollHeight); root.style.setProperty("--z", z); }
+  };
+  apply(); addEventListener("resize", apply);
+})();
 </script>
 </body>
 </html>
