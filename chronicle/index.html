@@ -56,7 +56,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 #tl .yr line { stroke: rgba(255,255,255,.12); }
 #tl .band { fill: rgba(255,255,255,.05); stroke: rgba(255,255,255,.14); cursor: pointer; }
 #tl .band.on { fill: rgba(57,255,138,.10); stroke: var(--ok); }
-#tl .band-t { font: 600 10px var(--display); letter-spacing: .14em; fill: #fff; pointer-events: none; }
+#tl .band-t { font: 600 11px var(--display); letter-spacing: .14em; fill: #fff; pointer-events: none; }
 #tl .dot { fill: #fff; stroke: var(--void); stroke-width: 2; cursor: pointer; }
 #tl .dot.key { fill: var(--ok); }
 #tl .dot:hover, #tl .dot.on { stroke: #fff; stroke-width: 2.5; }
@@ -77,7 +77,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .ev li:hover { border-left-color: #fff; }
 .ev li.key { border-left-color: var(--ok); }
 .ev li.on { background: rgba(57,255,138,.08); border-left-color: var(--ok); }
-.ev li .d { color: var(--dim); font-size: 11.5px; display: block; }
+.ev li .d { color: var(--dim); font-size: 12px; display: block; }
 .ev li .t { color: #fff; }
 .ev li .more { display: none; color: var(--text); font-size: 12px; margin-top: 4px; }
 .ev li.on .more { display: block; }
@@ -91,9 +91,7 @@ footer p { margin: 0 0 4px; }
 footer a { color: var(--dim); }
 #tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(320px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
 #tip b { color: #fff; font-weight: 600; }
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
-.fb-fab:hover { background: var(--ok); }
-@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } #tl .band-t { display: none; } }
+@media (max-width: 700px) { #tl .band-t { display: none; } }
 [hidden] { display: none !important; }
 
 /* one screen (laptop and up, landscape): no page scroll, laid out for 1600 x 820 and scaled
@@ -112,8 +110,9 @@ html.fit .lead { font-size: 22px; margin: 0; max-width: none; }
 html.fit .sub { font-size: 12px; margin: 2px 0 0; }
 html.fit header { padding: 4px 0 6px; }
 html.fit footer { padding-top: 6px; font-size: 11px; }
-html.fit #tip, html.fit .fb-fab { zoom: var(--z); }
-html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; right: 12px; }
+html.fit #tip { zoom: var(--z); }
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -140,11 +139,10 @@ html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; 
 
   <footer>
     <p>Unofficial. Summarised from the monthly update videos on <a href="https://www.youtube.com/@TauNetwork" target="_blank" rel="noopener">youtube.com/@TauNetwork</a> (225 videos, Aug 2016 to Oct 2026, read from their auto captions), plus the bitcointalk threads and the Tau blog for 2014 to 2017. Dates are the month a video reported something, not always the day it happened.</p>
-    <p><a href="/history/">Time travel</a> · <a href="/stats/">Testnet stats</a> · <a href="/playground/">Rule Playground</a> · <a href="https://tau.net/" target="_blank" rel="noopener">tau.net</a></p>
+    <p><a href="/history/">Time travel</a> · <a href="/stats/">Testnet stats</a> · <a href="/playground/">Rule Playground</a> · <a href="https://tau.net/" target="_blank" rel="noopener">tau.net</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BChronicle%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 
-<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BChronicle%5D%20" target="_blank" rel="noopener">Feedback</a>
 <div id="tip" hidden></div>
 
 <script>

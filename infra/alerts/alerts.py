@@ -360,7 +360,7 @@ def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
             "severity": x.get("severity"), "body": body, "link": link}
 
 
-DIFF_LINES = 8  # changed lines shown in a post; the rest is on the page
+DIFF_LINES = 6  # changed lines shown in a post; the rest is on the page
 
 NOW_TENSE = [("would cost", "costs"), ("would rest", "rests"), ("could no longer", "can no longer"), ("would be accepted", "are accepted"),
              ("would make", "make"), ("would follow", "follow"), ("Nothing would change", "Nothing changed"), ("If it takes effect, ", "")]
@@ -372,14 +372,17 @@ def telegram_text(item: dict) -> str:
     if "facts" not in item:  # posts recorded before explanations existed
         return (f"{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>\n{e(item['body'])}\n\n"
                 f"<a href=\"{e(item['link'])}\">Open in Tau HUD</a>")
+    # order: what it means first, then what changes and the facts; the raw diff comes last, for those who want it
     out = [f"{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>"]
     if item.get("label"):
         out.append(f"<i>Proposer's title: “{e(item['label'])}”</i>")
-    if item["what"]:
-        out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>"] + [f"• {e(w)}" for w in item["what"]]
     if item.get("why"):
         warn = "⚠️ " if item.get("severity") in ("halt", "unsafe") else ""
         out += ["", f"<b>{e(item.get('why_title', 'Why it matters'))}</b>", warn + e(item["why"])]
+    if item["what"]:
+        out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>"] + [f"• {e(w)}" for w in item["what"]]
+    if item["facts"]:
+        out += [""] + [e(f) for f in item["facts"]]
     d = item.get("diff")
     if d:  # Telegram has no colours: + and − carry the meaning
         if d["lines"]:
@@ -388,8 +391,6 @@ def telegram_text(item: dict) -> str:
             out += ["", f"<b>Rule text diff</b> ({e(d['summary'])})", f"<pre><code class=\"language-diff\">{e(code + more)}</code></pre>"]
         else:
             out += ["", "<b>Rule text diff</b>: none. The text equals the rules in force."]
-    if item["facts"]:
-        out += [""] + [e(f) for f in item["facts"]]
     label = "Open in Tau HUD" if item["kind"] == "restart" else "Details and votes on Tau HUD"
     out += ["", f"<a href=\"{e(item['link'])}\">{label}</a>"]
     return "\n".join(out)

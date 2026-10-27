@@ -112,6 +112,8 @@ body.video.wide .vid .vfoot { grid-column: 1 / -1; }
 body.video.wide .vid h2 { font-size: 6.6vmin; }
 body.video.wide .vid p.s { font-size: 4vmin; }
 body.video.wide .vid .kick { font-size: 2.8vmin; }
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
