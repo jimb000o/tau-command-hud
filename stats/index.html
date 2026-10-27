@@ -181,6 +181,11 @@ footer a { color: var(--dim); }
 .fb-fab:hover { background: var(--ok); }
 @media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .tile .v { font-size: 24px; } }
 [hidden] { display: none !important; }
+/* phone: nothing smaller than 11 px, buttons big enough for a thumb */
+@media (max-width: 700px) {
+  .filters .lbl, .tile h3, .tile .scope, .panel h2 .tbl, th { font-size: 11px; }
+  .filters button, .panel h2 .tbl { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+}
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>

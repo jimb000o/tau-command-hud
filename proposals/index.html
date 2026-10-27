@@ -156,6 +156,10 @@ p.why { margin: 0; color: var(--text); } p.why.warn { color: #fff; font-weight: 
 .howto ol li { counter-increment: st; display: grid; grid-template-columns: 26px 92px 1fr; gap: 8px; align-items: baseline; }
 .howto ol li::before { content: counter(st); font: 600 11px var(--mono, monospace); color: var(--ok, #39ff8a); }
 .howto em { font-style: normal; color: #fff; }
+/* phone: nothing smaller than 11 px, buttons big enough for a thumb */
+@media (max-width: 700px) {
+  .follow .lbl, .tile h3, .badge, .flow span, .sheet h3 { font-size: 11px; }
+}
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>

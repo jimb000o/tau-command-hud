@@ -261,7 +261,13 @@ function renderStrip() {
     return padL + u / YSUM * (W - padL - padR);
   };
   let s = `<g class="yr">`;
-  for (let y = X0; y <= X1; y++) s += `<line x1="${x(y)}" x2="${x(y)}" y1="18" y2="${H - 18}"/>` + (y < X1 ? `<text x="${x(y) + 3}" y="${H - 4}">${W < 560 ? "'" + String(y).slice(2) : y}</text>` : "");
+  // a year label is left out when it would run into the one before (narrow screens: the early years are thin)
+  let lastEnd = -1e9;
+  for (let y = X0; y <= X1; y++) {
+    s += `<line x1="${x(y)}" x2="${x(y)}" y1="18" y2="${H - 18}"/>`;
+    const t = W < 560 ? "'" + String(y).slice(2) : String(y), lx = x(y) + 3;
+    if (y < X1 && lx >= lastEnd + 4) { s += `<text x="${lx}" y="${H - 4}">${t}</text>`; lastEnd = lx + t.length * 6.8; }
+  }
   s += `</g>`;
   for (const e of ERAS) {
     const a = x(e.from), b = x(e.to);
