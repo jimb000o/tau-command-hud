@@ -217,6 +217,14 @@ async def main():
         r = await ask("/status@TauHUDbot", chat_id=-50, ctype="supergroup", user=8)
         assert r["chat_id"] == -50 and "reply_parameters" in r, r
 
+        # the channel's own posts arrive in its discussion group as automatic forwards: never answered
+        say("/height", chat_id=-60, ctype="supergroup", user=777000)
+        TG["updates"][-1]["message"].update(is_automatic_forward=True, sender_chat={"id": -100123, "type": "channel"})
+        await asyncio.sleep(1.2)
+        assert not any(s["chat_id"] == -60 for s in TG["sent"])
+        r = await ask("/proposals", chat_id=-60, ctype="supergroup", user=9)  # people in that group are answered
+        assert r["chat_id"] == -60 and "Coming up" in r["text"]
+
         # the alerts channel and old questions: never answered
         await nothing_for("/height", chat_id=-100123, ctype="channel", username="tauHUDcom")
         await nothing_for("/height", chat_id=-100123, ctype="supergroup", username="tauHUDcom")
