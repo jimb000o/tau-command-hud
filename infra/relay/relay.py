@@ -247,6 +247,8 @@ class Relay:
         self.community_at = 0.0
         self.board = self._load_board()          # node id -> leaderboard row, kept across restarts
         self.board_saved_at = 0.0
+        self.board_text: str | None = None
+        self.board_at = 0.0
 
     # ---------- polling ----------
     async def poll_loop(self, every: float, fn):
@@ -335,7 +337,7 @@ class Relay:
             rewrite = True
         self._save_chain(None if rewrite else fresh)
         self.note_chain()
-        self.stats_text = self.community_text = None
+        self.stats_text = self.community_text = self.board_text = None
         if len(fresh) > 5:
             log.info("new blocks: %s..%s (%s)", self._height(fresh[0]), self._height(fresh[-1]), len(fresh))
         else:
@@ -751,7 +753,7 @@ class Relay:
         for node_id in stale:
             del self.community[node_id]
         if stale:
-            self.community_text = None
+            self.community_text = self.board_text = None
 
     # ---------- leaderboard ----------
     def _load_board(self) -> dict[str, dict]:
@@ -788,6 +790,7 @@ class Relay:
             row["minutes"] += 1
             row["counted_at"] = now
         row.update(name=node["name"], last_seen=now, height=node["height"], kit=node["kit"], ref=node["ref"])
+        self.board_text = None
         cutoff = now - BOARD_KEEP_DAYS * 86400
         for k in [k for k, r in self.board.items() if r["last_seen"] < cutoff]:
             del self.board[k]
@@ -820,9 +823,14 @@ class Relay:
         return rows
 
     def board_json(self) -> str:
+        """Cached like /community: the endpoint is public and the build indexes the chain."""
         now = time.time()
-        return json.dumps({"nodes": self.board_rows(now), "keep_days": BOARD_KEEP_DAYS,
-                           "generated_at": round(now)}, separators=(",", ":"))
+        self.expire_community(now)
+        if self.board_text is None or now - self.board_at >= STATS_CACHE_SECONDS:
+            self.board_at = now
+            self.board_text = json.dumps({"nodes": self.board_rows(now), "keep_days": BOARD_KEEP_DAYS,
+                                          "generated_at": round(now)}, separators=(",", ":"))
+        return self.board_text
 
     def badge_svg(self, node_id: str) -> str:
         """A small embeddable badge: "Tau HUD node | running 12 d"."""
@@ -837,6 +845,9 @@ class Relay:
             online = node_id in self.community
             right = (f"running {span}" if span else "new node") if online else \
                 (f"offline · ran {span}" if span else "offline")
+            up = self.uptime(row, now)
+            if span and up is not None:  # days alone would flatter a node that was mostly down
+                right += f" · {round(up * 100)} % up"
         left = "Tau HUD node"
         # the site's colours: black, white, phosphor green for a node that is up
         bg, fg = ("#39ff8a", "#000") if online else ("#2a2a2e", "#ebebee")

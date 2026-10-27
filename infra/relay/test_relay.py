@@ -413,7 +413,8 @@ async def main():
         check("new node" in (await get(f"/community/badge/{bob_id}.svg"))[1], "badge for a new online node")
         check("unknown node" in (await get(f"/community/badge/{'0' * 12}.svg"))[1], "badge for an unknown id")
         r.board[bob_id]["first_seen"] -= 3 * 86400
-        check("running 3 d" in (await get(f"/community/badge/{bob_id}.svg"))[1], "badge counts days")
+        svg = (await get(f"/community/badge/{bob_id}.svg"))[1]
+        check("running 3 d" in svg and "% up" in svg, "badge counts days and shows the uptime share")
         check(relay.Relay.uptime({"first_seen": 0, "minutes": 30}, 60 * 60) == 0.5
               and relay.Relay.uptime({"first_seen": 0, "minutes": 3}, 5 * 60) is None, "uptime share")
         # a node that went silent keeps its start date when it comes back

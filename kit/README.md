@@ -100,7 +100,7 @@ leaderboard: https://tauhud.com/nodes/#1a2b3c4d5e6f
 badge for a README or website (Markdown): [![Tau HUD node](https://node.tauhud.com/community/badge/1a2b3c4d5e6f.svg)](https://tauhud.com/nodes/#1a2b3c4d5e6f)
 ```
 
-The badge reads "running 12 d" while the node reports and turns grey when it stops. The
+The badge reads "running 12 d · 98 % up" while the node reports and turns grey when it stops. The
 page has the same snippet (pick your node from the list). Your id stays the same as long
 as the `heartbeat_data` volume is kept.
 
