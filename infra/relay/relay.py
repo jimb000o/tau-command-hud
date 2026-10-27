@@ -66,7 +66,20 @@ BLOCK_POLL = _env_float("BLOCK_POLL_SECONDS", 3)
 MEMPOOL_POLL = _env_float("MEMPOOL_POLL_SECONDS", 3)
 GOV_POLL = _env_float("GOV_POLL_SECONDS", 15)
 STATE_POLL = _env_float("STATE_POLL_SECONDS", 30)
-CACHE_BLOCKS = _env_int("CACHE_BLOCKS", 50)
+CACHE_BLOCKS = _env_int("CACHE_BLOCKS", 50)        # most a visitor gets from getblocks
+# The relay keeps the whole current chain (for /stats and getblockrange), up to
+# this many blocks; ~1,200 blocks a day at the testnet's pace, a few KB each.
+CHAIN_BLOCKS = _env_int("CHAIN_BLOCKS", 20000)
+RANGE_MAX = 100
+UPSTREAM_MAX_SIZE = _env_int("UPSTREAM_MAX_SIZE", 64 * 2**20)
+# Chain restarts and transactions that left the mempool without a block are
+# kept here so /stats can show them across relay restarts.
+EVENTS_PATH = os.environ.get("EVENTS_PATH", "/data/events.json")
+EVENTS_MAX = 5000
+STATS_CACHE_SECONDS = _env_float("STATS_CACHE_SECONDS", 5)
+# a tx that leaves the mempool counts as dropped only if no block holds it
+# this long afterwards (the block poll may still be catching up)
+DROP_GRACE_SECONDS = _env_float("DROP_GRACE_SECONDS", 30)
 UPSTREAM_TIMEOUT = _env_float("UPSTREAM_TIMEOUT_SECONDS", 20)
 # The node allows heavy reads at burst 2, 0.5/s per connection; stay just under.
 HEAVY_COMMANDS = frozenset({"getblocks", "getgovernance", "gettaustate"})
@@ -131,7 +144,7 @@ class Upstream:
         backoff = 1.0
         while True:
             try:
-                async with connect(self.url, open_timeout=10, max_size=2**21,
+                async with connect(self.url, open_timeout=10, max_size=UPSTREAM_MAX_SIZE,
                                    ping_interval=20, ping_timeout=20) as ws:
                     await ws.send("hello version=1")
                     hello = await asyncio.wait_for(ws.recv(), UPSTREAM_TIMEOUT)
@@ -185,6 +198,12 @@ class Relay:
         self.lookup_cache: dict[str, tuple[float, str]] = {}
         self.lookup_bucket = TokenBucket(LOOKUP_BURST, LOOKUP_REFILL)
         self.started = time.time()
+        self.need_full = True                   # fetch the whole chain on the next block poll
+        self.state = self._load_state()         # restarts, dropped txs, last chain seen
+        self.mempool_seen: dict[str, dict] = {}  # tx_hash -> summary, while in the mempool
+        self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
+        self.stats_text: str | None = None
+        self.stats_at = 0.0
 
     # ---------- polling ----------
     async def poll_loop(self, every: float, fn):
@@ -197,8 +216,10 @@ class Relay:
             await asyncio.sleep(every)
 
     async def poll_blocks(self):
-        limit = 20 if self.blocks else CACHE_BLOCKS
-        msg = await self.upstream.request(f"getblocks {limit}")
+        # The whole chain once (at startup, after a reset or a gap), the tail
+        # afterwards. The node's getblocks without a limit returns every row.
+        full = self.need_full or not self.blocks
+        msg = await self.upstream.request("getblocks" if full else "getblocks 20")
         if not msg or msg.get("status") != "ok":
             self._note_error("getblocks", msg)
             return
@@ -211,10 +232,13 @@ class Relay:
             log.warning("chain reset: node has %s blocks, had %s; dropping cached blocks", total, self.total_blocks)
             self.blocks.clear()
             reset = True
+            self.need_full = True
         fresh = [b for b in data.get("blocks") or []
                  if isinstance(b, dict) and b.get("block_hash") and b["block_hash"] not in self.blocks]
         self.total_blocks = total
         self.updated["getblocks"] = time.time()
+        if full and not reset:
+            self.need_full = False
         if not fresh:
             return
         for b in fresh:
@@ -223,10 +247,20 @@ class Relay:
                 self.blocks.pop(old["block_hash"], None)
             self.blocks[b["block_hash"]] = b
         ordered = self.ordered_blocks()
-        for b in ordered[:-CACHE_BLOCKS]:
-            self.blocks.pop(b["block_hash"], None)
+        for b in ordered[:-CHAIN_BLOCKS]:
+            if self._height(b) > 1:  # block 1 stays: it identifies the chain for restart detection
+                self.blocks.pop(b["block_hash"], None)
+        heights = [self._height(b) for b in self.ordered_blocks()]
+        if not full and heights and heights[-1] - heights[0] + 1 != len(heights):
+            self.need_full = True  # more than 20 blocks arrived between two polls
+        self.note_chain()
+        self.stats_text = None
         fresh.sort(key=self._height)
-        log.info("new blocks: %s", ", ".join(str(self._height(b)) for b in fresh))
+        if len(fresh) > 5:
+            log.info("new blocks: %s..%s (%s)", self._height(fresh[0]), self._height(fresh[-1]), len(fresh))
+        else:
+            log.info("new blocks: %s", ", ".join(str(self._height(b)) for b in fresh))
+        fresh = fresh[-CACHE_BLOCKS:]
         broadcast(self.clients, envelope_ok("getblocks", {
             "blocks": fresh, "total": self.total_blocks, "truncated": True, "pushed": True,
             # reset: the chain restarted, drop everything you had before these blocks
@@ -237,12 +271,171 @@ class Relay:
         if not msg or msg.get("status") != "ok":
             self._note_error(command, msg)
             return
+        if command == "getmempool":
+            self.track_mempool(msg.get("data") or {})
         text = json.dumps(msg, separators=(",", ":"))
         changed = self.cache.get(command) != text
         self.cache[command] = text
         self.updated[command] = time.time()
         if changed and push:
             broadcast(self.clients, text)
+
+    # ---------- history: restarts, dropped transactions, /stats ----------
+    def _load_state(self) -> dict:
+        try:
+            with open(EVENTS_PATH) as f:
+                state = json.load(f)
+            if isinstance(state, dict):
+                state.setdefault("restarts", [])
+                state.setdefault("dropped", [])
+                return state
+        except FileNotFoundError:
+            pass
+        except (OSError, ValueError) as exc:
+            log.warning("cannot read %s: %r; starting a new history", EVENTS_PATH, exc)
+        return {"since": time.time(), "chain": None, "restarts": [], "dropped": []}
+
+    def _save_state(self):
+        tmp = EVENTS_PATH + ".tmp"
+        try:
+            with open(tmp, "w") as f:
+                json.dump(self.state, f, separators=(",", ":"))
+            os.replace(tmp, EVENTS_PATH)
+        except OSError as exc:
+            if not getattr(self, "_save_warned", False):
+                log.warning("cannot write %s: %r; history lives in memory only", EVENTS_PATH, exc)
+                self._save_warned = True
+
+    def chain_info(self) -> dict | None:
+        """What identifies the chain we hold: block 1 (the genesis block is the
+        same on every restart) and the tip."""
+        ordered = self.ordered_blocks()
+        first = next((b for b in ordered if self._height(b) == 1), None)
+        if not first:
+            return None
+        tip = ordered[-1]
+        return {"block1_hash": first["block_hash"], "block1_ts": self._ts(first),
+                "tip": self._height(tip), "tip_hash": tip["block_hash"], "tip_ts": self._ts(tip)}
+
+    def _same_chain(self, known: dict, info: dict) -> bool:
+        if known.get("block1_hash") != info["block1_hash"]:
+            return False
+        # same block 1 but another block at the old tip height: not our chain either
+        at_tip = next((b for b in self.blocks.values() if self._height(b) == known.get("tip")), None)
+        return at_tip is None or at_tip["block_hash"] == known.get("tip_hash")
+
+    def note_chain(self):
+        """Record a restart when block 1 differs from the chain seen last time.
+
+        Covers both a reset seen live (getblocks.total dropped) and one that
+        happened while the relay was down, when the cache starts empty."""
+        info = self.chain_info()
+        if not info:
+            return
+        known = self.state.get("chain")
+        if known and not self._same_chain(known, info):
+            log.warning("chain restart recorded: old chain ended at #%s", known.get("tip"))
+            self.state["restarts"].append({"detected_at": round(time.time()), "old": known,
+                                           "new_block1_ts": info["block1_ts"]})
+            self.state["restarts"] = self.state["restarts"][-EVENTS_MAX:]
+        self.state["chain"] = info
+        self._save_state()
+
+    @staticmethod
+    def _tx_summary(t: dict) -> dict:
+        ops = t.get("operations") if isinstance(t.get("operations"), dict) else {}
+        kind = t.get("tx_type") or "user_tx"
+        if kind == "user_tx" and ops.get("0"):
+            kind = "rule_deploy"
+        return {"type": str(kind)[:40], "sender": str(t.get("sender_pubkey") or t.get("sender") or "")[:200]}
+
+    def track_mempool(self, data: dict):
+        """A transaction that leaves the mempool and never shows up in a block
+        was dropped by the node (refused on re-check, expired or replaced)."""
+        now = time.time()
+        current = {}
+        for t in data.get("transactions") or []:
+            if isinstance(t, dict) and t.get("tx_hash"):
+                # getmempool entries carry tx_type only on some node versions; "" = unknown
+                current[str(t["tx_hash"])] = self.mempool_seen.get(t["tx_hash"]) or {
+                    **self._tx_summary(t), "type": str(t.get("tx_type") or "")[:40], "seen": round(now)}
+        for h, info in self.mempool_seen.items():
+            if h not in current:
+                self.left_mempool[h] = {**info, "left": round(now)}
+        self.mempool_seen = current
+        if not self.left_mempool:
+            return
+        sealed = {i for b in self.blocks.values() for i in (b.get("tx_ids") or [])}
+        changed = False
+        for h, info in list(self.left_mempool.items()):
+            if h in sealed:
+                del self.left_mempool[h]
+            elif now - info["left"] >= DROP_GRACE_SECONDS:
+                del self.left_mempool[h]
+                self.state["dropped"].append({"tx_hash": h, **info})
+                changed = True
+        if changed:
+            self.state["dropped"] = self.state["dropped"][-EVENTS_MAX:]
+            self.stats_text = None
+            self._save_state()
+
+    @staticmethod
+    def _ts(b: dict) -> int | None:
+        try:
+            return int((b.get("header") or {}).get("timestamp"))
+        except (TypeError, ValueError):
+            return None
+
+    def stats_json(self) -> str:
+        """Compact per-block history of the current chain plus the event log."""
+        if self.stats_text and time.monotonic() - self.stats_at < STATS_CACHE_SECONDS:
+            return self.stats_text
+        accounts: dict[str, int] = {}
+        proposers: dict[str, int] = {}
+        rows = []
+        for b in self.ordered_blocks():
+            h = b.get("header") or {}
+            types: dict[str, int] = {}
+            senders, transfers, volume = set(), 0, 0
+            for t in b.get("transactions") or []:
+                if not isinstance(t, dict):
+                    continue
+                s = self._tx_summary(t)
+                types[s["type"]] = types.get(s["type"], 0) + 1
+                if s["sender"]:
+                    senders.add(accounts.setdefault(s["sender"], len(accounts)))
+                ops = t.get("operations") if isinstance(t.get("operations"), dict) else {}
+                for x in ops.get("1") or []:
+                    if isinstance(x, (list, tuple)) and len(x) >= 3:
+                        transfers += 1
+                        try:
+                            volume += int(x[2])
+                        except (TypeError, ValueError):
+                            pass
+            prop = str(h.get("proposer_pubkey") or "")
+            rows.append([self._height(b), self._ts(b), sum(types.values()), transfers, volume,
+                         proposers.setdefault(prop, len(proposers)), types, sorted(senders)])
+        gov = self.governance()
+        archived = gov.get("archival_update_details") or []
+        self.stats_text = json.dumps({
+            "generated_at": round(time.time()),
+            "tracking_since": round(self.state.get("since") or self.started),
+            "head": self.height(), "canonical_height": self.canonical_height(), "tip_height": self.tip_height(),
+            "total_blocks": self.total_blocks,
+            "fields": ["height", "timestamp", "txs", "transfers", "volume", "proposer", "types", "senders"],
+            "blocks": rows, "accounts": list(accounts), "proposers": list(proposers),
+            "restarts": self.state["restarts"],
+            "dropped": self.state["dropped"][-500:], "dropped_total": len(self.state["dropped"]),
+            "governance": {
+                "pending": len(gov.get("pending_updates") or []),
+                "scheduled": len(gov.get("scheduled_updates") or []),
+                "activated": sum(1 for u in archived if isinstance(u, dict) and u.get("lifecycle") == "activated"),
+                "expired": sum(1 for u in archived if isinstance(u, dict) and u.get("lifecycle") != "activated"),
+                "validators": len(gov.get("active_validators") or []),
+            },
+        }, separators=(",", ":"))
+        self.stats_at = time.monotonic()
+        return self.stats_text
 
     def _note_error(self, command, msg):
         if msg:
@@ -312,6 +505,15 @@ class Relay:
             return envelope_ok(cmd, {"blocks": blocks, "total": self.total_blocks,
                                      "truncated": len(blocks) < self.total_blocks})
 
+        if cmd == "getblockrange":
+            if len(args) != 2 or not all(a.isdigit() for a in args) or not 1 <= int(args[1]) <= RANGE_MAX:
+                return envelope_error(cmd, f"Usage: getblockrange <from_height> <count 1..{RANGE_MAX}>", "INVALID_PARAMS")
+            if "getblocks" not in self.updated:
+                return envelope_error(cmd, "Relay is still syncing with the node.", "NOT_READY")
+            start, count = int(args[0]), int(args[1])
+            blocks = [b for b in self.ordered_blocks() if start <= self._height(b) < start + count]
+            return envelope_ok(cmd, {"blocks": blocks, "from": start, "total": self.total_blocks, "head": self.height()})
+
         if cmd == "presence":
             return self.presence_envelope()
 
@@ -338,7 +540,7 @@ class Relay:
             self.lookup_cache[key] = (time.monotonic(), text)
             return text
 
-        return envelope_error(cmd, "This relay is read-only. Allowed: getblocks, getmempool, getgovernance, "
+        return envelope_error(cmd, "This relay is read-only. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
                               "gettaustate, " + ", ".join(LOOKUPS), "FORBIDDEN")
 
     # ---------- presence ----------
@@ -393,6 +595,14 @@ class Relay:
                                ("Cache-Control", "no-store")])
             ok = self.upstream.connected.is_set() or path == "/status"
             code = HTTPStatus.OK if ok else HTTPStatus.SERVICE_UNAVAILABLE
+            return Response(code.value, code.phrase, headers, body)
+        if path == "/stats":
+            ready = "getblocks" in self.updated
+            body = self.stats_json().encode() if ready else b'{"error":"relay is still syncing with the node"}'
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
+            code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
         if request.headers.get("Upgrade", "").lower() != "websocket":
             return connection.respond(HTTPStatus.OK, "Tau HUD read-only relay. Connect with WebSocket; GET /status for health.\n")
