@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.10"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.11"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';
@@ -13,10 +13,10 @@
   const ROOT = src ? new URL("..", src).pathname : "/";
   const P = {
     hud:        { t: "HUD", d: "The chain core live: blocks, rules and agreement as they happen", i: "◉", h: "" },
-    explorer:   { t: "Explorer", d: "Find any block, transaction or address", i: "⌕", h: "explorer/" },
-    stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/" },
+    explorer:   { t: "Explorer", d: "Find any block, transaction or address", i: "⌕", h: "explorer/", view: true },
+    stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/", view: true },
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
-    account:    { t: "Accounts", d: "Balance, own rules, offers and refusals of any address", i: "@", h: "account/" },
+    account:    { t: "Accounts", d: "Balance, own rules, offers and refusals of any address", i: "@", h: "account/", view: true },
     nodes:      { t: "Nodes", d: "Community nodes that follow the chain, with badges for uptime and sync", i: "◎", h: "nodes/" },
     proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with Telegram and RSS alerts", i: "§", h: "proposals/" },
     tour:       { t: "Guided tour", d: "One minute, eight steps: how rules change by agreement", i: "▸", h: "?tour=1", act: "tour" },
@@ -217,7 +217,8 @@
     const page = nav.dataset.page || "hud", isHud = page === "hud", here = SECTION_OF[page];
     const tip = (e, txt) => { if (!txt) return; if (isHud) e.dataset.full = txt; else e.title = txt; };
     const slots = {}; nav.querySelectorAll("[data-slot]").forEach(e => { slots[e.dataset.slot] = e; });
-    if (!isHud) { const c = subControls(tip); slots.source = slots.source || c.src; slots.view = slots.view || c.view; slots.gear = slots.gear || c.gear; mountRail(nav, page); }
+    // the Simple/Technical switch appears only where it changes something (`view: true` in P); the stored choice stays global
+    if (!isHud) { const c = subControls(tip); slots.source = slots.source || c.src; slots.view = slots.view || (P[page] && P[page].view ? c.view : null); slots.gear = slots.gear || c.gear; mountRail(nav, page); }
     const left = el("div", "tnav-l"), right = el("div", "tnav-r"), bar = el("div", "tnav-nav");
     if (slots.source) { left.append(slots.source); left.append(el("span", "tnav-sep")); }
     SECTIONS.forEach(sec => {
