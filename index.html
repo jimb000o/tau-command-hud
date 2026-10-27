@@ -132,9 +132,11 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
   grid-template-areas: "eng core feed pol" "upd chain off val"; }
 .a-eng { grid-area: eng; } .a-core { grid-area: core; } .a-feed { grid-area: feed; } .a-pol { grid-area: pol; }
 .a-upd { grid-area: upd; } .a-chain { grid-area: chain; } .a-off { grid-area: off; } .a-val { grid-area: val; }
-.stack { display: grid; grid-template-rows: auto minmax(170px, 1fr) auto; gap: 10px; min-height: 0; }
-.stack .gov { overflow: auto; min-height: 120px; }
-body[data-view="simple"] .stack { grid-template-rows: auto minmax(0, 1fr); }
+.stack { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.stack .gov { flex: 0 1 auto; overflow: auto; min-height: 100px; }
+.stack .statep { flex: 1 1 auto; min-height: 112px; }
+.stack .logp { flex: 0 1 auto; min-height: 56px; }
+.stack .logp .log { min-height: 0; }
 .logp .log { max-height: 44px; }
 .logp h2 { margin-bottom: 4px; }
 .statep { display: flex; }
@@ -236,6 +238,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .info::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: -4px; width: min(300px, 80vw); padding: 10px 12px; background: #151517; border: 1px solid var(--hair); border-radius: 6px; box-shadow: 0 0 24px rgba(236,236,240,.35); color: var(--text); font: 12px/1.5 var(--mono); letter-spacing: 0; text-transform: none; text-align: left; white-space: normal; z-index: 30; opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .15s, transform .15s; pointer-events: none; }
 .info::before { content: ""; position: absolute; top: calc(100% + 3px); right: 3px; border: 5px solid transparent; border-bottom-color: var(--cyan); opacity: 0; visibility: hidden; transition: opacity .15s; }
 .info:hover::after, .info:focus-visible::after, .info.open::after, .info:hover::before, .info:focus-visible::before, .info.open::before { opacity: 1; visibility: visible; transform: none; }
+/* hidden tooltips must not add to the scrollable height of the page (they did: 86 px of phantom scroll at 1080 px) */
+.info::after, .info::before { display: none; }
+.info:hover::after, .info:focus-visible::after, .info.open::after, .info:hover::before, .info:focus-visible::before, .info.open::before { display: block; }
 .panel { overflow: visible; }
 
 /* Tau engine streams */
@@ -477,6 +482,15 @@ a.btn { text-decoration: none; display: inline-block; }
 .changes li:first-child { border-left-color: var(--cyan); }
 .panel.flash-target { box-shadow: 0 0 0 2px var(--cyan), 0 0 40px rgba(236,236,240,.35); transition: box-shadow .4s; }
 
+/* wide screens: scale, do not stretch. The layout keeps its design size and is scaled to fill the screen, so line
+   lengths stay at 45–75 characters (Refactoring UI), the layout stays recognisable (Krug) and everything stays on one
+   screen (Few). --z is set by script from the viewport: min(width/1800, height/900), between 1 and 1.7. */
+html.wide body { padding: 0; overflow: hidden; }
+html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 16px 12px; box-sizing: border-box; transform: scale(var(--z)); transform-origin: 0 0; }
+html.wide .modal .sheet, html.wide .fb-fab, html.wide .tour { zoom: var(--z); }
+html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z)) calc(11px * var(--z)); max-width: calc(min(520px, 60vw) * var(--z)); }
+/* the validators column must shrink with the screen instead of overflowing it */
+.statep .scroll { min-height: 40px; flex: 1 1 auto; overflow: auto; }
 @media (max-width: 1599px), (max-height: 820px) {
   html, body { height: auto; min-height: 100%; }
   .wrap { height: auto; grid-template-rows: none; }
@@ -727,6 +741,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v15.3 · 27 Oct 2026</b>Wide screens: from 2200 px the whole HUD scales to fill the screen (up to 1.7×) instead of stretching its columns, so line lengths, the layout and the one-screen rule stay as designed while type, numbers and the chain core grow. The validators column now shrinks with the screen instead of adding a scrollbar at 1080 px height.</li>
           <li><b>v15.2 · 27 Oct 2026</b>Every header chip and button explains itself on hover: network, height, spec revision, base fee, mode, online count, the Live/Simulation switch, the view switch and the menu buttons, each in one line with where the value comes from.</li>
           <li><b>v15.1 · 27 Oct 2026</b>Click any list item for the full picture: transactions (who, what, fee, hash, block, which rule decided and its text), rule offers (checks, rule text, what accepting means), rule changes (votes per validator, diff, path so far), personal rules (rule text and recent effects) and validators. Hover stays short; “open ›” marks the click.</li>
           <li><b>v15 · 27 Oct 2026</b>From GitHub feedback #1: every principle card now says whether it was seen on the testnet or comes from the protocol, with a link to the tau-testnet line that backs it (pinned to one commit). Failure paths are shown on purpose: some proposals now miss quorum and expire with a red moment in the rule row, the “n refused” chip on Transactions counts and filters what Tau refused, and the ~1 minute rule-change timing is marked as simulated.</li>
@@ -1801,6 +1816,18 @@ function detailValidator(v, i) {
     <h3>Votes on rule changes</h3>${hist ? `<ul>${hist}</ul>` : none}` };
 }
 
+/* ---------- wide screens: scale the HUD to the viewport instead of stretching its columns ---------- */
+(() => {
+  const apply = () => {
+    const w = innerWidth, h = innerHeight;
+    let z = w >= 2200 && h >= 900 ? Math.max(1, Math.min(1.7, w / 1800, h / 900)) : 1;
+    z = Math.round(z * 100) / 100;
+    document.documentElement.classList.toggle("wide", z > 1);
+    document.documentElement.style.setProperty("--z", z);
+  };
+  apply(); addEventListener("resize", apply);
+})();
+
 /* ---------- header value chips explain themselves ---------- */
 $("chipNet").dataset.ex = exKey(() => `Network id ${$("netId").textContent}: the chain this page shows. ${S.mode === "sim" ? "In simulation it is an imitation of the documented protocol." : "Read from the node at " + $("wsurl").value.trim() + "."}`);
 $("chipHeight").dataset.ex = exKey(() => `Chain height: the newest sealed block is #${fmt(S.height)}. ${S.mode === "sim" ? "Simulated, a block every ~8 s." : "Read from the node; the relay pushes each new block as it is sealed."}`);
@@ -1915,7 +1942,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.2`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.3`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
