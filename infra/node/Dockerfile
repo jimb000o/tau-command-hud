@@ -82,6 +82,7 @@ COPY patches/ /patches/
 RUN python3 -I /patches/read-until-eof.py /src
 RUN python3 -I /patches/sync-paginate.py /src
 RUN python3 -I /patches/sync-diagnostics.py /src
+RUN python3 -I /patches/network-tip.py /src
 
 
 FROM python:3.14-slim-trixie AS runtime

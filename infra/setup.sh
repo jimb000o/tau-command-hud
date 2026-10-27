@@ -28,6 +28,16 @@ if ! command -v docker >/dev/null; then
 fi
 systemctl enable --now docker
 
+# Keep the BuildKit cache: the tau-lang build layers (several GB) must survive
+# BuildKit's garbage collection, or an unrelated change rebuilds tau-lang for
+# 90 minutes (happened 2026-10-27). Only written once; restarting Docker here
+# restarts the running containers, which come back on their own.
+if [[ ! -f /etc/docker/daemon.json ]]; then
+  mkdir -p /etc/docker
+  echo '{"builder": {"gc": {"enabled": true, "defaultKeepStorage": "25GB"}}}' > /etc/docker/daemon.json
+  systemctl restart docker
+fi
+
 # 8 GB swap: a tau-lang translation unit can need more than 3 GB, and a 4 GB
 # box with 4 GB swap still froze. A smaller /swapfile from an earlier run is
 # grown in place.
