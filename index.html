@@ -173,6 +173,8 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .btn.gold { border-color: rgba(57,255,138,.45); color: var(--ok); }
 .btn.gold:hover { background: var(--ok); border-color: var(--ok); color: #000; }
 .btn.ghost { background: transparent; border-color: var(--hair); color: var(--dim); }
+.gov .seat { display: inline-block; margin-top: 8px; font: 10.5px var(--mono); letter-spacing: .04em; color: var(--dim); text-decoration: none; }
+.gov .seat:hover { color: var(--ok); }
 .btn.ghost:hover { color: #fff; border-color: var(--cyan); background: rgba(236,236,240,.08); }
 .chip.unoff { cursor: pointer; border-color: var(--hair); color: var(--text); background: rgba(255,255,255,.06); white-space: normal; text-align: left; max-width: 100%; color: var(--amber); border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.08); }
 
@@ -609,6 +611,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <button class="btn ghost" type="button" data-open="mFeedback" data-full="What changed on this page and when, built from your feedback. Also where to leave feedback.">Updates</button>
       <button class="btn state" type="button" id="btnState2" data-full="Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.">Chain state</button>
       <button class="btn ghost gold" type="button" id="btnTour" data-full="Six short steps: one rule change from proposal to law, pointing at the panels where it happens.">Guided tour</button>
+      <a class="btn ghost" href="playground/" data-full="Write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Opens the playground page.">Playground</a>
       <a class="btn ghost" href="https://tau.net" target="_blank" rel="noopener" data-full="Opens tau.net, the project behind the testnet, in a new tab.">What is Tau?</a>
       <button class="btn ghost" type="button" id="btnRain" aria-pressed="true" data-full="Turns the falling glyphs in the background on or off. Purely decorative.">Rain</button>
       <button class="btn ghost more" type="button" id="btnMore" aria-expanded="false" hidden>More ▾</button>
@@ -713,6 +716,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         <h2>Validators <small id="govSub">seal blocks, vote on rules</small><button class="info" type="button" aria-label="What is this?" data-tip="The accounts allowed to seal blocks. The set lives on the chain and changes only through an agreed rule change. The approval threshold is derived from the quorum policy, which is itself part of the state hash, so it cannot be changed quietly.">i</button></h2>
         <div class="vals" id="vals"></div>
         <dl class="kv" id="govkv"></dl>
+        <a class="seat" href="playground/#seat" data-full="A simulated validator seat in the playground: propose a fee change, collect votes, watch it activate.">take a validator seat ›</a>
       </article>
       <article class="panel statep" id="statePanelCard" title="Click to open the full chain state">
         <h2>Rules in force now <small id="stateSub">changes only when the chain agrees</small><button class="info" type="button" aria-label="What is this?" data-tip="The current state of the chain’s law: the consensus rules every block is judged by, how many validators must agree to change them, and the rule changes that have been agreed so far. This panel does not animate; it only changes when a new block changes the rules. The full view with the Tau spec code and every personal rule opens with the button below.">i</button></h2>
@@ -763,6 +767,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v15.7 · 27 Oct 2026</b>Rule Playground: a new page at <a href="playground/">/playground/</a> where you write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Linked from the header (“Playground”) and from the validators panel.</li>
           <li><b>v15.6 · 27 Oct 2026</b>Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both count down second by second to the next expected block, reset with every new block, and the line under Block pace says when a block runs late. On 16:9 wide screens the left column (block check, rule changes) is wider and taller at the top. While the node is still catching up with the chain (or the chain is idle), the countdown pauses and the line under Block pace says how old the newest block is; if the relay reports that the node has verified the state only up to an older block, the mode chip turns amber: “Live · Verified to #n of tip”. The Tau row follows the real proposal: “waits for n votes” while a proposal collects agreement (time cannot help there), a countdown to the activation height once it is agreed. Live wording no longer assumes that only validators vote: the threshold comes from the validator count, who may vote is a network setting.</li>
           <li><b>v15.5 · 27 Oct 2026</b>Wide screens, third pass: the blockchain panel gets double width and double height and its block detail flows into four columns instead of a scroll box; the block check shows every rule row; the scale is set so each panel keeps at least its desktop room. No label is cut off any more: the rule-change strip, check rows and transaction lines wrap whole words instead of ending in “…”. In the simple view the block detail shows short hashes, the technical view shows them in full.</li>
           <li><b>v15.4 · 27 Oct 2026</b>Wide screens, second pass: the chain core now spans both rows in the centre and is the largest thing on the screen, the validators column gets the full height, and the scale is set from a 2400 px design width instead of 1800, so panels keep their proportions.</li>
@@ -2066,7 +2071,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.6`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.7`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
