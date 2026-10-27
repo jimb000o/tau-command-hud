@@ -203,13 +203,24 @@ class Relay:
             self._note_error("getblocks", msg)
             return
         data = msg.get("data") or {}
+        total = data.get("total", self.total_blocks)
+        reset = False
+        if self.blocks and isinstance(total, int) and total < self.total_blocks:
+            # The node wiped its chain data (testnet restarted on the same genesis):
+            # everything cached belongs to a dead chain.
+            log.warning("chain reset: node has %s blocks, had %s; dropping cached blocks", total, self.total_blocks)
+            self.blocks.clear()
+            reset = True
         fresh = [b for b in data.get("blocks") or []
                  if isinstance(b, dict) and b.get("block_hash") and b["block_hash"] not in self.blocks]
-        self.total_blocks = data.get("total", self.total_blocks)
+        self.total_blocks = total
         self.updated["getblocks"] = time.time()
         if not fresh:
             return
         for b in fresh:
+            # a block at a height we already hold replaces the old one (reorg)
+            for old in [o for o in self.blocks.values() if self._height(o) == self._height(b)]:
+                self.blocks.pop(old["block_hash"], None)
             self.blocks[b["block_hash"]] = b
         ordered = self.ordered_blocks()
         for b in ordered[:-CACHE_BLOCKS]:
@@ -217,7 +228,9 @@ class Relay:
         fresh.sort(key=self._height)
         log.info("new blocks: %s", ", ".join(str(self._height(b)) for b in fresh))
         broadcast(self.clients, envelope_ok("getblocks", {
-            "blocks": fresh, "total": self.total_blocks, "truncated": True, "pushed": True}))
+            "blocks": fresh, "total": self.total_blocks, "truncated": True, "pushed": True,
+            # reset: the chain restarted, drop everything you had before these blocks
+            **({"reset": True} if reset else {})}))
 
     async def poll_cached(self, command: str, push: bool):
         msg = await self.upstream.request(command)
