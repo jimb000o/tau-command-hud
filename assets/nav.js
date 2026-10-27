@@ -15,10 +15,12 @@
     stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/" },
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
     account:    { t: "Accounts", d: "Balance, own rules, offers and refusals of any address", i: "@", h: "account/" },
-    nodes:      { t: "Nodes", d: "Community nodes that follow the chain, with badges for uptime and sync", i: "⬢", h: "nodes/" },
+    nodes:      { t: "Nodes", d: "Community nodes that follow the chain, with badges for uptime and sync", i: "◎", h: "nodes/" },
     proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with Telegram and RSS alerts", i: "§", h: "proposals/" },
     tour:       { t: "Guided tour", d: "One minute, eight steps: how rules change by agreement", i: "▸", h: "?tour=1", act: "tour" },
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
+    findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
+    status:     { t: "Status", d: "Uptime, outages, sync gaps and restarts of the community node", i: "◍", h: "status/" },
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
     about:      { t: "About", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
@@ -27,10 +29,10 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     { k: "explore", t: "Explore", items: ["explorer", "stats", "history", "account", "nodes", "proposals"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["tour", "chronicle", "tau", "about"], tab: "▸" },
+    { k: "learn", t: "Learn", items: ["tour", "chronicle", "findings", "status", "tau", "about"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat"], id: "btnPlayground", tab: "◇", short: "Play" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", chronicle: "learn", playground: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", chronicle: "learn", findings: "learn", status: "learn", playground: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     telegram: "Telegram channel @tauHUDcom: every new proposal, agreement and activation on the testnet, plus HUD updates. Opens Telegram.",
@@ -38,7 +40,7 @@
     gear: "Settings: node address and Connect, background rain.",
     hud: "The chain core live: blocks, rules and agreement as they happen.",
     explore: "Chain data pages: Explorer, Stats, Time travel, Accounts, Nodes, Proposals.",
-    learn: "Guided tour, Chronicle, What is Tau?, About.",
+    learn: "Guided tour, Chronicle, Findings, Status, What is Tau?, About.",
     play: "Write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law.",
   };
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -85,7 +87,7 @@
         const a = el("a", "ni" + (here === sec.k ? " here" : ""), esc(sec.t)); a.href = ROOT; if (here === sec.k) a.setAttribute("aria-current", "page"); tip(a, TIPS.hud); bar.append(a); return;
       }
       const w = el("div", "ni-wrap"), b = el("button", "ni" + (here === sec.k ? " here" : ""), `${esc(sec.t)}<span class="caret">▾</span>`);
-      b.type = "button"; b.setAttribute("aria-haspopup", "true"); b.setAttribute("aria-expanded", "false"); if (sec.id) b.id = sec.id; tip(b, TIPS[sec.k]);
+      b.type = "button"; b.setAttribute("aria-haspopup", "true"); b.setAttribute("aria-expanded", "false"); if (sec.id) b.id = sec.id;
       const m = el("div", "menu"); m.hidden = true; m.setAttribute("role", "menu"); m.setAttribute("aria-label", sec.t);
       sec.items.forEach(k => m.append(item(k, page, isHud)));
       b.addEventListener("click", () => toggle(b, m));
