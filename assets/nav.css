@@ -1,6 +1,6 @@
 /* Tau HUD shared header bar (row 2 on every page). Loaded by assets/nav.js.
    Monochrome, one green accent, nothing truncated, no layout shift when a menu opens. */
-.tnav, .tsheet, .tabbar { --tn-ok: var(--ok, #39ff8a); --tn-dim: var(--dim, #8a8a94); --tn-hair: var(--hair, rgba(255,255,255,.18)); --tn-line: var(--line, rgba(255,255,255,.09)); --tn-font: var(--display, "Sora", "Segoe UI", sans-serif); --tn-mono: var(--mono, "JetBrains Mono", ui-monospace, Menlo, monospace);
+.tnav, .tsheet, .tabbar, header.trail { --tn-ok: var(--ok, #39ff8a); --tn-dim: var(--dim, #8a8a94); --tn-hair: var(--hair, rgba(255,255,255,.18)); --tn-line: var(--line, rgba(255,255,255,.09)); --tn-font: var(--display, "Sora", "Segoe UI", sans-serif); --tn-mono: var(--mono, "JetBrains Mono", ui-monospace, Menlo, monospace);
 }
 .tnav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; flex: 1 1 100%; min-width: 0; position: relative; }
 .tnav-l, .tnav-r { display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -46,6 +46,42 @@
 .tnav-pop .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .tnav-pop .row > input { flex: 1 1 200px; }
 .tnav-pop .hint { flex: 1 1 100%; }
+/* row 1 on subpages (built by nav.js): identical to the HUD's brand row, page title in the tagline slot */
+header.trail { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 6px 12px; padding: 0 0 8px; margin: 0; border: 0; border-bottom: 1px solid var(--tn-line); min-width: 0; }
+header.trail .brand { display: flex; flex-direction: row; align-items: center; gap: 10px; text-decoration: none; margin: 0; padding: 0; min-width: 0; }
+header.trail .mark { width: 26px; height: 26px; flex: 0 0 auto; display: block; }
+header.trail .mark circle { fill: none; stroke: #fff; stroke-opacity: .45; stroke-width: 3.5; }
+header.trail .mark .pulse { fill: none; stroke: var(--tn-ok); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+header.trail .brand h1 { margin: 0; font: 700 22px/1 var(--tn-font); letter-spacing: .06em; text-transform: none; background: linear-gradient(90deg, #ffffff 0%, #b8b8c2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); white-space: nowrap; }
+header.trail .brand span { font: 500 11px var(--tn-font); letter-spacing: .3em; color: var(--tn-dim); text-transform: uppercase; white-space: nowrap; }
+header.trail .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; min-width: 0; }
+header.trail .chip { font: 500 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; padding: 5px 12px; border: 1px solid var(--tn-hair); border-radius: 999px; color: var(--tn-dim); background: rgba(255,255,255,.03); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; }
+header.trail .chip b { color: #fff; font-weight: 600; font-family: var(--tn-mono); letter-spacing: 0; text-transform: none; margin-left: 6px; font-variant-numeric: tabular-nums; }
+header.trail .chip b.n { margin-left: 0; margin-right: 6px; }
+header.trail .chip.live b { color: var(--tn-ok); }
+header.trail .chip.warn b { color: #d6d6dc; }
+header.trail .chip.behind b { color: #ffb13b; }
+header.trail a.chip:hover { border-color: #fff; color: #fff; }
+header.trail .chip.unoff { color: #d6d6dc; border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.06); }
+header.trail .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--tn-ok); box-shadow: 0 0 8px var(--tn-ok); margin-right: 6px; animation: tnblink 1.6s infinite; }
+header.trail .dot.behind { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
+header.trail .dot.off { background: #ff4d6d; box-shadow: 0 0 8px #ff4d6d; animation: none; }
+header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation: none; opacity: .6; }
+@keyframes tnblink { 50% { opacity: .35; } }
+/* row 2 controls on subpages, same look as the HUD's */
+.tnav .seg { display: inline-flex; border: 1px solid var(--tn-hair); border-radius: 999px; overflow: hidden; }
+.tnav .seg > a, .tnav .seg > button { font: 600 11.5px var(--tn-font); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--tn-dim); border: 0; padding: 7px 12px; cursor: pointer; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; }
+.tnav .seg > [aria-pressed="true"] { background: #fff; color: #000; }
+.tnav .seg > a:hover, .tnav .seg > button:hover { color: #fff; }
+.tnav .seg > [aria-pressed="true"]:hover { color: #000; }
+.tnav .seg [data-livedot] { width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; display: inline-block; background: var(--tn-ok); box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(57,255,138,.95); }
+.tnav .seg [data-livedot].behind { background: #ffb13b; box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,177,59,.9); }
+.tnav .seg [data-livedot].off, .tnav .seg [data-livedot].none { background: #9a9aa2; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
+.tnav-pop .gearbody { display: flex; flex-direction: column; gap: 10px; }
+.tnav-pop code { font: 500 12px var(--tn-mono); color: #fff; }
+.tnav-pop .hint { color: var(--tn-dim); font: 400 11px/1.45 var(--tn-font); }
+.tnav-pop .pill { font: 600 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--tn-hair); color: var(--tn-dim); text-decoration: none; white-space: nowrap; }
+.tnav-pop .pill:hover { color: #fff; border-color: #fff; }
 /* phone: row 2 keeps source, chain state, Telegram and gear; sections move to a bottom tab bar */
 .tabbar, .tsheet, .tsheet-bg { display: none; }
 @media (max-width: 700px) {
@@ -67,6 +103,15 @@
   .tsheet .mi { padding: 9px 6px; }
   .tsheet .mi b { white-space: normal; }
   .tnav-spacer { height: calc(58px + env(safe-area-inset-bottom, 0px)); }
+  header.trail { gap: 8px 8px; }
+  header.trail .brand { flex: 1 1 0; flex-wrap: wrap; }
+  header.trail .brand h1 { font-size: 20px; }
+  header.trail .brand span { flex: 1 1 100%; font-size: 9px; letter-spacing: .12em; line-height: 1.3; }
+  header.trail .chip.unoff { order: 2; flex: 1 1 100%; font-size: 9px; letter-spacing: .03em; padding: 5px 10px; justify-content: center; }
+  header.trail .chips { order: 3; flex: 1 1 100%; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 5px; }
+  header.trail .chips::-webkit-scrollbar { display: none; }
+  header.trail .chip { font-size: 10px; padding: 4px 10px; letter-spacing: .08em; }
+  .tnav .seg > a, .tnav .seg > button { font-size: 10.5px; padding: 8px 12px; min-height: 36px; }
   .fb-fab { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
   .tour { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
 }
