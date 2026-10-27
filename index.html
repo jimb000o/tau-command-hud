@@ -850,6 +850,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.3 · 27 Oct 2026</b>The green “you are here” line under a section name is now exactly as wide as the word and sits right under it (it used to float below the whole button, caret included).</li>
           <li><b>v17.2 · 27 Oct 2026</b>Every page now carries the whole HUD header: brand row with the page title, the status chips (mode, online, network, height, spec revision, base fee, read from the community relay), Live node / Simulation, View and the gear. Only the title and the active section change when you move between pages.</li>
           <li><b>v17.1 · 27 Oct 2026</b>Live mode links into the <a href="explorer/">Explorer</a>: the hash in a block’s identity opens the block there, the id on a transaction card opens the transaction. The Nodes entry in the Explore menu is marked “soon” until that page is online (it led to a 404).</li>
           <li><b>v17.0 · 27 Oct 2026</b>New header on every page: HUD · Explore · Learn · Playground as menus with one line per page, Chain state as the only button, Telegram channel in green, Updates with a dot when there is something new, View and settings (node address, rain) on the right. The current section is underlined in green. Same bar on all seven pages; on phones it becomes a tab bar at the bottom. Rationale: Krug’s persistent navigation and “you are here”, Tidwell’s progressive disclosure, Refactoring UI’s emphasize by de-emphasizing.</li>
@@ -2408,7 +2409,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.2`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.3`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

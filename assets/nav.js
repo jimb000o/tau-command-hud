@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.2"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.3"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';
@@ -219,9 +219,9 @@
     if (slots.source) { left.append(slots.source); left.append(el("span", "tnav-sep")); }
     SECTIONS.forEach(sec => {
       if (sec.single) {
-        const a = el("a", "ni" + (here === sec.k ? " here" : ""), esc(sec.t)); a.href = ROOT; if (here === sec.k) a.setAttribute("aria-current", "page"); tip(a, TIPS.hud); bar.append(a); return;
+        const a = el("a", "ni" + (here === sec.k ? " here" : ""), `<span class="lbl">${esc(sec.t)}</span>`); a.href = ROOT; if (here === sec.k) a.setAttribute("aria-current", "page"); tip(a, TIPS.hud); bar.append(a); return;
       }
-      const w = el("div", "ni-wrap"), b = el("button", "ni" + (here === sec.k ? " here" : ""), `${esc(sec.t)}<span class="caret">▾</span>`);
+      const w = el("div", "ni-wrap"), b = el("button", "ni" + (here === sec.k ? " here" : ""), `<span class="lbl">${esc(sec.t)}</span><span class="caret">▾</span>`);
       b.type = "button"; b.setAttribute("aria-haspopup", "true"); b.setAttribute("aria-expanded", "false"); if (sec.id) b.id = sec.id;
       const m = el("div", "menu"); m.hidden = true; m.setAttribute("role", "menu"); m.setAttribute("aria-label", sec.t);
       sec.items.forEach(k => m.append(item(k, page, isHud)));
