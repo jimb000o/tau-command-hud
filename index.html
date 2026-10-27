@@ -342,6 +342,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .pr b { font: 600 12.5px var(--display); letter-spacing: .02em; color: #fff; }
 .pr span { font-size: 11px; color: var(--text); opacity: .85; }
 .pr em { font-style: normal; font-size: 10.5px; color: var(--dim); }
+.prov { display: flex; justify-content: space-between; gap: 8px; margin-top: 3px; padding-top: 4px; border-top: 1px dashed var(--line); font: 10px var(--mono); color: var(--dim); white-space: nowrap; min-width: 0; }
+.prov span { overflow: hidden; text-overflow: ellipsis; }
+.prov i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 0; border: 1px solid var(--dim); }
+.prov i.seen { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.prov a { color: var(--dim); text-decoration: none; border-bottom: 1px dotted var(--hair); flex: 0 0 auto; }
+.prov a:hover { color: #fff; border-color: #fff; }
+.rejchip { margin-left: 8px; font: 500 10px var(--mono); letter-spacing: .04em; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; cursor: pointer; vertical-align: 1px; }
+.rejchip.some { color: var(--bad); border-color: rgba(255,77,109,.45); }
+.rejchip[aria-pressed="true"] { background: var(--bad); color: #000; border-color: var(--bad); }
+#feed.only-rej .tx:not(.rej) { display: none; }
 .rw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .panel .sub { margin: -6px 0 10px; color: var(--dim); font-size: 11px; }
 .updates, .offers, .clauses { display: grid; gap: 8px; align-content: start; }
@@ -369,6 +379,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .contrast .st.done small { color: var(--ok); }
 .contrast .st.on { color: #f0c969; border-style: solid; border-color: #e3b55a; background: repeating-linear-gradient(135deg, rgba(227,181,90,.16) 0 5px, rgba(227,181,90,.04) 5px 10px); box-shadow: 0 0 0 0 rgba(227,181,90,.5); animation: working 1.6s ease-in-out infinite; }
 .contrast .st.on small { color: #f0c969; }
+.contrast .st.fail { color: var(--bad); border-style: solid; border-color: rgba(255,77,109,.6); background: rgba(255,77,109,.08); }
+.contrast .st.fail small { color: var(--bad); }
+.contrast .tau-seg.failed { border-color: rgba(255,77,109,.5); background: rgba(255,77,109,.05); box-shadow: 0 0 0 1px rgba(255,77,109,.25), inset 0 0 20px rgba(255,77,109,.08); }
 .contrast .tau-seg.complete { border-color: var(--ok); background: rgba(57,255,138,.12); box-shadow: 0 0 0 1px rgba(57,255,138,.35), 0 0 28px rgba(57,255,138,.35), inset 0 0 24px rgba(57,255,138,.18); animation: complete .9s ease-out; }
 .contrast .tau-seg.complete .st.done { background: rgba(57,255,138,.18); border-color: var(--ok); color: #fff; }
 .contrast .tau-seg.complete .st.done small { color: var(--ok); }
@@ -510,6 +523,8 @@ a.btn { text-decoration: none; display: inline-block; }
   .thesis h2 { font-size: 15px; }
   .principles { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .pr span { font-size: 10.5px; }
+  .prov { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
+  .prov span { overflow: visible; }
   .core canvas { max-width: 300px; }
   .ribbon .blk { flex-basis: 130px; }
   #blkDetail dd { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -567,10 +582,10 @@ a.btn { text-decoration: none; display: inline-block; }
       <h2 id="thesisTxt" data-decode>On other chains, code is law. On Tau, the agreement is law: users write the rules in logic, every rule is checked before it can apply, and nothing changes without the validators’ consent. There is no admin key.</h2>
     </div>
     <div class="principles">
-      <div class="pr"><b>Checked before it applies</b><span>A proposed rule is compiled on its own first. If it does not hold, it never enters the chain.</span><em>see it: Rule changes · “compiled in isolation ✓”</em></div>
-      <div class="pr"><b>No admin key</b><span>Nobody can change the rules alone. A change needs the validators’ agreement and takes effect at a later block.</span><em>see it: Validators · “agreement needed”</em></div>
-      <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. A stolen key still obeys your limits.</span><em>see it: Transactions · red “✕ refused”</em></div>
-      <div class="pr"><b>Money with terms</b><span>A transfer can be returnable until a release point, locked until a time, or co-signed above an amount.</span><em>see it: Personal money rules</em></div>
+      <div class="pr"><b>Checked before it applies</b><span>A proposed rule is compiled on its own first. If it does not hold, it never enters the chain.</span><em>see it: Rule changes · “compiled in isolation ✓”</em><div class="prov" data-full="Documented in tau-testnet: a consensus_rule_update gets an isolated staging compile against the current consensus rules before it is admitted. We have not yet watched a rule change on the testnet ourselves."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py#L709" target="_blank" rel="noopener">admission.py:709 ↗</a></div></div>
+      <div class="pr"><b>No admin key</b><span>Nobody can change the rules alone. A change needs the validators’ agreement and takes effect at a later block.</span><em>see it: Validators · “agreement needed”</em><div class="prov" data-full="Read from the community node (getgovernance): the active validator set, the vote_quorum policy and the approval threshold, all bound into the state hash. Threshold = ⌈2N/3⌉ for supermajority."><span><i class="seen"></i>seen on the testnet</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py#L496" target="_blank" rel="noopener">governance.py:496 ↗</a></div></div>
+      <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. A stolen key still obeys your limits.</span><em>see it: Transactions · red “✕ refused”</em><div class="prov" data-full="Documented in tau-testnet: stream o5 is the sender’s own policy, 0 = block, enforced at admission (sendtx.py:1310) and again when the block is applied. Refusals here are simulated; we have not yet seen one on the testnet."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/engine.py#L1880" target="_blank" rel="noopener">engine.py:1880 ↗</a></div></div>
+      <div class="pr"><b>Money with terms</b><span>A transfer can be returnable until a release point, locked until a time, or co-signed above an amount.</span><em>see it: Personal money rules</em><div class="prov" data-full="Documented in tau-testnet: retractable_transfer parks funds in escrow until a release height or time; whitelists use i4, time-locks i5, limits i1. Not yet observed on the testnet by us."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md#L573" target="_blank" rel="noopener">README §Retractable ↗</a></div></div>
     </div>
   </section>
 
@@ -599,7 +614,7 @@ a.btn { text-decoration: none; display: inline-block; }
     </article>
 
     <article class="panel a-feed">
-      <h2>Transactions <small id="feedSub">waiting → sealed</small><button class="info" type="button" aria-label="What is this?" data-tip="Transactions as they are admitted and later sealed into blocks. Grey: transfers. Green: rule work (an account deploying, offering, accepting or rejecting a Tau rule). White: governance (proposals and votes). Red with ✕: refused, usually because the sender’s own rule (o5) blocked it, which applies even to whoever holds the key. Amounts are in AGRS (testnet balances, no real value).">i</button></h2>
+      <h2>Transactions <small id="feedSub">waiting → sealed</small><button class="rejchip" id="feedRej" type="button" aria-pressed="false" data-full="What Tau refused at the door: a transfer the sender’s own rule said no to, or a proposed spec that did not compile. Click to show only these.">0 refused</button><button class="info" type="button" aria-label="What is this?" data-tip="Transactions as they are admitted and later sealed into blocks. Grey: transfers. Green: rule work (an account deploying, offering, accepting or rejecting a Tau rule). White: governance (proposals and votes). Red with ✕: refused, usually because the sender’s own rule (o5) blocked it, which applies even to whoever holds the key. Amounts are in AGRS (testnet balances, no real value).">i</button></h2>
       <div class="feed scroll" id="feed"></div>
     </article>
 
@@ -624,7 +639,7 @@ a.btn { text-decoration: none; display: inline-block; }
           <span class="seg fork" data-full="A hard fork: nodes that disagree keep running the old rules, and the chain can split in two."><b>⑂ fork</b><small>splits</small></span>
           <span class="seg" data-full="Every node operator must upgrade their software by hand; whoever does not is left on the old chain."><b>upgrade</b><small>by hand</small></span>
         </div></div>
-        <div class="crow tau"><span class="who">Tau<em>~1 minute</em></span><div class="track">
+        <div class="crow tau"><span class="who">Tau<em data-full="Timing is simulated: 8 s blocks, activation 8 blocks after the proposal. On the testnet the rule is the same but the clock is the chain’s: activate_at_height must be at least the inclusion height plus the number of validators (README §Governance).">~1 min · simulated</em></span><div class="track">
           <div class="tau-seg"><span class="st" id="stPropose" data-full="Propose: any active validator sends a consensus_rule_update transaction with the new rule text or validator patch. It is an ordinary transaction, visible to everyone, with an activation height a few blocks ahead.">propose<small id="stProposeS">—</small></span><span class="st" id="stCheck" data-full="Checked: before the proposal is even admitted, the node compiles the proposed rule on its own against the active spec. If it does not compile or contradicts the live rules, it is refused at the door and never enters the chain.">checked<small id="stCheckS">—</small></span><span class="st" id="stAgree" data-full="Agreed: validators vote with consensus_rule_vote transactions. The proposal is scheduled once the quorum policy is met, for example 2 of 3 validators. The quorum rule itself is part of the chain state, so it cannot be changed quietly.">agreed<small id="stAgreeS">—</small></span><span class="st" id="stActive" data-full="Active: at the scheduled block height the node amends the spec and the spec revision counts up. Every node applies the new rules automatically; nobody upgrades software, nothing forks.">active<small id="stActiveS">—</small></span></div>
           <span class="rest" data-full="After activation nothing else is needed: no software upgrade, no coordination, no chain split. The next block is already judged by the new rules."><b>done.</b> nothing to upgrade, nothing splits.</span>
         </div></div>
@@ -700,6 +715,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v15 · 27 Oct 2026</b>From GitHub feedback #1: every principle card now says whether it was seen on the testnet or comes from the protocol, with a link to the tau-testnet line that backs it (pinned to one commit). Failure paths are shown on purpose: some proposals now miss quorum and expire with a red moment in the rule row, the “n refused” chip on Transactions counts and filters what Tau refused, and the ~1 minute rule-change timing is marked as simulated.</li>
           <li><b>v14.5 · 27 Oct 2026</b>Hardening: the page tells the browser to upgrade any insecure request, and a pasted ws:// node address becomes wss:// on an https page (localhost excepted), so the lock stays intact.</li>
           <li><b>v14.4 · 26 Oct 2026</b>A third live state: while the community node is connected but not synced with the real chain, the relay light and the mode chip turn amber and read “Live · Not synced”. Green and “Connected” only when the node follows the network’s tip.</li>
           <li><b>v14.3 · 26 Oct 2026</b>Simulation is the default view again for now: the community node sits on an orphan chain until IDNI publishes the current genesis, so its blocks are not the real tip. Live node and its light stay one click away; Live becomes the default again once the node follows the real chain.</li>
@@ -759,6 +775,8 @@ a.btn { text-decoration: none; display: inline-block; }
       <div class="unofficial" role="note">Unofficial community project<span>Built by Tau community members. Not affiliated with, endorsed by or maintained by IDNI or the Tau team. Data in simulation mode is generated in your browser and is not the real chain.</span></div>
       <h3>Experimental · no claim of accuracy</h3>
       <p>Tau HUD is an experimental community approach to visualising the Tau testnet. We do not claim that the information shown is accurate, complete or current, in simulation or live mode. It is not official information, not financial advice and not technical advice. Check anything that matters against the <a href="https://github.com/IDNI/tau-testnet" target="_blank" rel="noopener">tau-testnet repository</a> and your own node.</p>
+      <h3>Where each claim comes from</h3>
+      <p>Each principle card at the top carries its source. <span class="prov" style="display:inline-flex;border:0;padding:0;margin:0"><span><i class="seen"></i>seen on the testnet</span></span> means we read it from the community node; <span class="prov" style="display:inline-flex;border:0;padding:0;margin:0"><span><i class="spec"></i>from the protocol</span></span> means it is documented in <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md" target="_blank" rel="noopener">tau-testnet</a> (README and code, pinned to commit 539d1e2) but we have not watched it happen on the real chain yet. The link on each card goes to the line that backs it. Refusals matter as much as the happy path: the simulation deliberately produces proposals that do not compile, rule offers that collide, and proposals that miss quorum and expire (<a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md#L503" target="_blank" rel="noopener">README §Governance ↗</a>); the “n refused” chip on Transactions filters to what Tau refused.</p>
       <h3>Simulation vs. live node</h3>
       <p>The simulation follows the documented protocol of <a href="https://github.com/IDNI/tau-testnet" target="_blank" rel="noopener">tau-testnet</a>: validators vote on rule changes, accounts write and share their own Tau rules, every block is judged by Tau. It is a model, not the real chain.</p>
       <p>Live mode speaks the node's raw WebSocket protocol (<code>getblocks</code>, <code>getmempool</code>, <code>getgovernance</code>). The default address <code>wss://node.tauhud.com</code> is a read-only community relay in front of a Tau testnet node run for this page (its <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra" target="_blank" rel="noopener">setup is public</a>). To read your own node instead, run it with this page's origin in <code>TAU_WS_ALLOWED_ORIGINS</code> and put its address in the field.</p>
@@ -1024,7 +1042,7 @@ function explainBlock(b) {
 function explainValidator(v, i) {
   const open = S.updates.find(u => u.status === "voting" || u.status === "scheduled");
   const role = i === S.proposerIdx ? "Sealing the next block." : "Seals blocks in turn, votes on rule changes.";
-  return role + (open ? `\n“${open.title}”: ${open.votes.has(v) ? "agreed ✓" : "not voted yet"}.` : "\nNo open proposal to vote on.");
+  return role + (open ? `\n“${open.title}”: ${open.votes.has(v) ? "agreed ✓" : open.abstain && open.abstain.has(v) ? "not voting on this one" : "not voted yet"}.` : "\nNo open proposal to vote on.");
 }
 function explainSpec() {
   const active = S.updates.filter(u => u.status === "active").length;
@@ -1064,6 +1082,7 @@ function txCard(t) {
     : (t.note || `sender ${short(t.sender)}`);
   d.innerHTML = `<div class="top"><em>${esc(label)}</em><span>${short(t.id)} · fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
   d.dataset.ex = exKey(() => explainTx(t));
+  if (t.rejected) { S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
   if (feed.matches(":hover")) { feedHold.push(d); return d; }
   feed.prepend(d);
@@ -1109,30 +1128,35 @@ function renderUpdates() {
   // the strip follows one proposal to the end: a change that just took effect, else the oldest open one, else the last active one
   // once a change is absorbed into the network (celebration over) the boxes reset, so the next proposal visibly starts from propose
   const lastActive = S.updates.slice().reverse().find(u => u.status === "active");
-  const cur = S.updates.find(u => u.status === "active" && u.activatedAt && now - u.activatedAt < CELEBRATE_MS)
+  const FAIL_MS = 7000;
+  const failed = S.updates.find(u => u.status === "expired" && u.expiredAt && now - u.expiredAt < FAIL_MS) || null;
+  const cur = failed || S.updates.find(u => u.status === "active" && u.activatedAt && now - u.activatedAt < CELEBRATE_MS)
     || S.updates.find(u => u.status === "voting" || u.status === "scheduled") || null;
   const pend = S.pending && !(cur && (cur.status === "voting" || cur.status === "scheduled")) ? S.pending : null;
   // step by step: propose (in mempool) → checked (compiling) → agreed (votes) → active; every phase gets a visible moment
-  const stage = pend ? 0 : !cur ? -1 : cur.status === "voting" ? (now - (cur.minedAt || 0) < CHECK_MS ? 1 : 2) : cur.status === "scheduled" ? 3 : 4;
+  const stage = pend ? 0 : !cur ? -1 : failed ? 2 : cur.status === "voting" ? (now - (cur.minedAt || 0) < CHECK_MS ? 1 : 2) : cur.status === "scheduled" ? 3 : 4;
   const left = cur ? Math.max(0, cur.activateAt - S.height) : 0;
   const words = pend ? ["mempool", "next", "next", "next"]
     : !cur ? (lastActive ? ["next", "next", "next", `last #${lastActive.activeAt}`] : ["—", "—", "—", "—"])
+    : failed ? ["done", "done", `✕ ${cur.votes.size}/${thr}`, "no change"]
     : ["done", stage === 1 ? "compile" : "done", stage === 1 ? "next" : cur.status === "voting" ? `${cur.votes.size}/${thr} votes` : "done",
        cur.status === "active" ? `since #${cur.activeAt}` : cur.status === "scheduled" ? `in ${left} blk` : `#${cur.activateAt}`];
   ["stPropose", "stCheck", "stAgree", "stActive"].forEach((id, i) => {
-    $(id).className = "st" + (i < stage ? " done" : i === stage ? " on" : "");
+    $(id).className = "st" + (i < stage ? " done" : i === stage ? (failed ? " fail" : " on") : "");
     $(id + "S").textContent = i < stage ? "done" : i === stage ? words[i] : words[i] === "done" ? "next" : words[i];
   });
   if (stage === 4) $("stActiveS").textContent = words[3];
   const seg = document.querySelector(".tau-seg");
   const celebrate = cur && cur.status === "active" && cur.activatedAt && now - cur.activatedAt < CELEBRATE_MS;
-  seg.classList.toggle("complete", !!celebrate);
+  seg.classList.toggle("complete", !!celebrate); seg.classList.toggle("failed", !!failed);
+  if (failed) { $("stActive").className = "st"; $("stActiveS").textContent = "no change"; }
   if (cur) {
     $("stAgree").dataset.full = `Agreed: validators vote with consensus_rule_vote transactions. “${cur.title}” has ${cur.votes.size} of ${thr} needed votes (${S.quorum === "majority" ? "majority" : "two thirds"} of ${S.validators.length}). The quorum rule itself is part of the chain state, so it cannot be changed quietly.`;
     $("stActive").dataset.full = cur.status === "active" ? `Active: “${cur.title}” took effect at block #${cur.activeAt}; the spec revision is now ${S.specRev}. Every node applied the new rules automatically; nobody upgraded software, nothing forked.` : `Active: if agreed, “${cur.title}” takes effect at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Every node will apply it automatically; nobody upgrades software, nothing forks.`;
   }
 
-  $("contrastCap").innerHTML = !cur ? (lastActive ? `<b>“${esc(lastActive.title)}”</b> went from proposal to law in ${Math.max(1, lastActive.activeAt - lastActive.proposedAt)} blocks and is absorbed into the network. Waiting for the next proposal.` : "On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b>")
+  $("contrastCap").innerHTML = failed ? `<b>“${esc(failed.title)}”</b> missed quorum: ${failed.votes.size} of ${thr} validators by block #${failed.activateAt}. Archived without effect, the old rules stand. <b>Tau refuses by default.</b>`
+    : !cur ? (lastActive ? `<b>“${esc(lastActive.title)}”</b> went from proposal to law in ${Math.max(1, lastActive.activeAt - lastActive.proposedAt)} blocks and is absorbed into the network. Waiting for the next proposal.` : "On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b>")
     : cur.status === "active" ? `<b>“${esc(cur.title)}”</b> went from proposal to law in ${Math.max(1, cur.activeAt - cur.proposedAt)} blocks. No fork, no upgrade, no admin.`
     : cur.status === "scheduled" ? `<b>“${esc(cur.title)}”</b> is agreed and becomes law at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Nobody has to upgrade anything.`
     : `<b>“${esc(cur.title)}”</b> is collecting agreement: ${cur.votes.size} of ${thr} validators so far. It becomes law at #${cur.activateAt} if enough agree.`;
@@ -1277,7 +1301,7 @@ function simInit() {
   S.clauses = new Map();
   // a few accounts start with their own policies so the composite is visible from the first frame
   for (let i = 0; i < 3; i++) S.clauses.set(SIM.accounts[i], randomPolicy(SIM.accounts));
-  $("ribbon").innerHTML = ""; $("feed").innerHTML = "";
+  $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; S.refusedN = 0; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
   const g = { n: 0, hash: "4bf5ee70" + hex(48) + "fbce", state: hex(64), proposer: "0".repeat(96), ts: Math.floor(Date.now() / 1000) - 60, txs: [] };
   g.snap = { specRev: 1, fee: S.fee, quorum: S.quorum, budget: S.ruleBudget, validators: S.validators.slice(), rules: S.clauses.size, agreed: [] };
   S.byHeight.set(0, g); S.blocks.push(g); addBlockCard(g); showBlock(g, false); renderStatePanel();
@@ -1299,7 +1323,7 @@ function simTx() {
   const waiting = S.offers.find(o => o.status === "offered" && !o.answering);
 
   if (open && r < 0.30) {                                   // validators voting on an open proposal
-    const voter = S.validators.find(v => !open.votes.has(v));
+    const voter = S.validators.find(v => !open.votes.has(v) && !(open.abstain && open.abstain.has(v)));
     if (voter) {
       open.pendingVoters = open.pendingVoters || new Set();
       if (!open.pendingVoters.has(voter)) {
@@ -1320,7 +1344,7 @@ function simTx() {
     return admit({ id: hex(64), type: "consensus_rule_update", kind: "gov", sender: proposer, fee: 0, proposal: p, note: `“${p.title}” · ${p.diff}`,
       apply: (b, tx) => {
         S.pending = null;
-        const u = { ...p, id, proposer, votes: new Set([proposer]), activateAt: b.n + 8, proposedAt: b.n, status: "voting", checked: true, minedAt: Date.now() }; S.updates.push(u); tx.update = u;
+        const u = { ...p, id, proposer, votes: new Set([proposer]), abstain: new Set(S.validators.filter(v => v !== proposer && Math.random() < 0.25)), activateAt: b.n + 8, proposedAt: b.n, status: "voting", checked: true, minedAt: Date.now() }; S.updates.push(u); tx.update = u;
         log(`Rule change ${short(id)} compiled in isolation ✓ · proposed: ${p.title} · activates at #${b.n + 8} if ${threshold()} validators agree`, "warn");
       } });
   }
@@ -1363,7 +1387,7 @@ function simBlock() {
   const thr = threshold();
   S.updates.forEach(u => {
     if (u.status === "voting" && u.votes.size >= thr) { u.status = "scheduled"; log(`Agreement reached on ${short(u.id)} (${u.votes.size}/${S.validators.length}) → scheduled for #${u.activateAt}`, "warn"); }
-    if (u.status === "voting" && b.n >= u.activateAt) { u.status = "expired"; log(`${short(u.id)} expired before reaching agreement → archived`, "warn"); }
+    if (u.status === "voting" && b.n >= u.activateAt) { u.status = "expired"; u.expiredAt = Date.now(); log(`✕ “${u.title}” missed quorum: ${u.votes.size} of ${thr} by #${b.n} → archived, the old rules stand`, "err"); }
     if (u.status === "scheduled" && b.n >= u.activateAt) {
       u.status = "active"; u.activeAt = b.n; u.activatedAt = Date.now(); S.specRev++; b.amended = S.specRev; S.amend = 1;
       if (u.kind === "fee") S.fee = u.value;
@@ -1741,6 +1765,7 @@ $("btnTour").onclick = $("btnTour2").onclick = () => tourShow(0);
 $("btnState").onclick = $("btnState2").onclick = $("btnState3").onclick = showState;
 $("btnMore").onclick = () => { const c = $("btnMore").closest(".controls"), open = !c.classList.contains("open"); c.classList.toggle("open", open); $("btnMore").setAttribute("aria-expanded", open); $("btnMore").textContent = open ? "Less ▴" : "More ▾"; };
 $("statePanelCard").addEventListener("click", e => { if (!e.target.closest(".info")) showState(); }); $("statePanelCard").style.cursor = "pointer";
+$("feedRej").onclick = () => { const on = $("feedRej").getAttribute("aria-pressed") !== "true"; $("feedRej").setAttribute("aria-pressed", String(on)); $("feed").classList.toggle("only-rej", on); };
 $("chainSub").onclick = () => { selectedBlock = null; const last = S.blocks[S.blocks.length - 1]; if (last) showBlock(last, false); }; $("chainSub").style.cursor = "pointer";
 /* mouse wheel over the block strip steps through blocks: down = back in time, up = toward the newest; one block per notch */
 (() => {
