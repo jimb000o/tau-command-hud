@@ -850,6 +850,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.1 · 27 Oct 2026</b>Live mode links into the <a href="explorer/">Explorer</a>: the hash in a block’s identity opens the block there, the id on a transaction card opens the transaction. The Nodes entry in the Explore menu is marked “soon” until that page is online (it led to a 404).</li>
           <li><b>v17.0 · 27 Oct 2026</b>New header on every page: HUD · Explore · Learn · Playground as menus with one line per page, Chain state as the only button, Telegram channel in green, Updates with a dot when there is something new, View and settings (node address, rain) on the right. The current section is underlined in green. Same bar on all seven pages; on phones it becomes a tab bar at the bottom. Rationale: Krug’s persistent navigation and “you are here”, Tidwell’s progressive disclosure, Refactoring UI’s emphasize by de-emphasizing.</li>
           <li><b>v16.8 · 27 Oct 2026</b>Validators panel: the three consensus modes (fixed list › list in Tau logic › stake) are shown as a strip at the top, the active one lit in green, a mode the chain ran in before a switch dashed; hover explains each.</li>
           <li><b>v16.7 · 27 Oct 2026</b>The “online” count now counts people, not open connections: a random token in your browser (no cookies, no analytics) tells the relay that your tabs and the subpages are one visitor. Takes effect once the relay is updated.</li>
@@ -1349,7 +1350,8 @@ function txCard(t) {
   const body = t.transfers && t.transfers.length
     ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
     : (t.note || `sender ${acct(t.sender)}`);
-  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span>${short(t.id)} · fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
+  const txid = S.mode === "live" && t.id && !t.rejected ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id);
+  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span>${txid} · fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   if (t.rejected) { S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
@@ -1566,7 +1568,7 @@ function blockHtml(b) {
   const sn = b.snap || {}; const gov = b.txs.filter(t => t.kind === "gov"), rules = b.txs.filter(t => /rule/.test(t.type) && t.kind !== "gov");
   const simple = document.body.dataset.view === "simple", H = x => x ? (simple ? `<span title="${esc(x)}">${short(x)}</span>` : esc(x)) : "—";
   return `<p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${acct(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? "An agreed rule change became active in this block." : "No rule change took effect in this block."}</p>
-    <div class="cols"><section class="${simple ? "" : "ident"}"><h3>Identity</h3>${kvHtml({ "Block hash": H(b.hash), "Previous block": H(b.prev), "State hash": H(b.state), Proposer: S.mode === "live" && b.proposer ? `<a class="acct" href="account/?a=${encodeURIComponent(b.proposer)}" title="Open account">${simple ? short(b.proposer) : esc(b.proposer)}</a>` : H(b.proposer) })}
+    <div class="cols"><section class="${simple ? "" : "ident"}"><h3>Identity</h3>${kvHtml({ "Block hash": S.mode === "live" && b.hash ? `<a class="acct" href="explorer/?b=${encodeURIComponent(b.n)}" title="Open this block in the explorer">${H(b.hash)}</a>` : H(b.hash), "Previous block": H(b.prev), "State hash": H(b.state), Proposer: S.mode === "live" && b.proposer ? `<a class="acct" href="account/?a=${encodeURIComponent(b.proposer)}" title="Open account">${simple ? short(b.proposer) : esc(b.proposer)}</a>` : H(b.proposer) })}
     </section><section><h3>Rules in force at this block</h3>${kvHtml({ "Spec revision": sn.specRev ?? "—", "Base fee": sn.fee != null ? sn.fee + " AGRS per tx" : "—", "Agreement needed": sn.validators ? `${agreeNeed(sn.quorum === "majority" ? Math.floor(sn.validators.length / 2) + 1 : Math.ceil(sn.validators.length * 2 / 3), sn.validators.length)} · ${sn.quorum === "majority" ? "majority" : "two thirds"}` : "—", "Rule txs per block": sn.budget ?? "—", "Accounts with own rules": sn.rules ?? "—" })}
     </section><section><h3>Rule changes agreed here</h3>${sn.agreed && sn.agreed.length ? `<ul>${sn.agreed.map(a => `<li class="gov"><b>${esc(a.title)}</b> <span class="muted">agreed by ${a.votes} validators</span><br><code>${esc(a.diff)}</code></li>`).join("")}</ul>` : `<p class="small muted" style="color:var(--dim);font-size:12px">None. The rules were unchanged in this block.</p>`}
     <h3>Governance transactions (${gov.length})</h3>${gov.length ? `<ul>${gov.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
@@ -2403,7 +2405,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.0`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.1`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

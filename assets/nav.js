@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.0"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.1"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen";
   const src = document.currentScript && document.currentScript.src;
   const ROOT = src ? new URL("..", src).pathname : "/";
@@ -15,7 +15,7 @@
     stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/" },
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
     account:    { t: "Accounts", d: "Balance, own rules, offers and refusals of any address", i: "@", h: "account/" },
-    nodes:      { t: "Nodes", d: "Community nodes that follow the chain, with badges for uptime and sync", i: "◎", h: "nodes/" },
+    nodes:      { t: "Nodes", d: "Community nodes that follow the chain, with badges for uptime and sync", i: "◎", h: "nodes/", soon: true },   // soon: page not deployed yet; remove the flag when nodes/ is on main
     proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with Telegram and RSS alerts", i: "§", h: "proposals/" },
     tour:       { t: "Guided tour", d: "One minute, eight steps: how rules change by agreement", i: "▸", h: "?tour=1", act: "tour" },
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
@@ -51,10 +51,11 @@
   const markSeen = () => { store.set(SEEN_KEY, LATEST); document.querySelectorAll(".upd.new, .tabbar .new").forEach(e => e.classList.remove("new")); };
 
   function item(k, page, isHud, tip) {
-    const p = P[k], a = el("a", "mi" + (k === page ? " here" : ""));
+    const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : ""));
     a.setAttribute("role", "menuitem");
     a.innerHTML = `<span class="ic">${p.i}</span><b>${esc(p.t)}${p.ext ? ' <span class="ext">↗</span>' : ""}</b><span>${esc(p.d)}</span>`;
-    if (p.ext) { a.href = p.h; a.target = "_blank"; a.rel = "noopener"; }
+    if (p.soon) { a.setAttribute("aria-disabled", "true"); a.title = "This page is not online yet"; }
+    else if (p.ext) { a.href = p.h; a.target = "_blank"; a.rel = "noopener"; }
     else if (p.act && isHud) { a.href = "#"; a.addEventListener("click", e => { e.preventDefault(); closeAll(); emit(p.act); }); }
     else a.href = ROOT + p.h;
     if (k === page) a.setAttribute("aria-current", "page");

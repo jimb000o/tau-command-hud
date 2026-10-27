@@ -22,6 +22,9 @@
 .mi b { font: 600 13px var(--tn-font); color: #fff; white-space: nowrap; }
 .mi b .ext { color: var(--tn-dim); font-weight: 400; }
 .mi > span:last-child { font: 400 12px/1.45 var(--tn-font); color: var(--tn-dim); }
+.mi.soon { cursor: default; opacity: .5; }
+.mi.soon:hover { background: transparent; }
+.mi.soon b::after { content: "soon"; margin-left: 8px; font: 500 9.5px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-dim); }
 .mi.here .ic { border-color: var(--tn-ok); box-shadow: 0 0 8px rgba(57,255,138,.45); }
 .mi.here b::after { content: "you are here"; margin-left: 8px; font: 500 9.5px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-ok); }
 .tnav .pill { font: 600 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--tn-hair); color: var(--tn-dim); white-space: nowrap; cursor: pointer; background: transparent; display: inline-flex; align-items: center; gap: 7px; text-decoration: none; }
