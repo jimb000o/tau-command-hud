@@ -32,9 +32,13 @@ systemctl enable --now docker
 # BuildKit's garbage collection, or an unrelated change rebuilds tau-lang for
 # 90 minutes (happened 2026-10-27). Only written once; restarting Docker here
 # restarts the running containers, which come back on their own.
-if [[ ! -f /etc/docker/daemon.json ]]; then
+# 12 GB of build cache fits next to the images (~6 GB), the 8 GB swap file and
+# the OS on the 38 GB disk; 25 GB did not (disk full on 2026-10-27). The cache
+# mounts (dependency store, ccache) are what keeps a tau-lang rebuild short.
+DAEMON_JSON='{"builder": {"gc": {"enabled": true, "defaultKeepStorage": "12GB"}}}'
+if [[ "$(cat /etc/docker/daemon.json 2>/dev/null)" != "$DAEMON_JSON" ]]; then
   mkdir -p /etc/docker
-  echo '{"builder": {"gc": {"enabled": true, "defaultKeepStorage": "25GB"}}}' > /etc/docker/daemon.json
+  echo "$DAEMON_JSON" > /etc/docker/daemon.json
   systemctl restart docker
 fi
 
