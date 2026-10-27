@@ -168,6 +168,8 @@ html.fit .fb-fab { display: none; }
 @media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .tile .v { font-size: 17px; } }
 [hidden] { display: none !important; }
 </style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -175,12 +177,9 @@ html.fit .fb-fab { display: none; }
     <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Explorer</span></a>
     <div class="hdr-right">
       <span class="state" id="state" tabindex="0" data-tip="Connecting to our node…"><i></i><span id="stateText">Connecting</span></span>
-      <a class="chip" href="/account/">Accounts</a>
-      <a class="chip" href="/history/">Time travel</a>
-      <a class="chip" href="/stats/">Stats</a>
-      <a class="chip" href="/">Live HUD</a>
     </div>
   </header>
+  <nav class="tnav" data-page="explorer" aria-label="Pages and tools"></nav>
 
   <div class="top">
     <div>
