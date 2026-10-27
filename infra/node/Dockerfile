@@ -111,17 +111,21 @@ RUN --mount=type=cache,target=/root/.cache/coincurve-wheels \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir nanobind
 
+# The built tau-lang and its dependency store are several GB and change only
+# when tau-lang is rebuilt; they come BEFORE the node sources so that a node
+# patch does not create a fresh multi-GB layer per rebuild (the server's 40 GB
+# disk filled up with such copies on 2026-10-27).
+COPY --from=tau-builder /app/tau-lang /app/tau-lang
+COPY --from=tau-builder /tau-store /root/.tau
+# Register every shared-library directory of the built dependencies (cvc5,
+# Boost, Spot) with the dynamic linker, whatever layout the dependency store uses.
+RUN find /root/.tau /app/tau-lang -name '*.so*' -type f -printf '%h\n' | sort -u > /etc/ld.so.conf.d/tau.conf && \
+    ldconfig
+
 COPY --from=testnet-src /src /app/tau-testnet
 COPY --from=testnet-src /src/docker/entrypoint.sh /usr/local/bin/tau-node-entrypoint
 COPY start.sh /usr/local/bin/tau-node-start
-COPY --from=tau-builder /app/tau-lang /app/tau-lang
-COPY --from=tau-builder /tau-store /root/.tau
-
-# Register every shared-library directory of the built dependencies (cvc5,
-# Boost, Spot) with the dynamic linker, whatever layout the dependency store uses.
-RUN chmod +x /usr/local/bin/tau-node-entrypoint /usr/local/bin/tau-node-start && mkdir -p /data && \
-    find /root/.tau /app/tau-lang -name '*.so*' -type f -printf '%h\n' | sort -u > /etc/ld.so.conf.d/tau.conf && \
-    ldconfig
+RUN chmod +x /usr/local/bin/tau-node-entrypoint /usr/local/bin/tau-node-start && mkdir -p /data
 
 ENV PYTHONUNBUFFERED=1 \
     TAU_FORCE_TEST=0 \
