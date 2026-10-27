@@ -260,7 +260,7 @@ footer a { color: var(--dim); }
     </section>
 
     <section class="panel p-nodes">
-      <h2 data-tip="Nodes that other people run with the Tau HUD kit.\nWe compare each one’s block at its height with ours.">Community nodes<a class="tbl" href="https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md" target="_blank" rel="noopener">Run a node</a></h2>
+      <h2 data-tip="Nodes that other people run with the Tau HUD kit.\nWe compare each one’s block at its height with ours.">Community nodes<a class="tbl" href="/nodes/">Leaderboard</a></h2>
       <p class="headline" id="hNodes"></p>
       <div class="tablewrap open" id="nodesWrap"></div>
     </section>
@@ -813,7 +813,8 @@ function renderNodes() {
   const tb = el("tbody");
   nodes.forEach(x => {
     const tr = el("tr"), name = el("td"), h = el("td", "n"), a = el("td");
-    name.append(document.createTextNode(String(x.name || x.id || "unnamed")), el("span", "what", x.age_seconds != null ? `seen ${fmtDur(x.age_seconds)} ago` : ""));
+    const link = el("a", "", String(x.name || x.id || "unnamed")); link.href = "/nodes/#" + encodeURIComponent(String(x.id || x.name || "")); link.style.color = "inherit";
+    name.append(link, el("span", "what", x.age_seconds != null ? `seen ${fmtDur(x.age_seconds)} ago` : ""));
     const behind = refTip != null && x.height != null ? refTip - x.height : null;
     h.append(document.createTextNode(x.height != null ? `#${fmtN(x.height)}` : "—"),
       el("span", "what", behind == null ? "" : behind > 0 ? `${fmtN(behind)} behind` : behind < 0 ? `${fmtN(-behind)} ahead` : "at the tip"));
