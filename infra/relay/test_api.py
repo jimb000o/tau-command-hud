@@ -46,7 +46,7 @@ check(json.loads(json.dumps(s)) == s, "summary is plain JSON")
 check(">20<" in r.api_badge("height") and "#39ff8a" in r.api_badge("height"), "height badge green when synced")
 check("1 coming up · 2 in force" in r.api_badge("proposals"), "proposals badge")
 check("1 active" in r.api_badge("validators"), "validators badge")
-check("not rated yet" in r.api_badge("health"), "health badge before a score exists")
+check("/ 100" in r.api_badge("health"), "health badge carries the score from /status")
 
 r.cache["getgovernance"] = r.cache["getgovernance"].replace('"number": 21', '"number": 40')
 check(r.summary()["status"] == "catching_up", "far behind the tip reads catching_up")

@@ -16,6 +16,7 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
   cache. New blocks, mempool and governance changes are pushed to visitors as they happen.
 - **Caddy**: HTTPS with automatic Let's Encrypt certificates; also serves the tracker's `proposals.json` and `feed.xml`.
 - **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect, plus a weekly recap image.
+- **bot** (`alerts/bot.py`): the same Telegram bot answers questions in private chats and groups: height, proposals, a transaction, an address, a block, node status (see "Question bot").
 - **share** (`share/share.py`): share previews, the picture X, Telegram and WhatsApp show under a link (see "Share previews").
 
 ## Server
@@ -140,6 +141,29 @@ it lasts); `restarts`, `reorgs` and `stalls` (gaps of more than 10 min between t
 of the current chain: the network made no block) cover the same 31 days, and `status` is
 `/status`. Stored in `/data/uptime.json` (volume `relay_data`), so it survives restarts;
 the time between the relay's last sample and its next start counts as a relay outage.
+Since the health score, each bucket also carries `score_sum`, `score_min` and
+`score_samples` (older hours have only the first four fields).
+
+`GET /health-score` (CORS `*`, cached 5 s; tauhud.com/status, the alerts and `/status`
+use it) is one number for "does the testnet run?": 0 to 100 from seven factors whose
+weights add up to 100. `factors` lists each with `weight`, `points`, `value` and a `note`:
+
+| factor | weight | full points | no points |
+|---|---|---|---|
+| `node` node answering | 20 | answers | no answer |
+| `sync` in sync with the network | 15 | within 2 blocks of the tip | 30 behind |
+| `last_block` time since the last block | 20 | up to 3 typical block times | 30 min |
+| `pace` blocks in the last hour | 10 | 75 % of the expected count | none |
+| `availability` live and in sync, 24 h | 15 | 99 % of the checks | 80 % |
+| `stability` restarts, reorgs, stalls, 24 h | 15 | none | restart −10, stall −4, reorg −3 |
+| `mempool` oldest waiting transaction | 5 | up to 10 min | 60 min (IDNI #81 shows here) |
+
+The typical block time (`expected_block_seconds`) is the median gap of the last 100
+blocks, stalls left out (60 s until there are enough). `state` is `healthy` from 80
+(`HEALTH_OK_AT`), `degraded` from 50 (`HEALTH_DEGRADED_AT`), else `down`; no answer from
+the node or no block for 30 minutes is `down` whatever the score. `hours` is
+`[hour, average, lowest]` for the last 31 days. `/status` carries `health`
+(`score`, `state`, `label`).
 
 ## Rule Playground checker
 
@@ -241,7 +265,46 @@ JetBrains Mono, SIL OFL) live in `alerts/fonts/`.
   to `/recap/latest.png` and posts nothing.
 - `docker compose run --rm alerts python alerts.py --recap-now` draws it and posts it.
 
+**Health alerts**: once a minute the watcher reads `/health-score` and posts to Telegram
+when the testnet goes down (score under 50, the relay says `down`, or the relay does not
+answer) and when it recovers (score 70 or more), each only after the new state held for
+10 minutes (`HEALTH_DOWN_BELOW`, `HEALTH_UP_AT`, `HEALTH_CONFIRM_SECONDS`). The post names
+the factors that lose the most points. The state on the first run is not posted.
+`HEALTH_ALERTS=false` turns it off.
+
 Logs: `docker compose logs -f alerts`.
+
+## Question bot
+
+The bot that posts to `@tauHUDcom` also answers anyone who writes to it (`alerts/bot.py`,
+service `bot`, same image as alerts, same `TELEGRAM_BOT_TOKEN`; nothing else to set up):
+
+| Ask | Answer | Source |
+|---|---|---|
+| `/height`, "height?" | block height, age of the last block, block pace | relay `/uptime`, `proposals.json` |
+| `/proposals`, "last proposal?" | coming up (votes, deadline), agreed, in force, in the alerts' plain words | `proposals.json` |
+| `/tx <hash>`, "is my tx in? <hash>", a 64-hex hash | in a block / waiting / expired / refused / not known | relay `gettxstatus` |
+| `/address <address>`, a 96-hex address | confirmed balance, amounts waiting for a block | relay `getaccountstate` |
+| `/block <n>`, "block 12?" | when it was made, what it holds | relay `getblockrange` |
+| `/status`, "is it running?" | node online, in sync, availability over 24 h, restarts in 7 days | relay `/uptime` |
+
+Every answer links to the matching tauhud.com page. It long-polls Telegram (`getUpdates`),
+so no webhook and no open port. In groups it answers only commands (and `/cmd@ourbot`
+only, when several bots are there); it never posts into the alerts channel. Each person
+gets 5 questions in a row and one more every 8 s (`BOT_USER_BURST`,
+`BOT_USER_REFILL_SECONDS`); past that it says so once and stays quiet. Questions sent
+while the bot was down for more than 2 minutes are skipped. Telegram's command menu is
+set on start.
+
+In the channel: a channel has no member messages, so link a discussion group to it
+(channel settings → Discussion) and add the bot to that group as a member. People then
+ask with commands under any post or in the group; the channel's own posts copied into
+the group are ignored. Privacy mode can stay on (it lets commands and mentions through).
+
+- `docker compose run --rm bot python bot.py --ask "/proposals"` prints one answer and sends nothing.
+- `docker compose logs bot | grep answering` shows the bot's username.
+
+Logs: `docker compose logs -f bot`.
 
 ## Share previews
 
@@ -285,6 +348,7 @@ The embeddable widget is a static page on tauhud.com (`/embed/?panel=…`) that 
 pip install websockets==15.0.1
 python relay/test_relay.py
 python relay/test_uptime.py
+python relay/test_health.py
 python relay/test_api.py
 ```
 
@@ -299,12 +363,21 @@ docker compose run --rm checker python /checker/test_checker.py
 ```bash
 pip install websockets==15.0.1 blake3==1.0.5 pillow==11.3.0
 python alerts/test_alerts.py
+python alerts/test_health_alerts.py
 ```
 
 Runs the alerts watcher against a mock relay: history on the first run is not posted, new
 proposals, agreement, activation and a dropped change are posted once each per channel
 (also after a failed post and a watcher restart), the feed and proposals.json are right,
 a chain restart is reported, and the weekly recap is drawn and posted once.
+
+```bash
+python alerts/test_bot.py       # -v prints the answers
+```
+
+Runs the question bot against a mock relay and a mock Telegram: every question type,
+plain questions in private chats, groups only with commands meant for this bot, nothing
+into the alerts channel, old questions skipped, and the per-person limit.
 
 ```bash
 pip install websockets==15.0.1 pillow==11.3.0

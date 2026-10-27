@@ -125,9 +125,9 @@ function render() {
         tip = "Active validators: their votes turn a proposal into law.";
       } else if (p === "health") {
         const h = d.health && typeof d.health === "object" ? d.health : null;
-        on = !!(h && h.score >= 80);
+        on = !!(h && (h.state ? h.state === "healthy" : h.score >= 80));
         v = h && h.score != null ? `${h.score}<small>/ 100</small>` : "–";
-        s = h ? "testnet health" : "not rated yet";
+        s = h ? (h.label || "testnet health") : "not rated yet";
         tip = "One number for: is the testnet running well right now?";
       }
     }
