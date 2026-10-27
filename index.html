@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <meta name="description" content="Unofficial community HUD for the Tau Testnet Alpha: rule changes by agreement, rule sharing, personal Tau policies, live blocks.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
@@ -699,6 +700,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v14.5 · 27 Oct 2026</b>Hardening: the page tells the browser to upgrade any insecure request, and a pasted ws:// node address becomes wss:// on an https page (localhost excepted), so the lock stays intact.</li>
           <li><b>v14.4 · 26 Oct 2026</b>A third live state: while the community node is connected but not synced with the real chain, the relay light and the mode chip turn amber and read “Live · Not synced”. Green and “Connected” only when the node follows the network’s tip.</li>
           <li><b>v14.3 · 26 Oct 2026</b>Simulation is the default view again for now: the community node sits on an orphan chain until IDNI publishes the current genesis, so its blocks are not the real tip. Live node and its light stay one click away; Live becomes the default again once the node follows the real chain.</li>
           <li><b>v14.2 · 26 Oct 2026</b>The relay light on “Live node” is bigger, ringed in black so it reads on the white selected state too, and pulses while the relay is up.</li>
@@ -1445,7 +1447,8 @@ function liveMessage(ev) {
 }
 function liveConnect() {
   liveStop();
-  const url = $("wsurl").value.trim();
+  let url = $("wsurl").value.trim();
+  if (location.protocol === "https:" && /^ws:\/\//i.test(url) && !/^ws:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(url)) { url = url.replace(/^ws:/i, "wss:"); $("wsurl").value = url; log("Plain ws:// is not allowed from an https page; using wss:// instead.", "warn"); }
   log(`Connecting to ${esc(url)} …`, "warn");
   setMode("live", "Connecting");
   Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], height: 0, updates: [], offers: [] });
