@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.13"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.14"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';
@@ -25,6 +25,7 @@
     findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
     status:     { t: "Status", d: "Uptime, outages, sync gaps and restarts of the community node", i: "◍", h: "status/" },
     developers: { t: "Developers", d: "Widgets, badges and a free JSON API for your own site", i: "{}", h: "developers/" },
+    press:      { t: "Press kit", d: "Video, logo, screenshots, facts and a ready paragraph, free to use", i: "↓", h: "press/" },
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
     about:      { t: "About", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
@@ -33,10 +34,10 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     { k: "explore", t: "Explore", items: ["explorer", "stats", "history", "account", "nodes", "proposals"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["story", "tour", "chronicle", "findings", "status", "developers", "tau", "about"], tab: "▸" },
+    { k: "learn", t: "Learn", items: ["story", "tour", "chronicle", "findings", "status", "developers", "press", "tau", "about"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat"], id: "btnPlayground", tab: "◇", short: "Play" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", chronicle: "learn", findings: "learn", status: "learn", developers: "learn", playground: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", chronicle: "learn", findings: "learn", status: "learn", developers: "learn", press: "learn", playground: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     telegram: "Join @tauHUDcom on Telegram: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Questions (height, proposals, your transaction or address): write to @tauhud_alerts_bot. Opens Telegram.",
@@ -54,9 +55,10 @@
     height: "Newest block the community node has verified.",
     rev: "Spec revision: 1 plus every rule change that was agreed and took effect. Opens the chain state in the HUD.",
     fee: "Base fee in AGRS that every transaction pays, set by the consensus rule o9.",
+    cons: "Consensus: who may seal the next block. Tau has no proof of work. The mechanism is part of the chain state: a fixed validator list (proof of authority), a validator list kept in the Tau rules, or proof of stake. It switches only through an agreed rule change. Opens the chain state in the HUD.",
     hud: "The chain core live: blocks, rules and agreement as they happen.",
     explore: "Chain data pages: Explorer, Stats, Time travel, Accounts, Nodes, Proposals.",
-    learn: "Tau in 60 seconds, Guided tour, Chronicle, Findings, Status, Developers, What is Tau?, About.",
+    learn: "Tau in 60 seconds, Guided tour, Chronicle, Findings, Status, Developers, Press kit, What is Tau?, About.",
     play: "Write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law.",
   };
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -85,18 +87,21 @@
     const title = (tEl && tEl.textContent.trim()) || (P[page] && P[page].t) || "";
     const own = old && old.querySelector("#state");
     const rail = el("header", "trail");
-    const brand = el("a", "brand", `${MARK}<span class="bn">Tau HUD</span><h1 class="bt">${esc(title)}</h1>`);  // the page title is the heading, the logo is not brand.href = ROOT; brand.title = "Back to the HUD";
-    const unoff = el("a", "chip unoff", "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.title = TIPS.unoff;
+    const brand = el("a", "brand", `${MARK}<span class="bn">Tau HUD</span><h1 class="bt">${esc(title)}</h1>`);  // the page title is the heading, the logo is not
+    brand.href = ROOT; brand.dataset.tnt = "Back to the HUD";
+    const unoff = el("a", "chip unoff", "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = TIPS.unoff;
     const chips = el("div", "chips");
-    const chip = (tag, id, cls, html, t) => { const c = el(tag, "chip" + (cls ? " " + cls : ""), html); c.id = id; c.title = t; return c; };
+    const chip = (tag, id, cls, html, t) => { const c = el(tag, "chip" + (cls ? " " + cls : ""), html); c.id = id; c.dataset.tnt = t; return c; };
     chips.append(
-      chip("div", "tnMode", "warn", '<span class="dot none"></span>Mode<b>Live · Connecting</b>', TIPS.mode),
+      chip("div", "tnMode", "v", '<span class="dot none"></span><b>Live · Connecting</b>', TIPS.mode),
       chip("div", "tnOnline", "", '<span class="dot none"></span><b class="n">—</b>online', TIPS.online),
-      chip("div", "tnNet", "", `Network<b>${NET}</b>`, TIPS.net),
-      chip("div", "tnHeight", "", "Height<b>—</b>", TIPS.height),
-      chip("a", "tnRev", "", "Spec revision<b>—</b>", TIPS.rev),
-      chip("div", "tnFee", "", "Base fee<b>—</b>", TIPS.fee));
-    chips.querySelector("#tnRev").href = ROOT + "#chain-state";
+      chip("a", "tnCons", "v", '<b><span class="lg">—</span><span class="sh">—</span></b>', TIPS.cons),
+      chip("div", "tnNet", "v", `<b>${NET}</b>`, TIPS.net),
+      chip("div", "tnHeight", "v", "<b>—</b>", TIPS.height),
+      chip("a", "tnRev", "v", "<b>—</b>", TIPS.rev),
+      chip("div", "tnFee", "v", "<b>—</b>", TIPS.fee));
+    chips.querySelectorAll(".chip.v > b").forEach(b => { b.style.marginLeft = "0"; });   // value-only chips: the name lives in the hover text
+    chips.querySelector("#tnRev").href = chips.querySelector("#tnCons").href = ROOT + "#chain-state";
     if (own) chips.append(own);
     rail.append(brand, unoff, chips);
     if (old) old.replaceWith(rail); else nav.before(rail);
@@ -111,12 +116,22 @@
     } catch (e) { return ""; }
   }
   const fmt = n => Number(n).toLocaleString("en-US");
-  const CHAIN = { st: null, polled: false, wsUp: false, online: null, rev: null, fee: null };
+  const CHAIN = { st: null, polled: false, wsUp: false, online: null, rev: null, fee: null, elig: null, vals: null, switches: 0 };
+  /* consensus mechanism as the node reports it (eligibility_mode); the genesis spec's constant o7 = 1 also means the fixed list */
+  const CONS = { validator_set: ["Proof of authority", "PoA", "a fixed validator list (proof of authority): the listed validators take turns sealing blocks, each seal signed with BLS and checked by the Tau rules"],
+    tau_validator_set: ["Validator list in Tau", "Tau list", "a validator list kept in the Tau rules themselves: rule o7 decides who may seal"],
+    stake: ["Proof of stake", "PoS", "proof of stake: the Tau rules (o7) judge who may seal by stake"] };
+  const consTip = () => {
+    const c = CONS[CHAIN.elig], v = CHAIN.vals;
+    if (!c) return TIPS.cons;
+    return `Consensus right now: ${c[2]}.` + (v != null ? ` ${v} active validator${v === 1 ? "" : "s"}.` : "") +
+      ` Tau has no proof of work. The mechanism is chain state and switches (fixed list, list in Tau, stake) only through an agreed rule change; ${CHAIN.switches ? CHAIN.switches + " switch" + (CHAIN.switches === 1 ? "" : "es") + " so far" : "no switch so far"}. Opens the chain state in the HUD.`;
+  };
   function feedChips(rail) {
     const q = s => rail.querySelector(s);
     const mode = q("#tnMode"), modeB = mode.querySelector("b"), modeDot = mode.querySelector(".dot");
     const onChip = q("#tnOnline"), onB = onChip.querySelector("b"), onDot = onChip.querySelector(".dot");
-    const hB = q("#tnHeight b"), revB = q("#tnRev b"), feeB = q("#tnFee b");
+    const hB = q("#tnHeight b"), revB = q("#tnRev b"), feeB = q("#tnFee b"), cons = q("#tnCons");
     const render = () => {
       const st = CHAIN.st, health = st && st.health && typeof st.health.state === "string" ? st.health.state : null;
       const up = !!(st && st.upstream_connected && Number(st.height) > 0) && health !== "down", degraded = up && health === "degraded";
@@ -127,15 +142,19 @@
       const good = synced && !catching && !degraded;
       modeB.textContent = wait ? "Live · Connecting" : !up ? "Live · Offline" : degraded ? "Live · Degraded" : !synced ? "Live · Not synced" : catching ? `Verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}` : "Live · Connected";
       modeDot.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
-      mode.className = "chip " + (wait ? "warn" : !up ? "warn" : good ? "live" : "behind");
+      mode.className = "chip v " + (wait || !up ? "" : good ? "live" : "behind");   // offline: the red dot is the one signal, the text stays plain
       document.querySelectorAll(".tnav [data-livedot]").forEach(d => {
         d.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
-        const a = d.closest("a"); if (a) a.title = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + " Opens the HUD in Live mode.";
+        const a = d.closest("a"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + " Opens the HUD in Live mode.";
       });
       const n = CHAIN.online; onB.textContent = n == null ? "—" : String(n); onDot.className = "dot " + (n == null ? "none" : n > 0 ? "" : "off"); onChip.classList.toggle("live", n != null && n > 0);
-      hB.textContent = st && Number(st.height) > 0 ? fmt(st.height) : "—";
-      revB.textContent = CHAIN.rev == null ? "—" : String(CHAIN.rev);
-      feeB.textContent = CHAIN.fee == null ? "—" : String(CHAIN.fee);
+      hB.textContent = st && Number(st.height) > 0 ? "#" + fmt(st.height) : "—";
+      revB.textContent = CHAIN.rev == null ? "—" : "rev " + CHAIN.rev;
+      feeB.textContent = CHAIN.fee == null ? "—" : CHAIN.fee + " AGRS";
+      const c = CONS[CHAIN.elig], v = CHAIN.vals;
+      cons.querySelector(".lg").textContent = c ? c[0] + (v != null ? ` · ${v} validator${v === 1 ? "" : "s"}` : "") : "—";
+      cons.querySelector(".sh").textContent = c ? c[1] + (v != null ? ` · ${v}` : "") : "—";
+      cons.dataset.tnt = consTip();
     };
     render();
     const poll = async () => {
@@ -162,6 +181,10 @@
         if (m.command === "getgovernance") {
           CHAIN.rev = 1 + (d.archival_update_details || []).filter(u => u.lifecycle === "activated").length;
           const f = typeof d.consensus_rules === "string" && /o9\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]+)/.exec(d.consensus_rules); if (f) CHAIN.fee = parseInt(f[1], 16);
+          CHAIN.elig = typeof d.eligibility_mode === "string" && d.eligibility_mode ? d.eligibility_mode
+            : typeof d.consensus_rules === "string" && /o7\[t\][^=]*=\s*\{\s*1\s*\}/.test(d.consensus_rules) ? "validator_set" : CHAIN.elig;
+          if (Array.isArray(d.active_validators)) CHAIN.vals = d.active_validators.length; else if (Number.isFinite(d.active_validator_count)) CHAIN.vals = d.active_validator_count;
+          CHAIN.switches = (d.archival_update_details || []).filter(u => u && u.lifecycle === "activated" && u.host_contract_patch && typeof u.host_contract_patch.eligibility_mode === "string").length;
         }
         render();
       };
@@ -193,7 +216,8 @@
   function subControls(tip) {
     const src = el("div", "seg"); src.setAttribute("role", "group"); src.setAttribute("aria-label", "Data source");
     const live = el("a", "", '<span class="dot none" data-livedot></span>Live node'); live.href = ROOT + "?mode=live"; live.setAttribute("aria-pressed", "true"); tip(live, TIPS.live);
-    const sim = el("a", "", "Simulation ↗"); sim.href = ROOT + "?mode=sim";  // leaves this page: simulation only runs in the HUD sim.setAttribute("aria-pressed", "false"); tip(sim, TIPS.sim);
+    const sim = el("a", "", "Simulation ↗"); sim.href = ROOT + "?mode=sim";  // leaves this page: simulation only runs in the HUD
+    sim.setAttribute("aria-pressed", "false"); tip(sim, TIPS.sim);
     src.append(live, sim);
     const view = el("div", "seg"); view.setAttribute("role", "group"); view.setAttribute("aria-label", "Detail level");
     const bS = el("button", "", "Simple"), bT = el("button", "", "Technical"); bS.type = bT.type = "button"; tip(bS, TIPS.simple); tip(bT, TIPS.tech);
@@ -224,10 +248,10 @@
     if (nav.dataset.mounted) return;
     nav.dataset.mounted = "1";
     const page = nav.dataset.page || "hud", isHud = page === "hud", here = SECTION_OF[page];
-    const tip = (e, txt) => { if (!txt) return; if (isHud) e.dataset.full = txt; else e.title = txt; };
+    const tip = (e, txt) => { if (!txt) return; if (isHud) e.dataset.full = txt; else e.dataset.tnt = txt; };
     const slots = {}; nav.querySelectorAll("[data-slot]").forEach(e => { slots[e.dataset.slot] = e; });
     // the Simple/Technical switch appears only where it changes something (`view: true` in P); the stored choice stays global
-    if (!isHud) { const c = subControls(tip); slots.source = slots.source || c.src; slots.view = slots.view || (P[page] && P[page].view ? c.view : null); slots.gear = slots.gear || c.gear; mountRail(nav, page); }
+    if (!isHud) { const c = subControls(tip); slots.source = slots.source || c.src; slots.view = slots.view || (P[page] && P[page].view ? c.view : null); slots.gear = slots.gear || c.gear; mountRail(nav, page); if (!tipsOn) { tipsOn = true; hoverTips(); } }
     const left = el("div", "tnav-l"), right = el("div", "tnav-r"), bar = el("div", "tnav-nav");
     if (slots.source) { left.append(slots.source); left.append(el("span", "tnav-sep")); }
     SECTIONS.forEach(sec => {
@@ -288,6 +312,28 @@
     bar.append(u);
     document.body.append(el("div", "tnav-spacer"), ...sheets, bar);
   }
+
+  /* subpages: header chips and controls explain themselves on hover (tap on touch), in the same box as the HUD's */
+  function hoverTips() {
+    const css = el("style"); css.textContent = `header.trail .chip[data-tnt] { cursor: help; } header.trail a.chip[data-tnt] { cursor: pointer; } header.trail div.chip[data-tnt]:hover { border-color: rgba(255,255,255,.45); color: #d6d6dc; }
+      header.trail .chip .sh { display: none; } @media (max-width: 1899px) { header.trail .chip .lg { display: none; } header.trail .chip .sh { display: inline; } }
+      .tn-tip { position: fixed; z-index: 90; max-width: min(420px, 90vw); padding: 8px 11px; background: #151517; border: 1px solid rgba(255,255,255,.16); border-radius: 6px; font: 12px/1.5 "JetBrains Mono", ui-monospace, Menlo, monospace; color: #ececf0; white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; letter-spacing: 0; text-transform: none; } .tn-tip[hidden] { display: none; }`; document.head.append(css);
+    const box = el("div", "tn-tip"); box.hidden = true; box.setAttribute("role", "tooltip"); document.body.append(box);
+    let cur = null, touch = matchMedia("(hover: none)").matches;
+    const find = t => t instanceof Element ? t.closest("[data-tnt]") : null;
+    const place = (x, y) => { const w = box.offsetWidth, h = box.offsetHeight; box.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px"; box.style.top = (y + 18 + h > innerHeight ? Math.max(8, y - h - 10) : y + 18) + "px"; };
+    const show = (t, x, y) => { cur = t; box.textContent = t.dataset.tnt; box.hidden = false; place(x, y); };
+    const hide = () => { cur = null; box.hidden = true; };
+    document.addEventListener("pointerdown", e => { touch = e.pointerType === "touch"; }, true);
+    document.addEventListener("mouseover", e => { if (touch) return; const t = find(e.target); if (t) show(t, e.clientX, e.clientY); else if (cur) hide(); });
+    document.addEventListener("mousemove", e => { if (cur && !touch) place(e.clientX, e.clientY); });
+    document.addEventListener("focusin", e => { const t = find(e.target); if (t) { const r = t.getBoundingClientRect(); show(t, r.left, r.bottom - 8); } else if (cur) hide(); });
+    document.addEventListener("focusout", hide);
+    document.addEventListener("scroll", hide, true);
+    /* touch: a chip that is not a link shows its explanation on tap; a second tap or a tap elsewhere closes it */
+    document.addEventListener("click", e => { if (!touch) return; const t = find(e.target); if (t && t !== cur && !t.closest("a, button")) show(t, e.clientX, e.clientY); else hide(); }, true);
+  }
+  let tipsOn = false;
 
   document.addEventListener("click", e => { if (openEl && !e.target.closest(".tnav .ni-wrap, .tnav-gearwrap, .tsheet, .tabbar")) closeAll(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && openEl) closeAll(); });

@@ -82,7 +82,7 @@ body[data-mode="live"] .simtag { display: none; }
 /* simple vs technical view */
 .stream .lbl.plain, body[data-view="simple"] .stream .lbl.tech { display: none; }
 body[data-view="simple"] .stream .lbl.plain { display: block; }
-body[data-view="simple"] .stream code { color: var(--dim); font-weight: 500; font-size: 11px; }
+body[data-view="simple"] .stream code { color: var(--dim); font-weight: 600; font-size: 11px; }
 body[data-view="simple"] .rule.composite, body[data-view="simple"] .logp, body[data-view="simple"] .upd .diff, body[data-view="simple"] .blk .h.hx { display: none; }
 body[data-view="simple"] .pr em { display: none; }
 /* tour */
@@ -113,7 +113,7 @@ body[data-tour] .spot:not(.panel) { outline: 1px solid var(--ok); outline-offset
 .tour .t3 a[hidden] { display: none; }
 body[data-tour] .panel:not(.spot) { opacity: .45; }
 body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
-#rain.off { display: none; }
+#rain.off, body[data-tour] #rain, body:has(.modal:not([hidden])) #rain { display: none; }
 #ovl { position: fixed; z-index: 70; max-width: min(520px, 90vw); padding: 8px 11px; white-space: pre-line; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
 #ovl[hidden] { display: none; }
 .blk { cursor: pointer; }
@@ -124,7 +124,10 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .detail ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 .detail li { overflow-wrap: anywhere; padding: 6px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); font-size: 12px; }
 .detail li.ok { border-left-color: var(--ok); }
-.detail li.rej { border-left-color: var(--bad); }
+.detail li.rej { border-left-color: #fff; }
+.detail .key { color: var(--dim); font-family: var(--mono); }
+.detail .copy { margin-left: 8px; font: 600 10px var(--display); letter-spacing: .1em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 2px 8px; cursor: pointer; }
+.detail .copy:hover { background: #fff; color: #000; }
 .detail li.gov { border-left-color: var(--amber); }
 .detail li b { color: #fff; font-weight: 600; }
 .detail li .muted { color: var(--dim); }
@@ -136,12 +139,12 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .tx[data-detail]:hover::after, .offer[data-detail]:hover::after, .upd[data-detail]:hover::after { opacity: 1; }
 .detail .checks { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
 .detail .checks i { font: 10.5px var(--mono); font-style: normal; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--ok); }
-.detail .checks i.bad { color: var(--bad); border-color: rgba(255,77,109,.5); }
+.detail .checks i.bad { color: #fff; border-color: rgba(255,255,255,.5); }
 .detail .checks i.warn { color: var(--amber); }
 .detail .checks i.off { color: var(--dim); }
-.detail .verdict-line { margin: 10px 0 0; padding: 8px 10px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 500 12.5px var(--display); color: #fff; }
-.detail .verdict-line.bad { border-left-color: var(--bad); background: rgba(255,77,109,.07); }
-.detail .lead { font: 500 15px/1.4 var(--display); color: #fff; margin: 0 0 6px; }
+.detail .verdict-line { margin: 10px 0 0; padding: 8px 10px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 400 12.5px var(--display); color: #fff; }
+.detail .verdict-line.bad { border-left-color: #fff; background: rgba(255,255,255,.07); }
+.detail .lead { font: 400 15px/1.4 var(--display); color: #fff; margin: 0 0 6px; }
 .btn.state { border-color: rgba(255,255,255,.5); color: #fff; }
 .grid { display: grid; gap: 10px; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr);
   grid-template-areas: "eng core feed pol" "upd chain off val"; }
@@ -158,6 +161,12 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .statep:hover { border-color: var(--cyan); }
 .statep .scroll { min-height: 0; }
 .statep .kv { font-size: 12px; margin: 0; }
+.statep .big2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 2px 0 8px; }
+.statep .big2 > div { padding: 6px 8px; background: rgba(255,255,255,.04); border-radius: 4px; cursor: help; }
+.statep .big2 b { display: block; font: 600 28px/1 var(--display); color: #fff; font-variant-numeric: tabular-nums; }
+.statep .big2 span { display: block; margin-top: 4px; font: 11px var(--mono); color: var(--dim); }
+.statep .sent { margin: 0; font: 12px/1.5 var(--mono); color: var(--dim); }
+.statep .sent b { color: #fff; font-weight: 600; }
 .statep .kv dd { white-space: normal; text-align: right; }
 .statep h3 { margin: 10px 0 4px; font: 600 10.5px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
 .statep ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }
@@ -168,8 +177,8 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .thesis { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr); gap: 10px 18px; align-items: center; padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(90deg, rgba(255,255,255,.07), rgba(16,16,18,.6) 45%, rgba(57,255,138,.04)); position: relative; }
 .thesis::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--brand); border-radius: 2px; }
-.thesis .eyebrow { display: block; font: 700 11px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--amber); margin-bottom: 4px; }
-.thesis h2 { margin: 0; font: 500 clamp(15px, 1.15vw, 21px)/1.35 var(--display); color: #fff; text-wrap: balance; letter-spacing: .02em; }
+.thesis .eyebrow { display: block; font: 600 11px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--amber); margin-bottom: 4px; }
+.thesis h2 { margin: 0; font: 400 clamp(15px, 1.15vw, 21px)/1.35 var(--display); color: #fff; text-wrap: balance; letter-spacing: .02em; }
 .modal { position: fixed !important; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow: hidden; box-sizing: border-box; }
 .modal[hidden] { display: none; }
 .sheet { position: relative; width: min(1100px, 100%); max-height: 100%; flex: 0 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
@@ -205,7 +214,7 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .about p { margin: 0 0 8px; font-size: 12.5px; max-width: 80ch; }
 .about a, .about code { color: var(--cyan); }
 .addr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border: 1px solid var(--hair); border-radius: 6px; background: rgba(0,0,0,.35); }
-.addr code { flex: 1 1 320px; min-width: 0; font: 500 13px var(--mono); color: var(--ok); overflow-wrap: anywhere; user-select: all; }
+.addr code { flex: 1 1 320px; min-width: 0; font: 400 13px var(--mono); color: var(--ok); overflow-wrap: anywhere; user-select: all; }
 .about .small { color: var(--dim); font-size: 11.5px; }
 .donate { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 16px; align-items: center; margin: 12px 0 12px; }
 .donate .qr { width: 132px; height: 132px; border-radius: 6px; display: block; }
@@ -232,14 +241,20 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 @keyframes markring { 0% { stroke-opacity: .45; } 30% { stroke-opacity: 1; stroke: var(--ok); } 100% { stroke-opacity: .45; } }
 .mark.big { width: 40px; height: 40px; margin-right: 10px; }
 .panel.about h2 { justify-content: flex-start; align-items: center; gap: 10px; padding-right: 44px; }
-.brand h1 { margin: 0; font: 700 22px/1 var(--display); letter-spacing: .06em; text-transform: none; background: var(--brand); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); }
-.brand span { font: 500 11px var(--display); letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
+.brand h1 { margin: 0; font: 600 22px/1 var(--display); letter-spacing: .06em; text-transform: none; background: var(--brand); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); }
+.brand span { font: 400 11px var(--display); letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
-.chip { font: 500 11px var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 5px 12px; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); background: rgba(255,255,255,.03); white-space: nowrap; }
+.chip { font: 400 11px var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 5px 12px; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); background: rgba(255,255,255,.03); white-space: nowrap; }
 .chip b { color: var(--cyan-hi); font-weight: 600; font-family: var(--mono); letter-spacing: 0; text-transform: none; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.chip.v b { margin-left: 0; }
+/* consensus chip: full name on wide screens, short form where the row is tight */
+.rail .chip .sh { display: none; }
+@media (max-width: 1899px) { .rail .chip .lg { display: none; } .rail .chip .sh { display: inline; } }
 .chip.live b { color: var(--ok); }
 .chip.warn b { color: var(--amber); }
 .chip.behind b { color: var(--behind); }
+.rail .chips .chip { cursor: help; } .rail .chips button.chip { cursor: pointer; }
+.rail .chips .chip:hover { border-color: rgba(255,255,255,.45); color: var(--text); }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); margin-right: 6px; animation: blink 1.6s infinite; }
 .dot.sim { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
 .dot.behind { background: var(--behind); box-shadow: 0 0 8px var(--behind); }
@@ -279,8 +294,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .panel::before { content: ""; position: absolute; top: -1px; left: 14px; right: 14px; height: 1px; background: var(--brand); opacity: .7; }
 .panel::after { content: none; }
 .panel h2 { margin: 0 0 8px; flex: 0 0 auto; font: 600 11.5px var(--display); letter-spacing: .24em; text-transform: uppercase; color: #fff; display: flex; justify-content: space-between; gap: 8px; }
-.panel h2 small { color: var(--dim); letter-spacing: .1em; font-weight: 400; margin-left: auto; text-align: right; min-width: 0; }
-.info { position: relative; flex: 0 0 auto; width: 18px; height: 18px; border: 1px solid var(--hair); border-radius: 50%; background: rgba(255,255,255,.04); color: var(--dim); font: 700 11px/16px var(--display); text-align: center; cursor: help; padding: 0; }
+.panel h2 small { color: var(--dim); font: 400 11px var(--mono); letter-spacing: 0; text-transform: none; margin-left: auto; text-align: right; min-width: 0; }
+.info { position: relative; flex: 0 0 auto; width: 18px; height: 18px; border: 1px solid var(--hair); border-radius: 50%; background: rgba(255,255,255,.04); color: var(--dim); font: 600 11px/16px var(--display); text-align: center; cursor: help; padding: 0; }
 .info:hover, .info:focus-visible, .info.open { background: var(--cyan); color: var(--void); }
 .info::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: -4px; width: min(300px, 80vw); padding: 10px 12px; background: #151517; border: 1px solid var(--hair); border-radius: 6px; box-shadow: 0 0 24px rgba(236,236,240,.35); color: var(--text); font: 12px/1.5 var(--mono); letter-spacing: 0; text-transform: none; text-align: left; white-space: normal; z-index: 30; opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .15s, transform .15s; pointer-events: none; }
 .info::before { content: ""; position: absolute; top: calc(100% + 3px); right: 3px; border: 5px solid transparent; border-bottom-color: var(--cyan); opacity: 0; visibility: hidden; transition: opacity .15s; }
@@ -299,11 +314,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .stream.out code { color: var(--cyan); }
 .stream.flash { background: rgba(236,236,240,.18); border-left-color: var(--cyan); }
 .stream.pass .val { color: var(--ok); }
-.stream.fail .val { color: var(--bad); }
+.stream.fail .val { color: #fff; }
 .rule { margin: 12px 0 0; padding: 10px; background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 4px; font: 12px/1.6 var(--mono); color: var(--ok); text-shadow: 0 0 8px rgba(57,255,138,.25); white-space: pre-wrap; overflow-x: auto; }
 .rule .k { color: var(--cyan); }
 .rule .c { color: var(--dim); }
-.verdict { margin-top: auto; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 18px 0 8px; font: 700 15px var(--display); letter-spacing: .2em; text-transform: uppercase; position: relative; }
+.verdict { margin-top: auto; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 18px 0 8px; font: 600 15px var(--display); letter-spacing: .2em; text-transform: uppercase; position: relative; }
 .verdict .seal { width: 36px; height: 36px; border: 2px solid currentColor; transform: rotate(45deg); display: grid; place-items: center; position: relative; flex: 0 0 auto; border-radius: 3px; }
 .verdict .seal svg { width: 22px; height: 22px; transform: rotate(-45deg); fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .verdict .seal .check, .verdict .seal .cross, .verdict .seal .dia { display: none; }
@@ -314,8 +329,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .verdict.ok .seal { background: rgba(57,255,138,.1); box-shadow: 0 0 18px rgba(57,255,138,.35), inset 0 0 10px rgba(57,255,138,.2); animation: vstamp .55s cubic-bezier(.2,1.1,.3,1.25); }
 .verdict.ok .seal::after { content: ""; position: absolute; inset: -2px; border: 2px solid var(--ok); border-radius: 3px; opacity: 0; animation: vping 1s .1s ease-out; }
 .verdict.ok span { animation: vsettle .6s cubic-bezier(.2,.8,.3,1); }
-.verdict.ok span b { color: #fff; font-weight: 700; }
-.verdict.bad { color: var(--bad); }
+.verdict.ok span b { color: #fff; font-weight: 600; }
+.verdict.bad { color: #fff; }
 .verdict.wait { color: var(--dim); }
 .verdict.wait .seal { animation: vspin 2.4s linear infinite; }
 .a-eng.sealed { animation: vpanel 1.2s ease-out; }
@@ -338,31 +353,31 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: 100%; flex: 0 0 auto; }
 .readout div { text-align: center; padding: 6px 4px; border-top: 1px solid var(--hair); }
 .readout b { display: block; font: 600 20px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
-.readout span { font: 500 10px var(--display); color: var(--dim); letter-spacing: .2em; text-transform: uppercase; }
+.readout span { font: 400 10px var(--display); color: var(--dim); letter-spacing: .2em; text-transform: uppercase; }
 .readout span i { display: block; margin-top: 2px; font: 10px var(--mono); font-style: normal; letter-spacing: 0; text-transform: none; color: var(--dim); }
 
 /* tx feed */
 .feed { display: grid; gap: 6px; align-content: start; }
 .tx { display: grid; gap: 3px; padding: 7px 9px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--cyan); animation: slidein .45s ease-out; min-width: 0; }
-.tx.rej { border-left-color: var(--bad); }
+.tx.rej { border-left-color: #fff; }
 .tx.gov { border-left-color: var(--amber); }
 .tx.mined { opacity: .55; }
 .tx .top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--dim); }
 .tx .top em { font-style: normal; color: var(--cyan); letter-spacing: .08em; text-transform: uppercase; }
 .tx.gov .top em { color: var(--amber); }
-.tx.rej .top em { color: var(--bad); }
+.tx.rej .top em { color: #fff; }
 .tx .mid { font-size: 12px; overflow-wrap: anywhere; }
 .acct { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--hair); }
 .acct:hover { color: #fff; border-bottom-color: var(--ok); }
-.tx .mid b { color: var(--cyan-hi); font-weight: 500; }
+.tx .mid b { color: var(--cyan-hi); font-weight: 600; }
 @keyframes slidein { from { transform: translateX(16px); opacity: 0; } }
 
 /* chain ribbon */
 .radar { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: -2px 0 2px; font: 10.5px var(--mono); color: var(--dim); }
 .radar span { cursor: help; }
-.radar b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.radar b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .radar .warn b { color: var(--amber); }
-.radar .bad b { color: var(--bad); }
+.radar .bad b { color: #fff; }
 .radar .ok b { color: var(--ok); }
 .ribbon { display: flex; gap: 0; overflow: auto; flex: 0 0 auto; min-height: 0; align-items: flex-start; padding: 6px 2px 10px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .blk { flex: 0 0 150px; position: relative; padding: 10px 12px; margin-right: 26px; background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 6px; animation: drop .6s ease-out; }
@@ -410,11 +425,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .detail .loglist .t { color: var(--cyan); }
 .detail .loglist .ok { color: var(--ok); }
 .detail .loglist .warn { color: var(--amber); }
-.detail .loglist .err { color: var(--bad); }
+.detail .loglist .err { color: #fff; }
 .log .t { color: var(--cyan); }
 .log .ok { color: var(--ok); }
 .log .warn { color: var(--amber); }
-.log .err { color: var(--bad); }
+.log .err { color: #fff; }
 .gov { display: grid; gap: 10px; }
 .vals { display: grid; gap: 4px; }
 .modes { display: flex; align-items: stretch; gap: 4px; margin: 0 0 6px; }
@@ -444,7 +459,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .rule .chg { color: var(--ok); }
 .rulesworld { display: grid; gap: 12px; }
 .rw-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; }
-.rw-head h2 { margin: 0; font: 700 20px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--amber); text-shadow: 0 0 14px rgba(255,255,255,.35); text-wrap: balance; }
+.rw-head h2 { margin: 0; font: 600 20px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--amber); text-shadow: 0 0 14px rgba(255,255,255,.35); text-wrap: balance; }
 .rw-head p { margin: 0; flex: 1 1 380px; min-width: 0; max-width: 85ch; color: var(--text); opacity: .85; font-size: 12.5px; }
 .principles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .pr { display: grid; gap: 2px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.025); min-width: 0; position: relative; }
@@ -458,15 +473,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .prov i.seen { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .prov a { color: var(--dim); text-decoration: none; border-bottom: 1px dotted var(--hair); flex: 0 0 auto; }
 .prov a:hover { color: #fff; border-color: #fff; }
-.rejchip { margin-left: 8px; font: 500 10px var(--mono); letter-spacing: .04em; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; cursor: pointer; vertical-align: 1px; white-space: nowrap; flex: 0 0 auto; align-self: center; }
-.rejchip.some { color: var(--bad); border-color: rgba(255,77,109,.45); }
-.rejchip[aria-pressed="true"] { background: var(--bad); color: #000; border-color: var(--bad); }
+.rejchip { margin-left: 8px; font: 400 10px var(--mono); letter-spacing: .04em; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; cursor: pointer; vertical-align: 1px; white-space: nowrap; flex: 0 0 auto; align-self: center; }
+.rejchip.some { color: #fff; border-color: rgba(255,255,255,.45); }
+.rejchip[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+.rejchip.some { color: #fff; border-color: rgba(255,255,255,.6); }
 #feed.only-rej .tx:not(.rej) { display: none; }
 .rw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .panel .sub { margin: -6px 0 10px; color: var(--dim); font-size: 11px; }
 small { font-size: 10px; }   /* type floor on desktop: nothing under 10px */
 .updates, .offers, .clauses { display: grid; gap: 8px; align-content: start; }
-.contrast { display: grid; gap: 8px; margin: 0 0 10px; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.02); flex: 0 0 auto; }
+.contrast { display: grid; gap: 8px; margin: 0 0 10px; padding: 10px 12px 12px; border: 0; border-radius: 4px; background: rgba(255,255,255,.03); flex: 0 0 auto; }
 .contrast .hd { display: flex; justify-content: space-between; gap: 10px; font: 600 10px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--text); }
 .contrast .hd span { color: var(--dim); font-weight: 400; letter-spacing: .1em; }
 .contrast .crow { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 0 8px; align-items: stretch; }
@@ -474,35 +490,35 @@ small { font-size: 10px; }   /* type floor on desktop: nothing under 10px */
 .contrast .who em { font: 10.5px var(--mono); letter-spacing: 0; text-transform: none; font-style: normal; color: var(--dim); }
 .contrast .crow.tau .who, .contrast .crow.tau .who em { color: var(--ok); }
 .contrast .track { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 2px; min-width: 0; }
-.contrast .seg { display: grid; align-content: center; gap: 2px; padding: 6px 2px; text-align: center; min-width: 0; border: 1px dashed var(--hair); border-radius: 3px; background: rgba(255,255,255,.02); font: 500 11px var(--mono); color: var(--dim); }
-.contrast .seg b { font-weight: 500; color: var(--text); }
+.contrast .seg { display: grid; align-content: center; gap: 2px; padding: 6px 2px; text-align: center; min-width: 0; border: 0; border-radius: 3px; background: rgba(255,255,255,.02); font: 400 11px var(--mono); color: var(--dim); }
+.contrast .seg b { font-weight: 600; color: var(--text); }
 .contrast .seg small { font: 10px var(--mono); color: var(--dim); }
-.contrast .seg.fork { border-color: rgba(255,77,109,.55); background: repeating-linear-gradient(135deg, rgba(255,77,109,.10) 0 6px, rgba(255,77,109,.02) 6px 12px); }
-.contrast .seg.fork b { color: var(--bad); }
+.contrast .seg.fork { border-color: rgba(255,255,255,.55); background: repeating-linear-gradient(135deg, rgba(255,255,255,.10) 0 6px, rgba(255,255,255,.02) 6px 12px); }
+.contrast .seg.fork b { color: #fff; text-decoration: line-through; text-decoration-color: rgba(255,255,255,.7); text-decoration-thickness: 1.5px; }
 .contrast .crow:not(.tau) .track { opacity: .8; }
 .contrast .crow.tau .track { align-items: stretch; }
 .contrast .tau-seg { grid-column: 1 / 4; display: flex; gap: 3px; padding: 4px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
-.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 6px 1px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 500 10px var(--mono); letter-spacing: -.02em; color: var(--text); min-width: 0; }
+.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 6px 1px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 400 10px var(--mono); letter-spacing: -.02em; color: var(--text); min-width: 0; }
 .contrast .st small { font: 10px var(--mono); letter-spacing: -.01em; color: var(--ok); }
-.contrast .st { color: var(--dim); border-style: dashed; }
+.contrast .st { color: var(--dim); border-style: solid; border-color: transparent; background: rgba(255,255,255,.05); }
 .contrast .st small { color: var(--dim); }
 .contrast .st.done { color: var(--ok); border-style: solid; border-color: rgba(57,255,138,.55); background: rgba(57,255,138,.06); }
 .contrast .st.done small { color: var(--ok); }
 .contrast .st.on { color: #f0c969; border-style: solid; border-color: #e3b55a; background: repeating-linear-gradient(135deg, rgba(227,181,90,.16) 0 5px, rgba(227,181,90,.04) 5px 10px); box-shadow: 0 0 0 0 rgba(227,181,90,.5); animation: working 1.6s ease-in-out infinite; }
 .contrast .st.on small { color: #f0c969; }
-.contrast .st.fail { color: var(--bad); border-style: solid; border-color: rgba(255,77,109,.6); background: rgba(255,77,109,.08); }
-.contrast .st.fail small { color: var(--bad); }
-.contrast .tau-seg.failed { border-color: rgba(255,77,109,.5); background: rgba(255,77,109,.05); box-shadow: 0 0 0 1px rgba(255,77,109,.25), inset 0 0 20px rgba(255,77,109,.08); }
+.contrast .st.fail { color: #fff; border-style: solid; border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.08); }
+.contrast .st.fail small { color: #fff; }
+.contrast .tau-seg.failed { border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.05); box-shadow: 0 0 0 1px rgba(255,255,255,.25), inset 0 0 20px rgba(255,255,255,.08); }
 .contrast .tau-seg.complete { border-color: var(--ok); background: rgba(57,255,138,.12); box-shadow: 0 0 0 1px rgba(57,255,138,.35), 0 0 28px rgba(57,255,138,.35), inset 0 0 24px rgba(57,255,138,.18); animation: complete .9s ease-out; }
 .contrast .tau-seg.complete .st.done { background: rgba(57,255,138,.18); border-color: var(--ok); color: #fff; }
 .contrast .tau-seg.complete .st.done small { color: var(--ok); }
 @keyframes complete { 0% { box-shadow: 0 0 0 1px var(--ok), 0 0 0 rgba(57,255,138,0), inset 0 0 0 rgba(57,255,138,0); } 20% { box-shadow: 0 0 0 2px var(--ok), 0 0 40px rgba(57,255,138,.6), inset 0 0 30px rgba(57,255,138,.3); } }
 @keyframes working { 50% { box-shadow: 0 0 0 4px rgba(227,181,90,0), 0 0 16px rgba(227,181,90,.55); } }
 .contrast .rest { grid-column: 4 / 6; display: grid; align-content: center; padding: 6px 6px; font: 10px/1.4 var(--mono); color: var(--dim); min-width: 0; }
-.contrast .rest b { color: var(--ok); font-weight: 500; }
+.contrast .rest b { color: var(--ok); font-weight: 600; }
 .contrast .cap { font: 10.5px/1.5 var(--mono); color: var(--dim); }
-.contrast .cap b { color: var(--text); font-weight: 500; }
-.empty { color: var(--dim); font-size: 12px; padding: 10px; border: 1px dashed var(--hair); border-radius: 4px; }
+.contrast .cap b { color: var(--text); font-weight: 600; }
+.empty { color: var(--dim); font-size: 12px; padding: 6px 0; }
 .upd { display: grid; gap: 6px; padding: 9px 10px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--amber); }
 .upd.active { border-left-color: var(--ok); }
 .upd.expired { border-left-color: var(--dim); opacity: .6; }
@@ -514,7 +530,7 @@ small { font-size: 10px; }   /* type floor on desktop: nothing under 10px */
 .pill.voting, .pill.offered { color: var(--amber); }
 .pill.scheduled { color: var(--ok); }
 .pill.active, .pill.accepted { color: var(--ok); }
-.pill.rejected { color: var(--bad); }
+.pill.rejected { color: #fff; }
 .agree { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
 .bar { position: relative; height: 6px; background: rgba(255,255,255,.12); }
 .bar span { position: absolute; inset: 0 auto 0 0; background: #fff; box-shadow: 0 0 10px rgba(255,255,255,.35); transition: width .5s; }
@@ -533,7 +549,7 @@ small { font-size: 10px; }   /* type floor on desktop: nothing under 10px */
 .chk i { font-style: normal; }
 .chk i.warn { color: var(--amber); }
 .o2 { color: var(--dim); white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }   /* two lines rather than an ellipsis (27 Oct) */
-.o2 b { color: var(--text); font-weight: 500; }
+.o2 b { color: var(--text); font-weight: 600; }
 .clause { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; }
 .clause i { width: 10px; height: 10px; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: var(--amber); }
 .clause i.k-whitelist { background: var(--ok); }
@@ -547,11 +563,11 @@ small { font-size: 10px; }   /* type floor on desktop: nothing under 10px */
 .ap i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--amber); }
 .ap.open i { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
 .ap.approved i, .ap.signed i { background: var(--ok); border-color: var(--ok); }
-.ap.declined i { border-color: var(--bad); background: var(--bad); }
+.ap.declined i { border-color: #fff; background: #fff; }
 .ap.expired i, .ap.closed i { border-color: var(--dim); }
 .ap span:last-child { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ap.open span:last-child { color: var(--amber); }
-.ap b { color: #fff; font-weight: 500; }
+.ap b { color: #fff; font-weight: 600; }
 .rule.composite { font-size: 10.5px; line-height: 1.55; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
 .tx.rl { border-left-color: var(--ok); }
 .tx.rl .top em { color: var(--ok); }
@@ -581,7 +597,7 @@ small { font-size: 10px; }   /* type floor on desktop: nothing under 10px */
 .fb .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .fb .status { font-size: 12px; color: var(--dim); flex: 1 1 200px; min-width: 0; }
 .fb .status.ok { color: var(--ok); }
-.fb .status.err { color: var(--bad); }
+.fb .status.err { color: #fff; }
 .btn[disabled], .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
 a.btn { text-decoration: none; display: inline-block; }
 .fblink { color: var(--cyan); font-size: 12px; }
@@ -749,12 +765,13 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     <div class="brand"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></div>
     <button class="chip unoff" type="button" data-open="mAbout" data-full="Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Click for the full notice.">Unofficial community project · not affiliated with IDNI</button>
     <div class="chips">
-      <div class="chip" id="chipMode"><span class="dot sim" id="modeDot"></span>Mode<b id="modeTxt">Simulation</b></div>
+      <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <div class="chip" id="chipOnline" data-full="People looking at Tau HUD right now. Counted by the community read relay at node.tauhud.com, which every open HUD talks to; no cookies, no analytics, nobody is identified; a random token in your browser makes sure you count once, even with several tabs or pages open. “—” means the relay has not answered yet."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</div>
-      <div class="chip" id="chipNet">Network<b id="netId">tau-testnet-v2</b></div>
-      <div class="chip" id="chipHeight">Height<b id="chipH">0</b></div>
-      <button class="chip" type="button" id="btnState">Spec revision<b id="chipRev">1</b></button>
-      <div class="chip" id="chipFeeWrap">Base fee<b id="chipFee">10</b></div>
+      <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b></button>
+      <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b></div>
+      <div class="chip v" id="chipHeight"><b id="chipH">#0</b></div>
+      <button class="chip v" type="button" id="btnState"><b id="chipRev">rev 1</b></button>
+      <div class="chip v" id="chipFeeWrap"><b id="chipFee">10 AGRS</b></div>
     </div>
     <nav class="tnav" data-page="hud" aria-label="Pages and tools">
       <div class="seg" role="group" aria-label="Data source" data-slot="source">
@@ -776,7 +793,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         </div>
         <h4>Look</h4>
         <div class="row">
-          <button class="btn ghost" type="button" id="btnRain" aria-pressed="true" data-full="Turns the falling glyphs in the background on or off. Purely decorative.">Rain</button>
+          <button class="btn ghost" type="button" id="btnRain" aria-pressed="false" data-full="Turns the falling glyphs in the background on or off. Purely decorative.">Rain</button>
           <button class="btn ghost gold" type="button" id="btnTour" data-full="About one minute, eight short steps: how rules on Tau change by agreement, pointing at the panels where it happens.">Guided tour</button>
           <button class="btn ghost" type="button" data-open="mAbout" data-full="What this page is, who built it, where each claim comes from, and how to support it.">About</button>
         </div>
@@ -858,7 +875,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     </article>
 
     <article class="panel a-chain">
-      <h2>Blockchain <small id="chainSub">click a block to inspect it below · mouse wheel steps through blocks · bright card = a rule change took effect</small><button class="info" type="button" aria-label="What is this?" data-tip="Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
+      <h2>Blockchain <small id="chainSub">following the newest block</small><button class="info" type="button" aria-label="What is this?" data-tip="Click a block to inspect it below, the mouse wheel steps through blocks, a bright card marks a rule change that took effect. Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
       <div class="radar" id="radar"></div>
       <div class="ribbon" id="ribbon"></div>
       <div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div>
@@ -930,6 +947,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.14 · 27 Oct 2026</b>Press kit under Learn: a ready paragraph, the facts, the 60 second video in three formats, the logo for dark and light, screenshots and a ZIP of everything. Design pass, part one: red is reserved for offline and down, refusals and the fork step are white with ✕ or a strike; fewer boxes inside Rule changes; panel subtitles in sentence case, instructions moved into the (i) hover; Rules in force now shows revision and fee large and the rest as one sentence; header chips show the value only, the name is in the hover, and a new Consensus chip says who seals blocks; validator keys in the chain state are short with a copy button; the background rain is off unless you switch it on.</li>
           <li><b>v17.13 · 27 Oct 2026</b>The Live node light can no longer stick on green: the status request times out after 8 seconds, a minute without an answer turns it red, and the relay’s health score colours it (degraded amber, down red). Same on every subpage.</li>
           <li><b>v17.12 · 27 Oct 2026</b>The Telegram bot answers questions: write height, proposals, a transaction hash or an address to @tauhud_alerts_bot. Mentioned in the Telegram chip, About and here.</li>
           <li><b>v17.11 · 27 Oct 2026</b>Validators, Rules in force now and Node log fit their column in Technical view: on wide screens the column has the full height, laptops show every panel whole and scroll. The Simple/Technical switch appears only on pages where it changes something.</li>
@@ -1623,6 +1641,7 @@ function renderGov(extra = {}) {
 /* who may seal blocks right now: a fixed validator list (PoA) or a list or stake judged by the Tau rules (stream o7) */
 const MODE_TIP = { validator_set: "Fixed validator list (proof of authority): the host keeps the list, Tau checks every seal against it.", tau_validator_set: "The validator list itself lives in the Tau rules: stream o7 decides who may seal.", stake: "Stake-based: the Tau rules judge eligibility by stake (stream o7)." };
 const MODE_TXT = { validator_set: "fixed validator list (PoA)", tau_validator_set: "validator list kept in Tau logic", stake: "stake-based (Tau judges o7)" };
+const CONS_CHIP = { validator_set: ["Proof of authority", "PoA"], tau_validator_set: ["Validator list in Tau", "Tau list"], stake: ["Proof of stake", "PoS"] };
 const modeLabel = () => S.mode !== "live" ? "fixed validator list (PoA) · simulated" : S.eligMode ? (MODE_TXT[S.eligMode] || esc(S.eligMode)) : "—";
 /* fork radar: competing branches, reorgs and chain restarts, as the node and the relay report them */
 function renderRadar() {
@@ -1645,7 +1664,7 @@ function renderRadar() {
 /* ---------- readouts ---------- */
 function readouts() {
   renderRadar();
-  $("chipH").textContent = $("rH").textContent = fmt(S.height);
+  $("rH").textContent = fmt(S.height); $("chipH").textContent = "#" + fmt(S.height);
   $("rM").textContent = S.mempool.length;
   const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
   $("rT").textContent = pace != null ? fmtSec(pace) : "—";
@@ -1654,8 +1673,10 @@ function readouts() {
     : (live ? "Needs two consecutive blocks with timestamps before a pace can be measured." : "Measured once the first blocks are sealed.");
   tickPace();
   $("rR").textContent = S.clauses.size;
-  $("chipFee").textContent = S.fee;
-  $("chipRev").textContent = S.specRev;
+  $("chipFee").textContent = S.fee + " AGRS";
+  $("chipRev").textContent = "rev " + S.specRev;
+  { const m = S.mode === "live" ? S.eligMode || "" : "validator_set", c = CONS_CHIP[m], n = S.validators.length;
+    $("consL").textContent = c ? c[0] + (n ? ` · ${n} validator${n === 1 ? "" : "s"}` : "") : "—"; $("consS").textContent = c ? c[1] + (n ? ` · ${n}` : "") : "—"; }
   $("coreSub").textContent = S.validators.length ? "next proposer " + short(S.validators[(S.proposerIdx + 1) % S.validators.length]) : "—";
 }
 
@@ -1724,13 +1745,14 @@ function showBlock(b, pinned = true) {
     el.dataset.detail = dtKey(() => ({ title, html: blockHtml(b) }));
     if (el.scrollHeight > el.clientHeight + 2) { const lead = el.querySelector(".bsum .lead"); if (lead) lead.remove(); }
   }
-  $("chainSub").textContent = pinned ? `showing #${b.n} · click another block or “newest” to follow the chain` : "click a block to inspect it below · bright card = a rule change took effect";
+  $("chainSub").textContent = pinned ? `showing #${b.n} · back to newest ›` : "following the newest block";
 }
 function renderStatePanel() {
   if (hold("statePanel", renderStatePanel)) return;
   const N = S.validators.length, thr = N ? threshold() : "—";
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
-  $("statePanel").innerHTML = kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "To change a rule": `${thr} of ${N} validators`, "Rule txs per block": S.ruleBudget, "Accounts with own rules": S.clauses.size, "Open proposals": open.length, "Agreed rule changes": active.length ? `${active.length} · last at #${active[active.length - 1].activeAt}` : "none yet" });
+  $("statePanel").innerHTML = `<div class="big2"><div data-full="${KV_TIP["Spec revision"] || ""}"><b>${S.specRev}</b><span>spec revision</span></div><div data-full="${KV_TIP["Base fee"] || ""}"><b>${S.fee}</b><span>AGRS base fee</span></div></div>
+    <p class="sent"><b>${thr} of ${N}</b> validators change a rule · <b>${S.ruleBudget}</b> rule txs per block · <b>${S.clauses.size}</b> account${S.clauses.size === 1 ? "" : "s"} with own rules · <b>${open.length}</b> open proposal${open.length === 1 ? "" : "s"} · ${active.length ? `<b>${active.length}</b> agreed change${active.length === 1 ? "" : "s"}, last at #${active[active.length - 1].activeAt}` : "no agreed change yet"}</p>`;
 }
 function showState() {
   const N = S.validators.length, thr = N ? threshold() : "—";
@@ -1740,13 +1762,14 @@ function showState() {
     `<p class="lead">At height ${fmt(S.height)} the chain runs on spec revision ${S.specRev}: ${active.length} agreed rule change${active.length === 1 ? "" : "s"} so far, ${open.length} open, ${S.clauses.size} account${S.clauses.size === 1 ? "" : "s"} with their own money rules.</p>
     <h3>Consensus rules in force</h3>${kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "Agreement needed": `${agreeNeed(thr, N)} · ${S.quorum === "majority" ? "majority" : "two thirds"}`, "Rule txs per block": S.ruleBudget, "State hash (latest)": esc(last.state || "—") })}
     <pre class="rule">${$("ruleText").innerHTML}</pre>
-    <h3>Validators (${N})</h3><ul>${S.validators.map((v, i) => `<li class="${i === S.proposerIdx ? "ok" : ""}"><b>${i === S.proposerIdx ? "proposing" : "active"}</b> <span class="muted">${esc(v)}</span></li>`).join("")}</ul>
+    <h3>Validators (${N})</h3><ul>${S.validators.map((v, i) => `<li class="${i === S.proposerIdx ? "ok" : ""}"><b>${i === S.proposerIdx ? "proposing" : "active"}</b> <code class="key" title="${esc(v)}">${short(v)}</code><button class="copy" type="button" data-copy="${esc(v)}">copy key</button></li>`).join("")}</ul>
     <h3>Rule changes agreed (${active.length})</h3>${active.length ? `<ul>${active.slice().reverse().map(u => `<li class="gov"><b>${esc(u.title)}</b> <span class="muted">active since #${u.activeAt} · ${u.votes.size} votes</span><br><code>${esc(u.diff)}</code></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None yet. The chain still runs on its genesis rules.</p>`}
     <h3>Open proposals (${open.length})</h3>${open.length ? `<p class="muted" style="font-size:12px;margin:0 0 6px">${openTxt(open)}</p>` : ""}${open.length ? `<ul>${open.map(u => `<li><b>${esc(u.title)}</b> <span class="muted">${STATUS_TXT[u.status]} · ${u.votes.size} of ${thr} · activates at #${u.activateAt}</span></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <h3>Personal money rules (${S.clauses.size})</h3>${S.clauses.size ? `<ul>${[...S.clauses.entries()].map(([a, p]) => `<li class="ok"><b>${esc(p.name)}</b> <span class="muted">${acct(a)}</span><br>${esc(p.label || "")}</li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <pre class="rule composite">${$("composite").innerHTML}</pre>`;
   openModal("mState");
 }
+$("stBody").addEventListener("click", async e => { const b = e.target.closest(".copy"); if (!b) return; try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "copied"; } catch { b.textContent = "copy failed"; } setTimeout(() => { b.textContent = "copy key"; }, 1500); });
 
 /* ---------- block intake (shared by sim + live) ---------- */
 function ingestBlock(b, live) {
@@ -2385,6 +2408,7 @@ function detailValidator(v, i) {
 $("chipNet").dataset.ex = exKey(() => `Network id ${$("netId").textContent}: the chain this page shows. ${S.mode === "sim" ? "In simulation it is an imitation of the documented protocol." : "Read from the node at " + $("wsurl").value.trim() + "."}`);
 $("chipHeight").dataset.ex = exKey(() => `Chain height: the newest sealed block is #${fmt(S.height)}. ${S.mode === "sim" ? "Simulated, a block every ~8 s." : "Read from the node; the relay pushes each new block as it is sealed."}`);
 $("btnState").dataset.ex = exKey(() => `Spec revision ${S.specRev}: how many times the consensus rules have changed by agreement (genesis = 1). Click to see every rule in force right now.`);
+$("chipCons").dataset.ex = exKey(() => { const n = S.validators.length, sw = S.modeHistory.length; return `Consensus: ${modeLabel()}.${n ? ` ${n} active validator${n === 1 ? "" : "s"} seal${n === 1 ? "s" : ""} the blocks, each seal signed with BLS and checked by the Tau rules (o7).` : ""}\nTau has no proof of work. The mechanism itself is chain state: a fixed validator list (proof of authority), a validator list kept in the Tau rules, or proof of stake. It switches only through an agreed rule change, like any other rule; ${S.mode === "live" ? (sw ? `${sw} switch${sw === 1 ? "" : "es"} so far` : "no switch so far") : "simulated"}.\nClick to see every rule in force.`; });
 $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transaction, emitted by consensus rule o9. It changes only through an agreed rule change, never by an admin.`);
 
 /* ---------- overflow overlay: hover or tap any clipped text to read all of it ---------- */
@@ -2417,7 +2441,7 @@ setView(store.get("tau-view") || "simple");
 /* ---------- glyph rain toggle ---------- */
 function setRain(on) { $("rain").classList.toggle("off", !on); $("btnRain").setAttribute("aria-pressed", String(on)); store.set("tau-rain", on ? "1" : "0"); }
 $("btnRain").onclick = () => setRain($("btnRain").getAttribute("aria-pressed") !== "true");
-setRain(store.get("tau-rain") !== "0");
+setRain(store.get("tau-rain") === "1");   // decoration is opt-in
 /* ---------- guided tour for newcomers: how rules change by agreement, about one minute ---------- */
 const TOUR = [
   [".thesis", "Rules change by agreement", "On most chains the code is the law and a few developers can change it. On Tau the rules are written in logic, every block is checked against them, and they change only when the validators agree. This tour shows where each part of that happens."],
@@ -2482,7 +2506,7 @@ function tourOffer() {
   $("tourBack").textContent = "Not now"; $("tourBack").disabled = false; $("tourNext").textContent = "Start the tour";
 }
 $("btnTour").onclick = $("btnTour2").onclick = () => tourShow(0);
-$("btnState").onclick = $("btnState2").onclick = $("btnState3").onclick = showState;
+$("btnState").onclick = $("chipCons").onclick = $("btnState2").onclick = $("btnState3").onclick = showState;
 document.addEventListener("tau-nav", e => { const act = { tour: () => tourShow(0), about: () => openModal("mAbout"), updates: () => openModal("mFeedback"), state: showState }[e.detail]; if (act) act(); });
 /* links from the subpages land here: /#chain-state, /#updates, /#about, /?tour=1 */
 addEventListener("DOMContentLoaded", () => {
@@ -2554,7 +2578,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.13`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.14`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
