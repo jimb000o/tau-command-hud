@@ -902,6 +902,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.10 · 27 Oct 2026</b>Proposal wording matches the Proposals page: “waiting for votes” and “agreed, takes effect soon” in the Chain state detail and validator history, instead of “collecting agreement” and “scheduled”.</li>
           <li><b>v17.9 · 27 Oct 2026</b>From the 200-user usability simulation: Rule sharing lines wrap instead of ending in “…”; laptops (1280–1599 px wide or under 900 px tall) get a compact four-column step so the page is about 1.6 screens instead of 2.7; no type below 10 px on desktop, and ultra-wide screens scale the HUD a little more.</li>
           <li><b>v17.8 · 27 Oct 2026</b>Guided tour: each explanation now sits next to the panel it describes, with a pointer at it (below the panel, else beside or above it, always inside the window). On phones it stays a sheet at the bottom.</li>
           <li><b>v17.7 · 27 Oct 2026</b>The light on “Live node” is a traffic light on every page: green when the community node is synced, amber when it is online but not synced or still catching up, red when it is offline. Hover names the state.</li>
@@ -1459,7 +1460,8 @@ function addBlockCard(b) {
 }
 
 /* ---------- user-made rules panels ---------- */
-const STATUS_TXT = { voting: "collecting agreement", scheduled: "agreed · scheduled", active: "active", expired: "expired" };
+const STATUS_TXT = { voting: "waiting for votes", scheduled: "agreed · takes effect soon", active: "active", expired: "expired" };
+function openTxt(open) { const v = open.filter(u => u.status === "voting").length, s = open.length - v; return !open.length ? "0" : [v ? `${v} waiting for votes` : "", s ? `${s} agreed, takes effect soon` : ""].filter(Boolean).join(" · "); }
 function renderUpdates() {
   if (hold("updates", renderUpdates)) return;
   const thr = threshold(), el = $("updates");
@@ -1625,7 +1627,7 @@ const KV_TIP = {
   "To change a rule": "How many votes a rule change needs before it is scheduled: derived from the validator count and the quorum policy, which is itself part of the chain state. Who may vote is a network setting: validators only, or every account.",
   "Rule txs per block": "The most rule transactions (offers, acceptances, own-rule deployments) a block may carry. A budget set by the rules, not by the proposer.",
   "Accounts with own rules": "Accounts that have deployed a personal Tau rule for their own money, such as a spending limit or a time-lock. The node folds all of them into one spec.",
-  "Open proposals": "Rule changes that are collecting votes or are agreed and waiting for their activation height.",
+  "Open proposals": "Rule changes that are waiting for votes, or are agreed and take effect at their activation height. Same split as on the Proposals page.",
   "Block hash": "The fingerprint of this block: header, transactions and the state hash. The next block names it as its previous block.",
   "Previous block": "The hash of the block before this one. The chain is the sequence of blocks each naming its predecessor.",
   "State hash": "A fingerprint of everything the rules depend on: balances, the consensus rule program, the composite user-rule program, the validator set, pending governance and the quorum policy.",
@@ -1701,7 +1703,7 @@ function showState() {
     <pre class="rule">${$("ruleText").innerHTML}</pre>
     <h3>Validators (${N})</h3><ul>${S.validators.map((v, i) => `<li class="${i === S.proposerIdx ? "ok" : ""}"><b>${i === S.proposerIdx ? "proposing" : "active"}</b> <span class="muted">${esc(v)}</span></li>`).join("")}</ul>
     <h3>Rule changes agreed (${active.length})</h3>${active.length ? `<ul>${active.slice().reverse().map(u => `<li class="gov"><b>${esc(u.title)}</b> <span class="muted">active since #${u.activeAt} · ${u.votes.size} votes</span><br><code>${esc(u.diff)}</code></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None yet. The chain still runs on its genesis rules.</p>`}
-    <h3>Open proposals (${open.length})</h3>${open.length ? `<ul>${open.map(u => `<li><b>${esc(u.title)}</b> <span class="muted">${STATUS_TXT[u.status]} · ${u.votes.size} of ${thr} · activates at #${u.activateAt}</span></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
+    <h3>Open proposals (${open.length})</h3>${open.length ? `<p class="muted" style="font-size:12px;margin:0 0 6px">${openTxt(open)}</p>` : ""}${open.length ? `<ul>${open.map(u => `<li><b>${esc(u.title)}</b> <span class="muted">${STATUS_TXT[u.status]} · ${u.votes.size} of ${thr} · activates at #${u.activateAt}</span></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <h3>Personal money rules (${S.clauses.size})</h3>${S.clauses.size ? `<ul>${[...S.clauses.entries()].map(([a, p]) => `<li class="ok"><b>${esc(p.name)}</b> <span class="muted">${acct(a)}</span><br>${esc(p.label || "")}</li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <pre class="rule composite">${$("composite").innerHTML}</pre>`;
   openModal("mState");
@@ -2513,7 +2515,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.9`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.10`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
