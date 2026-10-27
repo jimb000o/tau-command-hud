@@ -179,7 +179,7 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .tgstrip a { color: var(--ok); font-weight: 600; text-decoration: none; }
 .tgstrip a:hover { text-decoration: underline; }
 /* About: on wide screens the sections flow into columns so nothing needs scrolling; each section stays whole */
-/* rhythm on an 8px scale (Refactoring UI): 32 around, 24 between blocks, 8 under a heading, 10 between paragraphs */
+/* rhythm on an 8px scale: 32 around, 24 between blocks, 8 under a heading, 10 between paragraphs */
 .sheet.wide .panel.about { padding: 28px 36px 32px; background: #0e0e11; }
 .panel.about h2 { margin-bottom: 22px; }
 .about .unofficial { margin: 0 0 28px; padding: 10px 16px; }
@@ -464,7 +464,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 #feed.only-rej .tx:not(.rej) { display: none; }
 .rw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .panel .sub { margin: -6px 0 10px; color: var(--dim); font-size: 11px; }
-small { font-size: 10px; }   /* type floor on desktop: nothing under 10px (usability simulation, 27 Oct) */
+small { font-size: 10px; }   /* type floor on desktop: nothing under 10px */
 .updates, .offers, .clauses { display: grid; gap: 8px; align-content: start; }
 .contrast { display: grid; gap: 8px; margin: 0 0 10px; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.02); flex: 0 0 auto; }
 .contrast .hd { display: flex; justify-content: space-between; gap: 10px; font: 600 10px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--text); }
@@ -592,8 +592,8 @@ a.btn { text-decoration: none; display: inline-block; }
 .panel.flash-target { box-shadow: 0 0 0 2px var(--cyan), 0 0 40px rgba(236,236,240,.35); transition: box-shadow .4s; }
 
 /* wide screens: scale, do not stretch. The layout keeps its design size and is scaled to fill the screen, so line
-   lengths stay at 45–75 characters (Refactoring UI), the layout stays recognisable (Krug) and everything stays on one
-   screen (Few). --z is set by script from the viewport: min(width/1800, height/900), between 1 and 1.7. */
+   lengths stay at 45–75 characters, the layout stays recognisable and everything stays on one
+   screen. --z is set by script from the viewport: min(width/1800, height/900), between 1 and 1.7. */
 html.wide body { padding: 0; overflow: hidden; }
 html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 16px 12px; box-sizing: border-box; transform: scale(var(--z)); transform-origin: 0 0; }
 html.wide .modal .sheet, html.wide .fb-fab, html.wide .tour { zoom: var(--z); }
@@ -930,10 +930,11 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.13 · 27 Oct 2026</b>The Live node light can no longer stick on green: the status request times out after 8 seconds, a minute without an answer turns it red, and the relay’s health score colours it (degraded amber, down red). Same on every subpage.</li>
           <li><b>v17.12 · 27 Oct 2026</b>The Telegram bot answers questions: write height, proposals, a transaction hash or an address to @tauhud_alerts_bot. Mentioned in the Telegram chip, About and here.</li>
           <li><b>v17.11 · 27 Oct 2026</b>Validators, Rules in force now and Node log fit their column in Technical view: on wide screens the column has the full height, laptops show every panel whole and scroll. The Simple/Technical switch appears only on pages where it changes something.</li>
           <li><b>v17.10 · 27 Oct 2026</b>Proposal wording matches the Proposals page: “waiting for votes” and “agreed, takes effect soon” in the Chain state detail and validator history, instead of “collecting agreement” and “scheduled”.</li>
-          <li><b>v17.9 · 27 Oct 2026</b>From the 200-user usability simulation: Rule sharing lines wrap instead of ending in “…”; laptops (1280–1599 px wide or under 900 px tall) get a compact four-column step so the page is about 1.6 screens instead of 2.7; no type below 10 px on desktop, and ultra-wide screens scale the HUD a little more.</li>
+          <li><b>v17.9 · 27 Oct 2026</b>Rule sharing lines wrap instead of ending in “…”; laptops (1280–1599 px wide or under 900 px tall) get a compact four-column step so the page is about 1.6 screens instead of 2.7; no type below 10 px on desktop, and ultra-wide screens scale the HUD a little more.</li>
           <li><b>v17.8 · 27 Oct 2026</b>Guided tour: each explanation now sits next to the panel it describes, with a pointer at it (below the panel, else beside or above it, always inside the window). On phones it stays a sheet at the bottom.</li>
           <li><b>v17.7 · 27 Oct 2026</b>The light on “Live node” is a traffic light on every page: green when the community node is synced, amber when it is online but not synced or still catching up, red when it is offline. Hover names the state.</li>
           <li><b>v17.6 · 27 Oct 2026</b>About breathes: a solid background, 32px around, a clear gap between the notice strip and the columns, wider gutters, consistent spacing under every heading. Still no scrolling on wide screens.</li>
@@ -988,7 +989,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
           <li><b>v9.1 · 26 Oct 2026</b>Simple/Technical switch moved to the right side of the header, under the status chips.</li>
           <li><b>v9 · 26 Oct 2026</b>Calmer: blocks every ~8 s. A block’s details now open inline under the block cards instead of a pop-up (the newest block is shown until you pick one). New always-visible panel “Rules in force now” on the right; the node log moved below it and only shows in the Technical view. Block-card footer no longer wraps.</li>
           <li><b>v8 · 26 Oct 2026</b>From a simulated study with 100 reader personas: simulation is now unmissable (banner, watermark in the core, SIM tag on every block card), a Simple/Technical switch with plain-language stream labels, a 5-step tour that follows one rule from proposal to active, clickable blocks with a full detail view (rules in force and agreed at that block), a “Chain state” view of every rule in force right now, no more clipped values, a compact core on laptops, live-node fields only in Live mode with a checklist on failure, a “What is Tau?” link, symbols per transaction type, AGRS amounts, and a rain switch.</li>
-          <li><b>v7 · 26 Oct 2026</b>Wording and hierarchy pass guided by the community’s design library (Made to Stick, Information Dashboard Design, Refactoring UI, Don’t Make Me Think, Albers): one core sentence up top, plain-language panel titles, every number with its context (“7 of 9 needed”), refusals marked ✕ as well as red, stream codes moved into the hover notes, quieter glyph rain.</li>
+          <li><b>v7 · 26 Oct 2026</b>Wording and hierarchy pass: one core sentence up top, plain-language panel titles, every number with its context (“7 of 9 needed”), refusals marked ✕ as well as red, stream codes moved into the hover notes, quieter glyph rain.</li>
           <li><b>v6 · 26 Oct 2026</b>Monochrome like the current tau.net: black, white, greys and hairlines, with phosphor green as the only accent, where data is live or true.</li>
           <li><b>v5 · 26 Oct 2026</b>Rebrand: Tau’s near-black and blue-to-violet gradient for structure, phosphor green reserved for data and truth, champagne for agreement. Matrix glyph rain behind the deck, the thesis decodes on load, hairline glass panels, Sora + JetBrains Mono. AGRS donation address under About.</li>
           <li><b>v4 · 26 Oct 2026</b>Everything on one screen: a 4×2 command grid with a thesis line for newcomers, feedback and about moved into pop-ups.</li>
@@ -1273,11 +1274,13 @@ async function runVerdict(b, live) {
 /* ---------- people online: asked from the community relay (node.tauhud.com/status), no analytics ---------- */
 const PRESENCE = { url: "https://node.tauhud.com/status", n: null, timer: null };
 function setRelay(up) {
+  if (PRESENCE.health === "down") up = false;            // the relay's health score (PR #71) wins when it says the testnet is down
+  const degraded = up && PRESENCE.health === "degraded";
   PRESENCE.up = up;
   const synced = PRESENCE.synced !== false;
   const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
-  $("liveDot").className = "dot " + (up ? (synced && !catching ? "" : "behind") : "off");
-  $("btnLive").dataset.full = !up ? "Red: the community node is offline, the relay is not answering." : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.` : "Green: the community node is online and follows the real testnet chain.";
+  $("liveDot").className = "dot " + (up ? (synced && !catching && !degraded ? "" : "behind") : "off");
+  $("btnLive").dataset.full = !up ? (PRESENCE.stale ? "Red: no answer from the relay for over a minute." : PRESENCE.health === "down" ? `Red: the testnet is down (${PRESENCE.healthLabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : degraded ? `Amber: ${PRESENCE.healthLabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.` : "Green: the community node is online and follows the real testnet chain.";
   if (S.mode === "live" && LIVE.status) setMode("live", LIVE.status);
 }
 function setOnline(n) {
@@ -1287,10 +1290,13 @@ function setOnline(n) {
   $("chipOnline").classList.toggle("live", n != null && n > 0);
 }
 async function pollOnline() {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);   // a stalled request must not freeze the light at its last colour
   try {
-    const r = await fetch(PRESENCE.url, { cache: "no-store" });
+    const r = await fetch(PRESENCE.url, { cache: "no-store", signal: ctl.signal });
     if (!r.ok) throw new Error(r.status);
     const j = await r.json();
+    PRESENCE.stale = false;
+    PRESENCE.health = j.health && typeof j.health.state === "string" ? j.health.state : null; PRESENCE.healthLabel = j.health && j.health.label ? String(j.health.label) : "";
     const n = Number(j.online ?? j.clients ?? j.presence);   // online = people (one per viewer token); clients = sockets
     setOnline(Number.isFinite(n) ? n : null);
     PRESENCE.liveDefault = j.live_default === true;
@@ -1302,7 +1308,10 @@ async function pollOnline() {
     setRelay(!!j.upstream_connected && Number(j.height) > 0);
     if (PRESENCE.up) autoLive();
   } catch { setOnline(null); setRelay(false); }
+  finally { clearTimeout(t); PRESENCE.at = Date.now(); }
 }
+/* watchdog: a visible tab that has heard nothing from the relay for over a minute shows red, whatever the last colour was */
+setInterval(() => { if (!document.hidden && PRESENCE.at && Date.now() - PRESENCE.at > 70000 && !PRESENCE.stale) { PRESENCE.stale = true; setRelay(false); } }, 5000);
 function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?? d.presence)); if (Number.isFinite(n)) setOnline(n); }
 addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); presenceOpen(); });
 /* a quiet presence socket to the relay: one “hello”, then only its presence pushes, so visitors in simulation count too */
@@ -2545,7 +2554,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.12`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.13`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
