@@ -60,7 +60,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .chip:hover { border-color: #fff; color: #fff; }
 .chip.on { border-color: var(--ok); color: var(--ok); }
 .chip .x { color: var(--bad); }
-textarea { width: 100%; min-height: 150px; resize: vertical; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; font: 13px/1.55 var(--mono); }
+textarea { font-variant-ligatures: none; width: 100%; min-height: 150px; resize: vertical; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; font: 13px/1.55 var(--mono); }
 textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border-color: var(--ok); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
 .btn { font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; border-radius: 999px; padding: 8px 16px; cursor: pointer; border: 1px solid var(--hair); background: transparent; color: #fff; }
@@ -94,6 +94,15 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
 .res { font-weight: 600; white-space: nowrap; }
 .res.allow { color: var(--ok); } .res.block { color: var(--bad); } .res.unk { color: var(--dim); font-weight: 500; white-space: normal; }
 .why { display: block; color: var(--dim); font-weight: 400; font-size: 11px; white-space: normal; }
+@media (max-width: 700px) {
+  table thead { display: none; }
+  table, tbody { display: block; }
+  #tests tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); position: relative; }
+  #tests td { display: block; border: 0; padding: 0; }
+  #tests td[data-label]::before { content: attr(data-label); display: block; font: 600 10px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); margin-bottom: 3px; }
+  #tests td.rc { grid-column: 1 / -1; }
+  #tests td.dc { position: absolute; top: 4px; right: 0; }
+}
 .del { background: none; border: 0; color: var(--dim); cursor: pointer; font: 14px var(--mono); }
 .del:hover { color: var(--bad); }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
@@ -552,10 +561,17 @@ function stepHtml(s, i) {
   const ic = s.ok === true ? "✓" : s.ok === false ? "✕" : s.ok === "run" ? "…" : "○";
   return `<li class="${cls}"><span class="ic">${ic}</span><div><b>${i + 1} · ${esc(s.title)}</b><p>${esc(s.detail || "")}</p></div></li>`;
 }
+const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+const engineReason = r => {
+  let t = cap(r || "The engine refused the rule.");
+  if (/ at 1:\d+/.test(t)) t += " (The position counts in the rule as the node stores it, shown below.)";
+  return /[.)]$/.test(t) ? t : t + ".";
+};
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 let checkSeq = 0;
 async function runCheck() {
+  clearTimeout(editTimer);
   const text = ruleEl.value, seq = ++checkSeq;
   const a = admission(text);
   const steps = a.steps.slice();
@@ -579,11 +595,12 @@ async function runCheck() {
     eng = { title: "Tau engine", ok: null, detail: res.busy };
     verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs. The engine compile could not be run right now.";
   } else if (res.accepted) {
-    eng = { title: "Tau engine", ok: true, detail: `Compiled and accepted by tau-lang ${res.engine || ""} in ${res.ms != null ? res.ms + " ms" : "its own sandbox"}.`.replace("  ", " ") };
+    eng = { title: "Tau engine", ok: true, detail: `Compiled and accepted by the real engine (${res.engine || "tau-lang"}) in a throwaway sandbox${res.ms != null ? `, ${res.ms} ms` : ""}. Your transfers below were run through it too.` };
     verdictEl.className = "verdict"; verdictEl.textContent = "The testnet would accept this rule.";
     engineResults = res.tests || null; engineFor = text; renderTests();
   } else {
-    eng = { title: "Tau engine", ok: false, detail: (res.stage && res.stage !== "engine" ? `The node’s own ${res.stage} check refused it: ` : "") + (res.reason || "The engine refused the rule.") };
+    $("compDetails").hidden = false; $("composite").textContent = res.composite || a.composite;
+    eng = { title: "Tau engine", ok: false, detail: (res.stage && res.stage !== "engine" ? `The node’s own ${res.stage} check refused it: ` : "") + engineReason(res.reason) };
     verdictEl.className = "verdict bad"; verdictEl.textContent = "Refused by the Tau engine. The testnet would not take this rule.";
   }
   stepsEl.innerHTML = steps.map(stepHtml).join("") + stepHtml(eng, steps.length);
@@ -629,12 +646,12 @@ function renderTests() {
     else if (perr) res = `<span class="res unk">The preview cannot read this rule (${esc(perr)}). The engine check decides.</span>`;
     else { try { res = resultCell(previewO5(ast, tx), tx, "preview"); } catch (e) { res = `<span class="res unk">The preview cannot evaluate this (${esc(e.message)}).</span>`; } }
     return `<tr data-i="${i}">
-      <td><select data-f="from" aria-label="From">${who(tx.from)}</select></td>
-      <td><input data-f="amount" type="number" min="0" max="16777215" value="${tx.amount}" aria-label="Amount"></td>
-      <td><select data-f="to" aria-label="To">${who(tx.to)}</select></td>
-      <td><input data-f="time" type="date" value="${fmtTime(tx.time)}" aria-label="Block time"></td>
-      <td>${res}</td>
-      <td><button class="del" type="button" data-del="${i}" aria-label="Remove">×</button></td></tr>`;
+      <td data-label="From"><select data-f="from" aria-label="From">${who(tx.from)}</select></td>
+      <td data-label="Amount"><input data-f="amount" type="number" min="0" max="16777215" value="${tx.amount}" aria-label="Amount"></td>
+      <td data-label="To"><select data-f="to" aria-label="To">${who(tx.to)}</select></td>
+      <td data-label="Time"><input data-f="time" type="date" value="${fmtTime(tx.time)}" aria-label="Block time"></td>
+      <td class="rc">${res}</td>
+      <td class="dc"><button class="del" type="button" data-del="${i}" aria-label="Remove">×</button></td></tr>`;
   }).join("");
   $("testSrc").textContent = fromEngine ? "answers from the Tau engine" : "in-browser preview, updates as you type";
 }

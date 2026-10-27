@@ -48,13 +48,14 @@ log = logging.getLogger("checker")
 PORT = int(os.environ.get("PORT", "8090"))
 ALLOWED_ORIGINS = [o.strip() for o in (os.environ.get("ALLOWED_ORIGINS")
     or "https://tauhud.com,https://www.tauhud.com,https://jimb000o.github.io").split(",") if o.strip()]
-ENGINE_LABEL = os.environ.get("ENGINE_LABEL", "")
+# Commit ids shortened to 7 characters for display.
+ENGINE_LABEL = re.sub(r"\b([0-9a-f]{7})[0-9a-f]{33}\b", r"\1", os.environ.get("ENGINE_LABEL", ""))
 MAX_BODY = 16 * 1024
 MAX_TESTS = 8
-STEP_TIMEOUT = float(os.environ.get("STEP_TIMEOUT", "20"))
+BUDGET = float(os.environ.get("CHECK_BUDGET", "30"))  # seconds of engine time per request
 QUEUE_WAIT = 30.0                  # seconds a request may wait for the engine
 MAX_WAITING = 4                    # requests allowed to wait at once
-RATE_WINDOW, RATE_MAX = 300.0, 12  # per client address
+RATE_WINDOW, RATE_MAX = 300.0, int(os.environ.get("RATE_MAX", "8"))  # per client address
 MAX_BV24 = (1 << 24) - 1
 MAX_TIME = (1 << 64) - 1
 HEX96 = re.compile(r"^[0-9a-f]{96}$")
@@ -120,10 +121,20 @@ def _o5_value(text):
 
 
 def _first_error(receipt) -> str:
+    """The engine's own words for a refusal: its first error line, else its report.
+
+    sendtx._revision_refusal reads the same two places in the other order; the
+    diagnostic line is the more specific one ("Incompatible type information in
+    i4 ..." rather than "type inference produced no tree"), so it goes first here.
+    """
     for key in ("diagnostics", "deferred_diagnostics"):
-        for line in tau_native.strip_ansi(receipt.get(key) or "").splitlines():
-            if "Error" in line:
-                return line.strip()[:400]
+        for line in str(receipt.get(key) or "").splitlines():
+            if "rror" in line:
+                text = tau_native.strip_ansi(line).strip()
+                return re.sub(r"^\(Error\)\s*", "", text)[:400]
+    errors = (receipt.get("report") or {}).get("errors") or []
+    if errors:
+        return tau_native.strip_ansi(str(errors[0])).strip()[:400]
     return ""
 
 
@@ -166,24 +177,26 @@ def check(rule: str, sender: str, tests: list) -> dict:
             return dict(_cache[key], cached=True)
 
     started = time.monotonic()
+    deadline = started + BUDGET
+    left = lambda: max(0.5, deadline - time.monotonic())  # noqa: E731
     result = {"composite": composite, "engine": ENGINE_LABEL}
-    session = tau_speculation.SpeculationSession(cwd=TESTNET_DIR, timeout=STEP_TIMEOUT)
+    session = tau_speculation.SpeculationSession(cwd=TESTNET_DIR)
     try:
-        session.init(SEED_SPEC)
+        session.init(SEED_SPEC, timeout=left())
         for i, rule in enumerate(BUILTIN_RULES):
-            if session.revise(rule, candidate_id=f"builtin-{i}").get("outcome") not in tau_speculation.ACCEPTED:
+            if session.revise(rule, candidate_id=f"builtin-{i}", timeout=left()).get("outcome") not in tau_speculation.ACCEPTED:
                 raise tau_speculation.SpeculationError(f"builtin rule {i} did not replay")
-        receipt = session.revise(tau_native.TauInterface.preprocess_spec_text(composite), candidate_id="playground")
+        receipt = session.revise(tau_native.TauInterface.preprocess_spec_text(composite),
+                                 candidate_id="playground", timeout=left())
         outcome = receipt.get("outcome")
         result["outcome"] = outcome
-        if outcome == "REJECTED_RULE":
-            result.update(accepted=False, stage="engine",
-                          reason=_first_error(receipt) or "the Tau engine refused the rule")
-        elif outcome == "REJECTED_NOT_ROUTED":
-            result.update(accepted=False, stage="engine",
-                          reason="the rule contradicts itself or the network's rules, so Tau found no way to apply it")
+        # Every outcome but acceptance refuses, as sendtx._revision_refusal does.
+        if outcome == "REJECTED_NOT_ROUTED":
+            result.update(accepted=False, stage="engine", reason=_first_error(receipt)
+                          or "the rule contradicts itself or the network's rules, so Tau found no way to apply it")
         elif outcome not in tau_speculation.ACCEPTED:
-            result.update(accepted=False, stage="engine", reason=f"the engine gave no verdict ({outcome})")
+            result.update(accepted=False, stage="engine",
+                          reason=_first_error(receipt) or f"the Tau engine refused the rule ({outcome})")
         else:
             result["accepted"] = True
             runs = []
@@ -191,18 +204,23 @@ def check(rule: str, sender: str, tests: list) -> dict:
                 resp = session.step({
                     "i1": str(t["amount"]), "i3": "#x" + t["from"], "i4": "#x" + t["to"],
                     "i5": str(t["time"]), "i12": "#x" + t["from"],
-                })
+                }, timeout=left())
                 outs = resp.get("outputs") if resp.get("ok") else None
                 runs.append({"ok": outs is not None,
                              "o5": _o5_value(outs.get("o5")) if outs else None,
                              "o1": _o5_value(outs.get("o1")) if outs else None})
             result["tests"] = runs
         session.close()
+    except tau_speculation.WorkerTimeout:
+        # Deterministic for this text, like the node's ADMISSION_TIMEOUT: too heavy.
+        session.kill()
+        result.update(accepted=False, stage="engine", timeout=True,
+                      reason=f"the engine needed more than {BUDGET:g} seconds, so the check was stopped")
     except (tau_speculation.SpeculationError, tau_speculation.WorkerLost) as exc:
         session.kill()
         log.warning("engine unavailable: %s", exc)
         return {"accepted": None, "stage": "engine", "unavailable": True,
-                "reason": "the engine could not finish in time"}
+                "reason": "the engine stopped unexpectedly"}
     result["ms"] = int((time.monotonic() - started) * 1000)
     with _cache_lock:
         _cache[key] = result

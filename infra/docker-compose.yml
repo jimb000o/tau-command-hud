@@ -62,9 +62,12 @@ services:
       - ./checker:/checker:ro
     read_only: true
     tmpfs: [/tmp]
-    user: "65534:65534"
-    mem_limit: 1g
-    memswap_limit: 1g
+    # Root inside the container only because the engine's libraries live under
+    # /root/.tau in the node image; it holds no capabilities and cannot gain any.
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m        # one engine worker measured at ~60 MB
+    memswap_limit: 512m
     cpus: 1.0
     pids_limit: 64
     networks: [checker]
