@@ -115,6 +115,18 @@ with one row per node, highest first:
 `different` (another chain or a fork), `ahead` (higher than this relay has) or `unknown`.
 `/status` counts them as `community_nodes`.
 
+`GET /uptime` (CORS `*`, cached 5 s; used by tauhud.com/status) is the availability
+history for the status page. Once a minute the relay samples whether the node is
+connected and answering (`node_ok`) and whether its verified head is within
+`SYNC_LAG_BLOCKS` (2) of the network tip (`synced`), and folds the samples into hourly
+buckets `[hour, samples, node_ok, synced]` for 31 days. A bucket with fewer than 60
+samples means the relay itself was down for the rest of that hour. `incidents` lists
+outages `{"kind": "relay" | "node" | "sync", "start", "end", "max_lag"}` (`end` null while
+it lasts); `restarts`, `reorgs` and `stalls` (gaps of more than 10 min between two blocks
+of the current chain: the network made no block) cover the same 31 days, and `status` is
+`/status`. Stored in `/data/uptime.json` (volume `relay_data`), so it survives restarts;
+the time between the relay's last sample and its next start counts as a relay outage.
+
 ## Rule Playground checker
 
 `checker/checker.py` answers tauhud.com/playground: `POST https://node.tauhud.com/check`
@@ -201,6 +213,7 @@ Logs: `docker compose logs -f alerts`.
 ```bash
 pip install websockets==15.0.1
 python relay/test_relay.py
+python relay/test_uptime.py
 ```
 
 Runs the relay against a mock node that enforces the real node's rate limits: read
