@@ -382,6 +382,9 @@ function openDetail(p, push) {
     ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere;margin:0">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
     <p class="note">Open any block number to see it in <a href="/history/#${p.proposed_at}">Time travel</a>. Votes count once per account while the change is open.</p>`;
+  // a link whose preview on X and Telegram shows a picture of this proposal (infra/share)
+  if (!params.has("sample")) $("dBody").insertAdjacentHTML("beforeend", `<p style="margin:12px 0 0"><button class="btn" type="button" data-share="https://node.tauhud.com/s/proposal/${esc(p.id.slice(0, 16))}"
+    title="A link that shows a picture of this proposal when you post it on X, Telegram or WhatsApp.">Copy share link</button></p>`);
   $("mDetail").hidden = false;
   $("mDetail").querySelector(".close").focus();
   if (push) try { history.replaceState(null, "", "#" + p.id.slice(0, 16)); } catch {}
@@ -397,6 +400,10 @@ function openFromHash(force) {
   openDetail(D.proposals.find(p => p.id.startsWith(h)), false);
 }
 $("mDetail").addEventListener("click", e => { if (e.target === $("mDetail") || e.target.closest("[data-close]")) closeModal(); });
+$("dBody").addEventListener("click", e => {
+  const b = e.target.closest("[data-share]"); if (!b || !navigator.clipboard) return;
+  navigator.clipboard.writeText(b.dataset.share).then(() => { const t = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = t; }, 1500); }).catch(() => {});
+});
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("mDetail").hidden) closeModal(); });
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-id]"); if (b) openDetail(D.proposals.find(p => p.id === b.dataset.id), true);

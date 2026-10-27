@@ -115,6 +115,24 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Share previews (share/share.py): the pictures X, Telegram and WhatsApp show
+  # under a link (/og/…png) and small link pages that carry them (/s/…). Reads
+  # the chain from the relay like any visitor and proposals.json from alerts.
+  share:
+    build:
+      context: .
+      dockerfile: share/Dockerfile
+    environment:
+      RELAY_URL: ws://relay:8080
+      RELAY_HTTP: http://relay:8080
+      PUBLIC_URL: https://${RELAY_DOMAIN}
+    volumes:
+      - alerts_public:/public:ro
+    depends_on: [relay]
+    mem_limit: 256m
+    restart: unless-stopped
+    logging: *logging
+
   caddy:
     image: caddy:2.8.4
     environment:
@@ -128,7 +146,7 @@ services:
       - caddy_config:/config
       - alerts_public:/srv/alerts:ro
     networks: [default, checker]
-    depends_on: [relay, checker]
+    depends_on: [relay, checker, share]
     restart: unless-stopped
     logging: *logging
 

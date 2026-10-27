@@ -299,6 +299,8 @@ const blkHref = h => `?b=${h}${qs}`, txHref = x => `?tx=${x}${qs}`, addrHref = a
 const blkLink = h => `<a class="go" href="${blkHref(h)}" data-go="b:${h}">#${fmtN(h)}</a>`;
 const txLink = (x, label) => `<a class="go" href="${txHref(x)}" data-go="tx:${x}">${esc(label || short(x))}</a>`;
 const addrLink = a => isAddr(a) ? `<a class="go" href="${addrHref(a)}" data-go="a:${a}">${esc(short(a))}</a>` : "—";
+// a link whose preview on X and Telegram shows a picture of this block or account (infra/share)
+const shareChip = path => SAMPLE ? "" : `<button class="chip" type="button" data-copy="https://node.tauhud.com/s/${path}" data-tip="A link that shows a picture of this ${path.split("/")[0]} when you post it on X, Telegram or WhatsApp.">Copy share link</button>`;
 const tagHtml = (text, cls) => `<span class="tag ${cls || ""}">${esc(text)}</span>`;
 
 /* ------------------------------ state ------------------------------ */
@@ -571,7 +573,7 @@ function blockView(h) {
       <dt class="vt">Merkle root</dt><dd class="vt"><code>${esc(hd.merkle_root || "—")}</code></dd>
       <dt class="vt">State hash</dt><dd class="vt"><code>${esc(hd.state_hash || "—")}</code></dd>
     </dl>
-    <div class="nav">${h > 0 ? `<a class="chip" href="${blkHref(h - 1)}" data-go="b:${h - 1}">← #${fmtN(h - 1)}</a>` : ""}${h < C.head ? `<a class="chip" href="${blkHref(h + 1)}" data-go="b:${h + 1}">#${fmtN(h + 1)} →</a>` : ""}<a class="chip" href="/history/#${h}">Time travel to here</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + blkHref(h))}">Copy link</button></div>
+    <div class="nav">${h > 0 ? `<a class="chip" href="${blkHref(h - 1)}" data-go="b:${h - 1}">← #${fmtN(h - 1)}</a>` : ""}${h < C.head ? `<a class="chip" href="${blkHref(h + 1)}" data-go="b:${h + 1}">#${fmtN(h + 1)} →</a>` : ""}<a class="chip" href="/history/#${h}">Time travel to here</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + blkHref(h))}">Copy link</button>${shareChip(`block/${h}`)}</div>
     ${txs.length ? `<h3>Transactions</h3><table><thead><tr><th class="n">#</th><th>What</th><th>From → to</th><th class="n">AGRS</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
     <p class="note vt">The state hash is a fingerprint of every balance and rule after this block. Two nodes that agree on it agree on the whole state.</p>
     <p class="note vp">Every node checked this block against the Tau rules before adding it. Switch View to Technical for its hashes and the raw data.</p>
@@ -678,7 +680,7 @@ function addrView(a) {
       ${pending ? `<dt>On hold</dt><dd>${fmtA(pending)} AGRS for transactions still waiting</dd>` : ""}
       ${waiting.length ? `<dt>Waiting</dt><dd>${waiting.map(m => txLink(low(m.tx_hash))).join(", ")}</dd>` : ""}
     </dl>
-    <div class="nav"><a class="chip" href="/account/?a=${esc(a)}${qs}">Full account view</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + addrHref(a))}">Copy link</button></div>
+    <div class="nav"><a class="chip" href="/account/?a=${esc(a)}${qs}">Full account view</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + addrHref(a))}">Copy link</button>${shareChip(`address/${a}`)}</div>
     ${list.length ? `<h3>Latest activity</h3><ul class="list">${list.map(({ x, dir, amt }) => { const k = txKind(x.t); return `<li><button type="button" data-go="tx:${x.id || `${x.h}.${x.i}`}"><span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${dir === "in" ? `from ${esc(short(low(x.t.sender_pubkey)))}` : toOf(x.t) && toOf(x.t) !== a ? `to ${esc(short(toOf(x.t)))}` : esc(ago(x.ts))}</em></span><span class="amt ${dir === "in" ? "" : "dim"}">${amt != null ? `${dir === "in" ? "+" : "−"}${fmtA(amt)}` : ""}</span></button></li>`; }).join("")}</ul>` : ""}
     <p class="note">Its own rules, rule offers and refusals are in the full account view.</p>`;
 }
