@@ -20,7 +20,8 @@ services:
       TAU_NETWORK_LISTEN: /ip4/0.0.0.0/tcp/4001
       TAU_MINING_ENABLED: "false"
       TAU_LOG_LEVEL: INFO
-    command: ["bash", "-c", "mkdir -p data && cp networks/tau-testnet-v2/genesis.json data/genesis.json && exec python server.py"]
+    # node/start.sh copies the genesis in and wipes chain data from another genesis.
+    command: ["/usr/local/bin/tau-node-start"]
     volumes:
       - tau_data:/data
     ports:
