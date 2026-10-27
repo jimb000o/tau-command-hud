@@ -145,6 +145,12 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
 ul.what { margin: 0; padding-left: 18px; } ul.what li { margin: 2px 0; } ul.what b { color: #fff; font-weight: 600; }
 p.why { margin: 0; color: var(--text); } p.why.warn { color: #fff; font-weight: 600; }
 [hidden] { display: none !important; }
+.howto { list-style: none; padding: 14px 4px; color: var(--dim); }
+.howto > b { display: block; color: #fff; font-weight: 600; margin-bottom: 8px; }
+.howto ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: st; }
+.howto ol li { counter-increment: st; display: grid; grid-template-columns: 26px 92px 1fr; gap: 8px; align-items: baseline; }
+.howto ol li::before { content: counter(st); font: 600 11px var(--mono, monospace); color: var(--ok, #39ff8a); }
+.howto em { font-style: normal; color: #fff; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -306,15 +312,15 @@ function render() {
   const open = P.filter(p => p.status === "voting" || p.status === "agreed").sort((a, b) => a.activate_at - b.activate_at);
   $("openCount").textContent = open.length ? `(${open.length})` : "";
   $("openList").innerHTML = open.length ? open.map(openCard).join("")
-    : `<li class="empty"><b>Nothing is waiting right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>`;
+    : `<li class="empty"><b>Nothing is waiting right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}`;
   const shown = P.filter(p => filter === "all" || (filter === "open" ? (p.status === "voting" || p.status === "agreed") : p.status === filter));
   $("allCount").textContent = `(${P.length})`;
   $("allList").innerHTML = shown.length ? shown.map(rowOf).join("")
-    : `<li class="empty">${P.length ? "None with this filter." : "No rule change has been proposed on this chain yet. The genesis rules are in force."}</li>`;
+    : (P.length ? `<li class="empty">None with this filter.</li>` : `<li class="empty">No rule change has been proposed on this chain yet. The genesis rules are in force.</li>${HOWTO}`);
   const E = D.events || [];
   $("newsList").innerHTML = E.length ? E.map(e => `<li class="k-${esc(e.kind)}"><b>${esc(e.headline)}</b><br>${esc(e.body)}<br>
     <em>${e.h ? `block #${fmtN(e.h)} · ` : ""}${ago(e.ts || e.seen)}</em></li>`).join("")
-    : `<li class="empty">No news yet on this chain.</li>`;
+    : NEWS_EMPTY;
   const ch = D.channels || {};
   if (ch.telegram) $("fTg").href = ch.telegram;
   if (ch.x) $("fX").outerHTML = `<a class="btn" id="fX" href="${esc(ch.x)}" target="_blank" rel="noopener">${$("fX").innerHTML.replace("X · soon", "X")}</a>`;
@@ -373,6 +379,13 @@ for (const sel of [".p-open", ".p-all", ".p-news"]) {
   el.addEventListener("pointerleave", () => { hovering = false; if (pending) render(); });
 }
 
+/* shown wherever a list would be empty, so a quiet chain still teaches how rule changes work */
+const HOWTO = `<li class="howto"><b>How a rule change becomes law</b><ol>
+  <li><em>Proposed</em>Someone sends a new rule and the block it would apply from.</li>
+  <li><em>Voting</em>Validators vote yes or no. Each vote shows up here within a block.</li>
+  <li><em>Agreed</em>Once enough validators say yes, the change is locked in.</li>
+  <li><em>In force</em>From its activation block every node runs the new rule.</li></ol></li>`;
+const NEWS_EMPTY = `<li class="empty">No news yet on this chain.<br>When a rule change is proposed, voted on or comes into force, this panel shows the exact post that goes to Telegram and the feed.</li>`;
 /* ---------------- data ---------------- */
 async function load() {
   try {
@@ -388,7 +401,7 @@ async function load() {
     setState("off", "Offline");
     if (!D) {
       $("openList").innerHTML = `<li class="empty"><b>The tracker is not reachable right now.</b><br>It retries every ${POLL / 1000} s. The Telegram channel and the feed keep posting meanwhile.</li>`;
-      $("allList").innerHTML = $("newsList").innerHTML = "";
+      $("allList").innerHTML = HOWTO; $("newsList").innerHTML = NEWS_EMPTY;
     }
   }
 }

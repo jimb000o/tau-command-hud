@@ -76,6 +76,7 @@ tr.off .name { color: var(--text); font-weight: 400; }
 .bar i { display: block; height: 100%; background: #fff; }
 .empty { color: var(--dim); padding: 28px 0; text-align: center; }
 .empty a { color: #fff; }
+.example { opacity: .45; pointer-events: none; } .example .exlbl { margin: 0 0 6px; color: var(--dim); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .side { display: grid; gap: 14px; align-content: start; }
 .step { margin: 0 0 8px; color: var(--text); }
 .step b { color: #fff; }
@@ -234,6 +235,11 @@ function render() {
   if (!rows.length) {
     wrap.append(el("p", { class: "empty" }, "No node is reporting yet. Be the first: the command on the right sets one up. ",
       el("a", { href: "https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md", target: "_blank", rel: "noopener", text: "Guide" })));
+    // a dimmed example row, so the empty board still shows what a node earns by reporting
+    const ex = el("div", { class: "example" });
+    ex.innerHTML = `<p class="exlbl">Example · what your row will look like</p><table><thead><tr><th class="n">#</th><th>Node</th><th>Running</th><th class="hide-s">Uptime</th><th class="n hide-s">Height</th><th>Chain</th><th class="hide-s">Last report</th></tr></thead>
+      <tbody><tr><td class="n rank">1</td><td><span class="dot on"></span><span class="name">your-node</span></td><td>3 days</td><td class="hide-s"><span class="bar"><i style="width:99%"></i></span>99.6 %</td><td class="n hide-s">#270</td><td><span class="agree same">Same chain</span></td><td class="hide-s">just now</td></tr></tbody></table>`;
+    wrap.append(ex);
   } else {
     const head = el("tr", null,
       el("th", { class: "n", text: "#" }), el("th", { text: "Node" }),

@@ -793,7 +793,7 @@ function openEvent(e) {
   if (e.dropped) {
     const d = e.dropped;
     return openDetail(`Dropped transaction`, `<p class="headline">${esc(TX_NAMES[d.type] || "A transaction")} sent by this account waited in our node’s queue and then left it without reaching a block.</p>
-      <dl class="kv"><dt>Hash</dt><dd>${esc(d.tx_hash)}</dd><dt>Seen</dt><dd>${esc(fmtWhen(d.seen))}</dd><dt>Left the queue</dt><dd>${esc(fmtWhen(d.left))}</dd></dl>
+      <dl class="kv"><dt class="vt">Hash</dt><dd class="vt">${esc(d.tx_hash)}</dd><dt>Seen</dt><dd>${esc(fmtWhen(d.seen))}</dd><dt>Left the queue</dt><dd>${esc(fmtWhen(d.left))}</dd></dl>
       <p class="note">Usually the network refused it on a second check (for example a rule said no or the balance did not cover it), it expired, or a newer transaction replaced it.</p>`);
   }
   const { x } = e, t = x.t, k = txKind(t);
@@ -803,13 +803,13 @@ function openEvent(e) {
   if (tr.length) rows.push(["Transfers", tr.map(([f, to, a]) => `${accLink(low(f))} → ${accLink(low(to))} · <b>${fmtA(num(a))} AGRS</b>`).join("<br>")]);
   if (t.recipient_pubkey) rows.push(["To", accLink(low(t.recipient_pubkey))]);
   if (t.amount != null) rows.push(["Amount", `${fmtA(num(t.amount))} AGRS`]);
-  if (t.sequence_number != null) rows.push(["Sequence", fmtN(num(t.sequence_number))]);
+  if (t.sequence_number != null) rows.push(["Sequence", fmtN(num(t.sequence_number)), "vt"]);
   if (e.offer) rows.push(["Offer", `${accLink(e.offer.from)} → ${accLink(e.offer.to)} · ${esc((STATUS[e.offer.status] || [e.offer.status])[0])}${e.offer.id ? `<br><code>${esc(e.offer.id)}</code>` : ""}`]);
   const ruleText = e.rule || (e.offer && e.offer.text) || null;
   openDetail(`${esc(TX_NAMES[k] || k)} <small>block #${fmtN(x.h)}</small>`, `<p class="headline">${e.text}${e.amt != null ? ` · <b>${fmtA(e.amt)} AGRS</b>` : ""}</p>
-    <dl class="kv">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
+    <dl class="kv">${rows.map(([a, b, c]) => c ? `<dt class="${c}">${a}</dt><dd class="${c}">${b}</dd>` : `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
     ${ruleText ? `<h3 style="margin-top:10px">Rule text${streamOf(ruleText) ? ` · ${esc(streamOf(ruleText))}` : ""}</h3><pre class="code">${esc(ruleText)}</pre><p class="note">${esc(STREAMS[streamOf(ruleText)] ? `Decides ${STREAMS[streamOf(ruleText)]}.` : "")} Try rules like this in the <a href="/playground/">Rule Playground</a>.</p>` : ""}
-    <details class="raw"><summary>Raw transaction</summary><pre class="code">${esc(JSON.stringify(t, null, 2))}</pre></details>`);
+    <details class="raw vt"><summary>Raw transaction</summary><pre class="code">${esc(JSON.stringify(t, null, 2))}</pre></details>`);
 }
 
 /* ------------------------------ tooltip ------------------------------ */
