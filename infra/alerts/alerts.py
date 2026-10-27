@@ -76,6 +76,8 @@ POST_MAX_AGE = float(os.environ.get("POST_MAX_AGE_SECONDS", 3 * 3600))
 OPEN_ADMISSION = os.environ.get("TAU_GOVERNANCE_OPEN_ADMISSION", "true").lower() in ("1", "true", "yes")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()
+# the question bot (bot.py, same token): every channel post carries buttons that open it; empty = no buttons
+TELEGRAM_BOT_NAME = os.environ.get("TELEGRAM_BOT_USERNAME", "tauhud_alerts_bot").strip().lstrip("@")
 X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")}
 RELAY_HTTP = os.environ.get("RELAY_HTTP", "http://relay:8080")
 RECAP_ON = os.environ.get("RECAP_ENABLED", "true").lower() in ("1", "true", "yes")
@@ -489,6 +491,14 @@ def multipart(fields: dict[str, str], files: dict[str, tuple[str, bytes, str]]) 
     return out.getvalue(), f"multipart/form-data; boundary={boundary}"
 
 
+def ask_buttons() -> dict:
+    """Buttons under each channel post; they open the question bot in a private chat (same as bot.buttons)."""
+    b = f"https://t.me/{TELEGRAM_BOT_NAME}?start="
+    return {"inline_keyboard": [[{"text": "💬 Ask the bot", "url": b + "help"},
+                                 {"text": "⛓ Height", "url": b + "height"},
+                                 {"text": "🟢 Status", "url": b + "status"}]]}
+
+
 class Telegram(Outlet):
     name = "telegram"
 
@@ -496,12 +506,17 @@ class Telegram(Outlet):
         return bool(TELEGRAM_TOKEN and TELEGRAM_CHAT)
 
     def send_text(self, text: str) -> tuple[bool, float | None, str]:
-        body = json.dumps({"chat_id": TELEGRAM_CHAT, "text": text, "parse_mode": "HTML",
-                           "link_preview_options": {"is_disabled": True}}).encode()
+        msg = {"chat_id": TELEGRAM_CHAT, "text": text, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}}
+        if TELEGRAM_BOT_NAME:
+            msg["reply_markup"] = ask_buttons()
+        body = json.dumps(msg).encode()
         return self.call("sendMessage", body, "application/json")
 
     def send_photo(self, png, r):
-        body, ctype = multipart({"chat_id": TELEGRAM_CHAT, "caption": recap.caption_html(r, SITE), "parse_mode": "HTML"},
+        fields = {"chat_id": TELEGRAM_CHAT, "caption": recap.caption_html(r, SITE), "parse_mode": "HTML"}
+        if TELEGRAM_BOT_NAME:
+            fields["reply_markup"] = json.dumps(ask_buttons())
+        body, ctype = multipart(fields,
                                 {"photo": (f"tau-recap-{recap.week_key(r['end'] - 1)}.png", png, "image/png")})
         return self.call("sendPhoto", body, ctype)
 
