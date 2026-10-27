@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Testnet Stats</title>
+<meta name="description" content="How the Tau Testnet Alpha is doing: block times, transactions, active accounts, dropped transactions and chain restarts, read from our own node.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Testnet stats">
+<meta property="og:description" content="Block times, transactions, active accounts and chain restarts of the Tau Testnet Alpha, block by block.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/stats/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  /* series: transfers grey, rule work green, governance white (as on the HUD's transaction feed) */
+  --s-transfer: #8a8a94; --s-rule: #39ff8a; --s-gov: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+@media (min-width: 2000px) { .wrap { max-width: 1680px; } }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.hdr-right { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.back { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.back:hover { background: #fff; color: #000; }
+.state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.wait { color: var(--behind); border-color: rgba(255,177,59,.4); } .state.wait i { background: var(--behind); }
+.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+.state.sample { color: #fff; border-color: #fff; } .state.sample i { background: #fff; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 32em; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 64em; }
+.banner { border: 1px dashed var(--hair); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 12.5px; }
+.banner b { color: #fff; }
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.filters .lbl { font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); margin-right: 4px; }
+.filters button { font: 600 12px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+.filters button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+.filters button:hover:not([aria-pressed="true"]) { color: #fff; border-color: #fff; }
+.filters .span { color: var(--dim); font-size: 12px; }
+.tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); }
+.tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; cursor: default; }
+.tile:hover, .tile:focus-visible { border-color: var(--hair); outline: none; }
+.tile h3 { margin: 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.tile .v { font: 600 28px/1.15 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 6px; }
+.tile .v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
+.tile p { margin: 4px 0 0; color: var(--dim); font-size: 12px; }
+.tile .scope { display: inline-block; margin-top: 6px; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px; }
+.grid2 { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 960px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 4px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.panel h2 .tbl { margin-left: auto; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.panel h2 .tbl:hover, .panel h2 .tbl[aria-pressed="true"] { color: #fff; border-color: #fff; }
+.headline { margin: 0 0 8px; font: 500 14px/1.4 var(--display); color: #fff; }
+.headline span { color: var(--dim); font: 12px var(--mono); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 6px; font-size: 12px; color: var(--text); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.legend i.ln { height: 2px; width: 14px; border-radius: 1px; }
+.legend i.dash { height: 0; width: 14px; border-top: 2px dashed var(--dim); border-radius: 0; background: none; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font: 11px var(--mono); fill: var(--dim); }
+.chart .grid line { stroke: rgba(255,255,255,.07); }
+.chart .axis line { stroke: rgba(255,255,255,.18); }
+.chart .hit { fill: transparent; cursor: crosshair; }
+.chart .bar { cursor: default; }
+.chart .bar:hover, .chart .bar.on { filter: brightness(1.25); }
+.chart .xh { stroke: rgba(255,255,255,.45); stroke-width: 1; pointer-events: none; }
+.empty { color: var(--dim); font-size: 12.5px; padding: 30px 0; text-align: center; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 4px 6px; border-bottom: 1px solid var(--line); }
+td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+@media (max-width: 520px) { #droppedWrap td:nth-child(4), #droppedWrap th:nth-child(4) { display: none; } }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .what { display: block; color: var(--dim); font-size: 11.5px; }
+.tablewrap { max-height: 320px; overflow: auto; margin-top: 8px; }
+.note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+.note b { color: #fff; font-weight: 600; }
+.ev { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; font-size: 12.5px; }
+.ev li { padding: 5px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
+.ev li.cur { border-left-color: var(--ok); }
+.ev li.rec { border-left-color: #fff; }
+.ev li em { font-style: normal; color: var(--dim); }
+.ev li b { color: #fff; font-weight: 600; }
+code.h { color: var(--dim); font-size: 11.5px; }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(320px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
+#tip .tv { font: 600 15px var(--display); color: #fff; }
+#tip .tr { display: flex; align-items: center; gap: 8px; }
+#tip .tr i { width: 12px; height: 2px; flex: none; }
+#tip .tr b { color: #fff; font-weight: 600; min-width: 2.5em; text-align: right; }
+#tip .tm { color: var(--dim); }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
+.fb-fab:hover { background: var(--ok); }
+@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .tile .v { font-size: 24px; } }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Testnet stats</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state" tabindex="0" data-tip="Connecting to our node…"><i></i><span id="stateText">Connecting</span></span>
+      <a class="back" href="/">Back to the live HUD</a>
+    </div>
+  </header>
+
+  <div>
+    <p class="lead">How the Tau testnet is doing, block by block.</p>
+    <p class="sub" id="sourceLine">Read from our own node, which verifies every block of the Tau Testnet Alpha itself. Nothing here is simulated unless it says so.</p>
+  </div>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="filters" role="group" aria-label="Time range">
+    <span class="lbl">Range</span>
+    <button type="button" data-range="0" aria-pressed="true">This chain</button>
+    <button type="button" data-range="86400" aria-pressed="false">24 h</button>
+    <button type="button" data-range="21600" aria-pressed="false">6 h</button>
+    <button type="button" data-range="3600" aria-pressed="false">1 h</button>
+    <span class="span" id="rangeSpan"></span>
+  </div>
+
+  <section class="tiles" id="tiles" aria-label="Key numbers"></section>
+
+  <section class="panel">
+    <h2>Block time <small>seconds between one block and the next</small><button class="tbl" type="button" data-table="tBlocks" aria-pressed="false">Table</button></h2>
+    <p class="headline" id="hBlocks"></p>
+    <div class="legend"><span><i class="ln" style="background:#fff"></i>each block</span><span><i class="dash"></i>median of the range</span></div>
+    <div class="chart" id="cBlocks"></div>
+    <div class="tablewrap" id="tBlocks" hidden></div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel">
+      <h2>Transactions <small>sealed into blocks</small><button class="tbl" type="button" data-table="tTx" aria-pressed="false">Table</button></h2>
+      <p class="headline" id="hTx"></p>
+      <div class="legend"><span><i style="background:var(--s-transfer)"></i>Transfers</span><span><i style="background:var(--s-rule)"></i>Rule work</span><span><i style="background:var(--s-gov)"></i>Governance</span></div>
+      <div class="chart" id="cTx"></div>
+      <div class="tablewrap" id="tTx" hidden></div>
+    </section>
+    <section class="panel">
+      <h2>Active accounts <small>accounts that sent at least one transaction</small><button class="tbl" type="button" data-table="tAcc" aria-pressed="false">Table</button></h2>
+      <p class="headline" id="hAcc"></p>
+      <div class="legend"><span><i style="background:#ebebee"></i>sending accounts per period</span></div>
+      <div class="chart" id="cAcc"></div>
+      <div class="tablewrap" id="tAcc" hidden></div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Chain restarts <small>when the testnet started over from its genesis</small></h2>
+    <p class="headline" id="hRestarts"></p>
+    <div class="legend"><span><i style="background:var(--ok)"></i>current chain</span><span><i style="background:#8a8a94"></i>earlier chain, recorded by our relay</span><span><i style="background:none;border:1px solid #8a8a94;border-radius:50%"></i>restart from our notes, time approximate</span></div>
+    <div class="chart" id="cRestarts"></div>
+    <ul class="ev" id="restartList"></ul>
+  </section>
+
+  <div class="grid2">
+    <section class="panel">
+      <h2>What the transactions were <small>by type, in the selected range</small></h2>
+      <div class="tablewrap" style="max-height:none"><table><thead><tr><th>Type</th><th class="n">Count</th><th class="n">Share</th></tr></thead><tbody id="types"></tbody></table></div>
+    </section>
+    <section class="panel">
+      <h2>Dropped transactions <small>left our node’s mempool without reaching a block</small></h2>
+      <p class="headline" id="hDropped"></p>
+      <div class="tablewrap" id="droppedWrap"></div>
+      <p class="note">A transaction the network refuses at another node’s door never reaches us, so a read-only node cannot count every refusal. What it can see: transactions that waited in its mempool and then vanished without being sealed (refused on re-check, expired or replaced).</p>
+    </section>
+  </div>
+
+  <footer>
+    <p id="foot">Data: our node at node.tauhud.com (tau-testnet pinned to commit 539d1e2), served by a read-only relay. <a id="rawLink" href="https://node.tauhud.com/stats" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra" target="_blank" rel="noopener">How it works</a> · <a href="/playground/">Rule Playground</a></p>
+  </footer>
+</div>
+
+<a class="fb-fab" id="fbFab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BStats%5D%20" target="_blank" rel="noopener">Feedback</a>
+<div id="tip" hidden></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const RELAY = "node.tauhud.com";
+const STATS_URL = `https://${RELAY}/stats`, WS_URL = `wss://${RELAY}`;
+const PARAMS = new URLSearchParams(location.search);
+const SAMPLE = PARAMS.has("sample");
+const SVGNS = "http://www.w3.org/2000/svg";
+
+/* Restarts we saw before the relay kept a log (from our node operation notes). Shown hollow, times approximate. */
+const KNOWN_RESTARTS = [
+  { at: Date.UTC(2026, 9, 23, 12) / 1000, label: "New genesis: tau-testnet-v2 restarted with an unpublished genesis (published later in commit 539d1e2)", approx: "day only" },
+  { at: Date.UTC(2026, 9, 27, 9, 10) / 1000, label: "Restart on the same genesis", approx: "about 09:10 UTC" },
+  { at: Date.UTC(2026, 9, 27, 13, 30) / 1000, label: "Restart on the same genesis", approx: "about 13:30 UTC" },
+];
+
+const KIND = t => /^consensus_/.test(t) ? "gov" : /^rule_/.test(t) ? "rule" : "transfer";
+const KINDS = [["transfer", "Transfers", "var(--s-transfer)", "#8a8a94"], ["rule", "Rule work", "var(--s-rule)", "#39ff8a"], ["gov", "Governance", "var(--s-gov)", "#ebebee"]];
+const TYPE_NAMES = {
+  user_tx: ["Transfer", "AGRS sent from one account to another"],
+  rule_deploy: ["Own rule deployed", "an account set its own Tau rule for its money"],
+  retractable_transfer: ["Retractable transfer", "a transfer that can be pulled back until released"],
+  retract_transfer: ["Transfer pulled back", "a retractable transfer taken back"],
+  transfer_vote: ["Co-sign vote", "a vote to release a transfer that needs approval"],
+  approval_request: ["Approval request", "asks co-signers to approve a transfer"],
+  rule_offer: ["Rule offered", "one account offers a rule to another"],
+  rule_offer_accept: ["Rule offer accepted", "the other account took the offered rule"],
+  rule_offer_reject: ["Rule offer rejected", "the other account said no"],
+  consensus_rule_update: ["Rule change proposed", "a change to the network’s own rules"],
+  consensus_rule_vote: ["Rule change vote", "agreement on a proposed rule change"],
+  consensus_proposal: ["Consensus proposal", "a governance proposal"],
+};
+
+/* ------------------------------ formatting ------------------------------ */
+const nf = new Intl.NumberFormat("en-US");
+const fmtN = n => nf.format(Math.round(n));
+function fmtDur(s) {
+  if (s == null || !isFinite(s)) return "—";
+  s = Math.max(0, Math.round(s));
+  if (s < 120) return `${s} s`;
+  const m = Math.round(s / 60);
+  if (m < 120) return `${m} min`;
+  const h = Math.floor(s / 3600), mm = Math.round((s % 3600) / 60);
+  if (h < 48) return `${h} h ${String(mm).padStart(2, "0")} m`;
+  return `${Math.round(s / 86400)} days`;
+}
+const pad = n => String(n).padStart(2, "0");
+const fmtTime = ts => { const d = new Date(ts * 1000); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmtTimeS = ts => { const d = new Date(ts * 1000); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+const fmtDay = ts => new Date(ts * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+const fmtWhen = ts => { const today = new Date().toDateString() === new Date(ts * 1000).toDateString(); return today ? fmtTime(ts) : `${fmtDay(ts)}, ${fmtTime(ts)}`; };
+const short = h => h ? `${h.slice(0, 6)}…${h.slice(-4)}` : "—";
+const median = a => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const quant = (a, q) => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(q * s.length))]; };
+
+/* ------------------------------ data ------------------------------ */
+// D: { rows:[{n,ts,txs,transfers,volume,types,senders:Set}], accounts:[], restarts:[], dropped:[], droppedTotal, governance, trackingSince, head, canonical, tip, mode }
+let D = null, RANGE = 0, lastFetch = 0;
+
+function fromStats(j) {
+  return {
+    rows: (j.blocks || []).map(r => ({ n: r[0], ts: r[1], txs: r[2], transfers: r[3], volume: r[4], types: r[6] || {}, senders: new Set(r[7] || []) })),
+    accounts: j.accounts || [], restarts: j.restarts || [], dropped: j.dropped || [], droppedTotal: j.dropped_total || 0,
+    governance: j.governance || null, trackingSince: j.tracking_since, head: j.head, canonical: j.canonical_height, tip: j.tip_height, mode: "history",
+  };
+}
+
+// Fallback while the relay has no /stats yet: the last 50 blocks over the HUD's WebSocket protocol.
+function rowFromRaw(b, accIndex) {
+  const h = b.header || {}, types = {}, senders = new Set();
+  let transfers = 0, volume = 0;
+  for (const t of b.transactions || []) {
+    const ops = t.operations || {};
+    let ty = t.tx_type || "user_tx";
+    if (ty === "user_tx" && ops["0"]) ty = "rule_deploy";
+    types[ty] = (types[ty] || 0) + 1;
+    const s = t.sender_pubkey || t.sender;
+    if (s) { if (!accIndex.has(s)) accIndex.set(s, accIndex.size); senders.add(accIndex.get(s)); }
+    for (const x of Array.isArray(ops["1"]) ? ops["1"] : []) { transfers++; volume += Number(x[2]) || 0; }
+  }
+  return { n: Number(h.block_number) || 0, ts: Number(h.timestamp) || null, txs: Object.values(types).reduce((a, b) => a + b, 0), transfers, volume, types, senders, hash: b.block_hash };
+}
+let WS = null;
+function startWindowMode() {
+  if (WS) return;
+  const acc = new Map(), byN = new Map();
+  D = { rows: [], accounts: [], restarts: [], dropped: [], droppedTotal: null, governance: null, head: null, canonical: null, tip: null, mode: "window" };
+  setState("wait", "Last 50 blocks", "Our relay does not keep the full history yet, so this page reads the last 50 blocks it holds and adds every new block while it stays open.");
+  WS = new WebSocket(WS_URL);
+  WS.onopen = () => { WS.send("hello version=1"); WS.send("getblocks 50"); WS.send("getgovernance"); };
+  WS.onmessage = ev => {
+    let m; try { m = JSON.parse(ev.data); } catch { return; }
+    if (m.status !== "ok") return;
+    const d = m.data || {};
+    if (m.command === "getblocks") {
+      if (d.reset) byN.clear();
+      for (const b of d.blocks || []) byN.set(Number((b.header || {}).block_number) || 0, rowFromRaw(b, acc));
+      D.rows = [...byN.values()].sort((a, b) => a.n - b.n);
+      D.accounts = [...acc.keys()]; D.head = D.rows.length ? D.rows[D.rows.length - 1].n : null;
+      lastFetch = Date.now(); render();
+    } else if (m.command === "getgovernance") {
+      const arch = d.archival_update_details || [];
+      D.governance = { pending: (d.pending_updates || []).length, scheduled: (d.scheduled_updates || []).length,
+        activated: arch.filter(u => u.lifecycle === "activated").length, expired: arch.filter(u => u.lifecycle !== "activated").length,
+        validators: (d.active_validators || []).length };
+      D.canonical = d.head_number ?? null; D.tip = d.network_tip ? d.network_tip.number : null;
+      render();
+    }
+  };
+  WS.onclose = () => { WS = null; setState("off", "Offline", "The connection to our node closed. Retrying in 10 s."); setTimeout(startWindowMode, 10000); };
+}
+
+async function load() {
+  if (SAMPLE) { D = sampleData(); lastFetch = Date.now(); render(); return; }
+  try {
+    const r = await fetch(STATS_URL, { cache: "no-store" });
+    if (!r.ok) throw new Error(String(r.status));
+    D = fromStats(await r.json()); lastFetch = Date.now();
+    if (WS) { WS.onclose = null; WS.close(); WS = null; }
+    render();
+  } catch (e) {
+    if (!D || D.mode !== "window") startWindowMode();
+  }
+}
+
+/* ------------------------------ sample data (?sample, for previews) ------------------------------ */
+function sampleData() {
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const now = Math.floor(Date.now() / 1000), start = now - 3 * 3600 - 640;
+  const accounts = Array.from({ length: 11 }, (_, i) => (i.toString(16).repeat(4) + "a1fe40d5c3b2").padEnd(96, "0"));
+  const rows = [{ n: 0, ts: 1761177600, txs: 0, transfers: 0, volume: 0, types: {}, senders: new Set() }];
+  let ts = start, n = 1;
+  while (ts < now - 20) {
+    const types = {}, senders = new Set(); let transfers = 0, volume = 0;
+    const busy = rnd() < 0.32 ? 1 + Math.floor(rnd() * (rnd() < 0.2 ? 6 : 3)) : 0;
+    for (let k = 0; k < busy; k++) {
+      const p = rnd(), ty = p < 0.62 ? "user_tx" : p < 0.72 ? "rule_deploy" : p < 0.8 ? "rule_offer" : p < 0.85 ? "rule_offer_accept" : p < 0.9 ? "retractable_transfer" : p < 0.95 ? "consensus_rule_vote" : "consensus_rule_update";
+      types[ty] = (types[ty] || 0) + 1; senders.add(Math.floor(rnd() * rnd() * accounts.length));
+      if (ty === "user_tx" || ty === "retractable_transfer") { transfers++; volume += 5 + Math.floor(rnd() * 400); }
+    }
+    rows.push({ n, ts, txs: busy, transfers, volume, types, senders });
+    n++; ts += Math.round(64 + rnd() * 12 + (rnd() < 0.04 ? 60 + rnd() * 130 : 0));
+  }
+  return { rows, accounts, mode: "sample", head: n - 1, canonical: n - 1, tip: n - 1, trackingSince: now - 9 * 3600, droppedTotal: 2,
+    restarts: [{ detected_at: start + 300, old: { block1_ts: start - 4 * 3600 - 1200, tip: 214, tip_ts: start - 120 }, new_block1_ts: start }],
+    dropped: [{ tx_hash: "9f3c1e".padEnd(64, "7"), type: "user_tx", sender: accounts[3], seen: now - 5400, left: now - 5330 },
+              { tx_hash: "41ab09".padEnd(64, "2"), type: "rule_offer", sender: accounts[6], seen: now - 1900, left: now - 1840 }],
+    governance: { pending: 1, scheduled: 0, activated: 1, expired: 0, validators: 1 } };
+}
+
+/* ------------------------------ derived ------------------------------ */
+function inRange() {
+  const rows = D.rows.filter(r => r.n > 0 && r.ts);   // the genesis block carries a fixed timestamp
+  if (!RANGE || !rows.length) return rows;
+  const end = Math.max(rows[rows.length - 1].ts, Date.now() / 1000), from = end - RANGE;
+  return rows.filter(r => r.ts >= from);
+}
+function intervals(rows) {
+  const out = [], all = D.rows;
+  const idx = new Map(all.map((r, i) => [r.n, i]));
+  for (const r of rows) {
+    const i = idx.get(r.n), p = i > 0 ? all[i - 1] : null;
+    if (p && p.n === r.n - 1 && p.n > 0 && p.ts && r.ts) out.push({ n: r.n, ts: r.ts, dt: r.ts - p.ts });
+  }
+  return out;
+}
+const BUCKETS = [300, 600, 900, 1800, 3600, 7200, 10800, 21600, 43200, 86400];
+function bucketize(rows) {
+  if (!rows.length) return { size: 3600, list: [] };
+  const t0 = rows[0].ts, t1 = Math.max(rows[rows.length - 1].ts, t0 + 1);
+  const size = BUCKETS.find(b => (t1 - t0) / b <= 36) || 86400;
+  const first = Math.floor(t0 / size) * size, list = [];
+  for (let t = first; t <= t1; t += size) list.push({ t, end: t + size, transfer: 0, rule: 0, gov: 0, txs: 0, senders: new Set(), blocks: 0 });
+  for (const r of rows) {
+    const b = list[Math.floor((r.ts - first) / size)];
+    if (!b) continue;
+    b.blocks++; b.txs += r.txs;
+    for (const [ty, c] of Object.entries(r.types)) b[KIND(ty)] += c;
+    r.senders.forEach(s => b.senders.add(s));
+  }
+  return { size, list };
+}
+const bucketLabel = (b, size) => size >= 86400 ? fmtDay(b.t) : `${fmtWhen(b.t)}–${fmtTime(b.end)}`;
+const perLabel = size => size >= 86400 ? "per day" : size >= 3600 ? `per ${size / 3600 === 1 ? "hour" : size / 3600 + " h"}` : `per ${size / 60} min`;
+
+/* ------------------------------ tooltip ------------------------------ */
+const tip = $("tip");
+function showTip(ev, build) {
+  tip.replaceChildren(); build(tip); tip.hidden = false;
+  const r = tip.getBoundingClientRect(), pad = 12;
+  const x = ev.clientX ?? (ev.target.getBoundingClientRect().left + 10), y = ev.clientY ?? ev.target.getBoundingClientRect().top;
+  let left = x + 14, top = y + 14;
+  if (left + r.width > innerWidth - pad) left = x - r.width - 14;
+  if (top + r.height > innerHeight - pad) top = y - r.height - 14;
+  tip.style.left = Math.max(pad, left) + "px"; tip.style.top = Math.max(pad, top) + "px";
+}
+const hideTip = () => { tip.hidden = true; };
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function tipLines(lines) { return t => lines.forEach(([cls, text]) => t.append(el("div", cls, text))); }
+// plain hover text on any element with data-tip
+document.addEventListener("pointerover", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d) showTip(e, tipLines(d.dataset.tip.split("\n").map(l => ["", l]))); });
+document.addEventListener("pointerout", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d && !d.contains(e.relatedTarget)) hideTip(); });
+document.addEventListener("focusin", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d) { const r = d.getBoundingClientRect(); showTip({ clientX: r.left, clientY: r.bottom }, tipLines(d.dataset.tip.split("\n").map(l => ["", l]))); } });
+document.addEventListener("focusout", hideTip);
+
+/* ------------------------------ svg helpers ------------------------------ */
+function svgEl(tag, attrs, parent) { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.append(e); return e; }
+// axis scale: a round step (whole numbers for counts) and the smallest multiple of it at or above v
+function niceScale(v, ticks = 4) {
+  v = Math.max(v, 1);
+  const raw = v / ticks, p = 10 ** Math.floor(Math.log10(raw));
+  const step = Math.max(1, [1, 2, 2.5, 5, 10].map(m => m * p).find(s => s >= raw && Number.isInteger(s)) || 10 * p);
+  return { step, max: Math.ceil(v / step) * step };
+}
+function frame(host, h) {
+  const w = Math.max(280, host.clientWidth);
+  const svg = svgEl("svg", { viewBox: `0 0 ${w} ${h}`, role: "img" });
+  host.replaceChildren(svg);
+  return { svg, w, h, L: 40, R: 12, T: 10, B: 26 };
+}
+function yAxis(f, sc, unit) {
+  const g = svgEl("g", { class: "grid" }, f.svg), ticks = Math.round(sc.max / sc.step);
+  for (let i = 0; i <= ticks; i++) {
+    const v = sc.step * i, y = f.h - f.B - (f.h - f.T - f.B) * i / ticks;
+    svgEl("line", { x1: f.L, x2: f.w - f.R, y1: y, y2: y }, g);
+    const t = svgEl("text", { x: f.L - 6, y: y + 4, "text-anchor": "end" }, f.svg); t.textContent = fmtN(v) + (unit && i === ticks ? unit : "");
+  }
+  const a = svgEl("g", { class: "axis" }, f.svg);
+  svgEl("line", { x1: f.L, x2: f.w - f.R, y1: f.h - f.B, y2: f.h - f.B }, a);
+}
+function xTimeAxis(f, t0, t1) {
+  const span = Math.max(1, t1 - t0), px = f.w - f.L - f.R, n = Math.max(2, Math.floor(px / 90));
+  const steps = [300, 600, 900, 1800, 3600, 7200, 10800, 21600, 43200, 86400, 172800, 604800];
+  const step = steps.find(s => span / s <= n) || 604800;
+  for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) {
+    const x = f.L + (t - t0) / span * px;
+    const lab = svgEl("text", { x, y: f.h - 8, "text-anchor": "middle" }, f.svg);
+    lab.textContent = step >= 86400 ? fmtDay(t) : fmtTime(t);
+  }
+}
+
+/* ------------------------------ charts ------------------------------ */
+function blockChart(rows) {
+  const host = $("cBlocks"), iv = intervals(rows);
+  if (iv.length < 2) { host.replaceChildren(el("div", "empty", "Needs at least three blocks in the range.")); return iv; }
+  const f = frame(host, 230), dts = iv.map(d => d.dt), med = median(dts);
+  // a stalled chain must not flatten the normal blocks: cap the axis, mark taller ones at the top
+  const sc = niceScale(Math.min(Math.max(...dts), Math.max(quant(dts, 0.95) * 1.3, med * 2.5))), maxV = sc.max;
+  yAxis(f, sc, " s");
+  const t0 = iv[0].ts, t1 = iv[iv.length - 1].ts, px = f.w - f.L - f.R, py = f.h - f.T - f.B;
+  const X = t => f.L + (t1 === t0 ? px / 2 : (t - t0) / (t1 - t0) * px), Y = v => f.h - f.B - Math.min(v, maxV) / maxV * py;
+  xTimeAxis(f, t0, t1);
+  // median reference
+  const my = Y(med);
+  svgEl("line", { x1: f.L, x2: f.w - f.R, y1: my, y2: my, stroke: "#8a8a94", "stroke-width": 1.5, "stroke-dasharray": "5 4" }, f.svg);
+  const ml = svgEl("text", { x: f.L + 6, y: my + 15, style: "fill:#ebebee;paint-order:stroke;stroke:#101012;stroke-width:4px" }, f.svg); ml.textContent = `median ${fmtDur(med)}`;
+  // the series: a thin line, plus a marker where a block took longer than the axis shows
+  const d = iv.map((p, i) => `${i ? "L" : "M"}${X(p.ts).toFixed(1)},${Y(p.dt).toFixed(1)}`).join("");
+  svgEl("path", { d, fill: "none", stroke: "#ebebee", "stroke-width": iv.length > 400 ? 1 : 2, "stroke-linejoin": "round" }, f.svg);
+  iv.filter(p => p.dt > maxV).forEach(p => svgEl("path", { d: `M${X(p.ts) - 5},${f.T + 6} L${X(p.ts) + 5},${f.T + 6} L${X(p.ts)},${f.T - 1} Z`, fill: "#fff" }, f.svg));
+  // crosshair snapping to the nearest block
+  const xh = svgEl("line", { class: "xh", y1: f.T, y2: f.h - f.B, visibility: "hidden" }, f.svg);
+  const dot = svgEl("circle", { r: 4.5, fill: "#fff", stroke: "#101012", "stroke-width": 2, visibility: "hidden", "pointer-events": "none" }, f.svg);
+  const hit = svgEl("rect", { class: "hit", x: f.L, y: f.T, width: px, height: py }, f.svg);
+  const near = ev => {
+    const r = f.svg.getBoundingClientRect(), x = (ev.clientX - r.left) * f.w / r.width;
+    let best = iv[0]; for (const p of iv) if (Math.abs(X(p.ts) - x) < Math.abs(X(best.ts) - x)) best = p;
+    return best;
+  };
+  hit.addEventListener("pointermove", ev => {
+    const p = near(ev);
+    xh.setAttribute("x1", X(p.ts)); xh.setAttribute("x2", X(p.ts)); xh.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", X(p.ts)); dot.setAttribute("cy", Y(p.dt)); dot.setAttribute("visibility", "visible");
+    showTip(ev, tipLines([["tv", fmtDur(p.dt)], ["", `Block #${p.n}, ${p.dt > med * 1.5 ? "slower than" : p.dt < med * 0.7 ? "faster than" : "close to"} the median`], ["tm", `sealed ${fmtWhen(p.ts)}:${pad(new Date(p.ts * 1000).getSeconds())}`]]));
+  });
+  hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); hideTip(); });
+  return iv;
+}
+
+function barChart(host, bk, stackKeys, valueOf, describe) {
+  const list = bk.list;
+  if (!list.length) { host.replaceChildren(el("div", "empty", "No blocks in the range yet.")); return; }
+  const f = frame(host, 210), px = f.w - f.L - f.R, py = f.h - f.T - f.B;
+  const totals = list.map(b => stackKeys.reduce((a, [k]) => a + valueOf(b, k), 0));
+  const sc = niceScale(Math.max(...totals)), maxV = sc.max;
+  yAxis(f, sc, "");
+  const slot = px / list.length, bw = Math.max(2, Math.min(28, slot - 2));
+  xTimeAxis({ ...f, L: f.L + slot / 2, R: f.R + slot / 2 }, list[0].t, list[list.length - 1].t);
+  list.forEach((b, i) => {
+    const x = f.L + i * slot + (slot - bw) / 2;
+    let y = f.h - f.B;
+    const g = svgEl("g", { class: "bar", tabindex: 0 }, f.svg);
+    stackKeys.forEach(([k, , , hex], si) => {
+      const v = valueOf(b, k); if (!v) return;
+      const hgt = Math.max(1, v / maxV * py), top = si === stackKeys.length - 1 || !stackKeys.slice(si + 1).some(([k2]) => valueOf(b, k2));
+      // 2px surface gap between stacked segments; only the top segment gets the rounded data-end
+      const gap = y < f.h - f.B ? 2 : 0;
+      svgEl("path", { d: top ? roundTop(x, y - hgt, bw, hgt - gap, Math.min(4, bw / 2)) : `M${x},${y - gap}V${y - hgt}H${x + bw}V${y - gap}Z`, fill: hex }, g);
+      y -= hgt;
+    });
+    svgEl("rect", { x: f.L + i * slot, y: f.T, width: slot, height: py, fill: "transparent" }, g);
+    const show = ev => { g.classList.add("on"); showTip(ev, describe(b, totals[i])); };
+    g.addEventListener("pointermove", show);
+    g.addEventListener("focus", () => { const r = g.getBoundingClientRect(); show({ clientX: r.left + r.width / 2, clientY: r.top + 30 }); });
+    g.addEventListener("pointerleave", () => { g.classList.remove("on"); hideTip(); });
+    g.addEventListener("blur", () => { g.classList.remove("on"); hideTip(); });
+  });
+}
+function roundTop(x, y, w, h, r) {
+  if (h <= r) return `M${x},${y + h}V${y}H${x + w}V${y + h}Z`;
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+}
+
+function restartChart(rows) {
+  const host = $("cRestarts");
+  const now = Date.now() / 1000;
+  const cur = rows.length ? { from: rows[0].ts, to: rows[rows.length - 1].ts, tip: rows[rows.length - 1].n } : null;
+  const recorded = (D.restarts || []).map(r => ({ at: r.new_block1_ts || r.detected_at, old: r.old || {} }));
+  const since = D.trackingSince || now;
+  const known = D.mode === "sample" ? [] : KNOWN_RESTARTS.filter(k => k.at < since - 1800 && !recorded.some(r => Math.abs(r.at - k.at) < 3 * 3600));
+  const t1 = now, t0 = Math.min(t1 - 86400, ...known.map(k => k.at - 3600), ...recorded.map(r => (r.old.block1_ts || r.at) - 1800), cur ? cur.from - 1800 : t1);
+  const f = frame(host, 92), yb = 34;  // a timeline: no y axis
+  const X2 = t => 12 + Math.max(0, Math.min(1, (t - t0) / (t1 - t0))) * (f.w - 24);
+  svgEl("line", { x1: 12, x2: f.w - 12, y1: yb, y2: yb, stroke: "rgba(255,255,255,.18)" }, f.svg);
+  xTimeAxis({ ...f, L: 12, R: 12, h: 70 }, t0, t1);
+  const mark = (x, label, build) => {
+    const g = svgEl("g", { tabindex: 0, class: "bar" }, f.svg); build(g);
+    svgEl("rect", { x: x - 12, y: 8, width: 24, height: 52, fill: "transparent" }, g);
+    g.addEventListener("pointermove", ev => showTip(ev, tipLines(label)));
+    g.addEventListener("pointerleave", hideTip);
+    g.addEventListener("focus", () => { const r = g.getBoundingClientRect(); showTip({ clientX: r.left, clientY: r.bottom }, tipLines(label)); });
+    g.addEventListener("blur", hideTip);
+  };
+  recorded.forEach(r => {
+    if (r.old.block1_ts && r.old.tip_ts) {
+      const a = X2(r.old.block1_ts), b = X2(r.old.tip_ts);
+      const g = svgEl("g", { tabindex: 0, class: "bar" }, f.svg);
+      svgEl("rect", { x: a, y: yb - 6, width: Math.max(3, b - a), height: 12, rx: 3, fill: "#8a8a94" }, g);
+      const lines = [["tv", `#${fmtN(r.old.tip)} blocks`], ["", `Earlier chain, ${fmtWhen(r.old.block1_ts)} to ${fmtWhen(r.old.tip_ts)}`], ["tm", "Ended when the testnet restarted"]];
+      g.addEventListener("pointermove", ev => showTip(ev, tipLines(lines))); g.addEventListener("pointerleave", hideTip);
+    }
+  });
+  if (cur) {
+    const a = X2(cur.from), b = X2(Math.max(cur.to, now - 1));
+    const g = svgEl("g", { tabindex: 0, class: "bar" }, f.svg);
+    svgEl("rect", { x: a, y: yb - 6, width: Math.max(3, b - a), height: 12, rx: 3, fill: "#39ff8a" }, g);
+    const lines = [["tv", `#${fmtN(cur.tip)}`], ["", `Current chain, running since ${fmtWhen(cur.from)} (${fmtDur(now - cur.from)})`]];
+    g.addEventListener("pointermove", ev => showTip(ev, tipLines(lines))); g.addEventListener("pointerleave", hideTip);
+  }
+  recorded.forEach(r => mark(X2(r.at), [["tv", fmtWhen(r.at)], ["", "Restart recorded by our relay"], ["tm", r.old.tip != null ? `the old chain had reached #${fmtN(r.old.tip)}` : ""]],
+    g => svgEl("path", { d: `M${X2(r.at)},${yb - 14}V${yb + 14}`, stroke: "#fff", "stroke-width": 2 }, g)));
+  known.forEach(k => mark(X2(k.at), [["tv", k.approx === "day only" ? fmtDay(k.at) : `${fmtDay(k.at)}, ${k.approx}`], ["", k.label], ["tm", "From our node notes; time approximate"]],
+    g => svgEl("circle", { cx: X2(k.at), cy: yb, r: 6, fill: "#101012", stroke: "#8a8a94", "stroke-width": 2 }, g)));
+  return { recorded, known, cur };
+}
+
+/* ------------------------------ tiles & tables ------------------------------ */
+function tile(title, value, unit, line, tipText, scope) {
+  const t = el("div", "tile"); t.tabIndex = 0; t.dataset.tip = tipText;
+  t.append(el("h3", "", title));
+  const v = el("div", "v", value); if (unit) v.append(el("small", "", unit)); t.append(v);
+  if (line) t.append(el("p", "", line));
+  if (scope) t.append(el("span", "scope", scope));
+  return t;
+}
+function table(host, head, rows) {
+  const t = el("table"), th = el("thead"), tr = el("tr");
+  head.forEach(([h, n]) => tr.append(el("th", n ? "n" : "", h))); th.append(tr); t.append(th);
+  const tb = el("tbody");
+  rows.forEach(r => { const row = el("tr"); r.forEach((c, i) => row.append(el("td", head[i][1] ? "n" : "", c))); tb.append(row); });
+  t.append(tb); host.replaceChildren(t);
+}
+
+/* ------------------------------ render ------------------------------ */
+function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = text; s.dataset.tip = tipText; }
+
+function render() {
+  if (!D) return;
+  const all = D.rows.filter(r => r.n > 0 && r.ts), rows = inRange(), now = Date.now() / 1000;
+  const last = all[all.length - 1];
+  // header state + banner
+  const banner = $("banner");
+  if (D.mode === "sample") {
+    setState("sample", "Sample data", "This preview uses made-up sample data shaped like the real testnet (about 70 s per block). Open the page without ?sample for the real chain.");
+    banner.hidden = false; banner.replaceChildren(el("b", "", "Sample data. "), document.createTextNode("Made-up numbers shaped like the real testnet, for previewing the layout. Remove ?sample from the address for the real chain."));
+  } else if (D.mode === "window") {
+    banner.hidden = false; banner.replaceChildren(el("b", "", "Short history. "), document.createTextNode(`Our relay does not keep the full chain yet, so this page shows the last ${all.length} blocks and adds new ones while it stays open.`));
+  } else {
+    banner.hidden = true;
+    const age = last ? now - last.ts : null;
+    if (D.canonical != null && D.tip != null && D.canonical < D.tip) setState("wait", `Verified to #${D.canonical} of ${D.tip}`, "Our node is still checking the newest blocks against the network. Numbers cover what it has verified.");
+    else setState("live", "Live", `Updated ${fmtDur((Date.now() - lastFetch) / 1000)} ago from our node.${age != null ? `\nNewest block #${last.n}, sealed ${fmtDur(age)} ago.` : ""}`);
+  }
+  // range buttons
+  document.querySelectorAll("[data-range]").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.range) === RANGE)));
+  $("rangeSpan").textContent = rows.length ? `blocks #${fmtN(rows[0].n)}–#${fmtN(rows[rows.length - 1].n)} · ${fmtWhen(rows[0].ts)} to ${fmtWhen(rows[rows.length - 1].ts)} · your local time` : "no blocks in this range";
+
+  // block times
+  const iv = blockChart(rows), dts = iv.map(d => d.dt), med = median(dts), last10 = dts.slice(-10), avg10 = last10.length ? last10.reduce((a, b) => a + b, 0) / last10.length : null;
+  const slow = iv.length ? iv.reduce((a, b) => b.dt > a.dt ? b : a) : null;
+  $("hBlocks").replaceChildren(document.createTextNode(med != null ? `Half of all blocks took ${fmtDur(med)} or less. ` : "Waiting for blocks. "),
+    el("span", "", slow ? `Slowest: block #${slow.n} after ${fmtDur(slow.dt)}.` : ""));
+  table($("tBlocks"), [["Block"], ["Sealed (local)"], ["Seconds after previous", 1]], [...iv].reverse().map(p => [`#${p.n}`, `${fmtDay(p.ts)} ${fmtTimeS(p.ts)}`, fmtN(p.dt)]));
+
+  // transactions + accounts
+  const bk = bucketize(rows), per = perLabel(bk.size);
+  const txTotal = rows.reduce((a, r) => a + r.txs, 0), transfers = rows.reduce((a, r) => a + r.transfers, 0), volume = rows.reduce((a, r) => a + r.volume, 0);
+  const spanS = rows.length > 1 ? rows[rows.length - 1].ts - rows[0].ts : 0;
+  const busiest = bk.list.reduce((a, b) => (!a || b.txs > a.txs) ? b : a, null);
+  barChart($("cTx"), bk, KINDS, (b, k) => b[k], (b, tot) => tipLines([["tv", `${fmtN(tot)} transaction${tot === 1 ? "" : "s"}`],
+    ...KINDS.filter(([k]) => b[k]).map(([k, name]) => ["", `${fmtN(b[k])} ${name.toLowerCase()}`]), ["tm", `${bucketLabel(b, bk.size)} · ${b.blocks} block${b.blocks === 1 ? "" : "s"}`]]));
+  $("hTx").replaceChildren(document.createTextNode(txTotal ? `${fmtN(txTotal)} transactions in ${fmtN(rows.length)} blocks. ` : "No transactions in this range. "),
+    el("span", "", busiest && busiest.txs ? `Busiest: ${fmtN(busiest.txs)} ${per.replace("per ", "in one ")}, ${bucketLabel(busiest, bk.size)}.` : ""));
+  table($("tTx"), [["Period"], ["Transfers", 1], ["Rule work", 1], ["Governance", 1], ["Blocks", 1]], [...bk.list].reverse().map(b => [bucketLabel(b, bk.size), fmtN(b.transfer), fmtN(b.rule), fmtN(b.gov), fmtN(b.blocks)]));
+
+  const active = new Set(); rows.forEach(r => r.senders.forEach(s => active.add(s)));
+  barChart($("cAcc"), bk, [["acc", "Accounts", "", "#ebebee"]], b => b.senders.size, b => tipLines([["tv", `${fmtN(b.senders.size)} account${b.senders.size === 1 ? "" : "s"}`], ["", "sent at least one transaction"], ["tm", bucketLabel(b, bk.size)]]));
+  $("hAcc").replaceChildren(document.createTextNode(active.size ? `${fmtN(active.size)} different accounts sent transactions in this range. ` : "No account sent a transaction in this range. "),
+    el("span", "", `Bars: ${per}.`));
+  table($("tAcc"), [["Period"], ["Sending accounts", 1]], [...bk.list].reverse().map(b => [bucketLabel(b, bk.size), fmtN(b.senders.size)]));
+
+  // restarts
+  const rs = restartChart(all), list = $("restartList"); list.replaceChildren();
+  if (rs.cur) { const li = el("li", "cur"); li.append(el("b", "", "Current chain"), document.createTextNode(` since ${fmtDay(rs.cur.from)}, ${fmtTime(rs.cur.from)}: ${fmtN(rs.cur.tip)} blocks, running ${fmtDur(now - rs.cur.from)}.`)); list.append(li); }
+  [...rs.recorded].reverse().forEach(r => { const li = el("li", "rec"); li.append(el("b", "", `Restart ${fmtDay(r.at)}, ${fmtTime(r.at)}`), document.createTextNode(r.old.tip != null ? `: the chain before had reached #${fmtN(r.old.tip)}${r.old.block1_ts ? ` after ${fmtDur((r.old.tip_ts || r.at) - r.old.block1_ts)}` : ""}.` : ".")); list.append(li); });
+  [...rs.known].reverse().forEach(k => { const li = el("li"); li.append(el("b", "", `${fmtDay(k.at)}, ${k.approx}`), document.createTextNode(`: ${k.label}. `), el("em", "", "From our notes, before the relay kept a log.")); list.append(li); });
+  const nRestarts = rs.recorded.length + rs.known.length;
+  $("hRestarts").replaceChildren(document.createTextNode(nRestarts ? `${nRestarts} restart${nRestarts === 1 ? "" : "s"} known. ` : "No restart seen. "),
+    el("span", "", D.trackingSince && D.mode !== "window" ? `Our relay records every restart since ${fmtDay(D.trackingSince)}, ${fmtTime(D.trackingSince)}.` : ""));
+
+  // types
+  const types = {}; rows.forEach(r => Object.entries(r.types).forEach(([k, v]) => types[k] = (types[k] || 0) + v));
+  const tb = $("types"); tb.replaceChildren();
+  const sorted = Object.entries(types).sort((a, b) => b[1] - a[1]);
+  if (!sorted.length) { const tr = el("tr"), td = el("td", "", "No transactions in this range."); td.colSpan = 3; tr.append(td); tb.append(tr); }
+  sorted.forEach(([k, v]) => {
+    const [name, what] = TYPE_NAMES[k] || [k, "other transaction type"], tr = el("tr"), td = el("td");
+    const sw = el("i"); sw.style.cssText = `display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:8px;background:${KINDS.find(x => x[0] === KIND(k))[3]}`;
+    td.append(sw, document.createTextNode(name), el("span", "what", what));
+    tr.append(td, el("td", "n", fmtN(v)), el("td", "n", `${Math.round(v / txTotal * 100)} %`)); tb.append(tr);
+  });
+
+  // dropped
+  const since = D.trackingSince, dr = (D.dropped || []).filter(x => !RANGE || x.left >= now - RANGE);
+  if (D.mode === "window") { $("hDropped").textContent = "Counted by the relay once it keeps the history."; $("droppedWrap").replaceChildren(); }
+  else {
+    $("hDropped").replaceChildren(document.createTextNode(dr.length ? `${fmtN(dr.length)} dropped in this range. ` : "None dropped in this range. "), el("span", "", since ? `Watching since ${fmtDay(since)}, ${fmtTime(since)}.` : ""));
+    if (dr.length) table($("droppedWrap"), [["Left mempool"], ["Type"], ["Sender"], ["Transaction"]], [...dr].reverse().map(x => [fmtWhen(x.left), (TYPE_NAMES[x.type] || [x.type || "not reported"])[0], short(x.sender), short(x.tx_hash)]));
+    else $("droppedWrap").replaceChildren();
+  }
+
+  // tiles
+  const tiles = $("tiles"); tiles.replaceChildren();
+  const g = D.governance;
+  tiles.append(
+    tile("Chain height", last ? `#${fmtN(last.n)}` : "—", "", last ? `newest block ${fmtDur(now - last.ts)} ago` : "waiting for the first block",
+      "Number of the newest block on the current chain.\nCounts from the last restart.", "now"),
+    tile("Block time", med != null ? fmtDur(med) : "—", "median", avg10 != null ? `last 10 blocks: ${fmtDur(avg10)} on average` : "",
+      "Half of the blocks in the range came faster, half slower.\nFrom the blocks’ own timestamps.", "range"),
+    tile("Transactions", fmtN(txTotal), "", spanS > 0 ? `${(txTotal / spanS * 3600).toFixed(txTotal / spanS * 3600 < 10 ? 1 : 0)} per hour · ${fmtN(transfers)} transfers moved ${fmtN(volume)} AGRS` : "",
+      "Transactions sealed into blocks in the range.\nAGRS are testnet balances with no real value.", "range"),
+    tile("Active accounts", fmtN(active.size), `of ${fmtN(D.accounts.length)}`, "sent at least one transaction",
+      "Accounts that sent a transaction in the range,\nout of all senders seen on this chain.", "range"),
+    tile("Dropped", D.mode === "window" ? "—" : fmtN(dr.length), "", "left our mempool without a block",
+      "Seen waiting at our node, then gone without a block.\nRefusals at other nodes never reach us.", "range"),
+    tile("Restarts", fmtN(nRestarts), "known", rs.cur ? `current chain running ${fmtDur(now - rs.cur.from)}` : "",
+      "Times the testnet started over from its genesis.\nThe whole history is lost for the chain each time.", "all time"),
+    tile("Rule changes", g ? fmtN(g.activated) : "—", "agreed", g ? `${fmtN(g.pending + g.scheduled)} open · ${fmtN(g.expired)} expired · ${fmtN(g.validators)} validator${g.validators === 1 ? "" : "s"}` : "",
+      "Changes to the network’s own rules that reached agreement,\nplus the ones still open or that missed quorum.", "this chain"),
+  );
+}
+
+/* ------------------------------ wiring ------------------------------ */
+document.querySelectorAll("[data-range]").forEach(b => b.addEventListener("click", () => { RANGE = Number(b.dataset.range); render(); }));
+document.querySelectorAll("[data-table]").forEach(b => b.addEventListener("click", () => { const t = $(b.dataset.table), on = t.hidden; t.hidden = !on; b.setAttribute("aria-pressed", String(on)); }));
+let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(render, 120); }).observe(document.querySelector(".wrap"));
+load();
+if (!SAMPLE) setInterval(load, 30000);  // also upgrades from the 50-block window once /stats answers
+setInterval(() => { if (D && document.visibilityState === "visible" && tip.hidden) render(); }, 15000);
+</script>
+</body>
+</html>
