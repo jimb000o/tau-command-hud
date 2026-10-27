@@ -73,6 +73,8 @@ sed -i "s/^TAU_TESTNET_REF=.*/TAU_TESTNET_REF=${REF}/" .env
 
 echo "==> Building and starting (first build compiles tau-lang: 1-2 hours with ${TAU_BUILD_JOBS} job)"
 docker compose up -d --build
+# Every rebuild leaves the previous image behind; a handful of them fill the disk.
+docker image prune -f >/dev/null
 
 IP=$(curl -fsS4 https://ifconfig.me || echo "<server IP>")
 cat <<MSG
