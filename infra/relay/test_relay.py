@@ -26,8 +26,8 @@ HEAVY = {"getblocks", "getgovernance", "gettaustate"}
 mock = {"blocks": [], "heavy_violations": 0, "commands": [], "connections": 0}
 
 
-def block(n):
-    return {"block_hash": f"{n:064x}", "header": {"block_number": n, "timestamp": int(time.time()),
+def block(n, chain=0):
+    return {"block_hash": f"{chain:04x}{n:060x}", "header": {"block_number": n, "timestamp": int(time.time()),
             "proposer_pubkey": "ab" * 48, "state_hash": "cd" * 32}, "tx_ids": [], "transactions": []}
 
 
@@ -66,8 +66,9 @@ async def mock_node(ws):
 async def mint():
     n = 0
     while True:
-        mock["blocks"].append(block(n))
-        n += 1
+        if mock.get("mint", True):
+            mock["blocks"].append(block(n))
+            n += 1
         await asyncio.sleep(1)
 
 
@@ -139,6 +140,31 @@ async def main():
                 await ws.send("getmempool")
             replies = [json.loads(await ws.recv()) for _ in range(25)]
             check(any(x.get("error", {}).get("code") == "RATE_LIMITED" for x in replies), "visitor rate limit")
+
+        # chain reset: the node comes back with a shorter chain of other blocks
+        # (testnet restarted on the same genesis); the relay drops the dead chain
+        async with connect(url, additional_headers=origin) as ws:
+            json.loads(await ws.recv())
+            mock["mint"] = False  # a restarted chain grows slowly; keep the mock still
+            mock["blocks"] = [block(n, chain=1) for n in range(3)]
+            pushed = None
+            deadline = time.monotonic() + 8
+            while time.monotonic() < deadline:
+                msg = json.loads(await asyncio.wait_for(ws.recv(), 8))
+                if msg.get("command") == "getblocks" and msg["data"].get("reset"):
+                    pushed = msg
+                    break
+            check(pushed is not None, "chain reset pushed to visitor")
+            m = await ask(ws, "getblocks 50")
+            hs = sorted(b["header"]["block_number"] for b in m["data"]["blocks"])
+            check(hs == [0, 1, 2] and all(b["block_hash"].startswith("0001") for b in m["data"]["blocks"]),
+                  f"cache holds only the new chain {hs}")
+        reader, writer = await asyncio.open_connection("127.0.0.1", 18766)
+        writer.write(b"GET /health HTTP/1.1\r\nHost: x\r\n\r\n")
+        body = json.loads((await reader.read(4096)).decode().split("\r\n\r\n", 1)[1])
+        writer.close()
+        check(body["height"] == 2 and body["total_blocks"] == 3, f"/health height follows the reset {body}")
+        mock["mint"] = True
 
         # presence: a second visitor raises the count for both, leaving lowers it
         async with connect(url, additional_headers=origin) as a:
