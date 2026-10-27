@@ -37,7 +37,9 @@ body {
 }
 a { color: #fff; }
 .wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
-@media (min-width: 2000px) { .wrap { max-width: 1680px; } }
+/* wide screens: the whole page scales up (like the HUD) and uses the full width */
+html.wide .wrap { max-width: none; zoom: var(--z); }
+html.wide #tip, html.wide .fb-fab { zoom: var(--z); }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
 .mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -71,8 +73,11 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .tile .v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
 .tile p { margin: 4px 0 0; color: var(--dim); font-size: 12px; }
 .tile .scope { display: inline-block; margin-top: 6px; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px; }
-.grid2 { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-@media (max-width: 960px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.grid2, .grid3 { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+.grid3 > .rs { grid-column: 1 / -1; }
+html.wide .grid3 { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); }
+html.wide .grid3 > .rs { grid-column: auto; }
+@media (max-width: 960px) { .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); } }
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
 .panel h2 { margin: 0 0 4px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
@@ -178,7 +183,8 @@ footer a { color: var(--dim); }
     </section>
   </div>
 
-  <section class="panel">
+  <div class="grid3">
+  <section class="panel rs">
     <h2>Chain restarts <small>when the testnet started over from its genesis</small></h2>
     <p class="headline" id="hRestarts"></p>
     <div class="legend"><span><i style="background:var(--ok)"></i>current chain</span><span><i style="background:#8a8a94"></i>earlier chain, recorded by our relay</span><span><i style="background:none;border:1px solid #8a8a94;border-radius:50%"></i>restart from our notes, time approximate</span></div>
@@ -186,7 +192,6 @@ footer a { color: var(--dim); }
     <ul class="ev" id="restartList"></ul>
   </section>
 
-  <div class="grid2">
     <section class="panel">
       <h2>What the transactions were <small>by type, in the selected range</small></h2>
       <div class="tablewrap" style="max-height:none"><table><thead><tr><th>Type</th><th class="n">Count</th><th class="n">Share</th></tr></thead><tbody id="types"></tbody></table></div>
@@ -401,7 +406,8 @@ function showTip(ev, build) {
   let left = x + 14, top = y + 14;
   if (left + r.width > innerWidth - pad) left = x - r.width - 14;
   if (top + r.height > innerHeight - pad) top = y - r.height - 14;
-  tip.style.left = Math.max(pad, left) + "px"; tip.style.top = Math.max(pad, top) + "px";
+  const z = ZOOM;  // the tip itself is zoomed on wide screens, so its own coordinates are too
+  tip.style.left = Math.max(pad, left) / z + "px"; tip.style.top = Math.max(pad, top) / z + "px";
 }
 const hideTip = () => { tip.hidden = true; };
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -440,8 +446,10 @@ function yAxis(f, sc, unit) {
 function xTimeAxis(f, t0, t1) {
   const span = Math.max(1, t1 - t0), px = f.w - f.L - f.R, n = Math.max(2, Math.floor(px / 90));
   const steps = [300, 600, 900, 1800, 3600, 7200, 10800, 21600, 43200, 86400, 172800, 604800];
-  const step = steps.find(s => span / s <= n) || 604800;
-  for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) {
+  const step = span > 2 * 86400 ? (steps.find(s => s >= 86400 && span / s <= n) || 604800) : (steps.find(s => span / s <= n) || 604800);
+  // day ticks fall on local midnight
+  const off = step >= 86400 ? new Date(t0 * 1000).getTimezoneOffset() * 60 : 0;
+  for (let t = Math.ceil((t0 - off) / step) * step + off; t <= t1; t += step) {
     const x = f.L + (t - t0) / span * px;
     const lab = svgEl("text", { x, y: f.h - 8, "text-anchor": "middle" }, f.svg);
     lab.textContent = step >= 86400 ? fmtDay(t) : fmtTime(t);
@@ -678,6 +686,19 @@ function render() {
       "Changes to the network’s own rules that reached agreement,\nplus the ones still open or that missed quorum.", "this chain"),
   );
 }
+
+/* ------------------------------ wide screens ------------------------------ */
+// From 1700 px the page scales up so text and charts stay readable from a desk
+// distance, capped by the height so a 21:9 monitor does not blow it past the fold.
+let ZOOM = 1;
+function fit() {
+  const w = innerWidth, h = innerHeight;
+  ZOOM = w >= 1700 ? Math.max(1, Math.min(2, w / 1600, h / 740)) : 1;
+  document.documentElement.classList.toggle("wide", ZOOM > 1);
+  document.documentElement.style.setProperty("--z", ZOOM);
+}
+fit();
+addEventListener("resize", fit);
 
 /* ------------------------------ wiring ------------------------------ */
 document.querySelectorAll("[data-range]").forEach(b => b.addEventListener("click", () => { RANGE = Number(b.dataset.range); render(); }));
