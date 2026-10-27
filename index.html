@@ -172,15 +172,24 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .tgstrip a { color: var(--ok); font-weight: 600; text-decoration: none; }
 .tgstrip a:hover { text-decoration: underline; }
 /* About: on wide screens the sections flow into columns so nothing needs scrolling; each section stays whole */
-.about-cols { column-gap: 36px; column-rule: 1px solid var(--line); }
-.about-cols > section { break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; display: block; margin: 0 0 12px; }
-.about-cols > section > h3:first-child { margin-top: 2px; }
+/* rhythm on an 8px scale (Refactoring UI): 32 around, 24 between blocks, 8 under a heading, 10 between paragraphs */
+.sheet.wide .panel.about { padding: 28px 36px 32px; background: #0e0e11; }
+.panel.about h2 { margin-bottom: 22px; }
+.about .unofficial { margin: 0 0 28px; padding: 10px 16px; }
+.about-cols { column-gap: 56px; column-rule: 1px solid var(--line); }
+.about-cols > section { break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; display: block; margin: 0 0 26px; }
+.about-cols > section:last-child { margin-bottom: 0; }
+.about-cols > section > h3:first-child { margin-top: 0; }
+.about-cols h3 { margin: 0 0 8px; }
+.about-cols p { margin: 0 0 10px; line-height: 1.55; }
+.about-cols p:last-child { margin-bottom: 0; }
 @media (min-width: 1500px) { .about-cols { column-count: 3; } }
 @media (min-width: 1000px) and (max-width: 1499px) { .about-cols { column-count: 2; } }
-.about .tgbox { padding: 10px 14px 12px; border: 1px solid rgba(57,255,138,.5); border-radius: 8px; background: rgba(57,255,138,.04); }
+.about .tgbox { padding: 16px 20px 18px; border: 1px solid rgba(57,255,138,.5); border-radius: 8px; background: rgba(57,255,138,.04); }
 .about .tgbox h3 { color: var(--ok); margin-top: 0; }
-.about .tgbox ul { margin: 0 0 10px; padding-left: 18px; font-size: 12.5px; }
-.about .tgbox li { margin: 0 0 4px; }
+.about .tgbox h3 { margin-bottom: 10px; }
+.about .tgbox ul { margin: 0 0 14px; padding-left: 18px; font-size: 12.5px; line-height: 1.5; }
+.about .tgbox li { margin: 0 0 6px; }
 .about .tgbox li b { color: #fff; font-weight: 600; }
 .about .tgjoin { display: inline-block; font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--ok); color: var(--ok); text-decoration: none; }
 .about .tgjoin:hover { background: var(--ok); color: #000; }
@@ -191,7 +200,7 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .addr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border: 1px solid var(--hair); border-radius: 6px; background: rgba(0,0,0,.35); }
 .addr code { flex: 1 1 320px; min-width: 0; font: 500 13px var(--mono); color: var(--ok); overflow-wrap: anywhere; user-select: all; }
 .about .small { color: var(--dim); font-size: 11.5px; }
-.donate { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 14px; align-items: center; margin: 4px 0 8px; }
+.donate { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 16px; align-items: center; margin: 12px 0 12px; }
 .donate .qr { width: 132px; height: 132px; border-radius: 6px; display: block; }
 .donate .addr { margin: 0; }
 @media (max-width: 520px) { .donate { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
@@ -865,6 +874,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.6 · 27 Oct 2026</b>About breathes: a solid background, 32px around, a clear gap between the notice strip and the columns, wider gutters, consistent spacing under every heading. Still no scrolling on wide screens.</li>
           <li><b>v17.5 · 27 Oct 2026</b>About fits the screen: on wide screens its sections sit in three columns, so the whole text and the donation address are visible without scrolling. The Telegram offer says what you get: every rule change and chain restart as it happens, a weekly recap picture, HUD updates; the header pill reads “Telegram alerts”, and the Updates panel carries the same line.</li>
           <li><b>v17.4 · 27 Oct 2026</b>The online counter counts people again, not open tabs: the 20-second status poll was overwriting the relay’s per-person count with its socket count.</li>
           <li><b>v17.3 · 27 Oct 2026</b>The green “you are here” line under a section name is now exactly as wide as the word and sits right under it (it used to float below the whole button, caret included).</li>
@@ -2446,7 +2456,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.5`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.6`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
