@@ -155,9 +155,9 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .thesis::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--brand); border-radius: 2px; }
 .thesis .eyebrow { display: block; font: 700 11px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--amber); margin-bottom: 4px; }
 .thesis h2 { margin: 0; font: 500 clamp(15px, 1.15vw, 21px)/1.35 var(--display); color: #fff; text-wrap: balance; letter-spacing: .02em; }
-.modal { position: fixed !important; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px; overflow: auto; }
+.modal { position: fixed !important; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow: hidden; box-sizing: border-box; }
 .modal[hidden] { display: none; }
-.sheet { position: relative; width: min(1100px, 100%); max-height: 100%; overflow: auto; }
+.sheet { position: relative; width: min(1100px, 100%); max-height: 100%; flex: 0 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .sheet.narrow { width: min(720px, 100%); }
 .close { position: absolute; top: 6px; right: 6px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: var(--cyan-hi); cursor: pointer; font: 14px var(--display); }
 .about h3 { margin: 14px 0 4px; font: 600 12px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); }
@@ -330,6 +330,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .blkdetail .ident .kv dt:first-child { margin-top: 0; }
 
 .blkdetail .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 18px; }
+/* when the full block detail would not fit without scrolling, a one-glance summary takes its place and a click opens the full detail */
+.blkdetail.compact { cursor: pointer; }
+.blkdetail.compact:hover h3:first-child::after { opacity: 1; }
+.blkdetail.compact h3:first-child::after { content: "open ›"; margin-left: 10px; font: 10px var(--mono); letter-spacing: .04em; color: var(--dim); text-transform: none; opacity: 0; transition: opacity .15s; }
+.bsum .row { display: flex; flex-wrap: wrap; gap: 4px 0; font-size: 11.5px; margin-top: 6px; }
+.bsum .row span { padding: 1px 12px 1px 0; margin-right: 12px; border-right: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bsum .row span:last-child { border-right: 0; }
+.bsum .row i { font-style: normal; color: var(--dim); margin-right: 6px; cursor: help; text-decoration: underline dotted rgba(255,255,255,.22); text-underline-offset: 3px; }
+.bsum .row i:hover { color: var(--text); text-decoration-color: var(--ok); }
+.bsum .row .gov { color: var(--amber); }
 .blk .m span:last-child { color: var(--ok); }
 .link { flex: 0 0 26px; align-self: center; margin-left: -26px; margin-right: 0; height: 2px; background: linear-gradient(90deg, var(--cyan), transparent); }
 @keyframes drop { from { transform: translateY(-14px); opacity: 0; } }
@@ -512,6 +522,7 @@ a.btn { text-decoration: none; display: inline-block; }
 html.wide body { padding: 0; overflow: hidden; }
 html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 16px 12px; box-sizing: border-box; transform: scale(var(--z)); transform-origin: 0 0; }
 html.wide .modal .sheet, html.wide .fb-fab, html.wide .tour { zoom: var(--z); }
+html.wide .modal .sheet { max-height: calc(100% / var(--z)); }
 /* wide layout: the chain core becomes the dominant centre element (both rows), the validators column gets both rows too */
 html.wide .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, .9fr) minmax(0, .9fr); grid-template-areas: "eng core feed pol val" "eng core feed off val" "upd core chain chain chain" "upd core chain chain chain"; }
 html.wide .blkdetail .cols { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 26px; }
@@ -526,7 +537,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   .contrast .crow { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .contrast .who { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 8px; }
 }
-@media (max-width: 1599px), (max-height: 820px) {
+@media (max-width: 1599px), (max-height: 900px) {
   html, body { height: auto; min-height: 100%; }
   .wrap { height: auto; grid-template-rows: none; }
   .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "eng core" "feed upd" "pol off" "val chain"; }
@@ -623,6 +634,8 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <button class="btn state" type="button" id="btnState2" data-full="Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.">Chain state</button>
       <button class="btn ghost gold" type="button" id="btnTour" data-full="Six short steps: one rule change from proposal to law, pointing at the panels where it happens.">Guided tour</button>
       <a class="btn ghost" href="playground/" data-full="Write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Opens the playground page.">Playground</a>
+      <a class="btn ghost" href="stats/" data-full="Testnet statistics: block pace, transactions, validators and rule changes over the whole chain. Opens the stats page.">Stats</a>
+      <a class="btn ghost" href="history/" data-full="Time travel: step through the chain block by block and see the rules that were in force at any height. Opens the history page.">Time travel</a>
       <a class="btn ghost" href="https://tau.net" target="_blank" rel="noopener" data-full="Opens tau.net, the project behind the testnet, in a new tab.">What is Tau?</a>
       <button class="btn ghost" type="button" id="btnRain" aria-pressed="true" data-full="Turns the falling glyphs in the background on or off. Purely decorative.">Rain</button>
       <button class="btn ghost more" type="button" id="btnMore" aria-expanded="false" hidden>More ▾</button>
@@ -778,6 +791,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v15.9 · 27 Oct 2026</b>Header: links to the new <a href="stats/">Stats</a> and <a href="history/">Time travel</a> pages; a block’s full detail links to the rules in force at that height. Rule changes by agreement: when an agreed change was scheduled far ahead by the proposal itself, the Tau row says so (“at #5028”, “agreed in n blocks”) instead of counting down the proposer’s wait as if it were Tau’s speed. Block detail: when the full detail would need scrolling at your screen size, a one-glance summary takes its place and a click opens the full detail. Every detail window scrolls inside the screen. Screens up to 900 px tall get the scrolling layout.</li>
           <li><b>v15.8 · 27 Oct 2026</b>Node log: the panel shows whole lines (time in its own column, nothing cut off) with more room, and a click opens the full log in the detail view, newest first, with counts of refusals and governance events. Chain core: every label (agreement, validators, “the agreed rules of everyone”) sits on a dark plate, so no ring crosses the letters. Detail views: every check chip (i10 signature, o6 block valid, o7 proposer eligible, o9 fee, o5 sender rule, the admission checks of a rule offer, the steps of a proposal) explains itself on hover. Live: when the relay reports a chain reset (the node discarded a chain the network abandoned), the page forgets the old blocks and rebuilds from the new ones.</li>
           <li><b>v15.7 · 27 Oct 2026</b>Rule Playground: a new page at <a href="playground/">/playground/</a> where you write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Linked from the header (“Playground”) and from the validators panel.</li>
           <li><b>v15.6 · 27 Oct 2026</b>Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both count down second by second to the next expected block, reset with every new block, and the line under Block pace says when a block runs late. On 16:9 wide screens the left column (block check, rule changes) is wider and taller at the top. While the node is still catching up with the chain (or the chain is idle), the countdown pauses and the line under Block pace says how old the newest block is; if the relay reports that the node has verified the state only up to an older block, the mode chip turns amber: “Live · Verified to #n of tip”. The Tau row follows the real proposal: “waits for n votes” while a proposal collects agreement (time cannot help there), a countdown to the activation height once it is agreed. Live wording no longer assumes that only validators vote: the threshold comes from the validator count, who may vote is a network setting.</li>
@@ -900,6 +914,12 @@ function updateTiming(pace, left) {
     return set(need != null ? `waits for ${need}\u00a0vote${need === 1 ? "" : "s"}` : "waits for votes",
       `Not a matter of time: the open proposal needs ${need != null ? need + " more" : "more"} vote${need === 1 ? "" : "s"} (consensus_rule_vote) before it is scheduled. Proposing does not count as a vote.${votersNote()}\nOnly then does the activation height (#${open.activateAt}) start to matter.` + (PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2 ? `\nVote count as of the node’s verified state, block #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.` : ""));
   }
+  if (open && farAhead(open)) {
+    const k = agreedIn(open), b = Number(open.activateAt) - S.height;
+    const why = `“${open.title}” is agreed. Its activation height #${open.activateAt} was chosen by the proposal itself, ${b} blocks ahead${pace ? ` (~${fmtCount(b * pace)} at the current pace)` : ""}, far beyond the protocol minimum of ${n} block${n === 1 ? "" : "s"}. The wait is the proposer’s choice, not Tau’s speed.`;
+    return set(k != null ? `agreed in ${k} block${k === 1 ? "" : "s"}` : `${blocks} minimum`,
+      (k != null ? `From proposal to agreement in ${k} block${k === 1 ? "" : "s"}, as this page saw it. ` : `Tau’s own part takes ${n} block${n === 1 ? "" : "s"} or more${pace ? ` (~${fmtCount(n * pace)})` : ""}. `) + why);
+  }
   if (open && open.status === "scheduled" && Number.isFinite(Number(open.activateAt)) && pace != null) {
     const b = Math.max(0, Number(open.activateAt) - S.height), secs = Math.max(0, b === 0 ? 0 : (left != null ? left : pace) + (b - 1) * pace), k = S.blockTimes.length;
     return set(`${b}\u00a0block${b === 1 ? "" : "s"} · ~${fmtCount(secs).replace(" ", "\u00a0")}`,
@@ -914,7 +934,12 @@ function updateTiming(pace, left) {
   set(`${blocks} · ~${fmtCount(secs).replace(" ", "\u00a0")}`,
     `Node minimum: a rule change activates ${n} block${n === 1 ? "" : "s"} or more after it is included.\nThe seconds count down to the next expected block${n > 1 ? ` plus ${n - 1} more` : ""}, estimated from the average time the last ${k} block${k === 1 ? "" : "s"} took (${fmtSec(pace)}). Resets with every block.\nA protocol minimum, not a measured average.`);
 }
-const fmtCount = s => s >= 90 ? (s / 60).toFixed(1) + " min" : Math.round(s) + " s";
+const fmtCount = s => s >= 172800 ? (s / 86400).toFixed(1) + " d" : s >= 5400 ? (s / 3600).toFixed(1) + " h" : s >= 90 ? (s / 60).toFixed(1) + " min" : Math.round(s) + " s";
+const paceNow = () => S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null;
+/* a scheduled change whose activation height lies far beyond the protocol minimum: the wait is the proposal’s choice, not Tau’s speed */
+const farAhead = u => u && u.status === "scheduled" && Number.isFinite(Number(u.activateAt)) && Number(u.activateAt) - S.height > Math.max(30, 3 * (S.minActBlocks || 0));
+/* blocks from proposal to agreement, when this page saw both */
+const agreedIn = u => u && Number.isFinite(u.proposedAt) && Number.isFinite(u.agreedAt) && u.agreedAt >= u.proposedAt ? Math.max(1, u.agreedAt - u.proposedAt) : null;
 const fmtAgo = s => s < 90 ? Math.round(s) + " s ago" : s < 5400 ? Math.round(s / 60) + " min ago" : s < 172800 ? (s / 3600).toFixed(1) + " h ago" : Math.round(s / 86400) + " d ago";
 /* the node is still replaying the chain (or the chain is idle): the countdown would measure replay speed, so it pauses */
 function catchingUp(pace) {
@@ -1258,7 +1283,7 @@ function renderUpdates() {
     const v = u.votes.size, pct = Math.min(100, v / thr * 100);
     const pips = S.validators.map(val => `<i class="${u.votes.has(val) ? "on" : ""}"></i>`).join("");
     const when = u.status === "voting" || u.status === "scheduled"
-      ? `activates at #${u.activateAt} · in ${Math.max(0, u.activateAt - S.height)} blocks` : u.status === "active" ? `active since #${u.activeAt}` : `missed quorum before #${u.activateAt}`;
+      ? `activates at #${u.activateAt} · in ${Math.max(0, u.activateAt - S.height)} blocks${farAhead(u) ? " · height chosen by the proposal" : ""}` : u.status === "active" ? `active since #${u.activeAt}` : `missed quorum before #${u.activateAt}`;
     return `<div class="upd ${u.status}" data-ex="${exKey(() => explainUpdate(u))}" data-detail="${dtKey(() => detailUpdate(u))}">
       <div class="u1"><b>${esc(u.title)}</b><span class="pill ${u.status}">${STATUS_TXT[u.status]}</span></div>
       <code class="diff">${u.diff}</code>
@@ -1282,7 +1307,7 @@ function renderUpdates() {
     : !cur ? (lastActive ? ["next", "next", "next", `last #${lastActive.activeAt}`] : ["—", "—", "—", "—"])
     : failed ? ["done", "done", `✕ ${cur.votes.size}/${thr}`, "no change"]
     : ["done", stage === 1 ? "compile" : "done", stage === 1 ? "next" : cur.status === "voting" ? `${cur.votes.size}/${thr} votes` : "done",
-       cur.status === "active" ? `since #${cur.activeAt}` : cur.status === "scheduled" ? `in ${left} blk` : `#${cur.activateAt}`];
+       cur.status === "active" ? `since #${cur.activeAt}` : cur.status === "scheduled" ? (farAhead(cur) ? `at #${cur.activateAt}` : `in ${left} blk`) : `#${cur.activateAt}`];
   ["stPropose", "stCheck", "stAgree", "stActive"].forEach((id, i) => {
     $(id).className = "st" + (i < stage ? " done" : i === stage ? (failed ? " fail" : " on") : "");
     $(id + "S").textContent = i < stage ? "done" : i === stage ? words[i] : words[i] === "done" ? "next" : words[i];
@@ -1294,12 +1319,13 @@ function renderUpdates() {
   if (failed) { $("stActive").className = "st"; $("stActiveS").textContent = "no change"; }
   if (cur) {
     $("stAgree").dataset.full = `Agreed: ${S.mode === "live" ? "votes arrive as" : "validators vote with"} consensus_rule_vote transactions. “${cur.title}” has ${cur.votes.size} of ${thr} needed votes (${S.quorum === "majority" ? "majority" : "two thirds"} of ${S.validators.length} validators).${votersNote()} The quorum rule itself is part of the chain state, so it cannot be changed quietly.`;
-    $("stActive").dataset.full = cur.status === "active" ? `Active: “${cur.title}” took effect at block #${cur.activeAt}; the spec revision is now ${S.specRev}. Every node applied the new rules automatically; nobody upgraded software, nothing forked.` : `Active: if agreed, “${cur.title}” takes effect at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Every node will apply it automatically; nobody upgrades software, nothing forks.`;
+    $("stActive").dataset.full = cur.status === "active" ? `Active: “${cur.title}” took effect at block #${cur.activeAt}; the spec revision is now ${S.specRev}. Every node applied the new rules automatically; nobody upgraded software, nothing forked.` : farAhead(cur) ? `Active at block #${cur.activateAt}: a height the proposal itself chose, ${left} blocks ahead${paceNow() ? ` (~${fmtCount(left * paceNow())} at the current pace)` : ""}. Agreement is done; the protocol minimum would be ${S.minActBlocks ?? "a few"} block${S.minActBlocks === 1 ? "" : "s"}. The wait is the proposer’s choice, not Tau’s speed.` : `Active: if agreed, “${cur.title}” takes effect at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Every node will apply it automatically; nobody upgrades software, nothing forks.`;
   }
 
   $("contrastCap").innerHTML = failed ? `<b>“${esc(failed.title)}”</b> missed quorum: ${failed.votes.size} of ${thr} validators by block #${failed.activateAt}. Archived without effect, the old rules stand. <b>Tau refuses by default.</b>`
     : !cur ? (lastActive ? `<b>“${esc(lastActive.title)}”</b> went from proposal to law in ${Math.max(1, lastActive.activeAt - lastActive.proposedAt)} blocks and is absorbed into the network. Waiting for the next proposal.` : "On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b>")
     : cur.status === "active" ? `<b>“${esc(cur.title)}”</b> went from proposal to law in ${Math.max(1, cur.activeAt - cur.proposedAt)} blocks. No fork, no upgrade, no admin.`
+    : cur.status === "scheduled" && farAhead(cur) ? `<b>“${esc(cur.title)}”</b> is agreed${agreedIn(cur) ? ` (${agreedIn(cur)} block${agreedIn(cur) === 1 ? "" : "s"} from proposal to agreement)` : ""}. It becomes law at block #${cur.activateAt}, a height the proposal itself chose: ${Math.max(0, cur.activateAt - S.height)} blocks ahead${paceNow() ? `, ~${fmtCount(Math.max(0, cur.activateAt - S.height) * paceNow())} at the current pace` : ""}. The wait is the proposer’s choice, not Tau’s. Nobody has to upgrade anything.`
     : cur.status === "scheduled" ? `<b>“${esc(cur.title)}”</b> is agreed and becomes law at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Nobody has to upgrade anything.`
     : `<b>“${esc(cur.title)}”</b> is collecting agreement: ${cur.votes.size} of ${thr} validators so far. It becomes law at #${cur.activateAt} if enough agree.`;
 }
@@ -1396,15 +1422,33 @@ function blockHtml(b) {
     <h3>Governance transactions (${gov.length})</h3>${gov.length ? `<ul>${gov.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <h3>Rule work (${rules.length})</h3>${rules.length ? `<ul>${rules.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     </section><section><h3>All transactions (${b.txs.length})</h3>${b.txs.length ? `<ul>${b.txs.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">Empty block</p>`}
-    <h3>What the state hash commits to</h3><p style="color:var(--dim);font-size:12px;margin:0">Balances, the consensus rule program, the composite user-rule program, the validator set, pending governance and the quorum policy. Change any of them and the hash changes.</p></section></div>`;
+    <h3>What the state hash commits to</h3><p style="color:var(--dim);font-size:12px;margin:0">Balances, the consensus rule program, the composite user-rule program, the validator set, pending governance and the quorum policy. Change any of them and the hash changes.</p>
+    <p style="margin:10px 0 0;font-size:12px"><a href="history/#${b.n}">See the rules in force at this block (time travel) ›</a></p></section></div>`;
 }
-let selectedBlock = null;
+/* one-glance block summary: every fact of the full detail, one line each, short hashes; the labels explain themselves on hover */
+function blockSummary(b) {
+  const sn = b.snap || {}, gov = b.txs.filter(t => t.kind === "gov"), rules = b.txs.filter(t => /rule/.test(t.type) && t.kind !== "gov"), refused = b.txs.filter(t => t.rejected);
+  const N = sn.validators ? sn.validators.length : 0, thr = N ? (sn.quorum === "majority" ? Math.floor(N / 2) + 1 : Math.ceil(N * 2 / 3)) : null;
+  const chip = (k, v, tip, cls) => `<span class="${cls || ""}"><i data-full="${esc(tip || KV_TIP[k] || "")}">${k}</i>${v}</span>`;
+  return `<div class="bsum"><p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${short(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? `Agreed rule change active from here: ${sn.agreed.map(a => esc(a.title)).join(", ")}.` : "No rule change took effect in this block."}</p>
+    <div class="row">${chip("Block hash", short(b.hash))}${chip("Previous block", b.prev ? short(b.prev) : "—")}${chip("State hash", short(b.state))}${chip("Proposer", short(b.proposer))}
+    ${chip("Base fee", sn.fee != null ? sn.fee + " AGRS" : "—")}${chip("Agreement needed", thr != null ? `${thr} of ${N}` : "—")}${chip("Rule txs per block", sn.budget ?? "—")}
+    ${chip("Governance", gov.length, "Votes, proposals and scheduled rule changes carried in this block.", gov.length ? "gov" : "")}${chip("Rule work", rules.length, "Rule offers, acceptances and own-rule deployments in this block.")}${chip("Refused", refused.length, "Transactions a rule said no to. They are recorded, not applied.")}
+    <span><i data-full="The full detail lists every transaction and what the state hash commits to.">Click</i>full detail ›</span></div></div>`;
+}
+let selectedBlock = null, shownBlock = null, shownPinned = true;
 function showBlock(b, pinned = true) {
   if (pinned) selectedBlock = b.n;
   document.querySelectorAll(".blk.sel").forEach(e => e.classList.remove("sel"));
   const card = document.querySelector(`.blk[data-n="${b.n}"]`); if (card) card.classList.add("sel");
   const title = `Block #${b.n}` + (b.amended ? ` · spec revision ${b.amended} took effect here` : "") + (pinned ? "" : " · newest") + (b.ts ? ` · ${new Date(b.ts * 1000).toLocaleString("de-DE")}` : "");
-  $("blkDetail").innerHTML = `<h3>${title}</h3>` + blockHtml(b);
+  const el = $("blkDetail"); shownBlock = b; shownPinned = pinned;
+  el.innerHTML = `<h3>${title}</h3>` + blockHtml(b); el.classList.remove("compact"); delete el.dataset.detail;
+  if (el.scrollHeight > el.clientHeight + 2) {     // the full detail would need scrolling here: show the summary, keep the full detail one click away
+    el.innerHTML = `<h3>${title}</h3>` + blockSummary(b); el.classList.add("compact");
+    el.dataset.detail = dtKey(() => ({ title, html: blockHtml(b) }));
+    if (el.scrollHeight > el.clientHeight + 2) { const lead = el.querySelector(".bsum .lead"); if (lead) lead.remove(); }
+  }
   $("chainSub").textContent = pinned ? `showing #${b.n} · click another block or “newest” to follow the chain` : "click a block to inspect it below · bright card = a rule change took effect";
 }
 function renderStatePanel() {
@@ -1443,6 +1487,7 @@ function ingestBlock(b, live) {
   S.byHeight.set(b.n, b); if (S.byHeight.size > 60) S.byHeight.delete(Math.min(...S.byHeight.keys()));
   S.blocks.push(b); if (S.blocks.length > 40) S.blocks.shift();
   S.height = b.n; S.txTotal += b.txs.length;
+  if (live) b.txs.forEach(t => { if (t.type === "consensus_rule_update") S.lastProposalBlock = b.n; else if (t.type === "consensus_rule_vote") S.lastVoteBlock = b.n; });
   const vi = S.validators.indexOf(b.proposer); if (vi >= 0) S.proposerIdx = vi;
   S.pulse = 1; burst = b.txs.length;
   addBlockCard(b); markMined(b.txs.map(x => x.id)); markBeat();
@@ -1628,6 +1673,13 @@ function liveMessage(ev) {
     };
     S.updates = [...(d.archival_update_details || []).map(u => mk(u, u.lifecycle === "activated" ? "active" : "expired")),
       ...(d.pending_updates || []).map(u => mk(u, "voting")), ...(d.scheduled_updates || []).map(u => mk(u, "scheduled"))];
+    // the node does not report when a proposal was included or agreed; this page remembers what it saw
+    LIVE.govSeen = LIVE.govSeen || {};
+    S.updates.forEach(u => {
+      const g = LIVE.govSeen[u.id] = LIVE.govSeen[u.id] || { status: u.status, proposedAt: u.status === "voting" ? (S.lastProposalBlock ?? S.height) : S.lastProposalBlock, agreedAt: u.status === "scheduled" ? S.lastVoteBlock : undefined };
+      if (g.status === "voting" && u.status === "scheduled") g.agreedAt = S.lastVoteBlock ?? S.height;
+      g.status = u.status; u.proposedAt = g.proposedAt; u.agreedAt = g.agreedAt;
+    });
     S.specRev = 1 + (d.archival_update_details || []).filter(u => u.lifecycle === "activated").length;
     if (d.consensus_rules) {
       renderConsensusRule(d.consensus_rules);
@@ -1902,6 +1954,8 @@ document.addEventListener("click", () => document.querySelectorAll(".info.open")
 const DT = new Map(); let dtSeq = 0;
 function dtKey(fn) { const k = "d" + (++dtSeq); DT.set(k, fn); if (DT.size > 4000) DT.delete(DT.keys().next().value); return k; }
 (() => { const lp = document.getElementById("logPanel"); if (lp) lp.dataset.detail = dtKey(detailLog); })();
+/* the block detail re-decides between full and summary whenever its box changes size */
+(() => { const el = $("blkDetail"); let last = ""; new ResizeObserver(() => { const k = el.clientWidth + "x" + el.clientHeight; if (k === last) return; last = k; if (shownBlock) showBlock(shownBlock, shownPinned); }).observe(el); })();
 function showDetail(key) {
   const fn = DT.get(key); if (!fn) return;
   const { title, html } = fn();
@@ -2001,7 +2055,7 @@ function detailValidator(v, i) {
 
 /* ---------- chain core: a true circle at every size (the canvas box is the largest square that fits its panel) ---------- */
 (() => {
-  const cv = $("core"), host = cv.parentElement, ro = host.querySelector(".readout"), fixed = matchMedia("(min-width: 1600px) and (min-height: 821px)");
+  const cv = $("core"), host = cv.parentElement, ro = host.querySelector(".readout"), fixed = matchMedia("(min-width: 1600px) and (min-height: 901px)");
   const fit = () => {
     if (!fixed.matches) { cv.style.width = cv.style.height = ""; return; }
     const h = host.clientHeight - (ro ? ro.offsetHeight + 6 : 0), w = host.clientWidth, sz = Math.max(160, Math.floor(Math.min(w, h)));
@@ -2124,7 +2178,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.8`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.9`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
