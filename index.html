@@ -850,6 +850,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.4 · 27 Oct 2026</b>The online counter counts people again, not open tabs: the 20-second status poll was overwriting the relay’s per-person count with its socket count.</li>
           <li><b>v17.3 · 27 Oct 2026</b>The green “you are here” line under a section name is now exactly as wide as the word and sits right under it (it used to float below the whole button, caret included).</li>
           <li><b>v17.2 · 27 Oct 2026</b>Every page now carries the whole HUD header: brand row with the page title, the status chips (mode, online, network, height, spec revision, base fee, read from the community relay), Live node / Simulation, View and the gear. Only the title and the active section change when you move between pages.</li>
           <li><b>v17.1 · 27 Oct 2026</b>Live mode links into the <a href="explorer/">Explorer</a>: the hash in a block’s identity opens the block there, the id on a transaction card opens the transaction. The Nodes entry in the Explore menu is marked “soon” until that page is online (it led to a 404).</li>
@@ -1180,7 +1181,7 @@ async function pollOnline() {
     const r = await fetch(PRESENCE.url, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
     const j = await r.json();
-    const n = Number(j.clients ?? j.online ?? j.presence);
+    const n = Number(j.online ?? j.clients ?? j.presence);   // online = people (one per viewer token); clients = sockets
     setOnline(Number.isFinite(n) ? n : null);
     PRESENCE.liveDefault = j.live_default === true;
     if (typeof j.open_governance_admission === "boolean") S.openVoting = j.open_governance_admission;
@@ -1192,7 +1193,7 @@ async function pollOnline() {
     if (PRESENCE.up) autoLive();
   } catch { setOnline(null); setRelay(false); }
 }
-function presenceFromMessage(d) { const n = Number(d && (d.clients ?? d.online ?? d.presence)); if (Number.isFinite(n)) setOnline(n); }
+function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?? d.presence)); if (Number.isFinite(n)) setOnline(n); }
 addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); presenceOpen(); });
 /* a quiet presence socket to the relay: one “hello”, then only its presence pushes, so visitors in simulation count too */
 const PSOCK = { ws: null, wait: 5000, timer: null, url: "wss://node.tauhud.com" };
@@ -2409,7 +2410,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.3`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.4`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
