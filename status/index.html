@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Tau HUD Status</title>
-<meta name="description" content="Is the Tau HUD live feed up? Relay and node availability, sync gaps, chain restarts and known issues over the last 30 days.">
+<meta name="description" content="Is the Tau testnet healthy? One health score from 0 to 100, relay and node availability, sync gaps, chain restarts and known issues over the last 30 days.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -132,6 +132,51 @@ footer p { margin: 0; }
 .known p { margin: 3px 0 0; color: var(--dim); font-size: 12px; }
 .known p a { color: #fff; }
 
+/* testnet health score: one number, what it is made of, 30 days of it */
+.health { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr) 200px; align-items: center; gap: 4px 16px; width: min(640px, 100%); background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; }
+.health:hover, .health:focus-visible { border-color: var(--hair); background: rgba(255,255,255,.05); }
+.h-num { font: 700 38px/1 var(--display); color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.h-num small { font: 500 13px var(--display); color: var(--dim); margin-left: 3px; }
+.h-num.healthy { color: var(--ok); } .h-num.degraded { color: var(--behind); } .h-num.down { color: var(--bad); }
+.h-meta { display: grid; gap: 4px; min-width: 0; }
+.h-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.h-top b { color: #fff; letter-spacing: .14em; }
+.h-top b.healthy { color: var(--ok); } .h-top b.degraded { color: var(--behind); } .h-top b.down { color: var(--bad); }
+.h-segs { display: flex; gap: 3px; height: 8px; }
+.h-segs i { position: relative; display: block; border-radius: 2px; background: #2a2a30; overflow: hidden; }
+.h-segs i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--f); background: #d8d8de; }
+.h-why { color: var(--dim); font-size: 12px; line-height: 1.35; }
+.h-spark { width: 200px; height: 44px; display: block; overflow: visible; }
+.spark .th { stroke: rgba(255,255,255,.12); stroke-dasharray: 3 3; stroke-width: 1; }
+.spark .lo { fill: rgba(255,255,255,.07); }
+.spark .av { fill: none; stroke: #d8d8de; stroke-width: 1.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.spark .now { stroke: none; }
+.spark .now.healthy { fill: var(--ok); } .spark .now.degraded { fill: var(--behind); } .spark .now.down { fill: var(--bad); }
+.h-spark-w { display: grid; gap: 2px; }
+.h-spark-w span { display: flex; justify-content: space-between; color: var(--dim); font-size: 10.5px; }
+html.fit .top { flex-wrap: nowrap; align-items: center; }
+html.fit .top > div { flex: 1 1 auto; min-width: 0; }
+html.fit .health { flex: 0 1 600px; min-width: 470px; padding: 6px 12px; grid-template-columns: auto minmax(0, 1fr) 150px; }
+html.fit .h-spark { width: 150px; height: 36px; }
+@media (max-width: 700px) {
+  .health { grid-template-columns: auto minmax(0, 1fr); }
+  .h-spark-w { grid-column: 1 / -1; }
+  .h-spark { width: 100%; }
+  .h-top { font-size: 11px; }
+}
+/* the breakdown in the detail sheet */
+.ftab { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.ftab th { text-align: left; font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); }
+.ftab td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.ftab td b { color: #fff; font-weight: 600; }
+.ftab td small { display: block; color: var(--dim); font-size: 11.5px; }
+.ftab td.pts { white-space: nowrap; font-variant-numeric: tabular-nums; text-align: right; }
+.ftab .bar { display: block; width: 90px; height: 6px; border-radius: 2px; background: #2a2a30; margin: 4px 0 0 auto; overflow: hidden; }
+.ftab .bar i { display: block; height: 100%; background: #d8d8de; }
+.ftab tr.lost td.pts b { color: var(--behind); }
+.ftab tr.zero td.pts b { color: var(--bad); }
+.hchart { width: 100%; height: 120px; display: block; margin-top: 4px; }
+.hchart text { fill: var(--dim); font: 10.5px var(--mono); }
 @media (max-width: 899px) { .p-inc .scroll { max-height: 60vh; overflow: auto; } }
 
 /* hover card: two or three lines, a click opens the day */
@@ -199,6 +244,15 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
       <p class="lead" id="lead">Is the live chain up right now?</p>
       <p class="sub">Our node follows the Tau Testnet Alpha, our relay serves it to every page of tauhud.com. Here is how both did over the last 30 days, every outage and testnet restart, and the bugs we know about.</p>
     </div>
+    <button class="health" id="health" type="button" aria-label="Testnet health score. Click for the breakdown.">
+      <span class="h-num" id="hNum">—<small>/100</small></span>
+      <span class="h-meta">
+        <span class="h-top">Testnet health <b id="hState">Checking</b></span>
+        <span class="h-segs" id="hSegs"></span>
+        <span class="h-why" id="hWhy">One number for “does the testnet run?”</span>
+      </span>
+      <span class="h-spark-w"><svg class="h-spark spark" id="hSpark" viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true"></svg><span><span>30 days</span><span>now</span></span></span>
+    </button>
   </div>
 
   <div class="tiles" id="tiles"></div>
@@ -230,7 +284,7 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   </main>
 
   <footer>
-    <p id="foot">Data: the relay at node.tauhud.com checks the node once a minute. <a href="https://node.tauhud.com/uptime" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://node.tauhud.com/status" target="_blank" rel="noopener">Current status (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra#readme" target="_blank" rel="noopener">How it works</a> · <a href="/stats/">Stats</a> · <a href="/findings/">Findings</a></p>
+    <p id="foot">Data: the relay at node.tauhud.com checks the node once a minute. <a href="https://node.tauhud.com/uptime" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://node.tauhud.com/status" target="_blank" rel="noopener">Current status (JSON)</a> · <a href="https://node.tauhud.com/health-score" target="_blank" rel="noopener">Health score (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra#readme" target="_blank" rel="noopener">How it works</a> · <a href="/stats/">Stats</a> · <a href="/findings/">Findings</a></p>
   </footer>
 </div>
 
@@ -259,12 +313,12 @@ const KNOWN_RESTARTS = [
   { at: Date.UTC(2026, 9, 27, 9, 10) / 1000, label: "Testnet restarted on the same genesis", approx: "about 09:10 UTC" },
   { at: Date.UTC(2026, 9, 27, 13, 30) / 1000, label: "Testnet restarted on the same genesis", approx: "about 13:30 UTC" },
 ];
-let U = null, S = null, reach = null, hovering = false, pending = false, failures = 0;
+let U = null, S = null, H = null, reach = null, hovering = false, pending = false, failures = 0;
 
 /* ---------------- one screen on wide displays ---------------- */
 function fit() {
   const w = innerWidth, h = innerHeight;
-  const on = w >= 1200 && h >= 700 && w / h >= 1.3;
+  const on = w >= 1200 && h >= 800 && w / h >= 1.3; // shorter laptop screens scroll, every panel whole
   const z = on ? Math.max(1, Math.min(2, w / 1600, h / 820)) : 1;
   const root = document.documentElement;
   root.classList.toggle("fit", on);
@@ -295,7 +349,9 @@ async function getJSON(path) {
   return r.json();
 }
 async function load() {
-  if (SAMPLE) { U = sample(); S = U.status; reach = true; return; }
+  if (SAMPLE) { U = sample(); S = U.status; H = sampleHealth(); reach = true; return; }
+  // the score is new: an older server answers 404 and the card says so
+  H = await getJSON("/health-score").catch(() => null);
   try {
     U = await getJSON("/uptime"); S = U.status; reach = true;
   } catch (e) {
@@ -430,6 +486,7 @@ function render() {
     return `<div><div class="row-h"><b>${name}</b><span>${right}</span></div><div class="bars">${bars}</div></div>`;
   }).join("") + `<div class="axis"><span>${fmtDay(days[0].start)}</span><span>today</span></div>`;
   window.__days = days;
+  renderHealth();
 
   const inc = incidents();
   $("incCount").textContent = inc.length ? `${plural(inc.length, "event")} in 30 days` : "";
@@ -480,6 +537,110 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("mDetai
 const inc = document.querySelector(".p-inc");
 inc.addEventListener("mouseenter", () => { hovering = true; });
 inc.addEventListener("mouseleave", () => { hovering = false; if (pending) render(); });
+
+/* ---------------- testnet health score ---------------- */
+const FACTOR_WORDS = {
+  node: v => v === "yes" ? "answers" : "no answer",
+  sync: v => v,
+  last_block: v => typeof v === "number" ? dur(v) + " ago" : String(v),
+  pace: v => plural(v, "block"),
+  availability: v => v == null ? "no record yet" : pct(v),
+  stability: v => v && typeof v === "object" ? (["restarts", "stalls", "reorgs"].filter(k => v[k]).map(k => plural(v[k], k.slice(0, -1))).join(", ") || "none") : String(v),
+  mempool: v => v ? `${dur(v)} waiting` : "none waiting",
+};
+const fval = f => (FACTOR_WORDS[f.key] || String)(f.value);
+const SHORT = { node: "node", sync: "sync", last_block: "last block", pace: "block pace", availability: "24 h uptime", stability: "stability", mempool: "waiting tx" };
+/* one point per UTC day: average and lowest of the hourly scores */
+function healthDays() {
+  const now = Date.now() / 1000, today = now - now % DAY, out = [];
+  for (let d = today - (DAYS - 1) * DAY; d <= today; d += DAY) {
+    const rows = (H?.hours || []).filter(r => r[0] >= d && r[0] < d + DAY);
+    out.push(rows.length ? { d, avg: rows.reduce((a, r) => a + r[1], 0) / rows.length, lo: Math.min(...rows.map(r => r[2])) } : { d, avg: null, lo: null });
+  }
+  return out;
+}
+function sparkSvg(days, w, h, cls, axis) {
+  const x = i => (i + 0.5) * w / days.length, y = v => h - v / 100 * h;
+  const th = [80, 50].map(t => `<line class="th" x1="0" x2="${w}" y1="${y(t)}" y2="${y(t)}"/>`).join("");
+  let lo = "", av = "", run = [];
+  const flush = () => {
+    if (!run.length) return;
+    lo += `<path class="lo" d="M${run.map(p => `${x(p.i)},${y(p.avg)}`).join("L")}L${run.slice().reverse().map(p => `${x(p.i)},${y(p.lo)}`).join("L")}Z"/>`;
+    av += `<path class="av" d="M${run.map(p => `${x(p.i)},${y(p.avg)}`).join("L")}${run.length === 1 ? "h0.01" : ""}"/>`;
+    run = [];
+  };
+  days.forEach((p, i) => { if (p.avg == null) flush(); else run.push({ ...p, i }); });
+  flush();
+  const now = H ? `<circle class="now ${H.state}" cx="${x(days.length - 1)}" cy="${y(H.score)}" r="${axis ? 4 : 3}"/>` : "";
+  const labels = axis ? [100, 80, 50, 0].map(t => `<text x="${w - 2}" y="${Math.min(h - 2, Math.max(10, y(t) - 3))}" text-anchor="end">${t}</text>`).join("") : "";
+  return th + lo + av + now + labels;
+}
+function renderHealth() {
+  const num = $("hNum"), st = $("hState");
+  if (!H) {
+    num.className = "h-num"; num.innerHTML = "—<small>/100</small>";
+    st.className = ""; st.textContent = reach === false ? "No data" : "Coming soon";
+    $("hSegs").innerHTML = ""; $("hSpark").innerHTML = "";
+    $("hWhy").textContent = reach === false ? "The relay does not answer." : "The score starts with the next server update.";
+    return;
+  }
+  num.className = "h-num " + H.state; num.innerHTML = `${H.score}<small>/100</small>`;
+  st.className = H.state; st.textContent = H.label;
+  $("hSegs").innerHTML = H.factors.map(f => `<i style="flex:${f.weight};--f:${(f.points / f.weight * 100).toFixed(0)}%" title="${esc(f.label)}: ${f.points} of ${f.weight}"></i>`).join("");
+  const lost = H.factors.filter(f => f.weight - f.points >= 1).sort((a, b) => (b.weight - b.points) - (a.weight - a.points));
+  $("hWhy").textContent = lost.length ? "Lost: " + lost.slice(0, 2).map(f => `${SHORT[f.key] || f.key} −${Math.round(f.weight - f.points)} (${fval(f)})`).join(" · ")
+    : "Every factor at full points.";
+  $("hSpark").innerHTML = sparkSvg(healthDays(), 200, 44, "", false);
+}
+function openHealth() {
+  if (!H) return;
+  tip.hidden = true;
+  const days = healthDays(), known = days.filter(d => d.avg != null);
+  $("dTitle").innerHTML = `Testnet health: ${H.score} / 100 · <span style="color:var(--${H.state === "healthy" ? "ok" : H.state === "degraded" ? "behind" : "bad"})">${esc(H.label)}</span>`;
+  $("dBody").innerHTML = `<p class="note" style="margin-top:0">One number for “does the Tau testnet run?”, from what our node sees. Seven factors, each worth part of 100 points. <b style="color:#fff">Healthy</b> from ${H.thresholds?.healthy ?? 80}, <b style="color:#fff">degraded</b> from ${H.thresholds?.degraded ?? 50}, below that <b style="color:#fff">down</b>. No answer from our node or no block for 30 minutes is down whatever the rest says. Updated ${ago(H.at)}.</p>
+  <h3>What the score is made of</h3>
+  <table class="ftab"><thead><tr><th>Factor</th><th>Now</th><th style="text-align:right">Points</th></tr></thead><tbody>
+  ${H.factors.map(f => `<tr class="${f.points <= 0 ? "zero" : f.weight - f.points >= 1 ? "lost" : ""}"><td><b>${esc(f.label)}</b>${f.note ? `<small>${esc(f.note)}</small>` : ""}</td><td>${esc(fval(f))}</td><td class="pts"><b>${f.points}</b> / ${f.weight}<span class="bar"><i style="width:${(f.points / f.weight * 100).toFixed(0)}%"></i></span></td></tr>`).join("")}
+  </tbody></table>
+  <h3>Last 30 days <small style="letter-spacing:0;text-transform:none">line: daily average · band: down to the lowest hour</small></h3>
+  ${known.length ? `<svg class="hchart spark" viewBox="0 0 600 120" preserveAspectRatio="none">${sparkSvg(days, 600, 120, "", true)}</svg><div class="axis"><span>${fmtDay(days[0].d)}</span><span>today</span></div>` : `<p class="note">The history starts now; the relay records the score once a minute.</p>`}
+  <p class="note">Get a Telegram post when the testnet goes down and when it is back: <a href="https://t.me/tauHUDcom" target="_blank" rel="noopener" style="color:#fff">t.me/tauHUDcom</a>. The waiting-transaction factor also shows the known mempool bug <a href="https://github.com/IDNI/tau-testnet/issues/81" target="_blank" rel="noopener">IDNI #81</a>. <a href="${BASE}/health-score" target="_blank" rel="noopener">Raw data (JSON)</a></p>`;
+  $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus();
+}
+$("health").addEventListener("click", openHealth);
+$("health").addEventListener("mouseenter", () => {
+  if (!H) return;
+  const worst = H.factors.filter(f => f.weight - f.points >= 1).sort((a, b) => (b.weight - b.points) - (a.weight - a.points))[0];
+  tip.innerHTML = `<b>Testnet health ${H.score} / 100 · ${esc(H.label)}</b>${worst ? `Biggest loss: ${esc(worst.label.toLowerCase())}, ${esc(fval(worst))}` : "Every factor at full points"}<br>Click for the breakdown`;
+  tip.hidden = false;
+  const r = $("health").getBoundingClientRect(), w = tip.offsetWidth;
+  tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px";
+  tip.style.top = (r.bottom + 8) + "px";
+});
+$("health").addEventListener("mouseleave", () => { tip.hidden = true; });
+function sampleHealth() {
+  const now = Math.floor(Date.now() / 1000), hours = [];
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let h = now - now % 3600 - 26 * DAY; h <= now; h += 3600) {
+    let a = 88 + rnd() * 10;
+    if (Math.abs(h - (now - 15 * DAY)) < 4 * 3600) a = 30 + rnd() * 20;
+    if (Math.abs(h - (now - 9 * DAY)) < 2 * 3600) a = 55 + rnd() * 15;
+    hours.push([h, Math.round(a * 10) / 10, Math.round(a - 5 - rnd() * 15)]);
+  }
+  return {
+    generated_at: now, at: now - 20, score: 91, state: "healthy", label: "Healthy", expected_block_seconds: 62,
+    thresholds: { healthy: 80, degraded: 50 }, hours,
+    factors: [
+      { key: "node", label: "Node answering", weight: 20, points: 20, value: "yes", note: "" },
+      { key: "sync", label: "In sync with the network", weight: 15, points: 15, value: "in sync", note: "" },
+      { key: "last_block", label: "Time since the last block", weight: 20, points: 20, value: 41, note: "usually 62 s between blocks" },
+      { key: "pace", label: "Blocks in the last hour", weight: 10, points: 10, value: 57, note: "about 58 expected" },
+      { key: "availability", label: "Live and in sync, 24 h", weight: 15, points: 14.2, value: 0.9891, note: "1440 checks" },
+      { key: "stability", label: "Restarts, reorgs and stalls, 24 h", weight: 15, points: 11, value: { restarts: 0, reorgs: 0, stalls: 1 }, note: "a restart costs 10 points, a stall over 10 min 4, a reorg 3" },
+      { key: "mempool", label: "Oldest waiting transaction", weight: 5, points: 0.8, value: 3100, note: "2 waiting" },
+    ],
+  };
+}
 
 /* ---------------- made-up data for previews (?sample) ---------------- */
 function sample() {

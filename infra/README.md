@@ -140,6 +140,29 @@ it lasts); `restarts`, `reorgs` and `stalls` (gaps of more than 10 min between t
 of the current chain: the network made no block) cover the same 31 days, and `status` is
 `/status`. Stored in `/data/uptime.json` (volume `relay_data`), so it survives restarts;
 the time between the relay's last sample and its next start counts as a relay outage.
+Since the health score, each bucket also carries `score_sum`, `score_min` and
+`score_samples` (older hours have only the first four fields).
+
+`GET /health-score` (CORS `*`, cached 5 s; tauhud.com/status, the alerts and `/status`
+use it) is one number for "does the testnet run?": 0 to 100 from seven factors whose
+weights add up to 100. `factors` lists each with `weight`, `points`, `value` and a `note`:
+
+| factor | weight | full points | no points |
+|---|---|---|---|
+| `node` node answering | 20 | answers | no answer |
+| `sync` in sync with the network | 15 | within 2 blocks of the tip | 30 behind |
+| `last_block` time since the last block | 20 | up to 3 typical block times | 30 min |
+| `pace` blocks in the last hour | 10 | 75 % of the expected count | none |
+| `availability` live and in sync, 24 h | 15 | 99 % of the checks | 80 % |
+| `stability` restarts, reorgs, stalls, 24 h | 15 | none | restart −10, stall −4, reorg −3 |
+| `mempool` oldest waiting transaction | 5 | up to 10 min | 60 min (IDNI #81 shows here) |
+
+The typical block time (`expected_block_seconds`) is the median gap of the last 100
+blocks, stalls left out (60 s until there are enough). `state` is `healthy` from 80
+(`HEALTH_OK_AT`), `degraded` from 50 (`HEALTH_DEGRADED_AT`), else `down`; no answer from
+the node or no block for 30 minutes is `down` whatever the score. `hours` is
+`[hour, average, lowest]` for the last 31 days. `/status` carries `health`
+(`score`, `state`, `label`).
 
 ## Rule Playground checker
 
@@ -241,6 +264,13 @@ JetBrains Mono, SIL OFL) live in `alerts/fonts/`.
   to `/recap/latest.png` and posts nothing.
 - `docker compose run --rm alerts python alerts.py --recap-now` draws it and posts it.
 
+**Health alerts**: once a minute the watcher reads `/health-score` and posts to Telegram
+when the testnet goes down (score under 50, the relay says `down`, or the relay does not
+answer) and when it recovers (score 70 or more), each only after the new state held for
+10 minutes (`HEALTH_DOWN_BELOW`, `HEALTH_UP_AT`, `HEALTH_CONFIRM_SECONDS`). The post names
+the factors that lose the most points. The state on the first run is not posted.
+`HEALTH_ALERTS=false` turns it off.
+
 Logs: `docker compose logs -f alerts`.
 
 ## Share previews
@@ -272,6 +302,7 @@ Logs: `docker compose logs -f share`.
 pip install websockets==15.0.1
 python relay/test_relay.py
 python relay/test_uptime.py
+python relay/test_health.py
 ```
 
 Runs the relay against a mock node that enforces the real node's rate limits: read
@@ -285,6 +316,7 @@ docker compose run --rm checker python /checker/test_checker.py
 ```bash
 pip install websockets==15.0.1 blake3==1.0.5 pillow==11.3.0
 python alerts/test_alerts.py
+python alerts/test_health_alerts.py
 ```
 
 Runs the alerts watcher against a mock relay: history on the first run is not posted, new
