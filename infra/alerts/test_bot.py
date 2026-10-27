@@ -90,7 +90,7 @@ class Api(BaseHTTPRequestHandler):
         assert self.path.startswith("/bot123:test/"), self.path
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])) or b"{}")
         if method == "getMe":
-            out = {"ok": True, "result": {"id": 1, "is_bot": True, "username": "TauHUDbot"}}
+            out = {"ok": True, "result": {"id": 1, "is_bot": True, "username": "tauhud_alerts_bot"}}
         elif method == "setMyCommands":
             TG["commands"] = body["commands"]
             out = {"ok": True, "result": True}
@@ -148,7 +148,7 @@ async def nothing_for(text, **kw):
 
 
 def test_parse():
-    P = lambda t, private=True: bot.parse(t, "TauHUDbot", private)  # noqa: E731
+    P = lambda t, private=True: bot.parse(t, "tauhud_alerts_bot", private)  # noqa: E731
     assert P("/height") == ("height", None)
     assert P("/start") == ("help", None)
     assert P("height?") == ("height", None)
@@ -156,13 +156,13 @@ def test_parse():
     assert P("is my tx in?") == ("tx", None)
     assert P(f"is my tx in? {TX_IN}") == ("tx", TX_IN)
     assert P(f"0x{ADDR.upper()}") == ("address", ADDR)
-    assert P("/tx@TauHUDbot " + TX_IN) == ("tx", TX_IN)
+    assert P("/tx@tauhud_alerts_bot " + TX_IN) == ("tx", TX_IN)
     assert P("what happened in block 12?") == ("block", "12")
     assert P("is the testnet down?") == ("status", None)
     assert P("hello") == ("help", None)
     assert P("hello", private=False) is None
     assert P("/height@OtherBot", private=False) is None
-    assert P("@TauHUDbot height?", private=False) == ("height", None)
+    assert P("@tauhud_alerts_bot height?", private=False) == ("height", None)
 
 
 async def main():
@@ -214,7 +214,7 @@ async def main():
         # groups: only commands, only ours; answers quote the question
         await nothing_for("height?", chat_id=-50, ctype="supergroup", user=8)
         await nothing_for("/height@OtherBot", chat_id=-50, ctype="supergroup", user=8)
-        r = await ask("/status@TauHUDbot", chat_id=-50, ctype="supergroup", user=8)
+        r = await ask("/status@tauhud_alerts_bot", chat_id=-50, ctype="supergroup", user=8)
         assert r["chat_id"] == -50 and "reply_parameters" in r, r
 
         # the channel's own posts arrive in its discussion group as automatic forwards: never answered
@@ -224,6 +224,19 @@ async def main():
         assert not any(s["chat_id"] == -60 for s in TG["sent"])
         r = await ask("/proposals", chat_id=-60, ctype="supergroup", user=9)  # people in that group are answered
         assert r["chat_id"] == -60 and "Coming up" in r["text"]
+
+        # an anonymous admin writes as the group itself (from GroupAnonymousBot, sender_chat = the group)
+        say("/height@tauhud_alerts_bot", chat_id=-61, ctype="supergroup", user=1087968824)
+        TG["updates"][-1]["message"]["from"]["is_bot"] = True
+        TG["updates"][-1]["message"]["sender_chat"] = {"id": -61, "type": "supergroup"}
+        await until(lambda: any(s["chat_id"] == -61 for s in TG["sent"]), "anonymous admin answered")
+        # someone writing as another channel, and other bots: ignored
+        say("/height", chat_id=-61, ctype="supergroup", user=1)
+        TG["updates"][-1]["message"]["sender_chat"] = {"id": -100555, "type": "channel"}
+        say("/height", chat_id=-61, ctype="supergroup", user=2)
+        TG["updates"][-1]["message"]["from"]["is_bot"] = True
+        await asyncio.sleep(1.2)
+        assert sum(s["chat_id"] == -61 for s in TG["sent"]) == 1
 
         # the alerts channel and old questions: never answered
         await nothing_for("/height", chat_id=-100123, ctype="channel", username="tauHUDcom")

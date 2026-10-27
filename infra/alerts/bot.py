@@ -535,17 +535,20 @@ class Bot:
     async def handle(self, upd: dict):
         msg = upd.get("message") or {}
         chat, user = msg.get("chat") or {}, msg.get("from") or {}
-        if not chat or user.get("is_bot") or self.channel_chat(chat):
-            return
-        if msg.get("is_automatic_forward") or msg.get("sender_chat"):
-            return  # a channel post copied into its discussion group, or someone writing as a channel
+        if not chat or self.channel_chat(chat) or msg.get("is_automatic_forward"):
+            return  # the channel itself, or a channel post copied into its discussion group
+        sender = msg.get("sender_chat") or {}
+        if sender and sender.get("id") != chat.get("id"):
+            return  # someone writing as a channel
+        if user.get("is_bot") and not sender:
+            return  # other bots (an anonymous group admin also arrives as a bot, with the group as sender_chat)
         if time.time() - float(msg.get("date") or 0) > MAX_AGE:
             return  # asked while the bot was down: an old answer would only confuse
         private = chat.get("type") == "private"
         q = parse(msg.get("text") or "", self.name, private)
         if not q:
             return
-        b = self.buckets.setdefault(int(user.get("id") or chat.get("id")), Bucket())
+        b = self.buckets.setdefault(int(chat["id"] if sender else user.get("id") or chat["id"]), Bucket())
         if not b.take():
             if not b.warned:
                 b.warned = True
