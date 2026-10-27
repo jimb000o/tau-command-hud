@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.8"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.9"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';

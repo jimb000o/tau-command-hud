@@ -15,7 +15,7 @@
 /* "you are here": a 2px line exactly as wide as the word, 3px under it (not under the caret, not on the row's edge) */
 .tnav .ni.here .lbl::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; border-radius: 1px; background: var(--tn-ok); box-shadow: 0 0 8px var(--tn-ok); }
 .tnav .ni[aria-expanded="true"] { color: #fff; background: rgba(255,255,255,.07); }
-.tnav .caret { color: var(--tn-dim); font-size: 9px; }
+.tnav .caret { color: var(--tn-dim); font-size: 10px; }
 .tnav .menu { position: absolute; top: calc(100% + 12px); left: 0; background: #111113; border: 1px solid var(--tn-hair); border-radius: 12px; padding: 10px; display: grid; gap: 2px; width: max-content; max-width: min(520px, calc(100vw - 32px)); box-shadow: 0 20px 50px rgba(0,0,0,.6); z-index: 45; text-transform: none; letter-spacing: 0; }
 .tnav .menu[hidden], .tsheet[hidden], .tsheet-bg[hidden], .tnav-pop[hidden] { display: none; }
 .mi { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; color: inherit; text-align: left; background: transparent; border: 0; font: inherit; }
