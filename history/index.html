@@ -46,12 +46,10 @@ html.wide .cols > .panel { overflow: auto; min-height: 0; }
 html.wide .cols .txs { max-height: none; }
 html.wide .src { margin: 0; padding-left: 150px; }
 html.wide .tip { font-size: calc(12px * var(--z)); padding: calc(6px * var(--z)) calc(9px * var(--z)); max-width: calc(320px * var(--z)); }
-/* 21:9 and wider: the timeline gets its own column and the three panels stand beside it at full height */
-html.ultra .wrap { grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); grid-template-rows: auto auto auto minmax(0, 1fr) auto;
-  grid-template-areas: "head head head head" "intro intro intro intro" "conn conn conn conn" "tl rules agree block" "src src src src"; }
-html.ultra .wrap > header { grid-area: head; } html.ultra #intro { grid-area: intro; } html.ultra .conn { grid-area: conn; }
-html.ultra #pTl { grid-area: tl; overflow: auto; } html.ultra .cols { display: contents; } html.ultra .src { grid-area: src; }
-html.ultra #pRules { grid-area: rules; } html.ultra #pAgree { grid-area: agree; } html.ultra #pBlock { grid-area: block; }
+/* wide: the timeline stays full width on top; the intro moves into one row so the panels below get the height */
+html.wide #intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 32px; align-items: end; }
+html.wide #intro .lead { max-width: none; margin: 0; }
+html.wide #intro .sub { margin: 0; }
 html.wide .modal .sheet, html.wide .fb-fab { zoom: var(--z); }
 html.wide .modal .sheet { max-height: calc(100% / var(--z)); }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
@@ -641,9 +639,7 @@ function drawTimeline() {
   const svg = $("tl"); const W = Math.max(280, svg.clientWidth || svg.parentNode.clientWidth);
   TL.w = W; TL.x0 = 14; TL.x1 = W - 14;
   const L = lanes(H.props), laneH = 26, nl = Math.max(1, L.n);
-  // 21:9: the timeline has a full-height column, so the transaction bars take the spare height
-  const spare = document.documentElement.classList.contains("ultra") ? Math.max(0, $("pTl").clientHeight - 340 - nl * laneH - 90) : 0;
-  const txH = 46 + Math.min(260, spare);
+  const txH = 46;
   const y = { txL: 12, tx0: 20, tx1: 20 + txH }; y.prL = y.tx1 + 18; y.pr0 = y.prL + 8; y.pr1 = y.pr0 + nl * laneH; y.rvL = y.pr1 + 16; y.rv0 = y.rvL + 8; y.rv1 = y.rv0 + 22; y.ax = y.rv1 + 18; y.h = y.ax + 16;
   TL.y = y; TL.lanes = L; TL.laneH = laneH;
   svg.setAttribute("height", y.h); svg.setAttribute("viewBox", `0 0 ${W} ${y.h}`);
