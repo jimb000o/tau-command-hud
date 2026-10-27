@@ -201,6 +201,51 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
 .fb .status.ok { color: var(--ok); }
 .fb a.btn { text-decoration: none; }
 .fblink { color: var(--dim); font-size: 12px; }
+/* touch and phone: the same page as a readable single column with controls a thumb can hit */
+.touch, .dock { display: none; }
+@media (hover: none) { .kbd { display: none; } .touch { display: inline; } }
+@media (max-width: 700px) {
+  .lead { font-size: 21px; }
+  .sub { font-size: 12px; }
+  .kbd { display: none; } .touch { display: inline; }
+  .panel { padding: 12px; }
+  .controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .controls .grp { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .controls .grp + .grp { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .controls .btn { min-height: 44px; padding: 0 4px; font-size: 13px; letter-spacing: .06em; }
+  .controls .grp + .grp .btn { font-size: 11px; }
+  .controls .w { display: none; }
+  .btn.primary { min-width: 0; }
+  .readout .h { font-size: 24px; }
+  input[type=range] { -webkit-appearance: none; appearance: none; height: 36px; margin: 6px 0 0; background: transparent; touch-action: none; }
+  input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); }
+  input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -11px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 0 0 4px rgba(57,255,138,.25); }
+  input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 0 0 4px rgba(57,255,138,.25); }
+  .legend { font-size: 11.5px; gap: 4px 14px; }
+  #tl .lbl { font-size: 11px; letter-spacing: .12em; }
+  #tl .ax, #tl .axs, #tl .prop text, #tl .revn, #tl .none { font-size: 11px; }
+  h3 { font-size: 11px; }
+  .flow span { font-size: 11px; letter-spacing: .08em; }
+  .panel h2 small { font-size: 12px; }
+  .kv { grid-template-columns: minmax(7.5em, 38%) minmax(0, 1fr); gap: 6px 12px; font-size: 13px; }
+  .items li, .txs li button { font-size: 12.5px; }
+  .txs { max-height: none; }
+  .btn.small { min-height: 40px; padding: 0 14px; font-size: 10.5px; }
+  .src { font-size: 12px; }
+  .dock { display: grid; position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 45; grid-template-columns: 44px minmax(0, 1fr) 44px 44px; align-items: center; gap: 6px;
+    padding: 6px max(10px, env(safe-area-inset-right, 0px)) 6px max(10px, env(safe-area-inset-left, 0px)); background: #0c0c0e; border-top: 1px solid var(--hair);
+    transform: translateY(calc(100% + 60px)); transition: transform .18s ease; }
+  .dock.on { transform: none; }
+  .dock button { height: 44px; border-radius: 10px; border: 1px solid var(--hair); background: transparent; color: #fff; font: 15px var(--display); cursor: pointer; }
+  .dock button:disabled { opacity: .35; }
+  .dock .dmid { display: grid; min-width: 0; }
+  .dock .dh { font-size: 11px; color: var(--dim); white-space: nowrap; overflow: hidden; text-align: center; }
+  .dock .dh b { color: #fff; font: 600 13px var(--display); }
+  .dock input[type=range] { height: 26px; margin: 0; }
+  body.dockon { padding-bottom: 140px; }
+  body.dockon .fb-fab { display: none; }
+}
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -224,18 +269,18 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   </div>
 
   <section class="panel" id="pTl">
-    <h2>The chain, block by block <small>drag or click the timeline · ← → step · Shift + ← → jump to the next rule event</small></h2>
+    <h2>The chain, block by block <small><span class="kbd">drag or click the timeline · ← → step · Shift + ← → jump to the next rule event</span><span class="touch">drag the timeline or the slider · tap a bar for its rule change</span></small></h2>
     <div class="tlwrap" id="tlwrap">
       <svg id="tl" height="200" role="img" aria-label="Timeline of blocks and rule changes"></svg>
     </div>
     <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Block height">
     <div class="controls">
       <span class="grp">
-        <button class="btn" id="bStart" type="button" title="Genesis">⏮ Genesis</button>
-        <button class="btn" id="bPrev" type="button" aria-label="Previous block">◀ Block</button>
+        <button class="btn" id="bStart" type="button" title="Genesis" aria-label="Genesis">⏮<span class="w"> Genesis</span></button>
+        <button class="btn" id="bPrev" type="button" aria-label="Previous block">◀<span class="w"> Block</span></button>
         <button class="btn primary" id="bPlay" type="button">▶ Play</button>
-        <button class="btn" id="bNext" type="button" aria-label="Next block">Block ▶</button>
-        <button class="btn" id="bEnd" type="button">Now ⏭</button>
+        <button class="btn" id="bNext" type="button" aria-label="Next block"><span class="w">Block </span>▶</button>
+        <button class="btn" id="bEnd" type="button" aria-label="Now"><span class="w">Now </span>⏭</button>
       </span>
       <span class="grp">
         <button class="btn" id="bPrevEv" type="button">◀ Rule event</button>
@@ -270,6 +315,14 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
 </div>
 
 <div class="tip" id="tip" hidden></div>
+
+<!-- phone: once the timeline is scrolled away, a small block picker stays above the tab bar -->
+<div class="dock" id="dock" aria-label="Pick a block">
+  <button type="button" id="dPrev" aria-label="Previous block">◀</button>
+  <label class="dmid"><span class="dh"><b id="dH">#–</b> <span id="dT"></span></span><input type="range" id="dScrub" min="0" max="0" value="0" step="1" aria-label="Block height"></label>
+  <button type="button" id="dNext" aria-label="Next block">▶</button>
+  <button type="button" id="dUp" aria-label="Back to the timeline">▲</button>
+</div>
 
 <div class="modal" id="mDetail" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle">
   <div class="sheet">
@@ -642,7 +695,7 @@ function lanes(props) {
   for (const p of props) {
     const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
     p.label = labelOf(p, TL.x1 - TL.x0);
-    const lw = p.label.length * 6.4 + 8;
+    const lw = p.label.length * charW() + 8;
     let lx = xa; if (lx + lw > TL.x1) lx = Math.max(TL.x0, TL.x1 - lw);
     const from = Math.min(xa, lx) - 6, to = Math.max(xEnd, lx + lw) + 6;
     let l = ends.findIndex(e => e < from);
@@ -651,6 +704,8 @@ function lanes(props) {
   }
   return { map: out, n: ends.length };
 }
+// width of one character of a rule-change label (10.5 px mono; 11 px on phones)
+const charW = () => matchMedia("(max-width: 700px)").matches ? 6.7 : 6.4;
 function tickStep(pxPerBlock) {
   for (const s of [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000]) if (s * pxPerBlock >= 74) return s;
   return 20000;
@@ -719,7 +774,7 @@ function drawTimeline() {
     for (const v of p.votes.filter(v => v.counted)) { const xv = xOf(v.h); g.push(`<line class="vote" x1="${xv}" x2="${xv}" y1="${top - 1}" y2="${top + hgt + 1}"/>`); }
     // label: its lane was chosen with room for it, so it is never cut or covered
     g.push(`<text x="${lx}" y="${ty}">${esc(p.label)}</text>`);
-    g.push(`<rect x="${Math.min(xa, xEnd, lx) - 4}" y="${ty - 10}" width="${Math.max(xEnd, lx + p.label.length * 6.4) - Math.min(xa, lx) + 8}" height="${top + hgt + 3 - (ty - 10)}" fill="transparent"/></g>`);
+    g.push(`<rect x="${Math.min(xa, xEnd, lx) - 4}" y="${ty - 10}" width="${Math.max(xEnd, lx + p.label.length * charW()) - Math.min(xa, lx) + 8}" height="${top + hgt + 3 - (ty - 10)}" fill="transparent"/></g>`);
     parts.push(g.join(""));
   }
   // spec revision step line
@@ -745,7 +800,8 @@ function drawTimeline() {
 /* ---------------- hover + drag on the timeline ---------------- */
 const tip = $("tip");
 function showTip(ev, html) { tip.innerHTML = html; tip.hidden = false; const r = tip.getBoundingClientRect();
-  let x = ev.clientX + 14, yy = ev.clientY + 16; if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14; if (yy + r.height > innerHeight - 8) yy = ev.clientY - r.height - 12;
+  let x = ev.clientX + 14, yy = ev.clientY + 16;
+  if (ev.pointerType === "touch") { x = ev.clientX - r.width / 2; yy = ev.clientY - r.height - 28; if (x + r.width > innerWidth - 8) x = innerWidth - 8 - r.width; } if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14; if (yy + r.height > innerHeight - 8) yy = ev.clientY - r.height - 12;
   tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, yy) + "px"; }
 function hideTip() { tip.hidden = true; }
 function svgX(ev) { const r = $("tl").getBoundingClientRect(); return (ev.clientX - r.left) * (TL.w / r.width); }
@@ -774,7 +830,7 @@ tlw.addEventListener("pointermove", ev => {
   const p = propAt(ev);
   if (p) showTip(ev, propTip(p)); else showTip(ev, blockTip(clampH(hOf(svgX(ev)))));
 });
-tlw.addEventListener("pointerup", () => { drag = false; });
+tlw.addEventListener("pointerup", ev => { drag = false; if (ev.pointerType !== "mouse") hideTip(); });
 tlw.addEventListener("pointerleave", () => { if (!drag) hideTip(); });
 tlw.addEventListener("click", ev => { const p = propAt(ev); if (p) { hideTip(); openProp(p); } });
 
@@ -788,6 +844,17 @@ function setCursor(h, user) {
   render();
 }
 $("scrub").addEventListener("input", e => { stopPlay(); setCursor(+e.target.value, true); });
+$("dScrub").addEventListener("input", e => { stopPlay(); setCursor(+e.target.value, true); });
+$("dPrev").onclick = () => { stopPlay(); setCursor(cursor - 1, true); };
+$("dNext").onclick = () => { stopPlay(); setCursor(cursor + 1, true); };
+$("dUp").onclick = () => $("pTl").scrollIntoView({ behavior: "smooth", block: "start" });
+// the dock shows once the timeline panel has scrolled out of view
+if (window.IntersectionObserver) new IntersectionObserver(([e]) => {
+  const on = !e.isIntersecting && e.boundingClientRect.top < 0;
+  const tab = document.querySelector(".tabbar"), dock = $("dock");
+  if (tab && tab.offsetHeight) dock.style.bottom = tab.offsetHeight + "px";   // sits right on the tab bar
+  dock.classList.toggle("on", on); document.body.classList.toggle("dockon", on);
+}, { rootMargin: "-40px 0px 0px 0px" }).observe($("pTl"));
 $("bStart").onclick = () => { stopPlay(); setCursor(C.first, true); };
 $("bEnd").onclick = () => { stopPlay(); setCursor(C.head, true); };
 $("bPrev").onclick = () => { stopPlay(); setCursor(cursor - 1, true); };
@@ -838,6 +905,9 @@ function readout() {
   ["bStart", "bPrev"].forEach(id => $(id).disabled = cursor <= C.first);
   ["bEnd", "bNext"].forEach(id => $(id).disabled = cursor >= C.head);
   $("bPrevEv").disabled = nextEvent(-1) == null; $("bNextEv").disabled = nextEvent(1) == null;
+  const ds = $("dScrub"); ds.min = sc.min; ds.max = sc.max; ds.value = cursor;
+  $("dH").textContent = `#${fmtN(cursor)}`; $("dT").textContent = ts ? hhmm(ts) + " UTC" : "genesis";
+  $("dPrev").disabled = cursor <= C.first; $("dNext").disabled = cursor >= C.head;
   ["rH", "aH", "bH"].forEach(id => $(id).textContent = `#${fmtN(cursor)}`);
 }
 function renderRules() {

@@ -110,6 +110,11 @@ footer a { color: var(--dim); }
   .side { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 700px) { td.hide-s, th.hide-s { display: none; } }
+/* phone: nothing smaller than 11 px, buttons big enough for a thumb */
+@media (max-width: 700px) {
+  .tile h3, th, button.copy { font-size: 11px; }
+  button.copy { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+}
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>

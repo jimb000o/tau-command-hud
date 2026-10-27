@@ -91,11 +91,12 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
   .tnav { gap: 6px 8px; }
   .tnav-sep, .tnav-nav, .tnav .upd, .tnav .vlab { display: none; }
   .tnav-r { margin-left: auto; gap: 8px; }
-  .tnav .pill { font-size: 10px; padding: 7px 11px; letter-spacing: .08em; }
+  .tnav .pill { font-size: 11px; padding: 0 14px; min-height: 44px; letter-spacing: .08em; }
   .tnav .pill.tg span { display: none; }
-  .tnav .pill.tg { padding: 7px 9px; }
-  .tabbar { display: grid; position: fixed; left: 0; right: 0; bottom: 0; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--tn-hair, rgba(255,255,255,.18)); background: #0c0c0e; z-index: 50; padding-bottom: env(safe-area-inset-bottom, 0px); }
-  .tabbar a, .tabbar button { font: 600 9.5px var(--display, sans-serif); letter-spacing: .08em; text-transform: uppercase; color: var(--dim, #8a8a94); text-align: center; padding: 8px 0 9px; display: flex; flex-direction: column; align-items: center; gap: 3px; background: transparent; border: 0; text-decoration: none; cursor: pointer; position: relative; }
+  .tnav .pill.tg { padding: 0; width: 44px; justify-content: center; }
+  .tnav .tnav-gear { width: 44px; height: 44px; }
+  .tabbar { display: grid; position: fixed; left: 0; right: 0; bottom: 0; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--tn-hair, rgba(255,255,255,.18)); background: #0c0c0e; z-index: 50; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .tabbar a, .tabbar button { font: 600 11px var(--display, sans-serif); letter-spacing: .05em; text-transform: uppercase; color: var(--dim, #8a8a94); text-align: center; padding: 8px 0 9px; display: flex; flex-direction: column; align-items: center; gap: 3px; background: transparent; border: 0; text-decoration: none; cursor: pointer; position: relative; }
   .tabbar em { font: 500 15px var(--mono, monospace); font-style: normal; color: #888; }
   .tabbar .on { color: #fff; } .tabbar .on em { color: var(--ok, #39ff8a); }
   .tabbar .new::after { content: ""; position: absolute; top: 7px; right: calc(50% - 14px); width: 6px; height: 6px; border-radius: 50%; background: var(--ok, #39ff8a); box-shadow: 0 0 6px var(--ok, #39ff8a); }
@@ -105,16 +106,17 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
   .tsheet h4 { margin: 6px 4px 4px; font: 600 10px var(--mono, monospace); letter-spacing: .18em; text-transform: uppercase; color: var(--ok, #39ff8a); }
   .tsheet .mi { padding: 9px 6px; }
   .tsheet .mi b { white-space: normal; }
-  .tnav-spacer { height: calc(58px + env(safe-area-inset-bottom, 0px)); }
+  /* room for the tab bar plus the floating Feedback button above it, so the last row can scroll clear of both */
+  .tnav-spacer { height: calc(112px + env(safe-area-inset-bottom, 0px)); }
   header.trail { gap: 8px 8px; }
   header.trail .brand { flex: 1 1 0; flex-wrap: wrap; }
   header.trail .brand .bn { font-size: 20px; }
-  header.trail .brand h1.bt { flex: 1 1 100%; font-size: 9px; letter-spacing: .12em; line-height: 1.3; }
-  header.trail .chip.unoff { order: 2; flex: 1 1 100%; font-size: 9px; letter-spacing: .03em; padding: 5px 10px; justify-content: center; }
-  header.trail .chips { order: 3; flex: 1 1 100%; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 5px; }
-  header.trail .chips::-webkit-scrollbar { display: none; }
-  header.trail .chip { font-size: 10px; padding: 4px 10px; letter-spacing: .08em; }
-  .tnav .seg > a, .tnav .seg > button { font-size: 10.5px; padding: 8px 12px; min-height: 36px; }
+  header.trail .brand h1.bt { flex: 1 1 100%; font-size: 11px; letter-spacing: .12em; line-height: 1.3; }
+  /* every chip stays whole: the row wraps instead of running off the screen */
+  header.trail .chip.unoff { order: 2; flex: 1 1 100%; font-size: 11px; letter-spacing: .03em; padding: 6px 10px; justify-content: center; text-align: center; white-space: normal; }
+  header.trail .chips { order: 3; flex: 1 1 100%; width: 100%; flex-wrap: wrap; gap: 6px; }
+  header.trail .chip { font-size: 11px; padding: 5px 10px; letter-spacing: .06em; }
+  .tnav .seg > a, .tnav .seg > button { font-size: 11px; padding: 0 12px; min-height: 44px; }
   .fb-fab { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
   .tour { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
 }
