@@ -43,7 +43,7 @@ html.wide body { padding: 0; overflow: hidden; }
 html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px; transform: scale(var(--z)); transform-origin: 0 0; grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; gap: 12px; }
 /* the panels are as tall as their content (capped at half the screen), the timeline above takes the rest */
 html.wide #pTl { overflow: hidden; min-height: 0; }
-html.wide .cols { min-height: 0; align-items: stretch; max-height: calc(50vh / var(--z)); }
+html.wide .cols { min-height: 0; align-items: stretch; height: calc(38vh / var(--z)); }   /* fixed: stepping through blocks must never resize the timeline */
 html.wide .cols > .panel { overflow: auto; min-height: 0; }
 html.wide .cols .txs { max-height: none; }
 html.wide .src { margin: 0; padding-left: 150px; }
@@ -1042,7 +1042,7 @@ render = function () {   // jump to a shared block once it is loaded, otherwise 
     document.documentElement.style.setProperty("--z", z);
   };
   apply(); addEventListener("resize", () => { apply(); drawTimeline(); });
-  // the panels below change height with their content; the timeline then takes the new spare height
+  // the timeline takes the spare height of the screen; the panels below have a fixed height and scroll inside
   if (window.ResizeObserver) new ResizeObserver(() => { if (document.documentElement.classList.contains("wide")) drawTimeline(); }).observe($("pTl"));
 })();
 setInterval(() => { if (C.head >= 0) readout(); }, 15000);
