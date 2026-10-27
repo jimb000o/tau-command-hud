@@ -220,6 +220,7 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
                      "activated_at": None, "activated_ts": None, "expired_at": None, "expired_ts": None,
                      "thr": thr, "rev": None, "dups": [], "tx_id": tx_id}
                 p["explain"] = explain.explain(p["revisions"], p["patch"], spec)
+                p["diff"] = explain.diff(p["revisions"], spec) if p["revisions"] else None
                 p["title"] = p["explain"]["title"]
                 p["parts"] = [c["topic"] + ": " + c["text"] for c in p["explain"]["changes"]] or [p["title"]]
                 props[uid] = p
@@ -336,10 +337,18 @@ def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
         for a, b in NOW_TENSE:
             why = why.replace(a, b)
     body = " ".join(([("What changes: " + "; ".join(what) + ".")] if what else []) + ([why] if why else []) + facts)
-    return {"headline": headline, "label": x.get("label"), "what": what, "why": why, "facts": facts,
+    # the changed lines of the rule text, not for a dropped proposal (nothing changes)
+    d = (p or {}).get("diff")
+    rdiff = None
+    if d and k != "dropped":
+        rdiff = {"summary": explain.diff_summary(d), "lines": [r for r in d["lines"] if r[0] != " "][:DIFF_LINES],
+                 "more": max(0, d["added"] + d["removed"] - DIFF_LINES)}
+    return {"headline": headline, "label": x.get("label"), "what": what, "why": why, "facts": facts, "diff": rdiff,
             "what_title": "What changed" if k == "active" else "What it would change" if k == "dropped" else "What changes",
             "severity": x.get("severity"), "body": body, "link": link}
 
+
+DIFF_LINES = 8  # changed lines shown in a post; the rest is on the page
 
 NOW_TENSE = [("would cost", "costs"), ("would rest", "rests"), ("could no longer", "can no longer"), ("would be accepted", "are accepted"),
              ("would make", "make"), ("would follow", "follow"), ("Nothing would change", "Nothing changed"), ("If it takes effect, ", "")]
@@ -359,6 +368,14 @@ def telegram_text(item: dict) -> str:
     if item.get("why"):
         warn = "⚠️ " if item.get("severity") in ("halt", "unsafe") else ""
         out += ["", f"<b>{e(item.get('why_title', 'Why it matters'))}</b>", warn + e(item["why"])]
+    d = item.get("diff")
+    if d:  # Telegram has no colours: + and − carry the meaning
+        if d["lines"]:
+            code = "\n".join(("+ " if op == "+" else "- ") + t.strip() for op, t in d["lines"])
+            more = f"\n… {d['more']} more on the page" if d["more"] else ""
+            out += ["", f"<b>Rule text diff</b> ({e(d['summary'])})", f"<pre><code class=\"language-diff\">{e(code + more)}</code></pre>"]
+        else:
+            out += ["", "<b>Rule text diff</b>: none. The text equals the rules in force."]
     if item["facts"]:
         out += [""] + [e(f) for f in item["facts"]]
     label = "Open in Tau HUD" if item["kind"] == "restart" else "Details and votes on Tau HUD"

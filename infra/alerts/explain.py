@@ -234,3 +234,53 @@ def explain(revisions: list[str], patch: dict | None, spec: dict[str, str]) -> d
     why = halt["why"] if halt else " ".join(dict.fromkeys(c["why"] for c in changes[:2]))
     return {"title": title, "label": label, "changes": [{k: c[k] for k in ("topic", "text", "why")} for c in changes],
             "unchanged": unchanged, "why": why, "severity": sev or "normal"}
+
+
+# ---------------- rule text diff (same as assets/rulediff.js on the pages) ----------------
+def _lines(spec: dict[str, str]) -> list[tuple[str, str]]:
+    """The spec as readable text, as (shown, compared) pairs. The && between two
+    clauses is shown but not compared, so adding a clause does not mark the one before it."""
+    seen, cs = set(), []
+    for s in sorted(spec, key=lambda x: int(x[1:])):
+        if spec[s] not in seen:
+            seen.add(spec[s])
+            cs.append(spec[s])
+    out = [("always (", "always (")]
+    for i, c in enumerate(cs):
+        ls = [ln.rstrip() for ln in c.split("\n") if ln.strip()]
+        ind = min((len(ln) - len(ln.lstrip()) for ln in ls[1:]), default=0)
+        for j, ln in enumerate(ls):
+            t = ("        " + ln[ind:]) if j else ("    " + ln.strip())
+            out.append((t + (" &&" if j == len(ls) - 1 and i < len(cs) - 1 else ""), t.strip()))
+    out.append((")", ")"))
+    return out
+
+
+def diff(revisions: list[str], spec: dict[str, str]) -> dict:
+    """{lines: [[op, text]], added, removed, streams} comparing the rules in force
+    with the rules after this proposal. Whitespace-only changes do not count."""
+    import difflib
+    new, streams = dict(spec), []
+    for s, c in apply({}, revisions).items():
+        if s in spec and _norm(spec[s]) == _norm(c):
+            continue
+        new[s] = c
+        streams.append(s)
+    a, b = _lines(spec), _lines(new)
+    sm = difflib.SequenceMatcher(None, [k for _, k in a], [k for _, k in b], autojunk=False)
+    rows: list[list[str]] = []
+    for op, i1, i2, j1, j2 in sm.get_opcodes():
+        if op == "equal":
+            rows += [[" ", t] for t, _ in b[j1:j2]]
+        else:
+            rows += [["-", t] for t, _ in a[i1:i2]] + [["+", t] for t, _ in b[j1:j2]]
+    added = sum(1 for r in rows if r[0] == "+")
+    removed = sum(1 for r in rows if r[0] == "-")
+    return {"lines": rows, "added": added, "removed": removed, "streams": sorted(streams, key=lambda x: int(x[1:]))}
+
+
+def diff_summary(d: dict) -> str:
+    if not d["added"] and not d["removed"]:
+        return "no difference"
+    pl = lambda n: f"{n} line{'' if n == 1 else 's'}"  # noqa: E731
+    return ", ".join(x for x in (f"+{pl(d['added'])}" if d["added"] else "", f"−{pl(d['removed'])}" if d["removed"] else "") if x)

@@ -182,6 +182,7 @@ h3 { margin: 14px 0 6px; font: 600 10.5px var(--display); letter-spacing: .18em;
 .sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
 .sheet .panel { padding-right: 48px; }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
+details.raw { margin: 14px 0 0; } details.raw > summary { cursor: pointer; min-height: 28px; padding: 4px 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 50vh; overflow: auto; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
 .src { color: var(--dim); font-size: 11.5px; margin-top: 10px; }
@@ -354,6 +355,7 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
 </div>
 
 <script src="vendor/blake3.umd.min.js"></script>
+<script src="../assets/rulediff.js"></script>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -1074,7 +1076,8 @@ function openProp(p) {
   ].filter(Boolean);
   openDetail(`${esc(p.title)}`, `
     <ul class="items">${steps.map(([t, m, h]) => `<li class="${h != null ? "on" : "now"}">${h != null ? `<button class="linkish" type="button" data-goto="${h}"><b>${t}</b></button><span class="m">${m} · <button class="linkish inl" type="button" data-goto="${h}">go to this block</button></span>` : `<b>${t}</b><span class="m">${m}</span>`}</li>`).join("")}</ul>
-    ${p.revisions.length ? `<h3>Rule text it adds (${p.revisions.length})</h3>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}` : ""}
+    ${window.RuleDiff ? RuleDiff.html(RuleDiff.specAt(p.proposedAt, H.props, GENESIS.rules), p.revisions, { at: p.proposedAt, patch: !!p.patch }) : ""}
+    ${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
     ${p.patch ? `<h3>Settings it changes</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
     <h3>Transaction as stored in block #${fmtN(p.proposedAt)}</h3><pre class="code">${esc(JSON.stringify(p.tx, (k, v) => k === "_h" ? undefined : v, 2))}</pre>`);
@@ -1139,7 +1142,28 @@ render = function () {   // jump to a shared block once it is loaded, otherwise 
 })();
 setInterval(() => { if (C.head >= 0) readout(); }, 15000);
 render();
-connect();
+if (params.has("sample")) sampleChain(); else connect();
+
+/* ---------------- sample chain (?sample): proposals with every kind of rule text diff, no node needed ---------------- */
+async function sampleChain() {
+  const V = GENESIS.validators[0], now = Math.round(Date.now() / 1000), head = 480;
+  const prop = (revs, act, patch) => ({ tx_type: "consensus_rule_update", sender_pubkey: V, rule_revisions: revs, activate_at_height: act, ...(patch ? { host_contract_patch: patch } : {}) });
+  const P = [
+    [30, prop(["# Valid blocks need a signature and a height above zero\nalways (\n    o6[t]:bv[16] = (i10[t]:bv[16] & ({ 1 }:bv[16] - (i6[t]:bv[64] = { 0 }:bv[64])))\n)"], 120)],
+    [140, prop(["always (\n  o6[t]:bv[16] = (i10[t]:bv[16] & ({ 1 }:bv[16] - (i6[t]:bv[64] = { 0 }:bv[64]))) &&\n  o7[t]:bv[16] = { 1 }:bv[16]\n)"], 220)],
+    [300, prop(["always (o9[t]:bv[24] = { #x000014 }:bv[24])"], 700)],
+    [420, prop(["# ONE PROPOSER\nalways (\n    o7[t]:bv[16] = (i8[t]:bv[384] = { #x" + V + " }:bv[384]) ? { 1 }:bv[16] : { 0 }:bv[16] &&\n    o10[t]:bv[16] = i15[t]:bv[16]\n)"], 5420)],
+  ];
+  const txs = {};
+  for (const [h, t] of P) {
+    (txs[h] ||= []).push(t);
+    if (h !== 420) (txs[h + 2] ||= []).push({ tx_type: "consensus_rule_vote", sender_pubkey: V, update_id: await updateId(t), approve: true });
+  }
+  for (let h = 0; h <= head; h++) store({ header: { block_number: h, timestamp: h ? now - (head - h) * 12 : 0 }, transactions: txs[h] || [], tx_ids: (txs[h] || []).map((_, i) => `sample${h}-${i}`) });
+  C.first = 0; C.loading = false;
+  setConn("ok", "Sample data", "A made-up chain with four rule changes, to show the rule text diff. Remove ?sample from the address for the live chain.");
+  rebuild();
+}
 </script>
 </body>
 </html>
