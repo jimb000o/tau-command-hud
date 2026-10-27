@@ -114,6 +114,18 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .detail li b { color: #fff; font-weight: 600; }
 .detail li .muted { color: var(--dim); }
 .detail .rule { margin-top: 6px; }
+[data-detail] { cursor: pointer; }
+.tx[data-detail], .offer[data-detail], .upd[data-detail] { position: relative; transition: background .15s; }
+.tx[data-detail]:hover, .offer[data-detail]:hover, .upd[data-detail]:hover, .clause[data-detail]:hover, .val[data-detail]:hover { background: rgba(255,255,255,.06); }
+.tx[data-detail]::after, .offer[data-detail]::after, .upd[data-detail]::after { content: "open ›"; position: absolute; right: 8px; bottom: 5px; font: 10px var(--mono); letter-spacing: .04em; color: var(--dim); opacity: 0; transition: opacity .15s; pointer-events: none; }
+.tx[data-detail]:hover::after, .offer[data-detail]:hover::after, .upd[data-detail]:hover::after { opacity: 1; }
+.detail .checks { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
+.detail .checks i { font: 10.5px var(--mono); font-style: normal; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--ok); }
+.detail .checks i.bad { color: var(--bad); border-color: rgba(255,77,109,.5); }
+.detail .checks i.warn { color: var(--amber); }
+.detail .checks i.off { color: var(--dim); }
+.detail .verdict-line { margin: 10px 0 0; padding: 8px 10px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 500 12.5px var(--display); color: #fff; }
+.detail .verdict-line.bad { border-left-color: var(--bad); background: rgba(255,77,109,.07); }
 .detail .lead { font: 500 15px/1.4 var(--display); color: #fff; margin: 0 0 6px; }
 .btn.state { border-color: rgba(255,255,255,.5); color: #fff; }
 .grid { display: grid; gap: 10px; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr);
@@ -715,6 +727,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v15.1 · 27 Oct 2026</b>Click any list item for the full picture: transactions (who, what, fee, hash, block, which rule decided and its text), rule offers (checks, rule text, what accepting means), rule changes (votes per validator, diff, path so far), personal rules (rule text and recent effects) and validators. Hover stays short; “open ›” marks the click.</li>
           <li><b>v15 · 27 Oct 2026</b>From GitHub feedback #1: every principle card now says whether it was seen on the testnet or comes from the protocol, with a link to the tau-testnet line that backs it (pinned to one commit). Failure paths are shown on purpose: some proposals now miss quorum and expire with a red moment in the rule row, the “n refused” chip on Transactions counts and filters what Tau refused, and the ~1 minute rule-change timing is marked as simulated.</li>
           <li><b>v14.5 · 27 Oct 2026</b>Hardening: the page tells the browser to upgrade any insecure request, and a pasted ws:// node address becomes wss:// on an https page (localhost excepted), so the lock stays intact.</li>
           <li><b>v14.4 · 26 Oct 2026</b>A third live state: while the community node is connected but not synced with the real chain, the relay light and the mode chip turn amber and read “Live · Not synced”. Green and “Connected” only when the node follows the network’s tip.</li>
@@ -759,6 +772,12 @@ a.btn { text-decoration: none; display: inline-block; }
   <div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="bkTitle">
     <button class="close" type="button" data-close aria-label="Close">✕</button>
     <article class="panel detail"><h2 id="bkTitle">Block</h2><div id="bkBody"></div></article>
+  </div>
+</div>
+<div class="modal" id="mDetail" hidden>
+  <div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="dtTitle">
+    <button class="close" type="button" data-close aria-label="Close">✕</button>
+    <article class="panel detail"><h2 id="dtTitle">Details</h2><div id="dtBody"></div></article>
   </div>
 </div>
 <div class="modal" id="mState" hidden>
@@ -1081,7 +1100,7 @@ function txCard(t) {
     ? t.transfers.map(([f, to, a]) => `${short(f)} → ${short(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
     : (t.note || `sender ${short(t.sender)}`);
   d.innerHTML = `<div class="top"><em>${esc(label)}</em><span>${short(t.id)} · fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
-  d.dataset.ex = exKey(() => explainTx(t));
+  d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   if (t.rejected) { S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
   if (feed.matches(":hover")) { feedHold.push(d); return d; }
@@ -1117,7 +1136,7 @@ function renderUpdates() {
     const pips = S.validators.map(val => `<i class="${u.votes.has(val) ? "on" : ""}"></i>`).join("");
     const when = u.status === "voting" || u.status === "scheduled"
       ? `activates at #${u.activateAt} · in ${Math.max(0, u.activateAt - S.height)} blocks` : u.status === "active" ? `active since #${u.activeAt}` : `missed quorum before #${u.activateAt}`;
-    return `<div class="upd ${u.status}" data-ex="${exKey(() => explainUpdate(u))}">
+    return `<div class="upd ${u.status}" data-ex="${exKey(() => explainUpdate(u))}" data-detail="${dtKey(() => detailUpdate(u))}">
       <div class="u1"><b>${esc(u.title)}</b><span class="pill ${u.status}">${STATUS_TXT[u.status]}</span></div>
       <code class="diff">${u.diff}</code>
       <div class="agree"><div class="bar"><span style="width:${pct}%"></span><em style="left:100%"></em></div><div class="pips">${pips}</div><span class="num">${v} of ${thr}</span></div>
@@ -1165,7 +1184,7 @@ function renderOffers() {
   if (hold("offers", renderOffers)) return;
   const el = $("offers");
   const list = S.offers.slice(-6).reverse();
-  el.innerHTML = list.length ? list.map(o => `<div class="offer ${o.status}" data-ex="${exKey(() => explainOffer(o))}">
+  el.innerHTML = list.length ? list.map(o => `<div class="offer ${o.status}" data-ex="${exKey(() => explainOffer(o))}" data-detail="${dtKey(() => detailOffer(o))}">
       <div class="o1"><span>${short(o.from)}</span><span class="arrow">→</span><span>${short(o.to)}</span><span class="pill ${o.status}">${o.status}</span></div>
       <div class="o2"><b>${o.policy.name}</b> · ${esc(o.policy.label)}</div>
       <div class="chk"><i>shape ✓</i><i>reserved ✓</i><i>widths ✓</i><i>compile ✓</i><i class="${o.collides ? "warn" : ""}">${o.collides ? "replaces current rule" : "no collision"}</i></div></div>`).join("")
@@ -1177,7 +1196,7 @@ function renderClauses() {
   const entries = [...S.clauses.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1);
   $("clauseCount").textContent = entries.length + " accounts";
   $("clauses").innerHTML = entries.length ? entries.slice(0, 8).map(([acc, p]) =>
-    `<div class="clause" data-ex="${exKey(() => explainClause(acc, p))}"><i class="k-${p.kind}"></i><span>${short(acc)}</span><span>${p.name}</span></div>`).join("")
+    `<div class="clause" data-ex="${exKey(() => explainClause(acc, p))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${short(acc)}</span><span>${p.name}</span></div>`).join("")
     : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`;
   // The node composes all accepted clauses into ONE rule per stream (README · Rule sharing)
   const branches = entries.slice(0, 3).map(([acc, p]) => `(i12[t]:bv[384] = { #x${acc.slice(0, 8)}… }:bv[384]) ? ( ${esc(p.body)} )`);
@@ -1192,7 +1211,7 @@ function renderRuleWorld() { renderUpdates(); renderOffers(); renderClauses(); }
 function renderGov(extra = {}) {
   if (hold("vals", () => renderGov(extra))) return;
   $("vals").innerHTML = S.validators.map((v, i) =>
-    `<div class="val ${i === S.proposerIdx ? "on" : ""}" data-ex="${exKey(() => explainValidator(v, i))}"><i></i><span>${short(v)}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
+    `<div class="val ${i === S.proposerIdx ? "on" : ""}" data-ex="${exKey(() => explainValidator(v, i))}" data-detail="${dtKey(() => detailValidator(v, i))}"><i></i><span>${short(v)}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
   const N = S.validators.length;
   const kv = Object.assign({
     "Validators": N ? `${N} active, 1 proposing` : "—",
@@ -1710,6 +1729,77 @@ document.querySelectorAll(".modal").forEach(m => m.addEventListener("click", e =
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModals(); });
 document.querySelectorAll(".info").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); const was = b.classList.contains("open"); document.querySelectorAll(".info.open").forEach(x => x.classList.remove("open")); if (!was) b.classList.add("open"); }));
 document.addEventListener("click", () => document.querySelectorAll(".info.open").forEach(x => x.classList.remove("open")));
+/* ---------- click → detail: the full picture behind every list item (hover stays short) ---------- */
+const DT = new Map(); let dtSeq = 0;
+function dtKey(fn) { const k = "d" + (++dtSeq); DT.set(k, fn); if (DT.size > 4000) DT.delete(DT.keys().next().value); return k; }
+function showDetail(key) {
+  const fn = DT.get(key); if (!fn) return;
+  const { title, html } = fn();
+  $("dtTitle").innerHTML = title; $("dtBody").innerHTML = html; openModal("mDetail");
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("a, button, .info, .modal")) return;
+  const el = e.target.closest("[data-detail]"); if (el) showDetail(el.dataset.detail);
+});
+const none = `<p style="color:var(--dim);font-size:12px;margin:0">None</p>`;
+const checksHtml = arr => `<div class="checks">${arr.map(([t, c]) => `<i class="${c || ""}">${t}</i>`).join("")}</div>`;
+const verdictHtml = (ok, text) => `<div class="verdict-line ${ok ? "" : "bad"}">${ok ? "✓" : "✕"} ${text}</div>`;
+function detailTx(t) {
+  const label = TYPE_LABEL[t.type] || t.type, transfer = /user_tx|retractable/.test(t.type);
+  const where = t.rejected ? "Refused at admission, never entered a block." : t.block != null ? `Sealed in block #${t.block}.` : "Admitted to the mempool, waiting for the next block.";
+  const p = t.policy, pol = transfer ? (p ? `${p.name}: ${p.label}` : "none (every transfer allowed)") : "—";
+  const kv = { Hash: esc(t.id), Type: esc(label), Sender: esc(t.sender || (t.transfers && t.transfers[0] && t.transfers[0][0]) || "—") };
+  if (t.transfers && t.transfers.length) { kv.To = t.transfers.map(x => esc(x[1])).join("<br>"); kv.Amount = t.transfers.map(x => fmt(x[2]) + " AGRS").join(", "); }
+  if (t.to && !t.transfers) kv.To = esc(t.to);
+  kv.Fee = (t.fee ?? "—") + (t.fee != null ? " AGRS" : ""); kv.Status = t.rejected ? "refused" : t.block != null ? `in block #${t.block}` : "in mempool";
+  if (transfer) kv["Sender’s own rule"] = esc(pol);
+  let rule = "";
+  if (transfer) {
+    rule = `<h3>Which rule decided</h3>${verdictHtml(!t.rejected, t.rejected ? `o5 = 0: the sender’s own rule “${esc(p ? p.name : "")}” refused it, whoever holds the key.` : p ? `o5 = 1: the sender’s rule “${esc(p.name)}” checked this transfer and let it pass.` : "No own rule on this account; only the consensus checks applied.")}`
+      + (p ? `<pre class="rule">${esc(p.body)}</pre>` : "")
+      + `<h3>Consensus checks</h3>${checksHtml([["i10 signature ✓"], ["o6 block valid ✓"], ["o7 proposer eligible ✓"], [`o9 fee ${t.fee ?? "—"} ✓`], [t.rejected ? "o5 sender rule ✕" : "o5 sender rule ✓", t.rejected ? "bad" : ""]])}`;
+  } else if (t.type === "rule_deploy" && p) {
+    rule = `<h3>The rule being deployed</h3>${verdictHtml(!t.rejected, policyMeaning(p))}<pre class="rule">${esc(p.body)}</pre><p style="color:var(--dim);font-size:12px;margin:8px 0 0">Compiled in isolation before admission. From the block it lands in, it binds the account on every transfer, whoever holds the key.</p>`;
+  } else if (t.type === "rule_offer" && p) {
+    rule = `<h3>The offered rule</h3>${verdictHtml(true, `${policyMeaning(p)} Waits for ${short(t.to)} to accept or reject.`)}<pre class="rule">${esc(p.body)}</pre>`;
+  } else if (t.kind === "gov") {
+    const u = t.update || t.proposal;
+    rule = `<h3>Governance</h3>${verdictHtml(!t.rejected, t.rejected ? `Refused at the door: ${esc(t.rejected)}. The live spec never changed.` : t.update ? `Vote on “${esc(u.title)}”: ${u.votes.size} of ${threshold()} needed.` : `Proposal “${esc(u.title)}”.`)}` + (u && u.diff ? `<pre class="rule">${esc(u.diff)}</pre>` : "");
+  }
+  if (t.note && !transfer) rule += `<p style="color:var(--dim);font-size:12px;margin:8px 0 0">${esc(t.note)}</p>`;
+  return { title: `Transaction · ${esc(label)}`, html: `<p class="lead">${esc(where)}</p>${kvHtml(kv)}${rule}` };
+}
+function detailOffer(o) {
+  const st = { offered: `Waiting for ${short(o.to)} to decide; expires unanswered at block #${o.expire}.`, accepted: `Accepted: it now binds ${short(o.to)}’s account on every transfer.`, rejected: "Rejected by the recipient; nothing changed.", expired: "Expired unanswered; nothing changed." }[o.status] || o.status;
+  return { title: `Rule offer · ${esc(o.policy.name)}`, html: `<p class="lead">${esc(st)}</p>${kvHtml({ Offerer: esc(o.from), Recipient: esc(o.to), Rule: esc(o.policy.name + ": " + o.policy.label), Status: o.status, "Expires at": "#" + o.expire, "Offer id": esc(o.id) })}
+    <h3>Checks at admission</h3>${checksHtml([["shape ✓"], ["reserved streams ✓"], ["bit widths ✓"], ["compile ✓"], [o.collides ? "replaces the recipient’s current rule" : "no collision", o.collides ? "warn" : ""]])}
+    <h3>The rule</h3>${verdictHtml(true, policyMeaning(o.policy))}<pre class="rule">${esc(o.policy.body)}</pre>
+    <h3>What accepting means</h3><p style="color:var(--dim);font-size:12px;margin:0">The recipient answers with its own transaction. On acceptance the rule joins the recipient’s clause in the composite o5 program; it cannot be retracted, only replaced by accepting a different offer later.</p>` };
+}
+function detailUpdate(u) {
+  const N = S.validators.length, thr = N ? threshold() : "—", left = Math.max(0, u.activateAt - S.height);
+  const lead = { voting: `Collecting agreement: ${u.votes.size} of ${thr} validators so far. Becomes law at #${u.activateAt} (${left} blocks) if enough agree, else expires.`, scheduled: `Agreed by ${u.votes.size} of ${N}. Becomes law at block #${u.activateAt}, in ${left} blocks; nobody upgrades anything.`, active: `Law since block #${u.activeAt}. Every block since is judged by the amended spec.`, expired: `Missed quorum: ${u.votes.size} of ${thr} by #${u.activateAt}. Archived without effect; the old rules stand.` }[u.status] || u.status;
+  const votes = S.validators.map((v, i) => { const yes = u.votes.has(v), ab = u.abstain && u.abstain.has(v); return `<li class="${yes ? "ok" : ""}"><b>V${i + 1}${v === u.proposer ? " · proposer" : ""}</b> <span class="muted">${short(v)}</span><br>${yes ? "agreed ✓" : ab ? "not voting on this one" : u.status === "voting" ? "not voted yet" : "did not vote"}</li>`; }).join("");
+  return { title: `Rule change · ${esc(u.title)}`, html: `<p class="lead">${esc(lead)}</p>${kvHtml({ Status: STATUS_TXT[u.status] || u.status, "Proposed by": esc(u.proposer || "—"), "Proposed at": u.proposedAt != null ? "#" + u.proposedAt : "—", "Activates at": "#" + u.activateAt, Agreement: `${u.votes.size} of ${thr} needed (${S.quorum === "majority" ? "majority" : "two thirds"} of ${N})`, "Update id": esc(u.id) })}
+    <h3>What it changes</h3>${verdictHtml(u.status !== "expired", proposalMeaning(u))}<pre class="rule">${esc(u.diff)}</pre>
+    <h3>Votes (${u.votes.size} of ${N})</h3><ul>${votes}</ul>
+    <h3>How it got here</h3>${checksHtml([["proposed ✓"], ["compiled in isolation ✓"], [u.status === "expired" ? "agreement ✕" : u.votes.size >= (N ? thr : Infinity) ? "agreement ✓" : "agreement …", u.status === "expired" ? "bad" : u.votes.size >= thr ? "" : "off"], [u.status === "active" ? `active since #${u.activeAt} ✓` : u.status === "expired" ? "never activated" : `activates at #${u.activateAt}`, u.status === "active" ? "" : "off"]])}` };
+}
+function detailClause(acc, p) {
+  const seen = [];
+  [...S.blocks.slice().reverse().flatMap(b => b.txs), ...S.mempool].forEach(t => { if (t.policy && t.sender === acc && /user_tx|retractable/.test(t.type) && seen.length < 6) seen.push(t); });
+  const fx = seen.length ? `<ul>${seen.map(t => `<li class="${t.rejected ? "rej" : "ok"}"><b>${t.rejected ? "✕ refused" : "✓ passed"}</b> <span class="muted">${short(t.id)}${t.block != null ? " · block #" + t.block : " · mempool"}</span><br>${t.transfers ? t.transfers.map(x => `→ ${short(x[1])} ${fmt(x[2])} AGRS`).join(", ") : ""}</li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px;margin:0">No transfer from this account checked yet.</p>`;
+  return { title: `Personal rule · ${esc(p.name)}`, html: `<p class="lead">${esc(policyMeaning(p))}</p>${kvHtml({ Account: esc(acc), Rule: esc(p.name), Terms: esc(p.label), Stream: "o5 (sender policy)", Enforced: "at admission and again in the block; binds the account, not the key" })}
+    <h3>The rule</h3><pre class="rule">${esc(p.body)}</pre>
+    <h3>Recent effects</h3>${fx}` };
+}
+function detailValidator(v, i) {
+  const sealed = S.blocks.filter(b => b.proposer === v).length, open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
+  const hist = S.updates.slice(-6).reverse().map(u => `<li class="${u.votes.has(v) ? "ok" : ""}"><b>${esc(u.title)}</b> <span class="muted">${STATUS_TXT[u.status] || u.status}</span><br>${u.votes.has(v) ? "agreed ✓" : u.abstain && u.abstain.has(v) ? "not voting" : "no vote"}</li>`).join("");
+  return { title: `Validator V${i + 1}`, html: `<p class="lead">${i === S.proposerIdx ? "Sealing the next block." : "Seals blocks in turn and votes on rule changes."} One of ${S.validators.length} validators; ${threshold()} must agree to change a rule.</p>${kvHtml({ "Public key": esc(v), Role: i === S.proposerIdx ? "proposing now" : "active", "Blocks sealed (recent)": sealed + " of the last " + S.blocks.length, "Open proposals": open.length })}
+    <h3>Votes on rule changes</h3>${hist ? `<ul>${hist}</ul>` : none}` };
+}
+
 /* ---------- overflow overlay: hover or tap any clipped text to read all of it ---------- */
 (() => {
   const ovl = document.createElement("div"); ovl.id = "ovl"; ovl.hidden = true; ovl.style.pointerEvents = "none"; document.body.appendChild(ovl);
@@ -1724,7 +1814,7 @@ document.addEventListener("click", () => document.querySelectorAll(".info.open")
   document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur && !touch) hide(); });
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
-  document.addEventListener("click", e => { if (!touch) return; const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
+  document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail]")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
   const coreShow = e => { const fn = coreHit(e); if (fn) { cur = cv; shownAt = Date.now(); ovl.textContent = fn(); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
@@ -1818,7 +1908,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v13`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.1`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
