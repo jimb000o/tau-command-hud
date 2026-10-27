@@ -230,7 +230,7 @@ html.fit .fb-fab { display: none; }
       <div class="panel">
         <h2>All accounts on this chain <small id="dirSub"></small></h2>
         <table id="dirTable">
-          <thead><tr><th>Account</th><th class="n">Sent</th><th class="n opt">Transfers in · out</th><th class="n opt">Own rules</th><th class="n">Last active</th></tr></thead>
+          <thead><tr><th>Account</th><th class="n">Sent</th><th class="n opt">Transfers in · out</th><th class="n opt">Own rules</th><th class="n opt">Blocks proposed</th><th class="n">Last active</th></tr></thead>
           <tbody id="dirBody"></tbody>
         </table>
         <p class="note">Accounts from the genesis block plus every account that sent, received or proposed a block. Click one to open it.</p>
@@ -258,11 +258,6 @@ html.fit .fb-fab { display: none; }
             <div class="chart" id="balChart"></div>
             <p class="note" id="balNote"></p>
           </section>
-          <section class="panel">
-            <h2>Refusals <small>what this account said no to, and what was refused</small></h2>
-            <ul class="list" id="refusals"></ul>
-            <p class="note">A transfer that someone’s own rule refuses never enters a block, so it shows here only if it waited in our node’s queue first.</p>
-          </section>
         </div>
         <div class="col">
           <section class="panel">
@@ -272,6 +267,11 @@ html.fit .fb-fab { display: none; }
           <section class="panel">
             <h2>Rule offers <small>rules sent to it, and rules it sent</small></h2>
             <div id="offers"></div>
+          </section>
+          <section class="panel">
+            <h2>Refusals <small>what this account said no to, and what was refused</small></h2>
+            <ul class="list" id="refusals"></ul>
+            <p class="note">A transfer that someone’s own rule refuses never enters a block, so it shows here only if it waited in our node’s queue first.</p>
           </section>
         </div>
         <div class="col one act">
@@ -617,8 +617,8 @@ function renderDir() {
   show("dir");
   const rows = directory();
   $("dirSub").textContent = C.ready || SAMPLE ? `${plural(rows.length, "account")} · up to block #${fmtN(C.head)}` : "reading the chain…";
-  $("dirBody").innerHTML = rows.map(r => `<tr class="click" data-acc="${r.a}"><td>${accLink(r.a)}${r.genesis ? `<span class="tag">genesis</span>` : ""}${isValidator(r.a) ? `<span class="tag g">validator</span>` : ""}${NAMES[r.a] ? "" : ""}</td>
-    <td class="n">${fmtN(r.sent)}</td><td class="n opt">${fmtN(r.tin)} · ${fmtN(r.tout)}</td><td class="n opt">${fmtN(r.rules)}</td><td class="n">${r.last ? ago(r.last) : "not yet"}</td></tr>`).join("");
+  $("dirBody").innerHTML = rows.map(r => `<tr class="click" data-acc="${r.a}"><td>${accLink(r.a)}${r.genesis ? `<span class="tag">genesis</span>` : ""}${isValidator(r.a) ? `<span class="tag g">validator</span>` : ""}</td>
+    <td class="n">${fmtN(r.sent)}</td><td class="n opt">${fmtN(r.tin)} · ${fmtN(r.tout)}</td><td class="n opt">${fmtN(r.rules)}</td><td class="n opt">${fmtN(r.proposed)}</td><td class="n">${r.last ? ago(r.last) : "not yet"}</td></tr>`).join("");
 }
 const isValidator = a => ((C.gov || {}).active_validators || []).some(v => low(typeof v === "string" ? v : (v || {}).pubkey) === a);
 
@@ -660,11 +660,11 @@ function renderAccount() {
   $("balHead").innerHTML = M.series.length > 1
     ? `${fmtA(M.series[0][2])} → ${fmtA(M.replayBal)} AGRS <span>from transfers in the blocks, genesis to #${fmtN(C.head)}</span>`
     : `${fmtA(M.replayBal)} AGRS <span>no transfers on this chain yet</span>`;
-  drawBalance($("balChart"), M.series);
   $("balNote").innerHTML = chainBal == null ? "Waiting for our node’s confirmed balance…"
     : Math.abs(delta) < 1e-9 ? "Matches the balance our node reports."
     : `Our node reports <b>${fmtA(chainBal)} AGRS</b>, ${fmtA(Math.abs(delta))} ${delta < 0 ? "less" : "more"} than the transfers add up to. The difference is ${delta < 0 ? "fees paid, and money held for retractable or co-signed transfers" : "fees earned for proposing blocks, and released retractable transfers"}, which no single transaction shows.`;
 
+  drawBalance($("balChart"), M.series);
   renderRules(rulesNow, ro);
   renderOffers(ro);
   renderActivity();
@@ -727,13 +727,21 @@ function renderActivity() {
 /* balance: a step line, one step per block that changed it */
 function drawBalance(host, series) {
   host.replaceChildren();
-  const W = Math.max(280, host.clientWidth || 400), H = Math.round(Math.min(220, Math.max(120, W * 0.36)));
+  const W = Math.max(280, host.clientWidth || 400);
+  let H = Math.round(Math.min(220, Math.max(120, W * 0.36)));
+  // one-screen layout: the balance panel has its column to itself, so the chart takes whatever height is left
+  if (document.documentElement.classList.contains("fit")) {
+    const panel = host.closest(".panel");
+    // panel height minus its padding, border, the margins of h2/headline/note and the other children
+    const other = [...panel.children].filter(c => c !== host).reduce((a, c) => a + c.offsetHeight, 0) + 26 + 20;
+    H = Math.round(Math.max(140, Math.min(560, panel.clientHeight - other)));
+  }
   const m = { l: 62, r: 10, t: 8, b: 22 };
   const svg = document.createElementNS(SVGNS, "svg"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   const mk = (tag, attrs, parent = svg) => { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.append(e); return e; };
   const x0 = 0, x1 = Math.max(1, C.head);
   let lo = Math.min(...series.map(p => p[2])), hi = Math.max(...series.map(p => p[2]));
-  if (hi === lo) { hi += Math.max(1, Math.abs(hi) * 0.05); lo -= Math.max(1, Math.abs(lo) * 0.05); }
+  if (hi - lo < 6) { const c = (hi + lo) / 2; hi = c + 3; lo = c - 3; }
   const padv = (hi - lo) * 0.08; hi += padv; lo = Math.max(0, lo - padv);
   const X = h => m.l + (h - x0) / (x1 - x0) * (W - m.l - m.r), Y = v => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b);
   const g = mk("g", { class: "grid" });
@@ -761,7 +769,8 @@ function drawBalance(host, series) {
   hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); hideTip(); });
   host.append(svg);
 }
-const compact = v => v >= 1e6 ? `${+(v / 1e6).toFixed(2)}M` : v >= 1e4 ? `${+(v / 1e3).toFixed(1)}k` : fmtN(v);
+// full numbers: a balance moves by a few AGRS at a time, so 100k on every line would say nothing
+const compact = v => v >= 1e7 ? `${+(v / 1e6).toFixed(2)}M` : fmtN(v);
 
 /* ------------------------------ detail ------------------------------ */
 let lastFocus = null;
