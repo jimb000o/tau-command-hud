@@ -389,7 +389,7 @@ const C = {
   partial: false,      // the relay could only give the newest blocks
   gov: null,           // latest getgovernance data (the node's own state at its head)
   openAdmission: true, // network runs TAU_GOVERNANCE_OPEN_ADMISSION=true; refined from /status
-  loading: false, ws: null, retry: 5000,
+  loading: false, ws: null, retry: 3000, fails: 0,
 };
 let H = { snaps: [], props: [], events: [], txKinds: [] };   // replay result
 let cursor = 0, following = true, playing = null, hovering = false, pendingRender = false;
@@ -611,7 +611,7 @@ function connect() {
   try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
   setConn("wait", "Connecting", `Reading the chain from ${esc(NODE.replace(/^wss?:\/\//, ""))}…`);
-  ws.onopen = () => { C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); };
+  ws.onopen = () => { C.retry = 3000; C.fails = 0; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
   ws.onerror = () => {};
@@ -621,11 +621,17 @@ function connect() {
 }
 function offline(why) {
   C.ws = null; C.loading = false;
-  const w = C.retry; C.retry = Math.min(60000, w * 2);
-  setConn("", "Offline", `The community node is not reachable (${esc(why)}). Retrying in ${w / 1000} s · <button type="button" id="retryNow">retry now</button>`);
+  const w = C.retry; C.retry = Math.min(20000, w * 2); C.fails++;
+  // the relay accepts a few connections per address, and every open Tau HUD tab uses two
+  const hint = C.fails >= 3 ? " If many Tau HUD tabs are open, closing a few frees a slot." : "";
+  setConn("", "Offline", `The community node is not reachable (${esc(why)}). Retrying in ${w / 1000} s · <button type="button" id="retryNow">retry now</button>${hint}`);
   $("retryNow").onclick = connect;
   C.retryT = setTimeout(connect, w);
 }
+// back on the tab or back online: try at once instead of waiting out the timer
+const retrySoon = () => { if (!C.ws && !params.has("sample") && C.retryT) connect(); };
+document.addEventListener("visibilitychange", () => { if (!document.hidden) retrySoon(); });
+addEventListener("online", retrySoon);
 function loadFrom(from) {
   C.loading = true; C.nextFrom = from;
   send(`getblockrange ${from} ${PAGE}`);
