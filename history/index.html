@@ -913,7 +913,7 @@ function openProp(p) {
   const steps = [
     [`Proposed at #${fmtN(p.proposedAt)}`, `by ${short(p.proposer)}. Deadline: activation block #${fmtN(p.activateAt)}.`, p.proposedAt],
     ...p.votes.map(v => [`${v.counted ? "Vote" : "Vote, not counted"} at #${fmtN(v.h)}`, `${short(v.voter)}${v.counted ? "" : " · already voted, outside the electorate, or the change was no longer open"}`, v.h]),
-    p.approvedAt != null ? [`Agreed at #${fmtN(p.approvedAt)}`, `${p.thr} of the needed ${p.thr} votes reached.`, p.approvedAt] : null,
+    p.approvedAt != null ? [`Agreed at #${fmtN(p.approvedAt)}`, `Quorum reached: ${plural(p.thr, "vote")} of ${p.thr} needed.`, p.approvedAt] : null,
     p.activatedAt != null ? [`In force from #${fmtN(p.activatedAt)}`, `Spec revision ${p.rev}.`, p.activatedAt] : null,
     p.expiredAt != null ? [`Dropped at #${fmtN(p.expiredAt)}`, `${counted.length} of ${p.thrAtEnd} votes by the deadline. The old rules stayed.`, p.expiredAt] : null,
     st === "voting" ? [`Waiting for votes`, `${counted.length} so far, deadline #${fmtN(p.activateAt)}.`, null] : null,
