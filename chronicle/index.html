@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Tau Chronicle</title>
-<meta name="description" content="How Tau got from a 2016 idea to a running testnet whose rules its users change: ten years of the project, summarised from its own monthly videos.">
+<meta name="description" content="How Tau got from Zennet in 2014 to a running testnet whose rules its users change, summarised from the project's own videos and posts.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD · Chronicle">
-<meta property="og:description" content="Ten years of Tau, from Tau-Chain and Agoras (2016) to a testnet that changes its own consensus (2026).">
+<meta property="og:description" content="Twelve years of Tau, from Zennet (2014) and Tau-Chain (2015) to a testnet that changes its own consensus (2026).">
 <meta property="og:image" content="https://tauhud.com/og.png">
 <meta property="og:url" content="https://tauhud.com/chronicle/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -124,20 +124,20 @@ html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; 
   </header>
 
   <div class="intro">
-    <p class="lead">Ten years of Tau: from an idea in 2016 to a testnet that changes its own rules.</p>
-    <p class="sub">The goal never changed: <b>a blockchain whose rules are data that its users change through logic.</b> The road did. Click an era or a moment for details and the video it comes from.</p>
+    <p class="lead">Twelve years of Tau: from Zennet in 2014 to a testnet that changes its own rules.</p>
+    <p class="sub">Since 2015 the goal has stayed the same: <b>a blockchain whose rules are data that its users change through logic.</b> The road did. Click an era or a moment for details and the video it comes from.</p>
   </div>
 
   <section class="strip" aria-label="Timeline">
-    <h2>Timeline <small>2015 to today · recent years drawn wider</small></h2>
-    <svg id="tl" role="img" aria-label="Timeline of Tau from 2015 to 2026"></svg>
+    <h2>Timeline <small>2014 to today · recent years drawn wider</small></h2>
+    <svg id="tl" role="img" aria-label="Timeline of Tau from 2014 to 2026"></svg>
     <div class="legend"><span><i class="key"></i>turning point</span><span><i></i>milestone</span></div>
   </section>
 
   <main class="eras" id="eras"></main>
 
   <footer>
-    <p>Unofficial. Summarised from the monthly update videos on <a href="https://www.youtube.com/@TauNetwork" target="_blank" rel="noopener">youtube.com/@TauNetwork</a> (225 videos, Aug 2016 to Oct 2026, read from their auto captions), plus the Tau blog for 2015 to 2017. Dates are the month a video reported something, not always the day it happened.</p>
+    <p>Unofficial. Summarised from the monthly update videos on <a href="https://www.youtube.com/@TauNetwork" target="_blank" rel="noopener">youtube.com/@TauNetwork</a> (225 videos, Aug 2016 to Oct 2026, read from their auto captions), plus the bitcointalk threads and the Tau blog for 2014 to 2017. Dates are the month a video reported something, not always the day it happened.</p>
     <p><a href="/history/">Time travel</a> · <a href="/stats/">Testnet stats</a> · <a href="/playground/">Rule Playground</a> · <a href="https://tau.net/" target="_blank" rel="noopener">tau.net</a></p>
   </footer>
 </div>
@@ -148,20 +148,22 @@ html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; 
 <script>
 /* d: year + month/12 (for placement), label: shown date, key: turning point, v: YouTube id */
 const ERAS = [
-  { id: "vision", name: "The vision", yrs: "2015 – 2018", from: 2015, to: 2019,
-    gist: "Tau-Chain: a chain that can change its own rules. Agoras: an economy of markets on top.",
+  { id: "vision", name: "Zennet and the vision", yrs: "2014 – 2018", from: 2014, to: 2019,
+    gist: "Zennet, a shared supercomputer, turns into Tau-Chain and Agoras. In late 2017 the plan is rethought as \u201cThe New Tau\u201d.",
     ev: [
-      { d: 2015.5, label: "2015", t: "Ohad Asor starts Tau-Chain", m: "A blockchain whose rules can be changed, with Agoras planned as a market on top. (Tau blog.)" },
-      { d: 2016.6, label: "Aug 2016", key: 1, t: "Each block decides the next", v: "TKhzo_60f6Y",
+      { d: 2014.62, label: "Aug 2014", t: "Zennet announced", m: "Ohad Asor's first project: a public, decentralised supercomputer where anyone rents out spare computing power, paid on a blockchain. (bitcointalk thread, Aug 2014.)" },
+      { d: 2014.9, label: "2014", t: "The idea of Tau arrives", v: "zFmaX-oumNw", m: "Ohad: \u201cThe idea for Tau is not mine.\u201d Discussing Zennet with a forum member called HunterMinerCrafter led to the idea of a chain whose rules can change." },
+      { d: 2015.1, label: "Feb 2015", key: 1, t: "Tau-Chain and Agoras announced", m: "Tau-Chain is the platform. Zennet's market becomes one kind of market in Agoras, which is built on top of it. (bitcointalk thread, Feb 2015.)" },
+      { d: 2016.6, label: "Aug 2016", t: "Each block decides the next", v: "TKhzo_60f6Y",
         m: "First video: Tau is a decidable language with a blockchain, and every block holds the conditions for accepting the next one. So the network's rules can change." },
       { d: 2016.85, label: "Nov 2016", t: "Agoras, the planned markets", v: "zFmaX-oumNw",
         m: "Rent computing power, pay for code that provably meets a spec, search, derivatives, and paid expert calls billed by the second." },
-      { d: 2017.9, label: "Late 2017", t: "“The New Tau”", m: "The goal is restated as social choice: groups reaching and following agreement, scaled up. AGRS is issued as an ERC-20 placeholder token. (Tau blog.)" }
+      { d: 2017.95, label: "Dec 2017", key: 1, t: "\u201cThe New Tau\u201d", m: "After a year without blog posts, Ohad rethinks the plan: Tau becomes a way for large groups to discuss and agree, helped by machines. \u201cUnder certain assumptions we can reach truly efficiently scaling discussions.\u201d (Tau blog.)" }
     ] },
   { id: "detour", name: "TML and a detour", yrs: "2019 – 2022", from: 2019, to: 2023,
     gist: "Monthly updates begin. TML, a white paper, a video app called Agoras Live, and the maths that became the Tau Language.",
     ev: [
-      { d: 2019.4, label: "May 2019", t: "Monthly updates begin", v: "W0WhSrEqE7g", m: "Focus on TML (a logic language built on decision diagrams) and a minimal discussion platform." },
+      { d: 2019.4, label: "May 2019", t: "Monthly updates begin", v: "W0WhSrEqE7g", m: "Focus on TML (a logic language built on decision diagrams) and a minimal discussion platform. Older videos are called outdated: \u201cthe new Tau is very different\u201d." },
       { d: 2019.7, label: "Sep 2019", t: "AGRS delisted by OpenLedger", v: "W86dPdQ5jOk", m: "Low trading volume. The team starts looking for other exchanges." },
       { d: 2020.65, label: "Aug 2020", key: 1, t: "White paper published", v: "MXj8Ke8YnAY", m: "Written by Ohad Asor with Prof. Avishai Carmi. It guides the work for the following years." },
       { d: 2020.9, label: "2020 – 2023", t: "Agoras Live, later Tau Live", v: "9-xYdKTiOHs", m: "A video-consulting app paid in crypto. Delayed several times, renamed Tau Live in 2023 and paused in Aug 2023 to focus on the core." },
@@ -209,6 +211,7 @@ const ERAS = [
     ] }
 ];
 const GONE = [
+  { t: "Zennet as its own project", m: "The shared supercomputer of 2014. Folded into Agoras as one kind of market in 2015." },
   { t: "Agoras Live / Tau Live", m: "The video-consulting app, 2020 to 2023. Paused in Aug 2023." },
   { t: "Internet of Languages", m: "A plan to let users add new languages. Dropped: the Tau Language does this better (Aug 2026)." },
   { t: "TML as the base", m: "Superseded by the Tau Language from 2022." },
@@ -246,7 +249,7 @@ function renderEras() {
 }
 
 /* recent years are drawn wider: most of the moments are from 2025 and 2026 */
-const X0 = 2015, X1 = 2027, YW = { 2015: .5, 2016: .7, 2017: .5, 2018: .5, 2019: .6, 2020: .6, 2021: .6, 2022: .6, 2023: .8, 2024: 1, 2025: 2.6, 2026: 2.6 };
+const X0 = 2014, X1 = 2027, YW = { 2014: .5, 2015: .5, 2016: .7, 2017: .5, 2018: .5, 2019: .6, 2020: .6, 2021: .6, 2022: .6, 2023: .8, 2024: 1, 2025: 2.6, 2026: 2.6 };
 const YSUM = Object.values(YW).reduce((a, b) => a + b, 0);
 function renderStrip() {
   const svg = $("tl"), W = svg.clientWidth || 1000, H = 92, padL = 8, padR = 8;
