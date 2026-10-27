@@ -314,6 +314,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .tx.gov .top em { color: var(--amber); }
 .tx.rej .top em { color: var(--bad); }
 .tx .mid { font-size: 12px; overflow-wrap: anywhere; }
+.acct { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--hair); }
+.acct:hover { color: #fff; border-bottom-color: var(--ok); }
 .tx .mid b { color: var(--cyan-hi); font-weight: 500; }
 @keyframes slidein { from { transform: translateX(16px); opacity: 0; } }
 
@@ -664,6 +666,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <a class="btn ghost" id="btnPlayground" href="playground/" data-full="Write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Opens the playground page.">Playground</a>
       <a class="btn ghost" href="stats/" data-full="Testnet statistics: block pace, transactions, validators and rule changes over the whole chain. Opens the stats page.">Stats</a>
       <a class="btn ghost" href="history/" data-full="Time travel: step through the chain block by block and see the rules that were in force at any height. Opens the history page.">Time travel</a>
+      <a class="btn ghost" href="account/" data-full="Accounts: balance, own rules, offers, activity and refusals of any account on the testnet. Opens the account page; every address in the HUD links there.">Accounts</a>
       <a class="btn ghost" href="https://tau.net" target="_blank" rel="noopener" data-full="Opens tau.net, the project behind the testnet, in a new tab.">What is Tau?</a>
       <button class="btn ghost" type="button" id="btnRain" aria-pressed="true" data-full="Turns the falling glyphs in the background on or off. Purely decorative.">Rain</button>
       <button class="btn ghost more" type="button" id="btnMore" aria-expanded="false" hidden>More ▾</button>
@@ -820,6 +823,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v16.2 · 27 Oct 2026</b>Accounts: a new page at <a href="account/">/account/</a> shows balance, own rules, offers, activity and refusals of any account; linked from the header, and on the live chain every address in the HUD (transactions, blocks, proposer, validators, rule holders, offers) links to its account.</li>
           <li><b>v16.1 · 27 Oct 2026</b>Phones and tablets: header chips wrap instead of scrolling sideways, panel subtitles, provenance lines and block values wrap instead of being cut off, the chain core uses the full width, a tap on a button no longer leaves a tooltip behind. Desktop: the “from the protocol / seen on the testnet” lines under the thesis cards wrap instead of being cut off.</li>
           <li><b>v16.0 · 27 Oct 2026</b>Guided tour for newcomers: eight short steps, about a minute, from “rules change by agreement” through block check, proposal, votes, the core, activation and personal rules to the playground. Offered once on the first visit (“Not now” is remembered), always available from the header; arrow keys step, Escape ends.</li>
           <li><b>v15.9 · 27 Oct 2026</b>Header: links to the new <a href="stats/">Stats</a> and <a href="history/">Time travel</a> pages; a block’s full detail links to the rules in force at that height. Rule changes by agreement: when an agreed change was scheduled far ahead by the proposal itself, the Tau row says so (“at #5028”, “agreed in n blocks”) instead of counting down the proposer’s wait as if it were Tau’s speed. Block detail: when the full detail would need scrolling at your screen size, a one-glance summary takes its place and a click opens the full detail. Every detail window scrolls inside the screen. Screens up to 900 px tall get the scrolling layout.</li>
@@ -924,6 +928,8 @@ const STREAM_EX_ = {
 const $ = id => document.getElementById(id);
 const hex = n => { let s = ""; const c = "0123456789abcdef"; for (let i = 0; i < n; i++) s += c[(Math.random() * 16) | 0]; return s; };
 const short = h => h ? (h.length > 14 ? h.slice(0, 6) + "…" + h.slice(-4) : h) : "—";
+/* an account address: on the live chain it links to the account page (full address in the link); in the simulation it is plain text, the accounts do not exist */
+const acct = h => !h ? "—" : S.mode === "live" && !/^0+$/.test(h) ? `<a class="acct" href="account/?a=${encodeURIComponent(h)}" title="Open account ${esc(h)}">${short(h)}</a>` : short(h);
 const now = () => new Date().toLocaleTimeString("de-DE", { hour12: false });
 const pick = a => a[(Math.random() * a.length) | 0];
 const hex6 = n => Math.max(0, Math.min(0xffffff, n | 0)).toString(16).padStart(6, "0");
@@ -1276,8 +1282,8 @@ function txCard(t) {
   d.id = "tx_" + t.id.slice(0, 16);
   const label = t.rejected ? "✕ " + t.rejected : (TYPE_LABEL[t.type] || t.type);
   const body = t.transfers && t.transfers.length
-    ? t.transfers.map(([f, to, a]) => `${short(f)} → ${short(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
-    : (t.note || `sender ${short(t.sender)}`);
+    ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
+    : (t.note || `sender ${acct(t.sender)}`);
   d.innerHTML = `<div class="top"><em>${esc(label)}</em><span>${short(t.id)} · fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   if (t.rejected) { S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
@@ -1296,7 +1302,7 @@ function addBlockCard(b) {
   d.className = "blk" + (b.amended ? " amended" : "");
   d.dataset.n = b.n; d.dataset.ex = exKey(() => explainBlock(b)); d.onclick = () => showBlock(b); d.title = "Click to inspect"; d.tabIndex = 0; d.onkeydown = e => { if (e.key === "Enter") showBlock(b); };
   const rules = b.txs.filter(t => /rule/.test(t.type)).length;
-  d.innerHTML = `<div class="n">#${b.n}</div><span class="simtag">SIM</span><div class="h hx">hash ${short(b.hash)}</div><div class="h hx">state ${short(b.state)}</div><div class="h">by ${short(b.proposer)}</div><div class="m"><span>${b.txs.length} tx${rules ? ` · ${rules} rule` : ""}</span><span>${b.amended ? "rev " + b.amended + " ✓" : "o6 ✓"}</span></div>`;
+  d.innerHTML = `<div class="n">#${b.n}</div><span class="simtag">SIM</span><div class="h hx">hash ${short(b.hash)}</div><div class="h hx">state ${short(b.state)}</div><div class="h">by ${acct(b.proposer)}</div><div class="m"><span>${b.txs.length} tx${rules ? ` · ${rules} rule` : ""}</span><span>${b.amended ? "rev " + b.amended + " ✓" : "o6 ✓"}</span></div>`;
   // a new block shows the instant it is sealed, even while the pointer rests on the strip; only the auto-scroll and the trim wait
   r.appendChild(d);
   if (r.matches(":hover")) { ribbonHold.push(d); return; }
@@ -1365,7 +1371,7 @@ function renderOffers() {
   const el = $("offers");
   const list = S.offers.slice(-6).reverse();
   el.innerHTML = list.length ? list.map(o => `<div class="offer ${o.status}" data-ex="${exKey(() => explainOffer(o))}" data-detail="${dtKey(() => detailOffer(o))}">
-      <div class="o1"><span>${short(o.from)}</span><span class="arrow">→</span><span>${short(o.to)}</span><span class="pill ${o.status}">${o.status}</span></div>
+      <div class="o1"><span>${acct(o.from)}</span><span class="arrow">→</span><span>${acct(o.to)}</span><span class="pill ${o.status}">${o.status}</span></div>
       <div class="o2"><b>${o.policy.name}</b> · ${esc(o.policy.label)}</div>
       <div class="chk"><i>shape ✓</i><i>reserved ✓</i><i>widths ✓</i><i>compile ✓</i><i class="${o.collides ? "warn" : ""}">${o.collides ? "replaces current rule" : "no collision"}</i></div></div>`).join("")
     : `<div class="empty">No rules shared yet. Anyone can send a Tau rule to another account; the recipient reviews it and accepts or rejects it.</div>`;
@@ -1376,7 +1382,7 @@ function renderClauses() {
   const entries = [...S.clauses.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1);
   $("clauseCount").textContent = entries.length + " accounts";
   $("clauses").innerHTML = entries.length ? entries.slice(0, 8).map(([acc, p]) =>
-    `<div class="clause" data-ex="${exKey(() => explainClause(acc, p))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${short(acc)}</span><span>${p.name}</span></div>`).join("")
+    `<div class="clause" data-ex="${exKey(() => explainClause(acc, p))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}</span><span>${p.name}</span></div>`).join("")
     : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`;
   // The node composes all accepted clauses into ONE rule per stream (README · Rule sharing)
   const branches = entries.slice(0, 3).map(([acc, p]) => `(i12[t]:bv[384] = { #x${acc.slice(0, 8)}… }:bv[384]) ? ( ${esc(p.body)} )`);
@@ -1391,7 +1397,7 @@ function renderRuleWorld() { renderUpdates(); renderOffers(); renderClauses(); }
 function renderGov(extra = {}) {
   if (hold("vals", () => renderGov(extra))) return;
   $("vals").innerHTML = S.validators.map((v, i) =>
-    `<div class="val ${i === S.proposerIdx ? "on" : ""}" data-ex="${exKey(() => explainValidator(v, i))}" data-detail="${dtKey(() => detailValidator(v, i))}"><i></i><span>${short(v)}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
+    `<div class="val ${i === S.proposerIdx ? "on" : ""}" data-ex="${exKey(() => explainValidator(v, i))}" data-detail="${dtKey(() => detailValidator(v, i))}"><i></i><span>${acct(v)}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
   const N = S.validators.length;
   const kv = Object.assign({
     "Validators": N ? `${N} active, 1 proposing` : "—",
@@ -1440,14 +1446,14 @@ const kvHtml = o => `<dl class="kv">${Object.entries(o).map(([k, v]) => `<dt${KV
 function txLine(t) {
   const cls = t.rejected ? "rej" : t.kind === "gov" ? "gov" : /rule/.test(t.type) ? "ok" : "";
   const label = t.rejected ? "✕ " + t.rejected : (TYPE_LABEL[t.type] || t.type);
-  const body = t.transfers && t.transfers.length ? t.transfers.map(([f, to, a]) => `${short(f)} → ${short(to)} ${fmt(a)} AGRS`).join(" · ") : (t.note || `sender ${short(t.sender)}`);
+  const body = t.transfers && t.transfers.length ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} ${fmt(a)} AGRS`).join(" · ") : (t.note || `sender ${acct(t.sender)}`);
   return `<li class="${cls}"><b>${esc(label)}</b> <span class="muted">${short(t.id)} · fee ${t.fee ?? "—"}</span><br>${esc(body)}</li>`;
 }
 function blockHtml(b) {
   const sn = b.snap || {}; const gov = b.txs.filter(t => t.kind === "gov"), rules = b.txs.filter(t => /rule/.test(t.type) && t.kind !== "gov");
   const simple = document.body.dataset.view === "simple", H = x => x ? (simple ? `<span title="${esc(x)}">${short(x)}</span>` : esc(x)) : "—";
-  return `<p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${short(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? "An agreed rule change became active in this block." : "No rule change took effect in this block."}</p>
-    <div class="cols"><section class="${simple ? "" : "ident"}"><h3>Identity</h3>${kvHtml({ "Block hash": H(b.hash), "Previous block": H(b.prev), "State hash": H(b.state), Proposer: H(b.proposer) })}
+  return `<p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${acct(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? "An agreed rule change became active in this block." : "No rule change took effect in this block."}</p>
+    <div class="cols"><section class="${simple ? "" : "ident"}"><h3>Identity</h3>${kvHtml({ "Block hash": H(b.hash), "Previous block": H(b.prev), "State hash": H(b.state), Proposer: S.mode === "live" && b.proposer ? `<a class="acct" href="account/?a=${encodeURIComponent(b.proposer)}" title="Open account">${simple ? short(b.proposer) : esc(b.proposer)}</a>` : H(b.proposer) })}
     </section><section><h3>Rules in force at this block</h3>${kvHtml({ "Spec revision": sn.specRev ?? "—", "Base fee": sn.fee != null ? sn.fee + " AGRS per tx" : "—", "Agreement needed": sn.validators ? `${agreeNeed(sn.quorum === "majority" ? Math.floor(sn.validators.length / 2) + 1 : Math.ceil(sn.validators.length * 2 / 3), sn.validators.length)} · ${sn.quorum === "majority" ? "majority" : "two thirds"}` : "—", "Rule txs per block": sn.budget ?? "—", "Accounts with own rules": sn.rules ?? "—" })}
     </section><section><h3>Rule changes agreed here</h3>${sn.agreed && sn.agreed.length ? `<ul>${sn.agreed.map(a => `<li class="gov"><b>${esc(a.title)}</b> <span class="muted">agreed by ${a.votes} validators</span><br><code>${esc(a.diff)}</code></li>`).join("")}</ul>` : `<p class="small muted" style="color:var(--dim);font-size:12px">None. The rules were unchanged in this block.</p>`}
     <h3>Governance transactions (${gov.length})</h3>${gov.length ? `<ul>${gov.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
@@ -1461,8 +1467,8 @@ function blockSummary(b) {
   const sn = b.snap || {}, gov = b.txs.filter(t => t.kind === "gov"), rules = b.txs.filter(t => /rule/.test(t.type) && t.kind !== "gov"), refused = b.txs.filter(t => t.rejected);
   const N = sn.validators ? sn.validators.length : 0, thr = N ? (sn.quorum === "majority" ? Math.floor(N / 2) + 1 : Math.ceil(N * 2 / 3)) : null;
   const chip = (k, v, tip, cls) => `<span class="${cls || ""}"><i data-full="${esc(tip || KV_TIP[k] || "")}">${k}</i>${v}</span>`;
-  return `<div class="bsum"><p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${short(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? `Agreed rule change active from here: ${sn.agreed.map(a => esc(a.title)).join(", ")}.` : "No rule change took effect in this block."}</p>
-    <div class="row">${chip("Block hash", short(b.hash))}${chip("Previous block", b.prev ? short(b.prev) : "—")}${chip("State hash", short(b.state))}${chip("Proposer", short(b.proposer))}
+  return `<div class="bsum"><p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${acct(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? `Agreed rule change active from here: ${sn.agreed.map(a => esc(a.title)).join(", ")}.` : "No rule change took effect in this block."}</p>
+    <div class="row">${chip("Block hash", short(b.hash))}${chip("Previous block", b.prev ? short(b.prev) : "—")}${chip("State hash", short(b.state))}${chip("Proposer", acct(b.proposer))}
     ${chip("Base fee", sn.fee != null ? sn.fee + " AGRS" : "—")}${chip("Agreement needed", thr != null ? `${thr} of ${N}` : "—")}${chip("Rule txs per block", sn.budget ?? "—")}
     ${chip("Governance", gov.length, "Votes, proposals and scheduled rule changes carried in this block.", gov.length ? "gov" : "")}${chip("Rule work", rules.length, "Rule offers, acceptances and own-rule deployments in this block.")}${chip("Refused", refused.length, "Transactions a rule said no to. They are recorded, not applied.")}
     <span><i data-full="The full detail lists every transaction and what the state hash commits to.">Click</i>full detail ›</span></div></div>`;
@@ -1500,7 +1506,7 @@ function showState() {
     <h3>Validators (${N})</h3><ul>${S.validators.map((v, i) => `<li class="${i === S.proposerIdx ? "ok" : ""}"><b>${i === S.proposerIdx ? "proposing" : "active"}</b> <span class="muted">${esc(v)}</span></li>`).join("")}</ul>
     <h3>Rule changes agreed (${active.length})</h3>${active.length ? `<ul>${active.slice().reverse().map(u => `<li class="gov"><b>${esc(u.title)}</b> <span class="muted">active since #${u.activeAt} · ${u.votes.size} votes</span><br><code>${esc(u.diff)}</code></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None yet. The chain still runs on its genesis rules.</p>`}
     <h3>Open proposals (${open.length})</h3>${open.length ? `<ul>${open.map(u => `<li><b>${esc(u.title)}</b> <span class="muted">${STATUS_TXT[u.status]} · ${u.votes.size} of ${thr} · activates at #${u.activateAt}</span></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
-    <h3>Personal money rules (${S.clauses.size})</h3>${S.clauses.size ? `<ul>${[...S.clauses.entries()].map(([a, p]) => `<li class="ok"><b>${esc(p.name)}</b> <span class="muted">${short(a)}</span><br>${esc(p.label || "")}</li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
+    <h3>Personal money rules (${S.clauses.size})</h3>${S.clauses.size ? `<ul>${[...S.clauses.entries()].map(([a, p]) => `<li class="ok"><b>${esc(p.name)}</b> <span class="muted">${acct(a)}</span><br>${esc(p.label || "")}</li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <pre class="rule composite">${$("composite").innerHTML}</pre>`;
   openModal("mState");
 }
@@ -2233,7 +2239,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.1`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.2`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
