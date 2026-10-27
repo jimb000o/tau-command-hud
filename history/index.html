@@ -44,10 +44,14 @@ a.acct:hover { color: var(--ok); text-decoration-color: currentColor; }
    the screen and fits on one screen: the three panels take the remaining height and scroll inside if they must.
    --z is set by script from the viewport. The hover box sits outside .wrap and stays in viewport pixels. */
 html.wide body { padding: 0; overflow: hidden; }
-html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px; transform: scale(var(--z)); transform-origin: 0 0; grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; gap: 12px; }
+html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px; transform: scale(var(--z)); transform-origin: 0 0; display: flex; flex-direction: column; gap: 12px; }
+/* a column, not grid rows: the shared header adds rows of its own; every row keeps its height, the timeline takes the rest */
+html.wide .wrap > * { flex: none; }
+html.wide .wrap > #pTl { flex: 1 1 0; min-height: var(--tlneed, 0px); }   /* never shorter than its content needs (set by script) */
 /* the panels are as tall as their content (capped at half the screen), the timeline above takes the rest */
 html.wide #pTl { overflow: hidden; min-height: 0; }
-html.wide .cols { min-height: 0; align-items: stretch; height: calc(38vh / var(--z)); }   /* fixed: stepping through blocks must never resize the timeline */
+/* the panels keep one height while scrubbing (38 % of the screen); only when the timeline needs room for many rule changes do they give some up */
+html.wide .wrap > .cols { flex: 0 1 calc(38vh / var(--z)); min-height: calc(17vh / var(--z)); align-items: stretch; }
 html.wide .cols > .panel { overflow: auto; min-height: 0; }
 html.wide .cols .txs { max-height: none; }
 html.wide .src { margin: 0; padding-left: 150px; }
@@ -444,7 +448,23 @@ function threshold(policy, n) {
 }
 const QUORUM_TXT = { supermajority: "two thirds", majority: "more than half" };
 const quorumTxt = q => QUORUM_TXT[q] || (/^count:\d+$/.test(q) ? `a fixed ${q.slice(6)}` : q);
+// plain-words titles from the proposal tracker (alerts/explain.py, the same as /proposals/ and Telegram), by update id
+const EXPLAIN = new Map();
+async function loadExplain() {
+  if (params.has("sample")) return;
+  try {
+    const r = await fetch(params.get("explain") || "https://node.tauhud.com/proposals.json", { cache: "no-store" }); if (!r.ok) return;
+    const j = await r.json(); let changed = false;
+    for (const x of j.proposals || []) {
+      const t = x && x.explain && x.explain.title, id = String(x && x.id || "").toLowerCase();
+      if (t && id && EXPLAIN.get(id) !== t) { EXPLAIN.set(id, t); changed = true; }
+    }
+    if (changed && C.head >= 0) rebuild();
+  } catch (e) { /* the page still works with its own titles */ }
+}
 function titleOf(p) {
+  const named = EXPLAIN.get(String(p.id || "").toLowerCase());
+  if (named) { p.parts = named.split(" + "); return named; }
   const parts = [], patch = p.patch || {};
   for (const r of p.revisions) {
     const f = feeOf(r);
@@ -653,8 +673,17 @@ function onMessage(ev) {
     if (C.head !== before || d.reset) rebuild();
   } else if (msg.command === "getgovernance") {
     if (msg.status !== "ok") return;
-    C.gov = d; renderCheck();
+    C.gov = d; renderCheck(); navChips(d);
   }
+}
+// the shared header's chips: same numbers as on the other pages, from the node's getgovernance this page already has
+function navChips(d) {
+  const rev = 1 + (d.archival_update_details || []).filter(u => u.lifecycle === "activated").length;
+  const f = typeof d.consensus_rules === "string" && /o9\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]+)/.exec(d.consensus_rules);
+  const ch = window.TauNav && TauNav.chain; if (ch) { ch.rev = rev; if (f) ch.fee = parseInt(f[1], 16); }
+  const rb = document.querySelector("#tnRev b"), fb = document.querySelector("#tnFee b");
+  if (rb) rb.textContent = String(rev);
+  if (fb && f) fb.textContent = String(parseInt(f[1], 16));
 }
 // heights the relay did not give us: say so, and ask again a little later
 function holes() {
@@ -715,16 +744,21 @@ const hhmm = ts => ts ? new Date(ts * 1000).toISOString().slice(11, 16) : "";
 function drawTimeline() {
   const svg = $("tl"); const W = Math.max(280, svg.clientWidth || svg.parentNode.clientWidth);
   TL.w = W; TL.x0 = 14; TL.x1 = W - 14;
-  const L = lanes(H.props), laneH = 26, nl = Math.max(1, L.n);
-  // wide screens: the timeline panel owns the spare height of the screen, the transaction bars take it
-  let txH = 46;
+  const L = lanes(H.props), nl = Math.max(1, L.n);
+  let laneH = 26, txH = 46;
+  // wide screens: the timeline panel owns the spare height of the screen. The svg takes exactly what is left of it:
+  // more room → taller transaction bars; less room (many rule changes) → shorter bars, then tighter lanes. Nothing below it is cut.
   if (document.documentElement.classList.contains("wide")) {
     // content height of the panel without the svg (rects are scaled by --z, so divide it back out)
     const pan = $("pTl"), z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--z")) || 1;
     const content = (pan.lastElementChild.getBoundingClientRect().bottom - pan.getBoundingClientRect().top) / z + 14;
     const other = content - (+svg.getAttribute("height") || 0);
-    const base = 20 + 46 + 18 + 8 + nl * laneH + 16 + 8 + 22 + 18 + 16;
-    txH = 46 + Math.max(0, Math.min(240, pan.clientHeight - other - base - 4));
+    const fixed = 20 + 18 + 8 + 16 + 8 + 22 + 18 + 16, room = pan.clientHeight - other - fixed - 4;
+    // what the panel needs at least (short bars, tight lanes); the panels below give up height for it
+    const need = Math.ceil(other + fixed + 4 + 24 + nl * 22) + "px";
+    if (pan.style.getPropertyValue("--tlneed") !== need) pan.style.setProperty("--tlneed", need);
+    txH = Math.max(20, Math.min(286, room - nl * laneH));
+    if (txH + nl * laneH > room) laneH = Math.max(22, Math.floor((room - txH) / nl));
   }
   const y = { txL: 12, tx0: 20, tx1: 20 + txH }; y.prL = y.tx1 + 18; y.pr0 = y.prL + 8; y.pr1 = y.pr0 + nl * laneH; y.rvL = y.pr1 + 16; y.rv0 = y.rvL + 8; y.rv1 = y.rv0 + 22; y.ax = y.rv1 + 18; y.h = y.ax + 16;
   TL.y = y; TL.lanes = L; TL.laneH = laneH;
@@ -973,7 +1007,7 @@ function nodeOnly() {
   return [...(g.pending_updates || []).map(u => ({ u, st: "voting" })), ...(g.scheduled_updates || []).map(u => ({ u, st: "agreed" }))]
     .filter(({ u }) => u.update_id && !seen.has(String(u.update_id).toLowerCase()))
     .map(({ u, st }) => {
-      const p = { revisions: Array.isArray(u.rule_revisions) ? u.rule_revisions : [], patch: u.host_contract_patch || null };
+      const p = { id: u.update_id, revisions: Array.isArray(u.rule_revisions) ? u.rule_revisions : [], patch: u.host_contract_patch || null };
       return { id: u.update_id, st, title: titleOf(p), at: u.activation_height ?? u.activate_at_height, votes: votes.filter(v => v.update_id === u.update_id).length, thr: g.approval_threshold };
     });
 }
@@ -1142,7 +1176,7 @@ render = function () {   // jump to a shared block once it is loaded, otherwise 
 })();
 setInterval(() => { if (C.head >= 0) readout(); }, 15000);
 render();
-if (params.has("sample")) sampleChain(); else connect();
+if (params.has("sample")) sampleChain(); else { connect(); loadExplain(); setInterval(loadExplain, 60000); }
 
 /* ---------------- sample chain (?sample): proposals with every kind of rule text diff, no node needed ---------------- */
 async function sampleChain() {
