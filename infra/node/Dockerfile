@@ -87,6 +87,7 @@ RUN python3 -I /patches/read-until-eof.py /src
 RUN python3 -I /patches/sync-paginate.py /src
 RUN python3 -I /patches/sync-diagnostics.py /src
 RUN python3 -I /patches/network-tip.py /src
+RUN python3 -I /patches/peer-addrs.py /src
 
 
 FROM python:3.14-slim-trixie@sha256:82abc9f53600280b0757126f83c5a7d47088592d2acb6b4c0b9e97f76865508c AS runtime
