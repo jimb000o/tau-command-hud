@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Tau HUD Status</title>
+<meta name="description" content="Is the Tau HUD live feed up? Relay and node availability, sync gaps, chain restarts and known issues over the last 30 days.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Status">
+<meta property="og:description" content="Uptime of the Tau HUD node and relay, sync gaps and testnet restarts over the last 30 days.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/status/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.hdr-right { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.back { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.back:hover { background: #fff; color: #000; }
+.state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 30em; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 60em; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 600 12px var(--display); letter-spacing: .1em; text-transform: uppercase; text-decoration: none; color: #fff; background: transparent; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+.btn svg { width: 15px; height: 15px; fill: currentColor; flex: none; }
+.btn:hover { background: #fff; color: #000; border-color: #fff; }
+.btn.primary { background: var(--ok); color: #000; border-color: var(--ok); }
+.btn.primary:hover { background: #fff; border-color: #fff; }
+.btn.soon { color: var(--dim); border-style: dashed; cursor: default; }
+.btn.soon:hover { background: transparent; color: var(--dim); border-color: var(--hair); }
+.tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-width: 0; }
+.tile h3 { margin: 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.tile .v { font: 600 24px/1.2 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.tile .v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
+.tile p { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
+.main { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } .p-news { grid-column: 1 / -1; } }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; align-content: start; }
+.list > li > button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 8px 12px; border-left: 2px solid var(--hair); background: rgba(255,255,255,.025); border-radius: 0 6px 6px 0; }
+.list > li > button:hover, .list > li > button:focus-visible { background: rgba(255,255,255,.07); }
+.list b { color: #fff; font: 600 13.5px/1.35 var(--display); display: block; overflow-wrap: anywhere; }
+.list .m { display: block; color: var(--dim); font-size: 12px; margin-top: 2px; }
+.badge { display: inline-block; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; margin-right: 6px; vertical-align: 1px; white-space: nowrap; }
+.news { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; align-content: start; }
+.news li { padding: 6px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
+.news li b { color: #fff; font-weight: 600; }
+.news li em { font-style: normal; color: var(--dim); }
+.news li a { color: var(--dim); }
+.empty { color: var(--dim); font-size: 12.5px; padding: 18px 4px; }
+.empty b { color: #fff; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+footer p { margin: 0; }
+
+.state.warn { color: #fff; border-color: var(--hair); } .state.warn i { background: #fff; }
+.tile .v.ok { color: var(--ok); } .tile .v.bad { color: var(--bad); }
+.main { grid-template-columns: 1fr; }
+@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); } .p-inc { grid-row: span 2; } }
+
+/* 30-day bars: one row per signal, one bar per UTC day */
+.rows { display: grid; gap: 10px; }
+.row-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px 16px; flex-wrap: wrap; }
+.row-h b { color: #fff; font: 600 13px var(--display); }
+.row-h span { color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+.row-h span strong { color: #fff; font-weight: 600; }
+.bars { display: grid; grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 3px; height: 30px; margin-top: 4px; }
+.bars button { all: unset; box-sizing: border-box; position: relative; border-radius: 2px; background: rgba(57,255,138,.78); cursor: pointer; min-width: 0; }
+.bars button.part { background: #fff; }
+.bars button.down { background: var(--bad); }
+.bars button.none { background: transparent; border: 1px solid var(--line); cursor: default; }
+.bars button.mark::after { content: ""; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #000; }
+.bars button:hover:not(.none), .bars button:focus-visible { outline: 1px solid #fff; outline-offset: 2px; }
+.axis { display: flex; justify-content: space-between; color: var(--dim); font-size: 11px; margin-top: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--dim); font-size: 11.5px; margin-top: 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.hint { color: var(--dim); font-size: 12px; margin: 0 0 8px; }
+.hint b { color: #fff; font-weight: 600; }
+
+/* incidents */
+.inc { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; align-content: start; }
+.inc li { padding: 6px 10px; border-left: 2px solid var(--hair); background: rgba(255,255,255,.025); border-radius: 0 6px 6px 0; }
+.inc li.k-relay, .inc li.k-node { border-left-color: var(--bad); }
+.inc li.k-sync { border-left-color: #fff; }
+.inc li.k-restart { border-left-color: #fff; }
+.inc li.k-stall, .inc li.k-reorg { border-left-color: var(--dim); }
+.inc li.open { border-left-color: var(--behind); }
+.inc b { color: #fff; font: 600 13px/1.35 var(--display); }
+.inc .m { display: block; color: var(--dim); font-size: 12px; margin-top: 1px; }
+.inc .m a { color: var(--dim); }
+
+/* known issues */
+.known { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.known article { border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px; background: rgba(255,255,255,.02); }
+.known b { color: #fff; font: 600 13px/1.35 var(--display); display: block; }
+.known p { margin: 3px 0 0; color: var(--dim); font-size: 12px; }
+.known p a { color: #fff; }
+
+@media (max-width: 899px) { .p-inc .scroll { max-height: 60vh; overflow: auto; } }
+
+/* hover card: two or three lines, a click opens the day */
+.tip { position: fixed; z-index: 70; pointer-events: none; background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: var(--dim); max-width: 280px; box-shadow: 0 10px 30px -10px #000; }
+.tip b { color: #fff; font-weight: 600; display: block; }
+
+/* one screen on laptops and up (landscape), laid out for 1600×820 and scaled, like the other pages */
+html.fit body { overflow: hidden; height: 100vh; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { max-width: none; zoom: var(--z); height: var(--fitH); display: flex; flex-direction: column; gap: 10px; padding: 6px 0 8px; }
+html.fit .wrap > * { flex: none; }
+html.fit .main { flex: 1 1 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; }
+html.fit .panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px 14px; }
+html.fit .panel > * { flex: none; }
+html.fit .panel > .scroll { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 2px; }
+html.fit .p-days .rows { flex: 1 1 0; min-height: 0; grid-template-rows: repeat(4, minmax(0, 1fr)) auto; gap: 8px; }
+html.fit .p-days .rows > div:not(.axis) { display: flex; flex-direction: column; min-height: 0; }
+html.fit .p-days .bars { flex: 1 1 0; height: auto; min-height: 16px; max-height: 64px; }
+html.fit .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+html.fit .lead { font-size: 22px; margin: 0; }
+html.fit .sub { font-size: 12px; margin: 2px 0 0; }
+html.fit header { padding: 4px 0 6px; }
+html.fit .modal .sheet, html.fit .fb-fab { zoom: var(--z); }
+html.fit .modal .sheet { max-height: calc(100% / var(--z)); }
+html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; right: 12px; }
+html.fit .tip { font-size: calc(12px * var(--z)); max-width: calc(280px * var(--z)); padding: calc(7px * var(--z)) calc(10px * var(--z)); }
+/* modal */
+.modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
+.sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
+.sheet .panel { padding-right: 48px; background: var(--deck); }
+.sheet h2 { font: 600 17px/1.35 var(--display); letter-spacing: 0; text-transform: none; color: #fff; }
+.sheet h3 { margin: 14px 0 4px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.steps li { padding: 5px 10px; border-left: 2px solid var(--hair); }
+.steps li.ok { border-left-color: var(--ok); } .steps li.now { border-left-color: var(--behind); }
+.steps b { color: #fff; font-weight: 600; }
+.steps a { color: var(--dim); }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 40vh; overflow: auto; }
+.note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
+.fb-fab:hover { background: var(--ok); }
+@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .follow .lbl { width: 100%; } }
+[hidden] { display: none !important; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Status</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state"><i></i><span id="stateText">Checking</span></span>
+      <a class="back" href="/">Back to the live HUD</a>
+    </div>
+  </header>
+
+  <div class="top">
+    <div>
+      <p class="lead" id="lead">Is the live chain up right now?</p>
+      <p class="sub">Our node follows the Tau Testnet Alpha, our relay serves it to every page of tauhud.com. Here is how both did over the last 30 days, every outage and testnet restart, and the bugs we know about.</p>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <main class="main">
+    <section class="panel p-days">
+      <h2>Last 30 days <small>one bar per day (UTC) · hover for numbers, click for the day</small></h2>
+      <p class="hint" id="daysHint" hidden></p>
+      <div class="rows" id="rows"></div>
+      <div class="legend"><span><i style="background:var(--ok)"></i>99 % or more</span><span><i style="background:#fff"></i>short outage</span><span><i style="background:var(--bad)"></i>down more than 10 %</span><span><i style="border:1px solid var(--line)"></i>no record yet</span><span><i style="background:var(--ok);box-shadow:inset 0 0 0 3px var(--ok);background-image:radial-gradient(circle,#000 0 2.5px,transparent 3px)"></i>testnet restarted that day</span></div>
+    </section>
+    <section class="panel p-inc">
+      <h2>Incidents <small id="incCount"></small></h2>
+      <div class="scroll"><ul class="inc" id="incList"></ul></div>
+    </section>
+    <section class="panel p-known">
+      <h2>Known issues <small>testnet bugs that change what you see · <a href="/findings/">all our findings</a></small></h2>
+      <div class="known">
+        <article>
+          <b>Some “waiting” transactions are already in a block</b>
+          <p>The testnet node keeps some transactions in its mempool as pending for up to 60 minutes although they are already sealed in a block. The waiting dots in the HUD’s chain core come from that mempool, so a few of them are not really waiting. Not a HUD bug; reported as <a href="https://github.com/IDNI/tau-testnet/issues/81" target="_blank" rel="noopener">IDNI/tau-testnet#81</a>.</p>
+        </article>
+        <article>
+          <b>The testnet restarts without notice</b>
+          <p>IDNI sometimes restarts the testnet on the same genesis. Our node notices, wipes the old chain and syncs the new one; the HUD starts again at block 1. Restarts are marked above. Asked for an announcement in <a href="https://github.com/IDNI/tau-testnet/issues/78" target="_blank" rel="noopener">IDNI/tau-testnet#78</a>.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p id="foot">Data: the relay at node.tauhud.com checks the node once a minute. <a href="https://node.tauhud.com/uptime" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://node.tauhud.com/status" target="_blank" rel="noopener">Current status (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra#readme" target="_blank" rel="noopener">How it works</a> · <a href="/stats/">Stats</a> · <a href="/findings/">Findings</a></p>
+  </footer>
+</div>
+
+<div class="tip" id="tip" hidden></div>
+<div class="modal" id="mDetail" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="sheet">
+    <button class="close" data-close type="button" aria-label="Close">✕</button>
+    <article class="panel"><h2 id="dTitle"></h2><div id="dBody"></div></article>
+  </div>
+</div>
+<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BStatus%5D%20" target="_blank" rel="noopener">Feedback</a>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtN = n => Number(n).toLocaleString("en-US");
+const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
+const params = new URLSearchParams(location.search);
+const BASE = params.get("relay") || "https://node.tauhud.com";
+const SAMPLE = params.has("sample");
+const POLL = 30000, DAY = 86400, DAYS = 30;
+// Restarts we know of from before the relay kept its log; times approximate (same list as /stats).
+const KNOWN_RESTARTS = [
+  { at: Date.UTC(2026, 9, 23, 12) / 1000, label: "New genesis: the testnet restarted on a genesis that was published later", approx: "day only" },
+  { at: Date.UTC(2026, 9, 27, 9, 10) / 1000, label: "Testnet restarted on the same genesis", approx: "about 09:10 UTC" },
+  { at: Date.UTC(2026, 9, 27, 13, 30) / 1000, label: "Testnet restarted on the same genesis", approx: "about 13:30 UTC" },
+];
+let U = null, S = null, reach = null, hovering = false, pending = false, failures = 0;
+
+/* ---------------- one screen on wide displays ---------------- */
+function fit() {
+  const w = innerWidth, h = innerHeight;
+  const on = w >= 1200 && h >= 700 && w / h >= 1.3;
+  const z = on ? Math.max(1, Math.min(2, w / 1600, h / 820)) : 1;
+  const root = document.documentElement;
+  root.classList.toggle("fit", on);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+}
+addEventListener("resize", fit); fit();
+
+/* ---------------- time words ---------------- */
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const fmtDay = t => { const d = new Date(t * 1000); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
+const fmtTime = t => new Date(t * 1000).toISOString().slice(11, 16) + " UTC";
+const fmtWhen = t => `${fmtDay(t)}, ${fmtTime(t)}`;
+function dur(s) {
+  s = Math.max(0, Math.round(s));
+  if (s < 90) return plural(s, "second");
+  if (s < 5400) return plural(Math.round(s / 60), "minute");
+  if (s < 2 * DAY) { const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return m ? `${h} h ${m} min` : plural(h, "hour"); }
+  return plural(Math.round(s / DAY), "day");
+}
+const ago = t => t ? (Date.now() / 1000 - t < 45 ? "just now" : dur(Date.now() / 1000 - t) + " ago") : "—";
+const pct = f => f == null ? "—" : f >= 0.9995 ? "100 %" : (Math.floor(f * 1000) / 10).toFixed(1) + " %";
+
+/* ---------------- data ---------------- */
+async function getJSON(path) {
+  const r = await fetch(BASE + path, { cache: "no-store" });
+  if (!r.ok) throw Object.assign(new Error(path + " " + r.status), { status: r.status });
+  return r.json();
+}
+async function load() {
+  if (SAMPLE) { U = sample(); S = U.status; reach = true; return; }
+  try {
+    U = await getJSON("/uptime"); S = U.status; reach = true;
+  } catch (e) {
+    // the relay may not have /uptime yet (older server): current status only
+    U = null;
+    try { S = await getJSON("/status"); reach = true; } catch { S = null; reach = false; }
+  }
+}
+
+/* hourly buckets -> per-day availability for one field (1 = node_ok, 2 = synced, 0 = relay up) */
+function dayStats() {
+  const now = Date.now() / 1000, today = now - now % DAY, first = today - (DAYS - 1) * DAY;
+  const since = U ? U.since : null, step = U ? U.sample_seconds || 60 : 60;
+  const hours = new Map((U ? U.hours : []).map(r => [r[0], r]));
+  const days = [];
+  for (let d = first; d <= today; d += DAY) {
+    const day = { start: d, exp: 0, relay: 0, node: 0, sync: 0, inc: [], restarts: [], stalls: [], stallSec: 0 };
+    if (since != null) for (let h = d; h < d + DAY; h += 3600) {
+      const from = Math.max(h, since), to = Math.min(h + 3600, now);
+      if (to <= from) continue;
+      const exp = Math.max(1, Math.floor((to - from) / step)), r = hours.get(h);
+      day.exp += exp;
+      if (r) { day.relay += Math.min(exp, r[1]); day.node += Math.min(exp, r[2]); day.sync += Math.min(exp, r[3]); }
+    }
+    days.push(day);
+  }
+  const find = t => days.find(x => t >= x.start && t < x.start + DAY);
+  for (const i of incidents()) {
+    // an outage that spans days shows on each of them
+    for (const d of days) if (i.start < d.start + DAY && (i.end ?? now) >= d.start) d.inc.push(i);
+    if (i.kind === "restart") find(i.start)?.restarts.push(i);
+    if (i.kind === "stall") for (const d of days) {
+      const o = Math.min(i.end, d.start + DAY) - Math.max(i.start, d.start);
+      if (o > 0) { d.stallSec += o; d.stalls.push(i); }
+    }
+  }
+  return days;
+}
+
+/* every event of the last 30 days, newest first */
+function incidents() {
+  const now = Date.now() / 1000, cut = now - DAYS * DAY, out = [];
+  if (U) {
+    for (const i of U.incidents) out.push({ ...i });
+    for (const r of U.restarts) out.push({ kind: "restart", start: r.new_block1_ts || r.detected_at, end: null, detected: r.detected_at, old_tip: r.old_tip });
+    for (const r of U.reorgs) out.push({ kind: "reorg", start: r.at, end: r.at, height: r.height, depth: r.depth });
+    for (const s of U.stalls) out.push({ kind: "stall", start: s.start, end: s.end, after: s.after });
+  } else if (S && S.restarts) {
+    for (const r of S.restarts) out.push({ kind: "restart", start: r.detected_at, end: null, detected: r.detected_at, old_tip: r.old_tip });
+  }
+  const logged = out.filter(i => i.kind === "restart");
+  for (const k of KNOWN_RESTARTS) {
+    if (logged.some(r => Math.abs(r.start - k.at) < 3 * 3600)) continue;
+    out.push({ kind: "restart", start: k.at, end: null, note: k.label, approx: k.approx });
+  }
+  return out.filter(i => (i.kind === "restart" ? i.start : i.end ?? now) >= cut).sort((a, b) => b.start - a.start);
+}
+
+const KIND = {
+  relay: ["Relay offline", "tauhud.com could not show live data: our relay or its server was down."],
+  node: ["Node unreachable", "The relay was up but got no answers from our node."],
+  sync: ["Node behind the network", "Our node was more than a couple of blocks behind the network tip, so the HUD showed an older chain state."],
+  restart: ["Testnet restarted", "The testnet started a new chain. Our node wiped the old one and synced the new chain from block 1."],
+  stall: ["No new blocks", "The network itself produced no block for a while (our node was fine)."],
+  reorg: ["Blocks replaced", "The node swapped blocks at the chain tip for others (a short reorg)."],
+};
+function incLine(i) {
+  const now = Date.now() / 1000, open = i.end == null && i.kind !== "restart";
+  const [title] = KIND[i.kind] || [i.kind];
+  let when = i.approx ? `${fmtDay(i.start)}${i.approx === "day only" ? "" : ", " + i.approx}` : fmtWhen(i.start);
+  let m = "";
+  if (i.kind === "restart") m = i.note ? `${i.note}. From our notes, time approximate.` : `${i.old_tip ? `The old chain ended at #${fmtN(i.old_tip)}. ` : ""}${i.detected && Math.abs(i.detected - i.start) > 600 ? `Noticed ${fmtWhen(i.detected)}.` : ""}`;
+  else if (i.kind === "stall") m = `${dur(i.end - i.start)} without a block after <a href="/history/#${i.after}">#${fmtN(i.after)}</a>`;
+  else if (i.kind === "reorg") m = `from #${fmtN(i.height)}, ${plural(i.depth, "block")} deep`;
+  else m = open ? `going on for ${dur(now - i.start)}` : `${dur(i.end - i.start)}, until ${fmtTime(i.end)}`;
+  if (i.kind === "sync" && i.max_lag) m += ` · up to ${plural(i.max_lag, "block")} behind`;
+  return `<li class="k-${i.kind}${open ? " open" : ""}"><b>${open ? "Now: " : ""}${title}</b><span class="m">${when} · ${m}</span></li>`;
+}
+
+/* ---------------- render ---------------- */
+function overall() {
+  if (reach === false) return ["off", "Relay offline", "No. Our relay does not answer right now."];
+  if (!S) return ["", "Checking", "Is the live chain up right now?"];
+  if (!S.upstream_connected) return ["off", "Node unreachable", "No. The relay is up but our node does not answer."];
+  const lag = S.tip_height != null && S.canonical_height != null ? S.tip_height - S.canonical_height : 0;
+  if (!S.canonical_height) return ["warn", "Syncing", "Our node is syncing the chain. Live data follows shortly."];
+  if (lag > (U ? U.sync_lag_blocks : 2)) return ["warn", "Catching up", `Live, but our node is ${plural(lag, "block")} behind the network.`];
+  return ["live", "All systems normal", "Yes. The live chain is up and our node is in sync."];
+}
+
+function render() {
+  if (hovering) { pending = true; return; }
+  pending = false;
+  const [cls, label, lead] = overall();
+  $("state").className = "state " + cls; $("stateText").textContent = label; $("lead").textContent = lead;
+  const days = dayStats(), tot = days.reduce((a, d) => (a.exp += d.exp, a.node += d.node, a.sync += d.sync, a.relay += d.relay, a), { exp: 0, node: 0, sync: 0, relay: 0 });
+  const lastTs = U && U.last_block_ts;
+  const lag = S && S.tip_height != null && S.canonical_height != null ? S.tip_height - S.canonical_height : null;
+  const T = [
+    ["Relay", reach === false ? ["Offline", "bad"] : reach ? ["Online", "ok"] : ["…", ""], S ? `up ${dur(S.uptime_seconds || 0)} since its last restart` : "node.tauhud.com"],
+    ["Node", !S ? ["—", ""] : S.upstream_connected ? ["Connected", "ok"] : ["No answer", "bad"], S ? `${plural(S.online || 0, "person", "people")} watching now` : "our tau-testnet node"],
+    ["Sync", !S || !S.canonical_height ? ["—", ""] : lag == null ? ["In sync", "ok"] : lag <= 2 ? ["In sync", "ok"] : [`${fmtN(lag)} behind`, ""], lag == null ? "no peer tip known yet" : "verified head vs network tip"],
+    ["Verified block", S && S.canonical_height != null ? [`#${fmtN(S.canonical_height)}`, ""] : ["—", ""], S && S.tip_height != null ? `network tip #${fmtN(S.tip_height)} · stored #${fmtN(S.height ?? 0)}` : "network tip unknown"],
+    ["Last block", lastTs ? [ago(lastTs), ""] : ["—", ""], lastTs ? fmtWhen(lastTs) : "from the relay’s chain copy"],
+    ["Live data, 30 days", tot.exp ? [pct(tot.node / tot.exp), ""] : ["—", ""], tot.exp ? `in sync ${pct(tot.sync / tot.exp)} of the time` : "history starts with the update"],
+  ];
+  $("tiles").innerHTML = T.map(([h, [v, c], p]) => `<div class="tile"><h3>${h}</h3><div class="v ${c}">${esc(v)}</div><p>${esc(p)}</p></div>`).join("");
+
+  const rows = [
+    ["relay", "Relay reachable", d => d.relay],
+    ["node", "Node answering", d => d.node],
+    ["sync", "In sync with the network", d => d.sync],
+    ["chain", "Testnet producing blocks", null],
+  ];
+  $("daysHint").hidden = !!U;
+  $("daysHint").innerHTML = U ? "" : reach === false ? "<b>The relay does not answer</b>, so there is no history to show right now." : "<b>The history starts once the server runs the latest update.</b> Until then this page shows the current state and the restarts we know of.";
+  $("rows").innerHTML = rows.map(([key, name, f]) => {
+    let sum = 0, exp = 0;
+    const bars = days.map((d, ix) => {
+      let frac = null, mark = "";
+      if (key === "chain") {
+        if (d.exp || d.restarts.length || d.stalls.length) frac = 1 - Math.min(DAY, d.stallSec) / DAY;
+        if (d.restarts.length) mark = " mark";
+        if (!d.exp && !d.stalls.length) frac = d.restarts.length ? 1 : null;
+      } else if (d.exp) { frac = f(d) / d.exp; sum += f(d); exp += d.exp; }
+      const c = frac == null ? "none" : frac >= 0.99 ? "" : frac >= 0.9 ? "part" : "down";
+      return `<button type="button" class="${c}${mark}" data-row="${key}" data-day="${ix}" aria-label="${esc(name)}, ${fmtDay(d.start)}"></button>`;
+    }).join("");
+    const right = key === "chain"
+      ? (() => { const r = days.reduce((a, d) => a + d.restarts.length, 0), s = days.reduce((a, d) => a + d.stalls.length, 0); return `<strong>${plural(r, "restart")}</strong> · ${plural(s, "stall")} over 10 min`; })()
+      : exp ? `<strong>${pct(sum / exp)}</strong> over ${plural(Math.round(exp * (U.sample_seconds || 60) / DAY) || 1, "day")}` : "no record yet";
+    return `<div><div class="row-h"><b>${name}</b><span>${right}</span></div><div class="bars">${bars}</div></div>`;
+  }).join("") + `<div class="axis"><span>${fmtDay(days[0].start)}</span><span>today</span></div>`;
+  window.__days = days;
+
+  const inc = incidents();
+  $("incCount").textContent = inc.length ? `${plural(inc.length, "event")} in 30 days` : "";
+  $("incList").innerHTML = inc.length ? inc.map(incLine).join("")
+    : `<li class="k-none"><b>Nothing to report</b><span class="m">No outage, sync gap or restart in the last 30 days.</span></li>`;
+}
+
+/* ---------------- hover card and day detail ---------------- */
+function dayText(row, d) {
+  const name = { relay: "Relay reachable", node: "Node answering", sync: "In sync", chain: "Testnet producing blocks" }[row];
+  const f = { relay: d.relay, node: d.node, sync: d.sync }[row];
+  const own = d.inc.filter(i => row === "chain" ? i.kind === "restart" || i.kind === "stall" : i.kind === row);
+  let l2;
+  if (row === "chain") l2 = `${plural(d.restarts.length, "restart")}${d.stallSec ? ` · ${dur(d.stallSec)} without blocks` : ""}`;
+  else l2 = d.exp ? `${pct(f / d.exp)} · ${own.length ? plural(own.length, "outage") : "no outage"}` : "no record for this day";
+  return [`${fmtDay(d.start)} · ${name}`, l2];
+}
+const tip = $("tip");
+$("rows").addEventListener("mouseover", e => {
+  const b = e.target.closest(".bars button"); if (!b) return;
+  const d = window.__days[+b.dataset.day], [l1, l2] = dayText(b.dataset.row, d);
+  tip.innerHTML = `<b>${esc(l1)}</b>${esc(l2)}${b.classList.contains("none") ? "" : "<br>Click for the day"}`;
+  tip.hidden = false;
+  const r = b.getBoundingClientRect(), w = tip.offsetWidth;
+  tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px";
+  tip.style.top = (r.top - tip.offsetHeight - 10 < 8 ? r.bottom + 10 : r.top - tip.offsetHeight - 10) + "px";
+});
+$("rows").addEventListener("mouseout", e => { if (e.target.closest(".bars button")) tip.hidden = true; });
+$("rows").addEventListener("click", e => {
+  const b = e.target.closest(".bars button"); if (!b || b.classList.contains("none")) return;
+  tip.hidden = true;
+  const d = window.__days[+b.dataset.day];
+  $("dTitle").textContent = `${fmtDay(d.start)} (UTC)`;
+  const line = (n, v) => `<li><b>${n}:</b> ${v}</li>`;
+  $("dBody").innerHTML = `<ul class="steps">
+    ${line("Relay reachable", d.exp ? pct(d.relay / d.exp) : "no record")}
+    ${line("Node answering", d.exp ? pct(d.node / d.exp) : "no record")}
+    ${line("In sync with the network", d.exp ? pct(d.sync / d.exp) : "no record")}
+    ${line("Testnet", `${plural(d.restarts.length, "restart")}${d.stallSec ? `, ${dur(d.stallSec)} without blocks` : ""}`)}
+  </ul><h3>What happened</h3><ul class="inc">${d.inc.length ? [...d.inc].sort((a, b) => a.start - b.start).map(incLine).join("") : `<li><b>Nothing</b><span class="m">No outage, sync gap or restart on this day.</span></li>`}</ul>
+  ${d.inc.length ? `<p class="note">${d.inc.map(i => i.kind).filter((k, i, a) => a.indexOf(k) === i).map(k => KIND[k] ? `<b>${KIND[k][0]}:</b> ${KIND[k][1]}` : "").join("<br>")}</p>` : ""}`;
+  $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus();
+});
+function closeModal() { $("mDetail").hidden = true; }
+$("mDetail").addEventListener("click", e => { if (e.target === $("mDetail") || e.target.closest("[data-close]")) closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("mDetail").hidden) closeModal(); });
+// the incident list holds still while the pointer is on it
+const inc = document.querySelector(".p-inc");
+inc.addEventListener("mouseenter", () => { hovering = true; });
+inc.addEventListener("mouseleave", () => { hovering = false; if (pending) render(); });
+
+/* ---------------- made-up data for previews (?sample) ---------------- */
+function sample() {
+  const now = Math.floor(Date.now() / 1000), since = now - 26 * DAY - 5 * 3600, hours = [], incs = [];
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const out = (kind, start, len, x = {}) => incs.push({ kind, start, end: len == null ? null : start + len, ...x });
+  out("relay", now - 19 * DAY + 3 * 3600, 23 * 60); out("relay", now - 11 * DAY, 4 * 60);
+  out("node", now - 15 * DAY + 7200, 2 * 3600 + 1200); out("node", now - 3 * DAY, 6 * 60);
+  out("sync", now - 15 * DAY + 3 * 3600, 3600 + 600, { max_lag: 412 }); out("sync", now - 8 * DAY, 9 * 60, { max_lag: 5 });
+  out("sync", now - 2 * DAY + 4000, 3 * 60, { max_lag: 3 });
+  // minutes of hour h covered by outages of these kinds
+  const down = (h, ...kinds) => incs.filter(i => kinds.includes(i.kind))
+    .reduce((s, i) => s + Math.max(0, Math.min(i.end ?? now, h + 3600) - Math.max(i.start, h)), 0) / 60;
+  for (let h = since - since % 3600; h < now; h += 3600) {
+    const n = Math.max(1, Math.min(60, Math.floor((Math.min(h + 3600, now) - Math.max(h, since)) / 60)));
+    const r = Math.max(0, n - Math.round(down(h, "relay"))), no = Math.max(0, r - Math.round(down(h, "node")));
+    const sy = Math.max(0, no - Math.round(down(h, "sync")) - (rnd() < 0.02 ? 1 : 0));
+    hours.push([h, r, no, sy]);
+  }
+  return {
+    generated_at: now, since, sample_seconds: 60, sync_lag_blocks: 2, stall_seconds: 600, hours, incidents: incs,
+    restarts: [{ detected_at: now - 9 * DAY + 600, old_tip: 4812, new_block1_ts: now - 9 * DAY }, { detected_at: now - 3 * 3600, old_tip: 1290, new_block1_ts: now - 3 * 3600 - 300 }],
+    reorgs: [{ at: now - 5 * DAY, height: 3011, depth: 1 }],
+    stalls: [{ after: 2410, start: now - 12 * DAY, end: now - 12 * DAY + 2400 }, { after: 117, start: now - DAY - 7000, end: now - DAY - 6000 }],
+    last_block_ts: now - 41,
+    status: { upstream_connected: true, height: 251, canonical_height: 251, tip_height: 251, online: 7, uptime_seconds: 3 * 3600 + 1200, restarts: [] },
+  };
+}
+
+/* ---------------- loop ---------------- */
+async function tick() {
+  await load();
+  failures = reach ? 0 : failures + 1;
+  render();
+  setTimeout(tick, reach ? POLL : Math.min(120000, POLL * 2 ** failures));
+}
+setInterval(() => { if (U || S) render(); }, 60000); // keep "x minutes ago" fresh
+tick();
+</script>
+</body>
+</html>
