@@ -400,8 +400,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .pr b { font: 600 12.5px var(--display); letter-spacing: .02em; color: #fff; }
 .pr span { font-size: 11px; color: var(--text); opacity: .85; }
 .pr em { font-style: normal; font-size: 10.5px; color: var(--dim); }
-.prov { display: flex; justify-content: space-between; gap: 8px; margin-top: 3px; padding-top: 4px; border-top: 1px dashed var(--line); font: 10px var(--mono); color: var(--dim); white-space: nowrap; min-width: 0; }
-.prov span { overflow: hidden; text-overflow: ellipsis; }
+.prov { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; margin-top: 3px; padding-top: 4px; border-top: 1px dashed var(--line); font: 10px var(--mono); color: var(--dim); min-width: 0; }
+.prov span { min-width: 0; }
 .prov i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 0; border: 1px solid var(--dim); }
 .prov i.seen { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .prov a { color: var(--dim); text-decoration: none; border-bottom: 1px dotted var(--hair); flex: 0 0 auto; }
@@ -610,6 +610,27 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   .modal { padding: 8px; }
   .sheet { max-height: 100%; }
 }
+/* ---------- phones and tablets: every word readable, nothing clipped (desktop untouched; from the mobile thread) ---------- */
+@media (max-width: 1100px), (max-width: 1366px) and (pointer: coarse) {
+  .prov { flex-wrap: wrap; row-gap: 2px; }
+  .prov span { overflow: visible; }
+}
+@media (max-width: 1100px) {
+  .o2 { white-space: normal; overflow: visible; text-overflow: clip; }
+  .fb-fab { left: auto; right: max(12px, env(safe-area-inset-right, 0px)); }
+}
+@media (max-width: 720px) {
+  /* header chips wrap instead of scrolling sideways, so all six stay visible */
+  .chips { flex-wrap: wrap; overflow: visible; }
+  .chip.unoff { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.35; }
+  /* panel subtitles move under the title instead of being cut off */
+  .panel h2 { flex-wrap: wrap; row-gap: 2px; }
+  .panel h2 small { white-space: normal; overflow: visible; text-overflow: clip; flex: 1 1 140px; line-height: 1.35; }
+  #blkDetail dd { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+  /* the chain core uses the full panel width */
+  .core canvas { max-width: 100%; }
+  .wrap { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -799,6 +820,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v16.1 · 27 Oct 2026</b>Phones and tablets: header chips wrap instead of scrolling sideways, panel subtitles, provenance lines and block values wrap instead of being cut off, the chain core uses the full width, a tap on a button no longer leaves a tooltip behind. Desktop: the “from the protocol / seen on the testnet” lines under the thesis cards wrap instead of being cut off.</li>
           <li><b>v16.0 · 27 Oct 2026</b>Guided tour for newcomers: eight short steps, about a minute, from “rules change by agreement” through block check, proposal, votes, the core, activation and personal rules to the playground. Offered once on the first visit (“Not now” is remembered), always available from the header; arrow keys step, Escape ends.</li>
           <li><b>v15.9 · 27 Oct 2026</b>Header: links to the new <a href="stats/">Stats</a> and <a href="history/">Time travel</a> pages; a block’s full detail links to the rules in force at that height. Rule changes by agreement: when an agreed change was scheduled far ahead by the proposal itself, the Tau row says so (“at #5028”, “agreed in n blocks”) instead of counting down the proposer’s wait as if it were Tau’s speed. Block detail: when the full detail would need scrolling at your screen size, a one-glance summary takes its place and a click opens the full detail. Every detail window scrolls inside the screen. Screens up to 900 px tall get the scrolling layout.</li>
           <li><b>v15.8 · 27 Oct 2026</b>Node log: the panel shows whole lines (time in its own column, nothing cut off) with more room, and a click opens the full log in the detail view, newest first, with counts of refusals and governance events. Chain core: every label (agreement, validators, “the agreed rules of everyone”) sits on a dark plate, so no ring crosses the letters. Detail views: every check chip (i10 signature, o6 block valid, o7 proposer eligible, o9 fee, o5 sender rule, the admission checks of a rule offer, the steps of a proposal) explains itself on hover. Live: when the relay reports a chain reset (the node discarded a chain the network abandoned), the page forgets the old blocks and rebuilds from the new ones.</li>
@@ -2093,7 +2115,7 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur && !touch) hide(); });
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
-  document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail]")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
+  document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail], button, a, input, select")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
   const coreShow = e => { const fn = coreHit(e); if (fn) { cur = cv; shownAt = Date.now(); ovl.textContent = fn(); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
@@ -2211,7 +2233,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.0`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.1`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
