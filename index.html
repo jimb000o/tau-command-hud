@@ -379,6 +379,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .log .err { color: var(--bad); }
 .gov { display: grid; gap: 10px; }
 .vals { display: grid; gap: 4px; }
+.modes { display: flex; align-items: stretch; gap: 4px; margin: 0 0 6px; }
+.modes span { flex: 1 1 auto; min-width: 0; font: 10.5px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); padding: 4px 6px; text-align: center; white-space: nowrap; }
+.modes span.on { color: var(--ok); border-color: rgba(57,255,138,.7); box-shadow: inset 0 0 0 1px rgba(57,255,138,.25); text-shadow: 0 0 8px rgba(57,255,138,.5); }
+.modes span.was { color: var(--text, #e6e6ea); border-style: dashed; }
+.modes em { flex: 0 0 auto; font: 11px var(--mono); color: var(--dim); align-self: center; }
+@media (max-width: 1599px) { .modes span { font-size: 10px; padding: 4px 4px; } }
 .val { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; }
 .val i { width: 8px; height: 8px; transform: rotate(45deg); background: var(--cyan); border-radius: 1px; }
 .val.on i { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
@@ -792,7 +798,8 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
 
     <div class="stack a-val">
       <article class="panel gov">
-        <h2>Validators <small id="govSub">seal blocks, vote on rules</small><button class="info" type="button" aria-label="What is this?" data-tip="The accounts allowed to seal blocks. The set lives on the chain and changes only through an agreed rule change. The approval threshold is derived from the quorum policy, which is itself part of the state hash, so it cannot be changed quietly.">i</button></h2>
+        <h2>Validators <small id="govSub">seal and vote</small><button class="info" type="button" aria-label="What is this?" data-tip="The accounts allowed to seal blocks. The set lives on the chain and changes only through an agreed rule change. The approval threshold is derived from the quorum policy, which is itself part of the state hash, so it cannot be changed quietly.">i</button></h2>
+        <div class="modes" id="modes" data-full="Who may seal the next block. The mode is chain state and changes only by an agreed rule change."></div>
         <div class="vals" id="vals"></div>
         <dl class="kv" id="govkv"></dl>
         <a class="seat" href="playground/#seat" data-full="A simulated validator seat in the playground: propose a fee change, collect votes, watch it activate.">take a validator seat ›</a>
@@ -848,6 +855,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v16.8 · 27 Oct 2026</b>Validators panel: the three consensus modes (fixed list › list in Tau logic › stake) are shown as a strip at the top, the active one lit in green, a mode the chain ran in before a switch dashed; hover explains each.</li>
           <li><b>v16.7 · 27 Oct 2026</b>The “online” count now counts people, not open connections: a random token in your browser (no cookies, no analytics) tells the relay that your tabs and the subpages are one visitor. Takes effect once the relay is updated.</li>
           <li><b>v16.6 · 27 Oct 2026</b>Chronicle: a new page at <a href="chronicle/">/chronicle/</a> tells the project’s history and milestones; linked from the header.</li>
           <li><b>v16.5 · 27 Oct 2026</b>Live: approval requests and their signatures are read from the blocks themselves (approval_request and transfer_vote transactions), the fork radar also counts the reorgs and restarts the relay remembers.</li>
@@ -1476,15 +1484,22 @@ function renderGov(extra = {}) {
   const kv = Object.assign({
     "Validators": N ? `${N} active, 1 proposing` : "—",
     "Agreement needed": N ? `${threshold()} of ${N} (${S.quorum === "majority" ? "majority" : "two thirds"})` : "—",
-    "Consensus mode": modeLabel(),
     "Mode switches": S.modeHistory.length ? `${S.modeHistory.length} · last at #${fmt(S.modeHistory[S.modeHistory.length - 1].height)}` : S.mode === "live" ? "none on record" : "none · simulated",
   }, extra);
   $("govkv").innerHTML = Object.entries(kv).map(([k, v]) => `<dt${KV_TIP[k] ? ` data-full="${esc(KV_TIP[k])}"` : ""}>${k}</dt><dd>${v}</dd>`).join("");
+  const MODES = [["validator_set", "Fixed list"], ["tau_validator_set", "List in Tau logic"], ["stake", "Stake"]];
+  const cur = S.mode === "live" ? S.eligMode : "validator_set", seen = new Set(S.modeHistory.flatMap(m => [m.from, m.to]).filter(Boolean));
+  const modesEl = $("modes");
+  if (modesEl) {
+    modesEl.innerHTML = MODES.map(([k, t], i) => (i ? "<em>›</em>" : "") + `<span class="${k === cur ? "on" : seen.has(k) ? "was" : ""}" data-full="${esc(MODE_TIP[k])}${k === cur ? " This is the mode right now." : seen.has(k) ? " The chain ran in this mode before a switch." : ""}">${t}</span>`).join("");
+    modesEl.dataset.full = `Consensus mode: ${modeLabel()}. ${KV_TIP["Consensus mode"]}`;
+  }
   const sub = $("govSub"), sw = S.modeHistory.length;
-  if (sub) { sub.textContent = S.mode === "live" ? `${modeLabel()} · ${sw ? `${sw} switch${sw === 1 ? "" : "es"} by agreement` : "no switch on record"}` : "seal blocks, vote on rules · fixed list (PoA), simulated"; sub.dataset.full = KV_TIP["Consensus mode"]; }
+  if (sub) { sub.textContent = "seal and vote"; sub.dataset.full = `Consensus mode: ${modeLabel()}${S.mode === "live" ? (sw ? ` · ${sw} switch${sw === 1 ? "" : "es"} by agreement` : " · no switch on record") : ""}. ${KV_TIP["Consensus mode"]}`; }
 }
 
 /* who may seal blocks right now: a fixed validator list (PoA) or a list or stake judged by the Tau rules (stream o7) */
+const MODE_TIP = { validator_set: "Fixed validator list (proof of authority): the host keeps the list, Tau checks every seal against it.", tau_validator_set: "The validator list itself lives in the Tau rules: stream o7 decides who may seal.", stake: "Stake-based: the Tau rules judge eligibility by stake (stream o7)." };
 const MODE_TXT = { validator_set: "fixed validator list (PoA)", tau_validator_set: "validator list kept in Tau logic", stake: "stake-based (Tau judges o7)" };
 const modeLabel = () => S.mode !== "live" ? "fixed validator list (PoA) · simulated" : S.eligMode ? (MODE_TXT[S.eligMode] || esc(S.eligMode)) : "—";
 /* fork radar: competing branches, reorgs and chain restarts, as the node and the relay report them */
@@ -2383,7 +2398,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.7`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.8`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
