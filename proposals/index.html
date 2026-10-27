@@ -143,6 +143,9 @@ html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; 
 .steps a { color: var(--dim); }
 pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 40vh; overflow: auto; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+.nw { white-space: nowrap; }
+details.raw { margin: 14px 0 0; } details.raw > summary { cursor: pointer; min-height: 28px; padding: 4px 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.state.sample { color: #fff; border-color: #fff; } .state.sample i { background: #fff; }
 .fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
 .fb-fab:hover { background: var(--ok); }
 @media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .follow .lbl { width: 100%; } }
@@ -163,6 +166,7 @@ p.why { margin: 0; color: var(--text); } p.why.warn { color: #fff; font-weight: 
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/rulediff.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -294,6 +298,17 @@ function explainHtml(p) {
       : `<p class="note" style="margin:0">Nothing: the text equals the rules already in force.</p>`}
     <h3>Why it matters</h3><p class="why${warn ? " warn" : ""}">${esc(x.why)}</p>`;
 }
+// rule text diff against the rules in force when it was proposed (assets/rulediff.js)
+const asRd = x => ({ id: x.id, activatedAt: x.activated_at, revisions: x.revisions });
+function diffOf(p) {
+  if (!window.RuleDiff || !p.revisions.length) return null;
+  return p._d || (p._d = RuleDiff.diff(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions));
+}
+function ruleDiff(p) {
+  if (!window.RuleDiff) return "";
+  return RuleDiff.html(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions, { at: p.proposed_at, patch: !!p.patch });
+}
+const diffTag = p => { const d = diffOf(p); return d ? ` · <span class="nw">rule text ${d.same ? "unchanged" : RuleDiff.summary(d)}</span>` : ""; };
 function openCard(p) {
   const need = p.thr, v = p.counted_votes, n = left(p), when = eta(n);
   const line = p.status === "agreed"
@@ -304,7 +319,7 @@ function openCard(p) {
   const bar = agreed ? (n > 0 ? `${plural(n, "block")} to go${when ? ` (${when})` : ""} · ${v} of ${need} votes` : "takes effect now") : `${v} of ${need} votes`;
   return `<li class="${p.status}"><button type="button" data-id="${esc(p.id)}"><b>${esc(p.title)}</b>
     ${whyOf(p) ? `<span class="m why">${esc(whyOf(p))}</span>` : ""}
-    <span class="m">proposed at #${fmtN(p.proposed_at)} by ${short(p.proposer)}${p.proposed_ts ? ` · ${ago(p.proposed_ts)}` : ""}</span>
+    <span class="m">proposed at #${fmtN(p.proposed_at)} by ${short(p.proposer)}${p.proposed_ts ? ` · ${ago(p.proposed_ts)}` : ""}${diffTag(p)}</span>
     ${flow(p)}<span class="m">${line}</span>
     <div class="quorum${agreed ? " wait" : ""}" aria-label="${esc(bar)}"><div class="fill" style="width:${pct}%"></div><span>${bar}</span></div></button></li>`;
 }
@@ -313,7 +328,7 @@ function rowOf(p) {
   const m = { active: `in force since #${fmtN(p.activated_at)} · revision ${p.rev}`, agreed: `agreed · takes effect at #${fmtN(p.activate_at)}`,
     voting: `${p.counted_votes} of ${p.thr} votes · deadline #${fmtN(p.activate_at)}`, dropped: `dropped at #${fmtN(p.expired_at)} · ${p.counted_votes} of ${p.thr} votes` }[st];
   return `<li class="${st}"><button type="button" data-id="${esc(p.id)}"><span class="badge b-${st}">${STATUS[st]}</span><b style="display:inline">${esc(p.title)}</b>
-    <span class="m">${m} · proposed at #${fmtN(p.proposed_at)}</span></button></li>`;
+    <span class="m">${m} · proposed at #${fmtN(p.proposed_at)}${diffTag(p)}</span></button></li>`;
 }
 function render() {
   if (hovering) { pending = true; return; }
@@ -362,8 +377,8 @@ function openDetail(p, push) {
   ].filter(Boolean);
   lastFocus = document.activeElement;
   $("dTitle").innerHTML = `<span class="badge b-${p.status}">${STATUS[p.status]}</span> ${esc(p.title)}`;
-  $("dBody").innerHTML = `${explainHtml(p)}<h3>Timeline</h3><ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
-    ${p.revisions.length ? `<h3>Rule text it ${p.status === "active" ? "added" : "would add"}</h3>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}` : ""}
+  $("dBody").innerHTML = `${explainHtml(p)}${ruleDiff(p)}<h3>Timeline</h3><ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
+    ${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
     ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere;margin:0">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
     <p class="note">Open any block number to see it in <a href="/history/#${p.proposed_at}">Time travel</a>. Votes count once per account while the change is open.</p>`;
@@ -403,8 +418,38 @@ const HOWTO = `<li class="howto"><b>How a rule change becomes law</b><ol>
   <li><em>Agreed</em>Once enough validators say yes, the change is locked in.</li>
   <li><em>In force</em>From its activation block every node runs the new rule.</li></ol></li>`;
 const NEWS_EMPTY = `<li class="empty">No news yet on this chain.<br>When a rule change is proposed, voted on or comes into force, this panel shows the exact post that goes to Telegram and the feed.</li>`;
+/* ---------------- sample data (?sample): every kind of diff without waiting for the chain ---------------- */
+function sample() {
+  const now = Math.round(Date.now() / 1000), head = 4210, at = h => now - (head - h) * 12, V = "a1fe40d5e4f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7d2b";
+  const ex = (title, changes, why, severity = "normal") => ({ title, label: null, changes, unchanged: [], why, severity });
+  const P = (n, o) => ({ id: (n + "f3c9a17be2d40c58e6a91b7d03f2c4e8a5b6c7d8e9f00112233445566778899").slice(0, 64), n, proposer: V, votes: [], dups: [], patch: null,
+    approved_at: null, approved_ts: null, activated_at: null, activated_ts: null, expired_at: null, expired_ts: null, rev: null, thr: 1, counted_votes: 0,
+    proposed_ts: at(o.proposed_at), ...o, title: o.explain.title });
+  const ps = [
+    P(1, { status: "active", proposed_at: 30, activate_at: 3030, approved_at: 31, activated_at: 3030, rev: 2, counted_votes: 1,
+      revisions: ["# Valid blocks need a signature and a height above zero\nalways (\n    o6[t]:bv[16] = (i10[t]:bv[16] & ({ 1 }:bv[16] - (i6[t]:bv[64] = { 0 }:bv[64])))\n)"],
+      votes: [{ h: 31, voter: V, counted: true, approve: true }], explain: ex("New rule for valid blocks", [{ topic: "Which blocks count as valid", text: "depends on the signature check and block height" }], "Changes which blocks the network accepts.") }),
+    P(2, { status: "active", proposed_at: 297, activate_at: 3300, approved_at: 298, activated_at: 3300, rev: 3, counted_votes: 1,
+      revisions: ["always (\n  o6[t]:bv[16] = i10[t]:bv[16] &&\n  o7[t]:bv[16] = { 1 }:bv[16]\n)"],
+      votes: [{ h: 298, voter: V, counted: true, approve: true }], explain: ex("Same rules as now (no real change)", [], "Nothing would change: the text equals the rules already in force. Often a test of the voting itself.", "none") }),
+    P(3, { status: "agreed", proposed_at: 4150, activate_at: 4400, approved_at: 4152, counted_votes: 1,
+      revisions: ["always (o9[t]:bv[24] = { #x000014 }:bv[24])"], votes: [{ h: 4152, voter: V, counted: true, approve: true }],
+      explain: ex("Base fee 10 → 20 AGRS", [{ topic: "Base fee per transaction", text: "10 → 20 AGRS" }], "Every transaction would cost 20 AGRS instead of 10.") }),
+    P(4, { status: "voting", proposed_at: 4198, activate_at: 9198,
+      revisions: ["# ONE PROPOSER\nalways (\n    o7[t]:bv[16] = (i8[t]:bv[384] = { #x" + V + " }:bv[384]) ? { 1 }:bv[16] : { 0 }:bv[16] &&\n    o10[t]:bv[16] = i15[t]:bv[16]\n)"],
+      explain: ex("Only one validator may make blocks + New definition of o10", [{ topic: "Who may make blocks", text: "only validator a1fe40…7d2b" }, { topic: "Output o10", text: "depends on the eligibility mode" }], "Block making would rest with a single validator. Others could no longer add blocks.") }),
+    P(5, { status: "dropped", proposed_at: 1200, activate_at: 3200, expired_at: 3200, revisions: [], patch: { validator_additions: ["b7c2" + "0".repeat(92)] },
+      explain: ex("Admit validator b7c200…0000", [{ topic: "Validators", text: "add b7c200…0000" }], "More parties would make blocks and vote on rule changes.") }),
+  ];
+  return { generated_at: now, chain: { head, head_ts: now, first: 0, seconds_per_block: 12 },
+    rules: { revision: 3, base_fee: 10, validators: 1, quorum: "supermajority", votes_needed: 1, open_admission: true },
+    proposals: ps.reverse(), channels: {},
+    events: [{ kind: "proposed", h: 4198, ts: at(4198), headline: "New proposal: Only one validator may make blocks", body: "Sample post. Rule text: +2 lines, −1 line." },
+      { kind: "agreed", h: 4152, ts: at(4152), headline: "Agreed: Base fee 10 → 20 AGRS", body: "Sample post. Rule text: +1 line, −1 line." }] };
+}
 /* ---------------- data ---------------- */
 async function load() {
+  if (params.has("sample")) { D = sample(); setState("sample", "Sample data"); render(); return; }
   try {
     const r = await fetch(DATA, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);

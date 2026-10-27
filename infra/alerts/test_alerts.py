@@ -179,4 +179,21 @@ def _fast_sleep(real):
     return sleep
 
 
+
+def test_rule_diff():
+    """The rule text diff: changed lines, an added stream, and no difference for the same text."""
+    spec = alerts.explain.clauses(alerts.explain.GENESIS_RULES)
+    d = alerts.explain.diff([FEE_RULE], spec)
+    assert (d["added"], d["removed"], d["streams"]) == (1, 1, ["o9"]), d
+    assert [r[0] for r in d["lines"] if r[0] != " "] == ["-", "+"] and "#x000014" in d["lines"][-2][1], d
+    d = alerts.explain.diff(["always (o10[t]:bv[16] = i15[t]:bv[16])"], spec)
+    assert (d["added"], d["removed"]) == (1, 0), d   # the clause before it keeps its line, only && is added
+    d = alerts.explain.diff([alerts.explain.GENESIS_RULES.replace("    ", "  ")], spec)
+    assert alerts.explain.diff_summary(d) == "no difference", d
+    item = {"kind": "proposed", "headline": "x", "what": [], "why": "", "facts": [], "link": "https://tauhud.com",
+            "diff": {"summary": "no difference", "lines": [], "more": 0}}
+    assert "Rule text diff</b>: none" in alerts.telegram_text(item)
+
+
+test_rule_diff()
 asyncio.run(main())
