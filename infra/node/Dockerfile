@@ -12,7 +12,11 @@
 
 ARG TAU_TESTNET_REF=539d1e20b53e45b197b42510af5d139a76687cf8
 
-FROM python:3.14-trixie AS tau-builder
+# Base images pinned by digest: a re-published tag (python:3.14-trixie was
+# rebuilt on Docker Hub 2026-10-27 02:13Z) invalidates the whole tau-builder
+# stage, i.e. a ~90-minute tau-lang rebuild on the server. Bump deliberately.
+# Both digests are the multi-arch manifest lists for 3.14-trixie as of 2026-10-27.
+FROM python:3.14-trixie@sha256:99a53439c9ffbd44b13fe09e60f21b2573e852e342513deaf525ad138d3b404f AS tau-builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TAU_LANG_REPO=https://github.com/IDNI/tau-lang.git
@@ -72,7 +76,7 @@ RUN --mount=type=cache,target=/root/.tau,id=tau-store \
     rm -rf /tau-store; cp -a /root/.tau /tau-store
 
 
-FROM python:3.14-trixie AS testnet-src
+FROM python:3.14-trixie@sha256:99a53439c9ffbd44b13fe09e60f21b2573e852e342513deaf525ad138d3b404f AS testnet-src
 ARG TAU_TESTNET_REF
 RUN git clone --filter=blob:none https://github.com/IDNI/tau-testnet.git /src && \
     git -C /src checkout "${TAU_TESTNET_REF}" && rm -rf /src/.git
@@ -85,7 +89,7 @@ RUN python3 -I /patches/sync-diagnostics.py /src
 RUN python3 -I /patches/network-tip.py /src
 
 
-FROM python:3.14-slim-trixie AS runtime
+FROM python:3.14-slim-trixie@sha256:82abc9f53600280b0757126f83c5a7d47088592d2acb6b4c0b9e97f76865508c AS runtime
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
