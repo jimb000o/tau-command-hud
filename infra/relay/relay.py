@@ -55,7 +55,10 @@ TRUST_PROXY = os.environ.get("TRUST_PROXY", "1") == "1"
 OPEN_ADMISSION = os.environ.get("TAU_GOVERNANCE_OPEN_ADMISSION", "false").lower() in ("1", "true", "yes")
 
 MAX_CLIENTS = _env_int("MAX_CLIENTS", 500)
-MAX_PER_IP = _env_int("MAX_PER_IP", 8)
+# Every open tauhud.com page holds two sockets (its own and the shared header's), the HUD
+# three, and a closed tab lingers for up to 30 s; so one person with a few tabs needs well
+# over 8. 32 still stops a single address from eating the relay.
+MAX_PER_IP = _env_int("MAX_PER_IP", 32)
 CLIENT_BURST = _env_float("CLIENT_BURST", 20)
 CLIENT_REFILL = _env_float("CLIENT_REFILL_PER_SEC", 2)
 # Account / tx lookups go to the node; this caps them across all visitors.
@@ -1327,6 +1330,7 @@ class Relay:
         if len(self.clients) >= MAX_CLIENTS:
             return connection.respond(HTTPStatus.SERVICE_UNAVAILABLE, "relay at capacity\n")
         if self.per_ip.get(self.client_ip(connection, request), 0) >= MAX_PER_IP:
+            log.info("refused a socket: one address already holds %s (MAX_PER_IP)", MAX_PER_IP)
             return connection.respond(HTTPStatus.TOO_MANY_REQUESTS, "too many connections from your address\n")
         return None
 
