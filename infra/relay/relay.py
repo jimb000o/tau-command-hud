@@ -91,6 +91,7 @@ HEAVY_BURST = 2
 HEAVY_REFILL = _env_float("HEAVY_REFILL_PER_SEC", 0.45)
 
 HEX = re.compile(r"^[0-9a-fA-F]{40,192}$")
+VIEWER_ID = re.compile(r"^[0-9a-fA-F]{16,64}$")  # "hello version=1 viewer=<token>", chosen by the browser
 # command -> validator for its arguments (list of strings). Anything not listed
 # here is refused.
 LOOKUPS = {
@@ -214,6 +215,9 @@ class Relay:
         self.upstream = Upstream(upstream_url)
         self.clients: set[ServerConnection] = set()
         self.per_ip: dict[str, int] = {}
+        # connection -> viewer token from "hello … viewer=…": one person's tabs, pages and
+        # reconnects count once. Random, chosen by the browser, kept in memory only.
+        self.viewers: dict[ServerConnection, str] = {}
         self.blocks: dict[str, dict] = {}       # block_hash -> raw block
         self.total_blocks = 0
         self.cache: dict[str, str] = {}         # command -> envelope text
@@ -612,17 +616,21 @@ class Relay:
             return None
 
     # ---------- visitor commands ----------
-    async def answer(self, message: str, ip: str = "?") -> str:
+    async def answer(self, message: str, ip: str = "?", ws: ServerConnection | None = None) -> str:
         parts = message.split()
         if not parts:
             return envelope_error("", "Empty command.", "INVALID_PARAMS")
         cmd, args = parts[0].lower(), parts[1:]
 
         if cmd == "hello":
-            version = message.split("=", 1)[1].strip() if "=" in message else ""
-            if version in ("1", "2"):
-                return f"ok version={version} env=testnet node=tau-hud-relay"
-            return f"error unsupported_version expected=1|2 got={version}"
+            fields = dict(a.split("=", 1) for a in args if "=" in a)
+            version = fields.get("version", "")
+            if version not in ("1", "2"):
+                return f"error unsupported_version expected=1|2 got={version}"
+            viewer = fields.get("viewer", "")
+            if ws is not None and VIEWER_ID.match(viewer):
+                self.viewers[ws] = viewer.lower()
+            return f"ok version={version} env=testnet node=tau-hud-relay"
 
         if cmd == "getblocks":
             limit = 12
@@ -751,8 +759,13 @@ class Relay:
         return self.community_text
 
     # ---------- presence ----------
+    def online(self) -> int:
+        """People, not sockets: connections that sent a viewer token are counted
+        once per token; connections without one count individually."""
+        return len(set(self.viewers.values())) + sum(1 for c in self.clients if c not in self.viewers)
+
     def presence_envelope(self) -> str:
-        return envelope_ok("presence", {"online": len(self.clients), "pushed": True})
+        return envelope_ok("presence", {"online": self.online(), "pushed": True})
 
     def push_presence(self):
         broadcast(self.clients, self.presence_envelope())
@@ -782,7 +795,7 @@ class Relay:
             "open_governance_admission": OPEN_ADMISSION,
             "total_blocks": self.total_blocks,
             "clients": len(self.clients),
-            "online": len(self.clients),
+            "online": self.online(),
             "community_nodes": len(self.community),
             # the newest chain restarts and reorgs the relay noticed (full lists on /stats)
             "restarts": [{"detected_at": r.get("detected_at"), "old_tip": (r.get("old") or {}).get("tip")}
@@ -845,12 +858,16 @@ class Relay:
                 if not bucket.take():
                     reply = envelope_error("rate_limit", "Rate limit exceeded", "RATE_LIMITED")
                 else:
-                    reply = await self.answer(message.strip(), ip)
+                    before = self.online()
+                    reply = await self.answer(message.strip(), ip, ws)
+                    if self.online() != before:
+                        self.push_presence()  # a hello with a viewer token merged this socket into a known person
                 await ws.send(reply)
         except ConnectionClosed:
             pass
         finally:
             self.clients.discard(ws)
+            self.viewers.pop(ws, None)
             self.per_ip[ip] -= 1
             if self.per_ip[ip] <= 0:
                 del self.per_ip[ip]
@@ -866,7 +883,7 @@ class Relay:
             asyncio.create_task(self.presence_loop()),
         ]
         async with serve(self.handler, LISTEN_HOST, LISTEN_PORT, process_request=self.process_request,
-                         max_size=512, max_queue=8, ping_interval=30, ping_timeout=30,
+                         max_size=512, max_queue=8, ping_interval=15, ping_timeout=15,
                          server_header="tau-hud-relay") as server:
             log.info("relay listening on %s:%s, upstream %s", LISTEN_HOST, LISTEN_PORT, self.upstream.url)
             loop = asyncio.get_running_loop()
