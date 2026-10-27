@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tau HUD widget</title>
+<meta name="description" content="Live Tau testnet numbers to put on your own site: block height, status, rule changes, validators. Made for an iframe; see tauhud.com/developers/.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Same tokens as the site: black and white, phosphor green as the one accent.
+   ?theme=light flips to white; ?theme=transparent keeps the host page's background. */
+:root {
+  --bg: #09090a; --card: rgba(16,16,18,.92); --line: rgba(255,255,255,.12); --text: #ebebee; --dim: #8a8a94; --strong: #fff;
+  --ok: #39ff8a; --off: #5a5a62;
+  --display: "Sora", "Segoe UI", sans-serif; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+:root[data-theme="light"] { --bg: #fff; --card: #fafafa; --line: rgba(0,0,0,.12); --text: #26262b; --dim: #6b6b74; --strong: #09090a; --ok: #16c060; --off: #b4b4bb; color-scheme: light; }
+:root[data-theme="transparent"] { --bg: transparent; --card: transparent; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 12px/1.45 var(--mono); padding: 8px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+a { color: inherit; }
+.tiles { flex: 1 1 auto; min-height: 0; display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; min-width: 0; display: flex; flex-direction: column; justify-content: center; text-decoration: none; color: inherit; }
+.tile:hover { border-color: var(--dim); }
+.tile h2 { margin: 0; display: flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.v { font: 600 26px/1.15 var(--display); color: var(--strong); font-variant-numeric: tabular-nums; margin-top: 3px; white-space: nowrap; }
+.v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
+.s { color: var(--dim); margin-top: 1px; font-size: 11px; white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--off); flex: none; }
+.dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.dot.on.beat { animation: beat 1.2s ease-out; }
+@keyframes beat { 0% { box-shadow: 0 0 0 0 var(--ok); } 100% { box-shadow: 0 0 0 9px transparent; } }
+@media (prefers-reduced-motion: reduce) { .dot.on.beat { animation: none; } }
+.foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--dim); font-size: 11px; white-space: nowrap; }
+.foot a { display: flex; align-items: center; gap: 6px; text-decoration: none; color: var(--strong); font: 600 11px var(--display); letter-spacing: .06em; }
+.mark { width: 16px; height: 16px; fill: none; stroke: var(--strong); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+@media (max-width: 400px) { .foot .long { display: none; } }
+:root[data-foot="0"] .foot { display: none; }
+/* the boxes do not fit the iframe (very low, or narrow so they wrap): one line per box,
+   then without the footer. Set by fit() below, and right away for very low strips. */
+:root.tight body { padding: 4px 8px; }
+:root.tight .tile { padding: 4px 10px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; }
+:root.tight .v { font-size: 18px; margin: 0; } :root.tight .s, :root.tight .v small, :root.tight .full { display: none; }
+.short { display: none; } :root.tight .short { display: inline; }
+:root.bare .foot { display: none; }
+@media (max-height: 90px) { .s, .foot { display: none; } .tile { padding: 4px 10px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; } .v { font-size: 18px; margin: 0; } body { padding: 4px; } }
+</style>
+</head>
+<body>
+<main class="tiles" id="tiles" aria-live="polite"></main>
+<footer class="foot"><a href="https://tauhud.com/" target="_blank" rel="noopener"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>Tau HUD</a><span id="note"><span class="long">Tau Testnet Alpha · </span>unofficial</span></footer>
+<script>
+"use strict";
+const API = "https://node.tauhud.com/api/v1/summary";
+const q = new URLSearchParams(location.search);
+const PANELS = ["status", "height", "proposals", "validators", "health"];
+const want = (q.get("panel") || "status,height,proposals,validators").split(",").map(s => s.trim()).filter(p => PANELS.includes(p));
+const panels = want.length ? want : ["status", "height", "proposals", "validators"];
+const theme = q.get("theme");
+if (theme === "light" || theme === "transparent") document.documentElement.dataset.theme = theme;
+if (q.get("footer") === "0") document.documentElement.dataset.foot = "0";
+const SAMPLE = q.has("sample");
+const LINK = { status: "status/", height: "explorer/", proposals: "proposals/", validators: "", health: "status/" };
+const TITLE = { status: "Testnet", height: "Block", proposals: "Rule changes", validators: "Validators", health: "Health" };
+let data = null, failed = false, lastHeight = null;
+
+const tiles = document.getElementById("tiles");
+const els = {};
+for (const p of panels) {
+  const a = document.createElement("a");
+  a.className = "tile"; a.href = "https://tauhud.com/" + LINK[p]; a.target = "_blank"; a.rel = "noopener";
+  a.innerHTML = `<h2><i class="dot"></i><span class="full">${TITLE[p]}</span><span class="short">${TITLE[p]}</span></h2><div class="v">–</div><div class="s">&nbsp;</div>`;
+  tiles.append(a);
+  els[p] = { a, short: a.querySelector(".short"), dot: a.querySelector(".dot"), v: a.querySelector(".v"), s: a.querySelector(".s") };
+}
+
+function ago(sec) {
+  if (sec == null) return "";
+  if (sec < 60) return `${Math.max(0, Math.round(sec))} s ago`;
+  if (sec < 3600) return `${Math.round(sec / 60)} min ago`;
+  if (sec < 86400) return `${Math.round(sec / 3600)} h ago`;
+  return `${Math.round(sec / 86400)} d ago`;
+}
+const num = n => n == null ? "–" : Number(n).toLocaleString("en-US");
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+function render() {
+  const d = data, live = d && d.status === "synced";
+  const age = d && d.last_block_ts ? Date.now() / 1000 - d.last_block_ts : null;
+  for (const p of panels) {
+    const e = els[p];
+    let v = "–", s = failed ? "no answer yet" : "loading…", on = false, tip = "";
+    if (d) {
+      if (p === "status") {
+        on = live;
+        v = { synced: "Live", catching_up: "Catching up", offline: "Offline" }[d.status] || "–";
+        s = d.status === "offline" ? "node not answering" : d.pace_seconds ? `block every ~${Math.round(d.pace_seconds)} s` : "in sync";
+        tip = "Live: our node follows the Tau Testnet Alpha and is at the network tip.";
+      } else if (p === "height") {
+        on = live;
+        v = d.height == null ? "–" : "#" + num(d.height);
+        s = age != null ? `sealed ${ago(age)}` : "no block yet";
+        tip = "Newest block our node has verified.";
+      } else if (p === "proposals") {
+        const pr = d.proposals;
+        if (pr) {
+          const coming = pr.waiting + pr.agreed;
+          on = coming > 0;
+          e.short.textContent = coming ? "Coming up" : "In force";
+          v = coming ? `${coming}<small>coming up</small>` : `${pr.in_force}<small>in force</small>`;
+          s = coming ? `${pr.in_force} in force` : pr.total ? `${plural(pr.total, "proposal")} so far` : "no proposals yet";
+          tip = `${pr.waiting} waiting for votes · ${pr.agreed} agreed, takes effect soon · ${pr.in_force} in force · ${pr.dropped} dropped`;
+        }
+        tip = tip || "Rule changes: proposed by anyone, agreed by validators, then in force for everyone.";
+      } else if (p === "validators") {
+        on = !!d.validators;
+        v = d.validators == null ? "–" : String(d.validators);
+        s = d.validators == null ? "" : "active right now";
+        tip = "Active validators: their votes turn a proposal into law.";
+      } else if (p === "health") {
+        const h = d.health && typeof d.health === "object" ? d.health : null;
+        on = !!(h && (h.state ? h.state === "healthy" : h.score >= 80));
+        v = h && h.score != null ? `${h.score}<small>/ 100</small>` : "–";
+        s = h ? (h.label || "testnet health") : "not rated yet";
+        tip = "One number for: is the testnet running well right now?";
+      }
+    }
+    e.v.innerHTML = v; e.s.textContent = s; e.a.title = tip;
+    e.dot.classList.toggle("on", on);
+  }
+  fit();
+}
+
+// never cut anything off: if the boxes overflow the iframe, go one line per box, then drop the footer
+function fit() {
+  const root = document.documentElement, over = () => root.scrollHeight > innerHeight + 1 || tiles.scrollHeight > tiles.clientHeight + 1;
+  root.classList.remove("tight", "bare");
+  if (over()) root.classList.add("tight");
+  if (over()) root.classList.add("bare");
+}
+addEventListener("resize", fit);
+
+function sample() {
+  const now = Math.round(Date.now() / 1000);
+  return { api: "tauhud/v1", status: "synced", height: 372, tip_height: 372, last_block_ts: now - 23, pace_seconds: 69.8,
+    spec_revision: 2, base_fee: 1, validators: 1, proposals: { waiting: 1, agreed: 0, in_force: 1, dropped: 0, total: 3 },
+    health: { score: 96 }, viewers: 4, community_nodes: 0 };
+}
+
+async function poll() {
+  try {
+    if (SAMPLE) data = sample();
+    else {
+      const r = await fetch(API, { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status);
+      data = await r.json();
+    }
+    failed = false;
+    if (lastHeight != null && data.height > lastHeight)
+      for (const p of panels) { const dot = els[p].dot; dot.classList.remove("beat"); void dot.offsetWidth; dot.classList.add("beat"); }
+    lastHeight = data.height;
+  } catch (e) { failed = true; data = null; }
+  render();
+}
+poll();
+setInterval(poll, Math.max(10, Number(q.get("every")) || 20) * 1000);
+setInterval(render, 1000);
+</script>
+</body>
+</html>

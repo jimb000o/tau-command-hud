@@ -136,6 +136,12 @@ BOARD_KEEP_DAYS = _env_float("BOARD_KEEP_DAYS", 30)
 BOARD_MAX = _env_int("BOARD_MAX", 1000)
 BOARD_SAVE_SECONDS = _env_float("BOARD_SAVE_SECONDS", 60)
 BADGE_PATH = re.compile(r"^/community/badge/([0-9a-f]{12})\.svg$")
+# Public read API for other sites (documented on tauhud.com/developers/): one
+# cached summary and live SVG badges. Versioned so fields can grow without
+# breaking embeds; a field is never renamed or removed within v1.
+API_BADGE_PATH = re.compile(r"^/api/v1/badge/(height|status|proposals|validators|health)\.svg$")
+API_CACHE_SECONDS = _env_float("API_CACHE_SECONDS", 10)
+NETWORK = os.environ.get("TAU_NETWORK", "tau-testnet-v2")
 REPORT_FIELDS = {
     "key": re.compile(r"^[0-9a-f]{32}$"),
     "name": re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$"),
@@ -269,6 +275,8 @@ class Relay:
         self.board_saved_at = 0.0
         self.board_text: str | None = None
         self.board_at = 0.0
+        self.summary_data: dict | None = None
+        self.summary_at = 0.0
 
     # ---------- polling ----------
     async def poll_loop(self, every: float, fn):
@@ -1091,9 +1099,13 @@ class Relay:
             up = self.node_uptime(row, now)
             if span and up is not None:  # days alone would flatter a node that was mostly down
                 right += f" · {round(up * 100)} % up"
-        left = "Tau HUD node"
-        # the site's colours: black, white, phosphor green for a node that is up
-        bg, fg = ("#39ff8a", "#000") if online else ("#2a2a2e", "#ebebee")
+        return self.badge("Tau HUD node", right, online)
+
+    @staticmethod
+    def badge(left: str, right: str, on: bool) -> str:
+        """Shields-style two-part badge in the site's colours: black, white,
+        phosphor green when the value is good news."""
+        bg, fg = ("#39ff8a", "#000") if on else ("#2a2a2e", "#ebebee")
         # Verdana 11px averages about 6.6 px per character; padding 6 px each side
         lw, rw = int(len(left) * 6.6) + 12, int(len(right) * 6.6) + 12
         esc = lambda t: t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -1104,6 +1116,76 @@ class Relay:
                 f'<text x="{lw / 2:.1f}" y="14" fill="#fff">{esc(left)}</text>'
                 f'<text x="{lw + rw / 2:.1f}" y="14" fill="{fg}">{esc(right)}</text>'
                 f'</g></svg>')
+
+    # ---------- public API (/api/v1/…) ----------
+    def summary(self) -> dict:
+        """Everything a widget needs in one small object, cached for API_CACHE_SECONDS."""
+        now = time.time()
+        if self.summary_data is not None and now - self.summary_at < API_CACHE_SECONDS:
+            return self.summary_data
+        st = self.status()
+        gov = self.governance()
+        connected = st["upstream_connected"] and "getblocks" in self.updated
+        canon, tip = st["canonical_height"], st["tip_height"]
+        synced = bool(connected and canon and (tip is None or tip - canon <= SYNC_LAG))
+        stamps = [t for t in (self._ts(b) for b in self.ordered_blocks()[-11:]) if t is not None]
+        pace = round((stamps[-1] - stamps[0]) / (len(stamps) - 1), 1) if len(stamps) > 1 and stamps[-1] > stamps[0] else None
+        archived = [u for u in gov.get("archival_update_details") or [] if isinstance(u, dict)]
+        activated = sum(1 for u in archived if u.get("lifecycle") == "activated")
+        fee = None
+        m = re.search(r"o9\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]+)", str(gov.get("consensus_rules") or ""))
+        if m:
+            fee = int(m.group(1), 16)
+        try:
+            mempool = len(json.loads(self.cache["getmempool"])["data"].get("transactions") or [])
+        except (KeyError, TypeError, ValueError, AttributeError):
+            mempool = None
+        proposals = {"waiting": len(gov.get("pending_updates") or []),
+                     "agreed": len(gov.get("scheduled_updates") or []),
+                     "in_force": activated, "dropped": len(archived) - activated}
+        proposals["total"] = sum(proposals.values())
+        self.summary_data = {
+            "api": "tauhud/v1", "network": NETWORK, "generated_at": round(now),
+            "status": "synced" if synced else "catching_up" if connected else "offline",
+            "height": canon, "tip_height": tip,
+            "last_block_ts": stamps[-1] if stamps else None,
+            "last_block_age_seconds": round(now - stamps[-1]) if stamps else None,
+            "pace_seconds": pace,
+            "spec_revision": 1 + activated if gov else None,
+            "base_fee": fee,
+            "validators": len(gov.get("active_validators") or []) if gov else None,
+            "proposals": proposals if gov else None,
+            "mempool": mempool,
+            "viewers": st["online"],
+            "community_nodes": st["community_nodes"],
+            "health": st.get("health"),
+            "docs": "https://tauhud.com/developers/",
+        }
+        self.summary_at = now
+        return self.summary_data
+
+    def api_badge(self, kind: str) -> str:
+        s = self.summary()
+        up = s["status"] == "synced"
+        p = s["proposals"] or {}
+        if kind == "height":
+            return self.badge("Tau block", f"{s['height']:,}" if s["height"] is not None else "offline", up)
+        if kind == "status":
+            return self.badge("Tau testnet", {"synced": "live", "catching_up": "catching up", "offline": "offline"}[s["status"]], up)
+        if kind == "proposals":
+            if not p:
+                return self.badge("Tau rule changes", "unknown", False)
+            right = f"{p['in_force']} in force"
+            if p["waiting"] or p["agreed"]:
+                right = f"{p['waiting'] + p['agreed']} coming up · " + right
+            return self.badge("Tau rule changes", right, bool(p["waiting"] or p["agreed"]))
+        if kind == "validators":
+            n = s["validators"]
+            return self.badge("Tau validators", "unknown" if n is None else f"{n} active", bool(n))
+        h = s["health"] if isinstance(s["health"], dict) else {}
+        score = h.get("score")
+        return self.badge("Tau testnet health", "not rated yet" if score is None else f"{score} / 100",
+                          score is not None and score >= HEALTH_OK)
 
     def community_json(self) -> str:
         """Cached like /stats: the endpoint is public, the build walks the chain once."""
@@ -1223,6 +1305,21 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.community_json().encode())
+        if path in ("/api", "/api/", "/api/v1", "/api/v1/", "/api/v1/summary"):
+            if path != "/api/v1/summary":
+                return Response(HTTPStatus.FOUND.value, HTTPStatus.FOUND.phrase,
+                                Headers([("Location", "https://tauhud.com/developers/")]), b"")
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers,
+                            json.dumps(self.summary(), separators=(",", ":")).encode())
+        api_badge = API_BADGE_PATH.match(path)
+        if api_badge:
+            headers = Headers([("Content-Type", "image/svg+xml; charset=utf-8"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.api_badge(api_badge.group(1)).encode())
         if request.headers.get("Upgrade", "").lower() != "websocket":
             return connection.respond(HTTPStatus.OK, "Tau HUD read-only relay. Connect with WebSocket; GET /status for health.\n")
         if not self.origin_ok(request.headers.get("Origin")):

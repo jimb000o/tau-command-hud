@@ -24,6 +24,7 @@
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
     findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
     status:     { t: "Status", d: "Uptime, outages, sync gaps and restarts of the community node", i: "◍", h: "status/" },
+    developers: { t: "Developers", d: "Widgets, badges and a free JSON API for your own site", i: "{}", h: "developers/" },
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
     about:      { t: "About", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
@@ -32,10 +33,10 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     { k: "explore", t: "Explore", items: ["explorer", "stats", "history", "account", "nodes", "proposals"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["story", "tour", "chronicle", "findings", "status", "tau", "about"], tab: "▸" },
+    { k: "learn", t: "Learn", items: ["story", "tour", "chronicle", "findings", "status", "developers", "tau", "about"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat"], id: "btnPlayground", tab: "◇", short: "Play" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", chronicle: "learn", findings: "learn", status: "learn", playground: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", chronicle: "learn", findings: "learn", status: "learn", developers: "learn", playground: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     telegram: "Join @tauHUDcom on Telegram: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Questions (height, proposals, your transaction or address): write to @tauhud_alerts_bot. Opens Telegram.",
@@ -55,7 +56,7 @@
     fee: "Base fee in AGRS that every transaction pays, set by the consensus rule o9.",
     hud: "The chain core live: blocks, rules and agreement as they happen.",
     explore: "Chain data pages: Explorer, Stats, Time travel, Accounts, Nodes, Proposals.",
-    learn: "Tau in 60 seconds, Guided tour, Chronicle, Findings, Status, What is Tau?, About.",
+    learn: "Tau in 60 seconds, Guided tour, Chronicle, Findings, Status, Developers, What is Tau?, About.",
     play: "Write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law.",
   };
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };

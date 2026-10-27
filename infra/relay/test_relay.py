@@ -439,6 +439,14 @@ async def main():
             check(len(f.read().strip()) == 32 and oct(os.stat(heartbeat.KEY_PATH).st_mode)[-3:] == "600", "report key kept, mode 600")
         check(any(n["name"] == "kit-test" for n in (await community())[1]["nodes"]), "heartbeat node listed")
 
+        # public API: the summary and its badges over HTTP, open to any origin
+        ctype, text = await get("/api/v1/summary")
+        api = json.loads(text)
+        check(ctype.startswith("application/json") and api["api"] == "tauhud/v1" and api["height"] >= 1
+              and api["status"] in ("synced", "catching_up"), f"/api/v1/summary {api['status']} {api['height']}")
+        ctype, svg = await get("/api/v1/badge/height.svg")
+        check(ctype.startswith("image/svg+xml") and "Tau block" in svg, "height badge over HTTP")
+
         minter.cancel()
         runner.cancel()
     sys.exit(1 if check.failed else 0)

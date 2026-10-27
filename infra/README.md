@@ -329,6 +329,19 @@ own copy of a preview once fetched.
 
 Logs: `docker compose logs -f share`.
 
+## Public API and badges
+
+For other sites; documented with copy-paste snippets on https://tauhud.com/developers/.
+All CORS `*`, read-only, no key.
+
+| Path | What |
+|---|---|
+| `/api/v1/summary` | one object: status (`synced`, `catching_up`, `offline`), height, tip, last block time, pace, spec revision, base fee, validators, proposal counts (`waiting`, `agreed`, `in_force`, `dropped`), mempool, viewers, community nodes, `health` (when `/status` carries one). Cached `API_CACHE_SECONDS` (10 s). |
+| `/api/v1/badge/{height,status,proposals,validators,health}.svg` | live badges in the site's colours, cached 60 s |
+
+Within v1 fields are only added, never renamed or removed. `/api` redirects to the docs.
+The embeddable widget is a static page on tauhud.com (`/embed/?panel=…`) that polls the summary.
+
 ## Tests
 
 ```bash
@@ -336,6 +349,7 @@ pip install websockets==15.0.1
 python relay/test_relay.py
 python relay/test_uptime.py
 python relay/test_health.py
+python relay/test_api.py
 ```
 
 Runs the relay against a mock node that enforces the real node's rate limits: read
