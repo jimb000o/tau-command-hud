@@ -4,6 +4,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY fonts ./fonts
-COPY alerts.py explain.py recap.py ./
+COPY alerts.py explain.py recap.py bot.py ./
 USER alerts
 CMD ["python", "alerts.py"]

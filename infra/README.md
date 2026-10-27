@@ -16,6 +16,7 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
   cache. New blocks, mempool and governance changes are pushed to visitors as they happen.
 - **Caddy**: HTTPS with automatic Let's Encrypt certificates; also serves the tracker's `proposals.json` and `feed.xml`.
 - **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect, plus a weekly recap image.
+- **bot** (`alerts/bot.py`): the same Telegram bot answers questions in private chats and groups: height, proposals, a transaction, an address, a block, node status (see "Question bot").
 - **share** (`share/share.py`): share previews, the picture X, Telegram and WhatsApp show under a link (see "Share previews").
 
 ## Server
@@ -243,6 +244,33 @@ JetBrains Mono, SIL OFL) live in `alerts/fonts/`.
 
 Logs: `docker compose logs -f alerts`.
 
+## Question bot
+
+The bot that posts to `@tauHUDcom` also answers anyone who writes to it (`alerts/bot.py`,
+service `bot`, same image as alerts, same `TELEGRAM_BOT_TOKEN`; nothing else to set up):
+
+| Ask | Answer | Source |
+|---|---|---|
+| `/height`, "height?" | block height, age of the last block, block pace | relay `/uptime`, `proposals.json` |
+| `/proposals`, "last proposal?" | coming up (votes, deadline), agreed, in force, in the alerts' plain words | `proposals.json` |
+| `/tx <hash>`, "is my tx in? <hash>", a 64-hex hash | in a block / waiting / expired / refused / not known | relay `gettxstatus` |
+| `/address <address>`, a 96-hex address | confirmed balance, amounts waiting for a block | relay `getaccountstate` |
+| `/block <n>`, "block 12?" | when it was made, what it holds | relay `getblockrange` |
+| `/status`, "is it running?" | node online, in sync, availability over 24 h, restarts in 7 days | relay `/uptime` |
+
+Every answer links to the matching tauhud.com page. It long-polls Telegram (`getUpdates`),
+so no webhook and no open port. In groups it answers only commands (and `/cmd@ourbot`
+only, when several bots are there); it never posts into the alerts channel. Each person
+gets 5 questions in a row and one more every 8 s (`BOT_USER_BURST`,
+`BOT_USER_REFILL_SECONDS`); past that it says so once and stays quiet. Questions sent
+while the bot was down for more than 2 minutes are skipped. Telegram's command menu is
+set on start.
+
+- `docker compose run --rm bot python bot.py --ask "/proposals"` prints one answer and sends nothing.
+- `docker compose logs bot | grep answering` shows the bot's username.
+
+Logs: `docker compose logs -f bot`.
+
 ## Share previews
 
 tauhud.com is static, so every page has one og:image and the crawlers of X and
@@ -291,6 +319,14 @@ Runs the alerts watcher against a mock relay: history on the first run is not po
 proposals, agreement, activation and a dropped change are posted once each per channel
 (also after a failed post and a watcher restart), the feed and proposals.json are right,
 a chain restart is reported, and the weekly recap is drawn and posted once.
+
+```bash
+python alerts/test_bot.py       # -v prints the answers
+```
+
+Runs the question bot against a mock relay and a mock Telegram: every question type,
+plain questions in private chats, groups only with commands meant for this bot, nothing
+into the alerts channel, old questions skipped, and the per-person limit.
 
 ```bash
 pip install websockets==15.0.1 pillow==11.3.0
