@@ -934,6 +934,9 @@ runCheck();
     if (wide && root.scrollHeight > h) { z = Math.max(.85, z * h / root.scrollHeight); root.style.setProperty("--z", z); }
   };
   apply(); addEventListener("resize", apply);
+  // results, tab switches and long reasons change the height: fit again (one frame later, so it never loops within a frame)
+  let raf = 0, lastH = 0;
+  new ResizeObserver(() => { const hh = document.querySelector(".wrap").offsetHeight; if (hh === lastH) return; lastH = hh; cancelAnimationFrame(raf); raf = requestAnimationFrame(apply); }).observe(document.querySelector(".wrap"));
 })();
 </script>
 </body>
