@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Tau Chronicle</title>
+<meta name="description" content="How Tau got from a 2016 idea to a running testnet whose rules its users change: ten years of the project, summarised from its own monthly videos.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Chronicle">
+<meta property="og:description" content="Ten years of Tau, from Tau-Chain and Agoras (2016) to a testnet that changes its own consensus (2026).">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/chronicle/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.back { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.back:hover { background: #fff; color: #000; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 34em; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 70em; }
+.sub b { color: #fff; font-weight: 600; }
+
+/* timeline strip: years, eras as bands, key moments as dots */
+.strip { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px 6px; }
+.strip h2, .panel h2 { margin: 0 0 4px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.strip h2 small, .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+#tl { display: block; width: 100%; height: 92px; overflow: visible; }
+#tl text { font: 11px var(--mono); fill: var(--dim); }
+#tl .yr line { stroke: rgba(255,255,255,.12); }
+#tl .band { fill: rgba(255,255,255,.05); stroke: rgba(255,255,255,.14); cursor: pointer; }
+#tl .band.on { fill: rgba(57,255,138,.10); stroke: var(--ok); }
+#tl .band-t { font: 600 10px var(--display); letter-spacing: .14em; fill: #fff; pointer-events: none; }
+#tl .dot { fill: #fff; stroke: var(--void); stroke-width: 2; cursor: pointer; }
+#tl .dot.key { fill: var(--ok); }
+#tl .dot:hover, #tl .dot.on { stroke: #fff; stroke-width: 2.5; }
+#tl .now { stroke: var(--ok); stroke-dasharray: 3 3; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 2px 0 0; font-size: 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: #fff; }
+.legend i.key { background: var(--ok); }
+
+/* eras */
+.eras { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; display: flex; flex-direction: column; }
+.panel.on { border-color: rgba(57,255,138,.55); }
+.panel .yrs { font: 600 20px/1.2 var(--display); color: #fff; margin: 0; }
+.panel .gist { margin: 4px 0 8px; color: var(--text); font: 500 13px/1.45 var(--display); }
+.ev { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; align-content: start; }
+.ev li { padding: 5px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); cursor: pointer; }
+.ev li:hover { border-left-color: #fff; }
+.ev li.key { border-left-color: var(--ok); }
+.ev li.on { background: rgba(57,255,138,.08); border-left-color: var(--ok); }
+.ev li .d { color: var(--dim); font-size: 11.5px; display: block; }
+.ev li .t { color: #fff; }
+.ev li .more { display: none; color: var(--text); font-size: 12px; margin-top: 4px; }
+.ev li.on .more { display: block; }
+.ev li .more a { color: var(--ok); text-decoration: none; white-space: nowrap; }
+.ev li .more a:hover { text-decoration: underline; }
+.p-gone .ev li { border-left-style: dashed; cursor: default; }
+.p-gone .ev li .more { display: block; }
+
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer p { margin: 0 0 4px; }
+footer a { color: var(--dim); }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(320px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
+#tip b { color: #fff; font-weight: 600; }
+.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
+.fb-fab:hover { background: var(--ok); }
+@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } #tl .band-t { display: none; } }
+[hidden] { display: none !important; }
+
+/* one screen (laptop and up, landscape): no page scroll, laid out for 1600 x 820 and scaled
+   to the viewport like the other pages; each era scrolls inside its own panel */
+html.fit body { overflow: hidden; height: 100vh; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { max-width: none; zoom: var(--z); height: var(--fitH); display: flex; flex-direction: column; gap: 10px; padding: 6px 0 8px; }
+html.fit .wrap > * { flex: none; }
+html.fit .eras { flex: 1 1 0; min-height: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: stretch; }
+html.fit.wide .eras { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
+html.fit .panel { min-height: 0; overflow: hidden; padding: 10px 14px; }
+html.fit .panel > * { flex: none; }
+html.fit .ev { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 4px; }
+html.fit .ev.more-below { -webkit-mask-image: linear-gradient(#000 calc(100% - 36px), transparent); mask-image: linear-gradient(#000 calc(100% - 36px), transparent); }
+.panel h2 .n { margin-left: auto; color: var(--dim); font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
+html.fit .lead { font-size: 22px; margin: 0; max-width: none; }
+html.fit .sub { font-size: 12px; margin: 2px 0 0; }
+html.fit header { padding: 4px 0 6px; }
+html.fit footer { padding-top: 6px; font-size: 11px; }
+html.fit #tip, html.fit .fb-fab { zoom: var(--z); }
+html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; right: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Chronicle</span></a>
+    <a class="back" href="/">Back to the live HUD</a>
+  </header>
+
+  <div class="intro">
+    <p class="lead">Ten years of Tau: from an idea in 2016 to a testnet that changes its own rules.</p>
+    <p class="sub">The goal never changed: <b>a blockchain whose rules are data that its users change through logic.</b> The road did. Click an era or a moment for details and the video it comes from.</p>
+  </div>
+
+  <section class="strip" aria-label="Timeline">
+    <h2>Timeline <small>2015 to today · recent years drawn wider</small></h2>
+    <svg id="tl" role="img" aria-label="Timeline of Tau from 2015 to 2026"></svg>
+    <div class="legend"><span><i class="key"></i>turning point</span><span><i></i>milestone</span></div>
+  </section>
+
+  <main class="eras" id="eras"></main>
+
+  <footer>
+    <p>Unofficial. Summarised from the monthly update videos on <a href="https://www.youtube.com/@TauNetwork" target="_blank" rel="noopener">youtube.com/@TauNetwork</a> (225 videos, Aug 2016 to Oct 2026, read from their auto captions), plus the Tau blog for 2015 to 2017. Dates are the month a video reported something, not always the day it happened.</p>
+    <p><a href="/history/">Time travel</a> · <a href="/stats/">Testnet stats</a> · <a href="/playground/">Rule Playground</a> · <a href="https://tau.net/" target="_blank" rel="noopener">tau.net</a></p>
+  </footer>
+</div>
+
+<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BChronicle%5D%20" target="_blank" rel="noopener">Feedback</a>
+<div id="tip" hidden></div>
+
+<script>
+/* d: year + month/12 (for placement), label: shown date, key: turning point, v: YouTube id */
+const ERAS = [
+  { id: "vision", name: "The vision", yrs: "2015 – 2018", from: 2015, to: 2019,
+    gist: "Tau-Chain: a chain that can change its own rules. Agoras: an economy of markets on top.",
+    ev: [
+      { d: 2015.5, label: "2015", t: "Ohad Asor starts Tau-Chain", m: "A blockchain whose rules can be changed, with Agoras planned as a market on top. (Tau blog.)" },
+      { d: 2016.6, label: "Aug 2016", key: 1, t: "Each block decides the next", v: "TKhzo_60f6Y",
+        m: "First video: Tau is a decidable language with a blockchain, and every block holds the conditions for accepting the next one. So the network's rules can change." },
+      { d: 2016.85, label: "Nov 2016", t: "Agoras, the planned markets", v: "zFmaX-oumNw",
+        m: "Rent computing power, pay for code that provably meets a spec, search, derivatives, and paid expert calls billed by the second." },
+      { d: 2017.9, label: "Late 2017", t: "“The New Tau”", m: "The goal is restated as social choice: groups reaching and following agreement, scaled up. AGRS is issued as an ERC-20 placeholder token. (Tau blog.)" }
+    ] },
+  { id: "detour", name: "TML and a detour", yrs: "2019 – 2022", from: 2019, to: 2023,
+    gist: "Monthly updates begin. TML, a white paper, a video app called Agoras Live, and the maths that became the Tau Language.",
+    ev: [
+      { d: 2019.4, label: "May 2019", t: "Monthly updates begin", v: "W0WhSrEqE7g", m: "Focus on TML (a logic language built on decision diagrams) and a minimal discussion platform." },
+      { d: 2019.7, label: "Sep 2019", t: "AGRS delisted by OpenLedger", v: "W86dPdQ5jOk", m: "Low trading volume. The team starts looking for other exchanges." },
+      { d: 2020.65, label: "Aug 2020", key: 1, t: "White paper published", v: "MXj8Ke8YnAY", m: "Written by Ohad Asor with Prof. Avishai Carmi. It guides the work for the following years." },
+      { d: 2020.9, label: "2020 – 2023", t: "Agoras Live, later Tau Live", v: "9-xYdKTiOHs", m: "A video-consulting app paid in crypto. Delayed several times, renamed Tau Live in 2023 and paused in Aug 2023 to focus on the core." },
+      { d: 2021.6, label: "Aug 2021", key: 1, t: "Boolean equations solved", v: "5zSj99HAIHI", m: "Ohad reports a complete way to solve systems of Boolean equations over any Boolean algebra. This is the root of today's Tau Language." },
+      { d: 2021.7, label: "Sep 2021", t: "New Tau logo", v: "Dk2TdbR8KTU", m: "Followed by a new Agoras logo in Dec 2021." },
+      { d: 2022.45, label: "Jun 2022", t: "tau.net replaces idni.org", v: "DPjeAnDcuhU", m: "New website. From mid-2022 the team separates TML (a tool) from the new Tau Language, which can talk about its own sentences and about time." },
+      { d: 2022.95, label: "Dec 2022", t: "Interview with Prof. Franconi", v: "tTla78mgQFw", m: "Ohad Asor and Prof. Enrico Franconi on logical AI and Tau, hosted by David Shapiro." }
+    ] },
+  { id: "language", name: "The Tau Language", yrs: "2023 – 2024", from: 2023, to: 2025,
+    gist: "A plan for a minimal testnet where users define what a valid block is, and the first release of the language.",
+    ev: [
+      { d: 2023.45, label: "Jun 2023", t: "Work on Tau's own chain starts", v: "ht2HGwK13ys", m: "Any part of the blockchain is to be written in logic and changeable with every new block." },
+      { d: 2023.9, label: "Nov 2023", t: "Testnet plan: minimal, users define valid blocks", v: "IEqcVGYfXtw", m: "First planned as a fork of the Qtum code. Also: a provisional patent on unique user identification and the Tau parser released. Dec 2023: Nvidia Inception." },
+      { d: 2024.15, label: "Feb – Aug 2024", t: "Choosing a base for the testnet", v: "lvvyA4XFRf4", m: "Solana, Aptos and the Polkadot SDK are looked at instead of Qtum. In the end the team builds its own node." },
+      { d: 2024.38, label: "May 2024", t: "Lectures on atomless Boolean algebras", v: "lNU1wS5rqtg", m: "Eight videos by Ohad on the logic under the language: NSO and the Guarded Successor temporal logic." },
+      { d: 2024.87, label: "15 Nov 2024", key: 1, t: "Tau Language Alpha released", v: "dw5-uwagOJY", m: "The language goes public on GitHub. Ohad: its first real demo will be the testnet itself." }
+    ] },
+  { id: "build", name: "Building the testnet", yrs: "2025", from: 2025, to: 2026,
+    gist: "Layer by layer: transactions through Tau, then blocks, storage, networking and consensus.",
+    ev: [
+      { d: 2025.05, label: "Jan 2025", t: "Core rules written as Tau specs", v: "zIZQnV3TLaY", m: "About 30 % of the testnet is specified in Tau. Runs are now deterministic: same inputs, same outputs." },
+      { d: 2025.2, label: "Mar 2025", key: 1, t: "Pointwise revision works", v: "7qt5-2Cu8Fc", m: "A running program gets an update stream. What is written there is merged consistently into the program for the next step. This is how rules change." },
+      { d: 2025.28, label: "Apr 2025", t: "US patent granted", v: "rPWBDeAVTqk", m: "Also: the node design. A wrapper runs the Tau program and talks to it only through input and output streams." },
+      { d: 2025.38, label: "May 2025", t: "Transactions run through Tau", v: "SWmmRLkJEy8", m: "Tau rules on each transaction and valid ones go to a simple mempool." },
+      { d: 2025.46, label: "Jun 2025", t: "Roadmap with 12 milestones", v: "7oPXHDGE8V8", m: "End-to-end transactions and a console wallet. One transaction can carry rules, transfers and more." },
+      { d: 2025.54, label: "Jul 2025", t: "Blocks are produced and stored", v: "swyOAQsetFY", m: "Hash-linked blocks with Merkle roots. A stress test simulates users adding rules. The solver moves from Z3 to CVC5." },
+      { d: 2025.62, label: "Aug 2025", t: "State rebuilt from history", v: "d86EZCLW97o", m: "On start the node rebuilds its state from the blocks. Numbers of any bit width." },
+      { d: 2025.7, label: "Sep 2025", t: "Peer-to-peer and a phone wallet", v: "UA-IVbfVcUI", m: "libp2p networking. An Android wallet that can also send Tau rules." },
+      { d: 2025.79, label: "Oct 2025", t: "From one node to a network", v: "iBwWpWV2OEU", m: "Six Tau protocols. Sync runs bootstrap, handshake, headers, blocks, state, then gossip." },
+      { d: 2025.87, label: "Nov 2025", key: 1, t: "Testnet code goes public", v: "8srMSM_V5uQ", m: "The tau-testnet repository is opened. Production-grade libp2p, persistent node identity." },
+      { d: 2025.96, label: "Dec 2025", t: "First proof-of-authority blocks", v: "VInemEav9iE", m: "Distributed hash table for finding peers, BLS signatures, signed blocks with a state hash." }
+    ] },
+  { id: "self", name: "A chain that changes itself", yrs: "2026", from: 2026, to: 2026.9,
+    gist: "Consensus, validators and fees become rules the network votes on. The wallet turns plain English into Tau rules.",
+    ev: [
+      { d: 2026.04, label: "Jan 2026", t: "Each block bound to its rules", v: "BNZOcH2oWDc", m: "Every block records the exact rule snapshot it ran under. New nodes check the state hash instead of replaying everything." },
+      { d: 2026.13, label: "Feb 2026", t: "Testnet Alpha “is the demo”", v: "tVamZTtTCh0", m: "Web wallet, Python bindings, recovery mode. Next language goals: tables and abstract data types." },
+      { d: 2026.29, label: "Apr 2026", t: "Fork choice and reorgs", v: "b2mgfr-b6CY", m: "One canonical chain, time-based rules and user-defined policy checks next to the built-in ones." },
+      { d: 2026.38, label: "May 2026", key: 1, t: "Consensus now runs in Tau", v: "37xBNArSUI8", m: "Moved from Python into Tau logic, so users can change it with rules. New developer CLI for nodes, keys and votes." },
+      { d: 2026.46, label: "Jun 2026", t: "AI agents stress the testnet", v: "Ah7oX9-Z4sk", m: "Agents act as users and validators. A guard agent checks their rule proposals. Every rule can be traced to who proposed it." },
+      { d: 2026.54, label: "Jul 2026", t: "Rules in plain English", v: "o_0pZ-Br4OQ", m: "Wallet build mode: describe a rule, an agent writes it in Tau, it is signed, proposed and accepted." },
+      { d: 2026.62, label: "Aug 2026", key: 1, t: "Consensus changed by vote", v: "1LHKdLY-4Ac", m: "From a fixed validator list to stake-based and back, without redeploying any node. The validator list lives in Tau logic." },
+      { d: 2026.71, label: "Sep 2026", t: "Product phase", v: "XTKjIxxAxpI", m: "Simple wallet mode with rule templates and sharing. Two more patents granted." },
+      { d: 2026.79, label: "Oct 2026", t: "Co-signed transfers", v: "ZlvC1YcJDew", m: "Large payments can need several approvals. Deadlines count in blocks. A typical spec loads in 2.4 s instead of 68 s. Mainnet and the real Agoras coin are still ahead." }
+    ] }
+];
+const GONE = [
+  { t: "Agoras Live / Tau Live", m: "The video-consulting app, 2020 to 2023. Paused in Aug 2023." },
+  { t: "Internet of Languages", m: "A plan to let users add new languages. Dropped: the Tau Language does this better (Aug 2026)." },
+  { t: "TML as the base", m: "Superseded by the Tau Language from 2022." },
+  { t: "Qtum, Solana, Polkadot as a base", m: "Considered 2023 to 2024. Tau built its own node instead." },
+  { t: "Z3 solver", m: "Replaced by CVC5 in Jul 2025 for speed." }
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const yt = v => `https://www.youtube.com/watch?v=${v}`;
+let SEL = null;  // selected event key "era:i"
+
+function renderEras() {
+  const host = $("eras");
+  host.innerHTML = ERAS.map(e => `
+    <section class="panel" id="era-${e.id}" data-era="${e.id}">
+      <h2>${esc(e.name)}<span class="n">${e.ev.length} moments</span></h2>
+      <p class="yrs">${esc(e.yrs)}</p>
+      <p class="gist">${esc(e.gist)}</p>
+      <ul class="ev">${e.ev.map((x, i) => `
+        <li class="${x.key ? "key" : ""}" data-k="${e.id}:${i}" tabindex="0">
+          <span class="d">${esc(x.label)}</span><span class="t">${esc(x.t)}</span>
+          <div class="more">${esc(x.m)}${x.v ? ` <a href="${yt(x.v)}" target="_blank" rel="noopener">Watch the video</a>` : ""}</div>
+        </li>`).join("")}</ul>
+    </section>`).join("") + `
+    <section class="panel p-gone">
+      <h2>Dropped along the way</h2>
+      <p class="gist">Ideas and tools the project tried and left behind.</p>
+      <ul class="ev">${GONE.map(g => `<li><span class="t">${esc(g.t)}</span><div class="more">${esc(g.m)}</div></li>`).join("")}</ul>
+    </section>`;
+  host.querySelectorAll("li[data-k]").forEach(li => {
+    li.addEventListener("click", () => select(li.dataset.k, false));
+    li.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(li.dataset.k, false); } });
+  });
+}
+
+/* recent years are drawn wider: most of the moments are from 2025 and 2026 */
+const X0 = 2015, X1 = 2027, YW = { 2015: .5, 2016: .7, 2017: .5, 2018: .5, 2019: .6, 2020: .6, 2021: .6, 2022: .6, 2023: .8, 2024: 1, 2025: 2.6, 2026: 2.6 };
+const YSUM = Object.values(YW).reduce((a, b) => a + b, 0);
+function renderStrip() {
+  const svg = $("tl"), W = svg.clientWidth || 1000, H = 92, padL = 8, padR = 8;
+  const x = d => {
+    let u = 0;
+    for (let y = X0; y < X1; y++) { if (d >= y + 1) u += YW[y]; else { u += Math.max(0, d - y) * YW[y]; break; } }
+    return padL + u / YSUM * (W - padL - padR);
+  };
+  let s = `<g class="yr">`;
+  for (let y = X0; y <= X1; y++) s += `<line x1="${x(y)}" x2="${x(y)}" y1="18" y2="${H - 18}"/>` + (y < X1 ? `<text x="${x(y) + 3}" y="${H - 4}">${W < 560 ? "'" + String(y).slice(2) : y}</text>` : "");
+  s += `</g>`;
+  for (const e of ERAS) {
+    const a = x(e.from), b = x(e.to);
+    s += `<rect class="band${SEL && SEL.startsWith(e.id + ":") ? " on" : ""}" data-era="${e.id}" x="${a + 1}" y="22" width="${Math.max(2, b - a - 2)}" height="${H - 46}" rx="4"/>`;
+    const label = e.name.toUpperCase(), fits = label.length * 7.4 < b - a - 10;
+    if (fits) s += `<text class="band-t" x="${a + 7}" y="35">${esc(label)}</text>`;
+  }
+  const now = 2026 + (new Date().getMonth() + new Date().getDate() / 31) / 12;
+  s += `<line class="now" x1="${x(now)}" x2="${x(now)}" y1="14" y2="${H - 18}"/><text x="${x(now) - 26}" y="11" style="fill:var(--ok)">today</text>`;
+  for (const e of ERAS) e.ev.forEach((v, i) => {
+    const k = `${e.id}:${i}`;
+    s += `<circle class="dot${v.key ? " key" : ""}${SEL === k ? " on" : ""}" data-k="${k}" cx="${x(v.d)}" cy="${v.key ? 52 : 60}" r="${v.key ? 6.5 : 4.5}"/>`;
+  });
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.innerHTML = s;
+  svg.querySelectorAll(".dot").forEach(c => {
+    c.addEventListener("click", () => select(c.dataset.k, true));
+    c.addEventListener("mouseenter", ev => showTip(ev, c.dataset.k));
+    c.addEventListener("mousemove", moveTip);
+    c.addEventListener("mouseleave", hideTip);
+  });
+  svg.querySelectorAll(".band").forEach(r => r.addEventListener("click", () => select(r.dataset.era + ":0", true)));
+}
+
+function find(k) { const [id, i] = k.split(":"); const e = ERAS.find(e => e.id === id); return { e, v: e.ev[+i] }; }
+function select(k, scroll) {
+  SEL = SEL === k ? null : k;
+  document.querySelectorAll(".ev li.on").forEach(li => li.classList.remove("on"));
+  document.querySelectorAll(".panel.on").forEach(p => p.classList.remove("on"));
+  if (SEL) {
+    const li = document.querySelector(`li[data-k="${SEL}"]`);
+    li.classList.add("on"); li.closest(".panel").classList.add("on");
+    if (scroll) li.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  renderStrip(); fades();
+}
+
+const tip = $("tip");
+function showTip(ev, k) { const { v } = find(k); tip.innerHTML = `<b>${esc(v.label)}</b> · ${esc(v.t)}`; tip.hidden = false; moveTip(ev); }
+function moveTip(ev) {
+  const z = ZOOM, r = tip.getBoundingClientRect();
+  let l = ev.clientX / z + 14, t = ev.clientY / z + 14;
+  if (l * z + r.width > innerWidth - 8) l = (ev.clientX - r.width - 14) / z;
+  tip.style.left = l + "px"; tip.style.top = t + "px";
+}
+function hideTip() { tip.hidden = true; }
+
+/* one screen: same rule as the other pages (laid out for 1600 x 820, scaled to fit) */
+let ZOOM = 1;
+function fit() {
+  const w = innerWidth, h = innerHeight, FIT = w >= 1200 && h >= 780 && w / h >= 1.3;
+  ZOOM = FIT ? Math.max(1, Math.min(2, w / 1600, h / 820)) : 1;
+  const root = document.documentElement;
+  root.classList.toggle("fit", FIT);
+  root.classList.toggle("wide", FIT && w / h >= 2.1);
+  root.style.setProperty("--z", ZOOM);
+  root.style.setProperty("--fitH", Math.floor(h / ZOOM) + "px");
+}
+fit();
+renderEras();
+renderStrip();
+/* fade the bottom edge while a list has more below, so a cut line reads as "scroll" */
+function fades() { document.querySelectorAll(".ev").forEach(l => l.classList.toggle("more-below", l.scrollTop + l.clientHeight < l.scrollHeight - 4)); }
+document.querySelectorAll(".ev").forEach(l => l.addEventListener("scroll", fades, { passive: true }));
+fades();
+addEventListener("resize", () => { fit(); renderStrip(); fades(); });
+new ResizeObserver(() => renderStrip()).observe($("tl"));
+</script>
+</body>
+</html>
