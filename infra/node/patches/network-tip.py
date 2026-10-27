@@ -25,6 +25,11 @@ def replace_once(old: str, new: str, what: str) -> None:
 
 
 replace_once(
+    "import functools\nimport logging\n",
+    "import functools\nimport logging\nimport time\n",
+    "service.py time import",
+)
+replace_once(
     "from .libp2p_compat import read_stream_to_eof  # noqa: E402\n",
     "from .libp2p_compat import read_stream_to_eof  # noqa: E402\n"
     "\n"
