@@ -248,7 +248,8 @@ class Relay:
             self.blocks[b["block_hash"]] = b
         ordered = self.ordered_blocks()
         for b in ordered[:-CHAIN_BLOCKS]:
-            self.blocks.pop(b["block_hash"], None)
+            if self._height(b) > 1:  # block 1 stays: it identifies the chain for restart detection
+                self.blocks.pop(b["block_hash"], None)
         heights = [self._height(b) for b in self.ordered_blocks()]
         if not full and heights and heights[-1] - heights[0] + 1 != len(heights):
             self.need_full = True  # more than 20 blocks arrived between two polls
@@ -355,7 +356,9 @@ class Relay:
         current = {}
         for t in data.get("transactions") or []:
             if isinstance(t, dict) and t.get("tx_hash"):
-                current[str(t["tx_hash"])] = self.mempool_seen.get(t["tx_hash"]) or {**self._tx_summary(t), "seen": round(now)}
+                # getmempool entries carry tx_type only on some node versions; "" = unknown
+                current[str(t["tx_hash"])] = self.mempool_seen.get(t["tx_hash"]) or {
+                    **self._tx_summary(t), "type": str(t.get("tx_type") or "")[:40], "seen": round(now)}
         for h, info in self.mempool_seen.items():
             if h not in current:
                 self.left_mempool[h] = {**info, "left": round(now)}
