@@ -292,6 +292,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .readout div { text-align: center; padding: 6px 4px; border-top: 1px solid var(--hair); }
 .readout b { display: block; font: 600 20px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
 .readout span { font: 500 10px var(--display); color: var(--dim); letter-spacing: .2em; text-transform: uppercase; }
+.readout span i { display: block; margin-top: 2px; font: 10px var(--mono); font-style: normal; letter-spacing: 0; text-transform: none; color: var(--dim); }
 
 /* tx feed */
 .feed { display: grid; gap: 6px; align-content: start; }
@@ -1273,7 +1274,7 @@ function readouts() {
   $("rM").textContent = S.mempool.length;
   const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
   $("rT").textContent = pace != null ? fmtSec(pace) : "—";
-  $("rTs").textContent = live && S.lastInterval != null ? `Block pace · last ${fmtSec(S.lastInterval)}` : "Block pace";
+  $("rTs").innerHTML = live && S.lastInterval != null ? `Block pace<i>last block ${fmtSec(S.lastInterval)}</i>` : "Block pace";
   $("rTw").dataset.full = pace != null
     ? (live ? `Average of the last ${S.blockTimes.length} block interval${S.blockTimes.length === 1 ? "" : "s"}, read from the blocks’ own timestamps (stream i7). The last block took ${fmtSec(S.lastInterval)}.` : `Average of the last ${S.blockTimes.length} simulated block intervals.`)
     : (live ? "Needs two consecutive blocks with timestamps before a pace can be measured." : "Measured once the first blocks are sealed.");
