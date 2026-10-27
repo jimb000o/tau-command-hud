@@ -183,10 +183,13 @@ PATCH_WHY = {
     "vote_quorum": "Changes how many votes a rule change needs.",
     "max_rule_txs_per_block": "Changes how many rule transactions fit in one block.",
     "fee_beneficiary": "Changes who receives the transaction fees.",
-    "eligibility_mode": "Changes how block makers are chosen.",
+    "eligibility_mode": "Switches the consensus mechanism: who may make blocks. Tau does this by agreement, without a fork or a software upgrade.",
     "approval_slots_active": "Lets accounts require co-signatures on large transfers.",
 }
 QUORUM_TXT = {"supermajority": "two thirds", "majority": "more than half"}
+# eligibility_mode values -> the consensus mechanism in plain words (same names as the pages)
+MODE_TXT = {"validator_set": "proof of authority (fixed validator list)", "tau_validator_set": "validator list in Tau",
+            "stake": "proof of stake"}
 
 
 def explain(revisions: list[str], patch: dict | None, spec: dict[str, str]) -> dict:
@@ -216,7 +219,7 @@ def explain(revisions: list[str], patch: dict | None, spec: dict[str, str]) -> d
             v = patch[k]
             text = {"vote_quorum": f"votes needed: {QUORUM_TXT.get(v, v)}", "max_rule_txs_per_block": f"{v} rule transactions per block",
                     "fee_beneficiary": f"fees go to {short(v)}" if v else "fees go to each block's maker",
-                    "eligibility_mode": f"block makers chosen by {v or 'validator set'}",
+                    "eligibility_mode": f"consensus switches to {MODE_TXT.get(v or 'validator_set', v)}",
                     "approval_slots_active": "co-signed transfers on" if v else "co-signed transfers off"}[k]
             changes.append({"topic": "Settings", "text": text, "title": text[0].upper() + text[1:], "why": PATCH_WHY[k]})
     label = next((label_of(r) for r in revisions if label_of(r)), None)

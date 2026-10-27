@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.12"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.13"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';
@@ -118,16 +118,19 @@
     const onChip = q("#tnOnline"), onB = onChip.querySelector("b"), onDot = onChip.querySelector(".dot");
     const hB = q("#tnHeight b"), revB = q("#tnRev b"), feeB = q("#tnFee b");
     const render = () => {
-      const st = CHAIN.st, up = !!(st && st.upstream_connected && Number(st.height) > 0);
+      const st = CHAIN.st, health = st && st.health && typeof st.health.state === "string" ? st.health.state : null;
+      const up = !!(st && st.upstream_connected && Number(st.height) > 0) && health !== "down", degraded = up && health === "degraded";
+      const hlabel = st && st.health && st.health.label ? String(st.health.label) : "";
       const synced = up && st.live_default === true;
       const catching = synced && Number(st.tip_height) > 0 && st.canonical_height != null && Number(st.canonical_height) < Number(st.tip_height) - 2;
       const wait = !CHAIN.polled;
-      modeB.textContent = wait ? "Live · Connecting" : !up ? "Live · Offline" : !synced ? "Live · Not synced" : catching ? `Verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}` : "Live · Connected";
-      modeDot.className = "dot " + (wait ? "none" : !up ? "off" : synced && !catching ? "" : "behind");
-      mode.className = "chip " + (wait ? "warn" : !up ? "warn" : synced && !catching ? "live" : "behind");
+      const good = synced && !catching && !degraded;
+      modeB.textContent = wait ? "Live · Connecting" : !up ? "Live · Offline" : degraded ? "Live · Degraded" : !synced ? "Live · Not synced" : catching ? `Verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}` : "Live · Connected";
+      modeDot.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
+      mode.className = "chip " + (wait ? "warn" : !up ? "warn" : good ? "live" : "behind");
       document.querySelectorAll(".tnav [data-livedot]").forEach(d => {
-        d.className = "dot " + (wait ? "none" : !up ? "off" : synced && !catching ? "" : "behind");
-        const a = d.closest("a"); if (a) a.title = (wait ? "Checking the community node…" : !up ? "Red: the community node is offline, the relay is not answering." : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + " Opens the HUD in Live mode.";
+        d.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
+        const a = d.closest("a"); if (a) a.title = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + " Opens the HUD in Live mode.";
       });
       const n = CHAIN.online; onB.textContent = n == null ? "—" : String(n); onDot.className = "dot " + (n == null ? "none" : n > 0 ? "" : "off"); onChip.classList.toggle("live", n != null && n > 0);
       hB.textContent = st && Number(st.height) > 0 ? fmt(st.height) : "—";
@@ -136,13 +139,17 @@
     };
     render();
     const poll = async () => {
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);   // a stalled request must not freeze the light at its last colour
       try {
-        const r = await fetch(`https://${RELAY}/status`, { cache: "no-store" }); if (!r.ok) throw new Error(r.status);
-        const j = await r.json(); CHAIN.st = j; const n = Number(j.online ?? j.clients); if (Number.isFinite(n)) CHAIN.online = n;
-      } catch (e) { CHAIN.st = null; CHAIN.online = null; }
-      CHAIN.polled = true; render();
+        const r = await fetch(`https://${RELAY}/status`, { cache: "no-store", signal: ctl.signal }); if (!r.ok) throw new Error(r.status);
+        const j = await r.json(); CHAIN.st = j; CHAIN.stale = false; const n = Number(j.online ?? j.clients); if (Number.isFinite(n)) CHAIN.online = n;
+      } catch (e) { CHAIN.st = null; CHAIN.online = null; CHAIN.err = e && e.message || String(e); }
+      clearTimeout(t); CHAIN.polled = true; CHAIN.at = Date.now(); render();
     };
     poll(); setInterval(() => { if (!document.hidden) poll(); }, 20000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
+    /* watchdog: a visible tab that has heard nothing from the relay for over a minute shows red, whatever the last colour was */
+    setInterval(() => { if (!document.hidden && CHAIN.at && Date.now() - CHAIN.at > 70000 && !CHAIN.stale) { CHAIN.stale = true; CHAIN.st = null; render(); } }, 5000);
     let wait = 5000;
     const open = () => {
       let ws; try { ws = new WebSocket(`wss://${RELAY}`); } catch (e) { return; }

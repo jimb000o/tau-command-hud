@@ -545,11 +545,20 @@ function overview() {
 /* rows that only matter to developers hide in View · Simple (body[data-view], set by the shared header) */
 const TECH_ROWS = new Set(["Hash", "Sequence", "Fee limit", "Offer", "Rule change", "Request", "Retractable", "Reason", "Expires"]);
 const kvRow = (a, b) => TECH_ROWS.has(a) ? `<dt class="vt">${a}</dt><dd class="vt">${b}</dd>` : `<dt>${a}</dt><dd>${b}</dd>`;
+/* which rules judged a block: revision 1 is genesis, each rule change the node reports as activated counts one up
+   from the block after its activation height (the change applies at the end of that block, after its transactions) */
+const CONS_NAME = { validator_set: "Proof of authority", tau_validator_set: "Validator list in Tau", stake: "Proof of stake" };
+function rulesAt(h) {
+  const g = C.gov; if (!g) return null;
+  const act = (g.archival_update_details || []).filter(u => u && u.lifecycle === "activated" && Number.isFinite(Number(u.activate_at_height)));
+  return { rev: 1 + act.filter(u => Number(u.activate_at_height) < h).length, here: act.filter(u => Number(u.activate_at_height) === h),
+    mode: CONS_NAME[g.eligibility_mode] || (g.eligibility_mode ? String(g.eligibility_mode) : "Proof of authority") };
+}
 function blockView(h) {
   const b = C.blocks[h];
   if (!b) return notFound(`Block #${fmtN(h)}`, h > C.head ? `The chain is at #${fmtN(C.head)}, so this block does not exist yet.` : "Our node does not hold this block.");
   const hd = b.header || {}, ts = tsOf(b), prev = tsOf(C.blocks[h - 1]), txs = b.transactions || [], prop = low(hd.proposer_pubkey);
-  const confirms = C.head - h + 1;
+  const confirms = C.head - h + 1, R = rulesAt(h);
   const rows = txs.map((t, i) => {
     if (!t || typeof t !== "object") return "";
     const k = txKind(t), id = low((b.tx_ids || [])[i] || ""), amt = amountOf(t);
@@ -560,12 +569,15 @@ function blockView(h) {
     <dl class="kv">
       <dt>Time</dt><dd>${esc(fmtWhen(ts))}</dd>
       <dt>Sealed by</dt><dd>${/^0*$/.test(prop) ? "nobody (genesis)" : `${addrLink(prop)}${isValidator(prop) ? " " + tagHtml("validator", "g") : ""}`}</dd>
+      ${R ? `<dt>Judged by</dt><dd>rules revision ${R.rev} <em>· <a href="/proposals/">rules over time</a></em>${R.here.length ? " " + tagHtml("rules changed here", "g") : ""}</dd>
+      <dt>Consensus</dt><dd>${esc(R.mode)}</dd>` : ""}
       <dt class="vt">Block hash</dt><dd class="vt"><code>${esc(b.block_hash || "—")}</code></dd>
       <dt class="vt">Previous</dt><dd class="vt">${h > 0 ? `${blkLink(h - 1)} <code>${esc(short(hd.previous_hash))}</code>` : "—"}</dd>
       <dt class="vt">Merkle root</dt><dd class="vt"><code>${esc(hd.merkle_root || "—")}</code></dd>
       <dt class="vt">State hash</dt><dd class="vt"><code>${esc(hd.state_hash || "—")}</code></dd>
     </dl>
     <div class="nav">${h > 0 ? `<a class="chip" href="${blkHref(h - 1)}" data-go="b:${h - 1}">← #${fmtN(h - 1)}</a>` : ""}${h < C.head ? `<a class="chip" href="${blkHref(h + 1)}" data-go="b:${h + 1}">#${fmtN(h + 1)} →</a>` : ""}<a class="chip" href="/history/#${h}">Time travel to here</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + blkHref(h))}">Copy link</button>${shareChip(`block/${h}`)}</div>
+    ${R && R.here.length ? `<p class="note"><b>The rules changed at this block.</b> ${R.here.length === 1 ? "An agreed rule change" : `${R.here.length} agreed rule changes`} took effect at the end of it, so from #${fmtN(h + 1)} on every block is judged by revision ${R.rev + R.here.length}. No fork, no software upgrade. ${R.here.map(u => u.update_id ? `<a href="/proposals/#${esc(String(u.update_id).slice(0, 16))}">See what changed</a>` : "").filter(Boolean).join(" · ")}</p>` : ""}
     ${txs.length ? `<h3>Transactions</h3><table><thead><tr><th class="n">#</th><th>What</th><th>From → to</th><th class="n">AGRS</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
     <p class="note vt">The state hash is a fingerprint of every balance and rule after this block. Two nodes that agree on it agree on the whole state.</p>
     <p class="note vp">Every node checked this block against the Tau rules before adding it. Switch View to Technical for its hashes and the raw data.</p>
@@ -803,7 +815,7 @@ function sampleChain() {
       transactions: txs, tx_ids: txs.map(() => hex(64)), block_hash: hash }, false);
     prev = hash;
   }
-  C.gov = { active_validators: [prop] };
+  C.gov = { active_validators: [prop], eligibility_mode: "validator_set", archival_update_details: [{ update_id: hex(64), lifecycle: "activated", activate_at_height: 200 }] };
   C.mempool = [{ tx_hash: hex(64), sender: accs[5], sequence_number: 3, received_at: new Date((now - 12) * 1000).toISOString(), expires_at: new Date((now + 3588) * 1000).toISOString(), operation_count: 1, status: "pending", fee_limit: 100, estimated_fee: 3 },
                { tx_hash: hex(64), sender: accs[2], sequence_number: 9, received_at: new Date((now - 41) * 1000).toISOString(), expires_at: new Date((now + 3559) * 1000).toISOString(), operation_count: 2, status: "pending", fee_limit: 100, estimated_fee: 4 }];
   C.dropped = [{ tx_hash: hex(64), type: "user_tx", sender: accs[6], seen: now - 5400, left: now - 5330 }]; C.droppedTotal = 1;

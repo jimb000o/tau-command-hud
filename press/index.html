@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Press kit</title>
+<meta name="description" content="Unofficial press kit of Tau HUD: the one-paragraph description, facts, the “Tau in 60 seconds” video, logo files, screenshots and embeds, free to use.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Press kit">
+<meta property="og:description" content="Video, logo, screenshots, facts and a ready paragraph about Tau HUD, the live view of the Tau testnet. Unofficial, free to use.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/press/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD and /developers: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 78em; }
+.sub b { color: var(--text); font-weight: 500; }
+.main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.col { display: grid; gap: 14px; min-width: 0; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.panel h3 { margin: 14px 0 6px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; }
+.panel p { margin: 0 0 8px; }
+.boiler { font: 400 15px/1.6 var(--display); color: #fff; margin: 0; }
+.copyrow { display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
+.copyrow > :first-child { flex: 1 1 auto; min-width: 0; }
+pre { margin: 0; background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 12px/1.5 var(--mono); color: #fff; white-space: pre-wrap; word-break: break-word; }
+button.copy { flex: none; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; cursor: pointer; min-width: 64px; min-height: 32px; }
+button.copy:hover { color: #000; background: #fff; border-color: #fff; }
+.note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+/* facts: label dim and small, value carries the weight */
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0 14px; margin: 0; }
+.facts dt, .facts dd { padding: 6px 0; border-top: 1px solid var(--line); margin: 0; }
+.facts dt { color: var(--dim); font-size: 11.5px; }
+.facts dd { color: var(--text); }
+.facts dd a { text-decoration: none; border-bottom: 1px dotted var(--hair); }
+.facts .pages { color: var(--dim); }
+.facts .pages a { color: var(--text); }
+/* downloads: what it is first, then size and format dimmed, one verb on the right */
+.dl { list-style: none; margin: 0; padding: 0; }
+.dl li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+.dl li:first-child { border-top: 0; }
+.dl .what { flex: 1 1 auto; min-width: 0; }
+.dl .what b { font-weight: 500; color: #fff; display: block; }
+.dl .what span { color: var(--dim); font-size: 11.5px; }
+.dl a.get, a.get { flex: none; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 0 12px; min-height: 32px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+a.get:hover { color: #000; background: #fff; border-color: #fff; }
+a.get.all { color: #000; background: #fff; border-color: #fff; }
+a.get.all:hover { background: var(--ok); border-color: var(--ok); }
+.video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; }
+/* logo tiles: every file shown on the background it is made for */
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.tile { margin: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.tile .pic { aspect-ratio: 16 / 10; display: grid; place-items: center; background: #050506; position: relative; overflow: hidden; }
+.tile .pic.light { background: #ebebee; }
+.tile .pic.check { background-color: #1a1a1d; background-image: linear-gradient(45deg, #232327 25%, transparent 25%, transparent 75%, #232327 75%), linear-gradient(45deg, #232327 25%, transparent 25%, transparent 75%, #232327 75%); background-size: 14px 14px; background-position: 0 0, 7px 7px; }
+.tile .pic img { max-width: 70%; max-height: 72%; display: block; }
+.tile .pic img.full, .tile .pic img.fit { position: absolute; inset: 0; max-width: none; max-height: none; width: 100%; height: 100%; object-fit: cover; }
+.tile figcaption { padding: 8px 10px; display: grid; gap: 6px; }
+.tile figcaption b { font-weight: 500; color: #fff; }
+.tile figcaption span { color: var(--dim); font-size: 11.5px; }
+.tile .links { display: flex; flex-wrap: wrap; gap: 6px; }
+.tile .pic img.fit { object-fit: contain; }
+/* screenshots: one grid of equals, desktop on top, phone below */
+.shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.shots.phone { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 10px; }
+.shot { margin: 0; min-width: 0; }
+.shot a { display: block; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.shot a:hover { border-color: #fff; }
+.shot img { display: block; width: 100%; height: auto; }
+.shots:not(.phone) img { aspect-ratio: 16 / 9; object-fit: cover; object-position: top; }
+.shots.phone img { aspect-ratio: 390 / 600; object-fit: cover; object-position: top; }
+.shot figcaption { font-size: 11.5px; color: var(--dim); padding-top: 4px; }
+.shot figcaption b { color: var(--text); font-weight: 500; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; min-height: 20px; }
+.badges img { height: 20px; display: block; }
+.ogrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.ogrow p { margin: 0; }
+.phead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.phead h2 { margin: 0; }
+.ogbox { aspect-ratio: 1200 / 630; position: relative; }
+.og { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--line); border-radius: 6px; background: #050506; }
+.rules { margin: 6px 0 0; padding-left: 18px; }
+.rules li { margin: 2px 0; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer p { margin: 0; }
+footer a { color: var(--dim); }
+.fb-fab { position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border-radius: 999px; padding: 9px 16px; text-decoration: none; }
+.fb-fab:hover { background: var(--ok); }
+[hidden] { display: none !important; }
+/* laptop and up: the words first, then the video, then the files and pictures */
+@media (min-width: 1100px) {
+  .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (min-width: 1600px) {
+  .main { grid-template-columns: minmax(0, .95fr) minmax(0, 1fr) minmax(0, 1.2fr); }
+  .c1 { grid-column: 1; grid-row: 1 / span 2; }
+  .c2 { grid-column: 2; grid-row: 1 / span 2; }
+  .c3 { grid-column: 3; grid-row: 1; }
+  .c4 { grid-column: 3; grid-row: 2; }
+}
+/* wide screens: four columns, everything on one screen */
+@media (min-width: 1900px) {
+  .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .9fr) minmax(0, 1.15fr); }
+  .c1, .c2, .c3, .c4 { grid-row: 1; }
+  .c3 { grid-column: 3; } .c4 { grid-column: 4; }
+}
+@media (min-width: 2200px) { body { font-size: 14px; padding-bottom: 56px; } .boiler { font-size: 16px; } }
+/* phone: nothing smaller than 11 px, every link and button big enough for a thumb */
+@media (max-width: 700px) {
+  button.copy, a.get, .dl a.get { min-height: 44px; font-size: 11px; }
+  .ogrow { grid-template-columns: minmax(0, 1fr); }
+  .facts { grid-template-columns: minmax(0, 1fr); }
+  .facts dt { border-top: 1px solid var(--line); padding-bottom: 0; }
+  .facts dd { border-top: 0; padding-top: 0; }
+  .facts dd a, .facts .pages a { display: inline-block; padding: 6px 0; min-height: 32px; }
+  .tiles { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .shots.phone { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .shots { grid-template-columns: minmax(0, 1fr); }
+  .copyrow { flex-direction: column; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Press kit</span></a>
+  </header>
+  <nav class="tnav" data-page="press" aria-label="Pages and tools"></nav>
+  <div>
+    <p class="lead">Writing or making a video about Tau? Take what you need.</p>
+    <p class="sub">A ready paragraph, the facts, a <b>60 second video</b>, the <b>logo</b> and <b>screenshots</b>. Free to use for coverage of Tau and Tau HUD; please credit <b>tauhud.com</b>. Unofficial: Tau HUD is a community project, not made or endorsed by IDNI or the Tau team.</p>
+  </div>
+  <main class="main">
+    <div class="col c1">
+      <section class="panel" aria-labelledby="hAbout">
+        <h2 id="hAbout">In one paragraph</h2>
+        <p class="boiler" id="boiler">Tau HUD shows the Tau testnet live: every block, every rule change and every vote, as it happens. On most blockchains a rule change means a hard fork. On Tau the rules are data on the chain: a validator proposes a new rule, every node checks it against the rules already in force, the validators agree, and it takes effect at a later block. Tau HUD makes that visible for anyone, in plain words. It is an unofficial community project, free and open source, and it reads the chain from its own testnet node.</p>
+        <div class="copyrow"><span></span><button class="copy" type="button" data-copy="boiler">Copy paragraph</button></div>
+        <h3>Tagline</h3>
+        <p>Where the rules change by agreement.</p>
+        <h3>How to credit and link</h3>
+        <div class="copyrow"><pre id="cite">Source: Tau HUD (tauhud.com), an unofficial live view of the Tau testnet.</pre><button class="copy" type="button" data-copy="cite">Copy</button></div>
+        <p class="note">Link to <a href="https://tauhud.com">tauhud.com</a>, or to the page you show, for example <a href="https://tauhud.com/story/">tauhud.com/story</a>. Please do not change the logo or suggest that IDNI made or backs this site.</p>
+      </section>
+      <section class="panel" aria-labelledby="hFacts">
+        <h2 id="hFacts">Facts</h2>
+        <dl class="facts">
+          <dt>Name</dt><dd>Tau HUD</dd>
+          <dt>What</dt><dd>A live view of the Tau Testnet Alpha: blocks, rule changes, votes, validators, accounts</dd>
+          <dt>Website</dt><dd><a href="https://tauhud.com">tauhud.com</a></dd>
+          <dt>Online since</dt><dd>October 2026</dd>
+          <dt>Data</dt><dd>Read from our own testnet node, <a href="https://node.tauhud.com/status">node.tauhud.com</a>, through a read-only relay; open <a href="/developers/">JSON API</a></dd>
+          <dt>Pages</dt><dd class="pages"><a href="/">HUD</a> · <a href="/explorer/">Explorer</a> · <a href="/proposals/">Proposals</a> · <a href="/stats/">Stats</a> · <a href="/history/">Time travel</a> · <a href="/account/">Accounts</a> · <a href="/nodes/">Nodes</a> · <a href="/story/">Tau in 60 seconds</a> · <a href="/chronicle/">Chronicle</a> · <a href="/findings/">Findings</a> · <a href="/status/">Status</a> · <a href="/playground/">Playground</a> · <a href="/developers/">Developers</a></dd>
+          <dt>Telegram</dt><dd><a href="https://t.me/tauHUDcom" target="_blank" rel="noopener">t.me/tauHUDcom</a>, alerts for every rule change; bot <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot</a> answers questions</dd>
+          <dt>X</dt><dd><a href="https://x.com/TauHUDcom" target="_blank" rel="noopener">@TauHUDcom</a></dd>
+          <dt>Code</dt><dd><a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">github.com/jimb000o/tau-command-hud</a>, MIT license, © 2026 jimb000o</dd>
+          <dt>Status</dt><dd>Unofficial, not affiliated with IDNI; testnet data without claim of accuracy. Tau itself: <a href="https://tau.net" target="_blank" rel="noopener">tau.net</a></dd>
+          <dt>Questions</dt><dd><a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&amp;title=%5BPress%5D%20" target="_blank" rel="noopener">Ask on GitHub</a> or write in the Telegram channel's chat</dd>
+        </dl>
+      </section>
+    </div>
+
+    <div class="col c2">
+      <section class="panel" aria-labelledby="hVideo">
+        <h2 id="hVideo">Video · Tau in 60 seconds</h2>
+        <video class="video" controls preload="none" playsinline poster="media/cover-1080x1080.png" aria-label="Tau in 60 seconds: how Tau changes its rules without a fork">
+          <source src="media/tau-in-60-seconds-1200x675.mp4" type="video/mp4">
+        </video>
+        <p>Propose, check, agree, law: how Tau changes its rules without a hard fork, in six steps. No sound, so it works in a feed. The same story to scroll through: <a href="/story/">tauhud.com/story</a>.</p>
+        <ul class="dl">
+          <li><span class="what"><b>Wide, for YouTube and articles</b><span>1200 × 675 · MP4 · 1.5 MB</span></span><a class="get" href="media/tau-in-60-seconds-1200x675.mp4" download>Download</a></li>
+          <li><span class="what"><b>Square, for X, Telegram and Instagram</b><span>1080 × 1080 · MP4 · 2.0 MB</span></span><a class="get" href="media/tau-in-60-seconds-1080x1080.mp4" download>Download</a></li>
+          <li><span class="what"><b>Animated GIF, for forums and chats</b><span>640 × 640 · GIF · 2.7 MB</span></span><a class="get" href="media/tau-in-60-seconds-640.gif" download>Download</a></li>
+          <li><span class="what"><b>Cover picture</b><span>1080 × 1080 · PNG · 247 KB</span></span><a class="get" href="media/cover-1080x1080.png" download>Download</a></li>
+        </ul>
+      </section>
+      <section class="panel" aria-labelledby="hEmbed">
+        <h2 id="hEmbed">Live on your page</h2>
+        <p>Show the testnet as it is right now instead of a picture. Paste this where your article or site takes HTML:</p>
+        <div class="copyrow"><pre id="snipWidget">&lt;iframe src="https://tauhud.com/embed/" width="100%" height="150" style="border:0;max-width:720px" title="Tau testnet live" loading="lazy"&gt;&lt;/iframe&gt;</pre><button class="copy" type="button" data-copy="snipWidget">Copy</button></div>
+        <h3>Live badges</h3>
+        <div class="badges" aria-label="Live badges">
+          <img src="https://node.tauhud.com/api/v1/badge/status.svg" alt="Tau testnet status badge" loading="lazy">
+          <img src="https://node.tauhud.com/api/v1/badge/height.svg" alt="Tau block height badge" loading="lazy">
+          <img src="https://node.tauhud.com/api/v1/badge/proposals.svg" alt="Tau proposals badge" loading="lazy">
+        </div>
+        <h3>Link pictures</h3>
+        <div class="ogrow"><p>Links to the HUD, a block, a proposal or an address show a live picture in X, Telegram and Discord, current within a minute. Picture address: <code>node.tauhud.com/og/hud.png</code>. More sizes, all badges and the JSON API: <a href="/developers/">Developers</a>.</p>
+        <div class="ogbox"><img class="og" src="https://node.tauhud.com/og/hud.png" alt="Live share picture of the Tau testnet: height, rules and votes" loading="lazy" width="1200" height="630"></div></div>
+      </section>
+    </div>
+
+    <div class="col c3">
+      <section class="panel" aria-labelledby="hLogo">
+        <h2 id="hLogo">Logo · “Pulse”</h2>
+        <p>A heartbeat inside a ring: the chain is alive and every block is a beat. White ring and green pulse on dark; one colour where colour is not possible.</p>
+        <div class="tiles">
+          <figure class="tile"><div class="pic"><img src="logo/pulse-mark.svg" alt="Pulse logo, white ring with a green pulse"></div>
+            <figcaption><b>On dark</b><span>Transparent, SVG or PNG 1024</span><span class="links"><a class="get" href="logo/pulse-mark.svg" download>SVG</a><a class="get" href="logo/pulse-mark-1024.png" download>PNG</a></span></figcaption></figure>
+          <figure class="tile"><div class="pic light"><img src="logo/pulse-mark-black.svg" alt="Pulse logo in black"></div>
+            <figcaption><b>On light</b><span>Black, SVG or PNG 1024</span><span class="links"><a class="get" href="logo/pulse-mark-black.svg" download>SVG</a><a class="get" href="logo/pulse-mark-black-1024.png" download>PNG</a></span></figcaption></figure>
+          <figure class="tile"><div class="pic check"><img src="logo/pulse-mark-white.svg" alt="Pulse logo in white"></div>
+            <figcaption><b>One colour, white</b><span>For photos, SVG or PNG 1024</span><span class="links"><a class="get" href="logo/pulse-mark-white.svg" download>SVG</a><a class="get" href="logo/pulse-mark-white-1024.png" download>PNG</a></span></figcaption></figure>
+          <figure class="tile"><div class="pic check"><img src="logo/pulse-app-icon.svg" alt="Pulse app icon on a dark rounded square"></div>
+            <figcaption><b>App icon</b><span>Rounded square, PNG 512</span><span class="links"><a class="get" href="logo/pulse-app-icon.svg" download>SVG</a><a class="get" href="logo/app-icon-512.png" download>PNG</a></span></figcaption></figure>
+          <figure class="tile"><div class="pic"><img class="full" src="shots/t/telegram-1024.jpg" alt="Tau HUD profile picture" loading="lazy"></div>
+            <figcaption><b>Profile picture</b><span>Telegram and X</span><span class="links"><a class="get" href="logo/telegram-1024.png" download>1024</a><a class="get" href="logo/x-avatar-400.png" download>400</a></span></figcaption></figure>
+          <figure class="tile"><div class="pic"><img class="fit" src="shots/t/x-banner-3000x1000.jpg" alt="Tau HUD banner" loading="lazy"></div>
+            <figcaption><b>Banner</b><span>3:1, 3000 or 1500 wide</span><span class="links"><a class="get" href="logo/x-banner-3000x1000.png" download>3000</a><a class="get" href="logo/x-banner-1500x500.png" download>1500</a></span></figcaption></figure>
+        </div>
+        <p class="note">Colours: black <code>#09090a</code>, white <code>#ffffff</code>, green <code>#39ff8a</code>. Type: Sora for headings, JetBrains Mono for numbers and text.</p>
+      </section>
+    </div>
+
+    <div class="col c4">
+      <section class="panel" aria-labelledby="hShots">
+        <div class="phead"><h2 id="hShots">Screenshots</h2><a class="get all" href="tau-hud-press-kit.zip" download>Download all · ZIP · 5.8 MB</a></div>
+        <p>Click a picture for the full size (PNG). Desktop at 2560 × 1440, phone at 390 wide. The ZIP holds every screenshot, logo file and the cover; the videos are separate.</p>
+        <div class="shots">
+          <figure class="shot"><a href="shots/hud-2560.png" target="_blank" rel="noopener"><img src="shots/t/hud-2560.jpg" width="800" height="450" alt="The HUD: chain core in the middle, rule checks, transactions and validators around it" loading="lazy"></a><figcaption><b>HUD</b> · the chain core and every rule, here in simulation mode</figcaption></figure>
+          <figure class="shot"><a href="shots/story-2560.png" target="_blank" rel="noopener"><img src="shots/t/story-2560.jpg" width="800" height="450" alt="Tau in 60 seconds: a rule change proposed as a transaction" loading="lazy"></a><figcaption><b>Tau in 60 seconds</b> · a rule change is just a transaction</figcaption></figure>
+          <figure class="shot"><a href="shots/playground-2560.png" target="_blank" rel="noopener"><img src="shots/t/playground-2560.jpg" width="800" height="450" alt="Playground: write a transfer rule and see the testnet's checks" loading="lazy"></a><figcaption><b>Playground</b> · write a rule, see what the testnet says</figcaption></figure>
+          <figure class="shot"><a href="shots/chronicle-2560.png" target="_blank" rel="noopener"><img src="shots/t/chronicle-2560.jpg" width="800" height="450" alt="Chronicle: twelve years of Tau from 2014 to the testnet" loading="lazy"></a><figcaption><b>Chronicle</b> · twelve years of Tau, 2014 to today</figcaption></figure>
+        </div>
+        <div class="shots phone">
+          <figure class="shot"><a href="shots/hud-390.png" target="_blank" rel="noopener"><img src="shots/t/hud-390.jpg" width="390" height="844" alt="HUD on a phone" loading="lazy"></a><figcaption><b>HUD</b> · phone</figcaption></figure>
+          <figure class="shot"><a href="shots/story-390.png" target="_blank" rel="noopener"><img src="shots/t/story-390.jpg" width="390" height="844" alt="Tau in 60 seconds on a phone" loading="lazy"></a><figcaption><b>Story</b> · phone</figcaption></figure>
+          <figure class="shot"><a href="shots/playground-390.png" target="_blank" rel="noopener"><img src="shots/t/playground-390.jpg" width="390" height="844" alt="Playground on a phone" loading="lazy"></a><figcaption><b>Playground</b> · phone</figcaption></figure>
+          <figure class="shot"><a href="shots/chronicle-390.png" target="_blank" rel="noopener"><img src="shots/t/chronicle-390.jpg" width="390" height="844" alt="Chronicle on a phone" loading="lazy"></a><figcaption><b>Chronicle</b> · phone</figcaption></figure>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer>
+    <p>Unofficial community project, not affiliated with IDNI. Everything on this page is part of the <a href="https://github.com/jimb000o/tau-command-hud/tree/main/press" target="_blank" rel="noopener">MIT-licensed repository</a>. · <a href="/developers/">Developers</a> · <a href="/story/">Tau in 60 seconds</a> · <a href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Telegram</a></p>
+  </footer>
+</div>
+<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BPress%5D%20" target="_blank" rel="noopener">Feedback</a>
+<script>
+"use strict";
+document.addEventListener("click", async e => {
+  const b = e.target.closest("button[data-copy]");
+  if (!b) return;
+  const src = document.getElementById(b.dataset.copy), label = b.textContent;
+  try { await navigator.clipboard.writeText(src.textContent.trim()); b.textContent = "Copied"; }
+  catch (err) { const r = document.createRange(); r.selectNodeContents(src); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Press Ctrl+C"; }
+  setTimeout(() => { b.textContent = label; }, 1600);
+});
+</script>
+</body>
+</html>
