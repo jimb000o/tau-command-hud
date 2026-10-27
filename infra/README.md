@@ -71,6 +71,23 @@ jimb000o.github.io and localhost (`ALLOWED_ORIGINS` in `.env`).
 `GET /status` returns `{"upstream_connected", "height", "canonical_height", "tip_height", "live_default", "open_governance_admission", "total_blocks", "online", "age_seconds", …}`. `tip_height` is the highest network tip the node heard from peers (null until known). `height` counts every block the node stores (orphans included); `canonical_height` is the node's real head, and `live_default` is true only while the node follows a real chain, so the page may use it to decide its default view. `open_governance_admission` mirrors the node's `TAU_GOVERNANCE_OPEN_ADMISSION` setting (true: any account's vote counts, false: only active validators).
 with CORS `*`; `GET /health` is the same but answers 503 while the node is unreachable.
 
+## Rule Playground checker
+
+`checker/checker.py` answers tauhud.com/playground: `POST https://node.tauhud.com/check`
+with `{"rule": "...", "sender": "<96 hex>", "tests": [{"amount", "from", "to", "time"}, …]}`.
+It runs the rule through tau-testnet's own code from the node image, in the node's order:
+`normalize_offer_rule_text` (shape), `_screen_clause_domains` (streams, `[t]` only, widths),
+`compose_stream_rule` (the sender-guarded composite), then a fresh `SpeculationSession`
+worker that builds genesis plus the shipped rules, offers the composite on `i0` and steps
+each sample transfer, reading `o5` (1 allow, 0 block). The answer is
+`{"accepted", "stage", "reason", "composite", "tests": [{"o5"}], "ms", "engine"}`.
+
+It never talks to the node or the chain. One worker at a time, 30 s of engine time per
+request, 8 sample transfers, 16 KB bodies, 8 checks per 5 minutes per address, a cache for
+repeated texts. The container uses the node's image (nothing extra to compile), has no
+outbound network, a read-only filesystem, no capabilities, 512 MB, 1 CPU and 64 processes.
+`GET /check/health` answers `{"ok": true}`.
+
 ## Tests
 
 ```bash
@@ -81,3 +98,10 @@ python relay/test_relay.py
 Runs the relay against a mock node that enforces the real node's rate limits: read
 commands, refusal of write commands, pushes, origin check, per-IP and per-client limits,
 `/health`, and that the polling never trips the node's limiter.
+
+```bash
+docker compose run --rm checker python /checker/test_checker.py
+```
+
+Runs the checker against the real engine: verdicts for sample transfers, refusals by
+the text screens and by the engine.

@@ -48,6 +48,39 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Rule Playground checker (checker/checker.py): runs a visitor's rule through
+  # tau-testnet's own screens and its isolated engine worker. Same image as the
+  # node, so nothing is compiled for it; no chain data, no node access, no
+  # outbound network, capped in memory, CPU and processes.
+  checker:
+    image: tau-testnet-standalone:${TAU_TESTNET_REF}
+    pull_policy: never   # built locally by the tau-node service
+    command: ["python", "-I", "/checker/checker.py"]
+    working_dir: /app/tau-testnet
+    environment:
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      ENGINE_LABEL: tau-lang c3ea334 · tau-testnet ${TAU_TESTNET_REF}
+      TAU_ENV: test
+      TAU_SHRINK_ENABLED: "false"
+      TAU_DB_PATH: /tmp/checker.db
+      TAU_DATA_DIR: /tmp
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - ./checker:/checker:ro
+    read_only: true
+    tmpfs: [/tmp]
+    # Root inside the container only because the engine's libraries live under
+    # /root/.tau in the node image; it holds no capabilities and cannot gain any.
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m        # one engine worker measured at ~60 MB
+    memswap_limit: 512m
+    cpus: 1.0
+    pids_limit: 64
+    networks: [checker]
+    restart: unless-stopped
+    logging: *logging
+
   caddy:
     image: caddy:2.8.4
     environment:
@@ -59,9 +92,16 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on: [relay]
+    networks: [default, checker]
+    depends_on: [relay, checker]
     restart: unless-stopped
     logging: *logging
+
+networks:
+  default:
+  # Internal: the checker can talk to Caddy and nothing else.
+  checker:
+    internal: true
 
 volumes:
   tau_data:
