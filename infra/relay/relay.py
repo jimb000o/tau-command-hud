@@ -15,6 +15,7 @@ else are refused here and never reach the node.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -103,6 +104,25 @@ CACHED = ("getmempool", "getgovernance", "gettaustate")
 # Presence: how many HUD pages are connected right now. Just a count, pushed on
 # every change and as a heartbeat; nothing about who is behind a connection.
 PRESENCE_HEARTBEAT = _env_float("PRESENCE_HEARTBEAT_SECONDS", 30)
+# Community nodes: nodes run with the operator kit (kit/) may report their head
+# once a minute ("report key=… name=… height=… head=…"); GET /community lists
+# them next to this relay's own node. The key is the reporter's secret; only
+# its hash is shown, so nobody can overwrite another node's row. The reporter's
+# address is held in memory for the per-IP cap and never shown or logged.
+COMMUNITY_MAX = _env_int("COMMUNITY_MAX", 200)
+COMMUNITY_PER_IP = _env_int("COMMUNITY_PER_IP", 3)
+COMMUNITY_TTL = _env_float("COMMUNITY_TTL_SECONDS", 15 * 60)
+COMMUNITY_MIN_INTERVAL = _env_float("COMMUNITY_MIN_INTERVAL_SECONDS", 20)
+REPORT_FIELDS = {
+    "key": re.compile(r"^[0-9a-f]{32}$"),
+    "name": re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$"),
+    "height": re.compile(r"^\d{1,9}$"),
+    "tip": re.compile(r"^(\d{1,9}|none)$"),
+    "head": re.compile(r"^[0-9a-f]{64}$"),
+    "kit": re.compile(r"^[0-9A-Za-z.-]{1,16}$"),
+    "ref": re.compile(r"^[0-9a-f]{7,40}$"),
+}
+REPORT_REQUIRED = ("key", "name", "height", "head")
 
 
 def envelope_error(command: str, message: str, code: str) -> str:
@@ -210,6 +230,9 @@ class Relay:
         self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
         self.stats_text: str | None = None
         self.stats_at = 0.0
+        self.community: dict[str, dict] = {}   # node id -> last report (+ "ip", never shown)
+        self.community_text: str | None = None
+        self.community_at = 0.0
 
     # ---------- polling ----------
     async def poll_loop(self, every: float, fn):
@@ -293,7 +316,7 @@ class Relay:
             rewrite = True
         self._save_chain(None if rewrite else fresh)
         self.note_chain()
-        self.stats_text = None
+        self.stats_text = self.community_text = None
         if len(fresh) > 5:
             log.info("new blocks: %s..%s (%s)", self._height(fresh[0]), self._height(fresh[-1]), len(fresh))
         else:
@@ -550,6 +573,9 @@ class Relay:
         except (KeyError, TypeError, ValueError):
             return {}
 
+    def head_hash(self) -> str | None:
+        return self.governance().get("head_hash") or None
+
     def canonical_height(self) -> int | None:
         """Height of the node's canonical head (getgovernance.head_number).
 
@@ -571,7 +597,7 @@ class Relay:
             return None
 
     # ---------- visitor commands ----------
-    async def answer(self, message: str) -> str:
+    async def answer(self, message: str, ip: str = "?") -> str:
         parts = message.split()
         if not parts:
             return envelope_error("", "Empty command.", "INVALID_PARAMS")
@@ -607,6 +633,9 @@ class Relay:
         if cmd == "presence":
             return self.presence_envelope()
 
+        if cmd == "report":
+            return self.report(args, ip)
+
         if cmd in CACHED:
             if args:
                 return envelope_error(cmd, f"Usage: {cmd}", "INVALID_PARAMS")
@@ -631,7 +660,80 @@ class Relay:
             return text
 
         return envelope_error(cmd, "This relay is read-only. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
-                              "gettaustate, " + ", ".join(LOOKUPS), "FORBIDDEN")
+                              "gettaustate, presence, report, " + ", ".join(LOOKUPS), "FORBIDDEN")
+
+    # ---------- community nodes ----------
+    def report(self, args: list[str], ip: str) -> str:
+        fields = dict(a.split("=", 1) for a in args if "=" in a)
+        if (len(fields) != len(args) or any(k not in REPORT_FIELDS or not REPORT_FIELDS[k].match(v) for k, v in fields.items())
+                or any(k not in fields for k in REPORT_REQUIRED)):
+            return envelope_error("report", "Usage: report key=<32 hex> name=<1-24 of A-Z a-z 0-9 . _ -> height=<n> "
+                                  "head=<64 hex> [tip=<n>|none] [kit=<version>] [ref=<commit>]", "INVALID_PARAMS")
+        if "tauhud" in fields["name"].lower():
+            return envelope_error("report", "That name is reserved.", "INVALID_PARAMS")
+        now = time.time()
+        self.expire_community(now)
+        node_id = hashlib.sha256(fields["key"].encode()).hexdigest()[:12]
+        known = self.community.get(node_id)
+        if known and now - known["last_seen"] < COMMUNITY_MIN_INTERVAL:
+            return envelope_error("report", f"At most one report per {int(COMMUNITY_MIN_INTERVAL)} s.", "RATE_LIMITED")
+        if not known:
+            if len(self.community) >= COMMUNITY_MAX:
+                return envelope_error("report", "The community list is full.", "BUSY")
+            if sum(1 for n in self.community.values() if n["ip"] == ip) >= COMMUNITY_PER_IP:
+                return envelope_error("report", f"At most {COMMUNITY_PER_IP} nodes per address.", "RATE_LIMITED")
+        self.community[node_id] = {
+            "id": node_id, "name": fields["name"], "height": int(fields["height"]),
+            "tip": int(fields["tip"]) if fields.get("tip", "none") != "none" else None,
+            "head": fields["head"], "kit": fields.get("kit"), "ref": fields.get("ref"),
+            "first_seen": known["first_seen"] if known else now, "last_seen": now, "ip": ip,
+        }
+        self.community_text = None
+        if not known:
+            log.info("community node joined: %s (%s)", fields["name"], node_id)
+        return envelope_ok("report", {"id": node_id, "agrees": self.agreement(self.community[node_id], self.hash_at())})
+
+    def hash_at(self) -> dict[int, str]:
+        """height -> block hash of the chain we hold (one block per height)."""
+        return {self._height(b): b["block_hash"] for b in self.blocks.values()}
+
+    def agreement(self, node: dict, hashes: dict[int, str]) -> str:
+        """How a reported head compares with this relay's chain: "same" (our
+        block at that height has that hash), "different", "ahead" (we have no
+        block that high yet) or "unknown" (we hold no block at that height)."""
+        if not hashes:
+            return "unknown"
+        if node["height"] > max(hashes):
+            return "ahead"
+        ours = hashes.get(node["height"])
+        if ours is None:
+            return "unknown"
+        return "same" if ours == node["head"] else "different"
+
+    def expire_community(self, now: float):
+        stale = [k for k, n in self.community.items() if now - n["last_seen"] > COMMUNITY_TTL]
+        for node_id in stale:
+            del self.community[node_id]
+        if stale:
+            self.community_text = None
+
+    def community_json(self) -> str:
+        """Cached like /stats: the endpoint is public, the build walks the chain once."""
+        now = time.time()
+        self.expire_community(now)
+        if self.community_text is not None and now - self.community_at < STATS_CACHE_SECONDS:
+            return self.community_text
+        hashes = self.hash_at()
+        nodes = [{**{k: v for k, v in n.items() if k != "ip"}, "agrees": self.agreement(n, hashes),
+                  "age_seconds": round(now - n["last_seen"])}
+                 for n in sorted(self.community.values(), key=lambda n: (-n["height"], n["name"].lower()))]
+        self.community_at = now
+        self.community_text = json.dumps({
+            "reference": {"name": "tauhud.com", "height": self.canonical_height(), "head": self.head_hash(),
+                          "tip": self.tip_height(), "upstream_connected": self.upstream.connected.is_set()},
+            "nodes": nodes, "ttl_seconds": int(COMMUNITY_TTL), "generated_at": round(now),
+        }, separators=(",", ":"))
+        return self.community_text
 
     # ---------- presence ----------
     def presence_envelope(self) -> str:
@@ -653,6 +755,7 @@ class Relay:
 
     def status(self) -> dict:
         now = time.time()
+        self.expire_community(now)
         return {
             "upstream_connected": self.upstream.connected.is_set(),
             "height": self.height(),
@@ -665,6 +768,7 @@ class Relay:
             "total_blocks": self.total_blocks,
             "clients": len(self.clients),
             "online": len(self.clients),
+            "community_nodes": len(self.community),
             "age_seconds": {k: round(now - v, 1) for k, v in self.updated.items()},
             "uptime_seconds": round(now - self.started),
         }
@@ -694,6 +798,11 @@ class Relay:
                                ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
+        if path == "/community":
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "no-store")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.community_json().encode())
         if request.headers.get("Upgrade", "").lower() != "websocket":
             return connection.respond(HTTPStatus.OK, "Tau HUD read-only relay. Connect with WebSocket; GET /status for health.\n")
         if not self.origin_ok(request.headers.get("Origin")):
@@ -717,7 +826,7 @@ class Relay:
                 if not bucket.take():
                     reply = envelope_error("rate_limit", "Rate limit exceeded", "RATE_LIMITED")
                 else:
-                    reply = await self.answer(message.strip())
+                    reply = await self.answer(message.strip(), ip)
                 await ws.send(reply)
         except ConnectionClosed:
             pass

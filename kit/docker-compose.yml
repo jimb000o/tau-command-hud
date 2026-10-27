@@ -1,0 +1,92 @@
+# Tau node operator kit: the same patched tau-testnet node as tauhud.com
+# (../infra/node), plus a status line that can report to tauhud.com, plus an
+# optional public read-only relay with HTTPS. install.sh writes .env.
+#
+# Only 4001 (P2P) is published, and 80/443 with the "public" profile. The
+# node's RPC (65432) and WebSocket (65433) stay on the internal Docker network.
+name: tau-node-kit
+
+services:
+  tau-node:
+    build:
+      context: ../infra/node
+      args:
+        TAU_TESTNET_REF: ${TAU_TESTNET_REF}
+        TAU_BUILD_JOBS: ${TAU_BUILD_JOBS:-1}
+    image: tau-testnet-standalone:${TAU_TESTNET_REF}
+    environment:
+      TAU_NETWORK_ID: tau-testnet-v2
+      TAU_BOOTSTRAP_PEERS: '[{"peer_id":"12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC","addrs":["/ip4/34.251.82.246/tcp/4001"]}]'
+      TAU_NETWORK_LISTEN: /ip4/0.0.0.0/tcp/4001
+      # Validator mode: off unless the key was added on chain (README "Validator").
+      TAU_MINING_ENABLED: ${TAU_VALIDATOR:-false}
+      # Consensus-relevant, must match the network (see ../infra/docker-compose.yml):
+      # with "false" the node stops verifying at the first non-validator vote.
+      TAU_GOVERNANCE_OPEN_ADMISSION: "true"
+      TAU_LOG_LEVEL: INFO
+    command: ["/usr/local/bin/tau-node-start"]
+    volumes:
+      - tau_data:/data
+    ports:
+      - "4001:4001"
+    restart: unless-stopped
+    logging: &logging
+      driver: json-file
+      options: { max-size: "20m", max-file: "3" }
+
+  # One line a minute about the node; reports to tauhud.com only if NODE_NAME is set.
+  heartbeat:
+    build: ../infra/relay   # small image that already has the websockets library
+    command: ["python", "-I", "/kit/heartbeat.py"]
+    environment:
+      NODE_URL: ws://tau-node:65433
+      NODE_NAME: ${NODE_NAME:-}
+      REPORT_URL: ${REPORT_URL:-wss://node.tauhud.com}
+      TAU_TESTNET_REF: ${TAU_TESTNET_REF}
+    volumes:
+      - ./heartbeat.py:/kit/heartbeat.py:ro
+      - heartbeat_data:/data
+    healthcheck:
+      disable: true   # the image's check is the relay's
+    depends_on: [tau-node]
+    restart: unless-stopped
+    logging: *logging
+
+  # Profile "public" (PUBLIC_DOMAIN in .env): wss://<PUBLIC_DOMAIN> serves the
+  # same read-only protocol as wss://node.tauhud.com.
+  relay:
+    profiles: [public]
+    build: ../infra/relay
+    environment:
+      UPSTREAM_URL: ws://tau-node:65433
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
+      TRUST_PROXY: "1"
+      TAU_GOVERNANCE_OPEN_ADMISSION: "true"
+    volumes:
+      - relay_data:/data
+    depends_on: [tau-node]
+    restart: unless-stopped
+    logging: *logging
+
+  caddy:
+    profiles: [public]
+    image: caddy:2.8.4
+    environment:
+      RELAY_DOMAIN: ${PUBLIC_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [relay]
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  tau_data:
+  heartbeat_data:
+  relay_data:
+  caddy_data:
+  caddy_config:

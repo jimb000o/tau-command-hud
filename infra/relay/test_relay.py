@@ -62,6 +62,15 @@ def stats():  # blocking client; run it off the event loop the relay lives on
     return asyncio.to_thread(_stats)
 
 
+def _community():
+    with urllib.request.urlopen("http://127.0.0.1:18766/community", timeout=5) as r:
+        return r.headers.get("Access-Control-Allow-Origin"), json.loads(r.read())
+
+
+def community():
+    return asyncio.to_thread(_community)
+
+
 async def mock_node(ws):
     mock["connections"] += 1
     heavy = relay.TokenBucket(2, 0.5)
@@ -88,6 +97,7 @@ async def mock_node(ws):
         elif cmd == "getgovernance":
             await ws.send(relay.envelope_ok(cmd, {"active_validators": ["ab" * 48], "vote_quorum": 1, "consensus_rules": "o6[t] = 1",
                                                    "head_number": len(mock["blocks"]) - 1,
+                                                   "head_hash": mock["blocks"][-1]["block_hash"],
                                                    "network_tip": {"number": len(mock["blocks"]) + 4, "seen": time.time()}}))
         elif cmd == "gettaustate":
             await ws.send(relay.envelope_ok(cmd, {"rules_state": "always o1[t] = i1[t]."}))
@@ -301,6 +311,51 @@ async def main():
         check(probe._other_chain([block(n, chain=6) for n in range(3)]), "restarted chain told apart from blocks on disk")
         check(not probe._other_chain([block(29, chain=6), block(30, chain=6)]), "replaced tip block is a reorg, not a new chain")
         check(not probe._other_chain([block(n, chain=5) for n in range(10, 31)]), "same chain matches")
+
+        # community nodes: kit nodes report their head, /community lists them
+        key_a, key_b = "a1" * 16, "b2" * 16
+        top = r.ordered_blocks()[-1]
+        h, head = r._height(top), top["block_hash"]
+        async with connect(url, additional_headers={"X-Forwarded-For": "198.51.100.7"}) as ws:  # no Origin: a server
+            json.loads(await ws.recv())
+            m = await ask(ws, f"report key={key_a} name=alice-node height={h} head={head} tip={h + 1} kit=1 ref=539d1e2")
+            check(m["status"] == "ok" and m["data"]["agrees"] == "same" and len(m["data"]["id"]) == 12, f"report accepted, same chain {m}")
+            m = await ask(ws, f"report key={key_a} name=alice-node height={h} head={head}")
+            check(m["status"] == "error" and m["error"]["code"] == "RATE_LIMITED", "one report per interval")
+            m = await ask(ws, f"report key={key_b} name=bob height={h} head={'0' * 64}")
+            check(m["status"] == "ok" and m["data"]["agrees"] == "different", "other chain told apart")
+            m = await ask(ws, f"report key={'c3' * 16} name=carol height={h + 1000} head={'1' * 64}")
+            check(m["status"] == "ok" and m["data"]["agrees"] == "ahead", "head above ours is ahead")
+            m = await ask(ws, f"report key={'d4' * 16} name=dave height=1 head={'1' * 64}")
+            check(m["status"] == "error" and m["error"]["code"] == "RATE_LIMITED", "community nodes capped per address")
+            for bad in (f"report key={key_a} name=tauhud.com height=1 head={head}",
+                        f"report key={key_a} name=<script> height=1 head={head}",
+                        f"report key=xyz name=eve height=1 head={head}",
+                        f"report key={key_a} name=eve height=1",
+                        f"report key={key_a} name=eve height=1 head={head} extra=1"):
+                check((await ask(ws, bad))["status"] == "error", f"bad report refused: {bad[:60]}")
+        cors, com = await community()
+        names = [n["name"] for n in com["nodes"]]
+        check(cors == "*" and names == ["carol", "alice-node", "bob"], f"/community lists nodes, highest first {names}")
+        alice = next(n for n in com["nodes"] if n["name"] == "alice-node")
+        check(alice["agrees"] == "same" and alice["tip"] == h + 1 and alice["ref"] == "539d1e2" and "ip" not in alice
+              and "key" not in alice, f"/community row {alice}")
+        check(com["reference"]["name"] == "tauhud.com" and com["reference"]["head"], f"/community reference {com['reference']}")
+        r.community[alice["id"]]["last_seen"] -= relay.COMMUNITY_TTL + 1
+        check(len((await community())[1]["nodes"]) == 2, "silent nodes expire")
+
+        # the kit's heartbeat end to end: reads the (mock) node, reports to the relay
+        os.environ.update(NODE_URL="ws://127.0.0.1:18765", REPORT_URL=url, NODE_NAME="kit-test",
+                          KEY_PATH=os.path.join(os.path.dirname(EVENTS), "report.key"), TAU_TESTNET_REF="539d1e20b53e")
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "kit"))
+        import heartbeat
+        st = await heartbeat.node_status()
+        check(st["height"] >= 1 and len(st["head"]) == 64 and st["tip"] == st["height"] + 5, f"heartbeat reads the node {st}")
+        reply = await heartbeat.send_report(await heartbeat.node_status())
+        check(reply["status"] == "ok" and reply["data"]["agrees"] in ("same", "ahead"), f"heartbeat report {reply}")
+        with open(heartbeat.KEY_PATH) as f:
+            check(len(f.read().strip()) == 32 and oct(os.stat(heartbeat.KEY_PATH).st_mode)[-3:] == "600", "report key kept, mode 600")
+        check(any(n["name"] == "kit-test" for n in (await community())[1]["nodes"]), "heartbeat node listed")
 
         minter.cancel()
         runner.cancel()

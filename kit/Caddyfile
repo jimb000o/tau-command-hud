@@ -1,0 +1,9 @@
+# TLS certificates come from Let's Encrypt once {$RELAY_DOMAIN} points here.
+{$RELAY_DOMAIN} {
+	encode gzip
+	reverse_proxy relay:8080
+	log {
+		output stdout
+		format console
+	}
+}

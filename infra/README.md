@@ -53,6 +53,8 @@ Connect to `wss://node.tauhud.com`, send a command as text, get the node's JSON 
 | `presence` | relay | `{"online": n}`: pages connected right now |
 | `getbalance <addr>`, `getsequence <addr>`, `getaccountstate <addr>`, `getruleoffers <addr> [in\|out\|all]`, `gettxstatus <hash>` | node, cached 10 s | hex arguments only; global cap 2/s |
 
+| `report key=<32 hex> name=<name> height=<n> head=<64 hex> [tip=<n>\|none] [kit=<v>] [ref=<commit>]` | relay | community node heartbeat from `kit/heartbeat.py`, see below |
+
 Anything else (`sendtx`, `createblock`, `getallaccounts`, `history`, …) gets
 `{"status":"error","error":{"code":"FORBIDDEN"}}` and never reaches the node.
 
@@ -91,6 +93,24 @@ after a restart or a gap the relay asks for `getblocks <chain length>` and halve
 until the reply fits; older blocks come from the file. Every other poll fetches the newest 20.
 Blocks in the file that contradict the node below its tip belong to an earlier chain and are
 dropped (and logged as a restart).
+
+## Community nodes
+
+Nodes run with the operator kit ([`kit/`](../kit/README.md)) can report their head once a
+minute with `report` (opt-in: only when the operator sets `NODE_NAME`). `key` is a random
+secret the reporter keeps; the relay shows only the first 12 hex of its SHA-256 as `id`, so
+nobody can overwrite another node's row. Names are 1-24 of `A-Z a-z 0-9 . _ -` and may not
+contain "tauhud"; render them as text. Limits: one report per 20 s per node, 3 nodes per
+address, 200 in total; a node silent for 15 minutes is dropped. The reporter's address is
+kept in memory for the per-address cap only; nothing is written to disk.
+
+`GET /community` (CORS `*`, no-store) returns
+`{"reference": {"name": "tauhud.com", "height", "head", "tip", "upstream_connected"}, "nodes": [...], "ttl_seconds", "generated_at"}`
+with one row per node, highest first:
+`{"id", "name", "height", "tip", "head", "kit", "ref", "first_seen", "last_seen", "age_seconds", "agrees"}`.
+`agrees` compares the reported head with this relay's block at that height: `same`,
+`different` (another chain or a fork), `ahead` (higher than this relay has) or `unknown`.
+`/status` counts them as `community_nodes`.
 
 ## Rule Playground checker
 
