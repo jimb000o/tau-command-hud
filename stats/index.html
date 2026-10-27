@@ -37,9 +37,15 @@ body {
 }
 a { color: #fff; }
 .wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
-/* wide screens: the whole page scales up (like the HUD) and uses the full width */
-html.wide .wrap { max-width: none; zoom: var(--z); }
-html.wide #tip, html.wide .fb-fab { zoom: var(--z); }
+/* one screen (laptop and up, landscape): no page scroll. The page is laid out
+   for a fixed design size and scaled with zoom to the viewport, like the HUD;
+   the charts take whatever height their panel has. */
+html.fit body { overflow: hidden; height: 100vh; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { max-width: none; zoom: var(--z); height: var(--fitH); display: flex; flex-direction: column; gap: 10px; padding: 6px 0 8px; }
+html.fit .wrap > * { flex: none; }
+html.fit .wrap > .main { flex: 1 1 0; }
+html.fit #tip, html.fit .fb-fab { zoom: var(--z); }
+html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; right: 12px; }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
 .mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -72,12 +78,43 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .tile .v { font: 600 28px/1.15 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 6px; }
 .tile .v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
 .tile p { margin: 4px 0 0; color: var(--dim); font-size: 12px; }
-.tile .scope { display: inline-block; margin-top: 6px; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px; }
-.grid2, .grid3 { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
-.grid3 > .rs { grid-column: 1 / -1; }
-html.wide .grid3 { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); }
-html.wide .grid3 > .rs { grid-column: auto; }
-@media (max-width: 960px) { .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); } }
+.tile h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.tile .scope { display: inline-block; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px; }
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
+.top .filters { flex: 0 1 auto; }
+/* scrolling layout: block time and restarts full width, the rest in pairs */
+.main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+.p-blocks, .p-rs { grid-column: 1 / -1; }
+@media (max-width: 960px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.timeline { position: relative; width: 100%; }
+.timeline svg { display: block; width: 100%; height: auto; overflow: visible; }
+.timeline text { font: 11px var(--mono); fill: var(--dim); }
+.tablewrap.open { max-height: none; }
+/* one screen: block time beside restarts on top, four panels below */
+html.fit .main { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr); gap: 10px; align-items: stretch; min-height: 0; }
+html.fit .p-blocks { grid-column: 1 / 4; }
+html.fit .p-rs { grid-column: 4; }
+html.fit .panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px 14px; }
+html.fit .panel > * { flex: none; }
+html.fit .chart { flex: 1 1 0; min-height: 60px; overflow: hidden; }
+html.fit .chart svg { height: 100%; }
+html.fit .tablewrap, html.fit .ev { flex: 1 1 0; min-height: 0; overflow: auto; max-height: none; margin-top: 6px; }
+html.fit .panel.tbl-on .chart, html.fit .panel.tbl-on .legend { display: none; }
+html.fit .headline { margin-bottom: 4px; font-size: 13px; }
+html.fit .legend { margin-bottom: 2px; }
+html.fit .note { font-size: 11.5px; }
+html.fit .ev { font-size: 12px; gap: 3px; align-content: start; }
+html.fit .ev li { padding: 3px 8px; }
+html.fit .lead { font-size: 22px; margin: 0; }
+html.fit .sub { font-size: 12px; margin: 2px 0 0; }
+html.fit header { padding: 4px 0 6px; }
+html.fit .tiles { gap: 8px; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+html.fit .tile { padding: 8px 12px; }
+html.fit .tile .v { font-size: 24px; margin-top: 2px; }
+html.fit .tile p { margin-top: 2px; }
+html.fit .tile .scope, html.fit .p-rs h2 small, html.fit .p-drop h2 small, html.fit #hRestarts span, html.fit .p-drop .note { display: none; }
+html.fit footer { padding-top: 6px; font-size: 11px; }
+html.fit footer p { margin: 0; }
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
 .panel h2 { margin: 0 0 4px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
@@ -104,6 +141,8 @@ table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 th { text-align: left; font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 4px 6px; border-bottom: 1px solid var(--line); }
 td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 @media (max-width: 520px) { #droppedWrap td:nth-child(4), #droppedWrap th:nth-child(4) { display: none; } }
+html.fit #droppedWrap td:nth-child(4), html.fit #droppedWrap th:nth-child(4) { display: none; }
+#droppedWrap td { white-space: nowrap; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 td .what { display: block; color: var(--dim); font-size: 11.5px; }
 .tablewrap { max-height: 320px; overflow: auto; margin-top: 8px; }
@@ -140,72 +179,73 @@ footer a { color: var(--dim); }
     </div>
   </header>
 
-  <div>
-    <p class="lead">How the Tau testnet is doing, block by block.</p>
-    <p class="sub" id="sourceLine">Read from our own node, which verifies every block of the Tau Testnet Alpha itself. Nothing here is simulated unless it says so.</p>
+  <div class="top">
+    <div class="intro">
+      <p class="lead">How the Tau testnet is doing, block by block.</p>
+      <p class="sub" id="sourceLine">Read from our own node, which verifies every block of the Tau Testnet Alpha itself. Nothing here is simulated unless it says so.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Time range">
+      <span class="lbl">Range</span>
+      <button type="button" data-range="0" aria-pressed="true">This chain</button>
+      <button type="button" data-range="86400" aria-pressed="false">24 h</button>
+      <button type="button" data-range="21600" aria-pressed="false">6 h</button>
+      <button type="button" data-range="3600" aria-pressed="false">1 h</button>
+      <span class="span" id="rangeSpan"></span>
+    </div>
   </div>
 
   <div class="banner" id="banner" hidden></div>
 
-  <div class="filters" role="group" aria-label="Time range">
-    <span class="lbl">Range</span>
-    <button type="button" data-range="0" aria-pressed="true">This chain</button>
-    <button type="button" data-range="86400" aria-pressed="false">24 h</button>
-    <button type="button" data-range="21600" aria-pressed="false">6 h</button>
-    <button type="button" data-range="3600" aria-pressed="false">1 h</button>
-    <span class="span" id="rangeSpan"></span>
-  </div>
-
   <section class="tiles" id="tiles" aria-label="Key numbers"></section>
 
-  <section class="panel">
-    <h2>Block time <small>seconds between one block and the next</small><button class="tbl" type="button" data-table="tBlocks" aria-pressed="false">Table</button></h2>
-    <p class="headline" id="hBlocks"></p>
-    <div class="legend"><span><i class="ln" style="background:#fff"></i>each block</span><span><i class="dash"></i>median of the range</span></div>
-    <div class="chart" id="cBlocks"></div>
-    <div class="tablewrap" id="tBlocks" hidden></div>
-  </section>
+  <main class="main">
+    <section class="panel p-blocks">
+      <h2>Block time <small>seconds between one block and the next</small><button class="tbl" type="button" data-table="tBlocks" aria-pressed="false">Table</button></h2>
+      <p class="headline" id="hBlocks"></p>
+      <div class="legend"><span><i class="ln" style="background:#fff"></i>each block</span><span><i class="dash"></i>median of the range</span></div>
+      <div class="chart" id="cBlocks"></div>
+      <div class="tablewrap" id="tBlocks" hidden></div>
+    </section>
 
-  <div class="grid2">
-    <section class="panel">
+    <section class="panel p-rs">
+      <h2 data-tip="Chain restarts: when the testnet started over from its genesis.\nEach restart loses the chain’s whole history.">Chain restarts <small>when the testnet started over from its genesis</small></h2>
+      <p class="headline" id="hRestarts"></p>
+      <div class="legend"><span><i style="background:var(--ok)"></i>current chain</span><span><i style="background:#8a8a94"></i>earlier chain, recorded by our relay</span><span><i style="background:none;border:1px solid #8a8a94;border-radius:50%"></i>from our notes, time approximate</span></div>
+      <div class="timeline" id="cRestarts"></div>
+      <ul class="ev" id="restartList"></ul>
+    </section>
+
+    <section class="panel p-tx">
       <h2>Transactions <small>sealed into blocks</small><button class="tbl" type="button" data-table="tTx" aria-pressed="false">Table</button></h2>
       <p class="headline" id="hTx"></p>
       <div class="legend"><span><i style="background:var(--s-transfer)"></i>Transfers</span><span><i style="background:var(--s-rule)"></i>Rule work</span><span><i style="background:var(--s-gov)"></i>Governance</span></div>
       <div class="chart" id="cTx"></div>
       <div class="tablewrap" id="tTx" hidden></div>
     </section>
-    <section class="panel">
-      <h2>Active accounts <small>accounts that sent at least one transaction</small><button class="tbl" type="button" data-table="tAcc" aria-pressed="false">Table</button></h2>
+
+    <section class="panel p-acc">
+      <h2>Active accounts <small>accounts that sent a transaction</small><button class="tbl" type="button" data-table="tAcc" aria-pressed="false">Table</button></h2>
       <p class="headline" id="hAcc"></p>
       <div class="legend"><span><i style="background:#ebebee"></i>sending accounts per period</span></div>
       <div class="chart" id="cAcc"></div>
       <div class="tablewrap" id="tAcc" hidden></div>
     </section>
-  </div>
 
-  <div class="grid3">
-  <section class="panel rs">
-    <h2>Chain restarts <small>when the testnet started over from its genesis</small></h2>
-    <p class="headline" id="hRestarts"></p>
-    <div class="legend"><span><i style="background:var(--ok)"></i>current chain</span><span><i style="background:#8a8a94"></i>earlier chain, recorded by our relay</span><span><i style="background:none;border:1px solid #8a8a94;border-radius:50%"></i>restart from our notes, time approximate</span></div>
-    <div class="chart" id="cRestarts"></div>
-    <ul class="ev" id="restartList"></ul>
-  </section>
-
-    <section class="panel">
-      <h2>What the transactions were <small>by type, in the selected range</small></h2>
-      <div class="tablewrap" style="max-height:none"><table><thead><tr><th>Type</th><th class="n">Count</th><th class="n">Share</th></tr></thead><tbody id="types"></tbody></table></div>
+    <section class="panel p-types">
+      <h2>What the transactions were <small>by type, in the range</small></h2>
+      <div class="tablewrap open"><table><thead><tr><th>Type</th><th class="n">Count</th><th class="n">Share</th></tr></thead><tbody id="types"></tbody></table></div>
     </section>
-    <section class="panel">
-      <h2>Dropped transactions <small>left our node’s mempool without reaching a block</small></h2>
+
+    <section class="panel p-drop">
+      <h2 data-tip="Left our node’s mempool without reaching a block.\nRefusals at other nodes never reach a read-only node,\nso this counts only what waited here and vanished.">Dropped transactions <small>left our node’s mempool without a block</small></h2>
       <p class="headline" id="hDropped"></p>
-      <div class="tablewrap" id="droppedWrap"></div>
+      <div class="tablewrap open" id="droppedWrap"></div>
       <p class="note">A transaction the network refuses at another node’s door never reaches us, so a read-only node cannot count every refusal. What it can see: transactions that waited in its mempool and then vanished without being sealed (refused on re-check, expired or replaced).</p>
     </section>
-  </div>
+  </main>
 
   <footer>
-    <p id="foot">Data: our node at node.tauhud.com (tau-testnet pinned to commit 539d1e2), served by a read-only relay. <a id="rawLink" href="https://node.tauhud.com/stats" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra" target="_blank" rel="noopener">How it works</a> · <a href="/playground/">Rule Playground</a></p>
+    <p id="foot">Data: our node at node.tauhud.com (tau-testnet pinned to commit 539d1e2), served by a read-only relay. <a id="rawLink" href="https://node.tauhud.com/stats" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra" target="_blank" rel="noopener">How it works</a> · <a href="/playground/">Rule Playground</a> · <a href="/history/">Time travel</a></p>
   </footer>
 </div>
 
@@ -429,6 +469,7 @@ function niceScale(v, ticks = 4) {
 }
 function frame(host, h) {
   const w = Math.max(280, host.clientWidth);
+  if (FIT && host.classList.contains("chart")) h = Math.max(60, host.clientHeight);  // fill the panel
   const svg = svgEl("svg", { viewBox: `0 0 ${w} ${h}`, role: "img" });
   host.replaceChildren(svg);
   return { svg, w, h, L: 40, R: 12, T: 10, B: 26 };
@@ -534,15 +575,18 @@ function restartChart(rows) {
   const cur = rows.length ? { from: rows[0].ts, to: rows[rows.length - 1].ts, tip: rows[rows.length - 1].n } : null;
   const recorded = (D.restarts || []).map(r => ({ at: r.new_block1_ts || r.detected_at, old: r.old || {} }));
   const since = D.trackingSince || now;
-  const known = D.mode === "sample" ? [] : KNOWN_RESTARTS.filter(k => k.at < since - 1800 && !recorded.some(r => Math.abs(r.at - k.at) < 3 * 3600));
+  // a noted restart close before block 1 of the current chain is that chain's start: use the exact time
+  const known = D.mode === "sample" ? [] : KNOWN_RESTARTS.filter(k => k.at < since - 1800 && !recorded.some(r => Math.abs(r.at - k.at) < 3 * 3600))
+    .map(k => cur && D.rows.some(r => r.n === 1) && Math.abs(cur.from - k.at) < 3 * 3600 ? { ...k, at: cur.from, approx: null, exact: true } : k);
   const t1 = now, t0 = Math.min(t1 - 86400, ...known.map(k => k.at - 3600), ...recorded.map(r => (r.old.block1_ts || r.at) - 1800), cur ? cur.from - 1800 : t1);
-  const f = frame(host, 92), yb = 34;  // a timeline: no y axis
+  const H = FIT ? 64 : 92, yb = FIT ? 22 : 34;  // a timeline: no y axis
+  const f = frame(host, H);
   const X2 = t => 12 + Math.max(0, Math.min(1, (t - t0) / (t1 - t0))) * (f.w - 24);
   svgEl("line", { x1: 12, x2: f.w - 12, y1: yb, y2: yb, stroke: "rgba(255,255,255,.18)" }, f.svg);
-  xTimeAxis({ ...f, L: 12, R: 12, h: 70 }, t0, t1);
+  xTimeAxis({ ...f, L: 12, R: 12, h: H - 22 }, t0, t1);
   const mark = (x, label, build) => {
     const g = svgEl("g", { tabindex: 0, class: "bar" }, f.svg); build(g);
-    svgEl("rect", { x: x - 12, y: 8, width: 24, height: 52, fill: "transparent" }, g);
+    svgEl("rect", { x: x - 12, y: yb - 24, width: 24, height: 48, fill: "transparent" }, g);
     g.addEventListener("pointermove", ev => showTip(ev, tipLines(label)));
     g.addEventListener("pointerleave", hideTip);
     g.addEventListener("focus", () => { const r = g.getBoundingClientRect(); showTip({ clientX: r.left, clientY: r.bottom }, tipLines(label)); });
@@ -566,18 +610,20 @@ function restartChart(rows) {
   }
   recorded.forEach(r => mark(X2(r.at), [["tv", fmtWhen(r.at)], ["", "Restart recorded by our relay"], ["tm", r.old.tip != null ? `the old chain had reached #${fmtN(r.old.tip)}` : ""]],
     g => svgEl("path", { d: `M${X2(r.at)},${yb - 14}V${yb + 14}`, stroke: "#fff", "stroke-width": 2 }, g)));
-  known.forEach(k => mark(X2(k.at), [["tv", k.approx === "day only" ? fmtDay(k.at) : `${fmtDay(k.at)}, ${k.approx}`], ["", k.label], ["tm", "From our node notes; time approximate"]],
+  known.filter(k => k.exact).forEach(k => mark(X2(k.at), [["tv", fmtWhen(k.at)], ["", `${k.label}: the current chain began`], ["tm", "exact time, from block 1"]],
+    g => svgEl("path", { d: `M${X2(k.at)},${yb - 14}V${yb + 14}`, stroke: "#fff", "stroke-width": 2 }, g)));
+  known.filter(k => !k.exact).forEach(k => mark(X2(k.at), [["tv", k.approx === "day only" ? fmtDay(k.at) : `${fmtDay(k.at)}, ${k.approx}`], ["", k.label], ["tm", "From our node notes; time approximate"]],
     g => svgEl("circle", { cx: X2(k.at), cy: yb, r: 6, fill: "#101012", stroke: "#8a8a94", "stroke-width": 2 }, g)));
   return { recorded, known, cur };
 }
 
 /* ------------------------------ tiles & tables ------------------------------ */
 function tile(title, value, unit, line, tipText, scope) {
-  const t = el("div", "tile"); t.tabIndex = 0; t.dataset.tip = tipText;
-  t.append(el("h3", "", title));
+  const t = el("div", "tile"); t.tabIndex = 0;
+  t.dataset.tip = tipText + (scope ? `\nCovers: ${scope === "range" ? "the selected range" : scope}.` : "");
+  const h = el("h3", "", title); if (scope) h.append(el("span", "scope", scope)); t.append(h);
   const v = el("div", "v", value); if (unit) v.append(el("small", "", unit)); t.append(v);
   if (line) t.append(el("p", "", line));
-  if (scope) t.append(el("span", "scope", scope));
   return t;
 }
 function table(host, head, rows) {
@@ -640,10 +686,11 @@ function render() {
   const rs = restartChart(all), list = $("restartList"); list.replaceChildren();
   if (rs.cur) { const li = el("li", "cur"); li.append(el("b", "", "Current chain"), document.createTextNode(` since ${fmtDay(rs.cur.from)}, ${fmtTime(rs.cur.from)}: ${fmtN(rs.cur.tip)} blocks, running ${fmtDur(now - rs.cur.from)}.`)); list.append(li); }
   [...rs.recorded].reverse().forEach(r => { const li = el("li", "rec"); li.append(el("b", "", `Restart ${fmtDay(r.at)}, ${fmtTime(r.at)}`), document.createTextNode(r.old.tip != null ? `: the chain before had reached #${fmtN(r.old.tip)}${r.old.block1_ts ? ` after ${fmtDur((r.old.tip_ts || r.at) - r.old.block1_ts)}` : ""}.` : ".")); list.append(li); });
-  [...rs.known].reverse().forEach(k => { const li = el("li"); li.append(el("b", "", `${fmtDay(k.at)}, ${k.approx}`), document.createTextNode(`: ${k.label}. `), el("em", "", "From our notes, before the relay kept a log.")); list.append(li); });
+  [...rs.known].reverse().forEach(k => { const li = el("li", k.exact ? "rec" : ""); li.append(el("b", "", `${fmtDay(k.at)}, ${k.exact ? fmtTime(k.at) : k.approx}`), document.createTextNode(`: ${k.label}. `), el("em", "", k.exact ? "Started the current chain; time from its block 1." : "From our notes, before the relay kept a log.")); list.append(li); });
   const nRestarts = rs.recorded.length + rs.known.length;
   $("hRestarts").replaceChildren(document.createTextNode(nRestarts ? `${nRestarts} restart${nRestarts === 1 ? "" : "s"} known. ` : "No restart seen. "),
     el("span", "", D.trackingSince && D.mode !== "window" ? `Our relay records every restart since ${fmtDay(D.trackingSince)}, ${fmtTime(D.trackingSince)}.` : ""));
+  $("hRestarts").dataset.tip = $("hRestarts").textContent;  // the one-screen layout hides the second sentence
 
   // types
   const types = {}; rows.forEach(r => Object.entries(r.types).forEach(([k, v]) => types[k] = (types[k] || 0) + v));
@@ -662,7 +709,7 @@ function render() {
   if (D.mode === "window") { $("hDropped").textContent = "Counted by the relay once it keeps the history."; $("droppedWrap").replaceChildren(); }
   else {
     $("hDropped").replaceChildren(document.createTextNode(dr.length ? `${fmtN(dr.length)} dropped in this range. ` : "None dropped in this range. "), el("span", "", since ? `Watching since ${fmtDay(since)}, ${fmtTime(since)}.` : ""));
-    if (dr.length) table($("droppedWrap"), [["Left mempool"], ["Type"], ["Sender"], ["Transaction"]], [...dr].reverse().map(x => [fmtWhen(x.left), (TYPE_NAMES[x.type] || [x.type || "not reported"])[0], short(x.sender), short(x.tx_hash)]));
+    if (dr.length) table($("droppedWrap"), [["Left"], ["Type"], ["Sender"], ["Transaction"]], [...dr].reverse().map(x => [fmtWhen(x.left), (TYPE_NAMES[x.type] || [x.type || "not reported"])[0], short(x.sender), short(x.tx_hash)]));
     else $("droppedWrap").replaceChildren();
   }
 
@@ -687,22 +734,30 @@ function render() {
   );
 }
 
-/* ------------------------------ wide screens ------------------------------ */
-// From 1700 px the page scales up so text and charts stay readable from a desk
-// distance, capped by the height so a 21:9 monitor does not blow it past the fold.
-let ZOOM = 1;
+/* ------------------------------ one screen ------------------------------ */
+// Landscape screens from laptop size up get the whole page without scrolling:
+// it is laid out for at least 1600 x 820 CSS px and scaled up to fill the
+// viewport (whichever of width or height runs out first), like the HUD.
+let ZOOM = 1, FIT = false;
 function fit() {
   const w = innerWidth, h = innerHeight;
-  ZOOM = w >= 1700 ? Math.max(1, Math.min(2, w / 1600, h / 740)) : 1;
-  document.documentElement.classList.toggle("wide", ZOOM > 1);
-  document.documentElement.style.setProperty("--z", ZOOM);
+  FIT = w >= 1200 && h >= 780 && w / h >= 1.3;  // smaller screens keep the scrolling layout
+  ZOOM = FIT ? Math.max(1, Math.min(2, w / 1600, h / 820)) : 1;
+  const root = document.documentElement;
+  root.classList.toggle("fit", FIT);
+  root.style.setProperty("--z", ZOOM);
+  root.style.setProperty("--fitH", Math.floor(h / ZOOM) + "px");
 }
 fit();
 addEventListener("resize", fit);
 
 /* ------------------------------ wiring ------------------------------ */
 document.querySelectorAll("[data-range]").forEach(b => b.addEventListener("click", () => { RANGE = Number(b.dataset.range); render(); }));
-document.querySelectorAll("[data-table]").forEach(b => b.addEventListener("click", () => { const t = $(b.dataset.table), on = t.hidden; t.hidden = !on; b.setAttribute("aria-pressed", String(on)); }));
+document.querySelectorAll("[data-table]").forEach(b => b.addEventListener("click", () => {
+  const t = $(b.dataset.table), on = t.hidden; t.hidden = !on; b.setAttribute("aria-pressed", String(on));
+  b.closest(".panel").classList.toggle("tbl-on", on);  // one screen: the table takes the chart's place
+  if (!on) render();
+}));
 let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(render, 120); }).observe(document.querySelector(".wrap"));
 load();
 if (!SAMPLE) setInterval(load, 30000);  // also upgrades from the 50-block window once /stats answers
