@@ -115,6 +115,25 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Question bot (alerts/bot.py): the same Telegram bot answers people who
+  # write to it (/height, /proposals, /tx, /address, /block, /status) with data
+  # from the relay and proposals.json. Long polling, so no inbound port; it
+  # never posts into the alerts channel. Off without TELEGRAM_BOT_TOKEN.
+  bot:
+    build: ./alerts
+    command: ["python", "bot.py"]
+    environment:
+      RELAY_URL: ws://relay:8080
+      RELAY_HTTP: http://relay:8080
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+    volumes:
+      - alerts_public:/public:ro   # proposals.json, written by alerts
+    depends_on: [relay, alerts]
+    mem_limit: 128m
+    restart: unless-stopped
+    logging: *logging
+
   # Share previews (share/share.py): the pictures X, Telegram and WhatsApp show
   # under a link (/og/…png) and small link pages that carry them (/s/…). Reads
   # the chain from the relay like any visitor and proposals.json from alerts.
