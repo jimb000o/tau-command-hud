@@ -24,14 +24,19 @@
 html, body { margin: 0; height: 100%; }
 body { background: var(--bg); color: var(--text); font: 12px/1.45 var(--mono); padding: 8px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
 a { color: inherit; }
-.tiles { flex: 1 1 auto; min-height: 0; display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-.tile { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; min-width: 0; display: flex; flex-direction: column; justify-content: center; text-decoration: none; color: inherit; }
+/* Each box reads top to bottom: what it is (small label), the number (the one big thing),
+   what the number means (unit, dim), then one line of context. Numbers use tabular figures
+   so they do not jitter as they change, and grow with the iframe. Green marks only good news. */
+.tiles { flex: 1 1 auto; min-height: 0; display: grid; align-content: center; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.tile { container-type: inline-size; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; text-decoration: none; color: inherit; }
 .tile:hover { border-color: var(--dim); }
-.tile h2 { margin: 0; display: flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
-.v { font: 600 26px/1.15 var(--display); color: var(--strong); font-variant-numeric: tabular-nums; margin-top: 3px; white-space: nowrap; }
-.v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
-.s { color: var(--dim); margin-top: 1px; font-size: 11px; white-space: nowrap; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--off); flex: none; }
+.tile h2 { margin: 0; font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.v { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; color: var(--strong); }
+.n { font: 600 clamp(20px, min(22cqi, 24vh), 44px)/1.05 var(--display); font-variant-numeric: tabular-nums lining-nums; letter-spacing: -.01em; }
+.u { font: 500 12px var(--display); color: var(--dim); }
+.v.good .u { color: var(--strong); }
+.s { color: var(--dim); font-size: 11px; white-space: nowrap; }
+.dot { align-self: center; width: 9px; height: 9px; border-radius: 50%; background: var(--off); flex: none; }
 .dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .dot.on.beat { animation: beat 1.2s ease-out; }
 @keyframes beat { 0% { box-shadow: 0 0 0 0 var(--ok); } 100% { box-shadow: 0 0 0 9px transparent; } }
@@ -45,11 +50,11 @@ a { color: inherit; }
 /* the boxes do not fit the iframe (very low, or narrow so they wrap): one line per box,
    then without the footer. Set by fit() below, and right away for very low strips. */
 :root.tight body { padding: 4px 8px; }
-:root.tight .tile { padding: 4px 10px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; }
-:root.tight .v { font-size: 18px; margin: 0; } :root.tight .s, :root.tight .v small, :root.tight .full { display: none; }
+:root.tight .tile { padding: 4px 12px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; }
+:root.tight .n { font-size: 18px; } :root.tight .s, :root.tight .u, :root.tight .full { display: none; }
 .short { display: none; } :root.tight .short { display: inline; }
 :root.bare .foot { display: none; }
-@media (max-height: 90px) { .s, .foot { display: none; } .tile { padding: 4px 10px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; } .v { font-size: 18px; margin: 0; } body { padding: 4px; } }
+@media (max-height: 90px) { .s, .u, .full, .foot { display: none; } .short { display: inline; } .tile { padding: 4px 12px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; } .n { font-size: 18px; } body { padding: 4px; } }
 </style>
 </head>
 <body>
@@ -75,9 +80,9 @@ const els = {};
 for (const p of panels) {
   const a = document.createElement("a");
   a.className = "tile"; a.href = "https://tauhud.com/" + LINK[p]; a.target = "_blank"; a.rel = "noopener";
-  a.innerHTML = `<h2><i class="dot"></i><span class="full">${TITLE[p]}</span><span class="short">${TITLE[p]}</span></h2><div class="v">–</div><div class="s">&nbsp;</div>`;
+  a.innerHTML = `<h2><span class="full">${TITLE[p]}</span><span class="short">${TITLE[p]}</span></h2><div class="v">${p === "status" ? '<i class="dot"></i>' : ""}<span class="n">–</span><span class="u"></span></div><div class="s">&nbsp;</div>`;
   tiles.append(a);
-  els[p] = { a, short: a.querySelector(".short"), dot: a.querySelector(".dot"), v: a.querySelector(".v"), s: a.querySelector(".s") };
+  els[p] = { a, short: a.querySelector(".short"), dot: a.querySelector(".dot"), v: a.querySelector(".v"), n: a.querySelector(".n"), u: a.querySelector(".u"), s: a.querySelector(".s") };
 }
 
 function ago(sec) {
@@ -87,7 +92,7 @@ function ago(sec) {
   if (sec < 86400) return `${Math.round(sec / 3600)} h ago`;
   return `${Math.round(sec / 86400)} d ago`;
 }
-const num = n => n == null ? "–" : Number(n).toLocaleString("en-US");
+const num = n => n == null ? "–" : Number(n).toLocaleString("en-US"); // 1,234: grouped, no "#" (the label already says Block)
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 function render() {
@@ -95,44 +100,41 @@ function render() {
   const age = d && d.last_block_ts ? Date.now() / 1000 - d.last_block_ts : null;
   for (const p of panels) {
     const e = els[p];
-    let v = "–", s = failed ? "no answer yet" : "loading…", on = false, tip = "";
+    let n = "–", u = "", s = failed ? "no answer yet" : "loading…", good = false, tip = "";
     if (d) {
       if (p === "status") {
-        on = live;
-        v = { synced: "Live", catching_up: "Catching up", offline: "Offline" }[d.status] || "–";
-        s = d.status === "offline" ? "node not answering" : d.pace_seconds ? `block every ~${Math.round(d.pace_seconds)} s` : "in sync";
+        n = { synced: "Live", catching_up: "Syncing", offline: "Offline" }[d.status] || "–";
+        s = d.status === "offline" ? "node not answering" : d.status === "catching_up" ? "behind the network tip" : d.pace_seconds ? `block every ~${Math.round(d.pace_seconds)} s` : "at the network tip";
         tip = "Live: our node follows the Tau Testnet Alpha and is at the network tip.";
       } else if (p === "height") {
-        on = live;
-        v = d.height == null ? "–" : "#" + num(d.height);
+        n = num(d.height);
         s = age != null ? `sealed ${ago(age)}` : "no block yet";
         tip = "Newest block our node has verified.";
       } else if (p === "proposals") {
         const pr = d.proposals;
         if (pr) {
           const coming = pr.waiting + pr.agreed;
-          on = coming > 0;
+          good = coming > 0;
           e.short.textContent = coming ? "Coming up" : "In force";
-          v = coming ? `${coming}<small>coming up</small>` : `${pr.in_force}<small>in force</small>`;
+          n = String(coming || pr.in_force); u = coming ? "coming up" : "in force";
           s = coming ? `${pr.in_force} in force` : pr.total ? `${plural(pr.total, "proposal")} so far` : "no proposals yet";
           tip = `${pr.waiting} waiting for votes · ${pr.agreed} agreed, takes effect soon · ${pr.in_force} in force · ${pr.dropped} dropped`;
         }
         tip = tip || "Rule changes: proposed by anyone, agreed by validators, then in force for everyone.";
       } else if (p === "validators") {
-        on = !!d.validators;
-        v = d.validators == null ? "–" : String(d.validators);
-        s = d.validators == null ? "" : "active right now";
+        n = num(d.validators); u = d.validators == null ? "" : "active";
+        s = d.validators == null ? "" : "agree on changes";
         tip = "Active validators: their votes turn a proposal into law.";
       } else if (p === "health") {
         const h = d.health && typeof d.health === "object" ? d.health : null;
-        on = !!(h && (h.state ? h.state === "healthy" : h.score >= 80));
-        v = h && h.score != null ? `${h.score}<small>/ 100</small>` : "–";
+        n = h && h.score != null ? String(h.score) : "–"; u = h && h.score != null ? "/ 100" : "";
         s = h ? (h.label || "testnet health") : "not rated yet";
         tip = "One number for: is the testnet running well right now?";
       }
     }
-    e.v.innerHTML = v; e.s.textContent = s; e.a.title = tip;
-    e.dot.classList.toggle("on", on);
+    e.n.textContent = n; e.u.textContent = u; e.s.textContent = s; e.a.title = tip;
+    e.v.classList.toggle("good", good);
+    if (e.dot) e.dot.classList.toggle("on", !!live);
   }
   fit();
 }
@@ -163,7 +165,7 @@ async function poll() {
     }
     failed = false;
     if (lastHeight != null && data.height > lastHeight)
-      for (const p of panels) { const dot = els[p].dot; dot.classList.remove("beat"); void dot.offsetWidth; dot.classList.add("beat"); }
+      for (const p of panels) { const dot = els[p].dot; if (!dot) continue; dot.classList.remove("beat"); void dot.offsetWidth; dot.classList.add("beat"); }
     lastHeight = data.height;
   } catch (e) { failed = true; data = null; }
   render();

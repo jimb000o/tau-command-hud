@@ -57,15 +57,29 @@ pre { margin: 0; background: #050506; border: 1px solid var(--line); border-radi
 button.copy { flex: none; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; cursor: pointer; min-width: 64px; }
 button.copy:hover { color: #000; background: #fff; border-color: #fff; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
-.opts { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 6px 0 8px; }
+.opts { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 6px 0 4px; }
+.phead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.phead h2 { margin: 0; }
 .opts label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
 .opts input { accent-color: #fff; margin: 0; }
 .seg { display: inline-flex; border: 1px solid var(--hair); border-radius: 999px; overflow: hidden; }
 .seg button { font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 0; padding: 6px 12px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: #fff; color: #000; }
+.fmt { margin-top: 8px; }
+.fmt .frame { padding: 8px; }
+.side-by-side { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; }
+.side-by-side .copyrow { margin-top: 0; }
+@media (max-width: 700px) { .side-by-side { grid-template-columns: minmax(0, 1fr); } }
+.fmt h3 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; }
+.fmt .k { font: 600 11px var(--mono); color: #000; background: #fff; border-radius: 50%; width: 18px; height: 18px; display: inline-grid; place-items: center; letter-spacing: 0; }
+.fmt .hint { font: 400 11.5px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
 .frame { border: 1px dashed var(--hair); border-radius: 8px; padding: 10px; background-image: linear-gradient(45deg, rgba(255,255,255,.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.03) 75%); background-size: 16px 16px; }
 .frame.light { background: #e9e9ec; }
 .frame iframe { display: block; border: 0; width: 100%; max-width: 100%; }
+.readme { background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin: 0 0 14px; }
+.readme .hint { display: block; color: var(--dim); font-size: 11px; margin-bottom: 6px; }
+#badgeRow { display: flex; flex-wrap: wrap; gap: 6px; }
+#badgeRow img { height: 20px; display: block; }
 .badges { display: grid; gap: 10px; }
 .badge { border-top: 1px solid var(--line); padding-top: 10px; }
 .badge:first-child { border-top: 0; padding-top: 0; }
@@ -82,7 +96,8 @@ td a { color: #fff; text-decoration: none; border-bottom: 1px dotted var(--hair)
 .live { color: var(--dim); display: flex; align-items: center; gap: 7px; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
 .dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
-#json { max-height: 260px; overflow: auto; white-space: pre; word-break: normal; }
+.jk { color: var(--dim); } .jn { color: #fff; font-weight: 600; }
+#json { color: #c9c9cf; max-height: 260px; overflow: auto; white-space: pre; word-break: normal; }
 .rules { margin: 6px 0 0; padding-left: 18px; color: var(--text); }
 .rules li { margin: 2px 0; }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
@@ -95,7 +110,7 @@ footer a { color: var(--dim); }
 @media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
   body { height: 100vh; overflow: hidden; padding-bottom: 10px; }
   .wrap { height: 100%; }
-  .wrap > .main { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1.25fr); }
+  .wrap > .main { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, 1.3fr) minmax(0, .85fr) minmax(0, 1.15fr); }
   .panel { overflow: auto; min-height: 0; }
   #json { max-height: none; }
 }
@@ -125,8 +140,12 @@ footer a { color: var(--dim); }
   </div>
   <main class="main">
     <section class="panel" aria-labelledby="hWidget">
-      <h2 id="hWidget">Widget</h2>
-      <p class="step">Live numbers in a small box. Pick what it shows and how it looks, then paste the code into your page.</p>
+      <div class="phead"><h2 id="hWidget">Widget</h2>
+        <div class="seg" id="theme" role="group" aria-label="Background">
+          <button type="button" data-v="dark" aria-pressed="true">Dark</button><button type="button" data-v="light" aria-pressed="false">Light</button><button type="button" data-v="transparent" aria-pressed="false">Clear</button>
+        </div>
+      </div>
+      <p class="step">Live numbers for your page in three sizes. Each box links to its page on tauhud.com; the numbers grow with the space you give them.</p>
       <div class="opts" id="panels" role="group" aria-label="What the widget shows">
         <label><input type="checkbox" value="status" checked> Status</label>
         <label><input type="checkbox" value="height" checked> Block</label>
@@ -134,19 +153,29 @@ footer a { color: var(--dim); }
         <label><input type="checkbox" value="validators" checked> Validators</label>
         <label><input type="checkbox" value="health"> Health</label>
       </div>
-      <div class="opts">
-        <div class="seg" id="theme" role="group" aria-label="Background">
-          <button type="button" data-v="dark" aria-pressed="true">Dark</button><button type="button" data-v="light" aria-pressed="false">Light</button><button type="button" data-v="transparent" aria-pressed="false">Clear</button>
+      <div class="fmt">
+        <h3><span class="k">1</span>Card <span class="hint">all boxes, for a sidebar or a page</span></h3>
+        <div class="frame" data-f="card"><iframe title="Tau HUD widget preview: card" loading="lazy"></iframe></div>
+        <div class="copyrow"><pre id="snip-card"></pre><button class="copy" type="button" data-copy="snip-card">Copy</button></div>
+      </div>
+      <div class="fmt">
+        <h3><span class="k">2</span>One number <span class="hint">the first box you picked</span></h3>
+        <div class="side-by-side">
+          <div class="frame" data-f="one"><iframe title="Tau HUD widget preview: one number" loading="lazy"></iframe></div>
+          <div class="copyrow"><pre id="snip-one"></pre><button class="copy" type="button" data-copy="snip-one">Copy</button></div>
         </div>
       </div>
-      <div class="frame" id="frame"><iframe id="preview" title="Tau HUD widget preview" loading="lazy"></iframe></div>
-      <div class="copyrow"><pre id="snipFrame"></pre><button class="copy" type="button" data-copy="snipFrame">Copy</button></div>
-      <p class="note">Each box links to its page on tauhud.com. In a tight space the boxes switch to one line each; give the iframe more room to see the details. <code>&amp;footer=0</code> hides the Tau HUD line.</p>
+      <div class="fmt">
+        <h3><span class="k">3</span>Strip <span class="hint">one line, no footer, for a header or a forum post</span></h3>
+        <div class="frame" data-f="strip"><iframe title="Tau HUD widget preview: strip" loading="lazy"></iframe></div>
+        <div class="copyrow"><pre id="snip-strip"></pre><button class="copy" type="button" data-copy="snip-strip">Copy</button></div>
+      </div>
     </section>
 
     <section class="panel" aria-labelledby="hBadges">
       <h2 id="hBadges">Badges</h2>
       <p class="step">Small images that stay current (refreshed every minute). Green means good news: the node is live, a rule change is coming up.</p>
+      <div class="readme" aria-label="How the badges look side by side in a README"><span class="hint">In a README, side by side</span><div id="badgeRow"></div></div>
       <div class="badges" id="badges"></div>
       <p class="note">Running your own node? It gets its own badge on <a href="/nodes/">Nodes</a>.</p>
     </section>
@@ -187,27 +216,39 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 
 /* ---------- widget builder ---------- */
 let theme = "dark";
-function widgetUrl() {
-  const panels = [...$("panels").querySelectorAll("input:checked")].map(i => i.value);
+// three ready-made sizes of the same widget; the code is what people paste, the preview the same page from here
+const FORMATS = {
+  card:  { w: "100%", h: 150, max: 720, extra: {} },
+  one:   { w: "240", h: 130, max: 240, one: true, extra: {} },
+  strip: { w: "100%", h: 56, max: 720, extra: { footer: "0" } },
+};
+function widgetUrl(f) {
+  const picked = [...$("panels").querySelectorAll("input:checked")].map(i => i.value);
+  const panels = f.one ? [picked[0] || "status"] : picked;
   const q = new URLSearchParams();
   if (panels.length && panels.join(",") !== "status,height,proposals,validators") q.set("panel", panels.join(","));
   if (theme !== "dark") q.set("theme", theme);
+  for (const [k, v] of Object.entries(f.extra)) q.set(k, v);
   const s = q.toString().replace(/%2C/g, ",");
   return { url: `${SITE}/embed/${s ? "?" + s : ""}`, n: panels.length || 4 };
 }
 function updateWidget() {
-  const { url, n } = widgetUrl();
-  const w = n === 1 ? "260" : "100%", h = 130;
-  $("snipFrame").textContent = `<iframe src="${url}" width="${w}" height="${h}" style="border:0;max-width:${n === 1 ? "100%" : "720px"}" title="Tau testnet live" loading="lazy"></iframe>`;
-  const ifr = $("preview");
-  // the preview shows every box with its details: as many rows as the boxes wrap into here
-  const fw = Math.min($("frame").clientWidth - 22, 720), per = Math.max(1, Math.floor((fw - 10) / 156));
-  ifr.style.height = (n === 1 ? h : Math.max(h, Math.ceil(n / per) * 88 + 44)) + "px";
-  ifr.style.width = n === 1 ? "260px" : "100%";
-  ifr.style.maxWidth = n === 1 ? "100%" : "720px";
-  // the preview runs from this site so it works before the change is deployed elsewhere
-  ifr.src = url.replace(SITE, "") + (location.search.includes("sample") ? (url.includes("?") ? "&" : "?") + "sample" : "");
-  $("frame").classList.toggle("light", theme === "light");
+  for (const [k, f] of Object.entries(FORMATS)) {
+    const { url, n } = widgetUrl(f);
+    $("snip-" + k).textContent = `<iframe src="${url}" width="${f.w}" height="${f.h}" style="border:0;max-width:${f.one ? "100%" : f.max + "px"}" title="Tau testnet live" loading="lazy"></iframe>`;
+    const frame = document.querySelector(`.frame[data-f="${k}"]`), ifr = frame.querySelector("iframe");
+    let h = f.h;
+    // the preview shows every box: as many rows as the boxes wrap into at this width
+    const fw = Math.min(frame.clientWidth - 18, f.max), rows = Math.ceil(n / Math.max(1, Math.floor((fw - 10) / 146)));
+    if (k === "card") h = Math.max(f.h, rows * 96 + 50);
+    if (k === "strip") h = Math.max(f.h, rows * 44 + 12);
+    ifr.style.height = h + "px";
+    ifr.style.width = f.w.endsWith("%") ? f.w : f.w + "px";
+    ifr.style.maxWidth = f.one ? "100%" : f.max + "px";
+    // the preview runs from this site so it works before the change is deployed elsewhere
+    ifr.src = url.replace(SITE, "") + (location.search.includes("sample") ? (url.includes("?") ? "&" : "?") + "sample" : "");
+    frame.classList.toggle("light", theme === "light");
+  }
 }
 $("panels").addEventListener("change", updateWidget);
 $("theme").addEventListener("click", e => {
@@ -236,6 +277,7 @@ for (const [k, what, page] of BADGES) {
     <button class="copy" type="button" data-text="${esc(md)}">Markdown</button><button class="copy" type="button" data-text="${esc(html)}">HTML</button></div></div>
     <div class="what">${esc(what)}</div>`;
   $("badges").append(row);
+  const mini = document.createElement("img"); mini.src = img; mini.alt = `Tau ${k} badge`; mini.loading = "lazy"; $("badgeRow").append(mini);
 }
 
 /* ---------- endpoint list ---------- */
@@ -262,7 +304,10 @@ async function loadJson() {
     const r = await fetch(`${API}/api/v1/summary`, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
     const d = await r.json();
-    $("json").textContent = JSON.stringify(d, null, 2);
+    // keys recede, values stand out: the eye goes to the numbers
+    $("json").innerHTML = esc(JSON.stringify(d, null, 2))
+      .replace(/^(\s*)(&quot;|")([^"&]+)(&quot;|")(:)/gm, '$1<span class="jk">"$3"</span>$5')
+      .replace(/: (-?\d[\d.]*|true|false|null)(,?)$/gm, ': <span class="jn">$1</span>$2');
     $("jsonDot").classList.toggle("on", d.status === "synced");
     $("jsonHead").textContent = `Live answer of /api/v1/summary · ${new Date().toLocaleTimeString()}`;
   } catch (e) {
@@ -281,7 +326,7 @@ document.addEventListener("click", async e => {
   setTimeout(() => { b.textContent = label; }, 1600);
 });
 
-updateWidget();
+requestAnimationFrame(updateWidget);
 addEventListener("resize", () => { clearTimeout(updateWidget.t); updateWidget.t = setTimeout(updateWidget, 200); });
 loadJson();
 setInterval(loadJson, 20000);
