@@ -763,7 +763,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
-          <li><b>v15.6 · 27 Oct 2026</b>Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both count down second by second to the next expected block, reset with every new block, and the line under Block pace says when a block runs late. On 16:9 wide screens the left column (block check, rule changes) is wider and taller at the top. While the node is still catching up with the chain (or the chain is idle), the countdown pauses and the line under Block pace says how old the newest block is; if the relay reports that the node has verified the state only up to an older block, the mode chip turns amber: “Live · Verified to #n of tip”. The Tau row follows the real proposal: “waits for n votes” while a proposal collects agreement (time cannot help there), a countdown to the activation height once it is agreed.</li>
+          <li><b>v15.6 · 27 Oct 2026</b>Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both count down second by second to the next expected block, reset with every new block, and the line under Block pace says when a block runs late. On 16:9 wide screens the left column (block check, rule changes) is wider and taller at the top. While the node is still catching up with the chain (or the chain is idle), the countdown pauses and the line under Block pace says how old the newest block is; if the relay reports that the node has verified the state only up to an older block, the mode chip turns amber: “Live · Verified to #n of tip”. The Tau row follows the real proposal: “waits for n votes” while a proposal collects agreement (time cannot help there), a countdown to the activation height once it is agreed. Live wording no longer assumes that only validators vote: the threshold comes from the validator count, who may vote is a network setting.</li>
           <li><b>v15.5 · 27 Oct 2026</b>Wide screens, third pass: the blockchain panel gets double width and double height and its block detail flows into four columns instead of a scroll box; the block check shows every rule row; the scale is set so each panel keeps at least its desktop room. No label is cut off any more: the rule-change strip, check rows and transaction lines wrap whole words instead of ending in “…”. In the simple view the block detail shows short hashes, the technical view shows them in full.</li>
           <li><b>v15.4 · 27 Oct 2026</b>Wide screens, second pass: the chain core now spans both rows in the centre and is the largest thing on the screen, the validators column gets the full height, and the scale is set from a 2400 px design width instead of 1800, so panels keep their proportions.</li>
           <li><b>v15.3 · 27 Oct 2026</b>Wide screens: from 2200 px the whole HUD scales to fill the screen (up to 1.7×) instead of stretching its columns, so line lengths, the layout and the one-screen rule stay as designed while type, numbers and the chain core grow. The validators column now shrinks with the screen instead of adding a scrollbar at 1080 px height.</li>
@@ -881,7 +881,7 @@ function updateTiming(pace, left) {
   if (open && open.status === "voting") {
     const thr = S.validators.length ? threshold() : null, need = thr != null ? Math.max(0, thr - open.votes.size) : null;
     return set(need != null ? `waits for ${need}\u00a0vote${need === 1 ? "" : "s"}` : "waits for votes",
-      `Not a matter of time: the open proposal needs ${need != null ? need + " more" : "more"} validator vote${need === 1 ? "" : "s"} (consensus_rule_vote) before it is scheduled. Proposing does not count as a vote.\nOnly then does the activation height (#${open.activateAt}) start to matter.` + (PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2 ? `\nVote count as of the node’s verified state, block #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.` : ""));
+      `Not a matter of time: the open proposal needs ${need != null ? need + " more" : "more"} vote${need === 1 ? "" : "s"} (consensus_rule_vote) before it is scheduled. Proposing does not count as a vote.${votersNote()}\nOnly then does the activation height (#${open.activateAt}) start to matter.` + (PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2 ? `\nVote count as of the node’s verified state, block #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.` : ""));
   }
   if (open && open.status === "scheduled" && Number.isFinite(Number(open.activateAt)) && pace != null) {
     const b = Math.max(0, Number(open.activateAt) - S.height), secs = Math.max(0, b === 0 ? 0 : (left != null ? left : pace) + (b - 1) * pace), k = S.blockTimes.length;
@@ -929,6 +929,10 @@ const S = {
   offers: [],           // rule sharing: {id,from,to,policy,status,expire}
   clauses: new Map(),   // acceptor -> policy  (the per-user o5 specification)
 };
+/* who may vote: the simulation lets validators vote; on the live network it is a node setting (open_governance_admission), reported by the relay when known */
+const agreeNeed = (thr, N) => S.mode === "live" ? `${thr} vote${thr === 1 ? "" : "s"} (threshold from ${N} validator${N === 1 ? "" : "s"})` : `${thr} of ${N} validators`;
+const agreeHave = (v, thr) => S.mode === "live" ? `${v} of ${thr} needed votes` : `${v} of ${thr} validators`;
+const votersNote = () => S.mode !== "live" ? "" : S.openVoting === true ? " On this network any account may vote (open governance admission); the threshold comes from the validator count." : S.openVoting === false ? " Only active validators may vote on this network." : " Who may vote is a network setting: validators only, or every account.";
 const threshold = () => { const N = Math.max(1, S.validators.length); return S.quorum === "majority" ? Math.floor(N / 2) + 1 : Math.ceil(2 * N / 3); };
 
 /* ---------- user policy templates (o5), as documented in WALLET_USAGE.md ---------- */
@@ -1041,6 +1045,7 @@ async function pollOnline() {
     const n = Number(j.clients ?? j.online ?? j.presence);
     setOnline(Number.isFinite(n) ? n : null);
     PRESENCE.liveDefault = j.live_default === true;
+    if (typeof j.open_governance_admission === "boolean") S.openVoting = j.open_governance_admission;
     PRESENCE.tip = Number(j.tip_height ?? j.network_height) || null; PRESENCE.canon = Number.isFinite(Number(j.canonical_height)) ? Number(j.canonical_height) : null;
     PRESENCE.synced = j.live_default === true || (j.live_default === undefined && j.canonical_height === undefined) ? true : Number(j.canonical_height) > 0;
     setRelay(!!j.upstream_connected && Number(j.height) > 0);
@@ -1125,14 +1130,14 @@ function explainTx(t) {
     case "rule_offer_accept": return `${t.offer ? policyMeaning(t.offer.policy) : ""} Now binds the recipient; the composite o5 rule is rebuilt.\n${st}`;
     case "rule_offer_reject": return `Declined after the conflict report. Nothing changes.\n${st}`;
     case "consensus_rule_update": { const u = t.update || t.proposal || {};
-      return `${proposalMeaning(u)}\n` + (t.rejected ? "Contradicts the live spec: the staging compile failed." : t.update ? `Compiled in isolation ✓. ${t.update.votes.size}/${thr} validators agree; active at #${t.update.activateAt} if agreed.` : `Needs ${thr} of ${N} validators.`); }
+      return `${proposalMeaning(u)}\n` + (t.rejected ? "Contradicts the live spec: the staging compile failed." : t.update ? `Compiled in isolation ✓. ${agreeHave(t.update.votes.size, thr)}; active at #${t.update.activateAt} if agreed.` : `Needs ${agreeNeed(thr, N)}.`); }
     case "consensus_rule_vote": return t.update ? `${t.update.votes.size}/${thr} needed votes; active at #${t.update.activateAt} once agreed.\n${st}` : st;
     default: return st;
   }
 }
 function explainUpdate(u) {
   const N = S.validators.length, thr = N ? threshold() : "—", left = Math.max(0, u.activateAt - S.height);
-  const st = { voting: `Needs ${thr} of ${N} validators; takes effect at #${u.activateAt} (${left} blocks) if agreed by then, else expires.`,
+  const st = { voting: `Needs ${agreeNeed(thr, N)}; takes effect at #${u.activateAt} (${left} blocks) if agreed by then, else expires.${votersNote()}`,
     scheduled: `Agreed. Becomes law at #${u.activateAt} (${left} blocks); nobody upgrades anything.`,
     active: `Law since #${u.activeAt}; every block since is judged by the amended spec.`,
     expired: `Not enough agreement by #${u.activateAt}; archived without effect.` }[u.status] || u.status;
@@ -1263,7 +1268,7 @@ function renderUpdates() {
   seg.classList.toggle("complete", !!celebrate); seg.classList.toggle("failed", !!failed);
   if (failed) { $("stActive").className = "st"; $("stActiveS").textContent = "no change"; }
   if (cur) {
-    $("stAgree").dataset.full = `Agreed: validators vote with consensus_rule_vote transactions. “${cur.title}” has ${cur.votes.size} of ${thr} needed votes (${S.quorum === "majority" ? "majority" : "two thirds"} of ${S.validators.length}). The quorum rule itself is part of the chain state, so it cannot be changed quietly.`;
+    $("stAgree").dataset.full = `Agreed: ${S.mode === "live" ? "votes arrive as" : "validators vote with"} consensus_rule_vote transactions. “${cur.title}” has ${cur.votes.size} of ${thr} needed votes (${S.quorum === "majority" ? "majority" : "two thirds"} of ${S.validators.length} validators).${votersNote()} The quorum rule itself is part of the chain state, so it cannot be changed quietly.`;
     $("stActive").dataset.full = cur.status === "active" ? `Active: “${cur.title}” took effect at block #${cur.activeAt}; the spec revision is now ${S.specRev}. Every node applied the new rules automatically; nobody upgraded software, nothing forked.` : `Active: if agreed, “${cur.title}” takes effect at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Every node will apply it automatically; nobody upgrades software, nothing forks.`;
   }
 
@@ -1334,8 +1339,8 @@ function readouts() {
 const KV_TIP = {
   "Spec revision": "How many times the consensus rules have been amended by agreement. Revision 1 is the genesis spec; every agreed rule change counts it up by one.",
   "Base fee": "The fee every transaction pays, set by the consensus rules (stream o9). It changes only through an agreed rule change.",
-  "Agreement needed": "How many validators must vote for a rule change before it is scheduled. Derived from the quorum policy, which is itself part of the chain state.",
-  "To change a rule": "How many validators must vote for a rule change before it is scheduled. Derived from the quorum policy, which is itself part of the chain state.",
+  "Agreement needed": "How many votes a rule change needs before it is scheduled: derived from the validator count and the quorum policy, which is itself part of the chain state. Who may vote is a network setting: validators only, or every account.",
+  "To change a rule": "How many votes a rule change needs before it is scheduled: derived from the validator count and the quorum policy, which is itself part of the chain state. Who may vote is a network setting: validators only, or every account.",
   "Rule txs per block": "The most rule transactions (offers, acceptances, own-rule deployments) a block may carry. A budget set by the rules, not by the proposer.",
   "Accounts with own rules": "Accounts that have deployed a personal Tau rule for their own money, such as a spending limit or a time-lock. The node folds all of them into one spec.",
   "Open proposals": "Rule changes that are collecting votes or are agreed and waiting for their activation height.",
@@ -1345,7 +1350,7 @@ const KV_TIP = {
   "Proposer": "The validator that sealed this block. Only a validator eligible under the rules (stream o7) may seal.",
   "Height": "The block’s position in the chain, counted from the genesis block #0.",
   "Validators": "How many validators are active and which one is proposing the next block.",
-  "Approval threshold": "How many validator votes a rule change needs, as the node reports it from its governance state.",
+  "Approval threshold": "How many votes a rule change needs, as the node reports it from its governance state (derived from the validator count and the quorum policy).",
   "Next height": "The height of the next block the node expects to seal.",
   "Eligibility": "How the node decides who may seal the next block, as reported by the node.",
 };
@@ -1361,7 +1366,7 @@ function blockHtml(b) {
   const simple = document.body.dataset.view === "simple", H = x => x ? (simple ? `<span title="${esc(x)}">${short(x)}</span>` : esc(x)) : "—";
   return `<p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${short(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? "An agreed rule change became active in this block." : "No rule change took effect in this block."}</p>
     <div class="cols"><section class="${simple ? "" : "ident"}"><h3>Identity</h3>${kvHtml({ "Block hash": H(b.hash), "Previous block": H(b.prev), "State hash": H(b.state), Proposer: H(b.proposer) })}
-    </section><section><h3>Rules in force at this block</h3>${kvHtml({ "Spec revision": sn.specRev ?? "—", "Base fee": sn.fee != null ? sn.fee + " AGRS per tx" : "—", "Agreement needed": sn.validators ? `${sn.quorum === "majority" ? Math.floor(sn.validators.length / 2) + 1 : Math.ceil(sn.validators.length * 2 / 3)} of ${sn.validators.length} validators (${sn.quorum === "majority" ? "majority" : "two thirds"})` : "—", "Rule txs per block": sn.budget ?? "—", "Accounts with own rules": sn.rules ?? "—" })}
+    </section><section><h3>Rules in force at this block</h3>${kvHtml({ "Spec revision": sn.specRev ?? "—", "Base fee": sn.fee != null ? sn.fee + " AGRS per tx" : "—", "Agreement needed": sn.validators ? `${agreeNeed(sn.quorum === "majority" ? Math.floor(sn.validators.length / 2) + 1 : Math.ceil(sn.validators.length * 2 / 3), sn.validators.length)} · ${sn.quorum === "majority" ? "majority" : "two thirds"}` : "—", "Rule txs per block": sn.budget ?? "—", "Accounts with own rules": sn.rules ?? "—" })}
     </section><section><h3>Rule changes agreed here</h3>${sn.agreed && sn.agreed.length ? `<ul>${sn.agreed.map(a => `<li class="gov"><b>${esc(a.title)}</b> <span class="muted">agreed by ${a.votes} validators</span><br><code>${esc(a.diff)}</code></li>`).join("")}</ul>` : `<p class="small muted" style="color:var(--dim);font-size:12px">None. The rules were unchanged in this block.</p>`}
     <h3>Governance transactions (${gov.length})</h3>${gov.length ? `<ul>${gov.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <h3>Rule work (${rules.length})</h3>${rules.length ? `<ul>${rules.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
@@ -1381,7 +1386,7 @@ function renderStatePanel() {
   if (hold("statePanel", renderStatePanel)) return;
   const N = S.validators.length, thr = N ? threshold() : "—";
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
-  $("statePanel").innerHTML = kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "To change a rule": `${thr} of ${N} validators must agree`, "Rule txs per block": S.ruleBudget, "Accounts with own rules": S.clauses.size, "Open proposals": open.length })
+  $("statePanel").innerHTML = kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "To change a rule": S.mode === "live" ? `${agreeNeed(thr, N)}` : `${thr} of ${N} validators must agree`, "Rule txs per block": S.ruleBudget, "Accounts with own rules": S.clauses.size, "Open proposals": open.length })
     + `<h3>Agreed rule changes (${active.length})</h3>` + (active.length ? `<ul>${active.slice().reverse().slice(0, 6).map(u => `<li>${esc(u.title)} <span>· since #${u.activeAt}</span></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:11.5px;margin:0">None yet: the chain runs on its genesis rules.</p>`);
 }
 function showState() {
@@ -1390,7 +1395,7 @@ function showState() {
   const last = S.blocks[S.blocks.length - 1] || {};
   $("stBody").innerHTML =
     `<p class="lead">At height ${fmt(S.height)} the chain runs on spec revision ${S.specRev}: ${active.length} agreed rule change${active.length === 1 ? "" : "s"} so far, ${open.length} open, ${S.clauses.size} account${S.clauses.size === 1 ? "" : "s"} with their own money rules.</p>
-    <h3>Consensus rules in force</h3>${kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "Agreement needed": `${thr} of ${N} validators (${S.quorum === "majority" ? "majority" : "two thirds"})`, "Rule txs per block": S.ruleBudget, "State hash (latest)": esc(last.state || "—") })}
+    <h3>Consensus rules in force</h3>${kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "Agreement needed": `${agreeNeed(thr, N)} · ${S.quorum === "majority" ? "majority" : "two thirds"}`, "Rule txs per block": S.ruleBudget, "State hash (latest)": esc(last.state || "—") })}
     <pre class="rule">${$("ruleText").innerHTML}</pre>
     <h3>Validators (${N})</h3><ul>${S.validators.map((v, i) => `<li class="${i === S.proposerIdx ? "ok" : ""}"><b>${i === S.proposerIdx ? "proposing" : "active"}</b> <span class="muted">${esc(v)}</span></li>`).join("")}</ul>
     <h3>Rule changes agreed (${active.length})</h3>${active.length ? `<ul>${active.slice().reverse().map(u => `<li class="gov"><b>${esc(u.title)}</b> <span class="muted">active since #${u.activeAt} · ${u.votes.size} votes</span><br><code>${esc(u.diff)}</code></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None yet. The chain still runs on its genesis rules.</p>`}
