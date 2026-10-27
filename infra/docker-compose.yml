@@ -19,6 +19,12 @@ services:
       TAU_BOOTSTRAP_PEERS: '[{"peer_id":"12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC","addrs":["/ip4/34.251.82.246/tcp/4001"]}]'
       TAU_NETWORK_LISTEN: /ip4/0.0.0.0/tcp/4001
       TAU_MINING_ENABLED: "false"
+      # Consensus-relevant: whether governance votes from non-validators count.
+      # The public network records them (block #10 of the 2026-10-27 chain
+      # carries a vote from a non-validator key and its state hash includes it);
+      # with the default "false" our node computes a different state hash and
+      # stops verifying at that block. Must match the network, like the genesis.
+      TAU_GOVERNANCE_OPEN_ADMISSION: "true"
       TAU_LOG_LEVEL: INFO
     # node/start.sh copies the genesis in and wipes chain data from another genesis.
     command: ["/usr/local/bin/tau-node-start"]
@@ -37,6 +43,7 @@ services:
       UPSTREAM_URL: ws://tau-node:65433
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       TRUST_PROXY: "1"
+      TAU_GOVERNANCE_OPEN_ADMISSION: "true"  # keep equal to the node setting above
     depends_on: [tau-node]
     restart: unless-stopped
     logging: *logging

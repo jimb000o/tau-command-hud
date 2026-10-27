@@ -99,7 +99,7 @@ body[data-tour] .panel.spot { border-color: var(--ok); box-shadow: 0 0 0 1px rgb
 body[data-tour] .panel:not(.spot) { opacity: .45; }
 body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 #rain.off { display: none; }
-#ovl { position: fixed; z-index: 70; max-width: min(520px, 90vw); padding: 8px 11px; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
+#ovl { position: fixed; z-index: 70; max-width: min(520px, 90vw); padding: 8px 11px; white-space: pre-line; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
 #ovl[hidden] { display: none; }
 .blk { cursor: pointer; }
 .blk:hover { border-color: var(--cyan); }
@@ -386,11 +386,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .contrast { display: grid; gap: 8px; margin: 0 0 10px; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.02); flex: 0 0 auto; }
 .contrast .hd { display: flex; justify-content: space-between; gap: 10px; font: 600 10px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--text); }
 .contrast .hd span { color: var(--dim); font-weight: 400; letter-spacing: .1em; }
-.contrast .crow { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 0 10px; align-items: stretch; }
+.contrast .crow { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 0 8px; align-items: stretch; }
 .contrast .who { display: grid; align-content: center; gap: 2px; font: 600 10px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .contrast .who em { font: 10.5px var(--mono); letter-spacing: 0; text-transform: none; font-style: normal; color: var(--dim); }
 .contrast .crow.tau .who, .contrast .crow.tau .who em { color: var(--ok); }
-.contrast .track { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; min-width: 0; }
+.contrast .track { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 3px; min-width: 0; }
 .contrast .seg { display: grid; align-content: center; gap: 2px; padding: 6px 3px; text-align: center; min-width: 0; border: 1px dashed var(--hair); border-radius: 3px; background: rgba(255,255,255,.02); font: 500 11px var(--mono); color: var(--dim); }
 .contrast .seg b { font-weight: 500; color: var(--text); }
 .contrast .seg small { font: 9.5px var(--mono); color: var(--dim); }
@@ -398,8 +398,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .contrast .seg.fork b { color: var(--bad); }
 .contrast .crow:not(.tau) .track { opacity: .8; }
 .contrast .crow.tau .track { align-items: stretch; }
-.contrast .tau-seg { grid-column: 1 / 5; display: flex; gap: 5px; padding: 5px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
-.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 6px 2px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 500 10px var(--mono); letter-spacing: 0; color: var(--text); min-width: 0; }
+.contrast .tau-seg { grid-column: 1 / 4; display: flex; gap: 3px; padding: 4px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
+.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 6px 1px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 500 10px var(--mono); letter-spacing: -.02em; color: var(--text); min-width: 0; }
 .contrast .st small { font: 8.5px var(--mono); letter-spacing: -.01em; color: var(--ok); }
 .contrast .st { color: var(--dim); border-style: dashed; }
 .contrast .st small { color: var(--dim); }
@@ -415,7 +415,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .contrast .tau-seg.complete .st.done small { color: var(--ok); }
 @keyframes complete { 0% { box-shadow: 0 0 0 1px var(--ok), 0 0 0 rgba(57,255,138,0), inset 0 0 0 rgba(57,255,138,0); } 20% { box-shadow: 0 0 0 2px var(--ok), 0 0 40px rgba(57,255,138,.6), inset 0 0 30px rgba(57,255,138,.3); } }
 @keyframes working { 50% { box-shadow: 0 0 0 4px rgba(227,181,90,0), 0 0 16px rgba(227,181,90,.55); } }
-.contrast .rest { grid-column: 5 / 6; display: grid; align-content: center; padding: 6px 4px; font: 10px/1.4 var(--mono); color: var(--dim); min-width: 0; }
+.contrast .rest { grid-column: 4 / 6; display: grid; align-content: center; padding: 6px 6px; font: 10px/1.4 var(--mono); color: var(--dim); min-width: 0; }
 .contrast .rest b { color: var(--ok); font-weight: 500; }
 .contrast .cap { font: 10.5px/1.5 var(--mono); color: var(--dim); }
 .contrast .cap b { color: var(--text); font-weight: 500; }
@@ -503,11 +503,16 @@ html.wide .modal .sheet, html.wide .fb-fab, html.wide .tour { zoom: var(--z); }
 html.wide .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, .9fr) minmax(0, .9fr); grid-template-areas: "eng core feed pol val" "eng core feed off val" "upd core chain chain chain" "upd core chain chain chain"; }
 html.wide .blkdetail .cols { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 26px; }
 html.wide .blk { flex-basis: 160px; }
-html.wide.tall .grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.9fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); }
+html.wide.tall .grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.65fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, .8fr) minmax(0, .8fr); }
 html.wide .core canvas { max-height: none; }
 html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z)) calc(11px * var(--z)); max-width: calc(min(520px, 60vw) * var(--z)); }
 /* the validators column must shrink with the screen instead of overflowing it */
 .statep .scroll { min-height: 40px; flex: 1 1 auto; overflow: auto; }
+/* narrow desktop columns: the row label moves above the strip so every step keeps its whole word */
+@media (max-width: 1800px) and (min-width: 1600px) {
+  .contrast .crow { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .contrast .who { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 8px; }
+}
 @media (max-width: 1599px), (max-height: 820px) {
   html, body { height: auto; min-height: 100%; }
   .wrap { height: auto; grid-template-rows: none; }
@@ -758,7 +763,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
-          <li><b>v15.6 · 27 Oct 2026</b>Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both are recomputed with every block, and a countdown under Block pace expects the next block (or says it is overdue).</li>
+          <li><b>v15.6 · 27 Oct 2026</b>Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both count down second by second to the next expected block, reset with every new block, and the line under Block pace says when a block runs late. On 16:9 wide screens the left column (block check, rule changes) is wider and taller at the top. While the node is still catching up with the chain (or the chain is idle), the countdown pauses and the line under Block pace says how old the newest block is; if the relay reports that the node has verified the state only up to an older block, the mode chip turns amber: “Live · Verified to #n of tip”. The Tau row follows the real proposal: “waits for n votes” while a proposal collects agreement (time cannot help there), a countdown to the activation height once it is agreed. Live wording no longer assumes that only validators vote: the threshold comes from the validator count, who may vote is a network setting.</li>
           <li><b>v15.5 · 27 Oct 2026</b>Wide screens, third pass: the blockchain panel gets double width and double height and its block detail flows into four columns instead of a scroll box; the block check shows every rule row; the scale is set so each panel keeps at least its desktop room. No label is cut off any more: the rule-change strip, check rows and transaction lines wrap whole words instead of ending in “…”. In the simple view the block detail shows short hashes, the technical view shows them in full.</li>
           <li><b>v15.4 · 27 Oct 2026</b>Wide screens, second pass: the chain core now spans both rows in the centre and is the largest thing on the screen, the validators column gets the full height, and the scale is set from a 2400 px design width instead of 1800, so panels keep their proportions.</li>
           <li><b>v15.3 · 27 Oct 2026</b>Wide screens: from 2200 px the whole HUD scales to fill the screen (up to 1.7×) instead of stretching its columns, so line lengths, the layout and the one-screen rule stay as designed while type, numbers and the chain core grow. The validators column now shrinks with the screen instead of adding a scrollbar at 1080 px height.</li>
@@ -864,22 +869,55 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const fmt = n => Number(n).toLocaleString("de-DE");
 const fmtSec = s => s >= 90 ? (s / 60).toFixed(1) + " min" : s >= 10 ? Math.round(s) + " s" : s.toFixed(1) + " s";
 /* how long a rule change takes: simulated figure in the simulation, the node’s own minimum in live mode */
-function updateTiming(pace) {
+function updateTiming(pace, left) {
   const el = $("tauTiming"); if (!el) return;
-  if (S.mode !== "live") { el.textContent = "~1 min · simulated"; el.dataset.full = "Timing is simulated: 8 s blocks, activation 8 blocks after the proposal. On the testnet the rule is the same but the clock is the chain’s: activate_at_height must be at least the inclusion height plus the number of validators (README §Governance)."; return; }
+  const set = (t, tip) => { if (el.textContent !== t) el.textContent = t; if (el.dataset.full !== tip) el.dataset.full = tip; };
+  if (S.mode !== "live") return set("~1 min · simulated", "Timing is simulated: 8 s blocks, activation 8 blocks after the proposal. On the testnet the rule is the same but the clock is the chain’s: activate_at_height must be at least the inclusion height plus the number of validators (README §Governance).");
   const n = S.minActBlocks;
-  if (n == null) { el.textContent = "live · measuring"; el.dataset.full = "Waiting for the node’s governance state: it reports the earliest height at which the next rule change may activate."; return; }
-  const dur = pace != null ? fmtSec(n * pace) : null;
-  el.textContent = dur ? `≥ ${n} block${n === 1 ? "" : "s"} · ~${dur}` : `≥ ${n} block${n === 1 ? "" : "s"}`;
-  el.dataset.full = `From the live node: the next rule change may activate no earlier than ${n} blocks after it is included (min_activation_height_for_next_update).` + (dur ? ` At the measured block pace of ${fmtSec(pace)} that is about ${dur}.` : " The block pace is not measured yet.") + " The node does not report when past proposals were included, so this is the protocol minimum, not a measured average. Recomputed with every new block.";
+  if (n == null) return set("live · measuring", "Waiting for the node’s governance state: it reports the earliest height at which the next rule change may activate.");
+  const blocks = `≥\u00a0${n}\u00a0block${n === 1 ? "" : "s"}`;
+  // a real proposal on the chain: waiting for votes is not a matter of time; an agreed one counts down to its activation height
+  const open = S.updates.find(u => u.status === "scheduled") || S.updates.find(u => u.status === "voting");
+  if (open && open.status === "voting") {
+    const thr = S.validators.length ? threshold() : null, need = thr != null ? Math.max(0, thr - open.votes.size) : null;
+    return set(need != null ? `waits for ${need}\u00a0vote${need === 1 ? "" : "s"}` : "waits for votes",
+      `Not a matter of time: the open proposal needs ${need != null ? need + " more" : "more"} vote${need === 1 ? "" : "s"} (consensus_rule_vote) before it is scheduled. Proposing does not count as a vote.${votersNote()}\nOnly then does the activation height (#${open.activateAt}) start to matter.` + (PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2 ? `\nVote count as of the node’s verified state, block #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.` : ""));
+  }
+  if (open && open.status === "scheduled" && Number.isFinite(Number(open.activateAt)) && pace != null) {
+    const b = Math.max(0, Number(open.activateAt) - S.height), secs = Math.max(0, b === 0 ? 0 : (left != null ? left : pace) + (b - 1) * pace), k = S.blockTimes.length;
+    return set(`${b}\u00a0block${b === 1 ? "" : "s"} · ~${fmtCount(secs).replace(" ", "\u00a0")}`,
+      `Agreed. Becomes law at block #${open.activateAt}, ${b} block${b === 1 ? "" : "s"} from now, estimated from the average time the last ${k} block${k === 1 ? "" : "s"} took (${fmtSec(pace)}).${left == null ? " The countdown is paused while the node catches up." : " Resets with every block."}`);
+  }
+  if (pace == null) return set(blocks, `Node minimum: a rule change activates ${n} block${n === 1 ? "" : "s"} or more after it is included. Block pace not measured yet.`);
+  // seconds until the earliest activation: the rest of the current block interval plus the remaining blocks at the measured pace
+  const secs = Math.max(0, (left != null ? left : pace) + (n - 1) * pace);
+  const k = S.blockTimes.length;
+  if (left == null) return set(`${blocks} · ~${fmtCount(n * pace).replace(" ", "\u00a0")}`,
+    `Node minimum: a rule change activates ${n} block${n === 1 ? "" : "s"} or more after it is included.\n${n} × the average time the last ${k} block${k === 1 ? "" : "s"} took (${fmtSec(pace)}). The countdown is paused: the node is still catching up with the chain, or the chain is idle.\nA protocol minimum, not a measured average.`);
+  set(`${blocks} · ~${fmtCount(secs).replace(" ", "\u00a0")}`,
+    `Node minimum: a rule change activates ${n} block${n === 1 ? "" : "s"} or more after it is included.\nThe seconds count down to the next expected block${n > 1 ? ` plus ${n - 1} more` : ""}, estimated from the average time the last ${k} block${k === 1 ? "" : "s"} took (${fmtSec(pace)}). Resets with every block.\nA protocol minimum, not a measured average.`);
 }
-/* live: a once-a-second countdown to the next expected block, honest when it runs late */
-setInterval(() => {
-  if (S.mode !== "live" || !S.blockTimes.length || S.lastInterval == null || document.querySelector(".a-core:hover")) return;
-  const i = $("rTs").querySelector("i"); if (!i) return;
-  const pace = S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length, left = Math.round(pace - (performance.now() - S.lastBlockAt) / 1000);
-  i.textContent = `last block ${fmtSec(S.lastInterval)} · ` + (left >= 0 ? `next in ~${left} s` : `next overdue by ${-left} s`);
-}, 1000);
+const fmtCount = s => s >= 90 ? (s / 60).toFixed(1) + " min" : Math.round(s) + " s";
+const fmtAgo = s => s < 90 ? Math.round(s) + " s ago" : s < 5400 ? Math.round(s / 60) + " min ago" : s < 172800 ? (s / 3600).toFixed(1) + " h ago" : Math.round(s / 86400) + " d ago";
+/* the node is still replaying the chain (or the chain is idle): the countdown would measure replay speed, so it pauses */
+function catchingUp(pace) {
+  if (S.mode !== "live") return false;
+  const last = S.blocks[S.blocks.length - 1];
+  return !!(last && last.ts && pace && Date.now() / 1000 - last.ts > Math.max(3 * pace, 300));
+}
+/* live: the pace line under Block pace and the Tau countdown have one writer, so they never flicker */
+function tickPace() {
+  const live = S.mode === "live", pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null;
+  const rTs = $("rTs");
+  if (!live || pace == null || S.lastInterval == null) { if (rTs.textContent !== "Block pace") rTs.textContent = "Block pace"; return updateTiming(pace, null); }
+  const last = S.blocks[S.blocks.length - 1], paused = catchingUp(pace);
+  const left = Math.round(pace - (performance.now() - S.lastBlockAt) / 1000);
+  const txt = `last block ${fmtSec(S.lastInterval)} · ` + (paused ? `newest block ${fmtAgo(Date.now() / 1000 - last.ts)}` : left >= 0 ? `next in ~${Math.max(0, left)} s` : `next overdue by ${-left} s`);
+  let i = rTs.querySelector("i"); if (!i) { rTs.innerHTML = "Block pace<i></i>"; i = rTs.querySelector("i"); }
+  if (i.textContent !== txt) i.textContent = txt;
+  updateTiming(pace, paused ? null : Math.max(0, left));
+}
+setInterval(() => { if (S.mode === "live" && !document.querySelector(".a-core:hover")) tickPace(); }, 1000);
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ---------- shared view state ---------- */
@@ -891,6 +929,10 @@ const S = {
   offers: [],           // rule sharing: {id,from,to,policy,status,expire}
   clauses: new Map(),   // acceptor -> policy  (the per-user o5 specification)
 };
+/* who may vote: the simulation lets validators vote; on the live network it is a node setting (open_governance_admission), reported by the relay when known */
+const agreeNeed = (thr, N) => S.mode === "live" ? `${thr} vote${thr === 1 ? "" : "s"} (threshold from ${N} validator${N === 1 ? "" : "s"})` : `${thr} of ${N} validators`;
+const agreeHave = (v, thr) => S.mode === "live" ? `${v} of ${thr} needed votes` : `${v} of ${thr} validators`;
+const votersNote = () => S.mode !== "live" ? "" : S.openVoting === true ? " On this network any account may vote (open governance admission); the threshold comes from the validator count." : S.openVoting === false ? " Only active validators may vote on this network." : " Who may vote is a network setting: validators only, or every account.";
 const threshold = () => { const N = Math.max(1, S.validators.length); return S.quorum === "majority" ? Math.floor(N / 2) + 1 : Math.ceil(2 * N / 3); };
 
 /* ---------- user policy templates (o5), as documented in WALLET_USAGE.md ---------- */
@@ -1003,6 +1045,8 @@ async function pollOnline() {
     const n = Number(j.clients ?? j.online ?? j.presence);
     setOnline(Number.isFinite(n) ? n : null);
     PRESENCE.liveDefault = j.live_default === true;
+    if (typeof j.open_governance_admission === "boolean") S.openVoting = j.open_governance_admission;
+    PRESENCE.tip = Number(j.tip_height ?? j.network_height) || null; PRESENCE.canon = Number.isFinite(Number(j.canonical_height)) ? Number(j.canonical_height) : null;
     PRESENCE.synced = j.live_default === true || (j.live_default === undefined && j.canonical_height === undefined) ? true : Number(j.canonical_height) > 0;
     setRelay(!!j.upstream_connected && Number(j.height) > 0);
     if (PRESENCE.up) autoLive();
@@ -1086,14 +1130,14 @@ function explainTx(t) {
     case "rule_offer_accept": return `${t.offer ? policyMeaning(t.offer.policy) : ""} Now binds the recipient; the composite o5 rule is rebuilt.\n${st}`;
     case "rule_offer_reject": return `Declined after the conflict report. Nothing changes.\n${st}`;
     case "consensus_rule_update": { const u = t.update || t.proposal || {};
-      return `${proposalMeaning(u)}\n` + (t.rejected ? "Contradicts the live spec: the staging compile failed." : t.update ? `Compiled in isolation ✓. ${t.update.votes.size}/${thr} validators agree; active at #${t.update.activateAt} if agreed.` : `Needs ${thr} of ${N} validators.`); }
+      return `${proposalMeaning(u)}\n` + (t.rejected ? "Contradicts the live spec: the staging compile failed." : t.update ? `Compiled in isolation ✓. ${agreeHave(t.update.votes.size, thr)}; active at #${t.update.activateAt} if agreed.` : `Needs ${agreeNeed(thr, N)}.`); }
     case "consensus_rule_vote": return t.update ? `${t.update.votes.size}/${thr} needed votes; active at #${t.update.activateAt} once agreed.\n${st}` : st;
     default: return st;
   }
 }
 function explainUpdate(u) {
   const N = S.validators.length, thr = N ? threshold() : "—", left = Math.max(0, u.activateAt - S.height);
-  const st = { voting: `Needs ${thr} of ${N} validators; takes effect at #${u.activateAt} (${left} blocks) if agreed by then, else expires.`,
+  const st = { voting: `Needs ${agreeNeed(thr, N)}; takes effect at #${u.activateAt} (${left} blocks) if agreed by then, else expires.${votersNote()}`,
     scheduled: `Agreed. Becomes law at #${u.activateAt} (${left} blocks); nobody upgrades anything.`,
     active: `Law since #${u.activeAt}; every block since is judged by the amended spec.`,
     expired: `Not enough agreement by #${u.activateAt}; archived without effect.` }[u.status] || u.status;
@@ -1224,7 +1268,7 @@ function renderUpdates() {
   seg.classList.toggle("complete", !!celebrate); seg.classList.toggle("failed", !!failed);
   if (failed) { $("stActive").className = "st"; $("stActiveS").textContent = "no change"; }
   if (cur) {
-    $("stAgree").dataset.full = `Agreed: validators vote with consensus_rule_vote transactions. “${cur.title}” has ${cur.votes.size} of ${thr} needed votes (${S.quorum === "majority" ? "majority" : "two thirds"} of ${S.validators.length}). The quorum rule itself is part of the chain state, so it cannot be changed quietly.`;
+    $("stAgree").dataset.full = `Agreed: ${S.mode === "live" ? "votes arrive as" : "validators vote with"} consensus_rule_vote transactions. “${cur.title}” has ${cur.votes.size} of ${thr} needed votes (${S.quorum === "majority" ? "majority" : "two thirds"} of ${S.validators.length} validators).${votersNote()} The quorum rule itself is part of the chain state, so it cannot be changed quietly.`;
     $("stActive").dataset.full = cur.status === "active" ? `Active: “${cur.title}” took effect at block #${cur.activeAt}; the spec revision is now ${S.specRev}. Every node applied the new rules automatically; nobody upgraded software, nothing forked.` : `Active: if agreed, “${cur.title}” takes effect at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Every node will apply it automatically; nobody upgrades software, nothing forks.`;
   }
 
@@ -1281,12 +1325,10 @@ function readouts() {
   $("rM").textContent = S.mempool.length;
   const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
   $("rT").textContent = pace != null ? fmtSec(pace) : "—";
-  $("rTs").innerHTML = live && S.lastInterval != null ? `Block pace<i>last block ${fmtSec(S.lastInterval)}</i>` : "Block pace";
   $("rTw").dataset.full = pace != null
-    ? (live ? `Average of the last ${S.blockTimes.length} block interval${S.blockTimes.length === 1 ? "" : "s"}, read from the blocks’ own timestamps (stream i7). The last block took ${fmtSec(S.lastInterval)}.` : `Average of the last ${S.blockTimes.length} simulated block intervals.`)
+    ? (live ? `Average time the last ${S.blockTimes.length} block${S.blockTimes.length === 1 ? "" : "s"} took, from their own timestamps (i7). Last block: ${fmtSec(S.lastInterval)}.\nThe countdown expects the next block after one average interval; a late block shows as overdue.` : `Average of the last ${S.blockTimes.length} simulated block intervals.`)
     : (live ? "Needs two consecutive blocks with timestamps before a pace can be measured." : "Measured once the first blocks are sealed.");
-  if (live && pace != null) $("rTw").dataset.full += " The countdown below expects the next block after one average interval; when it runs late it says so.";
-  updateTiming(pace);
+  tickPace();
   $("rR").textContent = S.clauses.size;
   $("chipFee").textContent = S.fee;
   $("chipRev").textContent = S.specRev;
@@ -1297,8 +1339,8 @@ function readouts() {
 const KV_TIP = {
   "Spec revision": "How many times the consensus rules have been amended by agreement. Revision 1 is the genesis spec; every agreed rule change counts it up by one.",
   "Base fee": "The fee every transaction pays, set by the consensus rules (stream o9). It changes only through an agreed rule change.",
-  "Agreement needed": "How many validators must vote for a rule change before it is scheduled. Derived from the quorum policy, which is itself part of the chain state.",
-  "To change a rule": "How many validators must vote for a rule change before it is scheduled. Derived from the quorum policy, which is itself part of the chain state.",
+  "Agreement needed": "How many votes a rule change needs before it is scheduled: derived from the validator count and the quorum policy, which is itself part of the chain state. Who may vote is a network setting: validators only, or every account.",
+  "To change a rule": "How many votes a rule change needs before it is scheduled: derived from the validator count and the quorum policy, which is itself part of the chain state. Who may vote is a network setting: validators only, or every account.",
   "Rule txs per block": "The most rule transactions (offers, acceptances, own-rule deployments) a block may carry. A budget set by the rules, not by the proposer.",
   "Accounts with own rules": "Accounts that have deployed a personal Tau rule for their own money, such as a spending limit or a time-lock. The node folds all of them into one spec.",
   "Open proposals": "Rule changes that are collecting votes or are agreed and waiting for their activation height.",
@@ -1308,7 +1350,7 @@ const KV_TIP = {
   "Proposer": "The validator that sealed this block. Only a validator eligible under the rules (stream o7) may seal.",
   "Height": "The block’s position in the chain, counted from the genesis block #0.",
   "Validators": "How many validators are active and which one is proposing the next block.",
-  "Approval threshold": "How many validator votes a rule change needs, as the node reports it from its governance state.",
+  "Approval threshold": "How many votes a rule change needs, as the node reports it from its governance state (derived from the validator count and the quorum policy).",
   "Next height": "The height of the next block the node expects to seal.",
   "Eligibility": "How the node decides who may seal the next block, as reported by the node.",
 };
@@ -1324,7 +1366,7 @@ function blockHtml(b) {
   const simple = document.body.dataset.view === "simple", H = x => x ? (simple ? `<span title="${esc(x)}">${short(x)}</span>` : esc(x)) : "—";
   return `<p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${short(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? "An agreed rule change became active in this block." : "No rule change took effect in this block."}</p>
     <div class="cols"><section class="${simple ? "" : "ident"}"><h3>Identity</h3>${kvHtml({ "Block hash": H(b.hash), "Previous block": H(b.prev), "State hash": H(b.state), Proposer: H(b.proposer) })}
-    </section><section><h3>Rules in force at this block</h3>${kvHtml({ "Spec revision": sn.specRev ?? "—", "Base fee": sn.fee != null ? sn.fee + " AGRS per tx" : "—", "Agreement needed": sn.validators ? `${sn.quorum === "majority" ? Math.floor(sn.validators.length / 2) + 1 : Math.ceil(sn.validators.length * 2 / 3)} of ${sn.validators.length} validators (${sn.quorum === "majority" ? "majority" : "two thirds"})` : "—", "Rule txs per block": sn.budget ?? "—", "Accounts with own rules": sn.rules ?? "—" })}
+    </section><section><h3>Rules in force at this block</h3>${kvHtml({ "Spec revision": sn.specRev ?? "—", "Base fee": sn.fee != null ? sn.fee + " AGRS per tx" : "—", "Agreement needed": sn.validators ? `${agreeNeed(sn.quorum === "majority" ? Math.floor(sn.validators.length / 2) + 1 : Math.ceil(sn.validators.length * 2 / 3), sn.validators.length)} · ${sn.quorum === "majority" ? "majority" : "two thirds"}` : "—", "Rule txs per block": sn.budget ?? "—", "Accounts with own rules": sn.rules ?? "—" })}
     </section><section><h3>Rule changes agreed here</h3>${sn.agreed && sn.agreed.length ? `<ul>${sn.agreed.map(a => `<li class="gov"><b>${esc(a.title)}</b> <span class="muted">agreed by ${a.votes} validators</span><br><code>${esc(a.diff)}</code></li>`).join("")}</ul>` : `<p class="small muted" style="color:var(--dim);font-size:12px">None. The rules were unchanged in this block.</p>`}
     <h3>Governance transactions (${gov.length})</h3>${gov.length ? `<ul>${gov.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <h3>Rule work (${rules.length})</h3>${rules.length ? `<ul>${rules.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
@@ -1344,7 +1386,7 @@ function renderStatePanel() {
   if (hold("statePanel", renderStatePanel)) return;
   const N = S.validators.length, thr = N ? threshold() : "—";
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
-  $("statePanel").innerHTML = kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "To change a rule": `${thr} of ${N} validators must agree`, "Rule txs per block": S.ruleBudget, "Accounts with own rules": S.clauses.size, "Open proposals": open.length })
+  $("statePanel").innerHTML = kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "To change a rule": S.mode === "live" ? `${agreeNeed(thr, N)}` : `${thr} of ${N} validators must agree`, "Rule txs per block": S.ruleBudget, "Accounts with own rules": S.clauses.size, "Open proposals": open.length })
     + `<h3>Agreed rule changes (${active.length})</h3>` + (active.length ? `<ul>${active.slice().reverse().slice(0, 6).map(u => `<li>${esc(u.title)} <span>· since #${u.activeAt}</span></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:11.5px;margin:0">None yet: the chain runs on its genesis rules.</p>`);
 }
 function showState() {
@@ -1353,7 +1395,7 @@ function showState() {
   const last = S.blocks[S.blocks.length - 1] || {};
   $("stBody").innerHTML =
     `<p class="lead">At height ${fmt(S.height)} the chain runs on spec revision ${S.specRev}: ${active.length} agreed rule change${active.length === 1 ? "" : "s"} so far, ${open.length} open, ${S.clauses.size} account${S.clauses.size === 1 ? "" : "s"} with their own money rules.</p>
-    <h3>Consensus rules in force</h3>${kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "Agreement needed": `${thr} of ${N} validators (${S.quorum === "majority" ? "majority" : "two thirds"})`, "Rule txs per block": S.ruleBudget, "State hash (latest)": esc(last.state || "—") })}
+    <h3>Consensus rules in force</h3>${kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "Agreement needed": `${agreeNeed(thr, N)} · ${S.quorum === "majority" ? "majority" : "two thirds"}`, "Rule txs per block": S.ruleBudget, "State hash (latest)": esc(last.state || "—") })}
     <pre class="rule">${$("ruleText").innerHTML}</pre>
     <h3>Validators (${N})</h3><ul>${S.validators.map((v, i) => `<li class="${i === S.proposerIdx ? "ok" : ""}"><b>${i === S.proposerIdx ? "proposing" : "active"}</b> <span class="muted">${esc(v)}</span></li>`).join("")}</ul>
     <h3>Rule changes agreed (${active.length})</h3>${active.length ? `<ul>${active.slice().reverse().map(u => `<li class="gov"><b>${esc(u.title)}</b> <span class="muted">active since #${u.activeAt} · ${u.votes.size} votes</span><br><code>${esc(u.diff)}</code></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None yet. The chain still runs on its genesis rules.</p>`}
@@ -1615,10 +1657,11 @@ function setMode(mode, status) {
   $("btnLive").setAttribute("aria-pressed", mode === "live");
   LIVE.status = status;
   const synced = status === "Connected" && PRESENCE.synced !== false, behind = status === "Connected" && !synced;
-  $("modeDot").className = "dot " + (mode === "sim" ? "sim" : synced ? "" : behind ? "behind" : "off");
-  $("modeTxt").textContent = mode === "sim" ? "Simulation" : "Live · " + (behind ? "Not synced" : status);
-  $("chipMode").className = "chip " + (mode === "sim" ? "warn" : synced ? "live" : behind ? "behind" : "warn");
-  $("chipMode").dataset.full = mode === "sim" ? "Simulation: invented but protocol-true activity, no real chain data." : behind ? "Connected to the community node, but the node does not follow the real testnet chain yet (it holds blocks the network does not accept). Real transactions, but not the network’s tip." : synced ? "Connected to the community node, which follows the real testnet chain." : "No connection to a node.";
+  const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
+  $("modeDot").className = "dot " + (mode === "sim" ? "sim" : synced && !catching ? "" : behind || catching ? "behind" : "off");
+  $("modeTxt").textContent = mode === "sim" ? "Simulation" : "Live · " + (behind ? "Not synced" : catching ? `Verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}` : status);
+  $("chipMode").className = "chip " + (mode === "sim" ? "warn" : synced && !catching ? "live" : behind || catching ? "behind" : "warn");
+  $("chipMode").dataset.full = mode === "sim" ? "Simulation: invented but protocol-true activity, no real chain data." : catching ? `Connected and receiving every block (#${fmt(PRESENCE.tip)}), but the node has fully verified the state (balances, rules, votes) only up to block #${fmt(PRESENCE.canon)}. Governance and rule panels show that verified state until the replay catches up.` : behind ? "Connected to the community node, but the node does not follow the real testnet chain yet (it holds blocks the network does not accept). Real transactions, but not the network’s tip." : synced ? "Connected to the community node, which follows the real testnet chain." : "No connection to a node.";
   $("hint").textContent = mode === "sim"
     ? "Simulation follows the documented protocol: validators vote on rule changes, accounts write and share their own Tau rules, every block is checked by Tau. Switch to Live node to read the real testnet through the community relay, or your own node."
     : status === "Offline" ? "Not connected. The community relay may be down, or for your own node: 1) WebSocket port 65433 open, 2) TAU_WS_ALLOWED_ORIGINS includes this page’s origin, 3) address above correct, then Connect."
