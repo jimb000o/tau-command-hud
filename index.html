@@ -12,9 +12,7 @@
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD">
 <meta property="og:description" content="Where the rules change by agreement. Unofficial community view of the Tau Testnet Alpha.">
-<meta property="og:image" content="https://node.tauhud.com/og/hud.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image" content="https://tauhud.com/og.png">
 <meta property="og:url" content="https://tauhud.com/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -904,7 +902,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fbTitle">
     <button class="close" type="button" data-close aria-label="Close">✕</button>
     <section class="community">
-      <p class="tgstrip"><a href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page.</p>
+      <p class="tgstrip"><a href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page. Ask <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> for the height, proposals, your transaction or address.</p>
       <article class="panel fb" id="feedback">
         <h2 id="fbTitle">Your feedback <small>shapes the next version</small><button class="info" type="button" aria-label="What is this?" data-tip="Tell us what you would like to see. Ideas with the most agreement get built first, which is rather in the spirit of the thing.">i</button></h2>
         <form id="fbForm" novalidate>
@@ -932,6 +930,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.12 · 27 Oct 2026</b>The Telegram bot answers questions: write height, proposals, a transaction hash or an address to @tauhud_alerts_bot. Mentioned in the Telegram chip, About and here.</li>
           <li><b>v17.11 · 27 Oct 2026</b>Validators, Rules in force now and Node log fit their column in Technical view: on wide screens the column has the full height, laptops show every panel whole and scroll. The Simple/Technical switch appears only on pages where it changes something.</li>
           <li><b>v17.10 · 27 Oct 2026</b>Proposal wording matches the Proposals page: “waiting for votes” and “agreed, takes effect soon” in the Chain state detail and validator history, instead of “collecting agreement” and “scheduled”.</li>
           <li><b>v17.9 · 27 Oct 2026</b>From the 200-user usability simulation: Rule sharing lines wrap instead of ending in “…”; laptops (1280–1599 px wide or under 900 px tall) get a compact four-column step so the page is about 1.6 screens instead of 2.7; no type below 10 px on desktop, and ultra-wide screens scale the HUD a little more.</li>
@@ -1033,6 +1032,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
           <li><b>Every rule change as it happens:</b> new proposal, agreement, activation, dropped proposal.</li>
           <li><b>Chain restarts</b> of the testnet, the moment our node sees one.</li>
           <li><b>A weekly recap picture</b> and every HUD update, so you never need to open this page to stay current.</li>
+          <li><b>Ask the bot:</b> height, proposals, your transaction or address. Write to <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot</a>.</li>
         </ul>
         <a class="tgjoin" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Join @tauHUDcom ↗</a>
       </section>
@@ -2545,7 +2545,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.11`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.12`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

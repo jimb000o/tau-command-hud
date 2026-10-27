@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Tau in 60 Seconds</title>
+<meta name="description" content="How Tau changes its own rules without a hard fork, in six steps: propose, check, agree, law. Built from the Tau HUD simulation.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau in 60 seconds">
+<meta property="og:description" content="Most blockchains change their rules with a hard fork. Tau changes them by agreement. Six steps, one minute.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/story/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-snap-type: y proximity; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+
+/* ---------- scroll story: one sticky stage, one screen per step ---------- */
+.story { position: relative; display: grid; grid-template-columns: 1fr; }
+.stage { position: sticky; top: 0; z-index: 2; height: 46svh; min-height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(var(--void) 88%, rgba(9,9,10,0)); margin: 0 -16px; padding: 8px 16px 0; }
+.stage svg { width: 100%; height: 100%; max-width: 100%; display: block; overflow: visible; }
+.dots { display: flex; gap: 8px; justify-content: center; padding: 6px 0 2px; }
+.dots button { all: unset; cursor: pointer; width: 44px; height: 24px; display: grid; place-items: center; }
+.dots button::before { content: ""; width: 22px; height: 3px; border-radius: 2px; background: var(--hair); transition: background .3s; }
+.dots button.on::before { background: var(--ok); box-shadow: 0 0 8px rgba(57,255,138,.6); }
+.dots button:focus-visible { outline: 1px solid #fff; border-radius: 4px; }
+.steps { position: relative; z-index: 1; }
+.step { min-height: 62svh; display: flex; flex-direction: column; justify-content: center; padding: 28px 0 40px; scroll-snap-align: end; }
+body > header { scroll-snap-align: start; scroll-margin-top: 12px; } .step:first-child { scroll-snap-align: none; }
+.step h2 { max-width: 15em; } .step p.s { max-width: 28em; }
+.kick { font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+.kick b { color: var(--ok); font-weight: 600; }
+.step h2 { margin: 0; font: 600 clamp(24px, 6vw, 44px)/1.18 var(--display); color: #fff; letter-spacing: -.01em; text-wrap: balance; }
+.step p.s { margin: 14px 0 0; font: 400 clamp(15px, 3.6vw, 20px)/1.5 var(--display); color: #c9c9cf; text-wrap: pretty; }
+.step .em { color: var(--ok); }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; font: 600 12px var(--display); letter-spacing: .1em; text-transform: uppercase; text-decoration: none; color: #fff; background: transparent; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 18px; cursor: pointer; white-space: nowrap; }
+.btn svg { width: 15px; height: 15px; fill: currentColor; flex: none; }
+.btn:hover, .btn:focus-visible { background: #fff; color: #000; border-color: #fff; }
+.btn.primary { background: var(--ok); color: #000; border-color: var(--ok); }
+.btn.primary:hover { background: #fff; border-color: #fff; }
+.note { margin: 26px 0 0; color: var(--dim); font-size: 12px; max-width: 46em; }
+.replay { margin-top: 18px; align-self: flex-start; }
+.hint { color: var(--dim); font: 500 12px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-top: 26px; display: flex; align-items: center; gap: 8px; }
+.hint i { width: 1px; height: 26px; background: linear-gradient(var(--ok), transparent); animation: drip 1.8s ease-in-out infinite; }
+@keyframes drip { 0%, 100% { transform: translateY(-4px); opacity: .3; } 50% { transform: translateY(4px); opacity: 1; } }
+
+/* wide screens: stage left at full height, text right, one step per screen */
+@media (min-width: 900px) {
+  .story { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); column-gap: clamp(24px, 4vw, 80px); }
+  .stage { grid-column: 1; grid-row: 1; height: 100svh; margin: 0; padding: 24px 0 12px; background: none; }
+  .steps { grid-column: 2; grid-row: 1; }
+  .step { min-height: 100svh; scroll-snap-align: center; padding: 40px 0; }
+  .step h2 { font-size: clamp(30px, 3vw, 76px); }
+  .step p.s { font-size: clamp(17px, 1.3vw, 30px); }
+  .step .kick { font-size: clamp(11px, .7vw, 16px); }
+}
+@media (min-width: 900px) and (max-height: 640px) { .step h2 { font-size: 28px; } .step p.s { font-size: 16px; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-snap-type: none; } .hint i { animation: none; } }
+
+/* ---------- video mode: ?video=1, the frame recorder seeks the timeline ---------- */
+body.video { padding: 0; overflow: hidden; background-size: auto, 72px 72px, 72px 72px; }
+body.video > header, body.video .tnav, body.video .tabbar, body.video .story { display: none !important; }
+.vid { display: none; }
+body.video .vid { display: grid; width: 100vw; height: 100vh; padding: 5.2vmin 6vmin 4.6vmin; gap: 3vmin; }
+.vid .vstage { min-height: 0; display: flex; align-items: center; justify-content: center; }
+.vid .vstage svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.vid .vtext { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+.vid .kick { font-size: 2.2vmin; margin-bottom: 1.4vmin; }
+.vid h2 { margin: 0; font: 600 5.2vmin/1.16 var(--display); color: #fff; letter-spacing: -.01em; text-wrap: balance; }
+.vid p.s { margin: 1.8vmin 0 0; font: 400 3.1vmin/1.42 var(--display); color: #c9c9cf; text-wrap: pretty; }
+.vid .em { color: var(--ok); }
+.vid .vfoot { display: flex; align-items: center; justify-content: space-between; gap: 2vmin; font: 600 2.2vmin var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.vid .vfoot .brand2 { display: flex; align-items: center; gap: 1.2vmin; color: #fff; letter-spacing: .04em; text-transform: none; font-size: 2.6vmin; }
+.vid .vfoot .mark { width: 4vmin; height: 4vmin; }
+.vid .vbar { display: flex; gap: 1vmin; }
+.vid .vbar i { width: 4vmin; height: .5vmin; border-radius: 1vmin; background: var(--hair); }
+.vid .vbar i.on { background: var(--ok); box-shadow: 0 0 1vmin rgba(57,255,138,.6); }
+body.video.square .vid { grid-template-rows: minmax(0, 1fr) auto auto; }
+body.video.square .vid .vtext { min-height: 24vmin; justify-content: flex-start; }
+body.video.wide .vid { grid-template-columns: minmax(0, 1fr) minmax(0, .95fr); grid-template-rows: minmax(0, 1fr) auto; column-gap: 5vmin; }
+body.video.wide .vid .vfoot { grid-column: 1 / -1; }
+body.video.wide .vid h2 { font-size: 6.6vmin; }
+body.video.wide .vid p.s { font-size: 4vmin; }
+body.video.wide .vid .kick { font-size: 2.8vmin; }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Tau in 60 seconds</span></a>
+  </header>
+  <nav class="tnav" data-page="story" aria-label="Pages and tools"></nav>
+
+  <div class="story" id="story">
+    <div class="stage" aria-hidden="true">
+      <svg id="stage" viewBox="0 60 640 535" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="steps" id="steps"></div>
+  </div>
+
+  <div class="vid" id="vid" aria-hidden="true">
+    <div class="vstage"><svg id="vstage" viewBox="0 60 640 535" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="vtext" id="vtext"></div>
+    <div class="vfoot"><span class="brand2"><svg class="mark" viewBox="0 0 64 64"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>tauhud.com</span><span class="vbar" id="vbar"></span><span>Tau in 60 seconds</span></div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+  /* Six steps, ten seconds each. One sentence a newcomer understands, one sentence of detail.
+     The visuals use the HUD's own language: the chain core ring, validator diamonds, the rule check rows
+     and the proposal pipeline proposed → checked → agreed → in force. */
+  const TG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.9 4.3 18.6 20c-.2 1.1-.9 1.4-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.2-8.3c.4-.4-.1-.6-.6-.2L6 13.6 1.1 12c-1.1-.3-1.1-1.1.2-1.6L20.4 3c.9-.3 1.7.2 1.5 1.3z"/></svg>';
+  const STEPS = [
+    { k: "The usual way", h: "Most blockchains change their rules with a hard fork.",
+      s: "Everyone has to install new software. Whoever does not ends up on a different chain." },
+    { k: "<b>1</b> · Propose", h: "On Tau, a rule change is just a transaction.",
+      s: "A validator proposes the new rule. Our example: raise the base fee from 1 to 2 AGRS." },
+    { k: "<b>2</b> · Check", h: "Every node checks it against the rules already in force.",
+      s: "A rule that contradicts them is refused at the door and never reaches the chain." },
+    { k: "<b>3</b> · Agree", h: "Validators vote. When enough agree, it gets a date.",
+      s: "The date is a block height. The voting rule lives on the chain too, so nobody can change it quietly." },
+    { k: "<b>4</b> · Law", h: "At that block it becomes law for everyone at once.",
+      s: "Every node applies the new rule by itself. <span class=\"em\">Nobody upgrades, nothing splits.</span>" },
+    { k: "That is Tau", h: "Where the rules change <span class=\"em\">by agreement.</span>",
+      s: "Watch it happen on the live testnet, try it yourself in the Playground, or get every rule change on Telegram.", end: true },
+  ];
+  const DUR = 10, TOTAL = STEPS.length * DUR;
+
+  /* ---------- drawing helpers ---------- */
+  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const seg = (s, a, b) => clamp((s - a) / (b - a));
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const W = "#ebebee", DIM = "#8a8a94", OK = "#39ff8a", HAIR = "rgba(255,255,255,.18)", LINE = "rgba(255,255,255,.09)";
+  const F = "Sora, Manrope, Segoe UI, sans-serif", M = "JetBrains Mono, ui-monospace, monospace";
+  const txt = (x, y, s, o = {}) => `<text x="${x}" y="${y}" text-anchor="${o.a || "middle"}" font-family="${o.mono ? M : F}" font-size="${o.size || 16}" font-weight="${o.w || 500}" fill="${o.c || W}" opacity="${o.o == null ? 1 : o.o}" letter-spacing="${o.ls || 0}">${s}</text>`;
+  const CX = 320, CY = 250, R = 170;
+  const VAL = [-90, 30, 150].map(a => ({ x: CX + R * Math.cos(a * Math.PI / 180), y: CY + R * Math.sin(a * Math.PI / 180) }));
+  const fmt = n => n.toLocaleString("en-US");
+
+  function diamond(x, y, r, fill, stroke, glow) {
+    return `<path d="M${x} ${y - r} L${x + r} ${y} L${x} ${y + r} L${x - r} ${y} Z" fill="${fill}" stroke="${stroke}" stroke-width="2"${glow ? ' filter="url(#glow)"' : ""}/>`;
+  }
+  function block(x, y, size, stroke, o = 1, fill = "#121214") {
+    return `<rect x="${x - size / 2}" y="${y - size / 2}" width="${size}" height="${size}" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="2" opacity="${o}"/>`;
+  }
+  function card(x, y, kick, main, o = 1, c = W, strike = false) {
+    const w = 236, h = 66;
+    return `<g opacity="${o}"><rect x="${x - w / 2}" y="${y - h / 2}" width="${w}" height="${h}" rx="9" fill="#121214" stroke="${c === W ? HAIR : c}" stroke-width="2"/>` +
+      txt(x, y - 9, kick, { size: 11, w: 600, c: DIM, ls: 2.6 }) + txt(x, y + 18, main, { size: 19, w: 600, c }) +
+      (strike ? `<line x1="${x - 96}" y1="${y + 12}" x2="${x + 96}" y2="${y + 12}" stroke="${W}" stroke-width="2"/>` : "") + `</g>`;
+  }
+  function ring(o, arc = 0, arcC = OK) {
+    let s = `<g opacity="${o}"><circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${HAIR}" stroke-width="2"/>` +
+      `<circle cx="${CX}" cy="${CY}" r="${R - 22}" fill="rgba(255,255,255,.02)" stroke="${LINE}" stroke-width="1"/>`;
+    if (arc > 0) {
+      const a0 = -Math.PI / 2, a1 = a0 + arc * 2 * Math.PI * .9999, r = R + 14;
+      s += `<path d="M${CX + r * Math.cos(a0)} ${CY + r * Math.sin(a0)} A${r} ${r} 0 ${arc > .5 ? 1 : 0} 1 ${CX + r * Math.cos(a1)} ${CY + r * Math.sin(a1)}" fill="none" stroke="${arcC}" stroke-width="4" stroke-linecap="round" filter="url(#glow)"/>`;
+    }
+    return s + `</g>`;
+  }
+  const STAGES = ["Proposed", "Checked", "Agreed", "In force"];
+  function pipeline(o, lit, litP) {
+    if (o <= 0) return "";
+    let s = `<g opacity="${o}">`; const y = 565, w = 128, gap = 22, x0 = CX - (4 * w + 3 * gap) / 2;
+    STAGES.forEach((t, i) => {
+      const x = x0 + i * (w + gap), on = i < lit || (i === lit && litP > 0), p = i === lit ? litP : 1;
+      s += `<rect x="${x}" y="${y - 19}" width="${w}" height="38" rx="19" fill="${on ? `rgba(57,255,138,${.14 * p})` : "none"}" stroke="${on ? OK : HAIR}" stroke-opacity="${on ? .4 + .6 * p : 1}" stroke-width="2"/>`;
+      s += txt(x + w / 2, y + 6, t, { size: 15, w: 600, c: on ? OK : DIM, ls: .5 });
+      if (i < 3) s += txt(x + w + gap / 2, y + 6, "›", { size: 18, c: DIM });
+    });
+    return s + `</g>`;
+  }
+  const DEFS = `<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+
+  /* ---------- one scene per step; s is seconds into the step (0..10) ---------- */
+  const SCENES = [
+    // 0 · the usual way: a chain that splits in two
+    s => {
+      let g = ""; const sp = 58, x0 = 40, y = 250, fork = 4;
+      const at = i => i <= fork ? .3 + i * .42 : 2.4 + (i - fork - 1) * .55;
+      const split = ease(seg(s, 2.2, 3.4));
+      for (let i = 0; i < 10; i++) {
+        const o = ease(seg(s, at(i), at(i) + .35)); if (o <= 0) continue;
+        const x = x0 + i * sp;
+        if (i <= fork) {
+          if (i > 0) g += `<line x1="${x - sp + 17}" y1="${y}" x2="${x - 17}" y2="${y}" stroke="${HAIR}" stroke-width="2" opacity="${o}"/>`;
+          g += block(x, y, 34, W, o);
+        } else {
+          const dy = 90 * split, px = x - sp;
+          [[-dy, W, 1], [dy, DIM, .9]].forEach(([d, c, k]) => {
+            const py = i === fork + 1 ? y : y + d;
+            g += `<line x1="${px + 17}" y1="${py}" x2="${x - 17}" y2="${y + d}" stroke="${c}" stroke-opacity=".5" stroke-width="2" opacity="${o}"/>`;
+            g += block(x, y + d, 34, c, o * k);
+          });
+        }
+      }
+      const lo = ease(seg(s, 5, 5.8));
+      g += txt(x0 + 7 * sp, y - 90 - 34, "upgraded nodes", { size: 17, w: 600, c: W, o: lo });
+      g += txt(x0 + 7 * sp, y + 90 + 50, "everyone else", { size: 17, w: 600, c: DIM, o: lo });
+      const ho = ease(seg(s, 6.2, 7));
+      g += txt(x0 + 4 * sp, y - 150, "HARD FORK", { size: 22, w: 700, c: W, o: ho, ls: 6 });
+      g += txt(x0 + 4 * sp, y + 205, "two chains, two sets of rules", { size: 17, c: DIM, o: ho, mono: true });
+      // the split point flashes
+      const fl = seg(s, 2.2, 3.6);
+      if (fl > 0 && fl < 1) g += `<circle cx="${x0 + fork * sp + 29}" cy="${y}" r="${10 + 40 * fl}" fill="none" stroke="${W}" stroke-opacity="${1 - fl}" stroke-width="2"/>`;
+      return g;
+    },
+    // 1 · propose: the core appears, a proposal flies from a validator into it
+    s => {
+      const co = ease(seg(s, 0, 1.2));
+      let g = ring(co);
+      VAL.forEach((v, i) => { g += `<g opacity="${co}">${diamond(v.x, v.y, 13, i === 0 && s > 1.4 ? OK : "#121214", i === 0 && s > 1.4 ? OK : W, i === 0 && s > 1.4)}</g>`; });
+      const cy0 = ease(seg(s, 4.2, 5.2));
+      g += txt(CX, lerp(232, 278, cy0), "RULES IN FORCE", { size: 12, w: 600, c: DIM, ls: 2.6, o: co });
+      g += txt(CX, lerp(266, 312, cy0), "base fee 1 AGRS", { size: 22, w: 600, o: co });
+      g += txt(CX, lerp(294, 340, cy0), "spec revision 3", { size: 14, c: DIM, mono: true, o: co });
+      const fly = ease(seg(s, 2, 4.4)), co2 = seg(s, 1.8, 2.3);
+      if (co2 > 0) {
+        const x = lerp(VAL[0].x + 150, CX, fly), y = lerp(VAL[0].y - 30, 172, fly);
+        if (fly < 1) g += `<line x1="${VAL[0].x}" y1="${VAL[0].y}" x2="${x}" y2="${y}" stroke="${OK}" stroke-opacity="${.5 * (1 - fly)}" stroke-width="2"/>`;
+        g += card(x, y, "PROPOSAL", "base fee 1 → 2 AGRS", co2);
+      }
+      g += txt(VAL[0].x + 30, VAL[0].y - 18, "validator", { size: 13, c: DIM, a: "start", mono: true, o: ease(seg(s, 1.4, 2)) * (1 - fly) });
+      g += pipeline(ease(seg(s, 3.6, 4.4)), 0, ease(seg(s, 4.4, 5)));
+      return g;
+    },
+    // 2 · check: three checks pass, a second proposal bounces off
+    s => {
+      let g = ring(1);
+      VAL.forEach(v => { g += diamond(v.x, v.y, 13, "#121214", W); });
+      g += card(CX, 172, "PROPOSAL", "base fee 1 → 2 AGRS");
+      const rows = ["valid Tau, it compiles", "fits the rules in force", "starts at a future block"];
+      rows.forEach((t, i) => {
+        const o = ease(seg(s, .8 + i * 1.3, 1.3 + i * 1.3)), ok = s > 1.4 + i * 1.3;
+        const y = 248 + i * 40;
+        g += `<g opacity="${o}"><circle cx="${CX - 112}" cy="${y - 6}" r="11" fill="${ok ? "rgba(57,255,138,.15)" : "none"}" stroke="${ok ? OK : HAIR}" stroke-width="2"/>` +
+          (ok ? `<path d="M${CX - 117} ${y - 6} l4 4 l7 -8" fill="none" stroke="${OK}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>` : "") +
+          txt(CX - 92, y, t, { size: 17, a: "start", c: ok ? W : DIM }) + `</g>`;
+      });
+      // the second proposal: contradicts a rule in force, refused at the door
+      const inn = ease(seg(s, 5.4, 6.8)), out = ease(seg(s, 7.2, 8.6));
+      if (inn > 0) {
+        const x = lerp(760, 540, inn) + 60 * out, y = 462 + 20 * out;
+        const shake = s > 6.8 && s < 7.3 ? Math.sin(s * 70) * 4 : 0;
+        g += card(x + shake, y, "PROPOSAL", "contradicts a rule", 1 - .5 * out, W, s > 7);
+        if (s > 6.8) {
+          const fl = seg(s, 6.8, 7.6);
+          g += `<circle cx="${CX + R * Math.cos(.62)}" cy="${CY + R * Math.sin(.62)}" r="${8 + 26 * fl}" fill="none" stroke="${W}" stroke-opacity="${1 - fl}" stroke-width="2"/>`;
+          g += txt(x + shake, y - 48, "REFUSED AT THE DOOR", { size: 15, w: 700, ls: 3, o: ease(seg(s, 7, 7.5)) });
+        }
+      }
+      g += pipeline(1, 1, ease(seg(s, 4.6, 5.2)));
+      return g;
+    },
+    // 3 · agree: votes light up, the arc fills to the quorum, the change gets a block height
+    s => {
+      const votes = [1.4, 3.2].filter(t => s > t).length;
+      let g = ring(1, ease(seg(s, 1.4, 2.2)) / 2 + ease(seg(s, 3.2, 4)) / 2);  // a full ring means the quorum is met
+      VAL.forEach((v, i) => {
+        const on = i < votes, t = [1.4, 3.2, 99][i], b = seg(s, t, t + .8);
+        if (b > 0) g += `<line x1="${v.x}" y1="${v.y}" x2="${CX}" y2="${CY + 30}" stroke="${OK}" stroke-opacity="${.75 - .45 * b}" stroke-width="2.5"/>`;
+        g += diamond(v.x, v.y, 13, on ? OK : "#121214", on ? OK : W, on);
+        g += txt(v.x + (i === 0 ? 0 : i === 1 ? 34 : -34), v.y + (i === 0 ? -26 : 36), on ? "yes" : "not yet", { size: 15, w: 600, c: on ? OK : DIM, mono: true });
+      });
+      g += card(CX, 172, "PROPOSAL", "base fee 1 → 2 AGRS");
+      const agreed = ease(seg(s, 4.4, 5.2));
+      g += txt(CX, 262, "VOTES", { size: 12, w: 600, c: DIM, ls: 2.6, o: 1 - agreed });
+      g += txt(CX, 304, `${votes} of 3`, { size: 38, w: 700, c: votes >= 2 ? OK : W, o: 1 - agreed });
+      g += txt(CX, 332, "2 needed", { size: 14, c: DIM, mono: true, o: 1 - agreed });
+      g += txt(CX, 262, "AGREED", { size: 14, w: 700, c: OK, ls: 3, o: agreed });
+      g += txt(CX, 300, "takes effect", { size: 17, c: W, o: agreed });
+      g += txt(CX, 334, "at block #5,028", { size: 24, w: 700, c: W, o: agreed });
+      g += txt(CX + R + 26, CY + 6, "2 of 3", { size: 16, w: 600, a: "start", c: OK, mono: true, o: ease(seg(s, 3.6, 4.2)) });
+      g += pipeline(1, 2, ease(seg(s, 4.2, 4.8)));
+      return g;
+    },
+    // 4 · law: blocks count up to the height, the spec revision ticks, one chain goes on
+    s => {
+      const t = ease(seg(s, .4, 5.4)), h = Math.round(lerp(4990, 5028, t)), law = s > 5.5, pulse = seg(s, 5.5, 7);
+      let g = ring(1, 0);
+      if (pulse > 0 && pulse < 1) g += `<circle cx="${CX}" cy="${CY}" r="${R + 50 * pulse}" fill="none" stroke="${OK}" stroke-opacity="${1 - pulse}" stroke-width="3"/>`;
+      if (law) g += `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${OK}" stroke-opacity="${.35 + .65 * (1 - pulse)}" stroke-width="2.5" filter="url(#glow)"/>`;
+      VAL.forEach(v => { g += diamond(v.x, v.y, 13, law ? OK : "#121214", law ? OK : W, law); });
+      g += txt(CX, 186, "BLOCK", { size: 12, w: 600, c: DIM, ls: 2.6 });
+      g += txt(CX, 222, "#" + fmt(h), { size: 30, w: 700, c: law ? OK : W, mono: true });
+      g += `<line x1="${CX - 90}" y1="${248}" x2="${CX + 90}" y2="${248}" stroke="${LINE}" stroke-width="1"/>`;
+      g += txt(CX, 284, "base fee", { size: 15, c: DIM });
+      g += txt(CX, 318, law ? "2 AGRS" : "1 AGRS", { size: 28, w: 700, c: law ? OK : W });
+      g += txt(CX, 346, law ? "spec revision 4" : "spec revision 3", { size: 14, c: law ? OK : DIM, mono: true });
+      // one chain, moving on
+      const sp = 44, off = (s * 26) % sp;
+      let chain = "";
+      for (let i = -1; i < 13; i++) {
+        const x = 50 + i * sp - off; if (x < 34 || x > 606) continue;
+        const o = Math.min(1, (x - 34) / 40, (606 - x) / 40);
+        chain += block(x, 478, 24, i >= 7 && law ? OK : HAIR, o);
+      }
+      g += `<line x1="40" y1="478" x2="600" y2="478" stroke="${LINE}" stroke-width="2"/>` + chain;
+      g += txt(CX, 520, "one chain · every node switched together", { size: 15, c: law ? W : DIM, mono: true, o: ease(seg(s, 6, 6.8)) });
+      g += pipeline(1, 3, ease(seg(s, 5.5, 6.1)));
+      return g;
+    },
+    // 5 · the end: the Pulse mark and where to go next
+    s => {
+      const o = ease(seg(s, .2, 1.4)), dr = ease(seg(s, .8, 2.6)), L = 120;
+      let g = `<g opacity="${o}" transform="translate(${CX - 125} ${CY - 135}) scale(${250 / 64})">` +
+        `<circle cx="32" cy="32" r="25" fill="none" stroke="${W}" stroke-width="2.4"/>` +
+        `<path d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51" fill="none" stroke="${OK}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${L}" stroke-dashoffset="${L * (1 - dr)}" filter="url(#glow)"/></g>`;
+      g += txt(CX, 480, "tauhud.com", { size: 40, w: 700, o: ease(seg(s, 2, 3)) });
+      g += txt(CX, 524, "live testnet · playground · alerts", { size: 16, c: DIM, mono: true, o: ease(seg(s, 2.6, 3.6)) });
+      g += txt(CX, 562, "Telegram: t.me/tauHUDcom", { size: 18, w: 600, c: OK, o: ease(seg(s, 3.4, 4.4)) });
+      return g;
+    },
+  ];
+  const draw = (svg, i, s) => { svg.innerHTML = DEFS + SCENES[i](clamp(s, 0, DUR)); };
+  const textHtml = (st, i) => `<p class="kick">${st.k}</p><h2>${st.h}</h2><p class="s">${st.s}</p>`;
+
+  /* ---------- video mode: window.__seek(t) draws the frame at t seconds ---------- */
+  const q = new URLSearchParams(location.search);
+  if (q.has("video")) {
+    document.body.classList.add("video", innerWidth / innerHeight > 1.3 ? "wide" : "square");
+    const svg = document.getElementById("vstage"), vt = document.getElementById("vtext"), vb = document.getElementById("vbar");
+    vb.innerHTML = STEPS.map(() => "<i></i>").join("");
+    let cur = -1;
+    window.__seek = t => {
+      const i = Math.min(STEPS.length - 1, Math.floor(t / DUR)), s = t - i * DUR;
+      if (i !== cur) { cur = i; vt.innerHTML = textHtml(STEPS[i], i); [...vb.children].forEach((e, k) => e.classList.toggle("on", k <= i)); }
+      // fade text and stage in at a step's start and out at its end
+      const fi = seg(s, 0, .5), fo = i === STEPS.length - 1 ? 1 : 1 - seg(s, DUR - .45, DUR);
+      vt.style.opacity = Math.min(fi, fo); vt.style.transform = `translateY(${(1 - ease(fi)) * 12}px)`;
+      svg.style.opacity = Math.min(seg(s, 0, .35), fo);
+      draw(svg, i, s);
+    };
+    window.__total = TOTAL;
+    window.__seek(+q.get("t") || 0);
+    if (q.has("play")) { const t0 = performance.now(); const loop = () => { window.__seek(((performance.now() - t0) / 1000) % TOTAL); requestAnimationFrame(loop); }; loop(); }
+    return;
+  }
+
+  /* ---------- scroll story: the step in the middle of the screen plays on the sticky stage ---------- */
+  const stepsEl = document.getElementById("steps"), dotsEl = document.getElementById("dots"), svg = document.getElementById("stage");
+  STEPS.forEach((st, i) => {
+    const sec = document.createElement("section"); sec.className = "step"; sec.id = "step-" + (i + 1); sec.dataset.i = i;
+    sec.innerHTML = textHtml(st, i) +
+      (i === 0 ? '<span class="hint"><i></i>Scroll</span>' : "") +
+      (st.end ? `<div class="cta"><a class="btn primary" href="../">Watch it live</a><a class="btn" href="../playground/#seat">Vote in the Playground</a><a class="btn" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">${TG}Telegram alerts</a></div>
+        <button class="btn replay" type="button" id="replay">Play again from the top</button>
+        <p class="note">The example (base fee 1 → 2 AGRS, block #5,028) is made up. The steps are how Tau Testnet Alpha handles every rule change today; the <a href="../proposals/">Proposals</a> page lists the real ones.</p>` : "");
+    stepsEl.append(sec);
+    const d = document.createElement("button"); d.type = "button"; d.setAttribute("aria-label", "Step " + (i + 1)); d.addEventListener("click", () => sec.scrollIntoView({ behavior: "smooth", block: "center" }));
+    dotsEl.append(d);
+  });
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let active = 0, t0 = performance.now(), raf = 0;
+  const frame = () => {
+    const s = reduce ? DUR - 1 : (performance.now() - t0) / 1000;
+    draw(svg, active, Math.min(s, DUR - .5));
+    raf = s < DUR ? requestAnimationFrame(frame) : 0;
+  };
+  const go = i => {
+    if (i === active && raf) return;
+    active = i; t0 = performance.now(); [...dotsEl.children].forEach((d, k) => d.classList.toggle("on", k === i));
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
+  };
+  const io = new IntersectionObserver(es => {
+    const vis = es.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (vis && +vis.target.dataset.i !== active) go(+vis.target.dataset.i);
+  }, { rootMargin: "-45% 0px -45% 0px" });
+  stepsEl.querySelectorAll(".step").forEach(s => io.observe(s));
+  document.getElementById("replay").addEventListener("click", () => { scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" }); setTimeout(() => go(0), 400); });
+  [...dotsEl.children][0].classList.add("on");
+  raf = requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
