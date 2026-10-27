@@ -102,6 +102,11 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .news li a { color: var(--dim); }
 .empty { color: var(--dim); font-size: 12.5px; padding: 18px 4px; }
 .empty b { color: #fff; }
+.grp { margin: 10px 0 6px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.grp:first-child { margin-top: 0; }
+.grp small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
+.list > li.quiet { color: var(--dim); font-size: 12.5px; padding: 4px 2px 6px; }
+.quorum.wait .fill { background: rgba(255,255,255,.14); }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer a { color: var(--dim); }
 footer p { margin: 0; }
@@ -182,15 +187,16 @@ p.why { margin: 0; color: var(--text); } p.why.warn { color: #fff; font-weight: 
 
   <main class="main">
     <section class="panel p-open">
-      <h2>Waiting for a decision <small id="openCount"></small></h2>
-      <div class="scroll"><ul class="list" id="openList"></ul></div>
+      <h2>Coming up <small id="openCount"></small></h2>
+      <div class="scroll" id="openList"></div>
     </section>
     <section class="panel p-all">
       <h2>All rule changes on this chain <small id="allCount"></small></h2>
       <div class="chips" id="chips" role="group" aria-label="Filter">
         <button type="button" data-f="all" aria-pressed="true">All</button>
         <button type="button" data-f="active" aria-pressed="false">In force</button>
-        <button type="button" data-f="open" aria-pressed="false">Open</button>
+        <button type="button" data-f="voting" aria-pressed="false">Waiting for votes</button>
+        <button type="button" data-f="agreed" aria-pressed="false">Agreed</button>
         <button type="button" data-f="dropped" aria-pressed="false">Dropped</button>
       </div>
       <div class="scroll"><ul class="list" id="allList"></ul></div>
@@ -289,12 +295,14 @@ function openCard(p) {
   const line = p.status === "agreed"
     ? `Agreed at #${fmtN(p.approved_at)}. Takes effect at #${fmtN(p.activate_at)}${n > 0 ? `, ${plural(n, "block")} from now${when ? ` (${when})` : ""}` : ""}.`
     : `Needs ${need - v > 0 ? plural(need - v, "more vote") : "no more votes"} by #${fmtN(p.activate_at)}${n > 0 ? ` (${plural(n, "block")}${when ? `, ${when}` : ""})` : ""}, or it is dropped.`;
-  const pct = Math.min(100, need ? v / need * 100 : 0);
+  const agreed = p.status === "agreed", span = p.activate_at - p.approved_at;
+  const pct = agreed ? Math.max(0, Math.min(100, span > 0 ? (span - Math.max(n, 0)) / span * 100 : 100)) : Math.min(100, need ? v / need * 100 : 0);
+  const bar = agreed ? (n > 0 ? `${plural(n, "block")} to go${when ? ` (${when})` : ""} · ${v} of ${need} votes` : "takes effect now") : `${v} of ${need} votes`;
   return `<li class="${p.status}"><button type="button" data-id="${esc(p.id)}"><b>${esc(p.title)}</b>
     ${whyOf(p) ? `<span class="m why">${esc(whyOf(p))}</span>` : ""}
     <span class="m">proposed at #${fmtN(p.proposed_at)} by ${short(p.proposer)}${p.proposed_ts ? ` · ${ago(p.proposed_ts)}` : ""}</span>
     ${flow(p)}<span class="m">${line}</span>
-    <div class="quorum" aria-label="${v} of ${need} votes"><div class="fill" style="width:${pct}%"></div><span>${v} of ${need} votes</span></div></button></li>`;
+    <div class="quorum${agreed ? " wait" : ""}" aria-label="${esc(bar)}"><div class="fill" style="width:${pct}%"></div><span>${bar}</span></div></button></li>`;
 }
 function rowOf(p) {
   const st = p.status;
@@ -309,11 +317,16 @@ function render() {
   if (!D) return;
   tiles();
   const P = D.proposals;
-  const open = P.filter(p => p.status === "voting" || p.status === "agreed").sort((a, b) => a.activate_at - b.activate_at);
-  $("openCount").textContent = open.length ? `(${open.length})` : "";
-  $("openList").innerHTML = open.length ? open.map(openCard).join("")
-    : `<li class="empty"><b>Nothing is waiting right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}`;
-  const shown = P.filter(p => filter === "all" || (filter === "open" ? (p.status === "voting" || p.status === "agreed") : p.status === filter));
+  const by = s => P.filter(p => p.status === s).sort((a, b) => a.activate_at - b.activate_at);
+  const voting = by("voting"), agreed = by("agreed");
+  $("openCount").textContent = voting.length + agreed.length ? `(${voting.length + agreed.length})` : "";
+  $("openList").innerHTML = !voting.length && !agreed.length
+    ? `<ul class="list"><li class="empty"><b>Nothing is coming up right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}</ul>`
+    : `<h3 class="grp">Waiting for votes <small>(${voting.length})</small></h3><ul class="list">${voting.length ? voting.map(openCard).join("")
+        : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`
+      + `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(openCard).join("")
+        : `<li class="quiet">Nothing agreed is waiting to take effect.</li>`}</ul>`;
+  const shown = P.filter(p => filter === "all" || p.status === filter);
   $("allCount").textContent = `(${P.length})`;
   $("allList").innerHTML = shown.length ? shown.map(rowOf).join("")
     : (P.length ? `<li class="empty">None with this filter.</li>` : `<li class="empty">No rule change has been proposed on this chain yet. The genesis rules are in force.</li>${HOWTO}`);
@@ -400,7 +413,7 @@ async function load() {
     failures++;
     setState("off", "Offline");
     if (!D) {
-      $("openList").innerHTML = `<li class="empty"><b>The tracker is not reachable right now.</b><br>It retries every ${POLL / 1000} s. The Telegram channel and the feed keep posting meanwhile.</li>`;
+      $("openList").innerHTML = `<ul class="list"><li class="empty"><b>The tracker is not reachable right now.</b><br>It retries every ${POLL / 1000} s. The Telegram channel and the feed keep posting meanwhile.</li></ul>`;
       $("allList").innerHTML = HOWTO; $("newsList").innerHTML = NEWS_EMPTY;
     }
   }
