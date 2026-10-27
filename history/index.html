@@ -40,8 +40,10 @@ a { color: #fff; }
    the screen and fits on one screen: the three panels take the remaining height and scroll inside if they must.
    --z is set by script from the viewport. The hover box sits outside .wrap and stays in viewport pixels. */
 html.wide body { padding: 0; overflow: hidden; }
-html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px; transform: scale(var(--z)); transform-origin: 0 0; grid-template-rows: auto auto auto auto minmax(0, 1fr) auto; gap: 12px; }
-html.wide .cols { min-height: 0; align-items: stretch; }
+html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px; transform: scale(var(--z)); transform-origin: 0 0; grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; gap: 12px; }
+/* the panels are as tall as their content (capped at half the screen), the timeline above takes the rest */
+html.wide #pTl { overflow: hidden; min-height: 0; }
+html.wide .cols { min-height: 0; align-items: stretch; max-height: calc(50vh / var(--z)); }
 html.wide .cols > .panel { overflow: auto; min-height: 0; }
 html.wide .cols .txs { max-height: none; }
 html.wide .src { margin: 0; padding-left: 150px; }
@@ -639,7 +641,16 @@ function drawTimeline() {
   const svg = $("tl"); const W = Math.max(280, svg.clientWidth || svg.parentNode.clientWidth);
   TL.w = W; TL.x0 = 14; TL.x1 = W - 14;
   const L = lanes(H.props), laneH = 26, nl = Math.max(1, L.n);
-  const txH = 46;
+  // wide screens: the timeline panel owns the spare height of the screen, the transaction bars take it
+  let txH = 46;
+  if (document.documentElement.classList.contains("wide")) {
+    // content height of the panel without the svg (rects are scaled by --z, so divide it back out)
+    const pan = $("pTl"), z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--z")) || 1;
+    const content = (pan.lastElementChild.getBoundingClientRect().bottom - pan.getBoundingClientRect().top) / z + 14;
+    const other = content - (+svg.getAttribute("height") || 0);
+    const base = 20 + 46 + 18 + 8 + nl * laneH + 16 + 8 + 22 + 18 + 16;
+    txH = 46 + Math.max(0, Math.min(240, pan.clientHeight - other - base - 4));
+  }
   const y = { txL: 12, tx0: 20, tx1: 20 + txH }; y.prL = y.tx1 + 18; y.pr0 = y.prL + 8; y.pr1 = y.pr0 + nl * laneH; y.rvL = y.pr1 + 16; y.rv0 = y.rvL + 8; y.rv1 = y.rv0 + 22; y.ax = y.rv1 + 18; y.h = y.ax + 16;
   TL.y = y; TL.lanes = L; TL.laneH = laneH;
   svg.setAttribute("height", y.h); svg.setAttribute("viewBox", `0 0 ${W} ${y.h}`);
@@ -841,22 +852,24 @@ function renderRules() {
 }
 function renderCheck() {
   const el = $("check"); if (!el) return;
-  const g = C.gov, s = H.snaps[C.head];
+  const g = C.gov; let s = H.snaps[C.head];
   if (!g || !s || C.partial) { el.innerHTML = C.partial ? `<span class="warn">Rebuilt from the blocks the relay holds; rules agreed before #${fmtN(C.first)} are not counted.</span>` : ""; return; }
   if (cursor !== C.head) { el.innerHTML = `Rebuilt from the blocks. At the newest block it is checked against the node’s own state.`; return; }
   const diffs = [];
   const unseen = nodeOnly().length;
   if (unseen) diffs.push(`${plural(unseen, "rule change")} the node knows about ${unseen === 1 ? "is" : "are"} not in the loaded blocks`);
   const nv = (g.active_validators || []).map(v => String(typeof v === "string" ? v : v.pubkey || "").toLowerCase()).sort();
-  if (Number(g.head_number) !== C.head) { el.innerHTML = `Node state is from #${fmtN(g.head_number)}; comparing once both reach the same block.`; return; }
+  // the node's state is from its own newest block, which can be a block ahead or behind the page: compare there
+  const at = Math.min(C.head, Number(g.head_number));
+  s = H.snaps[at] || s;
   if (nv.length && nv.join() !== s.validators.join()) diffs.push(`validators (node: ${nv.length})`);
   if (g.vote_quorum && g.vote_quorum !== s.quorum) diffs.push(`quorum (node: ${esc(g.vote_quorum)})`);
   if (Number.isFinite(g.approval_threshold) && g.approval_threshold !== s.thr) diffs.push(`threshold (node: ${g.approval_threshold})`);
   const o9defs = (String(g.consensus_rules || "").match(/o9\[t\][^=]*=\s*\{/g) || []).length;
   const nodeFee = o9defs === 1 ? feeOf(g.consensus_rules) : null;
   if (nodeFee != null && nodeFee !== s.fee) diffs.push(`base fee (node: ${nodeFee})`);
-  el.innerHTML = diffs.length ? `<span class="warn">Differs from the node at #${fmtN(C.head)}: ${diffs.join(", ")}.</span>`
-    : `<span class="ok">✓</span> Matches the node’s own state at #${fmtN(C.head)}: validators, quorum${nodeFee != null ? ", base fee" : ""}.`;
+  el.innerHTML = diffs.length ? `<span class="warn">Differs from the node at #${fmtN(s.h)}: ${diffs.join(", ")}.</span>`
+    : `<span class="ok">✓</span> Matches the node’s own state at #${fmtN(s.h)}: validators, quorum${nodeFee != null ? ", base fee" : ""}.`;
 }
 // rule changes the node lists (pending or scheduled) that the replay never saw, e.g. their block is missing
 function nodeOnly() {
@@ -1029,6 +1042,8 @@ render = function () {   // jump to a shared block once it is loaded, otherwise 
     document.documentElement.style.setProperty("--z", z);
   };
   apply(); addEventListener("resize", () => { apply(); drawTimeline(); });
+  // the panels below change height with their content; the timeline then takes the new spare height
+  if (window.ResizeObserver) new ResizeObserver(() => { if (document.documentElement.classList.contains("wide")) drawTimeline(); }).observe($("pTl"));
 })();
 setInterval(() => { if (C.head >= 0) readout(); }, 15000);
 render();
