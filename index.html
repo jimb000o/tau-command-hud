@@ -287,7 +287,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 
 /* core */
 .core { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px; justify-items: center; }
-.core canvas { height: 100%; width: auto; max-width: 100%; max-height: 100%; aspect-ratio: 1; display: block; }
+.core canvas { height: 100%; width: auto; max-width: 100%; max-height: 100%; aspect-ratio: 1; display: block; object-fit: contain; }
 .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: 100%; flex: 0 0 auto; }
 .readout div { text-align: center; padding: 6px 4px; border-top: 1px solid var(--hair); }
 .readout b { display: block; font: 600 20px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
@@ -346,6 +346,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .val span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 11.5px; }
 .kv dt { color: var(--dim); }
+.kv dt[data-full] { cursor: help; text-decoration: underline dotted rgba(255,255,255,.22); text-underline-offset: 3px; }
+.kv dt[data-full]:hover { color: var(--text); text-decoration-color: var(--ok); }
 .kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .footnote { color: var(--dim); font-size: 11px; max-width: 90ch; }
 .footnote a { color: var(--cyan); }
@@ -497,9 +499,10 @@ html.wide body { padding: 0; overflow: hidden; }
 html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 16px 12px; box-sizing: border-box; transform: scale(var(--z)); transform-origin: 0 0; }
 html.wide .modal .sheet, html.wide .fb-fab, html.wide .tour { zoom: var(--z); }
 /* wide layout: the chain core becomes the dominant centre element (both rows), the validators column gets both rows too */
-html.wide .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.05fr) minmax(0, 1.05fr) minmax(0, .95fr) minmax(0, .95fr); grid-template-areas: "eng core feed pol val" "eng core feed off val" "upd core chain chain val" "upd core chain chain val"; }
+html.wide .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, .9fr) minmax(0, .9fr); grid-template-areas: "eng core feed pol val" "eng core feed off val" "upd core chain chain chain" "upd core chain chain chain"; }
 html.wide .blkdetail .cols { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 26px; }
 html.wide .blk { flex-basis: 160px; }
+html.wide.tall .grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.9fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); }
 html.wide .core canvas { max-height: none; }
 html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z)) calc(11px * var(--z)); max-width: calc(min(520px, 60vw) * var(--z)); }
 /* the validators column must shrink with the screen instead of overflowing it */
@@ -646,7 +649,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         <div class="readout">
           <div><b id="rH">0</b><span>Height</span></div>
           <div><b id="rM">0</b><span>Waiting</span></div>
-          <div><b id="rT">—</b><span>Block pace</span></div>
+          <div id="rTw"><b id="rT">—</b><span id="rTs">Block pace</span></div>
           <div><b id="rR">0</b><span>User rules</span></div>
         </div>
       </div>
@@ -678,7 +681,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
           <span class="seg fork" data-full="A hard fork: nodes that disagree keep running the old rules, and the chain can split in two."><b>⑂ fork</b><small>splits</small></span>
           <span class="seg" data-full="Every node operator must upgrade their software by hand; whoever does not is left on the old chain."><b>upgrade</b><small>by hand</small></span>
         </div></div>
-        <div class="crow tau"><span class="who">Tau<em data-full="Timing is simulated: 8 s blocks, activation 8 blocks after the proposal. On the testnet the rule is the same but the clock is the chain’s: activate_at_height must be at least the inclusion height plus the number of validators (README §Governance).">~1 min · simulated</em></span><div class="track">
+        <div class="crow tau"><span class="who">Tau<em id="tauTiming" data-full="Timing is simulated: 8 s blocks, activation 8 blocks after the proposal. On the testnet the rule is the same but the clock is the chain’s: activate_at_height must be at least the inclusion height plus the number of validators (README §Governance).">~1 min · simulated</em></span><div class="track">
           <div class="tau-seg"><span class="st" id="stPropose" data-full="Propose: any active validator sends a consensus_rule_update transaction with the new rule text or validator patch. It is an ordinary transaction, visible to everyone, with an activation height a few blocks ahead.">propose<small id="stProposeS">—</small></span><span class="st" id="stCheck" data-full="Checked: before the proposal is even admitted, the node compiles the proposed rule on its own against the active spec. If it does not compile or contradicts the live rules, it is refused at the door and never enters the chain.">checked<small id="stCheckS">—</small></span><span class="st" id="stAgree" data-full="Agreed: validators vote with consensus_rule_vote transactions. The proposal is scheduled once the quorum policy is met, for example 2 of 3 validators. The quorum rule itself is part of the chain state, so it cannot be changed quietly.">agreed<small id="stAgreeS">—</small></span><span class="st" id="stActive" data-full="Active: at the scheduled block height the node amends the spec and the spec revision counts up. Every node applies the new rules automatically; nobody upgrades software, nothing forks.">active<small id="stActiveS">—</small></span></div>
           <span class="rest" data-full="After activation nothing else is needed: no software upgrade, no coordination, no chain split. The next block is already judged by the new rules."><b>done.</b> no fork, no upgrade.</span>
         </div></div>
@@ -754,6 +757,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v15.6 · 27 Oct 2026</b>Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”.</li>
           <li><b>v15.5 · 27 Oct 2026</b>Wide screens, third pass: the blockchain panel gets double width and double height and its block detail flows into four columns instead of a scroll box; the block check shows every rule row; the scale is set so each panel keeps at least its desktop room. No label is cut off any more: the rule-change strip, check rows and transaction lines wrap whole words instead of ending in “…”. In the simple view the block detail shows short hashes, the technical view shows them in full.</li>
           <li><b>v15.4 · 27 Oct 2026</b>Wide screens, second pass: the chain core now spans both rows in the centre and is the largest thing on the screen, the validators column gets the full height, and the scale is set from a 2400 px design width instead of 1800, so panels keep their proportions.</li>
           <li><b>v15.3 · 27 Oct 2026</b>Wide screens: from 2200 px the whole HUD scales to fill the screen (up to 1.7×) instead of stretching its columns, so line lengths, the layout and the one-screen rule stay as designed while type, numbers and the chain core grow. The validators column now shrinks with the screen instead of adding a scrollbar at 1080 px height.</li>
@@ -857,6 +861,17 @@ const pick = a => a[(Math.random() * a.length) | 0];
 const hex6 = n => Math.max(0, Math.min(0xffffff, n | 0)).toString(16).padStart(6, "0");
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmt = n => Number(n).toLocaleString("de-DE");
+const fmtSec = s => s >= 90 ? (s / 60).toFixed(1) + " min" : s >= 10 ? Math.round(s) + " s" : s.toFixed(1) + " s";
+/* how long a rule change takes: simulated figure in the simulation, the node’s own minimum in live mode */
+function updateTiming(pace) {
+  const el = $("tauTiming"); if (!el) return;
+  if (S.mode !== "live") { el.textContent = "~1 min · simulated"; el.dataset.full = "Timing is simulated: 8 s blocks, activation 8 blocks after the proposal. On the testnet the rule is the same but the clock is the chain’s: activate_at_height must be at least the inclusion height plus the number of validators (README §Governance)."; return; }
+  const n = S.minActBlocks;
+  if (n == null) { el.textContent = "live · measuring"; el.dataset.full = "Waiting for the node’s governance state: it reports the earliest height at which the next rule change may activate."; return; }
+  const dur = pace != null ? fmtSec(n * pace) : null;
+  el.textContent = dur ? `≥ ${n} blocks · ~${dur}` : `≥ ${n} blocks`;
+  el.dataset.full = `From the live node: the next rule change may activate no earlier than ${n} blocks after it is included (min_activation_height_for_next_update).` + (dur ? ` At the measured block pace of ${fmtSec(pace)} that is about ${dur}.` : " The block pace is not measured yet.") + " The node does not report when past proposals were included, so this is the protocol minimum, not a measured average.";
+}
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ---------- shared view state ---------- */
@@ -1256,7 +1271,13 @@ function renderGov(extra = {}) {
 function readouts() {
   $("chipH").textContent = $("rH").textContent = fmt(S.height);
   $("rM").textContent = S.mempool.length;
-  $("rT").textContent = S.blockTimes.length ? (S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length).toFixed(1) + " s" : "—";
+  const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
+  $("rT").textContent = pace != null ? fmtSec(pace) : "—";
+  $("rTs").textContent = live && S.lastInterval != null ? `Block pace · last ${fmtSec(S.lastInterval)}` : "Block pace";
+  $("rTw").dataset.full = pace != null
+    ? (live ? `Average of the last ${S.blockTimes.length} block interval${S.blockTimes.length === 1 ? "" : "s"}, read from the blocks’ own timestamps (stream i7). The last block took ${fmtSec(S.lastInterval)}.` : `Average of the last ${S.blockTimes.length} simulated block intervals.`)
+    : (live ? "Needs two consecutive blocks with timestamps before a pace can be measured." : "Measured once the first blocks are sealed.");
+  updateTiming(pace);
   $("rR").textContent = S.clauses.size;
   $("chipFee").textContent = S.fee;
   $("chipRev").textContent = S.specRev;
@@ -1264,7 +1285,25 @@ function readouts() {
 }
 
 /* ---------- block detail + chain state ---------- */
-const kvHtml = o => `<dl class="kv">${Object.entries(o).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
+const KV_TIP = {
+  "Spec revision": "How many times the consensus rules have been amended by agreement. Revision 1 is the genesis spec; every agreed rule change counts it up by one.",
+  "Base fee": "The fee every transaction pays, set by the consensus rules (stream o9). It changes only through an agreed rule change.",
+  "Agreement needed": "How many validators must vote for a rule change before it is scheduled. Derived from the quorum policy, which is itself part of the chain state.",
+  "To change a rule": "How many validators must vote for a rule change before it is scheduled. Derived from the quorum policy, which is itself part of the chain state.",
+  "Rule txs per block": "The most rule transactions (offers, acceptances, own-rule deployments) a block may carry. A budget set by the rules, not by the proposer.",
+  "Accounts with own rules": "Accounts that have deployed a personal Tau rule for their own money, such as a spending limit or a time-lock. The node folds all of them into one spec.",
+  "Open proposals": "Rule changes that are collecting votes or are agreed and waiting for their activation height.",
+  "Block hash": "The fingerprint of this block: header, transactions and the state hash. The next block names it as its previous block.",
+  "Previous block": "The hash of the block before this one. The chain is the sequence of blocks each naming its predecessor.",
+  "State hash": "A fingerprint of everything the rules depend on: balances, the consensus rule program, the composite user-rule program, the validator set, pending governance and the quorum policy.",
+  "Proposer": "The validator that sealed this block. Only a validator eligible under the rules (stream o7) may seal.",
+  "Height": "The block’s position in the chain, counted from the genesis block #0.",
+  "Validators": "How many validators are active and which one is proposing the next block.",
+  "Approval threshold": "How many validator votes a rule change needs, as the node reports it from its governance state.",
+  "Next height": "The height of the next block the node expects to seal.",
+  "Eligibility": "How the node decides who may seal the next block, as reported by the node.",
+};
+const kvHtml = o => `<dl class="kv">${Object.entries(o).map(([k, v]) => `<dt${KV_TIP[k] ? ` data-full="${KV_TIP[k]}"` : ""}>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
 function txLine(t) {
   const cls = t.rejected ? "rej" : t.kind === "gov" ? "gov" : /rule/.test(t.type) ? "ok" : "";
   const label = t.rejected ? "✕ " + t.rejected : (TYPE_LABEL[t.type] || t.type);
@@ -1317,8 +1356,10 @@ function showState() {
 
 /* ---------- block intake (shared by sim + live) ---------- */
 function ingestBlock(b, live) {
-  const t = performance.now();
-  if (S.blocks.length) S.blockTimes.push((t - S.lastBlockAt) / 1000);
+  const t = performance.now(), prev = S.blocks[S.blocks.length - 1];
+  // live: the chain’s own clock (block timestamps, stream i7); simulation: the browser clock
+  const dt = live ? (prev && b.ts > prev.ts ? b.ts - prev.ts : null) : (prev ? (t - S.lastBlockAt) / 1000 : null);
+  if (dt != null) { S.blockTimes.push(dt); S.lastInterval = dt; }
   if (S.blockTimes.length > 10) S.blockTimes.shift();
   S.lastBlockAt = t;
   b.snap = { specRev: S.specRev, fee: S.fee, quorum: S.quorum, budget: S.ruleBudget, validators: S.validators.slice(), rules: S.clauses.size,
@@ -1348,7 +1389,7 @@ const PROPOSALS = [
 function simInit() {
   S.validators = Array.from({ length: 4 }, () => hex(96));
   SIM.accounts = Array.from({ length: 14 }, () => hex(96));
-  Object.assign(S, { height: 0, blocks: [], mempool: [], txTotal: 0, blockTimes: [], fee: 10, specRev: 1, ruleBudget: 8, updates: [], offers: [], byHeight: new Map() }); selectedBlock = null;
+  Object.assign(S, { height: 0, blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, fee: 10, specRev: 1, ruleBudget: 8, updates: [], offers: [], byHeight: new Map() }); selectedBlock = null;
   S.clauses = new Map();
   // a few accounts start with their own policies so the composite is visible from the first frame
   for (let i = 0; i < 3; i++) S.clauses.set(SIM.accounts[i], randomPolicy(SIM.accounts));
@@ -1516,6 +1557,7 @@ function liveMessage(ev) {
       const m = /o9\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]+)/.exec(d.consensus_rules);
       if (m) S.fee = parseInt(m[1], 16);
     }
+    S.minActBlocks = Number.isFinite(d.min_activation_height_for_next_update) && Number.isFinite(d.next_block_height) ? Math.max(0, d.min_activation_height_for_next_update - d.next_block_height) : (Number.isFinite(d.active_validator_count) ? d.active_validator_count : null);
     renderGov({ "Approval threshold": d.approval_threshold ?? "—", "Next height": d.next_block_height ?? "—", "Eligibility": esc(d.eligibility_mode || "—") });
     renderRuleWorld(); readouts();
   }
@@ -1526,7 +1568,7 @@ function liveConnect() {
   if (location.protocol === "https:" && /^ws:\/\//i.test(url) && !/^ws:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(url)) { url = url.replace(/^ws:/i, "wss:"); $("wsurl").value = url; log("Plain ws:// is not allowed from an https page; using wss:// instead.", "warn"); }
   log(`Connecting to ${esc(url)} …`, "warn");
   setMode("live", "Connecting");
-  Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], height: 0, updates: [], offers: [] });
+  Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [] });
   S.clauses = new Map();
   $("ribbon").innerHTML = ""; $("feed").innerHTML = "";
   $("offers").innerHTML = `<div class="empty">Rule offers are stored per account. Live mode lists them once account lookups are added.</div>`;
@@ -1841,9 +1883,21 @@ function detailValidator(v, i) {
     let z = wide ? Math.max(1, Math.min(1.7, w / 2800, h / 950)) : 1;
     z = Math.round(z * 100) / 100;
     document.documentElement.classList.toggle("wide", wide);
+    document.documentElement.classList.toggle("tall", wide && w / h < 2.2);
     document.documentElement.style.setProperty("--z", z);
   };
   apply(); addEventListener("resize", apply);
+})();
+
+/* ---------- chain core: a true circle at every size (the canvas box is the largest square that fits its panel) ---------- */
+(() => {
+  const cv = $("core"), host = cv.parentElement, ro = host.querySelector(".readout"), fixed = matchMedia("(min-width: 1600px) and (min-height: 821px)");
+  const fit = () => {
+    if (!fixed.matches) { cv.style.width = cv.style.height = ""; return; }
+    const h = host.clientHeight - (ro ? ro.offsetHeight + 6 : 0), w = host.clientWidth, sz = Math.max(160, Math.floor(Math.min(w, h)));
+    cv.style.width = cv.style.height = sz + "px";
+  };
+  new ResizeObserver(fit).observe(host); fixed.addEventListener("change", fit); fit();
 })();
 
 /* ---------- header value chips explain themselves ---------- */
@@ -1960,7 +2014,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.5`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.6`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
