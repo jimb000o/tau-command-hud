@@ -16,12 +16,17 @@ Plain questions work too in a private chat: "height?", "last proposal?",
 "is my tx in? <hash>", or just a hash or an address. In groups it only
 answers commands (Telegram's privacy mode hides everything else anyway).
 
-It never writes to the alerts channel: answers go only to the private chat or
-group the question came from. Each person gets a few questions a minute;
+Where it answers: private chats, groups (commands only), the channel's
+discussion group, and the channel's Direct Messages (Telegram's "message the
+channel" button, when switched on). Into the alerts channel itself it writes
+only when a channel admin posts a command there; the command post is then
+removed and the answer stays. `python bot.py --post-howto` posts an "Ask the
+bot" message with buttons to the channel and pins it. Each person gets a few questions a minute;
 past that the bot says so once and then stays quiet until the budget refills.
 
   python bot.py          run the bot (needs TELEGRAM_BOT_TOKEN)
   python bot.py --ask "/height"   print the answer to one question, send nothing
+  python bot.py --post-howto      post and pin the "Ask the bot" message in the channel
 """
 from __future__ import annotations
 
@@ -401,6 +406,27 @@ def answer_help(private: bool = True) -> str:
     return "\n".join(x for x in out if x is not None)
 
 
+def buttons(bot_name: str) -> dict:
+    """The row of buttons under channel posts: open the bot in a private chat with a question asked."""
+    b = f"https://t.me/{bot_name}?start="
+    return {"inline_keyboard": [[{"text": "💬 Ask the bot", "url": b + "help"},
+                                 {"text": "⛓ Height", "url": b + "height"},
+                                 {"text": "🟢 Status", "url": b + "status"}]]}
+
+
+def howto_text(bot_name: str) -> str:
+    return "\n".join([
+        "💬 <b>Ask the Tau HUD bot</b>",
+        "Live answers from the Tau testnet, straight from Tau HUD's own node.",
+        "",
+        f"Tap a button below, or write to @{e(bot_name)}:",
+    ] + [h for _, _, h in COMMANDS if h] + [
+        "",
+        "In a private chat you can also just write <i>height?</i>, <i>last proposal?</i> or paste a transaction hash or an address. "
+        "Under any post here you can ask with a command in the comments.",
+    ])
+
+
 # ---------------- reading a question ----------------
 def parse(text: str, bot_name: str, private: bool) -> tuple[str, str | None] | None:
     """(intent, argument) for a message, or None when it is not for the bot."""
@@ -412,6 +438,8 @@ def parse(text: str, bot_name: str, private: bool) -> tuple[str, str | None] | N
         if m.group(2) and bot_name and m.group(2).lower() != bot_name.lower():
             return None  # a command for another bot in the same group
         cmd, arg = m.group(1).lower(), m.group(3).strip()
+        if cmd == "start" and arg:  # deep link from a button: t.me/<bot>?start=height
+            cmd, arg = arg.split("_", 1)[0].lower(), ""
         alias = {"start": "help", "h": "height", "height": "height", "p": "proposals", "proposal": "proposals",
                  "proposals": "proposals", "rules": "proposals", "votes": "proposals", "tx": "tx", "a": "address",
                  "address": "address", "balance": "address", "account": "address", "b": "block", "block": "block",
@@ -533,6 +561,8 @@ class Bot:
         log.info("answering questions as @%s", self.name or "?")
 
     async def handle(self, upd: dict):
+        if upd.get("channel_post"):
+            return await self.handle_channel_post(upd["channel_post"])
         msg = upd.get("message") or {}
         chat, user = msg.get("chat") or {}, msg.get("from") or {}
         if not chat or self.channel_chat(chat) or msg.get("is_automatic_forward"):
@@ -544,7 +574,8 @@ class Bot:
             return  # other bots (an anonymous group admin also arrives as a bot, with the group as sender_chat)
         if time.time() - float(msg.get("date") or 0) > MAX_AGE:
             return  # asked while the bot was down: an old answer would only confuse
-        private = chat.get("type") == "private"
+        # the channel's Direct Messages chat is one conversation per person: treat it like a private chat
+        private = chat.get("type") == "private" or bool(chat.get("is_direct_messages"))
         q = parse(msg.get("text") or "", self.name, private)
         if not q:
             return
@@ -563,12 +594,44 @@ class Bot:
         await self.reply(chat, msg, text)
         self.answered += 1
 
+    async def handle_channel_post(self, msg: dict):
+        """A command an admin posted in the alerts channel: answer there, remove the command post."""
+        chat = msg.get("chat") or {}
+        un = "@" + str(chat.get("username") or "")
+        if chat.get("type") != "channel" or not (CHANNEL in (str(chat.get("id")), un) or un.lower() == CHANNEL.lower()):
+            return
+        if time.time() - float(msg.get("date") or 0) > MAX_AGE or not (msg.get("text") or "").startswith("/"):
+            return
+        q = parse(msg["text"], self.name, False)
+        if not q:
+            return
+        b = self.buckets.setdefault(int(chat["id"]), Bucket())
+        if not b.take():
+            return
+        async with self.busy:
+            try:
+                text = await answer(self.src, q[0], q[1], False)
+            except Exception:
+                log.exception("answering %s", q[0])
+                return
+        r = await asyncio.to_thread(self.tg.call, "sendMessage", {
+            "chat_id": chat["id"], "text": text, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True},
+            "reply_markup": buttons(self.name or "tauhud_alerts_bot")})
+        if not r.get("ok"):
+            log.warning("channel answer failed: %s %s", r.get("error_code", ""), r.get("description", ""))
+            return
+        await asyncio.to_thread(self.tg.call, "deleteMessage", {"chat_id": chat["id"], "message_id": msg.get("message_id")})
+        self.answered += 1
+
     async def reply(self, chat: dict, msg: dict, text: str):
-        if self.channel_chat(chat):  # belt and braces: answers never reach the alerts channel
+        if self.channel_chat(chat):  # belt and braces: answers to questions never go to a channel
             return
         params = {"chat_id": chat["id"], "text": text, "parse_mode": "HTML",
                   "link_preview_options": {"is_disabled": True}}
-        if chat.get("type") != "private":
+        topic = (msg.get("direct_messages_topic") or {}).get("topic_id")
+        if chat.get("is_direct_messages") and topic is not None:
+            params["direct_messages_topic_id"] = topic  # the conversation with this one person
+        elif chat.get("type") != "private":
             params["reply_parameters"] = {"message_id": msg.get("message_id"), "allow_sending_without_reply": True}
         r = await asyncio.to_thread(self.tg.call, "sendMessage", params)
         if not r.get("ok"):
@@ -576,7 +639,7 @@ class Bot:
 
     async def poll_once(self):
         r = await asyncio.to_thread(self.tg.call, "getUpdates",
-                                    {"offset": self.offset, "timeout": POLL_TIMEOUT, "allowed_updates": ["message"]},
+                                    {"offset": self.offset, "timeout": POLL_TIMEOUT, "allowed_updates": ["message", "channel_post"]},
                                     POLL_TIMEOUT + 15)
         if not r.get("ok"):
             code = r.get("error_code")
@@ -617,8 +680,29 @@ async def ask_cli(text: str) -> int:
     return 0
 
 
+def post_howto() -> int:
+    """Post the "Ask the bot" message to the channel and pin it."""
+    tg = Telegram()
+    name = ((tg.call("getMe", {}) or {}).get("result") or {}).get("username")
+    if not name:
+        print("bot: cannot read its name (TELEGRAM_BOT_TOKEN?)")
+        return 1
+    r = tg.call("sendMessage", {"chat_id": CHANNEL, "text": howto_text(name), "parse_mode": "HTML",
+                                "link_preview_options": {"is_disabled": True}, "reply_markup": buttons(name)})
+    if not r.get("ok"):
+        print(f"post: FAILED {r.get('error_code', '')} {r.get('description', '')}")
+        return 1
+    mid = r["result"]["message_id"]
+    p = tg.call("pinChatMessage", {"chat_id": CHANNEL, "message_id": mid, "disable_notification": True})
+    print(f"posted to {CHANNEL} as @{name}; " + ("pinned" if p.get("ok") else
+          f"NOT pinned ({p.get('description', '')}): give the bot the 'Pin messages' right or pin it by hand"))
+    return 0
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    if "--post-howto" in sys.argv:
+        sys.exit(post_howto())
     if "--ask" in sys.argv:
         i = sys.argv.index("--ask")
         sys.exit(asyncio.run(ask_cli(" ".join(sys.argv[i + 1:]))))

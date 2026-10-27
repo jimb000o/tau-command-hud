@@ -103,6 +103,9 @@ class Api(BaseHTTPRequestHandler):
         elif method == "sendMessage":
             TG["sent"].append(body)
             out = {"ok": True, "result": {"message_id": 1}}
+        elif method in ("deleteMessage", "pinChatMessage"):
+            TG.setdefault(method, []).append(body)
+            out = {"ok": True, "result": True}
         else:
             out = {"ok": False, "description": "unknown method"}
         data = json.dumps(out).encode()
@@ -151,6 +154,7 @@ def test_parse():
     P = lambda t, private=True: bot.parse(t, "tauhud_alerts_bot", private)  # noqa: E731
     assert P("/height") == ("height", None)
     assert P("/start") == ("help", None)
+    assert P("/start height") == ("height", None) and P("/start status") == ("status", None)
     assert P("height?") == ("height", None)
     assert P("last proposal?") == ("proposals", None)
     assert P("is my tx in?") == ("tx", None)
@@ -238,11 +242,37 @@ async def main():
         await asyncio.sleep(1.2)
         assert sum(s["chat_id"] == -61 for s in TG["sent"]) == 1
 
+        # the channel's Direct Messages: like a private chat, answered into that person's topic
+        say("height?", chat_id=-70, ctype="supergroup", user=11)
+        TG["updates"][-1]["message"]["chat"]["is_direct_messages"] = True
+        TG["updates"][-1]["message"]["direct_messages_topic"] = {"topic_id": 42, "user": {"id": 11}}
+        await until(lambda: any(s["chat_id"] == -70 for s in TG["sent"]), "direct message answered")
+        r = [s for s in TG["sent"] if s["chat_id"] == -70][0]
+        assert r["direct_messages_topic_id"] == 42 and "reply_parameters" not in r and "Block #372" in r["text"], r
+
+        # a command an admin posts in the alerts channel: answered there with buttons, command post removed
+        def channel_post(text, chat_id=-100123, username="tauHUDcom"):
+            with TG["lock"]:
+                uid = TG["next"]
+                TG["next"] += 1
+                TG["updates"].append({"update_id": uid, "channel_post": {"message_id": 500 + uid, "date": int(time.time()), "text": text,
+                                                                         "chat": {"id": chat_id, "type": "channel", "username": username}}})
+            return 500 + uid
+        mid = channel_post("/height")
+        await until(lambda: any(s["chat_id"] == -100123 for s in TG["sent"]), "channel command answered")
+        r = [s for s in TG["sent"] if s["chat_id"] == -100123][0]
+        assert "Block #372" in r["text"] and "t.me/tauhud_alerts_bot?start=help" in json.dumps(r["reply_markup"]), r
+        await until(lambda: TG.get("deleteMessage"), "command post removed")
+        assert TG["deleteMessage"] == [{"chat_id": -100123, "message_id": mid}]
+        channel_post("A normal post")
+        channel_post("/height", chat_id=-100999, username="someoneelse")
+        await asyncio.sleep(1.2)
+        assert sum(str(s["chat_id"]).startswith("-100") for s in TG["sent"]) == 1
+
         # the alerts channel and old questions: never answered
         await nothing_for("/height", chat_id=-100123, ctype="channel", username="tauHUDcom")
         await nothing_for("/height", chat_id=-100123, ctype="supergroup", username="tauHUDcom")
         await nothing_for("/height", date=time.time() - 3600)
-        assert not any(str(s["chat_id"]).startswith("-100") for s in TG["sent"])
 
         # per person: 5 questions in a row, then one notice, then quiet
         n = len(TG["sent"])
@@ -254,6 +284,11 @@ async def main():
         r = await ask("/height", user=100, chat_id=100)  # someone else is not affected
         assert "Block #372" in r["text"]
         task.cancel()
+    # --post-howto: posted to the channel with buttons and pinned
+    n = len(TG["sent"])
+    assert await asyncio.to_thread(bot.post_howto) == 0
+    assert TG["sent"][n]["chat_id"] == "@tauHUDcom" and "Ask the Tau HUD bot" in TG["sent"][n]["text"]
+    assert TG["pinChatMessage"][-1]["chat_id"] == "@tauHUDcom"
     srv.shutdown()
     if "-v" in sys.argv:
         print("\n----\n".join(s["text"] for s in TG["sent"][:12]))

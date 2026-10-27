@@ -304,6 +304,19 @@ the group are ignored. Privacy mode can stay on (it lets commands and mentions t
 - `docker compose run --rm bot python bot.py --ask "/proposals"` prints one answer and sends nothing.
 - `docker compose logs bot | grep answering` shows the bot's username.
 
+Making it visible in the channel:
+- Every alert and recap post carries three buttons (Ask the bot, Height, Status) that open
+  the bot in a private chat with that question asked (`t.me/<bot>?start=height`).
+  `TELEGRAM_BOT_USERNAME` (default `tauhud_alerts_bot`, empty = no buttons).
+- `docker compose run --rm bot python bot.py --post-howto` posts an "Ask the bot" message
+  with the commands and the buttons to the channel and pins it (the bot needs the "Pin
+  messages" admin right; otherwise pin it by hand).
+- A command a channel admin posts in the channel itself (`/height`) is answered there and
+  the command post is removed. Only admins can post in a channel, so this is for showing.
+- Channel Direct Messages (channel settings → Direct Messages): messages people send to the
+  channel arrive at the bot when it is a channel admin and are answered in that
+  conversation, like a private chat.
+
 Logs: `docker compose logs -f bot`.
 
 ## Share previews
