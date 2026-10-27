@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.14"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.15"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';
@@ -277,6 +277,14 @@
     upd.classList.add("tl"); tip(upd, TIPS.updates);
     const updWrap = el("span", "upd" + (store.get(SEEN_KEY) !== LATEST ? " new" : "")); updWrap.append(upd);
     upd.addEventListener("click", markSeen);
+    if (page !== "explorer" && page !== "account") {   // every page can look something up: block number, hash or address go to the Explorer
+      const sf = el("form", "tn-search"); sf.action = ROOT + "explorer/"; sf.method = "get"; sf.setAttribute("role", "search");
+      const si = el("input"); si.name = "q"; si.type = "search"; si.placeholder = "Search  ⌘K"; si.setAttribute("aria-label", "Search a block number, transaction hash or address"); si.autocomplete = "off"; si.spellcheck = false;
+      tip(sf, "Block number, transaction hash or address: opens the Explorer with the result. Ctrl+K or ⌘K focuses this field.");
+      sf.append(si); right.append(sf);
+      document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); si.focus(); si.select(); } });
+      const css = el("style"); css.textContent = `.tnav .tn-search { display: flex; align-items: center; margin: 0; } .tnav .tn-search input { width: 150px; box-sizing: border-box; padding: 4px 8px; font: 12px var(--tn-mono); color: #fff; background: rgba(255,255,255,.04); border: 1px solid var(--tn-hair); border-radius: 999px; outline: none; } .tnav .tn-search input::placeholder { color: var(--tn-dim); } .tnav .tn-search input:focus { border-color: #fff; width: 220px; } .tnav .tn-search input::-webkit-search-cancel-button { display: none; } @media (max-width: 700px) { .tnav .tn-search { display: none; } }`; document.head.append(css);
+    }
     right.append(updWrap);
     if (slots.view) { const lab = el("span", "vlab", "View"); right.append(lab, slots.view); }
     if (slots.gear) {
