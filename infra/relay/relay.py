@@ -571,8 +571,8 @@ class Relay:
         out, prev = [], None
         for b in self.ordered_blocks():
             ts = self._ts(b)
-            if ts is None:
-                continue
+            if not ts or self._height(b) < 1:
+                continue  # block 0 (genesis) carries timestamp 0
             if prev and ts - prev[1] > STALL_SECONDS and ts >= since:
                 out.append({"after": prev[0], "start": prev[1], "end": ts})
             prev = (self._height(b), ts)

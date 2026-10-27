@@ -67,11 +67,12 @@ check(data["hours"][0][:4] == [T0, 21, 17, 12] and data["fields"][0] == "hour", 
 check("status" in data and data["sync_lag_blocks"] == relay.SYNC_LAG, "/uptime carries the current status")
 
 # stalls: blocks 1..5 a minute apart, then 20 minutes of nothing
+again.blocks["0" * 64] = {"block_hash": "0" * 64, "header": {"block_number": 0, "timestamp": 0}}
 for n in range(1, 7):
     ts = T0 + n * 60 + (1200 if n == 6 else 0)
     again.blocks[f"{n:064x}"] = {"block_hash": f"{n:064x}", "header": {"block_number": n, "timestamp": ts}}
-st = again.chain_stalls(T0)
-check(st == [{"after": 5, "start": T0 + 300, "end": T0 + 1560}], f"chain stall {st}")
+st = again.chain_stalls(0)
+check(st == [{"after": 5, "start": T0 + 300, "end": T0 + 1560}], f"chain stall, genesis ignored {st}")
 
 # a month later the old hours are gone
 relay.time.time = lambda: T0 + 40 * 86400
