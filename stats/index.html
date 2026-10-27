@@ -84,16 +84,24 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .top .filters { flex: 0 1 auto; }
 /* scrolling layout: block time and restarts full width, the rest in pairs */
 .main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
-.p-blocks, .p-rs { grid-column: 1 / -1; }
+.p-blocks, .p-rs, .p-nodes { grid-column: 1 / -1; }
 @media (max-width: 960px) { .main { grid-template-columns: minmax(0, 1fr); } }
 .timeline { position: relative; width: 100%; }
 .timeline svg { display: block; width: 100%; height: auto; overflow: visible; }
 .timeline text { font: 11px var(--mono); fill: var(--dim); }
 .tablewrap.open { max-height: none; }
 /* one screen: block time beside restarts on top, four panels below */
-html.fit .main { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr); gap: 10px; align-items: stretch; min-height: 0; }
-html.fit .p-blocks { grid-column: 1 / 4; }
-html.fit .p-rs { grid-column: 4; }
+html.fit .main { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: minmax(0, .6fr) minmax(0, .6fr) minmax(0, 1fr); gap: 10px; align-items: stretch; min-height: 0; }
+html.fit .p-blocks { grid-column: 1 / 4; grid-row: 1 / 3; }
+html.fit .p-rs { grid-column: 4; grid-row: 1; }
+html.fit .p-nodes { grid-column: 4; grid-row: 2; }
+/* ultrawide (21:9 and wider): restarts and community nodes side by side next to the block-time chart */
+html.fit.wide .main { grid-template-columns: repeat(20, minmax(0, 1fr)); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr); }
+html.fit.wide .main > .panel { grid-column: span 5; grid-row: auto; }
+html.fit.wide .main > .p-blocks { grid-column: 1 / 13; grid-row: 1; }
+html.fit.wide .main > .p-rs { grid-column: 13 / 17; grid-row: 1; }
+html.fit.wide .main > .p-nodes { grid-column: 17 / 21; grid-row: 1; }
+html.fit.wide .p-rs .legend { display: flex; }
 html.fit .panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px 14px; }
 html.fit .panel > * { flex: none; }
 html.fit .chart { flex: 1 1 0; min-height: 60px; overflow: hidden; }
@@ -112,7 +120,7 @@ html.fit .tiles { gap: 8px; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 html.fit .tile { padding: 8px 12px; }
 html.fit .tile .v { font-size: 24px; margin-top: 2px; }
 html.fit .tile p { margin-top: 2px; }
-html.fit .tile .scope, html.fit .p-rs h2 small, html.fit .p-drop h2 small, html.fit #hRestarts span, html.fit .p-drop .note { display: none; }
+html.fit .tile .scope, html.fit:not(.wide) #hNodes span, html.fit .p-rs .legend, html.fit .p-rs h2 small, html.fit .p-drop h2 small, html.fit #hRestarts span, html.fit .p-drop .note { display: none; }
 html.fit footer { padding-top: 6px; font-size: 11px; }
 html.fit footer p { margin: 0; }
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
@@ -143,6 +151,12 @@ td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top
 @media (max-width: 520px) { #droppedWrap td:nth-child(4), #droppedWrap th:nth-child(4) { display: none; } }
 html.fit #droppedWrap td:nth-child(4), html.fit #droppedWrap th:nth-child(4) { display: none; }
 #droppedWrap td { white-space: nowrap; }
+#nodesWrap td { white-space: nowrap; }
+#nodesWrap .agree { font-weight: 600; }
+#nodesWrap .agree.same { color: var(--ok); }
+#nodesWrap .agree.different { color: #fff; }
+#nodesWrap .agree.ahead, #nodesWrap .agree.unknown { color: var(--dim); font-weight: 400; }
+.panel h2 a.tbl { text-decoration: none; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 td .what { display: block; color: var(--dim); font-size: 11.5px; }
 .tablewrap { max-height: 320px; overflow: auto; margin-top: 8px; }
@@ -208,7 +222,7 @@ footer a { color: var(--dim); }
     </section>
 
     <section class="panel p-rs">
-      <h2 data-tip="Chain restarts: when the testnet started over from its genesis.\nEach restart loses the chain’s whole history.">Chain restarts <small>when the testnet started over from its genesis</small></h2>
+      <h2 data-tip="Chain restarts: when the testnet started over from its genesis.\nEach restart loses the chain’s whole history.\nGreen: current chain. Grey: earlier chain. Hollow: from our notes.">Chain restarts <small>when the testnet started over from its genesis</small></h2>
       <p class="headline" id="hRestarts"></p>
       <div class="legend"><span><i style="background:var(--ok)"></i>current chain</span><span><i style="background:#8a8a94"></i>earlier chain, recorded by our relay</span><span><i style="background:none;border:1px solid #8a8a94;border-radius:50%"></i>from our notes, time approximate</span></div>
       <div class="timeline" id="cRestarts"></div>
@@ -242,6 +256,12 @@ footer a { color: var(--dim); }
       <div class="tablewrap open" id="droppedWrap"></div>
       <p class="note">A transaction the network refuses at another node’s door never reaches us, so a read-only node cannot count every refusal. What it can see: transactions that waited in its mempool and then vanished without being sealed (refused on re-check, expired or replaced).</p>
     </section>
+
+    <section class="panel p-nodes">
+      <h2 data-tip="Nodes that other people run with the Tau HUD kit.\nWe compare each one’s block at its height with ours.">Community nodes<a class="tbl" href="https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md" target="_blank" rel="noopener">Run a node</a></h2>
+      <p class="headline" id="hNodes"></p>
+      <div class="tablewrap open" id="nodesWrap"></div>
+    </section>
   </main>
 
   <footer>
@@ -256,7 +276,7 @@ footer a { color: var(--dim); }
 "use strict";
 const $ = id => document.getElementById(id);
 const RELAY = "node.tauhud.com";
-const STATS_URL = `https://${RELAY}/stats`, WS_URL = `wss://${RELAY}`;
+const STATS_URL = `https://${RELAY}/stats`, WS_URL = `wss://${RELAY}`, COMMUNITY_URL = `https://${RELAY}/community`;
 const PARAMS = new URLSearchParams(location.search);
 const SAMPLE = PARAMS.has("sample");
 const SVGNS = "http://www.w3.org/2000/svg";
@@ -310,6 +330,7 @@ const quant = (a, q) => { if (!a.length) return null; const s = [...a].sort((x, 
 /* ------------------------------ data ------------------------------ */
 // D: { rows:[{n,ts,txs,transfers,volume,types,senders:Set}], accounts:[], restarts:[], dropped:[], droppedTotal, governance, trackingSince, head, canonical, tip, mode }
 let D = null, RANGE = 0, lastFetch = 0;
+let NODES = null;  // GET /community: other people's nodes and how they compare with ours (null until it answers)
 
 function fromStats(j) {
   return {
@@ -364,6 +385,16 @@ function startWindowMode() {
   WS.onclose = () => { WS = null; setState("off", "Offline", "The connection to our node closed. Retrying in 10 s."); setTimeout(startWindowMode, 10000); };
 }
 
+async function loadNodes() {
+  if (SAMPLE) { NODES = sampleNodes(); render(); return; }
+  try {
+    const r = await fetch(COMMUNITY_URL, { cache: "no-store" });
+    if (!r.ok) throw new Error(String(r.status));
+    NODES = await r.json();
+  } catch (e) { NODES = null; }
+  render();
+}
+
 async function load() {
   if (SAMPLE) { D = sampleData(); lastFetch = Date.now(); render(); return; }
   try {
@@ -400,6 +431,13 @@ function sampleData() {
     dropped: [{ tx_hash: "9f3c1e".padEnd(64, "7"), type: "user_tx", sender: accounts[3], seen: now - 5400, left: now - 5330 },
               { tx_hash: "41ab09".padEnd(64, "2"), type: "rule_offer", sender: accounts[6], seen: now - 1900, left: now - 1840 }],
     governance: { pending: 1, scheduled: 0, activated: 1, expired: 0, validators: 1 } };
+}
+
+function sampleNodes() {
+  const tip = D ? D.head : 180, now = Math.floor(Date.now() / 1000);
+  const n = (name, height, agrees, seen, kit) => ({ id: name, name, height, tip, head: height, kit, agrees, first_seen: now - 7200, last_seen: now - seen, age_seconds: seen });
+  return { reference: { name: "tauhud.com", height: tip, head: tip, tip, upstream_connected: true },
+    nodes: [n("berlin-pi", tip, "same", 40, "1"), n("kln.home", tip - 1, "same", 95, "1"), n("tau_watcher_07", tip - 14, "unknown", 300, "1"), n("old-genesis", 512, "different", 610, "1")], ttl_seconds: 900 };
 }
 
 /* ------------------------------ derived ------------------------------ */
@@ -713,6 +751,9 @@ function render() {
     else $("droppedWrap").replaceChildren();
   }
 
+  // community nodes
+  renderNodes();
+
   // tiles
   const tiles = $("tiles"); tiles.replaceChildren();
   const g = D.governance;
@@ -734,6 +775,42 @@ function render() {
   );
 }
 
+const AGREE = {
+  same: ["Same chain", "Its block at that height matches ours."],
+  different: ["Other chain", "Its block at that height differs from ours:\nit follows another chain, e.g. an older genesis."],
+  ahead: ["Ahead of ours", "It reports blocks our node does not have yet,\nso there is nothing to compare."],
+  unknown: ["Not checked", "No block hash to compare yet."],
+};
+function renderNodes() {
+  const host = $("nodesWrap"), head = $("hNodes");
+  const nodes = NODES && Array.isArray(NODES.nodes) ? NODES.nodes : [];
+  const ref = NODES && NODES.reference, refTip = ref ? (ref.tip ?? ref.height) : (D && D.tip);
+  if (!nodes.length) {
+    head.textContent = "No community node is reporting yet.";
+    const p = el("p", "note", "Anyone can run a node with the Tau HUD kit. It shows up here within a minute, and we check that it follows the same chain as ours. ");
+    const a = el("a", "", "Run your own node"); a.href = "https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md"; a.target = "_blank"; a.rel = "noopener"; a.style.color = "#fff";
+    p.append(a); host.replaceChildren(p);
+    return;
+  }
+  const same = nodes.filter(x => x.agrees === "same").length, diff = nodes.filter(x => x.agrees === "different").length;
+  head.replaceChildren(document.createTextNode(`${nodes.length} node${nodes.length === 1 ? "" : "s"} reporting, ${same} on our chain${diff ? `, ${diff} on another` : ""}. `),
+    el("span", "", ref && ref.height != null ? `Ours: #${fmtN(ref.height)}.` : ""));
+  const t = el("table"), th = el("thead"), hr = el("tr");
+  hr.append(el("th", "", "Node"), el("th", "n", "Height"), el("th", "", "Chain")); th.append(hr); t.append(th);
+  const tb = el("tbody");
+  nodes.forEach(x => {
+    const tr = el("tr"), name = el("td"), h = el("td", "n"), a = el("td");
+    name.append(document.createTextNode(String(x.name || x.id || "unnamed")), el("span", "what", x.age_seconds != null ? `seen ${fmtDur(x.age_seconds)} ago` : ""));
+    const behind = refTip != null && x.height != null ? refTip - x.height : null;
+    h.append(document.createTextNode(x.height != null ? `#${fmtN(x.height)}` : "—"),
+      el("span", "what", behind == null ? "" : behind > 0 ? `${fmtN(behind)} behind` : behind < 0 ? `${fmtN(-behind)} ahead` : "at the tip"));
+    const [label, why] = AGREE[x.agrees] || AGREE.unknown, mark = el("span", `agree ${AGREE[x.agrees] ? x.agrees : "unknown"}`, label);
+    a.dataset.tip = why; a.append(mark);
+    tr.append(name, h, a); tb.append(tr);
+  });
+  t.append(tb); host.replaceChildren(t);
+}
+
 /* ------------------------------ one screen ------------------------------ */
 // Landscape screens from laptop size up get the whole page without scrolling:
 // it is laid out for at least 1600 x 820 CSS px and scaled up to fill the
@@ -745,6 +822,7 @@ function fit() {
   ZOOM = FIT ? Math.max(1, Math.min(2, w / 1600, h / 820)) : 1;
   const root = document.documentElement;
   root.classList.toggle("fit", FIT);
+  root.classList.toggle("wide", FIT && w / h >= 2.1);
   root.style.setProperty("--z", ZOOM);
   root.style.setProperty("--fitH", Math.floor(h / ZOOM) + "px");
 }
@@ -759,8 +837,8 @@ document.querySelectorAll("[data-table]").forEach(b => b.addEventListener("click
   if (!on) render();
 }));
 let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(render, 120); }).observe(document.querySelector(".wrap"));
-load();
-if (!SAMPLE) setInterval(load, 30000);  // also upgrades from the 50-block window once /stats answers
+load().then(loadNodes);
+if (!SAMPLE) { setInterval(load, 30000); setInterval(loadNodes, 30000); }  // also upgrades from the 50-block window once /stats answers
 setInterval(() => { if (D && document.visibilityState === "visible" && tip.hidden) render(); }, 15000);
 </script>
 </body>
