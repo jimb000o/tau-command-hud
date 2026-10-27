@@ -42,7 +42,7 @@
     gear: "Settings: node address and Connect, background rain.",
     gearSub: "Settings: which node this page reads, guided tour, about.",
     live: "This page reads the real testnet through the community relay. Opens the HUD in Live mode.",
-    sim: "Simulation: invented activity that follows the documented protocol, generated in your browser. Runs in the HUD.",
+    sim: "Simulation: invented activity that follows the documented protocol, generated in your browser. It runs only in the HUD, so this opens the HUD; this page always shows the live chain.",
     simple: "Simple view: plain words, fewer numbers, no stream names.",
     tech: "Technical view: stream names (i10, o5, o9), hashes and rule text everywhere.",
     unoff: "Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Opens the full notice.",
@@ -83,7 +83,7 @@
     const title = (tEl && tEl.textContent.trim()) || (P[page] && P[page].t) || "";
     const own = old && old.querySelector("#state");
     const rail = el("header", "trail");
-    const brand = el("a", "brand", `${MARK}<h1>Tau HUD</h1><span>${esc(title)}</span>`); brand.href = ROOT; brand.title = "Back to the HUD";
+    const brand = el("a", "brand", `${MARK}<span class="bn">Tau HUD</span><h1 class="bt">${esc(title)}</h1>`);  // the page title is the heading, the logo is not brand.href = ROOT; brand.title = "Back to the HUD";
     const unoff = el("a", "chip unoff", "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.title = TIPS.unoff;
     const chips = el("div", "chips");
     const chip = (tag, id, cls, html, t) => { const c = el(tag, "chip" + (cls ? " " + cls : ""), html); c.id = id; c.title = t; return c; };
@@ -184,7 +184,7 @@
   function subControls(tip) {
     const src = el("div", "seg"); src.setAttribute("role", "group"); src.setAttribute("aria-label", "Data source");
     const live = el("a", "", '<span class="dot none" data-livedot></span>Live node'); live.href = ROOT + "?mode=live"; live.setAttribute("aria-pressed", "true"); tip(live, TIPS.live);
-    const sim = el("a", "", "Simulation"); sim.href = ROOT + "?mode=sim"; sim.setAttribute("aria-pressed", "false"); tip(sim, TIPS.sim);
+    const sim = el("a", "", "Simulation ↗"); sim.href = ROOT + "?mode=sim";  // leaves this page: simulation only runs in the HUD sim.setAttribute("aria-pressed", "false"); tip(sim, TIPS.sim);
     src.append(live, sim);
     const view = el("div", "seg"); view.setAttribute("role", "group"); view.setAttribute("aria-label", "Detail level");
     const bS = el("button", "", "Simple"), bT = el("button", "", "Technical"); bS.type = bT.type = "button"; tip(bS, TIPS.simple); tip(bT, TIPS.tech);

@@ -54,8 +54,8 @@ header.trail .brand { display: flex; flex-direction: row; align-items: center; g
 header.trail .mark { width: 26px; height: 26px; flex: 0 0 auto; display: block; }
 header.trail .mark circle { fill: none; stroke: #fff; stroke-opacity: .45; stroke-width: 3.5; }
 header.trail .mark .pulse { fill: none; stroke: var(--tn-ok); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
-header.trail .brand h1 { margin: 0; font: 700 22px/1 var(--tn-font); letter-spacing: .06em; text-transform: none; background: linear-gradient(90deg, #ffffff 0%, #b8b8c2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); white-space: nowrap; }
-header.trail .brand span { font: 500 11px var(--tn-font); letter-spacing: .3em; color: var(--tn-dim); text-transform: uppercase; white-space: nowrap; }
+header.trail .brand .bn { margin: 0; font: 700 22px/1 var(--tn-font); letter-spacing: .06em; text-transform: none; background: linear-gradient(90deg, #ffffff 0%, #b8b8c2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); white-space: nowrap; }
+header.trail .brand h1.bt { margin: 0;  font: 500 11px var(--tn-font); letter-spacing: .3em; color: var(--tn-dim); text-transform: uppercase; white-space: nowrap; }
 header.trail .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; min-width: 0; }
 header.trail .chip { font: 500 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; padding: 5px 12px; border: 1px solid var(--tn-hair); border-radius: 999px; color: var(--tn-dim); background: rgba(255,255,255,.03); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; }
 header.trail .chip b { color: #fff; font-weight: 600; font-family: var(--tn-mono); letter-spacing: 0; text-transform: none; margin-left: 6px; font-variant-numeric: tabular-nums; }
@@ -108,8 +108,8 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
   .tnav-spacer { height: calc(58px + env(safe-area-inset-bottom, 0px)); }
   header.trail { gap: 8px 8px; }
   header.trail .brand { flex: 1 1 0; flex-wrap: wrap; }
-  header.trail .brand h1 { font-size: 20px; }
-  header.trail .brand span { flex: 1 1 100%; font-size: 9px; letter-spacing: .12em; line-height: 1.3; }
+  header.trail .brand .bn { font-size: 20px; }
+  header.trail .brand h1.bt { flex: 1 1 100%; font-size: 9px; letter-spacing: .12em; line-height: 1.3; }
   header.trail .chip.unoff { order: 2; flex: 1 1 100%; font-size: 9px; letter-spacing: .03em; padding: 5px 10px; justify-content: center; }
   header.trail .chips { order: 3; flex: 1 1 100%; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 5px; }
   header.trail .chips::-webkit-scrollbar { display: none; }
@@ -118,3 +118,8 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
   .fb-fab { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
   .tour { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
 }
+
+/* View · Simple / Technical on subpages: .vt is developer detail (hashes, sequence numbers, raw data), .vp is its plain-language stand-in */
+body[data-view="simple"] .vt { display: none !important; }
+.vp { display: none; }
+body[data-view="simple"] .vp { display: block; }

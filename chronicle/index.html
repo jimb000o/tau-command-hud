@@ -312,8 +312,8 @@ function hideTip() { tip.hidden = true; }
 /* one screen: same rule as the other pages (laid out for 1600 x 820, scaled to fit) */
 let ZOOM = 1;
 function fit() {
-  const w = innerWidth, h = innerHeight, FIT = w >= 1200 && h >= 780 && w / h >= 1.3;
-  ZOOM = FIT ? Math.max(1, Math.min(2, w / 1600, h / 820)) : 1;
+  const w = innerWidth, h = innerHeight, FIT = w >= 1200 && h >= 640 && w / h >= 1.3;
+  ZOOM = FIT ? Math.max(.82, Math.min(2, w / 1600, h / 820))  /* laptops (1366 × 768) scale down a little instead of scrolling */ : 1;
   const root = document.documentElement;
   root.classList.toggle("fit", FIT);
   root.classList.toggle("wide", FIT && w / h >= 2.1);

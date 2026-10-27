@@ -927,13 +927,13 @@ runCheck();
 /* wide screens: same idea as the HUD, scale instead of stretching */
 (() => {
   const apply = () => {
-    const w = innerWidth, h = innerHeight, wide = w >= 1700 && h >= 760;
+    const w = innerWidth, h = innerHeight, wide = w >= 1200 && h >= 640 && w / h >= 1.3;  // laptops too: scale down a little rather than scroll
     const root = document.documentElement;
-    let z = wide ? Math.max(1, Math.min(2, w / 1800, h / 860)) : 1;
+    let z = wide ? Math.max(.75, Math.min(2, w / 1800, h / 860)) : 1;
     root.classList.toggle("wide", wide);
     root.style.setProperty("--z", z);
     // a long rule or reason can make the page taller than the design height: shrink once so it still fits the screen
-    if (wide && root.scrollHeight > h) { z = Math.max(.85, z * h / root.scrollHeight); root.style.setProperty("--z", z); }
+    if (wide && root.scrollHeight > h) { z = Math.max(.7, z * h / root.scrollHeight); root.style.setProperty("--z", z); }
   };
   apply(); addEventListener("resize", apply);
   // results, tab switches and long reasons change the height: fit again (one frame later, so it never loops within a frame)

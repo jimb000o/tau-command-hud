@@ -215,7 +215,7 @@ html.fit .fb-fab { display: none; }
   </main>
 
   <footer>
-    <p>Data: our node at node.tauhud.com (tau-testnet pinned to commit 539d1e2), which checks every block itself, served by a read-only relay. Amounts in AGRS. <a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">Source</a> · <a href="/account/">Accounts</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p>Data: our node at node.tauhud.com<span class="vt"> (tau-testnet pinned to commit 539d1e2)</span>, which checks every block itself, served by a read-only relay. Amounts in AGRS. <a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">Source</a> · <a href="/account/">Accounts</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 <a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a>
@@ -540,6 +540,9 @@ function overview() {
     </dl>
     <p class="note">Our node checks every block against the network's Tau rules before it shows up here. Transactions a rule refuses never reach a block; if they waited in our queue first, you can still find them by hash.</p>`;
 }
+/* rows that only matter to developers hide in View · Simple (body[data-view], set by the shared header) */
+const TECH_ROWS = new Set(["Hash", "Sequence", "Fee limit", "Offer", "Rule change", "Request", "Retractable", "Reason", "Expires"]);
+const kvRow = (a, b) => TECH_ROWS.has(a) ? `<dt class="vt">${a}</dt><dd class="vt">${b}</dd>` : `<dt>${a}</dt><dd>${b}</dd>`;
 function blockView(h) {
   const b = C.blocks[h];
   if (!b) return notFound(`Block #${fmtN(h)}`, h > C.head ? `The chain is at #${fmtN(C.head)}, so this block does not exist yet.` : "Our node does not hold this block.");
@@ -555,15 +558,16 @@ function blockView(h) {
     <dl class="kv">
       <dt>Time</dt><dd>${esc(fmtWhen(ts))}</dd>
       <dt>Sealed by</dt><dd>${/^0*$/.test(prop) ? "nobody (genesis)" : `${addrLink(prop)}${isValidator(prop) ? " " + tagHtml("validator", "g") : ""}`}</dd>
-      <dt>Block hash</dt><dd><code>${esc(b.block_hash || "—")}</code></dd>
-      <dt>Previous</dt><dd>${h > 0 ? `${blkLink(h - 1)} <code>${esc(short(hd.previous_hash))}</code>` : "—"}</dd>
-      <dt>Merkle root</dt><dd><code>${esc(hd.merkle_root || "—")}</code></dd>
-      <dt>State hash</dt><dd><code>${esc(hd.state_hash || "—")}</code></dd>
+      <dt class="vt">Block hash</dt><dd class="vt"><code>${esc(b.block_hash || "—")}</code></dd>
+      <dt class="vt">Previous</dt><dd class="vt">${h > 0 ? `${blkLink(h - 1)} <code>${esc(short(hd.previous_hash))}</code>` : "—"}</dd>
+      <dt class="vt">Merkle root</dt><dd class="vt"><code>${esc(hd.merkle_root || "—")}</code></dd>
+      <dt class="vt">State hash</dt><dd class="vt"><code>${esc(hd.state_hash || "—")}</code></dd>
     </dl>
     <div class="nav">${h > 0 ? `<a class="chip" href="${blkHref(h - 1)}" data-go="b:${h - 1}">← #${fmtN(h - 1)}</a>` : ""}${h < C.head ? `<a class="chip" href="${blkHref(h + 1)}" data-go="b:${h + 1}">#${fmtN(h + 1)} →</a>` : ""}<a class="chip" href="/history/#${h}">Time travel to here</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + blkHref(h))}">Copy link</button></div>
     ${txs.length ? `<h3>Transactions</h3><table><thead><tr><th class="n">#</th><th>What</th><th>From → to</th><th class="n">AGRS</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
-    <p class="note">The state hash is a fingerprint of every balance and rule after this block. Two nodes that agree on it agree on the whole state.</p>
-    <details class="raw"><summary>Raw block</summary><pre class="code">${esc(JSON.stringify(b, null, 2))}</pre></details>`;
+    <p class="note vt">The state hash is a fingerprint of every balance and rule after this block. Two nodes that agree on it agree on the whole state.</p>
+    <p class="note vp">Every node checked this block against the Tau rules before adding it. Switch View to Technical for its hashes and the raw data.</p>
+    <details class="raw vt"><summary>Raw block</summary><pre class="code">${esc(JSON.stringify(b, null, 2))}</pre></details>`;
 }
 function txView(key) {
   let x = null;
@@ -594,7 +598,7 @@ function txView(key) {
   if (st && st.status === "confirmed" && st.block_number != null) rows.push(["Block", `${blkLink(num(st.block_number))} · ${plural(num(st.confirmations), "confirmation")}`]);
   return `<p class="kind">Transaction</p><p class="title">${esc(short(key))} ${tagHtml(label, cls)}</p>
     <p class="headline">${esc(says)}</p>
-    <dl class="kv">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
+    <dl class="kv">${rows.map(([a, b]) => kvRow(a, b)).join("")}</dl>
     ${status === "queued" ? `<p class="note">Our node only shows a summary while it waits. The full transaction appears here once a block takes it.</p>` : ""}
     <div class="nav"><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + txHref(key))}">Copy link</button></div>`;
 }
@@ -619,7 +623,7 @@ function sealedTx(x) {
   if (t.fee_limit != null) rows.push(["Fee limit", `${fmtA(num(t.fee_limit))} AGRS`]);
   return `<p class="kind">Transaction</p><p class="title">${esc(TX_NAMES[k] || k)} ${tagHtml(`in block · ${fmtN(confirms)} deep`, "g")}</p>
     <p class="headline">${esc(TX_SAYS[k] || "")}</p>
-    <dl class="kv">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
+    <dl class="kv">${rows.map(([a, b]) => kvRow(a, b)).join("")}</dl>
     ${tr.length > 1 ? `<h3>Transfers</h3><table><thead><tr><th>From</th><th>To</th><th class="n">AGRS</th></tr></thead><tbody>${tr.map(([f, to, a]) => `<tr><td>${addrLink(low(f))}</td><td>${addrLink(low(to))}</td><td class="n">${fmtA(num(a))}</td></tr>`).join("")}</tbody></table>` : ""}
     ${rule ? `<h3>Rule text${st ? ` · ${esc(st)}` : ""}</h3><pre class="code">${esc(rule)}</pre><p class="note">${STREAMS[st] ? `This rule decides ${esc(STREAMS[st])}. ` : ""}Try rules like this in the <a href="/playground/">Rule Playground</a>.</p>` : ""}
     <div class="nav"><a class="chip" href="/account/?a=${esc(s)}">Sender's account</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + txHref(x.id || `${x.h}.${x.i}`))}">Copy link</button></div>
@@ -659,10 +663,10 @@ function addrView(a) {
       <div><h4>Last active</h4><b>${last ? esc(ago(last)) : "—"}</b></div>
     </div>
     <dl class="kv">
-      <dt>Address</dt><dd><code>${esc(a)}</code></dd>
+      <dt class="vt">Address</dt><dd class="vt"><code>${esc(a)}</code></dd>
       <dt>Moved</dt><dd>${fmtA(inSum)} AGRS in · ${fmtA(outSum)} AGRS out</dd>
       ${proposed ? `<dt>Blocks sealed</dt><dd>${fmtN(proposed)}</dd>` : ""}
-      ${sq && sq.sequence_number != null ? `<dt>Next sequence</dt><dd>${fmtN(num(sq.sequence_number))}</dd>` : ""}
+      ${sq && sq.sequence_number != null ? `<dt class="vt">Next sequence</dt><dd class="vt">${fmtN(num(sq.sequence_number))}</dd>` : ""}
       ${pending ? `<dt>On hold</dt><dd>${fmtA(pending)} AGRS for transactions still waiting</dd>` : ""}
       ${waiting.length ? `<dt>Waiting</dt><dd>${waiting.map(m => txLink(low(m.tx_hash))).join(", ")}</dd>` : ""}
     </dl>
