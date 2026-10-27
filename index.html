@@ -689,6 +689,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <a class="btn ghost" href="history/" data-full="Time travel: step through the chain block by block and see the rules that were in force at any height. Opens the history page.">Time travel</a>
       <a class="btn ghost" href="account/" data-full="Accounts: balance, own rules, offers, activity and refusals of any account on the testnet. Opens the account page; every address in the HUD links there.">Accounts</a>
       <a class="btn ghost" href="proposals/" data-full="Proposal tracker: every rule change from proposal to law, with Telegram, X and RSS alerts. Opens the proposals page.">Proposals</a>
+      <a class="btn ghost" href="chronicle/" data-full="Chronicle: the project’s history from the first Tau videos to the testnet alpha, with the milestones reached so far. Opens the chronicle page.">Chronicle</a>
       <a class="btn ghost" href="https://tau.net" target="_blank" rel="noopener" data-full="Opens tau.net, the project behind the testnet, in a new tab.">What is Tau?</a>
       <button class="btn ghost" type="button" id="btnRain" aria-pressed="true" data-full="Turns the falling glyphs in the background on or off. Purely decorative.">Rain</button>
       <button class="btn ghost more" type="button" id="btnMore" aria-expanded="false" hidden>More ▾</button>
@@ -847,6 +848,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v16.6 · 27 Oct 2026</b>Chronicle: a new page at <a href="chronicle/">/chronicle/</a> tells the project’s history and milestones; linked from the header.</li>
           <li><b>v16.5 · 27 Oct 2026</b>Live: approval requests and their signatures are read from the blocks themselves (approval_request and transfer_vote transactions), the fork radar also counts the reorgs and restarts the relay remembers.</li>
           <li><b>v16.4 · 27 Oct 2026</b>Personal money rules: the examples now show what Tau itself advertises: a second approval above an amount (the transfer parks as an approval request and executes when the approver signs, with a countdown in blocks), a lock until a block height instead of a clock time, spending limits, whitelists and co-signatures. Live mode shows approval requests only when the node reports them. Validators: the consensus mode (fixed validator list, list in Tau logic, or stake-based) and how often it was switched by agreement. Blockchain: a fork radar counting reorgs (with depth) and testnet restarts.</li>
           <li><b>v16.3 · 27 Oct 2026</b>Proposals: a new page at <a href="proposals/">/proposals/</a> tracks every rule change and offers Telegram, X and RSS alerts; linked from the header, and the feedback panel links the Telegram channel.</li>
@@ -2369,7 +2371,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.5`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.6`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
