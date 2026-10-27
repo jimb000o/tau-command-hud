@@ -87,7 +87,7 @@ footer a { color: var(--dim); }
 footer p { margin: 0; }
 
 .main { grid-template-columns: 1fr; }
-@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); } .main { grid-template-areas: "issues report" "fixes report"; } .p-issues { grid-area: issues; } .p-fixes { grid-area: fixes; } .p-report { grid-area: report; } .main .fixes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); } .main { grid-template-areas: "issues report" "issues fixes"; } .p-issues { grid-area: issues; } .p-fixes { grid-area: fixes; } .p-report { grid-area: report; } .main .fixes { grid-template-columns: 1fr; } }
 
 /* one card per issue filed at IDNI */
 .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; align-content: start; }
@@ -125,7 +125,7 @@ footer p { margin: 0; }
 html.fit body { overflow: hidden; height: 100vh; padding-top: 0; padding-bottom: 0; }
 html.fit .wrap { max-width: none; zoom: var(--z); height: var(--fitH); display: flex; flex-direction: column; gap: 10px; padding: 6px 0 8px; }
 html.fit .wrap > * { flex: none; }
-html.fit .main { flex: 1 1 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; }
+html.fit .main { flex: 1 1 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
 html.fit .panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px 14px; }
 html.fit .panel > * { flex: none; }
 html.fit .panel > .scroll { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 2px; }
@@ -142,7 +142,8 @@ html.fit .cards { gap: 6px; }
 html.fit .cards > li > button { padding: 8px 12px; }
 html.fit .cards p { margin-top: 2px; }
 html.fit .cards .m { margin-top: 2px; }
-html.fit .fixes li { padding: 6px 10px; }
+html.fit .fixes li { padding: 5px 10px; }
+html.fit .p-fixes { overflow: auto; }
 
 /* modal */
 .modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
@@ -239,15 +240,27 @@ const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
 const REPO = "IDNI/tau-testnet", OURS = "https://github.com/jimb000o/tau-command-hud";
 const pr = n => `<a href="${OURS}/pull/${n}" target="_blank" rel="noopener">PR #${n}</a>`;
 const SAMPLE = new URLSearchParams(location.search).has("sample");
-const CACHE_KEY = "tauhud-findings-v1", CACHE_MS = 10 * 60 * 1000;
+const CACHE_KEY = "tauhud-findings-v2", CACHE_MS = 10 * 60 * 1000;
 
 // Issues we filed with IDNI. Add a new one here; title and status come from GitHub.
 const FINDINGS = [
+  {
+    n: 82, title: "Join profile gaps seen by a fresh read node: open admission, advertised 0.0.0.0 address, restarts on the same genesis",
+    found: "Missing from the join profile: the network counts every account's vote, the bootnode advertises 0.0.0.0, and restarts on the same genesis come unannounced.",
+    impact: "A node on default settings stops at the first non-validator vote, loses its peer after a restart, or silently keeps a dead chain.",
+    ours: `Open admission on (${pr(15)}), learned 0.0.0.0 addresses dropped (${pr(22)}), restart detection that wipes and resyncs (${pr(23)}).`,
+  },
   {
     n: 81, title: "Mempool keeps transactions that are already sealed in canonical blocks",
     found: "A fully synced node keeps transactions in its mempool as pending after the very same transactions are sealed in a block, until their 60-minute expiry. gettxstatus answers “queued” for them.",
     impact: "Explorers and wallets show transactions as waiting that are already confirmed. In the HUD, some of the waiting dots in the chain core are such transactions.",
     ours: "Nothing to patch on our side; the status page and the HUD explain it.",
+  },
+  {
+    n: 80, kind: "request", title: "Request: add the Tau HUD node as a tau-testnet-v2 validator",
+    found: "Not a bug: we asked IDNI to add our node's BLS key to the validator set, so tauhud.com can also help produce blocks.",
+    impact: "One more independent validator on the testnet; the HUD could then show its own blocks.",
+    ours: "Our node runs with mining off until the key is in the active set; a validator gate keeps it from proposing early, so it cannot split off onto a private chain.",
   },
   {
     n: 79, title: "Dockerfile.standalone does not build from a clean checkout",
@@ -262,12 +275,12 @@ const FINDINGS = [
     ours: `IDNI published the right genesis in commit 539d1e2; our node is pinned to it (${pr(13)}). The two sync bugs are patched in our node (read-until-eof, sync-paginate).`,
   },
 ];
-// Found and worked around on our side; no separate IDNI issue of their own.
+// Node patches running today: read-until-eof, sync-paginate, open admission, peer-addrs, chain-reset, orphan sync loop, genesis pin.
+const PATCHES = 7;
+// Worked around on our side, no IDNI issue of their own.
 const FIXES = [
-  ["Non-validator votes change the state hash", `The network counts every account’s vote; a node on default settings stops at the first such vote. ${pr(15)}`],
-  ["Bootnode announces 0.0.0.0", `After a restart the node dialled itself and stopped syncing. ${pr(22)}`],
-  ["Testnet restarts silently", `A node keeps the dead chain; ours wipes it and syncs the new one. ${pr(23)}`],
   ["Sync loop on orphan blocks", `Blocks that did not connect were fetched again and again. ${pr(10)}`],
+  ["Genesis pinned", `Our node builds from the commit with the network's real genesis, so a new upstream genesis cannot split it off. ${pr(13)}`],
 ];
 
 /* ---------------- one screen on wide displays ---------------- */
@@ -317,34 +330,36 @@ async function fetchIssues() {
 function sampleIssues() {
   const d = n => new Date(Date.now() - n * 3600e3).toISOString();
   return {
-    81: { title: FINDINGS[0].title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
-    79: { title: FINDINGS[1].title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
-    78: { title: FINDINGS[2].title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
+    82: { title: FINDINGS[0].title, state: "open", comments: 0, created_at: d(0.3), updated_at: d(0.3), labels: [] },
+    81: { title: FINDINGS[1].title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
+    80: { title: FINDINGS[2].title, state: "open", comments: 0, created_at: d(2), updated_at: d(2), labels: [] },
+    79: { title: FINDINGS[3].title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
+    78: { title: FINDINGS[4].title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
   };
 }
-function status(i) {
+function status(i, f) {
   if (!i) return ["unknown", "Status unknown"];
   if (i.state === "open") return ["open", "Open"];
-  return i.state_reason === "not_planned" ? ["closed", "Closed, not planned"] : ["fixed", "Fixed"];
+  return i.state_reason === "not_planned" ? ["closed", "Closed, not planned"] : ["fixed", f && f.kind === "request" ? "Done" : "Fixed"];
 }
 
 /* ---------------- render ---------------- */
 let ISSUES = {};
 function render() {
   const got = FINDINGS.filter(f => ISSUES[f.n]);
-  const st = FINDINGS.map(f => status(ISSUES[f.n])[0]);
+  const st = FINDINGS.filter(f => f.kind !== "request").map(f => status(ISSUES[f.n])[0]);
   $("state").className = "state " + (got.length ? "live" : "off");
   $("stateText").textContent = got.length ? (SAMPLE ? "Sample data" : "Live from GitHub") : "GitHub unreachable";
   const tiles = [
-    ["Filed with IDNI", FINDINGS.length, "issues on IDNI/tau-testnet"],
-    ["Open", got.length ? st.filter(s => s === "open").length : "—", "waiting for IDNI"],
+    ["Filed with IDNI", FINDINGS.length, `${plural(FINDINGS.filter(f => f.kind !== "request").length, "bug")}, ${plural(FINDINGS.filter(f => f.kind === "request").length, "request")}`],
+    ["Open bugs", got.length ? st.filter(s => s === "open").length : "—", "waiting for IDNI"],
     ["Fixed by IDNI", got.length ? st.filter(s => s === "fixed").length : "—", "closed as done"],
-    ["Patched by us", FIXES.length + 2 /* + the two sync patches from #78 */, "running in our node today"],
+    ["Patched by us", PATCHES, "running in our node today"],
     ["Comments", got.length ? got.reduce((a, f) => a + (ISSUES[f.n].comments || 0), 0) : "—", "on our issues at IDNI"],
   ];
   $("tiles").innerHTML = tiles.map(([h, v, p]) => `<div class="tile"><h3>${h}</h3><div class="v">${v}</div><p>${p}</p></div>`).join("");
   $("cards").innerHTML = FINDINGS.map((f, ix) => {
-    const i = ISSUES[f.n], [cls, label] = status(i);
+    const i = ISSUES[f.n], [cls, label] = status(i, f);
     const meta = i ? [`filed ${fmtDay(i.created_at)}`, plural(i.comments || 0, "comment"), i.closed_at ? `closed ${ago(i.closed_at)}` : `last activity ${ago(i.updated_at)}`].join(" · ") : "status could not be read from GitHub right now";
     return `<li class="s-${cls}"><button type="button" data-ix="${ix}">
       <span class="t"><span class="badge b-${cls}">${label}</span><span class="num">#${f.n}</span><b>${esc(i ? i.title : f.title)}</b></span>
@@ -354,7 +369,7 @@ function render() {
 }
 $("cards").addEventListener("click", e => {
   const b = e.target.closest("button[data-ix]"); if (!b) return;
-  const f = FINDINGS[+b.dataset.ix], i = ISSUES[f.n], [, label] = status(i);
+  const f = FINDINGS[+b.dataset.ix], i = ISSUES[f.n], [, label] = status(i, f);
   $("dTitle").textContent = `#${f.n} · ${i ? i.title : f.title}`;
   $("dBody").innerHTML = `
     <h3>What we found</h3><p>${esc(f.found)}</p>
