@@ -302,12 +302,17 @@ class Relay:
         if not full and prev_top is not None and self._height(fresh[0]) > prev_top + 1:
             self.need_full = True  # more than 20 blocks arrived between two polls
         rewrite = reset or dropped or not self.chain_file_ok
+        replaced = []
         for b in fresh:
             # a block at a height we already hold replaces the old one (reorg)
             for old in [o for o in self.blocks.values() if self._height(o) == self._height(b)]:
                 self.blocks.pop(old["block_hash"], None)
+                replaced.append(self._height(b))
                 rewrite = True
             self.blocks[b["block_hash"]] = b
+        if replaced and prev_top is not None and not (reset or dropped):
+            # depth: how many blocks of the chain we held were replaced, counted from its old tip
+            self._record_reorg(min(replaced), prev_top - min(replaced) + 1)
         ordered = self.ordered_blocks()
         if len(ordered) > CHAIN_BLOCKS * 1.1:  # trim in batches so the file is not rewritten every block
             for b in ordered[:-CHAIN_BLOCKS]:
@@ -398,12 +403,13 @@ class Relay:
             if isinstance(state, dict):
                 state.setdefault("restarts", [])
                 state.setdefault("dropped", [])
+                state.setdefault("reorgs", [])
                 return state
         except FileNotFoundError:
             pass
         except (OSError, ValueError) as exc:
             log.warning("cannot read %s: %r; starting a new history", EVENTS_PATH, exc)
-        return {"since": time.time(), "chain": None, "restarts": [], "dropped": []}
+        return {"since": time.time(), "chain": None, "restarts": [], "dropped": [], "reorgs": []}
 
     def _save_state(self):
         tmp = EVENTS_PATH + ".tmp"
@@ -430,9 +436,12 @@ class Relay:
     def _same_chain(self, known: dict, info: dict) -> bool:
         if known.get("block1_hash") != info["block1_hash"]:
             return False
-        # same block 1 but another block at the old tip height: not our chain either
+        # same block 1 but another block at the old tip height: not our chain either,
+        # unless that height is within 3 of the current tip (a reorg, as in _other_chain)
         at_tip = next((b for b in self.blocks.values() if self._height(b) == known.get("tip")), None)
-        return at_tip is None or at_tip["block_hash"] == known.get("tip_hash")
+        if at_tip is None or at_tip["block_hash"] == known.get("tip_hash"):
+            return True
+        return known.get("tip", 0) > (self.height() or 0) - 3
 
     def note_chain(self):
         """Record a restart when block 1 differs from the chain seen last time.
@@ -446,6 +455,12 @@ class Relay:
         if known and not self._same_chain(known, info):
             self._record_restart(known, info["block1_ts"])
         self.state["chain"] = info
+        self._save_state()
+
+    def _record_reorg(self, height: int, depth: int):
+        log.warning("reorg: blocks from #%s replaced (depth %s)", height, depth)
+        self.state["reorgs"].append({"at": round(time.time()), "height": height, "depth": depth})
+        self.state["reorgs"] = self.state["reorgs"][-EVENTS_MAX:]
         self._save_state()
 
     def _record_restart(self, old: dict, new_block1_ts: int | None = None):
@@ -769,6 +784,10 @@ class Relay:
             "clients": len(self.clients),
             "online": len(self.clients),
             "community_nodes": len(self.community),
+            # the newest chain restarts and reorgs the relay noticed (full lists on /stats)
+            "restarts": [{"detected_at": r.get("detected_at"), "old_tip": (r.get("old") or {}).get("tip")}
+                         for r in self.state["restarts"][-10:]],
+            "reorgs": self.state["reorgs"][-10:],
             "age_seconds": {k: round(now - v, 1) for k, v in self.updated.items()},
             "uptime_seconds": round(now - self.started),
         }

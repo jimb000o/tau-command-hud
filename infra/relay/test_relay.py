@@ -245,6 +245,21 @@ async def main():
         body = json.loads((await reader.read(4096)).decode().split("\r\n\r\n", 1)[1])
         writer.close()
         check(body["height"] == 2 and body["total_blocks"] == 3, f"/health height follows the reset {body}")
+        check(len(body["restarts"]) == 2 and body["restarts"][1]["old_tip"] >= 60 and body["restarts"][1]["detected_at"] > 0
+              and body["reorgs"] == [], f"/status carries the restart history {body['restarts']}")
+
+        # a reorg: the node replaces its newest block (same height, other hash)
+        mock["blocks"][-1] = block(2, chain=2)
+        await asyncio.sleep(5)
+        reader, writer = await asyncio.open_connection("127.0.0.1", 18766)
+        writer.write(b"GET /status HTTP/1.1\r\nHost: x\r\n\r\n")
+        body = json.loads((await reader.read(4096)).decode().split("\r\n\r\n", 1)[1])
+        writer.close()
+        check(len(body["reorgs"]) == 1 and body["reorgs"][0]["height"] == 2 and body["reorgs"][0]["depth"] == 1
+              and body["height"] == 2, f"/status records the reorg {body['reorgs']}")
+        check(len(body["restarts"]) == 2, f"a replaced tip block is not a restart {body['restarts']}")
+        with open(EVENTS) as f:
+            check(len(json.load(f)["reorgs"]) == 1, "reorg persisted to the events file")
         mock["mint"] = True
 
         # presence: a second visitor raises the count for both, leaving lowers it
