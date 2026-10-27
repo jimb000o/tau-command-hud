@@ -108,16 +108,16 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 /* rules over time: one lane per spec revision, one for the consensus mechanism, one bar per proposal from proposed to its activation block */
 .p-rules { padding-bottom: 10px; }
 .tl { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 5px 12px; align-items: center; }
-.tl .ln { font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.tl .ln { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
 .tl .tr { position: relative; height: 26px; }
 .tl .tr.props { height: auto; min-height: 14px; }
-.seg { position: absolute; top: 0; bottom: 0; border: 1px solid var(--hair); border-radius: 4px; background: rgba(255,255,255,.04); display: flex; align-items: center; padding: 0 8px; overflow: hidden;
+.tl .seg { position: absolute; top: 0; bottom: 0; border: 1px solid var(--hair); border-radius: 4px; background: rgba(255,255,255,.04); display: flex; align-items: center; padding: 0 8px; overflow: hidden;
   font: 600 11px var(--display); color: var(--dim); white-space: nowrap; cursor: pointer; min-width: 3px; }
-.seg:hover, .seg:focus-visible { background: rgba(255,255,255,.1); color: #fff; outline: none; }
-.seg.now { border-color: #fff; color: #fff; background: rgba(255,255,255,.08); }
-.seg.future { border-style: dashed; background: transparent; }
-.seg.maybe { border-style: dotted; background: transparent; color: var(--dim); }
-.seg .t { overflow: hidden; }
+.tl .seg:hover, .seg:focus-visible { background: rgba(255,255,255,.1); color: #fff; outline: none; }
+.tl .seg.now { border-color: #fff; color: #fff; background: rgba(255,255,255,.08); }
+.tl .seg.future { border-style: dashed; background: transparent; }
+.tl .seg.maybe { border-style: dotted; background: transparent; color: var(--dim); }
+.tl .seg .t { overflow: hidden; }
 .tick { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 2px solid var(--ok); }
 .tick.future { border-left: 2px dashed #fff; }
 .nowline { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 1px solid var(--ok); box-shadow: 0 0 6px var(--ok); pointer-events: none; }
