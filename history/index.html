@@ -34,6 +34,10 @@ body {
   background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
 }
 a { color: #fff; }
+a.acct { color: inherit; text-decoration: underline dotted rgba(255,255,255,.45); text-underline-offset: 3px; }
+.linkish.inl { display: inline; width: auto; text-decoration: underline dotted rgba(255,255,255,.45); text-underline-offset: 3px; }
+.linkish.inl:hover { color: var(--ok); }
+a.acct:hover { color: var(--ok); text-decoration-color: currentColor; }
 .wrap { max-width: 1680px; margin: 0 auto; display: grid; gap: 14px; }
 /* widescreen: everything grows with the screen instead of floating in a narrow column */
 /* wide screens: scale, do not stretch (same approach as the HUD). The page keeps its design size, is scaled to fill
@@ -300,7 +304,9 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
 "use strict";
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const short = h => h ? (String(h).length > 14 ? String(h).slice(0, 6) + "…" + String(h).slice(-4) : String(h)) : "—";
+var short = h => h ? (String(h).length > 14 ? String(h).slice(0, 6) + "…" + String(h).slice(-4) : String(h)) : "—";
+// an account address, linked to its account page (inside buttons the plain short form is used)
+const acct = h => /^[0-9a-f]{96}$/i.test(h || "") ? `<a class="acct" href="../account/?a=${String(h).toLowerCase()}" title="Open this account">${short(h)}</a>` : short(h);
 const fmtN = n => Number(n).toLocaleString("en-US");
 const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
 
@@ -829,12 +835,12 @@ function renderRules() {
   const ch = k => s.changed.includes(k) ? ' class="chg"' : "";
   const rows = [
     ["Base fee", `${fmtN(s.fee)} AGRS per transaction`, "fee"],
-    ["Validators", `${N} <small>${s.validators.map(short).join(", ")}</small>`, "validators"],
+    ["Validators", `${N} <small>${s.validators.map(acct).join(", ")}</small>`, "validators"],
     ["Agreement needed", `${s.thr} of ${N} <small>· ${esc(quorumTxt(s.quorum))}</small>`, "quorum"],
     ["Who may vote", C.openAdmission ? "any account <small>· open governance admission</small>" : "validators only", null],
   ];
   if (s.budget != null) rows.push(["Rule txs per block", fmtN(s.budget), "budget"]);
-  if (s.beneficiary != null) rows.push(["Fees go to", s.beneficiary ? short(s.beneficiary) : "each block’s proposer", "beneficiary"]);
+  if (s.beneficiary != null) rows.push(["Fees go to", s.beneficiary ? acct(s.beneficiary) : "each block’s proposer", "beneficiary"]);
   if (s.eligibility != null) rows.push(["Who may propose blocks", esc(s.eligibility || "default"), "eligibility"]);
   rows.push(["Accounts with own rules", `${fmtN(s.ownRules)}`, null]);
   const inForce = H.props.filter(p => p.activatedAt != null && p.activatedAt <= cursor);
@@ -914,15 +920,15 @@ function renderAgree() {
       return `<li class="${ok ? "on" : ""}${(p.activatedAt ?? p.expiredAt) === h ? " here" : ""}"><button class="linkish" type="button" data-open="${p.n}"><b>${esc(p.title)}</b><span class="m">${ok ? `agreed · in force since #${fmtN(p.activatedAt)}` : `dropped at #${fmtN(p.expiredAt)} · ${votesAt(p, h)} of ${p.thrAtEnd} votes`}</span></button></li>`; }).join("")}</ul>`
       : `<p class="empty">Nothing decided yet at this point.</p>`}`;
 }
-function txLine(t) {
-  const k = txKind(t), tr = transfersOf(t);
+function txLine(t, link) {
+  const k = txKind(t), tr = transfersOf(t), short = link ? acct : window.short;
   if (k === "user_tx") return tr.length ? tr.map(([f, to, a]) => `${short(f)} → ${short(to)} · ${fmtN(a)} AGRS`).join("; ") : short(t.sender_pubkey);
   if (k === "rule_deploy") return `${short(t.sender_pubkey)} sets its own transfer rule${tr.length ? ` · plus ${plural(tr.length, "transfer")}` : ""}`;
   if (k === "consensus_rule_update") { const p = H.props.find(p => p.tx === t); return p ? `“${esc(p.title)}” · deadline #${fmtN(p.activateAt)}` : "rule change"; }
   if (k === "consensus_rule_vote") {
     const p = H.props.find(p => p.id === String(t.update_id || "").toLowerCase());
     const v = p && p.votes.find(v => v.h === (+t._h) && v.voter === (t.sender_pubkey || "").toLowerCase());
-    return `${short(t.sender_pubkey)} ${t.approve === false ? "votes no on" : "agrees to"} ${p ? `“${esc(p.title)}”` : short(t.update_id)}${p && v && !v.counted ? " · not counted" : ""}`;
+    return `${short(t.sender_pubkey)} ${t.approve === false ? "votes no on" : "agrees to"} ${p ? `“${esc(p.title)}”` : window.short(t.update_id)}${p && v && !v.counted ? " · not counted" : ""}`;
   }
   return short(t.sender_pubkey);
 }
@@ -934,7 +940,7 @@ function renderBlock() {
   $("blockBody").innerHTML = `
     <dl class="kv">
       <dt>Time</dt><dd>${timeTxt(hd.timestamp)}${hd.timestamp ? ` <small>· ${ago(hd.timestamp)}</small>` : ""}</dd>
-      <dt>Made by</dt><dd>${/^0+$/.test(hd.proposer_pubkey || "") ? "genesis" : `validator ${short(hd.proposer_pubkey)}`}</dd>
+      <dt>Made by</dt><dd>${/^0+$/.test(hd.proposer_pubkey || "") ? "genesis" : `validator ${acct(hd.proposer_pubkey)}`}</dd>
       <dt>Block hash</dt><dd>${short(b.block_hash)}</dd>
       <dt>State hash</dt><dd>${short(hd.state_hash)}</dd>
     </dl>
@@ -972,8 +978,8 @@ function openProp(p) {
   if (!p) return;
   const st = statusAt(p, C.head), counted = p.votes.filter(v => v.counted);
   const steps = [
-    [`Proposed at #${fmtN(p.proposedAt)}`, `by ${short(p.proposer)}. Deadline: activation block #${fmtN(p.activateAt)}.`, p.proposedAt],
-    ...p.votes.map(v => [`${v.counted ? "Vote" : "Vote, not counted"} at #${fmtN(v.h)}`, `${short(v.voter)}${v.counted ? "" : " · already voted, outside the electorate, or the change was no longer open"}`, v.h]),
+    [`Proposed at #${fmtN(p.proposedAt)}`, `by ${acct(p.proposer)}. Deadline: activation block #${fmtN(p.activateAt)}.`, p.proposedAt],
+    ...p.votes.map(v => [`${v.counted ? "Vote" : "Vote, not counted"} at #${fmtN(v.h)}`, `${acct(v.voter)}${v.counted ? "" : " · already voted, outside the electorate, or the change was no longer open"}`, v.h]),
     p.approvedAt != null ? [`Agreed at #${fmtN(p.approvedAt)}`, `Quorum reached: ${plural(p.thr, "vote")} of ${p.thr} needed.`, p.approvedAt] : null,
     p.activatedAt != null ? [`In force from #${fmtN(p.activatedAt)}`, `Spec revision ${p.rev}.`, p.activatedAt] : null,
     p.expiredAt != null ? [`Dropped at #${fmtN(p.expiredAt)}`, `${counted.length} of ${p.thrAtEnd} votes by the deadline. The old rules stayed.`, p.expiredAt] : null,
@@ -981,7 +987,7 @@ function openProp(p) {
     st === "agreed" ? [`Waiting for block #${fmtN(p.activateAt)}`, `Agreed, takes effect there.`, null] : null,
   ].filter(Boolean);
   openDetail(`${esc(p.title)}`, `
-    <ul class="items">${steps.map(([t, m, h]) => `<li class="${h != null ? "on" : "now"}">${h != null ? `<button class="linkish" type="button" data-goto="${h}"><b>${t}</b><span class="m">${m} · go to this block</span></button>` : `<b>${t}</b><span class="m">${m}</span>`}</li>`).join("")}</ul>
+    <ul class="items">${steps.map(([t, m, h]) => `<li class="${h != null ? "on" : "now"}">${h != null ? `<button class="linkish" type="button" data-goto="${h}"><b>${t}</b></button><span class="m">${m} · <button class="linkish inl" type="button" data-goto="${h}">go to this block</button></span>` : `<b>${t}</b><span class="m">${m}</span>`}</li>`).join("")}</ul>
     ${p.revisions.length ? `<h3>Rule text it adds (${p.revisions.length})</h3>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}` : ""}
     ${p.patch ? `<h3>Settings it changes</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
@@ -991,7 +997,7 @@ $("dBody").addEventListener("click", e => { const g = e.target.closest("[data-go
 function openTx(b, i) {
   const t = b.transactions[i], id = (b.tx_ids || [])[i];
   openDetail(`${esc(TX_NAMES[txKind(t)] || txKind(t))} <small>block #${fmtN(b.header.block_number)}${id ? ` · ${short(id)}` : ""}</small>`,
-    `<p class="note" style="margin-top:0">${txLine(t)}</p><pre class="code">${esc(JSON.stringify(t, (k, v) => k === "_h" ? undefined : v, 2))}</pre>`);
+    `<p class="note" style="margin-top:0">${txLine(t, true)}</p><pre class="code">${esc(JSON.stringify(t, (k, v) => k === "_h" ? undefined : v, 2))}</pre>`);
 }
 function openRuleText(s) {
   openDetail(`Rule text at #${fmtN(s.h)} <small>spec revision ${s.rev}</small>`, `
