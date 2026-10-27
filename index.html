@@ -244,11 +244,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .panel { overflow: visible; }
 
 /* Tau engine streams */
-.streams { display: grid; gap: 6px; }
+.streams { display: grid; gap: 5px; }
 .stream { display: grid; grid-template-columns: 38px minmax(0, 1fr) max-content; gap: 10px; align-items: center; padding: 4px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; transition: background .3s, border-color .3s; }
 .stream code { font: 600 13px var(--mono); color: var(--ok); }
-.stream .lbl { color: var(--dim); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stream .val { display: block; font-variant-numeric: tabular-nums; color: var(--text); font-size: 12px; text-align: right; white-space: nowrap; max-width: 16ch; overflow: hidden; text-overflow: ellipsis; }
+.stream .lbl { color: var(--dim); font-size: 11.5px; line-height: 1.25; }
+.stream .val { display: block; font-variant-numeric: tabular-nums; color: var(--text); font-size: 12px; text-align: right; max-width: 18ch; line-height: 1.25; }
 .stream.out code { color: var(--cyan); }
 .stream.flash { background: rgba(236,236,240,.18); border-left-color: var(--cyan); }
 .stream.pass .val { color: var(--ok); }
@@ -303,7 +303,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .tx .top em { font-style: normal; color: var(--cyan); letter-spacing: .08em; text-transform: uppercase; }
 .tx.gov .top em { color: var(--amber); }
 .tx.rej .top em { color: var(--bad); }
-.tx .mid { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx .mid { font-size: 12px; overflow-wrap: anywhere; }
 .tx .mid b { color: var(--cyan-hi); font-weight: 500; }
 @keyframes slidein { from { transform: translateX(16px); opacity: 0; } }
 
@@ -317,8 +317,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .blk.sel { border-color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,.5); }
 .blkdetail { flex: 1 1 auto; min-height: 0; overflow: auto; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
 .blkdetail .lead { font-size: 13px; }
-.blkdetail h3:first-child { margin-top: 0; }
-.blkdetail .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 18px; }
+.blkdetail h3:first-child, .blkdetail section > h3:first-child { margin-top: 0; }
+.blkdetail .cols section { min-width: 0; }
+.blkdetail .kv { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 4px 10px; }
+.blkdetail .kv dt, .blkdetail .kv dd { overflow-wrap: normal; }
+.blkdetail .ident .kv dd { overflow-wrap: anywhere; }
+.blkdetail .ident .kv { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.blkdetail .ident .kv dt { margin-top: 6px; }
+.blkdetail .ident .kv dt:first-child { margin-top: 0; }
+
+.blkdetail .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 18px; }
 .blk .m span:last-child { color: var(--ok); }
 .link { flex: 0 0 26px; align-self: center; margin-left: -26px; margin-right: 0; height: 2px; background: linear-gradient(90deg, var(--cyan), transparent); }
 @keyframes drop { from { transform: translateY(-14px); opacity: 0; } }
@@ -379,17 +387,17 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .contrast .who { display: grid; align-content: center; gap: 2px; font: 600 10px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .contrast .who em { font: 10.5px var(--mono); letter-spacing: 0; text-transform: none; font-style: normal; color: var(--dim); }
 .contrast .crow.tau .who, .contrast .crow.tau .who em { color: var(--ok); }
-.contrast .track { display: grid; grid-template-columns: 1fr 1.6fr 1fr 1.1fr 1.2fr; gap: 3px; min-width: 0; }
-.contrast .seg { display: grid; align-content: center; gap: 2px; padding: 6px 6px; text-align: center; min-width: 0; border: 1px dashed var(--hair); border-radius: 3px; background: rgba(255,255,255,.02); font: 500 11px var(--mono); color: var(--dim); }
-.contrast .seg b { font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contrast .track { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; min-width: 0; }
+.contrast .seg { display: grid; align-content: center; gap: 2px; padding: 6px 3px; text-align: center; min-width: 0; border: 1px dashed var(--hair); border-radius: 3px; background: rgba(255,255,255,.02); font: 500 11px var(--mono); color: var(--dim); }
+.contrast .seg b { font-weight: 500; color: var(--text); }
 .contrast .seg small { font: 9.5px var(--mono); color: var(--dim); }
 .contrast .seg.fork { border-color: rgba(255,77,109,.55); background: repeating-linear-gradient(135deg, rgba(255,77,109,.10) 0 6px, rgba(255,77,109,.02) 6px 12px); }
 .contrast .seg.fork b { color: var(--bad); }
 .contrast .crow:not(.tau) .track { opacity: .8; }
 .contrast .crow.tau .track { align-items: stretch; }
-.contrast .tau-seg { grid-column: 1 / 4; display: flex; gap: 5px; padding: 5px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
-.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 6px 4px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 500 10px var(--mono); letter-spacing: 0; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.contrast .st small { font: 8.5px var(--mono); letter-spacing: -.01em; color: var(--ok); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contrast .tau-seg { grid-column: 1 / 5; display: flex; gap: 5px; padding: 5px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
+.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 6px 2px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 500 10px var(--mono); letter-spacing: 0; color: var(--text); min-width: 0; }
+.contrast .st small { font: 8.5px var(--mono); letter-spacing: -.01em; color: var(--ok); }
 .contrast .st { color: var(--dim); border-style: dashed; }
 .contrast .st small { color: var(--dim); }
 .contrast .st.done { color: var(--ok); border-style: solid; border-color: rgba(57,255,138,.55); background: rgba(57,255,138,.06); }
@@ -404,7 +412,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .contrast .tau-seg.complete .st.done small { color: var(--ok); }
 @keyframes complete { 0% { box-shadow: 0 0 0 1px var(--ok), 0 0 0 rgba(57,255,138,0), inset 0 0 0 rgba(57,255,138,0); } 20% { box-shadow: 0 0 0 2px var(--ok), 0 0 40px rgba(57,255,138,.6), inset 0 0 30px rgba(57,255,138,.3); } }
 @keyframes working { 50% { box-shadow: 0 0 0 4px rgba(227,181,90,0), 0 0 16px rgba(227,181,90,.55); } }
-.contrast .rest { grid-column: 4 / 6; display: grid; align-content: center; padding: 6px 8px; font: 10px/1.4 var(--mono); color: var(--dim); min-width: 0; }
+.contrast .rest { grid-column: 5 / 6; display: grid; align-content: center; padding: 6px 4px; font: 10px/1.4 var(--mono); color: var(--dim); min-width: 0; }
 .contrast .rest b { color: var(--ok); font-weight: 500; }
 .contrast .cap { font: 10.5px/1.5 var(--mono); color: var(--dim); }
 .contrast .cap b { color: var(--text); font-weight: 500; }
@@ -489,7 +497,9 @@ html.wide body { padding: 0; overflow: hidden; }
 html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 16px 12px; box-sizing: border-box; transform: scale(var(--z)); transform-origin: 0 0; }
 html.wide .modal .sheet, html.wide .fb-fab, html.wide .tour { zoom: var(--z); }
 /* wide layout: the chain core becomes the dominant centre element (both rows), the validators column gets both rows too */
-html.wide .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, .95fr) minmax(0, .95fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "eng core feed pol val" "upd core chain off val"; }
+html.wide .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.05fr) minmax(0, 1.05fr) minmax(0, .95fr) minmax(0, .95fr); grid-template-areas: "eng core feed pol val" "eng core feed off val" "upd core chain chain val" "upd core chain chain val"; }
+html.wide .blkdetail .cols { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 26px; }
+html.wide .blk { flex-basis: 160px; }
 html.wide .core canvas { max-height: none; }
 html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z)) calc(11px * var(--z)); max-width: calc(min(520px, 60vw) * var(--z)); }
 /* the validators column must shrink with the screen instead of overflowing it */
@@ -670,7 +680,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         </div></div>
         <div class="crow tau"><span class="who">Tau<em data-full="Timing is simulated: 8 s blocks, activation 8 blocks after the proposal. On the testnet the rule is the same but the clock is the chain’s: activate_at_height must be at least the inclusion height plus the number of validators (README §Governance).">~1 min · simulated</em></span><div class="track">
           <div class="tau-seg"><span class="st" id="stPropose" data-full="Propose: any active validator sends a consensus_rule_update transaction with the new rule text or validator patch. It is an ordinary transaction, visible to everyone, with an activation height a few blocks ahead.">propose<small id="stProposeS">—</small></span><span class="st" id="stCheck" data-full="Checked: before the proposal is even admitted, the node compiles the proposed rule on its own against the active spec. If it does not compile or contradicts the live rules, it is refused at the door and never enters the chain.">checked<small id="stCheckS">—</small></span><span class="st" id="stAgree" data-full="Agreed: validators vote with consensus_rule_vote transactions. The proposal is scheduled once the quorum policy is met, for example 2 of 3 validators. The quorum rule itself is part of the chain state, so it cannot be changed quietly.">agreed<small id="stAgreeS">—</small></span><span class="st" id="stActive" data-full="Active: at the scheduled block height the node amends the spec and the spec revision counts up. Every node applies the new rules automatically; nobody upgrades software, nothing forks.">active<small id="stActiveS">—</small></span></div>
-          <span class="rest" data-full="After activation nothing else is needed: no software upgrade, no coordination, no chain split. The next block is already judged by the new rules."><b>done.</b> nothing to upgrade, nothing splits.</span>
+          <span class="rest" data-full="After activation nothing else is needed: no software upgrade, no coordination, no chain split. The next block is already judged by the new rules."><b>done.</b> no fork, no upgrade.</span>
         </div></div>
         <div class="cap" id="contrastCap">On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b></div>
       </div>
@@ -744,6 +754,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v15.5 · 27 Oct 2026</b>Wide screens, third pass: the blockchain panel gets double width and double height and its block detail flows into four columns instead of a scroll box; the block check shows every rule row; the scale is set so each panel keeps at least its desktop room. No label is cut off any more: the rule-change strip, check rows and transaction lines wrap whole words instead of ending in “…”. In the simple view the block detail shows short hashes, the technical view shows them in full.</li>
           <li><b>v15.4 · 27 Oct 2026</b>Wide screens, second pass: the chain core now spans both rows in the centre and is the largest thing on the screen, the validators column gets the full height, and the scale is set from a 2400 px design width instead of 1800, so panels keep their proportions.</li>
           <li><b>v15.3 · 27 Oct 2026</b>Wide screens: from 2200 px the whole HUD scales to fill the screen (up to 1.7×) instead of stretching its columns, so line lengths, the layout and the one-screen rule stay as designed while type, numbers and the chain core grow. The validators column now shrinks with the screen instead of adding a scrollbar at 1080 px height.</li>
           <li><b>v15.2 · 27 Oct 2026</b>Every header chip and button explains itself on hover: network, height, spec revision, base fee, mode, online count, the Live/Simulation switch, the view switch and the menu buttons, each in one line with where the value comes from.</li>
@@ -1262,21 +1273,22 @@ function txLine(t) {
 }
 function blockHtml(b) {
   const sn = b.snap || {}; const gov = b.txs.filter(t => t.kind === "gov"), rules = b.txs.filter(t => /rule/.test(t.type) && t.kind !== "gov");
+  const simple = document.body.dataset.view === "simple", H = x => x ? (simple ? `<span title="${esc(x)}">${short(x)}</span>` : esc(x)) : "—";
   return `<p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${short(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? "An agreed rule change became active in this block." : "No rule change took effect in this block."}</p>
-    <h3>Identity</h3>${kvHtml({ Height: b.n, "Block hash": esc(b.hash || "—"), "Previous block": esc(b.prev || "—"), "State hash": esc(b.state || "—"), Proposer: esc(b.proposer || "—"), Time: b.ts ? new Date(b.ts * 1000).toLocaleString("de-DE") : "—" })}
-    <h3>Rules in force at this block</h3>${kvHtml({ "Spec revision": sn.specRev ?? "—", "Base fee": sn.fee != null ? sn.fee + " AGRS per tx" : "—", "Agreement needed": sn.validators ? `${sn.quorum === "majority" ? Math.floor(sn.validators.length / 2) + 1 : Math.ceil(sn.validators.length * 2 / 3)} of ${sn.validators.length} validators (${sn.quorum === "majority" ? "majority" : "two thirds"})` : "—", "Rule txs per block": sn.budget ?? "—", "Accounts with own rules": sn.rules ?? "—" })}
-    <h3>Rule changes agreed here</h3>${sn.agreed && sn.agreed.length ? `<ul>${sn.agreed.map(a => `<li class="gov"><b>${esc(a.title)}</b> <span class="muted">agreed by ${a.votes} validators</span><br><code>${esc(a.diff)}</code></li>`).join("")}</ul>` : `<p class="small muted" style="color:var(--dim);font-size:12px">None. The rules were unchanged in this block.</p>`}
+    <div class="cols"><section class="${simple ? "" : "ident"}"><h3>Identity</h3>${kvHtml({ "Block hash": H(b.hash), "Previous block": H(b.prev), "State hash": H(b.state), Proposer: H(b.proposer) })}
+    </section><section><h3>Rules in force at this block</h3>${kvHtml({ "Spec revision": sn.specRev ?? "—", "Base fee": sn.fee != null ? sn.fee + " AGRS per tx" : "—", "Agreement needed": sn.validators ? `${sn.quorum === "majority" ? Math.floor(sn.validators.length / 2) + 1 : Math.ceil(sn.validators.length * 2 / 3)} of ${sn.validators.length} validators (${sn.quorum === "majority" ? "majority" : "two thirds"})` : "—", "Rule txs per block": sn.budget ?? "—", "Accounts with own rules": sn.rules ?? "—" })}
+    </section><section><h3>Rule changes agreed here</h3>${sn.agreed && sn.agreed.length ? `<ul>${sn.agreed.map(a => `<li class="gov"><b>${esc(a.title)}</b> <span class="muted">agreed by ${a.votes} validators</span><br><code>${esc(a.diff)}</code></li>`).join("")}</ul>` : `<p class="small muted" style="color:var(--dim);font-size:12px">None. The rules were unchanged in this block.</p>`}
     <h3>Governance transactions (${gov.length})</h3>${gov.length ? `<ul>${gov.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <h3>Rule work (${rules.length})</h3>${rules.length ? `<ul>${rules.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
-    <h3>All transactions (${b.txs.length})</h3>${b.txs.length ? `<ul>${b.txs.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">Empty block</p>`}
-    <h3>What the state hash commits to</h3><p style="color:var(--dim);font-size:12px;margin:0">Balances, the consensus rule program, the composite user-rule program, the validator set, pending governance and the quorum policy. Change any of them and the hash changes.</p>`;
+    </section><section><h3>All transactions (${b.txs.length})</h3>${b.txs.length ? `<ul>${b.txs.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">Empty block</p>`}
+    <h3>What the state hash commits to</h3><p style="color:var(--dim);font-size:12px;margin:0">Balances, the consensus rule program, the composite user-rule program, the validator set, pending governance and the quorum policy. Change any of them and the hash changes.</p></section></div>`;
 }
 let selectedBlock = null;
 function showBlock(b, pinned = true) {
   if (pinned) selectedBlock = b.n;
   document.querySelectorAll(".blk.sel").forEach(e => e.classList.remove("sel"));
   const card = document.querySelector(`.blk[data-n="${b.n}"]`); if (card) card.classList.add("sel");
-  const title = `Block #${b.n}` + (b.amended ? ` · spec revision ${b.amended} took effect here` : "") + (pinned ? "" : " · newest");
+  const title = `Block #${b.n}` + (b.amended ? ` · spec revision ${b.amended} took effect here` : "") + (pinned ? "" : " · newest") + (b.ts ? ` · ${new Date(b.ts * 1000).toLocaleString("de-DE")}` : "");
   $("blkDetail").innerHTML = `<h3>${title}</h3>` + blockHtml(b);
   $("chainSub").textContent = pinned ? `showing #${b.n} · click another block or “newest” to follow the chain` : "click a block to inspect it below · bright card = a rule change took effect";
 }
@@ -1824,10 +1836,11 @@ function detailValidator(v, i) {
 (() => {
   const apply = () => {
     const w = innerWidth, h = innerHeight;
-    // design width 2400 for the wide layout (five columns, chain core spanning both rows); height sets the cap
-    let z = w >= 2200 && h >= 900 ? Math.max(1, Math.min(1.7, w / 2400, h / 900)) : 1;
+    // five-column layout from 2200 px; design width 2800 so every panel keeps at least its desktop room, height sets the cap
+    const wide = w >= 2200 && h >= 900;
+    let z = wide ? Math.max(1, Math.min(1.7, w / 2800, h / 950)) : 1;
     z = Math.round(z * 100) / 100;
-    document.documentElement.classList.toggle("wide", z > 1);
+    document.documentElement.classList.toggle("wide", wide);
     document.documentElement.style.setProperty("--z", z);
   };
   apply(); addEventListener("resize", apply);
@@ -1863,7 +1876,7 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
 
 /* ---------- simple / technical view ---------- */
 const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
-function setView(v) { document.body.dataset.view = v; $("btnSimple").setAttribute("aria-pressed", v === "simple"); $("btnTech").setAttribute("aria-pressed", v === "tech"); store.set("tau-view", v); }
+function setView(v) { document.body.dataset.view = v; $("btnSimple").setAttribute("aria-pressed", v === "simple"); $("btnTech").setAttribute("aria-pressed", v === "tech"); store.set("tau-view", v); const cur = selectedBlock !== null ? S.byHeight.get(selectedBlock) : S.blocks[S.blocks.length - 1]; if (cur) showBlock(cur, selectedBlock !== null); }
 $("btnSimple").onclick = () => setView("simple"); $("btnTech").onclick = () => setView("tech");
 setView(store.get("tau-view") || "simple");
 /* ---------- glyph rain toggle ---------- */
@@ -1947,7 +1960,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.4`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.5`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
