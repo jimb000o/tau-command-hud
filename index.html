@@ -320,6 +320,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 @keyframes slidein { from { transform: translateX(16px); opacity: 0; } }
 
 /* chain ribbon */
+.radar { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: -2px 0 2px; font: 10.5px var(--mono); color: var(--dim); }
+.radar span { cursor: help; }
+.radar b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.radar .warn b { color: var(--amber); }
+.radar .bad b { color: var(--bad); }
+.radar .ok b { color: var(--ok); }
 .ribbon { display: flex; gap: 0; overflow: auto; flex: 0 0 auto; min-height: 0; align-items: flex-start; padding: 6px 2px 10px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .blk { flex: 0 0 150px; position: relative; padding: 10px 12px; margin-right: 26px; background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 6px; animation: drop .6s ease-out; }
 .blk:last-child { border-color: var(--ok); box-shadow: inset 0 0 24px rgba(57,255,138,.14), 0 0 18px rgba(57,255,138,.12); }
@@ -488,7 +494,18 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .clause i.k-whitelist { background: var(--ok); }
 .clause i.k-timelock { background: #c4c4cc; }
 .clause i.k-cosign { background: #6e6e78; }
+.clause i.k-approval { background: #fff; }
+.clause i.k-heightlock { background: #c4c4cc; }
 .clause span:last-child { color: var(--dim); }
+.appr { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line); display: grid; gap: 4px; }
+.ap { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; cursor: help; }
+.ap i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--amber); }
+.ap.open i { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.ap.approved i { background: var(--ok); border-color: var(--ok); }
+.ap.expired i { border-color: var(--dim); }
+.ap span:last-child { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ap.open span:last-child { color: var(--amber); }
+.ap b { color: #fff; font-weight: 500; }
 .rule.composite { font-size: 10.5px; line-height: 1.55; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
 .tx.rl { border-left-color: var(--ok); }
 .tx.rl .top em { color: var(--ok); }
@@ -760,6 +777,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
 
     <article class="panel a-chain">
       <h2>Blockchain <small id="chainSub">click a block to inspect it below · mouse wheel steps through blocks · bright card = a rule change took effect</small><button class="info" type="button" aria-label="What is this?" data-tip="Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
+      <div class="radar" id="radar"></div>
       <div class="ribbon" id="ribbon"></div>
       <div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div>
     </article>
@@ -828,6 +846,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v16.4 · 27 Oct 2026</b>Personal money rules: the examples now show what Tau itself advertises: a second approval above an amount (the transfer parks as an approval request and executes when the approver signs, with a countdown in blocks), a lock until a block height instead of a clock time, spending limits, whitelists and co-signatures. Live mode shows approval requests only when the node reports them. Validators: the consensus mode (fixed validator list, list in Tau logic, or stake-based) and how often it was switched by agreement. Blockchain: a fork radar counting reorgs (with depth) and testnet restarts.</li>
           <li><b>v16.3 · 27 Oct 2026</b>Proposals: a new page at <a href="proposals/">/proposals/</a> tracks every rule change and offers Telegram, X and RSS alerts; linked from the header, and the feedback panel links the Telegram channel.</li>
           <li><b>v16.2 · 27 Oct 2026</b>Accounts: a new page at <a href="account/">/account/</a> shows balance, own rules, offers, activity and refusals of any account; linked from the header, and on the live chain every address in the HUD (transactions, blocks, proposer, validators, rule holders, offers) links to its account.</li>
           <li><b>v16.1 · 27 Oct 2026</b>Phones and tablets: header chips wrap instead of scrolling sideways, panel subtitles, provenance lines and block values wrap instead of being cut off, the chain core uses the full width, a tap on a button no longer leaves a tooltip behind. Desktop: the “from the protocol / seen on the testnet” lines under the thesis cards wrap instead of being cut off.</li>
@@ -1013,6 +1032,8 @@ const S = {
   updates: [],          // governance: {id,title,diff,votes:Set,proposer,activateAt,status,kind,value}
   offers: [],           // rule sharing: {id,from,to,policy,status,expire}
   clauses: new Map(),   // acceptor -> policy  (the per-user o5 specification)
+  approvals: [],        // approval requests: {id,from,to,amount,approver,expireAt,status}
+  reorgs: [], restarts: 0, eligMode: "", modeHistory: [],
 };
 /* who may vote: the simulation lets validators vote; on the live network it is a node setting (open_governance_admission), reported by the relay when known */
 const agreeNeed = (thr, N) => S.mode === "live" ? `${thr} vote${thr === 1 ? "" : "s"} (threshold from ${N} validator${N === 1 ? "" : "s"})` : `${thr} of ${N} validators`;
@@ -1037,6 +1058,16 @@ const POLICIES = {
     body: `(i5[t]:bv[64] < { ${ts} }:bv[64]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])`,
     blocks: () => Date.now() / 1000 < ts,
   }),
+  approval: (amt, who, win) => ({
+    kind: "approval", name: "Second approval", label: `above ${fmt(amt)} AGRS ${short(who)} must approve · a request waits ${win} blocks`, approver: who, window: win, parks: true,
+    body: `(i1[t]:bv[24] > { #x${hex6(amt)} }:bv[24] && !(i18[t]:bv[384] = { #x${who.slice(0, 8)}… }:bv[384])) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])`,
+    blocks: tx => tx.amount > amt,
+  }),
+  heightlock: h => ({
+    kind: "heightlock", name: "Locked until a block", label: `frozen until block #${h}`,
+    body: `(i6[t]:bv[64] < { ${h} }:bv[64]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])`,
+    blocks: () => S.height < h,
+  }),
   cosign: (amt, who) => ({
     kind: "cosign", name: "Co-signature", label: `needs ${short(who)} to sign above ${fmt(amt)} AGRS`,
     body: `(i1[t]:bv[24] > { #x${hex6(amt)} }:bv[24] && !(i18[t]:bv[384] = { #x${who.slice(0, 8)}… }:bv[384])) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])`,
@@ -1044,10 +1075,11 @@ const POLICIES = {
   }),
 };
 function randomPolicy(accounts) {
-  const k = pick(["limit", "limit", "whitelist", "timelock", "cosign"]);
+  const k = pick(["limit", "whitelist", "heightlock", "cosign", "approval", "approval"]);
   if (k === "limit") return POLICIES.limit(pick([500, 1000, 2500, 4000]));
   if (k === "whitelist") return POLICIES.whitelist(pick(accounts));
-  if (k === "timelock") return POLICIES.timelock(Math.floor(Date.now() / 1000) + 40 + ((Math.random() * 60) | 0));
+  if (k === "heightlock") return POLICIES.heightlock(S.height + 4 + ((Math.random() * 8) | 0));
+  if (k === "approval") return POLICIES.approval(pick([1000, 2000, 3000]), pick(accounts), pick([6, 10, 15]));
   return POLICIES.cosign(pick([2000, 3000]), pick(accounts));
 }
 
@@ -1139,6 +1171,7 @@ async function pollOnline() {
     setOnline(Number.isFinite(n) ? n : null);
     PRESENCE.liveDefault = j.live_default === true;
     if (typeof j.open_governance_admission === "boolean") S.openVoting = j.open_governance_admission;
+    if (Array.isArray(j.restarts)) PRESENCE.restarts = j.restarts.map(r => ({ detected_at: Number(r.detected_at) || null, old_tip: r.old_tip ?? (r.old && r.old.tip) ?? null }));
     PRESENCE.tip = Number(j.tip_height ?? j.network_height) || null; PRESENCE.canon = Number.isFinite(Number(j.canonical_height)) ? Number(j.canonical_height) : null;
     PRESENCE.synced = j.live_default === true || (j.live_default === undefined && j.canonical_height === undefined) ? true : Number(j.canonical_height) > 0;
     setRelay(!!j.upstream_connected && Number(j.height) > 0);
@@ -1204,6 +1237,8 @@ const policyMeaning = p => !p ? "No own rule: every transfer is allowed." : ({
   whitelist: `Whitelist: ${p.label}; every other recipient is refused.`,
   timelock: `Time-lock: ${p.label}; until then every transfer is refused.`,
   cosign: `Co-signature: ${p.label}; without it the transfer is refused.`,
+  approval: `Second approval: ${p.label}. A transfer above the threshold parks on the chain as an approval request and executes by itself the moment the approver signs; unsigned, it expires and the money stays.`,
+  heightlock: `Locked until a block: ${p.label}; until the chain reaches it every transfer is refused. A deadline in block heights, not clock time, so no clock can be gamed.`,
 }[p.kind] || p.label);
 const proposalMeaning = u => ({
   fee: `Every transaction would cost ${u.value} AGRS instead of ${S.fee}; the fee rule (o9) in the consensus spec changes.`,
@@ -1216,6 +1251,8 @@ function explainTx(t) {
   const st = t.rejected ? "Refused at the door, never entered a block." : t.block != null ? `In block #${t.block}.` : "In the mempool, waiting for the next block.";
   const pol = t.policy ? `Sender’s own rule: ${t.policy.label}.` : "Sender has no own rule.";
   switch (t.type) {
+    case "approval_request":
+      return `${pol} Above the threshold, so the transfer parks on the chain as an approval request. It executes by itself the moment ${short(t.parked ? t.parked.approver : "")} signs; unsigned, it expires after ${t.parked ? t.parked.window : "a few"} blocks and the money stays. ${st}`;
     case "user_tx": case "retractable_transfer":
       return (t.rejected ? `${pol} The rule said no, so the node refused it, whoever holds the key.` : `${pol} Checked and passed before admission.`) + (t.type === "retractable_transfer" ? " Can be pulled back until released." : "") + `\n${st}`;
     case "rule_deploy": return `${policyMeaning(t.policy)} Binds the account from now on, even with a stolen key.\n${st}`;
@@ -1268,7 +1305,7 @@ function explainComposite() {
 const TYPE_LABEL = {
   user_tx: "⇄ transfer", rule_deploy: "◆ own rule deployed", rule_offer: "⤳ rule offered", rule_offer_accept: "✓ rule accepted",
   rule_offer_reject: "✕ rule rejected", consensus_rule_update: "§ rule change proposed", consensus_rule_vote: "☑ vote",
-  retractable_transfer: "↺ retractable transfer",
+  retractable_transfer: "↺ retractable transfer", approval_request: "⏳ approval request",
 };
 /* a live panel never re-renders while the pointer rests on it; the pending render runs on mouseleave */
 const HOLD = new Map();
@@ -1386,10 +1423,17 @@ function renderOffers() {
 function renderClauses() {
   if (hold("clauses", renderClauses)) return;
   const entries = [...S.clauses.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1);
-  $("clauseCount").textContent = entries.length + " accounts";
-  $("clauses").innerHTML = entries.length ? entries.slice(0, 8).map(([acc, p]) =>
+  const open = S.approvals.filter(a => a.status === "open");
+  $("clauseCount").textContent = entries.length + " accounts" + (open.length ? ` · ${open.length} waiting for approval` : "");
+  const shown = open.concat(S.approvals.filter(a => a.status !== "open").slice(-2));
+  const appr = shown.length ? `<div class="appr">${shown.map(a => {
+    const left = Math.max(0, a.expireAt - S.height);
+    const tip = a.status === "open" ? `Approval request: ${fmt(a.amount)} AGRS from ${short(a.from)} to ${short(a.to)} wait on the chain for ${short(a.approver)} to sign. If signed, the transfer executes by itself; unsigned, it expires at block #${a.expireAt} and the money stays.` : a.status === "approved" ? `Signed by ${short(a.approver)} at block #${a.settledAt}: the transfer executed by itself.` : `Expired unsigned at block #${a.settledAt}: the money stayed with ${short(a.from)}.`;
+    return `<div class="ap ${a.status}" data-full="${esc(tip)}"><i></i><span>${acct(a.from)} → ${acct(a.to)} <b>${fmt(a.amount)} AGRS</b></span><span>${a.status === "open" ? `waits for ${short(a.approver)} · ${left} blk` : a.status === "approved" ? "approved ✓" : "expired"}</span></div>`;
+  }).join("")}</div>` : "";
+  $("clauses").innerHTML = (entries.length ? entries.slice(0, 8).map(([acc, p]) =>
     `<div class="clause" data-ex="${exKey(() => explainClause(acc, p))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}</span><span>${p.name}</span></div>`).join("")
-    : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`;
+    : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`) + appr;
   // The node composes all accepted clauses into ONE rule per stream (README · Rule sharing)
   const branches = entries.slice(0, 3).map(([acc, p]) => `(i12[t]:bv[384] = { #x${acc.slice(0, 8)}… }:bv[384]) ? ( ${esc(p.body)} )`);
   if (entries.length > 3) branches.push(`<span class="c">… ${entries.length - 3} more guarded branches</span>`);
@@ -1408,13 +1452,37 @@ function renderGov(extra = {}) {
   const kv = Object.assign({
     "Validators": N ? `${N} active, 1 proposing` : "—",
     "Agreement needed": N ? `${threshold()} of ${N} (${S.quorum === "majority" ? "majority" : "two thirds"})` : "—",
-
+    "Consensus mode": modeLabel(),
+    "Mode switches": S.modeHistory.length ? `${S.modeHistory.length} · last at #${fmt(S.modeHistory[S.modeHistory.length - 1].height)}` : S.mode === "live" ? "none on record" : "none · simulated",
   }, extra);
-  $("govkv").innerHTML = Object.entries(kv).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+  $("govkv").innerHTML = Object.entries(kv).map(([k, v]) => `<dt${KV_TIP[k] ? ` data-full="${esc(KV_TIP[k])}"` : ""}>${k}</dt><dd>${v}</dd>`).join("");
+  const sub = $("govSub"), sw = S.modeHistory.length;
+  if (sub) { sub.textContent = S.mode === "live" ? `${modeLabel()} · ${sw ? `${sw} switch${sw === 1 ? "" : "es"} by agreement` : "no switch on record"}` : "seal blocks, vote on rules · fixed list (PoA), simulated"; sub.dataset.full = KV_TIP["Consensus mode"]; }
 }
 
+/* who may seal blocks right now: a fixed validator list (PoA) or a list or stake judged by the Tau rules (stream o7) */
+const MODE_TXT = { validator_set: "fixed validator list (PoA)", tau_validator_set: "validator list kept in Tau logic", stake: "stake-based (Tau judges o7)" };
+const modeLabel = () => S.mode !== "live" ? "fixed validator list (PoA) · simulated" : S.eligMode ? (MODE_TXT[S.eligMode] || esc(S.eligMode)) : "—";
+/* fork radar: competing branches, reorgs and chain restarts, as the node and the relay report them */
+function renderRadar() {
+  const el = $("radar"); if (!el) return;
+  const sp = (cls, html, tip) => `<span class="${cls}" data-full="${esc(tip)}">${html}</span>`;
+  let html;
+  if (S.mode !== "live") html = sp("", "fork radar · <b>simulated</b> · one branch, no reorgs, no restarts", "The simulation never forks. On the live chain this line counts competing branches the node switched between (reorgs, up to the 2000-block path cap), and restarts of the testnet on the same genesis.");
+  else {
+    const deepest = S.reorgs.reduce((m, r) => Math.max(m, r.depth), 0), last = S.reorgs[S.reorgs.length - 1];
+    const rs = PRESENCE.restarts || [], restarts = Math.max(S.restarts, rs.length), lastRs = rs[rs.length - 1];
+    html = sp("", "fork radar", "Competing branches, reorgs and restarts of the testnet, as seen by the community node and its relay.")
+      + sp("", "tips <b>1</b>", "The node follows one head: the heaviest valid branch (height, then the smaller hash). A competing branch shows up here as a reorg the moment the node switches to it.")
+      + sp(S.reorgs.length ? "warn" : "ok", `reorgs <b>${S.reorgs.length}</b>${deepest ? ` · deepest <b>${deepest}</b>` : ""}`, S.reorgs.length ? `${S.reorgs.length} reorg${S.reorgs.length === 1 ? "" : "s"} seen in this session, the deepest ${deepest} block${deepest === 1 ? "" : "s"} (last at block #${last.height}). The node reverts and replays state along the new branch; a reorg deeper than 2000 blocks is refused.` : "No block of this session was replaced by a competing branch. A reorg can run as deep as the common ancestor, up to a 2000-block path cap, because the alpha has no finality.")
+      + sp(restarts ? "warn" : "ok", `restarts <b>${restarts}</b>${lastRs && lastRs.detected_at ? ` · last ${fmtAgo(Date.now() / 1000 - lastRs.detected_at)}` : ""}`, restarts ? `The testnet was restarted ${restarts} time${restarts === 1 ? "" : "s"} on the same genesis${lastRs && lastRs.old_tip != null ? `, the last one after block #${fmt(lastRs.old_tip)}` : ""}. The relay flags a restart, the page forgets the dead chain and starts again from block 1.` : "No restart of the testnet on record. A restart is a new chain on the same genesis; the relay flags it and the page starts over.")
+      + (PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2 ? sp("warn", `verified <b>#${fmt(PRESENCE.canon)}</b> of <b>#${fmt(PRESENCE.tip)}</b>`, "The node holds every block up to the tip but has fully verified the state only up to the lower height.") : "");
+  }
+  if (el.innerHTML !== html) el.innerHTML = html;
+}
 /* ---------- readouts ---------- */
 function readouts() {
+  renderRadar();
   $("chipH").textContent = $("rH").textContent = fmt(S.height);
   $("rM").textContent = S.mempool.length;
   const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
@@ -1446,6 +1514,8 @@ const KV_TIP = {
   "Validators": "How many validators are active and which one is proposing the next block.",
   "Approval threshold": "How many votes a rule change needs, as the node reports it from its governance state (derived from the validator count and the quorum policy).",
   "Next height": "The height of the next block the node expects to seal.",
+  "Consensus mode": "Who may seal the next block. Fixed validator list (PoA): the host keeps the list and Tau checks it. Validator list in Tau logic, or stake-based: the Tau rules (stream o7) are the binding authority. The mode is itself chain state and switches only by an agreed rule change (eligibility_mode in a host contract patch).",
+  "Mode switches": "How often the consensus mode changed by agreement: switches recorded in activated rule changes, plus any this page saw happen.",
   "Eligibility": "How the node decides who may seal the next block, as reported by the node.",
 };
 const kvHtml = o => `<dl class="kv">${Object.entries(o).map(([k, v]) => `<dt${KV_TIP[k] ? ` data-full="${KV_TIP[k]}"` : ""}>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
@@ -1527,7 +1597,17 @@ function ingestBlock(b, live) {
   S.lastBlockAt = t;
   b.snap = { specRev: S.specRev, fee: S.fee, quorum: S.quorum, budget: S.ruleBudget, validators: S.validators.slice(), rules: S.clauses.size,
     agreed: S.updates.filter(u => u.status === "active" && u.activeAt === b.n).map(u => ({ title: u.title, diff: u.diff, votes: u.votes.size })) };
+  const old = live ? S.byHeight.get(b.n) : null;
+  if (old && old.hash !== b.hash) {   // a block at a height we hold, with another hash: the node switched to a heavier branch
+    const depth = Math.max(1, S.height - b.n + 1);
+    S.reorgs.push({ at: Date.now(), height: b.n, depth });
+    log(`Reorg: block #${b.n} replaced, ${depth} block${depth === 1 ? "" : "s"} deep · the node switched to a heavier branch`, "warn");
+    S.blocks = S.blocks.filter(x => x.n < b.n); [...S.byHeight.keys()].filter(k => k >= b.n).forEach(k => S.byHeight.delete(k));
+    document.querySelectorAll(`#ribbon .blk`).forEach(c => { if (Number(c.dataset.n) >= b.n) c.remove(); });
+    S.approvals.forEach(a => { if (a.settledAt != null && a.settledAt >= b.n) { a.status = "open"; a.settledAt = null; } });
+  }
   S.byHeight.set(b.n, b); if (S.byHeight.size > 60) S.byHeight.delete(Math.min(...S.byHeight.keys()));
+  if (S.approvals.some(a => a.status === "open")) renderClauses();
   S.blocks.push(b); if (S.blocks.length > 40) S.blocks.shift();
   S.height = b.n; S.txTotal += b.txs.length;
   if (live) b.txs.forEach(t => { if (t.type === "consensus_rule_update") S.lastProposalBlock = b.n; else if (t.type === "consensus_rule_vote") S.lastVoteBlock = b.n; });
@@ -1629,9 +1709,25 @@ function simTx() {
   const tx = { id: hex(64), type: Math.random() < .12 ? "retractable_transfer" : "user_tx", sender, to, amount, fee: S.fee, transfers: [[sender, to, String(amount)]] };
   const pol = S.clauses.get(sender);
   tx.policy = pol || null;
-  if (pol && pol.blocks(tx)) { tx.rejected = `o5 = 0 · ${pol.name}`; tx.note = ""; }
+  if (pol && pol.blocks(tx)) {
+    if (pol.parks) {   // second approval: the transfer parks as an approval request instead of being refused
+      tx.type = "approval_request"; tx.parked = pol; tx.note = `${short(sender)} → ${short(to)} ${fmt(amount)} AGRS · waits for ${short(pol.approver)} · ${pol.window} blocks`;
+      tx.apply = b => { S.approvals.push({ id: tx.id, from: sender, to, amount, approver: pol.approver, since: b.n, expireAt: b.n + pol.window, status: "open" }); renderClauses(); };
+    } else { tx.rejected = `o5 = 0 · ${pol.name}`; tx.note = ""; }
+  }
   if (pol) { pol.lastCheck = performance.now(); pol.lastRefused = !!tx.rejected; }
   admit(tx);
+}
+/* approval requests at a height transition: an approver signs (the transfer executes) or the request expires (the money stays) */
+function settleApprovals(b) {
+  let changed = false;
+  S.approvals.forEach(a => {
+    if (a.status !== "open") return;
+    if (b.n >= a.expireAt) { a.status = "expired"; a.settledAt = b.n; changed = true; log(`Approval request ${short(a.id)} expired at #${b.n} · ${fmt(a.amount)} AGRS stay with ${short(a.from)}`, "warn"); }
+    else if (Math.random() < 0.22) { a.status = "approved"; a.settledAt = b.n; changed = true; log(`Approval: ${short(a.approver)} signed ${short(a.id)} · ${fmt(a.amount)} AGRS ${short(a.from)} → ${short(a.to)} execute`, "ok"); }
+  });
+  if (S.approvals.length > 12) S.approvals = S.approvals.filter(a => a.status === "open").concat(S.approvals.filter(a => a.status !== "open").slice(-4));
+  if (changed) renderClauses();
 }
 function simBlock() {
   const prev = S.blocks[S.blocks.length - 1];
@@ -1639,6 +1735,7 @@ function simBlock() {
   const take = S.mempool.splice(0, Math.min(S.mempool.length, 3 + ((Math.random() * 6) | 0)));
   const b = { n: prev.n + 1, hash: hex(64), prev: prev.hash, state: hex(64), proposer: S.validators[S.proposerIdx], ts: Math.floor(Date.now() / 1000), txs: take };
   take.forEach(t => { t.block = b.n; t.apply && t.apply(b, t); });
+  settleApprovals(b);
   // governance lifecycle at the height transition (after transactions execute)
   const thr = threshold();
   S.updates.forEach(u => {
@@ -1690,7 +1787,7 @@ function liveMessage(ev) {
   presenceFromMessage(d);
   if (msg.command === "getblocks") {
     LIVE.gotData = true; setRelay(true);
-    if (d.reset) { liveClear(); log("Chain reset: the node discarded a chain the network abandoned and starts again from genesis. Block numbers restart.", "warn"); renderGov(); renderUpdates(); renderClauses(); }
+    if (d.reset) { const n = S.restarts + 1; liveClear(); S.restarts = n; log("Chain reset: the node discarded a chain the network abandoned and starts again from genesis. Block numbers restart.", "warn"); renderGov(); renderUpdates(); renderClauses(); }
     (d.blocks || []).filter(b => !LIVE.seenBlocks.has(b.block_hash)).forEach(raw => {
       LIVE.seenBlocks.add(raw.block_hash);
       const h = raw.header || {}, ids = raw.tx_ids || [];
@@ -1730,13 +1827,26 @@ function liveMessage(ev) {
       if (m) S.fee = parseInt(m[1], 16);
     }
     S.minActBlocks = Number.isFinite(d.min_activation_height_for_next_update) && Number.isFinite(d.next_block_height) ? Math.max(0, d.min_activation_height_for_next_update - d.next_block_height) : (Number.isFinite(d.active_validator_count) ? d.active_validator_count : null);
-    renderGov({ "Approval threshold": d.approval_threshold ?? "—", "Next height": d.next_block_height ?? "—", "Eligibility": esc(d.eligibility_mode || "—") });
+    if (typeof d.eligibility_mode === "string" && d.eligibility_mode) {
+      if (S.eligMode && d.eligibility_mode !== S.eligMode) S.modeHistory.push({ from: S.eligMode, to: d.eligibility_mode, height: S.height, seen: true });
+      S.eligMode = d.eligibility_mode;
+    }
+    (d.archival_update_details || []).forEach(u => {   // switches voted in before this page was watching
+      const p = u && u.host_contract_patch, h = u && u.activate_at_height;
+      if (p && typeof p.eligibility_mode === "string" && u.lifecycle === "activated" && !S.modeHistory.some(m => m.height === h)) S.modeHistory.push({ to: p.eligibility_mode, height: h });
+    });
+    if (Array.isArray(d.approval_requests)) {
+      S.approvals = d.approval_requests.map(a => ({ id: a.request_id || a.id || a.tx_hash || "", from: a.sender || a.sender_pubkey || "", to: a.recipient || a.to || "", amount: Number(a.amount) || 0,
+        approver: ([].concat(a.approvers || a.approver || [])).filter(Boolean)[0] || "", since: Number(a.included_at_height) || null, expireAt: Number(a.expire_at_height) || 0, status: a.status || "open", settledAt: Number(a.settled_at_height) || null }));
+      renderClauses();
+    }
+    renderGov({ "Approval threshold": d.approval_threshold ?? "—", "Next height": d.next_block_height ?? "—" });
     renderRuleWorld(); readouts();
   }
 }
 /* forget every block and transaction: on connect, and when the relay reports that the node wiped a dead chain ("reset": true) */
 function liveClear() {
-  Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0 });
+  Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0, approvals: [], reorgs: [], eligMode: "", modeHistory: [] });
   S.clauses = new Map(); S.byHeight = new Map(); LIVE.seenBlocks.clear(); LIVE.seenTx.clear();
   $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
 }
@@ -2245,7 +2355,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.3`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.4`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
