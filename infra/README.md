@@ -84,8 +84,13 @@ lists transactions that left the node's mempool without reaching a block within 
 pending, scheduled, activated and expired rule changes.
 
 To serve these, the relay holds every block of the current chain (up to `CHAIN_BLOCKS`,
-default 20,000): it fetches the whole chain once at startup, after a restart or after a gap,
-and only the newest 20 blocks on every other poll.
+default 20,000) and keeps a copy in `/data/chain.jsonl`, so the history survives relay
+restarts. The node's WebSocket hands out at most its newest ~900 KB of blocks (a bare
+`getblocks` means 50 there, bigger replies fail with `PAYLOAD_TOO_LARGE`), so at startup,
+after a restart or a gap the relay asks for `getblocks <chain length>` and halves the request
+until the reply fits; older blocks come from the file. Every other poll fetches the newest 20.
+Blocks in the file that contradict the node below its tip belong to an earlier chain and are
+dropped (and logged as a restart).
 
 ## Rule Playground checker
 

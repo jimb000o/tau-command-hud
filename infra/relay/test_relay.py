@@ -19,7 +19,8 @@ EVENTS = os.path.join(tempfile.mkdtemp(), "events.json")
 with open(EVENTS, "w") as f:
     json.dump({"since": 1000, "chain": {"block1_hash": "dead", "block1_ts": 1000, "tip": 40, "tip_hash": "beef", "tip_ts": 4000},
                "restarts": [], "dropped": []}, f)
-os.environ.update(EVENTS_PATH=EVENTS, DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
+os.environ.update(CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 sys.path.insert(0, os.path.dirname(__file__))
@@ -42,8 +43,14 @@ def block(n, chain=0):
             "transactions": txs}
 
 
-# the chain is already longer than one getblocks window when the relay starts
+# the chain is already longer than the node will hand out in one reply (cap 45
+# below); the relay's file from an earlier run holds the older blocks
 mock["blocks"] = [block(n) for n in range(60)]
+mock["cap"] = 45
+mock["mint"] = False  # still until the relay has caught up, so the window math is exact
+with open(CHAIN, "w") as f:
+    for b in mock["blocks"][:30]:
+        f.write(json.dumps(b) + "\n")
 
 
 def _stats():
@@ -70,7 +77,10 @@ async def mock_node(ws):
             await ws.send(relay.envelope_error("rate_limit", "Rate limit exceeded", "RATE_LIMITED"))
             continue
         if cmd == "getblocks":
-            n = int(parts[1]) if len(parts) > 1 else len(mock["blocks"])  # no limit: every block
+            n = int(parts[1]) if len(parts) > 1 else 50  # like the node's WebSocket: bare = 50
+            if n > mock.get("cap", 10**6) and n > 1 and len(mock["blocks"]) > mock.get("cap", 10**6):
+                await ws.send(relay.envelope_error(cmd, "Response too large (999999 bytes).", "PAYLOAD_TOO_LARGE"))
+                continue
             bs = mock["blocks"][-n:]
             await ws.send(relay.envelope_ok(cmd, {"blocks": bs, "total": len(mock["blocks"]), "truncated": len(bs) < len(mock["blocks"])}))
         elif cmd == "getmempool":
@@ -125,8 +135,13 @@ async def main():
             check(first.get("command") == "presence" and first["data"]["online"] == 1, "presence pushed on connect")
             await ws.send("hello version=1")
             check((await ws.recv()).startswith("ok version=1"), "handshake")
-            m = await ask(ws, "getblocks 12")
+            for _ in range(30):  # cold start: chain length, then a full fetch that must shrink to fit
+                m = await ask(ws, "getblocks 12")
+                if m["status"] == "ok" and r.height() and r.height() >= 59:
+                    break
+                await asyncio.sleep(0.5)
             check(m["status"] == "ok" and len(m["data"]["blocks"]) >= 1, "getblocks served from cache")
+            mock["mint"] = True
             hs = [b["header"]["block_number"] for b in m["data"]["blocks"]]
             check(hs == sorted(hs), "blocks in ascending order")
             check((await ask(ws, "getgovernance"))["status"] == "ok", "getgovernance")
@@ -146,12 +161,15 @@ async def main():
             check(row[2] == 1 and row[3] == 1 and row[4] == 5 and row[6] == {"user_tx": 1}
                   and st["accounts"][row[7][0]] == ALICE, f"/stats block summary {row}")
             check(len(st["restarts"]) == 1 and st["restarts"][0]["old"]["tip"] == 40, "restart found at relay start")
+            with open(CHAIN) as f:
+                on_disk = [json.loads(line)["header"]["block_number"] for line in f]
+            check(sorted(set(on_disk)) == list(range(0, max(on_disk) + 1)) and max(on_disk) >= 59, "whole chain kept on disk")
 
             # a tx that leaves the mempool without reaching a block is counted as dropped
             mock["mempool"] = [{"tx_hash": "77" * 32, "sender": BOB, "tx_type": "user_tx"}]
-            await asyncio.sleep(4)
+            await asyncio.sleep(6)
             mock["mempool"] = []
-            await asyncio.sleep(9)  # two mempool polls plus the grace period
+            await asyncio.sleep(14)  # two mempool polls (they queue behind the paced heavy reads) plus the grace period
             _, st = await stats()
             check(st["dropped_total"] == 1 and st["dropped"][0]["tx_hash"] == "77" * 32 and st["dropped"][0]["sender"] == BOB,
                   "dropped tx recorded")
@@ -210,6 +228,8 @@ async def main():
                   "live restart recorded, /stats follows the new chain")
             with open(EVENTS) as f:
                 check(len(json.load(f)["restarts"]) == 2, "restarts persisted to the events file")
+            with open(CHAIN) as f:
+                check(all(json.loads(line)["block_hash"].startswith("0001") for line in f), "file rewritten with the new chain")
         reader, writer = await asyncio.open_connection("127.0.0.1", 18766)
         writer.write(b"GET /health HTTP/1.1\r\nHost: x\r\n\r\n")
         body = json.loads((await reader.read(4096)).decode().split("\r\n\r\n", 1)[1])
@@ -274,6 +294,13 @@ async def main():
         await asyncio.sleep(8)
         check(mock["heavy_violations"] == 0, f"never tripped node rate limit ({mock['heavy_violations']} violations)")
         check(mock["connections"] == 1, "single upstream connection")
+
+        # blocks on disk vs. the node: another chain below the tip, or just a replaced tip block
+        probe = relay.Relay()
+        probe.blocks = {b["block_hash"]: b for b in (block(n, chain=5) for n in range(30))}
+        check(probe._other_chain([block(n, chain=6) for n in range(3)]), "restarted chain told apart from blocks on disk")
+        check(not probe._other_chain([block(29, chain=6), block(30, chain=6)]), "replaced tip block is a reorg, not a new chain")
+        check(not probe._other_chain([block(n, chain=5) for n in range(10, 31)]), "same chain matches")
 
         minter.cancel()
         runner.cancel()

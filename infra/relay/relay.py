@@ -75,6 +75,9 @@ UPSTREAM_MAX_SIZE = _env_int("UPSTREAM_MAX_SIZE", 64 * 2**20)
 # Chain restarts and transactions that left the mempool without a block are
 # kept here so /stats can show them across relay restarts.
 EVENTS_PATH = os.environ.get("EVENTS_PATH", "/data/events.json")
+# Every block of the current chain, one JSON line each, so history survives
+# relay restarts (the node only hands out its newest ~900 KB of blocks).
+CHAIN_PATH = os.environ.get("CHAIN_PATH", "/data/chain.jsonl")
 EVENTS_MAX = 5000
 STATS_CACHE_SECONDS = _env_float("STATS_CACHE_SECONDS", 5)
 # a tx that leaves the mempool counts as dropped only if no block holds it
@@ -199,7 +202,10 @@ class Relay:
         self.lookup_bucket = TokenBucket(LOOKUP_BURST, LOOKUP_REFILL)
         self.started = time.time()
         self.need_full = True                   # fetch the whole chain on the next block poll
+        self.full_limit = CHAIN_BLOCKS          # how many blocks a full fetch asks for
+        self.chain_file_ok = True
         self.state = self._load_state()         # restarts, dropped txs, last chain seen
+        self._load_chain()
         self.mempool_seen: dict[str, dict] = {}  # tx_hash -> summary, while in the mempool
         self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
         self.stats_text: str | None = None
@@ -217,45 +223,77 @@ class Relay:
 
     async def poll_blocks(self):
         # The whole chain once (at startup, after a reset or a gap), the tail
-        # afterwards. The node's getblocks without a limit returns every row.
+        # afterwards. Over WebSocket the node turns a bare getblocks into
+        # "getblocks 50" and refuses replies over ~900 KB (PAYLOAD_TOO_LARGE),
+        # so the full fetch names a limit and shrinks it until the reply fits;
+        # whatever is older than that window comes from the relay's own copy
+        # on disk (CHAIN_PATH).
         full = self.need_full or not self.blocks
-        msg = await self.upstream.request("getblocks" if full else "getblocks 20")
+        if full and not self.total_blocks:
+            # learn the chain length first, so the full fetch can ask for just that
+            msg = await self.upstream.request("getblocks 1")
+            total = ((msg or {}).get("data") or {}).get("total")
+            if msg and msg.get("status") == "ok" and isinstance(total, int) and total > 0:
+                self.total_blocks = total
+            else:
+                self._note_error("getblocks", msg)
+            return
+        cmd = f"getblocks {min(self.full_limit, self.total_blocks)}" if full else "getblocks 20"
+        msg = await self.upstream.request(cmd)
+        if msg and msg.get("status") == "error" and (msg.get("error") or {}).get("code") == "PAYLOAD_TOO_LARGE":
+            self.full_limit = max(20, min(self.full_limit, self.total_blocks) // 2)
+            log.info("getblocks reply too large; full fetch now asks for %s blocks", self.full_limit)
+            return
         if not msg or msg.get("status") != "ok":
             self._note_error("getblocks", msg)
             return
         data = msg.get("data") or {}
         total = data.get("total", self.total_blocks)
-        reset = False
-        if self.blocks and isinstance(total, int) and total < self.total_blocks:
+        fetched = [b for b in data.get("blocks") or [] if isinstance(b, dict) and b.get("block_hash")]
+        reset = dropped = False
+        if self.total_blocks and isinstance(total, int) and total < self.total_blocks:
             # The node wiped its chain data (testnet restarted on the same genesis):
             # everything cached belongs to a dead chain.
             log.warning("chain reset: node has %s blocks, had %s; dropping cached blocks", total, self.total_blocks)
             self.blocks.clear()
             reset = True
-            self.need_full = True
-        fresh = [b for b in data.get("blocks") or []
-                 if isinstance(b, dict) and b.get("block_hash") and b["block_hash"] not in self.blocks]
+        elif full and self.blocks and self._other_chain(fetched):
+            # typically right after a relay start: the blocks on disk are from a chain that is gone
+            log.warning("held blocks belong to an earlier chain; dropping them")
+            self.blocks.clear()
+            dropped = True
+            if self.state.get("chain"):
+                self._record_restart(self.state["chain"])
+                self.state["chain"] = None
+        prev_top = self.height()
+        fresh = [b for b in fetched if b["block_hash"] not in self.blocks]
         self.total_blocks = total
         self.updated["getblocks"] = time.time()
-        if full and not reset:
+        if reset:
+            self.need_full = True
+        elif full:
             self.need_full = False
         if not fresh:
             return
+        fresh.sort(key=self._height)
+        if not full and prev_top is not None and self._height(fresh[0]) > prev_top + 1:
+            self.need_full = True  # more than 20 blocks arrived between two polls
+        rewrite = reset or dropped or not self.chain_file_ok
         for b in fresh:
             # a block at a height we already hold replaces the old one (reorg)
             for old in [o for o in self.blocks.values() if self._height(o) == self._height(b)]:
                 self.blocks.pop(old["block_hash"], None)
+                rewrite = True
             self.blocks[b["block_hash"]] = b
         ordered = self.ordered_blocks()
-        for b in ordered[:-CHAIN_BLOCKS]:
-            if self._height(b) > 1:  # block 1 stays: it identifies the chain for restart detection
-                self.blocks.pop(b["block_hash"], None)
-        heights = [self._height(b) for b in self.ordered_blocks()]
-        if not full and heights and heights[-1] - heights[0] + 1 != len(heights):
-            self.need_full = True  # more than 20 blocks arrived between two polls
+        if len(ordered) > CHAIN_BLOCKS * 1.1:  # trim in batches so the file is not rewritten every block
+            for b in ordered[:-CHAIN_BLOCKS]:
+                if self._height(b) > 1:  # block 1 stays: it identifies the chain for restart detection
+                    self.blocks.pop(b["block_hash"], None)
+            rewrite = True
+        self._save_chain(None if rewrite else fresh)
         self.note_chain()
         self.stats_text = None
-        fresh.sort(key=self._height)
         if len(fresh) > 5:
             log.info("new blocks: %s..%s (%s)", self._height(fresh[0]), self._height(fresh[-1]), len(fresh))
         else:
@@ -265,6 +303,55 @@ class Relay:
             "blocks": fresh, "total": self.total_blocks, "truncated": True, "pushed": True,
             # reset: the chain restarted, drop everything you had before these blocks
             **({"reset": True} if reset else {})}))
+
+    def _other_chain(self, fetched: list[dict]) -> bool:
+        """True when the node's blocks contradict the ones loaded from disk
+        below their tip (a replaced tip block is a reorg, not a new chain)."""
+        top = self.height() or 0
+        held = {self._height(b): b["block_hash"] for b in self.blocks.values()}
+        return any(1 <= self._height(b) <= top - 3 and held.get(self._height(b)) not in (None, b["block_hash"])
+                   for b in fetched)
+
+    # ---------- the relay's own copy of the chain ----------
+    def _load_chain(self):
+        try:
+            with open(CHAIN_PATH) as f:
+                for line in f:
+                    try:
+                        b = json.loads(line)
+                    except ValueError:
+                        continue  # a line cut short by a crash
+                    if isinstance(b, dict) and b.get("block_hash"):
+                        for old in [o for o in self.blocks.values() if self._height(o) == self._height(b)]:
+                            self.blocks.pop(old["block_hash"], None)
+                        self.blocks[b["block_hash"]] = b
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            log.warning("cannot read %s: %r", CHAIN_PATH, exc)
+        if self.blocks:
+            log.info("loaded %s blocks from %s (up to #%s)", len(self.blocks), CHAIN_PATH, self.height())
+
+    def _save_chain(self, appended: list[dict] | None):
+        """Append new blocks, or rewrite the file (appended=None) after a
+        reset, a reorg or a trim."""
+        try:
+            if appended is None:
+                tmp = CHAIN_PATH + ".tmp"
+                with open(tmp, "w") as f:
+                    for b in self.ordered_blocks():
+                        f.write(json.dumps(b, separators=(",", ":")) + "\n")
+                os.replace(tmp, CHAIN_PATH)
+            else:
+                with open(CHAIN_PATH, "a") as f:
+                    for b in appended:
+                        f.write(json.dumps(b, separators=(",", ":")) + "\n")
+            self.chain_file_ok = True
+        except OSError as exc:
+            self.chain_file_ok = False
+            if not getattr(self, "_chain_warned", False):
+                log.warning("cannot write %s: %r; the chain lives in memory only", CHAIN_PATH, exc)
+                self._chain_warned = True
 
     async def poll_cached(self, command: str, push: bool):
         msg = await self.upstream.request(command)
@@ -334,11 +421,14 @@ class Relay:
             return
         known = self.state.get("chain")
         if known and not self._same_chain(known, info):
-            log.warning("chain restart recorded: old chain ended at #%s", known.get("tip"))
-            self.state["restarts"].append({"detected_at": round(time.time()), "old": known,
-                                           "new_block1_ts": info["block1_ts"]})
-            self.state["restarts"] = self.state["restarts"][-EVENTS_MAX:]
+            self._record_restart(known, info["block1_ts"])
         self.state["chain"] = info
+        self._save_state()
+
+    def _record_restart(self, old: dict, new_block1_ts: int | None = None):
+        log.warning("chain restart recorded: old chain ended at #%s", old.get("tip"))
+        self.state["restarts"].append({"detected_at": round(time.time()), "old": old, "new_block1_ts": new_block1_ts})
+        self.state["restarts"] = self.state["restarts"][-EVENTS_MAX:]
         self._save_state()
 
     @staticmethod
