@@ -115,6 +115,19 @@ with one row per node, highest first:
 `different` (another chain or a fork), `ahead` (higher than this relay has) or `unknown`.
 `/status` counts them as `community_nodes`.
 
+The leaderboard on tauhud.com/nodes reads `GET /community/board` (CORS `*`, cached 30 s):
+every node that reported in the last 30 days, also after it went silent, kept in
+`/data/community.json` (volume `relay_data`) across relay restarts. One row per node:
+`{"id", "name", "first_seen", "last_seen", "online", "days", "uptime", "height", "kit", "ref", "agrees"}`,
+online nodes first, then the longest running. `uptime` is the share of minutes since
+`first_seen` in which the node reported (null for its first ten minutes); `agrees` is null
+while offline. `first_seen` in `/community` comes from the same record, so a node keeps its
+start date through a silence.
+
+`GET /community/badge/<id>.svg` is an embeddable badge ("Tau HUD node | running 12 d", green
+while the node reports, grey when offline, "unknown node" for an id it never saw), cached
+5 minutes. The kit's heartbeat log prints the Markdown snippet for it once per start.
+
 ## Rule Playground checker
 
 `checker/checker.py` answers tauhud.com/playground: `POST https://node.tauhud.com/check`

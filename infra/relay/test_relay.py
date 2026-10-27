@@ -20,7 +20,8 @@ with open(EVENTS, "w") as f:
     json.dump({"since": 1000, "chain": {"block1_hash": "dead", "block1_ts": 1000, "tip": 40, "tip_hash": "beef", "tip_ts": 4000},
                "restarts": [], "dropped": []}, f)
 CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
-os.environ.update(CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+BOARD = os.path.join(os.path.dirname(EVENTS), "community.json")
+os.environ.update(BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 sys.path.insert(0, os.path.dirname(__file__))
@@ -69,6 +70,15 @@ def _community():
 
 def community():
     return asyncio.to_thread(_community)
+
+
+def _get(path):
+    with urllib.request.urlopen("http://127.0.0.1:18766" + path, timeout=5) as r:
+        return r.headers.get("Content-Type"), r.read().decode()
+
+
+def get(path):
+    return asyncio.to_thread(_get, path)
 
 
 async def mock_node(ws):
@@ -386,6 +396,34 @@ async def main():
         check(com["reference"]["name"] == "tauhud.com" and com["reference"]["head"], f"/community reference {com['reference']}")
         r.community[alice["id"]]["last_seen"] -= relay.COMMUNITY_TTL + 1
         check(len((await community())[1]["nodes"]) == 2, "silent nodes expire")
+
+        # leaderboard: every node of the last 30 days, offline ones too, kept on disk
+        ctype, text = await get("/community/board")
+        board = json.loads(text)["nodes"]
+        check([b["name"] for b in board][-1] == "alice-node" and board[-1]["online"] is False
+              and all(b["online"] for b in board[:-1]), f"board keeps silent nodes, online first {[b['name'] for b in board]}")
+        check(board[-1]["days"] == 0 and board[-1]["uptime"] is None and board[-1]["agrees"] is None
+              and "ip" not in board[-1], f"board row {board[-1]}")
+        with open(BOARD) as f:
+            check(alice["id"] in json.load(f), "board saved to disk")
+        check(alice["id"] in relay.Relay().board, "board survives a relay restart")
+        ctype, svg = await get(f"/community/badge/{alice['id']}.svg")
+        check(ctype.startswith("image/svg+xml") and "Tau HUD node" in svg and "offline" in svg, f"badge for a silent node: {svg[-120:]}")
+        bob_id = next(n["id"] for n in com["nodes"] if n["name"] == "bob")
+        check("new node" in (await get(f"/community/badge/{bob_id}.svg"))[1], "badge for a new online node")
+        check("unknown node" in (await get(f"/community/badge/{'0' * 12}.svg"))[1], "badge for an unknown id")
+        r.board[bob_id]["first_seen"] -= 3 * 86400
+        check("running 3 d" in (await get(f"/community/badge/{bob_id}.svg"))[1], "badge counts days")
+        check(relay.Relay.uptime({"first_seen": 0, "minutes": 30}, 60 * 60) == 0.5
+              and relay.Relay.uptime({"first_seen": 0, "minutes": 3}, 5 * 60) is None, "uptime share")
+        # a node that went silent keeps its start date when it comes back
+        alice_first = r.board[alice["id"]]["first_seen"]
+        async with connect(url, additional_headers={"X-Forwarded-For": "198.51.100.8"}) as ws:
+            json.loads(await ws.recv())
+            m = await ask(ws, f"report key={key_a} name=alice-node height={h} head={head}")
+            check(m["status"] == "ok", "silent node reports again")
+        back = next(n for n in (await community())[1]["nodes"] if n["name"] == "alice-node")
+        check(back["first_seen"] == alice_first, "first_seen kept across a silence")
 
         # the kit's heartbeat end to end: reads the (mock) node, reports to the relay
         os.environ.update(NODE_URL="ws://127.0.0.1:18765", REPORT_URL=url, NODE_NAME="kit-test",

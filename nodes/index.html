@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Community Nodes</title>
+<meta name="description" content="People who run a Tau testnet node with the Tau HUD kit: how long each has been running, how steadily, and whether it agrees with our chain. Get a badge for your node.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Community nodes">
+<meta property="og:description" content="Who runs a Tau testnet node, for how long, and on which chain. One command to join.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/nodes/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD and /stats: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.hdr-right { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.chip { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.chip:hover { background: #fff; color: #000; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 70em; }
+.tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-width: 0; }
+.tile h3 { margin: 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.tile .v { font: 600 26px/1.15 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.tile .v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
+.tile p { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
+.main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.tablewrap { overflow: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; position: sticky; top: 0; background: #101012; }
+td { padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+tr.me td { background: rgba(57,255,138,.07); }
+tr.off td { color: var(--dim); }
+tr[data-id] { cursor: pointer; }
+tr[data-id]:hover td { background: rgba(255,255,255,.04); }
+.rank { color: var(--dim); }
+.name { color: #fff; font-weight: 600; }
+tr.off .name { color: var(--text); font-weight: 400; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); margin-right: 7px; vertical-align: 1px; }
+.dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.agree.same { color: var(--ok); font-weight: 600; }
+.agree.different { color: #fff; font-weight: 600; }
+.bar { display: inline-block; width: 54px; height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; margin-right: 8px; vertical-align: 1px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: #fff; }
+.empty { color: var(--dim); padding: 28px 0; text-align: center; }
+.empty a { color: #fff; }
+.side { display: grid; gap: 14px; align-content: start; }
+.step { margin: 0 0 8px; color: var(--text); }
+.step b { color: #fff; }
+pre { margin: 0; background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font: 12px/1.5 var(--mono); color: #fff; white-space: pre-wrap; word-break: break-all; }
+.copyrow { display: flex; gap: 8px; align-items: stretch; margin-top: 6px; }
+.copyrow pre { flex: 1 1 auto; min-width: 0; }
+button.copy { flex: none; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; cursor: pointer; }
+button.copy:hover { color: #000; background: #fff; border-color: #fff; }
+.note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+select { font: 12.5px var(--mono); background: #050506; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 6px 8px; max-width: 100%; }
+.badgeprev { margin: 10px 0 2px; min-height: 22px; }
+.badgeprev img { display: block; height: 20px; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+.fb-fab { position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border-radius: 999px; padding: 9px 16px; text-decoration: none; }
+.fb-fab:hover { background: var(--ok); }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(320px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
+[hidden] { display: none !important; }
+/* laptop and up, landscape: one screen, the leaderboard scrolls inside its panel */
+@media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
+  body { height: 100vh; overflow: hidden; padding-bottom: 10px; }
+  .wrap { height: 100%; }
+  .main { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, 2.2fr) minmax(340px, 1fr); }
+  .panel.board { display: flex; flex-direction: column; min-height: 0; }
+  .panel.board .tablewrap { flex: 1 1 0; min-height: 0; }
+  .side { overflow: auto; min-height: 0; }
+}
+/* 21:9 and wider: the side column gets room for both cards next to each other */
+@media (min-width: 1100px) and (min-aspect-ratio: 2/1) {
+  .main { grid-template-columns: minmax(0, 1.8fr) minmax(0, 1.2fr); }
+  .side { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) { td.hide-s, th.hide-s { display: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Community nodes</span></a>
+    <div class="hdr-right">
+      <a class="chip" href="/stats/">Stats</a>
+      <a class="chip" href="/">Back to the live HUD</a>
+    </div>
+  </header>
+  <div>
+    <p class="lead">The people who keep the Tau testnet checkable.</p>
+    <p class="sub" id="sourceLine">Every node here runs the Tau HUD kit and follows the Tau Testnet Alpha by itself. The longer and steadier a node runs, the higher it ranks. Each one is compared, block for block, with our own node.</p>
+  </div>
+  <section class="tiles" aria-label="Key numbers">
+    <div class="tile" data-tip="Nodes that reported in the last 15 minutes."><h3>Online now</h3><div class="v" id="tOnline">–</div><p id="tOnlineSub">&nbsp;</p></div>
+    <div class="tile" data-tip="On the same chain as tauhud.com:\ntheir block at their height is the block we have there."><h3>Same chain as ours</h3><div class="v" id="tSame">–</div><p>of the nodes online</p></div>
+    <div class="tile" data-tip="Every node that reported in the last 30 days."><h3>Nodes, last 30 days</h3><div class="v" id="tAll">–</div><p>&nbsp;</p></div>
+    <div class="tile" data-tip="The node that has been running longest among those online."><h3>Running longest</h3><div class="v" id="tLong">–</div><p id="tLongSub">&nbsp;</p></div>
+  </section>
+  <main class="main">
+    <section class="panel board">
+      <h2>Leaderboard</h2>
+      <div class="tablewrap" id="boardWrap"><p class="empty">Loading…</p></div>
+    </section>
+    <div class="side">
+      <section class="panel">
+        <h2>Run a node</h2>
+        <p class="step">A server with <b>2 CPU, 4 GB RAM, 40 GB disk</b> (Ubuntu or Debian, x86 or ARM, about €6 a month). As root:</p>
+        <div class="copyrow"><pre id="cmd">curl -fsSL https://raw.githubusercontent.com/jimb000o/tau-command-hud/main/kit/install.sh | NODE_NAME=my-node bash</pre><button class="copy" type="button" data-copy="cmd">Copy</button></div>
+        <p class="note">Pick your own name. The first build takes about 1.5 hours; then your node appears here within a minute. <a href="https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md" target="_blank" rel="noopener">Full guide</a></p>
+      </section>
+      <section class="panel">
+        <h2>Badge for your node</h2>
+        <p class="step">Show that you run a node: in a GitHub README, on your website or in a forum signature. It stays up to date by itself.</p>
+        <label for="pick" class="note" style="display:block;margin:0 0 4px">Your node</label>
+        <select id="pick"><option value="">Pick a node from the list</option></select>
+        <div class="badgeprev" id="badgePrev"></div>
+        <div id="snips" hidden>
+          <div class="copyrow"><pre id="snipMd"></pre><button class="copy" type="button" data-copy="snipMd">Copy</button></div>
+          <div class="copyrow"><pre id="snipHtml"></pre><button class="copy" type="button" data-copy="snipHtml">Copy</button></div>
+        </div>
+        <p class="note">Your node’s log prints the same snippet once it reports: <code>docker compose logs heartbeat</code>.</p>
+      </section>
+    </div>
+  </main>
+  <footer>
+    <p>Data: <a href="https://node.tauhud.com/community/board" target="_blank" rel="noopener">node.tauhud.com/community/board</a> (JSON). Nodes report once a minute and only if their operator sets a name; nothing but the name, height, block hash and kit version is sent. A node that stays silent for 30 days leaves the list. · <a href="/stats/">Stats</a> · <a href="/history/">Time travel</a> · <a href="/playground/">Rule Playground</a></p>
+  </footer>
+</div>
+<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BNodes%5D%20" target="_blank" rel="noopener">Feedback</a>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const RELAY = "https://node.tauhud.com";
+const BOARD_URL = `${RELAY}/community/board`;
+const SAMPLE = new URLSearchParams(location.search).has("sample");
+let rows = null, failed = false;
+
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) e.append(k);
+  return e;
+}
+
+function span(sec) {
+  if (sec < 3600) return `${Math.max(1, Math.round(sec / 60))} min`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)} h`;
+  const d = Math.floor(sec / 86400);
+  return `${d} day${d === 1 ? "" : "s"}`;
+}
+function ago(sec) { return sec < 90 ? "just now" : `${span(sec)} ago`; }
+function date(ts) { return new Date(ts * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
+const AGREE = { same: "Same chain", different: "Other chain", ahead: "Ahead of ours", unknown: "Not checked yet" };
+const AGREE_TIP = {
+  same: "Its block at its height is the block we have there.",
+  different: "Its block at that height differs from ours:\na fork, an old chain, or a node still on a restarted chain.",
+  ahead: "It is higher than our node; we check it once we get there.",
+  unknown: "We hold no block at its height (yet).",
+};
+
+function sampleRows() {
+  const now = Date.now() / 1000, d = 86400;
+  const mk = (id, name, age, up, on, agrees, h) => ({ id, name, first_seen: now - age, last_seen: on ? now - 30 : now - 3 * d,
+    online: on, days: Math.floor(age / d), uptime: age < 600 ? null : up, height: h, kit: "2", ref: "539d1e2", agrees: on ? agrees : null });
+  return [mk("a1b2c3d4e5f6", "berlin-arm", 12 * d, .998, true, "same", 1412), mk("0f9e8d7c6b5a", "tau-fan", 6 * d, .91, true, "same", 1412),
+    mk("1234abcd5678", "lab-box", 2.2 * d, .74, true, "different", 830), mk("cafe0000beef", "newcomer", 7200, .99, true, "ahead", 1413),
+    mk("dead0000f00d", "old-vps", 20 * d, .62, false, null, 1201)];
+}
+
+async function load() {
+  if (SAMPLE) { rows = sampleRows(); render(); return; }
+  try {
+    const r = await fetch(BOARD_URL, { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    rows = (await r.json()).nodes || [];
+    failed = false;
+  } catch (e) { failed = true; }
+  render();
+}
+
+function render() {
+  const now = Date.now() / 1000;
+  const wrap = $("boardWrap");
+  wrap.replaceChildren();
+  if (!rows) {
+    wrap.append(el("p", { class: "empty", text: failed ? "Our relay does not answer right now. Trying again in a minute." : "Loading…" }));
+    return;
+  }
+  const online = rows.filter(r => r.online);
+  $("tOnline").textContent = online.length;
+  $("tOnlineSub").textContent = rows.length ? `${rows.length - online.length} offline` : " ";
+  $("tSame").textContent = online.length ? online.filter(r => r.agrees === "same").length : "–";
+  $("tAll").textContent = rows.length;
+  const longest = online.slice().sort((a, b) => a.first_seen - b.first_seen)[0];
+  $("tLong").textContent = longest ? span(now - longest.first_seen) : "–";
+  $("tLongSub").textContent = longest ? longest.name : " ";
+
+  if (!rows.length) {
+    wrap.append(el("p", { class: "empty" }, "No node is reporting yet. Be the first: the command on the right sets one up. ",
+      el("a", { href: "https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md", target: "_blank", rel: "noopener", text: "Guide" })));
+  } else {
+    const head = el("tr", null,
+      el("th", { class: "n", text: "#" }), el("th", { text: "Node" }),
+      el("th", { "data-tip": "Since its first report to tauhud.com.", text: "Running" }),
+      el("th", { class: "hide-s", "data-tip": "Share of the minutes since its first report\nin which it reported. Shown after ten minutes.", text: "Uptime" }),
+      el("th", { class: "n hide-s", "data-tip": "Its canonical height at its last report.", text: "Height" }),
+      el("th", { "data-tip": "Compared with our node, block for block.", text: "Chain" }),
+      el("th", { class: "hide-s", text: "Last report" }));
+    const body = el("tbody");
+    const me = location.hash.slice(1);
+    rows.forEach((r, i) => {
+      const up = r.uptime == null ? el("span", { class: "rank", text: "new" })
+        : el("span", null, el("span", { class: "bar" }, el("i", { style: `width:${Math.round(r.uptime * 100)}%` })), `${(r.uptime * 100).toFixed(r.uptime >= .995 ? 1 : 0)} %`);
+      const chain = r.online ? el("span", { class: `agree ${r.agrees}`, "data-tip": AGREE_TIP[r.agrees] || "", text: AGREE[r.agrees] || "–" })
+        : el("span", { class: "rank", text: "offline" });
+      const tr = el("tr", { "data-id": r.id, class: [r.online ? "" : "off", r.id === me ? "me" : ""].join(" ").trim(),
+                            "data-tip": `${r.name} · id ${r.id}\nsince ${date(r.first_seen)} · kit ${r.kit || "?"} · tau-testnet ${r.ref || "?"}\nClick for its badge.` },
+        el("td", { class: "n rank", text: i + 1 }),
+        el("td", null, el("span", { class: "dot" + (r.online ? " on" : "") }), el("span", { class: "name", text: r.name })),
+        el("td", { text: span(now - r.first_seen) }),
+        el("td", { class: "hide-s" }, up),
+        el("td", { class: "n hide-s", text: r.height != null ? `#${r.height}` : "–" }),
+        el("td", null, chain),
+        el("td", { class: "hide-s", text: ago(now - r.last_seen) }));
+      tr.addEventListener("click", () => { location.hash = r.id; pick(r.id); });
+      body.append(tr);
+    });
+    wrap.append(el("table", null, el("thead", null, head), body));
+  }
+
+  const sel = $("pick"), keep = sel.value || location.hash.slice(1);
+  sel.replaceChildren(el("option", { value: "", text: rows.length ? "Pick a node from the list" : "No node yet" }));
+  for (const r of rows.slice().sort((a, b) => a.name.localeCompare(b.name))) sel.append(el("option", { value: r.id, text: `${r.name} (${r.id})` }));
+  if (keep && rows.some(r => r.id === keep)) pick(keep);
+}
+
+function pick(id) {
+  $("pick").value = id;
+  const prev = $("badgePrev");
+  prev.replaceChildren();
+  $("snips").hidden = !id;
+  if (!id) return;
+  const badge = `${RELAY}/community/badge/${id}.svg`, page = `https://tauhud.com/nodes/#${id}`;
+  prev.append(SAMPLE ? el("span", { class: "note", text: "(the badge preview needs the live relay)" })
+                     : el("img", { src: badge, alt: "Tau HUD node badge" }));
+  $("snipMd").textContent = `[![Tau HUD node](${badge})](${page})`;
+  $("snipHtml").textContent = `<a href="${page}"><img src="${badge}" alt="Tau HUD node" height="20"></a>`;
+  for (const tr of document.querySelectorAll("tr[data-id]")) tr.classList.toggle("me", tr.dataset.id === id);
+}
+
+$("pick").addEventListener("change", e => { if (e.target.value) location.hash = e.target.value; pick(e.target.value); });
+document.addEventListener("click", async e => {
+  const b = e.target.closest("button.copy");
+  if (!b) return;
+  try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); b.textContent = "Copied"; }
+  catch { b.textContent = "Select it"; }
+  setTimeout(() => { b.textContent = "Copy"; }, 1600);
+});
+
+// hover tips: short, only what the table does not already say
+const tip = $("tip");
+document.addEventListener("mouseover", e => {
+  const t = e.target.closest("[data-tip]");
+  if (!t || !t.dataset.tip) { tip.hidden = true; return; }
+  tip.textContent = t.dataset.tip.replace(/\\n/g, "\n");
+  tip.hidden = false;
+});
+document.addEventListener("mousemove", e => {
+  if (tip.hidden) return;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + "px";
+  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) + "px";
+});
+document.addEventListener("mouseleave", () => { tip.hidden = true; });
+
+if (SAMPLE) $("sourceLine").textContent = "Sample data: made-up nodes to preview the page. Remove ?sample from the address for the real list.";
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>
