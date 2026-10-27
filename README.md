@@ -26,6 +26,14 @@ docker run --rm -it -p 127.0.0.1:65432:65432 -p 127.0.0.1:65433:65433 -p 4001:40
   bash -c 'mkdir -p data && cp networks/tau-testnet-v2/genesis.json data/genesis.json && python server.py'
 ```
 
+## Run your own node
+
+The [node operator kit](kit/README.md) sets up the same patched node that powers tauhud.com on a fresh server with one command, and can list it on [tauhud.com/stats](https://tauhud.com/stats) as a community node:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jimb000o/tau-command-hud/main/kit/install.sh | NODE_NAME=my-node bash
+```
+
 ## Support
 
 If this is useful to you, AGRS or ETH donations are welcome at `0x23fB76A33A8d70f5c51aB558b85e4b93040003eb`.
