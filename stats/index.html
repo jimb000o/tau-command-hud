@@ -356,13 +356,24 @@ function rowFromRaw(b, accIndex) {
   return { n: Number(h.block_number) || 0, ts: Number(h.timestamp) || null, txs: Object.values(types).reduce((a, b) => a + b, 0), transfers, volume, types, senders, hash: b.block_hash };
 }
 let WS = null;
+// one random id per browser, shared by every tauhud.com page, so the online counter counts a visitor once
+function viewerId() {
+  try {
+    let v = localStorage.getItem("tauhud-viewer");
+    if (!/^[0-9a-f]{32}$/.test(v || "")) {
+      v = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem("tauhud-viewer", v);
+    }
+    return v;
+  } catch { return ""; }
+}
 function startWindowMode() {
   if (WS) return;
   const acc = new Map(), byN = new Map();
   D = { rows: [], accounts: [], restarts: [], dropped: [], droppedTotal: null, governance: null, head: null, canonical: null, tip: null, mode: "window" };
   setState("wait", "Last 50 blocks", "Our relay does not keep the full history yet, so this page reads the last 50 blocks it holds and adds every new block while it stays open.");
   WS = new WebSocket(WS_URL);
-  WS.onopen = () => { WS.send("hello version=1"); WS.send("getblocks 50"); WS.send("getgovernance"); };
+  WS.onopen = () => { WS.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); WS.send("getblocks 50"); WS.send("getgovernance"); };
   WS.onmessage = ev => {
     let m; try { m = JSON.parse(ev.data); } catch { return; }
     if (m.status !== "ok") return;
