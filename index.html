@@ -89,6 +89,13 @@ body[data-view="simple"] .pr em { display: none; }
 .tour { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 55; width: min(560px, calc(100% - 32px)); background: var(--deck); border: 1px solid rgba(57,255,138,.55); border-radius: 8px; padding: 12px 14px 10px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.6); }
 .tour[hidden] { display: none; }
 .tour.top { bottom: auto; top: 64px; }   /* the card moves to the top when the spotlighted panel sits in the lower half */
+/* anchored (desktop): the card sits next to the spotlighted panel with a pointer on the edge that faces it; tourPlace() picks below, right, left or above */
+.tour.anchored { left: 0; top: 0; bottom: auto; transform: none; width: min(440px, calc(100% - 32px)); }
+.tour.anchored::before { content: ""; position: absolute; width: 12px; height: 12px; background: var(--deck); border: 1px solid rgba(57,255,138,.55); transform: rotate(45deg); }
+.tour.anchored.side-top::before { top: -7px; left: calc(var(--ax) - 6px); border-right: 0; border-bottom: 0; }
+.tour.anchored.side-bottom::before { bottom: -7px; left: calc(var(--ax) - 6px); border-left: 0; border-top: 0; }
+.tour.anchored.side-left::before { left: -7px; top: calc(var(--ay) - 6px); border-top: 0; border-right: 0; }
+.tour.anchored.side-right::before { right: -7px; top: calc(var(--ay) - 6px); border-bottom: 0; border-left: 0; }
 .tour .t1 { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font: 600 10.5px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--ok); }
 .tour h3 { margin: 4px 0 2px; font: 600 15px var(--display); color: #fff; }
 .tour p { margin: 0 0 10px; font-size: 12.5px; color: var(--text); }
@@ -877,6 +884,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.8 · 27 Oct 2026</b>Guided tour: each explanation now sits next to the panel it describes, with a pointer at it (below the panel, else beside or above it, always inside the window). On phones it stays a sheet at the bottom.</li>
           <li><b>v17.7 · 27 Oct 2026</b>The light on “Live node” is a traffic light on every page: green when the community node is synced, amber when it is online but not synced or still catching up, red when it is offline. Hover names the state.</li>
           <li><b>v17.6 · 27 Oct 2026</b>About breathes: a solid background, 32px around, a clear gap between the notice strip and the columns, wider gutters, consistent spacing under every heading. Still no scrolling on wide screens.</li>
           <li><b>v17.5 · 27 Oct 2026</b>About fits the screen: on wide screens its sections sit in three columns, so the whole text and the donation address are visible without scrolling. The Telegram offer says what you get: every rule change and chain restart as it happens, a weekly recap picture, HUD updates; the header pill reads “Telegram alerts”, and the Updates panel carries the same line.</li>
@@ -2370,20 +2378,45 @@ function tourShow(i, from) {
   }
   tourI = i; tourOffered = false; const [sel, title, text] = TOUR[i];
   const el = document.querySelector(sel), target = el.classList.contains("panel") ? el : (el.querySelector(".panel") || el);
-  target.classList.add("spot"); target.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
-  const r = target.getBoundingClientRect(); $("tour").classList.toggle("top", r.top + r.height / 2 > innerHeight / 2);
-  document.body.dataset.tour = "1"; $("tour").hidden = false;
+  target.classList.add("spot"); target.scrollIntoView({ block: "nearest", behavior: "auto" });
+  document.body.dataset.tour = "1"; $("tour").hidden = false; TOURPOS.target = target;
   $("tourStep").textContent = `Step ${i + 1} of ${TOUR.length}`; $("tourTitle").textContent = title; $("tourText").textContent = text;
   $("tourBar").firstElementChild.style.width = `${(i + 1) / TOUR.length * 100}%`;
   $("tourBack").textContent = "Back"; $("tourBack").disabled = i === 0; $("tourNext").textContent = i === TOUR.length - 1 ? "Done" : "Next";
   $("tourLink").hidden = i !== TOUR.length - 1;
-  if (from !== "key") $("tourNext").focus();
+  tourPlace();
+  if (from !== "key") $("tourNext").focus({ preventScroll: true });
 }
+/* place the card next to the spotlighted panel: below it, else right, left, above; always inside the viewport; the pointer aims at the panel's centre.
+   On phones (< 900px) the card stays a sheet at the bottom. */
+const TOURPOS = { target: null };
+function tourPlace() {
+  const card = $("tour"), t = TOURPOS.target;
+  if (!t || card.hidden || innerWidth < 900) { card.classList.remove("anchored", "side-top", "side-bottom", "side-left", "side-right"); card.style.left = card.style.top = ""; return; }
+  card.classList.add("anchored"); card.classList.remove("top");
+  card.style.left = "0px"; card.style.top = "0px";
+  const cr = card.getBoundingClientRect(), z = card.offsetWidth ? cr.width / card.offsetWidth : 1;   // html.wide zooms the card
+  const cw = cr.width, ch = cr.height, r = t.getBoundingClientRect(), vw = document.documentElement.clientWidth, vh = innerHeight, m = 14, g = 12;
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const fits = c => c[1] >= g && c[2] >= g && c[1] + cw <= vw - g && c[2] + ch <= vh - g;
+  const sideY = Math.min(Math.max(r.top, g), vh - ch - g);
+  const cands = [["side-top", cx - cw / 2, r.bottom + m], ["side-left", r.right + m, sideY], ["side-right", r.left - m - cw, sideY], ["side-bottom", cx - cw / 2, r.top - m - ch]];
+  let pick = cands.find(fits);
+  if (!pick) pick = r.bottom + m + ch <= vh - g ? cands[0] : r.top - m - ch >= g ? cands[3] : r.right + m + cw <= vw - g ? cands[1] : cands[2];
+  const side = pick[0], l = Math.min(Math.max(pick[1], g), vw - cw - g), tp = Math.min(Math.max(pick[2], g), vh - ch - g);
+  card.classList.remove("side-top", "side-bottom", "side-left", "side-right"); card.classList.add(side);
+  card.style.left = (l / z) + "px"; card.style.top = (tp / z) + "px";
+  card.style.setProperty("--ax", Math.min(Math.max(cx - l, 18), cw - 18) / z + "px");
+  card.style.setProperty("--ay", Math.min(Math.max(cy - tp, 18), ch - 18) / z + "px");
+}
+addEventListener("resize", () => { if (tourI >= 0) tourPlace(); });
+addEventListener("scroll", () => { if (tourI >= 0) tourPlace(); }, { passive: true });
 /* first visit: offer the tour once; “Not now” is remembered, as is finishing it */
 function tourOffer() {
   if (tourI >= 0 || store.get("tau-tour") || innerWidth < 900 || document.querySelector(".modal:not([hidden])")) return;
   tourOffered = true;
-  $("tour").classList.remove("top"); $("tour").hidden = false; $("tourStep").textContent = "New here?"; $("tourTitle").textContent = "How rules change on Tau, in one minute";
+  $("tour").classList.remove("top", "anchored", "side-top", "side-bottom", "side-left", "side-right"); $("tour").style.left = $("tour").style.top = ""; TOURPOS.target = null;
+  $("tour").hidden = false; $("tourStep").textContent = "New here?"; $("tourTitle").textContent = "How rules change on Tau, in one minute";
   $("tourText").textContent = "Eight short steps point at the panels where a rule is proposed, checked, agreed and made law, without a fork or an upgrade. You can stop at any time.";
   $("tourBar").firstElementChild.style.width = "0"; $("tourLink").hidden = true;
   $("tourBack").textContent = "Not now"; $("tourBack").disabled = false; $("tourNext").textContent = "Start the tour";
@@ -2461,7 +2494,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.7`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.8`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
