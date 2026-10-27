@@ -57,6 +57,9 @@ if [[ ! -f .env ]]; then
   cp .env.example .env
   sed -i "s/^RELAY_DOMAIN=.*/RELAY_DOMAIN=${RELAY_DOMAIN}/" .env
 fi
+# The pinned tau-testnet commit follows the repo, not the server's old .env.
+REF=$(grep '^TAU_TESTNET_REF=' .env.example | cut -d= -f2)
+sed -i "s/^TAU_TESTNET_REF=.*/TAU_TESTNET_REF=${REF}/" .env
 
 echo "==> Building and starting (first build compiles tau-lang: 1-2 hours with ${TAU_BUILD_JOBS} job)"
 docker compose up -d --build

@@ -10,7 +10,7 @@
 # x86_64 and arm64 (tau-lang ships linux-arm64 recipes; Spot is built from
 # source there).
 
-ARG TAU_TESTNET_REF=99a9e928d4aa67718cda2c4214c5da4de3c3a58c
+ARG TAU_TESTNET_REF=539d1e20b53e45b197b42510af5d139a76687cf8
 
 FROM python:3.14-trixie AS tau-builder
 
@@ -106,12 +106,13 @@ RUN --mount=type=cache,target=/root/.cache/coincurve-wheels \
 
 COPY --from=testnet-src /src /app/tau-testnet
 COPY --from=testnet-src /src/docker/entrypoint.sh /usr/local/bin/tau-node-entrypoint
+COPY start.sh /usr/local/bin/tau-node-start
 COPY --from=tau-builder /app/tau-lang /app/tau-lang
 COPY --from=tau-builder /tau-store /root/.tau
 
 # Register every shared-library directory of the built dependencies (cvc5,
 # Boost, Spot) with the dynamic linker, whatever layout the dependency store uses.
-RUN chmod +x /usr/local/bin/tau-node-entrypoint && mkdir -p /data && \
+RUN chmod +x /usr/local/bin/tau-node-entrypoint /usr/local/bin/tau-node-start && mkdir -p /data && \
     find /root/.tau /app/tau-lang -name '*.so*' -type f -printf '%h\n' | sort -u > /etc/ld.so.conf.d/tau.conf && \
     ldconfig
 
