@@ -2,7 +2,16 @@
 # for {$RELAY_DOMAIN} points at this server.
 {$RELAY_DOMAIN} {
 	encode gzip
-	reverse_proxy relay:8080
+	# Rule Playground checks (checker/checker.py). Everything else is the relay.
+	handle /check* {
+		request_body {
+			max_size 16KB
+		}
+		reverse_proxy checker:8090
+	}
+	handle {
+		reverse_proxy relay:8080
+	}
 	log {
 		output stdout
 		format console

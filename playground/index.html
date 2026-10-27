@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Rule Playground</title>
+<meta name="description" content="Write your own Tau rule and put it through the same checks the Tau Testnet Alpha applies. Then take a simulated validator seat and vote a rule change in.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Rule Playground">
+<meta property="og:description" content="Write a Tau rule, see what the testnet would say. Then vote a rule change in from a simulated validator seat.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/playground/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.back { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.back:hover { background: #fff; color: #000; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 30em; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 60em; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tabs button { font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; background: transparent; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: #fff; color: #000; border-color: #fff; }
+.tabs button:hover:not([aria-selected="true"]) { color: #fff; border-color: #fff; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.cols { display: grid; gap: 14px; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
+@media (max-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+[hidden] { display: none !important; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip { font: 12px var(--mono); background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.chip:hover { border-color: #fff; color: #fff; }
+.chip.on { border-color: var(--ok); color: var(--ok); }
+.chip .x { color: var(--bad); }
+textarea { width: 100%; min-height: 150px; resize: vertical; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; font: 13px/1.55 var(--mono); }
+textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border-color: var(--ok); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.btn { font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; border-radius: 999px; padding: 8px 16px; cursor: pointer; border: 1px solid var(--hair); background: transparent; color: #fff; }
+.btn.primary { background: #fff; color: #000; border-color: #fff; }
+.btn.primary:hover { background: var(--ok); border-color: var(--ok); }
+.btn:hover:not(.primary) { border-color: #fff; }
+.btn:disabled { opacity: .4; cursor: default; }
+.insert { font: 11.5px var(--mono); color: var(--dim); }
+.insert button { font: 11.5px var(--mono); background: none; border: 0; border-bottom: 1px dotted var(--dim); color: #fff; padding: 0; margin: 0 4px; cursor: pointer; }
+.legend { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 12px 0 0; font-size: 12px; }
+.legend dt { color: #fff; font-weight: 600; }
+.legend dd { margin: 0; color: var(--dim); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.steps li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 7px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
+.steps li .ic { font-weight: 600; color: var(--dim); }
+.steps li b { color: #fff; font: 600 12.5px var(--display); }
+.steps li p { margin: 2px 0 0; color: var(--dim); font-size: 12px; overflow-wrap: anywhere; }
+.steps li.pass { border-left-color: var(--ok); } .steps li.pass .ic { color: var(--ok); }
+.steps li.fail { border-left-color: var(--bad); } .steps li.fail .ic { color: var(--bad); } .steps li.fail p { color: var(--text); }
+.steps li.run { border-left-color: var(--behind); } .steps li.run .ic { color: var(--behind); }
+.steps li.skip { opacity: .5; }
+.verdict { margin: 10px 0 0; padding: 10px 12px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 500 14px/1.4 var(--display); color: #fff; }
+.verdict.bad { border-left-color: var(--bad); background: rgba(255,77,109,.07); }
+.verdict.idle { border-left-color: var(--hair); background: rgba(255,255,255,.03); color: var(--dim); }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); }
+details summary { cursor: pointer; color: #fff; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-top: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 4px 6px; border-bottom: 1px solid var(--line); }
+td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 4px; padding: 4px 6px; font: 12.5px var(--mono); }
+.res { font-weight: 600; white-space: nowrap; }
+.res.allow { color: var(--ok); } .res.block { color: var(--bad); } .res.unk { color: var(--dim); font-weight: 500; white-space: normal; }
+.why { display: block; color: var(--dim); font-weight: 400; font-size: 11px; white-space: normal; }
+.del { background: none; border: 0; color: var(--dim); cursor: pointer; font: 14px var(--mono); }
+.del:hover { color: var(--bad); }
+.note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+.src { color: var(--dim); font-size: 11.5px; margin-top: 10px; }
+.src a { color: var(--dim); }
+.engine { display: inline-flex; align-items: center; gap: 6px; font: 11.5px var(--mono); color: var(--dim); }
+.engine i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); display: inline-block; }
+.engine.on i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.engine.off i { background: var(--bad); }
+/* validator seat */
+.seats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.seat { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: rgba(255,255,255,.025); }
+.seat.you { border-color: rgba(255,255,255,.5); }
+.seat b { display: block; color: #fff; font: 600 13px var(--display); }
+.seat code { color: var(--dim); font-size: 11px; }
+.seat .v { margin-top: 4px; font-size: 12px; color: var(--dim); }
+.seat .v.yes { color: var(--ok); } .seat .v.no { color: var(--bad); }
+.quorum { position: relative; height: 26px; border: 1px solid var(--hair); border-radius: 4px; overflow: hidden; margin: 8px 0 4px; background: #0c0c0d; }
+.quorum .fill { position: absolute; inset: 0 auto 0 0; background: var(--ok); opacity: .85; transition: width .5s; }
+.quorum .need { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff; }
+.quorum span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 600 12px var(--display); color: #fff; text-shadow: 0 0 4px #000, 0 0 2px #000; }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.flow span { font: 600 10.5px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.flow span.done { border-color: var(--ok); color: var(--ok); }
+.flow span.now { border-color: var(--behind); color: var(--behind); }
+.flow span.dead { border-color: var(--bad); color: var(--bad); }
+.height { font: 600 22px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 12.5px; margin: 0; }
+.kv dt { color: var(--dim); } .kv dd { margin: 0; color: #fff; overflow-wrap: anywhere; }
+.log { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 3px; font-size: 12px; max-height: 220px; overflow: auto; }
+.log li { padding: 3px 8px; border-left: 2px solid var(--line); color: var(--text); }
+.log li.ok { border-left-color: var(--ok); } .log li.bad { border-left-color: var(--bad); }
+.log li em { font-style: normal; color: var(--dim); margin-right: 6px; }
+.simtag { font: 600 9.5px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 6px; }
+.realbox { border: 1px dashed var(--hair); border-radius: 6px; padding: 8px 10px; font-size: 12px; color: var(--dim); margin-top: 10px; }
+.realbox b { color: #fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Rule Playground</span></a>
+    <a class="back" href="/">Back to the live HUD</a>
+  </header>
+
+  <div>
+    <p class="lead">Write a rule. See what the testnet would say.</p>
+    <p class="sub">The checks below are the ones the Tau Testnet Alpha runs before it lets a personal rule in. Nothing you do here is sent to the chain.</p>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabPolicy" aria-selected="true" aria-controls="viewPolicy">1 · Your transfer rule</button>
+    <button role="tab" id="tabSeat" aria-selected="false" aria-controls="viewSeat">2 · Validator seat</button>
+  </div>
+
+  <!-- ============ 1 · personal transfer rule (o5 policy) ============ -->
+  <section id="viewPolicy" class="cols" role="tabpanel" aria-labelledby="tabPolicy">
+    <div class="panel">
+      <h2>Your rule <small>decides on your own outgoing transfers</small></h2>
+      <div class="chips" id="examples"></div>
+      <textarea id="rule" spellcheck="false" aria-label="Tau rule text"></textarea>
+      <div class="insert">Insert an address: <button type="button" data-ins="bob">Bob</button><button type="button" data-ins="carol">Carol</button><button type="button" data-ins="dave">Dave</button></div>
+      <div class="row">
+        <button class="btn primary" id="btnCheck" type="button">Check rule</button>
+        <span class="engine" id="engine"><i></i><span>Tau engine: checking…</span></span>
+      </div>
+      <dl class="legend">
+        <dt>o5[t]</dt><dd>your answer: <b style="color:#fff">1</b> lets the transfer through, <b style="color:#fff">0</b> blocks it</dd>
+        <dt>i1[t]</dt><dd>amount being sent (bv[24], up to 16 777 215)</dd>
+        <dt>i4[t]</dt><dd>recipient address (bv[384])</dd>
+        <dt>i5[t]</dt><dd>block time, Unix seconds</dd>
+        <dt>[t]</dt><dd>“this step”. Only the current step may be read.</dd>
+      </dl>
+    </div>
+
+    <div class="panel">
+      <h2>What the testnet does with it</h2>
+      <ol class="steps" id="steps"></ol>
+      <div class="verdict idle" id="verdict">Press “Check rule” to run the checks.</div>
+      <details id="compDetails" hidden>
+        <summary>The rule as the node stores it</summary>
+        <p class="note">Your rule never enters the chain as you wrote it. The node wraps it in a guard on your address, so it can only ever decide your own transfers. Everyone else falls through to “allow”.</p>
+        <pre class="code" id="composite"></pre>
+      </details>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1">
+      <h2>Try transfers against it <small id="testSrc">results update as you type</small></h2>
+      <table>
+        <thead><tr><th style="width:22%">From</th><th style="width:16%">Amount</th><th style="width:20%">To</th><th style="width:16%">Time</th><th>Result</th><th style="width:28px"></th></tr></thead>
+        <tbody id="tests"></tbody>
+      </table>
+      <div class="row"><button class="btn" id="btnAddTest" type="button">Add transfer</button></div>
+      <p class="note" id="testNote">Results come from an in-browser preview of the rule. When the Tau engine on the community node is reachable, “Check rule” also runs every transfer through it and its answer replaces the preview.</p>
+    </div>
+  </section>
+
+  <!-- ============ 2 · validator seat (simulation) ============ -->
+  <section id="viewSeat" class="cols" role="tabpanel" aria-labelledby="tabSeat" hidden>
+    <div class="panel">
+      <h2>Take a validator seat <span class="simtag">SIMULATION</span></h2>
+      <p class="note" style="margin-top:0">Rules that bind everyone, like the base fee, change only when enough validators agree. Here you hold one of four seats. Pick a change, then vote.</p>
+      <div class="seats" id="seats"></div>
+      <div class="chips" id="proposals" style="margin-top:12px"></div>
+      <div id="propBox" hidden>
+        <dl class="kv" id="propKv"></dl>
+        <pre class="code" id="propRule"></pre>
+        <div class="flow" id="flow"></div>
+        <div class="quorum" aria-hidden="true"><div class="fill" id="qFill"></div><div class="need" id="qNeed"></div><span id="qText"></span></div>
+        <p class="note" id="qNote" style="margin-top:0"></p>
+        <div class="row" id="voteRow">
+          <button class="btn primary" id="btnYes" type="button">Vote yes</button>
+          <button class="btn" id="btnNo" type="button">Vote no</button>
+        </div>
+      </div>
+      <div class="realbox"><b>The real testnet today:</b> one validator (<code>a1fe40…7d2b</code>, most likely run by IDNI). With one seat the quorum is 1 of 1, so that single key decides. The vote count and the delay before a change takes effect work exactly as simulated here.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Simulated chain</h2>
+      <dl class="kv">
+        <dt>Height</dt><dd class="height" id="simHeight">#0</dd>
+        <dt>Base fee</dt><dd id="simFee">10 AGRS per step</dd>
+        <dt>Validators</dt><dd id="simN">4 · quorum 3</dd>
+      </dl>
+      <ul class="log" id="simLog"></ul>
+      <div class="row"><button class="btn" id="btnReset" type="button">Start over</button></div>
+      <p class="src">How the real node does it: <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py" target="_blank" rel="noopener">governance.py ↗</a> · quorum ⌈2N/3⌉ of the current validator set, one vote per validator, activation at a later height.</p>
+    </div>
+  </section>
+
+  <p class="src">Checks ported from <a href="https://github.com/IDNI/tau-testnet/tree/539d1e2" target="_blank" rel="noopener">IDNI/tau-testnet @ 539d1e2</a>: <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/rule_offers.py" target="_blank" rel="noopener">rule_offers.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py" target="_blank" rel="noopener">admission.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/approvals.py" target="_blank" rel="noopener">approvals.py</a>. Unofficial community page, not affiliated with IDNI.</p>
+</div>
+
+<script>
+"use strict";
+/* ---------------- demo identities ---------------- */
+const KEYS = {
+  you:   "db3812f5433c4eb018daf9da70fb1a4bc61f105bc76fe62ffaa7ff199945e331d03d7b60f29053e6b3e742a725af8087",
+  bob:   "8ad2d883982c6a99261548600757db087718877e88d40cf4438019c5cfda90abbcc9adb1048ab4ef863144c09e14568e",
+  carol: "42ae64ee2cc956ee0c6fe908db30017de824739ad25f324043cd26baca83c6e5467312c9df7a2d7dd12eb0f7386e00f7",
+  dave:  "3b6f50616b9be3f5e9cdebf0df3acc4461237b850c56ae6f41f640d74da214e5806513afe8f741a6570dc5c4d8be2741",
+};
+const NAMES = { you: "You", bob: "Bob", carol: "Carol", dave: "Dave" };
+const addr = k => `{ #x${KEYS[k]} }:bv[384]`;
+const CHECK_URL = "https://node.tauhud.com/check";
+
+const NOW = Math.floor(Date.UTC(2026, 10, 1) / 1000); // 1 Nov 2026, a fixed "today" for the examples
+const EXAMPLES = [
+  { id: "limit", label: "Spending limit", text:
+`# Block any single transfer above 1000 AGRS.
+always ( (i1[t]:bv[24] > { 1000 }:bv[24])
+         ? (o5[t]:bv[24] = { #x000000 }:bv[24])
+         : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).` },
+  { id: "only", label: "Only pay Bob", text:
+`# Transfers may only go to Bob.
+always ( (i4[t]:bv[384] = ${addr("bob")})
+         ? (o5[t]:bv[24] = { #x000001 }:bv[24])
+         : (o5[t]:bv[24] = { #x000000 }:bv[24]) ).` },
+  { id: "lock", label: "Time lock", text:
+`# Nothing leaves this account before 1 Jan 2027 (Unix 1798761600).
+always ( (i5[t]:bv[64] < { 1798761600 }:bv[64])
+         ? (o5[t]:bv[24] = { #x000000 }:bv[24])
+         : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).` },
+  { id: "combo", label: "Limit, Bob exempt", text:
+`# Up to 1000 AGRS to anyone; Bob may receive any amount.
+always ( ((i4[t]:bv[384] = ${addr("bob")}) || (i1[t]:bv[24] <= { 1000 }:bv[24]))
+         ? (o5[t]:bv[24] = { #x000001 }:bv[24])
+         : (o5[t]:bv[24] = { #x000000 }:bv[24]) ).` },
+  { id: "bal", label: "Reads balance", bad: true, text:
+`# Keep at least 100 AGRS: the testnet refuses this one.
+always ( (i2[t]:bv[24] < { 100 }:bv[24])
+         ? (o5[t]:bv[24] = { #x000000 }:bv[24])
+         : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).` },
+  { id: "prev", label: "Looks at the last step", bad: true, text:
+`# Block if the previous transfer was large: refused too.
+always ( (i1[t-1]:bv[24] > { 1000 }:bv[24])
+         ? (o5[t]:bv[24] = { #x000000 }:bv[24])
+         : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).` },
+  { id: "fee", label: "Changes the fee", bad: true, text:
+`# Personal rules cannot touch the consensus fee o9.
+always ( o9[t]:bv[24] = { #x000000 }:bv[24] ).` },
+];
+
+/* ---------------- ported admission screens (pure text, as on the node) ---------------- */
+const MAX_OFFER_RULE_BYTES = 8192;
+const FORBIDDEN_CLAUSE_OUTPUT_STREAMS = [0, 1, 2, 3, 4, 6, 7, 8, 9];
+const ALLOWED_TARGET = 5;
+const CONSENSUS_OWNED_OUTPUTS = ["o0", "o1", "o2", "o3", "o4", "o6", "o7", "o9"];
+const APPLY_MOCKED_INPUTS = ["i2"];
+// o5-clause context, widest reserved set (tau_validator_set, approval slots active), i12 readable.
+const RESERVED_INPUTS = ["i14", "i15", "i13"];
+const SLOT_FIRST = 18, SLOT_LAST = 25;
+const NEUTRAL_O5 = "(o5[t]:bv[24] = { #x000001 }:bv[24])";
+
+function stripComments(text) {
+  const out = [];
+  for (const line of (text || "").split(/\r?\n/)) {
+    let i = 0, s = "";
+    while (i < line.length) {
+      const ch = line[i];
+      if (ch !== "#") { s += ch; i++; continue; }
+      const nxt = (line[i + 1] || "").toLowerCase();
+      if (nxt === "b" || nxt === "x") { s += ch; i++; continue; }
+      break;
+    }
+    out.push(s);
+  }
+  return out.join("\n") + "\n";
+}
+function canonicalize(text) {
+  const lines = [];
+  for (const line of stripComments(text).split("\n")) {
+    if (/^\s*(?:#\s*tau\b|tau\s)/.test(line)) continue;
+    const t = line.trim(); if (t) lines.push(t);
+  }
+  let flat = lines.join(" ").replace(/\s+/g, " ").trim();
+  if (!flat) throw new Error("The rule is empty.");
+  flat = flat.replace(/\.+$/, "").trim();
+  if (!flat) throw new Error("The rule is empty.");
+  return flat + " .";
+}
+function parensBalanced(t) { let d = 0; for (const c of t) { if (c === "(") d++; else if (c === ")") { d--; if (d < 0) return false; } } return d === 0; }
+const refs = (text, toks) => { const s = stripComments(text); return toks.filter(t => new RegExp(`\\b${t}\\b`).test(s)); };
+
+function clauseBody(text) {
+  const unit = canonicalize(text);
+  const m = unit.match(/^always\s*\(([\s\S]*)\)\s*\.$/);
+  if (!m) throw new Error("A rule must be exactly one “always ( … ).” unit.");
+  const body = m[1].trim();
+  if (!body) throw new Error("The rule body is empty.");
+  if (!parensBalanced(body)) throw new Error("Unbalanced parentheses, or more than one rule unit.");
+  if (/\b(?:always|sometimes)\b/.test(body)) throw new Error("A second “always” or “sometimes” inside the rule is not allowed.");
+  if (/\bi12\b/.test(stripComments(body))) throw new Error("Do not use i12 (your own address). The node adds that guard itself.");
+  return body;
+}
+function targetStream(body) {
+  const s = stripComments(body), seen = [];
+  for (const m of s.matchAll(/\bo(\d+)\s*\[/g)) { const n = +m[1]; if (!seen.includes(n)) seen.push(n); }
+  seen.sort((a, b) => a - b);
+  if (!seen.length) throw new Error("The rule writes no output. A transfer rule must set o5[t].");
+  if (seen.length > 1) throw new Error("The rule writes more than one output (" + seen.map(n => "o" + n).join(", ") + "). It may only set o5.");
+  const t = seen[0];
+  if (FORBIDDEN_CLAUSE_OUTPUT_STREAMS.includes(t)) throw new Error(`o${t} belongs to the network itself and may not be written by a personal rule.`);
+  if (t !== ALLOWED_TARGET) throw new Error(`o${t} is not an accepted output. Supported: o5.`);
+  return t;
+}
+function temporalRef(text) {
+  const s = stripComments(text);
+  for (const m of s.matchAll(/\b([io])(\d+)\s*(\[([^\]]*)\])?/g)) {
+    if (m[3] === undefined) return `${m[1]}${m[2]} (no step given)`;
+    if (m[4].replace(/\s+/g, "") !== "t") return `${m[1]}${m[2]}[${m[4].trim()}]`;
+  }
+  return null;
+}
+function policyWidths(text) {
+  const s = stripComments(text);
+  for (const m of s.matchAll(/\bo(\d+)\s*\[\s*t\s*\]\s*:\s*bv\s*\[\s*(\d+)\s*\]/g))
+    if ((m[1] === "5" || m[1] === "8") && m[2] !== "24") return `o${m[1]} must be typed bv[24], found bv[${m[2]}].`;
+  for (const m of s.matchAll(/\bo(\d+)\b/g)) {
+    if (m[1] !== "5" && m[1] !== "8") continue;
+    const tail = s.slice(m.index + m[0].length);
+    const typed = tail.match(/^\s*\[\s*t\s*\]\s*:\s*bv\s*\[\s*24\s*\]/);
+    if (!typed) return `Every mention of o${m[1]} must be written o${m[1]}[t]:bv[24]. An untyped mention lets the engine pick another width for everyone.`;
+    let rest = tail.slice(typed[0].length);
+    const as = rest.match(/^\s*=\s*/); if (!as) continue;
+    let lit = rest.slice(as[0].length).trimStart();
+    while (lit.startsWith("(")) lit = lit.slice(1).trimStart();
+    if (!lit) continue;
+    if (/^\d/.test(lit)) return `A value given to o${m[1]} must be typed bv[24], found a bare number.`;
+    if (lit[0] !== "{") continue;
+    const close = lit.indexOf("}");
+    const w = close < 0 ? null : lit.slice(close + 1).match(/^\s*:\s*bv\s*\[\s*(\d+)\s*\]/);
+    if (!w) return `A value given to o${m[1]} must be typed bv[24], found an untyped value.`;
+    if (w[1] !== "24") return `A value given to o${m[1]} must be typed bv[24], found bv[${w[1]}].`;
+  }
+  return null;
+}
+function slotWidths(text) {
+  const s = stripComments(text);
+  for (const m of s.matchAll(/\bi(\d+)\b/g)) {
+    const n = +m[1]; if (n < SLOT_FIRST || n > SLOT_LAST) continue;
+    if (!/^\s*\[\s*t\s*\]\s*:\s*bv\s*\[\s*384\s*\]/.test(s.slice(m.index + m[0].length)))
+      return `i${n} is an approval slot and every mention must be written i${n}[t]:bv[384].`;
+  }
+  return null;
+}
+function compose(body, pubkey) {
+  const guard = `(i12[t]:bv[384] = { #x${pubkey} }:bv[384])`;
+  return `always ( (${guard} ? ( ${body} ) : ${NEUTRAL_O5}) ).`;
+}
+
+/* Runs the node's checks in the node's order. Each step: {title, ok, detail}. */
+function admission(text) {
+  const steps = [];
+  const add = (title, ok, detail) => { steps.push({ title, ok, detail }); return ok; };
+  const bytes = new TextEncoder().encode(text).length;
+  if (!add("Size", bytes <= MAX_OFFER_RULE_BYTES, bytes <= MAX_OFFER_RULE_BYTES ? `${bytes} bytes, limit ${MAX_OFFER_RULE_BYTES}.` : `${bytes} bytes, over the ${MAX_OFFER_RULE_BYTES} byte limit.`)) return { steps };
+  let body;
+  try { body = clauseBody(text); targetStream(body); add("Shape", true, "One “always” unit that sets only o5, your transfer answer."); }
+  catch (e) { add("Shape", false, e.message); return { steps }; }
+  const tr = temporalRef(body);
+  if (!add("Time", !tr, tr ? `It reads ${tr}. Personal rules may look at the current step [t] only; one rule reading another step would break every account’s outputs after each rule change.` : "Reads the current step [t] only.")) return { steps };
+  const own = refs(body, CONSENSUS_OWNED_OUTPUTS), mock = refs(body, APPLY_MOCKED_INPUTS), res = refs(body, RESERVED_INPUTS);
+  const sw = slotWidths(body);
+  let msg = null;
+  if (own.length) msg = `Writes ${own.join(", ")}, which belongs to the network.`;
+  else if (mock.length) msg = `Reads ${mock.join(", ")} (your balance). Its value differs between the moment a transfer is checked and the moment its block is applied, so the testnet refuses rules that read it.`;
+  else if (res.length) msg = `Uses the reserved input ${res.join(", ")}.`;
+  else if (sw) msg = sw;
+  if (!add("Streams", !msg, msg || "Only reads inputs a personal rule may read.")) return { steps };
+  const pw = policyWidths(body);
+  if (!add("Widths", !pw, pw || "o5 and its values are typed bv[24], as the network requires.")) return { steps };
+  const composite = compose(body, KEYS.you);
+  add("Wrapped in your address guard", true, "The node puts your rule behind “only if the sender is you”.");
+  return { steps, body, composite, ok: true };
+}
+
+/* ---------------- in-browser preview evaluator for the o5 rule ---------------- */
+/* A small reader for the part of Tau a transfer rule uses: comparisons, && || ! -> <->, ?:, and bitvector
+   arithmetic. It answers "what would o5 be for these inputs" by trying o5 = 0 and o5 = 1. The Tau engine
+   on the node is the authority; this only gives instant feedback while typing. */
+function lex(src) {
+  const toks = []; let i = 0;
+  const ops = ["<->", "->", "&&", "||", "!=", "<=", ">=", "<<", ">>", "=", "<", ">", "!", "&", "|", "^", "+", "-", "*", "/", "%", "'", "(", ")", "{", "}", "[", "]", ":", "?", "."];
+  while (i < src.length) {
+    const c = src[i];
+    if (/\s/.test(c)) { i++; continue; }
+    if (c === "#") {
+      const m = src.slice(i).match(/^#([xX][0-9a-fA-F]+|[bB][01]+)/);
+      if (!m) throw new Error("bad literal");
+      toks.push({ k: "lit", v: m[1][0].toLowerCase() === "x" ? BigInt("0x" + m[1].slice(1)) : BigInt("0b" + m[1].slice(1)) }); i += m[0].length; continue;
+    }
+    if (/\d/.test(c)) { const m = src.slice(i).match(/^\d+/); toks.push({ k: "num", v: BigInt(m[0]) }); i += m[0].length; continue; }
+    if (/[A-Za-z_]/.test(c)) { const m = src.slice(i).match(/^[A-Za-z_][A-Za-z0-9_]*/); toks.push({ k: "id", v: m[0] }); i += m[0].length; continue; }
+    const op = ops.find(o => src.startsWith(o, i));
+    if (!op) throw new Error(`unexpected “${c}”`);
+    toks.push({ k: "op", v: op }); i += op.length;
+  }
+  return toks;
+}
+function parseUnit(src) {
+  const t = lex(stripComments(src)); let p = 0;
+  const peek = (v) => t[p] && t[p].k === "op" && t[p].v === v;
+  const eat = (v) => { if (!peek(v)) throw new Error(`expected “${v}”`); p++; };
+  const width = () => { if (peek(":")) { p++; const id = t[p++]; if (!id || id.v !== "bv") throw new Error("expected bv"); eat("["); const n = t[p++]; eat("]"); return Number(n.v); } return null; };
+  function primary() {
+    const tk = t[p];
+    if (!tk) throw new Error("unexpected end");
+    if (peek("(")) { p++; const e = term(); eat(")"); return e; }
+    if (peek("{")) { p++; const v = t[p++]; if (!v || (v.k !== "lit" && v.k !== "num")) throw new Error("expected a value"); eat("}"); return { k: "const", v: v.v, w: width() }; }
+    if (tk.k === "num") { p++; return { k: "const", v: tk.v, w: null }; }
+    if (tk.k === "id" && /^[io]\d+$/.test(tk.v)) { p++; eat("["); const tt = t[p++]; if (!tt || tt.v !== "t") throw new Error("only [t] is supported"); eat("]"); return { k: "stream", n: tk.v, w: width() }; }
+    throw new Error(`unexpected “${tk.v}”`);
+  }
+  function post() { let e = primary(); while (peek("'")) { p++; e = { k: "not", a: e }; } return e; }
+  const bin = (next, opsList) => () => { let e = next(); while (t[p] && t[p].k === "op" && opsList.includes(t[p].v)) { const op = t[p++].v; e = { k: "bin", op, a: e, b: next() }; } return e; };
+  const mul = bin(post, ["*", "/", "%"]), add = bin(mul, ["+", "-"]), sh = bin(add, ["<<", ">>"]), band = bin(sh, ["&"]), bxor = bin(band, ["^"]);
+  const term = bin(bxor, ["|"]);
+  const REL = ["=", "!=", "<", "<=", ">", ">="];
+  function atom() {
+    const tk = t[p];
+    if (tk && tk.k === "id" && (tk.v === "T" || tk.v === "F")) { p++; return { k: "bool", v: tk.v === "T" }; }
+    if (peek("(")) { const save = p; try { p++; const f = formula(); eat(")"); return f; } catch (e) { p = save; } }
+    const a = term();
+    if (!(t[p] && t[p].k === "op" && REL.includes(t[p].v))) throw new Error("expected a comparison");
+    const op = t[p++].v; return { k: "rel", op, a, b: term() };
+  }
+  function unary() { if (peek("!")) { p++; return { k: "fnot", a: unary() }; } return atom(); }
+  const and = () => { let e = unary(); while (peek("&&")) { p++; e = { k: "and", a: e, b: unary() }; } return e; };
+  const or = () => { let e = and(); while (peek("||")) { p++; e = { k: "or", a: e, b: and() }; } return e; };
+  function impl() { const a = or(); if (peek("->")) { p++; return { k: "imp", a, b: impl() }; } return a; }
+  function equiv() { let e = impl(); while (peek("<->")) { p++; e = { k: "iff", a: e, b: impl() }; } return e; }
+  function formula() { const c = equiv(); if (peek("?")) { p++; const a = formula(); eat(":"); const b = formula(); return { k: "ite", c, a, b }; } return c; }
+  const first = t[p]; if (!first || first.v !== "always") throw new Error("expected always");
+  p++; eat("("); const f = formula(); eat(")"); if (peek(".")) p++;
+  if (p !== t.length) throw new Error("text after the rule");
+  return f;
+}
+const DEFAULT_W = { i1: 24, i2: 24, i3: 384, i4: 384, i12: 384, o5: 24 };
+function evalTerm(e, env, wHint) {
+  if (e.k === "const") { const w = e.w || wHint || 64; return { v: e.v & ((1n << BigInt(w)) - 1n), w }; }
+  if (e.k === "stream") { const w = e.w || DEFAULT_W[e.n] || wHint || 64; if (!(e.n in env)) throw new Error(`no value for ${e.n}`); return { v: BigInt(env[e.n]) & ((1n << BigInt(w)) - 1n), w }; }
+  if (e.k === "not") { const a = evalTerm(e.a, env, wHint); return { v: ~a.v & ((1n << BigInt(a.w)) - 1n), w: a.w }; }
+  const wa = termWidth(e.a), wb = termWidth(e.b), w = wa || wb || wHint || 64;
+  const a = evalTerm(e.a, env, w).v, b = evalTerm(e.b, env, w).v, m = (1n << BigInt(w)) - 1n;
+  let v;
+  switch (e.op) {
+    case "+": v = a + b; break; case "-": v = a - b; break; case "*": v = a * b; break;
+    case "/": v = b === 0n ? m : a / b; break; case "%": v = b === 0n ? a : a % b; break;
+    case "<<": v = a << b; break; case ">>": v = a >> b; break;
+    case "&": v = a & b; break; case "|": v = a | b; break; case "^": v = a ^ b; break;
+  }
+  return { v: ((v % (m + 1n)) + (m + 1n)) & m, w };
+}
+function termWidth(e) {
+  if (e.k === "const") return e.w; if (e.k === "stream") return e.w || DEFAULT_W[e.n] || null;
+  if (e.k === "not") return termWidth(e.a); return termWidth(e.a) || termWidth(e.b);
+}
+function evalF(f, env) {
+  switch (f.k) {
+    case "bool": return f.v;
+    case "fnot": return !evalF(f.a, env);
+    case "and": return evalF(f.a, env) && evalF(f.b, env);
+    case "or": return evalF(f.a, env) || evalF(f.b, env);
+    case "imp": return !evalF(f.a, env) || evalF(f.b, env);
+    case "iff": return evalF(f.a, env) === evalF(f.b, env);
+    case "ite": return evalF(f.c, env) ? evalF(f.a, env) : evalF(f.b, env);
+    case "rel": {
+      const w = termWidth(f.a) || termWidth(f.b) || 64;
+      const a = evalTerm(f.a, env, w).v, b = evalTerm(f.b, env, w).v;
+      return { "=": a === b, "!=": a !== b, "<": a < b, "<=": a <= b, ">": a > b, ">=": a >= b }[f.op];
+    }
+  }
+  throw new Error("cannot read this part");
+}
+/* What would o5 be for one transfer? Tries every value the rule could give it. */
+function previewO5(ast, tx) {
+  const env = { i1: tx.amount, i3: BigInt("0x" + KEYS[tx.from]), i4: BigInt("0x" + KEYS[tx.to]), i5: tx.time, i12: BigInt("0x" + KEYS[tx.from]) };
+  const sat = [];
+  for (const o5 of [0n, 1n]) if (evalF(ast, { ...env, o5 })) sat.push(o5);
+  return sat;
+}
+
+/* ---------------- the policy view ---------------- */
+const $ = id => document.getElementById(id);
+const ruleEl = $("rule"), stepsEl = $("steps"), verdictEl = $("verdict"), testsEl = $("tests");
+let tests = [
+  { from: "you", amount: 500, to: "bob", time: NOW },
+  { from: "you", amount: 5000, to: "carol", time: NOW },
+  { from: "you", amount: 50, to: "dave", time: NOW },
+  { from: "bob", amount: 5000, to: "carol", time: NOW },
+];
+let engineResults = null;      // answers from the Tau engine for the last checked text
+let engineFor = null;          // the exact text those answers belong to
+let engineState = "unknown";   // "on" | "off" | "unknown"
+
+function renderExamples() {
+  $("examples").innerHTML = EXAMPLES.map(e => `<button type="button" class="chip" data-ex="${e.id}">${e.bad ? '<span class="x">✕</span> ' : ""}${e.label}</button>`).join("");
+}
+$("examples").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-ex]"); if (!b) return;
+  const ex = EXAMPLES.find(e => e.id === b.dataset.ex);
+  ruleEl.value = ex.text;
+  document.querySelectorAll("#examples .chip").forEach(c => c.classList.toggle("on", c === b));
+  engineResults = null; clearTimeout(editTimer); renderTests(); runCheck();
+});
+document.querySelector(".insert").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-ins]"); if (!b) return;
+  const ins = addr(b.dataset.ins), s = ruleEl.selectionStart, e = ruleEl.selectionEnd;
+  ruleEl.setRangeText(ins, s, e, "end"); ruleEl.focus(); onEdit();
+});
+
+function stepHtml(s, i) {
+  const cls = s.ok === true ? "pass" : s.ok === false ? "fail" : s.ok === "run" ? "run" : "skip";
+  const ic = s.ok === true ? "✓" : s.ok === false ? "✕" : s.ok === "run" ? "…" : "○";
+  return `<li class="${cls}"><span class="ic">${ic}</span><div><b>${i + 1} · ${esc(s.title)}</b><p>${esc(s.detail || "")}</p></div></li>`;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let checkSeq = 0;
+async function runCheck() {
+  const text = ruleEl.value, seq = ++checkSeq;
+  const a = admission(text);
+  const steps = a.steps.slice();
+  $("compDetails").hidden = !a.ok;
+  if (a.ok) $("composite").textContent = a.composite;
+  if (!a.ok) {
+    stepsEl.innerHTML = steps.map(stepHtml).join("") + stepHtml({ title: "Tau engine", ok: null, detail: "Not reached: the node stops at the first failed check." }, steps.length);
+    const fail = steps.find(s => s.ok === false);
+    verdictEl.className = "verdict bad"; verdictEl.textContent = `Refused at “${fail.title}”. The testnet would not take this rule.`;
+    return;
+  }
+  stepsEl.innerHTML = steps.map(stepHtml).join("") + stepHtml({ title: "Tau engine", ok: "run", detail: "Compiling your rule with the real Tau engine on the community node…" }, steps.length);
+  verdictEl.className = "verdict idle"; verdictEl.textContent = "Text checks passed. Waiting for the Tau engine…";
+  const res = await engineCheck(text);
+  if (seq !== checkSeq) return;
+  let eng;
+  if (!res) {
+    eng = { title: "Tau engine", ok: null, detail: "The community node’s engine is not reachable right now, so this step was skipped. The text checks above are the same ones the node runs first." };
+    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs. The engine compile could not be run right now.";
+  } else if (res.busy) {
+    eng = { title: "Tau engine", ok: null, detail: res.busy };
+    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs. The engine compile could not be run right now.";
+  } else if (res.accepted) {
+    eng = { title: "Tau engine", ok: true, detail: `Compiled and accepted by tau-lang ${res.engine || ""} in ${res.ms != null ? res.ms + " ms" : "its own sandbox"}.`.replace("  ", " ") };
+    verdictEl.className = "verdict"; verdictEl.textContent = "The testnet would accept this rule.";
+    engineResults = res.tests || null; engineFor = text; renderTests();
+  } else {
+    eng = { title: "Tau engine", ok: false, detail: (res.stage && res.stage !== "engine" ? `The node’s own ${res.stage} check refused it: ` : "") + (res.reason || "The engine refused the rule.") };
+    verdictEl.className = "verdict bad"; verdictEl.textContent = "Refused by the Tau engine. The testnet would not take this rule.";
+  }
+  stepsEl.innerHTML = steps.map(stepHtml).join("") + stepHtml(eng, steps.length);
+}
+$("btnCheck").addEventListener("click", runCheck);
+
+async function engineCheck(text) {
+  try {
+    const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 60000);
+    const r = await fetch(CHECK_URL, {
+      method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl.signal,
+      body: JSON.stringify({ rule: text, sender: KEYS.you, tests: tests.map(tx => ({ amount: tx.amount, from: KEYS[tx.from], to: KEYS[tx.to], time: tx.time })) }),
+    });
+    clearTimeout(timer);
+    const j = await r.json().catch(() => ({}));
+    setEngine("on");
+    if (r.status === 429) return { busy: "Too many checks from your connection. Try again in a few minutes." };
+    if (r.status === 503) return { busy: j.reason ? `The engine could not answer: ${j.reason}. Try again shortly.` : "The engine is busy with another check. Try again shortly." };
+    if (!r.ok) throw new Error("http " + r.status);
+    return j;
+  } catch (e) { setEngine("off"); return null; }
+}
+function setEngine(s) {
+  engineState = s; const el = $("engine");
+  el.className = "engine " + s;
+  el.querySelector("span").textContent = s === "on" ? "Tau engine: online" : s === "off" ? "Tau engine: offline, text checks only" : "Tau engine: checking…";
+}
+(async () => { try { const r = await fetch(CHECK_URL.replace("/check", "/check/health"), { cache: "no-store" }); setEngine(r.ok ? "on" : "off"); } catch (e) { setEngine("off"); } })();
+
+/* transfers table */
+const who = (sel, k) => Object.keys(NAMES).map(n => `<option value="${n}"${n === sel ? " selected" : ""}>${NAMES[n]}</option>`).join("");
+const fmtTime = s => new Date(Number(s) * 1000).toISOString().slice(0, 10);
+function renderTests() {
+  let ast = null, perr = null;
+  const a = admission(ruleEl.value);
+  if (a.ok) { try { ast = parseUnit(ruleEl.value); } catch (e) { perr = e.message; } }
+  const fromEngine = engineResults && engineFor === ruleEl.value;
+  testsEl.innerHTML = tests.map((tx, i) => {
+    let res;
+    if (!a.ok) res = `<span class="res unk">rule refused, nothing to run</span>`;
+    else if (fromEngine && engineResults[i]) res = resultCell(engineResults[i].o5 === undefined ? null : [BigInt(engineResults[i].o5)], tx, "Tau engine");
+    else if (tx.from !== "you") res = `<span class="res allow">Allowed<span class="why">not your transfer, your rule does not apply</span></span>`;
+    else if (perr) res = `<span class="res unk">The preview cannot read this rule (${esc(perr)}). The engine check decides.</span>`;
+    else { try { res = resultCell(previewO5(ast, tx), tx, "preview"); } catch (e) { res = `<span class="res unk">The preview cannot evaluate this (${esc(e.message)}).</span>`; } }
+    return `<tr data-i="${i}">
+      <td><select data-f="from" aria-label="From">${who(tx.from)}</select></td>
+      <td><input data-f="amount" type="number" min="0" max="16777215" value="${tx.amount}" aria-label="Amount"></td>
+      <td><select data-f="to" aria-label="To">${who(tx.to)}</select></td>
+      <td><input data-f="time" type="date" value="${fmtTime(tx.time)}" aria-label="Block time"></td>
+      <td>${res}</td>
+      <td><button class="del" type="button" data-del="${i}" aria-label="Remove">×</button></td></tr>`;
+  }).join("");
+  $("testSrc").textContent = fromEngine ? "answers from the Tau engine" : "in-browser preview, updates as you type";
+}
+function resultCell(sat, tx, src) {
+  if (!sat || sat.length === 0) return `<span class="res block">Blocked<span class="why">${src}: no consistent answer for this transfer, so it fails</span></span>`;
+  if (sat.length === 2) return `<span class="res block">Blocked<span class="why">${src}: the rule leaves o5 open here, and an open o5 reads as 0</span></span>`;
+  return sat[0] === 0n ? `<span class="res block">Blocked<span class="why">${src}: o5 = 0</span></span>` : `<span class="res allow">Allowed<span class="why">${src}: o5 = 1</span></span>`;
+}
+testsEl.addEventListener("change", ev => {
+  const tr = ev.target.closest("tr"); const f = ev.target.dataset.f; if (!tr || !f) return;
+  const tx = tests[+tr.dataset.i];
+  if (f === "amount") tx.amount = Math.max(0, Math.min(16777215, Math.floor(+ev.target.value || 0)));
+  else if (f === "time") { const d = Date.parse(ev.target.value); if (!isNaN(d)) tx.time = Math.floor(d / 1000); }
+  else tx[f] = ev.target.value;
+  engineResults = null; renderTests();
+});
+testsEl.addEventListener("click", ev => { const b = ev.target.closest("[data-del]"); if (!b) return; tests.splice(+b.dataset.del, 1); engineResults = null; renderTests(); });
+$("btnAddTest").addEventListener("click", () => { tests.push({ from: "you", amount: 100, to: "bob", time: NOW }); engineResults = null; renderTests(); });
+
+let editTimer = null;
+function onEdit() {
+  engineResults = null; renderTests();
+  clearTimeout(editTimer);
+  editTimer = setTimeout(() => {
+    const a = admission(ruleEl.value);
+    if (!a.ok) { runCheck(); return; }
+    stepsEl.innerHTML = a.steps.map(stepHtml).join("") + stepHtml({ title: "Tau engine", ok: null, detail: "Press “Check rule” to compile it with the real engine." }, a.steps.length);
+    verdictEl.className = "verdict idle"; verdictEl.textContent = "Text checks pass so far. Press “Check rule” for the engine.";
+    $("compDetails").hidden = false; $("composite").textContent = a.composite;
+  }, 250);
+}
+ruleEl.addEventListener("input", () => { document.querySelectorAll("#examples .chip").forEach(c => c.classList.remove("on")); onEdit(); });
+
+/* ---------------- tabs ---------------- */
+function showTab(seat) {
+  $("tabPolicy").setAttribute("aria-selected", String(!seat)); $("tabSeat").setAttribute("aria-selected", String(seat));
+  $("viewPolicy").hidden = seat; $("viewSeat").hidden = !seat;
+  try { history.replaceState(null, "", seat ? "#seat" : "#rule"); } catch (e) {}
+}
+$("tabPolicy").addEventListener("click", () => showTab(false));
+$("tabSeat").addEventListener("click", () => showTab(true));
+
+/* ---------------- validator seat (simulation) ---------------- */
+/* Mirrors consensus/governance.py: votes from the CURRENT active set, one per validator,
+   promotion to "scheduled" at votes >= ceil(2N/3), activation at activate_at_height. */
+const SIM_VALS = [
+  { id: "you", name: "You", key: KEYS.you },
+  { id: "v1", name: "Validator Ada", key: "7d43fd4497d9bd55720d6bfab504cd333d9feda6f705210c08aea6a60816ecd0c9eef704722c64046410c8c20a84e343" },
+  { id: "v2", name: "Validator Ben", key: "c4ebcd32971f046ee28820dec32911d6ef25659f989f3d333977df987649c1c951ea9b80e74ecd4ff33c8773ca9d57bb" },
+  { id: "v3", name: "Validator Cleo", key: "75bb1be554b16480d536d44342da486be0d460267e8ebcf12eee53e49e9afb49cb6bdb3644e1d2698fd60dc7cbcd5544" },
+];
+const NEW_VAL = { id: "v4", name: "Validator Dex", key: "1581c26e84f919c7206d5be82613354d22c101ad692180974629d7665aba48ab43dbe2985496d4a3a2884609af2b07d6" };
+const PROPOSALS = [
+  { id: "fee5", label: "Lower the base fee to 5", what: "Base fee 10 → 5 AGRS per step", rule: "always (o9[t]:bv[24] = { #x000005 }:bv[24]).", fee: 5,
+    plan: { v1: [1, true], v2: [2, true], v3: [3, false] } },
+  { id: "fee20", label: "Raise the base fee to 20", what: "Base fee 10 → 20 AGRS per step", rule: "always (o9[t]:bv[24] = { #x000014 }:bv[24]).", fee: 20,
+    plan: { v1: [1, false], v2: [2, true], v3: [3, true] } },
+  { id: "addval", label: "Add a fifth validator", what: "Validator set + Validator Dex", rule: `host_contract_patch.validator_additions = ["${NEW_VAL.key.slice(0, 6)}…${NEW_VAL.key.slice(-4)}"]`, add: true,
+    plan: { v1: [1, true], v2: [2, false], v3: [3, true] } },
+];
+const BLOCK_MS = 2200, VOTE_WINDOW = 6, ACT_DELAY = 3;
+let sim;
+const need = n => Math.ceil(2 * n / 3);
+const short = k => k.slice(0, 6) + "…" + k.slice(-4);
+function simReset() {
+  if (sim && sim.timer) clearInterval(sim.timer);
+  sim = { h: 120, fee: 10, vals: SIM_VALS.slice(), prop: null, votes: {}, state: "idle", log: [], timer: null };
+  simLog("Chain running. 4 validators, quorum 3 of 4.", "");
+  sim.timer = setInterval(simTick, BLOCK_MS);
+  renderSim();
+}
+function simLog(text, cls) { sim.log.unshift({ h: sim.h, text, cls }); sim.log = sim.log.slice(0, 40); }
+function propose(id) {
+  if (sim.prop && (sim.state === "voting" || sim.state === "scheduled")) return;
+  const p = PROPOSALS.find(x => x.id === id);
+  sim.prop = { ...p, at: sim.h, deadline: sim.h + VOTE_WINDOW, n: sim.vals.length, threshold: need(sim.vals.length) };
+  sim.votes = {}; sim.state = "voting";
+  simLog(`Proposal: ${p.what}. Compiled in isolation first: OK.`, "");
+  renderSim();
+}
+function vote(yes) {
+  if (!sim.prop || sim.state !== "voting" || ("you" in sim.votes)) return;
+  sim.votes.you = yes; simLog(`You vote ${yes ? "yes" : "no"}.`, yes ? "ok" : "bad"); tally(); renderSim();
+}
+function tally() {
+  const yes = Object.values(sim.votes).filter(Boolean).length;
+  if (sim.state === "voting" && yes >= sim.prop.threshold) {
+    sim.state = "scheduled"; sim.prop.activateAt = sim.h + ACT_DELAY;
+    simLog(`Quorum reached: ${yes} of ${sim.prop.threshold} needed. Scheduled for block #${sim.prop.activateAt}.`, "ok");
+  }
+}
+function simTick() {
+  sim.h++;
+  if (sim.prop && sim.state === "voting") {
+    const age = sim.h - sim.prop.at;
+    for (const [v, [at, yes]] of Object.entries(sim.prop.plan)) {
+      if (age === at && !(v in sim.votes)) { sim.votes[v] = yes; const val = sim.vals.find(x => x.id === v); simLog(`${val.name} votes ${yes ? "yes" : "no"}.`, yes ? "ok" : "bad"); }
+    }
+    tally();
+    if (sim.state === "voting" && sim.h >= sim.prop.deadline) { sim.state = "missed"; simLog("Voting window closed without a quorum. Nothing changes.", "bad"); }
+  } else if (sim.prop && sim.state === "scheduled" && sim.h >= sim.prop.activateAt) {
+    sim.state = "active";
+    if (sim.prop.fee) { sim.fee = sim.prop.fee; simLog(`Active from block #${sim.h}: every transfer now pays a base fee of ${sim.fee}.`, "ok"); }
+    if (sim.prop.add) { sim.vals.push(NEW_VAL); simLog(`Active from block #${sim.h}: Validator Dex joins. 5 validators, the next change needs ${need(5)} votes.`, "ok"); }
+  }
+  renderSim();
+}
+function renderSim() {
+  $("simHeight").textContent = "#" + sim.h;
+  $("simFee").textContent = `${sim.fee} AGRS per step`;
+  $("simN").textContent = `${sim.vals.length} · quorum ${need(sim.vals.length)} (⌈2N/3⌉)`;
+  $("seats").innerHTML = sim.vals.map(v => {
+    const vv = v.id in sim.votes ? (sim.votes[v.id] ? '<div class="v yes">voted yes</div>' : '<div class="v no">voted no</div>') : (sim.state === "voting" ? '<div class="v">has not voted</div>' : '<div class="v">&nbsp;</div>');
+    return `<div class="seat${v.id === "you" ? " you" : ""}"><b>${v.name}</b><code>${short(v.key)}</code>${vv}</div>`;
+  }).join("");
+  const busy = sim.prop && (sim.state === "voting" || sim.state === "scheduled");
+  $("proposals").innerHTML = PROPOSALS.map(p => `<button type="button" class="chip${sim.prop && sim.prop.id === p.id ? " on" : ""}" data-prop="${p.id}"${busy ? " disabled" : ""}>${p.label}</button>`).join("");
+  $("propBox").hidden = !sim.prop;
+  if (sim.prop) {
+    const p = sim.prop, yes = Object.values(sim.votes).filter(Boolean).length;
+    $("propKv").innerHTML = `<dt>Change</dt><dd>${esc(p.what)}</dd><dt>Proposed</dt><dd>block #${p.at}</dd><dt>Votes needed</dt><dd>${p.threshold} of ${p.n} (⌈2·${p.n}/3⌉)</dd>`;
+    $("propRule").textContent = p.rule;
+    const st = sim.state, order = ["voting", "scheduled", "active"];
+    const label = { voting: "Voting", scheduled: p.activateAt ? `Scheduled · #${p.activateAt}` : "Scheduled", active: "Active" };
+    $("flow").innerHTML = `<span class="done">Proposed</span>` + order.map((s, i) => {
+      const idx = order.indexOf(st);
+      const cls = st === "missed" ? (s === "voting" ? "dead" : "") : (i < idx || st === "active" ? "done" : i === idx ? "now" : "");
+      return `<span class="${cls}">${s === "voting" && st === "missed" ? "No quorum" : label[s]}</span>`;
+    }).join("");
+    $("qFill").style.width = (100 * yes / p.n) + "%";
+    $("qNeed").style.left = `calc(${100 * p.threshold / p.n}% - 1px)`;
+    $("qText").textContent = `${yes} yes of ${p.threshold} needed`;
+    const left = p.deadline - sim.h;
+    $("qNote").textContent = st === "voting" ? (("you" in sim.votes) ? `Waiting for the others. Window closes in ${left} block${left === 1 ? "" : "s"}.` : `Your vote can decide this. Window closes in ${left} block${left === 1 ? "" : "s"}.`)
+      : st === "scheduled" ? `Agreed. It takes effect at block #${p.activateAt}, never in the block that decided it.`
+      : st === "active" ? "In force. Pick another change to vote again." : "Not enough yes votes in time. The rules stay as they were. Pick a change to try again.";
+    $("voteRow").hidden = st !== "voting" || ("you" in sim.votes);
+  }
+  $("simLog").innerHTML = sim.log.map(l => `<li class="${l.cls}"><em>#${l.h}</em>${esc(l.text)}</li>`).join("");
+}
+$("proposals").addEventListener("click", ev => { const b = ev.target.closest("[data-prop]"); if (b && !b.disabled) propose(b.dataset.prop); });
+$("btnYes").addEventListener("click", () => vote(true));
+$("btnNo").addEventListener("click", () => vote(false));
+$("btnReset").addEventListener("click", simReset);
+document.addEventListener("visibilitychange", () => { if (document.hidden) { clearInterval(sim.timer); sim.timer = null; } else if (!sim.timer) sim.timer = setInterval(simTick, BLOCK_MS); });
+
+/* ---------------- start ---------------- */
+renderExamples();
+ruleEl.value = EXAMPLES[0].text;
+document.querySelector('#examples [data-ex="limit"]').classList.add("on");
+renderTests();
+simReset();
+if (location.hash === "#seat") showTab(true);
+runCheck();
+</script>
+</body>
+</html>
