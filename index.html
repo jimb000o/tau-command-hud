@@ -501,8 +501,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .ap { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; cursor: help; }
 .ap i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--amber); }
 .ap.open i { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
-.ap.approved i { background: var(--ok); border-color: var(--ok); }
-.ap.expired i { border-color: var(--dim); }
+.ap.approved i, .ap.signed i { background: var(--ok); border-color: var(--ok); }
+.ap.declined i { border-color: var(--bad); background: var(--bad); }
+.ap.expired i, .ap.closed i { border-color: var(--dim); }
 .ap span:last-child { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ap.open span:last-child { color: var(--amber); }
 .ap b { color: #fff; font-weight: 500; }
@@ -846,6 +847,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v16.5 · 27 Oct 2026</b>Live: approval requests and their signatures are read from the blocks themselves (approval_request and transfer_vote transactions), the fork radar also counts the reorgs and restarts the relay remembers.</li>
           <li><b>v16.4 · 27 Oct 2026</b>Personal money rules: the examples now show what Tau itself advertises: a second approval above an amount (the transfer parks as an approval request and executes when the approver signs, with a countdown in blocks), a lock until a block height instead of a clock time, spending limits, whitelists and co-signatures. Live mode shows approval requests only when the node reports them. Validators: the consensus mode (fixed validator list, list in Tau logic, or stake-based) and how often it was switched by agreement. Blockchain: a fork radar counting reorgs (with depth) and testnet restarts.</li>
           <li><b>v16.3 · 27 Oct 2026</b>Proposals: a new page at <a href="proposals/">/proposals/</a> tracks every rule change and offers Telegram, X and RSS alerts; linked from the header, and the feedback panel links the Telegram channel.</li>
           <li><b>v16.2 · 27 Oct 2026</b>Accounts: a new page at <a href="account/">/account/</a> shows balance, own rules, offers, activity and refusals of any account; linked from the header, and on the live chain every address in the HUD (transactions, blocks, proposer, validators, rule holders, offers) links to its account.</li>
@@ -1171,6 +1173,7 @@ async function pollOnline() {
     setOnline(Number.isFinite(n) ? n : null);
     PRESENCE.liveDefault = j.live_default === true;
     if (typeof j.open_governance_admission === "boolean") S.openVoting = j.open_governance_admission;
+    if (Array.isArray(j.reorgs)) PRESENCE.reorgs = j.reorgs.map(r => ({ at: Number(r.at) || null, height: Number(r.height) || null, depth: Number(r.depth) || 1 }));
     if (Array.isArray(j.restarts)) PRESENCE.restarts = j.restarts.map(r => ({ detected_at: Number(r.detected_at) || null, old_tip: r.old_tip ?? (r.old && r.old.tip) ?? null }));
     PRESENCE.tip = Number(j.tip_height ?? j.network_height) || null; PRESENCE.canon = Number.isFinite(Number(j.canonical_height)) ? Number(j.canonical_height) : null;
     PRESENCE.synced = j.live_default === true || (j.live_default === undefined && j.canonical_height === undefined) ? true : Number(j.canonical_height) > 0;
@@ -1305,7 +1308,7 @@ function explainComposite() {
 const TYPE_LABEL = {
   user_tx: "⇄ transfer", rule_deploy: "◆ own rule deployed", rule_offer: "⤳ rule offered", rule_offer_accept: "✓ rule accepted",
   rule_offer_reject: "✕ rule rejected", consensus_rule_update: "§ rule change proposed", consensus_rule_vote: "☑ vote",
-  retractable_transfer: "↺ retractable transfer", approval_request: "⏳ approval request",
+  retractable_transfer: "↺ retractable transfer", approval_request: "⏳ approval request", transfer_vote: "✍ approval signed",
 };
 /* a live panel never re-renders while the pointer rests on it; the pending render runs on mouseleave */
 const HOLD = new Map();
@@ -1428,8 +1431,15 @@ function renderClauses() {
   const shown = open.concat(S.approvals.filter(a => a.status !== "open").slice(-2));
   const appr = shown.length ? `<div class="appr">${shown.map(a => {
     const left = Math.max(0, a.expireAt - S.height);
-    const tip = a.status === "open" ? `Approval request: ${fmt(a.amount)} AGRS from ${short(a.from)} to ${short(a.to)} wait on the chain for ${short(a.approver)} to sign. If signed, the transfer executes by itself; unsigned, it expires at block #${a.expireAt} and the money stays.` : a.status === "approved" ? `Signed by ${short(a.approver)} at block #${a.settledAt}: the transfer executed by itself.` : `Expired unsigned at block #${a.settledAt}: the money stayed with ${short(a.from)}.`;
-    return `<div class="ap ${a.status}" data-full="${esc(tip)}"><i></i><span>${acct(a.from)} → ${acct(a.to)} <b>${fmt(a.amount)} AGRS</b></span><span>${a.status === "open" ? `waits for ${short(a.approver)} · ${left} blk` : a.status === "approved" ? "approved ✓" : "expired"}</span></div>`;
+    const TIP = {
+      open: `Approval request: ${fmt(a.amount)} AGRS from ${short(a.from)} to ${short(a.to)} wait on the chain for ${(a.approvers || [a.approver]).map(short).join(", ")} to sign (transfer_vote). If the sender’s rule is satisfied, the transfer executes by itself; unsigned, it expires at block #${a.expireAt} and the money stays.`,
+      approved: `Signed by ${short(a.approver)} at block #${a.settledAt}: the transfer executed by itself.`,
+      signed: `${short(a.approver)} signed at block #${a.settledAt}. The transfer executes by itself once the sender’s rule is satisfied.`,
+      declined: `${short(a.approver)} declined at block #${a.settledAt}. The request cannot execute; it expires at block #${a.expireAt}.`,
+      expired: `Expired unsigned at block #${a.settledAt}: the money stayed with ${short(a.from)}.`,
+      closed: `The window closed at block #${a.expireAt}. Signed in time, the transfer executed; otherwise it expired and the money stayed.`,
+    }, LBL = { open: `waits for ${short(a.approver)} · ${left} blk`, approved: "approved ✓", signed: "signed ✓", declined: "declined ✕", expired: "expired", closed: "window closed" };
+    return `<div class="ap ${a.status}" data-full="${esc(TIP[a.status] || "")}"><i></i><span>${acct(a.from)} → ${acct(a.to)} <b>${fmt(a.amount)} AGRS</b></span><span>${LBL[a.status] || a.status}</span></div>`;
   }).join("")}</div>` : "";
   $("clauses").innerHTML = (entries.length ? entries.slice(0, 8).map(([acc, p]) =>
     `<div class="clause" data-ex="${exKey(() => explainClause(acc, p))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}</span><span>${p.name}</span></div>`).join("")
@@ -1470,11 +1480,12 @@ function renderRadar() {
   let html;
   if (S.mode !== "live") html = sp("", "fork radar · <b>simulated</b> · one branch, no reorgs, no restarts", "The simulation never forks. On the live chain this line counts competing branches the node switched between (reorgs, up to the 2000-block path cap), and restarts of the testnet on the same genesis.");
   else {
-    const deepest = S.reorgs.reduce((m, r) => Math.max(m, r.depth), 0), last = S.reorgs[S.reorgs.length - 1];
+    const relayR = PRESENCE.reorgs || [], reorgN = Math.max(S.reorgs.length, relayR.length), allR = S.reorgs.concat(relayR);
+    const deepest = allR.reduce((m, r) => Math.max(m, r.depth), 0), last = allR.sort((a, b) => (a.at || 0) - (b.at || 0))[allR.length - 1];
     const rs = PRESENCE.restarts || [], restarts = Math.max(S.restarts, rs.length), lastRs = rs[rs.length - 1];
     html = sp("", "fork radar", "Competing branches, reorgs and restarts of the testnet, as seen by the community node and its relay.")
       + sp("", "tips <b>1</b>", "The node follows one head: the heaviest valid branch (height, then the smaller hash). A competing branch shows up here as a reorg the moment the node switches to it.")
-      + sp(S.reorgs.length ? "warn" : "ok", `reorgs <b>${S.reorgs.length}</b>${deepest ? ` · deepest <b>${deepest}</b>` : ""}`, S.reorgs.length ? `${S.reorgs.length} reorg${S.reorgs.length === 1 ? "" : "s"} seen in this session, the deepest ${deepest} block${deepest === 1 ? "" : "s"} (last at block #${last.height}). The node reverts and replays state along the new branch; a reorg deeper than 2000 blocks is refused.` : "No block of this session was replaced by a competing branch. A reorg can run as deep as the common ancestor, up to a 2000-block path cap, because the alpha has no finality.")
+      + sp(reorgN ? "warn" : "ok", `reorgs <b>${reorgN}</b>${deepest ? ` · deepest <b>${deepest}</b>` : ""}`, reorgN ? `${reorgN} reorg${reorgN === 1 ? "" : "s"} on record (relay history and this session), the deepest ${deepest} block${deepest === 1 ? "" : "s"}${last && last.height != null ? `, the last at block #${fmt(last.height)}` : ""}. The node reverts and replays state along the new branch; a reorg deeper than 2000 blocks is refused.` : "No block was replaced by a competing branch, in the relay’s history or in this session. A reorg can run as deep as the common ancestor, up to a 2000-block path cap, because the alpha has no finality.")
       + sp(restarts ? "warn" : "ok", `restarts <b>${restarts}</b>${lastRs && lastRs.detected_at ? ` · last ${fmtAgo(Date.now() / 1000 - lastRs.detected_at)}` : ""}`, restarts ? `The testnet was restarted ${restarts} time${restarts === 1 ? "" : "s"} on the same genesis${lastRs && lastRs.old_tip != null ? `, the last one after block #${fmt(lastRs.old_tip)}` : ""}. The relay flags a restart, the page forgets the dead chain and starts again from block 1.` : "No restart of the testnet on record. A restart is a new chain on the same genesis; the relay flags it and the page starts over.")
       + (PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2 ? sp("warn", `verified <b>#${fmt(PRESENCE.canon)}</b> of <b>#${fmt(PRESENCE.tip)}</b>`, "The node holds every block up to the tip but has fully verified the state only up to the lower height.") : "");
   }
@@ -1775,6 +1786,9 @@ function normTx(raw, idHint) {
   return {
     id: idHint || raw.tx_hash || hex(64), type, sender: raw.sender_pubkey || raw.sender || "",
     kind: /consensus_rule/.test(type) ? "gov" : "", fee: raw.estimated_fee ?? raw.fee_limit ?? "—", transfers,
+    // co-signature approvals (approvals.md): a request parks a transfer, a transfer_vote signs or declines it
+    to: raw.recipient_pubkey || "", amount: Number(raw.amount) || 0, expireAt: Number(raw.expire_at_height) || 0, approve: raw.approve !== false,
+    approvers: raw.approvers && typeof raw.approvers === "object" ? Object.values(raw.approvers).map(a => typeof a === "string" ? a : (a && a.pubkey) || "").filter(Boolean) : [],
   };
 }
 function liveMessage(ev) {
@@ -1795,6 +1809,11 @@ function liveMessage(ev) {
       const b = { n: h.block_number ?? 0, hash: raw.block_hash, state: h.state_hash, proposer: h.proposer_pubkey || "", ts: h.timestamp, txs };
       if (b.proposer && !/^0+$/.test(b.proposer) && !S.validators.includes(b.proposer)) S.validators.push(b.proposer);
       txs.forEach(t => { if (!LIVE.seenTx.has(t.id)) { LIVE.seenTx.add(t.id); txCard(t); } });
+      txs.forEach(t => {
+        if (t.type === "approval_request" && !S.approvals.some(a => a.id === t.id)) { t.note = `${short(t.sender)} → ${short(t.to)} ${fmt(t.amount)} AGRS · waits for ${t.approvers.map(short).join(", ") || "an approver"} · until #${t.expireAt}`; S.approvals.push({ id: t.id, from: t.sender, to: t.to, amount: t.amount, approver: t.approvers[0] || "", approvers: t.approvers, since: b.n, expireAt: t.expireAt, status: "open" }); }
+        if (t.type === "transfer_vote") { const a = S.approvals.find(x => x.status === "open" && x.approvers && x.approvers.includes(t.sender)); if (a) { a.status = t.approve ? "signed" : "declined"; a.settledAt = b.n; a.approver = t.sender; } t.note = `${short(t.sender)} ${t.approve ? "signs" : "declines"} an approval request`; }
+      });
+      S.approvals.forEach(a => { if (a.status === "open" && a.expireAt && b.n >= a.expireAt) { a.status = "closed"; a.settledAt = b.n; } });
       ingestBlock(b, true);
     });
   } else if (msg.command === "getmempool") {
@@ -1835,11 +1854,6 @@ function liveMessage(ev) {
       const p = u && u.host_contract_patch, h = u && u.activate_at_height;
       if (p && typeof p.eligibility_mode === "string" && u.lifecycle === "activated" && !S.modeHistory.some(m => m.height === h)) S.modeHistory.push({ to: p.eligibility_mode, height: h });
     });
-    if (Array.isArray(d.approval_requests)) {
-      S.approvals = d.approval_requests.map(a => ({ id: a.request_id || a.id || a.tx_hash || "", from: a.sender || a.sender_pubkey || "", to: a.recipient || a.to || "", amount: Number(a.amount) || 0,
-        approver: ([].concat(a.approvers || a.approver || [])).filter(Boolean)[0] || "", since: Number(a.included_at_height) || null, expireAt: Number(a.expire_at_height) || 0, status: a.status || "open", settledAt: Number(a.settled_at_height) || null }));
-      renderClauses();
-    }
     renderGov({ "Approval threshold": d.approval_threshold ?? "—", "Next height": d.next_block_height ?? "—" });
     renderRuleWorld(); readouts();
   }
@@ -2355,7 +2369,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.4`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v16.5`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
