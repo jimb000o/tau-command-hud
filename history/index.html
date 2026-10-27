@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Chain Time Travel</title>
+<meta name="description" content="Scrub through every block of the Tau Testnet Alpha and see which rules were in force, who voted, and when each agreed change took effect.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Time travel">
+<meta property="og:description" content="Every block of the Tau testnet, with the rules in force at that moment. Rules change only by agreement: watch it happen.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/history/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1680px; margin: 0 auto; display: grid; gap: 14px; }
+/* widescreen: everything grows with the screen instead of floating in a narrow column */
+@media (min-width: 2000px) { body { zoom: 1.25; } }
+@media (min-width: 3000px) { body { zoom: 1.6; } }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.back { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.back:hover { background: #fff; color: #000; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 32em; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 62em; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 6px 10px; flex-wrap: wrap; }
+.panel h2 b { color: #fff; font-weight: 600; letter-spacing: .08em; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+[hidden] { display: none !important; }
+
+/* connection line */
+.conn { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font-size: 12px; color: var(--dim); }
+.dot { display: inline-flex; align-items: center; gap: 7px; color: #fff; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+.dot i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); display: inline-block; }
+.dot.ok i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.dot.wait i { background: var(--behind); }
+.conn .warn { color: var(--behind); }
+.conn button { font: 12px var(--mono); background: none; border: 0; border-bottom: 1px dotted var(--dim); color: #fff; padding: 0; cursor: pointer; }
+
+/* timeline */
+.tlwrap { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+#tl { display: block; width: 100%; cursor: ew-resize; }
+#tl text { font-family: var(--mono); }
+#tl .lbl { font: 600 9.5px var(--display); letter-spacing: .18em; fill: var(--dim); text-transform: uppercase; }
+#tl .ax { font-size: 10.5px; fill: var(--dim); }
+#tl .axs { font-size: 10px; fill: rgba(138,138,148,.7); }
+#tl .bars { fill: rgba(255,255,255,.55); }
+#tl .bars.gov { fill: var(--ok); }
+#tl .gap { fill: rgba(255,255,255,.04); }
+#tl .grid { stroke: rgba(255,255,255,.06); }
+#tl .prop rect.track { fill: transparent; stroke: rgba(255,255,255,.6); stroke-width: 1; }
+#tl .prop rect.agreed { fill: rgba(57,255,138,.25); stroke: var(--ok); }
+#tl .prop.expired rect.track { stroke: rgba(255,255,255,.28); stroke-dasharray: 3 3; }
+#tl .prop .vote { stroke: #fff; stroke-width: 1.5; }
+#tl .prop text, #tl .revn, #tl .lbl, #tl .none { paint-order: stroke; stroke: #101012; stroke-width: 5px; stroke-linejoin: round; }
+#tl .prop text { font-size: 10.5px; fill: #fff; }
+#tl .prop.expired text { fill: var(--dim); }
+#tl .prop:hover rect.track { stroke: #fff; stroke-width: 1.5; }
+#tl .rev { fill: none; stroke: var(--ok); stroke-width: 1.5; }
+#tl .revn { font-size: 10.5px; fill: var(--ok); }
+#tl .cursor { stroke: #fff; stroke-width: 1.5; }
+#tl .cpill { fill: #fff; }
+#tl .ctext { font: 600 11px var(--mono); fill: #000; }
+#tl .none { font-size: 11px; fill: var(--dim); }
+.tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(320px, calc(100vw - 32px)); background: #000; border: 1px solid var(--hair); border-radius: 6px; padding: 6px 9px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 8px 24px -8px #000; }
+.tip b { color: #fff; font-weight: 600; }
+.tip em { color: var(--dim); font-style: normal; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 10px; }
+.btn { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; border-radius: 999px; padding: 7px 13px; cursor: pointer; border: 1px solid var(--hair); background: transparent; color: #fff; white-space: nowrap; }
+.btn.primary { background: #fff; color: #000; border-color: #fff; min-width: 82px; }
+.btn.primary:hover { background: var(--ok); border-color: var(--ok); }
+.btn:hover:not(.primary):not(:disabled) { border-color: #fff; }
+.btn:disabled { opacity: .35; cursor: default; }
+.btn:focus-visible, input[type=range]:focus-visible, .linkish:focus-visible, .fb-fab:focus-visible, .close:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+.grp { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.readout { margin-left: auto; text-align: right; min-width: 0; }
+.readout .h { font: 600 22px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
+.readout .t { color: var(--dim); font-size: 12px; }
+.readout .follow { color: var(--ok); }
+@media (max-width: 760px) { .readout { margin-left: 0; text-align: left; width: 100%; order: -1; } }
+input[type=range] { width: 100%; margin: 10px 0 0; accent-color: #fff; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 8px; font-size: 11.5px; color: var(--dim); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 18px; height: 9px; border-radius: 2px; }
+.legend .l-vote { border: 1px solid rgba(255,255,255,.6); }
+.legend .l-agreed { background: rgba(57,255,138,.25); border: 1px solid var(--ok); }
+.legend .l-active { background: var(--ok); }
+.legend .l-exp { border: 1px dashed rgba(255,255,255,.35); }
+
+/* three panels at the cursor */
+.cols { display: grid; gap: 14px; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+@media (max-width: 1150px) { .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .cols > :first-child { grid-column: 1 / -1; } }
+@media (max-width: 760px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.big { font: 600 20px/1.3 var(--display); color: #fff; margin: 0 0 4px; }
+.big .ok { color: var(--ok); }
+.cmp { font-size: 12px; color: var(--dim); margin: 0 0 10px; }
+.cmp b { color: #fff; font-weight: 500; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 14px; font-size: 12.5px; margin: 0; }
+.kv dt { color: var(--dim); }
+.kv dd { margin: 0; color: #fff; overflow-wrap: anywhere; }
+.kv dd.chg { color: var(--ok); }
+.kv dd small { color: var(--dim); font-size: 11.5px; }
+h3 { margin: 14px 0 6px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.items { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.items li { border-left: 2px solid var(--line); background: rgba(255,255,255,.025); padding: 6px 10px; font-size: 12px; min-width: 0; }
+.items li.on { border-left-color: var(--ok); }
+.items li.now { border-left-color: var(--behind); }
+.items li b { color: #fff; font: 600 12.5px var(--display); }
+.items li .m { display: block; color: var(--dim); overflow-wrap: anywhere; }
+.items li.here { background: rgba(57,255,138,.07); }
+.linkish { background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%; display: block; }
+.linkish:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.empty { color: var(--dim); font-size: 12px; margin: 0; }
+.flow { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 4px; }
+.flow span { font: 600 9.5px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.flow span.done { border-color: var(--ok); color: var(--ok); }
+.flow span.now { border-color: var(--behind); color: var(--behind); }
+.quorum { position: relative; height: 20px; border: 1px solid var(--hair); border-radius: 4px; overflow: hidden; margin: 6px 0 2px; background: #0c0c0d; }
+.quorum .fill { position: absolute; inset: 0 auto 0 0; background: var(--ok); opacity: .85; }
+.quorum span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 600 11px var(--display); color: #fff; text-shadow: 0 0 4px #000, 0 0 2px #000; }
+.txs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 320px; overflow: auto; }
+.txs li button { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 10px; width: 100%; text-align: left; background: rgba(255,255,255,.025); border: 0; border-left: 2px solid var(--line); color: var(--text); font: 12px/1.45 var(--mono); padding: 5px 9px; cursor: pointer; }
+.txs li button:hover { border-left-color: #fff; }
+.txs li.gov button { border-left-color: var(--ok); }
+.txs .ty { color: #fff; font-weight: 600; }
+.txs .d { color: var(--dim); overflow-wrap: anywhere; }
+.prov { margin: 12px 0 0; font-size: 11.5px; color: var(--dim); }
+.prov .ok { color: var(--ok); }
+.prov .warn { color: var(--behind); }
+.btn.small { padding: 5px 10px; font-size: 10px; margin-top: 10px; }
+
+/* modal */
+.modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
+.sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
+.sheet .panel { padding-right: 48px; }
+.close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 50vh; overflow: auto; }
+.note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+.src { color: var(--dim); font-size: 11.5px; margin-top: 10px; }
+.src a { color: var(--dim); }
+
+/* feedback: same floating button as the HUD, opens a pre-filled GitHub issue */
+.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); }
+.fb-fab:hover { background: var(--ok); }
+@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } }
+.fb form { display: grid; gap: 10px; }
+.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 11.5px; }
+.fb textarea, .fb input[type=text] { width: 100%; background: #0c0c0d; border: 1px solid var(--hair); border-radius: 6px; color: #fff; font: 13px/1.5 var(--mono); padding: 8px 10px; }
+.fb textarea { min-height: 96px; resize: vertical; }
+.fb textarea:focus, .fb input:focus { outline: 1px solid var(--ok); border-color: var(--ok); }
+.fb .row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.fb .status { font-size: 12px; color: var(--dim); flex: 1 1 200px; min-width: 0; }
+.fb .status.ok { color: var(--ok); }
+.fb a.btn { text-decoration: none; }
+.fblink { color: var(--dim); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Time travel</span></a>
+    <nav class="nav"><a class="back" href="/playground/">Rule Playground</a><a class="back" href="/">Back to the live HUD</a></nav>
+  </header>
+
+  <div>
+    <p class="lead">Rules change by agreement. Scrub the chain and watch it happen.</p>
+    <p class="sub">Every block of the current Tau Testnet Alpha chain, read from the community node. Pick any block to see the rules in force at that moment, the votes still open, and what the block itself carried.</p>
+  </div>
+
+  <div class="conn" aria-live="polite">
+    <span class="dot wait" id="connDot"><i></i><span id="connText">Connecting</span></span>
+    <span id="connInfo">Reading the chain from the community node…</span>
+    <span class="warn" id="connWarn" hidden></span>
+  </div>
+
+  <section class="panel">
+    <h2>The chain, block by block <small>drag or click the timeline · ← → step · Shift + ← → jump to the next rule event</small></h2>
+    <div class="tlwrap" id="tlwrap">
+      <svg id="tl" height="200" role="img" aria-label="Timeline of blocks and rule changes"></svg>
+    </div>
+    <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Block height">
+    <div class="controls">
+      <span class="grp">
+        <button class="btn" id="bStart" type="button" title="Genesis">⏮ Genesis</button>
+        <button class="btn" id="bPrev" type="button" aria-label="Previous block">◀ Block</button>
+        <button class="btn primary" id="bPlay" type="button">▶ Play</button>
+        <button class="btn" id="bNext" type="button" aria-label="Next block">Block ▶</button>
+        <button class="btn" id="bEnd" type="button">Now ⏭</button>
+      </span>
+      <span class="grp">
+        <button class="btn" id="bPrevEv" type="button">◀ Rule event</button>
+        <button class="btn" id="bNextEv" type="button">Rule event ▶</button>
+      </span>
+      <div class="readout"><div class="h" id="roH">#–</div><div class="t" id="roT">waiting for blocks</div></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:rgba(255,255,255,.55);height:9px;width:4px"></i>transactions per block (green: carries a vote or proposal)</span>
+      <span><i class="l-vote"></i>proposed, waiting for votes</span>
+      <span><i class="l-agreed"></i>agreed, waiting for its block</span>
+      <span><i class="l-active"></i>in force</span>
+      <span><i class="l-exp"></i>too few votes, dropped</span>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section class="panel" id="pRules">
+      <h2>Rules in force <b id="rH">#–</b></h2>
+      <div id="rulesBody"><p class="empty">Waiting for blocks.</p></div>
+    </section>
+    <section class="panel" id="pAgree">
+      <h2>Agreement in progress <b id="aH">#–</b></h2>
+      <div id="agreeBody"><p class="empty">Waiting for blocks.</p></div>
+    </section>
+    <section class="panel" id="pBlock">
+      <h2>Block <b id="bH">#–</b></h2>
+      <div id="blockBody"><p class="empty">Waiting for blocks.</p></div>
+    </section>
+  </div>
+  <p class="src">How the history is rebuilt: the page replays every block in order, exactly as the node’s governance code does (<a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py" target="_blank" rel="noopener">governance.py ↗</a>): a proposal waits for votes, becomes agreed once it holds the quorum, and takes effect at its activation block. If it is still short of votes by then, it is dropped and the old rules stay. At the newest block the result is checked against the node’s own state.</p>
+</div>
+
+<div class="tip" id="tip" hidden></div>
+
+<div class="modal" id="mDetail" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="sheet">
+    <button class="close" data-close type="button" aria-label="Close">✕</button>
+    <article class="panel"><h2 id="dTitle"></h2><div id="dBody"></div></article>
+  </div>
+</div>
+
+<button class="fb-fab" id="fbFab" type="button">Feedback</button>
+<div class="modal" id="mFeedback" hidden role="dialog" aria-modal="true" aria-labelledby="fbTitle">
+  <div class="sheet">
+    <button class="close" data-close type="button" aria-label="Close">✕</button>
+    <article class="panel fb">
+      <h2 id="fbTitle">Feedback on Time travel <small>shapes the next version</small></h2>
+      <form id="fbForm" novalidate>
+        <label class="f" for="fbText">What should we know?
+          <textarea id="fbText" maxlength="2000" placeholder="e.g. something on the timeline I did not understand, a block that looks wrong, what you would like to compare…"></textarea>
+        </label>
+        <label class="f" for="fbName">Name or handle (optional)
+          <input type="text" id="fbName" maxlength="80" placeholder="@yourhandle">
+        </label>
+        <div class="row">
+          <a class="btn primary" id="fbSend" href="#" target="_blank" rel="noopener">Send via GitHub</a>
+          <a class="fblink" href="https://github.com/jimb000o/tau-command-hud/issues?q=is%3Aissue+label%3Afeedback" target="_blank" rel="noopener">See all feedback</a>
+          <span class="status" id="fbStatus" aria-live="polite">Feedback becomes a public GitHub issue (free account needed). The block you are looking at is attached.</span>
+        </div>
+      </form>
+    </article>
+  </div>
+</div>
+
+<script src="vendor/blake3.umd.min.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const short = h => h ? (String(h).length > 14 ? String(h).slice(0, 6) + "…" + String(h).slice(-4) : String(h)) : "—";
+const fmtN = n => Number(n).toLocaleString("en-US");
+const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
+
+/* ---------------- genesis of tau-testnet-v2 (networks/tau-testnet-v2/genesis.json @ 539d1e2) ---------------- */
+const GENESIS = {
+  hash: "35faee3b5652e30c9b5a9adb89bdf3c2312ff0cef833adf57ebd9566ceeaf1a7",
+  validators: ["a1fe40d5e4f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7d2b"],
+  quorum: "supermajority", fee: 10, supply: 2000000, accounts: 11,
+  rules: "# Tau-Driven Consensus v1 Interface\n#\n# i6: Block height\n# i7: Block timestamp\n# i8: Proposer identity (yid)\n# i9: Previous block hash (yid)\n# i10: Host proof validity (1 for valid, 0 for invalid)\n# i11: Claims summary (yid)\n#\n# o6: Block validity\n# o7: Proposer eligibility\n\n# Initial V1 Rule:\n# All authorized proposals handled by host PoA are considered eligible (o7 = 1)\n# Blocks are valid strictly if the host cryptographically verifies the proof (o6 = i10)\nalways (\n    o6[t]:bv[16] = i10[t]:bv[16] &&\n    o7[t]:bv[16] = { 1 }:bv[16]\n &&\n    o9[t]:bv[24] = { #x00000a }:bv[24]\n)\n",
+};
+const params = new URLSearchParams(location.search);
+const NODE = params.get("node") || "wss://node.tauhud.com";
+const PAGE = 100;
+
+/* ---------------- what the page knows ---------------- */
+const C = {
+  blocks: [],          // index = height, raw block as the node returns it
+  head: -1,            // highest height held
+  first: 0,            // lowest height held without a gap up to head
+  partial: false,      // the relay could only give the newest blocks
+  gov: null,           // latest getgovernance data (the node's own state at its head)
+  openAdmission: true, // network runs TAU_GOVERNANCE_OPEN_ADMISSION=true; refined from /status
+  loading: false, ws: null, retry: 5000,
+};
+let H = { snaps: [], props: [], events: [], txKinds: [] };   // replay result
+let cursor = 0, following = true, playing = null, hovering = false, pendingRender = false;
+
+/* ---------------- update ids: BLAKE3 over the node's canonical serialization (consensus/serialization.py) ---------------- */
+const enc = new TextEncoder();
+const u32 = n => [n >>> 24 & 255, n >>> 16 & 255, n >>> 8 & 255, n & 255];
+const u64 = n => [...u32(Math.floor(n / 4294967296)), ...u32(n >>> 0)];
+const str = s => { const b = enc.encode(s); return [...u32(b.length), ...b]; };
+function patchBytes(p) {
+  const pairs = Object.keys(p).map(k => {
+    const v = p[k]; let vb;
+    if (typeof v === "boolean") vb = [1, v ? 1 : 0];
+    else if (Number.isInteger(v)) vb = [2, ...u32(v)];
+    else if (typeof v === "string") vb = [3, ...str(v)];
+    else if (Array.isArray(v)) {
+      const items = /^validator_(additions|removals)$/.test(k) ? [...new Set(v)].sort() : v;
+      vb = [4, ...u32(items.length), ...items.flatMap(str)];
+    } else throw new Error("patch value " + k);
+    return [k, [...str(k), ...vb]];
+  }).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
+  return [...u32(pairs.length), ...pairs.flatMap(x => x[1])];
+}
+const uidCache = new Map();
+async function updateId(tx) {
+  const key = JSON.stringify([tx.rule_revisions, tx.activate_at_height, tx.host_contract_patch ?? null]);
+  if (uidCache.has(key)) return uidCache.get(key);
+  let id = null;
+  try {
+    const patch = tx.host_contract_patch;
+    const bytes = [...u32(tx.rule_revisions.length), ...tx.rule_revisions.flatMap(str), ...u64(Number(tx.activate_at_height)),
+      patch != null ? 1 : 0, ...(patch != null ? patchBytes(patch) : [])];
+    if (window.hashwasm) id = await hashwasm.blake3(new Uint8Array(bytes));
+  } catch (e) { id = null; }
+  if (!id) {   // no hash library: fall back to the node's own list of update ids, matched by payload
+    const g = C.gov || {};
+    const all = [...(g.pending_updates || []), ...(g.scheduled_updates || []), ...(g.archival_update_details || [])];
+    const hit = all.find(u => Array.isArray(u.rule_revisions) && JSON.stringify([u.rule_revisions, u.activate_at_height, u.host_contract_patch ?? null]) === key);
+    id = hit ? hit.update_id : null;
+  }
+  uidCache.set(key, id);
+  return id;
+}
+
+/* ---------------- describe things in words ---------------- */
+function feeOf(text) {
+  const m = /o9\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]+)\s*\}/.exec(text || "");
+  return m ? parseInt(m[1], 16) : null;
+}
+function threshold(policy, n) {
+  if (!n) return 1;
+  if (policy === "majority") return Math.floor(n / 2) + 1;
+  const m = /^count:(\d+)$/.exec(policy || "");
+  if (m) return Math.max(1, Math.min(+m[1], n));
+  return Math.max(1, Math.floor((2 * n + 2) / 3));
+}
+const QUORUM_TXT = { supermajority: "two thirds", majority: "more than half" };
+const quorumTxt = q => QUORUM_TXT[q] || (/^count:\d+$/.test(q) ? `a fixed ${q.slice(6)}` : q);
+function titleOf(p) {
+  const parts = [], patch = p.patch || {};
+  for (const r of p.revisions) {
+    const f = feeOf(r);
+    if (f != null) parts.push(`Base fee → ${fmtN(f)} AGRS`);
+  }
+  const otherRevs = p.revisions.filter(r => feeOf(r) == null).length;
+  if (otherRevs) parts.push(otherRevs === 1 ? "New consensus rule text" : `${otherRevs} consensus rule revisions`);
+  const add = (patch.validator_additions || []).length, rem = (patch.validator_removals || []).length;
+  if (add) parts.push(add === 1 ? "Admit a validator" : `Admit ${add} validators`);
+  if (rem) parts.push(rem === 1 ? "Remove a validator" : `Remove ${rem} validators`);
+  if ("vote_quorum" in patch) parts.push(`Quorum → ${quorumTxt(patch.vote_quorum)}`);
+  if ("max_rule_txs_per_block" in patch) parts.push(`${patch.max_rule_txs_per_block} rule txs per block`);
+  if ("fee_beneficiary" in patch) parts.push(patch.fee_beneficiary ? "Fees to one account" : "Fees to the proposer");
+  if ("eligibility_mode" in patch) parts.push(`Proposers: ${patch.eligibility_mode || "default"}`);
+  if ("approval_slots_active" in patch) parts.push("Turn on approval slots");
+  p.parts = parts.length ? parts : ["Empty rule change"];
+  return p.parts.join(" + ");
+}
+// the timeline label: the full title when it fits, else its first part and how many more (full title on hover and click)
+function labelOf(p, room) {
+  if (p.title.length * 6.4 + 8 <= room) return p.title;
+  const alt = `${p.parts[0]} + ${p.parts.length - 1} more`;
+  return p.parts.length > 1 && alt.length * 6.4 + 8 <= room ? alt : p.parts[0];
+}
+const TX_NAMES = {
+  user_tx: "transfer", rule_deploy: "own rule", consensus_rule_update: "rule change proposed", consensus_rule_vote: "vote",
+  rule_offer: "rule shared", rule_offer_accept: "shared rule accepted", rule_offer_reject: "shared rule rejected",
+  retractable_transfer: "retractable transfer", retract_transfer: "transfer retracted", approval_request: "approval request", transfer_vote: "transfer approval",
+};
+function txKind(t) {
+  const ops = t.operations || {};
+  if ((t.tx_type || "user_tx") === "user_tx" && ops["0"]) return "rule_deploy";
+  return t.tx_type || "user_tx";
+}
+const transfersOf = t => Array.isArray((t.operations || {})["1"]) ? t.operations["1"].filter(x => Array.isArray(x) && x.length >= 3) : [];
+
+/* ---------------- replay: the node's governance lifecycle, block by block ---------------- */
+async function replay() {
+  const props = new Map(), list = [], events = [];
+  let validators = GENESIS.validators.slice(), quorum = GENESIS.quorum, fee = GENESIS.fee, rev = 1;
+  let budget = null, beneficiary = null, eligibility = null;
+  const revisions = [];  // in force: { text, prop, at }
+  const ownRules = new Set(), accounts = new Set();
+  let txTotal = 0, moved = 0, transfers = 0, votesTotal = 0;
+  const snaps = [];
+  const g = C.gov || {};
+  // pre-compute ids (async) for every proposal on the chain
+  const uids = new Map();
+  for (let h = C.first; h <= C.head; h++) {
+    const b = C.blocks[h]; if (!b) continue;
+    for (const t of b.transactions || []) if (t.tx_type === "consensus_rule_update" && Array.isArray(t.rule_revisions)) uids.set(t, await updateId(t));
+  }
+  for (let h = C.first; h <= C.head; h++) {
+    const b = C.blocks[h];
+    let thr = threshold(quorum, validators.length);
+    const changed = [];
+    if (b) (b.transactions || []).forEach((t, i) => {
+      const kind = txKind(t), sender = (t.sender_pubkey || "").toLowerCase();
+      txTotal++; if (sender) accounts.add(sender);
+      for (const [from, to, amt] of transfersOf(t)) { transfers++; moved += Number(amt) || 0; accounts.add(String(from).toLowerCase()); accounts.add(String(to).toLowerCase()); }
+      if (kind === "rule_deploy" || kind === "rule_offer_accept") { ownRules.add(sender); }
+      if (kind === "consensus_rule_update" && Array.isArray(t.rule_revisions)) {
+        const id = uids.get(t) || `unknown-${h}-${i}`;
+        if (props.has(id)) { props.get(id).dups.push(h); return; }   // the node ignores a second copy
+        const p = { id, n: list.length + 1, proposedAt: h, proposer: sender, revisions: t.rule_revisions, activateAt: Number(t.activate_at_height),
+          patch: t.host_contract_patch || null, votes: [], approvedAt: null, activatedAt: null, expiredAt: null, thr: null, dups: [], tx: t, txId: (b.tx_ids || [])[i] };
+        p.title = titleOf(p);
+        props.set(id, p); list.push(p); events.push({ h, kind: "proposed", p });
+      }
+      if (kind === "consensus_rule_vote") {
+        votesTotal++;
+        const id = String(t.update_id || "").toLowerCase();
+        const p = props.get(id);
+        const v = { h, voter: sender, approve: t.approve !== false && String(t.approve).toLowerCase() !== "false", counted: false, txId: (b.tx_ids || [])[i] };
+        if (!p) { (H.orphanVotes ||= []).push(v); return; }
+        const open = p.approvedAt == null && p.expiredAt == null && p.activatedAt == null;
+        const eligible = C.openAdmission || validators.includes(sender);
+        if (open && eligible && !p.votes.some(x => x.counted && x.voter === sender)) v.counted = true;
+        p.votes.push(v);
+        if (v.counted) {
+          events.push({ h, kind: "vote", p });
+          const n = p.votes.filter(x => x.counted).length;
+          if (n >= thr) { p.approvedAt = h; p.thr = thr; events.push({ h, kind: "agreed", p }); }
+        }
+      }
+    });
+    // height transitions run after the block's transactions (engine._apply_block)
+    for (const p of list) {
+      if (p.approvedAt == null && p.expiredAt == null && p.activateAt <= h) { p.expiredAt = h; p.thrAtEnd = thr; events.push({ h, kind: "expired", p }); }
+    }
+    for (const p of list.filter(p => p.approvedAt != null && p.activatedAt == null && p.activateAt <= h).sort((a, b) => a.activateAt - b.activateAt || (a.id < b.id ? -1 : 1))) {
+      p.activatedAt = h; rev++; p.rev = rev;
+      for (const r of p.revisions) { revisions.push({ text: r, p }); const f = feeOf(r); if (f != null) { fee = f; changed.push("fee"); } }
+      const patch = p.patch || {};
+      if (patch.validator_additions || patch.validator_removals) {
+        const rem = new Set((patch.validator_removals || []).map(x => String(x).toLowerCase()));
+        validators = [...new Set([...validators.filter(v => !rem.has(v)), ...(patch.validator_additions || []).map(x => String(x).toLowerCase())])].sort();
+        changed.push("validators");
+      }
+      if ("vote_quorum" in patch) { quorum = patch.vote_quorum; changed.push("quorum"); }
+      if ("max_rule_txs_per_block" in patch) { budget = patch.max_rule_txs_per_block; changed.push("budget"); }
+      if ("fee_beneficiary" in patch) { beneficiary = patch.fee_beneficiary; changed.push("beneficiary"); }
+      if ("eligibility_mode" in patch) { eligibility = patch.eligibility_mode; changed.push("eligibility"); }
+      changed.push("rev");
+      events.push({ h, kind: "active", p });
+    }
+    thr = threshold(quorum, validators.length);
+    snaps[h] = { h, rev, fee, validators, quorum, thr, budget, beneficiary, eligibility, revisions: revisions.slice(), changed,
+      ownRules: ownRules.size, accounts: accounts.size, txTotal, transfers, moved, proposals: list.length, votesTotal, missing: !b };
+  }
+  H = { snaps, props: list, events, orphanVotes: H.orphanVotes || [] };
+  H.eventHeights = [...new Set(events.map(e => e.h))].sort((a, b) => a - b);
+}
+function statusAt(p, h) {
+  if (h < p.proposedAt) return null;
+  if (p.activatedAt != null && h >= p.activatedAt) return "active";
+  if (p.expiredAt != null && h >= p.expiredAt) return "expired";
+  if (p.approvedAt != null && h >= p.approvedAt) return "agreed";
+  return "voting";
+}
+const votesAt = (p, h) => p.votes.filter(v => v.counted && v.h <= h).length;
+
+/* ---------------- relay connection ---------------- */
+function setConn(state, text, info) {
+  $("connDot").className = "dot " + state; $("connText").textContent = text;
+  if (info != null) $("connInfo").innerHTML = info;
+}
+function warn(text) { const w = $("connWarn"); w.hidden = !text; w.textContent = text || ""; }
+function send(cmd) { if (C.ws && C.ws.readyState === 1) C.ws.send(cmd); }
+function connect() {
+  clearTimeout(C.retryT);
+  let ws;
+  try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
+  C.ws = ws;
+  setConn("wait", "Connecting", `Reading the chain from ${esc(NODE.replace(/^wss?:\/\//, ""))}…`);
+  ws.onopen = () => { C.retry = 5000; ws.send("hello version=1"); send("getgovernance"); loadFrom(0); };
+  ws.onmessage = onMessage;
+  ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
+  ws.onerror = () => {};
+  fetch(NODE.replace(/^ws/, "http").replace(/\/$/, "") + "/status", { cache: "no-store" }).then(r => r.json())
+    .then(s => { if (typeof s.open_governance_admission === "boolean" && s.open_governance_admission !== C.openAdmission) { C.openAdmission = s.open_governance_admission; rebuild(); } })
+    .catch(() => {});
+}
+function offline(why) {
+  C.ws = null; C.loading = false;
+  const w = C.retry; C.retry = Math.min(60000, w * 2);
+  setConn("", "Offline", `The community node is not reachable (${esc(why)}). Retrying in ${w / 1000} s · <button type="button" id="retryNow">retry now</button>`);
+  $("retryNow").onclick = connect;
+  C.retryT = setTimeout(connect, w);
+}
+function loadFrom(from) {
+  C.loading = true; C.nextFrom = from;
+  send(`getblockrange ${from} ${PAGE}`);
+}
+function store(raw) {
+  const h = Number((raw.header || {}).block_number);
+  if (!Number.isFinite(h) || h < 0) return;
+  C.blocks[h] = raw;
+  if (h > C.head) C.head = h;
+}
+let rebuildT = null;
+function rebuild() { clearTimeout(rebuildT); rebuildT = setTimeout(async () => { await replay(); render(); }, 30); }
+function onMessage(ev) {
+  const text = String(ev.data);
+  if (/^ok version/.test(text) || /^error/.test(text)) return;
+  let msg; try { msg = JSON.parse(text); } catch { return; }
+  const d = msg.data || {};
+  if (msg.command === "getblockrange") {
+    if (msg.status !== "ok") {
+      // NOT_READY: the relay is still fetching the chain from its node; anything else: an older relay without ranges
+      if ((msg.error || {}).code === "NOT_READY") setTimeout(() => loadFrom(C.nextFrom), 3000); else legacy();
+      return;
+    }
+    (d.blocks || []).forEach(store);
+    const head = Number.isFinite(d.head) ? d.head : C.head;
+    const next = C.nextFrom + PAGE;
+    setConn("wait", "Loading", `Read ${plural(Math.max(0, C.head + 1), "block")} of ${fmtN(head + 1)}…`);
+    if ((d.blocks || []).length && next <= head) { loadFrom(next); rebuild(); return; }
+    C.loading = false; C.partial = false; C.first = 0; warn("");
+    live(); rebuild();
+  } else if (msg.command === "getblocks") {
+    if (msg.status !== "ok") return;
+    if (d.reset) { resetChain(); }
+    const before = C.head;
+    (d.blocks || []).forEach(store);
+    if (C.loading && !C.legacy) return;   // the range load will pick these up
+    if (C.legacy) {
+      // only the newest blocks are available: keep the contiguous run that ends at the head
+      let f = C.head; while (f > 0 && C.blocks[f - 1]) f--;
+      C.first = f; C.partial = f > 0; C.loading = false;
+      warn(C.partial ? `History before block #${fmtN(f)} is not on the relay yet, so rule changes from that time are missing.` : "");
+      live();
+    } else if (C.head > before + 1 && before >= 0 && !C.blocks[before + 1]) { loadFrom(before + 1); }
+    if (C.head !== before || d.reset) rebuild();
+  } else if (msg.command === "getgovernance") {
+    if (msg.status !== "ok") return;
+    C.gov = d; renderCheck();
+  }
+}
+function legacy() {   // relay without getblockrange: the newest 50 blocks only
+  C.legacy = true; send("getblocks 50");
+}
+function resetChain() {
+  C.blocks = []; C.head = -1; C.first = 0; uidCache.clear(); H.orphanVotes = [];
+  warn("The testnet restarted its chain. History starts again at genesis.");
+  if (!C.legacy) { setTimeout(() => loadFrom(0), 500); }
+}
+function live() {
+  setConn("ok", "Live", `${plural(C.head + 1 - C.first, "block")} · new blocks appear as they are made`);
+  clearInterval(C.poll);
+  // the relay pushes new blocks; this only catches a missed push
+  C.poll = setInterval(() => send("getblocks 6"), 30000);
+}
+
+/* ---------------- timeline (SVG) ---------------- */
+const NS = "http://www.w3.org/2000/svg";
+const TL = { pad: 14, w: 800, x0: 14, x1: 786, rows: {} };
+function xOf(h) { const span = Math.max(1, C.head - C.first); return TL.x0 + (h - C.first) / span * (TL.x1 - TL.x0); }
+function hOf(x) { const span = Math.max(1, C.head - C.first); return Math.round(C.first + (x - TL.x0) / (TL.x1 - TL.x0) * span); }
+const clampH = h => Math.max(C.first, Math.min(C.head, h));
+function lanes(props) {
+  // lanes in pixel space: a bar and its label must never overlap another bar or label
+  const ends = [], out = new Map();
+  for (const p of props) {
+    const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
+    p.label = labelOf(p, TL.x1 - TL.x0);
+    const lw = p.label.length * 6.4 + 8;
+    let lx = xa; if (lx + lw > TL.x1) lx = Math.max(TL.x0, TL.x1 - lw);
+    const from = Math.min(xa, lx) - 6, to = Math.max(xEnd, lx + lw) + 6;
+    let l = ends.findIndex(e => e < from);
+    if (l < 0) { l = ends.length; ends.push(to); } else ends[l] = to;
+    out.set(p, { lane: l, lx });
+  }
+  return { map: out, n: ends.length };
+}
+function tickStep(pxPerBlock) {
+  for (const s of [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000]) if (s * pxPerBlock >= 74) return s;
+  return 20000;
+}
+const hhmm = ts => ts ? new Date(ts * 1000).toISOString().slice(11, 16) : "";
+function drawTimeline() {
+  const svg = $("tl"); const W = Math.max(280, svg.clientWidth || svg.parentNode.clientWidth);
+  TL.w = W; TL.x0 = 14; TL.x1 = W - 14;
+  const L = lanes(H.props), laneH = 26, nl = Math.max(1, L.n);
+  const y = { txL: 12, tx0: 20, tx1: 66, prL: 84, pr0: 92 }; y.pr1 = y.pr0 + nl * laneH; y.rvL = y.pr1 + 16; y.rv0 = y.rvL + 8; y.rv1 = y.rv0 + 22; y.ax = y.rv1 + 18; y.h = y.ax + 16;
+  TL.y = y; TL.lanes = L; TL.laneH = laneH;
+  svg.setAttribute("height", y.h); svg.setAttribute("viewBox", `0 0 ${W} ${y.h}`);
+  const parts = [];
+  parts.push(`<text class="lbl" x="${TL.x0}" y="${y.txL}">Transactions per block</text>`);
+  parts.push(`<text class="lbl" x="${TL.x0}" y="${y.prL}">Rule changes</text>`);
+  parts.push(`<text class="lbl" x="${TL.x0}" y="${y.rvL}">Spec revision in force</text>`);
+  if (C.head < 0) { svg.innerHTML = parts.join(""); return; }
+  const span = Math.max(1, C.head - C.first), ppb = (TL.x1 - TL.x0) / span;
+  // axis grid + labels: height on top, UTC time below
+  const step = tickStep(ppb);
+  for (let h = Math.ceil(C.first / step) * step; h <= C.head; h += step) {
+    const x = xOf(h), b = C.blocks[h], ts = b && b.header ? b.header.timestamp : 0;
+    const anchor = x < TL.x0 + 20 ? "start" : x > TL.x1 - 20 ? "end" : "middle";
+    parts.push(`<line class="grid" x1="${x}" x2="${x}" y1="${y.tx0}" y2="${y.rv1}"/>`);
+    parts.push(`<text class="ax" x="${x}" y="${y.ax}" text-anchor="${anchor}">#${fmtN(h)}${ts ? ` <tspan class="axs">${hhmm(ts)}</tspan>` : ""}</text>`);
+  }
+  // transactions per block: one path for plain blocks, one for governance blocks
+  let maxTx = 1; for (let h = C.first; h <= C.head; h++) { const b = C.blocks[h]; if (b) maxTx = Math.max(maxTx, (b.transactions || []).length); }
+  const bw = Math.max(1, Math.min(10, ppb * 0.7));
+  let pPlain = "", pGov = "", pGap = "";
+  for (let h = C.first; h <= C.head; h++) {
+    const b = C.blocks[h], x = xOf(h) - bw / 2;
+    if (!b) { pGap += `M${x} ${y.tx0}h${bw}V${y.tx1}h${-bw}Z`; continue; }
+    const n = (b.transactions || []).length, hh = n ? Math.max(2, (y.tx1 - y.tx0) * n / maxTx) : 1;
+    const gov = (b.transactions || []).some(t => /^consensus_rule/.test(t.tx_type || ""));
+    const d = `M${x} ${y.tx1 - hh}h${bw}V${y.tx1}h${-bw}Z`;
+    if (gov) pGov += d; else pPlain += d;
+  }
+  parts.push(`<path class="gap" d="${pGap}"/><path class="bars" d="${pPlain}"/><path class="bars gov" d="${pGov}"/>`);
+  // the cursor line sits behind every label (labels carry a dark halo), its pill is drawn last
+  const cx = xOf(cursor);
+  parts.push(`<line class="cursor" x1="${cx}" x2="${cx}" y1="${y.tx0 - 2}" y2="${y.rv1 + 2}"/>`);
+  // rule changes, one bar per proposal from "proposed" to its end
+  if (!H.props.length) parts.push(`<text class="none" x="${TL.x0}" y="${y.pr0 + 15}">No rule change proposed on this chain yet.</text>`);
+  for (const p of H.props) {
+    // label on its own line above the bar, so vote marks and dots never cross the text
+    const { lane: l, lx } = L.map.get(p), ty = y.pr0 + l * laneH + 9, top = ty + 4, hgt = 8;
+    const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
+    const xAg = p.approvedAt != null ? xOf(p.approvedAt) : null;
+    const xAct = p.activatedAt != null ? xOf(p.activatedAt) : null;
+    const g = [`<g class="prop ${p.expiredAt != null ? "expired" : ""}" data-p="${p.n}">`];
+    g.push(`<rect class="track" x="${xa}" y="${top}" width="${Math.max(3, xEnd - xa)}" height="${hgt}" rx="2"/>`);
+    if (xAg != null) g.push(`<rect class="agreed" x="${xAg}" y="${top}" width="${Math.max(3, (xAct ?? xEnd) - xAg)}" height="${hgt}" rx="2"/>`);
+    if (xAct != null) g.push(`<circle cx="${xAct}" cy="${top + hgt / 2}" r="4.5" fill="var(--ok)"/>`);
+    for (const v of p.votes.filter(v => v.counted)) { const xv = xOf(v.h); g.push(`<line class="vote" x1="${xv}" x2="${xv}" y1="${top - 1}" y2="${top + hgt + 1}"/>`); }
+    // label: its lane was chosen with room for it, so it is never cut or covered
+    g.push(`<text x="${lx}" y="${ty}">${esc(p.label)}</text>`);
+    g.push(`<rect x="${Math.min(xa, xEnd, lx) - 4}" y="${ty - 10}" width="${Math.max(xEnd, lx + p.label.length * 6.4) - Math.min(xa, lx) + 8}" height="${top + hgt + 3 - (ty - 10)}" fill="transparent"/></g>`);
+    parts.push(g.join(""));
+  }
+  // spec revision step line
+  let d = "", prevRev = null; const revLabels = [];
+  for (let h = C.first; h <= C.head; h++) {
+    const s = H.snaps[h]; if (!s) continue;
+    const yy = y.rv1 - Math.min(s.rev - 1, 6) * 3 - 2, x = xOf(h);
+    if (prevRev == null) { d += `M${x} ${yy}`; revLabels.push([x, s.rev]); }
+    else if (s.rev !== prevRev) { d += `H${x}V${yy}`; revLabels.push([x, s.rev]); }
+    prevRev = s.rev;
+  }
+  d += `H${TL.x1}`;
+  parts.push(`<path class="rev" d="${d}"/>`);
+  let lastX = -1e9;
+  for (const [x, r] of revLabels) { if (x - lastX < 26) continue; parts.push(`<text class="revn" x="${Math.min(x + 4, TL.x1 - 22)}" y="${y.rv0 + 4}">rev ${r}</text>`); lastX = x; }
+  // cursor
+  const pill = `#${fmtN(cursor)}`, pw = pill.length * 7 + 12;
+  const px = Math.max(TL.x0, Math.min(TL.x1 - pw, cx - pw / 2));
+  parts.push(`<rect class="cpill" x="${px}" y="0" width="${pw}" height="15" rx="7.5"/><text class="ctext" x="${px + pw / 2}" y="11" text-anchor="middle">${pill}</text>`);
+  svg.innerHTML = parts.join("");
+}
+
+/* ---------------- hover + drag on the timeline ---------------- */
+const tip = $("tip");
+function showTip(ev, html) { tip.innerHTML = html; tip.hidden = false; const r = tip.getBoundingClientRect();
+  let x = ev.clientX + 14, yy = ev.clientY + 16; if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14; if (yy + r.height > innerHeight - 8) yy = ev.clientY - r.height - 12;
+  tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, yy) + "px"; }
+function hideTip() { tip.hidden = true; }
+function svgX(ev) { const r = $("tl").getBoundingClientRect(); return (ev.clientX - r.left) * (TL.w / r.width); }
+function propAt(ev) { const g = ev.target.closest && ev.target.closest(".prop"); return g ? H.props[+g.dataset.p - 1] : null; }
+function blockTip(h) {
+  const b = C.blocks[h]; if (!b) return `<b>#${fmtN(h)}</b><br><em>not loaded</em>`;
+  const txs = b.transactions || [], counts = {};
+  txs.forEach(t => { const k = TX_NAMES[txKind(t)] || txKind(t); counts[k] = (counts[k] || 0) + 1; });
+  const ts = b.header.timestamp;
+  return `<b>Block #${fmtN(h)}</b> <em>${ts ? new Date(ts * 1000).toISOString().slice(11, 19) + " UTC" : "genesis"}</em><br>${txs.length ? Object.entries(counts).map(([k, n]) => `${n} ${esc(k)}`).join(" · ") : "<em>no transactions</em>"}`;
+}
+function propTip(p) {
+  const st = { active: `in force from #${fmtN(p.activatedAt)}`, expired: `dropped at #${fmtN(p.expiredAt)}: too few votes`, agreed: `agreed at #${fmtN(p.approvedAt)}, in force from #${fmtN(p.activateAt)}`, voting: `waiting for votes, deadline #${fmtN(p.activateAt)}` }[statusAt(p, C.head)];
+  return `<b>${esc(p.title)}</b><br>proposed #${fmtN(p.proposedAt)} · ${plural(p.votes.filter(v => v.counted).length, "vote")}<br><em>${st} · click for details</em>`;
+}
+let drag = false;
+const tlw = $("tlwrap");
+tlw.addEventListener("pointerdown", ev => {
+  if (C.head < 0) return;
+  const p = propAt(ev); if (p) return;   // a click on a rule change opens it (see click)
+  drag = true; tlw.setPointerCapture(ev.pointerId); stopPlay(); setCursor(clampH(hOf(svgX(ev))), true);
+});
+tlw.addEventListener("pointermove", ev => {
+  if (C.head < 0) return;
+  if (drag) { setCursor(clampH(hOf(svgX(ev))), true); showTip(ev, blockTip(cursor)); return; }
+  const p = propAt(ev);
+  if (p) showTip(ev, propTip(p)); else showTip(ev, blockTip(clampH(hOf(svgX(ev)))));
+});
+tlw.addEventListener("pointerup", () => { drag = false; });
+tlw.addEventListener("pointerleave", () => { if (!drag) hideTip(); });
+tlw.addEventListener("click", ev => { const p = propAt(ev); if (p) { hideTip(); openProp(p); } });
+
+/* ---------------- cursor ---------------- */
+function setCursor(h, user) {
+  if (C.head < 0) return;
+  cursor = clampH(h);
+  if (user) following = cursor === C.head;
+  $("scrub").value = cursor;
+  try { history.replaceState(null, "", `#${cursor}`); } catch {}
+  render();
+}
+$("scrub").addEventListener("input", e => { stopPlay(); setCursor(+e.target.value, true); });
+$("bStart").onclick = () => { stopPlay(); setCursor(C.first, true); };
+$("bEnd").onclick = () => { stopPlay(); setCursor(C.head, true); };
+$("bPrev").onclick = () => { stopPlay(); setCursor(cursor - 1, true); };
+$("bNext").onclick = () => { stopPlay(); setCursor(cursor + 1, true); };
+const nextEvent = dir => { const hs = H.eventHeights || []; return dir > 0 ? hs.find(h => h > cursor) : [...hs].reverse().find(h => h < cursor); };
+$("bPrevEv").onclick = () => { stopPlay(); const h = nextEvent(-1); if (h != null) setCursor(h, true); };
+$("bNextEv").onclick = () => { stopPlay(); const h = nextEvent(1); if (h != null) setCursor(h, true); };
+$("bPlay").onclick = () => { if (playing) return stopPlay(); if (cursor >= C.head) setCursor(C.first, true); startPlay(); };
+function startPlay() {
+  $("bPlay").textContent = "❚❚ Pause";
+  // about 12 s for the whole chain, never faster than 25 blocks a second
+  const ms = Math.max(40, Math.min(400, 12000 / Math.max(1, C.head - C.first)));
+  playing = setInterval(() => { if (cursor >= C.head) { stopPlay(); following = true; render(); return; } setCursor(cursor + 1, false); }, ms);
+}
+function stopPlay() { if (playing) clearInterval(playing); playing = null; $("bPlay").textContent = "▶ Play"; }
+document.addEventListener("keydown", e => {
+  if (e.target.closest("input, textarea") && e.target.id !== "scrub") return;
+  if (!$("mDetail").hidden || !$("mFeedback").hidden) return;
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    e.preventDefault(); stopPlay();
+    const dir = e.key === "ArrowRight" ? 1 : -1;
+    if (e.shiftKey) { const h = nextEvent(dir); if (h != null) setCursor(h, true); } else setCursor(cursor + dir, true);
+  } else if (e.key === "Home") { e.preventDefault(); setCursor(C.first, true); } else if (e.key === "End") { e.preventDefault(); setCursor(C.head, true); }
+  else if (e.key === " " && e.target === document.body) { e.preventDefault(); $("bPlay").click(); }
+});
+
+/* ---------------- panels at the cursor ---------------- */
+function ago(ts) {
+  const s = Math.max(0, Math.round(Date.now() / 1000 - ts));
+  if (s < 90) return `${s} s ago`; if (s < 5400) return `${Math.round(s / 60)} min ago`;
+  if (s < 172800) { const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return `${h} h${m ? ` ${m} min` : ""} ago`; }
+  return `${Math.round(s / 86400)} days ago`;
+}
+const timeTxt = ts => ts ? `${new Date(ts * 1000).toISOString().replace("T", " ").slice(0, 19)} UTC` : "genesis, no timestamp";
+function render() {
+  if (hovering && !drag && !playing) { pendingRender = true; drawTimeline(); readout(); return; }
+  pendingRender = false;
+  drawTimeline(); readout();
+  if (C.head < 0) return;
+  renderRules(); renderAgree(); renderBlock();
+}
+function readout() {
+  const sc = $("scrub"); sc.min = Math.max(0, C.first); sc.max = Math.max(0, C.head); sc.value = cursor;
+  if (C.head < 0) return;
+  const b = C.blocks[cursor], ts = b && b.header ? b.header.timestamp : 0;
+  $("roH").textContent = `#${fmtN(cursor)}`;
+  $("roT").innerHTML = (ts ? `${timeTxt(ts)} · ${ago(ts)}` : "genesis") + (following && cursor === C.head ? ` · <span class="follow">following the newest block</span>` : ` · ${plural(C.head - cursor, "block")} before now`);
+  ["bStart", "bPrev"].forEach(id => $(id).disabled = cursor <= C.first);
+  ["bEnd", "bNext"].forEach(id => $(id).disabled = cursor >= C.head);
+  $("bPrevEv").disabled = nextEvent(-1) == null; $("bNextEv").disabled = nextEvent(1) == null;
+  ["rH", "aH", "bH"].forEach(id => $(id).textContent = `#${fmtN(cursor)}`);
+}
+function renderRules() {
+  const s = H.snaps[cursor], now = H.snaps[C.head];
+  if (!s) { $("rulesBody").innerHTML = `<p class="empty">This block is not loaded.</p>`; return; }
+  const later = H.props.filter(p => p.activatedAt != null && p.activatedAt > cursor).length;
+  const N = s.validators.length;
+  const ch = k => s.changed.includes(k) ? ' class="chg"' : "";
+  const rows = [
+    ["Base fee", `${fmtN(s.fee)} AGRS per transaction`, "fee"],
+    ["Validators", `${N} <small>${s.validators.map(short).join(", ")}</small>`, "validators"],
+    ["Agreement needed", `${s.thr} of ${N} <small>· ${esc(quorumTxt(s.quorum))}</small>`, "quorum"],
+    ["Who may vote", C.openAdmission ? "any account <small>· open governance admission</small>" : "validators only", null],
+  ];
+  if (s.budget != null) rows.push(["Rule txs per block", fmtN(s.budget), "budget"]);
+  if (s.beneficiary != null) rows.push(["Fees go to", s.beneficiary ? short(s.beneficiary) : "each block’s proposer", "beneficiary"]);
+  if (s.eligibility != null) rows.push(["Who may propose blocks", esc(s.eligibility || "default"), "eligibility"]);
+  rows.push(["Accounts with own rules", `${fmtN(s.ownRules)}`, null]);
+  const inForce = H.props.filter(p => p.activatedAt != null && p.activatedAt <= cursor);
+  $("rulesBody").innerHTML = `
+    <p class="big">Spec revision <span class="ok">${s.rev}</span></p>
+    <p class="cmp">${cursor === C.head ? "This is the rule set in force right now." : later ? `<b>${plural(later, "agreed change")}</b> took effect after this block. Now: revision ${now.rev}.` : "Same rule set as now."}${s.changed.length ? ` <b style="color:var(--ok)">Changed at this block.</b>` : ""}</p>
+    <dl class="kv">${rows.map(([k, v, key]) => `<dt>${k}</dt><dd${key ? ch(key) : ""}>${v}</dd>`).join("")}</dl>
+    <h3>Agreed changes in force (${inForce.length})</h3>
+    ${inForce.length ? `<ul class="items">${inForce.slice().reverse().map(p => `<li class="on${p.activatedAt === cursor ? " here" : ""}"><button class="linkish" type="button" data-open="${p.n}"><b>${esc(p.title)}</b><span class="m">revision ${p.rev} · in force since #${fmtN(p.activatedAt)} · ${plural(p.votes.filter(v => v.counted).length, "vote")}</span></button></li>`).join("")}</ul>`
+      : `<p class="empty">None. The chain still runs on its genesis rules.</p>`}
+    <button class="btn small" type="button" id="showRules">Show the rule text at #${fmtN(cursor)}</button>
+    <div class="prov" id="check"></div>`;
+  $("showRules").onclick = () => openRuleText(s);
+  renderCheck();
+}
+function renderCheck() {
+  const el = $("check"); if (!el) return;
+  const g = C.gov, s = H.snaps[C.head];
+  if (!g || !s || C.partial) { el.innerHTML = C.partial ? `<span class="warn">Rebuilt from the blocks the relay holds; rules agreed before #${fmtN(C.first)} are not counted.</span>` : ""; return; }
+  if (cursor !== C.head) { el.innerHTML = `Rebuilt from the blocks. At the newest block it is checked against the node’s own state.`; return; }
+  const diffs = [];
+  const nv = (g.active_validators || []).map(v => String(typeof v === "string" ? v : v.pubkey || "").toLowerCase()).sort();
+  if (Number(g.head_number) !== C.head) { el.innerHTML = `Node state is from #${fmtN(g.head_number)}; comparing once both reach the same block.`; return; }
+  if (nv.length && nv.join() !== s.validators.join()) diffs.push(`validators (node: ${nv.length})`);
+  if (g.vote_quorum && g.vote_quorum !== s.quorum) diffs.push(`quorum (node: ${esc(g.vote_quorum)})`);
+  if (Number.isFinite(g.approval_threshold) && g.approval_threshold !== s.thr) diffs.push(`threshold (node: ${g.approval_threshold})`);
+  const o9defs = (String(g.consensus_rules || "").match(/o9\[t\][^=]*=\s*\{/g) || []).length;
+  const nodeFee = o9defs === 1 ? feeOf(g.consensus_rules) : null;
+  if (nodeFee != null && nodeFee !== s.fee) diffs.push(`base fee (node: ${nodeFee})`);
+  el.innerHTML = diffs.length ? `<span class="warn">Differs from the node at #${fmtN(C.head)}: ${diffs.join(", ")}.</span>`
+    : `<span class="ok">✓</span> Matches the node’s own state at #${fmtN(C.head)}: validators, quorum${nodeFee != null ? ", base fee" : ""}.`;
+}
+function renderAgree() {
+  const h = cursor, thr = H.snaps[h] ? H.snaps[h].thr : 1;
+  const open = H.props.filter(p => { const st = statusAt(p, h); return st === "voting" || st === "agreed"; });
+  const decided = H.props.filter(p => (p.activatedAt != null && p.activatedAt <= h) || (p.expiredAt != null && p.expiredAt <= h))
+    .sort((a, b) => (b.activatedAt ?? b.expiredAt) - (a.activatedAt ?? a.expiredAt)).slice(0, 4);
+  const flow = (p, st) => {
+    const steps = [["proposed", true], ["votes", st !== "voting"], ["agreed", st === "agreed" || st === "active"], ["in force", st === "active"]];
+    const nowIdx = st === "voting" ? 1 : st === "agreed" ? 3 : -1;
+    return `<div class="flow">${steps.map(([t, done], i) => `<span class="${done ? "done" : i === nowIdx ? "now" : ""}">${t}</span>`).join("")}</div>`;
+  };
+  const card = p => {
+    const st = statusAt(p, h), v = votesAt(p, h), need = st === "agreed" ? p.thr : thr, left = p.activateAt - h;
+    const pct = Math.min(100, v / Math.max(1, need) * 100);
+    const when = st === "agreed" ? `Agreed at #${fmtN(p.approvedAt)}. Takes effect at #${fmtN(p.activateAt)}, ${plural(left, "block")} later.`
+      : `Needs ${need - v > 0 ? plural(need - v, "more vote") : "no more votes"} by #${fmtN(p.activateAt)} (${plural(left, "block")} left), or it is dropped.`;
+    return `<li class="${st === "agreed" ? "on" : "now"}"><button class="linkish" type="button" data-open="${p.n}"><b>${esc(p.title)}</b>
+      <span class="m">proposed at #${fmtN(p.proposedAt)} by ${short(p.proposer)}</span></button>${flow(p, st)}
+      <div class="quorum" aria-label="${v} of ${need} votes"><div class="fill" style="width:${pct}%"></div><span>${v} of ${need} votes</span></div>
+      <span class="m">${when}</span></li>`;
+  };
+  $("agreeBody").innerHTML = `
+    ${open.length ? `<ul class="items">${open.map(card).join("")}</ul>` : `<p class="empty">No rule change was waiting for votes at this block.</p>`}
+    <h3>Decided before (${H.props.filter(p => (p.activatedAt ?? p.expiredAt ?? Infinity) <= h).length})</h3>
+    ${decided.length ? `<ul class="items">${decided.map(p => { const ok = p.activatedAt != null && p.activatedAt <= h;
+      return `<li class="${ok ? "on" : ""}${(p.activatedAt ?? p.expiredAt) === h ? " here" : ""}"><button class="linkish" type="button" data-open="${p.n}"><b>${esc(p.title)}</b><span class="m">${ok ? `agreed · in force since #${fmtN(p.activatedAt)}` : `dropped at #${fmtN(p.expiredAt)} · ${votesAt(p, h)} of ${p.thrAtEnd} votes`}</span></button></li>`; }).join("")}</ul>`
+      : `<p class="empty">Nothing decided yet at this point.</p>`}`;
+}
+function txLine(t) {
+  const k = txKind(t), tr = transfersOf(t);
+  if (k === "user_tx") return tr.length ? tr.map(([f, to, a]) => `${short(f)} → ${short(to)} · ${fmtN(a)} AGRS`).join("; ") : short(t.sender_pubkey);
+  if (k === "rule_deploy") return `${short(t.sender_pubkey)} sets its own transfer rule${tr.length ? ` · plus ${plural(tr.length, "transfer")}` : ""}`;
+  if (k === "consensus_rule_update") { const p = H.props.find(p => p.tx === t); return p ? `“${esc(p.title)}” · deadline #${fmtN(p.activateAt)}` : "rule change"; }
+  if (k === "consensus_rule_vote") {
+    const p = H.props.find(p => p.id === String(t.update_id || "").toLowerCase());
+    const v = p && p.votes.find(v => v.h === (+t._h) && v.voter === (t.sender_pubkey || "").toLowerCase());
+    return `${short(t.sender_pubkey)} ${t.approve === false ? "votes no on" : "agrees to"} ${p ? `“${esc(p.title)}”` : short(t.update_id)}${p && v && !v.counted ? " · not counted" : ""}`;
+  }
+  return short(t.sender_pubkey);
+}
+function renderBlock() {
+  const b = C.blocks[cursor], s = H.snaps[cursor];
+  if (!b) { $("blockBody").innerHTML = `<p class="empty">This block is not loaded.</p>`; return; }
+  const hd = b.header || {}, txs = b.transactions || [];
+  txs.forEach(t => t._h = cursor);
+  $("blockBody").innerHTML = `
+    <dl class="kv">
+      <dt>Time</dt><dd>${timeTxt(hd.timestamp)}${hd.timestamp ? ` <small>· ${ago(hd.timestamp)}</small>` : ""}</dd>
+      <dt>Made by</dt><dd>${/^0+$/.test(hd.proposer_pubkey || "") ? "genesis" : `validator ${short(hd.proposer_pubkey)}`}</dd>
+      <dt>Block hash</dt><dd>${short(b.block_hash)}</dd>
+      <dt>State hash</dt><dd>${short(hd.state_hash)}</dd>
+    </dl>
+    <h3>Transactions (${txs.length})</h3>
+    ${txs.length ? `<ul class="txs">${txs.map((t, i) => `<li class="${/^consensus_rule/.test(t.tx_type || "") ? "gov" : ""}"><button type="button" data-tx="${i}"><span class="ty">${esc(TX_NAMES[txKind(t)] || txKind(t))}</span><span class="d">${txLine(t)}</span></button></li>`).join("")}</ul>` : `<p class="empty">Empty block.</p>`}
+    <h3>Chain so far, up to here</h3>
+    <dl class="kv">
+      <dt>Transactions</dt><dd>${fmtN(s.txTotal)}</dd>
+      <dt>Transfers</dt><dd>${fmtN(s.transfers)} <small>· ${fmtN(s.moved)} AGRS moved</small></dd>
+      <dt>Accounts seen</dt><dd>${fmtN(s.accounts)}</dd>
+      <dt>Rule changes</dt><dd>${fmtN(s.proposals)} proposed <small>· ${plural(s.votesTotal, "vote")} cast</small></dd>
+    </dl>
+    <button class="btn small" type="button" id="rawBlock">Show the raw block</button>`;
+  $("rawBlock").onclick = () => openDetail(`Block #${fmtN(cursor)} <small>as the node returns it</small>`, `<pre class="code">${esc(JSON.stringify(b, (k, v) => k === "_h" ? undefined : v, 2))}</pre>`);
+}
+document.addEventListener("click", e => {
+  const o = e.target.closest("[data-open]"); if (o) { openProp(H.props[+o.dataset.open - 1]); return; }
+  const t = e.target.closest("[data-tx]"); if (t) { openTx(C.blocks[cursor], +t.dataset.tx); }
+});
+// live panels freeze while the pointer is on them, so nothing moves under the reader
+for (const id of ["pRules", "pAgree", "pBlock"]) {
+  $(id).addEventListener("pointerenter", e => { if (e.pointerType === "mouse") hovering = true; });
+  $(id).addEventListener("pointerleave", () => { hovering = false; if (pendingRender) render(); });
+}
+
+/* ---------------- detail views ---------------- */
+let lastFocus = null;
+function openDetail(title, html) { lastFocus = document.activeElement; $("dTitle").innerHTML = title; $("dBody").innerHTML = html; $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus(); }
+function closeModal(m) { m.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+document.querySelectorAll(".modal").forEach(m => {
+  m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-close]")) closeModal(m); });
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.querySelectorAll(".modal:not([hidden])").forEach(closeModal); });
+function openProp(p) {
+  if (!p) return;
+  const st = statusAt(p, C.head), counted = p.votes.filter(v => v.counted);
+  const steps = [
+    [`Proposed at #${fmtN(p.proposedAt)}`, `by ${short(p.proposer)}. Deadline: activation block #${fmtN(p.activateAt)}.`, p.proposedAt],
+    ...p.votes.map(v => [`${v.counted ? "Vote" : "Vote, not counted"} at #${fmtN(v.h)}`, `${short(v.voter)}${v.counted ? "" : " · already voted, outside the electorate, or the change was no longer open"}`, v.h]),
+    p.approvedAt != null ? [`Agreed at #${fmtN(p.approvedAt)}`, `Quorum reached: ${plural(p.thr, "vote")} of ${p.thr} needed.`, p.approvedAt] : null,
+    p.activatedAt != null ? [`In force from #${fmtN(p.activatedAt)}`, `Spec revision ${p.rev}.`, p.activatedAt] : null,
+    p.expiredAt != null ? [`Dropped at #${fmtN(p.expiredAt)}`, `${counted.length} of ${p.thrAtEnd} votes by the deadline. The old rules stayed.`, p.expiredAt] : null,
+    st === "voting" ? [`Waiting for votes`, `${counted.length} so far, deadline #${fmtN(p.activateAt)}.`, null] : null,
+    st === "agreed" ? [`Waiting for block #${fmtN(p.activateAt)}`, `Agreed, takes effect there.`, null] : null,
+  ].filter(Boolean);
+  openDetail(`${esc(p.title)}`, `
+    <ul class="items">${steps.map(([t, m, h]) => `<li class="${h != null ? "on" : "now"}">${h != null ? `<button class="linkish" type="button" data-goto="${h}"><b>${t}</b><span class="m">${m} · go to this block</span></button>` : `<b>${t}</b><span class="m">${m}</span>`}</li>`).join("")}</ul>
+    ${p.revisions.length ? `<h3>Rule text it adds (${p.revisions.length})</h3>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}` : ""}
+    ${p.patch ? `<h3>Settings it changes</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
+    <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
+    <h3>Transaction as stored in block #${fmtN(p.proposedAt)}</h3><pre class="code">${esc(JSON.stringify(p.tx, (k, v) => k === "_h" ? undefined : v, 2))}</pre>`);
+}
+$("dBody").addEventListener("click", e => { const g = e.target.closest("[data-goto]"); if (g) { closeModal($("mDetail")); stopPlay(); setCursor(+g.dataset.goto, true); } });
+function openTx(b, i) {
+  const t = b.transactions[i], id = (b.tx_ids || [])[i];
+  openDetail(`${esc(TX_NAMES[txKind(t)] || txKind(t))} <small>block #${fmtN(b.header.block_number)}${id ? ` · ${short(id)}` : ""}</small>`,
+    `<p class="note" style="margin-top:0">${txLine(t)}</p><pre class="code">${esc(JSON.stringify(t, (k, v) => k === "_h" ? undefined : v, 2))}</pre>`);
+}
+function openRuleText(s) {
+  openDetail(`Rule text at #${fmtN(s.h)} <small>spec revision ${s.rev}</small>`, `
+    <p class="note" style="margin-top:0">The genesis rules, then each agreed revision in the order it took effect. The node folds every revision into the running spec (Tau pointwise revision): an output a revision defines takes its new definition, everything else stays.</p>
+    <h3>Genesis rules · revision 1</h3><pre class="code">${esc(GENESIS.rules)}</pre>
+    ${s.revisions.map(r => `<h3>Revision ${r.p.rev} · in force since #${fmtN(r.p.activatedAt)} · ${esc(r.p.title)}</h3><pre class="code">${esc(r.text)}</pre>`).join("")}`);
+}
+
+/* ---------------- feedback (same flow as the HUD: a pre-filled GitHub issue) ---------------- */
+(() => {
+  const REPO = "jimb000o/tau-command-hud", link = $("fbSend"), st = $("fbStatus");
+  const build = () => {
+    const text = $("fbText").value.trim();
+    const title = `[Time travel] ${text.split("\n")[0].slice(0, 60) || "Feedback"}`;
+    const s = H.snaps[cursor];
+    const body = `### What should we know?\n\n${text}\n\n---\nPage: Time travel\nBlock: #${cursor} of ${C.head}${s ? ` · spec revision ${s.rev}` : ""}\nNode: ${NODE}\nFrom: ${$("fbName").value.trim() || "anonymous"}`;
+    return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent("feedback,history")}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+  };
+  const sync = () => { const ok = $("fbText").value.trim().length >= 3; link.href = ok ? build() : "#"; link.setAttribute("aria-disabled", String(!ok)); };
+  ["input", "change"].forEach(ev => $("fbForm").addEventListener(ev, sync));
+  link.addEventListener("click", e => {
+    if (link.getAttribute("aria-disabled") !== "false") { e.preventDefault(); st.textContent = "Write a few words first."; $("fbText").focus(); return; }
+    link.href = build(); st.textContent = "GitHub opens in a new tab with your text filled in. Press “Create” there to send it."; st.className = "status ok";
+  });
+  $("fbForm").addEventListener("submit", e => { e.preventDefault(); link.click(); });
+  $("fbFab").addEventListener("click", () => { lastFocus = $("fbFab"); sync(); $("mFeedback").hidden = false; $("fbText").focus(); });
+})();
+
+/* ---------------- start ---------------- */
+const wanted = /^#(\d+)$/.exec(location.hash);
+const origRender = render;
+let firstData = true;
+render = function () {   // jump to a shared block once it is loaded, otherwise follow the newest block
+  if (C.head >= 0) {
+    if (firstData && !C.loading) {
+      firstData = false;
+      if (wanted && +wanted[1] <= C.head) { cursor = +wanted[1]; following = cursor === C.head; } else { cursor = C.head; following = true; }
+    } else if (following && !playing && !drag) cursor = C.head;
+  }
+  origRender();
+};
+addEventListener("resize", () => drawTimeline());
+setInterval(() => { if (C.head >= 0) readout(); }, 15000);
+render();
+connect();
+</script>
+</body>
+</html>
