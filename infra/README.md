@@ -72,7 +72,7 @@ Pushed without asking:
 
 Clients should de-duplicate blocks by `block_hash` (the HUD already does).
 
-Limits: 20 messages burst then 2/s per connection, 8 connections per IP, 500 in total,
+Limits: 20 messages burst then 2/s per connection, 32 connections per IP (every open page holds two or three sockets), 500 in total,
 512-byte messages. Browser origins allowed: tauhud.com, www.tauhud.com,
 jimb000o.github.io and localhost (`ALLOWED_ORIGINS` in `.env`).
 
