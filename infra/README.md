@@ -16,6 +16,7 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
   cache. New blocks, mempool and governance changes are pushed to visitors as they happen.
 - **Caddy**: HTTPS with automatic Let's Encrypt certificates; also serves the tracker's `proposals.json` and `feed.xml`.
 - **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect, plus a weekly recap image.
+- **share** (`share/share.py`): share previews, the picture X, Telegram and WhatsApp show under a link (see "Share previews").
 
 ## Server
 
@@ -242,6 +243,29 @@ JetBrains Mono, SIL OFL) live in `alerts/fonts/`.
 
 Logs: `docker compose logs -f alerts`.
 
+## Share previews
+
+tauhud.com is static, so every page has one og:image and the crawlers of X and
+Telegram never run the page's JavaScript. The share service draws a 1200×630
+card per thing, live from the chain, in the look of the weekly recap:
+
+| Path | Card |
+|---|---|
+| `/og/hud.png` | live overview: height, sync, rule changes in force, coming up, validators |
+| `/og/block/<n>.png` | one block: its transactions, who sealed it, when |
+| `/og/proposal/<id or first 8+ hex>.png` | one rule change: what changes, why, votes, countdown or result |
+| `/og/address/<96 hex>.png` | one account: balance, transactions, latest activity |
+
+`/s/`, `/s/block/<n>`, `/s/proposal/<id>` and `/s/address/<hex>` are tiny pages
+with the og:/twitter: tags for that card; a person who opens one is sent on to
+the real page on tauhud.com. These are the links to share: the Explorer and the
+proposal tracker have a "Copy share link" button, and the HUD's own og:image is
+`/og/hud.png`. If the chain cannot be read, every card falls back to the logo card.
+Cards are cached for a minute (older blocks for an hour); X and Telegram keep their
+own copy of a preview once fetched.
+
+Logs: `docker compose logs -f share`.
+
 ## Tests
 
 ```bash
@@ -267,6 +291,15 @@ Runs the alerts watcher against a mock relay: history on the first run is not po
 proposals, agreement, activation and a dropped change are posted once each per channel
 (also after a failed post and a watcher restart), the feed and proposals.json are right,
 a chain restart is reported, and the weekly recap is drawn and posted once.
+
+```bash
+pip install websockets==15.0.1 pillow==11.3.0
+python share/test_share.py      # OUT=/tmp/cards also writes the cards to look at
+```
+
+Runs the share service against a mock relay: the chain is read in pages, every card is
+a 1200×630 PNG, the link pages carry the tags and send on to tauhud.com, bad paths are
+refused, and a chain restart is reloaded.
 
 Runs the checker against the real engine: verdicts for sample transfers, refusals by
 the text screens and by the engine.
