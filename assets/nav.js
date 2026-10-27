@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.6"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.7"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';
@@ -123,7 +123,10 @@
       modeB.textContent = wait ? "Live · Connecting" : !up ? "Live · Offline" : !synced ? "Live · Not synced" : catching ? `Verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}` : "Live · Connected";
       modeDot.className = "dot " + (wait ? "none" : !up ? "off" : synced && !catching ? "" : "behind");
       mode.className = "chip " + (wait ? "warn" : !up ? "warn" : synced && !catching ? "live" : "behind");
-      document.querySelectorAll(".tnav [data-livedot]").forEach(d => { d.className = "dot " + (!up ? "off" : synced && !catching ? "" : "behind"); });
+      document.querySelectorAll(".tnav [data-livedot]").forEach(d => {
+        d.className = "dot " + (wait ? "none" : !up ? "off" : synced && !catching ? "" : "behind");
+        const a = d.closest("a"); if (a) a.title = (wait ? "Checking the community node…" : !up ? "Red: the community node is offline, the relay is not answering." : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + " Opens the HUD in Live mode.";
+      });
       const n = CHAIN.online; onB.textContent = n == null ? "—" : String(n); onDot.className = "dot " + (n == null ? "none" : n > 0 ? "" : "off"); onChip.classList.toggle("live", n != null && n > 0);
       hB.textContent = st && Number(st.height) > 0 ? fmt(st.height) : "—";
       revB.textContent = CHAIN.rev == null ? "—" : String(CHAIN.rev);

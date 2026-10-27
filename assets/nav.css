@@ -78,7 +78,8 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
 .tnav .seg > [aria-pressed="true"]:hover { color: #000; }
 .tnav .seg [data-livedot] { width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; display: inline-block; background: var(--tn-ok); box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(57,255,138,.95); }
 .tnav .seg [data-livedot].behind { background: #ffb13b; box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,177,59,.9); }
-.tnav .seg [data-livedot].off, .tnav .seg [data-livedot].none { background: #9a9aa2; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
+.tnav .seg [data-livedot].off { background: #ff4d6d; box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,77,109,.9); }   /* red only here: node offline (decided 27 Oct) */
+.tnav .seg [data-livedot].none { background: #9a9aa2; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
 .tnav-pop .gearbody { display: flex; flex-direction: column; gap: 10px; }
 .tnav-pop code { font: 500 12px var(--tn-mono); color: #fff; }
 .tnav-pop .hint { color: var(--tn-dim); font: 400 11px/1.45 var(--tn-font); }
