@@ -2,13 +2,23 @@
 # for {$RELAY_DOMAIN} points at this server.
 {$RELAY_DOMAIN} {
 	encode gzip
-	# Rule Playground checks (checker/checker.py). Everything else is the relay.
+	# Rule Playground checks (checker/checker.py).
 	handle /check* {
 		request_body {
 			max_size 16KB
 		}
 		reverse_proxy checker:8090
 	}
+	# Proposal tracker data and the Atom feed (alerts/alerts.py).
+	@alerts path /proposals.json /feed.xml
+	handle @alerts {
+		root * /srv/alerts
+		header Access-Control-Allow-Origin *
+		header Cache-Control "public, max-age=10"
+		header /feed.xml Content-Type "application/atom+xml; charset=utf-8"
+		file_server
+	}
+	# Everything else is the relay.
 	handle {
 		reverse_proxy relay:8080
 	}

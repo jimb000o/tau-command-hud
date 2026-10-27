@@ -86,6 +86,30 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Proposal tracker and alerts (alerts/alerts.py): reads the chain from the
+  # relay like any visitor, replays governance, writes proposals.json and
+  # feed.xml for Caddy, and posts news to Telegram / X when .env holds their
+  # keys (each channel is off without them).
+  alerts:
+    build: ./alerts
+    environment:
+      RELAY_URL: ws://relay:8080
+      TAU_GOVERNANCE_OPEN_ADMISSION: "true"  # keep equal to the node setting above
+      FEED_URL: https://${RELAY_DOMAIN}/feed.xml
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+      X_API_KEY: ${X_API_KEY:-}
+      X_API_SECRET: ${X_API_SECRET:-}
+      X_ACCESS_TOKEN: ${X_ACCESS_TOKEN:-}
+      X_ACCESS_SECRET: ${X_ACCESS_SECRET:-}
+      X_PROFILE_URL: ${X_PROFILE_URL:-}
+    volumes:
+      - alerts_state:/state     # what was seen and posted, so nothing is posted twice
+      - alerts_public:/public   # proposals.json + feed.xml, served by Caddy
+    depends_on: [relay]
+    restart: unless-stopped
+    logging: *logging
+
   caddy:
     image: caddy:2.8.4
     environment:
@@ -97,6 +121,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      - alerts_public:/srv/alerts:ro
     networks: [default, checker]
     depends_on: [relay, checker]
     restart: unless-stopped
@@ -111,5 +136,7 @@ networks:
 volumes:
   tau_data:
   relay_data:
+  alerts_state:
+  alerts_public:
   caddy_data:
   caddy_config:

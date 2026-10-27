@@ -1,0 +1,2 @@
+websockets==15.0.1
+blake3==1.0.5
