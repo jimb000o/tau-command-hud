@@ -503,7 +503,7 @@ html.wide .modal .sheet, html.wide .fb-fab, html.wide .tour { zoom: var(--z); }
 html.wide .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, .9fr) minmax(0, .9fr); grid-template-areas: "eng core feed pol val" "eng core feed off val" "upd core chain chain chain" "upd core chain chain chain"; }
 html.wide .blkdetail .cols { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 26px; }
 html.wide .blk { flex-basis: 160px; }
-html.wide.tall .grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.9fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); }
+html.wide.tall .grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.65fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, .8fr) minmax(0, .8fr); }
 html.wide .core canvas { max-height: none; }
 html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z)) calc(11px * var(--z)); max-width: calc(min(520px, 60vw) * var(--z)); }
 /* the validators column must shrink with the screen instead of overflowing it */
@@ -763,7 +763,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
-          <li><b>v15.6 · 27 Oct 2026</b>Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both are recomputed with every block, and a countdown under Block pace expects the next block (or says it is overdue).</li>
+          <li><b>v15.6 · 27 Oct 2026</b>Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both count down second by second to the next expected block, reset with every new block, and the line under Block pace says when a block runs late. On 16:9 wide screens the left column (block check, rule changes) is wider and taller at the top.</li>
           <li><b>v15.5 · 27 Oct 2026</b>Wide screens, third pass: the blockchain panel gets double width and double height and its block detail flows into four columns instead of a scroll box; the block check shows every rule row; the scale is set so each panel keeps at least its desktop room. No label is cut off any more: the rule-change strip, check rows and transaction lines wrap whole words instead of ending in “…”. In the simple view the block detail shows short hashes, the technical view shows them in full.</li>
           <li><b>v15.4 · 27 Oct 2026</b>Wide screens, second pass: the chain core now spans both rows in the centre and is the largest thing on the screen, the validators column gets the full height, and the scale is set from a 2400 px design width instead of 1800, so panels keep their proportions.</li>
           <li><b>v15.3 · 27 Oct 2026</b>Wide screens: from 2200 px the whole HUD scales to fill the screen (up to 1.7×) instead of stretching its columns, so line lengths, the layout and the one-screen rule stay as designed while type, numbers and the chain core grow. The validators column now shrinks with the screen instead of adding a scrollbar at 1080 px height.</li>
@@ -869,22 +869,32 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const fmt = n => Number(n).toLocaleString("de-DE");
 const fmtSec = s => s >= 90 ? (s / 60).toFixed(1) + " min" : s >= 10 ? Math.round(s) + " s" : s.toFixed(1) + " s";
 /* how long a rule change takes: simulated figure in the simulation, the node’s own minimum in live mode */
-function updateTiming(pace) {
+function updateTiming(pace, left) {
   const el = $("tauTiming"); if (!el) return;
-  if (S.mode !== "live") { el.textContent = "~1 min · simulated"; el.dataset.full = "Timing is simulated: 8 s blocks, activation 8 blocks after the proposal. On the testnet the rule is the same but the clock is the chain’s: activate_at_height must be at least the inclusion height plus the number of validators (README §Governance)."; return; }
+  const set = (t, tip) => { if (el.textContent !== t) el.textContent = t; if (el.dataset.full !== tip) el.dataset.full = tip; };
+  if (S.mode !== "live") return set("~1 min · simulated", "Timing is simulated: 8 s blocks, activation 8 blocks after the proposal. On the testnet the rule is the same but the clock is the chain’s: activate_at_height must be at least the inclusion height plus the number of validators (README §Governance).");
   const n = S.minActBlocks;
-  if (n == null) { el.textContent = "live · measuring"; el.dataset.full = "Waiting for the node’s governance state: it reports the earliest height at which the next rule change may activate."; return; }
-  const dur = pace != null ? fmtSec(n * pace) : null;
-  el.textContent = dur ? `≥ ${n} block${n === 1 ? "" : "s"} · ~${dur}` : `≥ ${n} block${n === 1 ? "" : "s"}`;
-  el.dataset.full = `From the live node: the next rule change may activate no earlier than ${n} blocks after it is included (min_activation_height_for_next_update).` + (dur ? ` At the measured block pace of ${fmtSec(pace)} that is about ${dur}.` : " The block pace is not measured yet.") + " The node does not report when past proposals were included, so this is the protocol minimum, not a measured average. Recomputed with every new block.";
+  if (n == null) return set("live · measuring", "Waiting for the node’s governance state: it reports the earliest height at which the next rule change may activate.");
+  const blocks = `≥\u00a0${n}\u00a0block${n === 1 ? "" : "s"}`;
+  if (pace == null) return set(blocks, `From the live node: the next rule change may activate no earlier than ${n} block${n === 1 ? "" : "s"} after it is included (min_activation_height_for_next_update). The block pace is not measured yet.`);
+  // seconds until the earliest activation: the rest of the current block interval plus the remaining blocks at the measured pace
+  const secs = Math.max(0, (left != null ? left : pace) + (n - 1) * pace);
+  set(`${blocks} · ~${fmtCount(secs).replace(" ", "\u00a0")}`,
+    `From the live node: the next rule change may activate no earlier than ${n} block${n === 1 ? "" : "s"} after it is included (min_activation_height_for_next_update). The seconds count down to the next expected block at the measured pace of ${fmtSec(pace)} (${(n - 1) ? `plus ${n - 1} more block${n - 1 === 1 ? "" : "s"}` : "no further blocks"}) and reset with every new block. The node does not report when past proposals were included, so this is the protocol minimum, not a measured average.`);
 }
-/* live: a once-a-second countdown to the next expected block, honest when it runs late */
-setInterval(() => {
-  if (S.mode !== "live" || !S.blockTimes.length || S.lastInterval == null || document.querySelector(".a-core:hover")) return;
-  const i = $("rTs").querySelector("i"); if (!i) return;
-  const pace = S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length, left = Math.round(pace - (performance.now() - S.lastBlockAt) / 1000);
-  i.textContent = `last block ${fmtSec(S.lastInterval)} · ` + (left >= 0 ? `next in ~${left} s` : `next overdue by ${-left} s`);
-}, 1000);
+const fmtCount = s => s >= 90 ? (s / 60).toFixed(1) + " min" : Math.round(s) + " s";
+/* live: the pace line under Block pace and the Tau countdown have one writer, so they never flicker */
+function tickPace() {
+  const live = S.mode === "live", pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null;
+  const rTs = $("rTs");
+  if (!live || pace == null || S.lastInterval == null) { if (rTs.textContent !== "Block pace") rTs.textContent = "Block pace"; return updateTiming(pace, null); }
+  const left = Math.round(pace - (performance.now() - S.lastBlockAt) / 1000);
+  const txt = `last block ${fmtSec(S.lastInterval)} · ` + (left >= 0 ? `next in ~${left} s` : `next overdue by ${-left} s`);
+  let i = rTs.querySelector("i"); if (!i) { rTs.innerHTML = "Block pace<i></i>"; i = rTs.querySelector("i"); }
+  if (i.textContent !== txt) i.textContent = txt;
+  updateTiming(pace, Math.max(0, left));
+}
+setInterval(() => { if (S.mode === "live" && !document.querySelector(".a-core:hover")) tickPace(); }, 1000);
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ---------- shared view state ---------- */
@@ -1286,12 +1296,11 @@ function readouts() {
   $("rM").textContent = S.mempool.length;
   const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
   $("rT").textContent = pace != null ? fmtSec(pace) : "—";
-  $("rTs").innerHTML = live && S.lastInterval != null ? `Block pace<i>last block ${fmtSec(S.lastInterval)}</i>` : "Block pace";
   $("rTw").dataset.full = pace != null
     ? (live ? `Average of the last ${S.blockTimes.length} block interval${S.blockTimes.length === 1 ? "" : "s"}, read from the blocks’ own timestamps (stream i7). The last block took ${fmtSec(S.lastInterval)}.` : `Average of the last ${S.blockTimes.length} simulated block intervals.`)
     : (live ? "Needs two consecutive blocks with timestamps before a pace can be measured." : "Measured once the first blocks are sealed.");
   if (live && pace != null) $("rTw").dataset.full += " The countdown below expects the next block after one average interval; when it runs late it says so.";
-  updateTiming(pace);
+  tickPace();
   $("rR").textContent = S.clauses.size;
   $("chipFee").textContent = S.fee;
   $("chipRev").textContent = S.specRev;
