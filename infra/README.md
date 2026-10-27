@@ -46,6 +46,7 @@ Connect to `wss://node.tauhud.com`, send a command as text, get the node's JSON 
 |---|---|---|
 | `hello version=1` | relay | `ok version=1 env=testnet node=tau-hud-relay` |
 | `getblocks [n]` | cache, last 50 blocks | ascending; `n` capped at 50 |
+| `getblockrange <from> <count>` | cache, whole current chain | blocks with `from <= block_number < from+count`, ascending; `count` 1..100; `{"blocks", "from", "total", "head"}` |
 | `getmempool` | cache, refreshed every 3 s | |
 | `getgovernance` | cache, refreshed every 15 s | |
 | `gettaustate` | cache, refreshed every 30 s | `{"rules_state": "…"}` |
@@ -70,6 +71,21 @@ jimb000o.github.io and localhost (`ALLOWED_ORIGINS` in `.env`).
 
 `GET /status` returns `{"upstream_connected", "height", "canonical_height", "tip_height", "live_default", "open_governance_admission", "total_blocks", "online", "age_seconds", …}`. `tip_height` is the highest network tip the node heard from peers (null until known). `height` counts every block the node stores (orphans included; when the node wipes a dead chain after a testnet restart the relay drops its cache and the next pushed `getblocks` carries `"reset": true`); `canonical_height` is the node's real head, and `live_default` is true only while the node follows a real chain, so the page may use it to decide its default view. `open_governance_admission` mirrors the node's `TAU_GOVERNANCE_OPEN_ADMISSION` setting (true: any account's vote counts, false: only active validators).
 with CORS `*`; `GET /health` is the same but answers 503 while the node is unreachable.
+
+`GET /stats` (CORS `*`, cached 5 s; used by tauhud.com/stats) returns the history of the
+current chain: `blocks` is one row per block,
+`[height, timestamp, txs, transfers, volume, proposer, {tx_type: count}, [sender]]`, where
+`proposer` and `sender` index into `proposers` and `accounts`. `restarts` lists every chain
+restart the relay noticed (`{"detected_at", "old": {"block1_ts", "tip", "tip_ts", …},
+"new_block1_ts"}`), also ones that happened while the relay was down: the last chain seen is
+kept in `/data/events.json` (volume `relay_data`) and compared by its block 1 hash. `dropped`
+lists transactions that left the node's mempool without reaching a block within 30 s
+(`dropped_total` counts all). `tracking_since` is when that log began; `governance` counts
+pending, scheduled, activated and expired rule changes.
+
+To serve these, the relay holds every block of the current chain (up to `CHAIN_BLOCKS`,
+default 20,000): it fetches the whole chain once at startup, after a restart or after a gap,
+and only the newest 20 blocks on every other poll.
 
 ## Rule Playground checker
 

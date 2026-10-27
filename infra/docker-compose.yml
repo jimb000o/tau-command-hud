@@ -44,6 +44,9 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       TRUST_PROXY: "1"
       TAU_GOVERNANCE_OPEN_ADMISSION: "true"  # keep equal to the node setting above
+    volumes:
+      # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH)
+      - relay_data:/data
     depends_on: [tau-node]
     restart: unless-stopped
     logging: *logging
@@ -105,5 +108,6 @@ networks:
 
 volumes:
   tau_data:
+  relay_data:
   caddy_data:
   caddy_config:
