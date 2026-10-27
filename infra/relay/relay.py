@@ -238,10 +238,10 @@ class Relay:
             else:
                 self._note_error("getblocks", msg)
             return
-        cmd = f"getblocks {min(self.full_limit, self.total_blocks)}" if full else "getblocks 20"
+        cmd = f"getblocks {min(self.full_limit, self.total_blocks)}" if full else f"getblocks {min(20, self.full_limit)}"
         msg = await self.upstream.request(cmd)
         if msg and msg.get("status") == "error" and (msg.get("error") or {}).get("code") == "PAYLOAD_TOO_LARGE":
-            self.full_limit = max(20, min(self.full_limit, self.total_blocks) // 2)
+            self.full_limit = max(1, min(self.full_limit, self.total_blocks) // 2)
             log.info("getblocks reply too large; full fetch now asks for %s blocks", self.full_limit)
             return
         if not msg or msg.get("status") != "ok":
