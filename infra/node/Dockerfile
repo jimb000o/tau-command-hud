@@ -89,6 +89,7 @@ RUN python3 -I /patches/sync-diagnostics.py /src
 RUN python3 -I /patches/network-tip.py /src
 RUN python3 -I /patches/peer-addrs.py /src
 RUN python3 -I /patches/chain-reset.py /src
+RUN python3 -I /patches/validator-gate.py /src
 
 
 FROM python:3.14-slim-trixie@sha256:82abc9f53600280b0757126f83c5a7d47088592d2acb6b4c0b9e97f76865508c AS runtime
@@ -125,7 +126,8 @@ RUN find /root/.tau /app/tau-lang -name '*.so*' -type f -printf '%h\n' | sort -u
 COPY --from=testnet-src /src /app/tau-testnet
 COPY --from=testnet-src /src/docker/entrypoint.sh /usr/local/bin/tau-node-entrypoint
 COPY start.sh /usr/local/bin/tau-node-start
-RUN chmod +x /usr/local/bin/tau-node-entrypoint /usr/local/bin/tau-node-start && mkdir -p /data
+COPY validator-key.py /usr/local/bin/tau-validator-key
+RUN chmod +x /usr/local/bin/tau-node-entrypoint /usr/local/bin/tau-node-start /usr/local/bin/tau-validator-key && mkdir -p /data
 
 ENV PYTHONUNBUFFERED=1 \
     TAU_FORCE_TEST=0 \
