@@ -553,36 +553,36 @@ a.btn { text-decoration: none; display: inline-block; }
 <div class="wrap">
   <header class="rail">
     <div class="brand"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></div>
-    <button class="chip unoff" type="button" data-open="mAbout" title="Read the full notice">Unofficial community project · not affiliated with IDNI</button>
+    <button class="chip unoff" type="button" data-open="mAbout" data-full="Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Click for the full notice.">Unofficial community project · not affiliated with IDNI</button>
     <div class="chips">
       <div class="chip" id="chipMode"><span class="dot sim" id="modeDot"></span>Mode<b id="modeTxt">Simulation</b></div>
       <div class="chip" id="chipOnline" data-full="People looking at Tau HUD right now. Counted by the community read relay at node.tauhud.com, which every open HUD talks to; no cookies, no analytics, nobody is identified. “—” means the relay has not answered yet."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</div>
-      <div class="chip">Network<b id="netId">tau-testnet-v2</b></div>
-      <div class="chip">Height<b id="chipH">0</b></div>
-      <button class="chip" type="button" id="btnState" title="Open the current state of the chain: every rule in force right now">Spec revision<b id="chipRev">1</b></button>
-      <div class="chip" title="Base fee per transaction, set by the fee rule (o9) and changeable only by agreement">Base fee<b id="chipFee">10</b></div>
+      <div class="chip" id="chipNet">Network<b id="netId">tau-testnet-v2</b></div>
+      <div class="chip" id="chipHeight">Height<b id="chipH">0</b></div>
+      <button class="chip" type="button" id="btnState">Spec revision<b id="chipRev">1</b></button>
+      <div class="chip" id="chipFeeWrap">Base fee<b id="chipFee">10</b></div>
     </div>
     <div class="controls">
       <div class="seg" role="group" aria-label="Data source">
         <button id="btnLive" aria-pressed="false"><span class="dot none" id="liveDot" aria-hidden="true"></span>Live node</button>
-        <button id="btnSim" aria-pressed="true">Simulation</button>
+        <button id="btnSim" aria-pressed="true" data-full="Simulation: invented activity that follows the documented protocol, generated in your browser. No real chain data.">Simulation</button>
       </div>
-      <input id="wsurl" value="wss://node.tauhud.com" aria-label="WebSocket address of your Tau node" spellcheck="false">
-      <button class="btn" id="btnConnect">Connect</button>
-      <button class="btn ghost" type="button" data-open="mAbout">About</button>
-      <button class="btn ghost" type="button" data-open="mFeedback">Updates</button>
-      <button class="btn state" type="button" id="btnState2">Chain state</button>
-      <button class="btn ghost gold" type="button" id="btnTour">Guided tour</button>
-      <a class="btn ghost" href="https://tau.net" target="_blank" rel="noopener">What is Tau?</a>
-      <button class="btn ghost" type="button" id="btnRain" aria-pressed="true" title="Toggle the glyph rain">Rain</button>
+      <input id="wsurl" value="wss://node.tauhud.com" aria-label="WebSocket address of your Tau node" spellcheck="false" data-full="WebSocket address of the node to read: the community relay by default, or your own node with this page’s origin allowed.">
+      <button class="btn" id="btnConnect" data-full="Connects to the node address on the left and starts reading blocks, mempool and governance.">Connect</button>
+      <button class="btn ghost" type="button" data-open="mAbout" data-full="What this page is, who built it, where each claim comes from, and how to support it.">About</button>
+      <button class="btn ghost" type="button" data-open="mFeedback" data-full="What changed on this page and when, built from your feedback. Also where to leave feedback.">Updates</button>
+      <button class="btn state" type="button" id="btnState2" data-full="Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.">Chain state</button>
+      <button class="btn ghost gold" type="button" id="btnTour" data-full="Six short steps: one rule change from proposal to law, pointing at the panels where it happens.">Guided tour</button>
+      <a class="btn ghost" href="https://tau.net" target="_blank" rel="noopener" data-full="Opens tau.net, the project behind the testnet, in a new tab.">What is Tau?</a>
+      <button class="btn ghost" type="button" id="btnRain" aria-pressed="true" data-full="Turns the falling glyphs in the background on or off. Purely decorative.">Rain</button>
       <button class="btn ghost more" type="button" id="btnMore" aria-expanded="false" hidden>More ▾</button>
       <span class="hint" id="hint" hidden></span>
     </div>
     <div class="viewctl">
       <span>View</span>
       <div class="seg" role="group" aria-label="Detail level">
-        <button id="btnSimple" aria-pressed="false">Simple</button>
-        <button id="btnTech" aria-pressed="true">Technical</button>
+        <button id="btnSimple" aria-pressed="false" data-full="Simple view: plain words, fewer numbers, no stream names.">Simple</button>
+        <button id="btnTech" aria-pressed="true" data-full="Technical view: stream names (i10, o5, o9), hashes and rule text everywhere.">Technical</button>
       </div>
     </div>
   </header>
@@ -727,6 +727,7 @@ a.btn { text-decoration: none; display: inline-block; }
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v15.2 · 27 Oct 2026</b>Every header chip and button explains itself on hover: network, height, spec revision, base fee, mode, online count, the Live/Simulation switch, the view switch and the menu buttons, each in one line with where the value comes from.</li>
           <li><b>v15.1 · 27 Oct 2026</b>Click any list item for the full picture: transactions (who, what, fee, hash, block, which rule decided and its text), rule offers (checks, rule text, what accepting means), rule changes (votes per validator, diff, path so far), personal rules (rule text and recent effects) and validators. Hover stays short; “open ›” marks the click.</li>
           <li><b>v15 · 27 Oct 2026</b>From GitHub feedback #1: every principle card now says whether it was seen on the testnet or comes from the protocol, with a link to the tau-testnet line that backs it (pinned to one commit). Failure paths are shown on purpose: some proposals now miss quorum and expire with a red moment in the rule row, the “n refused” chip on Transactions counts and filters what Tau refused, and the ~1 minute rule-change timing is marked as simulated.</li>
           <li><b>v14.5 · 27 Oct 2026</b>Hardening: the page tells the browser to upgrade any insecure request, and a pasted ws:// node address becomes wss:// on an https page (localhost excepted), so the lock stays intact.</li>
@@ -932,7 +933,7 @@ function setRelay(up) {
   PRESENCE.up = up;
   const synced = PRESENCE.synced !== false;
   $("liveDot").className = "dot " + (up ? (synced ? "" : "behind") : "off");
-  $("btnLive").title = !up ? "The community relay is not answering right now." : synced ? "The community relay is online and follows the real testnet chain." : "The community relay is online, but its node is not synced with the real chain yet.";
+  $("btnLive").dataset.full = !up ? "The community relay is not answering right now." : synced ? "The community relay is online and follows the real testnet chain." : "The community relay is online, but its node is not synced with the real chain yet.";
   if (S.mode === "live" && LIVE.status) setMode("live", LIVE.status);
 }
 function setOnline(n) {
@@ -1800,6 +1801,12 @@ function detailValidator(v, i) {
     <h3>Votes on rule changes</h3>${hist ? `<ul>${hist}</ul>` : none}` };
 }
 
+/* ---------- header value chips explain themselves ---------- */
+$("chipNet").dataset.ex = exKey(() => `Network id ${$("netId").textContent}: the chain this page shows. ${S.mode === "sim" ? "In simulation it is an imitation of the documented protocol." : "Read from the node at " + $("wsurl").value.trim() + "."}`);
+$("chipHeight").dataset.ex = exKey(() => `Chain height: the newest sealed block is #${fmt(S.height)}. ${S.mode === "sim" ? "Simulated, a block every ~8 s." : "Read from the node; the relay pushes each new block as it is sealed."}`);
+$("btnState").dataset.ex = exKey(() => `Spec revision ${S.specRev}: how many times the consensus rules have changed by agreement (genesis = 1). Click to see every rule in force right now.`);
+$("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transaction, emitted by consensus rule o9. It changes only through an agreed rule change, never by an admin.`);
+
 /* ---------- overflow overlay: hover or tap any clipped text to read all of it ---------- */
 (() => {
   const ovl = document.createElement("div"); ovl.id = "ovl"; ovl.hidden = true; ovl.style.pointerEvents = "none"; document.body.appendChild(ovl);
@@ -1908,7 +1915,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.1`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.2`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
