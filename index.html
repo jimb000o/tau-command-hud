@@ -135,9 +135,9 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .stack { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .stack .gov { flex: 0 1 auto; overflow: auto; min-height: 100px; }
 .stack .statep { flex: 1 1 auto; min-height: 112px; }
-.stack .logp { flex: 0 1 auto; min-height: 56px; }
+.stack .logp { flex: 0 1 auto; min-height: 110px; }
 .stack .logp .log { min-height: 0; }
-.logp .log { max-height: 44px; }
+.logp .log { max-height: 130px; }
 .logp h2 { margin-bottom: 4px; }
 .statep { display: flex; }
 .statep:hover { border-color: var(--cyan); }
@@ -336,7 +336,18 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 
 .lower { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
 .log { font-size: 11.5px; line-height: 1.6; color: var(--dim); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log div { display: grid; grid-template-columns: 8.5ch minmax(0, 1fr); gap: 0 8px; overflow-wrap: anywhere; padding: 2px 0; border-top: 1px solid rgba(255,255,255,.04); }
+.log div:first-child { border-top: 0; }
+.logp[data-detail] { cursor: pointer; }
+.logp[data-detail]:hover { border-color: rgba(255,255,255,.35); }
+.logp[data-detail] h2::after { content: "open ›"; margin-left: auto; font: 10px var(--mono); letter-spacing: .04em; color: var(--dim); opacity: 0; transition: opacity .15s; }
+.logp[data-detail]:hover h2::after { opacity: 1; }
+.detail .loglist { display: grid; gap: 0; }
+.detail .loglist div { display: grid; grid-template-columns: 8ch minmax(0, 1fr); gap: 0 10px; padding: 5px 8px; font: 12px/1.55 var(--mono); overflow-wrap: anywhere; border-top: 1px solid rgba(255,255,255,.05); }
+.detail .loglist .t { color: var(--cyan); }
+.detail .loglist .ok { color: var(--ok); }
+.detail .loglist .warn { color: var(--amber); }
+.detail .loglist .err { color: var(--bad); }
 .log .t { color: var(--cyan); }
 .log .ok { color: var(--ok); }
 .log .warn { color: var(--amber); }
@@ -723,7 +734,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         <div class="scroll" id="statePanel"></div>
         <button class="more" type="button" id="btnState3">Full chain state</button>
       </article>
-      <article class="panel logp">
+      <article class="panel logp" id="logPanel" title="Click to open the full log">
         <h2>Node log <small id="logSub">host ↔ tau interpreter</small><button class="info" type="button" aria-label="What is this?" data-tip="What a node prints while it works: transactions admitted or refused, blocks added, votes counted, rule registries rebuilt, specs amended. Red lines are refusals, amber lines are governance events.">i</button></h2>
         <div class="log scroll" id="log"></div>
       </article>
@@ -767,6 +778,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v15.8 · 27 Oct 2026</b>Node log: the panel shows whole lines (time in its own column, nothing cut off) with more room, and a click opens the full log in the detail view, newest first, with counts of refusals and governance events. Chain core: every label (agreement, validators, “the agreed rules of everyone”) sits on a dark plate, so no ring crosses the letters. Detail views: every check chip (i10 signature, o6 block valid, o7 proposer eligible, o9 fee, o5 sender rule, the admission checks of a rule offer, the steps of a proposal) explains itself on hover. Live: when the relay reports a chain reset (the node discarded a chain the network abandoned), the page forgets the old blocks and rebuilds from the new ones.</li>
           <li><b>v15.7 · 27 Oct 2026</b>Rule Playground: a new page at <a href="playground/">/playground/</a> where you write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Linked from the header (“Playground”) and from the validators panel.</li>
           <li><b>v15.6 · 27 Oct 2026</b>Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both count down second by second to the next expected block, reset with every new block, and the line under Block pace says when a block runs late. On 16:9 wide screens the left column (block check, rule changes) is wider and taller at the top. While the node is still catching up with the chain (or the chain is idle), the countdown pauses and the line under Block pace says how old the newest block is; if the relay reports that the node has verified the state only up to an older block, the mode chip turns amber: “Live · Verified to #n of tip”. The Tau row follows the real proposal: “waits for n votes” while a proposal collects agreement (time cannot help there), a countdown to the activation height once it is agreed. Live wording no longer assumes that only validators vote: the threshold comes from the validator count, who may vote is a network setting.</li>
           <li><b>v15.5 · 27 Oct 2026</b>Wide screens, third pass: the blockchain panel gets double width and double height and its block detail flows into four columns instead of a scroll box; the block check shows every rule row; the scale is set so each panel keeps at least its desktop room. No label is cut off any more: the rule-change strip, check rows and transaction lines wrap whole words instead of ending in “…”. In the simple view the block detail shows short hashes, the technical view shows them in full.</li>
@@ -972,12 +984,20 @@ function randomPolicy(accounts) {
 }
 
 /* ---------- log ---------- */
+const LOG = [];
 function log(msg, cls = "") {
-  const el = $("log"), d = document.createElement("div");
-  d.innerHTML = `<span class="t">[${now()}]</span> <span class="${cls}">${msg}</span>`;
-  el.appendChild(d);
+  const el = $("log"), d = document.createElement("div"), t = now();
+  d.innerHTML = `<span class="t">${t}</span><span class="${cls}">${msg}</span>`;
+  el.appendChild(d); LOG.push({ t, msg, cls }); if (LOG.length > 400) LOG.shift();
   while (el.children.length > 140) el.firstChild.remove();
   el.scrollTop = el.scrollHeight;
+}
+function detailLog() {
+  const n = LOG.length, refused = LOG.filter(e => e.cls === "err").length, gov = LOG.filter(e => e.cls === "warn").length;
+  return { title: `Node log · ${n} line${n === 1 ? "" : "s"}`,
+    html: `<p class="lead">What the ${S.mode === "live" ? "community node" : "simulated node"} printed while it worked: blocks added, transactions admitted or refused, votes counted, specs amended. Newest first.</p>
+    ${checksHtml([[`${n} lines`, "", "Lines kept in this session; the panel shows the newest."], [`${refused} refusals`, refused ? "bad" : "off", "Transactions the node refused at the door: a rule said no."], [`${gov} governance events`, gov ? "warn" : "off", "Proposals, votes, scheduling and activation of rule changes."]])}
+    <h3>Log</h3><div class="loglist">${LOG.slice().reverse().map(e => `<div><span class="t">${e.t}</span><span class="${e.cls}">${e.msg}</span></div>`).join("")}</div>` };
 }
 
 /* ---------- Tau streams panel ---------- */
@@ -1582,6 +1602,7 @@ function liveMessage(ev) {
   presenceFromMessage(d);
   if (msg.command === "getblocks") {
     LIVE.gotData = true; setRelay(true);
+    if (d.reset) { liveClear(); log("Chain reset: the node discarded a chain the network abandoned and starts again from genesis. Block numbers restart.", "warn"); renderGov(); renderUpdates(); renderClauses(); }
     (d.blocks || []).filter(b => !LIVE.seenBlocks.has(b.block_hash)).forEach(raw => {
       LIVE.seenBlocks.add(raw.block_hash);
       const h = raw.header || {}, ids = raw.tx_ids || [];
@@ -1618,15 +1639,19 @@ function liveMessage(ev) {
     renderRuleWorld(); readouts();
   }
 }
+/* forget every block and transaction: on connect, and when the relay reports that the node wiped a dead chain ("reset": true) */
+function liveClear() {
+  Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0 });
+  S.clauses = new Map(); S.byHeight = new Map(); LIVE.seenBlocks.clear(); LIVE.seenTx.clear();
+  $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
+}
 function liveConnect() {
   liveStop();
   let url = $("wsurl").value.trim();
   if (location.protocol === "https:" && /^ws:\/\//i.test(url) && !/^ws:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(url)) { url = url.replace(/^ws:/i, "wss:"); $("wsurl").value = url; log("Plain ws:// is not allowed from an https page; using wss:// instead.", "warn"); }
   log(`Connecting to ${esc(url)} …`, "warn");
   setMode("live", "Connecting");
-  Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [] });
-  S.clauses = new Map();
-  $("ribbon").innerHTML = ""; $("feed").innerHTML = "";
+  liveClear();
   $("offers").innerHTML = `<div class="empty">Rule offers are stored per account. Live mode lists them once account lookups are added.</div>`;
   renderGov(); renderUpdates(); renderClauses(); readouts();
   presenceClose();
@@ -1696,6 +1721,20 @@ function coreHit(e) {
   for (const r of CORE_RINGS) if (Math.abs(d - r.r) <= r.w) return r.fn;
   return null;
 }
+/* labels sit on dark plates and are painted last, above every ring, line and dot: no stroke ever crosses the letters */
+const PLATES = [];
+function plate(text, x, y, font, color, alpha) { PLATES.push({ text, x, y, font, color, alpha }); }
+function paintPlates() {
+  for (const p of PLATES) {
+    cx.save(); cx.font = p.font; cx.textAlign = "center"; cx.textBaseline = "alphabetic"; cx.shadowBlur = 0; cx.globalAlpha = p.alpha ?? 1;
+    const fs = parseFloat(p.font.match(/(\d+(?:\.\d+)?)px/)?.[1]) || 22, w = cx.measureText(p.text).width + 24, h = fs * 1.55, rx = p.x - w / 2, ry = p.y - fs * 1.1;
+    cx.fillStyle = "rgba(6,6,8,.9)"; cx.beginPath(); cx.roundRect(rx, ry, w, h, 7); cx.fill();
+    cx.fillStyle = p.color; cx.fillText(p.text, p.x, p.y); cx.restore();
+  }
+  PLATES.length = 0;
+}
+/* the y where a horizontal label of the given width fits just inside a ring of radius r (the ring dips lowest at the label’s ends) */
+function belowRing(r, text, font) { cx.font = font; const hw = cx.measureText(text).width / 2 + 12; return -Math.sqrt(Math.max(0, r * r - hw * hw)) + 30; }
 function draw(tm) {
   const W = cv.width, C = W / 2, t = (tm - t0) / 1000;
   cx.clearRect(0, 0, W, W);
@@ -1722,8 +1761,8 @@ function draw(tm) {
   if (open) {
     const frac = Math.min(1, open.votes.size / threshold());
     arc(C * .70, 10, -Math.PI / 2, frac * Math.PI * 2, `rgba(${amber},${open.status === "scheduled" ? .95 : .7})`, 0);
-    cx.fillStyle = `rgba(${amber},.9)`; cx.font = "600 22px Sora, sans-serif"; cx.textAlign = "center";
-    cx.fillText(open.status === "scheduled" ? "AGREED · ACTIVATES #" + open.activateAt : `AGREEMENT ${open.votes.size}/${threshold()}`, 0, -C * .70 + 34);
+    const agreeTxt = open.status === "scheduled" ? "AGREED · ACTIVATES #" + open.activateAt : `AGREEMENT ${open.votes.size}/${threshold()}`, agreeFont = "600 22px Sora, sans-serif";
+    plate(agreeTxt, 0, belowRing(C * .70, agreeTxt, agreeFont), agreeFont, `rgba(${amber},.95)`);
   }
 
   // validators
@@ -1737,8 +1776,7 @@ function draw(tm) {
     const s = on ? 30 : 22; cx.fillRect(-s / 2, -s / 2, s, s);
     if (voted) { cx.strokeStyle = `rgba(${amber},.95)`; cx.lineWidth = 3; cx.strokeRect(-s, -s, s * 2, s * 2); }
     cx.restore();
-    cx.fillStyle = `rgba(${cyan},.8)`; cx.font = "500 22px JetBrains Mono, monospace"; cx.textAlign = "center";
-    cx.fillText("V" + (i + 1) + " " + v.slice(0, 6), x, y + (y > 0 ? 50 : -34));
+    plate("V" + (i + 1) + " " + v.slice(0, 6), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
     hit(x, y, 40, () => `V${i + 1} ${short(v)}\n` + explainValidator(v, i) + (on ? "\nGreen line to the core: its block being sealed." : ""));
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
@@ -1753,8 +1791,7 @@ function draw(tm) {
     });
     const RR = S.clauses.size, rr0 = C * .56;
     for (let i = 0; i < RR; i++) { const a = i / RR * Math.PI * 2 - t * .12, x = Math.cos(a) * rr0, y = Math.sin(a) * rr0; cx.fillStyle = `rgba(57,255,138,${S.pulse * .9})`; cx.beginPath(); cx.arc(x * (1 - q), y * (1 - q), 5, 0, Math.PI * 2); cx.fill(); }
-    cx.fillStyle = `rgba(57,255,138,${Math.min(1, S.pulse * 1.6)})`; cx.font = "600 20px Sora, sans-serif"; cx.textAlign = "center";
-    cx.fillText("THE AGREED RULES OF EVERYONE → BLOCK #" + S.height, 0, C * .78);
+    plate("THE AGREED RULES OF EVERYONE → BLOCK #" + S.height, 0, C * .78, "600 20px Sora, sans-serif", "rgb(57,255,138)", Math.min(1, S.pulse * 1.6));
   }
 
   // user-rule ring: every account that runs its own Tau policy
@@ -1800,8 +1837,9 @@ function draw(tm) {
   cx.fillText("#" + S.height, 0, -8);
   cx.font = "600 19px Sora, sans-serif";
   cx.fillText(am > .2 ? "SPEC AMENDED · REV " + S.specRev : since < 1.2 ? "SEALED BY AGREEMENT" : "SPEC REV " + S.specRev, 0, 40);
+  if (S.mode === "sim") plate("SIMULATION · NO REAL CHAIN DATA", 0, C * .64 + 10, "600 30px Sora, sans-serif", "rgba(236,236,240,.42)");
+  paintPlates();
   cx.restore();
-  if (S.mode === "sim") { cx.save(); cx.translate(C, C); cx.fillStyle = "rgba(236,236,240,.42)"; cx.font = "600 30px Sora, sans-serif"; cx.textAlign = "center"; cx.textBaseline = "middle"; cx.fillText("SIMULATION · NO REAL CHAIN DATA", 0, C * .64); cx.restore(); }
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
@@ -1863,6 +1901,7 @@ document.addEventListener("click", () => document.querySelectorAll(".info.open")
 /* ---------- click → detail: the full picture behind every list item (hover stays short) ---------- */
 const DT = new Map(); let dtSeq = 0;
 function dtKey(fn) { const k = "d" + (++dtSeq); DT.set(k, fn); if (DT.size > 4000) DT.delete(DT.keys().next().value); return k; }
+(() => { const lp = document.getElementById("logPanel"); if (lp) lp.dataset.detail = dtKey(detailLog); })();
 function showDetail(key) {
   const fn = DT.get(key); if (!fn) return;
   const { title, html } = fn();
@@ -1873,7 +1912,7 @@ document.addEventListener("click", e => {
   const el = e.target.closest("[data-detail]"); if (el) showDetail(el.dataset.detail);
 });
 const none = `<p style="color:var(--dim);font-size:12px;margin:0">None</p>`;
-const checksHtml = arr => `<div class="checks">${arr.map(([t, c]) => `<i class="${c || ""}">${t}</i>`).join("")}</div>`;
+const checksHtml = arr => `<div class="checks">${arr.map(([t, c, tip]) => `<i class="${c || ""}"${tip ? ` data-full="${tip}"` : ""}>${t}</i>`).join("")}</div>`;
 const verdictHtml = (ok, text) => `<div class="verdict-line ${ok ? "" : "bad"}">${ok ? "✓" : "✕"} ${text}</div>`;
 function detailTx(t) {
   const label = TYPE_LABEL[t.type] || t.type, transfer = /user_tx|retractable/.test(t.type);
@@ -1888,7 +1927,12 @@ function detailTx(t) {
   if (transfer) {
     rule = `<h3>Which rule decided</h3>${verdictHtml(!t.rejected, t.rejected ? `o5 = 0: the sender’s own rule “${esc(p ? p.name : "")}” refused it, whoever holds the key.` : p ? `o5 = 1: the sender’s rule “${esc(p.name)}” checked this transfer and let it pass.` : "No own rule on this account; only the consensus checks applied.")}`
       + (p ? `<pre class="rule">${esc(p.body)}</pre>` : "")
-      + `<h3>Consensus checks</h3>${checksHtml([["i10 signature ✓"], ["o6 block valid ✓"], ["o7 proposer eligible ✓"], [`o9 fee ${t.fee ?? "—"} ✓`], [t.rejected ? "o5 sender rule ✕" : "o5 sender rule ✓", t.rejected ? "bad" : ""]])}`;
+      + `<h3>Consensus checks</h3>${checksHtml([
+        ["i10 signature ✓", "", "The signature is valid: the key that owns the sender account really signed this transaction (input i10 = 1)."],
+        ["o6 block valid ✓", "", "The block carrying this transaction satisfies the consensus rules: the Tau spec judged it valid (output o6 = 1)."],
+        ["o7 proposer eligible ✓", "", "The validator that sealed the block was allowed to: in the active set and eligible under the rules (output o7 = 1)."],
+        [`o9 fee ${t.fee ?? "—"} ✓`, "", "The fee the consensus rules require per transaction (output o9). This transaction pays it."],
+        [t.rejected ? "o5 sender rule ✕" : "o5 sender rule ✓", t.rejected ? "bad" : "", t.rejected ? "The sender’s own money rule refused this transfer (output o5 = 0). The node enforces an account’s rule against whoever holds the key." : "The sender’s own money rule allowed this transfer (output o5 = 1): spending limit, time-lock, co-signature or whitelist, whichever the account deployed. No rule means every transfer is allowed."]])}`;
   } else if (t.type === "rule_deploy" && p) {
     rule = `<h3>The rule being deployed</h3>${verdictHtml(!t.rejected, policyMeaning(p))}<pre class="rule">${esc(p.body)}</pre><p style="color:var(--dim);font-size:12px;margin:8px 0 0">Compiled in isolation before admission. From the block it lands in, it binds the account on every transfer, whoever holds the key.</p>`;
   } else if (t.type === "rule_offer" && p) {
@@ -1903,7 +1947,12 @@ function detailTx(t) {
 function detailOffer(o) {
   const st = { offered: `Waiting for ${short(o.to)} to decide; expires unanswered at block #${o.expire}.`, accepted: `Accepted: it now binds ${short(o.to)}’s account on every transfer.`, rejected: "Rejected by the recipient; nothing changed.", expired: "Expired unanswered; nothing changed." }[o.status] || o.status;
   return { title: `Rule offer · ${esc(o.policy.name)}`, html: `<p class="lead">${esc(st)}</p>${kvHtml({ Offerer: esc(o.from), Recipient: esc(o.to), Rule: esc(o.policy.name + ": " + o.policy.label), Status: o.status, "Expires at": "#" + o.expire, "Offer id": esc(o.id) })}
-    <h3>Checks at admission</h3>${checksHtml([["shape ✓"], ["reserved streams ✓"], ["bit widths ✓"], ["compile ✓"], [o.collides ? "replaces the recipient’s current rule" : "no collision", o.collides ? "warn" : ""]])}
+    <h3>Checks at admission</h3>${checksHtml([
+      ["shape ✓", "", "The offered rule has the shape the protocol expects: one Tau clause on the sender’s own money stream (o5)."],
+      ["reserved streams ✓", "", "The rule touches only streams an account may use. The consensus streams (i6 … o9) are reserved for the chain’s own rules."],
+      ["bit widths ✓", "", "Every value in the rule has the bit width its stream declares, so it can compile against the live spec."],
+      ["compile ✓", "", "The rule compiles on its own and together with the rules already in force. One that does not compile is refused at the door."],
+      [o.collides ? "replaces the recipient’s current rule" : "no collision", o.collides ? "warn" : "", o.collides ? "The recipient already has a rule on this stream; accepting the offer replaces it." : "The recipient has no rule on this stream yet; accepting adds it without replacing anything."]])}
     <h3>The rule</h3>${verdictHtml(true, policyMeaning(o.policy))}<pre class="rule">${esc(o.policy.body)}</pre>
     <h3>What accepting means</h3><p style="color:var(--dim);font-size:12px;margin:0">The recipient answers with its own transaction. On acceptance the rule joins the recipient’s clause in the composite o5 program; it cannot be retracted, only replaced by accepting a different offer later.</p>` };
 }
@@ -1914,7 +1963,11 @@ function detailUpdate(u) {
   return { title: `Rule change · ${esc(u.title)}`, html: `<p class="lead">${esc(lead)}</p>${kvHtml({ Status: STATUS_TXT[u.status] || u.status, "Proposed by": esc(u.proposer || "—"), "Proposed at": u.proposedAt != null ? "#" + u.proposedAt : "—", "Activates at": "#" + u.activateAt, Agreement: `${u.votes.size} of ${thr} needed (${S.quorum === "majority" ? "majority" : "two thirds"} of ${N})`, "Update id": esc(u.id) })}
     <h3>What it changes</h3>${verdictHtml(u.status !== "expired", proposalMeaning(u))}<pre class="rule">${esc(u.diff)}</pre>
     <h3>Votes (${u.votes.size} of ${N})</h3><ul>${votes}</ul>
-    <h3>How it got here</h3>${checksHtml([["proposed ✓"], ["compiled in isolation ✓"], [u.status === "expired" ? "agreement ✕" : u.votes.size >= (N ? thr : Infinity) ? "agreement ✓" : "agreement …", u.status === "expired" ? "bad" : u.votes.size >= thr ? "" : "off"], [u.status === "active" ? `active since #${u.activeAt} ✓` : u.status === "expired" ? "never activated" : `activates at #${u.activateAt}`, u.status === "active" ? "" : "off"]])}` };
+    <h3>How it got here</h3>${checksHtml([
+      ["proposed ✓", "", "Sent as a consensus_rule_update transaction: the full new consensus spec, with an activation height a few blocks ahead."],
+      ["compiled in isolation ✓", "", "The node compiled the proposed spec on its own before admitting it. A spec that does not compile never enters the chain."],
+      [u.status === "expired" ? "agreement ✕" : u.votes.size >= (N ? thr : Infinity) ? "agreement ✓" : "agreement …", u.status === "expired" ? "bad" : u.votes.size >= thr ? "" : "off", u.status === "expired" ? `Not enough votes before the activation height: ${u.votes.size} of ${thr}. Archived without effect.` : `${u.votes.size} of ${thr} needed votes (consensus_rule_vote). At ${thr} the change is scheduled for its activation height.`],
+      [u.status === "active" ? `active since #${u.activeAt} ✓` : u.status === "expired" ? "never activated" : `activates at #${u.activateAt}`, u.status === "active" ? "" : "off", u.status === "active" ? `At block #${u.activeAt} every node amended its spec and the revision counted up. Nobody upgraded software.` : u.status === "expired" ? "The activation height passed without agreement, so the rules stayed as they were." : `If agreed in time, every node applies the new rules at block #${u.activateAt}, never earlier.`]])}` };
 }
 function detailClause(acc, p) {
   const seen = [];
@@ -2071,7 +2124,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.7`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v15.8`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
