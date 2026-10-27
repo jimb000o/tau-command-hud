@@ -518,13 +518,24 @@ function setConn(state, text, info) {
 }
 function warn(text) { const w = $("connWarn"); w.hidden = !text; w.textContent = text || ""; }
 function send(cmd) { if (C.ws && C.ws.readyState === 1) C.ws.send(cmd); }
+// one random id per browser, shared by every tauhud.com page, so the online counter counts a person once
+function viewerId() {
+  try {
+    let v = localStorage.getItem("tauhud-viewer");
+    if (!/^[0-9a-f]{32}$/.test(v || "")) {
+      v = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem("tauhud-viewer", v);
+    }
+    return v;
+  } catch { return ""; }
+}
 function connect() {
   clearTimeout(C.retryT);
   let ws;
   try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
   setConn("wait", "Connecting", `Reading the chain from ${esc(NODE.replace(/^wss?:\/\//, ""))}…`);
-  ws.onopen = () => { C.retry = 5000; ws.send("hello version=1"); send("getgovernance"); loadFrom(0); };
+  ws.onopen = () => { C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
   ws.onerror = () => {};
