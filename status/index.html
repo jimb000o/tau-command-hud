@@ -335,7 +335,7 @@ function incidents() {
     for (const i of U.incidents) out.push({ ...i });
     for (const r of U.restarts) out.push({ kind: "restart", start: r.new_block1_ts || r.detected_at, end: null, detected: r.detected_at, old_tip: r.old_tip });
     for (const r of U.reorgs) out.push({ kind: "reorg", start: r.at, end: r.at, height: r.height, depth: r.depth });
-    for (const s of U.stalls) out.push({ kind: "stall", start: s.start, end: s.end, after: s.after });
+    for (const s of U.stalls) if (s.start > 0) out.push({ kind: "stall", start: s.start, end: s.end, after: s.after });
   } else if (S && S.restarts) {
     for (const r of S.restarts) out.push({ kind: "restart", start: r.detected_at, end: null, detected: r.detected_at, old_tip: r.old_tip });
   }
