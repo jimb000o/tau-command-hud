@@ -202,13 +202,15 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
 .fb a.btn { text-decoration: none; }
 .fblink { color: var(--dim); font-size: 12px; }
 </style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
 </head>
 <body>
 <div class="wrap">
   <header>
     <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Time travel</span></a>
-    <nav class="nav"><a class="back" href="/playground/">Rule Playground</a><a class="back" href="/">Back to the live HUD</a></nav>
   </header>
+  <nav class="tnav" data-page="history" aria-label="Pages and tools"></nav>
 
   <div id="intro">
     <p class="lead">Rules change by agreement. Scrub the chain and watch it happen.</p>
