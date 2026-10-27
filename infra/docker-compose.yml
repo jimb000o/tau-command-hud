@@ -103,9 +103,13 @@ services:
       X_ACCESS_TOKEN: ${X_ACCESS_TOKEN:-}
       X_ACCESS_SECRET: ${X_ACCESS_SECRET:-}
       X_PROFILE_URL: ${X_PROFILE_URL:-}
+      # weekly recap image (alerts/recap.py): Monday 09:00 UTC unless .env says otherwise
+      RECAP_ENABLED: ${RECAP_ENABLED:-true}
+      RECAP_WEEKDAY: ${RECAP_WEEKDAY:-0}
+      RECAP_HOUR: ${RECAP_HOUR:-9}
     volumes:
       - alerts_state:/state     # what was seen and posted, so nothing is posted twice
-      - alerts_public:/public   # proposals.json + feed.xml, served by Caddy
+      - alerts_public:/public   # proposals.json, feed.xml and recap/, served by Caddy
     depends_on: [relay]
     restart: unless-stopped
     logging: *logging
