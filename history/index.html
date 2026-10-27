@@ -214,7 +214,6 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   .controls .grp + .grp { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .controls .btn { min-height: 44px; padding: 0 4px; font-size: 13px; letter-spacing: .06em; }
   .controls .grp + .grp .btn { font-size: 11px; }
-  .controls .w { display: none; }
   .btn.primary { min-width: 0; }
   .readout .h { font-size: 24px; }
   input[type=range] { -webkit-appearance: none; appearance: none; height: 36px; margin: 6px 0 0; background: transparent; touch-action: none; }
@@ -276,11 +275,11 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
     <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Block height">
     <div class="controls">
       <span class="grp">
-        <button class="btn" id="bStart" type="button" title="Genesis" aria-label="Genesis">⏮<span class="w"> Genesis</span></button>
-        <button class="btn" id="bPrev" type="button" aria-label="Previous block">◀<span class="w"> Block</span></button>
+        <button class="btn" id="bStart" type="button" title="Genesis" aria-label="Genesis">⏮ Genesis</button>
+        <button class="btn" id="bPrev" type="button" aria-label="Previous block">◀ Block</button>
         <button class="btn primary" id="bPlay" type="button">▶ Play</button>
-        <button class="btn" id="bNext" type="button" aria-label="Next block"><span class="w">Block </span>▶</button>
-        <button class="btn" id="bEnd" type="button" aria-label="Now"><span class="w">Now </span>⏭</button>
+        <button class="btn" id="bNext" type="button" aria-label="Next block">Block ▶</button>
+        <button class="btn" id="bEnd" type="button" aria-label="Now">Now ⏭</button>
       </span>
       <span class="grp">
         <button class="btn" id="bPrevEv" type="button">◀ Rule event</button>
@@ -844,6 +843,10 @@ function setCursor(h, user) {
   render();
 }
 $("scrub").addEventListener("input", e => { stopPlay(); setCursor(+e.target.value, true); });
+// phone: the step buttons show their symbol only (the label stays as aria-label)
+{ const mq = matchMedia("(max-width: 700px)"), full = { bStart: "⏮ Genesis", bPrev: "◀ Block", bNext: "Block ▶", bEnd: "Now ⏭" }, sym = { bStart: "⏮", bPrev: "◀", bNext: "▶", bEnd: "⏭" };
+  const label = () => { for (const id in full) $(id).textContent = (mq.matches ? sym : full)[id]; };
+  label(); mq.addEventListener("change", label); }
 $("dScrub").addEventListener("input", e => { stopPlay(); setCursor(+e.target.value, true); });
 $("dPrev").onclick = () => { stopPlay(); setCursor(cursor - 1, true); };
 $("dNext").onclick = () => { stopPlay(); setCursor(cursor + 1, true); };
