@@ -36,8 +36,24 @@ body {
 a { color: #fff; }
 .wrap { max-width: 1680px; margin: 0 auto; display: grid; gap: 14px; }
 /* widescreen: everything grows with the screen instead of floating in a narrow column */
-@media (min-width: 2000px) { body { zoom: 1.25; } }
-@media (min-width: 3000px) { body { zoom: 1.6; } }
+/* wide screens: scale, do not stretch (same approach as the HUD). The page keeps its design size, is scaled to fill
+   the screen and fits on one screen: the three panels take the remaining height and scroll inside if they must.
+   --z is set by script from the viewport. The hover box sits outside .wrap and stays in viewport pixels. */
+html.wide body { padding: 0; overflow: hidden; }
+html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px; transform: scale(var(--z)); transform-origin: 0 0; grid-template-rows: auto auto auto auto minmax(0, 1fr) auto; gap: 12px; }
+html.wide .cols { min-height: 0; align-items: stretch; }
+html.wide .cols > .panel { overflow: auto; min-height: 0; }
+html.wide .cols .txs { max-height: none; }
+html.wide .src { margin: 0; padding-left: 150px; }
+html.wide .tip { font-size: calc(12px * var(--z)); padding: calc(6px * var(--z)) calc(9px * var(--z)); max-width: calc(320px * var(--z)); }
+/* 21:9 and wider: the timeline gets its own column and the three panels stand beside it at full height */
+html.ultra .wrap { grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-areas: "head head head head" "intro intro intro intro" "conn conn conn conn" "tl rules agree block" "src src src src"; }
+html.ultra .wrap > header { grid-area: head; } html.ultra #intro { grid-area: intro; } html.ultra .conn { grid-area: conn; }
+html.ultra #pTl { grid-area: tl; overflow: auto; } html.ultra .cols { display: contents; } html.ultra .src { grid-area: src; }
+html.ultra #pRules { grid-area: rules; } html.ultra #pAgree { grid-area: agree; } html.ultra #pBlock { grid-area: block; }
+html.wide .modal .sheet, html.wide .fb-fab { zoom: var(--z); }
+html.wide .modal .sheet { max-height: calc(100% / var(--z)); }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
 .mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -190,7 +206,7 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
     <nav class="nav"><a class="back" href="/playground/">Rule Playground</a><a class="back" href="/">Back to the live HUD</a></nav>
   </header>
 
-  <div>
+  <div id="intro">
     <p class="lead">Rules change by agreement. Scrub the chain and watch it happen.</p>
     <p class="sub">Every block of the current Tau Testnet Alpha chain, read from the community node. Pick any block to see the rules in force at that moment, the votes still open, and what the block itself carried.</p>
   </div>
@@ -201,7 +217,7 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
     <span class="warn" id="connWarn" hidden></span>
   </div>
 
-  <section class="panel">
+  <section class="panel" id="pTl">
     <h2>The chain, block by block <small>drag or click the timeline · ← → step · Shift + ← → jump to the next rule event</small></h2>
     <div class="tlwrap" id="tlwrap">
       <svg id="tl" height="200" role="img" aria-label="Timeline of blocks and rule changes"></svg>
@@ -545,8 +561,8 @@ function onMessage(ev) {
     const next = C.nextFrom + PAGE;
     setConn("wait", "Loading", `Read ${plural(Math.max(0, C.head + 1), "block")} of ${fmtN(head + 1)}…`);
     if ((d.blocks || []).length && next <= head) { loadFrom(next); rebuild(); return; }
-    C.loading = false; C.partial = false; C.first = 0; warn("");
-    live(); rebuild();
+    C.loading = false; C.partial = false; C.first = 0;
+    noteHoles(); live(); rebuild();
   } else if (msg.command === "getblocks") {
     if (msg.status !== "ok") return;
     if (d.reset) { resetChain(); }
@@ -560,11 +576,25 @@ function onMessage(ev) {
       warn(C.partial ? `History before block #${fmtN(f)} is not on the relay yet, so rule changes from that time are missing.` : "");
       live();
     } else if (C.head > before + 1 && before >= 0 && !C.blocks[before + 1]) { loadFrom(before + 1); }
+    else noteHoles();
     if (C.head !== before || d.reset) rebuild();
   } else if (msg.command === "getgovernance") {
     if (msg.status !== "ok") return;
     C.gov = d; renderCheck();
   }
+}
+// heights the relay did not give us: say so, and ask again a little later
+function holes() {
+  const out = [];
+  for (let h = C.first; h <= C.head; h++) if (!C.blocks[h]) { if (out.length && out[out.length - 1][1] === h - 1) out[out.length - 1][1] = h; else out.push([h, h]); }
+  return out;
+}
+function noteHoles() {
+  if (C.legacy && C.partial) return;
+  const hs = holes(), n = hs.reduce((a, [x, y]) => a + y - x + 1, 0);
+  warn(n ? `${plural(n, "block")} (${hs.slice(0, 3).map(([x, y]) => x === y ? `#${x}` : `#${x}–#${y}`).join(", ")}${hs.length > 3 ? ", …" : ""}) not received from the relay yet, so rule changes in them may be missing. Asking again…` : "");
+  clearTimeout(C.holeT);
+  if (n && !C.legacy) C.holeT = setTimeout(() => { if (!C.loading && holes().length) loadFrom(holes()[0][0]); }, 15000);
 }
 function legacy() {   // relay without getblockrange: the newest 50 blocks only
   C.legacy = true; send("getblocks 50");
@@ -611,7 +641,10 @@ function drawTimeline() {
   const svg = $("tl"); const W = Math.max(280, svg.clientWidth || svg.parentNode.clientWidth);
   TL.w = W; TL.x0 = 14; TL.x1 = W - 14;
   const L = lanes(H.props), laneH = 26, nl = Math.max(1, L.n);
-  const y = { txL: 12, tx0: 20, tx1: 66, prL: 84, pr0: 92 }; y.pr1 = y.pr0 + nl * laneH; y.rvL = y.pr1 + 16; y.rv0 = y.rvL + 8; y.rv1 = y.rv0 + 22; y.ax = y.rv1 + 18; y.h = y.ax + 16;
+  // 21:9: the timeline has a full-height column, so the transaction bars take the spare height
+  const spare = document.documentElement.classList.contains("ultra") ? Math.max(0, $("pTl").clientHeight - 340 - nl * laneH - 90) : 0;
+  const txH = 46 + Math.min(260, spare);
+  const y = { txL: 12, tx0: 20, tx1: 20 + txH }; y.prL = y.tx1 + 18; y.pr0 = y.prL + 8; y.pr1 = y.pr0 + nl * laneH; y.rvL = y.pr1 + 16; y.rv0 = y.rvL + 8; y.rv1 = y.rv0 + 22; y.ax = y.rv1 + 18; y.h = y.ax + 16;
   TL.y = y; TL.lanes = L; TL.laneH = laneH;
   svg.setAttribute("height", y.h); svg.setAttribute("viewBox", `0 0 ${W} ${y.h}`);
   const parts = [];
@@ -645,7 +678,8 @@ function drawTimeline() {
   const cx = xOf(cursor);
   parts.push(`<line class="cursor" x1="${cx}" x2="${cx}" y1="${y.tx0 - 2}" y2="${y.rv1 + 2}"/>`);
   // rule changes, one bar per proposal from "proposed" to its end
-  if (!H.props.length) parts.push(`<text class="none" x="${TL.x0}" y="${y.pr0 + 15}">No rule change proposed on this chain yet.</text>`);
+  if (!H.props.length) { const n = nodeOnly().length;
+    parts.push(`<text class="none" x="${TL.x0}" y="${y.pr0 + 15}">${n ? `No proposal in the loaded blocks. The node lists ${n}: see “Agreement in progress”.` : "No rule change proposed on this chain yet."}</text>`); }
   for (const p of H.props) {
     // label on its own line above the bar, so vote marks and dots never cross the text
     const { lane: l, lx } = L.map.get(p), ty = y.pr0 + l * laneH + 9, top = ty + 4, hgt = 8;
@@ -815,6 +849,8 @@ function renderCheck() {
   if (!g || !s || C.partial) { el.innerHTML = C.partial ? `<span class="warn">Rebuilt from the blocks the relay holds; rules agreed before #${fmtN(C.first)} are not counted.</span>` : ""; return; }
   if (cursor !== C.head) { el.innerHTML = `Rebuilt from the blocks. At the newest block it is checked against the node’s own state.`; return; }
   const diffs = [];
+  const unseen = nodeOnly().length;
+  if (unseen) diffs.push(`${plural(unseen, "rule change")} the node knows about ${unseen === 1 ? "is" : "are"} not in the loaded blocks`);
   const nv = (g.active_validators || []).map(v => String(typeof v === "string" ? v : v.pubkey || "").toLowerCase()).sort();
   if (Number(g.head_number) !== C.head) { el.innerHTML = `Node state is from #${fmtN(g.head_number)}; comparing once both reach the same block.`; return; }
   if (nv.length && nv.join() !== s.validators.join()) diffs.push(`validators (node: ${nv.length})`);
@@ -825,6 +861,18 @@ function renderCheck() {
   if (nodeFee != null && nodeFee !== s.fee) diffs.push(`base fee (node: ${nodeFee})`);
   el.innerHTML = diffs.length ? `<span class="warn">Differs from the node at #${fmtN(C.head)}: ${diffs.join(", ")}.</span>`
     : `<span class="ok">✓</span> Matches the node’s own state at #${fmtN(C.head)}: validators, quorum${nodeFee != null ? ", base fee" : ""}.`;
+}
+// rule changes the node lists (pending or scheduled) that the replay never saw, e.g. their block is missing
+function nodeOnly() {
+  const g = C.gov; if (!g) return [];
+  const seen = new Set(H.props.map(p => p.id));
+  const votes = Array.isArray(g.votes) ? g.votes : [];
+  return [...(g.pending_updates || []).map(u => ({ u, st: "voting" })), ...(g.scheduled_updates || []).map(u => ({ u, st: "agreed" }))]
+    .filter(({ u }) => u.update_id && !seen.has(String(u.update_id).toLowerCase()))
+    .map(({ u, st }) => {
+      const p = { revisions: Array.isArray(u.rule_revisions) ? u.rule_revisions : [], patch: u.host_contract_patch || null };
+      return { id: u.update_id, st, title: titleOf(p), at: u.activation_height ?? u.activate_at_height, votes: votes.filter(v => v.update_id === u.update_id).length, thr: g.approval_threshold };
+    });
 }
 function renderAgree() {
   const h = cursor, thr = H.snaps[h] ? H.snaps[h].thr : 1;
@@ -846,8 +894,12 @@ function renderAgree() {
       <div class="quorum" aria-label="${v} of ${need} votes"><div class="fill" style="width:${pct}%"></div><span>${v} of ${need} votes</span></div>
       <span class="m">${when}</span></li>`;
   };
+  const extra = h === C.head ? nodeOnly() : [];
   $("agreeBody").innerHTML = `
-    ${open.length ? `<ul class="items">${open.map(card).join("")}</ul>` : `<p class="empty">No rule change was waiting for votes at this block.</p>`}
+    ${extra.length ? `<ul class="items" style="margin-bottom:8px">${extra.map(x => `<li class="${x.st === "agreed" ? "on" : "now"}"><b>${esc(x.title)}</b>
+      <span class="m">${x.st === "agreed" ? `agreed · takes effect at #${fmtN(x.at)}` : `${x.votes} of ${x.thr} votes · deadline #${fmtN(x.at)}`}</span>
+      <span class="m">From the node’s own list. The block that carried the proposal is not loaded, so its history is not shown.</span></li>`).join("")}</ul>` : ""}
+    ${open.length ? `<ul class="items">${open.map(card).join("")}</ul>` : extra.length ? "" : `<p class="empty">No rule change was waiting for votes at this block.</p>`}
     <h3>Decided before (${H.props.filter(p => (p.activatedAt ?? p.expiredAt ?? Infinity) <= h).length})</h3>
     ${decided.length ? `<ul class="items">${decided.map(p => { const ok = p.activatedAt != null && p.activatedAt <= h;
       return `<li class="${ok ? "on" : ""}${(p.activatedAt ?? p.expiredAt) === h ? " here" : ""}"><button class="linkish" type="button" data-open="${p.n}"><b>${esc(p.title)}</b><span class="m">${ok ? `agreed · in force since #${fmtN(p.activatedAt)}` : `dropped at #${fmtN(p.expiredAt)} · ${votesAt(p, h)} of ${p.thrAtEnd} votes`}</span></button></li>`; }).join("")}</ul>`
@@ -972,7 +1024,16 @@ render = function () {   // jump to a shared block once it is loaded, otherwise 
   }
   origRender();
 };
-addEventListener("resize", () => drawTimeline());
+(() => {   // wide screens: scale the page to the viewport (design size about 1900 × 1000)
+  const apply = () => {
+    const w = innerWidth, h = innerHeight, wide = w >= 1600 && h >= 760 && w / h >= 1.4;
+    const z = wide ? Math.round(Math.max(1, Math.min(1.7, w / 1900, h / 1000)) * 100) / 100 : 1;
+    document.documentElement.classList.toggle("wide", wide);
+    document.documentElement.classList.toggle("ultra", wide && w / h >= 2.1);
+    document.documentElement.style.setProperty("--z", z);
+  };
+  apply(); addEventListener("resize", () => { apply(); drawTimeline(); });
+})();
 setInterval(() => { if (C.head >= 0) readout(); }, 15000);
 render();
 connect();
