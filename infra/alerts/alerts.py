@@ -20,8 +20,13 @@ Nothing is posted for what the watcher finds on its very first run, and
 nothing whose block is older than POST_MAX_AGE_SECONDS, so a fresh volume or
 a long outage never floods the channel with old news.
 
-  python alerts.py            run the watcher
-  python alerts.py --test     send one test post to each configured channel
+Once a week (Monday 09:00 UTC by default) it also posts a recap image of the
+week (recap.py) and keeps a copy at https://node.tauhud.com/recap/latest.png.
+
+  python alerts.py                  run the watcher
+  python alerts.py --test           send one test post to each configured channel
+  python alerts.py --recap-preview  draw this week's recap and save it, post nothing
+  python alerts.py --recap-now      draw the recap and post it to each configured channel
 """
 from __future__ import annotations
 
@@ -30,6 +35,7 @@ import base64
 import hashlib
 import hmac
 import html
+import io
 import json
 import logging
 import os
@@ -39,10 +45,12 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
 from websockets.asyncio.client import connect
+
+import recap
 
 try:
     from blake3 import blake3
@@ -62,6 +70,10 @@ OPEN_ADMISSION = os.environ.get("TAU_GOVERNANCE_OPEN_ADMISSION", "true").lower()
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()
 X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")}
+RELAY_HTTP = os.environ.get("RELAY_HTTP", "http://relay:8080")
+RECAP_ON = os.environ.get("RECAP_ENABLED", "true").lower() in ("1", "true", "yes")
+RECAP_WEEKDAY = int(os.environ.get("RECAP_WEEKDAY", 0))   # 0 = Monday
+RECAP_HOUR = int(os.environ.get("RECAP_HOUR", 9))         # UTC
 FEED_ITEMS = 100
 RANGE = 100           # relay's getblockrange maximum
 REFETCH_TAIL = 6      # blocks re-read every poll so a replaced tip block (reorg) is noticed
@@ -373,6 +385,23 @@ class Outlet:
         """(sent, retry_after_seconds or None, error text)."""
         raise NotImplementedError
 
+    def send_photo(self, png: bytes, r: dict) -> tuple[bool, float | None, str]:
+        """Post the weekly recap image with its caption."""
+        raise NotImplementedError
+
+
+def multipart(fields: dict[str, str], files: dict[str, tuple[str, bytes, str]]) -> tuple[bytes, str]:
+    boundary = "tauhud" + secrets.token_hex(12)
+    out = io.BytesIO()
+    for k, v in fields.items():
+        out.write(f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode())
+    for k, (name, data, ctype) in files.items():
+        out.write(f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"; filename="{name}"\r\n'
+                  f"Content-Type: {ctype}\r\n\r\n".encode())
+        out.write(data + b"\r\n")
+    out.write(f"--{boundary}--\r\n".encode())
+    return out.getvalue(), f"multipart/form-data; boundary={boundary}"
+
 
 class Telegram(Outlet):
     name = "telegram"
@@ -383,10 +412,18 @@ class Telegram(Outlet):
     def send_text(self, text: str) -> tuple[bool, float | None, str]:
         body = json.dumps({"chat_id": TELEGRAM_CHAT, "text": text, "parse_mode": "HTML",
                            "link_preview_options": {"is_disabled": True}}).encode()
-        req = urllib.request.Request(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", data=body,
-                                     headers={"Content-Type": "application/json"})
+        return self.call("sendMessage", body, "application/json")
+
+    def send_photo(self, png, r):
+        body, ctype = multipart({"chat_id": TELEGRAM_CHAT, "caption": recap.caption_html(r, SITE), "parse_mode": "HTML"},
+                                {"photo": (f"tau-recap-{recap.week_key(r['end'] - 1)}.png", png, "image/png")})
+        return self.call("sendPhoto", body, ctype)
+
+    def call(self, method: str, body: bytes, ctype: str) -> tuple[bool, float | None, str]:
+        req = urllib.request.Request(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/{method}", data=body,
+                                     headers={"Content-Type": ctype})
         try:
-            with urllib.request.urlopen(req, timeout=20) as r:
+            with urllib.request.urlopen(req, timeout=60) as r:
                 ok = json.load(r).get("ok", False)
                 return ok, None, "" if ok else "not ok"
         except urllib.error.HTTPError as e:  # never log the URL: it holds the token
@@ -416,23 +453,44 @@ class X(Outlet):
     def enabled(self) -> bool:
         return all(X_KEYS.values())
 
-    def auth_header(self) -> str:
+    def auth_header(self, url: str | None = None) -> str:
         oauth = {"oauth_consumer_key": X_KEYS["X_API_KEY"], "oauth_nonce": secrets.token_hex(16),
                  "oauth_signature_method": "HMAC-SHA1", "oauth_timestamp": str(int(time.time())),
                  "oauth_token": X_KEYS["X_ACCESS_TOKEN"], "oauth_version": "1.0"}
-        # a JSON body is not part of the signature base
+        # a JSON or multipart body is not part of the signature base
         params = "&".join(f"{_pct(k)}={_pct(v)}" for k, v in sorted(oauth.items()))
-        base = "&".join(["POST", _pct(self.URL), _pct(params)])
+        base = "&".join(["POST", _pct(url or self.URL), _pct(params)])
         key = f"{_pct(X_KEYS['X_API_SECRET'])}&{_pct(X_KEYS['X_ACCESS_SECRET'])}"
         oauth["oauth_signature"] = base64.b64encode(hmac.new(key.encode(), base.encode(), hashlib.sha1).digest()).decode()
         return "OAuth " + ", ".join(f'{_pct(k)}="{_pct(v)}"' for k, v in sorted(oauth.items()))
 
-    def send_text(self, text: str) -> tuple[bool, float | None, str]:
-        req = urllib.request.Request(self.URL, data=json.dumps({"text": text}).encode(),
+    UPLOAD = "https://api.x.com/2/media/upload"
+
+    def send_text(self, text: str, media_id: str | None = None) -> tuple[bool, float | None, str]:
+        payload = {"text": text, **({"media": {"media_ids": [media_id]}} if media_id else {})}
+        req = urllib.request.Request(self.URL, data=json.dumps(payload).encode(),
                                      headers={"Content-Type": "application/json", "Authorization": self.auth_header()})
+        return self.call(req)
+
+    def send_photo(self, png, r):
+        body, ctype = multipart({"media_category": "tweet_image"}, {"media": ("recap.png", png, "image/png")})
+        req = urllib.request.Request(self.UPLOAD, data=body,
+                                     headers={"Content-Type": ctype, "Authorization": self.auth_header(self.UPLOAD)})
+        ok, retry, err, reply = self.call(req, want_reply=True)
+        if not ok:
+            return ok, retry, "media upload " + err
+        media_id = str((reply.get("data") or {}).get("id") or reply.get("media_id_string") or "")
+        if not media_id:
+            return False, None, "media upload: no id"
+        return self.send_text(recap.caption_x(r, SITE), media_id)
+
+    def call(self, req, want_reply=False):
         try:
-            with urllib.request.urlopen(req, timeout=20) as r:
-                return 200 <= r.status < 300, None, ""
+            with urllib.request.urlopen(req, timeout=60) as r:
+                ok = 200 <= r.status < 300
+                if want_reply:
+                    return ok, None, "", json.load(r)
+                return ok, None, ""
         except urllib.error.HTTPError as e:
             retry = None
             if e.code == 429:
@@ -442,9 +500,10 @@ class X(Outlet):
                 detail = json.load(e).get("detail", "")
             except ValueError:
                 detail = ""
-            return False, retry, f"HTTP {e.code}: {detail}"
+            res = (False, retry, f"HTTP {e.code}: {detail}")
         except (urllib.error.URLError, OSError) as e:
-            return False, None, type(e).__name__
+            res = (False, None, type(e).__name__)
+        return res + ({},) if want_reply else res
 
     def send(self, item):
         return self.send_text(x_text(item))
@@ -672,6 +731,88 @@ class Watcher:
                 self.save_state()
                 await asyncio.sleep(3)  # Telegram allows ~20 posts a minute per channel
 
+    # ---------- weekly recap ----------
+    @staticmethod
+    def recap_slot(now: float) -> float:
+        """The latest scheduled recap time at or before now."""
+        d = datetime.fromtimestamp(now, timezone.utc).replace(hour=RECAP_HOUR, minute=0, second=0, microsecond=0)
+        d -= timedelta(days=(d.weekday() - RECAP_WEEKDAY) % 7)
+        if d.timestamp() > now:
+            d -= timedelta(days=7)
+        return d.timestamp()
+
+    def make_recap(self, end: float) -> tuple[dict, bytes]:
+        def get(path):
+            try:
+                with urllib.request.urlopen(RELAY_HTTP + path, timeout=30) as r:
+                    return json.load(r)
+            except (urllib.error.URLError, OSError, ValueError) as exc:
+                log.warning("recap: cannot read %s (%r)", path, exc)
+                return None
+        stats = get("/stats")
+        if not stats or "blocks" not in stats:
+            raise RuntimeError("relay /stats not available")
+        r = recap.build(stats, get("/community"), self.state["items"], end)
+        png = recap.render(r, SITE)
+        d = os.path.join(PUBLIC_DIR, "recap")
+        os.makedirs(d, exist_ok=True)
+        name = datetime.fromtimestamp(end, timezone.utc).strftime("%Y-%m-%d") + ".png"
+        for fn in (name, "latest.png"):
+            tmp = os.path.join(d, fn + ".tmp")
+            with open(tmp, "wb") as f:
+                f.write(png)
+            os.replace(tmp, os.path.join(d, fn))
+        try:
+            with open(os.path.join(d, "index.json")) as f:
+                index = json.load(f)
+        except (OSError, ValueError):
+            index = []
+        index = [x for x in index if x.get("file") != name]
+        index.insert(0, {"file": name, "start": round(r["start"]), "end": round(r["end"]), "period": recap.period(r),
+                         "lines": recap.lines(r, SITE)})
+        write_atomic(os.path.join(d, "index.json"), json.dumps(index[:104], separators=(",", ":")))
+        log.info("recap drawn: %s (%s)", name, recap.period(r))
+        return r, png
+
+    async def maybe_recap(self):
+        if not RECAP_ON:
+            return
+        slot = self.recap_slot(time.time())
+        st = self.state.get("recap")
+        if st is None:  # first run: the first recap comes at the next slot
+            self.state["recap"] = {"slot": slot, "posted": {}}
+            self.save_state()
+            return
+        if slot > st.get("slot", 0):
+            try:
+                r, _ = await asyncio.to_thread(self.make_recap, slot)
+            except Exception as exc:  # retried on the next poll
+                log.warning("recap failed: %r", exc)
+                return
+            st = self.state["recap"] = {"slot": slot, "posted": {}, "r": r,
+                                        "file": datetime.fromtimestamp(slot, timezone.utc).strftime("%Y-%m-%d") + ".png"}
+            self.save_state()
+        if "r" not in st or time.time() - st["slot"] > 86400:  # nothing drawn, or a day late: skip this week's post
+            return
+        for o in self.outlets:
+            got = st["posted"].get(o.name)
+            if not o.enabled() or got == "ok" or (isinstance(got, int) and got >= 3) or st.get("pause_until", 0) > time.time():
+                continue
+            try:
+                with open(os.path.join(PUBLIC_DIR, "recap", st["file"]), "rb") as f:
+                    png = f.read()
+            except OSError:
+                return
+            ok, retry, err = await asyncio.to_thread(o.send_photo, png, st["r"])
+            if ok:
+                st["posted"][o.name] = "ok"
+                log.info("recap posted to %s", o.name)
+            else:
+                st["posted"][o.name] = (got if isinstance(got, int) else 0) + 1
+                st["pause_until"] = time.time() + (retry or 300)
+                log.warning("recap post to %s failed (%s)", o.name, err)
+            self.save_state()
+
     async def run(self):
         while True:
             try:
@@ -683,6 +824,7 @@ class Watcher:
                         if await self.sync() or self.dirty_public or not self.state["primed"]:
                             self.process()
                         await self.deliver()
+                        await self.maybe_recap()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
                 raise
@@ -706,8 +848,32 @@ def send_test() -> int:
     return code
 
 
+def recap_cli(post: bool) -> int:
+    """Draw the recap of the 7 days up to now; post it too with post=True."""
+    w = Watcher()
+    try:
+        r, png = w.make_recap(time.time())
+    except Exception as exc:
+        print(f"recap: FAILED {exc}")
+        return 1
+    print("recap drawn: https://" + FEED_URL.split("//", 1)[-1].split("/", 1)[0] + "/recap/latest.png")
+    print("\n".join("  " + x for x in recap.lines(r, SITE)))
+    code = 0
+    if post:
+        for o in (Telegram(), X()):
+            if not o.enabled():
+                print(f"{o.name}: off (credentials not set in .env)")
+                continue
+            ok, _, err = o.send_photo(png, r)
+            print(f"{o.name}: {'sent' if ok else 'FAILED ' + err}")
+            code |= 0 if ok else 1
+    return code
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if "--test" in sys.argv:
         sys.exit(send_test())
+    if "--recap-now" in sys.argv or "--recap-preview" in sys.argv:
+        sys.exit(recap_cli("--recap-now" in sys.argv))
     asyncio.run(Watcher().run())
