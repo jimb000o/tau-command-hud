@@ -107,6 +107,40 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .grp small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
 .list > li.quiet { color: var(--dim); font-size: 12.5px; padding: 4px 2px 6px; }
 .quorum.wait .fill { background: rgba(255,255,255,.14); }
+/* rules over time: one lane per spec revision, one for the consensus mechanism, one bar per proposal from proposed to its activation block */
+.p-rules { padding-bottom: 10px; }
+.tl { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 5px 12px; align-items: center; }
+.tl .ln { font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.tl .tr { position: relative; height: 26px; }
+.tl .tr.props { height: auto; min-height: 14px; }
+.seg { position: absolute; top: 0; bottom: 0; border: 1px solid var(--hair); border-radius: 4px; background: rgba(255,255,255,.04); display: flex; align-items: center; padding: 0 8px; overflow: hidden;
+  font: 600 11px var(--display); color: var(--dim); white-space: nowrap; cursor: pointer; min-width: 3px; }
+.seg:hover, .seg:focus-visible { background: rgba(255,255,255,.1); color: #fff; outline: none; }
+.seg.now { border-color: #fff; color: #fff; background: rgba(255,255,255,.08); }
+.seg.future { border-style: dashed; background: transparent; }
+.seg.maybe { border-style: dotted; background: transparent; color: var(--dim); }
+.seg .t { overflow: hidden; }
+.tick { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 2px solid var(--ok); }
+.tick.future { border-left: 2px dashed #fff; }
+.nowline { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 1px solid var(--ok); box-shadow: 0 0 6px var(--ok); pointer-events: none; }
+.pbar { position: relative; height: 12px; }
+.pbar button { all: unset; position: absolute; top: 0; height: 12px; cursor: pointer; min-width: 8px; color: rgba(255,255,255,.55); background: linear-gradient(currentColor, currentColor) center / 100% 2px no-repeat; }
+.pbar button::before { content: ""; position: absolute; left: -4px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--deck); border: 2px solid currentColor; box-sizing: border-box; }
+.pbar button::after { content: ""; position: absolute; right: -1px; top: 0; width: 2px; height: 12px; background: currentColor; }
+.pbar button:hover, .pbar button:focus-visible { color: #fff; }
+.pbar .active { color: var(--ok); }
+.pbar .voting { color: var(--behind); }
+.pbar .dropped { color: rgba(255,255,255,.25); }
+.axis { position: relative; height: 16px; font: 11px var(--mono); color: var(--dim); }
+.axis span { position: absolute; top: 0; white-space: nowrap; transform: translateX(-50%); }
+.axis span.l { transform: none; } .axis span.r { transform: translateX(-100%); }
+.axis span.now { color: var(--ok); }
+.axis .brk { position: absolute; top: 2px; bottom: 2px; border-left: 1px dashed var(--hair); }
+.tl-note { margin: 6px 0 0; color: var(--dim); font-size: 12px; }
+.tl-note b { color: #fff; font-weight: 600; }
+#tlTip { position: fixed; z-index: 80; max-width: min(420px, 90vw); padding: 8px 11px; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
+#tlTip[hidden] { display: none; }
+@media (max-width: 700px) { .tl { grid-template-columns: 1fr; gap: 3px; } .tl .ln { margin-top: 6px; } .tl .ln:empty { display: none; } .tl .tr { height: 30px; } .pbar { height: 22px; } .pbar button { top: 8px; } }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer a { color: var(--dim); }
 footer p { margin: 0; }
@@ -192,6 +226,12 @@ p.why { margin: 0; color: var(--text); } p.why.warn { color: #fff; font-weight: 
   </div>
 
   <div class="tiles" id="tiles"></div>
+
+  <section class="panel p-rules" aria-labelledby="rulesH">
+    <h2 id="rulesH">Rules over time <small id="rulesSub">each block is judged by the rules in force at its height</small></h2>
+    <div class="tl" id="tl"></div>
+    <p class="tl-note" id="tlNote"></p>
+  </section>
 
   <main class="main">
     <section class="panel p-open">
@@ -335,6 +375,7 @@ function render() {
   pending = false;
   if (!D) return;
   tiles();
+  timeline();
   const P = D.proposals;
   const by = s => P.filter(p => p.status === s).sort((a, b) => a.activate_at - b.activate_at);
   const voting = by("voting"), agreed = by("agreed");
@@ -358,6 +399,116 @@ function render() {
   if (ch.x) $("fX").outerHTML = `<a class="btn" id="fX" href="${esc(ch.x)}" target="_blank" rel="noopener">${$("fX").innerHTML.replace("X · soon", "X")}</a>`;
   openFromHash(false);
 }
+
+/* ---------------- rules over time ----------------
+   Rules lane: one segment per spec revision, from the block where it took effect to the next one.
+   Revisions that are agreed but not yet in force follow as dashed segments.
+   Consensus lane: who may seal blocks (eligibility_mode). Genesis is a fixed validator list (proof of authority);
+   only an agreed rule change whose settings carry eligibility_mode switches it.
+   Proposals lane: one bar per proposal from the block it was proposed to its activation block (or deadline).
+   The past and the future have their own scale: activation heights lie thousands of blocks ahead. */
+const CONS = { validator_set: ["Proof of authority", "a fixed validator list: the listed validators take turns sealing blocks, each seal signed with BLS and checked by the Tau rules (o7)"],
+  tau_validator_set: ["Validator list in Tau", "a validator list kept in the Tau rules themselves: rule o7 decides who may seal"],
+  stake: ["Proof of stake", "proof of stake: the Tau rules (o7) judge who may seal by stake"] };
+const consName = m => (CONS[m] || [m])[0];
+const modeOf = p => p.patch && typeof p.patch.eligibility_mode === "string" ? p.patch.eligibility_mode : null;
+let TL = null;
+function timeline() {
+  const P = D.proposals, head = D.chain.head || 0, lo = 0;
+  const act = P.filter(p => p.status === "active").sort((a, b) => a.activated_at - b.activated_at);
+  const agr = P.filter(p => p.status === "agreed").sort((a, b) => a.activate_at - b.activate_at);
+  const vot = P.filter(p => p.status === "voting").sort((a, b) => a.activate_at - b.activate_at);
+  const far = Math.max(head, ...P.map(p => p.activate_at || 0));
+  // the scale squeezes quiet stretches: every gap between two events gets width by the log of its length, so a wait of
+  // thousands of empty blocks does not crush the events around it; within a gap the blocks are evenly spaced
+  const marks = [...new Set([lo, head, far, ...P.flatMap(p => [p.proposed_at, p.activated_at ?? p.expired_at ?? p.activate_at])].filter(h => h != null && h >= lo))].sort((a, b) => a - b);
+  // a short tail after the last event, so the newest (agreed or proposed) stretch has room for its label
+  marks.push(far + Math.max(1, Math.round((far - lo) * 0.02)));
+  const wts = marks.slice(1).map((h, i) => Math.log1p(h - marks[i])); wts[wts.length - 1] = Math.max(wts[wts.length - 1], 0.9 * wts.reduce((a, b) => a + b, 0) / wts.length);
+  const tot = wts.reduce((a, b) => a + b, 0) || 1, cum = [0];
+  wts.forEach(w => cum.push(cum[cum.length - 1] + w / tot));
+  const x = h => { if (h <= marks[0]) return 0; for (let i = 1; i < marks.length; i++) if (h <= marks[i]) return cum[i - 1] + (cum[i] - cum[i - 1]) * (h - marks[i - 1]) / Math.max(1, marks[i] - marks[i - 1]); return 1; };
+  const END = marks[marks.length - 1];
+  const pc = h => (x(h) * 100).toFixed(3) + "%";
+  const rd = q => ({ id: q.id, activatedAt: q.at, revisions: q.revisions });
+  // revision segments: genesis, every activation, then the agreed ones in activation order
+  const bounds = [{ h: lo, rev: 1, ps: [] }];
+  act.forEach(p => { const last = bounds[bounds.length - 1]; if (last.h === p.activated_at) last.ps.push(p), last.rev = p.rev; else bounds.push({ h: p.activated_at, rev: p.rev, ps: [p] }); });
+  let rev = (D.rules && D.rules.revision) || bounds[bounds.length - 1].rev;
+  agr.forEach(p => { const last = bounds[bounds.length - 1]; if (last.h === p.activate_at && last.future) last.ps.push(p), last.rev = ++rev; else bounds.push({ h: p.activate_at, rev: ++rev, ps: [p], future: true }); });
+  const applied = [...act.map(p => ({ id: p.id, at: p.activated_at, revisions: p.revisions })), ...agr.map(p => ({ id: p.id, at: p.activate_at, revisions: p.revisions }))];
+  const segs = bounds.map((b, i) => ({ ...b, to: i + 1 < bounds.length ? bounds[i + 1].h : END, spec: window.RuleDiff ? RuleDiff.specAt(b.h + 1, applied.map(rd)) : null }));
+  // consensus mechanism segments
+  let mode = "validator_set"; const modes = [{ h: lo, m: mode }];
+  [...act.map(p => [p, p.activated_at, false]), ...agr.map(p => [p, p.activate_at, true])].forEach(([p, h, fut]) => { const m = modeOf(p); if (m && m !== mode) { modes.push({ h, m, p, future: fut }); mode = m; } });
+  const msegs = modes.map((s, i) => ({ ...s, to: i + 1 < modes.length ? modes[i + 1].h : END }));
+  const nowM = [...modes].reverse().find(s => !s.future) || modes[0];
+  if (D.rules && D.rules.consensus_mode && !modes.some(s => s.p && !s.future)) nowM.m = D.rules.consensus_mode;
+  const maybe = vot.filter(p => modeOf(p) && modeOf(p) !== mode);
+  TL = { segs, msegs };
+  // labels are never cut: the full text if it fits, else the short one, else none (the hover still names it)
+  const trackW = Math.max(200, ($("tl").clientWidth || 800) - (matchMedia("(max-width: 700px)").matches ? 0 : 128));
+  const label = (txt, w, sh) => { const px = w / 100 * trackW, fits = t => t && t.length * 7.2 + 20 <= px;
+    const t = fits(txt) ? txt : fits(sh) ? sh : ""; return t ? `<span class="t">${esc(t)}</span>` : ""; };
+  const segHtml = (s, i) => { const w = (x(s.to) - x(s.h)) * 100, cur = !s.future && (i + 1 === segs.length || segs[i + 1].future);
+    const txt = `Revision ${s.rev}` + (cur ? " · in force now" : s.future ? " · agreed" : "");
+    return `<div class="seg${cur ? " now" : ""}${s.future ? " future" : ""}" role="button" tabindex="0" data-seg="${i}" aria-label="${esc(txt)}" style="left:${pc(s.h)};width:calc(${w.toFixed(3)}% - 2px)" data-tip="${esc(segTip(s, cur))}">${label(txt, w, `Rev ${s.rev}`)}</div>`; };
+  const ticks = segs.slice(1).map(s => `<i class="tick${s.future ? " future" : ""}" style="left:${pc(s.h)}"></i>`).join("");
+  const mHtml = msegs.map((s, i) => { const w = (x(s.to) - x(s.h)) * 100, cur = s === nowM;
+    const tip = `${consName(s.m)}${cur ? ", in force now" : s.future ? `, agreed: from block #${fmtN(s.h)}` : ""}: ${(CONS[s.m] || ["", s.m])[1]}.` + (s.p ? `\nSwitched by the agreed rule change “${s.p.title}”. Click for the proposal.` : `\nTau has no proof of work. The mechanism is part of the chain state and switches only through an agreed rule change.${modes.length === 1 ? " No switch so far." : ""}`);
+    return `<div class="seg${cur ? " now" : ""}${s.future ? " future" : ""}" ${s.p ? `data-id="${esc(s.p.id)}" ` : ""}role="button" tabindex="0" style="left:${pc(s.h)};width:calc(${w.toFixed(3)}% - 2px)" aria-label="${esc(consName(s.m))}" data-tip="${esc(tip)}">${label(consName(s.m) + (s.m === "validator_set" ? " · fixed validator list" : ""), w, consName(s.m))}</div>`; }).join("")
+    + maybe.map(p => `<div class="seg maybe" data-id="${esc(p.id)}" role="button" tabindex="0" style="left:${pc(p.activate_at)};width:calc(${((1 - x(p.activate_at)) * 100).toFixed(3)}% - 2px);z-index:1;background:var(--deck)" data-tip="${esc(`Proposed: switch to ${consName(modeOf(p))} at block #${fmtN(p.activate_at)}, if enough validators agree by then (${p.counted_votes} of ${p.thr} votes so far). Click for the proposal.`)}">${label("→ " + consName(modeOf(p)) + "?", (1 - x(p.activate_at)) * 100, "→ " + { stake: "PoS", validator_set: "PoA", tau_validator_set: "Tau list" }[modeOf(p)] + "?")}</div>`).join("");
+  const pRows = [...P].sort((a, b) => a.proposed_at - b.proposed_at).map(p => {
+    const end = p.activated_at ?? p.expired_at ?? p.activate_at, w = Math.max(0.4, (x(end) - x(p.proposed_at)) * 100);
+    const what = { active: `in force since #${fmtN(p.activated_at)} (revision ${p.rev})`, agreed: `agreed at #${fmtN(p.approved_at)}, takes effect at #${fmtN(p.activate_at)}${left(p) > 0 ? `, ${plural(left(p), "block")} from now${eta(left(p)) ? ` (${eta(left(p))})` : ""}` : ""}`,
+      voting: `waiting for votes (${p.counted_votes} of ${p.thr}), deadline #${fmtN(p.activate_at)}`, dropped: `dropped at #${fmtN(p.expired_at)}` }[p.status];
+    return `<div class="pbar"><button type="button" class="${p.status}" data-id="${esc(p.id)}" style="left:${pc(p.proposed_at)};width:${w.toFixed(3)}%" aria-label="${esc(p.title)}" data-tip="${esc(`“${p.title}”\nproposed at #${fmtN(p.proposed_at)}, ${what}.${modeOf(p) ? `\nSwitches the consensus mechanism to ${consName(modeOf(p))}.` : ""}\nClick for the rule diff and the votes.`)}"></button></div>`; }).join("");
+  // axis labels at the events, left to right, skipping any that would touch the one before
+  const gap = 100 * 84 / trackW, keep = [lo, head, ...(Math.abs(x(far) - x(head)) * 100 >= gap ? [far] : [])];
+  const shown = marks.filter(h => h <= far && (h !== far || keep.includes(far)) && (keep.includes(h) || keep.every(k => Math.abs(x(k) - x(h)) * 100 >= gap)))
+    .filter((h, i, a) => keep.includes(h) || i === 0 || (x(h) - x(a[i - 1])) * 100 >= gap);
+  const ax = shown.map(h => { const xv = x(h) * 100, isNow = h === head;
+    return `<span class="${isNow ? "now " : ""}${h === lo ? "l" : xv > 95 ? "r" : ""}" style="left:${xv.toFixed(3)}%">${isNow ? "now " : ""}#${fmtN(h)}</span>`; }).join("");
+  $("tl").innerHTML = `<span class="ln">Rules</span><div class="tr">${segs.map(segHtml).join("")}${ticks}<i class="nowline" style="left:${pc(head)}"></i></div>
+    <span class="ln">Consensus</span><div class="tr">${mHtml}<i class="nowline" style="left:${pc(head)}"></i></div>
+    <span class="ln">Proposals</span><div class="tr props">${pRows || `<p class="tl-note" style="margin:0">No rule change proposed yet.</p>`}<i class="nowline" style="left:${pc(head)}"></i></div>
+    <span class="ln"></span><div class="axis">${ax}</div>`;
+  const nextA = agr[0];
+  $("tlNote").innerHTML = `Revision <b>${D.rules ? D.rules.revision : bounds.filter(b => !b.future).pop().rev}</b> is in force. ` +
+    (nextA ? `Next change: <b>#${fmtN(nextA.activate_at)}</b>, ${plural(left(nextA), "block")} from now${eta(left(nextA)) ? ` (${eta(left(nextA))})` : ""}. ` : "No agreed change is waiting. ") +
+    `Consensus: <b>${esc(consName(nowM.m))}</b>${modes.length > 1 ? `, ${plural(modes.filter(s => s.p && !s.future).length, "switch", "switches")} so far` : ", never switched"}.` +
+    ` Not to scale: long stretches without events are drawn shorter.`;
+}
+function segTip(s, cur) {
+  const span = s.future ? `from block #${fmtN(s.h)} (agreed, not yet in force)` : `${s.h ? `from block #${fmtN(s.h)}` : "from genesis"}${cur ? " to now" : ` to #${fmtN(s.to)}`}`;
+  const why = s.ps.length ? `\nStarted by: ${s.ps.map(p => `“${p.title}”`).join(", ")}.` : "\nThe genesis rules: a block is valid if its BLS signature checks out (o6), every listed validator may seal (o7), the base fee is 10 AGRS (o9).";
+  return `Revision ${s.rev}, ${span}.${why}\nClick for the full rule text${s.ps.length ? " and what changed" : ""}.`;
+}
+function openSeg(i) {
+  const s = TL && TL.segs[i]; if (!s) return;
+  const prev = i ? TL.segs[i - 1].spec : null, cur = !s.future && (i + 1 === TL.segs.length || TL.segs[i + 1].future);
+  const text = s.spec ? "always (\n" + [...new Set(Object.keys(s.spec).sort((a, b) => +a.slice(1) - +b.slice(1)).map(k => s.spec[k]))].map(c => "    " + c.trim()).join(" &&\n") + "\n)" : "";
+  lastFocus = document.activeElement; openId = null;
+  $("dTitle").innerHTML = `<span class="badge ${cur ? "b-active" : s.future ? "b-agreed" : "b-dropped"}">${cur ? "in force" : s.future ? "agreed" : "earlier"}</span> Rules revision ${s.rev}`;
+  $("dBody").innerHTML = `<p class="note" style="margin:0">${esc(segTip(s, cur).split("\n")[0])} Every block in this range is judged by exactly this rule text; nodes switch to the next revision on their own at its activation block. No software upgrade, no fork.</p>
+    ${s.ps.map(p => `<h3>What changed: ${esc(p.title)}</h3>${prev && window.RuleDiff ? RuleDiff.html(prev, p.revisions, { at: s.h, patch: !!p.patch }) : ""}<p class="note" style="margin:6px 0 0"><button class="btn" type="button" data-id="${esc(p.id)}">Open the proposal</button></p>`).join("")}
+    <h3>Full rule text of revision ${s.rev}</h3><pre class="code">${esc(text)}</pre>
+    <p class="note">Step through these blocks in <a href="/history/#${Math.max(1, s.h)}">Time travel</a>.</p>`;
+  $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus();
+}
+(() => {
+  const box = document.createElement("div"); box.id = "tlTip"; box.hidden = true; document.body.appendChild(box);
+  const place = (x, y) => { const w = box.offsetWidth, h = box.offsetHeight; box.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px"; box.style.top = (y + 18 + h > innerHeight ? Math.max(8, y - h - 10) : y + 18) + "px"; };
+  const tl = $("tl");
+  tl.addEventListener("mouseover", e => { const t = e.target.closest("[data-tip]"); if (!t) { box.hidden = true; return; } box.textContent = t.dataset.tip; box.hidden = false; place(e.clientX, e.clientY); });
+  tl.addEventListener("mousemove", e => { if (!box.hidden) place(e.clientX, e.clientY); });
+  tl.addEventListener("mouseleave", () => { box.hidden = true; });
+  tl.addEventListener("click", e => { box.hidden = true; const s = e.target.closest("[data-seg]"); if (s) openSeg(+s.dataset.seg); });
+  tl.addEventListener("keydown", e => { if (e.key !== "Enter" && e.key !== " ") return; const t = e.target.closest("[data-seg], [data-id]"); if (!t) return; e.preventDefault(); t.click(); });
+  const p = document.querySelector(".p-rules");
+  p.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") hovering = true; });
+  p.addEventListener("pointerleave", () => { hovering = false; if (pending) render(); });
+})();
 
 /* ---------------- detail ---------------- */
 let lastFocus = null, openId = null;
@@ -447,6 +598,8 @@ function sample() {
       explain: ex("Only one validator may make blocks + New definition of o10", [{ topic: "Who may make blocks", text: "only validator a1fe40…7d2b" }, { topic: "Output o10", text: "depends on the eligibility mode" }], "Block making would rest with a single validator. Others could no longer add blocks.") }),
     P(5, { status: "dropped", proposed_at: 1200, activate_at: 3200, expired_at: 3200, revisions: [], patch: { validator_additions: ["b7c2" + "0".repeat(92)] },
       explain: ex("Admit validator b7c200…0000", [{ topic: "Validators", text: "add b7c200…0000" }], "More parties would make blocks and vote on rule changes.") }),
+    P(6, { status: "voting", proposed_at: 4205, activate_at: 9205, revisions: [], patch: { eligibility_mode: "stake" },
+      explain: ex("Switch consensus to proof of stake", [{ topic: "Who may make blocks", text: "fixed validator list → by stake (o7)" }], "Block making would follow stake instead of a fixed list.") }),
   ];
   return { generated_at: now, chain: { head, head_ts: now, first: 0, seconds_per_block: 12 },
     rules: { revision: 3, base_fee: 10, validators: 1, quorum: "supermajority", votes_needed: 1, open_admission: true },

@@ -207,7 +207,7 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
     props: dict[str, dict] = {}
     order: list[dict] = []
     events: list[dict] = []
-    validators, quorum, fee, rev = list(GENESIS_VALIDATORS), GENESIS_QUORUM, 10, 1
+    validators, quorum, fee, rev, mode = list(GENESIS_VALIDATORS), GENESIS_QUORUM, 10, 1, "validator_set"
     spec = explain.clauses(explain.GENESIS_RULES)   # the rules in force, stream -> clause
     if not blocks:
         return [], [], {}
@@ -273,6 +273,8 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
                 validators = sorted({*(v for v in validators if v not in rem), *(str(x).lower() for x in patch.get("validator_additions") or [])})
             if "vote_quorum" in patch:
                 quorum = patch["vote_quorum"]
+            if patch.get("eligibility_mode"):
+                mode = patch["eligibility_mode"]
             events.append({"kind": "active", "h": h, "ts": ts, "id": p["id"]})
     thr = threshold(quorum, len(validators))
     for p in order:
@@ -281,7 +283,7 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
         p["counted_votes"] = sum(1 for v in p["votes"] if v["counted"])
         if p["status"] == "voting":
             p["thr"] = thr  # what it needs now
-    now = {"head": hi, "first": lo, "rev": rev, "fee": fee, "validators": len(validators), "quorum": quorum, "thr": thr}
+    now = {"head": hi, "first": lo, "rev": rev, "fee": fee, "validators": len(validators), "quorum": quorum, "thr": thr, "mode": mode}
     return order, events, now
 
 
@@ -783,7 +785,8 @@ class Watcher:
                       "seconds_per_block": round(pace, 1) if pace else None,
                       "node_head": g.get("head_number")},
             "rules": {"revision": now.get("rev"), "base_fee": now.get("fee"), "validators": now.get("validators"),
-                      "quorum": now.get("quorum"), "votes_needed": now.get("thr"), "open_admission": OPEN_ADMISSION},
+                      "quorum": now.get("quorum"), "votes_needed": now.get("thr"), "open_admission": OPEN_ADMISSION,
+                      "consensus_mode": g.get("eligibility_mode") or now.get("mode")},
             "proposals": [{k: p[k] for k in ("id", "n", "title", "parts", "status", "proposer", "proposed_at", "proposed_ts",
                                               "activate_at", "approved_at", "approved_ts", "activated_at", "activated_ts",
                                               "expired_at", "expired_ts", "thr", "counted_votes", "rev", "revisions",
