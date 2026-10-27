@@ -64,7 +64,6 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
    and everything fits one screen. --z comes from the script: min(width/1800, height/860), between 1 and 2, and smaller if the content is taller. */
 html.wide body { padding: 0; }
 html.wide .wrap { zoom: var(--z); max-width: none; padding: 10px 24px 56px; gap: 12px; }
-html.wide .fb-fab, html.wide .modal .sheet { zoom: var(--z); }
 html.wide .intro { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 24px; }
 html.wide .cols { grid-template-columns: minmax(0, 1fr) minmax(0, .95fr) minmax(0, 1.35fr); align-items: stretch; }
 html.wide .ptests { grid-column: auto; }
@@ -78,7 +77,7 @@ html.wide .log { max-height: 520px; }
 .chip { font: 12px var(--mono); background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
 .chip:hover { border-color: #fff; color: #fff; }
 .chip.on { border-color: var(--ok); color: var(--ok); }
-.chip .x { color: var(--bad); }
+.chip .x { color: var(--dim); }
 textarea { font-variant-ligatures: none; width: 100%; min-height: 150px; resize: vertical; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; font: 13px/1.55 var(--mono); }
 textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border-color: var(--ok); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
@@ -87,47 +86,49 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border
 .btn.primary:hover { background: var(--ok); border-color: var(--ok); }
 .btn:hover:not(.primary) { border-color: #fff; }
 .btn:disabled { opacity: .4; cursor: default; }
-.insert { font: 11.5px var(--mono); color: var(--dim); }
-.insert button { font: 11.5px var(--mono); background: none; border: 0; border-bottom: 1px dotted var(--dim); color: #fff; padding: 0; margin: 0 4px; cursor: pointer; }
+.insert { font: 12px var(--mono); color: var(--dim); }
+.insert button { font: 12px var(--mono); background: none; border: 0; border-bottom: 1px dotted var(--dim); color: #fff; padding: 0; margin: 0 4px; cursor: pointer; }
 .legend { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 12px 0 0; font-size: 12px; }
 .legend dt { color: #fff; font-weight: 600; }
 .legend dd { margin: 0; color: var(--dim); }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .steps li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 7px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
 .steps li .ic { font-weight: 600; color: var(--dim); }
-.steps li b { color: #fff; font: 600 12.5px var(--display); }
+.steps li b { color: #fff; font: 600 13px var(--display); }
 .steps li p { margin: 2px 0 0; color: var(--dim); font-size: 12px; overflow-wrap: anywhere; }
 .steps li.pass { border-left-color: var(--ok); } .steps li.pass .ic { color: var(--ok); }
-.steps li.fail { border-left-color: var(--bad); } .steps li.fail .ic { color: var(--bad); } .steps li.fail p { color: var(--text); }
+.steps li.fail { border-left-color: #fff; } .steps li.fail .ic { color: #fff; } .steps li.fail p { color: var(--text); }   /* a failed check is white, not red: red is kept for "node offline" */
 .steps li.run { border-left-color: var(--behind); } .steps li.run .ic { color: var(--behind); }
 .steps li.skip { opacity: .5; }
 .verdict { margin: 10px 0 0; padding: 10px 12px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 500 14px/1.4 var(--display); color: #fff; }
-.verdict.bad { border-left-color: var(--bad); background: rgba(255,77,109,.07); }
+.verdict.bad { border-left-color: #fff; background: rgba(255,255,255,.06); }
 .verdict.idle { border-left-color: var(--hair); background: rgba(255,255,255,.03); color: var(--dim); }
-pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); }
 details summary { cursor: pointer; color: #fff; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-top: 10px; }
-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-th { text-align: left; font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 4px 6px; border-bottom: 1px solid var(--line); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 4px 6px; border-bottom: 1px solid var(--line); }
 td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 4px; padding: 4px 6px; font: 12.5px var(--mono); }
+td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 4px; padding: 4px 6px; font: 13px var(--mono); }
 .res { font-weight: 600; white-space: nowrap; }
-.res.allow { color: var(--ok); } .res.block { color: var(--bad); } .res.unk { color: var(--dim); font-weight: 500; white-space: normal; }
+.res.allow { color: var(--ok); } .res.block { color: #fff; } .res.unk { color: var(--dim); font-weight: 500; white-space: normal; }
 .why { display: block; color: var(--dim); font-weight: 400; font-size: 11px; white-space: normal; }
 @media (max-width: 700px) {
   table thead { display: none; }
   table, tbody { display: block; }
   #tests tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); position: relative; }
   #tests td { display: block; border: 0; padding: 0; }
-  #tests td[data-label]::before { content: attr(data-label); display: block; font: 600 10px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); margin-bottom: 3px; }
+  #tests td[data-label]::before { content: attr(data-label); display: block; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); margin-bottom: 3px; }
   #tests td.rc { grid-column: 1 / -1; }
   #tests td.dc { position: absolute; top: 4px; right: 0; }
 }
 .del { background: none; border: 0; color: var(--dim); cursor: pointer; font: 14px var(--mono); }
-.del:hover { color: var(--bad); }
+.del:hover { color: #fff; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
-.src { color: var(--dim); font-size: 11.5px; margin-top: 10px; }
+.src { color: var(--dim); font-size: 12px; margin-top: 10px; }
 .src a { color: var(--dim); }
-.engine { display: inline-flex; align-items: center; gap: 6px; font: 11.5px var(--mono); color: var(--dim); }
+.linkish { background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted rgba(255,255,255,.45); text-underline-offset: 3px; }
+.linkish:hover { color: var(--ok); }
+.engine { display: inline-flex; align-items: center; gap: 6px; font: 12px var(--mono); color: var(--dim); }
 .engine i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); display: inline-block; }
 .engine.on i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
 .engine.off i { background: var(--bad); }
@@ -138,43 +139,39 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
 .seat b { display: block; color: #fff; font: 600 13px var(--display); }
 .seat code { color: var(--dim); font-size: 11px; }
 .seat .v { margin-top: 4px; font-size: 12px; color: var(--dim); }
-.seat .v.yes { color: var(--ok); } .seat .v.no { color: var(--bad); }
+.seat .v.yes { color: var(--ok); } .seat .v.no { color: #fff; }
 .quorum { position: relative; height: 26px; border: 1px solid var(--hair); border-radius: 4px; overflow: hidden; margin: 8px 0 4px; background: #0c0c0d; }
 .quorum .fill { position: absolute; inset: 0 auto 0 0; background: var(--ok); opacity: .85; transition: width .5s; }
 .quorum .need { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff; }
 .quorum span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 600 12px var(--display); color: #fff; text-shadow: 0 0 4px #000, 0 0 2px #000; }
 .flow { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-.flow span { font: 600 10.5px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.flow span { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
 .flow span.done { border-color: var(--ok); color: var(--ok); }
 .flow span.now { border-color: var(--behind); color: var(--behind); }
-.flow span.dead { border-color: var(--bad); color: var(--bad); }
+.flow span.dead { border-color: rgba(255,255,255,.5); color: #fff; }
 .height { font: 600 22px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
-.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 12.5px; margin: 0; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 13px; margin: 0; }
 .kv dt { color: var(--dim); } .kv dd { margin: 0; color: #fff; overflow-wrap: anywhere; }
 .log { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 3px; font-size: 12px; max-height: 220px; overflow: auto; }
 .log li { padding: 3px 8px; border-left: 2px solid var(--line); color: var(--text); }
-.log li.ok { border-left-color: var(--ok); } .log li.bad { border-left-color: var(--bad); }
+.log li.ok { border-left-color: var(--ok); } .log li.bad { border-left-color: #fff; }
 .log li em { font-style: normal; color: var(--dim); margin-right: 6px; }
-.simtag { font: 600 9.5px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 6px; }
+.simtag { font: 600 11px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 6px; }
 .realbox { border: 1px dashed var(--hair); border-radius: 6px; padding: 8px 10px; font-size: 12px; color: var(--dim); margin-top: 10px; }
 .realbox b { color: #fff; }
 /* feedback: same floating button as the HUD, opens a pre-filled GitHub issue */
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); }
-.fb-fab:hover { background: var(--ok); }
-.fb-fab:focus-visible, .close:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
-@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } }
 .modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
 .sheet { position: relative; width: min(620px, 100%); max-height: 100%; overflow: auto; }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); }
 .fb form { display: grid; gap: 10px; }
 .cats { display: flex; flex-wrap: wrap; gap: 6px; border: 0; padding: 0; margin: 0; }
-.cats legend { color: var(--dim); font-size: 11.5px; margin-bottom: 6px; }
+.cats legend { color: var(--dim); font-size: 12px; margin-bottom: 6px; }
 .cats label { cursor: pointer; }
 .cats input { position: absolute; opacity: 0; pointer-events: none; }
 .cats span { display: inline-block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 6px 12px; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); }
 .cats input:checked + span { color: #000; background: #fff; border-color: transparent; }
 .cats input:focus-visible + span { outline: 2px solid var(--ok); outline-offset: 2px; }
-.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 11.5px; }
+.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 12px; }
 .fb label.chk { display: flex; gap: 8px; align-items: center; color: var(--dim); font-size: 12px; cursor: pointer; }
 .fb textarea { min-height: 96px; }
 .fb input[type=text] { width: 100%; background: #0c0c0d; border: 1px solid var(--hair); border-radius: 6px; color: #fff; font: 13px/1.5 var(--mono); padding: 8px 10px; }
@@ -182,6 +179,8 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
 .fb .status.ok { color: var(--ok); } .fb .status.err { color: var(--bad); }
 .fb a.btn { text-decoration: none; }
 .fblink { color: var(--dim); font-size: 12px; }
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -284,10 +283,9 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
     </div>
   </section>
 
-  <p class="src">Checks ported from <a href="https://github.com/IDNI/tau-testnet/tree/539d1e2" target="_blank" rel="noopener">IDNI/tau-testnet @ 539d1e2</a>: <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/rule_offers.py" target="_blank" rel="noopener">rule_offers.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py" target="_blank" rel="noopener">admission.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/approvals.py" target="_blank" rel="noopener">approvals.py</a>. Unofficial community page, not affiliated with IDNI.</p>
+  <p class="src">Checks ported from <a href="https://github.com/IDNI/tau-testnet/tree/539d1e2" target="_blank" rel="noopener">IDNI/tau-testnet @ 539d1e2</a>: <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/rule_offers.py" target="_blank" rel="noopener">rule_offers.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py" target="_blank" rel="noopener">admission.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/approvals.py" target="_blank" rel="noopener">approvals.py</a>. Unofficial community page, not affiliated with IDNI. · <button class="linkish" id="fbFab" type="button">Feedback</button></p>
 </div>
 
-<button class="fb-fab" id="fbFab" type="button">Feedback</button>
 <div class="modal" id="mFeedback" hidden role="dialog" aria-modal="true" aria-labelledby="fbTitle">
   <div class="sheet">
     <button class="close" id="fbClose" type="button" aria-label="Close">✕</button>
@@ -670,11 +668,11 @@ async function runCheck() {
   if (seq !== checkSeq) return;
   let eng;
   if (!res) {
-    eng = { title: "Tau engine", ok: null, detail: "The community node’s engine is not reachable right now, so this step was skipped. The text checks above are the same ones the node runs first." };
-    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs. The engine compile could not be run right now.";
+    eng = { title: "Tau engine", ok: null, detail: "Not reachable right now, so this step was skipped. The text checks above are the same ones the node runs first." };
+    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs.";
   } else if (res.busy) {
     eng = { title: "Tau engine", ok: null, detail: res.busy };
-    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs. The engine compile could not be run right now.";
+    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs.";
   } else if (res.accepted) {
     eng = { title: "Tau engine", ok: true, detail: `Compiled and accepted by the real engine (${res.engine || "tau-lang"}) in a throwaway sandbox${res.ms != null ? `, ${res.ms} ms` : ""}. Your transfers below were run through it too.` };
     verdictEl.className = "verdict"; verdictEl.textContent = "The testnet would accept this rule.";

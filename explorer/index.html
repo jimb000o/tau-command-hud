@@ -47,7 +47,6 @@ html.fit .cols > .panel { min-height: 0; display: flex; flex-direction: column; 
 html.fit .scroll { min-height: 0; flex: 1 1 auto; overflow: auto; }
 html.fit footer { padding-top: 6px; }
 html.fit footer p { margin: 0; }
-html.fit .fb-fab, html.fit #tip { zoom: var(--z); }
 
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
@@ -62,7 +61,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
 .state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
 .state.wait { color: var(--behind); border-color: rgba(255,177,59,.4); } .state.wait i { background: var(--behind); }
-.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+.state.off { color: #fff; border-color: rgba(255,255,255,.4); } .state.off i { background: var(--bad); }   /* the red dot means offline; the text stays white, one colour per meaning */
 .state.sample { color: #fff; border-color: #fff; } .state.sample i { background: #fff; }
 
 /* search + key numbers in one row on desktop */
@@ -83,7 +82,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 @media (min-width: 700px) { .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 .tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px; min-width: 0; cursor: default; }
 .tile:hover, .tile:focus-visible { border-color: var(--hair); outline: none; }
-.tile h4 { margin: 0; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.tile h4 { margin: 0; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
 .tile .v { font: 600 20px/1.2 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 3px; white-space: nowrap; }
 .tile .v small { font: 500 11px var(--display); color: var(--dim); margin-left: 3px; }
 .tile.a .v { color: var(--behind); }
@@ -91,8 +90,8 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
 .panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
 .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
-.panel h3 { margin: 12px 0 4px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #fff; }
-.empty { color: var(--dim); font-size: 12.5px; margin: 4px 0; }
+.panel h3 { margin: 12px 0 4px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #fff; }
+.empty { color: var(--dim); font-size: 13px; margin: 4px 0; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
 .note b { color: #fff; font-weight: 600; }
 
@@ -105,7 +104,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 
 /* lists */
 ul.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
-ul.list li > button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; padding: 5px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); cursor: pointer; font: 12.5px/1.45 var(--mono); color: var(--text); }
+ul.list li > button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; padding: 5px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); cursor: pointer; font: 13px/1.45 var(--mono); color: var(--text); }
 ul.list li > button:hover, ul.list li > button:focus-visible { background: rgba(255,255,255,.07); }
 ul.list li.on > button { background: rgba(255,255,255,.09); border-left-color: #fff; }
 ul.list li.q > button { border-left-color: var(--behind); }
@@ -119,53 +118,50 @@ ul.list li.fresh > button { animation: fresh 2.4s ease-out; }
 .list .amt.dim { color: var(--dim); }
 .list .amt.q { color: var(--behind); }
 .filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
-.filters button { font: 600 10.5px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 11px; cursor: pointer; white-space: nowrap; }
+.filters button { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 11px; cursor: pointer; white-space: nowrap; }
 .filters button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
 .filters button:hover:not([aria-pressed="true"]) { color: #fff; border-color: #fff; }
 button.more { all: unset; cursor: pointer; color: var(--dim); font-size: 12px; text-decoration: underline; margin: 8px 0 2px; display: inline-block; }
 button.more:hover { color: #fff; }
 
 /* the open item */
-.kind { font: 600 10px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin: 0; }
+.kind { font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin: 0; }
 .title { margin: 2px 0 4px; font: 600 19px/1.25 var(--display); color: #fff; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
-.headline { margin: 0 0 6px; font: 500 13.5px/1.45 var(--display); color: #fff; }
+.headline { margin: 0 0 6px; font: 500 14px/1.45 var(--display); color: #fff; }
 .headline em { font-style: normal; color: var(--dim); }
-.tag { display: inline-block; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 2px 7px; white-space: nowrap; }
+.tag { display: inline-block; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 2px 7px; white-space: nowrap; }
 .tag.g { color: var(--ok); border-color: rgba(57,255,138,.4); }
 .tag.w { color: #fff; border-color: var(--hair); }
 .tag.a { color: var(--behind); border-color: rgba(255,177,59,.4); }
 .tag.r { color: var(--bad); border-color: rgba(255,77,109,.4); }
 .nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
-dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 6px 0 0; font-size: 12.5px; }
+dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 6px 0 0; font-size: 13px; }
 dl.kv dt { color: var(--dim); }
 dl.kv dd { margin: 0; overflow-wrap: anywhere; word-break: break-word; }
 dl.kv code { color: var(--text); }
 @media (max-width: 520px) { dl.kv { grid-template-columns: minmax(0, 1fr); } dl.kv dd { margin-bottom: 4px; } }
 pre, code { font-variant-ligatures: none; }
-pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 22em; overflow: auto; }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); max-height: 22em; overflow: auto; }
 details.raw { margin-top: 10px; } details.raw summary { cursor: pointer; color: var(--dim); font-size: 12px; }
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
-th { text-align: left; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { text-align: left; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 a.go { color: #fff; text-decoration: none; border-bottom: 1px dotted var(--hair); cursor: pointer; }
 a.go:hover { border-bottom-color: #fff; }
 .mini { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); margin: 8px 0 2px; }
 .mini div { border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; }
-.mini h4 { margin: 0; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.mini h4 { margin: 0; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
 .mini b { display: block; font: 600 16px/1.3 var(--display); color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .how { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; }
-.how li { margin: 3px 0; color: var(--dim); font-size: 12.5px; }
+.how li { margin: 3px 0; color: var(--dim); font-size: 13px; }
 .how li b { color: #fff; font-weight: 600; }
 .how code { color: #fff; }
 
 #tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(320px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer a { color: var(--dim); }
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
-.fb-fab:hover { background: var(--ok); }
-html.fit .fb-fab { display: none; }
-@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .tile .v { font-size: 17px; } }
+@media (max-width: 700px) { .tile .v { font-size: 17px; } }
 [hidden] { display: none !important; }
 /* phone: nothing smaller than 11 px, buttons big enough for a thumb */
 @media (max-width: 700px) {
@@ -175,6 +171,8 @@ html.fit .fb-fab { display: none; }
   .filters button { min-height: 44px; padding-top: 0; padding-bottom: 0; }
 }
 @media (max-width: 380px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -226,7 +224,6 @@ html.fit .fb-fab { display: none; }
     <p>Data: our node at node.tauhud.com<span class="vt"> (tau-testnet pinned to commit 539d1e2)</span>, which checks every block itself, served by a read-only relay. Amounts in AGRS. <a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">Source</a> · <a href="/account/">Accounts</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
-<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a>
 <div id="tip" hidden></div>
 
 <script>
@@ -329,7 +326,7 @@ function connect() {
   try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
   setState("wait", "Connecting", `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
-  ws.onopen = () => { C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); send("getmempool"); loadFrom(0); askFor(V.sel); };
+  ws.onopen = () => { C.off = false; C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); send("getmempool"); loadFrom(0); askFor(V.sel); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
   ws.onerror = () => {};
@@ -339,6 +336,7 @@ function offline(why) {
   C.ws = null; C.loading = false;
   const w = C.retry; C.retry = Math.min(60000, w * 2);
   setState("off", "Offline", `Our node is not reachable (${why}).\nRetrying in ${w / 1000} s.`);
+  C.off = true; render();   // the empty panels say that the node is offline instead of "reading" forever
   C.retryT = setTimeout(connect, w);
 }
 function loadFrom(from) { C.loading = true; C.nextFrom = from; send(`getblockrange ${from} ${PAGE}`); }
@@ -494,7 +492,7 @@ function drawBlocks() {
     rows.push(`<li class="${isSel("b", h) ? "on" : ""} ${C.fresh.has(h) ? "fresh" : ""}"><button type="button" data-go="b:${h}">
       <span class="h">#${fmtN(h)}</span><span class="d">${n ? `<b>${plural(n, "transaction")}</b>` : `<em>empty</em>`} <em>· ${h === 0 ? "genesis" : esc(ago(ts))}</em></span><span class="amt dim">${esc(short(b.block_hash))}</span></button></li>`);
   }
-  $("blocks").innerHTML = rows.join("") || `<li class="empty">${C.ready || SAMPLE ? "No blocks yet." : "Reading the chain…"}</li>`;
+  $("blocks").innerHTML = rows.join("") || `<li class="empty">${C.ready || SAMPLE ? "No blocks yet." : C.off ? "Our node is offline right now. This list fills as soon as it answers again." : "Reading the chain…"}</li>`;
   $("blkSub").textContent = C.head >= 0 ? `newest first · ${plural(C.head + 1, "block")}` : "";
   $("blkMore").hidden = C.head + 1 <= V.blkN;
 }
@@ -521,7 +519,7 @@ function drawTxs() {
         <span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${txLine(x.t, k)}</em></span><span class="amt">${amt != null ? `${fmtA(amt)}` : ""}</span></button></li>`);
     }
   }
-  $("txs").innerHTML = rows.join("") || `<li class="empty">${f === "queue" ? "Nothing is waiting. New transactions show up here until a block takes them." : C.ready || SAMPLE ? "No transactions of this kind yet." : "Reading the chain…"}</li>`;
+  $("txs").innerHTML = rows.join("") || `<li class="empty">${f === "queue" ? "Nothing is waiting. New transactions show up here until a block takes them." : C.ready || SAMPLE ? "No transactions of this kind yet." : C.off ? "Our node is offline right now. This list fills as soon as it answers again." : "Reading the chain…"}</li>`;
   $("txSub").textContent = f === "queue" ? `${plural(C.mempool.length, "transaction")} waiting` : `newest first${C.mempool.length && f === "all" ? ` · ${fmtN(C.mempool.length)} waiting` : ""}`;
   $("txMore").hidden = f === "queue" || total <= V.txN;
 }
@@ -534,21 +532,15 @@ function drawDetail() {
 }
 function overview() {
   const g = C.gov || {}, vals = g.active_validators || [];
-  return `<p class="kind">Explorer</p><p class="title">What you can look up</p>
-    <p class="headline">Click any block or transaction on the left, or search above. Every link here is shareable.</p>
-    <ul class="how">
-      <li><b>A block number</b> like <code>${C.head > 0 ? C.head : 42}</code>: when it was made, who sealed it, what it holds.</li>
-      <li><b>A transaction hash</b> (64 hex characters): is it in a block, still waiting, or was it dropped, and what did it do.</li>
-      <li><b>A block hash</b> (64 hex characters): the same as a block number.</li>
-      <li><b>An address</b> (96 hex characters): its balance and everything it sent or received. The start of one works too.</li>
-    </ul>
-    <h3>Right now</h3>
+  // the column opens with the chain itself; what the search takes is one line under it (and the field's placeholder says it too)
+  return `<p class="kind">Explorer</p><p class="title">Right now</p>
     <dl class="kv">
       <dt>Newest block</dt><dd>${C.head >= 0 ? `${blkLink(C.head)} · ${esc(ago(tsOf(C.blocks[C.head])))}` : "—"}</dd>
       <dt>Validators</dt><dd>${vals.length ? vals.map(v => addrLink(low(typeof v === "string" ? v : (v || {}).pubkey))).join(", ") : "—"}</dd>
       <dt>Waiting</dt><dd>${plural(C.mempool.length, "transaction")}</dd>
     </dl>
-    <p class="note">Our node checks every block against the network's Tau rules before it shows up here. Transactions a rule refuses never reach a block; if they waited in our queue first, you can still find them by hash.</p>`;
+    <p class="note">Our node checks every block against the network's Tau rules before it shows up here. Transactions a rule refuses never reach a block; if they waited in our queue first, you can still find them by hash.</p>
+    <p class="note">Search takes a block number, a transaction or block hash, or an address (the start of one works too). Every link here is shareable.</p>`;
 }
 /* rows that only matter to developers hide in View · Simple (body[data-view], set by the shared header) */
 const TECH_ROWS = new Set(["Hash", "Sequence", "Fee limit", "Offer", "Rule change", "Request", "Retractable", "Reason", "Expires"]);

@@ -8,14 +8,14 @@
 .tnav-sep { width: 1px; height: 22px; background: var(--tn-line); flex: none; }
 .tnav-nav { display: flex; align-items: center; gap: 2px; }
 .tnav .ni-wrap { position: relative; }
-.tnav .ni { font: 600 11.5px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; color: #a3a3ad; padding: 8px 13px; border-radius: 8px; white-space: nowrap; cursor: pointer; position: relative; user-select: none; background: transparent; border: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+.tnav .ni { font: 600 12px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; color: #a3a3ad; padding: 8px 13px; border-radius: 8px; white-space: nowrap; cursor: pointer; position: relative; user-select: none; background: transparent; border: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
 .tnav .ni:hover { color: #fff; background: rgba(255,255,255,.04); }
 .tnav .ni.here { color: #fff; }
 .tnav .ni .lbl { position: relative; display: inline-block; line-height: 1.2; }
 /* "you are here": a 2px line exactly as wide as the word, 3px under it (not under the caret, not on the row's edge) */
 .tnav .ni.here .lbl::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; border-radius: 1px; background: var(--tn-ok); box-shadow: 0 0 8px var(--tn-ok); }
 .tnav .ni[aria-expanded="true"] { color: #fff; background: rgba(255,255,255,.07); }
-.tnav .caret { color: var(--tn-dim); font-size: 10px; }
+.tnav .caret { color: var(--tn-dim); font-size: 11px; }
 .tnav .menu { position: absolute; top: calc(100% + 12px); left: 0; background: #111113; border: 1px solid var(--tn-hair); border-radius: 12px; padding: 10px; display: grid; gap: 2px; width: max-content; max-width: min(520px, calc(100vw - 32px)); box-shadow: 0 20px 50px rgba(0,0,0,.6); z-index: 45; text-transform: none; letter-spacing: 0; }
 .tnav .menu[hidden], .tsheet[hidden], .tsheet-bg[hidden], .tnav-pop[hidden] { display: none; }
 .mi { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; color: inherit; text-align: left; background: transparent; border: 0; font: inherit; }
@@ -26,16 +26,16 @@
 .mi > span:last-child { font: 400 12px/1.45 var(--tn-font); color: var(--tn-dim); }
 .mi.soon { cursor: default; opacity: .5; }
 .mi.soon:hover { background: transparent; }
-.mi.soon b::after { content: "soon"; margin-left: 8px; font: 500 9.5px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-dim); }
+.mi.soon b::after { content: "soon"; margin-left: 8px; font: 500 11px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-dim); }
 .mi.here .ic { border-color: var(--tn-ok); box-shadow: 0 0 8px rgba(57,255,138,.45); }
-.mi.here b::after { content: "you are here"; margin-left: 8px; font: 500 9.5px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-ok); }
+.mi.here b::after { content: "you are here"; margin-left: 8px; font: 500 11px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-ok); }
 .tnav .pill { font: 600 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--tn-hair); color: var(--tn-dim); white-space: nowrap; cursor: pointer; background: transparent; display: inline-flex; align-items: center; gap: 7px; text-decoration: none; }
 .tnav .pill.primary { border-color: rgba(255,255,255,.6); color: #fff; background: rgba(255,255,255,.06); }
 .tnav .pill.primary:hover { background: #fff; color: #000; }
 .tnav .pill.tg { border-color: rgba(57,255,138,.6); color: var(--tn-ok); }
 .tnav .pill.tg svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
 .tnav .pill.tg:hover { background: var(--tn-ok); border-color: var(--tn-ok); color: #000; }
-.tnav .tl { font: 500 11.5px var(--tn-font); letter-spacing: .09em; text-transform: uppercase; color: #a3a3ad; white-space: nowrap; cursor: pointer; text-decoration: none; background: transparent; border: 0; padding: 6px 2px; }
+.tnav .tl { font: 500 12px var(--tn-font); letter-spacing: .09em; text-transform: uppercase; color: #a3a3ad; white-space: nowrap; cursor: pointer; text-decoration: none; background: transparent; border: 0; padding: 6px 2px; }
 .tnav .tl:hover { color: #fff; }
 .tnav .upd { position: relative; display: inline-flex; }
 .tnav .upd.new::after { content: ""; position: absolute; top: 2px; right: -6px; width: 6px; height: 6px; border-radius: 50%; background: var(--tn-ok); box-shadow: 0 0 6px var(--tn-ok); }
@@ -44,7 +44,7 @@
 .tnav .tnav-gear:hover, .tnav .tnav-gear[aria-expanded="true"] { color: #fff; border-color: #fff; }
 .tnav-gearwrap { position: relative; }
 .tnav-pop { position: absolute; top: calc(100% + 12px); right: 0; background: #111113; border: 1px solid var(--tn-hair); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; width: min(440px, calc(100vw - 32px)); box-shadow: 0 20px 50px rgba(0,0,0,.6); z-index: 45; }
-.tnav-pop h4 { margin: 0; font: 600 10px var(--tn-mono); letter-spacing: .18em; text-transform: uppercase; color: var(--tn-ok); }
+.tnav-pop h4 { margin: 0; font: 600 11px var(--tn-mono); letter-spacing: .18em; text-transform: uppercase; color: var(--tn-ok); }
 .tnav-pop .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .tnav-pop .row > input { flex: 1 1 200px; }
 .tnav-pop .hint { flex: 1 1 100%; }
@@ -72,7 +72,7 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
 @keyframes tnblink { 50% { opacity: .35; } }
 /* row 2 controls on subpages, same look as the HUD's */
 .tnav .seg { display: inline-flex; border: 1px solid var(--tn-hair); border-radius: 999px; overflow: hidden; }
-.tnav .seg > a, .tnav .seg > button { font: 600 11.5px var(--tn-font); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--tn-dim); border: 0; padding: 7px 12px; cursor: pointer; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; }
+.tnav .seg > a, .tnav .seg > button { font: 600 12px var(--tn-font); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--tn-dim); border: 0; padding: 7px 12px; cursor: pointer; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; }
 .tnav .seg > [aria-pressed="true"] { background: #fff; color: #000; }
 .tnav .seg > a:hover, .tnav .seg > button:hover { color: #fff; }
 .tnav .seg > [aria-pressed="true"]:hover { color: #000; }
@@ -103,21 +103,23 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
   .tsheet-bg { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 51; }
   .tsheet { display: block; position: fixed; left: 0; right: 0; bottom: 0; background: #101012; border-top: 1px solid var(--hair, rgba(255,255,255,.18)); border-radius: 16px 16px 0 0; padding: 12px 12px calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 52; box-shadow: 0 -20px 50px rgba(0,0,0,.7); max-height: 80vh; overflow: auto; }
   .tsheet .grab { width: 38px; height: 4px; border-radius: 4px; background: #333; margin: 0 auto 10px; }
-  .tsheet h4 { margin: 6px 4px 4px; font: 600 10px var(--mono, monospace); letter-spacing: .18em; text-transform: uppercase; color: var(--ok, #39ff8a); }
+  .tsheet h4 { margin: 6px 4px 4px; font: 600 11px var(--mono, monospace); letter-spacing: .18em; text-transform: uppercase; color: var(--ok, #39ff8a); }
   .tsheet .mi { padding: 9px 6px; }
   .tsheet .mi b { white-space: normal; }
-  /* room for the tab bar plus the floating Feedback button above it, so the last row can scroll clear of both */
-  .tnav-spacer { height: calc(112px + env(safe-area-inset-bottom, 0px)); }
-  header.trail { gap: 8px 8px; }
-  header.trail .brand { flex: 1 1 0; flex-wrap: wrap; }
-  header.trail .brand .bn { font-size: 20px; }
-  header.trail .brand h1.bt { flex: 1 1 100%; font-size: 11px; letter-spacing: .12em; line-height: 1.3; }
-  /* every chip stays whole: the row wraps instead of running off the screen */
-  header.trail .chip.unoff { order: 2; flex: 1 1 100%; font-size: 11px; letter-spacing: .03em; padding: 6px 10px; justify-content: center; text-align: center; white-space: normal; }
-  header.trail .chips { order: 3; flex: 1 1 100%; width: 100%; flex-wrap: wrap; gap: 6px; }
-  header.trail .chip { font-size: 11px; padding: 5px 10px; letter-spacing: .06em; }
+  /* room for the tab bar, so the last row can scroll clear of it */
+  .tnav-spacer { height: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  /* phone header: brand and page title on one line, the unofficial note short, three chips (mode, online, height);
+     network, spec revision and base fee stay in the HUD's Chain state. Content starts near 200 px instead of 600. */
+  header.trail { gap: 6px 8px; padding-bottom: 6px; }
+  header.trail .brand { flex: 1 1 100%; align-items: baseline; gap: 8px; }
+  header.trail .brand .bn { font-size: 19px; }
+  header.trail .brand h1.bt { font-size: 11px; letter-spacing: .14em; line-height: 1.3; white-space: normal; }
+  header.trail .chip.unoff { order: 2; font-size: 0; letter-spacing: 0; padding: 4px 9px; }
+  header.trail .chip.unoff::after { content: "Unofficial · not affiliated with IDNI"; font-size: 11px; letter-spacing: .03em; }
+  header.trail .chips { order: 3; flex: 1 1 100%; width: 100%; flex-wrap: wrap; gap: 6px; margin: 0; }
+  header.trail .chip { font-size: 11px; padding: 4px 9px; letter-spacing: .04em; }
+  header.trail #tnNet, header.trail #tnRev, header.trail #tnFee { display: none; }
   .tnav .seg > a, .tnav .seg > button { font-size: 11px; padding: 0 12px; min-height: 44px; }
-  .fb-fab { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
   .tour { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
 }
 

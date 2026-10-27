@@ -261,14 +261,26 @@ def render(r: dict, site: str = "https://tauhud.com") -> bytes:
     n = len(pd)
     bw = (cx1 - cx0 - 36 - (n - 1) * 12) / n
     base = cy1 - 34
+    # a steady chain gives seven near-equal bars: the average is written once, a bar is labelled only where it deviates
+    days_with = [v for v in pd if v]
+    avg = sum(days_with) / len(days_with) if days_with else 0
+    if avg:
+        note_avg = f"about {fmt_n(round(avg))} a day"
+        d.text((sc(cx0 + 18) + d.textlength("Blocks per day".upper(), font=f_lab) + sc(14), sc(cy0 + 15)), note_avg, font=f_small, fill=DIM)
+        ya = base - (base - (cy0 + 64)) * avg / top   # the average as a thin dashed line across the bars
+        for xx in range(cx0 + 18, cx1 - 18, 8):
+            d.line([sc(xx), sc(ya), sc(xx + 4), sc(ya)], fill=(120, 120, 128), width=sc(1))
     for i, v in enumerate(pd):
         x = cx0 + 18 + i * (bw + 12)
         h = (base - (cy0 + 64)) * v / top
         fill = OK if i == n - 1 else (200, 200, 205)
         if v:
             d.rounded_rectangle(B(x, base - max(h, 2), x + bw, base), radius=sc(3), fill=fill)
-        lbl = fmt_n(v)
-        d.text((sc(x + bw / 2) - d.textlength(lbl, font=f_small) / 2, sc(base - max(h, 2) - 18)), lbl, font=f_small, fill=TEXT)
+        off = (v - avg) / avg if avg else 0
+        if not v or abs(off) >= 0.03 or i == n - 1:
+            lbl = fmt_n(v) if not v or i == n - 1 else f"{'+' if off > 0 else '−'}{abs(off) * 100:.0f} %"
+            inside = v and h > 40   # label inside the bar, clear of the average line
+            d.text((sc(x + bw / 2) - d.textlength(lbl, font=f_small) / 2, sc(base - h + 8) if inside else sc(base - max(h, 2) - 18)), lbl, font=f_small, fill=(20, 20, 24) if inside else TEXT)
         day = r["days"][i] if i < len(r["days"]) else ""
         d.text((sc(x + bw / 2) - d.textlength(day, font=f_small) / 2, sc(base + 8)), day, font=f_small, fill=DIM)
     if r["old_blocks"]:

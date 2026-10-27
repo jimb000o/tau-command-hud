@@ -60,7 +60,7 @@ html.wide .tip { font-size: calc(12px * var(--z)); padding: calc(6px * var(--z))
 html.wide #intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 32px; align-items: end; }
 html.wide #intro .lead { max-width: none; margin: 0; }
 html.wide #intro .sub { margin: 0; }
-html.wide .modal .sheet, html.wide .fb-fab { zoom: var(--z); }
+html.wide .modal .sheet { zoom: var(--z); }
 html.wide .modal .sheet { max-height: calc(100% / var(--z)); }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
@@ -92,9 +92,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .tlwrap { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 #tl { display: block; width: 100%; cursor: ew-resize; }
 #tl text { font-family: var(--mono); }
-#tl .lbl { font: 600 9.5px var(--display); letter-spacing: .18em; fill: var(--dim); text-transform: uppercase; }
-#tl .ax { font-size: 10.5px; fill: var(--dim); }
-#tl .axs { font-size: 10px; fill: rgba(138,138,148,.7); }
+#tl .lbl { font: 600 11px var(--display); letter-spacing: .18em; fill: var(--dim); text-transform: uppercase; }
+#tl .ax { font-size: 11px; fill: var(--dim); }
+#tl .axs { font-size: 11px; fill: rgba(138,138,148,.7); }
 #tl .bars { fill: rgba(255,255,255,.55); }
 #tl .bars.gov { fill: var(--ok); }
 #tl .gap { fill: rgba(255,255,255,.04); }
@@ -104,11 +104,11 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 #tl .prop.expired rect.track { stroke: rgba(255,255,255,.28); stroke-dasharray: 3 3; }
 #tl .prop .vote { stroke: #fff; stroke-width: 1.5; }
 #tl .prop text, #tl .revn, #tl .lbl, #tl .none { paint-order: stroke; stroke: #101012; stroke-width: 5px; stroke-linejoin: round; }
-#tl .prop text { font-size: 10.5px; fill: #fff; }
+#tl .prop text { font-size: 11px; fill: #fff; }
 #tl .prop.expired text { fill: var(--dim); }
 #tl .prop:hover rect.track { stroke: #fff; stroke-width: 1.5; }
 #tl .rev { fill: none; stroke: var(--ok); stroke-width: 1.5; }
-#tl .revn { font-size: 10.5px; fill: var(--ok); }
+#tl .revn { font-size: 11px; fill: var(--ok); }
 #tl .cursor { stroke: #fff; stroke-width: 1.5; }
 #tl .cpill { fill: #fff; }
 #tl .ctext { font: 600 11px var(--mono); fill: #000; }
@@ -123,7 +123,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .btn.primary:hover { background: var(--ok); border-color: var(--ok); }
 .btn:hover:not(.primary):not(:disabled) { border-color: #fff; }
 .btn:disabled { opacity: .35; cursor: default; }
-.btn:focus-visible, input[type=range]:focus-visible, .linkish:focus-visible, .fb-fab:focus-visible, .close:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+.btn:focus-visible, input[type=range]:focus-visible, .linkish:focus-visible, .close:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
 .grp { display: inline-flex; gap: 6px; flex-wrap: wrap; }
 .readout { margin-left: auto; text-align: right; min-width: 0; }
 .readout .h { font: 600 22px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
@@ -131,7 +131,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .readout .follow { color: var(--ok); }
 @media (max-width: 760px) { .readout { margin-left: 0; text-align: left; width: 100%; order: -1; } }
 input[type=range] { width: 100%; margin: 10px 0 0; accent-color: #fff; }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 8px; font-size: 11.5px; color: var(--dim); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 8px; font-size: 12px; color: var(--dim); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { display: inline-block; width: 18px; height: 9px; border-radius: 2px; }
 .legend .l-vote { border: 1px solid rgba(255,255,255,.6); }
@@ -147,24 +147,24 @@ input[type=range] { width: 100%; margin: 10px 0 0; accent-color: #fff; }
 .big .ok { color: var(--ok); }
 .cmp { font-size: 12px; color: var(--dim); margin: 0 0 10px; }
 .cmp b { color: #fff; font-weight: 500; }
-.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 14px; font-size: 12.5px; margin: 0; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 14px; font-size: 13px; margin: 0; }
 .kv dt { color: var(--dim); }
 .kv dd { margin: 0; color: #fff; overflow-wrap: anywhere; }
 .kv dd.chg { color: var(--ok); }
-.kv dd small { color: var(--dim); font-size: 11.5px; }
-h3 { margin: 14px 0 6px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.kv dd small { color: var(--dim); font-size: 12px; }
+h3 { margin: 14px 0 6px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .items { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
 .items li { border-left: 2px solid var(--line); background: rgba(255,255,255,.025); padding: 6px 10px; font-size: 12px; min-width: 0; }
 .items li.on { border-left-color: var(--ok); }
 .items li.now { border-left-color: var(--behind); }
-.items li b { color: #fff; font: 600 12.5px var(--display); }
+.items li b { color: #fff; font: 600 13px var(--display); }
 .items li .m { display: block; color: var(--dim); overflow-wrap: anywhere; }
 .items li.here { background: rgba(57,255,138,.07); }
 .linkish { background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%; display: block; }
 .linkish:hover b { text-decoration: underline; text-underline-offset: 3px; }
 .empty { color: var(--dim); font-size: 12px; margin: 0; }
 .flow { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 4px; }
-.flow span { font: 600 9.5px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.flow span { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
 .flow span.done { border-color: var(--ok); color: var(--ok); }
 .flow span.now { border-color: var(--behind); color: var(--behind); }
 .quorum { position: relative; height: 20px; border: 1px solid var(--hair); border-radius: 4px; overflow: hidden; margin: 6px 0 2px; background: #0c0c0d; }
@@ -176,28 +176,25 @@ h3 { margin: 14px 0 6px; font: 600 10.5px var(--display); letter-spacing: .18em;
 .txs li.gov button { border-left-color: var(--ok); }
 .txs .ty { color: #fff; font-weight: 600; }
 .txs .d { color: var(--dim); overflow-wrap: anywhere; }
-.prov { margin: 12px 0 0; font-size: 11.5px; color: var(--dim); }
+.prov { margin: 12px 0 0; font-size: 12px; color: var(--dim); }
 .prov .ok { color: var(--ok); }
 .prov .warn { color: var(--behind); }
-.btn.small { padding: 5px 10px; font-size: 10px; margin-top: 10px; }
+.btn.small { padding: 5px 10px; font-size: 11px; margin-top: 10px; }
 
 /* modal */
 .modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
 .sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
 .sheet .panel { padding-right: 48px; }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
-details.raw { margin: 14px 0 0; } details.raw > summary { cursor: pointer; min-height: 28px; padding: 4px 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
-pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 50vh; overflow: auto; }
+details.raw { margin: 14px 0 0; } details.raw > summary { cursor: pointer; min-height: 28px; padding: 4px 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); max-height: 50vh; overflow: auto; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
-.src { color: var(--dim); font-size: 11.5px; margin-top: 10px; }
+.src { color: var(--dim); font-size: 12px; margin-top: 10px; }
 .src a { color: var(--dim); }
 
 /* feedback: same floating button as the HUD, opens a pre-filled GitHub issue */
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); }
-.fb-fab:hover { background: var(--ok); }
-@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } }
 .fb form { display: grid; gap: 10px; }
-.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 11.5px; }
+.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 12px; }
 .fb textarea, .fb input[type=text] { width: 100%; background: #0c0c0d; border: 1px solid var(--hair); border-radius: 6px; color: #fff; font: 13px/1.5 var(--mono); padding: 8px 10px; }
 .fb textarea { min-height: 96px; resize: vertical; }
 .fb textarea:focus, .fb input:focus { outline: 1px solid var(--ok); border-color: var(--ok); }
@@ -226,16 +223,16 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -11px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 0 0 4px rgba(57,255,138,.25); }
   input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 0 0 4px rgba(57,255,138,.25); }
-  .legend { font-size: 11.5px; gap: 4px 14px; }
+  .legend { font-size: 12px; gap: 4px 14px; }
   #tl .lbl { font-size: 11px; letter-spacing: .12em; }
   #tl .ax, #tl .axs, #tl .prop text, #tl .revn, #tl .none { font-size: 11px; }
   h3 { font-size: 11px; }
   .flow span { font-size: 11px; letter-spacing: .08em; }
   .panel h2 small { font-size: 12px; }
   .kv { grid-template-columns: minmax(7.5em, 38%) minmax(0, 1fr); gap: 6px 12px; font-size: 13px; }
-  .items li, .txs li button { font-size: 12.5px; }
+  .items li, .txs li button { font-size: 13px; }
   .txs { max-height: none; }
-  .btn.small { min-height: 40px; padding: 0 14px; font-size: 10.5px; }
+  .btn.small { min-height: 40px; padding: 0 14px; font-size: 11px; }
   .src { font-size: 12px; }
   .dock { display: grid; position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 45; grid-template-columns: 44px minmax(0, 1fr) 44px 44px; align-items: center; gap: 6px;
     padding: 6px max(10px, env(safe-area-inset-right, 0px)) 6px max(10px, env(safe-area-inset-left, 0px)); background: #0c0c0e; border-top: 1px solid var(--hair);
@@ -248,8 +245,11 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   .dock .dh b { color: #fff; font: 600 13px var(--display); }
   .dock input[type=range] { height: 26px; margin: 0; }
   body.dockon { padding-bottom: 140px; }
-  body.dockon .fb-fab { display: none; }
 }
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
+/* the wide layout has no height to spare for a tall footer: the same text in two columns of readable width */
+html.wide .src { max-width: none; columns: 2; column-gap: 40px; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -273,7 +273,7 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   </div>
 
   <section class="panel" id="pTl">
-    <h2>The chain, block by block <small><span class="kbd">drag or click the timeline · ← → step · Shift + ← → jump to the next rule event</span><span class="touch">drag the timeline or the slider · tap a bar for its rule change</span></small></h2>
+    <h2>The chain, block by block <small><span class="kbd">← → one block · Shift + ← → next rule event</span><span class="touch">drag the timeline or the slider · tap a bar for its rule change</span></small></h2>
     <div class="tlwrap" id="tlwrap">
       <svg id="tl" height="200" role="img" aria-label="Timeline of blocks and rule changes"></svg>
     </div>
@@ -315,7 +315,7 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
       <div id="blockBody"><p class="empty">Waiting for blocks.</p></div>
     </section>
   </div>
-  <p class="src">How the history is rebuilt: the page replays every block in order, exactly as the node’s governance code does (<a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py" target="_blank" rel="noopener">governance.py ↗</a>): a proposal waits for votes, becomes agreed once it holds the quorum, and takes effect at its activation block. If it is still short of votes by then, it is dropped and the old rules stay. At the newest block the result is checked against the node’s own state.</p>
+  <p class="src">How the history is rebuilt: the page replays every block in order, exactly as the node’s governance code does (<a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py" target="_blank" rel="noopener">governance.py ↗</a>): a proposal waits for votes, becomes agreed once it holds the quorum, and takes effect at its activation block. If it is still short of votes by then, it is dropped and the old rules stay. At the newest block the result is checked against the node’s own state. · <button class="linkish inl" id="fbFab" type="button">Feedback</button></p>
 </div>
 
 <div class="tip" id="tip" hidden></div>
@@ -335,7 +335,6 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   </div>
 </div>
 
-<button class="fb-fab" id="fbFab" type="button">Feedback</button>
 <div class="modal" id="mFeedback" hidden role="dialog" aria-modal="true" aria-labelledby="fbTitle">
   <div class="sheet">
     <button class="close" data-close type="button" aria-label="Close">✕</button>
@@ -484,10 +483,12 @@ function titleOf(p) {
   return p.parts.join(" + ");
 }
 // the timeline label: the full title when it fits, else its first part and how many more (full title on hover and click)
+// every label starts with the block the proposal was made in, so two proposals with the same text stay apart
 function labelOf(p, room) {
-  if (p.title.length * 6.4 + 8 <= room) return p.title;
-  const alt = `${p.parts[0]} + ${p.parts.length - 1} more`;
-  return p.parts.length > 1 && alt.length * 6.4 + 8 <= room ? alt : p.parts[0];
+  const at = `#${fmtN(p.proposedAt)} · `;
+  if ((at + p.title).length * 6.4 + 8 <= room) return at + p.title;
+  const alt = `${at}${p.parts[0]} + ${p.parts.length - 1} more`;
+  return p.parts.length > 1 && alt.length * 6.4 + 8 <= room ? alt : at + p.parts[0];
 }
 const TX_NAMES = {
   user_tx: "transfer", rule_deploy: "own rule", consensus_rule_update: "rule change proposed", consensus_rule_vote: "vote",
@@ -743,7 +744,7 @@ function lanes(props) {
 // width of one character of a rule-change label (10.5 px mono; 11 px on phones)
 const charW = () => matchMedia("(max-width: 700px)").matches ? 6.7 : 6.4;
 function tickStep(pxPerBlock) {
-  for (const s of [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000]) if (s * pxPerBlock >= 74) return s;
+  for (const s of [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000]) if (s * pxPerBlock >= 96) return s;
   return 20000;
 }
 const hhmm = ts => ts ? new Date(ts * 1000).toISOString().slice(11, 16) : "";
@@ -777,10 +778,15 @@ function drawTimeline() {
   const span = Math.max(1, C.head - C.first), ppb = (TL.x1 - TL.x0) / span;
   // axis grid + labels: height on top, UTC time below
   const step = tickStep(ppb);
+  // a label is drawn only when it keeps clear of the one before it (the grid line always is), so the axis never overprints
+  let axRight = -1e9;
   for (let h = Math.ceil(C.first / step) * step; h <= C.head; h += step) {
     const x = xOf(h), b = C.blocks[h], ts = b && b.header ? b.header.timestamp : 0;
     const anchor = x < TL.x0 + 20 ? "start" : x > TL.x1 - 20 ? "end" : "middle";
     parts.push(`<line class="grid" x1="${x}" x2="${x}" y1="${y.tx0}" y2="${y.rv1}"/>`);
+    const txt = `#${fmtN(h)}${ts ? ` ${hhmm(ts)}` : ""}`, lw = txt.length * 6.2, left = anchor === "start" ? x : anchor === "end" ? x - lw : x - lw / 2;
+    if (left < axRight + 10) continue;
+    axRight = left + lw;
     parts.push(`<text class="ax" x="${x}" y="${y.ax}" text-anchor="${anchor}">#${fmtN(h)}${ts ? ` <tspan class="axs">${hhmm(ts)}</tspan>` : ""}</text>`);
   }
   // transactions per block: one path for plain blocks, one for governance blocks
