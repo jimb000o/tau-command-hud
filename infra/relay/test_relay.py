@@ -53,7 +53,8 @@ async def mock_node(ws):
             await ws.send(relay.envelope_ok(cmd, {"count": 0, "transactions": []}))
         elif cmd == "getgovernance":
             await ws.send(relay.envelope_ok(cmd, {"active_validators": ["ab" * 48], "vote_quorum": 1, "consensus_rules": "o6[t] = 1",
-                                                   "head_number": len(mock["blocks"]) - 1}))
+                                                   "head_number": len(mock["blocks"]) - 1,
+                                                   "network_tip": {"number": len(mock["blocks"]) + 4, "seen": time.time()}}))
         elif cmd == "gettaustate":
             await ws.send(relay.envelope_ok(cmd, {"rules_state": "always o1[t] = i1[t]."}))
         elif cmd == "getbalance":
@@ -189,6 +190,7 @@ async def main():
             await asyncio.sleep(1)
         check(raw.startswith("HTTP/1.1 200") and body["upstream_connected"] and body["height"] >= 1 and body["online"] == 0, f"/health {body}")
         check(body["canonical_height"] >= 1 and body["live_default"] is True, f"/health live_default follows canonical head {body}")
+        check(body["tip_height"] == body["canonical_height"] + 5, f"/health tip_height from network_tip {body}")
 
         # keep polling for a while; the node's heavy limit must never trip
         await asyncio.sleep(8)

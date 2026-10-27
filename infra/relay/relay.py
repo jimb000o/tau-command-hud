@@ -245,6 +245,12 @@ class Relay:
     def height(self) -> int | None:
         return self._height(self.ordered_blocks()[-1]) if self.blocks else None
 
+    def governance(self) -> dict:
+        try:
+            return json.loads(self.cache["getgovernance"])["data"]
+        except (KeyError, TypeError, ValueError):
+            return {}
+
     def canonical_height(self) -> int | None:
         """Height of the node's canonical head (getgovernance.head_number).
 
@@ -252,7 +258,16 @@ class Relay:
         read 1999 while the node's real chain still sits at genesis.
         """
         try:
-            return int(json.loads(self.cache["getgovernance"])["data"]["head_number"])
+            return int(self.governance()["head_number"])
+        except (KeyError, TypeError, ValueError):
+            return None
+
+    def tip_height(self) -> int | None:
+        """Highest network tip the node has heard from its peers (patched
+        getgovernance.network_tip); None until a peer was seen or on an
+        unpatched node."""
+        try:
+            return int((self.governance().get("network_tip") or {})["number"])
         except (KeyError, TypeError, ValueError):
             return None
 
@@ -334,6 +349,7 @@ class Relay:
             "upstream_connected": self.upstream.connected.is_set(),
             "height": self.height(),
             "canonical_height": self.canonical_height(),
+            "tip_height": self.tip_height(),
             # the page may make Live the default view only while the node follows a real chain
             "live_default": bool(self.upstream.connected.is_set() and (self.canonical_height() or 0) > 0),
             "total_blocks": self.total_blocks,
