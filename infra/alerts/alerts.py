@@ -11,6 +11,11 @@ happened into news:
   dropped    its deadline passed with too few votes
   restart    the testnet started a new chain
 
+It also watches the testnet health score (relay GET /health-score) and posts
+to Telegram when the testnet goes down and when it recovers, after the new
+state has held for HEALTH_CONFIRM_SECONDS, so a short blip or an update of
+our own server stays quiet.
+
 Every event goes into /public/proposals.json (the tracker page at
 tauhud.com/proposals/) and /public/feed.xml (Atom), which Caddy serves at
 https://node.tauhud.com/. New events are also posted to Telegram and X when
@@ -76,6 +81,11 @@ RELAY_HTTP = os.environ.get("RELAY_HTTP", "http://relay:8080")
 RECAP_ON = os.environ.get("RECAP_ENABLED", "true").lower() in ("1", "true", "yes")
 RECAP_WEEKDAY = int(os.environ.get("RECAP_WEEKDAY", 0))   # 0 = Monday
 RECAP_HOUR = int(os.environ.get("RECAP_HOUR", 9))         # UTC
+HEALTH_ON = os.environ.get("HEALTH_ALERTS", "true").lower() in ("1", "true", "yes")
+HEALTH_DOWN_BELOW = float(os.environ.get("HEALTH_DOWN_BELOW", 50))   # also "down" whenever the relay says so
+HEALTH_UP_AT = float(os.environ.get("HEALTH_UP_AT", 70))             # recovered at or above this
+HEALTH_CONFIRM = float(os.environ.get("HEALTH_CONFIRM_SECONDS", 600))
+HEALTH_EVERY = float(os.environ.get("HEALTH_POLL_SECONDS", 60))
 FEED_ITEMS = 100
 RANGE = 100           # relay's getblockrange maximum
 REFETCH_TAIL = 6      # blocks re-read every poll so a replaced tip block (reorg) is noticed
@@ -394,6 +404,60 @@ def x_text(item: dict) -> str:
         if len(text) <= room:
             return text + tail
     return text[: room - 1] + "…" + tail
+
+
+def health_problems(h: dict) -> list[str]:
+    """The factors that lose the most points, in plain words, worst first."""
+    out = []
+    for f in sorted(h.get("factors") or [], key=lambda f: f["points"] - f["weight"]):
+        if f["weight"] - f["points"] < 2:
+            continue
+        k, v = f["key"], f.get("value")
+        if k == "node":
+            out.append("Our node does not answer, so we cannot see the testnet right now")
+        elif k == "sync":
+            out.append(f"Our node is not in sync with the network ({v})")
+        elif k == "last_block":
+            out.append(f"No new block for {fmt_dur(v)}" if isinstance(v, (int, float)) else "No blocks yet")
+        elif k == "pace":
+            out.append(f"Only {fmt_n(v)} blocks in the last hour ({f.get('note', '')})")
+        elif k == "availability" and isinstance(v, (int, float)):
+            out.append(f"Live and in sync only {v * 100:.1f} % of the last 24 hours")
+        elif k == "stability" and isinstance(v, dict):
+            parts = [plural(v[x], x[:-1]) for x in ("restarts", "stalls", "reorgs") if v.get(x)]
+            out.append("In the last 24 hours: " + ", ".join(parts))
+        elif k == "mempool" and isinstance(v, (int, float)):
+            out.append(f"A transaction has been waiting for {fmt_dur(v)}")
+    return out[:3]
+
+
+def fmt_dur(s: float) -> str:
+    s = max(0, round(s))
+    if s < 90:
+        return plural(s, "second")
+    if s < 5400:
+        return plural(round(s / 60), "minute")
+    h, m = divmod(round(s / 60), 60)
+    return f"{h} h {m} min" if m else plural(h, "hour")
+
+
+def health_text(kind: str, h: dict | None, since: float | None = None, now: float | None = None) -> str:
+    e = html.escape
+    link = f"<a href=\"{SITE}/status/\">Live status on Tau HUD</a>"
+    if kind == "down":
+        if h is None:
+            return ("🔴 <b>Tau testnet: no data</b>\nOur relay does not answer, so we cannot tell whether the testnet runs. "
+                    f"We are on it.\n\n{link}")
+        lines = [f"🔴 <b>Tau testnet health {h['score']}/100: {e(h['label'])}</b>"]
+        lines += [f"• {e(p)}" for p in health_problems(h)]
+        return "\n".join(lines + ["", "We post again when it recovers.", link])
+    lines = [f"🟢 <b>Tau testnet recovered: health {h['score']}/100</b>"]
+    if since:
+        lines.append(f"It was down for {fmt_dur((now or time.time()) - since)}.")
+    rest = health_problems(h)
+    if rest:
+        lines += ["Still not perfect:"] + [f"• {e(p)}" for p in rest]
+    return "\n".join(lines + ["", link])
 
 
 # ---------------- outlets ----------------
@@ -753,6 +817,63 @@ class Watcher:
                 self.save_state()
                 await asyncio.sleep(3)  # Telegram allows ~20 posts a minute per channel
 
+    # ---------- testnet health ----------
+    def health_now(self) -> dict | None:
+        try:
+            with urllib.request.urlopen(RELAY_HTTP + "/health-score", timeout=20) as r:
+                return json.load(r)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            log.warning("health: cannot read /health-score (%r)", exc)
+            return None
+
+    async def maybe_health(self, now: float | None = None):
+        """Post to Telegram when the testnet goes down or comes back. The new
+        state must hold for HEALTH_CONFIRM seconds; between the two thresholds
+        the last state stays (no flapping around one number)."""
+        if not HEALTH_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("health", {})
+        if now - st.get("checked", 0) < HEALTH_EVERY:
+            return
+        st["checked"] = now
+        h = await asyncio.to_thread(self.health_now)
+        if h is None or h.get("state") == "down" or h.get("score", 0) < HEALTH_DOWN_BELOW:
+            seen = "down"
+        elif h.get("score", 0) >= HEALTH_UP_AT:
+            seen = "up"
+        else:
+            seen = st.get("posted") or "up"
+        if h is not None:
+            st["score"] = h.get("score")
+        if "posted" not in st:  # first run: this is how things are, not news
+            st["posted"] = seen
+            self.save_state()
+            return
+        if seen == st["posted"]:
+            st.pop("cand", None)
+            self.save_state()
+            return
+        cand = st.get("cand")
+        if not cand or cand["state"] != seen:
+            st["cand"] = {"state": seen, "since": now}
+            self.save_state()
+            return
+        if now - cand["since"] < HEALTH_CONFIRM:
+            return
+        text = health_text(seen, h, st.get("down_since") if seen == "up" else None, now)
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        for o in tg:
+            ok, _, err = await asyncio.to_thread(o.send_text, text)
+            if not ok:
+                log.warning("health post to telegram failed (%s); trying again next check", err)
+                return
+        log.info("health: testnet %s (score %s)%s", seen, h and h.get("score"), "" if tg else ", telegram off")
+        st["posted"] = seen
+        st["down_since"] = cand["since"] if seen == "down" else None
+        st.pop("cand", None)
+        self.save_state()
+
     # ---------- weekly recap ----------
     @staticmethod
     def recap_slot(now: float) -> float:
@@ -847,11 +968,13 @@ class Watcher:
                             self.process()
                         await self.deliver()
                         await self.maybe_recap()
+                        await self.maybe_health()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:  # relay restarting, network blip: try again shortly
                 log.warning("relay connection lost (%r); retrying in 10 s", exc)
+                await self.maybe_health()  # a relay that stays away is news too
                 await asyncio.sleep(10)
 
 

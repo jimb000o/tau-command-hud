@@ -46,7 +46,7 @@ for i in range(18, 20):
     gov(110, 110)
     relay_.sample_uptime(T0 + i * 60)
 h = relay_.uptime["hours"][str(T0)]
-check(h == [20, 17, 12], f"hour bucket samples/node_ok/synced {h}")
+check(h[:3] == [20, 17, 12] and h[5] == 20, f"hour bucket samples/node_ok/synced/score samples {h}")
 inc = relay_.uptime["incidents"]
 kinds = [(i["kind"], i["start"] - T0, i["end"] - T0) for i in inc]
 check(kinds == [("sync", 600, 900), ("node", 900, 1080)], f"incidents {kinds}")
