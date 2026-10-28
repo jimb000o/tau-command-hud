@@ -280,6 +280,7 @@ if (window.TauI18n && TauI18n.lang === "zh") {
     if (m) el.setAttribute(a, m[1] + "-zh" + m[m.length - 1]);
   }
   for (const img of document.querySelectorAll('img[src*="/badge/"]')) img.src += "?lang=zh";   // badges red when live, as on this site
+  for (const a of document.querySelectorAll('a[href="/story/"], a[href="https://tauhud.com/story/"]')) { a.href = "https://tauhud.com/story/zh/"; if (/tauhud\.com\/story$/.test(a.textContent)) a.textContent = "tauhud.com/story/zh"; }   // the Chinese story has its own address
   document.querySelector("video.video").load();
   for (const c of document.querySelectorAll("p.note code")) if (c.textContent === "#39ff8a") c.textContent = "#ff3b52";
   const cite = document.getElementById("cite"); cite.textContent = TauI18n.t(cite.textContent);

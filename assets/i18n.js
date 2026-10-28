@@ -13,6 +13,8 @@
   let lang = norm(q.get("lang"));
   if (lang) store.set(KEY, lang);
   else lang = norm(store.get(KEY)) || ((navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]).map(norm).find(Boolean)) || "en";
+  /* the address bar keeps ?lang=zh, so a link copied from the Chinese site opens in Chinese */
+  if (lang === "zh" && q.get("lang") !== "zh") try { const u = new URL(location.href); u.searchParams.set("lang", "zh"); history.replaceState(history.state, "", u.href); } catch (e) {}
   const me = document.currentScript, ROOT = me && me.src ? new URL("..", me.src) : new URL("/", location.href);
   const api = window.TauI18n = {
     lang, langs: LANGS, strings: new Map(), upper: new Map(), patterns: [],
@@ -79,7 +81,8 @@
     return [k, 0, letters(k)];
   }
   const lookup = k => {
-    if (!k || !words(k) || /[\u3000-\u9fff\uff00-\uffef]/.test(k)) return null;   // nothing to translate, or already translated
+    if (!k || !words(k)) return null;   // nothing to translate
+    if (/[\u3000-\u9fff\uff00-\uffef]/.test(k)) return api.strings.get(k) ?? null;   // already translated, unless it is a key that quotes Chinese (“EN | 中文”)
     if (cache.has(k)) return cache.get(k);
     let [t, done, left] = parts(k, 0);
     const [, pre, core, post] = /^([·•\s]*)([\s\S]*?)([\s·•]*)$/.exec(k);   // "· frozen until block #5" is a fragment of a line; so is "{e1}Headline: text" with a leading bold label
@@ -135,7 +138,7 @@
     const kids = el.childNodes; if (kids.length < 2 || kids.length > 13) return false;
     let key = "", els = [], words = false;
     for (const c of kids) {
-      if (c.nodeType === 3) { const v = src(c); if (/[\u3000-\u9fff]/.test(v)) return false; if (/[A-Za-z]{2}/.test(v)) words = true; key += v; }
+      if (c.nodeType === 3) { const v = src(c); if (/[\u3000-\u9fff]/.test(v) && !/[A-Za-z]{3}/.test(v)) return false; if (/[A-Za-z]{2}/.test(v)) words = true; key += v; }
       else if (c.nodeType === 1) { if (!INLINE.has(c.nodeName) || c.firstElementChild && c.querySelector("div,p,ul,ol,li,table,br,h1,h2,h3,h4,h5")) return false; els.push(c); key += "{e" + els.length + "}"; }
     }
     if (!els.length || !words) return false;
