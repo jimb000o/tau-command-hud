@@ -1388,5 +1388,17 @@ TauI18n.add({ strings: {
   "⤳ rule offered": "⤳ 已提供规则",
   "Chain core: the Tau HUD node breathes a soft green while it reads the real chain (red in the Chinese version), its label reads “Tau HUD”, and the validator is named IDNI on the live chain, with a line in its hover saying that IDNI’s bootnode is the only validator right now. Update log: the list scrolls inside its panel and older entries appear as you reach the bottom, no button.": "链核心：Tau HUD 节点在读取真实链时会轻柔地呼吸发光（中文版为红色），标签写作“Tau HUD”，在真实链上验证者标为 IDNI，其悬停说明中加了一行：此刻 IDNI 的引导节点是唯一的验证者。更新日志：列表在面板内滚动，滚到底部时自动显示更早的条目，不再需要按钮。",
   "Run by IDNI, the team behind Tau: its bootnode is the only validator right now.": "由 Tau 背后的团队 IDNI 运行：此刻它的引导节点是唯一的验证者。",
-  "Operator: IDNI (bootnode; PoA validator_set mode, the only validator).": "运营者：IDNI（引导节点；PoA validator_set 模式，唯一的验证者）。"
+  "Operator: IDNI (bootnode; PoA validator_set mode, the only validator).": "运营者：IDNI（引导节点；PoA validator_set 模式，唯一的验证者）。",
+  "Effort, counted rather than claimed: the Updates panel shows changes pushed to the public repository, days since its first commit and releases listed in this log (hover for the sources), and “Keep it running” in About carries the same numbers in one quiet line. Nothing is typed by hand; hours are not counted anywhere.": "投入以数字计，而非口头声称：更新面板显示推送到公开仓库的改动数、自首次提交以来的天数和本日志列出的发布数（悬停查看来源），“让它继续运行”里用一行安静的文字给出同样的数字。没有手工填写；没有任何地方统计工时。",
+  "changes": "改动",
+  "days": "天",
+  "releases": "发布",
+  "since {x}": "自 {x}",
+  "So far: {n} changes, {m} releases, {a} days since {x}, all in free time.": "至今：{n} 次改动、{m} 次发布、自 {x} 起 {a} 天，全部利用业余时间完成。",
+  "So far: {n} changes, {m} releases, 1 day since {x}, all in free time.": "至今：{n} 次改动、{m} 次发布、自 {x} 起 1 天，全部利用业余时间完成。",
+  "Counting…": "统计中…",
+  "Since {x}: {n} changes pushed to the public repository in {m} days.": "自 {x}：{n} 次改动在 {m} 天内推送到公开仓库。",
+  "Since {x}: {n} changes pushed to the public repository in 1 day.": "自 {x}：{n} 次改动在 1 天内推送到公开仓库。",
+  "{n} releases listed in this log ({m} HUD versions, {a} of other pages).": "本日志列出 {n} 次发布（{m} 个 HUD 版本，{a} 个其他页面）。",
+  "Counted live from GitHub and this log; nothing typed by hand. Hours are not counted anywhere.": "实时从 GitHub 和本日志统计；没有手工填写。没有任何地方统计工时。"
 } });
