@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Missions</title>
+<meta name="description" content="Six short missions on a practice chain in your browser: vote a rule in, get one refused, let one fail at two thirds, lower the bar, survive a validator outage, switch to proof of stake. Each ends where to see it on the real Tau testnet.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Missions">
+<meta property="og:description" content="Change the rules of a chain by agreement: six short missions on a practice chain, then where to see the same on the Tau testnet.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/missions/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber for "in progress", red only for offline. */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --refused: #e5484d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.intro { display: grid; gap: 10px 24px; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 34em; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 76ch; }
+.progress { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.pips { display: flex; gap: 5px; }
+.pips i { width: 22px; height: 6px; border-radius: 3px; background: var(--line); border: 1px solid var(--hair); }
+.pips i.on { background: var(--ok); border-color: var(--ok); }
+.ptext { font: 600 13px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
+.btn { font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; border-radius: 999px; padding: 8px 16px; cursor: pointer; border: 1px solid var(--hair); background: transparent; color: #fff; min-height: 34px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.btn.primary { background: #fff; color: #000; border-color: #fff; }
+.btn.primary:hover { background: var(--ok); border-color: var(--ok); }
+.btn:hover:not(.primary):not(:disabled) { border-color: #fff; }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn.small { padding: 5px 12px; font-size: 11px; min-height: 28px; }
+.shared { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 12px; border: 1px solid rgba(57,255,138,.4); border-radius: 8px; background: rgba(57,255,138,.05); color: var(--text); font-size: 12.5px; }
+.shared b { color: #fff; font: 600 13px var(--display); }
+.shared .x { margin-left: auto; background: none; border: 0; color: var(--dim); cursor: pointer; font: 14px var(--mono); min-width: 32px; min-height: 32px; }
+.cols { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) { .cols { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } .pmis { grid-column: 1 / -1; } }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.simtag { font: 600 11px var(--display); letter-spacing: .2em; color: var(--behind); border: 1px solid rgba(255,177,59,.5); border-radius: 3px; padding: 1px 6px; }
+.info { display: inline-grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--hair); border-radius: 50%; font: 600 10px/1 var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); cursor: help; }
+.info:hover, .info:focus-visible { color: #fff; border-color: #fff; outline: none; }
+
+/* ---------- mission list ---------- */
+.mlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.mcard { width: 100%; height: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 2px 10px; align-content: start; text-align: left; cursor: pointer; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--hair); background: rgba(255,255,255,.03); color: var(--text); font: 12px/1.45 var(--mono); min-height: 44px; }
+.mcard .no { grid-row: span 2; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--hair); font: 700 12px var(--display); color: #fff; }
+.mcard b { font: 600 13.5px/1.3 var(--display); color: #fff; }
+.mcard span { color: var(--dim); }
+.mcard:hover { border-color: #fff; }
+.mcard:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+.mcard.on { border-color: var(--ok); background: rgba(57,255,138,.07); }
+.mcard.done .no { background: var(--ok); border-color: var(--ok); color: #000; }
+
+/* ---------- practice chain ---------- */
+.rules { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; }
+.rules > div { padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.025); min-width: 0; }
+.rules dt { color: var(--dim); font: 600 10.5px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+.rules dd { margin: 2px 0 0; color: #fff; font: 600 13.5px/1.3 var(--display); }
+.rules dd small { display: block; color: var(--dim); font: 11.5px var(--mono); }
+.rules .flash { animation: flash 1.4s ease-out; }
+@keyframes flash { from { background-color: rgba(57,255,138,.22); border-color: var(--ok); } }
+@media (max-width: 700px) { .rules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.strip { list-style: none; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px; }
+.strip li { border: 1px solid var(--hair); border-radius: 4px; padding: 4px 2px; text-align: center; font-size: 11px; line-height: 1.3; min-width: 0; overflow: hidden; background: rgba(255,255,255,.03); cursor: default; }
+.strip li b { display: block; color: #fff; font: 600 11px var(--display); font-variant-numeric: tabular-nums; }
+.strip li span { color: var(--dim); }
+.strip li.you { border-color: var(--ok); } .strip li.you span { color: var(--ok); }
+.strip li.miss { border: 1px dashed var(--bad); background: transparent; } .strip li.miss b { color: var(--bad); }
+.strip li.new { animation: seal .7s ease-out; }
+.strip li.empty { border-style: dotted; background: transparent; }
+@keyframes seal { from { background-color: rgba(255,255,255,.22); transform: translateY(-3px); } }
+@media (max-width: 700px) { .strip { grid-template-columns: repeat(7, minmax(0, 1fr)); } .strip li:nth-child(-n+7) { display: none; } }
+.seats { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.seat { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: rgba(255,255,255,.025); display: grid; gap: 3px; align-content: start; min-width: 0; }
+.seat.you { border-color: rgba(255,255,255,.55); }
+.seat.off { border-color: rgba(255,77,109,.55); background: rgba(255,77,109,.05); }
+.seat .nm { display: flex; align-items: center; gap: 6px; color: #fff; font: 600 13.5px var(--display); }
+.seat .nm i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); flex: none; }
+.seat.off .nm i { background: var(--bad); box-shadow: none; }
+.seat .nm em { font-style: normal; font: 11px var(--mono); color: var(--dim); margin-left: auto; }
+.seat .per { color: var(--dim); font-size: 11.5px; line-height: 1.4; }
+.seat .v { font-size: 12px; color: var(--dim); }
+.seat .v.yes { color: var(--ok); } .seat .v.no { color: #fff; } .seat .v.off { color: var(--bad); }
+.seat .stk { font-size: 11.5px; color: var(--text); font-variant-numeric: tabular-nums; }
+.seat .plug { justify-self: start; margin-top: 4px; }
+.prop { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: rgba(255,255,255,.02); }
+.prop h3 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.offers { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.offer { display: grid; gap: 3px; align-content: start; text-align: left; cursor: pointer; padding: 9px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,.32); background: rgba(255,255,255,.04); color: var(--text); font: 12px/1.4 var(--mono); min-height: 44px; }
+.offer b { font: 600 13.5px/1.3 var(--display); color: #fff; }
+.offer span { color: var(--dim); }
+.offer:hover:not(:disabled) { border-color: var(--ok); background: rgba(57,255,138,.07); }
+.offer:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+.offer:disabled { opacity: .45; cursor: default; }
+.offers.invite .offer { animation: invite 2.4s ease-in-out infinite; }
+@keyframes invite { 0%, 100% { box-shadow: 0 0 0 0 rgba(57,255,138,0); } 50% { box-shadow: 0 0 0 1px rgba(57,255,138,.55), 0 0 18px -4px rgba(57,255,138,.45); } }
+.ptitle { color: #fff; font: 600 15px/1.3 var(--display); margin: 0 0 4px; }
+pre.code { margin: 4px 0 8px; padding: 6px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.flow span { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.flow span.f-ok { border-color: var(--ok); color: var(--ok); }
+.flow span.f-now { border-color: var(--behind); color: var(--behind); }
+.flow span.f-dead { border-color: rgba(255,255,255,.6); color: #fff; }
+.flow span.f-ref { border-color: var(--refused); color: var(--refused); }
+.quorum { position: relative; height: 26px; border: 1px solid var(--hair); border-radius: 4px; overflow: hidden; margin: 0 0 4px; background: #0c0c0d; }
+.quorum .fill { position: absolute; inset: 0 auto 0 0; background: var(--ok); opacity: .85; transition: width .5s; }
+.quorum .half { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.35); }
+.quorum .need { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff; }
+.quorum span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 600 12px var(--display); color: #fff; text-shadow: 0 0 4px #000, 0 0 2px #000; }
+.pnote { margin: 0; color: var(--dim); font-size: 12px; min-height: 1.5em; }
+.pnote.refused { color: var(--text); border-left: 2px solid var(--refused); padding-left: 8px; background: rgba(229,72,77,.07); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.log { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 2px; font-size: 12px; max-height: 128px; overflow: auto; }
+.log li { padding: 2px 8px; border-left: 2px solid var(--line); color: var(--text); }
+.log li em { font-style: normal; color: var(--dim); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.log li.ok { border-left-color: var(--ok); } .log li.bad { border-left-color: var(--bad); } .log li.ref { border-left-color: var(--refused); } .log li.dead { border-left-color: #fff; }
+
+/* ---------- briefing ---------- */
+.brief .mtitle { margin: 0; color: #fff; font: 600 19px/1.25 var(--display); }
+.brief .story { margin: 6px 0 12px; max-width: 76ch; }
+.goals { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.goals li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 7px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
+.goals li .ic { color: var(--dim); font-weight: 600; }
+.goals li b { color: #fff; font: 600 13px var(--display); font-weight: 600; }
+.goals li p { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
+.goals li.now { border-left-color: var(--behind); } .goals li.now .ic { color: var(--behind); }
+.goals li.met { border-left-color: var(--ok); } .goals li.met .ic { color: var(--ok); }
+.goals li.met.tick { animation: tick .8s ease-out; }
+@keyframes tick { from { background-color: rgba(57,255,138,.18); } }
+.hint { margin: 0 0 12px; color: var(--dim); font-size: 12px; max-width: 76ch; }
+.hint b { color: #fff; }
+.won { border: 1px solid var(--ok); border-radius: 8px; padding: 10px 12px; margin: 0 0 12px; background: rgba(57,255,138,.06); }
+.won.pop { animation: pop 1.2s ease-out; }
+@keyframes pop { from { box-shadow: 0 0 0 0 rgba(57,255,138,.7); } to { box-shadow: 0 0 0 14px rgba(57,255,138,0); } }
+.won b { display: block; color: var(--ok); font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; }
+.won p { margin: 4px 0 0; color: #fff; font: 500 14px/1.4 var(--display); }
+.real { border: 1px dashed var(--hair); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; }
+.real b { display: block; color: #fff; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 4px; }
+.real p { margin: 0 0 8px; max-width: 76ch; }
+.real .links { display: flex; flex-wrap: wrap; gap: 6px; }
+.copied { color: var(--ok); font-size: 12px; }
+.src { color: var(--dim); font-size: 12px; margin: 0; max-width: 76ch; }
+.src a { color: var(--dim); }
+@media (max-width: 899px) { .brief { order: 2; } .pchain { order: 3; } }
+@media (max-width: 700px) {
+  body { font-size: 13px; }
+  .btn { min-height: 44px; }
+  .btn.small { min-height: 44px; }
+  .mlist { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .seats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* wide screens: three columns on one screen, scaled as a whole like the HUD and the Playground.
+   --z comes from the script: min(width/1800, height/860), between .75 and 2, smaller if the content is taller. */
+html.wide body { padding: 0; }
+html.wide .wrap { zoom: var(--z); max-width: none; padding: 10px 24px 56px; gap: 12px; }
+html.wide .intro { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+html.wide .cols { grid-template-columns: minmax(0, .78fr) minmax(0, 1.55fr) minmax(0, 1.05fr); align-items: stretch; }
+html.wide .pmis { grid-column: auto; }
+html.wide .mlist { grid-template-columns: minmax(0, 1fr); }
+html.wide .log { max-height: 118px; }
+html.wide .seat .per { min-height: 2.8em; }
+p.sub, .sub, .story, .hint, .real p, .src, .goals li p { max-width: 76ch; }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Missions</span></a>
+  </header>
+  <nav class="tnav" data-page="missions" aria-label="Pages and tools"></nav>
+
+  <div class="intro">
+    <div>
+      <p class="lead">Six missions. Change the rules of a chain by agreement.</p>
+      <p class="sub">A practice chain of your own, in your browser, one block every two seconds. You hold one validator seat. Each mission ends with where to see the same thing on the real Tau testnet.</p>
+    </div>
+    <div class="progress">
+      <div class="pips" id="pips" aria-hidden="true"></div>
+      <span class="ptext" id="ptext">0 of 6 done</span>
+      <button class="btn small" id="btnShareAll" type="button" data-tnt="Copies a link that shows which missions you finished. Nothing is stored anywhere but in your browser and in the link.">Share progress</button>
+      <span class="copied" id="copiedAll" aria-live="polite"></span>
+    </div>
+  </div>
+  <div class="shared" id="shared" hidden></div>
+
+  <div class="cols">
+    <section class="panel pmis" aria-labelledby="hMis">
+      <h2 id="hMis">Missions <small>progress stays in this browser</small></h2>
+      <ol class="mlist" id="mlist"></ol>
+    </section>
+
+    <section class="panel pchain" aria-labelledby="hChain">
+      <h2 id="hChain">Your practice chain <span class="simtag">PRACTICE</span><span class="info" tabindex="0" data-tnt="Made up and private: this chain runs only in your browser and starts fresh with every mission. Counting, thresholds and the wait before a change takes effect follow the Tau testnet’s governance code; everything happens faster so a mission takes a minute or two.">i</span></h2>
+      <dl class="rules" id="rules"></dl>
+      <ol class="strip" id="strip" aria-label="Last block slots"></ol>
+      <div class="seats" id="seats"></div>
+      <div class="prop" id="prop"></div>
+      <ul class="log" id="log" aria-live="polite"></ul>
+    </section>
+
+    <section class="panel brief" id="brief" aria-live="polite"></section>
+  </div>
+
+  <p class="src">Counting and thresholds as in <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py" target="_blank" rel="noopener">governance.py ↗</a>: a quorum of the whole validator set, one vote per validator, activation at a later height. Practice chain only, nothing is sent anywhere. Unofficial community page, not affiliated with IDNI.</p>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = n => Number(n).toLocaleString("en-US");
+const blocks = n => n === 1 ? "1 block" : `${n} blocks`;
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+const KEY = "tauhud-missions", BLOCK_MS = 2000, DEADLINE = 12, DELAY = 3, SITE = "https://tauhud.com/missions/";
+const LANG = new URLSearchParams(location.search).get("lang");
+
+/* ---------- the rule changes a mission may offer ---------- */
+const OFFERS = {
+  fee8:   { kind: "fee", value: 8, title: "Lower the base fee to 8 AGRS", line: "every transaction pays a little less", rule: "o9[t]:bv[24] = { #x000008 }:bv[24]" },
+  fee12:  { kind: "fee", value: 12, title: "Raise the base fee to 12 AGRS", line: "every transaction pays a little more", rule: "o9[t]:bv[24] = { #x00000c }:bv[24]" },
+  major:  { kind: "quorum", value: "major", title: "Agreement threshold → more than half", line: "fewer yes votes pass a change", rule: "governance quorum = ⌊N/2⌋ + 1" },
+  stake:  { kind: "elig", value: "stake", title: "Switch consensus to proof of stake", line: "whoever stakes AGRS may seal blocks", rule: "eligibility_mode = stake" },
+  rmcyr:  { kind: "remove", value: "cyr", title: "Remove Cyr from the validator list", line: "the offline seat stops missing turns", rule: "validator_set −= Cyr" },
+  contra: { kind: "contra", title: "Blocks are never valid", line: "a change that breaks the chain", rule: "o6[t]:bv[16] = { 0 }:bv[16]",
+    why: "Refused before the vote: the rule contradicts the rules in force (the live spec needs o6 = i10, a valid block must be valid). The staging compile failed, so the change never reached the validators." },
+};
+const NAMES = { you: "You", ada: "Ada", bao: "Bao", cyr: "Cyr", dag: "Dag" };
+
+/* ---------- the six missions ---------- */
+const MISSIONS = [
+  { id: "vote", win: "Three of four said yes, and the new fee is law. No fork, no restart: the chain changed its own rules.", title: "Vote a change into law", line: "Two thirds of the validators must agree.",
+    story: "Four validators run this chain. A change to the rules needs two thirds of them, three of four. Pick a fee change that enough of them like, vote for it and watch it become law.",
+    vals: ["you", "ada", "bao", "cyr"], offers: ["fee8", "fee12"],
+    per: { ada: "votes yes on any fee change", bao: "votes yes only when fees go down", cyr: "votes no on every change" },
+    stance: { ada: { fee8: "yes", fee12: "yes" }, bao: { fee8: "yes" } },
+    goals: [
+      { t: "Put a change to a vote", d: "Pick one of the proposals under the validators.", ok: s => s.f.proposed },
+      { t: "Reach two thirds", d: "Three of four seats must say yes before the deadline.", ok: s => s.f.agreed },
+      { t: "See it take effect", d: "An agreed change waits three blocks, then it is law.", ok: s => s.f.active },
+    ],
+    hint: "Bao only supports a lower fee, and Cyr never says yes. Which change gets three votes?",
+    real: { text: "Every real rule change goes the same way: proposed, voted, agreed, then in force at a later block. The Proposals page follows each one. Today the testnet has one validator and lets any account’s yes vote count, so a single vote is enough there.",
+      links: [["Proposals", "../proposals/"], ["Validator seat", "../playground/#seat"]] } },
+
+  { id: "door", win: "Tau refused a broken rule before anyone voted, then took a sound one. A bad change never gets near the chain.", title: "Get a rule refused at the door", line: "Tau checks a change before anyone votes.",
+    story: "A rule change is compiled against the rules in force before it may go to a vote. Try to pass a rule that would make every block invalid, see what happens, then pass a sound one.",
+    vals: ["you", "ada", "bao", "cyr"], offers: ["contra", "fee8"],
+    per: { ada: "votes yes on sound changes", bao: "votes yes on sound changes", cyr: "votes no on every change" },
+    stance: { ada: { fee8: "yes" }, bao: { fee8: "yes" } },
+    goals: [
+      { t: "Propose “Blocks are never valid”", d: "Nobody gets to vote on it. Read the reason.", ok: s => s.f.refused },
+      { t: "Pass a sound change instead", d: "Get the fee change agreed and in force.", ok: s => s.f.active },
+    ],
+    hint: "The refusal happens before the vote, so no seat can save it. The fee change goes through normally.",
+    real: { text: "The real node runs the same staging compile on every proposal. In the simulation, every hour at hh:40, a change that contradicts the live rules is refused at the door; it shows in the Proposals news and the Explorer’s Refused list. In the Playground you can run the checks on your own rule.",
+      links: [["Proposals", "../proposals/"], ["Explorer", "../explorer/"], ["Playground", "../playground/"]] } },
+
+  { id: "fail", win: "A clear majority, and still no change: below two thirds the rules stay as they are.", title: "Let a rule fail at two thirds", line: "More than half is not enough.",
+    story: "Five validators now. Two thirds of five is four. Win a clear majority for a fee change, three of five, and watch it fail anyway when the deadline passes.",
+    vals: ["you", "ada", "bao", "cyr", "dag"], offers: ["fee8", "fee12"],
+    per: { ada: "votes yes on a lower fee", bao: "votes yes on a lower fee", cyr: "votes no on fee changes", dag: "votes no on every change" },
+    stance: { ada: { fee8: "yes" }, bao: { fee8: "yes" } },
+    goals: [
+      { t: "Win more than half the votes", d: "Three of five yes votes on one proposal.", ok: s => s.f.maxYes >= 3 },
+      { t: "Watch it dropped at the deadline", d: "Three is below the four that two thirds needs.", ok: s => s.f.droppedWith >= 3 },
+    ],
+    hint: "Your own yes vote is the third one. Then wait: twelve blocks after the proposal its time runs out.",
+    real: { text: "A proposal that misses its quorum by the deadline is dropped, and the rules stay as they were. In the simulation a contested proposal is put up every hour at hh:50 and dropped at hh:58. On the real testnet, with one validator, a change is agreed or not on the first vote.",
+      links: [["Proposals", "../proposals/"], ["HUD in simulation", "../?mode=sim"]] } },
+
+  { id: "bar", win: "You changed how rules change, then used it. On Tau the threshold is a rule like any other.", title: "Lower the bar", line: "A rule can change how rules change.",
+    story: "The same five seats, and your fee change still has only three friends. The agreement threshold is a rule too. Change it to more than half first, then the fee change passes with three votes.",
+    vals: ["you", "ada", "bao", "cyr", "dag"], offers: ["fee8", "major"],
+    per: { ada: "votes yes on both", bao: "votes yes on both", cyr: "votes yes on the threshold, no on fees", dag: "votes no on every change" },
+    stance: { ada: { fee8: "yes", major: "yes" }, bao: { fee8: "yes", major: "yes" }, cyr: { major: "yes" } },
+    goals: [
+      { t: "Switch the threshold to more than half", d: "This change still needs four of five.", ok: s => s.rules.quorum === "major" },
+      { t: "Pass the fee change with three votes", d: "Under the new threshold three of five are enough.", ok: s => s.rules.quorum === "major" && s.rules.fee === 8 },
+    ],
+    hint: "Cyr likes a lower threshold but not a lower fee. Order matters.",
+    real: { text: "On Tau the threshold is part of the rules, so it changes the same way as any other rule, by agreement. The simulation switches between two thirds and more than half a few times a day; the Proposals page lists when. A rule that amends its own amendment rule is one of Tau’s ideas you can see here.",
+      links: [["Proposals", "../proposals/"], ["HUD in simulation", "../?mode=sim"]] } },
+
+  { id: "outage", win: "The chain kept going while a seat was dark, and agreement took the dead seat off the list.", title: "Survive a validator outage", line: "A dark seat misses its turns.",
+    story: "Validators take turns sealing blocks. A few blocks in, Cyr’s server goes dark and every one of its turns is missed. Keep the chain healthy: agree to take Cyr off the list.",
+    vals: ["you", "ada", "bao", "cyr"], offers: ["rmcyr", "fee8"], plug: true,
+    per: { ada: "votes yes to remove an offline seat", bao: "votes yes to remove an offline seat", cyr: "goes offline at block 4" },
+    stance: { ada: { rmcyr: "yes", fee8: "yes" }, bao: { rmcyr: "yes", fee8: "yes" } },
+    events: [{ at: 4, run: s => setOnline(s, "cyr", false, "Cyr’s server went dark. Its turns will be missed.") }],
+    goals: [
+      { t: "Notice a missed turn", d: "A dashed red slot in the block row: Cyr’s turn, no block.", ok: s => s.f.missed > 0 },
+      { t: "Remove Cyr from the validator list", d: "Three of four must agree, and Cyr cannot vote.", ok: s => !s.vals.some(v => v.id === "cyr") },
+      { t: "Ten blocks without a missed turn", d: "With Cyr off the list the others share the turns.", ok: s => !s.vals.some(v => v.id === "cyr") && s.f.clean >= 10 },
+    ],
+    hint: "Two thirds count the whole list, offline seats too. Switch off Ada as well and see why a second outage stalls every change.",
+    real: { text: "The real testnet has one validator, most likely run by IDNI. If it stops there is no next block at all. The Status page records every outage and restart of the community node, and the Nodes page shows who is online.",
+      links: [["Status", "../status/"], ["Nodes", "../nodes/"]] } },
+
+  { id: "stake", win: "The chain now picks who seals by stake, and your AGRS earned you a block.", title: "Bring the chain to proof of stake", line: "Switch who may seal blocks.",
+    story: "Today a fixed list of validators takes turns. Propose proof of stake, where the chance to seal a block follows the AGRS each seat has staked. Then stake some of yours and seal a block.",
+    vals: ["you", "ada", "bao", "cyr"], offers: ["stake", "fee8"], stakeBtn: true,
+    stakes: { you: 0, ada: 8000, bao: 6000, cyr: 4000 },
+    per: { ada: "votes yes on proof of stake", bao: "votes yes on proof of stake", cyr: "votes no on every change" },
+    stance: { ada: { stake: "yes", fee8: "yes" }, bao: { stake: "yes", fee8: "yes" } },
+    goals: [
+      { t: "Get proof of stake agreed and in force", d: "Three of four, then three blocks of waiting.", ok: s => s.rules.elig === "stake" },
+      { t: "Stake AGRS from your balance", d: "Without a stake your seat is never picked.", ok: s => s.me().stake > 0 },
+      { t: "Seal a block because of your stake", d: "The more you stake, the sooner it is your turn.", ok: s => s.f.myStakeBlocks > 0 },
+    ],
+    hint: "Staking before the switch is fine too; it only counts once proof of stake is in force.",
+    real: { text: "The simulation does this every day: proof of stake from 10:30 UTC, the fixed list again from 16:30 UTC, each announced on Telegram ten minutes ahead. The real testnet runs a fixed list with one validator; the switch is a setting of the chain (eligibility_mode) that would change only by agreement.",
+      links: [["HUD in simulation", "../?mode=sim"], ["Proposals", "../proposals/"], ["Telegram ↗", "https://t.me/tauHUDcom"]] } },
+];
+MISSIONS.forEach((m, i) => { m.n = i + 1; });
+const byId = id => MISSIONS.find(m => m.id === id);
+
+/* ---------- progress: {id: "YYYY-MM-DD"} in this browser ---------- */
+let DONE = {};
+try { DONE = JSON.parse(store.get(KEY) || "{}") || {}; } catch (e) { DONE = {}; }
+const doneCount = () => MISSIONS.filter(m => DONE[m.id]).length;
+
+/* ---------- the practice chain ---------- */
+let S = null, timer = 0;
+function start(m) {
+  S = {
+    m, h: 0, slot: 0, slots: [], log: [], prop: null, history: [], won: false, wonAt: 0,
+    rules: { elig: "fixed", quorum: "super", fee: 10 },
+    vals: m.vals.map(id => ({ id, name: NAMES[id], you: id === "you", online: true, stake: (m.stakes || {})[id] || 0 })),
+    balance: 20000, f: { proposed: false, agreed: false, active: false, refused: false, maxYes: 0, droppedWith: 0, missed: 0, clean: 0, myStakeBlocks: 0 },
+    met: m.goals.map(() => false),
+    me() { return this.vals.find(v => v.you); },
+  };
+  say(`Mission ${m.n}: ${m.title}. ${m.vals.length} validators, two thirds must agree.`);
+  clearInterval(timer); timer = setInterval(() => { if (!document.hidden) tick(); }, BLOCK_MS);
+  renderAll(true);
+}
+const need = (q, N) => q === "major" ? Math.floor(N / 2) + 1 : Math.max(1, Math.ceil(2 * N / 3));
+const qWord = q => q === "major" ? "more than half" : "two thirds";
+const say = (t, cls) => { S.log.unshift({ h: S.h, t, cls: cls || "" }); S.log.length = Math.min(S.log.length, 30); };
+function setOnline(s, id, on, msg) {
+  const v = s.vals.find(x => x.id === id); if (!v || v.online === on) return;
+  v.online = on; say(msg || (on ? `${v.name} is back online.` : `${v.name} went offline.`), on ? "ok" : "bad");
+}
+
+/* who seals the next block: fixed list = turns in list order; proof of stake = a draw weighted by stake */
+function proposer() {
+  const vals = S.vals;
+  if (S.rules.elig === "stake") {
+    const pool = vals.filter(v => v.online && v.stake > 0), total = pool.reduce((a, v) => a + v.stake, 0);
+    if (!total) return null;
+    let r = Math.random() * total;
+    for (const v of pool) { r -= v.stake; if (r < 0) return v; }
+    return pool[pool.length - 1];
+  }
+  return vals[S.slot % vals.length];
+}
+function tick() {
+  if (!S) return;
+  S.slot++;
+  const v = proposer();
+  if (!v || !v.online) {
+    S.slots.push({ miss: true, by: v ? v.name : "nobody", h: S.h + 1 });
+    S.f.missed++; S.f.clean = 0;
+    say(v ? `Missed turn: ${v.name} is offline, no block in this slot.` : "No block: nobody with a stake is online.", "bad");
+  } else {
+    S.h++;
+    S.slots.push({ h: S.h, by: v.name, you: v.you, stake: S.rules.elig === "stake" });
+    S.f.clean++;
+    if (v.you && S.rules.elig === "stake") { S.f.myStakeBlocks++; if (S.f.myStakeBlocks === 1) say(`You sealed block #${S.h}: your stake earned the turn.`, "ok"); }
+    (S.m.events || []).forEach(e => { if (e.at === S.h) e.run(S); });
+    advance();
+  }
+  if (S.slots.length > 40) S.slots.splice(0, S.slots.length - 40);
+  renderAll();
+}
+/* a proposal moves with the height: the other seats vote a block or two after it is put up, it is agreed the moment the
+   yes votes reach the quorum, dropped when its deadline passes, and an agreed change takes effect DELAY blocks later */
+function advance() {
+  const p = S.prop; if (!p) return;
+  if (p.status === "voting") {
+    S.vals.forEach(v => {
+      if (v.you || !v.online || p.votes[v.id] || S.h < p.at + p.delay[v.id]) return;
+      const st = ((S.m.stance[v.id] || {})[p.key]) || "no";
+      p.votes[v.id] = st; say(`${v.name} votes ${st}.`, st === "yes" ? "ok" : "");
+    });
+    count();
+    if (p.status === "voting" && S.h >= p.deadline) {
+      p.status = "dropped"; S.f.droppedWith = Math.max(S.f.droppedWith, yesOf(p));
+      say(`Dropped: “${p.title}” got ${yesOf(p)} of ${p.need} needed yes votes by its deadline. The rules stay as they were.`, "dead");
+    }
+  } else if (p.status === "agreed" && S.h >= p.activate) {
+    apply(p); p.status = "active"; S.f.active = true;
+    say(`In force: ${p.title}.`, "ok");
+  }
+}
+const yesOf = p => Object.values(p.votes).filter(x => x === "yes").length;
+function count() {
+  const p = S.prop; if (!p || p.status !== "voting") return;
+  p.need = need(S.rules.quorum, S.vals.length);
+  const y = yesOf(p); S.f.maxYes = Math.max(S.f.maxYes, y);
+  if (y >= p.need) { p.status = "agreed"; p.activate = S.h + DELAY; S.f.agreed = true; say(`Agreed: ${y} of ${S.vals.length} said yes, ${p.need} were needed. In force at block #${p.activate}.`, "ok"); }
+}
+function apply(p) {
+  const o = p.o;
+  if (o.kind === "fee") S.rules.fee = o.value;
+  else if (o.kind === "quorum") S.rules.quorum = o.value;
+  else if (o.kind === "elig") S.rules.elig = o.value;
+  else if (o.kind === "remove") { S.vals = S.vals.filter(v => v.id !== o.value); S.f.clean = 0; }
+  S.flash = o.kind;
+}
+function propose(key) {
+  const o = OFFERS[key]; if (!S || (S.prop && /voting|agreed/.test(S.prop.status))) return;
+  S.f.proposed = true;
+  if (o.kind === "contra") {
+    S.prop = { key, o, title: o.title, status: "refused", at: S.h, votes: {}, need: need(S.rules.quorum, S.vals.length) };
+    S.f.refused = true; say(`Refused before the vote: “${o.title}” contradicts the rules in force.`, "ref");
+    renderAll(); return;
+  }
+  const delay = {}; S.vals.forEach((v, i) => { delay[v.id] = 1 + ((i + S.h) % 2); });
+  S.prop = { key, o, title: o.title, status: "voting", at: S.h, deadline: S.h + DEADLINE, votes: {}, delay, need: need(S.rules.quorum, S.vals.length) };
+  say(`You propose: ${o.title}. Deadline block #${S.prop.deadline}.`);
+  renderAll();
+}
+function vote(yes) {
+  const p = S && S.prop; if (!p || p.status !== "voting" || p.votes.you) return;
+  p.votes.you = yes ? "yes" : "no"; say(yes ? "You vote yes." : "You vote no.", yes ? "ok" : "");
+  count(); renderAll();
+}
+function stakeMore() {
+  if (!S || S.balance < 5000) return;
+  S.balance -= 5000; S.me().stake += 5000;
+  say(`You stake 5,000 AGRS. Your stake: ${fmt(S.me().stake)} AGRS.`, "ok"); renderAll();
+}
+
+/* ---------- goals ---------- */
+function checkGoals() {
+  let fresh = -1;
+  S.m.goals.forEach((g, i) => { if (!S.met[i] && (i === 0 || S.met[i - 1]) && g.ok(S)) { S.met[i] = true; fresh = i; } });
+  if (!S.won && S.met.every(Boolean)) {
+    S.won = true; S.wonAt = Date.now();
+    if (!DONE[S.m.id]) { DONE[S.m.id] = new Date().toISOString().slice(0, 10); store.set(KEY, JSON.stringify(DONE)); }
+    say(`Mission complete: ${S.m.title}.`, "ok");
+  }
+  return fresh;
+}
+
+/* ---------- rendering ---------- */
+function renderAll(fresh) {
+  const tickGoal = checkGoals();
+  renderList(); renderProgress(); renderRules(); renderStrip(fresh); renderSeats(); renderProp(); renderLog(); renderBrief(tickGoal);
+}
+function renderProgress() {
+  const n = doneCount();
+  $("pips").innerHTML = MISSIONS.map(m => `<i class="${DONE[m.id] ? "on" : ""}"></i>`).join("");
+  $("ptext").textContent = n === MISSIONS.length ? "All 6 missions done" : `${n} of ${MISSIONS.length} done`;
+}
+function renderList() {
+  $("mlist").innerHTML = MISSIONS.map(m => `<li><button class="mcard${m === S.m ? " on" : ""}${DONE[m.id] ? " done" : ""}" type="button" data-m="${m.id}" aria-pressed="${m === S.m}" data-tnt="${esc(m.story)}">
+    <span class="no">${DONE[m.id] ? "✓" : m.n}</span><b>${esc(m.title)}</b><span>${esc(m.line)}</span></button></li>`).join("");
+}
+function renderRules() {
+  const N = S.vals.length, on = S.vals.filter(v => v.online).length, n = need(S.rules.quorum, N), fl = S.flash; S.flash = null;
+  const box = (k, dt, dd, small, tip) => `<div class="${fl === k ? "flash" : ""}" data-tnt="${esc(tip)}"><dt>${dt}</dt><dd>${dd}<small>${small}</small></dd></div>`;
+  $("rules").innerHTML =
+    box("elig", "Consensus", S.rules.elig === "stake" ? "Proof of stake" : "Fixed validator list", S.rules.elig === "stake" ? "a draw weighted by stake" : "turns in list order",
+      "Who may seal the next block. A fixed list takes turns; under proof of stake the chance follows the AGRS each seat has staked.") +
+    box("quorum", "Agreement", qWord(S.rules.quorum), `${n} of ${N} must say yes`,
+      "How many validators must say yes before a rule change is agreed. Counted over the whole list, offline seats included.") +
+    box("fee", "Base fee", `${S.rules.fee} AGRS`, "per transaction", "Every transaction pays it. Set by the consensus rule o9.") +
+    box("remove", "Validators", `${on} of ${N} online`, S.vals.map(v => v.name).join(" · "), "The validator list. A seat that is offline misses its turns and cannot vote.");
+}
+function renderStrip(fresh) {
+  const last = S.slots.slice(-14), pad = 14 - last.length;
+  $("strip").innerHTML = Array.from({ length: pad }, () => `<li class="empty" aria-hidden="true"><b>&nbsp;</b><span>&nbsp;</span></li>`).join("") +
+    last.map((b, i) => {
+      const cls = [b.miss ? "miss" : "", b.you ? "you" : "", !fresh && i === last.length - 1 ? "new" : ""].join(" ");
+      const tip = b.miss ? `Missed turn: it was ${b.by}’s slot, ${b.by} was offline, so no block was sealed.` : `Block #${b.h}, sealed by ${b.by}${b.stake ? ", picked by stake" : ", its turn in the list"}.`;
+      return `<li class="${cls}" data-tnt="${esc(tip)}"><b>${b.miss ? "missed" : "#" + b.h}</b><span>${esc(b.by)}</span></li>`;
+    }).join("");
+}
+function renderSeats() {
+  const p = S.prop, open = p && p.status === "voting";
+  $("seats").innerHTML = S.vals.map(v => {
+    let vt = "";
+    if (!v.online) vt = `<span class="v off">offline · cannot vote</span>`;
+    else if (p && p.votes[v.id]) vt = `<span class="v ${p.votes[v.id]}">voted ${p.votes[v.id]}</span>`;
+    else if (open) vt = `<span class="v">${v.you ? "your vote" : "thinking…"}</span>`;
+    else vt = `<span class="v">online</span>`;
+    const per = v.you ? "your seat" : (S.m.per[v.id] || "");
+    const stk = S.m.stakeBtn ? `<span class="stk">staked ${fmt(v.stake)} AGRS</span>` : "";
+    const plug = S.m.plug && !v.you ? `<button class="btn small plug" type="button" data-plug="${v.id}">${v.online ? "Switch off" : "Switch on"}</button>` : "";
+    return `<div class="seat${v.you ? " you" : ""}${v.online ? "" : " off"}"><span class="nm"><i></i>${esc(v.name)}${v.you ? "<em>you</em>" : ""}</span><span class="per">${esc(per)}</span>${stk}${vt}${plug}</div>`;
+  }).join("");
+}
+function flowHtml(p) {
+  const st = p.status, steps = [["Proposed", "f-ok"], st === "refused" ? ["Check failed", "f-ref"] : ["Checked", "f-ok"]];
+  if (st === "refused") steps.push(["Refused", "f-ref"]);
+  else {
+    steps.push(["Voting", st === "voting" ? "f-now" : "f-ok"]);
+    if (st === "dropped") steps.push(["Dropped", "f-dead"]);
+    else { steps.push(["Agreed", st === "agreed" ? "f-now" : st === "active" ? "f-ok" : ""]); steps.push(["In force", st === "active" ? "f-ok" : ""]); }
+  }
+  return `<div class="flow">${steps.map(([t, c]) => `<span class="${c}">${t}</span>`).join("")}</div>`;
+}
+function renderProp() {
+  const p = S.prop, busy = p && /voting|agreed/.test(p.status);
+  const offers = `<div class="offers${p ? "" : " invite"}">${S.m.offers.map(k => { const o = OFFERS[k];
+    const gone = (o.kind === "remove" && !S.vals.some(v => v.id === o.value)) || (o.kind === "fee" && S.rules.fee === o.value) || (o.kind === "quorum" && S.rules.quorum === o.value) || (o.kind === "elig" && S.rules.elig === o.value);
+    return `<button class="offer" type="button" data-offer="${k}"${busy || gone ? " disabled" : ""}><b>${esc(o.title)}</b><span>${gone ? "already in force" : esc(o.line)}</span></button>`; }).join("")}</div>`;
+  if (!p) { $("prop").innerHTML = `<h3>Propose a change <small>one vote at a time</small></h3>${offers}`; return; }
+  const N = S.vals.length, y = yesOf(p), n = p.need, pct = x => Math.min(100, x / N * 100);
+  let note = "";
+  if (p.status === "voting") note = `Deadline in ${blocks(Math.max(0, p.deadline - S.h))} · ${y} of ${n} needed yes votes`;
+  else if (p.status === "agreed") note = `Agreed. In force in ${blocks(Math.max(0, p.activate - S.h))}, at #${p.activate}.`;
+  else if (p.status === "active") note = "In force. Propose the next change below.";
+  else if (p.status === "dropped") note = `Dropped at block #${p.deadline}: ${y} yes, ${n} needed. Nothing changed.`;
+  else if (p.status === "refused") note = p.o.why;
+  const myVote = p.status === "voting" && !p.votes.you && S.me().online;
+  $("prop").innerHTML = `<h3>The proposal <small>put up at block #${p.at}</small></h3>
+    <p class="ptitle">${esc(p.title)}</p><pre class="code">${esc(p.o.rule)}</pre>${flowHtml(p)}
+    ${p.status === "refused" ? "" : `<div class="quorum" data-tnt="Green: yes votes. White line: the ${qWord(S.rules.quorum)} needed (${n} of ${N}). Faint line: half of the seats."><div class="fill" style="width:${pct(y)}%"></div><div class="half" style="left:50%"></div><div class="need" style="left:calc(${pct(n)}% - 1px)"></div><span>${y} yes · ${n} needed</span></div>`}
+    <p class="pnote${p.status === "refused" ? " refused" : ""}">${esc(note)}</p>
+    ${myVote ? `<div class="row"><button class="btn primary" type="button" data-vote="yes">Vote yes</button><button class="btn" type="button" data-vote="no">Vote no</button></div>` : ""}
+    ${S.m.stakeBtn ? `<div class="row"><button class="btn" type="button" id="btnStake"${S.balance < 5000 ? " disabled" : ""}>Stake 5,000 AGRS</button><span class="pnote">Your balance: ${fmt(S.balance)} AGRS</span></div>` : ""}
+    ${busy ? "" : `<h3 style="margin-top:12px">Next change</h3>${offers}`}`;
+}
+function renderLog() {
+  $("log").innerHTML = S.log.slice(0, 12).map(e => `<li class="${e.cls}"><em>#${e.h}</em>${esc(e.t)}</li>`).join("");
+}
+let lastBriefKey = "";
+function renderBrief(tickGoal) {
+  const m = S.m, idx = S.met.findIndex(x => !x), nxt = MISSIONS.find(x => !DONE[x.id] && x !== m) || MISSIONS[(m.n) % MISSIONS.length];
+  const key = [m.id, S.met.join(), S.won, S.won ? nxt.id : ""].join("|");
+  if (key === lastBriefKey && tickGoal < 0) return;
+  lastBriefKey = key;
+  const goals = m.goals.map((g, i) => `<li class="${S.met[i] ? "met" : i === idx ? "now" : ""}${i === tickGoal ? " tick" : ""}"><span class="ic">${S.met[i] ? "✓" : i === idx ? "▸" : i + 1}</span><div><b>${esc(g.t)}</b><p>${esc(g.d)}</p></div></li>`).join("");
+  const real = `<div class="real"><b>On the real testnet</b><p>${esc(m.real.text)}</p><div class="links">${m.real.links.map(([t, h]) => `<a class="btn small" href="${h}"${/^http/.test(h) ? ' target="_blank" rel="noopener"' : ""}>${esc(t)}</a>`).join("")}</div></div>`;
+  const done = S.won ? `<div class="won${Date.now() - S.wonAt < 1500 ? " pop" : ""}"><b>Mission complete</b><p>${esc(m.win)}</p>
+    <div class="row"><button class="btn primary" type="button" data-go="${nxt.id}">${DONE[nxt.id] ? "Play" : "Next"}: ${esc(nxt.title)}</button><button class="btn" type="button" id="btnShare">Share this mission</button><span class="copied" id="copied" aria-live="polite"></span></div></div>` : "";
+  $("brief").innerHTML = `<h2>Mission ${m.n} of ${MISSIONS.length} <small>${DONE[m.id] && !S.won ? "done before · play it again" : ""}</small></h2>
+    <p class="mtitle">${esc(m.title)}</p><p class="story">${esc(m.story)}</p>
+    ${done}<ol class="goals">${goals}</ol>
+    ${S.won ? "" : `<p class="hint"><b>Hint:</b> ${esc(m.hint)}</p>`}${real}
+    <div class="row"><button class="btn small" type="button" id="btnRestart">Start this mission over</button></div>`;
+}
+
+/* ---------- sharing: a link to one mission, or to your progress ---------- */
+const link = hash => SITE + (LANG ? "?lang=" + encodeURIComponent(LANG) : "") + "#" + hash;
+function share(url, text, out) {
+  const done = () => { const e = $(out); if (e) { e.textContent = "Link copied"; setTimeout(() => { e.textContent = ""; }, 2500); } };
+  if (navigator.share && matchMedia("(pointer: coarse)").matches) { navigator.share({ title: "Tau HUD · Missions", text, url }).catch(() => {}); return; }
+  const all = text + " " + url;
+  (navigator.clipboard ? navigator.clipboard.writeText(all) : Promise.reject()).then(done, () => { prompt("Copy this link:", all); });
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, a"); if (!t) return;
+  if (t.dataset.m) { pick(t.dataset.m); return; }
+  if (t.dataset.go) { pick(t.dataset.go); return; }
+  if (t.dataset.offer) { propose(t.dataset.offer); return; }
+  if (t.dataset.vote) { vote(t.dataset.vote === "yes"); return; }
+  if (t.dataset.plug) { const v = S.vals.find(x => x.id === t.dataset.plug); if (v) { setOnline(S, v.id, !v.online, v.online ? `You switched ${v.name} off.` : `You switched ${v.name} back on.`); renderAll(); } return; }
+  if (t.id === "btnStake") { stakeMore(); return; }
+  if (t.id === "btnRestart") { start(S.m); return; }
+  if (t.id === "btnShare") { share(link("m=" + S.m.id), `I finished “${S.m.title}” on a Tau practice chain. Your turn:`, "copied"); return; }
+  if (t.id === "btnShareAll") { const ids = MISSIONS.filter(m => DONE[m.id]).map(m => m.id); share(link(ids.length ? "done=" + ids.join(",") : "m=vote"), ids.length ? `${ids.length} of ${MISSIONS.length} Tau missions done: change the rules of a chain by agreement. Your turn:` : "Six short missions: change the rules of a chain by agreement.", "copiedAll"); return; }
+  if (t.classList.contains("x")) { $("shared").hidden = true; return; }
+});
+function pick(id) {
+  const m = byId(id) || MISSIONS[0];
+  try { history.replaceState(null, "", location.pathname + location.search + "#m=" + m.id); } catch (e) {}
+  start(m);
+}
+/* a shared progress link (#done=vote,door) shows what the sender finished; a mission link (#m=stake) opens that mission */
+function fromHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  const shared = (h.get("done") || "").split(",").map(byId).filter(Boolean);
+  if (shared.length) {
+    const box = $("shared");
+    box.innerHTML = `<b>${shared.length === MISSIONS.length ? "Someone finished all 6 missions." : `Someone finished ${shared.length} of ${MISSIONS.length} missions.`}</b><span>${shared.map(m => "✓ " + esc(m.title)).join(" · ")}</span><span>Your turn.</span><button class="x" type="button" aria-label="Close">✕</button>`;
+    box.hidden = false;
+  }
+  const want = byId(h.get("m")) || MISSIONS.find(m => !DONE[m.id]) || MISSIONS[0];
+  start(want);
+}
+fromHash();
+addEventListener("hashchange", () => { const id = new URLSearchParams(location.hash.slice(1)).get("m"); if (id && byId(id) && (!S || S.m.id !== id)) start(byId(id)); });
+
+/* wide screens: same idea as the HUD and the Playground, scale instead of stretching */
+(() => {
+  const apply = () => {
+    const w = innerWidth, h = innerHeight, wide = w >= 1200 && h >= 640 && w / h >= 1.3;
+    const root = document.documentElement;
+    let z = wide ? Math.max(.75, Math.min(2, w / 1800, h / 860)) : 1;
+    root.classList.toggle("wide", wide);
+    root.style.setProperty("--z", z);
+    if (wide && root.scrollHeight > h) { z = Math.max(.7, z * h / root.scrollHeight); root.style.setProperty("--z", z); }
+  };
+  apply(); addEventListener("resize", apply);
+  let raf = 0, lastH = 0;
+  new ResizeObserver(() => { const hh = document.querySelector(".wrap").offsetHeight; if (hh === lastH) return; lastH = hh; cancelAnimationFrame(raf); raf = requestAnimationFrame(apply); }).observe(document.querySelector(".wrap"));
+})();
+</script>
+</body>
+</html>
