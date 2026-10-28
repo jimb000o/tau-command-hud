@@ -34,6 +34,11 @@ digest post of the smaller changes at SITE_DIGEST_HOUR UTC, once enough
 have gathered. The first run only remembers what is already in the log,
 except majors from the last SITE_MAJOR_MAX_AGE_DAYS days, which are queued.
 
+Practice votes (proposals that only repeat the rules in force) get no post
+of their own; one evening summary, "Testnet today" at TESTNET_TODAY_HOUR UTC,
+counts them with the day's blocks, transactions and rule changes, and is
+skipped on a quiet day.
+
 Once a week (Monday 09:00 UTC by default) it also posts a recap image of the
 week (recap.py) and keeps a copy at https://node.tauhud.com/recap/latest.png.
 
@@ -43,6 +48,7 @@ week (recap.py) and keeps a copy at https://node.tauhud.com/recap/latest.png.
   python alerts.py --recap-preview  draw this week's recap and save it, post nothing
   python alerts.py --recap-now      draw the recap and post it to each configured channel
   python alerts.py --sim-preview    print today's two simulation posts (the consensus switches), post nothing
+  python alerts.py --today-preview  print the "Testnet today" summary as it stands now, post nothing
   python alerts.py --site-preview   print the site-update posts waiting in assets/updates.json, post nothing
 """
 from __future__ import annotations
@@ -130,6 +136,10 @@ SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smalle
 SITE_DIGEST_MAX_WAIT = float(os.environ.get("SITE_DIGEST_MAX_WAIT_DAYS", 7)) * 86400  # …but not longer than this
 SITE_DIGEST_LINES = 8
 SITE_LOG_LINK = f"{SITE}/#updates"
+# "Testnet today": one evening summary of the real chain's last 24 hours, only on a day with something to report.
+# Practice votes (the rules in force proposed again) appear here instead of in posts of their own.
+TODAY_ON = os.environ.get("TESTNET_TODAY", "true").lower() in ("1", "true", "yes")
+TODAY_HOUR = int(os.environ.get("TESTNET_TODAY_HOUR", 19))   # UTC
 # Visitors may propose a rule change to the simulation from the Playground and vote on it (relay/simprops.py, relay/simvotes.py).
 # The channel hears only about the ones visitors voted in, with at least VISITOR_MIN_VOTES votes, at most VISITOR_DAILY_CAP a day.
 VISITOR_MIN_VOTES = int(os.environ.get("SIM_VISITOR_MIN_VOTES", 3))
@@ -387,7 +397,7 @@ def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
         if need == 0 and p.get("approved_at") is not None:
             facts[0] = f"Already agreed. Takes effect at {when}."
     elif k == "agreed" and ev.get("combined"):
-        headline = f"New rule change, agreed right away: {title}"
+        headline = f"Agreed: {title}"
         facts = [f"Takes effect at {when}. Until then the current rules apply.",
                  f"Proposed at block #{fmt_n(p['proposed_at'])} by {short(p['proposer'])}, agreed at block #{fmt_n(ev['h'])} "
                  f"with {p['counted_votes']} of {p['thr']} vote{'' if p['thr'] == 1 else 's'} needed."]
@@ -430,32 +440,40 @@ ICONS = {"proposed": "🗳️", "agreed": "✅", "active": "⚡", "dropped": "�
 
 
 def telegram_text(item: dict) -> str:
+    """Lead with the change and when it applies, then why it matters; block numbers, voters, the proposer's own title and
+    the rule diff go into a folded part at the end (Telegram opens it with a tap)."""
     e = html.escape
     if "facts" not in item:  # posts recorded before explanations existed
         return (f"{REAL_LINE}\n{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>\n{e(item['body'])}\n\n"
                 f"<a href=\"{e(item['link'])}\">Open in Tau HUD</a>")
-    # order: what it means first, then what changes and the facts; the raw diff comes last, for those who want it
     out = [REAL_LINE, f"{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>"]
-    if item.get("label"):
-        out.append(f"<i>Proposer's title: “{e(item['label'])}”</i>")
+    facts = list(item["facts"])
+    if facts and item["kind"] != "restart":
+        out.append(e(facts.pop(0)))  # when it applies, or what it still needs
     if item.get("why"):
         warn = "⚠️ " if item.get("severity") in ("halt", "unsafe") else ""
         out += ["", f"<b>{e(item.get('why_title', 'Why it matters'))}</b>", warn + e(item["why"])]
-    if item["what"]:
+    if len(item["what"]) > 1:  # one change is already the headline
         out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>"] + [f"• {e(w)}" for w in item["what"]]
-    if item["facts"]:
-        out += [""] + [e(f) for f in item["facts"]]
+    if item["kind"] == "restart":
+        out += [""] + [e(f) for f in facts]
+        facts = []
+    details = []
+    if item.get("label"):
+        details.append(f"Proposer's title: “{e(item['label'])}”")
+    details += [e(f) for f in facts]
     d = item.get("diff")
     if d:  # Telegram has no colours: + and − carry the meaning
         if d["lines"]:
-            code = "\n".join(("+ " if op == "+" else "- ") + t.strip() for op, t in d["lines"])
-            more = f"\n… {d['more']} more on the page" if d["more"] else ""
-            out += ["", f"<b>Rule text diff</b> ({e(d['summary'])})", f"<pre><code class=\"language-diff\">{e(code + more)}</code></pre>"]
+            details.append(f"Rule text diff ({e(d['summary'])}):")
+            details += [f"<code>{e(('+ ' if op == '+' else '- ') + t.strip())}</code>" for op, t in d["lines"]]
+            if d["more"]:
+                details.append(f"… {d['more']} more lines on the page")
         else:
-            out += ["", "<b>Rule text diff</b>: none. The text equals the rules in force."]
-    if item.get("note"):
-        out += ["", f"<i>{e(item['note'])}</i>"]
-    label = "Open in Tau HUD" if item["kind"] == "restart" else "Details and votes on Tau HUD"
+            details.append("Rule text diff: none. The text equals the rules in force.")
+    if details:
+        out += ["", "<blockquote expandable>" + "\n".join(["<b>Details</b>"] + details) + "</blockquote>"]
+    label = "Open in Tau HUD" if item["kind"] == "restart" else "Watch it on Tau HUD"
     out += ["", f"<a href=\"{e(item['link'])}\">{label}</a>"]
     return "\n".join(out)
 
@@ -656,6 +674,57 @@ def sim_text(ev: dict, forecast: list[str] | None = None) -> str:
 def sim_buttons() -> dict:
     """One button under a simulation post: it opens the site in Simulation mode (the real-testnet buttons would mislead here)."""
     return {"inline_keyboard": [[{"text": "🧪 Watch the simulation", "url": SIM_LINK}]]}
+
+
+# ---------- "Testnet today" ----------
+def today_numbers(stats: dict | None, items: list[dict], props: list[dict], online: int | None, end: float) -> dict:
+    """The real chain's last 24 hours up to `end`: blocks, pace, transactions, practice votes, rule events, what comes next."""
+    start = end - 86400
+    f = {k: i for i, k in enumerate((stats or {}).get("fields") or [])}
+    rows = [r for r in (stats or {}).get("blocks") or [] if "timestamp" in f and r[f["timestamp"]] and start <= r[f["timestamp"]] < end]
+    ts = sorted(r[f["timestamp"]] for r in rows)
+    gaps = sorted(b - a for a, b in zip(ts, ts[1:]) if b > a)
+    senders = {x for r in rows for x in r[f["senders"]]} if "senders" in f else set()
+    recent = [it for it in items if start <= (it.get("seen") or 0) < end and not it.get("folded")]
+    practice = {it.get("id") for it in recent if it.get("practice")}
+    events = [it["headline"] for it in reversed(recent) if not it.get("practice") and it["kind"] in ("agreed", "active", "dropped", "restart")]
+    head = (stats or {}).get("head") or 0
+    pace = gaps[len(gaps) // 2] if gaps else None
+    coming = [{"title": p["title"], "at": p["activate_at"], "eta": eta_txt(p["activate_at"] - head, pace) if head else ""}
+              for p in props if p.get("approved_at") is not None and p.get("activated_at") is None and p.get("expired_at") is None
+              and (p.get("explain") or {}).get("severity") != "none"]
+    return {"end": end, "blocks": len(rows), "pace": pace, "txs": sum(r[f["txs"]] for r in rows) if "txs" in f else 0,
+            "senders": len(senders), "practice": len(practice), "events": events, "online": online,
+            "coming": sorted(coming, key=lambda c: c["at"])[:2]}
+
+
+def today_worth_posting(r: dict) -> bool:
+    return bool(r["txs"] or r["practice"] or r["events"])
+
+
+def today_text(r: dict) -> str:
+    e = html.escape
+    day = datetime.fromtimestamp(r["end"], timezone.utc)
+    out = [REAL_LINE, f"📋 <b>Testnet today, {day.day} {day.strftime('%B')}</b>", ""]
+    pace = f", one every {round(r['pace'])} seconds" if r["pace"] else ""
+    out.append(f"• {plural(r['blocks'], 'block')}{pace}")
+    if r["txs"]:
+        out.append(f"• {plural(r['txs'], 'transaction')} from {plural(r['senders'], 'account')}")
+    for h in r["events"]:
+        out.append(f"• {e(h)}")
+    if r["practice"]:
+        n = r["practice"]
+        out.append(f"• {plural(n, 'practice vote')}: the rules in force were proposed again and agreed. Nothing changes; "
+                   f"{'it tries' if n == 1 else 'they try'} the vote itself. You can try it on the Vote page.")
+    if r["online"]:
+        out.append(f"• {plural(r['online'], 'node')} online")
+    for c in r["coming"]:
+        out += ["", f"Coming up: {e(c['title'])} at block #{fmt_n(c['at'])}{e(c['eta'])}."]
+    return "\n".join(out)
+
+
+def today_buttons() -> dict:
+    return {"inline_keyboard": [[{"text": "⛓ Open the HUD", "url": f"{SITE}/"}, {"text": "🗳 How to vote", "url": f"{SITE}/vote/"}]]}
 
 
 # ---------- changes to Tau HUD itself ----------
@@ -1094,6 +1163,8 @@ class Watcher:
             prop["folded"] = True
         item = {"key": key, "kind": ev["kind"], "h": ev["h"], "ts": ev.get("ts"), "seen": time.time(), "chain": chain[:16],
                 "id": ev.get("id"), "thr": (p or {}).get("thr"), **d,
+                # the rules in force proposed again: a practice vote, counted in "Testnet today", never a post of its own
+                "practice": ev["kind"] != "restart" and d.get("severity") == "none",
                 # the very first replay is history; later events are news unless their block is old
                 "news": self.state["primed"] and (time.time() - (ev.get("ts") or time.time())) <= POST_MAX_AGE,
                 "posted": {}}
@@ -1105,6 +1176,7 @@ class Watcher:
 
     def process(self):
         props, events, now = replay(self.blocks, self.gov)
+        self.props = props
         chain = self.state["chain"]["block1_hash"] if self.state["chain"] else ""
         by_id = {p["id"]: p for p in props}
         pace = block_pace(self.blocks)
@@ -1162,7 +1234,7 @@ class Watcher:
                 st = it["posted"].get(o.name)
                 if not it["news"] or it["seen"] < meta["since"] or st == "ok" or (isinstance(st, int) and st >= MAX_TRIES):
                     continue
-                if it.get("folded"):
+                if it.get("folded") or it.get("practice"):
                     continue
                 if it["kind"] == "proposed" and it.get("thr") == 1 and time.time() - it["seen"] < PROPOSED_HOLD:
                     break  # wait: it may be agreed in a moment; keep the order of posts
@@ -1321,6 +1393,35 @@ class Watcher:
             changed = True
         if changed:
             self.save_state()
+
+    # ---------- "Testnet today" ----------
+    async def maybe_today(self, now: float | None = None):
+        """One evening summary of the real chain's day, at TODAY_HOUR UTC; skipped on a quiet day, never posted late."""
+        if not TODAY_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("today", {})
+        slot = datetime.fromtimestamp(now, timezone.utc).replace(hour=TODAY_HOUR, minute=0, second=0, microsecond=0).timestamp()
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        if not tg or now < slot or now > slot + 3 * 3600 or st.get("slot", 0) >= slot or st.get("pause_until", 0) > now:
+            return
+        stats = await asyncio.to_thread(self.relay_json, "/stats")
+        peers, board = await asyncio.to_thread(self.relay_json, "/peers"), await asyncio.to_thread(self.relay_json, "/community/board")
+        online = nodes_online(peers, board) if peers is not None or board is not None else None
+        r = today_numbers(stats, self.state["items"], getattr(self, "props", []), online, slot)
+        if today_worth_posting(r):
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, today_text(r), today_buttons())
+                if not ok:
+                    st["pause_until"] = now + (retry or 300)
+                    log.warning("testnet today failed (%s); trying again later", err)
+                    self.save_state()
+                    return
+            log.info("testnet today posted")
+        else:
+            log.info("testnet today: a quiet day, no post")
+        st["slot"] = slot
+        self.save_state()
 
     # ---------- changes to Tau HUD itself ----------
     def fetch_updates(self) -> list | None:
@@ -1539,6 +1640,7 @@ class Watcher:
                         await self.maybe_newnodes()
                         await self.maybe_sim()
                         await self.maybe_site()
+                        await self.maybe_today()
                         await self.maybe_visitors()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
@@ -1583,6 +1685,20 @@ async def preview_latest(n: int = 6) -> int:
     for ev in events[-n:]:
         print(telegram_text({"kind": ev["kind"], **describe(ev, by_id.get(ev["id"]), now.get("head", 0), pace)}))
         print("-" * 60)
+    return 0
+
+
+async def today_preview() -> int:
+    """Print tonight's "Testnet today" from the chain as it is now, and whether it would be posted; posts nothing."""
+    w = Watcher([])
+    async with connect(RELAY_URL, max_size=64 * 2**20, open_timeout=20) as ws:
+        w.ws = ws
+        await w.sync()
+    w.props = replay(w.blocks, w.gov)[0]
+    peers, board = w.relay_json("/peers"), w.relay_json("/community/board")
+    r = today_numbers(w.relay_json("/stats"), w.state["items"], w.props, nodes_online(peers, board), time.time())
+    print(today_text(r))
+    print("-" * 60 + "\n" + ("would be posted" if today_worth_posting(r) else "a quiet day: no post"))
     return 0
 
 
@@ -1642,6 +1758,8 @@ if __name__ == "__main__":
         sys.exit(recap_cli("--recap-now" in sys.argv))
     if "--sim-preview" in sys.argv:
         sys.exit(sim_preview())
+    if "--today-preview" in sys.argv:
+        sys.exit(asyncio.run(today_preview()))
     if "--site-preview" in sys.argv:
         sys.exit(site_preview())
     asyncio.run(Watcher().run())

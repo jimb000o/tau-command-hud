@@ -113,6 +113,9 @@ services:
       SITE_MAJOR_DAILY_CAP: ${SITE_MAJOR_DAILY_CAP:-2}
       SITE_POST_HOURS: ${SITE_POST_HOURS:-8-20}
       SITE_DIGEST_HOUR: ${SITE_DIGEST_HOUR:-17}
+      # "Testnet today": the real chain's day in one evening post; practice votes are counted there, not posted one by one
+      TESTNET_TODAY: ${TESTNET_TODAY:-true}
+      TESTNET_TODAY_HOUR: ${TESTNET_TODAY_HOUR:-19}
     volumes:
       - alerts_state:/state     # what was seen and posted, so nothing is posted twice
       - alerts_public:/public   # proposals.json, feed.xml and recap/, served by Caddy
