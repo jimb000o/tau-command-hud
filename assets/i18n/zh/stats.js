@@ -111,6 +111,8 @@ TauI18n.add({ strings: {
   "of {n}": "/ {n}",
   "one account offers a rule to another": "一个账户向另一个账户提供规则",
   "Other chain": "另一条链",
+  "Our node sees {n} nodes on the network, IDNI’s bootnode and ours included.": "我们的节点在网络中看到 {n} 个节点，包括 IDNI 的引导节点和我们自己的节点。",
+  "Our node sees {n} nodes on the network.": "我们的节点在网络中看到 {n} 个节点。",
   "Our relay does not keep the full chain yet, so this page shows the last 0 blocks and adds new ones while it stays open.": "我们的中继还没有保存完整的链，所以本页显示最近 0 个区块，并在页面打开期间添加新区块。",
   "Our relay does not keep the full chain yet, so this page shows the last {x1} blocks and adds new ones while it stays open.": "我们的中继还没有保存完整的链，所以本页显示最近 {x1} 个区块，并在页面打开期间添加新区块。",
   "Our relay does not keep the full history yet, so this page reads the last 50 blocks it holds and adds every new block while it stays open.": "我们的中继还没有保存完整历史，所以本页读取它保存的最近 50 个区块，并在页面打开期间添加每个新区块。",
@@ -204,6 +206,4 @@ TauI18n.add({ strings: {
   "{x} above the median": "比中位数长 {x}",
   "{x} below the median": "比中位数短 {x}",
   "· your local time": "· 你的本地时间",
-  "Our node sees {n} nodes on the network, IDNI’s bootnode and ours included.": "我们的节点在网络中看到 {n} 个节点，包括 IDNI 的引导节点和我们自己的节点。",
-  "Our node sees {n} nodes on the network.": "我们的节点在网络中看到 {n} 个节点。",
 } });
