@@ -308,6 +308,23 @@ JetBrains Mono, SIL OFL) live in `alerts/fonts/`.
   to `/recap/latest.png` and posts nothing.
 - `docker compose run --rm alerts python alerts.py --recap-now` draws it and posts it.
 
+**The weekly newspaper**: in the same Monday slot, right after the recap image,
+`alerts/gazette.py` writes that week's edition of The Daily Consensus (the site's
+`gazette/` page) in English and Chinese: a headline chosen from the week (a rule change in
+force, agreed, a fresh chain, new proposals, new nodes, or a steady week), the lead story,
+the week in figures, the rule changes still waiting, and the visitors' week in the
+simulation. For that last part the watcher notes `/sim/votes` and `/sim/predictions` every
+ten minutes, because the relay starts them over at midnight UTC. Files:
+`https://node.tauhud.com/recap/gazette/latest.json`, `/recap/gazette/<date>.json` and
+`/recap/gazette/editions.json` (newest first; `number`, `headline`, `deck` and their `_zh`
+twins are what the HUD's notice of the paper reads). The page sets the latest edition as
+its front page; `gazette/?edition=<date>` opens an older one. The first edition is written
+as soon as the service starts and none exists yet. The words stay careful: read from the
+chain, plans are IDNI's, testnet AGRS have no value, nothing is offered.
+
+- `docker compose run --rm alerts python alerts.py --gazette-now` writes an edition of
+  the last 7 days now (it keeps the number if one is already out today).
+
 **Health alerts**: once a minute the watcher reads `/health-score` and posts to Telegram
 when the testnet goes down (score under 50, the relay says `down`, or the relay does not
 answer) and when it recovers (score 70 or more), each only after the new state held for

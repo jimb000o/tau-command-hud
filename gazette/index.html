@@ -119,6 +119,10 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
 .photo figcaption, .cap { font: 400 .78em/1.28 var(--body); margin-top: .3em; text-align: justify; }
 .photo figcaption b, .cap b { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .rule2 { border: 0; border-top: 3px double var(--ink); margin: .35em 0; }
+.figs { width: 100%; border-collapse: collapse; font-size: .9em; margin: .1em 0 .3em; }
+.figs td { padding: .16em 0; border-bottom: 1px dotted rgba(27,24,19,.6); vertical-align: baseline; }
+.figs td:last-child { text-align: right; font-weight: 700; white-space: nowrap; padding-left: .6em; }
+.wknote { font-size: .78em; line-height: 1.3; text-align: center; font-style: italic; text-indent: 0; border-top: 1px solid var(--ink); padding-top: .35em; margin-top: .3em; }
 .small { font-size: .84em; line-height: 1.3; }
 .mono { font-family: var(--wire); }
 .ad { border: 2px solid var(--ink); padding: .5em .6em; text-align: center; margin: .35em .1em .5em; break-inside: avoid; position: relative; }
@@ -251,7 +255,7 @@ html.i18n-zh .title { font-family: "Noto Serif SC", "Songti SC", serif; font-wei
 const EN = {
   name: "The Daily Consensus",
   motto: "“Where the rules change by agreement”",
-  ui: { coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
+  ui: { week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
   date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
   pages: [
@@ -652,6 +656,51 @@ const EN = {
   const fill = html => html.replaceAll("{{NAME}}", ED.name).replaceAll("{{MOTTO}}", ED.motto).replaceAll("{{DATE}}", today)
     .replaceAll("{{HEIGHT}}", HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—").replaceAll("{{WIRE}}", WIRE);
 
+  /* ----- the weekly edition: written every Monday by the Tau HUD server (infra/alerts/gazette.py), set as the front page ----- */
+  let OFF = 0, WEEK = null;
+  const L = ED === EN ? "en" : "zh";
+  const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const txt = x => esc(x && typeof x === "object" ? (x[L] || x.en) : x).replace(/&lt;(\/?)b&gt;/g, "<$1b>");
+  const edParam = /^\d{4}-\d{2}-\d{2}$/.test(new URLSearchParams(location.search).get("edition") || "") ? new URLSearchParams(location.search).get("edition") : "latest";
+  const weekFetch = (async () => {
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 5000);
+    try {
+      const r = await fetch(`https://node.tauhud.com/recap/gazette/${edParam}.json`, { cache: "no-store", signal: ctl.signal });
+      if (!r.ok) return null;
+      const e = await r.json(); return e && e.no && e.banner && e.lead ? e : null;
+    } catch (e) { return null; } finally { clearTimeout(to); }
+  })();
+  function weekPage(e) {
+    const figs = (e.figures || []).map(f => `<tr><td>${txt(f.label)}</td><td>${txt(f.value)}</td></tr>`).join("");
+    const stories = (e.stories || []).map((st, i) => `<div class="u s3${i % 2 ? " rl" : ""} rt"><h3>${txt(st.h)}</h3>${(st.body || []).map((b, j) => `<p${j ? "" : ' class="ni"'}>${txt(b)}</p>`).join("")}</div>`).join("");
+    return `<div class="pg front week">
+  <div class="mast">
+    <div class="ear"><b>${UI.weekEar}</b>${txt(e.period)}</div>
+    <div><div class="title">{{NAME}}</div><div class="motto">{{MOTTO}}</div></div>
+    <div class="ear r"><b>${UI.free}</b>${UI.freeP}</div>
+  </div>
+  <div class="dateline"><span>${UI.weekNo(e.no)}</span><span>${txt(e.printed)}</span><span>tauhud.com</span></div>
+  <div class="banner">${txt(e.banner)}</div>
+  <div class="grid">
+    <div class="u s4">
+      <div class="kick">${txt(e.lead.kick)}</div>
+      <h2>${txt(e.lead.h)}</h2>
+      <div class="deck">${txt(e.lead.deck)}</div>
+      <div class="c2">${(e.lead.body || []).map((b, j) => `<p${j ? "" : ' class="dc ni"'}>${txt(b)}</p>`).join("")}</div>
+    </div>
+    <div class="u s2 rl">
+      <h3>${UI.figures}</h3>
+      <table class="figs">${figs}</table>
+      <div class="ad inv"><div class="t">${UI.founding}</div><p>${UI.foundingP}</p></div>
+    </div>
+    ${stories}
+    <div class="u full"><p class="wknote">${UI.weekNote}</p></div>
+  </div>
+</div>`;
+  }
+  const num = i => i - OFF + 1;                                  /* the printed page number of page i (the weekly front has none) */
+  const lab = i => i < OFF ? UI.week : num(i) === 1 ? UI.front : UI.pageN(num(i));
+
   /* ----- pages for each edition ----- */
   const tpl = document.createElement("template");
   const broadPages = () => ED.pages.map(fill);
@@ -662,22 +711,23 @@ const EN = {
     host.className = "paper"; host.style.cssText = `position:fixed;left:-99999px;top:0;width:${W}px;height:${H}px;visibility:hidden;--H:${H}px`;
     document.body.appendChild(host);
     const HEADY = "H2, H3, .kick, .deck, .by, .banner";
-    const rh = (pi, cont) => `<div class="rh"><span>${pi === 0 ? UI.front : UI.pageN(pi + 1)}</span><span class="nm">${ED.name}</span><span>${cont ? UI.cont : ""}</span></div>`;
+    const rh = (pi, cont) => `<div class="rh"><span>${lab(pi)}</span><span class="nm">${ED.name}</span><span>${cont ? UI.cont : ""}</span></div>`;
     ED.pages.forEach((html, pi) => {
       tpl.innerHTML = fill(html);
       const src = tpl.content.querySelector(".pg"), banner = src.querySelector(".banner");
       const units = [...src.querySelectorAll(".grid > .u")].filter(u => u.textContent.trim() || u.querySelector("svg, img"));
-      const head = pi === 0
-        ? `<div class="mast" style="grid-template-columns:minmax(0,1fr)"><div><div class="title">${ED.name}</div><div class="motto">${ED.motto}</div></div></div><div class="dateline"><span>No. ${HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—"}</span><span>${today}</span></div>`
+      const front = pi === OFF, wk = pi < OFF;
+      const head = front || wk
+        ? `<div class="mast" style="grid-template-columns:minmax(0,1fr)"><div><div class="title">${ED.name}</div><div class="motto">${ED.motto}</div></div></div><div class="dateline"><span>${wk ? UI.weekNo(WEEK.no) : "No. " + (HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—")}</span><span>${wk ? txt(WEEK.printed) : today}</span></div>`
         : rh(pi, false);
       let pg = null, slot = null, first = true;
       const open = top => {
-        host.innerHTML = `<div class="pg pocket">${top}<div class="grid" style="grid-template-columns:minmax(0,1fr)"><div class="u"></div></div>${pi === 0 && first ? `<div class="stop"><b>${UI.stop}</b><span id="wire0">${WIRE}</span></div>` : ""}</div>`;
+        host.innerHTML = `<div class="pg pocket${wk ? " week" : ""}">${top}<div class="grid" style="grid-template-columns:minmax(0,1fr)"><div class="u"></div></div>${front && first ? `<div class="stop"><b>${UI.stop}</b><span id="wire0">${WIRE}</span></div>` : ""}</div>`;
         pg = host.firstElementChild; slot = pg.querySelector(".u"); fitTitle(pg);
       };
       const over = () => { const g = pg.querySelector(".grid"); return pg.scrollHeight > pg.clientHeight + 1 || g.scrollHeight > g.clientHeight + 1; };
-      const close = () => { if (slot.childElementCount || (pi === 0 && first)) out.push({ html: pg.outerHTML, from: pi }); first = false; };
-      open(head + (pi === 0 ? `<div class="center" style="margin-top:.4em"><span class="extra">EXTRA</span></div>` : "") + (banner ? `<div class="banner sm">${banner.innerHTML}</div>` : "") + (pi === 0 ? `<p class="center" style="text-indent:0;font-style:italic;margin-top:.6em">${UI.coverLine}</p>` : ""));
+      const close = () => { if (slot.childElementCount || ((front || wk) && first)) out.push({ html: pg.outerHTML, from: pi }); first = false; };
+      open(head + (front ? `<div class="center" style="margin-top:.4em"><span class="extra">EXTRA</span></div>` : "") + (banner ? `<div class="banner sm">${banner.innerHTML}</div>` : "") + (front || wk ? `<p class="center" style="text-indent:0;font-style:italic;margin-top:.6em">${front ? UI.coverLine : txt(WEEK.teaser || WEEK.lead.deck)}</p>` : ""));
       units.forEach((u, ui) => {
         u.querySelectorAll(".c2, .c3").forEach(c => c.replaceWith(...c.childNodes));
         const kids = [...u.children];
@@ -827,7 +877,8 @@ const EN = {
     zs();
     if (anim && old !== pos) { sound(); hintOff(); }
     label();
-    try { history.replaceState(null, "", location.pathname + location.search + (pos ? "#p" + (pageAt(pos) + 1) : "")); } catch (e) {}
+    const from = PAGES.length ? PAGES[Math.min(pageAt(pos), PAGES.length - 1)].from : 0;
+    try { history.replaceState(null, "", location.pathname + location.search + (pos && from >= OFF ? "#p" + num(from) : "")); } catch (e) {}
   }
   const pageAt = p => MODE.spread ? Math.max(0, 2 * p - 1) : p;
   function label() {
@@ -835,9 +886,9 @@ const EN = {
     let t;
     if (MODE.spread) {
       const a = 2 * pos - 1, b = 2 * pos;
-      const vis = [a, b].filter(i => i >= 0 && i < PAGES.length).map(i => i + 1);
-      t = vis.length === 1 && vis[0] === 1 ? UI.front : (vis.length === 1 ? UI.pageN(vis[0]) : UI.pagesN(vis[0], vis[1])) + ` ${UI.of} ${PAGES.length}`;
-    } else t = pos === 0 ? UI.front + ` · 1 ${UI.of} ${PAGES.length}` : `${UI.pageN(pos + 1)} ${UI.of} ${PAGES.length}`;
+      const vis = [a, b].filter(i => i >= 0 && i < PAGES.length), total = PAGES.length - OFF;
+      t = vis.length === 1 && (vis[0] < OFF || num(vis[0]) === 1) ? lab(vis[0]) : (vis.length === 1 ? UI.pageN(num(vis[0])) : UI.pagesN(Math.max(1, num(vis[0])), num(vis[1]))) + ` ${UI.of} ${total}`;
+    } else t = pos === 0 ? (OFF ? UI.week : UI.front) + ` · 1 ${UI.of} ${PAGES.length}` : `${UI.pageN(pos + 1)} ${UI.of} ${PAGES.length}`;
     $("pgno").textContent = t;
     $("bPrev").disabled = $("sPrev").disabled = pos === 0;
     $("bNext").disabled = $("sNext").disabled = pos === max;
@@ -847,7 +898,7 @@ const EN = {
   /* ----- contents ----- */
   function buildToc() {
     const toc = $("toc");
-    toc.innerHTML = ED.toc.map((t, i) => `<button data-i="${i}"><span>${UI.tocN(i + 1)}</span>${t}</button>`).join("");
+    toc.innerHTML = ED.toc.map((t, i) => `<button data-i="${i}"><span>${i < OFF ? "★" : UI.tocN(num(i))}</span>${t}</button>`).join("");
     toc.querySelectorAll("button").forEach(b => b.onclick = e => {
       e.stopPropagation(); const i = +b.dataset.i, k = PAGES.findIndex(x => x.from === i);
       go(MODE.spread ? Math.ceil(k / 2) : k); toc.hidden = true; $("bToc").setAttribute("aria-expanded", "false");
@@ -914,13 +965,17 @@ const EN = {
     } catch (e) { WIRE = UI.wireOff; }
     clearTimeout(to);
     document.querySelectorAll("#wire0, #wire1").forEach(el => { el.innerHTML = WIRE; const pg = el.closest(".pg"); if (pg && MODE) fit(pg); });
-    document.querySelectorAll(".dateline span:first-child").forEach(el => el.textContent = el.textContent.replace(/No\. .*$|—$/, HEIGHT != null ? "No. " + HEIGHT.toLocaleString("en-US") : "No. —"));
+    document.querySelectorAll(".pg:not(.week) .dateline span:first-child").forEach(el => el.textContent = el.textContent.replace(/No\. .*$|—$/, HEIGHT != null ? "No. " + HEIGHT.toLocaleString("en-US") : "No. —"));
   }
 
   /* ----- start ----- */
   const want = /^#p(\d+)$/.exec(location.hash);
-  const startFrom = () => { build(null); if (want) { const k = Math.max(0, +want[1] - 1); go(MODE.spread ? Math.ceil(k / 2) : k, false); } };
-  const ready = () => { startFrom(); wire(); setInterval(() => { if (!document.hidden) wire(); }, 60000); };
+  const startFrom = () => { build(null); if (want) { const k = Math.max(0, PAGES.findIndex(x => x.from === Math.max(0, +want[1] - 1) + OFF)); go(MODE.spread ? Math.ceil(k / 2) : k, false); } };
+  const ready = async () => {
+    WEEK = await weekFetch;
+    if (WEEK) { ED.pages.unshift(weekPage(WEEK)); ED.toc.unshift(`${UI.week}: ${txt(WEEK.banner)}`); OFF = 1; }
+    startFrom(); wire(); setInterval(() => { if (!document.hidden) wire(); }, 60000);
+  };
   /* the paper's faces load only when first used; load them before measuring, and measure again if one arrives late */
   const FACES = ["400 20px UnifrakturMaguntia", "900 20px 'Playfair Display'", "700 20px 'Playfair Display'", "italic 400 20px 'Playfair Display'", "400 20px 'Old Standard TT'", "700 20px 'Old Standard TT'", "italic 400 20px 'Old Standard TT'", "400 20px Limelight", "400 20px 'Special Elite'"].concat(window.GAZETTE_ZH && ED === window.GAZETTE_ZH ? ["900 20px 'Noto Serif SC'", "400 20px 'Noto Serif SC'"] : []);
   const refit = () => { LEAVES.forEach(l => delete l.dataset.fit); zs(); };

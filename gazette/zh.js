@@ -2,7 +2,7 @@
 window.GAZETTE_ZH = {
   name: "共识日报",
   motto: "规则经由共识而改变",
-  ui: { coverLine: "Tau 的十二年，以及一条能修改自身规则的链：十版新闻、来信、讣告与谜题。", cont: "续前", stop: "最新电讯", front: "头版", pageN: n => `第 ${n} 版`, pagesN: (a, b) => `第 ${a}–${b} 版`, of: "/ 共", tocN: n => `第 ${n} 版`, back: "‹ 上一页", turn: "翻页 ›", contents: "目录", pocket: "袖珍版", broad: "大报版", sOn: "声音 开", sOff: "声音 关", hint: "<b>点击版面</b>即可翻页 · 方向键亦可", hintTouch: "<b>轻触版面</b>即可翻页 · 也可滑动", wireWait: "正在接通节点电报线", wireOff: "节点电报线暂时无声；完整消息请见 tauhud.com", wire: (h, age) => `截至付印之时，测试网位于区块 <span class="live">#${h}</span>${age != null ? `，最近一个区块在本行排版前 ${age} 秒封存` : ""}。实时动态请见 tauhud.com。` },
+  ui: { week: "本周", weekNo: n => `周刊 · 第 ${n} 期`, weekEar: "本期所载", figures: "一周数字", founding: "创刊特稿", foundingP: "Tau 的十二年：从 2014 年的一篇论坛帖子，到一条由用户投票修改规则的链。请翻页。", weekNote: "由非官方社区项目 Tau HUD 读取公开测试网与模拟写成。测试网 AGRS 仅供练习，没有价值。每周一出版新一期；完整的“读者须知”见末版。", free: "免费赠阅", freeP: "由 Tau HUD 印行，非官方社区项目。", coverLine: "Tau 的十二年，以及一条能修改自身规则的链：十版新闻、来信、讣告与谜题。", cont: "续前", stop: "最新电讯", front: "头版", pageN: n => `第 ${n} 版`, pagesN: (a, b) => `第 ${a}–${b} 版`, of: "/ 共", tocN: n => `第 ${n} 版`, back: "‹ 上一页", turn: "翻页 ›", contents: "目录", pocket: "袖珍版", broad: "大报版", sOn: "声音 开", sOff: "声音 关", hint: "<b>点击版面</b>即可翻页 · 方向键亦可", hintTouch: "<b>轻触版面</b>即可翻页 · 也可滑动", wireWait: "正在接通节点电报线", wireOff: "节点电报线暂时无声；完整消息请见 tauhud.com", wire: (h, age) => `截至付印之时，测试网位于区块 <span class="live">#${h}</span>${age != null ? `，最近一个区块在本行排版前 ${age} 秒封存` : ""}。实时动态请见 tauhud.com。` },
   date: d => d.toLocaleDateString("zh-CN", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["头版：用户改写链的法则", "从 Zennet 出发的漫长道路", "硬分叉是什么", "沉寂四年与一个伟大方程", "一门谈论自身的语言", "工地来电：2025", "用户接过方向盘的一年", "法律如何制定 · 读者来信", "今日测试网 · 分类广告", "游艺 · 剪下收藏"],
   pages: [

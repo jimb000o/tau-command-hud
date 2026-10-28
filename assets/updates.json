@@ -787,5 +787,10 @@
   "tag": "v17.49",
   "on": "2026-10-28",
   "html": "The Daily Consensus now advertises itself on the HUD: the free space at the bottom of Rules in force now carries a 1920s newspaper advertisement in the HUD's black and white, with the blackletter masthead, a double-ruled dateline, the latest edition's headline and, where the box is tall, the EXTRA stamp, the front-page photo and its deck. It takes only the room the box leaves and shrinks or steps aside when there is none. One click opens the newspaper."
- }
+ },
+  {
+  "tag": "Newspaper",
+  "on": "2026-10-28",
+  "html": "The Daily Consensus now comes out every Monday. The Tau HUD server writes a new front page from the week on the testnet: the headline of the week, the week in figures, the rule changes still waiting and what the visitors decided in the simulation, in English and Chinese. The twelve-year story follows behind it, and older editions stay readable."
+  }
 ]
