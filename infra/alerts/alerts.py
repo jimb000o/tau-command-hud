@@ -105,6 +105,7 @@ SIM_ON = os.environ.get("SIM_ALERTS", "true").lower() in ("1", "true", "yes")
 SIM_SWITCHES = (("stake", 10), ("fixed", 16))
 SIM_PROPOSED_AT, SIM_IN_FORCE_AT = 20 * 60, 30 * 60
 SIM_LINK = f"{SITE}/proposals/?mode=sim"
+PREDICT_LINK = f"{SITE}/?mode=sim#predict"   # the forecast sheet on the HUD (assets/predict.js)
 FEED_ITEMS = 100
 RANGE = 100           # relay's getblockrange maximum
 REFETCH_TAIL = 6      # blocks re-read every poll so a replaced tip block (reorg) is noticed
@@ -576,7 +577,33 @@ SIM_NOTICE = ("Simulated: a made-up chain generated in your browser from the clo
               "Nothing here happens on the real Tau testnet.")
 
 
-def sim_text(ev: dict) -> str:
+def forecast_lines(ev: dict, today: dict | None, yesterday: dict | None) -> list[str]:
+    """The visitors' forecasts under a simulation post (relay /sim/predictions, infra/relay/simpredict.py): yesterday's best
+    in the morning post, today's leaders in the afternoon one, and when the next round closes. Names are the anonymous
+    two-word names of the simulation; nothing else about anyone is known."""
+    e = html.escape
+    top = lambda rows: " · ".join(f"{i + 1}. {e(r.get('name') or 'Anonymous')} {r['points']}" for i, r in enumerate(rows[:3]))  # noqa: E731
+    out = []
+    if ev["kind"] == "stake" and yesterday and yesterday.get("board"):
+        out.append(f"Yesterday's best forecasters: {top(yesterday['board'])}")
+    if today and today.get("board"):
+        out.append(f"Leading today: {top(today['board'])} ({today.get('forecasters', 0)} playing)")
+    nxt = datetime.fromtimestamp(ev["proposed"] + 3600, timezone.utc).strftime("%H:%M")
+    out.append(f"Next round: the visitors vote at {nxt} UTC. Guess before then whether the change comes and how many vote.")
+    return ["", "🎯 <b>Forecasts</b>"] + out + [f"<a href=\"{e(PREDICT_LINK)}\">Guess the next round</a>"]
+
+
+def forecasts_for(ev: dict) -> list[str]:
+    """The forecast lines for a simulation post; none when the relay does not answer (the post goes out without them)."""
+    try:
+        with urllib.request.urlopen(RELAY_HTTP + "/sim/predictions", timeout=10) as r:
+            today = json.loads(r.read())
+    except (urllib.error.URLError, OSError, ValueError):
+        return []
+    return forecast_lines(ev, today, today.get("yesterday") if ev["kind"] == "stake" else None)
+
+
+def sim_text(ev: dict, forecast: list[str] | None = None) -> str:
     """The Telegram post for a simulated consensus switch: marked as simulation first and last, then why, what to watch, the times."""
     e = html.escape
     hm = lambda t: datetime.fromtimestamp(t, timezone.utc).strftime("%H:%M")  # noqa: E731
@@ -586,6 +613,7 @@ def sim_text(ev: dict) -> str:
            "", "<b>Why it matters</b>", e(w["why"]),
            "", "<b>What to watch</b>"] + [f"• {e(x.format(**f))}" for x in w["watch"]] + [
            "", e(f"Proposed {f['proposed']} UTC · in force {f['in_force']} UTC · {w['after'].format(**f)}"),
+           ] + (forecast or []) + [
            "", f"<i>{e(SIM_NOTICE)}</i>",
            "", f"<a href=\"{e(SIM_LINK)}\">Watch it in the simulation</a>"]
     return "\n".join(out)
@@ -1109,7 +1137,7 @@ class Watcher:
         for ev in sim_switches(now):
             if not (ev["proposed"] <= now < ev["in_force"]) or ev["key"] in st["posted"]:
                 continue
-            text, buttons = sim_text(ev), sim_buttons()
+            text, buttons = sim_text(ev, await asyncio.to_thread(forecasts_for, ev)), sim_buttons()
             for o in tg:
                 ok, retry, err = await asyncio.to_thread(o.send_text, text, buttons)
                 if not ok:
@@ -1271,7 +1299,7 @@ async def preview_latest(n: int = 6) -> int:
 def sim_preview() -> int:
     """Print today's simulation posts as they would go to Telegram; posts nothing."""
     for ev in sim_switches(time.time()):
-        print(sim_text(ev))
+        print(sim_text(ev, forecasts_for(ev)))
         print("-" * 60)
     return 0
 

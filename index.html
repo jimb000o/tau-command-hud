@@ -20,6 +20,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/nav.css">
 <script src="assets/nav.js" defer></script>
+<script src="assets/predict.js" defer></script>
 </head>
 <body>
 <title>Tau HUD</title>
@@ -867,7 +868,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     </nav>
   </header>
 
-  <div class="simbar" id="simbar" role="status"><b id="simNext">Simulation · no real chain data</b><a id="simWatch" class="watch" href="proposals/" hidden>Watch in Proposals</a><span>What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node. Experimental community project, no claim of accuracy.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
+  <div class="simbar" id="simbar" role="status"><b id="simNext">Simulation · no real chain data</b><a id="simWatch" class="watch" href="proposals/" hidden>Watch in Proposals</a><a id="simGuess" class="watch" href="#predict" data-predict data-full="Every hour the visitors vote on one simulated rule change. Guess before the vote opens whether it comes and how many vote; points add up on a board for the day.">Guess the next round</a><span>What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node. Experimental community project, no claim of accuracy.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
   <section class="thesis" aria-label="Why Tau is different">
     <div class="thesis-main">
       <span class="eyebrow">Why this is not a normal blockchain</span>

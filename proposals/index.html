@@ -106,6 +106,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .empty { color: var(--dim); font-size: 13px; padding: 18px 4px; }
 .empty b { color: #fff; }
 .grp { margin: 10px 0 6px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.grp .guess { float: right; color: #ffb13b; text-decoration: none; border: 1px solid rgba(255,177,59,.6); border-radius: 999px; padding: 2px 8px; letter-spacing: .14em; } .grp .guess:hover { background: #ffb13b; color: #000; }
 .grp:first-child { margin-top: 0; }
 .grp small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
 .list > li.quiet { color: var(--dim); font-size: 13px; padding: 4px 2px 6px; }
@@ -225,6 +226,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/predict.js" defer></script>
 <script src="../assets/rulediff.js"></script>
 </head>
 <body>
@@ -425,7 +427,7 @@ function render() {
   /* the programme ahead, in the words of the header badge (assets/nav.js): what happens, why it matters, where to watch it */
   const U = SCHED, hhmm = x => new Date(x * 1000).toISOString().slice(11, 16);
   const inMin = x => { const m = Math.ceil((x - Date.now() / 1000) / 60); return m <= 0 ? "now" : m < 60 ? `in ${m} min` : `in ${Math.floor(m / 60)} h ${m % 60} min`; };
-  const sched = U.length ? `<h3 class="grp">Scheduled in the simulation <small>(${U.length})</small></h3><ul class="list">${U.map(u => {
+  const sched = U.length ? `<h3 class="grp">Scheduled in the simulation <small>(${U.length})</small><a class="guess" href="#predict" data-predict>Guess the next round</a></h3><ul class="list">${U.map(u => {
     const ev = EVENT[u.kind] || { what: u.short || u.title, why: u.title, watch: "" };
     const when = u.kind === "restart" ? `at ${hhmm(u.at_ts)} UTC (${inMin(u.at_ts)})` : `${u.proposed_ts ? `proposed at ${hhmm(u.proposed_ts)} UTC, ` : ""}in force at ${hhmm(u.at_ts)} UTC (${inMin(u.at_ts)})`;
     return `<li class="soon sched"><button type="button" data-sched="${SCHED.indexOf(u)}" aria-label="${esc(ev.what)}"><b>${esc(ev.what)}</b>${esc(ev.why)} ${esc(ev.watch)}<span class="when">${when}</span></button></li>`; }).join("")}</ul>` : "";

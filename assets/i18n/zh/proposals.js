@@ -258,4 +258,5 @@ TauI18n.add({ strings: {
   "in {n} min": "还有 {n} 分钟",
   "in {n} h {m} min": "还有 {n} 小时 {m} 分钟",
   "now": "现在",
+  "Guess the next round": "预测下一轮"
 } });
