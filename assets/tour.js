@@ -108,7 +108,7 @@
     ] },
     whatif: { name: "What if", intro: "Move block time, validators and votes needed, and watch a sandbox chain react.", steps: [
       { s: ".levers", t: "Move a lever", x: "Block time, validators, votes needed, validators offline and network delay. Or start from a preset such as “Real testnet today”." },
-      { s: ".stage", t: "The chain reacts at once", x: "Newest block on the right. When blocks arrive too late, the chain forks into two lanes. Hover a block, click it for its story." },
+      { s: ".stage", t: "The chain reacts at once", x: "Newest block on the right. When a block arrives too late, two blocks land at one height: a short split that the next block settles. It is not the fork Tau avoids, changing the rules never needs one. Hover a block, click it for its story." },
       { s: "#agree", t: "Rule changes need votes", x: "Every rule change needs yes votes from the validators before its deadline. Raise the bar or take validators offline and see what passes." },
       { s: ".side > section.panel:nth-of-type(1)", t: "What happens, in plain words", x: "One verdict for your settings, in plain words. The panel below counts what changed since your last move." },
     ] },

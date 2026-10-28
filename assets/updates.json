@@ -792,5 +792,10 @@
   "tag": "v17.50",
   "on": "2026-10-28",
   "html": "The newspaper block in Rules in force now is no longer an advertisement but a clipping of the front page lying on the HUD: grey-white newsprint with torn edges and a slight tilt, the blackletter masthead, double rules, EXTRA, the headline in the newspaper's own type, the halftone photo and the opening paragraph in two columns with a drop cap. On smaller screens it drops the columns, then the photo, and keeps masthead, headline and the link. One click opens the newspaper."
+ },
+ {
+  "tag": "What if",
+  "on": "2026-10-28",
+  "html": "The What if tour now says short split where it said fork, like the page itself: two blocks at one height that the next block settles are not the fork Tau avoids, and changing the rules never needs one."
  }
 ]
