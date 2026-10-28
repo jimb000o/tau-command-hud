@@ -614,7 +614,8 @@ small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .btn[disabled], .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
 a.btn { text-decoration: none; display: inline-block; }
 .fblink { color: var(--cyan); font-size: 12px; }
-.changes { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.changes { display: grid; gap: 8px; margin: 0; padding: 0 8px 0 0; list-style: none; max-height: min(62vh, 560px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line) transparent; align-content: start; }
+.changes li.sentinel { display: block; height: 1px; padding: 0; border: 0; }
 .changes li[hidden] { display: none; }
 .changes li { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 2px 10px; align-items: start; padding-left: 12px; border-left: 2px solid var(--line); font-size: 12px; }
 .changes li.day { display: block; padding: 0; border: 0; margin-top: 6px; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
@@ -1320,7 +1321,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.28", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.29", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -1352,14 +1353,19 @@ function foldLog() {
     if (rest) { const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head; pr.textContent = rest; d.append(sm, pr); li.append(d); }
     else { const o = document.createElement("div"); o.className = "one"; o.textContent = head; li.append(o); }
   });
-  /* the newest twelve entries are enough for a visit; the rest unfold on request, with the days that hold only older entries */
-  const all = [...document.querySelectorAll(".changes li:not(.day)")], older = all.slice(12), days = [...document.querySelectorAll(".changes li.day")];
-  if (older.length) {
-    const apply = hide => { older.forEach(li => { li.hidden = hide; }); days.forEach(d => { let n = d.nextElementSibling, any = false; while (n && !n.classList.contains("day")) { if (!n.hidden) any = true; n = n.nextElementSibling; } d.hidden = !any; }); };
-    apply(true);
-    const more = document.createElement("button"); more.type = "button"; more.className = "more-log"; more.textContent = `Show ${older.length} older entries`;
-    more.onclick = () => { const show = older[0].hidden; apply(!show); more.textContent = show ? "Show the newest twelve only" : `Show ${older.length} older entries`; };
-    all[0].parentElement.after(more);
+  /* the list scrolls inside its panel: the newest twelve entries first, twelve more each time the bottom comes into view, days appearing with their first entry */
+  const ul = document.querySelector(".changes"), all = [...ul.querySelectorAll("li:not(.day)")], days = [...ul.querySelectorAll("li.day")];
+  let shown = 12;
+  const reveal = () => {
+    all.forEach((li, i) => { li.hidden = i >= shown; });
+    days.forEach(d => { let n = d.nextElementSibling, any = false; while (n && !n.classList.contains("day")) { if (!n.hidden && !n.classList.contains("sentinel")) any = true; n = n.nextElementSibling; } d.hidden = !any; });
+  };
+  reveal();
+  if (all.length > shown) {
+    const tail = document.createElement("li"); tail.className = "sentinel"; tail.setAttribute("aria-hidden", "true"); ul.append(tail);
+    const more = () => { shown += 12; reveal(); if (shown >= all.length) { io.disconnect(); tail.remove(); } };
+    const io = "IntersectionObserver" in window ? new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) more(); }, { root: ul, rootMargin: "0px 0px 160px 0px" }) : null;
+    if (io) io.observe(tail); else { shown = all.length; reveal(); tail.remove(); }
   }
 }
 addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); NET.timer = setInterval(() => { if (!document.hidden && PRESENCE.up) pollNodes(); }, 60000); presenceOpen(); });
@@ -2274,10 +2280,13 @@ function draw(tm) {
     const a = -Math.PI / 2 + .35 + (i % Vn) * gap + (Math.floor(i / Vn) + 1) * gap / (rounds + 1) + t * .04, x = Math.cos(a) * NR, y = Math.sin(a) * NR;   // and the whole orbit turns slowly, one round in about two and a half minutes
     const al = n.kind === "hud" ? .95 : n.kind === "kit" ? .75 : .45, got = S.pulse > 0 && S.pulse < .2 ? (.2 - S.pulse) / .2 : 0;   // got: the new block just arrived here
     if (S.pulse > 0) { const q = Math.min(1, (1 - S.pulse) * 1.25), k = .30 + (NR / C - .30) * q; cx.fillStyle = `rgba(57,255,138,${S.pulse})`; cx.beginPath(); cx.arc(x * k / (NR / C), y * k / (NR / C), 4.5, 0, Math.PI * 2); cx.fill(); }   // the sealed block travels out to every node
+    // our own node breathes a soft green while it reads the real chain: alive, not alarmed (green stays the one accent; simulation stays grey)
+    const liveHud = n.kind === "hud" && S.mode === "live" && PRESENCE.up, br = liveHud ? .5 + .5 * Math.sin(t * 1.6) : 0;
     cx.beginPath(); cx.arc(x, y, n.kind === "hud" ? 10 : 8, 0, Math.PI * 2);
     if (got) { cx.fillStyle = `rgba(57,255,138,${got * .55})`; cx.fill(); }
-    cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : `rgba(${cyan},${al})`; cx.shadowColor = got ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = n.kind === "hud" || got ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
-    if (n.name) { const label = n.kind === "hud" ? "TAU HUD" : n.name, w = cx.measureText(label).width; plate(label, x + Math.sign(x || 1) * (w / 2 + 24), y + 7, "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`); }
+    else if (liveHud) { cx.fillStyle = `rgba(57,255,138,${.10 + .22 * br})`; cx.fill(); }
+    cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : liveHud ? `rgba(57,255,138,${.55 + .35 * br})` : `rgba(${cyan},${al})`; cx.shadowColor = got || liveHud ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = got ? 12 : liveHud ? 8 + 12 * br : n.kind === "hud" ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
+    if (n.name) { const label = n.kind === "hud" ? "Tau HUD" : n.name, w = cx.measureText(label).width; plate(label, x + Math.sign(x || 1) * (w / 2 + 24), y + 7, "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`); }
     const age = n.age ? fmtAge(n.age) + " ago" : "just now", ahead = S.height - n.height;
     const alone = S.mode === "live" && nodes.length === 1 && S.validators.length === 1;   // the whole visible network: IDNI's validator and us
     hit(x, y, 24, () => n.kind === "hud"
@@ -2338,8 +2347,9 @@ function draw(tm) {
     const s = on ? 30 : 22; cx.fillRect(-s / 2, -s / 2, s, s);
     if (voted) { cx.strokeStyle = `rgba(${amber},.95)`; cx.lineWidth = 3; cx.strokeRect(-s, -s, s * 2, s * 2); }
     cx.restore();
-    plate("V" + (i + 1) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
-    hit(x, y, 40, () => vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."));
+    const idni = S.mode === "live" && V === 1;   // the live testnet has one validator: IDNI's bootnode
+    plate((idni ? "IDNI" : "V" + (i + 1)) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
+    hit(x, y, 40, () => vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."));
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
 
@@ -2795,7 +2805,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.28`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.29`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

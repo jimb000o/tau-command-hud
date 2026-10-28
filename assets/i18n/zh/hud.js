@@ -1386,4 +1386,7 @@ TauI18n.add({ strings: {
   "✕ rule rejected": "✕ 规则被拒绝",
   "✕ “{x1}” missed quorum: {x2} of {x3} by #{x4} → archived, the old rules stand": "✕ “{x1}”未达法定票数：截至 #{x4} 为 {x2} / {x3} → 已归档，旧规则保持不变",
   "⤳ rule offered": "⤳ 已提供规则",
+  "Chain core: the Tau HUD node breathes a soft green while it reads the real chain (red in the Chinese version), its label reads “Tau HUD”, and the validator is named IDNI on the live chain, with a line in its hover saying that IDNI’s bootnode is the only validator right now. Update log: the list scrolls inside its panel and older entries appear as you reach the bottom, no button.": "链核心：Tau HUD 节点在读取真实链时会轻柔地呼吸发光（中文版为红色），标签写作“Tau HUD”，在真实链上验证者标为 IDNI，其悬停说明中加了一行：此刻 IDNI 的引导节点是唯一的验证者。更新日志：列表在面板内滚动，滚到底部时自动显示更早的条目，不再需要按钮。",
+  "Run by IDNI, the team behind Tau: its bootnode is the only validator right now.": "由 Tau 背后的团队 IDNI 运行：此刻它的引导节点是唯一的验证者。",
+  "Operator: IDNI (bootnode; PoA validator_set mode, the only validator).": "运营者：IDNI（引导节点；PoA validator_set 模式，唯一的验证者）。"
 } });
