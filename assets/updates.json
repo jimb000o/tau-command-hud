@@ -715,5 +715,6 @@
   "tag": "v17.48",
   "on": "2026-10-28",
   "html": "Feedback is now one click away on every page: a white Feedback button sits next to Telegram alerts in the header and opens the feedback form right where you are, with the cursor already in the text box. On the HUD it opens the HUD's own form; on phones it is a 44 px icon."
- }
+ },
+{"tag": "Simulation", "on": "2026-10-28", "html": "Forecasts in the simulation. Every hour the visitors vote on one simulated rule change; before the vote opens at hh:20, anyone can guess whether it comes into force at hh:30 and how many visitors vote. 2 points for yes or no, 3 for the right number of voters, 1 for the group next to it. The board counts the UTC day, like the simulated chain, with the same anonymous two-word name as the ballot and no sign-up. Open it with Guess the next round in the simulation bar or on Proposals; the two simulated consensus posts on Telegram name the day’s best forecasters.", "major": {"id": "sim-forecasts", "title": "New: guess the next round in the simulation", "text": "Every hour visitors vote on one simulated rule change. Before the vote opens, guess whether it comes and how many vote, and climb the day's board.", "link": "/?mode=sim#predict"}}
 ]
