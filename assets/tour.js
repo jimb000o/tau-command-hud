@@ -67,7 +67,7 @@
     ] },
     meta: { name: "In numbers", intro: "How many people look at Tau through this site: per day, over time and on which pages. Counted without cookies.", steps: [
       { s: ".intro .kpis", t: "The short version", x: "Visitors today, the daily average of the last week with its trend, all visits added up and the best day so far." },
-      { s: "#pDaily", t: "Visitors per day", x: "One bar per day, the green line is the 7-day average. Pick 7 days up to All for the whole history; click a bar for that day." },
+      { s: "#pDaily", t: "Visitors per day", x: "The green line is the number of visitors each day, the faint bars below are the pages they opened. Pick 7 days up to All for the whole history; hover for the numbers, click a day for its pages." },
       { s: "#dayPanel", t: "One day up close", x: "Visitors, pages opened and how many stayed 30 seconds, plus the pages people opened that day." },
       { s: "#pGrowth", t: "Growth", x: "Every day's visitors added up since counting began, so you see the climb at a glance." },
       { s: "#pPages", t: "What people open", x: "The most visited pages in the chosen range. Click one to go there." },
