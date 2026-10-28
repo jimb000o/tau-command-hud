@@ -1576,5 +1576,18 @@ TauI18n.add({ strings: {
   "The Daily Consensus": "共识日报",
   "agreed change": "项已通过的变更",
   "agreed changes": "项已通过的变更",
-  "The Daily Consensus now advertises itself on the HUD: the free space at the bottom of Rules in force now carries a 1920s newspaper advertisement in the HUD's black and white, with the blackletter masthead, a double-ruled dateline, the latest edition's headline and, where the box is tall, the EXTRA stamp, the front-page photo and its deck. It takes only the room the box leaves and shrinks or steps aside when there is none. One click opens the newspaper.": "《共识日报》现在在 HUD 上刊登广告：“当前生效的规则”底部的空白处是一则 1920 年代风格的报纸广告，采用 HUD 的黑白配色，有报头、双线日期栏、最新一期的头条，方框较高时还有“号外”印章、头版照片和导语。它只占用方框剩下的空间，没有空间时会缩小或让开。点击一下即可打开报纸。"
+  "The Daily Consensus now advertises itself on the HUD: the free space at the bottom of Rules in force now carries a 1920s newspaper advertisement in the HUD's black and white, with the blackletter masthead, a double-ruled dateline, the latest edition's headline and, where the box is tall, the EXTRA stamp, the front-page photo and its deck. It takes only the room the box leaves and shrinks or steps aside when there is none. One click opens the newspaper.": "《共识日报》现在在 HUD 上刊登广告：“当前生效的规则”底部的空白处是一则 1920 年代风格的报纸广告，采用 HUD 的黑白配色，有报头、双线日期栏、最新一期的头条，方框较高时还有“号外”印章、头版照片和导语。它只占用方框剩下的空间，没有空间时会缩小或让开。点击一下即可打开报纸。",
+  // found by the page check (tests/pages.mjs)
+  "Playground: on the validator seat you can now write your own proposal. A fourth card, “Write your own”, opens a guided editor: change the base fee, add or remove a validator, or write any network rule. It is checked as you type, then goes through the same vote, quorum and activation as the ready-made proposals; the simulated validators vote no on a big jump.": "规则游乐场：在验证者席位上，你现在可以写下自己的提案。第四张卡片“写你自己的”会打开一个引导式编辑器：修改基础手续费、增加或移除一个验证者，或编写任意网络规则。输入时即时检查，然后与现成的提案一样经过投票、法定人数和生效；改动过大时，模拟中的验证者会投反对票。",
+  "On the validator seat you can now write your own proposal": "在验证者席位上，你现在可以写下自己的提案",
+  "A fourth card, “Write your own”, opens a guided editor: change the base fee, add or remove a validator, or write any network rule. It is checked as you type, then goes through the same vote, quorum and activation as the ready-made proposals; the simulated validators vote no on a big jump.": "第四张卡片“写你自己的”会打开一个引导式编辑器：修改基础手续费、增加或移除一个验证者，或编写任意网络规则。输入时即时检查，然后与现成的提案一样经过投票、法定人数和生效；改动过大时，模拟中的验证者会投反对票。",
+  "Write your own": "写你自己的",
+  "Vote": "投票",
+  "Press films": "宣传影片",
+  "Handshake: {x}": "握手：{x}",
+  "{h} · fee limit {n} AGRS is below the base fee of {m}": "{h} · 手续费上限 {n} AGRS 低于基础手续费 {m}",
+  "fee limit {n} AGRS is below the base fee of {m}": "手续费上限 {n} AGRS 低于基础手续费 {m}",
+  "simulation or live mode": "无论模拟模式还是实时模式",
+  "fee —": "手续费 —",
+  "Checks: every change to the site is now opened in a browser before it goes live, each page in English and Chinese, in the simulation and with the live node offline, on wide screens, so a broken page or a missing Chinese text is caught first. About fifty Chinese texts that were still English are translated, and a rare drawing error in Time travel is fixed.": "检查：现在网站的每一次改动在上线前都会先在浏览器中打开：每个页面都用英文和中文、在模拟模式和实时节点离线的情况下、在宽屏上各打开一次，这样页面出错或缺少中文文字都会先被发现。约五十条仍是英文的中文文字已翻译，“时光回溯”页面上一个偶尔出现的绘图错误也已修复。",
 } });

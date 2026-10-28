@@ -949,8 +949,7 @@ function drawTimeline() {
     else if (s.rev !== prevRev) { d += `H${x}V${yy}`; segs.push({ x, rev: s.rev, h, yy }); }
     prevRev = s.rev;
   }
-  d += `H${TL.x1}`;
-  parts.push(`<path class="rev" d="${d}"/>`);
+  if (d) parts.push(`<path class="rev" d="${d}H${TL.x1}"/>`);   // no snapshot loaded yet: no line (a path must start with M)
   segs.forEach((g, i) => {
     const end = i + 1 < segs.length ? segs[i + 1].x : TL.x1, t = `rev ${g.rev}`, w = revW(t);
     if (i + 1 < segs.length) parts.push(`<line class="revtick" x1="${end}" x2="${end}" y1="${y.rv0 - 4}" y2="${y.rv1}"/>`);
@@ -1015,7 +1014,7 @@ function drawOverview() {
   let d = "", prev = null;
   for (let i = 0; i <= cols; i++) { const h = Math.min(C.head, Math.floor(C.first + i * per)), s = H.snaps[h]; if (!s) continue; const yy = 27 - Math.min(s.rev - 1, 8) * 1.2, x = OV.x0 + i * 2;
     if (prev == null) d += `M${x} ${yy}`; else if (s.rev !== prev) d += `H${x}V${yy}`; prev = s.rev; }
-  parts.push(`<path class="orev" d="${d}H${OV.x1}"/>`);
+  if (d) parts.push(`<path class="orev" d="${d}H${OV.x1}"/>`);
   for (const p of H.props) { const x = oxOf(p.proposedAt); parts.push(`<line class="oprop" x1="${x}" x2="${x}" y1="16" y2="21"/>`); }
   // the window: everything outside it is shaded
   const a = oxOf(va()), b = oxOf(vb());

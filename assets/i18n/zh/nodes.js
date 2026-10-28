@@ -128,4 +128,6 @@ TauI18n.add({ strings: {
   "Online nodes at our chain’s tip: kit nodes with our block at their height, peers within 2 blocks of our height.": "位于我们链顶端的在线节点：在其高度上与我们区块相同的套件节点，以及与我们高度相差不超过 2 个区块的节点。",
   "Nodes that run the Tau HUD kit and reported in the last 30 days.": "运行 Tau HUD 套件、并在最近 30 天内报告过的节点。",
   "None yet: yours would be the first.": "还没有：你的会是第一个。",
+  // found by the page check (tests/pages.mjs)
+  "Tau HUD node: running {n} d · {m} % up": "Tau HUD 节点：已运行 {n} 天 · 在线率 {m} %",
 } });

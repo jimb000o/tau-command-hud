@@ -63,7 +63,8 @@
     for (const [re, rep] of api.patterns) { if (re.test(k)) return k.replace(re, rep); }
     return null;
   };
-  const note = k => { if (debug && !k.includes("{e") && !missing.has(k)) { missing.add(k); console.debug("[i18n] missing:", k); } };
+  let held = null;   // while best() tries a text two ways, the misses wait here; only the way it keeps reports them
+  const note = k => { if (!debug || k.includes("{e") || missing.has(k)) return; if (held) { held.push(k); return; } missing.add(k); console.debug("[i18n] missing:", k); };
   /* returns [text, letters translated, letters left in English] */
   const letters = k => k.replace(NOISE, "").replace(/[^A-Za-z]/g, "").length;
   function parts(k, level) {
@@ -83,7 +84,7 @@
   const lookup = k => {
     if (!k || !words(k)) return null;   // nothing to translate
     if (/[\u3000-\u9fff\uff00-\uffef]/.test(k)) return api.strings.get(k) ?? null;   // already translated, unless it is a key that quotes Chinese (“EN | 中文”)
-    if (cache.has(k)) return cache.get(k);
+    if (cache.has(k)) { const r = cache.get(k); if (r == null) note(k); return r; }
     let [t, done, left] = parts(k, 0);
     const [, pre, core, post] = /^([·•\s]*)([\s\S]*?)([\s·•]*)$/.exec(k);   // "· frozen until block #5" is a fragment of a line; so is "{e1}Headline: text" with a leading bold label
     if (left && core !== k) { const [t2, d2, l2] = parts(core, 0); if (l2 < left) [t, done, left] = [pre + t2 + post, d2, l2]; }
@@ -109,9 +110,18 @@
   /* whichever of whole-text and line-by-line leaves fewer English words */
   const latin = s => (s.match(/[A-Za-z]{2,}/g) || []).length;
   const best = s => {
-    const w = lookup(squash(s)), l = byLine(s.trim());
-    if (w == null || l == null) return w ?? l;
-    return latin(l) < latin(w) ? l : w;
+    if (!debug) {
+      const w = lookup(squash(s)), l = byLine(s.trim());
+      if (w == null || l == null) return w ?? l;
+      return latin(l) < latin(w) ? l : w;
+    }
+    const outer = held;
+    held = []; const w = lookup(squash(s)), wMiss = held;
+    held = []; const l = byLine(s.trim()), lMiss = held;
+    held = outer;
+    const useL = w == null ? l != null || s.includes("\n") : l != null && latin(l) < latin(w);
+    (useL ? lMiss : wMiss).forEach(note);
+    return useL ? l ?? w : w;
   };
   api.t = s => { const r = best(s); return r == null ? s : r; };
   const tr = s => {

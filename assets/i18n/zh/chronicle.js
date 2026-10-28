@@ -125,4 +125,8 @@ TauI18n.add({ strings: {
   "Zennet as its own project": "Zennet 作为独立项目",
   "Zennet, a shared supercomputer, turns into Tau-Chain and Agoras. In late 2017 the plan is rethought as “The New Tau”.": "共享超级计算机 Zennet 演变为 Tau-Chain 和 Agoras。2017 年底，计划被重新构想为“新 Tau”。",
   "“The New Tau”": "“新 Tau”",
+  // found by the page check (tests/pages.mjs)
+  "Click a moment below or a dot on the timeline for details and the video it comes from.": "点击下方的某个时刻或时间线上的点，查看详情和它出自的视频。",
+  "Tap a moment for details and the video it comes from.": "点按某个时刻，查看详情和它出自的视频。",
+  "The road did.": "变的是道路。",
 } });

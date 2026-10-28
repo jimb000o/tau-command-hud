@@ -787,5 +787,10 @@
   "tag": "v17.49",
   "on": "2026-10-28",
   "html": "The Daily Consensus now advertises itself on the HUD: the free space at the bottom of Rules in force now carries a 1920s newspaper advertisement in the HUD's black and white, with the blackletter masthead, a double-ruled dateline, the latest edition's headline and, where the box is tall, the EXTRA stamp, the front-page photo and its deck. It takes only the room the box leaves and shrinks or steps aside when there is none. One click opens the newspaper."
+ },
+ {
+  "tag": "Checks",
+  "on": "2026-10-28",
+  "html": "Checks: every change to the site is now opened in a browser before it goes live, each page in English and Chinese, in the simulation and with the live node offline, on wide screens, so a broken page or a missing Chinese text is caught first. About fifty Chinese texts that were still English are translated, and a rare drawing error in Time travel is fixed."
  }
 ]
