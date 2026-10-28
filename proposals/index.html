@@ -108,6 +108,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .list > li.quiet { color: var(--dim); font-size: 13px; padding: 4px 2px 6px; }
 .list > li.sched { color: var(--dim); font-size: 13px; padding: 6px 12px; border-left: 2px solid var(--behind); background: rgba(255,177,59,.05); }
 .list > li.sched b { color: #fff; }
+.list > li.soon > button { border-left-color: var(--behind); background: rgba(255,177,59,.05); padding: 8px 12px; }
+.list > li.soon > button:hover, .list > li.soon > button:focus-visible { background: rgba(255,177,59,.1); }
+.list > li.soon .m.when { color: var(--text); }
 .quorum.wait .fill { background: rgba(255,255,255,.14); }
 /* rules over time: one lane per spec revision, one for the consensus mechanism, one bar per proposal from proposed to its activation block */
 .p-rules { padding-bottom: 10px; }
@@ -133,6 +136,12 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .pbar .active { color: var(--ok); }
 .pbar .voting { color: var(--behind); }
 .pbar .dropped { color: rgba(255,255,255,.25); }
+.pbar .agreed { color: var(--behind); }
+.pbar button.cut::after { display: none; }   /* decided here; the end marker sits at the activation block */
+.pbar button.due { min-width: 0; width: 0; background: none; }
+.pbar button.due::before { left: -4px; top: 2px; width: 8px; height: 8px; border-radius: 1px; transform: rotate(45deg); background: var(--deck); }
+.pbar button.due::after { display: none; }
+.pbar button.due.active::before { background: currentColor; }
 .axis { position: relative; height: 16px; font: 11px var(--mono); color: var(--dim); }
 .axis span { position: absolute; top: 0; white-space: nowrap; transform: translateX(-50%); }
 .axis span.l { transform: none; } .axis span.r { transform: translateX(-100%); }
@@ -241,7 +250,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 
   <main class="main">
     <section class="panel p-open">
-      <h2>Coming up <small id="openCount"></small></h2>
+      <h2><span id="openTitle">Coming up</span> <small id="openCount"></small></h2>
       <div class="scroll" id="openList"></div>
     </section>
     <section class="panel p-all">
@@ -330,10 +339,6 @@ function tiles() {
   ];
   $("tiles").innerHTML = t.map(([h, v, p]) => `<div class="tile"><h3>${h}</h3><div class="v">${v}</div><p>${p}</p></div>`).join("");
 }
-function flow(p) {
-  const s = p.status;
-  return `<div class="flow"><span class="done">proposed</span><span class="${s === "voting" ? "now" : "done"}">votes</span><span class="${s === "agreed" ? "now" : s === "active" ? "done" : ""}">agreed</span><span class="${s === "active" ? "ok" : ""}">in force</span></div>`;
-}
 // plain-words explanation from the tracker (alerts/explain.py): what changes, why it matters
 const whyOf = p => (p.explain && p.explain.why) || "";
 function explainHtml(p) {
@@ -355,19 +360,28 @@ function ruleDiff(p) {
   return RuleDiff.html(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions, { at: p.proposed_at, patch: !!p.patch });
 }
 const diffTag = p => { const d = diffOf(p); return d ? ` · <span class="nw">rule text ${d.same ? "unchanged" : RuleDiff.summary(d)}</span>` : ""; };
-function openCard(p) {
-  const need = p.thr, v = p.counted_votes, n = left(p), when = eta(n);
-  const line = p.status === "agreed"
-    ? `Agreed at #${fmtN(p.approved_at)}. Takes effect at #${fmtN(p.activate_at)}${n > 0 ? `, ${plural(n, "block")} from now${when ? ` (${when})` : ""}` : ""}.`
-    : `Needs ${need - v > 0 ? plural(need - v, "more vote") : "no more votes"} by #${fmtN(p.activate_at)}${n > 0 ? ` (${plural(n, "block")}${when ? `, ${when}` : ""})` : ""}, or it is dropped.`;
-  const agreed = p.status === "agreed", span = p.activate_at - p.approved_at;
-  const pct = agreed ? Math.max(0, Math.min(100, span > 0 ? (span - Math.max(n, 0)) / span * 100 : 100)) : Math.min(100, need ? v / need * 100 : 0);
-  const bar = agreed ? (n > 0 ? `${plural(n, "block")} to go${when ? ` (${when})` : ""} · ${v} of ${need} votes` : "takes effect now") : `${v} of ${need} votes`;
-  return `<li class="${p.status}"><button type="button" data-id="${esc(p.id)}"><b>${esc(p.title)}</b>
+/* when a block is expected: from the real block pace, as a date in UTC and a countdown, like the simulation's programme */
+function inTime(s) {
+  const m = Math.ceil(s / 60);
+  return m <= 1 ? "in a minute" : m < 60 ? `in ${m} min` : m < 1440 ? `in ${Math.floor(m / 60)} h ${m % 60} min` : `in ${Math.floor(m / 1440)} d ${Math.floor(m % 1440 / 60)} h`;
+}
+function atBlock(h) {
+  const n = h - D.chain.head, pace = D.chain.seconds_per_block;
+  if (n <= 0) return `#${fmtN(h)} · now`;
+  if (!pace) return `#${fmtN(h)} · ${plural(n, "block")} from now`;
+  const s = n * pace, at = new Date(((D.chain.head_ts || Date.now() / 1000) + s) * 1000).toISOString();
+  return `#${fmtN(h)} · ~${at.slice(0, 10)} ${at.slice(11, 16)} UTC · ${inTime(s)}`;
+}
+// compact card for what is coming up: the same shape as the simulation's scheduled events
+function soonCard(p) {
+  const need = Math.max(0, p.thr - p.counted_votes);
+  const when = p.status === "agreed" ? `In force at ${atBlock(p.activate_at)}`
+    : `Needs ${need ? plural(need, "more yes vote") : "no more votes"} by ${atBlock(p.activate_at)}, or dropped`;
+  const how = p.status === "agreed" ? `Agreed at #${fmtN(p.approved_at)} with ${p.counted_votes} of ${p.thr} votes.`
+    : `Proposed at #${fmtN(p.proposed_at)} by ${short(p.proposer)}. ${p.counted_votes} of ${p.thr} votes so far.`;
+  return `<li class="soon ${p.status}"><button type="button" data-id="${esc(p.id)}"><b>${esc(p.title)}</b>
     ${whyOf(p) ? `<span class="m why">${esc(whyOf(p))}</span>` : ""}
-    <span class="m">proposed at #${fmtN(p.proposed_at)} by ${short(p.proposer)}${p.proposed_ts ? ` · ${ago(p.proposed_ts)}` : ""}${diffTag(p)}</span>
-    ${flow(p)}<span class="m">${line}</span>
-    <div class="quorum${agreed ? " wait" : ""}" aria-label="${esc(bar)}"><div class="fill" style="width:${pct}%"></div><span>${bar}</span></div></button></li>`;
+    <span class="m when">${when}</span><span class="m">${how}</span></button></li>`;
 }
 function rowOf(p) {
   const st = p.status;
@@ -385,6 +399,7 @@ function render() {
   const P = D.proposals;
   const by = s => P.filter(p => p.status === s).sort((a, b) => a.activate_at - b.activate_at);
   const voting = by("voting"), agreed = by("agreed");
+  $("openTitle").textContent = SIM ? "Coming up" : "Coming up on the testnet";
   $("openCount").textContent = voting.length + agreed.length ? `(${voting.length + agreed.length})` : "";
   // the simulation announces its programme: special rule changes at fixed times of the day, and the restart at midnight
   const U = (D.upcoming || []).filter(u => u.status === "scheduled"), hhmm = x => new Date(x * 1000).toISOString().slice(11, 16);
@@ -392,10 +407,10 @@ function render() {
   const sched = U.length ? `<h3 class="grp">Scheduled in the simulation <small>(${U.length})</small></h3><ul class="list">${U.map(u => `<li class="sched"><b>${esc(u.title)}</b><br>${u.proposed_ts ? `proposed at ${hhmm(u.proposed_ts)} UTC, ` : ""}in force at ${hhmm(u.at_ts)} UTC (${inMin(u.at_ts)})</li>`).join("")}</ul>` : "";
   $("openList").innerHTML = sched + (!voting.length && !agreed.length
     ? (sched ? `<ul class="list"><li class="quiet">No proposal is open right now.</li></ul>` : `<ul class="list"><li class="empty"><b>Nothing is coming up right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}</ul>`)
-    : `<h3 class="grp">Waiting for votes <small>(${voting.length})</small></h3><ul class="list">${voting.length ? voting.map(openCard).join("")
-        : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`
-      + `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(openCard).join("")
-        : `<li class="quiet">Nothing agreed is waiting to take effect.</li>`}</ul>`);
+    : `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(soonCard).join("")
+        : `<li class="quiet">Nothing agreed is waiting to take effect.</li>`}</ul>`
+      + `<h3 class="grp">Waiting for votes <small>(${voting.length})</small></h3><ul class="list">${voting.length ? voting.map(soonCard).join("")
+        : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`);
   const shown = P.filter(p => filter === "all" || (filter === "decided" ? p.status === "active" || p.status === "dropped" : p.status === filter));
   $("allCount").textContent = `(${shown.length})`;
   $("allList").innerHTML = shown.length ? shown.map(rowOf).join("")
@@ -468,13 +483,23 @@ function timeline() {
     const tip = `${consName(s.m)}${cur ? ", in force now" : s.future ? `, agreed: from block #${fmtN(s.h)}` : ""}: ${(CONS[s.m] || ["", s.m])[1]}.` + (s.p ? `\nSwitched by the agreed rule change “${s.p.title}”. Click for the proposal.` : `\nTau has no proof of work. The mechanism is part of the chain state and switches only through an agreed rule change.${modes.length === 1 ? " No switch so far." : ""}`);
     return `<div class="seg${cur ? " now" : ""}${s.future ? " future" : ""}" ${s.p ? `data-id="${esc(s.p.id)}" ` : ""}role="button" tabindex="0" style="left:${pc(s.h)};width:calc(${w.toFixed(3)}% - 2px)" aria-label="${esc(consName(s.m))}" data-tip="${esc(tip)}">${label(consName(s.m) + (s.m === "validator_set" ? " · fixed validator list" : ""), w, consName(s.m))}</div>`; }).join("")
     + maybe.map(p => `<div class="seg maybe" data-id="${esc(p.id)}" role="button" tabindex="0" style="left:${pc(p.activate_at)};width:calc(${((1 - x(p.activate_at)) * 100).toFixed(3)}% - 2px);z-index:1;background:var(--deck)" data-tip="${esc(`Proposed: switch to ${consName(modeOf(p))} at block #${fmtN(p.activate_at)}, if enough validators agree by then (${p.counted_votes} of ${p.thr} votes so far). Click for the proposal.`)}">${label("→ " + consName(modeOf(p)) + "?", (1 - x(p.activate_at)) * 100, "→ " + { stake: "PoS", validator_set: "PoA", tau_validator_set: "Tau list" }[modeOf(p)] + "?")}</div>`).join("");
-  // one bar per proposal; bars that do not overlap in time share a row, so a busy chain stays a few rows high (the hover names each bar)
-  const lanes = [], laneGap = 100 * 14 / trackW, laneOf = (a, b) => { let i = lanes.findIndex(end => end + laneGap <= a); if (i < 0) { i = lanes.length; lanes.push(b); } else lanes[i] = b; return i; };
+  // one bar per proposal, from its proposal to its end (in force, dropped, or its activation block). On the live chain the
+  // activation block lies thousands of blocks after the vote: then the bar ends where it was decided and a marker sits at
+  // the activation block, so long waits do not stack up as long lines. Items that do not overlap share a row.
+  const lanes = [], laneGap = 100 * 14 / trackW;
+  const laneOf = parts => { const free = l => parts.every(([a, b]) => l.every(([c, d]) => b + laneGap <= c || d + laneGap <= a));
+    let i = lanes.findIndex(free); if (i < 0) { i = lanes.length; lanes.push([]); } lanes[i].push(...parts); return i; };
   const pBars = [...P].sort((a, b) => a.proposed_at - b.proposed_at).map(p => {
-    const end = p.activated_at ?? p.expired_at ?? p.activate_at, w = Math.max(0.4, (x(end) - x(p.proposed_at)) * 100), lane = laneOf(x(p.proposed_at) * 100, x(p.proposed_at) * 100 + w);
+    const end = p.activated_at ?? p.expired_at ?? p.activate_at;
+    const decided = p.approved_at ?? (p.status === "voting" ? Math.max(p.proposed_at, Math.min(head, end)) : p.proposed_at);
+    const x0 = x(p.proposed_at) * 100, xe = x(end) * 100, xd = x(decided) * 100, split = xe - xd > 100 * 40 / trackW;
+    const w = Math.max(0.4, (split ? xd : xe) - x0);
+    const lane = laneOf(split ? [[x0, x0 + w], [xe - 0.4, xe + 0.4]] : [[x0, x0 + w]]);
     const what = { active: `in force since #${fmtN(p.activated_at)} (revision ${p.rev})`, agreed: `agreed at #${fmtN(p.approved_at)}, takes effect at #${fmtN(p.activate_at)}${left(p) > 0 ? `, ${plural(left(p), "block")} from now${eta(left(p)) ? ` (${eta(left(p))})` : ""}` : ""}`,
       voting: `waiting for votes (${p.counted_votes} of ${p.thr}), deadline #${fmtN(p.activate_at)}`, dropped: `dropped at #${fmtN(p.expired_at)}` }[p.status];
-    return [lane, `<button type="button" class="${p.status}" data-id="${esc(p.id)}" style="left:${pc(p.proposed_at)};width:${w.toFixed(3)}%" aria-label="${esc(p.title)}" data-tip="${esc(`“${p.title}”\nproposed at #${fmtN(p.proposed_at)}, ${what}.${modeOf(p) ? `\nSwitches the consensus mechanism to ${consName(modeOf(p))}.` : ""}\nClick for the rule diff and the votes.`)}"></button>`]; });
+    const tip = esc(`“${p.title}”\nproposed at #${fmtN(p.proposed_at)}, ${what}.${modeOf(p) ? `\nSwitches the consensus mechanism to ${consName(modeOf(p))}.` : ""}\nClick for the rule diff and the votes.`);
+    return [lane, `<button type="button" class="${p.status}${split ? " cut" : ""}" data-id="${esc(p.id)}" style="left:${pc(p.proposed_at)};width:${w.toFixed(3)}%" aria-label="${esc(p.title)}" data-tip="${tip}"></button>`
+      + (split ? `<button type="button" class="${p.status} due" data-id="${esc(p.id)}" style="left:${pc(end)}" aria-label="${esc(p.title)}: ${p.status === "active" ? "in force" : p.status === "dropped" ? "dropped" : "takes effect"} at #${fmtN(end)}" data-tip="${tip}"></button>` : "")]; });
   const pRows = lanes.map((_, i) => `<div class="pbar">${pBars.filter(b => b[0] === i).map(b => b[1]).join("")}</div>`).join("");
   // axis labels at the events, left to right, skipping any that would touch the one before
   const gap = 100 * 84 / trackW, keep = [lo, head, ...(Math.abs(x(far) - x(head)) * 100 >= gap ? [far] : [])];
