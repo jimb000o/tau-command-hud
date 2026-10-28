@@ -484,4 +484,6 @@ TauI18n.add({ strings: {
   // found by the page check (tests/pages.mjs)
   "{x} UTC": "{x} UTC",
   "Open account {h}": "打开账户 {h}",
+  "Checks": "检查",
+  "Visits": "访问量",
 } });
