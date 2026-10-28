@@ -145,4 +145,11 @@ TauI18n.add({ strings: {
   "{n} proposals": "{n} 项提案",
   "{n} proposal": "{n} 项提案",
   "shared rule rejected": "已拒绝共享规则",
+  "Whole chain": "整条链",
+  "← → one block · Shift + ← → next rule event · wheel or + − to zoom, drag the strip below to move": "← → 一个区块 · Shift + ← → 下一个规则事件 · 滚轮或 + − 缩放，拖动下方条带移动",
+  "No rule change in this part of the chain.": "链的这一部分没有规则变更。",
+  "{n} revisions here · hover or zoom for each": "此处 {n} 个版本 · 悬停或缩放查看每一个",
+  "The whole chain. Drag to choose the part shown above, drag the window to move it, double-click for everything.": "整条链。拖动以选择上方显示的部分，拖动窗口来移动它，双击显示全部。",
+  "Overview of the whole chain": "整条链概览",
+  "{x} · rev {n}": "{x} · 版本 {n}",
 } });
