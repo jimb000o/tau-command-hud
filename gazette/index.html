@@ -15,7 +15,7 @@
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="The Daily Consensus · Tau HUD">
 <meta property="og:description" content="Extra! Users rewrite the chain’s law by vote, no fork required. Twelve years of Tau as a 1920s newspaper you can leaf through.">
-<meta property="og:image" content="https://tauhud.com/gazette/img/og.png">
+<meta property="og:image" content="https://tauhud.com/gazette/img/og-2.png">
 <meta property="og:url" content="https://tauhud.com/gazette/">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -113,6 +113,7 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
 .q small { display: block; font: 700 .62em/1.3 var(--body); letter-spacing: .14em; text-transform: uppercase; margin-top: .3em; font-style: normal; }
 .box { border: 1.5px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 2px; padding: .55em .7em .45em; margin: .35em .1em .55em; break-inside: avoid; }
 .box p { text-indent: 0; }
+.box.notice p { text-align: left; hyphens: auto; font-size: .92em; }
 .photo { margin: .2em 0 .45em; break-inside: avoid; }
 .photo img { display: block; width: 100%; filter: sepia(.35) contrast(1.08) brightness(.96); mix-blend-mode: multiply; border: 1px solid var(--ink); }
 .photo figcaption, .cap { font: 400 .78em/1.28 var(--body); margin-top: .3em; text-align: justify; }
@@ -259,7 +260,7 @@ const EN = {
   <div class="mast">
     <div class="ear"><b>Weather on the chain</b>Fair. Blocks about every eight seconds. A single validator holds the watch. Outlook: the climate may change by vote.</div>
     <div><div class="title">{{NAME}}</div><div class="motto">{{MOTTO}}</div></div>
-    <div class="ear r"><b>Price: one AGRS</b>Testnet coins carry no value. Printed by Tau HUD, an unofficial community instrument.</div>
+    <div class="ear r"><b>Free of charge</b>Printed by Tau HUD, an unofficial community instrument. Testnet AGRS are for practice only.</div>
   </div>
   <div class="dateline"><span>Vol. XIII · No. {{HEIGHT}}</span><span>{{DATE}}</span><span>tauhud.com</span></div>
   <div class="center"><span class="extra">EXTRA</span></div>
@@ -319,7 +320,7 @@ const EN = {
       <h3>The Million-Person Conversation</h3>
       <p class="ni">Ask ten people to agree on a rule and you have a meeting. Ask a million and you have a riot. The Tau answer is to let every participant state what they want in a language a machine can read and reason about, so that the machine can tell who agrees with whom, where opinions contradict, and what everyone together has actually said.</p>
       <p>The same team asked, in a 2016 interview, what makes a blockchain worth having. The answer was Satoshi’s: <i>“a public shared database that everyone writes and no one can cheat”</i>. Tau set out to do the same for rules and knowledge.</p>
-      <div class="ad"><div class="t">AGORAS</div><p>The Market of Tomorrow! Rent computing power. Buy code that provably meets your specification. Consult an expert and pay by the second.</p><div class="fine">Planned since 2015. Not yet open: the real Agoras coin comes with mainnet.</div></div>
+      <div class="box small"><p><b>WHAT IS AGORAS?</b> A market that IDNI has described since 2015 as a later layer on top of Tau: for computing power, for code checked against a specification, and for expert advice. Still a plan for later, not yet a product. The AGRS on today’s testnet are for practice only.</p></div>
       <div class="box small"><p><b>WHO IS OHAD ASOR?</b> Founder of IDNI, the company behind Tau. A developer with mathematics in the background who, by his own account, went deep into logic only after he began working on Tau.</p></div>
     </div>
   </div>
@@ -481,7 +482,7 @@ const EN = {
       <p>April brought fork choice and reorganisations, one canonical chain, and user-defined policy checks beside the built-in ones. In May came the decisive step. Consensus was moved out of Python and into Tau logic, so that the users could change it with rules, and a developer command line arrived for nodes, keys and votes.</p>
       <p>In August the users did change it. They voted their way from a fixed validator list to stake and back, without redeploying a node. The validator list itself now lives in Tau logic.</p>
       <p>September was declared the product phase: a simple wallet mode with rule templates and sharing, and two more patents granted. In October, co-signed transfers arrived, large payments that need several approvals, with deadlines counted in blocks that no clock can fake. One commonly used specification now loads in 2.4 seconds where it once took 68.</p>
-      <p>Mainnet and the real Agoras coin are still ahead. The road, for once, is visible.</p></div>
+      <p>Mainnet and Agoras remain plans on the team’s own roadmap. The road, for once, is visible.</p></div>
     </div>
     <div class="u s2 rl">
       <h3>Speak Plainly, and the Chain Will Write It Down</h3>
@@ -581,7 +582,7 @@ const EN = {
     </div>
     <div class="u s2 rl cls">
       <p><b>Lost.</b> One hard fork. Not missed. Finder may keep it.</p>
-      <p><b>Notice.</b> Testnet AGRS carry no value whatever. Do not exchange them for your grandmother’s silver.</p>
+      <p><b>Notice.</b> Testnet AGRS carry no value whatever. They exist to try the testnet and are neither offered nor sold here.</p>
       <p><b>For the curious.</b> Propose a rule and watch the chain accept or refuse it, safely, at the <a href="/playground/" data-noflip>Playground</a>.</p>
     </div>
     <div class="u s2 rl cls">
@@ -612,7 +613,7 @@ const EN = {
       <div class="ups"><p><b>Answer.</b> (c). It contradicts (b), so the compile check refuses it before any vote. Proposals (a) and (b) fit together.</p></div>
     </div>
     <div class="u full rt gl"><h3 style="text-align:left">A Glossary for New Readers</h3>
-      <div class="c3"><p><b>Agoras.</b> The planned market on top of Tau, and its coin, AGRS. The real coin comes with mainnet.</p>
+      <div class="c3"><p><b>Agoras.</b> The market IDNI plans as a later layer on Tau. On the testnet, AGRS is a test unit with no value.</p>
       <p><b>Block.</b> A sealed page of the chain\u2019s ledger. On Tau each records the rules it ran under.</p>
       <p><b>Bootnode.</b> The first node a newcomer calls to find the rest of the network.</p>
       <p><b>Consensus.</b> The rule for who may seal blocks and when they count. On Tau, itself a rule.</p>
@@ -624,13 +625,13 @@ const EN = {
     </div>
     <div class="u s4 rt">
       <h2 class="l">Coming Attractions</h2>
-      <div class="c2"><p class="ni dc">The programme ahead, as announced by the team: tables and abstract data types for the language; the merge of the development branch before the next release; a simple wallet in which rules are written in plain words; and in time, the mainnet and the real Agoras coin, with its markets for computing power, knowledge and expert advice.</p>
+      <div class="c2"><p class="ni dc">The programme ahead, as announced by the team: tables and abstract data types for the language; the merge of the development branch before the next release; a simple wallet in which rules are written in plain words; and, further off, a mainnet and Agoras, the market the team has long described for computing power, knowledge and expert advice.</p>
       <p>Your paper cannot promise dates, and neither does the team. But it can promise this: when the next rule changes on Testnet Alpha, Tau HUD will be watching, and so may you.</p></div>
       <div class="coupon"><div class="t">Clip and Keep</div><p>Watch the chain live at <b>tauhud.com</b> · Alerts at <b>t.me/tauHUDcom</b> · Try a rule at <b>tauhud.com/playground</b> · Read Tau’s own words at <b>tau.net</b></p></div>
     </div>
     <div class="u s2 rl rt">
       <div class="ad"><div class="t">Tau HUD</div><p>Twelve instruments for watching a chain that changes its own rules. Free of charge. Open source.</p><div class="fine">Kept running by time, tools and a modest server.</div></div>
-      <p class="ni small" style="margin-top:.6em"><b>THE COLOPHON.</b> {{NAME}} is printed by Tau HUD, an unofficial community project, not affiliated with IDNI. Facts are drawn from the Tau team’s public videos, posts and papers; quotations from video captions are lightly cleaned. Advertisements, puzzles and the weather are offered in fun.</p>
+      <div class="box small notice" style="margin-top:.6em"><p class="ni"><b>NOTICE TO READERS.</b> {{NAME}} is a friendly, unofficial paper made by Tau HUD, a community project not affiliated with IDNI. It is written to inform and to entertain, not as financial advice, and nothing in it is for sale. Testnet AGRS are for practice and have no value. Where these pages speak of plans, they report what IDNI has said, and plans can change. Facts come from the Tau team’s public videos, posts and papers; quotations from captions are lightly cleaned. Puzzles and the weather are offered in fun.</p></div>
     </div>
   </div>
 </div>`
