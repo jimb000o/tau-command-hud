@@ -360,6 +360,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .readout div { text-align: center; padding: 6px 4px; border-top: 1px solid var(--hair); }
 .readout b { display: block; font: 600 22px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
 .readout span { font: 400 11px var(--display); color: var(--dim); letter-spacing: .2em; text-transform: uppercase; }
+.readout div[data-full] { cursor: help; border-radius: 6px; transition: background .15s; }
+.readout div[data-full]:hover { background: rgba(57,255,138,.06); }
+.readout div[data-full]:hover b { color: var(--ok); text-shadow: 0 0 14px rgba(57,255,138,.45); }
 .readout span i { display: block; margin-top: 2px; font: 11px var(--mono); font-style: normal; letter-spacing: 0; text-transform: none; color: var(--dim); }
 
 /* tx feed */
@@ -848,10 +851,10 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="core">
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
-          <div><b id="rH">0</b><span>Height</span></div>
-          <div><b id="rM">0</b><span>Waiting</span></div>
+          <div id="rHw"><b id="rH">0</b><span>Height<i id="rHs"></i></span></div>
+          <div id="rMw"><b id="rM">0</b><span>Waiting<i id="rMs"></i></span></div>
           <div id="rTw"><b id="rT">—</b><span id="rTs">Block pace</span></div>
-          <div><b id="rR">0</b><span>User rules</span></div>
+          <div id="rRw"><b id="rR">0</b><span>User rules<i id="rRs"></i></span></div>
         </div>
       </div>
     </article>
@@ -964,6 +967,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.19 · 28 Oct 2026</b>Chain core: Height, Waiting and User rules carry a line of context like Block pace does. Height says when the last block came and how old the chain is, Waiting counts pending transactions and how long the oldest has waited, User rules says how many are in force and where the last one was deployed. Hovering each number explains it. In the circle, whatever your pointer rests on lights up green while its text shows, the outer rim answers to a wider band that reaches outside the ticks, and the three grey arcs that used to turn just inside the rim are now one quiet circle, the validator orbit, with its own text.</li>
           <li><b>v17.18 · 28 Oct 2026</b>The first donation came in, thank you. About now shows who supported Tau HUD, read straight from the Ethereum chain: one quiet line under the donation address with the number of supporters and the latest donations, each sender only as a shortened address linked to its transaction. Every new donation also gets one thank-you post in the Telegram channel. AGRS and ETH only; no banner, no goal bar. tauhud.com/#donate opens About at the donation address.</li>
           <li><b>v17.17 · 28 Oct 2026</b>Decode effect: the unresolved glyphs now run a gradient from the settled text outward, white next to the resolved letters, through pale green into full phosphor green by the twelfth glyph, then dimmer the further out.</li>
           <li><b>v17.16 · 27 Oct 2026</b>Blockchain strip scrolls like a film, and About says what a donation pays for: the mouse wheel glides through the blocks instead of stopping at each one, the detail below follows the block at the right edge, and scrolling back keeps loading older blocks from the relay all the way to genesis; “back to newest” returns to the live end. The donation section is now “Keep it running”: what the project costs (mostly time), what a donation pays for, no banner, no pop-up. The thesis that resolves out of glyph noise on load now does it in phosphor green: brightest at the resolve front, dimmer further out, white once settled, and the paragraph no longer shifts while it resolves.</li>
@@ -1186,14 +1190,27 @@ function tickPace() {
   if (i.textContent !== txt) i.textContent = txt;
   updateTiming(pace, paused ? null : Math.max(0, left));
 }
-setInterval(() => { if (S.mode === "live" && !document.querySelector(".a-core:hover")) tickPace(); }, 1000);
+/* the sub-lines under Height, Waiting and User rules: the same treatment as Block pace, each with its own facts */
+const fmtAge = s => s < 90 ? Math.round(s) + " s" : s < 5400 ? Math.round(s / 60) + " min" : s < 172800 ? (s / 3600).toFixed(1) + " h" : (s / 86400).toFixed(1) + " d";
+function tickSubs() {
+  const now = Date.now() / 1000, last = S.blocks[S.blocks.length - 1];
+  const start = S.mode === "live" ? S.chainStart : (S.byHeight.get(0) || {}).ts;
+  const put = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };
+  put("rHs", !last ? "" : `last ${last.ts ? fmtAgo(now - last.ts) : "just now"}` + (start && now > start ? ` · chain ${fmtAge(now - start)}` : ""));
+  const seen = S.memSeen, ids = new Set(S.mempool.map(t => t.id));
+  S.mempool.forEach(t => { if (!seen.has(t.id)) seen.set(t.id, now); }); [...seen.keys()].forEach(k => { if (!ids.has(k)) seen.delete(k); });
+  const oldest = seen.size ? now - Math.min(...seen.values()) : 0;
+  put("rMs", !S.mempool.length ? "nothing pending" : `${S.mempool.length} pending · oldest ${fmtAge(oldest)}`);
+  put("rRs", !S.clauses.size ? "none deployed yet" : `${S.clauses.size} in force` + (S.rulesLastBlock != null ? ` · last at #${fmt(S.rulesLastBlock)}` : ""));
+}
+setInterval(() => { if (!document.querySelector(".a-core:hover")) { if (S.mode === "live") tickPace(); tickSubs(); } }, 1000);
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ---------- shared view state ---------- */
 const S = {
   mode: "sim", height: 0, txTotal: 0, mempool: [], blocks: [], validators: [], proposerIdx: 0,
   lastBlockAt: performance.now(), blockTimes: [], fee: 10, quorum: "supermajority", ruleBudget: 8,
-  pulse: 0, amend: 0, specRev: 1, byHeight: new Map(),
+  pulse: 0, amend: 0, specRev: 1, byHeight: new Map(), chainStart: null, memSeen: new Map(), rulesLastBlock: null,
   updates: [],          // governance: {id,title,diff,votes:Set,proposer,activateAt,status,kind,value}
   offers: [],           // rule sharing: {id,from,to,policy,status,expire}
   clauses: new Map(),   // acceptor -> policy  (the per-user o5 specification)
@@ -1752,6 +1769,10 @@ function readouts() {
     : (live ? "Needs two consecutive blocks with timestamps before a pace can be measured." : "Measured once the first blocks are sealed.");
   tickPace();
   $("rR").textContent = S.clauses.size;
+  tickSubs();
+  $("rHw").dataset.full = `Height ${fmt(S.height)}: the number of blocks in the chain, counted from genesis #0. The line under it says when the last block was sealed${S.mode === "live" ? " and how old the chain is, measured from block #1 (genesis carries no time)" : " and how old the simulated chain is"}.`;
+  $("rMw").dataset.full = `Waiting: transactions the node holds but has not sealed into a block yet. “Oldest” counts from when this page first saw the transaction.${S.mode === "live" ? " The alpha node can keep a sealed transaction listed as pending for up to an hour (see Findings)." : ""}`;
+  $("rRw").dataset.full = `User rules: accounts that run their own money rule (o5) on this chain, in force right now. “Last at” names the block where the newest rule was deployed.${S.mode === "live" ? " The live chain has not seen a personal rule yet; the simulation shows how they would look." : ""}`;
   $("chipFee").textContent = S.fee + " AGRS";
   $("chipRev").textContent = "rev " + S.specRev;
   { const m = S.mode === "live" ? S.eligMode || "" : "validator_set", c = CONS_CHIP[m], n = S.validators.length;
@@ -1896,7 +1917,7 @@ const PROPOSALS = [
 function simInit() {
   S.validators = Array.from({ length: 4 }, () => hex(96));
   SIM.accounts = Array.from({ length: 14 }, () => hex(96));
-  Object.assign(S, { height: 0, blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, fee: 10, specRev: 1, ruleBudget: 8, updates: [], offers: [], byHeight: new Map() }); selectedBlock = null;
+  Object.assign(S, { height: 0, blocks: [], mempool: [], memSeen: new Map(), rulesLastBlock: null, txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, fee: 10, specRev: 1, ruleBudget: 8, updates: [], offers: [], byHeight: new Map() }); selectedBlock = null;
   S.clauses = new Map();
   // a few accounts start with their own policies so the composite is visible from the first frame
   for (let i = 0; i < 3; i++) S.clauses.set(SIM.accounts[i], randomPolicy(SIM.accounts));
@@ -1955,7 +1976,7 @@ function simTx() {
       note: `${short(waiting.to)} ${yes ? "accepts" : "rejects"} “${waiting.policy.name}” from ${short(waiting.from)}`,
       apply: () => {
         waiting.status = yes ? "accepted" : "rejected";
-        if (yes) { S.clauses.set(waiting.to, waiting.policy); log(`Clause registry: ${short(waiting.to)} now runs “${waiting.policy.name}” · composite o5 rebuilt`, "ok"); }
+        if (yes) { S.clauses.set(waiting.to, waiting.policy); S.rulesLastBlock = S.height; log(`Clause registry: ${short(waiting.to)} now runs “${waiting.policy.name}” · composite o5 rebuilt`, "ok"); }
       } });
   }
   if (r < 0.52) {                                           // someone shares a rule with someone else
@@ -1966,7 +1987,7 @@ function simTx() {
   if (r < 0.60) {                                           // an account writes its own policy
     const policy = randomPolicy(A);
     return admit({ id: hex(64), type: "rule_deploy", sender, policy, fee: S.fee, note: `${short(sender)} deploys own rule · ${policy.name}: ${policy.label}`,
-      apply: () => { S.clauses.set(sender, policy); log(`Clause registry: ${short(sender)} deployed “${policy.name}”`, "ok"); } });
+      apply: () => { S.clauses.set(sender, policy); S.rulesLastBlock = S.height; log(`Clause registry: ${short(sender)} deployed “${policy.name}”`, "ok"); } });
   }
   // ordinary transfer, checked against the sender's own Tau policy (o5)
   const to = pick(A.filter(a => a !== sender)), amount = 1 + ((Math.random() * (Math.random() < .3 ? 6000 : 1200)) | 0);
@@ -2070,6 +2091,7 @@ function liveMessage(ev) {
       ingestBlock(b, true);
     });
   } else if (msg.command === "getblockrange") {
+    if (RIB.probe && d.from === 1) { RIB.probe = false; const h = ((d.blocks || [])[0] || {}).header || {}; if (h.timestamp) S.chainStart = h.timestamp; tickSubs(); return; }
     RIB.loading = false;
     const got = (d.blocks || []).map(raw => {
       const h = raw.header || {}, ids = raw.tx_ids || [];
@@ -2122,7 +2144,7 @@ function liveMessage(ev) {
 /* forget every block and transaction: on connect, and when the relay reports that the node wiped a dead chain ("reset": true) */
 function liveClear() {
   Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0, approvals: [], reorgs: [], eligMode: "", modeHistory: [] });
-  S.clauses = new Map(); S.byHeight = new Map(); LIVE.seenBlocks.clear(); LIVE.seenTx.clear();
+  S.clauses = new Map(); S.byHeight = new Map(); S.memSeen = new Map(); S.chainStart = null; S.rulesLastBlock = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear();
   $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
   RIB.back = false; RIB.target = null; RIB.loading = false; ribbonHold.length = 0;
 }
@@ -2143,7 +2165,7 @@ function liveConnect() {
     LIVE.everConnected = true; LIVE.retryWait = 5000;
     setMode("live", "Connected");
     ws.send(helloLine());
-    liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool");
+    liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool"); RIB.probe = true; liveSend("getblockrange 1 1");
     LIVE.poll = setInterval(() => { liveSend("getblocks 6"); liveSend("getmempool"); }, 3000);
     LIVE.govPoll = setInterval(() => liveSend("getgovernance"), 15000);
   };
@@ -2192,15 +2214,31 @@ let burst = 0, sparks = [], t0 = performance.now();
 const RULE_HOT_S = 5;
 const ruleState = p => { const age = (performance.now() - (p.lastCheck || 0)) / 1000; return age < RULE_HOT_S ? { hot: true, k: 1 - age / RULE_HOT_S, refused: !!p.lastRefused } : { hot: false, k: 0, refused: false }; };
 const CORE_HITS = [], CORE_RINGS = [];
+/* CORE_MOUSE: where the pointer rests over the core, in canvas units; the frame loop re-runs the hit test there so the hovered element lights up even while it orbits */
+let CORE_MOUSE = null;
+function coreHitAt(x, y) {
+  let best = null, bd = Infinity;
+  for (const h of CORE_HITS) { const d = Math.hypot(h.x - x, h.y - y); if (d <= h.r && d < bd) { best = h; bd = d; } }
+  if (best) return best;
+  const d = Math.hypot(x, y);
+  for (const r of CORE_RINGS) if (Math.abs(d - r.r) <= r.w) return r;
+  return null;
+}
 function coreHit(e) {
   const b = cv.getBoundingClientRect(); if (!b.width) return null;
   const k = cv.width / b.width, C = cv.width / 2, x = (e.clientX - b.left) * k - C, y = (e.clientY - b.top) * k - C;
-  let best = null, bd = Infinity;
-  for (const h of CORE_HITS) { const d = Math.hypot(h.x - x, h.y - y); if (d <= h.r && d < bd) { best = h; bd = d; } }
-  if (best) return best.fn;
-  const d = Math.hypot(x, y);
-  for (const r of CORE_RINGS) if (Math.abs(d - r.r) <= r.w) return r.fn;
-  return null;
+  const h = coreHitAt(x, y); CORE_MOUSE = h ? { x, y } : null;
+  return h ? h.fn : null;
+}
+/* the hovered element glows green under its overlay text: a band for a ring, a halo for a dot, the validator or the core */
+function paintHover() {
+  if (!CORE_MOUSE) return; const h = coreHitAt(CORE_MOUSE.x, CORE_MOUSE.y); if (!h) return;
+  cx.save(); cx.shadowColor = "rgb(57,255,138)";
+  if ("w" in h) { cx.beginPath(); cx.arc(0, 0, h.r, 0, Math.PI * 2); cx.lineWidth = h.w * 2; cx.strokeStyle = "rgba(57,255,138,.10)"; cx.shadowBlur = 0; cx.stroke();
+    cx.beginPath(); cx.arc(0, 0, h.r - h.w, 0, Math.PI * 2); cx.arc(0, 0, h.r + h.w, 0, Math.PI * 2); cx.lineWidth = 1.5; cx.strokeStyle = "rgba(57,255,138,.55)"; cx.shadowBlur = 16; cx.stroke(); }
+  else { cx.beginPath(); cx.arc(h.x, h.y, h.r, 0, Math.PI * 2); cx.fillStyle = "rgba(57,255,138,.12)"; cx.shadowBlur = 0; cx.fill();
+    cx.beginPath(); cx.arc(h.x, h.y, h.r, 0, Math.PI * 2); cx.lineWidth = 2; cx.strokeStyle = "rgba(57,255,138,.7)"; cx.shadowBlur = 18; cx.stroke(); }
+  cx.restore();
 }
 /* labels sit on dark plates and are painted last, above every ring, line and dot: no stroke ever crosses the letters */
 const PLATES = [];
@@ -2223,7 +2261,8 @@ function draw(tm) {
   const cyan = "236,236,240", amber = "255,255,255";
   CORE_HITS.length = 0; const hit = (x, y, r, fn) => CORE_HITS.push({ x, y, r, fn }); const ring = (r, w, fn) => CORE_RINGS.push({ r, w, fn });
   CORE_RINGS.length = 0;
-  ring(C * .90, 20, () => `Outer rim: the consensus spec, revision ${S.specRev}. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`);
+  ring(C * .84, 16, () => `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is proposing the next block; a white square around one marks a vote for the open rule change.`);
+  ring(C * .93, C * .085, () => `Outer rim: the consensus spec, revision ${S.specRev}. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`);
 
   cx.strokeStyle = `rgba(${cyan},.35)`; cx.lineWidth = 2;
   for (let i = 0; i < 120; i++) {
@@ -2231,7 +2270,7 @@ function draw(tm) {
     cx.beginPath(); cx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1); cx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2); cx.stroke();
   }
   const arc = (r, w, a0, len, col, sp) => { cx.beginPath(); cx.lineWidth = w; cx.strokeStyle = col; cx.arc(0, 0, r, a0 + t * sp, a0 + len + t * sp); cx.stroke(); };
-  for (let k = 0; k < 3; k++) arc(C * .84, 6, k * 2.1, 1.4, `rgba(${cyan},.5)`, .25);
+  cx.beginPath(); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${cyan},.22)`; cx.arc(0, 0, C * .84, 0, Math.PI * 2); cx.stroke();   // the validator orbit
 
   // agreement ring: progress of the open rule change toward quorum
   const open = S.updates.find(u => u.status === "voting" || u.status === "scheduled");
@@ -2319,6 +2358,7 @@ function draw(tm) {
   cx.font = "600 19px Sora, sans-serif";
   cx.fillText(am > .2 ? "SPEC AMENDED · REV " + S.specRev : since < 1.2 ? "SEALED BY AGREEMENT" : "SPEC REV " + S.specRev, 0, 40);
   if (S.mode === "sim") plate("SIMULATION · NO REAL CHAIN DATA", 0, C * .64 + 10, "600 30px Sora, sans-serif", "rgba(236,236,240,.42)");
+  paintHover();
   paintPlates();
   cx.restore();
   requestAnimationFrame(draw);
@@ -2560,7 +2600,7 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
   const coreShow = e => { const fn = coreHit(e); if (fn) { cur = cv; shownAt = Date.now(); ovl.textContent = fn(); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
-  cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; if (cur === cv && !touch) hide(); });
+  cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; CORE_MOUSE = null; if (cur === cv && !touch) hide(); });
   cv.addEventListener("click", e => { if (touch) coreShow(e); });
 })();
 
@@ -2709,7 +2749,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.17`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.19`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
