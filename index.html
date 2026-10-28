@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <script src="assets/i18n.js"></script>
 <script src="assets/sim.js"></script>
+<script src="assets/simvote.js"></script>
 <script src="assets/simnode.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
@@ -80,6 +81,7 @@ body::after { /* scanlines */
 .simbar b { font-weight: inherit; } .simbar b[data-full] { cursor: help; }
 .simbar b.soon { animation: simSoon 1.6s ease-in-out infinite; } @keyframes simSoon { 50% { text-shadow: 0 0 12px rgba(255,177,59,.95); } }
 .simbar a.watch { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; border: 1px solid rgba(255,177,59,.6); color: #ffb13b; border-radius: 999px; padding: 3px 8px; text-decoration: none; } .simbar a.watch:hover { background: #ffb13b; color: #000; }
+.simbar #simVote { flex: 1 1 420px; min-width: 0; } .simbar #simVote span { flex: 0 1 auto; min-width: 0; }
 .simbar span { color: var(--dim); font: 12px var(--mono); letter-spacing: 0; text-transform: none; flex: 1 1 320px; }
 .simbar button { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 3px 8px; cursor: pointer; }
 .simbar button:hover { background: #fff; color: #000; }
@@ -873,7 +875,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     </nav>
   </header>
 
-  <div class="simbar" id="simbar" role="status"><b id="simNext">Simulation · no real chain data</b><a id="simWatch" class="watch" href="proposals/" hidden>Watch in Proposals</a><span>What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node. Experimental community project, no claim of accuracy.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
+  <div class="simbar" id="simbar" role="status"><b id="simNext">Simulation · no real chain data</b><a id="simWatch" class="watch" href="proposals/" hidden>Watch in Proposals</a><div id="simVote" hidden></div><span id="simAbout">What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node. Experimental community project, no claim of accuracy.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
   <section class="thesis" aria-label="Why Tau is different">
     <div class="thesis-main">
       <span class="eyebrow">Why this is not a normal blockchain</span>
@@ -2528,6 +2530,28 @@ function draw(tm) {
     const agreeTxt = open ? `AGREEMENT ${open.votes.size}/${threshold()}` : sched.length === 1 ? "AGREED · ACTIVATES #" + next.activateAt : `${sched.length} AGREED · NEXT #${next.activateAt}`, agreeFont = "600 22px Sora, sans-serif";
     plate(agreeTxt, 0, belowRing(C * .70, agreeTxt, agreeFont), agreeFont, `rgba(${amber},.95)`);
   }
+  // the visitors' vote on the hourly change (simulation only): yes dots run down the right side, no dots down the left, each in the voter's colour
+  const vb = SIMBAL && SIMBAL.ballot;
+  if (vb && S.simfeed) {
+    const rv = C * .655, step = .075, me = TauSim.me(), mine = vb.mine;
+    let own = false, yi = 0, ni = 0;
+    cx.save(); cx.setLineDash([2, 8]); cx.beginPath(); cx.lineWidth = 1.2; cx.strokeStyle = "rgba(255,177,59,.28)"; cx.arc(0, 0, rv, 0, Math.PI * 2); cx.stroke(); cx.restore();
+    const isMe = v => mine != null && v[0] === me.a && v[1] === me.b && v[2] === me.c && v[3] === mine, ordered = [...vb.voters.filter(isMe).slice(0, 1), ...vb.voters.filter(v => !isMe(v)).slice(-47)];   // your own dot first, at the top of its side
+    ordered.forEach(v => {
+      const yes = v[3] === 1, i = yes ? yi++ : ni++, a = yes ? -.3 + (i % 16) * step : Math.PI + .3 - (i % 16) * step, rr = rv - Math.floor(i / 16) * 26, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+      const col = TauSim.colourOf(v[2]), self = !own && isMe(v);
+      if (self) own = true;
+      cx.beginPath(); cx.arc(x, y, self ? 12 : 9, 0, Math.PI * 2);
+      if (yes) { cx.fillStyle = col; cx.fill(); } else { cx.lineWidth = 3.5; cx.strokeStyle = col; cx.stroke(); }
+      if (self) { cx.beginPath(); cx.arc(x, y, 18, 0, Math.PI * 2); cx.lineWidth = 2; cx.strokeStyle = "#fff"; cx.stroke(); }
+    });
+    const vTxt = vb.open ? `VISITORS ${vb.yes} YES · ${vb.no} NO` : vb.outcome === "no" ? `VISITORS SAID NO · ${vb.no} TO ${vb.yes}` : vb.outcome === "yes" ? `VISITORS SAID YES · ${vb.yes} TO ${vb.no}` : `NO MAJORITY · AS PLANNED`, vFont = "600 22px Sora, sans-serif";
+    plate(vTxt, 0, belowRing(C * .70, vTxt, vFont) + 44, vFont, "rgba(255,177,59,.95)");   // right under the agreement label
+    const what = (SIM_EVENT[SIMBAL.kind] || {}).what || SIMBAL.title;
+    ring(rv, 14, () => (vb.open ? `Visitors’ vote: ${what}?\n${vb.yes} yes, ${vb.no} no so far. Filled dots on the right said yes, rings on the left said no, each in the visitor’s colour; ${mine == null ? "you have not voted yet" : "the white circle is you"}.\nVoting closes ${new Date(vb.closes * 1000).toISOString().slice(11, 16)} UTC. Then the simulated validators follow the majority: more yes than no, or no votes at all, and they agree; more no, and the change is dropped.`
+      : `Visitors’ vote, closed: ${vb.yes} yes, ${vb.no} no. ${vb.outcome === "no" ? "The validators hold back, so the change is dropped when its deadline passes and the old rules stand." : "The validators agree, so the change takes effect as planned."}`)
+      + `\nYou vote as ${me.name}: a name and colour made up in your browser, no account. Vote with the buttons in the simulation bar.`);
+  }
 
   // validators
   const V = S.validators.length || 1, vr = C * .84;
@@ -3034,9 +3058,12 @@ function simBadge() {
   const b = $("simNext"), a = $("simWatch"); if (!b) return;
   const localTime = new Date().getTimezoneOffset() !== 0, when = x => { const d = new Date(x * 1000), loc = d.toTimeString().slice(0, 5), utc = d.toISOString().slice(11, 16); return localTime ? `${loc} (${utc})` : utc; };   // no word in the time itself: the heading says which clock
   const list = S.simfeed && window.TauSim && TauSim.upcoming ? TauSim.upcoming() : [], u = list[0], left = u ? Math.ceil((u.at_ts - Date.now() / 1000) / 60) : 999;
-  const ev = u && (SIM_EVENT[u.kind] || { what: u.short, why: u.title, watch: "" }), soon = !!u && left <= 60;
+  const ev = u && (SIM_EVENT[u.kind] || { what: u.short, why: u.title, watch: "" }), soon = !!u && left <= 60, bal = u && u.ballot;
+  simVote(list);
   const text = !soon ? "Simulation · no real chain data"
     : left <= 0 ? `Simulation · now: ${ev.what}`
+    : bal && bal.open ? `Simulation · vote now: ${ev.what} in ${left} min?`
+    : bal && bal.outcome === "no" ? "Simulation · the visitors said no: the rules stay as they are"
     : u.status === "voting" ? `Simulation · validators are voting: ${ev.what} in ${left} min`
     : u.status === "agreed" ? `Simulation · agreed: ${ev.what} in ${left} min`
     : `Simulation · in ${left} min: ${ev.what}`;
@@ -3044,9 +3071,20 @@ function simBadge() {
   if (a) { a.hidden = !soon; const lang = new URLSearchParams(location.search).get("lang"); a.href = "proposals/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); }
   if (text === simBadgeText) return; simBadgeText = text;
   b.textContent = text;
-  if (list.length) b.dataset.full = (soon ? `${ev.why} ${ev.watch}\n` : "") + "Every change is proposed 10 minutes ahead, voted on by the simulated validators, then in force: the path a real rule change takes on Tau.\n" + (localTime ? "Next in the simulation (your time, UTC in brackets):" : "Next in the simulation (UTC):") + "\n" + list.map(x => `${when(x.at_ts)} · ${(SIM_EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet.";
+  if (list.length) b.dataset.full = (soon ? `${ev.why} ${ev.watch}\n` : "") + (bal && bal.open ? "Vote yes or no in this bar: the simulated validators follow the visitors’ majority.\n" : "") + "Every change is proposed 10 minutes ahead and put to the visitors until 7 minutes in: the simulated validators follow the majority, then it is in force, the path a real rule change takes on Tau.\n" + (localTime ? "Next in the simulation (your time, UTC in brackets):" : "Next in the simulation (UTC):") + "\n" + list.map(x => `${when(x.at_ts)} · ${(SIM_EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet.";
   else delete b.dataset.full;
 }
+/* the visitors' vote on the hourly change: the strip in the simulation bar (assets/simvote.js) while it is open and until it takes effect; the ring draws the votes */
+let SIMBAL = null, simVoteSig = "";
+function simVote(list) {
+  const box = $("simVote"), about = $("simAbout"); if (!box || !window.TauVote) return;
+  const u = S.simfeed ? TauVote.current() : null; SIMBAL = u;
+  box.hidden = !u; if (about) about.hidden = !!u;
+  const sig = u ? TauVote.sig(u) + document.documentElement.lang : "";
+  if (sig === simVoteSig) return; simVoteSig = sig;
+  box.innerHTML = u ? TauVote.strip(u) : ""; TauVote.bind(box);
+}
+if (window.TauSim && TauSim.onBallots) TauSim.onBallots(() => { simVoteSig = ""; simBadge(); });
 simBadge(); setInterval(() => { if (!document.hidden) simBadge(); }, 1000);
 /* the "coming up" chip beside the mode chip: an agreed rule change on the live chain that is not yet in force, counted down from the relay's block pace (the same chip as in every subpage header) */
 const NEXT = { rows: [], chain: null, text: "", dict: null };

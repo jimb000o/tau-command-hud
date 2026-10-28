@@ -16,7 +16,17 @@
    TauSim.on      true when this page runs in simulation mode (?sample previews stay what they are)
    TauSim.mode()  "sim" | "live"      TauSim.set("sim"|"live")  remembers the choice and reloads the page
    TauSim.head()  current height       TauSim.block(n)  the raw block   TauSim.genesis  balances at block 0
-   TauSim.chain   the generator itself (ts, rulesAt, proposals, arrivals), for a page that wants more than the relay protocol */
+   TauSim.chain   the generator itself (ts, rulesAt, proposals, arrivals), for a page that wants more than the relay protocol
+
+   Visitors vote: the one input from people. Every hourly rule change (proposed hh:20, in force hh:30) is put to the visitors
+   until hh:27; the relay counts the votes (infra/relay/simvotes.py, GET /sim/votes) and the simulated validators follow the
+   majority. More yes than no, or no votes at all: they agree from hh:28 and the change is in force at hh:30. More no than yes:
+   only the proposer's vote stands and the change is dropped at hh:30. Every browser reads the same outcome, so the chain
+   stays the same everywhere; when an outcome arrives that a page already generated differently, the day is generated again.
+   TauSim.me()             the visitor's anonymous identity {token, name, colour}: a random token and two words, browser only
+   TauSim.vote(item, yes)  cast or change a vote (Promise of {ok, error, item})
+   TauSim.ballots()        the day's tallies {items: {"slot:<k>": {yes, no, opens, closes, open, outcome, voters, mine}}}
+   TauSim.onBallots(fn)    called whenever the tallies change */
 (() => {
   "use strict";
   const PACE = 8, DAY = 86400, FEE0 = 10, BUDGET0 = 8, QUORUM0 = "supermajority", NETWORK = "tau-testnet-v2", KEY = "tau-mode";
@@ -55,11 +65,44 @@
   ];
   const BOOTNODE = peerOf(idR), STRANGERS = [peerOf(idR), peerOf(idR)];
   const QT = { supermajority: "two thirds", majority: "more than half" };
+
+  /* ---------- visitors: an anonymous name and colour, and the votes the relay counts ---------- */
+  // the same lists, in the same order, as infra/relay/simvotes.py (NAME_A, NAME_B, COLOURS_HEX); test_simvotes.py compares them
+  const ID_A = ["Quiet", "Swift", "Bright", "Calm", "Bold", "Clever", "Gentle", "Brave", "Keen", "Lucky", "Merry", "Noble",
+    "Patient", "Proud", "Rapid", "Silent", "Steady", "Sunny", "Wise", "Witty", "Daring", "Eager", "Fair", "Jolly"];
+  const ID_B = ["Otter", "Heron", "Fox", "Owl", "Lynx", "Badger", "Falcon", "Hare", "Wolf", "Raven", "Seal", "Crane",
+    "Panda", "Tiger", "Whale", "Robin", "Bison", "Koala", "Gecko", "Moose", "Ibex", "Swan", "Yak", "Wren"];
+  const ID_A_ZH = ["安静", "迅捷", "明亮", "沉着", "大胆", "聪明", "温和", "勇敢", "敏锐", "幸运", "快乐", "高贵", "耐心", "骄傲", "飞快", "无声", "稳重", "阳光", "睿智", "风趣", "果敢", "热切", "公正", "欢乐"];
+  const ID_B_ZH = ["水獭", "苍鹭", "狐狸", "猫头鹰", "猞猁", "獾", "猎隼", "野兔", "狼", "渡鸦", "海豹", "仙鹤", "熊猫", "老虎", "鲸", "知更鸟", "野牛", "考拉", "壁虎", "驼鹿", "羱羊", "天鹅", "牦牛", "鹪鹩"];
+  const ID_COLOURS = ["#8fa3d9", "#b39ddb", "#d9a3c4", "#d9c49a", "#8fc7d9", "#a7a0d9", "#c4a3d9", "#c8c8d0"];
+  const zhPage = () => document.documentElement.classList.contains("i18n-zh") || /^zh/i.test(document.documentElement.lang || "");
+  const nameOf = (a, b) => ID_A[a] == null || ID_B[b] == null ? (zhPage() ? "一位访客" : "A visitor") : zhPage() ? `${ID_A_ZH[a]}的${ID_B_ZH[b]}` : `${ID_A[a]} ${ID_B[b]}`;
+  let ME = null;
+  function me() {
+    if (!ME) {
+      try { const m = JSON.parse(store.get("tau-sim-id") || "null"); if (m && /^[0-9a-f]{32}$/.test(m.token) && ID_A[m.a] && ID_B[m.b] && ID_COLOURS[m.c]) ME = m; } catch (e) {}
+      if (!ME) {
+        const rnd = n => { try { const u = new Uint32Array(n); crypto.getRandomValues(u); return [...u]; } catch (e) { return Array.from({ length: n }, () => (Math.random() * 2 ** 32) >>> 0); } };
+        const r = rnd(7);
+        ME = { token: r.slice(0, 4).map(x => x.toString(16).padStart(8, "0")).join(""), a: r[4] % ID_A.length, b: r[5] % ID_B.length, c: r[6] % ID_COLOURS.length };
+        store.set("tau-sim-id", JSON.stringify(ME));
+      }
+    }
+    return { token: ME.token, a: ME.a, b: ME.b, c: ME.c, name: nameOf(ME.a, ME.b), colour: ID_COLOURS[ME.c] };
+  }
+  const RELAY = window.TAU_SIM_RELAY || "https://node.tauhud.com";
+  // what came from outside the clock, per day: the visitors' outcome of every hourly ballot ("yes" | "no" | "none").
+  // Cached so a reload knows it at once; makeBlock reads it. Another source (visitor proposals) adds its own field.
+  let OUTSIDE = { day: -1, slots: {} };
+  try { const o = JSON.parse(store.get("tau-sim-outside") || "null"); if (o && typeof o.day === "number" && o.slots) OUTSIDE = o; } catch (e) {}
+  let BALLOTS = { day: null, now: 0, items: {} }, BAL_AT = 0;
+  const BAL_FNS = new Set();
+  const slotOutcome = k => OUTSIDE.day === DAYI ? OUTSIDE.slots[k] || null : null;
   /* the day's programme: one special rule change every hour, proposed 20 minutes in (block 150), in force ten minutes later, the same every day.
      The consensus switch is the rare one, twice a day: proof of stake on at 10:30 UTC, the fixed validator list back at 16:30 UTC (the alerts
      service announces these two on Telegram from the same clock: infra/alerts/alerts.py SIM_SWITCHES). The other hours cycle through a validator
      admitted, the majority threshold, a validator removed, the two-thirds threshold again. */
-  const SLOT_AT = 150, SLOT_LEN = 450, SLOT_WAIT = 75, STAKE_SLOT = 10, FIXED_SLOT = 16, HOURLY = ["admit", "major", "remove", "super"];
+  const SLOT_AT = 150, SLOT_LEN = 450, SLOT_WAIT = 75, BALLOT_SECONDS = 420, BALLOT_BLOCKS = 60, STAKE_SLOT = 10, FIXED_SLOT = 16, HOURLY = ["admit", "major", "remove", "super"];
   const specialOf = k => k === STAKE_SLOT ? "stake" : k === FIXED_SLOT ? "fixed" : HOURLY[(k - (k > STAKE_SLOT) - (k > FIXED_SLOT)) % HOURLY.length];
   const specialAt = n => n >= SLOT_AT && (n - SLOT_AT) % SLOT_LEN === 0 ? specialOf((n - SLOT_AT) / SLOT_LEN) : null;
   /* the failure paths of governance, every hour: at hh:40 a proposal that contradicts the live rules is refused at the door,
@@ -123,7 +166,7 @@
     const contested = want === "contested"; if (contested) want = null;   // the hourly contested one: a sixfold fee that nobody but the proposer votes for
     const N = rules.validators.length, proposer = pick(R, rules.validators), r = R();
     const p = { id: hexOf(R, 64), n: ST.props.length + 1, proposer, proposed_at: n, activate_at: n + (want ? SLOT_WAIT : contested ? 60 : 15 + ((R() * 10) | 0)), approved_at: null,
-      thr: threshold(rules.quorum, N), votes: [], special: want || null, contested,
+      thr: threshold(rules.quorum, N), votes: [], special: want || null, contested, slot: want ? (n - SLOT_AT) / SLOT_LEN : null,
       abstain: want ? new Set() : new Set(rules.validators.filter(v => v !== proposer && (contested || R() < 0.2))), patch: null, revisions: [], kind: "", value: null, explain: null };
     const ex = (title, changes, why, severity) => ({ title, label: null, changes, unchanged: [], why, severity: severity || "normal" });
     const frees = SPARE.filter(v => !rules.validators.includes(v) && !ST.props.some(x => x.kind === "validator" && x.value === v && ["voting", "agreed"].includes(statusAt(x, n))));
@@ -167,8 +210,15 @@
     // governance: validators vote on every open proposal; the day's programme proposes its special change at the fixed block, an ordinary one comes when nothing is open
     for (const p of ST.props) {
       if (statusAt(p, n - 1) !== "voting" || n >= p.activate_at) continue;
+      if (p.special) {
+        // the hourly change waits for the visitors: from hh:28 the validators follow their majority, one vote per block; a "no" leaves the proposer alone
+        if (n < p.proposed_at + BALLOT_BLOCKS || slotOutcome(p.slot) === "no") continue;
+        const v = rules.validators.find(x => !p.votes.some(y => y.voter === x));
+        if (v) vote(p, v, n);
+        continue;
+      }
       for (const v of rules.validators) {
-        if (p.abstain.has(v) || p.votes.some(x => x.voter === v) || R() >= (p.special ? 0.08 : 0.4)) continue;   // a special one collects its votes over a few minutes, so there is something to watch
+        if (p.abstain.has(v) || p.votes.some(x => x.voter === v) || R() >= 0.4) continue;
         vote(p, v, n);
       }
     }
@@ -426,6 +476,18 @@
       pace_seconds: PACE, spec_revision: ru.rev, base_fee: ru.fee, validators: ru.validators.length, proposals, mempool: mempool(t).count, viewers: 1,
       community_nodes: NODES.filter(n => n.online).length, health: { score: hs.score, state: hs.state, label: hs.label }, docs: "https://tauhud.com/developers/", simulation: true };
   }
+  /* the visitors' ballot on the hourly change k: open hh:20 to hh:27, the tally from the relay, the outcome once closed */
+  function ballotOf(k, t) { const opens = G + (SLOT_AT + SLOT_LEN * k) * PACE; return ballotFor("slot:" + k, t, opens, opens + BALLOT_SECONDS, slotOutcome(k)); }
+  /* any item the relay counts (a visitor proposal too): the same shape, so every page treats it the same way */
+  function ballotFor(item, t, opens, closes, cached) {
+    t = at(t);
+    const b = BALLOTS.day === dayKey() && BALLOTS.items[item] || null;
+    opens = opens != null ? opens : b ? b.opens : null; closes = closes != null ? closes : b ? b.closes : null;
+    const outcome = closes != null && t >= closes ? (b && b.outcome) || cached || (b ? "none" : null) : null;
+    return { item, opens, closes, open: opens != null && t >= opens && t < closes, yes: b ? b.yes : 0, no: b ? b.no : 0, voters: b ? b.voters || [] : [], mine: b && b.mine != null ? b.mine : null, outcome, counted: !!b, meta: b ? b.meta || {} : {} };
+  }
+  const dayKey = () => new Date(DAYI * DAY * 1000).toISOString().slice(0, 10);
+
   /* the programme ahead: the next special rule changes (proposed hh:20, in force hh:30) and the restart at midnight, for the countdowns */
   function upcoming(t) {
     t = at(t);
@@ -434,7 +496,7 @@
       if (n + SLOT_WAIT <= h) continue;
       const kind = specialAt(n), p = ST.props.find(x => x.special === kind && x.proposed_at === n);
       out.push({ kind, short: SHORT[kind], title: p ? p.explain.title : SPECIAL_TITLE[kind], proposed_at: n, proposed_ts: ts(n), activate_at: n + SLOT_WAIT, at_ts: ts(n + SLOT_WAIT),
-        status: p ? statusAt(p, h) : "scheduled", id: p ? p.id : null, votes: p ? p.votes.filter(v => v.h <= h).length : 0, thr: p ? p.thr : null });
+        status: p ? statusAt(p, h) : "scheduled", id: p ? p.id : null, votes: p ? p.votes.filter(v => v.h <= h).length : 0, thr: p ? p.thr : null, ballot: ballotOf((n - SLOT_AT) / SLOT_LEN, t) });
     }
     out.push({ kind: "restart", short: SHORT.restart, title: SPECIAL_TITLE.restart, proposed_at: null, proposed_ts: null, activate_at: 1, at_ts: (DAYI + 1) * DAY + PACE, status: "scheduled", id: null, votes: 0, thr: null });
     return out.sort((a, b) => a.at_ts - b.at_ts).slice(0, 3);
@@ -449,7 +511,7 @@
       return { id: p.id, n: p.n, title: p.explain.title, parts: [], status: s, proposer: p.proposer, proposed_at: p.proposed_at, proposed_ts: ts(p.proposed_at), activate_at: p.activate_at,
         approved_at: ok ? p.approved_at : null, approved_ts: ok ? ts(p.approved_at) : null, activated_at: s === "active" ? p.activate_at : null, activated_ts: s === "active" ? ts(p.activate_at) : null,
         expired_at: s === "dropped" ? p.activate_at : null, expired_ts: s === "dropped" ? ts(p.activate_at) : null, thr: p.thr, counted_votes: votes.filter(v => v.approve).length,
-        rev: s === "active" ? 2 + active.indexOf(p) : null, revisions: p.revisions, patch: p.patch, dups: [], tx_id: p.tx_id, explain: p.explain, votes };
+        rev: s === "active" ? 2 + active.indexOf(p) : null, revisions: p.revisions, patch: p.patch, dups: [], tx_id: p.tx_id, explain: p.explain, votes, ballot: p.special ? ballotOf(p.slot, t) : null };
     }).reverse();
     const events = [];
     for (const p of rows) {
@@ -457,7 +519,7 @@
       say("proposed", p.proposed_at, `New proposal: ${p.title}`, `${p.explain.why} Needs ${p.thr} of ${rulesAt(p.proposed_at).validators.length} validators by block #${p.activate_at}.`);
       if (p.approved_at != null) say("agreed", p.approved_at, `Agreed: ${p.title}`, `${p.counted_votes} votes, enough. Takes effect at block #${p.activate_at}.`);
       if (p.status === "active") say("active", p.activate_at, `In force: ${p.title}`, `Revision ${p.rev} of the rules applies from block #${p.activate_at}.`);
-      if (p.status === "dropped") say("dropped", p.activate_at, `Dropped: ${p.title}`, `Only ${p.counted_votes} of ${p.thr} votes by block #${p.activate_at}. The old rules stand.`);
+      if (p.status === "dropped") say("dropped", p.activate_at, `Dropped: ${p.title}`, (p.ballot && p.ballot.outcome === "no" ? `The visitors voted no (${p.ballot.no} no, ${p.ballot.yes} yes), so the validators did not agree. ` : "") + `Only ${p.counted_votes} of ${p.thr} votes by block #${p.activate_at}. The old rules stand.`);
     }
     // what Tau refused before any vote: a rule change that does not fit the rules in force never becomes a proposal
     for (const d of ST.dropped) if (d.type === "consensus_rule_update" && d.left <= t)
@@ -470,6 +532,59 @@
       proposals: rows, events: events.slice(0, 100), upcoming: upcoming(t), channels: {}, simulation: true };
   }
 
+  /* ---------- the visitors' votes: fetched from the relay, applied to the chain ---------- */
+  const SOCKSEEN = () => Math.max(-1, ...[...SOCKETS].map(s => s._seen));
+  // the first block a change of outside input touches (Infinity: none). A further source adds its own comparison here.
+  function firstTouched(prev, next) {
+    let first = Infinity;
+    const no = (o, k) => o.day === DAYI && o.slots[k] === "no";   // "yes" and "none" make the same chain
+    for (let k = 0; k < 24; k++) if (no(prev, k) !== no(next, k)) first = Math.min(first, SLOT_AT + SLOT_LEN * k + BALLOT_BLOCKS);
+    return first;
+  }
+  function applyOutside(next) {
+    const prev = OUTSIDE, first = firstTouched(prev, next);
+    OUTSIDE = next; store.set("tau-sim-outside", JSON.stringify(next));
+    if (first < B.length) {   // a block already generated came out differently: generate the day again, the blocks before it stay as they were
+      const h = B.length - 2, seen = SOCKSEEN();
+      init(DAYI); gen(Math.max(0, h) + 1);
+      if (seen >= first) RESET++;   // a page already holds a block that changed: it gets the chain afresh
+    }
+  }
+  async function refreshOutside() {
+    sync();
+    const r = await fetch(`${RELAY}/sim/votes?voter=${me().token}`, { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    if (!j || !j.items) return;
+    const was = JSON.stringify(BALLOTS.items);
+    BALLOTS = j; BAL_AT = Date.now();
+    if (j.day === dayKey()) {
+      const slots = {};
+      for (const [id, it] of Object.entries(j.items)) { const m = /^slot:(\d+)$/.exec(id); if (m && it && it.outcome) slots[m[1]] = it.outcome; }
+      // (a further source of outside input merges its own field into next here)
+      applyOutside({ ...OUTSIDE, day: DAYI, slots });
+    }
+    if (JSON.stringify(j.items) !== was) BAL_FNS.forEach(fn => { try { fn(BALLOTS); } catch (e) {} });
+  }
+  // poll quickly while a ballot is open or has just closed, slowly otherwise
+  function ballotPace() {
+    const t = now(), k = Math.floor(((t - G) / PACE - SLOT_AT) / SLOT_LEN), opens = G + (SLOT_AT + SLOT_LEN * k) * PACE;
+    return k >= 0 && t >= opens - 30 && t < opens + BALLOT_SECONDS + 60 ? 5000 : 30000;
+  }
+  function pollBallots() {
+    const go = () => refreshOutside().catch(() => {}).finally(() => setTimeout(pollBallots, document.hidden ? 30000 : ballotPace()));
+    go();
+  }
+  let FIRST = Promise.resolve();
+  async function castVote(item, yes) {
+    const m = me();
+    try {
+      const r = await fetch(`${RELAY}/sim/vote?item=${encodeURIComponent(item)}&voter=${m.token}&yes=${yes ? 1 : 0}&a=${m.a}&b=${m.b}&c=${m.c}`, { cache: "no-store" });
+      const j = await r.json();
+      if (j && j.item) { BALLOTS.items = { ...BALLOTS.items, [item]: j.item }; BAL_FNS.forEach(fn => { try { fn(BALLOTS); } catch (e) {} }); }
+      return j || { ok: false, error: "bad" };
+    } catch (e) { return { ok: false, error: "offline" }; }
+  }
   /* ---------- your node: a simulated node a visitor runs in this browser (assets/simnode.js is its panel) ----------
      It lives in localStorage (tau-simnode) as a list of runs: [start, end] in seconds, the stake it brings, and when it had caught up.
      A run stays open while any Tau HUD page in simulation is open (a heartbeat every 15 s); a page that finds the heartbeat
@@ -558,6 +673,9 @@
   function posWindow(t) { const d = Math.floor(t / DAY) * DAY, from = d + STAKE_SLOT * 3600 + 1800, to = d + FIXED_SLOT * 3600 + 1800; return t < to ? { from, to } : { from: from + DAY, to: to + DAY }; }
   if (ON) { beat(); setInterval(beat, BEAT * 1000); addEventListener("visibilitychange", () => { if (!document.hidden) beat(); }); }
 
+  // the first tally, once everything the chain reads is defined: sockets and fetches wait for it (at most 1.5 s)
+  if (ON) { sync(); FIRST = new Promise(res => { setTimeout(res, 1500); refreshOutside().catch(() => {}).finally(res); }).then(() => setTimeout(pollBallots, ballotPace())); }
+
   /* ---------- a WebSocket to the simulation, and fetch for its GET endpoints ---------- */
   const ok = (command, data) => JSON.stringify({ status: "ok", command, data });
   const err = (command, message, code) => JSON.stringify({ status: "error", command, error: { code, message } });
@@ -598,7 +716,7 @@
     s.send = cmd => { if (s.readyState !== 1) return; later(() => s._emit(answer(cmd)), 8 + Math.random() * 25); };
     s.close = () => { if (s.readyState === 3) return; s.readyState = 3; s._t.forEach(clearTimeout); s._t.clear(); SOCKETS.delete(s); };
     s.addEventListener = (type, fn) => { s["on" + type] = fn; };
-    setTimeout(() => { if (s.readyState === 3) return; s.readyState = 1; s._seen = sync(); SOCKETS.add(s); if (typeof s.onopen === "function") s.onopen({}); }, 15);
+    FIRST.then(() => setTimeout(() => { if (s.readyState === 3) return; s.readyState = 1; s._seen = sync(); SOCKETS.add(s); if (typeof s.onopen === "function") s.onopen({}); }, 15));   // after the visitors' outcomes are in, so the first blocks are the final ones
     return s;
   }
   /* new blocks, queue changes and governance changes reach every open socket as the relay pushes them */
@@ -615,7 +733,8 @@
     }
   }
   setInterval(pushLoop, 1000);
-  function fetchSim(url) {
+  async function fetchSim(url) {
+    await FIRST;   // the visitors' outcomes first, so every answer describes the final chain
     const path = String(url).replace(/^[a-z]+:\/\/[^/]+/i, "").split("?")[0].replace(/\/$/, "") || "/", t = now();
     const data = path === "/status" || path === "/health" ? status(t) : path === "/stats" ? stats(t) : path === "/uptime" ? uptime(t) : path === "/health-score" ? health(t)
       : path === "/community" ? community(t) : path === "/community/board" ? board(t) : path === "/peers" ? peers(t) : path === "/api/v1/summary" ? summary(t) : path === "/proposals.json" ? proposals(t) : null;
@@ -631,6 +750,7 @@
       try { const u = new URL(location.href); u.searchParams.delete("mode"); u.searchParams.delete("sample"); if (u.href === location.href) location.reload(); else location.href = u.href; } catch (e) { location.reload(); }
     },
     head: () => sync(), block: n => { sync(); return B[n] ? pub(B[n]) : null; }, ts: n => { sync(); return ts(n); },
+    refresh: () => refreshOutside().catch(() => {}), me, vote: castVote, ballots: () => BALLOTS, ballot: k => ballotOf(k), ballotFor: item => ballotFor(item), onBallots: fn => { BAL_FNS.add(fn); return () => BAL_FNS.delete(fn); }, nameOf, colourOf: c => ID_COLOURS[c] || "#c8c8d0", colours: ID_COLOURS, ballotSeconds: BALLOT_SECONDS, ready: () => FIRST,
     socket, fetch: fetchSim, answer, node, status, stats, uptime, health, community, board, peers, summary, proposals, upcoming, governance, mempool, account,
     chain: { rulesAt: h => { sync(); return rulesAt(h); }, props: () => { sync(); return ST.props; }, arrivals: n => { sync(); return B[n] ? B[n]._arrive : []; }, dropped: n => { sync(); return B[n] ? B[n]._dropped : []; }, headAt: t => { rollDay(t); return headAt(t); }, genesisTs: () => { sync(); return G; } },
     /* marks a page: the title says so, and a footer line that names the data source gets the simulation's line instead */
