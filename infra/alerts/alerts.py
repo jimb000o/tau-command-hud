@@ -36,12 +36,18 @@ except majors from the last SITE_MAJOR_MAX_AGE_DAYS days, which are queued.
 
 Once a week (Monday 09:00 UTC by default) it also posts a recap image of the
 week (recap.py) and keeps a copy at https://node.tauhud.com/recap/latest.png.
+At the same time it writes that week's edition of The Daily Consensus, the
+site's newspaper (gazette.py), to /recap/gazette/latest.json; the first one is
+written as soon as the service starts. For it, the visitors' day in the
+simulation (votes, their own proposals, the best forecaster) is noted every
+ten minutes, because the relay starts those over at midnight UTC.
 
   python alerts.py                  run the watcher
   python alerts.py --test           send one test post to each configured channel
   python alerts.py --preview        print how the newest rule changes would be posted, post nothing
   python alerts.py --recap-preview  draw this week's recap and save it, post nothing
   python alerts.py --recap-now      draw the recap and post it to each configured channel
+  python alerts.py --gazette-now    write this week's newspaper edition now (same number if one is already out today)
   python alerts.py --sim-preview    print today's two simulation posts (the consensus switches), post nothing
   python alerts.py --site-preview   print the site-update posts waiting in assets/updates.json, post nothing
 """
@@ -69,6 +75,7 @@ from xml.sax.saxutils import escape as xml_escape
 from websockets.asyncio.client import connect
 
 import explain
+import gazette
 import recap
 
 try:
@@ -1451,7 +1458,7 @@ class Watcher:
             d -= timedelta(days=7)
         return d.timestamp()
 
-    def make_recap(self, end: float) -> tuple[dict, bytes]:
+    def recap_numbers(self, end: float) -> dict:
         def get(path):
             try:
                 with urllib.request.urlopen(RELAY_HTTP + path, timeout=30) as r:
@@ -1462,7 +1469,10 @@ class Watcher:
         stats = get("/stats")
         if not stats or "blocks" not in stats:
             raise RuntimeError("relay /stats not available")
-        r = recap.build(stats, get("/community"), self.state["items"], end)
+        return recap.build(stats, get("/community"), self.state["items"], end)
+
+    def make_recap(self, end: float) -> tuple[dict, bytes]:
+        r = self.recap_numbers(end)
         png = recap.render(r, SITE)
         d = os.path.join(PUBLIC_DIR, "recap")
         os.makedirs(d, exist_ok=True)
@@ -1484,6 +1494,59 @@ class Watcher:
         log.info("recap drawn: %s (%s)", name, recap.period(r))
         return r, png
 
+    # ---------- the weekly newspaper (gazette.py) ----------
+    def make_gazette(self, r: dict, printed_at: float) -> dict:
+        """Write the edition for the week in r (recap numbers) as /recap/gazette/<date>.json, latest.json and editions.json."""
+        try:
+            with open(os.path.join(PUBLIC_DIR, "proposals.json")) as f:
+                props = json.load(f).get("proposals") or []
+        except (OSError, ValueError):
+            props = []
+        days = [d for k, d in sorted((self.state.get("simdays") or {}).items())
+                if r["start"] <= datetime.strptime(k, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() + 43200 < r["end"]]
+        d = os.path.join(PUBLIC_DIR, "recap", "gazette")
+        os.makedirs(d, exist_ok=True)
+        try:
+            with open(os.path.join(d, "editions.json")) as f:
+                index = json.load(f)
+        except (OSError, ValueError):
+            index = []
+        date = datetime.fromtimestamp(printed_at, timezone.utc).strftime("%Y-%m-%d")
+        same = next((x for x in index if x.get("date") == date), None)
+        no = same["no"] if same else max((x.get("no", 0) for x in index), default=0) + 1
+        e = gazette.edition(r, props, days, no, printed_at)
+        text = json.dumps(e, ensure_ascii=False, separators=(",", ":"))
+        write_atomic(os.path.join(d, date + ".json"), text)
+        write_atomic(os.path.join(d, "latest.json"), text)
+        index = [gazette.summary(e)] + [x for x in index if x.get("date") != date]
+        write_atomic(os.path.join(d, "editions.json"), json.dumps(index[:260], ensure_ascii=False, separators=(",", ":")))
+        log.info("gazette: edition No. %s of %s written (%s)", no, date, e["banner"]["en"])
+        return e
+
+    async def maybe_gazette(self, now: float | None = None):
+        """Note the visitors' day in the simulation every ten minutes, and write a first edition if none is out yet."""
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("gazette", {"noted": 0, "tried": 0})
+        if SIM_ON and now - st.get("noted", 0) >= 600:
+            st["noted"] = now
+            votes = await asyncio.to_thread(self.relay_json, "/sim/votes")
+            preds = await asyncio.to_thread(self.relay_json, "/sim/predictions")
+            day = gazette.sim_day(votes, preds)
+            if day:
+                days = self.state.setdefault("simdays", {})
+                days[day["day"]] = day
+                for k in sorted(days)[:-21]:
+                    del days[k]
+            self.save_state()
+        if RECAP_ON and now - st.get("tried", 0) >= 600 and not os.path.exists(os.path.join(PUBLIC_DIR, "recap", "gazette", "latest.json")):
+            st["tried"] = now
+            try:
+                r = await asyncio.to_thread(self.recap_numbers, now)
+                await asyncio.to_thread(self.make_gazette, r, now)
+            except Exception as exc:  # retried in ten minutes
+                log.warning("gazette: first edition failed (%r)", exc)
+            self.save_state()
+
     async def maybe_recap(self):
         if not RECAP_ON:
             return
@@ -1502,6 +1565,10 @@ class Watcher:
             st = self.state["recap"] = {"slot": slot, "posted": {}, "r": r,
                                         "file": datetime.fromtimestamp(slot, timezone.utc).strftime("%Y-%m-%d") + ".png"}
             self.save_state()
+            try:
+                self.make_gazette(r, slot)
+            except Exception as exc:  # the recap goes out regardless
+                log.warning("gazette: edition failed (%r)", exc)
         if "r" not in st or time.time() - st["slot"] > 86400:  # nothing drawn, or a day late: skip this week's post
             return
         for o in self.outlets:
@@ -1535,6 +1602,7 @@ class Watcher:
                             self.process()
                         await self.deliver()
                         await self.maybe_recap()
+                        await self.maybe_gazette()
                         await self.maybe_health()
                         await self.maybe_newnodes()
                         await self.maybe_sim()
@@ -1610,6 +1678,19 @@ def site_preview() -> int:
     return 0
 
 
+def gazette_cli() -> int:
+    """Write this week's newspaper edition now, from the 7 days up to now."""
+    w = Watcher()
+    try:
+        e = w.make_gazette(w.recap_numbers(time.time()), time.time())
+    except Exception as exc:
+        print(f"gazette: FAILED {exc}")
+        return 1
+    print(f"gazette: edition No. {e['no']} of {e['date']}: {e['banner']['en']}")
+    print("  https://" + FEED_URL.split("//", 1)[-1].split("/", 1)[0] + "/recap/gazette/latest.json")
+    return 0
+
+
 def recap_cli(post: bool) -> int:
     """Draw the recap of the 7 days up to now; post it too with post=True."""
     w = Watcher()
@@ -1640,6 +1721,8 @@ if __name__ == "__main__":
         sys.exit(asyncio.run(preview_latest()))
     if "--recap-now" in sys.argv or "--recap-preview" in sys.argv:
         sys.exit(recap_cli("--recap-now" in sys.argv))
+    if "--gazette-now" in sys.argv:
+        sys.exit(gazette_cli())
     if "--sim-preview" in sys.argv:
         sys.exit(sim_preview())
     if "--site-preview" in sys.argv:

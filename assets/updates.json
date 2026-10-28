@@ -814,6 +814,16 @@
   "html": "The What if tour now says short split where it said fork, like the page itself: two blocks at one height that the next block settles are not the fork Tau avoids, and changing the rules never needs one."
  },
  {
+  "tag": "Newspaper",
+  "on": "2026-10-28",
+  "html": "The Daily Consensus now comes out every Monday. The Tau HUD server writes a new front page from the week on the testnet: the headline of the week, the week in figures, the rule changes still waiting and what the visitors decided in the simulation, in English and Chinese. The twelve-year story follows behind it, and older editions stay readable."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-28",
+  "html": "The Daily Consensus on phones is now read like a real newspaper: the paper fills the whole screen (the ✕ brings the menu back), shows the whole page, and a double tap or two fingers bring a column closer. Swipe or tap to turn. Aa switches to large type, one story at a time; on phones that allow it, ⛶ goes full screen."
+ },
+ {
   "tag": "In numbers",
   "on": "2026-10-28",
   "html": "New page: Tau HUD in numbers (Learn → Tau HUD in numbers). How many people look at Tau through this site: visitors per day with a 7-day average, growth since counting began, the most visited pages, language and screen size. Pick 7 days, 30 days, 90 days, a year or All for the whole history; click a day to see its pages. Counted on our own server without cookies, only daily totals.",
