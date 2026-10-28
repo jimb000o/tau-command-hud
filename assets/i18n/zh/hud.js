@@ -1081,5 +1081,13 @@ TauI18n.add({ strings: {
   "Peer of our node: tip {n}": "我们节点的对等节点：最新高度 {n}",
   "same height as ours": "高度与我们相同",
   "{n} behind us": "落后我们 {n} 个区块",
-  "{n} ahead of us": "领先我们 {n} 个区块"
+  "{n} ahead of us": "领先我们 {n} 个区块",
+  "Chain core: the node orbit turns slowly, one round in about two and a half minutes. The Tau HUD node’s hover is more balanced, and as long as our node is the only one besides IDNI’s validator it says so: the two are the whole visible network right now.": "链核心：节点轨道缓慢旋转，约两分半转一圈。Tau HUD 节点的悬停说明更均衡；只要我们的节点是 IDNI 验证者之外唯一的节点，它就会说明：此刻这两个就是整个可见网络。",
+  "Tau HUD’s node: the node behind this page, at {n}.": "Tau HUD 的节点：本页背后的节点，位于 {n}。",
+  "It checks and keeps every block and serves what you see here; it seals nothing.": "它核验并保存每个区块，并提供你在此看到的一切；它不封装任何区块。",
+  "Right now it is the only node besides IDNI’s validator: together they are the whole visible network.": "此刻它是 IDNI 验证者之外唯一的节点：两者合起来就是整个可见网络。",
+  "It has applied as the second validator. Click to open the Nodes page.": "它已申请成为第二个验证者。点击打开节点页。",
+  "Serves this page over wss://node.tauhud.com (getblocks, getmempool, getgovernance); verifies every block, seals none.": "通过 wss://node.tauhud.com 为本页提供数据（getblocks、getmempool、getgovernance）；核验每个区块，不封装任何区块。",
+  "Only node besides the IDNI validator (PoA, validator_set mode): the two are the whole visible network right now.": "IDNI 验证者（PoA，validator_set 模式）之外唯一的节点：此刻这两个就是整个可见网络。",
+  "Validator seat requested (BLS key submitted to IDNI). Click to open the Nodes page.": "已申请验证者席位（BLS 公钥已提交给 IDNI）。点击打开节点页。"
 } });
