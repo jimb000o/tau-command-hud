@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.20"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.21"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';
@@ -66,7 +66,7 @@
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const PLANE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.9 3.3 2.6 10.8c-1 .4-1 1 0 1.3l4.9 1.5 11.4-7.2c.5-.3 1-.1.6.2l-9.2 8.3-.4 5.1c.5 0 .7-.2 1-.5l2.4-2.3 5 3.7c.9.5 1.6.2 1.8-.9l3.3-15.5c.3-1.3-.5-1.9-1.5-1.5z"/></svg>';
   const emit = action => document.dispatchEvent(new CustomEvent("tau-nav", { detail: action }));
-  const markSeen = () => { store.set(SEEN_KEY, LATEST); document.querySelectorAll(".upd.new, .tabbar .new").forEach(e => e.classList.remove("new")); };
+  const markSeen = () => { store.set(SEEN_KEY, LATEST); document.querySelectorAll(".tn-upd.new, .tabbar .new").forEach(e => e.classList.remove("new")); };
 
   function item(k, page, isHud, tip) {
     const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : ""));
@@ -275,7 +275,7 @@
     let upd = slots.updates;
     if (!upd) { upd = el("a", "", "Updates"); upd.href = ROOT + "#updates"; }
     upd.classList.add("tl"); tip(upd, TIPS.updates);
-    const updWrap = el("span", "upd" + (store.get(SEEN_KEY) !== LATEST ? " new" : "")); updWrap.append(upd);
+    const updWrap = el("span", "tn-upd" + (store.get(SEEN_KEY) !== LATEST ? " new" : "")); updWrap.append(upd);
     upd.addEventListener("click", markSeen);
     if (page !== "explorer" && page !== "account") {   // every page can look something up: block number, hash or address go to the Explorer
       const sf = el("form", "tn-search"); sf.action = ROOT + "explorer/"; sf.method = "get"; sf.setAttribute("role", "search");
