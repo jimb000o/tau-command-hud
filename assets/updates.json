@@ -715,5 +715,10 @@
   "tag": "v17.48",
   "on": "2026-10-28",
   "html": "Feedback is now one click away on every page: a white Feedback button sits next to Telegram alerts in the header and opens the feedback form right where you are, with the cursor already in the text box. On the HUD it opens the HUD's own form; on phones it is a 44 px icon."
+ },
+ {
+  "tag": "Vote",
+  "on": "2026-10-28",
+  "html": "Hover texts on Vote and Nodes now sit right next to the cursor on wide screens; before, they drifted further away the wider the screen. On Vote, every Try button in the practice terminal now works on its own: if an earlier step is missing, it is done for you first instead of answering “tau: command not found”."
  }
 ]
