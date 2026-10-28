@@ -225,7 +225,8 @@ tr.pick td { background: rgba(57,255,138,.06); }
 tr.pick td:first-child { box-shadow: inset 2px 0 0 var(--ok); }
 tr.pick .shbar i { background: var(--ok); }
 td .approx { color: var(--dim); }
-.testnet { margin: 0 0 8px; padding: 5px 10px; border: 1px dashed var(--hair); border-radius: 6px; color: var(--text); font-size: 12px; }
+.testnet { margin: 0 0 10px; padding: 6px 10px; border: 1px solid #fff; border-radius: 6px; color: #fff; font-size: 12.5px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.testnet b { font: 700 11px var(--display); letter-spacing: .2em; text-transform: uppercase; background: #fff; color: #000; border-radius: 3px; padding: 2px 8px; }
 .dist { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 2px 0 10px; background: rgba(255,255,255,.05); }
 .dist i { display: block; height: 100%; border-right: 1px solid var(--void); cursor: pointer; }
 .dist i.pick { background: var(--ok) !important; }
@@ -274,16 +275,16 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     <section id="dir" hidden>
       <div class="dirgrid">
         <div class="panel rich">
+          <p class="testnet"><b>Testnet</b><span>Test tokens with no value. Not money: they cannot be bought or sold, and the chain may restart from zero.</span></p>
           <h2>Rich list <small id="dirSub"></small></h2>
           <p class="headline" id="dirHead"></p>
           <div class="dist" id="dist" aria-hidden="true"></div>
-          <p class="testnet">Testnet: these AGRS are test tokens with no value. They cannot be bought or sold, and the chain may restart from zero.</p>
           <div class="tablewrap">
             <table id="dirTable">
               <thead><tr>
                 <th class="n rk"><button type="button" data-sort="bal" data-tip="Rank by balance">#</button></th>
                 <th><button type="button" data-sort="a">Account</button></th>
-                <th class="n" data-main="1"><button type="button" data-sort="bal">Balance</button></th>
+                <th class="n" data-main="1"><button type="button" data-sort="bal">Test AGRS</button></th>
                 <th class="sh"><button type="button" data-sort="bal">Share</button></th>
                 <th class="n opt"><button type="button" data-sort="sent" data-tip="Transactions this account signed">Sent</button></th>
                 <th class="n opt"><button type="button" data-sort="tin" data-tip="Transfers received · transfers sent">In · out</button></th>
@@ -734,7 +735,7 @@ function renderDir() {
   const byBal = [...rows].sort((x, y) => x.rank - y.rank), k = Math.min(3, byBal.length);
   const topShare = byBal.slice(0, k).reduce((t, r) => t + r.share, 0), empty = rows.filter(r => r.bal <= 0).length;
   const pick = pickOf(rows);
-  $("dirHead").innerHTML = !rows.length || !(C.ready || SAMPLE) ? "" : (k === 1 ? `The largest account holds ${pct(topShare)} of all ${fmtA(total)} AGRS.` : `The top ${k} accounts hold ${pct(topShare)} of all ${fmtA(total)} AGRS.`)
+  $("dirHead").innerHTML = !rows.length || !(C.ready || SAMPLE) ? "" : (k === 1 ? `The largest account holds ${pct(topShare)} of all ${fmtA(total)} test AGRS (no value).` : `The top ${k} accounts hold ${pct(topShare)} of all ${fmtA(total)} test AGRS (no value).`)
     + (empty ? ` <span>${empty === 1 ? "1 account holds nothing." : `${fmtN(empty)} accounts hold nothing.`}</span>` : "");
   $("dist").innerHTML = byBal.filter(r => r.share > 0).map((r, i) => `<i data-pick="${r.a}" class="${r.a === pick ? "pick" : ""}" style="width:${(r.share * 100).toFixed(3)}%;background:rgba(255,255,255,${(0.75 - Math.min(i, 8) * 0.07).toFixed(2)})" data-tip="#${r.rank} ${short(r.a)}\n${fmtA(r.bal)} AGRS · ${pct(r.share)}"></i>`).join("");
   // sorting: any column; the rank always shows the balance order
@@ -769,7 +770,7 @@ function renderPreview(r) {
     <div class="addr">${esc(r.a)}</div>
     <div class="roles">${r.genesis ? `<span class="tag w">genesis account</span>` : `<span class="tag">new</span>`}${isValidator(r.a) ? ` <span class="tag g">validator</span>` : ""}</div>
     <div class="acts"><a class="btn" href="${accUrl(r.a)}" data-acc="${r.a}">Open account</a></div>
-    <div class="big">${r.node ? "" : "≈ "}${fmtA(r.bal)}<small>AGRS</small></div>
+    <div class="big">${r.node ? "" : "≈ "}${fmtA(r.bal)}<small>test AGRS</small></div>
     <p class="note" style="margin-top:2px">${pct(r.share)} of all AGRS · test tokens with no value</p>
     <div class="spark" id="spark"></div>
     <p class="note" style="margin-top:2px">Balance from transfers, genesis to #${fmtN(C.head)}</p>
