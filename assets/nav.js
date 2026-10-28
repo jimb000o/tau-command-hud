@@ -286,6 +286,14 @@
       const css = el("style"); css.textContent = `.tnav .tn-search { display: flex; align-items: center; margin: 0; } .tnav .tn-search input { width: 150px; box-sizing: border-box; padding: 4px 8px; font: 12px var(--tn-mono); color: #fff; background: rgba(255,255,255,.04); border: 1px solid var(--tn-hair); border-radius: 999px; outline: none; } .tnav .tn-search input::placeholder { color: var(--tn-dim); } .tnav .tn-search input:focus { border-color: #fff; width: 220px; } .tnav .tn-search input::-webkit-search-cancel-button { display: none; } @media (max-width: 700px) { .tnav .tn-search { display: none; } }`; document.head.append(css);
     }
     right.append(updWrap);
+    const I = window.TauI18n;
+    if (I) {   // language switch: shows the other language in its own script, the choice is remembered
+      const other = I.lang === "zh" ? "en" : "zh", lb = el("button", "tl tn-lang", other === "zh" ? "中文" : "EN");
+      lb.type = "button"; lb.lang = other === "zh" ? "zh-CN" : "en"; lb.setAttribute("translate", "no");
+      lb.setAttribute("aria-label", other === "zh" ? "切换到中文 (Chinese)" : "Switch to English");
+      tip(lb, other === "zh" ? "阅读中文版 · Read this site in Chinese" : "Read this site in English · 切换到英文");
+      lb.addEventListener("click", () => I.set(other)); right.append(lb);
+    }
     if (slots.view) { const lab = el("span", "vlab", "View"); right.append(lab, slots.view); }
     if (slots.gear) {
       const gw = el("div", "tnav-gearwrap"), gb = el("button", "tnav-gear", "⚙"), pop = el("div", "tnav-pop");
@@ -310,6 +318,7 @@
       sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", sec.t);
       sh.append(el("div", "grab"), el("h4", "", esc(sec.t)));
       sec.items.forEach(k => sh.append(item(k, page, isHud)));
+      if (sec.k === "learn" && window.TauI18n) { const I = window.TauI18n, other = I.lang === "zh" ? "en" : "zh", l = el("a", "mi", `<span class="ic">文</span><b>${other === "zh" ? "中文" : "English"}</b><span>${other === "zh" ? "阅读中文版 · Read this site in Chinese" : "Read this site in English"}</span>`); l.href = "#"; l.setAttribute("translate", "no"); l.addEventListener("click", e => { e.preventDefault(); I.set(other); }); sh.append(l); }
       if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram alerts <span class="ext">↗</span></b><span>@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t); }
       bg.addEventListener("click", closeAll);
       b.addEventListener("click", () => { const open = sh.hidden; closeAll(); if (open) { bg.hidden = sh.hidden = false; b.setAttribute("aria-expanded", "true"); openEl = sh; } });
