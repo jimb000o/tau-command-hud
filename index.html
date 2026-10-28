@@ -970,6 +970,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.24 · 28 Oct 2026</b>Header, right side: the word “View” is gone (the hover on the switch says what Simple and Technical do), the language switch is a two-way pill like Simple/Technical with EN and 中文, and a thin line separates the text links from the two switches. Same on every page.</li>
           <li><b>v17.23 · 28 Oct 2026</b>Header: the logo and the words “Tau HUD” at the top left are one link back to the main page, on every page.</li>
           <li><b>v17.22 · 28 Oct 2026</b>Simple and Technical view mean more on the HUD: Simple says what each thing means, Technical adds keys, hashes, heights and stream names. Every hover text in the Chain core now comes in both versions, validators read V1, V2 in Simple and show their key in Technical, the block check hides stream names in Simple, transactions show kind and fee without the hash, and the Validators panel follows the view. The thesis and its four points stay as they are.</li>
           <li><b>v17.21 · 28 Oct 2026</b>Header: the green “new updates” dot now sits at the top right of the word Updates, two pixels from the last letter, on every page. It used to float far to the right on the HUD.</li>
@@ -2777,7 +2778,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.23`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.24`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

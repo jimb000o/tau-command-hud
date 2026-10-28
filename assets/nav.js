@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.23"; // newest entry of the HUD update log; bump with every release so the green dot appears once
+  const LATEST = "v17.24"; // newest entry of the HUD update log; bump with every release so the green dot appears once
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';
@@ -287,14 +287,16 @@
     }
     right.append(updWrap);
     const I = window.TauI18n;
-    if (I) {   // language switch: shows the other language in its own script, the choice is remembered
-      const other = I.lang === "zh" ? "en" : "zh", lb = el("button", "tl tn-lang", other === "zh" ? "中文" : "EN");
-      lb.type = "button"; lb.lang = other === "zh" ? "zh-CN" : "en"; lb.setAttribute("translate", "no");
-      lb.setAttribute("aria-label", other === "zh" ? "切换到中文 (Chinese)" : "Switch to English");
-      tip(lb, other === "zh" ? "阅读中文版 · Read this site in Chinese" : "Read this site in English · 切换到英文");
-      lb.addEventListener("click", () => I.set(other)); right.append(lb);
+    right.append(el("span", "tnav-sep"));   // text links on the left of the line, the two switches on the right
+    if (I) {   // language switch: a two-way pill like Simple/Technical, each language in its own script; the choice is remembered
+      const lg = el("div", "seg tn-lang"); lg.setAttribute("role", "group"); lg.setAttribute("aria-label", "Language · 语言"); lg.setAttribute("translate", "no");
+      [["en", "EN", "en", "Read this site in English · 切换到英文"], ["zh", "中文", "zh-CN", "阅读中文版 · Read this site in Chinese"]].forEach(([code, label, tag, t]) => {
+        const lb = el("button", "", label); lb.type = "button"; lb.lang = tag; lb.setAttribute("aria-pressed", String(I.lang === code)); tip(lb, t);
+        lb.addEventListener("click", () => { if (I.lang !== code) I.set(code); }); lg.append(lb);
+      });
+      right.append(lg);
     }
-    if (slots.view) { const lab = el("span", "vlab", "View"); right.append(lab, slots.view); }
+    if (slots.view) { tip(slots.view, "View: Simple says what each thing means; Technical adds keys, hashes, heights and stream names."); right.append(slots.view); }
     if (slots.gear) {
       const gw = el("div", "tnav-gearwrap"), gb = el("button", "tnav-gear", "⚙"), pop = el("div", "tnav-pop");
       gb.type = "button"; gb.setAttribute("aria-label", isHud ? "Settings: node address, background rain" : "Settings: node, guided tour, about"); gb.setAttribute("aria-haspopup", "true"); gb.setAttribute("aria-expanded", "false"); tip(gb, isHud ? TIPS.gear : TIPS.gearSub);
