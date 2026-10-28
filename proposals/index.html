@@ -96,7 +96,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .quorum span { position: relative; display: block; text-align: center; font-size: 12px; line-height: 16px; color: #fff; }
 .news { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; align-content: start; }
 .news li { padding: 6px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
-.news li.k-proposed { border-left-color: var(--behind); } .news li.k-agreed, .news li.k-active { border-left-color: var(--ok); } .news li.k-restart { border-left-color: #fff; }
+.news li.k-proposed { border-left-color: var(--behind); } .news li.k-agreed, .news li.k-active { border-left-color: var(--ok); } .news li.k-restart { border-left-color: #fff; } .news li.k-refused { border-left-color: #fff; }
 .news li b { color: #fff; font-weight: 600; }
 .news li.fresh { animation: fresh 2.4s ease-out; }
 @keyframes fresh { from { background: rgba(57,255,138,.22); } to { background: rgba(255,255,255,.025); } }

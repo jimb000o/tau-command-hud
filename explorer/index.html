@@ -809,13 +809,15 @@ function sealedTx(x) {
   const mine = own.get(s), theirs = [...new Set(tr.map(r => low(r[1])).concat(low(t.recipient_pubkey) || []))].map(a => own.get(a)).filter(Boolean);
   const ruleLink = r => `<a class="go" href="${txHref(r.id || `${r.h}.${r.i}`)}" data-go="tx:${r.id || `${r.h}.${r.i}`}">set in #${fmtN(r.h)}</a>`;
   let why = "";
-  if (CAT[k] === "transfer") {
+  if (k === "retract_transfer") {
+    why = `<div class="verdict"><h4>What this does</h4><p>The sender pulled back the retractable transfer named below before its release block: the amount returns to the sender, the receiver never gets it.</p></div>`;
+  } else if (CAT[k] === "transfer") {
     why = `<div class="verdict"><h4>Why the network let it through</h4>
       <p>The network's rules${R ? ` (revision ${R.rev}, ${esc(R.mode.toLowerCase())})` : ""} said yes${own.size ? `, and so did the accounts' own rules: every transfer is checked against the combined rules of every account that set one (${fmtN(own.size)} so far)` : ". No account had set a rule of its own yet"}.</p>
       ${mine ? `<p><em>The sender has a rule of its own:</em> ${ruleLink(mine)}.</p>` : ""}
       ${theirs.map(r => `<p><em>The receiver ${addrLink(r.a)} has a rule of its own:</em> ${ruleLink(r)}.</p>`).join("")}</div>`;
   } else if (CAT[k] === "rule") {
-    why = `<div class="verdict"><h4>What this rule does now</h4><p>${k === "rule_deploy" || k === "rule_offer_accept" ? "From this block on, every transfer is also checked against this rule." : k === "rule_offer" ? "Nothing yet: the receiver decides whether to take it on." : "The offer is closed; nothing changed for the receiver."}</p>${STREAMS[st] ? `<p><em>It decides ${esc(STREAMS[st])}.</em></p>` : ""}</div>`;
+    why = `<div class="verdict"><h4>What this rule does now</h4><p>${k === "rule_deploy" || k === "rule_offer_accept" ? "From this block on, every transfer is also checked against this rule." : k === "rule_offer" ? "Nothing yet: the receiver decides whether to take it on." : "The offer is closed; nothing changed for the receiver."}</p>${t.reason ? `<p><em>Reason given:</em> ${esc(t.reason)}</p>` : ""}${STREAMS[st] ? `<p><em>It decides ${esc(STREAMS[st])}.</em></p>` : ""}</div>`;
   } else {
     why = `<div class="verdict"><h4>What this vote does</h4><p>A vote counts once it is in a block. Whether the change takes effect depends on the agreement it reaches before its activation block. <a href="/proposals/">See all proposals</a>.</p></div>`;
   }
