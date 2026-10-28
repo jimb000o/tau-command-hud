@@ -281,5 +281,9 @@ TauI18n.add({ strings: {
   "· this sender's transaction number {x1}": "· 该发送方的交易序号 {x1}",
   "· to {h}": "· 转给 {h}",
   "· {x1} after the one before": "· 距上一个区块 {x1}",
+  "Rule offer accepted": "规则提供已接受",
+  "Rule offer refused": "规则提供已拒绝",
+  "Retractable transfer": "可撤回转账",
+  "Read {n} blocks of {m}…": "已读取 {m} 个区块中的 {n} 个…",
   "· {x} after the one before": "· 比前一个晚 {x}",
 } });

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Developers</title>
@@ -211,6 +212,7 @@ console.log(`Tau block #${s.height}, ${s.proposals.waiting} waiting for votes`);
 "use strict";
 const $ = id => document.getElementById(id);
 const API = "https://node.tauhud.com";
+if (window.TauSim && TauSim.on) TauSim.mark({ foot: null });   // Simulation: the page title says so; the footer keeps its own text
 const SITE = "https://tauhud.com";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -302,7 +304,7 @@ $("endpoints").innerHTML = EP.map(([p, d]) => {
 /* ---------- live answer ---------- */
 async function loadJson() {
   try {
-    const r = await fetch(`${API}/api/v1/summary`, { cache: "no-store" });
+    const r = await (window.TauSim && TauSim.on ? TauSim.fetch("/api/v1/summary") : fetch(`${API}/api/v1/summary`, { cache: "no-store" }));
     if (!r.ok) throw new Error(r.status);
     const d = await r.json();
     // keys recede, values stand out: the eye goes to the numbers
@@ -310,7 +312,7 @@ async function loadJson() {
       .replace(/^(\s*)(&quot;|")([^"&]+)(&quot;|")(:)/gm, '$1<span class="jk">"$3"</span>$5')
       .replace(/: (-?\d[\d.]*|true|false|null)(,?)$/gm, ': <span class="jn">$1</span>$2');
     $("jsonDot").classList.toggle("on", d.status === "synced");
-    $("jsonHead").textContent = `Live answer of /api/v1/summary · ${new Date().toLocaleTimeString()}`;
+    $("jsonHead").textContent = `${window.TauSim && TauSim.on ? "Simulated answer" : "Live answer"} of /api/v1/summary · ${new Date().toLocaleTimeString()}`;
   } catch (e) {
     $("jsonDot").classList.remove("on");
     $("jsonHead").textContent = "Live answer of /api/v1/summary";

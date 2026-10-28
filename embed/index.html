@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tau HUD widget</title>
 <meta name="description" content="Live Tau testnet numbers to put on your own site: block height, status, rule changes, validators. Made for an iframe; see tauhud.com/developers/.">
@@ -72,6 +73,7 @@ const theme = q.get("theme");
 if (theme === "light" || theme === "transparent") document.documentElement.dataset.theme = theme;
 if (q.get("footer") === "0") document.documentElement.dataset.foot = "0";
 const SAMPLE = q.has("sample");
+const SIM = !SAMPLE && !!(window.TauSim && TauSim.on);   // simulation mode, shared with every page of tauhud.com (assets/sim.js)
 const LINK = { status: "status/", height: "explorer/", proposals: "proposals/", validators: "", health: "status/" };
 const TITLE = { status: "Testnet", height: "Block", proposals: "Rule changes", validators: "Validators", health: "Health" };
 let data = null, failed = false, lastHeight = null;
@@ -160,7 +162,7 @@ async function poll() {
   try {
     if (SAMPLE) data = sample();
     else {
-      const r = await fetch(API, { cache: "no-store" });
+      const r = await (SIM ? TauSim.fetch("/api/v1/summary") : fetch(API, { cache: "no-store" }));
       if (!r.ok) throw new Error(r.status);
       data = await r.json();
     }

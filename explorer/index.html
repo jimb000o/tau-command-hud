@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Tau Explorer</title>
@@ -302,6 +303,7 @@ const $ = id => document.getElementById(id);
 const PARAMS = new URLSearchParams(location.search);
 const NODE = PARAMS.get("node") || "wss://node.tauhud.com";
 const SAMPLE = PARAMS.has("sample");
+const SIM = !SAMPLE && !!(window.TauSim && TauSim.on);   // simulation mode: the same made-up chain as every other page (assets/sim.js)
 const PAGE = 100;
 
 const TX_NAMES = {
@@ -367,7 +369,7 @@ const blkLink = h => `<a class="go" href="${blkHref(h)}" data-go="b:${h}">#${fmt
 const txLink = (x, label) => `<a class="go" href="${txHref(x)}" data-go="tx:${x}">${esc(label || short(x))}</a>`;
 const addrLink = a => isAddr(a) ? `<a class="go" href="${addrHref(a)}" data-go="a:${a}">${esc(short(a))}</a>` : "—";
 // a link whose preview on X and Telegram shows a picture of this block or account (infra/share)
-const shareChip = path => SAMPLE ? "" : `<button class="chip" type="button" data-copy="https://node.tauhud.com/s/${path}" data-tip="A link that shows a picture of this ${path.split("/")[0]} when you post it on X, Telegram or WhatsApp.">Copy share link</button>`;
+const shareChip = path => SAMPLE || SIM ? "" : `<button class="chip" type="button" data-copy="https://node.tauhud.com/s/${path}" data-tip="A link that shows a picture of this ${path.split("/")[0]} when you post it on X, Telegram or WhatsApp.">Copy share link</button>`;
 const tagHtml = (text, cls) => `<span class="tag ${cls || ""}">${esc(text)}</span>`;
 
 /* ------------------------------ state ------------------------------ */
@@ -393,9 +395,9 @@ function viewerId() {
 function connect() {
   clearTimeout(C.retryT);
   let ws;
-  try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
+  try { ws = SIM ? TauSim.socket() : new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
-  setState("wait", "Connecting", `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
+  setState("wait", "Connecting", SIM ? "Building the simulated chain…" : `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
   ws.onopen = () => { C.off = false; C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); send("getmempool"); loadFrom(0); askFor(V.sel); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
@@ -442,7 +444,7 @@ function index() {
 }
 // transactions that left our node's queue without reaching a block (kept by the relay, see /stats)
 function loadDropped() {
-  fetch(NODE.replace(/^ws/, "http").replace(/\/$/, "") + "/stats", { cache: "no-store" }).then(r => r.ok ? r.json() : null)
+  (SIM ? TauSim.fetch("/stats") : fetch(NODE.replace(/^ws/, "http").replace(/\/$/, "") + "/stats", { cache: "no-store" })).then(r => r.ok ? r.json() : null)
     .then(j => { if (j && Array.isArray(j.dropped)) { C.dropped = j.dropped; C.droppedTotal = j.dropped_total || j.dropped.length; render(); } }).catch(() => {});
 }
 // what the open item needs from the node beyond the blocks
@@ -489,7 +491,8 @@ function onMessage(ev) {
 }
 function live() {
   C.ready = true;
-  setState("live", "Live", `${plural(C.head + 1, "block")} read from our node.\nNew blocks and waiting transactions appear as they come.`);
+  if (SIM) setState("sim", "Simulation", `${plural(C.head + 1, "block")} of a made-up chain, generated in your browser and the same on every page.\nNew blocks come every ${TauSim.pace} s. No real chain data.`);
+  else setState("live", "Live", `${plural(C.head + 1, "block")} read from our node.\nNew blocks and waiting transactions appear as they come.`);
   clearInterval(C.poll);
   C.poll = setInterval(() => { send("getblocks 6"); send("getgovernance"); }, 30000);
 }
@@ -915,7 +918,7 @@ function urlFor(sel) {
 function go(sel, push) {
   V.sel = sel;
   if (push) history.pushState(null, "", urlFor(sel));
-  document.title = !sel ? "Tau Explorer" : sel.t === "b" ? `Block #${sel.v} · Tau Explorer` : sel.t === "tx" ? `Transaction ${short(sel.v)} · Tau Explorer` : sel.t === "a" ? `Address ${short(sel.v)} · Tau Explorer` : "Search · Tau Explorer";
+  document.title = (SIM ? "Simulation · " : "") + (!sel ? "Tau Explorer" : sel.t === "b" ? `Block #${sel.v} · Tau Explorer` : sel.t === "tx" ? `Transaction ${short(sel.v)} · Tau Explorer` : sel.t === "a" ? `Address ${short(sel.v)} · Tau Explorer` : "Search · Tau Explorer");
   askFor(sel); hideTip(); draw();
   $("dBody").scrollTop = 0;
   if (!document.documentElement.classList.contains("fit") && sel) $("detail").scrollIntoView({ block: "start", behavior: "smooth" });
@@ -1036,6 +1039,7 @@ function sampleChain() {
 
 /* ------------------------------ start ------------------------------ */
 fit();
+if (SIM) TauSim.mark();
 if (SAMPLE) sampleChain(); else connect();
 V.sel = fromUrl();
 go(V.sel, false);

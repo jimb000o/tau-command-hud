@@ -206,4 +206,7 @@ TauI18n.add({ strings: {
   "{x} above the median": "比中位数长 {x}",
   "{x} below the median": "比中位数短 {x}",
   "· your local time": "· 你的本地时间",
+  "A made-up chain generated in your browser, the same on every page.": "在你的浏览器中生成的虚构链，每个页面都相同。",
+  "Newest block #{n}, sealed {m} s ago.": "最新区块 #{n}，{m} 秒前封装。",
+  "the other account said no": "对方账户拒绝了",
 } });

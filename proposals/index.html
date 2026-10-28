@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Proposal Tracker</title>
@@ -277,6 +278,7 @@ const short = h => h ? (String(h).length > 14 ? String(h).slice(0, 6) + "…" + 
 const fmtN = n => Number(n).toLocaleString("en-US");
 const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
 const params = new URLSearchParams(location.search);
+const SIM = !params.has("sample") && !!(window.TauSim && TauSim.on);   // simulation mode: the same made-up chain as every other page (assets/sim.js)
 const DATA = params.get("data") || "https://node.tauhud.com/proposals.json";
 const POLL = 20000;
 const STATUS = { voting: "waiting for votes", agreed: "agreed", active: "in force", dropped: "dropped" };
@@ -460,11 +462,14 @@ function timeline() {
     const tip = `${consName(s.m)}${cur ? ", in force now" : s.future ? `, agreed: from block #${fmtN(s.h)}` : ""}: ${(CONS[s.m] || ["", s.m])[1]}.` + (s.p ? `\nSwitched by the agreed rule change “${s.p.title}”. Click for the proposal.` : `\nTau has no proof of work. The mechanism is part of the chain state and switches only through an agreed rule change.${modes.length === 1 ? " No switch so far." : ""}`);
     return `<div class="seg${cur ? " now" : ""}${s.future ? " future" : ""}" ${s.p ? `data-id="${esc(s.p.id)}" ` : ""}role="button" tabindex="0" style="left:${pc(s.h)};width:calc(${w.toFixed(3)}% - 2px)" aria-label="${esc(consName(s.m))}" data-tip="${esc(tip)}">${label(consName(s.m) + (s.m === "validator_set" ? " · fixed validator list" : ""), w, consName(s.m))}</div>`; }).join("")
     + maybe.map(p => `<div class="seg maybe" data-id="${esc(p.id)}" role="button" tabindex="0" style="left:${pc(p.activate_at)};width:calc(${((1 - x(p.activate_at)) * 100).toFixed(3)}% - 2px);z-index:1;background:var(--deck)" data-tip="${esc(`Proposed: switch to ${consName(modeOf(p))} at block #${fmtN(p.activate_at)}, if enough validators agree by then (${p.counted_votes} of ${p.thr} votes so far). Click for the proposal.`)}">${label("→ " + consName(modeOf(p)) + "?", (1 - x(p.activate_at)) * 100, "→ " + { stake: "PoS", validator_set: "PoA", tau_validator_set: "Tau list" }[modeOf(p)] + "?")}</div>`).join("");
-  const pRows = [...P].sort((a, b) => a.proposed_at - b.proposed_at).map(p => {
-    const end = p.activated_at ?? p.expired_at ?? p.activate_at, w = Math.max(0.4, (x(end) - x(p.proposed_at)) * 100);
+  // one bar per proposal; bars that do not overlap in time share a row, so a busy chain stays a few rows high (the hover names each bar)
+  const lanes = [], laneGap = 100 * 14 / trackW, laneOf = (a, b) => { let i = lanes.findIndex(end => end + laneGap <= a); if (i < 0) { i = lanes.length; lanes.push(b); } else lanes[i] = b; return i; };
+  const pBars = [...P].sort((a, b) => a.proposed_at - b.proposed_at).map(p => {
+    const end = p.activated_at ?? p.expired_at ?? p.activate_at, w = Math.max(0.4, (x(end) - x(p.proposed_at)) * 100), lane = laneOf(x(p.proposed_at) * 100, x(p.proposed_at) * 100 + w);
     const what = { active: `in force since #${fmtN(p.activated_at)} (revision ${p.rev})`, agreed: `agreed at #${fmtN(p.approved_at)}, takes effect at #${fmtN(p.activate_at)}${left(p) > 0 ? `, ${plural(left(p), "block")} from now${eta(left(p)) ? ` (${eta(left(p))})` : ""}` : ""}`,
       voting: `waiting for votes (${p.counted_votes} of ${p.thr}), deadline #${fmtN(p.activate_at)}`, dropped: `dropped at #${fmtN(p.expired_at)}` }[p.status];
-    return `<div class="pbar"><button type="button" class="${p.status}" data-id="${esc(p.id)}" style="left:${pc(p.proposed_at)};width:${w.toFixed(3)}%" aria-label="${esc(p.title)}" data-tip="${esc(`“${p.title}”\nproposed at #${fmtN(p.proposed_at)}, ${what}.${modeOf(p) ? `\nSwitches the consensus mechanism to ${consName(modeOf(p))}.` : ""}\nClick for the rule diff and the votes.`)}"></button></div>`; }).join("");
+    return [lane, `<button type="button" class="${p.status}" data-id="${esc(p.id)}" style="left:${pc(p.proposed_at)};width:${w.toFixed(3)}%" aria-label="${esc(p.title)}" data-tip="${esc(`“${p.title}”\nproposed at #${fmtN(p.proposed_at)}, ${what}.${modeOf(p) ? `\nSwitches the consensus mechanism to ${consName(modeOf(p))}.` : ""}\nClick for the rule diff and the votes.`)}"></button>`]; });
+  const pRows = lanes.map((_, i) => `<div class="pbar">${pBars.filter(b => b[0] === i).map(b => b[1]).join("")}</div>`).join("");
   // axis labels at the events, left to right, skipping any that would touch the one before
   const gap = 100 * 84 / trackW, keep = [lo, head, ...(Math.abs(x(far) - x(head)) * 100 >= gap ? [far] : [])];
   const shown = marks.filter(h => h <= far && (h !== far || keep.includes(far)) && (keep.includes(h) || keep.every(k => Math.abs(x(k) - x(h)) * 100 >= gap)))
@@ -537,7 +542,7 @@ function openDetail(p, push) {
     ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
 </div></div>`;
   // a link whose preview on X and Telegram shows a picture of this proposal (infra/share)
-  if (!params.has("sample")) $("dBody").querySelector(".dcols > div:first-child").insertAdjacentHTML("beforeend", `<p style="margin:12px 0 0"><button class="btn" type="button" data-share="https://node.tauhud.com/s/proposal/${esc(p.id.slice(0, 16))}"
+  if (!params.has("sample") && !SIM) $("dBody").querySelector(".dcols > div:first-child").insertAdjacentHTML("beforeend", `<p style="margin:12px 0 0"><button class="btn" type="button" data-share="https://node.tauhud.com/s/proposal/${esc(p.id.slice(0, 16))}"
     title="A link that shows a picture of this proposal when you post it on X, Telegram or WhatsApp.">Copy share link</button></p>`);
   $("mDetail").querySelector(".sheet").classList.add("w2");
   $("mDetail").hidden = false;
@@ -615,12 +620,12 @@ function sample() {
 async function load() {
   if (params.has("sample")) { D = sample(); setState("sample", "Sample data"); render(); return; }
   try {
-    const r = await fetch(DATA, { cache: "no-store" });
+    const r = await (SIM ? TauSim.fetch("/proposals.json") : fetch(DATA, { cache: "no-store" }));
     if (!r.ok) throw new Error(r.status);
     D = await r.json();
     failures = 0;
     const age = Date.now() / 1000 - D.generated_at;
-    setState(age < 120 ? "live" : "off", age < 120 ? "Live" : `Last update ${ago(D.generated_at)}`);
+    if (SIM) setState("sim", "Simulation"); else setState(age < 120 ? "live" : "off", age < 120 ? "Live" : `Last update ${ago(D.generated_at)}`);
     render();
   } catch (e) {
     failures++;
@@ -631,6 +636,7 @@ async function load() {
     }
   }
 }
+if (SIM) TauSim.mark();
 load();
 setInterval(load, POLL);
 setInterval(() => { if (D) render(); }, 60000);  // "x min ago" keeps moving

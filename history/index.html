@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Chain Time Travel</title>
@@ -86,6 +87,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .dot i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); display: inline-block; }
 .dot.ok i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
 .dot.wait i { background: var(--behind); }
+.dot.sim i { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
 .conn .warn { color: var(--behind); }
 .conn button { font: 12px var(--mono); background: none; border: 0; border-bottom: 1px dotted var(--dim); color: #fff; padding: 0; cursor: pointer; }
 
@@ -386,7 +388,8 @@ const fmtN = n => Number(n).toLocaleString("en-US");
 const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
 
 /* ---------------- genesis of tau-testnet-v2 (networks/tau-testnet-v2/genesis.json @ 539d1e2) ---------------- */
-const GENESIS = {
+const SIM0 = !new URLSearchParams(location.search).has("sample") && !!(window.TauSim && TauSim.on);
+const GENESIS = SIM0 ? { hash: TauSim.genesisHash, validators: TauSim.validators.slice(), quorum: "supermajority", fee: 10, supply: 2000000, accounts: Object.keys(TauSim.genesis).length } : {
   hash: "35faee3b5652e30c9b5a9adb89bdf3c2312ff0cef833adf57ebd9566ceeaf1a7",
   validators: ["a1fe40d5e4f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7d2b"],
   quorum: "supermajority", fee: 10, supply: 2000000, accounts: 11,
@@ -394,6 +397,7 @@ const GENESIS = {
 };
 const params = new URLSearchParams(location.search);
 const NODE = params.get("node") || "wss://node.tauhud.com";
+const SIM = !params.has("sample") && !!(window.TauSim && TauSim.on);   // simulation mode: the same made-up chain as every other page (assets/sim.js)
 const PAGE = 100;
 
 /* ---------------- what the page knows ---------------- */
@@ -432,6 +436,7 @@ const uidCache = new Map();
 async function updateId(tx) {
   const key = JSON.stringify([tx.rule_revisions, tx.activate_at_height, tx.host_contract_patch ?? null]);
   if (uidCache.has(key)) return uidCache.get(key);
+  if (typeof tx.update_id === "string" && /^[0-9a-f]{64}$/.test(tx.update_id)) { uidCache.set(key, tx.update_id); return tx.update_id; }   // the simulation names its proposals in the transaction
   let id = null;
   try {
     const patch = tx.host_contract_patch;
@@ -468,7 +473,7 @@ const EXPLAIN = new Map();
 async function loadExplain() {
   if (params.has("sample")) return;
   try {
-    const r = await fetch(params.get("explain") || "https://node.tauhud.com/proposals.json", { cache: "no-store" }); if (!r.ok) return;
+    const r = await (SIM ? TauSim.fetch("/proposals.json") : fetch(params.get("explain") || "https://node.tauhud.com/proposals.json", { cache: "no-store" })); if (!r.ok) return;
     const j = await r.json(); let changed = false;
     for (const x of j.proposals || []) {
       const t = x && x.explain && x.explain.title, id = String(x && x.id || "").toLowerCase();
@@ -625,14 +630,14 @@ function viewerId() {
 function connect() {
   clearTimeout(C.retryT);
   let ws;
-  try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
+  try { ws = SIM ? TauSim.socket() : new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
-  setConn("wait", "Connecting", `Reading the chain from ${esc(NODE.replace(/^wss?:\/\//, ""))}…`);
+  setConn("wait", "Connecting", SIM ? "Building the simulated chain…" : `Reading the chain from ${esc(NODE.replace(/^wss?:\/\//, ""))}…`);
   ws.onopen = () => { C.retry = 3000; C.fails = 0; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
   ws.onerror = () => {};
-  fetch(NODE.replace(/^ws/, "http").replace(/\/$/, "") + "/status", { cache: "no-store" }).then(r => r.json())
+  (SIM ? TauSim.fetch("/status") : fetch(NODE.replace(/^ws/, "http").replace(/\/$/, "") + "/status", { cache: "no-store" })).then(r => r.json())
     .then(s => { if (typeof s.open_governance_admission === "boolean" && s.open_governance_admission !== C.openAdmission) { C.openAdmission = s.open_governance_admission; rebuild(); } })
     .catch(() => {});
 }
@@ -730,7 +735,8 @@ function resetChain() {
   if (!C.legacy) { setTimeout(() => loadFrom(0), 500); }
 }
 function live() {
-  setConn("ok", "Live", `${plural(C.head + 1 - C.first, "block")} · new blocks appear as they are made`);
+  if (SIM) setConn("sim", "Simulation", `${plural(C.head + 1 - C.first, "block")} of a made-up chain, the same on every page · no real chain data`);
+  else setConn("ok", "Live", `${plural(C.head + 1 - C.first, "block")} · new blocks appear as they are made`);
   clearInterval(C.poll);
   // the relay pushes new blocks; this only catches a missed push
   C.poll = setInterval(() => send("getblocks 6"), 30000);
@@ -1258,6 +1264,7 @@ render = function () {   // jump to a shared block once it is loaded, otherwise 
 })();
 setInterval(() => { if (C.head >= 0) readout(); }, 15000);
 render();
+if (SIM) TauSim.mark({ foot: null });
 if (params.has("sample")) sampleChain(); else { connect(); loadExplain(); setInterval(loadExplain, 60000); }
 
 /* ---------------- sample chain (?sample): proposals with every kind of rule text diff, no node needed ---------------- */

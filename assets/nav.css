@@ -71,6 +71,13 @@ header.trail .dot { display: inline-block; width: 7px; height: 7px; border-radiu
 header.trail .dot.behind { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
 header.trail .dot.off { background: #ff4d6d; box-shadow: 0 0 8px #ff4d6d; animation: none; }
 header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation: none; opacity: .6; }
+/* simulation mode: amber, the colour of "not the real thing yet"; the badge is striped like the HUD's simulation bar */
+header.trail .chip.sim b { color: #ffb13b; }
+header.trail .dot.sim { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
+header.trail .chip.unoff.sim { color: #fff; border-color: rgba(255,177,59,.7); background: repeating-linear-gradient(135deg, rgba(255,177,59,.14) 0 10px, rgba(255,177,59,.03) 10px 20px); }
+header.trail .chip.unoff.sim:hover { border-color: #ffb13b; }
+.state.sim { color: #ffb13b; border-color: #ffb13b; } .state.sim i { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
+.tnav .seg.tn-src > button[aria-pressed="true"]:last-child { background: #ffb13b; color: #000; }
 @keyframes tnblink { 50% { opacity: .35; } }
 /* row 2 controls on subpages, same look as the HUD's */
 .tnav .seg { display: inline-flex; border: 1px solid var(--tn-hair); border-radius: 999px; overflow: hidden; }

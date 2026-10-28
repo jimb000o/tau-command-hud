@@ -45,8 +45,10 @@
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
     gear: "Settings: node address and Connect, background rain.",
     gearSub: "Settings: which node this page reads, guided tour, about.",
-    live: "This page reads the real testnet through the community relay. Opens the HUD in Live mode.",
-    sim: "Simulation: invented activity that follows the documented protocol, generated in your browser. It runs only in the HUD, so this opens the HUD; this page always shows the live chain.",
+    live: "Live node: this page reads the real testnet through the community relay at node.tauhud.com. The choice holds on every page.",
+    sim: "Simulation: invented activity that follows the documented protocol, generated in your browser. The same made-up chain on every page, eight seconds per block, a fresh start every day at 00:00 UTC. No real chain data. The choice holds on every page.",
+    simMode: "Simulation: this page shows a made-up chain generated in your browser, the same on every page. No real chain data. Switch to Live node for the real testnet.",
+    simBadge: "Everything on this page is simulated: invented but protocol-true activity, generated in your browser. Nothing here happened on the real testnet. Opens the full notice.",
     simple: "Simple view: plain words, fewer numbers, no stream names.",
     tech: "Technical view: stream names (i10, o5, o9), hashes and rule text everywhere.",
     unoff: "Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Opens the full notice.",
@@ -65,6 +67,9 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+  /* simulation mode (assets/sim.js): the header reads the simulated chain and says so; the people-online count stays real */
+  const SIM = !!(window.TauSim && TauSim.on);
+  if (SIM) document.documentElement.classList.add("tau-sim");
   const PLANE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.9 3.3 2.6 10.8c-1 .4-1 1 0 1.3l4.9 1.5 11.4-7.2c.5-.3 1-.1.6.2l-9.2 8.3-.4 5.1c.5 0 .7-.2 1-.5l2.4-2.3 5 3.7c.9.5 1.6.2 1.8-.9l3.3-15.5c.3-1.3-.5-1.9-1.5-1.5z"/></svg>';
   const emit = action => document.dispatchEvent(new CustomEvent("tau-nav", { detail: action }));
   const markSeen = () => { store.set(SEEN_KEY, LATEST_ID); document.querySelectorAll(".tn-upd.new, .tabbar .new").forEach(e => e.classList.remove("new")); };
@@ -98,11 +103,11 @@
     const rail = el("header", "trail");
     const brand = el("a", "brand", `${MARK}<span class="bn">Tau HUD</span><h1 class="bt">${esc(title)}</h1>`);  // the page title is the heading, the logo is not
     const lang = new URLSearchParams(location.search).get("lang"); brand.href = ROOT + (lang ? "?lang=" + encodeURIComponent(lang) : ""); brand.dataset.tnt = "Back to the HUD";
-    const unoff = el("a", "chip unoff", "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = TIPS.unoff;
+    const unoff = el("a", "chip unoff" + (SIM ? " sim" : ""), SIM ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = SIM ? TIPS.simBadge : TIPS.unoff;
     const chips = el("div", "chips");
     const chip = (tag, id, cls, html, t) => { const c = el(tag, "chip" + (cls ? " " + cls : ""), html); c.id = id; c.dataset.tnt = t; return c; };
     chips.append(
-      chip("div", "tnMode", "v", '<span class="dot none"></span><b>Live · Connecting</b>', TIPS.mode),
+      chip("div", "tnMode", "v", SIM ? '<span class="dot sim"></span><b>Simulation</b>' : '<span class="dot none"></span><b>Live · Connecting</b>', SIM ? TIPS.simMode : TIPS.mode),
       chip("div", "tnOnline", "", '<span class="dot none"></span><b class="n">—</b>online', TIPS.online),
       chip("a", "tnCons", "v", '<b><span class="lg">—</span><span class="sh">—</span></b>', TIPS.cons),
       chip("div", "tnNet", "v", `<b>${NET}</b>`, TIPS.net),
@@ -149,10 +154,11 @@
       const catching = synced && Number(st.tip_height) > 0 && st.canonical_height != null && Number(st.canonical_height) < Number(st.tip_height) - 2;
       const wait = !CHAIN.polled;
       const good = synced && !catching && !degraded;
-      modeB.textContent = wait ? "Live · Connecting" : !up ? "Live · Offline" : degraded ? "Live · Degraded" : !synced ? "Live · Not synced" : catching ? `Verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}` : "Live · Connected";
-      modeDot.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
-      mode.className = "chip v " + (wait || !up ? "" : good ? "live" : "behind");   // offline: the red dot is the one signal, the text stays plain
+      modeB.textContent = SIM ? "Simulation" : wait ? "Live · Connecting" : !up ? "Live · Offline" : degraded ? "Live · Degraded" : !synced ? "Live · Not synced" : catching ? `Verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}` : "Live · Connected";
+      modeDot.className = "dot " + (SIM ? "sim" : wait ? "none" : !up ? "off" : good ? "" : "behind");
+      mode.className = "chip v " + (SIM ? "sim" : wait || !up ? "" : good ? "live" : "behind");   // offline: the red dot is the one signal, the text stays plain
       document.querySelectorAll(".tnav [data-livedot]").forEach(d => {
+        if (SIM) { d.className = "dot none"; return; }
         d.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
         const a = d.closest("a"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + " Opens the HUD in Live mode.";
       });
@@ -166,7 +172,20 @@
       cons.dataset.tnt = consTip();
     };
     render();
+    const govFrom = d => {
+      CHAIN.rev = 1 + (d.archival_update_details || []).filter(u => u.lifecycle === "activated").length;
+      const f = typeof d.consensus_rules === "string" && /o9\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]+)/.exec(d.consensus_rules); if (f) CHAIN.fee = parseInt(f[1], 16);
+      CHAIN.elig = typeof d.eligibility_mode === "string" && d.eligibility_mode ? d.eligibility_mode
+        : typeof d.consensus_rules === "string" && /o7\[t\][^=]*=\s*\{\s*1\s*\}/.test(d.consensus_rules) ? "validator_set" : CHAIN.elig;
+      if (Array.isArray(d.active_validators)) CHAIN.vals = d.active_validators.length; else if (Number.isFinite(d.active_validator_count)) CHAIN.vals = d.active_validator_count;
+      CHAIN.switches = (d.archival_update_details || []).filter(u => u && u.lifecycle === "activated" && u.host_contract_patch && typeof u.host_contract_patch.eligibility_mode === "string").length;
+    };
+    if (SIM) {   // the simulated chain: height, revision, fee and consensus from the generator, every second
+      const tick = () => { CHAIN.st = TauSim.status(); govFrom(TauSim.governance()); CHAIN.polled = true; CHAIN.at = Date.now(); render(); };
+      tick(); setInterval(() => { if (!document.hidden) tick(); }, 1000);
+    }
     const poll = async () => {
+      if (SIM) return;
       const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);   // a stalled request must not freeze the light at its last colour
       try {
         const r = await fetch(`https://${RELAY}/status`, { cache: "no-store", signal: ctl.signal }); if (!r.ok) throw new Error(r.status);
@@ -177,7 +196,7 @@
     poll(); setInterval(() => { if (!document.hidden) poll(); }, 20000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
     /* watchdog: a visible tab that has heard nothing from the relay for over a minute shows red, whatever the last colour was */
-    setInterval(() => { if (!document.hidden && CHAIN.at && Date.now() - CHAIN.at > 70000 && !CHAIN.stale) { CHAIN.stale = true; CHAIN.st = null; render(); } }, 5000);
+    setInterval(() => { if (!SIM && !document.hidden && CHAIN.at && Date.now() - CHAIN.at > 70000 && !CHAIN.stale) { CHAIN.stale = true; CHAIN.st = null; render(); } }, 5000);
     let wait = 5000;
     const open = () => {
       let ws; try { ws = new WebSocket(`wss://${RELAY}`); } catch (e) { return; }
@@ -187,14 +206,7 @@
         if (!m || m.status !== "ok") return;
         const d = m.data || {};
         if (m.command === "presence") { const n = Number(d.online ?? d.clients); if (Number.isFinite(n)) CHAIN.online = n; }
-        if (m.command === "getgovernance") {
-          CHAIN.rev = 1 + (d.archival_update_details || []).filter(u => u.lifecycle === "activated").length;
-          const f = typeof d.consensus_rules === "string" && /o9\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]+)/.exec(d.consensus_rules); if (f) CHAIN.fee = parseInt(f[1], 16);
-          CHAIN.elig = typeof d.eligibility_mode === "string" && d.eligibility_mode ? d.eligibility_mode
-            : typeof d.consensus_rules === "string" && /o7\[t\][^=]*=\s*\{\s*1\s*\}/.test(d.consensus_rules) ? "validator_set" : CHAIN.elig;
-          if (Array.isArray(d.active_validators)) CHAIN.vals = d.active_validators.length; else if (Number.isFinite(d.active_validator_count)) CHAIN.vals = d.active_validator_count;
-          CHAIN.switches = (d.archival_update_details || []).filter(u => u && u.lifecycle === "activated" && u.host_contract_patch && typeof u.host_contract_patch.eligibility_mode === "string").length;
-        }
+        if (m.command === "getgovernance" && !SIM) govFrom(d);   // in simulation the chain numbers come from the generator; this socket only counts people
         render();
       };
       ws.onclose = ws.onerror = () => { if (ws._dead) return; ws._dead = true; CHAIN.wsUp = false; render(); setTimeout(open, wait); wait = Math.min(60000, wait * 2); };
@@ -223,10 +235,12 @@
 
   /* ---------- row 2 controls on subpages: the HUD's source toggle, view switch and gear, with the same look ---------- */
   function subControls(tip) {
-    const src = el("div", "seg"); src.setAttribute("role", "group"); src.setAttribute("aria-label", "Data source");
-    const live = el("a", "", '<span class="dot none" data-livedot></span>Live node'); live.href = ROOT + "?mode=live"; live.setAttribute("aria-pressed", "true"); tip(live, TIPS.live);
-    const sim = el("a", "", "Simulation ↗"); sim.href = ROOT + "?mode=sim";  // leaves this page: simulation only runs in the HUD
-    sim.setAttribute("aria-pressed", "false"); tip(sim, TIPS.sim);
+    const src = el("div", "seg tn-src"); src.setAttribute("role", "group"); src.setAttribute("aria-label", "Data source");
+    const live = el("button", "", '<span class="dot none" data-livedot></span>Live node'); live.type = "button"; live.setAttribute("aria-pressed", String(!SIM)); tip(live, TIPS.live);
+    const sim = el("button", "", "Simulation"); sim.type = "button"; sim.setAttribute("aria-pressed", String(SIM)); tip(sim, TIPS.sim);
+    // the choice is remembered for every page (tau-mode, the HUD reads it too); this page reloads with the other source
+    const go = m => { if (window.TauSim) TauSim.set(m); else { store.set("tau-mode", m); location.href = ROOT + "?mode=" + m; } };
+    live.addEventListener("click", () => { if (SIM) go("live"); }); sim.addEventListener("click", () => { if (!SIM) go("sim"); });
     src.append(live, sim);
     const view = el("div", "seg"); view.setAttribute("role", "group"); view.setAttribute("aria-label", "Detail level");
     const bS = el("button", "", "Simple"), bT = el("button", "", "Technical"); bS.type = bT.type = "button"; tip(bS, TIPS.simple); tip(bT, TIPS.tech);
@@ -368,5 +382,5 @@
   document.addEventListener("keydown", e => { if (e.key === "Escape" && openEl) closeAll(); });
   const init = () => document.querySelectorAll("nav.tnav").forEach(mount);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-  window.TauNav = { LATEST, TELEGRAM, markSeen, closeAll, chain: CHAIN };
+  window.TauNav = { LATEST, TELEGRAM, markSeen, closeAll, chain: CHAIN, sim: SIM };
 })();
