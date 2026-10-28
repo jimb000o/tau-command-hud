@@ -28,6 +28,9 @@
         api.patterns.push([new RegExp("^" + src + "$"), (...g) => { let out = v; names.forEach((n, i) => { out = out.split("{" + n + "}").join(api.t(g[i + 1])); }); return out; }]);
       }
       if (dict.patterns) api.patterns.push(...dict.patterns);
+      /* the template with the most fixed text first, so "{n} for {x} ({y}), {m} for {z} ({w})" beats "{n} for {x} ({y})" */
+      const fixed = re => re.source.replace(/\(.*?\)|\\/g, "").length;
+      api.patterns.sort((a, b) => fixed(b[0]) - fixed(a[0]));
     },
   };
   /* placeholder kinds: {n} {m} {a} {b} {c} numbers, {h} {g} hashes or addresses, anything else free text */
@@ -65,6 +68,7 @@
     if (!words(k)) return [k, 0, 0];
     let r = one(k);
     if (r == null && /\.$/.test(k)) { r = one(k.slice(0, -1)); if (r != null) r += /[。！？]$/.test(r) ? "" : "。"; }
+    if (r == null && /\w$/.test(k)) { r = one(k + "."); if (r != null) r = r.replace(/[。.]$/, ""); }   // a sentence cut out of a longer line has lost its full stop
     if (r != null) return [r, letters(k), 0];
     for (let l = level; l < SEPS.length; l++) {
       const sep = SEPS[l]; if (!k.includes(sep)) continue;
@@ -78,17 +82,37 @@
     if (!k || !words(k) || /[\u3000-\u9fff\uff00-\uffef]/.test(k)) return null;   // nothing to translate, or already translated
     if (cache.has(k)) return cache.get(k);
     let [t, done, left] = parts(k, 0);
-    const [, pre, core, post] = /^([·•\s]*)([\s\S]*?)([\s·•]*)$/.exec(k);   // "· frozen until block #5" is a fragment of a line
+    const [, pre, core, post] = /^([·•\s]*)([\s\S]*?)([\s·•]*)$/.exec(k);   // "· frozen until block #5" is a fragment of a line; so is "{e1}Headline: text" with a leading bold label
     if (left && core !== k) { const [t2, d2, l2] = parts(core, 0); if (l2 < left) [t, done, left] = [pre + t2 + post, d2, l2]; }
+    if (left && /^\{e\d+\}|\{e\d+\}$/.test(k)) {   // "{e1}Headline: text": a bold label before or after the sentence
+      let a = "", b = "", c = k, m;
+      while ((m = /^\{e\d+\}\s*/.exec(c))) { a += m[0]; c = c.slice(m[0].length); }
+      while ((m = /\s*\{e\d+\}$/.exec(c))) { b = m[0] + b; c = c.slice(0, -m[0].length); }
+      const [t3, d3, l3] = parts(c, 0); if (l3 < left) [t, done, left] = [a + t3 + b, d3, l3];
+    }
     if (left) note(k);
     const r = done && left <= done / 4 ? t : null;   // a line that would stay mostly English stays all English
     if (cache.size > 4000) cache.clear();
     cache.set(k, r);
     return r;
   };
-  api.t = s => { const r = lookup(squash(s)); return r == null ? s : r; };
+  /* a hover built from several lines: each line on its own, so one unknown line cannot spoil the rest */
+  const byLine = s => {
+    if (!s.includes("\n")) return null;
+    let any = false;
+    const out = s.split("\n").map(l => { const r = lookup(squash(l)); if (r != null) { any = true; return r; } return l; });
+    return any ? out.join("\n") : null;
+  };
+  /* whichever of whole-text and line-by-line leaves fewer English words */
+  const latin = s => (s.match(/[A-Za-z]{2,}/g) || []).length;
+  const best = s => {
+    const w = lookup(squash(s)), l = byLine(s.trim());
+    if (w == null || l == null) return w ?? l;
+    return latin(l) < latin(w) ? l : w;
+  };
+  api.t = s => { const r = best(s); return r == null ? s : r; };
   const tr = s => {
-    const k = squash(s), r = lookup(k);
+    const r = best(s);
     if (r == null) return null;
     const lead = /^\s/.test(s) && !/^[，。：；、）]/.test(r) ? " " : "", tail = /\s$/.test(s) ? " " : "";
     return lead + r + tail;
@@ -105,6 +129,7 @@
   /* a sentence with a link or bold word inside is several text nodes; translate it whole so the word order can change.
      The inline elements become {e1} {e2} … in the key and keep their place (and listeners) in the translation. */
   const INLINE = new Set(["A", "B", "STRONG", "EM", "I", "SPAN", "CODE", "SMALL", "KBD", "SUB", "SUP", "ABBR", "U", "S", "MARK", "TIME", "Q"]);
+  const done = new WeakMap();   // element → its text right after our last block translation
   function block(el) {
     if (!el || el.nodeType !== 1 || skip(el)) return false;
     const kids = el.childNodes; if (kids.length < 2 || kids.length > 13) return false;
@@ -115,7 +140,8 @@
     }
     if (!els.length || !words) return false;
     const r = lookup(squash(key));
-    if (r == null) return false;
+    if (r == null || r === squash(key)) return false;
+    if (done.get(el) === el.textContent) return true;   // already shows our translation; writing it again would wake the observer forever
     const bits = r.split(/(\{e\d+\})/), used = new Set();
     for (const b of bits) { const m = /^\{e(\d+)\}$/.exec(b); if (m) { if (used.has(m[1]) || !els[m[1] - 1]) return false; used.add(m[1]); } }
     if (used.size !== els.length) return false;
@@ -123,6 +149,7 @@
     if (lead && typeof nodes[0] === "object" && nodes[0].nodeType === 3) nodes[0].nodeValue = lead + nodes[0].nodeValue;
     el.replaceChildren(...nodes);
     els.forEach(walk);
+    done.set(el, el.textContent);
     return true;
   }
   function attrs(el) {
@@ -131,10 +158,11 @@
   }
   function walk(root) {
     if (root.nodeType === 3) return block(root.parentElement) || text(root);
-    if (root.nodeType !== 1 || SKIP.has(root.nodeName)) return;
+    if (root.nodeType !== 1) return;
+    if (SKIP.has(root.nodeName)) { if (root.nodeName === "TEXTAREA") attrs(root); return; }   // a text box keeps its text, but its placeholder is ours
     if (root.hasAttributes()) attrs(root);
     block(root);
-    const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeType === 1 && SKIP.has(n.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeType === 1 && SKIP.has(n.nodeName) ? (n.nodeName === "TEXTAREA" && attrs(n), NodeFilter.FILTER_REJECT) : NodeFilter.FILTER_ACCEPT });
     for (let n = w.nextNode(); n; n = w.nextNode()) { if (n.nodeType === 3) text(n); else { if (n.hasAttributes()) { attrs(n); colorEl(n); } block(n); } }
     colorEl(root);
   }
@@ -190,6 +218,7 @@
   });
 
   const obs = new MutationObserver(list => {
+    if (document.readyState === "loading") return;   // the parser can hand over half a text node; the full pass runs at DOMContentLoaded
     let css = false;
     for (const m of list) {
       if (m.type === "characterData") { if (!block(m.target.parentElement)) text(m.target); }

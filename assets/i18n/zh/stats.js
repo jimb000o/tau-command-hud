@@ -115,6 +115,7 @@ TauI18n.add({ strings: {
   "Our relay does not keep the full chain yet, so this page shows the last {x1} blocks and adds new ones while it stays open.": "我们的中继还没有保存完整的链，所以本页显示最近 {x1} 个区块，并在页面打开期间添加新区块。",
   "Our relay does not keep the full history yet, so this page reads the last 50 blocks it holds and adds every new block while it stays open.": "我们的中继还没有保存完整历史，所以本页读取它保存的最近 50 个区块，并在页面打开期间添加每个新区块。",
   "Our relay records every restart since {x1}, {x2}.": "我们的中继自 {x1}（{x2}）起记录每次重启。",
+  "Our relay records every restart since {x}, {y}.": "我们的中继自 {x} {y} 起记录每一次重启。",
   "Our relay records every restart since {x}.": "我们的中继自 {x} 起记录每次重启。",
   "Ours: #{n}.": "我们的：#{n}。",
   "out of all senders seen on this chain.": "占这条链上见过的所有发送方的比例。",
