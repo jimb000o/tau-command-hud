@@ -98,6 +98,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .news li { padding: 6px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
 .news li.k-proposed { border-left-color: var(--behind); } .news li.k-agreed, .news li.k-active { border-left-color: var(--ok); } .news li.k-restart { border-left-color: #fff; }
 .news li b { color: #fff; font-weight: 600; }
+.news li.fresh { animation: fresh 2.4s ease-out; }
+@keyframes fresh { from { background: rgba(57,255,138,.22); } to { background: rgba(255,255,255,.025); } }
+@media (prefers-reduced-motion: reduce) { .news li.fresh { animation: none; } }
 .news li em { font-style: normal; color: var(--dim); }
 .news li a { color: var(--dim); }
 .empty { color: var(--dim); font-size: 13px; padding: 18px 4px; }
@@ -106,7 +109,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .grp:first-child { margin-top: 0; }
 .grp small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
 .list > li.quiet { color: var(--dim); font-size: 13px; padding: 4px 2px 6px; }
-.list > li.sched { color: var(--dim); font-size: 13px; padding: 6px 12px; border-left: 2px solid var(--behind); background: rgba(255,177,59,.05); }
+.list > li.sched { color: var(--dim); font-size: 13px; }
 .list > li.sched b { color: #fff; }
 .list > li.sched b::first-letter { text-transform: uppercase; }
 .list > li.sched .when { display: block; margin-top: 3px; opacity: .8; }
@@ -139,6 +142,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .pbar .voting { color: var(--behind); }
 .pbar .dropped { color: rgba(255,255,255,.25); }
 .pbar .agreed { color: var(--behind); }
+.pbar .ghost { color: rgba(255,177,59,.6); background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 8px) center / 100% 2px no-repeat; }
+.pbar .ghost::after { opacity: .6; }
+.tick.ghost { border-left: 2px dotted rgba(255,177,59,.7); }
 .pbar button.cut::after { display: none; }   /* decided here; the end marker sits at the activation block */
 .pbar button.due { min-width: 0; width: 0; background: none; }
 .pbar button.due::before { left: -4px; top: 2px; width: 8px; height: 8px; border-radius: 1px; transform: rotate(45deg); background: var(--deck); }
@@ -185,6 +191,7 @@ html.fit .modal .sheet { max-height: calc((100vh - 40px) / var(--z)); }
 .dcols pre.code { max-height: 38vh; }
 html.fit .dcols pre.code { max-height: calc(38vh / var(--z)); }
 @media (max-width: 900px) { .dcols { grid-template-columns: minmax(0, 1fr); } .dcols > div + div { margin-top: 14px; } }
+.sheet h2 .cap { display: inline-block; } .sheet h2 .cap::first-letter { text-transform: uppercase; }
 .sheet h2 { font: 600 17px/1.35 var(--display); letter-spacing: 0; text-transform: none; color: #fff; }
 .sheet h3 { margin: 14px 0 4px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
@@ -293,7 +300,7 @@ const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
 const params = new URLSearchParams(location.search);
 const SIM = !params.has("sample") && !!(window.TauSim && TauSim.on);   // simulation mode: the same made-up chain as every other page (assets/sim.js)
 const DATA = params.get("data") || "https://node.tauhud.com/proposals.json";
-const POLL = 20000;
+const POLL = SIM ? 3000 : 10000;   // the simulation is local and cheap; live reads the tracker file, rewritten after every block
 const STATUS = { voting: "waiting for votes", agreed: "agreed", active: "in force", dropped: "dropped" };
 const X_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.2 2.3h3.4l-7.4 8.4 8.7 11.5h-6.8l-5.3-7-6.1 7H1.3l7.9-9L.9 2.3h7l4.8 6.4 5.5-6.4zm-1.2 17.9h1.9L7.1 4.2H5.1l11.9 16z"/></svg>';
 let D = null, filter = "decided", failures = 0, hovering = false, pending = false;
@@ -392,11 +399,22 @@ function rowOf(p) {
   return `<li class="${st}"><button type="button" data-id="${esc(p.id)}"><span class="badge b-${st}">${STATUS[st]}</span><b style="display:inline">${esc(p.title)}</b>
     <span class="m">${m} · proposed at #${fmtN(p.proposed_at)}${diffTag(p)}</span></button></li>`;
 }
+const EVENT = {
+  stake: { what: "proof of stake takes over", why: "The chain changes how it picks who seals blocks: the six richest accounts take over from the fixed list.", watch: "Watch the proposer change in the Chain core." },
+  fixed: { what: "the fixed validator list returns", why: "The chain goes back to a fixed validator list: a known set seals blocks again instead of the richest accounts.", watch: "Watch the validator ring in the Chain core." },
+  admit: { what: "a new validator joins", why: "One more party seals blocks and votes on rule changes.", watch: "Watch a new diamond appear on the validator orbit." },
+  remove: { what: "a validator leaves", why: "One party fewer seals blocks and votes on rule changes.", watch: "Watch a diamond vanish from the validator orbit." },
+  super: { what: "two thirds must agree", why: "Changing the rules gets harder: two thirds of the validators must agree instead of more than half.", watch: "Watch the agreement arc need more votes." },
+  major: { what: "more than half must agree", why: "Changing the rules gets easier: more than half of the validators is enough.", watch: "Watch the agreement arc fill sooner." },
+  restart: { what: "the simulated chain starts over", why: "At midnight UTC the simulated chain starts again from block 0, as the real alpha testnet did more than once.", watch: "Watch the height reset." }
+};
+let SCHED = [], lastSig = "", seenNews = null;
 function render() {
   if (hovering) { pending = true; return; }
   pending = false;
   if (!D) return;
   tiles();
+  SCHED = (D.upcoming || []).filter(u => u.status === "scheduled");
   timeline();
   const P = D.proposals;
   const by = s => P.filter(p => p.status === s).sort((a, b) => a.activate_at - b.activate_at);
@@ -405,21 +423,12 @@ function render() {
   $("openCount").textContent = voting.length + agreed.length ? `(${voting.length + agreed.length})` : "";
   // the simulation announces its programme: special rule changes at fixed times of the day, and the restart at midnight
   /* the programme ahead, in the words of the header badge (assets/nav.js): what happens, why it matters, where to watch it */
-  const EVENT = {
-    stake: { what: "proof of stake takes over", why: "The chain changes how it picks who seals blocks: the six richest accounts take over from the fixed list.", watch: "Watch the proposer change in the Chain core." },
-    fixed: { what: "the fixed validator list returns", why: "The chain goes back to a fixed validator list: a known set seals blocks again instead of the richest accounts.", watch: "Watch the validator ring in the Chain core." },
-    admit: { what: "a new validator joins", why: "One more party seals blocks and votes on rule changes.", watch: "Watch a new diamond appear on the validator orbit." },
-    remove: { what: "a validator leaves", why: "One party fewer seals blocks and votes on rule changes.", watch: "Watch a diamond vanish from the validator orbit." },
-    super: { what: "two thirds must agree", why: "Changing the rules gets harder: two thirds of the validators must agree instead of more than half.", watch: "Watch the agreement arc need more votes." },
-    major: { what: "more than half must agree", why: "Changing the rules gets easier: more than half of the validators is enough.", watch: "Watch the agreement arc fill sooner." },
-    restart: { what: "the simulated chain starts over", why: "At midnight UTC the simulated chain starts again from block 0, as the real alpha testnet did more than once.", watch: "Watch the height reset." }
-  };
-  const U = (D.upcoming || []).filter(u => u.status === "scheduled"), hhmm = x => new Date(x * 1000).toISOString().slice(11, 16);
+  const U = SCHED, hhmm = x => new Date(x * 1000).toISOString().slice(11, 16);
   const inMin = x => { const m = Math.ceil((x - Date.now() / 1000) / 60); return m <= 0 ? "now" : m < 60 ? `in ${m} min` : `in ${Math.floor(m / 60)} h ${m % 60} min`; };
   const sched = U.length ? `<h3 class="grp">Scheduled in the simulation <small>(${U.length})</small></h3><ul class="list">${U.map(u => {
     const ev = EVENT[u.kind] || { what: u.short || u.title, why: u.title, watch: "" };
     const when = u.kind === "restart" ? `at ${hhmm(u.at_ts)} UTC (${inMin(u.at_ts)})` : `${u.proposed_ts ? `proposed at ${hhmm(u.proposed_ts)} UTC, ` : ""}in force at ${hhmm(u.at_ts)} UTC (${inMin(u.at_ts)})`;
-    return `<li class="sched"><b>${esc(ev.what)}</b>${esc(ev.why)} ${esc(ev.watch)}<span class="when">${when}</span></li>`; }).join("")}</ul>` : "";
+    return `<li class="soon sched"><button type="button" data-sched="${SCHED.indexOf(u)}" aria-label="${esc(ev.what)}"><b>${esc(ev.what)}</b>${esc(ev.why)} ${esc(ev.watch)}<span class="when">${when}</span></button></li>`; }).join("")}</ul>` : "";
   $("openList").innerHTML = (!voting.length && !agreed.length
     ? (sched ? `<ul class="list"><li class="quiet">No proposal is open right now.</li></ul>` : `<ul class="list"><li class="empty"><b>Nothing is coming up right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}</ul>`)
     : `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(soonCard).join("")
@@ -431,9 +440,11 @@ function render() {
   $("allList").innerHTML = shown.length ? shown.map(rowOf).join("")
     : (P.length ? `<li class="empty">None with this filter.</li>` : `<li class="empty">No rule change has been proposed on this chain yet. The genesis rules are in force.</li>${HOWTO}`);
   const E = D.events || [];
-  $("newsList").innerHTML = E.length ? E.map(e => `<li class="k-${esc(e.kind)}"><b>${esc(e.headline)}</b><br>${esc(e.body)}<br>
+  const keyOf = e => e.key || `${e.kind}:${e.h}:${e.headline}`, fresh = k => seenNews && !seenNews.has(k);   // an event that arrived while the page was open flashes once
+  $("newsList").innerHTML = E.length ? E.map(e => `<li class="k-${esc(e.kind)}${fresh(keyOf(e)) ? " fresh" : ""}"><b>${esc(e.headline)}</b><br>${esc(e.body)}<br>
     <em>${e.h ? `block #${fmtN(e.h)} · ` : ""}${ago(e.ts || e.seen)}</em></li>`).join("")
     : NEWS_EMPTY;
+  seenNews = new Set(E.map(keyOf));
   const ch = D.channels || {};
   if (ch.telegram) $("fTg").href = ch.telegram;
   if (ch.x && !$("fX")) $("fRss").insertAdjacentHTML("beforebegin", `<a class="btn" id="fX" href="${esc(ch.x)}" target="_blank" rel="noopener">${X_SVG}X</a>`);
@@ -458,10 +469,12 @@ function timeline() {
   const act = P.filter(p => p.status === "active").sort((a, b) => a.activated_at - b.activated_at);
   const agr = P.filter(p => p.status === "agreed").sort((a, b) => a.activate_at - b.activate_at);
   const vot = P.filter(p => p.status === "voting").sort((a, b) => a.activate_at - b.activate_at);
-  const far = Math.max(head, ...P.map(p => p.activate_at || 0));
+  // the simulation's programme, not proposed yet: drawn ahead of "now" as ghosts, so the next event is visible before it lands
+  const SCH = SCHED.filter(u => u.kind !== "restart" && u.proposed_at != null && u.activate_at > head);
+  const far = Math.max(head, ...P.map(p => p.activate_at || 0), ...SCH.map(u => u.activate_at));
   // the scale squeezes quiet stretches: every gap between two events gets width by the log of its length, so a wait of
   // thousands of empty blocks does not crush the events around it; within a gap the blocks are evenly spaced
-  const marks = [...new Set([lo, head, far, ...P.flatMap(p => [p.proposed_at, p.activated_at ?? p.expired_at ?? p.activate_at])].filter(h => h != null && h >= lo))].sort((a, b) => a - b);
+  const marks = [...new Set([lo, head, far, ...P.flatMap(p => [p.proposed_at, p.activated_at ?? p.expired_at ?? p.activate_at]), ...SCH.flatMap(u => [u.proposed_at, u.activate_at])].filter(h => h != null && h >= lo))].sort((a, b) => a - b);
   // a short tail after the last event, so the newest (agreed or proposed) stretch has room for its label
   marks.push(far + Math.max(1, Math.round((far - lo) * 0.02)));
   const wts = marks.slice(1).map((h, i) => Math.log1p(h - marks[i])); wts[wts.length - 1] = Math.max(wts[wts.length - 1], 0.9 * wts.reduce((a, b) => a + b, 0) / wts.length);
@@ -493,10 +506,15 @@ function timeline() {
   const segHtml = (s, i) => { const w = (x(s.to) - x(s.h)) * 100, cur = !s.future && (i + 1 === segs.length || segs[i + 1].future);
     const txt = `Revision ${s.rev}` + (cur ? " · in force now" : s.future ? " · agreed" : "");
     return `<div class="seg${cur ? " now" : ""}${s.future ? " future" : ""}" role="button" tabindex="0" data-seg="${i}" aria-label="${esc(txt)}" style="left:${pc(s.h)};width:calc(${w.toFixed(3)}% - 2px)" data-tip="${esc(segTip(s, cur))}">${label(txt, w, `Rev ${s.rev}`)}</div>`; };
-  const ticks = segs.slice(1).map(s => `<i class="tick${s.future ? " future" : ""}" style="left:${pc(s.h)}"></i>`).join("");
+  const ticks = segs.slice(1).map(s => `<i class="tick${s.future ? " future" : ""}" style="left:${pc(s.h)}"></i>`).join("")
+    + SCH.map(u => `<i class="tick ghost" style="left:${pc(u.activate_at)}"></i>`).join("");
+  const hm = x => new Date(x * 1000).toISOString().slice(11, 16), inM = x => inTime(Math.max(0, x - Date.now() / 1000));
+  const schTip = u => `Scheduled: “${u.title}”\nproposed at #${fmtN(u.proposed_at)}, ${hm(u.proposed_ts)} UTC (${inM(u.proposed_ts)}), in force at #${fmtN(u.activate_at)}, ${hm(u.at_ts)} UTC (${inM(u.at_ts)}), if the validators agree.\nSimulated. Click for what it does.`;
+  const schMode = { stake: "stake", fixed: "validator_set" };
   const mHtml = msegs.map((s, i) => { const w = (x(s.to) - x(s.h)) * 100, cur = s === nowM;
     const tip = `${consName(s.m)}${cur ? ", in force now" : s.future ? `, agreed: from block #${fmtN(s.h)}` : ""}: ${(CONS[s.m] || ["", s.m])[1]}.` + (s.p ? `\nSwitched by the agreed rule change “${s.p.title}”. Click for the proposal.` : `\nTau has no proof of work. The mechanism is part of the chain state and switches only through an agreed rule change.${modes.length === 1 ? " No switch so far." : ""}`);
     return `<div class="seg${cur ? " now" : ""}${s.future ? " future" : ""}" ${s.p ? `data-id="${esc(s.p.id)}" ` : ""}role="button" tabindex="0" style="left:${pc(s.h)};width:calc(${w.toFixed(3)}% - 2px)" aria-label="${esc(consName(s.m))}" data-tip="${esc(tip)}">${label(consName(s.m) + (s.m === "validator_set" ? " · fixed validator list" : ""), w, consName(s.m))}</div>`; }).join("")
+    + SCH.filter(u => schMode[u.kind]).map(u => `<div class="seg maybe" data-sched="${SCHED.indexOf(u)}" role="button" tabindex="0" style="left:${pc(u.activate_at)};width:calc(${((1 - x(u.activate_at)) * 100).toFixed(3)}% - 2px);z-index:1;background:var(--deck)" data-tip="${esc(schTip(u))}">${label("→ " + consName(schMode[u.kind]) + "?", (1 - x(u.activate_at)) * 100, "→ " + { stake: "PoS", validator_set: "PoA" }[schMode[u.kind]] + "?")}</div>`).join("")
     + maybe.map(p => `<div class="seg maybe" data-id="${esc(p.id)}" role="button" tabindex="0" style="left:${pc(p.activate_at)};width:calc(${((1 - x(p.activate_at)) * 100).toFixed(3)}% - 2px);z-index:1;background:var(--deck)" data-tip="${esc(`Proposed: switch to ${consName(modeOf(p))} at block #${fmtN(p.activate_at)}, if enough validators agree by then (${p.counted_votes} of ${p.thr} votes so far). Click for the proposal.`)}">${label("→ " + consName(modeOf(p)) + "?", (1 - x(p.activate_at)) * 100, "→ " + { stake: "PoS", validator_set: "PoA", tau_validator_set: "Tau list" }[modeOf(p)] + "?")}</div>`).join("");
   // one bar per proposal, from its proposal to its end (in force, dropped, or its activation block). On the live chain the
   // activation block lies thousands of blocks after the vote: then the bar ends where it was decided and a marker sits at
@@ -515,6 +533,8 @@ function timeline() {
     const tip = esc(`“${p.title}”\nproposed at #${fmtN(p.proposed_at)}, ${what}.${modeOf(p) ? `\nSwitches the consensus mechanism to ${consName(modeOf(p))}.` : ""}\nClick for the rule diff and the votes.`);
     return [lane, `<button type="button" class="${p.status}${split ? " cut" : ""}" data-id="${esc(p.id)}" style="left:${pc(p.proposed_at)};width:${w.toFixed(3)}%" aria-label="${esc(p.title)}" data-tip="${tip}"></button>`
       + (split ? `<button type="button" class="${p.status} due" data-id="${esc(p.id)}" style="left:${pc(end)}" aria-label="${esc(p.title)}: ${p.status === "active" ? "in force" : p.status === "dropped" ? "dropped" : "takes effect"} at #${fmtN(end)}" data-tip="${tip}"></button>` : "")]; });
+  SCH.forEach(u => { const x0 = x(u.proposed_at) * 100, w = Math.max(0.4, (x(u.activate_at) - x(u.proposed_at)) * 100);
+    pBars.push([laneOf([[x0, x0 + w]]), `<button type="button" class="ghost" data-sched="${SCHED.indexOf(u)}" style="left:${pc(u.proposed_at)};width:${w.toFixed(3)}%" aria-label="${esc(u.title)}" data-tip="${esc(schTip(u))}"></button>`]); });
   const pRows = lanes.map((_, i) => `<div class="pbar">${pBars.filter(b => b[0] === i).map(b => b[1]).join("")}</div>`).join("");
   // axis labels at the events, left to right, skipping any that would touch the one before
   const gap = 100 * 84 / trackW, keep = [lo, head, ...(Math.abs(x(far) - x(head)) * 100 >= gap ? [far] : [])];
@@ -528,7 +548,8 @@ function timeline() {
     <span class="ln"></span><div class="axis">${ax}</div>`;
   const nextA = agr[0];
   $("tlNote").innerHTML = `Revision <b>${D.rules ? D.rules.revision : bounds.filter(b => !b.future).pop().rev}</b> is in force. ` +
-    (nextA ? `Next change: <b>#${fmtN(nextA.activate_at)}</b>, ${plural(left(nextA), "block")} from now${eta(left(nextA)) ? ` (${eta(left(nextA))})` : ""}. ` : "No agreed change is waiting. ") +
+    (nextA ? `Next change: <b>#${fmtN(nextA.activate_at)}</b>, ${plural(left(nextA), "block")} from now${eta(left(nextA)) ? ` (${eta(left(nextA))})` : ""}. `
+      : SCH.length ? `Next: <b>${esc(SCH[0].title)}</b> at ${hm(SCH[0].at_ts)} UTC (${inM(SCH[0].at_ts)}). ` : "No agreed change is waiting. ") +
     `Consensus: <b>${esc(consName(nowM.m))}</b>${modes.length > 1 ? `, ${plural(modes.filter(s => s.p && !s.future).length, "switch", "switches")} so far` : ", never switched"}.` +
     ` Not to scale: long stretches without events are drawn shorter.`;
 }
@@ -557,7 +578,7 @@ function openSeg(i) {
   tl.addEventListener("mousemove", e => { if (!box.hidden) place(e.clientX, e.clientY); });
   tl.addEventListener("mouseleave", () => { box.hidden = true; });
   tl.addEventListener("click", e => { box.hidden = true; const s = e.target.closest("[data-seg]"); if (s) openSeg(+s.dataset.seg); });
-  tl.addEventListener("keydown", e => { if (e.key !== "Enter" && e.key !== " ") return; const t = e.target.closest("[data-seg], [data-id]"); if (!t) return; e.preventDefault(); t.click(); });
+  tl.addEventListener("keydown", e => { if (e.key !== "Enter" && e.key !== " ") return; const t = e.target.closest("[data-seg], [data-id], [data-sched]"); if (!t) return; e.preventDefault(); t.click(); });
   const p = document.querySelector(".p-rules");
   p.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") hovering = true; });
   p.addEventListener("pointerleave", () => { hovering = false; if (pending) render(); });
@@ -595,6 +616,31 @@ function openDetail(p, push) {
   $("mDetail").querySelector(".close").focus();
   if (push) try { history.replaceState(null, "", "#" + p.id.slice(0, 16)); } catch {}
 }
+/* a scheduled event of the simulation's programme, not proposed yet: the same detail sheet as a proposal */
+function openSched(u) {
+  if (!u) return;
+  const ev = EVENT[u.kind] || { what: u.short || u.title, why: u.title, watch: "" };
+  const hhmm = x => new Date(x * 1000).toISOString().slice(11, 16), r = D.rules || {};
+  const when = x => { const m = Math.ceil((x - Date.now() / 1000) / 60); return `${hhmm(x)} UTC (${m <= 0 ? "now" : inTime(m * 60)})`; };
+  const restart = u.kind === "restart";
+  const steps = restart ? [["now", `<b>Starts over</b> at ${when(u.at_ts)}: the simulated chain begins again from block 0.`]] : [
+    ["now", `<b>Proposed</b> at block #${fmtN(u.proposed_at)}, ${when(u.proposed_ts)}, by one of the simulated validators.`],
+    ["", `<b>Votes:</b> the simulated validators vote in the blocks after it. It needs ${r.votes_needed} of ${r.validators} (${esc(quorumWords(r.quorum))}).`],
+    ["", `<b>In force</b> at block #${fmtN(u.activate_at)}, ${when(u.at_ts)}, if enough validators agree by then. Otherwise it is dropped and the old rules stay.`]];
+  lastFocus = document.activeElement; openId = "sched";
+  $("dTitle").innerHTML = `<span class="badge b-voting">scheduled</span> <span class="cap">${esc(ev.what)}</span>`;
+  $("dBody").innerHTML = `<div class="dcols"><div><h3>What happens</h3><p class="why">${esc(u.title)}</p>
+    <h3>Why it matters</h3><p class="why">${esc(ev.why)}</p>
+    <h3>${restart ? "When" : "Timeline"}</h3><ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul></div><div>
+    <h3>Where to watch it</h3><p class="why">${esc(ev.watch)}</p>
+    <p class="note"><a href="/">Open the HUD</a> · <a href="/explorer/">Explorer</a> · <a href="/history/">Time travel</a></p>
+    ${restart ? "" : `<h3>Not proposed yet</h3><p class="note" style="margin:0">It appears in the lists here once it is proposed, with its votes and its rule text. Every change of the programme is proposed 10 minutes ahead, then voted on like a real rule change.</p>`}
+    <h3>Simulated</h3><p class="note" style="margin:0">Generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet.</p></div></div>`;
+  $("mDetail").querySelector(".sheet").classList.add("w2");
+  $("mDetail").hidden = false;
+  $("mDetail").querySelector(".close").focus();
+}
+const quorumWords = q => ({ supermajority: "two thirds", majority: "more than half" }[q] || q || "");
 function closeModal() {
   $("mDetail").hidden = true; openId = null;
   try { history.replaceState(null, "", location.pathname + location.search); } catch {}
@@ -613,6 +659,7 @@ $("dBody").addEventListener("click", e => {
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("mDetail").hidden) closeModal(); });
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-id]"); if (b) openDetail(D.proposals.find(p => p.id === b.dataset.id), true);
+  const sc = e.target.closest("[data-sched]"); if (sc) openSched(SCHED[+sc.dataset.sched]);
   const f = e.target.closest("[data-f]");
   if (f) { filter = f.dataset.f; document.querySelectorAll("#chips button").forEach(x => x.setAttribute("aria-pressed", x === f)); render(); }
 });
@@ -668,11 +715,15 @@ async function load() {
   try {
     const r = await (SIM ? TauSim.fetch("/proposals.json") : fetch(DATA, { cache: "no-store" }));
     if (!r.ok) throw new Error(r.status);
-    D = await r.json();
+    const next = await r.json();
     failures = 0;
+    // redraw only when something changed (a block, a vote, an event), so nothing jumps under the reader in between
+    const sig = JSON.stringify([next.chain && next.chain.head, next.rules, (next.proposals || []).map(p => [p.id, p.status, p.counted_votes]),
+      (next.events || [])[0] && next.events[0].key, (next.upcoming || []).map(u => [u.kind, u.status, u.at_ts])]);
+    const changed = sig !== lastSig; lastSig = sig; D = next;
     const age = Date.now() / 1000 - D.generated_at;
     if (SIM) setState("sim", "Simulation"); else setState(age < 120 ? "live" : "off", age < 120 ? "Live" : `Last update ${ago(D.generated_at)}`);
-    render();
+    if (changed) render();
   } catch (e) {
     failures++;
     setState("off", "Offline");
@@ -685,7 +736,7 @@ async function load() {
 if (SIM) TauSim.mark();
 load();
 setInterval(load, POLL);
-setInterval(() => { if (D) render(); }, 60000);  // "x min ago" keeps moving
+setInterval(() => { if (D) render(); }, 30000);  // countdowns and "x min ago" keep moving
 </script>
 </body>
 </html>
