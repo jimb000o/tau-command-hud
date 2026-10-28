@@ -94,14 +94,16 @@ footer p { margin: 0; }
 .cards > li > button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 10px 14px; border-left: 2px solid var(--hair); background: rgba(255,255,255,.025); border-radius: 0 6px 6px 0; }
 .cards > li > button:hover, .cards > li > button:focus-visible { background: rgba(255,255,255,.07); }
 .cards > li.s-open > button { border-left-color: #fff; }
-.cards > li.s-fixed > button { border-left-color: var(--ok); }
+.cards > li.s-fixed > button, .cards > li.s-partly > button { border-left-color: var(--ok); }
+.cards p.idni { color: var(--dim); }
+.cards p.idni b { color: var(--ok); font-weight: 600; }
 .cards .t { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .cards b { color: #fff; font: 600 14px/1.35 var(--display); overflow-wrap: anywhere; }
 .cards .num { color: var(--dim); font: 600 13px var(--display); white-space: nowrap; }
 .cards p { margin: 4px 0 0; color: var(--text); font-size: 13px; }
 .cards .m { display: block; color: var(--dim); font-size: 12px; margin-top: 4px; }
 .badge { display: inline-block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
-.b-open { color: #fff; } .b-fixed { color: var(--ok); } .b-closed, .b-unknown { color: var(--dim); }
+.b-open { color: #fff; } .b-fixed, .b-partly { color: var(--ok); } .b-partly { border-style: dashed; } .b-closed, .b-unknown { color: var(--dim); }
 
 /* worked around on our side */
 .fixes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
@@ -272,12 +274,14 @@ const FINDINGS = [
   },
   {
     n: 79, title: "Dockerfile.standalone does not build from a clean checkout",
+    idni: "partly", idniText: "IDNI’s Dockerfile.standalone has changed since the build we reported: the failing cvc5 prefetch is gone, it builds for Python 3.14 and installs auditwheel, and the docs list the right block 0. Still open: the parallel build needs more memory than a small machine has.",
     found: "Four build failures in a row on a fresh 4 GB machine: a dependency prefetch without a compiler, a Python 3.12 pin against a 3.14 venv, a required auditwheel that is never used, and compile jobs that need over 3 GB each.",
     impact: "Anyone trying to run their own node hits these one after the other; a failed late step repeated a 55-minute dependency build.",
     ours: `Our own <a href="${OURS}/blob/main/infra/node/Dockerfile" target="_blank" rel="noopener">Dockerfile</a> with build caches, one compile job and the fixes above; the <a href="${OURS}/tree/main/kit" target="_blank" rel="noopener">node operator kit</a> uses it.`,
   },
   {
     n: 78, title: "Cannot join tau-testnet-v2: published genesis does not match the network, plus two sync bugs",
+    idni: "partly", idniText: "IDNI fixed the main problem within a day: commit 539d1e2 (“fix(#78)”) ships the genesis the network runs, so fresh nodes can join again. The two sync bugs are still in IDNI’s code; our node patches them.",
     found: "The genesis.json in the repo was not the one the network ran, so a new node rejected block 0 and never synced. Header sync read only one 64 KB frame, and it never fetched past the first 2,000 headers.",
     impact: "Nobody outside IDNI could join the testnet with a fresh node.",
     ours: `IDNI published the right genesis in commit 539d1e2; our node is pinned to it (${pr(13)}). The two sync bugs are patched in our node (read-until-eof, sync-paginate).`,
@@ -347,8 +351,8 @@ function sampleIssues() {
   };
 }
 function status(i, f) {
-  if (!i) return ["unknown", "Status unknown"];
-  if (i.state === "open") return ["open", "Open"];
+  if (!i) return f && f.idni === "partly" ? ["partly", "Partly fixed"] : ["unknown", "Status unknown"];
+  if (i.state === "open") return f && f.idni === "partly" ? ["partly", "Partly fixed"] : ["open", "Open"];
   return i.state_reason === "not_planned" ? ["closed", "Closed, not planned"] : ["fixed", f && f.kind === "request" ? "Done" : "Fixed"];
 }
 
@@ -356,13 +360,13 @@ function status(i, f) {
 let ISSUES = {};
 function render() {
   const got = FINDINGS.filter(f => ISSUES[f.n]);
-  const st = FINDINGS.filter(f => f.kind !== "request").map(f => status(ISSUES[f.n])[0]);
+  const st = FINDINGS.filter(f => f.kind !== "request").map(f => status(ISSUES[f.n], f)[0]);
   $("state").className = "state " + (got.length ? "live" : "off");
   $("stateText").textContent = got.length ? (SAMPLE ? "Sample data" : "Live from GitHub") : "GitHub unreachable";
   const tiles = [
     ["Filed with IDNI", FINDINGS.length, `${plural(FINDINGS.filter(f => f.kind !== "request").length, "bug")}, ${plural(FINDINGS.filter(f => f.kind === "request").length, "request")}`],
     ["Open bugs", got.length ? st.filter(s => s === "open").length : "—", "waiting for IDNI"],
-    ["Fixed by IDNI", got.length ? st.filter(s => s === "fixed").length : "—", "closed as done"],
+    ["Fixed by IDNI", st.filter(s => s === "fixed" || s === "partly").length, st.some(s => s === "partly") ? `${st.filter(s => s === "partly").length} partly: fix landed, issue still open` : "closed as done"],
     ["Patched by us", PATCHES, "running in our node today"],
     ["Comments", got.length ? got.reduce((a, f) => a + (ISSUES[f.n].comments || 0), 0) : "—", "on our issues at IDNI"],
   ];
@@ -372,7 +376,7 @@ function render() {
     const meta = i ? [`filed ${fmtDay(i.created_at)}`, plural(i.comments || 0, "comment"), i.closed_at ? `closed ${ago(i.closed_at)}` : `last activity ${ago(i.updated_at)}`].join(" · ") : "status could not be read from GitHub right now";
     return `<li class="s-${cls}"><button type="button" data-ix="${ix}">
       <span class="t"><span class="badge b-${cls}">${label}</span><span class="num">#${f.n}</span><b>${esc(i ? i.title : f.title)}</b></span>
-      <p>${esc(f.found)}</p><span class="m">${meta}</span></button></li>`;
+      <p>${esc(f.found)}</p>${f.idniText ? `<p class="idni"><b>IDNI:</b> ${esc(f.idniText)}</p>` : ""}<span class="m">${meta}</span></button></li>`;
   }).join("");
   $("fixes").innerHTML = FIXES.map(([t, d]) => `<li><b>${t}</b><span>${d}</span></li>`).join("");
 }
@@ -384,7 +388,7 @@ $("cards").addEventListener("click", e => {
     <h3>What we found</h3><p>${esc(f.found)}</p>
     <h3>Why it matters</h3><p>${esc(f.impact)}</p>
     <h3>What we did</h3><p>${f.ours}</p>
-    <h3>At IDNI</h3><p>${i ? `${label}. Filed ${fmtDay(i.created_at)}, ${plural(i.comments || 0, "comment")}${i.closed_at ? `, closed ${fmtDay(i.closed_at)}` : `, last activity ${ago(i.updated_at)}`}.` : "Status could not be read from GitHub right now."}</p>
+    <h3>At IDNI</h3>${f.idniText ? `<p>${esc(f.idniText)}</p>` : ""}<p>${i ? `${i.state === "open" ? "Issue open on GitHub" : label}. Filed ${fmtDay(i.created_at)}, ${plural(i.comments || 0, "comment")}${i.closed_at ? `, closed ${fmtDay(i.closed_at)}` : `, last activity ${ago(i.updated_at)}`}.` : "Status could not be read from GitHub right now."}</p>
     <p><a class="btn" href="https://github.com/${REPO}/issues/${f.n}" target="_blank" rel="noopener">Open on GitHub</a></p>`;
   $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus();
 });
