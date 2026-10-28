@@ -147,6 +147,11 @@ PEERS_PATH = os.environ.get("PEERS_PATH", "/data/peers.json")
 PEERS_KEEP_DAYS = _env_float("PEERS_KEEP_DAYS", 30)
 PEERS_MAX = _env_int("PEERS_MAX", 1000)
 PEERS_SAVE_SECONDS = _env_float("PEERS_SAVE_SECONDS", 300)
+# A peer counts as online once our node has known it for PEER_STEADY seconds
+# (test nodes that come and go for a minute never show up) and until
+# PEER_ONLINE seconds after it was last seen (no flicker between two polls).
+PEER_STEADY = _env_float("PEER_STEADY_SECONDS", 600)
+PEER_ONLINE = _env_float("PEER_ONLINE_SECONDS", 1800)
 PEER_ID = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{20,128}$")  # base58, like 12D3KooW...
 # the network's bootnode, run by IDNI (infra/docker-compose.yml TAU_BOOTSTRAP_PEERS)
 BOOTNODE_ID = os.environ.get("BOOTNODE_PEER_ID", "12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC")
@@ -1123,8 +1128,10 @@ class Relay:
             for pid, r in self.peer_book["peers"].items():
                 last = max(r["last_direct"] or 0, r["last_heard"] or 0) or None
                 kit = named.get(pid)
+                steady = pid == BOOTNODE_ID or (last or 0) - r["first_seen"] >= PEER_STEADY
                 rows.append({"id": pid, "label": "IDNI bootnode" if pid == BOOTNODE_ID else None,
                              "community": {"id": kit["id"], "name": kit["name"]} if kit else None,
+                             "steady": steady, "online": steady and now - (last or 0) < PEER_ONLINE,
                              "first_seen": r["first_seen"], "last_direct": r["last_direct"],
                              "last_heard": r["last_heard"], "last_seen": last, "head": r["head"],
                              "connected": bool(r.get("connected"))})
@@ -1136,10 +1143,11 @@ class Relay:
             self.peers_text = json.dumps({
                 "peers": rows,
                 # met = our node exchanged something with it; seen = met or listed by a peer
-                "counts": {"connected": sum(r["connected"] for r in rows),
+                "counts": {"connected": sum(r["connected"] for r in rows), "online": sum(r["online"] for r in rows),
                            "met_30m": within(1800, True), "met_24h": within(86400, True),
                            "seen_24h": within(86400), "seen_30d": len(rows)},
                 "bootnode": BOOTNODE_ID, "since": self.peer_book["since"],
+                "steady_seconds": PEER_STEADY, "online_seconds": PEER_ONLINE,
                 "keep_days": PEERS_KEEP_DAYS, "generated_at": round(now),
             }, separators=(",", ":"))
         return self.peers_text

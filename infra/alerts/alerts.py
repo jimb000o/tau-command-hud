@@ -89,6 +89,13 @@ HEALTH_DOWN_BELOW = float(os.environ.get("HEALTH_DOWN_BELOW", 50))   # also "dow
 HEALTH_UP_AT = float(os.environ.get("HEALTH_UP_AT", 70))             # recovered at or above this
 HEALTH_CONFIRM = float(os.environ.get("HEALTH_CONFIRM_SECONDS", 600))
 HEALTH_EVERY = float(os.environ.get("HEALTH_POLL_SECONDS", 60))
+# New nodes on the network (relay /peers and /community/board): one post per node,
+# only after it stayed NEWNODE_HOLD seconds, never for one first seen more than a
+# day ago, at most NEWNODE_DAILY_CAP posts a day (the rest are recorded, not posted).
+NEWNODE_ON = os.environ.get("NEWNODE_ALERTS", "true").lower() in ("1", "true", "yes")
+NEWNODE_HOLD = float(os.environ.get("NEWNODE_HOLD_SECONDS", 1800))
+NEWNODE_DAILY_CAP = int(os.environ.get("NEWNODE_DAILY_CAP", 3))
+NEWNODE_EVERY = float(os.environ.get("NEWNODE_POLL_SECONDS", 300))
 FEED_ITEMS = 100
 RANGE = 100           # relay's getblockrange maximum
 REFETCH_TAIL = 6      # blocks re-read every poll so a replaced tip block (reorg) is noticed
@@ -480,6 +487,52 @@ def health_text(kind: str, h: dict | None, since: float | None = None, now: floa
     if rest:
         lines += ["Still not perfect:"] + [f"• {e(p)}" for p in rest]
     return "\n".join(lines + ["", link])
+
+
+def new_nodes(peers: dict | None, board: dict | None, known: dict, now: float) -> list[dict]:
+    """Nodes worth one post: a kit node that has reported for NEWNODE_HOLD, or a
+    peer (not the bootnode, not a kit node) our node has known that long and
+    still sees. Each comes back once: `known` holds every key ever handled."""
+    out = []
+    for n in (board or {}).get("nodes") or []:
+        key = "kit:" + str(n.get("id"))
+        if key in known or not n.get("online"):
+            continue
+        first, last = n.get("first_seen") or now, n.get("last_seen") or 0
+        if last - first >= NEWNODE_HOLD and now - first < 86400 + NEWNODE_HOLD:
+            out.append({"key": key, "kind": "kit", "name": str(n.get("name") or "node"), "for": last - first,
+                        "height": n.get("height")})
+    kit_peers = {p["id"] for p in (peers or {}).get("peers") or [] if p.get("community")}
+    for p in (peers or {}).get("peers") or []:
+        key = "peer:" + str(p.get("id"))
+        if key in known or p.get("label") or p["id"] in kit_peers:
+            continue
+        first, last = p.get("first_seen") or now, p.get("last_seen") or 0
+        if now - last < 600 and last - first >= NEWNODE_HOLD and now - first < 86400 + NEWNODE_HOLD:
+            out.append({"key": key, "kind": "peer", "id": str(p["id"]), "for": last - first, "head": p.get("head")})
+    return out
+
+
+def nodes_online(peers: dict | None, board: dict | None) -> int:
+    """Our node, the online peers and the online kit nodes that are not among them."""
+    ps = (peers or {}).get("peers") or []
+    named = {p["community"]["id"] for p in ps if p.get("community") and p.get("online")}
+    kit = [n for n in (board or {}).get("nodes") or [] if n.get("online") and n.get("id") not in named]
+    return 1 + sum(1 for p in ps if p.get("online")) + len(kit)
+
+
+def newnode_text(n: dict, online: int) -> str:
+    e = html.escape
+    link = f"<a href=\"{SITE}/nodes/\">All nodes on Tau HUD</a>"
+    if n["kind"] == "kit":
+        head = f"🆕 <b>New community node: {e(n['name'])}</b>"
+        body = (f"Someone started a Tau testnet node with the Tau HUD kit. It has checked every block for "
+                f"{fmt_dur(n['for'])}" + (f" and is at block #{fmt_n(n['height'])}" if n.get("height") else "") + ".")
+    else:
+        head = "🆕 <b>A new node joined the Tau testnet</b>"
+        body = (f"Our node has seen it for {fmt_dur(n['for'])}" + (f", at block #{fmt_n(n['head'])}" if n.get("head") else "")
+                + f". Peer {e(n['id'][:8])}…{e(n['id'][-4:])}, no name: it does not run our kit.")
+    return "\n".join([head, body, f"Nodes online now: {online}.", "", link])
 
 
 # ---------------- outlets ----------------
@@ -924,6 +977,60 @@ class Watcher:
         st.pop("cand", None)
         self.save_state()
 
+    # ---------- new nodes on the network ----------
+    def relay_json(self, path: str) -> dict | None:
+        try:
+            with urllib.request.urlopen(RELAY_HTTP + path, timeout=20) as r:
+                return json.load(r)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            log.warning("newnodes: cannot read %s (%r)", path, exc)
+            return None
+
+    async def maybe_newnodes(self, now: float | None = None):
+        """One Telegram post per genuinely new node (see new_nodes); nodes
+        already there when this first runs are history, not news."""
+        if not NEWNODE_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("newnodes", {})
+        if now - st.get("checked", 0) < NEWNODE_EVERY:
+            return
+        st["checked"] = now
+        peers, board = await asyncio.to_thread(self.relay_json, "/peers"), await asyncio.to_thread(self.relay_json, "/community/board")
+        if peers is None and board is None:
+            return
+        known = st.setdefault("known", {})
+        fresh = new_nodes(peers, board, known, now)
+        if not st.get("primed"):
+            for p in (peers or {}).get("peers") or []:
+                known.setdefault("peer:" + p["id"], round(now))
+            for n in (board or {}).get("nodes") or []:
+                known.setdefault("kit:" + str(n.get("id")), round(now))
+            st["primed"] = True
+            self.save_state()
+            return
+        day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        for n in fresh:
+            posted = st.get("day") == day and st.get("posted", 0) or 0
+            if posted < NEWNODE_DAILY_CAP and tg:
+                text = newnode_text(n, nodes_online(peers, board))
+                for o in tg:
+                    ok, _, err = await asyncio.to_thread(o.send_text, text)
+                    if not ok:
+                        log.warning("new node post failed (%s); trying again next check", err)
+                        self.save_state()
+                        return
+                st["day"], st["posted"] = day, posted + 1
+                log.info("newnodes: posted %s", n["key"])
+            else:
+                log.info("newnodes: %s recorded without a post (%s)", n["key"], "daily cap" if tg else "telegram off")
+            known[n["key"]] = round(now)
+        if len(known) > 5000:  # oldest first out; a key that comes back that late is not new news anyway
+            for k in sorted(known, key=known.get)[:len(known) - 5000]:
+                del known[k]
+        self.save_state()
+
     # ---------- weekly recap ----------
     @staticmethod
     def recap_slot(now: float) -> float:
@@ -1019,6 +1126,7 @@ class Watcher:
                         await self.deliver()
                         await self.maybe_recap()
                         await self.maybe_health()
+                        await self.maybe_newnodes()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
                 raise
