@@ -710,5 +710,10 @@
    "text": "Write a rule change in the Playground and put it to everyone watching the simulation. If more visitors vote yes than no, the simulated validators vote it in and it takes effect for everyone ten minutes later.",
    "link": "/playground/#seat"
   }
+ },
+ {
+  "tag": "What if",
+  "on": "2026-10-28",
+  "html": "What if now says short split where it said fork. Two blocks at one height, which the chain settles within a block or two when blocks come faster than the network carries them, are something different from the fork Tau avoids: changing the rules never needs one. The page says so in its intro, in What happens and in the hover of Network delay."
  }
 ]
