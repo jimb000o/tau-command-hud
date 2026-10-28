@@ -847,11 +847,11 @@
  {
   "tag": "Privacy",
   "on": "2026-10-29",
-  "html": "New page: imprint and privacy notice, in the Learn menu and under the gear. Who runs Tau HUD and exactly what the site processes, in German and English. Along with it the site got more private: the fonts now come from tauhud.com itself instead of Google, the server keeps no access logs, the online counter no longer stores an id in your browser, the simulation stores your anonymous name only once you vote, forecast or propose, and the visit count no longer reads your screen width.",
+  "html": "New page: privacy notice, in the Learn menu and under the gear. Exactly what the site processes, in German and English. Along with it the site got more private: the fonts now come from tauhud.com itself instead of Google, the server keeps no access logs, the online counter no longer stores an id in your browser, the simulation stores your anonymous name only once you vote, forecast or propose, and the visit count no longer reads your screen width.",
   "major": {
-   "id": "imprint-privacy",
-   "title": "New: imprint and privacy notice",
-   "text": "Who runs Tau HUD and exactly what the site processes. No cookies, no tracking, and the fonts now come from the site itself instead of Google.",
+   "id": "privacy",
+   "title": "New: privacy notice",
+   "text": "Exactly what Tau HUD processes. No cookies, no tracking, and the fonts now come from the site itself instead of Google.",
    "link": "/legal/"
   }
  }

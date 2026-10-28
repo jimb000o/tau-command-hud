@@ -30,7 +30,7 @@
     developers: { t: "Developers", d: "Widgets, badges and a free JSON API for your own site", i: "{}", h: "developers/" },
     press:      { t: "Press kit", d: "Video, logo, screenshots, facts and a ready paragraph, free to use", i: "↓", h: "press/" },
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
-    legal:      { t: "Imprint & privacy", d: "Impressum and privacy notice: who runs this site and what it processes (no cookies, no tracking)", i: "§", h: "legal/" },
+    legal:      { t: "Privacy", d: "Privacy notice: exactly what this site processes (no cookies, no tracking)", i: "§", h: "legal/" },
     about:      { t: "About", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
     seat:       { t: "Validator seat", d: "Take a simulated seat and vote a rule change into law", i: "✓", h: "playground/#seat" },
@@ -489,7 +489,7 @@
     const gear = el("div", "gearbody", `<h4>Node</h4><div class="row"><code>wss://${RELAY}</code><span class="hint">Community relay in front of a Tau testnet node run for this site. To read your own node, open the HUD and put its address under the gear there.</span></div><h4>Look</h4><div class="row"></div>`);
     const row = gear.querySelector(".row:last-child");
     const tour = el("a", "pill", "Tour of this page"); tour.href = "#tour"; tour.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); });
-    const hudTour = el("a", "pill", "HUD tour"); hudTour.href = ROOT + "?tour=1"; const about = el("a", "pill", "About"); about.href = ROOT + "#about"; const legal = el("a", "pill", "Imprint & privacy"); legal.href = ROOT + "legal/"; row.append(tour, hudTour, about, legal);
+    const hudTour = el("a", "pill", "HUD tour"); hudTour.href = ROOT + "?tour=1"; const about = el("a", "pill", "About"); about.href = ROOT + "#about"; const legal = el("a", "pill", "Privacy"); legal.href = ROOT + "legal/"; row.append(tour, hudTour, about, legal);
     return { src, view, gear };
   }
 
