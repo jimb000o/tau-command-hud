@@ -1089,5 +1089,14 @@ TauI18n.add({ strings: {
   "It has applied as the second validator. Click to open the Nodes page.": "它已申请成为第二个验证者。点击打开节点页。",
   "Serves this page over wss://node.tauhud.com (getblocks, getmempool, getgovernance); verifies every block, seals none.": "通过 wss://node.tauhud.com 为本页提供数据（getblocks、getmempool、getgovernance）；核验每个区块，不封装任何区块。",
   "Only node besides the IDNI validator (PoA, validator_set mode): the two are the whole visible network right now.": "IDNI 验证者（PoA，validator_set 模式）之外唯一的节点：此刻这两个就是整个可见网络。",
-  "Validator seat requested (BLS key submitted to IDNI). Click to open the Nodes page.": "已申请验证者席位（BLS 公钥已提交给 IDNI）。点击打开节点页。"
+  "Validator seat requested (BLS key submitted to IDNI). Click to open the Nodes page.": "已申请验证者席位（BLS 公钥已提交给 IDNI）。点击打开节点页。",
+  "Update log: entries are grouped by day, a green number marks a version of this page (the HUD), a grey name marks a release of another page and opens it; a legend says so. Page entries no longer repeat their page name as the headline, and the fold hides whole days of older entries.": "更新日志：条目按日期分组，绿色编号表示本页（HUD）的版本，灰色名称表示其他页面的发布并可点击打开；图例予以说明。页面条目的标题不再重复页面名，折叠会整天隐藏较早的条目。",
+  "Version of this page, the HUD": "本页（HUD）的版本",
+  "Release of another page (no version numbers there; the name opens it)": "其他页面的发布（那里没有版本号；点击名称打开）",
+  "Newest first": "最新在前",
+  "Show {n} older entries": "显示 {n} 条较早的条目",
+  "Show the newest twelve only": "只显示最新的十二条",
+  "What changed and when, newest first. A green number is a version of this page, the HUD. A named entry is a release of another page; those pages carry no version numbers, and the name opens the page.": "改了什么、何时改的，最新在前。绿色编号是本页（HUD）的版本。带名称的条目是其他页面的发布；那些页面没有版本号，点击名称可打开页面。",
+  "Alerts": "提醒",
+  "Could not load the log (assets/updates.json).": "无法加载日志（assets/updates.json）。"
 } });
