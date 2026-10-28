@@ -26,7 +26,13 @@
    TauSim.me()             the visitor's anonymous identity {token, name, colour}: a random token and two words, browser only
    TauSim.vote(item, yes)  cast or change a vote (Promise of {ok, error, item})
    TauSim.ballots()        the day's tallies {items: {"slot:<k>": {yes, no, opens, closes, open, outcome, voters, mine}}}
-   TauSim.onBallots(fn)    called whenever the tallies change */
+   TauSim.onBallots(fn)    called whenever the tallies change
+
+   Visitors propose: a visitor may write a rule change in the Playground and put it to everyone (infra/relay/simprops.py,
+   GET /sim/propose). It arrives here with the tallies as a "visitor:<id>" item: the chain takes it in at the block the relay
+   fixed, everyone may vote for six minutes, and if more said yes than no the simulated validators vote it in, one per block,
+   so it is in force ten minutes after it was proposed. Otherwise nobody votes and it lapses. Its kind and value are fixed
+   lists (base fee, a validator in or out, the threshold, the consensus mode, a rule of Tau tokens), never free text. */
 (() => {
   "use strict";
   const PACE = 8, DAY = 86400, FEE0 = 10, BUDGET0 = 8, QUORUM0 = "supermajority", NETWORK = "tau-testnet-v2", KEY = "tau-mode";
@@ -98,6 +104,11 @@
   let BALLOTS = { day: null, now: 0, items: {} }, BAL_AT = 0;
   const BAL_FNS = new Set();
   const slotOutcome = k => OUTSIDE.day === DAYI ? OUTSIDE.slots[k] || null : null;
+  // the visitors' own proposals of the day, from the relay's "visitor:" items: [{item, kind, value, by, proposed_at, close_at, activate_at, outcome}]
+  const visitorsOf = o => o.day === DAYI && Array.isArray(o.visitors) ? o.visitors : [];
+  const VISITOR_VOTE_AT = 2;   // the validators follow a "yes" from two blocks after the visitors' vote closed, one per block
+  const strHash = str => { let h = 2166136261 >>> 0; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619) >>> 0; return h; };
+  const hexFrom = (seed, n) => hexOf(prng(mix(strHash(seed))), n);   // ids for what visitors add, outside the day's random stream: the blocks around stay as they were
   /* the day's programme: one special rule change every hour, proposed 20 minutes in (block 150), in force ten minutes later, the same every day.
      The consensus switch is the rare one, twice a day: proof of stake on at 10:30 UTC, the fixed validator list back at 16:30 UTC (the alerts
      service announces these two on Telegram from the same clock: infra/alerts/alerts.py SIM_SWITCHES). The other hours cycle through a validator
@@ -186,6 +197,42 @@
     else Object.assign(p, { kind: "noop", revisions: [SPEC(rules.fee)], explain: ex("Same rules as now (no real change)", [], "Nothing would change: the text equals the rules already in force. Often a test of the voting itself.", "none") });
     return p;
   }
+  /* a visitor's rule change, as the chain takes it in: the same kinds and words as the day's own proposals; a change that would
+     change nothing by now (the threshold already set, the validator already gone) becomes a no-op, as the node would see it */
+  function visitorProposal(n, rules, v) {
+    const N = rules.validators.length, sponsor = rules.validators[strHash(v.item) % N];
+    const p = { id: hexFrom(v.item, 64), n: ST.props.length + 1, proposer: sponsor, proposed_at: n, activate_at: v.activate_at, approved_at: null, thr: threshold(rules.quorum, N),
+      votes: [], special: null, contested: false, slot: null, abstain: new Set(), patch: null, revisions: [], kind: "", value: null, explain: null,
+      visitor: { item: v.item, by: v.by || [], close_at: v.close_at } };
+    const who = TauSimName(v.by), hm = x => new Date(x * 1000).toISOString().slice(11, 16);
+    const why = w => `${w} Proposed by ${who}, a visitor of Tau HUD, from the Playground: everyone may vote until ${hm(ts(v.close_at))} UTC; if more say yes than no, the simulated validators vote it in.`;
+    const ex = (title, changes, w) => ({ title: "Visitors' proposal: " + title, label: null, changes, unchanged: [], why: why(w), severity: "normal" });
+    const k = v.kind, val = v.value;
+    const ruleFee = k === "rule" && /^always\s*\(\s*o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]{1,6})\s*\}:bv\[24\]\s*\)\s*\.$/.exec(String(val));
+    const fee = k === "fee" ? Number(val) : ruleFee ? parseInt(ruleFee[1], 16) : null;
+    const frees = SPARE.filter(x => !rules.validators.includes(x) && !ST.props.some(y => y.kind === "validator" && y.value === x && ["voting", "agreed"].includes(statusAt(y, n))));
+    const gone = k === "remove" ? rules.validators.find(x => x.startsWith(String(val))) : null;
+    const noop = w => Object.assign(p, { kind: "noop", revisions: [SPEC(rules.fee)], explain: ex("Same rules as now (no real change)", [], w) });
+    if (fee != null && Number.isFinite(fee)) {
+      if (fee === rules.fee) noop(`The base fee is already ${fee} AGRS, so nothing would change.`);
+      else Object.assign(p, { kind: "fee", value: fee, revisions: [k === "rule" ? String(val) : SPEC(fee)], explain: ex(`Base fee ${rules.fee} → ${fee} AGRS`, [{ topic: "Base fee per transaction", text: `${rules.fee} → ${fee} AGRS` }], `Every transaction would cost ${fee} AGRS instead of ${rules.fee}.`) });
+    } else if (k === "add") {
+      if (!frees.length || N >= 10) noop("No free validator key is left to admit.");
+      else { const x = frees[0]; Object.assign(p, { kind: "validator", value: x, patch: { validator_additions: [x] }, explain: ex(`Admit validator ${short(x)}`, [{ topic: "Validators", text: `add ${short(x)}` }], "One more party would make blocks and vote on rule changes.") }); }
+    } else if (k === "remove") {
+      if (!gone || N <= 3) noop(gone ? "At least three validators stay, so nothing would change." : "That validator is no longer in the set, so nothing would change.");
+      else Object.assign(p, { kind: "remove", value: gone, patch: { validator_removals: [gone] }, explain: ex(`Remove validator ${short(gone)}`, [{ topic: "Validators", text: `remove ${short(gone)}` }], "One party fewer would make blocks and vote on rule changes.") });
+    } else if (k === "quorum") {
+      if (val === rules.quorum || !QT[val]) noop(`The threshold is already ${QT[rules.quorum]}, so nothing would change.`);
+      else Object.assign(p, { kind: "quorum", value: val, patch: { vote_quorum: val }, explain: ex(`Agreement threshold → ${QT[val]} of the validators`, [{ topic: "Votes needed for a rule change", text: `${QT[rules.quorum]} → ${QT[val]} of the validators` }], "The rule that governs rule changes would change itself: every later proposal needs this share of the validators.") });
+    } else if (k === "mode") {
+      const to = val === "stake" ? "stake" : "fixed";
+      if ((to === "stake") === (rules.elig === "stake")) noop("The chain already works this way, so nothing would change.");
+      else Object.assign(p, { kind: to, value: to === "stake" ? "stake" : "validator_set", patch: { eligibility_mode: to === "stake" ? "stake" : "validator_set" }, explain: ex(SPECIAL_TITLE[to], [{ topic: "Who may make blocks", text: to === "stake" ? "fixed validator list → by stake (o7)" : "by stake → fixed validator list (o7)" }], to === "stake" ? "Block making would follow stake instead of a fixed list: the richest accounts seal the blocks." : "Block making would follow the fixed validator list again instead of stake.") });
+    } else Object.assign(p, { kind: "visitorrule", value: null, revisions: [String(val)], explain: ex("A visitor's own network rule", [{ topic: "Rules", text: "a new revision with the visitor's rule text" }], "A new revision of the rules with the visitor's text. The simulation records it but cannot run it; the real node compiles every proposal against the rules in force first.") });
+    return p;
+  }
+  const TauSimName = by => Array.isArray(by) && by.length >= 2 ? nameOf(by[0], by[1]) : "a visitor";
   const txType = tx => tx.tx_type ? tx.tx_type : tx.operations && tx.operations["0"] ? "rule_deploy" : "user_tx";
 
   function curRules(h) {
@@ -206,9 +253,20 @@
     const setRule = (a, rule) => ST.rules.set(a, rule);
     // every counted vote is a yes: the node's governance code counts votes, it does not weigh them (alerts/alerts.py replays it the same way)
     const vote = (p, v, h) => { put({ ...base(v), tx_type: "consensus_rule_vote", update_id: p.id, approve: true }); p.votes.push({ h, voter: v, counted: true, approve: true }); if (p.approved_at == null && p.votes.length >= p.thr) p.approved_at = h; };
+    // what visitors bring in takes nothing from the day's random stream, so a browser that learns of it late regenerates the same chain
+    const putQuiet = (tx, seed) => { txs.push(tx); const id = hexFrom(seed, 64); ids.push(id); arrive.push(Math.round(prevT + 0.5 * (t - prevT))); move(tx.sender_pubkey, -fee); TXI.set(id, { h: n, i: txs.length - 1 }); return id; };
+    const voteQuiet = (p, v, h) => { putQuiet({ ...base(v), tx_type: "consensus_rule_vote", update_id: p.id, approve: true }, p.visitor.item + ":vote:" + v); p.votes.push({ h, voter: v, counted: true, approve: true }); if (p.approved_at == null && p.votes.length >= p.thr) p.approved_at = h; };
     // governance: validators vote on every open proposal; the day's programme proposes its special change at the fixed block, an ordinary one comes when nothing is open
     for (const p of ST.props) {
       if (statusAt(p, n - 1) !== "voting" || n >= p.activate_at) continue;
+      if (p.visitor) {
+        // a visitor's proposal: the validators follow the visitors' "yes" once their vote has closed, one vote per block; otherwise nobody votes
+        const o = (visitorsOf(OUTSIDE).find(x => x.item === p.visitor.item) || {}).outcome;
+        if (o !== "yes" || n < p.visitor.close_at + VISITOR_VOTE_AT) continue;
+        const v = rules.validators.find(x => !p.votes.some(y => y.voter === x));
+        if (v) voteQuiet(p, v, n);
+        continue;
+      }
       if (p.special) {
         // the hourly change waits for the visitors: from hh:28 the validators follow their majority, one vote per block; a "no" leaves the proposer alone
         if (n < p.proposed_at + BALLOT_BLOCKS || slotOutcome(p.slot) === "no") continue;
@@ -221,7 +279,14 @@
         vote(p, v, n);
       }
     }
-    const want = specialAt(n), extra = extraAt(n), last = ST.props[ST.props.length - 1], busy = last && ["voting", "agreed"].includes(statusAt(last, n - 1));
+    // a visitor's proposal enters at the block the relay fixed for it, carried by a validator in turn (any key may send a rule update; the votes decide)
+    for (const v of visitorsOf(OUTSIDE)) if (v.proposed_at === n && !ST.props.some(x => x.visitor && x.visitor.item === v.item)) {
+      const p = visitorProposal(n, rules, v);
+      p.tx_id = putQuiet({ ...base(p.proposer), tx_type: "consensus_rule_update", update_id: p.id, rule_revisions: p.revisions, activate_at_height: p.activate_at, ...(p.patch ? { host_contract_patch: p.patch } : {}) }, v.item);
+      ST.props.push(p);
+    }
+    const ordinary = ST.props.filter(p => !p.visitor);   // the day's own rhythm does not wait for visitors
+    const want = specialAt(n), extra = extraAt(n), last = ordinary[ordinary.length - 1], busy = last && ["voting", "agreed"].includes(statusAt(last, n - 1));
     if (extra === "contra") refuse("consensus_rule_update", pick(R, rules.validators), CONTRA_WHY);   // refused at the door: never a proposal, never a vote
     const forced = want || (extra === "contested" ? "contested" : null);
     if (forced || (n >= ST.nextPropAt && !busy)) {
@@ -492,6 +557,10 @@
       out.push({ kind, short: SHORT[kind], title: p ? p.explain.title : SPECIAL_TITLE[kind], proposed_at: n, proposed_ts: ts(n), activate_at: n + SLOT_WAIT, at_ts: ts(n + SLOT_WAIT),
         status: p ? statusAt(p, h) : "scheduled", id: p ? p.id : null, votes: p ? p.votes.filter(v => v.h <= h).length : 0, thr: p ? p.thr : null, ballot: ballotOf((n - SLOT_AT) / SLOT_LEN, t) });
     }
+    // the visitors' own proposals still to come into force: the same shape, with their ballot
+    for (const p of ST.props) if (p.visitor && p.proposed_at <= h && h < p.activate_at && statusAt(p, h) !== "dropped")
+      out.push({ kind: "visitor", short: "visitors' proposal", title: p.explain.title, proposed_at: p.proposed_at, proposed_ts: ts(p.proposed_at), activate_at: p.activate_at, at_ts: ts(p.activate_at),
+        status: statusAt(p, h), id: p.id, votes: p.votes.filter(v => v.h <= h).length, thr: p.thr, ballot: ballotFor(p.visitor.item, t, ts(p.proposed_at), ts(p.visitor.close_at)) });
     out.push({ kind: "restart", short: SHORT.restart, title: SPECIAL_TITLE.restart, proposed_at: null, proposed_ts: null, activate_at: 1, at_ts: (DAYI + 1) * DAY + PACE, status: "scheduled", id: null, votes: 0, thr: null });
     return out.sort((a, b) => a.at_ts - b.at_ts).slice(0, 3);
   }
@@ -505,7 +574,8 @@
       return { id: p.id, n: p.n, title: p.explain.title, parts: [], status: s, proposer: p.proposer, proposed_at: p.proposed_at, proposed_ts: ts(p.proposed_at), activate_at: p.activate_at,
         approved_at: ok ? p.approved_at : null, approved_ts: ok ? ts(p.approved_at) : null, activated_at: s === "active" ? p.activate_at : null, activated_ts: s === "active" ? ts(p.activate_at) : null,
         expired_at: s === "dropped" ? p.activate_at : null, expired_ts: s === "dropped" ? ts(p.activate_at) : null, thr: p.thr, counted_votes: votes.filter(v => v.approve).length,
-        rev: s === "active" ? 2 + active.indexOf(p) : null, revisions: p.revisions, patch: p.patch, dups: [], tx_id: p.tx_id, explain: p.explain, votes, ballot: p.special ? ballotOf(p.slot, t) : null };
+        rev: s === "active" ? 2 + active.indexOf(p) : null, revisions: p.revisions, patch: p.patch, dups: [], tx_id: p.tx_id, explain: p.explain, votes,
+        ballot: p.special ? ballotOf(p.slot, t) : p.visitor ? ballotFor(p.visitor.item, t, ts(p.proposed_at), ts(p.visitor.close_at)) : null, visitor: p.visitor ? { item: p.visitor.item, by: p.visitor.by, name: TauSimName(p.visitor.by), close_at: p.visitor.close_at, close_ts: ts(p.visitor.close_at) } : null };
     }).reverse();
     const events = [];
     for (const p of rows) {
@@ -513,7 +583,7 @@
       say("proposed", p.proposed_at, `New proposal: ${p.title}`, `${p.explain.why} Needs ${p.thr} of ${rulesAt(p.proposed_at).validators.length} validators by block #${p.activate_at}.`);
       if (p.approved_at != null) say("agreed", p.approved_at, `Agreed: ${p.title}`, `${p.counted_votes} votes, enough. Takes effect at block #${p.activate_at}.`);
       if (p.status === "active") say("active", p.activate_at, `In force: ${p.title}`, `Revision ${p.rev} of the rules applies from block #${p.activate_at}.`);
-      if (p.status === "dropped") say("dropped", p.activate_at, `Dropped: ${p.title}`, (p.ballot && p.ballot.outcome === "no" ? `The visitors voted no (${p.ballot.no} no, ${p.ballot.yes} yes), so the validators did not agree. ` : "") + `Only ${p.counted_votes} of ${p.thr} votes by block #${p.activate_at}. The old rules stand.`);
+      if (p.status === "dropped") say("dropped", p.activate_at, `Dropped: ${p.title}`, (p.visitor && p.ballot && p.ballot.outcome !== "yes" ? `The visitors did not vote it in (${p.ballot.yes} yes, ${p.ballot.no} no), so the validators let it lapse. ` : p.ballot && p.ballot.outcome === "no" ? `The visitors voted no (${p.ballot.no} no, ${p.ballot.yes} yes), so the validators did not agree. ` : "") + `Only ${p.counted_votes} of ${p.thr} votes by block #${p.activate_at}. The old rules stand.`);
     }
     // what Tau refused before any vote: a rule change that does not fit the rules in force never becomes a proposal
     for (const d of ST.dropped) if (d.type === "consensus_rule_update" && d.left <= t)
@@ -533,6 +603,13 @@
     let first = Infinity;
     const no = (o, k) => o.day === DAYI && o.slots[k] === "no";   // "yes" and "none" make the same chain
     for (let k = 0; k < 24; k++) if (no(prev, k) !== no(next, k)) first = Math.min(first, SLOT_AT + SLOT_LEN * k + BALLOT_BLOCKS);
+    // visitor proposals: one that appears or vanishes touches its own block, a "yes" that comes or goes the block the validators follow it
+    const pv = new Map(visitorsOf(prev).map(v => [v.item, v])), nv = new Map(visitorsOf(next).map(v => [v.item, v]));
+    for (const id of new Set([...pv.keys(), ...nv.keys()])) {
+      const a = pv.get(id), b = nv.get(id);
+      if (!a || !b || a.proposed_at !== b.proposed_at) first = Math.min(first, (a || b).proposed_at, (b || a).proposed_at);
+      else if ((a.outcome === "yes") !== (b.outcome === "yes")) first = Math.min(first, b.close_at + VISITOR_VOTE_AT);
+    }
     return first;
   }
   function applyOutside(next) {
@@ -555,15 +632,19 @@
     if (j.day === dayKey()) {
       const slots = {};
       for (const [id, it] of Object.entries(j.items)) { const m = /^slot:(\d+)$/.exec(id); if (m && it && it.outcome) slots[m[1]] = it.outcome; }
-      // (a further source of outside input merges its own field into next here)
-      applyOutside({ ...OUTSIDE, day: DAYI, slots });
+      // visitor proposals: the relay keeps the proposal in the item's meta; the outcome is "yes" only with more yes than no
+      const visitors = Object.entries(j.items).filter(([id, it]) => /^visitor:[0-9a-f]{12}$/.test(id) && it && it.meta && Number.isInteger(it.meta.proposed_at))
+        .map(([id, it]) => ({ item: id, kind: it.meta.kind, value: it.meta.value, by: it.meta.by, proposed_at: it.meta.proposed_at, close_at: it.meta.close_at, activate_at: it.meta.activate_at,
+          outcome: it.outcome ? (it.yes > it.no ? "yes" : "no") : null })).sort((a, b) => a.proposed_at - b.proposed_at || (a.item < b.item ? -1 : 1));
+      applyOutside({ ...OUTSIDE, day: DAYI, slots, visitors });
     }
     if (JSON.stringify(j.items) !== was) BAL_FNS.forEach(fn => { try { fn(BALLOTS); } catch (e) {} });
   }
   // poll quickly while a ballot is open or has just closed, slowly otherwise
   function ballotPace() {
     const t = now(), k = Math.floor(((t - G) / PACE - SLOT_AT) / SLOT_LEN), opens = G + (SLOT_AT + SLOT_LEN * k) * PACE;
-    return k >= 0 && t >= opens - 30 && t < opens + BALLOT_SECONDS + 60 ? 5000 : 30000;
+    const visitorOpen = visitorsOf(OUTSIDE).some(v => t >= ts(v.proposed_at) - 30 && t < ts(v.close_at) + 60);   // a visitor's ballot open or just closed
+    return visitorOpen || (k >= 0 && t >= opens - 30 && t < opens + BALLOT_SECONDS + 60) ? 5000 : 30000;
   }
   function pollBallots() {
     const go = () => refreshOutside().catch(() => {}).finally(() => setTimeout(pollBallots, document.hidden ? 30000 : ballotPace()));

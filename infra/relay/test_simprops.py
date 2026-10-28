@@ -42,7 +42,7 @@ h = simprops.head_at(T)
 check(h == 9000, f"head from the clock: 20:00:04 UTC is block 9000 ({h})")
 check(m.get("proposed_at") == 9004 and m.get("close_at") == 9049 and m.get("activate_at") == 9079, "enters 4 blocks ahead, vote 45 blocks, in force 75 after")
 it = s.votes.items[r["id"]]
-check(it["closes"] - it["opens"] == 45 * 8 and m["activate_ts"] == it["opens"] + 75 * 8, "ballot times in seconds match the blocks")
+check(it["opens"] == T and it["closes"] == m["activate_ts"] - 30 * 8, "the ballot opens at once and closes 30 blocks before it is in force")
 check(m["value"] == 8 and m["by"] == [1, 2, 3] and m["kind"] == "fee", "meta carries kind, value and the word-list identity")
 
 for kv, label in [(dict(kind="fee", value="0"), "fee 0"), (dict(kind="fee", value="1001"), "fee over 1000"), (dict(kind="fee", value="x"), "fee not a number"),

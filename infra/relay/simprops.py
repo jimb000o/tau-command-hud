@@ -146,7 +146,7 @@ class SimProps:
         meta = {"kind": kind, "value": value, "by": [int(x) for x in ident], "proposed_at": proposed_at, "close_at": close_at,
                 "activate_at": activate_at, "activate_ts": d0 + activate_at * PACE, "proposer": voter[:8]}
         item_id = f"visitor:{pid}"
-        if not self.votes.register(item_id, d0 + proposed_at * PACE, d0 + close_at * PACE, meta):
+        if not self.votes.register(item_id, now, d0 + close_at * PACE, meta):   # open at once, so the proposer's own yes counts
             return bad("full", "the simulation takes no more ballots today; it starts over at 00:00 UTC")
         self.count += 1
         self.by_voter[voter] = self.by_voter.get(voter, 0) + 1
