@@ -645,6 +645,16 @@
   "html": "Keep it running says plainly where the money goes: most of what Tau HUD costs is time, the development tools behind that work are not free either, and the server is the smallest part. Donations help cover these costs; no promise is attached. Same text in the Updates overlay on every page and in About."
  },
  {
+  "tag": "v17.46",
+  "on": "2026-10-28",
+  "html": "Personal money rules, Rule sharing and refused transactions now fill on the HUD, in Live mode and in the simulation. Every rule an account deploys or accepts appears with its terms; offers show who offered what to whom and whether it was accepted, declined or expired; rules and offers set before you opened the page are fetched per account. What the node refuses at the door shows in the transaction feed with its reason, such as too little balance, a used sequence number, a fee below the base fee, a rule that does not compile or the sender's own rule saying no; hover or click for the full story."
+ },
+ {
+  "tag": "v17.47",
+  "on": "2026-10-28",
+  "html": "What Tau refuses is red again: refused transactions in the feed, the refused counter, a rejected rule offer, a declined approval and the verdict in each detail use the muted refusal red from the Playground; a personal rule that has just said no to a transfer lights up in it too. The bright red stays reserved for offline."
+ },
+ {
   "tag": "Newspaper",
   "on": "2026-10-28",
   "html": "New page: The Daily Consensus, twelve years of Tau as a 1920s newspaper. Ten pages drawn from the Tau team’s own videos and the Chronicle: the front-page story of the chain that changed its consensus by vote, the road from Zennet, obituaries for dropped plans, telegrams from 2025, letters from the monthly Q&As, classifieds and puzzles. Click, tap or press the arrow keys to turn a page; on phones and small screens it becomes a pocket edition. In Chinese too. Find it under Learn."
