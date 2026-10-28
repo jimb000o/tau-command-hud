@@ -648,5 +648,10 @@
   "tag": "v17.46",
   "on": "2026-10-28",
   "html": "Personal money rules, Rule sharing and refused transactions now fill on the HUD, in Live mode and in the simulation. Every rule an account deploys or accepts appears with its terms; offers show who offered what to whom and whether it was accepted, declined or expired; rules and offers set before you opened the page are fetched per account. What the node refuses at the door shows in the transaction feed with its reason, such as too little balance, a used sequence number, a fee below the base fee, a rule that does not compile or the sender's own rule saying no; hover or click for the full story."
+ },
+  {
+  "tag": "Simulation",
+  "on": "2026-10-28",
+  "html": "The simulation now shows what Tau refuses, and the day has rhythm. Every hour at hh:40 a rule change that contradicts the rules in force is refused before any vote, with its reason in the Proposals news and the Explorer’s Refused list. At hh:50 a contested proposal, six times today’s fee, gets the proposer’s vote alone and is dropped at hh:58: a quorum that never forms. A rule offer that conflicts with the receiver’s own rule is rejected with the reason in the transaction. Retractable transfers are sometimes pulled back and the money returns. Every half hour a three-minute burst of traffic and a six-minute lull. The kit node bob falls up to 60 blocks behind from minute 35 and catches up from minute 45; the Nodes page shows it as “Catching up”. Simulation mode only."
  }
 ]
