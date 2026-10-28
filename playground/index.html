@@ -100,6 +100,30 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border
 .steps li.fail { border-left-color: #fff; } .steps li.fail .ic { color: #fff; } .steps li.fail p { color: var(--text); }   /* a failed check is white, not red: red is kept for "node offline" */
 .steps li.run { border-left-color: var(--behind); } .steps li.run .ic { color: var(--behind); }
 .steps li.skip { opacity: .5; }
+.steps li { transition: opacity .18s, border-color .18s, background-color .18s; }
+.steps li.wait { opacity: .35; } .steps li.wait .ic { color: var(--dim); }
+.steps li.tick { animation: tick .6s ease-out; }
+.steps li.run .ic { animation: blink 1s ease-in-out infinite; }
+@keyframes tick { from { background-color: rgba(57,255,138,.14); } to { background-color: rgba(255,255,255,.025); } }
+@keyframes blink { 50% { opacity: .3; } }
+#btnCheck { min-width: 10.5em; text-align: center; transition: background-color .12s, color .12s, transform .08s; }
+#btnCheck:active { transform: scale(.97); }
+#btnCheck.busy, #btnCheck.busy:hover { background: transparent; color: #fff; border-color: var(--hair); cursor: progress; }
+.stamp { margin: 6px 0 0; font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; min-height: 1.5em; }
+.settle { animation: settle .5s ease-out; }
+.stamp.settle { animation: settleText .9s ease-out; }
+@keyframes settle { from { background-color: rgba(57,255,138,.16); } }
+.verdict.bad.settle, .steps li.fail.settle { animation-name: settleWhite; }
+.steps li:last-child p { min-height: 3em; }
+@keyframes settleWhite { from { background-color: rgba(255,255,255,.16); } }
+@keyframes settleText { from { color: #fff; } }
+#tests.pending .rc { opacity: .4; transition: opacity .18s; }
+#tests .rc.fresh { animation: fresh .6s ease-out both; }
+@keyframes fresh { from { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) {
+  .steps li, #btnCheck, #tests.pending .rc { transition: none; }
+  .steps li.tick, .steps li.run .ic, .settle, .stamp.settle, #tests .rc.fresh { animation: none; }
+}
 .verdict { margin: 10px 0 0; padding: 10px 12px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 500 14px/1.4 var(--display); color: #fff; }
 .verdict.bad { border-left-color: #fff; background: rgba(255,255,255,.06); }
 .verdict.idle { border-left-color: var(--hair); background: rgba(255,255,255,.03); color: var(--dim); }
@@ -213,6 +237,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
         <button class="btn primary" id="btnCheck" type="button">Check rule</button>
         <span class="engine" id="engine"><i></i><span>Tau engine: checking…</span></span>
       </div>
+      <p class="stamp" id="stamp" aria-live="polite">Not checked yet.</p>
       <dl class="legend">
         <dt>o5[t]</dt><dd>your answer: <b style="color:#fff">1</b> lets the transfer through, <b style="color:#fff">0</b> blocks it</dd>
         <dt>i1[t]</dt><dd>amount being sent (bv[24], up to 16 777 215)</dd>
@@ -225,7 +250,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     <div class="panel">
       <h2>What the testnet does with it</h2>
       <ol class="steps" id="steps"></ol>
-      <div class="verdict idle" id="verdict">Press “Check rule” to run the checks.</div>
+      <div class="verdict idle" id="verdict" aria-live="polite">Press “Check rule” to run the checks.</div>
       <details id="compDetails" hidden>
         <summary>The rule as the node stores it</summary>
         <p class="note">Your rule never enters the chain as you wrote it. The node wraps it in a guard on your address, so it can only ever decide your own transfers. Everyone else falls through to “allow”.</p>
@@ -627,7 +652,7 @@ $("examples").addEventListener("click", ev => {
   const ex = EXAMPLES.find(e => e.id === b.dataset.ex);
   ruleEl.value = ex.text;
   document.querySelectorAll("#examples .chip").forEach(c => c.classList.toggle("on", c === b));
-  engineResults = null; clearTimeout(editTimer); renderTests(); runCheck();
+  engineResults = null; clearTimeout(editTimer); renderTests(); runCheck(true);
 });
 document.querySelector(".insert").addEventListener("click", ev => {
   const b = ev.target.closest("[data-ins]"); if (!b) return;
@@ -635,10 +660,17 @@ document.querySelector(".insert").addEventListener("click", ev => {
   ruleEl.setRangeText(ins, s, e, "end"); ruleEl.focus(); onEdit();
 });
 
+const STEP_TITLES = ["Size", "Shape", "Time", "Streams", "Widths", "Wrapped in your address guard"];
 function stepHtml(s, i) {
-  const cls = s.ok === true ? "pass" : s.ok === false ? "fail" : s.ok === "run" ? "run" : "skip";
-  const ic = s.ok === true ? "✓" : s.ok === false ? "✕" : s.ok === "run" ? "…" : "○";
+  const cls = s.ok === true ? "pass" : s.ok === false ? "fail" : s.ok === "run" ? "run" : s.ok === "wait" ? "wait" : "skip";
+  const ic = s.ok === true ? "✓" : s.ok === false ? "✕" : s.ok === "run" ? "…" : s.ok === "wait" ? "·" : "○";
   return `<li class="${cls}"><span class="ic">${ic}</span><div><b>${i + 1} · ${esc(s.title)}</b><p>${esc(s.detail || "")}</p></div></li>`;
+}
+/* the full list of seven, so the panel keeps its height whether a rule fails early or not */
+function allSteps(steps, eng) {
+  const out = steps.slice();
+  for (let i = out.length; i < STEP_TITLES.length; i++) out.push({ title: STEP_TITLES[i], ok: null, detail: "Not reached: the node stops at the first failed check." });
+  return out.concat(eng);
 }
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
 const engineReason = r => {
@@ -648,43 +680,117 @@ const engineReason = r => {
 };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-let checkSeq = 0;
-async function runCheck() {
-  clearTimeout(editTimer);
-  const text = ruleEl.value, seq = ++checkSeq;
+/* "Check rule" answers the click at once and then walks the list: every check resets, ticks in one after the
+   other, the engine step runs (its request starts at the click, so the walk costs no extra time), the verdict
+   and the transfers settle last, and a line by the button says when it ran. Without motion it all lands at once. */
+const STEP_MS = 170;
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const btnCheck = $("btnCheck"), stampEl = $("stamp");
+let checkSeq = 0, checking = false, holdTimer = null;
+function setBusy(on) {
+  checking = on;
+  btnCheck.classList.toggle("busy", on); btnCheck.setAttribute("aria-busy", String(on));
+  btnCheck.textContent = on ? "Checking…" : "Check rule";
+  testsEl.classList.toggle("pending", false);
+}
+function putStep(i, s, cls) {
+  const li = stepsEl.children[i]; if (!li) return;
+  li.outerHTML = stepHtml(s, i);
+  if (cls) stepsEl.children[i].classList.add(cls);
+}
+const hhmmss = d => d.toTimeString().slice(0, 8);
+const mmss = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+function settle(el) { el.classList.remove("settle"); void el.offsetWidth; el.classList.add("settle"); }
+
+async function runCheck(animate) {
+  if (animate === true && checking) return;
+  clearTimeout(editTimer); clearInterval(holdTimer);
+  const text = ruleEl.value, seq = ++checkSeq, t0 = performance.now();
+  const gap = animate === true && !reducedMotion.matches ? STEP_MS : 0;
   const a = admission(text);
-  const steps = a.steps.slice();
+  const steps = a.steps;
+  const engineP = a.ok ? engineCheck(text) : null;   // starts now, runs while the list is walked
+  if (animate === true) {
+    setBusy(true);
+    // one column (phones): the checks sit below the button, so bring them into view
+    if (stepsEl.getBoundingClientRect().top > innerHeight * .6) stepsEl.closest(".panel").scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "start" });
+  }
   $("compDetails").hidden = !a.ok;
   if (a.ok) $("composite").textContent = a.composite;
+
+  const n = STEP_TITLES.length;
+  if (gap) {
+    stepsEl.innerHTML = allSteps([], []).map((s, i) => stepHtml({ ...s, ok: "wait", detail: steps[i] ? steps[i].detail : s.detail }, i)).join("") + stepHtml({ title: "Tau engine", ok: "wait", detail: "Waits for the text checks." }, n);
+    verdictEl.className = "verdict idle"; verdictEl.textContent = "Running the checks…";
+    if (a.ok) testsEl.classList.add("pending");
+    for (let i = 0; i < steps.length; i++) {
+      await sleep(gap); if (seq !== checkSeq) return;
+      putStep(i, steps[i], steps[i].ok ? "tick" : "settle");
+    }
+  }
   if (!a.ok) {
-    stepsEl.innerHTML = steps.map(stepHtml).join("") + stepHtml({ title: "Tau engine", ok: null, detail: "Not reached: the node stops at the first failed check." }, steps.length);
+    await sleep(gap); if (seq !== checkSeq) return;
+    stepsEl.innerHTML = allSteps(steps, { title: "Tau engine", ok: null, detail: "Not reached: the node stops at the first failed check." }).map(stepHtml).join("");
     const fail = steps.find(s => s.ok === false);
     verdictEl.className = "verdict bad"; verdictEl.textContent = `Refused at “${fail.title}”. The testnet would not take this rule.`;
+    finish(seq, t0, `refused at check ${steps.length} of ${n + 1}`, gap > 0);
     return;
   }
-  stepsEl.innerHTML = steps.map(stepHtml).join("") + stepHtml({ title: "Tau engine", ok: "run", detail: "Compiling your rule with the real Tau engine on the community node…" }, steps.length);
+  const run = { title: "Tau engine", ok: "run", detail: "Compiling your rule with the real Tau engine on the community node…" };
+  if (gap) { await sleep(gap); if (seq !== checkSeq) return; putStep(n, run); }
+  else stepsEl.innerHTML = allSteps(steps, run).map(stepHtml).join("");
   verdictEl.className = "verdict idle"; verdictEl.textContent = "Text checks passed. Waiting for the Tau engine…";
-  const res = await engineCheck(text);
+  const res = await engineP;
   if (seq !== checkSeq) return;
-  let eng;
+  let eng, note;
   if (!res) {
     eng = { title: "Tau engine", ok: null, detail: "Not reachable right now, so this step was skipped. The text checks above are the same ones the node runs first." };
     verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs.";
+    note = "engine skipped, offline";
+  } else if (res.hold) {
+    eng = holdStep(res.hold);
+    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs.";
+    note = "engine paused";
+    const until = Date.now() + res.hold * 1000;
+    holdTimer = setInterval(() => {
+      const left = Math.ceil((until - Date.now()) / 1000), li = stepsEl.children[n];
+      if (seq !== checkSeq || !li) return clearInterval(holdTimer);
+      if (left <= 0) { clearInterval(holdTimer); li.outerHTML = stepHtml({ title: "Tau engine", ok: null, detail: "Ready again. Press “Check rule” to compile it with the real engine." }, n); return; }
+      li.querySelector("p").textContent = holdStep(left).detail;
+    }, 1000);
   } else if (res.busy) {
     eng = { title: "Tau engine", ok: null, detail: res.busy };
     verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs.";
+    note = "engine busy";
   } else if (res.accepted) {
-    eng = { title: "Tau engine", ok: true, detail: `Compiled and accepted by the real engine (${res.engine || "tau-lang"}) in a throwaway sandbox${res.ms != null ? `, ${res.ms} ms` : ""}. Your transfers below were run through it too.` };
+    eng = { title: "Tau engine", ok: true, detail: `Compiled and accepted by the real engine (${res.engine || "tau-lang"}) in a throwaway sandbox${res.ms != null ? `, ${res.ms} ms` : ""}. Your transfers were run through it too.` };
     verdictEl.className = "verdict"; verdictEl.textContent = "The testnet would accept this rule.";
-    engineResults = res.tests || null; engineFor = text; renderTests();
+    engineResults = res.tests || null; engineFor = text;
+    note = res.cached ? "engine answer reused, same rule as before" : `engine ${(res.ms / 1000).toFixed(1)} s`;
   } else {
     $("compDetails").hidden = false; $("composite").textContent = res.composite || a.composite;
     eng = { title: "Tau engine", ok: false, detail: (res.stage && res.stage !== "engine" ? `The node’s own ${res.stage} check refused it: ` : "") + engineReason(res.reason) };
     verdictEl.className = "verdict bad"; verdictEl.textContent = "Refused by the Tau engine. The testnet would not take this rule.";
+    note = res.cached ? "engine answer reused" : res.ms != null ? `engine ${(res.ms / 1000).toFixed(1)} s` : "engine";
   }
-  stepsEl.innerHTML = steps.map(stepHtml).join("") + stepHtml(eng, steps.length);
+  if (gap) putStep(n, eng, eng.ok === true ? "tick" : null);
+  else stepsEl.innerHTML = allSteps(steps, eng).map(stepHtml).join("");
+  testsEl.classList.remove("pending");
+  renderTests();
+  if (gap && res && res.accepted) testsEl.querySelectorAll(".rc").forEach((td, i) => { td.style.animationDelay = `${i * 70}ms`; td.classList.add("fresh"); });
+  finish(seq, t0, note, gap > 0);
 }
-$("btnCheck").addEventListener("click", runCheck);
+function holdStep(sec) {
+  return { title: "Tau engine", ok: null, detail: `Paused for your connection after many engine runs. Back in ${mmss(sec)}. The text checks above ran as usual.` };
+}
+function finish(seq, t0, note, flash) {
+  if (seq !== checkSeq) return;
+  setBusy(false);
+  stampEl.textContent = `Checked ${hhmmss(new Date())} · ${((performance.now() - t0) / 1000).toFixed(1)} s${note ? " · " + note : ""}`;
+  if (flash) { settle(verdictEl); settle(stampEl); }
+}
+btnCheck.addEventListener("click", () => runCheck(true));
 
 async function engineCheck(text) {
   try {
@@ -696,7 +802,7 @@ async function engineCheck(text) {
     clearTimeout(timer);
     const j = await r.json().catch(() => ({}));
     setEngine("on");
-    if (r.status === 429) return { busy: "Too many checks from your connection. Try again in a few minutes." };
+    if (r.status === 429) return { hold: Math.max(1, Math.min(600, Number(j.retry_after || r.headers.get("Retry-After")) || 120)) };
     if (r.status === 503) return { busy: j.reason ? `The engine could not answer: ${j.reason}. Try again shortly.` : "The engine is busy with another check. Try again shortly." };
     if (!r.ok) throw new Error("http " + r.status);
     return j;
@@ -752,12 +858,14 @@ $("btnAddTest").addEventListener("click", () => { tests.push({ from: "you", amou
 
 let editTimer = null;
 function onEdit() {
+  if (checking) { ++checkSeq; setBusy(false); clearInterval(holdTimer); }
   engineResults = null; renderTests();
   clearTimeout(editTimer);
   editTimer = setTimeout(() => {
     const a = admission(ruleEl.value);
     if (!a.ok) { runCheck(); return; }
-    stepsEl.innerHTML = a.steps.map(stepHtml).join("") + stepHtml({ title: "Tau engine", ok: null, detail: "Press “Check rule” to compile it with the real engine." }, a.steps.length);
+    clearInterval(holdTimer);
+    stepsEl.innerHTML = allSteps(a.steps, { title: "Tau engine", ok: null, detail: "Press “Check rule” to compile it with the real engine." }).map(stepHtml).join("");
     verdictEl.className = "verdict idle"; verdictEl.textContent = "Text checks pass so far. Press “Check rule” for the engine.";
     $("compDetails").hidden = false; $("composite").textContent = a.composite;
   }, 250);
