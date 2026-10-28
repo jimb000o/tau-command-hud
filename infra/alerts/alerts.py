@@ -394,16 +394,17 @@ DIFF_LINES = 6  # changed lines shown in a post; the rest is on the page
 
 NOW_TENSE = [("would cost", "costs"), ("would rest", "rests"), ("could no longer", "can no longer"), ("would be accepted", "are accepted"),
              ("would make", "make"), ("would follow", "follow"), ("Nothing would change", "Nothing changed"), ("If it takes effect, ", "")]
+REAL_LINE = recap.REAL_LINE
 ICONS = {"proposed": "🗳️", "agreed": "✅", "active": "⚡", "dropped": "❌", "restart": "🔄"}
 
 
 def telegram_text(item: dict) -> str:
     e = html.escape
     if "facts" not in item:  # posts recorded before explanations existed
-        return (f"{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>\n{e(item['body'])}\n\n"
+        return (f"{REAL_LINE}\n{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>\n{e(item['body'])}\n\n"
                 f"<a href=\"{e(item['link'])}\">Open in Tau HUD</a>")
     # order: what it means first, then what changes and the facts; the raw diff comes last, for those who want it
-    out = [f"{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>"]
+    out = [REAL_LINE, f"{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>"]
     if item.get("label"):
         out.append(f"<i>Proposer's title: “{e(item['label'])}”</i>")
     if item.get("why"):
@@ -484,12 +485,12 @@ def health_text(kind: str, h: dict | None, since: float | None = None, now: floa
     link = f"<a href=\"{SITE}/status/\">Live status on Tau HUD</a>"
     if kind == "down":
         if h is None:
-            return ("🔴 <b>Tau testnet: no data</b>\nOur relay does not answer, so we cannot tell whether the testnet runs. "
+            return (f"{REAL_LINE}\n🔴 <b>Tau testnet: no data</b>\nOur relay does not answer, so we cannot tell whether the testnet runs. "
                     f"We are on it.\n\n{link}")
-        lines = [f"🔴 <b>Tau testnet health {h['score']}/100: {e(h['label'])}</b>"]
+        lines = [REAL_LINE, f"🔴 <b>Tau testnet health {h['score']}/100: {e(h['label'])}</b>"]
         lines += [f"• {e(p)}" for p in health_problems(h)]
         return "\n".join(lines + ["", "We post again when it recovers.", link])
-    lines = [f"🟢 <b>Tau testnet recovered: health {h['score']}/100</b>"]
+    lines = [REAL_LINE, f"🟢 <b>Tau testnet recovered: health {h['score']}/100</b>"]
     if since:
         lines.append(f"It was down for {fmt_dur((now or time.time()) - since)}.")
     rest = health_problems(h)
@@ -541,7 +542,7 @@ def newnode_text(n: dict, online: int) -> str:
         head = "🆕 <b>A new node joined the Tau testnet</b>"
         body = (f"Our node has seen it for {fmt_dur(n['for'])}" + (f", at block #{fmt_n(n['head'])}" if n.get("head") else "")
                 + f". Peer {e(n['id'][:8])}…{e(n['id'][-4:])}, no name: it does not run our kit.")
-    return "\n".join([head, body, f"Nodes online now: {online}.", "", link])
+    return "\n".join([REAL_LINE, head, body, f"Nodes online now: {online}.", "", link])
 
 
 # ---------- the simulation's consensus switches ----------

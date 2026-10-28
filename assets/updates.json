@@ -623,5 +623,10 @@
   "tag": "v17.43",
   "on": "2026-10-28",
   "html": "Updates now opens in place on every page: the header link and the tab bar open the same overlay as on the HUD, with the log, the effort numbers, feedback and Keep it running, instead of sending you back to the start page. The /#updates deep link still works everywhere. The feedback box that needs no account stays on the HUD; the overlay links to it, to GitHub and to Telegram."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-28",
+  "html": "Telegram posts about the real testnet now say so in their first line: “⛓ TESTNET ALPHA · live chain”. That covers rule changes, votes, activations, restarts, new nodes, health alerts and the weekly recap, so they never get mixed up with the simulated posts, which start with “SIMULATION · not the real testnet”."
  }
 ]

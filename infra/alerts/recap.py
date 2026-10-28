@@ -127,10 +127,14 @@ def lines(r: dict, site: str) -> list[str]:
     return out
 
 
+# first line of every post about the real chain; the simulation's posts start with their own line instead
+REAL_LINE = "⛓ <b>TESTNET ALPHA · live chain</b>"
+
+
 def caption_html(r: dict, site: str) -> str:
     import html
     body = "\n".join("• " + html.escape(x) for x in lines(r, site))
-    return (f"📊 <b>Tau testnet weekly recap</b> · {html.escape(period(r))}\n{body}\n\n"
+    return (f"{REAL_LINE}\n📊 <b>Tau testnet weekly recap</b> · {html.escape(period(r))}\n{body}\n\n"
             f"<a href=\"{site}/stats/\">Stats</a> · <a href=\"{site}/proposals/\">Rule changes</a> · <a href=\"{site}/history/\">Time travel</a>")
 
 
