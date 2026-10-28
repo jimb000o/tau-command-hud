@@ -1021,4 +1021,5 @@ TauI18n.add({ strings: {
   "Accounts: a rich list with balances, share of supply, sorting and an account preview.": "账户：富豪榜，含余额、供应占比、排序和账户预览。",
   "Nodes: the board is never empty, joining takes three steps, and the page says what you get for running a node.": "节点：榜单永不为空，加入只需三步，页面说明运行节点能得到什么。",
   "The update log lives in one shared file now (assets/updates.json) that every page’s release adds a line to, so the log lists the subpages too; today’s subpage releases are listed here. The green dot in the header keys on the newest entry.": "更新日志现在放在一个共享文件中（assets/updates.json），每个页面的发布都会在其中加一行，因此日志也会列出子页面的更新；今天的子页面发布已列在这里。页眉中的绿点以最新条目为准。",
+  "Nodes: the page now counts every node on the network as our node sees it, IDNI’s bootnode included, not only the ones that run our kit; the <a href=\"stats/\">Stats</a> page says it too.": "节点：页面现在统计我们的节点在网络中看到的所有节点，包括 IDNI 的引导节点，而不只是运行我们套件的节点；<a href=\"stats/\">统计</a>页面也会显示。",
 } });

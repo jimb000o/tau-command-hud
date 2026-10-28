@@ -336,6 +336,7 @@ const quant = (a, q) => { if (!a.length) return null; const s = [...a].sort((x, 
 /* ------------------------------ data ------------------------------ */
 // D: { rows:[{n,ts,txs,transfers,volume,types,senders:Set}], accounts:[], restarts:[], dropped:[], droppedTotal, governance, trackingSince, head, canonical, tip, mode }
 let D = null, RANGE = 0, lastFetch = 0;
+let PEERS = null;  // GET /peers: every node our node met or heard of (null until it answers)
 let NODES = null;  // GET /community: other people's nodes and how they compare with ours (null until it answers)
 
 function fromStats(j) {
@@ -404,6 +405,8 @@ function startWindowMode() {
 
 async function loadNodes() {
   if (SAMPLE) { NODES = sampleNodes(); render(); return; }
+  fetch(COMMUNITY_URL.replace(/community$/, "peers"), { cache: "no-store" }).then(r => r.ok ? r.json() : null)
+    .then(p => { PEERS = p; render(); }).catch(() => {});
   try {
     const r = await fetch(COMMUNITY_URL, { cache: "no-store" });
     if (!r.ok) throw new Error(String(r.status));
@@ -803,15 +806,18 @@ function renderNodes() {
   const host = $("nodesWrap"), head = $("hNodes");
   const nodes = NODES && Array.isArray(NODES.nodes) ? NODES.nodes : [];
   const ref = NODES && NODES.reference, refTip = ref ? (ref.tip ?? ref.height) : (D && D.tip);
+  // the whole network as our node sees it, ours included
+  const seen = PEERS && Array.isArray(PEERS.peers) ? PEERS.peers.filter(p => p.last_seen && Date.now() / 1000 - p.last_seen < 86400) : null;
+  const net = seen ? `Our node sees ${seen.length + 1} nodes on the network${seen.some(p => p.label) ? ", IDNI’s bootnode and ours included" : ""}. ` : "";
   if (!nodes.length) {
-    head.textContent = "No community node is reporting yet.";
+    head.textContent = net + "No community node is reporting yet.";
     const p = el("p", "note", "Anyone can run a node with the Tau HUD kit. It shows up here within a minute, and we check that it follows the same chain as ours. ");
     const a = el("a", "", "Run your own node"); a.href = "https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md"; a.target = "_blank"; a.rel = "noopener"; a.style.color = "#fff";
     p.append(a); host.replaceChildren(p);
     return;
   }
   const same = nodes.filter(x => x.agrees === "same").length, diff = nodes.filter(x => x.agrees === "different").length;
-  head.replaceChildren(document.createTextNode(`${nodes.length} node${nodes.length === 1 ? "" : "s"} reporting, ${same} on our chain${diff ? `, ${diff} on another` : ""}. `),
+  head.replaceChildren(document.createTextNode(net + `${nodes.length} node${nodes.length === 1 ? "" : "s"} reporting, ${same} on our chain${diff ? `, ${diff} on another` : ""}. `),
     el("span", "", ref && ref.height != null ? `Ours: #${fmtN(ref.height)}.` : ""));
   const t = el("table"), th = el("thead"), hr = el("tr");
   hr.append(el("th", "", "Node"), el("th", "n", "Height"), el("th", "", "Chain")); th.append(hr); t.append(th);

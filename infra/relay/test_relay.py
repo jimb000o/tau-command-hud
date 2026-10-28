@@ -21,7 +21,8 @@ with open(EVENTS, "w") as f:
                "restarts": [], "dropped": []}, f)
 CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
 BOARD = os.path.join(os.path.dirname(EVENTS), "community.json")
-os.environ.update(BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+PEERS = os.path.join(os.path.dirname(EVENTS), "peers.json")
+os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 sys.path.insert(0, os.path.dirname(__file__))
@@ -108,7 +109,13 @@ async def mock_node(ws):
             await ws.send(relay.envelope_ok(cmd, {"active_validators": ["ab" * 48], "vote_quorum": 1, "consensus_rules": "o6[t] = 1",
                                                    "head_number": len(mock["blocks"]) - 1,
                                                    "head_hash": mock["blocks"][-1]["block_hash"],
-                                                   "network_tip": {"number": len(mock["blocks"]) + 4, "seen": time.time()}}))
+                                                   "network_tip": {"number": len(mock["blocks"]) + 4, "seen": time.time()},
+                                                   "peer_id": "12D3KooWHeardFromBootnode" + "x" * 30,
+                                                   "peers": [{"id": relay.BOOTNODE_ID, "first_seen": time.time() - 99, "last_direct": time.time(),
+                                                              "last_heard": None, "head": len(mock["blocks"]) - 1, "connected": True},
+                                                             {"id": "12D3KooWHeardFromBootnode" + "x" * 30, "first_seen": time.time() - 5,
+                                                              "last_direct": None, "last_heard": time.time(), "head": None, "connected": False},
+                                                             {"id": "not a peer id!", "last_direct": time.time()}]}))
         elif cmd == "gettaustate":
             await ws.send(relay.envelope_ok(cmd, {"rules_state": "always o1[t] = i1[t]."}))
         elif cmd == "getbalance":
@@ -438,6 +445,20 @@ async def main():
         with open(heartbeat.KEY_PATH) as f:
             check(len(f.read().strip()) == 32 and oct(os.stat(heartbeat.KEY_PATH).st_mode)[-3:] == "600", "report key kept, mode 600")
         check(any(n["name"] == "kit-test" for n in (await community())[1]["nodes"]), "heartbeat node listed")
+
+        # the network as our node sees it: peers from the patched getgovernance, never pushed to visitors
+        ctype, text = await get("/peers")
+        pr = json.loads(text)
+        ids = [p["id"] for p in pr["peers"]]
+        check(ctype.startswith("application/json") and len(ids) == 2 and pr["peers"][0]["label"] == "IDNI bootnode"
+              and pr["peers"][0]["connected"] and pr["counts"]["met_30m"] == 1 and pr["counts"]["seen_24h"] == 2,
+              f"/peers {pr['counts']}")
+        check(pr["peers"][1]["community"] and pr["peers"][1]["community"]["name"] == "kit-test", "kit 3 report names its peer")
+        async with connect(url, additional_headers={"Origin": "https://tauhud.com"}) as ws:
+            gov = await ask(ws, "getgovernance")
+            check("peers" not in gov["data"] and "network_tip" in gov["data"], "peers stripped from getgovernance")
+        with open(PEERS) as f:
+            check(relay.BOOTNODE_ID in json.load(f)["peers"], "peer list saved")
 
         # public API: the summary and its badges over HTTP, open to any origin
         ctype, text = await get("/api/v1/summary")

@@ -87,5 +87,6 @@
   {"tag": "Alerts", "on": "2026-10-28", "html": "Telegram alerts: a proposal that is agreed right away gets one post instead of two."},
   {"tag": "Accounts", "on": "2026-10-28", "html": "Accounts: a rich list with balances, share of supply, sorting and an account preview."},
   {"tag": "Nodes", "on": "2026-10-28", "html": "Nodes: the board is never empty, joining takes three steps, and the page says what you get for running a node."},
-  {"tag": "v17.25", "on": "2026-10-28", "html": "The update log lives in one shared file now (assets/updates.json) that every page’s release adds a line to, so the log lists the subpages too; today’s subpage releases are listed here. The green dot in the header keys on the newest entry."}
+  {"tag": "v17.25", "on": "2026-10-28", "html": "The update log lives in one shared file now (assets/updates.json) that every page’s release adds a line to, so the log lists the subpages too; today’s subpage releases are listed here. The green dot in the header keys on the newest entry."},
+  {"tag": "Nodes", "on": "2026-10-28", "html": "Nodes: the page now counts every node on the network as our node sees it, IDNI’s bootnode included, not only the ones that run our kit; the <a href=\"stats/\">Stats</a> page says it too."}
 ]
