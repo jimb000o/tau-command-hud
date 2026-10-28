@@ -29,6 +29,8 @@ TauI18n.add({ strings: {
   "Hash": "哈希",
   "Last active": "最近活跃",
   "Look up anything on the Tau testnet.": "在 Tau 测试网上查找任何内容。",
+  "Made {x} ago.": "{x}前生成。",
+  "Made {x}.": "{x}生成。",
   "Made-up data for previews. Remove ?sample from the address for the live chain.": "用于预览的虚构数据。从地址中去掉 ?sample 即可查看实时链。",
   "Merkle root": "Merkle 根",
   "Moved": "转出",

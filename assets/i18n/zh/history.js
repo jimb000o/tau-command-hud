@@ -7,6 +7,7 @@ TauI18n.add({ strings: {
   "Accounts seen": "见过的账户",
   "Accounts with own rules": "拥有自有规则的账户",
   "Admit": "接纳",
+  "agreed": "已同意",
   "Agreed at #{x1}": "在 #{x1} 获同意",
   "agreed at #{x1}, in force from #{x2}": "在 #{x1} 获同意，自 #{x2} 起生效",
   "Agreed at #{x1}. Takes effect at #{x2}, {x3} later.": "在 #{x1} 获同意。于 #{x2} 生效，{x3}之后。",
