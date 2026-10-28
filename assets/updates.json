@@ -843,5 +843,10 @@
   "tag": "Checks",
   "on": "2026-10-28",
   "html": "Checks: every change to the site is now opened in a browser before it goes live, each page in English and Chinese, in the simulation and with the live node offline, on wide screens, so a broken page or a missing Chinese text is caught first. About fifty Chinese texts that were still English are translated, and a rare drawing error in Time travel is fixed."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-28",
+  "html": "In numbers: the charts are now lines with a soft fill instead of blocks. Visitors per day as a green line with the pages opened as faint bars below, growth in the same style, a crosshair with the day's numbers on hover, and today shown as still counting. A short history opens as All, so the first days fill the chart."
  }
 ]

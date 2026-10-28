@@ -65,18 +65,28 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
 .chart text { fill: var(--dim); font: 11px var(--mono); }
 .chart .grid { stroke: var(--line); }
-.chart .bar { fill: rgba(255,255,255,.32); }
-.chart .bar.today { fill: rgba(255,255,255,.16); }
-.chart .bar.sel { fill: #fff; }
-.chart .hit { fill: transparent; cursor: pointer; }
-.chart .hit:hover + .bar, .chart .bar.hover { fill: rgba(255,255,255,.6); }
-.chart .avg { fill: none; stroke: var(--ok); stroke-width: 2; }
-.chart .area { fill: rgba(57,255,138,.08); }
-.chart .cum { fill: none; stroke: var(--ok); stroke-width: 2; }
-.chart .dotsel { fill: #fff; }
+.chart .axis { fill: var(--dim); }
+.chart .line { fill: none; stroke: var(--ok); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .line.open { stroke-dasharray: 3 4; }
+.chart .avg { fill: none; stroke: rgba(255,255,255,.45); stroke-width: 1.5; stroke-dasharray: 2 4; }
+.chart .vol { fill: rgba(255,255,255,.10); }
+.chart .vol.on { fill: rgba(255,255,255,.28); }
+.chart .pt { fill: var(--void); stroke: var(--ok); stroke-width: 2; }
+.chart .pt.sel { fill: var(--ok); }
+.chart .before { fill: rgba(255,255,255,.025); }
+.chart .before-t { fill: var(--dim); font-size: 11px; }
+.chart .xh { stroke: rgba(255,255,255,.35); stroke-width: 1; }
+.chart .hov { fill: var(--ok); stroke: var(--void); stroke-width: 2; }
+.chart .ov { fill: transparent; cursor: crosshair; }
+.chart.pick .ov { cursor: pointer; }
+.ctip { position: absolute; z-index: 5; pointer-events: none; background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 10px; font: 12px/1.5 var(--mono); color: var(--dim); white-space: nowrap; }
+.ctip b { color: #fff; font: 600 13px var(--display); }
+.ctip .d { color: var(--text); }
 .legend { display: flex; gap: 16px; flex-wrap: wrap; color: var(--dim); font-size: 12px; margin-top: 8px; }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
-.legend i.b { background: rgba(255,255,255,.32); } .legend i.l { height: 2px; background: var(--ok); vertical-align: 3px; } .legend i.t { background: rgba(255,255,255,.16); }
+.legend i { display: inline-block; width: 14px; margin-right: 6px; vertical-align: 3px; height: 2px; background: var(--ok); }
+.legend i.v { height: 8px; width: 8px; vertical-align: -1px; background: rgba(255,255,255,.22); border-radius: 1px; }
+.legend i.a { background: none; border-top: 1.5px dashed rgba(255,255,255,.5); height: 0; }
+.legend i.o { background: none; border-top: 2px dashed var(--ok); height: 0; }
 /* one day */
 .day h3 { margin: 0 0 8px; font: 600 16px var(--display); color: #fff; }
 .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; margin-bottom: 10px; }
@@ -100,7 +110,9 @@ td a { text-decoration: none; } td a:hover { text-decoration: underline; }
 .row2 { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); min-width: 0; }
 @media (min-width: 900px) { .row2 { grid-template-columns: minmax(0, 1fr) 300px; } }
 html.fit .row2 { gap: 12px; min-height: 0; }
-.who h2 + div h2:first-child { margin-top: 0 !important; }
+.who { overflow: auto; }
+.who .sp { margin-top: 10px; } .who .sp:first-child { margin-top: 0; }
+.who .sp > span { color: var(--dim); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-family: var(--display); font-weight: 600; }
 .tablewrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
 .empty { color: var(--dim); padding: 8px 0; }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
@@ -112,7 +124,7 @@ html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom:
 html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 12px; }
 html.fit #tip { zoom: var(--z); }
 html.fit .wrap > .main { flex: 1 1 0; min-height: 0; gap: 12px; grid-template-columns: minmax(0, 1fr) 440px; }
-html.fit .col { min-height: 0; gap: 12px; grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr); }
+html.fit .col { min-height: 0; gap: 12px; grid-template-rows: minmax(0, 1.55fr) minmax(210px, 1fr); }
 html.fit .col.side { grid-template-rows: auto minmax(0, 1fr); }
 html.fit .panel { min-height: 0; }
 html.fit .chart { min-height: 0; }
@@ -154,7 +166,7 @@ html.fit.wide .col.side { display: contents; }
           </span>
         </h2>
         <div class="chart" id="cDaily"></div>
-        <div class="legend"><span><i class="b"></i>visitors that day (click a bar for the day)</span><span><i class="l"></i>7-day average</span><span><i class="t"></i>today, still counting</span></div>
+        <div class="legend"><span><i></i>visitors per day (click a day for its pages)</span><span><i class="o"></i>today, still counting</span><span id="lgAvg"><i class="a"></i>7-day average</span><span><i class="v"></i>pages opened</span></div>
       </section>
       <div class="row2">
         <section class="panel" id="pGrowth">
@@ -169,7 +181,7 @@ html.fit.wide .col.side { display: contents; }
     </div>
     <div class="col side">
       <section class="panel day" id="dayPanel">
-        <h2>One day <span class="aside" id="dayHint">click a bar to change</span></h2>
+        <h2>One day <span class="aside" id="dayHint">click a day in the chart</span></h2>
         <h3 id="dTitle">–</h3>
         <div class="facts">
           <div><b id="dVis">–</b><span>visitors</span></div>
@@ -236,40 +248,112 @@ function rangeDays() {
   return out;
 }
 
-function svgEl(box) {
-  const w = box.clientWidth, h = box.clientHeight;
-  return { w: Math.max(w, 10), h: Math.max(h, 10) };
+/* nice round ticks: 0, step, 2·step … covering max */
+function ticks(lo, hi, want = 4) {
+  const span = Math.max(1, hi - lo), raw = span / want, p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = Math.max(1, [1, 2, 2.5, 5, 10].map(m => m * p).find(v => v >= raw));
+  const a = Math.floor(lo / step) * step, out = [];
+  for (let v = a; v < hi + step; v += step) { out.push(v); if (v >= hi) break; }
+  return out;
 }
-function niceMax(v) { if (v <= 5) return 5; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p; return v; }
+/* the dates the chart spans: the chosen range ending today; "All" from the first counted day, at least a week */
+function domain() {
+  const end = Date.parse(data.today + "T00:00:00Z"), keys = Object.keys(data.days).sort();
+  const first = keys.length ? Date.parse(keys[0] + "T00:00:00Z") : end;
+  const start = range ? end - (range - 1) * DAY : Math.min(first, end - 6 * DAY);
+  return { start, end, first };
+}
+const shortDate = t => new Date(t).toLocaleDateString(ZH ? "zh-CN" : "en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+const monthDate = t => new Date(t).toLocaleDateString(ZH ? "zh-CN" : "en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
+
+/* One line chart in the HUD's style: green line over a soft green fill, faint bars along the bottom for a second
+   number (no axis of its own), hairline grid, a crosshair and a small card on hover.
+   pts: [{t, v, vol?, open?}] in time order; opts: {label, lo0, avg, onPick, tip(pt) -> html} */
+function lineChart(box, pts, opts) {
+  const { start, end, first } = domain();
+  const w = Math.max(box.clientWidth, 10), h = Math.max(box.clientHeight, 10);
+  const vals = pts.map(p => p.v), hi = Math.max(1, ...vals), lo = opts.lo0 ? 0 : Math.min(...vals);
+  const tk = ticks(opts.lo0 ? 0 : lo - (hi - lo) * .15, hi + (hi - lo || hi) * .12);
+  const yMin = tk[0], yMax = tk[tk.length - 1];
+  const lab = Math.max(...tk.map(v => fmt(v).length)) * 7 + 14, L = lab, R = 10, top = 10, B = 22, cw = w - L - R, ch = h - top - B;
+  const x = t => L + (end === start ? cw / 2 : cw * (t - start) / (end - start));
+  const y = v => top + ch - ch * (v - yMin) / (yMax - yMin || 1);
+  const uid = box.id;
+  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(opts.label)}"><defs><linearGradient id="g-${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#39ff8a" stop-opacity=".22"/><stop offset="1" stop-color="#39ff8a" stop-opacity="0"/></linearGradient></defs>`;
+  for (const v of tk) s += `<line class="grid" x1="${L}" x2="${w - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="axis" x="${L - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${fmt(v)}</text>`;
+  // days in the range before counting began: shaded, said once
+  if (first > start) {
+    const xb = x(first - DAY / 2);
+    s += `<rect class="before" x="${L}" y="${top}" width="${Math.max(0, xb - L).toFixed(1)}" height="${ch}"/>`;
+    if (xb - L > 150) s += `<text class="before-t" x="${((L + xb) / 2).toFixed(1)}" y="${(top + ch / 2).toFixed(1)}" text-anchor="middle">${esc(T("before counting began"))}</text>`;
+  }
+  // x labels: days, or months on long ranges
+  const days = (end - start) / DAY + 1, maxLabels = Math.max(2, Math.floor(cw / 78));
+  if (days > 120) {
+    const d = new Date(start); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + 1);
+    const every = Math.ceil(((end - start) / (30 * DAY)) / maxLabels);
+    for (let i = 0; d.getTime() <= end; i++, d.setUTCMonth(d.getUTCMonth() + 1)) if (i % every === 0) s += `<text class="axis" x="${x(d.getTime()).toFixed(1)}" y="${h - 5}" text-anchor="middle">${esc(monthDate(d.getTime()))}</text>`;
+  } else {
+    const every = Math.ceil(days / maxLabels);
+    for (let i = days - 1; i >= 0; i -= every) { const t = start + i * DAY; s += `<text class="axis" x="${x(t).toFixed(1)}" y="${h - 5}" text-anchor="${i === 0 && days > 1 ? "start" : "middle"}">${esc(shortDate(t))}</text>`; }
+  }
+  // faint volume bars along the bottom
+  const vmax = Math.max(1, ...pts.map(p => p.vol || 0)), vh = ch * .22, bw = Math.max(1, Math.min(14, cw / days * .6));
+  if (pts.some(p => p.vol)) pts.forEach((p, i) => { if (p.vol) s += `<rect class="vol" data-i="${i}" x="${(x(p.t) - bw / 2).toFixed(1)}" y="${(top + ch - vh * p.vol / vmax).toFixed(1)}" width="${bw.toFixed(1)}" height="${(vh * p.vol / vmax).toFixed(1)}" rx="1"/>`; });
+  // the line and its fill; the still-counting day is joined with a dashed piece
+  const closed = pts.filter(p => !p.open), last = pts[pts.length - 1];
+  const path = arr => arr.map((p, i) => (i ? "L" : "M") + x(p.t).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
+  if (pts.length > 1) {
+    s += `<path d="${path(pts)} L${x(last.t).toFixed(1)} ${top + ch} L${x(pts[0].t).toFixed(1)} ${top + ch} Z" fill="url(#g-${uid})"/>`;
+    if (closed.length > 1) s += `<path class="line" d="${path(closed)}"/>`;
+    if (last.open && closed.length) s += `<path class="line open" d="${path([closed[closed.length - 1], last])}"/>`;
+  }
+  if (opts.avg && opts.avg.length > 1) s += `<path class="avg" d="${path(opts.avg)}"/>`;
+  // points stay visible while there are few of them, so a short history still reads as data
+  if (pts.length <= 45) pts.forEach(p => { s += `<circle class="pt${p.k === sel ? " sel" : ""}" cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${pts.length <= 10 ? 4 : 3}"/>`; });
+  else { const sp = pts.find(p => p.k === sel); if (sp) s += `<circle class="pt sel" cx="${x(sp.t).toFixed(1)}" cy="${y(sp.v).toFixed(1)}" r="4"/>`; }
+  s += `<line class="xh" id="xh-${uid}" y1="${top}" y2="${top + ch}" visibility="hidden"/><circle class="hov" id="hv-${uid}" r="5" visibility="hidden"/>`;
+  s += `<rect class="ov" x="${L}" y="${top}" width="${cw}" height="${ch}"/></svg><div class="ctip" hidden></div>`;
+  box.innerHTML = s;
+  box.classList.toggle("pick", !!opts.onPick);
+  const ov = box.querySelector(".ov"), xh = box.querySelector(".xh"), hv = box.querySelector(".hov"), tipEl = box.querySelector(".ctip");
+  const near = e => {
+    const r = box.getBoundingClientRect(), z = r.width / w, mx = (e.clientX - r.left) / z;
+    let best = null, bd = 1e9; for (const p of pts) { const d = Math.abs(x(p.t) - mx); if (d < bd) { bd = d; best = p; } }
+    return bd < Math.max(24, cw / days) ? best : null;
+  };
+  ov.addEventListener("mousemove", e => {
+    const p = near(e);
+    box.querySelectorAll(".vol.on").forEach(v => v.classList.remove("on"));
+    if (!p) { xh.setAttribute("visibility", "hidden"); hv.setAttribute("visibility", "hidden"); tipEl.hidden = true; return; }
+    const px = x(p.t), py = y(p.v);
+    xh.setAttribute("x1", px); xh.setAttribute("x2", px); xh.setAttribute("visibility", "visible");
+    hv.setAttribute("cx", px); hv.setAttribute("cy", py); hv.setAttribute("visibility", "visible");
+    const vb = box.querySelector(`.vol[data-i="${pts.indexOf(p)}"]`); if (vb) vb.classList.add("on");
+    tipEl.innerHTML = opts.tip(p); tipEl.hidden = false;
+    const tw = tipEl.offsetWidth, left = px + 14 + tw > w ? px - 14 - tw : px + 14;
+    tipEl.style.left = Math.max(0, left) + "px"; tipEl.style.top = Math.max(0, Math.min(py - 20, h - tipEl.offsetHeight - B)) + "px";
+  });
+  ov.addEventListener("mouseleave", () => { xh.setAttribute("visibility", "hidden"); hv.setAttribute("visibility", "hidden"); tipEl.hidden = true; box.querySelectorAll(".vol.on").forEach(v => v.classList.remove("on")); });
+  if (opts.onPick) ov.addEventListener("click", e => { const p = near(e); if (p) opts.onPick(p); });
+}
 
 function drawDaily() {
   const box = $("cDaily"), days = data ? rangeDays() : [];
   if (!days.length) { box.innerHTML = `<p class="empty">${esc(T(failed ? "The counter could not be reached. It will try again in a minute." : "Counting began on 28 October 2026. The first numbers appear here as soon as people open a page."))}</p>`; return; }
-  const { w, h } = svgEl(box), L = 36, B = 20, top = 8, cw = w - L, ch = h - B - top;
-  const max = niceMax(Math.max(1, ...days.map(d => d[1][0])));
-  const bw = cw / days.length, gap = bw > 6 ? Math.min(4, bw * .25) : 0;
-  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(T("Visitors per day"))}">`;
-  for (const f of [0, .5, 1]) { const y = top + ch - f * ch; s += `<line class="grid" x1="${L}" x2="${w}" y1="${y}" y2="${y}"/><text x="${L - 6}" y="${y + 4}" text-anchor="end">${fmt(Math.round(max * f))}</text>`; }
-  const every = Math.ceil(days.length / Math.max(2, Math.floor(cw / 70)));
-  days.forEach(([k, d], i) => {
-    const x = L + i * bw, bh = ch * d[0] / max;
-    s += `<rect class="hit" data-k="${k}" x="${x}" y="${top}" width="${bw}" height="${ch}"/>`;
-    s += `<rect class="bar${k === data.today ? " today" : ""}${k === sel ? " sel" : ""}" x="${x + gap / 2}" y="${top + ch - bh}" width="${Math.max(1, bw - gap)}" height="${bh}"/>`;
-    if (i % every === 0) s += `<text x="${x + bw / 2}" y="${h - 4}" text-anchor="middle">${esc(dayLabel(k))}</text>`;
-  });
-  // 7-day average over full days, drawn from the 7th day it can see
-  const all = Object.keys(data.days).sort(), avgOf = k => {
-    const t = Date.parse(k + "T00:00:00Z"); let sum = 0, n = 0;
-    for (let j = 0; j < 7; j++) { const kk = dayKey(t - j * DAY); if (kk < all[0]) break; sum += (data.days[kk] || [0])[0]; n++; }
-    return n >= 3 ? sum / n : null;
-  };
-  const pts = days.map(([k], i) => k === data.today ? null : [L + i * bw + bw / 2, avgOf(k)]).filter(p => p && p[1] != null);
-  if (pts.length > 1) s += `<path class="avg" d="${pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + (top + ch - ch * p[1] / max).toFixed(1)).join(" ")}"/>`;
-  box.innerHTML = s + "</svg>";
-  box.querySelectorAll(".hit").forEach(r => {
-    const k = r.dataset.k, d = data.days[k] || [0, 0];
-    r.dataset.tip = `${dayLabel(k, true)}${k === data.today ? " · " + T("still counting") : ""}\n${fmt(d[0])} ${T("visitors")} · ${fmt(d[1])} ${T("pages opened")}`;
-    r.addEventListener("click", () => { sel = k; render(); });
+  const pts = days.map(([k, d]) => ({ k, t: Date.parse(k + "T00:00:00Z"), v: d[0], vol: d[1], open: k === data.today }));
+  // 7-day average of full days, once there are at least two weeks to compare
+  const all = Object.keys(data.days).sort(), full = all.filter(k => k !== data.today);
+  let avg = null;
+  if (full.length >= 14) avg = pts.filter(p => !p.open).map(p => {
+    let sum = 0, n = 0; for (let j = 0; j < 7; j++) { const kk = dayKey(p.t - j * DAY); if (kk < all[0]) break; sum += (data.days[kk] || [0])[0]; n++; }
+    return n >= 7 ? { t: p.t, v: sum / n } : null;
+  }).filter(Boolean);
+  $("lgAvg").hidden = !avg;
+  lineChart(box, pts, {
+    label: T("Visitors per day"), lo0: true, avg,
+    tip: p => `<div class="d">${esc(dayLabel(p.k, true))}${p.open ? " · " + esc(T("still counting")) : ""}</div><b>${fmt(p.v)}</b> ${esc(T("visitors"))}<br><b>${fmt(p.vol)}</b> ${esc(T("pages opened"))}`,
+    onPick: p => { sel = p.k; render(); },
   });
 }
 
@@ -278,22 +362,14 @@ function drawGrowth() {
   if (!days.length || !days.some(d => d[1][0])) { box.innerHTML = `<p class="empty">${esc(T("The climb starts with the first visitors."))}</p>`; $("growthNote").textContent = ""; return; }
   // visits added up from the very first day, so every range shows the same climb
   let before = 0; for (const k of all) if (k < days[0][0]) before += data.days[k][0];
-  const cum = []; let run = before; for (const [, d] of days) { run += d[0]; cum.push(run); }
-  const { w, h } = svgEl(box), L = 52, B = 20, top = 8, cw = w - L, ch = h - B - top;
-  const step = niceMax(Math.max(1, (run - (range ? before : 0)) / 2)) / 2, lo = range ? Math.floor(before / step) * step : 0;
-  const max = Math.max(lo + 2 * step, lo + step * Math.ceil((run - lo) / step)), y = v => top + ch - ch * (v - lo) / (max - lo || 1);
-  const x = i => L + (days.length === 1 ? cw / 2 : cw * i / (days.length - 1));
-  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(T("Visits added up"))}">`;
-  for (let v = lo; v <= max + 1e-9; v += step) s += `<line class="grid" x1="${L}" x2="${w}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${fmt(Math.round(v))}</text>`;
-  const line = cum.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join(" ");
-  s += `<path class="area" d="${line} L${x(cum.length - 1).toFixed(1)} ${top + ch} L${x(0).toFixed(1)} ${top + ch} Z"/><path class="cum" d="${line}"/>`;
-  const every = Math.ceil(days.length / Math.max(2, Math.floor(cw / 70)));
-  days.forEach(([k], i) => { if (i % every === 0) s += `<text x="${x(i)}" y="${h - 4}" text-anchor="middle">${esc(dayLabel(k))}</text>`; });
-  const si = days.findIndex(([k]) => k === sel);
-  if (si >= 0) s += `<circle class="dotsel" cx="${x(si)}" cy="${y(cum[si])}" r="4"/>`;
-  box.innerHTML = s + "</svg>";
-  const gained = run - before;
-  $("growthNote").textContent = range ? `+${fmt(gained)} ${T("visits in this range")} · ${fmt(run)} ${T("in total")}` : `${fmt(run)} ${T("visits since counting began")}`;
+  let run = before;
+  const pts = days.map(([k, d]) => { run += d[0]; return { k, t: Date.parse(k + "T00:00:00Z"), v: run, add: d[0], open: k === data.today }; });
+  lineChart(box, pts, {
+    label: T("Visits added up"), lo0: !range || before === 0,
+    tip: p => `<div class="d">${esc(dayLabel(p.k, true))}</div><b>${fmt(p.v)}</b> ${esc(T("visits in total"))}<br>+${fmt(p.add)} ${esc(T("that day"))}`,
+    onPick: p => { sel = p.k; render(); },
+  });
+  $("growthNote").textContent = range ? `+${fmt(run - before)} ${T("visits in this range")} · ${fmt(run)} ${T("in total")}` : `${fmt(run)} ${T("visits since counting began")}`;
 }
 
 function rows(el, list, total, link) {
@@ -305,8 +381,8 @@ function rows(el, list, total, link) {
 function split(title, obj, names) {
   const ent = Object.entries(obj).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]), tot = ent.reduce((a, e) => a + e[1], 0);
   if (!tot) return "";
-  return `<h2 style="margin:12px 0 4px">${esc(T(title))}</h2><div class="split">${ent.slice(0, 4).map(([, v]) => `<i style="width:${(100 * v / tot).toFixed(1)}%"></i>`).join("")}</div>` +
-    `<div class="splitkey">${ent.slice(0, 4).map(([k, v]) => `<span>${esc(T(names[k] || k))} <b>${pct(v, tot)}</b></span>`).join("")}</div>`;
+  return `<div class="sp"><span>${esc(T(title))}</span><div class="split">${ent.slice(0, 4).map(([, v]) => `<i style="width:${(100 * v / tot).toFixed(1)}%"></i>`).join("")}</div>` +
+    `<div class="splitkey">${ent.slice(0, 4).map(([k, v]) => `<span>${esc(T(names[k] || k))} <b>${pct(v, tot)}</b></span>`).join("")}</div></div>`;
 }
 
 function drawDay() {
@@ -332,7 +408,9 @@ function kpis() {
   const week = j => { let s = 0, n = 0; for (let i = j; i < j + 7; i++) { const k = dayKey(t - i * DAY); if (data.days[k]) { s += v(k); n++; } } return n ? s / n : null; };
   const w1 = week(1), w0 = week(8);
   $("kToday").textContent = fmt(v(data.today));
-  $("kWeek").textContent = w1 == null ? "–" : fmt(Math.round(w1)) + (w0 ? ` ${w1 >= w0 ? "▲" : "▼"}${Math.abs(Math.round(100 * (w1 - w0) / w0))}%` : "");
+  // until there is a full day, the chip waits; until two weeks, no trend
+  $("kWeekBox").hidden = w1 == null;
+  if (w1 != null) $("kWeek").textContent = fmt(Math.round(w1)) + (w0 ? ` ${w1 >= w0 ? "▲" : "▼"}${Math.abs(Math.round(100 * (w1 - w0) / w0))}%` : "");
   $("kWeekBox").classList.toggle("up", !!(w0 && w1 > w0));
   $("kAll").textContent = fmt(Object.values(data.days).reduce((a, d) => a + d[0], 0));
   const best = Object.entries(data.days).sort((a, b) => b[1][0] - a[1][0])[0];
@@ -352,6 +430,8 @@ async function load() {
     const r = await fetch(`${RELAY}/visits/public`, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
     data = await r.json(); failed = false;
+    // a short history fills the chart better as All (at least a week) than as an empty 30 days
+    if (!load.done) { load.done = true; const n = Object.keys(data.days || {}).length; if (range && n < range) { range = 0; } }
   } catch (e) { failed = true; if (!data) data = null; }
   render();
 }

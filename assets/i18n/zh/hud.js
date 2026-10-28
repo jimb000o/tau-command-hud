@@ -1634,4 +1634,5 @@ TauI18n.add({ strings: {
   "simulation or live mode": "无论模拟模式还是实时模式",
   "fee —": "手续费 —",
   "Checks: every change to the site is now opened in a browser before it goes live, each page in English and Chinese, in the simulation and with the live node offline, on wide screens, so a broken page or a missing Chinese text is caught first. About fifty Chinese texts that were still English are translated, and a rare drawing error in Time travel is fixed.": "检查：现在网站的每一次改动在上线前都会先在浏览器中打开：每个页面都用英文和中文、在模拟模式和实时节点离线的情况下、在宽屏上各打开一次，这样页面出错或缺少中文文字都会先被发现。约五十条仍是英文的中文文字已翻译，“时光回溯”页面上一个偶尔出现的绘图错误也已修复。",
+  "In numbers: the charts are now lines with a soft fill instead of blocks. Visitors per day as a green line with the pages opened as faint bars below, growth in the same style, a crosshair with the day's numbers on hover, and today shown as still counting. A short history opens as All, so the first days fill the chart.": "数据一览：图表现在是带柔和填充的折线，而不是色块。每日访客是一条绿线，下方浅色柱子是打开的页面数；增长图同样风格；悬停时出现十字准线和当天的数字；今天标为仍在统计中。历史较短时默认显示“全部”，让最初几天铺满图表。",
 } });
