@@ -1400,5 +1400,6 @@ TauI18n.add({ strings: {
   "Since {x}: {n} changes pushed to the public repository in {m} days.": "自 {x}：{n} 次改动在 {m} 天内推送到公开仓库。",
   "Since {x}: {n} changes pushed to the public repository in 1 day.": "自 {x}：{n} 次改动在 1 天内推送到公开仓库。",
   "{n} releases listed in this log ({m} HUD versions, {a} of other pages).": "本日志列出 {n} 次发布（{m} 个 HUD 版本，{a} 个其他页面）。",
-  "Counted live from GitHub and this log; nothing typed by hand. Hours are not counted anywhere.": "实时从 GitHub 和本日志统计；没有手工填写。没有任何地方统计工时。"
+  "Counted live from GitHub and this log; nothing typed by hand. Hours are not counted anywhere.": "实时从 GitHub 和本日志统计；没有手工填写。没有任何地方统计工时。",
+  "Nodes: the numbers at the top count the whole network now, our node and IDNI’s included, and say which of them are community nodes.": "节点：顶部的数字现在统计整个网络，包括我们的节点和 IDNI 的节点，并单独标出社区节点的数量。",
 } });
