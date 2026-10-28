@@ -1,6 +1,7 @@
 /* Simplified Chinese for the guided tours of the subpages (assets/tour.js). Keys are the English text. */
 TauI18n.add({ strings: {
   "Guided tour": "导览",
+  "Take the tour": "开始本页导览",
   "End tour": "结束导览",
   "Back": "返回",
   "Next": "下一步",

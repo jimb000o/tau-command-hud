@@ -833,5 +833,10 @@
    "text": "How many people look at Tau through this site: visitors per day, growth since the start and the most visited pages. Counted on our own server without cookies.",
    "link": "/meta/"
   }
+ },
+ {
+  "tag": "Guided tour",
+  "on": "2026-10-28",
+  "html": "Every subpage with a tour now has a Take the tour button at the end of its opening line, top left where reading starts, besides Tour in the header. One click starts the page’s tour; in Chinese too."
  }
 ]
