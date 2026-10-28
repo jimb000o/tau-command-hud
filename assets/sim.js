@@ -152,7 +152,8 @@
   function makeBlock(n) {
     const prev = B[n - 1], rules = curRules(n - 1), N = rules.validators.length, fee = rules.fee;
     // who seals this block: the validators in turn, or under proof of stake the six richest accounts (validators included) in turn
-    const makers = rules.elig === "stake" ? [...ST.bal.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, 6).map(e => e[0]) : rules.validators;
+    // (a visitor's own simulated node with its stake joins the ranking in that visitor's browser: see "your node" below)
+    const makers = rules.elig === "stake" ? stakers(ts(n)) : rules.validators;
     const t = ts(n), prevT = n > 1 ? ts(n - 1) : t - PACE;
     const txs = [], ids = [], arrive = [], dropped = [];
     const seqOf = a => { const s = ST.seq.get(a) || 0; ST.seq.set(a, s + 1); return s; };
@@ -395,12 +396,16 @@
     t = at(t);
     const h = sync(t);
     return { reference: { name: "tauhud.com", height: h, head: B[h].block_hash, tip: h, upstream_connected: true },
-      nodes: NODES.filter(n => n.online).map(n => ({ ...nodeRow(n, t, h), agrees: lagOf(n, t) > 2 ? "behind" : "same", age_seconds: 20 + 30 * Math.min(lagOf(n, t), 2) })), ttl_seconds: 900, generated_at: Math.round(t), simulation: true };
+      nodes: [...NODES.filter(n => n.online).map(n => ({ ...nodeRow(n, t, h), agrees: lagOf(n, t) > 2 ? "behind" : "same", age_seconds: 20 + 30 * Math.min(lagOf(n, t), 2) })),
+        ...((y => y && y.p.listed ? [{ ...y.row, agrees: h - y.row.height > 2 ? "behind" : "same", age_seconds: Math.round(t - y.row.last_seen) }] : [])(mineRow(t, h)))], ttl_seconds: 900, generated_at: Math.round(t), simulation: true };
   }
   function board(t) {
     t = at(t);
     const h = sync(t);
-    return { nodes: NODES.map(n => { const r = nodeRow(n, t, h); return { id: r.id, name: r.name, first_seen: r.first_seen, last_seen: r.last_seen, online: n.online, days: Math.floor(n.days), uptime: n.uptime, height: n.online ? r.height : h - 1300, kit: n.kit, ref: "539d1e2", agrees: n.online ? (lagOf(n, t) > 2 ? "behind" : "same") : null }; }),
+    const y = mineRow(t, h), yours = y ? [{ ...y.row, online: y.p.listed, days: Math.floor((t - y.p.first) / DAY), uptime: Math.round(Math.min(1, y.p.up / Math.max(1, t - y.p.first)) * 1000) / 1000, agrees: y.p.listed ? (h - y.row.height > 2 ? "behind" : "same") : null }] : [];
+    const row = n => { const r = nodeRow(n, t, h); return { id: r.id, name: r.name, first_seen: r.first_seen, last_seen: r.last_seen, online: n.online, days: Math.floor(n.days), uptime: n.uptime, height: n.online ? r.height : h - 1300, kit: n.kit, ref: "539d1e2", agrees: n.online ? (lagOf(n, t) > 2 ? "behind" : "same") : null }; };
+    const on = yours.filter(r => r.online), off = yours.filter(r => !r.online);   // in the board's own order: online nodes first
+    return { nodes: [...NODES.filter(n => n.online).map(row), ...on, ...NODES.filter(n => !n.online).map(row), ...off],
       keep_days: 30, generated_at: Math.round(t), simulation: true };
   }
   function peers(t) {
@@ -408,6 +413,7 @@
     const h = sync(t), mk = (id, days, head, extra) => ({ id, label: null, community: null, first_seen: Math.round(t - days * DAY), last_direct: Math.round(t - 40), last_heard: null, last_seen: Math.round(t - 40), head, connected: true, ...extra });
     const list = [mk(BOOTNODE, 9, h, {}), ...NODES.filter(n => n.online && n.peer).map(n => mk(n.peer, n.days, Math.max(0, h - lagOf(n, t)), { community: { id: n.id, name: n.name } })),
       mk(STRANGERS[0], 3, h - 1, {}), mk(STRANGERS[1], 0.2, h, { connected: false, last_direct: Math.round(t - 2 * 3600), last_seen: Math.round(t - 2 * 3600) })];
+    const y = mineRow(t, h); if (y && y.p.listed) list.push({ ...mk(y.row.peer, (t - y.p.first) / DAY, y.row.height, { community: { id: y.row.id, name: y.row.name }, you: true }), last_seen: y.row.last_seen, last_direct: y.row.last_seen, connected: y.p.on, steady: true, online: true });
     const within = s => list.filter(p => p.last_seen >= t - s).length;
     return { peers: list, counts: { connected: list.filter(p => p.connected).length, met_30m: within(1800), met_24h: within(DAY), seen_24h: within(DAY), seen_30d: list.length },
       bootnode: BOOTNODE, since: Math.round(G - 9 * DAY), keep_days: 30, generated_at: Math.round(t), simulation: true };
@@ -463,6 +469,94 @@
       rules: { revision: ru.rev, base_fee: ru.fee, validators: ru.validators.length, quorum: ru.quorum, votes_needed: threshold(ru.quorum, ru.validators.length), open_admission: false, consensus_mode: ru.elig },
       proposals: rows, events: events.slice(0, 100), upcoming: upcoming(t), channels: {}, simulation: true };
   }
+
+  /* ---------- your node: a simulated node a visitor runs in this browser (assets/simnode.js is its panel) ----------
+     It lives in localStorage (tau-simnode) as a list of runs: [start, end] in seconds, the stake it brings, and when it had caught up.
+     A run stays open while any Tau HUD page in simulation is open (a heartbeat every 15 s); a page that finds the heartbeat
+     older than 90 s closes the run there and starts a new one that first catches up. The chain reads the runs, not the clock,
+     so a reload rebuilds the same blocks: under proof of stake the node's stake joins the six largest that seal, in this
+     browser only. Other visitors never see it, and nothing leaves the browser. The node shows on the node orbit, the Nodes
+     board and /peers the way the relay lists a real one: after 10 minutes of presence, and for 30 minutes after its last contact. */
+  const MINE_KEY = "tau-simnode", SYNC_RATE = 300, LIST_AFTER = 600, KEEP_FOR = 1800, BEAT = 15, GRACE = 90, STAKE_SEATS = 6;
+  let MINE = null, MINE_RAW;
+  const mine = () => { const raw = store.get(MINE_KEY); if (raw !== MINE_RAW) { MINE_RAW = raw; try { const o = JSON.parse(raw || "null"); MINE = o && o.key && Array.isArray(o.runs) ? o : null; } catch (e) { MINE = null; } } return MINE; };
+  const saveMine = m => { if (m) store.set(MINE_KEY, JSON.stringify(m)); else try { localStorage.removeItem(MINE_KEY); } catch (e) {} };
+  const runEnd = (m, r) => r.end != null ? r.end : Math.max(r.start, m.last || r.start) + GRACE;
+  const runAt = (m, t) => m ? m.runs.find(r => r.start <= t && t <= runEnd(m, r)) || null : null;
+  function stakers(t) {
+    const e = [...ST.bal.entries()], m = mine(), r = runAt(m, t);
+    if (r && t >= r.synced && r.stake > 0) e.push([m.key, r.stake]);
+    return e.sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, STAKE_SEATS).map(x => x[0]);
+  }
+  /* the relay's presence rule: listed after 10 min on the network, kept for 30 min after the last contact (gaps under 30 min don't reset it) */
+  function presence(t) {
+    const m = mine(); if (!m || !m.runs.length) return null;
+    let since = null, prevEnd = -Infinity, last = null, on = false, ever = false, up = 0;
+    for (const r of m.runs) {
+      if (r.start > t) break;
+      const e = runEnd(m, r);
+      if (r.start - prevEnd > KEEP_FOR) since = r.start;
+      last = Math.min(e, t); prevEnd = e; up += last - r.start; if (t <= e) on = true;
+      if (last - since >= LIST_AFTER) ever = true;
+    }
+    if (since == null) return null;
+    const run = runAt(m, t);
+    return { on, since, last, ever, listed: last - since >= LIST_AFTER && t - last <= KEEP_FOR, listAt: since + LIST_AFTER, leaveAt: last + KEEP_FOR, up, run, first: m.runs[0].start };
+  }
+  const mineHeight = (p, t, h) => { if (!p.on) return headAt(Math.min(p.last, t)); const r = p.run; if (t >= r.synced) return h; const from = Math.min(r.from || 0, h); return Math.min(h, from + Math.floor((t - r.start) / (r.synced - r.start) * (h - from))); };
+  const mineRow = (t, h) => { const m = mine(), p = presence(t); if (!p || !p.ever) return null; const ht = Math.max(0, Math.min(mineHeight(p, t, h), h));
+    return { m, p, row: { id: m.id, name: m.name, height: ht, head: B[ht].block_hash, tip: h, kit: "sim", ref: "539d1e2", peer: m.peer, first_seen: Math.round(p.first), last_seen: Math.round(p.on ? t - 5 : p.last), you: true } }; };
+  function headFor(t) { const d = Math.floor(t / DAY); return d === DAYI ? headAt(t) : 0; }
+  /* catching up after a gap: from where it stopped on the same simulated day, else from block 0 */
+  function newRun(m, t, stake, carry) {
+    const prev = m.runs[m.runs.length - 1], h = sync(t), same = prev && Math.floor(prev.end / DAY) === Math.floor(t / DAY);
+    const from = carry ? (carry.from || 0) : same ? Math.min(h, headFor(prev.end)) : 0;
+    const synced = carry ? carry.synced : t + 3 + (h - from) / SYNC_RATE;
+    m.runs.push({ start: t, end: null, stake, from, synced: Math.round(synced * 10) / 10 });
+    m.runs = m.runs.filter(r => r.end == null || r.end > t - 2 * DAY).slice(-200);
+  }
+  function beat() {
+    const m = mine(); if (!m || m.stopped) return;
+    const t = now(), r = m.runs[m.runs.length - 1];
+    if (!r || r.end != null) return;
+    if (t - Math.max(r.start, m.last || r.start) > GRACE) { r.end = Math.max(r.start, m.last || r.start) + GRACE; newRun(m, t, r.stake); }
+    m.last = Math.round(t); saveMine(m);
+  }
+  const rid = n => { const a = new Uint8Array(n); try { crypto.getRandomValues(a); } catch (e) { for (let i = 0; i < n; i++) a[i] = (Math.random() * 256) | 0; } return a; };
+  const node = {
+    seats: STAKE_SEATS, listAfter: LIST_AFTER, keepFor: KEEP_FOR,
+    get: () => mine(),
+    start(name, stake) {
+      const t = now(); let m = mine();
+      if (!m) { const b = rid(60); m = { v: 1, key: [...b.slice(0, 48)].map(x => x.toString(16).padStart(2, "0")).join(""), id: [...b.slice(48, 54)].map(x => x.toString(16).padStart(2, "0")).join(""),
+        peer: "12D3KooW" + [...rid(44)].map(x => B58[x % 58]).join(""), runs: [] }; }
+      m.name = name || m.name || "my-sim-node"; m.stopped = false; m.last = Math.round(t);
+      const r = m.runs[m.runs.length - 1]; if (r && r.end == null) r.end = Math.min(t, runEnd(m, r));
+      const was = m.runs.length ? m.runs[m.runs.length - 1].stake : 200000;
+      newRun(m, t, Math.max(0, stake == null ? was : stake | 0)); saveMine(m); return m;
+    },
+    stop() { const m = mine(); if (!m) return; const t = now(), r = m.runs[m.runs.length - 1]; if (r && r.end == null) r.end = Math.round(Math.min(t, runEnd(m, r))); m.stopped = true; saveMine(m); },
+    /* a new stake counts from now on: the run splits, the node stays caught up */
+    stake(s) { const m = mine(); if (!m || m.stopped) return; const t = now(), r = m.runs[m.runs.length - 1]; if (!r || r.end != null) return; r.end = t; newRun(m, t, Math.max(0, s | 0), r); m.last = Math.round(t); saveMine(m); },
+    rank(stake) { sync(); const v = [...ST.bal.values()]; return { rank: 1 + v.filter(x => x > stake).length, sixth: v.sort((a, b) => b - a)[STAKE_SEATS - 1] || 0 }; },
+    rename(name) { const m = mine(); if (m && name) { m.name = name; saveMine(m); } },
+    forget() { saveMine(null); },
+    /* everything a panel needs at time t */
+    state(t) {
+      t = at(t); const m = mine(); if (!m) return null;
+      const h = sync(t), p = presence(t), ru = rulesAt(h), run = p && p.run, synced = !!(run && t >= run.synced);
+      const stake = run ? run.stake : (m.runs.length ? m.runs[m.runs.length - 1].stake : 0);
+      const rank = 1 + [...ST.bal.values()].filter(v => v > stake).length, sixth = [...ST.bal.values()].sort((a, b) => b - a)[STAKE_SEATS - 1] || 0;
+      let sealed = 0, lastSeal = null; for (let n = 1; n <= h; n++) if (B[n].header.proposer_pubkey === m.key) { sealed++; lastSeal = n; }
+      const height = p ? Math.max(0, Math.min(mineHeight(p, t, h), h)) : 0;
+      return { name: m.name, key: m.key, id: m.id, peer: m.peer, stopped: !!m.stopped, on: !!(p && p.on), synced, progress: run ? (synced ? 1 : Math.max(0, Math.min(1, (t - run.start) / (run.synced - run.start)))) : 0,
+        syncedAt: run ? run.synced : null, height, head: h, from: run ? run.from || 0 : 0, listed: !!(p && p.listed), listAt: p ? p.listAt : null, leaveAt: p ? p.leaveAt : null, since: p ? p.since : null,
+        mode: ru.elig, pos: posWindow(t), stake, rank, sixth, seat: ru.elig === "stake" && synced && stake > 0 && rank <= STAKE_SEATS, sealed, lastSeal, upcoming: upcoming(t) };
+    },
+  };
+  /* when the programme runs proof of stake: from 10:30 to 16:30 UTC, today's window or tomorrow's once today's is over */
+  function posWindow(t) { const d = Math.floor(t / DAY) * DAY, from = d + STAKE_SLOT * 3600 + 1800, to = d + FIXED_SLOT * 3600 + 1800; return t < to ? { from, to } : { from: from + DAY, to: to + DAY }; }
+  if (ON) { beat(); setInterval(beat, BEAT * 1000); addEventListener("visibilitychange", () => { if (!document.hidden) beat(); }); }
 
   /* ---------- a WebSocket to the simulation, and fetch for its GET endpoints ---------- */
   const ok = (command, data) => JSON.stringify({ status: "ok", command, data });
@@ -537,7 +631,7 @@
       try { const u = new URL(location.href); u.searchParams.delete("mode"); u.searchParams.delete("sample"); if (u.href === location.href) location.reload(); else location.href = u.href; } catch (e) { location.reload(); }
     },
     head: () => sync(), block: n => { sync(); return B[n] ? pub(B[n]) : null; }, ts: n => { sync(); return ts(n); },
-    socket, fetch: fetchSim, answer, status, stats, uptime, health, community, board, peers, summary, proposals, upcoming, governance, mempool, account,
+    socket, fetch: fetchSim, answer, node, status, stats, uptime, health, community, board, peers, summary, proposals, upcoming, governance, mempool, account,
     chain: { rulesAt: h => { sync(); return rulesAt(h); }, props: () => { sync(); return ST.props; }, arrivals: n => { sync(); return B[n] ? B[n]._arrive : []; }, dropped: n => { sync(); return B[n] ? B[n]._dropped : []; }, headAt: t => { rollDay(t); return headAt(t); }, genesisTs: () => { sync(); return G; } },
     /* marks a page: the title says so, and a footer line that names the data source gets the simulation's line instead */
     mark(opts) {
