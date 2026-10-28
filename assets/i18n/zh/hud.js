@@ -1402,4 +1402,8 @@ TauI18n.add({ strings: {
   "{n} releases listed in this log ({m} HUD versions, {a} of other pages).": "本日志列出 {n} 次发布（{m} 个 HUD 版本，{a} 个其他页面）。",
   "Counted live from GitHub and this log; nothing typed by hand. Hours are not counted anywhere.": "实时从 GitHub 和本日志统计；没有手工填写。没有任何地方统计工时。",
   "Nodes: the numbers at the top count the whole network now, our node and IDNI’s included, and say which of them are community nodes.": "节点：顶部的数字现在统计整个网络，包括我们的节点和 IDNI 的节点，并单独标出社区节点的数量。",
+  "Updates overlay: the empty space under “Your feedback” now holds a compact “Keep it running” card, the same address and QR code as in About, with the copy button, what the money helps pay for and the supporters line; feedback, update log and support sit together as “how this gets built”. Fits without scrolling down to 1280×720. The effort numbers hide instead of showing a wrong count when GitHub does not answer.": "更新浮层：“你的反馈”下方的空白处现在放了一张紧凑的“让它继续运行”卡片，地址和二维码与“关于”相同，带复制按钮、资金用途和支持者一行；反馈、更新日志和支持放在一起，构成“它是如何被做出来的”。最小 1280×720 也无需滚动。GitHub 无响应时，投入数字会隐藏而不是显示错误的计数。",
+  "one person, free time": "一个人，业余时间",
+  "Tau HUD is an independent community project, built and maintained by one person in their free time. The address and the QR code are the same as in About; the numbers above show what the time goes into.": "Tau HUD 是一个独立的社区项目，由一个人利用业余时间构建和维护。地址和二维码与“关于”中的相同；上方的数字显示时间花在了哪里。",
+  "The server is cheap; the real cost is the time it takes to keep the HUD, the alerts and the bot in step with the testnet. A donation of any size helps keep it online and independent.": "服务器很便宜；真正的成本是让 HUD、提醒和机器人与测试网保持同步所花的时间。任何数额的捐助都有助于让它保持在线和独立。"
 } });
