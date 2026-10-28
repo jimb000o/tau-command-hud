@@ -473,7 +473,7 @@ function offline(why) {
   C.ws = null; C.loading = false;
   const w = C.retry; C.retry = Math.min(60000, w * 2);
   setState("off", "Offline", `Our node is not reachable (${why}).\nRetrying in ${w / 1000} s.`);
-  C.off = true; render();   // the empty panels say that the node is offline instead of "reading" forever
+  C.off = true; rebuild();   // the empty panels say that the node is offline instead of "reading" forever
   C.retryT = setTimeout(connect, w);
 }
 function loadFrom(from) { C.loading = true; C.nextFrom = from; send(`getblockrange ${from} ${PAGE}`); }

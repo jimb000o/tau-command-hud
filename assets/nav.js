@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.48"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.50"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -50,6 +50,8 @@
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
     gear: "Settings: node address and Connect, background rain.",
     gearSub: "Settings: which node this page reads, guided tour, about.",
+    tour: "A short guided tour of this page: what each part shows and why it matters. Arrow keys step, Esc ends.",
+    tourHud: "One minute, eight steps: how rules on Tau change by agreement, pointing at the panels where it happens. Arrow keys step, Esc ends.",
     live: "Live node: this page reads the real testnet through the community relay at node.tauhud.com. The choice holds on every page.",
     sim: "Simulation: invented activity that follows the documented protocol, generated in your browser. The same made-up chain on every page, eight seconds per block, a fresh start every day at 00:00 UTC. No real chain data. The choice holds on every page.",
     simMode: "Simulation: this page shows a made-up chain generated in your browser, the same on every page. No real chain data. Switch to Live node for the real testnet.",
@@ -184,7 +186,7 @@
     try { list = await (await fetch(ROOT + "assets/updates.json", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
     catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
     const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
-    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh" };
+    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", "Guided tour": "playground/#tour" };
     let day = null, html = "";
     for (const e of order) {
       const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
@@ -484,8 +486,20 @@
     view.append(bS, bT);
     const gear = el("div", "gearbody", `<h4>Node</h4><div class="row"><code>wss://${RELAY}</code><span class="hint">Community relay in front of a Tau testnet node run for this site. To read your own node, open the HUD and put its address under the gear there.</span></div><h4>Look</h4><div class="row"></div>`);
     const row = gear.querySelector(".row:last-child");
-    const tour = el("a", "pill", "Guided tour"); tour.href = ROOT + "?tour=1"; const about = el("a", "pill", "About"); about.href = ROOT + "#about"; row.append(tour, about);
+    const tour = el("a", "pill", "Tour of this page"); tour.href = "#tour"; tour.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); });
+    const hudTour = el("a", "pill", "HUD tour"); hudTour.href = ROOT + "?tour=1"; const about = el("a", "pill", "About"); about.href = ROOT + "#about"; row.append(tour, hudTour, about);
     return { src, view, gear };
+  }
+
+  /* guided tours: the HUD keeps its own; a subpage loads assets/tour.js (and its Chinese texts first) */
+  function loadTour() {
+    if (document.querySelector("script[data-tour]")) return;
+    const files = (window.TauI18n && TauI18n.lang === "zh" ? ["i18n/zh/tour.js"] : []).concat("tour.js");
+    files.forEach(f => { const s = el("script"); s.src = ROOT + "assets/" + f; s.async = false; s.dataset.tour = f; document.head.append(s); });
+  }
+  function startTour(isHud) {
+    if (isHud) { document.dispatchEvent(new CustomEvent("tau-nav", { detail: "tour" })); return; }
+    if (window.TauTour) TauTour.start(); else { loadTour(); setTimeout(() => window.TauTour && TauTour.start(), 600); }
   }
 
   let openEl = null;
@@ -546,7 +560,11 @@
       document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); si.focus(); si.select(); } });
       const css = el("style"); css.textContent = `.tnav .tn-search { display: flex; align-items: center; margin: 0; } .tnav .tn-search input { width: 150px; box-sizing: border-box; padding: 4px 8px; font: 12px var(--tn-mono); color: #fff; background: rgba(255,255,255,.04); border: 1px solid var(--tn-hair); border-radius: 999px; outline: none; } .tnav .tn-search input::placeholder { color: var(--tn-dim); } .tnav .tn-search input:focus { border-color: #fff; width: 220px; } .tnav .tn-search input::-webkit-search-cancel-button { display: none; } @media (max-width: 700px) { .tnav .tn-search { display: none; } }`; document.head.append(css);
     }
-    right.append(updWrap);
+    /* every page has a short guided tour of its own (assets/tour.js); on the HUD this starts the HUD's tour */
+    const tourA = el("a", "tl", "Tour"); tourA.href = isHud ? "?tour=1" : "#tour"; tip(tourA, isHud ? TIPS.tourHud : TIPS.tour);
+    tourA.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(isHud); });
+    right.append(tourA, updWrap);
+    if (!isHud) loadTour();
     const I = window.TauI18n;
     right.append(el("span", "tnav-sep"));   // text links on the left of the line, the two switches on the right
     if (I) {   // language switch: a two-way pill like Simple/Technical, each language in its own script; the choice is remembered
@@ -583,6 +601,7 @@
       sh.append(el("div", "grab"), el("h4", "", esc(sec.t)));
       sec.items.forEach(k => sh.append(item(k, page, isHud)));
       if (sec.k === "learn" && window.TauI18n) { const I = window.TauI18n, other = I.lang === "zh" ? "en" : "zh", l = el("a", "mi", `<span class="ic">文</span><b>${other === "zh" ? "中文" : "English"}</b><span>${other === "zh" ? "阅读中文版 · Read this site in Chinese" : "Read this site in English"}</span>`); l.href = "#"; l.setAttribute("translate", "no"); l.addEventListener("click", e => { e.preventDefault(); I.set(other); }); sh.append(l); }
+      if (sec.k === "learn" && !isHud) { const t = el("a", "mi", `<span class="ic">?</span><b>Tour of this page</b><span>What each part of this page shows and why it matters, in a few short steps</span>`); t.href = "#tour"; t.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); }); sh.append(t); }
       if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram alerts <span class="ext">↗</span></b><span>@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t); }
       bg.addEventListener("click", closeAll);
       b.addEventListener("click", () => { const open = sh.hidden; closeAll(); if (open) { bg.hidden = sh.hidden = false; b.setAttribute("aria-expanded", "true"); openEl = sh; } });
