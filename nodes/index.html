@@ -29,7 +29,7 @@
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
-  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
   background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
     linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
   background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
@@ -43,24 +43,51 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .mark .pulse { stroke: var(--ok); }
 .brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
 .brand span { color: var(--dim); font: 12px var(--mono); }
-.hdr-right { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.chip { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
-.chip:hover { background: #fff; color: #000; }
+.intro { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
 .lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; }
-.sub { margin: 4px 0 0; color: var(--dim); max-width: 70em; }
-.tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
-.tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-width: 0; }
-.tile h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
-.tile .v { font: 600 26px/1.15 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 4px; }
-.tile .v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
-.tile p { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 76ch; }
+.kpis { display: flex; flex-wrap: wrap; gap: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--dim); font-size: 12px; white-space: nowrap; background: rgba(16,16,18,.86); }
+.kpi b { color: #fff; font: 600 13px var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
 .main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
-.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; }
+.panel h2 .rules { margin-left: auto; font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); border-bottom: 1px dotted var(--dim); cursor: help; }
+/* the join panel is the page's one call to action */
+.panel.join { border-color: rgba(57,255,138,.45); box-shadow: 0 0 0 1px rgba(57,255,138,.08), 0 18px 40px -24px rgba(57,255,138,.35); }
+.panel.join h2 { color: var(--ok); }
+.join .big { margin: 0 0 12px; font: 600 19px/1.3 var(--display); color: #fff; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: s; }
+ol.steps > li { counter-increment: s; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 0 10px; }
+ol.steps > li::before { content: counter(s); width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--hair); color: #fff; font: 600 12px/22px var(--display); text-align: center; }
+.steps h3 { margin: 1px 0 2px; font: 600 14px var(--display); color: #fff; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.steps h3 small { font: 12px var(--mono); color: var(--dim); }
+.steps p { margin: 0; color: var(--dim); }
+.steps p b { color: var(--text); font-weight: 600; }
+.namerow { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; flex-wrap: wrap; }
+.namerow label { color: var(--dim); }
+input#name { font: 13px var(--mono); background: #050506; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 6px 8px; width: 16em; max-width: 100%; }
+input#name:focus { outline: none; border-color: var(--ok); }
+input#name.bad { border-color: #ff4d6d; }
+pre { margin: 0; background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font: 12px/1.5 var(--mono); color: #fff; white-space: pre-wrap; word-break: break-all; }
+pre .nm { color: var(--ok); }
+.copyrow { display: flex; gap: 8px; align-items: stretch; margin-top: 6px; }
+.copyrow pre { flex: 1 1 auto; min-width: 0; }
+button.copy { flex: none; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; cursor: pointer; }
+button.copy:hover { color: #000; background: #fff; border-color: #fff; }
+button.copy.primary { background: #fff; color: #000; border-color: #fff; padding: 0 16px; }
+button.copy.primary:hover { background: var(--ok); border-color: var(--ok); }
+.note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+ul.gets { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+ul.gets li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; color: var(--dim); }
+ul.gets li::before { content: "✓"; color: var(--ok); font-weight: 600; }
+ul.gets li.no::before { content: "–"; color: var(--dim); }
+ul.gets b { color: #fff; font-weight: 600; }
+/* leaderboard */
 .tablewrap { overflow: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { text-align: left; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; position: sticky; top: 0; background: #101012; }
-td { padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { text-align: left; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 6px; border-bottom: 1px solid var(--line); white-space: nowrap; position: sticky; top: 0; background: #101012; z-index: 1; }
+td { padding: 7px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
 tr.me td { background: rgba(57,255,138,.07); }
 tr.off td { color: var(--dim); }
@@ -75,47 +102,61 @@ tr.off .name { color: var(--text); font-weight: 400; }
 .agree.different { color: #fff; font-weight: 600; }
 .bar { display: inline-block; width: 54px; height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; margin-right: 8px; vertical-align: 1px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: #fff; }
-.empty { color: var(--dim); padding: 28px 0; text-align: center; }
-.empty a { color: #fff; }
-.example { opacity: .45; pointer-events: none; } .example .exlbl { margin: 0 0 6px; color: var(--dim); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
-.side { display: grid; gap: 14px; align-content: start; }
-.step { margin: 0 0 8px; color: var(--text); }
-.step b { color: #fff; }
-pre { margin: 0; background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font: 12px/1.5 var(--mono); color: #fff; white-space: pre-wrap; word-break: break-all; }
-.copyrow { display: flex; gap: 8px; align-items: stretch; margin-top: 6px; }
-.copyrow pre { flex: 1 1 auto; min-width: 0; }
-button.copy { flex: none; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; cursor: pointer; }
-button.copy:hover { color: #000; background: #fff; border-color: #fff; }
-.note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+.tag { display: inline-block; margin-left: 8px; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; vertical-align: 1px; }
+tr.ref td { background: rgba(255,255,255,.025); }
+/* free places: what the board looks like with you on it */
+tr.free td { color: rgba(255,255,255,.22); border-bottom: 1px dashed rgba(255,255,255,.07); }
+tr.free .slot { display: inline-block; width: 7em; height: 7px; border-radius: 3px; background: rgba(255,255,255,.05); vertical-align: 1px; }
+tr.free.next td { color: var(--ok); background: rgba(57,255,138,.05); border-top: 1px dashed rgba(57,255,138,.5); border-bottom: 1px dashed rgba(57,255,138,.5); cursor: pointer; }
+tr.free.next td:first-child { border-left: 1px dashed rgba(57,255,138,.5); }
+tr.free.next td:last-child { border-right: 1px dashed rgba(57,255,138,.5); }
+tr.free.next .name { color: var(--ok); }
+.status { color: var(--dim); padding: 10px 0 0; }
+.faq details { border-top: 1px solid var(--line); padding: 7px 0; }
+.faq details:first-of-type { border-top: 0; padding-top: 0; }
+.faq summary { color: #fff; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--dim); }
+.faq details[open] summary::after { content: "–"; }
+.faq details p { margin: 4px 0 2px; color: var(--dim); }
+.col1, .col3 { display: grid; gap: 14px; align-content: start; min-width: 0; }
+/* badge */
 select { font: 13px var(--mono); background: #050506; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 6px 8px; max-width: 100%; }
 .badgeprev { margin: 10px 0 2px; min-height: 22px; }
-.badgeprev img { display: block; height: 20px; }
+.badgeprev img, .badgeprev svg { display: block; height: 20px; }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer a { color: var(--dim); }
-#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(320px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
 [hidden] { display: none !important; }
-/* laptop and up, landscape: one screen, the leaderboard scrolls inside its panel */
-@media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
-  body { height: 100vh; overflow: hidden; padding-bottom: 10px; }
-  .wrap { height: 100%; }
-  .wrap > .main { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, 2.2fr) minmax(340px, 1fr); }
-  .panel.board { display: flex; flex-direction: column; min-height: 0; align-self: start; max-height: 100%; }   /* the board ends with its rows; no frame around empty space */
-  .panel.board .tablewrap { flex: 1 1 0; min-height: 0; }
-  .side { overflow: auto; min-height: 0; }
-}
-/* 21:9 and wider: the side column gets room for both cards next to each other */
-@media (min-width: 1100px) and (min-aspect-ratio: 2/1) {
-  .main { grid-template-columns: minmax(0, 1.8fr) minmax(0, 1.2fr); }
-  .side { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 700px) { td.hide-s, th.hide-s { display: none; } }
-/* phone: nothing smaller than 11 px, buttons big enough for a thumb */
+/* landscape from laptop size up: one screen, laid out for about 1600 x 860 CSS px and
+   scaled to the viewport (script below), like /stats. The board fills its column (free
+   places fill what rows do not); the join panel sits beside it at full height. */
+html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 12px; }
+html.fit #tip { zoom: var(--z); }
+html.fit .sub { max-width: 118ch; }
+html.fit .col1, html.fit .col3 { display: contents; }
+html.fit .wrap > .main { flex: 1 1 0; min-height: 0; gap: 12px; grid-template-columns: minmax(0, 1.3fr) minmax(440px, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-areas: "board join" "badge join" "faq gets"; }
+html.fit .board { grid-area: board; } html.fit .join { grid-area: join; } html.fit .gets { grid-area: gets; }
+html.fit .badge { grid-area: badge; } html.fit .faq { grid-area: faq; }
+html.fit .main > * > .panel, html.fit .main > .panel { min-height: 0; overflow: auto; }
+html.fit .panel.board { display: flex; flex-direction: column; overflow: hidden; }
+html.fit .panel.board .tablewrap { flex: 1 1 0; min-height: 0; }
+/* 21:9 and wider: board with the badge under it, how to join, then what you get and questions */
+html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, .85fr);
+  grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "board join side" "board badge side"; }
+/* right column: what you get, then the questions; fit() opens as many answers as fit */
+html.fit.wide .col3 { grid-area: side; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+html.fit.wide .col3 > .gets { flex: none; }
+html.fit.wide .col3 > .faq { flex: 1 1 0; }
+@media (max-width: 1199px) { .join { order: -1; } }
 @media (max-width: 700px) {
-  .tile h3, th, button.copy { font-size: 11px; }
-  button.copy { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+  td.hide-s, th.hide-s { display: none; }
+  button.copy { min-height: 44px; }
+  .join .big { font-size: 17px; }
 }
-/* running text stays readable: about 70 characters a line, whatever the screen width */
-p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -126,44 +167,73 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Community nodes</span></a>
   </header>
   <nav class="tnav" data-page="nodes" aria-label="Pages and tools"></nav>
-  <div>
-    <p class="lead">The people who keep the Tau testnet checkable.</p>
-    <p class="sub" id="sourceLine">Every node here runs the Tau HUD kit and follows the Tau Testnet Alpha by itself. The longer and steadier a node runs, the higher it ranks. Each one is compared, block for block, with our own node.</p>
-  </div>
-  <section class="tiles" aria-label="Key numbers">
-    <div class="tile" data-tip="Nodes that reported in the last 15 minutes."><h3>Online now</h3><div class="v" id="tOnline">–</div><p id="tOnlineSub">&nbsp;</p></div>
-    <div class="tile" data-tip="On the same chain as tauhud.com:\ntheir block at their height is the block we have there."><h3>Same chain as ours</h3><div class="v" id="tSame">–</div><p>of the nodes online</p></div>
-    <div class="tile" data-tip="Every node that reported in the last 30 days."><h3>Nodes, last 30 days</h3><div class="v" id="tAll">–</div><p>&nbsp;</p></div>
-    <div class="tile" data-tip="The node that has been running longest among those online."><h3>Running longest</h3><div class="v" id="tLong">–</div><p id="tLongSub">&nbsp;</p></div>
-  </section>
-  <main class="main">
-    <section class="panel board">
-      <h2>Leaderboard</h2>
-      <div class="tablewrap" id="boardWrap"><p class="empty">Loading…</p></div>
-    </section>
-    <div class="side">
-      <section class="panel">
-        <h2>Run a node</h2>
-        <p class="step">A server with <b>2 CPU, 4 GB RAM, 40 GB disk</b> (Ubuntu or Debian, x86 or ARM, about €6 a month). As root:</p>
-        <div class="copyrow"><pre id="cmd">curl -fsSL https://raw.githubusercontent.com/jimb000o/tau-command-hud/main/kit/install.sh | NODE_NAME=my-node bash</pre><button class="copy" type="button" data-copy="cmd">Copy</button></div>
-        <p class="note">Pick your own name. The first build takes about 1.5 hours; then your node appears here within a minute. <a href="https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md" target="_blank" rel="noopener">Full guide</a></p>
-      </section>
-      <section class="panel">
-        <h2>Badge for your node</h2>
-        <p class="step">Show that you run a node: in a GitHub README, on your website or in a forum signature. It stays up to date by itself.</p>
-        <label for="pick" class="note" style="display:block;margin:0 0 4px">Your node</label>
-        <select id="pick"><option value="">Pick a node from the list</option></select>
-        <div class="badgeprev" id="badgePrev"></div>
-        <div id="snips" hidden>
-          <div class="copyrow"><pre id="snipMd"></pre><button class="copy" type="button" data-copy="snipMd">Copy</button></div>
-          <div class="copyrow"><pre id="snipHtml"></pre><button class="copy" type="button" data-copy="snipHtml">Copy</button></div>
-        </div>
-        <p class="note">Your node’s log prints the same snippet once it reports: <code>docker compose logs heartbeat</code>.</p>
-      </section>
+  <div class="intro">
+    <div>
+      <p class="lead">Every node that checks the chain makes it harder to fake.</p>
+      <p class="sub" id="sourceLine">These nodes run the Tau HUD kit and verify every block of the Tau testnet themselves. We compare each one, block for block, with our own node. The longer and steadier a node runs, the higher it ranks.</p>
     </div>
+    <div class="kpis" aria-label="Key numbers">
+      <span class="kpi" data-tip="Community nodes that reported in the last 15 minutes."><b id="tOnline">–</b>online now</span>
+      <span class="kpi" data-tip="Online community nodes whose block at their height\nis the block our node has there."><b id="tSame">–</b>on our chain</span>
+      <span class="kpi" data-tip="Every community node that reported in the last 30 days."><b id="tAll">–</b>in the last 30 days</span>
+    </div>
+  </div>
+  <main class="main">
+    <div class="col1">
+    <section class="panel board">
+      <h2>Leaderboard <span class="rules" data-tip="How the board ranks:\n1. Online nodes before offline ones.\n2. Then the longest running (since its first report).\n3. Then the steadiest (share of minutes it reported).\nA node silent for 30 days leaves the list.">How it ranks</span></h2>
+      <div class="tablewrap" id="boardWrap"></div>
+      <p class="status" id="status" hidden></p>
+    </section>
+    <section class="panel badge">
+      <h2>Badge for your node</h2>
+      <div class="badgeprev" id="badgeDemo" aria-label="What the badge looks like"></div>
+      <label for="pick" class="note" style="display:block;margin:8px 0 4px">Your node</label>
+      <select id="pick"><option value="">Pick a node from the list</option></select>
+      <div class="badgeprev" id="badgePrev"></div>
+      <div id="snips" hidden>
+        <div class="copyrow"><pre id="snipMd"></pre><button class="copy" type="button" data-copy="snipMd">Copy</button></div>
+        <div class="copyrow"><pre id="snipHtml"></pre><button class="copy" type="button" data-copy="snipHtml">Copy</button></div>
+      </div>
+    </section>
+    </div>
+      <section class="panel join" id="join">
+        <h2>Run a node</h2>
+        <p class="big">Put your name on this board in three steps.</p>
+        <ol class="steps">
+          <li><div><h3>Rent a small server <small>2 min · about €6 a month</small></h3>
+            <p><b>2 CPU, 4 GB RAM, 40 GB disk</b>, Ubuntu or Debian, x86 or ARM. Any cloud provider works.</p></div></li>
+          <li><div><h3>Paste one command <small>runs by itself · about 1.5 h</small></h3>
+            <p>As root on the server. It installs Docker, builds the node and starts it.</p>
+            <div class="namerow"><label for="name">Your node’s name</label><input id="name" type="text" value="my-node" maxlength="24" spellcheck="false" autocomplete="off" aria-describedby="nameHelp"></div>
+            <div class="copyrow"><pre id="cmd"></pre><button class="copy primary" type="button" data-copy="cmd">Copy</button></div>
+            <p class="note" id="nameHelp">1 to 24 letters, digits, dots, dashes or underscores. Shown publicly.</p></div></li>
+          <li><div><h3>Your row appears <small>a minute after it syncs</small></h3>
+            <p>Your node reports once a minute. Its log prints your badge: <code>docker compose logs heartbeat</code>. <a href="https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md" target="_blank" rel="noopener">Full guide</a></p></div></li>
+        </ol>
+      </section>
+      <div class="col3">
+        <section class="panel gets">
+          <h2>What you get</h2>
+          <ul class="gets">
+            <li><span><b>Your name on this board</b>, ranked by how long and how steadily your node runs.</span></li>
+            <li><span><b>A live badge</b> for your README or website.</span></li>
+            <li><span><b>A chain you checked yourself</b>, block for block.</span></li>
+            <li><span><b>A head start for a validator seat.</b> Seats are decided on chain.</span></li>
+            <li class="no"><span>No tokens or payment: this is a testnet.</span></li>
+          </ul>
+        </section>
+        <section class="panel faq">
+          <h2>Before you start</h2>
+          <details><summary>Is it safe for my server?</summary><p>It opens only SSH and the peer port 4001. The node’s own interfaces stay inside Docker; nothing on the server is shared.</p></details>
+          <details><summary>Does it need looking after?</summary><p>No. It restarts by itself and resyncs when the testnet restarts. To update, run the same command again.</p></details>
+          <details><summary>What does tauhud.com learn?</summary><p>The name, height, latest block hash and kit version, once a minute. No address, no keys. Leave the name empty and nothing is sent.</p></details>
+          <details><summary>How do I stop?</summary><p><code>cd /opt/tau-node-kit/kit &amp;&amp; docker compose down</code></p></details>
+        </section>
+      </div>
   </main>
   <footer>
-    <p>Data: <a href="https://node.tauhud.com/community/board" target="_blank" rel="noopener">node.tauhud.com/community/board</a> (JSON). Nodes report once a minute and only if their operator sets a name; nothing but the name, height, block hash and kit version is sent. A node that stays silent for 30 days leaves the list. · <a href="/stats/">Stats</a> · <a href="/history/">Time travel</a> · <a href="/playground/">Rule Playground</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BNodes%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p>Data: <a href="https://node.tauhud.com/community/board" target="_blank" rel="noopener">node.tauhud.com/community/board</a> (JSON). Nodes report once a minute and only if their operator sets a name; nothing but the name, height, block hash and kit version is sent. · <a href="/stats/">Stats</a> · <a href="/history/">Time travel</a> · <a href="/playground/">Rule Playground</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BNodes%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 <div id="tip" hidden></div>
@@ -171,9 +241,10 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 "use strict";
 const $ = id => document.getElementById(id);
 const RELAY = "https://node.tauhud.com";
-const BOARD_URL = `${RELAY}/community/board`;
 const SAMPLE = new URLSearchParams(location.search).has("sample");
-let rows = null, failed = false;
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const NAME_OK = /^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$/;
+let rows = null, ref = null, failed = false;
 
 function el(tag, attrs, ...kids) {
   const e = document.createElement(tag);
@@ -183,7 +254,6 @@ function el(tag, attrs, ...kids) {
   for (const k of kids) if (k != null) e.append(k);
   return e;
 }
-
 function span(sec) {
   if (sec < 3600) return `${Math.max(1, Math.round(sec / 60))} min`;
   if (sec < 86400) return `${Math.floor(sec / 3600)} h`;
@@ -200,6 +270,20 @@ const AGREE_TIP = {
   unknown: "We hold no block at its height (yet).",
 };
 
+/* ---------- the install command follows the name you type ---------- */
+const CMD_A = "curl -fsSL https://raw.githubusercontent.com/jimb000o/tau-command-hud/main/kit/install.sh | NODE_NAME=", CMD_B = " bash";
+function updateCmd() {
+  const inp = $("name"), v = inp.value.trim(), ok = NAME_OK.test(v) && !/tauhud/i.test(v);
+  inp.classList.toggle("bad", !ok);
+  $("cmd").replaceChildren(CMD_A, el("span", { class: "nm", text: ok ? v : "my-node" }), CMD_B);
+  $("nameHelp").textContent = ok ? T("1 to 24 letters, digits, dots, dashes or underscores. Shown publicly.")
+    : T("Use 1 to 24 letters, digits, dots, dashes or underscores, starting with a letter or digit.");
+  const free = document.querySelector("tr.free.next .name");
+  if (free) free.textContent = ok ? v : T("your node");
+}
+$("name").addEventListener("input", updateCmd);
+
+/* ---------- data ---------- */
 function sampleRows() {
   const now = Date.now() / 1000, d = 86400;
   const mk = (id, name, age, up, on, agrees, h) => ({ id, name, first_seen: now - age, last_seen: on ? now - 30 : now - 3 * d,
@@ -208,79 +292,140 @@ function sampleRows() {
     mk("1234abcd5678", "lab-box", 2.2 * d, .74, true, "different", 830), mk("cafe0000beef", "newcomer", 7200, .99, true, "ahead", 1413),
     mk("dead0000f00d", "old-vps", 20 * d, .62, false, null, 1201)];
 }
-
+async function getJSON(path) {
+  const r = await fetch(RELAY + path, { cache: "no-store" });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
 async function load() {
-  if (SAMPLE) { rows = sampleRows(); render(); return; }
-  try {
-    const r = await fetch(BOARD_URL, { cache: "no-store" });
-    if (!r.ok) throw new Error(r.status);
-    rows = (await r.json()).nodes || [];
-    failed = false;
-  } catch (e) { failed = true; }
+  // our own node, always on the board: height from /community, running time and uptime from /uptime
+  const refP = Promise.all([getJSON("/community").catch(() => null), getJSON("/uptime").catch(() => null)]).then(([c, u]) => {
+    if (!c && !u) return null;
+    const hours = (u && u.hours) || [];
+    const samples = hours.reduce((s, h) => s + (h[1] || 0), 0), okay = hours.reduce((s, h) => s + (h[2] || 0), 0);
+    return { height: c && c.reference ? c.reference.height : null, online: !!(c && c.reference && c.reference.upstream_connected),
+             since: u && u.since, uptime: samples ? okay / samples : null };
+  });
+  if (SAMPLE) { rows = sampleRows(); ref = { height: 1412, online: true, since: Date.now() / 1000 - 2 * 86400, uptime: .996 }; render(); return; }
+  try { rows = (await getJSON("/community/board")).nodes || []; failed = false; }
+  catch (e) { failed = true; }
+  ref = await refP;
   render();
 }
 
+/* ---------- board ---------- */
+function upCell(u) {
+  return u == null ? el("span", { class: "rank", text: T("new") })
+    : el("span", null, el("span", { class: "bar" }, el("i", { style: `width:${Math.round(u * 100)}%` })), `${(u * 100).toFixed(u >= .995 ? 1 : 0)} %`);
+}
 function render() {
-  const now = Date.now() / 1000;
-  const wrap = $("boardWrap");
-  wrap.replaceChildren();
-  if (!rows) {
-    wrap.append(el("p", { class: "empty", text: failed ? "Our relay does not answer right now. Trying again in a minute." : "Loading…" }));
-    return;
-  }
-  const online = rows.filter(r => r.online);
-  $("tOnline").textContent = online.length;
-  $("tOnlineSub").textContent = rows.length ? `${rows.length - online.length} offline` : " ";
-  $("tSame").textContent = online.length ? online.filter(r => r.agrees === "same").length : "–";
-  $("tAll").textContent = rows.length;
-  const longest = online.slice().sort((a, b) => a.first_seen - b.first_seen)[0];
-  $("tLong").textContent = longest ? span(now - longest.first_seen) : "–";
-  $("tLongSub").textContent = longest ? longest.name : " ";
+  const now = Date.now() / 1000, wrap = $("boardWrap"), list = rows || [];
+  const online = list.filter(r => r.online);
+  $("tOnline").textContent = rows ? online.length : "–";
+  $("tSame").textContent = rows ? online.filter(r => r.agrees === "same").length : "–";
+  $("tAll").textContent = rows ? list.length : "–";
+  $("status").hidden = !failed;
+  $("status").textContent = failed ? T("Our relay does not answer right now. Trying again in a minute.") : "";
 
-  if (!rows.length) {
-    wrap.append(el("p", { class: "empty" }, "No node is reporting yet. Be the first: the command on the right sets one up. ",
-      el("a", { href: "https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md", target: "_blank", rel: "noopener", text: "Guide" })));
-    // a dimmed example row, so the empty board still shows what a node earns by reporting
-    const ex = el("div", { class: "example" });
-    ex.innerHTML = `<p class="exlbl">Example · what your row will look like</p><table><thead><tr><th class="n">#</th><th>Node</th><th>Running</th><th class="hide-s">Uptime</th><th class="n hide-s">Height</th><th>Chain</th><th class="hide-s">Last report</th></tr></thead>
-      <tbody><tr><td class="n rank">1</td><td><span class="dot on"></span><span class="name">your-node</span></td><td>3 days</td><td class="hide-s"><span class="bar"><i style="width:99%"></i></span>99.6 %</td><td class="n hide-s">#270</td><td><span class="agree same">Same chain</span></td><td class="hide-s">just now</td></tr></tbody></table>`;
-    wrap.append(ex);
-  } else {
-    const head = el("tr", null,
-      el("th", { class: "n", text: "#" }), el("th", { text: "Node" }),
-      el("th", { "data-tip": "Since its first report to tauhud.com.", text: "Running" }),
-      el("th", { class: "hide-s", "data-tip": "Share of the minutes since its first report\nin which it reported. Shown after ten minutes.", text: "Uptime" }),
-      el("th", { class: "n hide-s", "data-tip": "Its canonical height at its last report.", text: "Height" }),
-      el("th", { "data-tip": "Compared with our node, block for block.", text: "Chain" }),
-      el("th", { class: "hide-s", text: "Last report" }));
-    const body = el("tbody");
-    const me = location.hash.slice(1);
-    rows.forEach((r, i) => {
-      const up = r.uptime == null ? el("span", { class: "rank", text: "new" })
-        : el("span", null, el("span", { class: "bar" }, el("i", { style: `width:${Math.round(r.uptime * 100)}%` })), `${(r.uptime * 100).toFixed(r.uptime >= .995 ? 1 : 0)} %`);
-      const chain = r.online ? el("span", { class: `agree ${r.agrees}`, "data-tip": AGREE_TIP[r.agrees] || "", text: AGREE[r.agrees] || "–" })
-        : el("span", { class: "rank", text: "offline" });
-      const tr = el("tr", { "data-id": r.id, class: [r.online ? "" : "off", r.id === me ? "me" : ""].join(" ").trim(),
-                            "data-tip": `${r.name} · id ${r.id}\nsince ${date(r.first_seen)} · kit ${r.kit || "?"} · tau-testnet ${r.ref || "?"}\nClick for its badge.` },
-        el("td", { class: "n rank", text: i + 1 }),
-        el("td", null, el("span", { class: "dot" + (r.online ? " on" : "") }), el("span", { class: "name", text: r.name })),
-        el("td", { text: span(now - r.first_seen) }),
-        el("td", { class: "hide-s" }, up),
-        el("td", { class: "n hide-s", text: r.height != null ? `#${r.height}` : "–" }),
-        el("td", null, chain),
-        el("td", { class: "hide-s", text: ago(now - r.last_seen) }));
-      tr.addEventListener("click", () => { location.hash = r.id; pick(r.id); });
-      body.append(tr);
-    });
-    wrap.append(el("table", null, el("thead", null, head), body));
-  }
+  const head = el("tr", null,
+    el("th", { class: "n", text: "#" }), el("th", { text: "Node" }),
+    el("th", { "data-tip": "Since its first report to tauhud.com.", text: "Running" }),
+    el("th", { class: "hide-s", "data-tip": "Share of the minutes since its first report\nin which it reported. Shown after ten minutes.", text: "Uptime" }),
+    el("th", { class: "n hide-s", "data-tip": "Its canonical height at its last report.", text: "Height" }),
+    el("th", { "data-tip": "Compared with our node, block for block.", text: "Chain" }),
+    el("th", { class: "hide-s", text: "Last report" }));
+  const body = el("tbody");
+  // our node first: the yardstick every other row is compared with, so the board is never empty
+  if (ref) body.append(el("tr", { class: "ref", "data-tip": "tauhud.com’s own node. It runs the same kit,\nand every other row is compared with it.\nIt does not count as a community node." },
+    el("td", { class: "n rank", text: "·" }),
+    el("td", null, el("span", { class: "dot" + (ref.online ? " on" : "") }), el("span", { class: "name", text: "tauhud.com" }), el("span", { class: "tag", text: T("reference") })),
+    el("td", { text: ref.since ? span(now - ref.since) : "–" }),
+    el("td", { class: "hide-s" }, upCell(ref.uptime)),
+    el("td", { class: "n hide-s", text: ref.height != null ? `#${ref.height}` : "–" }),
+    el("td", { class: "rank", text: T("the yardstick") }),
+    el("td", { class: "hide-s", text: ref.online ? T("just now") : "–" })));
+  const me = location.hash.slice(1);
+  list.forEach((r, i) => {
+    const chain = r.online ? el("span", { class: `agree ${r.agrees}`, "data-tip": AGREE_TIP[r.agrees] || "", text: AGREE[r.agrees] || "–" })
+      : el("span", { class: "rank", text: "offline" });
+    const tr = el("tr", { "data-id": r.id, class: [r.online ? "" : "off", r.id === me ? "me" : ""].join(" ").trim(),
+                          "data-tip": `${r.name} · id ${r.id}\nsince ${date(r.first_seen)} · kit ${r.kit || "?"} · tau-testnet ${r.ref || "?"}\nClick for its badge.` },
+      el("td", { class: "n rank", text: i + 1 }),
+      el("td", null, el("span", { class: "dot" + (r.online ? " on" : "") }), el("span", { class: "name", text: r.name })),
+      el("td", { text: span(now - r.first_seen) }),
+      el("td", { class: "hide-s" }, upCell(r.uptime)),
+      el("td", { class: "n hide-s", text: r.height != null ? `#${r.height}` : "–" }),
+      el("td", null, chain),
+      el("td", { class: "hide-s", text: ago(now - r.last_seen) }));
+    tr.addEventListener("click", () => { location.hash = r.id; pick(r.id); });
+    body.append(tr);
+  });
+  // the next free place, in green: what your row will look like
+  const nextRank = list.length + 1, typed = $("name").value.trim();
+  const next = el("tr", { class: "free next", "data-tip": "Free. Run the command on the right\nand your node takes this place." },
+    el("td", { class: "n", text: nextRank }),
+    el("td", null, el("span", { class: "dot on" }), el("span", { class: "name", text: NAME_OK.test(typed) ? typed : T("your node") })),
+    el("td", { text: T("from day one") }), el("td", { class: "hide-s", text: "–" }), el("td", { class: "n hide-s", text: "–" }),
+    el("td", { text: T("Same chain") }), el("td", { class: "hide-s", text: T("free place") }));
+  next.addEventListener("click", () => { $("join").scrollIntoView({ behavior: "smooth", block: "start" }); $("name").focus(); $("name").select(); });
+  body.append(next);
+  const table = el("table", null, el("thead", null, head), body);
+  wrap.replaceChildren(table);
+  // more free places fill whatever height the board has left, so the panel shows its size, not a void
+  const fill = () => {
+    for (const f of [...body.querySelectorAll("tr.free:not(.next)")]) f.remove();
+    const rowH = next.getBoundingClientRect().height || 36;
+    const left = wrap.getBoundingClientRect().height - table.getBoundingClientRect().height;
+    const n = FIT ? Math.max(0, Math.min(30, Math.floor(left / rowH))) : 2;
+    for (let k = 0; k < n; k++) body.append(el("tr", { class: "free", "aria-hidden": "true" },
+      el("td", { class: "n", text: nextRank + 1 + k }), el("td", null, el("span", { class: "slot" })),
+      el("td"), el("td", { class: "hide-s" }), el("td", { class: "hide-s" }), el("td"), el("td", { class: "hide-s" })));
+  };
+  fill();
+  render.fill = fill;
 
   const sel = $("pick"), keep = sel.value || location.hash.slice(1);
-  sel.replaceChildren(el("option", { value: "", text: rows.length ? "Pick a node from the list" : "No node yet" }));
-  for (const r of rows.slice().sort((a, b) => a.name.localeCompare(b.name))) sel.append(el("option", { value: r.id, text: `${r.name} (${r.id})` }));
-  if (keep && rows.some(r => r.id === keep)) pick(keep);
+  sel.replaceChildren(el("option", { value: "", text: list.length ? T("Pick a node from the list") : T("No node has reported yet") }));
+  for (const r of list.slice().sort((a, b) => a.name.localeCompare(b.name))) sel.append(el("option", { value: r.id, text: `${r.name} (${r.id})` }));
+  if (keep && list.some(r => r.id === keep)) pick(keep);
 }
+/* ---------- one screen ---------- */
+let FIT = false;
+function fit() {
+  const w = innerWidth, h = innerHeight, root = document.documentElement;
+  FIT = w >= 1200 && h >= 640 && w / h >= 1.3;   // smaller screens scroll
+  const z = FIT ? Math.max(.82, Math.min(2, w / 1600, h / 860)) : 1;
+  root.classList.toggle("fit", FIT);
+  const wide = FIT && w / h >= 1.95;
+  root.classList.toggle("wide", wide);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+  // on 21:9 the questions show their answers, as many as fit
+  const faq = document.querySelector(".faq"), qs = [...faq.querySelectorAll("details")];
+  if (wide !== fit.wide || wide) {
+    qs.forEach(d => d.open = wide);
+    for (let i = qs.length - 1; wide && i >= 0 && faq.scrollHeight > faq.clientHeight + 1; i--) qs[i].open = false;
+    fit.wide = wide;
+  }
+  if (render.fill) render.fill();
+}
+addEventListener("resize", fit);
 
+/* ---------- badge ---------- */
+// what the badge looks like, drawn here so it shows before you have a node
+function demoBadge(right) {
+  const left = "Tau HUD node", lw = Math.round(left.length * 6.6) + 12, rw = Math.round(right.length * 6.6) + 12;
+  const ns = "http://www.w3.org/2000/svg", s = document.createElementNS(ns, "svg");
+  s.setAttribute("width", lw + rw); s.setAttribute("height", 20); s.setAttribute("viewBox", `0 0 ${lw + rw} 20`); s.setAttribute("role", "img");
+  s.setAttribute("aria-label", `${left}: ${right}`);
+  const add = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text) e.textContent = text; s.append(e); };
+  add("rect", { width: lw, height: 20, fill: "#09090a", stroke: "rgba(255,255,255,.18)" });
+  add("rect", { x: lw, width: rw, height: 20, fill: "#39ff8a" });
+  add("text", { x: lw / 2, y: 14, fill: "#fff", "font-family": "Verdana,DejaVu Sans,sans-serif", "font-size": 11, "text-anchor": "middle" }, left);
+  add("text", { x: lw + rw / 2, y: 14, fill: "#000", "font-family": "Verdana,DejaVu Sans,sans-serif", "font-size": 11, "text-anchor": "middle" }, right);
+  return s;
+}
+$("badgeDemo").append(demoBadge("running 12 d · 99 % up"));
 function pick(id) {
   $("pick").value = id;
   const prev = $("badgePrev");
@@ -288,28 +433,26 @@ function pick(id) {
   $("snips").hidden = !id;
   if (!id) return;
   const badge = `${RELAY}/community/badge/${id}.svg`, page = `https://tauhud.com/nodes/#${id}`;
-  prev.append(SAMPLE ? el("span", { class: "note", text: "(the badge preview needs the live relay)" })
-                     : el("img", { src: badge, alt: "Tau HUD node badge" }));
+  prev.append(SAMPLE ? el("span", { class: "note", text: T("(the badge preview needs the live relay)") }) : el("img", { src: badge, alt: "Tau HUD node badge" }));
   $("snipMd").textContent = `[![Tau HUD node](${badge})](${page})`;
   $("snipHtml").textContent = `<a href="${page}"><img src="${badge}" alt="Tau HUD node" height="20"></a>`;
   for (const tr of document.querySelectorAll("tr[data-id]")) tr.classList.toggle("me", tr.dataset.id === id);
 }
-
 $("pick").addEventListener("change", e => { if (e.target.value) location.hash = e.target.value; pick(e.target.value); });
 document.addEventListener("click", async e => {
   const b = e.target.closest("button.copy");
   if (!b) return;
-  try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); b.textContent = "Copied"; }
-  catch { b.textContent = "Select it"; }
-  setTimeout(() => { b.textContent = "Copy"; }, 1600);
+  try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); b.textContent = T("Copied"); }
+  catch { b.textContent = T("Select it"); }
+  setTimeout(() => { b.textContent = T("Copy"); }, 1600);
 });
 
-// hover tips: short, only what the table does not already say
+/* ---------- hover tips: short, only what the page does not already say ---------- */
 const tip = $("tip");
 document.addEventListener("mouseover", e => {
   const t = e.target.closest("[data-tip]");
   if (!t || !t.dataset.tip) { tip.hidden = true; return; }
-  tip.textContent = t.dataset.tip.replace(/\\n/g, "\n");
+  tip.textContent = T(t.dataset.tip.replace(/\\n/g, "\n"));
   tip.hidden = false;
 });
 document.addEventListener("mousemove", e => {
@@ -321,6 +464,9 @@ document.addEventListener("mousemove", e => {
 document.addEventListener("mouseleave", () => { tip.hidden = true; });
 
 if (SAMPLE) $("sourceLine").textContent = "Sample data: made-up nodes to preview the page. Remove ?sample from the address for the real list.";
+updateCmd();
+fit();
+render();
 load();
 setInterval(load, 60000);
 </script>
