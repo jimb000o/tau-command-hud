@@ -48,6 +48,18 @@ html.fit .cols > .panel { min-height: 0; display: flex; flex-direction: column; 
 html.fit .scroll { min-height: 0; flex: 1 1 auto; overflow: auto; }
 html.fit footer { padding-top: 6px; }
 html.fit footer p { margin: 0; }
+/* laptops with short screens (1280×720, 1366×768): tighter spacing so the open item fits without scrolling */
+@media (max-height: 860px) {
+  html.fit .wrap { gap: 8px; padding-top: 6px; }
+  html.fit .lead { margin-bottom: 4px; font-size: 18px; }
+  html.fit .try { margin-top: 4px; }
+  html.fit .panel { padding: 9px 12px; }
+  html.fit .trace { margin: 8px 0 2px; }
+  html.fit .step { padding-top: 19px; }
+  html.fit .verdict { margin: 6px 0 2px; padding: 6px 10px; }
+  html.fit .panel h3 { margin-top: 8px; }
+  html.fit p.note.type { display: none; }
+}
 
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
@@ -91,6 +103,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .qcheck b.a { color: var(--behind); }
 .qcheck span { display: block; color: var(--dim); font-size: 11.5px; line-height: 1.3; }
 .qcheck p { margin: 5px 0 0; color: var(--dim); font-size: 11.5px; }
+.qcheck .more-q { color: #fff; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
 .panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
@@ -135,6 +148,8 @@ ul.list li.gap > button { color: var(--dim); background: transparent; }
 ul.list li.sealed > button { border-left-color: var(--line); }
 ul.list li.stuck > button { border-left-color: #fff; }
 .list .d .tag { margin-left: 6px; vertical-align: 1px; }
+/* where the trail column is narrow, "4 min ago" would push a one-transaction block onto two lines: it moves to the hover */
+@media (min-width: 701px) and (max-width: 1599px) { .list .d .ago { display: none; } }
 
 /* the life of a transaction, left to right (top to bottom on phones) */
 .trace { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); margin: 14px 0 6px; }
@@ -162,7 +177,7 @@ ul.list li.stuck > button { border-left-color: #fff; }
 .verdict.wait { border-left-color: var(--behind); background: rgba(255,177,59,.03); }
 .verdict.plain { border-left-color: var(--hair); background: transparent; }
 .verdict h4 { margin: 0 0 3px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; }
-.verdict p { margin: 2px 0; font-size: 12.5px; color: var(--text); }
+.verdict p { margin: 2px 0; font-size: 12.5px; color: var(--text); max-width: 76ch; }
 .verdict p em { font-style: normal; color: var(--dim); }
 .split { display: grid; gap: 4px 24px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1100px) { .split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
@@ -172,7 +187,19 @@ ul.plain { margin: 6px 0 0; padding-left: 16px; font-size: 12.5px; } ul.plain li
 /* the open item */
 .kind { font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin: 0; }
 .title { margin: 2px 0 4px; font: 600 19px/1.25 var(--display); color: #fff; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
-.headline { margin: 0 0 6px; font: 500 14px/1.45 var(--display); color: #fff; }
+.headline { margin: 0 0 6px; font: 500 14px/1.45 var(--display); color: #fff; max-width: 76ch; }
+.headline a.go { font-weight: 600; }
+.title code { font: 500 15px var(--mono); color: var(--dim); }
+/* the sender's transactions in sequence order: shows at a glance whether one is missing in front of this one */
+ol.seq { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 0; font-size: 12.5px; }
+ol.seq li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding: 3px 0 3px 18px; position: relative; color: var(--dim); }
+ol.seq li::before { content: ""; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; background: var(--line); }
+ol.seq li::after { content: ""; position: absolute; left: 0; top: 9px; width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; border: 2px solid var(--hair); background: var(--void); }
+ol.seq li.s::after { background: #fff; border-color: #fff; }
+ol.seq li.w::after { background: var(--behind); border-color: var(--behind); }
+ol.seq li.x::after { border-style: dashed; border-color: var(--behind); }
+ol.seq li.me { color: #fff; } ol.seq li.me b { color: #fff; }
+ol.seq li b { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .headline em { font-style: normal; color: var(--dim); }
 .tag { display: inline-block; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 2px 7px; white-space: nowrap; }
 .tag.g { color: var(--ok); border-color: rgba(57,255,138,.4); }
@@ -212,6 +239,11 @@ footer a { color: var(--dim); }
   .mini h4, .qcheck h4, .panel h3, .filters button, .kind, .tag, th { font-size: 11px; }
   .mini h4, .qcheck h4 { letter-spacing: .06em; }
   .filters button { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+  .find { flex-wrap: nowrap; } .find input { flex: 1 1 0; height: 44px; padding: 0 14px; } .find .btn { height: 44px; padding: 0 16px; }
+  .find:has(.msg:not([hidden])) { flex-wrap: wrap; }
+  .try .chip, .nav .chip { min-height: 44px; display: inline-flex; align-items: center; }
+  button.more { min-height: 44px; display: inline-flex; align-items: center; }
+  ul.list li > button { min-height: 44px; align-items: center; }
 }
 /* running text stays readable: about 70 characters a line, whatever the screen width */
 p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
@@ -341,7 +373,7 @@ const tagHtml = (text, cls) => `<span class="tag ${cls || ""}">${esc(text)}</spa
 /* ------------------------------ state ------------------------------ */
 // C: the chain as read from the relay, plus indexes built from it. V: what the page shows.
 const C = { ws: null, blocks: [], head: -1, gov: null, mempool: [], dropped: [], droppedTotal: 0, loading: false, nextFrom: 0, retry: 5000, ready: false, legacy: false,
-  byHash: new Map(), txIndex: new Map(), bySeq: new Map(), ownRules: [], indexedTo: -1, fresh: new Set() };
+  byHash: new Map(), txIndex: new Map(), bySeq: new Map(), lastSeq: new Map(), ownRules: [], indexedTo: -1, fresh: new Set() };
 const V = { sel: null, trail: "latest", trailN: 40, lookups: {}, status: {} };
 
 /* ------------------------------ relay ------------------------------ */
@@ -378,7 +410,7 @@ function offline(why) {
   C.retryT = setTimeout(connect, w);
 }
 function loadFrom(from) { C.loading = true; C.nextFrom = from; send(`getblockrange ${from} ${PAGE}`); }
-function reset() { C.blocks = []; C.head = -1; C.byHash.clear(); C.txIndex.clear(); C.bySeq.clear(); C.ownRules = []; C.indexedTo = -1; }
+function reset() { C.blocks = []; C.head = -1; C.byHash.clear(); C.txIndex.clear(); C.bySeq.clear(); C.lastSeq.clear(); C.ownRules = []; C.indexedTo = -1; }
 function store(raw, live) {
   const h = Number((raw.header || {}).block_number);
   if (!Number.isFinite(h) || h < 0) return;
@@ -391,7 +423,7 @@ function store(raw, live) {
 // tx hash -> where it sits; block hash -> height. Built once per block.
 function index() {
   if (C.indexedTo > C.head) C.indexedTo = -1;
-  if (C.indexedTo === -1) { C.byHash.clear(); C.txIndex.clear(); C.bySeq.clear(); C.ownRules = []; }
+  if (C.indexedTo === -1) { C.byHash.clear(); C.txIndex.clear(); C.bySeq.clear(); C.lastSeq.clear(); C.ownRules = []; }
   C.ownRules = C.ownRules.filter(r => r.h <= C.indexedTo);   // a reorg may have replaced the blocks after it
   for (let h = C.indexedTo + 1; h <= C.head; h++) {
     const b = C.blocks[h]; if (!b) continue;
@@ -400,7 +432,7 @@ function index() {
     (b.transactions || []).forEach((t, i) => {
       if (!t || typeof t !== "object") return;
       const s = low(t.sender_pubkey);
-      if (t.sequence_number != null) C.bySeq.set(`${s}:${t.sequence_number}`, { h, i });
+      if (t.sequence_number != null) { C.bySeq.set(`${s}:${t.sequence_number}`, { h, i }); C.lastSeq.set(s, Math.max(C.lastSeq.has(s) ? C.lastSeq.get(s) : -1, num(t.sequence_number))); }
       const k = txKind(t);
       // an account's own rule: one it wrote, or one it took on from an offer
       if (isAddr(s) && (k === "rule_deploy" || k === "rule_offer_accept") && ruleOf(t)) C.ownRules.push({ a: s, h, i, id: low((b.tx_ids || [])[i] || ""), text: ruleOf(t) });
@@ -511,10 +543,10 @@ function drawQcheck() {
   const n = queueCounts(), total = C.mempool.length;
   const ready = C.ready || SAMPLE;
   $("qcheck").innerHTML = `<h4>Queue check · our node lists ${fmtN(total)}</h4>
-    <div class="row"><div><b>${ready ? fmtN(n.sealed) : "—"}</b><span>already in a block</span></div>
-    <div><b class="${n.waiting ? "a" : ""}">${ready ? fmtN(n.waiting) : "—"}</b><span>really waiting</span></div>
-    <div><b>${ready ? fmtN(n.stuck) : "—"}</b><span>stuck over 10 min</span></div></div>
-    <p>${!ready ? (C.off ? "Our node is offline right now." : "Reading the chain…") : !total ? "Nothing is waiting. A new transaction shows up here until a block takes it." : n.sealed ? "The node still lists sealed ones as waiting (a known node bug). Click to see each one." : "Click to see each one."}</p>`;
+    <div class="row"><div><b class="${n.waiting ? "a" : ""}">${ready ? fmtN(n.waiting) : "—"}</b><span>really waiting</span></div>
+    <div><b>${ready ? fmtN(n.stuck) : "—"}</b><span>stuck over 10 min</span></div>
+    <div><b>${ready ? fmtN(n.sealed) : "—"}</b><span>listed, but already in a block</span></div></div>
+    <p>${!ready ? (C.off ? "Our node is offline right now." : "Reading the chain…") : !total ? "Nothing is waiting. A new transaction shows up here until a block takes it." : `${n.sealed ? "Sealed ones still listed are a known node bug. " : ""}<span class="more-q">Show the queue →</span>`}</p>`;
 }
 // a few ways in for someone who has nothing to paste yet
 function drawTry() {
@@ -553,7 +585,7 @@ function txRow(x, cls) {
   return `<li class="tx ${cls || ""} ${isOpen("tx", txKey(x)) ? "on" : ""}"><button type="button" data-go="tx:${txKey(x)}">
     <span class="h"></span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${txLine(x.t, k)}</em></span><span class="amt">${amt != null ? fmtA(amt) : ""}</span></button></li>`;
 }
-const TRAIL_SUB = { latest: "blocks and what they hold, newest first", queue: "our node's queue, checked against the chain", rules: "own rules, offers, votes and proposals", refused: "left the queue without reaching a block" };
+const TRAIL_SUB = { latest: "newest first; a block with one transaction is one line", queue: "our node's queue, checked against the chain", rules: "own rules, offers, votes and proposals", refused: "left the queue without reaching a block" };
 function drawTrail() {
   const f = V.trail, rows = [];
   let more = false;
@@ -566,10 +598,18 @@ function drawTrail() {
       const txs = (b.transactions || []).filter(t => t && typeof t === "object");
       if (!txs.length && h > 0 && !isOpen("b", h)) { if (!gapN) gapTop = h; gapN++; continue; }
       flush();
-      rows.push(`<li class="blk ${isOpen("b", h) ? "on" : ""} ${C.fresh.has(h) ? "fresh" : ""}"><button type="button" data-go="b:${h}">
-        <span class="h">#${fmtN(h)}</span><span class="d"><b>${h === 0 ? "Genesis" : plural(txs.length, "transaction")}</b> <em>· ${h === 0 ? "the starting state" : esc(ago(tsOf(b)))}</em></span><span class="amt dim">${h ? esc(fmtTime(tsOf(b))) : ""}</span></button></li>`);
+      const fresh = C.fresh.has(h) ? "fresh" : "", clock = h ? ` title="${esc(fmtWhen(tsOf(b)))}"` : "";
+      const one = h > 0 && txs.length === 1 ? (b.transactions || []).map((t, i) => txAt(h, i)).find(Boolean) : null;
+      if (one) {
+        const k = txKind(one.t), amt = amountOf(one.t);
+        rows.push(`<li class="blk ${isOpen("b", h) || isOpen("tx", txKey(one)) ? "on" : ""} ${fresh}"><button type="button" data-go="tx:${txKey(one)}"${clock}>
+          <span class="h">#${fmtN(h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${txLine(one.t, k)}<span class="ago"> · ${esc(ago(tsOf(b)))}</span></em></span><span class="amt">${amt != null ? fmtA(amt) : ""}</span></button></li>`);
+        shown++; continue;
+      }
+      rows.push(`<li class="blk ${isOpen("b", h) ? "on" : ""} ${fresh}"><button type="button" data-go="b:${h}"${clock}>
+        <span class="h">#${fmtN(h)}</span><span class="d"><b>${h === 0 ? "Genesis" : plural(txs.length, "transaction")}</b> <em>· ${h === 0 ? "the starting state" : esc(ago(tsOf(b)))}</em></span><span class="amt"></span></button></li>`);
       shown++;
-      for (let i = 0; i < (b.transactions || []).length; i++) { const x = txAt(h, i); if (x) rows.push(txRow(x, C.fresh.has(h) ? "fresh" : "")); }
+      for (let i = 0; i < (b.transactions || []).length; i++) { const x = txAt(h, i); if (x) rows.push(txRow(x, fresh)); }
     }
     flush();
   } else if (f === "queue") {
@@ -629,6 +669,29 @@ const trace = steps => `<div class="trace" style="--n:${steps.length}">${steps.m
 const nav = (...chips) => `<div class="nav">${chips.filter(Boolean).join("")}</div>`;
 const copyChip = href => `<button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + href)}">Copy link</button>`;
 
+/* the sender's transactions around this one, in sequence order. A sender's transactions go into blocks strictly
+   in order, so a number missing in front of a waiting one holds it back; this is the usual reason a transaction is stuck. */
+function seqAround(sender, seq) {
+  if (!isAddr(sender) || seq == null) return null;
+  seq = num(seq);
+  const queued = new Map();
+  for (const m of C.mempool) if (low(m.sender) === sender && m.sequence_number != null && !C.txIndex.has(low(m.tx_hash))) queued.set(num(m.sequence_number), m);
+  const top = Math.max(seq, C.lastSeq.has(sender) ? C.lastSeq.get(sender) : -1, ...queued.keys());
+  const next = (C.lastSeq.has(sender) ? C.lastSeq.get(sender) : -1) + 1;   // the number the chain expects from this sender
+  let gap = null, ahead = null;
+  for (let k = next; k < seq; k++) { if (queued.has(k)) { if (ahead == null) ahead = k; } else { gap = k; break; } }
+  const from = Math.max(0, seq - 3), to = Math.min(top, seq + 2), rows = [];
+  for (let k = to; k >= from; k--) {
+    const at = C.bySeq.get(`${sender}:${k}`), m = queued.get(k), me = k === seq ? " me" : "";
+    const id = at ? low((C.blocks[at.h].tx_ids || [])[at.i] || "") || `${at.h}.${at.i}` : m ? low(m.tx_hash) : null;
+    const label = `<b>no. ${fmtN(k + 1)}</b>`;
+    if (at) rows.push(`<li class="s${me}">${label}<span>${me ? "this one · " : id ? `${txLink(id)} · ` : ""}sealed in ${blkLink(at.h)}</span></li>`);
+    else if (m) { rows.push(`<li class="w${me}">${label}<span>${me ? "this one · " : `${txLink(low(m.tx_hash))} · `}waiting since ${esc(fmtTime(isoTs(m.received_at) || 0))}</span></li>`); }
+    else rows.push(`<li class="x${me}">${label}<span>${me ? "this one · " : ""}missing: in no block and not in our node's queue</span></li>`);
+  }
+  if (next - 1 < from && next > 0) { const at = C.bySeq.get(`${sender}:${next - 1}`); if (at) rows.push(`<li class="s"><b>no. ${fmtN(next)}</b><span>its last one in a block, ${blkLink(at.h)}</span></li>`); }
+  return { html: `<h3>This sender's transactions, in order</h3><ol class="seq">${rows.join("")}</ol>`, gap, ahead };
+}
 function blockView(h) {
   const b = C.blocks[h];
   if (!b) return notFound(`Block #${fmtN(h)}`, h > C.head ? `The chain is at #${fmtN(C.head)}, so this block does not exist yet.` : "Our node does not hold this block.");
@@ -663,7 +726,7 @@ function blockView(h) {
         <dl class="kv">
           <dt>Time</dt><dd>${esc(fmtWhen(ts))}</dd>
           <dt>Sealed by</dt><dd>${/^0*$/.test(prop) ? "nobody (genesis)" : `${addrLink(prop)}${isValidator(prop) ? " " + tagHtml("validator", "g") : ""}`}</dd>
-          ${R ? `<dt>Judged by</dt><dd>network rules, revision ${R.rev} <em>· <a href="/proposals/">rules over time</a></em>${R.here.length ? " " + tagHtml("rules changed here", "g") : ""}</dd><dt>Consensus</dt><dd>${esc(R.mode)}</dd>` : ""}
+          ${R ? `<dt>Judged by</dt><dd>network rules, revision ${R.rev} <em>· ${esc(R.mode.toLowerCase())} · <a href="/proposals/">rules over time</a></em>${R.here.length ? " " + tagHtml("rules changed here", "g") : ""}</dd>` : ""}
           <dt>Own rules</dt><dd>${own.size ? `${plural(own.size, "account")} had set a rule of their own` : "no account had set a rule of its own yet"}</dd>
           <dt class="vt">Block hash</dt><dd class="vt"><code>${esc(b.block_hash || "—")}</code></dd>
           <dt class="vt">Previous</dt><dd class="vt">${h > 0 ? `${blkLink(h - 1)} <code>${esc(short(hd.previous_hash))}</code>` : "—"}</dd>
@@ -705,10 +768,14 @@ function txView(key) {
   const checked = status === "queued" ? ["todo", "Checked", "when a block takes it"]
     : ["fail", failLabel, status === "superseded" ? `sequence already used in ${blkLink(truth.h)}` : left ? `${esc(fmtWhen(left))}${st && st.reason ? ` · <b>${esc(st.reason)}</b>` : ""}` : (st && st.reason ? `<b>${esc(st.reason)}</b>` : "left the queue")];
   const steps = [signed, queued, checked, ["todo", "Sealed", status === "queued" ? "not yet" : "never"], ["todo", "Settled", "—"]];
+  const line = status === "queued" ? seqAround(sender, seq) : null;
+  const cause = !line ? "" : line.gap != null ? `<p><b>No. ${fmtN(line.gap + 1)} from the same sender is missing.</b> It is in no block and no longer in our node's queue, most likely dropped. A sender's transactions go into blocks strictly in order, so this one cannot land until no. ${fmtN(line.gap + 1)} is sent again.</p>`
+    : line.ahead != null ? `<p><b>It waits behind no. ${fmtN(line.ahead + 1)} from the same sender</b>, which is still in the queue too. They go into blocks in order.</p>`
+    : truth.k === "stuck" ? `<p>Nothing is missing in front of it: it is next in line for its sender. So the likely reason is its fee limit, or a rule that will refuse it.</p>` : "";
   const why = status === "queued"
-    ? `<div class="verdict wait"><h4>${truth.k === "stuck" ? "Why it may be stuck" : "Still waiting"}</h4>${truth.k === "stuck"
-        ? `<p>A transaction usually lands in the next block or two. One waiting this long often means an earlier transaction from the same sender is missing or stuck, its fee limit is too low, or a rule will refuse it.</p><p><em>${exp ? `Our node lets it go at ${esc(fmtWhen(exp))} if nothing takes it.` : ""}</em></p>`
-        : `<p>It sits in our node's queue until the validator puts it in a block, usually within a minute or two. Every account's own rules and the network's rules check it then.</p>`}</div>`
+    ? `<div class="verdict wait"><h4>${truth.k === "stuck" ? "Why it is stuck" : "Still waiting"}</h4>${truth.k === "stuck"
+        ? `${cause || `<p>A transaction usually lands in the next block or two. One waiting this long often means an earlier transaction from the same sender is missing, its fee limit is too low, or a rule will refuse it.</p>`}<p><em>${exp ? `If nothing takes it, our node lets it go: ${esc(fmtWhen(exp))}.` : ""}</em></p>`
+        : `${cause}<p>It sits in our node's queue until the validator puts it in a block, usually within a minute or two. Every account's own rules and the network's rules check it then.</p>`}</div>`
     : status === "superseded" ? "" : `<div class="verdict no"><h4>Why it never landed</h4><p>${esc(says)}</p></div>`;
   const rows = [["Hash", `<code>${esc(key)}</code>`]];
   if (dr && dr.type) rows.push(["What", esc(TX_NAMES[dr.type] || dr.type)]);
@@ -720,8 +787,7 @@ function txView(key) {
   return `<p class="kind">Transaction</p><p class="title">${esc(short(key))} ${tagHtml(status === "queued" && truth.k === "waiting" ? "Waiting" : label, status === "queued" && truth.k === "waiting" ? "a" : cls)}</p>
     <p class="headline">${status === "queued" && truth.k === "waiting" ? "In our node's queue, waiting for the next block." : esc(says)}</p>
     ${trace(steps)}
-    ${why}
-    <dl class="kv">${rows.map(([a, b]) => kvRow(a, b)).join("")}</dl>
+    <div class="split"><div>${why}<dl class="kv">${rows.map(([a, b]) => kvRow(a, b)).join("")}</dl></div><div>${line ? line.html : ""}</div></div>
     ${status === "queued" ? `<p class="note">Our node only shows a summary while it waits. The whole transaction appears here once a block takes it.</p>` : ""}
     ${nav(sender && `<a class="chip" href="${addrHref(sender)}" data-go="a:${sender}">Sender</a>`, copyChip(txHref(key)))}`;
 }
@@ -729,12 +795,13 @@ function sealedTx(x) {
   const t = x.t, k = txKind(t), s = low(t.sender_pubkey), tr = transfersOf(t), rule = ruleOf(t), st = streamOf(rule);
   const confirms = C.head - x.h + 1, R = rulesAt(x.h), own = ownRulesBefore(x.h, x.i);
   const m = x.id && C.mempool.find(e => low(e.tx_hash) === x.id), seen = m && isoTs(m.received_at), recv = seen && x.ts && seen <= x.ts ? seen : null;
+  const onTop = confirms - 1;
   const steps = [
     ["done", "Signed", `by ${addrLink(s)}${t.sequence_number != null ? ` · no. ${fmtN(num(t.sequence_number) + 1)}` : ""}`],
     ["done", "Queued", recv ? `arrived ${esc(fmtTime(recv))}` : "passed our node's queue"],
     ["done", "Checked", `by Tau rules${R ? ` · revision ${R.rev}` : ""}${CAT[k] === "transfer" && own.size ? ` + ${plural(own.size, "own rule")}` : ""}`],
     ["done", "Sealed", `in ${blkLink(x.h)} · ${esc(fmtWhen(x.ts))}`],
-    ["ok", "Settled", `${plural(confirms - 1, "block")} on top`],
+    onTop ? ["ok", "Settled", `${plural(onTop, "block")} on top`] : ["now", "Settled", "with the next block on top"],
   ];
   const mine = own.get(s), theirs = [...new Set(tr.map(r => low(r[1])).concat(low(t.recipient_pubkey) || []))].map(a => own.get(a)).filter(Boolean);
   const ruleLink = r => `<a class="go" href="${txHref(r.id || `${r.h}.${r.i}`)}" data-go="tx:${r.id || `${r.h}.${r.i}`}">set in #${fmtN(r.h)}</a>`;
@@ -764,14 +831,18 @@ function sealedTx(x) {
   for (const [f, label] of [["offer_id", "Offer"], ["update_id", "Rule change"], ["request_id", "Request"], ["retractable_id", "Retractable"]])
     if (t[f]) rows.push([label, `<code>${esc(t[f])}</code>`]);
   if (t.fee_limit != null) rows.push(["Fee limit", `${fmtA(num(t.fee_limit))} AGRS`]);
-  return `<p class="kind">Transaction</p><p class="title">${esc(TX_NAMES[k] || k)} ${tagHtml("In a block", "g")}</p>
-    <p class="headline">${esc(TX_SAYS[k] || "")}</p>
+  const to1 = toOf(t), amt = amountOf(t);
+  const what = CAT[k] === "transfer" && amt != null ? `<b>${fmtA(amt)} AGRS</b> from ${addrLink(s)} to ${to1 ? addrLink(to1) : plural(tr.length, "account")}.`
+    : k === "rule_deploy" ? `${addrLink(s)} set a rule for its own account.` : to1 ? `From ${addrLink(s)} to ${addrLink(to1)}.` : `From ${addrLink(s)}.`;
+  return `<p class="kind">Transaction</p><p class="title">${esc(TX_NAMES[k] || k)} ${x.id ? `<code>${esc(short(x.id))}</code>` : ""} ${tagHtml("In a block", "g")}</p>
+    <p class="headline">Arrived: sealed in ${blkLink(x.h)} ${esc(ago(x.ts))}. ${what}</p>
     ${trace(steps)}
     ${m ? `<p class="note"><b>Our node still lists this one as waiting.</b> The chain says it is sealed; that is a known node bug (IDNI issue #81), not a second copy.</p>` : ""}
-    <div class="split"><div>${why}</div><div><dl class="kv">${rows.map(([a, b]) => kvRow(a, b)).join("")}</dl></div></div>
+    <div class="split"><div>${why}</div><div><dl class="kv">${rows.map(([a, b]) => kvRow(a, b)).join("")}</dl>${(seqAround(s, t.sequence_number) || {}).html || ""}</div></div>
     ${tr.length > 1 ? `<h3>Transfers</h3><table><thead><tr><th>From</th><th>To</th><th class="n">AGRS</th></tr></thead><tbody>${tr.map(([f, to, a]) => `<tr><td>${addrLink(low(f))}</td><td>${addrLink(low(to))}</td><td class="n">${fmtA(num(a))}</td></tr>`).join("")}</tbody></table>` : ""}
     ${rule ? `<h3>Rule text${st ? ` · ${esc(st)}` : ""}</h3><pre class="code">${esc(rule)}</pre><p class="note">Try rules like this in the <a href="/playground/">Rule Playground</a>.</p>` : ""}
     ${nav(`<a class="chip" href="${addrHref(s)}" data-go="a:${s}">Sender</a>`, copyChip(txHref(txKey(x))))}
+    <p class="note type">${esc(TX_SAYS[k] || "")}</p>
     <details class="raw vt"><summary>Raw transaction</summary><pre class="code">${esc(JSON.stringify(t, null, 2))}</pre></details>`;
 }
 const isValidator = a => ((C.gov || {}).active_validators || []).some(v => low(typeof v === "string" ? v : (v || {}).pubkey) === a);
@@ -790,7 +861,7 @@ function addrView(a) {
     if (!touched) continue;
     if (mine) sent++;
     if (last == null) last = x.ts;
-    if (list.length < 40) list.push({ x, dir, amt });
+    if (list.length < (innerHeight < 860 ? 6 : 10)) list.push({ x, dir, amt });
   }
   const st = V.lookups[`getaccountstate ${a}`], sq = V.lookups[`getsequence ${a}`];
   const bal = st && st.chain_balance != null ? num(st.chain_balance) : null;
@@ -820,7 +891,7 @@ function addrView(a) {
       ${pending ? `<dt>On hold</dt><dd>${fmtA(pending)} AGRS for transactions still waiting</dd>` : ""}
     </dl>
     </div><div>
-    ${list.length ? `<h3>Latest activity</h3><ul class="list">${list.map(({ x, dir, amt }) => { const k = txKind(x.t); return `<li><button type="button" data-go="tx:${txKey(x)}"><span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${dir === "in" ? `from ${esc(short(low(x.t.sender_pubkey)))}` : toOf(x.t) && toOf(x.t) !== a ? `to ${esc(short(toOf(x.t)))}` : esc(ago(x.ts))}</em></span><span class="amt ${dir === "in" ? "" : "dim"}">${amt != null ? `${dir === "in" ? "+" : "−"}${fmtA(amt)}` : ""}</span></button></li>`; }).join("")}</ul>` : ""}
+    ${list.length ? `<h3>Latest activity${sent + inN > list.length ? ` <a class="go" href="/account/?a=${esc(a)}${qs}">· all in the account view</a>` : ""}</h3><ul class="list">${list.map(({ x, dir, amt }) => { const k = txKind(x.t); return `<li><button type="button" data-go="tx:${txKey(x)}"><span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${dir === "in" ? `from ${esc(short(low(x.t.sender_pubkey)))}` : toOf(x.t) && toOf(x.t) !== a ? `to ${esc(short(toOf(x.t)))}` : esc(ago(x.ts))}</em></span><span class="amt ${dir === "in" ? "" : "dim"}">${amt != null ? `${dir === "in" ? "+" : "−"}${fmtA(amt)}` : ""}</span></button></li>`; }).join("")}</ul>` : ""}
     </div></div>
     <p class="note">Its rule offers and refusals are in the full account view.</p>`;
 }
@@ -953,10 +1024,11 @@ function sampleChain() {
   C.gov = { active_validators: [prop], eligibility_mode: "validator_set", archival_update_details: [{ update_id: hex(64), lifecycle: "activated", activate_at_height: 200 }] };
   const iso = t => new Date(t * 1000).toISOString();
   const q = (hash, sender, sq, ago) => ({ tx_hash: hash, sender, sequence_number: sq, received_at: iso(now - ago), expires_at: iso(now - ago + 3600), operation_count: 1, status: "pending", fee_limit: 100, estimated_fee: 3 });
-  C.mempool = [q(hex(64), accs[5], 40, 12), q(hex(64), accs[7], 77, 25 * 60)];
+  // one really waiting, next in line for its sender; one stuck behind a transaction of its sender that was dropped
+  C.mempool = [q(hex(64), accs[5], seq[accs[5]] || 0, 12), q(hex(64), accs[7], (seq[accs[7]] || 0) + 1, 25 * 60)];
   // like the live node (IDNI issue #81): transactions already sealed stay listed as waiting for up to an hour
   for (let h = N - 1, n = 0; h > N - 40 && n < 5; h--) { const b = C.blocks[h]; if (b && b.tx_ids.length) { C.mempool.push(q(b.tx_ids[0], b.transactions[0].sender_pubkey, b.transactions[0].sequence_number, now - b.header.timestamp + 25)); n++; } }
-  C.dropped = [{ tx_hash: hex(64), type: "user_tx", sender: accs[6], seen: now - 5400, left: now - 5330 }]; C.droppedTotal = 1;
+  C.dropped = [{ tx_hash: hex(64), type: "user_tx", sender: accs[7], seen: now - 27 * 60, left: now - 26 * 60 }]; C.droppedTotal = 1;
   V.lookups[`getaccountstate ${accs[1]}`] = { address: accs[1], chain_balance: "24120", pending_outgoing: "0", pending_fees: "0" };
   C.ready = true;
   setState("sample", "Sample data", "Made-up data for previews.\nRemove ?sample from the address for the live chain.");
