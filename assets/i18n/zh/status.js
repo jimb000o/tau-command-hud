@@ -152,4 +152,8 @@ TauI18n.add({ strings: {
   "· up to": "· 直到",
   "· {n} stalls over 10 min": "· {n} 次超过 10 分钟的停滞",
   "A made-up chain generated in your browser: the simulated node is up and in sync. No real chain data.": "在你的浏览器中生成的虚构链：模拟节点在线且已同步。不是真实链上数据。",
+  // found by the page check (tests/pages.mjs)
+  "{n} minutes": "{n} 分钟",
+  "{n} seconds": "{n} 秒",
+  "up to {n} block behind": "最多落后 {n} 个区块",
 } });

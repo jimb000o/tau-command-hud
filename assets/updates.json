@@ -838,5 +838,10 @@
   "tag": "Guided tour",
   "on": "2026-10-28",
   "html": "Every subpage with a tour now has a Take the tour button at the end of its opening line, top left where reading starts, besides Tour in the header. One click starts the page’s tour; in Chinese too."
+ },
+ {
+  "tag": "Checks",
+  "on": "2026-10-28",
+  "html": "Checks: every change to the site is now opened in a browser before it goes live, each page in English and Chinese, in the simulation and with the live node offline, on wide screens, so a broken page or a missing Chinese text is caught first. About fifty Chinese texts that were still English are translated, and a rare drawing error in Time travel is fixed."
  }
 ]

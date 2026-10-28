@@ -224,4 +224,7 @@ TauI18n.add({ strings: {
   "A made-up chain generated in your browser, the same on every page.": "在你的浏览器中生成的虚构链，每个页面都相同。",
   "Newest block #{n}, sealed {m} s ago.": "最新区块 #{n}，{m} 秒前封装。",
   "the other account said no": "对方账户拒绝了",
+  // found by the page check (tests/pages.mjs)
+  "Transfer pulled back": "转账已撤回",
+  "a retractable transfer taken back": "一笔可撤回转账被收回",
 } });

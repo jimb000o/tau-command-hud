@@ -152,4 +152,25 @@ TauI18n.add({ strings: {
   "The whole chain. Drag to choose the part shown above, drag the window to move it, double-click for everything.": "整条链。拖动以选择上方显示的部分，拖动窗口来移动它，双击显示全部。",
   "Overview of the whole chain": "整条链概览",
   "{x} · rev {n}": "{x} · 版本 {n}",
+  // found by the page check (tests/pages.mjs)
+  "{n} of {m} votes · deadline #{a}": "{m} 票中已有 {n} 票 · 截止 #{a}",
+  "{n} rule change": "{n} 项规则变更",
+  "{n} rule changes": "{n} 项规则变更",
+  "{n} rule change the node knows about is not in the loaded blocks": "节点知道的 {n} 项规则变更不在已加载的区块中",
+  "{n} rule changes the node knows about are not in the loaded blocks": "节点知道的 {n} 项规则变更不在已加载的区块中",
+  "validators (node: {n})": "验证者（节点：{n}）",
+  "base fee (node: {n})": "基础手续费（节点：{n}）",
+  "threshold (node: {n})": "阈值（节点：{n}）",
+  "quorum (node: majority)": "法定人数（节点：过半数）",
+  "quorum (node: supermajority)": "法定人数（节点：三分之二）",
+  "retractable transfer": "可撤回转账",
+  "· {n} h {m} min ago": "· {n} 小时 {m} 分钟前",
+  "Changed at this block.": "在此区块发生了变更。",
+  ", base fee": "、基础手续费",
+  "own rule": "自有规则",
 } });
+/* "Differs from the node": the list of differences, each part on its own (their "(node: 5)" colons would split the line wrongly) */
+(() => {
+  const PART = String.raw`(?:[\d,]+ rule changes? the node knows about (?:is|are) not in the loaded blocks|validators \(node: [\d,]+\)|quorum \(node: [\w-]+\)|threshold \(node: [\d,]+\)|base fee \(node: [\d,]+\))`;
+  TauI18n.add({ patterns: [[new RegExp(`^${PART}(?:, ${PART})+$`), s => s.split(", ").map(p => TauI18n.t(p)).join("，")]] });
+})();
