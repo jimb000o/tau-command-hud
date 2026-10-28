@@ -13,6 +13,8 @@
   let lang = norm(q.get("lang"));
   if (lang) store.set(KEY, lang);
   else lang = norm(store.get(KEY)) || ((navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]).map(norm).find(Boolean)) || "en";
+  /* the address bar keeps ?lang=zh, so a link copied from the Chinese site opens in Chinese */
+  if (lang === "zh" && q.get("lang") !== "zh") try { const u = new URL(location.href); u.searchParams.set("lang", "zh"); history.replaceState(history.state, "", u.href); } catch (e) {}
   const me = document.currentScript, ROOT = me && me.src ? new URL("..", me.src) : new URL("/", location.href);
   const api = window.TauI18n = {
     lang, langs: LANGS, strings: new Map(), upper: new Map(), patterns: [],

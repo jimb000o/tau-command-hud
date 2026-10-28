@@ -55,6 +55,7 @@ TauI18n.add({ strings: {
   "Feedback becomes a public GitHub issue (free account needed).": "反馈会成为一个公开的 GitHub issue（需要免费账号）。",
   "Feedback on the Playground": "关于试验场的反馈",
   "From": "发送方",
+  "Hover a check for what it tests. Click it for why the testnet has it, how to fix a refusal and where it lives in the node’s code.": "悬停在某项检查上可查看它测试什么。点击可了解测试网为什么有它、被拒绝时如何修复，以及它在节点代码中的位置。",
   "How the real node does it:": "真实节点的做法：",
   "in-browser preview, updates as you type": "浏览器内预览，输入时更新",
   "Insert an address:": "插入一个地址：",
