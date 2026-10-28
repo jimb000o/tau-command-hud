@@ -79,6 +79,10 @@ body::after { /* scanlines */
 .simbar button { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 3px 8px; cursor: pointer; }
 .simbar button:hover { background: #fff; color: #000; }
 body[data-mode="live"] .simbar { display: none; }
+body[data-mode="sim"] .simbar { color: #ffb13b; border-color: rgba(255,177,59,.7); background: repeating-linear-gradient(135deg, rgba(255,177,59,.14) 0 10px, rgba(255,177,59,.03) 10px 20px); }
+body[data-mode="sim"] .simbar button { border-color: rgba(255,177,59,.6); }
+body[data-mode="sim"] .simbar button:hover { background: #ffb13b; border-color: #ffb13b; color: #000; }
+body[data-mode="sim"] .simtag { color: #ffb13b; border-color: rgba(255,177,59,.6); }
 .simtag { position: absolute; top: 6px; right: 8px; font: 600 11px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 4px; }
 body[data-mode="live"] .simtag { display: none; }
 /* simple vs technical view */
@@ -266,7 +270,8 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .rail .chips .chip { cursor: help; } .rail .chips button.chip { cursor: pointer; }
 .rail .chips .chip:hover { border-color: rgba(255,255,255,.45); color: var(--text); }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); margin-right: 6px; animation: blink 1.6s infinite; }
-.dot.sim { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.dot.sim { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
+.chip.sim b { color: #ffb13b; }
 .dot.behind { background: var(--behind); box-shadow: 0 0 8px var(--behind); }
 .dot.off { background: var(--bad); box-shadow: 0 0 8px var(--bad); animation: none; }
 .dot.none { background: var(--dim); box-shadow: none; animation: none; opacity: .6; }
@@ -1351,7 +1356,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.32", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.33", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -2259,7 +2264,7 @@ function setMode(mode, status) {
   const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
   $("modeDot").className = "dot " + (simUI ? "sim" : synced && !catching ? "" : behind || catching ? "behind" : "off");
   $("modeTxt").textContent = simUI ? "Simulation" : "Live · " + (behind ? "Not synced" : catching ? `Verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}` : status);
-  $("chipMode").className = "chip " + (simUI ? "warn" : synced && !catching ? "live" : behind || catching ? "behind" : "warn");
+  $("chipMode").className = "chip " + (simUI ? "sim" : synced && !catching ? "live" : behind || catching ? "behind" : "warn");
   $("chipMode").dataset.full = S.simfeed ? "Simulation: one made-up chain that follows the documented protocol, generated in your browser from the clock and the same on every page of Tau HUD. No real chain data." : simUI ? "Simulation: invented but protocol-true activity, no real chain data." : catching ? `Connected and receiving every block (#${fmt(PRESENCE.tip)}), but the node has fully verified the state (balances, rules, votes) only up to block #${fmt(PRESENCE.canon)}. Governance and rule panels show that verified state until the replay catches up.` : behind ? "Connected to the community node, but the node does not follow the real testnet chain yet (it holds blocks the network does not accept). Real transactions, but not the network’s tip." : synced ? "Connected to the community node, which follows the real testnet chain." : "No connection to a node.";
   $("hint").textContent = S.simfeed
     ? "Simulation: one made-up chain, the same on every page of Tau HUD, generated in your browser from the clock. No real chain data. Switch to Live node to read the real testnet through the community relay."
@@ -2874,7 +2879,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.32`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.33`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
