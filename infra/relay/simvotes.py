@@ -22,6 +22,7 @@ import logging
 import os
 import re
 import time
+from urllib.parse import unquote
 
 log = logging.getLogger("relay.simvotes")
 
@@ -186,7 +187,7 @@ class SimVotes:
         for part in query.split("&"):
             k, _, v = part.partition("=")
             if k:
-                q[k] = v[:80]
+                q[unquote(k)] = unquote(v)[:80]
         voter = q.get("voter", "").lower()
         if path == "/sim/votes":
             return 200, self.snapshot(voter if TOKEN.match(voter) else None)

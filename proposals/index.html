@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
+<script src="../assets/simvote.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Proposal Tracker</title>
@@ -109,6 +110,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .grp .guess { float: right; color: #ffb13b; text-decoration: none; border: 1px solid rgba(255,177,59,.6); border-radius: 999px; padding: 2px 8px; letter-spacing: .14em; } .grp .guess:hover { background: #ffb13b; color: #000; }
 .grp:first-child { margin-top: 0; }
 .grp small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
+.list > li.vote { padding: 8px 12px 10px; border-left: 2px solid #ffb13b; background: rgba(255,177,59,.06); border-radius: 0 6px 6px 0; margin-top: -4px; }
 .list > li.quiet { color: var(--dim); font-size: 13px; padding: 4px 2px 6px; }
 .list > li.sched { color: var(--dim); font-size: 13px; }
 .list > li.sched b { color: #fff; }
@@ -394,6 +396,11 @@ function soonCard(p) {
     ${whyOf(p) ? `<span class="m why">${esc(whyOf(p))}</span>` : ""}
     <span class="m when">${when}</span><span class="m">${how}</span></button></li>`;
 }
+/* the simulation's hourly change is put to the visitors (assets/simvote.js): the vote strip sits right under its card */
+function withVote(p) {
+  const u = SIM && window.TauVote && p.ballot ? (D.upcoming || []).find(x => x.id === p.id) : null, strip = u ? TauVote.strip(u) : "";
+  return soonCard(p) + (strip ? `<li class="vote">${strip}</li>` : "");
+}
 function rowOf(p) {
   const st = p.status;
   const m = { active: `in force since #${fmtN(p.activated_at)} · revision ${p.rev}`, agreed: `agreed · takes effect at #${fmtN(p.activate_at)}`,
@@ -433,9 +440,9 @@ function render() {
     return `<li class="soon sched"><button type="button" data-sched="${SCHED.indexOf(u)}" aria-label="${esc(ev.what)}"><b>${esc(ev.what)}</b>${esc(ev.why)} ${esc(ev.watch)}<span class="when">${when}</span></button></li>`; }).join("")}</ul>` : "";
   $("openList").innerHTML = (!voting.length && !agreed.length
     ? (sched ? `<ul class="list"><li class="quiet">No proposal is open right now.</li></ul>` : `<ul class="list"><li class="empty"><b>Nothing is coming up right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}</ul>`)
-    : `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(soonCard).join("")
+    : `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(withVote).join("")
         : `<li class="quiet">Nothing agreed is waiting to take effect.</li>`}</ul>`
-      + `<h3 class="grp">Waiting for votes <small>(${voting.length})</small></h3><ul class="list">${voting.length ? voting.map(soonCard).join("")
+      + `<h3 class="grp">Waiting for votes <small>(${voting.length})</small></h3><ul class="list">${voting.length ? voting.map(withVote).join("")
         : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`) + sched;   // the programme ahead after what is open now
   const shown = P.filter(p => filter === "all" || (filter === "decided" ? p.status === "active" || p.status === "dropped" : p.status === filter));
   $("allCount").textContent = `(${shown.length})`;
@@ -721,7 +728,7 @@ async function load() {
     failures = 0;
     // redraw only when something changed (a block, a vote, an event), so nothing jumps under the reader in between
     const sig = JSON.stringify([next.chain && next.chain.head, next.rules, (next.proposals || []).map(p => [p.id, p.status, p.counted_votes]),
-      (next.events || [])[0] && next.events[0].key, (next.upcoming || []).map(u => [u.kind, u.status, u.at_ts])]);
+      (next.events || [])[0] && next.events[0].key, (next.upcoming || []).map(u => [u.kind, u.status, u.at_ts, window.TauVote ? TauVote.sig(u) : ""])]);
     const changed = sig !== lastSig; lastSig = sig; D = next;
     const age = Date.now() / 1000 - D.generated_at;
     if (SIM) setState("sim", "Simulation"); else setState(age < 120 ? "live" : "off", age < 120 ? "Live" : `Last update ${ago(D.generated_at)}`);
@@ -736,6 +743,7 @@ async function load() {
   }
 }
 if (SIM) TauSim.mark();
+if (SIM && window.TauVote) { TauVote.bind($("openList")); TauSim.onBallots(() => { lastSig = ""; load(); }); }
 load();
 setInterval(load, POLL);
 setInterval(() => { if (D) render(); }, 30000);  // countdowns and "x min ago" keep moving

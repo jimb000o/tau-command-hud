@@ -64,6 +64,7 @@ check("Nothing here happens on the real Tau testnet" in txt and txt.rstrip().end
 check("proof of stake" in txt and "10:30 UTC" in txt and "16:30 UTC" in txt, "says what, when, and when it turns back")
 check("?mode=sim" in txt, "links the site in Simulation mode")
 check("Why it matters" in txt and "What to watch" in txt, "why and what to watch, like every post")
+check("until 10:27 UTC" in alerts.sim_text(sw[0]) and "majority" in alerts.sim_text(sw[0]), "the post asks visitors to vote until the ballot closes")
 check("fixed validator list" in alerts.sim_text(sw[1]) and "10:30 UTC" in alerts.sim_text(sw[1]), "the return post names the list and tomorrow's switch")
 check(alerts.sim_buttons()["inline_keyboard"][0][0]["url"].endswith("/proposals/?mode=sim"), "the one button opens the simulation")
 

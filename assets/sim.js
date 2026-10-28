@@ -655,7 +655,7 @@
       try { const u = new URL(location.href); u.searchParams.delete("mode"); u.searchParams.delete("sample"); if (u.href === location.href) location.reload(); else location.href = u.href; } catch (e) { location.reload(); }
     },
     head: () => sync(), block: n => { sync(); return B[n] ? pub(B[n]) : null; }, ts: n => { sync(); return ts(n); },
-    refresh: () => refreshOutside().catch(() => {}), me, vote: castVote, ballots: () => BALLOTS, ballot: k => ballotOf(k), ballotFor: item => ballotFor(item), onBallots: fn => { BAL_FNS.add(fn); return () => BAL_FNS.delete(fn); }, nameOf, colours: ID_COLOURS, ballotSeconds: BALLOT_SECONDS, ready: () => FIRST,
+    refresh: () => refreshOutside().catch(() => {}), me, vote: castVote, ballots: () => BALLOTS, ballot: k => ballotOf(k), ballotFor: item => ballotFor(item), onBallots: fn => { BAL_FNS.add(fn); return () => BAL_FNS.delete(fn); }, nameOf, colourOf: c => ID_COLOURS[c] || "#c8c8d0", colours: ID_COLOURS, ballotSeconds: BALLOT_SECONDS, ready: () => FIRST,
     socket, fetch: fetchSim, answer, status, stats, uptime, health, community, board, peers, summary, proposals, upcoming, governance, mempool, account,
     chain: { rulesAt: h => { sync(); return rulesAt(h); }, props: () => { sync(); return ST.props; }, arrivals: n => { sync(); return B[n] ? B[n]._arrive : []; }, dropped: n => { sync(); return B[n] ? B[n]._dropped : []; }, headAt: t => { rollDay(t); return headAt(t); }, genesisTs: () => { sync(); return G; } },
     /* marks a page: the title says so, and a footer line that names the data source gets the simulation's line instead */
