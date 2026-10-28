@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="assets/i18n.js"></script>
+<script src="assets/sim.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <meta name="description" content="Unofficial community HUD for the Tau Testnet Alpha: rule changes by agreement, rule sharing, personal Tau policies, live blocks.">
@@ -1183,7 +1184,7 @@ const viewText = t => TECH() ? t : String(t).replace(/\s*\((?:[io]\d+(?:\s*[,=]\
 
 /* ---------- shared view state ---------- */
 const S = {
-  mode: "sim", height: 0, txTotal: 0, mempool: [], blocks: [], validators: [], proposerIdx: 0,
+  mode: "sim", simfeed: false, height: 0, txTotal: 0, mempool: [], blocks: [], validators: [], proposerIdx: 0,
   lastBlockAt: performance.now(), blockTimes: [], fee: 10, quorum: "supermajority", ruleBudget: 8,
   pulse: 0, amend: 0, specRev: 1, byHeight: new Map(), chainStart: null, memSeen: new Map(), rulesLastBlock: null,
   updates: [],          // governance: {id,title,diff,votes:Set,proposer,activateAt,status,kind,value}
@@ -1252,7 +1253,7 @@ function log(msg, cls = "") {
 function detailLog() {
   const n = LOG.length, refused = LOG.filter(e => e.cls === "err").length, gov = LOG.filter(e => e.cls === "warn").length;
   return { title: `Node log · ${n} line${n === 1 ? "" : "s"}`,
-    html: `<p class="lead">What the ${S.mode === "live" ? "community node" : "simulated node"} printed while it worked: blocks added, transactions admitted or refused, votes counted, specs amended. Newest first.</p>
+    html: `<p class="lead">What the ${isSim() ? "simulated node" : "community node"} printed while it worked: blocks added, transactions admitted or refused, votes counted, specs amended. Newest first.</p>
     ${checksHtml([[`${n} lines`, "", "Lines kept in this session; the panel shows the newest."], [`${refused} refusals`, refused ? "bad" : "off", "Transactions the node refused at the door: a rule said no."], [`${gov} governance events`, gov ? "warn" : "off", "Proposals, votes, scheduling and activation of rule changes."]])}
     <h3>Log</h3><div class="loglist">${LOG.slice().reverse().map(e => `<div><span class="t">${e.t}</span><span class="${e.cls}">${e.msg}</span></div>`).join("")}</div>` };
 }
@@ -1350,7 +1351,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.31", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.32", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -1425,7 +1426,7 @@ function foldLog() {
     if (io) io.observe(tail); else { shown = all.length; reveal(); tail.remove(); }
   }
 }
-addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); NET.timer = setInterval(() => { if (!document.hidden && PRESENCE.up) pollNodes(); }, 60000); presenceOpen(); });
+addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); NET.timer = setInterval(() => { if (!document.hidden && (PRESENCE.up || S.simfeed)) pollNodes(); }, 60000); presenceOpen(); });
 /* a quiet presence socket to the relay: one “hello”, then only its presence pushes, so visitors in simulation count too */
 const PSOCK = { ws: null, wait: 5000, timer: null, url: "wss://node.tauhud.com" };
 function viewerId() {
@@ -1440,7 +1441,7 @@ function viewerId() {
 }
 function helloLine() { const v = viewerId(); return "hello version=1" + (v ? " viewer=" + v : ""); }
 function presenceOpen() {
-  if (PSOCK.ws || S.mode === "live") return;
+  if (PSOCK.ws || (S.mode === "live" && !S.simfeed)) return;
   let ws; try { ws = new WebSocket(PSOCK.url); } catch { return; }
   PSOCK.ws = ws;
   ws.onopen = () => { PSOCK.wait = 5000; ws.send(helloLine()); ws.send("presence"); };
@@ -1941,6 +1942,9 @@ function ingestBlock(b, live) {
    SIMULATION — mirrors the documented protocol of tau-testnet
    ===================================================================== */
 const SIM = { timer: null, txTimer: null, accounts: [], nodes: [] };
+/* one simulation for every page: when assets/sim.js is present and the visitor chose Simulation, the HUD reads TauSim.socket()
+   through its live code path (S.mode stays "live", S.simfeed marks the presentation); the built-in engine below is the fallback */
+const SIMFEED = () => !!(window.TauSim && TauSim.on), isSim = () => S.mode === "sim" || !!S.simfeed;
 /* nodes that follow and check the chain without sealing blocks: the node behind this page (the relay's upstream),
    community nodes run with the node kit (GET /community), and peers our node talks to (GET /peers, when the relay offers it) */
 const NET = { nodes: [], at: 0, timer: null };
@@ -1950,12 +1954,13 @@ async function pollNodes() {
   if (S.mode !== "live") return;
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
   try {
-    const j = await (await fetch(relayBase() + "/community", { cache: "no-store", signal: ctl.signal })).json();
+    const get = path => S.simfeed ? TauSim.fetch(path) : fetch(relayBase() + path, { cache: "no-store", signal: ctl.signal });
+    const j = await (await get("/community")).json();
     const list = [];
     if (j.reference) list.push({ kind: "hud", name: "tauhud.com", height: Number(j.reference.height) || 0, head: j.reference.head || "", tip: Number(j.reference.tip) || null, agrees: true, age: 0 });
     for (const n of Array.isArray(j.nodes) ? j.nodes : []) list.push({ kind: "kit", name: String(n.name || "node"), height: Number(n.height) || 0, head: n.head || "", agrees: n.agrees !== false, age: Number(n.age_seconds) || 0 });
     try {   // peers our node met or heard of in the last day (GET /peers): the bootnode is the validator, already on its orbit; kit nodes are already listed above
-      const pj = await (await fetch(relayBase() + "/peers", { cache: "no-store", signal: ctl.signal })).json(), now = Date.now() / 1000, kits = new Set(list.map(n => n.name));
+      const pj = await (await get("/peers")).json(), now = Date.now() / 1000, kits = new Set(list.map(n => n.name));
       for (const n of Array.isArray(pj.peers) ? pj.peers : []) {
         if (n.label || (n.community && kits.has(String(n.community.name)))) continue;
         const last = Number(n.last_seen) || 0; if (!last || now - last > 86400) continue;
@@ -2135,7 +2140,7 @@ function liveMessage(ev) {
   presenceFromMessage(d);
   if (msg.command === "getblocks") {
     LIVE.gotData = true; setRelay(true);
-    if (d.reset) { const n = S.restarts + 1; liveClear(); S.restarts = n; log("Chain reset: the node discarded a chain the network abandoned and starts again from genesis. Block numbers restart.", "warn"); renderGov(); renderUpdates(); renderClauses(); }
+    if (d.reset && S.blocks.length) { const n = S.restarts + 1; liveClear(); S.restarts = n; log("Chain reset: the node discarded a chain the network abandoned and starts again from genesis. Block numbers restart.", "warn"); renderGov(); renderUpdates(); renderClauses(); }
     (d.blocks || []).filter(b => !LIVE.seenBlocks.has(b.block_hash)).forEach(raw => {
       LIVE.seenBlocks.add(raw.block_hash);
       const h = raw.header || {}, ids = raw.tx_ids || [];
@@ -2210,16 +2215,16 @@ function liveClear() {
 }
 function liveConnect() {
   liveStop();
-  let url = $("wsurl").value.trim();
-  if (location.protocol === "https:" && /^ws:\/\//i.test(url) && !/^ws:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(url)) { url = url.replace(/^ws:/i, "wss:"); $("wsurl").value = url; log("Plain ws:// is not allowed from an https page; using wss:// instead.", "warn"); }
-  log(`Connecting to ${esc(url)} …`, "warn");
+  let url = S.simfeed ? "sim://tau-hud" : $("wsurl").value.trim();
+  if (!S.simfeed && location.protocol === "https:" && /^ws:\/\//i.test(url) && !/^ws:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(url)) { url = url.replace(/^ws:/i, "wss:"); $("wsurl").value = url; log("Plain ws:// is not allowed from an https page; using wss:// instead.", "warn"); }
+  log(S.simfeed ? "Starting the simulation: one made-up chain, the same on every page …" : `Connecting to ${esc(url)} …`, "warn");
   setMode("live", "Connecting");
   liveClear();
   $("offers").innerHTML = `<div class="empty">Rule offers are stored per account. Live mode lists them once account lookups are added.</div>`;
   renderGov(); renderUpdates(); renderClauses(); readouts();
-  presenceClose();
+  if (!S.simfeed) presenceClose();
   let ws;
-  try { ws = new WebSocket(url); } catch (e) { liveFail(e.message); return; }
+  try { ws = S.simfeed ? TauSim.socket() : new WebSocket(url); } catch (e) { liveFail(e.message); return; }
   LIVE.ws = ws;
   ws.onopen = () => {
     LIVE.everConnected = true; LIVE.retryWait = 5000;
@@ -2228,6 +2233,7 @@ function liveConnect() {
     liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool"); RIB.probe = true; liveSend("getblockrange 1 1");
     LIVE.poll = setInterval(() => { liveSend("getblocks 6"); liveSend("getmempool"); }, 3000);
     LIVE.govPoll = setInterval(() => liveSend("getgovernance"), 15000);
+    if (S.simfeed) pollNodes();
   };
   ws.onmessage = liveMessage;
   ws.onerror = () => liveFail("no connection");
@@ -2245,25 +2251,27 @@ function liveStop() { clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); cle
 
 /* ---------- mode switching ---------- */
 function setMode(mode, status) {
-  S.mode = mode; document.body.dataset.mode = mode;
-  $("btnSim").setAttribute("aria-pressed", mode === "sim");
-  $("btnLive").setAttribute("aria-pressed", mode === "live");
+  S.mode = mode; const simUI = mode === "sim" || !!S.simfeed; document.body.dataset.mode = simUI ? "sim" : mode;
+  $("btnSim").setAttribute("aria-pressed", simUI);
+  $("btnLive").setAttribute("aria-pressed", !simUI);
   LIVE.status = status;
   const synced = status === "Connected" && PRESENCE.synced !== false, behind = status === "Connected" && !synced;
   const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
-  $("modeDot").className = "dot " + (mode === "sim" ? "sim" : synced && !catching ? "" : behind || catching ? "behind" : "off");
-  $("modeTxt").textContent = mode === "sim" ? "Simulation" : "Live · " + (behind ? "Not synced" : catching ? `Verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}` : status);
-  $("chipMode").className = "chip " + (mode === "sim" ? "warn" : synced && !catching ? "live" : behind || catching ? "behind" : "warn");
-  $("chipMode").dataset.full = mode === "sim" ? "Simulation: invented but protocol-true activity, no real chain data." : catching ? `Connected and receiving every block (#${fmt(PRESENCE.tip)}), but the node has fully verified the state (balances, rules, votes) only up to block #${fmt(PRESENCE.canon)}. Governance and rule panels show that verified state until the replay catches up.` : behind ? "Connected to the community node, but the node does not follow the real testnet chain yet (it holds blocks the network does not accept). Real transactions, but not the network’s tip." : synced ? "Connected to the community node, which follows the real testnet chain." : "No connection to a node.";
-  $("hint").textContent = mode === "sim"
+  $("modeDot").className = "dot " + (simUI ? "sim" : synced && !catching ? "" : behind || catching ? "behind" : "off");
+  $("modeTxt").textContent = simUI ? "Simulation" : "Live · " + (behind ? "Not synced" : catching ? `Verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}` : status);
+  $("chipMode").className = "chip " + (simUI ? "warn" : synced && !catching ? "live" : behind || catching ? "behind" : "warn");
+  $("chipMode").dataset.full = S.simfeed ? "Simulation: one made-up chain that follows the documented protocol, generated in your browser from the clock and the same on every page of Tau HUD. No real chain data." : simUI ? "Simulation: invented but protocol-true activity, no real chain data." : catching ? `Connected and receiving every block (#${fmt(PRESENCE.tip)}), but the node has fully verified the state (balances, rules, votes) only up to block #${fmt(PRESENCE.canon)}. Governance and rule panels show that verified state until the replay catches up.` : behind ? "Connected to the community node, but the node does not follow the real testnet chain yet (it holds blocks the network does not accept). Real transactions, but not the network’s tip." : synced ? "Connected to the community node, which follows the real testnet chain." : "No connection to a node.";
+  $("hint").textContent = S.simfeed
+    ? "Simulation: one made-up chain, the same on every page of Tau HUD, generated in your browser from the clock. No real chain data. Switch to Live node to read the real testnet through the community relay."
+    : simUI
     ? "Simulation follows the documented protocol: validators vote on rule changes, accounts write and share their own Tau rules, every block is checked by Tau. Switch to Live node to read the real testnet through the community relay, or your own node."
     : status === "Offline" ? "Not connected. The community relay may be down, or for your own node: 1) WebSocket port 65433 open, 2) TAU_WS_ALLOWED_ORIGINS includes this page’s origin, 3) address above correct, then Connect."
     : behind ? "Connected, but the community node is not synced with the real chain yet: it sits on blocks the network does not accept until the current genesis is published. What you see is real node data, not the network’s tip."
     : "Reads the node every 3 s (getblocks, getmempool) and governance every 15 s; the relay pushes new blocks as they arrive.";
-  $("hint").className = "hint" + (mode === "live" && status === "Offline" ? " err" : "");
+  $("hint").className = "hint" + (!simUI && status === "Offline" ? " err" : "");
 }
-$("btnSim").onclick = () => { store.set("tau-mode", "sim"); LIVE.auto = false; liveStop(); setMode("sim"); simStart(); presenceOpen(); };
-$("btnLive").onclick = () => { store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveConnect(); };
+$("btnSim").onclick = () => { if (window.TauSim) { TauSim.set("sim"); return; } store.set("tau-mode", "sim"); LIVE.auto = false; liveStop(); setMode("sim"); simStart(); presenceOpen(); };
+$("btnLive").onclick = () => { if (window.TauSim && S.simfeed) { TauSim.set("live"); return; } store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveConnect(); };
 $("btnConnect").onclick = () => { store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveConnect(); };
 
 /* =====================================================================
@@ -2325,7 +2333,7 @@ function draw(tm) {
   const nodes = nodesNow(), NR = C * .77, named = nodes.filter(n => n.name);
   ring(NR, 12, () => {
     const N = nodes.length, who = named.map(n => n.kind === "hud" ? "Tau HUD’s node" : n.name).join(", ") + (N > named.length ? `${named.length ? " and " : ""}${N - named.length} peer${N - named.length === 1 ? "" : "s"} our node has met` : "");
-    const simNote = S.mode === "sim" ? "Simulated nodes. " : "";
+    const simNote = isSim() ? "Simulated nodes. " : "";
     return vt(`${simNote}Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} keep${N === 1 ? "s" : ""} a full copy of the chain and check${N === 1 ? "s" : ""} every block without sealing any${N ? ": " + who : ""}.\nThe validators that seal blocks sit on the orbit just outside.\nMore nodes make the chain harder to fake and easier to check.\nClick to open the Nodes page.`,
       `${simNote}Node orbit: ${N || "no"} non-sealing node${N === 1 ? "" : "s"}${N ? ": " + nodes.map(n => `${n.name || "peer"}${n.height ? " #" + fmt(n.height) : n.head ? " " + short(n.head) : ""}${n.agrees === false ? " (other head)" : ""}`).join(" · ") : ""}.\nThey verify every block against the spec and serve readers; sealing stays with the validator orbit outside.\nSource: the relay’s /community list and its own upstream node.\nClick to open the Nodes page.`);
   }, nodesHref);
@@ -2338,17 +2346,17 @@ function draw(tm) {
     const al = n.kind === "hud" ? .95 : n.kind === "kit" ? .75 : .45, got = S.pulse > 0 && S.pulse < .2 ? (.2 - S.pulse) / .2 : 0;   // got: the new block just arrived here
     if (S.pulse > 0) { const q = Math.min(1, (1 - S.pulse) * 1.25), k = .30 + (NR / C - .30) * q; cx.fillStyle = `rgba(57,255,138,${S.pulse})`; cx.beginPath(); cx.arc(x * k / (NR / C), y * k / (NR / C), 4.5, 0, Math.PI * 2); cx.fill(); }   // the sealed block travels out to every node
     // our own node breathes a soft green while it reads the real chain: alive, not alarmed (green stays the one accent; simulation stays grey)
-    const liveHud = n.kind === "hud" && S.mode === "live" && PRESENCE.up, br = liveHud ? .5 + .5 * Math.sin(t * 1.6) : 0;
+    const liveHud = n.kind === "hud" && S.mode === "live" && !S.simfeed && PRESENCE.up, br = liveHud ? .5 + .5 * Math.sin(t * 1.6) : 0;
     cx.beginPath(); cx.arc(x, y, n.kind === "hud" ? 10 : 8, 0, Math.PI * 2);
     if (got) { cx.fillStyle = `rgba(57,255,138,${got * .55})`; cx.fill(); }
     else if (liveHud) { cx.fillStyle = `rgba(57,255,138,${.10 + .22 * br})`; cx.fill(); }
     cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : liveHud ? `rgba(57,255,138,${.55 + .35 * br})` : `rgba(${cyan},${al})`; cx.shadowColor = got || liveHud ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = got ? 12 : liveHud ? 8 + 12 * br : n.kind === "hud" ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
     if (n.name) { const label = n.kind === "hud" ? "Tau HUD" : n.name, w = cx.measureText(label).width; plate(label, x + Math.sign(x || 1) * (w / 2 + 24), y + 7, "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`); }
     const age = n.age ? fmtAge(n.age) + " ago" : "just now", ahead = S.height - n.height;
-    const alone = S.mode === "live" && nodes.length === 1 && S.validators.length === 1;   // the whole visible network: IDNI's validator and us
+    const alone = S.mode === "live" && !S.simfeed && nodes.length === 1 && S.validators.length === 1;   // the whole visible network: IDNI's validator and us
     hit(x, y, 24, () => n.kind === "hud"
-      ? vt(`Tau HUD’s node: the node behind this page, at #${fmt(n.height)}.\nIt checks and keeps every block and serves what you see here; it seals nothing.${alone ? "\nRight now it is the only node besides IDNI’s validator: together they are the whole visible network." : ""}${S.mode === "live" ? "\nIt has applied as the second validator. " : "\n"}Click to open the Nodes page.`,
-           `tauhud.com: the relay’s upstream node at #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}${n.tip ? ", network tip #" + fmt(n.tip) : ""}.\nServes this page over wss://node.tauhud.com (getblocks, getmempool, getgovernance); verifies every block, seals none.${alone ? "\nOnly node besides the IDNI validator (PoA, validator_set mode): the two are the whole visible network right now." : ""}${S.mode === "live" ? "\nValidator seat requested (BLS key submitted to IDNI). " : "\n"}Click to open the Nodes page.`)
+      ? vt(`Tau HUD’s node: the node behind this page, at #${fmt(n.height)}.\nIt checks and keeps every block and serves what you see here; it seals nothing.${alone ? "\nRight now it is the only node besides IDNI’s validator: together they are the whole visible network." : ""}${S.mode === "live" && !S.simfeed ? "\nIt has applied as the second validator. " : "\n"}Click to open the Nodes page.`,
+           `tauhud.com: the relay’s upstream node at #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}${n.tip ? ", network tip #" + fmt(n.tip) : ""}.\nServes this page over wss://node.tauhud.com (getblocks, getmempool, getgovernance); verifies every block, seals none.${alone ? "\nOnly node besides the IDNI validator (PoA, validator_set mode): the two are the whole visible network right now." : ""}${S.mode === "live" && !S.simfeed ? "\nValidator seat requested (BLS key submitted to IDNI). " : "\n"}Click to open the Nodes page.`)
       : n.kind === "kit"
       ? vt(`${n.name}: a community node run with the node kit.\nAt #${fmt(n.height)}, ${n.agrees ? "same head as Tau HUD’s node" : "a different head than Tau HUD’s node"}.\nLast report ${age}.\nClick to open the Nodes page.`,
            `${n.name} (node kit): #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}, ${n.agrees ? "agrees with" : "differs from"} the reference head${ahead > 0 ? `, ${fmt(ahead)} behind` : ""}.\nReported ${age}; a kit node reports once a minute.\nClick to open the Nodes page.`)
@@ -2404,7 +2412,7 @@ function draw(tm) {
     const s = on ? 30 : 22; cx.fillRect(-s / 2, -s / 2, s, s);
     if (voted) { cx.strokeStyle = `rgba(${amber},.95)`; cx.lineWidth = 3; cx.strokeRect(-s, -s, s * 2, s * 2); }
     cx.restore();
-    const idni = S.mode === "live" && V === 1;   // the live testnet has one validator: IDNI's bootnode
+    const idni = S.mode === "live" && !S.simfeed && V === 1;   // the live testnet has one validator: IDNI's bootnode
     plate((idni ? "IDNI" : "V" + (i + 1)) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
     hit(x, y, 40, () => vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."));
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
@@ -2467,7 +2475,7 @@ function draw(tm) {
   cx.fillText("#" + S.height, 0, -8);
   cx.font = "600 19px Sora, sans-serif";
   cx.fillText(am > .2 ? vt("RULES CHANGED · V", "SPEC AMENDED · REV ") + S.specRev : since < 1.2 ? "SEALED BY AGREEMENT" : vt("RULES V", "SPEC REV ") + S.specRev, 0, 40);
-  if (S.mode === "sim") plate("SIMULATION · NO REAL CHAIN DATA", 0, C * .64 + 10, "600 30px Sora, sans-serif", "rgba(236,236,240,.42)");
+  if (isSim()) plate("SIMULATION · NO REAL CHAIN DATA", 0, C * .64 + 10, "600 30px Sora, sans-serif", "rgba(236,236,240,.42)");
   paintHover();
   paintPlates();
   cx.restore();
@@ -2692,8 +2700,8 @@ function detailValidator(v, i) {
 })();
 
 /* ---------- header value chips explain themselves ---------- */
-$("chipNet").dataset.ex = exKey(() => `Network id ${$("netId").textContent}: the chain this page shows. ${S.mode === "sim" ? "In simulation it is an imitation of the documented protocol." : "Read from the node at " + $("wsurl").value.trim() + "."}`);
-$("chipHeight").dataset.ex = exKey(() => `Chain height: the newest sealed block is #${fmt(S.height)}. ${S.mode === "sim" ? "Simulated, a block every ~8 s." : "Read from the node; the relay pushes each new block as it is sealed."}`);
+$("chipNet").dataset.ex = exKey(() => `Network id ${$("netId").textContent}: the chain this page shows. ${isSim() ? "In simulation it is an imitation of the documented protocol." : "Read from the node at " + $("wsurl").value.trim() + "."}`);
+$("chipHeight").dataset.ex = exKey(() => `Chain height: the newest sealed block is #${fmt(S.height)}. ${isSim() ? "Simulated, a block every ~8 s." : "Read from the node; the relay pushes each new block as it is sealed."}`);
 $("btnState").dataset.ex = exKey(() => `Spec revision ${S.specRev}: how many times the consensus rules have changed by agreement (genesis = 1). Click to see every rule in force right now.`);
 $("chipCons").dataset.ex = exKey(() => { const n = S.validators.length, sw = S.modeHistory.length; return `Consensus: ${modeLabel()}.${n ? ` ${n} active validator${n === 1 ? "" : "s"} seal${n === 1 ? "s" : ""} the blocks, each seal signed with BLS and checked by the Tau rules (o7).` : ""}\nTau has no proof of work. The mechanism itself is chain state: a fixed validator list (proof of authority), a validator list kept in the Tau rules, or proof of stake. It switches only through an agreed rule change, like any other rule; ${S.mode === "live" ? (sw ? `${sw} switch${sw === 1 ? "" : "es"} so far` : "no switch so far") : "simulated"}.\nClick to see every rule in force.`; });
 $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transaction, emitted by consensus rule o9. It changes only through an agreed rule change, never by an admin.`);
@@ -2844,7 +2852,7 @@ const RELAY = "wss://node.tauhud.com";
    current testnet chain (it sits on an orphan chain; IDNI has not published the current genesis). Flip to true
    once it syncs, or let the relay say so with "live_default": true in /status. */
 const LIVE_DEFAULT = false;
-setMode("sim"); simStart();
+if (SIMFEED()) { S.simfeed = true; liveConnect(); presenceOpen(); } else { setMode("sim"); simStart(); }
 function autoLive() {
   if (S.mode !== "sim" || !PRESENCE.up || LIVE.autoFailedAt && performance.now() - LIVE.autoFailedAt < 60000) return;
   const pref = store.get("tau-mode");
@@ -2866,7 +2874,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.31`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.32`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
