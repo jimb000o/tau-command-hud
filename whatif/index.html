@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>What if</title>
+<meta name="description" content="Move block time, the number of validators and the votes a rule change needs, and watch a simulated chain react: forks, missed blocks, slow or stuck agreement.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · What if">
+<meta property="og:description" content="Faster blocks, more validators, a higher bar for rule changes: move a lever and watch the chain react.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/whatif/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber for "in progress" and the simulation, red only for offline. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+button { font: inherit; color: inherit; }
+.wrap { max-width: 1680px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+
+#intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 32px; align-items: end; }
+.lead { margin: 0; font: 500 clamp(20px, 2.4vw, 26px)/1.25 var(--display); color: #fff; }
+.sub { margin: 2px 0 0; color: var(--dim); max-width: 76ch; }
+.sub b { color: #fff; font-weight: 600; }
+.sandbox { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--behind); border: 1px solid rgba(255,177,59,.55); border-radius: 4px; padding: 6px 10px; white-space: nowrap; cursor: help;
+  background: repeating-linear-gradient(135deg, rgba(255,177,59,.10) 0 6px, transparent 6px 12px); }
+
+.grid { display: grid; grid-template-columns: 330px minmax(0, 1fr) 380px; gap: 12px; min-height: 0; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.col { display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0; }
+
+/* levers */
+.presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip { font: 500 12px var(--mono); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 10px; background: transparent; cursor: pointer; color: var(--text); min-height: 30px; }
+.chip:hover { border-color: #fff; color: #fff; }
+.chip.on { border-color: var(--ok); color: #fff; background: rgba(57,255,138,.08); }
+.lever { padding: 8px 0 9px; border-top: 1px solid var(--line); }
+.lever:first-of-type { border-top: 0; }
+.lever .top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.lever label { font: 600 13px var(--display); color: #fff; }
+.lever output { font: 600 15px var(--mono); color: #fff; white-space: nowrap; }
+.lever p { margin: 2px 0 0; color: var(--dim); font-size: 12px; line-height: 1.4; }
+.lever.what label::before { content: "⚠ "; color: var(--behind); font-weight: 500; }
+.group { font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--hair); }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; margin: 2px 0 0; cursor: pointer; }
+input[type=range]::-webkit-slider-runnable-track { height: 4px; background: rgba(255,255,255,.16); border-radius: 2px; }
+input[type=range]::-moz-range-track { height: 4px; background: rgba(255,255,255,.16); border-radius: 2px; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid var(--void); box-shadow: 0 0 0 1px #fff; margin-top: -7px; }
+input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--void); box-shadow: 0 0 0 1px #fff; }
+input[type=range]:focus-visible { outline: 1px dashed #fff; outline-offset: 2px; }
+.ticks { display: flex; justify-content: space-between; color: var(--dim); font-size: 11px; margin-top: -2px; }
+.run { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--hair); }
+.run .lbl { color: var(--dim); font-size: 12px; margin-right: 2px; }
+.btn { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 12px; background: transparent; cursor: pointer; color: #fff; min-height: 30px; }
+.btn:hover { background: #fff; color: #000; }
+.btn.on { border-color: #fff; background: rgba(255,255,255,.1); }
+.clock { margin-left: auto; color: var(--dim); font-size: 12px; white-space: nowrap; }
+
+/* the chain */
+.stage { flex: 1 1 auto; }
+.lane { position: relative; flex: 1 1 auto; min-height: 220px; border: 1px solid var(--line); border-radius: 6px; background: rgba(0,0,0,.25); }
+#svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#svg text { font: 12px var(--mono); fill: var(--dim); }
+#svg .axis line { stroke: rgba(255,255,255,.07); }
+#svg .nowline { stroke: rgba(255,255,255,.35); stroke-dasharray: 3 4; }
+#svg .nowtxt { fill: #fff; font-weight: 600; }
+#svg .rowtxt { font: 600 11px var(--display); letter-spacing: .16em; fill: var(--dim); }
+#svg .blk { cursor: pointer; }
+#svg .blk rect { fill: #161618; stroke: rgba(255,255,255,.7); stroke-width: 1.2; }
+#svg .blk .who { fill: #fff; font: 600 15px var(--display); }
+#svg .blk .ht { fill: var(--dim); font-size: 11px; }
+#svg .blk.new rect { stroke: var(--ok); stroke-width: 2; }
+#svg .blk.fork rect { stroke: var(--behind); stroke-dasharray: 4 3; }
+#svg .blk.fork .tag { fill: var(--behind); }
+#svg .blk.gone { opacity: .42; }
+#svg .blk.gone rect { stroke-dasharray: 2 3; stroke: rgba(255,255,255,.55); }
+#svg .blk.gone .tag { fill: var(--dim); }
+#svg .blk.sel rect { stroke: #fff; stroke-width: 2.4; stroke-dasharray: none; }
+#svg .blk .vote { fill: var(--ok); }
+#svg .miss { cursor: pointer; }
+#svg .miss rect { fill: none; stroke: var(--bad); stroke-opacity: .7; stroke-dasharray: 3 4; }
+#svg .miss text { fill: var(--bad); font-size: 11px; }
+#svg .miss.sel rect { stroke-opacity: 1; stroke-width: 2; }
+#svg .link { fill: none; stroke: rgba(255,255,255,.45); stroke-width: 1.4; }
+#svg .link.fork { stroke: var(--behind); stroke-dasharray: 4 3; }
+#svg .link.gone { stroke: rgba(255,255,255,.2); stroke-dasharray: 2 3; }
+#svg .hit { fill: transparent; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 10px; display: inline-block; border: 1.4px solid rgba(255,255,255,.7); border-radius: 2px; }
+.legend i.f { border: 1.4px dashed var(--behind); }
+.legend i.g { border: 1.4px dashed rgba(255,255,255,.4); opacity: .6; }
+.legend i.m { border: 1.4px dashed var(--bad); }
+.legend i.v { border: 0; background: var(--ok); width: 6px; height: 6px; border-radius: 50%; }
+
+.vals { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin-top: 10px; }
+.val { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.02); cursor: pointer; text-align: left; min-height: 44px; }
+.val:hover { border-color: rgba(255,255,255,.4); }
+.val.sel { border-color: #fff; }
+.val .ring { width: 26px; height: 26px; flex: none; border-radius: 50%; border: 1.6px solid #fff; display: grid; place-items: center; font: 600 13px var(--display); color: #fff; }
+.val.turn .ring { border-color: var(--ok); box-shadow: 0 0 0 3px rgba(57,255,138,.18); }
+.val.off { opacity: .8; }
+.val.off .ring { border: 1.6px dashed var(--bad); color: var(--bad); }
+.val .st { font-size: 11px; line-height: 1.3; color: var(--dim); }
+.val .st b { color: #fff; font-weight: 600; }
+.val .st .lag { color: var(--behind); }
+.val .st .down { color: var(--bad); }
+
+/* agreement */
+.agree { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 10px; cursor: pointer; }
+.agree .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.agree .head b { font: 600 13px var(--display); color: #fff; }
+.agree .head span { color: var(--dim); font-size: 12px; }
+.seats { position: relative; display: flex; gap: 4px; margin: 20px 0 4px; height: 26px; }
+.seat { flex: 1 1 0; border: 1px solid var(--hair); border-radius: 3px; background: #0c0c0d; position: relative; }
+.seat.yes { background: rgba(57,255,138,.55); border-color: var(--ok); }
+.seat.sent { border-color: var(--behind); background: repeating-linear-gradient(135deg, rgba(255,177,59,.22) 0 5px, transparent 5px 10px); }
+.seat.off { border-style: dashed; border-color: rgba(255,77,109,.6); }
+.bar { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #fff; }
+.bar.end::after { left: auto; right: 4px; }
+.bar::after { content: attr(data-l); position: absolute; top: -16px; left: 4px; font: 600 11px var(--mono); color: #fff; white-space: nowrap; }
+.past { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--dim); }
+.past .ok { color: var(--ok); }
+.past .no { color: var(--behind); }
+
+/* right column */
+.verdict { border-left: 3px solid var(--ok); padding: 6px 0 6px 12px; }
+.verdict.warn { border-left-color: var(--behind); }
+.verdict.down { border-left-color: var(--bad); }
+.verdict .state { font: 600 17px var(--display); color: #fff; margin: 0 0 4px; }
+.verdict ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.verdict li { font: 400 13px/1.45 var(--display); color: var(--text); max-width: 76ch; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tile { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; cursor: help; }
+.tile b { display: block; font: 600 20px var(--display); color: #fff; }
+.tile b.warn { color: var(--behind); }
+.tile b.down { color: var(--bad); }
+.tile span { font-size: 12px; color: var(--dim); }
+.since { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
+.side > .panel { flex: none; }
+.side > .panel.detail { flex: 1 1 0; min-height: 0; }
+.detail #detail { overflow: auto; min-height: 0; }
+.detail h3 { margin: 0 0 4px; font: 600 15px var(--display); color: #fff; }
+.detail p { margin: 0 0 8px; font: 400 13px/1.5 var(--display); max-width: 76ch; }
+.detail dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0 0 8px; font-size: 12px; }
+.detail dt { color: var(--dim); }
+.detail dd { margin: 0; color: #fff; }
+.detail .back { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; border: 0; color: var(--dim); cursor: pointer; padding: 0; margin-bottom: 6px; }
+.detail .back:hover { color: #fff; }
+.events { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.events li { padding: 5px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); cursor: pointer; font: 400 12px/1.4 var(--display); }
+.events li:hover { border-left-color: #fff; }
+.events li.f { border-left-color: var(--behind); }
+.events li.m { border-left-color: var(--bad); }
+.events li.ok { border-left-color: var(--ok); }
+.events li time { color: var(--dim); font: 11px var(--mono); margin-right: 6px; }
+.tolive { font-size: 12px; color: var(--dim); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 8px; }
+.tolive a { color: #fff; }
+
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+footer p { margin: 0; }
+footer a { color: var(--dim); }
+
+/* wide screens: the page keeps its design size, is scaled to the screen and fits on one screen (same approach as Time travel) */
+html.fit body { padding: 0; overflow: hidden; }
+html.fit .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px; transform: scale(var(--z)); transform-origin: 0 0; }
+html.fit .wrap > * { flex: none; }
+html.fit .wrap > .grid { flex: 1 1 0; }
+html.fit .grid > .panel, html.fit .grid > .col { min-height: 0; overflow: hidden; }
+html.fit .levers { overflow: auto; }
+html.fit .tn-tip { font-size: calc(12px * var(--z)); }
+/* laptops and short screens: the same page, tighter. The lever explanations stay in their hover texts */
+html.fit.short .sub, html.fit.short .lever p, html.fit.short footer .how { display: none; }
+html.fit.short .wrap { gap: 8px; padding-top: 6px; padding-bottom: 8px; }
+html.fit.short .lever { padding: 4px 0 5px; }
+html.fit.short .group { margin-top: 4px; padding-top: 6px; }
+html.fit.short .presets { margin-bottom: 4px; }
+html.fit.short .lane { min-height: 150px; }
+html.fit.short .panel { padding: 10px 12px; }
+html.fit.short .val { min-height: 36px; padding: 4px 8px; }
+html.fit.short .vals { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); margin-top: 6px; }
+html.fit.short .val .ring { width: 22px; height: 22px; }
+html.fit.short .legend { margin-top: 4px; }
+html.fit.short .agree { margin-top: 6px; padding-top: 6px; }
+html.fit.short .tile { padding: 5px 8px; }
+html.fit.short .tile b { font-size: 17px; }
+html.fit.short .verdict li { font-size: 12px; }
+html.fit.short .tolive { display: none; }
+@media (max-width: 1279px) {
+  .grid { grid-template-columns: 300px minmax(0, 1fr); }
+  .grid > .col.side { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+}
+@media (max-width: 900px) {
+  #intro { grid-template-columns: minmax(0, 1fr); }
+  .sandbox { justify-self: start; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .stage { order: -1; }
+  .lane { height: 230px; flex: none; }
+  .chip, .btn { min-height: 44px; }
+  input[type=range] { height: 44px; }
+  .vals { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { .val.turn .ring { box-shadow: none; } }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>What if</span></a>
+  </header>
+  <nav class="tnav" data-page="whatif" aria-label="Pages and tools"></nav>
+
+  <div id="intro">
+    <div>
+      <p class="lead">Move a lever. Watch the chain react.</p>
+      <p class="sub">Faster blocks, more validators, a higher bar for rule changes: every choice a chain makes has a price. Change one and see <b>forks</b>, <b>missed blocks</b> or <b>slow agreement</b> appear within seconds.</p>
+    </div>
+    <span class="sandbox" tabindex="0" data-tnt="Your own sandbox: this chain runs only in your browser and starts fresh when you open the page. The shared simulation on the other pages and the real testnet stay as they are.">Your sandbox · simulated</span>
+  </div>
+
+  <div class="grid">
+    <!-- levers -->
+    <section class="panel levers" aria-labelledby="hLevers">
+      <h2 id="hLevers">Levers <small>the chain reacts at once</small></h2>
+      <div class="presets" id="presets"></div>
+      <div class="lever" data-tnt="How often a new block is due. Shorter means faster confirmations, but each block has less time to reach everyone before the next one.">
+        <div class="top"><label for="rT">Block time</label><output id="oT"></output></div>
+        <input type="range" id="rT" min="0" max="13" step="1">
+        <p id="pT">How often a new block is made.</p>
+      </div>
+      <div class="lever" data-tnt="How many parties take turns making blocks and vote on rule changes. More parties: harder to capture, more votes to collect.">
+        <div class="top"><label for="rN">Validators</label><output id="oN"></output></div>
+        <input type="range" id="rN" min="1" max="12" step="1">
+        <p id="pN">Who takes turns making blocks and votes on rule changes.</p>
+      </div>
+      <div class="lever" data-tnt="How many yes votes a rule change needs before it becomes law. The testnet knows more than half and two thirds; everyone is a what-if.">
+        <div class="top"><label for="rQ">Votes needed</label><output id="oQ"></output></div>
+        <input type="range" id="rQ" min="0" max="2" step="1">
+        <div class="ticks"><span>more than half</span><span>two thirds</span><span>everyone</span></div>
+        <p id="pQ">The bar a rule change must clear.</p>
+      </div>
+      <div class="group">What can go wrong</div>
+      <div class="lever what" data-tnt="Validators that are switched off or unreachable. Their turn comes round anyway: no block that time. Their vote never arrives.">
+        <div class="top"><label for="rO">Validators offline</label><output id="oO"></output></div>
+        <input type="range" id="rO" min="0" max="12" step="1">
+        <p id="pO">Each one misses its turn and its vote.</p>
+      </div>
+      <div class="lever what" data-tnt="How long a new block needs to reach the other validators. When this comes close to the block time, the next maker has not seen the last block yet and builds beside it: a fork.">
+        <div class="top"><label for="rD">Network delay</label><output id="oD"></output></div>
+        <input type="range" id="rD" min="0" max="8" step="1">
+        <p id="pD">How long a block travels to the others.</p>
+      </div>
+      <div class="run">
+        <span class="lbl">Speed</span>
+        <button class="btn" type="button" data-speed="1" data-tnt="Real time: one simulated second per second.">1×</button>
+        <button class="btn" type="button" data-speed="4" data-tnt="Four times faster than real time.">4×</button>
+        <button class="btn" type="button" data-speed="16" data-tnt="Sixteen times faster: good for slow block times.">16×</button>
+        <button class="btn" type="button" id="bPause" data-tnt="Freeze the chain to look at a moment; hover and click still work.">Pause</button>
+        <span class="clock" id="clock" data-tnt="Simulated time since you opened the page.">0:00</span>
+      </div>
+    </section>
+
+    <!-- the chain -->
+    <section class="panel stage" aria-labelledby="hChain">
+      <h2 id="hChain">The chain <small id="chainSub">newest on the right · hover a block, click for its story</small></h2>
+      <div class="lane" id="lane"><svg id="svg" role="img" aria-label="Blocks of the sandbox chain over time"></svg></div>
+      <div class="legend">
+        <span><i></i>block on the chain</span>
+        <span><i class="f"></i>competing block (fork)</span>
+        <span><i class="g"></i>thrown away</span>
+        <span><i class="m"></i>missed turn</span>
+        <span><i class="v"></i>carries a vote</span>
+      </div>
+      <div class="vals" id="vals" aria-label="Validators"></div>
+      <div class="agree" id="agree" tabindex="0" role="button" data-tnt="A rule change collects yes votes. Votes are transactions, so each one waits for a block. Click for the full story.">
+        <div class="head"><b id="aTitle">Rule change</b><span id="aState"></span></div>
+        <div class="seats" id="seats"></div>
+        <div class="past" id="past"></div>
+      </div>
+    </section>
+
+    <!-- what it means -->
+    <div class="col side">
+      <section class="panel" aria-labelledby="hNow">
+        <h2 id="hNow">What happens</h2>
+        <div class="verdict" id="verdict" aria-live="polite"><p class="state" id="vState">Steady</p><ul id="vList"></ul></div>
+      </section>
+      <section class="panel" aria-labelledby="hNums">
+        <h2 id="hNums">Since your last change</h2>
+        <div class="tiles">
+          <div class="tile" tabindex="0" data-tnt="Blocks per minute that stayed on the chain. Missed turns and thrown-away blocks do not count."><b id="tB">0</b><span>blocks per minute</span></div>
+          <div class="tile" tabindex="0" data-tnt="Turns where the validator in line was offline, so no block came."><b id="tM">0</b><span>missed turns</span></div>
+          <div class="tile" tabindex="0" data-tnt="Blocks made beside another one at the same height. Only one branch survives; the other is thrown away and its transactions wait for the next block."><b id="tF">0</b><span>blocks thrown away</span></div>
+          <div class="tile" tabindex="0" data-tnt="How long a rule change took from proposal to enough yes votes, as the median of the ones so far."><b id="tA">…</b><span id="tAs">to agree on a rule change</span></div>
+        </div>
+        <p class="since" id="since"></p>
+      </section>
+      <section class="panel detail" aria-labelledby="hDetail" id="detailPanel">
+        <h2 id="hDetail">Detail</h2>
+        <div id="detail"></div>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <p><span class="how">How the sandbox works: validators take turns in a fixed order; a block reaches the others after the network delay; a maker builds on the highest block it has seen, so a late block leads to two blocks at one height and the longer branch wins. Rule-change votes are transactions that wait for a block; a change passes with enough yes votes before its deadline of 20 blocks, as on the testnet (<a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py" target="_blank" rel="noopener">governance.py ↗</a>). Made up and generated in your browser; no real chain data. · </span><a href="/playground/">Rule Playground</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BWhat%20if%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+  const put = (el, s) => { if (el._t !== s) { el._t = s; el.textContent = s; } };   // only real changes: the Chinese dictionary re-translates every write
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* ---------- levers ---------- */
+  const TIMES = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 30, 45, 60];
+  const DELAYS = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 5];
+  const QUORA = ["half", "two", "all"];
+  const QNAME = { half: "more than half", two: "two thirds", all: "everyone" };
+  const need = (q, n) => q === "half" ? Math.floor(n / 2) + 1 : q === "two" ? Math.max(1, Math.ceil(2 * n / 3)) : n;
+  const NAMES = "ABCDEFGHIJKL".split("");
+  const OFF_ORDER = [2, 5, 0, 7, 3, 10, 1, 8, 4, 11, 6, 9];   // who goes offline first: spread out, the same every time
+  const HABIT = [4, 9, 6, 16, 5, 28, 8, 12, 7, 22, 10, 14];    // seconds each validator usually takes to vote: some are quick, one is slow
+  const sim = (() => { try { if (!window.TauSim || !TauSim.chain) return null; const r = TauSim.chain.rulesAt(TauSim.head()); return { n: r.validators.length, q: r.quorum === "majority" ? "half" : "two", t: TauSim.pace }; } catch (e) { return null; } })();
+  const PRESETS = [
+    { k: "testnet", t: "Real testnet today", tip: "One validator, a block about every minute: the testnet as it runs now. Fast to agree, no forks, but if that one machine stops, the chain stops.", v: { T: 60, N: 1, q: "two", off: 0, d: 0.5 } },
+    { k: "sim", t: "Simulation now", tip: "The shared simulation on the other pages at this moment: its validators, its threshold, eight seconds per block.", v: { T: sim ? sim.t : 8, N: sim ? sim.n : 4, q: sim ? sim.q : "two", off: 0, d: 0.5 } },
+    { k: "fast", t: "Too fast", tip: "Two-second blocks over a slow network: blocks often cross on the way and the chain forks.", v: { T: 2, N: 6, q: "two", off: 0, d: 1.5 } },
+    { k: "outage", t: "Two validators down", tip: "Six validators, two of them offline: gaps where their turn was. Two thirds can still agree, everyone could not.", v: { T: 8, N: 6, q: "two", off: 2, d: 0.5 } },
+    { k: "stuck", t: "Everyone must agree", tip: "Every validator must say yes, and one is offline: no rule change can pass, each one is dropped at its deadline.", v: { T: 8, N: 5, q: "all", off: 1, d: 0.5 } },
+    { k: "big", t: "Many, careful", tip: "Twelve validators, two thirds needed, twenty-second blocks: very steady, but a rule change takes its time.", v: { T: 20, N: 12, q: "two", off: 0, d: 1 } },
+  ];
+  const S = { T: 8, N: 4, q: "two", off: 0, d: 0.5, speed: 4, paused: false };
+  (() => {   // a shared link brings its levers along
+    const p = new URLSearchParams(location.search);
+    const num = (k, lo, hi) => { const v = parseFloat(p.get(k)); return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : null; };
+    if (!p.has("t") && sim) Object.assign(S, PRESETS[1].v);
+    const t = num("t", 1, 60), n = num("n", 1, 12), o = num("off", 0, 12), d = num("d", 0.1, 5);
+    if (t != null) S.T = TIMES.reduce((a, b) => Math.abs(b - t) < Math.abs(a - t) ? b : a);
+    if (n != null) S.N = Math.round(n);
+    if (QUORA.includes(p.get("q"))) S.q = p.get("q");
+    if (o != null) S.off = Math.min(S.N, Math.round(o));
+    if (d != null) S.d = DELAYS.reduce((a, b) => Math.abs(b - d) < Math.abs(a - d) ? b : a);
+  })();
+
+  /* ---------- the sandbox chain ---------- */
+  let now = 0, slotNo = 0, nextSlot = 2, since = 0, seq = 0, propNo = 0, nextProp = 5;
+  const vals = NAMES.map((name, i) => ({ name, i, online: true, back: 0 }));
+  const genesis = { id: 0, h: 0, t: -1, maker: null, parent: null, arr: NAMES.map(() => -1), votes: [], main: true };
+  let blocks = [genesis], missed = [], props = [], events = [], tip = genesis, selected = null;
+  const rnd = Math.random;
+  const travel = () => S.d * (0.5 + rnd()) * (rnd() < 0.1 ? 2.2 : 1);   // mostly near the delay, now and then a slow hop
+  const active = () => vals.slice(0, S.N);
+  function applyOffline() {
+    const off = new Set(OFF_ORDER.filter(i => i < S.N).slice(0, S.off));
+    vals.forEach(v => {
+      const was = v.online; v.online = !off.has(v.i);
+      if (v.online && !was) {   // back online: it catches up on the blocks it missed, after one network hop
+        v.back = now; blocks.forEach(b => { if (!isFinite(b.arr[v.i])) b.arr[v.i] = now + travel(); });
+        const p = openProp(); if (p && v.i < S.N && !p.votes.some(x => x.v === v.i)) p.votes.push({ v: v.i, ready: now + travel() + HABIT[v.i] * (0.6 + 0.8 * rnd()), block: null });
+      }
+      if (!v.online && was) { const p = openProp(); if (p) p.votes = p.votes.filter(x => x.v !== v.i || x.block); }   // a vote not yet sent never arrives
+    });
+  }
+  const sees = (v, t) => { let best = genesis; for (const b of blocks) if (b.arr[v.i] <= t && (b.h > best.h || (b.h === best.h && b.arr[v.i] < best.arr[v.i]))) best = b; return best; };
+  function settle() {
+    let best = genesis; for (const b of blocks) if (b.h > best.h || (b.h === best.h && b.t < best.t)) best = b;
+    tip = best; blocks.forEach(b => { b.main = false; });
+    for (let b = tip; b; b = b.parent) b.main = true;
+    // votes and proposals in a thrown-away block go back to wait for the next block, as transactions do
+    for (const p of props) {
+      if (p.block && !p.block.main && tip.h - p.block.h >= 1) p.block = null;
+      p.votes.forEach(x => { if (x.block && !x.block.main && tip.h - x.block.h >= 1) x.block = null; });
+    }
+  }
+  const status = b => b.main ? (blocks.some(o => o !== b && o.h === b.h && tip.h - b.h < 2) ? "fork" : "main") : tip.h - b.h >= 2 ? "gone" : "fork";
+  function makeSlot(t) {
+    const N = S.N, maker = vals[slotNo % N]; slotNo++;
+    if (!maker.online) { const m = { id: "m" + (++seq), t, maker: maker.i, h: tip.h + 1 }; missed.push(m); if (!events.some(e => e.kind === "m" && e.ref.maker === maker.i && now - e.t < 3 * N * S.T)) log("m", `Missed turn: validator ${maker.name} is offline, no block for ${fmtS(S.T)}.`, m); return; }
+    const parent = sees(maker, t);
+    const b = { id: ++seq, h: parent.h + 1, t, maker: maker.i, parent, arr: vals.map(v => v.i === maker.i ? t : v.online && v.i < N ? t + travel() : Infinity), votes: [], main: false };
+    const p = openProp();
+    if (p && !p.block && t >= p.ready) { p.block = b; b.prop = p; }
+    if (p && p.block && p.block !== b && isAnc(p.block, parent)) for (const x of p.votes) if (!x.block && t >= x.ready) { x.block = b; b.votes.push(x.v); }
+    const rival = blocks.find(o => o.h === b.h && o.t > t - 4 * S.T);
+    blocks.push(b); settle();
+    if (rival) log("f", `Fork at #${b.h}: validator ${maker.name} had not seen block #${b.h} by ${vals[rival.maker].name} yet and made its own.`, b);
+  }
+  const isAnc = (a, b) => { for (let x = b; x; x = x.parent) if (x === a) return true; return false; };
+  const openProp = () => props.find(p => p.status === "voting") || null;
+  function propose() {
+    const on = active().filter(v => v.online); if (!on.length) return;
+    const proposer = on[propNo % on.length], N = S.N;
+    const p = { n: ++propNo, t0: now, ready: now + travel(), proposer: proposer.i, thr: need(S.q, N), N, q: S.q, status: "voting", block: null, votes: [], at: null };
+    p.votes.push({ v: proposer.i, ready: p.ready, block: null });   // the proposer votes like everyone else, with a transaction
+    active().forEach(v => { if (v.online && v !== proposer) p.votes.push({ v: v.i, ready: now + travel() + HABIT[v.i] * (0.6 + 0.8 * rnd()), block: null }); });
+    props.push(p); if (props.length > 30) props.shift();
+    log("p", `Rule change ${p.n} proposed by validator ${proposer.name}: it needs ${p.thr} of ${N} yes votes.`, p);
+  }
+  function checkProp() {
+    const p = openProp(); if (!p || !p.block || !p.block.main) return;
+    const counted = p.votes.filter(x => x.block && x.block.main).sort((a, b) => a.block.h - b.block.h);
+    if (counted.length >= p.thr) { p.status = "agreed"; p.at = counted[p.thr - 1].block.t; p.atH = counted[p.thr - 1].block.h; log("ok", p.thr === 1 ? `Rule change ${p.n} agreed after ${fmtS(p.at - p.t0)}: its one yes vote is in a block.` : `Rule change ${p.n} agreed after ${fmtS(p.at - p.t0)}: ${p.thr} yes votes are in blocks.`, p); nextProp = now + Math.max(4 * S.T, 12); }
+    else if (tip.h >= p.block.h + 20) { p.status = "dropped"; p.at = now; p.got = counted.length; log("x", `Rule change ${p.n} dropped: ${counted.length} of ${p.thr} votes by its deadline, the old rules stay.`, p); nextProp = now + Math.max(4 * S.T, 12); }
+  }
+  function step(dt) {
+    const end = now + dt;
+    while (nextSlot <= end) { now = nextSlot; makeSlot(now); checkProp(); nextSlot += S.T; }
+    now = end;
+    if (!openProp() && now >= nextProp) propose();
+    // only what can still be seen is kept
+    const keep = now - 70 * S.T - 120;
+    if (blocks.length > 260) { blocks = blocks.filter(b => b === genesis || b.t > keep || b === tip || isAnc(b, tip) && b.h > tip.h - 80); }
+    if (missed.length > 120) missed = missed.filter(m => m.t > keep);
+  }
+  function log(kind, text, ref) { events.unshift({ kind, text, t: now, ref }); if (events.length > 40) events.pop(); }
+  function changed(what) {
+    since = now;
+    if (what === "N" || what === "q") {   // a rule change running under the old settings is withdrawn; a fresh one starts soon
+      const p = openProp(); if (p) { p.status = "withdrawn"; props.splice(props.indexOf(p), 1); }
+      nextProp = now + 2;
+    }
+    if (what === "N") { slotNo = slotNo - (slotNo % S.N); vals.forEach(v => { if (v.i >= S.N) v.online = true; }); blocks.forEach(b => vals.forEach(v => { if (v.i < S.N && !isFinite(b.arr[v.i]) && vals[v.i].online) b.arr[v.i] = now + travel(); })); }
+    if (what === "T") nextSlot = Math.min(nextSlot, now + S.T);
+    applyOffline(); share(); ui(); draw(); verdict();
+  }
+
+  /* ---------- words ---------- */
+  function fmtS(s) { if (!isFinite(s)) return "—"; if (s < 10) return T(`${Math.round(s * 10) / 10} s`); if (s < 90) return T(`${Math.round(s)} s`); const m = Math.floor(s / 60), r = Math.round(s % 60); return T(r ? `${m} min ${r} s` : `${m} min`); }
+  const clock = s => { const m = Math.floor(s / 60), r = Math.floor(s % 60); return `${m}:${String(r).padStart(2, "0")}`; };
+
+  function verdict() {
+    const N = S.N, on = active().filter(v => v.online).length, thr = need(S.q, N), d = S.d, Tb = S.T;
+    const out = []; let state = "Steady", cls = "";
+    if (on === 0) { state = "Stopped"; cls = "down"; out.push("Every validator is offline: nobody makes blocks, nothing moves. A chain with no one at the table simply stands still."); }
+    else {
+      if (on < thr) { state = "Rule changes stuck"; cls = "down"; out.push(`A rule change needs ${thr} yes votes, but only ${on} validators are online. Nothing can pass: every proposal is dropped at its deadline and the old rules stay.`); }
+      if (on > 1 && d * 1.1 >= Tb * 0.45) {
+        if (cls !== "down") { state = "Forks"; cls = "warn"; }
+        out.push(`A block needs about ${fmtS(d)} to reach the others, but the next one is due after ${fmtS(Tb)}. The next maker often has not seen the last block yet and builds beside it: a fork. One branch is thrown away.`);
+      }
+      if (S.off > 0) {
+        if (!cls) { state = "Gaps"; cls = "warn"; }
+        out.push(`${S.off} of ${N} validators are offline. When their turn comes, no block is made: a gap of ${fmtS(Tb)} each time.`);
+        if (on >= thr && S.q !== "all") out.push(`Rule changes still pass: ${thr} of ${N} votes are enough and ${on} can vote.`);
+      }
+      if (N === 1) out.push("One validator makes every block and alone decides every rule change. Quick and simple; but if that machine stops, the chain stops. This is how the testnet runs today.");
+      const agreed = props.filter(p => p.status === "agreed" && p.t0 >= since);
+      if (on >= thr && N > 1 && (thr >= 6 || Tb >= 20 || S.q === "all")) {
+        const m = agreed.length ? median(agreed.map(p => p.at - p.t0)) : null;
+        out.push(`Votes are transactions and wait for blocks: with ${thr} votes needed${S.q === "all" ? ", including the slowest validator," : ""} and a block every ${fmtS(Tb)}, agreement takes ${m != null ? "about " + fmtS(m) : "a while"}.`);
+        if (!cls) { state = "Slow agreement"; cls = "warn"; }
+      }
+      if (!out.length) out.push(`Every block reaches every validator long before the next is due, all ${N} validators are online and ${thr} of ${N} votes pass a rule change. Move a lever to see what breaks.`);
+    }
+    $("verdict").className = "verdict " + cls; put($("vState"), state);
+    const vh = out.slice(0, 3).map(s => `<li>${esc(s)}</li>`).join(""); if ($("vList")._h !== vh) { $("vList")._h = vh; $("vList").innerHTML = vh; }
+  }
+  const median = a => { const s = a.slice().sort((x, y) => x - y); return s.length ? s[(s.length - 1) >> 1] : null; };
+
+  /* ---------- levers UI ---------- */
+  function ui() {
+    $("rT").value = TIMES.indexOf(S.T); $("oT").textContent = fmtS(S.T);
+    $("pT").textContent = S.T <= 3 ? "Very fast: little time for a block to reach everyone." : S.T >= 30 ? "Slow: steady, but every vote and transfer waits longer." : "A new block is due this often.";
+    $("rN").value = S.N; $("oN").textContent = S.N;
+    $("pN").textContent = S.N === 1 ? "One party decides everything: the testnet today." : `${S.N} parties take turns making blocks.`;
+    $("rQ").value = QUORA.indexOf(S.q); $("oQ").textContent = `${need(S.q, S.N)} of ${S.N}`;
+    $("pQ").textContent = { half: "More than half of the validators must say yes.", two: "Two thirds of the validators must say yes.", all: "Every validator must say yes." }[S.q];
+    $("rO").max = S.N; $("rO").value = S.off; $("oO").textContent = `${S.off} of ${S.N}`;
+    $("pO").textContent = S.off ? `${S.off} miss their turn and their vote.` : "Everyone is online.";
+    $("rD").value = DELAYS.indexOf(S.d); $("oD").textContent = fmtS(S.d);
+    $("pD").textContent = S.d * 1.1 >= S.T * 0.45 ? "Close to the block time: expect forks." : "Well below the block time.";
+    document.querySelectorAll("[data-speed]").forEach(b => b.classList.toggle("on", +b.dataset.speed === S.speed && !S.paused));
+    $("bPause").textContent = S.paused ? "Play" : "Pause"; $("bPause").classList.toggle("on", S.paused);
+    const pr = PRESETS.find(p => p.v.T === S.T && p.v.N === S.N && p.v.q === S.q && p.v.off === S.off && p.v.d === S.d);
+    document.querySelectorAll("#presets .chip").forEach(c => c.classList.toggle("on", !!pr && c.dataset.k === pr.k));
+  }
+  function share() {
+    try { const u = new URL(location.href); u.search = ""; const p = new URLSearchParams(location.search); if (p.get("lang")) u.searchParams.set("lang", p.get("lang")); u.searchParams.set("t", S.T); u.searchParams.set("n", S.N); u.searchParams.set("q", S.q); u.searchParams.set("off", S.off); u.searchParams.set("d", S.d); history.replaceState(null, "", u.href); } catch (e) {}
+  }
+  $("presets").innerHTML = PRESETS.map(p => `<button class="chip" type="button" data-k="${p.k}" data-tnt="${esc(p.tip)}">${esc(p.t)}</button>`).join("");
+  $("presets").addEventListener("click", e => { const c = e.target.closest(".chip"); if (!c) return; const p = PRESETS.find(x => x.k === c.dataset.k); const nOld = S.N, qOld = S.q; Object.assign(S, p.v); changed(S.N !== nOld ? "N" : S.q !== qOld ? "q" : "T"); });
+  $("rT").addEventListener("input", e => { S.T = TIMES[+e.target.value]; changed("T"); });
+  $("rN").addEventListener("input", e => { S.N = +e.target.value; S.off = Math.min(S.off, S.N); changed("N"); });
+  $("rQ").addEventListener("input", e => { S.q = QUORA[+e.target.value]; changed("q"); });
+  $("rO").addEventListener("input", e => { S.off = +e.target.value; changed("off"); });
+  $("rD").addEventListener("input", e => { S.d = DELAYS[+e.target.value]; changed("d"); });
+  document.querySelectorAll("[data-speed]").forEach(b => b.addEventListener("click", () => { S.speed = +b.dataset.speed; S.paused = false; ui(); }));
+  $("bPause").addEventListener("click", () => { S.paused = !S.paused; ui(); });
+
+  /* ---------- the lane ---------- */
+  const svg = $("svg"), NS = "http://www.w3.org/2000/svg";
+  let W = 800, H = 260;
+  const node = (tag, cls) => { const e = document.createElementNS(NS, tag); if (cls) e.setAttribute("class", cls); return e; };
+  const layer = { axis: node("g", "axis"), labels: node("g"), links: node("g"), items: node("g") };
+  layer.labels.innerHTML = `<line class="nowline"></line><text class="nowtxt">now</text><text class="rowtxt" x="8">CHAIN</text><text class="rowtxt" x="8">FORK</text>`;
+  svg.append(layer.axis, layer.labels, layer.links, layer.items);
+  const pool = new Map();
+  function resize() { const r = $("lane"); W = r.clientWidth || 800; H = r.clientHeight || 260; svg.setAttribute("viewBox", `0 0 ${W} ${H}`); }
+  function blockTip(b) {
+    const st = status(b), mk = vals[b.maker].name;
+    const reach = b.arr.filter((a, i) => i < S.N && i !== b.maker && isFinite(a)), last = reach.length ? Math.max(...reach) - b.t : 0;
+    const head = `Block #${b.h} by validator ${mk}, made at ${clock(b.t)}.`;
+    const what = st === "gone" ? "Thrown away: a block at the same height won. Its transactions go back to wait for the next block." : st === "fork" ? "Competing: another block sits at the same height. The branch that grows first wins." : reach.length ? `On the chain. It reached the other validators within ${fmtS(last)}.` : "On the chain. With a single validator nobody else has to receive it.";
+    // each line is translated on its own: the dictionary knows sentences, not their combinations
+    return [head, what, b.votes.length === 1 ? "Carries 1 rule-change vote." : b.votes.length ? `Carries ${b.votes.length} rule-change votes.` : ""].filter(Boolean).map(T).join("\n");
+  }
+  function draw() {
+    resize();
+    const nb = Math.max(5, Math.min(14, Math.floor(W / 64))), win = nb * S.T, pad = W < 500 ? 56 : 78, right = W - 70, x = t => pad + (t - (now - win)) / win * (right - pad);
+    const bw = Math.max(16, Math.min(46, (right - pad) / nb * 0.62)), bh = Math.min(46, Math.max(30, H * 0.17));
+    const y0 = H * 0.58, rowY = r => y0 - r * (bh + Math.max(14, H * 0.08));
+    // axis: a tick every block interval, labels every few
+    const [nl, nt, rc, rf] = layer.labels.children;
+    nl.setAttribute("x1", x(now)); nl.setAttribute("x2", x(now)); nl.setAttribute("y1", 18); nl.setAttribute("y2", H - 22);
+    nt.setAttribute("x", x(now) + 6); nt.setAttribute("y", 30); rc.setAttribute("y", y0 + 4); rf.setAttribute("y", rowY(1) + 4);
+    let ax = "";
+    const every = S.T * Math.max(1, Math.round(nb / 4.5));
+    for (let k = 1; k * every <= win; k++) { const t = now - k * every, xx = x(t); ax += `<line x1="${xx}" x2="${xx}" y1="40" y2="${H - 22}"></line><text x="${xx}" y="${H - 6}" text-anchor="middle">−${fmtS(k * every)}</text>`; }
+    layer.axis.innerHTML = ax;
+    const seen = new Set(), vis = blocks.filter(b => b !== genesis && b.t >= now - win - S.T * 2), links = [];
+    // rows: blocks on the chain sit on the line; a competing branch one row up, a second one above it
+    const rowOf = new Map(); let free = 1;
+    vis.sort((a, b) => a.t - b.t).forEach(b => {
+      if (b.main) rowOf.set(b, 0);
+      else { const pr = rowOf.get(b.parent); rowOf.set(b, pr && pr > 0 ? pr : Math.min(2, free)); if (!(pr > 0)) free = free === 1 ? 2 : 1; }
+    });
+    for (const b of vis) {
+      const st = status(b), r = rowOf.get(b) || 0, bx = x(b.t) - bw / 2, by = rowY(r) - bh / 2;
+      if (bx < pad - 2) continue;   // the row labels keep their place on the left
+      let g = pool.get(b.id);
+      if (!g) { g = node("g", "blk"); g.innerHTML = `<rect rx="4"></rect><text class="who" text-anchor="middle"></text><text class="ht" text-anchor="middle"></text><text class="tag" text-anchor="middle"></text><g class="vs"></g>`; g.addEventListener("click", () => pick({ type: "block", ref: b })); pool.set(b.id, g); layer.items.append(g); }
+      seen.add(b.id);
+      g.setAttribute("class", `blk ${st}${now - b.t < Math.min(S.T, 3) && st === "main" ? " new" : ""}${selected && selected.ref === b ? " sel" : ""}`);
+      const rect = g.children[0]; rect.setAttribute("x", bx); rect.setAttribute("y", by); rect.setAttribute("width", bw); rect.setAttribute("height", bh);
+      const who = g.children[1]; who.setAttribute("x", bx + bw / 2); who.setAttribute("y", by + bh / 2 + 5); put(who, vals[b.maker].name);
+      const ht = g.children[2]; ht.setAttribute("x", bx + bw / 2); ht.setAttribute("y", by + bh + 14); put(ht, bw >= 30 || b.h % 2 === 0 ? "#" + b.h : "");
+      const tag = g.children[3]; tag.setAttribute("x", bx + bw / 2); tag.setAttribute("y", by - 6); put(tag, bw < 34 ? "" : st === "gone" ? "thrown away" : st === "fork" && r > 0 ? "fork" : "");
+      const vs = g.children[4], vh = b.votes.slice(0, 6).map((v, i) => `<circle class="vote" cx="${bx + 6 + i * 6}" cy="${by + 6}" r="2.4"></circle>`).join(""); if (vs._h !== vh) { vs._h = vh; vs.innerHTML = vh; }
+      const tt = blockTip(b); if (g._tt !== tt) { g._tt = tt; g.dataset.tnt = tt; }
+      if (b.parent && b.parent !== genesis && rowOf.has(b.parent)) {
+        const p = b.parent, pr = rowOf.get(p) || 0, x1 = x(p.t) + bw / 2, y1 = rowY(pr), x2 = bx, y2 = rowY(r), mx = (x1 + x2) / 2;
+        links.push(`<path class="link ${st === "gone" ? "gone" : r !== pr ? "fork" : ""}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}"></path>`);
+      } else if (b.parent && b.main) links.push(`<path class="link" d="M${pad - 4},${rowY(0)} L${bx},${rowY(0)}"></path>`);
+    }
+    for (const m of missed) {
+      if (m.t < now - win - S.T || x(m.t) - bw / 2 < pad - 2) continue;
+      const id = m.id; let g = pool.get(id);
+      if (!g) { g = node("g", "miss"); g.innerHTML = `<rect rx="4"></rect><text text-anchor="middle"></text><rect class="hit"></rect>`; g.addEventListener("click", () => pick({ type: "miss", ref: m })); pool.set(id, g); layer.items.append(g); g.dataset.tnt = [`Missed turn at ${clock(m.t)}: validator ${vals[m.maker].name} was offline.`, `No block for ${fmtS(S.T)}: everything waiting simply waits longer.`].map(T).join("\n"); }
+      seen.add(id);
+      g.setAttribute("class", "miss" + (selected && selected.ref === m ? " sel" : ""));
+      const bx = x(m.t) - bw / 2, by = rowY(0) - bh / 2;
+      const rc = g.children[0]; rc.setAttribute("x", bx); rc.setAttribute("y", by); rc.setAttribute("width", bw); rc.setAttribute("height", bh);
+      const tx = g.children[1]; tx.setAttribute("x", bx + bw / 2); tx.setAttribute("y", by + bh + 14); put(tx, bw >= 30 ? "missed" : "×");
+      const hit = g.children[2]; hit.setAttribute("x", bx); hit.setAttribute("y", by); hit.setAttribute("width", bw); hit.setAttribute("height", bh);
+    }
+    for (const [id, g] of pool) if (!seen.has(id)) { g.remove(); pool.delete(id); }
+    layer.links.innerHTML = links.join("");
+  }
+
+  /* ---------- validators, agreement, numbers ---------- */
+  function side() {
+    const N = S.N, turn = vals[slotNo % N];
+    let html = "";
+    for (const v of active()) {
+      const s = v.online ? sees(v, now) : null, lag = s ? tip.h - s.h : 0;
+      const st = !v.online ? `<span class="down">offline</span>` : v === turn ? `<b>makes the next block</b>` : lag > 0 ? `sees #${s.h} · <span class="lag">${lag} behind</span>` : `sees #${s.h}`;
+      const tt = !v.online ? T(`Validator ${v.name} is offline: it misses its turn and its vote.`) : [`Validator ${v.name} has seen up to block #${s.h}${lag ? `, ${lag} behind the newest: a block is still on its way` : ", the newest"}.`, `Usually votes on a rule change after about ${HABIT[v.i]} s.`].map(T).join("\n");
+      html += `<button type="button" class="val${v.online ? "" : " off"}${v === turn && v.online ? " turn" : ""}${selected && selected.type === "val" && selected.ref === v ? " sel" : ""}" data-v="${v.i}" data-tnt="${esc(tt)}"><span class="ring">${v.name}</span><span class="st">${st}</span></button>`;
+    }
+    if ($("vals").dataset.h !== html) { $("vals").innerHTML = html; $("vals").dataset.h = html; }
+    const p = openProp() || props[props.length - 1];
+    if (p) {
+      const counted = p.votes.filter(x => x.block && x.block.main), sent = p.status === "voting" ? p.votes.filter(x => !x.block && x.ready <= now && vals[x.v].online) : [];
+      put($("aTitle"), `Rule change ${p.n}`);
+      put($("aState"), p.status === "agreed" ? `agreed after ${fmtS(p.at - p.t0)}` : p.status === "dropped" ? `dropped: ${p.got} of ${p.thr} votes by the deadline` : !p.block ? "proposed, waiting for a block" : `${counted.length} of ${p.thr} needed · ${tip.h >= p.block.h ? Math.max(0, p.block.h + 20 - tip.h) : 20} blocks left`);
+      let seats = "";
+      for (let i = 0; i < p.N; i++) {
+        const v = vals[i], c = counted.some(x => x.v === i), w = sent.some(x => x.v === i);
+        seats += `<span class="seat${c ? " yes" : w ? " sent" : !v.online ? " off" : ""}" data-tnt="${esc(`Validator ${v.name}: ${c ? "yes vote in a block" : w ? "yes vote sent, waiting for a block" : !v.online ? "offline, its vote never comes" : "has not voted yet"}`)}"></span>`;
+      }
+      seats += `<span class="bar${p.thr / p.N > 0.85 ? " end" : ""}" style="left:calc(${(p.thr / p.N) * 100}% - 3px)" data-l="${esc(T(`${p.thr} needed`))}"></span>`;
+      if ($("seats").dataset.h !== seats) { $("seats").innerHTML = seats; $("seats").dataset.h = seats; }
+    } else { put($("aTitle"), "Rule change"); put($("aState"), "the first one comes in a few seconds"); $("seats").innerHTML = ""; $("seats").dataset.h = ""; }
+    const past = props.filter(x => x.status !== "voting").slice(-4).reverse().map(x => x.status === "agreed" ? `<span class="ok">${esc(`#${x.n} agreed in ${fmtS(x.at - x.t0)}`)}</span>` : `<span class="no">${esc(`#${x.n} dropped`)}</span>`).join("");
+    const ph = past || `<span>${esc("Every rule change needs yes votes from the validators before its deadline.")}</span>`;
+    if ($("past").dataset.h !== ph) { $("past").innerHTML = ph; $("past").dataset.h = ph; }
+    // numbers since the last change
+    const span = Math.max(1, now - since), made = blocks.filter(b => b !== genesis && b.t >= since);
+    const kept = made.filter(b => b.main).length, gone = made.filter(b => status(b) === "gone").length, miss = missed.filter(m => m.t >= since).length;
+    put($("tB"), span < S.T ? "…" : (Math.round(kept / span * 600) / 10).toString());
+    put($("tM"), String(miss)); $("tM").className = miss ? "down" : "";
+    put($("tF"), String(gone)); $("tF").className = gone ? "warn" : "";
+    const ag = props.filter(x => x.status === "agreed" && x.t0 >= since), dr = props.filter(x => x.status === "dropped" && x.t0 >= since);
+    if (ag.length) { put($("tA"), fmtS(median(ag.map(x => x.at - x.t0)))); $("tA").className = ""; put($("tAs"), "to agree on a rule change"); }
+    else if (dr.length) { put($("tA"), "never"); $("tA").className = "down"; put($("tAs"), dr.length > 1 ? `${dr.length} rule changes dropped` : "1 rule change dropped"); }
+    else { put($("tA"), "…"); $("tA").className = ""; put($("tAs"), "to agree on a rule change"); }
+    put($("since"), `Counted over the last ${fmtS(span)} of simulated time.`);
+    put($("clock"), clock(now) + (S.paused ? " · paused" : ` · ${S.speed}×`));
+  }
+
+  /* ---------- detail: what you clicked, or what just happened ---------- */
+  function pick(sel) { selected = sel; detail(); draw(); side(); }
+  function detail() {
+    const d = $("detail");
+    if (!selected) {
+      const items = events.slice(0, 9).map((e, i) => `<li class="${e.kind === "f" ? "f" : e.kind === "m" || e.kind === "x" ? "m" : e.kind === "ok" ? "ok" : ""}" data-e="${i}"><time>${clock(e.t)}</time>${esc(e.text)}</li>`).join("");
+      const html = `<h3>${esc("What just happened")}</h3>` + (items ? `<ul class="events">${items}</ul>` : `<p>${esc("The first blocks are on their way. Click a block, a validator or the rule change for its story.")}</p>`) + toLive();
+      if (d.dataset.h !== html) { d.innerHTML = html; d.dataset.h = html; }
+      return;
+    }
+    let h = `<button class="back" type="button" data-back>← ${esc("What just happened")}</button>`;
+    const s = selected;
+    if (s.type === "block") {
+      const b = s.ref, st = status(b), reach = b.arr.map((a, i) => i < S.N && i !== b.maker ? (isFinite(a) ? `${vals[i].name} ${fmtS(a - b.t)}` : `${vals[i].name} offline`) : null).filter(Boolean);
+      h += `<h3>${esc(`Block #${b.h} by validator ${vals[b.maker].name}`)}</h3>`;
+      h += `<p>${esc(st === "gone" ? "Thrown away. Another block at the same height grew first, so the chain went on from there. Nothing in this block is lost for good: its transactions return to the queue and ride in a later block." : st === "fork" ? "Competing. Another block sits at the same height because one maker had not seen the other's block yet. Whichever branch gets the next block wins; the other is thrown away." : "On the chain. Every later block builds on it.")}</p>`;
+      h += `<dl><dt>${esc("made at")}</dt><dd>${clock(b.t)}</dd><dt>${esc("builds on")}</dt><dd>${b.parent === genesis ? esc("the start") : `#${b.parent.h} (${vals[b.parent.maker].name})`}</dd><dt>${esc("votes inside")}</dt><dd>${b.votes.length ? b.votes.map(v => vals[v].name).join(", ") : esc("none")}</dd><dt>${esc("reached")}</dt><dd>${esc(reach.join(" · ") || "no one else: a single validator")}</dd></dl>`;
+    } else if (s.type === "miss") {
+      const m = s.ref;
+      h += `<h3>${esc(`Missed turn at ${clock(m.t)}`)}</h3><p>${esc(`It was validator ${vals[m.maker].name}'s turn, and it is offline. The others wait for the next turn: ${fmtS(S.T)} without a block. With a fixed order this repeats every time the list comes round.`)}</p>`;
+    } else if (s.type === "val") {
+      const v = s.ref, se = v.online ? sees(v, now) : null, made = blocks.filter(b => b.maker === v.i && b.t >= since).length, mm = missed.filter(m => m.maker === v.i && m.t >= since).length;
+      h += `<h3>${esc(`Validator ${v.name}`)}</h3><p>${esc(v.online ? `Online. It has seen up to block #${se.h}. It makes every ${S.N === 1 ? "" : S.N + ". "}block in turn and usually votes on a rule change after about ${HABIT[v.i]} s.` : "Offline. Its turn still comes round, so the chain has a gap there, and its vote on rule changes never arrives.")}</p>`;
+      h += `<dl><dt>${esc("blocks made")}</dt><dd>${made}</dd><dt>${esc("turns missed")}</dt><dd>${mm}</dd></dl>`;
+    } else if (s.type === "prop") {
+      const p = s.ref, counted = p.votes.filter(x => x.block && x.block.main);
+      h += `<h3>${esc(`Rule change ${p.n}`)}</h3><p>${esc(`Proposed by validator ${vals[p.proposer].name}. It needs ${p.thr} of ${p.N} yes votes (${QNAME[p.q]}) within 20 blocks of being proposed. Each vote is a transaction: it travels to the next maker and counts once it sits in a block on the chain.`)}</p>`;
+      h += `<dl><dt>${esc("state")}</dt><dd>${esc(p.status === "agreed" ? `agreed after ${fmtS(p.at - p.t0)}` : p.status === "dropped" ? "dropped at its deadline, the old rules stay" : "collecting votes")}</dd><dt>${esc("yes votes in blocks")}</dt><dd>${counted.length ? counted.map(x => `${vals[x.v].name} (#${x.block.h})`).join(", ") : esc("none yet")}</dd></dl>`;
+      if (p.status === "dropped") h += `<p>${esc("On the testnet a dropped proposal looks the same: the deadline passes, the proposal leaves the list and nothing changes.")}</p>`;
+    }
+    h += toLive();
+    if (d.dataset.h !== h) { d.innerHTML = h; d.dataset.h = h; }
+  }
+  const toLive = () => `<p class="tolive">${esc("Where to see this for real:")} <a href="/proposals/">${esc("Proposals")}</a> ${esc("for votes and deadlines,")} <a href="/stats/">${esc("Stats")}</a> ${esc("for block time and missed slots,")} <a href="/history/">${esc("Time travel")}</a> ${esc("for every rule change in order.")}</p>`;
+  $("detail").addEventListener("click", e => {
+    if (e.target.closest("[data-back]")) { selected = null; detail(); draw(); return; }
+    const li = e.target.closest("[data-e]"); if (!li) return;
+    const ev = events[+li.dataset.e]; if (!ev) return;
+    const r = ev.ref; pick(r && r.thr ? { type: "prop", ref: r } : r && r.maker != null && r.arr ? { type: "block", ref: r } : r && r.maker != null ? { type: "miss", ref: r } : null);
+  });
+  $("vals").addEventListener("click", e => { const b = e.target.closest("[data-v]"); if (b) pick({ type: "val", ref: vals[+b.dataset.v] }); });
+  const openAgree = () => { const p = openProp() || props[props.length - 1]; if (p) pick({ type: "prop", ref: p }); };
+  $("agree").addEventListener("click", openAgree);
+  $("agree").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAgree(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && selected) { selected = null; detail(); draw(); } });
+
+  /* ---------- wide screens: scale to the viewport, no page scrolling (design size about 1900 × 1000) ---------- */
+  const fit = () => {
+    const w = innerWidth, h = innerHeight, on = w >= 1100 && h >= 640;
+    const z = on && w >= 1600 ? Math.round(Math.max(1, Math.min(1.7, w / 1900, h / 1000)) * 100) / 100 : 1;
+    document.documentElement.classList.toggle("fit", on);
+    document.documentElement.classList.toggle("short", on && h / z < 980);
+    document.documentElement.style.setProperty("--z", z);
+  };
+  fit(); addEventListener("resize", () => { fit(); draw(); });
+
+  /* ---------- run ---------- */
+  applyOffline(); ui(); share(); verdict(); detail();
+  let last = performance.now(), tick = 0;
+  const frame = t => {
+    const dt = Math.min(0.25, (t - last) / 1000); last = t;
+    if (!S.paused && !document.hidden) step(dt * S.speed);
+    draw();
+    if (++tick % 6 === 0) { side(); detail(); }
+    if (tick % 30 === 0) verdict();
+    requestAnimationFrame(frame);
+  };
+  side(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
