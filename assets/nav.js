@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.38"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.39"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -181,14 +181,31 @@
       CHAIN.switches = (d.archival_update_details || []).filter(u => u && u.lifecycle === "activated" && u.host_contract_patch && typeof u.host_contract_patch.eligibility_mode === "string").length;
     };
     if (SIM) {   // the simulated chain: height, revision, fee and consensus from the generator, every second; the badge counts down to the day's programme
-      const hhmm = x => new Date(x * 1000).toISOString().slice(11, 16); let badgeText = "";
+      let badgeText = "";
+      /* each event of the programme in plain words: what happens, why it matters, where to watch it (the same words as the HUD's bar) */
+      const EVENT = {
+        stake: { what: "proof of stake takes over", why: "The chain changes how it picks who seals blocks: the six richest accounts take over from the fixed list.", watch: "Watch the proposer change in the Chain core." },
+        fixed: { what: "the fixed validator list returns", why: "The chain goes back to a fixed validator list: a known set seals blocks again instead of the richest accounts.", watch: "Watch the validator ring in the Chain core." },
+        admit: { what: "a new validator joins", why: "One more party seals blocks and votes on rule changes.", watch: "Watch a new diamond appear on the validator orbit." },
+        remove: { what: "a validator leaves", why: "One party fewer seals blocks and votes on rule changes.", watch: "Watch a diamond vanish from the validator orbit." },
+        super: { what: "two thirds must agree", why: "Changing the rules gets harder: two thirds of the validators must agree instead of more than half.", watch: "Watch the agreement arc need more votes." },
+        major: { what: "more than half must agree", why: "Changing the rules gets easier: more than half of the validators is enough.", watch: "Watch the agreement arc fill sooner." },
+        restart: { what: "the simulated chain starts over", why: "At midnight UTC the simulated chain starts again from block 0, as the real alpha testnet did more than once.", watch: "Watch the height reset." },
+      };
+      const when = x => { const d = new Date(x * 1000), loc = d.toTimeString().slice(0, 5), utc = d.toISOString().slice(11, 16); return loc === utc ? `${utc} UTC` : `${loc} local (${utc} UTC)`; };
       const badge = () => {
         const b = document.querySelector("header.trail .chip.unoff.sim"); if (!b || !TauSim.upcoming) return;
         const list = TauSim.upcoming(), u = list[0], left = u ? Math.ceil((u.at_ts - Date.now() / 1000) / 60) : 999;
-        const text = u && left <= 60 ? `Simulation · ${u.short} ${left <= 0 ? "now" : `in ${left} min`}` : "Simulation · no real chain data";
+        const ev = u && (EVENT[u.kind] || { what: u.short, why: u.title, watch: "" }), soon = !!u && left <= 60;
+        const text = !soon ? "Simulation · no real chain data"
+          : left <= 0 ? `Simulation · now: ${ev.what}`
+          : u.status === "voting" ? `Simulation · validators are voting: ${ev.what} in ${left} min`
+          : u.status === "agreed" ? `Simulation · agreed: ${ev.what} in ${left} min`
+          : `Simulation · in ${left} min: ${ev.what}`;
+        b.classList.toggle("soon", soon && left <= 5);
         if (text === badgeText) return; badgeText = text;
-        b.textContent = text; b.dataset.short = text;
-        b.dataset.tnt = TIPS.simBadge + "\nComing up in the simulation (UTC):\n" + list.map(x => `${hhmm(x.at_ts)} UTC · ${x.title}`).join("\n");
+        b.textContent = text; b.dataset.short = soon ? `Simulation · ${left <= 0 ? "now" : `in ${left} min`}: ${u.short}` : text;   // the phone header has room for the short label only
+        b.dataset.tnt = (soon ? `${ev.why} ${ev.watch}\n` : "") + "Every change is proposed 10 minutes ahead, voted on by the simulated validators, then in force: the path a real rule change takes on Tau.\nNext in the simulation:\n" + list.map(x => `${when(x.at_ts)} · ${(EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet. Opens the full notice.";
       };
       const tick = () => { CHAIN.st = TauSim.status(); govFrom(TauSim.governance()); CHAIN.polled = true; CHAIN.at = Date.now(); render(); badge(); };
       tick(); setInterval(() => { if (!document.hidden) tick(); }, 1000);

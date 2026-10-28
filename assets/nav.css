@@ -76,6 +76,7 @@ header.trail .chip.sim b { color: #ffb13b; }
 header.trail .dot.sim { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
 header.trail .chip.unoff.sim { color: #fff; border-color: rgba(255,177,59,.7); background: repeating-linear-gradient(135deg, rgba(255,177,59,.14) 0 10px, rgba(255,177,59,.03) 10px 20px); }
 header.trail .chip.unoff.sim:hover { border-color: #ffb13b; }
+header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite; } @keyframes navSoon { 50% { box-shadow: 0 0 14px rgba(255,177,59,.8); border-color: #ffb13b; } }
 .state.sim { color: #ffb13b; border-color: #ffb13b; } .state.sim i { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
 .tnav .seg.tn-src > button[aria-pressed="true"]:last-child { background: #ffb13b; color: #000; }
 @keyframes tnblink { 50% { opacity: .35; } }
