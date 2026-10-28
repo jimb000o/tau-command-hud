@@ -670,8 +670,8 @@
   "on": "2026-10-28",
   "html": "Missions: a new page in the Playground menu with six short tasks on a practice chain of your own, one block every two seconds. Vote a change into law, get a rule refused before the vote, let a rule fail at two thirds, lower the bar, survive a validator outage and bring the chain to proof of stake. Each mission ends with where to see the same thing on the real testnet. Progress stays in your browser; share a mission or your progress as a link.",
   "major": {"id": "missions", "title": "New: Missions, six short tasks on a practice chain of your own", "text": "Vote a change into law, get a rule refused before the vote, let a rule fail at two thirds, lower the bar, survive a validator outage and bring the chain to proof of stake. Each mission ends with where to see the same thing on the real testnet.", "link": "/missions/"}
-  },
-  {
+ },
+ {
   "tag": "Newspaper",
   "on": "2026-10-28",
   "html": "The Daily Consensus on phones: the paper gets most of the screen (the header keeps the brand and the tools, the tab bar stays below), pages no longer slip under the controls, nothing black flickers over the page when you turn it, and in landscape the controls sit at the side so a page shows enough text. The personal notice to the forum member from 2014 now says what is true: the idea grew into a different design."
@@ -695,8 +695,36 @@
   "major": {"id": "whatif", "title": "New: What if, a sandbox chain with levers", "text": "Move the block time, the number of validators and the votes a rule change needs, switch validators off or slow the network down, and watch the chain react: forks, gaps, rule changes that take longer or never pass. It runs only in your browser, and the link keeps your levers so a setting can be shared.", "link": "/whatif/"}
  },
  {
+  "tag": "Simulation",
+  "on": "2026-10-28",
+  "html": "Visitors vote in the simulation. Every hourly rule change is put to everyone watching: from hh:20 to hh:27 you vote yes or no under an anonymous name and colour that your browser makes up (no account, nothing to sign up for). The simulated validators follow the majority: more yes than no, or nobody voting, and they agree so the change is in force at hh:30; more no than yes, and only the proposer's vote stands, the change is dropped and the old rules stay. Vote in the simulation bar on the HUD or under the card on Proposals; the chain core shows every vote as a dot in the voter's colour, yes on the right, no on the left, yours circled. All visitors see the same outcome. The Telegram posts for the two daily consensus switches say until when you can vote. Simulation mode only.",
+  "major": {
+   "id": "sim-voting",
+   "title": "New: vote in the simulation",
+   "text": "Every hour you decide with the other visitors whether the simulation's rule change happens: vote yes or no from hh:20 to hh:27, and the simulated validators follow the majority.",
+   "link": "/?mode=sim"
+  }
+ },
+ {
+  "tag": "Simulation",
+  "on": "2026-10-28",
+  "html": "Visitors can now change the simulation. In the Playground, “Write your own” has a new switch, “Everyone · simulation”: a new base fee, a validator admitted or removed, the agreement threshold, the consensus mode or a rule of your own goes into the shared simulated chain about 30 seconds later, under your anonymous visitor name. Everyone in Simulation mode can vote yes or no for six minutes, in Proposals and on the HUD. If more say yes than no, the simulated validators vote it in and it takes effect for everyone ten minutes after it was proposed, on every page; otherwise nobody votes and it lapses, the path a rule change takes on Tau. The Telegram channel reports a visitor proposal only when it was voted in with at least three votes, at most three a day, marked as simulation. Simulation mode only; nothing reaches the real testnet.",
+  "major": {
+   "id": "sim-proposals",
+   "title": "New: propose your own rule change to the simulation",
+   "text": "Write a rule change in the Playground and put it to everyone watching the simulation. If more visitors vote yes than no, the simulated validators vote it in and it takes effect for everyone ten minutes later.",
+   "link": "/playground/#seat"
+  }
+ },
+ {
+  "tag": "v17.48",
+  "on": "2026-10-28",
+  "html": "Feedback is now one click away on every page: a white Feedback button sits next to Telegram alerts in the header and opens the feedback form right where you are, with the cursor already in the text box. On the HUD it opens the HUD's own form; on phones it is a 44 px icon."
+ },
+{"tag": "Simulation", "on": "2026-10-28", "html": "Forecasts in the simulation. Every hour the visitors vote on one simulated rule change; before the vote opens at hh:20, anyone can guess whether it comes into force at hh:30 and how many visitors vote. 2 points for yes or no, 3 for the right number of voters, 1 for the group next to it. The board counts the UTC day, like the simulated chain, with the same anonymous two-word name as the ballot and no sign-up. Open it with Guess the next round in the simulation bar or on Proposals; the two simulated consensus posts on Telegram name the day’s best forecasters.", "major": {"id": "sim-forecasts", "title": "New: guess the next round in the simulation", "text": "Every hour visitors vote on one simulated rule change. Before the vote opens, guess whether it comes and how many vote, and climb the day's board.", "link": "/?mode=sim#predict"}},
+ {
   "tag": "Alerts",
   "on": "2026-10-28",
-  "html": "Tau HUD itself now has news in the Telegram channel. A big new page or feature gets a post of its own, first line “✨ TAU HUD · new on the site”, at most two a day and only between 08:00 and 20:00 UTC; smaller changes are gathered and go out together as one digest at 17:00 UTC. The newest pages come first: The Daily Consensus, Missions, your own node in the simulation, Vote and What if."
+  "html": "Tau HUD itself now has news in the Telegram channel. A big new page or feature gets a post of its own, first line “✨ TAU HUD · new on the site”, at most two a day and only between 08:00 and 20:00 UTC; smaller changes are gathered and go out together as one digest at 17:00 UTC. The newest pages and features are announced first, from 08:00 UTC tomorrow."
  }
 ]

@@ -130,6 +130,12 @@ SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smalle
 SITE_DIGEST_MAX_WAIT = float(os.environ.get("SITE_DIGEST_MAX_WAIT_DAYS", 7)) * 86400  # …but not longer than this
 SITE_DIGEST_LINES = 8
 SITE_LOG_LINK = f"{SITE}/#updates"
+# Visitors may propose a rule change to the simulation from the Playground and vote on it (relay/simprops.py, relay/simvotes.py).
+# The channel hears only about the ones visitors voted in, with at least VISITOR_MIN_VOTES votes, at most VISITOR_DAILY_CAP a day.
+VISITOR_MIN_VOTES = int(os.environ.get("SIM_VISITOR_MIN_VOTES", 3))
+VISITOR_DAILY_CAP = int(os.environ.get("SIM_VISITOR_DAILY_CAP", 3))
+VISITOR_EVERY = float(os.environ.get("SIM_VISITOR_POLL_SECONDS", 60))
+PREDICT_LINK = f"{SITE}/?mode=sim#predict"   # the forecast sheet on the HUD (assets/predict.js)
 FEED_ITEMS = 100
 RANGE = 100           # relay's getblockrange maximum
 REFETCH_TAIL = 6      # blocks re-read every poll so a replaced tip block (reorg) is noticed
@@ -601,7 +607,36 @@ SIM_NOTICE = ("Simulated: a made-up chain generated in your browser from the clo
               "Nothing here happens on the real Tau testnet.")
 
 
-def sim_text(ev: dict) -> str:
+SIM_BALLOT_SECONDS = 420  # visitors vote until 7 minutes after the proposal (sim.js BALLOT_SECONDS, relay/simvotes.py)
+
+
+def forecast_lines(ev: dict, today: dict | None, yesterday: dict | None) -> list[str]:
+    """The visitors' forecasts under a simulation post (relay /sim/predictions, infra/relay/simpredict.py): yesterday's best
+    in the morning post, today's leaders in the afternoon one, and when the next round closes. Names are the anonymous
+    two-word names of the simulation; nothing else about anyone is known."""
+    e = html.escape
+    top = lambda rows: " · ".join(f"{i + 1}. {e(r.get('name') or 'Anonymous')} {r['points']}" for i, r in enumerate(rows[:3]))  # noqa: E731
+    out = []
+    if ev["kind"] == "stake" and yesterday and yesterday.get("board"):
+        out.append(f"Yesterday's best forecasters: {top(yesterday['board'])}")
+    if today and today.get("board"):
+        out.append(f"Leading today: {top(today['board'])} ({today.get('forecasters', 0)} playing)")
+    nxt = datetime.fromtimestamp(ev["proposed"] + 3600, timezone.utc).strftime("%H:%M")
+    out.append(f"Next round: the visitors vote at {nxt} UTC. Guess before then whether the change comes and how many vote.")
+    return ["", "🎯 <b>Forecasts</b>"] + out + [f"<a href=\"{e(PREDICT_LINK)}\">Guess the next round</a>"]
+
+
+def forecasts_for(ev: dict) -> list[str]:
+    """The forecast lines for a simulation post; none when the relay does not answer (the post goes out without them)."""
+    try:
+        with urllib.request.urlopen(RELAY_HTTP + "/sim/predictions", timeout=10) as r:
+            today = json.loads(r.read())
+    except (urllib.error.URLError, OSError, ValueError):
+        return []
+    return forecast_lines(ev, today, today.get("yesterday") if ev["kind"] == "stake" else None)
+
+
+def sim_text(ev: dict, forecast: list[str] | None = None) -> str:
     """The Telegram post for a simulated consensus switch: marked as simulation first and last, then why, what to watch, the times."""
     e = html.escape
     hm = lambda t: datetime.fromtimestamp(t, timezone.utc).strftime("%H:%M")  # noqa: E731
@@ -611,6 +646,8 @@ def sim_text(ev: dict) -> str:
            "", "<b>Why it matters</b>", e(w["why"]),
            "", "<b>What to watch</b>"] + [f"• {e(x.format(**f))}" for x in w["watch"]] + [
            "", e(f"Proposed {f['proposed']} UTC · in force {f['in_force']} UTC · {w['after'].format(**f)}"),
+           "", "<b>You decide</b>", e(f"Vote yes or no on tauhud.com until {hm(ev['proposed'] + SIM_BALLOT_SECONDS)} UTC: the simulated validators follow the visitors' majority. More no than yes, and the switch is dropped."),
+           ] + (forecast or []) + [
            "", f"<i>{e(SIM_NOTICE)}</i>",
            "", f"<a href=\"{e(SIM_LINK)}\">Watch it in the simulation</a>"]
     return "\n".join(out)
@@ -705,6 +742,54 @@ def digest_buttons() -> dict:
 def in_post_hours(t: float) -> bool:
     h = datetime.fromtimestamp(t, timezone.utc).hour
     return SITE_POST_HOURS[0] <= h < SITE_POST_HOURS[1]
+
+
+# ---------- rule changes visitors voted into the simulation ----------
+QUORUM_WORDS = {"majority": "more than half", "supermajority": "two thirds"}
+
+
+def visitor_title(meta: dict) -> str:
+    """A visitor proposal in a few words, from its fixed kind and value (no free text: relay/simprops.py)."""
+    k, v = meta.get("kind"), meta.get("value")
+    if k == "fee":
+        return f"Base fee → {v} AGRS per transaction"
+    if k == "add":
+        return "A new validator is admitted"
+    if k == "remove":
+        return f"Validator {v}… is removed"
+    if k == "quorum":
+        return f"Agreement threshold → {QUORUM_WORDS.get(v, v)} of the validators"
+    if k == "mode":
+        return "Switch consensus to proof of stake" if v == "stake" else "Back to the fixed validator list"
+    return "A visitor's own network rule"
+
+
+def visitor_ready(votes: dict, now: float) -> list[dict]:
+    """Visitor proposals whose vote has closed with more yes than no and enough votes, and that are not in force yet."""
+    out = []
+    for item_id, it in (votes.get("items") or {}).items():
+        meta = it.get("meta") or {}
+        yes, no = int(it.get("yes") or 0), int(it.get("no") or 0)
+        if (item_id.startswith("visitor:") and it.get("closes", now + 1) <= now < meta.get("activate_ts", 0)
+                and yes > no and yes + no >= VISITOR_MIN_VOTES):
+            out.append({"key": item_id, "yes": yes, "no": no, "meta": meta})
+    return sorted(out, key=lambda x: x["meta"].get("activate_ts", 0))
+
+
+def visitor_text(v: dict) -> str:
+    """The Telegram post for a rule change visitors voted into the simulation: marked as simulation first and last."""
+    e = html.escape
+    meta = v["meta"]
+    hm = datetime.fromtimestamp(meta["activate_ts"], timezone.utc).strftime("%H:%M")
+    out = ["🧪 <b>SIMULATION · not the real testnet</b>", "<b>Visitors voted a rule change into the simulation</b>",
+           e(visitor_title(meta)),
+           "", "<b>Why it matters</b>",
+           e("A visitor wrote this change in the Playground, everyone on the site could vote, and more said yes than no. "
+             "The simulated validators follow the visitors and vote it in: on Tau the rules change by agreement, never by decree."),
+           "", e(f"{v['yes']} yes · {v['no']} no · in force at {hm} UTC (block #{meta.get('activate_at')})"),
+           "", f"<i>{e(SIM_NOTICE)}</i>",
+           "", f"<a href=\"{e(SIM_LINK)}\">Watch it in the simulation</a>"]
+    return "\n".join(out)
 
 
 # ---------------- outlets ----------------
@@ -1220,7 +1305,7 @@ class Watcher:
         for ev in sim_switches(now):
             if not (ev["proposed"] <= now < ev["in_force"]) or ev["key"] in st["posted"]:
                 continue
-            text, buttons = sim_text(ev), sim_buttons()
+            text, buttons = sim_text(ev, await asyncio.to_thread(forecasts_for, ev)), sim_buttons()
             for o in tg:
                 ok, retry, err = await asyncio.to_thread(o.send_text, text, buttons)
                 if not ok:
@@ -1315,6 +1400,46 @@ class Watcher:
                 log.warning("site update post failed (%s); trying again later", err)
                 return False
         return True
+
+    # ---------- rule changes visitors voted into the simulation ----------
+    async def maybe_visitors(self, now: float | None = None, votes: dict | None = None):
+        """One Telegram post per visitor proposal that was voted in with enough votes, at most VISITOR_DAILY_CAP a day,
+        sent between the close of its vote and the moment it is in force; one missed while the service was down is skipped."""
+        if not SIM_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("visitors", {"posted": {}, "checked": 0})
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        if not tg or st.get("pause_until", 0) > now or (votes is None and now - st.get("checked", 0) < VISITOR_EVERY):
+            return
+        st["checked"] = now
+        if votes is None:
+            try:
+                def get():
+                    with urllib.request.urlopen(RELAY_HTTP + "/sim/votes", timeout=20) as r:
+                        return json.loads(r.read())
+                votes = await asyncio.to_thread(get)
+            except Exception as exc:  # relay restarting: next minute
+                log.info("visitor proposals: relay not readable (%r)", exc)
+                return
+        day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
+        for v in visitor_ready(votes, now):
+            if v["key"] in st["posted"]:
+                continue
+            if sum(1 for t in st["posted"].values() if datetime.fromtimestamp(t, timezone.utc).strftime("%Y-%m-%d") == day) >= VISITOR_DAILY_CAP:
+                break
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, visitor_text(v), sim_buttons())
+                if not ok:
+                    st["pause_until"] = now + (retry or 60)
+                    log.warning("visitor proposal post failed (%s); trying again in a minute", err)
+                    self.save_state()
+                    return
+            st["posted"][v["key"]] = round(now)
+            log.info("simulation: posted visitor proposal %s", v["key"])
+        for k in [k for k, t in st["posted"].items() if now - t > 7 * 86400]:
+            del st["posted"][k]
+        self.save_state()
 
     # ---------- weekly recap ----------
     @staticmethod
@@ -1414,6 +1539,7 @@ class Watcher:
                         await self.maybe_newnodes()
                         await self.maybe_sim()
                         await self.maybe_site()
+                        await self.maybe_visitors()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
                 raise
@@ -1463,7 +1589,7 @@ async def preview_latest(n: int = 6) -> int:
 def sim_preview() -> int:
     """Print today's simulation posts as they would go to Telegram; posts nothing."""
     for ev in sim_switches(time.time()):
-        print(sim_text(ev))
+        print(sim_text(ev, forecasts_for(ev)))
         print("-" * 60)
     return 0
 

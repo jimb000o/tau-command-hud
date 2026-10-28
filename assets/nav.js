@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.47"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.48"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -45,6 +45,7 @@
   const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
+    feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
     telegram: "Join @tauHUDcom on Telegram: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Questions (height, proposals, your transaction or address): write to @tauhud_alerts_bot. Opens Telegram.",
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
     gear: "Settings: node address and Connect, background rain.",
@@ -74,6 +75,7 @@
   /* simulation mode (assets/sim.js): the header reads the simulated chain and says so; the people-online count stays real */
   const SIM = !!(window.TauSim && TauSim.on);
   if (SIM) document.documentElement.classList.add("tau-sim");
+  const BUBBLE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 5v2h10V8H7zm0 4v2h7v-2H7z"/></svg>';
   const PLANE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.9 3.3 2.6 10.8c-1 .4-1 1 0 1.3l4.9 1.5 11.4-7.2c.5-.3 1-.1.6.2l-9.2 8.3-.4 5.1c.5 0 .7-.2 1-.5l2.4-2.3 5 3.7c.9.5 1.6.2 1.8-.9l3.3-15.5c.3-1.3-.5-1.9-1.5-1.5z"/></svg>';
   const emit = action => document.dispatchEvent(new CustomEvent("tau-nav", { detail: action }));
   const markSeen = () => { store.set(SEEN_KEY, LATEST_ID); document.querySelectorAll(".tn-upd.new, .tabbar .new").forEach(e => e.classList.remove("new")); };
@@ -167,9 +169,10 @@
     return m;
   }
   function closeUpdates() { if (UPD.el && !UPD.el.hidden) { UPD.el.hidden = true; try { if (location.hash === "#updates") history.replaceState(null, "", location.pathname + location.search); } catch (e) {} } }
-  async function openUpdates(page) {
+  async function openUpdates(page, focusForm) {
     if (!UPD.el) UPD.el = buildUpdates(page);
     UPD.el.hidden = false; markSeen();
+    if (focusForm) { UPD.el.querySelector(".tn-sheet").scrollTop = 0; setTimeout(() => { const t = UPD.el.querySelector(".tn-text"); if (t) t.focus({ preventScroll: true }); }, 60); }
     if (!UPD.loaded) { UPD.loaded = true; await updDict(); loadUpdLog(); }
     loadUpdDonors();
   }
@@ -372,16 +375,18 @@
       const badge = () => {
         const b = document.querySelector("header.trail .chip.unoff.sim"); if (!b || !TauSim.upcoming) return;
         const list = TauSim.upcoming(), u = list[0], left = u ? Math.ceil((u.at_ts - Date.now() / 1000) / 60) : 999;
-        const ev = u && (EVENT[u.kind] || { what: u.short, why: u.title, watch: "" }), soon = !!u && left <= 60;
+        const ev = u && (EVENT[u.kind] || { what: u.short, why: u.title, watch: "" }), soon = !!u && left <= 60, bal = u && u.ballot;
         const text = !soon ? "Simulation · no real chain data"
           : left <= 0 ? `Simulation · now: ${ev.what}`
+          : bal && bal.open ? `Simulation · vote now: ${ev.what} in ${left} min?`
+          : bal && bal.outcome === "no" ? "Simulation · the visitors said no: the rules stay as they are"
           : u.status === "voting" ? `Simulation · validators are voting: ${ev.what} in ${left} min`
           : u.status === "agreed" ? `Simulation · agreed: ${ev.what} in ${left} min`
           : `Simulation · in ${left} min: ${ev.what}`;
         b.classList.toggle("soon", soon && left <= 5);
         if (text === badgeText) return; badgeText = text;
         b.textContent = text; b.dataset.short = soon ? `Simulation · ${left <= 0 ? "now" : `in ${left} min`}: ${u.short}` : text;   // the phone header has room for the short label only
-        b.dataset.tnt = (soon ? `${ev.why} ${ev.watch}\n` : "") + "Every change is proposed 10 minutes ahead, voted on by the simulated validators, then in force: the path a real rule change takes on Tau.\n" + (localTime ? "Next in the simulation (your time, UTC in brackets):" : "Next in the simulation (UTC):") + "\n" + list.map(x => `${when(x.at_ts)} · ${(EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet. Opens the full notice.";
+        b.dataset.tnt = (soon ? `${ev.why} ${ev.watch}\n` : "") + (bal && bal.open ? "Vote yes or no on the HUD or in Proposals: the simulated validators follow the visitors’ majority.\n" : "") + "Every change is proposed 10 minutes ahead and put to the visitors until 7 minutes in: the simulated validators follow the majority, then it is in force, the path a real rule change takes on Tau.\n" + (localTime ? "Next in the simulation (your time, UTC in brackets):" : "Next in the simulation (UTC):") + "\n" + list.map(x => `${when(x.at_ts)} · ${(EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet. Opens the full notice.";
       };
       const tick = () => { CHAIN.st = TauSim.status(); govFrom(TauSim.governance()); CHAIN.polled = true; CHAIN.at = Date.now(); render(); badge(); };
       tick(); setInterval(() => { if (!document.hidden) tick(); }, 1000);
@@ -524,7 +529,10 @@
     state.classList.add("pill", "primary"); tip(state, TIPS.state);
     left.append(state);
     const tg = el("a", "pill tg", `${PLANE}<span>Telegram alerts</span>`); tg.href = TELEGRAM; tg.target = "_blank"; tg.rel = "noopener"; tg.setAttribute("aria-label", "Telegram channel tauHUDcom"); tip(tg, TIPS.telegram);
-    right.append(tg);
+    /* feedback, impossible to miss: opens the feedback form in place, the HUD's own on the start page */
+    const fbk = el("button", "pill fbk", `${BUBBLE}<span>Feedback</span>`); fbk.type = "button"; fbk.setAttribute("aria-label", "Give feedback"); tip(fbk, TIPS.feedback);
+    fbk.addEventListener("click", () => { closeAll(); if (isHud && slots.updates) { slots.updates.click(); setTimeout(() => { const t = document.getElementById("fbText"); if (t) t.focus({ preventScroll: true }); }, 60); } else openUpdates(page, true); });
+    right.append(fbk, tg);
     let upd = slots.updates;
     if (!upd) { upd = el("a", "", "Updates"); upd.href = "#updates"; upd.addEventListener("click", e => { e.preventDefault(); openUpdates(page); }); }   // opens in place; the HUD keeps its own overlay with the feedback box
     upd.classList.add("tl"); tip(upd, TIPS.updates);
