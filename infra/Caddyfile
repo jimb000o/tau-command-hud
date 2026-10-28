@@ -9,8 +9,9 @@
 		}
 		reverse_proxy checker:8090
 	}
-	# Proposal tracker data, the Atom feed and the weekly recap images (alerts/alerts.py).
-	@alerts path /proposals.json /feed.xml /recap/*
+	# Proposal tracker data, the Atom feed, the weekly recap images (alerts/alerts.py)
+	# and the donation list read by About (alerts/donations.py).
+	@alerts path /proposals.json /feed.xml /recap/* /donations.json
 	handle @alerts {
 		root * /srv/alerts
 		header Access-Control-Allow-Origin *
