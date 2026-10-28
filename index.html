@@ -83,7 +83,9 @@ body[data-mode="live"] .simtag { display: none; }
 /* simple vs technical view */
 .stream .lbl.plain, body[data-view="simple"] .stream .lbl.tech { display: none; }
 body[data-view="simple"] .stream .lbl.plain { display: block; }
-body[data-view="simple"] .stream code { color: var(--dim); font-weight: 600; font-size: 11px; }
+body[data-view="simple"] .stream code { display: none; }
+body[data-view="simple"] .stream { grid-template-columns: minmax(0, 1fr) max-content; }
+body[data-view="simple"] .feed .txid { display: none; }
 body[data-view="simple"] .rule.composite, body[data-view="simple"] .logp, body[data-view="simple"] .upd .diff, body[data-view="simple"] .blk .h.hx { display: none; }
 body[data-view="simple"] .pr em { display: none; }
 /* tour */
@@ -802,8 +804,8 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <button class="pill primary" type="button" id="btnState2" data-slot="state">Chain state</button>
       <button class="tl" type="button" data-slot="updates" data-open="mFeedback">Updates</button>
       <div class="seg" role="group" aria-label="Detail level" data-slot="view">
-        <button id="btnSimple" aria-pressed="false" data-full="Simple view: plain words, fewer numbers, no stream names.">Simple</button>
-        <button id="btnTech" aria-pressed="true" data-full="Technical view: stream names (i10, o5, o9), hashes and rule text everywhere.">Technical</button>
+        <button id="btnSimple" aria-pressed="false" data-full="Simple view: what each thing means, in words. No keys, hashes or stream names; validators are V1, V2…; transactions show their kind and fee; the node log is hidden.">Simple</button>
+        <button id="btnTech" aria-pressed="true" data-full="Technical view: the same plus keys, hashes, heights, proposal ids, stream names (i10, o5, o9), rule text and the node log.">Technical</button>
       </div>
       <div class="gearbody" data-slot="gear">
         <h4>Node</h4>
@@ -968,6 +970,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.22 · 28 Oct 2026</b>Simple and Technical view mean more on the HUD: Simple says what each thing means, Technical adds keys, hashes, heights and stream names. Every hover text in the Chain core now comes in both versions, validators read V1, V2 in Simple and show their key in Technical, the block check hides stream names in Simple, transactions show kind and fee without the hash, and the Validators panel follows the view. The thesis and its four points stay as they are.</li>
           <li><b>v17.21 · 28 Oct 2026</b>Header: the green “new updates” dot now sits at the top right of the word Updates, two pixels from the last letter, on every page. It used to float far to the right on the HUD.</li>
           <li><b>v17.20 · 28 Oct 2026</b>Chain core shows every agreed rule change, not just one: the agreement ring carries one marker per change that waits for its activation height, clockwise in activation order, the next one bright, and the label says “4 agreed · next #5028”. An open vote still fills the same ring toward quorum. Hover a marker for the proposal, what it changes and when it takes effect.</li>
           <li><b>v17.19 · 28 Oct 2026</b>Chain core: Height, Waiting and User rules carry a line of context like Block pace does. Height says when the last block came and how old the chain is, Waiting counts pending transactions and how long the oldest has waited, User rules says how many are in force and where the last one was deployed. Hovering each number explains it. In the circle, whatever your pointer rests on lights up green while its text shows, the outer rim answers to a wider band that reaches outside the ticks, and the three grey arcs that used to turn just inside the rim are now one quiet circle, the validator orbit, with its own text.</li>
@@ -1208,6 +1211,9 @@ function tickSubs() {
 }
 setInterval(() => { if (!document.querySelector(".a-core:hover")) { if (S.mode === "live") tickPace(); tickSubs(); } }, 1000);
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* Simple view says what a thing means; Technical view adds keys, hashes, heights, stream names and raw values */
+const TECH = () => document.body.dataset.view !== "simple", vt = (simple, tech) => TECH() ? tech : simple;
+const viewText = t => TECH() ? t : String(t).replace(/\s*\((?:[io]\d+(?:\s*[,=]\s*[^)]*)?)\)/g, "");
 
 /* ---------- shared view state ---------- */
 const S = {
@@ -1555,7 +1561,7 @@ function txCard(t) {
     ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
     : (t.note || `sender ${acct(t.sender)}`);
   const txid = S.mode === "live" && t.id && !t.rejected ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id);
-  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span>${txid} · fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
+  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="txid">${txid} · </span>fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   if (t.rejected) { S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
@@ -1718,7 +1724,7 @@ function renderRuleWorld() { renderUpdates(); renderOffers(); renderClauses(); }
 function renderGov(extra = {}) {
   if (hold("vals", () => renderGov(extra))) return;
   $("vals").innerHTML = S.validators.map((v, i) =>
-    `<div class="val ${i === S.proposerIdx ? "on" : ""}" data-ex="${exKey(() => explainValidator(v, i))}" data-detail="${dtKey(() => detailValidator(v, i))}"><i></i><span>${acct(v)}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
+    `<div class="val ${i === S.proposerIdx ? "on" : ""}" data-ex="${exKey(() => explainValidator(v, i))}" data-detail="${dtKey(() => detailValidator(v, i))}"><i></i><span>${TECH() ? acct(v) : `Validator ${i + 1}`}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
   const N = S.validators.length;
   const kv = Object.assign({
     "Validators": N ? `${N} active, 1 proposing` : "—",
@@ -1780,7 +1786,7 @@ function readouts() {
   $("chipRev").textContent = "rev " + S.specRev;
   { const m = S.mode === "live" ? S.eligMode || "" : "validator_set", c = CONS_CHIP[m], n = S.validators.length;
     $("consL").textContent = c ? c[0] + (n ? ` · ${n} validator${n === 1 ? "" : "s"}` : "") : "—"; $("consS").textContent = c ? c[1] + (n ? ` · ${n}` : "") : "—"; }
-  $("coreSub").textContent = S.validators.length ? "next proposer " + short(S.validators[(S.proposerIdx + 1) % S.validators.length]) : "—";
+  $("coreSub").textContent = S.validators.length ? "next proposer " + (TECH() ? short(S.validators[(S.proposerIdx + 1) % S.validators.length]) : "V" + ((S.proposerIdx + 1) % S.validators.length + 1)) : "—";
 }
 
 /* ---------- block detail + chain state ---------- */
@@ -2264,8 +2270,9 @@ function draw(tm) {
   const cyan = "236,236,240", amber = "255,255,255";
   CORE_HITS.length = 0; const hit = (x, y, r, fn) => CORE_HITS.push({ x, y, r, fn }); const ring = (r, w, fn) => CORE_RINGS.push({ r, w, fn });
   CORE_RINGS.length = 0;
-  ring(C * .84, 16, () => `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is proposing the next block; a white square around one marks a vote for the open rule change.`);
-  ring(C * .93, C * .085, () => `Outer rim: the consensus spec, revision ${S.specRev}. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`);
+  ring(C * .84, 16, () => `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is ${vt("building", "proposing")} the next block; a white frame around one marks a vote for the open rule change.` + vt("", `\nThe proposer rotates through the set (o7 eligibility); a vote is a consensus_rule_vote transaction.`));
+  ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}. Everything inside obeys it: validators sit on it, accounts and waiting transactions orbit within it, and every block is checked against it.`,
+    `Outer rim: the consensus spec, revision ${S.specRev} (o6 block validity, o7 proposer eligibility, o9 fee = ${S.fee} AGRS). Amended ${S.updates.filter(u => u.status === "active").length} time${S.updates.filter(u => u.status === "active").length === 1 ? "" : "s"} by agreement. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`));
 
   cx.strokeStyle = `rgba(${cyan},.35)`; cx.lineWidth = 2;
   for (let i = 0; i < 120; i++) {
@@ -2284,7 +2291,8 @@ function draw(tm) {
     const parts = [];
     if (open) parts.push(`${open.votes.size} of ${threshold()} validators agree to “${open.title}”; at ${threshold()} it is scheduled for a later block${voting.length > 1 ? ` (${voting.length - 1} more vote${plural(voting.length - 1)} open)` : ""}.`);
     if (sched.length) parts.push(`${sched.length} agreed change${plural(sched.length)} wait${sched.length === 1 ? "s" : ""} for ${sched.length === 1 ? "its" : "their"} activation height: the markers, clockwise in activation order; the bright one is next, at block #${next.activateAt} (${blocksLeft(next)} block${plural(blocksLeft(next))} away). Until then the old rules apply.`);
-    return parts.length ? "Agreement ring: " + parts.join(" ") : "Agreement ring: empty. No rule change is being voted on or waiting to take effect; it fills clockwise as validators agree.";
+    const txt = parts.length ? "Agreement ring: " + parts.join(" ") : "Agreement ring: empty. No rule change is being voted on or waiting to take effect; it fills clockwise as validators agree.";
+    return txt + (TECH() && sched.length ? "\n" + sched.map(u => `${short(u.id)} → #${u.activateAt}`).join(" · ") : "");
   });
   if (sched.length) arc(C * .70, 10, 0, Math.PI * 2, `rgba(${amber},.32)`, 0);   // a full, quiet ring: agreement reached, waiting to take effect
   if (open) arc(C * .70, 10, -Math.PI / 2, Math.min(1, open.votes.size / threshold()) * Math.PI * 2, `rgba(${amber},.7)`, 0);
@@ -2293,7 +2301,8 @@ function draw(tm) {
     cx.save(); cx.translate(x, y); cx.rotate(Math.PI / 4);
     cx.fillStyle = `rgba(${amber},${lead ? 1 : .55})`; cx.shadowColor = `rgb(${amber})`; cx.shadowBlur = lead ? 22 : 8;
     const sz = lead ? 14 : 10; cx.fillRect(-sz / 2, -sz / 2, sz, sz); cx.restore();
-    hit(x, y, 20, () => `Agreed ${short(u.id)}: “${u.title}”${u.diff ? ` · ${String(u.diff).replace(/<[^>]+>/g, "").slice(0, 120)}` : ""}.\nActivates at block #${u.activateAt}, in ${blocksLeft(u)} block${plural(blocksLeft(u))}${lead ? " · next to take effect" : ` · ${i + 1} of ${sched.length} waiting`}.${farAhead(u) ? "\nThe height was chosen by the proposal, not by Tau’s speed." : ""}`);
+    hit(x, y, 20, () => vt(`Agreed rule change${sched.length > 1 ? ` ${i + 1} of ${sched.length}` : ""}: takes effect at block #${fmt(u.activateAt)}, in ${fmt(blocksLeft(u))} block${plural(blocksLeft(u))}${paceNow() ? ` (about ${fmtAge(blocksLeft(u) * paceNow())})` : ""}. Until then the old rules apply.${lead ? "\nThis one is next." : ""}`,
+      `Agreed ${short(u.id)}: “${u.title}”${u.diff ? ` · ${String(u.diff).replace(/<[^>]+>/g, "").slice(0, 120)}` : ""}.\nActivates at block #${u.activateAt}, in ${blocksLeft(u)} block${plural(blocksLeft(u))}${lead ? " · next to take effect" : ` · ${i + 1} of ${sched.length} waiting`}.${farAhead(u) ? "\nThe height was chosen by the proposal, not by Tau’s speed." : ""}`));
   });
   if (open || next) {
     const agreeTxt = open ? `AGREEMENT ${open.votes.size}/${threshold()}` : sched.length === 1 ? "AGREED · ACTIVATES #" + next.activateAt : `${sched.length} AGREED · NEXT #${next.activateAt}`, agreeFont = "600 22px Sora, sans-serif";
@@ -2311,8 +2320,8 @@ function draw(tm) {
     const s = on ? 30 : 22; cx.fillRect(-s / 2, -s / 2, s, s);
     if (voted) { cx.strokeStyle = `rgba(${amber},.95)`; cx.lineWidth = 3; cx.strokeRect(-s, -s, s * 2, s * 2); }
     cx.restore();
-    plate("V" + (i + 1) + " " + v.slice(0, 6), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
-    hit(x, y, 40, () => `V${i + 1} ${short(v)}\n` + explainValidator(v, i) + (on ? "\nGreen line to the core: its block being sealed." : ""));
+    plate("V" + (i + 1) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
+    hit(x, y, 40, () => vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."));
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
 
@@ -2335,7 +2344,7 @@ function draw(tm) {
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
     const st = ruleState(p), col = st.hot ? (st.refused ? "255,255,255" : "57,255,138") : "170,170,178";
-    hit(x, y, 24, () => `${short(RA[i])} runs its own rule: ${p.name}.\n${policyMeaning(p)} Binds the account, not the key.\n` + (st.hot ? (st.refused ? "White line: the rule just refused a transfer from this account." : "Green line: the rule just checked a transfer from this account and let it pass.") : "Grey line: in force, no transfer from this account checked in the last few seconds."));
+    hit(x, y, 24, () => vt(`This account runs its own money rule: ${p.name}.\n${policyMeaning(p)} It binds the account, not the key.\n`, `${short(RA[i])} runs its own rule: ${p.name}.\n${policyMeaning(p)} Binds the account, not the key; one guarded branch in the composite o5 program.\n`) + (st.hot ? (st.refused ? "White line: the rule just refused a transfer from this account." : "Green line: the rule just checked a transfer from this account and let it pass.") : "Grey line: in force, no transfer from this account checked in the last few seconds."));
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
     cx.shadowBlur = 0; cx.beginPath(); cx.arc(x, y, 12, 0, Math.PI * 2); cx.strokeStyle = `rgba(${col},.45)`; cx.lineWidth = 1.5; cx.stroke();
@@ -2348,7 +2357,7 @@ function draw(tm) {
     const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
     cx.shadowColor = cx.fillStyle; cx.shadowBlur = 14; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 6, 0, Math.PI * 2); cx.fill();
-    hit(Math.cos(a) * r, Math.sin(a) * r, 20, () => `Mempool: ${tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"} ${short(tx.id)}, admitted after the rule check, waiting for the next block.`);
+    hit(Math.cos(a) * r, Math.sin(a) * r, 20, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`); });
   });
   cx.shadowBlur = 0;
 
@@ -2357,7 +2366,8 @@ function draw(tm) {
   const g = cx.createRadialGradient(0, 0, 0, 0, 0, C * .32);
   g.addColorStop(0, "rgba(240,246,255,.95)"); g.addColorStop(.25, `rgba(${core},${.55 + Math.max(p, am) * .4})`); g.addColorStop(1, `rgba(${core},0)`);
   cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, C * (.30 + p * .06), 0, Math.PI * 2); cx.fill();
-  hit(0, 0, C * .30, () => `Block #${S.height}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago, judged under spec revision ${S.specRev}.\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`);
+  hit(0, 0, C * .30, () => { const last = S.blocks[S.blocks.length - 1] || {}; return vt(`Block #${fmt(S.height)}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago under rule version ${S.specRev}.\nEvery block carries the agreed rules of everyone; changing a rule needs ${threshold()} of ${S.validators.length} validators.`,
+    `Block #${S.height}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago, judged under spec revision ${S.specRev}.\nhash ${short(last.hash)} · state ${short(last.state)} · ${(last.txs || []).length} tx · proposer ${short(last.proposer)}\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`); });
   cx.strokeStyle = `rgba(${core},.8)`; cx.lineWidth = 3;
   for (let k = 0; k < 3; k++) { cx.save(); cx.rotate(t * (k % 2 ? -.8 : .6) + k); const r = C * (.17 + k * .04); for (let j = 0; j < 3; j++) { cx.beginPath(); cx.arc(0, 0, r, j * Math.PI * 2 / 3, j * Math.PI * 2 / 3 + 1.75); cx.stroke(); } cx.restore(); }
 
@@ -2371,7 +2381,7 @@ function draw(tm) {
   cx.fillStyle = "#0b0b0e"; cx.font = "600 60px Sora, sans-serif"; cx.textAlign = "center"; cx.textBaseline = "middle";
   cx.fillText("#" + S.height, 0, -8);
   cx.font = "600 19px Sora, sans-serif";
-  cx.fillText(am > .2 ? "SPEC AMENDED · REV " + S.specRev : since < 1.2 ? "SEALED BY AGREEMENT" : "SPEC REV " + S.specRev, 0, 40);
+  cx.fillText(am > .2 ? vt("RULES CHANGED · V", "SPEC AMENDED · REV ") + S.specRev : since < 1.2 ? "SEALED BY AGREEMENT" : vt("RULES V", "SPEC REV ") + S.specRev, 0, 40);
   if (S.mode === "sim") plate("SIMULATION · NO REAL CHAIN DATA", 0, C * .64 + 10, "600 30px Sora, sans-serif", "rgba(236,236,240,.42)");
   paintHover();
   paintPlates();
@@ -2606,14 +2616,14 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   document.addEventListener("pointerdown", e => { touch = e.pointerType === "touch"; }, true);
   const place = (x, y) => { const w = ovl.offsetWidth, h = ovl.offsetHeight; ovl.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px"; ovl.style.top = (y + 18 + h > innerHeight ? y - h - 10 : y + 18) + "px"; };
   let shownAt = 0;
-  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex && EX.get(el.dataset.ex); ovl.textContent = fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim()); ovl.hidden = false; place(x, y); };
+  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex && EX.get(el.dataset.ex); ovl.textContent = viewText(fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim())); ovl.hidden = false; place(x, y); };
   const hide = () => { cur = null; ovl.hidden = true; };
   document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur && !touch) hide(); });
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
   document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail], button, a, input, select")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
-  const coreShow = e => { const fn = coreHit(e); if (fn) { cur = cv; shownAt = Date.now(); ovl.textContent = fn(); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
+  const coreShow = e => { const fn = coreHit(e); if (fn) { cur = cv; shownAt = Date.now(); ovl.textContent = viewText(fn()); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
   cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; CORE_MOUSE = null; if (cur === cv && !touch) hide(); });
   cv.addEventListener("click", e => { if (touch) coreShow(e); });
@@ -2621,7 +2631,7 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
 
 /* ---------- simple / technical view ---------- */
 const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
-function setView(v) { document.body.dataset.view = v; $("btnSimple").setAttribute("aria-pressed", v === "simple"); $("btnTech").setAttribute("aria-pressed", v === "tech"); store.set("tau-view", v); const cur = selectedBlock !== null ? S.byHeight.get(selectedBlock) : S.blocks[S.blocks.length - 1]; if (cur) showBlock(cur, selectedBlock !== null); }
+function setView(v) { document.body.dataset.view = v; $("btnSimple").setAttribute("aria-pressed", v === "simple"); $("btnTech").setAttribute("aria-pressed", v === "tech"); store.set("tau-view", v); if (S.validators.length) renderGov(); const cur = selectedBlock !== null ? S.byHeight.get(selectedBlock) : S.blocks[S.blocks.length - 1]; if (cur) showBlock(cur, selectedBlock !== null); }
 $("btnSimple").onclick = () => setView("simple"); $("btnTech").onclick = () => setView("tech");
 setView(store.get("tau-view") || "simple");
 /* ---------- glyph rain toggle ---------- */
@@ -2764,7 +2774,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.21`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.22`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
