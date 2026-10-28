@@ -6,4 +6,16 @@ TauI18n.add({ strings: {
   "Previous page": "上一页",
   "Sound of the paper": "翻报纸的声音",
   "Switch between the full broadsheet and the pocket edition with one story per page": "在整版大报和每页一篇的袖珍版之间切换",
+  "Show the site menu": "显示网站菜单",
+  "Large type": "大字号",
+  "Full screen": "全屏",
+  // the same words as the Chinese edition (gazette/zh.js), for the controls before the edition has loaded
+  "‹ Back": "‹ 上一页",
+  "Turn ›": "翻页 ›",
+  "Contents": "目录",
+  "Pocket edition": "袖珍版",
+  "Broadsheet": "大报版",
+  "Sound on": "声音 开",
+  "Sound off": "声音 关",
+  "Front page": "头版",
 } });

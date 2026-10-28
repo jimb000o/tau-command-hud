@@ -488,4 +488,5 @@ TauI18n.add({ strings: {
   "Open account {h}": "打开账户 {h}",
   "Checks": "检查",
   "Visits": "访问量",
+  "In numbers": "数据一览",
 } });
