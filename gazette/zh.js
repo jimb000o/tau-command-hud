@@ -11,7 +11,7 @@ window.GAZETTE_ZH = {
   <div class="mast">
     <div class="ear"><b>链上天气</b>晴。约每八秒一个区块。由一位验证者值守。展望：气候可经投票改变。</div>
     <div><div class="title">{{NAME}}</div><div class="motto">{{MOTTO}}</div></div>
-    <div class="ear r"><b>定价：一枚 AGRS</b>测试网代币没有价值。由 Tau HUD 印行，非官方社区项目。</div>
+    <div class="ear r"><b>免费赠阅</b>由 Tau HUD 印行，非官方社区项目。测试网 AGRS 仅供练习。</div>
   </div>
   <div class="dateline"><span>第十三卷 · No. {{HEIGHT}}</span><span>{{DATE}}</span><span>tauhud.com</span></div>
   <div class="center"><span class="extra">号外</span></div>
@@ -71,7 +71,7 @@ window.GAZETTE_ZH = {
       <h3>百万人的对话</h3>
       <p class="ni">让十个人就一条规则达成一致，是一场会议；让一百万人这样做，是一场骚乱。Tau 的答案是：让每位参与者用机器能读懂、能推理的语言表达自己的意愿，这样机器就能分辨谁同意谁、哪些意见互相矛盾，以及大家合起来到底说了什么。</p>
       <p>团队在 2016 年的访谈中谈到区块链的价值，答案来自中本聪：<i>“一个人人都能写入、谁也无法作弊的公共共享数据库”</i>。Tau 要为规则和知识做同样的事。</p>
-      <div class="ad"><div class="t">AGORAS</div><p>明日之市场！出租算力。购买可证明符合规格的代码。咨询专家，按秒计费。</p><div class="fine">自 2015 年起筹划。尚未开张：真正的 Agoras 币随主网到来。</div></div>
+      <div class="box small"><p><b>AGORAS 是什么？</b>IDNI 自 2015 年起描述的一个市场，作为日后建在 Tau 之上的一层：交易算力、经规格检验的代码和专家咨询。它仍是日后的计划，还不是产品。今天测试网上的 AGRS 仅供练习。</p></div>
       <div class="box small"><p><b>Ohad Asor 是谁？</b>IDNI 的创始人，Tau 背后的公司。一位有数学背景的开发者，据他自己说，是在开始做 Tau 之后才深入逻辑学的。</p></div>
     </div>
   </div>
@@ -233,7 +233,7 @@ window.GAZETTE_ZH = {
       <p>四月带来了分叉选择与链重组、唯一的规范链，以及与内置检查并列的用户自定义策略检查。五月迈出决定性一步：共识从 Python 移入 Tau 逻辑，用户可以用规则修改它；同时推出了管理节点、密钥和投票的开发者命令行。</p>
       <p>八月，用户真的改了它。他们通过投票从固定验证者名单切换到权益证明再切回，没有重新部署任何节点。验证者名单本身如今也存在于 Tau 逻辑中。</p>
       <p>九月宣布进入产品阶段：带规则模板与分享功能的简易钱包模式，另有两项专利获批。十月，联署转账上线：大额支付需要多方批准，期限以任何时钟都伪造不了的区块数计算。一个常用规格的加载时间从 68 秒降到 2.4 秒。</p>
-      <p>主网和真正的 Agoras 币仍在前方。难得的是，这一次路看得见。</p></div>
+      <p>主网和 Agoras 仍是团队路线图上的计划。难得的是，这一次路看得见。</p></div>
     </div>
     <div class="u s2 rl">
       <h3>说白话，链来记下</h3>
@@ -333,7 +333,7 @@ window.GAZETTE_ZH = {
     </div>
     <div class="u s2 rl cls">
       <p><b>失物。</b>硬分叉一个。无人想念。拾得者可自行留用。</p>
-      <p><b>告示。</b>测试网 AGRS 毫无价值。请勿用它换你祖母的银器。</p>
+      <p><b>告示。</b>测试网 AGRS 毫无价值。它们只用于试用测试网，本报既不提供也不出售。</p>
       <p><b>致好奇者。</b>在<a href="/playground/" data-noflip>试验场</a>提交一条规则，安全地看着链接受或拒绝它。</p>
     </div>
     <div class="u s2 rl cls">
@@ -364,7 +364,7 @@ window.GAZETTE_ZH = {
       <div class="ups"><p><b>答案：</b>（丙）。它与（乙）矛盾，所以在任何投票之前就被编译检查拒绝。（甲）和（乙）可以共存。</p></div>
     </div>
     <div class="u full rt gl"><h3 style="text-align:left">新读者词汇表</h3>
-      <div class="c3"><p><b>Agoras。</b>计划建于 Tau 之上的市场及其代币 AGRS。真正的代币随主网到来。</p>
+      <div class="c3"><p><b>Agoras。</b>IDNI 计划日后建在 Tau 之上的市场。在测试网上，AGRS 只是没有价值的测试单位。</p>
       <p><b>区块。</b>链上账本封存的一页。在 Tau 上，每个区块记录其依据的规则。</p>
       <p><b>引导节点。</b>新节点用来寻找网络其余部分的第一个节点。</p>
       <p><b>共识。</b>谁可以封存区块、何时算数的规则。在 Tau 上，它本身也是一条规则。</p>
@@ -376,13 +376,13 @@ window.GAZETTE_ZH = {
     </div>
     <div class="u s4 rt">
       <h2 class="l">近期预告</h2>
-      <div class="c2"><p class="ni dc">团队公布的后续节目：为语言加入表格和抽象数据类型；在下一次发布前合并开发分支；一个用白话写规则的简易钱包；以及在适当时候到来的主网和真正的 Agoras 币，连同它的算力、知识和专家咨询市场。</p>
+      <div class="c2"><p class="ni dc">团队公布的后续节目：为语言加入表格和抽象数据类型；在下一次发布前合并开发分支；一个用白话写规则的简易钱包；以及更远一些的主网和 Agoras，即团队长期描述的算力、知识和专家咨询市场。</p>
       <p>本报无法承诺日期，团队也不承诺。但本报可以承诺：Testnet Alpha 上下一次规则变更时，Tau HUD 会在现场，你也可以。</p></div>
       <div class="coupon"><div class="t">剪下收藏</div><p>实时观看：<b>tauhud.com</b> · 提醒：<b>t.me/tauHUDcom</b> · 试写规则：<b>tauhud.com/playground</b> · Tau 官方：<b>tau.net</b></p></div>
     </div>
     <div class="u s2 rl rt">
       <div class="ad"><div class="t">Tau HUD</div><p>十二件仪器，观看一条能修改自身规则的链。免费。开源。</p><div class="fine">靠时间、工具和一台朴素的服务器维持运转。</div></div>
-      <p class="ni small" style="margin-top:.6em"><b>版权页。</b>《{{NAME}}》由 Tau HUD 印行，非官方社区项目，与 IDNI 无关。事实取自 Tau 团队公开的视频、文章与论文；视频字幕引文略经整理。广告、谜题与天气仅供一乐。</p>
+      <div class="box small notice" style="margin-top:.6em"><p class="ni"><b>读者须知。</b>《{{NAME}}》是社区项目 Tau HUD 制作的一份友好的非官方报纸，与 IDNI 无关。它为传递资讯、带来乐趣而写，不是财务建议，报中也没有任何东西出售。测试网 AGRS 仅供练习，没有价值。文中谈到的计划，转述的是 IDNI 自己说过的话，计划可能改变。事实取自 Tau 团队公开的视频、文章与论文；字幕引文略经整理。谜题与天气仅供一乐。</p></div>
     </div>
   </div>
 </div>`
