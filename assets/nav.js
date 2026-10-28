@@ -30,6 +30,7 @@
     developers: { t: "Developers", d: "Widgets, badges and a free JSON API for your own site", i: "{}", h: "developers/" },
     press:      { t: "Press kit", d: "Video, logo, screenshots, facts and a ready paragraph, free to use", i: "↓", h: "press/" },
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
+    legal:      { t: "Privacy", d: "Privacy notice: exactly what this site processes (no cookies, no tracking)", i: "§", h: "legal/" },
     about:      { t: "About", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
     seat:       { t: "Validator seat", d: "Take a simulated seat and vote a rule change into law", i: "✓", h: "playground/#seat" },
@@ -40,10 +41,10 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     { k: "explore", t: "Explore", items: ["explorer", "stats", "history", "account", "nodes", "proposals"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "meta", "developers", "press", "tau", "about"], tab: "▸" },
+    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "meta", "developers", "press", "tau", "about", "legal"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote"], id: "btnPlayground", tab: "◇", short: "Play" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", meta: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", meta: "learn", legal: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
@@ -304,11 +305,11 @@
     feedChips(rail);
     return rail;
   }
-  function viewerId() {
+  function viewerId() {   // one random id per page view, in memory only: nothing about the visitor is stored in the browser
     try {
-      let v = localStorage.getItem(VIEWER_KEY);
-      if (!/^[0-9a-f]{32}$/.test(v || "")) { v = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem(VIEWER_KEY, v); }
-      return v;
+      if (!window.__tauViewer) window.__tauViewer = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
+      try { localStorage.removeItem(VIEWER_KEY); } catch (e) {}   // the id older versions kept in the browser
+      return window.__tauViewer;
     } catch (e) { return ""; }
   }
   const fmt = n => Number(n).toLocaleString("en-US");
@@ -488,7 +489,7 @@
     const gear = el("div", "gearbody", `<h4>Node</h4><div class="row"><code>wss://${RELAY}</code><span class="hint">Community relay in front of a Tau testnet node run for this site. To read your own node, open the HUD and put its address under the gear there.</span></div><h4>Look</h4><div class="row"></div>`);
     const row = gear.querySelector(".row:last-child");
     const tour = el("a", "pill", "Tour of this page"); tour.href = "#tour"; tour.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); });
-    const hudTour = el("a", "pill", "HUD tour"); hudTour.href = ROOT + "?tour=1"; const about = el("a", "pill", "About"); about.href = ROOT + "#about"; row.append(tour, hudTour, about);
+    const hudTour = el("a", "pill", "HUD tour"); hudTour.href = ROOT + "?tour=1"; const about = el("a", "pill", "About"); about.href = ROOT + "#about"; const legal = el("a", "pill", "Privacy"); legal.href = ROOT + "legal/"; row.append(tour, hudTour, about, legal);
     return { src, view, gear };
   }
 
@@ -654,7 +655,7 @@
     const q = new URLSearchParams(location.search), zh = /^zh/i.test(document.documentElement.lang) || q.get("lang") === "zh";
     const base = `https://${RELAY}/v?p=${encodeURIComponent(page)}`;
     const send = extra => { try { fetch(base + extra, { mode: "no-cors", keepalive: true, credentials: "omit", referrerPolicy: "no-referrer" }).catch(() => {}); } catch (e) {} };
-    send(`&r=${encodeURIComponent(ref)}&s=${encodeURIComponent(q.get("utm_source") || q.get("ref") || "")}&l=${zh ? "zh" : "en"}&m=${SIM ? "sim" : "live"}&w=${innerWidth}`);
+    send(`&r=${encodeURIComponent(ref)}&s=${encodeURIComponent(q.get("utm_source") || q.get("ref") || "")}&l=${zh ? "zh" : "en"}&m=${SIM ? "sim" : "live"}`);
     let shown = 0;
     const tick = setInterval(() => { if (document.visibilityState === "visible" && ++shown >= 30) { clearInterval(tick); send("&e=1"); } }, 1000);
   }

@@ -16,8 +16,7 @@
 <meta property="og:description" content="Visitors per day, growth and the most visited pages of Tau HUD, counted without cookies.">
 <meta property="og:image" content="https://tauhud.com/og.png">
 <meta property="og:url" content="https://tauhud.com/meta/">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
 <style>
 /* Same tokens as the HUD and /stats: black and white, phosphor green as the one accent. */
 :root {
@@ -400,7 +399,7 @@ function drawPages() {
   for (const [, d] of days) { vis += d[0]; for (const [p, v] of Object.entries(d[3] || {})) u[p] = (u[p] || 0) + v; for (const [p, v] of Object.entries(d[4] || {})) lang[p] = (lang[p] || 0) + v; for (const [p, v] of Object.entries(d[5] || {})) scr[p] = (scr[p] || 0) + v; }
   rows($("pages"), Object.entries(u).sort((a, b) => b[1] - a[1]).slice(0, 14), vis, true);
   $("pRange").textContent = $("wRange").textContent = range ? T(range === 365 ? "last year" : `last ${range} days`) : T("since counting began");
-  $("splits").innerHTML = (vis ? "" : `<p class="empty">${esc(T("Language and screen size appear with the first visitors."))}</p>`) + split("Language", lang, { en: "English", zh: "Chinese" }) + split("Screen size", scr, { phone: "Phone", tablet: "Tablet", laptop: "Laptop", desktop: "Desktop", wide: "Wide", "?": "Unknown" });
+  $("splits").innerHTML = (vis ? "" : `<p class="empty">${esc(T("The language split appears with the first visitors."))}</p>`) + split("Language", lang, { en: "English", zh: "Chinese" });
 }
 
 function kpis() {

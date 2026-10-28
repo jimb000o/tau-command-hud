@@ -489,4 +489,6 @@ TauI18n.add({ strings: {
   "Checks": "检查",
   "Visits": "访问量",
   "In numbers": "数据一览",
+  "Privacy": "隐私",
+  "Privacy notice: exactly what this site processes (no cookies, no tracking)": "隐私说明：本网站究竟处理哪些数据（不用 Cookie，不追踪）",
 } });

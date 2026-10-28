@@ -28,8 +28,6 @@
 	handle {
 		reverse_proxy relay:8080
 	}
-	log {
-		output stdout
-		format console
-	}
+	# No access log: Caddy would write every visitor's address into the container log. Errors still reach
+	# the container log (docker compose logs caddy); the privacy notice at tauhud.com/legal/ relies on this.
 }

@@ -16,8 +16,7 @@
 <meta property="og:description" content="Write a Tau rule, see what the testnet would say. Then vote a rule change in from a simulated validator seat.">
 <meta property="og:image" content="https://tauhud.com/og.png">
 <meta property="og:url" content="https://tauhud.com/playground/">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
 <style>
 /* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
 :root {
@@ -1287,7 +1286,7 @@ function sharedCheck(kind, ok, bad, info) {
 function sentBox(cls, title, html) { const b = $("ownSent"); b.className = "sentbox" + (cls ? " " + cls : ""); b.innerHTML = `<b>${esc(title)}</b><span>${html}</span>`; b.hidden = false; }
 async function sendShared(p) {
   if (sending) return;
-  const me = TauSim.me ? TauSim.me() : null;
+  const me = TauSim.me ? TauSim.me(true) : null;
   if (!me) { sentBox("err", "Not sent", "The shared simulation is not available in this browser."); return; }
   sending = true; $("btnOwn").disabled = true; $("btnOwn").textContent = "Sending…";
   const q = new URLSearchParams({ voter: me.token, kind: p.kind, value: String(p.value), a: me.a, b: me.b, c: me.c });

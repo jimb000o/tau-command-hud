@@ -23,7 +23,7 @@
    majority. More yes than no, or no votes at all: they agree from hh:28 and the change is in force at hh:30. More no than yes:
    only the proposer's vote stands and the change is dropped at hh:30. Every browser reads the same outcome, so the chain
    stays the same everywhere; when an outcome arrives that a page already generated differently, the day is generated again.
-   TauSim.me()             the visitor's anonymous identity {token, name, colour}: a random token and two words, browser only
+   TauSim.me(keep)         the visitor's anonymous identity {token, name, colour}: a random token and two words, browser only; stored only with keep
    TauSim.vote(item, yes)  cast or change a vote (Promise of {ok, error, item})
    TauSim.ballots()        the day's tallies {items: {"slot:<k>": {yes, no, opens, closes, open, outcome, voters, mine}}}
    TauSim.onBallots(fn)    called whenever the tallies change
@@ -84,16 +84,18 @@
   const zhPage = () => document.documentElement.classList.contains("i18n-zh") || /^zh/i.test(document.documentElement.lang || "");
   const nameOf = (a, b) => ID_A[a] == null || ID_B[b] == null ? (zhPage() ? "一位访客" : "A visitor") : zhPage() ? `${ID_A_ZH[a]}的${ID_B_ZH[b]}` : `${ID_A[a]} ${ID_B[b]}`;
   let ME = null;
-  function me() {
+  // The identity is made in memory; it is written to this browser only once the visitor votes, forecasts or proposes
+  // (me(true)), so just looking at the simulation stores nothing (TDDDG § 25).
+  function me(keep) {
     if (!ME) {
       try { const m = JSON.parse(store.get("tau-sim-id") || "null"); if (m && /^[0-9a-f]{32}$/.test(m.token) && ID_A[m.a] && ID_B[m.b] && ID_COLOURS[m.c]) ME = m; } catch (e) {}
       if (!ME) {
         const rnd = n => { try { const u = new Uint32Array(n); crypto.getRandomValues(u); return [...u]; } catch (e) { return Array.from({ length: n }, () => (Math.random() * 2 ** 32) >>> 0); } };
         const r = rnd(7);
-        ME = { token: r.slice(0, 4).map(x => x.toString(16).padStart(8, "0")).join(""), a: r[4] % ID_A.length, b: r[5] % ID_B.length, c: r[6] % ID_COLOURS.length };
-        store.set("tau-sim-id", JSON.stringify(ME));
+        ME = { token: r.slice(0, 4).map(x => x.toString(16).padStart(8, "0")).join(""), a: r[4] % ID_A.length, b: r[5] % ID_B.length, c: r[6] % ID_COLOURS.length, fresh: true };
       }
     }
+    if (keep && ME.fresh) { delete ME.fresh; store.set("tau-sim-id", JSON.stringify(ME)); }
     return { token: ME.token, a: ME.a, b: ME.b, c: ME.c, name: nameOf(ME.a, ME.b), colour: ID_COLOURS[ME.c] };
   }
   const RELAY = window.TAU_SIM_RELAY || "https://node.tauhud.com";
@@ -658,7 +660,7 @@
   }
   let FIRST = Promise.resolve();
   async function castVote(item, yes) {
-    const m = me();
+    const m = me(true);
     try {
       const r = await fetch(`${RELAY}/sim/vote?item=${encodeURIComponent(item)}&voter=${m.token}&yes=${yes ? 1 : 0}&a=${m.a}&b=${m.b}&c=${m.c}`, { cache: "no-store" });
       const j = await r.json();

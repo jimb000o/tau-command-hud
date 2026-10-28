@@ -42,7 +42,7 @@
     render();
   }
   async function send() {
-    const round = nextRound(), id = me();
+    const round = nextRound(), id = TauSim.me(true);
     if (!round || S.pick.come == null || S.pick.n == null || S.sending) return;
     S.sending = true; render();
     try {

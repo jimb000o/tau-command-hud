@@ -50,6 +50,7 @@ TauI18n.add({ strings: {
   "The counter could not be reached. It will try again in a minute.": "暂时无法连接计数器，一分钟后会再试。",
   "The climb starts with the first visitors.": "随着第一批访客到来，曲线开始上升。",
   "Language and screen size appear with the first visitors.": "第一批访客到来后，这里会显示语言和屏幕尺寸。",
+  "The language split appears with the first visitors.": "第一批访客到来后，这里会显示语言分布。",
   "Counted on our own server, not by another company: a page sends one small request when it opens and one more after 30 seconds in view. Nothing is stored in your browser, addresses are never stored, and browsers with Do Not Track or Global Privacy Control are not counted. A visitor is recognised for one day only. Data:": "在我们自己的服务器上统计，不经过任何其他公司：页面打开时发送一个小请求，在屏幕上停留 30 秒后再发送一个。不在你的浏览器中存储任何内容，从不保存 IP 地址，开启“请勿追踪”或“全球隐私控制”的浏览器不会被统计。访客只在当天内被识别。数据：",
   "JSON": "JSON",
   "visitors per day (click a day for its pages)": "每日访客（点击某一天查看当天的页面）",

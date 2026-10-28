@@ -1,0 +1,21 @@
+/* Simplified Chinese for this page. Keys are the English text. The legal text itself stays German and English (translate=no). */
+TauI18n.add({ strings: {
+  "Privacy": "隐私",
+  "Privacy notice: exactly what this site processes (no cookies, no tracking)": "隐私说明：本网站究竟处理哪些数据（不用 Cookie，不追踪）",
+  "What this site does with your data.": "这个网站如何处理你的数据。",
+  "Short answer: almost nothing. No cookies, no tracking, no advertising, no analytics company, no fonts or scripts from other companies. The details below are complete and checked against the site's code.": "简短回答：几乎什么都不处理。不用 Cookie，不追踪，没有广告，没有统计公司，也不加载其他公司的字体或脚本。下面的说明是完整的，并已对照网站代码核实。",
+  "The legal text is available in German and English. The German version is binding.": "法律文本提供德语和英语版本，以德语版本为准。",
+  "No cookies": "不用 Cookie",
+  "No tracking or profiles": "不追踪，不建用户画像",
+  "No third-party analytics": "没有第三方统计",
+  "Fonts served from this site": "字体由本网站自己提供",
+  "Visits counted as daily totals only": "访问只按每日总数统计",
+  "Tau HUD · unofficial community project ·": "Tau HUD · 非官方社区项目 ·",
+  "About": "关于",
+  "Tau HUD in numbers": "Tau HUD 数据一览",
+  "Deutsch": "德语",
+  "English": "英语",
+  "Privacy · Tau HUD": "隐私 · Tau HUD",
+  "Language of the legal text": "法律文本的语言",
+  "In short": "简而言之",
+} });

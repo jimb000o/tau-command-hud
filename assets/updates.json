@@ -854,5 +854,16 @@
   "tag": "In numbers",
   "on": "2026-10-28",
   "html": "In numbers: the charts are now lines with a soft fill instead of blocks. Visitors per day as a green line with the pages opened as faint bars below, growth in the same style, a crosshair with the day's numbers on hover, and today shown as still counting. A short history opens as All, so the first days fill the chart."
+ },
+ {
+  "tag": "Privacy",
+  "on": "2026-10-29",
+  "html": "New page: privacy notice, in the Learn menu and under the gear. Exactly what the site processes, in German and English. Along with it the site got more private: the fonts now come from tauhud.com itself instead of Google, the server keeps no access logs, the online counter no longer stores an id in your browser, the simulation stores your anonymous name only once you vote, forecast or propose, and the visit count no longer reads your screen width.",
+  "major": {
+   "id": "privacy",
+   "title": "New: privacy notice",
+   "text": "Exactly what Tau HUD processes. No cookies, no tracking, and the fonts now come from the site itself instead of Google.",
+   "link": "/legal/"
+  }
  }
 ]
