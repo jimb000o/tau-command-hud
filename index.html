@@ -967,6 +967,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
+          <li><b>v17.20 · 28 Oct 2026</b>Chain core shows every agreed rule change, not just one: the agreement ring carries one marker per change that waits for its activation height, clockwise in activation order, the next one bright, and the label says “4 agreed · next #5028”. An open vote still fills the same ring toward quorum. Hover a marker for the proposal, what it changes and when it takes effect.</li>
           <li><b>v17.19 · 28 Oct 2026</b>Chain core: Height, Waiting and User rules carry a line of context like Block pace does. Height says when the last block came and how old the chain is, Waiting counts pending transactions and how long the oldest has waited, User rules says how many are in force and where the last one was deployed. Hovering each number explains it. In the circle, whatever your pointer rests on lights up green while its text shows, the outer rim answers to a wider band that reaches outside the ticks, and the three grey arcs that used to turn just inside the rim are now one quiet circle, the validator orbit, with its own text.</li>
           <li><b>v17.18 · 28 Oct 2026</b>The first donation came in, thank you. About now shows who supported Tau HUD, read straight from the Ethereum chain: one quiet line under the donation address with the number of supporters and the latest donations, each sender only as a shortened address linked to its transaction. Every new donation also gets one thank-you post in the Telegram channel. AGRS and ETH only; no banner, no goal bar. tauhud.com/#donate opens About at the donation address.</li>
           <li><b>v17.17 · 28 Oct 2026</b>Decode effect: the unresolved glyphs now run a gradient from the settled text outward, white next to the resolved letters, through pale green into full phosphor green by the twelfth glyph, then dimmer the further out.</li>
@@ -2272,16 +2273,28 @@ function draw(tm) {
   const arc = (r, w, a0, len, col, sp) => { cx.beginPath(); cx.lineWidth = w; cx.strokeStyle = col; cx.arc(0, 0, r, a0 + t * sp, a0 + len + t * sp); cx.stroke(); };
   cx.beginPath(); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${cyan},.22)`; cx.arc(0, 0, C * .84, 0, Math.PI * 2); cx.stroke();   // the validator orbit
 
-  // agreement ring: progress of the open rule change toward quorum
-  const open = S.updates.find(u => u.status === "voting" || u.status === "scheduled");
+  // agreement ring: one ring carries every rule change on its way to law. The open vote fills it clockwise toward quorum;
+  // every agreed change that waits for its activation height sits on it as a marker, clockwise in activation order, the next one bright.
+  const voting = S.updates.filter(u => u.status === "voting"), sched = S.updates.filter(u => u.status === "scheduled").sort((a, b) => Number(a.activateAt) - Number(b.activateAt));
+  const open = voting[0] || null, next = sched[0] || null, blocksLeft = u => Math.max(0, Number(u.activateAt) - S.height), plural = n => n === 1 ? "" : "s";
   cx.beginPath(); cx.lineWidth = 10; cx.strokeStyle = `rgba(${amber},.1)`; cx.arc(0, 0, C * .70, 0, Math.PI * 2); cx.stroke();
-  ring(C * .70, 18, () => !open ? "Agreement ring: empty. No rule change is being voted on right now; it fills clockwise as validators agree."
-    : open.status === "scheduled" ? `Agreed: “${open.title}” activates at block #${open.activateAt}, in ${Math.max(0, open.activateAt - S.height)} block${open.activateAt - S.height === 1 ? "" : "s"}. Until then the old rules apply.`
-    : `Agreement ring: ${open.votes.size} of ${threshold()} validators agree to “${open.title}”. At ${threshold()} it is scheduled for a later block.`);
-  if (open) {
-    const frac = Math.min(1, open.votes.size / threshold());
-    arc(C * .70, 10, -Math.PI / 2, frac * Math.PI * 2, `rgba(${amber},${open.status === "scheduled" ? .95 : .7})`, 0);
-    const agreeTxt = open.status === "scheduled" ? "AGREED · ACTIVATES #" + open.activateAt : `AGREEMENT ${open.votes.size}/${threshold()}`, agreeFont = "600 22px Sora, sans-serif";
+  ring(C * .70, 18, () => {
+    const parts = [];
+    if (open) parts.push(`${open.votes.size} of ${threshold()} validators agree to “${open.title}”; at ${threshold()} it is scheduled for a later block${voting.length > 1 ? ` (${voting.length - 1} more vote${plural(voting.length - 1)} open)` : ""}.`);
+    if (sched.length) parts.push(`${sched.length} agreed change${plural(sched.length)} wait${sched.length === 1 ? "s" : ""} for ${sched.length === 1 ? "its" : "their"} activation height: the markers, clockwise in activation order; the bright one is next, at block #${next.activateAt} (${blocksLeft(next)} block${plural(blocksLeft(next))} away). Until then the old rules apply.`);
+    return parts.length ? "Agreement ring: " + parts.join(" ") : "Agreement ring: empty. No rule change is being voted on or waiting to take effect; it fills clockwise as validators agree.";
+  });
+  if (sched.length) arc(C * .70, 10, 0, Math.PI * 2, `rgba(${amber},.32)`, 0);   // a full, quiet ring: agreement reached, waiting to take effect
+  if (open) arc(C * .70, 10, -Math.PI / 2, Math.min(1, open.votes.size / threshold()) * Math.PI * 2, `rgba(${amber},.7)`, 0);
+  sched.forEach((u, i) => {   // markers start right of the label at the top and run clockwise, so none sits under the text
+    const a = -Math.PI / 2 + .62 + (i / sched.length) * (Math.PI * 2 - 1.24), x = Math.cos(a) * C * .70, y = Math.sin(a) * C * .70, lead = i === 0;
+    cx.save(); cx.translate(x, y); cx.rotate(Math.PI / 4);
+    cx.fillStyle = `rgba(${amber},${lead ? 1 : .55})`; cx.shadowColor = `rgb(${amber})`; cx.shadowBlur = lead ? 22 : 8;
+    const sz = lead ? 14 : 10; cx.fillRect(-sz / 2, -sz / 2, sz, sz); cx.restore();
+    hit(x, y, 20, () => `Agreed ${short(u.id)}: “${u.title}”${u.diff ? ` · ${String(u.diff).replace(/<[^>]+>/g, "").slice(0, 120)}` : ""}.\nActivates at block #${u.activateAt}, in ${blocksLeft(u)} block${plural(blocksLeft(u))}${lead ? " · next to take effect" : ` · ${i + 1} of ${sched.length} waiting`}.${farAhead(u) ? "\nThe height was chosen by the proposal, not by Tau’s speed." : ""}`);
+  });
+  if (open || next) {
+    const agreeTxt = open ? `AGREEMENT ${open.votes.size}/${threshold()}` : sched.length === 1 ? "AGREED · ACTIVATES #" + next.activateAt : `${sched.length} AGREED · NEXT #${next.activateAt}`, agreeFont = "600 22px Sora, sans-serif";
     plate(agreeTxt, 0, belowRing(C * .70, agreeTxt, agreeFont), agreeFont, `rgba(${amber},.95)`);
   }
 
@@ -2749,7 +2762,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.19`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.20`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
