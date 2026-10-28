@@ -13,6 +13,9 @@ Control, and bots by user agent, are not counted.
 GET /v?p=<page>&r=<referrer>&s=<tag>&l=en|zh&m=sim|live&w=<width>[&e=1]   count (204, empty)
 GET /visits?key=<key>                                                     the owner's report page (visits.html)
 GET /visits.json?key=<key>[&days=<n>]                                     the counts behind it
+GET /visits/public                                                        totals anyone may see (tauhud.com/meta/): per day
+                                                                          visitors, views, stayed, visitors per page, language
+                                                                          and screen; no referrers, tags or hours
 
 The key comes from VISITS_KEY or, if that is empty, is made once and kept in /data/visits.key.
 """
@@ -200,14 +203,29 @@ class Visits:
         return {"now": round(self.clock()), "today": _day_str(self.day), "engaged_seconds": ENGAGED_SECONDS,
                 "days": {k: v for k, v in sorted(self.days.items()) if k >= first}}
 
+    def public(self) -> dict:
+        """Per day [visitors, views, stayed, {page: visitors}, {lang: visitors}, {screen: visitors}], cached for a minute."""
+        now = self.clock()
+        if getattr(self, "_pub", None) and now - self._pub[0] < 60:
+            return self._pub[1]
+        self._roll()
+        out = {"now": round(now), "today": _day_str(self.day), "engaged_seconds": ENGAGED_SECONDS,
+               "days": {k: [d.get("visitors", 0), sum(d.get("views", {}).values()), sum(d.get("engaged", {}).values()),
+                            d.get("uniques", {}), d.get("lang", {}), d.get("screen", {})]
+                        for k, d in sorted(self.days.items())}}
+        self._pub = (now, out)
+        return out
+
     # ---------- HTTP ----------
     def key_ok(self, q: dict) -> bool:
         return bool(self.key) and hmac.compare_digest(q.get("key", ""), self.key)
 
     def route(self, path: str, query: str, ip: str, headers) -> tuple[int, str, bytes] | None:
-        """(status, content type, body) for /v, /visits and /visits.json; None for any other path."""
-        if path not in ("/v", "/visits", "/visits.json"):
+        """(status, content type, body) for /v, /visits, /visits.json and /visits/public; None for any other path."""
+        if path not in ("/v", "/visits", "/visits.json", "/visits/public"):
             return None
+        if path == "/visits/public":
+            return 200, "application/json", json.dumps(self.public(), separators=(",", ":")).encode()
         q = {}
         for part in query.split("&"):
             k, _, v = part.partition("=")
