@@ -372,7 +372,7 @@
         const text = !soon ? "Simulation · no real chain data"
           : left <= 0 ? `Simulation · now: ${ev.what}`
           : bal && bal.open ? `Simulation · vote now: ${ev.what} in ${left} min?`
-          : bal && bal.outcome === "no" ? `Simulation · the visitors said no: ${ev.what} is called off`
+          : bal && bal.outcome === "no" ? "Simulation · the visitors said no: the rules stay as they are"
           : u.status === "voting" ? `Simulation · validators are voting: ${ev.what} in ${left} min`
           : u.status === "agreed" ? `Simulation · agreed: ${ev.what} in ${left} min`
           : `Simulation · in ${left} min: ${ev.what}`;
