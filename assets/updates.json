@@ -822,5 +822,10 @@
   "tag": "Newspaper",
   "on": "2026-10-28",
   "html": "The Daily Consensus on phones is now read like a real newspaper: the paper fills the whole screen (the ✕ brings the menu back), shows the whole page, and a double tap or two fingers bring a column closer. Swipe or tap to turn. Aa switches to large type, one story at a time; on phones that allow it, ⛶ goes full screen."
-  }
+  },
+ {
+  "tag": "Guided tour",
+  "on": "2026-10-28",
+  "html": "Every subpage with a tour now has a Take the tour button at the end of its opening line, top left where reading starts, besides Tour in the header. One click starts the page’s tour; in Chinese too."
+ }
 ]
