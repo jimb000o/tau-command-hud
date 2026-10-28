@@ -478,7 +478,7 @@ function pick(id) {
   prev.replaceChildren();
   $("snips").hidden = !id;
   if (!id) return;
-  const badge = `${RELAY}/community/badge/${id}.svg`, page = `https://tauhud.com/nodes/#${id}`;
+  const badge = `${RELAY}/community/badge/${id}.svg${window.TauI18n && TauI18n.lang === "zh" ? "?lang=zh" : ""}`, page = `https://tauhud.com/nodes/#${id}`;
   prev.append(SAMPLE ? el("span", { class: "note", text: T("(the badge preview needs the live relay)") }) : el("img", { src: badge, alt: "Tau HUD node badge" }));
   $("snipMd").textContent = `[![Tau HUD node](${badge})](${page})`;
   $("snipHtml").textContent = `<a href="${page}"><img src="${badge}" alt="Tau HUD node" height="20"></a>`;

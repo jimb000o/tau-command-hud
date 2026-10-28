@@ -260,6 +260,7 @@ $("theme").addEventListener("click", e => {
 });
 
 /* ---------- badges ---------- */
+const ZH_BADGE = window.TauI18n && TauI18n.lang === "zh" ? "?lang=zh" : "";   // red when live, as on the Chinese site
 const BADGES = [
   ["status", "Is the testnet live?", "status/"],
   ["height", "Newest verified block", "explorer/"],
@@ -268,7 +269,7 @@ const BADGES = [
   ["health", "Testnet health score, 0 to 100", "status/"],
 ];
 for (const [k, what, page] of BADGES) {
-  const img = `${API}/api/v1/badge/${k}.svg`, link = `${SITE}/${page}`;
+  const img = `${API}/api/v1/badge/${k}.svg${ZH_BADGE}`, link = `${SITE}/${page}`;
   const md = `[![Tau ${k}](${img})](${link})`;
   const html = `<a href="${link}"><img src="${img}" alt="Tau ${k}" height="20"></a>`;
   const row = document.createElement("div");
@@ -283,7 +284,7 @@ for (const [k, what, page] of BADGES) {
 /* ---------- endpoint list ---------- */
 const EP = [
   ["/api/v1/summary", "Status, height, pace, last block, spec revision, base fee, validators, proposal counts, mempool, health. One small object, made for widgets."],
-  ["/api/v1/badge/<kind>.svg", "The badges on this page: status, height, proposals, validators, health."],
+  ["/api/v1/badge/<kind>.svg", "The badges on this page: status, height, proposals, validators, health. Add ?lang=zh for the Chinese colours (red when live)."],
   ["/status", "The relay and our node right now: heights, sync, people online, restarts."],
   ["/health-score", "Testnet health 0 to 100 with every factor behind it and its history."],
   ["/proposals.json", "Every rule change with votes, status and plain-language explanation; rules in force; last 100 events."],

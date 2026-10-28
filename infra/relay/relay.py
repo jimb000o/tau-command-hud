@@ -1223,7 +1223,7 @@ class Relay:
                                           "generated_at": round(now)}, separators=(",", ":"))
         return self.board_text
 
-    def badge_svg(self, node_id: str) -> str:
+    def badge_svg(self, node_id: str, zh: bool = False) -> str:
         """A small embeddable badge: "Tau HUD node | running 12 d"."""
         now = time.time()
         self.expire_community(now)
@@ -1239,13 +1239,13 @@ class Relay:
             up = self.node_uptime(row, now)
             if span and up is not None:  # days alone would flatter a node that was mostly down
                 right += f" · {round(up * 100)} % up"
-        return self.badge("Tau HUD node", right, online)
+        return self.badge("Tau HUD node", right, online, zh)
 
     @staticmethod
-    def badge(left: str, right: str, on: bool) -> str:
+    def badge(left: str, right: str, on: bool, zh: bool = False) -> str:
         """Shields-style two-part badge in the site's colours: black, white,
-        phosphor green when the value is good news."""
-        bg, fg = ("#39ff8a", "#000") if on else ("#2a2a2e", "#ebebee")
+        phosphor green when the value is good news (red with ?lang=zh, as on the Chinese site)."""
+        bg, fg = (("#ff3b52" if zh else "#39ff8a"), "#000") if on else ("#2a2a2e", "#ebebee")
         # Verdana 11px averages about 6.6 px per character; padding 6 px each side
         lw, rw = int(len(left) * 6.6) + 12, int(len(right) * 6.6) + 12
         esc = lambda t: t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -1304,28 +1304,29 @@ class Relay:
         self.summary_at = now
         return self.summary_data
 
-    def api_badge(self, kind: str) -> str:
+    def api_badge(self, kind: str, zh: bool = False) -> str:
+        badge = lambda left, right, on: self.badge(left, right, on, zh)
         s = self.summary()
         up = s["status"] == "synced"
         p = s["proposals"] or {}
         if kind == "height":
-            return self.badge("Tau block", f"{s['height']:,}" if s["height"] is not None else "offline", up)
+            return badge("Tau block", f"{s['height']:,}" if s["height"] is not None else "offline", up)
         if kind == "status":
-            return self.badge("Tau testnet", {"synced": "live", "catching_up": "catching up", "offline": "offline"}[s["status"]], up)
+            return badge("Tau testnet", {"synced": "live", "catching_up": "catching up", "offline": "offline"}[s["status"]], up)
         if kind == "proposals":
             if not p:
-                return self.badge("Tau rule changes", "unknown", False)
+                return badge("Tau rule changes", "unknown", False)
             right = f"{p['in_force']} in force"
             if p["waiting"] or p["agreed"]:
                 right = f"{p['waiting'] + p['agreed']} coming up · " + right
-            return self.badge("Tau rule changes", right, bool(p["waiting"] or p["agreed"]))
+            return badge("Tau rule changes", right, bool(p["waiting"] or p["agreed"]))
         if kind == "validators":
             n = s["validators"]
-            return self.badge("Tau validators", "unknown" if n is None else f"{n} active", bool(n))
+            return badge("Tau validators", "unknown" if n is None else f"{n} active", bool(n))
         h = s["health"] if isinstance(s["health"], dict) else {}
         score = h.get("score")
-        return self.badge("Tau testnet health", "not rated yet" if score is None else f"{score} / 100",
-                          score is not None and score >= HEALTH_OK)
+        return badge("Tau testnet health", "not rated yet" if score is None else f"{score} / 100",
+                     score is not None and score >= HEALTH_OK)
 
     def community_json(self) -> str:
         """Cached like /stats: the endpoint is public, the build walks the chain once."""
@@ -1402,7 +1403,8 @@ class Relay:
         return bool(re.match(r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$", origin))
 
     def process_request(self, connection: ServerConnection, request: Request):
-        path = request.path.split("?")[0]
+        path, _, query = request.path.partition("?")
+        zh = "lang=zh" in query.split("&")
         if path in ("/health", "/status"):
             body = json.dumps(self.status()).encode()
             headers = Headers([("Content-Type", "application/json"),
@@ -1429,7 +1431,7 @@ class Relay:
             headers = Headers([("Content-Type", "image/svg+xml; charset=utf-8"),
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=300")])
-            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.badge_svg(badge.group(1)).encode())
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.badge_svg(badge.group(1), zh).encode())
         if path == "/uptime":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
@@ -1464,7 +1466,7 @@ class Relay:
             headers = Headers([("Content-Type", "image/svg+xml; charset=utf-8"),
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=60")])
-            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.api_badge(api_badge.group(1)).encode())
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.api_badge(api_badge.group(1), zh).encode())
         if request.headers.get("Upgrade", "").lower() != "websocket":
             return connection.respond(HTTPStatus.OK, "Tau HUD read-only relay. Connect with WebSocket; GET /status for health.\n")
         if not self.origin_ok(request.headers.get("Origin")):
