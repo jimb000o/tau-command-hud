@@ -135,6 +135,8 @@ html.fit footer p { margin: 0; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .legend i.ln { height: 2px; width: 14px; border-radius: 1px; }
+.legend i.band { background: rgba(235,235,238,.22); height: 10px; width: 14px; border-radius: 2px; }
+.legend i.dot { width: 6px; height: 6px; border-radius: 50%; background: #ebebee; }
 .legend i.dash { height: 0; width: 14px; border-top: 2px dashed var(--dim); border-radius: 0; background: none; }
 .chart { position: relative; width: 100%; }
 .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
@@ -224,7 +226,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     <section class="panel p-blocks">
       <h2>Block time <small>seconds between one block and the next</small><button class="tbl" type="button" data-table="tBlocks" aria-pressed="false">Table</button></h2>
       <p class="headline" id="hBlocks"></p>
-      <div class="legend"><span><i class="ln" style="background:#fff"></i>each block</span><span><i class="dash"></i>median of the range</span></div>
+      <div class="legend" id="lBlocks"><span><i class="ln" style="background:#fff"></i>each block</span><span><i class="dash"></i>median of the range</span></div>
       <div class="chart" id="cBlocks"></div>
       <div class="tablewrap" id="tBlocks" hidden></div>
     </section>
@@ -496,7 +498,7 @@ function bucketize(rows) {
   return { size, list };
 }
 const bucketLabel = (b, size) => size >= 86400 ? fmtDay(b.t) : `${fmtWhen(b.t)}–${fmtTime(b.end)}`;
-const perLabel = size => size >= 86400 ? "per day" : size >= 3600 ? `per ${size / 3600 === 1 ? "hour" : size / 3600 + " h"}` : `per ${size / 60} min`;
+const perLabel = size => size >= 86400 ? "per day" : size >= 3600 ? `per ${size / 3600 === 1 ? "hour" : size / 3600 + " h"}` : size < 60 ? `per ${size} s` : `per ${size / 60} min`;
 
 /* ------------------------------ tooltip ------------------------------ */
 const tip = $("tip");
@@ -536,9 +538,9 @@ function frame(host, h) {
   return { svg, w, h, L: 40, R: 12, T: 10, B: 26 };
 }
 function yAxis(f, sc, unit) {
-  const g = svgEl("g", { class: "grid" }, f.svg), ticks = Math.round(sc.max / sc.step);
+  const lo = sc.min || 0, g = svgEl("g", { class: "grid" }, f.svg), ticks = Math.round((sc.max - lo) / sc.step);
   for (let i = 0; i <= ticks; i++) {
-    const v = sc.step * i, y = f.h - f.B - (f.h - f.T - f.B) * i / ticks;
+    const v = lo + sc.step * i, y = f.h - f.B - (f.h - f.T - f.B) * i / ticks;
     svgEl("line", { x1: f.L, x2: f.w - f.R, y1: y, y2: y }, g);
     const t = svgEl("text", { x: f.L - 6, y: y + 4, "text-anchor": "end" }, f.svg); t.textContent = fmtN(v) + (unit && i === ticks ? unit : "");
   }
@@ -559,38 +561,84 @@ function xTimeAxis(f, t0, t1) {
 }
 
 /* ------------------------------ charts ------------------------------ */
+/* Block time. Up to about one block per 4 px it draws every block as a line. Beyond that a line per block turns into
+   a solid band, so it groups the blocks into equal time slots and draws per slot the median (line) and the middle
+   half (shaded band), with the unusually slow blocks as dots: that reads the same for 100 blocks and for 10,000. */
+const BT_SLOTS = [30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600, 43200, 86400];
 function blockChart(rows) {
-  const host = $("cBlocks"), iv = intervals(rows);
+  const host = $("cBlocks"), iv = intervals(rows), legend = $("lBlocks");
   if (iv.length < 2) { host.replaceChildren(el("div", "empty", "Needs at least three blocks in the range.")); return iv; }
   const f = frame(host, 230), dts = iv.map(d => d.dt), med = median(dts);
-  // a stalled chain must not flatten the normal blocks: cap the axis, mark taller ones at the top
-  const sc = niceScale(Math.min(Math.max(...dts), Math.max(quant(dts, 0.95) * 1.3, med * 2.5))), maxV = sc.max;
-  yAxis(f, sc, " s");
   const t0 = iv[0].ts, t1 = iv[iv.length - 1].ts, px = f.w - f.L - f.R, py = f.h - f.T - f.B;
-  const X = t => f.L + (t1 === t0 ? px / 2 : (t - t0) / (t1 - t0) * px), Y = v => f.h - f.B - Math.min(v, maxV) / maxV * py;
+  const dense = iv.length > px / 4;
+  // slots: the shortest nice length that gives at most one slot per 8 px and about twenty blocks per slot,
+    // so the median and the quartiles describe the slot and not the luck of a handful of blocks
+  let slot = 0, slots = [];
+  if (dense) {
+    const span = Math.max(1, t1 - t0), maxSlots = Math.max(12, Math.floor(px / 8)), perBlock = span / iv.length;
+    slot = BT_SLOTS.find(z => span / z <= maxSlots && z >= perBlock * 20) || 86400;
+    const first = Math.floor(t0 / slot) * slot, map = new Map();
+    for (const p of iv) { const k = Math.floor((p.ts - first) / slot); (map.get(k) || map.set(k, []).get(k)).push(p); }
+    slots = [...map.entries()].sort((a, b) => a[0] - b[0]).map(([k, ps]) => {
+      const v = ps.map(p => p.dt).sort((a, b) => a - b), q = x => { const i = (v.length - 1) * x, j = Math.floor(i); return v[j] + (v[Math.min(j + 1, v.length - 1)] - v[j]) * (i - j); };
+      const slow = ps.reduce((a, b) => b.dt > a.dt ? b : a);
+      return { t: first + k * slot, end: first + (k + 1) * slot, mid: first + (k + 0.5) * slot, n: v.length, med: q(0.5), lo: q(0.25), hi: q(0.75), min: v[0], max: v[v.length - 1], slow };
+    });
+  }
+  // y axis: a stalled chain must not flatten the normal blocks, so the top is capped and taller ones get a mark;
+  // when every block sits in a narrow range (a steady 8 s chain) the axis starts near it instead of at zero
+  const top = Math.min(Math.max(...dts), Math.max(quant(dts, dense ? 0.99 : 0.95) * (dense ? 1.1 : 1.3), med * 2.5)), floor = quant(dts, 0.02);
+  let sc = niceScale(top);
+  if (floor > sc.max * 0.45) {
+    const z = niceScale(Math.max(1, top - floor * 0.85), 4), lo = Math.floor(floor * 0.85 / z.step) * z.step;
+    sc = { step: z.step, min: lo, max: Math.max(lo + z.step * 2, Math.ceil(top * 1.08 / z.step) * z.step) };
+  }
+  const minV = sc.min || 0, maxV = sc.max;
+  yAxis(f, sc, " s");
+  const X = t => f.L + (t1 === t0 ? px / 2 : (t - t0) / (t1 - t0) * px), Y = v => f.h - f.B - (Math.min(Math.max(v, minV), maxV) - minV) / (maxV - minV) * py;
   xTimeAxis(f, t0, t1);
-  // median reference
+  // median of the range
   const my = Y(med);
   svgEl("line", { x1: f.L, x2: f.w - f.R, y1: my, y2: my, stroke: "#8a8a94", "stroke-width": 1.5, "stroke-dasharray": "5 4" }, f.svg);
   const ml = svgEl("text", { x: f.L + 6, y: my + 15, style: "fill:#ebebee;paint-order:stroke;stroke:#101012;stroke-width:4px" }, f.svg); ml.textContent = `median ${fmtDur(med)}`;
-  // the series: a thin line, plus a marker where a block took longer than the axis shows
-  const d = iv.map((p, i) => `${i ? "L" : "M"}${X(p.ts).toFixed(1)},${Y(p.dt).toFixed(1)}`).join("");
-  svgEl("path", { d, fill: "none", stroke: "#ebebee", "stroke-width": iv.length > 400 ? 1 : 2, "stroke-linejoin": "round" }, f.svg);
-  iv.filter(p => p.dt > maxV).forEach(p => svgEl("path", { d: `M${X(p.ts) - 5},${f.T + 6} L${X(p.ts) + 5},${f.T + 6} L${X(p.ts)},${f.T - 1} Z`, fill: "#fff" }, f.svg));
-  // crosshair snapping to the nearest block
+  const capMark = x => svgEl("path", { d: `M${x - 5},${f.T + 6} L${x + 5},${f.T + 6} L${x},${f.T - 1} Z`, fill: "#fff" }, f.svg);
+  const lg = (cls, text, style) => { const sp = el("span"), i = el("i", cls); if (style) i.style.cssText = style; sp.append(i, document.createTextNode(text)); return sp; };
+  let pick, mark;
+  if (!dense) {
+    legend.replaceChildren(lg("ln", "each block", "background:#fff"), lg("dash", "median of the range"));
+    const d = iv.map((p, i) => `${i ? "L" : "M"}${X(p.ts).toFixed(1)},${Y(p.dt).toFixed(1)}`).join("");
+    svgEl("path", { d, fill: "none", stroke: "#ebebee", "stroke-width": iv.length > 120 ? 1.25 : 2, "stroke-linejoin": "round" }, f.svg);
+    iv.filter(p => p.dt > maxV).forEach(p => capMark(X(p.ts)));
+    pick = x => { let best = iv[0]; for (const p of iv) if (Math.abs(X(p.ts) - x) < Math.abs(X(best.ts) - x)) best = p; return best; };
+    mark = p => [X(p.ts), Y(p.dt)];
+  } else {
+    const xs = s2 => X(Math.min(t1, Math.max(t0, s2.mid)));
+    // band: one flat step per slot (each slot is a group of blocks, not a point), then the median line on top
+    const xa = b => X(Math.max(t0, b.t)), xb = b => X(Math.min(t1, b.end));
+    const band = slots.map((b, i) => `${i ? "L" : "M"}${xa(b).toFixed(1)},${Y(b.hi).toFixed(1)}H${xb(b).toFixed(1)}`).join("") + [...slots].reverse().map(b => `L${xb(b).toFixed(1)},${Y(b.lo).toFixed(1)}H${xa(b).toFixed(1)}`).join("") + "Z";
+    svgEl("path", { d: band, fill: "rgba(235,235,238,.16)", stroke: "none" }, f.svg);
+    svgEl("path", { d: slots.map((b, i) => `${i ? "L" : "M"}${xs(b).toFixed(1)},${Y(b.med).toFixed(1)}`).join(""), fill: "none", stroke: "#ebebee", "stroke-width": 2, "stroke-linejoin": "round" }, f.svg);
+    // slow blocks: well above their own slot and above the range's usual pace; at most 300, the slowest first
+    const slowCut = Math.max(med * 1.5, quant(dts, 0.95));
+    const slowOnes = iv.filter(p => p.dt > slowCut).sort((a, b) => b.dt - a.dt).slice(0, 300);
+    legend.replaceChildren(lg("ln", `median ${perLabel(slot)}`, "background:#fff"), lg("band", "middle half of blocks"), ...(slowOnes.length ? [lg("dot", "unusually slow block")] : []), lg("dash", "median of the range"));
+    slowOnes.forEach(p => p.dt > maxV ? capMark(X(p.ts)) : svgEl("circle", { cx: X(p.ts), cy: Y(p.dt), r: 2.5, fill: "#ebebee", "fill-opacity": .85, "pointer-events": "none" }, f.svg));
+    pick = x => { let best = slots[0]; for (const b of slots) if (Math.abs(xs(b) - x) < Math.abs(xs(best) - x)) best = b; return best; };
+    mark = b => [xs(b), Y(b.med)];
+  }
+  // crosshair snapping to the nearest block (or slot)
   const xh = svgEl("line", { class: "xh", y1: f.T, y2: f.h - f.B, visibility: "hidden" }, f.svg);
   const dot = svgEl("circle", { r: 4.5, fill: "#fff", stroke: "#101012", "stroke-width": 2, visibility: "hidden", "pointer-events": "none" }, f.svg);
   const hit = svgEl("rect", { class: "hit", x: f.L, y: f.T, width: px, height: py }, f.svg);
-  const near = ev => {
-    const r = f.svg.getBoundingClientRect(), x = (ev.clientX - r.left) * f.w / r.width;
-    let best = iv[0]; for (const p of iv) if (Math.abs(X(p.ts) - x) < Math.abs(X(best.ts) - x)) best = p;
-    return best;
-  };
   hit.addEventListener("pointermove", ev => {
-    const p = near(ev);
-    xh.setAttribute("x1", X(p.ts)); xh.setAttribute("x2", X(p.ts)); xh.setAttribute("visibility", "visible");
-    dot.setAttribute("cx", X(p.ts)); dot.setAttribute("cy", Y(p.dt)); dot.setAttribute("visibility", "visible");
-    showTip(ev, tipLines([["tv", fmtDur(p.dt)], ["", `Block #${p.n}, ${p.dt > med * 1.5 ? "slower than" : p.dt < med * 0.7 ? "faster than" : "close to"} the median`], ["tm", `sealed ${fmtWhen(p.ts)}:${pad(new Date(p.ts * 1000).getSeconds())}`]]));
+    const r = f.svg.getBoundingClientRect(), p = pick((ev.clientX - r.left) * f.w / r.width), [cx, cy] = mark(p);
+    xh.setAttribute("x1", cx); xh.setAttribute("x2", cx); xh.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", cx); dot.setAttribute("cy", cy); dot.setAttribute("visibility", "visible");
+    if (!dense) showTip(ev, tipLines([["tv", fmtDur(p.dt)], ["", `Block #${p.n}, ${p.dt > med * 1.5 ? "slower than" : p.dt < med * 0.7 ? "faster than" : "close to"} the median`], ["tm", `sealed ${fmtWhen(p.ts)}:${pad(new Date(p.ts * 1000).getSeconds())}`]]));
+    else showTip(ev, tipLines([["tv", `${fmtDur(p.med)} median`],
+      ["", fmtDur(p.lo) === fmtDur(p.hi) ? `The middle half took ${fmtDur(p.lo)}` : `The middle half took ${fmtDur(p.lo)} to ${fmtDur(p.hi)}`],
+      ["", `Slowest: block #${p.slow.n} after ${fmtDur(p.slow.dt)}.`],
+      ["tm", `${fmtN(p.n)} blocks · ${fmtWhen(p.t)}–${fmtTime(p.end)}`]]));
   });
   hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); hideTip(); });
   return iv;
@@ -811,7 +859,7 @@ function renderNodes() {
   const nodes = NODES && Array.isArray(NODES.nodes) ? NODES.nodes : [];
   const ref = NODES && NODES.reference, refTip = ref ? (ref.tip ?? ref.height) : (D && D.tip);
   // the whole network as our node sees it, ours included
-  const seen = PEERS && Array.isArray(PEERS.peers) ? PEERS.peers.filter(p => p.last_seen && Date.now() / 1000 - p.last_seen < 86400) : null;
+  const seen = PEERS && Array.isArray(PEERS.peers) ? PEERS.peers.filter(p => p.online ?? (p.last_seen && Date.now() / 1000 - p.last_seen < 86400)) : null;
   const net = seen ? `Our node sees ${seen.length + 1} nodes on the network${seen.some(p => p.label) ? ", IDNI’s bootnode and ours included" : ""}. ` : "";
   if (!nodes.length) {
     head.textContent = net + "No community node is reporting yet.";

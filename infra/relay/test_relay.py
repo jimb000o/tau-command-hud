@@ -453,6 +453,8 @@ async def main():
         check(ctype.startswith("application/json") and len(ids) == 2 and pr["peers"][0]["label"] == "IDNI bootnode"
               and pr["peers"][0]["connected"] and pr["counts"]["met_30m"] == 1 and pr["counts"]["seen_24h"] == 2,
               f"/peers {pr['counts']}")
+        check(pr["peers"][0]["online"] and not pr["peers"][1]["steady"] and pr["counts"]["online"] == 1,
+              "a peer seen for seconds is not online yet; the bootnode is")
         check(pr["peers"][1]["community"] and pr["peers"][1]["community"]["name"] == "kit-test", "kit 3 report names its peer")
         async with connect(url, additional_headers={"Origin": "https://tauhud.com"}) as ws:
             gov = await ask(ws, "getgovernance")

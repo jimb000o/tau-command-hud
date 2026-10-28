@@ -305,7 +305,8 @@ function samplePeers() {
 }
 /* the network as our node sees it (GET /peers): the bootnode, kit nodes that said which peer they are, everyone else */
 function network(now) {
-  const recent = ((peers && peers.peers) || []).filter(p => p.last_seen && now - p.last_seen < 86400);
+  // a peer known for only a few minutes (someone testing) is left out until the relay calls it steady
+  const recent = ((peers && peers.peers) || []).filter(p => p.last_seen && now - p.last_seen < 86400 && p.steady !== false);
   return { recent, boot: recent.find(p => p.label), others: recent.filter(p => !p.label && !p.community),
            kit: recent.filter(p => !p.label && p.community) };
 }
@@ -329,7 +330,7 @@ async function load() {
   try { rows = (await getJSON("/community/board")).nodes || []; failed = false; }
   catch (e) { failed = true; }
   ref = await refP;
-  peers = await peersP;
+  peers = (await peersP) || peers;   // one failed request keeps the last list instead of dropping the peers
   render();
 }
 
@@ -343,7 +344,7 @@ function render() {
   const online = list.filter(r => r.online), net = network(now);
   // one count for the whole network, so the chips agree with the board: our node, the peers our
   // node talked to in the last 30 min, and kit nodes online that are not already among those peers
-  const peerOn = net.recent.filter(p => now - p.last_seen < 1800), named = new Set(peerOn.filter(p => p.community).map(p => p.community.id));
+  const peerOn = net.recent.filter(p => p.online ?? now - p.last_seen < 1800), named = new Set(peerOn.filter(p => p.community).map(p => p.community.id));
   const kitOn = online.filter(r => !named.has(r.id)), ours = ref && ref.online ? 1 : 0;
   const atTip = p => p.head != null && ref && ref.height != null && Math.abs(p.head - ref.height) <= 2;
   const up = [ours ? "tauhud.com" : null, ...peerOn.map(p => p.label ? "IDNI" : p.community ? p.community.name : shortId(p.id)), ...kitOn.map(r => r.name)].filter(Boolean);
