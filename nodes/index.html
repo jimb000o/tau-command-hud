@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
+<script src="../assets/simnode.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Community Nodes</title>
@@ -91,6 +92,14 @@ th { text-align: left; font: 600 11px var(--display); letter-spacing: .14em; tex
 td { padding: 7px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
 tr.me td { background: rgba(57,255,138,.07); }
+tr.you td { background: rgba(57,255,138,.05); } tr.you .tag { color: var(--ok); border-color: rgba(57,255,138,.5); }
+/* try it first: a simulated node in the browser, before renting a server */
+.trysim { margin-top: 6px; padding: 3px 4px 3px 14px; border: 1px dashed rgba(255,177,59,.6); border-radius: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.trysim p { margin: 0; flex: 1 1 240px; color: var(--dim); }
+.trysim p b { color: var(--text); font-weight: 600; }
+.trysim a { display: inline-flex; align-items: center; min-height: 34px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(255,177,59,.7); color: #fff; font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; text-decoration: none; white-space: nowrap; }
+@media (max-width: 900px) { .trysim a { min-height: 44px; } }
+.trysim a:hover { border-color: #ffb13b; box-shadow: 0 0 12px rgba(255,177,59,.4); }
 tr.off td { color: var(--dim); }
 tr[data-id] { cursor: pointer; }
 tr[data-id]:hover td { background: rgba(255,255,255,.04); }
@@ -213,6 +222,7 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
           <li><div><h3>Your row appears <small>a minute after it syncs</small></h3>
             <p>Your node reports once a minute. Its log prints your badge: <code>docker compose logs heartbeat</code>. <a href="https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md" target="_blank" rel="noopener">Full guide</a></p></div></li>
         </ol>
+        <div class="trysim" data-tip="It catches up from block #0, joins the node orbit after 10 min\nand, under proof of stake, can seal blocks. Only in your browser."><p><b>No server yet?</b> Try a simulated node in your browser first.</p><a href="?mode=sim#node" id="trySim">Try it</a></div>
       </section>
       <div class="col3">
         <section class="panel gets">
@@ -401,16 +411,16 @@ function render() {
   list.forEach((r, i) => {
     const chain = r.online ? el("span", { class: `agree ${r.agrees}`, "data-tip": AGREE_TIP[r.agrees] || "", text: AGREE[r.agrees] || "–" })
       : el("span", { class: "rank", text: "offline" });
-    const tr = el("tr", { "data-id": r.id, class: [r.online ? "" : "off", r.id === me ? "me" : ""].join(" ").trim(),
+    const tr = el("tr", { "data-id": r.id, class: [r.online ? "" : "off", r.id === me ? "me" : "", r.you ? "you" : ""].join(" ").trim(),
                           "data-tip": `${r.name} · id ${r.id}\nsince ${date(r.first_seen)} · kit ${r.kit || "?"} · tau-testnet ${r.ref || "?"}\nClick for its badge.` },
       el("td", { class: "n rank", text: i + 1 }),
-      el("td", null, el("span", { class: "dot" + (r.online ? " on" : "") }), el("span", { class: "name", text: r.name })),
+      el("td", null, el("span", { class: "dot" + (r.online ? " on" : "") }), el("span", { class: "name", text: r.name }), r.you ? el("span", { class: "tag", text: T("you · simulated") }) : null),
       el("td", { text: span(now - r.first_seen) }),
       el("td", { class: "hide-s" }, upCell(r.uptime)),
       el("td", { class: "n hide-s", text: r.height != null ? `#${r.height}` : "–" }),
       el("td", null, chain),
       el("td", { class: "hide-s", text: ago(now - r.last_seen) }));
-    tr.addEventListener("click", () => { location.hash = r.id; pick(r.id); });
+    tr.addEventListener("click", () => { if (r.you && window.TauSimNode) { TauSimNode.open(); return; } location.hash = r.id; pick(r.id); });
     body.append(tr);
   });
   // the next free place, in green: what your row will look like
@@ -517,6 +527,8 @@ document.addEventListener("mousemove", e => {
 document.addEventListener("mouseleave", () => { tip.hidden = true; });
 
 if (SAMPLE) $("sourceLine").textContent = "Sample data: made-up nodes to preview the page. Remove ?sample from the address for the real list.";
+// in the simulation the panel opens in place; on the live page the link switches to the simulation first
+$("trySim").addEventListener("click", e => { if (SIM && window.TauSimNode) { e.preventDefault(); TauSimNode.open(); } });
 if (SIM) { $("sourceLine").textContent = "Simulation: made-up nodes on the simulated chain, the same on every page. No real nodes. Switch to Live node in the header for the real list."; TauSim.mark(); }
 updateCmd();
 fit();
