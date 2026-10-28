@@ -62,6 +62,11 @@
   const SLOT_AT = 150, SLOT_LEN = 450, SLOT_WAIT = 75, STAKE_SLOT = 10, FIXED_SLOT = 16, HOURLY = ["admit", "major", "remove", "super"];
   const specialOf = k => k === STAKE_SLOT ? "stake" : k === FIXED_SLOT ? "fixed" : HOURLY[(k - (k > STAKE_SLOT) - (k > FIXED_SLOT)) % HOURLY.length];
   const specialAt = n => n >= SLOT_AT && (n - SLOT_AT) % SLOT_LEN === 0 ? specialOf((n - SLOT_AT) / SLOT_LEN) : null;
+  /* the failure paths of governance, every hour: at hh:40 a proposal that contradicts the live rules is refused at the door,
+     at hh:50 a contested one is proposed, gets the proposer's vote alone and is dropped when its deadline passes at hh:58 */
+  const extraAt = n => n < SLOT_AT ? null : (n - SLOT_AT) % SLOT_LEN === 150 ? "contra" : (n - SLOT_AT) % SLOT_LEN === 225 ? "contested" : null;
+  const CONTRA_WHY = "contradicts the rules in force: the text sets o6 to 0 where the live spec needs 1, so the staging compile failed and the node never admitted it";
+  const CONFLICT_WHY = name => `the offered rule contradicts the rule the account already runs (${name}): both together would refuse every transfer, o5 = 0 for all`;
   const SPECIAL_TITLE = { stake: "Switch consensus to proof of stake", fixed: "Back to the fixed validator list", admit: "A new validator is admitted", remove: "A validator is removed",
     super: "Agreement threshold → two thirds of the validators", major: "Agreement threshold → more than half of the validators", restart: "The simulated testnet starts over" };
   const SHORT = { stake: "proof of stake", fixed: "fixed list again", admit: "new validator", remove: "validator leaves", super: "two-thirds rule", major: "majority rule", restart: "chain restarts" };
@@ -73,7 +78,7 @@
   const TXI = new Map(), DROP = new Map(), ACC = new Map();
   function init(dayIndex) {
     DAYI = dayIndex; G = dayIndex * DAY; R = prng(mix(dayIndex * 7919 + 17));
-    ST = { seq: new Map(), bal: new Map(Object.entries(GENESIS)), rules: new Map(), offers: [], open: [], props: [], dropped: [], nextPropAt: 12 + ((R() * 20) | 0), curH: -1, cur: null };
+    ST = { seq: new Map(), bal: new Map(Object.entries(GENESIS)), rules: new Map(), offers: [], open: [], retractables: [], props: [], dropped: [], nextPropAt: 12 + ((R() * 20) | 0), curH: -1, cur: null };
     TXI.clear(); DROP.clear(); ACC.clear();
     B = [{ header: { block_number: 0, previous_hash: "0".repeat(64), timestamp: 0, merkle_root: "0".repeat(64), proposer_pubkey: "0".repeat(96), state_hash: hexOf(R, 64) },
       transactions: [], tx_ids: [], block_hash: GENESIS_HASH, _arrive: [], _dropped: [], _fee: FEE0 }];
@@ -115,19 +120,20 @@
   }
   /* a rule change: an ordinary one picks its kind at random; a special one (want: the day's programme) is told what to be and gets everyone's vote */
   function proposal(n, rules, want) {
+    const contested = want === "contested"; if (contested) want = null;   // the hourly contested one: a sixfold fee that nobody but the proposer votes for
     const N = rules.validators.length, proposer = pick(R, rules.validators), r = R();
-    const p = { id: hexOf(R, 64), n: ST.props.length + 1, proposer, proposed_at: n, activate_at: n + (want ? SLOT_WAIT : 15 + ((R() * 10) | 0)), approved_at: null,
-      thr: threshold(rules.quorum, N), votes: [], special: want || null,
-      abstain: want ? new Set() : new Set(rules.validators.filter(v => v !== proposer && R() < 0.2)), patch: null, revisions: [], kind: "", value: null, explain: null };
+    const p = { id: hexOf(R, 64), n: ST.props.length + 1, proposer, proposed_at: n, activate_at: n + (want ? SLOT_WAIT : contested ? 60 : 15 + ((R() * 10) | 0)), approved_at: null,
+      thr: threshold(rules.quorum, N), votes: [], special: want || null, contested,
+      abstain: want ? new Set() : new Set(rules.validators.filter(v => v !== proposer && (contested || R() < 0.2))), patch: null, revisions: [], kind: "", value: null, explain: null };
     const ex = (title, changes, why, severity) => ({ title, label: null, changes, unchanged: [], why, severity: severity || "normal" });
     const frees = SPARE.filter(v => !rules.validators.includes(v) && !ST.props.some(x => x.kind === "validator" && x.value === v && ["voting", "agreed"].includes(statusAt(x, n))));
     const spare = frees.length ? frees[((n / SLOT_LEN) | 0) % frees.length] : null;
     const extra = rules.validators.filter(v => !VALIDATORS0.includes(v)), gone = extra.length ? extra[extra.length - 1] : rules.validators[N - 1];
-    let kind = want === "admit" ? (spare ? "validator" : "noop") : want === "super" || want === "major" ? "quorum" : want ? want
+    let kind = contested ? "fee" : want === "admit" ? (spare ? "validator" : "noop") : want === "super" || want === "major" ? "quorum" : want ? want
       : r < 0.40 ? "fee" : r < 0.52 && spare && N < 5 ? "validator" : r < 0.72 ? "budget" : "noop";
     const quorum = want === "super" ? "supermajority" : want === "major" ? "majority" : rules.quorum === "majority" ? "supermajority" : "majority";
     if ((kind === "quorum" && quorum === rules.quorum) || (kind === "stake" && rules.elig === "stake") || (kind === "fixed" && rules.elig !== "stake") || (kind === "remove" && N <= 3)) kind = "noop";
-    if (kind === "fee") { const v = pick(R, [6, 8, 12, 15, 20].filter(x => x !== rules.fee)); Object.assign(p, { kind, value: v, revisions: [SPEC(v)], explain: ex(`Base fee ${rules.fee} → ${v} AGRS`, [{ topic: "Base fee per transaction", text: `${rules.fee} → ${v} AGRS` }], `Every transaction would cost ${v} AGRS instead of ${rules.fee}.`) }); }
+    if (kind === "fee") { const v = contested ? rules.fee * 6 : pick(R, [6, 8, 12, 15, 20].filter(x => x !== rules.fee)); Object.assign(p, { kind, value: v, revisions: [SPEC(v)], explain: ex(`Base fee ${rules.fee} → ${v} AGRS`, [{ topic: "Base fee per transaction", text: `${rules.fee} → ${v} AGRS` }], contested ? `Every transaction would cost ${v} AGRS instead of ${rules.fee}: six times today's fee. Only the proposer votes yes; the other validators let the deadline pass.` : `Every transaction would cost ${v} AGRS instead of ${rules.fee}.`) }); }
     else if (kind === "validator") Object.assign(p, { kind, value: spare, patch: { validator_additions: [spare] }, explain: ex(`Admit validator ${short(spare)}`, [{ topic: "Validators", text: `add ${short(spare)}` }], "One more party would make blocks and vote on rule changes.") });
     else if (kind === "remove") Object.assign(p, { kind, value: gone, patch: { validator_removals: [gone] }, explain: ex(`Remove validator ${short(gone)}`, [{ topic: "Validators", text: `remove ${short(gone)}` }], "One party fewer would make blocks and vote on rule changes.") });
     else if (kind === "budget") { const v = rules.budget === 8 ? 12 : 8; Object.assign(p, { kind, value: v, patch: { max_rule_txs_per_block: v }, explain: ex(`Allow ${v} rule transactions per block`, [{ topic: "Rule transactions per block", text: `${rules.budget} → ${v}` }], `A block could carry ${v > rules.budget ? "more" : "fewer"} rule deployments and offers.`) }); }
@@ -153,7 +159,7 @@
     const bal = a => ST.bal.get(a) || 0, move = (a, d) => ST.bal.set(a, bal(a) + d);
     const base = sender => ({ sender_pubkey: sender, sequence_number: seqOf(sender), fee_limit: "100", expiration_time: t + 3600 });
     const put = tx => { txs.push(tx); const id = hexOf(R, 64); ids.push(id); arrive.push(Math.round(prevT + (0.05 + R() * 0.9) * (t - prevT))); move(tx.sender_pubkey, -fee); TXI.set(id, { h: n, i: txs.length - 1 }); };
-    const refuse = (type, sender, why) => { const d = { tx_hash: hexOf(R, 64), type, sender, seq: ST.seq.get(sender) || 0, seen: Math.round(prevT + (0.05 + R() * 0.9) * (t - prevT)), left: t, why }; dropped.push(d); ST.dropped.push(d); DROP.set(d.tx_hash, d); };
+    const refuse = (type, sender, why) => { const d = { tx_hash: hexOf(R, 64), type, sender, seq: ST.seq.get(sender) || 0, seen: Math.round(prevT + (0.05 + R() * 0.9) * (t - prevT)), left: t, why, h: n }; dropped.push(d); ST.dropped.push(d); DROP.set(d.tx_hash, d); };
     const setRule = (a, rule) => ST.rules.set(a, rule);
     // every counted vote is a yes: the node's governance code counts votes, it does not weigh them (alerts/alerts.py replays it the same way)
     const vote = (p, v, h) => { put({ ...base(v), tx_type: "consensus_rule_vote", update_id: p.id, approve: true }); p.votes.push({ h, voter: v, counted: true, approve: true }); if (p.approved_at == null && p.votes.length >= p.thr) p.approved_at = h; };
@@ -165,11 +171,13 @@
         vote(p, v, n);
       }
     }
-    const want = specialAt(n), last = ST.props[ST.props.length - 1], busy = last && ["voting", "agreed"].includes(statusAt(last, n - 1));
-    if (want || (n >= ST.nextPropAt && !busy)) {
-      const p = proposal(n, rules, want);
-      if (!want) ST.nextPropAt = n + 75 + ((R() * 150) | 0);
-      if (!want && R() < 0.15) refuse("consensus_rule_update", p.proposer, "the proposed spec does not compile against the rules in force");
+    const want = specialAt(n), extra = extraAt(n), last = ST.props[ST.props.length - 1], busy = last && ["voting", "agreed"].includes(statusAt(last, n - 1));
+    if (extra === "contra") refuse("consensus_rule_update", pick(R, rules.validators), CONTRA_WHY);   // refused at the door: never a proposal, never a vote
+    const forced = want || (extra === "contested" ? "contested" : null);
+    if (forced || (n >= ST.nextPropAt && !busy)) {
+      const p = proposal(n, rules, forced);
+      if (!forced) ST.nextPropAt = n + 75 + ((R() * 150) | 0);
+      if (!forced && R() < 0.15) refuse("consensus_rule_update", p.proposer, "the proposed spec does not compile against the rules in force");
       else {
         put({ ...base(p.proposer), tx_type: "consensus_rule_update", update_id: p.id, rule_revisions: p.revisions, activate_at_height: p.activate_at, ...(p.patch ? { host_contract_patch: p.patch } : {}) });
         p.tx_id = ids[ids.length - 1]; ST.props.push(p);
@@ -179,14 +187,24 @@
     // rule offers get an answer a few blocks later, or run out
     for (const o of ST.open.slice()) {
       if (n >= o.expire) { o.status = "expired"; }
+      else if (o.conflict && n >= o.h + 2) { o.reason = CONFLICT_WHY(ST.rules.get(o.to).name); put({ ...base(o.to), tx_type: "rule_offer_reject", offer_id: o.id, reason: o.reason }); o.status = "rejected"; }   // two whitelists would refuse everything
       else if (n < o.h + 2 || R() >= 0.3) continue;
       else if (R() < 0.72) { put({ ...base(o.to), tx_type: "rule_offer_accept", offer_id: o.id, rule_text: o.rule.text }); setRule(o.to, o.rule); o.status = "accepted"; }
       else { put({ ...base(o.to), tx_type: "rule_offer_reject", offer_id: o.id }); o.status = "rejected"; }
       ST.open.splice(ST.open.indexOf(o), 1);
     }
+    // a retractable transfer can be pulled back until its release block; now and then the sender does, and the money returns
+    for (const r of ST.retractables.slice()) {
+      if (n >= r.release) { ST.retractables.splice(ST.retractables.indexOf(r), 1); continue; }
+      if (n < r.h + 3 || R() >= 0.012 || bal(r.to) < r.amount) continue;
+      put({ ...base(r.from), tx_type: "retract_transfer", retractable_id: r.id }); move(r.to, -r.amount); move(r.from, r.amount);
+      ST.retractables.splice(ST.retractables.indexOf(r), 1);
+    }
     // the first blocks give three accounts a rule of their own, so the rule world is never empty
     if (n <= 3) { const a = ACCOUNTS[n - 1], rule = randomRule(a); put({ ...base(a), operations: { "0": rule.text } }); setRule(a, rule); }
-    const k = n <= 3 ? 1 : R() < 0.2 ? 0 : 1 + ((R() * R() * 5) | 0);
+    // the day breathes: every half hour a three-minute burst, a six-minute lull, ordinary traffic in between
+    const minute = (n % 225) * PACE / 60, phase = minute >= 8 && minute < 11 ? "burst" : minute >= 20 && minute < 26 ? "quiet" : "normal";
+    const k = n <= 3 ? 1 : phase === "burst" ? 4 + ((R() * 6) | 0) : phase === "quiet" ? (R() < 0.75 ? 0 : 1) : R() < 0.2 ? 0 : 1 + ((R() * R() * 5) | 0);
     for (let i = 0; i < k; i++) {
       const r = R(), sender = pick(R, ACCOUNTS), r2 = R();
       // what the node refuses: it waits in the queue, then leaves it with a reason (gettxstatus) and lands in the dropped list
@@ -195,9 +213,10 @@
       if (r2 < 0.045) { refuse("user_tx", sender, `fee limit ${Math.max(1, fee - 1 - ((R() * 4) | 0))} AGRS is below the base fee of ${fee} AGRS`); continue; }
       if (r2 < 0.052) { refuse("user_tx", sender, `expired at block #${n - 1} before a block took it`); continue; }
       if (r < 0.12) {
-        const to = pick(R, ACCOUNTS.filter(x => x !== sender)), rule = randomRule(to), expire = n + 40, id = hexOf(R, 64);
+        const to = pick(R, ACCOUNTS.filter(x => x !== sender)), has = ST.rules.get(to), rule = randomRule(to), expire = n + 40, id = hexOf(R, 64);
+        const conflict = !!has && has.name === "Recipient whitelist" && rule.name === "Recipient whitelist" && has.text !== rule.text;
         put({ ...base(sender), tx_type: "rule_offer", recipient_pubkey: to, rule_text: rule.text, expire_at_height: expire, offer_id: id });
-        const o = { id, from: sender, to, rule, h: n, expire, status: "offered" }; ST.offers.push(o); ST.open.push(o);
+        const o = { id, from: sender, to, rule, h: n, expire, status: "offered", conflict }; ST.offers.push(o); ST.open.push(o);
         continue;
       }
       if (r < 0.2) {
@@ -208,7 +227,7 @@
       if (bal(sender) < amount + fee) continue;
       const rule = ST.rules.get(sender);
       if (rule && rule.blocks(amount, to)) { if (R() < 0.12) refuse("user_tx", sender, `the sender's own rule said no (o5 = 0 · ${rule.name})`); continue; }   // most people know their own rule
-      if (r < 0.26) put({ ...base(sender), tx_type: "retractable_transfer", recipient_pubkey: to, amount: String(amount), release_at_height: n + 30 });
+      if (r < 0.26) { put({ ...base(sender), tx_type: "retractable_transfer", recipient_pubkey: to, amount: String(amount), release_at_height: n + 30 }); ST.retractables.push({ id: ids[ids.length - 1], h: n, from: sender, to, amount, release: n + 30 }); }
       else put({ ...base(sender), operations: { "1": [[sender, to, String(amount)]] } });
       move(sender, -amount); move(to, amount);
     }
@@ -220,6 +239,7 @@
   const pub = b => ({ header: b.header, transactions: b.transactions, tx_ids: b.tx_ids, block_hash: b.block_hash });
   const amountOf = tx => { const tr = tx.operations && tx.operations["1"]; if (tr) return tr.reduce((s, x) => s + (Number(x[2]) || 0), 0); return Number(tx.amount) || 0; };
   const toOf = tx => { const tr = tx.operations && tx.operations["1"]; return tr && tr[0] ? tr[0][1] : tx.recipient_pubkey || ""; };
+  const retracted = tx => { const pos = TXI.get(tx.retractable_id); if (!pos) return null; const o = B[pos.h].transactions[pos.i]; return { to: o.recipient_pubkey, amount: Number(o.amount) || 0 }; };
   function mempool(t) {
     t = at(t);
     const h = sync(t), nb = B[h + 1], fee = nb._fee, list = [];
@@ -248,8 +268,10 @@
     if (!ACC.has(key)) {
       let bal = GENESIS[addr] || 0, seq = 0;
       for (let n = 1; n <= h; n++) for (const tx of B[n].transactions) {
-        if (tx.sender_pubkey === addr) { bal -= B[n]._fee; seq++; if (txType(tx) === "user_tx" || tx.tx_type === "retractable_transfer") bal -= amountOf(tx); }
+        const back = tx.tx_type === "retract_transfer" ? retracted(tx) : null;   // a pulled-back transfer returns its amount
+        if (tx.sender_pubkey === addr) { bal -= B[n]._fee; seq++; if (txType(tx) === "user_tx" || tx.tx_type === "retractable_transfer") bal -= amountOf(tx); else if (back) bal += back.amount; }
         else if (toOf(tx) === addr && (txType(tx) === "user_tx" || tx.tx_type === "retractable_transfer")) bal += amountOf(tx);
+        else if (back && back.to === addr) bal -= back.amount;
       }
       if (ACC.size > 2000) ACC.clear();
       ACC.set(key, { bal, seq });
@@ -264,7 +286,7 @@
     const h = sync(t); addr = String(addr).toLowerCase(); dir = dir || "all";
     const rows = ST.offers.filter(o => o.h <= h && ((dir !== "out" && o.to === addr) || (dir !== "in" && o.from === addr))).map(o => ({
       offer_id: o.id, offerer_pubkey: o.from, recipient_pubkey: o.to, rule_text: o.rule.text, expire_at_height: o.expire, created_at_height: o.h,
-      status: o.status === "offered" && h >= o.expire ? "expired" : o.status }));
+      status: o.status === "offered" && h >= o.expire ? "expired" : o.status, ...(o.reason ? { reason: o.reason } : {}) }));
     const acc = ST.rules.get(addr);
     return { address: addr, direction: dir, offers: rows, accepted_clauses: acc ? [{ target_stream: "o5", clause_body: acc.text }] : [] };
   }
@@ -365,24 +387,26 @@
       restarts: restarts(t, 7).map(r => ({ detected_at: r.detected_at, old_tip: r.old.tip, old_tip_ts: r.old.tip_ts, new_block1_ts: r.new_block1_ts })),
       reorgs: [], stalls: [], last_block_ts: ts(h), status: status(t), simulation: true };
   }
-  const nodeRow = (n, t, h) => ({ id: n.id, name: n.name, height: h - n.lag, head: B[h - n.lag].block_hash, tip: h, kit: n.kit, ref: "539d1e2", peer: n.peer,
-    first_seen: Math.round(t - n.days * DAY), last_seen: Math.round(t - (n.online ? 20 + 30 * n.lag : 3 * DAY)) });
+  // bob falls behind every hour from minute 35: one block per ten seconds, up to 60 behind, then catches up over two minutes from minute 45
+  const lagOf = (n, t) => { if (n.name !== "bob") return n.lag; const m = ((t % 3600) + 3600) % 3600; return m >= 2100 && m < 2700 ? Math.min(60, 1 + (((m - 2100) / 10) | 0)) : m >= 2700 && m < 2820 ? Math.max(n.lag, 60 - (((m - 2700) / 2) | 0)) : n.lag; };
+  const nodeRow = (n, t, h) => { const lag = Math.min(lagOf(n, t), h); return { id: n.id, name: n.name, height: h - lag, head: B[h - lag].block_hash, tip: h, kit: n.kit, ref: "539d1e2", peer: n.peer,
+    first_seen: Math.round(t - n.days * DAY), last_seen: Math.round(t - (n.online ? 20 + 30 * Math.min(lag, 2) : 3 * DAY)) }; };
   function community(t) {
     t = at(t);
     const h = sync(t);
     return { reference: { name: "tauhud.com", height: h, head: B[h].block_hash, tip: h, upstream_connected: true },
-      nodes: NODES.filter(n => n.online).map(n => ({ ...nodeRow(n, t, h), agrees: "same", age_seconds: 20 + 30 * n.lag })), ttl_seconds: 900, generated_at: Math.round(t), simulation: true };
+      nodes: NODES.filter(n => n.online).map(n => ({ ...nodeRow(n, t, h), agrees: lagOf(n, t) > 2 ? "behind" : "same", age_seconds: 20 + 30 * Math.min(lagOf(n, t), 2) })), ttl_seconds: 900, generated_at: Math.round(t), simulation: true };
   }
   function board(t) {
     t = at(t);
     const h = sync(t);
-    return { nodes: NODES.map(n => { const r = nodeRow(n, t, h); return { id: r.id, name: r.name, first_seen: r.first_seen, last_seen: r.last_seen, online: n.online, days: Math.floor(n.days), uptime: n.uptime, height: n.online ? r.height : h - 1300, kit: n.kit, ref: "539d1e2", agrees: n.online ? "same" : null }; }),
+    return { nodes: NODES.map(n => { const r = nodeRow(n, t, h); return { id: r.id, name: r.name, first_seen: r.first_seen, last_seen: r.last_seen, online: n.online, days: Math.floor(n.days), uptime: n.uptime, height: n.online ? r.height : h - 1300, kit: n.kit, ref: "539d1e2", agrees: n.online ? (lagOf(n, t) > 2 ? "behind" : "same") : null }; }),
       keep_days: 30, generated_at: Math.round(t), simulation: true };
   }
   function peers(t) {
     t = at(t);
     const h = sync(t), mk = (id, days, head, extra) => ({ id, label: null, community: null, first_seen: Math.round(t - days * DAY), last_direct: Math.round(t - 40), last_heard: null, last_seen: Math.round(t - 40), head, connected: true, ...extra });
-    const list = [mk(BOOTNODE, 9, h, {}), ...NODES.filter(n => n.online && n.peer).map(n => mk(n.peer, n.days, h - n.lag, { community: { id: n.id, name: n.name } })),
+    const list = [mk(BOOTNODE, 9, h, {}), ...NODES.filter(n => n.online && n.peer).map(n => mk(n.peer, n.days, Math.max(0, h - lagOf(n, t)), { community: { id: n.id, name: n.name } })),
       mk(STRANGERS[0], 3, h - 1, {}), mk(STRANGERS[1], 0.2, h, { connected: false, last_direct: Math.round(t - 2 * 3600), last_seen: Math.round(t - 2 * 3600) })];
     const within = s => list.filter(p => p.last_seen >= t - s).length;
     return { peers: list, counts: { connected: list.filter(p => p.connected).length, met_30m: within(1800), met_24h: within(DAY), seen_24h: within(DAY), seen_30d: list.length },
@@ -429,6 +453,10 @@
       if (p.status === "active") say("active", p.activate_at, `In force: ${p.title}`, `Revision ${p.rev} of the rules applies from block #${p.activate_at}.`);
       if (p.status === "dropped") say("dropped", p.activate_at, `Dropped: ${p.title}`, `Only ${p.counted_votes} of ${p.thr} votes by block #${p.activate_at}. The old rules stand.`);
     }
+    // what Tau refused before any vote: a rule change that does not fit the rules in force never becomes a proposal
+    for (const d of ST.dropped) if (d.type === "consensus_rule_update" && d.left <= t)
+      events.push({ key: "refused:" + d.tx_hash, kind: "refused", h: d.h, ts: d.left, seen: d.left, id: null, headline: "Refused before the vote: a rule change that contradicts the rules in force",
+        body: `Tau checks a proposed rule against the rules in force before anyone may vote on it. Reason: ${d.why}.`, link: null, chain });
     if (h >= 1) events.push({ key: "restart:" + DAYI, kind: "restart", h: 1, ts: ts(1), seen: ts(1), id: null, headline: "The simulated testnet started over", body: "A new day, a new chain: block numbers restart at genesis, as the real testnet did after its restarts.", link: null, chain });
     events.sort((a, b) => b.ts - a.ts || b.h - a.h);
     return { generated_at: Math.round(t), chain: { block1_hash: B[1] ? B[1].block_hash : null, head: h, head_ts: ts(h), first: 0, seconds_per_block: PACE, node_head: h },

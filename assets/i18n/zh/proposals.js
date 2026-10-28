@@ -249,6 +249,8 @@ TauI18n.add({ strings: {
   "“Remove validator {h}”": "“移除验证者 {h}”",
   "“Back to the fixed validator list”": "“恢复固定验证者名单”",
   "Scheduled in the simulation": "模拟中已排定",
+  "Refused before the vote: a rule change that contradicts the rules in force": "投票前即被拒绝：一项与生效规则相矛盾的规则变更",
+  "Tau checks a proposed rule against the rules in force before anyone may vote on it. Reason: {x}.": "在任何人可以投票之前，Tau 会把提议的规则与生效规则进行核对。原因：{x}。",
   "No proposal is open right now.": "目前没有开放的提案。",
   "proposed at {x} UTC, in force at {y} UTC ({z})": "{x} UTC 提议，{y} UTC 生效（{z}）",
   "in force at {y} UTC ({z})": "{y} UTC 生效（{z}）",

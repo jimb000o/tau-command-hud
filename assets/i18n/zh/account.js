@@ -1,5 +1,7 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Transfer pulled back": "转账已撤回",
+  "Pulled back a retractable transfer": "撤回了一笔可撤回转账",
   ", {x1} {x2} than the transfers add up to. The difference is {x3}, which no single transaction shows.": "，比转账加总{x2} {x1}。差额 {x3} 没有体现在任何单笔交易中。",
   "1 account holds nothing.": "1 个账户余额为零。",
   "A full address has 96 characters; this has": "完整地址有 96 个字符；这个有",
