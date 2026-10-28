@@ -6,7 +6,8 @@ pages use), replays governance block by block exactly like history/ does
 happened into news:
 
   proposed   a rule change was proposed
-  agreed     it reached the quorum
+  agreed     it reached the quorum (while one vote is enough, a proposal agreed
+             within PROPOSED_HOLD_SECONDS is posted once, as "proposed and agreed")
   active     it took effect at its activation block
   dropped    its deadline passed with too few votes
   restart    the testnet started a new chain
@@ -92,6 +93,11 @@ FEED_ITEMS = 100
 RANGE = 100           # relay's getblockrange maximum
 REFETCH_TAIL = 6      # blocks re-read every poll so a replaced tip block (reorg) is noticed
 MAX_TRIES = 8
+# While one yes vote is enough (one validator), a proposal is usually agreed a block or two later.
+# Its "proposed" post waits this long; if it is agreed meanwhile, one combined post goes out instead of two.
+PROPOSED_HOLD = float(os.environ.get("PROPOSED_HOLD_SECONDS", 600))
+SOLO_NOTE = ("One yes vote is enough: the testnet has one validator, and any account may vote. "
+             "Tau HUD has applied to become a second validator; then a change would need two yes votes.")
 
 # genesis of tau-testnet-v2 (networks/tau-testnet-v2/genesis.json @ 539d1e2), as in history/
 GENESIS_VALIDATORS = ["a1fe40d5e4f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7d2b"]
@@ -333,6 +339,11 @@ def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
                  f"Proposed at block #{fmt_n(ev['h'])} by {short(p['proposer'])}."]
         if need == 0 and p.get("approved_at") is not None:
             facts[0] = f"Already agreed. Takes effect at {when}."
+    elif k == "agreed" and ev.get("combined"):
+        headline = f"New rule change, agreed right away: {title}"
+        facts = [f"Takes effect at {when}. Until then the current rules apply.",
+                 f"Proposed at block #{fmt_n(p['proposed_at'])} by {short(p['proposer'])}, agreed at block #{fmt_n(ev['h'])} "
+                 f"with {p['counted_votes']} of {p['thr']} vote{'' if p['thr'] == 1 else 's'} needed."]
     elif k == "agreed":
         headline = f"Agreed: {title}"
         facts = [f"Takes effect at {when}. Until then the current rules apply.",
@@ -357,7 +368,8 @@ def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
     if d and k != "dropped":
         rdiff = {"summary": explain.diff_summary(d), "lines": [r for r in d["lines"] if r[0] != " "][:DIFF_LINES],
                  "more": max(0, d["added"] + d["removed"] - DIFF_LINES)}
-    return {"headline": headline, "label": x.get("label"), "what": what, "why": why, "facts": facts, "diff": rdiff,
+    note = SOLO_NOTE if k in ("proposed", "agreed") and p and p.get("thr") == 1 else None
+    return {"headline": headline, "label": x.get("label"), "what": what, "why": why, "facts": facts, "diff": rdiff, "note": note,
             "what_title": "What changed" if k == "active" else "What it would change" if k == "dropped" else "What changes",
             "severity": x.get("severity"), "body": body, "link": link}
 
@@ -393,6 +405,8 @@ def telegram_text(item: dict) -> str:
             out += ["", f"<b>Rule text diff</b> ({e(d['summary'])})", f"<pre><code class=\"language-diff\">{e(code + more)}</code></pre>"]
         else:
             out += ["", "<b>Rule text diff</b>: none. The text equals the rules in force."]
+    if item.get("note"):
+        out += ["", f"<i>{e(item['note'])}</i>"]
     label = "Open in Tau HUD" if item["kind"] == "restart" else "Details and votes on Tau HUD"
     out += ["", f"<a href=\"{e(item['link'])}\">{label}</a>"]
     return "\n".join(out)
@@ -620,7 +634,7 @@ def iso(ts: float | None) -> str:
 
 def atom(items: list[dict], updated: float) -> str:
     entries = []
-    for it in items[:FEED_ITEMS]:
+    for it in [i for i in items if not i.get("folded")][:FEED_ITEMS]:
         entries.append(f"""  <entry>
     <id>tag:tauhud.com,2026:{xml_escape(it['key'])}</id>
     <title>{xml_escape(it['headline'])}</title>
@@ -752,9 +766,19 @@ class Watcher:
         key = ev.get("key") or f"{chain[:16]}:{ev['kind']}:{ev['id']}"
         if any(it["key"] == key for it in self.state["items"]):
             return False
+        prop = None
+        if ev["kind"] == "agreed" and p and p.get("thr") == 1:
+            # one vote was enough: if its "proposed" post is still waiting, post both as one
+            prop = next((it for it in self.state["items"] if it["kind"] == "proposed" and it.get("id") == ev.get("id")
+                         and it.get("chain") == chain[:16] and it["news"] and not it.get("folded")
+                         and "ok" not in it["posted"].values()), None)
+            if prop:
+                ev = {**ev, "combined": True}
         d = describe(ev, p, head, pace)
+        if prop:
+            prop["folded"] = True
         item = {"key": key, "kind": ev["kind"], "h": ev["h"], "ts": ev.get("ts"), "seen": time.time(), "chain": chain[:16],
-                "id": ev.get("id"), **d,
+                "id": ev.get("id"), "thr": (p or {}).get("thr"), **d,
                 # the very first replay is history; later events are news unless their block is old
                 "news": self.state["primed"] and (time.time() - (ev.get("ts") or time.time())) <= POST_MAX_AGE,
                 "posted": {}}
@@ -795,7 +819,7 @@ class Watcher:
                           | {"votes": [{"h": v["h"], "voter": v["voter"], "counted": v["counted"], "approve": v["approve"]} for v in p["votes"]]}
                           for p in reversed(props)],
             "events": [{k: it.get(k) for k in ("key", "kind", "h", "ts", "seen", "id", "headline", "body", "link", "chain")}
-                       for it in self.state["items"][:FEED_ITEMS]],
+                       for it in [i for i in self.state["items"] if not i.get("folded")][:FEED_ITEMS]],
             "channels": {"telegram": "https://t.me/" + TELEGRAM_CHAT.lstrip("@") if TELEGRAM_CHAT.startswith("@") else None,
                          "x": os.environ.get("X_PROFILE_URL") or None, "feed": FEED_URL},
         }
@@ -823,6 +847,10 @@ class Watcher:
                 st = it["posted"].get(o.name)
                 if not it["news"] or it["seen"] < meta["since"] or st == "ok" or (isinstance(st, int) and st >= MAX_TRIES):
                     continue
+                if it.get("folded"):
+                    continue
+                if it["kind"] == "proposed" and it.get("thr") == 1 and time.time() - it["seen"] < PROPOSED_HOLD:
+                    break  # wait: it may be agreed in a moment; keep the order of posts
                 ok, retry, err = await asyncio.to_thread(o.send, it)
                 if ok:
                     it["posted"][o.name] = "ok"
@@ -1022,6 +1050,10 @@ async def preview_latest(n: int = 6) -> int:
     by_id, pace = {p["id"]: p for p in props}, block_pace(w.blocks)
     if not events:
         print("No rule change on this chain yet.")
+    quick = {e["id"] for e in events if e["kind"] == "agreed" and by_id.get(e["id"], {}).get("thr") == 1 and pace
+             and (e["h"] - by_id[e["id"]]["proposed_at"]) * pace <= PROPOSED_HOLD}
+    events = [{**e, "combined": True} if e["kind"] == "agreed" and e["id"] in quick else e
+              for e in events if not (e["kind"] == "proposed" and e["id"] in quick)]
     for ev in events[-n:]:
         print(telegram_text({"kind": ev["kind"], **describe(ev, by_id.get(ev["id"]), now.get("head", 0), pace)}))
         print("-" * 60)
