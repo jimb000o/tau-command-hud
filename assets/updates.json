@@ -699,5 +699,16 @@
    "text": "Every hour you decide with the other visitors whether the simulation's rule change happens: vote yes or no from hh:20 to hh:27, and the simulated validators follow the majority.",
    "link": "/?mode=sim"
   }
+ },
+ {
+  "tag": "Simulation",
+  "on": "2026-10-28",
+  "html": "Visitors can now change the simulation. In the Playground, “Write your own” has a new switch, “Everyone · simulation”: a new base fee, a validator admitted or removed, the agreement threshold, the consensus mode or a rule of your own goes into the shared simulated chain about 30 seconds later, under your anonymous visitor name. Everyone in Simulation mode can vote yes or no for six minutes, in Proposals and on the HUD. If more say yes than no, the simulated validators vote it in and it takes effect for everyone ten minutes after it was proposed, on every page; otherwise nobody votes and it lapses, the path a rule change takes on Tau. The Telegram channel reports a visitor proposal only when it was voted in with at least three votes, at most three a day, marked as simulation. Simulation mode only; nothing reaches the real testnet.",
+  "major": {
+   "id": "sim-proposals",
+   "title": "New: propose your own rule change to the simulation",
+   "text": "Write a rule change in the Playground and put it to everyone watching the simulation. If more visitors vote yes than no, the simulated validators vote it in and it takes effect for everyone ten minutes later.",
+   "link": "/playground/#seat"
+  }
  }
 ]
