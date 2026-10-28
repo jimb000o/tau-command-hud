@@ -55,10 +55,13 @@
   ];
   const BOOTNODE = peerOf(idR), STRANGERS = [peerOf(idR), peerOf(idR)];
   const QT = { supermajority: "two thirds", majority: "more than half" };
-  /* the day's programme: one special rule change every hour, proposed 20 minutes in (block 150), in force ten minutes later, the same every day:
-     proof of stake on, a validator admitted, majority threshold, back to the fixed list, a validator removed, two-thirds threshold again, and so on */
-  const SLOT_AT = 150, SLOT_LEN = 450, SLOT_WAIT = 75, SPECIALS = ["stake", "admit", "major", "fixed", "remove", "super"];
-  const specialAt = n => n >= SLOT_AT && (n - SLOT_AT) % SLOT_LEN === 0 ? SPECIALS[((n - SLOT_AT) / SLOT_LEN) % SPECIALS.length] : null;
+  /* the day's programme: one special rule change every hour, proposed 20 minutes in (block 150), in force ten minutes later, the same every day.
+     The consensus switch is the rare one, twice a day: proof of stake on at 10:30 UTC, the fixed validator list back at 16:30 UTC (the alerts
+     service announces these two on Telegram from the same clock: infra/alerts/alerts.py SIM_SWITCHES). The other hours cycle through a validator
+     admitted, the majority threshold, a validator removed, the two-thirds threshold again. */
+  const SLOT_AT = 150, SLOT_LEN = 450, SLOT_WAIT = 75, STAKE_SLOT = 10, FIXED_SLOT = 16, HOURLY = ["admit", "major", "remove", "super"];
+  const specialOf = k => k === STAKE_SLOT ? "stake" : k === FIXED_SLOT ? "fixed" : HOURLY[(k - (k > STAKE_SLOT) - (k > FIXED_SLOT)) % HOURLY.length];
+  const specialAt = n => n >= SLOT_AT && (n - SLOT_AT) % SLOT_LEN === 0 ? specialOf((n - SLOT_AT) / SLOT_LEN) : null;
   const SPECIAL_TITLE = { stake: "Switch consensus to proof of stake", fixed: "Back to the fixed validator list", admit: "A new validator is admitted", remove: "A validator is removed",
     super: "Agreement threshold → two thirds of the validators", major: "Agreement threshold → more than half of the validators", restart: "The simulated testnet starts over" };
   const SHORT = { stake: "proof of stake", fixed: "fixed list again", admit: "new validator", remove: "validator leaves", super: "two-thirds rule", major: "majority rule", restart: "chain restarts" };
@@ -76,7 +79,7 @@
       transactions: [], tx_ids: [], block_hash: GENESIS_HASH, _arrive: [], _dropped: [], _fee: FEE0 }];
   }
   // block n is sealed at a fixed second of the day: eight seconds per block, give or take one
-  const ts = n => n <= 0 ? 0 : G + n * PACE + (mix(DAYI * 100003 + n) % 3) - 1;
+  const ts = n => n <= 0 ? 0 : G + n * PACE + ((n - SLOT_AT) % SLOT_WAIT === 0 ? 0 : (mix(DAYI * 100003 + n) % 3) - 1);   // ±1 s, except on the programme's blocks: hh:20:00 and hh:30:00 sharp, as the alerts service expects
   function rollDay(t) { const d = Math.floor(t / DAY); if (d !== DAYI) { init(d); RESET++; } }
   function headAt(t) {
     let n = Math.max(0, Math.floor((t - G) / PACE));

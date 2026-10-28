@@ -229,6 +229,7 @@ TauI18n.add({ strings: {
   "No proposal is open right now.": "目前没有开放的提案。",
   "proposed at {x} UTC, in force at {y} UTC ({z})": "{x} UTC 提议，{y} UTC 生效（{z}）",
   "in force at {y} UTC ({z})": "{y} UTC 生效（{z}）",
+  "at {x} UTC ({z})": "{x} UTC（{z}）",
   "in {n} min": "还有 {n} 分钟",
   "in {n} h {m} min": "还有 {n} 小时 {m} 分钟",
   "now": "现在",

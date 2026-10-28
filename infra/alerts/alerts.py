@@ -34,6 +34,7 @@ week (recap.py) and keeps a copy at https://node.tauhud.com/recap/latest.png.
   python alerts.py --preview        print how the newest rule changes would be posted, post nothing
   python alerts.py --recap-preview  draw this week's recap and save it, post nothing
   python alerts.py --recap-now      draw the recap and post it to each configured channel
+  python alerts.py --sim-preview    print today's two simulation posts (the consensus switches), post nothing
 """
 from __future__ import annotations
 
@@ -96,6 +97,14 @@ NEWNODE_ON = os.environ.get("NEWNODE_ALERTS", "true").lower() in ("1", "true", "
 NEWNODE_HOLD = float(os.environ.get("NEWNODE_HOLD_SECONDS", 1800))
 NEWNODE_DAILY_CAP = int(os.environ.get("NEWNODE_DAILY_CAP", 3))
 NEWNODE_EVERY = float(os.environ.get("NEWNODE_POLL_SECONDS", 300))
+# Simulation mode on the site runs a made-up chain in the visitor's browser (assets/sim.js), the same for everyone because it is
+# generated from the clock, with a fixed day programme. Only its two consensus switches are announced here, each when its proposal
+# appears, 10 minutes before it is in force; the channel reports the real testnet, so these posts are rare and marked as simulated.
+# SIM_SWITCHES must equal STAKE_SLOT / FIXED_SLOT in assets/sim.js (slot k = proposed at k:20 UTC, in force at k:30 UTC).
+SIM_ON = os.environ.get("SIM_ALERTS", "true").lower() in ("1", "true", "yes")
+SIM_SWITCHES = (("stake", 10), ("fixed", 16))
+SIM_PROPOSED_AT, SIM_IN_FORCE_AT = 20 * 60, 30 * 60
+SIM_LINK = f"{SITE}/proposals/?mode=sim"
 FEED_ITEMS = 100
 RANGE = 100           # relay's getblockrange maximum
 REFETCH_TAIL = 6      # blocks re-read every poll so a replaced tip block (reorg) is noticed
@@ -535,6 +544,57 @@ def newnode_text(n: dict, online: int) -> str:
     return "\n".join([head, body, f"Nodes online now: {online}.", "", link])
 
 
+# ---------- the simulation's consensus switches ----------
+def sim_switches(t: float) -> list[dict]:
+    """The simulated consensus switches of the UTC day that holds `t`, in order: when each is proposed, in force, and when the other one follows."""
+    d0 = int(t // 86400) * 86400
+    day = datetime.fromtimestamp(d0, timezone.utc).strftime("%Y-%m-%d")
+    out = []
+    for i, (kind, hour) in enumerate(SIM_SWITCHES):
+        other = SIM_SWITCHES[(i + 1) % len(SIM_SWITCHES)]
+        out.append({"kind": kind, "key": f"{day}:{kind}", "proposed": d0 + hour * 3600 + SIM_PROPOSED_AT, "in_force": d0 + hour * 3600 + SIM_IN_FORCE_AT,
+                    "next": d0 + other[1] * 3600 + SIM_IN_FORCE_AT + (86400 if other[1] <= hour else 0)})
+    return out
+
+
+SIM_WORDS = {  # the same words as the simulation badge on the site: what happens, why it matters, where to watch it
+    "stake": {"headline": "In 10 minutes the simulated chain switches to proof of stake",
+              "why": ("The chain changes how it picks who seals blocks: the six richest accounts take over from the fixed validator list. "
+                      "Tau treats a consensus switch like any other rule change: proposed, voted on by the validators, then in force."),
+              "watch": ["Proposals: the simulated validators vote, then the switch takes effect at {in_force} UTC",
+                        "Chain core on the HUD: the proposer changes from the validator list to the richest accounts"],
+              "after": "the fixed validator list returns at {next} UTC"},
+    "fixed": {"headline": "In 10 minutes the simulated chain returns to its fixed validator list",
+              "why": ("The chain goes back to a fixed validator list: a known set seals blocks again instead of the richest accounts. "
+                      "Tau treats a consensus switch like any other rule change: proposed, voted on by the validators, then in force."),
+              "watch": ["Proposals: the simulated validators vote, then the switch takes effect at {in_force} UTC",
+                        "Chain core on the HUD: the validator ring seals the blocks again"],
+              "after": "proof of stake takes over again at {next} UTC"},
+}
+SIM_NOTICE = ("Simulated: a made-up chain generated in your browser from the clock, the same on every page of Tau HUD. "
+              "Nothing here happens on the real Tau testnet.")
+
+
+def sim_text(ev: dict) -> str:
+    """The Telegram post for a simulated consensus switch: marked as simulation first and last, then why, what to watch, the times."""
+    e = html.escape
+    hm = lambda t: datetime.fromtimestamp(t, timezone.utc).strftime("%H:%M")  # noqa: E731
+    w = SIM_WORDS[ev["kind"]]
+    f = {"proposed": hm(ev["proposed"]), "in_force": hm(ev["in_force"]), "next": hm(ev["next"])}
+    out = ["🧪 <b>SIMULATION · not the real testnet</b>", f"<b>{e(w['headline'])}</b>",
+           "", "<b>Why it matters</b>", e(w["why"]),
+           "", "<b>What to watch</b>"] + [f"• {e(x.format(**f))}" for x in w["watch"]] + [
+           "", e(f"Proposed {f['proposed']} UTC · in force {f['in_force']} UTC · {w['after'].format(**f)}"),
+           "", f"<i>{e(SIM_NOTICE)}</i>",
+           "", f"<a href=\"{e(SIM_LINK)}\">Watch it in the simulation</a>"]
+    return "\n".join(out)
+
+
+def sim_buttons() -> dict:
+    """One button under a simulation post: it opens the site in Simulation mode (the real-testnet buttons would mislead here)."""
+    return {"inline_keyboard": [[{"text": "🧪 Watch the simulation", "url": SIM_LINK}]]}
+
+
 # ---------------- outlets ----------------
 class Outlet:
     name = ""
@@ -578,9 +638,11 @@ class Telegram(Outlet):
     def enabled(self) -> bool:
         return bool(TELEGRAM_TOKEN and TELEGRAM_CHAT)
 
-    def send_text(self, text: str) -> tuple[bool, float | None, str]:
+    def send_text(self, text: str, buttons: dict | None = None) -> tuple[bool, float | None, str]:
         msg = {"chat_id": TELEGRAM_CHAT, "text": text, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}}
-        if TELEGRAM_BOT_NAME:
+        if buttons is not None:
+            msg["reply_markup"] = buttons
+        elif TELEGRAM_BOT_NAME:
             msg["reply_markup"] = ask_buttons()
         body = json.dumps(msg).encode()
         return self.call("sendMessage", body, "application/json")
@@ -1031,6 +1093,38 @@ class Watcher:
                 del known[k]
         self.save_state()
 
+    # ---------- the simulation's consensus switches ----------
+    async def maybe_sim(self, now: float | None = None):
+        """One Telegram post per simulated consensus switch, sent while its proposal is open (the 10 minutes before it is
+        in force). A switch missed while the service was down is skipped, never posted late. Pure clock work: no relay needed."""
+        if not SIM_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("sim", {"posted": {}})
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        if not tg or st.get("pause_until", 0) > now:
+            return
+        changed = False
+        for ev in sim_switches(now):
+            if not (ev["proposed"] <= now < ev["in_force"]) or ev["key"] in st["posted"]:
+                continue
+            text, buttons = sim_text(ev), sim_buttons()
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, text, buttons)
+                if not ok:
+                    st["pause_until"] = now + (retry or 60)
+                    log.warning("simulation post failed (%s); trying again in a minute", err)
+                    self.save_state()
+                    return
+            st["posted"][ev["key"]] = round(now)
+            changed = True
+            log.info("simulation: posted %s", ev["key"])
+        for k in [k for k, t in st["posted"].items() if now - t > 7 * 86400]:
+            del st["posted"][k]
+            changed = True
+        if changed:
+            self.save_state()
+
     # ---------- weekly recap ----------
     @staticmethod
     def recap_slot(now: float) -> float:
@@ -1127,12 +1221,14 @@ class Watcher:
                         await self.maybe_recap()
                         await self.maybe_health()
                         await self.maybe_newnodes()
+                        await self.maybe_sim()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:  # relay restarting, network blip: try again shortly
                 log.warning("relay connection lost (%r); retrying in 10 s", exc)
                 await self.maybe_health()  # a relay that stays away is news too
+                await self.maybe_sim()     # needs no relay
                 await asyncio.sleep(10)
 
 
@@ -1171,6 +1267,14 @@ async def preview_latest(n: int = 6) -> int:
     return 0
 
 
+def sim_preview() -> int:
+    """Print today's simulation posts as they would go to Telegram; posts nothing."""
+    for ev in sim_switches(time.time()):
+        print(sim_text(ev))
+        print("-" * 60)
+    return 0
+
+
 def recap_cli(post: bool) -> int:
     """Draw the recap of the 7 days up to now; post it too with post=True."""
     w = Watcher()
@@ -1201,4 +1305,6 @@ if __name__ == "__main__":
         sys.exit(asyncio.run(preview_latest()))
     if "--recap-now" in sys.argv or "--recap-preview" in sys.argv:
         sys.exit(recap_cli("--recap-now" in sys.argv))
+    if "--sim-preview" in sys.argv:
+        sys.exit(sim_preview())
     asyncio.run(Watcher().run())

@@ -108,6 +108,8 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .list > li.quiet { color: var(--dim); font-size: 13px; padding: 4px 2px 6px; }
 .list > li.sched { color: var(--dim); font-size: 13px; padding: 6px 12px; border-left: 2px solid var(--behind); background: rgba(255,177,59,.05); }
 .list > li.sched b { color: #fff; }
+.list > li.sched b::first-letter { text-transform: uppercase; }
+.list > li.sched .when { display: block; margin-top: 3px; opacity: .8; }
 .list > li.soon > button { border-left-color: var(--behind); background: rgba(255,177,59,.05); padding: 8px 12px; }
 .list > li.soon > button:hover, .list > li.soon > button:focus-visible { background: rgba(255,177,59,.1); }
 .list > li.soon .m.when { color: var(--text); }
@@ -402,15 +404,28 @@ function render() {
   $("openTitle").textContent = SIM ? "Coming up" : "Coming up on the testnet";
   $("openCount").textContent = voting.length + agreed.length ? `(${voting.length + agreed.length})` : "";
   // the simulation announces its programme: special rule changes at fixed times of the day, and the restart at midnight
+  /* the programme ahead, in the words of the header badge (assets/nav.js): what happens, why it matters, where to watch it */
+  const EVENT = {
+    stake: { what: "proof of stake takes over", why: "The chain changes how it picks who seals blocks: the six richest accounts take over from the fixed list.", watch: "Watch the proposer change in the Chain core." },
+    fixed: { what: "the fixed validator list returns", why: "The chain goes back to a fixed validator list: a known set seals blocks again instead of the richest accounts.", watch: "Watch the validator ring in the Chain core." },
+    admit: { what: "a new validator joins", why: "One more party seals blocks and votes on rule changes.", watch: "Watch a new diamond appear on the validator orbit." },
+    remove: { what: "a validator leaves", why: "One party fewer seals blocks and votes on rule changes.", watch: "Watch a diamond vanish from the validator orbit." },
+    super: { what: "two thirds must agree", why: "Changing the rules gets harder: two thirds of the validators must agree instead of more than half.", watch: "Watch the agreement arc need more votes." },
+    major: { what: "more than half must agree", why: "Changing the rules gets easier: more than half of the validators is enough.", watch: "Watch the agreement arc fill sooner." },
+    restart: { what: "the simulated chain starts over", why: "At midnight UTC the simulated chain starts again from block 0, as the real alpha testnet did more than once.", watch: "Watch the height reset." }
+  };
   const U = (D.upcoming || []).filter(u => u.status === "scheduled"), hhmm = x => new Date(x * 1000).toISOString().slice(11, 16);
   const inMin = x => { const m = Math.ceil((x - Date.now() / 1000) / 60); return m <= 0 ? "now" : m < 60 ? `in ${m} min` : `in ${Math.floor(m / 60)} h ${m % 60} min`; };
-  const sched = U.length ? `<h3 class="grp">Scheduled in the simulation <small>(${U.length})</small></h3><ul class="list">${U.map(u => `<li class="sched"><b>${esc(u.title)}</b><br>${u.proposed_ts ? `proposed at ${hhmm(u.proposed_ts)} UTC, ` : ""}in force at ${hhmm(u.at_ts)} UTC (${inMin(u.at_ts)})</li>`).join("")}</ul>` : "";
-  $("openList").innerHTML = sched + (!voting.length && !agreed.length
+  const sched = U.length ? `<h3 class="grp">Scheduled in the simulation <small>(${U.length})</small></h3><ul class="list">${U.map(u => {
+    const ev = EVENT[u.kind] || { what: u.short || u.title, why: u.title, watch: "" };
+    const when = u.kind === "restart" ? `at ${hhmm(u.at_ts)} UTC (${inMin(u.at_ts)})` : `${u.proposed_ts ? `proposed at ${hhmm(u.proposed_ts)} UTC, ` : ""}in force at ${hhmm(u.at_ts)} UTC (${inMin(u.at_ts)})`;
+    return `<li class="sched"><b>${esc(ev.what)}</b>${esc(ev.why)} ${esc(ev.watch)}<span class="when">${when}</span></li>`; }).join("")}</ul>` : "";
+  $("openList").innerHTML = (!voting.length && !agreed.length
     ? (sched ? `<ul class="list"><li class="quiet">No proposal is open right now.</li></ul>` : `<ul class="list"><li class="empty"><b>Nothing is coming up right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}</ul>`)
     : `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(soonCard).join("")
         : `<li class="quiet">Nothing agreed is waiting to take effect.</li>`}</ul>`
       + `<h3 class="grp">Waiting for votes <small>(${voting.length})</small></h3><ul class="list">${voting.length ? voting.map(soonCard).join("")
-        : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`);
+        : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`) + sched;   // the programme ahead after what is open now
   const shown = P.filter(p => filter === "all" || (filter === "decided" ? p.status === "active" || p.status === "dropped" : p.status === filter));
   $("allCount").textContent = `(${shown.length})`;
   $("allList").innerHTML = shown.length ? shown.map(rowOf).join("")
