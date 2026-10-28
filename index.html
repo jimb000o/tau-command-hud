@@ -1368,7 +1368,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.39", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.40", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -2469,16 +2469,17 @@ function draw(tm) {
     cx.shadowBlur = 0; cx.strokeStyle = `rgba(${col},${st.hot ? .25 + st.k * .65 : .18})`; cx.lineWidth = st.hot ? 2.5 : 1.5; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke();
   });
 
-  // mempool orbit
+  // mempool orbit: a faint guide circle shows where the waiting transactions travel, so the ring can be found even when it is empty
   const M = S.mempool.length;
+  cx.save(); cx.setLineDash([2, 10]); cx.beginPath(); cx.lineWidth = 1.2; cx.strokeStyle = "rgba(255,255,255,.07)"; cx.arc(0, 0, C * .44, 0, Math.PI * 2); cx.stroke(); cx.restore();
   S.mempool.forEach((tx, i) => {
     const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
     cx.shadowColor = cx.fillStyle; cx.shadowBlur = 14; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 6, 0, Math.PI * 2); cx.fill();
-    hit(Math.cos(a) * r, Math.sin(a) * r, 20, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`); });
+    hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`); });
   });
   cx.shadowBlur = 0;
-  ring(C * .44, 18, () => {   // the waiting room: every dot on this orbit is a transaction the node admitted but no block has sealed yet
+  ring(C * .44, 30, () => {   // the waiting room: every dot on this orbit is a transaction the node admitted but no block has sealed yet
     const seen = S.memSeen, oldest = seen.size ? Date.now() / 1000 - Math.min(...seen.values()) : 0;
     const gov = S.mempool.filter(t => t.kind === "gov").length, rule = S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length, xfer = M - gov - rule;
     const mix = [[xfer, "transfer", "transfers"], [rule, "rule work", "rule work"], [gov, "rule-change proposal", "rule-change proposals"]].filter(x => x[0]).map(x => `${x[0]} ${x[0] === 1 ? x[1] : x[2]}`).join(", ");
@@ -2941,7 +2942,7 @@ simBadge(); setInterval(() => { if (!document.hidden) simBadge(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.39`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.40`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
