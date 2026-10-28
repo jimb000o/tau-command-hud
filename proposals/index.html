@@ -110,6 +110,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .list > li.sched b { color: #fff; }
 .list > li.sched b::first-letter { text-transform: uppercase; }
 .list > li.sched .when { display: block; margin-top: 3px; opacity: .8; }
+.list > li.soon > button { border-left-color: var(--behind); background: rgba(255,177,59,.05); padding: 8px 12px; }
+.list > li.soon > button:hover, .list > li.soon > button:focus-visible { background: rgba(255,177,59,.1); }
+.list > li.soon .m.when { color: var(--text); }
 .quorum.wait .fill { background: rgba(255,255,255,.14); }
 /* rules over time: one lane per spec revision, one for the consensus mechanism, one bar per proposal from proposed to its activation block */
 .p-rules { padding-bottom: 10px; }
@@ -243,7 +246,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 
   <main class="main">
     <section class="panel p-open">
-      <h2>Coming up <small id="openCount"></small></h2>
+      <h2><span id="openTitle">Coming up</span> <small id="openCount"></small></h2>
       <div class="scroll" id="openList"></div>
     </section>
     <section class="panel p-all">
@@ -332,10 +335,6 @@ function tiles() {
   ];
   $("tiles").innerHTML = t.map(([h, v, p]) => `<div class="tile"><h3>${h}</h3><div class="v">${v}</div><p>${p}</p></div>`).join("");
 }
-function flow(p) {
-  const s = p.status;
-  return `<div class="flow"><span class="done">proposed</span><span class="${s === "voting" ? "now" : "done"}">votes</span><span class="${s === "agreed" ? "now" : s === "active" ? "done" : ""}">agreed</span><span class="${s === "active" ? "ok" : ""}">in force</span></div>`;
-}
 // plain-words explanation from the tracker (alerts/explain.py): what changes, why it matters
 const whyOf = p => (p.explain && p.explain.why) || "";
 function explainHtml(p) {
@@ -357,19 +356,28 @@ function ruleDiff(p) {
   return RuleDiff.html(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions, { at: p.proposed_at, patch: !!p.patch });
 }
 const diffTag = p => { const d = diffOf(p); return d ? ` · <span class="nw">rule text ${d.same ? "unchanged" : RuleDiff.summary(d)}</span>` : ""; };
-function openCard(p) {
-  const need = p.thr, v = p.counted_votes, n = left(p), when = eta(n);
-  const line = p.status === "agreed"
-    ? `Agreed at #${fmtN(p.approved_at)}. Takes effect at #${fmtN(p.activate_at)}${n > 0 ? `, ${plural(n, "block")} from now${when ? ` (${when})` : ""}` : ""}.`
-    : `Needs ${need - v > 0 ? plural(need - v, "more vote") : "no more votes"} by #${fmtN(p.activate_at)}${n > 0 ? ` (${plural(n, "block")}${when ? `, ${when}` : ""})` : ""}, or it is dropped.`;
-  const agreed = p.status === "agreed", span = p.activate_at - p.approved_at;
-  const pct = agreed ? Math.max(0, Math.min(100, span > 0 ? (span - Math.max(n, 0)) / span * 100 : 100)) : Math.min(100, need ? v / need * 100 : 0);
-  const bar = agreed ? (n > 0 ? `${plural(n, "block")} to go${when ? ` (${when})` : ""} · ${v} of ${need} votes` : "takes effect now") : `${v} of ${need} votes`;
-  return `<li class="${p.status}"><button type="button" data-id="${esc(p.id)}"><b>${esc(p.title)}</b>
+/* when a block is expected: from the real block pace, as a date in UTC and a countdown, like the simulation's programme */
+function inTime(s) {
+  const m = Math.ceil(s / 60);
+  return m <= 1 ? "in a minute" : m < 60 ? `in ${m} min` : m < 1440 ? `in ${Math.floor(m / 60)} h ${m % 60} min` : `in ${Math.floor(m / 1440)} d ${Math.floor(m % 1440 / 60)} h`;
+}
+function atBlock(h) {
+  const n = h - D.chain.head, pace = D.chain.seconds_per_block;
+  if (n <= 0) return `#${fmtN(h)} · now`;
+  if (!pace) return `#${fmtN(h)} · ${plural(n, "block")} from now`;
+  const s = n * pace, at = new Date(((D.chain.head_ts || Date.now() / 1000) + s) * 1000).toISOString();
+  return `#${fmtN(h)} · ~${at.slice(0, 10)} ${at.slice(11, 16)} UTC · ${inTime(s)}`;
+}
+// compact card for what is coming up: the same shape as the simulation's scheduled events
+function soonCard(p) {
+  const need = Math.max(0, p.thr - p.counted_votes);
+  const when = p.status === "agreed" ? `In force at ${atBlock(p.activate_at)}`
+    : `Needs ${need ? plural(need, "more yes vote") : "no more votes"} by ${atBlock(p.activate_at)}, or dropped`;
+  const how = p.status === "agreed" ? `Agreed at #${fmtN(p.approved_at)} with ${p.counted_votes} of ${p.thr} votes.`
+    : `Proposed at #${fmtN(p.proposed_at)} by ${short(p.proposer)}. ${p.counted_votes} of ${p.thr} votes so far.`;
+  return `<li class="soon ${p.status}"><button type="button" data-id="${esc(p.id)}"><b>${esc(p.title)}</b>
     ${whyOf(p) ? `<span class="m why">${esc(whyOf(p))}</span>` : ""}
-    <span class="m">proposed at #${fmtN(p.proposed_at)} by ${short(p.proposer)}${p.proposed_ts ? ` · ${ago(p.proposed_ts)}` : ""}${diffTag(p)}</span>
-    ${flow(p)}<span class="m">${line}</span>
-    <div class="quorum${agreed ? " wait" : ""}" aria-label="${esc(bar)}"><div class="fill" style="width:${pct}%"></div><span>${bar}</span></div></button></li>`;
+    <span class="m when">${when}</span><span class="m">${how}</span></button></li>`;
 }
 function rowOf(p) {
   const st = p.status;
@@ -387,6 +395,7 @@ function render() {
   const P = D.proposals;
   const by = s => P.filter(p => p.status === s).sort((a, b) => a.activate_at - b.activate_at);
   const voting = by("voting"), agreed = by("agreed");
+  $("openTitle").textContent = SIM ? "Coming up" : "Coming up on the testnet";
   $("openCount").textContent = voting.length + agreed.length ? `(${voting.length + agreed.length})` : "";
   // the simulation announces its programme: special rule changes at fixed times of the day, and the restart at midnight
   /* the programme ahead, in the words of the header badge (assets/nav.js): what happens, why it matters, where to watch it */
@@ -407,10 +416,10 @@ function render() {
     return `<li class="sched"><b>${esc(ev.what)}</b>${esc(ev.why)} ${esc(ev.watch)}<span class="when">${when}</span></li>`; }).join("")}</ul>` : "";
   $("openList").innerHTML = (!voting.length && !agreed.length
     ? (sched ? `<ul class="list"><li class="quiet">No proposal is open right now.</li></ul>` : `<ul class="list"><li class="empty"><b>Nothing is coming up right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}</ul>`)
-    : `<h3 class="grp">Waiting for votes <small>(${voting.length})</small></h3><ul class="list">${voting.length ? voting.map(openCard).join("")
-        : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`
-      + `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(openCard).join("")
-        : `<li class="quiet">Nothing agreed is waiting to take effect.</li>`}</ul>`) + sched;   // the programme ahead after what is open now
+    : `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(soonCard).join("")
+        : `<li class="quiet">Nothing agreed is waiting to take effect.</li>`}</ul>`
+      + `<h3 class="grp">Waiting for votes <small>(${voting.length})</small></h3><ul class="list">${voting.length ? voting.map(soonCard).join("")
+        : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`) + sched;   // the programme ahead after what is open now
   const shown = P.filter(p => filter === "all" || (filter === "decided" ? p.status === "active" || p.status === "dropped" : p.status === filter));
   $("allCount").textContent = `(${shown.length})`;
   $("allList").innerHTML = shown.length ? shown.map(rowOf).join("")
