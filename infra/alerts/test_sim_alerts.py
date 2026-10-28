@@ -11,7 +11,7 @@ import tempfile
 from datetime import datetime, timezone
 
 TMP = tempfile.mkdtemp()
-os.environ.update(STATE_PATH=os.path.join(TMP, "alerts.json"), PUBLIC_DIR=TMP, TELEGRAM_BOT_TOKEN="", SITE_URL="https://tauhud.com")
+os.environ.update(STATE_PATH=os.path.join(TMP, "alerts.json"), PUBLIC_DIR=TMP, TELEGRAM_BOT_TOKEN="", SITE_URL="https://tauhud.com", RELAY_HTTP="http://127.0.0.1:9")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alerts  # noqa: E402
 
@@ -116,6 +116,20 @@ check(len(tg4.sent) == 1, "retried after the pause")
 w4.state["sim"]["posted"]["2026-10-01:stake"] = at("2026-10-01", "10:20")
 run(w4, at("2026-10-28", "16:25"))
 check("2026-10-01:stake" not in w4.state["sim"]["posted"] and "2026-10-28:fixed" in w4.state["sim"]["posted"], "keys older than a week are dropped")
+
+# the visitors' forecasts under the post (relay /sim/predictions): no relay, no lines; yesterday's best only in the morning
+check(alerts.forecasts_for(sw[0]) == [], "no forecast lines when the relay does not answer")
+row = lambda n, p: {"name": n, "points": p}  # noqa: E731
+today = {"board": [row("Quiet Otter", 12), row("Brave <Lynx>", 9)], "forecasters": 5}
+y = {"day": "2026-10-27", "board": [row("Calm Heron", 40)]}
+f0 = alerts.forecast_lines(sw[0], today, y)
+check("Yesterday's best forecasters: 1. Calm Heron 40" in "\n".join(f0), "the morning post names yesterday's best")
+check("1. Quiet Otter 12 · 2. Brave &lt;Lynx&gt; 9 (5 playing)" in "\n".join(f0), "and today's leaders, escaped")
+check("11:20 UTC" in "\n".join(f0) and f0[-1].endswith("Guess the next round</a>") and "#predict" in f0[-1], "invites to the next round with its time")
+f1 = alerts.forecast_lines(sw[1], {"board": [], "forecasters": 0}, None)
+check(not any("Yesterday" in x or "Leading" in x for x in f1) and "17:20 UTC" in "\n".join(f1), "an empty board still invites, without names")
+t2 = alerts.sim_text(sw[0], f0)
+check(t2.startswith("🧪 <b>SIMULATION") and t2.rstrip().endswith("Watch it in the simulation</a>") and "🎯 <b>Forecasts</b>" in t2, "forecasts sit inside the marked post")
 
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)

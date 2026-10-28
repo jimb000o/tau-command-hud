@@ -22,6 +22,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/nav.css">
 <script src="assets/nav.js" defer></script>
+<script src="assets/predict.js" defer></script>
 </head>
 <body>
 <title>Tau HUD</title>
@@ -875,7 +876,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     </nav>
   </header>
 
-  <div class="simbar" id="simbar" role="status"><b id="simNext">Simulation · no real chain data</b><a id="simWatch" class="watch" href="proposals/" hidden>Watch in Proposals</a><div id="simVote" hidden></div><span id="simAbout">What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node. Experimental community project, no claim of accuracy.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
+  <div class="simbar" id="simbar" role="status"><b id="simNext">Simulation · no real chain data</b><a id="simWatch" class="watch" href="proposals/" hidden>Watch in Proposals</a><a id="simGuess" class="watch" href="#predict" data-predict data-full="Every hour the visitors vote on one simulated rule change. Guess before the vote opens whether it comes and how many vote; points add up on a board for the day.">Guess the next round</a><div id="simVote" hidden></div><span id="simAbout">What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node. Experimental community project, no claim of accuracy.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
   <section class="thesis" aria-label="Why Tau is different">
     <div class="thesis-main">
       <span class="eyebrow">Why this is not a normal blockchain</span>
@@ -1398,7 +1399,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.47", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.48", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -3127,7 +3128,7 @@ pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); set
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.47`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.48`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
