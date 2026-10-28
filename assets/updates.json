@@ -654,10 +654,20 @@
   "on": "2026-10-28",
   "html": "What Tau refuses is red again: refused transactions in the feed, the refused counter, a rejected rule offer, a declined approval and the verdict in each detail use the muted refusal red from the Playground; a personal rule that has just said no to a transfer lights up in it too. The bright red stays reserved for offline."
  },
-  {
+ {
   "tag": "Simulation",
   "on": "2026-10-28",
   "html": "The simulation now shows what Tau refuses, and the day has rhythm. Every hour at hh:40 a rule change that contradicts the rules in force is refused before any vote, with its reason in the Proposals news and the Explorer’s Refused list. At hh:50 a contested proposal, six times today’s fee, gets the proposer’s vote alone and is dropped at hh:58: a quorum that never forms. A rule offer that conflicts with the receiver’s own rule is rejected with the reason in the transaction. Retractable transfers are sometimes pulled back and the money returns. Every half hour a three-minute burst of traffic and a six-minute lull. The kit node bob falls up to 60 blocks behind from minute 35 and catches up from minute 45; the Nodes page shows it as “Catching up”. Simulation mode only."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-28",
+  "html": "New page: The Daily Consensus, twelve years of Tau as a 1920s newspaper. Ten pages drawn from the Tau team’s own videos and the Chronicle: the front-page story of the users who changed the chain’s consensus by vote, the road from Zennet, obituaries for dropped plans, telegrams from 2025, letters from the monthly Q&As, classifieds and puzzles. Click, tap or press the arrow keys to turn a page; on phones and small screens it becomes a pocket edition. In Chinese too. Find it under Learn."
+ },
+ {
+  "tag": "Missions",
+  "on": "2026-10-28",
+  "html": "Missions: a new page in the Playground menu with six short tasks on a practice chain of your own, one block every two seconds. Vote a change into law, get a rule refused before the vote, let a rule fail at two thirds, lower the bar, survive a validator outage and bring the chain to proof of stake. Each mission ends with where to see the same thing on the real testnet. Progress stays in your browser; share a mission or your progress as a link."
  },
  {
   "tag": "Simulation",
