@@ -1,126 +1,627 @@
 [
-  {"tag": "v1", "on": "2026-10-26", "html": "First HUD: Tau consensus engine, validator core, transaction stream, block ribbon, governance, live-node mode."},
-  {"tag": "v2", "on": "2026-10-26", "html": "Focus on what makes Tau different: rule changes by validator agreement, rule sharing between accounts, personal Tau policies and the composite spec. Feedback inbox, unofficial-project notice, this update log."},
-  {"tag": "v3", "on": "2026-10-26", "html": "Info icons with explanations on every panel. Tau principles strip. Proposals show the isolated compile check and can be refused for contradicting the live spec; a quorum change shows a rule amending its own amendment rule; rule offers show the conflict report. Links to the Tau papers."},
-  {"tag": "v4", "on": "2026-10-26", "html": "Everything on one screen: a 4×2 command grid with a thesis line for newcomers, feedback and about moved into pop-ups."},
-  {"tag": "v5", "on": "2026-10-26", "html": "Rebrand: Tau’s near-black and blue-to-violet gradient for structure, phosphor green reserved for data and truth, champagne for agreement. Matrix glyph rain behind the deck, the thesis decodes on load, hairline glass panels, Sora + JetBrains Mono. AGRS donation address under About."},
-  {"tag": "v6", "on": "2026-10-26", "html": "Monochrome like the current tau.net: black, white, greys and hairlines, with phosphor green as the only accent, where data is live or true."},
-  {"tag": "v7", "on": "2026-10-26", "html": "Wording and hierarchy pass: one core sentence up top, plain-language panel titles, every number with its context (“7 of 9 needed”), refusals marked ✕ as well as red, stream codes moved into the hover notes, quieter glyph rain."},
-  {"tag": "v8", "on": "2026-10-26", "html": "From a simulated study with 100 reader personas: simulation is now unmissable (banner, watermark in the core, SIM tag on every block card), a Simple/Technical switch with plain-language stream labels, a 5-step tour that follows one rule from proposal to active, clickable blocks with a full detail view (rules in force and agreed at that block), a “Chain state” view of every rule in force right now, no more clipped values, a compact core on laptops, live-node fields only in Live mode with a checklist on failure, a “What is Tau?” link, symbols per transaction type, AGRS amounts, and a rain switch."},
-  {"tag": "v9", "on": "2026-10-26", "html": "Calmer: blocks every ~8 s. A block’s details now open inline under the block cards instead of a pop-up (the newest block is shown until you pick one). New always-visible panel “Rules in force now” on the right; the node log moved below it and only shows in the Technical view. Block-card footer no longer wraps."},
-  {"tag": "v9.1", "on": "2026-10-26", "html": "Simple/Technical switch moved to the right side of the header, under the status chips."},
-  {"tag": "v10", "on": "2026-10-26", "html": "The contrast is now visual, not just verbal: “How a rule changes” strip in the Rule changes panel (other chains: propose, months of debate, vote, hard fork, everyone upgrades; Tau: propose, checked, agreed, active, lit live from the current proposal), and in the core every sealed block draws the agreement of all validators and rule-holding accounts flowing into it (“the agreed rules of everyone → block”)."},
-  {"tag": "v10.1", "on": "2026-10-26", "html": "QR code next to the donation address (scan to donate). No more hexagons: the core is built from rings and the rule-holding accounts are ringed dots. “How a rule changes” laid out on one shared grid: both rows use the same four columns, each step has a one-line note, the clock sits with the row label, and the Tau row shows the live vote count and activation block."},
-  {"tag": "v11", "on": "2026-10-26", "html": "Renamed to “Tau HUD”. Tau steps show their state: done (green), in progress (amber, gently pulsing, e.g. “collecting 2/3”), next (dimmed). Disclaimer added (experimental, no claim of accuracy, no advice). Tau step boxes given room. Any clipped text (step notes, hashes, rule names, transaction rows) shows in full as an overlay on hover, or on tap on phones. “How a rule changes” now encodes time as length, so both tracks compare on one scale: the Other-chains track spans the whole row with its slow, fragmenting steps (months of debate, a fork that can split the chain, manual upgrades), the Tau track is a short green segment followed by “done.”"},
-  {"tag": "v12", "on": "2026-10-26", "html": "Everything explains itself: hover any transaction, rule-change card, shared rule, personal rule, block card, validator, stream row, the active consensus spec and the composite rule for a plain-language explanation with the live numbers. The whole “Rules in force now” panel opens the full chain state."},
-  {"tag": "v12.1", "on": "2026-10-26", "html": "Transaction hovers cut to the essentials that the row does not already show; the feed holds still while you hover it."},
-  {"tag": "v12.2", "on": "2026-10-26", "html": "Rule sharing, rule changes and personal rules: hovers cut to the essentials. No live panel re-renders while the pointer rests on it, so an open overlay stays until you move away."},
-  {"tag": "v12.3", "on": "2026-10-26", "html": "The Tau row of “How a rule changes” now moves step by step: propose (in mempool) → checked (compiling) → agreed (votes) → active, each phase visible. When a change takes effect the whole row lights up green for a moment."},
-  {"tag": "v13", "on": "2026-10-26", "html": "Phone layout: compact header (name, view switch, one-line notice, swipeable status chips, main buttons plus a More menu), reading order core → rule changes → rules in force → blocks → detail, comparison rows wrap with every word readable, tap-to-explain works reliably, block details stay short."},
-  {"tag": "v13.1", "on": "2026-10-26", "html": "Tau HUD has a mark: a pulse inside the ring of its rules. It beats once per block in the header, in the favicon (animated SVG, and a canvas-drawn beat where browsers show SVG favicons static) and on the share preview."},
-  {"tag": "v13.2", "on": "2026-10-26", "html": "Mouse wheel over the block strip steps through the chain: down goes back in time, up toward the newest block, the detail below follows. “n online” chip in the status row: how many people have Tau HUD open right now, with a green light when anyone is there. Counted by the community relay, no analytics; shows “—” until the relay is live."},
-  {"tag": "v13.3", "on": "2026-10-26", "html": "New block cards appear the moment a block is sealed, also while the pointer rests on the strip (before, the strip waited until you moved away)."},
-  {"tag": "v13.4", "on": "2026-10-26", "html": "“How a rule changes”: one proposal at a time, so every run starts at propose and each step lights up in real time. The Tau row now ends under “vote”; fork, splits and upgrading by hand belong to the other chains only. The “length = time” caption is gone."},
-  {"tag": "v13.5", "on": "2026-10-26", "html": "The “block accepted” moment: the seal stamps down, the check draws itself, a ring rings out and the panel edge glows for a second. Once a rule change is absorbed into the network, the step boxes reset; the next proposal starts from an empty row."},
-  {"tag": "v13.6", "on": "2026-10-26", "html": "The step row resets in the same instant the activating block is sealed: one short green flash with the block, then empty, ready for the next proposal."},
-  {"tag": "v13.7", "on": "2026-10-26", "html": "Block-card and validator hovers cut to the essentials the card does not already show. The “block accepted” seal sits centred in its own space instead of hugging the corner."},
-  {"tag": "v13.8", "on": "2026-10-26", "html": "Chain core explains itself: hover (or tap) a validator, the agreement ring, a rule account, a mempool dot, the block in the centre or the outer rim for a short line on what it is and what it is doing right now."},
-  {"tag": "v13.9", "on": "2026-10-26", "html": "Lines to the core now mean something: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle. Said in the hover line and in the panel’s “i”."},
-  {"tag": "v14.0", "on": "2026-10-26", "html": "Live node reachable: the default address is now the community relay wss://node.tauhud.com in front of a Tau testnet node run for this page. Simulation stays the default view until the node has caught up with the chain. The “online” chip now counts every open tab, simulation or live, through a quiet presence socket."},
-  {"tag": "v14.1", "on": "2026-10-26", "html": "Live by default: the page opens on the real Tau testnet through the community relay whenever it is running, and shows the simulation only when it is not. The green light on “Live node” says the relay is up, whichever view you are in. Live node now comes first in the switch, and your own choice is remembered on this device."},
-  {"tag": "v14.2", "on": "2026-10-26", "html": "The relay light on “Live node” is bigger, ringed in black so it reads on the white selected state too, and pulses while the relay is up."},
-  {"tag": "v14.3", "on": "2026-10-26", "html": "Simulation is the default view again for now: the community node sits on an orphan chain until IDNI publishes the current genesis, so its blocks are not the real tip. Live node and its light stay one click away; Live becomes the default again once the node follows the real chain."},
-  {"tag": "v14.4", "on": "2026-10-26", "html": "A third live state: while the community node is connected but not synced with the real chain, the relay light and the mode chip turn amber and read “Live · Not synced”. Green and “Connected” only when the node follows the network’s tip."},
-  {"tag": "v14.5", "on": "2026-10-27", "html": "Hardening: the page tells the browser to upgrade any insecure request, and a pasted ws:// node address becomes wss:// on an https page (localhost excepted), so the lock stays intact."},
-  {"tag": "v15", "on": "2026-10-27", "html": "From GitHub feedback #1: every principle card now says whether it was seen on the testnet or comes from the protocol, with a link to the tau-testnet line that backs it (pinned to one commit). Failure paths are shown on purpose: some proposals now miss quorum and expire with a red moment in the rule row, the “n refused” chip on Transactions counts and filters what Tau refused, and the ~1 minute rule-change timing is marked as simulated."},
-  {"tag": "v15.1", "on": "2026-10-27", "html": "Click any list item for the full picture: transactions (who, what, fee, hash, block, which rule decided and its text), rule offers (checks, rule text, what accepting means), rule changes (votes per validator, diff, path so far), personal rules (rule text and recent effects) and validators. Hover stays short; “open ›” marks the click."},
-  {"tag": "v15.2", "on": "2026-10-27", "html": "Every header chip and button explains itself on hover: network, height, spec revision, base fee, mode, online count, the Live/Simulation switch, the view switch and the menu buttons, each in one line with where the value comes from."},
-  {"tag": "v15.3", "on": "2026-10-27", "html": "Wide screens: from 2200 px the whole HUD scales to fill the screen (up to 1.7×) instead of stretching its columns, so line lengths, the layout and the one-screen rule stay as designed while type, numbers and the chain core grow. The validators column now shrinks with the screen instead of adding a scrollbar at 1080 px height."},
-  {"tag": "v15.4", "on": "2026-10-27", "html": "Wide screens, second pass: the chain core now spans both rows in the centre and is the largest thing on the screen, the validators column gets the full height, and the scale is set from a 2400 px design width instead of 1800, so panels keep their proportions."},
-  {"tag": "v15.5", "on": "2026-10-27", "html": "Wide screens, third pass: the blockchain panel gets double width and double height and its block detail flows into four columns instead of a scroll box; the block check shows every rule row; the scale is set so each panel keeps at least its desktop room. No label is cut off any more: the rule-change strip, check rows and transaction lines wrap whole words instead of ending in “…”. In the simple view the block detail shows short hashes, the technical view shows them in full."},
-  {"tag": "v15.6", "on": "2026-10-27", "html": "Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both count down second by second to the next expected block, reset with every new block, and the line under Block pace says when a block runs late. On 16:9 wide screens the left column (block check, rule changes) is wider and taller at the top. While the node is still catching up with the chain (or the chain is idle), the countdown pauses and the line under Block pace says how old the newest block is; if the relay reports that the node has verified the state only up to an older block, the mode chip turns amber: “Live · Verified to #n of tip”. The Tau row follows the real proposal: “waits for n votes” while a proposal collects agreement (time cannot help there), a countdown to the activation height once it is agreed. Live wording no longer assumes that only validators vote: the threshold comes from the validator count, who may vote is a network setting."},
-  {"tag": "v15.7", "on": "2026-10-27", "html": "Rule Playground: a new page at <a href=\"playground/\">/playground/</a> where you write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Linked from the header (“Playground”) and from the validators panel."},
-  {"tag": "v15.8", "on": "2026-10-27", "html": "Node log: the panel shows whole lines (time in its own column, nothing cut off) with more room, and a click opens the full log in the detail view, newest first, with counts of refusals and governance events. Chain core: every label (agreement, validators, “the agreed rules of everyone”) sits on a dark plate, so no ring crosses the letters. Detail views: every check chip (i10 signature, o6 block valid, o7 proposer eligible, o9 fee, o5 sender rule, the admission checks of a rule offer, the steps of a proposal) explains itself on hover. Live: when the relay reports a chain reset (the node discarded a chain the network abandoned), the page forgets the old blocks and rebuilds from the new ones."},
-  {"tag": "v15.9", "on": "2026-10-27", "html": "Header: links to the new <a href=\"stats/\">Stats</a> and <a href=\"history/\">Time travel</a> pages; a block’s full detail links to the rules in force at that height. Rule changes by agreement: when an agreed change was scheduled far ahead by the proposal itself, the Tau row says so (“at #5028”, “agreed in n blocks”) instead of counting down the proposer’s wait as if it were Tau’s speed. Block detail: when the full detail would need scrolling at your screen size, a one-glance summary takes its place and a click opens the full detail. Every detail window scrolls inside the screen. Screens up to 900 px tall get the scrolling layout."},
-  {"tag": "v16.0", "on": "2026-10-27", "html": "Guided tour for newcomers: eight short steps, about a minute, from “rules change by agreement” through block check, proposal, votes, the core, activation and personal rules to the playground. Offered once on the first visit (“Not now” is remembered), always available from the header; arrow keys step, Escape ends."},
-  {"tag": "v16.1", "on": "2026-10-27", "html": "Phones and tablets: header chips wrap instead of scrolling sideways, panel subtitles, provenance lines and block values wrap instead of being cut off, the chain core uses the full width, a tap on a button no longer leaves a tooltip behind. Desktop: the “from the protocol / seen on the testnet” lines under the thesis cards wrap instead of being cut off."},
-  {"tag": "v16.2", "on": "2026-10-27", "html": "Accounts: a new page at <a href=\"account/\">/account/</a> shows balance, own rules, offers, activity and refusals of any account; linked from the header, and on the live chain every address in the HUD (transactions, blocks, proposer, validators, rule holders, offers) links to its account."},
-  {"tag": "v16.3", "on": "2026-10-27", "html": "Proposals: a new page at <a href=\"proposals/\">/proposals/</a> tracks every rule change and offers Telegram, X and RSS alerts; linked from the header, and the feedback panel links the Telegram channel."},
-  {"tag": "v16.4", "on": "2026-10-27", "html": "Personal money rules: the examples now show what Tau itself advertises: a second approval above an amount (the transfer parks as an approval request and executes when the approver signs, with a countdown in blocks), a lock until a block height instead of a clock time, spending limits, whitelists and co-signatures. Live mode shows approval requests only when the node reports them. Validators: the consensus mode (fixed validator list, list in Tau logic, or stake-based) and how often it was switched by agreement. Blockchain: a fork radar counting reorgs (with depth) and testnet restarts."},
-  {"tag": "v16.5", "on": "2026-10-27", "html": "Live: approval requests and their signatures are read from the blocks themselves (approval_request and transfer_vote transactions), the fork radar also counts the reorgs and restarts the relay remembers."},
-  {"tag": "v16.6", "on": "2026-10-27", "html": "Chronicle: a new page at <a href=\"chronicle/\">/chronicle/</a> tells the project’s history and milestones; linked from the header."},
-  {"tag": "v16.7", "on": "2026-10-27", "html": "The “online” count now counts people, not open connections: a random token in your browser (no cookies, no analytics) tells the relay that your tabs and the subpages are one visitor. Takes effect once the relay is updated."},
-  {"tag": "v16.8", "on": "2026-10-27", "html": "Validators panel: the three consensus modes (fixed list › list in Tau logic › stake) are shown as a strip at the top, the active one lit in green, a mode the chain ran in before a switch dashed; hover explains each."},
-  {"tag": "v17.0", "on": "2026-10-27", "html": "New header on every page: HUD · Explore · Learn · Playground as menus with one line per page, Chain state as the only button, Telegram channel in green, Updates with a dot when there is something new, View and settings (node address, rain) on the right. The current section is underlined in green. Same bar on all seven pages; on phones it becomes a tab bar at the bottom. The idea: the same navigation everywhere with a clear “you are here”, details only when you ask for them, and emphasis by making everything else quieter."},
-  {"tag": "v17.1", "on": "2026-10-27", "html": "Live mode links into the Explorer page: the hash in a block’s identity opens the block there, the id on a transaction card opens the transaction. The Nodes entry in the Explore menu is marked “soon” until that page is online (it led to a 404)."},
-  {"tag": "v17.2", "on": "2026-10-27", "html": "Every page now carries the whole HUD header: brand row with the page title, the status chips (mode, online, network, height, spec revision, base fee, read from the community relay), Live node / Simulation, View and the gear. Only the title and the active section change when you move between pages."},
-  {"tag": "v17.3", "on": "2026-10-27", "html": "The green “you are here” line under a section name is now exactly as wide as the word and sits right under it (it used to float below the whole button, caret included)."},
-  {"tag": "v17.4", "on": "2026-10-27", "html": "The online counter counts people again, not open tabs: the 20-second status poll was overwriting the relay’s per-person count with its socket count."},
-  {"tag": "v17.5", "on": "2026-10-27", "html": "About fits the screen: on wide screens its sections sit in three columns, so the whole text and the donation address are visible without scrolling. The Telegram offer says what you get: every rule change and chain restart as it happens, a weekly recap picture, HUD updates; the header pill reads “Telegram alerts”, and the Updates panel carries the same line."},
-  {"tag": "v17.6", "on": "2026-10-27", "html": "About breathes: a solid background, 32px around, a clear gap between the notice strip and the columns, wider gutters, consistent spacing under every heading. Still no scrolling on wide screens."},
-  {"tag": "v17.7", "on": "2026-10-27", "html": "The light on “Live node” is a traffic light on every page: green when the community node is synced, amber when it is online but not synced or still catching up, red when it is offline. Hover names the state."},
-  {"tag": "v17.8", "on": "2026-10-27", "html": "Guided tour: each explanation now sits next to the panel it describes, with a pointer at it (below the panel, else beside or above it, always inside the window). On phones it stays a sheet at the bottom."},
-  {"tag": "v17.9", "on": "2026-10-27", "html": "Rule sharing lines wrap instead of ending in “…”; laptops (1280–1599 px wide or under 900 px tall) get a compact four-column step so the page is about 1.6 screens instead of 2.7; no type below 10 px on desktop, and ultra-wide screens scale the HUD a little more."},
-  {"tag": "v17.10", "on": "2026-10-27", "html": "Proposal wording matches the Proposals page: “waiting for votes” and “agreed, takes effect soon” in the Chain state detail and validator history, instead of “collecting agreement” and “scheduled”."},
-  {"tag": "v17.11", "on": "2026-10-27", "html": "Validators, Rules in force now and Node log fit their column in Technical view: on wide screens the column has the full height, laptops show every panel whole and scroll. The Simple/Technical switch appears only on pages where it changes something."},
-  {"tag": "v17.12", "on": "2026-10-27", "html": "The Telegram bot answers questions: write height, proposals, a transaction hash or an address to @tauhud_alerts_bot. Mentioned in the Telegram chip, About and here."},
-  {"tag": "v17.13", "on": "2026-10-27", "html": "The Live node light can no longer stick on green: the status request times out after 8 seconds, a minute without an answer turns it red, and the relay’s health score colours it (degraded amber, down red). Same on every subpage."},
-  {"tag": "v17.14", "on": "2026-10-27", "html": "Press kit under Learn: a ready paragraph, the facts, the 60 second video in three formats, the logo for dark and light, screenshots and a ZIP of everything. Design pass, part one: red is reserved for offline and down, refusals and the fork step are white with ✕ or a strike; fewer boxes inside Rule changes; panel subtitles in sentence case, instructions moved into the (i) hover; Rules in force now shows revision and fee large and the rest as one sentence; header chips show the value only, the name is in the hover, and a new Consensus chip says who seals blocks; validator keys in the chain state are short with a copy button; the background rain is off unless you switch it on."},
-  {"tag": "v17.15", "on": "2026-10-27", "html": "Design pass, part two: one type scale and one spacing scale on the HUD, this log shows one line per version with the details folded away, and a search field in the header (⌘K or Ctrl+K) sends a block number, hash or address to the Explorer. Design pass on all pages: Feedback in the footer, compact phone header, offline states, one type scale, readable line length; Telegram posts lead with why it matters."},
-  {"tag": "v17.16", "on": "2026-10-27", "html": "Blockchain strip scrolls like a film, and About says what a donation pays for: the mouse wheel glides through the blocks instead of stopping at each one, the detail below follows the block at the right edge, and scrolling back keeps loading older blocks from the relay all the way to genesis; “back to newest” returns to the live end. The donation section is now “Keep it running”: what the project costs (mostly time), what a donation pays for, no banner, no pop-up. The thesis that resolves out of glyph noise on load now does it in phosphor green: brightest at the resolve front, dimmer further out, white once settled, and the paragraph no longer shifts while it resolves."},
-  {"tag": "v17.17", "on": "2026-10-28", "html": "Decode effect: the unresolved glyphs now run a gradient from the settled text outward, white next to the resolved letters, through pale green into full phosphor green by the twelfth glyph, then dimmer the further out."},
-  {"tag": "v17.18", "on": "2026-10-28", "html": "The first donation came in, thank you. About now shows who supported Tau HUD, read straight from the Ethereum chain: one quiet line under the donation address with the number of supporters and the latest donations, each sender only as a shortened address linked to its transaction. Every new donation also gets one thank-you post in the Telegram channel. AGRS and ETH only; no banner, no goal bar. tauhud.com/#donate opens About at the donation address."},
-  {"tag": "v17.19", "on": "2026-10-28", "html": "Chain core: Height, Waiting and User rules carry a line of context like Block pace does. Height says when the last block came and how old the chain is, Waiting counts pending transactions and how long the oldest has waited, User rules says how many are in force and where the last one was deployed. Hovering each number explains it. In the circle, whatever your pointer rests on lights up green while its text shows, the outer rim answers to a wider band that reaches outside the ticks, and the three grey arcs that used to turn just inside the rim are now one quiet circle, the validator orbit, with its own text."},
-  {"tag": "v17.20", "on": "2026-10-28", "html": "Chain core shows every agreed rule change, not just one: the agreement ring carries one marker per change that waits for its activation height, clockwise in activation order, the next one bright, and the label says “4 agreed · next #5028”. An open vote still fills the same ring toward quorum. Hover a marker for the proposal, what it changes and when it takes effect."},
-  {"tag": "v17.21", "on": "2026-10-28", "html": "Header: the green “new updates” dot now sits at the top right of the word Updates, two pixels from the last letter, on every page. It used to float far to the right on the HUD."},
-  {"tag": "v17.22", "on": "2026-10-28", "html": "Simple and Technical view mean more on the HUD: Simple says what each thing means, Technical adds keys, hashes, heights and stream names. Every hover text in the Chain core now comes in both versions, validators read V1, V2 in Simple and show their key in Technical, the block check hides stream names in Simple, transactions show kind and fee without the hash, and the Validators panel follows the view. The thesis and its four points stay as they are."},
-  {"tag": "v17.23", "on": "2026-10-28", "html": "Header: the logo and the words “Tau HUD” at the top left are one link back to the main page, on every page."},
-  {"tag": "v17.24", "on": "2026-10-28", "html": "Header, right side: the word “View” is gone (the hover on the switch says what Simple and Technical do), the language switch is a two-way pill like Simple/Technical with EN and 中文, and a thin line separates the text links from the two switches. Same on every page."},
-  {"tag": "Playground", "on": "2026-10-28", "html": "Playground: a visible “Check rule” run with a softer engine limit, refused checks in a muted red, hover and click explain each check, and on the validator seat proposals are the obvious first step."},
-  {"tag": "Findings", "on": "2026-10-28", "html": "Findings: shows what IDNI already fixed, and all findings sit on one screen."},
-  {"tag": "Chinese", "on": "2026-10-28", "html": "Chinese version: the whole site reads in 中文; switch with the EN | 中文 pill in the header. Every HUD hover, the press kit and the subpages are translated, and the choice is remembered."},
-  {"tag": "Time travel", "on": "2026-10-28", "html": "Time travel: rule-change rows are capped, no-op proposals share one row and the overflow folds into “+N more”; the proposal detail sits in two columns so it fits without scrolling."},
-  {"tag": "Story", "on": "2026-10-28", "html": "Story: stops at every step; scroll to play it faster, then move on."},
-  {"tag": "Chronicle", "on": "2026-10-28", "html": "Chronicle: one screen without scrolling (six columns, compact moments, details under the timeline); clicking a moment opens its details inside the era card, a second click closes it."},
-  {"tag": "Proposals", "on": "2026-10-28", "html": "Proposals: the detail sits in two columns so it fits without scrolling."},
-  {"tag": "Explorer", "on": "2026-10-28", "html": "Explorer: leads with the answer to “what happened to it?”, says why a transaction is stuck, and fits every view on one screen instead of repeating the HUD."},
-  {"tag": "Alerts", "on": "2026-10-28", "html": "Telegram alerts: a proposal that is agreed right away gets one post instead of two."},
-  {"tag": "Accounts", "on": "2026-10-28", "html": "Accounts: a rich list with balances, share of supply, sorting and an account preview."},
-  {"tag": "Nodes", "on": "2026-10-28", "html": "Nodes: the board is never empty, joining takes three steps, and the page says what you get for running a node."},
-  {"tag": "v17.25", "on": "2026-10-28", "html": "The update log lives in one shared file now (assets/updates.json) that every page’s release adds a line to, so the log lists the subpages too; today’s subpage releases are listed here. The green dot in the header keys on the newest entry."},
-  {"tag": "Accounts", "on": "2026-10-28", "html": "Accounts: the rich list opens with a clear testnet notice, and its headline says the AGRS are test tokens with no value."},
-  {"tag": "Status", "on": "2026-10-28", "html": "Status: the testnet health score now counts the known mempool bug (IDNI #81). Every transaction that is already in a block but still listed as waiting costs its share of 10 points, and the breakdown lists the bug with what it costs right now."},
-  {"tag": "Nodes", "on": "2026-10-28", "html": "Nodes: the page now counts every node on the network as our node sees it, IDNI’s bootnode included, not only the ones that run our kit; the <a href=\"stats/\">Stats</a> page says it too."},
-  {"tag": "v17.26", "on": "2026-10-28", "html": "The Chain core shows the nodes that keep the chain checkable: a dashed node orbit just inside the validator orbit, one hollow ring per node (Tau HUD’s node bright, community nodes by name, peers our node has met unnamed), and every sealed block travels out to each of them. Hover explains a node, click opens the Nodes page. The update log now loads fresh on every new version and reads in Chinese."},
-  {"tag": "v17.27", "on": "2026-10-28", "html": "Chain core: the node orbit turns slowly, one round in about two and a half minutes. The Tau HUD node’s hover is more balanced, and as long as our node is the only one besides IDNI’s validator it says so: the two are the whole visible network right now."},
-  {"tag": "v17.28", "on": "2026-10-28", "html": "Update log: entries are grouped by day, a green number marks a version of this page (the HUD), a grey name marks a release of another page and opens it; a legend says so. Page entries no longer repeat their page name as the headline, and the fold hides whole days of older entries."},
-  {"tag": "Chinese", "on": "2026-10-28", "html": "Chinese: every HUD hover now reads in Chinese in live mode too (node orbit, peers, votes, approvals, block pace, reorgs and restarts), and the Chinese story has its own address to share, tauhud.com/story/zh, with a Chinese link preview. A link copied from the Chinese site keeps ?lang=zh, so it opens in Chinese."},
-  {"tag": "v17.29", "on": "2026-10-28", "html": "Chain core: the Tau HUD node breathes a soft green while it reads the real chain (red in the Chinese version), its label reads “Tau HUD”, and the validator is named IDNI on the live chain, with a line in its hover saying that IDNI’s bootnode is the only validator right now. Update log: the list scrolls inside its panel and older entries appear as you reach the bottom, no button."},
-  {"tag": "Playground", "on": "2026-10-28", "html": "Playground: on the validator seat you can now write your own proposal. A fourth card, “Write your own”, opens a guided editor: change the base fee, add or remove a validator, or write any network rule. It is checked as you type, then goes through the same vote, quorum and activation as the ready-made proposals; the simulated validators vote no on a big jump."},
-  {"tag": "v17.30", "on": "2026-10-28", "html": "Effort, counted rather than claimed: the Updates panel shows changes pushed to the public repository, days since its first commit and releases listed in this log (hover for the sources), and “Keep it running” in About carries the same numbers in one quiet line. Nothing is typed by hand; hours are not counted anywhere."},
-  {"tag": "Nodes", "on": "2026-10-28", "html": "Nodes: the numbers at the top count the whole network now, our node and IDNI’s included, and say which of them are community nodes."},
-  {"tag": "v17.31", "on": "2026-10-28", "html": "Updates overlay: the empty space under “Your feedback” now holds a compact “Keep it running” card, the same address and QR code as in About, with the copy button, what the money helps pay for and the supporters line; feedback, update log and support sit together as “how this gets built”. Fits without scrolling down to 1280×720. The effort numbers hide instead of showing a wrong count when GitHub does not answer."},
-  {"tag": "Simulation", "on": "2026-10-28", "html": "Simulation on every page: the Live node / Simulation switch in the header now holds for the whole site. In Simulation, Explorer, Accounts, Time travel, Stats, Proposals, Nodes, Status, Developers and the embed widgets all show the same made-up chain, generated in your browser from the documented protocol: 8 s per block, rule changes proposed, voted, in force or dropped, rule offers accepted or refused, personal rules that refuse transfers, a restart every day at 00:00 UTC. Every page says so: amber Mode chip, a striped “Simulation · no real chain data” badge, a footer line and the page title. Live node is unchanged and remains the default."},
-  {"tag": "v17.32", "on": "2026-10-28", "html": "One simulation for every page: when you choose Simulation, the HUD now reads the same made-up chain as the Explorer, Accounts, Stats, Nodes and the other pages (generated in your browser from the clock, so every page shows the same block at the same moment) through its live code path, including the node orbit and the validators. The Live node / Simulation switch is shared across pages. The built-in engine remains the opening picture until the relay answers."},
-  {"tag": "v17.33", "on": "2026-10-28", "html": "Simulation marking in the same amber as the other pages: the Mode chip and its dot, the “Simulation · no real chain data” bar (striped amber) and the SIM tags on the block cards. Amber stays amber in the Chinese version."},
-  {"tag": "v17.34", "on": "2026-10-28", "html": "The simulation never restarts at block 0 any more: the HUD opens on the shared clock-driven chain from the first frame, the same one every other page shows, so moving between pages continues the same simulation at the same height. The relay still takes over on the HUD once it answers, unless you chose Simulation. The built-in engine remains only as a fallback when the shared engine is not loaded."},
-  {"tag": "Nodes", "on": "2026-10-28", "html": "Nodes: a node someone starts for a few minutes no longer makes the node count jump; a new node that stays half an hour gets one post in the Telegram channel."},
-  {"tag": "v17.35", "on": "2026-10-28", "html": "Chain core: the hover for another node on the network now says what that node does (keeps its own copy of the chain, checks every block for itself) rather than what it is not; Technical adds the short peer id. The node orbit follows the relay’s steadier online rule for peers and keeps the last good list when one request fails, so the count no longer flickers on refresh."},
-  {"tag": "Stats", "on": "2026-10-28", "html": "Stats: the block time chart stays readable with thousands of blocks. Past about one block per 4 pixels it groups the blocks into equal time slots and shows the median per slot as a line, the middle half of the blocks as a shaded band and unusually slow blocks as dots; the axis starts near the data when every block is about as fast (the 8 s simulation). Hover a slot for its median, spread and slowest block."},
-  {"tag": "v17.36", "on": "2026-10-28", "html": "Chain core: the orbit of waiting transactions is now a ring of its own. Hover it and it lights up like the other rings, with a short text: how many transactions are waiting, what kinds, how long the oldest has waited, and in Technical the alpha node’s habit of listing sealed transactions for up to an hour. Click opens a list of the waiting transactions, oldest first, with explorer links when live. The node orbit hover also says when a node shows up there (after 10 min on the network, kept 30 min after last contact) and why."},
-  {"tag": "Time travel", "on": "2026-10-28", "html": "Time travel: the timeline now zooms. Wheel or + − zooms around the pointer, a strip below shows the whole chain and a window you drag to choose the part shown above; double-click or “Whole chain” shows everything again. Rule changes outside the shown part give their rows back, transaction bars are grouped per pixel so long chains stay readable, revision labels appear only where they fit, and the current block sits as a pill on the axis."},
-  {"tag": "Stats", "on": "2026-10-28", "html": "Stats, second pass: the block time headline says how many blocks were slow (over 1.5× the median) and the legend explains the dots and the ▲ for blocks off the scale; on a very steady chain the axis starts closer to the data. Chain restart dates sit below the timeline instead of under the bars. Community nodes and Dropped transactions explain themselves in one short paragraph when they are empty, and the restart list gets more room on 16:9. Tile hovers read as one sentence."},
-  {"tag": "v17.37", "on": "2026-10-28", "html": "Chain core: the node orbit no longer shows the opening simulation’s nodes (alice-node, bob) for a moment after the switch to the live chain. Each node list is tagged with the feed that filled it; the live orbit shows only Tau HUD’s node until the relay’s own answer arrives, and an answer that belongs to the previous feed is discarded. No more flicker between “just us” and “us plus two” on refresh."},
-  {"tag": "Simulation", "on": "2026-10-28", "html": "A livelier simulation, announced in advance. The made-up chain now refuses transactions the way the node would: not enough balance, a used sequence number, a fee below the base fee, expired before a block took it, a rule that does not compile, and the sender’s own rule saying no. Each refusal waits in the queue, then shows in the Explorer’s Refused list with its reason. Every hour the day’s programme brings a special rule change, proposed at hh:20 and in force at hh:30: proof of stake on (the richest accounts seal the blocks), a validator admitted, the majority threshold, back to the fixed list, a validator removed, the two-thirds threshold, and so on; at midnight the chain starts over. The amber badge in the header counts down to the next one on every page, its hover lists the next three, and the Proposals page shows them under “Scheduled in the simulation”."},
-  {"tag": "v17.38", "on": "2026-10-28", "html": "The simulation badge on the HUD now counts down to the next event of the simulated day’s programme, the same text as on every other page: “Simulation · majority rule in 40 min”, then “now”. Hover it for the next three events with their UTC times. Outside the last hour before an event it reads “Simulation · no real chain data” as before. Simulation mode only; the live chain is untouched."},
-  {"tag": "v17.39", "on": "2026-10-28", "html": "The simulation badge, on the HUD and in the header of every other page, now talks about the day’s programme as chain events worth watching: “Simulation · in 33 min: the fixed validator list returns”, “validators are voting: proof of stake takes over in 4 min”, “agreed: …”, “now: …”. The hover says what happens and why it matters, where to watch it on the page, that every change is proposed 10 minutes ahead and voted on like a real rule change, then the next three events in your local time and UTC, and the short notice that it is simulated. In the last five minutes the badge pulses; the HUD bar adds a “Watch in Proposals” link."},
-  {"tag": "Press films", "on": "2026-10-28", "html": "Press kit: eight short films with sound, one per feature, in English and Chinese. Take a validator seat, write your own proposal, check a rule, the Explorer’s “what happened to it?”, accounts, time travel, the chain core and running a node, each about half a minute, recorded on this site and free to use. Also fixed: the check lines in the Playground’s “Write your own” form no longer squeeze into a narrow column."},
-  {"tag": "Proposals", "on": "2026-10-28", "html": "Proposals page on the live node, like the simulation: “Coming up on the testnet” lists each agreed change in a short card with what it does, why it matters, the block where it takes effect, the expected date and time from the real block pace and a countdown (“in 3 d 7 h”). Proposals still waiting for votes follow in the same form."},
-  {"tag": "Proposals", "on": "2026-10-28", "html": "Rules over time on the live node, as compact as in the simulation: a proposal on the real testnet is agreed within a few blocks but takes effect thousands of blocks later, so each one is now a short mark up to its vote and a diamond at the block where it takes effect, instead of eleven long overlapping lines."},
-  {"tag": "v17.40", "on": "2026-10-28", "html": "Chain core: the waiting-room ring is easy to hit now. Its hover band covers the whole orbit the transactions travel in, a faint dotted guide circle shows where it is even when empty, and a transaction dot only takes the hover when the pointer is right on it. The dots themselves are unchanged. Also: Chinese texts for the header’s consensus chip (proof of stake, validator list in Tau, switches so far)."},
-  {"tag": "Press", "on": "2026-10-28", "html": "Press kit, reordered: the films come first and largest. One player with Tau in 60 seconds and the eight feature films as posters below it, each with its own downloads. Then the paragraph and facts, the logo and screenshots, and the embeds last. In Chinese the film lengths now match the Chinese cuts and the consensus chip reads 权益证明 in proof of stake mode."},
-  {"tag": "Simulation", "on": "2026-10-28", "html": "Simulated consensus switches on Telegram, and a calmer programme. The simulation now switches consensus twice a day instead of every three hours: proof of stake takes over at 10:30 UTC (proposed at 10:20), the fixed validator list returns at 16:30 UTC (proposed at 16:20); the other hours keep their rule changes (a validator admitted, the majority threshold, a validator removed, the two-thirds threshold). These two switches, and only these, are announced on the Telegram channel the moment they are proposed, 10 minutes ahead: the post starts with “SIMULATION · not the real testnet”, says why it matters and what to watch, and ends with the simulated notice and one button that opens the site in Simulation mode. The programme’s blocks now land on the exact minute. The Proposals page describes the scheduled events in the words of the header badge: what happens, why it matters, where to watch it, listed after the open proposals."},
-  {"tag": "Press", "on": "2026-10-28", "html": "Tau in 60 seconds now has sound: the same quiet tones as the feature films, a soft tick per block, a glass note per check and vote, a warm chord when the change is agreed and when it becomes law. It still works muted. On the press kit the film posters are larger."},
-  {"tag": "v17.41", "on": "2026-10-28", "html": "The live chain gets the same “coming up” treatment as the simulation: when a rule change is agreed but not yet in force, the header of every page shows a green chip “Coming up · in ~2 d 15 h: New rule for valid blocks”, pulsing in the last five minutes, counted down from the relay’s block pace. Hover for why the change matters, the activation block with its estimated UTC time, the next three activations and a link to Proposals. The simulation hover now lists times in your own clock with UTC in brackets. Chinese throughout."},
-  {"tag": "v17.42", "on": "2026-10-28", "html": "The green “Coming up” chip now sits next to the mode chip on the HUD too, in Live mode only: an agreed rule change that is not yet in force, with the same countdown and hover as in every subpage header. Keep it running (About and the Updates card) now names the costs honestly: the time it takes to keep everything in step with the testnet and the development tools behind that work; the server itself is cheap. The line reads “time · tools · server · domain”."}
+ {
+  "tag": "v1",
+  "on": "2026-10-26",
+  "html": "First HUD: Tau consensus engine, validator core, transaction stream, block ribbon, governance, live-node mode."
+ },
+ {
+  "tag": "v2",
+  "on": "2026-10-26",
+  "html": "Focus on what makes Tau different: rule changes by validator agreement, rule sharing between accounts, personal Tau policies and the composite spec. Feedback inbox, unofficial-project notice, this update log."
+ },
+ {
+  "tag": "v3",
+  "on": "2026-10-26",
+  "html": "Info icons with explanations on every panel. Tau principles strip. Proposals show the isolated compile check and can be refused for contradicting the live spec; a quorum change shows a rule amending its own amendment rule; rule offers show the conflict report. Links to the Tau papers."
+ },
+ {
+  "tag": "v4",
+  "on": "2026-10-26",
+  "html": "Everything on one screen: a 4×2 command grid with a thesis line for newcomers, feedback and about moved into pop-ups."
+ },
+ {
+  "tag": "v5",
+  "on": "2026-10-26",
+  "html": "Rebrand: Tau’s near-black and blue-to-violet gradient for structure, phosphor green reserved for data and truth, champagne for agreement. Matrix glyph rain behind the deck, the thesis decodes on load, hairline glass panels, Sora + JetBrains Mono. AGRS donation address under About."
+ },
+ {
+  "tag": "v6",
+  "on": "2026-10-26",
+  "html": "Monochrome like the current tau.net: black, white, greys and hairlines, with phosphor green as the only accent, where data is live or true."
+ },
+ {
+  "tag": "v7",
+  "on": "2026-10-26",
+  "html": "Wording and hierarchy pass: one core sentence up top, plain-language panel titles, every number with its context (“7 of 9 needed”), refusals marked ✕ as well as red, stream codes moved into the hover notes, quieter glyph rain."
+ },
+ {
+  "tag": "v8",
+  "on": "2026-10-26",
+  "html": "From a simulated study with 100 reader personas: simulation is now unmissable (banner, watermark in the core, SIM tag on every block card), a Simple/Technical switch with plain-language stream labels, a 5-step tour that follows one rule from proposal to active, clickable blocks with a full detail view (rules in force and agreed at that block), a “Chain state” view of every rule in force right now, no more clipped values, a compact core on laptops, live-node fields only in Live mode with a checklist on failure, a “What is Tau?” link, symbols per transaction type, AGRS amounts, and a rain switch."
+ },
+ {
+  "tag": "v9",
+  "on": "2026-10-26",
+  "html": "Calmer: blocks every ~8 s. A block’s details now open inline under the block cards instead of a pop-up (the newest block is shown until you pick one). New always-visible panel “Rules in force now” on the right; the node log moved below it and only shows in the Technical view. Block-card footer no longer wraps."
+ },
+ {
+  "tag": "v9.1",
+  "on": "2026-10-26",
+  "html": "Simple/Technical switch moved to the right side of the header, under the status chips."
+ },
+ {
+  "tag": "v10",
+  "on": "2026-10-26",
+  "html": "The contrast is now visual, not just verbal: “How a rule changes” strip in the Rule changes panel (other chains: propose, months of debate, vote, hard fork, everyone upgrades; Tau: propose, checked, agreed, active, lit live from the current proposal), and in the core every sealed block draws the agreement of all validators and rule-holding accounts flowing into it (“the agreed rules of everyone → block”)."
+ },
+ {
+  "tag": "v10.1",
+  "on": "2026-10-26",
+  "html": "QR code next to the donation address (scan to donate). No more hexagons: the core is built from rings and the rule-holding accounts are ringed dots. “How a rule changes” laid out on one shared grid: both rows use the same four columns, each step has a one-line note, the clock sits with the row label, and the Tau row shows the live vote count and activation block."
+ },
+ {
+  "tag": "v11",
+  "on": "2026-10-26",
+  "html": "Renamed to “Tau HUD”. Tau steps show their state: done (green), in progress (amber, gently pulsing, e.g. “collecting 2/3”), next (dimmed). Disclaimer added (experimental, no claim of accuracy, no advice). Tau step boxes given room. Any clipped text (step notes, hashes, rule names, transaction rows) shows in full as an overlay on hover, or on tap on phones. “How a rule changes” now encodes time as length, so both tracks compare on one scale: the Other-chains track spans the whole row with its slow, fragmenting steps (months of debate, a fork that can split the chain, manual upgrades), the Tau track is a short green segment followed by “done.”"
+ },
+ {
+  "tag": "v12",
+  "on": "2026-10-26",
+  "html": "Everything explains itself: hover any transaction, rule-change card, shared rule, personal rule, block card, validator, stream row, the active consensus spec and the composite rule for a plain-language explanation with the live numbers. The whole “Rules in force now” panel opens the full chain state."
+ },
+ {
+  "tag": "v12.1",
+  "on": "2026-10-26",
+  "html": "Transaction hovers cut to the essentials that the row does not already show; the feed holds still while you hover it."
+ },
+ {
+  "tag": "v12.2",
+  "on": "2026-10-26",
+  "html": "Rule sharing, rule changes and personal rules: hovers cut to the essentials. No live panel re-renders while the pointer rests on it, so an open overlay stays until you move away."
+ },
+ {
+  "tag": "v12.3",
+  "on": "2026-10-26",
+  "html": "The Tau row of “How a rule changes” now moves step by step: propose (in mempool) → checked (compiling) → agreed (votes) → active, each phase visible. When a change takes effect the whole row lights up green for a moment."
+ },
+ {
+  "tag": "v13",
+  "on": "2026-10-26",
+  "html": "Phone layout: compact header (name, view switch, one-line notice, swipeable status chips, main buttons plus a More menu), reading order core → rule changes → rules in force → blocks → detail, comparison rows wrap with every word readable, tap-to-explain works reliably, block details stay short."
+ },
+ {
+  "tag": "v13.1",
+  "on": "2026-10-26",
+  "html": "Tau HUD has a mark: a pulse inside the ring of its rules. It beats once per block in the header, in the favicon (animated SVG, and a canvas-drawn beat where browsers show SVG favicons static) and on the share preview."
+ },
+ {
+  "tag": "v13.2",
+  "on": "2026-10-26",
+  "html": "Mouse wheel over the block strip steps through the chain: down goes back in time, up toward the newest block, the detail below follows. “n online” chip in the status row: how many people have Tau HUD open right now, with a green light when anyone is there. Counted by the community relay, no analytics; shows “—” until the relay is live."
+ },
+ {
+  "tag": "v13.3",
+  "on": "2026-10-26",
+  "html": "New block cards appear the moment a block is sealed, also while the pointer rests on the strip (before, the strip waited until you moved away)."
+ },
+ {
+  "tag": "v13.4",
+  "on": "2026-10-26",
+  "html": "“How a rule changes”: one proposal at a time, so every run starts at propose and each step lights up in real time. The Tau row now ends under “vote”; fork, splits and upgrading by hand belong to the other chains only. The “length = time” caption is gone."
+ },
+ {
+  "tag": "v13.5",
+  "on": "2026-10-26",
+  "html": "The “block accepted” moment: the seal stamps down, the check draws itself, a ring rings out and the panel edge glows for a second. Once a rule change is absorbed into the network, the step boxes reset; the next proposal starts from an empty row."
+ },
+ {
+  "tag": "v13.6",
+  "on": "2026-10-26",
+  "html": "The step row resets in the same instant the activating block is sealed: one short green flash with the block, then empty, ready for the next proposal."
+ },
+ {
+  "tag": "v13.7",
+  "on": "2026-10-26",
+  "html": "Block-card and validator hovers cut to the essentials the card does not already show. The “block accepted” seal sits centred in its own space instead of hugging the corner."
+ },
+ {
+  "tag": "v13.8",
+  "on": "2026-10-26",
+  "html": "Chain core explains itself: hover (or tap) a validator, the agreement ring, a rule account, a mempool dot, the block in the centre or the outer rim for a short line on what it is and what it is doing right now."
+ },
+ {
+  "tag": "v13.9",
+  "on": "2026-10-26",
+  "html": "Lines to the core now mean something: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle. Said in the hover line and in the panel’s “i”."
+ },
+ {
+  "tag": "v14.0",
+  "on": "2026-10-26",
+  "html": "Live node reachable: the default address is now the community relay wss://node.tauhud.com in front of a Tau testnet node run for this page. Simulation stays the default view until the node has caught up with the chain. The “online” chip now counts every open tab, simulation or live, through a quiet presence socket."
+ },
+ {
+  "tag": "v14.1",
+  "on": "2026-10-26",
+  "html": "Live by default: the page opens on the real Tau testnet through the community relay whenever it is running, and shows the simulation only when it is not. The green light on “Live node” says the relay is up, whichever view you are in. Live node now comes first in the switch, and your own choice is remembered on this device."
+ },
+ {
+  "tag": "v14.2",
+  "on": "2026-10-26",
+  "html": "The relay light on “Live node” is bigger, ringed in black so it reads on the white selected state too, and pulses while the relay is up."
+ },
+ {
+  "tag": "v14.3",
+  "on": "2026-10-26",
+  "html": "Simulation is the default view again for now: the community node sits on an orphan chain until IDNI publishes the current genesis, so its blocks are not the real tip. Live node and its light stay one click away; Live becomes the default again once the node follows the real chain."
+ },
+ {
+  "tag": "v14.4",
+  "on": "2026-10-26",
+  "html": "A third live state: while the community node is connected but not synced with the real chain, the relay light and the mode chip turn amber and read “Live · Not synced”. Green and “Connected” only when the node follows the network’s tip."
+ },
+ {
+  "tag": "v14.5",
+  "on": "2026-10-27",
+  "html": "Hardening: the page tells the browser to upgrade any insecure request, and a pasted ws:// node address becomes wss:// on an https page (localhost excepted), so the lock stays intact."
+ },
+ {
+  "tag": "v15",
+  "on": "2026-10-27",
+  "html": "From GitHub feedback #1: every principle card now says whether it was seen on the testnet or comes from the protocol, with a link to the tau-testnet line that backs it (pinned to one commit). Failure paths are shown on purpose: some proposals now miss quorum and expire with a red moment in the rule row, the “n refused” chip on Transactions counts and filters what Tau refused, and the ~1 minute rule-change timing is marked as simulated."
+ },
+ {
+  "tag": "v15.1",
+  "on": "2026-10-27",
+  "html": "Click any list item for the full picture: transactions (who, what, fee, hash, block, which rule decided and its text), rule offers (checks, rule text, what accepting means), rule changes (votes per validator, diff, path so far), personal rules (rule text and recent effects) and validators. Hover stays short; “open ›” marks the click."
+ },
+ {
+  "tag": "v15.2",
+  "on": "2026-10-27",
+  "html": "Every header chip and button explains itself on hover: network, height, spec revision, base fee, mode, online count, the Live/Simulation switch, the view switch and the menu buttons, each in one line with where the value comes from."
+ },
+ {
+  "tag": "v15.3",
+  "on": "2026-10-27",
+  "html": "Wide screens: from 2200 px the whole HUD scales to fill the screen (up to 1.7×) instead of stretching its columns, so line lengths, the layout and the one-screen rule stay as designed while type, numbers and the chain core grow. The validators column now shrinks with the screen instead of adding a scrollbar at 1080 px height."
+ },
+ {
+  "tag": "v15.4",
+  "on": "2026-10-27",
+  "html": "Wide screens, second pass: the chain core now spans both rows in the centre and is the largest thing on the screen, the validators column gets the full height, and the scale is set from a 2400 px design width instead of 1800, so panels keep their proportions."
+ },
+ {
+  "tag": "v15.5",
+  "on": "2026-10-27",
+  "html": "Wide screens, third pass: the blockchain panel gets double width and double height and its block detail flows into four columns instead of a scroll box; the block check shows every rule row; the scale is set so each panel keeps at least its desktop room. No label is cut off any more: the rule-change strip, check rows and transaction lines wrap whole words instead of ending in “…”. In the simple view the block detail shows short hashes, the technical view shows them in full."
+ },
+ {
+  "tag": "v15.6",
+  "on": "2026-10-27",
+  "html": "Wide screens, fourth pass: the chain core is a true circle at every size (its canvas is now the largest square that fits, no more stretching on tall screens), the validators column takes only the top half and the blockchain panel runs across the whole bottom right. Labels in every key-value list (spec revision, base fee, state hash, …) explain themselves on hover. Live mode: block pace comes from the blocks’ own timestamps (average of the last ten, plus how long the last block took), and the rule-change timing shows the node’s own minimum activation delay instead of the simulated “~1 min”. Both count down second by second to the next expected block, reset with every new block, and the line under Block pace says when a block runs late. On 16:9 wide screens the left column (block check, rule changes) is wider and taller at the top. While the node is still catching up with the chain (or the chain is idle), the countdown pauses and the line under Block pace says how old the newest block is; if the relay reports that the node has verified the state only up to an older block, the mode chip turns amber: “Live · Verified to #n of tip”. The Tau row follows the real proposal: “waits for n votes” while a proposal collects agreement (time cannot help there), a countdown to the activation height once it is agreed. Live wording no longer assumes that only validators vote: the threshold comes from the validator count, who may vote is a network setting."
+ },
+ {
+  "tag": "v15.7",
+  "on": "2026-10-27",
+  "html": "Rule Playground: a new page at <a href=\"playground/\">/playground/</a> where you write your own transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. Linked from the header (“Playground”) and from the validators panel."
+ },
+ {
+  "tag": "v15.8",
+  "on": "2026-10-27",
+  "html": "Node log: the panel shows whole lines (time in its own column, nothing cut off) with more room, and a click opens the full log in the detail view, newest first, with counts of refusals and governance events. Chain core: every label (agreement, validators, “the agreed rules of everyone”) sits on a dark plate, so no ring crosses the letters. Detail views: every check chip (i10 signature, o6 block valid, o7 proposer eligible, o9 fee, o5 sender rule, the admission checks of a rule offer, the steps of a proposal) explains itself on hover. Live: when the relay reports a chain reset (the node discarded a chain the network abandoned), the page forgets the old blocks and rebuilds from the new ones."
+ },
+ {
+  "tag": "v15.9",
+  "on": "2026-10-27",
+  "html": "Header: links to the new <a href=\"stats/\">Stats</a> and <a href=\"history/\">Time travel</a> pages; a block’s full detail links to the rules in force at that height. Rule changes by agreement: when an agreed change was scheduled far ahead by the proposal itself, the Tau row says so (“at #5028”, “agreed in n blocks”) instead of counting down the proposer’s wait as if it were Tau’s speed. Block detail: when the full detail would need scrolling at your screen size, a one-glance summary takes its place and a click opens the full detail. Every detail window scrolls inside the screen. Screens up to 900 px tall get the scrolling layout."
+ },
+ {
+  "tag": "v16.0",
+  "on": "2026-10-27",
+  "html": "Guided tour for newcomers: eight short steps, about a minute, from “rules change by agreement” through block check, proposal, votes, the core, activation and personal rules to the playground. Offered once on the first visit (“Not now” is remembered), always available from the header; arrow keys step, Escape ends."
+ },
+ {
+  "tag": "v16.1",
+  "on": "2026-10-27",
+  "html": "Phones and tablets: header chips wrap instead of scrolling sideways, panel subtitles, provenance lines and block values wrap instead of being cut off, the chain core uses the full width, a tap on a button no longer leaves a tooltip behind. Desktop: the “from the protocol / seen on the testnet” lines under the thesis cards wrap instead of being cut off."
+ },
+ {
+  "tag": "v16.2",
+  "on": "2026-10-27",
+  "html": "Accounts: a new page at <a href=\"account/\">/account/</a> shows balance, own rules, offers, activity and refusals of any account; linked from the header, and on the live chain every address in the HUD (transactions, blocks, proposer, validators, rule holders, offers) links to its account."
+ },
+ {
+  "tag": "v16.3",
+  "on": "2026-10-27",
+  "html": "Proposals: a new page at <a href=\"proposals/\">/proposals/</a> tracks every rule change and offers Telegram, X and RSS alerts; linked from the header, and the feedback panel links the Telegram channel."
+ },
+ {
+  "tag": "v16.4",
+  "on": "2026-10-27",
+  "html": "Personal money rules: the examples now show what Tau itself advertises: a second approval above an amount (the transfer parks as an approval request and executes when the approver signs, with a countdown in blocks), a lock until a block height instead of a clock time, spending limits, whitelists and co-signatures. Live mode shows approval requests only when the node reports them. Validators: the consensus mode (fixed validator list, list in Tau logic, or stake-based) and how often it was switched by agreement. Blockchain: a fork radar counting reorgs (with depth) and testnet restarts."
+ },
+ {
+  "tag": "v16.5",
+  "on": "2026-10-27",
+  "html": "Live: approval requests and their signatures are read from the blocks themselves (approval_request and transfer_vote transactions), the fork radar also counts the reorgs and restarts the relay remembers."
+ },
+ {
+  "tag": "v16.6",
+  "on": "2026-10-27",
+  "html": "Chronicle: a new page at <a href=\"chronicle/\">/chronicle/</a> tells the project’s history and milestones; linked from the header."
+ },
+ {
+  "tag": "v16.7",
+  "on": "2026-10-27",
+  "html": "The “online” count now counts people, not open connections: a random token in your browser (no cookies, no analytics) tells the relay that your tabs and the subpages are one visitor. Takes effect once the relay is updated."
+ },
+ {
+  "tag": "v16.8",
+  "on": "2026-10-27",
+  "html": "Validators panel: the three consensus modes (fixed list › list in Tau logic › stake) are shown as a strip at the top, the active one lit in green, a mode the chain ran in before a switch dashed; hover explains each."
+ },
+ {
+  "tag": "v17.0",
+  "on": "2026-10-27",
+  "html": "New header on every page: HUD · Explore · Learn · Playground as menus with one line per page, Chain state as the only button, Telegram channel in green, Updates with a dot when there is something new, View and settings (node address, rain) on the right. The current section is underlined in green. Same bar on all seven pages; on phones it becomes a tab bar at the bottom. The idea: the same navigation everywhere with a clear “you are here”, details only when you ask for them, and emphasis by making everything else quieter."
+ },
+ {
+  "tag": "v17.1",
+  "on": "2026-10-27",
+  "html": "Live mode links into the Explorer page: the hash in a block’s identity opens the block there, the id on a transaction card opens the transaction. The Nodes entry in the Explore menu is marked “soon” until that page is online (it led to a 404)."
+ },
+ {
+  "tag": "v17.2",
+  "on": "2026-10-27",
+  "html": "Every page now carries the whole HUD header: brand row with the page title, the status chips (mode, online, network, height, spec revision, base fee, read from the community relay), Live node / Simulation, View and the gear. Only the title and the active section change when you move between pages."
+ },
+ {
+  "tag": "v17.3",
+  "on": "2026-10-27",
+  "html": "The green “you are here” line under a section name is now exactly as wide as the word and sits right under it (it used to float below the whole button, caret included)."
+ },
+ {
+  "tag": "v17.4",
+  "on": "2026-10-27",
+  "html": "The online counter counts people again, not open tabs: the 20-second status poll was overwriting the relay’s per-person count with its socket count."
+ },
+ {
+  "tag": "v17.5",
+  "on": "2026-10-27",
+  "html": "About fits the screen: on wide screens its sections sit in three columns, so the whole text and the donation address are visible without scrolling. The Telegram offer says what you get: every rule change and chain restart as it happens, a weekly recap picture, HUD updates; the header pill reads “Telegram alerts”, and the Updates panel carries the same line."
+ },
+ {
+  "tag": "v17.6",
+  "on": "2026-10-27",
+  "html": "About breathes: a solid background, 32px around, a clear gap between the notice strip and the columns, wider gutters, consistent spacing under every heading. Still no scrolling on wide screens."
+ },
+ {
+  "tag": "v17.7",
+  "on": "2026-10-27",
+  "html": "The light on “Live node” is a traffic light on every page: green when the community node is synced, amber when it is online but not synced or still catching up, red when it is offline. Hover names the state."
+ },
+ {
+  "tag": "v17.8",
+  "on": "2026-10-27",
+  "html": "Guided tour: each explanation now sits next to the panel it describes, with a pointer at it (below the panel, else beside or above it, always inside the window). On phones it stays a sheet at the bottom."
+ },
+ {
+  "tag": "v17.9",
+  "on": "2026-10-27",
+  "html": "Rule sharing lines wrap instead of ending in “…”; laptops (1280–1599 px wide or under 900 px tall) get a compact four-column step so the page is about 1.6 screens instead of 2.7; no type below 10 px on desktop, and ultra-wide screens scale the HUD a little more."
+ },
+ {
+  "tag": "v17.10",
+  "on": "2026-10-27",
+  "html": "Proposal wording matches the Proposals page: “waiting for votes” and “agreed, takes effect soon” in the Chain state detail and validator history, instead of “collecting agreement” and “scheduled”."
+ },
+ {
+  "tag": "v17.11",
+  "on": "2026-10-27",
+  "html": "Validators, Rules in force now and Node log fit their column in Technical view: on wide screens the column has the full height, laptops show every panel whole and scroll. The Simple/Technical switch appears only on pages where it changes something."
+ },
+ {
+  "tag": "v17.12",
+  "on": "2026-10-27",
+  "html": "The Telegram bot answers questions: write height, proposals, a transaction hash or an address to @tauhud_alerts_bot. Mentioned in the Telegram chip, About and here."
+ },
+ {
+  "tag": "v17.13",
+  "on": "2026-10-27",
+  "html": "The Live node light can no longer stick on green: the status request times out after 8 seconds, a minute without an answer turns it red, and the relay’s health score colours it (degraded amber, down red). Same on every subpage."
+ },
+ {
+  "tag": "v17.14",
+  "on": "2026-10-27",
+  "html": "Press kit under Learn: a ready paragraph, the facts, the 60 second video in three formats, the logo for dark and light, screenshots and a ZIP of everything. Design pass, part one: red is reserved for offline and down, refusals and the fork step are white with ✕ or a strike; fewer boxes inside Rule changes; panel subtitles in sentence case, instructions moved into the (i) hover; Rules in force now shows revision and fee large and the rest as one sentence; header chips show the value only, the name is in the hover, and a new Consensus chip says who seals blocks; validator keys in the chain state are short with a copy button; the background rain is off unless you switch it on."
+ },
+ {
+  "tag": "v17.15",
+  "on": "2026-10-27",
+  "html": "Design pass, part two: one type scale and one spacing scale on the HUD, this log shows one line per version with the details folded away, and a search field in the header (⌘K or Ctrl+K) sends a block number, hash or address to the Explorer. Design pass on all pages: Feedback in the footer, compact phone header, offline states, one type scale, readable line length; Telegram posts lead with why it matters."
+ },
+ {
+  "tag": "v17.16",
+  "on": "2026-10-27",
+  "html": "Blockchain strip scrolls like a film, and About says what a donation pays for: the mouse wheel glides through the blocks instead of stopping at each one, the detail below follows the block at the right edge, and scrolling back keeps loading older blocks from the relay all the way to genesis; “back to newest” returns to the live end. The donation section is now “Keep it running”: what the project costs (mostly time), what a donation pays for, no banner, no pop-up. The thesis that resolves out of glyph noise on load now does it in phosphor green: brightest at the resolve front, dimmer further out, white once settled, and the paragraph no longer shifts while it resolves."
+ },
+ {
+  "tag": "v17.17",
+  "on": "2026-10-28",
+  "html": "Decode effect: the unresolved glyphs now run a gradient from the settled text outward, white next to the resolved letters, through pale green into full phosphor green by the twelfth glyph, then dimmer the further out."
+ },
+ {
+  "tag": "v17.18",
+  "on": "2026-10-28",
+  "html": "The first donation came in, thank you. About now shows who supported Tau HUD, read straight from the Ethereum chain: one quiet line under the donation address with the number of supporters and the latest donations, each sender only as a shortened address linked to its transaction. Every new donation also gets one thank-you post in the Telegram channel. AGRS and ETH only; no banner, no goal bar. tauhud.com/#donate opens About at the donation address."
+ },
+ {
+  "tag": "v17.19",
+  "on": "2026-10-28",
+  "html": "Chain core: Height, Waiting and User rules carry a line of context like Block pace does. Height says when the last block came and how old the chain is, Waiting counts pending transactions and how long the oldest has waited, User rules says how many are in force and where the last one was deployed. Hovering each number explains it. In the circle, whatever your pointer rests on lights up green while its text shows, the outer rim answers to a wider band that reaches outside the ticks, and the three grey arcs that used to turn just inside the rim are now one quiet circle, the validator orbit, with its own text."
+ },
+ {
+  "tag": "v17.20",
+  "on": "2026-10-28",
+  "html": "Chain core shows every agreed rule change, not just one: the agreement ring carries one marker per change that waits for its activation height, clockwise in activation order, the next one bright, and the label says “4 agreed · next #5028”. An open vote still fills the same ring toward quorum. Hover a marker for the proposal, what it changes and when it takes effect."
+ },
+ {
+  "tag": "v17.21",
+  "on": "2026-10-28",
+  "html": "Header: the green “new updates” dot now sits at the top right of the word Updates, two pixels from the last letter, on every page. It used to float far to the right on the HUD."
+ },
+ {
+  "tag": "v17.22",
+  "on": "2026-10-28",
+  "html": "Simple and Technical view mean more on the HUD: Simple says what each thing means, Technical adds keys, hashes, heights and stream names. Every hover text in the Chain core now comes in both versions, validators read V1, V2 in Simple and show their key in Technical, the block check hides stream names in Simple, transactions show kind and fee without the hash, and the Validators panel follows the view. The thesis and its four points stay as they are."
+ },
+ {
+  "tag": "v17.23",
+  "on": "2026-10-28",
+  "html": "Header: the logo and the words “Tau HUD” at the top left are one link back to the main page, on every page."
+ },
+ {
+  "tag": "v17.24",
+  "on": "2026-10-28",
+  "html": "Header, right side: the word “View” is gone (the hover on the switch says what Simple and Technical do), the language switch is a two-way pill like Simple/Technical with EN and 中文, and a thin line separates the text links from the two switches. Same on every page."
+ },
+ {
+  "tag": "Playground",
+  "on": "2026-10-28",
+  "html": "Playground: a visible “Check rule” run with a softer engine limit, refused checks in a muted red, hover and click explain each check, and on the validator seat proposals are the obvious first step."
+ },
+ {
+  "tag": "Findings",
+  "on": "2026-10-28",
+  "html": "Findings: shows what IDNI already fixed, and all findings sit on one screen."
+ },
+ {
+  "tag": "Chinese",
+  "on": "2026-10-28",
+  "html": "Chinese version: the whole site reads in 中文; switch with the EN | 中文 pill in the header. Every HUD hover, the press kit and the subpages are translated, and the choice is remembered."
+ },
+ {
+  "tag": "Time travel",
+  "on": "2026-10-28",
+  "html": "Time travel: rule-change rows are capped, no-op proposals share one row and the overflow folds into “+N more”; the proposal detail sits in two columns so it fits without scrolling."
+ },
+ {
+  "tag": "Story",
+  "on": "2026-10-28",
+  "html": "Story: stops at every step; scroll to play it faster, then move on."
+ },
+ {
+  "tag": "Chronicle",
+  "on": "2026-10-28",
+  "html": "Chronicle: one screen without scrolling (six columns, compact moments, details under the timeline); clicking a moment opens its details inside the era card, a second click closes it."
+ },
+ {
+  "tag": "Proposals",
+  "on": "2026-10-28",
+  "html": "Proposals: the detail sits in two columns so it fits without scrolling."
+ },
+ {
+  "tag": "Explorer",
+  "on": "2026-10-28",
+  "html": "Explorer: leads with the answer to “what happened to it?”, says why a transaction is stuck, and fits every view on one screen instead of repeating the HUD."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-28",
+  "html": "Telegram alerts: a proposal that is agreed right away gets one post instead of two."
+ },
+ {
+  "tag": "Accounts",
+  "on": "2026-10-28",
+  "html": "Accounts: a rich list with balances, share of supply, sorting and an account preview."
+ },
+ {
+  "tag": "Nodes",
+  "on": "2026-10-28",
+  "html": "Nodes: the board is never empty, joining takes three steps, and the page says what you get for running a node."
+ },
+ {
+  "tag": "v17.25",
+  "on": "2026-10-28",
+  "html": "The update log lives in one shared file now (assets/updates.json) that every page’s release adds a line to, so the log lists the subpages too; today’s subpage releases are listed here. The green dot in the header keys on the newest entry."
+ },
+ {
+  "tag": "Accounts",
+  "on": "2026-10-28",
+  "html": "Accounts: the rich list opens with a clear testnet notice, and its headline says the AGRS are test tokens with no value."
+ },
+ {
+  "tag": "Status",
+  "on": "2026-10-28",
+  "html": "Status: the testnet health score now counts the known mempool bug (IDNI #81). Every transaction that is already in a block but still listed as waiting costs its share of 10 points, and the breakdown lists the bug with what it costs right now."
+ },
+ {
+  "tag": "Nodes",
+  "on": "2026-10-28",
+  "html": "Nodes: the page now counts every node on the network as our node sees it, IDNI’s bootnode included, not only the ones that run our kit; the <a href=\"stats/\">Stats</a> page says it too."
+ },
+ {
+  "tag": "v17.26",
+  "on": "2026-10-28",
+  "html": "The Chain core shows the nodes that keep the chain checkable: a dashed node orbit just inside the validator orbit, one hollow ring per node (Tau HUD’s node bright, community nodes by name, peers our node has met unnamed), and every sealed block travels out to each of them. Hover explains a node, click opens the Nodes page. The update log now loads fresh on every new version and reads in Chinese."
+ },
+ {
+  "tag": "v17.27",
+  "on": "2026-10-28",
+  "html": "Chain core: the node orbit turns slowly, one round in about two and a half minutes. The Tau HUD node’s hover is more balanced, and as long as our node is the only one besides IDNI’s validator it says so: the two are the whole visible network right now."
+ },
+ {
+  "tag": "v17.28",
+  "on": "2026-10-28",
+  "html": "Update log: entries are grouped by day, a green number marks a version of this page (the HUD), a grey name marks a release of another page and opens it; a legend says so. Page entries no longer repeat their page name as the headline, and the fold hides whole days of older entries."
+ },
+ {
+  "tag": "Chinese",
+  "on": "2026-10-28",
+  "html": "Chinese: every HUD hover now reads in Chinese in live mode too (node orbit, peers, votes, approvals, block pace, reorgs and restarts), and the Chinese story has its own address to share, tauhud.com/story/zh, with a Chinese link preview. A link copied from the Chinese site keeps ?lang=zh, so it opens in Chinese."
+ },
+ {
+  "tag": "v17.29",
+  "on": "2026-10-28",
+  "html": "Chain core: the Tau HUD node breathes a soft green while it reads the real chain (red in the Chinese version), its label reads “Tau HUD”, and the validator is named IDNI on the live chain, with a line in its hover saying that IDNI’s bootnode is the only validator right now. Update log: the list scrolls inside its panel and older entries appear as you reach the bottom, no button."
+ },
+ {
+  "tag": "Playground",
+  "on": "2026-10-28",
+  "html": "Playground: on the validator seat you can now write your own proposal. A fourth card, “Write your own”, opens a guided editor: change the base fee, add or remove a validator, or write any network rule. It is checked as you type, then goes through the same vote, quorum and activation as the ready-made proposals; the simulated validators vote no on a big jump."
+ },
+ {
+  "tag": "v17.30",
+  "on": "2026-10-28",
+  "html": "Effort, counted rather than claimed: the Updates panel shows changes pushed to the public repository, days since its first commit and releases listed in this log (hover for the sources), and “Keep it running” in About carries the same numbers in one quiet line. Nothing is typed by hand; hours are not counted anywhere."
+ },
+ {
+  "tag": "Nodes",
+  "on": "2026-10-28",
+  "html": "Nodes: the numbers at the top count the whole network now, our node and IDNI’s included, and say which of them are community nodes."
+ },
+ {
+  "tag": "v17.31",
+  "on": "2026-10-28",
+  "html": "Updates overlay: the empty space under “Your feedback” now holds a compact “Keep it running” card, the same address and QR code as in About, with the copy button, what the money helps pay for and the supporters line; feedback, update log and support sit together as “how this gets built”. Fits without scrolling down to 1280×720. The effort numbers hide instead of showing a wrong count when GitHub does not answer."
+ },
+ {
+  "tag": "Simulation",
+  "on": "2026-10-28",
+  "html": "Simulation on every page: the Live node / Simulation switch in the header now holds for the whole site. In Simulation, Explorer, Accounts, Time travel, Stats, Proposals, Nodes, Status, Developers and the embed widgets all show the same made-up chain, generated in your browser from the documented protocol: 8 s per block, rule changes proposed, voted, in force or dropped, rule offers accepted or refused, personal rules that refuse transfers, a restart every day at 00:00 UTC. Every page says so: amber Mode chip, a striped “Simulation · no real chain data” badge, a footer line and the page title. Live node is unchanged and remains the default."
+ },
+ {
+  "tag": "v17.32",
+  "on": "2026-10-28",
+  "html": "One simulation for every page: when you choose Simulation, the HUD now reads the same made-up chain as the Explorer, Accounts, Stats, Nodes and the other pages (generated in your browser from the clock, so every page shows the same block at the same moment) through its live code path, including the node orbit and the validators. The Live node / Simulation switch is shared across pages. The built-in engine remains the opening picture until the relay answers."
+ },
+ {
+  "tag": "v17.33",
+  "on": "2026-10-28",
+  "html": "Simulation marking in the same amber as the other pages: the Mode chip and its dot, the “Simulation · no real chain data” bar (striped amber) and the SIM tags on the block cards. Amber stays amber in the Chinese version."
+ },
+ {
+  "tag": "v17.34",
+  "on": "2026-10-28",
+  "html": "The simulation never restarts at block 0 any more: the HUD opens on the shared clock-driven chain from the first frame, the same one every other page shows, so moving between pages continues the same simulation at the same height. The relay still takes over on the HUD once it answers, unless you chose Simulation. The built-in engine remains only as a fallback when the shared engine is not loaded."
+ },
+ {
+  "tag": "Nodes",
+  "on": "2026-10-28",
+  "html": "Nodes: a node someone starts for a few minutes no longer makes the node count jump; a new node that stays half an hour gets one post in the Telegram channel."
+ },
+ {
+  "tag": "v17.35",
+  "on": "2026-10-28",
+  "html": "Chain core: the hover for another node on the network now says what that node does (keeps its own copy of the chain, checks every block for itself) rather than what it is not; Technical adds the short peer id. The node orbit follows the relay’s steadier online rule for peers and keeps the last good list when one request fails, so the count no longer flickers on refresh."
+ },
+ {
+  "tag": "Stats",
+  "on": "2026-10-28",
+  "html": "Stats: the block time chart stays readable with thousands of blocks. Past about one block per 4 pixels it groups the blocks into equal time slots and shows the median per slot as a line, the middle half of the blocks as a shaded band and unusually slow blocks as dots; the axis starts near the data when every block is about as fast (the 8 s simulation). Hover a slot for its median, spread and slowest block."
+ },
+ {
+  "tag": "v17.36",
+  "on": "2026-10-28",
+  "html": "Chain core: the orbit of waiting transactions is now a ring of its own. Hover it and it lights up like the other rings, with a short text: how many transactions are waiting, what kinds, how long the oldest has waited, and in Technical the alpha node’s habit of listing sealed transactions for up to an hour. Click opens a list of the waiting transactions, oldest first, with explorer links when live. The node orbit hover also says when a node shows up there (after 10 min on the network, kept 30 min after last contact) and why."
+ },
+ {
+  "tag": "Time travel",
+  "on": "2026-10-28",
+  "html": "Time travel: the timeline now zooms. Wheel or + − zooms around the pointer, a strip below shows the whole chain and a window you drag to choose the part shown above; double-click or “Whole chain” shows everything again. Rule changes outside the shown part give their rows back, transaction bars are grouped per pixel so long chains stay readable, revision labels appear only where they fit, and the current block sits as a pill on the axis."
+ },
+ {
+  "tag": "Stats",
+  "on": "2026-10-28",
+  "html": "Stats, second pass: the block time headline says how many blocks were slow (over 1.5× the median) and the legend explains the dots and the ▲ for blocks off the scale; on a very steady chain the axis starts closer to the data. Chain restart dates sit below the timeline instead of under the bars. Community nodes and Dropped transactions explain themselves in one short paragraph when they are empty, and the restart list gets more room on 16:9. Tile hovers read as one sentence."
+ },
+ {
+  "tag": "v17.37",
+  "on": "2026-10-28",
+  "html": "Chain core: the node orbit no longer shows the opening simulation’s nodes (alice-node, bob) for a moment after the switch to the live chain. Each node list is tagged with the feed that filled it; the live orbit shows only Tau HUD’s node until the relay’s own answer arrives, and an answer that belongs to the previous feed is discarded. No more flicker between “just us” and “us plus two” on refresh."
+ },
+ {
+  "tag": "Simulation",
+  "on": "2026-10-28",
+  "html": "A livelier simulation, announced in advance. The made-up chain now refuses transactions the way the node would: not enough balance, a used sequence number, a fee below the base fee, expired before a block took it, a rule that does not compile, and the sender’s own rule saying no. Each refusal waits in the queue, then shows in the Explorer’s Refused list with its reason. Every hour the day’s programme brings a special rule change, proposed at hh:20 and in force at hh:30: proof of stake on (the richest accounts seal the blocks), a validator admitted, the majority threshold, back to the fixed list, a validator removed, the two-thirds threshold, and so on; at midnight the chain starts over. The amber badge in the header counts down to the next one on every page, its hover lists the next three, and the Proposals page shows them under “Scheduled in the simulation”."
+ },
+ {
+  "tag": "v17.38",
+  "on": "2026-10-28",
+  "html": "The simulation badge on the HUD now counts down to the next event of the simulated day’s programme, the same text as on every other page: “Simulation · majority rule in 40 min”, then “now”. Hover it for the next three events with their UTC times. Outside the last hour before an event it reads “Simulation · no real chain data” as before. Simulation mode only; the live chain is untouched."
+ },
+ {
+  "tag": "v17.39",
+  "on": "2026-10-28",
+  "html": "The simulation badge, on the HUD and in the header of every other page, now talks about the day’s programme as chain events worth watching: “Simulation · in 33 min: the fixed validator list returns”, “validators are voting: proof of stake takes over in 4 min”, “agreed: …”, “now: …”. The hover says what happens and why it matters, where to watch it on the page, that every change is proposed 10 minutes ahead and voted on like a real rule change, then the next three events in your local time and UTC, and the short notice that it is simulated. In the last five minutes the badge pulses; the HUD bar adds a “Watch in Proposals” link."
+ },
+ {
+  "tag": "Press films",
+  "on": "2026-10-28",
+  "html": "Press kit: eight short films with sound, one per feature, in English and Chinese. Take a validator seat, write your own proposal, check a rule, the Explorer’s “what happened to it?”, accounts, time travel, the chain core and running a node, each about half a minute, recorded on this site and free to use. Also fixed: the check lines in the Playground’s “Write your own” form no longer squeeze into a narrow column."
+ },
+ {
+  "tag": "Proposals",
+  "on": "2026-10-28",
+  "html": "Proposals page on the live node, like the simulation: “Coming up on the testnet” lists each agreed change in a short card with what it does, why it matters, the block where it takes effect, the expected date and time from the real block pace and a countdown (“in 3 d 7 h”). Proposals still waiting for votes follow in the same form."
+ },
+ {
+  "tag": "Proposals",
+  "on": "2026-10-28",
+  "html": "Rules over time on the live node, as compact as in the simulation: a proposal on the real testnet is agreed within a few blocks but takes effect thousands of blocks later, so each one is now a short mark up to its vote and a diamond at the block where it takes effect, instead of eleven long overlapping lines."
+ },
+ {
+  "tag": "v17.40",
+  "on": "2026-10-28",
+  "html": "Chain core: the waiting-room ring is easy to hit now. Its hover band covers the whole orbit the transactions travel in, a faint dotted guide circle shows where it is even when empty, and a transaction dot only takes the hover when the pointer is right on it. The dots themselves are unchanged. Also: Chinese texts for the header’s consensus chip (proof of stake, validator list in Tau, switches so far)."
+ },
+ {
+  "tag": "Press",
+  "on": "2026-10-28",
+  "html": "Press kit, reordered: the films come first and largest. One player with Tau in 60 seconds and the eight feature films as posters below it, each with its own downloads. Then the paragraph and facts, the logo and screenshots, and the embeds last. In Chinese the film lengths now match the Chinese cuts and the consensus chip reads 权益证明 in proof of stake mode."
+ },
+ {
+  "tag": "Simulation",
+  "on": "2026-10-28",
+  "html": "Simulated consensus switches on Telegram, and a calmer programme. The simulation now switches consensus twice a day instead of every three hours: proof of stake takes over at 10:30 UTC (proposed at 10:20), the fixed validator list returns at 16:30 UTC (proposed at 16:20); the other hours keep their rule changes (a validator admitted, the majority threshold, a validator removed, the two-thirds threshold). These two switches, and only these, are announced on the Telegram channel the moment they are proposed, 10 minutes ahead: the post starts with “SIMULATION · not the real testnet”, says why it matters and what to watch, and ends with the simulated notice and one button that opens the site in Simulation mode. The programme’s blocks now land on the exact minute. The Proposals page describes the scheduled events in the words of the header badge: what happens, why it matters, where to watch it, listed after the open proposals."
+ },
+ {
+  "tag": "Press",
+  "on": "2026-10-28",
+  "html": "Tau in 60 seconds now has sound: the same quiet tones as the feature films, a soft tick per block, a glass note per check and vote, a warm chord when the change is agreed and when it becomes law. It still works muted. On the press kit the film posters are larger."
+ },
+ {
+  "tag": "v17.41",
+  "on": "2026-10-28",
+  "html": "The live chain gets the same “coming up” treatment as the simulation: when a rule change is agreed but not yet in force, the header of every page shows a green chip “Coming up · in ~2 d 15 h: New rule for valid blocks”, pulsing in the last five minutes, counted down from the relay’s block pace. Hover for why the change matters, the activation block with its estimated UTC time, the next three activations and a link to Proposals. The simulation hover now lists times in your own clock with UTC in brackets. Chinese throughout."
+ },
+ {
+  "tag": "v17.42",
+  "on": "2026-10-28",
+  "html": "The green “Coming up” chip now sits next to the mode chip on the HUD too, in Live mode only: an agreed rule change that is not yet in force, with the same countdown and hover as in every subpage header. Keep it running (About and the Updates card) now names the costs honestly: the time it takes to keep everything in step with the testnet and the development tools behind that work; the server itself is cheap. The line reads “time · tools · server · domain”."
+ },
+ {
+  "tag": "v17.43",
+  "on": "2026-10-28",
+  "html": "Updates now opens in place on every page: the header link and the tab bar open the same overlay as on the HUD, with the log, the effort numbers, feedback and Keep it running, instead of sending you back to the start page. The /#updates deep link still works everywhere. The feedback box that needs no account stays on the HUD; the overlay links to it, to GitHub and to Telegram."
+ }
 ]

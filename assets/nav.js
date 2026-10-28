@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.42"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.43"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -81,6 +81,134 @@
     const fresh = store.get(SEEN_KEY) !== LATEST_ID;
     document.querySelectorAll(".tn-upd, .tabbar .tb-upd").forEach(e => e.classList.toggle("new", fresh));
   }).catch(() => { const fresh = store.get(SEEN_KEY) !== LATEST; document.querySelectorAll(".tn-upd, .tabbar .tb-upd").forEach(e => e.classList.toggle("new", fresh)); });
+
+  /* ---------- the Updates overlay, in place on every page but the HUD (which has its own, with the feedback box that needs no account) ---------- */
+  const DONATE = { addr: "0x23fB76A33A8d70f5c51aB558b85e4b93040003eb", donors: "https://node.tauhud.com/donations.json", qr: `<svg class="tn-qr" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges" role="img" aria-label="QR code of the donation address"><rect width="33" height="33" fill="#fff"/><path d="M2 2h7v1h-7zM11 2h2v1h-2zM16 2h1v1h-1zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM14 3h1v1h-1zM17 3h1v1h-1zM19 3h2v1h-2zM22 3h1v1h-1zM24 3h1v1h-1zM30 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM13 4h1v1h-1zM17 4h2v1h-2zM20 4h1v1h-1zM24 4h1v1h-1zM26 4h3v1h-3zM30 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM14 5h2v1h-2zM17 5h4v1h-4zM24 5h1v1h-1zM26 5h3v1h-3zM30 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM16 6h1v1h-1zM21 6h2v1h-2zM24 6h1v1h-1zM26 6h3v1h-3zM30 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h2v1h-2zM17 7h1v1h-1zM22 7h1v1h-1zM24 7h1v1h-1zM30 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h7v1h-7zM10 9h1v1h-1zM14 9h1v1h-1zM17 9h1v1h-1zM2 10h1v1h-1zM4 10h5v1h-5zM12 10h1v1h-1zM15 10h1v1h-1zM17 10h4v1h-4zM22 10h1v1h-1zM24 10h5v1h-5zM2 11h4v1h-4zM11 11h3v1h-3zM16 11h1v1h-1zM21 11h1v1h-1zM24 11h1v1h-1zM26 11h1v1h-1zM30 11h1v1h-1zM2 12h4v1h-4zM7 12h2v1h-2zM12 12h2v1h-2zM17 12h2v1h-2zM22 12h8v1h-8zM2 13h1v1h-1zM6 13h1v1h-1zM9 13h1v1h-1zM11 13h2v1h-2zM22 13h2v1h-2zM26 13h2v1h-2zM29 13h2v1h-2zM3 14h1v1h-1zM8 14h3v1h-3zM12 14h2v1h-2zM15 14h1v1h-1zM17 14h4v1h-4zM22 14h1v1h-1zM26 14h1v1h-1zM28 14h2v1h-2zM2 15h1v1h-1zM4 15h1v1h-1zM6 15h1v1h-1zM13 15h1v1h-1zM16 15h1v1h-1zM19 15h1v1h-1zM21 15h1v1h-1zM23 15h5v1h-5zM30 15h1v1h-1zM2 16h4v1h-4zM7 16h2v1h-2zM13 16h3v1h-3zM17 16h2v1h-2zM20 16h1v1h-1zM22 16h1v1h-1zM25 16h1v1h-1zM28 16h2v1h-2zM3 17h1v1h-1zM5 17h1v1h-1zM7 17h1v1h-1zM9 17h2v1h-2zM13 17h2v1h-2zM16 17h2v1h-2zM20 17h2v1h-2zM23 17h1v1h-1zM26 17h2v1h-2zM29 17h1v1h-1zM2 18h1v1h-1zM4 18h1v1h-1zM6 18h4v1h-4zM11 18h1v1h-1zM13 18h4v1h-4zM18 18h2v1h-2zM23 18h1v1h-1zM25 18h1v1h-1zM29 18h2v1h-2zM2 19h3v1h-3zM9 19h2v1h-2zM12 19h2v1h-2zM20 19h3v1h-3zM24 19h1v1h-1zM26 19h1v1h-1zM30 19h1v1h-1zM2 20h1v1h-1zM4 20h1v1h-1zM7 20h3v1h-3zM12 20h3v1h-3zM16 20h2v1h-2zM19 20h2v1h-2zM22 20h1v1h-1zM25 20h1v1h-1zM28 20h1v1h-1zM2 21h1v1h-1zM4 21h4v1h-4zM9 21h1v1h-1zM11 21h1v1h-1zM16 21h1v1h-1zM20 21h1v1h-1zM22 21h1v1h-1zM24 21h1v1h-1zM26 21h1v1h-1zM29 21h1v1h-1zM2 22h1v1h-1zM4 22h2v1h-2zM8 22h6v1h-6zM15 22h3v1h-3zM19 22h2v1h-2zM22 22h8v1h-8zM10 23h4v1h-4zM18 23h2v1h-2zM21 23h2v1h-2zM26 23h2v1h-2zM30 23h1v1h-1zM2 24h7v1h-7zM11 24h5v1h-5zM17 24h1v1h-1zM20 24h3v1h-3zM24 24h1v1h-1zM26 24h4v1h-4zM2 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM17 25h2v1h-2zM20 25h1v1h-1zM22 25h1v1h-1zM26 25h1v1h-1zM29 25h2v1h-2zM2 26h1v1h-1zM4 26h3v1h-3zM8 26h1v1h-1zM10 26h2v1h-2zM13 26h1v1h-1zM17 26h4v1h-4zM22 26h9v1h-9zM2 27h1v1h-1zM4 27h3v1h-3zM8 27h1v1h-1zM10 27h3v1h-3zM14 27h1v1h-1zM22 27h2v1h-2zM25 27h1v1h-1zM27 27h1v1h-1zM29 27h2v1h-2zM2 28h1v1h-1zM4 28h3v1h-3zM8 28h1v1h-1zM10 28h1v1h-1zM15 28h4v1h-4zM21 28h1v1h-1zM24 28h1v1h-1zM26 28h1v1h-1zM28 28h2v1h-2zM2 29h1v1h-1zM8 29h1v1h-1zM11 29h2v1h-2zM17 29h2v1h-2zM22 29h2v1h-2zM25 29h3v1h-3zM29 29h1v1h-1zM2 30h7v1h-7zM10 30h2v1h-2zM13 30h2v1h-2zM17 30h1v1h-1zM19 30h1v1h-1zM21 30h1v1h-1zM23 30h1v1h-1zM26 30h1v1h-1z" fill="#000"/></svg>` };
+  const UPD = { el: null, loaded: false, donorsAt: 0 };
+  const logDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+  function buildUpdates(page) {
+    const lang = new URLSearchParams(location.search).get("lang"), q = lang ? "?lang=" + encodeURIComponent(lang) : "";
+    const title = (P[page] && P[page].t) || page || "Page";
+    const issue = `https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=${encodeURIComponent("[" + title + "] ")}`;
+    const m = el("div", "tn-modal"); m.id = "tnUpdates"; m.hidden = true;
+    m.innerHTML = `<div class="tn-sheet" role="dialog" aria-modal="true" aria-labelledby="tnUpdTitle"><button class="tn-close" type="button" aria-label="Close">✕</button>
+      <p class="tn-tgstrip"><a href="${TELEGRAM}" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> <span>sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page.</span> <span>Ask</span> <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> <span>for the height, proposals, your transaction or address.</span></p>
+      <div class="tn-cols"><div class="tn-col">
+        <article class="tn-card"><h2 id="tnUpdTitle">Your feedback <small>shapes the next version</small></h2>
+          <p>Tell us what you would like to see. Ideas with the most agreement get built first, which is rather in the spirit of the thing.</p>
+          <p class="tn-row"><a class="tn-btn" href="${issue}" target="_blank" rel="noopener">Write feedback on GitHub ↗</a><a class="tn-btn ghost" href="${TELEGRAM}" target="_blank" rel="noopener">Or on Telegram ↗</a></p>
+          <p class="tn-note">The HUD start page has a feedback box that needs no account. <a href="${ROOT}${q}#updates">Open it ›</a></p>
+        </article>
+        <article class="tn-card tn-keep"><h2>Keep it running <small>one person, free time</small></h2>
+          <p class="tn-lead">The real costs are the time it takes to keep the HUD, the alerts and the bot in step with the testnet, and the development tools behind that work; the server itself is cheap. A donation of any size helps keep it online and independent.</p>
+          <p class="tn-note">AGRS or ETH, one address for both · What it helps pay for: time · tools · server · domain</p>
+          <div class="tn-donate">${DONATE.qr}<div class="tn-addr"><code>${DONATE.addr}</code><button class="tn-btn" type="button">Copy</button></div></div>
+          <p class="tn-note tn-thanks" hidden></p>
+          <p class="tn-note tn-copymsg" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
+        </article></div>
+        <article class="tn-card tn-log"><h2>Update log <small>built from your feedback</small></h2>
+          <div class="tn-effort" hidden><div><b data-n="commits">—</b><span>changes</span></div><div><b data-n="days">—</b><span>days</span></div><div><b data-n="releases">—</b><span>releases</span></div><em data-n="since"></em></div>
+          <p class="tn-legend"><i class="ver"></i>Version of the HUD · <i></i>Release of another page (the name opens it) · Newest first</p>
+          <ul class="tn-changes"><li class="day">Loading…</li></ul>
+        </article></div></div>`;
+    m.querySelector(".tn-close").addEventListener("click", closeUpdates);
+    m.addEventListener("click", e => { if (e.target === m) closeUpdates(); });
+    const code = m.querySelector(".tn-addr code"), msg = m.querySelector(".tn-copymsg");
+    m.querySelector(".tn-addr button").addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(code.textContent); msg.textContent = "Address copied."; }
+      catch (e) { const r = document.createRange(); r.selectNodeContents(code); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); msg.textContent = "Copy blocked by the browser; the address is selected, press Ctrl/Cmd+C."; }
+    });
+    document.body.append(m);
+    return m;
+  }
+  function closeUpdates() { if (UPD.el && !UPD.el.hidden) { UPD.el.hidden = true; try { if (location.hash === "#updates") history.replaceState(null, "", location.pathname + location.search); } catch (e) {} } }
+  async function openUpdates(page) {
+    if (!UPD.el) UPD.el = buildUpdates(page);
+    UPD.el.hidden = false; markSeen();
+    if (!UPD.loaded) { UPD.loaded = true; await updDict(); loadUpdLog(); }
+    loadUpdDonors();
+  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeUpdates(); });
+  /* the entries are worded in English and translated with the HUD's dictionary; in Chinese it is fetched once, when the overlay opens */
+  const updDict = () => new Promise(res => { if (!document.documentElement.classList.contains("i18n-zh") || !window.TauI18n) return res(); const sc = document.createElement("script"); sc.src = ROOT + "assets/i18n/zh/hud.js"; sc.onload = sc.onerror = res; document.head.append(sc); });
+  async function loadUpdLog() {
+    const ul = UPD.el.querySelector(".tn-changes"); let list;
+    try { list = await (await fetch(ROOT + "assets/updates.json", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+    catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
+    const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
+    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", "Time travel": "history/", Playground: "playground/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh" };
+    let day = null, html = "";
+    for (const e of order) {
+      const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
+      if (on !== day) { day = on; html += `<li class="day">${logDate(on)}</li>`; }
+      const t = ver ? `<a class="tag ver" href="${ROOT}">${esc(tag)}</a>` : PAGE[tag] ? `<a class="tag" href="${ROOT}${PAGE[tag]}">${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
+      html += `<li data-tag="${esc(tag)}">${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
+    }
+    ul.innerHTML = html;
+    foldUpdLog(ul);
+    loadUpdEffort(list);
+  }
+  /* the first clause of every entry is the headline, the rest folds away behind it; newest twelve first, twelve more as the bottom comes into view */
+  function foldUpdLog(ul) {
+    ul.querySelectorAll("li:not(.day)").forEach(li => {
+      const b = li.querySelector(".tag"), body = li.querySelector(".body"); if (!b || !body) return;
+      const tr = x => window.TauI18n ? TauI18n.t(x) : x, tag = tr(li.dataset.tag || "");
+      let text = tr(body.textContent.trim());
+      const lead = text.search(/[:：]\s*/), tags = [tag, li.dataset.tag || ""].map(x => x.toLowerCase()).filter(Boolean);
+      if (lead > 0 && lead <= 28 && tags.length && !/^v\d/i.test(tag)) { const first = text.slice(0, lead).toLowerCase(); if (tags.some(x => first.includes(x) || x.includes(first))) { text = text.slice(lead).replace(/^[:：]\s*/, ""); text = text.charAt(0).toUpperCase() + text.slice(1); } }
+      let cut = text.search(/[:.;]\s|[：。；]/); if (cut < 0 || cut > 90) { const c2 = text.slice(0, 90).search(/,\s|\s\(/); cut = c2 > 20 ? c2 : cut < 0 ? -1 : cut; }
+      if (cut > 90 || (cut < 0 && text.length > 90)) { const sp = text.slice(0, 84).lastIndexOf(" "); cut = sp > 20 ? sp : cut; }
+      const head = cut > 0 ? text.slice(0, cut).replace(/[:.;,]$/, "") + (/[:.;,]\s|[：。；，]/.test(text.slice(cut, cut + 2)) ? "" : " …") : text, rest = cut > 0 ? text.slice(cut).replace(/^[:.;,：。；，]?\s*/, "") : "";
+      body.remove();
+      if (rest) { const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head; pr.textContent = rest; d.append(sm, pr); li.append(d); }
+      else { const o = document.createElement("div"); o.className = "one"; o.textContent = head; li.append(o); }
+    });
+    const all = [...ul.querySelectorAll("li:not(.day)")], days = [...ul.querySelectorAll("li.day")];
+    let shown = 12;
+    const reveal = () => {
+      all.forEach((li, i) => { li.hidden = i >= shown; });
+      days.forEach(d => { let n = d.nextElementSibling, any = false; while (n && !n.classList.contains("day")) { if (!n.hidden && !n.classList.contains("sentinel")) any = true; n = n.nextElementSibling; } d.hidden = !any; });
+    };
+    reveal();
+    if (all.length > shown) {
+      const tail = document.createElement("li"); tail.className = "sentinel"; tail.setAttribute("aria-hidden", "true"); ul.append(tail);
+      const more = () => { shown += 12; reveal(); if (shown >= all.length) { io.disconnect(); tail.remove(); } };
+      const io = "IntersectionObserver" in window ? new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) more(); }, { root: ul, rootMargin: "0px 0px 160px 0px" }) : null;
+      if (io) io.observe(tail); else { shown = all.length; reveal(); tail.remove(); }
+    }
+  }
+  /* effort, counted rather than claimed: changes pushed to the public repository and days since its first commit (GitHub API, cached an hour in this browser), releases from the log */
+  async function loadUpdEffort(list) {
+    const releases = list.length; let git = null;
+    try { const c = JSON.parse(store.get("tau-effort") || "null"); if (c && Date.now() - c.at < 3600000) git = c.git; } catch (e) {}
+    if (!git) {
+      try {
+        const h = { headers: { Accept: "application/vnd.github+json" } }, base = "https://api.github.com/repos/jimb000o/tau-command-hud";
+        const repo = await (await fetch(base, h)).json();
+        const r = await fetch(`${base}/commits?per_page=1`, h), m = /page=(\d+)>;\s*rel="last"/.exec(r.headers.get("Link") || "");
+        git = { since: String(repo.created_at || "").slice(0, 10), commits: m ? Number(m[1]) : 1 };
+        if (git.since && git.commits > 1) store.set("tau-effort", JSON.stringify({ at: Date.now(), git })); else git = null;
+      } catch (e) { git = null; }
+    }
+    if (!git) return;
+    const days = Math.max(1, Math.floor((Date.now() - new Date(git.since + "T00:00:00Z")) / 86400000) + 1), e = UPD.el.querySelector(".tn-effort");
+    e.querySelector('[data-n="commits"]').textContent = fmt(git.commits); e.querySelector('[data-n="days"]').textContent = String(days); e.querySelector('[data-n="releases"]').textContent = String(releases); e.querySelector('[data-n="since"]').textContent = `since ${logDate(git.since)}`; e.hidden = false;
+  }
+  async function loadUpdDonors() {
+    if (Date.now() - UPD.donorsAt < 120000) return; UPD.donorsAt = Date.now();
+    try {
+      const d = await (await fetch(DONATE.donors, { cache: "no-store" })).json(), line = UPD.el.querySelector(".tn-thanks");
+      const items = (d.items || []).filter(x => /^0x[0-9a-f]{40}$/i.test(x.from) && /^0x[0-9a-f]{64}$/i.test(x.tx) && (x.asset === "AGRS" || x.asset === "ETH") && isFinite(x.amount));
+      if (!items.length) { line.hidden = true; return; }
+      const short = a => a.slice(0, 6) + "…" + a.slice(-4);
+      const amt = x => { const n = Number(x.amount); return (n >= 100 ? Math.round(n).toLocaleString("en-US") : String(+n.toFixed(n >= 1 ? 2 : 4))) + " " + x.asset; };
+      const day = x => new Date(x.ts * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+      const one = x => `<a href="https://etherscan.io/tx/${encodeURIComponent(x.tx)}" target="_blank" rel="noopener">${short(x.from)}</a> (${amt(x)}, ${day(x)})`;
+      const n = Math.max(1, parseInt(d.donors, 10) || 1);
+      line.innerHTML = (n === 1 ? "Supported by 1 person so far. Thank you, " : `Supported by ${n} people so far. Thank you, `) + items.slice(0, 3).map(one).join(", ") + (items.length > 3 ? " and everyone before." : ".");
+      line.hidden = false;
+    } catch (e) { UPD.donorsAt = 0; }
+  }
 
   function item(k, page, isHud, tip) {
     const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : ""));
@@ -327,6 +455,7 @@
     if (nav.dataset.mounted) return;
     nav.dataset.mounted = "1";
     const page = nav.dataset.page || "hud", isHud = page === "hud", here = SECTION_OF[page];
+    if (!isHud && location.hash === "#updates") setTimeout(() => openUpdates(page), 50);   // the deep link lands in the overlay, not on the HUD
     const tip = (e, txt) => { if (!txt) return; if (isHud) e.dataset.full = txt; else e.dataset.tnt = txt; };
     const slots = {}; nav.querySelectorAll("[data-slot]").forEach(e => { slots[e.dataset.slot] = e; });
     // the Simple/Technical switch appears only where it changes something (`view: true` in P); the stored choice stays global
@@ -352,7 +481,7 @@
     const tg = el("a", "pill tg", `${PLANE}<span>Telegram alerts</span>`); tg.href = TELEGRAM; tg.target = "_blank"; tg.rel = "noopener"; tg.setAttribute("aria-label", "Telegram channel tauHUDcom"); tip(tg, TIPS.telegram);
     right.append(tg);
     let upd = slots.updates;
-    if (!upd) { upd = el("a", "", "Updates"); upd.href = ROOT + "#updates"; }
+    if (!upd) { upd = el("a", "", "Updates"); upd.href = "#updates"; upd.addEventListener("click", e => { e.preventDefault(); openUpdates(page); }); }   // opens in place; the HUD keeps its own overlay with the feedback box
     upd.classList.add("tl"); tip(upd, TIPS.updates);
     const updWrap = el("span", "tn-upd"); updWrap.append(upd);
     upd.addEventListener("click", markSeen);
@@ -407,7 +536,7 @@
       bar.append(b); sheets.push(bg, sh);
     });
     const u = el(isHud ? "button" : "a", "tb-upd", "<em>•</em>Updates");
-    if (isHud) { u.type = "button"; u.addEventListener("click", () => { markSeen(); closeAll(); upd.click(); }); } else { u.href = ROOT + "#updates"; u.addEventListener("click", markSeen); }
+    if (isHud) { u.type = "button"; u.addEventListener("click", () => { markSeen(); closeAll(); upd.click(); }); } else { u.href = "#updates"; u.addEventListener("click", e => { e.preventDefault(); closeAll(); openUpdates(page); }); }
     bar.append(u);
     document.body.append(el("div", "tnav-spacer"), ...sheets, bar);
   }
