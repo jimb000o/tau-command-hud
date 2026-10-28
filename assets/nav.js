@@ -180,8 +180,17 @@
       if (Array.isArray(d.active_validators)) CHAIN.vals = d.active_validators.length; else if (Number.isFinite(d.active_validator_count)) CHAIN.vals = d.active_validator_count;
       CHAIN.switches = (d.archival_update_details || []).filter(u => u && u.lifecycle === "activated" && u.host_contract_patch && typeof u.host_contract_patch.eligibility_mode === "string").length;
     };
-    if (SIM) {   // the simulated chain: height, revision, fee and consensus from the generator, every second
-      const tick = () => { CHAIN.st = TauSim.status(); govFrom(TauSim.governance()); CHAIN.polled = true; CHAIN.at = Date.now(); render(); };
+    if (SIM) {   // the simulated chain: height, revision, fee and consensus from the generator, every second; the badge counts down to the day's programme
+      const hhmm = x => new Date(x * 1000).toISOString().slice(11, 16); let badgeText = "";
+      const badge = () => {
+        const b = document.querySelector("header.trail .chip.unoff.sim"); if (!b || !TauSim.upcoming) return;
+        const list = TauSim.upcoming(), u = list[0], left = u ? Math.ceil((u.at_ts - Date.now() / 1000) / 60) : 999;
+        const text = u && left <= 60 ? `Simulation · ${u.short} ${left <= 0 ? "now" : `in ${left} min`}` : "Simulation · no real chain data";
+        if (text === badgeText) return; badgeText = text;
+        b.textContent = text; b.dataset.short = text;
+        b.dataset.tnt = TIPS.simBadge + "\nComing up in the simulation (UTC):\n" + list.map(x => `${hhmm(x.at_ts)} UTC · ${x.title}`).join("\n");
+      };
+      const tick = () => { CHAIN.st = TauSim.status(); govFrom(TauSim.governance()); CHAIN.polled = true; CHAIN.at = Date.now(); render(); badge(); };
       tick(); setInterval(() => { if (!document.hidden) tick(); }, 1000);
     }
     const poll = async () => {

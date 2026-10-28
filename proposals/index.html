@@ -106,6 +106,8 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .grp:first-child { margin-top: 0; }
 .grp small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
 .list > li.quiet { color: var(--dim); font-size: 13px; padding: 4px 2px 6px; }
+.list > li.sched { color: var(--dim); font-size: 13px; padding: 6px 12px; border-left: 2px solid var(--behind); background: rgba(255,177,59,.05); }
+.list > li.sched b { color: #fff; }
 .quorum.wait .fill { background: rgba(255,255,255,.14); }
 /* rules over time: one lane per spec revision, one for the consensus mechanism, one bar per proposal from proposed to its activation block */
 .p-rules { padding-bottom: 10px; }
@@ -384,12 +386,16 @@ function render() {
   const by = s => P.filter(p => p.status === s).sort((a, b) => a.activate_at - b.activate_at);
   const voting = by("voting"), agreed = by("agreed");
   $("openCount").textContent = voting.length + agreed.length ? `(${voting.length + agreed.length})` : "";
-  $("openList").innerHTML = !voting.length && !agreed.length
-    ? `<ul class="list"><li class="empty"><b>Nothing is coming up right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}</ul>`
+  // the simulation announces its programme: special rule changes at fixed times of the day, and the restart at midnight
+  const U = (D.upcoming || []).filter(u => u.status === "scheduled"), hhmm = x => new Date(x * 1000).toISOString().slice(11, 16);
+  const inMin = x => { const m = Math.ceil((x - Date.now() / 1000) / 60); return m <= 0 ? "now" : m < 60 ? `in ${m} min` : `in ${Math.floor(m / 60)} h ${m % 60} min`; };
+  const sched = U.length ? `<h3 class="grp">Scheduled in the simulation <small>(${U.length})</small></h3><ul class="list">${U.map(u => `<li class="sched"><b>${esc(u.title)}</b><br>${u.proposed_ts ? `proposed at ${hhmm(u.proposed_ts)} UTC, ` : ""}in force at ${hhmm(u.at_ts)} UTC (${inMin(u.at_ts)})</li>`).join("")}</ul>` : "";
+  $("openList").innerHTML = sched + (!voting.length && !agreed.length
+    ? (sched ? `<ul class="list"><li class="quiet">No proposal is open right now.</li></ul>` : `<ul class="list"><li class="empty"><b>Nothing is coming up right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}</ul>`)
     : `<h3 class="grp">Waiting for votes <small>(${voting.length})</small></h3><ul class="list">${voting.length ? voting.map(openCard).join("")
         : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`
       + `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(openCard).join("")
-        : `<li class="quiet">Nothing agreed is waiting to take effect.</li>`}</ul>`;
+        : `<li class="quiet">Nothing agreed is waiting to take effect.</li>`}</ul>`);
   const shown = P.filter(p => filter === "all" || (filter === "decided" ? p.status === "active" || p.status === "dropped" : p.status === filter));
   $("allCount").textContent = `(${shown.length})`;
   $("allList").innerHTML = shown.length ? shown.map(rowOf).join("")

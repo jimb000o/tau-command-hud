@@ -633,7 +633,7 @@ function drawTrail() {
   } else {
     for (const d of [...C.dropped].reverse()) {
       const id = low(d.tx_hash);
-      rows.push(`<li class="${isOpen("tx", id) ? "on" : ""}"><button type="button" data-go="tx:${esc(id)}"><span class="h">${esc(TX_NAMES[d.type] || "Transaction")}</span><span class="d"><b>${esc(short(id))}</b> <em>· from ${esc(short(low(d.sender)))}</em></span><span class="amt dim">${esc(ago(d.left || d.seen))}</span></button></li>`);
+      rows.push(`<li class="${isOpen("tx", id) ? "on" : ""}"><button type="button" data-go="tx:${esc(id)}"><span class="h">${esc(TX_NAMES[d.type] || "Transaction")}</span><span class="d"><b>${esc(short(id))}</b> <em>· from ${esc(short(low(d.sender)))}${d.reason ? ` · ${esc(d.reason)}` : ""}</em></span><span class="amt dim">${esc(ago(d.left || d.seen))}</span></button></li>`);
     }
   }
   const empty = { latest: "No blocks yet.", queue: "Nothing is waiting. A new transaction shows up here until a block takes it.", rules: "Nobody has set a rule or voted yet on this chain.", refused: "No transaction has been refused or dropped since our node started watching." }[f];
