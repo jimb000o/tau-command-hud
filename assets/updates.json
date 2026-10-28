@@ -665,6 +665,7 @@
   "html": "New page: The Daily Consensus, twelve years of Tau as a 1920s newspaper. Ten pages drawn from the Tau team’s own videos and the Chronicle: the front-page story of the users who changed the chain’s consensus by vote, the road from Zennet, obituaries for dropped plans, telegrams from 2025, letters from the monthly Q&As, classifieds and puzzles. Click, tap or press the arrow keys to turn a page; on phones and small screens it becomes a pocket edition. In Chinese too. Find it under Learn.",
   "major": {
    "id": "gazette",
+   "skip": "posted by hand on 2026-10-28",
    "title": "New: The Daily Consensus, twelve years of Tau as a 1920s newspaper",
    "text": "Ten pages drawn from the Tau team’s own videos: the users who changed the chain’s consensus by vote, the road from Zennet, obituaries for dropped plans, letters from the monthly Q&As, classifieds and puzzles. Turn the pages with a click or the arrow keys; on phones it becomes a pocket edition. In Chinese too.",
    "link": "/gazette/"
@@ -838,5 +839,10 @@
   "tag": "Guided tour",
   "on": "2026-10-28",
   "html": "Every subpage with a tour now has a Take the tour button at the end of its opening line, top left where reading starts, besides Tour in the header. One click starts the page’s tour; in Chinese too."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-28",
+  "html": "The Telegram channel says more with fewer posts. A practice vote, where someone proposes the rules already in force to try the vote, no longer gets a post of its own; one evening post, “Testnet today” at 19:00 UTC, counts them with the day’s blocks, transactions and rule changes and names what comes next, and on a quiet day there is none. A real rule change now leads with the change and when it applies, then why it matters; block numbers, votes and the rule text sit in a part that opens with a tap."
  }
 ]

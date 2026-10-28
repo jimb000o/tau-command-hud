@@ -129,7 +129,8 @@ SIM_SWITCHES = (("stake", 10), ("fixed", 16))
 SIM_PROPOSED_AT, SIM_IN_FORCE_AT = 20 * 60, 30 * 60
 SIM_LINK = f"{SITE}/proposals/?mode=sim"
 # Changes to Tau HUD itself, from the update log every release appends to. Mark an entry as worth its own post with
-#   "major": {"title": "…", "text": "one or two plain sentences", "link": "/page/"}
+#   "major": {"id": "unique-slug", "title": "…", "text": "one or two plain sentences", "link": "/page/"}
+# and add "skip": "why" to a major that must not be posted (already announced by hand); it also leaves the queue.
 # (text and link are optional: the entry's first two sentences and the home page). Everything else is bundled into a digest.
 SITE_ON = os.environ.get("SITE_UPDATES", "true").lower() in ("1", "true", "yes")
 SITE_UPDATES_URL = os.environ.get("SITE_UPDATES_URL", f"{SITE}/assets/updates.json")
@@ -1451,12 +1452,17 @@ class Watcher:
                 continue
             seen[k] = round(now)
             if isinstance(e.get("major"), dict):
-                if str(e.get("on") or "") >= oldest:
+                if e["major"].get("skip"):
+                    log.info("site updates: major %s is marked skip, not posted", k)
+                elif str(e.get("on") or "") >= oldest:
                     st["majors"].append({"key": k, **major_item(e)})
                 else:
                     log.info("site updates: major %s is older than %d days, not posted", k, SITE_MAJOR_MAX_AGE_DAYS)
             elif st["primed"]:
                 st["pending"].append({"key": k, "at": round(now), **digest_item(e)})
+        # a major marked "skip" after it was queued (posted by hand meanwhile) leaves the queue
+        skip = {site_key(e) for e in entries if isinstance(e.get("major"), dict) and e["major"].get("skip")}
+        st["majors"] = [m for m in st["majors"] if m["key"] not in skip]
         st["primed"] = True
         if len(seen) > 5000:
             for k in sorted(seen, key=seen.get)[:len(seen) - 5000]:
