@@ -173,6 +173,7 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
       <p class="sub" id="sourceLine">These nodes run the Tau HUD kit and verify every block of the Tau testnet themselves. We compare each one, block for block, with our own node. The longer and steadier a node runs, the higher it ranks.</p>
     </div>
     <div class="kpis" aria-label="Key numbers">
+      <span class="kpi net" id="kNet" data-tip="Nodes our node met or heard of in the last 24 h, ours included."><b id="tNet">–</b>nodes on the network</span>
       <span class="kpi" data-tip="Community nodes that reported in the last 15 minutes."><b id="tOnline">–</b>online now</span>
       <span class="kpi" data-tip="Online community nodes whose block at their height\nis the block our node has there."><b id="tSame">–</b>on our chain</span>
       <span class="kpi" data-tip="Every community node that reported in the last 30 days."><b id="tAll">–</b>in the last 30 days</span>
@@ -244,7 +245,7 @@ const RELAY = "https://node.tauhud.com";
 const SAMPLE = new URLSearchParams(location.search).has("sample");
 const T = s => (window.TauI18n ? TauI18n.t(s) : s);
 const NAME_OK = /^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$/;
-let rows = null, ref = null, failed = false;
+let rows = null, ref = null, peers = null, failed = false;
 
 function el(tag, attrs, ...kids) {
   const e = document.createElement(tag);
@@ -292,6 +293,22 @@ function sampleRows() {
     mk("1234abcd5678", "lab-box", 2.2 * d, .74, true, "different", 830), mk("cafe0000beef", "newcomer", 7200, .99, true, "ahead", 1413),
     mk("dead0000f00d", "old-vps", 20 * d, .62, false, null, 1201)];
 }
+function samplePeers() {
+  const now = Date.now() / 1000, d = 86400;
+  const mk = (id, age, head, community) => ({ id, label: null, community, first_seen: now - age, last_direct: now - 40,
+    last_heard: null, last_seen: now - 40, head, connected: true });
+  const list = [Object.assign(mk("12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC", 2 * d, 1412), { label: "IDNI bootnode" }),
+    mk("12D3KooWBerLinArmxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 12 * d, 1412, { id: "a1b2c3d4e5f6", name: "berlin-arm" }),
+    mk("12D3KooWNoKitPeerAxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 3 * d, 1411), mk("12D3KooWNoKitPeerBxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 5 * 3600, 1412)];
+  return { peers: list, counts: { connected: 4, met_30m: 4, met_24h: 4, seen_24h: 4, seen_30d: 4 }, generated_at: now };
+}
+/* the network as our node sees it (GET /peers): the bootnode, kit nodes that said which peer they are, everyone else */
+function network(now) {
+  const recent = ((peers && peers.peers) || []).filter(p => p.last_seen && now - p.last_seen < 86400);
+  return { recent, boot: recent.find(p => p.label), others: recent.filter(p => !p.label && !p.community),
+           kit: recent.filter(p => !p.label && p.community) };
+}
+const shortId = id => `${id.slice(0, 8)}…${id.slice(-4)}`;
 async function getJSON(path) {
   const r = await fetch(RELAY + path, { cache: "no-store" });
   if (!r.ok) throw new Error(r.status);
@@ -306,10 +323,12 @@ async function load() {
     return { height: c && c.reference ? c.reference.height : null, online: !!(c && c.reference && c.reference.upstream_connected),
              since: u && u.since, uptime: samples ? okay / samples : null };
   });
-  if (SAMPLE) { rows = sampleRows(); ref = { height: 1412, online: true, since: Date.now() / 1000 - 2 * 86400, uptime: .996 }; render(); return; }
+  const peersP = getJSON("/peers").catch(() => null);
+  if (SAMPLE) { rows = sampleRows(); ref = { height: 1412, online: true, since: Date.now() / 1000 - 2 * 86400, uptime: .996 }; peers = samplePeers(); render(); return; }
   try { rows = (await getJSON("/community/board")).nodes || []; failed = false; }
   catch (e) { failed = true; }
   ref = await refP;
+  peers = await peersP;
   render();
 }
 
@@ -324,6 +343,13 @@ function render() {
   $("tOnline").textContent = rows ? online.length : "–";
   $("tSame").textContent = rows ? online.filter(r => r.agrees === "same").length : "–";
   $("tAll").textContent = rows ? list.length : "–";
+  const net = network(now);
+  $("tNet").textContent = peers ? net.recent.length + 1 : "–";
+  $("kNet").dataset.tip = peers ? [T("Nodes our node met or heard of in the last 24 h, ours included:"),
+    `${net.boot ? "IDNI bootnode · " : ""}tauhud.com`
+      + (net.kit.length ? " · " + T("{n} community nodes").replace("{n}", net.kit.length) : "")
+      + (net.others.length ? " · " + T("{n} other peers").replace("{n}", net.others.length) : "")].join("\n")
+    : T("Nodes our node met or heard of in the last 24 h, ours included.");
   $("status").hidden = !failed;
   $("status").textContent = failed ? T("Our relay does not answer right now. Trying again in a minute.") : "";
 
@@ -335,7 +361,16 @@ function render() {
     el("th", { "data-tip": "Compared with our node, block for block.", text: "Chain" }),
     el("th", { class: "hide-s", text: "Last report" }));
   const body = el("tbody");
-  // our node first: the yardstick every other row is compared with, so the board is never empty
+  // IDNI's bootnode: the network's entry point, where our node gets its blocks
+  if (net.boot) body.append(el("tr", { class: "ref", "data-tip": T("IDNI’s bootnode: every node joins the network through it.\nRunning counts from when our node first met it.") + "\n" + net.boot.id },
+    el("td", { class: "n rank", text: "·" }),
+    el("td", null, el("span", { class: "dot" + (net.boot.connected ? " on" : "") }), el("span", { class: "name", text: "IDNI" }), el("span", { class: "tag", text: T("bootnode") })),
+    el("td", { text: span(now - net.boot.first_seen) }),
+    el("td", { class: "hide-s", text: "–" }),
+    el("td", { class: "n hide-s", text: net.boot.head != null ? `#${net.boot.head}` : "–" }),
+    el("td", { class: "rank", text: T("entry point") }),
+    el("td", { class: "hide-s", text: T(ago(now - net.boot.last_seen)) })));
+  // our node: the yardstick every other row is compared with, so the board is never empty
   if (ref) body.append(el("tr", { class: "ref", "data-tip": "tauhud.com’s own node. It runs the same kit,\nand every other row is compared with it.\nIt does not count as a community node." },
     el("td", { class: "n rank", text: "·" }),
     el("td", null, el("span", { class: "dot" + (ref.online ? " on" : "") }), el("span", { class: "name", text: "tauhud.com" }), el("span", { class: "tag", text: T("reference") })),
@@ -344,6 +379,17 @@ function render() {
     el("td", { class: "n hide-s", text: ref.height != null ? `#${ref.height}` : "–" }),
     el("td", { class: "rank", text: T("the yardstick") }),
     el("td", { class: "hide-s", text: ref.online ? T("just now") : "–" })));
+  // peers without the kit: no name, no rank, one line for all of them
+  if (net.others.length) {
+    const top = Math.max(...net.others.map(p => p.head ?? -1)), last = Math.max(...net.others.map(p => p.last_seen));
+    body.append(el("tr", { class: "ref", "data-tip": T("Nodes without the kit: our node met them or heard of them from another peer.\nThey have no name and no rank.") + "\n" + net.others.slice(0, 6).map(p => shortId(p.id)).join(" · ") + (net.others.length > 6 ? " …" : "") },
+      el("td", { class: "n rank", text: "·" }),
+      el("td", null, el("span", { class: "dot" + (net.others.some(p => p.connected) ? " on" : "") }), el("span", { class: "name", text: T("Other peers") }), el("span", { class: "tag", text: String(net.others.length) })),
+      el("td", { text: "–" }), el("td", { class: "hide-s", text: "–" }),
+      el("td", { class: "n hide-s", text: top >= 0 ? `#${top}` : "–" }),
+      el("td", { class: "rank", text: T("no kit") }),
+      el("td", { class: "hide-s", text: T(ago(now - last)) })));
+  }
   const me = location.hash.slice(1);
   list.forEach((r, i) => {
     const chain = r.online ? el("span", { class: `agree ${r.agrees}`, "data-tip": AGREE_TIP[r.agrees] || "", text: AGREE[r.agrees] || "–" })

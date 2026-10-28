@@ -131,6 +131,15 @@ start date through a silence.
 while the node reports, grey when offline, "unknown node" for an id it never saw), cached
 5 minutes. The kit's heartbeat log prints the Markdown snippet for it once per start.
 
+`GET /peers` (CORS `*`, cached 30 s) is the network as our node sees it: every peer it
+talked to or heard of from another peer (a handshake's peer list) in the last 30 days,
+from the node's patched `getgovernance.peers` (`node/patches/peer-book.py`; the relay
+strips the list before it pushes governance to visitors). Peer IDs only, never addresses.
+`{"peers": [{"id", "label", "community", "first_seen", "last_direct", "last_heard", "last_seen", "head", "connected"}],
+"counts": {"connected", "met_30m", "met_24h", "seen_24h", "seen_30d"}, "bootnode", "since"}`; `label` is
+"IDNI bootnode" for IDNI's bootnode, `community` names a kit node that reported this peer ID
+(kit 3 sends `peer=` with its report). Kept in `/data/peers.json`.
+
 `GET /uptime` (CORS `*`, cached 5 s; used by tauhud.com/status) is the availability
 history for the status page. Once a minute the relay samples whether the node is
 connected and answering (`node_ok`) and whether its verified head is within

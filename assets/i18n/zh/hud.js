@@ -478,6 +478,7 @@ TauI18n.add({ strings: {
   "Node minimum: a rule change activates {x1} block{x2} or more after it is included. The seconds count down to the next expected block{x3}": "节点最低要求：规则变更在被打包后 {x1} 个或更多区块才生效。秒数倒数到下一个预计区块{x3}",
   "Node minimum: a rule change activates {x1} block{x2} or more after it is included. {x3} × the average time the last {x4} block{x5} took ({x6}). The countdown is paused: the node is still catching up with the chain, or the chain is idle. A protocol minimum, not a measured average.": "节点最低要求：规则变更在被打包后 {x1} 个或更多区块才生效。{x3} × 最近 {x4} 个区块的平均用时（{x6}）。倒计时已暂停：节点仍在追赶链，或链处于空闲。这是协议最低要求，不是实测平均值。",
   "Nodes: the board is never empty, joining takes three steps, and the page says what you get for running a node.": "节点：榜单永不为空，加入只需三步，页面说明运行节点能得到什么。",
+  "Nodes: the page now counts every node on the network as our node sees it, IDNI’s bootnode included, not only the ones that run our kit; the <a href=\"stats/\">Stats</a> page says it too.": "节点：页面现在统计我们的节点在网络中看到的所有节点，包括 IDNI 的引导节点，而不只是运行我们套件的节点；<a href=\"stats/\">统计</a>页面也会显示。",
   "None": "无",
   "none deployed yet": "尚未部署",
   "none on record": "无记录",
