@@ -1,5 +1,11 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Films": "短片",
+  "with downloads, a ready paragraph, the facts, the": "（可下载）、现成的介绍段落、事实数据、",
+  "Free to use, please credit tauhud.com": "可免费使用，请注明 tauhud.com",
+  "Tau in 60 seconds and eight feature films, about half a minute each": "60 秒了解 Tau，以及八部功能短片，每部约半分钟",
+  "1920 × 1080 · MP4 · with sound": "1920 × 1080 · MP4 · 有声",
+  "One feature, shown on this site with its sample data and simulation, with quiet sound made for these films.": "介绍一项功能，在本站用示例数据和模拟录制，配有为这些短片制作的轻柔音效。",
   "Feature films · with sound": "功能短片 · 有声",
   "Take a validator seat": "坐上验证者席位",
   "Write your own proposal": "写下你自己的提案",

@@ -120,6 +120,8 @@ TauI18n.add({ strings: {
   "Proof of authority · fixed validator list": "权威证明 · 固定验证者名单",
   "Proof of authority · {n} validator": "权威证明 · {n} 个验证者",
   "Proof of authority · {n} validators": "权威证明 · {n} 个验证者",
+  "Proof of stake · {n} validator": "权益证明 · {n} 个验证者",
+  "Proof of stake · {n} validators": "权益证明 · {n} 个验证者",
   "Proof of stake": "权益证明",
   "Proposals": "提案",
   "Propose, check, agree, law: how Tau changes its rules without a fork": "提议、检查、同意、成为法律：Tau 如何在不分叉的情况下修改规则",
