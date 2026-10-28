@@ -145,13 +145,15 @@ footer a { color: var(--dim); }
 @media (min-width: 1100px) {
   .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "f f" "t l" "t s"; grid-template-rows: auto auto 1fr; }
   .cF { grid-area: f; } .cT { grid-area: t; } .cL { grid-area: l; } .cS { grid-area: s; }
-  .films-panel { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); grid-template-rows: auto auto 1fr; gap: 0 18px; align-items: start; }
+  .films-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); grid-template-rows: auto auto 1fr; gap: 0 18px; align-items: start; }
   .films-panel > .phead { grid-column: 1 / -1; }
   .films-panel > .video { grid-column: 1; grid-row: 2; }
   .films-panel > .now { grid-column: 1; grid-row: 3; }
   .films-panel > .pick { grid-column: 2; grid-row: 2 / span 2; }
   .films-panel .pick h3 { margin: 0 0 8px; }
-  .now { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .now { gap: 8px; }
+  .nowdl .dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; }
+  .nowdl .dl li:nth-child(2) { border-top: 0; }
 }
 @media (min-width: 1900px) {
   .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, .9fr); grid-template-areas: "f f t s" "l l t s"; grid-template-rows: min-content 1fr; }
@@ -162,7 +164,7 @@ footer a { color: var(--dim); }
 }
 @media (min-width: 2900px) {
   .main { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, .8fr); }
-  .films-panel { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+  .films-panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .cL .tile .pic { aspect-ratio: 16 / 7; }
 }
 @media (min-width: 2200px) { body { font-size: 14px; padding-bottom: 56px; } .boiler { font-size: 16px; } }
@@ -202,11 +204,11 @@ footer a { color: var(--dim); }
           <source src="media/tau-in-60-seconds-1200x675.mp4" type="video/mp4">
         </video>
         <div class="now">
-          <p class="nowt"><b id="filmNow">Tau in 60 seconds</b><span id="filmAbout">Propose, check, agree, law: how Tau changes its rules without a hard fork, in six steps. No sound, so it works in a feed. The same story to scroll through: <a href="/story/">tauhud.com/story</a>.</span><span id="filmAboutF" hidden>One feature, shown on this site with its sample data and simulation, with quiet sound made for these films.</span></p>
+          <p class="nowt"><b id="filmNow">Tau in 60 seconds</b><span id="filmAbout">Propose, check, agree, law: how Tau changes its rules without a hard fork, in six steps. With quiet sound, and it still works muted in a feed. The same story to scroll through: <a href="/story/">tauhud.com/story</a>.</span><span id="filmAboutF" hidden>One feature, shown on this site with its sample data and simulation, with quiet sound made for these films.</span></p>
           <div class="nowdl" data-film="story">
             <ul class="dl">
-              <li><span class="what"><b>Wide, for YouTube and articles</b><span>1200 × 675 · MP4 · 1.5 MB</span></span><a class="get" href="media/tau-in-60-seconds-1200x675.mp4" download>Download</a></li>
-              <li><span class="what"><b>Square, for X, Telegram and Instagram</b><span>1080 × 1080 · MP4 · 2.0 MB</span></span><a class="get" href="media/tau-in-60-seconds-1080x1080.mp4" download>Download</a></li>
+              <li><span class="what"><b>Wide, for YouTube and articles</b><span>1200 × 675 · MP4 · 2.4 MB</span></span><a class="get" href="media/tau-in-60-seconds-1200x675.mp4" download>Download</a></li>
+              <li><span class="what"><b>Square, for X, Telegram and Instagram</b><span>1080 × 1080 · MP4 · 2.9 MB</span></span><a class="get" href="media/tau-in-60-seconds-1080x1080.mp4" download>Download</a></li>
               <li><span class="what"><b>Animated GIF, for forums and chats</b><span>640 × 640 · GIF · 2.7 MB</span></span><a class="get" href="media/tau-in-60-seconds-640.gif" download>Download</a></li>
               <li><span class="what"><b>Cover picture</b><span>1080 × 1080 · PNG · 247 KB</span></span><a class="get" href="media/cover-1080x1080.png" download>Download</a></li>
             </ul>
