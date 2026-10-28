@@ -228,6 +228,10 @@ is **proposed**, **agreed** (quorum reached), **active** (its activation block a
   changes on the chain would be posted, without posting.
 - Telegram and X: each event as a post, when the keys are in `.env`. Without keys that
   channel is off; the feed and the page work regardless.
+- While one yes vote is enough (one validator), a "proposed" post waits
+  `PROPOSED_HOLD_SECONDS` (default 600). If the proposal is agreed meanwhile, one combined
+  post "New rule change, agreed right away" goes out instead of two. With more validators
+  each step is posted on its own again.
 
 What it finds on its very first run is history and is never posted, and neither is an
 event whose block is older than 3 hours (`POST_MAX_AGE_SECONDS`), so a fresh volume or a
