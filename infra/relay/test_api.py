@@ -44,6 +44,7 @@ check(s["proposals"] == {"waiting": 1, "agreed": 0, "in_force": 2, "dropped": 1,
 check(s["spec_revision"] == 3 and s["base_fee"] == 3 and s["validators"] == 1 and s["mempool"] == 1, "revision, fee, validators, mempool")
 check(json.loads(json.dumps(s)) == s, "summary is plain JSON")
 check(">20<" in r.api_badge("height") and "#39ff8a" in r.api_badge("height"), "height badge green when synced")
+check("#ff3b52" in r.api_badge("height", zh=True) and "#39ff8a" not in r.api_badge("height", zh=True), "?lang=zh badge red when synced, as on the Chinese site")
 check("1 coming up · 2 in force" in r.api_badge("proposals"), "proposals badge")
 check("1 active" in r.api_badge("validators"), "validators badge")
 check("/ 100" in r.api_badge("health"), "health badge carries the score from /status")
