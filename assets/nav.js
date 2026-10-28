@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.44"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.45"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -121,7 +121,7 @@
       </article>
       <article class="tn-panel tn-keep">
         <h2>Keep it running <small>one person, free time</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built and maintained by one person in their free time. The address and the QR code are the same as in About; the numbers above show what the time goes into.">i</button></h2>
-        <p class="lead small">The real costs are the time it takes to keep the HUD, the alerts and the bot in step with the testnet, and the development tools behind that work; the server itself is cheap. A donation of any size helps keep it online and independent.</p>
+        <p class="lead small">Most of what Tau HUD costs is time: following a testnet that changes by agreement and keeping the HUD, the alerts and the bot in step with it. The development tools behind that work are not free either. The server is the smallest part. Donations help cover these costs and are received with thanks.</p>
         <p class="small">AGRS or ETH, one address for both · What it helps pay for: time · tools · server · domain</p>
         <div class="tn-donate">${DONATE.qr}<div class="tn-addr"><code>${DONATE.addr}</code><button class="tn-btn" type="button">Copy</button></div></div>
         <p class="small tn-thanks" hidden></p>

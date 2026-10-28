@@ -638,5 +638,10 @@
   "tag": "v17.44",
   "on": "2026-10-28",
   "html": "The Updates overlay on every other page now looks exactly like the one on the HUD: the same feedback form with its categories that opens a pre-filled GitHub issue, the update log with the effort numbers, and Keep it running, in the HUD's layout, widths, fonts and colours."
+ },
+ {
+  "tag": "v17.45",
+  "on": "2026-10-28",
+  "html": "Keep it running says plainly where the money goes: most of what Tau HUD costs is time, the development tools behind that work are not free either, and the server is the smallest part. Donations help cover these costs; no promise is attached. Same text in the Updates overlay on every page and in About."
  }
 ]

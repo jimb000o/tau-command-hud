@@ -394,7 +394,7 @@ TauI18n.add({ strings: {
   "and everyone before.": "以及之前的每一位。",
   "Check the address against this page before sending; never trust a copy of it from elsewhere.": "发送前请与本页核对地址；不要信任从其他地方复制来的地址。",
   "AGRS or ETH, one address for both · What it helps pay for: time · tools · server · domain": "AGRS 或 ETH，同一个地址 · 用于支付：时间 · 工具 · 服务器 · 域名",
-  "The real costs are the time it takes to keep the HUD, the alerts and the bot in step with the testnet, and the development tools behind that work; the server itself is cheap. A donation of any size helps keep it online and independent.": "真正的成本是让 HUD、提醒和机器人与测试网保持同步所花的时间，以及这些工作背后的开发工具；服务器本身很便宜。任何数额的捐助都有助于让它保持在线和独立。",
+  "Most of what Tau HUD costs is time: following a testnet that changes by agreement and keeping the HUD, the alerts and the bot in step with it. The development tools behind that work are not free either. The server is the smallest part. Donations help cover these costs and are received with thanks.": "Tau HUD 的开销大部分是时间：跟进一个靠共识改变规则的测试网，并让 HUD、提醒和机器人与它保持同步。这项工作背后的开发工具也并非免费。服务器只是最小的一部分。捐赠帮助承担这些开销，我们心怀感谢地接收。",
   "Tell us what you would like to see. Ideas with the most agreement get built first, which is rather in the spirit of the thing.": "告诉我们你想看到什么。获得最多认同的想法最先实现，这也正合本项目的精神。",
   "Copy blocked by the browser; the address is selected, press Ctrl/Cmd+C.": "浏览器阻止了复制；地址已选中，请按 Ctrl/Cmd+C。",
   "for the height, proposals, your transaction or address.": "查询高度、提案、你的交易或地址。",
