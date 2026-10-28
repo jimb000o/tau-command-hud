@@ -489,4 +489,6 @@ TauI18n.add({ strings: {
   "Checks": "检查",
   "Visits": "访问量",
   "In numbers": "数据一览",
+  "Imprint & privacy": "法律声明与隐私",
+  "Impressum and privacy notice: who runs this site and what it processes (no cookies, no tracking)": "法律声明（Impressum）与隐私说明：谁在运营本网站、处理哪些数据（不用 Cookie，不追踪）",
 } });

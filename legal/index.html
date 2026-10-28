@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Imprint & privacy · Tau HUD</title>
+<meta name="description" content="Impressum and privacy notice of Tau HUD: who runs the site and exactly what it processes. No cookies, no tracking, no third-party analytics.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Imprint & privacy · Tau HUD">
+<meta property="og:description" content="Who runs Tau HUD and what it processes: no cookies, no tracking, no third-party analytics.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/legal/">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as /meta and /stats: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --amber: #ffb13b;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.55 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.intro { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 96ch; }
+.langs { display: inline-flex; gap: 4px; }
+.langs a { font: 600 11px var(--display); letter-spacing: .12em; color: var(--dim); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 0 14px; min-height: 30px; display: inline-flex; align-items: center; }
+.langs a:hover { color: #fff; border-color: var(--hair); }
+.langs a[aria-current="true"] { color: #000; background: #fff; border-color: #fff; }
+.zhnote { margin: 0; color: var(--text); }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.fact { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--text); font-size: 12px; background: rgba(16,16,18,.86); white-space: nowrap; }
+.fact::before { content: "✓"; color: var(--ok); margin-right: 6px; }
+article[hidden] { display: none !important; }
+.cols { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1100px) { .cols { grid-template-columns: 380px minmax(0, 1fr); } }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; min-width: 0; }
+.panel > h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.privacy { column-gap: 28px; }
+@media (min-width: 1500px) { .privacy { columns: 2; } }
+@media (min-width: 2300px) { .privacy { columns: 3; } }
+.privacy > h2 { column-span: all; }
+section { break-inside: avoid; margin: 0 0 14px; }
+h3 { margin: 0 0 4px; font: 600 14px var(--display); color: #fff; }
+p, ul { margin: 0 0 6px; }
+ul { padding-left: 18px; }
+li { margin: 0 0 3px; }
+dl.keys { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 4px 0 6px; }
+dl.keys dt { color: #fff; font-size: 12px; }
+dl.keys dd { margin: 0; color: var(--text); }
+address { font-style: normal; color: #fff; margin: 0 0 8px; }
+.ph { color: var(--amber); }
+.small { color: var(--dim); font-size: 12px; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+[hidden] { display: none !important; }
+@media (max-width: 700px) {
+  .langs a { min-height: 44px; }
+  dl.keys { grid-template-columns: minmax(0, 1fr); }
+  dl.keys dd { margin-bottom: 4px; }
+  .fact { white-space: normal; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Imprint & privacy</span></a>
+  </header>
+  <nav class="tnav" data-page="legal" aria-label="Pages and tools"></nav>
+  <div class="intro">
+    <div>
+      <p class="lead">Who runs this site, and what it does with your data.</p>
+      <p class="sub">Short answer: almost nothing. No cookies, no tracking, no advertising, no analytics company, no fonts or scripts from other companies. The details below are complete and checked against the site's code.</p>
+    </div>
+    <div class="langs" role="group" aria-label="Language of the legal text">
+      <a href="?l=de" data-l="de" hreflang="de">Deutsch</a><a href="?l=en" data-l="en" hreflang="en">English</a>
+    </div>
+  </div>
+  <p class="zhnote" id="zhNote" hidden>The legal text is available in German and English. The German version is binding.</p>
+  <div class="facts" aria-label="In short">
+    <span class="fact">No cookies</span><span class="fact">No tracking or profiles</span><span class="fact">No third-party analytics</span><span class="fact">Fonts served from this site</span><span class="fact">Visits counted as daily totals only</span>
+  </div>
+
+  <!-- ===================== DEUTSCH (maßgeblich) ===================== -->
+  <article id="de" lang="de" translate="no" class="cols">
+    <section class="panel" id="impressum">
+      <h2>Impressum</h2>
+      <p class="small">Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG)</p>
+      <address>
+        <span class="ph">[Vorname Nachname]</span><br>
+        <span class="ph">[Straße Hausnummer]</span><br>
+        <span class="ph">[PLZ Ort]</span><br>
+        Deutschland
+      </address>
+      <h3>Kontakt</h3>
+      <p>E-Mail: <span class="ph">[E-Mail-Adresse]</span></p>
+      <h3>Verantwortlich für den Inhalt</h3>
+      <p>nach § 18 Abs. 2 Medienstaatsvertrag (MStV): <span class="ph">[Vorname Nachname]</span>, Anschrift wie oben.</p>
+      <h3>Über dieses Angebot</h3>
+      <p>Tau HUD ist ein privates, nicht kommerzielles Community-Projekt. Es ist nicht mit IDNI oder dem Tau-Projekt verbunden und spricht nicht für sie. Hier wird nichts verkauft und nichts angeboten. Testnet-AGRS haben keinen Wert. Die Seite zeigt öffentliche Daten des Tau Testnet Alpha sowie eine deutlich gekennzeichnete Simulation, ohne Gewähr für Richtigkeit und Vollständigkeit.</p>
+      <h3>Verbraucherstreitbeilegung</h3>
+      <p>Wir sind nicht verpflichtet und nicht bereit, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+      <h3>Haftung für Links</h3>
+      <p>Diese Seite verlinkt auf Angebote Dritter (zum Beispiel tau.net, GitHub, Telegram, YouTube, X, Etherscan). Für deren Inhalte sind allein deren Anbieter verantwortlich. Werden uns Rechtsverletzungen bekannt, entfernen wir den Link umgehend.</p>
+      <h3>Urheberrecht</h3>
+      <p>Der Code dieser Seite steht unter der MIT-Lizenz (<a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">github.com/jimb000o/tau-command-hud</a>). Namen, Logos und Materialien des Tau-Projekts gehören ihren Inhabern. Die Schriften Sora und JetBrains Mono und die übrigen Schriften stehen unter der SIL Open Font License.</p>
+    </section>
+
+    <div class="panel privacy" id="datenschutz">
+      <h2>Datenschutzerklärung</h2>
+      <section>
+        <h3>1. Verantwortlicher</h3>
+        <p>Verantwortlich im Sinne der DSGVO ist die im Impressum genannte Person (<span class="ph">[Vorname Nachname]</span>, <span class="ph">[E-Mail-Adresse]</span>). Ein Datenschutzbeauftragter ist nicht vorgeschrieben und nicht benannt.</p>
+      </section>
+      <section>
+        <h3>2. Kurz gesagt</h3>
+        <ul>
+          <li>Keine Cookies, kein Tracking, keine Werbung, keine Profile.</li>
+          <li>Keine Analysedienste, Social-Media-Plugins, eingebetteten Videos oder Schriften anderer Firmen. Die Schriften liegen auf dieser Seite selbst.</li>
+          <li>Besuche werden auf unserem eigenen Server nur als Tagessummen gezählt. IP-Adressen werden dabei nicht gespeichert.</li>
+          <li>Im Browser speichert die Seite nur Einstellungen, die du selbst wählst, und Daten, die eine von dir genutzte Funktion braucht (Abschnitt 6).</li>
+        </ul>
+      </section>
+      <section>
+        <h3>3. Hosting der Webseite: GitHub Pages</h3>
+        <p>tauhud.com wird über GitHub Pages ausgeliefert, einen Dienst der GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA. Beim Aufruf jeder Seite verarbeitet GitHub technisch notwendige Daten, insbesondere deine IP-Adresse, Datum und Uhrzeit, die aufgerufene Adresse und die Browserkennung (User-Agent), um die Seite auszuliefern und vor Angriffen zu schützen. Wir haben auf diese Protokolle keinen Zugriff.</p>
+        <p>Einige Seiten lesen öffentliche Daten direkt bei der GitHub-Schnittstelle (api.github.com): Findings den Status unserer Meldungen an IDNI, das Menü „Updates“ die Zahl der Änderungen am Projekt. Auch dabei erhält GitHub deine IP-Adresse.</p>
+        <p>Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer sicheren, kostenlosen Bereitstellung). GitHub ist unter dem EU-US Data Privacy Framework zertifiziert; die Übermittlung in die USA stützt sich auf den Angemessenheitsbeschluss der EU-Kommission vom 10. Juli 2023 (Art. 45 DSGVO). Mehr: <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub General Privacy Statement</a>.</p>
+      </section>
+      <section>
+        <h3>4. Unser Server node.tauhud.com</h3>
+        <p>Live-Daten, Simulation-Abstimmungen, Prognosen, Regelprüfungen im Playground, Linkvorschauen und die Besuchszählung laufen über unseren Server node.tauhud.com bei der Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Deutschland, mit Standort in der EU. Hetzner verarbeitet die Daten in unserem Auftrag (Art. 28 DSGVO).</p>
+        <p>Für jede Verbindung ist technisch deine IP-Adresse nötig. Sie wird nur im Arbeitsspeicher genutzt, um Missbrauch zu begrenzen (zum Beispiel höchstens einige Regelprüfungen pro Minute je Adresse), und weder in Zugriffsprotokolle noch auf die Festplatte geschrieben. Der Server führt keine Zugriffsprotokolle. Fehlermeldungen der Dienste enthalten keine IP-Adressen und werden nach wenigen Megabyte überschrieben. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Betrieb und Schutz des Dienstes).</p>
+      </section>
+      <section>
+        <h3>5. Besuchszählung ohne Cookies</h3>
+        <p>Damit wir sehen, welche Seiten helfen, Tau zu verstehen, sendet jede Seite beim Öffnen eine kleine Anfrage an node.tauhud.com und, wenn sie 30 Sekunden sichtbar war, eine zweite. Dabei wird übermittelt: die Seite, der Name der Website, von der du kamst (nur der Hostname, zum Beispiel t.me), ein eventuelles Kennzeichen ?ref= oder utm_source aus dem Link, die Sprache der Seite (Englisch oder Chinesisch) und ob du Live oder Simulation siehst.</p>
+        <p>Um Besucher eines Tages nicht doppelt zu zählen, bildet der Server aus einem zufälligen Tageswert, deiner IP-Adresse und der Browserkennung einen Hashwert. Der Tageswert liegt nur im Arbeitsspeicher und wird um 00:00 UTC verworfen; danach lässt sich der Hashwert niemandem mehr zuordnen. Gespeichert werden ausschließlich Tagessummen (Aufrufe, Besucher, Aufrufe über 30 Sekunden je Seite, Herkunftsseiten, Sprache, Live oder Simulation, Stunde des Tages). Im Browser wird dafür nichts gespeichert und nichts ausgelesen. Die Summen pro Tag sind öffentlich unter <a href="../meta/">Tau HUD in numbers</a>.</p>
+        <p>Browser mit „Do Not Track“ oder „Global Privacy Control“ sowie Bots werden nicht gezählt. Du kannst dich mit <a href="../?nostats=1">tauhud.com/?nostats=1</a> von der Zählung ausnehmen; das legt auf deinen Wunsch den Eintrag tauhud-nostats in deinem Browser ab (<a href="../?nostats=0">?nostats=0</a> entfernt ihn). Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer reichweitenarmen, anonymen Nutzungsstatistik).</p>
+      </section>
+      <section>
+        <h3>6. Speicher in deinem Browser (localStorage)</h3>
+        <p>Die Seite setzt keine Cookies. Sie legt in deinem Browser (localStorage) nur ab, was für eine von dir gewählte Einstellung oder genutzte Funktion unbedingt nötig ist (§ 25 Abs. 2 Nr. 2 TDDDG). Diese Einträge bleiben in deinem Browser; zu uns gelangt nur die Simulations-Kennung, wenn du abstimmst, prognostizierst oder eine Regel vorschlägst. Du kannst alles jederzeit löschen, indem du die Websitedaten von tauhud.com in deinem Browser löschst.</p>
+        <dl class="keys">
+          <dt>tau-mode</dt><dd>Live oder Simulation</dd>
+          <dt>tauhud-lang</dt><dd>gewählte Sprache</dd>
+          <dt>tau-view</dt><dd>Ansicht Einfach oder Technisch</dd>
+          <dt>tau-tour…</dt><dd>welche Seitenführungen schon gezeigt wurden</dd>
+          <dt>tauhud-updates-seen</dt><dd>bis zu welcher Neuigkeit du die Updates gesehen hast</dd>
+          <dt>tau-rain</dt><dd>Hintergrund-Effekt an oder aus</dd>
+          <dt>gazette-…</dt><dd>Ausgabe, Leseposition und Ton der Zeitung</dd>
+          <dt>tauhud-missions</dt><dd>dein Fortschritt bei den Missionen</dd>
+          <dt>tau-simnode</dt><dd>dein eigener Simulations-Knoten, wenn du einen startest</dd>
+          <dt>tau-sim-id</dt><dd>zufällige Simulations-Kennung mit Fantasiename (zum Beispiel „Swift Otter“), erst ab deiner ersten Abstimmung, Prognose oder Regel</dd>
+          <dt>tau-sim-outside</dt><dd>Zwischenspeicher der Abstimmungsergebnisse des Tages</dd>
+          <dt>tauhud-vote-key</dt><dd>der öffentliche Schlüssel, den du auf Vote for real eingibst</dd>
+          <dt>tauhud-findings-v3, tau-effort</dt><dd>Zwischenspeicher öffentlicher GitHub-Daten (höchstens eine Stunde)</dd>
+          <dt>visits-range, tauhud-meta-range</dt><dd>gewählter Zeitraum auf den Zahlen-Seiten</dd>
+          <dt>tauhud-nostats</dt><dd>nur auf deinen Wunsch: nicht mitzählen (Abschnitt 5)</dd>
+        </dl>
+      </section>
+      <section>
+        <h3>7. Simulation: Abstimmen, Prognosen, Regelvorschläge</h3>
+        <p>Wenn du in der Simulation abstimmst, eine Prognose abgibst oder eine Regel vorschlägst, sendet die Seite deine Wahl mit der zufälligen Simulations-Kennung und dem Fantasienamen an unseren Server. Freitext gibt es nicht. Alles wird um 00:00 UTC mit der simulierten Kette verworfen. Die Zahl der Personen online zählt der Server mit einer Zufallszahl je geöffneter Seite, die nur im Arbeitsspeicher liegt. Rechtsgrundlage: Art. 6 Abs. 1 lit. b und f DSGVO.</p>
+      </section>
+      <section>
+        <h3>8. Playground und eigene Knoten</h3>
+        <p>Eine Regel, die du im Playground prüfen lässt, wird an unseren Server gesendet, dort geprüft und nicht dauerhaft gespeichert. Wer mit dem Operator-Kit einen eigenen Testnet-Knoten betreibt und ihn meldet, erscheint unter Nodes mit Knotenname, Höhe, Peer-ID und Kit-Version; diese Angaben sind öffentlich und werden 30 Tage nach der letzten Meldung gelöscht.</p>
+      </section>
+      <section>
+        <h3>9. Feedback über GitHub</h3>
+        <p>Der Feedback-Knopf öffnet ein vorausgefülltes Issue auf GitHub. Was du dort schreibst, ist öffentlich und unterliegt den Bedingungen von GitHub; dafür brauchst du ein GitHub-Konto.</p>
+      </section>
+      <section>
+        <h3>10. Telegram</h3>
+        <p>Kanal @tauHUDcom und Bot @tauhud_alerts_bot laufen auf Telegram (Telegram FZ-LLC, Dubai). Wenn du dem Bot schreibst, übermittelt Telegram deine Nachricht und deine Telegram-ID an unseren Server; er beantwortet sie und speichert sie nicht. Ansonsten gilt die <a href="https://telegram.org/privacy" target="_blank" rel="noopener">Datenschutzerklärung von Telegram</a>.</p>
+      </section>
+      <section>
+        <h3>11. Spenden</h3>
+        <p>Spenden an die angezeigte Adresse sind öffentliche Transaktionen auf Ethereum. Wir lesen sie aus öffentlichen Blockchain-Daten und danken im Telegram-Kanal mit der gekürzten Absenderadresse. Wer das nicht möchte, kann uns schreiben.</p>
+      </section>
+      <section>
+        <h3>12. Links und Einbettung</h3>
+        <p>Links zu YouTube, X, Telegram, tau.net, Etherscan und anderen sind einfache Links: Erst wenn du klickst, wird die andere Seite geladen. Bindet eine andere Website unser Widget ein, lädt es Daten von tauhud.com und node.tauhud.com wie oben beschrieben.</p>
+      </section>
+      <section>
+        <h3>13. Deine Rechte</h3>
+        <p>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit (Art. 15 bis 20 DSGVO) und auf Widerspruch gegen Verarbeitungen auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO (Art. 21 DSGVO). Da wir keine Daten speichern, die dich identifizieren, können wir dich meist nicht zuordnen (Art. 11 DSGVO). Du kannst dich bei einer Datenschutz-Aufsichtsbehörde beschweren, zum Beispiel der deines Wohnorts.</p>
+        <p class="small">Stand: 29. Oktober 2026</p>
+      </section>
+    </div>
+  </article>
+
+  <!-- ===================== ENGLISH ===================== -->
+  <article id="en" lang="en" translate="no" class="cols" hidden>
+    <section class="panel" id="imprint">
+      <h2>Imprint</h2>
+      <p class="small">Information under § 5 of the German Digital Services Act (DDG)</p>
+      <address>
+        <span class="ph">[First name Last name]</span><br>
+        <span class="ph">[Street and number]</span><br>
+        <span class="ph">[Postcode City]</span><br>
+        Germany
+      </address>
+      <h3>Contact</h3>
+      <p>Email: <span class="ph">[Email address]</span></p>
+      <h3>Responsible for the content</h3>
+      <p>under § 18 (2) of the German Media State Treaty (MStV): <span class="ph">[First name Last name]</span>, address as above.</p>
+      <h3>About this site</h3>
+      <p>Tau HUD is a private, non-commercial community project. It is not affiliated with IDNI or the Tau project and does not speak for them. Nothing is sold or offered here. Testnet AGRS have no value. The site shows public data of Tau Testnet Alpha and a clearly marked simulation, without any guarantee of accuracy or completeness.</p>
+      <h3>Consumer dispute resolution</h3>
+      <p>We are neither obliged nor willing to take part in dispute resolution proceedings before a consumer arbitration board.</p>
+      <h3>Links</h3>
+      <p>This site links to other sites (for example tau.net, GitHub, Telegram, YouTube, X, Etherscan). Their providers alone are responsible for their content. If we learn of an infringement, we remove the link at once.</p>
+      <h3>Copyright</h3>
+      <p>The code of this site is MIT licensed (<a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">github.com/jimb000o/tau-command-hud</a>). Names, logos and material of the Tau project belong to their owners. Sora, JetBrains Mono and the other fonts are under the SIL Open Font License.</p>
+      <p class="small">The German version of this page is binding.</p>
+    </section>
+
+    <div class="panel privacy" id="privacy">
+      <h2>Privacy notice</h2>
+      <section>
+        <h3>1. Controller</h3>
+        <p>The controller under the GDPR is the person named in the imprint (<span class="ph">[First name Last name]</span>, <span class="ph">[Email address]</span>). A data protection officer is not required and not appointed.</p>
+      </section>
+      <section>
+        <h3>2. In short</h3>
+        <ul>
+          <li>No cookies, no tracking, no advertising, no profiles.</li>
+          <li>No analytics services, social media plugins, embedded videos or fonts from other companies. The fonts are served by this site itself.</li>
+          <li>Visits are counted on our own server as daily totals only. IP addresses are not stored.</li>
+          <li>In your browser the site keeps only settings you choose and data a feature you use needs (section 6).</li>
+        </ul>
+      </section>
+      <section>
+        <h3>3. Hosting of the website: GitHub Pages</h3>
+        <p>tauhud.com is served by GitHub Pages, a service of GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA. For every page GitHub processes technically necessary data, in particular your IP address, date and time, the address requested and the browser identifier (user agent), to deliver the page and protect it from attacks. We have no access to these logs.</p>
+        <p>Some pages read public data straight from GitHub's interface (api.github.com): Findings the status of our reports to IDNI, the Updates menu the number of changes to the project. GitHub receives your IP address here too.</p>
+        <p>Legal basis: Art. 6 (1) (f) GDPR (legitimate interest in secure, free hosting). GitHub is certified under the EU-US Data Privacy Framework; the transfer to the USA relies on the European Commission's adequacy decision of 10 July 2023 (Art. 45 GDPR). More: <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub General Privacy Statement</a>.</p>
+      </section>
+      <section>
+        <h3>4. Our server node.tauhud.com</h3>
+        <p>Live data, simulation votes, forecasts, Playground rule checks, link previews and the visit count run through our server node.tauhud.com at Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Germany, located in the EU. Hetzner processes the data on our behalf (Art. 28 GDPR).</p>
+        <p>Every connection technically needs your IP address. It is used in memory only, to limit abuse (for example a few rule checks per minute per address), and is written neither to access logs nor to disk. The server keeps no access logs. Error messages of the services contain no IP addresses and are overwritten after a few megabytes. Legal basis: Art. 6 (1) (f) GDPR (running and protecting the service).</p>
+      </section>
+      <section>
+        <h3>5. Visit counting without cookies</h3>
+        <p>To see which pages help people understand Tau, each page sends one small request to node.tauhud.com when it opens and a second one if it stayed visible for 30 seconds. It carries: the page, the name of the site you came from (host name only, for example t.me), a ?ref= or utm_source tag from the link if there is one, the page language (English or Chinese) and whether you view Live or Simulation.</p>
+        <p>To count a visitor once per day, the server hashes a random daily value together with your IP address and browser identifier. The daily value lives in memory only and is discarded at 00:00 UTC; after that the hash cannot be linked to anyone. Only daily totals are stored (views, visitors, views over 30 seconds per page, referring sites, language, Live or Simulation, hour of day). Nothing is stored in or read from your browser for this. The per-day totals are public at <a href="../meta/">Tau HUD in numbers</a>.</p>
+        <p>Browsers with Do Not Track or Global Privacy Control, and bots, are not counted. Open <a href="../?nostats=1">tauhud.com/?nostats=1</a> to leave yourself out; at your request this stores the entry tauhud-nostats in your browser (<a href="../?nostats=0">?nostats=0</a> removes it). Legal basis: Art. 6 (1) (f) GDPR (legitimate interest in minimal, anonymous usage numbers).</p>
+      </section>
+      <section>
+        <h3>6. Storage in your browser (localStorage)</h3>
+        <p>The site sets no cookies. In your browser (localStorage) it keeps only what a setting you chose or a feature you use strictly needs (§ 25 (2) no. 2 TDDDG). These entries stay in your browser; only the simulation identity reaches us, when you vote, forecast or propose a rule. You can delete everything at any time by clearing the site data of tauhud.com in your browser.</p>
+        <dl class="keys">
+          <dt>tau-mode</dt><dd>Live or Simulation</dd>
+          <dt>tauhud-lang</dt><dd>chosen language</dd>
+          <dt>tau-view</dt><dd>Simple or Technical view</dd>
+          <dt>tau-tour…</dt><dd>which page tours were already shown</dd>
+          <dt>tauhud-updates-seen</dt><dd>the newest update you have seen</dd>
+          <dt>tau-rain</dt><dd>background effect on or off</dd>
+          <dt>gazette-…</dt><dd>edition, reading position and sound of the newspaper</dd>
+          <dt>tauhud-missions</dt><dd>your progress in Missions</dd>
+          <dt>tau-simnode</dt><dd>your own simulated node, if you start one</dd>
+          <dt>tau-sim-id</dt><dd>random simulation identity with a made-up name (for example “Swift Otter”), only from your first vote, forecast or rule</dd>
+          <dt>tau-sim-outside</dt><dd>cache of the day's vote results</dd>
+          <dt>tauhud-vote-key</dt><dd>the public key you enter on Vote for real</dd>
+          <dt>tauhud-findings-v3, tau-effort</dt><dd>cache of public GitHub data (one hour at most)</dd>
+          <dt>visits-range, tauhud-meta-range</dt><dd>chosen time range on the numbers pages</dd>
+          <dt>tauhud-nostats</dt><dd>only at your request: do not count me (section 5)</dd>
+        </dl>
+      </section>
+      <section>
+        <h3>7. Simulation: votes, forecasts, rule proposals</h3>
+        <p>When you vote, forecast or propose a rule in the simulation, the page sends your choice with the random simulation identity and the made-up name to our server. There is no free text. Everything is discarded at 00:00 UTC together with the simulated chain. The server counts people online with a random number per open page that lives in memory only. Legal basis: Art. 6 (1) (b) and (f) GDPR.</p>
+      </section>
+      <section>
+        <h3>8. Playground and own nodes</h3>
+        <p>A rule you check in the Playground is sent to our server, checked there and not kept. If you run your own testnet node with the operator kit and report it, it appears under Nodes with its node name, height, peer id and kit version; these are public and deleted 30 days after the last report.</p>
+      </section>
+      <section>
+        <h3>9. Feedback through GitHub</h3>
+        <p>The Feedback button opens a pre-filled issue on GitHub. What you write there is public and subject to GitHub's terms; it needs a GitHub account.</p>
+      </section>
+      <section>
+        <h3>10. Telegram</h3>
+        <p>The channel @tauHUDcom and the bot @tauhud_alerts_bot run on Telegram (Telegram FZ-LLC, Dubai). When you write to the bot, Telegram passes your message and your Telegram id to our server; it answers and does not keep them. Otherwise <a href="https://telegram.org/privacy" target="_blank" rel="noopener">Telegram's privacy policy</a> applies.</p>
+      </section>
+      <section>
+        <h3>11. Donations</h3>
+        <p>Donations to the address shown are public Ethereum transactions. We read them from public blockchain data and say thank you in the Telegram channel with the shortened sender address. If you prefer not, write to us.</p>
+      </section>
+      <section>
+        <h3>12. Links and embedding</h3>
+        <p>Links to YouTube, X, Telegram, tau.net, Etherscan and others are plain links: the other site loads only when you click. If another website embeds our widget, it loads data from tauhud.com and node.tauhud.com as described above.</p>
+      </section>
+      <section>
+        <h3>13. Your rights</h3>
+        <p>You have the right of access, rectification, erasure, restriction of processing, data portability (Art. 15 to 20 GDPR) and to object to processing based on Art. 6 (1) (f) GDPR (Art. 21 GDPR). As we store nothing that identifies you, we usually cannot link data to you (Art. 11 GDPR). You can complain to a data protection supervisory authority, for example the one where you live.</p>
+        <p class="small">As of 29 October 2026</p>
+      </section>
+    </div>
+  </article>
+
+  <footer>Tau HUD · unofficial community project · <a href="../#about">About</a> · <a href="../meta/">Tau HUD in numbers</a></footer>
+</div>
+<script>
+"use strict";
+/* Deutsch or English: ?l=de / ?l=en or #impressum / #imprint; otherwise German on a German page view, English elsewhere.
+   Nothing is stored; the choice lives in the address. */
+(function () {
+  const q = new URLSearchParams(location.search), h = location.hash.slice(1);
+  const DE = ["impressum", "datenschutz"], EN = ["imprint", "privacy"];
+  let l = q.get("l");
+  if (l !== "de" && l !== "en") l = DE.includes(h) ? "de" : EN.includes(h) ? "en" : /^de\b/i.test(navigator.language || "") ? "de" : "en";
+  document.getElementById("de").hidden = l !== "de";
+  document.getElementById("en").hidden = l !== "en";
+  document.querySelectorAll(".langs a").forEach(a => {
+    a.setAttribute("aria-current", String(a.dataset.l === l));
+    const u = new URL(location.href); u.searchParams.set("l", a.dataset.l); u.hash = ""; a.href = u.pathname + u.search;
+  });
+  if (window.TauI18n && TauI18n.lang === "zh") document.getElementById("zhNote").hidden = false;
+  if (h) { const t = document.getElementById(h); if (t && !t.closest("[hidden]")) t.scrollIntoView(); }
+})();
+</script>
+</body>
+</html>

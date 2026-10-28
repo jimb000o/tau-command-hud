@@ -16,8 +16,7 @@
 <meta property="og:description" content="Every block of the Tau testnet, with the rules in force at that moment. Rules change only by agreement: watch it happen.">
 <meta property="og:image" content="https://tauhud.com/og.png">
 <meta property="og:url" content="https://tauhud.com/history/">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
 <style>
 /* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
 :root {
@@ -635,12 +634,9 @@ function send(cmd) { if (C.ws && C.ws.readyState === 1) C.ws.send(cmd); }
 // one random id per browser, shared by every tauhud.com page, so the online counter counts a person once
 function viewerId() {
   try {
-    let v = localStorage.getItem("tauhud-viewer");
-    if (!/^[0-9a-f]{32}$/.test(v || "")) {
-      v = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
-      localStorage.setItem("tauhud-viewer", v);
-    }
-    return v;
+    if (!window.__tauViewer) window.__tauViewer = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
+    try { localStorage.removeItem("tauhud-viewer"); } catch {}   // the id older versions kept in the browser
+    return window.__tauViewer;
   } catch { return ""; }
 }
 function connect() {

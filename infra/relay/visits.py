@@ -3,7 +3,7 @@
 Every page's header (assets/nav.js) sends one GET /v when it opens and, if the page stayed visible for 30 seconds,
 one more with e=1. The relay keeps only counts per UTC day: views, visitors and engaged views per page, where people
 came from (the other site's host name, a ?ref= / utm_source tag, or the previous Tau HUD page), language, sim or live
-view, screen class and hour of day.
+view and hour of day (screen class only from requests that still carry w=; the pages no longer send it).
 
 A "visitor" is counted with a hash of a random daily salt, the address and the browser's user agent. The salt lives in
 memory only and is replaced at 00:00 UTC, so a hash cannot be traced back or linked across days, and the addresses
@@ -171,7 +171,8 @@ class Visits:
                 self.seen.add(visitor)
                 t["visitors"] += 1
                 _bump(t["lang"], "zh" if q.get("l") == "zh" else "en")
-                _bump(t["screen"], screen(q.get("w", "")))
+                if q.get("w"):   # older pages only: the site stopped reading the window width (TDDDG § 25)
+                    _bump(t["screen"], screen(q["w"]))
             if (visitor, page) not in self.seen_page:
                 self.seen_page.add((visitor, page))
                 _bump(t["uniques"], page, MAX_KEYS["views"])

@@ -843,5 +843,16 @@
   "tag": "Checks",
   "on": "2026-10-28",
   "html": "Checks: every change to the site is now opened in a browser before it goes live, each page in English and Chinese, in the simulation and with the live node offline, on wide screens, so a broken page or a missing Chinese text is caught first. About fifty Chinese texts that were still English are translated, and a rare drawing error in Time travel is fixed."
+ },
+ {
+  "tag": "Privacy",
+  "on": "2026-10-29",
+  "html": "New page: imprint and privacy notice, in the Learn menu and under the gear. Who runs Tau HUD and exactly what the site processes, in German and English. Along with it the site got more private: the fonts now come from tauhud.com itself instead of Google, the server keeps no access logs, the online counter no longer stores an id in your browser, the simulation stores your anonymous name only once you vote, forecast or propose, and the visit count no longer reads your screen width.",
+  "major": {
+   "id": "imprint-privacy",
+   "title": "New: imprint and privacy notice",
+   "text": "Who runs Tau HUD and exactly what the site processes. No cookies, no tracking, and the fonts now come from the site itself instead of Google.",
+   "link": "/legal/"
+  }
  }
 ]

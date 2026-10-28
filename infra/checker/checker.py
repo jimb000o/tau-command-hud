@@ -321,8 +321,8 @@ class Handler(BaseHTTPRequestHandler):
             _engine.release()
         if "ms" in result and not result.get("cached"):
             _rate_charge(client)
-        log.info("check from %s: %s %s %sms", self._client(), result.get("stage", "-"),
-                 result.get("accepted"), result.get("ms", "-"))
+        # the visitor's address is used for the rate limit in memory only and is not logged
+        log.info("check: %s %s %sms", result.get("stage", "-"), result.get("accepted"), result.get("ms", "-"))
         self._json(200 if result.get("accepted") is not None else 503, result)
 
     def log_message(self, *args):  # requests are logged once, in do_POST

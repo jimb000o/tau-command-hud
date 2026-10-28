@@ -27,8 +27,7 @@
 <body>
 <title>Tau HUD</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Noto+Serif+SC:wght@900&display=swap">
+<link rel="stylesheet" href="assets/fonts/sora-jetbrainsmono-unifrakturmaguntia-playfairdisplay-oldstandardtt-notoserifsc.css">
 <style>
 /* Layout: holographic command deck. Status rail on top, reactor core in the centre flanked by
    the Tau engine (left) and the transaction stream (right), the chain ribbon and logs below. */
@@ -1622,12 +1621,9 @@ addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setI
 const PSOCK = { ws: null, wait: 5000, timer: null, url: "wss://node.tauhud.com" };
 function viewerId() {
   try {
-    let v = localStorage.getItem("tauhud-viewer");
-    if (!/^[0-9a-f]{32}$/.test(v || "")) {
-      v = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
-      localStorage.setItem("tauhud-viewer", v);
-    }
-    return v;
+    if (!window.__tauViewer) window.__tauViewer = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
+    try { localStorage.removeItem("tauhud-viewer"); } catch {}   // the id older versions kept in the browser
+    return window.__tauViewer;
   } catch { return ""; }
 }
 function helloLine() { const v = viewerId(); return "hello version=1" + (v ? " viewer=" + v : ""); }
