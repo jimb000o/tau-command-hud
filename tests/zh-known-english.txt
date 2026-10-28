@@ -17,6 +17,7 @@ sees {n} nodes on the network. {n} nodes
 /playground
 /proposals
 @TauHUDcom
+Agoras
 Agoras Tau
 Bob
 Bobby
