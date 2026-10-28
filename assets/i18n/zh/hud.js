@@ -1438,5 +1438,6 @@ TauI18n.add({ strings: {
   "and {n} other node on the testnet": "以及测试网上另外 {n} 个节点",
   "and {n} other nodes on the testnet": "以及测试网上另外 {n} 个节点",
   "1 other node on the testnet": "测试网上另外 1 个节点",
-  "and 1 other node on the testnet": "以及测试网上另外 1 个节点"
+  "and 1 other node on the testnet": "以及测试网上另外 1 个节点",
+  "Stats: the block time chart stays readable with thousands of blocks. Past about one block per 4 pixels it groups the blocks into equal time slots and shows the median per slot as a line, the middle half of the blocks as a shaded band and unusually slow blocks as dots; the axis starts near the data when every block is about as fast (the 8 s simulation). Hover a slot for its median, spread and slowest block.": "统计：出块时间图在有数千个区块时也保持清晰。当超过约每 4 像素一个区块时，它把区块分成等长的时间段，用线显示每段的中位数，用阴影带显示中间一半的区块，用圆点显示异常慢的区块；当所有区块速度都差不多时（8 秒的模拟），纵轴从数据附近开始。悬停在某一段上可查看它的中位数、分布和最慢的区块。"
 } });
