@@ -64,7 +64,7 @@ check(sv2.tally("slot:3")["no"] == 4 and sv2.tally("visitor:abc")["yes"] == 1, "
 T[0] += 86400
 check(sv2.snapshot()["items"].get("slot:3", {}).get("yes", 0) == 0 and sv2.tally("visitor:abc") is None, "a new day starts with no votes")
 
-st, body = sv2.route("/sim/vote", f"item=slot:3&voter={tok(40)}&yes=1&a=0&b=0&c=0", "ip40")
+st, body = sv2.route("/sim/vote", f"item=slot%3A3&voter={tok(40)}&yes=1&a=0&b=0&c=0", "ip40")
 check(st == 409 and body["error"] == "closed", f"route answers a closed ballot with 409 ({st})")
 check(sv2.route("/sim/votes", "", "ip") [0] == 200 and sv2.route("/status", "", "ip") is None, "route handles only its paths")
 check(simvotes.name_of(0, 0) == "Quiet Otter", "name_of")
