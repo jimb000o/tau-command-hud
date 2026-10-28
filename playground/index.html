@@ -102,6 +102,18 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border
 .steps li.fail { border-left-color: var(--refused); background: rgba(229,72,77,.07); } .steps li.fail .ic { color: var(--refused); } .steps li.fail p { color: var(--text); }
 .steps li.run { border-left-color: var(--behind); } .steps li.run .ic { color: var(--behind); }
 .steps li.skip { opacity: .5; }
+.steps li { cursor: pointer; }
+.steps li:hover, .steps li:focus-visible { background-color: rgba(255,255,255,.05); outline: none; }
+.steps li:focus-visible { box-shadow: inset 0 0 0 1px var(--hair); }
+.info { display: inline-grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--hair); border-radius: 50%; font: 600 10px/1 var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); cursor: help; }
+.info:hover, .info:focus-visible { color: #fff; border-color: #fff; outline: none; }
+.stepd h2 { color: #fff; font: 600 15px var(--display); letter-spacing: .02em; text-transform: none; }
+.stepd .stat { margin: 0 0 12px; padding: 8px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.03); font-size: 12px; }
+.stepd .stat.pass { border-left-color: var(--ok); } .stepd .stat.fail { border-left-color: var(--refused); background: rgba(229,72,77,.07); }
+.stepd .stat b { display: block; color: #fff; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 2px; }
+.stepd h3 { margin: 12px 0 3px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.stepd p { margin: 0; max-width: 76ch; }
+.stepd .src { margin-top: 14px; }
 .steps li { transition: opacity .18s, border-color .18s, background-color .18s; }
 .steps li.wait { opacity: .35; } .steps li.wait .ic { color: var(--dim); }
 .steps li.tick { animation: tick .6s ease-out; }
@@ -250,7 +262,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     </div>
 
     <div class="panel">
-      <h2>What the testnet does with it</h2>
+      <h2>What the testnet does with it <span class="info" tabindex="0" data-tnt="Hover a check for what it tests. Click it for why the testnet has it, how to fix a refusal and where it lives in the node’s code.">i</span></h2>
       <ol class="steps" id="steps"></ol>
       <div class="verdict idle" id="verdict" aria-live="polite">Press “Check rule” to run the checks.</div>
       <details id="compDetails" hidden>
@@ -311,6 +323,13 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   </section>
 
   <p class="src">Checks ported from <a href="https://github.com/IDNI/tau-testnet/tree/539d1e2" target="_blank" rel="noopener">IDNI/tau-testnet @ 539d1e2</a>: <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/rule_offers.py" target="_blank" rel="noopener">rule_offers.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py" target="_blank" rel="noopener">admission.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/approvals.py" target="_blank" rel="noopener">approvals.py</a>. Unofficial community page, not affiliated with IDNI. · <button class="linkish" id="fbFab" type="button">Feedback</button></p>
+</div>
+
+<div class="modal" id="mStep" hidden role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  <div class="sheet">
+    <button class="close" id="stClose" type="button" aria-label="Close">✕</button>
+    <article class="panel stepd" id="stBody"></article>
+  </div>
 </div>
 
 <div class="modal" id="mFeedback" hidden role="dialog" aria-modal="true" aria-labelledby="fbTitle">
@@ -663,10 +682,43 @@ document.querySelector(".insert").addEventListener("click", ev => {
 });
 
 const STEP_TITLES = ["Size", "Shape", "Time", "Streams", "Widths", "Wrapped in your address guard"];
+/* what each check is for: hover shows "tip", a click opens the rest */
+const SRC = "https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/";
+const STEP_INFO = [
+  { tip: "Is the rule short enough? The node refuses any rule text over 8 192 bytes before it reads it at all.",
+    why: "Every node stores and replays every rule. A size cap keeps one rule from slowing down or flooding the whole network.",
+    fix: "Shorten the rule: drop comments and repeated parts, or split the idea into a simpler condition.",
+    src: ["rule_offers.py", "MAX_OFFER_RULE_BYTES"] },
+  { tip: "Is it one “always ( … ).” unit that sets o5, your transfer answer, and nothing else?",
+    why: "A personal rule may only answer one question: may this transfer of yours go through? So the node accepts exactly one always-clause whose output is o5.",
+    fix: "Write it as always ( condition ? (o5[t]:bv[24] = { #x000001 }:bv[24]) : (o5[t]:bv[24] = { #x000000 }:bv[24]) ). Start from an example chip if unsure.",
+    src: ["rule_offers.py", "normalize_offer_rule_text"] },
+  { tip: "Does it read only the current step [t]? Looking back at [t-1] or ahead is refused.",
+    why: "Rules change by agreement while the chain runs. A rule that remembered earlier steps would carry stale state across every rule change and break other accounts’ outputs.",
+    fix: "Replace [t-1] (or any other step) with [t]. Decide on the transfer in front of you, not on earlier ones.",
+    src: ["admission.py", "temporal screen"] },
+  { tip: "Does it read only inputs a personal rule may read, and write no network-owned output?",
+    why: "Some streams belong to the network (o0–o4, o6, o7, o9) or differ between checking and applying a transfer, like your balance i2. Reading or writing those would let a rule disagree with the chain.",
+    fix: "Use i1 (amount), i4 (recipient) and i5 (block time). Do not read i2 (balance) or the reserved inputs, and write only o5.",
+    src: ["admission.py", "_screen_clause_domains"] },
+  { tip: "Are o5 and its values typed bv[24], the width the network expects?",
+    why: "The network reads o5 as a 24-bit value. A different width would make your answer unreadable for the node that applies the transfer.",
+    fix: "Write o5[t]:bv[24] and give its values as { #x000001 }:bv[24] / { #x000000 }:bv[24].",
+    src: ["admission.py", "policy widths"] },
+  { tip: "The node puts your rule behind “only if the sender is you”, so it can only decide your own transfers.",
+    why: "Without the guard a personal rule could block anyone’s transfers. Wrapped, everyone else falls through to “allow”. The wrapped text is what the node stores (shown under “The rule as the node stores it”).",
+    fix: "Nothing to fix here: this step always passes once the checks above pass.",
+    src: ["rule_offers.py", "compose_stream_rule"] },
+  { tip: "The real Tau engine compiles the wrapped rule next to the network’s own rules and runs your transfers through it.",
+    why: "Text checks cannot see contradictions or clashes with the network’s rules. The engine can: if it finds no consistent way to apply the rule, the node refuses it.",
+    fix: "Read the engine’s reason. Common causes: the rule contradicts itself (o5 both 0 and 1), or a stream width clashes with how the network uses it.",
+    src: null },
+];
+function infoTip(i) { return STEP_INFO[i] ? STEP_INFO[i].tip + "\nClick for more." : ""; }
 function stepHtml(s, i) {
   const cls = s.ok === true ? "pass" : s.ok === false ? "fail" : s.ok === "run" ? "run" : s.ok === "wait" ? "wait" : "skip";
   const ic = s.ok === true ? "✓" : s.ok === false ? "✕" : s.ok === "run" ? "…" : s.ok === "wait" ? "·" : "○";
-  return `<li class="${cls}"><span class="ic">${ic}</span><div><b>${i + 1} · ${esc(s.title)}</b><p>${esc(s.detail || "")}</p></div></li>`;
+  return `<li class="${cls}" data-step="${i}" tabindex="0" role="button" aria-haspopup="dialog" data-tnt="${esc(infoTip(i))}"><span class="ic">${ic}</span><div><b>${i + 1} · ${esc(s.title)}</b><p>${esc(s.detail || "")}</p></div></li>`;
 }
 /* the full list of seven, so the panel keeps its height whether a rule fails early or not */
 function allSteps(steps, eng) {
@@ -793,6 +845,34 @@ function finish(seq, t0, note, flash) {
   if (flash) { settle(verdictEl); settle(stampEl); }
 }
 btnCheck.addEventListener("click", () => runCheck(true));
+
+/* click a check: what it tests, why, how to fix, where it lives in the node's code, and how this rule fared */
+(() => {
+  const modal = $("mStep"), body = $("stBody");
+  let back = null;
+  function open(li) {
+    const i = +li.dataset.step, info = STEP_INFO[i]; if (!info) return;
+    const title = li.querySelector("b").textContent, now = li.querySelector("p").textContent;
+    const st = li.classList.contains("pass") ? ["pass", "Passed for your rule"] : li.classList.contains("fail") ? ["fail", "Refused your rule"]
+      : li.classList.contains("run") || li.classList.contains("wait") ? ["", "Running"] : ["", "Not run for your rule"];
+    const src = info.src
+      ? `Where the node does it: <a href="${SRC}${info.src[0]}" target="_blank" rel="noopener">${info.src[0]} ↗</a> (${esc(info.src[1])}), IDNI/tau-testnet @ 539d1e2.`
+      : `Where the node does it: the Tau engine sandbox the node uses before it takes a rule. This page sends your rule to the same code on the community node (<a href="https://github.com/jimb000o/tau-command-hud/blob/main/infra/checker/checker.py" target="_blank" rel="noopener">checker.py ↗</a>).`;
+    body.innerHTML = `<h2 id="stTitle">${esc(title)}</h2>
+      <div class="stat ${st[0]}"><b>${st[1]}</b>${esc(now)}</div>
+      <h3>What it checks</h3><p>${esc(info.tip)}</p>
+      <h3>Why the testnet has it</h3><p>${esc(info.why)}</p>
+      <h3>${st[0] === "fail" ? "How to fix it" : "If it refuses a rule"}</h3><p>${esc(info.fix)}</p>
+      <p class="src">${src}</p>`;
+    back = document.activeElement; modal.hidden = false; $("stClose").focus();
+  }
+  function close() { modal.hidden = true; if (back && back.focus) back.focus(); }
+  stepsEl.addEventListener("click", e => { const li = e.target.closest("li[data-step]"); if (li) open(li); });
+  stepsEl.addEventListener("keydown", e => { const li = e.target.closest("li[data-step]"); if (li && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open(li); } });
+  $("stClose").addEventListener("click", close);
+  modal.addEventListener("click", e => { if (e.target === modal) close(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) close(); });
+})();
 
 async function engineCheck(text) {
   try {
