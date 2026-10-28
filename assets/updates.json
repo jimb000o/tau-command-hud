@@ -658,5 +658,10 @@
   "tag": "Simulation",
   "on": "2026-10-28",
   "html": "The simulation now shows what Tau refuses, and the day has rhythm. Every hour at hh:40 a rule change that contradicts the rules in force is refused before any vote, with its reason in the Proposals news and the Explorer’s Refused list. At hh:50 a contested proposal, six times today’s fee, gets the proposer’s vote alone and is dropped at hh:58: a quorum that never forms. A rule offer that conflicts with the receiver’s own rule is rejected with the reason in the transaction. Retractable transfers are sometimes pulled back and the money returns. Every half hour a three-minute burst of traffic and a six-minute lull. The kit node bob falls up to 60 blocks behind from minute 35 and catches up from minute 45; the Nodes page shows it as “Catching up”. Simulation mode only."
+ },
+ {
+  "tag": "What if",
+  "on": "2026-10-28",
+  "html": "New page What if, under Playground: a sandbox chain with levers. Move the block time, the number of validators and the votes a rule change needs, switch validators off or slow the network down, and the chain reacts at once: forks where a block arrives too late, gaps where a validator misses its turn, rule changes that take longer or never pass. Presets show the real testnet today, the shared simulation, a chain that is too fast and one where everyone must agree. The sandbox runs only in your browser; the shared simulation and the real testnet stay as they are. The link keeps your levers, so a setting can be shared."
  }
 ]
