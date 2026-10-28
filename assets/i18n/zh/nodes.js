@@ -116,4 +116,10 @@ TauI18n.add({ strings: {
   "{n} offline": "{n} 个离线",
   "{n} other peers": "{n} 个其他节点",
   "{x1} · id {x2} since {x3} · kit {x4} · tau-testnet {x5} Click for its badge.": "{x1} · ID {x2} 自 {x3} 起 · 套件 {x4} · tau-testnet {x5} 点击获取它的徽章。",
+  "nodes online": "个节点在线",
+  "community nodes": "个社区节点",
+  "Every node online now: ours, the peers our node talked to in the last 30 minutes and kit nodes that reported in the last 15.": "当前在线的所有节点：我们的节点、我们的节点在最近 30 分钟内通信过的节点，以及最近 15 分钟内报告过的套件节点。",
+  "Online nodes at our chain’s tip: kit nodes with our block at their height, peers within 2 blocks of our height.": "位于我们链顶端的在线节点：在其高度上与我们区块相同的套件节点，以及与我们高度相差不超过 2 个区块的节点。",
+  "Nodes that run the Tau HUD kit and reported in the last 30 days.": "运行 Tau HUD 套件、并在最近 30 天内报告过的节点。",
+  "None yet: yours would be the first.": "还没有：你的会是第一个。",
 } });
