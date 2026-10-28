@@ -26,6 +26,14 @@ Nothing is posted for what the watcher finds on its very first run, and
 nothing whose block is older than POST_MAX_AGE_SECONDS, so a fresh volume or
 a long outage never floods the channel with old news.
 
+It also announces changes to Tau HUD itself, read from the site's own update
+log (assets/updates.json): an entry with a "major" field gets a post of its
+own (at most SITE_MAJOR_DAILY_CAP a day, SITE_MAJOR_GAP_SECONDS apart, only
+between SITE_POST_HOURS UTC); every other entry waits and goes into one
+digest post of the smaller changes at SITE_DIGEST_HOUR UTC, once enough
+have gathered. The first run only remembers what is already in the log,
+except majors from the last SITE_MAJOR_MAX_AGE_DAYS days, which are queued.
+
 Once a week (Monday 09:00 UTC by default) it also posts a recap image of the
 week (recap.py) and keeps a copy at https://node.tauhud.com/recap/latest.png.
 
@@ -35,6 +43,7 @@ week (recap.py) and keeps a copy at https://node.tauhud.com/recap/latest.png.
   python alerts.py --recap-preview  draw this week's recap and save it, post nothing
   python alerts.py --recap-now      draw the recap and post it to each configured channel
   python alerts.py --sim-preview    print today's two simulation posts (the consensus switches), post nothing
+  python alerts.py --site-preview   print the site-update posts waiting in assets/updates.json, post nothing
 """
 from __future__ import annotations
 
@@ -47,6 +56,7 @@ import io
 import json
 import logging
 import os
+import re
 import secrets
 import sys
 import time
@@ -105,6 +115,21 @@ SIM_ON = os.environ.get("SIM_ALERTS", "true").lower() in ("1", "true", "yes")
 SIM_SWITCHES = (("stake", 10), ("fixed", 16))
 SIM_PROPOSED_AT, SIM_IN_FORCE_AT = 20 * 60, 30 * 60
 SIM_LINK = f"{SITE}/proposals/?mode=sim"
+# Changes to Tau HUD itself, from the update log every release appends to. Mark an entry as worth its own post with
+#   "major": {"title": "…", "text": "one or two plain sentences", "link": "/page/"}
+# (text and link are optional: the entry's first two sentences and the home page). Everything else is bundled into a digest.
+SITE_ON = os.environ.get("SITE_UPDATES", "true").lower() in ("1", "true", "yes")
+SITE_UPDATES_URL = os.environ.get("SITE_UPDATES_URL", f"{SITE}/assets/updates.json")
+SITE_EVERY = float(os.environ.get("SITE_UPDATES_POLL_SECONDS", 600))
+SITE_MAJOR_DAILY_CAP = int(os.environ.get("SITE_MAJOR_DAILY_CAP", 2))
+SITE_MAJOR_GAP = float(os.environ.get("SITE_MAJOR_GAP_SECONDS", 3 * 3600))
+SITE_MAJOR_MAX_AGE_DAYS = int(os.environ.get("SITE_MAJOR_MAX_AGE_DAYS", 3))
+SITE_POST_HOURS = tuple(int(x) for x in os.environ.get("SITE_POST_HOURS", "8-20").split("-"))  # UTC, start included, end not
+SITE_DIGEST_HOUR = int(os.environ.get("SITE_DIGEST_HOUR", 17))   # UTC
+SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smaller changes wait for the next day…
+SITE_DIGEST_MAX_WAIT = float(os.environ.get("SITE_DIGEST_MAX_WAIT_DAYS", 7)) * 86400  # …but not longer than this
+SITE_DIGEST_LINES = 8
+SITE_LOG_LINK = f"{SITE}/#updates"
 FEED_ITEMS = 100
 RANGE = 100           # relay's getblockrange maximum
 REFETCH_TAIL = 6      # blocks re-read every poll so a replaced tip block (reorg) is noticed
@@ -594,6 +619,92 @@ def sim_text(ev: dict) -> str:
 def sim_buttons() -> dict:
     """One button under a simulation post: it opens the site in Simulation mode (the real-testnet buttons would mislead here)."""
     return {"inline_keyboard": [[{"text": "🧪 Watch the simulation", "url": SIM_LINK}]]}
+
+
+# ---------- changes to Tau HUD itself ----------
+SITE_LINE = "✨ <b>TAU HUD · new on the site</b>"
+DIGEST_LINE = "🛠 <b>TAU HUD · smaller site updates</b>"
+SITE_NOTICE = "An update to the Tau HUD website, not news from the testnet."
+
+
+def plain(h: str) -> str:
+    """An update-log entry as plain text: tags dropped, entities resolved, spaces collapsed."""
+    return " ".join(html.unescape(re.sub(r"<[^>]+>", "", h or "")).split())
+
+
+def sentences(t: str, n: int) -> str:
+    """The first n sentences of t."""
+    parts = re.split(r"(?<=[.!?])\s+(?=[A-Z“\"(])", t)
+    return " ".join(parts[:n])
+
+
+def site_area(e: dict) -> str:
+    tag = str(e.get("tag") or "").strip()
+    return "HUD" if re.fullmatch(r"v\d+(\.\d+)*", tag) else (tag or "Tau HUD")
+
+
+def site_key(e: dict) -> str:
+    """Stable enough to never post an entry twice: date, tag and the start of its text (a later typo fix further on keeps it)."""
+    m = e.get("major") if isinstance(e.get("major"), dict) else None
+    if m and m.get("id"):
+        return "major:" + str(m["id"])
+    return f"{e.get('on')}|{e.get('tag')}|{plain(e.get('html'))[:60]}"
+
+
+def site_link(link: str | None) -> str:
+    if not link:
+        return SITE + "/"
+    return link if link.startswith("http") else SITE + "/" + link.lstrip("/")
+
+
+def major_item(e: dict) -> dict:
+    m = e["major"]
+    return {"title": str(m.get("title") or site_area(e)), "text": str(m.get("text") or sentences(plain(e.get("html")), 2)),
+            "link": site_link(m.get("link")), "on": e.get("on")}
+
+
+def digest_item(e: dict) -> dict:
+    """One line of the digest: the area and the entry's first sentence, without the area repeated in front."""
+    area, first = site_area(e), sentences(plain(e.get("html")), 1)
+    if first.lower().startswith(area.lower() + ":"):
+        first = first[len(area) + 1:].strip()
+        first = first[:1].upper() + first[1:]
+    return {"area": area, "line": first, "on": e.get("on")}
+
+
+def major_text(m: dict) -> str:
+    e = html.escape
+    return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", "", e(m["text"]), "",
+                      f"<a href=\"{e(m['link'])}\">Open it on tauhud.com</a>", "", f"<i>{e(SITE_NOTICE)}</i>"])
+
+
+def major_buttons(m: dict) -> dict:
+    return {"inline_keyboard": [[{"text": "✨ Open it", "url": m["link"]}, {"text": "📜 All updates", "url": SITE_LOG_LINK}]]}
+
+
+def digest_text(items: list[dict], lines: int = SITE_DIGEST_LINES) -> str:
+    """The digest of smaller changes, oldest first; more than `lines` are counted, not listed."""
+    e = html.escape
+    shown, rest = items[:lines], len(items) - lines
+    since = min((i.get("on") or "" for i in items), default="")
+    head = f"<b>{plural(len(items), 'smaller change')} to Tau HUD" + (f" since {e(since)}" if since else "") + "</b>"
+    out = [DIGEST_LINE, head, ""] + [f"• <b>{e(i['area'])}</b>: {e(i['line'])}" for i in shown]
+    if rest > 0:
+        out.append(f"…and {plural(rest, 'more change')} in the Updates log.")
+    out += ["", f"<a href=\"{e(SITE_LOG_LINK)}\">Read every change in the Updates log</a>", "", f"<i>{e(SITE_NOTICE)}</i>"]
+    text = "\n".join(out)
+    if len(text) > 3900 and lines > 1:  # Telegram's limit is 4096 characters
+        return digest_text(items, lines - 1)
+    return text
+
+
+def digest_buttons() -> dict:
+    return {"inline_keyboard": [[{"text": "📜 Updates log", "url": SITE_LOG_LINK}]]}
+
+
+def in_post_hours(t: float) -> bool:
+    h = datetime.fromtimestamp(t, timezone.utc).hour
+    return SITE_POST_HOURS[0] <= h < SITE_POST_HOURS[1]
 
 
 # ---------------- outlets ----------------
@@ -1126,6 +1237,85 @@ class Watcher:
         if changed:
             self.save_state()
 
+    # ---------- changes to Tau HUD itself ----------
+    def fetch_updates(self) -> list | None:
+        try:
+            req = urllib.request.Request(SITE_UPDATES_URL, headers={"Cache-Control": "no-cache", "User-Agent": "tauhud-alerts"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                data = json.load(r)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            log.warning("site updates: cannot read %s (%r)", SITE_UPDATES_URL, exc)
+            return None
+        return [e for e in data if isinstance(e, dict)] if isinstance(data, list) else None
+
+    def take_updates(self, entries: list[dict], now: float):
+        """New log entries into the queues: majors to post one by one, the rest into the digest. First run: history."""
+        st = self.state["site"]
+        seen, oldest = st["seen"], (datetime.fromtimestamp(now, timezone.utc) - timedelta(days=SITE_MAJOR_MAX_AGE_DAYS)).strftime("%Y-%m-%d")
+        for e in entries:
+            k = site_key(e)
+            if k in seen:
+                continue
+            seen[k] = round(now)
+            if isinstance(e.get("major"), dict):
+                if str(e.get("on") or "") >= oldest:
+                    st["majors"].append({"key": k, **major_item(e)})
+                else:
+                    log.info("site updates: major %s is older than %d days, not posted", k, SITE_MAJOR_MAX_AGE_DAYS)
+            elif st["primed"]:
+                st["pending"].append({"key": k, "at": round(now), **digest_item(e)})
+        st["primed"] = True
+        if len(seen) > 5000:
+            for k in sorted(seen, key=seen.get)[:len(seen) - 5000]:
+                del seen[k]
+
+    async def maybe_site(self, now: float | None = None, entries: list | None = None):
+        """Major site changes one post each, smaller ones bundled into a daily digest; see the module text."""
+        if not SITE_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("site", {})
+        for k, v in (("seen", {}), ("majors", []), ("pending", []), ("primed", False)):
+            st.setdefault(k, v)
+        if now - st.get("checked", 0) >= SITE_EVERY or entries is not None:
+            st["checked"] = now
+            entries = entries if entries is not None else await asyncio.to_thread(self.fetch_updates)
+            if entries is not None:
+                self.take_updates(entries, now)
+            self.save_state()
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        if not tg or st.get("pause_until", 0) > now or not in_post_hours(now):
+            return
+        day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
+        if st.get("day") != day:
+            st["day"], st["count"] = day, 0
+        if st["majors"] and st["count"] < SITE_MAJOR_DAILY_CAP and now - st.get("last_major", 0) >= SITE_MAJOR_GAP:
+            m = st["majors"][0]
+            if await self.site_send(tg, major_text(m), major_buttons(m), now):
+                st["majors"].pop(0)
+                st["count"] += 1
+                st["last_major"] = round(now)
+                log.info("site updates: posted %s", m["key"])
+            self.save_state()
+            return  # one post per check: a digest never lands on top of a major
+        slot = datetime.fromtimestamp(now, timezone.utc).replace(hour=SITE_DIGEST_HOUR, minute=0, second=0, microsecond=0).timestamp()
+        due = st["pending"] and now >= slot and st.get("last_digest", 0) < slot and now - st.get("last_major", 0) >= 1800
+        if due and (len(st["pending"]) >= SITE_DIGEST_MIN or now - st["pending"][0]["at"] >= SITE_DIGEST_MAX_WAIT):
+            if await self.site_send(tg, digest_text(st["pending"]), digest_buttons(), now):
+                log.info("site updates: digest of %d posted", len(st["pending"]))
+                st["pending"], st["last_digest"] = [], round(now)
+            self.save_state()
+
+    async def site_send(self, tg: list, text: str, buttons: dict, now: float) -> bool:
+        st = self.state["site"]
+        for o in tg:
+            ok, retry, err = await asyncio.to_thread(o.send_text, text, buttons)
+            if not ok:
+                st["pause_until"] = now + (retry or 300)
+                log.warning("site update post failed (%s); trying again later", err)
+                return False
+        return True
+
     # ---------- weekly recap ----------
     @staticmethod
     def recap_slot(now: float) -> float:
@@ -1223,6 +1413,7 @@ class Watcher:
                         await self.maybe_health()
                         await self.maybe_newnodes()
                         await self.maybe_sim()
+                        await self.maybe_site()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
                 raise
@@ -1230,6 +1421,7 @@ class Watcher:
                 log.warning("relay connection lost (%r); retrying in 10 s", exc)
                 await self.maybe_health()  # a relay that stays away is news too
                 await self.maybe_sim()     # needs no relay
+                await self.maybe_site()    # neither does this
                 await asyncio.sleep(10)
 
 
@@ -1276,6 +1468,22 @@ def sim_preview() -> int:
     return 0
 
 
+def site_preview() -> int:
+    """Print the site-update posts the log holds right now: the majors of the last days and a digest of the newest smaller changes."""
+    entries = Watcher([]).fetch_updates()
+    if entries is None:
+        print(f"cannot read {SITE_UPDATES_URL}")
+        return 1
+    oldest = (datetime.now(timezone.utc) - timedelta(days=SITE_MAJOR_MAX_AGE_DAYS)).strftime("%Y-%m-%d")
+    for e in entries:
+        if isinstance(e.get("major"), dict) and str(e.get("on") or "") >= oldest:
+            print(major_text(major_item(e)))
+            print("-" * 60)
+    small = [digest_item(e) for e in entries if not isinstance(e.get("major"), dict)][-5:]
+    print(digest_text(small) if small else "No smaller changes in the log.")
+    return 0
+
+
 def recap_cli(post: bool) -> int:
     """Draw the recap of the 7 days up to now; post it too with post=True."""
     w = Watcher()
@@ -1308,4 +1516,6 @@ if __name__ == "__main__":
         sys.exit(recap_cli("--recap-now" in sys.argv))
     if "--sim-preview" in sys.argv:
         sys.exit(sim_preview())
+    if "--site-preview" in sys.argv:
+        sys.exit(site_preview())
     asyncio.run(Watcher().run())
