@@ -471,11 +471,14 @@
       community_nodes: NODES.filter(n => n.online).length, health: { score: hs.score, state: hs.state, label: hs.label }, docs: "https://tauhud.com/developers/", simulation: true };
   }
   /* the visitors' ballot on the hourly change k: open hh:20 to hh:27, the tally from the relay, the outcome once closed */
-  function ballotOf(k, t) {
+  function ballotOf(k, t) { const opens = G + (SLOT_AT + SLOT_LEN * k) * PACE; return ballotFor("slot:" + k, t, opens, opens + BALLOT_SECONDS, slotOutcome(k)); }
+  /* any item the relay counts (a visitor proposal too): the same shape, so every page treats it the same way */
+  function ballotFor(item, t, opens, closes, cached) {
     t = at(t);
-    const item = "slot:" + k, opens = G + (SLOT_AT + SLOT_LEN * k) * PACE, closes = opens + BALLOT_SECONDS, b = BALLOTS.day === dayKey() && BALLOTS.items[item] || null;
-    const outcome = t >= closes ? (b && b.outcome) || slotOutcome(k) || (b ? "none" : null) : null;
-    return { item, opens, closes, open: t >= opens && t < closes, yes: b ? b.yes : 0, no: b ? b.no : 0, voters: b ? b.voters || [] : [], mine: b && b.mine != null ? b.mine : null, outcome, counted: !!b };
+    const b = BALLOTS.day === dayKey() && BALLOTS.items[item] || null;
+    opens = opens != null ? opens : b ? b.opens : null; closes = closes != null ? closes : b ? b.closes : null;
+    const outcome = closes != null && t >= closes ? (b && b.outcome) || cached || (b ? "none" : null) : null;
+    return { item, opens, closes, open: opens != null && t >= opens && t < closes, yes: b ? b.yes : 0, no: b ? b.no : 0, voters: b ? b.voters || [] : [], mine: b && b.mine != null ? b.mine : null, outcome, counted: !!b, meta: b ? b.meta || {} : {} };
   }
   const dayKey = () => new Date(DAYI * DAY * 1000).toISOString().slice(0, 10);
 
@@ -652,7 +655,7 @@
       try { const u = new URL(location.href); u.searchParams.delete("mode"); u.searchParams.delete("sample"); if (u.href === location.href) location.reload(); else location.href = u.href; } catch (e) { location.reload(); }
     },
     head: () => sync(), block: n => { sync(); return B[n] ? pub(B[n]) : null; }, ts: n => { sync(); return ts(n); },
-    _refresh: () => refreshOutside(), me, vote: castVote, ballots: () => BALLOTS, ballot: k => ballotOf(k), onBallots: fn => { BAL_FNS.add(fn); return () => BAL_FNS.delete(fn); }, nameOf, colours: ID_COLOURS, ballotSeconds: BALLOT_SECONDS, ready: () => FIRST,
+    refresh: () => refreshOutside().catch(() => {}), me, vote: castVote, ballots: () => BALLOTS, ballot: k => ballotOf(k), ballotFor: item => ballotFor(item), onBallots: fn => { BAL_FNS.add(fn); return () => BAL_FNS.delete(fn); }, nameOf, colours: ID_COLOURS, ballotSeconds: BALLOT_SECONDS, ready: () => FIRST,
     socket, fetch: fetchSim, answer, status, stats, uptime, health, community, board, peers, summary, proposals, upcoming, governance, mempool, account,
     chain: { rulesAt: h => { sync(); return rulesAt(h); }, props: () => { sync(); return ST.props; }, arrivals: n => { sync(); return B[n] ? B[n]._arrive : []; }, dropped: n => { sync(); return B[n] ? B[n]._dropped : []; }, headAt: t => { rollDay(t); return headAt(t); }, genesisTs: () => { sync(); return G; } },
     /* marks a page: the title says so, and a footer line that names the data source gets the simulation's line instead */
