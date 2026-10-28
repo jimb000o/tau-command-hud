@@ -138,6 +138,12 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .pbar .active { color: var(--ok); }
 .pbar .voting { color: var(--behind); }
 .pbar .dropped { color: rgba(255,255,255,.25); }
+.pbar .agreed { color: var(--behind); }
+.pbar button.cut::after { display: none; }   /* decided here; the end marker sits at the activation block */
+.pbar button.due { min-width: 0; width: 0; background: none; }
+.pbar button.due::before { left: -4px; top: 2px; width: 8px; height: 8px; border-radius: 1px; transform: rotate(45deg); background: var(--deck); }
+.pbar button.due::after { display: none; }
+.pbar button.due.active::before { background: currentColor; }
 .axis { position: relative; height: 16px; font: 11px var(--mono); color: var(--dim); }
 .axis span { position: absolute; top: 0; white-space: nowrap; transform: translateX(-50%); }
 .axis span.l { transform: none; } .axis span.r { transform: translateX(-100%); }
@@ -492,13 +498,23 @@ function timeline() {
     const tip = `${consName(s.m)}${cur ? ", in force now" : s.future ? `, agreed: from block #${fmtN(s.h)}` : ""}: ${(CONS[s.m] || ["", s.m])[1]}.` + (s.p ? `\nSwitched by the agreed rule change “${s.p.title}”. Click for the proposal.` : `\nTau has no proof of work. The mechanism is part of the chain state and switches only through an agreed rule change.${modes.length === 1 ? " No switch so far." : ""}`);
     return `<div class="seg${cur ? " now" : ""}${s.future ? " future" : ""}" ${s.p ? `data-id="${esc(s.p.id)}" ` : ""}role="button" tabindex="0" style="left:${pc(s.h)};width:calc(${w.toFixed(3)}% - 2px)" aria-label="${esc(consName(s.m))}" data-tip="${esc(tip)}">${label(consName(s.m) + (s.m === "validator_set" ? " · fixed validator list" : ""), w, consName(s.m))}</div>`; }).join("")
     + maybe.map(p => `<div class="seg maybe" data-id="${esc(p.id)}" role="button" tabindex="0" style="left:${pc(p.activate_at)};width:calc(${((1 - x(p.activate_at)) * 100).toFixed(3)}% - 2px);z-index:1;background:var(--deck)" data-tip="${esc(`Proposed: switch to ${consName(modeOf(p))} at block #${fmtN(p.activate_at)}, if enough validators agree by then (${p.counted_votes} of ${p.thr} votes so far). Click for the proposal.`)}">${label("→ " + consName(modeOf(p)) + "?", (1 - x(p.activate_at)) * 100, "→ " + { stake: "PoS", validator_set: "PoA", tau_validator_set: "Tau list" }[modeOf(p)] + "?")}</div>`).join("");
-  // one bar per proposal; bars that do not overlap in time share a row, so a busy chain stays a few rows high (the hover names each bar)
-  const lanes = [], laneGap = 100 * 14 / trackW, laneOf = (a, b) => { let i = lanes.findIndex(end => end + laneGap <= a); if (i < 0) { i = lanes.length; lanes.push(b); } else lanes[i] = b; return i; };
+  // one bar per proposal, from its proposal to its end (in force, dropped, or its activation block). On the live chain the
+  // activation block lies thousands of blocks after the vote: then the bar ends where it was decided and a marker sits at
+  // the activation block, so long waits do not stack up as long lines. Items that do not overlap share a row.
+  const lanes = [], laneGap = 100 * 14 / trackW;
+  const laneOf = parts => { const free = l => parts.every(([a, b]) => l.every(([c, d]) => b + laneGap <= c || d + laneGap <= a));
+    let i = lanes.findIndex(free); if (i < 0) { i = lanes.length; lanes.push([]); } lanes[i].push(...parts); return i; };
   const pBars = [...P].sort((a, b) => a.proposed_at - b.proposed_at).map(p => {
-    const end = p.activated_at ?? p.expired_at ?? p.activate_at, w = Math.max(0.4, (x(end) - x(p.proposed_at)) * 100), lane = laneOf(x(p.proposed_at) * 100, x(p.proposed_at) * 100 + w);
+    const end = p.activated_at ?? p.expired_at ?? p.activate_at;
+    const decided = p.approved_at ?? (p.status === "voting" ? Math.max(p.proposed_at, Math.min(head, end)) : p.proposed_at);
+    const x0 = x(p.proposed_at) * 100, xe = x(end) * 100, xd = x(decided) * 100, split = xe - xd > 100 * 40 / trackW;
+    const w = Math.max(0.4, (split ? xd : xe) - x0);
+    const lane = laneOf(split ? [[x0, x0 + w], [xe - 0.4, xe + 0.4]] : [[x0, x0 + w]]);
     const what = { active: `in force since #${fmtN(p.activated_at)} (revision ${p.rev})`, agreed: `agreed at #${fmtN(p.approved_at)}, takes effect at #${fmtN(p.activate_at)}${left(p) > 0 ? `, ${plural(left(p), "block")} from now${eta(left(p)) ? ` (${eta(left(p))})` : ""}` : ""}`,
       voting: `waiting for votes (${p.counted_votes} of ${p.thr}), deadline #${fmtN(p.activate_at)}`, dropped: `dropped at #${fmtN(p.expired_at)}` }[p.status];
-    return [lane, `<button type="button" class="${p.status}" data-id="${esc(p.id)}" style="left:${pc(p.proposed_at)};width:${w.toFixed(3)}%" aria-label="${esc(p.title)}" data-tip="${esc(`“${p.title}”\nproposed at #${fmtN(p.proposed_at)}, ${what}.${modeOf(p) ? `\nSwitches the consensus mechanism to ${consName(modeOf(p))}.` : ""}\nClick for the rule diff and the votes.`)}"></button>`]; });
+    const tip = esc(`“${p.title}”\nproposed at #${fmtN(p.proposed_at)}, ${what}.${modeOf(p) ? `\nSwitches the consensus mechanism to ${consName(modeOf(p))}.` : ""}\nClick for the rule diff and the votes.`);
+    return [lane, `<button type="button" class="${p.status}${split ? " cut" : ""}" data-id="${esc(p.id)}" style="left:${pc(p.proposed_at)};width:${w.toFixed(3)}%" aria-label="${esc(p.title)}" data-tip="${tip}"></button>`
+      + (split ? `<button type="button" class="${p.status} due" data-id="${esc(p.id)}" style="left:${pc(end)}" aria-label="${esc(p.title)}: ${p.status === "active" ? "in force" : p.status === "dropped" ? "dropped" : "takes effect"} at #${fmtN(end)}" data-tip="${tip}"></button>` : "")]; });
   const pRows = lanes.map((_, i) => `<div class="pbar">${pBars.filter(b => b[0] === i).map(b => b[1]).join("")}</div>`).join("");
   // axis labels at the events, left to right, skipping any that would touch the one before
   const gap = 100 * 84 / trackW, keep = [lo, head, ...(Math.abs(x(far) - x(head)) * 100 >= gap ? [far] : [])];
