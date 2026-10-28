@@ -662,12 +662,14 @@
  {
   "tag": "Newspaper",
   "on": "2026-10-28",
-  "html": "New page: The Daily Consensus, twelve years of Tau as a 1920s newspaper. Ten pages drawn from the Tau team’s own videos and the Chronicle: the front-page story of the users who changed the chain’s consensus by vote, the road from Zennet, obituaries for dropped plans, telegrams from 2025, letters from the monthly Q&As, classifieds and puzzles. Click, tap or press the arrow keys to turn a page; on phones and small screens it becomes a pocket edition. In Chinese too. Find it under Learn."
+  "html": "New page: The Daily Consensus, twelve years of Tau as a 1920s newspaper. Ten pages drawn from the Tau team’s own videos and the Chronicle: the front-page story of the users who changed the chain’s consensus by vote, the road from Zennet, obituaries for dropped plans, telegrams from 2025, letters from the monthly Q&As, classifieds and puzzles. Click, tap or press the arrow keys to turn a page; on phones and small screens it becomes a pocket edition. In Chinese too. Find it under Learn.",
+  "major": {"id": "gazette", "title": "New: The Daily Consensus, twelve years of Tau as a 1920s newspaper", "text": "Ten pages drawn from the Tau team’s own videos: the users who changed the chain’s consensus by vote, the road from Zennet, obituaries for dropped plans, letters from the monthly Q&As, classifieds and puzzles. Turn the pages with a click or the arrow keys; on phones it becomes a pocket edition. In Chinese too.", "link": "/gazette/"}
  },
  {
   "tag": "Missions",
   "on": "2026-10-28",
-  "html": "Missions: a new page in the Playground menu with six short tasks on a practice chain of your own, one block every two seconds. Vote a change into law, get a rule refused before the vote, let a rule fail at two thirds, lower the bar, survive a validator outage and bring the chain to proof of stake. Each mission ends with where to see the same thing on the real testnet. Progress stays in your browser; share a mission or your progress as a link."
+  "html": "Missions: a new page in the Playground menu with six short tasks on a practice chain of your own, one block every two seconds. Vote a change into law, get a rule refused before the vote, let a rule fail at two thirds, lower the bar, survive a validator outage and bring the chain to proof of stake. Each mission ends with where to see the same thing on the real testnet. Progress stays in your browser; share a mission or your progress as a link.",
+  "major": {"id": "missions", "title": "New: Missions, six short tasks on a practice chain of your own", "text": "Vote a change into law, get a rule refused before the vote, let a rule fail at two thirds, lower the bar, survive a validator outage and bring the chain to proof of stake. Each mission ends with where to see the same thing on the real testnet.", "link": "/missions/"}
  },
  {
   "tag": "Newspaper",
@@ -677,17 +679,20 @@
  {
   "tag": "Simulation",
   "on": "2026-10-28",
-  "html": "Run your own node in the simulation. One click on “Run a node here” in the Chain core, or “Try it” on the Nodes page, starts a simulated node in your browser. Like a real node it catches up from block #0, follows the chain, joins the node orbit and the Nodes board after 10 minutes and stays 30 minutes after its last contact. Choose the stake it brings: under proof of stake (10:30 to 16:30 UTC in the simulation) the six largest stakes seal blocks, and if yours is among them your node takes its turns as “You” on the validator orbit. It runs while a Tau HUD page in simulation is open, only in your browser. “Run a real node” leads to the node kit."
+  "html": "Run your own node in the simulation. One click on “Run a node here” in the Chain core, or “Try it” on the Nodes page, starts a simulated node in your browser. Like a real node it catches up from block #0, follows the chain, joins the node orbit and the Nodes board after 10 minutes and stays 30 minutes after its last contact. Choose the stake it brings: under proof of stake (10:30 to 16:30 UTC in the simulation) the six largest stakes seal blocks, and if yours is among them your node takes its turns as “You” on the validator orbit. It runs while a Tau HUD page in simulation is open, only in your browser. “Run a real node” leads to the node kit.",
+  "major": {"id": "sim-node", "title": "New: run your own node in the simulation", "text": "One click starts a simulated node in your browser. Like a real one it catches up from block #0, joins the node orbit and the Nodes board, and with enough stake it seals blocks under proof of stake as “You”. When you want the real thing, the node kit is one click away.", "link": "/nodes/?mode=sim"}
  },
  {
   "tag": "Vote",
   "on": "2026-10-28",
-  "html": "New page Vote (Playground menu): how to vote on the real Tau Testnet Alpha yourself, in five steps with IDNI’s own tau-testnet command line. Run a node with the Tau HUD kit, open the command line, make your key, then vote yes on every open rule change with its command ready, or send a ready proposal built from the rules in force (same rules, or a new base fee) together with your vote on it. Every step can be practised first in a terminal that answers from the simulation. Paste your public key to follow your vote from the queue into a block. The testnet accepts a vote from any account, and while it has one validator, one yes agrees a change."
+  "html": "New page Vote (Playground menu): how to vote on the real Tau Testnet Alpha yourself, in five steps with IDNI’s own tau-testnet command line. Run a node with the Tau HUD kit, open the command line, make your key, then vote yes on every open rule change with its command ready, or send a ready proposal built from the rules in force (same rules, or a new base fee) together with your vote on it. Every step can be practised first in a terminal that answers from the simulation. Paste your public key to follow your vote from the queue into a block. The testnet accepts a vote from any account, and while it has one validator, one yes agrees a change.",
+  "major": {"id": "vote", "title": "New: vote on the real Tau testnet yourself", "text": "Five steps with IDNI’s own tau-testnet command line: run a node with the Tau HUD kit, make your key, then vote yes on an open rule change or send a proposal of your own. Practise every step first in a terminal that answers from the simulation, then follow your vote from the queue into a block.", "link": "/vote/"}
  },
  {
   "tag": "What if",
   "on": "2026-10-28",
-  "html": "New page What if, under Playground: a sandbox chain with levers. Move the block time, the number of validators and the votes a rule change needs, switch validators off or slow the network down, and the chain reacts at once: forks where a block arrives too late, gaps where a validator misses its turn, rule changes that take longer or never pass. Presets show the real testnet today, the shared simulation, a chain that is too fast and one where everyone must agree. The sandbox runs only in your browser; the shared simulation and the real testnet stay as they are. The link keeps your levers, so a setting can be shared."
+  "html": "New page What if, under Playground: a sandbox chain with levers. Move the block time, the number of validators and the votes a rule change needs, switch validators off or slow the network down, and the chain reacts at once: forks where a block arrives too late, gaps where a validator misses its turn, rule changes that take longer or never pass. Presets show the real testnet today, the shared simulation, a chain that is too fast and one where everyone must agree. The sandbox runs only in your browser; the shared simulation and the real testnet stay as they are. The link keeps your levers, so a setting can be shared.",
+  "major": {"id": "whatif", "title": "New: What if, a sandbox chain with levers", "text": "Move the block time, the number of validators and the votes a rule change needs, switch validators off or slow the network down, and watch the chain react: forks, gaps, rule changes that take longer or never pass. It runs only in your browser, and the link keeps your levers so a setting can be shared.", "link": "/whatif/"}
  },
  {
   "tag": "Simulation",
@@ -722,6 +727,16 @@
   "on": "2026-10-28",
   "html": "The Daily Consensus now reads carefully where money comes up: Agoras is described as IDNI’s plan rather than advertised, no line promises a coin, and the back page carries a friendly Notice to Readers (unofficial, not financial advice, nothing for sale, testnet AGRS for practice only, plans can change)."
   },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-28",
+  "html": "Tau HUD itself now has news in the Telegram channel. A big new page or feature gets a post of its own, first line “✨ TAU HUD · new on the site”, at most two a day and only between 08:00 and 20:00 UTC; smaller changes are gathered and go out together as one digest at 17:00 UTC. The newest pages and features are announced first, from 08:00 UTC tomorrow."
+ },
+ {
+  "tag": "What if",
+  "on": "2026-10-28",
+  "html": "What if now says short split where it said fork. Two blocks at one height, which the chain settles within a block or two when blocks come faster than the network carries them, are something different from the fork Tau avoids: changing the rules never needs one. The page says so in its intro, in What happens and in the hover of Network delay."
+ },
   {
    "tag": "Vote",
    "on": "2026-10-28",

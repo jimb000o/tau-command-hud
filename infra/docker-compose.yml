@@ -108,6 +108,11 @@ services:
       RECAP_ENABLED: ${RECAP_ENABLED:-true}
       RECAP_WEEKDAY: ${RECAP_WEEKDAY:-0}
       RECAP_HOUR: ${RECAP_HOUR:-9}
+      # changes to Tau HUD itself, from assets/updates.json: "major" entries one post each, the rest in a 17:00 UTC digest
+      SITE_UPDATES: ${SITE_UPDATES:-true}
+      SITE_MAJOR_DAILY_CAP: ${SITE_MAJOR_DAILY_CAP:-2}
+      SITE_POST_HOURS: ${SITE_POST_HOURS:-8-20}
+      SITE_DIGEST_HOUR: ${SITE_DIGEST_HOUR:-17}
     volumes:
       - alerts_state:/state     # what was seen and posted, so nothing is posted twice
       - alerts_public:/public   # proposals.json, feed.xml and recap/, served by Caddy
