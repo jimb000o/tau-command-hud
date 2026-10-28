@@ -1255,6 +1255,15 @@ function log(msg, cls = "") {
   while (el.children.length > 140) el.firstChild.remove();
   el.scrollTop = el.scrollHeight;
 }
+function detailMempool() {
+  const seen = S.memSeen, now = Date.now() / 1000, M = S.mempool.length, live = S.mode === "live" && !S.simfeed;
+  const kind = t => t.kind === "gov" ? "rule-change proposal" : /rule/.test(t.type) ? "rule work" : "transfer";
+  const rows = S.mempool.map(t => `<div><span class="t">${seen.has(t.id) ? fmtAge(now - seen.get(t.id)) : "—"}</span><span>${live && t.id ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id)} · ${kind(t)} · ${esc(t.type)} · fee ${esc(t.fee)}</span></div>`).join("");
+  return { title: `Waiting transactions · ${M}`,
+    html: `<p class="lead">${isSim() ? "Simulated transactions" : "Transactions"} the node admitted after the rule check and no block has sealed yet. They orbit the core as dots until the next proposer takes them in; the age counts from when this page first saw each one.${live ? " The alpha node can keep a sealed transaction listed for up to an hour (IDNI #81, see Findings)." : ""}</p>
+    ${checksHtml([[`${M} waiting`, M ? "" : "off", "Transactions in the node’s mempool right now."], [`${S.mempool.filter(t => t.kind === "gov").length} proposals`, "", "Rule-change proposals waiting to be sealed (white dots)."], [`${S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length} rule work`, "", "Rule deployments and offers (green dots)."], [`fee ${S.fee} AGRS`, "", "Base fee under the current rule version (o9)."]])}
+    <h3>Oldest first</h3><div class="loglist">${rows || `<div><span class="t">—</span><span>Nothing waiting: every transaction sent so far is in a block.</span></div>`}</div>` };
+}
 function detailLog() {
   const n = LOG.length, refused = LOG.filter(e => e.cls === "err").length, gov = LOG.filter(e => e.cls === "warn").length;
   return { title: `Node log · ${n} line${n === 1 ? "" : "s"}`,
@@ -1356,7 +1365,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.35", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.36", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -2335,15 +2344,15 @@ function draw(tm) {
   cx.clearRect(0, 0, W, W);
   cx.save(); cx.translate(C, C);
   const cyan = "236,236,240", amber = "255,255,255";
-  CORE_HITS.length = 0; const hit = (x, y, r, fn, href) => CORE_HITS.push({ x, y, r, fn, href }); const ring = (r, w, fn, href) => CORE_RINGS.push({ r, w, fn, href });
+  CORE_HITS.length = 0; const hit = (x, y, r, fn, href) => CORE_HITS.push({ x, y, r, fn, href }); const ring = (r, w, fn, href, open) => CORE_RINGS.push({ r, w, fn, href, open });
   CORE_RINGS.length = 0;
   ring(C * .84, 16, () => `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is ${vt("building", "proposing")} the next block; a white frame around one marks a vote for the open rule change.` + vt("\nNodes that only follow and check the chain sit on the orbit inside.", `\nThe proposer rotates through the set (o7 eligibility); a vote is a consensus_rule_vote transaction.\nNon-sealing nodes sit on the orbit inside.`));
   const nodes = nodesNow(), NR = C * .77, named = nodes.filter(n => n.name);
   ring(NR, 12, () => {
     const N = nodes.length, who = named.map(n => n.kind === "hud" ? "Tau HUD’s node" : n.name).join(", ") + (N > named.length ? `${named.length ? ", and " : ""}${N - named.length} other node${N - named.length === 1 ? "" : "s"} on the testnet` : "");
     const simNote = isSim() ? "Simulated nodes. " : "";
-    return vt(`${simNote}Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} keep${N === 1 ? "s" : ""} a full copy of the chain and check${N === 1 ? "s" : ""} every block without sealing any${N ? ": " + who : ""}.\nThe validators that seal blocks sit on the orbit just outside.\nMore nodes make the chain harder to fake and easier to check.\nClick to open the Nodes page.`,
-      `${simNote}Node orbit: ${N || "no"} non-sealing node${N === 1 ? "" : "s"}${N ? ": " + nodes.map(n => `${n.name || "peer"}${n.height ? " #" + fmt(n.height) : n.head ? " " + short(n.head) : ""}${n.agrees === false ? " (other head)" : ""}`).join(" · ") : ""}.\nThey verify every block against the spec and serve readers; sealing stays with the validator orbit outside.\nSource: the relay’s /community list and its own upstream node.\nClick to open the Nodes page.`);
+    return vt(`${simNote}Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} keep${N === 1 ? "s" : ""} a full copy of the chain and check${N === 1 ? "s" : ""} every block without sealing any${N ? ": " + who : ""}.\nThe validators that seal blocks sit on the orbit just outside.\nMore nodes make the chain harder to fake and easier to check.\nA node shows up here after 10 min on the network and stays 30 min after its last contact, so short tests don’t make the count flicker.\nClick to open the Nodes page.`,
+      `${simNote}Node orbit: ${N || "no"} non-sealing node${N === 1 ? "" : "s"}${N ? ": " + nodes.map(n => `${n.name || "peer"}${n.height ? " #" + fmt(n.height) : n.head ? " " + short(n.head) : ""}${n.agrees === false ? " (other head)" : ""}`).join(" · ") : ""}.\nThey verify every block against the spec and serve readers; sealing stays with the validator orbit outside.\nSource: the relay’s /community list and /peers (listed after 10 min of presence, kept 30 min after last contact, so brief test nodes don’t flicker the count).\nClick to open the Nodes page.`);
   }, nodesHref);
   cx.save(); cx.setLineDash([3, 9]); cx.beginPath(); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${cyan},.16)`; cx.arc(0, 0, NR, 0, Math.PI * 2); cx.stroke(); cx.restore();   // the node orbit: quiet, dashed
   cx.font = "500 18px JetBrains Mono, monospace";
@@ -2461,6 +2470,17 @@ function draw(tm) {
     hit(Math.cos(a) * r, Math.sin(a) * r, 20, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`); });
   });
   cx.shadowBlur = 0;
+  ring(C * .44, 18, () => {   // the waiting room: every dot on this orbit is a transaction the node admitted but no block has sealed yet
+    const seen = S.memSeen, oldest = seen.size ? Date.now() / 1000 - Math.min(...seen.values()) : 0;
+    const gov = S.mempool.filter(t => t.kind === "gov").length, rule = S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length, xfer = M - gov - rule;
+    const mix = [[xfer, "transfer", "transfers"], [rule, "rule work", "rule work"], [gov, "rule-change proposal", "rule-change proposals"]].filter(x => x[0]).map(x => `${x[0]} ${x[0] === 1 ? x[1] : x[2]}`).join(", ");
+    const liveNote = S.mode === "live" && !S.simfeed ? vt("\nThe alpha node can keep a sealed transaction listed here for up to an hour (see Findings).", "\nAlpha quirk: the node keeps sealed txs in getmempool for up to 60 min (IDNI #81), so a dot here may already sit in a block.") : "";
+    return M
+      ? vt(`Waiting room: ${M} transaction${M === 1 ? "" : "s"} sent to the network and checked at the door, not yet sealed into a block (${mix}).\nThe next block takes them in; the oldest has waited ${fmtAge(oldest)}.${liveNote}\nClick to see them one by one.`,
+           `Mempool: ${M} pending tx (${mix}), oldest ${fmtAge(oldest)} since this page first saw it.\nAdmitted after the rule check (o5/o6); the proposer pulls them into the next block, fee ${S.fee} AGRS each.${liveNote}\nClick to list them.`)
+      : vt(`Waiting room: empty. Every transaction sent so far has been sealed into a block.\nNew ones appear here as dots until the next block takes them in.\nClick for details.`,
+           `Mempool: empty; nothing pending since the last block.\nAdmitted transactions orbit here until the proposer seals them (one dot each: white proposal, green rule work, grey transfer).\nClick for details.`);
+  }, null, () => showDetail(dtKey(detailMempool)));
 
   // reactor
   const p = S.pulse, am = S.amend, core = am > 0 ? amber : cyan;
@@ -2730,11 +2750,11 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
   document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail], button, a, input, select")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
-  const coreShow = e => { const h = coreHit(e); if (h) { cur = cv; shownAt = Date.now(); ovl.textContent = viewText(h.fn()); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
+  const coreShow = e => { const h = coreHit(e); if (h) { cur = cv; shownAt = Date.now(); ovl.textContent = viewText(h.fn()); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href || h.open ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
   cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; CORE_MOUSE = null; if (cur === cv && !touch) hide(); });
   /* a drawn element with a page behind it (the nodes) opens that page on click; on touch the first tap explains, the second opens */
-  cv.addEventListener("click", e => { const h = coreHit(e); if (h && h.href && (!touch || cur === cv)) { location.href = h.href(); return; } if (touch) coreShow(e); });
+  cv.addEventListener("click", e => { const h = coreHit(e); if (h && (h.href || h.open) && (!touch || cur === cv)) { if (h.open) h.open(); else location.href = h.href(); return; } if (touch) coreShow(e); });
 })();
 
 /* ---------- simple / technical view ---------- */
@@ -2883,7 +2903,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.35`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.36`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
