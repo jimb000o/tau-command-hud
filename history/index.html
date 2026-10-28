@@ -192,6 +192,15 @@ h3 { margin: 14px 0 6px; font: 600 11px var(--display); letter-spacing: .18em; t
 .modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
 .sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
 .sheet .panel { padding-right: 48px; }
+/* proposal detail: two columns on wide screens, so the whole story fits without scrolling */
+.sheet.w2 { width: min(1500px, 100%); }
+.dcols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0 28px; align-items: start; }
+.dcols > div > :first-child, .dcols > div > details.raw:first-child { margin-top: 0; }
+.dcols pre.code { max-height: 38vh; }
+.dcols .rd-code { max-height: 46vh; }
+html.wide .dcols pre.code { max-height: calc(38vh / var(--z)); }
+html.wide .dcols .rd-code { max-height: calc(46vh / var(--z)); }
+@media (max-width: 900px) { .dcols { grid-template-columns: minmax(0, 1fr); } .dcols > div + div { margin-top: 14px; } }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
 details.raw { margin: 14px 0 0; } details.raw > summary { cursor: pointer; min-height: 28px; padding: 4px 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); max-height: 50vh; overflow: auto; }
@@ -1161,7 +1170,8 @@ for (const id of ["pRules", "pAgree", "pBlock"]) {
 
 /* ---------------- detail views ---------------- */
 let lastFocus = null;
-function openDetail(title, html) { lastFocus = document.activeElement; $("dTitle").innerHTML = title; $("dBody").innerHTML = html; $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus(); }
+function openDetail(title, html) { lastFocus = document.activeElement; $("dTitle").innerHTML = title; $("dBody").innerHTML = html;
+  $("mDetail").querySelector(".sheet").classList.toggle("w2", html.includes('class="dcols"')); $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus(); }
 function closeModal(m) { m.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
 document.querySelectorAll(".modal").forEach(m => {
   m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-close]")) closeModal(m); });
@@ -1179,13 +1189,14 @@ function openProp(p) {
     st === "voting" ? [`Waiting for votes`, `${counted.length} so far, deadline #${fmtN(p.activateAt)}.`, null] : null,
     st === "agreed" ? [`Waiting for block #${fmtN(p.activateAt)}`, `Agreed, takes effect there.`, null] : null,
   ].filter(Boolean);
-  openDetail(`${esc(p.title)}`, `
+  openDetail(`${esc(p.title)}`, `<div class="dcols"><div>
     <ul class="items">${steps.map(([t, m, h]) => `<li class="${h != null ? "on" : "now"}">${h != null ? `<button class="linkish" type="button" data-goto="${h}"><b>${t}</b></button><span class="m">${m} · <button class="linkish inl" type="button" data-goto="${h}">go to this block</button></span>` : `<b>${t}</b><span class="m">${m}</span>`}</li>`).join("")}</ul>
     ${window.RuleDiff ? RuleDiff.html(RuleDiff.specAt(p.proposedAt, H.props, GENESIS.rules), p.revisions, { at: p.proposedAt, patch: !!p.patch }) : ""}
+    </div><div>
     ${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
     ${p.patch ? `<h3>Settings it changes</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
-    <h3>Transaction as stored in block #${fmtN(p.proposedAt)}</h3><pre class="code">${esc(JSON.stringify(p.tx, (k, v) => k === "_h" ? undefined : v, 2))}</pre>`);
+    <h3>Transaction as stored in block #${fmtN(p.proposedAt)}</h3><pre class="code">${esc(JSON.stringify(p.tx, (k, v) => k === "_h" ? undefined : v, 2))}</pre></div></div>`);
 }
 $("dBody").addEventListener("click", e => { const g = e.target.closest("[data-goto]"); if (g) { closeModal($("mDetail")); stopPlay(); setCursor(+g.dataset.goto, true); } });
 function openTx(b, i) {

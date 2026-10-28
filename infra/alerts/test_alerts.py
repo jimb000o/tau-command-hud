@@ -18,7 +18,7 @@ import xml.etree.ElementTree as ET
 
 TMP = tempfile.mkdtemp()
 os.environ.update(RELAY_URL="ws://127.0.0.1:18799", RELAY_HTTP="http://127.0.0.1:18799", STATE_PATH=os.path.join(TMP, "state", "alerts.json"),
-                  PUBLIC_DIR=os.path.join(TMP, "public"), POLL_SECONDS="0.3", TELEGRAM_BOT_TOKEN="", TAU_GOVERNANCE_OPEN_ADMISSION="true")
+                  PUBLIC_DIR=os.path.join(TMP, "public"), POLL_SECONDS="0.3", PROPOSED_HOLD_SECONDS="1.5", TELEGRAM_BOT_TOKEN="", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 _now = time.gmtime()
 os.environ.update(RECAP_WEEKDAY=str(_now.tm_wday), RECAP_HOUR=str(_now.tm_hour))  # a recap slot that just passed
 sys.path.insert(0, os.path.dirname(__file__))
@@ -141,6 +141,16 @@ async def main():
         assert data["rules"]["revision"] == 3 and data["rules"]["base_fee"] == 30, data["rules"]
         feed = ET.parse(os.path.join(os.environ["PUBLIC_DIR"], "feed.xml")).getroot()
         assert len(feed.findall("{http://www.w3.org/2005/Atom}entry")) == 8
+
+        # one validator: a proposal agreed while its post waits goes out once, as "agreed right away"
+        quick = propose(30, (FEE_RULE.replace("14", "28"),))
+        add(block(13, [quick]))
+        await asyncio.sleep(0.6)
+        add(block(14, [vote(alerts.update_id(quick))]))
+        await until(lambda: len(tg.sent) == 6, "combined post")
+        await asyncio.sleep(2)
+        assert len(tg.sent) == 6 and tg.sent[5].startswith("agreed:New rule change, agreed right away: Base fee 30 → 40"), tg.sent
+        assert "has one validator" in alerts.telegram_text(w.state["items"][0]), alerts.telegram_text(w.state["items"][0])
 
         # --preview reads the chain on its own and posts nothing
         assert await alerts.preview_latest(2) == 0

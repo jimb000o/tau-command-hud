@@ -159,12 +159,18 @@ html.fit .lead { font-size: 22px; margin: 0; }
 html.fit .sub { font-size: 12px; margin: 2px 0 0; }
 html.fit header { padding: 4px 0 6px; }
 html.fit .modal .sheet { zoom: var(--z); }
-html.fit .modal .sheet { max-height: calc(100% / var(--z)); }
+html.fit .modal .sheet { max-height: calc((100vh - 40px) / var(--z)); }
 
 /* modal */
 .modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
 .sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
 .sheet .panel { padding-right: 48px; }
+.sheet.w2 { width: min(1500px, 100%); }
+.dcols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0 28px; align-items: start; }
+.dcols > div > :first-child { margin-top: 0; }
+.dcols pre.code { max-height: 38vh; }
+html.fit .dcols pre.code { max-height: calc(38vh / var(--z)); }
+@media (max-width: 900px) { .dcols { grid-template-columns: minmax(0, 1fr); } .dcols > div + div { margin-top: 14px; } }
 .sheet h2 { font: 600 17px/1.35 var(--display); letter-spacing: 0; text-transform: none; color: #fff; }
 .sheet h3 { margin: 14px 0 4px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
@@ -314,7 +320,7 @@ function tiles() {
     ["Rule revision", r.revision, "genesis is revision 1"],
     ["Base fee", `${fmtN(r.base_fee)}<small>AGRS</small>`, "per transaction"],
     ["Validators", r.validators, r.open_admission ? "any account may vote" : "only validators vote"],
-    ["Votes to agree", r.votes_needed, `quorum: ${esc(r.quorum)}`],
+    ["Votes to agree", r.votes_needed, r.votes_needed === 1 && r.open_admission ? "one validator, so one yes vote from any account" : `quorum: ${esc(r.quorum)}`],
     ["Proposals", P.length, `${P.filter(p => p.status === "active").length} in force · ${P.filter(p => p.status === "dropped").length} dropped`],
     ["Chain head", `#${fmtN(c.head)}`, c.seconds_per_block ? `a block every ${Math.round(c.seconds_per_block)} s` : ago(c.head_ts)],
   ];
@@ -524,14 +530,16 @@ function openDetail(p, push) {
   ].filter(Boolean);
   lastFocus = document.activeElement;
   $("dTitle").innerHTML = `<span class="badge b-${p.status}">${STATUS[p.status]}</span> ${esc(p.title)}`;
-  $("dBody").innerHTML = `${explainHtml(p)}${ruleDiff(p)}<h3>Timeline</h3><ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
-    ${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
-    ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
+  $("dBody").innerHTML = `<div class="dcols"><div>${explainHtml(p)}<h3>Timeline</h3><ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere;margin:0">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
-    <p class="note">Open any block number to see it in <a href="/history/#${p.proposed_at}">Time travel</a>. Votes count once per account while the change is open.</p>`;
+    <p class="note">Open any block number to see it in <a href="/history/#${p.proposed_at}">Time travel</a>. Votes count once per account while the change is open.</p></div><div>
+    ${ruleDiff(p)}${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
+    ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
+</div></div>`;
   // a link whose preview on X and Telegram shows a picture of this proposal (infra/share)
-  if (!params.has("sample")) $("dBody").insertAdjacentHTML("beforeend", `<p style="margin:12px 0 0"><button class="btn" type="button" data-share="https://node.tauhud.com/s/proposal/${esc(p.id.slice(0, 16))}"
+  if (!params.has("sample")) $("dBody").querySelector(".dcols > div:first-child").insertAdjacentHTML("beforeend", `<p style="margin:12px 0 0"><button class="btn" type="button" data-share="https://node.tauhud.com/s/proposal/${esc(p.id.slice(0, 16))}"
     title="A link that shows a picture of this proposal when you post it on X, Telegram or WhatsApp.">Copy share link</button></p>`);
+  $("mDetail").querySelector(".sheet").classList.add("w2");
   $("mDetail").hidden = false;
   $("mDetail").querySelector(".close").focus();
   if (push) try { history.replaceState(null, "", "#" + p.id.slice(0, 16)); } catch {}

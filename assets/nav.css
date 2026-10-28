@@ -39,7 +39,9 @@
 .tnav .tl:hover { color: #fff; }
 .tnav .tn-upd { position: relative; display: inline-flex; }
 .tnav .tn-upd.new::after { content: ""; position: absolute; top: 3px; right: -5px; width: 6px; height: 6px; border-radius: 50%; background: var(--tn-ok); box-shadow: 0 0 6px var(--tn-ok); }
-.tnav .vlab { font: 500 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; color: var(--tn-dim); }
+.tnav .vlab { display: none; }
+.tnav .seg.tn-lang > button { padding: 7px 10px; letter-spacing: .06em; }
+.tnav .seg.tn-lang > button[lang="zh-CN"] { font-weight: 500; letter-spacing: .04em; }
 .tnav .tnav-gear { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--tn-hair); display: grid; place-items: center; color: var(--tn-dim); font-size: 15px; cursor: pointer; background: transparent; flex: none; padding: 0; line-height: 1; }
 .tnav .tnav-gear:hover, .tnav .tnav-gear[aria-expanded="true"] { color: #fff; border-color: #fff; }
 .tnav-gearwrap { position: relative; }
@@ -89,7 +91,7 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
 .tabbar, .tsheet, .tsheet-bg { display: none; }
 @media (max-width: 700px) {
   .tnav { gap: 6px 8px; }
-  .tnav-sep, .tnav-nav, .tnav .tn-upd, .tnav .vlab { display: none; }
+  .tnav-sep, .tnav-nav, .tnav .tn-upd, .tnav .vlab, .tnav .seg.tn-lang { display: none; }   /* phone: the language lives in the Learn sheet */
   .tnav-r { margin-left: auto; gap: 8px; }
   .tnav .pill { font-size: 11px; padding: 0 14px; min-height: 44px; letter-spacing: .08em; }
   .tnav .pill.tg span { display: none; }

@@ -80,6 +80,13 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .ev li.on { background: rgba(57,255,138,.08); border-left-color: var(--ok); }
 .ev li .d { color: var(--dim); font-size: 12px; display: block; }
 .ev li .t { color: #fff; }
+/* details of the selected moment, under the timeline (one-screen layout only) */
+#det { display: none; }
+html.fit #det { display: block; min-height: calc(2 * 1.45em + 14px); margin: 4px 0 0; padding: 6px 10px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.05); font: 12.5px/1.45 var(--mono); color: var(--text); }
+#det b { color: #fff; font-weight: 600; }
+#det .hint { color: var(--dim); }
+#det a { color: var(--ok); text-decoration: none; white-space: nowrap; }
+#det a:hover { text-decoration: underline; }
 .ev li .more { display: none; color: var(--text); font-size: 12px; margin-top: 4px; }
 .ev li.on .more { display: block; }
 .ev li .more a { color: var(--ok); text-decoration: none; white-space: nowrap; }
@@ -100,14 +107,27 @@ footer a { color: var(--dim); }
 html.fit body { overflow: hidden; height: 100vh; padding-top: 0; padding-bottom: 0; }
 html.fit .wrap { max-width: none; zoom: var(--z); height: var(--fitH); display: flex; flex-direction: column; gap: 10px; padding: 6px 0 8px; }
 html.fit .wrap > * { flex: none; }
-html.fit .eras { flex: 1 1 0; min-height: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: stretch; }
-html.fit.wide .eras { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
-html.fit .panel { min-height: 0; overflow: hidden; padding: 10px 14px; }
+/* every era is one column and every moment one compact row, so nothing scrolls; if a short
+   screen still cannot hold them, the text size --fs steps down until it does (see fitText) */
+html.fit .eras { flex: 1 1 0; min-height: 0; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 10px; align-items: stretch; font-size: var(--fs, 12.5px); }
+html.fit .panel { min-height: 0; overflow: hidden; padding: 10px 12px; }
 html.fit .panel > * { flex: none; }
-html.fit .ev { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 4px; }
-html.fit .ev.more-below { -webkit-mask-image: linear-gradient(#000 calc(100% - 36px), transparent); mask-image: linear-gradient(#000 calc(100% - 36px), transparent); }
+html.fit .panel .yrs { font-size: 1.45em; }
+html.fit .panel .gist { font-size: 1em; margin: 2px 0 6px; }
+html.fit .ev { flex: 1 1 0; min-height: 0; overflow: hidden; gap: 2px; }
+html.fit .ev li { padding: 3px 8px; font: inherit; line-height: 1.35; }
+html.fit .ev li .d { display: inline; font-size: .92em; margin-right: .5em; }
+html.fit .ev li .t { font-family: var(--display); }
+/* an opened moment shows its details in place; only that list may then scroll, the rest stays put */
+html.fit .ev li.on .more { font-size: .92em; margin-top: 3px; }
+html.fit .ev.open { overflow: auto; padding-right: 2px; }
+html.fit .p-gone .ev li .more { font-size: .92em; margin-top: 1px; color: var(--dim); }
+html.fit .intro { display: flex; align-items: baseline; gap: 6px 28px; flex-wrap: wrap; }
 .panel h2 .n { margin-left: auto; color: var(--dim); font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
+.panel h2 { flex-wrap: nowrap; }
+.panel h2 .n { flex: none; white-space: nowrap; }
 html.fit .lead { font-size: 22px; margin: 0; max-width: none; }
+html.fit .mob { display: none; }
 html.fit .sub { font-size: 12px; margin: 2px 0 0; }
 html.fit header { padding: 4px 0 6px; }
 html.fit footer { padding-top: 6px; font-size: 11px; }
@@ -127,13 +147,14 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 
   <div class="intro">
     <p class="lead">Twelve years of Tau: from Zennet in 2014 to a testnet that changes its own rules.</p>
-    <p class="sub">Since 2015 the goal has stayed the same: <b>a blockchain whose rules are data that its users change through logic.</b> The road did. Click an era or a moment for details and the video it comes from.</p>
+    <p class="sub">Since 2015 the goal has stayed the same: <b>a blockchain whose rules are data that its users change through logic.</b> The road did. <span class="mob">Tap a moment for details and the video it comes from.</span></p>
   </div>
 
   <section class="strip" aria-label="Timeline">
     <h2>Timeline <small>2014 to today · recent years drawn wider</small></h2>
     <svg id="tl" role="img" aria-label="Timeline of Tau from 2014 to 2026"></svg>
     <div class="legend"><span><i class="key"></i>turning point</span><span><i></i>milestone</span></div>
+    <div id="det" aria-live="polite"></div>
   </section>
 
   <main class="eras" id="eras"></main>
@@ -296,12 +317,20 @@ function select(k, scroll) {
   SEL = SEL === k ? null : k;
   document.querySelectorAll(".ev li.on").forEach(li => li.classList.remove("on"));
   document.querySelectorAll(".panel.on").forEach(p => p.classList.remove("on"));
+  document.querySelectorAll(".ev.open").forEach(l => { l.classList.remove("open"); l.scrollTop = 0; });
   if (SEL) {
     const li = document.querySelector(`li[data-k="${SEL}"]`);
-    li.classList.add("on"); li.closest(".panel").classList.add("on");
-    if (scroll) li.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    li.classList.add("on"); li.closest(".panel").classList.add("on"); li.closest(".ev").classList.add("open");
+    li.scrollIntoView({ block: "nearest", behavior: scroll ? "smooth" : "auto" });
   }
-  renderStrip(); fades();
+  renderStrip(); renderDet();
+}
+
+const HINT = `<span class="hint">Click a moment below or a dot on the timeline for details and the video it comes from.</span>`;
+function renderDet() {
+  if (!SEL) { $("det").innerHTML = HINT; return; }
+  const { v } = find(SEL);
+  $("det").innerHTML = `<b>${esc(v.label)} · ${esc(v.t)}.</b> ${esc(v.m)}${v.v ? ` <a href="${yt(v.v)}" target="_blank" rel="noopener">Watch the video</a>` : ""}`;
 }
 
 const tip = $("tip");
@@ -325,14 +354,21 @@ function fit() {
   root.style.setProperty("--z", ZOOM);
   root.style.setProperty("--fitH", Math.floor(h / ZOOM) + "px");
 }
+/* step the era text size down until every list fits its column (no inner scrolling) */
+function fitText() {
+  const eras = $("eras");
+  eras.style.removeProperty("--fs");
+  if (!document.documentElement.classList.contains("fit")) return;
+  const over = () => [...eras.querySelectorAll(".ev:not(.open)")].some(l => l.scrollHeight > l.clientHeight + 1);
+  for (let fs = 12.5; fs >= 9.5 && over(); fs -= .25) eras.style.setProperty("--fs", (fs - .25) + "px");
+}
 fit();
 renderEras();
 renderStrip();
-/* fade the bottom edge while a list has more below, so a cut line reads as "scroll" */
-function fades() { document.querySelectorAll(".ev").forEach(l => l.classList.toggle("more-below", l.scrollTop + l.clientHeight < l.scrollHeight - 4)); }
-document.querySelectorAll(".ev").forEach(l => l.addEventListener("scroll", fades, { passive: true }));
-fades();
-addEventListener("resize", () => { fit(); renderStrip(); fades(); });
+renderDet();
+fitText();
+document.fonts && document.fonts.ready.then(fitText);
+addEventListener("resize", () => { fit(); renderStrip(); fitText(); });
 new ResizeObserver(() => renderStrip()).observe($("tl"));
 </script>
 </body>
