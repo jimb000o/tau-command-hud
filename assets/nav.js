@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.48"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.51"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -22,10 +22,11 @@
     proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with Telegram and RSS alerts", i: "§", h: "proposals/" },
     story:      { t: "Tau in 60 seconds", d: "Propose, check, agree, law: how Tau changes its rules without a fork", i: "▶", h: "story/" },
     tour:       { t: "Guided tour", d: "One minute, eight steps: how rules change by agreement", i: "▸", h: "?tour=1", act: "tour" },
-    gazette:    { t: "The Daily Consensus", d: "Twelve years of Tau as a 1920s newspaper: turn the pages with a click or a tap", i: "❡", h: "gazette/" },
+    gazette:    { t: "The Daily Consensus", d: "Tau as a 1920s newspaper, a new edition every Monday: turn the pages with a click or a tap", i: "❡", h: "gazette/" },
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
     findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
     status:     { t: "Status", d: "Uptime, outages, sync gaps and restarts of the community node", i: "◍", h: "status/" },
+    meta:       { t: "Tau HUD in numbers", d: "How many people use this site: visitors per day, growth and the most visited pages", i: "∑", h: "meta/" },
     developers: { t: "Developers", d: "Widgets, badges and a free JSON API for your own site", i: "{}", h: "developers/" },
     press:      { t: "Press kit", d: "Video, logo, screenshots, facts and a ready paragraph, free to use", i: "↓", h: "press/" },
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
@@ -39,10 +40,10 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     { k: "explore", t: "Explore", items: ["explorer", "stats", "history", "account", "nodes", "proposals"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "developers", "press", "tau", "about"], tab: "▸" },
+    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "meta", "developers", "press", "tau", "about"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote"], id: "btnPlayground", tab: "◇", short: "Play" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", meta: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
@@ -637,7 +638,27 @@
 
   document.addEventListener("click", e => { if (openEl && !e.target.closest(".tnav .ni-wrap, .tnav-gearwrap, .tsheet, .tabbar")) closeAll(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && openEl) closeAll(); });
-  const init = () => document.querySelectorAll("nav.tnav").forEach(mount);
+  /* cookie-free visitor numbers (infra/relay/visits.py): one ping when a page opens, one more after 30 s visible.
+     Nothing is stored in the browser; ?nostats=1 leaves this browser out of the count (?nostats=0 undoes it). */
+  function countVisit() {
+    try {
+      const q = new URLSearchParams(location.search);
+      if (q.has("nostats")) { if (q.get("nostats") === "0") localStorage.removeItem("tauhud-nostats"); else localStorage.setItem("tauhud-nostats", "1"); }
+      if (localStorage.getItem("tauhud-nostats") === "1") return;
+    } catch (e) {}
+    if (!/^(www\.)?tauhud\.com$|\.github\.io$/.test(location.hostname) || navigator.doNotTrack === "1" || navigator.globalPrivacyControl || navigator.webdriver) return;
+    const pageOf = path => path.slice(ROOT.length).replace(/index\.html$/, "").replace(/\/+$/, "").toLowerCase() || "hud";
+    const page = pageOf(location.pathname);
+    let ref = "";
+    try { const r = new URL(document.referrer); ref = r.host === location.host ? "/" + (r.pathname.startsWith(ROOT) ? pageOf(r.pathname) : "") : r.hostname; } catch (e) {}
+    const q = new URLSearchParams(location.search), zh = /^zh/i.test(document.documentElement.lang) || q.get("lang") === "zh";
+    const base = `https://${RELAY}/v?p=${encodeURIComponent(page)}`;
+    const send = extra => { try { fetch(base + extra, { mode: "no-cors", keepalive: true, credentials: "omit", referrerPolicy: "no-referrer" }).catch(() => {}); } catch (e) {} };
+    send(`&r=${encodeURIComponent(ref)}&s=${encodeURIComponent(q.get("utm_source") || q.get("ref") || "")}&l=${zh ? "zh" : "en"}&m=${SIM ? "sim" : "live"}&w=${innerWidth}`);
+    let shown = 0;
+    const tick = setInterval(() => { if (document.visibilityState === "visible" && ++shown >= 30) { clearInterval(tick); send("&e=1"); } }, 1000);
+  }
+  const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); countVisit(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.TauNav = { LATEST, TELEGRAM, markSeen, closeAll, chain: CHAIN, sim: SIM };
 })();

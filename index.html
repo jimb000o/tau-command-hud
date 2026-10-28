@@ -28,7 +28,7 @@
 <title>Tau HUD</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Noto+Serif+SC:wght@900&display=swap">
 <style>
 /* Layout: holographic command deck. Status rail on top, reactor core in the centre flanked by
    the Tau engine (left) and the transaction stream (right), the chain ribbon and logs below. */
@@ -132,6 +132,14 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 #rain.off, body[data-tour] #rain, body:has(.modal:not([hidden])) #rain { display: none; }
 #ovl { position: fixed; z-index: 70; max-width: min(520px, 90vw); padding: 8px 12px; white-space: pre-line; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
 #ovl[hidden] { display: none; }
+/* a hover that judges the state opens with a status light and one verdict line: green normal, amber watch or in progress, red only for a real problem */
+#ovl .hv { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--hair); font-weight: 600; color: #fff; white-space: normal; }
+#ovl .hv::before { content: ""; flex: 0 0 auto; width: .7em; height: .7em; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+#ovl.hv-busy .hv::before, #ovl.hv-watch .hv::before { background: var(--behind); box-shadow: 0 0 8px var(--behind); }
+#ovl.hv-watch { border-color: rgba(255,177,59,.5); }
+#ovl.hv-bad { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad), 0 16px 40px -10px rgba(0,0,0,.9); }
+#ovl.hv-bad .hv { color: var(--bad); }
+#ovl.hv-bad .hv::before { background: var(--bad); box-shadow: 0 0 10px var(--bad); animation: blink 1.2s infinite; }
 .blk { cursor: pointer; }
 .blk:hover { border-color: var(--cyan); }
 .detail h3 { margin: 12px 0 6px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
@@ -190,6 +198,40 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .statep li span { color: var(--dim); }
 .statep .more { margin-top: 8px; align-self: flex-start; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 4px 8px; cursor: pointer; }
 .statep .more:hover { background: #fff; color: #000; }
+/* a clipping of the newspaper's front page lies in what the box leaves free: newsprint and ink, the paper's own type and rules.
+   The paper is a neutral grey-white, so the HUD keeps green as its only colour. */
+.statep #statePanel { flex: 0 1 auto; }
+.gazad { flex: 1 1 0; min-height: 0; margin: 10px 4px 4px; display: flex; text-decoration: none; position: relative; container: gaz / inline-size; }
+.gazad[hidden] { display: none; }
+.ga-paper { --ink: #1c1c1e; --ink2: #4a4a4e; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; overflow: hidden; padding: 12px 14px 10px; text-align: center; color: var(--ink);
+  background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.35), rgba(255,255,255,0) 60%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), #dcdad5;
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 10px 24px -6px rgba(0,0,0,.85), 0 2px 4px rgba(0,0,0,.5); transform: rotate(-.7deg); transition: transform .25s, box-shadow .25s;
+  clip-path: polygon(0 1%, 4% 0, 11% .8%, 19% .1%, 27% .9%, 36% 0, 45% .7%, 55% .1%, 64% .9%, 73% 0, 82% .8%, 91% .1%, 100% .9%, 99.6% 50%, 100% 99%, 93% 100%, 84% 99.2%, 75% 100%, 66% 99.1%, 57% 100%, 48% 99.3%, 39% 100%, 30% 99.1%, 21% 100%, 12% 99.2%, 4% 100%, 0 99.1%, .4% 50%); }
+.gazad:hover .ga-paper, .gazad:focus-visible .ga-paper { transform: rotate(0deg) translateY(-2px); box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 16px 30px -6px rgba(0,0,0,.9), 0 2px 4px rgba(0,0,0,.5); }
+.gazad:focus-visible { outline: 2px solid var(--ok); outline-offset: 4px; }
+.ga-nm { font: 400 clamp(16px, calc((100cqi - 30px) / 11.5), 34px)/1 "UnifrakturMaguntia", "Old English Text MT", serif; color: var(--ink); white-space: nowrap; }
+.ga-mo { font: italic 400 11px/1.2 "Playfair Display", Georgia, serif; color: var(--ink2); margin-top: -3px; }
+.ga-dl { align-self: stretch; display: flex; justify-content: space-between; gap: 8px; padding: 2px 2px; border-top: 3px double var(--ink); border-bottom: 3px double var(--ink); font: 700 9.5px/1.2 "Old Standard TT", Georgia, serif; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
+.ga-dl i { font-style: normal; white-space: nowrap; }
+.ga-x { font: 900 10px/1 "Playfair Display", Georgia, serif; letter-spacing: .5em; text-transform: uppercase; color: var(--ink); border: 1.5px solid var(--ink); padding: 3px 3px 3px 8px; }
+.ga-hl { font: 900 clamp(16px, 1.15vw, 23px)/1.08 "Playfair Display", Georgia, serif; color: var(--ink); text-wrap: balance; max-width: 30ch; letter-spacing: -.005em; }
+.ga-dk { font: italic 400 12px/1.3 "Old Standard TT", Georgia, serif; color: var(--ink2); max-width: 44ch; padding-bottom: 4px; border-bottom: 1px solid rgba(0,0,0,.35); }
+.ga-ph { width: 100%; height: 0; min-height: 70px; max-height: 300px; flex: 1 1 0; object-fit: cover; object-position: 50% 45%; filter: grayscale(1) contrast(1.15); mix-blend-mode: multiply; border: 1px solid var(--ink); }
+.ga-tx { align-self: stretch; columns: 2; column-gap: 12px; column-rule: 1px solid rgba(0,0,0,.35); text-align: justify; hyphens: auto; font: 11.5px/1.32 "Old Standard TT", Georgia, serif; color: var(--ink); }
+.ga-tx::first-letter { float: left; font: 700 2.5em/.85 "Playfair Display", Georgia, serif; margin: 2px 3px 0 0; }
+.ga-more { margin-top: auto; padding-top: 3px; font: italic 700 11px "Playfair Display", Georgia, serif; color: var(--ink); border-top: 1px solid rgba(0,0,0,.35); align-self: stretch; }
+.gazad:hover .ga-more { text-decoration: underline; }
+/* six sizes, the largest that fits: everything · without the columns (the photo takes the room) · without photo · without motto and EXTRA · smaller headline, no deck · masthead, headline and link */
+.gazad.c1 .ga-tx, .gazad.c2 .ga-tx, .gazad.c3 .ga-tx, .gazad.c4 .ga-tx, .gazad.c2 .ga-ph, .gazad.c3 .ga-ph, .gazad.c4 .ga-ph { display: none; }
+.gazad.c2 .ga-paper, .gazad.c3 .ga-paper, .gazad.c4 .ga-paper { justify-content: center; }
+.gazad.c2 .ga-more, .gazad.c3 .ga-more, .gazad.c4 .ga-more { margin-top: 6px; }
+.gazad.c3 .ga-mo, .gazad.c3 .ga-x, .gazad.c4 .ga-mo, .gazad.c4 .ga-x { display: none; }
+.gazad.c4 .ga-dk, .gazad.c5 .ga-dk, .gazad.c5 .ga-dl { display: none; }
+.gazad.c4 .ga-hl, .gazad.c5 .ga-hl { font-size: 15px; }
+.gazad.c5 .ga-paper { justify-content: center; } .gazad.c5 .ga-mo, .gazad.c5 .ga-x, .gazad.c5 .ga-ph, .gazad.c5 .ga-tx { display: none; }
+html.i18n-zh .ga-nm { font: 900 clamp(20px, 1.6vw, 30px)/1.1 "Noto Serif SC", serif; letter-spacing: .14em; }
+html.i18n-zh .ga-hl, html.i18n-zh .ga-mo, html.i18n-zh .ga-dk, html.i18n-zh .ga-tx, html.i18n-zh .ga-more { font-family: "Noto Serif SC", serif; letter-spacing: 0; }
+html.i18n-zh .ga-tx { text-align: left; }
 .scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .thesis { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr); gap: 8px 16px; align-items: center; padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(90deg, rgba(255,255,255,.07), rgba(16,16,18,.6) 45%, rgba(57,255,138,.04)); position: relative; }
 .thesis::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--brand); border-radius: 2px; }
@@ -387,6 +429,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .readout div[data-full] { cursor: help; border-radius: 6px; transition: background .15s; }
 .readout div[data-full]:hover { background: rgba(57,255,138,.06); }
 .readout div[data-full]:hover b { color: var(--ok); text-shadow: 0 0 14px rgba(57,255,138,.45); }
+.readout div[data-lv] > span::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 6px 1px 0; border-radius: 50%; vertical-align: middle; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.readout div[data-lv="busy"] > span::before, .readout div[data-lv="watch"] > span::before { background: var(--behind); box-shadow: 0 0 6px var(--behind); }
+.readout div[data-lv="watch"] b { color: var(--behind); }
+.readout div[data-lv="bad"] > span::before { background: var(--bad); box-shadow: 0 0 8px var(--bad); animation: blink 1.2s infinite; }
+.readout div[data-lv="bad"] b { color: var(--bad); }
+.readout div[data-lv=""] > span::before { display: none; }
 .readout span i { display: block; margin-top: 2px; font: 11px var(--mono); font-style: normal; letter-spacing: 0; text-transform: none; color: var(--dim); }
 
 /* tx feed */
@@ -907,9 +955,9 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="core">
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
-          <div id="rHw"><b id="rH">0</b><span>Height<i id="rHs"></i></span></div>
-          <div id="rMw"><b id="rM">0</b><span>Waiting<i id="rMs"></i></span></div>
-          <div id="rTw"><b id="rT">—</b><span id="rTs">Block pace</span></div>
+          <div id="rHw" data-health="height"><b id="rH">0</b><span>Height<i id="rHs"></i></span></div>
+          <div id="rMw" data-health="mempool"><b id="rM">0</b><span>Waiting<i id="rMs"></i></span></div>
+          <div id="rTw" data-health="pace"><b id="rT">—</b><span id="rTs">Block pace</span></div>
           <div id="rRw"><b id="rR">0</b><span>User rules<i id="rRs"></i></span></div>
         </div>
       </div>
@@ -974,6 +1022,19 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel statep" id="statePanelCard" title="Click to open the full chain state">
         <h2>Rules in force now <small id="stateSub">changes only when the chain agrees</small><button class="info" type="button" aria-label="What is this?" data-tip="The current state of the chain’s law: the consensus rules every block is judged by, how many validators must agree to change them, and the rule changes that have been agreed so far. This panel does not animate; it only changes when a new block changes the rules. The full view with the Tau spec code and every personal rule opens with the button below.">i</button></h2>
         <div class="scroll" id="statePanel"></div>
+        <a class="gazad" id="gazAd" href="gazette/" aria-label="Read the latest edition of The Daily Consensus" data-full="The Daily Consensus: the testnet told as a 1920s newspaper. Front page, the road from Zennet, how a hard fork works, letters to the editor. Opens the latest edition.">
+          <span class="ga-paper">
+            <span class="ga-nm">The Daily Consensus</span>
+            <span class="ga-mo">Where the rules change by agreement</span>
+            <span class="ga-dl"><i>Vol. XIII</i><i id="gazNo">No. —</i><i id="gazDate"></i></span>
+            <span class="ga-x">Extra</span>
+            <span class="ga-hl" id="gazHl">Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys</span>
+            <span class="ga-dk" id="gazDk">Consensus moves from a fixed list of validators to stake and back again, and not a single machine is reinstalled.</span>
+            <img class="ga-ph" src="gazette/img/hud-core.jpg" width="700" height="574" alt="" loading="lazy" decoding="async">
+            <span class="ga-tx" id="gazTx">Every blockchain has a rulebook. On most of them it is carved into the software itself, and changing a single line means a hard fork: new software, shipped to every machine, installed by every operator, with the ever-present danger that some refuse and the chain splits in two.</span>
+            <span class="ga-more">Continued in the newspaper ›</span>
+          </span>
+        </a>
         <button class="more" type="button" id="btnState3">Full chain state</button>
       </article>
       <article class="panel logp" id="logPanel" title="Click to open the full log">
@@ -1201,7 +1262,85 @@ function tickSubs() {
   put("rMs", !S.mempool.length ? "nothing pending" : `${S.mempool.length} pending · oldest ${fmtAge(oldest)}`);
   put("rRs", !S.clauses.size ? "none deployed yet" : `${S.clauses.size} in force` + (S.rulesLastBlock != null ? ` · last at #${fmt(S.rulesLastBlock)}` : ""));
 }
-setInterval(() => { if (!document.querySelector(".a-core:hover")) { if (S.mode === "live") tickPace(); tickSubs(); } }, 1000);
+/* ---------- health: how good the current state is, as a status light and one verdict line on top of a hover ----------
+   Thresholds follow the block pace (8 s in the simulation, measured on the live chain). A transaction already sealed but still listed
+   by the alpha node (IDNI #81, up to an hour) is a known quirk, not an alarm. Red only when something is really stuck or offline. */
+const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
+const liveChain = () => S.mode === "live" && !S.simfeed, offline = () => liveChain() && LIVE.status !== "Connected";
+const SEALED = { h: -1, n: -1, ids: new Set() };
+function sealedIds() {
+  if (SEALED.h !== S.height || SEALED.n !== S.blocks.length) { SEALED.h = S.height; SEALED.n = S.blocks.length; SEALED.ids = new Set(); for (const b of S.blocks.slice(-400)) for (const t of b.txs || []) if (t && t.id) SEALED.ids.add(t.id); }
+  return SEALED.ids;
+}
+function memState() {
+  const now = Date.now() / 1000, sealed = sealedIds(), wait = S.mempool.filter(t => !sealed.has(t.id)), last = S.blocks[S.blocks.length - 1];
+  const ages = wait.map(t => now - (S.memSeen.get(t.id) || now)), perf = (performance.now() - S.lastBlockAt) / 1000;
+  const since = liveChain() && last && last.ts ? Math.max(0, now - last.ts) : perf;
+  return { M: S.mempool.length, W: wait.length, oldest: ages.length ? Math.max(...ages) : 0, since, pace: paceNow() ?? (liveChain() ? null : 8) };
+}
+const syncLag = () => {
+  if (!liveChain() || LIVE.status !== "Connected") return "";
+  if (PRESENCE.synced === false) return "Watch: the community node is not in step with the network yet; the blocks are real, but not the newest.";
+  if (PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2) return `Watch: catching up, the state is verified to block #${fmt(PRESENCE.canon)} of #${fmt(PRESENCE.tip)}.`;
+  return "";
+};
+const wait_s = n => n === 1 ? "1 transaction waits" : `${n} transactions wait`;
+const HEALTH = {
+  mempool() {
+    if (offline()) return ["bad", "Problem: no connection to a node, so the waiting room cannot be read."];
+    const m = memState(), p = m.pace || 8, live = liveChain();
+    if (!m.M) return ["ok", "Normal: nothing waiting, every transaction sent so far is in a block."];
+    if (m.W && m.since > Math.max(600, 10 * p)) return ["bad", `Problem: nothing sealed for ${fmtAge(m.since)} while ${wait_s(m.W)}.`];
+    if (!m.W) return ["ok", m.M === 1 ? "Normal: it is already in a block; the alpha node keeps sealed transactions listed for up to an hour (known issue)." : "Normal: they are already in blocks; the alpha node keeps sealed transactions listed for up to an hour (known issue)."];
+    const late = Math.max(300, 8 * p), flowing = m.since < Math.max(3 * p, 180);
+    if (m.oldest > late && live && flowing && m.oldest < 3900) return ["ok", "Normal: blocks keep coming; the alpha node can list a sealed transaction for up to an hour (known issue)."];
+    if (m.oldest > late) return ["watch", `Watch: the oldest has waited ${fmtAge(m.oldest)}; blocks usually come every ${fmtSec(p)}.`];
+    return ["ok", m.W === 1 ? "Normal: the next block takes it in." : "Normal: the next block takes them in."];
+  },
+  pace() {
+    if (offline()) return ["bad", "Problem: no connection to a node."];
+    const lag = syncLag(); if (lag) return ["watch", lag];
+    const m = memState(), p = m.pace;
+    if (p == null) return ["busy", "Measuring: the pace needs two blocks with timestamps."];
+    if (m.since <= Math.max(2.5 * p, p + 30)) return ["ok", `Normal: a block about every ${fmtSec(p)}, the last ${fmtAge(m.since)} ago.`];
+    if (!m.W) return m.since > 1800 ? ["watch", `Watch: no block for ${fmtAge(m.since)}; nothing is waiting, so the chain may simply be quiet.`] : ["ok", `Quiet: no block for ${fmtAge(m.since)}, and nothing is waiting to be sealed.`];
+    if (m.since > Math.max(600, 10 * p)) return ["bad", `Problem: nothing sealed for ${fmtAge(m.since)} while ${wait_s(m.W)}.`];
+    return ["watch", `Watch: the next block is late, ${fmtAge(m.since)} since the last; usually every ${fmtSec(p)}.`];
+  },
+  height() {
+    if (offline()) return ["bad", "Problem: no connection to a node; the height may be out of date."];
+    const lag = syncLag(); if (lag) return ["watch", lag];
+    return ["ok", liveChain() ? `Normal: in step with the network at block #${fmt(S.height)}.` : `Normal: following the newest simulated block, #${fmt(S.height)}.`];
+  },
+  validators() {
+    if (offline()) return ["bad", "Problem: no connection to a node."];
+    const N = S.validators.length;
+    if (!N) return ["watch", "Watch: no validator known yet."];
+    if (N === 1) return ["watch", "Watch: a single validator seals every block; if it stops, the chain waits until it is back."];
+    return ["ok", `Normal: ${N} validators take turns sealing.`];
+  },
+  agreement() {
+    const voting = S.updates.filter(u => u.status === "voting"), sched = S.updates.filter(u => u.status === "scheduled"), thr = threshold();
+    if (voting.length) { const v = voting[0].votes ? voting[0].votes.size : 0; return ["busy", `In progress: ${v} of ${thr} needed votes so far; the change is scheduled once ${thr} agree.`]; }
+    if (sched.length) return ["ok", sched.length === 1 ? "Normal: 1 agreed change waits for its block; nothing needs a vote." : `Normal: ${sched.length} agreed changes wait for their block; nothing needs a vote.`];
+    return ["ok", "Normal: nothing to vote on; the rules in force stay as they are."];
+  },
+  nodes() {
+    if (offline()) return ["bad", "Problem: no connection to a node."];
+    const ns = nodesNow(), N = ns.length, far = ns.filter(n => n.height && Math.abs(n.height - S.height) > 5).length;
+    if (!N) return ["watch", "Watch: no other node checks the chain right now."];
+    if (far) return ["watch", `Watch: ${far} of ${N} nodes are more than 5 blocks away from ours.`];
+    return ["ok", N === 1 ? "Normal: 1 node checks every block and is in step." : `Normal: ${N} nodes check every block, all in step.`];
+  },
+};
+const healthOf = k => { try { return HEALTH[k] ? HEALTH[k]() : null; } catch (e) { return null; } };
+const health = k => { const r = healthOf(k); return r ? verdict(r[0], r[1]) : ""; };
+const CORE_LV = { mempool: "ok" };
+function tickHealth() {
+  for (const [id, k] of [["rHw", "height"], ["rMw", "mempool"], ["rTw", "pace"]]) { const r = healthOf(k), lv = r ? r[0] : ""; if ($(id).dataset.lv !== lv) $(id).dataset.lv = lv; }
+  CORE_LV.mempool = (healthOf("mempool") || ["ok"])[0];
+}
+setInterval(() => { if (!document.querySelector(".a-core:hover")) { if (S.mode === "live") tickPace(); tickSubs(); } tickHealth(); }, 1000);
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 /* Simple view says what a thing means; Technical view adds keys, hashes, heights, stream names and raw values */
 const TECH = () => document.body.dataset.view !== "simple", vt = (simple, tech) => TECH() ? tech : simple;
@@ -1399,7 +1538,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.48", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.51", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -1936,12 +2075,48 @@ function showBlock(b, pinned = true) {
   }
   $("chainSub").textContent = pinned ? `showing #${b.n} · back to newest ›` : "following the newest block";
 }
+/* the newspaper ad: the newest edition from node.tauhud.com/recap/gazette/latest.json once the weekly edition is out, else the current front page;
+   shown in three sizes, the largest that fits the room the box leaves, hidden when even the smallest does not fit */
+const GAZ = { at: 0, ed: null };
+function fitGazAd() {
+  const a = $("gazAd"); if (!a) return;
+  a.hidden = false; a.classList.remove("c1", "c2", "c3", "c4", "c5");
+  const paper = a.firstElementChild, over = () => paper.scrollHeight > paper.clientHeight + 1 || paper.clientHeight < 96;
+  for (const c of ["c1", "c2", "c3", "c4", "c5"]) { if (!over()) return; a.classList.add(c); }
+  if (over()) a.hidden = true;
+}
+async function loadGazette() {
+  if (Date.now() - GAZ.at < 600000) return; GAZ.at = Date.now();
+  // the weekly edition is set by the alerts service on the server, next to the weekly recap
+  try { const r = await fetch("https://node.tauhud.com/recap/gazette/latest.json", { cache: "no-cache" }); if (r.ok) { const j = await r.json(); if (j && typeof j.headline === "string") GAZ.ed = j; } } catch (e) {}
+  renderGazAd();
+}
+function renderGazAd() {
+  const ed = GAZ.ed || {}, zh = document.documentElement.classList.contains("i18n-zh");
+  const hl = (zh && ed.headline_zh) || ed.headline || "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys";
+  const no = ed.number != null ? Number(ed.number) : S.height || null;
+  $("gazHl").textContent = hl;
+  if (typeof ed.url === "string" && /^https:\/\/tauhud\.com\/gazette\//.test(ed.url)) $("gazAd").href = ed.url.replace(/^https:\/\/tauhud\.com\//, "");   // same site, so the preview and a local copy open their own newspaper
+  if (ed.deck || ed.deck_zh) $("gazDk").textContent = (zh && ed.deck_zh) || ed.deck;
+  if (ed.text || ed.text_zh) $("gazTx").textContent = (zh && ed.text_zh) || ed.text;
+  $("gazNo").textContent = zh ? (no ? `第 ${fmt(no)} 期` : "第 — 期") : no ? `No. ${fmt(no)}` : "No. —";
+  const d = ed.date ? new Date(ed.date + (/T/.test(ed.date) ? "" : "T00:00:00Z")) : new Date();
+  $("gazDate").textContent = isNaN(d) ? "" : d.toLocaleDateString(zh ? "zh-CN" : "en-GB", { day: "numeric", month: zh ? "long" : "short", year: "numeric", timeZone: "UTC" });
+  fitGazAd();
+}
+addEventListener("DOMContentLoaded", () => {
+  loadGazette(); setInterval(loadGazette, 600000);
+  if ("ResizeObserver" in window) new ResizeObserver(() => fitGazAd()).observe($("statePanelCard"));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitGazAd);
+});
 function renderStatePanel() {
   if (hold("statePanel", renderStatePanel)) return;
   const N = S.validators.length, thr = N ? threshold() : "—";
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
   $("statePanel").innerHTML = `<div class="big2"><div data-full="${KV_TIP["Spec revision"] || ""}"><b>${S.specRev}</b><span>spec revision</span></div><div data-full="${KV_TIP["Base fee"] || ""}"><b>${S.fee}</b><span>AGRS base fee</span></div></div>
-    <p class="sent"><b>${thr} of ${N}</b> validators change a rule · <b>${S.ruleBudget}</b> rule txs per block · <b>${S.clauses.size}</b> account${S.clauses.size === 1 ? "" : "s"} with own rules · <b>${open.length}</b> open proposal${open.length === 1 ? "" : "s"} · ${active.length ? `<b>${active.length}</b> agreed change${active.length === 1 ? "" : "s"}, last at #${active[active.length - 1].activeAt}` : "no agreed change yet"}</p>`;
+    <p class="sent"><b>${thr} of ${N}</b> validators change a rule · <b>${S.ruleBudget}</b> rule txs per block · <b>${S.clauses.size}</b> account${S.clauses.size === 1 ? "" : "s"} with own rules · <b>${open.length}</b> open proposal${open.length === 1 ? "" : "s"} · ${active.length ? `<b>${active.length}</b> agreed change${active.length === 1 ? "" : "s"}${Number.isFinite(Number(active[active.length - 1].activeAt)) ? `, last at #${active[active.length - 1].activeAt}` : ""}` : "no agreed change yet"}</p>`;
+  if (!GAZ.ed && $("gazNo")) $("gazNo").textContent = document.documentElement.classList.contains("i18n-zh") ? `第 ${S.height ? fmt(S.height) : "—"} 期` : S.height ? `No. ${fmt(S.height)}` : "No. —";   // the paper numbers its issues by block height
+  fitGazAd();
 }
 function showState() {
   const N = S.validators.length, thr = N ? threshold() : "—";
@@ -2456,12 +2631,12 @@ function draw(tm) {
   const cyan = "236,236,240", amber = "255,255,255";
   CORE_HITS.length = 0; const hit = (x, y, r, fn, href, open) => CORE_HITS.push({ x, y, r, fn, href, open }); const ring = (r, w, fn, href, open) => CORE_RINGS.push({ r, w, fn, href, open });
   CORE_RINGS.length = 0;
-  ring(C * .84, 16, () => `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is ${vt("building", "proposing")} the next block; a white frame around one marks a vote for the open rule change.` + vt("\nNodes that only follow and check the chain sit on the orbit inside.", `\nThe proposer rotates through the set (o7 eligibility); a vote is a consensus_rule_vote transaction.\nNon-sealing nodes sit on the orbit inside.`));
+  ring(C * .84, 16, () => health("validators") + `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is ${vt("building", "proposing")} the next block; a white frame around one marks a vote for the open rule change.` + vt("\nNodes that only follow and check the chain sit on the orbit inside.", `\nThe proposer rotates through the set (o7 eligibility); a vote is a consensus_rule_vote transaction.\nNon-sealing nodes sit on the orbit inside.`));
   const nodes = nodesNow(), NR = C * .77, named = nodes.filter(n => n.name);
   ring(NR, 12, () => {
     const N = nodes.length, who = named.map(n => n.kind === "hud" ? "Tau HUD’s node" : n.name).join(", ") + (N > named.length ? `${named.length ? ", and " : ""}${N - named.length} other node${N - named.length === 1 ? "" : "s"} on the testnet` : "");
     const simNote = isSim() ? "Simulated nodes. " : "";
-    return vt(`${simNote}Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} keep${N === 1 ? "s" : ""} a full copy of the chain and check${N === 1 ? "s" : ""} every block without sealing any${N ? ": " + who : ""}.\nThe validators that seal blocks sit on the orbit just outside.\nMore nodes make the chain harder to fake and easier to check.\nA node shows up here after 10 min on the network and stays 30 min after its last contact, so short tests don’t make the count flicker.\nClick to open the Nodes page.`,
+    return health("nodes") + vt(`${simNote}Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} keep${N === 1 ? "s" : ""} a full copy of the chain and check${N === 1 ? "s" : ""} every block without sealing any${N ? ": " + who : ""}.\nThe validators that seal blocks sit on the orbit just outside.\nMore nodes make the chain harder to fake and easier to check.\nA node shows up here after 10 min on the network and stays 30 min after its last contact, so short tests don’t make the count flicker.\nClick to open the Nodes page.`,
       `${simNote}Node orbit: ${N || "no"} non-sealing node${N === 1 ? "" : "s"}${N ? ": " + nodes.map(n => `${n.name || "peer"}${n.height ? " #" + fmt(n.height) : n.head ? " " + short(n.head) : ""}${n.agrees === false ? " (other head)" : ""}`).join(" · ") : ""}.\nThey verify every block against the spec and serve readers; sealing stays with the validator orbit outside.\nSource: the relay’s /community list and /peers (listed after 10 min of presence, kept 30 min after last contact, so brief test nodes don’t flicker the count).\nClick to open the Nodes page.`);
   }, nodesHref);
   cx.save(); cx.setLineDash([3, 9]); cx.beginPath(); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${cyan},.16)`; cx.arc(0, 0, NR, 0, Math.PI * 2); cx.stroke(); cx.restore();   // the node orbit: quiet, dashed
@@ -2514,7 +2689,7 @@ function draw(tm) {
     const parts = [];
     if (open) parts.push(`${open.votes.size} of ${threshold()} validators agree to “${open.title}”; at ${threshold()} it is scheduled for a later block${voting.length > 1 ? ` (${voting.length - 1} more vote${plural(voting.length - 1)} open)` : ""}.`);
     if (sched.length) parts.push(`${sched.length} agreed change${plural(sched.length)} wait${sched.length === 1 ? "s" : ""} for ${sched.length === 1 ? "its" : "their"} activation height: the markers, clockwise in activation order; the bright one is next, at block #${next.activateAt} (${blocksLeft(next)} block${plural(blocksLeft(next))} away). Until then the old rules apply.`);
-    const txt = parts.length ? "Agreement ring: " + parts.join(" ") : "Agreement ring: empty. No rule change is being voted on or waiting to take effect; it fills clockwise as validators agree.";
+    const txt = health("agreement") + (parts.length ? "Agreement ring: " + parts.join(" ") : "Agreement ring: empty. No rule change is being voted on or waiting to take effect; it fills clockwise as validators agree.");
     return txt + (TECH() && sched.length ? "\n" + sched.map(u => `${short(u.id)} → #${u.activateAt}`).join(" · ") : "");
   });
   if (sched.length) arc(C * .70, 10, 0, Math.PI * 2, `rgba(${amber},.32)`, 0);   // a full, quiet ring: agreement reached, waiting to take effect
@@ -2568,7 +2743,7 @@ function draw(tm) {
     const idni = S.mode === "live" && !S.simfeed && V === 1;   // the live testnet has one validator: IDNI's bootnode
     const yours = v === myNodeKey();   // the visitor's own simulated node, seated by its stake under proof of stake
     plate((idni ? "IDNI" : yours ? "You" : "V" + (i + 1)) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
-    hit(x, y, 40, () => (yours ? vt("Your node, sealing by stake: under proof of stake the six largest stakes take turns, and yours is one of them.\nClick to open your node.\n", `Your simulated node ${short(v)}: one of the ${TauSim.node.seats} largest stakes (o7 eligibility by stake).\nClick to open your node.\n`) : "") + vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."), null, yours ? () => TauSimNode.open() : null);
+    hit(x, y, 40, () => health("validators") + (yours ? vt("Your node, sealing by stake: under proof of stake the six largest stakes take turns, and yours is one of them.\nClick to open your node.\n", `Your simulated node ${short(v)}: one of the ${TauSim.node.seats} largest stakes (o7 eligibility by stake).\nClick to open your node.\n`) : "") + vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."), null, yours ? () => TauSimNode.open() : null);
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
 
@@ -2613,7 +2788,8 @@ function draw(tm) {
 
   // mempool orbit: a faint guide circle shows where the waiting transactions travel, so the ring can be found even when it is empty
   const M = S.mempool.length;
-  cx.save(); cx.setLineDash([2, 10]); cx.beginPath(); cx.lineWidth = 1.2; cx.strokeStyle = "rgba(255,255,255,.07)"; cx.arc(0, 0, C * .44, 0, Math.PI * 2); cx.stroke(); cx.restore();
+  const mlv = CORE_LV.mempool, mcol = mlv === "bad" ? "rgba(255,77,109,.55)" : mlv === "watch" ? "rgba(255,177,59,.4)" : "rgba(255,255,255,.07)";   // the orbit itself warns: amber to watch, red when stuck
+  cx.save(); cx.setLineDash([2, 10]); cx.beginPath(); cx.lineWidth = mlv === "ok" ? 1.2 : 2; cx.strokeStyle = mcol; cx.arc(0, 0, C * .44, 0, Math.PI * 2); cx.stroke(); cx.restore();
   S.mempool.forEach((tx, i) => {
     const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
@@ -2626,11 +2802,11 @@ function draw(tm) {
     const gov = S.mempool.filter(t => t.kind === "gov").length, rule = S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length, xfer = M - gov - rule;
     const mix = [[xfer, "transfer", "transfers"], [rule, "rule work", "rule work"], [gov, "rule-change proposal", "rule-change proposals"]].filter(x => x[0]).map(x => `${x[0]} ${x[0] === 1 ? x[1] : x[2]}`).join(", ");
     const liveNote = S.mode === "live" && !S.simfeed ? vt("\nThe alpha node can keep a sealed transaction listed here for up to an hour (see Findings).", "\nAlpha quirk: the node keeps sealed txs in getmempool for up to 60 min (IDNI #81), so a dot here may already sit in a block.") : "";
-    return M
+    return health("mempool") + (M
       ? vt(`Waiting room: ${M} transaction${M === 1 ? "" : "s"} sent to the network and checked at the door, not yet sealed into a block (${mix}).\nThe next block takes them in; the oldest has waited ${fmtAge(oldest)}.${liveNote}\nClick to see them one by one.`,
            `Mempool: ${M} pending tx (${mix}), oldest ${fmtAge(oldest)} since this page first saw it.\nAdmitted after the rule check (o5/o6); the proposer pulls them into the next block, fee ${S.fee} AGRS each.${liveNote}\nClick to list them.`)
       : vt(`Waiting room: empty. Every transaction sent so far has been sealed into a block.\nNew ones appear here as dots until the next block takes them in.\nClick for details.`,
-           `Mempool: empty; nothing pending since the last block.\nAdmitted transactions orbit here until the proposer seals them (one dot each: white proposal, green rule work, grey transfer).\nClick for details.`);
+           `Mempool: empty; nothing pending since the last block.\nAdmitted transactions orbit here until the proposer seals them (one dot each: white proposal, green rule work, grey transfer).\nClick for details.`));
   }, null, () => showDetail(dtKey(detailMempool)));
 
   // reactor
@@ -2638,7 +2814,7 @@ function draw(tm) {
   const g = cx.createRadialGradient(0, 0, 0, 0, 0, C * .32);
   g.addColorStop(0, "rgba(240,246,255,.95)"); g.addColorStop(.25, `rgba(${core},${.55 + Math.max(p, am) * .4})`); g.addColorStop(1, `rgba(${core},0)`);
   cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, C * (.30 + p * .06), 0, Math.PI * 2); cx.fill();
-  hit(0, 0, C * .30, () => { const last = S.blocks[S.blocks.length - 1] || {}; return vt(`Block #${fmt(S.height)}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago under rule version ${S.specRev}.\nEvery block carries the agreed rules of everyone; changing a rule needs ${threshold()} of ${S.validators.length} validators.`,
+  hit(0, 0, C * .30, () => { const last = S.blocks[S.blocks.length - 1] || {}; return health("pace") + vt(`Block #${fmt(S.height)}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago under rule version ${S.specRev}.\nEvery block carries the agreed rules of everyone; changing a rule needs ${threshold()} of ${S.validators.length} validators.`,
     `Block #${S.height}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago, judged under spec revision ${S.specRev}.\nhash ${short(last.hash)} · state ${short(last.state)} · ${(last.txs || []).length} tx · proposer ${short(last.proposer)}\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`); });
   cx.strokeStyle = `rgba(${core},.8)`; cx.lineWidth = 3;
   for (let k = 0; k < 3; k++) { cx.save(); cx.rotate(t * (k % 2 ? -.8 : .6) + k); const r = C * (.17 + k * .04); for (let j = 0; j < 3; j++) { cx.beginPath(); cx.arc(0, 0, r, j * Math.PI * 2 / 3, j * Math.PI * 2 / 3 + 1.75); cx.stroke(); } cx.restore(); }
@@ -2885,6 +3061,7 @@ $("chipNet").dataset.ex = exKey(() => `Network id ${$("netId").textContent}: the
 $("chipHeight").dataset.ex = exKey(() => `Chain height: the newest sealed block is #${fmt(S.height)}. ${isSim() ? "Simulated, a block every ~8 s." : "Read from the node; the relay pushes each new block as it is sealed."}`);
 $("btnState").dataset.ex = exKey(() => `Spec revision ${S.specRev}: how many times the consensus rules have changed by agreement (genesis = 1). Click to see every rule in force right now.`);
 $("chipCons").dataset.ex = exKey(() => { const n = S.validators.length, sw = S.modeHistory.length; return `Consensus: ${modeLabel()}.${n ? ` ${n} active validator${n === 1 ? "" : "s"} seal${n === 1 ? "s" : ""} the blocks, each seal signed with BLS and checked by the Tau rules (o7).` : ""}\nTau has no proof of work. The mechanism itself is chain state: a fixed validator list (proof of authority), a validator list kept in the Tau rules, or proof of stake. It switches only through an agreed rule change, like any other rule; ${S.mode === "live" ? (sw ? `${sw} switch${sw === 1 ? "" : "es"} so far` : "no switch so far") : "simulated"}.\nClick to see every rule in force.`; });
+$("chipHeight").dataset.health = "height"; $("chipCons").dataset.health = "validators";
 $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transaction, emitted by consensus rule o9. It changes only through an agreed rule change, never by an admin.`);
 
 /* ---------- overflow overlay: hover or tap any clipped text to read all of it ---------- */
@@ -2896,14 +3073,19 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   document.addEventListener("pointerdown", e => { touch = e.pointerType === "touch"; }, true);
   const place = (x, y) => { const w = ovl.offsetWidth, h = ovl.offsetHeight; ovl.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px"; ovl.style.top = (y + 18 + h > innerHeight ? y - h - 10 : y + 18) + "px"; };
   let shownAt = 0;
-  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex && EX.get(el.dataset.ex); ovl.textContent = viewText(fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim())); ovl.hidden = false; place(x, y); };
+  const setOvl = str => {
+    const m = /^\u2063(ok|busy|watch|bad)\u2063([^\n]*)\n?/.exec(str); ovl.className = m ? "hv-" + m[1] : "";
+    if (!m) { ovl.textContent = str; return; }
+    const d = document.createElement("div"); d.className = "hv"; d.textContent = m[2]; ovl.textContent = ""; ovl.append(d, document.createTextNode(str.slice(m[0].length)));
+  };
+  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex && EX.get(el.dataset.ex); setOvl(viewText((el.dataset.health ? health(el.dataset.health) : "") + (fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim())))); ovl.hidden = false; place(x, y); };
   const hide = () => { cur = null; ovl.hidden = true; };
   document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur && !touch) hide(); });
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
   document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail], button, a, input, select")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
-  const coreShow = e => { const h = coreHit(e); if (h) { cur = cv; shownAt = Date.now(); ovl.textContent = viewText(h.fn()); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href || h.open ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
+  const coreShow = e => { const h = coreHit(e); if (h) { cur = cv; shownAt = Date.now(); setOvl(viewText(h.fn())); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href || h.open ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
   cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; CORE_MOUSE = null; if (cur === cv && !touch) hide(); });
   /* a drawn element with a page behind it (the nodes) opens that page on click; on touch the first tap explains, the second opens */
@@ -2995,7 +3177,7 @@ addEventListener("DOMContentLoaded", () => {
   try { history.replaceState(null, "", location.pathname); } catch (e) {}
   setTimeout(() => { if (act === "tour") { tourOffered = true; $("tourOffer") && ($("tourOffer").hidden = true); } document.dispatchEvent(new CustomEvent("tau-nav", { detail: act })); }, 500);
 });
-$("statePanelCard").addEventListener("click", e => { if (!e.target.closest(".info")) showState(); }); $("statePanelCard").style.cursor = "pointer";
+$("statePanelCard").addEventListener("click", e => { if (!e.target.closest(".info, .gazad")) showState(); }); $("statePanelCard").style.cursor = "pointer";
 $("feedRej").onclick = () => { const on = $("feedRej").getAttribute("aria-pressed") !== "true"; $("feedRej").setAttribute("aria-pressed", String(on)); $("feed").classList.toggle("only-rej", on); };
 $("chainSub").onclick = () => { selectedBlock = null; ribbonReset(); const last = S.blocks[S.blocks.length - 1]; if (last) showBlock(last, false); }; $("chainSub").style.cursor = "pointer";
 /* mouse wheel over the block strip glides through the chain: down = back in time, up = toward the newest; sideways trackpad scrolling is native */
@@ -3128,7 +3310,7 @@ pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); set
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.48`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.51`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

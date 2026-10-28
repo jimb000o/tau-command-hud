@@ -65,6 +65,13 @@
       { s: "#join", t: "Run a node", x: "Three steps and about an hour and a half on a small server. No server yet? Try a simulated node in your browser first." },
       { s: ".panel.gets", t: "What you get", x: "Your name on the board, a live badge, a chain you checked yourself and a head start for a validator seat." },
     ] },
+    meta: { name: "In numbers", intro: "How many people look at Tau through this site: per day, over time and on which pages. Counted without cookies.", steps: [
+      { s: ".intro .kpis", t: "The short version", x: "Visitors today, the daily average of the last week with its trend, all visits added up and the best day so far." },
+      { s: "#pDaily", t: "Visitors per day", x: "One bar per day, the green line is the 7-day average. Pick 7 days up to All for the whole history; click a bar for that day." },
+      { s: "#dayPanel", t: "One day up close", x: "Visitors, pages opened and how many stayed 30 seconds, plus the pages people opened that day." },
+      { s: "#pGrowth", t: "Growth", x: "Every day's visitors added up since counting began, so you see the climb at a glance." },
+      { s: "#pPages", t: "What people open", x: "The most visited pages in the chosen range. Click one to go there." },
+    ] },
     status: { name: "Status", intro: "Is our node up and in sync, how healthy is the testnet, and what happened in the last 30 days.", steps: [
       { s: "#lead", t: "The answer first", x: "One line says whether our node is up and in sync with the testnet. Everything below backs it up." },
       { s: "#health", t: "Testnet health", x: "A score out of 100, the points lost and why, and the last 30 days as a small line." },
@@ -84,7 +91,7 @@
       { s: "#eras", t: "Five eras, every moment", x: "From the first vision to a chain that changes itself. Click any moment to read it above." },
       { s: ".p-gone", t: "Dropped along the way", x: "Ideas and tools the project tried and left behind. They make today’s design easier to understand." },
     ] },
-    story: { name: "Tau in 60 seconds", intro: "How Tau changes its rules without a fork, in six short steps you scroll through.", steps: [
+    story: { cta: false, name: "Tau in 60 seconds", intro: "How Tau changes its rules without a fork, in six short steps you scroll through.", steps: [
       { s: ".stage", t: "The picture plays the story", x: "The drawing follows the text: first the usual hard fork, then how a rule change on Tau is proposed, checked, agreed and made law." },
       { s: "#step-1", t: "Scroll to play", x: "Scroll down and each step takes over the picture. At the end you can watch it live, try it in the Playground or follow the alerts." },
     ] },
@@ -108,7 +115,7 @@
     ] },
     whatif: { name: "What if", intro: "Move block time, validators and votes needed, and watch a sandbox chain react.", steps: [
       { s: ".levers", t: "Move a lever", x: "Block time, validators, votes needed, validators offline and network delay. Or start from a preset such as “Real testnet today”." },
-      { s: ".stage", t: "The chain reacts at once", x: "Newest block on the right. When blocks arrive too late, the chain forks into two lanes. Hover a block, click it for its story." },
+      { s: ".stage", t: "The chain reacts at once", x: "Newest block on the right. When a block arrives too late, two blocks land at one height: a short split that the next block settles. It is not the fork Tau avoids, changing the rules never needs one. Hover a block, click it for its story." },
       { s: "#agree", t: "Rule changes need votes", x: "Every rule change needs yes votes from the validators before its deadline. Raise the bar or take validators offline and see what passes." },
       { s: ".side > section.panel:nth-of-type(1)", t: "What happens, in plain words", x: "One verdict for your settings, in plain words. The panel below counts what changed since your last move." },
     ] },
@@ -119,7 +126,7 @@
       { s: ".follow", t: "Follow your vote", x: "Paste your public key and this page shows when your vote reaches the chain." },
       { s: ".facts", t: "Good to know", x: "Any account may vote, two thirds decide, a vote is free and counts once, and nothing changes at once." },
     ] },
-    gazette: { name: "The Daily Consensus", intro: "Twelve years of Tau as a 1920s newspaper.", steps: [
+    gazette: { cta: false, name: "The Daily Consensus", intro: "Twelve years of Tau as a 1920s newspaper.", steps: [
       { s: "#stage", t: "Turn the pages", x: "Click or tap the page to turn it. The arrow keys work too." },
       { s: "#ctl", t: "Contents and pocket edition", x: "Jump to any story from the contents, switch to the pocket edition for small screens, or turn the sound on." },
     ] },
@@ -154,7 +161,10 @@
 .tt-card .t3 button:disabled { opacity: .35; cursor: default; }
 .tt-ring { position: fixed; z-index: 94; pointer-events: none; border: 1px solid #39ff8a; border-radius: 8px; box-shadow: 0 0 0 1px rgba(57,255,138,.5), 0 0 40px -6px rgba(57,255,138,.55), 0 0 0 200vmax rgba(0,0,0,.55); transition: left .25s, top .25s, width .25s, height .25s; }
 @media (prefers-reduced-motion: reduce) { .tt-ring, .tt-card .bar i { transition: none; } }
-@media (max-width: 899px) { .tt-card { bottom: 72px; } .tt-card .t3 button { min-height: 44px; } }`;
+.tt-cta { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 0 16px; padding: 5px 13px 5px 11px; vertical-align: .2em; border: 1px solid rgba(57,255,138,.6); border-radius: 999px; background: transparent; color: #39ff8a; font: 600 11px/1.2 "Sora", "Segoe UI", sans-serif; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; cursor: pointer; }
+.tt-cta:hover, .tt-cta:focus-visible { background: #39ff8a; border-color: #39ff8a; color: #000; outline: none; }
+.tt-cta i { font-style: normal; font-size: 10px; letter-spacing: 0; }
+@media (max-width: 899px) { .tt-card { bottom: 72px; } .tt-card .t3 button { min-height: 44px; } .tt-cta { min-height: 44px; margin: 6px 0 0; } }`;
   document.head.append(css);
 
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -243,6 +253,12 @@
     else if (e.key === "ArrowLeft") { e.preventDefault(); e.stopImmediatePropagation(); show(i - 1, -1, "key"); }
   }, true);
   window.TauTour = { has: true, start, end: () => end(false) };
+  /* a “Take the tour” button at the end of the page's opening line, so the tour is found where reading starts.
+     Pages that redraw their opening line (Status) get it back on the next check. */
+  const cta = el("button", "tt-cta", "<i>▸</i>Take the tour"); cta.type = "button"; cta.dataset.tnt = "A short guided tour of this page: what each part shows and why it matters. Arrow keys step, Esc ends.";
+  cta.addEventListener("click", start);
+  const placeCta = () => { const lead = T.cta !== false && document.querySelector("p.lead"); if (lead && !lead.contains(cta)) lead.append(cta); };
+  placeCta(); setInterval(placeCta, 2000);
   const params = new URLSearchParams(location.search);
   if (params.get("tour") || location.hash === "#tour") {   // a link with ?tour=1 or #tour starts the tour; the address bar drops it
     params.delete("tour"); try { history.replaceState(history.state, "", location.pathname + (params.toString() ? "?" + params : "") + (location.hash === "#tour" ? "" : location.hash)); } catch (e) {}

@@ -119,6 +119,10 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
 .photo figcaption, .cap { font: 400 .78em/1.28 var(--body); margin-top: .3em; text-align: justify; }
 .photo figcaption b, .cap b { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .rule2 { border: 0; border-top: 3px double var(--ink); margin: .35em 0; }
+.figs { width: 100%; border-collapse: collapse; font-size: .9em; margin: .1em 0 .3em; }
+.figs td { padding: .16em 0; border-bottom: 1px dotted rgba(27,24,19,.6); vertical-align: baseline; }
+.figs td:last-child { text-align: right; font-weight: 700; white-space: nowrap; padding-left: .6em; }
+.wknote { font-size: .78em; line-height: 1.3; text-align: center; font-style: italic; text-indent: 0; border-top: 1px solid var(--ink); padding-top: .35em; margin-top: .3em; }
 .small { font-size: .84em; line-height: 1.3; }
 .mono { font-family: var(--wire); }
 .ad { border: 2px solid var(--ink); padding: .5em .6em; text-align: center; margin: .35em .1em .5em; break-inside: avoid; position: relative; }
@@ -211,6 +215,17 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
   .ctl .opt { display: none; }
   .hint { font-size: 11px; }
 }
+/* phones: reading mode, the paper alone on the screen; the site bar and the tab bar come back with the ✕ */
+html.reading body { padding: 0; height: 100vh; height: 100dvh; }
+html.reading body > header.top, html.reading body > header.trail, html.reading body > nav.tnav, html.reading .tabbar, html.reading .tnav-spacer { display: none !important; }
+html.reading .desk { margin: 0; }
+html.reading .desk.zoomable { touch-action: none; }
+.rbar { display: none; position: absolute; top: max(8px, env(safe-area-inset-top, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); z-index: 35; gap: 6px; }
+.rbar.on { display: flex; }
+@media (max-height: 520px) { .rbar { flex-direction: column; } }
+.rbar button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--hair); background: rgba(9,9,10,.72); color: #fff; font: 600 15px/1 var(--display); cursor: pointer; display: grid; place-items: center; padding: 0; backdrop-filter: blur(6px); }
+.rbar button[hidden] { display: none; }
+html.reading .desk.zoomed .ctl, html.reading .desk.zoomed .hint { opacity: .25; }
 @media (prefers-reduced-motion: reduce) { .leaf, .book { transition-duration: .01s; } .leaf.turning .shade { animation: none; } }
 html.i18n-zh .pg { font-family: "Noto Serif SC", "Songti SC", "SimSun", var(--body); }
 html.i18n-zh .banner, html.i18n-zh h2, html.i18n-zh h3 { font-family: "Noto Serif SC", "Songti SC", var(--head); }
@@ -232,6 +247,7 @@ html.i18n-zh .title { font-family: "Noto Serif SC", "Songti SC", serif; font-wei
     <button class="side prev" id="sPrev" aria-label="Previous page">‹</button>
     <button class="side next" id="sNext" aria-label="Next page">›</button>
     <div class="toc" id="toc" hidden></div>
+    <div class="rbar" id="rbar"><button id="rMode" aria-label="Show the site menu">✕</button><button id="rEd" aria-label="Large type">Aa</button><button id="rFull" aria-label="Full screen" hidden>⛶</button></div>
     <div class="ctl" id="ctl">
       <button id="bPrev" aria-label="Previous page">‹ Back</button>
       <span class="pgno" id="pgno">Front page</span>
@@ -251,7 +267,7 @@ html.i18n-zh .title { font-family: "Noto Serif SC", "Songti SC", serif; font-wei
 const EN = {
   name: "The Daily Consensus",
   motto: "“Where the rules change by agreement”",
-  ui: { coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
+  ui: { rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
   date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
   pages: [
@@ -647,10 +663,58 @@ const EN = {
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const desk = $("desk"), stage = $("stage"), scaler = $("scaler"), book = $("book");
   const touch = matchMedia("(pointer: coarse)").matches;
+  /* on a phone the paper takes the whole screen (reading mode); the ✕ brings the site bar and the tab bar back */
+  const phone = touch && matchMedia("(max-width: 700px), (max-height: 520px)").matches;
+  if (phone) document.documentElement.classList.toggle("reading", store.get("gazette-reading") !== "off");
   const today = ED.date(new Date());
   let HEIGHT = null, AGE = null, WIRE = UI.wireWait;
   const fill = html => html.replaceAll("{{NAME}}", ED.name).replaceAll("{{MOTTO}}", ED.motto).replaceAll("{{DATE}}", today)
     .replaceAll("{{HEIGHT}}", HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—").replaceAll("{{WIRE}}", WIRE);
+
+  /* ----- the weekly edition: written every Monday by the Tau HUD server (infra/alerts/gazette.py), set as the front page ----- */
+  let OFF = 0, WEEK = null;
+  const L = ED === EN ? "en" : "zh";
+  const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const txt = x => esc(x && typeof x === "object" ? (x[L] || x.en) : x).replace(/&lt;(\/?)b&gt;/g, "<$1b>");
+  const edParam = /^\d{4}-\d{2}-\d{2}$/.test(new URLSearchParams(location.search).get("edition") || "") ? new URLSearchParams(location.search).get("edition") : "latest";
+  const weekFetch = (async () => {
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 5000);
+    try {
+      const r = await fetch(`https://node.tauhud.com/recap/gazette/${edParam}.json`, { cache: "no-store", signal: ctl.signal });
+      if (!r.ok) return null;
+      const e = await r.json(); return e && e.no && e.banner && e.lead ? e : null;
+    } catch (e) { return null; } finally { clearTimeout(to); }
+  })();
+  function weekPage(e) {
+    const figs = (e.figures || []).map(f => `<tr><td>${txt(f.label)}</td><td>${txt(f.value)}</td></tr>`).join("");
+    const stories = (e.stories || []).map((st, i) => `<div class="u s3${i % 2 ? " rl" : ""} rt"><h3>${txt(st.h)}</h3>${(st.body || []).map((b, j) => `<p${j ? "" : ' class="ni"'}>${txt(b)}</p>`).join("")}</div>`).join("");
+    return `<div class="pg front week">
+  <div class="mast">
+    <div class="ear"><b>${UI.weekEar}</b>${txt(e.period)}</div>
+    <div><div class="title">{{NAME}}</div><div class="motto">{{MOTTO}}</div></div>
+    <div class="ear r"><b>${UI.free}</b>${UI.freeP}</div>
+  </div>
+  <div class="dateline"><span>${UI.weekNo(e.no)}</span><span>${txt(e.printed)}</span><span>tauhud.com</span></div>
+  <div class="banner">${txt(e.banner)}</div>
+  <div class="grid">
+    <div class="u s4">
+      <div class="kick">${txt(e.lead.kick)}</div>
+      <h2>${txt(e.lead.h)}</h2>
+      <div class="deck">${txt(e.lead.deck)}</div>
+      <div class="c2">${(e.lead.body || []).map((b, j) => `<p${j ? "" : ' class="dc ni"'}>${txt(b)}</p>`).join("")}</div>
+    </div>
+    <div class="u s2 rl">
+      <h3>${UI.figures}</h3>
+      <table class="figs">${figs}</table>
+      <div class="ad inv"><div class="t">${UI.founding}</div><p>${UI.foundingP}</p></div>
+    </div>
+    ${stories}
+    <div class="u full"><p class="wknote">${UI.weekNote}</p></div>
+  </div>
+</div>`;
+  }
+  const num = i => i - OFF + 1;                                  /* the printed page number of page i (the weekly front has none) */
+  const lab = i => i < OFF ? UI.week : num(i) === 1 ? UI.front : UI.pageN(num(i));
 
   /* ----- pages for each edition ----- */
   const tpl = document.createElement("template");
@@ -662,22 +726,23 @@ const EN = {
     host.className = "paper"; host.style.cssText = `position:fixed;left:-99999px;top:0;width:${W}px;height:${H}px;visibility:hidden;--H:${H}px`;
     document.body.appendChild(host);
     const HEADY = "H2, H3, .kick, .deck, .by, .banner";
-    const rh = (pi, cont) => `<div class="rh"><span>${pi === 0 ? UI.front : UI.pageN(pi + 1)}</span><span class="nm">${ED.name}</span><span>${cont ? UI.cont : ""}</span></div>`;
+    const rh = (pi, cont) => `<div class="rh"><span>${lab(pi)}</span><span class="nm">${ED.name}</span><span>${cont ? UI.cont : ""}</span></div>`;
     ED.pages.forEach((html, pi) => {
       tpl.innerHTML = fill(html);
       const src = tpl.content.querySelector(".pg"), banner = src.querySelector(".banner");
       const units = [...src.querySelectorAll(".grid > .u")].filter(u => u.textContent.trim() || u.querySelector("svg, img"));
-      const head = pi === 0
-        ? `<div class="mast" style="grid-template-columns:minmax(0,1fr)"><div><div class="title">${ED.name}</div><div class="motto">${ED.motto}</div></div></div><div class="dateline"><span>No. ${HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—"}</span><span>${today}</span></div>`
+      const front = pi === OFF, wk = pi < OFF;
+      const head = front || wk
+        ? `<div class="mast" style="grid-template-columns:minmax(0,1fr)"><div><div class="title">${ED.name}</div><div class="motto">${ED.motto}</div></div></div><div class="dateline"><span>${wk ? UI.weekNo(WEEK.no) : "No. " + (HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—")}</span><span>${wk ? txt(WEEK.printed) : today}</span></div>`
         : rh(pi, false);
       let pg = null, slot = null, first = true;
       const open = top => {
-        host.innerHTML = `<div class="pg pocket">${top}<div class="grid" style="grid-template-columns:minmax(0,1fr)"><div class="u"></div></div>${pi === 0 && first ? `<div class="stop"><b>${UI.stop}</b><span id="wire0">${WIRE}</span></div>` : ""}</div>`;
+        host.innerHTML = `<div class="pg pocket${wk ? " week" : ""}">${top}<div class="grid" style="grid-template-columns:minmax(0,1fr)"><div class="u"></div></div>${front && first ? `<div class="stop"><b>${UI.stop}</b><span id="wire0">${WIRE}</span></div>` : ""}</div>`;
         pg = host.firstElementChild; slot = pg.querySelector(".u"); fitTitle(pg);
       };
       const over = () => { const g = pg.querySelector(".grid"); return pg.scrollHeight > pg.clientHeight + 1 || g.scrollHeight > g.clientHeight + 1; };
-      const close = () => { if (slot.childElementCount || (pi === 0 && first)) out.push({ html: pg.outerHTML, from: pi }); first = false; };
-      open(head + (pi === 0 ? `<div class="center" style="margin-top:.4em"><span class="extra">EXTRA</span></div>` : "") + (banner ? `<div class="banner sm">${banner.innerHTML}</div>` : "") + (pi === 0 ? `<p class="center" style="text-indent:0;font-style:italic;margin-top:.6em">${UI.coverLine}</p>` : ""));
+      const close = () => { if (slot.childElementCount || ((front || wk) && first)) out.push({ html: pg.outerHTML, from: pi }); first = false; };
+      open(head + (front ? `<div class="center" style="margin-top:.4em"><span class="extra">EXTRA</span></div>` : "") + (banner ? `<div class="banner sm">${banner.innerHTML}</div>` : "") + (front || wk ? `<p class="center" style="text-indent:0;font-style:italic;margin-top:.6em">${front ? UI.coverLine : txt(WEEK.teaser || WEEK.lead.deck)}</p>` : ""));
       units.forEach((u, ui) => {
         u.querySelectorAll(".c2, .c3").forEach(c => c.replaceWith(...c.childNodes));
         const kids = [...u.children];
@@ -728,11 +793,16 @@ const EN = {
   function choose() {
     const forced = store.get("gazette-edition");
     const ctl = $("ctl"), side = getComputedStyle(ctl).flexDirection === "column";
-    const aw = desk.clientWidth - 24 - (side ? ctl.offsetWidth + 12 : 0), ah = desk.clientHeight - 16 - (side ? 0 : ctl.offsetHeight + 14);
+    /* the phone's small buttons at the top left get their own strip: above the page upright, beside it on its side */
+    const rb = phone ? 56 : 0;
+    const aw = desk.clientWidth - 24 - (side ? ctl.offsetWidth + 12 + rb : 0), ah = desk.clientHeight - 16 - (side ? 0 : ctl.offsetHeight + 14 + rb);
     const sideRoom = aw > 900 ? 140 : 0;
     const sSpread = Math.min(ah / BH, (aw - sideRoom) / (2 * BW)), sSingleB = Math.min(ah / BH, (aw - sideRoom) / BW);
     const minBody = 0.68;   // broadsheet only while its body type stays readable; the fit step sets it a little larger on most pages
-    let ed = forced || (sSpread >= minBody ? "broad" : (sSingleB >= minBody && aw < ah * 1.2 ? "broad" : "pocket"));
+    /* a phone in reading mode shows the whole page like a real newspaper (double-tap or pinch to read closer) when it is at least
+       this large; smaller screens and the large-type choice get the pocket edition */
+    const wholeOnPhone = phone && document.documentElement.classList.contains("reading") && sSingleB >= 0.36;
+    let ed = forced || (wholeOnPhone ? "broad" : sSpread >= minBody ? "broad" : (sSingleB >= minBody && aw < ah * 1.2 ? "broad" : "pocket"));
     let spread, w, h, s;
     if (ed === "broad") {
       spread = aw > ah && sSpread >= Math.min(minBody, sSingleB) * 0.98; w = BW; h = BH;
@@ -768,8 +838,9 @@ const EN = {
     const bw = (m.spread ? 2 * W : W) * scale, bh = H * scale;
     stage.style.width = bw + "px"; stage.style.height = bh + "px";
     const ctl = $("ctl"), side = getComputedStyle(ctl).flexDirection === "column";
-    stage.style.marginLeft = (-bw / 2 - (side ? (ctl.offsetWidth + 12) / 2 : 0)) + "px";
-    stage.style.top = Math.max(8, (desk.clientHeight - (side ? 0 : ctl.offsetHeight + 14) - bh) / 2) + "px"; stage.style.marginTop = "0";
+    const rb = phone ? 56 : 0;
+    stage.style.marginLeft = (-bw / 2 - (side ? (ctl.offsetWidth + 12 - rb) / 2 : 0)) + "px";
+    stage.style.top = Math.max(8 + (side ? 0 : rb), (side ? 0 : rb) + (desk.clientHeight - (side ? 0 : ctl.offsetHeight + 14 + rb) - bh) / 2) + "px"; stage.style.marginTop = "0";
     requestAnimationFrame(zs);
     // land on the same story we were on
     let p = 0;
@@ -778,6 +849,10 @@ const EN = {
     const narrow = desk.clientWidth < 560 || side;
     $("bPrev").textContent = narrow ? "‹" : UI.back; $("bNext").textContent = narrow ? "›" : UI.turn; $("bToc").textContent = narrow ? "☰" : UI.contents;
     $("bToc").setAttribute("aria-label", UI.contents); sndLabel();
+    zreset(false);
+    desk.classList.toggle("zoomable", zoomable());
+    rbar();
+    if (touch) hint.innerHTML = zoomable() ? UI.hintZoom : UI.hintTouch;
     go(p, false);
     buildToc();
   }
@@ -812,6 +887,7 @@ const EN = {
     const n = LEAVES.length, max = MODE.spread ? n : n - 1;
     p = Math.max(0, Math.min(max, p)); if (anim && p === pos) return;
     const old = pos; pos = p;
+    if (old !== pos) zreset(anim);
     LEAVES.forEach((l, j) => { if (j >= Math.min(old, pos) - 2 && j <= Math.max(old, pos) + 1 && l.classList.contains("far")) { l.classList.remove("far"); if (anim) void l.offsetWidth; } });
     LEAVES.forEach((l, j) => {
       const flipped = j < pos, was = l.classList.contains("flipped");
@@ -827,7 +903,8 @@ const EN = {
     zs();
     if (anim && old !== pos) { sound(); hintOff(); }
     label();
-    try { history.replaceState(null, "", location.pathname + location.search + (pos ? "#p" + (pageAt(pos) + 1) : "")); } catch (e) {}
+    const from = PAGES.length ? PAGES[Math.min(pageAt(pos), PAGES.length - 1)].from : 0;
+    try { history.replaceState(null, "", location.pathname + location.search + (pos && from >= OFF ? "#p" + num(from) : "")); } catch (e) {}
   }
   const pageAt = p => MODE.spread ? Math.max(0, 2 * p - 1) : p;
   function label() {
@@ -835,9 +912,9 @@ const EN = {
     let t;
     if (MODE.spread) {
       const a = 2 * pos - 1, b = 2 * pos;
-      const vis = [a, b].filter(i => i >= 0 && i < PAGES.length).map(i => i + 1);
-      t = vis.length === 1 && vis[0] === 1 ? UI.front : (vis.length === 1 ? UI.pageN(vis[0]) : UI.pagesN(vis[0], vis[1])) + ` ${UI.of} ${PAGES.length}`;
-    } else t = pos === 0 ? UI.front + ` · 1 ${UI.of} ${PAGES.length}` : `${UI.pageN(pos + 1)} ${UI.of} ${PAGES.length}`;
+      const vis = [a, b].filter(i => i >= 0 && i < PAGES.length), total = PAGES.length - OFF;
+      t = vis.length === 1 && (vis[0] < OFF || num(vis[0]) === 1) ? lab(vis[0]) : (vis.length === 1 ? UI.pageN(num(vis[0])) : UI.pagesN(Math.max(1, num(vis[0])), num(vis[1]))) + ` ${UI.of} ${total}`;
+    } else t = pos === 0 ? (OFF ? UI.week : UI.front) + ` · 1 ${UI.of} ${PAGES.length}` : `${UI.pageN(pos + 1)} ${UI.of} ${PAGES.length}`;
     $("pgno").textContent = t;
     $("bPrev").disabled = $("sPrev").disabled = pos === 0;
     $("bNext").disabled = $("sNext").disabled = pos === max;
@@ -847,7 +924,7 @@ const EN = {
   /* ----- contents ----- */
   function buildToc() {
     const toc = $("toc");
-    toc.innerHTML = ED.toc.map((t, i) => `<button data-i="${i}"><span>${UI.tocN(i + 1)}</span>${t}</button>`).join("");
+    toc.innerHTML = ED.toc.map((t, i) => `<button data-i="${i}"><span>${i < OFF ? "★" : UI.tocN(num(i))}</span>${t}</button>`).join("");
     toc.querySelectorAll("button").forEach(b => b.onclick = e => {
       e.stopPropagation(); const i = +b.dataset.i, k = PAGES.findIndex(x => x.from === i);
       go(MODE.spread ? Math.ceil(k / 2) : k); toc.hidden = true; $("bToc").setAttribute("aria-expanded", "false");
@@ -856,19 +933,101 @@ const EN = {
   $("bToc").onclick = e => { e.stopPropagation(); const t = $("toc"); t.hidden = !t.hidden; $("bToc").setAttribute("aria-expanded", String(!t.hidden)); };
   $("bEd").onclick = e => { e.stopPropagation(); const cur = PAGES[pageAt(pos)] ? PAGES[pageAt(pos)].from : 0; store.set("gazette-edition", MODE.ed === "broad" ? "pocket" : "broad"); build(cur); };
 
+  /* ----- reading on a phone: the whole page; a double tap or two fingers bring it closer, one finger moves it ----- */
+  const Z = { s: 1, x: 0, y: 0 };
+  function zoomable() { return touch && MODE && MODE.ed === "broad" && !MODE.spread; }
+  function zclamp() {
+    const L = stage.offsetLeft, T = stage.offsetTop, w = stage.offsetWidth * Z.s, h = stage.offsetHeight * Z.s, dw = desk.clientWidth, dh = desk.clientHeight;
+    Z.x = w <= dw ? (dw - w) / 2 - L : Math.min(-L, Math.max(dw - L - w, Z.x));
+    Z.y = h <= dh ? (dh - h) / 2 - T : Math.min(-T, Math.max(dh - T - h, Z.y));
+  }
+  function zapply(anim) {
+    stage.style.transition = anim ? "transform .3s ease" : "none"; stage.style.transformOrigin = "0 0";
+    stage.style.transform = Z.s > 1 ? `translate(${Z.x}px, ${Z.y}px) scale(${Z.s})` : "";
+    desk.classList.toggle("zoomed", Z.s > 1);
+  }
+  function zreset(anim) { if (Z.s === 1 && !stage.style.transform) return; Z.s = 1; Z.x = Z.y = 0; zapply(anim); }
+  function zoomAt(px, py, ns, anim) {     /* (px, py) in desk coordinates stays where it is */
+    const L = stage.offsetLeft, T = stage.offsetTop, cx = (px - L - Z.x) / Z.s, cy = (py - T - Z.y) / Z.s;
+    ns = Math.max(1, Math.min(5, ns));
+    if (ns <= 1.02) { zreset(anim); return; }
+    Z.s = ns; Z.x = px - L - cx * ns; Z.y = py - T - cy * ns; zclamp(); zapply(anim);
+  }
+  const pts = new Map(); let pinch = null, panned = false, lastTap = null, tapTimer = null;
+  const deskXY = e => { const r = desk.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  desk.addEventListener("pointermove", e => {
+    if (!pts.has(e.pointerId) || !zoomable()) return;
+    const prevPt = pts.get(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size >= 2 && pinch) {
+      const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+      const r = desk.getBoundingClientRect();
+      zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, pinch.s * d / pinch.d, false); panned = true;
+    } else if (Z.s > 1 && pts.size === 1) {
+      Z.x += e.clientX - prevPt.x; Z.y += e.clientY - prevPt.y; zclamp(); zapply(false);
+      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 10) panned = true;
+    }
+  });
+
   /* ----- input: click/tap halves, keys, swipe ----- */
   let down = null;
-  desk.addEventListener("pointerdown", e => { down = { x: e.clientX, y: e.clientY, t: Date.now() }; });
-  desk.addEventListener("pointerup", e => {
-    if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y; const d = down; down = null;
-    if (e.target.closest("a, button, select, .toc, .ctl, [data-noflip]")) return;
-    if (!$("toc").hidden) { $("toc").hidden = true; $("bToc").setAttribute("aria-expanded", "false"); return; }
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); return; }
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10 || Date.now() - d.t > 900) return;
-    const r = stage.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
-    if (MODE.spread) { if (pos === 0) next(); else x < 0.5 ? prev() : next(); }
-    else x < 0.3 ? prev() : next();
+  desk.addEventListener("pointerdown", e => {
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 1) { down = { x: e.clientX, y: e.clientY, t: Date.now() }; panned = false; }
+    if (pts.size === 2 && zoomable()) { const [a, b] = [...pts.values()]; pinch = { d: Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)), s: Z.s }; panned = true; }
   });
+  desk.addEventListener("pointercancel", e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) down = null; });
+  desk.addEventListener("pointerup", e => {
+    pts.delete(e.pointerId); if (pts.size < 2) pinch = null;
+    if (pts.size) return;                       /* the other finger is still down */
+    if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y; const d = down; down = null;
+    if (e.target.closest("a, button, select, .toc, .ctl, .rbar, [data-noflip]")) return;
+    if (!$("toc").hidden) { $("toc").hidden = true; $("bToc").setAttribute("aria-expanded", "false"); return; }
+    if (panned) return;
+    const zoomed = Z.s > 1;
+    if (!zoomed && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); return; }
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10 || Date.now() - d.t > 900) return;
+    const tap = () => {
+      const r = stage.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
+      if (MODE.spread) { if (pos === 0) next(); else x < 0.5 ? prev() : next(); }
+      else x < 0.3 ? prev() : next();
+    };
+    if (!zoomable()) { tap(); return; }
+    /* a double tap brings the page closer (to about true type size) or back; a single tap turns it, unless it is close */
+    const now = Date.now(), [px, py] = deskXY(e);
+    if (lastTap && now - lastTap.t < 320 && Math.hypot(px - lastTap.x, py - lastTap.y) < 40) {
+      clearTimeout(tapTimer); lastTap = null;
+      if (zoomed) zreset(true); else zoomAt(px, py, Math.max(2, 1 / scale), true);
+      hintOff(); return;
+    }
+    lastTap = { t: now, x: px, y: py };
+    clearTimeout(tapTimer);
+    if (!zoomed) tapTimer = setTimeout(tap, 300);
+  });
+
+  /* ----- the small buttons at the top left on a phone: site menu or whole screen, page or large type, full screen ----- */
+  const canFull = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+  function rbar() {
+    const on = phone, reading = document.documentElement.classList.contains("reading");
+    $("rbar").classList.toggle("on", on);
+    if (!on) return;
+    $("rMode").textContent = reading ? "✕" : "⤢"; $("rMode").setAttribute("aria-label", reading ? UI.rOut : UI.rIn); $("rMode").title = $("rMode").getAttribute("aria-label");
+    $("rEd").textContent = MODE.ed === "broad" ? "Aa" : "▦"; $("rEd").setAttribute("aria-label", MODE.ed === "broad" ? UI.rLarge : UI.rWhole); $("rEd").title = $("rEd").getAttribute("aria-label");
+    $("rFull").hidden = !canFull || !reading; $("rFull").setAttribute("aria-label", UI.rFull); $("rFull").title = UI.rFull;
+  }
+  const curFrom = () => PAGES[pageAt(pos)] ? PAGES[Math.min(pageAt(pos), PAGES.length - 1)].from : 0;
+  $("rMode").onclick = e => {
+    e.stopPropagation(); const cur = curFrom(), reading = !document.documentElement.classList.contains("reading");
+    document.documentElement.classList.toggle("reading", reading); store.set("gazette-reading", reading ? "on" : "off");
+    if (!reading && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    requestAnimationFrame(() => build(cur));
+  };
+  $("rEd").onclick = e => { e.stopPropagation(); const cur = curFrom(); store.set("gazette-edition", MODE.ed === "broad" ? "pocket" : "broad"); build(cur); };
+  $("rFull").onclick = e => {
+    e.stopPropagation();
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else document.documentElement.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
+  };
+  document.addEventListener("fullscreenchange", () => { const cur = curFrom(); setTimeout(() => build(cur), 120); });
   $("bNext").onclick = $("sNext").onclick = e => { e.stopPropagation(); next(); };
   $("bPrev").onclick = $("sPrev").onclick = e => { e.stopPropagation(); prev(); };
   addEventListener("keydown", e => {
@@ -914,20 +1073,29 @@ const EN = {
     } catch (e) { WIRE = UI.wireOff; }
     clearTimeout(to);
     document.querySelectorAll("#wire0, #wire1").forEach(el => { el.innerHTML = WIRE; const pg = el.closest(".pg"); if (pg && MODE) fit(pg); });
-    document.querySelectorAll(".dateline span:first-child").forEach(el => el.textContent = el.textContent.replace(/No\. .*$|—$/, HEIGHT != null ? "No. " + HEIGHT.toLocaleString("en-US") : "No. —"));
+    document.querySelectorAll(".pg:not(.week) .dateline span:first-child").forEach(el => el.textContent = el.textContent.replace(/No\. .*$|—$/, HEIGHT != null ? "No. " + HEIGHT.toLocaleString("en-US") : "No. —"));
   }
 
   /* ----- start ----- */
   const want = /^#p(\d+)$/.exec(location.hash);
-  const startFrom = () => { build(null); if (want) { const k = Math.max(0, +want[1] - 1); go(MODE.spread ? Math.ceil(k / 2) : k, false); } };
-  const ready = () => { startFrom(); wire(); setInterval(() => { if (!document.hidden) wire(); }, 60000); };
+  const startFrom = () => { build(null); if (want) { const k = Math.max(0, PAGES.findIndex(x => x.from === Math.max(0, +want[1] - 1) + OFF)); go(MODE.spread ? Math.ceil(k / 2) : k, false); } };
+  const ready = async () => {
+    WEEK = await weekFetch;
+    if (WEEK) { ED.pages.unshift(weekPage(WEEK)); ED.toc.unshift(`${UI.week}: ${txt(WEEK.banner)}`); OFF = 1; }
+    startFrom(); wire(); setInterval(() => { if (!document.hidden) wire(); }, 60000);
+  };
   /* the paper's faces load only when first used; load them before measuring, and measure again if one arrives late */
   const FACES = ["400 20px UnifrakturMaguntia", "900 20px 'Playfair Display'", "700 20px 'Playfair Display'", "italic 400 20px 'Playfair Display'", "400 20px 'Old Standard TT'", "700 20px 'Old Standard TT'", "italic 400 20px 'Old Standard TT'", "400 20px Limelight", "400 20px 'Special Elite'"].concat(window.GAZETTE_ZH && ED === window.GAZETTE_ZH ? ["900 20px 'Noto Serif SC'", "400 20px 'Noto Serif SC'"] : []);
   const refit = () => { LEAVES.forEach(l => delete l.dataset.fit); zs(); };
   Promise.race([Promise.all(FACES.map(f => document.fonts ? document.fonts.load(f) : 0)), new Promise(r => setTimeout(r, 3500))]).then(ready);
   if (document.fonts) document.fonts.addEventListener("loadingdone", () => { if (MODE && MODE.ed === "broad") refit(); });
   book.addEventListener("load", e => { if (e.target.tagName === "IMG") fit(e.target.closest(".pg")); }, true);
-  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const cur = PAGES[pageAt(pos)] ? PAGES[pageAt(pos)].from : 0; build(cur); }, 200); });
+  /* a phone's address bar coming and going changes the height a little: that alone does not reset the page */
+  let rt, lastSize = [innerWidth, innerHeight];
+  addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => {
+    if (phone && innerWidth === lastSize[0] && Math.abs(innerHeight - lastSize[1]) < 140) return;
+    lastSize = [innerWidth, innerHeight]; build(curFrom());
+  }, 200); });
 })();
 </script>
 </body>

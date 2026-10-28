@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Tau HUD in numbers</title>
+<meta name="description" content="How many people use Tau HUD: visitors per day, growth since the start and the most visited pages. Counted without cookies.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD in numbers">
+<meta property="og:description" content="Visitors per day, growth and the most visited pages of Tau HUD, counted without cookies.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/meta/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD and /stats: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.intro { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 86ch; }
+.kpis { display: flex; flex-wrap: wrap; gap: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--dim); font-size: 12px; white-space: nowrap; background: rgba(16,16,18,.86); }
+.kpi b { color: #fff; font: 600 13px var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.kpi.up b { color: var(--ok); }
+.main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.col { display: grid; gap: 14px; min-width: 0; align-content: start; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 .aside { margin-left: auto; font: 12px var(--mono); letter-spacing: 0; text-transform: none; }
+.range { display: inline-flex; gap: 4px; margin-left: auto; }
+.range button { font: 600 11px var(--display); letter-spacing: .12em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 12px; min-height: 28px; cursor: pointer; }
+.range button:hover { color: #fff; border-color: var(--hair); }
+.range button[aria-pressed="true"] { color: #000; background: #fff; border-color: #fff; }
+.chart { position: relative; flex: 1 1 auto; min-height: 220px; }
+.chart.small { min-height: 150px; }
+.chart svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.chart text { fill: var(--dim); font: 11px var(--mono); }
+.chart .grid { stroke: var(--line); }
+.chart .bar { fill: rgba(255,255,255,.32); }
+.chart .bar.today { fill: rgba(255,255,255,.16); }
+.chart .bar.sel { fill: #fff; }
+.chart .hit { fill: transparent; cursor: pointer; }
+.chart .hit:hover + .bar, .chart .bar.hover { fill: rgba(255,255,255,.6); }
+.chart .avg { fill: none; stroke: var(--ok); stroke-width: 2; }
+.chart .area { fill: rgba(57,255,138,.08); }
+.chart .cum { fill: none; stroke: var(--ok); stroke-width: 2; }
+.chart .dotsel { fill: #fff; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; color: var(--dim); font-size: 12px; margin-top: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.legend i.b { background: rgba(255,255,255,.32); } .legend i.l { height: 2px; background: var(--ok); vertical-align: 3px; } .legend i.t { background: rgba(255,255,255,.16); }
+/* one day */
+.day h3 { margin: 0 0 8px; font: 600 16px var(--display); color: #fff; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; margin-bottom: 10px; }
+.facts div { border-left: 2px solid var(--line); padding-left: 8px; }
+.facts b { display: block; color: #fff; font: 600 18px var(--display); font-variant-numeric: tabular-nums; }
+.facts span { color: var(--dim); font-size: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 5px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+td.w { width: 38%; }
+.meter { height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: #fff; }
+tr:first-child .meter i { background: var(--ok); }
+td a { text-decoration: none; } td a:hover { text-decoration: underline; }
+.split { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: rgba(255,255,255,.08); margin: 4px 0 2px; }
+.split i { display: block; height: 100%; }
+.split i:nth-child(1) { background: #fff; } .split i:nth-child(2) { background: rgba(255,255,255,.5); } .split i:nth-child(3) { background: rgba(255,255,255,.28); } .split i:nth-child(4) { background: rgba(255,255,255,.14); }
+.splitkey { color: var(--dim); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.splitkey b { color: var(--text); font-weight: 600; }
+.row2 { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+@media (min-width: 900px) { .row2 { grid-template-columns: minmax(0, 1fr) 300px; } }
+html.fit .row2 { gap: 12px; min-height: 0; }
+.who h2 + div h2:first-child { margin-top: 0 !important; }
+.tablewrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.empty { color: var(--dim); padding: 8px 0; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
+[hidden] { display: none !important; }
+/* landscape from laptop size up: one screen, laid out for about 1600 x 860 CSS px and scaled to the viewport, like /stats */
+html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 12px; }
+html.fit #tip { zoom: var(--z); }
+html.fit .wrap > .main { flex: 1 1 0; min-height: 0; gap: 12px; grid-template-columns: minmax(0, 1fr) 440px; }
+html.fit .col { min-height: 0; gap: 12px; grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr); }
+html.fit .col.side { grid-template-rows: auto minmax(0, 1fr); }
+html.fit .panel { min-height: 0; }
+html.fit .chart { min-height: 0; }
+html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 1fr) 420px 420px; }
+html.fit.wide .col.side { display: contents; }
+@media (max-width: 700px) {
+  .range button { min-height: 44px; padding: 0 10px; }
+  .chart { min-height: 200px; }
+  td.hide-s, th.hide-s { display: none; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>In numbers</span></a>
+  </header>
+  <nav class="tnav" data-page="meta" aria-label="Pages and tools"></nav>
+  <div class="intro">
+    <div>
+      <p class="lead">How many people look at Tau through this site.</p>
+      <p class="sub" id="sourceLine">Visitors per day, growth since counting began and the pages people open most. Counted without cookies and without storing anything in your browser; only daily totals are kept.</p>
+    </div>
+    <div class="kpis" aria-label="Key numbers">
+      <span class="kpi" data-tip="Different people on this site today so far (UTC day).\nThe same person on two pages counts once."><b id="kToday">–</b>visitors today</span>
+      <span class="kpi" id="kWeekBox" data-tip="Average visitors per day over the last 7 full days,\ncompared with the 7 days before."><b id="kWeek">–</b>a day, last 7 days</span>
+      <span class="kpi" data-tip="Every day's visitors added up since counting began.\nSomeone who comes back on another day counts again."><b id="kAll">–</b>visits in total</span>
+      <span class="kpi" data-tip="The day with the most visitors so far."><b id="kBest">–</b>best day</span>
+    </div>
+  </div>
+  <main class="main">
+    <div class="col">
+      <section class="panel" id="pDaily">
+        <h2>Visitors per day
+          <span class="range" role="group" aria-label="Time range">
+            <button type="button" data-r="7">7D</button><button type="button" data-r="30">30D</button><button type="button" data-r="90">90D</button><button type="button" data-r="365">1Y</button><button type="button" data-r="0">All</button>
+          </span>
+        </h2>
+        <div class="chart" id="cDaily"></div>
+        <div class="legend"><span><i class="b"></i>visitors that day (click a bar for the day)</span><span><i class="l"></i>7-day average</span><span><i class="t"></i>today, still counting</span></div>
+      </section>
+      <div class="row2">
+        <section class="panel" id="pGrowth">
+          <h2>Growth <span class="aside" id="growthNote"></span></h2>
+          <div class="chart small" id="cGrowth"></div>
+        </section>
+        <section class="panel who">
+          <h2>Who visits <span class="aside" id="wRange"></span></h2>
+          <div id="splits"></div>
+        </section>
+      </div>
+    </div>
+    <div class="col side">
+      <section class="panel day" id="dayPanel">
+        <h2>One day <span class="aside" id="dayHint">click a bar to change</span></h2>
+        <h3 id="dTitle">–</h3>
+        <div class="facts">
+          <div><b id="dVis">–</b><span>visitors</span></div>
+          <div><b id="dViews">–</b><span>pages opened</span></div>
+          <div><b id="dPer">–</b><span>pages per visitor</span></div>
+          <div data-tip="Share of opened pages that stayed in view for 30 seconds or longer."><b id="dStay">–</b><span>stayed 30 s or longer</span></div>
+        </div>
+        <table id="dPages"></table>
+      </section>
+      <section class="panel" id="pPages">
+        <h2>Most visited pages <span class="aside" id="pRange"></span></h2>
+        <div class="tablewrap"><table id="pages"></table></div>
+      </section>
+    </div>
+  </main>
+  <footer>Counted on our own server, not by another company: a page sends one small request when it opens and one more after 30 seconds in view. Nothing is stored in your browser, addresses are never stored, and browsers with Do Not Track or Global Privacy Control are not counted. A visitor is recognised for one day only. Data: <a href="https://node.tauhud.com/visits/public">JSON</a>.</footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const RELAY = "https://node.tauhud.com";
+const SAMPLE = new URLSearchParams(location.search).has("sample");
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const ZH = !!(window.TauI18n && TauI18n.lang === "zh");
+const fmt = n => Number(n).toLocaleString(ZH ? "zh-CN" : "en-US");
+const pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "–";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const DAY = 86400000;
+let data = null, range = 30, sel = null, failed = false;
+try { const r = localStorage.getItem("tauhud-meta-range"); if (r != null && [0, 7, 30, 90, 365].includes(+r)) range = +r; } catch (e) {}
+
+/* page keys from the counter: "hud", "explorer", "story/zh" … */
+const NAMES = { hud: "HUD", explorer: "Explorer", stats: "Stats", history: "Time travel", account: "Accounts", nodes: "Nodes", proposals: "Proposals", story: "Tau in 60 seconds", gazette: "The Daily Consensus", chronicle: "Chronicle", findings: "Findings", status: "Status", developers: "Developers", press: "Press kit", playground: "Playground", whatif: "What if", vote: "Vote for real", missions: "Missions", meta: "In numbers" };
+const pageName = p => { const [a, b] = p.split("/"); return T(NAMES[a] || "/" + a + "/") + (b ? ` (${b})` : ""); };
+const pageHref = p => "/" + (p === "hud" ? "" : p + "/");
+const dayKey = t => new Date(t).toISOString().slice(0, 10);
+const dayLabel = (k, long) => new Date(k + "T00:00:00Z").toLocaleDateString(ZH ? "zh-CN" : "en-GB", long ? { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
+
+/* made-up numbers to preview the page (?sample) */
+function sample() {
+  const days = {}, today = Date.now(), n = 140;
+  let s = 7;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const pages = { hud: 1, explorer: .3, gazette: .24, stats: .18, story: .17, vote: .12, playground: .1, missions: .08, whatif: .06, proposals: .06, press: .04, nodes: .04, account: .04, "story/zh": .02 };
+  for (let i = n - 1; i >= 0; i--) {
+    const k = dayKey(today - i * DAY), base = 20 + (n - i) * 1.4 + (i % 7 === 1 ? 25 : 0);
+    const v = Math.round(base * (.75 + .5 * rnd()) * (i === 0 ? .55 : 1)), u = {};
+    for (const p in pages) u[p] = Math.max(0, Math.round(v * pages[p] * (.7 + .6 * rnd())));
+    const views = Math.round(v * 2.6);
+    days[k] = [v, views, Math.round(views * (.35 + .2 * rnd())), u, { en: Math.round(v * .8), zh: v - Math.round(v * .8) }, { phone: Math.round(v * .35), laptop: Math.round(v * .3), desktop: Math.round(v * .25), wide: Math.round(v * .1) }];
+  }
+  return { today: dayKey(today), days };
+}
+
+/* every calendar day of the range, zero where nothing was counted; not before counting began */
+function rangeDays() {
+  const keys = Object.keys(data.days).sort();
+  if (!keys.length) return [];
+  const end = Date.parse(data.today + "T00:00:00Z"), first = Date.parse(keys[0] + "T00:00:00Z");
+  const start = range ? Math.max(first, end - (range - 1) * DAY) : first;
+  const out = [];
+  for (let t = start; t <= end; t += DAY) { const k = dayKey(t); out.push([k, data.days[k] || [0, 0, 0, {}, {}, {}]]); }
+  return out;
+}
+
+function svgEl(box) {
+  const w = box.clientWidth, h = box.clientHeight;
+  return { w: Math.max(w, 10), h: Math.max(h, 10) };
+}
+function niceMax(v) { if (v <= 5) return 5; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p; return v; }
+
+function drawDaily() {
+  const box = $("cDaily"), days = data ? rangeDays() : [];
+  if (!days.length) { box.innerHTML = `<p class="empty">${esc(T(failed ? "The counter could not be reached. It will try again in a minute." : "Counting began on 28 October 2026. The first numbers appear here as soon as people open a page."))}</p>`; return; }
+  const { w, h } = svgEl(box), L = 36, B = 20, top = 8, cw = w - L, ch = h - B - top;
+  const max = niceMax(Math.max(1, ...days.map(d => d[1][0])));
+  const bw = cw / days.length, gap = bw > 6 ? Math.min(4, bw * .25) : 0;
+  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(T("Visitors per day"))}">`;
+  for (const f of [0, .5, 1]) { const y = top + ch - f * ch; s += `<line class="grid" x1="${L}" x2="${w}" y1="${y}" y2="${y}"/><text x="${L - 6}" y="${y + 4}" text-anchor="end">${fmt(Math.round(max * f))}</text>`; }
+  const every = Math.ceil(days.length / Math.max(2, Math.floor(cw / 70)));
+  days.forEach(([k, d], i) => {
+    const x = L + i * bw, bh = ch * d[0] / max;
+    s += `<rect class="hit" data-k="${k}" x="${x}" y="${top}" width="${bw}" height="${ch}"/>`;
+    s += `<rect class="bar${k === data.today ? " today" : ""}${k === sel ? " sel" : ""}" x="${x + gap / 2}" y="${top + ch - bh}" width="${Math.max(1, bw - gap)}" height="${bh}"/>`;
+    if (i % every === 0) s += `<text x="${x + bw / 2}" y="${h - 4}" text-anchor="middle">${esc(dayLabel(k))}</text>`;
+  });
+  // 7-day average over full days, drawn from the 7th day it can see
+  const all = Object.keys(data.days).sort(), avgOf = k => {
+    const t = Date.parse(k + "T00:00:00Z"); let sum = 0, n = 0;
+    for (let j = 0; j < 7; j++) { const kk = dayKey(t - j * DAY); if (kk < all[0]) break; sum += (data.days[kk] || [0])[0]; n++; }
+    return n >= 3 ? sum / n : null;
+  };
+  const pts = days.map(([k], i) => k === data.today ? null : [L + i * bw + bw / 2, avgOf(k)]).filter(p => p && p[1] != null);
+  if (pts.length > 1) s += `<path class="avg" d="${pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + (top + ch - ch * p[1] / max).toFixed(1)).join(" ")}"/>`;
+  box.innerHTML = s + "</svg>";
+  box.querySelectorAll(".hit").forEach(r => {
+    const k = r.dataset.k, d = data.days[k] || [0, 0];
+    r.dataset.tip = `${dayLabel(k, true)}${k === data.today ? " · " + T("still counting") : ""}\n${fmt(d[0])} ${T("visitors")} · ${fmt(d[1])} ${T("pages opened")}`;
+    r.addEventListener("click", () => { sel = k; render(); });
+  });
+}
+
+function drawGrowth() {
+  const box = $("cGrowth"), days = rangeDays(), all = Object.keys(data.days).sort();
+  if (!days.length || !days.some(d => d[1][0])) { box.innerHTML = `<p class="empty">${esc(T("The climb starts with the first visitors."))}</p>`; $("growthNote").textContent = ""; return; }
+  // visits added up from the very first day, so every range shows the same climb
+  let before = 0; for (const k of all) if (k < days[0][0]) before += data.days[k][0];
+  const cum = []; let run = before; for (const [, d] of days) { run += d[0]; cum.push(run); }
+  const { w, h } = svgEl(box), L = 52, B = 20, top = 8, cw = w - L, ch = h - B - top;
+  const step = niceMax(Math.max(1, (run - (range ? before : 0)) / 2)) / 2, lo = range ? Math.floor(before / step) * step : 0;
+  const max = Math.max(lo + 2 * step, lo + step * Math.ceil((run - lo) / step)), y = v => top + ch - ch * (v - lo) / (max - lo || 1);
+  const x = i => L + (days.length === 1 ? cw / 2 : cw * i / (days.length - 1));
+  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(T("Visits added up"))}">`;
+  for (let v = lo; v <= max + 1e-9; v += step) s += `<line class="grid" x1="${L}" x2="${w}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${fmt(Math.round(v))}</text>`;
+  const line = cum.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join(" ");
+  s += `<path class="area" d="${line} L${x(cum.length - 1).toFixed(1)} ${top + ch} L${x(0).toFixed(1)} ${top + ch} Z"/><path class="cum" d="${line}"/>`;
+  const every = Math.ceil(days.length / Math.max(2, Math.floor(cw / 70)));
+  days.forEach(([k], i) => { if (i % every === 0) s += `<text x="${x(i)}" y="${h - 4}" text-anchor="middle">${esc(dayLabel(k))}</text>`; });
+  const si = days.findIndex(([k]) => k === sel);
+  if (si >= 0) s += `<circle class="dotsel" cx="${x(si)}" cy="${y(cum[si])}" r="4"/>`;
+  box.innerHTML = s + "</svg>";
+  const gained = run - before;
+  $("growthNote").textContent = range ? `+${fmt(gained)} ${T("visits in this range")} · ${fmt(run)} ${T("in total")}` : `${fmt(run)} ${T("visits since counting began")}`;
+}
+
+function rows(el, list, total, link) {
+  if (!list.length) { el.innerHTML = `<tr><td class="empty">${esc(T("No pages opened yet."))}</td></tr>`; return; }
+  const max = list[0][1];
+  el.innerHTML = `<tr><th>${esc(T("Page"))}</th><th class="n">${esc(T("visitors"))}</th><th class="n hide-s">${esc(T("share"))}</th><th></th></tr>` +
+    list.map(([p, v]) => `<tr><td>${link ? `<a href="${pageHref(p)}">${esc(pageName(p))}</a>` : esc(pageName(p))}</td><td class="n">${fmt(v)}</td><td class="n hide-s">${pct(v, total)}</td><td class="w"><div class="meter"><i style="width:${(100 * v / max).toFixed(1)}%"></i></div></td></tr>`).join("");
+}
+function split(title, obj, names) {
+  const ent = Object.entries(obj).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]), tot = ent.reduce((a, e) => a + e[1], 0);
+  if (!tot) return "";
+  return `<h2 style="margin:12px 0 4px">${esc(T(title))}</h2><div class="split">${ent.slice(0, 4).map(([, v]) => `<i style="width:${(100 * v / tot).toFixed(1)}%"></i>`).join("")}</div>` +
+    `<div class="splitkey">${ent.slice(0, 4).map(([k, v]) => `<span>${esc(T(names[k] || k))} <b>${pct(v, tot)}</b></span>`).join("")}</div>`;
+}
+
+function drawDay() {
+  const k = sel, d = (data.days[k] || [0, 0, 0, {}]);
+  $("dTitle").textContent = dayLabel(k, true) + (k === data.today ? " · " + T("still counting") : "");
+  $("dVis").textContent = fmt(d[0]); $("dViews").textContent = fmt(d[1]);
+  $("dPer").textContent = d[0] ? (d[1] / d[0]).toFixed(1) : "–"; $("dStay").textContent = pct(d[2], d[1]);
+  const list = Object.entries(d[3] || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  rows($("dPages"), list, d[0], false);
+}
+
+function drawPages() {
+  const days = rangeDays(), u = {}, lang = {}, scr = {};
+  let vis = 0;
+  for (const [, d] of days) { vis += d[0]; for (const [p, v] of Object.entries(d[3] || {})) u[p] = (u[p] || 0) + v; for (const [p, v] of Object.entries(d[4] || {})) lang[p] = (lang[p] || 0) + v; for (const [p, v] of Object.entries(d[5] || {})) scr[p] = (scr[p] || 0) + v; }
+  rows($("pages"), Object.entries(u).sort((a, b) => b[1] - a[1]).slice(0, 14), vis, true);
+  $("pRange").textContent = $("wRange").textContent = range ? T(range === 365 ? "last year" : `last ${range} days`) : T("since counting began");
+  $("splits").innerHTML = (vis ? "" : `<p class="empty">${esc(T("Language and screen size appear with the first visitors."))}</p>`) + split("Language", lang, { en: "English", zh: "Chinese" }) + split("Screen size", scr, { phone: "Phone", tablet: "Tablet", laptop: "Laptop", desktop: "Desktop", wide: "Wide", "?": "Unknown" });
+}
+
+function kpis() {
+  const t = Date.parse(data.today + "T00:00:00Z"), v = k => (data.days[k] || [0])[0];
+  const week = j => { let s = 0, n = 0; for (let i = j; i < j + 7; i++) { const k = dayKey(t - i * DAY); if (data.days[k]) { s += v(k); n++; } } return n ? s / n : null; };
+  const w1 = week(1), w0 = week(8);
+  $("kToday").textContent = fmt(v(data.today));
+  $("kWeek").textContent = w1 == null ? "–" : fmt(Math.round(w1)) + (w0 ? ` ${w1 >= w0 ? "▲" : "▼"}${Math.abs(Math.round(100 * (w1 - w0) / w0))}%` : "");
+  $("kWeekBox").classList.toggle("up", !!(w0 && w1 > w0));
+  $("kAll").textContent = fmt(Object.values(data.days).reduce((a, d) => a + d[0], 0));
+  const best = Object.entries(data.days).sort((a, b) => b[1][0] - a[1][0])[0];
+  $("kBest").textContent = best && best[1][0] ? `${fmt(best[1][0])} · ${dayLabel(best[0])}` : "–";
+}
+
+function render() {
+  document.querySelectorAll(".range button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.r === range)));
+  if (!data) { if (failed) drawDaily(); return; }
+  if (!sel || !rangeDays().some(([k]) => k === sel)) sel = data.today;
+  kpis(); drawDaily(); drawGrowth(); drawDay(); drawPages();
+}
+
+async function load() {
+  if (SAMPLE) { data = sample(); render(); return; }
+  try {
+    const r = await fetch(`${RELAY}/visits/public`, { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    data = await r.json(); failed = false;
+  } catch (e) { failed = true; if (!data) data = null; }
+  render();
+}
+
+document.querySelectorAll(".range button").forEach(b => b.addEventListener("click", () => {
+  range = +b.dataset.r; try { localStorage.setItem("tauhud-meta-range", range); } catch (e) {}
+  render();
+}));
+
+/* ---------- one screen ---------- */
+let FIT = false;
+function fit() {
+  const w = innerWidth, h = innerHeight, root = document.documentElement;
+  FIT = w >= 1200 && h >= 640 && w / h >= 1.3;   // smaller screens scroll
+  const z = FIT ? Math.max(.82, Math.min(2, w / 1600, h / 860)) : 1;
+  root.classList.toggle("fit", FIT);
+  root.classList.toggle("wide", FIT && w / h >= 1.95);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+  render();
+}
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(fit, 80); });
+
+/* hover texts next to the cursor */
+const tip = $("tip");
+document.addEventListener("mouseover", e => {
+  const t = e.target.closest("[data-tip]");
+  if (!t || !t.dataset.tip) { tip.hidden = true; return; }
+  tip.textContent = T(t.dataset.tip.replace(/\\n/g, "\n"));
+  tip.hidden = false;
+});
+document.addEventListener("mousemove", e => {
+  if (tip.hidden) return;
+  const z = document.documentElement.classList.contains("fit") ? +getComputedStyle(document.documentElement).getPropertyValue("--z") || 1 : 1;
+  const w = tip.offsetWidth * z, h = tip.offsetHeight * z;
+  tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - w - 8)) / z + "px";
+  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) / z + "px";
+});
+document.addEventListener("mouseleave", () => { tip.hidden = true; });
+
+if (SAMPLE) $("sourceLine").textContent = "Sample data: made-up numbers to preview the page. Remove ?sample from the address for the real ones.";
+fit();
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

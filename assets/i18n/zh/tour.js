@@ -1,6 +1,7 @@
 /* Simplified Chinese for the guided tours of the subpages (assets/tour.js). Keys are the English text. */
 TauI18n.add({ strings: {
   "Guided tour": "导览",
+  "Take the tour": "开始本页导览",
   "End tour": "结束导览",
   "Back": "返回",
   "Next": "下一步",
@@ -176,7 +177,7 @@ TauI18n.add({ strings: {
   "Move a lever": "拨动一个控制杆",
   "Block time, validators, votes needed, validators offline and network delay. Or start from a preset such as “Real testnet today”.": "出块时间、验证者、所需票数、离线的验证者和网络延迟。也可以从“今天的真实测试网”等预设开始。",
   "The chain reacts at once": "链立即作出反应",
-  "Newest block on the right. When blocks arrive too late, the chain forks into two lanes. Hover a block, click it for its story.": "最新区块在右侧。当区块到达太晚时，链会分叉成两条轨道。悬停区块，点击可看它的故事。",
+  "Newest block on the right. When a block arrives too late, two blocks land at one height: a short split that the next block settles. It is not the fork Tau avoids, changing the rules never needs one. Hover a block, click it for its story.": "最新区块在右侧。当区块到达太晚时，同一高度会出现两个区块：这是短暂分岔，下一个区块就会把它解决。它不是 Tau 所避免的分叉，改变规则从不需要分叉。悬停区块，点击可看它的故事。",
   "Rule changes need votes": "规则变更需要投票",
   "Every rule change needs yes votes from the validators before its deadline. Raise the bar or take validators offline and see what passes.": "每项规则变更都需要在截止之前得到验证者的赞成票。提高门槛或让验证者离线，看看什么能通过。",
   "What happens, in plain words": "用通俗的话说发生了什么",
@@ -199,4 +200,16 @@ TauI18n.add({ strings: {
   "Click or tap the page to turn it. The arrow keys work too.": "点击或轻触页面即可翻页。方向键也可以用。",
   "Contents and pocket edition": "目录和袖珍版",
   "Jump to any story from the contents, switch to the pocket edition for small screens, or turn the sound on.": "从目录跳到任意文章，在小屏幕上切换到袖珍版，或打开声音。",
+  "In numbers": "数据一览",
+  "How many people look at Tau through this site: per day, over time and on which pages. Counted without cookies.": "有多少人通过这个网站了解 Tau：每天多少、随时间如何变化、看了哪些页面。统计不使用 Cookie。",
+  "The short version": "简要概览",
+  "Visitors today, the daily average of the last week with its trend, all visits added up and the best day so far.": "今日访客、最近一周的每日平均及趋势、所有访问的累计，以及到目前为止的最佳一天。",
+  "One bar per day, the green line is the 7-day average. Pick 7 days up to All for the whole history; click a bar for that day.": "每天一根柱子，绿线是 7 日平均。可从 7 天选到“全部”查看完整历史；点击柱子查看那一天。",
+  "One day up close": "单日详情",
+  "Visitors, pages opened and how many stayed 30 seconds, plus the pages people opened that day.": "访客、打开的页面、停留满 30 秒的比例，以及当天大家打开的页面。",
+  "Every day's visitors added up since counting began, so you see the climb at a glance.": "把开始统计以来每天的访客相加，一眼看出增长。",
+  "What people open": "大家打开什么",
+  "The most visited pages in the chosen range. Click one to go there.": "所选时间范围内最常访问的页面。点击即可前往。",
+  "Visitors per day": "每日访客",
+  "Growth": "增长",
 } });

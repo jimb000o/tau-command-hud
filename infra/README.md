@@ -308,6 +308,23 @@ JetBrains Mono, SIL OFL) live in `alerts/fonts/`.
   to `/recap/latest.png` and posts nothing.
 - `docker compose run --rm alerts python alerts.py --recap-now` draws it and posts it.
 
+**The weekly newspaper**: in the same Monday slot, right after the recap image,
+`alerts/gazette.py` writes that week's edition of The Daily Consensus (the site's
+`gazette/` page) in English and Chinese: a headline chosen from the week (a rule change in
+force, agreed, a fresh chain, new proposals, new nodes, or a steady week), the lead story,
+the week in figures, the rule changes still waiting, and the visitors' week in the
+simulation. For that last part the watcher notes `/sim/votes` and `/sim/predictions` every
+ten minutes, because the relay starts them over at midnight UTC. Files:
+`https://node.tauhud.com/recap/gazette/latest.json`, `/recap/gazette/<date>.json` and
+`/recap/gazette/editions.json` (newest first; `number`, `headline`, `deck` and their `_zh`
+twins are what the HUD's notice of the paper reads). The page sets the latest edition as
+its front page; `gazette/?edition=<date>` opens an older one. The first edition is written
+as soon as the service starts and none exists yet. The words stay careful: read from the
+chain, plans are IDNI's, testnet AGRS have no value, nothing is offered.
+
+- `docker compose run --rm alerts python alerts.py --gazette-now` writes an edition of
+  the last 7 days now (it keeps the number if one is already out today).
+
 **Health alerts**: once a minute the watcher reads `/health-score` and posts to Telegram
 when the testnet goes down (score under 50, the relay says `down`, or the relay does not
 answer) and when it recovers (score 70 or more), each only after the new state held for
@@ -398,6 +415,21 @@ All CORS `*`, read-only, no key.
 Within v1 fields are only added, never renamed or removed. `/api` redirects to the docs.
 The embeddable widget is a static page on tauhud.com (`/embed/?panel=…`) that polls the summary.
 
+## Visitor numbers
+
+`relay/visits.py`: cookie-free counts for the site owner, so it shows which pages people open and stay on.
+Every page's header (`assets/nav.js`) sends `GET /v?p=<page>&r=<referrer>&s=<tag>&l=<lang>&m=<sim|live>&w=<width>`
+when it opens and `GET /v?p=<page>&e=1` after 30 s visible. The relay keeps only daily totals in `/data/visits.json`:
+views, visitors and "stayed 30 s" per page, referring site (host name only), `?ref=`/`utm_source` tag, previous
+Tau HUD page, language, sim or live, screen class, hour of day.
+
+- No cookies and nothing stored in the browser (only `?nostats=1`, on request, leaves a browser out).
+- A visitor is a hash of address + user agent with a random salt that lives in memory and changes at 00:00 UTC;
+  addresses and user agents are never written down. Do Not Track, Global Privacy Control and bots are not counted.
+- Report: `https://node.tauhud.com/visits?key=<key>` (`/visits.json?key=` for the raw counts). The key is
+  `VISITS_KEY` from `.env`, or made once and kept in `/data/visits.key`:
+  `docker compose exec relay cat /data/visits.key`
+
 ## Tests
 
 ```bash
@@ -407,6 +439,7 @@ python relay/test_uptime.py
 python relay/test_health.py
 python relay/test_api.py
 python relay/test_simvotes.py
+python relay/test_visits.py
 ```
 
 Runs the relay against a mock node that enforces the real node's rate limits: read
