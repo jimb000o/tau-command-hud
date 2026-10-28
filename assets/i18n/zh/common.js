@@ -163,6 +163,8 @@ TauI18n.add({ strings: {
   "Take a simulated seat and vote a rule change into law": "坐上一个模拟席位，投票让一项规则变更成为法律",
   "Tau from the first videos in 2014 to the testnet alpha": "从 2014 年的第一批视频到测试网 Alpha 的 Tau",
   "Tau in 60 seconds": "60 秒了解 Tau",
+  "The Daily Consensus": "共识日报",
+  "Twelve years of Tau as a 1920s newspaper: turn the pages with a click or a tap": "以 1920 年代报纸的形式讲述 Tau 的十二年：点击或轻触即可翻页",
   "tau.net, the project behind the testnet": "tau.net，测试网背后的项目",
   "Technical": "技术",
   "Technical view: stream names (i10, o5, o9), hashes and rule text everywhere.": "技术视图：处处显示数据流名称（i10、o5、o9）、哈希和规则原文。",
