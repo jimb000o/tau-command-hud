@@ -81,7 +81,7 @@ html.wide .log { max-height: 520px; }
 /* validator seat: the three proposals are the page's main action, so they look like it */
 .pick { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; font: 600 15px var(--display); color: #fff; }
 .pick .num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ok); color: #000; font: 700 13px var(--display); }
-.props { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.props { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 14px; }
 .prop { display: grid; gap: 4px; align-content: start; text-align: left; cursor: pointer; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,.32); background: rgba(255,255,255,.04); color: var(--text); font: 12px/1.45 var(--mono); }
 .prop b { font: 600 14px/1.3 var(--display); color: #fff; }
 .prop span { color: var(--dim); }
@@ -93,6 +93,25 @@ html.wide .log { max-height: 520px; }
 .props.waiting .prop { animation: invite 2.4s ease-in-out infinite; }
 .props.waiting .prop:nth-child(2) { animation-delay: .25s; } .props.waiting .prop:nth-child(3) { animation-delay: .5s; }
 @keyframes invite { 0%, 100% { box-shadow: 0 0 0 0 rgba(57,255,138,0); } 50% { box-shadow: 0 0 0 1px rgba(57,255,138,.55), 0 0 18px -4px rgba(57,255,138,.45); } }
+.prop.own { border-style: dashed; }
+.composer { display: grid; gap: 10px; }
+.kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.kinds label { cursor: pointer; }
+.kinds input { position: absolute; opacity: 0; pointer-events: none; }
+.kinds span { display: inline-block; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; padding: 6px 12px; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); }
+.kinds input:checked + span { color: #000; background: #fff; border-color: #fff; }
+.kinds input:focus-visible + span { outline: 2px solid var(--ok); outline-offset: 2px; }
+.field { display: grid; gap: 4px; }
+.field label { color: var(--dim); font-size: 12px; } .field label small { margin-left: 8px; }
+.field input, .field select { width: 100%; max-width: 320px; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 10px; font: 13px var(--mono); }
+.field textarea { min-height: 72px; }
+.composer pre.code { margin: 0; }
+.ownchecks { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 12px; }
+.ownchecks li { padding: 2px 8px; border-left: 2px solid var(--ok); color: var(--text); }
+.ownchecks li::before { content: "✓ "; color: var(--ok); }
+.ownchecks li.bad { border-left-color: var(--refused); }
+.ownchecks li.bad::before { content: "✗ "; color: var(--refused); }
+.ownchecks li.info { border-left-color: var(--hair); color: var(--dim); } .ownchecks li.info::before { content: "· "; color: var(--dim); }
 .idle { display: grid; gap: 6px; padding: 18px; border: 1px dashed var(--hair); border-radius: 8px; color: var(--dim); font-size: 12.5px; }
 .idle b { color: #fff; font: 600 14px var(--display); }
 .chip.on { border-color: var(--ok); color: var(--ok); }
@@ -306,8 +325,8 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   <section id="viewSeat" class="cols seatcols" role="tabpanel" aria-labelledby="tabSeat" hidden>
     <div class="panel">
       <h2>Take a validator seat <span class="simtag">SIMULATION</span></h2>
-      <p class="note" style="margin-top:0">Rules that bind everyone, like the base fee, change only when enough validators agree. Here you hold one of four seats. Pick a change, then vote.</p>
-      <h3 class="pick" id="pickHead"><span class="num">1</span>Pick a proposal to vote on</h3>
+      <p class="note" style="margin-top:0">Rules that bind everyone, like the base fee, change only when enough validators agree. Here you hold one of four seats. Pick a change or write your own, then vote.</p>
+      <h3 class="pick" id="pickHead"><span class="num">1</span>Pick a proposal, or write your own</h3>
       <div class="props" id="proposals"></div>
       <div class="seats" id="seats"></div>
       <div class="realbox"><b>The real testnet today:</b> one validator (<code>a1fe40…7d2b</code>, most likely run by IDNI), so the quorum is 1. The network also runs with open governance admission: a proposal or a vote from any key counts, so a single yes vote schedules a change. Here the seat is simulated and only validators vote, which is the code’s default. Counting, quorum and the delay before a change takes effect work as on the real node.</div>
@@ -315,7 +334,26 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 
     <div class="panel pprop">
       <h2>The proposal</h2>
-      <div class="idle" id="propIdle"><b>No vote running yet.</b><span>Pick one of the three proposals to start one. Its rule, the votes and the way to activation then show up here.</span></div>
+      <div class="idle" id="propIdle"><b>No vote running yet.</b><span>Pick a proposal or write your own to start one. Its rule, the votes and the way to activation then show up here.</span></div>
+      <form class="composer" id="composer" hidden autocomplete="off">
+        <p class="note" style="margin-top:0">Write a change of your own. It is checked as you type, the way a node checks a proposal before anyone may vote on it.</p>
+        <div class="kinds" role="radiogroup" aria-label="Kind of change">
+          <label><input type="radio" name="kind" value="fee" checked><span>Base fee</span></label>
+          <label><input type="radio" name="kind" value="add"><span>Add a validator</span></label>
+          <label><input type="radio" name="kind" value="remove"><span>Remove a validator</span></label>
+          <label><input type="radio" name="kind" value="rule"><span>Any rule</span></label>
+        </div>
+        <div class="field" data-kind="fee"><label for="ownFee">New base fee <small id="ownFeeNow">now 10 AGRS per step</small></label><input id="ownFee" type="number" min="0" max="16777215" step="1" value="8" inputmode="numeric"></div>
+        <div class="field" data-kind="add" hidden><label for="ownName">Name of the new validator</label><input id="ownName" type="text" maxlength="16" value="Eve"></div>
+        <div class="field" data-kind="remove" hidden><label for="ownRemove">Validator to remove</label><select id="ownRemove"></select></div>
+        <div class="field" data-kind="rule" hidden><label for="ownRule">Rule text <small>a network rule, written like the base-fee rule</small></label><textarea id="ownRule" spellcheck="false" rows="3">always (o9[t]:bv[24] = { #x00000c }:bv[24]).</textarea></div>
+        <pre class="code" id="ownPreview"></pre>
+        <ul class="ownchecks" id="ownChecks"></ul>
+        <div class="row">
+          <button class="btn primary" id="btnOwn" type="submit">Put it to a vote</button>
+          <button class="btn" id="btnOwnCancel" type="button">Cancel</button>
+        </div>
+      </form>
       <div id="propBox" hidden>
         <dl class="kv" id="propKv"></dl>
         <pre class="code" id="propRule"></pre>
@@ -1001,6 +1039,7 @@ const PROPOSALS = [
   { id: "addval", label: "Add a fifth validator", effect: "Quorum rises to 4 of 5.", what: "Validator set + Validator Dex", rule: `host_contract_patch.validator_additions = ["${NEW_VAL.key.slice(0, 6)}…${NEW_VAL.key.slice(-4)}"]`, add: true,
     plan: { v1: [1, true], v2: [2, false], v3: [3, true] } },
 ];
+const OWN = { id: "own", label: "Write your own", effect: "Any change you like, checked before the vote." };
 const BLOCK_MS = 2200, VOTE_WINDOW = 6, ACT_DELAY = 3;
 let sim;
 const need = n => Math.ceil(2 * n / 3);
@@ -1013,9 +1052,11 @@ function simReset() {
   renderSim();
 }
 function simLog(text, cls) { sim.log.unshift({ h: sim.h, text, cls }); sim.log = sim.log.slice(0, 40); }
-function propose(id) {
+function propose(id, own) {
   if (sim.prop && (sim.state === "voting" || sim.state === "scheduled")) return;
-  const p = PROPOSALS.find(x => x.id === id);
+  if (id === "own" && !own) { sim.composing = true; sim.prop = null; sim.state = "idle"; sim.votes = {}; renderSim(); ownCheck(); if (!matchMedia("(min-width: 900px)").matches) $("composer").scrollIntoView({ block: "nearest", behavior: "smooth" }); return; }
+  sim.composing = false;
+  const p = own || PROPOSALS.find(x => x.id === id);
   sim.prop = { ...p, at: sim.h, deadline: sim.h + VOTE_WINDOW, n: sim.vals.length, threshold: need(sim.vals.length) };
   sim.votes = {}; sim.state = "voting";
   simLog(`Proposal: ${p.what}. Compiled in isolation first: OK.`, "");
@@ -1044,7 +1085,10 @@ function simTick() {
   } else if (sim.prop && sim.state === "scheduled" && sim.h >= sim.prop.activateAt) {
     sim.state = "active";
     if (sim.prop.fee) { sim.fee = sim.prop.fee; simLog(`Active from block #${sim.h}: every transfer now pays a base fee of ${sim.fee}.`, "ok"); }
-    if (sim.prop.add) { sim.vals.push(NEW_VAL); simLog(`Active from block #${sim.h}: Validator Dex joins. 5 validators, the next change needs ${need(5)} votes.`, "ok"); }
+    const nv = sim.prop.addVal || (sim.prop.add && NEW_VAL);
+    if (nv && !sim.vals.some(v => v.id === nv.id)) { sim.vals.push(nv); simLog(`Active from block #${sim.h}: ${nv.name} joins. ${sim.vals.length} validators, the next change needs ${need(sim.vals.length)} votes.`, "ok"); }
+    if (sim.prop.removeId) { const gone = sim.vals.find(v => v.id === sim.prop.removeId); sim.vals = sim.vals.filter(v => v.id !== sim.prop.removeId); if (gone) simLog(`Active from block #${sim.h}: ${gone.name} leaves. ${sim.vals.length} validators, the next change needs ${need(sim.vals.length)} votes.`, "ok"); }
+    if (sim.prop.custom) simLog(`Active from block #${sim.h}: your rule is part of the spec now.`, "ok");
   }
   renderSim();
 }
@@ -1057,9 +1101,14 @@ function renderSim() {
     return `<div class="seat${v.id === "you" ? " you" : ""}"><b>${v.name}</b><code>${short(v.key)}</code>${vv}</div>`;
   }).join("");
   const busy = sim.prop && (sim.state === "voting" || sim.state === "scheduled");
-  $("proposals").innerHTML = PROPOSALS.map(p => `<button type="button" class="prop${sim.prop && sim.prop.id === p.id ? " on" : ""}" data-prop="${p.id}"${busy ? " disabled" : ""}><b>${p.label}</b><span>${p.effect}</span><em>${busy ? "" : "Propose ›"}</em></button>`).join("");
-  $("proposals").classList.toggle("waiting", !sim.prop);
-  $("propBox").hidden = !sim.prop; $("propIdle").hidden = !!sim.prop;
+  $("proposals").innerHTML = PROPOSALS.map(p => `<button type="button" class="prop${sim.prop && sim.prop.id === p.id ? " on" : ""}" data-prop="${p.id}"${busy ? " disabled" : ""}><b>${p.label}</b><span>${p.effect}</span><em>${busy ? "" : "Propose ›"}</em></button>`).join("")
+    + `<button type="button" class="prop own${sim.composing || (sim.prop && sim.prop.id === "own") ? " on" : ""}" data-prop="own"${busy ? " disabled" : ""}><b>${OWN.label}</b><span>${OWN.effect}</span><em>${busy ? "" : "Write ›"}</em></button>`;
+  $("proposals").classList.toggle("waiting", !sim.prop && !sim.composing);
+  $("composer").hidden = !sim.composing;
+  $("propBox").hidden = !sim.prop || sim.composing; $("propIdle").hidden = !!sim.prop || sim.composing;
+  $("ownFeeNow").textContent = `now ${sim.fee} AGRS per step`;
+  const rm = $("ownRemove"), keep = rm.value, others = sim.vals.filter(v => v.id !== "you");
+  if (rm.dataset.ids !== others.map(v => v.id).join()) { rm.innerHTML = others.map(v => `<option value="${v.id}">${esc(v.name)}</option>`).join(""); rm.dataset.ids = others.map(v => v.id).join(); if (others.some(v => v.id === keep)) rm.value = keep; }
   if (sim.prop) {
     const p = sim.prop, yes = Object.values(sim.votes).filter(Boolean).length;
     $("propKv").innerHTML = `<dt>Change</dt><dd>${esc(p.what)}</dd><dt>Proposed</dt><dd>block #${p.at}</dd><dt>Votes needed</dt><dd>${p.threshold} of ${p.n} (⌈2·${p.n}/3⌉)</dd>`;
@@ -1082,6 +1131,83 @@ function renderSim() {
   }
   $("simLog").innerHTML = sim.log.map(l => `<li class="${l.cls}"><em>#${l.h}</em>${esc(l.text)}</li>`).join("");
 }
+/* ---------- your own proposal: guided fields, checked as you type, then the same vote as the cards ---------- */
+const hex24 = n => "#x" + n.toString(16).padStart(6, "0");
+const pseudoKey = name => { let h = 2166136261 >>> 0, out = ""; for (let i = 0; out.length < 96; i++) { h = Math.imul(h ^ (name.charCodeAt(i % name.length) + i), 16777619) >>> 0; out += h.toString(16).padStart(8, "0"); } return out.slice(0, 96); };
+/* the simulated validators are not a rubber stamp: a small step gets a split vote (yours decides), a big jump gets no votes */
+function ownPlan(kind, extreme, removeId) {
+  const others = sim.vals.filter(v => v.id !== "you").map(v => v.id);
+  const plan = {};
+  others.forEach((id, i) => { plan[id] = [i + 1, extreme ? false : id === removeId ? false : i % 2 === 0]; });
+  return plan;
+}
+function ownCheck() {
+  const kind = (document.querySelector('#composer input[name="kind"]:checked') || {}).value || "fee";
+  document.querySelectorAll("#composer .field").forEach(f => { f.hidden = f.dataset.kind !== kind; });
+  const checks = [], ok = (t) => checks.push(["", t]), bad = (t) => checks.push(["bad", t]), info = (t) => checks.push(["info", t]);
+  let prop = null;
+  if (kind === "fee") {
+    const raw = $("ownFee").value.trim(), n = Number(raw);
+    if (!/^\d+$/.test(raw)) bad("A whole number of AGRS, 0 or more.");
+    else if (n > 16777215) bad("At most 16 777 215: o9 is a 24-bit value (bv[24]).");
+    else if (n === sim.fee) bad(`The base fee is already ${n}. A proposal has to change something.`);
+    else {
+      ok("A whole number that fits o9 (bv[24]).");
+      const extreme = n === 0 || n > sim.fee * 4 || n * 4 < sim.fee;
+      if (extreme) info("A big jump. Expect the other validators to vote no.");
+      prop = { label: `Base fee ${sim.fee} → ${n}`, what: `Base fee ${sim.fee} → ${n} AGRS per step`, rule: `always (o9[t]:bv[24] = { ${hex24(n)} }:bv[24]).`, fee: n, extreme };
+    }
+  } else if (kind === "add") {
+    const name = $("ownName").value.trim();
+    if (!/^[A-Za-z][A-Za-z0-9 ]{0,15}$/.test(name)) bad("A name of 1 to 16 letters or digits, starting with a letter.");
+    else if (sim.vals.some(v => v.name.toLowerCase() === name.toLowerCase() || v.name.toLowerCase() === ("validator " + name).toLowerCase())) bad(`${name} already holds a seat.`);
+    else {
+      const key = pseudoKey(name);
+      ok("A new key, not yet in the validator set.");
+      info(`${sim.vals.length + 1} validators afterwards, so the next change needs ${need(sim.vals.length + 1)} votes.`);
+      prop = { label: `Add ${name}`, what: `Validator set + ${name}`, rule: `host_contract_patch.validator_additions = ["${short(key)}"]`, addVal: { id: "own-" + key.slice(0, 8), name, key } };
+    }
+  } else if (kind === "remove") {
+    const id = $("ownRemove").value, v = sim.vals.find(x => x.id === id);
+    if (!v) bad("Pick a validator.");
+    else if (sim.vals.length <= 2) bad("At least two validators have to stay.");
+    else {
+      ok(`${v.name} holds a seat and is not you.`);
+      info(`${sim.vals.length - 1} validators afterwards, so the next change needs ${need(sim.vals.length - 1)} votes. ${v.name} will vote no.`);
+      prop = { label: `Remove ${v.name}`, what: `Validator set − ${v.name}`, rule: `host_contract_patch.validator_removals = ["${short(v.key)}"]`, removeId: id };
+    }
+  } else {
+    const text = $("ownRule").value.trim(), body = stripComments(text).replace(/\s+/g, " ").trim();
+    let depth = 0, balanced = true;
+    for (const c of body) { if ("([{".includes(c)) depth++; else if (")]}".includes(c) && --depth < 0) { balanced = false; break; } }
+    balanced = balanced && depth === 0;
+    const outs = [...body.matchAll(/\bo(\d+)\[([^\]]*)\]/g)];
+    if (!/^always\s*\(/.test(body) || !body.endsWith(".") || (body.match(/\balways\b/g) || []).length !== 1) bad("One unit: always ( … ). with the final dot.");
+    else ok("One “always” unit ending in a dot.");
+    if (!balanced) bad("Brackets do not match."); else ok("Brackets match.");
+    if (!outs.length) bad("Sets no output stream, so it would change nothing.");
+    else if (outs.some(m => m[2] !== "t")) bad("Only the current step [t] may be used.");
+    else if (outs.some(m => m[1] === "5")) bad("o5 is each account’s own transfer answer. Write that on the first tab, not as a network rule.");
+    else ok(`Writes ${[...new Set(outs.map(m => "o" + m[1]))].join(", ")} at step [t].`);
+    const fee = /^always\s*\(\s*o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]{1,6})\s*\}:bv\[24\]\s*\)\s*\.$/.exec(body);
+    if (fee) info(`Sets the base fee to ${parseInt(fee[1], 16)}. The simulated chain will apply it.`);
+    else info("The simulated chain records it but cannot run it. The real node compiles every proposal in isolation first.");
+    if (!checks.some(c => c[0] === "bad")) {
+      const n = fee ? parseInt(fee[1], 16) : null;
+      prop = { label: "Your rule", what: fee ? `Base fee ${sim.fee} → ${n} AGRS per step` : "Your own network rule", rule: body, fee: fee && n !== sim.fee ? n : undefined, custom: !fee, extreme: fee ? (n === 0 || n > sim.fee * 4 || n * 4 < sim.fee) : false };
+    }
+  }
+  $("ownChecks").innerHTML = checks.map(([c, t]) => `<li class="${c}">${esc(t)}</li>`).join("");
+  $("ownPreview").textContent = prop ? prop.rule : "";
+  $("ownPreview").hidden = !prop;
+  $("btnOwn").disabled = !prop;
+  if (prop) prop.plan = ownPlan(kind, prop.extreme, prop.removeId);
+  return prop;
+}
+$("composer").addEventListener("input", ownCheck);
+$("composer").addEventListener("change", ownCheck);
+$("composer").addEventListener("submit", ev => { ev.preventDefault(); const p = ownCheck(); if (p) propose("own", { ...p, id: "own" }); });
+$("btnOwnCancel").addEventListener("click", () => { sim.composing = false; renderSim(); });
 $("proposals").addEventListener("click", ev => { const b = ev.target.closest("[data-prop]"); if (b && !b.disabled) propose(b.dataset.prop); });
 $("btnYes").addEventListener("click", () => vote(true));
 $("btnNo").addEventListener("click", () => vote(false));

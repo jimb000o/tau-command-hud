@@ -174,10 +174,9 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
       <p class="sub" id="sourceLine">These nodes run the Tau HUD kit and verify every block of the Tau testnet themselves. We compare each one, block for block, with our own node. The longer and steadier a node runs, the higher it ranks.</p>
     </div>
     <div class="kpis" aria-label="Key numbers">
-      <span class="kpi net" id="kNet" data-tip="Nodes our node met or heard of in the last 24 h, ours included."><b id="tNet">–</b>nodes on the network</span>
-      <span class="kpi" data-tip="Community nodes that reported in the last 15 minutes."><b id="tOnline">–</b>online now</span>
-      <span class="kpi" data-tip="Online community nodes whose block at their height\nis the block our node has there."><b id="tSame">–</b>on our chain</span>
-      <span class="kpi" data-tip="Every community node that reported in the last 30 days."><b id="tAll">–</b>in the last 30 days</span>
+      <span class="kpi" id="kOnline" data-tip="Every node online now: ours, the peers our node talked to\nin the last 30 minutes and kit nodes that reported in the last 15."><b id="tOnline">–</b>nodes online</span>
+      <span class="kpi" id="kSame" data-tip="Online nodes at our chain’s tip: kit nodes with our block\nat their height, peers within 2 blocks of our height."><b id="tSame">–</b>on our chain</span>
+      <span class="kpi" id="kAll" data-tip="Nodes that run the Tau HUD kit and reported in the last 30 days."><b id="tAll">–</b>community nodes</span>
     </div>
   </div>
   <main class="main">
@@ -341,17 +340,20 @@ function upCell(u) {
 }
 function render() {
   const now = Date.now() / 1000, wrap = $("boardWrap"), list = rows || [];
-  const online = list.filter(r => r.online);
-  $("tOnline").textContent = rows ? online.length : "–";
-  $("tSame").textContent = rows ? online.filter(r => r.agrees === "same").length : "–";
+  const online = list.filter(r => r.online), net = network(now);
+  // one count for the whole network, so the chips agree with the board: our node, the peers our
+  // node talked to in the last 30 min, and kit nodes online that are not already among those peers
+  const peerOn = net.recent.filter(p => now - p.last_seen < 1800), named = new Set(peerOn.filter(p => p.community).map(p => p.community.id));
+  const kitOn = online.filter(r => !named.has(r.id)), ours = ref && ref.online ? 1 : 0;
+  const atTip = p => p.head != null && ref && ref.height != null && Math.abs(p.head - ref.height) <= 2;
+  const up = [ours ? "tauhud.com" : null, ...peerOn.map(p => p.label ? "IDNI" : p.community ? p.community.name : shortId(p.id)), ...kitOn.map(r => r.name)].filter(Boolean);
+  const loaded = rows || peers || ref;
+  $("tOnline").textContent = loaded ? up.length : "–";
+  $("tSame").textContent = loaded ? ours + peerOn.filter(atTip).length + kitOn.filter(r => r.agrees === "same").length : "–";
   $("tAll").textContent = rows ? list.length : "–";
-  const net = network(now);
-  $("tNet").textContent = peers ? net.recent.length + 1 : "–";
-  $("kNet").dataset.tip = peers ? [T("Nodes our node met or heard of in the last 24 h, ours included:"),
-    `${net.boot ? "IDNI bootnode · " : ""}tauhud.com`
-      + (net.kit.length ? " · " + T("{n} community nodes").replace("{n}", net.kit.length) : "")
-      + (net.others.length ? " · " + T("{n} other peers").replace("{n}", net.others.length) : "")].join("\n")
-    : T("Nodes our node met or heard of in the last 24 h, ours included.");
+  $("kOnline").dataset.tip = T("Every node online now: ours, the peers our node talked to in the last 30 minutes and kit nodes that reported in the last 15.")
+    + (up.length ? "\n" + up.slice(0, 8).join(" · ") + (up.length > 8 ? " …" : "") : "");
+  $("kAll").dataset.tip = T("Nodes that run the Tau HUD kit and reported in the last 30 days.") + (rows && !list.length ? "\n" + T("None yet: yours would be the first.") : "");
   $("status").hidden = !failed;
   $("status").textContent = failed ? T("Our relay does not answer right now. Trying again in a minute.") : "";
 

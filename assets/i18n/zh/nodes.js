@@ -119,4 +119,10 @@ TauI18n.add({ strings: {
   "Simulation: made-up nodes on the simulated chain, the same on every page. No real nodes. Switch to Live node in the header for the real list.": "模拟：模拟链上的虚构节点，每个页面都相同。不是真实节点。在页眉切换到实时节点可查看真实列表。",
   "Tau HUD node": "Tau HUD 节点",
   "running {n} d · {m} % up": "运行 {n} 天 · 在线 {m} %",
+  "nodes online": "个节点在线",
+  "community nodes": "个社区节点",
+  "Every node online now: ours, the peers our node talked to in the last 30 minutes and kit nodes that reported in the last 15.": "当前在线的所有节点：我们的节点、我们的节点在最近 30 分钟内通信过的节点，以及最近 15 分钟内报告过的套件节点。",
+  "Online nodes at our chain’s tip: kit nodes with our block at their height, peers within 2 blocks of our height.": "位于我们链顶端的在线节点：在其高度上与我们区块相同的套件节点，以及与我们高度相差不超过 2 个区块的节点。",
+  "Nodes that run the Tau HUD kit and reported in the last 30 days.": "运行 Tau HUD 套件、并在最近 30 天内报告过的节点。",
+  "None yet: yours would be the first.": "还没有：你的会是第一个。",
 } });
