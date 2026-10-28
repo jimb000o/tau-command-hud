@@ -108,6 +108,12 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 #tl .prop text { font-size: 11px; fill: #fff; }
 #tl .prop.expired text { fill: var(--dim); }
 #tl .prop:hover rect.track { stroke: #fff; stroke-width: 1.5; }
+#tl .grp .gline { stroke: rgba(255,255,255,.35); stroke-width: 1; }
+#tl .grp text { font-size: 11px; fill: var(--dim); paint-order: stroke; stroke: #101012; stroke-width: 5px; stroke-linejoin: round; }
+#tl .grp:hover text { fill: #fff; }
+#tl .pmark .tick { stroke: rgba(255,255,255,.75); stroke-width: 1.5; }
+#tl .pmark.expired .tick { stroke: rgba(255,255,255,.3); }
+#tl .pmark:hover .tick { stroke: #fff; stroke-width: 2.5; }
 #tl .rev { fill: none; stroke: var(--ok); stroke-width: 1.5; }
 #tl .revn { font-size: 11px; fill: var(--ok); }
 #tl .cursor { stroke: #fff; stroke-width: 1.5; }
@@ -727,20 +733,49 @@ const TL = { pad: 14, w: 800, x0: 14, x1: 786, rows: {} };
 function xOf(h) { const span = Math.max(1, C.head - C.first); return TL.x0 + (h - C.first) / span * (TL.x1 - TL.x0); }
 function hOf(x) { const span = Math.max(1, C.head - C.first); return Math.round(C.first + (x - TL.x0) / (TL.x1 - TL.x0) * span); }
 const clampH = h => Math.max(C.first, Math.min(C.head, h));
+// a proposal whose rule text equals the rules in force and that changes no setting ("Same rules as now")
+function isNoop(p) {
+  if (p._noop != null) return p._noop;
+  if (/^Same rules as now/.test(p.title)) return (p._noop = true);
+  if (p.patch && Object.keys(p.patch).length) return (p._noop = false);
+  try { return (p._noop = !!(window.RuleDiff && p.revisions.length && RuleDiff.diff(RuleDiff.specAt(p.proposedAt, H.props, GENESIS.rules), p.revisions).same)); }
+  catch (e) { return (p._noop = false); }
+}
+// how many rule-change rows the timeline shows at most; more proposals never push the page down
+const MAX_LANES = () => matchMedia("(max-width: 700px)").matches ? 4 : 6;
 function lanes(props) {
-  // lanes in pixel space: a bar and its label must never overlap another bar or label
-  const ends = [], out = new Map();
-  for (const p of props) {
-    const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
-    p.label = labelOf(p, TL.x1 - TL.x0);
-    const lw = p.label.length * charW() + 8;
-    let lx = xa; if (lx + lw > TL.x1) lx = Math.max(TL.x0, TL.x1 - lw);
-    const from = Math.min(xa, lx) - 6, to = Math.max(xEnd, lx + lw) + 6;
-    let l = ends.findIndex(e => e < from);
-    if (l < 0) { l = ends.length; ends.push(to); } else ends[l] = to;
-    out.set(p, { lane: l, lx });
-  }
-  return { map: out, n: ends.length };
+  // lanes in pixel space: a bar and its label must never overlap another bar or label.
+  // Rows are capped: proposals that change nothing share one row, and when real changes still need more rows,
+  // the oldest finished ones fold into one "+N more" row. Open proposals and the newest always keep their own row.
+  const out = new Map(), groups = [], cap = MAX_LANES();
+  const noop = props.filter(isNoop), real = props.filter(p => !isNoop(p));
+  const place = (list, rows) => {   // greedy packing; returns the proposals that did not fit
+    const ends = [], left = [];
+    for (const p of list) {
+      const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
+      p.label = labelOf(p, TL.x1 - TL.x0);
+      const lw = p.label.length * charW() + 8;
+      let lx = xa; if (lx + lw > TL.x1) lx = Math.max(TL.x0, TL.x1 - lw);
+      const from = Math.min(xa, lx) - 6, to = Math.max(xEnd, lx + lw) + 6;
+      let l = ends.findIndex(e => e < from);
+      if (l < 0) { if (ends.length >= rows) { left.push(p); continue; } l = ends.length; ends.push(to); } else ends[l] = to;
+      out.set(p, { lane: l, lx });
+    }
+    return { n: ends.length, left };
+  };
+  const nGroups = (noop.length > 1 ? 1 : 0);
+  // open ones first, then the newest: they keep their own row
+  const rank = p => [statusAt(p, C.head) === "voting" || statusAt(p, C.head) === "agreed" ? 0 : 1, -p.proposedAt];
+  const order = (noop.length > 1 ? real : props).slice().sort((a, b) => { const x = rank(a), y = rank(b); return x[0] - y[0] || x[1] - y[1]; });
+  let r = place(order, cap - nGroups);
+  if (r.left.length) { out.clear(); r = place(order, cap - nGroups - 1); }   // leave a row for "+N more"
+  // the kept ones are laid out oldest first (packing in time order never needs more rows)
+  const kept = order.filter(p => out.has(p)).sort((a, b) => a.proposedAt - b.proposedAt);
+  out.clear(); place(kept, Infinity);
+  let n = Math.max(0, ...[...out.values()].map(v => v.lane + 1));
+  if (noop.length > 1) groups.push({ kind: "noop", lane: n++, members: noop, label: `Same rules as now (no real change) · ${noop.length} proposals` });
+  if (r.left.length) groups.push({ kind: "more", lane: n++, members: r.left.sort((a, b) => a.proposedAt - b.proposedAt), label: `+${r.left.length} more rule ${r.left.length === 1 ? "change" : "changes"}` });
+  return { map: out, groups, n };
 }
 // width of one character of a rule-change label (10.5 px mono; 11 px on phones)
 const charW = () => matchMedia("(max-width: 700px)").matches ? 6.7 : 6.4;
@@ -810,6 +845,7 @@ function drawTimeline() {
   if (!H.props.length) { const n = nodeOnly().length;
     parts.push(`<text class="none" x="${TL.x0}" y="${y.pr0 + 15}">${n ? `No proposal in the loaded blocks. The node lists ${n}: see “Agreement in progress”.` : "No rule change proposed on this chain yet."}</text>`); }
   for (const p of H.props) {
+    if (!L.map.has(p)) continue;   // drawn as a mark in a shared row below
     // label on its own line above the bar, so vote marks and dots never cross the text
     const { lane: l, lx } = L.map.get(p), ty = y.pr0 + l * laneH + 9, top = ty + 4, hgt = 8;
     const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
@@ -823,6 +859,21 @@ function drawTimeline() {
     // label: its lane was chosen with room for it, so it is never cut or covered
     g.push(`<text x="${lx}" y="${ty}">${esc(p.label)}</text>`);
     g.push(`<rect x="${Math.min(xa, xEnd, lx) - 4}" y="${ty - 10}" width="${Math.max(xEnd, lx + p.label.length * charW()) - Math.min(xa, lx) + 8}" height="${top + hgt + 3 - (ty - 10)}" fill="transparent"/></g>`);
+    parts.push(g.join(""));
+  }
+  // shared rows: one thin line over their span, one mark per proposal (tick where it was proposed, dot where it took effect)
+  for (const G of L.groups) {
+    const ty = y.pr0 + G.lane * laneH + 9, mid = ty + 7, ms = G.members;
+    const x0 = Math.min(...ms.map(p => xOf(p.proposedAt))), x1 = Math.max(...ms.map(p => xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt))));
+    let lx = x0; const lw = G.label.length * charW() + 8; if (lx + lw > TL.x1) lx = Math.max(TL.x0, TL.x1 - lw);
+    const g = [`<g class="grp" data-g="${G.kind}"><line class="gline" x1="${x0}" x2="${Math.max(x1, x0 + 3)}" y1="${mid}" y2="${mid}"/>`,
+      `<text x="${lx}" y="${ty}">${esc(G.label)}</text><rect x="${Math.min(x0, lx) - 4}" y="${ty - 10}" width="${Math.max(x1, lx + lw) - Math.min(x0, lx) + 8}" height="12" fill="transparent"/></g>`];
+    for (const p of ms) {
+      const xa = xOf(p.proposedAt), xAct = p.activatedAt != null ? xOf(p.activatedAt) : null;
+      g.push(`<g class="prop pmark ${p.expiredAt != null ? "expired" : ""}" data-p="${p.n}"><line class="tick" x1="${xa}" x2="${xa}" y1="${mid - 4}" y2="${mid + 4}"/>`
+        + (xAct != null ? `<circle cx="${xAct}" cy="${mid}" r="3" fill="var(--ok)"/>` : "")
+        + `<rect x="${xa - 5}" y="${mid - 6}" width="10" height="12" fill="transparent"/></g>`);
+    }
     parts.push(g.join(""));
   }
   // spec revision step line
@@ -854,6 +905,12 @@ function showTip(ev, html) { tip.innerHTML = html; tip.hidden = false; const r =
 function hideTip() { tip.hidden = true; }
 function svgX(ev) { const r = $("tl").getBoundingClientRect(); return (ev.clientX - r.left) * (TL.w / r.width); }
 function propAt(ev) { const g = ev.target.closest && ev.target.closest(".prop"); return g ? H.props[+g.dataset.p - 1] : null; }
+function groupAt(ev) { const g = ev.target.closest && ev.target.closest(".grp"); return g && TL.lanes ? TL.lanes.groups.find(G => G.kind === g.dataset.g) : null; }
+function groupTip(G) { return `<b>${esc(G.label)}</b><br>${G.kind === "noop" ? "Proposals whose rule text equals the rules in force. " : ""}One mark per proposal<br><em>click for the list</em>`; }
+function openGroup(G) {
+  openDetail(esc(G.label), `<p class="note" style="margin-top:0">${G.kind === "noop" ? "Each of these proposals carries rule text that equals the rules already in force, so nothing changes when it takes effect. They share one row on the timeline." : "The timeline shows at most six rows. Open and newer rule changes keep their own row; these share one, so the page keeps its size however many proposals come."}</p>
+    <ul class="items">${G.members.slice().reverse().map(p => `<li class="${p.activatedAt != null ? "on" : ""}"><button class="linkish" type="button" data-open="${p.n}"><b>${esc(p.title)}</b><span class="m">proposed at #${fmtN(p.proposedAt)} · ${p.activatedAt != null ? `in force since #${fmtN(p.activatedAt)}` : p.expiredAt != null ? `dropped at #${fmtN(p.expiredAt)}` : p.approvedAt != null ? `agreed, takes effect at #${fmtN(p.activateAt)}` : "waiting for votes"}</span></button></li>`).join("")}</ul>`);
+}
 function blockTip(h) {
   const b = C.blocks[h]; if (!b) return `<b>#${fmtN(h)}</b><br><em>not loaded</em>`;
   const txs = b.transactions || [], counts = {};
@@ -869,18 +926,19 @@ let drag = false;
 const tlw = $("tlwrap");
 tlw.addEventListener("pointerdown", ev => {
   if (C.head < 0) return;
-  const p = propAt(ev); if (p) return;   // a click on a rule change opens it (see click)
+  const p = propAt(ev); if (p || groupAt(ev)) return;   // a click on a rule change opens it (see click)
   drag = true; tlw.setPointerCapture(ev.pointerId); stopPlay(); setCursor(clampH(hOf(svgX(ev))), true);
 });
 tlw.addEventListener("pointermove", ev => {
   if (C.head < 0) return;
   if (drag) { setCursor(clampH(hOf(svgX(ev))), true); showTip(ev, blockTip(cursor)); return; }
   const p = propAt(ev);
-  if (p) showTip(ev, propTip(p)); else showTip(ev, blockTip(clampH(hOf(svgX(ev)))));
+  const G = !p && groupAt(ev);
+  if (p) showTip(ev, propTip(p)); else if (G) showTip(ev, groupTip(G)); else showTip(ev, blockTip(clampH(hOf(svgX(ev)))));
 });
 tlw.addEventListener("pointerup", ev => { drag = false; if (ev.pointerType !== "mouse") hideTip(); });
 tlw.addEventListener("pointerleave", () => { if (!drag) hideTip(); });
-tlw.addEventListener("click", ev => { const p = propAt(ev); if (p) { hideTip(); openProp(p); } });
+tlw.addEventListener("click", ev => { const p = propAt(ev); if (p) { hideTip(); openProp(p); return; } const G = groupAt(ev); if (G) { hideTip(); openGroup(G); } });
 
 /* ---------------- cursor ---------------- */
 function setCursor(h, user) {
