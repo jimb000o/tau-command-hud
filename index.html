@@ -1368,7 +1368,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.40", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.41", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -2913,7 +2913,7 @@ const SIM_EVENT = {
 };
 function simBadge() {
   const b = $("simNext"), a = $("simWatch"); if (!b) return;
-  const when = x => { const d = new Date(x * 1000), loc = d.toTimeString().slice(0, 5), utc = d.toISOString().slice(11, 16); return loc === utc ? `${utc} UTC` : `${loc} local (${utc} UTC)`; };
+  const localTime = new Date().getTimezoneOffset() !== 0, when = x => { const d = new Date(x * 1000), loc = d.toTimeString().slice(0, 5), utc = d.toISOString().slice(11, 16); return localTime ? `${loc} (${utc})` : utc; };   // no word in the time itself: the heading says which clock
   const list = S.simfeed && window.TauSim && TauSim.upcoming ? TauSim.upcoming() : [], u = list[0], left = u ? Math.ceil((u.at_ts - Date.now() / 1000) / 60) : 999;
   const ev = u && (SIM_EVENT[u.kind] || { what: u.short, why: u.title, watch: "" }), soon = !!u && left <= 60;
   const text = !soon ? "Simulation · no real chain data"
@@ -2925,7 +2925,7 @@ function simBadge() {
   if (a) { a.hidden = !soon; const lang = new URLSearchParams(location.search).get("lang"); a.href = "proposals/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); }
   if (text === simBadgeText) return; simBadgeText = text;
   b.textContent = text;
-  if (list.length) b.dataset.full = (soon ? `${ev.why} ${ev.watch}\n` : "") + "Every change is proposed 10 minutes ahead, voted on by the simulated validators, then in force: the path a real rule change takes on Tau.\nNext in the simulation:\n" + list.map(x => `${when(x.at_ts)} · ${(SIM_EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet.";
+  if (list.length) b.dataset.full = (soon ? `${ev.why} ${ev.watch}\n` : "") + "Every change is proposed 10 minutes ahead, voted on by the simulated validators, then in force: the path a real rule change takes on Tau.\n" + (localTime ? "Next in the simulation (your time, UTC in brackets):" : "Next in the simulation (UTC):") + "\n" + list.map(x => `${when(x.at_ts)} · ${(SIM_EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet.";
   else delete b.dataset.full;
 }
 simBadge(); setInterval(() => { if (!document.hidden) simBadge(); }, 1000);
@@ -2942,7 +2942,7 @@ simBadge(); setInterval(() => { if (!document.hidden) simBadge(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.40`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.41`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

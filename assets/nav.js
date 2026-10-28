@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.40"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.41"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -116,6 +116,9 @@
       chip("div", "tnFee", "v", "<b>—</b>", TIPS.fee));
     chips.querySelectorAll(".chip.v > b").forEach(b => { b.style.marginLeft = "0"; });   // value-only chips: the name lives in the hover text
     chips.querySelector("#tnRev").href = chips.querySelector("#tnCons").href = ROOT + "#chain-state";
+    if (!SIM) {   // coming up on the live chain: an agreed rule change that is not yet in force, counted down from the relay's proposals file
+      const nx = el("a", "chip next", "<b></b>"); nx.id = "tnNext"; nx.hidden = true; nx.href = ROOT + "proposals/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); chips.append(nx);
+    }
     if (own) chips.append(own);
     rail.append(brand, unoff, chips);
     if (old) old.replaceWith(rail); else nav.before(rail);
@@ -192,7 +195,7 @@
         major: { what: "more than half must agree", why: "Changing the rules gets easier: more than half of the validators is enough.", watch: "Watch the agreement arc fill sooner." },
         restart: { what: "the simulated chain starts over", why: "At midnight UTC the simulated chain starts again from block 0, as the real alpha testnet did more than once.", watch: "Watch the height reset." },
       };
-      const when = x => { const d = new Date(x * 1000), loc = d.toTimeString().slice(0, 5), utc = d.toISOString().slice(11, 16); return loc === utc ? `${utc} UTC` : `${loc} local (${utc} UTC)`; };
+      const localTime = new Date().getTimezoneOffset() !== 0, when = x => { const d = new Date(x * 1000), loc = d.toTimeString().slice(0, 5), utc = d.toISOString().slice(11, 16); return localTime ? `${loc} (${utc})` : utc; };   // no word in the time itself: the heading says which clock
       const badge = () => {
         const b = document.querySelector("header.trail .chip.unoff.sim"); if (!b || !TauSim.upcoming) return;
         const list = TauSim.upcoming(), u = list[0], left = u ? Math.ceil((u.at_ts - Date.now() / 1000) / 60) : 999;
@@ -205,7 +208,7 @@
         b.classList.toggle("soon", soon && left <= 5);
         if (text === badgeText) return; badgeText = text;
         b.textContent = text; b.dataset.short = soon ? `Simulation · ${left <= 0 ? "now" : `in ${left} min`}: ${u.short}` : text;   // the phone header has room for the short label only
-        b.dataset.tnt = (soon ? `${ev.why} ${ev.watch}\n` : "") + "Every change is proposed 10 minutes ahead, voted on by the simulated validators, then in force: the path a real rule change takes on Tau.\nNext in the simulation:\n" + list.map(x => `${when(x.at_ts)} · ${(EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet. Opens the full notice.";
+        b.dataset.tnt = (soon ? `${ev.why} ${ev.watch}\n` : "") + "Every change is proposed 10 minutes ahead, voted on by the simulated validators, then in force: the path a real rule change takes on Tau.\n" + (localTime ? "Next in the simulation (your time, UTC in brackets):" : "Next in the simulation (UTC):") + "\n" + list.map(x => `${when(x.at_ts)} · ${(EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet. Opens the full notice.";
       };
       const tick = () => { CHAIN.st = TauSim.status(); govFrom(TauSim.governance()); CHAIN.polled = true; CHAIN.at = Date.now(); render(); badge(); };
       tick(); setInterval(() => { if (!document.hidden) tick(); }, 1000);
@@ -220,6 +223,33 @@
       clearTimeout(t); CHAIN.polled = true; CHAIN.at = Date.now(); render();
     };
     poll(); setInterval(() => { if (!document.hidden) poll(); }, 20000);
+    /* the "coming up" chip: agreed rule changes waiting for their activation block, with a countdown from the relay's block pace */
+    const NEXT = { rows: [], chain: null, text: "" };
+    /* the proposal titles and reasons are worded on the Proposals page; in Chinese its dictionary is borrowed so the chip reads the same here */
+    const dict = new Promise(res => { if (!document.documentElement.classList.contains("i18n-zh") || /\/proposals\/?$/.test(location.pathname) || !window.TauI18n) return res(); const sc = document.createElement("script"); sc.src = ROOT + "assets/i18n/zh/proposals.js"; sc.onload = sc.onerror = res; document.head.append(sc); });
+    const span = sec => { const m = Math.max(0, Math.round(sec / 60)); if (m < 60) return m <= 0 ? "now" : `in ${m} min`; const h = Math.floor(m / 60); if (h < 24) return `in ~${h} h ${m % 60} min`; return `in ~${Math.floor(h / 24)} d ${h % 24} h`; };
+    const renderNext = () => {
+      const nx = rail.querySelector("#tnNext"); if (!nx) return;
+      const c = NEXT.chain, now = Date.now() / 1000;
+      const rows = c ? NEXT.rows.map(p => ({ ...p, eta: Number(c.head_ts) + (Number(p.activate_at) - Number(c.head)) * Number(c.seconds_per_block || 8) })).filter(p => Number.isFinite(p.eta)).sort((a, b) => a.eta - b.eta) : [];
+      const u = rows[0]; if (!u) { nx.hidden = true; NEXT.text = ""; return; }
+      const left = u.eta - now, text = left <= 30 ? `Coming up · now: ${u.title}` : `Coming up · ${span(left)}: ${u.title}`;
+      nx.hidden = false; nx.classList.toggle("soon", left <= 300);
+      if (text === NEXT.text) return; NEXT.text = text;
+      nx.querySelector("b").textContent = text;
+      const when = x => new Date(x * 1000).toISOString().slice(0, 16).replace("T", " ");
+      nx.dataset.tnt = (u.why ? u.why + "\n" : "") + `Agreed by the validators; takes effect at block #${fmt(u.activate_at)}, about ${when(u.eta)} UTC, that is ${span(left)}. The time is an estimate from the current block pace.\nNext activations on the live chain (UTC):\n` + rows.slice(0, 3).map(p => `#${fmt(p.activate_at)} · ${when(p.eta)} · ${span(p.eta - now)} · ${p.title}`).join("\n") + "\nWatch it in Proposals.";
+    };
+    const pollNext = async () => {
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+      try {
+        const r = await fetch(`https://${RELAY}/proposals.json`, { cache: "no-store", signal: ctl.signal }); if (!r.ok) throw new Error(r.status);
+        const j = await r.json(); NEXT.chain = j.chain || null;
+        NEXT.rows = (Array.isArray(j.proposals) ? j.proposals : []).filter(p => p && p.status === "agreed" && Number(p.activate_at) > 0).map(p => ({ title: String(p.title || "Rule change"), why: p.explain && p.explain.why ? String(p.explain.why) : "", activate_at: Number(p.activate_at) }));
+      } catch (e) { /* keep the last answer; a missing file just leaves the chip as it was */ }
+      clearTimeout(t); await dict; renderNext();
+    };
+    pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); setInterval(() => { if (!document.hidden) renderNext(); }, 15000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
     /* watchdog: a visible tab that has heard nothing from the relay for over a minute shows red, whatever the last colour was */
     setInterval(() => { if (!SIM && !document.hidden && CHAIN.at && Date.now() - CHAIN.at > 70000 && !CHAIN.stale) { CHAIN.stale = true; CHAIN.st = null; render(); } }, 5000);
