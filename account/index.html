@@ -52,7 +52,6 @@ html.fit .cols { min-height: 0; }
 html.fit .col { min-height: 0; display: flex; flex-direction: column; }
 html.fit .col > .panel { min-height: 0; overflow: auto; flex: 0 1 auto; }
 html.fit .col > .panel:last-child { flex: 1 1 auto; }
-html.fit #dir .panel { height: auto; max-height: 100%; overflow: auto; }   /* the panel ends with its rows; no frame around empty space */
 html.fit footer { padding-top: 6px; }
 html.fit footer p { margin: 0; }
 html.fit .modal .sheet, html.fit #tip { zoom: var(--z); }
@@ -173,11 +172,13 @@ td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space:
 tr.click { cursor: pointer; }
 tr.click:hover td { background: rgba(255,255,255,.05); }
 td .tag { margin-left: 6px; }
+@media (min-width: 701px) { #dirBody td:nth-child(2) { white-space: nowrap; } }
 a.acc { color: #fff; text-decoration: none; border-bottom: 1px dotted var(--hair); }
 a.acc:hover { border-bottom-color: #fff; }
 a.blk { color: var(--dim); text-decoration: none; }
 a.blk:hover { color: #fff; text-decoration: underline; }
-@media (max-width: 640px) { #dirTable .opt { display: none; } }
+@media (max-width: 1399px) { #dirTable .opt2 { display: none; } }
+@media (max-width: 700px) { #dirTable .opt { display: none; } }
 
 /* tooltip, modal */
 #tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(320px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
@@ -197,6 +198,43 @@ details.raw { margin-top: 10px; } details.raw summary { cursor: pointer; color: 
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer a { color: var(--dim); }
 @media (max-width: 700px) { .tile .v { font-size: 19px; } }
+/* rich list: the table on the left, the picked account on the right (never empty: rank 1 until the visitor picks) */
+.dirgrid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .dirgrid { grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1fr); } }
+@media (max-width: 1099px) { #prev { display: none; } }
+html.fit .dirgrid { height: 100%; min-height: 0; }
+html.fit .dirgrid > .panel { min-height: 0; overflow: auto; }
+html.fit .rich { display: flex; flex-direction: column; }
+html.fit .rich > * { flex: none; }
+html.fit .rich .tablewrap { flex: 0 1 auto; min-height: 0; overflow: auto; }
+html.fit .rich thead th { position: sticky; top: 0; background: #101012; z-index: 1; }
+.rich tfoot td { background: #101012; border-top: 1px solid var(--hair); border-bottom: 0; color: #fff; font-weight: 600; }
+th button { all: unset; cursor: pointer; }
+th button:hover, th button:focus-visible { color: #fff; }
+th[aria-sort] button { color: #fff; }
+th[aria-sort="descending"] button::after { content: " ↓"; }
+th[aria-sort="ascending"] button::after { content: " ↑"; }
+td.rk, th.rk { width: 2.5em; color: var(--dim); }
+td.sh { width: 24%; min-width: 120px; }
+html.fit .rich tfoot td { position: sticky; bottom: 0; }
+@media (max-width: 700px) { td.sh { min-width: 0; width: auto; } .shbar i { max-width: 48px; } }
+.shbar { display: flex; align-items: center; gap: 8px; }
+.shbar i { display: block; height: 6px; border-radius: 3px; background: rgba(255,255,255,.55); min-width: 1px; }
+.shbar span { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.pick td { background: rgba(57,255,138,.06); }
+tr.pick td:first-child { box-shadow: inset 2px 0 0 var(--ok); }
+tr.pick .shbar i { background: var(--ok); }
+td .approx { color: var(--dim); }
+.testnet { margin: 0 0 8px; padding: 5px 10px; border: 1px dashed var(--hair); border-radius: 6px; color: var(--text); font-size: 12px; }
+.dist { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 2px 0 10px; background: rgba(255,255,255,.05); }
+.dist i { display: block; height: 100%; border-right: 1px solid var(--void); cursor: pointer; }
+.dist i.pick { background: var(--ok) !important; }
+.preview .kind { margin: 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.preview .addr { font: 500 12px/1.45 var(--mono); color: #fff; word-break: break-all; margin: 6px 0 4px; }
+.preview .big { font: 600 30px/1.15 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 10px; }
+.preview .big small { font: 500 13px var(--display); color: var(--dim); margin-left: 6px; }
+.preview .spark svg { display: block; width: 100%; height: auto; margin-top: 8px; }
+.preview .acts { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
 [hidden] { display: none !important; }
 /* phone: nothing smaller than 11 px, buttons big enough for a thumb */
 @media (max-width: 700px) {
@@ -234,13 +272,32 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   <main id="main">
     <!-- account directory: shown when no account is open -->
     <section id="dir" hidden>
-      <div class="panel">
-        <h2>All accounts on this chain <small id="dirSub"></small></h2>
-        <table id="dirTable">
-          <thead><tr><th>Account</th><th class="n">Sent</th><th class="n opt">Transfers in · out</th><th class="n opt">Own rules</th><th class="n opt">Blocks proposed</th><th class="n">Last active</th></tr></thead>
-          <tbody id="dirBody"></tbody>
-        </table>
-        <p class="note" id="dirNote">Accounts from the genesis block plus every account that sent, received or proposed a block. Click one to open it.</p>
+      <div class="dirgrid">
+        <div class="panel rich">
+          <h2>Rich list <small id="dirSub"></small></h2>
+          <p class="headline" id="dirHead"></p>
+          <div class="dist" id="dist" aria-hidden="true"></div>
+          <p class="testnet">Testnet: these AGRS are test tokens with no value. They cannot be bought or sold, and the chain may restart from zero.</p>
+          <div class="tablewrap">
+            <table id="dirTable">
+              <thead><tr>
+                <th class="n rk"><button type="button" data-sort="bal" data-tip="Rank by balance">#</button></th>
+                <th><button type="button" data-sort="a">Account</button></th>
+                <th class="n" data-main="1"><button type="button" data-sort="bal">Balance</button></th>
+                <th class="sh"><button type="button" data-sort="bal">Share</button></th>
+                <th class="n opt"><button type="button" data-sort="sent" data-tip="Transactions this account signed">Sent</button></th>
+                <th class="n opt"><button type="button" data-sort="tin" data-tip="Transfers received · transfers sent">In · out</button></th>
+                <th class="n opt"><button type="button" data-sort="rules" data-tip="Tau rules it set for itself or accepted">Own rules</button></th>
+                <th class="n opt"><button type="button" data-sort="proposed">Blocks</button></th>
+                <th class="n opt2"><button type="button" data-sort="last">Last active</button></th>
+              </tr></thead>
+              <tbody id="dirBody"></tbody>
+              <tfoot id="dirFoot"></tfoot>
+            </table>
+          </div>
+          <p class="note" id="dirNote"></p>
+        </div>
+        <aside class="panel preview" id="prev" aria-live="polite"></aside>
       </div>
     </section>
 
@@ -301,7 +358,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   </main>
 
   <footer>
-    <p>Data: our node at node.tauhud.com (tau-testnet pinned to commit 539d1e2), served by a read-only relay. Amounts in AGRS. <a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">Source</a> · <a href="/playground/">Rule Playground</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BAccounts%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p>Data: our node at node.tauhud.com (tau-testnet pinned to commit 539d1e2), served by a read-only relay. Amounts in AGRS, the testnet’s test tokens with no monetary value. <a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">Source</a> · <a href="/playground/">Rule Playground</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BAccounts%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 
@@ -378,7 +435,7 @@ function nameOf(a) { return NAMES[a] || (a === S.addr ? "this account" : short(a
 /* ------------------------------ state ------------------------------ */
 // C: chain as read from the relay. S: the open account and the node's answers about it.
 const C = { ws: null, blocks: [], head: -1, gov: null, loading: false, nextFrom: 0, retry: 5000, dropped: [], legacy: false, ready: false };
-const S = { addr: null, lookups: {}, filter: "all", more: 20 };
+const S = { addr: null, lookups: {}, filter: "all", more: 20, sort: { k: "bal", d: -1 }, pick: null };
 let M = null;               // derived view of the open account
 const offerIds = new Map(); // tx object -> offer id (hex)
 
@@ -403,7 +460,7 @@ function connect() {
   try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
   setState("wait", "Connecting", `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
-  ws.onopen = () => { C.off = false; C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); if (S.addr) lookup(S.addr); };
+  ws.onopen = () => { C.off = false; C.retry = 5000; setTimeout(pumpBalances, 500); ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); if (S.addr) lookup(S.addr); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
   ws.onerror = () => {};
@@ -427,6 +484,21 @@ function store(raw) {
 function loadDropped() {
   fetch(NODE.replace(/^ws/, "http").replace(/\/$/, "") + "/stats", { cache: "no-store" }).then(r => r.ok ? r.json() : null)
     .then(j => { if (j && Array.isArray(j.dropped)) { C.dropped = j.dropped; rebuild(); } }).catch(() => {});
+}
+// the rich list needs every account's confirmed balance: one getbalance at a time, so the relay's shared lookup budget
+// (a few per second for all visitors) is never spent in a burst; refreshed every minute while the list is open
+const BAL = new Map(), balQ = [];
+let balBusy = null, balT = null;
+function queueBalances(addrs) { for (const a of addrs) if (!balQ.includes(a)) balQ.push(a); pumpBalances(); }
+function pumpBalances() {
+  if (balBusy || !balQ.length || SAMPLE || !C.ws || C.ws.readyState !== 1) return;
+  balBusy = balQ.shift(); send(`getbalance ${balBusy}`);
+  clearTimeout(balT); balT = setTimeout(() => { balBusy = null; pumpBalances(); }, 4000);   // no answer: move on
+}
+function balanceAnswer(ok, d) {
+  if (ok && d.address) { BAL.set(low(d.address), num(d.balance)); if (!S.addr) rebuild(); }
+  else if (!ok && balBusy) balQ.unshift(balBusy);   // BUSY: ask again after a pause
+  if (balBusy && (!ok || low(d.address) === balBusy)) { const wait = ok ? 350 : 1500; balBusy = null; clearTimeout(balT); balT = setTimeout(pumpBalances, wait); }
 }
 function lookup(a) {
   for (const cmd of ["getaccountstate", "getbalance", "getruleoffers", "getsequence"]) setTimeout(() => send(`${cmd} ${a}`), 0);
@@ -458,6 +530,8 @@ function onMessage(ev) {
   } else if (cmd === "getgovernance") {
     if (msg.status === "ok") { C.gov = d; rebuild(); }
   } else if (["getaccountstate", "getbalance", "getruleoffers", "getsequence"].includes(cmd)) {
+    if (cmd === "getbalance") balanceAnswer(msg.status === "ok", d);
+    if (cmd === "getaccountstate" && msg.status === "ok" && d.address && d.chain_balance != null) BAL.set(low(d.address), num(d.chain_balance));
     if (msg.status !== "ok") {
       if ((msg.error || {}).code === "BUSY" && S.addr) setTimeout(() => send(`${cmd} ${S.addr}`), 1500);
       return;
@@ -515,23 +589,32 @@ function* eachTx() {
 // every account the chain mentions, for the directory and for prefix search
 function directory() {
   const D = new Map();
-  const get = a => { if (!D.has(a)) D.set(a, { a, sent: 0, tin: 0, tout: 0, rules: 0, last: 0, proposed: 0, genesis: a in GENESIS }); return D.get(a); };
+  const get = a => { if (!D.has(a)) D.set(a, { a, sent: 0, tin: 0, tout: 0, rules: 0, last: 0, first: 0, proposed: 0, genesis: a in GENESIS,
+    replay: GENESIS[a] || 0, series: [[0, GENESIS[a] || 0]], recent: [] }); return D.get(a); };
+  const touch = (r, ts) => { if (ts && !r.first) r.first = ts; r.last = Math.max(r.last, ts || 0); };
   Object.keys(GENESIS).forEach(get);
   for (let h = 0; h <= C.head; h++) {
     const b = C.blocks[h]; if (!b) continue;
     const p = low((b.header || {}).proposer_pubkey);
-    if (isAddr(p) && !/^0+$/.test(p)) { const r = get(p); r.proposed++; r.last = Math.max(r.last, num(b.header.timestamp)); }
+    if (isAddr(p) && !/^0+$/.test(p)) { const r = get(p); r.proposed++; touch(r, num(b.header.timestamp)); }
   }
-  for (const { ts, t } of eachTx()) {
+  // balances replayed from transfers: the fallback until our node confirms each one, and the curve in the preview
+  const step = (r, h, d, rec) => { r.replay += d; const sr = r.series; if (sr[sr.length - 1][0] === h) sr[sr.length - 1][1] = r.replay; else sr.push([h, r.replay]);
+    r.recent.push(rec); if (r.recent.length > 6) r.recent.shift(); };
+  for (const { h, ts, t } of eachTx()) {
     const s = low(t.sender_pubkey), k = txKind(t);
-    if (isAddr(s)) { const r = get(s); r.sent++; r.last = Math.max(r.last, ts || 0); if (k === "rule_deploy" || k === "rule_offer_accept") r.rules++; }
-    for (const [f, to] of transfersOf(t)) {
-      if (isAddr(low(f))) get(low(f)).tout++;
-      if (isAddr(low(to))) { const r = get(low(to)); r.tin++; r.last = Math.max(r.last, ts || 0); }
+    if (isAddr(s)) { const r = get(s); r.sent++; touch(r, ts); if (k === "rule_deploy" || k === "rule_offer_accept") r.rules++; }
+    for (const [f0, to0, a0] of transfersOf(t)) {
+      const f = low(f0), to = low(to0), amt = num(a0);
+      if (f === to) continue;
+      if (isAddr(f)) { const r = get(f); r.tout++; step(r, h, -amt, { h, dir: "out", amt, other: to }); }
+      if (isAddr(to)) { const r = get(to); r.tin++; touch(r, ts); step(r, h, amt, { h, dir: "in", amt, other: f }); }
     }
     const rc = low(t.recipient_pubkey);
-    if (isAddr(rc)) { const r = get(rc); r.last = Math.max(r.last, ts || 0); }
+    if (isAddr(rc)) touch(get(rc), ts);
   }
+  for (const r of D.values()) r.series.push([C.head, r.replay]);
+  directory.lastCount = D.size;
   return [...D.values()].sort((x, y) => (y.sent + y.tin) - (x.sent + x.tin) || y.last - x.last || (x.a < y.a ? -1 : 1));
 }
 
@@ -631,17 +714,83 @@ function rebuild() { clearTimeout(rebuildT); rebuildT = setTimeout(async () => {
 
 function show(view) { $("dir").hidden = view !== "dir"; $("acct").hidden = view !== "acct"; $("allBtn").setAttribute("aria-pressed", String(view === "dir")); fit(); }
 
+const BALAT = new Map();   // when each balance was last asked for
+function richRows() {
+  const rows = directory();
+  for (const r of rows) { r.node = BAL.has(r.a); r.bal = r.node ? BAL.get(r.a) : r.replay; }
+  const total = rows.reduce((t, r) => t + Math.max(0, r.bal), 0);
+  [...rows].sort((x, y) => y.bal - x.bal || (x.a < y.a ? -1 : 1)).forEach((r, i) => { r.rank = i + 1; r.share = total ? Math.max(0, r.bal) / total : 0; });
+  return { rows, total };
+}
 function renderDir() {
   show("dir");
-  const rows = directory();
-  $("dirNote").textContent = rows.filter(r => r.genesis).length * 2 > rows.length
-    ? "Most accounts were funded in the genesis block; “new” marks the ones that appeared later. Click one to open it."
-    : "Accounts from the genesis block plus every account that sent, received or proposed a block. Click one to open it.";
-  $("dirSub").textContent = C.ready || SAMPLE ? `${plural(rows.length, "account")} · up to block #${fmtN(C.head)}` : C.off ? "our node is offline right now" : "reading the chain…";
-  // a tag marks the exception: "genesis" when most accounts came later, "new" when nearly every account was funded at genesis
+  const { rows, total } = richRows();
+  const now = Date.now(), stale = rows.filter(r => !BALAT.has(r.a) || now - BALAT.get(r.a) > 60000).map(r => r.a);
+  if (C.ready && !SAMPLE && stale.length) { stale.forEach(a => BALAT.set(a, now)); queueBalances(stale); }
   const mostGenesis = rows.filter(r => r.genesis).length * 2 > rows.length;
-  $("dirBody").innerHTML = !rows.length ? `<tr><td colspan="7" class="empty">${C.off ? "Our node is offline right now. The table fills as soon as it answers again." : "Reading the chain…"}</td></tr>` : rows.map(r => `<tr class="click" data-acc="${r.a}"><td>${accLink(r.a)}${r.genesis && !mostGenesis ? `<span class="tag">genesis</span>` : !r.genesis && mostGenesis ? `<span class="tag">new</span>` : ""}${isValidator(r.a) ? `<span class="tag g">validator</span>` : ""}</td>
-    <td class="n">${fmtN(r.sent)}</td><td class="n opt">${fmtN(r.tin)} · ${fmtN(r.tout)}</td><td class="n opt">${fmtN(r.rules)}</td><td class="n opt">${fmtN(r.proposed)}</td><td class="n">${r.last ? ago(r.last) : "not yet"}</td></tr>`).join("");
+  const confirmed = rows.filter(r => r.node).length;
+  $("dirSub").textContent = C.ready || SAMPLE ? `${plural(rows.length, "account")} · up to block #${fmtN(C.head)}` : C.off ? "our node is offline right now" : "reading the chain…";
+  // the one sentence worth remembering: how concentrated the money is
+  const byBal = [...rows].sort((x, y) => x.rank - y.rank), k = Math.min(3, byBal.length);
+  const topShare = byBal.slice(0, k).reduce((t, r) => t + r.share, 0), empty = rows.filter(r => r.bal <= 0).length;
+  const pick = pickOf(rows);
+  $("dirHead").innerHTML = !rows.length || !(C.ready || SAMPLE) ? "" : (k === 1 ? `The largest account holds ${pct(topShare)} of all ${fmtA(total)} AGRS.` : `The top ${k} accounts hold ${pct(topShare)} of all ${fmtA(total)} AGRS.`)
+    + (empty ? ` <span>${empty === 1 ? "1 account holds nothing." : `${fmtN(empty)} accounts hold nothing.`}</span>` : "");
+  $("dist").innerHTML = byBal.filter(r => r.share > 0).map((r, i) => `<i data-pick="${r.a}" class="${r.a === pick ? "pick" : ""}" style="width:${(r.share * 100).toFixed(3)}%;background:rgba(255,255,255,${(0.75 - Math.min(i, 8) * 0.07).toFixed(2)})" data-tip="#${r.rank} ${short(r.a)}\n${fmtA(r.bal)} AGRS · ${pct(r.share)}"></i>`).join("");
+  // sorting: any column; the rank always shows the balance order
+  const { k: sk, d: sd } = S.sort, val = r => sk === "a" ? r.a : r[sk];
+  const sorted = [...rows].sort((x, y) => { const a = val(x), b = val(y); return (a < b ? -1 : a > b ? 1 : 0) * sd || x.rank - y.rank; });
+  document.querySelectorAll("#dirTable thead th").forEach(th => {
+    const b = th.querySelector("[data-sort]"), on = b && b.dataset.sort === sk && (sk !== "bal" || th.dataset.main === "1");
+    if (on) th.setAttribute("aria-sort", sd < 0 ? "descending" : "ascending"); else th.removeAttribute("aria-sort");
+  });
+  const maxShare = Math.max(...rows.map(r => r.share), 0.0001);
+  $("dirBody").innerHTML = !rows.length ? `<tr><td colspan="9" class="empty">${C.off ? "Our node is offline right now. The table fills as soon as it answers again." : "Reading the chain…"}</td></tr>`
+    : sorted.map(r => `<tr class="click${r.a === pick ? " pick" : ""}" data-row="${r.a}" tabindex="0"><td class="n rk">${r.rank}</td>
+    <td>${accLink(r.a)}${r.genesis && !mostGenesis ? `<span class="tag">genesis</span>` : !r.genesis && mostGenesis ? `<span class="tag">new</span>` : ""}${isValidator(r.a) ? `<span class="tag g">validator</span>` : ""}</td>
+    <td class="n">${r.node ? fmtA(r.bal) : `<span class="approx" data-tip="Counted from the transfers in the blocks.\nAsking our node for the confirmed balance…">≈ ${fmtA(r.bal)}</span>`}</td>
+    <td class="sh"><div class="shbar"><i style="width:${(r.share / maxShare * 100).toFixed(2)}%"></i><span>${pct(r.share)}</span></div></td>
+    <td class="n opt">${fmtN(r.sent)}</td><td class="n opt">${fmtN(r.tin)} · ${fmtN(r.tout)}</td><td class="n opt">${fmtN(r.rules)}</td><td class="n opt">${fmtN(r.proposed)}</td><td class="n opt2">${r.last ? ago(r.last) : "not yet"}</td></tr>`).join("");
+  const sum = key => rows.reduce((t, r) => t + r[key], 0);
+  $("dirFoot").innerHTML = rows.length ? `<tr><td class="n rk"></td><td>Total</td><td class="n">${fmtA(total)}</td><td class="sh">100%</td>
+    <td class="n opt">${fmtN(sum("sent"))}</td><td class="n opt">${fmtN(sum("tin"))} · ${fmtN(sum("tout"))}</td><td class="n opt">${fmtN(sum("rules"))}</td><td class="n opt">${fmtN(sum("proposed"))}</td><td class="n opt2"></td></tr>` : "";
+  $("dirNote").textContent = confirmed < rows.length && !SAMPLE && C.ready
+    ? `≈ marks a balance still counted from the transfers while our node confirms it (${fmtN(confirmed)} of ${fmtN(rows.length)} confirmed so far).`
+    : matchMedia("(min-width: 1100px)").matches ? "Balances as our node confirms them, refreshed every minute. Click a column to sort, a row to preview it, an address to open it." : "Balances as our node confirms them, refreshed every minute. Tap a column to sort, a row to open the account.";
+  renderPreview(rows.find(r => r.a === pick));
+}
+const pct = x => !x ? "0%" : x >= 0.01 ? `${(x * 100).toFixed(1)}%` : x >= 0.0001 ? `${(x * 100).toFixed(2)}%` : "<0.01%";
+function pickOf(rows) { if (S.pick && rows.some(r => r.a === S.pick)) return S.pick; const top = rows.find(r => r.rank === 1); return top ? top.a : null; }
+// the right side: the picked account in brief, so the list never leaves an empty half
+function renderPreview(r) {
+  const el = $("prev");
+  if (!r) { el.innerHTML = `<p class="kind">Account</p><p class="empty">${C.off ? "Our node is offline right now." : "Reading the chain…"}</p>`; return; }
+  el.innerHTML = `<p class="kind">Rank ${r.rank} of ${fmtN(directory.lastCount || 0)}</p>
+    <div class="addr">${esc(r.a)}</div>
+    <div class="roles">${r.genesis ? `<span class="tag w">genesis account</span>` : `<span class="tag">new</span>`}${isValidator(r.a) ? ` <span class="tag g">validator</span>` : ""}</div>
+    <div class="acts"><a class="btn" href="${accUrl(r.a)}" data-acc="${r.a}">Open account</a></div>
+    <div class="big">${r.node ? "" : "≈ "}${fmtA(r.bal)}<small>AGRS</small></div>
+    <p class="note" style="margin-top:2px">${pct(r.share)} of all AGRS · test tokens with no value</p>
+    <div class="spark" id="spark"></div>
+    <p class="note" style="margin-top:2px">Balance from transfers, genesis to #${fmtN(C.head)}</p>
+    <dl class="kv">
+      <dt>Transfers</dt><dd>${fmtN(r.tin)} received · ${fmtN(r.tout)} sent</dd>
+      <dt>Transactions</dt><dd>${fmtN(r.sent)} signed</dd>
+      <dt>Own rules</dt><dd>${r.rules ? fmtN(r.rules) : "none: the defaults apply"}</dd>
+      ${r.proposed ? `<dt>Blocks proposed</dt><dd>${fmtN(r.proposed)}</dd>` : ""}
+      <dt>Last active</dt><dd>${r.last ? esc(ago(r.last)) : "not yet"}</dd>
+    </dl>
+    <h3>Latest transfers</h3>
+    <ul class="list">${r.recent.length ? r.recent.slice(-5).reverse().map(x => `<li class="${x.dir}"><a class="row" href="/history/#${x.h}"><span class="h">#${fmtN(x.h)}</span><span class="d">${x.dir === "in" ? "from" : "to"} ${esc(short(x.other))}</span><span class="amt ${x.dir === "in" ? "in" : ""}">${x.dir === "in" ? "+" : "−"}${fmtA(x.amt)}</span></a></li>`).join("") : `<li class="empty">No transfers yet.</li>`}</ul>
+`;
+  drawSpark($("spark"), r.series);
+}
+function drawSpark(host, series) {
+  const W = Math.max(240, host.clientWidth || 300), H = 64, lo0 = Math.min(...series.map(p => p[1])), hi0 = Math.max(...series.map(p => p[1]));
+  const lo = hi0 - lo0 < 2 ? lo0 - 1 : lo0, hi = hi0 - lo0 < 2 ? hi0 + 1 : hi0, x1 = Math.max(1, C.head);
+  const X = h => h / x1 * (W - 2) + 1, Y = v => 4 + (1 - (v - lo) / (hi - lo)) * (H - 8);
+  let d = ""; series.forEach(([h, v], i) => { d += i ? ` H${X(h).toFixed(1)} V${Y(v).toFixed(1)}` : `M${X(h).toFixed(1)} ${Y(v).toFixed(1)}`; });
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${d} V${H} H1 Z" fill="rgba(57,255,138,.08)"/><path d="${d}" fill="none" stroke="#fff" stroke-width="1.4"/></svg>`;
 }
 const isValidator = a => ((C.gov || {}).active_validators || []).some(v => low(typeof v === "string" ? v : (v || {}).pubkey) === a);
 
@@ -670,7 +819,7 @@ function renderAccount() {
   const refusals = M.ev.filter(e => e.cat === "refusal");
   $("tiles").innerHTML = [
     tile("Balance", chainBal != null ? fmtA(chainBal) : `≈ ${fmtA(M.replayBal)}`, chainBal != null ? (pendOut || pendIn ? `${pendOut ? `−${fmtA(pendOut)} queued` : ""}${pendOut && pendIn ? " · " : ""}${pendIn ? `+${fmtA(pendIn)} incoming` : ""}` : esc_ ? `${fmtA(esc_)} held for retractable transfers` : "confirmed on chain") : "from the blocks; asking the node…",
-      "Confirmed balance, as our node reports it.\nQueued: sent but not in a block yet.", "AGRS"),
+      "Confirmed balance, as our node reports it.\nQueued: sent but not in a block yet.\nTestnet AGRS are test tokens with no value.", "AGRS"),
     tile("Received", fmtA(M.inSum), plural(M.inN, "transfer"), "Total of all transfers into this account on this chain.", "AGRS"),
     tile("Sent", fmtA(M.outSum), plural(M.outN, "transfer"), "Total of all transfers out of this account on this chain.", "AGRS"),
     tile("Transactions", fmtN(M.sentN), sq ? `next sequence ${fmtN(sq.sequence_number)}` : "signed by this account", "Transactions this account signed that made it into a block."),
@@ -865,6 +1014,14 @@ $("find").addEventListener("submit", e => {
 $("allBtn").addEventListener("click", () => open(null, true));
 $("copyBtn").addEventListener("click", () => { navigator.clipboard && navigator.clipboard.writeText(S.addr).then(() => { $("copyBtn").textContent = "Copied"; setTimeout(() => { $("copyBtn").textContent = "Copy address"; }, 1500); }).catch(() => {}); });
 document.addEventListener("click", e => {
+  const th = e.target.closest("[data-sort]");
+  if (th) { const k = th.dataset.sort; S.sort = { k, d: S.sort.k === k ? -S.sort.d : k === "a" ? 1 : -1 }; renderDir(); return; }
+  const pk = e.target.closest("[data-pick], tr[data-row]");
+  if (pk && !e.target.closest("a")) {
+    const a = pk.dataset.pick || pk.dataset.row;
+    if (matchMedia("(min-width: 1100px)").matches) { S.pick = a; renderDir(); } else open(a, true);
+    return;
+  }
   const a = e.target.closest("a[data-acc], tr[data-acc]");
   if (a && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); $("mDetail").hidden = true; open(a.dataset.acc, true); window.scrollTo(0, 0); return; }
   const b = e.target.closest("[data-ev]");
@@ -873,6 +1030,9 @@ document.addEventListener("click", e => {
   const f = e.target.closest("[data-f]");
   if (f) { S.filter = f.dataset.f; S.more = 20; renderActivity(); fit(); }
 });
+document.addEventListener("dblclick", e => { const r = e.target.closest("tr[data-row]"); if (r) open(r.dataset.row, true); });
+document.addEventListener("keydown", e => { const r = e.target.closest && e.target.closest("tr[data-row]"); if (r && e.key === "Enter") open(r.dataset.row, true); });
+setInterval(() => { if (!S.addr && document.visibilityState === "visible") rebuild(); }, 60000);
 document.querySelectorAll(".modal").forEach(m => m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-close]")) closeModal(m); }));
 document.addEventListener("keydown", e => { if (e.key === "Escape") document.querySelectorAll(".modal:not([hidden])").forEach(closeModal); });
 
@@ -934,6 +1094,7 @@ async function startSample() {
   for (const { t } of eachTx()) if (/^@\d$/.test(t.offer_id || "")) { const o = offersTx[Number(t.offer_id.slice(1))]; t.offer_id = (await offerId(o)) || "0".repeat(64); }
   C.gov = { active_validators: [prop, Object.keys(GENESIS)[1]] };
   C.dropped = [{ tx_hash: "9f3c1e".padEnd(64, "7"), type: "user_tx", sender: Object.keys(GENESIS)[0], seen: Date.now() / 1000 - 5400, left: Date.now() / 1000 - 5330 }];
+  for (const r of directory()) BAL.set(r.a, Math.max(0, r.replay - r.sent * 3));
   C.ready = true; offerIds.clear();
   setState("sample", "Sample data", "Made-up data for previews.\nRemove ?sample from the address for the live chain.");
   rebuild();
