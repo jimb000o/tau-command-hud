@@ -115,6 +115,28 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Donation thank-yous (alerts/donations.py): watches the donation address on
+  # Ethereum (AGRS and ETH only) through the public Blockscout API, keeps
+  # donations.json for the About section and posts one thank-you per new
+  # donation to the channel. Same image as alerts, its own state file.
+  donations:
+    build: ./alerts
+    command: ["python", "donations.py"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+      X_API_KEY: ${X_API_KEY:-}
+      X_API_SECRET: ${X_API_SECRET:-}
+      X_ACCESS_TOKEN: ${X_ACCESS_TOKEN:-}
+      X_ACCESS_SECRET: ${X_ACCESS_SECRET:-}
+      ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-}
+      DONATION_IGNORE_FROM: ${DONATION_IGNORE_FROM:-}  # own wallets, comma separated: transfers from them are not donations
+    volumes:
+      - alerts_state:/state
+      - alerts_public:/public
+    restart: unless-stopped
+    logging: *logging
+
   # Question bot (alerts/bot.py): the same Telegram bot answers people who
   # write to it (/height, /proposals, /tx, /address, /block, /status) with data
   # from the relay and proposals.json. Long polling, so no inbound port; it
