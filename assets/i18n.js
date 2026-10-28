@@ -168,9 +168,9 @@
   }
 
   /* ---------- colours: green ↔ red, so red is the positive accent and green means offline or down; amber stays ---------- */
-  const SWAP = { "57,255,138": "255,59,82", "255,77,109": "57,255,138", "185,255,214": "255,190,198", "230,255,240": "255,232,235", "22,192,96": "214,40,64" };
-  const HEX = { "39ff8a": "ff3b52", "ff4d6d": "39ff8a", "b9ffd6": "ffbec6", "16c060": "d62840" };
-  const COLOR_RE = /#(39ff8a|ff4d6d|b9ffd6|16c060)\b|rgba?\(\s*(57\s*,\s*255\s*,\s*138|255\s*,\s*77\s*,\s*109|185\s*,\s*255\s*,\s*214|230\s*,\s*255\s*,\s*240|22\s*,\s*192\s*,\s*96)\s*([,/][^)]*)?\)/gi;
+  const SWAP = { "57,255,138": "255,59,82", "255,77,109": "57,255,138", "185,255,214": "255,190,198", "230,255,240": "255,232,235", "22,192,96": "214,40,64", "229,72,77": "48,164,108" };
+  const HEX = { "39ff8a": "ff3b52", "ff4d6d": "39ff8a", "b9ffd6": "ffbec6", "16c060": "d62840", "e5484d": "30a46c" };
+  const COLOR_RE = /#(39ff8a|ff4d6d|b9ffd6|16c060|e5484d)\b|rgba?\(\s*(57\s*,\s*255\s*,\s*138|255\s*,\s*77\s*,\s*109|185\s*,\s*255\s*,\s*214|230\s*,\s*255\s*,\s*240|22\s*,\s*192\s*,\s*96|229\s*,\s*72\s*,\s*77)\s*([,/][^)]*)?\)/gi;
   const swap = s => typeof s !== "string" || !s ? s : s.replace(COLOR_RE, (m, hex, rgb, rest) => {
     if (hex) return "#" + HEX[hex.toLowerCase()];
     const k = rgb.replace(/\s+/g, ""); return (rest ? "rgba(" : "rgb(") + SWAP[k] + (rest || "") + ")";
