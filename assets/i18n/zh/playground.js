@@ -273,4 +273,13 @@ TauI18n.add({ strings: {
   "Validator {h} is removed": "移除验证者 {h}",
   "Back to the fixed validator list": "回到固定验证者名单",
   "A visitor's own network rule": "访客自己的网络规则",
+  // found by the page check (tests/pages.mjs)
+  "Are o{n} and its values typed bv[{m}], the width the network expects?": "o{n} 及其取值的类型是否为 bv[{m}]，即网络期望的位宽？",
+  "Does it read only inputs a personal rule may read, and write no network-owned output?": "它是否只读取个人规则可以读取的输入，并且不写入任何属于网络的输出？",
+  "Does it read only the current step [t]? Looking back at [t-{n}] or ahead is refused.": "它是否只读取当前步 [t]？回看 [t-{n}] 或向前看都会被拒绝。",
+  "Is it one “always ( … ).” unit that sets o{n}, your transfer answer, and nothing else?": "它是否是一个“always ( … ).”单元，只设置 o{n}（你的转账答复），别无其他？",
+  "Is the rule short enough? The node refuses any rule text over {x} bytes before it reads it at all.": "规则够短吗？任何超过 {x} 字节的规则文本，节点在读取之前就会拒绝。",
+  "Click for more.": "点击查看更多。",
+  "The node puts your rule behind “only if the sender is you”, so it can only decide your own transfers.": "节点会给你的规则加上“仅当发送方是你”的前提，因此它只能决定你自己的转账。",
+  "The real Tau engine compiles the wrapped rule next to the network’s own rules and runs your transfers through it.": "真正的 Tau 引擎会把包装后的规则与网络自己的规则一起编译，并让你的转账经过它。",
 } });

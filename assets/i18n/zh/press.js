@@ -125,4 +125,6 @@ TauI18n.add({ strings: {
   "· the chain core and every rule, here in simulation mode": "· 链核心和每一条规则，这里是模拟模式",
   "· twelve years of Tau, 2014 to today": "· Tau 的十二年，2014 年至今",
   "· write a rule, see what the testnet says": "· 写一条规则，看测试网怎么说",
+  // found by the page check (tests/pages.mjs)
+  "Download {x}, MP4": "下载 {x}，MP4",
 } });

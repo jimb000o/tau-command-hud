@@ -483,4 +483,10 @@ TauI18n.add({ strings: {
   "One minute, eight steps: how rules on Tau change by agreement, pointing at the panels where it happens. Arrow keys step, Esc ends.": "一分钟、八个步骤：Tau 上的规则如何经共识而改变，并指出发生这一切的面板。方向键翻页，Esc 结束。",
   "Tau HUD in numbers": "Tau HUD 数据一览",
   "How many people use this site: visitors per day, growth and the most visited pages": "有多少人在用这个网站：每日访客、增长和最常访问的页面",
+  // found by the page check (tests/pages.mjs)
+  "{x} UTC": "{x} UTC",
+  "Open account {h}": "打开账户 {h}",
+  "Checks": "检查",
+  "Visits": "访问量",
+  "In numbers": "数据一览",
 } });

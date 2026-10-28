@@ -258,5 +258,9 @@ TauI18n.add({ strings: {
   "in {n} min": "还有 {n} 分钟",
   "in {n} h {m} min": "还有 {n} 小时 {m} 分钟",
   "now": "现在",
-  "Guess the next round": "预测下一轮"
+  "Guess the next round": "预测下一轮",
+  // found by the page check (tests/pages.mjs)
+  "Every transaction would cost {n} AGRS instead of {m}: six times today's fee. Only the proposer votes yes; the other validators let the deadline pass. Needs {a} of {b} validators by block #{c}.": "每笔交易将花费 {n} AGRS，而不是 {m}：是今天手续费的六倍。只有提议者投赞成票，其他验证者任由截止期限过去。需要在区块 #{c} 之前获得 {b} 个验证者中的 {a} 个。",
+  "Nothing agreed is waiting to take effect.": "没有已通过、等待生效的变更。",
+  "{n} min": "{n} 分钟",
 } });
