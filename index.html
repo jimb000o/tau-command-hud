@@ -80,7 +80,7 @@ body::after { /* scanlines */
 .simbar b { font-weight: inherit; } .simbar b[data-full] { cursor: help; }
 .simbar b.soon { animation: simSoon 1.6s ease-in-out infinite; } @keyframes simSoon { 50% { text-shadow: 0 0 12px rgba(255,177,59,.95); } }
 .simbar a.watch { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; border: 1px solid rgba(255,177,59,.6); color: #ffb13b; border-radius: 999px; padding: 3px 8px; text-decoration: none; } .simbar a.watch:hover { background: #ffb13b; color: #000; }
-.simbar #simVote { flex: 1 1 420px; } .simbar #simVote span { flex: none; }
+.simbar #simVote { flex: 1 1 420px; min-width: 0; } .simbar #simVote span { flex: 0 1 auto; min-width: 0; }
 .simbar span { color: var(--dim); font: 12px var(--mono); letter-spacing: 0; text-transform: none; flex: 1 1 320px; }
 .simbar button { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 3px 8px; cursor: pointer; }
 .simbar button:hover { background: #fff; color: #000; }
@@ -2519,9 +2519,10 @@ function draw(tm) {
     const rv = C * .655, step = .075, me = TauSim.me(), mine = vb.mine;
     let own = false, yi = 0, ni = 0;
     cx.save(); cx.setLineDash([2, 8]); cx.beginPath(); cx.lineWidth = 1.2; cx.strokeStyle = "rgba(255,177,59,.28)"; cx.arc(0, 0, rv, 0, Math.PI * 2); cx.stroke(); cx.restore();
-    vb.voters.forEach(v => {
-      const yes = v[3] === 1, i = yes ? yi++ : ni++, a = yes ? -.3 + (i % 20) * step : Math.PI + .3 - (i % 20) * step, rr = rv - Math.floor(i / 20) * 26, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
-      const col = TauSim.colours[v[2]] || "#c8c8d0", self = !own && mine != null && v[0] === me.a && v[1] === me.b && v[2] === me.c && v[3] === mine;
+    const isMe = v => mine != null && v[0] === me.a && v[1] === me.b && v[2] === me.c && v[3] === mine, ordered = [...vb.voters.filter(isMe).slice(0, 1), ...vb.voters.filter(v => !isMe(v)).slice(-47)];   // your own dot first, at the top of its side
+    ordered.forEach(v => {
+      const yes = v[3] === 1, i = yes ? yi++ : ni++, a = yes ? -.3 + (i % 16) * step : Math.PI + .3 - (i % 16) * step, rr = rv - Math.floor(i / 16) * 26, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+      const col = TauSim.colourOf(v[2]), self = !own && isMe(v);
       if (self) own = true;
       cx.beginPath(); cx.arc(x, y, self ? 12 : 9, 0, Math.PI * 2);
       if (yes) { cx.fillStyle = col; cx.fill(); } else { cx.lineWidth = 3.5; cx.strokeStyle = col; cx.stroke(); }
@@ -3031,7 +3032,7 @@ function simBadge() {
   const text = !soon ? "Simulation · no real chain data"
     : left <= 0 ? `Simulation · now: ${ev.what}`
     : bal && bal.open ? `Simulation · vote now: ${ev.what} in ${left} min?`
-    : bal && bal.outcome === "no" ? `Simulation · the visitors said no: ${ev.what} is called off`
+    : bal && bal.outcome === "no" ? "Simulation · the visitors said no: the rules stay as they are"
     : u.status === "voting" ? `Simulation · validators are voting: ${ev.what} in ${left} min`
     : u.status === "agreed" ? `Simulation · agreed: ${ev.what} in ${left} min`
     : `Simulation · in ${left} min: ${ev.what}`;

@@ -1,4 +1,4 @@
-/* Tau HUD simulation: the visitors' vote on the hourly rule change and on visitors' own proposals, as a strip any page can show (HUD bar, Proposals).
+/* Tau HUD simulation: the visitors' vote on the hourly rule change, as a strip any page can show (HUD bar, Proposals).
 
    TauVote.strip(u)   HTML for an upcoming entry of TauSim.upcoming() that carries a ballot: the question, Yes / No,
                       the tally, the visitor's own name and colour; after the close, what the visitors decided
@@ -19,8 +19,8 @@
 .tv.tv button[data-vote] { font: 600 11px var(--display, Sora, sans-serif); letter-spacing: .14em; text-transform: uppercase; background: transparent; border: 1px solid rgba(255,177,59,.6); color: #ffb13b; border-radius: 999px; padding: 4px 12px; min-height: 26px; cursor: pointer; }
 .tv.tv button[data-vote]:hover, .tv.tv button[data-vote]:focus-visible { background: rgba(255,177,59,.18); }
 .tv.tv button[data-vote][aria-pressed="true"] { background: #ffb13b; border-color: #ffb13b; color: #000; }
-.tv .tv-t { color: #fff; } .tv .tv-t b { font-weight: 700; }
-.tv .tv-me { color: rgba(255,255,255,.7); white-space: nowrap; } .tv .tv-me i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.tv .tv-t { color: #fff; font-weight: 700; }
+.tv .tv-me { color: rgba(255,255,255,.7); white-space: nowrap; } .tv .tv-me b { color: #fff; font-weight: 600; } .tv .tv-me i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
 .tv .tv-msg { color: #fff; font-style: normal; } .tv .tv-msg:empty { display: none; }
 @media (max-width: 700px) { .tv.tv button[data-vote] { min-height: 44px; padding: 4px 16px; } .tv { font-size: 11px; } }`;
   document.head.append(css);
@@ -29,20 +29,20 @@
     const b = u && u.ballot; if (!b || b.opens == null) return "";
     const visitor = u.kind === "visitor", by = visitor && b.meta && b.meta.by ? TauSim.nameOf(b.meta.by[0], b.meta.by[1]) : "";
     const what = visitor ? String(u.title || "").replace(/^Visitors' proposal: /, "") : EVENT[u.kind] || u.short || u.title, me = TauSim.me(), t = Date.now() / 1000;
-    const tally = `<span class="tv-t"><b>${b.yes}</b> yes · <b>${b.no}</b> no</span>`;
-    const who = `<span class="tv-me"><i style="background:${esc(me.colour)}"></i>You vote as ${esc(me.name)}</span>`;
+    const tally = `<span class="tv-t">${b.yes} yes · ${b.no} no</span>`;
+    const who = `<span class="tv-me"><i style="background:${esc(me.colour)}"></i>You vote as <b>${esc(me.name)}</b></span>`;
     if (b.open) return `<div class="tv" data-item="${esc(b.item)}"><span class="tv-q">Your call: ${esc(what)}?${by ? ` <small>Proposed by ${esc(by)}</small>` : ""}</span>`
       + `<button type="button" data-vote="1" aria-pressed="${b.mine === 1}">Yes</button><button type="button" data-vote="0" aria-pressed="${b.mine === 0}">No</button>`
       + `${tally}<span>· voting closes ${mins(b.closes)}, the majority decides at ${hhmm(u.at_ts)}</span>${who}<em class="tv-msg" role="status"></em></div>`;
     if (t < b.opens || t >= u.at_ts) return "";
     const out = b.outcome || "none";
     // a visitor's proposal needs more yes than no: otherwise nobody votes it in and it lapses
-    const said = visitor ? (b.yes > b.no ? `The visitors said yes (${b.yes} to ${b.no}): the validators vote it in, ${esc(what)} at ${hhmm(u.at_ts)}.`
-        : `The visitors did not say yes (${b.yes} to ${b.no}): nobody votes it in, it lapses at ${hhmm(u.at_ts)} and the old rules stand.`)
-      : out === "yes" ? `The visitors said yes (${b.yes} to ${b.no}): the validators agree, ${esc(what)} at ${hhmm(u.at_ts)}.`
-      : out === "no" ? `The visitors said no (${b.no} to ${b.yes}): the validators hold back, the change is dropped at ${hhmm(u.at_ts)} and the old rules stand.`
-      : b.yes + b.no ? `A tie (${b.yes} to ${b.no}): the validators go ahead as planned, ${esc(what)} at ${hhmm(u.at_ts)}.`
-      : `No visitor voted: the validators go ahead as planned, ${esc(what)} at ${hhmm(u.at_ts)}.`;
+    const said = visitor ? (b.yes > b.no ? `The visitors said yes (${b.yes} to ${b.no}). The validators vote it in: ${esc(what)}, at ${hhmm(u.at_ts)}.`
+        : `The visitors did not say yes (${b.yes} to ${b.no}). Nobody votes it in, it lapses at ${hhmm(u.at_ts)} and the old rules stand.`)
+      : out === "yes" ? `The visitors said yes (${b.yes} to ${b.no}). The validators agree: ${esc(what)}, at ${hhmm(u.at_ts)}.`
+      : out === "no" ? `The visitors said no (${b.no} to ${b.yes}). The validators hold back, the change is dropped at ${hhmm(u.at_ts)} and the old rules stand.`
+      : b.yes + b.no ? `A tie (${b.yes} to ${b.no}). The validators go ahead as planned: ${esc(what)}, at ${hhmm(u.at_ts)}.`
+      : `No visitor voted. The validators go ahead as planned: ${esc(what)}, at ${hhmm(u.at_ts)}.`;
     return `<div class="tv" data-item="${esc(b.item)}"><span class="tv-q">${said}</span></div>`;
   }
   function bind(el) {
@@ -54,7 +54,7 @@
       box.querySelectorAll("[data-vote]").forEach(x => x.setAttribute("aria-pressed", String(x === btn)));
       const r = await TauSim.vote(box.dataset.item, yes);
       if (msg) msg.textContent = r && r.ok ? (yes ? "Counted: yes." : "Counted: no.") : MSG[(r && r.error) || "bad"] || MSG.bad;
-      if (r && r.item) { const t = box.querySelector(".tv-t"); if (t) t.innerHTML = `<b>${r.item.yes}</b> yes · <b>${r.item.no}</b> no`; if (!r.ok && r.item.mine != null) box.querySelectorAll("[data-vote]").forEach(x => x.setAttribute("aria-pressed", String(Number(x.dataset.vote) === r.item.mine))); }
+      if (r && r.item) { const t = box.querySelector(".tv-t"); if (t) t.textContent = `${r.item.yes} yes · ${r.item.no} no`; if (!r.ok && r.item.mine != null) box.querySelectorAll("[data-vote]").forEach(x => x.setAttribute("aria-pressed", String(Number(x.dataset.vote) === r.item.mine))); }
       else if (!(r && r.ok)) box.querySelectorAll("[data-vote]").forEach(x => x.setAttribute("aria-pressed", "false"));
     });
   }

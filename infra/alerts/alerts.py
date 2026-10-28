@@ -581,6 +581,9 @@ SIM_NOTICE = ("Simulated: a made-up chain generated in your browser from the clo
               "Nothing here happens on the real Tau testnet.")
 
 
+SIM_BALLOT_SECONDS = 420  # visitors vote until 7 minutes after the proposal (sim.js BALLOT_SECONDS, relay/simvotes.py)
+
+
 def sim_text(ev: dict) -> str:
     """The Telegram post for a simulated consensus switch: marked as simulation first and last, then why, what to watch, the times."""
     e = html.escape
@@ -591,6 +594,7 @@ def sim_text(ev: dict) -> str:
            "", "<b>Why it matters</b>", e(w["why"]),
            "", "<b>What to watch</b>"] + [f"• {e(x.format(**f))}" for x in w["watch"]] + [
            "", e(f"Proposed {f['proposed']} UTC · in force {f['in_force']} UTC · {w['after'].format(**f)}"),
+           "", "<b>You decide</b>", e(f"Vote yes or no on tauhud.com until {hm(ev['proposed'] + SIM_BALLOT_SECONDS)} UTC: the simulated validators follow the visitors' majority. More no than yes, and the switch is dropped."),
            "", f"<i>{e(SIM_NOTICE)}</i>",
            "", f"<a href=\"{e(SIM_LINK)}\">Watch it in the simulation</a>"]
     return "\n".join(out)
