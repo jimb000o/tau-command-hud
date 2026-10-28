@@ -101,30 +101,33 @@ a.get.all:hover { background: var(--ok); border-color: var(--ok); }
 .shot a:hover { border-color: #fff; }
 .shot img { display: block; width: 100%; height: auto; }
 .shots:not(.phone) img { aspect-ratio: 16 / 9; object-fit: cover; object-position: top; }
-.shots.phone img { aspect-ratio: 390 / 600; object-fit: cover; object-position: top; }
+.shots.phone img { aspect-ratio: 390 / 520; object-fit: cover; object-position: top; }
 .shot figcaption { font-size: 11.5px; color: var(--dim); padding-top: 4px; }
 .shot figcaption b { color: var(--text); font-weight: 500; }
-/* feature films: a poster per film; a click plays it in one dialog */
-.films { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
-.films li a.get { min-height: 32px; padding: 0 10px; }
-.films li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px; min-width: 0; }
-.films button { min-width: 0; text-align: left; background: none; border: 1px solid var(--line); border-radius: 6px; padding: 2px; color: var(--text); font: inherit; cursor: pointer; display: grid; grid-template-columns: 56px 1fr; gap: 10px; align-items: center; }
-.films button img { width: 56px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; display: block; background: #000; }
-.films button b { display: block; font: 500 12.5px/1.3 var(--display); color: #fff; }
-.films button .t span { color: var(--dim); font-size: 11.5px; margin-left: 8px; }
-.films button .t { display: flex; flex-wrap: wrap; align-items: baseline; }
-.films i, .filmdlg i { font-style: normal; }
-.films button:hover, .films button:focus-visible { border-color: #fff; }
-.filmdlg { width: min(1280px, 92vw); padding: 0; background: var(--bg, #09090a); color: var(--text); border: 1px solid var(--hair); border-radius: 8px; }
-.filmdlg::backdrop { background: rgba(0,0,0,.82); }
-.filmdlg video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
-.filmdlg p { margin: 0; padding: 10px 14px; display: flex; align-items: center; gap: 12px; color: var(--dim); font-size: 12px; }
-.filmdlg p b { color: #fff; font-weight: 500; margin-right: auto; }
-.filmdlg button { font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 6px; padding: 0 12px; min-height: 32px; cursor: pointer; }
-.filmdlg button:hover { color: #000; background: #fff; }
+/* films: the most used material, so it leads: one large player, what it is and its files under it, every film as a poster below */
+.films-panel .video { margin-bottom: 10px; }
+.films-panel .phead .note { margin: 0; }
+.now { display: grid; gap: 4px 18px; grid-template-columns: minmax(0, 1fr); }
+.nowt { margin: 0; display: grid; gap: 2px; }
+.nowt b { font: 600 17px/1.3 var(--display); color: #fff; }
+.nowt span { color: var(--dim); }
+.nowdl .dl li:first-child { border-top: 0; }
+.nowdl .dl li { padding: 4px 0; }
+.nowdl:not(:has(.dl)) { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.nowdl[hidden] { display: none !important; }
+.nowdl > .what { flex: 1 1 auto; min-width: 0; color: var(--dim); }
+.films { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.films li { min-width: 0; }
+.films button { width: 100%; min-width: 0; text-align: left; background: none; border: 0; padding: 0; color: var(--text); font: inherit; cursor: pointer; display: grid; gap: 6px; }
+.films button img { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid var(--line); border-radius: 6px; display: block; background: #000; }
+.films button:hover img, .films button:focus-visible img { border-color: var(--hair); }
+.films button[aria-pressed="true"] img { border-color: #fff; box-shadow: 0 0 0 1px #fff; }
+.films button b { display: block; font: 500 13px/1.3 var(--display); color: #fff; }
+.films button .t > span { color: var(--dim); font-size: 11.5px; }
+.films i { font-style: normal; }
 .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; min-height: 20px; }
 .badges img { height: 20px; display: block; }
-.ogrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.ogrow { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 12px; align-items: start; }
 .ogrow p { margin: 0; }
 .phead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
 .phead h2 { margin: 0; }
@@ -138,22 +141,29 @@ footer a { color: var(--dim); }
 .fb-fab { position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border-radius: 999px; padding: 9px 16px; text-decoration: none; }
 .fb-fab:hover { background: var(--ok); }
 [hidden] { display: none !important; }
-/* laptop and up: the words first, then the video, then the files and pictures */
+/* films first and largest, then the words, then logo and screenshots, the embeds last */
 @media (min-width: 1100px) {
-  .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "f f" "t l" "t s"; grid-template-rows: auto auto 1fr; }
+  .cF { grid-area: f; } .cT { grid-area: t; } .cL { grid-area: l; } .cS { grid-area: s; }
+  .films-panel { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); grid-template-rows: auto auto 1fr; gap: 0 18px; align-items: start; }
+  .films-panel > .phead { grid-column: 1 / -1; }
+  .films-panel > .video { grid-column: 1; grid-row: 2; }
+  .films-panel > .now { grid-column: 1; grid-row: 3; }
+  .films-panel > .pick { grid-column: 2; grid-row: 2 / span 2; }
+  .films-panel .pick h3 { margin: 0 0 8px; }
+  .now { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
 }
-@media (min-width: 1600px) {
-  .main { grid-template-columns: minmax(0, .95fr) minmax(0, 1fr) minmax(0, 1.2fr); }
-  .c1 { grid-column: 1; grid-row: 1 / span 2; }
-  .c2 { grid-column: 2; grid-row: 1 / span 2; }
-  .c3 { grid-column: 3; grid-row: 1; }
-  .c4 { grid-column: 3; grid-row: 2; }
-}
-/* wide screens: four columns, everything on one screen */
 @media (min-width: 1900px) {
-  .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .9fr) minmax(0, 1.15fr); }
-  .c1, .c2, .c3, .c4 { grid-row: 1; }
-  .c3 { grid-column: 3; } .c4 { grid-column: 4; }
+  .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, .9fr); grid-template-areas: "f f t s" "l l t s"; grid-template-rows: min-content 1fr; }
+  .cL .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .cL .tile .pic { aspect-ratio: 16 / 8; }
+  .cL .tile .pic img.full { object-fit: contain; }
+  .cT, .cS { align-self: start; }
+}
+@media (min-width: 2900px) {
+  .main { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, .8fr); }
+  .films-panel { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+  .cL .tile .pic { aspect-ratio: 16 / 7; }
 }
 @media (min-width: 2200px) { body { font-size: 14px; padding-bottom: 56px; } .boiler { font-size: 16px; } }
 /* phone: nothing smaller than 11 px, every link and button big enough for a thumb */
@@ -167,6 +177,7 @@ footer a { color: var(--dim); }
   .tiles { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .shots.phone { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .shots { grid-template-columns: minmax(0, 1fr); }
+  .films { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .copyrow { flex-direction: column; }
 }
 </style>
@@ -181,10 +192,51 @@ footer a { color: var(--dim); }
   <nav class="tnav" data-page="press" aria-label="Pages and tools"></nav>
   <div>
     <p class="lead">Writing or making a video about Tau? Take what you need.</p>
-    <p class="sub">A ready paragraph, the facts, a <b>60 second video</b>, the <b>logo</b> and <b>screenshots</b>. Free to use for coverage of Tau and Tau HUD; please credit <b>tauhud.com</b>. Unofficial: Tau HUD is a community project, not made or endorsed by IDNI or the Tau team.</p>
+    <p class="sub"><b>Films</b> with downloads, a ready paragraph, the facts, the <b>logo</b> and <b>screenshots</b>. Free to use for coverage of Tau and Tau HUD; please credit <b>tauhud.com</b>. Unofficial: Tau HUD is a community project, not made or endorsed by IDNI or the Tau team.</p>
   </div>
   <main class="main">
-    <div class="col c1">
+    <div class="col cF">
+      <section class="panel films-panel" aria-labelledby="hFilms">
+        <div class="phead"><h2 id="hFilms">Films</h2><span class="note">Free to use, please credit tauhud.com</span></div>
+        <video class="video" id="film" controls preload="none" playsinline poster="media/tau-in-60-seconds-poster.jpg" aria-label="Tau in 60 seconds: how Tau changes its rules without a fork">
+          <source src="media/tau-in-60-seconds-1200x675.mp4" type="video/mp4">
+        </video>
+        <div class="now">
+          <p class="nowt"><b id="filmNow">Tau in 60 seconds</b><span id="filmAbout">Propose, check, agree, law: how Tau changes its rules without a hard fork, in six steps. No sound, so it works in a feed. The same story to scroll through: <a href="/story/">tauhud.com/story</a>.</span><span id="filmAboutF" hidden>One feature, shown on this site with its sample data and simulation, with quiet sound made for these films.</span></p>
+          <div class="nowdl" data-film="story">
+            <ul class="dl">
+              <li><span class="what"><b>Wide, for YouTube and articles</b><span>1200 × 675 · MP4 · 1.5 MB</span></span><a class="get" href="media/tau-in-60-seconds-1200x675.mp4" download>Download</a></li>
+              <li><span class="what"><b>Square, for X, Telegram and Instagram</b><span>1080 × 1080 · MP4 · 2.0 MB</span></span><a class="get" href="media/tau-in-60-seconds-1080x1080.mp4" download>Download</a></li>
+              <li><span class="what"><b>Animated GIF, for forums and chats</b><span>640 × 640 · GIF · 2.7 MB</span></span><a class="get" href="media/tau-in-60-seconds-640.gif" download>Download</a></li>
+              <li><span class="what"><b>Cover picture</b><span>1080 × 1080 · PNG · 247 KB</span></span><a class="get" href="media/cover-1080x1080.png" download>Download</a></li>
+            </ul>
+          </div>
+            <div class="nowdl" data-film="seat" hidden><span class="what">1920 × 1080 · MP4 · with sound</span><a class="get" href="media/films/seat.mp4" download aria-label="Download Take a validator seat, MP4">Download</a></div>
+            <div class="nowdl" data-film="own" hidden><span class="what">1920 × 1080 · MP4 · with sound</span><a class="get" href="media/films/own.mp4" download aria-label="Download Write your own proposal, MP4">Download</a></div>
+            <div class="nowdl" data-film="rule" hidden><span class="what">1920 × 1080 · MP4 · with sound</span><a class="get" href="media/films/rule.mp4" download aria-label="Download Check a rule like the testnet does, MP4">Download</a></div>
+            <div class="nowdl" data-film="explorer" hidden><span class="what">1920 × 1080 · MP4 · with sound</span><a class="get" href="media/films/explorer.mp4" download aria-label="Download What happened to it?, MP4">Download</a></div>
+            <div class="nowdl" data-film="accounts" hidden><span class="what">1920 × 1080 · MP4 · with sound</span><a class="get" href="media/films/accounts.mp4" download aria-label="Download Every account keeps its own rules, MP4">Download</a></div>
+            <div class="nowdl" data-film="history" hidden><span class="what">1920 × 1080 · MP4 · with sound</span><a class="get" href="media/films/history.mp4" download aria-label="Download Scrub the chain, watch rules change, MP4">Download</a></div>
+            <div class="nowdl" data-film="hud" hidden><span class="what">1920 × 1080 · MP4 · with sound</span><a class="get" href="media/films/hud.mp4" download aria-label="Download Watch the chain think, MP4">Download</a></div>
+            <div class="nowdl" data-film="nodes" hidden><span class="what">1920 × 1080 · MP4 · with sound</span><a class="get" href="media/films/nodes.mp4" download aria-label="Download Run a node in three steps, MP4">Download</a></div>
+        </div>
+        <div class="pick">
+        <h3>Tau in 60 seconds and eight feature films, about half a minute each</h3>
+        <ul class="films" id="films">
+          <li><button type="button" data-film="story" aria-pressed="true"><img src="media/films/t/story.jpg" alt="" loading="lazy" width="320" height="180"><span class="t"><b>Tau in 60 seconds</b><span><i>Story</i> · <time data-zh="1:00">1:00</time></span></span></button></li>
+          <li><button type="button" data-film="seat" aria-pressed="false"><img src="media/films/t/seat.jpg" alt="" loading="lazy" width="320" height="180"><span class="t"><b>Take a validator seat</b><span><i>Playground</i> · <time data-zh="0:32">0:32</time></span></span></button></li>
+          <li><button type="button" data-film="own" aria-pressed="false"><img src="media/films/t/own.jpg" alt="" loading="lazy" width="320" height="180"><span class="t"><b>Write your own proposal</b><span><i>Playground</i> · <time data-zh="0:42">0:45</time></span></span></button></li>
+          <li><button type="button" data-film="rule" aria-pressed="false"><img src="media/films/t/rule.jpg" alt="" loading="lazy" width="320" height="180"><span class="t"><b>Check a rule like the testnet does</b><span><i>Playground</i> · <time data-zh="0:35">0:36</time></span></span></button></li>
+          <li><button type="button" data-film="explorer" aria-pressed="false"><img src="media/films/t/explorer.jpg" alt="" loading="lazy" width="320" height="180"><span class="t"><b>What happened to it?</b><span><i>Explorer</i> · <time data-zh="0:34">0:34</time></span></span></button></li>
+          <li><button type="button" data-film="accounts" aria-pressed="false"><img src="media/films/t/accounts.jpg" alt="" loading="lazy" width="320" height="180"><span class="t"><b>Every account keeps its own rules</b><span><i>Accounts</i> · <time data-zh="0:33">0:33</time></span></span></button></li>
+          <li><button type="button" data-film="history" aria-pressed="false"><img src="media/films/t/history.jpg" alt="" loading="lazy" width="320" height="180"><span class="t"><b>Scrub the chain, watch rules change</b><span><i>Time travel</i> · <time data-zh="0:39">0:41</time></span></span></button></li>
+          <li><button type="button" data-film="hud" aria-pressed="false"><img src="media/films/t/hud.jpg" alt="" loading="lazy" width="320" height="180"><span class="t"><b>Watch the chain think</b><span><i>HUD</i> · <time data-zh="0:36">0:38</time></span></span></button></li>
+          <li><button type="button" data-film="nodes" aria-pressed="false"><img src="media/films/t/nodes.jpg" alt="" loading="lazy" width="320" height="180"><span class="t"><b>Run a node in three steps</b><span><i>Nodes</i> · <time data-zh="0:26">0:27</time></span></span></button></li>
+        </ul>
+        </div>
+      </section>
+    </div>
+    <div class="col cT">
       <section class="panel" aria-labelledby="hAbout">
         <h2 id="hAbout">In one paragraph</h2>
         <p class="boiler" id="boiler">Tau HUD shows the Tau testnet live: every block, every rule change and every vote, as it happens. On most blockchains a rule change means a hard fork. On Tau the rules are data on the chain: a validator proposes a new rule, every node checks it against the rules already in force, the validators agree, and it takes effect at a later block. Tau HUD makes that visible for anyone, in plain words. It is an unofficial community project, free and open source, and it reads the chain from its own testnet node.</p>
@@ -212,38 +264,7 @@ footer a { color: var(--dim); }
         </dl>
       </section>
     </div>
-
-    <div class="col c2">
-      <section class="panel" aria-labelledby="hVideo">
-        <h2 id="hVideo">Video · Tau in 60 seconds</h2>
-        <video class="video" controls preload="none" playsinline poster="media/cover-1080x1080.png" aria-label="Tau in 60 seconds: how Tau changes its rules without a fork">
-          <source src="media/tau-in-60-seconds-1200x675.mp4" type="video/mp4">
-        </video>
-        <p>Propose, check, agree, law: how Tau changes its rules without a hard fork, in six steps. No sound, so it works in a feed. The same story to scroll through: <a href="/story/">tauhud.com/story</a>.</p>
-        <ul class="dl">
-          <li><span class="what"><b>Wide, for YouTube and articles</b><span>1200 × 675 · MP4 · 1.5 MB</span></span><a class="get" href="media/tau-in-60-seconds-1200x675.mp4" download>Download</a></li>
-          <li><span class="what"><b>Square, for X, Telegram and Instagram</b><span>1080 × 1080 · MP4 · 2.0 MB</span></span><a class="get" href="media/tau-in-60-seconds-1080x1080.mp4" download>Download</a></li>
-          <li><span class="what"><b>Animated GIF, for forums and chats</b><span>640 × 640 · GIF · 2.7 MB</span></span><a class="get" href="media/tau-in-60-seconds-640.gif" download>Download</a></li>
-          <li><span class="what"><b>Cover picture</b><span>1080 × 1080 · PNG · 247 KB</span></span><a class="get" href="media/cover-1080x1080.png" download>Download</a></li>
-        </ul>
-      </section>
-      <section class="panel" aria-labelledby="hEmbed">
-        <h2 id="hEmbed">Live on your page</h2>
-        <p>Show the testnet as it is right now instead of a picture. Paste this where your article or site takes HTML:</p>
-        <div class="copyrow"><pre id="snipWidget">&lt;iframe src="https://tauhud.com/embed/" width="100%" height="150" style="border:0;max-width:720px" title="Tau testnet live" loading="lazy"&gt;&lt;/iframe&gt;</pre><button class="copy" type="button" data-copy="snipWidget">Copy</button></div>
-        <h3>Live badges</h3>
-        <div class="badges" aria-label="Live badges">
-          <img src="https://node.tauhud.com/api/v1/badge/status.svg" alt="Tau testnet status badge" loading="lazy">
-          <img src="https://node.tauhud.com/api/v1/badge/height.svg" alt="Tau block height badge" loading="lazy">
-          <img src="https://node.tauhud.com/api/v1/badge/proposals.svg" alt="Tau proposals badge" loading="lazy">
-        </div>
-        <h3>Link pictures</h3>
-        <div class="ogrow"><p>Links to the HUD, a block, a proposal or an address show a live picture in X, Telegram and Discord, current within a minute. Picture address: <code>node.tauhud.com/og/hud.png</code>. More sizes, all badges and the JSON API: <a href="/developers/">Developers</a>.</p>
-        <div class="ogbox"><img class="og" src="https://node.tauhud.com/og/hud.png" alt="Live share picture of the Tau testnet: height, rules and votes" loading="lazy" width="1200" height="630"></div></div>
-      </section>
-    </div>
-
-    <div class="col c3">
+    <div class="col cL">
       <section class="panel" aria-labelledby="hLogo">
         <h2 id="hLogo">Logo · “Pulse”</h2>
         <p>A heartbeat inside a ring: the chain is alive and every block is a beat. White ring and green pulse on dark; one colour where colour is not possible.</p>
@@ -263,27 +284,8 @@ footer a { color: var(--dim); }
         </div>
         <p class="note">Colours: black <code>#09090a</code>, white <code>#ffffff</code>, green <code>#39ff8a</code>. Type: Sora for headings, JetBrains Mono for numbers and text.</p>
       </section>
-      <section class="panel" aria-labelledby="hFilms">
-        <h2 id="hFilms">Feature films · with sound</h2>
-        <ul class="films" id="films">
-          <li><button type="button" data-film="seat"><img src="media/films/seat.jpg" alt="" loading="lazy" width="56" height="32"><span class="t"><b>Take a validator seat</b><span><i>Playground</i> · 0:32</span></span></button><a class="get" href="media/films/seat.mp4" download aria-label="Download Take a validator seat, MP4">MP4</a></li>
-          <li><button type="button" data-film="own"><img src="media/films/own.jpg" alt="" loading="lazy" width="56" height="32"><span class="t"><b>Write your own proposal</b><span><i>Playground</i> · 0:45</span></span></button><a class="get" href="media/films/own.mp4" download aria-label="Download Write your own proposal, MP4">MP4</a></li>
-          <li><button type="button" data-film="rule"><img src="media/films/rule.jpg" alt="" loading="lazy" width="56" height="32"><span class="t"><b>Check a rule like the testnet does</b><span><i>Playground</i> · 0:36</span></span></button><a class="get" href="media/films/rule.mp4" download aria-label="Download Check a rule like the testnet does, MP4">MP4</a></li>
-          <li><button type="button" data-film="explorer"><img src="media/films/explorer.jpg" alt="" loading="lazy" width="56" height="32"><span class="t"><b>What happened to it?</b><span><i>Explorer</i> · 0:34</span></span></button><a class="get" href="media/films/explorer.mp4" download aria-label="Download What happened to it?, MP4">MP4</a></li>
-          <li><button type="button" data-film="accounts"><img src="media/films/accounts.jpg" alt="" loading="lazy" width="56" height="32"><span class="t"><b>Every account keeps its own rules</b><span><i>Accounts</i> · 0:33</span></span></button><a class="get" href="media/films/accounts.mp4" download aria-label="Download Every account keeps its own rules, MP4">MP4</a></li>
-          <li><button type="button" data-film="history"><img src="media/films/history.jpg" alt="" loading="lazy" width="56" height="32"><span class="t"><b>Scrub the chain, watch rules change</b><span><i>Time travel</i> · 0:41</span></span></button><a class="get" href="media/films/history.mp4" download aria-label="Download Scrub the chain, watch rules change, MP4">MP4</a></li>
-          <li><button type="button" data-film="hud"><img src="media/films/hud.jpg" alt="" loading="lazy" width="56" height="32"><span class="t"><b>Watch the chain think</b><span><i>HUD</i> · 0:38</span></span></button><a class="get" href="media/films/hud.mp4" download aria-label="Download Watch the chain think, MP4">MP4</a></li>
-          <li><button type="button" data-film="nodes"><img src="media/films/nodes.jpg" alt="" loading="lazy" width="56" height="32"><span class="t"><b>Run a node in three steps</b><span><i>Nodes</i> · 0:27</span></span></button><a class="get" href="media/films/nodes.mp4" download aria-label="Download Run a node in three steps, MP4">MP4</a></li>
-        </ul>
-        <p class="note">One feature each, about half a minute, 1920 × 1080 MP4 with quiet sound made for these films. Recorded on this site with its sample data and simulation. Free to use, please credit tauhud.com.</p>
-        <dialog class="filmdlg" id="filmDlg" aria-label="Feature film">
-          <video id="film" controls playsinline preload="none"></video>
-          <p><b id="filmNow"></b><a class="get" id="filmGet" href="#" download>MP4</a><button type="button" id="filmClose">Close</button></p>
-        </dialog>
-      </section>
     </div>
-
-    <div class="col c4">
+    <div class="col cS">
       <section class="panel" aria-labelledby="hShots">
         <div class="phead"><h2 id="hShots">Screenshots</h2><a class="get all" href="tau-hud-press-kit.zip" download>Download all · ZIP · 5.8 MB</a></div>
         <p>Click a picture for the full size (PNG). Desktop at 2560 × 1440, phone at 390 wide. The ZIP holds every screenshot, logo file and the cover; the videos are separate.</p>
@@ -300,6 +302,20 @@ footer a { color: var(--dim); }
           <figure class="shot"><a href="shots/chronicle-390.png" target="_blank" rel="noopener"><img src="shots/t/chronicle-390.jpg" width="390" height="844" alt="Chronicle on a phone" loading="lazy"></a><figcaption><b>Chronicle</b> · phone</figcaption></figure>
         </div>
       </section>
+      <section class="panel" aria-labelledby="hEmbed">
+        <h2 id="hEmbed">Live on your page</h2>
+        <p>Show the testnet as it is right now instead of a picture. Paste this where your article or site takes HTML:</p>
+        <div class="copyrow"><pre id="snipWidget">&lt;iframe src="https://tauhud.com/embed/" width="100%" height="150" style="border:0;max-width:720px" title="Tau testnet live" loading="lazy"&gt;&lt;/iframe&gt;</pre><button class="copy" type="button" data-copy="snipWidget">Copy</button></div>
+        <h3>Live badges</h3>
+        <div class="badges" aria-label="Live badges">
+          <img src="https://node.tauhud.com/api/v1/badge/status.svg" alt="Tau testnet status badge" loading="lazy">
+          <img src="https://node.tauhud.com/api/v1/badge/height.svg" alt="Tau block height badge" loading="lazy">
+          <img src="https://node.tauhud.com/api/v1/badge/proposals.svg" alt="Tau proposals badge" loading="lazy">
+        </div>
+        <h3>Link pictures</h3>
+        <div class="ogrow"><p>Links to the HUD, a block, a proposal or an address show a live picture in X, Telegram and Discord, current within a minute. Picture address: <code>node.tauhud.com/og/hud.png</code>. More sizes, all badges and the JSON API: <a href="/developers/">Developers</a>.</p>
+        <div class="ogbox"><img class="og" src="https://node.tauhud.com/og/hud.png" alt="Live share picture of the Tau testnet: height, rules and votes" loading="lazy" width="1200" height="630"></div></div>
+      </section>
     </div>
   </main>
   <footer>
@@ -311,7 +327,7 @@ footer a { color: var(--dim); }
 "use strict";
 /* Chinese version: the same files recorded in Chinese, logos with the red accent (files end in -zh) */
 if (window.TauI18n && TauI18n.lang === "zh") {
-  const ZH = /^(media\/(tau-in-60-seconds-[^.]+|cover-1080x1080|films\/[a-z]+)|shots\/(t\/)?(hud|story|playground|chronicle)-(2560|390)|shots\/t\/(cover-1080x1080|telegram-1024|x-banner-3000x1000)|logo\/(pulse-mark|pulse-app-icon|pulse-mark-1024|app-icon-512|telegram-1024|x-avatar-400|x-banner-1500x500|x-banner-3000x1000)|tau-hud-press-kit)(\.\w+)$/;
+  const ZH = /^(media\/(tau-in-60-seconds-[^.]+|cover-1080x1080|films\/(t\/)?[a-z]+)|shots\/(t\/)?(hud|story|playground|chronicle)-(2560|390)|shots\/t\/(cover-1080x1080|telegram-1024|x-banner-3000x1000)|logo\/(pulse-mark|pulse-app-icon|pulse-mark-1024|app-icon-512|telegram-1024|x-avatar-400|x-banner-1500x500|x-banner-3000x1000)|tau-hud-press-kit)(\.\w+)$/;
   for (const el of document.querySelectorAll("[src],[href],[poster]")) for (const a of ["src", "href", "poster"]) {
     const v = el.getAttribute(a), m = v && ZH.exec(v);
     if (m) el.setAttribute(a, m[1] + "-zh" + m[m.length - 1]);
@@ -320,20 +336,23 @@ if (window.TauI18n && TauI18n.lang === "zh") {
   for (const a of document.querySelectorAll('a[href="/story/"], a[href="https://tauhud.com/story/"]')) { a.href = "https://tauhud.com/story/zh/"; if (/tauhud\.com\/story$/.test(a.textContent)) a.textContent = "tauhud.com/story/zh"; }   // the Chinese story has its own address
   for (const c of document.querySelectorAll("p.note code")) if (c.textContent === "#39ff8a") c.textContent = "#ff3b52";
   const cite = document.getElementById("cite"); cite.textContent = TauI18n.t(cite.textContent);
+  for (const t of document.querySelectorAll("time[data-zh]")) t.textContent = t.dataset.zh;   // the Chinese cuts differ by a second or two
+  document.getElementById("film").load();
 }
-/* feature films: a poster opens its film in the dialog; the download link next to it already carries the language */
-const filmDlg = document.getElementById("filmDlg"), film = document.getElementById("film");
+/* films: a poster plays its film in the one player and shows that film's files; Tau in 60 seconds is the first */
+const film = document.getElementById("film"), storyPoster = film.getAttribute("poster");
 document.getElementById("films").addEventListener("click", e => {
   const b = e.target.closest("button[data-film]"); if (!b) return;
-  const mp4 = b.parentNode.querySelector("a.get").getAttribute("href");
-  film.poster = b.querySelector("img").getAttribute("src"); film.src = mp4;
+  const k = b.dataset.film, story = k === "story";
+  document.querySelectorAll("#films button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  document.querySelectorAll(".nowdl").forEach(d => { d.hidden = d.dataset.film !== k; });
+  const dl = document.querySelector(`.nowdl[data-film="${k}"] a.get`).getAttribute("href");
+  film.poster = story ? storyPoster : dl.replace(/\.mp4$/, ".jpg");
+  film.querySelector("source").src = dl; film.setAttribute("aria-label", b.querySelector("b").textContent);
   document.getElementById("filmNow").textContent = b.querySelector("b").textContent;
-  document.getElementById("filmGet").href = mp4;
-  filmDlg.showModal(); film.play().catch(() => {});
+  document.getElementById("filmAbout").hidden = !story; document.getElementById("filmAboutF").hidden = story;
+  film.load(); film.play().catch(() => {});
 });
-document.getElementById("filmClose").onclick = () => filmDlg.close();
-filmDlg.addEventListener("click", e => { if (e.target === filmDlg) filmDlg.close(); });
-filmDlg.addEventListener("close", () => film.pause());
 document.addEventListener("click", async e => {
   const b = e.target.closest("button[data-copy]");
   if (!b) return;

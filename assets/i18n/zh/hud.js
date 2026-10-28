@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Press kit, reordered: the films come first and largest. One player with Tau in 60 seconds and the eight feature films as posters below it, each with its own downloads. Then the paragraph and facts, the logo and screenshots, and the embeds last. In Chinese the film lengths now match the Chinese cuts and the consensus chip reads 权益证明 in proof of stake mode.": "媒体资料重新排列：短片放在最前、最大。一个播放器播放「60 秒了解 Tau」，八部功能短片以海报排在下方，各有自己的下载。然后是介绍段落和事实数据、标志和截图，嵌入代码放在最后。中文版的短片时长现在与中文版本一致，权益证明模式下的共识标签也显示为中文。",
   "Press kit: eight short films with sound, one per feature, in English and Chinese. Take a validator seat, write your own proposal, check a rule, the Explorer’s “what happened to it?”, accounts, time travel, the chain core and running a node, each about half a minute, recorded on this site and free to use. Also fixed: the check lines in the Playground’s “Write your own” form no longer squeeze into a narrow column.": "媒体资料：八部有声短片，每部介绍一项功能，有英文版和中文版。坐上验证者席位、写下你自己的提案、检查一条规则、区块浏览器的“它怎么样了？”、账户、时光回溯、链核心以及运行一个节点，每部约半分钟，在本站录制，可免费使用。另外修复：规则试验场“写你自己的”表单中的检查行不再挤成窄窄的一列。",
   "# active consensus spec · revision {x1}": "# 当前生效的共识规范 · 版本 {x1}",
   "# composite o5 · one guarded branch per account": "# 组合 o5 · 每个账户一个受保护分支",
