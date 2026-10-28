@@ -654,12 +654,11 @@
   "on": "2026-10-28",
   "html": "What Tau refuses is red again: refused transactions in the feed, the refused counter, a rejected rule offer, a declined approval and the verdict in each detail use the muted refusal red from the Playground; a personal rule that has just said no to a transfer lights up in it too. The bright red stays reserved for offline."
  },
-  {
+ {
   "tag": "Simulation",
   "on": "2026-10-28",
   "html": "The simulation now shows what Tau refuses, and the day has rhythm. Every hour at hh:40 a rule change that contradicts the rules in force is refused before any vote, with its reason in the Proposals news and the Explorer’s Refused list. At hh:50 a contested proposal, six times today’s fee, gets the proposer’s vote alone and is dropped at hh:58: a quorum that never forms. A rule offer that conflicts with the receiver’s own rule is rejected with the reason in the transaction. Retractable transfers are sometimes pulled back and the money returns. Every half hour a three-minute burst of traffic and a six-minute lull. The kit node bob falls up to 60 blocks behind from minute 35 and catches up from minute 45; the Nodes page shows it as “Catching up”. Simulation mode only."
  },
- {
  {
   "tag": "Newspaper",
   "on": "2026-10-28",
