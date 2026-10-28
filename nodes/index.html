@@ -101,6 +101,7 @@ tr.off .name { color: var(--text); font-weight: 400; }
 .dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .agree.same { color: var(--ok); font-weight: 600; }
 .agree.different { color: #fff; font-weight: 600; }
+.agree.behind { color: #ffb13b; font-weight: 600; }
 .bar { display: inline-block; width: 54px; height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; margin-right: 8px; vertical-align: 1px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: #fff; }
 .tag { display: inline-block; margin-left: 8px; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; vertical-align: 1px; }
@@ -264,9 +265,10 @@ function span(sec) {
 }
 function ago(sec) { return sec < 90 ? "just now" : `${span(sec)} ago`; }
 function date(ts) { return new Date(ts * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
-const AGREE = { same: "Same chain", different: "Other chain", ahead: "Ahead of ours", unknown: "Not checked yet" };
+const AGREE = { same: "Same chain", behind: "Catching up", different: "Other chain", ahead: "Ahead of ours", unknown: "Not checked yet" };
 const AGREE_TIP = {
   same: "Its block at its height is the block we have there.",
+  behind: "Same chain, but more than two blocks behind our tip:\nit is still fetching blocks and catches up on its own.",
   different: "Its block at that height differs from ours:\na fork, an old chain, or a node still on a restarted chain.",
   ahead: "It is higher than our node; we check it once we get there.",
   unknown: "We hold no block at its height (yet).",
