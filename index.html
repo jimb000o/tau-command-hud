@@ -643,6 +643,16 @@ a.btn { text-decoration: none; display: inline-block; }
 .changes li details p { margin: 4px 0 0; color: var(--dim); line-height: 1.5; }
 .changes li .one { color: #fff; font-weight: 600; line-height: 1.4; }
 .community { align-items: start; }
+.community .col { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.keep .lead { margin: 0 0 6px; }
+.keep p.small { margin: 0 0 6px; }
+.keep .donate { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; margin: 4px 0 8px; }
+.keep .donate .qr { width: 96px; height: 96px; }
+.keep .addr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.keep .addr code { font-size: 12px; overflow-wrap: anywhere; }
+.keep .thanks { color: var(--text); }
+.keep .thanks a { color: var(--ok); }
+@media (max-height: 820px) { .keep .lead { display: none; } .keep .donate { grid-template-columns: 72px minmax(0, 1fr); } .keep .donate .qr { width: 72px; height: 72px; } .keep #copyMsg2:not([data-msg]) { display: none; } }
 .more-log { margin-top: 12px; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
 .more-log:hover { background: #fff; color: #000; }
 .changes li b { font: 600 12px var(--display); letter-spacing: .12em; color: var(--cyan-hi); text-transform: uppercase; }
@@ -962,6 +972,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     <button class="close" type="button" data-close aria-label="Close">✕</button>
     <section class="community">
       <p class="tgstrip"><a href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page. Ask <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> for the height, proposals, your transaction or address.</p>
+      <div class="col">
       <article class="panel fb" id="feedback">
         <h2 id="fbTitle">Your feedback <small>shapes the next version</small><button class="info" type="button" aria-label="What is this?" data-tip="Tell us what you would like to see. Ideas with the most agreement get built first, which is rather in the spirit of the thing.">i</button></h2>
         <form id="fbForm" novalidate>
@@ -986,6 +997,15 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         </form>
         <p class="follow"><a href="https://t.me/tauHUDcom" rel="noopener" data-full="A Telegram channel that posts every new proposal, agreement and activation on the testnet. Opens Telegram.">Follow rule changes on Telegram ›</a> <span>· <a href="proposals/">proposal tracker</a></span></p>
       </article>
+      <article class="panel keep" id="keepUpd">
+        <h2>Keep it running <small>one person, free time</small><button class="info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built and maintained by one person in their free time. The address and the QR code are the same as in About; the numbers above show what the time goes into.">i</button></h2>
+        <p class="lead small">The server is cheap; the real cost is the time it takes to keep the HUD, the alerts and the bot in step with the testnet. A donation of any size helps keep it online and independent.</p>
+        <p class="small">AGRS or ETH, one address for both · What it helps pay for: time · server · domain</p>
+        <div class="donate" id="donate2"><div class="addr"><code id="agrsAddr2"></code><button class="btn" type="button" id="copyAddr2">Copy</button></div></div>
+        <p class="small thanks" id="donorLine2" hidden></p>
+        <p class="small" id="copyMsg2" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
+      </article>
+      </div>
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed and when, newest first. A green number is a version of this page, the HUD. A named entry is a release of another page; those pages carry no version numbers, and the name opens the page.">i</button></h2>
         <div class="effort" id="effortUpd" hidden data-ex="effort"><div><b data-n="commits">—</b><span>changes</span></div><div><b data-n="days">—</b><span>days</span></div><div><b data-n="releases">—</b><span>releases</span></div><em data-n="since"></em></div>
@@ -1330,7 +1350,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.30", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.31", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -1362,7 +1382,7 @@ async function loadEffort(list) {
       const repo = await (await fetch(base, h)).json();
       const commits = lastPage(await fetch(`${base}/commits?per_page=1`, h));
       git = { since: String(repo.created_at || "").slice(0, 10), commits };
-      if (git.since && commits > 1) store.set("tau-effort", JSON.stringify({ at: Date.now(), git }));
+      if (git.since && commits > 1) store.set("tau-effort", JSON.stringify({ at: Date.now(), git })); else git = null;   // rate-limited or odd answer: show nothing rather than a wrong number
     } catch { git = null; }
   }
   const since = git && git.since ? git.since : (list.map(e => String(e.on || "")).filter(Boolean).sort()[0] || null);
@@ -2527,28 +2547,32 @@ const DONORS = { url: "https://node.tauhud.com/donations.json", at: 0 };
 async function loadDonors() {
   if (Date.now() - DONORS.at < 120000) return; DONORS.at = Date.now();
   try {
-    const d = await (await fetch(DONORS.url, { cache: "no-store" })).json(), el = $("donorLine");
+    const d = await (await fetch(DONORS.url, { cache: "no-store" })).json(), el = $("donorLine"), el2 = $("donorLine2");
     const items = (d.items || []).filter(x => /^0x[0-9a-f]{40}$/i.test(x.from) && /^0x[0-9a-f]{64}$/i.test(x.tx) && (x.asset === "AGRS" || x.asset === "ETH") && isFinite(x.amount));
-    if (!items.length) { el.hidden = true; return; }
+    if (!items.length) { el.hidden = true; el2.hidden = true; return; }
     const short = a => a.slice(0, 6) + "…" + a.slice(-4);
     const amt = x => { const n = Number(x.amount); return (n >= 100 ? Math.round(n).toLocaleString("en-US") : String(+n.toFixed(n >= 1 ? 2 : 4))) + " " + x.asset; };
     const day = x => new Date(x.ts * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
     const one = x => `<a href="https://etherscan.io/tx/${encodeURIComponent(x.tx)}" target="_blank" rel="noopener" title="See the transaction on Etherscan">${short(x.from)}</a> (${amt(x)}, ${day(x)})`;
     const n = Math.max(1, parseInt(d.donors, 10) || 1);
     el.innerHTML = (n === 1 ? "Supported by 1 person so far. Thank you, " : `Supported by ${n} people so far. Thank you, `) + items.slice(0, 3).map(one).join(", ") + (items.length > 3 ? " and everyone before." : ".");
-    el.hidden = false;
+    el.hidden = false; el2.innerHTML = el.innerHTML; el2.hidden = false;
   } catch (e) { DONORS.at = 0; }
 }
-document.querySelectorAll('[data-open="mAbout"]').forEach(b => b.addEventListener("click", loadDonors));
+document.querySelectorAll('[data-open="mAbout"], [data-open="mFeedback"]').forEach(b => b.addEventListener("click", loadDonors));
 document.addEventListener("tau-nav", e => { if (e.detail === "about" || e.detail === "donate") loadDonors(); });
 loadDonors();
 /* the brand block is the way home; a chosen language travels with it */
 (() => { const l = new URLSearchParams(location.search).get("lang"), b = document.querySelector("a.brand"); if (l && b) b.href = "./?lang=" + encodeURIComponent(l); })();
-$("copyAddr").addEventListener("click", async () => {
-  const code = $("agrsAddr"), msg = $("copyMsg");
+const wireCopy = (codeId, btnId, msgId) => $(btnId).addEventListener("click", async () => {
+  const code = $(codeId), msg = $(msgId);
+  msg.dataset.msg = "1";
   try { await navigator.clipboard.writeText(code.textContent); msg.textContent = "Address copied."; }
   catch { const r = document.createRange(); r.selectNodeContents(code); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); msg.textContent = "Copy blocked by the browser; the address is selected, press Ctrl/Cmd+C."; }
 });
+wireCopy("agrsAddr", "copyAddr", "copyMsg"); wireCopy("agrsAddr2", "copyAddr2", "copyMsg2");
+/* the Keep it running card in the Updates overlay mirrors About: same QR, same address, one source */
+(() => { const qr = document.querySelector("#mAbout .donate .qr"); if (qr) $("donate2").prepend(qr.cloneNode(true)); $("agrsAddr2").textContent = $("agrsAddr").textContent; })();
 document.querySelectorAll(".modal").forEach(m => m.addEventListener("click", e => { if (e.target === m) closeModals(); }));
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModals(); });
 document.querySelectorAll(".info").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); const was = b.classList.contains("open"); document.querySelectorAll(".info.open").forEach(x => x.classList.remove("open")); if (!was) b.classList.add("open"); }));
@@ -2842,7 +2866,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.30`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.31`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
