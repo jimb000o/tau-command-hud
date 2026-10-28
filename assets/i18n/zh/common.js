@@ -472,5 +472,7 @@ TauI18n.add({ strings: {
   "No visitor voted. The validators go ahead as planned: {x}, at {y}.": "没有访客投票。验证者按计划进行：{y}，{x}。",
   "Vote yes or no on the HUD or in Proposals: the simulated validators follow the visitors’ majority.": "在 HUD 或提案页投赞成或反对票：模拟中的验证者会听从访客的多数意见。",
   "Vote yes or no in this bar: the simulated validators follow the visitors’ majority.": "在这一栏中投赞成或反对票：模拟中的验证者会听从访客的多数意见。",
-  "Every change is proposed 10 minutes ahead and put to the visitors until 7 minutes in: the simulated validators follow the majority, then it is in force, the path a real rule change takes on Tau.": "每项变更都提前 10 分钟提出，并在前 7 分钟内交由访客投票：模拟中的验证者听从多数意见，随后生效，这正是 Tau 上真实规则变更所走的路径。"
+  "Every change is proposed 10 minutes ahead and put to the visitors until 7 minutes in: the simulated validators follow the majority, then it is in force, the path a real rule change takes on Tau.": "每项变更都提前 10 分钟提出，并在前 7 分钟内交由访客投票：模拟中的验证者听从多数意见，随后生效，这正是 Tau 上真实规则变更所走的路径。",
+  "Give feedback": "提交反馈",
+  "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.": "你想看到什么，哪里坏了？就在这里打开反馈表单。获得最多赞同的想法会最先实现。"
 } });

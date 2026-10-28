@@ -710,5 +710,10 @@
    "text": "Write a rule change in the Playground and put it to everyone watching the simulation. If more visitors vote yes than no, the simulated validators vote it in and it takes effect for everyone ten minutes later.",
    "link": "/playground/#seat"
   }
+ },
+ {
+  "tag": "v17.48",
+  "on": "2026-10-28",
+  "html": "Feedback is now one click away on every page: a white Feedback button sits next to Telegram alerts in the header and opens the feedback form right where you are, with the cursor already in the text box. On the HUD it opens the HUD's own form; on phones it is a 44 px icon."
  }
 ]
