@@ -320,7 +320,7 @@ function tiles() {
     ["Rule revision", r.revision, "genesis is revision 1"],
     ["Base fee", `${fmtN(r.base_fee)}<small>AGRS</small>`, "per transaction"],
     ["Validators", r.validators, r.open_admission ? "any account may vote" : "only validators vote"],
-    ["Votes to agree", r.votes_needed, `quorum: ${esc(r.quorum)}`],
+    ["Votes to agree", r.votes_needed, r.votes_needed === 1 && r.open_admission ? "one validator, so one yes vote from any account" : `quorum: ${esc(r.quorum)}`],
     ["Proposals", P.length, `${P.filter(p => p.status === "active").length} in force · ${P.filter(p => p.status === "dropped").length} dropped`],
     ["Chain head", `#${fmtN(c.head)}`, c.seconds_per_block ? `a block every ${Math.round(c.seconds_per_block)} s` : ago(c.head_ts)],
   ];
