@@ -22,7 +22,7 @@
     proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with Telegram and RSS alerts", i: "§", h: "proposals/" },
     story:      { t: "Tau in 60 seconds", d: "Propose, check, agree, law: how Tau changes its rules without a fork", i: "▶", h: "story/" },
     tour:       { t: "Guided tour", d: "One minute, eight steps: how rules change by agreement", i: "▸", h: "?tour=1", act: "tour" },
-    gazette:    { t: "The Daily Consensus", d: "Twelve years of Tau as a 1920s newspaper: turn the pages with a click or a tap", i: "❡", h: "gazette/" },
+    gazette:    { t: "The Daily Consensus", d: "Tau as a 1920s newspaper, a new edition every Monday: turn the pages with a click or a tap", i: "❡", h: "gazette/" },
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
     findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
     status:     { t: "Status", d: "Uptime, outages, sync gaps and restarts of the community node", i: "◍", h: "status/" },
