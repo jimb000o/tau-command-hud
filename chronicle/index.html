@@ -118,7 +118,9 @@ html.fit .ev { flex: 1 1 0; min-height: 0; overflow: hidden; gap: 2px; }
 html.fit .ev li { padding: 3px 8px; font: inherit; line-height: 1.35; }
 html.fit .ev li .d { display: inline; font-size: .92em; margin-right: .5em; }
 html.fit .ev li .t { font-family: var(--display); }
-html.fit .ev li.on .more { display: none; }
+/* an opened moment shows its details in place; only that list may then scroll, the rest stays put */
+html.fit .ev li.on .more { font-size: .92em; margin-top: 3px; }
+html.fit .ev.open { overflow: auto; padding-right: 2px; }
 html.fit .p-gone .ev li .more { font-size: .92em; margin-top: 1px; color: var(--dim); }
 html.fit .intro { display: flex; align-items: baseline; gap: 6px 28px; flex-wrap: wrap; }
 .panel h2 .n { margin-left: auto; color: var(--dim); font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
@@ -315,10 +317,11 @@ function select(k, scroll) {
   SEL = SEL === k ? null : k;
   document.querySelectorAll(".ev li.on").forEach(li => li.classList.remove("on"));
   document.querySelectorAll(".panel.on").forEach(p => p.classList.remove("on"));
+  document.querySelectorAll(".ev.open").forEach(l => { l.classList.remove("open"); l.scrollTop = 0; });
   if (SEL) {
     const li = document.querySelector(`li[data-k="${SEL}"]`);
-    li.classList.add("on"); li.closest(".panel").classList.add("on");
-    if (scroll) li.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    li.classList.add("on"); li.closest(".panel").classList.add("on"); li.closest(".ev").classList.add("open");
+    li.scrollIntoView({ block: "nearest", behavior: scroll ? "smooth" : "auto" });
   }
   renderStrip(); renderDet();
 }
@@ -356,7 +359,7 @@ function fitText() {
   const eras = $("eras");
   eras.style.removeProperty("--fs");
   if (!document.documentElement.classList.contains("fit")) return;
-  const over = () => [...eras.querySelectorAll(".ev")].some(l => l.scrollHeight > l.clientHeight + 1);
+  const over = () => [...eras.querySelectorAll(".ev:not(.open)")].some(l => l.scrollHeight > l.clientHeight + 1);
   for (let fs = 12.5; fs >= 9.5 && over(); fs -= .25) eras.style.setProperty("--fs", (fs - .25) + "px");
 }
 fit();
