@@ -1870,7 +1870,8 @@ async function pollNodes() {
       for (const n of Array.isArray(pj.peers) ? pj.peers : []) {
         if (n.label || (n.community && kits.has(String(n.community.name)))) continue;
         const last = Number(n.last_seen) || 0; if (!last || now - last > 86400) continue;
-        list.push({ kind: "peer", name: "", height: 0, head: n.head || "", agrees: n.head && j.reference && j.reference.head ? n.head === j.reference.head : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
+        const ph = Number(n.head) || 0, ref = j.reference ? Number(j.reference.tip) || Number(j.reference.height) || 0 : 0;   // a peer's "head" is its tip height, not a hash
+        list.push({ kind: "peer", name: "", height: ph, head: "", agrees: ph && ref ? Math.abs(ph - ref) <= 2 : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
       }
     } catch {}
     NET.nodes = list; NET.at = Date.now();
@@ -2259,7 +2260,7 @@ function draw(tm) {
       ? vt(`${n.name}: a community node run with the node kit.\nAt #${fmt(n.height)}, ${n.agrees ? "same head as Tau HUD’s node" : "a different head than Tau HUD’s node"}.\nLast report ${age}.\nClick to open the Nodes page.`,
            `${n.name} (node kit): #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}, ${n.agrees ? "agrees with" : "differs from"} the reference head${ahead > 0 ? `, ${fmt(ahead)} behind` : ""}.\nReported ${age}; a kit node reports once a minute.\nClick to open the Nodes page.`)
       : vt(`A node our node ${n.connected ? "is connected to right now" : "has met"}${n.height ? `, at #${fmt(n.height)}` : ""}.\nNobody runs it for this page; it just takes part in the network.\nLast seen ${age}.\nClick to open the Nodes page.`,
-           `Peer of our node${n.head ? ": head " + short(n.head) : ""}${n.agrees == null ? "" : n.agrees ? ", same head as ours" : ", other head than ours"}${n.first ? ", first seen " + fmtLogDate(new Date(n.first * 1000).toISOString().slice(0, 10)) : ""}.\n${n.connected ? "Connected to our node right now." : "Not connected right now; met or heard of earlier."}\nLast seen ${age}.\nClick to open the Nodes page.`), nodesHref);
+           `Peer of our node${n.height ? ": tip #" + fmt(n.height) : ""}${n.agrees == null ? "" : n.agrees ? ", same height as ours" : ", " + fmt(Math.abs(ahead)) + (ahead > 0 ? " behind us" : " ahead of us")}${n.first ? ", first seen " + fmtLogDate(new Date(n.first * 1000).toISOString().slice(0, 10)) : ""}.\n${n.connected ? "Connected to our node right now." : "Not connected right now; met or heard of earlier."}\nLast seen ${age}.\nClick to open the Nodes page.`), nodesHref);
   });
   ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}. Everything inside obeys it: validators sit on it, accounts and waiting transactions orbit within it, and every block is checked against it.`,
     `Outer rim: the consensus spec, revision ${S.specRev} (o6 block validity, o7 proposer eligibility, o9 fee = ${S.fee} AGRS). Amended ${S.updates.filter(u => u.status === "active").length} time${S.updates.filter(u => u.status === "active").length === 1 ? "" : "s"} by agreement. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`));

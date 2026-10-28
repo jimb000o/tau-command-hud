@@ -1077,5 +1077,9 @@ TauI18n.add({ strings: {
   "{n} min ago": "{n} 分钟前",
   "{n} h ago": "{n} 小时前",
   "{n} d ago": "{n} 天前",
-  "just now": "刚刚"
+  "just now": "刚刚",
+  "Peer of our node: tip {n}": "我们节点的对等节点：最新高度 {n}",
+  "same height as ours": "高度与我们相同",
+  "{n} behind us": "落后我们 {n} 个区块",
+  "{n} ahead of us": "领先我们 {n} 个区块"
 } });
