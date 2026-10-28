@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.43"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.44"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -89,30 +89,71 @@
   function buildUpdates(page) {
     const lang = new URLSearchParams(location.search).get("lang"), q = lang ? "?lang=" + encodeURIComponent(lang) : "";
     const title = (P[page] && P[page].t) || page || "Page";
-    const issue = `https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=${encodeURIComponent("[" + title + "] ")}`;
     const m = el("div", "tn-modal"); m.id = "tnUpdates"; m.hidden = true;
+    /* the same markup as the HUD's own overlay, so both look alike; the feedback form opens a pre-filled GitHub issue, as on the public HUD */
     m.innerHTML = `<div class="tn-sheet" role="dialog" aria-modal="true" aria-labelledby="tnUpdTitle"><button class="tn-close" type="button" aria-label="Close">✕</button>
-      <p class="tn-tgstrip"><a href="${TELEGRAM}" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> <span>sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page.</span> <span>Ask</span> <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> <span>for the height, proposals, your transaction or address.</span></p>
-      <div class="tn-cols"><div class="tn-col">
-        <article class="tn-card"><h2 id="tnUpdTitle">Your feedback <small>shapes the next version</small></h2>
-          <p>Tell us what you would like to see. Ideas with the most agreement get built first, which is rather in the spirit of the thing.</p>
-          <p class="tn-row"><a class="tn-btn" href="${issue}" target="_blank" rel="noopener">Write feedback on GitHub ↗</a><a class="tn-btn ghost" href="${TELEGRAM}" target="_blank" rel="noopener">Or on Telegram ↗</a></p>
-          <p class="tn-note">The HUD start page has a feedback box that needs no account. <a href="${ROOT}${q}#updates">Open it ›</a></p>
-        </article>
-        <article class="tn-card tn-keep"><h2>Keep it running <small>one person, free time</small></h2>
-          <p class="tn-lead">The real costs are the time it takes to keep the HUD, the alerts and the bot in step with the testnet, and the development tools behind that work; the server itself is cheap. A donation of any size helps keep it online and independent.</p>
-          <p class="tn-note">AGRS or ETH, one address for both · What it helps pay for: time · tools · server · domain</p>
-          <div class="tn-donate">${DONATE.qr}<div class="tn-addr"><code>${DONATE.addr}</code><button class="tn-btn" type="button">Copy</button></div></div>
-          <p class="tn-note tn-thanks" hidden></p>
-          <p class="tn-note tn-copymsg" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
-        </article></div>
-        <article class="tn-card tn-log"><h2>Update log <small>built from your feedback</small></h2>
-          <div class="tn-effort" hidden><div><b data-n="commits">—</b><span>changes</span></div><div><b data-n="days">—</b><span>days</span></div><div><b data-n="releases">—</b><span>releases</span></div><em data-n="since"></em></div>
-          <p class="tn-legend"><i class="ver"></i>Version of the HUD · <i></i>Release of another page (the name opens it) · Newest first</p>
-          <ul class="tn-changes"><li class="day">Loading…</li></ul>
-        </article></div></div>`;
+      <section class="tn-community">
+      <p class="tn-tgstrip"><a href="${TELEGRAM}" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page. Ask <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> for the height, proposals, your transaction or address.</p>
+      <div class="tn-col">
+      <article class="tn-panel tn-fb">
+        <h2 id="tnUpdTitle">Your feedback <small>shapes the next version</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="Tell us what you would like to see. Ideas with the most agreement get built first, which is rather in the spirit of the thing.">i</button></h2>
+        <form class="tn-form" novalidate>
+          <fieldset class="tn-cats">
+            <legend>What is it about?</legend>
+            <label><input type="radio" name="tncat" value="idea" checked><span>Feature idea</span></label>
+            <label><input type="radio" name="tncat" value="data"><span>Chain data</span></label>
+            <label><input type="radio" name="tncat" value="design"><span>Look &amp; feel</span></label>
+            <label><input type="radio" name="tncat" value="bug"><span>Something broken</span></label>
+          </fieldset>
+          <label class="f">What would you like to see on this HUD?
+            <textarea class="tn-text" maxlength="2000" placeholder="e.g. show account balances as orbits, add a governance vote timeline, a sound when a block seals…"></textarea>
+          </label>
+          <label class="f">Name or handle (optional)
+            <input type="text" class="tn-name" maxlength="80" placeholder="@yourhandle">
+          </label>
+          <div class="row">
+            <a class="tn-btn tn-send" href="#updates" target="_blank" rel="noopener" aria-disabled="true">Send via GitHub</a>
+            <a class="tn-fblink" href="https://github.com/jimb000o/tau-command-hud/issues?q=is%3Aissue+label%3Afeedback" target="_blank" rel="noopener">See all feedback</a>
+            <span class="tn-status" aria-live="polite">Feedback becomes a public GitHub issue (free account needed). Upvote ideas you like with 👍.</span>
+          </div>
+        </form>
+        <p class="tn-follow"><a href="${TELEGRAM}" rel="noopener" data-full="A Telegram channel that posts every new proposal, agreement and activation on the testnet. Opens Telegram.">Follow rule changes on Telegram ›</a> <span>· <a href="${ROOT}proposals/${q}">proposal tracker</a></span></p>
+      </article>
+      <article class="tn-panel tn-keep">
+        <h2>Keep it running <small>one person, free time</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built and maintained by one person in their free time. The address and the QR code are the same as in About; the numbers above show what the time goes into.">i</button></h2>
+        <p class="lead small">The real costs are the time it takes to keep the HUD, the alerts and the bot in step with the testnet, and the development tools behind that work; the server itself is cheap. A donation of any size helps keep it online and independent.</p>
+        <p class="small">AGRS or ETH, one address for both · What it helps pay for: time · tools · server · domain</p>
+        <div class="tn-donate">${DONATE.qr}<div class="tn-addr"><code>${DONATE.addr}</code><button class="tn-btn" type="button">Copy</button></div></div>
+        <p class="small tn-thanks" hidden></p>
+        <p class="small tn-copymsg" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
+      </article>
+      </div>
+      <article class="tn-panel tn-log">
+        <h2>Update log <small>built from your feedback</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="What changed and when, newest first. A green number is a version of this page, the HUD. A named entry is a release of another page; those pages carry no version numbers, and the name opens the page.">i</button></h2>
+        <div class="tn-effort" hidden><div><b data-n="commits">—</b><span>changes</span></div><div><b data-n="days">—</b><span>days</span></div><div><b data-n="releases">—</b><span>releases</span></div><em data-n="since"></em></div>
+        <p class="tn-legend"><i class="ver"></i>Version of this page, the HUD · <i></i>Release of another page (no version numbers there; the name opens it) · Newest first</p>
+        <ul class="tn-changes"><li class="day">Loading…</li></ul>
+      </article>
+      </section></div>`;
     m.querySelector(".tn-close").addEventListener("click", closeUpdates);
     m.addEventListener("click", e => { if (e.target === m) closeUpdates(); });
+    m.querySelectorAll(".tn-info").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); const was = b.classList.contains("open"); m.querySelectorAll(".tn-info.open").forEach(x => x.classList.remove("open")); if (!was) b.classList.add("open"); }));
+    m.addEventListener("click", () => m.querySelectorAll(".tn-info.open").forEach(x => x.classList.remove("open")));
+    /* feedback: the text becomes a pre-filled GitHub issue, with the page and the mode noted at the end */
+    const form = m.querySelector(".tn-form"), text = form.querySelector(".tn-text"), name = form.querySelector(".tn-name"), send = form.querySelector(".tn-send"), st = form.querySelector(".tn-status");
+    const CAT = { idea: "Feature idea", data: "Chain data", design: "Look & feel", bug: "Something broken" };
+    const say = (t, c = "") => { st.textContent = t; st.className = "tn-status " + c; };
+    const build = () => {
+      const t = text.value.trim(), cat = (form.querySelector('input[name="tncat"]:checked') || {}).value || "idea";
+      const ttl = `[${CAT[cat]}] ${t.split("\n")[0].slice(0, 70) || "Feedback"}`;
+      const body = `### What would you like to see?\n\n${t}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${name.value.trim() || "anonymous"}\nPage: ${title} · mode: ${SIM ? "sim" : "live"} · version ${LATEST}`;
+      const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
+      return `https://github.com/jimb000o/tau-command-hud/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(ttl)}&body=${encodeURIComponent(body)}`;
+    };
+    const sync = () => { const ok = text.value.trim().length >= 3; send.href = ok ? build() : "#updates"; send.setAttribute("aria-disabled", String(!ok)); };
+    ["input", "change"].forEach(ev => form.addEventListener(ev, sync)); sync();
+    send.addEventListener("click", e => { if (send.getAttribute("aria-disabled") === "true") { e.preventDefault(); say("Write a few words first.", "err"); text.focus(); return; } say("GitHub opens in a new tab with your text filled in. Press “Create” there to send it.", "ok"); });
+    form.addEventListener("submit", e => { e.preventDefault(); send.click(); });
     const code = m.querySelector(".tn-addr code"), msg = m.querySelector(".tn-copymsg");
     m.querySelector(".tn-addr button").addEventListener("click", async () => {
       try { await navigator.clipboard.writeText(code.textContent); msg.textContent = "Address copied."; }
