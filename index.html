@@ -1297,7 +1297,7 @@ async function pollOnline() {
     PRESENCE.tip = Number(j.tip_height ?? j.network_height) || null; PRESENCE.canon = Number.isFinite(Number(j.canonical_height)) ? Number(j.canonical_height) : null;
     PRESENCE.synced = j.live_default === true || (j.live_default === undefined && j.canonical_height === undefined) ? true : Number(j.canonical_height) > 0;
     setRelay(!!j.upstream_connected && Number(j.height) > 0);
-    if (PRESENCE.up) autoLive();
+    if (PRESENCE.up) { autoLive(); if (S.mode === "live" && Date.now() - NET.at > 55000) pollNodes(); }
   } catch { setOnline(null); setRelay(false); }
   finally { clearTimeout(t); PRESENCE.at = Date.now(); }
 }
@@ -1308,7 +1308,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.26", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li><b>Update log</b><div class="one">Could not load the log (assets/updates.json).</div></li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   ul.innerHTML = order.map(e => `<li><b>${esc(String(e.tag || ""))} · ${fmtLogDate(String(e.on || ""))}</b>${e.html || esc(e.text || "")}</li>`).join("");
@@ -1319,10 +1319,10 @@ addEventListener("DOMContentLoaded", loadLog);
 function foldLog() {
   document.querySelectorAll(".changes li").forEach(li => {
     const b = li.querySelector("b"); if (!b) return;
-    const text = li.textContent.replace(b.textContent, "").trim();
-    let cut = text.search(/[:.;]\s/); if (cut < 0 || cut > 90) { const c2 = text.slice(0, 90).search(/,\s|\s\(/); cut = c2 > 20 ? c2 : cut < 0 ? -1 : cut; }
+    const raw = li.textContent.replace(b.textContent, "").trim(), text = window.TauI18n ? TauI18n.t(raw) : raw;   // translated as a whole before it is split into headline and rest
+    let cut = text.search(/[:.;]\s|[：。；]/); if (cut < 0 || cut > 90) { const c2 = text.slice(0, 90).search(/,\s|\s\(/); cut = c2 > 20 ? c2 : cut < 0 ? -1 : cut; }
     if (cut > 90 || (cut < 0 && text.length > 90)) { const sp = text.slice(0, 84).lastIndexOf(" "); cut = sp > 20 ? sp : cut; }
-    const head = cut > 0 ? text.slice(0, cut).replace(/[:.;,]$/, "") + (/[:.;,]\s/.test(text.slice(cut, cut + 2)) ? "" : " …") : text, rest = cut > 0 ? text.slice(cut).replace(/^[:.;,]?\s*/, "") : "";
+    const head = cut > 0 ? text.slice(0, cut).replace(/[:.;,]$/, "") + (/[:.;,]\s|[：。；，]/.test(text.slice(cut, cut + 2)) ? "" : " …") : text, rest = cut > 0 ? text.slice(cut).replace(/^[:.;,：。；，]?\s*/, "") : "";
     li.innerHTML = ""; li.append(b);
     if (rest) { const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head; pr.textContent = rest; d.append(sm, pr); li.append(d); }
     else { const o = document.createElement("div"); o.className = "one"; o.textContent = head; li.append(o); }
@@ -1336,7 +1336,7 @@ function foldLog() {
     all[0].parentElement.after(more);
   }
 }
-addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); presenceOpen(); });
+addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); NET.timer = setInterval(() => { if (!document.hidden && PRESENCE.up) pollNodes(); }, 60000); presenceOpen(); });
 /* a quiet presence socket to the relay: one “hello”, then only its presence pushes, so visitors in simulation count too */
 const PSOCK = { ws: null, wait: 5000, timer: null, url: "wss://node.tauhud.com" };
 function viewerId() {
@@ -1359,7 +1359,7 @@ function presenceOpen() {
   ws.onclose = ws.onerror = () => { if (PSOCK.ws !== ws) return; PSOCK.ws = null; clearTimeout(PSOCK.timer); PSOCK.timer = setTimeout(presenceOpen, PSOCK.wait); PSOCK.wait = Math.min(60000, PSOCK.wait * 2); };
 }
 function presenceClose() { clearTimeout(PSOCK.timer); if (PSOCK.ws) { const w = PSOCK.ws; PSOCK.ws = null; w.onclose = w.onerror = null; w.close(); } }
-document.addEventListener("visibilitychange", () => { if (!document.hidden) pollOnline(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { pollOnline(); if (PRESENCE.up) pollNodes(); } });
 
 /* ---------- the mark: beats once per block, and the favicon beats with it ---------- */
 const MARKS = () => document.querySelectorAll(".mark");
@@ -1851,7 +1851,32 @@ function ingestBlock(b, live) {
 /* =====================================================================
    SIMULATION — mirrors the documented protocol of tau-testnet
    ===================================================================== */
-const SIM = { timer: null, txTimer: null, accounts: [] };
+const SIM = { timer: null, txTimer: null, accounts: [], nodes: [] };
+/* nodes that follow and check the chain without sealing blocks: the node behind this page (the relay's upstream),
+   community nodes run with the node kit (GET /community), and peers our node talks to (GET /peers, when the relay offers it) */
+const NET = { nodes: [], at: 0, timer: null };
+const relayBase = () => PRESENCE.url.replace(/\/status$/, "");
+const nodesHref = () => { const l = new URLSearchParams(location.search).get("lang"); return "nodes/" + (l ? "?lang=" + encodeURIComponent(l) : ""); };
+async function pollNodes() {
+  if (S.mode !== "live") return;
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const j = await (await fetch(relayBase() + "/community", { cache: "no-store", signal: ctl.signal })).json();
+    const list = [];
+    if (j.reference) list.push({ kind: "hud", name: "tauhud.com", height: Number(j.reference.height) || 0, head: j.reference.head || "", tip: Number(j.reference.tip) || null, agrees: true, age: 0 });
+    for (const n of Array.isArray(j.nodes) ? j.nodes : []) list.push({ kind: "kit", name: String(n.name || "node"), height: Number(n.height) || 0, head: n.head || "", agrees: n.agrees !== false, age: Number(n.age_seconds) || 0 });
+    try {   // peers our node met or heard of in the last day (GET /peers): the bootnode is the validator, already on its orbit; kit nodes are already listed above
+      const pj = await (await fetch(relayBase() + "/peers", { cache: "no-store", signal: ctl.signal })).json(), now = Date.now() / 1000, kits = new Set(list.map(n => n.name));
+      for (const n of Array.isArray(pj.peers) ? pj.peers : []) {
+        if (n.label || (n.community && kits.has(String(n.community.name)))) continue;
+        const last = Number(n.last_seen) || 0; if (!last || now - last > 86400) continue;
+        list.push({ kind: "peer", name: "", height: 0, head: n.head || "", agrees: n.head && j.reference && j.reference.head ? n.head === j.reference.head : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
+      }
+    } catch {}
+    NET.nodes = list; NET.at = Date.now();
+  } catch {} finally { clearTimeout(t); }
+}
+function nodesNow() { return S.mode === "sim" ? SIM.nodes.map(n => ({ ...n, height: S.height })) : NET.nodes; }
 const PROPOSALS = [
   () => { const v = pick([6, 8, 12, 15].filter(x => x !== S.fee)); return { kind: "fee", value: v, title: `Change base fee to ${v}`, diff: `o9: #x${hex6(S.fee)} (${S.fee}) → #x${hex6(v)} (${v})` }; },
   () => { const pk = hex(96); return { kind: "validator", value: pk, title: "Admit a new validator", diff: `host_contract_patch.validator_additions += ${short(pk)}` }; },
@@ -1861,6 +1886,7 @@ const PROPOSALS = [
 function simInit() {
   S.validators = Array.from({ length: 4 }, () => hex(96));
   SIM.accounts = Array.from({ length: 14 }, () => hex(96));
+  SIM.nodes = [{ kind: "hud", name: "tauhud.com", agrees: true, age: 0, head: hex(64) }, { kind: "kit", name: "alice-node", agrees: true, age: 42, head: hex(64) }, { kind: "kit", name: "bob", agrees: true, age: 70, head: hex(64) }, { kind: "peer", name: "", agrees: true, age: 12, head: hex(64), connected: true, first: Date.now() / 1000 - 3 * 86400 }];
   Object.assign(S, { height: 0, blocks: [], mempool: [], memSeen: new Map(), rulesLastBlock: null, txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, fee: 10, specRev: 1, ruleBudget: 8, updates: [], offers: [], byHeight: new Map() }); selectedBlock = null;
   S.clauses = new Map();
   // a few accounts start with their own policies so the composite is visible from the first frame
@@ -2172,7 +2198,7 @@ function coreHit(e) {
   const b = cv.getBoundingClientRect(); if (!b.width) return null;
   const k = cv.width / b.width, C = cv.width / 2, x = (e.clientX - b.left) * k - C, y = (e.clientY - b.top) * k - C;
   const h = coreHitAt(x, y); CORE_MOUSE = h ? { x, y } : null;
-  return h ? h.fn : null;
+  return h;
 }
 /* the hovered element glows green under its overlay text: a band for a ring, a halo for a dot, the validator or the core */
 function paintHover() {
@@ -2203,9 +2229,38 @@ function draw(tm) {
   cx.clearRect(0, 0, W, W);
   cx.save(); cx.translate(C, C);
   const cyan = "236,236,240", amber = "255,255,255";
-  CORE_HITS.length = 0; const hit = (x, y, r, fn) => CORE_HITS.push({ x, y, r, fn }); const ring = (r, w, fn) => CORE_RINGS.push({ r, w, fn });
+  CORE_HITS.length = 0; const hit = (x, y, r, fn, href) => CORE_HITS.push({ x, y, r, fn, href }); const ring = (r, w, fn, href) => CORE_RINGS.push({ r, w, fn, href });
   CORE_RINGS.length = 0;
-  ring(C * .84, 16, () => `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is ${vt("building", "proposing")} the next block; a white frame around one marks a vote for the open rule change.` + vt("", `\nThe proposer rotates through the set (o7 eligibility); a vote is a consensus_rule_vote transaction.`));
+  ring(C * .84, 16, () => `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is ${vt("building", "proposing")} the next block; a white frame around one marks a vote for the open rule change.` + vt("\nNodes that only follow and check the chain sit on the orbit inside.", `\nThe proposer rotates through the set (o7 eligibility); a vote is a consensus_rule_vote transaction.\nNon-sealing nodes sit on the orbit inside.`));
+  const nodes = nodesNow(), NR = C * .77, named = nodes.filter(n => n.name);
+  ring(NR, 12, () => {
+    const N = nodes.length, who = named.map(n => n.kind === "hud" ? "Tau HUD’s node" : n.name).join(", ") + (N > named.length ? `${named.length ? " and " : ""}${N - named.length} peer${N - named.length === 1 ? "" : "s"} our node has met` : "");
+    const simNote = S.mode === "sim" ? "Simulated nodes. " : "";
+    return vt(`${simNote}Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} keep${N === 1 ? "s" : ""} a full copy of the chain and check${N === 1 ? "s" : ""} every block without sealing any${N ? ": " + who : ""}.\nThe validators that seal blocks sit on the orbit just outside.\nMore nodes make the chain harder to fake and easier to check.\nClick to open the Nodes page.`,
+      `${simNote}Node orbit: ${N || "no"} non-sealing node${N === 1 ? "" : "s"}${N ? ": " + nodes.map(n => `${n.name || "peer"}${n.height ? " #" + fmt(n.height) : n.head ? " " + short(n.head) : ""}${n.agrees === false ? " (other head)" : ""}`).join(" · ") : ""}.\nThey verify every block against the spec and serve readers; sealing stays with the validator orbit outside.\nSource: the relay’s /community list and its own upstream node.\nClick to open the Nodes page.`);
+  }, nodesHref);
+  cx.save(); cx.setLineDash([3, 9]); cx.beginPath(); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${cyan},.16)`; cx.arc(0, 0, NR, 0, Math.PI * 2); cx.stroke(); cx.restore();   // the node orbit: quiet, dashed
+  cx.font = "500 18px JetBrains Mono, monospace";
+  nodes.forEach((n, i) => {
+    // nodes sit in the gaps between validators (one per gap, then a second round), never on a validator's radial, so no two labels crowd
+    const Vn = S.validators.length || 1, rounds = Math.ceil(nodes.length / Vn), gap = Math.PI * 2 / Vn;
+    const a = -Math.PI / 2 + .35 + (i % Vn) * gap + (Math.floor(i / Vn) + 1) * gap / (rounds + 1), x = Math.cos(a) * NR, y = Math.sin(a) * NR;
+    const al = n.kind === "hud" ? .95 : n.kind === "kit" ? .75 : .45, got = S.pulse > 0 && S.pulse < .2 ? (.2 - S.pulse) / .2 : 0;   // got: the new block just arrived here
+    if (S.pulse > 0) { const q = Math.min(1, (1 - S.pulse) * 1.25), k = .30 + (NR / C - .30) * q; cx.fillStyle = `rgba(57,255,138,${S.pulse})`; cx.beginPath(); cx.arc(x * k / (NR / C), y * k / (NR / C), 4.5, 0, Math.PI * 2); cx.fill(); }   // the sealed block travels out to every node
+    cx.beginPath(); cx.arc(x, y, n.kind === "hud" ? 10 : 8, 0, Math.PI * 2);
+    if (got) { cx.fillStyle = `rgba(57,255,138,${got * .55})`; cx.fill(); }
+    cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : `rgba(${cyan},${al})`; cx.shadowColor = got ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = n.kind === "hud" || got ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
+    if (n.name) { const label = n.kind === "hud" ? "TAU HUD" : n.name, w = cx.measureText(label).width; plate(label, x + Math.sign(x || 1) * (w / 2 + 24), y + 7, "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`); }
+    const age = n.age ? fmtAge(n.age) + " ago" : "just now", ahead = S.height - n.height;
+    hit(x, y, 24, () => n.kind === "hud"
+      ? vt(`Tau HUD’s node: the node behind this page.\nIt follows the chain at #${fmt(n.height)} and serves what you see here through the read relay.\nIt seals nothing: it checks and keeps the chain.${S.mode === "live" ? "\nIt has applied as the second validator." : ""}\nClick to open the Nodes page.`,
+           `tauhud.com: the relay’s upstream node at #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}${n.tip ? ", network tip #" + fmt(n.tip) : ""}.\nServes this page over wss://node.tauhud.com (getblocks, getmempool, getgovernance).${S.mode === "live" ? "\nValidator seat requested (BLS key submitted to IDNI)." : ""}\nClick to open the Nodes page.`)
+      : n.kind === "kit"
+      ? vt(`${n.name}: a community node run with the node kit.\nAt #${fmt(n.height)}, ${n.agrees ? "same head as Tau HUD’s node" : "a different head than Tau HUD’s node"}.\nLast report ${age}.\nClick to open the Nodes page.`,
+           `${n.name} (node kit): #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}, ${n.agrees ? "agrees with" : "differs from"} the reference head${ahead > 0 ? `, ${fmt(ahead)} behind` : ""}.\nReported ${age}; a kit node reports once a minute.\nClick to open the Nodes page.`)
+      : vt(`A node our node ${n.connected ? "is connected to right now" : "has met"}${n.height ? `, at #${fmt(n.height)}` : ""}.\nNobody runs it for this page; it just takes part in the network.\nLast seen ${age}.\nClick to open the Nodes page.`,
+           `Peer of our node${n.head ? ": head " + short(n.head) : ""}${n.agrees == null ? "" : n.agrees ? ", same head as ours" : ", other head than ours"}${n.first ? ", first seen " + fmtLogDate(new Date(n.first * 1000).toISOString().slice(0, 10)) : ""}.\n${n.connected ? "Connected to our node right now." : "Not connected right now; met or heard of earlier."}\nLast seen ${age}.\nClick to open the Nodes page.`), nodesHref);
+  });
   ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}. Everything inside obeys it: validators sit on it, accounts and waiting transactions orbit within it, and every block is checked against it.`,
     `Outer rim: the consensus spec, revision ${S.specRev} (o6 block validity, o7 proposer eligibility, o9 fee = ${S.fee} AGRS). Amended ${S.updates.filter(u => u.status === "active").length} time${S.updates.filter(u => u.status === "active").length === 1 ? "" : "s"} by agreement. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`));
 
@@ -2560,10 +2615,11 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
   document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail], button, a, input, select")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
-  const coreShow = e => { const fn = coreHit(e); if (fn) { cur = cv; shownAt = Date.now(); ovl.textContent = viewText(fn()); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
+  const coreShow = e => { const h = coreHit(e); if (h) { cur = cv; shownAt = Date.now(); ovl.textContent = viewText(h.fn()); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
   cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; CORE_MOUSE = null; if (cur === cv && !touch) hide(); });
-  cv.addEventListener("click", e => { if (touch) coreShow(e); });
+  /* a drawn element with a page behind it (the nodes) opens that page on click; on touch the first tap explains, the second opens */
+  cv.addEventListener("click", e => { const h = coreHit(e); if (h && h.href && (!touch || cur === cv)) { location.href = h.href(); return; } if (touch) coreShow(e); });
 })();
 
 /* ---------- simple / technical view ---------- */
@@ -2711,7 +2767,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.25`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.26`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
