@@ -75,6 +75,9 @@ body::after { /* scanlines */
 .fb-fab { position: fixed; }
 .wrap { max-width: 2400px; margin: 0 auto; display: grid; gap: 8px; grid-template-rows: auto auto auto minmax(0, 1fr); height: 100%; min-height: 0; }
 .simbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 4px 12px; border: 1px solid rgba(214,214,220,.5); border-radius: 4px; background: repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 10px, rgba(255,255,255,.015) 10px 20px); font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: #fff; }
+.simbar b { font-weight: inherit; } .simbar b[data-full] { cursor: help; }
+.simbar b.soon { animation: simSoon 1.6s ease-in-out infinite; } @keyframes simSoon { 50% { text-shadow: 0 0 12px rgba(255,177,59,.95); } }
+.simbar a.watch { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; border: 1px solid rgba(255,177,59,.6); color: #ffb13b; border-radius: 999px; padding: 3px 8px; text-decoration: none; } .simbar a.watch:hover { background: #ffb13b; color: #000; }
 .simbar span { color: var(--dim); font: 12px var(--mono); letter-spacing: 0; text-transform: none; flex: 1 1 320px; }
 .simbar button { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 3px 8px; cursor: pointer; }
 .simbar button:hover { background: #fff; color: #000; }
@@ -859,7 +862,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     </nav>
   </header>
 
-  <div class="simbar" id="simbar" role="status">Simulation · no real chain data<span>What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node. Experimental community project, no claim of accuracy.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
+  <div class="simbar" id="simbar" role="status"><b id="simNext">Simulation · no real chain data</b><a id="simWatch" class="watch" href="proposals/" hidden>Watch in Proposals</a><span>What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node. Experimental community project, no claim of accuracy.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
   <section class="thesis" aria-label="Why Tau is different">
     <div class="thesis-main">
       <span class="eyebrow">Why this is not a normal blockchain</span>
@@ -1365,7 +1368,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.37", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.39", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -2895,6 +2898,36 @@ function autoLive() {
   LIVE.auto = true; LIVE.gotData = false; simStop(); liveStop(); S.simfeed = false; liveConnect();
 }
 setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
+/* the simulation badge counts down to the next event of the day's programme (the same text as the badge on every other page); hover lists the next three */
+let simBadgeText = "";
+/* each event of the programme in plain words: what happens, why it matters, where to watch it on this page */
+const SIM_EVENT = {
+  stake: { what: "proof of stake takes over", why: "The chain changes how it picks who seals blocks: the six richest accounts take over from the fixed list.", watch: "Watch the proposer change in the Chain core." },
+  fixed: { what: "the fixed validator list returns", why: "The chain goes back to a fixed validator list: a known set seals blocks again instead of the richest accounts.", watch: "Watch the validator ring in the Chain core." },
+  admit: { what: "a new validator joins", why: "One more party seals blocks and votes on rule changes.", watch: "Watch a new diamond appear on the validator orbit." },
+  remove: { what: "a validator leaves", why: "One party fewer seals blocks and votes on rule changes.", watch: "Watch a diamond vanish from the validator orbit." },
+  super: { what: "two thirds must agree", why: "Changing the rules gets harder: two thirds of the validators must agree instead of more than half.", watch: "Watch the agreement arc need more votes." },
+  major: { what: "more than half must agree", why: "Changing the rules gets easier: more than half of the validators is enough.", watch: "Watch the agreement arc fill sooner." },
+  restart: { what: "the simulated chain starts over", why: "At midnight UTC the simulated chain starts again from block 0, as the real alpha testnet did more than once.", watch: "Watch the height reset." },
+};
+function simBadge() {
+  const b = $("simNext"), a = $("simWatch"); if (!b) return;
+  const when = x => { const d = new Date(x * 1000), loc = d.toTimeString().slice(0, 5), utc = d.toISOString().slice(11, 16); return loc === utc ? `${utc} UTC` : `${loc} local (${utc} UTC)`; };
+  const list = S.simfeed && window.TauSim && TauSim.upcoming ? TauSim.upcoming() : [], u = list[0], left = u ? Math.ceil((u.at_ts - Date.now() / 1000) / 60) : 999;
+  const ev = u && (SIM_EVENT[u.kind] || { what: u.short, why: u.title, watch: "" }), soon = !!u && left <= 60;
+  const text = !soon ? "Simulation · no real chain data"
+    : left <= 0 ? `Simulation · now: ${ev.what}`
+    : u.status === "voting" ? `Simulation · validators are voting: ${ev.what} in ${left} min`
+    : u.status === "agreed" ? `Simulation · agreed: ${ev.what} in ${left} min`
+    : `Simulation · in ${left} min: ${ev.what}`;
+  b.classList.toggle("soon", soon && left <= 5);
+  if (a) { a.hidden = !soon; const lang = new URLSearchParams(location.search).get("lang"); a.href = "proposals/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); }
+  if (text === simBadgeText) return; simBadgeText = text;
+  b.textContent = text;
+  if (list.length) b.dataset.full = (soon ? `${ev.why} ${ev.watch}\n` : "") + "Every change is proposed 10 minutes ahead, voted on by the simulated validators, then in force: the path a real rule change takes on Tau.\nNext in the simulation:\n" + list.map(x => `${when(x.at_ts)} · ${(SIM_EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet.";
+  else delete b.dataset.full;
+}
+simBadge(); setInterval(() => { if (!document.hidden) simBadge(); }, 1000);
 /* =====================================================================
    FEEDBACK — opens a pre-filled GitHub issue in the project repo
    ===================================================================== */
@@ -2908,7 +2941,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.37`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.39`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
