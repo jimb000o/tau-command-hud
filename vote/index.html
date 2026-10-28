@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Vote on Tau</title>
+<meta name="description" content="How to vote on Tau Testnet Alpha's rules yourself: your own node, your key, a ready vote command for every open proposal and a ready proposal. Practise every step on the simulation first.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Vote on Tau's rules yourself">
+<meta property="og:description" content="On Tau Testnet Alpha any account's yes vote counts. Five commands, practised first on the simulation.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/vote/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same tokens as the HUD and /nodes: black and white, phosphor green as the one accent, amber for the simulation. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --sim: #ffb13b; --refused: #e5484d;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+code { color: #fff; font: 12px var(--mono); }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.state { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; color: var(--dim); font-size: 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.state.ok { color: var(--text); } .state.ok i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.off i { background: #ff4d6d; }
+.intro { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 76ch; }
+.kpis { display: flex; flex-wrap: wrap; gap: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--dim); font-size: 12px; white-space: nowrap; background: rgba(16,16,18,.86); cursor: help; }
+.kpi b { color: #fff; font: 600 13px var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.kpi.hot b { color: var(--ok); }
+.main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 .aside { margin-left: auto; font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+/* the real steps are the page's call to action */
+.panel.real { border-color: rgba(57,255,138,.45); box-shadow: 0 0 0 1px rgba(57,255,138,.08), 0 18px 40px -24px rgba(57,255,138,.35); }
+.panel.real h2 { color: var(--ok); }
+.stepcols { display: grid; gap: 12px; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: s; }
+ol.steps > li { counter-increment: s; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 0 10px; border-radius: 6px; }
+ol.steps > li::before { content: counter(s); width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--hair); color: #fff; font: 600 12px/22px var(--display); text-align: center; }
+ol.steps > li.done::before { content: "✓"; color: #000; background: var(--ok); border-color: var(--ok); }
+.steps h3 { margin: 1px 0 2px; font: 600 14px var(--display); color: #fff; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.steps h3 small { font: 12px var(--mono); color: var(--dim); }
+.steps p { margin: 0; color: var(--dim); }
+.steps p b { color: var(--text); font-weight: 600; }
+pre { margin: 0; background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 12px/1.5 var(--mono); color: #fff; white-space: pre-wrap; word-break: break-all; }
+pre .v { color: var(--ok); }
+.copyrow { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.copyrow pre { flex: 1 1 auto; min-width: 0; }
+.copyrow.inline { flex-direction: row; align-items: stretch; }
+.btns { display: flex; gap: 6px; flex: none; justify-content: flex-end; }
+button.copy, button.try { flex: none; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--hair); border-radius: 6px; padding: 4px 10px; cursor: pointer; min-width: 64px; }
+button.copy:hover { color: #000; background: #fff; border-color: #fff; }
+button.try { color: var(--sim); border-color: rgba(255,177,59,.45); }
+button.try:hover { color: #000; background: var(--sim); border-color: var(--sim); }
+button.copy:disabled { opacity: .35; cursor: default; background: none; color: var(--dim); border-color: var(--hair); }
+.note { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
+.note b { color: var(--text); font-weight: 600; }
+/* open proposals inside step 4 */
+.props { display: grid; gap: 8px; margin-top: 6px; }
+.prop { border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px 8px; }
+.prop .t { color: #fff; font-weight: 600; }
+.prop .m { color: var(--dim); font-size: 12px; }
+.prop.mine { border-color: rgba(57,255,138,.45); }
+.empty { border: 1px dashed var(--hair); border-radius: 6px; padding: 8px 10px; color: var(--dim); margin-top: 6px; }
+.empty b { color: var(--text); }
+.ctl { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 6px; color: var(--dim); }
+.ctl label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.ctl input[type=radio] { accent-color: var(--ok); }
+input.num, input.key { font: 13px var(--mono); background: #050506; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 5px 8px; }
+input.num { width: 4.2em; padding: 3px 6px; }
+input.key { width: 100%; }
+input.num:focus, input.key:focus { outline: none; border-color: var(--ok); }
+input.key.bad { border-color: var(--refused); }
+/* practice terminal: the simulation, marked amber like every simulated view */
+.panel.practice { border-color: rgba(255,177,59,.4); display: flex; flex-direction: column; }
+.panel.practice h2 { color: var(--sim); }
+.simtag { font: 600 10px var(--display); letter-spacing: .14em; color: #000; padding: 1px 7px; border-radius: 3px;
+  background: repeating-linear-gradient(135deg, var(--sim) 0 6px, #e09a2c 6px 12px); }
+.term { flex: 1 1 auto; min-height: 260px; background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow: auto; font: 12px/1.55 var(--mono); }
+.term .ln { white-space: pre-wrap; word-break: break-all; }
+.term .cmd { color: #fff; } .term .cmd::before { content: attr(data-p); color: var(--sim); }
+.term .out { color: var(--dim); }
+.term .good { color: var(--ok); }
+.term .bad { color: var(--refused); }
+.term .hint { color: var(--sim); }
+.prompt { display: flex; gap: 0; align-items: center; margin-top: 8px; background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 0 0 0 10px; }
+.prompt span { color: var(--sim); white-space: nowrap; font-size: 12px; }
+.prompt input { flex: 1 1 auto; min-width: 0; font: 12px var(--mono); background: none; color: #fff; border: 0; padding: 8px 6px; }
+.prompt input:focus { outline: none; }
+.prompt:focus-within { border-color: var(--sim); }
+.tally { display: flex; gap: 10px; align-items: center; margin-top: 8px; color: var(--dim); font-size: 12px; min-height: 22px; flex-wrap: wrap; }
+.tally .pips { display: inline-flex; gap: 4px; }
+.tally .pip { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--hair); }
+.tally .pip.y { background: #fff; border-color: #fff; }
+.tally .pip.me { background: var(--sim); border-color: var(--sim); }
+/* follow + facts */
+.follow .res { margin-top: 8px; color: var(--dim); display: grid; gap: 6px; }
+.follow .res b { color: #fff; }
+.follow .res .good { color: var(--ok); font-weight: 600; }
+ul.facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ul.facts li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; color: var(--dim); }
+ul.facts li::before { content: "·"; color: var(--ok); font-weight: 700; text-align: center; }
+ul.facts li.warn::before { content: "!"; color: var(--sim); }
+ul.facts b { color: #fff; font-weight: 600; }
+.col2, .col3 { display: grid; gap: 14px; align-content: start; min-width: 0; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
+[hidden] { display: none !important; }
+/* landscape from laptop size up: one screen, laid out for about 1600 x 860 CSS px and scaled to the viewport, like /nodes */
+html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 12px; }
+html.fit #tip { zoom: var(--z); }
+html.fit .sub { max-width: 118ch; }
+html.fit .wrap > .main { flex: 1 1 0; min-height: 0; gap: 12px; grid-template-columns: minmax(0, 2.3fr) minmax(0, .9fr) minmax(280px, .85fr); }
+/* the five steps in two columns: getting ready (1 to 3), then voting and proposing (4 and 5) */
+html.fit .stepcols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 22px; align-items: start; }
+html.fit .main > .panel, html.fit .col3 > .panel { min-height: 0; overflow: auto; }
+html.fit .col2, html.fit .col3 { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+html.fit .col2 > .follow { flex: none; max-height: 45%; }
+html.fit .col3 > .facts { flex: 1 1 0; }
+html.fit .practice { min-height: 0; overflow: hidden; flex: 1 1 0; }
+html.fit .term { min-height: 0; flex: 1 1 0; }
+/* 21:9: the steps get the extra width, so they fit without scrolling */
+html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, .85fr); }
+@media (max-width: 700px) {
+  button.copy, button.try { min-height: 44px; }
+  .btns > button { flex: 1 1 0; }
+  .term { min-height: 220px; max-height: 60vh; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../history/vendor/blake3.umd.min.js" defer></script>
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Vote</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state" tabindex="0" data-tip="Connecting to our node…"><i></i><span id="stateText">Connecting</span></span>
+    </div>
+  </header>
+  <nav class="tnav" data-page="vote" aria-label="Pages and tools"></nav>
+  <div class="intro">
+    <div>
+      <p class="lead">Vote on Tau’s rules yourself.</p>
+      <p class="sub" id="sourceLine">On Tau Testnet Alpha every account may vote on a rule change, not only validators. Five steps with IDNI’s own command line, each ready to copy; practise each one on the simulation first.</p>
+    </div>
+    <div class="kpis" aria-label="Key numbers">
+      <span class="kpi" id="kOpen" data-tip="Rule changes on the chain right now that still need yes votes."><b id="tOpen">–</b>waiting for votes</span>
+      <span class="kpi" id="kNeed" data-tip="Yes votes a rule change needs: two thirds of the validators, rounded up."><b id="tNeed">–</b>yes votes needed</span>
+      <span class="kpi" id="kWho" data-tip="Who the network lets vote. The testnet admits a vote from any account (open admission)."><b id="tWho">–</b>may vote</span>
+    </div>
+  </div>
+  <main class="main">
+    <section class="panel real" id="real">
+      <h2>On the real testnet <span class="aside" id="realAside">IDNI’s tau-testnet command line</span></h2>
+      <div class="stepcols"><ol class="steps">
+        <li id="s1"><div><h3>Run your own node <small>about 1.5 h · about €6 a month</small></h3>
+          <p>Votes enter the testnet through a node; no public node takes them (ours only reads). The <a href="/nodes/#join">Tau HUD kit</a> runs one with the network’s settings, <b>open admission</b> included.</p></div></li>
+        <li id="s2"><div><h3>Open the command line <small>on the server · 10 s</small></h3>
+          <p><code>tau</code> becomes short for IDNI’s tau-testnet command line inside your node. Keys are kept in the node’s data volume.</p>
+          <div class="copyrow"><pre id="c2">cd /opt/tau-node-kit/kit
+alias tau='docker compose exec -T -e HOME=/data tau-node python -m tau_testnet_cli'
+tau status</pre><div class="btns"><button class="copy" type="button" data-copy="c2">Copy</button><button class="try" type="button" data-try="c2">Try</button></div></div></div></li>
+        <li id="s3"><div><h3>Make your key <small>your address and your voice</small></h3>
+          <p>It prints your <b>public key</b>, your address and the name your vote carries. Back up the private key: <code>tau keys show me --private</code>.</p>
+          <div class="copyrow"><pre id="c3">tau keys save --name me</pre><div class="btns"><button class="copy" type="button" data-copy="c3">Copy</button><button class="try" type="button" data-try="c3">Try</button></div></div></div></li>
+      </ol><ol class="steps" style="counter-reset: s 3">
+        <li id="s4"><div><h3><span style="margin-right:auto">Vote yes</span> <small id="s4small">one command per proposal</small></h3>
+          <p>Each open rule change with its command ready. There is no “no”: a change nobody agrees to expires.</p>
+          <div id="openList"></div></div></li>
+        <li id="s5"><div><h3>Propose a change <small>advanced · public for good</small></h3>
+          <p>A ready proposal, then your vote on it. <b id="oneYes">With one validator, one yes agrees it for everyone.</b></p>
+          <div class="ctl" role="radiogroup" aria-label="What the proposal changes">
+            <label><input type="radio" name="what" value="same" checked> Same rules (no change)</label>
+            <label id="feeLbl"><input type="radio" name="what" value="fee"> Base fee <input class="num" id="fee" type="number" min="1" max="100" step="1" value="10" aria-label="New base fee in AGRS"> AGRS</label>
+          </div>
+          <div class="copyrow"><pre id="c5">Waiting for the rules in force…</pre><div class="btns"><button class="copy" type="button" data-copy="c5" id="copy5" disabled>Copy</button><button class="try" type="button" data-try="c5">Try</button></div></div>
+          <p class="note" id="n5"></p></div></li>
+      </ol></div>
+    </section>
+    <div class="col2">
+    <section class="panel practice" id="practice" aria-label="Practice terminal">
+      <h2>Practise first <span class="simtag">SIMULATION</span><span class="aside">same commands · nothing leaves your browser</span></h2>
+      <div class="term" id="term" role="log" aria-live="polite" translate="no"></div>
+      <form class="prompt" id="promptForm" autocomplete="off"><span id="ps" translate="no">root@my-node:/opt/tau-node-kit/kit# </span><input id="cmdIn" spellcheck="false" aria-label="Type a command" placeholder="press Try on a step, or type: tau gov list"></form>
+      <div class="tally" id="tally"></div>
+    </section>
+      <section class="panel follow">
+        <h2>Follow your vote</h2>
+        <label class="note" for="me" style="display:block;margin:0 0 4px">Your public key (from step 3)</label>
+        <input class="key" id="me" spellcheck="false" autocomplete="off" placeholder="96 hex characters">
+        <div class="res" id="meRes"><span>Paste it and this page shows when your vote waits in the queue, when a block counts it and what it changed.</span></div>
+      </section>
+    </div>
+    <div class="col3">
+      <section class="panel facts">
+        <h2>Good to know</h2>
+        <ul class="facts">
+          <li><span><b>Any account may vote.</b> The testnet runs with open admission: a yes from any key counts, not only from validators.</span></li>
+          <li><span id="fNeed"><b>Two thirds decide.</b> A change needs yes votes from two thirds of the number of validators, rounded up.</span></li>
+          <li><span><b>Free, and once.</b> Proposals and votes pay no fee. The node refuses a second yes from the same key, and any vote for a change that is no longer open.</span></li>
+          <li><span><b>Never at once.</b> A change takes effect at its activation height, at least as many blocks ahead as there are validators.</span></li>
+          <li class="warn"><span><b>Think before you propose.</b> IDNI warns that a bad rule change can halt the testnet until it is corrected. Test rule text in the <a href="/playground/">Playground</a> first.</span></li>
+          <li><span><b>Prefer a browser?</b> IDNI’s <a href="https://github.com/IDNI/tau-testnet/tree/main/web-wallet" target="_blank" rel="noopener">web wallet</a> has a Gov: Vote tab.</span></li>
+        </ul>
+      </section>
+    </div>
+  </main>
+  <footer>
+    <p>Commands from <a href="https://github.com/IDNI/tau-testnet/blob/main/docs/developer_cli.md#governance" target="_blank" rel="noopener">IDNI’s tau-testnet docs</a>. Open proposals read from <a href="https://node.tauhud.com/status" target="_blank" rel="noopener">node.tauhud.com</a>; nothing you type here is sent anywhere. Testnet AGRS have no value. · <a href="/proposals/">Proposals</a> · <a href="/nodes/">Nodes</a> · <a href="/playground/#seat">Validator seat</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BVote%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const NODE = "wss://node.tauhud.com", RELAY = "https://node.tauhud.com";
+const SIM = !!(window.TauSim && TauSim.on);   // page in simulation mode: the open proposals come from the simulated chain too
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));   // filled first: the dictionary matches templates against the finished text
+const short = h => h ? `${h.slice(0, 8)}…${h.slice(-4)}` : "";
+const isKey = s => /^[0-9a-f]{96}$/.test(s);
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+const KEY_STORE = "tauhud-vote-key";
+const ACT_AHEAD = SIM ? 75 : 300;   // blocks between a ready proposal and its activation: time to land and gather votes
+
+/* ---------- update ids: BLAKE3 over the node's canonical serialization (consensus/serialization.py), as on /history ---------- */
+const enc = new TextEncoder();
+const u32 = n => [n >>> 24 & 255, n >>> 16 & 255, n >>> 8 & 255, n & 255];
+const u64 = n => [...u32(Math.floor(n / 4294967296)), ...u32(n >>> 0)];
+const bstr = s => { const b = enc.encode(s); return [...u32(b.length), ...b]; };
+async function updateId(revisions, height) {   // no host_contract_patch: the ready proposals only change rule text
+  if (!window.hashwasm) return null;
+  try { return await hashwasm.blake3(new Uint8Array([...u32(revisions.length), ...revisions.flatMap(bstr), ...u64(height), 0])); } catch (e) { return null; }
+}
+
+/* ---------- live data: the relay (or the simulated chain) ---------- */
+const L = { ws: null, gov: null, mempool: [], titles: new Map(), open: null, retry: 5000, times: [] };
+function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = T(text); s.dataset.tip = tipText; }
+function send(cmd) { if (L.ws && L.ws.readyState === 1) L.ws.send(cmd); }
+function connect() {
+  let ws;
+  try { ws = SIM ? TauSim.socket() : new WebSocket(NODE); } catch (e) { return offline(e.message); }
+  L.ws = ws;
+  setState("wait", "Connecting", SIM ? "Building the simulated chain…" : "Reading the chain from node.tauhud.com…");
+  ws.onopen = () => { L.retry = 5000; ws.send("hello version=1"); send("getgovernance"); send("getmempool"); send("getblocks 12"); };
+  ws.onmessage = onMessage;
+  ws.onclose = () => { if (L.ws === ws) offline("connection closed"); };
+  ws.onerror = () => {};
+}
+function offline(why) {
+  L.ws = null;
+  const w = L.retry; L.retry = Math.min(60000, w * 2);
+  setState("off", "Offline", `Our node is not reachable (${why}).\nRetrying in ${w / 1000} s.`);
+  setTimeout(connect, w);
+}
+function onMessage(ev) {
+  let msg; try { msg = JSON.parse(String(ev.data)); } catch { return; }
+  if (msg.status !== "ok") return;
+  const d = msg.data || {};
+  if (msg.command === "getgovernance") { L.gov = d; setState(SIM ? "sim" : "ok", SIM ? "Simulation" : "Live", SIM ? "Open proposals from the simulated chain." : "Open proposals read live from node.tauhud.com."); renderLive(); }
+  else if (msg.command === "getmempool") { L.mempool = d.transactions || []; renderMe(); }
+  else if (msg.command === "getblocks") {
+    for (const b of d.blocks || []) if (b.header) L.times.push([b.header.block_number, b.header.timestamp]);
+    L.times = L.times.filter((x, i, a) => a.findIndex(y => y[0] === x[0]) === i).sort((a, b) => a[0] - b[0]).slice(-30);
+    send("getgovernance"); send("getmempool");   // the simulation pushes these itself; the relay answers each block
+  }
+}
+async function loadTitles() {   // plain-language titles from the proposal tracker, by update id
+  try {
+    const r = await (SIM ? TauSim.fetch("/proposals.json") : fetch(RELAY + "/proposals.json", { cache: "no-store" }));
+    if (!r.ok) return;
+    const j = await r.json();
+    for (const p of j.proposals || []) if (p.id && p.title) L.titles.set(p.id, p.title);
+    renderLive();
+  } catch (e) {}
+  try {
+    const r = await (SIM ? TauSim.fetch("/status") : fetch(RELAY + "/status", { cache: "no-store" }));
+    if (r.ok) { const s = await r.json(); L.open = s.open_governance_admission !== false; renderKpis(); }
+  } catch (e) {}
+}
+const secsPerBlock = () => { const t = L.times; if (t.length < 3) return SIM ? 8 : null; const a = t[0], b = t[t.length - 1]; return (b[1] - a[1]) / Math.max(1, b[0] - a[0]); };
+const inTime = blocks => { const s = secsPerBlock(); if (!s) return ""; const m = Math.round(blocks * s / 60); return m < 90 ? F("about {m} min", { m }) : F("about {n} h", { n: Math.round(m / 60) }); };
+
+/* ---------- KPIs ---------- */
+function renderKpis() {
+  const g = L.gov;
+  const n = g ? (g.pending_updates || []).length : null;
+  $("tOpen").textContent = n == null ? "–" : n;
+  $("kOpen").classList.toggle("hot", !!n);
+  $("tNeed").textContent = g ? g.approval_threshold : "–";
+  $("tWho").textContent = L.open == null ? "–" : L.open ? T("every account") : T("validators only");
+  if (g) {
+    const N = g.active_validator_count ?? (g.active_validators || []).length;
+    $("kNeed").dataset.tip = F("{n} yes votes needed: the testnet has {v} validators and agrees with two thirds of them, rounded up.", { n: g.approval_threshold, v: N });
+    $("fNeed").innerHTML = "";
+    $("fNeed").append(el("b", { text: T("Two thirds decide.") }), " ",
+      N === 1 ? F("A change needs yes votes from two thirds of the number of validators, rounded up: today one validator, so {n}.", { n: g.approval_threshold })
+        : F("A change needs yes votes from two thirds of the number of validators, rounded up: today {v} validators, so {n}.", { v: N, n: g.approval_threshold }));
+    $("oneYes").hidden = g.approval_threshold !== 1;
+  }
+}
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) { if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v); }
+  for (const k of kids) if (k != null) e.append(k);
+  return e;
+}
+function copyRow(id, text, tryIt) {
+  const pre = el("pre", { id }); pre.textContent = text;
+  return el("div", { class: "copyrow" + (tryIt ? "" : " inline") }, pre, el("div", { class: "btns" },
+    el("button", { class: "copy", type: "button", "data-copy": id, text: T("Copy") }),
+    tryIt ? el("button", { class: "try", type: "button", "data-try": id, text: T("Try") }) : null));
+}
+
+/* ---------- step 4: the open proposals, each with its vote command ---------- */
+function votesFor(id) { return ((L.gov && L.gov.votes) || []).filter(v => v.update_id === id).length; }
+function renderLive() { renderKpis(); renderOpen(); renderProposal(); renderMe(); }
+function renderOpen() {
+  const g = L.gov, box = $("openList");
+  if (!g) return;
+  const open = g.pending_updates || [], head = g.head_number;
+  if (!open.length) {
+    const last = [...(g.scheduled_updates || [])].pop();
+    box.replaceChildren(el("div", { class: "empty" },
+      el("b", { text: T("Nothing open right now.") }), " ",
+      T(SIM ? "The simulation proposes a change every hour at 20 past, or practise on your own proposal in step 5."
+            : "Testnet proposals have been agreed within minutes so far. Telegram posts each new one at once, or propose your own in step 5."),
+      last ? el("span", { text: " " + F("Agreed and waiting to take effect: {id} at #{a}.", { id: short(last.update_id), a: last.activate_at_height }) }) : null,
+      SIM ? null : el("span", null, " ", el("a", { href: "https://t.me/tauHUDcom", target: "_blank", rel: "noopener", text: "@tauHUDcom" }))));
+    $("s4small").textContent = T("one command per proposal");
+    return;
+  }
+  $("s4small").textContent = F("{n} open now", { n: open.length });
+  box.replaceChildren(el("div", { class: "props" }, ...open.slice(0, 3).map((u, i) => {
+    const have = votesFor(u.update_id), need = g.approval_threshold;
+    const title = L.titles.get(u.update_id) || T("Rule change");
+    return el("div", { class: "prop" + (store.get(KEY_STORE) && u.proposer_pubkey === store.get(KEY_STORE) ? " mine" : "") },
+      el("div", { class: "t", text: title }),
+      el("div", { class: "m", text: F("{id} · {a} of {b} yes votes · takes effect at #{c}", { id: short(u.update_id), a: have, b: need, c: u.activate_at_height }) + (head != null && inTime(u.activate_at_height - head) ? ` (${inTime(u.activate_at_height - head)})` : "") }),
+      copyRow("c4_" + i, `tau gov vote --key me --update-id ${u.update_id}`, false));
+  }), open.length > 3 ? el("a", { href: "/proposals/", text: F("{n} more on Proposals", { n: open.length - 3 }) }) : ""));
+}
+
+/* ---------- step 5: a ready proposal from the rules in force ---------- */
+const feeOf = rules => { const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec(rules || ""); return m ? parseInt(m[1], 16) : null; };
+const withFee = (rules, fee) => rules.replace(/(o9\[t\]:bv\[24\]\s*=\s*\{\s*#x)([0-9a-fA-F]+)/, (m, a) => a + fee.toString(16).padStart(6, "0"));
+const shq = s => "'" + s.replace(/'/g, "'\\''") + "'";
+// the rule text runs to a thousand characters: shown shortened, copied and run in full
+const brief = c => c.replace(/("rule_revisions":\[")((?:[^"\\]|\\.)*)(")/, (m, a, r, b) => a + F("…the rule text, {n} characters…", { n: r.length }) + b);
+let P5 = null, lastRules = null;
+async function renderProposal() {
+  const g = L.gov;
+  const rules = g && g.consensus_rules;
+  if (!rules) return;
+  const cur = feeOf(rules);
+  $("feeLbl").hidden = cur == null;
+  if (rules !== lastRules) { lastRules = rules; if (cur != null) $("fee").value = cur; }
+  const what = document.querySelector("input[name=what]:checked").value;
+  let fee = Math.round(Number($("fee").value));
+  fee = Number.isFinite(fee) ? Math.max(1, Math.min(100, fee)) : cur;
+  const text = what === "fee" && cur != null ? withFee(rules, fee) : rules;
+  const act = Math.max(g.min_activation_height_for_next_update || 0, (g.head_number || 0) + ACT_AHEAD);
+  const payload = { rule_revisions: [text], activate_at_height: act, host_contract_patch: null };
+  const id = await updateId(payload.rule_revisions, act);
+  P5 = { payload, id, fee, cur, what };
+  const cmd = `printf '%s\\n' ${shq(JSON.stringify(payload))} | tau gov propose --key me --file /dev/stdin\n` +
+    `tau gov vote --key me --update-id ${id || "<update_id printed by the line above>"}`;
+  $("c5").textContent = brief(cmd);
+  $("c5").dataset.cmd = cmd;
+  $("copy5").disabled = false;
+  const effect = F("Takes effect at #{a} ({t}); paste it soon, or the node refuses a height that has passed.", { a: act, t: inTime(act - (g.head_number || 0)) || T("later") });
+  $("c5").dataset.tip = effect;
+  $("n5").textContent = (what === "fee" && cur != null
+      ? (fee === cur ? F("The base fee is {f} AGRS already, so this changes nothing.", { f: cur }) : F("Every transaction would pay {f} AGRS instead of {c}.", { f: fee, c: cur }))
+      : T("The text equals the rules in force: a safe first proposal that tests the voting itself."))
+    + " " + F("In force at #{a}.", { a: act });
+}
+document.querySelectorAll("input[name=what]").forEach(r => r.addEventListener("change", renderProposal));
+$("fee").addEventListener("input", () => { document.querySelector("input[name=what][value=fee]").checked = true; renderProposal(); });
+
+/* ---------- follow your vote ---------- */
+function renderMe() {
+  const k = $("me").value.trim().toLowerCase(), res = $("meRes"), g = L.gov;
+  $("me").classList.toggle("bad", !!k && !isKey(k));
+  if (!isKey(k)) { res.replaceChildren(el("span", { text: k ? T("A public key is 96 hex characters (0-9, a-f).") : T("Paste it and this page shows when your vote waits in the queue, when a block counts it and what it changed.") })); return; }
+  store.set(KEY_STORE, k);
+  const rows = [];
+  const queued = L.mempool.filter(t => t.sender === k && /consensus_rule_(vote|update)/.test(t.tx_type || ""));
+  for (const t of queued) rows.push(el("span", null, el("b", { text: t.tx_type === "consensus_rule_vote" ? T("Your vote is in the queue.") : T("Your proposal is in the queue.") }), " ", T("The next block takes it in.")));
+  const mine = ((g && g.votes) || []).filter(v => v.voter_pubkey === k);
+  const all = g ? [...(g.pending_updates || []).map(u => [u, "open"]), ...(g.scheduled_updates || []).map(u => [u, "agreed"]), ...(g.archival_update_details || []).map(u => [u, u.lifecycle === "activated" ? "active" : "gone"])] : [];
+  const word = { open: "still open", agreed: "agreed, takes effect at #{a}", active: "in force since #{a}", gone: "expired" };
+  for (const v of mine) {
+    const hit = all.find(x => x[0].update_id === v.update_id);
+    rows.push(el("span", null, el("span", { class: "good", text: T("Counted.") }), " ",
+      F("Your yes for {id}", { id: short(v.update_id) }) + (v.height != null ? " " + F("in block #{a}", { a: v.height }) : "") + (hit ? ": " + F(word[hit[1]], { a: hit[0].activate_at_height }) + "." : ".")));
+  }
+  for (const [u, s] of all.filter(x => x[0].proposer_pubkey === k)) rows.push(el("span", null, el("b", { text: T("Your proposal") }), " " + short(u.update_id) + ": " + F(word[s], { a: u.activate_at_height }) + "."));
+  if (!rows.length) rows.push(el("span", { text: g ? T("Nothing from this key on the chain yet. After you vote, the queue shows it within seconds.") : T("Waiting for the chain…") }));
+  rows.push(el("a", { href: "/account/?a=" + k, text: T("Open this account ›") }));
+  res.replaceChildren(...rows);
+}
+$("me").addEventListener("input", renderMe);
+
+/* ---------- practice terminal: the same commands against the simulated chain ---------- */
+const term = $("term"), PS = "root@my-node:/opt/tau-node-kit/kit# ";
+const X = { key: null, aliased: false, cd: false, votes: new Map(), props: new Map(), seq: 0 };   // practice state, this tab only
+const hex = n => Array.from(crypto.getRandomValues(new Uint8Array(n / 2)), b => b.toString(16).padStart(2, "0")).join("");
+function line(cls, text, prompt) {
+  const d = el("div", { class: "ln " + cls }); d.textContent = text; if (prompt) d.dataset.p = PS;
+  term.append(d); term.scrollTop = term.scrollHeight; return d;
+}
+const out = t => line("out", t), good = t => line("good", t), bad = t => line("bad", t), hint = t => line("hint", T(t));
+const env = (status, data) => JSON.stringify(status === "ok" ? { status, command: "sendtx", data } : { status, command: "sendtx", error: data });
+function simGov() { return TauSim.governance(); }
+function practiceOpen() {   // the simulation's open proposals plus your own practice proposals
+  const g = simGov(), h = g.head_number;
+  const list = (g.pending_updates || []).map(u => ({ id: u.update_id, act: u.activate_at_height, votes: g.votes.filter(v => v.update_id === u.update_id).length, need: g.approval_threshold, title: L.simTitles.get(u.update_id) || T("Rule change"), sim: true }));
+  for (const p of X.props.values()) if (p.landed <= h && p.act > h) list.push({ id: p.id, act: p.act, votes: 0, need: g.approval_threshold, title: p.title, sim: false });
+  return list;
+}
+L.simTitles = new Map();
+function refreshSimTitles() { try { for (const p of TauSim.proposals().proposals || []) L.simTitles.set(p.id, p.title); } catch (e) {} }
+function stepDone(n) { const s = $("s" + n); if (s) s.classList.add("done"); }
+function run(raw) {
+  const cmdline = raw.trim();
+  if (!cmdline) return;
+  line("cmd", brief(cmdline), true);
+  for (const part of cmdline.split(/\n/)) runOne(part.trim());
+  renderTally();
+}
+function runOne(c) {
+  if (!c) return;
+  if (/^cd\s+\/opt\/tau-node-kit\/kit\/?$/.test(c)) { X.cd = true; return; }
+  if (/^alias tau=/.test(c)) { X.aliased = true; return; }
+  if (/^clear$/.test(c)) { term.replaceChildren(); return; }
+  let pipe = null;
+  const m = /^printf '%s\\n' ('(?:[^']|'\\'')*')\s*\|\s*(.*)$/.exec(c);
+  if (m) { pipe = m[1].slice(1, -1).replace(/'\\''/g, "'"); c = m[2]; }
+  const a = c.split(/\s+/);
+  if (a[0] !== "tau") { out(F("{x}: practise the tau commands from the steps; type help for the list.", { x: a[0] })); return; }
+  if (!X.aliased) { out("bash: tau: command not found"); hint("Run step 2 first: it makes tau short for the command line inside your node."); return; }
+  const sub = a.slice(1).join(" ");
+  const arg = name => { const i = a.indexOf(name); return i > 0 ? a[i + 1] : null; };
+  const g = simGov();
+  if (/^status/.test(sub)) {
+    out(`network: tau-testnet-v2 (simulation) · head #${g.head_number} · mempool ${TauSim.mempool().count}`);
+    good(T("Your node answers. Next: step 3, your key."));
+    stepDone(2); return;
+  }
+  if (/^keys save/.test(sub)) {
+    const name = arg("--name") || "me";
+    if (X.key) { bad(`error: key '${name}' already exists`); hint("You have a key already: tau keys show me"); return; }
+    X.key = hex(96);
+    out(`Saved key '${name}' → /data/.tau-testnet/keys/${name}.json`); out(`Public Key (hex): ${X.key}`);
+    good(T("This is your address. Next: step 4, vote."));
+    stepDone(3); return;
+  }
+  if (/^keys show/.test(sub)) {
+    if (!X.key) { bad("error: no key named 'me'"); hint("Make one first: tau keys save --name me"); return; }
+    if (/--private/.test(sub)) out("Private Key (hex): " + hex(64) + "   " + T("(made up for practice)"));
+    out(`Public Key${/--private/.test(sub) ? "  " : " "}(hex): ${X.key}`); return;
+  }
+  if (/^(gov list|governance)/.test(sub)) {
+    const open = practiceOpen();
+    out(T("(shortened; the real output is the node's full governance JSON)"));
+    out(`approval_threshold: ${g.approval_threshold} · active validators: ${g.active_validator_count}`);
+    if (!open.length) { out("pending_updates: []"); hint("Nothing open in the simulation right now. Make your own practice proposal: press Try on step 5."); return; }
+    for (const p of open) out(`pending  ${p.id}\n         ${p.title} · ${p.votes + (X.votes.has(p.id) ? 1 : 0)}/${p.need} yes · activates #${p.act}`);
+    hint("Copy an id into: tau gov vote --key me --update-id <id>  (or press Try on step 4)");
+    return;
+  }
+  if (/^gov vote/.test(sub)) {
+    if (!X.key) { bad("error: no key named 'me'"); hint("Make your key first: tau keys save --name me"); return; }
+    const id = (arg("--update-id") || "").toLowerCase();
+    const open = practiceOpen(), p = open.find(x => x.id === id);
+    if (!/^[0-9a-f]{64}$/.test(id) || !p) {
+      const known = [...(g.scheduled_updates || []), ...(g.archival_update_details || [])].find(u => u.update_id === id);
+      bad(env("error", { code: "TX_REJECTED", message: known ? `Vote targeted update_id ${id.slice(0, 10)} resolving to non-pending state: ${known.lifecycle || "approved-and-scheduled"}` : `Vote points natively to unknown update_id: ${id.slice(0, 10)}` }));
+      hint(known ? "That change is no longer open. tau gov list shows what is." : "No open proposal has that id. tau gov list shows the open ones.");
+      return;
+    }
+    if (X.votes.has(id)) { bad(env("error", { code: "TX_REJECTED", message: `Duplicate explicit vote actively suppressed for ${X.key.slice(0, 10)} natively on ${id.slice(0, 10)}` })); hint("One vote per key and proposal: the node refuses a second."); return; }
+    const tx = hex(64), at = g.head_number + 1;
+    X.votes.set(id, { tx, at, title: p.title });
+    out(env("ok", { message: "Transaction queued.", tx_hash: tx }));
+    good(F("Queued. It lands in block #{a} in a few seconds.", { a: at }));
+    stepDone(4);
+    watchLanding(id);
+    return;
+  }
+  if (/^gov propose/.test(sub)) {
+    if (!X.key) { bad("error: no key named 'me'"); hint("Make your key first: tau keys save --name me"); return; }
+    let obj = null;
+    try { obj = JSON.parse(pipe || "null"); } catch (e) { bad("error: --file is not valid JSON: " + e.message); return; }
+    if (!obj || !Array.isArray(obj.rule_revisions) || !obj.rule_revisions.length) { bad("error: --file must be a JSON object with rule_revisions/activate_at_height"); return; }
+    const min = g.head_number + 1 + g.active_validator_count;
+    if (!(obj.activate_at_height >= min)) { bad(env("error", { code: "TX_REJECTED", message: `Minimum activation delay explicitly breached: ${obj.activate_at_height} < ${min}` })); hint("The activation height is already too close. Press Try on step 5 again for a fresh one."); return; }
+    const done = id => {
+      const tx = hex(64), at = g.head_number + 1;
+      const same = obj.rule_revisions[0] === g.consensus_rules;
+      X.props.set(id, { id, act: obj.activate_at_height, landed: at, title: same ? T("Your proposal: same rules as now") : T("Your proposal: a new base fee") });
+      out(env("ok", { message: "Transaction queued.", tx_hash: tx, update_id: id }));
+      good(F("Your proposal lands in block #{a}. Then it is open for votes, yours included.", { a: at }));
+      stepDone(5);
+    };
+    updateId(obj.rule_revisions, obj.activate_at_height).then(id => done(id || hex(64)));
+    return;
+  }
+  if (/^help/.test(sub) || !sub) { out("tau status · tau keys save --name me · tau keys show me · tau gov list · tau gov vote --key me --update-id <id> · tau gov propose --key me --file <file>"); return; }
+  out(F("Not part of the practice: tau {s}. Type tau help.", { s: sub }));
+}
+function watchLanding(id) {
+  const v = X.votes.get(id);
+  const tick = () => {
+    if (TauSim.head() >= v.at) {
+      good(F("Block #{a}: your yes for {id} is counted.", { a: v.at, id: short(id) }));
+      renderTally(); return;
+    }
+    setTimeout(tick, 1000);
+  };
+  setTimeout(tick, 1000);
+}
+function renderTally() {
+  const box = $("tally"), open = practiceOpen(), mineFirst = open.find(p => X.votes.has(p.id)) || open[0];
+  if (!mineFirst) { box.replaceChildren(el("span", { text: T("No open proposal in the simulation right now.") })); return; }
+  const v = X.votes.get(mineFirst.id), landed = v && TauSim.head() >= v.at;
+  const have = mineFirst.votes, pips = [];
+  for (let i = 0; i < Math.max(mineFirst.need, have + (v ? 1 : 0)); i++) pips.push(el("span", { class: "pip" + (i < have ? " y" : i === have && landed ? " me" : "") }));
+  const total = have + (landed ? 1 : 0);
+  box.replaceChildren(...[el("span", { class: "pips", "aria-hidden": "true" }, ...pips),
+    el("span", { text: `${short(mineFirst.id)} · ` + F("{a} of {b} yes votes", { a: total, b: mineFirst.need }) + (landed ? " · " + T("yours in amber") : "") + (total >= mineFirst.need ? " · " + T("agreed") : "") }),
+    mineFirst.sim ? null : el("span", { text: F("The simulation has {v} validators; on the real testnet today one yes is enough.", { v: simGov().active_validator_count }) })].filter(Boolean));
+}
+setInterval(() => { refreshSimTitles(); renderTally(); }, 4000);
+$("promptForm").addEventListener("submit", e => { e.preventDefault(); const v = $("cmdIn").value; $("cmdIn").value = ""; run(v); });
+document.addEventListener("click", async e => {
+  const c = e.target.closest("button.copy");
+  if (c && !c.disabled) {
+    try { await navigator.clipboard.writeText($(c.dataset.copy).dataset.cmd || $(c.dataset.copy).textContent); c.textContent = T("Copied"); }
+    catch { c.textContent = T("Select it"); }
+    setTimeout(() => { c.textContent = T("Copy"); }, 1600);
+    return;
+  }
+  const t = e.target.closest("button.try");
+  if (!t) return;
+  if (t.dataset.try === "c5") {   // practice proposal: the same command, built from the simulated chain's rules
+    const g = simGov(), payload = { rule_revisions: [g.consensus_rules], activate_at_height: g.head_number + 75, host_contract_patch: null };
+    const id = await updateId(payload.rule_revisions, payload.activate_at_height);
+    run(`printf '%s\\n' ${shq(JSON.stringify(payload))} | tau gov propose --key me --file /dev/stdin`);
+    if (id) setTimeout(() => { $("cmdIn").value = `tau gov vote --key me --update-id ${id}`; $("cmdIn").focus({ preventScroll: true }); hint("Your vote on it is ready below: press Enter once the proposal has landed."); }, 200);
+    return;
+  }
+  if (t.dataset.try === "c4") {
+    const open = practiceOpen().filter(p => !X.votes.has(p.id));
+    if (!open.length) { run("tau gov list"); return; }
+    run(`tau gov vote --key me --update-id ${open[0].id}`);
+    return;
+  }
+  run($(t.dataset.try).dataset.cmd || $(t.dataset.try).textContent);
+});
+// step 4's Try votes on the simulation's own open proposal, whatever the real list shows
+$("s4small").after(el("button", { class: "try", type: "button", "data-try": "c4", style: "min-width:0;padding:0 8px",
+  "data-tip": "Votes yes in the practice terminal on the simulation's open proposal.", text: T("Try") }));
+
+/* ---------- hover tips ---------- */
+const tip = $("tip");
+document.addEventListener("mouseover", e => {
+  const t = e.target.closest("[data-tip]");
+  if (!t || !t.dataset.tip) { tip.hidden = true; return; }
+  tip.textContent = T(t.dataset.tip.replace(/\\n/g, "\n"));
+  tip.hidden = false;
+});
+document.addEventListener("mousemove", e => {
+  if (tip.hidden) return;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + "px";
+  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) + "px";
+});
+document.addEventListener("mouseleave", () => { tip.hidden = true; });
+
+/* ---------- one screen ---------- */
+function fit() {
+  const w = innerWidth, h = innerHeight, root = document.documentElement;
+  const on = w >= 1200 && h >= 640 && w / h >= 1.3;   // smaller screens scroll
+  const z = on ? Math.max(.82, Math.min(2, w / 1600, h / 860)) : 1;
+  root.classList.toggle("fit", on);
+  root.classList.toggle("wide", on && w / h >= 1.95);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+}
+addEventListener("resize", fit);
+
+/* ---------- start ---------- */
+if (SIM) { $("sourceLine").textContent = T("Simulation: the open proposals in step 4 come from the made-up chain, the same on every page. The practice terminal always uses it. Switch to Live node in the header for the real testnet."); TauSim.mark(); }
+const saved = store.get(KEY_STORE); if (saved && isKey(saved)) $("me").value = saved;
+line("hint", T("Practice terminal. It answers like your node would, from the simulated chain. Press Try on a step, starting with step 2."));
+refreshSimTitles();
+fit();
+renderTally();
+connect();
+loadTitles();
+setInterval(loadTitles, 120000);
+</script>
+</body>
+</html>
