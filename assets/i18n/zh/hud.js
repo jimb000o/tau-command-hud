@@ -1481,5 +1481,6 @@ TauI18n.add({ strings: {
   "Nothing waiting: every transaction sent so far is in a block.": "没有等待中的交易：迄今发送的每笔交易都已在区块中。",
   "transfer": "转账",
   "rule-change proposal": "规则变更提案",
-  "Mempool: {h} pending · est. fee {n}": "内存池：{h} 待处理 · 预估手续费 {n}"
+  "Mempool: {h} pending · est. fee {n}": "内存池：{h} 待处理 · 预估手续费 {n}",
+  "Time travel: the timeline now zooms. Wheel or + − zooms around the pointer, a strip below shows the whole chain and a window you drag to choose the part shown above; double-click or “Whole chain” shows everything again. Rule changes outside the shown part give their rows back, transaction bars are grouped per pixel so long chains stay readable, revision labels appear only where they fit, and the current block sits as a pill on the axis.": "时间旅行：时间轴现在可以缩放。滚轮或 + − 以指针为中心缩放，下方的条带显示整条链，拖动其中的窗口即可选择上方显示的部分；双击或点“整条链”恢复全部显示。显示范围之外的规则变更会让出行位，交易柱按像素合并，长链也清晰可读，版本标签只在放得下时显示，当前区块以胶囊形式标在坐标轴上。",
 } });

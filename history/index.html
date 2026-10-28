@@ -92,6 +92,18 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .conn button { font: 12px var(--mono); background: none; border: 0; border-bottom: 1px dotted var(--dim); color: #fff; padding: 0; cursor: pointer; }
 
 /* timeline */
+.ovwrap { position: relative; margin-top: 6px; touch-action: none; user-select: none; -webkit-user-select: none; }
+#ov { display: block; width: 100%; cursor: crosshair; }
+#ov .obar { fill: rgba(255,255,255,.32); } #ov .obar.gov { fill: var(--ok); }
+#ov .orev { fill: none; stroke: var(--ok); stroke-width: 1; opacity: .8; }
+#ov .oprop { stroke: rgba(255,255,255,.7); stroke-width: 1; }
+#ov .owin { fill: rgba(255,255,255,.07); stroke: rgba(255,255,255,.6); stroke-width: 1; cursor: grab; }
+#ov .oshade { fill: rgba(0,0,0,.45); }
+#ov .ocur { stroke: #fff; stroke-width: 1.5; }
+#ov .olbl { font: 600 9.5px var(--display); letter-spacing: .16em; fill: var(--dim); text-transform: uppercase; }
+#bAll { position: absolute; right: 0; top: -30px; }
+#tl .revtick { stroke: rgba(57,255,138,.35); stroke-width: 1; }
+#tl .revn.dim { fill: var(--dim); }
 .tlwrap { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 #tl { display: block; width: 100%; cursor: ew-resize; }
 #tl text { font-family: var(--mono); }
@@ -291,9 +303,13 @@ html.wide .src { max-width: none; columns: 2; column-gap: 40px; }
   </div>
 
   <section class="panel" id="pTl">
-    <h2>The chain, block by block <small><span class="kbd">← → one block · Shift + ← → next rule event</span><span class="touch">drag the timeline or the slider · tap a bar for its rule change</span></small></h2>
+    <h2>The chain, block by block <small><span class="kbd">← → one block · Shift + ← → next rule event · wheel or + − to zoom, drag the strip below to move</span><span class="touch">drag the timeline or the slider · tap a bar for its rule change</span></small></h2>
     <div class="tlwrap" id="tlwrap">
       <svg id="tl" height="200" role="img" aria-label="Timeline of blocks and rule changes"></svg>
+    </div>
+    <div class="ovwrap" id="ovwrap" title="The whole chain. Drag to choose the part shown above, drag the window to move it, double-click for everything.">
+      <svg id="ov" height="30" role="img" aria-label="Overview of the whole chain"></svg>
+      <button class="btn small" id="bAll" type="button" hidden>Whole chain</button>
     </div>
     <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Block height">
     <div class="controls">
@@ -730,7 +746,7 @@ function legacy() {   // relay without getblockrange: the newest 50 blocks only
   C.legacy = true; send("getblocks 50");
 }
 function resetChain() {
-  C.blocks = []; C.head = -1; C.first = 0; uidCache.clear(); H.orphanVotes = [];
+  C.blocks = []; C.head = -1; C.first = 0; VIEW = null; uidCache.clear(); H.orphanVotes = [];
   warn("The testnet restarted its chain. History starts again at genesis.");
   if (!C.legacy) { setTimeout(() => loadFrom(0), 500); }
 }
@@ -745,8 +761,30 @@ function live() {
 /* ---------------- timeline (SVG) ---------------- */
 const NS = "http://www.w3.org/2000/svg";
 const TL = { pad: 14, w: 800, x0: 14, x1: 786, rows: {} };
-function xOf(h) { const span = Math.max(1, C.head - C.first); return TL.x0 + (h - C.first) / span * (TL.x1 - TL.x0); }
-function hOf(x) { const span = Math.max(1, C.head - C.first); return Math.round(C.first + (x - TL.x0) / (TL.x1 - TL.x0) * span); }
+/* the visible window of the timeline: the whole chain (VIEW = null) or a zoomed range. The overview strip below always shows the whole chain. */
+let VIEW = null, headMoved = false;
+const va = () => VIEW ? Math.max(C.first, VIEW.a) : C.first, vb = () => VIEW ? Math.min(C.head, VIEW.b) : C.head;
+function xOf(h) { const a = va(), span = Math.max(1, vb() - a); return TL.x0 + (h - a) / span * (TL.x1 - TL.x0); }
+function hOf(x) { const a = va(), span = Math.max(1, vb() - a); return Math.round(a + (x - TL.x0) / (TL.x1 - TL.x0) * span); }
+const MIN_SPAN = 24;
+const revW = t => t.length * 7 + 14;
+function setView(a, b) {
+  const full = C.head - C.first;
+  if (b - a >= full || full <= MIN_SPAN) VIEW = null;
+  else { const span = Math.max(MIN_SPAN, Math.round(b - a)); a = Math.max(C.first, Math.min(C.head - span, Math.round(a))); VIEW = { a, b: a + span, cur: cursor, glued: a + span >= C.head }; }
+  $("bAll").hidden = !VIEW;
+  drawTimeline(); drawOverview();
+}
+const zoomAt = (h, f) => { const a = va(), b = vb(); setView(h - (h - a) * f, h + (b - h) * f); };
+// keep the cursor in sight: a window that ends at the head moves with new blocks; moving the cursor outside the window recentres it
+function keepInView() {
+  const auto = headMoved; headMoved = false;   // a new block moved the cursor, not the reader
+  if (!VIEW) return;
+  const span = VIEW.b - VIEW.a;
+  if (VIEW.glued) { VIEW.b = C.head; VIEW.a = C.head - span; }
+  if (!auto && cursor !== VIEW.cur && (cursor < VIEW.a || cursor > VIEW.b)) { VIEW.a = Math.max(C.first, Math.min(C.head - span, cursor - Math.round(span / 2))); VIEW.b = VIEW.a + span; }
+  VIEW.glued = VIEW.b >= C.head; VIEW.cur = cursor;
+}
 const clampH = h => Math.max(C.first, Math.min(C.head, h));
 // a proposal whose rule text equals the rules in force and that changes no setting ("Same rules as now")
 function isNoop(p) {
@@ -762,12 +800,13 @@ function lanes(props) {
   // lanes in pixel space: a bar and its label must never overlap another bar or label.
   // Rows are capped: proposals that change nothing share one row, and when real changes still need more rows,
   // the oldest finished ones fold into one "+N more" row. Open proposals and the newest always keep their own row.
-  const out = new Map(), groups = [], cap = MAX_LANES();
+  const out = new Map(), groups = [], cap = MAX_LANES(), A = va(), B = vb();
+  props = props.filter(p => p.proposedAt <= B && (p.activatedAt ?? p.expiredAt ?? Math.max(C.head, p.activateAt)) >= A);
   const noop = props.filter(isNoop), real = props.filter(p => !isNoop(p));
   const place = (list, rows) => {   // greedy packing; returns the proposals that did not fit
     const ends = [], left = [];
     for (const p of list) {
-      const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
+      const xa = Math.max(TL.x0, xOf(p.proposedAt)), xEnd = Math.min(TL.x1, xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt)));
       p.label = labelOf(p, TL.x1 - TL.x0);
       const lw = p.label.length * charW() + 8;
       let lx = xa; if (lx + lw > TL.x1) lx = Math.max(TL.x0, TL.x1 - lw);
@@ -826,51 +865,61 @@ function drawTimeline() {
   parts.push(`<text class="lbl" x="${TL.x0}" y="${y.prL}">Rule changes</text>`);
   parts.push(`<text class="lbl" x="${TL.x0}" y="${y.rvL}">Spec revision in force</text>`);
   if (C.head < 0) { svg.innerHTML = parts.join(""); return; }
-  const span = Math.max(1, C.head - C.first), ppb = (TL.x1 - TL.x0) / span;
-  // axis grid + labels: height on top, UTC time below
+  const A = va(), B = vb(), span = Math.max(1, B - A), ppb = (TL.x1 - TL.x0) / span;
+  const cx = xOf(cursor);
+  // the playhead pill sits in the axis row; axis labels that would touch it give way
+  const pill = `#${fmtN(cursor)}`, pw = pill.length * 7 + 12, px = Math.max(TL.x0, Math.min(TL.x1 - pw, cx - pw / 2));
+  // axis grid + labels: height and UTC time, a label only where it keeps clear of its neighbours and of the pill
   const step = tickStep(ppb);
-  // a label is drawn only when it keeps clear of the one before it (the grid line always is), so the axis never overprints
   let axRight = -1e9;
-  for (let h = Math.ceil(C.first / step) * step; h <= C.head; h += step) {
+  for (let h = Math.ceil(A / step) * step; h <= B; h += step) {
     const x = xOf(h), b = C.blocks[h], ts = b && b.header ? b.header.timestamp : 0;
     const anchor = x < TL.x0 + 20 ? "start" : x > TL.x1 - 20 ? "end" : "middle";
     parts.push(`<line class="grid" x1="${x}" x2="${x}" y1="${y.tx0}" y2="${y.rv1}"/>`);
     const txt = `#${fmtN(h)}${ts ? ` ${hhmm(ts)}` : ""}`, lw = txt.length * 6.2, left = anchor === "start" ? x : anchor === "end" ? x - lw : x - lw / 2;
-    if (left < axRight + 10) continue;
+    if (left < axRight + 10 || (left < px + pw + 8 && left + lw > px - 8)) continue;
     axRight = left + lw;
     parts.push(`<text class="ax" x="${x}" y="${y.ax}" text-anchor="${anchor}">#${fmtN(h)}${ts ? ` <tspan class="axs">${hhmm(ts)}</tspan>` : ""}</text>`);
   }
-  // transactions per block: one path for plain blocks, one for governance blocks
-  let maxTx = 1; for (let h = C.first; h <= C.head; h++) { const b = C.blocks[h]; if (b) maxTx = Math.max(maxTx, (b.transactions || []).length); }
-  const bw = Math.max(1, Math.min(10, ppb * 0.7));
+  // transactions: one bar per block when there is room, otherwise one bar per pixel column showing the busiest block in it
+  // (green when any block in the column carries a vote or proposal), so 10,000 blocks read as a profile, not as noise
+  const per = ppb >= 2 ? 1 : Math.ceil(2 / ppb);
+  let maxTx = 1; for (let h = A; h <= B; h++) { const b = C.blocks[h]; if (b) maxTx = Math.max(maxTx, (b.transactions || []).length); }
+  const bw = per === 1 ? Math.max(1, Math.min(10, ppb * 0.7)) : Math.max(1, per * ppb - 0.6);
   let pPlain = "", pGov = "", pGap = "";
-  for (let h = C.first; h <= C.head; h++) {
-    const b = C.blocks[h], x = xOf(h) - bw / 2;
-    if (!b) { pGap += `M${x} ${y.tx0}h${bw}V${y.tx1}h${-bw}Z`; continue; }
-    const n = (b.transactions || []).length, hh = n ? Math.max(2, (y.tx1 - y.tx0) * n / maxTx) : 1;
-    const gov = (b.transactions || []).some(t => /^consensus_rule/.test(t.tx_type || ""));
+  for (let h0 = A - (A % per); h0 <= B; h0 += per) {
+    let n = -1, gov = false, gap = false;
+    for (let h = Math.max(A, h0); h < h0 + per && h <= B; h++) {
+      const b = C.blocks[h]; if (!b) { gap = true; continue; }
+      const txs = b.transactions || []; n = Math.max(n, txs.length);
+      if (!gov && txs.some(t => /^consensus_rule/.test(t.tx_type || ""))) gov = true;
+    }
+    const x = (per === 1 ? xOf(h0) - bw / 2 : xOf(Math.max(A, h0)));
+    if (n < 0) { if (gap) pGap += `M${x} ${y.tx0}h${bw}V${y.tx1}h${-bw}Z`; continue; }
+    const hh = n ? Math.max(2, (y.tx1 - y.tx0) * n / maxTx) : 1;
     const d = `M${x} ${y.tx1 - hh}h${bw}V${y.tx1}h${-bw}Z`;
     if (gov) pGov += d; else pPlain += d;
   }
   parts.push(`<path class="gap" d="${pGap}"/><path class="bars" d="${pPlain}"/><path class="bars gov" d="${pGov}"/>`);
-  // the cursor line sits behind every label (labels carry a dark halo), its pill is drawn last
-  const cx = xOf(cursor);
+  // the cursor line sits behind every label (labels carry a dark halo)
   parts.push(`<line class="cursor" x1="${cx}" x2="${cx}" y1="${y.tx0 - 2}" y2="${y.rv1 + 2}"/>`);
-  // rule changes, one bar per proposal from "proposed" to its end
+  // rule changes, one bar per proposal from "proposed" to its end, cut to the window
+  const X = h => Math.max(TL.x0, Math.min(TL.x1, xOf(h))), inV = h => h >= A && h <= B;
   if (!H.props.length) { const n = nodeOnly().length;
     parts.push(`<text class="none" x="${TL.x0}" y="${y.pr0 + 15}">${n ? `No proposal in the loaded blocks. The node lists ${n}: see “Agreement in progress”.` : "No rule change proposed on this chain yet."}</text>`); }
+  else if (!L.n) parts.push(`<text class="none" x="${TL.x0}" y="${y.pr0 + 15}">No rule change in this part of the chain.</text>`);
   for (const p of H.props) {
-    if (!L.map.has(p)) continue;   // drawn as a mark in a shared row below
+    if (!L.map.has(p)) continue;   // outside the window, or drawn as a mark in a shared row below
     // label on its own line above the bar, so vote marks and dots never cross the text
     const { lane: l, lx } = L.map.get(p), ty = y.pr0 + l * laneH + 9, top = ty + 4, hgt = 8;
-    const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
-    const xAg = p.approvedAt != null ? xOf(p.approvedAt) : null;
-    const xAct = p.activatedAt != null ? xOf(p.activatedAt) : null;
+    const xa = X(p.proposedAt), xEnd = X(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
+    const xAg = p.approvedAt != null ? X(p.approvedAt) : null;
+    const xAct = p.activatedAt != null && inV(p.activatedAt) ? xOf(p.activatedAt) : null;
     const g = [`<g class="prop ${p.expiredAt != null ? "expired" : ""}" data-p="${p.n}">`];
     g.push(`<rect class="track" x="${xa}" y="${top}" width="${Math.max(3, xEnd - xa)}" height="${hgt}" rx="2"/>`);
-    if (xAg != null) g.push(`<rect class="agreed" x="${xAg}" y="${top}" width="${Math.max(3, (xAct ?? xEnd) - xAg)}" height="${hgt}" rx="2"/>`);
+    if (xAg != null && p.approvedAt <= B) g.push(`<rect class="agreed" x="${xAg}" y="${top}" width="${Math.max(3, (xAct ?? xEnd) - xAg)}" height="${hgt}" rx="2"/>`);
     if (xAct != null) g.push(`<circle cx="${xAct}" cy="${top + hgt / 2}" r="4.5" fill="var(--ok)"/>`);
-    for (const v of p.votes.filter(v => v.counted)) { const xv = xOf(v.h); g.push(`<line class="vote" x1="${xv}" x2="${xv}" y1="${top - 1}" y2="${top + hgt + 1}"/>`); }
+    for (const v of p.votes.filter(v => v.counted && inV(v.h))) { const xv = xOf(v.h); g.push(`<line class="vote" x1="${xv}" x2="${xv}" y1="${top - 1}" y2="${top + hgt + 1}"/>`); }
     // label: its lane was chosen with room for it, so it is never cut or covered
     g.push(`<text x="${lx}" y="${ty}">${esc(p.label)}</text>`);
     g.push(`<rect x="${Math.min(xa, xEnd, lx) - 4}" y="${ty - 10}" width="${Math.max(xEnd, lx + p.label.length * charW()) - Math.min(xa, lx) + 8}" height="${top + hgt + 3 - (ty - 10)}" fill="transparent"/></g>`);
@@ -879,35 +928,38 @@ function drawTimeline() {
   // shared rows: one thin line over their span, one mark per proposal (tick where it was proposed, dot where it took effect)
   for (const G of L.groups) {
     const ty = y.pr0 + G.lane * laneH + 9, mid = ty + 7, ms = G.members;
-    const x0 = Math.min(...ms.map(p => xOf(p.proposedAt))), x1 = Math.max(...ms.map(p => xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt))));
+    const x0 = Math.min(...ms.map(p => X(p.proposedAt))), x1 = Math.max(...ms.map(p => X(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt))));
     let lx = x0; const lw = G.label.length * charW() + 8; if (lx + lw > TL.x1) lx = Math.max(TL.x0, TL.x1 - lw);
     const g = [`<g class="grp" data-g="${G.kind}"><line class="gline" x1="${x0}" x2="${Math.max(x1, x0 + 3)}" y1="${mid}" y2="${mid}"/>`,
       `<text x="${lx}" y="${ty}">${esc(G.label)}</text><rect x="${Math.min(x0, lx) - 4}" y="${ty - 10}" width="${Math.max(x1, lx + lw) - Math.min(x0, lx) + 8}" height="12" fill="transparent"/></g>`];
     for (const p of ms) {
-      const xa = xOf(p.proposedAt), xAct = p.activatedAt != null ? xOf(p.activatedAt) : null;
-      g.push(`<g class="prop pmark ${p.expiredAt != null ? "expired" : ""}" data-p="${p.n}"><line class="tick" x1="${xa}" x2="${xa}" y1="${mid - 4}" y2="${mid + 4}"/>`
-        + (xAct != null ? `<circle cx="${xAct}" cy="${mid}" r="3" fill="var(--ok)"/>` : "")
-        + `<rect x="${xa - 5}" y="${mid - 6}" width="10" height="12" fill="transparent"/></g>`);
+      if (!inV(p.proposedAt) && !(p.activatedAt != null && inV(p.activatedAt))) continue;
+      const xa = xOf(p.proposedAt), xAct = p.activatedAt != null && inV(p.activatedAt) ? xOf(p.activatedAt) : null;
+      g.push(`<g class="prop pmark ${p.expiredAt != null ? "expired" : ""}" data-p="${p.n}">` + (inV(p.proposedAt) ? `<line class="tick" x1="${xa}" x2="${xa}" y1="${mid - 4}" y2="${mid + 4}"/><rect x="${xa - 5}" y="${mid - 6}" width="10" height="12" fill="transparent"/>` : "")
+        + (xAct != null ? `<circle cx="${xAct}" cy="${mid}" r="3" fill="var(--ok)"/>` : "") + `</g>`);
     }
     parts.push(g.join(""));
   }
-  // spec revision step line
-  let d = "", prevRev = null; const revLabels = [];
-  for (let h = C.first; h <= C.head; h++) {
+  // spec revision: a step line; each revision's name sits inside its own stretch when it fits there, otherwise on hover
+  let d = "", prevRev = null; const segs = [];
+  for (let h = A; h <= B; h++) {
     const s = H.snaps[h]; if (!s) continue;
-    const yy = y.rv1 - Math.min(s.rev - 1, 6) * 3 - 2, x = xOf(h);
-    if (prevRev == null) { d += `M${x} ${yy}`; revLabels.push([x, s.rev]); }
-    else if (s.rev !== prevRev) { d += `H${x}V${yy}`; revLabels.push([x, s.rev]); }
+    const yy = y.rv1 - Math.min(s.rev - 1, 4) * 3 - 2, x = xOf(h);
+    if (prevRev == null) { d += `M${x} ${yy}`; segs.push({ x, rev: s.rev, h, yy }); }
+    else if (s.rev !== prevRev) { d += `H${x}V${yy}`; segs.push({ x, rev: s.rev, h, yy }); }
     prevRev = s.rev;
   }
   d += `H${TL.x1}`;
   parts.push(`<path class="rev" d="${d}"/>`);
-  let lastX = -1e9;
-  for (const [x, r] of revLabels) { if (x - lastX < 26) continue; parts.push(`<text class="revn" x="${Math.min(x + 4, TL.x1 - 22)}" y="${y.rv0 + 4}">rev ${r}</text>`); lastX = x; }
-  // cursor
-  const pill = `#${fmtN(cursor)}`, pw = pill.length * 7 + 12;
-  const px = Math.max(TL.x0, Math.min(TL.x1 - pw, cx - pw / 2));
-  parts.push(`<rect class="cpill" x="${px}" y="0" width="${pw}" height="15" rx="7.5"/><text class="ctext" x="${px + pw / 2}" y="11" text-anchor="middle">${pill}</text>`);
+  segs.forEach((g, i) => {
+    const end = i + 1 < segs.length ? segs[i + 1].x : TL.x1, t = `rev ${g.rev}`, w = revW(t);
+    if (i + 1 < segs.length) parts.push(`<line class="revtick" x1="${end}" x2="${end}" y1="${y.rv0 - 4}" y2="${y.rv1}"/>`);
+    if (end - g.x >= w) parts.push(`<text class="revn" x="${g.x + 5}" y="${g.yy - 5}">${t}</text>`);
+  });
+  if (segs.length > 1 && TL.x1 - TL.x0 > 620 && segs.some((g, i) => (i + 1 < segs.length ? segs[i + 1].x : TL.x1) - g.x < revW(`rev ${g.rev}`)))
+    parts.push(`<text class="revn dim" x="${TL.x1}" y="${y.rvL}" text-anchor="end">${plural(segs.length, "revision")} here · hover or zoom for each</text>`);
+  // playhead pill, drawn last, in the axis row
+  parts.push(`<rect class="cpill" x="${px}" y="${y.ax - 11}" width="${pw}" height="15" rx="7.5"/><text class="ctext" x="${px + pw / 2}" y="${y.ax}" text-anchor="middle">${pill}</text>`);
   svg.innerHTML = parts.join("");
 }
 
@@ -931,14 +983,84 @@ function blockTip(h) {
   const txs = b.transactions || [], counts = {};
   txs.forEach(t => { const k = TX_NAMES[txKind(t)] || txKind(t); counts[k] = (counts[k] || 0) + 1; });
   const ts = b.header.timestamp;
-  return `<b>Block #${fmtN(h)}</b> <em>${ts ? new Date(ts * 1000).toISOString().slice(11, 19) + " UTC" : "genesis"}</em><br>${txs.length ? Object.entries(counts).map(([k, n]) => `${n} ${esc(k)}`).join(" · ") : "<em>no transactions</em>"}`;
+  const sr = H.snaps[h] ? ` · rev ${H.snaps[h].rev}` : "";
+  return `<b>Block #${fmtN(h)}</b> <em>${ts ? new Date(ts * 1000).toISOString().slice(11, 19) + " UTC" : "genesis"}${sr}</em><br>${txs.length ? Object.entries(counts).map(([k, n]) => `${n} ${esc(k)}`).join(" · ") : "<em>no transactions</em>"}`;
 }
 function propTip(p) {
   const st = { active: `in force from #${fmtN(p.activatedAt)}`, expired: `dropped at #${fmtN(p.expiredAt)}: too few votes`, agreed: `agreed at #${fmtN(p.approvedAt)}, in force from #${fmtN(p.activateAt)}`, voting: `waiting for votes, deadline #${fmtN(p.activateAt)}` }[statusAt(p, C.head)];
   return `<b>${esc(p.title)}</b><br>proposed #${fmtN(p.proposedAt)} · ${plural(p.votes.filter(v => v.counted).length, "vote")}<br><em>${st} · click for details</em>`;
 }
+/* ---------------- overview: the whole chain in one strip, with the shown window as a brush ---------------- */
+const OV = { x0: 14, x1: 786, w: 800 };
+const oxOf = h => OV.x0 + (h - C.first) / Math.max(1, C.head - C.first) * (OV.x1 - OV.x0);
+const ohOf = x => Math.round(C.first + (x - OV.x0) / (OV.x1 - OV.x0) * Math.max(1, C.head - C.first));
+function drawOverview() {
+  const svg = $("ov"); const W = Math.max(280, svg.clientWidth || svg.parentNode.clientWidth);
+  OV.w = W; OV.x0 = TL.x0; OV.x1 = W - (TL.w - TL.x1); svg.setAttribute("viewBox", `0 0 ${W} 30`);
+  if (C.head < 0) { svg.innerHTML = ""; return; }
+  const cols = Math.max(1, Math.floor((OV.x1 - OV.x0) / 2)), per = Math.max(1, (C.head - C.first + 1) / cols), parts = [];
+  let maxTx = 1; const bins = [];
+  for (let i = 0; i < cols; i++) {
+    let n = 0, gov = false;
+    for (let h = Math.floor(C.first + i * per); h < Math.floor(C.first + (i + 1) * per) && h <= C.head; h++) {
+      const b = C.blocks[h]; if (!b) continue; const t = b.transactions || []; n = Math.max(n, t.length);
+      if (!gov && t.some(x => /^consensus_rule/.test(x.tx_type || ""))) gov = true;
+    }
+    bins.push([n, gov]); maxTx = Math.max(maxTx, n);
+  }
+  let pP = "", pG = "";
+  bins.forEach(([n, gov], i) => { if (!n) return; const x = OV.x0 + i * 2, hh = Math.max(1, 12 * n / maxTx), d = `M${x} ${14 - hh}h1.4V14h-1.4Z`; if (gov) pG += d; else pP += d; });
+  parts.push(`<path class="obar" d="${pP}"/><path class="obar gov" d="${pG}"/>`);
+  // spec revision as a thin step line, proposals as ticks
+  let d = "", prev = null;
+  for (let i = 0; i <= cols; i++) { const h = Math.min(C.head, Math.floor(C.first + i * per)), s = H.snaps[h]; if (!s) continue; const yy = 27 - Math.min(s.rev - 1, 8) * 1.2, x = OV.x0 + i * 2;
+    if (prev == null) d += `M${x} ${yy}`; else if (s.rev !== prev) d += `H${x}V${yy}`; prev = s.rev; }
+  parts.push(`<path class="orev" d="${d}H${OV.x1}"/>`);
+  for (const p of H.props) { const x = oxOf(p.proposedAt); parts.push(`<line class="oprop" x1="${x}" x2="${x}" y1="16" y2="21"/>`); }
+  // the window: everything outside it is shaded
+  const a = oxOf(va()), b = oxOf(vb());
+  if (VIEW) parts.push(`<rect class="oshade" x="${OV.x0}" y="0" width="${Math.max(0, a - OV.x0)}" height="30"/><rect class="oshade" x="${b}" y="0" width="${Math.max(0, OV.x1 - b)}" height="30"/>`);
+  parts.push(`<rect class="owin" x="${a}" y="0.5" width="${Math.max(3, b - a)}" height="29" rx="2"/>`);
+  const c = oxOf(cursor); parts.push(`<line class="ocur" x1="${c}" x2="${c}" y1="0" y2="30"/>`);
+  svg.innerHTML = parts.join("");
+}
+{
+  const ov = $("ovwrap"); let mode = null, h0 = 0, w0 = null;
+  const ovX = ev => { const r = $("ov").getBoundingClientRect(); return (ev.clientX - r.left) * (OV.w / r.width); };
+  ov.addEventListener("pointerdown", ev => {
+    if (C.head < 0 || ev.target.closest("#bAll")) return;
+    const h = Math.max(C.first, Math.min(C.head, ohOf(ovX(ev))));
+    ov.setPointerCapture(ev.pointerId); h0 = h;
+    if (VIEW && h >= VIEW.a && h <= VIEW.b) { mode = "move"; w0 = { ...VIEW }; } else { mode = "new"; }
+  });
+  ov.addEventListener("pointermove", ev => {
+    if (!mode) return;
+    const h = Math.max(C.first, Math.min(C.head, ohOf(ovX(ev))));
+    if (mode === "move") { const dh = h - h0; setView(w0.a + dh, w0.b + dh); }
+    else if (Math.abs(h - h0) > 2) setView(Math.min(h, h0), Math.max(h, h0));
+    if (VIEW) VIEW.glued = VIEW.b >= C.head;
+  });
+  ov.addEventListener("pointerup", ev => {
+    if (mode === "new" && Math.abs(Math.max(C.first, Math.min(C.head, ohOf(ovX(ev)))) - h0) <= 2) {
+      // a plain click: centre the window there (or jump the cursor when nothing is zoomed)
+      if (VIEW) { const span = VIEW.b - VIEW.a; setView(h0 - span / 2, h0 + span / 2); } else { stopPlay(); setCursor(h0, true); }
+    }
+    mode = null;
+  });
+  ov.addEventListener("dblclick", () => setView(C.first, C.head));
+  $("bAll").onclick = () => setView(C.first, C.head);
+}
 let drag = false;
 const tlw = $("tlwrap");
+// wheel over the timeline zooms around the pointer (pinch on a trackpad too)
+tlw.addEventListener("wheel", ev => {
+  if (C.head < 0 || (!ev.ctrlKey && Math.abs(ev.deltaX) > Math.abs(ev.deltaY))) {   // sideways swipe pans
+    if (C.head >= 0 && VIEW) { ev.preventDefault(); const span = VIEW.b - VIEW.a, dh = Math.round(ev.deltaX / (TL.x1 - TL.x0) * span); setView(VIEW.a + dh, VIEW.b + dh); }
+    return;
+  }
+  ev.preventDefault(); hideTip();
+  zoomAt(clampH(hOf(svgX(ev))), Math.exp(ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0015)));
+}, { passive: false });
 tlw.addEventListener("pointerdown", ev => {
   if (C.head < 0) return;
   const p = propAt(ev); if (p || groupAt(ev)) return;   // a click on a rule change opens it (see click)
@@ -1002,7 +1124,10 @@ document.addEventListener("keydown", e => {
     e.preventDefault(); stopPlay();
     const dir = e.key === "ArrowRight" ? 1 : -1;
     if (e.shiftKey) { const h = nextEvent(dir); if (h != null) setCursor(h, true); } else setCursor(cursor + dir, true);
-  } else if (e.key === "Home") { e.preventDefault(); setCursor(C.first, true); } else if (e.key === "End") { e.preventDefault(); setCursor(C.head, true); }
+  } else if (e.key === "+" || e.key === "=") { e.preventDefault(); zoomAt(cursor, 0.6); }
+  else if (e.key === "-" || e.key === "_") { e.preventDefault(); zoomAt(cursor, 1 / 0.6); }
+  else if (e.key === "0") { e.preventDefault(); setView(C.first, C.head); }
+  else if (e.key === "Home") { e.preventDefault(); setCursor(C.first, true); } else if (e.key === "End") { e.preventDefault(); setCursor(C.head, true); }
   else if (e.key === " " && e.target === document.body) { e.preventDefault(); $("bPlay").click(); }
 });
 
@@ -1015,9 +1140,10 @@ function ago(ts) {
 }
 const timeTxt = ts => ts ? `${new Date(ts * 1000).toISOString().replace("T", " ").slice(0, 19)} UTC` : "genesis, no timestamp";
 function render() {
-  if (hovering && !drag && !playing) { pendingRender = true; drawTimeline(); readout(); return; }
+  keepInView();
+  if (hovering && !drag && !playing) { pendingRender = true; drawTimeline(); drawOverview(); readout(); return; }
   pendingRender = false;
-  drawTimeline(); readout();
+  drawTimeline(); drawOverview(); readout();
   if (C.head < 0) return;
   renderRules(); renderAgree(); renderBlock();
 }
@@ -1246,7 +1372,7 @@ render = function () {   // jump to a shared block once it is loaded, otherwise 
     if (firstData && !C.loading) {
       firstData = false;
       if (wanted && +wanted[1] <= C.head) { cursor = +wanted[1]; following = cursor === C.head; } else { cursor = C.head; following = true; }
-    } else if (following && !playing && !drag) cursor = C.head;
+    } else if (following && !playing && !drag) { headMoved = cursor !== C.head; cursor = C.head; }
   }
   origRender();
 };
@@ -1258,7 +1384,7 @@ render = function () {   // jump to a shared block once it is loaded, otherwise 
     document.documentElement.classList.toggle("ultra", wide && w / h >= 2.1);
     document.documentElement.style.setProperty("--z", z);
   };
-  apply(); addEventListener("resize", () => { apply(); drawTimeline(); });
+  apply(); addEventListener("resize", () => { apply(); drawTimeline(); drawOverview(); });
   // the timeline takes the spare height of the screen; the panels below have a fixed height and scroll inside
   if (window.ResizeObserver) new ResizeObserver(() => { if (document.documentElement.classList.contains("wide")) drawTimeline(); }).observe($("pTl"));
 })();
