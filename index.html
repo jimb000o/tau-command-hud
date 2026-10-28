@@ -28,7 +28,7 @@
 <title>Tau HUD</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Noto+Serif+SC:wght@900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Noto+Serif+SC:wght@900&display=swap">
 <style>
 /* Layout: holographic command deck. Status rail on top, reactor core in the centre flanked by
    the Tau engine (left) and the transaction stream (right), the chain ribbon and logs below. */
@@ -190,29 +190,40 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .statep li span { color: var(--dim); }
 .statep .more { margin-top: 8px; align-self: flex-start; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 4px 8px; cursor: pointer; }
 .statep .more:hover { background: #fff; color: #000; }
-/* the newspaper's advertisement fills what the box leaves free: 1920s type and double rules, in the HUD's black and white */
+/* a clipping of the newspaper's front page lies in what the box leaves free: newsprint and ink, the paper's own type and rules.
+   The paper is a neutral grey-white, so the HUD keeps green as its only colour. */
 .statep #statePanel { flex: 0 1 auto; }
-.gazad { flex: 1 1 0; min-height: 0; margin-top: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; text-align: center; text-decoration: none; color: #e9e6df; padding: 10px 12px; border: 3px double rgba(255,255,255,.32); border-radius: 2px; background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.05), rgba(255,255,255,0) 70%); position: relative; }
-.gazad::before, .gazad::after { content: "✦"; position: absolute; top: 4px; font-size: 9px; color: rgba(255,255,255,.4); }
-.gazad::before { left: 7px; } .gazad::after { right: 7px; }
-.gazad:hover { border-color: rgba(255,255,255,.7); background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.09), rgba(255,255,255,0) 70%); }
-.gazad:hover .ga-cta { background: #fff; color: #000; }
+.gazad { flex: 1 1 0; min-height: 0; margin: 10px 4px 4px; display: flex; text-decoration: none; position: relative; container: gaz / inline-size; }
 .gazad[hidden] { display: none; }
-.ga-k { font: 600 9px var(--display); letter-spacing: .34em; text-transform: uppercase; color: var(--dim); }
-.ga-nm { font: 400 clamp(22px, 1.9vw, 34px)/1 "UnifrakturMaguntia", "Old English Text MT", serif; color: #fff; white-space: nowrap; }
-.ga-mo { font: italic 400 12px/1.2 "Playfair Display", Georgia, serif; color: #bdb8ad; }
-.ga-dl { align-self: stretch; display: flex; justify-content: space-between; gap: 8px; padding: 3px 2px; margin: 2px 0; border-top: 3px double rgba(255,255,255,.35); border-bottom: 3px double rgba(255,255,255,.35); font: 600 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: #bdb8ad; }
+.ga-paper { --ink: #1c1c1e; --ink2: #4a4a4e; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; overflow: hidden; padding: 12px 14px 10px; text-align: center; color: var(--ink);
+  background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.35), rgba(255,255,255,0) 60%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), #dcdad5;
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 10px 24px -6px rgba(0,0,0,.85), 0 2px 4px rgba(0,0,0,.5); transform: rotate(-.7deg); transition: transform .25s, box-shadow .25s;
+  clip-path: polygon(0 1%, 4% 0, 11% .8%, 19% .1%, 27% .9%, 36% 0, 45% .7%, 55% .1%, 64% .9%, 73% 0, 82% .8%, 91% .1%, 100% .9%, 99.6% 50%, 100% 99%, 93% 100%, 84% 99.2%, 75% 100%, 66% 99.1%, 57% 100%, 48% 99.3%, 39% 100%, 30% 99.1%, 21% 100%, 12% 99.2%, 4% 100%, 0 99.1%, .4% 50%); }
+.gazad:hover .ga-paper, .gazad:focus-visible .ga-paper { transform: rotate(0deg) translateY(-2px); box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 16px 30px -6px rgba(0,0,0,.9), 0 2px 4px rgba(0,0,0,.5); }
+.gazad:focus-visible { outline: 2px solid var(--ok); outline-offset: 4px; }
+.ga-nm { font: 400 clamp(16px, calc((100cqi - 30px) / 11.5), 34px)/1 "UnifrakturMaguntia", "Old English Text MT", serif; color: var(--ink); white-space: nowrap; }
+.ga-mo { font: italic 400 11px/1.2 "Playfair Display", Georgia, serif; color: var(--ink2); margin-top: -3px; }
+.ga-dl { align-self: stretch; display: flex; justify-content: space-between; gap: 8px; padding: 2px 2px; border-top: 3px double var(--ink); border-bottom: 3px double var(--ink); font: 700 9.5px/1.2 "Old Standard TT", Georgia, serif; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
 .ga-dl i { font-style: normal; white-space: nowrap; }
-.ga-hl { font: 900 clamp(15px, 1.1vw, 21px)/1.15 "Playfair Display", Georgia, serif; color: #fff; text-wrap: balance; max-width: 34ch; }
-.ga-cta { margin-top: 4px; font: 600 10px var(--display); letter-spacing: .2em; text-transform: uppercase; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; padding: 4px 12px; }
-.ga-x { font: 900 11px/1 "Playfair Display", Georgia, serif; letter-spacing: .4em; text-transform: uppercase; color: #fff; border: 1px solid rgba(255,255,255,.5); padding: 3px 4px 3px 9px; }
-.ga-ph { width: min(100%, 300px); height: auto; aspect-ratio: 700 / 574; min-height: 90px; flex: 0 1 auto; object-fit: cover; filter: grayscale(1) contrast(1.05) brightness(.9); border: 1px solid rgba(255,255,255,.3); }
-.ga-dk { font: italic 400 13px/1.35 "Playfair Display", Georgia, serif; color: #bdb8ad; max-width: 40ch; }
-.gazad.c1 .ga-ph, .gazad.c1 .ga-dk, .gazad.c1 .ga-x, .gazad.c2 .ga-ph, .gazad.c2 .ga-dk, .gazad.c2 .ga-x, .gazad.c3 .ga-ph, .gazad.c3 .ga-dk, .gazad.c3 .ga-x { display: none; }   /* a tall box gets the photo and the deck */
-.gazad.c2 .ga-mo, .gazad.c2 .ga-k { display: none; }          /* less room: masthead, headline, link */
-.gazad.c3 .ga-dl { display: none; }                            /* even less: without the dateline */
-html.i18n-zh .ga-nm { font: 900 clamp(22px, 1.7vw, 30px)/1.1 "Noto Serif SC", serif; letter-spacing: .12em; }
-html.i18n-zh .ga-hl, html.i18n-zh .ga-mo { font-family: "Noto Serif SC", serif; }
+.ga-x { font: 900 10px/1 "Playfair Display", Georgia, serif; letter-spacing: .5em; text-transform: uppercase; color: var(--ink); border: 1.5px solid var(--ink); padding: 3px 3px 3px 8px; }
+.ga-hl { font: 900 clamp(16px, 1.15vw, 23px)/1.08 "Playfair Display", Georgia, serif; color: var(--ink); text-wrap: balance; max-width: 30ch; letter-spacing: -.005em; }
+.ga-dk { font: italic 400 12px/1.3 "Old Standard TT", Georgia, serif; color: var(--ink2); max-width: 44ch; padding-bottom: 4px; border-bottom: 1px solid rgba(0,0,0,.35); }
+.ga-ph { width: 100%; height: 0; min-height: 70px; max-height: 300px; flex: 1 1 0; object-fit: cover; object-position: 50% 45%; filter: grayscale(1) contrast(1.15); mix-blend-mode: multiply; border: 1px solid var(--ink); }
+.ga-tx { align-self: stretch; columns: 2; column-gap: 12px; column-rule: 1px solid rgba(0,0,0,.35); text-align: justify; hyphens: auto; font: 11.5px/1.32 "Old Standard TT", Georgia, serif; color: var(--ink); }
+.ga-tx::first-letter { float: left; font: 700 2.5em/.85 "Playfair Display", Georgia, serif; margin: 2px 3px 0 0; }
+.ga-more { margin-top: auto; padding-top: 3px; font: italic 700 11px "Playfair Display", Georgia, serif; color: var(--ink); border-top: 1px solid rgba(0,0,0,.35); align-self: stretch; }
+.gazad:hover .ga-more { text-decoration: underline; }
+/* six sizes, the largest that fits: everything · without the columns (the photo takes the room) · without photo · without motto and EXTRA · smaller headline, no deck · masthead, headline and link */
+.gazad.c1 .ga-tx, .gazad.c2 .ga-tx, .gazad.c3 .ga-tx, .gazad.c4 .ga-tx, .gazad.c2 .ga-ph, .gazad.c3 .ga-ph, .gazad.c4 .ga-ph { display: none; }
+.gazad.c2 .ga-paper, .gazad.c3 .ga-paper, .gazad.c4 .ga-paper { justify-content: center; }
+.gazad.c2 .ga-more, .gazad.c3 .ga-more, .gazad.c4 .ga-more { margin-top: 6px; }
+.gazad.c3 .ga-mo, .gazad.c3 .ga-x, .gazad.c4 .ga-mo, .gazad.c4 .ga-x { display: none; }
+.gazad.c4 .ga-dk, .gazad.c5 .ga-dk, .gazad.c5 .ga-dl { display: none; }
+.gazad.c4 .ga-hl, .gazad.c5 .ga-hl { font-size: 15px; }
+.gazad.c5 .ga-paper { justify-content: center; } .gazad.c5 .ga-mo, .gazad.c5 .ga-x, .gazad.c5 .ga-ph, .gazad.c5 .ga-tx { display: none; }
+html.i18n-zh .ga-nm { font: 900 clamp(20px, 1.6vw, 30px)/1.1 "Noto Serif SC", serif; letter-spacing: .14em; }
+html.i18n-zh .ga-hl, html.i18n-zh .ga-mo, html.i18n-zh .ga-dk, html.i18n-zh .ga-tx, html.i18n-zh .ga-more { font-family: "Noto Serif SC", serif; letter-spacing: 0; }
+html.i18n-zh .ga-tx { text-align: left; }
 .scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .thesis { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr); gap: 8px 16px; align-items: center; padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(90deg, rgba(255,255,255,.07), rgba(16,16,18,.6) 45%, rgba(57,255,138,.04)); position: relative; }
 .thesis::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--brand); border-radius: 2px; }
@@ -998,15 +1009,17 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         <h2>Rules in force now <small id="stateSub">changes only when the chain agrees</small><button class="info" type="button" aria-label="What is this?" data-tip="The current state of the chain’s law: the consensus rules every block is judged by, how many validators must agree to change them, and the rule changes that have been agreed so far. This panel does not animate; it only changes when a new block changes the rules. The full view with the Tau spec code and every personal rule opens with the button below.">i</button></h2>
         <div class="scroll" id="statePanel"></div>
         <a class="gazad" id="gazAd" href="gazette/" aria-label="Read the latest edition of The Daily Consensus" data-full="The Daily Consensus: the testnet told as a 1920s newspaper. Front page, the road from Zennet, how a hard fork works, letters to the editor. Opens the latest edition.">
-          <span class="ga-k">Advertisement</span>
-          <span class="ga-nm">The Daily Consensus</span>
-          <span class="ga-mo">Where the rules change by agreement</span>
-          <span class="ga-dl"><i>Latest edition</i><i id="gazNo">No. —</i><i id="gazDate"></i></span>
-          <span class="ga-x">Extra</span>
-          <span class="ga-hl" id="gazHl">Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys</span>
-          <img class="ga-ph" src="gazette/img/hud-core.jpg" width="700" height="574" alt="" loading="lazy" decoding="async">
-          <span class="ga-dk" id="gazDk">Consensus moves from a fixed list of validators to stake and back again, and not a single machine is reinstalled.</span>
-          <span class="ga-cta">Read it ›</span>
+          <span class="ga-paper">
+            <span class="ga-nm">The Daily Consensus</span>
+            <span class="ga-mo">Where the rules change by agreement</span>
+            <span class="ga-dl"><i>Vol. XIII</i><i id="gazNo">No. —</i><i id="gazDate"></i></span>
+            <span class="ga-x">Extra</span>
+            <span class="ga-hl" id="gazHl">Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys</span>
+            <span class="ga-dk" id="gazDk">Consensus moves from a fixed list of validators to stake and back again, and not a single machine is reinstalled.</span>
+            <img class="ga-ph" src="gazette/img/hud-core.jpg" width="700" height="574" alt="" loading="lazy" decoding="async">
+            <span class="ga-tx" id="gazTx">Every blockchain has a rulebook. On most of them it is carved into the software itself, and changing a single line means a hard fork: new software, shipped to every machine, installed by every operator, with the ever-present danger that some refuse and the chain splits in two.</span>
+            <span class="ga-more">Continued in the newspaper ›</span>
+          </span>
         </a>
         <button class="more" type="button" id="btnState3">Full chain state</button>
       </article>
@@ -1433,7 +1446,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.49", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.50", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -1970,21 +1983,20 @@ function showBlock(b, pinned = true) {
   }
   $("chainSub").textContent = pinned ? `showing #${b.n} · back to newest ›` : "following the newest block";
 }
-/* the newspaper ad: the newest edition from gazette/latest.json once the newspaper publishes it, else the current front page;
+/* the newspaper ad: the newest edition from node.tauhud.com/recap/gazette/latest.json once the weekly edition is out, else the current front page;
    shown in three sizes, the largest that fits the room the box leaves, hidden when even the smallest does not fit */
 const GAZ = { at: 0, ed: null };
 function fitGazAd() {
   const a = $("gazAd"); if (!a) return;
-  a.hidden = false; a.classList.remove("c1", "c2", "c3");
-  const over = () => a.scrollHeight > a.clientHeight + 1 || a.clientHeight < 96;
-  if (over()) a.classList.add("c1");
-  if (over()) a.classList.add("c2");
-  if (over()) a.classList.add("c3");
+  a.hidden = false; a.classList.remove("c1", "c2", "c3", "c4", "c5");
+  const paper = a.firstElementChild, over = () => paper.scrollHeight > paper.clientHeight + 1 || paper.clientHeight < 96;
+  for (const c of ["c1", "c2", "c3", "c4", "c5"]) { if (!over()) return; a.classList.add(c); }
   if (over()) a.hidden = true;
 }
 async function loadGazette() {
   if (Date.now() - GAZ.at < 600000) return; GAZ.at = Date.now();
-  try { const r = await fetch("gazette/latest.json", { cache: "no-cache" }); if (r.ok) GAZ.ed = await r.json(); } catch (e) {}
+  // the weekly edition is set by the alerts service on the server, next to the weekly recap
+  try { const r = await fetch("https://node.tauhud.com/recap/gazette/latest.json", { cache: "no-cache" }); if (r.ok) { const j = await r.json(); if (j && typeof j.headline === "string") GAZ.ed = j; } } catch (e) {}
   renderGazAd();
 }
 function renderGazAd() {
@@ -1992,7 +2004,9 @@ function renderGazAd() {
   const hl = (zh && ed.headline_zh) || ed.headline || "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys";
   const no = ed.number != null ? Number(ed.number) : S.height || null;
   $("gazHl").textContent = hl;
+  if (typeof ed.url === "string" && /^https:\/\/tauhud\.com\/gazette\//.test(ed.url)) $("gazAd").href = ed.url.replace(/^https:\/\/tauhud\.com\//, "");   // same site, so the preview and a local copy open their own newspaper
   if (ed.deck || ed.deck_zh) $("gazDk").textContent = (zh && ed.deck_zh) || ed.deck;
+  if (ed.text || ed.text_zh) $("gazTx").textContent = (zh && ed.text_zh) || ed.text;
   $("gazNo").textContent = zh ? (no ? `第 ${fmt(no)} 期` : "第 — 期") : no ? `No. ${fmt(no)}` : "No. —";
   const d = ed.date ? new Date(ed.date + (/T/.test(ed.date) ? "" : "T00:00:00Z")) : new Date();
   $("gazDate").textContent = isNaN(d) ? "" : d.toLocaleDateString(zh ? "zh-CN" : "en-GB", { day: "numeric", month: zh ? "long" : "short", year: "numeric", timeZone: "UTC" });
@@ -3197,7 +3211,7 @@ pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); set
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.49`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.50`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
