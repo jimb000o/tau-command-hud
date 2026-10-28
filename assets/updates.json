@@ -663,5 +663,10 @@
   "tag": "Newspaper",
   "on": "2026-10-28",
   "html": "New page: The Daily Consensus, twelve years of Tau as a 1920s newspaper. Ten pages drawn from the Tau team’s own videos and the Chronicle: the front-page story of the users who changed the chain’s consensus by vote, the road from Zennet, obituaries for dropped plans, telegrams from 2025, letters from the monthly Q&As, classifieds and puzzles. Click, tap or press the arrow keys to turn a page; on phones and small screens it becomes a pocket edition. In Chinese too. Find it under Learn."
+ },
+ {
+  "tag": "Missions",
+  "on": "2026-10-28",
+  "html": "Missions: a new page in the Playground menu with six short tasks on a practice chain of your own, one block every two seconds. Vote a change into law, get a rule refused before the vote, let a rule fail at two thirds, lower the bar, survive a validator outage and bring the chain to proof of stake. Each mission ends with where to see the same thing on the real testnet. Progress stays in your browser; share a mission or your progress as a link."
  }
 ]
