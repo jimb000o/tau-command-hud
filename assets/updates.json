@@ -643,5 +643,10 @@
   "tag": "v17.45",
   "on": "2026-10-28",
   "html": "Keep it running says plainly where the money goes: most of what Tau HUD costs is time, the development tools behind that work are not free either, and the server is the smallest part. Donations help cover these costs; no promise is attached. Same text in the Updates overlay on every page and in About."
+ },
+ {
+  "tag": "v17.46",
+  "on": "2026-10-28",
+  "html": "Personal money rules, Rule sharing and refused transactions now fill on the HUD, in Live mode and in the simulation. Every rule an account deploys or accepts appears with its terms; offers show who offered what to whom and whether it was accepted, declined or expired; rules and offers set before you opened the page are fetched per account. What the node refuses at the door shows in the transaction feed with its reason, such as too little balance, a used sequence number, a fee below the base fee, a rule that does not compile or the sender's own rule saying no; hover or click for the full story."
  }
 ]
