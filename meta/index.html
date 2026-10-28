@@ -147,7 +147,7 @@ html.fit.wide .col.side { display: contents; }
   </div>
   <main class="main">
     <div class="col">
-      <section class="panel">
+      <section class="panel" id="pDaily">
         <h2>Visitors per day
           <span class="range" role="group" aria-label="Time range">
             <button type="button" data-r="7">7D</button><button type="button" data-r="30">30D</button><button type="button" data-r="90">90D</button><button type="button" data-r="365">1Y</button><button type="button" data-r="0">All</button>
@@ -157,7 +157,7 @@ html.fit.wide .col.side { display: contents; }
         <div class="legend"><span><i class="b"></i>visitors that day (click a bar for the day)</span><span><i class="l"></i>7-day average</span><span><i class="t"></i>today, still counting</span></div>
       </section>
       <div class="row2">
-        <section class="panel">
+        <section class="panel" id="pGrowth">
           <h2>Growth <span class="aside" id="growthNote"></span></h2>
           <div class="chart small" id="cGrowth"></div>
         </section>
@@ -179,7 +179,7 @@ html.fit.wide .col.side { display: contents; }
         </div>
         <table id="dPages"></table>
       </section>
-      <section class="panel">
+      <section class="panel" id="pPages">
         <h2>Most visited pages <span class="aside" id="pRange"></span></h2>
         <div class="tablewrap"><table id="pages"></table></div>
       </section>

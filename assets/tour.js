@@ -65,6 +65,13 @@
       { s: "#join", t: "Run a node", x: "Three steps and about an hour and a half on a small server. No server yet? Try a simulated node in your browser first." },
       { s: ".panel.gets", t: "What you get", x: "Your name on the board, a live badge, a chain you checked yourself and a head start for a validator seat." },
     ] },
+    meta: { name: "In numbers", intro: "How many people look at Tau through this site: per day, over time and on which pages. Counted without cookies.", steps: [
+      { s: ".intro .kpis", t: "The short version", x: "Visitors today, the daily average of the last week with its trend, all visits added up and the best day so far." },
+      { s: "#pDaily", t: "Visitors per day", x: "One bar per day, the green line is the 7-day average. Pick 7 days up to All for the whole history; click a bar for that day." },
+      { s: "#dayPanel", t: "One day up close", x: "Visitors, pages opened and how many stayed 30 seconds, plus the pages people opened that day." },
+      { s: "#pGrowth", t: "Growth", x: "Every day's visitors added up since counting began, so you see the climb at a glance." },
+      { s: "#pPages", t: "What people open", x: "The most visited pages in the chosen range. Click one to go there." },
+    ] },
     status: { name: "Status", intro: "Is our node up and in sync, how healthy is the testnet, and what happened in the last 30 days.", steps: [
       { s: "#lead", t: "The answer first", x: "One line says whether our node is up and in sync with the testnet. Everything below backs it up." },
       { s: "#health", t: "Testnet health", x: "A score out of 100, the points lost and why, and the last 30 days as a small line." },
