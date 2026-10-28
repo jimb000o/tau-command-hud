@@ -116,4 +116,7 @@ TauI18n.add({ strings: {
   "{n} offline": "{n} 个离线",
   "{n} other peers": "{n} 个其他节点",
   "{x1} · id {x2} since {x3} · kit {x4} · tau-testnet {x5} Click for its badge.": "{x1} · ID {x2} 自 {x3} 起 · 套件 {x4} · tau-testnet {x5} 点击获取它的徽章。",
+  "Simulation: made-up nodes on the simulated chain, the same on every page. No real nodes. Switch to Live node in the header for the real list.": "模拟：模拟链上的虚构节点，每个页面都相同。不是真实节点。在页眉切换到实时节点可查看真实列表。",
+  "Tau HUD node": "Tau HUD 节点",
+  "running {n} d · {m} % up": "运行 {n} 天 · 在线 {m} %",
 } });

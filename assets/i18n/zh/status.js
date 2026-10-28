@@ -151,4 +151,5 @@ TauI18n.add({ strings: {
   "· Ask the Telegram bot: send /status to": "· 问 Telegram 机器人：发送 /status 给",
   "· up to": "· 直到",
   "· {n} stalls over 10 min": "· {n} 次超过 10 分钟的停滞",
+  "A made-up chain generated in your browser: the simulated node is up and in sync. No real chain data.": "在你的浏览器中生成的虚构链：模拟节点在线且已同步。不是真实链上数据。",
 } });

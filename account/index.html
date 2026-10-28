@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Tau Account View</title>
@@ -378,11 +379,12 @@ const $ = id => document.getElementById(id);
 const PARAMS = new URLSearchParams(location.search);
 const NODE = PARAMS.get("node") || "wss://node.tauhud.com";
 const SAMPLE = PARAMS.has("sample");
+const SIM = !SAMPLE && !!(window.TauSim && TauSim.on);   // simulation mode: the same made-up chain as every other page (assets/sim.js)
 const PAGE = 100;
 const SVGNS = "http://www.w3.org/2000/svg";
 
 /* Starting balances from tau-testnet networks/tau-testnet-v2/genesis.json (commit 539d1e2). */
-const GENESIS = {
+const GENESIS = SIM ? TauSim.genesis : {
   "f427fbf4cb8cc5ebcfc50add98ba574b94c03b1e32626e2e50cf60ba5e0a6d0c42d3ed702c2e0eeef7fae29bc4f3d2f9": 1000000,
   "838d089401687e4ba5fe844f1241b2f6cf63cf73a7f8fb6aa0e45b3c6b85454f4e7ca19960b71d847655486495b64cb4": 100000,
   "93da919aed3b83e517190b8362528b35cbd51beb754289c5d99db12a306ac7f4980fbb96108a9cb812a46aede0c5f9ca": 100000,
@@ -458,9 +460,9 @@ function connect() {
   if (SAMPLE) return;
   clearTimeout(C.retryT);
   let ws;
-  try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
+  try { ws = SIM ? TauSim.socket() : new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
-  setState("wait", "Connecting", `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
+  setState("wait", "Connecting", SIM ? "Building the simulated chain…" : `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
   ws.onopen = () => { C.off = false; C.retry = 5000; setTimeout(pumpBalances, 500); ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); if (S.addr) lookup(S.addr); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
@@ -483,7 +485,7 @@ function store(raw) {
 }
 // "dropped": transactions that left our node's queue without reaching a block (kept by the relay, see /stats)
 function loadDropped() {
-  fetch(NODE.replace(/^ws/, "http").replace(/\/$/, "") + "/stats", { cache: "no-store" }).then(r => r.ok ? r.json() : null)
+  (SIM ? TauSim.fetch("/stats") : fetch(NODE.replace(/^ws/, "http").replace(/\/$/, "") + "/stats", { cache: "no-store" })).then(r => r.ok ? r.json() : null)
     .then(j => { if (j && Array.isArray(j.dropped)) { C.dropped = j.dropped; rebuild(); } }).catch(() => {});
 }
 // the rich list needs every account's confirmed balance: one getbalance at a time, so the relay's shared lookup budget
@@ -544,7 +546,8 @@ function onMessage(ev) {
 function live() {
   C.ready = true;
   const first = C.blocks.findIndex(Boolean);
-  setState("live", "Live", `${plural(C.head + 1 - Math.max(0, first), "block")} read from our node.\nNew blocks appear as they are made.`);
+  if (SIM) setState("sim", "Simulation", `${plural(C.head + 1 - Math.max(0, first), "block")} of a made-up chain, generated in your browser and the same on every page.\nNew blocks come every ${TauSim.pace} s. No real chain data.`);
+  else setState("live", "Live", `${plural(C.head + 1 - Math.max(0, first), "block")} read from our node.\nNew blocks appear as they are made.`);
   clearInterval(C.poll);
   C.poll = setInterval(() => { send("getblocks 6"); send("getgovernance"); }, 30000);
 }
@@ -558,6 +561,7 @@ const hexBytes = h => (h.match(/../g) || []).map(x => parseInt(x, 16));
 // offer_id = BLAKE3(offerer pubkey ‖ recipient pubkey ‖ rule text ‖ expiry height), as consensus/serialization.py computes it
 async function offerId(t) {
   if (offerIds.has(t)) return offerIds.get(t);
+  if (typeof t.offer_id === "string" && /^[0-9a-f]{64}$/.test(t.offer_id)) return t.offer_id;   // the simulation names its offers in the transaction
   let id = null;
   try {
     const a = low(t.sender_pubkey), b = low(t.recipient_pubkey);
@@ -995,7 +999,7 @@ function open(addr, push) {
   if (addr === S.addr) { rebuild(); return; }
   S.addr = addr; S.lookups = {}; S.filter = "all"; S.more = 20; M = null;
   if (push) history.pushState({ a: addr }, "", addr ? accUrl(addr) : `/account/${SAMPLE ? "?sample" : ""}`);
-  document.title = addr ? `Tau Account ${short(addr)}` : "Tau Account View";
+  document.title = (SIM ? "Simulation · " : "") + (addr ? `Tau Account ${short(addr)}` : "Tau Account View");
   $("q").value = addr || ""; $("qMsg").hidden = true; $("q").classList.remove("bad");
   if (addr) { if (SAMPLE) sampleLookups(addr); else lookup(addr); }
   hideTip(); rebuild();
@@ -1112,6 +1116,7 @@ function sampleLookups(addr) {
 
 /* ------------------------------ start ------------------------------ */
 fit();
+if (SIM) TauSim.mark();
 const first = low(PARAMS.get("a") || "");
 if (SAMPLE) startSample(); else connect();
 open(isAddr(first) ? first : null, false);

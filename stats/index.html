@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Testnet Stats</title>
@@ -285,6 +286,8 @@ const RELAY = "node.tauhud.com";
 const STATS_URL = `https://${RELAY}/stats`, WS_URL = `wss://${RELAY}`, COMMUNITY_URL = `https://${RELAY}/community`;
 const PARAMS = new URLSearchParams(location.search);
 const SAMPLE = PARAMS.has("sample");
+const SIM = !SAMPLE && !!(window.TauSim && TauSim.on);   // simulation mode: the same made-up chain as every other page (assets/sim.js)
+const get = (url, path) => SIM ? TauSim.fetch(path) : fetch(url, { cache: "no-store" });
 const SVGNS = "http://www.w3.org/2000/svg";
 
 /* Restarts we saw before the relay kept a log (from our node operation notes). Shown hollow, times approximate. */
@@ -405,10 +408,10 @@ function startWindowMode() {
 
 async function loadNodes() {
   if (SAMPLE) { NODES = sampleNodes(); render(); return; }
-  fetch(COMMUNITY_URL.replace(/community$/, "peers"), { cache: "no-store" }).then(r => r.ok ? r.json() : null)
+  get(COMMUNITY_URL.replace(/community$/, "peers"), "/peers").then(r => r.ok ? r.json() : null)
     .then(p => { PEERS = p; render(); }).catch(() => {});
   try {
-    const r = await fetch(COMMUNITY_URL, { cache: "no-store" });
+    const r = await get(COMMUNITY_URL, "/community");
     if (!r.ok) throw new Error(String(r.status));
     NODES = await r.json();
   } catch (e) { NODES = null; }
@@ -418,7 +421,7 @@ async function loadNodes() {
 async function load() {
   if (SAMPLE) { D = sampleData(); lastFetch = Date.now(); render(); return; }
   try {
-    const r = await fetch(STATS_URL, { cache: "no-store" });
+    const r = await get(STATS_URL, "/stats");
     if (!r.ok) throw new Error(String(r.status));
     D = fromStats(await r.json()); lastFetch = Date.now();
     if (WS) { WS.onclose = null; WS.close(); WS = null; }
@@ -634,7 +637,7 @@ function restartChart(rows) {
   const recorded = (D.restarts || []).map(r => ({ at: r.new_block1_ts || r.detected_at, old: r.old || {} }));
   const since = D.trackingSince || now;
   // a noted restart close before block 1 of the current chain is that chain's start: use the exact time
-  const known = D.mode === "sample" ? [] : KNOWN_RESTARTS.filter(k => k.at < since - 1800 && !recorded.some(r => Math.abs(r.at - k.at) < 3 * 3600))
+  const known = D.mode === "sample" || SIM ? [] : KNOWN_RESTARTS.filter(k => k.at < since - 1800 && !recorded.some(r => Math.abs(r.at - k.at) < 3 * 3600))
     .map(k => cur && D.rows.some(r => r.n === 1) && Math.abs(cur.from - k.at) < 3 * 3600 ? { ...k, at: cur.from, approx: null, exact: true } : k);
   const t1 = now, t0 = Math.min(t1 - 86400, ...known.map(k => k.at - 3600), ...recorded.map(r => (r.old.block1_ts || r.at) - 1800), cur ? cur.from - 1800 : t1);
   const WIDE = document.documentElement.classList.contains("wide");
@@ -711,6 +714,7 @@ function render() {
     banner.hidden = true;
     const age = last ? now - last.ts : null;
     if (D.canonical != null && D.tip != null && D.canonical < D.tip) setState("wait", `Verified to #${D.canonical} of ${D.tip}`, "Our node is still checking the newest blocks against the network. Numbers cover what it has verified.");
+    else if (SIM) setState("sim", "Simulation", `A made-up chain generated in your browser, the same on every page. No real chain data.${age != null ? `\nNewest block #${last.n}, sealed ${fmtDur(age)} ago.` : ""}`);
     else setState("live", "Live", `Updated ${fmtDur((Date.now() - lastFetch) / 1000)} ago from our node.${age != null ? `\nNewest block #${last.n}, sealed ${fmtDur(age)} ago.` : ""}`);
   }
   // range buttons
@@ -863,6 +867,7 @@ document.querySelectorAll("[data-table]").forEach(b => b.addEventListener("click
 }));
 let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(render, 120); }).observe(document.querySelector(".wrap"));
 load().then(loadNodes);
+if (SIM) TauSim.mark();
 if (!SAMPLE) { setInterval(load, 30000); setInterval(loadNodes, 30000); }  // also upgrades from the 50-block window once /stats answers
 setInterval(() => { if (D && document.visibilityState === "visible" && tip.hidden) render(); }, 15000);
 </script>

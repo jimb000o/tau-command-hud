@@ -74,4 +74,7 @@ TauI18n.add({ strings: {
   "widget": "小组件",
   "Within": "在",
   "yourself. Free, no key, no tracking. Everything updates by itself from our node.": "。免费，无需密钥，没有追踪。一切都从我们的节点自动更新。",
+  "Simulated answer of /api/v1/summary": "/api/v1/summary 的模拟响应",
+  "Simulated answer of /api/v1/summary ·": "/api/v1/summary 的模拟响应 ·",
+  "Simulated answer of /api/v1/summary · {x1}": "/api/v1/summary 的模拟响应 · {x1}",
 } });

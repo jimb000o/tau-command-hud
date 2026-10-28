@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Community Nodes</title>
@@ -243,6 +244,7 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
 const $ = id => document.getElementById(id);
 const RELAY = "https://node.tauhud.com";
 const SAMPLE = new URLSearchParams(location.search).has("sample");
+const SIM = !SAMPLE && !!(window.TauSim && TauSim.on);   // simulation mode: the same made-up network as every other page (assets/sim.js)
 const T = s => (window.TauI18n ? TauI18n.t(s) : s);
 const NAME_OK = /^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$/;
 let rows = null, ref = null, peers = null, failed = false;
@@ -310,7 +312,7 @@ function network(now) {
 }
 const shortId = id => `${id.slice(0, 8)}…${id.slice(-4)}`;
 async function getJSON(path) {
-  const r = await fetch(RELAY + path, { cache: "no-store" });
+  const r = await (SIM ? TauSim.fetch(path) : fetch(RELAY + path, { cache: "no-store" }));
   if (!r.ok) throw new Error(r.status);
   return r.json();
 }
@@ -479,7 +481,7 @@ function pick(id) {
   $("snips").hidden = !id;
   if (!id) return;
   const badge = `${RELAY}/community/badge/${id}.svg${window.TauI18n && TauI18n.lang === "zh" ? "?lang=zh" : ""}`, page = `https://tauhud.com/nodes/#${id}`;
-  prev.append(SAMPLE ? el("span", { class: "note", text: T("(the badge preview needs the live relay)") }) : el("img", { src: badge, alt: "Tau HUD node badge" }));
+  prev.append(SAMPLE || SIM ? el("span", { class: "note", text: T("(the badge preview needs the live relay)") }) : el("img", { src: badge, alt: "Tau HUD node badge" }));
   $("snipMd").textContent = `[![Tau HUD node](${badge})](${page})`;
   $("snipHtml").textContent = `<a href="${page}"><img src="${badge}" alt="Tau HUD node" height="20"></a>`;
   for (const tr of document.querySelectorAll("tr[data-id]")) tr.classList.toggle("me", tr.dataset.id === id);
@@ -510,6 +512,7 @@ document.addEventListener("mousemove", e => {
 document.addEventListener("mouseleave", () => { tip.hidden = true; });
 
 if (SAMPLE) $("sourceLine").textContent = "Sample data: made-up nodes to preview the page. Remove ?sample from the address for the real list.";
+if (SIM) { $("sourceLine").textContent = "Simulation: made-up nodes on the simulated chain, the same on every page. No real nodes. Switch to Live node in the header for the real list."; TauSim.mark(); }
 updateCmd();
 fit();
 render();

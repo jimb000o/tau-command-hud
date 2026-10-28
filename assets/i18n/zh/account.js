@@ -144,4 +144,7 @@ TauI18n.add({ strings: {
   "· waits for co-signers": "· 等待共同签名人",
   "”. A full address has 96 characters; this has": "”开头的账户。完整地址有 96 个字符；这个有",
   "≈ marks a balance still counted from the transfers while our node confirms it ({n} of {m} confirmed so far).": "≈ 表示该余额仍按转账计算，我们的节点正在确认（目前已确认 {n} / {m}）。",
+  "Read {n} blocks of {m}…": "已读取 {m} 个区块中的 {n} 个…",
+  "Counted from the transfers in the blocks.": "根据区块中的转账计算。",
+  "Asking our node for the confirmed balance…": "正在向我们的节点询问已确认的余额…",
 } });

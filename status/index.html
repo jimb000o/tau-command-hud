@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Tau HUD Status</title>
@@ -306,6 +307,7 @@ const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
 const params = new URLSearchParams(location.search);
 const BASE = params.get("relay") || "https://node.tauhud.com";
 const SAMPLE = params.has("sample");
+const SIM = !SAMPLE && !!(window.TauSim && TauSim.on);   // simulation mode: the same made-up chain as every other page (assets/sim.js)
 const POLL = 30000, DAY = 86400, DAYS = 30;
 // Restarts we know of from before the relay kept its log; times approximate (same list as /stats).
 const KNOWN_RESTARTS = [
@@ -344,7 +346,7 @@ const pct = f => f == null ? "—" : f >= 0.9995 ? "100 %" : (Math.floor(f * 100
 
 /* ---------------- data ---------------- */
 async function getJSON(path) {
-  const r = await fetch(BASE + path, { cache: "no-store" });
+  const r = await (SIM ? TauSim.fetch(path) : fetch(BASE + path, { cache: "no-store" }));
   if (!r.ok) throw Object.assign(new Error(path + " " + r.status), { status: r.status });
   return r.json();
 }
@@ -403,7 +405,7 @@ function incidents() {
     for (const r of S.restarts) out.push({ kind: "restart", start: r.detected_at, end: null, detected: r.detected_at, old_tip: r.old_tip });
   }
   const logged = out.filter(i => i.kind === "restart");
-  for (const k of KNOWN_RESTARTS) {
+  for (const k of SIM ? [] : KNOWN_RESTARTS) {
     if (logged.some(r => Math.abs(r.start - k.at) < 3 * 3600)) continue;
     out.push({ kind: "restart", start: k.at, end: null, note: k.label, approx: k.approx });
   }
@@ -439,6 +441,7 @@ function overall() {
   const lag = S.tip_height != null && S.canonical_height != null ? S.tip_height - S.canonical_height : 0;
   if (!S.canonical_height) return ["warn", "Syncing", "Our node is syncing the chain. Live data follows shortly."];
   if (lag > (U ? U.sync_lag_blocks : 2)) return ["warn", "Catching up", `Live, but our node is ${plural(lag, "block")} behind the network.`];
+  if (SIM) return ["sim", "Simulation", "A made-up chain generated in your browser: the simulated node is up and in sync. No real chain data."];
   return ["live", "All systems normal", "Yes. The live chain is up and our node is in sync."];
 }
 
@@ -684,6 +687,7 @@ async function tick() {
   setTimeout(tick, reach ? POLL : Math.min(120000, POLL * 2 ** failures));
 }
 setInterval(() => { if (U || S) render(); }, 60000); // keep "x minutes ago" fresh
+if (SIM) TauSim.mark();
 tick();
 </script>
 </body>
