@@ -20,7 +20,7 @@
 /* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
 :root {
   --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
-  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --refused: #e5484d; --dim: #8a8a94; --text: #ebebee;
   --display: "Sora", "Manrope", "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   color-scheme: dark;
@@ -97,7 +97,8 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border
 .steps li b { color: #fff; font: 600 13px var(--display); }
 .steps li p { margin: 2px 0 0; color: var(--dim); font-size: 12px; overflow-wrap: anywhere; }
 .steps li.pass { border-left-color: var(--ok); } .steps li.pass .ic { color: var(--ok); }
-.steps li.fail { border-left-color: #fff; } .steps li.fail .ic { color: #fff; } .steps li.fail p { color: var(--text); }   /* a failed check is white, not red: red is kept for "node offline" */
+/* a refused rule is the visitor's own error: a deeper, muted red, always with ✕ and words; the bright offline red stays for "node down" */
+.steps li.fail { border-left-color: var(--refused); background: rgba(229,72,77,.07); } .steps li.fail .ic { color: var(--refused); } .steps li.fail p { color: var(--text); }
 .steps li.run { border-left-color: var(--behind); } .steps li.run .ic { color: var(--behind); }
 .steps li.skip { opacity: .5; }
 .steps li { transition: opacity .18s, border-color .18s, background-color .18s; }
@@ -113,9 +114,9 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border
 .settle { animation: settle .5s ease-out; }
 .stamp.settle { animation: settleText .9s ease-out; }
 @keyframes settle { from { background-color: rgba(57,255,138,.16); } }
-.verdict.bad.settle, .steps li.fail.settle { animation-name: settleWhite; }
+.verdict.bad.settle, .steps li.fail.settle { animation-name: settleRed; }
 .steps li:last-child p { min-height: 3em; }
-@keyframes settleWhite { from { background-color: rgba(255,255,255,.16); } }
+@keyframes settleRed { from { background-color: rgba(229,72,77,.22); } }
 @keyframes settleText { from { color: #fff; } }
 #tests.pending .rc { opacity: .4; transition: opacity .18s; }
 #tests .rc.fresh { animation: fresh .6s ease-out both; }
@@ -125,7 +126,7 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border
   .steps li.tick, .steps li.run .ic, .settle, .stamp.settle, #tests .rc.fresh { animation: none; }
 }
 .verdict { margin: 10px 0 0; padding: 10px 12px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 500 14px/1.4 var(--display); color: #fff; }
-.verdict.bad { border-left-color: #fff; background: rgba(255,255,255,.06); }
+.verdict.bad { border-left-color: var(--refused); background: rgba(229,72,77,.09); }
 .verdict.idle { border-left-color: var(--hair); background: rgba(255,255,255,.03); color: var(--dim); }
 pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); }
 details summary { cursor: pointer; color: #fff; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-top: 10px; }
