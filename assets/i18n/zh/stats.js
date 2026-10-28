@@ -1,5 +1,15 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "median per {n} s": "每 {n} 秒的中位数",
+  "median per {n} min": "每 {n} 分钟的中位数",
+  "median per hour": "每小时的中位数",
+  "median per {n} h": "每 {n} 小时的中位数",
+  "median per day": "每天的中位数",
+  "middle half of blocks": "中间一半的区块",
+  "unusually slow block": "异常慢的区块",
+  "{x} median": "中位数 {x}",
+  "The middle half took {x} to {y}": "中间一半用时 {x} 至 {y}",
+  "The middle half took {x}": "中间一半用时 {x}",
   "(tau-testnet pinned to commit 539d1e2)": "（tau-testnet 固定在提交 539d1e2）",
   ", served by a read-only relay.": "，通过只读中继提供。",
   ", {n} on another.": "，{n} 个在另一条链上。",
