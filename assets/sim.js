@@ -205,7 +205,7 @@
       votes: [], special: null, contested: false, slot: null, abstain: new Set(), patch: null, revisions: [], kind: "", value: null, explain: null,
       visitor: { item: v.item, by: v.by || [], close_at: v.close_at } };
     const who = TauSimName(v.by), hm = x => new Date(x * 1000).toISOString().slice(11, 16);
-    const why = w => `${w} Proposed by ${who}, a visitor of Tau HUD, from the Playground: everyone may vote until ${hm(ts(v.close_at))} UTC; if more say yes than no, the simulated validators vote it in.`;
+    const why = w => `${w} Proposed by ${who}, a visitor, in the Playground. Everyone votes until ${hm(ts(v.close_at))} UTC; more yes than no and the validators vote it in.`;
     const ex = (title, changes, w) => ({ title: "Visitors' proposal: " + title, label: null, changes, unchanged: [], why: why(w), severity: "normal" });
     const k = v.kind, val = v.value;
     const ruleFee = k === "rule" && /^always\s*\(\s*o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]{1,6})\s*\}:bv\[24\]\s*\)\s*\.$/.exec(String(val));
@@ -559,7 +559,7 @@
     }
     // the visitors' own proposals still to come into force: the same shape, with their ballot
     for (const p of ST.props) if (p.visitor && p.proposed_at <= h && h < p.activate_at && statusAt(p, h) !== "dropped")
-      out.push({ kind: "visitor", short: "visitors' proposal", title: p.explain.title, proposed_at: p.proposed_at, proposed_ts: ts(p.proposed_at), activate_at: p.activate_at, at_ts: ts(p.activate_at),
+      out.push({ kind: "visitor", short: (t => t[0].toLowerCase() + t.slice(1))(p.explain.title.replace(/^Visitors' proposal: /, "")), title: p.explain.title, proposed_at: p.proposed_at, proposed_ts: ts(p.proposed_at), activate_at: p.activate_at, at_ts: ts(p.activate_at),
         status: statusAt(p, h), id: p.id, votes: p.votes.filter(v => v.h <= h).length, thr: p.thr, ballot: ballotFor(p.visitor.item, t, ts(p.proposed_at), ts(p.visitor.close_at)) });
     out.push({ kind: "restart", short: SHORT.restart, title: SPECIAL_TITLE.restart, proposed_at: null, proposed_ts: null, activate_at: 1, at_ts: (DAYI + 1) * DAY + PACE, status: "scheduled", id: null, votes: 0, thr: null });
     return out.sort((a, b) => a.at_ts - b.at_ts).slice(0, 3);

@@ -1,4 +1,4 @@
-/* Tau HUD simulation: the visitors' vote on the hourly rule change, as a strip any page can show (HUD bar, Proposals).
+/* Tau HUD simulation: the visitors' vote on the hourly rule change and on visitors' own proposals, as a strip any page can show (HUD bar, Proposals).
 
    TauVote.strip(u)   HTML for an upcoming entry of TauSim.upcoming() that carries a ballot: the question, Yes / No,
                       the tally, the visitor's own name and colour; after the close, what the visitors decided
@@ -27,15 +27,19 @@
 
   function strip(u) {
     const b = u && u.ballot; if (!b || b.opens == null) return "";
-    const what = EVENT[u.kind] || u.short || u.title, me = TauSim.me(), t = Date.now() / 1000;
+    const visitor = u.kind === "visitor", by = visitor && b.meta && b.meta.by ? TauSim.nameOf(b.meta.by[0], b.meta.by[1]) : "";
+    const what = visitor ? String(u.title || "").replace(/^Visitors' proposal: /, "") : EVENT[u.kind] || u.short || u.title, me = TauSim.me(), t = Date.now() / 1000;
     const tally = `<span class="tv-t"><b>${b.yes}</b> yes · <b>${b.no}</b> no</span>`;
     const who = `<span class="tv-me"><i style="background:${esc(me.colour)}"></i>You vote as ${esc(me.name)}</span>`;
-    if (b.open) return `<div class="tv" data-item="${esc(b.item)}"><span class="tv-q">Your call: ${esc(what)}?</span>`
+    if (b.open) return `<div class="tv" data-item="${esc(b.item)}"><span class="tv-q">Your call: ${esc(what)}?${by ? ` <small>Proposed by ${esc(by)}</small>` : ""}</span>`
       + `<button type="button" data-vote="1" aria-pressed="${b.mine === 1}">Yes</button><button type="button" data-vote="0" aria-pressed="${b.mine === 0}">No</button>`
       + `${tally}<span>· voting closes ${mins(b.closes)}, the majority decides at ${hhmm(u.at_ts)}</span>${who}<em class="tv-msg" role="status"></em></div>`;
     if (t < b.opens || t >= u.at_ts) return "";
     const out = b.outcome || "none";
-    const said = out === "yes" ? `The visitors said yes (${b.yes} to ${b.no}): the validators agree, ${esc(what)} at ${hhmm(u.at_ts)}.`
+    // a visitor's proposal needs more yes than no: otherwise nobody votes it in and it lapses
+    const said = visitor ? (b.yes > b.no ? `The visitors said yes (${b.yes} to ${b.no}): the validators vote it in, ${esc(what)} at ${hhmm(u.at_ts)}.`
+        : `The visitors did not say yes (${b.yes} to ${b.no}): nobody votes it in, it lapses at ${hhmm(u.at_ts)} and the old rules stand.`)
+      : out === "yes" ? `The visitors said yes (${b.yes} to ${b.no}): the validators agree, ${esc(what)} at ${hhmm(u.at_ts)}.`
       : out === "no" ? `The visitors said no (${b.no} to ${b.yes}): the validators hold back, the change is dropped at ${hhmm(u.at_ts)} and the old rules stand.`
       : b.yes + b.no ? `A tie (${b.yes} to ${b.no}): the validators go ahead as planned, ${esc(what)} at ${hhmm(u.at_ts)}.`
       : `No visitor voted: the validators go ahead as planned, ${esc(what)} at ${hhmm(u.at_ts)}.`;

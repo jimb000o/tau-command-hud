@@ -1293,11 +1293,11 @@ async function sendShared(p) {
   const q = new URLSearchParams({ voter: me.token, kind: p.kind, value: String(p.value), a: me.a, b: me.b, c: me.c });
   try {
     const r = await fetch(`${SIM_API}/sim/propose?${q}`, { cache: "no-store" }), d = await r.json();
-    if (!d.ok) { sentBox("err", "Not sent", esc(d.why || "The simulation did not take it.") + " Your text stays here."); return; }
+    if (!d.ok) { sentBox("err", "Not sent", esc(cap(d.why || "the simulation did not take it")) + ". Your text stays here."); return; }
     const m = d.meta, hm = x => new Date(x * 1000).toTimeString().slice(0, 5), closes = (m.activate_ts - (m.activate_at - m.close_at) * 8);
     const mine = TauSim.vote ? await TauSim.vote(d.id, true) : null;   // the proposer votes yes, like a validator who proposes
     if (TauSim.refresh) TauSim.refresh();
-    sentBox("", "In the shared simulation", `${esc(p.what)} enters block #${m.proposed_at} in about 30 seconds. ${mine && mine.ok ? "Your yes vote is counted; everyone" : "Everyone, you too,"} may vote until ${hm(closes)}, in force at ${hm(m.activate_ts)} if more say yes than no. <a href="../proposals/?mode=sim#${esc(d.id.split(":")[1])}">Watch and vote in Proposals ›</a>`);
+    sentBox("", "In the shared simulation", `${esc(p.what)} enters block #${m.proposed_at} in about 30 seconds. ${mine && mine.ok ? "Your yes vote is counted; everyone" : "Everyone, you too,"} may vote until ${hm(closes)}, in force at ${hm(m.activate_ts)} if more say yes than no. <a href="../proposals/?mode=sim">Watch and vote in Proposals ›</a>`);
   } catch (e) {
     sentBox("err", "Not sent", "The Tau HUD server did not answer. Try again in a minute.");
   } finally { sending = false; ownCheck(); }

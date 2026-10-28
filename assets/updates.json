@@ -658,5 +658,10 @@
   "tag": "Simulation",
   "on": "2026-10-28",
   "html": "The simulation now shows what Tau refuses, and the day has rhythm. Every hour at hh:40 a rule change that contradicts the rules in force is refused before any vote, with its reason in the Proposals news and the Explorer’s Refused list. At hh:50 a contested proposal, six times today’s fee, gets the proposer’s vote alone and is dropped at hh:58: a quorum that never forms. A rule offer that conflicts with the receiver’s own rule is rejected with the reason in the transaction. Retractable transfers are sometimes pulled back and the money returns. Every half hour a three-minute burst of traffic and a six-minute lull. The kit node bob falls up to 60 blocks behind from minute 35 and catches up from minute 45; the Nodes page shows it as “Catching up”. Simulation mode only."
+ },
+ {
+  "tag": "Simulation",
+  "on": "2026-10-28",
+  "html": "Visitors can now change the simulation. In the Playground, “Write your own” has a new switch, “Everyone · simulation”: a new base fee, a validator admitted or removed, the agreement threshold, the consensus mode or a rule of your own goes into the shared simulated chain about 30 seconds later, under your anonymous visitor name. Everyone in Simulation mode can vote yes or no for six minutes, in Proposals and on the HUD. If more say yes than no, the simulated validators vote it in and it takes effect for everyone ten minutes after it was proposed, on every page; otherwise nobody votes and it lapses, the path a rule change takes on Tau. The Telegram channel reports a visitor proposal only when it was voted in with at least three votes, at most three a day, marked as simulation. Simulation mode only; nothing reaches the real testnet."
  }
 ]
