@@ -94,7 +94,6 @@ TauI18n.add({ strings: {
   "Amend the amendment rule: quorum → {x1}": "修订修订规则：法定票数 → {x1}",
   "Amend the amendment rule: quorum → {x}": "修订修订规则：法定票数 → {x}",
   "An agreed rule change became active in this block": "一项经同意的规则变更在此区块生效",
-  "and": "和",
   "and every HUD update, so you never need to open this page to stay current.": "以及每次 HUD 更新，你无需打开本页也能随时了解最新情况。",
   "and put its address in the field.": "，然后把它的地址填入输入框。",
   "and your own node.": "和你自己的节点核实。",
