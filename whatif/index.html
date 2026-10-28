@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>What if</title>
-<meta name="description" content="Move block time, the number of validators and the votes a rule change needs, and watch a simulated chain react: forks, missed blocks, slow or stuck agreement.">
+<meta name="description" content="Move block time, the number of validators and the votes a rule change needs, and watch a simulated chain react: short splits, missed blocks, slow or stuck agreement.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -244,7 +244,7 @@ html.fit.short .tolive { display: none; }
   <div id="intro">
     <div>
       <p class="lead">Move a lever. Watch the chain react.</p>
-      <p class="sub">Faster blocks, more validators, a higher bar for rule changes: every choice a chain makes has a price. Change one and see <b>forks</b>, <b>missed blocks</b> or <b>slow agreement</b> appear within seconds.</p>
+      <p class="sub">Faster blocks, more validators, a higher bar for rule changes: every choice a chain makes has a price. Change one and see <b>short splits</b>, <b>missed blocks</b> or <b>slow agreement</b> appear within seconds. A split is two blocks at one height that the chain settles within a block or two; it is not the fork Tau avoids: changing the rules never needs one.</p>
     </div>
     <span class="sandbox" tabindex="0" data-tnt="Your own sandbox: this chain runs only in your browser and starts fresh when you open the page. The shared simulation on the other pages and the real testnet stay as they are.">Your sandbox · simulated</span>
   </div>
@@ -276,7 +276,7 @@ html.fit.short .tolive { display: none; }
         <input type="range" id="rO" min="0" max="12" step="1">
         <p id="pO">Each one misses its turn and its vote.</p>
       </div>
-      <div class="lever what" data-tnt="How long a new block needs to reach the other validators. When this comes close to the block time, the next maker has not seen the last block yet and builds beside it: a fork.">
+      <div class="lever what" data-tnt="How long a new block needs to reach the other validators. When this comes close to the block time, the next maker has not seen the last block yet and builds beside it: two blocks at one height, a short split that the next block settles.">
         <div class="top"><label for="rD">Network delay</label><output id="oD"></output></div>
         <input type="range" id="rD" min="0" max="8" step="1">
         <p id="pD">How long a block travels to the others.</p>
@@ -297,7 +297,7 @@ html.fit.short .tolive { display: none; }
       <div class="lane" id="lane"><svg id="svg" role="img" aria-label="Blocks of the sandbox chain over time"></svg></div>
       <div class="legend">
         <span><i></i>block on the chain</span>
-        <span><i class="f"></i>competing block (fork)</span>
+        <span><i class="f"></i>competing block (short split)</span>
         <span><i class="g"></i>thrown away</span>
         <span><i class="m"></i>missed turn</span>
         <span><i class="v"></i>carries a vote</span>
@@ -357,9 +357,9 @@ html.fit.short .tolive { display: none; }
   const HABIT = [4, 9, 6, 16, 5, 28, 8, 12, 7, 22, 10, 14];    // seconds each validator usually takes to vote: some are quick, one is slow
   const sim = (() => { try { if (!window.TauSim || !TauSim.chain) return null; const r = TauSim.chain.rulesAt(TauSim.head()); return { n: r.validators.length, q: r.quorum === "majority" ? "half" : "two", t: TauSim.pace }; } catch (e) { return null; } })();
   const PRESETS = [
-    { k: "testnet", t: "Real testnet today", tip: "One validator, a block about every minute: the testnet as it runs now. Fast to agree, no forks, but if that one machine stops, the chain stops.", v: { T: 60, N: 1, q: "two", off: 0, d: 0.5 } },
+    { k: "testnet", t: "Real testnet today", tip: "One validator, a block about every minute: the testnet as it runs now. Fast to agree, never two blocks at one height, but if that one machine stops, the chain stops.", v: { T: 60, N: 1, q: "two", off: 0, d: 0.5 } },
     { k: "sim", t: "Simulation now", tip: "The shared simulation on the other pages at this moment: its validators, its threshold, eight seconds per block.", v: { T: sim ? sim.t : 8, N: sim ? sim.n : 4, q: sim ? sim.q : "two", off: 0, d: 0.5 } },
-    { k: "fast", t: "Too fast", tip: "Two-second blocks over a slow network: blocks often cross on the way and the chain forks.", v: { T: 2, N: 6, q: "two", off: 0, d: 1.5 } },
+    { k: "fast", t: "Too fast", tip: "Two-second blocks over a slow network: blocks often cross on the way and the chain splits for a moment.", v: { T: 2, N: 6, q: "two", off: 0, d: 1.5 } },
     { k: "outage", t: "Two validators down", tip: "Six validators, two of them offline: gaps where their turn was. Two thirds can still agree, everyone could not.", v: { T: 8, N: 6, q: "two", off: 2, d: 0.5 } },
     { k: "stuck", t: "Everyone must agree", tip: "Every validator must say yes, and one is offline: no rule change can pass, each one is dropped at its deadline.", v: { T: 8, N: 5, q: "all", off: 1, d: 0.5 } },
     { k: "big", t: "Many, careful", tip: "Twelve validators, two thirds needed, twenty-second blocks: very steady, but a rule change takes its time.", v: { T: 20, N: 12, q: "two", off: 0, d: 1 } },
@@ -418,7 +418,7 @@ html.fit.short .tolive { display: none; }
     if (p && p.block && p.block !== b && isAnc(p.block, parent)) for (const x of p.votes) if (!x.block && t >= x.ready) { x.block = b; b.votes.push(x.v); }
     const rival = blocks.find(o => o.h === b.h && o.t > t - 4 * S.T);
     blocks.push(b); settle();
-    if (rival) log("f", `Fork at #${b.h}: validator ${maker.name} had not seen block #${b.h} by ${vals[rival.maker].name} yet and made its own.`, b);
+    if (rival) log("f", `Split at #${b.h}: validator ${maker.name} had not seen block #${b.h} by ${vals[rival.maker].name} yet and made its own.`, b);
   }
   const isAnc = (a, b) => { for (let x = b; x; x = x.parent) if (x === a) return true; return false; };
   const openProp = () => props.find(p => p.status === "voting") || null;
@@ -470,8 +470,8 @@ html.fit.short .tolive { display: none; }
     else {
       if (on < thr) { state = "Rule changes stuck"; cls = "down"; out.push(`A rule change needs ${thr} yes votes, but only ${on} validators are online. Nothing can pass: every proposal is dropped at its deadline and the old rules stay.`); }
       if (on > 1 && d * 1.1 >= Tb * 0.45) {
-        if (cls !== "down") { state = "Forks"; cls = "warn"; }
-        out.push(`A block needs about ${fmtS(d)} to reach the others, but the next one is due after ${fmtS(Tb)}. The next maker often has not seen the last block yet and builds beside it: a fork. One branch is thrown away.`);
+        if (cls !== "down") { state = "Short splits"; cls = "warn"; }
+        out.push(`A block needs about ${fmtS(d)} to reach the others, but the next one is due after ${fmtS(Tb)}. The next maker often has not seen the last block yet and builds beside it: two blocks at one height. The chain keeps one and throws the other away. The rules stay the same; this is not the fork Tau avoids, rule changes never need one.`);
       }
       if (S.off > 0) {
         if (!cls) { state = "Gaps"; cls = "warn"; }
@@ -503,7 +503,7 @@ html.fit.short .tolive { display: none; }
     $("rO").max = S.N; $("rO").value = S.off; $("oO").textContent = `${S.off} of ${S.N}`;
     $("pO").textContent = S.off ? `${S.off} miss their turn and their vote.` : "Everyone is online.";
     $("rD").value = DELAYS.indexOf(S.d); $("oD").textContent = fmtS(S.d);
-    $("pD").textContent = S.d * 1.1 >= S.T * 0.45 ? "Close to the block time: expect forks." : "Well below the block time.";
+    $("pD").textContent = S.d * 1.1 >= S.T * 0.45 ? "Close to the block time: expect short splits." : "Well below the block time.";
     document.querySelectorAll("[data-speed]").forEach(b => b.classList.toggle("on", +b.dataset.speed === S.speed && !S.paused));
     $("bPause").textContent = S.paused ? "Play" : "Pause"; $("bPause").classList.toggle("on", S.paused);
     const pr = PRESETS.find(p => p.v.T === S.T && p.v.N === S.N && p.v.q === S.q && p.v.off === S.off && p.v.d === S.d);
@@ -527,7 +527,7 @@ html.fit.short .tolive { display: none; }
   let W = 800, H = 260;
   const node = (tag, cls) => { const e = document.createElementNS(NS, tag); if (cls) e.setAttribute("class", cls); return e; };
   const layer = { axis: node("g", "axis"), labels: node("g"), links: node("g"), items: node("g") };
-  layer.labels.innerHTML = `<line class="nowline"></line><text class="nowtxt">now</text><text class="rowtxt" x="8">CHAIN</text><text class="rowtxt" x="8">FORK</text>`;
+  layer.labels.innerHTML = `<line class="nowline"></line><text class="nowtxt">now</text><text class="rowtxt" x="8">CHAIN</text><text class="rowtxt" x="8">SPLIT</text>`;
   svg.append(layer.axis, layer.labels, layer.links, layer.items);
   const pool = new Map();
   function resize() { const r = $("lane"); W = r.clientWidth || 800; H = r.clientHeight || 260; svg.setAttribute("viewBox", `0 0 ${W} ${H}`); }
@@ -569,7 +569,7 @@ html.fit.short .tolive { display: none; }
       const rect = g.children[0]; rect.setAttribute("x", bx); rect.setAttribute("y", by); rect.setAttribute("width", bw); rect.setAttribute("height", bh);
       const who = g.children[1]; who.setAttribute("x", bx + bw / 2); who.setAttribute("y", by + bh / 2 + 5); put(who, vals[b.maker].name);
       const ht = g.children[2]; ht.setAttribute("x", bx + bw / 2); ht.setAttribute("y", by + bh + 14); put(ht, bw >= 30 || b.h % 2 === 0 ? "#" + b.h : "");
-      const tag = g.children[3]; tag.setAttribute("x", bx + bw / 2); tag.setAttribute("y", by - 6); put(tag, bw < 34 ? "" : st === "gone" ? "thrown away" : st === "fork" && r > 0 ? "fork" : "");
+      const tag = g.children[3]; tag.setAttribute("x", bx + bw / 2); tag.setAttribute("y", by - 6); put(tag, bw < 34 ? "" : st === "gone" ? "thrown away" : st === "fork" && r > 0 ? "split" : "");
       const vs = g.children[4], vh = b.votes.slice(0, 6).map((v, i) => `<circle class="vote" cx="${bx + 6 + i * 6}" cy="${by + 6}" r="2.4"></circle>`).join(""); if (vs._h !== vh) { vs._h = vh; vs.innerHTML = vh; }
       const tt = blockTip(b); if (g._tt !== tt) { g._tt = tt; g.dataset.tnt = tt; }
       if (b.parent && b.parent !== genesis && rowOf.has(b.parent)) {

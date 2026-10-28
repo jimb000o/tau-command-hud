@@ -731,5 +731,10 @@
   "tag": "Alerts",
   "on": "2026-10-28",
   "html": "Tau HUD itself now has news in the Telegram channel. A big new page or feature gets a post of its own, first line “✨ TAU HUD · new on the site”, at most two a day and only between 08:00 and 20:00 UTC; smaller changes are gathered and go out together as one digest at 17:00 UTC. The newest pages and features are announced first, from 08:00 UTC tomorrow."
+ },
+ {
+  "tag": "What if",
+  "on": "2026-10-28",
+  "html": "What if now says short split where it said fork. Two blocks at one height, which the chain settles within a block or two when blocks come faster than the network carries them, are something different from the fork Tau avoids: changing the rules never needs one. The page says so in its intro, in What happens and in the hover of Network delay."
  }
 ]
