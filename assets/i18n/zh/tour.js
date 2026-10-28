@@ -204,7 +204,7 @@ TauI18n.add({ strings: {
   "How many people look at Tau through this site: per day, over time and on which pages. Counted without cookies.": "有多少人通过这个网站了解 Tau：每天多少、随时间如何变化、看了哪些页面。统计不使用 Cookie。",
   "The short version": "简要概览",
   "Visitors today, the daily average of the last week with its trend, all visits added up and the best day so far.": "今日访客、最近一周的每日平均及趋势、所有访问的累计，以及到目前为止的最佳一天。",
-  "One bar per day, the green line is the 7-day average. Pick 7 days up to All for the whole history; click a bar for that day.": "每天一根柱子，绿线是 7 日平均。可从 7 天选到“全部”查看完整历史；点击柱子查看那一天。",
+  "The green line is the number of visitors each day, the faint bars below are the pages they opened. Pick 7 days up to All for the whole history; hover for the numbers, click a day for its pages.": "绿线是每天的访客人数，下方浅色柱子是他们打开的页面数。可从 7 天选到“全部”查看完整历史；悬停查看数字，点击某一天查看当天的页面。",
   "One day up close": "单日详情",
   "Visitors, pages opened and how many stayed 30 seconds, plus the pages people opened that day.": "访客、打开的页面、停留满 30 秒的比例，以及当天大家打开的页面。",
   "Every day's visitors added up since counting began, so you see the climb at a glance.": "把开始统计以来每天的访客相加，一眼看出增长。",

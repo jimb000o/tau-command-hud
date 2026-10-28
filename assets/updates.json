@@ -851,6 +851,11 @@
   "html": "The Telegram channel says more with fewer posts. A practice vote, where someone proposes the rules already in force to try the vote, no longer gets a post of its own; one evening post, “Testnet today” at 19:00 UTC, counts them with the day’s blocks, transactions and rule changes and names what comes next, and on a quiet day there is none. A real rule change now leads with the change and when it applies, then why it matters; block numbers, votes and the rule text sit in a part that opens with a tap."
  },
  {
+  "tag": "In numbers",
+  "on": "2026-10-28",
+  "html": "In numbers: the charts are now lines with a soft fill instead of blocks. Visitors per day as a green line with the pages opened as faint bars below, growth in the same style, a crosshair with the day's numbers on hover, and today shown as still counting. A short history opens as All, so the first days fill the chart."
+ },
+ {
   "tag": "Privacy",
   "on": "2026-10-29",
   "html": "New page: privacy notice, in the Learn menu and under the gear. Exactly what the site processes, in German and English. Along with it the site got more private: the fonts now come from tauhud.com itself instead of Google, the server keeps no access logs, the online counter no longer stores an id in your browser, the simulation stores your anonymous name only once you vote, forecast or propose, and the visit count no longer reads your screen width.",
