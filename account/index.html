@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Tau Account View</title>
@@ -41,18 +42,20 @@ button { font: inherit; }
    three columns take the remaining height, each scrolling inside if it must. Phones and short windows scroll normally. */
 html.fit body { padding: 0; overflow: hidden; height: 100vh; }
 html.fit .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px;
-  transform: scale(var(--z)); transform-origin: 0 0; grid-template-rows: auto auto auto minmax(0, 1fr) auto; }
-html.fit main { min-height: 0; display: grid; }
+  transform: scale(var(--z)); transform-origin: 0 0; display: flex; flex-direction: column; }
+/* a column, not grid rows: the shared header (assets/nav.js) adds rows of its own, and main must always get the rest */
+html.fit .wrap > * { flex: none; }
+html.fit .wrap > main { flex: 1 1 0; min-height: 0; display: grid; }
 html.fit #acct, html.fit #dir { min-height: 0; height: 100%; }
 html.fit #acct { grid-template-rows: auto auto minmax(0, 1fr); }
 html.fit .cols { min-height: 0; }
 html.fit .col { min-height: 0; display: flex; flex-direction: column; }
 html.fit .col > .panel { min-height: 0; overflow: auto; flex: 0 1 auto; }
 html.fit .col > .panel:last-child { flex: 1 1 auto; }
-html.fit #dir .panel { height: 100%; overflow: auto; }
+html.fit #dir .panel { height: auto; max-height: 100%; overflow: auto; }   /* the panel ends with its rows; no frame around empty space */
 html.fit footer { padding-top: 6px; }
 html.fit footer p { margin: 0; }
-html.fit .modal .sheet, html.fit .fb-fab, html.fit #tip { zoom: var(--z); }
+html.fit .modal .sheet, html.fit #tip { zoom: var(--z); }
 html.fit .modal .sheet { max-height: calc(100% / var(--z)); }
 
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
@@ -68,14 +71,14 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
 .state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
 .state.wait { color: var(--behind); border-color: rgba(255,177,59,.4); } .state.wait i { background: var(--behind); }
-.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+.state.off { color: #fff; border-color: rgba(255,255,255,.4); } .state.off i { background: var(--bad); }   /* the red dot means offline; the text stays white, one colour per meaning */
 .state.sample { color: #fff; border-color: #fff; } .state.sample i { background: #fff; }
 
 .intro { display: grid; gap: 4px 32px; align-items: end; }
 @media (min-width: 1100px) { .intro { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .lead { margin: 0; font: 500 clamp(19px, 2.6vw, 25px)/1.25 var(--display); color: #fff; }
 .sub { margin: 0; color: var(--dim); }
-.banner { border: 1px dashed var(--hair); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 12.5px; }
+.banner { border: 1px dashed var(--hair); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 13px; }
 
 /* search */
 .find { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -91,9 +94,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
 .panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
 .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
-.panel h3 { margin: 10px 0 4px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #fff; }
+.panel h3 { margin: 10px 0 4px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #fff; }
 .panel h3:first-of-type { margin-top: 2px; }
-.empty { color: var(--dim); font-size: 12.5px; margin: 4px 0; }
+.empty { color: var(--dim); font-size: 13px; margin: 4px 0; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
 .note b { color: #fff; font-weight: 600; }
 
@@ -103,7 +106,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .ident .roles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .ident .acts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 @media (max-width: 700px) { .ident { grid-template-columns: minmax(0, 1fr); } .ident .acts { justify-content: flex-start; } }
-.tag { display: inline-block; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 2px 7px; white-space: nowrap; }
+.tag { display: inline-block; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 2px 7px; white-space: nowrap; }
 .tag.g { color: var(--ok); border-color: rgba(57,255,138,.4); }
 .tag.w { color: #fff; border-color: var(--hair); }
 .tag.a { color: var(--behind); border-color: rgba(255,177,59,.4); }
@@ -112,10 +115,10 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .tiles { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; min-width: 0; cursor: default; }
 .tile:hover, .tile:focus-visible { border-color: var(--hair); outline: none; }
-.tile h4 { margin: 0; font: 600 10px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.tile h4 { margin: 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .tile .v { font: 600 22px/1.2 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 3px; overflow-wrap: anywhere; }
 .tile .v small { font: 500 12px var(--display); color: var(--dim); margin-left: 4px; }
-.tile p { margin: 2px 0 0; color: var(--dim); font-size: 11.5px; }
+.tile p { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
 
 /* account body: three columns on desktop, one on phones (activity first) */
 #acct { display: grid; gap: 12px; }
@@ -127,16 +130,16 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 /* chart */
 .chart { position: relative; width: 100%; }
 .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
-.chart text { font: 10.5px var(--mono); fill: var(--dim); }
+.chart text { font: 11px var(--mono); fill: var(--dim); }
 .chart .grid line { stroke: rgba(255,255,255,.07); }
 .chart .hit { fill: transparent; cursor: crosshair; }
 .chart .xh { stroke: rgba(255,255,255,.45); stroke-width: 1; pointer-events: none; }
-.headline { margin: 0 0 4px; font: 500 13.5px/1.4 var(--display); color: #fff; }
+.headline { margin: 0 0 4px; font: 500 14px/1.4 var(--display); color: #fff; }
 .headline span { color: var(--dim); font: 12px var(--mono); }
 
 /* lists */
 ul.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
-ul.list li > button:not(.btn), ul.list li > a.row { all: unset; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; padding: 5px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); cursor: pointer; font: 12.5px/1.45 var(--mono); color: var(--text); }
+ul.list li > button:not(.btn), ul.list li > a.row { all: unset; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; padding: 5px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); cursor: pointer; font: 13px/1.45 var(--mono); color: var(--text); }
 ul.list li > button:hover, ul.list li > button:focus-visible, ul.list li > a.row:hover, ul.list li > a.row:focus-visible { background: rgba(255,255,255,.07); }
 ul.list li.in > button { border-left-color: var(--ok); }
 ul.list li.out > button { border-left-color: #fff; }
@@ -150,21 +153,21 @@ ul.list li.gov > button { border-left-color: var(--hair); }
 .list .amt.in { color: var(--ok); }
 .list .amt.no { color: var(--bad); }
 .filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
-.filters button { font: 600 10.5px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 11px; cursor: pointer; white-space: nowrap; }
+.filters button { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 11px; cursor: pointer; white-space: nowrap; }
 .filters button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
 .filters button:hover:not([aria-pressed="true"]) { color: #fff; border-color: #fff; }
 
 /* rules */
 .rule { border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; margin: 4px 0; background: rgba(255,255,255,.02); }
-.rule .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 11.5px; color: var(--dim); }
+.rule .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 12px; color: var(--dim); }
 .rule .meta b { color: #fff; font-weight: 600; }
-.rule pre { margin: 5px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.45 var(--mono); color: var(--text); max-height: 7.5em; overflow: auto; }
+.rule pre { margin: 5px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.45 var(--mono); color: var(--text); max-height: 7.5em; overflow: auto; }
 .rule button.more { all: unset; cursor: pointer; color: var(--dim); font-size: 11px; text-decoration: underline; margin-top: 3px; display: inline-block; }
 .rule.now { border-color: rgba(57,255,138,.35); }
 
 /* counterparties */
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
-th { text-align: left; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { text-align: left; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 tr.click { cursor: pointer; }
@@ -184,20 +187,24 @@ a.blk:hover { color: #fff; text-decoration: underline; }
 .sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
 .sheet .panel { padding-right: 48px; }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
-dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 6px 0 0; font-size: 12.5px; }
+dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 6px 0 0; font-size: 13px; }
 dl.kv dt { color: var(--dim); }
 dl.kv dd { margin: 0; overflow-wrap: anywhere; word-break: break-word; }
 @media (max-width: 520px) { dl.kv { grid-template-columns: minmax(0, 1fr); } dl.kv dd { margin-bottom: 4px; } }
 pre, code { font-variant-ligatures: none; }
-pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 40vh; overflow: auto; }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); max-height: 40vh; overflow: auto; }
 details.raw { margin-top: 10px; } details.raw summary { cursor: pointer; color: var(--dim); font-size: 12px; }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer a { color: var(--dim); }
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
-.fb-fab:hover { background: var(--ok); }
-html.fit .fb-fab { display: none; }
-@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .tile .v { font-size: 19px; } }
+@media (max-width: 700px) { .tile .v { font-size: 19px; } }
 [hidden] { display: none !important; }
+/* phone: nothing smaller than 11 px, buttons big enough for a thumb */
+@media (max-width: 700px) {
+  .panel h3, .tag, .tile h4, .chart text, .filters button, th { font-size: 11px; }
+  .filters button { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+}
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -233,7 +240,7 @@ html.fit .fb-fab { display: none; }
           <thead><tr><th>Account</th><th class="n">Sent</th><th class="n opt">Transfers in · out</th><th class="n opt">Own rules</th><th class="n opt">Blocks proposed</th><th class="n">Last active</th></tr></thead>
           <tbody id="dirBody"></tbody>
         </table>
-        <p class="note">Accounts from the genesis block plus every account that sent, received or proposed a block. Click one to open it.</p>
+        <p class="note" id="dirNote">Accounts from the genesis block plus every account that sent, received or proposed a block. Click one to open it.</p>
       </div>
     </section>
 
@@ -298,7 +305,6 @@ html.fit .fb-fab { display: none; }
   </footer>
 </div>
 
-<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BAccounts%5D%20" target="_blank" rel="noopener">Feedback</a>
 <div id="tip" hidden></div>
 <div class="modal" id="mDetail" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle">
   <div class="sheet">
@@ -397,7 +403,7 @@ function connect() {
   try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
   setState("wait", "Connecting", `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
-  ws.onopen = () => { C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); if (S.addr) lookup(S.addr); };
+  ws.onopen = () => { C.off = false; C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); if (S.addr) lookup(S.addr); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
   ws.onerror = () => {};
@@ -407,6 +413,7 @@ function offline(why) {
   C.ws = null; C.loading = false;
   const w = C.retry; C.retry = Math.min(60000, w * 2);
   setState("off", "Offline", `Our node is not reachable (${why}).\nRetrying in ${w / 1000} s.`);
+  C.off = true; render();   // the empty panels say that the node is offline instead of "reading" forever
   C.retryT = setTimeout(connect, w);
 }
 function loadFrom(from) { C.loading = true; C.nextFrom = from; send(`getblockrange ${from} ${PAGE}`); }
@@ -627,8 +634,13 @@ function show(view) { $("dir").hidden = view !== "dir"; $("acct").hidden = view 
 function renderDir() {
   show("dir");
   const rows = directory();
-  $("dirSub").textContent = C.ready || SAMPLE ? `${plural(rows.length, "account")} · up to block #${fmtN(C.head)}` : "reading the chain…";
-  $("dirBody").innerHTML = rows.map(r => `<tr class="click" data-acc="${r.a}"><td>${accLink(r.a)}${r.genesis ? `<span class="tag">genesis</span>` : ""}${isValidator(r.a) ? `<span class="tag g">validator</span>` : ""}</td>
+  $("dirNote").textContent = rows.filter(r => r.genesis).length * 2 > rows.length
+    ? "Most accounts were funded in the genesis block; “new” marks the ones that appeared later. Click one to open it."
+    : "Accounts from the genesis block plus every account that sent, received or proposed a block. Click one to open it.";
+  $("dirSub").textContent = C.ready || SAMPLE ? `${plural(rows.length, "account")} · up to block #${fmtN(C.head)}` : C.off ? "our node is offline right now" : "reading the chain…";
+  // a tag marks the exception: "genesis" when most accounts came later, "new" when nearly every account was funded at genesis
+  const mostGenesis = rows.filter(r => r.genesis).length * 2 > rows.length;
+  $("dirBody").innerHTML = !rows.length ? `<tr><td colspan="7" class="empty">${C.off ? "Our node is offline right now. The table fills as soon as it answers again." : "Reading the chain…"}</td></tr>` : rows.map(r => `<tr class="click" data-acc="${r.a}"><td>${accLink(r.a)}${r.genesis && !mostGenesis ? `<span class="tag">genesis</span>` : !r.genesis && mostGenesis ? `<span class="tag">new</span>` : ""}${isValidator(r.a) ? `<span class="tag g">validator</span>` : ""}</td>
     <td class="n">${fmtN(r.sent)}</td><td class="n opt">${fmtN(r.tin)} · ${fmtN(r.tout)}</td><td class="n opt">${fmtN(r.rules)}</td><td class="n opt">${fmtN(r.proposed)}</td><td class="n">${r.last ? ago(r.last) : "not yet"}</td></tr>`).join("");
 }
 const isValidator = a => ((C.gov || {}).active_validators || []).some(v => low(typeof v === "string" ? v : (v || {}).pubkey) === a);
@@ -731,7 +743,7 @@ function renderActivity() {
   // the desktop panel scrolls inside; on a phone the list would push everything else far down, so it grows on request
   const cap = document.documentElement.classList.contains("fit") ? 300 : S.more;
   $("activity").innerHTML = list.length ? list.slice(0, cap).map(rowHtml).join("") + (list.length > cap ? (cap < 300 ? `<li><button type="button" class="btn ghost" id="moreBtn" style="justify-self:start">Show ${fmtN(Math.min(40, list.length - cap))} more of ${fmtN(list.length - cap)}</button></li>` : `<li class="empty">Showing the newest 300 of ${fmtN(list.length)}.</li>`) : "")
-    : `<li class="empty">${S.filter === "all" ? (C.ready || SAMPLE ? "Nothing on this chain involves this account yet." : "Reading the chain…") : "Nothing of this kind yet."}</li>`;
+    : `<li class="empty">${S.filter === "all" ? (C.ready || SAMPLE ? "Nothing on this chain involves this account yet." : C.off ? "Our node is offline right now. This list fills as soon as it answers again." : "Reading the chain…") : "Nothing of this kind yet."}</li>`;
   document.querySelectorAll("[data-f]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === S.filter)));
 }
 
@@ -791,7 +803,7 @@ function openEvent(e) {
   if (e.dropped) {
     const d = e.dropped;
     return openDetail(`Dropped transaction`, `<p class="headline">${esc(TX_NAMES[d.type] || "A transaction")} sent by this account waited in our node’s queue and then left it without reaching a block.</p>
-      <dl class="kv"><dt>Hash</dt><dd>${esc(d.tx_hash)}</dd><dt>Seen</dt><dd>${esc(fmtWhen(d.seen))}</dd><dt>Left the queue</dt><dd>${esc(fmtWhen(d.left))}</dd></dl>
+      <dl class="kv"><dt class="vt">Hash</dt><dd class="vt">${esc(d.tx_hash)}</dd><dt>Seen</dt><dd>${esc(fmtWhen(d.seen))}</dd><dt>Left the queue</dt><dd>${esc(fmtWhen(d.left))}</dd></dl>
       <p class="note">Usually the network refused it on a second check (for example a rule said no or the balance did not cover it), it expired, or a newer transaction replaced it.</p>`);
   }
   const { x } = e, t = x.t, k = txKind(t);
@@ -801,13 +813,13 @@ function openEvent(e) {
   if (tr.length) rows.push(["Transfers", tr.map(([f, to, a]) => `${accLink(low(f))} → ${accLink(low(to))} · <b>${fmtA(num(a))} AGRS</b>`).join("<br>")]);
   if (t.recipient_pubkey) rows.push(["To", accLink(low(t.recipient_pubkey))]);
   if (t.amount != null) rows.push(["Amount", `${fmtA(num(t.amount))} AGRS`]);
-  if (t.sequence_number != null) rows.push(["Sequence", fmtN(num(t.sequence_number))]);
+  if (t.sequence_number != null) rows.push(["Sequence", fmtN(num(t.sequence_number)), "vt"]);
   if (e.offer) rows.push(["Offer", `${accLink(e.offer.from)} → ${accLink(e.offer.to)} · ${esc((STATUS[e.offer.status] || [e.offer.status])[0])}${e.offer.id ? `<br><code>${esc(e.offer.id)}</code>` : ""}`]);
   const ruleText = e.rule || (e.offer && e.offer.text) || null;
   openDetail(`${esc(TX_NAMES[k] || k)} <small>block #${fmtN(x.h)}</small>`, `<p class="headline">${e.text}${e.amt != null ? ` · <b>${fmtA(e.amt)} AGRS</b>` : ""}</p>
-    <dl class="kv">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
+    <dl class="kv">${rows.map(([a, b, c]) => c ? `<dt class="${c}">${a}</dt><dd class="${c}">${b}</dd>` : `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
     ${ruleText ? `<h3 style="margin-top:10px">Rule text${streamOf(ruleText) ? ` · ${esc(streamOf(ruleText))}` : ""}</h3><pre class="code">${esc(ruleText)}</pre><p class="note">${esc(STREAMS[streamOf(ruleText)] ? `Decides ${STREAMS[streamOf(ruleText)]}.` : "")} Try rules like this in the <a href="/playground/">Rule Playground</a>.</p>` : ""}
-    <details class="raw"><summary>Raw transaction</summary><pre class="code">${esc(JSON.stringify(t, null, 2))}</pre></details>`);
+    <details class="raw vt"><summary>Raw transaction</summary><pre class="code">${esc(JSON.stringify(t, null, 2))}</pre></details>`);
 }
 
 /* ------------------------------ tooltip ------------------------------ */

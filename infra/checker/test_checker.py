@@ -54,4 +54,18 @@ check("contradiction refused by the engine", r["accepted"] is False and r["stage
 r = checker.check(LIMIT.replace("i1[t]:bv[24] >", "i4[t]:bv[16] >").replace("{ 1000 }:bv[24]", "{ 1000 }:bv[16]"), YOU, [])
 check("width clash refused by the engine", r["accepted"] is False and "i4" in r.get("reason", ""), r)
 
+r = checker.check(LIMIT, YOU, [tx(500, YOU, BOB), tx(5000, YOU, CAROL), tx(5000, BOB, CAROL)], engine_ok=False)
+check("cached answer still served when the engine is off limits", r.get("cached") is True and r["accepted"] is True, r)
+r = checker.check(LIMIT.replace("1000", "1001"), YOU, [], engine_ok=False)
+check("fresh rule waits when the engine is off limits", r.get("limited") is True, r)
+r = checker.check(LIMIT.replace("i1[t]", "i2[t]"), YOU, [], engine_ok=False)
+check("text refusal still served when the engine is off limits", r["stage"] == "streams", r)
+
+ip = "203.0.113.9"
+for _ in range(checker.RATE_MAX):
+    check("engine run allowed", checker._rate_wait(ip) == 0)
+    checker._rate_charge(ip)
+w = checker._rate_wait(ip)
+check("limit reached, wait given in seconds", 0 < w <= checker.RATE_WINDOW, w)
+
 sys.exit(1 if failures else 0)

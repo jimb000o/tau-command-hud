@@ -55,7 +55,8 @@ MAX_TESTS = 8
 BUDGET = float(os.environ.get("CHECK_BUDGET", "30"))  # seconds of engine time per request
 QUEUE_WAIT = 30.0                  # seconds a request may wait for the engine
 MAX_WAITING = 4                    # requests allowed to wait at once
-RATE_WINDOW, RATE_MAX = 300.0, int(os.environ.get("RATE_MAX", "8"))  # per client address
+# per client address; only real engine runs count (cached answers and text refusals are free)
+RATE_WINDOW, RATE_MAX = 300.0, int(os.environ.get("RATE_MAX", "24"))
 MAX_BV24 = (1 << 24) - 1
 MAX_TIME = (1 << 64) - 1
 HEX96 = re.compile(r"^[0-9a-f]{96}$")
@@ -89,19 +90,24 @@ _cache: "collections.OrderedDict[str, dict]" = collections.OrderedDict()
 _cache_lock = threading.Lock()
 
 
-def _rate_ok(addr: str) -> bool:
+def _rate_wait(addr: str) -> int:
+    """Seconds until this address may start another engine run (0 = now)."""
     now = time.monotonic()
     with _hits_lock:
-        q = _hits.setdefault(addr, collections.deque())
+        q = _hits.get(addr)
         while q and now - q[0] > RATE_WINDOW:
             q.popleft()
-        if len(q) >= RATE_MAX:
-            return False
-        q.append(now)
+        if not q or len(q) < RATE_MAX:
+            return 0
+        return max(1, int(q[0] + RATE_WINDOW - now + 0.999))
+
+
+def _rate_charge(addr: str) -> None:
+    with _hits_lock:
+        _hits.setdefault(addr, collections.deque()).append(time.monotonic())
         if len(_hits) > 5000:  # forget idle addresses
             for k in [k for k, v in _hits.items() if not v]:
                 del _hits[k]
-        return True
 
 
 def _o5_value(text):
@@ -157,8 +163,9 @@ def _validate_request(data):
     return rule, sender, clean
 
 
-def check(rule: str, sender: str, tests: list) -> dict:
-    """The verdict for one rule, in the node's order. Cheap screens before any engine work."""
+def check(rule: str, sender: str, tests: list, engine_ok: bool = True) -> dict:
+    """The verdict for one rule, in the node's order. Cheap screens before any engine work.
+    With engine_ok False, a rule that would need a fresh engine run returns {"limited": True}."""
     if len(rule.encode("utf-8")) > MAX_OFFER_RULE_BYTES:
         return {"accepted": False, "stage": "size", "reason": f"over the {MAX_OFFER_RULE_BYTES} byte limit"}
     try:
@@ -175,6 +182,8 @@ def check(rule: str, sender: str, tests: list) -> dict:
         if key in _cache:
             _cache.move_to_end(key)
             return dict(_cache[key], cached=True)
+    if not engine_ok:
+        return {"limited": True}
 
     started = time.monotonic()
     deadline = started + BUDGET
@@ -242,10 +251,12 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Access-Control-Max-Age", "600")
 
-    def _json(self, status, payload):
+    def _json(self, status, payload, headers=None):
         blob = json.dumps(payload).encode()
         self.send_response(status)
         self._cors()
+        for k, v in (headers or {}).items():
+            self.send_header(k, v)
         self.send_header("Content-Type", "application/json")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(blob)))
@@ -276,12 +287,20 @@ class Handler(BaseHTTPRequestHandler):
         size = int(self.headers.get("Content-Length") or 0)
         if size <= 0 or size > MAX_BODY:
             return self._json(413, {"error": f"body must be 1 to {MAX_BODY} bytes"})
-        if not _rate_ok(self._client()):
-            return self._json(429, {"error": "too many checks, try again in a few minutes"})
+        client = self._client()
         try:
             rule, sender, tests = _validate_request(json.loads(self.rfile.read(size)))
         except Exception as exc:
             return self._json(400, {"error": f"bad request: {exc}"})
+
+        wait = _rate_wait(client)
+        if wait:
+            # over the limit: screens and cached answers still come back, only a fresh engine run waits
+            result = check(rule, sender, tests, engine_ok=False)
+            if result.get("limited"):
+                return self._json(429, {"error": "too many engine runs from this address", "retry_after": wait},
+                                  {"Retry-After": str(wait)})
+            return self._json(200 if result.get("accepted") is not None else 503, result)
 
         with _waiting_lock:
             if _waiting >= MAX_WAITING:
@@ -300,6 +319,8 @@ class Handler(BaseHTTPRequestHandler):
             result = {"accepted": None, "stage": "engine", "unavailable": True, "reason": "internal error"}
         finally:
             _engine.release()
+        if "ms" in result and not result.get("cached"):
+            _rate_charge(client)
         log.info("check from %s: %s %s %sms", self._client(), result.get("stage", "-"),
                  result.get("accepted"), result.get("ms", "-"))
         self._json(200 if result.get("accepted") is not None else 503, result)

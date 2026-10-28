@@ -11,6 +11,11 @@ happened into news:
   dropped    its deadline passed with too few votes
   restart    the testnet started a new chain
 
+It also watches the testnet health score (relay GET /health-score) and posts
+to Telegram when the testnet goes down and when it recovers, after the new
+state has held for HEALTH_CONFIRM_SECONDS, so a short blip or an update of
+our own server stays quiet.
+
 Every event goes into /public/proposals.json (the tracker page at
 tauhud.com/proposals/) and /public/feed.xml (Atom), which Caddy serves at
 https://node.tauhud.com/. New events are also posted to Telegram and X when
@@ -25,6 +30,7 @@ week (recap.py) and keeps a copy at https://node.tauhud.com/recap/latest.png.
 
   python alerts.py                  run the watcher
   python alerts.py --test           send one test post to each configured channel
+  python alerts.py --preview        print how the newest rule changes would be posted, post nothing
   python alerts.py --recap-preview  draw this week's recap and save it, post nothing
   python alerts.py --recap-now      draw the recap and post it to each configured channel
 """
@@ -50,6 +56,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from websockets.asyncio.client import connect
 
+import explain
 import recap
 
 try:
@@ -69,11 +76,18 @@ POST_MAX_AGE = float(os.environ.get("POST_MAX_AGE_SECONDS", 3 * 3600))
 OPEN_ADMISSION = os.environ.get("TAU_GOVERNANCE_OPEN_ADMISSION", "true").lower() in ("1", "true", "yes")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()
+# the question bot (bot.py, same token): every channel post carries buttons that open it; empty = no buttons
+TELEGRAM_BOT_NAME = os.environ.get("TELEGRAM_BOT_USERNAME", "tauhud_alerts_bot").strip().lstrip("@")
 X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")}
 RELAY_HTTP = os.environ.get("RELAY_HTTP", "http://relay:8080")
 RECAP_ON = os.environ.get("RECAP_ENABLED", "true").lower() in ("1", "true", "yes")
 RECAP_WEEKDAY = int(os.environ.get("RECAP_WEEKDAY", 0))   # 0 = Monday
 RECAP_HOUR = int(os.environ.get("RECAP_HOUR", 9))         # UTC
+HEALTH_ON = os.environ.get("HEALTH_ALERTS", "true").lower() in ("1", "true", "yes")
+HEALTH_DOWN_BELOW = float(os.environ.get("HEALTH_DOWN_BELOW", 50))   # also "down" whenever the relay says so
+HEALTH_UP_AT = float(os.environ.get("HEALTH_UP_AT", 70))             # recovered at or above this
+HEALTH_CONFIRM = float(os.environ.get("HEALTH_CONFIRM_SECONDS", 600))
+HEALTH_EVERY = float(os.environ.get("HEALTH_POLL_SECONDS", 60))
 FEED_ITEMS = 100
 RANGE = 100           # relay's getblockrange maximum
 REFETCH_TAIL = 6      # blocks re-read every poll so a replaced tip block (reorg) is noticed
@@ -166,33 +180,6 @@ def short(h: str) -> str:
     return h[:6] + "…" + h[-4:] if len(h) > 14 else (h or "—")
 
 
-def title_parts(revisions: list[str], patch: dict | None) -> list[str]:
-    parts, patch = [], patch or {}
-    for r in revisions:
-        f = fee_of(r)
-        if f is not None:
-            parts.append(f"Base fee → {fmt_n(f)} AGRS")
-    other = sum(1 for r in revisions if fee_of(r) is None)
-    if other:
-        parts.append("New consensus rule text" if other == 1 else f"{other} consensus rule revisions")
-    add, rem = len(patch.get("validator_additions") or []), len(patch.get("validator_removals") or [])
-    if add:
-        parts.append("Admit a validator" if add == 1 else f"Admit {add} validators")
-    if rem:
-        parts.append("Remove a validator" if rem == 1 else f"Remove {rem} validators")
-    if "vote_quorum" in patch:
-        parts.append(f"Quorum → {quorum_txt(patch['vote_quorum'])}")
-    if "max_rule_txs_per_block" in patch:
-        parts.append(f"{patch['max_rule_txs_per_block']} rule txs per block")
-    if "fee_beneficiary" in patch:
-        parts.append("Fees to one account" if patch["fee_beneficiary"] else "Fees to the proposer")
-    if "eligibility_mode" in patch:
-        parts.append(f"Proposers: {patch['eligibility_mode'] or 'default'}")
-    if "approval_slots_active" in patch:
-        parts.append("Turn on approval slots")
-    return parts or ["Empty rule change"]
-
-
 def height_of(b: dict) -> int:
     try:
         return int((b.get("header") or {}).get("block_number"))
@@ -220,7 +207,8 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
     props: dict[str, dict] = {}
     order: list[dict] = []
     events: list[dict] = []
-    validators, quorum, fee, rev = list(GENESIS_VALIDATORS), GENESIS_QUORUM, 10, 1
+    validators, quorum, fee, rev, mode = list(GENESIS_VALIDATORS), GENESIS_QUORUM, 10, 1, "validator_set"
+    spec = explain.clauses(explain.GENESIS_RULES)   # the rules in force, stream -> clause
     if not blocks:
         return [], [], {}
     lo, hi = min(blocks), max(blocks)
@@ -243,8 +231,10 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
                      "patch": t.get("host_contract_patch"), "votes": [], "approved_at": None, "approved_ts": None,
                      "activated_at": None, "activated_ts": None, "expired_at": None, "expired_ts": None,
                      "thr": thr, "rev": None, "dups": [], "tx_id": tx_id}
-                p["parts"] = title_parts(p["revisions"], p["patch"])
-                p["title"] = " + ".join(p["parts"])
+                p["explain"] = explain.explain(p["revisions"], p["patch"], spec)
+                p["diff"] = explain.diff(p["revisions"], spec) if p["revisions"] else None
+                p["title"] = p["explain"]["title"]
+                p["parts"] = [c["topic"] + ": " + c["text"] for c in p["explain"]["changes"]] or [p["title"]]
                 props[uid] = p
                 order.append(p)
                 events.append({"kind": "proposed", "h": h, "ts": ts, "id": uid})
@@ -273,16 +263,18 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
         for p in due:
             rev += 1
             p["activated_at"], p["activated_ts"], p["rev"] = h, ts, rev
-            for r in p["revisions"]:
-                f = fee_of(r)
-                if f is not None:
-                    fee = f
+            spec = explain.apply(spec, p["revisions"])
+            f = fee_of(spec.get("o9", ""))
+            if f is not None:
+                fee = f
             patch = p["patch"] or {}
             if patch.get("validator_additions") or patch.get("validator_removals"):
                 rem = {str(x).lower() for x in patch.get("validator_removals") or []}
                 validators = sorted({*(v for v in validators if v not in rem), *(str(x).lower() for x in patch.get("validator_additions") or [])})
             if "vote_quorum" in patch:
                 quorum = patch["vote_quorum"]
+            if patch.get("eligibility_mode"):
+                mode = patch["eligibility_mode"]
             events.append({"kind": "active", "h": h, "ts": ts, "id": p["id"]})
     thr = threshold(quorum, len(validators))
     for p in order:
@@ -291,7 +283,7 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
         p["counted_votes"] = sum(1 for v in p["votes"] if v["counted"])
         if p["status"] == "voting":
             p["thr"] = thr  # what it needs now
-    now = {"head": hi, "first": lo, "rev": rev, "fee": fee, "validators": len(validators), "quorum": quorum, "thr": thr}
+    now = {"head": hi, "first": lo, "rev": rev, "fee": fee, "validators": len(validators), "quorum": quorum, "thr": thr, "mode": mode}
     return order, events, now
 
 
@@ -319,59 +311,158 @@ def eta_txt(blocks_left: int, pace: float | None) -> str:
 
 
 def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
-    """Headline, one-line body and link for an event."""
+    """Everything a post says about an event: a headline, what changes, why it
+    matters, the facts, a plain one-paragraph body (feed, page, X) and a link."""
     k = ev["kind"]
     if k == "restart":
         old = ev.get("old_tip")
-        return {"headline": "The Tau testnet restarted",
-                "body": (f"The old chain ended at block #{fmt_n(old)}. " if old else "") +
-                        "A new chain started; our node follows it from its first block.",
-                "link": f"{SITE}/stats/"}
-    title = p["title"] if p else "a rule change"
+        why = "The test network started over: balances, rules and history begin again from the starting state."
+        facts = ([f"The old chain ended at block #{fmt_n(old)}."] if old else []) + ["Tau HUD follows the new chain from block 1."]
+        return {"headline": "The Tau testnet restarted", "what": [], "why": why, "why_title": "What happened", "facts": facts,
+                "body": why + " " + " ".join(facts), "link": f"{SITE}/stats/"}
+    x = (p or {}).get("explain") or {"title": (p or {}).get("title", "a rule change"), "changes": [], "why": ""}
+    title = x["title"]
+    what = [f"{c['topic']}: {c['text']}" for c in x["changes"]]
     link = f"{SITE}/proposals/#{(p or {}).get('id', '')[:16]}"
+    left = p["activate_at"] - head if p else 0
+    when = f"block #{fmt_n(p['activate_at'])}{eta_txt(left, pace)}" if p else ""
     if k == "proposed":
-        left = p["activate_at"] - head
-        return {"headline": f"New rule proposal: {title}",
-                "body": f"Proposed at block #{fmt_n(ev['h'])} by {short(p['proposer'])}. "
-                        f"Needs {plural(p['thr'], 'vote')} by block #{fmt_n(p['activate_at'])}"
-                        f"{eta_txt(left, pace)}, or it is dropped.",
-                "link": link}
-    if k == "agreed":
-        left = p["activate_at"] - head
-        return {"headline": f"Agreed: {title}",
-                "body": f"Reached the quorum at block #{fmt_n(ev['h'])} ({p['counted_votes']} of {p['thr']} votes). "
-                        f"Takes effect at block #{fmt_n(p['activate_at'])}{eta_txt(left, pace)}.",
-                "link": link}
-    if k == "active":
-        return {"headline": f"Now in force: {title}",
-                "body": f"Took effect at block #{fmt_n(ev['h'])}. Consensus rules are at revision {p['rev']} now.",
-                "link": link}
-    if k == "dropped":
-        return {"headline": f"Dropped: {title}",
-                "body": f"Only {p['counted_votes']} of {p['thr']} votes by block #{fmt_n(ev['h'])}. The old rules stay.",
-                "link": link}
-    return {"headline": k, "body": "", "link": SITE}
+        need = max(0, p["thr"] - p["counted_votes"]) if p.get("approved_at") is None else 0
+        headline = f"New proposal: {title}"
+        facts = [f"Needs {plural(p['thr'], 'yes vote')} by {when}, or it is dropped.",
+                 f"Proposed at block #{fmt_n(ev['h'])} by {short(p['proposer'])}."]
+        if need == 0 and p.get("approved_at") is not None:
+            facts[0] = f"Already agreed. Takes effect at {when}."
+    elif k == "agreed":
+        headline = f"Agreed: {title}"
+        facts = [f"Takes effect at {when}. Until then the current rules apply.",
+                 f"Votes: {p['counted_votes']} of {p['thr']} needed, reached at block #{fmt_n(ev['h'])}."]
+    elif k == "active":
+        headline = f"Now in force: {title}"
+        facts = [f"In force since block #{fmt_n(ev['h'])}. The consensus rules are now at revision {p['rev']}."]
+    elif k == "dropped":
+        headline = f"Dropped: {title}"
+        facts = [f"It got {p['counted_votes']} of the {plural(p['thr'], 'vote')} it needed by its deadline, block #{fmt_n(ev['h'])}. "
+                 "Nothing changes."]
+    else:
+        return {"headline": k, "what": [], "why": "", "facts": [], "body": "", "link": SITE}
+    why = x.get("why", "") if k != "dropped" else ""
+    if k == "active":  # it happened: say it in the present
+        for a, b in NOW_TENSE:
+            why = why.replace(a, b)
+    body = " ".join(([("What changes: " + "; ".join(what) + ".")] if what else []) + ([why] if why else []) + facts)
+    # the changed lines of the rule text, not for a dropped proposal (nothing changes)
+    d = (p or {}).get("diff")
+    rdiff = None
+    if d and k != "dropped":
+        rdiff = {"summary": explain.diff_summary(d), "lines": [r for r in d["lines"] if r[0] != " "][:DIFF_LINES],
+                 "more": max(0, d["added"] + d["removed"] - DIFF_LINES)}
+    return {"headline": headline, "label": x.get("label"), "what": what, "why": why, "facts": facts, "diff": rdiff,
+            "what_title": "What changed" if k == "active" else "What it would change" if k == "dropped" else "What changes",
+            "severity": x.get("severity"), "body": body, "link": link}
 
 
-ICONS = {"proposed": "🆕", "agreed": "✅", "active": "⚡", "dropped": "✖️", "restart": "🔄"}
+DIFF_LINES = 6  # changed lines shown in a post; the rest is on the page
+
+NOW_TENSE = [("would cost", "costs"), ("would rest", "rests"), ("could no longer", "can no longer"), ("would be accepted", "are accepted"),
+             ("would make", "make"), ("would follow", "follow"), ("Nothing would change", "Nothing changed"), ("If it takes effect, ", "")]
+ICONS = {"proposed": "🗳️", "agreed": "✅", "active": "⚡", "dropped": "❌", "restart": "🔄"}
 
 
 def telegram_text(item: dict) -> str:
-    return (f"{ICONS.get(item['kind'], '•')} <b>{html.escape(item['headline'])}</b>\n"
-            f"{html.escape(item['body'])}\n\n"
-            f"<a href=\"{html.escape(item['link'])}\">Open in Tau HUD</a>")
+    e = html.escape
+    if "facts" not in item:  # posts recorded before explanations existed
+        return (f"{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>\n{e(item['body'])}\n\n"
+                f"<a href=\"{e(item['link'])}\">Open in Tau HUD</a>")
+    # order: what it means first, then what changes and the facts; the raw diff comes last, for those who want it
+    out = [f"{ICONS.get(item['kind'], '•')} <b>{e(item['headline'])}</b>"]
+    if item.get("label"):
+        out.append(f"<i>Proposer's title: “{e(item['label'])}”</i>")
+    if item.get("why"):
+        warn = "⚠️ " if item.get("severity") in ("halt", "unsafe") else ""
+        out += ["", f"<b>{e(item.get('why_title', 'Why it matters'))}</b>", warn + e(item["why"])]
+    if item["what"]:
+        out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>"] + [f"• {e(w)}" for w in item["what"]]
+    if item["facts"]:
+        out += [""] + [e(f) for f in item["facts"]]
+    d = item.get("diff")
+    if d:  # Telegram has no colours: + and − carry the meaning
+        if d["lines"]:
+            code = "\n".join(("+ " if op == "+" else "- ") + t.strip() for op, t in d["lines"])
+            more = f"\n… {d['more']} more on the page" if d["more"] else ""
+            out += ["", f"<b>Rule text diff</b> ({e(d['summary'])})", f"<pre><code class=\"language-diff\">{e(code + more)}</code></pre>"]
+        else:
+            out += ["", "<b>Rule text diff</b>: none. The text equals the rules in force."]
+    label = "Open in Tau HUD" if item["kind"] == "restart" else "Details and votes on Tau HUD"
+    out += ["", f"<a href=\"{e(item['link'])}\">{label}</a>"]
+    return "\n".join(out)
 
 
 def x_text(item: dict) -> str:
     # X counts every link as 23 characters
     tail = f"\n\n{item['link']} #Tau"
     room = 280 - 23 - len(" #Tau") - 2
-    text = f"{ICONS.get(item['kind'], '')} {item['headline']}\n{item['body']}".strip()
-    if len(text) > room:
-        text = f"{ICONS.get(item['kind'], '')} {item['headline']}".strip()
-        if len(text) > room:
-            text = text[: room - 1] + "…"
-    return text + tail
+    icon = ICONS.get(item["kind"], "")
+    for text in (f"{icon} {item['headline']}\n{item.get('why') or item['body']}",
+                 f"{icon} {item['headline']}"):
+        text = text.strip()
+        if len(text) <= room:
+            return text + tail
+    return text[: room - 1] + "…" + tail
+
+
+def health_problems(h: dict) -> list[str]:
+    """The factors that lose the most points, in plain words, worst first."""
+    out = []
+    for f in sorted(h.get("factors") or [], key=lambda f: f["points"] - f["weight"]):
+        if f["weight"] - f["points"] < 2:
+            continue
+        k, v = f["key"], f.get("value")
+        if k == "node":
+            out.append("Our node does not answer, so we cannot see the testnet right now")
+        elif k == "sync":
+            out.append(f"Our node is not in sync with the network ({v})")
+        elif k == "last_block":
+            out.append(f"No new block for {fmt_dur(v)}" if isinstance(v, (int, float)) else "No blocks yet")
+        elif k == "pace":
+            out.append(f"Only {fmt_n(v)} blocks in the last hour ({f.get('note', '')})")
+        elif k == "availability" and isinstance(v, (int, float)):
+            out.append(f"Live and in sync only {v * 100:.1f} % of the last 24 hours")
+        elif k == "stability" and isinstance(v, dict):
+            parts = [plural(v[x], x[:-1]) for x in ("restarts", "stalls", "reorgs") if v.get(x)]
+            out.append("In the last 24 hours: " + ", ".join(parts))
+        elif k == "mempool" and isinstance(v, (int, float)):
+            out.append(f"A transaction has been waiting for {fmt_dur(v)}")
+    return out[:3]
+
+
+def fmt_dur(s: float) -> str:
+    s = max(0, round(s))
+    if s < 90:
+        return plural(s, "second")
+    if s < 5400:
+        return plural(round(s / 60), "minute")
+    h, m = divmod(round(s / 60), 60)
+    return f"{h} h {m} min" if m else plural(h, "hour")
+
+
+def health_text(kind: str, h: dict | None, since: float | None = None, now: float | None = None) -> str:
+    e = html.escape
+    link = f"<a href=\"{SITE}/status/\">Live status on Tau HUD</a>"
+    if kind == "down":
+        if h is None:
+            return ("🔴 <b>Tau testnet: no data</b>\nOur relay does not answer, so we cannot tell whether the testnet runs. "
+                    f"We are on it.\n\n{link}")
+        lines = [f"🔴 <b>Tau testnet health {h['score']}/100: {e(h['label'])}</b>"]
+        lines += [f"• {e(p)}" for p in health_problems(h)]
+        return "\n".join(lines + ["", "We post again when it recovers.", link])
+    lines = [f"🟢 <b>Tau testnet recovered: health {h['score']}/100</b>"]
+    if since:
+        lines.append(f"It was down for {fmt_dur((now or time.time()) - since)}.")
+    rest = health_problems(h)
+    if rest:
+        lines += ["Still not perfect:"] + [f"• {e(p)}" for p in rest]
+    return "\n".join(lines + ["", link])
 
 
 # ---------------- outlets ----------------
@@ -403,6 +494,14 @@ def multipart(fields: dict[str, str], files: dict[str, tuple[str, bytes, str]]) 
     return out.getvalue(), f"multipart/form-data; boundary={boundary}"
 
 
+def ask_buttons() -> dict:
+    """Buttons under each channel post; they open the question bot in a private chat (same as bot.buttons)."""
+    b = f"https://t.me/{TELEGRAM_BOT_NAME}?start="
+    return {"inline_keyboard": [[{"text": "💬 Ask the bot", "url": b + "help"},
+                                 {"text": "⛓ Height", "url": b + "height"},
+                                 {"text": "🟢 Status", "url": b + "status"}]]}
+
+
 class Telegram(Outlet):
     name = "telegram"
 
@@ -410,12 +509,17 @@ class Telegram(Outlet):
         return bool(TELEGRAM_TOKEN and TELEGRAM_CHAT)
 
     def send_text(self, text: str) -> tuple[bool, float | None, str]:
-        body = json.dumps({"chat_id": TELEGRAM_CHAT, "text": text, "parse_mode": "HTML",
-                           "link_preview_options": {"is_disabled": True}}).encode()
+        msg = {"chat_id": TELEGRAM_CHAT, "text": text, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}}
+        if TELEGRAM_BOT_NAME:
+            msg["reply_markup"] = ask_buttons()
+        body = json.dumps(msg).encode()
         return self.call("sendMessage", body, "application/json")
 
     def send_photo(self, png, r):
-        body, ctype = multipart({"chat_id": TELEGRAM_CHAT, "caption": recap.caption_html(r, SITE), "parse_mode": "HTML"},
+        fields = {"chat_id": TELEGRAM_CHAT, "caption": recap.caption_html(r, SITE), "parse_mode": "HTML"}
+        if TELEGRAM_BOT_NAME:
+            fields["reply_markup"] = json.dumps(ask_buttons())
+        body, ctype = multipart(fields,
                                 {"photo": (f"tau-recap-{recap.week_key(r['end'] - 1)}.png", png, "image/png")})
         return self.call("sendPhoto", body, ctype)
 
@@ -682,11 +786,12 @@ class Watcher:
                       "seconds_per_block": round(pace, 1) if pace else None,
                       "node_head": g.get("head_number")},
             "rules": {"revision": now.get("rev"), "base_fee": now.get("fee"), "validators": now.get("validators"),
-                      "quorum": now.get("quorum"), "votes_needed": now.get("thr"), "open_admission": OPEN_ADMISSION},
+                      "quorum": now.get("quorum"), "votes_needed": now.get("thr"), "open_admission": OPEN_ADMISSION,
+                      "consensus_mode": g.get("eligibility_mode") or now.get("mode")},
             "proposals": [{k: p[k] for k in ("id", "n", "title", "parts", "status", "proposer", "proposed_at", "proposed_ts",
                                               "activate_at", "approved_at", "approved_ts", "activated_at", "activated_ts",
                                               "expired_at", "expired_ts", "thr", "counted_votes", "rev", "revisions",
-                                              "patch", "dups", "tx_id")}
+                                              "patch", "dups", "tx_id", "explain")}
                           | {"votes": [{"h": v["h"], "voter": v["voter"], "counted": v["counted"], "approve": v["approve"]} for v in p["votes"]]}
                           for p in reversed(props)],
             "events": [{k: it.get(k) for k in ("key", "kind", "h", "ts", "seen", "id", "headline", "body", "link", "chain")}
@@ -730,6 +835,63 @@ class Watcher:
                     break
                 self.save_state()
                 await asyncio.sleep(3)  # Telegram allows ~20 posts a minute per channel
+
+    # ---------- testnet health ----------
+    def health_now(self) -> dict | None:
+        try:
+            with urllib.request.urlopen(RELAY_HTTP + "/health-score", timeout=20) as r:
+                return json.load(r)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            log.warning("health: cannot read /health-score (%r)", exc)
+            return None
+
+    async def maybe_health(self, now: float | None = None):
+        """Post to Telegram when the testnet goes down or comes back. The new
+        state must hold for HEALTH_CONFIRM seconds; between the two thresholds
+        the last state stays (no flapping around one number)."""
+        if not HEALTH_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("health", {})
+        if now - st.get("checked", 0) < HEALTH_EVERY:
+            return
+        st["checked"] = now
+        h = await asyncio.to_thread(self.health_now)
+        if h is None or h.get("state") == "down" or h.get("score", 0) < HEALTH_DOWN_BELOW:
+            seen = "down"
+        elif h.get("score", 0) >= HEALTH_UP_AT:
+            seen = "up"
+        else:
+            seen = st.get("posted") or "up"
+        if h is not None:
+            st["score"] = h.get("score")
+        if "posted" not in st:  # first run: this is how things are, not news
+            st["posted"] = seen
+            self.save_state()
+            return
+        if seen == st["posted"]:
+            st.pop("cand", None)
+            self.save_state()
+            return
+        cand = st.get("cand")
+        if not cand or cand["state"] != seen:
+            st["cand"] = {"state": seen, "since": now}
+            self.save_state()
+            return
+        if now - cand["since"] < HEALTH_CONFIRM:
+            return
+        text = health_text(seen, h, st.get("down_since") if seen == "up" else None, now)
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        for o in tg:
+            ok, _, err = await asyncio.to_thread(o.send_text, text)
+            if not ok:
+                log.warning("health post to telegram failed (%s); trying again next check", err)
+                return
+        log.info("health: testnet %s (score %s)%s", seen, h and h.get("score"), "" if tg else ", telegram off")
+        st["posted"] = seen
+        st["down_since"] = cand["since"] if seen == "down" else None
+        st.pop("cand", None)
+        self.save_state()
 
     # ---------- weekly recap ----------
     @staticmethod
@@ -825,11 +987,13 @@ class Watcher:
                             self.process()
                         await self.deliver()
                         await self.maybe_recap()
+                        await self.maybe_health()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:  # relay restarting, network blip: try again shortly
                 log.warning("relay connection lost (%r); retrying in 10 s", exc)
+                await self.maybe_health()  # a relay that stays away is news too
                 await asyncio.sleep(10)
 
 
@@ -846,6 +1010,22 @@ def send_test() -> int:
         print(f"{o.name}: {'sent' if ok else 'FAILED ' + err}")
         code |= 0 if ok else 1
     return code
+
+
+async def preview_latest(n: int = 6) -> int:
+    """Print how the newest events on the chain would be posted now; posts nothing."""
+    w = Watcher([])
+    async with connect(RELAY_URL, max_size=64 * 2**20, open_timeout=20) as ws:
+        w.ws = ws
+        await w.sync()
+    props, events, now = replay(w.blocks, w.gov)
+    by_id, pace = {p["id"]: p for p in props}, block_pace(w.blocks)
+    if not events:
+        print("No rule change on this chain yet.")
+    for ev in events[-n:]:
+        print(telegram_text({"kind": ev["kind"], **describe(ev, by_id.get(ev["id"]), now.get("head", 0), pace)}))
+        print("-" * 60)
+    return 0
 
 
 def recap_cli(post: bool) -> int:
@@ -874,6 +1054,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if "--test" in sys.argv:
         sys.exit(send_test())
+    if "--preview" in sys.argv:
+        sys.exit(asyncio.run(preview_latest()))
     if "--recap-now" in sys.argv or "--recap-preview" in sys.argv:
         sys.exit(recap_cli("--recap-now" in sys.argv))
     asyncio.run(Watcher().run())

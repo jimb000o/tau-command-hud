@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Chain Time Travel</title>
@@ -44,10 +45,14 @@ a.acct:hover { color: var(--ok); text-decoration-color: currentColor; }
    the screen and fits on one screen: the three panels take the remaining height and scroll inside if they must.
    --z is set by script from the viewport. The hover box sits outside .wrap and stays in viewport pixels. */
 html.wide body { padding: 0; overflow: hidden; }
-html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px; transform: scale(var(--z)); transform-origin: 0 0; grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; gap: 12px; }
+html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px; transform: scale(var(--z)); transform-origin: 0 0; display: flex; flex-direction: column; gap: 12px; }
+/* a column, not grid rows: the shared header adds rows of its own; every row keeps its height, the timeline takes the rest */
+html.wide .wrap > * { flex: none; }
+html.wide .wrap > #pTl { flex: 1 1 0; min-height: var(--tlneed, 0px); }   /* never shorter than its content needs (set by script) */
 /* the panels are as tall as their content (capped at half the screen), the timeline above takes the rest */
 html.wide #pTl { overflow: hidden; min-height: 0; }
-html.wide .cols { min-height: 0; align-items: stretch; height: calc(38vh / var(--z)); }   /* fixed: stepping through blocks must never resize the timeline */
+/* the panels keep one height while scrubbing (38 % of the screen); only when the timeline needs room for many rule changes do they give some up */
+html.wide .wrap > .cols { flex: 0 1 calc(38vh / var(--z)); min-height: calc(17vh / var(--z)); align-items: stretch; }
 html.wide .cols > .panel { overflow: auto; min-height: 0; }
 html.wide .cols .txs { max-height: none; }
 html.wide .src { margin: 0; padding-left: 150px; }
@@ -56,7 +61,7 @@ html.wide .tip { font-size: calc(12px * var(--z)); padding: calc(6px * var(--z))
 html.wide #intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 32px; align-items: end; }
 html.wide #intro .lead { max-width: none; margin: 0; }
 html.wide #intro .sub { margin: 0; }
-html.wide .modal .sheet, html.wide .fb-fab { zoom: var(--z); }
+html.wide .modal .sheet { zoom: var(--z); }
 html.wide .modal .sheet { max-height: calc(100% / var(--z)); }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
@@ -88,9 +93,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .tlwrap { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 #tl { display: block; width: 100%; cursor: ew-resize; }
 #tl text { font-family: var(--mono); }
-#tl .lbl { font: 600 9.5px var(--display); letter-spacing: .18em; fill: var(--dim); text-transform: uppercase; }
-#tl .ax { font-size: 10.5px; fill: var(--dim); }
-#tl .axs { font-size: 10px; fill: rgba(138,138,148,.7); }
+#tl .lbl { font: 600 11px var(--display); letter-spacing: .18em; fill: var(--dim); text-transform: uppercase; }
+#tl .ax { font-size: 11px; fill: var(--dim); }
+#tl .axs { font-size: 11px; fill: rgba(138,138,148,.7); }
 #tl .bars { fill: rgba(255,255,255,.55); }
 #tl .bars.gov { fill: var(--ok); }
 #tl .gap { fill: rgba(255,255,255,.04); }
@@ -100,11 +105,17 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 #tl .prop.expired rect.track { stroke: rgba(255,255,255,.28); stroke-dasharray: 3 3; }
 #tl .prop .vote { stroke: #fff; stroke-width: 1.5; }
 #tl .prop text, #tl .revn, #tl .lbl, #tl .none { paint-order: stroke; stroke: #101012; stroke-width: 5px; stroke-linejoin: round; }
-#tl .prop text { font-size: 10.5px; fill: #fff; }
+#tl .prop text { font-size: 11px; fill: #fff; }
 #tl .prop.expired text { fill: var(--dim); }
 #tl .prop:hover rect.track { stroke: #fff; stroke-width: 1.5; }
+#tl .grp .gline { stroke: rgba(255,255,255,.35); stroke-width: 1; }
+#tl .grp text { font-size: 11px; fill: var(--dim); paint-order: stroke; stroke: #101012; stroke-width: 5px; stroke-linejoin: round; }
+#tl .grp:hover text { fill: #fff; }
+#tl .pmark .tick { stroke: rgba(255,255,255,.75); stroke-width: 1.5; }
+#tl .pmark.expired .tick { stroke: rgba(255,255,255,.3); }
+#tl .pmark:hover .tick { stroke: #fff; stroke-width: 2.5; }
 #tl .rev { fill: none; stroke: var(--ok); stroke-width: 1.5; }
-#tl .revn { font-size: 10.5px; fill: var(--ok); }
+#tl .revn { font-size: 11px; fill: var(--ok); }
 #tl .cursor { stroke: #fff; stroke-width: 1.5; }
 #tl .cpill { fill: #fff; }
 #tl .ctext { font: 600 11px var(--mono); fill: #000; }
@@ -119,7 +130,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .btn.primary:hover { background: var(--ok); border-color: var(--ok); }
 .btn:hover:not(.primary):not(:disabled) { border-color: #fff; }
 .btn:disabled { opacity: .35; cursor: default; }
-.btn:focus-visible, input[type=range]:focus-visible, .linkish:focus-visible, .fb-fab:focus-visible, .close:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+.btn:focus-visible, input[type=range]:focus-visible, .linkish:focus-visible, .close:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
 .grp { display: inline-flex; gap: 6px; flex-wrap: wrap; }
 .readout { margin-left: auto; text-align: right; min-width: 0; }
 .readout .h { font: 600 22px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
@@ -127,7 +138,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .readout .follow { color: var(--ok); }
 @media (max-width: 760px) { .readout { margin-left: 0; text-align: left; width: 100%; order: -1; } }
 input[type=range] { width: 100%; margin: 10px 0 0; accent-color: #fff; }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 8px; font-size: 11.5px; color: var(--dim); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 8px; font-size: 12px; color: var(--dim); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { display: inline-block; width: 18px; height: 9px; border-radius: 2px; }
 .legend .l-vote { border: 1px solid rgba(255,255,255,.6); }
@@ -143,24 +154,24 @@ input[type=range] { width: 100%; margin: 10px 0 0; accent-color: #fff; }
 .big .ok { color: var(--ok); }
 .cmp { font-size: 12px; color: var(--dim); margin: 0 0 10px; }
 .cmp b { color: #fff; font-weight: 500; }
-.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 14px; font-size: 12.5px; margin: 0; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 14px; font-size: 13px; margin: 0; }
 .kv dt { color: var(--dim); }
 .kv dd { margin: 0; color: #fff; overflow-wrap: anywhere; }
 .kv dd.chg { color: var(--ok); }
-.kv dd small { color: var(--dim); font-size: 11.5px; }
-h3 { margin: 14px 0 6px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.kv dd small { color: var(--dim); font-size: 12px; }
+h3 { margin: 14px 0 6px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .items { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
 .items li { border-left: 2px solid var(--line); background: rgba(255,255,255,.025); padding: 6px 10px; font-size: 12px; min-width: 0; }
 .items li.on { border-left-color: var(--ok); }
 .items li.now { border-left-color: var(--behind); }
-.items li b { color: #fff; font: 600 12.5px var(--display); }
+.items li b { color: #fff; font: 600 13px var(--display); }
 .items li .m { display: block; color: var(--dim); overflow-wrap: anywhere; }
 .items li.here { background: rgba(57,255,138,.07); }
 .linkish { background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%; display: block; }
 .linkish:hover b { text-decoration: underline; text-underline-offset: 3px; }
 .empty { color: var(--dim); font-size: 12px; margin: 0; }
 .flow { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 4px; }
-.flow span { font: 600 9.5px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.flow span { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
 .flow span.done { border-color: var(--ok); color: var(--ok); }
 .flow span.now { border-color: var(--behind); color: var(--behind); }
 .quorum { position: relative; height: 20px; border: 1px solid var(--hair); border-radius: 4px; overflow: hidden; margin: 6px 0 2px; background: #0c0c0d; }
@@ -172,27 +183,34 @@ h3 { margin: 14px 0 6px; font: 600 10.5px var(--display); letter-spacing: .18em;
 .txs li.gov button { border-left-color: var(--ok); }
 .txs .ty { color: #fff; font-weight: 600; }
 .txs .d { color: var(--dim); overflow-wrap: anywhere; }
-.prov { margin: 12px 0 0; font-size: 11.5px; color: var(--dim); }
+.prov { margin: 12px 0 0; font-size: 12px; color: var(--dim); }
 .prov .ok { color: var(--ok); }
 .prov .warn { color: var(--behind); }
-.btn.small { padding: 5px 10px; font-size: 10px; margin-top: 10px; }
+.btn.small { padding: 5px 10px; font-size: 11px; margin-top: 10px; }
 
 /* modal */
 .modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
 .sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
 .sheet .panel { padding-right: 48px; }
+/* proposal detail: two columns on wide screens, so the whole story fits without scrolling */
+.sheet.w2 { width: min(1500px, 100%); }
+.dcols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0 28px; align-items: start; }
+.dcols > div > :first-child, .dcols > div > details.raw:first-child { margin-top: 0; }
+.dcols pre.code { max-height: 38vh; }
+.dcols .rd-code { max-height: 46vh; }
+html.wide .dcols pre.code { max-height: calc(38vh / var(--z)); }
+html.wide .dcols .rd-code { max-height: calc(46vh / var(--z)); }
+@media (max-width: 900px) { .dcols { grid-template-columns: minmax(0, 1fr); } .dcols > div + div { margin-top: 14px; } }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
-pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 50vh; overflow: auto; }
+details.raw { margin: 14px 0 0; } details.raw > summary { cursor: pointer; min-height: 28px; padding: 4px 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); max-height: 50vh; overflow: auto; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
-.src { color: var(--dim); font-size: 11.5px; margin-top: 10px; }
+.src { color: var(--dim); font-size: 12px; margin-top: 10px; }
 .src a { color: var(--dim); }
 
 /* feedback: same floating button as the HUD, opens a pre-filled GitHub issue */
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); }
-.fb-fab:hover { background: var(--ok); }
-@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } }
 .fb form { display: grid; gap: 10px; }
-.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 11.5px; }
+.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 12px; }
 .fb textarea, .fb input[type=text] { width: 100%; background: #0c0c0d; border: 1px solid var(--hair); border-radius: 6px; color: #fff; font: 13px/1.5 var(--mono); padding: 8px 10px; }
 .fb textarea { min-height: 96px; resize: vertical; }
 .fb textarea:focus, .fb input:focus { outline: 1px solid var(--ok); border-color: var(--ok); }
@@ -201,6 +219,53 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
 .fb .status.ok { color: var(--ok); }
 .fb a.btn { text-decoration: none; }
 .fblink { color: var(--dim); font-size: 12px; }
+/* touch and phone: the same page as a readable single column with controls a thumb can hit */
+.touch, .dock { display: none; }
+@media (hover: none) { .kbd { display: none; } .touch { display: inline; } }
+@media (max-width: 700px) {
+  .lead { font-size: 21px; }
+  .sub { font-size: 12px; }
+  .kbd { display: none; } .touch { display: inline; }
+  .panel { padding: 12px; }
+  .controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .controls .grp { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .controls .grp + .grp { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .controls .btn { min-height: 44px; padding: 0 4px; font-size: 13px; letter-spacing: .06em; }
+  .controls .grp + .grp .btn { font-size: 11px; }
+  .btn.primary { min-width: 0; }
+  .readout .h { font-size: 24px; }
+  input[type=range] { -webkit-appearance: none; appearance: none; height: 36px; margin: 6px 0 0; background: transparent; touch-action: none; }
+  input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); }
+  input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -11px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 0 0 4px rgba(57,255,138,.25); }
+  input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 0 0 4px rgba(57,255,138,.25); }
+  .legend { font-size: 12px; gap: 4px 14px; }
+  #tl .lbl { font-size: 11px; letter-spacing: .12em; }
+  #tl .ax, #tl .axs, #tl .prop text, #tl .revn, #tl .none { font-size: 11px; }
+  h3 { font-size: 11px; }
+  .flow span { font-size: 11px; letter-spacing: .08em; }
+  .panel h2 small { font-size: 12px; }
+  .kv { grid-template-columns: minmax(7.5em, 38%) minmax(0, 1fr); gap: 6px 12px; font-size: 13px; }
+  .items li, .txs li button { font-size: 13px; }
+  .txs { max-height: none; }
+  .btn.small { min-height: 40px; padding: 0 14px; font-size: 11px; }
+  .src { font-size: 12px; }
+  .dock { display: grid; position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 45; grid-template-columns: 44px minmax(0, 1fr) 44px 44px; align-items: center; gap: 6px;
+    padding: 6px max(10px, env(safe-area-inset-right, 0px)) 6px max(10px, env(safe-area-inset-left, 0px)); background: #0c0c0e; border-top: 1px solid var(--hair);
+    transform: translateY(calc(100% + 60px)); transition: transform .18s ease; }
+  .dock.on { transform: none; }
+  .dock button { height: 44px; border-radius: 10px; border: 1px solid var(--hair); background: transparent; color: #fff; font: 15px var(--display); cursor: pointer; }
+  .dock button:disabled { opacity: .35; }
+  .dock .dmid { display: grid; min-width: 0; }
+  .dock .dh { font-size: 11px; color: var(--dim); white-space: nowrap; overflow: hidden; text-align: center; }
+  .dock .dh b { color: #fff; font: 600 13px var(--display); }
+  .dock input[type=range] { height: 26px; margin: 0; }
+  body.dockon { padding-bottom: 140px; }
+}
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
+/* the wide layout has no height to spare for a tall footer: the same text in two columns of readable width */
+html.wide .src { max-width: none; columns: 2; column-gap: 40px; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -224,18 +289,18 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   </div>
 
   <section class="panel" id="pTl">
-    <h2>The chain, block by block <small>drag or click the timeline · ← → step · Shift + ← → jump to the next rule event</small></h2>
+    <h2>The chain, block by block <small><span class="kbd">← → one block · Shift + ← → next rule event</span><span class="touch">drag the timeline or the slider · tap a bar for its rule change</span></small></h2>
     <div class="tlwrap" id="tlwrap">
       <svg id="tl" height="200" role="img" aria-label="Timeline of blocks and rule changes"></svg>
     </div>
     <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Block height">
     <div class="controls">
       <span class="grp">
-        <button class="btn" id="bStart" type="button" title="Genesis">⏮ Genesis</button>
+        <button class="btn" id="bStart" type="button" title="Genesis" aria-label="Genesis">⏮ Genesis</button>
         <button class="btn" id="bPrev" type="button" aria-label="Previous block">◀ Block</button>
         <button class="btn primary" id="bPlay" type="button">▶ Play</button>
         <button class="btn" id="bNext" type="button" aria-label="Next block">Block ▶</button>
-        <button class="btn" id="bEnd" type="button">Now ⏭</button>
+        <button class="btn" id="bEnd" type="button" aria-label="Now">Now ⏭</button>
       </span>
       <span class="grp">
         <button class="btn" id="bPrevEv" type="button">◀ Rule event</button>
@@ -266,10 +331,18 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
       <div id="blockBody"><p class="empty">Waiting for blocks.</p></div>
     </section>
   </div>
-  <p class="src">How the history is rebuilt: the page replays every block in order, exactly as the node’s governance code does (<a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py" target="_blank" rel="noopener">governance.py ↗</a>): a proposal waits for votes, becomes agreed once it holds the quorum, and takes effect at its activation block. If it is still short of votes by then, it is dropped and the old rules stay. At the newest block the result is checked against the node’s own state.</p>
+  <p class="src">How the history is rebuilt: the page replays every block in order, exactly as the node’s governance code does (<a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py" target="_blank" rel="noopener">governance.py ↗</a>): a proposal waits for votes, becomes agreed once it holds the quorum, and takes effect at its activation block. If it is still short of votes by then, it is dropped and the old rules stay. At the newest block the result is checked against the node’s own state. · <button class="linkish inl" id="fbFab" type="button">Feedback</button></p>
 </div>
 
 <div class="tip" id="tip" hidden></div>
+
+<!-- phone: once the timeline is scrolled away, a small block picker stays above the tab bar -->
+<div class="dock" id="dock" aria-label="Pick a block">
+  <button type="button" id="dPrev" aria-label="Previous block">◀</button>
+  <label class="dmid"><span class="dh"><b id="dH">#–</b> <span id="dT"></span></span><input type="range" id="dScrub" min="0" max="0" value="0" step="1" aria-label="Block height"></label>
+  <button type="button" id="dNext" aria-label="Next block">▶</button>
+  <button type="button" id="dUp" aria-label="Back to the timeline">▲</button>
+</div>
 
 <div class="modal" id="mDetail" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle">
   <div class="sheet">
@@ -278,7 +351,6 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   </div>
 </div>
 
-<button class="fb-fab" id="fbFab" type="button">Feedback</button>
 <div class="modal" id="mFeedback" hidden role="dialog" aria-modal="true" aria-labelledby="fbTitle">
   <div class="sheet">
     <button class="close" data-close type="button" aria-label="Close">✕</button>
@@ -302,6 +374,7 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
 </div>
 
 <script src="vendor/blake3.umd.min.js"></script>
+<script src="../assets/rulediff.js"></script>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -331,7 +404,7 @@ const C = {
   partial: false,      // the relay could only give the newest blocks
   gov: null,           // latest getgovernance data (the node's own state at its head)
   openAdmission: true, // network runs TAU_GOVERNANCE_OPEN_ADMISSION=true; refined from /status
-  loading: false, ws: null, retry: 5000,
+  loading: false, ws: null, retry: 3000, fails: 0,
 };
 let H = { snaps: [], props: [], events: [], txKinds: [] };   // replay result
 let cursor = 0, following = true, playing = null, hovering = false, pendingRender = false;
@@ -390,7 +463,23 @@ function threshold(policy, n) {
 }
 const QUORUM_TXT = { supermajority: "two thirds", majority: "more than half" };
 const quorumTxt = q => QUORUM_TXT[q] || (/^count:\d+$/.test(q) ? `a fixed ${q.slice(6)}` : q);
+// plain-words titles from the proposal tracker (alerts/explain.py, the same as /proposals/ and Telegram), by update id
+const EXPLAIN = new Map();
+async function loadExplain() {
+  if (params.has("sample")) return;
+  try {
+    const r = await fetch(params.get("explain") || "https://node.tauhud.com/proposals.json", { cache: "no-store" }); if (!r.ok) return;
+    const j = await r.json(); let changed = false;
+    for (const x of j.proposals || []) {
+      const t = x && x.explain && x.explain.title, id = String(x && x.id || "").toLowerCase();
+      if (t && id && EXPLAIN.get(id) !== t) { EXPLAIN.set(id, t); changed = true; }
+    }
+    if (changed && C.head >= 0) rebuild();
+  } catch (e) { /* the page still works with its own titles */ }
+}
 function titleOf(p) {
+  const named = EXPLAIN.get(String(p.id || "").toLowerCase());
+  if (named) { p.parts = named.split(" + "); return named; }
   const parts = [], patch = p.patch || {};
   for (const r of p.revisions) {
     const f = feeOf(r);
@@ -410,10 +499,12 @@ function titleOf(p) {
   return p.parts.join(" + ");
 }
 // the timeline label: the full title when it fits, else its first part and how many more (full title on hover and click)
+// every label starts with the block the proposal was made in, so two proposals with the same text stay apart
 function labelOf(p, room) {
-  if (p.title.length * 6.4 + 8 <= room) return p.title;
-  const alt = `${p.parts[0]} + ${p.parts.length - 1} more`;
-  return p.parts.length > 1 && alt.length * 6.4 + 8 <= room ? alt : p.parts[0];
+  const at = `#${fmtN(p.proposedAt)} · `;
+  if ((at + p.title).length * 6.4 + 8 <= room) return at + p.title;
+  const alt = `${at}${p.parts[0]} + ${p.parts.length - 1} more`;
+  return p.parts.length > 1 && alt.length * 6.4 + 8 <= room ? alt : at + p.parts[0];
 }
 const TX_NAMES = {
   user_tx: "transfer", rule_deploy: "own rule", consensus_rule_update: "rule change proposed", consensus_rule_vote: "vote",
@@ -537,7 +628,7 @@ function connect() {
   try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
   setConn("wait", "Connecting", `Reading the chain from ${esc(NODE.replace(/^wss?:\/\//, ""))}…`);
-  ws.onopen = () => { C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); };
+  ws.onopen = () => { C.retry = 3000; C.fails = 0; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
   ws.onerror = () => {};
@@ -547,11 +638,17 @@ function connect() {
 }
 function offline(why) {
   C.ws = null; C.loading = false;
-  const w = C.retry; C.retry = Math.min(60000, w * 2);
-  setConn("", "Offline", `The community node is not reachable (${esc(why)}). Retrying in ${w / 1000} s · <button type="button" id="retryNow">retry now</button>`);
+  const w = C.retry; C.retry = Math.min(20000, w * 2); C.fails++;
+  // the relay accepts a few connections per address, and every open Tau HUD tab uses two
+  const hint = C.fails >= 3 ? " If many Tau HUD tabs are open, closing a few frees a slot." : "";
+  setConn("", "Offline", `The community node is not reachable (${esc(why)}). Retrying in ${w / 1000} s · <button type="button" id="retryNow">retry now</button>${hint}`);
   $("retryNow").onclick = connect;
   C.retryT = setTimeout(connect, w);
 }
+// back on the tab or back online: try at once instead of waiting out the timer
+const retrySoon = () => { if (!C.ws && !params.has("sample") && C.retryT) connect(); };
+document.addEventListener("visibilitychange", () => { if (!document.hidden) retrySoon(); });
+addEventListener("online", retrySoon);
 function loadFrom(from) {
   C.loading = true; C.nextFrom = from;
   send(`getblockrange ${from} ${PAGE}`);
@@ -599,8 +696,17 @@ function onMessage(ev) {
     if (C.head !== before || d.reset) rebuild();
   } else if (msg.command === "getgovernance") {
     if (msg.status !== "ok") return;
-    C.gov = d; renderCheck();
+    C.gov = d; renderCheck(); navChips(d);
   }
+}
+// the shared header's chips: same numbers as on the other pages, from the node's getgovernance this page already has
+function navChips(d) {
+  const rev = 1 + (d.archival_update_details || []).filter(u => u.lifecycle === "activated").length;
+  const f = typeof d.consensus_rules === "string" && /o9\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]+)/.exec(d.consensus_rules);
+  const ch = window.TauNav && TauNav.chain; if (ch) { ch.rev = rev; if (f) ch.fee = parseInt(f[1], 16); }
+  const rb = document.querySelector("#tnRev b"), fb = document.querySelector("#tnFee b");
+  if (rb) rb.textContent = String(rev);
+  if (fb && f) fb.textContent = String(parseInt(f[1], 16));
 }
 // heights the relay did not give us: say so, and ask again a little later
 function holes() {
@@ -636,39 +742,75 @@ const TL = { pad: 14, w: 800, x0: 14, x1: 786, rows: {} };
 function xOf(h) { const span = Math.max(1, C.head - C.first); return TL.x0 + (h - C.first) / span * (TL.x1 - TL.x0); }
 function hOf(x) { const span = Math.max(1, C.head - C.first); return Math.round(C.first + (x - TL.x0) / (TL.x1 - TL.x0) * span); }
 const clampH = h => Math.max(C.first, Math.min(C.head, h));
-function lanes(props) {
-  // lanes in pixel space: a bar and its label must never overlap another bar or label
-  const ends = [], out = new Map();
-  for (const p of props) {
-    const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
-    p.label = labelOf(p, TL.x1 - TL.x0);
-    const lw = p.label.length * 6.4 + 8;
-    let lx = xa; if (lx + lw > TL.x1) lx = Math.max(TL.x0, TL.x1 - lw);
-    const from = Math.min(xa, lx) - 6, to = Math.max(xEnd, lx + lw) + 6;
-    let l = ends.findIndex(e => e < from);
-    if (l < 0) { l = ends.length; ends.push(to); } else ends[l] = to;
-    out.set(p, { lane: l, lx });
-  }
-  return { map: out, n: ends.length };
+// a proposal whose rule text equals the rules in force and that changes no setting ("Same rules as now")
+function isNoop(p) {
+  if (p._noop != null) return p._noop;
+  if (/^Same rules as now/.test(p.title)) return (p._noop = true);
+  if (p.patch && Object.keys(p.patch).length) return (p._noop = false);
+  try { return (p._noop = !!(window.RuleDiff && p.revisions.length && RuleDiff.diff(RuleDiff.specAt(p.proposedAt, H.props, GENESIS.rules), p.revisions).same)); }
+  catch (e) { return (p._noop = false); }
 }
+// how many rule-change rows the timeline shows at most; more proposals never push the page down
+const MAX_LANES = () => matchMedia("(max-width: 700px)").matches ? 4 : 6;
+function lanes(props) {
+  // lanes in pixel space: a bar and its label must never overlap another bar or label.
+  // Rows are capped: proposals that change nothing share one row, and when real changes still need more rows,
+  // the oldest finished ones fold into one "+N more" row. Open proposals and the newest always keep their own row.
+  const out = new Map(), groups = [], cap = MAX_LANES();
+  const noop = props.filter(isNoop), real = props.filter(p => !isNoop(p));
+  const place = (list, rows) => {   // greedy packing; returns the proposals that did not fit
+    const ends = [], left = [];
+    for (const p of list) {
+      const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
+      p.label = labelOf(p, TL.x1 - TL.x0);
+      const lw = p.label.length * charW() + 8;
+      let lx = xa; if (lx + lw > TL.x1) lx = Math.max(TL.x0, TL.x1 - lw);
+      const from = Math.min(xa, lx) - 6, to = Math.max(xEnd, lx + lw) + 6;
+      let l = ends.findIndex(e => e < from);
+      if (l < 0) { if (ends.length >= rows) { left.push(p); continue; } l = ends.length; ends.push(to); } else ends[l] = to;
+      out.set(p, { lane: l, lx });
+    }
+    return { n: ends.length, left };
+  };
+  const nGroups = (noop.length > 1 ? 1 : 0);
+  // open ones first, then the newest: they keep their own row
+  const rank = p => [statusAt(p, C.head) === "voting" || statusAt(p, C.head) === "agreed" ? 0 : 1, -p.proposedAt];
+  const order = (noop.length > 1 ? real : props).slice().sort((a, b) => { const x = rank(a), y = rank(b); return x[0] - y[0] || x[1] - y[1]; });
+  let r = place(order, cap - nGroups);
+  if (r.left.length) { out.clear(); r = place(order, cap - nGroups - 1); }   // leave a row for "+N more"
+  // the kept ones are laid out oldest first (packing in time order never needs more rows)
+  const kept = order.filter(p => out.has(p)).sort((a, b) => a.proposedAt - b.proposedAt);
+  out.clear(); place(kept, Infinity);
+  let n = Math.max(0, ...[...out.values()].map(v => v.lane + 1));
+  if (noop.length > 1) groups.push({ kind: "noop", lane: n++, members: noop, label: `Same rules as now (no real change) · ${noop.length} proposals` });
+  if (r.left.length) groups.push({ kind: "more", lane: n++, members: r.left.sort((a, b) => a.proposedAt - b.proposedAt), label: `+${r.left.length} more rule ${r.left.length === 1 ? "change" : "changes"}` });
+  return { map: out, groups, n };
+}
+// width of one character of a rule-change label (10.5 px mono; 11 px on phones)
+const charW = () => matchMedia("(max-width: 700px)").matches ? 6.7 : 6.4;
 function tickStep(pxPerBlock) {
-  for (const s of [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000]) if (s * pxPerBlock >= 74) return s;
+  for (const s of [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000]) if (s * pxPerBlock >= 96) return s;
   return 20000;
 }
 const hhmm = ts => ts ? new Date(ts * 1000).toISOString().slice(11, 16) : "";
 function drawTimeline() {
   const svg = $("tl"); const W = Math.max(280, svg.clientWidth || svg.parentNode.clientWidth);
   TL.w = W; TL.x0 = 14; TL.x1 = W - 14;
-  const L = lanes(H.props), laneH = 26, nl = Math.max(1, L.n);
-  // wide screens: the timeline panel owns the spare height of the screen, the transaction bars take it
-  let txH = 46;
+  const L = lanes(H.props), nl = Math.max(1, L.n);
+  let laneH = 26, txH = 46;
+  // wide screens: the timeline panel owns the spare height of the screen. The svg takes exactly what is left of it:
+  // more room → taller transaction bars; less room (many rule changes) → shorter bars, then tighter lanes. Nothing below it is cut.
   if (document.documentElement.classList.contains("wide")) {
     // content height of the panel without the svg (rects are scaled by --z, so divide it back out)
     const pan = $("pTl"), z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--z")) || 1;
     const content = (pan.lastElementChild.getBoundingClientRect().bottom - pan.getBoundingClientRect().top) / z + 14;
     const other = content - (+svg.getAttribute("height") || 0);
-    const base = 20 + 46 + 18 + 8 + nl * laneH + 16 + 8 + 22 + 18 + 16;
-    txH = 46 + Math.max(0, Math.min(240, pan.clientHeight - other - base - 4));
+    const fixed = 20 + 18 + 8 + 16 + 8 + 22 + 18 + 16, room = pan.clientHeight - other - fixed - 4;
+    // what the panel needs at least (short bars, tight lanes); the panels below give up height for it
+    const need = Math.ceil(other + fixed + 4 + 24 + nl * 22) + "px";
+    if (pan.style.getPropertyValue("--tlneed") !== need) pan.style.setProperty("--tlneed", need);
+    txH = Math.max(20, Math.min(286, room - nl * laneH));
+    if (txH + nl * laneH > room) laneH = Math.max(22, Math.floor((room - txH) / nl));
   }
   const y = { txL: 12, tx0: 20, tx1: 20 + txH }; y.prL = y.tx1 + 18; y.pr0 = y.prL + 8; y.pr1 = y.pr0 + nl * laneH; y.rvL = y.pr1 + 16; y.rv0 = y.rvL + 8; y.rv1 = y.rv0 + 22; y.ax = y.rv1 + 18; y.h = y.ax + 16;
   TL.y = y; TL.lanes = L; TL.laneH = laneH;
@@ -681,10 +823,15 @@ function drawTimeline() {
   const span = Math.max(1, C.head - C.first), ppb = (TL.x1 - TL.x0) / span;
   // axis grid + labels: height on top, UTC time below
   const step = tickStep(ppb);
+  // a label is drawn only when it keeps clear of the one before it (the grid line always is), so the axis never overprints
+  let axRight = -1e9;
   for (let h = Math.ceil(C.first / step) * step; h <= C.head; h += step) {
     const x = xOf(h), b = C.blocks[h], ts = b && b.header ? b.header.timestamp : 0;
     const anchor = x < TL.x0 + 20 ? "start" : x > TL.x1 - 20 ? "end" : "middle";
     parts.push(`<line class="grid" x1="${x}" x2="${x}" y1="${y.tx0}" y2="${y.rv1}"/>`);
+    const txt = `#${fmtN(h)}${ts ? ` ${hhmm(ts)}` : ""}`, lw = txt.length * 6.2, left = anchor === "start" ? x : anchor === "end" ? x - lw : x - lw / 2;
+    if (left < axRight + 10) continue;
+    axRight = left + lw;
     parts.push(`<text class="ax" x="${x}" y="${y.ax}" text-anchor="${anchor}">#${fmtN(h)}${ts ? ` <tspan class="axs">${hhmm(ts)}</tspan>` : ""}</text>`);
   }
   // transactions per block: one path for plain blocks, one for governance blocks
@@ -707,6 +854,7 @@ function drawTimeline() {
   if (!H.props.length) { const n = nodeOnly().length;
     parts.push(`<text class="none" x="${TL.x0}" y="${y.pr0 + 15}">${n ? `No proposal in the loaded blocks. The node lists ${n}: see “Agreement in progress”.` : "No rule change proposed on this chain yet."}</text>`); }
   for (const p of H.props) {
+    if (!L.map.has(p)) continue;   // drawn as a mark in a shared row below
     // label on its own line above the bar, so vote marks and dots never cross the text
     const { lane: l, lx } = L.map.get(p), ty = y.pr0 + l * laneH + 9, top = ty + 4, hgt = 8;
     const xa = xOf(p.proposedAt), xEnd = xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt));
@@ -719,7 +867,22 @@ function drawTimeline() {
     for (const v of p.votes.filter(v => v.counted)) { const xv = xOf(v.h); g.push(`<line class="vote" x1="${xv}" x2="${xv}" y1="${top - 1}" y2="${top + hgt + 1}"/>`); }
     // label: its lane was chosen with room for it, so it is never cut or covered
     g.push(`<text x="${lx}" y="${ty}">${esc(p.label)}</text>`);
-    g.push(`<rect x="${Math.min(xa, xEnd, lx) - 4}" y="${ty - 10}" width="${Math.max(xEnd, lx + p.label.length * 6.4) - Math.min(xa, lx) + 8}" height="${top + hgt + 3 - (ty - 10)}" fill="transparent"/></g>`);
+    g.push(`<rect x="${Math.min(xa, xEnd, lx) - 4}" y="${ty - 10}" width="${Math.max(xEnd, lx + p.label.length * charW()) - Math.min(xa, lx) + 8}" height="${top + hgt + 3 - (ty - 10)}" fill="transparent"/></g>`);
+    parts.push(g.join(""));
+  }
+  // shared rows: one thin line over their span, one mark per proposal (tick where it was proposed, dot where it took effect)
+  for (const G of L.groups) {
+    const ty = y.pr0 + G.lane * laneH + 9, mid = ty + 7, ms = G.members;
+    const x0 = Math.min(...ms.map(p => xOf(p.proposedAt))), x1 = Math.max(...ms.map(p => xOf(Math.min(C.head, p.activatedAt ?? p.expiredAt ?? p.activateAt))));
+    let lx = x0; const lw = G.label.length * charW() + 8; if (lx + lw > TL.x1) lx = Math.max(TL.x0, TL.x1 - lw);
+    const g = [`<g class="grp" data-g="${G.kind}"><line class="gline" x1="${x0}" x2="${Math.max(x1, x0 + 3)}" y1="${mid}" y2="${mid}"/>`,
+      `<text x="${lx}" y="${ty}">${esc(G.label)}</text><rect x="${Math.min(x0, lx) - 4}" y="${ty - 10}" width="${Math.max(x1, lx + lw) - Math.min(x0, lx) + 8}" height="12" fill="transparent"/></g>`];
+    for (const p of ms) {
+      const xa = xOf(p.proposedAt), xAct = p.activatedAt != null ? xOf(p.activatedAt) : null;
+      g.push(`<g class="prop pmark ${p.expiredAt != null ? "expired" : ""}" data-p="${p.n}"><line class="tick" x1="${xa}" x2="${xa}" y1="${mid - 4}" y2="${mid + 4}"/>`
+        + (xAct != null ? `<circle cx="${xAct}" cy="${mid}" r="3" fill="var(--ok)"/>` : "")
+        + `<rect x="${xa - 5}" y="${mid - 6}" width="10" height="12" fill="transparent"/></g>`);
+    }
     parts.push(g.join(""));
   }
   // spec revision step line
@@ -745,11 +908,18 @@ function drawTimeline() {
 /* ---------------- hover + drag on the timeline ---------------- */
 const tip = $("tip");
 function showTip(ev, html) { tip.innerHTML = html; tip.hidden = false; const r = tip.getBoundingClientRect();
-  let x = ev.clientX + 14, yy = ev.clientY + 16; if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14; if (yy + r.height > innerHeight - 8) yy = ev.clientY - r.height - 12;
+  let x = ev.clientX + 14, yy = ev.clientY + 16;
+  if (ev.pointerType === "touch") { x = ev.clientX - r.width / 2; yy = ev.clientY - r.height - 28; if (x + r.width > innerWidth - 8) x = innerWidth - 8 - r.width; } if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14; if (yy + r.height > innerHeight - 8) yy = ev.clientY - r.height - 12;
   tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, yy) + "px"; }
 function hideTip() { tip.hidden = true; }
 function svgX(ev) { const r = $("tl").getBoundingClientRect(); return (ev.clientX - r.left) * (TL.w / r.width); }
 function propAt(ev) { const g = ev.target.closest && ev.target.closest(".prop"); return g ? H.props[+g.dataset.p - 1] : null; }
+function groupAt(ev) { const g = ev.target.closest && ev.target.closest(".grp"); return g && TL.lanes ? TL.lanes.groups.find(G => G.kind === g.dataset.g) : null; }
+function groupTip(G) { return `<b>${esc(G.label)}</b><br>${G.kind === "noop" ? "Proposals whose rule text equals the rules in force. " : ""}One mark per proposal<br><em>click for the list</em>`; }
+function openGroup(G) {
+  openDetail(esc(G.label), `<p class="note" style="margin-top:0">${G.kind === "noop" ? "Each of these proposals carries rule text that equals the rules already in force, so nothing changes when it takes effect. They share one row on the timeline." : "The timeline shows at most six rows. Open and newer rule changes keep their own row; these share one, so the page keeps its size however many proposals come."}</p>
+    <ul class="items">${G.members.slice().reverse().map(p => `<li class="${p.activatedAt != null ? "on" : ""}"><button class="linkish" type="button" data-open="${p.n}"><b>${esc(p.title)}</b><span class="m">proposed at #${fmtN(p.proposedAt)} · ${p.activatedAt != null ? `in force since #${fmtN(p.activatedAt)}` : p.expiredAt != null ? `dropped at #${fmtN(p.expiredAt)}` : p.approvedAt != null ? `agreed, takes effect at #${fmtN(p.activateAt)}` : "waiting for votes"}</span></button></li>`).join("")}</ul>`);
+}
 function blockTip(h) {
   const b = C.blocks[h]; if (!b) return `<b>#${fmtN(h)}</b><br><em>not loaded</em>`;
   const txs = b.transactions || [], counts = {};
@@ -765,18 +935,19 @@ let drag = false;
 const tlw = $("tlwrap");
 tlw.addEventListener("pointerdown", ev => {
   if (C.head < 0) return;
-  const p = propAt(ev); if (p) return;   // a click on a rule change opens it (see click)
+  const p = propAt(ev); if (p || groupAt(ev)) return;   // a click on a rule change opens it (see click)
   drag = true; tlw.setPointerCapture(ev.pointerId); stopPlay(); setCursor(clampH(hOf(svgX(ev))), true);
 });
 tlw.addEventListener("pointermove", ev => {
   if (C.head < 0) return;
   if (drag) { setCursor(clampH(hOf(svgX(ev))), true); showTip(ev, blockTip(cursor)); return; }
   const p = propAt(ev);
-  if (p) showTip(ev, propTip(p)); else showTip(ev, blockTip(clampH(hOf(svgX(ev)))));
+  const G = !p && groupAt(ev);
+  if (p) showTip(ev, propTip(p)); else if (G) showTip(ev, groupTip(G)); else showTip(ev, blockTip(clampH(hOf(svgX(ev)))));
 });
-tlw.addEventListener("pointerup", () => { drag = false; });
+tlw.addEventListener("pointerup", ev => { drag = false; if (ev.pointerType !== "mouse") hideTip(); });
 tlw.addEventListener("pointerleave", () => { if (!drag) hideTip(); });
-tlw.addEventListener("click", ev => { const p = propAt(ev); if (p) { hideTip(); openProp(p); } });
+tlw.addEventListener("click", ev => { const p = propAt(ev); if (p) { hideTip(); openProp(p); return; } const G = groupAt(ev); if (G) { hideTip(); openGroup(G); } });
 
 /* ---------------- cursor ---------------- */
 function setCursor(h, user) {
@@ -788,6 +959,21 @@ function setCursor(h, user) {
   render();
 }
 $("scrub").addEventListener("input", e => { stopPlay(); setCursor(+e.target.value, true); });
+// phone: the step buttons show their symbol only (the label stays as aria-label)
+{ const mq = matchMedia("(max-width: 700px)"), full = { bStart: "⏮ Genesis", bPrev: "◀ Block", bNext: "Block ▶", bEnd: "Now ⏭" }, sym = { bStart: "⏮", bPrev: "◀", bNext: "▶", bEnd: "⏭" };
+  const label = () => { for (const id in full) $(id).textContent = (mq.matches ? sym : full)[id]; };
+  label(); mq.addEventListener("change", label); }
+$("dScrub").addEventListener("input", e => { stopPlay(); setCursor(+e.target.value, true); });
+$("dPrev").onclick = () => { stopPlay(); setCursor(cursor - 1, true); };
+$("dNext").onclick = () => { stopPlay(); setCursor(cursor + 1, true); };
+$("dUp").onclick = () => $("pTl").scrollIntoView({ behavior: "smooth", block: "start" });
+// the dock shows once the timeline panel has scrolled out of view
+if (window.IntersectionObserver) new IntersectionObserver(([e]) => {
+  const on = !e.isIntersecting && e.boundingClientRect.top < 0;
+  const tab = document.querySelector(".tabbar"), dock = $("dock");
+  if (tab && tab.offsetHeight) dock.style.bottom = tab.offsetHeight + "px";   // sits right on the tab bar
+  dock.classList.toggle("on", on); document.body.classList.toggle("dockon", on);
+}, { rootMargin: "-40px 0px 0px 0px" }).observe($("pTl"));
 $("bStart").onclick = () => { stopPlay(); setCursor(C.first, true); };
 $("bEnd").onclick = () => { stopPlay(); setCursor(C.head, true); };
 $("bPrev").onclick = () => { stopPlay(); setCursor(cursor - 1, true); };
@@ -838,6 +1024,9 @@ function readout() {
   ["bStart", "bPrev"].forEach(id => $(id).disabled = cursor <= C.first);
   ["bEnd", "bNext"].forEach(id => $(id).disabled = cursor >= C.head);
   $("bPrevEv").disabled = nextEvent(-1) == null; $("bNextEv").disabled = nextEvent(1) == null;
+  const ds = $("dScrub"); ds.min = sc.min; ds.max = sc.max; ds.value = cursor;
+  $("dH").textContent = `#${fmtN(cursor)}`; $("dT").textContent = ts ? hhmm(ts) + " UTC" : "genesis";
+  $("dPrev").disabled = cursor <= C.first; $("dNext").disabled = cursor >= C.head;
   ["rH", "aH", "bH"].forEach(id => $(id).textContent = `#${fmtN(cursor)}`);
 }
 function renderRules() {
@@ -898,7 +1087,7 @@ function nodeOnly() {
   return [...(g.pending_updates || []).map(u => ({ u, st: "voting" })), ...(g.scheduled_updates || []).map(u => ({ u, st: "agreed" }))]
     .filter(({ u }) => u.update_id && !seen.has(String(u.update_id).toLowerCase()))
     .map(({ u, st }) => {
-      const p = { revisions: Array.isArray(u.rule_revisions) ? u.rule_revisions : [], patch: u.host_contract_patch || null };
+      const p = { id: u.update_id, revisions: Array.isArray(u.rule_revisions) ? u.rule_revisions : [], patch: u.host_contract_patch || null };
       return { id: u.update_id, st, title: titleOf(p), at: u.activation_height ?? u.activate_at_height, votes: votes.filter(v => v.update_id === u.update_id).length, thr: g.approval_threshold };
     });
 }
@@ -981,7 +1170,8 @@ for (const id of ["pRules", "pAgree", "pBlock"]) {
 
 /* ---------------- detail views ---------------- */
 let lastFocus = null;
-function openDetail(title, html) { lastFocus = document.activeElement; $("dTitle").innerHTML = title; $("dBody").innerHTML = html; $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus(); }
+function openDetail(title, html) { lastFocus = document.activeElement; $("dTitle").innerHTML = title; $("dBody").innerHTML = html;
+  $("mDetail").querySelector(".sheet").classList.toggle("w2", html.includes('class="dcols"')); $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus(); }
 function closeModal(m) { m.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
 document.querySelectorAll(".modal").forEach(m => {
   m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-close]")) closeModal(m); });
@@ -999,12 +1189,14 @@ function openProp(p) {
     st === "voting" ? [`Waiting for votes`, `${counted.length} so far, deadline #${fmtN(p.activateAt)}.`, null] : null,
     st === "agreed" ? [`Waiting for block #${fmtN(p.activateAt)}`, `Agreed, takes effect there.`, null] : null,
   ].filter(Boolean);
-  openDetail(`${esc(p.title)}`, `
+  openDetail(`${esc(p.title)}`, `<div class="dcols"><div>
     <ul class="items">${steps.map(([t, m, h]) => `<li class="${h != null ? "on" : "now"}">${h != null ? `<button class="linkish" type="button" data-goto="${h}"><b>${t}</b></button><span class="m">${m} · <button class="linkish inl" type="button" data-goto="${h}">go to this block</button></span>` : `<b>${t}</b><span class="m">${m}</span>`}</li>`).join("")}</ul>
-    ${p.revisions.length ? `<h3>Rule text it adds (${p.revisions.length})</h3>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}` : ""}
+    ${window.RuleDiff ? RuleDiff.html(RuleDiff.specAt(p.proposedAt, H.props, GENESIS.rules), p.revisions, { at: p.proposedAt, patch: !!p.patch }) : ""}
+    </div><div>
+    ${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
     ${p.patch ? `<h3>Settings it changes</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
-    <h3>Transaction as stored in block #${fmtN(p.proposedAt)}</h3><pre class="code">${esc(JSON.stringify(p.tx, (k, v) => k === "_h" ? undefined : v, 2))}</pre>`);
+    <h3>Transaction as stored in block #${fmtN(p.proposedAt)}</h3><pre class="code">${esc(JSON.stringify(p.tx, (k, v) => k === "_h" ? undefined : v, 2))}</pre></div></div>`);
 }
 $("dBody").addEventListener("click", e => { const g = e.target.closest("[data-goto]"); if (g) { closeModal($("mDetail")); stopPlay(); setCursor(+g.dataset.goto, true); } });
 function openTx(b, i) {
@@ -1066,7 +1258,28 @@ render = function () {   // jump to a shared block once it is loaded, otherwise 
 })();
 setInterval(() => { if (C.head >= 0) readout(); }, 15000);
 render();
-connect();
+if (params.has("sample")) sampleChain(); else { connect(); loadExplain(); setInterval(loadExplain, 60000); }
+
+/* ---------------- sample chain (?sample): proposals with every kind of rule text diff, no node needed ---------------- */
+async function sampleChain() {
+  const V = GENESIS.validators[0], now = Math.round(Date.now() / 1000), head = 480;
+  const prop = (revs, act, patch) => ({ tx_type: "consensus_rule_update", sender_pubkey: V, rule_revisions: revs, activate_at_height: act, ...(patch ? { host_contract_patch: patch } : {}) });
+  const P = [
+    [30, prop(["# Valid blocks need a signature and a height above zero\nalways (\n    o6[t]:bv[16] = (i10[t]:bv[16] & ({ 1 }:bv[16] - (i6[t]:bv[64] = { 0 }:bv[64])))\n)"], 120)],
+    [140, prop(["always (\n  o6[t]:bv[16] = (i10[t]:bv[16] & ({ 1 }:bv[16] - (i6[t]:bv[64] = { 0 }:bv[64]))) &&\n  o7[t]:bv[16] = { 1 }:bv[16]\n)"], 220)],
+    [300, prop(["always (o9[t]:bv[24] = { #x000014 }:bv[24])"], 700)],
+    [420, prop(["# ONE PROPOSER\nalways (\n    o7[t]:bv[16] = (i8[t]:bv[384] = { #x" + V + " }:bv[384]) ? { 1 }:bv[16] : { 0 }:bv[16] &&\n    o10[t]:bv[16] = i15[t]:bv[16]\n)"], 5420)],
+  ];
+  const txs = {};
+  for (const [h, t] of P) {
+    (txs[h] ||= []).push(t);
+    if (h !== 420) (txs[h + 2] ||= []).push({ tx_type: "consensus_rule_vote", sender_pubkey: V, update_id: await updateId(t), approve: true });
+  }
+  for (let h = 0; h <= head; h++) store({ header: { block_number: h, timestamp: h ? now - (head - h) * 12 : 0 }, transactions: txs[h] || [], tx_ids: (txs[h] || []).map((_, i) => `sample${h}-${i}`) });
+  C.first = 0; C.loading = false;
+  setConn("ok", "Sample data", "A made-up chain with four rule changes, to show the rule text diff. Remove ?sample from the address for the live chain.");
+  rebuild();
+}
 </script>
 </body>
 </html>

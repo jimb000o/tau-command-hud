@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Rule Playground</title>
@@ -20,7 +21,7 @@
 /* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
 :root {
   --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
-  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --refused: #e5484d; --dim: #8a8a94; --text: #ebebee;
   --display: "Sora", "Manrope", "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   color-scheme: dark;
@@ -64,7 +65,6 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
    and everything fits one screen. --z comes from the script: min(width/1800, height/860), between 1 and 2, and smaller if the content is taller. */
 html.wide body { padding: 0; }
 html.wide .wrap { zoom: var(--z); max-width: none; padding: 10px 24px 56px; gap: 12px; }
-html.wide .fb-fab, html.wide .modal .sheet { zoom: var(--z); }
 html.wide .intro { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 24px; }
 html.wide .cols { grid-template-columns: minmax(0, 1fr) minmax(0, .95fr) minmax(0, 1.35fr); align-items: stretch; }
 html.wide .ptests { grid-column: auto; }
@@ -77,8 +77,25 @@ html.wide .log { max-height: 520px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .chip { font: 12px var(--mono); background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
 .chip:hover { border-color: #fff; color: #fff; }
+/* validator seat: the three proposals are the page's main action, so they look like it */
+.pick { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; font: 600 15px var(--display); color: #fff; }
+.pick .num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ok); color: #000; font: 700 13px var(--display); }
+.props { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.prop { display: grid; gap: 4px; align-content: start; text-align: left; cursor: pointer; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,.32); background: rgba(255,255,255,.04); color: var(--text); font: 12px/1.45 var(--mono); }
+.prop b { font: 600 14px/1.3 var(--display); color: #fff; }
+.prop span { color: var(--dim); }
+.prop em { font: 600 11px var(--display); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: var(--ok); margin-top: 4px; min-height: 1.2em; }
+.prop:hover:not(:disabled) { border-color: var(--ok); background: rgba(57,255,138,.07); }
+.prop:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+.prop.on { border-color: var(--ok); background: rgba(57,255,138,.08); }
+.prop:disabled { cursor: default; opacity: .45; } .prop.on:disabled { opacity: 1; }
+.props.waiting .prop { animation: invite 2.4s ease-in-out infinite; }
+.props.waiting .prop:nth-child(2) { animation-delay: .25s; } .props.waiting .prop:nth-child(3) { animation-delay: .5s; }
+@keyframes invite { 0%, 100% { box-shadow: 0 0 0 0 rgba(57,255,138,0); } 50% { box-shadow: 0 0 0 1px rgba(57,255,138,.55), 0 0 18px -4px rgba(57,255,138,.45); } }
+.idle { display: grid; gap: 6px; padding: 18px; border: 1px dashed var(--hair); border-radius: 8px; color: var(--dim); font-size: 12.5px; }
+.idle b { color: #fff; font: 600 14px var(--display); }
 .chip.on { border-color: var(--ok); color: var(--ok); }
-.chip .x { color: var(--bad); }
+.chip .x { color: var(--dim); }
 textarea { font-variant-ligatures: none; width: 100%; min-height: 150px; resize: vertical; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; font: 13px/1.55 var(--mono); }
 textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border-color: var(--ok); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
@@ -87,47 +104,87 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border
 .btn.primary:hover { background: var(--ok); border-color: var(--ok); }
 .btn:hover:not(.primary) { border-color: #fff; }
 .btn:disabled { opacity: .4; cursor: default; }
-.insert { font: 11.5px var(--mono); color: var(--dim); }
-.insert button { font: 11.5px var(--mono); background: none; border: 0; border-bottom: 1px dotted var(--dim); color: #fff; padding: 0; margin: 0 4px; cursor: pointer; }
+.insert { font: 12px var(--mono); color: var(--dim); }
+.insert button { font: 12px var(--mono); background: none; border: 0; border-bottom: 1px dotted var(--dim); color: #fff; padding: 0; margin: 0 4px; cursor: pointer; }
 .legend { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 12px 0 0; font-size: 12px; }
 .legend dt { color: #fff; font-weight: 600; }
 .legend dd { margin: 0; color: var(--dim); }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .steps li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 7px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
 .steps li .ic { font-weight: 600; color: var(--dim); }
-.steps li b { color: #fff; font: 600 12.5px var(--display); }
+.steps li b { color: #fff; font: 600 13px var(--display); }
 .steps li p { margin: 2px 0 0; color: var(--dim); font-size: 12px; overflow-wrap: anywhere; }
 .steps li.pass { border-left-color: var(--ok); } .steps li.pass .ic { color: var(--ok); }
-.steps li.fail { border-left-color: var(--bad); } .steps li.fail .ic { color: var(--bad); } .steps li.fail p { color: var(--text); }
+/* a refused rule is the visitor's own error: a deeper, muted red, always with ✕ and words; the bright offline red stays for "node down" */
+.steps li.fail { border-left-color: var(--refused); background: rgba(229,72,77,.07); } .steps li.fail .ic { color: var(--refused); } .steps li.fail p { color: var(--text); }
 .steps li.run { border-left-color: var(--behind); } .steps li.run .ic { color: var(--behind); }
 .steps li.skip { opacity: .5; }
+.steps li { cursor: pointer; }
+.steps li:hover, .steps li:focus-visible { background-color: rgba(255,255,255,.05); outline: none; }
+.steps li:focus-visible { box-shadow: inset 0 0 0 1px var(--hair); }
+.info { display: inline-grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--hair); border-radius: 50%; font: 600 10px/1 var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); cursor: help; }
+.info:hover, .info:focus-visible { color: #fff; border-color: #fff; outline: none; }
+.stepd h2 { color: #fff; font: 600 15px var(--display); letter-spacing: .02em; text-transform: none; }
+.stepd .stat { margin: 0 0 12px; padding: 8px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.03); font-size: 12px; }
+.stepd .stat.pass { border-left-color: var(--ok); } .stepd .stat.fail { border-left-color: var(--refused); background: rgba(229,72,77,.07); }
+.stepd .stat b { display: block; color: #fff; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 2px; }
+.stepd h3 { margin: 12px 0 3px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.stepd p { margin: 0; max-width: 76ch; }
+.stepd .src { margin-top: 14px; }
+.steps li { transition: opacity .18s, border-color .18s, background-color .18s; }
+.steps li.wait { opacity: .35; } .steps li.wait .ic { color: var(--dim); }
+.steps li.tick { animation: tick .6s ease-out; }
+.steps li.run .ic { animation: blink 1s ease-in-out infinite; }
+@keyframes tick { from { background-color: rgba(57,255,138,.14); } to { background-color: rgba(255,255,255,.025); } }
+@keyframes blink { 50% { opacity: .3; } }
+#btnCheck { min-width: 10.5em; text-align: center; transition: background-color .12s, color .12s, transform .08s; }
+#btnCheck:active { transform: scale(.97); }
+#btnCheck.busy, #btnCheck.busy:hover { background: transparent; color: #fff; border-color: var(--hair); cursor: progress; }
+.stamp { margin: 6px 0 0; font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; min-height: 1.5em; }
+.settle { animation: settle .5s ease-out; }
+.stamp.settle { animation: settleText .9s ease-out; }
+@keyframes settle { from { background-color: rgba(57,255,138,.16); } }
+.verdict.bad.settle, .steps li.fail.settle { animation-name: settleRed; }
+.steps li:last-child p { min-height: 3em; }
+@keyframes settleRed { from { background-color: rgba(229,72,77,.22); } }
+@keyframes settleText { from { color: #fff; } }
+#tests.pending .rc { opacity: .4; transition: opacity .18s; }
+#tests .rc.fresh { animation: fresh .6s ease-out both; }
+@keyframes fresh { from { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) {
+  .props.waiting .prop { animation: none; }
+  .steps li, #btnCheck, #tests.pending .rc { transition: none; }
+  .steps li.tick, .steps li.run .ic, .settle, .stamp.settle, #tests .rc.fresh { animation: none; }
+}
 .verdict { margin: 10px 0 0; padding: 10px 12px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 500 14px/1.4 var(--display); color: #fff; }
-.verdict.bad { border-left-color: var(--bad); background: rgba(255,77,109,.07); }
+.verdict.bad { border-left-color: var(--refused); background: rgba(229,72,77,.09); }
 .verdict.idle { border-left-color: var(--hair); background: rgba(255,255,255,.03); color: var(--dim); }
-pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); }
 details summary { cursor: pointer; color: #fff; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-top: 10px; }
-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-th { text-align: left; font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 4px 6px; border-bottom: 1px solid var(--line); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 4px 6px; border-bottom: 1px solid var(--line); }
 td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 4px; padding: 4px 6px; font: 12.5px var(--mono); }
+td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 4px; padding: 4px 6px; font: 13px var(--mono); }
 .res { font-weight: 600; white-space: nowrap; }
-.res.allow { color: var(--ok); } .res.block { color: var(--bad); } .res.unk { color: var(--dim); font-weight: 500; white-space: normal; }
+.res.allow { color: var(--ok); } .res.block { color: #fff; } .res.unk { color: var(--dim); font-weight: 500; white-space: normal; }
 .why { display: block; color: var(--dim); font-weight: 400; font-size: 11px; white-space: normal; }
 @media (max-width: 700px) {
   table thead { display: none; }
   table, tbody { display: block; }
   #tests tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); position: relative; }
   #tests td { display: block; border: 0; padding: 0; }
-  #tests td[data-label]::before { content: attr(data-label); display: block; font: 600 10px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); margin-bottom: 3px; }
+  #tests td[data-label]::before { content: attr(data-label); display: block; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); margin-bottom: 3px; }
   #tests td.rc { grid-column: 1 / -1; }
   #tests td.dc { position: absolute; top: 4px; right: 0; }
 }
 .del { background: none; border: 0; color: var(--dim); cursor: pointer; font: 14px var(--mono); }
-.del:hover { color: var(--bad); }
+.del:hover { color: #fff; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
-.src { color: var(--dim); font-size: 11.5px; margin-top: 10px; }
+.src { color: var(--dim); font-size: 12px; margin-top: 10px; }
 .src a { color: var(--dim); }
-.engine { display: inline-flex; align-items: center; gap: 6px; font: 11.5px var(--mono); color: var(--dim); }
+.linkish { background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted rgba(255,255,255,.45); text-underline-offset: 3px; }
+.linkish:hover { color: var(--ok); }
+.engine { display: inline-flex; align-items: center; gap: 6px; font: 12px var(--mono); color: var(--dim); }
 .engine i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); display: inline-block; }
 .engine.on i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
 .engine.off i { background: var(--bad); }
@@ -138,43 +195,39 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
 .seat b { display: block; color: #fff; font: 600 13px var(--display); }
 .seat code { color: var(--dim); font-size: 11px; }
 .seat .v { margin-top: 4px; font-size: 12px; color: var(--dim); }
-.seat .v.yes { color: var(--ok); } .seat .v.no { color: var(--bad); }
+.seat .v.yes { color: var(--ok); } .seat .v.no { color: #fff; }
 .quorum { position: relative; height: 26px; border: 1px solid var(--hair); border-radius: 4px; overflow: hidden; margin: 8px 0 4px; background: #0c0c0d; }
 .quorum .fill { position: absolute; inset: 0 auto 0 0; background: var(--ok); opacity: .85; transition: width .5s; }
 .quorum .need { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff; }
 .quorum span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 600 12px var(--display); color: #fff; text-shadow: 0 0 4px #000, 0 0 2px #000; }
 .flow { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-.flow span { font: 600 10.5px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.flow span { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
 .flow span.done { border-color: var(--ok); color: var(--ok); }
 .flow span.now { border-color: var(--behind); color: var(--behind); }
-.flow span.dead { border-color: var(--bad); color: var(--bad); }
+.flow span.dead { border-color: rgba(255,255,255,.5); color: #fff; }
 .height { font: 600 22px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
-.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 12.5px; margin: 0; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 13px; margin: 0; }
 .kv dt { color: var(--dim); } .kv dd { margin: 0; color: #fff; overflow-wrap: anywhere; }
 .log { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 3px; font-size: 12px; max-height: 220px; overflow: auto; }
 .log li { padding: 3px 8px; border-left: 2px solid var(--line); color: var(--text); }
-.log li.ok { border-left-color: var(--ok); } .log li.bad { border-left-color: var(--bad); }
+.log li.ok { border-left-color: var(--ok); } .log li.bad { border-left-color: #fff; }
 .log li em { font-style: normal; color: var(--dim); margin-right: 6px; }
-.simtag { font: 600 9.5px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 6px; }
+.simtag { font: 600 11px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 6px; }
 .realbox { border: 1px dashed var(--hair); border-radius: 6px; padding: 8px 10px; font-size: 12px; color: var(--dim); margin-top: 10px; }
 .realbox b { color: #fff; }
 /* feedback: same floating button as the HUD, opens a pre-filled GitHub issue */
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); }
-.fb-fab:hover { background: var(--ok); }
-.fb-fab:focus-visible, .close:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
-@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } }
 .modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
 .sheet { position: relative; width: min(620px, 100%); max-height: 100%; overflow: auto; }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); }
 .fb form { display: grid; gap: 10px; }
 .cats { display: flex; flex-wrap: wrap; gap: 6px; border: 0; padding: 0; margin: 0; }
-.cats legend { color: var(--dim); font-size: 11.5px; margin-bottom: 6px; }
+.cats legend { color: var(--dim); font-size: 12px; margin-bottom: 6px; }
 .cats label { cursor: pointer; }
 .cats input { position: absolute; opacity: 0; pointer-events: none; }
 .cats span { display: inline-block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 6px 12px; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); }
 .cats input:checked + span { color: #000; background: #fff; border-color: transparent; }
 .cats input:focus-visible + span { outline: 2px solid var(--ok); outline-offset: 2px; }
-.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 11.5px; }
+.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 12px; }
 .fb label.chk { display: flex; gap: 8px; align-items: center; color: var(--dim); font-size: 12px; cursor: pointer; }
 .fb textarea { min-height: 96px; }
 .fb input[type=text] { width: 100%; background: #0c0c0d; border: 1px solid var(--hair); border-radius: 6px; color: #fff; font: 13px/1.5 var(--mono); padding: 8px 10px; }
@@ -182,6 +235,8 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
 .fb .status.ok { color: var(--ok); } .fb .status.err { color: var(--bad); }
 .fb a.btn { text-decoration: none; }
 .fblink { color: var(--dim); font-size: 12px; }
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -214,6 +269,7 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
         <button class="btn primary" id="btnCheck" type="button">Check rule</button>
         <span class="engine" id="engine"><i></i><span>Tau engine: checking…</span></span>
       </div>
+      <p class="stamp" id="stamp" aria-live="polite">Not checked yet.</p>
       <dl class="legend">
         <dt>o5[t]</dt><dd>your answer: <b style="color:#fff">1</b> lets the transfer through, <b style="color:#fff">0</b> blocks it</dd>
         <dt>i1[t]</dt><dd>amount being sent (bv[24], up to 16 777 215)</dd>
@@ -224,9 +280,9 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
     </div>
 
     <div class="panel">
-      <h2>What the testnet does with it</h2>
+      <h2>What the testnet does with it <span class="info" tabindex="0" data-tnt="Hover a check for what it tests. Click it for why the testnet has it, how to fix a refusal and where it lives in the node’s code.">i</span></h2>
       <ol class="steps" id="steps"></ol>
-      <div class="verdict idle" id="verdict">Press “Check rule” to run the checks.</div>
+      <div class="verdict idle" id="verdict" aria-live="polite">Press “Check rule” to run the checks.</div>
       <details id="compDetails" hidden>
         <summary>The rule as the node stores it</summary>
         <p class="note">Your rule never enters the chain as you wrote it. The node wraps it in a guard on your address, so it can only ever decide your own transfers. Everyone else falls through to “allow”.</p>
@@ -250,14 +306,15 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
     <div class="panel">
       <h2>Take a validator seat <span class="simtag">SIMULATION</span></h2>
       <p class="note" style="margin-top:0">Rules that bind everyone, like the base fee, change only when enough validators agree. Here you hold one of four seats. Pick a change, then vote.</p>
+      <h3 class="pick" id="pickHead"><span class="num">1</span>Pick a proposal to vote on</h3>
+      <div class="props" id="proposals"></div>
       <div class="seats" id="seats"></div>
-      <div class="chips" id="proposals" style="margin-top:12px"></div>
       <div class="realbox"><b>The real testnet today:</b> one validator (<code>a1fe40…7d2b</code>, most likely run by IDNI), so the quorum is 1. The network also runs with open governance admission: a proposal or a vote from any key counts, so a single yes vote schedules a change. Here the seat is simulated and only validators vote, which is the code’s default. Counting, quorum and the delay before a change takes effect work as on the real node.</div>
     </div>
 
     <div class="panel pprop">
       <h2>The proposal</h2>
-      <p class="note" id="propIdle" style="margin-top:0">Pick a change on the left. Its rule, the votes and the way to activation show up here.</p>
+      <div class="idle" id="propIdle"><b>No vote running yet.</b><span>Pick one of the three proposals to start one. Its rule, the votes and the way to activation then show up here.</span></div>
       <div id="propBox" hidden>
         <dl class="kv" id="propKv"></dl>
         <pre class="code" id="propRule"></pre>
@@ -284,10 +341,16 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
     </div>
   </section>
 
-  <p class="src">Checks ported from <a href="https://github.com/IDNI/tau-testnet/tree/539d1e2" target="_blank" rel="noopener">IDNI/tau-testnet @ 539d1e2</a>: <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/rule_offers.py" target="_blank" rel="noopener">rule_offers.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py" target="_blank" rel="noopener">admission.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/approvals.py" target="_blank" rel="noopener">approvals.py</a>. Unofficial community page, not affiliated with IDNI.</p>
+  <p class="src">Checks ported from <a href="https://github.com/IDNI/tau-testnet/tree/539d1e2" target="_blank" rel="noopener">IDNI/tau-testnet @ 539d1e2</a>: <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/rule_offers.py" target="_blank" rel="noopener">rule_offers.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py" target="_blank" rel="noopener">admission.py</a>, <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/approvals.py" target="_blank" rel="noopener">approvals.py</a>. Unofficial community page, not affiliated with IDNI. · <button class="linkish" id="fbFab" type="button">Feedback</button></p>
 </div>
 
-<button class="fb-fab" id="fbFab" type="button">Feedback</button>
+<div class="modal" id="mStep" hidden role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  <div class="sheet">
+    <button class="close" id="stClose" type="button" aria-label="Close">✕</button>
+    <article class="panel stepd" id="stBody"></article>
+  </div>
+</div>
+
 <div class="modal" id="mFeedback" hidden role="dialog" aria-modal="true" aria-labelledby="fbTitle">
   <div class="sheet">
     <button class="close" id="fbClose" type="button" aria-label="Close">✕</button>
@@ -629,7 +692,7 @@ $("examples").addEventListener("click", ev => {
   const ex = EXAMPLES.find(e => e.id === b.dataset.ex);
   ruleEl.value = ex.text;
   document.querySelectorAll("#examples .chip").forEach(c => c.classList.toggle("on", c === b));
-  engineResults = null; clearTimeout(editTimer); renderTests(); runCheck();
+  engineResults = null; clearTimeout(editTimer); renderTests(); runCheck(true);
 });
 document.querySelector(".insert").addEventListener("click", ev => {
   const b = ev.target.closest("[data-ins]"); if (!b) return;
@@ -637,10 +700,50 @@ document.querySelector(".insert").addEventListener("click", ev => {
   ruleEl.setRangeText(ins, s, e, "end"); ruleEl.focus(); onEdit();
 });
 
+const STEP_TITLES = ["Size", "Shape", "Time", "Streams", "Widths", "Wrapped in your address guard"];
+/* what each check is for: hover shows "tip", a click opens the rest */
+const SRC = "https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/";
+const STEP_INFO = [
+  { tip: "Is the rule short enough? The node refuses any rule text over 8 192 bytes before it reads it at all.",
+    why: "Every node stores and replays every rule. A size cap keeps one rule from slowing down or flooding the whole network.",
+    fix: "Shorten the rule: drop comments and repeated parts, or split the idea into a simpler condition.",
+    src: ["rule_offers.py", "MAX_OFFER_RULE_BYTES"] },
+  { tip: "Is it one “always ( … ).” unit that sets o5, your transfer answer, and nothing else?",
+    why: "A personal rule may only answer one question: may this transfer of yours go through? So the node accepts exactly one always-clause whose output is o5.",
+    fix: "Write it as always ( condition ? (o5[t]:bv[24] = { #x000001 }:bv[24]) : (o5[t]:bv[24] = { #x000000 }:bv[24]) ). Start from an example chip if unsure.",
+    src: ["rule_offers.py", "normalize_offer_rule_text"] },
+  { tip: "Does it read only the current step [t]? Looking back at [t-1] or ahead is refused.",
+    why: "Rules change by agreement while the chain runs. A rule that remembered earlier steps would carry stale state across every rule change and break other accounts’ outputs.",
+    fix: "Replace [t-1] (or any other step) with [t]. Decide on the transfer in front of you, not on earlier ones.",
+    src: ["admission.py", "temporal screen"] },
+  { tip: "Does it read only inputs a personal rule may read, and write no network-owned output?",
+    why: "Some streams belong to the network (o0–o4, o6, o7, o9) or differ between checking and applying a transfer, like your balance i2. Reading or writing those would let a rule disagree with the chain.",
+    fix: "Use i1 (amount), i4 (recipient) and i5 (block time). Do not read i2 (balance) or the reserved inputs, and write only o5.",
+    src: ["admission.py", "_screen_clause_domains"] },
+  { tip: "Are o5 and its values typed bv[24], the width the network expects?",
+    why: "The network reads o5 as a 24-bit value. A different width would make your answer unreadable for the node that applies the transfer.",
+    fix: "Write o5[t]:bv[24] and give its values as { #x000001 }:bv[24] / { #x000000 }:bv[24].",
+    src: ["admission.py", "policy widths"] },
+  { tip: "The node puts your rule behind “only if the sender is you”, so it can only decide your own transfers.",
+    why: "Without the guard a personal rule could block anyone’s transfers. Wrapped, everyone else falls through to “allow”. The wrapped text is what the node stores (shown under “The rule as the node stores it”).",
+    fix: "Nothing to fix here: this step always passes once the checks above pass.",
+    src: ["rule_offers.py", "compose_stream_rule"] },
+  { tip: "The real Tau engine compiles the wrapped rule next to the network’s own rules and runs your transfers through it.",
+    why: "Text checks cannot see contradictions or clashes with the network’s rules. The engine can: if it finds no consistent way to apply the rule, the node refuses it.",
+    fix: "Read the engine’s reason. Common causes: the rule contradicts itself (o5 both 0 and 1), or a stream width clashes with how the network uses it.",
+    src: null },
+];
+function infoTip(i) { return STEP_INFO[i] ? STEP_INFO[i].tip + "\nClick for more." : ""; }
 function stepHtml(s, i) {
-  const cls = s.ok === true ? "pass" : s.ok === false ? "fail" : s.ok === "run" ? "run" : "skip";
-  const ic = s.ok === true ? "✓" : s.ok === false ? "✕" : s.ok === "run" ? "…" : "○";
-  return `<li class="${cls}"><span class="ic">${ic}</span><div><b>${i + 1} · ${esc(s.title)}</b><p>${esc(s.detail || "")}</p></div></li>`;
+  const cls = s.ok === true ? "pass" : s.ok === false ? "fail" : s.ok === "run" ? "run" : s.ok === "wait" ? "wait" : "skip";
+  const ic = s.ok === true ? "✓" : s.ok === false ? "✕" : s.ok === "run" ? "…" : s.ok === "wait" ? "·" : "○";
+  return `<li class="${cls}" data-step="${i}" tabindex="0" role="button" aria-haspopup="dialog" data-tnt="${esc(infoTip(i))}"><span class="ic">${ic}</span><div><b>${i + 1} · ${esc(s.title)}</b><p>${esc(s.detail || "")}</p></div></li>`;
+}
+/* the full list of seven, so the panel keeps its height whether a rule fails early or not */
+function allSteps(steps, eng) {
+  const out = steps.slice();
+  for (let i = out.length; i < STEP_TITLES.length; i++) out.push({ title: STEP_TITLES[i], ok: null, detail: "Not reached: the node stops at the first failed check." });
+  return out.concat(eng);
 }
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
 const engineReason = r => {
@@ -650,43 +753,145 @@ const engineReason = r => {
 };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-let checkSeq = 0;
-async function runCheck() {
-  clearTimeout(editTimer);
-  const text = ruleEl.value, seq = ++checkSeq;
+/* "Check rule" answers the click at once and then walks the list: every check resets, ticks in one after the
+   other, the engine step runs (its request starts at the click, so the walk costs no extra time), the verdict
+   and the transfers settle last, and a line by the button says when it ran. Without motion it all lands at once. */
+const STEP_MS = 170;
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const btnCheck = $("btnCheck"), stampEl = $("stamp");
+let checkSeq = 0, checking = false, holdTimer = null;
+function setBusy(on) {
+  checking = on;
+  btnCheck.classList.toggle("busy", on); btnCheck.setAttribute("aria-busy", String(on));
+  btnCheck.textContent = on ? "Checking…" : "Check rule";
+  testsEl.classList.toggle("pending", false);
+}
+function putStep(i, s, cls) {
+  const li = stepsEl.children[i]; if (!li) return;
+  li.outerHTML = stepHtml(s, i);
+  if (cls) stepsEl.children[i].classList.add(cls);
+}
+const hhmmss = d => d.toTimeString().slice(0, 8);
+const mmss = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+function settle(el) { el.classList.remove("settle"); void el.offsetWidth; el.classList.add("settle"); }
+
+async function runCheck(animate) {
+  if (animate === true && checking) return;
+  clearTimeout(editTimer); clearInterval(holdTimer);
+  const text = ruleEl.value, seq = ++checkSeq, t0 = performance.now();
+  const gap = animate === true && !reducedMotion.matches ? STEP_MS : 0;
   const a = admission(text);
-  const steps = a.steps.slice();
+  const steps = a.steps;
+  const engineP = a.ok ? engineCheck(text) : null;   // starts now, runs while the list is walked
+  if (animate === true) {
+    setBusy(true);
+    // one column (phones): the checks sit below the button, so bring them into view
+    if (stepsEl.getBoundingClientRect().top > innerHeight * .6) stepsEl.closest(".panel").scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "start" });
+  }
   $("compDetails").hidden = !a.ok;
   if (a.ok) $("composite").textContent = a.composite;
+
+  const n = STEP_TITLES.length;
+  if (gap) {
+    stepsEl.innerHTML = allSteps([], []).map((s, i) => stepHtml({ ...s, ok: "wait", detail: steps[i] ? steps[i].detail : s.detail }, i)).join("") + stepHtml({ title: "Tau engine", ok: "wait", detail: "Waits for the text checks." }, n);
+    verdictEl.className = "verdict idle"; verdictEl.textContent = "Running the checks…";
+    if (a.ok) testsEl.classList.add("pending");
+    for (let i = 0; i < steps.length; i++) {
+      await sleep(gap); if (seq !== checkSeq) return;
+      putStep(i, steps[i], steps[i].ok ? "tick" : "settle");
+    }
+  }
   if (!a.ok) {
-    stepsEl.innerHTML = steps.map(stepHtml).join("") + stepHtml({ title: "Tau engine", ok: null, detail: "Not reached: the node stops at the first failed check." }, steps.length);
+    await sleep(gap); if (seq !== checkSeq) return;
+    stepsEl.innerHTML = allSteps(steps, { title: "Tau engine", ok: null, detail: "Not reached: the node stops at the first failed check." }).map(stepHtml).join("");
     const fail = steps.find(s => s.ok === false);
     verdictEl.className = "verdict bad"; verdictEl.textContent = `Refused at “${fail.title}”. The testnet would not take this rule.`;
+    finish(seq, t0, `refused at check ${steps.length} of ${n + 1}`, gap > 0);
     return;
   }
-  stepsEl.innerHTML = steps.map(stepHtml).join("") + stepHtml({ title: "Tau engine", ok: "run", detail: "Compiling your rule with the real Tau engine on the community node…" }, steps.length);
+  const run = { title: "Tau engine", ok: "run", detail: "Compiling your rule with the real Tau engine on the community node…" };
+  if (gap) { await sleep(gap); if (seq !== checkSeq) return; putStep(n, run); }
+  else stepsEl.innerHTML = allSteps(steps, run).map(stepHtml).join("");
   verdictEl.className = "verdict idle"; verdictEl.textContent = "Text checks passed. Waiting for the Tau engine…";
-  const res = await engineCheck(text);
+  const res = await engineP;
   if (seq !== checkSeq) return;
-  let eng;
+  let eng, note;
   if (!res) {
-    eng = { title: "Tau engine", ok: null, detail: "The community node’s engine is not reachable right now, so this step was skipped. The text checks above are the same ones the node runs first." };
-    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs. The engine compile could not be run right now.";
+    eng = { title: "Tau engine", ok: null, detail: "Not reachable right now, so this step was skipped. The text checks above are the same ones the node runs first." };
+    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs.";
+    note = "engine skipped, offline";
+  } else if (res.hold) {
+    eng = holdStep(res.hold);
+    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs.";
+    note = "engine paused";
+    const until = Date.now() + res.hold * 1000;
+    holdTimer = setInterval(() => {
+      const left = Math.ceil((until - Date.now()) / 1000), li = stepsEl.children[n];
+      if (seq !== checkSeq || !li) return clearInterval(holdTimer);
+      if (left <= 0) { clearInterval(holdTimer); li.outerHTML = stepHtml({ title: "Tau engine", ok: null, detail: "Ready again. Press “Check rule” to compile it with the real engine." }, n); return; }
+      li.querySelector("p").textContent = holdStep(left).detail;
+    }, 1000);
   } else if (res.busy) {
     eng = { title: "Tau engine", ok: null, detail: res.busy };
-    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs. The engine compile could not be run right now.";
+    verdictEl.className = "verdict"; verdictEl.textContent = "Passes every text check the testnet runs.";
+    note = "engine busy";
   } else if (res.accepted) {
-    eng = { title: "Tau engine", ok: true, detail: `Compiled and accepted by the real engine (${res.engine || "tau-lang"}) in a throwaway sandbox${res.ms != null ? `, ${res.ms} ms` : ""}. Your transfers below were run through it too.` };
+    eng = { title: "Tau engine", ok: true, detail: `Compiled and accepted by the real engine (${res.engine || "tau-lang"}) in a throwaway sandbox${res.ms != null ? `, ${res.ms} ms` : ""}. Your transfers were run through it too.` };
     verdictEl.className = "verdict"; verdictEl.textContent = "The testnet would accept this rule.";
-    engineResults = res.tests || null; engineFor = text; renderTests();
+    engineResults = res.tests || null; engineFor = text;
+    note = res.cached ? "engine answer reused, same rule as before" : `engine ${(res.ms / 1000).toFixed(1)} s`;
   } else {
     $("compDetails").hidden = false; $("composite").textContent = res.composite || a.composite;
     eng = { title: "Tau engine", ok: false, detail: (res.stage && res.stage !== "engine" ? `The node’s own ${res.stage} check refused it: ` : "") + engineReason(res.reason) };
     verdictEl.className = "verdict bad"; verdictEl.textContent = "Refused by the Tau engine. The testnet would not take this rule.";
+    note = res.cached ? "engine answer reused" : res.ms != null ? `engine ${(res.ms / 1000).toFixed(1)} s` : "engine";
   }
-  stepsEl.innerHTML = steps.map(stepHtml).join("") + stepHtml(eng, steps.length);
+  if (gap) putStep(n, eng, eng.ok === true ? "tick" : null);
+  else stepsEl.innerHTML = allSteps(steps, eng).map(stepHtml).join("");
+  testsEl.classList.remove("pending");
+  renderTests();
+  if (gap && res && res.accepted) testsEl.querySelectorAll(".rc").forEach((td, i) => { td.style.animationDelay = `${i * 70}ms`; td.classList.add("fresh"); });
+  finish(seq, t0, note, gap > 0);
 }
-$("btnCheck").addEventListener("click", runCheck);
+function holdStep(sec) {
+  return { title: "Tau engine", ok: null, detail: `Paused for your connection after many engine runs. Back in ${mmss(sec)}. The text checks above ran as usual.` };
+}
+function finish(seq, t0, note, flash) {
+  if (seq !== checkSeq) return;
+  setBusy(false);
+  stampEl.textContent = `Checked ${hhmmss(new Date())} · ${((performance.now() - t0) / 1000).toFixed(1)} s${note ? " · " + note : ""}`;
+  if (flash) { settle(verdictEl); settle(stampEl); }
+}
+btnCheck.addEventListener("click", () => runCheck(true));
+
+/* click a check: what it tests, why, how to fix, where it lives in the node's code, and how this rule fared */
+(() => {
+  const modal = $("mStep"), body = $("stBody");
+  let back = null;
+  function open(li) {
+    const i = +li.dataset.step, info = STEP_INFO[i]; if (!info) return;
+    const title = li.querySelector("b").textContent, now = li.querySelector("p").textContent;
+    const st = li.classList.contains("pass") ? ["pass", "Passed for your rule"] : li.classList.contains("fail") ? ["fail", "Refused your rule"]
+      : li.classList.contains("run") || li.classList.contains("wait") ? ["", "Running"] : ["", "Not run for your rule"];
+    const src = info.src
+      ? `Where the node does it: <a href="${SRC}${info.src[0]}" target="_blank" rel="noopener">${info.src[0]} ↗</a> (${esc(info.src[1])}), IDNI/tau-testnet @ 539d1e2.`
+      : `Where the node does it: the Tau engine sandbox the node uses before it takes a rule. This page sends your rule to the same code on the community node (<a href="https://github.com/jimb000o/tau-command-hud/blob/main/infra/checker/checker.py" target="_blank" rel="noopener">checker.py ↗</a>).`;
+    body.innerHTML = `<h2 id="stTitle">${esc(title)}</h2>
+      <div class="stat ${st[0]}"><b>${st[1]}</b>${esc(now)}</div>
+      <h3>What it checks</h3><p>${esc(info.tip)}</p>
+      <h3>Why the testnet has it</h3><p>${esc(info.why)}</p>
+      <h3>${st[0] === "fail" ? "How to fix it" : "If it refuses a rule"}</h3><p>${esc(info.fix)}</p>
+      <p class="src">${src}</p>`;
+    back = document.activeElement; modal.hidden = false; $("stClose").focus();
+  }
+  function close() { modal.hidden = true; if (back && back.focus) back.focus(); }
+  stepsEl.addEventListener("click", e => { const li = e.target.closest("li[data-step]"); if (li) open(li); });
+  stepsEl.addEventListener("keydown", e => { const li = e.target.closest("li[data-step]"); if (li && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open(li); } });
+  $("stClose").addEventListener("click", close);
+  modal.addEventListener("click", e => { if (e.target === modal) close(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) close(); });
+})();
 
 async function engineCheck(text) {
   try {
@@ -698,7 +903,7 @@ async function engineCheck(text) {
     clearTimeout(timer);
     const j = await r.json().catch(() => ({}));
     setEngine("on");
-    if (r.status === 429) return { busy: "Too many checks from your connection. Try again in a few minutes." };
+    if (r.status === 429) return { hold: Math.max(1, Math.min(600, Number(j.retry_after || r.headers.get("Retry-After")) || 120)) };
     if (r.status === 503) return { busy: j.reason ? `The engine could not answer: ${j.reason}. Try again shortly.` : "The engine is busy with another check. Try again shortly." };
     if (!r.ok) throw new Error("http " + r.status);
     return j;
@@ -754,12 +959,14 @@ $("btnAddTest").addEventListener("click", () => { tests.push({ from: "you", amou
 
 let editTimer = null;
 function onEdit() {
+  if (checking) { ++checkSeq; setBusy(false); clearInterval(holdTimer); }
   engineResults = null; renderTests();
   clearTimeout(editTimer);
   editTimer = setTimeout(() => {
     const a = admission(ruleEl.value);
     if (!a.ok) { runCheck(); return; }
-    stepsEl.innerHTML = a.steps.map(stepHtml).join("") + stepHtml({ title: "Tau engine", ok: null, detail: "Press “Check rule” to compile it with the real engine." }, a.steps.length);
+    clearInterval(holdTimer);
+    stepsEl.innerHTML = allSteps(a.steps, { title: "Tau engine", ok: null, detail: "Press “Check rule” to compile it with the real engine." }).map(stepHtml).join("");
     verdictEl.className = "verdict idle"; verdictEl.textContent = "Text checks pass so far. Press “Check rule” for the engine.";
     $("compDetails").hidden = false; $("composite").textContent = a.composite;
   }, 250);
@@ -786,11 +993,11 @@ const SIM_VALS = [
 ];
 const NEW_VAL = { id: "v4", name: "Validator Dex", key: "1581c26e84f919c7206d5be82613354d22c101ad692180974629d7665aba48ab43dbe2985496d4a3a2884609af2b07d6" };
 const PROPOSALS = [
-  { id: "fee5", label: "Lower the base fee to 5", what: "Base fee 10 → 5 AGRS per step", rule: "always (o9[t]:bv[24] = { #x000005 }:bv[24]).", fee: 5,
+  { id: "fee5", label: "Lower the base fee to 5", effect: "Every transfer gets cheaper.", what: "Base fee 10 → 5 AGRS per step", rule: "always (o9[t]:bv[24] = { #x000005 }:bv[24]).", fee: 5,
     plan: { v1: [1, true], v2: [2, true], v3: [3, false] } },
-  { id: "fee20", label: "Raise the base fee to 20", what: "Base fee 10 → 20 AGRS per step", rule: "always (o9[t]:bv[24] = { #x000014 }:bv[24]).", fee: 20,
+  { id: "fee20", label: "Raise the base fee to 20", effect: "Transfers cost twice as much.", what: "Base fee 10 → 20 AGRS per step", rule: "always (o9[t]:bv[24] = { #x000014 }:bv[24]).", fee: 20,
     plan: { v1: [1, false], v2: [2, true], v3: [3, true] } },
-  { id: "addval", label: "Add a fifth validator", what: "Validator set + Validator Dex", rule: `host_contract_patch.validator_additions = ["${NEW_VAL.key.slice(0, 6)}…${NEW_VAL.key.slice(-4)}"]`, add: true,
+  { id: "addval", label: "Add a fifth validator", effect: "Quorum rises to 4 of 5.", what: "Validator set + Validator Dex", rule: `host_contract_patch.validator_additions = ["${NEW_VAL.key.slice(0, 6)}…${NEW_VAL.key.slice(-4)}"]`, add: true,
     plan: { v1: [1, true], v2: [2, false], v3: [3, true] } },
 ];
 const BLOCK_MS = 2200, VOTE_WINDOW = 6, ACT_DELAY = 3;
@@ -849,7 +1056,8 @@ function renderSim() {
     return `<div class="seat${v.id === "you" ? " you" : ""}"><b>${v.name}</b><code>${short(v.key)}</code>${vv}</div>`;
   }).join("");
   const busy = sim.prop && (sim.state === "voting" || sim.state === "scheduled");
-  $("proposals").innerHTML = PROPOSALS.map(p => `<button type="button" class="chip${sim.prop && sim.prop.id === p.id ? " on" : ""}" data-prop="${p.id}"${busy ? " disabled" : ""}>${p.label}</button>`).join("");
+  $("proposals").innerHTML = PROPOSALS.map(p => `<button type="button" class="prop${sim.prop && sim.prop.id === p.id ? " on" : ""}" data-prop="${p.id}"${busy ? " disabled" : ""}><b>${p.label}</b><span>${p.effect}</span><em>${busy ? "" : "Propose ›"}</em></button>`).join("");
+  $("proposals").classList.toggle("waiting", !sim.prop);
   $("propBox").hidden = !sim.prop; $("propIdle").hidden = !!sim.prop;
   if (sim.prop) {
     const p = sim.prop, yes = Object.values(sim.votes).filter(Boolean).length;
@@ -927,13 +1135,13 @@ runCheck();
 /* wide screens: same idea as the HUD, scale instead of stretching */
 (() => {
   const apply = () => {
-    const w = innerWidth, h = innerHeight, wide = w >= 1700 && h >= 760;
+    const w = innerWidth, h = innerHeight, wide = w >= 1200 && h >= 640 && w / h >= 1.3;  // laptops too: scale down a little rather than scroll
     const root = document.documentElement;
-    let z = wide ? Math.max(1, Math.min(2, w / 1800, h / 860)) : 1;
+    let z = wide ? Math.max(.75, Math.min(2, w / 1800, h / 860)) : 1;
     root.classList.toggle("wide", wide);
     root.style.setProperty("--z", z);
     // a long rule or reason can make the page taller than the design height: shrink once so it still fits the screen
-    if (wide && root.scrollHeight > h) { z = Math.max(.85, z * h / root.scrollHeight); root.style.setProperty("--z", z); }
+    if (wide && root.scrollHeight > h) { z = Math.max(.7, z * h / root.scrollHeight); root.style.setProperty("--z", z); }
   };
   apply(); addEventListener("resize", apply);
   // results, tab switches and long reasons change the height: fit again (one frame later, so it never loops within a frame)

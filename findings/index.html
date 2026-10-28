@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Testnet Findings</title>
@@ -47,7 +48,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
 .state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
 .state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
-.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+.state.off { color: #fff; border-color: rgba(255,255,255,.4); } .state.off i { background: var(--bad); }   /* the red dot means offline; the text stays white, one colour per meaning */
 .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
 .lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 30em; }
 .sub { margin: 4px 0 0; color: var(--dim); max-width: 60em; }
@@ -60,7 +61,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .btn.soon:hover { background: transparent; color: var(--dim); border-color: var(--hair); }
 .tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-width: 0; }
-.tile h3 { margin: 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.tile h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .tile .v { font: 600 24px/1.2 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 4px; }
 .tile .v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
 .tile p { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
@@ -72,36 +73,38 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; align-content: start; }
 .list > li > button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 8px 12px; border-left: 2px solid var(--hair); background: rgba(255,255,255,.025); border-radius: 0 6px 6px 0; }
 .list > li > button:hover, .list > li > button:focus-visible { background: rgba(255,255,255,.07); }
-.list b { color: #fff; font: 600 13.5px/1.35 var(--display); display: block; overflow-wrap: anywhere; }
+.list b { color: #fff; font: 600 14px/1.35 var(--display); display: block; overflow-wrap: anywhere; }
 .list .m { display: block; color: var(--dim); font-size: 12px; margin-top: 2px; }
-.badge { display: inline-block; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; margin-right: 6px; vertical-align: 1px; white-space: nowrap; }
+.badge { display: inline-block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; margin-right: 6px; vertical-align: 1px; white-space: nowrap; }
 .news { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; align-content: start; }
 .news li { padding: 6px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
 .news li b { color: #fff; font-weight: 600; }
 .news li em { font-style: normal; color: var(--dim); }
 .news li a { color: var(--dim); }
-.empty { color: var(--dim); font-size: 12.5px; padding: 18px 4px; }
+.empty { color: var(--dim); font-size: 13px; padding: 18px 4px; }
 .empty b { color: #fff; }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer a { color: var(--dim); }
 footer p { margin: 0; }
 
 .main { grid-template-columns: 1fr; }
-@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); } .main { grid-template-areas: "issues report" "fixes report"; } .p-issues { grid-area: issues; } .p-fixes { grid-area: fixes; } .p-report { grid-area: report; } .main .fixes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); } .main { grid-template-areas: "issues report" "issues fixes"; } .p-issues { grid-area: issues; } .p-fixes { grid-area: fixes; } .p-report { grid-area: report; } .main .fixes { grid-template-columns: 1fr; } }
 
 /* one card per issue filed at IDNI */
 .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; align-content: start; }
 .cards > li > button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 10px 14px; border-left: 2px solid var(--hair); background: rgba(255,255,255,.025); border-radius: 0 6px 6px 0; }
 .cards > li > button:hover, .cards > li > button:focus-visible { background: rgba(255,255,255,.07); }
 .cards > li.s-open > button { border-left-color: #fff; }
-.cards > li.s-fixed > button { border-left-color: var(--ok); }
+.cards > li.s-fixed > button, .cards > li.s-partly > button { border-left-color: var(--ok); }
+.cards p.idni { color: var(--dim); }
+.cards p.idni b { color: var(--ok); font-weight: 600; }
 .cards .t { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .cards b { color: #fff; font: 600 14px/1.35 var(--display); overflow-wrap: anywhere; }
 .cards .num { color: var(--dim); font: 600 13px var(--display); white-space: nowrap; }
-.cards p { margin: 4px 0 0; color: var(--text); font-size: 12.5px; }
+.cards p { margin: 4px 0 0; color: var(--text); font-size: 13px; }
 .cards .m { display: block; color: var(--dim); font-size: 12px; margin-top: 4px; }
-.badge { display: inline-block; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
-.b-open { color: #fff; } .b-fixed { color: var(--ok); } .b-closed, .b-unknown { color: var(--dim); }
+.badge { display: inline-block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.b-open { color: #fff; } .b-fixed, .b-partly { color: var(--ok); } .b-partly { border-style: dashed; } .b-closed, .b-unknown { color: var(--dim); }
 
 /* worked around on our side */
 .fixes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
@@ -111,13 +114,13 @@ footer p { margin: 0; }
 .fixes a { color: var(--dim); white-space: nowrap; }
 
 /* report */
-.report h3 { margin: 8px 0 3px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.report h3 { margin: 8px 0 3px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .report h3:first-child { margin-top: 0; }
-.report p { margin: 0 0 8px; color: var(--dim); font-size: 12.5px; }
+.report p { margin: 0 0 8px; color: var(--dim); font-size: 13px; }
 .report p b { color: #fff; font-weight: 600; }
 .report .btns { display: grid; gap: 8px; }
 .report .btn { justify-content: center; }
-.report ol { margin: 0; padding-left: 18px; color: var(--dim); font-size: 12.5px; display: grid; gap: 3px; }
+.report ol { margin: 0; padding-left: 18px; color: var(--dim); font-size: 13px; display: grid; gap: 3px; }
 .report ol b { color: #fff; font-weight: 600; }
 .report a:not(.btn) { color: #fff; }
 
@@ -125,7 +128,7 @@ footer p { margin: 0; }
 html.fit body { overflow: hidden; height: 100vh; padding-top: 0; padding-bottom: 0; }
 html.fit .wrap { max-width: none; zoom: var(--z); height: var(--fitH); display: flex; flex-direction: column; gap: 10px; padding: 6px 0 8px; }
 html.fit .wrap > * { flex: none; }
-html.fit .main { flex: 1 1 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; }
+html.fit .main { flex: 1 1 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
 html.fit .panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px 14px; }
 html.fit .panel > * { flex: none; }
 html.fit .panel > .scroll { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 2px; }
@@ -133,36 +136,60 @@ html.fit .tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 html.fit .lead { font-size: 22px; margin: 0; }
 html.fit .sub { font-size: 12px; margin: 2px 0 0; }
 html.fit header { padding: 4px 0 6px; }
-html.fit .modal .sheet, html.fit .fb-fab { zoom: var(--z); }
+html.fit .modal .sheet { zoom: var(--z); }
 html.fit .modal .sheet { max-height: calc(100% / var(--z)); }
-html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; right: 12px; }
 html.fit .fixes { gap: 5px; }
 html.fit .sub { max-width: none; }
 html.fit .cards { gap: 6px; }
 html.fit .cards > li > button { padding: 8px 12px; }
 html.fit .cards p { margin-top: 2px; }
 html.fit .cards .m { margin-top: 2px; }
-html.fit .fixes li { padding: 6px 10px; }
+html.fit .fixes li { padding: 5px 10px; }
+html.fit .p-fixes { overflow: auto; }
+/* all findings at once: one-line briefs (the full text is in the detail view), two columns */
+.cards .brief { display: none; }
+html.fit .cards .brief { display: block; }
+html.fit .cards .full { display: none; }
+html.fit .main { grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr); }
+/* two columns of equal cards that share the panel height */
+html.fit .p-issues .scroll { display: flex; overflow: visible; }
+html.fit .cards { flex: 1 1 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; align-content: stretch; gap: 8px; }
+html.fit .cards > li { display: flex; min-height: 0; }
+html.fit .cards > li > button { display: flex; flex-direction: column; height: 100%; }
+html.fit .cards > li > button .m { margin-top: auto; padding-top: 4px; }
+html.fit .report .btns:first-of-type { grid-template-columns: 1fr 1fr; }
+html.fit .report h3 { margin-top: 6px; }
+html.fit .report ol { gap: 1px; }
+html.fit .report .hud-note { display: none; }
+html.fit .cards > li > button { padding: 6px 12px; }
+html.fit .cards { gap: 6px; }
+html.fit .fixes li { display: flex; align-items: baseline; gap: 8px; }
+html.fit .fixes li span { font-size: 0; margin: 0; }
+html.fit .fixes li span a { font-size: 12px; }
 
 /* modal */
 .modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
 .sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
 .sheet .panel { padding-right: 48px; background: var(--deck); }
 .sheet h2 { font: 600 17px/1.35 var(--display); letter-spacing: 0; text-transform: none; color: #fff; }
-.sheet h3 { margin: 14px 0 4px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.sheet h3 { margin: 14px 0 4px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .steps li { padding: 5px 10px; border-left: 2px solid var(--hair); }
 .steps li.ok { border-left-color: var(--ok); } .steps li.now { border-left-color: var(--behind); }
 .steps b { color: #fff; font-weight: 600; }
 .steps a { color: var(--dim); }
-pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 40vh; overflow: auto; }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); max-height: 40vh; overflow: auto; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
-.fb-fab:hover { background: var(--ok); }
-@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .follow .lbl { width: 100%; } }
+@media (max-width: 700px) { .follow .lbl { width: 100%; } }
 [hidden] { display: none !important; }
 
+/* phone: nothing smaller than 11 px, buttons big enough for a thumb */
+@media (max-width: 700px) {
+  .tile h3, .badge, .report h3, .sheet h3 { font-size: 11px; }
+}
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -210,7 +237,7 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
         <li><b>Proof</b>: the log lines or RPC replies that show it.</li>
       </ol>
       <h3>Something wrong with Tau HUD?</h3>
-      <p>A wrong number, a broken page, an idea: that is ours, not IDNI’s.</p>
+      <p class="hud-note">A wrong number, a broken page, an idea: that is ours, not IDNI’s.</p>
       <div class="btns">
         <a class="btn" target="_blank" rel="noopener" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BFindings%5D%20">Tell us about it</a>
       </div>
@@ -218,7 +245,7 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   </main>
 
   <footer>
-    <p>Status from the public GitHub API, refreshed every 10 minutes. <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra/node/patches" target="_blank" rel="noopener">Our node patches</a> · <a href="/status/">Status</a> · <a href="/stats/">Stats</a> · <a href="/chronicle/">Chronicle</a></p>
+    <p>Status from the public GitHub API, refreshed every 10 minutes. <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra/node/patches" target="_blank" rel="noopener">Our node patches</a> · <a href="/status/">Status</a> · <a href="/stats/">Stats</a> · <a href="/chronicle/">Chronicle</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BFindings%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 
@@ -228,7 +255,6 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
     <article class="panel"><h2 id="dTitle"></h2><div id="dBody"></div></article>
   </div>
 </div>
-<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BFindings%5D%20" target="_blank" rel="noopener">Feedback</a>
 
 <script>
 "use strict";
@@ -239,35 +265,61 @@ const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
 const REPO = "IDNI/tau-testnet", OURS = "https://github.com/jimb000o/tau-command-hud";
 const pr = n => `<a href="${OURS}/pull/${n}" target="_blank" rel="noopener">PR #${n}</a>`;
 const SAMPLE = new URLSearchParams(location.search).has("sample");
-const CACHE_KEY = "tauhud-findings-v1", CACHE_MS = 10 * 60 * 1000;
+const CACHE_KEY = "tauhud-findings-v3", CACHE_MS = 10 * 60 * 1000;
 
 // Issues we filed with IDNI. Add a new one here; title and status come from GitHub.
 const FINDINGS = [
   {
+    n: 83, kind: "request", title: "Testnet Alpha: ideas to make governance visible (real rule changes, shorter activation, refusals, second validator)",
+    brief: "Not a bug: ideas that would make rule changes visible on the live chain.",
+    found: "Not a bug: the live chain has seen three proposals so far, two of them changing nothing, and each takes 3 to 4 days to apply. We suggested real rule changes, shorter activation, visible refusals and a second validator.",
+    impact: "Visitors could watch a rule go from proposal to law within hours and see what gets refused, the parts that make Tau different.",
+    ours: "We offered to send test traffic ourselves, within limits IDNI sets, so the testnet is not spammed.",
+  },
+  {
+    n: 82, title: "Join profile gaps seen by a fresh read node: open admission, advertised 0.0.0.0 address, restarts on the same genesis",
+    brief: "Three settings a new node needs are missing from the join profile.",
+    found: "Missing from the join profile: the network counts every account's vote, the bootnode advertises 0.0.0.0, and restarts on the same genesis come unannounced.",
+    impact: "A node on default settings stops at the first non-validator vote, loses its peer after a restart, or silently keeps a dead chain.",
+    ours: `Open admission on (${pr(15)}), learned 0.0.0.0 addresses dropped (${pr(22)}), restart detection that wipes and resyncs (${pr(23)}).`,
+  },
+  {
     n: 81, title: "Mempool keeps transactions that are already sealed in canonical blocks",
+    brief: "Transactions already sealed in a block stay “pending” for up to an hour.",
     found: "A fully synced node keeps transactions in its mempool as pending after the very same transactions are sealed in a block, until their 60-minute expiry. gettxstatus answers “queued” for them.",
     impact: "Explorers and wallets show transactions as waiting that are already confirmed. In the HUD, some of the waiting dots in the chain core are such transactions.",
     ours: "Nothing to patch on our side; the status page and the HUD explain it.",
   },
   {
+    n: 80, kind: "request", title: "Request: add the Tau HUD node as a tau-testnet-v2 validator",
+    brief: "Not a bug: we asked IDNI to make our node a second validator.",
+    found: "Not a bug: we asked IDNI to add our node's BLS key to the validator set, so tauhud.com can also help produce blocks.",
+    impact: "One more independent validator on the testnet; the HUD could then show its own blocks.",
+    ours: "Our node runs with mining off until the key is in the active set; a validator gate keeps it from proposing early, so it cannot split off onto a private chain.",
+  },
+  {
     n: 79, title: "Dockerfile.standalone does not build from a clean checkout",
+    brief: "Four build failures in a row on a fresh 4 GB machine.", idniBrief: "3 of the 4 build fixes are in its Dockerfile now.",
+    idni: "partly", idniText: "IDNI’s Dockerfile.standalone has changed since the build we reported: the failing cvc5 prefetch is gone, it builds for Python 3.14 and installs auditwheel, and the docs list the right block 0. Still open: the parallel build needs more memory than a small machine has.",
     found: "Four build failures in a row on a fresh 4 GB machine: a dependency prefetch without a compiler, a Python 3.12 pin against a 3.14 venv, a required auditwheel that is never used, and compile jobs that need over 3 GB each.",
     impact: "Anyone trying to run their own node hits these one after the other; a failed late step repeated a 55-minute dependency build.",
     ours: `Our own <a href="${OURS}/blob/main/infra/node/Dockerfile" target="_blank" rel="noopener">Dockerfile</a> with build caches, one compile job and the fixes above; the <a href="${OURS}/tree/main/kit" target="_blank" rel="noopener">node operator kit</a> uses it.`,
   },
   {
     n: 78, title: "Cannot join tau-testnet-v2: published genesis does not match the network, plus two sync bugs",
+    brief: "Wrong genesis in the repo, plus two sync bugs.", idniBrief: "shipped the right genesis in 539d1e2; sync bugs remain.",
+    idni: "partly", idniText: "IDNI fixed the main problem within a day: commit 539d1e2 (“fix(#78)”) ships the genesis the network runs, so fresh nodes can join again. The two sync bugs are still in IDNI’s code; our node patches them.",
     found: "The genesis.json in the repo was not the one the network ran, so a new node rejected block 0 and never synced. Header sync read only one 64 KB frame, and it never fetched past the first 2,000 headers.",
     impact: "Nobody outside IDNI could join the testnet with a fresh node.",
     ours: `IDNI published the right genesis in commit 539d1e2; our node is pinned to it (${pr(13)}). The two sync bugs are patched in our node (read-until-eof, sync-paginate).`,
   },
 ];
-// Found and worked around on our side; no separate IDNI issue of their own.
+// Node patches running today: read-until-eof, sync-paginate, open admission, peer-addrs, chain-reset, orphan sync loop, genesis pin.
+const PATCHES = 7;
+// Worked around on our side, no IDNI issue of their own.
 const FIXES = [
-  ["Non-validator votes change the state hash", `The network counts every account’s vote; a node on default settings stops at the first such vote. ${pr(15)}`],
-  ["Bootnode announces 0.0.0.0", `After a restart the node dialled itself and stopped syncing. ${pr(22)}`],
-  ["Testnet restarts silently", `A node keeps the dead chain; ours wipes it and syncs the new one. ${pr(23)}`],
   ["Sync loop on orphan blocks", `Blocks that did not connect were fetched again and again. ${pr(10)}`],
+  ["Genesis pinned", `Our node builds from the commit with the network's real genesis, so a new upstream genesis cannot split it off. ${pr(13)}`],
 ];
 
 /* ---------------- one screen on wide displays ---------------- */
@@ -317,50 +369,55 @@ async function fetchIssues() {
 function sampleIssues() {
   const d = n => new Date(Date.now() - n * 3600e3).toISOString();
   return {
-    81: { title: FINDINGS[0].title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
-    79: { title: FINDINGS[1].title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
-    78: { title: FINDINGS[2].title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
+    83: { title: FINDINGS[0].title, state: "open", comments: 0, created_at: d(0.1), updated_at: d(0.1), labels: [] },
+    82: { title: FINDINGS[1].title, state: "open", comments: 0, created_at: d(0.3), updated_at: d(0.3), labels: [] },
+    81: { title: FINDINGS[2].title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
+    80: { title: FINDINGS[3].title, state: "open", comments: 0, created_at: d(2), updated_at: d(2), labels: [] },
+    79: { title: FINDINGS[4].title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
+    78: { title: FINDINGS[5].title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
   };
 }
-function status(i) {
-  if (!i) return ["unknown", "Status unknown"];
-  if (i.state === "open") return ["open", "Open"];
-  return i.state_reason === "not_planned" ? ["closed", "Closed, not planned"] : ["fixed", "Fixed"];
+function status(i, f) {
+  if (!i) return f && f.idni === "partly" ? ["partly", "Partly fixed"] : ["unknown", "Status unknown"];
+  if (i.state === "open") return f && f.idni === "partly" ? ["partly", "Partly fixed"] : ["open", "Open"];
+  return i.state_reason === "not_planned" ? ["closed", "Closed, not planned"] : ["fixed", f && f.kind === "request" ? "Done" : "Fixed"];
 }
 
 /* ---------------- render ---------------- */
 let ISSUES = {};
 function render() {
   const got = FINDINGS.filter(f => ISSUES[f.n]);
-  const st = FINDINGS.map(f => status(ISSUES[f.n])[0]);
+  const st = FINDINGS.filter(f => f.kind !== "request").map(f => status(ISSUES[f.n], f)[0]);
   $("state").className = "state " + (got.length ? "live" : "off");
   $("stateText").textContent = got.length ? (SAMPLE ? "Sample data" : "Live from GitHub") : "GitHub unreachable";
   const tiles = [
-    ["Filed with IDNI", FINDINGS.length, "issues on IDNI/tau-testnet"],
-    ["Open", got.length ? st.filter(s => s === "open").length : "—", "waiting for IDNI"],
-    ["Fixed by IDNI", got.length ? st.filter(s => s === "fixed").length : "—", "closed as done"],
-    ["Patched by us", FIXES.length + 2 /* + the two sync patches from #78 */, "running in our node today"],
+    ["Filed with IDNI", FINDINGS.length, `${plural(FINDINGS.filter(f => f.kind !== "request").length, "bug")}, ${plural(FINDINGS.filter(f => f.kind === "request").length, "request")}`],
+    ["Open bugs", got.length ? st.filter(s => s === "open").length : "—", "waiting for IDNI"],
+    ["Fixed by IDNI", st.filter(s => s === "fixed" || s === "partly").length, st.some(s => s === "partly") ? `${st.filter(s => s === "partly").length} partly: fix landed, issue still open` : "closed as done"],
+    ["Patched by us", PATCHES, "running in our node today"],
     ["Comments", got.length ? got.reduce((a, f) => a + (ISSUES[f.n].comments || 0), 0) : "—", "on our issues at IDNI"],
   ];
   $("tiles").innerHTML = tiles.map(([h, v, p]) => `<div class="tile"><h3>${h}</h3><div class="v">${v}</div><p>${p}</p></div>`).join("");
   $("cards").innerHTML = FINDINGS.map((f, ix) => {
-    const i = ISSUES[f.n], [cls, label] = status(i);
+    const i = ISSUES[f.n], [cls, label] = status(i, f);
     const meta = i ? [`filed ${fmtDay(i.created_at)}`, plural(i.comments || 0, "comment"), i.closed_at ? `closed ${ago(i.closed_at)}` : `last activity ${ago(i.updated_at)}`].join(" · ") : "status could not be read from GitHub right now";
     return `<li class="s-${cls}"><button type="button" data-ix="${ix}">
       <span class="t"><span class="badge b-${cls}">${label}</span><span class="num">#${f.n}</span><b>${esc(i ? i.title : f.title)}</b></span>
-      <p>${esc(f.found)}</p><span class="m">${meta}</span></button></li>`;
+      <p class="full">${esc(f.found)}</p><p class="brief">${esc(f.brief)}</p>${f.idniText ? `<p class="idni full"><b>IDNI:</b> ${esc(f.idniText)}</p><p class="idni brief"><b>IDNI:</b> ${esc(f.idniBrief)}</p>` : ""}<span class="m">${meta}</span></button></li>`;
   }).join("");
   $("fixes").innerHTML = FIXES.map(([t, d]) => `<li><b>${t}</b><span>${d}</span></li>`).join("");
+  // on one screen each patch is one line: its name and PR; the sentence stays in the tooltip
+  $("fixes").querySelectorAll("li").forEach(li => { li.title = li.querySelector("span").textContent; });
 }
 $("cards").addEventListener("click", e => {
   const b = e.target.closest("button[data-ix]"); if (!b) return;
-  const f = FINDINGS[+b.dataset.ix], i = ISSUES[f.n], [, label] = status(i);
+  const f = FINDINGS[+b.dataset.ix], i = ISSUES[f.n], [, label] = status(i, f);
   $("dTitle").textContent = `#${f.n} · ${i ? i.title : f.title}`;
   $("dBody").innerHTML = `
     <h3>What we found</h3><p>${esc(f.found)}</p>
     <h3>Why it matters</h3><p>${esc(f.impact)}</p>
     <h3>What we did</h3><p>${f.ours}</p>
-    <h3>At IDNI</h3><p>${i ? `${label}. Filed ${fmtDay(i.created_at)}, ${plural(i.comments || 0, "comment")}${i.closed_at ? `, closed ${fmtDay(i.closed_at)}` : `, last activity ${ago(i.updated_at)}`}.` : "Status could not be read from GitHub right now."}</p>
+    <h3>At IDNI</h3>${f.idniText ? `<p>${esc(f.idniText)}</p>` : ""}<p>${i ? `${i.state === "open" ? "Issue open on GitHub" : label}. Filed ${fmtDay(i.created_at)}, ${plural(i.comments || 0, "comment")}${i.closed_at ? `, closed ${fmtDay(i.closed_at)}` : `, last activity ${ago(i.updated_at)}`}.` : "Status could not be read from GitHub right now."}</p>
     <p><a class="btn" href="https://github.com/${REPO}/issues/${f.n}" target="_blank" rel="noopener">Open on GitHub</a></p>`;
   $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus();
 });

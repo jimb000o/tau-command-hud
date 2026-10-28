@@ -16,6 +16,9 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
   cache. New blocks, mempool and governance changes are pushed to visitors as they happen.
 - **Caddy**: HTTPS with automatic Let's Encrypt certificates; also serves the tracker's `proposals.json` and `feed.xml`.
 - **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect, plus a weekly recap image.
+- **donations** (`alerts/donations.py`): watches the donation address on Ethereum (AGRS and ETH only, public Blockscout API), keeps `/donations.json` for the About section and posts one thank-you per new donation to the channel.
+- **bot** (`alerts/bot.py`): the same Telegram bot answers questions in private chats and groups: height, proposals, a transaction, an address, a block, node status (see "Question bot").
+- **share** (`share/share.py`): share previews, the picture X, Telegram and WhatsApp show under a link (see "Share previews").
 
 ## Server
 
@@ -70,7 +73,7 @@ Pushed without asking:
 
 Clients should de-duplicate blocks by `block_hash` (the HUD already does).
 
-Limits: 20 messages burst then 2/s per connection, 8 connections per IP, 500 in total,
+Limits: 20 messages burst then 2/s per connection, 32 connections per IP (every open page holds two or three sockets), 500 in total,
 512-byte messages. Browser origins allowed: tauhud.com, www.tauhud.com,
 jimb000o.github.io and localhost (`ALLOWED_ORIGINS` in `.env`).
 
@@ -139,6 +142,29 @@ it lasts); `restarts`, `reorgs` and `stalls` (gaps of more than 10 min between t
 of the current chain: the network made no block) cover the same 31 days, and `status` is
 `/status`. Stored in `/data/uptime.json` (volume `relay_data`), so it survives restarts;
 the time between the relay's last sample and its next start counts as a relay outage.
+Since the health score, each bucket also carries `score_sum`, `score_min` and
+`score_samples` (older hours have only the first four fields).
+
+`GET /health-score` (CORS `*`, cached 5 s; tauhud.com/status, the alerts and `/status`
+use it) is one number for "does the testnet run?": 0 to 100 from seven factors whose
+weights add up to 100. `factors` lists each with `weight`, `points`, `value` and a `note`:
+
+| factor | weight | full points | no points |
+|---|---|---|---|
+| `node` node answering | 20 | answers | no answer |
+| `sync` in sync with the network | 15 | within 2 blocks of the tip | 30 behind |
+| `last_block` time since the last block | 20 | up to 3 typical block times | 30 min |
+| `pace` blocks in the last hour | 10 | 75 % of the expected count | none |
+| `availability` live and in sync, 24 h | 15 | 99 % of the checks | 80 % |
+| `stability` restarts, reorgs, stalls, 24 h | 15 | none | restart −10, stall −4, reorg −3 |
+| `mempool` oldest waiting transaction | 5 | up to 10 min | 60 min (IDNI #81 shows here) |
+
+The typical block time (`expected_block_seconds`) is the median gap of the last 100
+blocks, stalls left out (60 s until there are enough). `state` is `healthy` from 80
+(`HEALTH_OK_AT`), `degraded` from 50 (`HEALTH_DEGRADED_AT`), else `down`; no answer from
+the node or no block for 30 minutes is `down` whatever the score. `hours` is
+`[hour, average, lowest]` for the last 31 days. `/status` carries `health`
+(`score`, `state`, `label`).
 
 ## Rule Playground checker
 
@@ -194,6 +220,12 @@ is **proposed**, **agreed** (quorum reached), **active** (its activation block a
 - `https://node.tauhud.com/proposals.json`: every proposal with its votes and status, the
   rules in force and the last 100 events. Read by tauhud.com/proposals/.
 - `https://node.tauhud.com/feed.xml`: Atom feed of the same events.
+- Each proposal is explained in plain words (`alerts/explain.py`): its rule text is compared
+  stream by stream with the rules in force (o6 valid blocks, o7 who makes blocks, o9 base
+  fee) plus its settings patch, giving "what changes", "why it matters" and a title such as
+  "Base fee 10 → 20 AGRS" or "Same rules as now (no real change)". The tracker page and
+  the recap use the same words. `python alerts.py --preview` prints how the newest rule
+  changes on the chain would be posted, without posting.
 - Telegram and X: each event as a post, when the keys are in `.env`. Without keys that
   channel is off; the feed and the page work regardless.
 
@@ -219,6 +251,17 @@ switching to Read and write) as `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`,
 `X_ACCESS_SECRET` in `.env`, and `X_PROFILE_URL=https://x.com/<handle>` for the page's
 follow link. Same `up -d alerts` and `--test`.
 
+**Donation thank-yous**: `alerts/donations.py` (service `donations`, same image) reads
+incoming AGRS (contract `0x7388…bdda` only, so look-alike tokens are ignored) and ETH
+transfers to the donation address every 5 minutes, above a small minimum
+(`DONATION_MIN_AGRS`, `DONATION_MIN_ETH`). Each new donation gets one post, the sender
+named only by a shortened address; a donation is remembered and never posted twice, and on
+the first run only donations younger than 3 days are thanked. Transfers from your own
+wallets: list them in `.env` as `DONATION_IGNORE_FROM=0x…,0x…`. With `ETHERSCAN_API_KEY`
+in `.env` it reads Etherscan instead of Blockscout.
+- `docker compose run --rm donations python donations.py --preview` lists what it finds and
+  the post the newest donation would get, and posts nothing.
+
 **Weekly recap**: every Monday 09:00 UTC (`RECAP_WEEKDAY`, `RECAP_HOUR`) `alerts/recap.py`
 draws the past 7 days as one 1200×675 image in the HUD look: blocks and block time,
 transactions and active accounts, blocks per day, rule changes (proposed, agreed, in force,
@@ -234,7 +277,95 @@ JetBrains Mono, SIL OFL) live in `alerts/fonts/`.
   to `/recap/latest.png` and posts nothing.
 - `docker compose run --rm alerts python alerts.py --recap-now` draws it and posts it.
 
+**Health alerts**: once a minute the watcher reads `/health-score` and posts to Telegram
+when the testnet goes down (score under 50, the relay says `down`, or the relay does not
+answer) and when it recovers (score 70 or more), each only after the new state held for
+10 minutes (`HEALTH_DOWN_BELOW`, `HEALTH_UP_AT`, `HEALTH_CONFIRM_SECONDS`). The post names
+the factors that lose the most points. The state on the first run is not posted.
+`HEALTH_ALERTS=false` turns it off.
+
 Logs: `docker compose logs -f alerts`.
+
+## Question bot
+
+The bot that posts to `@tauHUDcom` also answers anyone who writes to it (`alerts/bot.py`,
+service `bot`, same image as alerts, same `TELEGRAM_BOT_TOKEN`; nothing else to set up):
+
+| Ask | Answer | Source |
+|---|---|---|
+| `/height`, "height?" | block height, age of the last block, block pace | relay `/uptime`, `proposals.json` |
+| `/proposals`, "last proposal?" | coming up (votes, deadline), agreed, in force, in the alerts' plain words | `proposals.json` |
+| `/tx <hash>`, "is my tx in? <hash>", a 64-hex hash | in a block / waiting / expired / refused / not known | relay `gettxstatus` |
+| `/address <address>`, a 96-hex address | confirmed balance, amounts waiting for a block | relay `getaccountstate` |
+| `/block <n>`, "block 12?" | when it was made, what it holds | relay `getblockrange` |
+| `/status`, "is it running?" | node online, in sync, availability over 24 h, restarts in 7 days | relay `/uptime` |
+
+Every answer links to the matching tauhud.com page. It long-polls Telegram (`getUpdates`),
+so no webhook and no open port. In groups it answers only commands (and `/cmd@ourbot`
+only, when several bots are there); it never posts into the alerts channel. Each person
+gets 5 questions in a row and one more every 8 s (`BOT_USER_BURST`,
+`BOT_USER_REFILL_SECONDS`); past that it says so once and stays quiet. Questions sent
+while the bot was down for more than 2 minutes are skipped. Telegram's command menu is
+set on start.
+
+In the channel: a channel has no member messages, so link a discussion group to it
+(channel settings → Discussion) and add the bot to that group as a member. People then
+ask with commands under any post or in the group; the channel's own posts copied into
+the group are ignored. Privacy mode can stay on (it lets commands and mentions through).
+
+- `docker compose run --rm bot python bot.py --ask "/proposals"` prints one answer and sends nothing.
+- `docker compose logs bot | grep answering` shows the bot's username.
+
+Making it visible in the channel:
+- Every alert and recap post carries three buttons (Ask the bot, Height, Status) that open
+  the bot in a private chat with that question asked (`t.me/<bot>?start=height`).
+  `TELEGRAM_BOT_USERNAME` (default `tauhud_alerts_bot`, empty = no buttons).
+- `docker compose run --rm bot python bot.py --post-howto` posts an "Ask the bot" message
+  with the commands and the buttons to the channel and pins it (the bot needs the "Pin
+  messages" admin right; otherwise pin it by hand).
+- A command a channel admin posts in the channel itself (`/height`) is answered there and
+  the command post is removed. Only admins can post in a channel, so this is for showing.
+- Channel Direct Messages (channel settings → Direct Messages): messages people send to the
+  channel arrive at the bot when it is a channel admin and are answered in that
+  conversation, like a private chat.
+
+Logs: `docker compose logs -f bot`.
+
+## Share previews
+
+tauhud.com is static, so every page has one og:image and the crawlers of X and
+Telegram never run the page's JavaScript. The share service draws a 1200×630
+card per thing, live from the chain, in the look of the weekly recap:
+
+| Path | Card |
+|---|---|
+| `/og/hud.png` | live overview: height, sync, rule changes in force, coming up, validators |
+| `/og/block/<n>.png` | one block: its transactions, who sealed it, when |
+| `/og/proposal/<id or first 8+ hex>.png` | one rule change: what changes, why, votes, countdown or result |
+| `/og/address/<96 hex>.png` | one account: balance, transactions, latest activity |
+
+`/s/`, `/s/block/<n>`, `/s/proposal/<id>` and `/s/address/<hex>` are tiny pages
+with the og:/twitter: tags for that card; a person who opens one is sent on to
+the real page on tauhud.com. These are the links to share: the Explorer and the
+proposal tracker have a "Copy share link" button, and the HUD's own og:image is
+`/og/hud.png`. If the chain cannot be read, every card falls back to the logo card.
+Cards are cached for a minute (older blocks for an hour); X and Telegram keep their
+own copy of a preview once fetched.
+
+Logs: `docker compose logs -f share`.
+
+## Public API and badges
+
+For other sites; documented with copy-paste snippets on https://tauhud.com/developers/.
+All CORS `*`, read-only, no key.
+
+| Path | What |
+|---|---|
+| `/api/v1/summary` | one object: status (`synced`, `catching_up`, `offline`), height, tip, last block time, pace, spec revision, base fee, validators, proposal counts (`waiting`, `agreed`, `in_force`, `dropped`), mempool, viewers, community nodes, `health` (when `/status` carries one). Cached `API_CACHE_SECONDS` (10 s). |
+| `/api/v1/badge/{height,status,proposals,validators,health}.svg` | live badges in the site's colours, cached 60 s |
+
+Within v1 fields are only added, never renamed or removed. `/api` redirects to the docs.
+The embeddable widget is a static page on tauhud.com (`/embed/?panel=…`) that polls the summary.
 
 ## Tests
 
@@ -242,6 +373,8 @@ Logs: `docker compose logs -f alerts`.
 pip install websockets==15.0.1
 python relay/test_relay.py
 python relay/test_uptime.py
+python relay/test_health.py
+python relay/test_api.py
 ```
 
 Runs the relay against a mock node that enforces the real node's rate limits: read
@@ -255,12 +388,30 @@ docker compose run --rm checker python /checker/test_checker.py
 ```bash
 pip install websockets==15.0.1 blake3==1.0.5 pillow==11.3.0
 python alerts/test_alerts.py
+python alerts/test_health_alerts.py
 ```
 
 Runs the alerts watcher against a mock relay: history on the first run is not posted, new
 proposals, agreement, activation and a dropped change are posted once each per channel
 (also after a failed post and a watcher restart), the feed and proposals.json are right,
 a chain restart is reported, and the weekly recap is drawn and posted once.
+
+```bash
+python alerts/test_bot.py       # -v prints the answers
+```
+
+Runs the question bot against a mock relay and a mock Telegram: every question type,
+plain questions in private chats, groups only with commands meant for this bot, nothing
+into the alerts channel, old questions skipped, and the per-person limit.
+
+```bash
+pip install websockets==15.0.1 pillow==11.3.0
+python share/test_share.py      # OUT=/tmp/cards also writes the cards to look at
+```
+
+Runs the share service against a mock relay: the chain is read in pages, every card is
+a 1200×630 PNG, the link pages carry the tags and send on to tauhud.com, bad paths are
+refused, and a chain restart is reloaded.
 
 Runs the checker against the real engine: verdicts for sample transfers, refusals by
 the text screens and by the engine.

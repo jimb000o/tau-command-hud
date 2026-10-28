@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tau HUD widget</title>
+<meta name="description" content="Live Tau testnet numbers to put on your own site: block height, status, rule changes, validators. Made for an iframe; see tauhud.com/developers/.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Same tokens as the site: black and white, phosphor green as the one accent.
+   ?theme=light flips to white; ?theme=transparent keeps the host page's background. */
+:root {
+  --bg: #09090a; --card: rgba(16,16,18,.92); --line: rgba(255,255,255,.12); --text: #ebebee; --dim: #8a8a94; --strong: #fff;
+  --ok: #39ff8a; --off: #5a5a62;
+  --display: "Sora", "Segoe UI", sans-serif; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+:root[data-theme="light"] { --bg: #fff; --card: #fafafa; --line: rgba(0,0,0,.12); --text: #26262b; --dim: #6b6b74; --strong: #09090a; --ok: #16c060; --off: #b4b4bb; color-scheme: light; }
+:root[data-theme="transparent"] { --bg: transparent; --card: transparent; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 12px/1.45 var(--mono); padding: 8px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+a { color: inherit; }
+/* Each box reads top to bottom: what it is (small label), the number (the one big thing),
+   what the number means (unit, dim), then one line of context. Numbers use tabular figures
+   so they do not jitter as they change, and grow with the iframe. Green marks only good news. */
+.tiles { flex: 1 1 auto; min-height: 0; display: grid; align-content: center; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.tile { container-type: inline-size; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; text-decoration: none; color: inherit; }
+.tile:hover { border-color: var(--dim); }
+.tile h2 { margin: 0; font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.v { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; color: var(--strong); }
+.n { font: 600 clamp(20px, min(22cqi, 24vh), 44px)/1.05 var(--display); font-variant-numeric: tabular-nums lining-nums; letter-spacing: -.01em; }
+.u { font: 500 12px var(--display); color: var(--dim); }
+.v.good .u { color: var(--strong); }
+.s { color: var(--dim); font-size: 11px; white-space: nowrap; }
+.dot { align-self: center; width: 9px; height: 9px; border-radius: 50%; background: var(--off); flex: none; }
+.dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.dot.on.beat { animation: beat 1.2s ease-out; }
+@keyframes beat { 0% { box-shadow: 0 0 0 0 var(--ok); } 100% { box-shadow: 0 0 0 9px transparent; } }
+@media (prefers-reduced-motion: reduce) { .dot.on.beat { animation: none; } }
+.foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--dim); font-size: 11px; white-space: nowrap; }
+.foot a { display: flex; align-items: center; gap: 6px; text-decoration: none; color: var(--strong); font: 600 11px var(--display); letter-spacing: .06em; }
+.mark { width: 16px; height: 16px; fill: none; stroke: var(--strong); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+@media (max-width: 400px) { .foot .long { display: none; } }
+:root[data-foot="0"] .foot { display: none; }
+/* the boxes do not fit the iframe (very low, or narrow so they wrap): one line per box,
+   then without the footer. Set by fit() below, and right away for very low strips. */
+:root.tight body { padding: 4px 8px; }
+:root.tight .tile { padding: 4px 12px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; }
+:root.tight .n { font-size: 18px; } :root.tight .s, :root.tight .u, :root.tight .full { display: none; }
+.short { display: none; } :root.tight .short { display: inline; }
+:root.bare .foot { display: none; }
+@media (max-height: 90px) { .s, .u, .full, .foot { display: none; } .short { display: inline; } .tile { padding: 4px 12px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; } .n { font-size: 18px; } body { padding: 4px; } }
+</style>
+</head>
+<body>
+<main class="tiles" id="tiles" aria-live="polite"></main>
+<footer class="foot"><a href="https://tauhud.com/" target="_blank" rel="noopener"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>Tau HUD</a><span id="note"><span class="long">Tau Testnet Alpha · </span>unofficial</span></footer>
+<script>
+"use strict";
+const API = "https://node.tauhud.com/api/v1/summary";
+const q = new URLSearchParams(location.search);
+const PANELS = ["status", "height", "proposals", "validators", "health"];
+const want = (q.get("panel") || "status,height,proposals,validators").split(",").map(s => s.trim()).filter(p => PANELS.includes(p));
+const panels = want.length ? want : ["status", "height", "proposals", "validators"];
+const theme = q.get("theme");
+if (theme === "light" || theme === "transparent") document.documentElement.dataset.theme = theme;
+if (q.get("footer") === "0") document.documentElement.dataset.foot = "0";
+const SAMPLE = q.has("sample");
+const LINK = { status: "status/", height: "explorer/", proposals: "proposals/", validators: "", health: "status/" };
+const TITLE = { status: "Testnet", height: "Block", proposals: "Rule changes", validators: "Validators", health: "Health" };
+let data = null, failed = false, lastHeight = null;
+
+const tiles = document.getElementById("tiles");
+const els = {};
+for (const p of panels) {
+  const a = document.createElement("a");
+  a.className = "tile"; a.href = "https://tauhud.com/" + LINK[p]; a.target = "_blank"; a.rel = "noopener";
+  a.innerHTML = `<h2><span class="full">${TITLE[p]}</span><span class="short">${TITLE[p]}</span></h2><div class="v">${p === "status" ? '<i class="dot"></i>' : ""}<span class="n">–</span><span class="u"></span></div><div class="s">&nbsp;</div>`;
+  tiles.append(a);
+  els[p] = { a, short: a.querySelector(".short"), dot: a.querySelector(".dot"), v: a.querySelector(".v"), n: a.querySelector(".n"), u: a.querySelector(".u"), s: a.querySelector(".s") };
+}
+
+function ago(sec) {
+  if (sec == null) return "";
+  if (sec < 60) return `${Math.max(0, Math.round(sec))} s ago`;
+  if (sec < 3600) return `${Math.round(sec / 60)} min ago`;
+  if (sec < 86400) return `${Math.round(sec / 3600)} h ago`;
+  return `${Math.round(sec / 86400)} d ago`;
+}
+const num = n => n == null ? "–" : Number(n).toLocaleString("en-US"); // 1,234: grouped, no "#" (the label already says Block)
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+function render() {
+  const d = data, live = d && d.status === "synced";
+  const age = d && d.last_block_ts ? Date.now() / 1000 - d.last_block_ts : null;
+  for (const p of panels) {
+    const e = els[p];
+    let n = "–", u = "", s = failed ? "no answer yet" : "loading…", good = false, tip = "";
+    if (d) {
+      if (p === "status") {
+        n = { synced: "Live", catching_up: "Syncing", offline: "Offline" }[d.status] || "–";
+        s = d.status === "offline" ? "node not answering" : d.status === "catching_up" ? "behind the network tip" : d.pace_seconds ? `block every ~${Math.round(d.pace_seconds)} s` : "at the network tip";
+        tip = "Live: our node follows the Tau Testnet Alpha and is at the network tip.";
+      } else if (p === "height") {
+        n = num(d.height);
+        s = age != null ? `sealed ${ago(age)}` : "no block yet";
+        tip = "Newest block our node has verified.";
+      } else if (p === "proposals") {
+        const pr = d.proposals;
+        if (pr) {
+          const coming = pr.waiting + pr.agreed;
+          good = coming > 0;
+          e.short.textContent = coming ? "Coming up" : "In force";
+          n = String(coming || pr.in_force); u = coming ? "coming up" : "in force";
+          s = coming ? `${pr.in_force} in force` : pr.total ? `${plural(pr.total, "proposal")} so far` : "no proposals yet";
+          tip = `${pr.waiting} waiting for votes · ${pr.agreed} agreed, takes effect soon · ${pr.in_force} in force · ${pr.dropped} dropped`;
+        }
+        tip = tip || "Rule changes: proposed by anyone, agreed by validators, then in force for everyone.";
+      } else if (p === "validators") {
+        n = num(d.validators); u = d.validators == null ? "" : "active";
+        s = d.validators == null ? "" : "agree on changes";
+        tip = "Active validators: their votes turn a proposal into law.";
+      } else if (p === "health") {
+        const h = d.health && typeof d.health === "object" ? d.health : null;
+        n = h && h.score != null ? String(h.score) : "–"; u = h && h.score != null ? "/ 100" : "";
+        s = h ? (h.label || "testnet health") : "not rated yet";
+        tip = "One number for: is the testnet running well right now?";
+      }
+    }
+    e.n.textContent = n; e.u.textContent = u; e.s.textContent = s; e.a.title = tip;
+    e.v.classList.toggle("good", good);
+    if (e.dot) e.dot.classList.toggle("on", !!live);
+  }
+  fit();
+}
+
+// never cut anything off: if the boxes overflow the iframe, go one line per box, then drop the footer
+function fit() {
+  const root = document.documentElement, over = () => root.scrollHeight > innerHeight + 1 || tiles.scrollHeight > tiles.clientHeight + 1;
+  root.classList.remove("tight", "bare");
+  if (over()) root.classList.add("tight");
+  if (over()) root.classList.add("bare");
+}
+addEventListener("resize", fit);
+
+function sample() {
+  const now = Math.round(Date.now() / 1000);
+  return { api: "tauhud/v1", status: "synced", height: 372, tip_height: 372, last_block_ts: now - 23, pace_seconds: 69.8,
+    spec_revision: 2, base_fee: 1, validators: 1, proposals: { waiting: 1, agreed: 0, in_force: 1, dropped: 0, total: 3 },
+    health: { score: 96 }, viewers: 4, community_nodes: 0 };
+}
+
+async function poll() {
+  try {
+    if (SAMPLE) data = sample();
+    else {
+      const r = await fetch(API, { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status);
+      data = await r.json();
+    }
+    failed = false;
+    if (lastHeight != null && data.height > lastHeight)
+      for (const p of panels) { const dot = els[p].dot; if (!dot) continue; dot.classList.remove("beat"); void dot.offsetWidth; dot.classList.add("beat"); }
+    lastHeight = data.height;
+  } catch (e) { failed = true; data = null; }
+  render();
+}
+poll();
+setInterval(poll, Math.max(10, Number(q.get("every")) || 20) * 1000);
+setInterval(render, 1000);
+</script>
+</body>
+</html>

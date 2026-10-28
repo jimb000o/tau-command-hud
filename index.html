@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="assets/i18n.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <meta name="description" content="Unofficial community HUD for the Tau Testnet Alpha: rule changes by agreement, rule sharing, personal Tau policies, live blocks.">
@@ -54,7 +55,7 @@ body {
   font: 13px/1.45 var(--mono);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 10px 12px;
+  padding-block: 8px 12px;
   box-sizing: border-box;
   background-image:
     radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
@@ -71,27 +72,36 @@ body::after { /* scanlines */
 #rain { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .3; }
 .wrap, .fb-fab, .modal { position: relative; z-index: 1; }
 .fb-fab { position: fixed; }
-.wrap { max-width: 2400px; margin: 0 auto; display: grid; gap: 10px; grid-template-rows: auto auto auto minmax(0, 1fr); height: 100%; min-height: 0; }
-.simbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 5px 12px; border: 1px solid rgba(214,214,220,.5); border-radius: 4px; background: repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 10px, rgba(255,255,255,.015) 10px 20px); font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: #fff; }
-.simbar span { color: var(--dim); font: 11.5px var(--mono); letter-spacing: 0; text-transform: none; flex: 1 1 320px; }
-.simbar button { font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.wrap { max-width: 2400px; margin: 0 auto; display: grid; gap: 8px; grid-template-rows: auto auto auto minmax(0, 1fr); height: 100%; min-height: 0; }
+.simbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 4px 12px; border: 1px solid rgba(214,214,220,.5); border-radius: 4px; background: repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 10px, rgba(255,255,255,.015) 10px 20px); font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: #fff; }
+.simbar span { color: var(--dim); font: 12px var(--mono); letter-spacing: 0; text-transform: none; flex: 1 1 320px; }
+.simbar button { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 3px 8px; cursor: pointer; }
 .simbar button:hover { background: #fff; color: #000; }
 body[data-mode="live"] .simbar { display: none; }
-.simtag { position: absolute; top: 6px; right: 8px; font: 600 9px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 5px; }
+.simtag { position: absolute; top: 6px; right: 8px; font: 600 11px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 4px; }
 body[data-mode="live"] .simtag { display: none; }
 /* simple vs technical view */
 .stream .lbl.plain, body[data-view="simple"] .stream .lbl.tech { display: none; }
 body[data-view="simple"] .stream .lbl.plain { display: block; }
-body[data-view="simple"] .stream code { color: var(--dim); font-weight: 500; font-size: 11px; }
+body[data-view="simple"] .stream code { display: none; }
+body[data-view="simple"] .stream { grid-template-columns: minmax(0, 1fr) max-content; }
+body[data-view="simple"] .feed .txid { display: none; }
 body[data-view="simple"] .rule.composite, body[data-view="simple"] .logp, body[data-view="simple"] .upd .diff, body[data-view="simple"] .blk .h.hx { display: none; }
 body[data-view="simple"] .pr em { display: none; }
 /* tour */
-.tour { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 55; width: min(560px, calc(100% - 32px)); background: var(--deck); border: 1px solid rgba(57,255,138,.55); border-radius: 8px; padding: 12px 14px 10px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.6); }
+.tour { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 55; width: min(560px, calc(100% - 32px)); background: var(--deck); border: 1px solid rgba(57,255,138,.55); border-radius: 8px; padding: 12px 12px 8px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.6); }
 .tour[hidden] { display: none; }
 .tour.top { bottom: auto; top: 64px; }   /* the card moves to the top when the spotlighted panel sits in the lower half */
-.tour .t1 { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font: 600 10.5px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--ok); }
+/* anchored (desktop): the card sits next to the spotlighted panel with a pointer on the edge that faces it; tourPlace() picks below, right, left or above */
+.tour.anchored { left: 0; top: 0; bottom: auto; transform: none; width: min(440px, calc(100% - 32px)); }
+.tour.anchored::before { content: ""; position: absolute; width: 12px; height: 12px; background: var(--deck); border: 1px solid rgba(57,255,138,.55); transform: rotate(45deg); }
+.tour.anchored.side-top::before { top: -7px; left: calc(var(--ax) - 6px); border-right: 0; border-bottom: 0; }
+.tour.anchored.side-bottom::before { bottom: -7px; left: calc(var(--ax) - 6px); border-left: 0; border-top: 0; }
+.tour.anchored.side-left::before { left: -7px; top: calc(var(--ay) - 6px); border-top: 0; border-right: 0; }
+.tour.anchored.side-right::before { right: -7px; top: calc(var(--ay) - 6px); border-bottom: 0; border-left: 0; }
+.tour .t1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--ok); }
 .tour h3 { margin: 4px 0 2px; font: 600 15px var(--display); color: #fff; }
-.tour p { margin: 0 0 10px; font-size: 12.5px; color: var(--text); }
+.tour p { margin: 0 0 8px; font-size: 13px; color: var(--text); }
 .tour .t3 { display: flex; gap: 8px; justify-content: flex-end; }
 .tour .t3 button { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; border-radius: 999px; padding: 6px 12px; cursor: pointer; border: 1px solid var(--hair); background: transparent; color: var(--dim); }
 .tour .t3 button.primary { background: #fff; color: #000; border-color: #fff; }
@@ -99,25 +109,28 @@ body[data-view="simple"] .pr em { display: none; }
 .tour .t3 button.primary:hover { background: var(--ok); border-color: var(--ok); color: #000; }
 body[data-tour] .panel.spot { border-color: var(--ok); box-shadow: 0 0 0 1px rgba(57,255,138,.5), 0 0 40px -6px rgba(57,255,138,.55); z-index: 2; }
 body[data-tour] .spot:not(.panel) { outline: 1px solid var(--ok); outline-offset: 4px; border-radius: 6px; box-shadow: 0 0 30px -6px rgba(57,255,138,.55); }
-.tour .bar { height: 2px; background: rgba(255,255,255,.1); margin: 8px 0 10px; border-radius: 1px; overflow: hidden; }
+.tour .bar { height: 2px; background: rgba(255,255,255,.1); margin: 8px 0 8px; border-radius: 1px; overflow: hidden; }
 .tour .bar i { display: block; height: 100%; background: var(--ok); transition: width .3s; }
 .tour .t3 a { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; border-radius: 999px; padding: 6px 12px; border: 1px solid var(--ok); color: var(--ok); text-decoration: none; margin-right: auto; }
 .tour .t3 a:hover { background: var(--ok); color: #000; }
 .tour .t3 a[hidden] { display: none; }
 body[data-tour] .panel:not(.spot) { opacity: .45; }
 body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
-#rain.off { display: none; }
-#ovl { position: fixed; z-index: 70; max-width: min(520px, 90vw); padding: 8px 11px; white-space: pre-line; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
+#rain.off, body[data-tour] #rain, body:has(.modal:not([hidden])) #rain { display: none; }
+#ovl { position: fixed; z-index: 70; max-width: min(520px, 90vw); padding: 8px 12px; white-space: pre-line; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
 #ovl[hidden] { display: none; }
 .blk { cursor: pointer; }
 .blk:hover { border-color: var(--cyan); }
-.detail h3 { margin: 14px 0 6px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.detail h3 { margin: 12px 0 6px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
 .detail .kv { font-size: 12px; }
 .detail .kv dd { white-space: normal; overflow-wrap: anywhere; text-align: left; font-family: var(--mono); }
 .detail ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
-.detail li { overflow-wrap: anywhere; padding: 6px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); font-size: 12px; }
+.detail li { overflow-wrap: anywhere; padding: 6px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); font-size: 12px; }
 .detail li.ok { border-left-color: var(--ok); }
-.detail li.rej { border-left-color: var(--bad); }
+.detail li.rej { border-left-color: #fff; }
+.detail .key { color: var(--dim); font-family: var(--mono); }
+.detail .copy { margin-left: 8px; font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 2px 8px; cursor: pointer; }
+.detail .copy:hover { background: #fff; color: #000; }
 .detail li.gov { border-left-color: var(--amber); }
 .detail li b { color: #fff; font-weight: 600; }
 .detail li .muted { color: var(--dim); }
@@ -125,22 +138,22 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 [data-detail] { cursor: pointer; }
 .tx[data-detail], .offer[data-detail], .upd[data-detail] { position: relative; transition: background .15s; }
 .tx[data-detail]:hover, .offer[data-detail]:hover, .upd[data-detail]:hover, .clause[data-detail]:hover, .val[data-detail]:hover { background: rgba(255,255,255,.06); }
-.tx[data-detail]::after, .offer[data-detail]::after, .upd[data-detail]::after { content: "open ›"; position: absolute; right: 8px; bottom: 5px; font: 10px var(--mono); letter-spacing: .04em; color: var(--dim); opacity: 0; transition: opacity .15s; pointer-events: none; }
+.tx[data-detail]::after, .offer[data-detail]::after, .upd[data-detail]::after { content: "open ›"; position: absolute; right: 8px; bottom: 5px; font: 11px var(--mono); letter-spacing: .04em; color: var(--dim); opacity: 0; transition: opacity .15s; pointer-events: none; }
 .tx[data-detail]:hover::after, .offer[data-detail]:hover::after, .upd[data-detail]:hover::after { opacity: 1; }
 .detail .checks { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
-.detail .checks i { font: 10.5px var(--mono); font-style: normal; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--ok); }
-.detail .checks i.bad { color: var(--bad); border-color: rgba(255,77,109,.5); }
+.detail .checks i { font: 11px var(--mono); font-style: normal; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--ok); }
+.detail .checks i.bad { color: #fff; border-color: rgba(255,255,255,.5); }
 .detail .checks i.warn { color: var(--amber); }
 .detail .checks i.off { color: var(--dim); }
-.detail .verdict-line { margin: 10px 0 0; padding: 8px 10px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 500 12.5px var(--display); color: #fff; }
-.detail .verdict-line.bad { border-left-color: var(--bad); background: rgba(255,77,109,.07); }
-.detail .lead { font: 500 15px/1.4 var(--display); color: #fff; margin: 0 0 6px; }
+.detail .verdict-line { margin: 8px 0 0; padding: 8px 8px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 400 13px var(--display); color: #fff; }
+.detail .verdict-line.bad { border-left-color: #fff; background: rgba(255,255,255,.07); }
+.detail .lead { font: 400 15px/1.4 var(--display); color: #fff; margin: 0 0 6px; }
 .btn.state { border-color: rgba(255,255,255,.5); color: #fff; }
-.grid { display: grid; gap: 10px; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr);
+.grid { display: grid; gap: 8px; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr);
   grid-template-areas: "eng core feed pol" "upd chain off val"; }
 .a-eng { grid-area: eng; } .a-core { grid-area: core; } .a-feed { grid-area: feed; } .a-pol { grid-area: pol; }
 .a-upd { grid-area: upd; } .a-chain { grid-area: chain; } .a-off { grid-area: off; } .a-val { grid-area: val; }
-.stack { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.stack { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
 .stack .gov { flex: 0 1 auto; overflow: auto; min-height: 100px; }
 .stack .statep { flex: 1 1 auto; min-height: 112px; }
 .stack .logp { flex: 0 1 auto; min-height: 110px; }
@@ -150,45 +163,84 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .statep { display: flex; }
 .statep:hover { border-color: var(--cyan); }
 .statep .scroll { min-height: 0; }
-.statep .kv { font-size: 12px; }
+.statep .kv { font-size: 12px; margin: 0; }
+.statep .big2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 2px 0 8px; }
+.statep .big2 > div { padding: 6px 8px; background: rgba(255,255,255,.04); border-radius: 4px; cursor: help; }
+.statep .big2 b { display: block; font: 600 28px/1 var(--display); color: #fff; font-variant-numeric: tabular-nums; }
+.statep .big2 span { display: block; margin-top: 4px; font: 11px var(--mono); color: var(--dim); }
+.statep .sent { margin: 0; font: 12px/1.5 var(--mono); color: var(--dim); }
+.statep .sent b { color: #fff; font-weight: 600; }
 .statep .kv dd { white-space: normal; text-align: right; }
-.statep h3 { margin: 10px 0 4px; font: 600 10.5px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.statep h3 { margin: 8px 0 4px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
 .statep ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }
-.statep li { font-size: 11.5px; padding: 4px 8px; border-left: 2px solid var(--ok); background: rgba(255,255,255,.025); }
+.statep li { font-size: 12px; padding: 4px 8px; border-left: 2px solid var(--ok); background: rgba(255,255,255,.025); }
 .statep li span { color: var(--dim); }
-.statep .more { margin-top: 8px; align-self: flex-start; font: 600 10.5px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.statep .more { margin-top: 8px; align-self: flex-start; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 4px 8px; cursor: pointer; }
 .statep .more:hover { background: #fff; color: #000; }
 .scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.thesis { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr); gap: 10px 18px; align-items: center; padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(90deg, rgba(255,255,255,.07), rgba(16,16,18,.6) 45%, rgba(57,255,138,.04)); position: relative; }
+.thesis { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr); gap: 8px 16px; align-items: center; padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(90deg, rgba(255,255,255,.07), rgba(16,16,18,.6) 45%, rgba(57,255,138,.04)); position: relative; }
 .thesis::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--brand); border-radius: 2px; }
-.thesis .eyebrow { display: block; font: 700 11px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--amber); margin-bottom: 4px; }
-.thesis h2 { margin: 0; font: 500 clamp(15px, 1.15vw, 21px)/1.35 var(--display); color: #fff; text-wrap: balance; letter-spacing: .02em; }
-.modal { position: fixed !important; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow: hidden; box-sizing: border-box; }
+.thesis .eyebrow { display: block; font: 600 11px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--amber); margin-bottom: 4px; }
+.thesis h2 { margin: 0; font: 400 clamp(15px, 1.15vw, 21px)/1.35 var(--display); color: #fff; text-wrap: balance; letter-spacing: .02em; }
+.thesis h2.decoding .dw { white-space: nowrap; }
+.thesis h2 .dc { display: inline-block; text-align: center; clip-path: inset(-2px -1px); }
+.thesis h2 .dc.g { color: var(--ok); }
+.thesis h2 .dc.front { text-shadow: 0 0 6px rgba(57,255,138,.7), 0 0 14px rgba(57,255,138,.35); }
+.modal { position: fixed !important; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; overflow: hidden; box-sizing: border-box; }
 .modal[hidden] { display: none; }
 .sheet { position: relative; width: min(1100px, 100%); max-height: 100%; flex: 0 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .sheet.narrow { width: min(720px, 100%); }
-.close { position: absolute; top: 6px; right: 6px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: var(--cyan-hi); cursor: pointer; font: 14px var(--display); }
-.about h3 { margin: 14px 0 4px; font: 600 12px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); }
-.about p { margin: 0 0 8px; font-size: 12.5px; max-width: 80ch; }
+.sheet.wide { width: min(1760px, 100%); }
+.tgstrip { grid-column: 1 / -1; margin: 0 0 8px; padding: 8px 52px 8px 12px; border: 1px solid rgba(57,255,138,.45); border-radius: 8px; font-size: 13px; color: var(--text); }
+.tgstrip a { color: var(--ok); font-weight: 600; text-decoration: none; }
+.tgstrip a:hover { text-decoration: underline; }
+/* About: on wide screens the sections flow into columns so nothing needs scrolling; each section stays whole */
+/* rhythm on an 8px scale: 32 around, 24 between blocks, 8 under a heading, 10 between paragraphs */
+.sheet.wide .panel.about { padding: 32px 36px 32px; background: #0e0e11; }
+.panel.about h2 { margin-bottom: 24px; }
+.about .unofficial { margin: 0 0 32px; padding: 8px 16px; }
+.about-cols { column-gap: 56px; column-rule: 1px solid var(--line); }
+.about-cols > section { break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; display: block; margin: 0 0 24px; }
+.about-cols > section:last-child { margin-bottom: 0; }
+.about-cols > section > h3:first-child { margin-top: 0; }
+.about-cols h3 { margin: 0 0 8px; }
+.about-cols p { margin: 0 0 8px; line-height: 1.55; }
+.about-cols p:last-child { margin-bottom: 0; }
+@media (min-width: 1500px) { .about-cols { column-count: 3; } }
+@media (min-width: 1000px) and (max-width: 1499px) { .about-cols { column-count: 2; } }
+.about .tgbox { padding: 16px 24px 16px; border: 1px solid rgba(57,255,138,.5); border-radius: 8px; background: rgba(57,255,138,.04); }
+.about .tgbox h3 { color: var(--ok); margin-top: 0; }
+.about .tgbox h3 { margin-bottom: 8px; }
+.about .tgbox ul { margin: 0 0 12px; padding-left: 16px; font-size: 13px; line-height: 1.5; }
+.about .tgbox li { margin: 0 0 6px; }
+.about .tgbox li b { color: #fff; font-weight: 600; }
+.about .tgjoin { display: inline-block; font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--ok); color: var(--ok); text-decoration: none; }
+.about .tgjoin:hover { background: var(--ok); color: #000; }
+.close { position: absolute; top: 6px; right: 6px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: var(--cyan-hi); cursor: pointer; font: 15px var(--display); }
+.about h3 { margin: 12px 0 4px; font: 600 12px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); }
+.about p { margin: 0 0 8px; font-size: 13px; max-width: 80ch; }
 .about a, .about code { color: var(--cyan); }
-.addr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border: 1px solid var(--hair); border-radius: 6px; background: rgba(0,0,0,.35); }
-.addr code { flex: 1 1 320px; min-width: 0; font: 500 13px var(--mono); color: var(--ok); overflow-wrap: anywhere; user-select: all; }
-.about .small { color: var(--dim); font-size: 11.5px; }
-.donate { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 14px; align-items: center; margin: 4px 0 8px; }
+.addr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border: 1px solid var(--hair); border-radius: 6px; background: rgba(0,0,0,.35); }
+.addr code { flex: 1 1 320px; min-width: 0; font: 400 13px var(--mono); color: var(--ok); overflow-wrap: anywhere; user-select: all; }
+.about .small { color: var(--dim); font-size: 12px; }
+.about .thanks { color: var(--text); margin: 0 0 8px; }
+.about .thanks a { color: var(--ok); }
+.donate { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 16px; align-items: center; margin: 12px 0 12px; }
 .donate .qr { width: 132px; height: 132px; border-radius: 6px; display: block; }
 .donate .addr { margin: 0; }
 @media (max-width: 520px) { .donate { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
 .btn.gold { border-color: rgba(57,255,138,.45); color: var(--ok); }
 .btn.gold:hover { background: var(--ok); border-color: var(--ok); color: #000; }
 .btn.ghost { background: transparent; border-color: var(--hair); color: var(--dim); }
-.gov .seat { display: inline-block; margin-top: 8px; font: 10.5px var(--mono); letter-spacing: .04em; color: var(--dim); text-decoration: none; }
+.gov .kv { margin: 6px 0 0; }
+.gov .seat { display: inline-block; margin-top: 8px; font: 11px var(--mono); letter-spacing: .04em; color: var(--dim); text-decoration: none; }
 .gov .seat:hover { color: var(--ok); }
 .btn.ghost:hover { color: #fff; border-color: var(--cyan); background: rgba(236,236,240,.08); }
 .chip.unoff { cursor: pointer; border-color: var(--hair); color: var(--text); background: rgba(255,255,255,.06); white-space: normal; text-align: left; max-width: 100%; color: var(--amber); border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.08); }
 
 /* ---------- top rail ---------- */
 .rail { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
-.brand { display: flex; align-items: center; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; }
 .mark { width: 26px; height: 26px; flex: 0 0 auto; display: block; }
 .mark circle { fill: none; stroke: #fff; stroke-opacity: .45; stroke-width: 3.5; }
 .mark .pulse { fill: none; stroke: var(--ok); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 70; stroke-dashoffset: 0; }
@@ -196,16 +248,22 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .mark.beat circle { animation: markring 1.1s ease-out; }
 @keyframes beat { 0% { stroke-dashoffset: 70; opacity: .4; } 45% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 1; } }
 @keyframes markring { 0% { stroke-opacity: .45; } 30% { stroke-opacity: 1; stroke: var(--ok); } 100% { stroke-opacity: .45; } }
-.mark.big { width: 40px; height: 40px; margin-right: 10px; }
-.about h2 { justify-content: flex-start; align-items: center; }
-.brand h1 { margin: 0; font: 700 22px/1 var(--display); letter-spacing: .06em; text-transform: none; background: var(--brand); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); }
-.brand span { font: 500 11px var(--display); letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
+.mark.big { width: 40px; height: 40px; margin-right: 8px; }
+.panel.about h2 { justify-content: flex-start; align-items: center; gap: 8px; padding-right: 44px; }
+.brand h1 { margin: 0; font: 600 22px/1 var(--display); letter-spacing: .06em; text-transform: none; background: var(--brand); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); }
+.brand span { font: 400 11px var(--display); letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
-.chip { font: 500 11px var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 5px 12px; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); background: rgba(255,255,255,.03); white-space: nowrap; }
+.chip { font: 400 11px var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 4px 12px; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); background: rgba(255,255,255,.03); white-space: nowrap; }
 .chip b { color: var(--cyan-hi); font-weight: 600; font-family: var(--mono); letter-spacing: 0; text-transform: none; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.chip.v b { margin-left: 0; }
+/* consensus chip: full name on wide screens, short form where the row is tight */
+.rail .chip .sh { display: none; }
+@media (max-width: 1899px) { .rail .chip .lg { display: none; } .rail .chip .sh { display: inline; } }
 .chip.live b { color: var(--ok); }
 .chip.warn b { color: var(--amber); }
 .chip.behind b { color: var(--behind); }
+.rail .chips .chip { cursor: help; } .rail .chips button.chip { cursor: pointer; }
+.rail .chips .chip:hover { border-color: rgba(255,255,255,.45); color: var(--text); }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); margin-right: 6px; animation: blink 1.6s infinite; }
 .dot.sim { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
 .dot.behind { background: var(--behind); box-shadow: 0 0 8px var(--behind); }
@@ -213,39 +271,42 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .dot.none { background: var(--dim); box-shadow: none; animation: none; opacity: .6; }
 @keyframes blink { 50% { opacity: .35; } }
 
-.gearbody { display: flex; flex-direction: column; gap: 10px; }
-.gearbody h4 { margin: 0; font: 600 10px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--ok); }
+.gearbody { display: flex; flex-direction: column; gap: 8px; }
+.gearbody h4 { margin: 0; font: 600 11px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--ok); }
 .gearbody .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .seg { display: inline-flex; border: 1px solid var(--hair); border-radius: 999px; overflow: hidden; }
 .seg button, .btn {
-  font: 600 11.5px var(--display); letter-spacing: .12em; text-transform: uppercase;
-  background: transparent; color: var(--dim); border: 0; padding: 7px 12px; cursor: pointer;
+  font: 600 12px var(--display); letter-spacing: .12em; text-transform: uppercase;
+  background: transparent; color: var(--dim); border: 0; padding: 6px 12px; cursor: pointer;
 }
 .seg button[aria-pressed="true"] { background: #fff; color: #000; }
 #liveDot { width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; background: var(--ok); box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 12px 2px rgba(57,255,138,.9); animation: livepulse 1.6s ease-in-out infinite; }
 .seg button[aria-pressed="true"] #liveDot { box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(57,255,138,.95); }
 #liveDot.behind { background: var(--behind); box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 12px 2px rgba(255,177,59,.85); }
 .seg button[aria-pressed="true"] #liveDot.behind { box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,177,59,.9); }
-#liveDot.off { background: #5a5a62; box-shadow: 0 0 0 2px rgba(0,0,0,.35); animation: none; opacity: 1; }
-.seg button[aria-pressed="true"] #liveDot.off { background: #9a9aa2; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
+/* red only here, by decision 27 Oct: the node light is a traffic light (green synced · amber not synced or catching up · red offline · grey unknown) */
+#liveDot.off { background: var(--bad); box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 12px 2px rgba(255,77,109,.85); animation: none; opacity: 1; }
+.seg button[aria-pressed="true"] #liveDot.off { box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,77,109,.9); }
+#liveDot.none { background: #5a5a62; box-shadow: 0 0 0 2px rgba(0,0,0,.35); animation: none; opacity: 1; }
+.seg button[aria-pressed="true"] #liveDot.none { background: #9a9aa2; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
 @keyframes livepulse { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.18); filter: brightness(1.35); } }
 .btn { border: 1px solid transparent; border-radius: 999px; color: #fff; background: linear-gradient(var(--deck), var(--deck)) padding-box, var(--brand) border-box; }
 .btn:hover { background: #fff; color: #000; }
 .btn:hover, .seg button:hover { color: var(--cyan-hi); }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-#wsurl { flex: 1 1 240px; min-width: 0; max-width: 360px; background: rgba(0,0,0,.35); border: 1px solid var(--hair); border-radius: 999px; color: var(--text); font: 13px var(--mono); padding: 7px 10px; }
+#wsurl { flex: 1 1 240px; min-width: 0; max-width: 360px; background: rgba(0,0,0,.35); border: 1px solid var(--hair); border-radius: 999px; color: var(--text); font: 13px var(--mono); padding: 6px 8px; }
 .hint { color: var(--dim); font-size: 11px; flex: 1 1 100%; min-width: 0; }
 
 /* ---------- main deck ---------- */
-.deck { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
-.panel { position: relative; background: var(--glass); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; min-width: 0; min-height: 0; display: flex; flex-direction: column; box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 20px 50px -30px rgba(0,0,0,.9); }
+.deck { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.panel { position: relative; background: var(--glass); border: 1px solid var(--line); border-radius: 6px; padding: 12px 12px; min-width: 0; min-height: 0; display: flex; flex-direction: column; box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 20px 50px -30px rgba(0,0,0,.9); }
 .panel::before { content: ""; position: absolute; top: -1px; left: 14px; right: 14px; height: 1px; background: var(--brand); opacity: .7; }
 .panel::after { content: none; }
-.panel h2 { margin: 0 0 8px; flex: 0 0 auto; font: 600 11.5px var(--display); letter-spacing: .24em; text-transform: uppercase; color: #fff; display: flex; justify-content: space-between; gap: 8px; }
-.panel h2 small { color: var(--dim); letter-spacing: .1em; font-weight: 400; margin-left: auto; text-align: right; min-width: 0; }
-.info { position: relative; flex: 0 0 auto; width: 18px; height: 18px; border: 1px solid var(--hair); border-radius: 50%; background: rgba(255,255,255,.04); color: var(--dim); font: 700 11px/16px var(--display); text-align: center; cursor: help; padding: 0; }
+.panel h2 { margin: 0 0 8px; flex: 0 0 auto; font: 600 12px var(--display); letter-spacing: .24em; text-transform: uppercase; color: #fff; display: flex; justify-content: space-between; gap: 8px; }
+.panel h2 small { color: var(--dim); font: 400 11px var(--mono); letter-spacing: 0; text-transform: none; margin-left: auto; text-align: right; min-width: 0; }
+.info { position: relative; flex: 0 0 auto; width: 18px; height: 18px; border: 1px solid var(--hair); border-radius: 50%; background: rgba(255,255,255,.04); color: var(--dim); font: 600 11px/16px var(--display); text-align: center; cursor: help; padding: 0; }
 .info:hover, .info:focus-visible, .info.open { background: var(--cyan); color: var(--void); }
-.info::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: -4px; width: min(300px, 80vw); padding: 10px 12px; background: #151517; border: 1px solid var(--hair); border-radius: 6px; box-shadow: 0 0 24px rgba(236,236,240,.35); color: var(--text); font: 12px/1.5 var(--mono); letter-spacing: 0; text-transform: none; text-align: left; white-space: normal; z-index: 30; opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .15s, transform .15s; pointer-events: none; }
+.info::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: -4px; width: min(300px, 80vw); padding: 8px 12px; background: #151517; border: 1px solid var(--hair); border-radius: 6px; box-shadow: 0 0 24px rgba(236,236,240,.35); color: var(--text); font: 12px/1.5 var(--mono); letter-spacing: 0; text-transform: none; text-align: left; white-space: normal; z-index: 30; opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .15s, transform .15s; pointer-events: none; }
 .info::before { content: ""; position: absolute; top: calc(100% + 3px); right: 3px; border: 5px solid transparent; border-bottom-color: var(--cyan); opacity: 0; visibility: hidden; transition: opacity .15s; }
 .info:hover::after, .info:focus-visible::after, .info.open::after, .info:hover::before, .info:focus-visible::before, .info.open::before { opacity: 1; visibility: visible; transform: none; }
 /* hidden tooltips must not add to the scrollable height of the page (they did: 86 px of phantom scroll at 1080 px) */
@@ -254,19 +315,19 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .panel { overflow: visible; }
 
 /* Tau engine streams */
-.streams { display: grid; gap: 5px; }
-.stream { display: grid; grid-template-columns: 38px minmax(0, 1fr) max-content; gap: 10px; align-items: center; padding: 4px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; transition: background .3s, border-color .3s; }
+.streams { display: grid; gap: 4px; }
+.stream { display: grid; grid-template-columns: 38px minmax(0, 1fr) max-content; gap: 8px; align-items: center; padding: 4px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; transition: background .3s, border-color .3s; }
 .stream code { font: 600 13px var(--mono); color: var(--ok); }
-.stream .lbl { color: var(--dim); font-size: 11.5px; line-height: 1.25; }
+.stream .lbl { color: var(--dim); font-size: 12px; line-height: 1.25; }
 .stream .val { display: block; font-variant-numeric: tabular-nums; color: var(--text); font-size: 12px; text-align: right; max-width: 18ch; line-height: 1.25; }
 .stream.out code { color: var(--cyan); }
 .stream.flash { background: rgba(236,236,240,.18); border-left-color: var(--cyan); }
 .stream.pass .val { color: var(--ok); }
-.stream.fail .val { color: var(--bad); }
-.rule { margin: 12px 0 0; padding: 10px; background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 4px; font: 12px/1.6 var(--mono); color: var(--ok); text-shadow: 0 0 8px rgba(57,255,138,.25); white-space: pre-wrap; overflow-x: auto; }
+.stream.fail .val { color: #fff; }
+.rule { margin: 12px 0 0; padding: 8px; background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 4px; font: 12px/1.6 var(--mono); color: var(--ok); text-shadow: 0 0 8px rgba(57,255,138,.25); white-space: pre-wrap; overflow-x: auto; }
 .rule .k { color: var(--cyan); }
 .rule .c { color: var(--dim); }
-.verdict { margin-top: auto; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 18px 0 8px; font: 700 15px var(--display); letter-spacing: .2em; text-transform: uppercase; position: relative; }
+.verdict { margin-top: auto; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 0 8px; font: 600 15px var(--display); letter-spacing: .2em; text-transform: uppercase; position: relative; }
 .verdict .seal { width: 36px; height: 36px; border: 2px solid currentColor; transform: rotate(45deg); display: grid; place-items: center; position: relative; flex: 0 0 auto; border-radius: 3px; }
 .verdict .seal svg { width: 22px; height: 22px; transform: rotate(-45deg); fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .verdict .seal .check, .verdict .seal .cross, .verdict .seal .dia { display: none; }
@@ -277,8 +338,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .verdict.ok .seal { background: rgba(57,255,138,.1); box-shadow: 0 0 18px rgba(57,255,138,.35), inset 0 0 10px rgba(57,255,138,.2); animation: vstamp .55s cubic-bezier(.2,1.1,.3,1.25); }
 .verdict.ok .seal::after { content: ""; position: absolute; inset: -2px; border: 2px solid var(--ok); border-radius: 3px; opacity: 0; animation: vping 1s .1s ease-out; }
 .verdict.ok span { animation: vsettle .6s cubic-bezier(.2,.8,.3,1); }
-.verdict.ok span b { color: #fff; font-weight: 700; }
-.verdict.bad { color: var(--bad); }
+.verdict.ok span b { color: #fff; font-weight: 600; }
+.verdict.bad { color: #fff; }
 .verdict.wait { color: var(--dim); }
 .verdict.wait .seal { animation: vspin 2.4s linear infinite; }
 .a-eng.sealed { animation: vpanel 1.2s ease-out; }
@@ -300,97 +361,101 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .core canvas { height: 100%; width: auto; max-width: 100%; max-height: 100%; aspect-ratio: 1; display: block; object-fit: contain; }
 .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: 100%; flex: 0 0 auto; }
 .readout div { text-align: center; padding: 6px 4px; border-top: 1px solid var(--hair); }
-.readout b { display: block; font: 600 20px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
-.readout span { font: 500 10px var(--display); color: var(--dim); letter-spacing: .2em; text-transform: uppercase; }
-.readout span i { display: block; margin-top: 2px; font: 10px var(--mono); font-style: normal; letter-spacing: 0; text-transform: none; color: var(--dim); }
+.readout b { display: block; font: 600 22px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
+.readout span { font: 400 11px var(--display); color: var(--dim); letter-spacing: .2em; text-transform: uppercase; }
+.readout div[data-full] { cursor: help; border-radius: 6px; transition: background .15s; }
+.readout div[data-full]:hover { background: rgba(57,255,138,.06); }
+.readout div[data-full]:hover b { color: var(--ok); text-shadow: 0 0 14px rgba(57,255,138,.45); }
+.readout span i { display: block; margin-top: 2px; font: 11px var(--mono); font-style: normal; letter-spacing: 0; text-transform: none; color: var(--dim); }
 
 /* tx feed */
 .feed { display: grid; gap: 6px; align-content: start; }
-.tx { display: grid; gap: 3px; padding: 7px 9px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--cyan); animation: slidein .45s ease-out; min-width: 0; }
-.tx.rej { border-left-color: var(--bad); }
+.tx { display: grid; gap: 3px; padding: 6px 8px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--cyan); animation: slidein .45s ease-out; min-width: 0; }
+.tx.rej { border-left-color: #fff; }
 .tx.gov { border-left-color: var(--amber); }
 .tx.mined { opacity: .55; }
 .tx .top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--dim); }
 .tx .top em { font-style: normal; color: var(--cyan); letter-spacing: .08em; text-transform: uppercase; }
 .tx.gov .top em { color: var(--amber); }
-.tx.rej .top em { color: var(--bad); }
+.tx.rej .top em { color: #fff; }
 .tx .mid { font-size: 12px; overflow-wrap: anywhere; }
 .acct { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--hair); }
 .acct:hover { color: #fff; border-bottom-color: var(--ok); }
-.tx .mid b { color: var(--cyan-hi); font-weight: 500; }
+.tx .mid b { color: var(--cyan-hi); font-weight: 600; }
 @keyframes slidein { from { transform: translateX(16px); opacity: 0; } }
 
 /* chain ribbon */
-.radar { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: -2px 0 2px; font: 10.5px var(--mono); color: var(--dim); }
+.radar { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: -2px 0 2px; font: 11px var(--mono); color: var(--dim); }
 .radar span { cursor: help; }
-.radar b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.radar b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .radar .warn b { color: var(--amber); }
-.radar .bad b { color: var(--bad); }
+.radar .bad b { color: #fff; }
 .radar .ok b { color: var(--ok); }
-.ribbon { display: flex; gap: 0; overflow: auto; flex: 0 0 auto; min-height: 0; align-items: flex-start; padding: 6px 2px 10px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.blk { flex: 0 0 150px; position: relative; padding: 10px 12px; margin-right: 26px; background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 6px; animation: drop .6s ease-out; }
+.ribbon { display: flex; gap: 0; overflow: auto; flex: 0 0 auto; min-height: 0; align-items: flex-start; padding: 6px 2px 8px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.blk { flex: 0 0 150px; position: relative; padding: 8px 12px; margin-right: 24px; background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 6px; animation: drop .6s ease-out; }
 .blk:last-child { border-color: var(--ok); box-shadow: inset 0 0 24px rgba(57,255,138,.14), 0 0 18px rgba(57,255,138,.12); }
 .blk .n { font: 600 18px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
-.blk .h { font-size: 10.5px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.blk .h { font-size: 11px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .blk .m { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; margin-top: 6px; white-space: nowrap; }
 .blk.sel { border-color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,.5); }
+.blk.old { animation: none; }
 .blkdetail { flex: 1 1 auto; min-height: 0; overflow: auto; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
 .blkdetail .lead { font-size: 13px; }
 .blkdetail h3:first-child, .blkdetail section > h3:first-child { margin-top: 0; }
 .blkdetail .cols section { min-width: 0; }
-.blkdetail .kv { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 4px 10px; }
+.blkdetail .kv { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 4px 8px; }
 .blkdetail .kv dt, .blkdetail .kv dd { overflow-wrap: normal; }
 .blkdetail .ident .kv dd { overflow-wrap: anywhere; }
 .blkdetail .ident .kv { grid-template-columns: minmax(0, 1fr); gap: 0; }
 .blkdetail .ident .kv dt { margin-top: 6px; }
 .blkdetail .ident .kv dt:first-child { margin-top: 0; }
 
-.blkdetail .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 18px; }
+.blkdetail .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 16px; }
 /* when the full block detail would not fit without scrolling, a one-glance summary takes its place and a click opens the full detail */
 .blkdetail.compact { cursor: pointer; }
 .blkdetail.compact:hover h3:first-child::after { opacity: 1; }
-.blkdetail.compact h3:first-child::after { content: "open ›"; margin-left: 10px; font: 10px var(--mono); letter-spacing: .04em; color: var(--dim); text-transform: none; opacity: 0; transition: opacity .15s; }
-.bsum .row { display: flex; flex-wrap: wrap; gap: 4px 0; font-size: 11.5px; margin-top: 6px; }
+.blkdetail.compact h3:first-child::after { content: "open ›"; margin-left: 8px; font: 11px var(--mono); letter-spacing: .04em; color: var(--dim); text-transform: none; opacity: 0; transition: opacity .15s; }
+.bsum .row { display: flex; flex-wrap: wrap; gap: 4px 0; font-size: 12px; margin-top: 6px; }
 .bsum .row span { padding: 1px 12px 1px 0; margin-right: 12px; border-right: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .bsum .row span:last-child { border-right: 0; }
 .bsum .row i { font-style: normal; color: var(--dim); margin-right: 6px; cursor: help; text-decoration: underline dotted rgba(255,255,255,.22); text-underline-offset: 3px; }
 .bsum .row i:hover { color: var(--text); text-decoration-color: var(--ok); }
 .bsum .row .gov { color: var(--amber); }
 .blk .m span:last-child { color: var(--ok); }
-.link { flex: 0 0 26px; align-self: center; margin-left: -26px; margin-right: 0; height: 2px; background: linear-gradient(90deg, var(--cyan), transparent); }
+.link { flex: 0 0 26px; align-self: center; margin-left: -24px; margin-right: 0; height: 2px; background: linear-gradient(90deg, var(--cyan), transparent); }
 @keyframes drop { from { transform: translateY(-14px); opacity: 0; } }
 
-.lower { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
-.log { font-size: 11.5px; line-height: 1.6; color: var(--dim); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.lower { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; }
+.log { font-size: 12px; line-height: 1.6; color: var(--dim); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .log div { display: grid; grid-template-columns: 8.5ch minmax(0, 1fr); gap: 0 8px; overflow-wrap: anywhere; padding: 2px 0; border-top: 1px solid rgba(255,255,255,.04); }
 .log div:first-child { border-top: 0; }
 .logp[data-detail] { cursor: pointer; }
 .logp[data-detail]:hover { border-color: rgba(255,255,255,.35); }
-.logp[data-detail] h2::after { content: "open ›"; margin-left: auto; font: 10px var(--mono); letter-spacing: .04em; color: var(--dim); opacity: 0; transition: opacity .15s; }
+.logp[data-detail] h2::after { content: "open ›"; margin-left: auto; font: 11px var(--mono); letter-spacing: .04em; color: var(--dim); opacity: 0; transition: opacity .15s; }
 .logp[data-detail]:hover h2::after { opacity: 1; }
 .detail .loglist { display: grid; gap: 0; }
-.detail .loglist div { display: grid; grid-template-columns: 8ch minmax(0, 1fr); gap: 0 10px; padding: 5px 8px; font: 12px/1.55 var(--mono); overflow-wrap: anywhere; border-top: 1px solid rgba(255,255,255,.05); }
+.detail .loglist div { display: grid; grid-template-columns: 8ch minmax(0, 1fr); gap: 0 8px; padding: 4px 8px; font: 12px/1.55 var(--mono); overflow-wrap: anywhere; border-top: 1px solid rgba(255,255,255,.05); }
 .detail .loglist .t { color: var(--cyan); }
 .detail .loglist .ok { color: var(--ok); }
 .detail .loglist .warn { color: var(--amber); }
-.detail .loglist .err { color: var(--bad); }
+.detail .loglist .err { color: #fff; }
 .log .t { color: var(--cyan); }
 .log .ok { color: var(--ok); }
 .log .warn { color: var(--amber); }
-.log .err { color: var(--bad); }
-.gov { display: grid; gap: 10px; }
+.log .err { color: #fff; }
+.gov { display: grid; gap: 8px; }
 .vals { display: grid; gap: 4px; }
 .modes { display: flex; align-items: stretch; gap: 4px; margin: 0 0 6px; }
-.modes span { flex: 1 1 auto; min-width: 0; font: 10.5px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); padding: 4px 6px; text-align: center; white-space: nowrap; }
+.modes span { flex: 1 1 auto; min-width: 0; font: 11px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); padding: 4px 6px; text-align: center; white-space: nowrap; }
 .modes span.on { color: var(--ok); border-color: rgba(57,255,138,.7); box-shadow: inset 0 0 0 1px rgba(57,255,138,.25); text-shadow: 0 0 8px rgba(57,255,138,.5); }
 .modes span.was { color: var(--text, #e6e6ea); border-style: dashed; }
 .modes em { flex: 0 0 auto; font: 11px var(--mono); color: var(--dim); align-self: center; }
-@media (max-width: 1599px) { .modes span { font-size: 10px; padding: 4px 4px; } }
-.val { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; }
+@media (max-width: 1599px) { .modes span { font-size: 11px; padding: 4px 4px; } }
+.val { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; }
 .val i { width: 8px; height: 8px; transform: rotate(45deg); background: var(--cyan); border-radius: 1px; }
 .val.on i { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
 .val span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 11.5px; }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 12px; }
 .kv dt { color: var(--dim); }
 .kv dt[data-full] { cursor: help; text-decoration: underline dotted rgba(255,255,255,.22); text-underline-offset: 3px; }
 .kv dt[data-full]:hover { color: var(--text); text-decoration-color: var(--ok); }
@@ -406,78 +471,80 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .rule + .verdict, .rulehead + .rule { margin-top: 6px; }
 .rule .chg { color: var(--ok); }
 .rulesworld { display: grid; gap: 12px; }
-.rw-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; }
-.rw-head h2 { margin: 0; font: 700 20px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--amber); text-shadow: 0 0 14px rgba(255,255,255,.35); text-wrap: balance; }
-.rw-head p { margin: 0; flex: 1 1 380px; min-width: 0; max-width: 85ch; color: var(--text); opacity: .85; font-size: 12.5px; }
+.rw-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 24px; }
+.rw-head h2 { margin: 0; font: 600 22px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--amber); text-shadow: 0 0 14px rgba(255,255,255,.35); text-wrap: balance; }
+.rw-head p { margin: 0; flex: 1 1 380px; min-width: 0; max-width: 85ch; color: var(--text); opacity: .85; font-size: 13px; }
 .principles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.pr { display: grid; gap: 2px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.025); min-width: 0; position: relative; }
+.pr { display: grid; gap: 2px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.025); min-width: 0; position: relative; }
 .pr::before { content: ""; position: absolute; top: -1px; left: 10px; right: 10px; height: 1px; background: var(--brand); opacity: .8; }
-.pr b { font: 600 12.5px var(--display); letter-spacing: .02em; color: #fff; }
+.pr b { font: 600 13px var(--display); letter-spacing: .02em; color: #fff; }
 .pr span { font-size: 11px; color: var(--text); opacity: .85; }
-.pr em { font-style: normal; font-size: 10.5px; color: var(--dim); }
-.prov { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; margin-top: 3px; padding-top: 4px; border-top: 1px dashed var(--line); font: 10px var(--mono); color: var(--dim); min-width: 0; }
+.pr em { font-style: normal; font-size: 11px; color: var(--dim); }
+.prov { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; margin-top: 3px; padding-top: 4px; border-top: 1px dashed var(--line); font: 11px var(--mono); color: var(--dim); min-width: 0; }
 .prov span { min-width: 0; }
-.prov i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 0; border: 1px solid var(--dim); }
+.prov i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: 0; border: 1px solid var(--dim); }
 .prov i.seen { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .prov a { color: var(--dim); text-decoration: none; border-bottom: 1px dotted var(--hair); flex: 0 0 auto; }
 .prov a:hover { color: #fff; border-color: #fff; }
-.rejchip { margin-left: 8px; font: 500 10px var(--mono); letter-spacing: .04em; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; cursor: pointer; vertical-align: 1px; }
-.rejchip.some { color: var(--bad); border-color: rgba(255,77,109,.45); }
-.rejchip[aria-pressed="true"] { background: var(--bad); color: #000; border-color: var(--bad); }
+.rejchip { margin-left: 8px; font: 400 11px var(--mono); letter-spacing: .04em; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; cursor: pointer; vertical-align: 1px; white-space: nowrap; flex: 0 0 auto; align-self: center; }
+.rejchip.some { color: #fff; border-color: rgba(255,255,255,.45); }
+.rejchip[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+.rejchip.some { color: #fff; border-color: rgba(255,255,255,.6); }
 #feed.only-rej .tx:not(.rej) { display: none; }
-.rw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
-.panel .sub { margin: -6px 0 10px; color: var(--dim); font-size: 11px; }
+.rw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.panel .sub { margin: -6px 0 8px; color: var(--dim); font-size: 11px; }
+small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .updates, .offers, .clauses { display: grid; gap: 8px; align-content: start; }
-.contrast { display: grid; gap: 8px; margin: 0 0 10px; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.02); flex: 0 0 auto; }
-.contrast .hd { display: flex; justify-content: space-between; gap: 10px; font: 600 10px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--text); }
+.contrast { display: grid; gap: 8px; margin: 0 0 8px; padding: 8px 12px 12px; border: 0; border-radius: 4px; background: rgba(255,255,255,.03); flex: 0 0 auto; }
+.contrast .hd { display: flex; justify-content: space-between; gap: 8px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--text); }
 .contrast .hd span { color: var(--dim); font-weight: 400; letter-spacing: .1em; }
 .contrast .crow { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 0 8px; align-items: stretch; }
-.contrast .who { display: grid; align-content: center; gap: 2px; font: 600 10px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
-.contrast .who em { font: 10.5px var(--mono); letter-spacing: 0; text-transform: none; font-style: normal; color: var(--dim); }
+.contrast .who { display: grid; align-content: center; gap: 2px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.contrast .who em { font: 11px var(--mono); letter-spacing: 0; text-transform: none; font-style: normal; color: var(--dim); }
 .contrast .crow.tau .who, .contrast .crow.tau .who em { color: var(--ok); }
-.contrast .track { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 3px; min-width: 0; }
-.contrast .seg { display: grid; align-content: center; gap: 2px; padding: 6px 3px; text-align: center; min-width: 0; border: 1px dashed var(--hair); border-radius: 3px; background: rgba(255,255,255,.02); font: 500 11px var(--mono); color: var(--dim); }
-.contrast .seg b { font-weight: 500; color: var(--text); }
-.contrast .seg small { font: 9.5px var(--mono); color: var(--dim); }
-.contrast .seg.fork { border-color: rgba(255,77,109,.55); background: repeating-linear-gradient(135deg, rgba(255,77,109,.10) 0 6px, rgba(255,77,109,.02) 6px 12px); }
-.contrast .seg.fork b { color: var(--bad); }
+.contrast .track { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 2px; min-width: 0; }
+.contrast .seg { display: grid; align-content: center; gap: 2px; padding: 6px 2px; text-align: center; min-width: 0; border: 0; border-radius: 3px; background: rgba(255,255,255,.02); font: 400 11px var(--mono); color: var(--dim); }
+.contrast .seg b { font-weight: 600; color: var(--text); }
+.contrast .seg small { font: 11px var(--mono); color: var(--dim); }
+.contrast .seg.fork { border-color: rgba(255,255,255,.55); background: repeating-linear-gradient(135deg, rgba(255,255,255,.10) 0 6px, rgba(255,255,255,.02) 6px 12px); }
+.contrast .seg.fork b { color: #fff; text-decoration: line-through; text-decoration-color: rgba(255,255,255,.7); text-decoration-thickness: 1.5px; }
 .contrast .crow:not(.tau) .track { opacity: .8; }
 .contrast .crow.tau .track { align-items: stretch; }
 .contrast .tau-seg { grid-column: 1 / 4; display: flex; gap: 3px; padding: 4px; border: 1px solid rgba(57,255,138,.5); border-radius: 3px; background: rgba(57,255,138,.05); box-shadow: inset 0 0 18px rgba(57,255,138,.08); min-width: 0; }
-.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 6px 1px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 500 10px var(--mono); letter-spacing: -.02em; color: var(--text); min-width: 0; }
-.contrast .st small { font: 8.5px var(--mono); letter-spacing: -.01em; color: var(--ok); }
-.contrast .st { color: var(--dim); border-style: dashed; }
+.contrast .st { flex: 1 1 0; display: grid; align-content: center; gap: 1px; text-align: center; padding: 6px 1px; border: 1px solid var(--hair); border-radius: 3px; background: #121214; font: 400 11px var(--mono); letter-spacing: -.02em; color: var(--text); min-width: 0; }
+.contrast .st small { font: 11px var(--mono); letter-spacing: -.01em; color: var(--ok); }
+.contrast .st { color: var(--dim); border-style: solid; border-color: transparent; background: rgba(255,255,255,.05); }
 .contrast .st small { color: var(--dim); }
 .contrast .st.done { color: var(--ok); border-style: solid; border-color: rgba(57,255,138,.55); background: rgba(57,255,138,.06); }
 .contrast .st.done small { color: var(--ok); }
 .contrast .st.on { color: #f0c969; border-style: solid; border-color: #e3b55a; background: repeating-linear-gradient(135deg, rgba(227,181,90,.16) 0 5px, rgba(227,181,90,.04) 5px 10px); box-shadow: 0 0 0 0 rgba(227,181,90,.5); animation: working 1.6s ease-in-out infinite; }
 .contrast .st.on small { color: #f0c969; }
-.contrast .st.fail { color: var(--bad); border-style: solid; border-color: rgba(255,77,109,.6); background: rgba(255,77,109,.08); }
-.contrast .st.fail small { color: var(--bad); }
-.contrast .tau-seg.failed { border-color: rgba(255,77,109,.5); background: rgba(255,77,109,.05); box-shadow: 0 0 0 1px rgba(255,77,109,.25), inset 0 0 20px rgba(255,77,109,.08); }
+.contrast .st.fail { color: #fff; border-style: solid; border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.08); }
+.contrast .st.fail small { color: #fff; }
+.contrast .tau-seg.failed { border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.05); box-shadow: 0 0 0 1px rgba(255,255,255,.25), inset 0 0 20px rgba(255,255,255,.08); }
 .contrast .tau-seg.complete { border-color: var(--ok); background: rgba(57,255,138,.12); box-shadow: 0 0 0 1px rgba(57,255,138,.35), 0 0 28px rgba(57,255,138,.35), inset 0 0 24px rgba(57,255,138,.18); animation: complete .9s ease-out; }
 .contrast .tau-seg.complete .st.done { background: rgba(57,255,138,.18); border-color: var(--ok); color: #fff; }
 .contrast .tau-seg.complete .st.done small { color: var(--ok); }
 @keyframes complete { 0% { box-shadow: 0 0 0 1px var(--ok), 0 0 0 rgba(57,255,138,0), inset 0 0 0 rgba(57,255,138,0); } 20% { box-shadow: 0 0 0 2px var(--ok), 0 0 40px rgba(57,255,138,.6), inset 0 0 30px rgba(57,255,138,.3); } }
 @keyframes working { 50% { box-shadow: 0 0 0 4px rgba(227,181,90,0), 0 0 16px rgba(227,181,90,.55); } }
-.contrast .rest { grid-column: 4 / 6; display: grid; align-content: center; padding: 6px 6px; font: 10px/1.4 var(--mono); color: var(--dim); min-width: 0; }
-.contrast .rest b { color: var(--ok); font-weight: 500; }
-.contrast .cap { font: 10.5px/1.5 var(--mono); color: var(--dim); }
-.contrast .cap b { color: var(--text); font-weight: 500; }
-.empty { color: var(--dim); font-size: 12px; padding: 10px; border: 1px dashed var(--hair); border-radius: 4px; }
-.upd { display: grid; gap: 6px; padding: 9px 10px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--amber); }
+.contrast .rest { grid-column: 4 / 6; display: grid; align-content: center; padding: 6px 6px; font: 11px/1.4 var(--mono); color: var(--dim); min-width: 0; }
+.contrast .rest b { color: var(--ok); font-weight: 600; }
+.contrast .cap { font: 11px/1.5 var(--mono); color: var(--dim); }
+.contrast .cap b { color: var(--text); font-weight: 600; }
+.empty { color: var(--dim); font-size: 12px; padding: 6px 0; }
+.upd { display: grid; gap: 6px; padding: 8px 8px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--amber); }
 .upd.active { border-left-color: var(--ok); }
 .upd.expired { border-left-color: var(--dim); opacity: .6; }
 .u1, .o1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
 .u1 b { font: 600 13px var(--display); letter-spacing: .04em; color: var(--cyan-hi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.diff { font: 11.5px var(--mono); color: var(--amber); overflow-wrap: anywhere; }
+.diff { font: 12px var(--mono); color: var(--amber); overflow-wrap: anywhere; }
 .u3 { font-size: 11px; color: var(--dim); }
-.pill { flex: 0 0 auto; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 3px 9px; border: 1px solid currentColor; border-radius: 999px; color: var(--dim); white-space: nowrap; }
+.pill { flex: 0 0 auto; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 3px 8px; border: 1px solid currentColor; border-radius: 999px; color: var(--dim); white-space: nowrap; }
 .pill.voting, .pill.offered { color: var(--amber); }
 .pill.scheduled { color: var(--ok); }
 .pill.active, .pill.accepted { color: var(--ok); }
-.pill.rejected { color: var(--bad); }
-.agree { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
+.pill.rejected { color: #fff; }
+.agree { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
 .bar { position: relative; height: 6px; background: rgba(255,255,255,.12); }
 .bar span { position: absolute; inset: 0 auto 0 0; background: #fff; box-shadow: 0 0 10px rgba(255,255,255,.35); transition: width .5s; }
 .upd.scheduled .bar span, .upd.active .bar span { background: var(--ok); box-shadow: 0 0 10px rgba(57,255,138,.6); }
@@ -486,17 +553,17 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .pips i { width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid var(--amber); }
 .pips i.on { background: var(--amber); }
 .agree .num { font: 600 12px var(--display); color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.offer { display: grid; gap: 4px; padding: 8px 10px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--ok); font-size: 11.5px; animation: slidein .45s ease-out; }
+.offer { display: grid; gap: 4px; padding: 8px 8px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--ok); font-size: 12px; animation: slidein .45s ease-out; }
 .offer.rejected, .offer.expired { border-left-color: var(--dim); opacity: .65; }
 .o1 span:not(.pill) { color: var(--cyan-hi); }
 .o1 .arrow { color: var(--dim); }
 .o1 .pill { margin-left: auto; }
-.chk { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 10px; color: var(--ok); letter-spacing: .04em; }
+.chk { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 11px; color: var(--ok); letter-spacing: .04em; }
 .chk i { font-style: normal; }
 .chk i.warn { color: var(--amber); }
-.o2 { color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.o2 b { color: var(--text); font-weight: 500; }
-.clause { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; }
+.o2 { color: var(--dim); white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }   /* two lines rather than an ellipsis (27 Oct) */
+.o2 b { color: var(--text); font-weight: 600; }
+.clause { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; }
 .clause i { width: 10px; height: 10px; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: var(--amber); }
 .clause i.k-whitelist { background: var(--ok); }
 .clause i.k-timelock { background: #c4c4cc; }
@@ -505,79 +572,114 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .clause i.k-heightlock { background: #c4c4cc; }
 .clause span:last-child { color: var(--dim); }
 .appr { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line); display: grid; gap: 4px; }
-.ap { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; cursor: help; }
+.ap { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; cursor: help; }
 .ap i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--amber); }
 .ap.open i { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
 .ap.approved i, .ap.signed i { background: var(--ok); border-color: var(--ok); }
-.ap.declined i { border-color: var(--bad); background: var(--bad); }
+.ap.declined i { border-color: #fff; background: #fff; }
 .ap.expired i, .ap.closed i { border-color: var(--dim); }
 .ap span:last-child { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ap.open span:last-child { color: var(--amber); }
-.ap b { color: #fff; font-weight: 500; }
-.rule.composite { font-size: 10.5px; line-height: 1.55; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
+.ap b { color: #fff; font-weight: 600; }
+.rule.composite { font-size: 11px; line-height: 1.55; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
 .tx.rl { border-left-color: var(--ok); }
 .tx.rl .top em { color: var(--ok); }
 .blk.amended { border-color: var(--amber); box-shadow: inset 0 0 22px rgba(255,255,255,.3); }
 .blk.amended .m span:last-child { color: var(--amber); }
 
 /* community banner + feedback */
-.unofficial { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.45); border-radius: 6px; background: rgba(255,255,255,.06); color: var(--amber); font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+.unofficial { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.45); border-radius: 6px; background: rgba(255,255,255,.06); color: var(--amber); font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; }
 .unofficial span { color: var(--text); font: 12px var(--mono); letter-spacing: 0; text-transform: none; flex: 1 1 320px; min-width: 0; }
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); }
+.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 24px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); }
 .fb-fab:hover { filter: brightness(1.15); }
-.community { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
-.fb form { display: grid; gap: 10px; }
-.fb .follow { margin: 10px 0 0; font-size: 12px; color: var(--dim); }
-.about .tgline { margin: 8px 0 12px; padding: 8px 12px; border: 1px solid rgba(57,255,138,.45); border-radius: 6px; font-size: 12.5px; color: var(--text); }
-.about .tgline a.tg { color: var(--ok); font-weight: 600; text-decoration: none; }
-.about .tgline a.tg:hover { text-decoration: underline; }
+.community { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; }
+.fb form { display: grid; gap: 8px; }
+.fb .follow { margin: 8px 0 0; font-size: 12px; color: var(--dim); }
 .fb .follow a { color: var(--ok); text-decoration: none; border-bottom: 1px dotted var(--hair); }
 .fb .follow a:hover { color: #fff; border-bottom-color: var(--ok); }
 .cats { display: flex; flex-wrap: wrap; gap: 6px; border: 0; padding: 0; margin: 0; }
-.cats legend { color: var(--dim); font-size: 11.5px; margin-bottom: 6px; }
+.cats legend { color: var(--dim); font-size: 12px; margin-bottom: 6px; }
 .cats label { cursor: pointer; }
 .cats input { position: absolute; opacity: 0; pointer-events: none; }
 .cats span { display: inline-block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 6px 12px; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); }
 .cats input:checked + span { color: #000; background: #fff; border-color: transparent; }
 .cats input:focus-visible + span { outline: 2px solid var(--amber); outline-offset: 2px; }
-.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 11.5px; }
-.fb textarea, .fb input[type=text] { width: 100%; background: rgba(0,0,0,.4); border: 1px solid var(--hair); border-radius: 6px; color: var(--text); font: 13px/1.5 var(--mono); padding: 8px 10px; resize: vertical; }
+.fb label.f { display: grid; gap: 4px; color: var(--dim); font-size: 12px; }
+.fb textarea, .fb input[type=text] { width: 100%; background: rgba(0,0,0,.4); border: 1px solid var(--hair); border-radius: 6px; color: var(--text); font: 13px/1.5 var(--mono); padding: 8px 8px; resize: vertical; }
 .fb textarea { min-height: 96px; }
-.fb .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.fb .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .fb .status { font-size: 12px; color: var(--dim); flex: 1 1 200px; min-width: 0; }
 .fb .status.ok { color: var(--ok); }
-.fb .status.err { color: var(--bad); }
+.fb .status.err { color: #fff; }
 .btn[disabled], .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
 a.btn { text-decoration: none; display: inline-block; }
 .fblink { color: var(--cyan); font-size: 12px; }
-.changes { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.changes { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.changes li[hidden] { display: none; }
 .changes li { display: grid; gap: 2px; padding-left: 12px; border-left: 2px solid var(--line); font-size: 12px; }
+.changes li summary { cursor: pointer; list-style: none; color: #fff; font-weight: 600; line-height: 1.4; }
+.changes li summary::-webkit-details-marker { display: none; }
+.changes li summary::after { content: " ›"; color: var(--dim); font-weight: 400; }
+.changes li details[open] summary::after { content: " ‹"; }
+.changes li details p { margin: 4px 0 0; color: var(--dim); line-height: 1.5; }
+.changes li .one { color: #fff; font-weight: 600; line-height: 1.4; }
+.community { align-items: start; }
+.more-log { margin-top: 12px; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.more-log:hover { background: #fff; color: #000; }
 .changes li b { font: 600 12px var(--display); letter-spacing: .12em; color: var(--cyan-hi); text-transform: uppercase; }
 .changes li:first-child { border-left-color: var(--cyan); }
 .panel.flash-target { box-shadow: 0 0 0 2px var(--cyan), 0 0 40px rgba(236,236,240,.35); transition: box-shadow .4s; }
 
 /* wide screens: scale, do not stretch. The layout keeps its design size and is scaled to fill the screen, so line
-   lengths stay at 45–75 characters (Refactoring UI), the layout stays recognisable (Krug) and everything stays on one
-   screen (Few). --z is set by script from the viewport: min(width/1800, height/900), between 1 and 1.7. */
+   lengths stay at 45–75 characters, the layout stays recognisable and everything stays on one
+   screen. --z is set by script from the viewport: min(width/1800, height/900), between 1 and 1.7. */
 html.wide body { padding: 0; overflow: hidden; }
-html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 16px 12px; box-sizing: border-box; transform: scale(var(--z)); transform-origin: 0 0; }
+html.wide .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 8px 16px 12px; box-sizing: border-box; transform: scale(var(--z)); transform-origin: 0 0; }
 html.wide .modal .sheet, html.wide .fb-fab, html.wide .tour { zoom: var(--z); }
 html.wide .modal .sheet { max-height: calc(100% / var(--z)); }
 /* wide layout: the chain core becomes the dominant centre element (both rows), the validators column gets both rows too */
-html.wide .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, .9fr) minmax(0, .9fr); grid-template-areas: "eng core feed pol val" "eng core feed off val" "upd core chain chain chain" "upd core chain chain chain"; }
-html.wide .blkdetail .cols { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 26px; }
+html.wide .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, .9fr) minmax(0, .9fr); grid-template-areas: "eng core feed pol val" "eng core feed off val" "upd core chain chain val" "upd core chain chain val"; }
+html.wide .blkdetail .cols { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 24px; }
 html.wide .blk { flex-basis: 160px; }
-html.wide.tall .grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.65fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, .8fr) minmax(0, .8fr); }
+/* 1080p class (wide but not ultra-wide): the transactions stream gives width to the personal-rules column, the top rows give height to the rule-change strip and its stream */
+html.wide.tall .grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.55fr) minmax(0, .85fr) minmax(0, 1.15fr) minmax(0, 1fr); grid-template-rows: minmax(0, .85fr) minmax(0, .85fr) minmax(0, 1.15fr) minmax(0, 1.15fr); }
+html.wide.tall .contrast .seg { padding: 3px 2px; }
+html.wide.tall .a-feed h2 { flex-wrap: wrap; }
+html.wide.tall #feedSub { order: 9; flex: 0 0 100%; margin-left: 0; text-align: left; }
+html.wide.tall .a-feed .rejchip { margin-left: auto; }
+html.wide.tall .a-feed h2 { gap: 6px; }
 html.wide .core canvas { max-height: none; }
-html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z)) calc(11px * var(--z)); max-width: calc(min(520px, 60vw) * var(--z)); }
+/* wide: the validator column has the full grid height; validators and the state panel keep their content whole, the log takes what is left */
+html.wide .stack .gov { flex: 0 0 auto; gap: 4px; }
+html.wide .statep .more { margin-top: 6px; }
+html.wide .gov .seat { margin-top: 4px; }
+html.wide .stack .statep { flex: 1 1 auto; }
+html.wide .stack .logp { flex: 0 0 auto; min-height: 0; }
+html.wide .logp .log { max-height: 60px; }
+/* 1080p class screens (wide but not ultra-wide): the comparison strip gets its label above the track, every word whole */
+html.wide.tall .contrast .crow { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+html.wide.tall .contrast .who { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 8px; }
+html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z)) calc(12px * var(--z)); max-width: calc(min(520px, 60vw) * var(--z)); }
 /* the validators column must shrink with the screen instead of overflowing it */
 .statep .scroll { min-height: 40px; flex: 1 1 auto; overflow: auto; }
+/* below the wide layout the column has one grid row only: its panels take the height their content needs, nothing is clipped, the page scrolls instead */
+@media (max-width: 1899px) {
+  html, body { height: auto; min-height: 100%; }
+  .wrap { height: auto; grid-template-rows: none; }
+  .grid { grid-template-rows: none; }
+  .stack .gov, .stack .statep { flex: none; max-height: none; overflow: visible; }
+  .statep .scroll { overflow: visible; flex: none; max-height: none; }
+  .stack .logp { flex: 1 1 auto; }
+  .stack .logp .log { max-height: none; }
+  .scroll { max-height: 360px; }
+  #blkDetail { max-height: 320px; overflow: auto; }
+}
 /* narrow desktop columns: the row label moves above the strip so every step keeps its whole word */
 @media (max-width: 1800px) and (min-width: 1600px) {
   .contrast .crow { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .contrast .who { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 8px; }
 }
-@media (max-width: 1599px), (max-height: 900px) {
+@media (max-width: 1899px), (max-height: 900px) {
   html, body { height: auto; min-height: 100%; }
   .wrap { height: auto; grid-template-rows: none; }
   .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "eng core" "feed upd" "pol off" "val chain"; }
@@ -585,6 +687,22 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   .core canvas { width: 100%; height: auto; max-width: 380px; }
   .core-panel { order: 0; }
   .thesis { grid-template-columns: minmax(0, 1fr); }
+}
+/* compact laptop step (1280–1899 wide, or any width under 900 tall): four columns and shorter lists, so the page is about 1.6 screens instead of 2.7 */
+@media (min-width: 1280px) and (max-width: 1899px), (min-width: 1280px) and (max-height: 900px) {
+  .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "eng core feed pol" "upd chain off val"; gap: 8px; }
+  .scroll { max-height: 230px; }
+  #blkDetail { max-height: 280px; overflow: auto; }
+  .core canvas { max-width: 300px; }
+  .thesis { grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); }
+  .principles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .rail { padding-bottom: 6px; }
+  /* the comparison strip in a quarter-width column: label above the track, every word whole */
+  .contrast .crow { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .contrast .track { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .contrast .seg b, .contrast .seg small { white-space: normal; overflow: visible; text-overflow: clip; }
+  .contrast .tau-seg { grid-column: 1 / -1; }
+  .contrast .rest { grid-column: 1 / -1; padding: 4px 2px; }
 }
 @media (max-width: 1100px) {
   .rw-grid, .principles { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -600,35 +718,35 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
 }
 @media (max-width: 720px) {
   body { padding-left: 12px; padding-right: 12px; }
-  .wrap { padding-bottom: 72px; gap: 10px; }
+  .wrap { padding-bottom: 72px; gap: 8px; }
   /* header: one compact bar */
   .rail { gap: 8px 8px; padding-bottom: 8px; }
   .brand { flex-direction: column; align-items: flex-start; gap: 2px; flex: 1 1 0; min-width: 0; }
-  .brand h1 { font-size: 20px; white-space: nowrap; }
+  .brand h1 { font-size: 22px; white-space: nowrap; }
   .brand { flex-direction: row; flex-wrap: wrap; align-items: center; }
   .brand span { flex: 1 1 100%; }
-  .brand span { font-size: 9px; letter-spacing: .12em; line-height: 1.3; }
-  .chip.unoff { order: 2; flex: 1 1 100%; font-size: 9px; letter-spacing: .03em; padding: 5px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: center; }
+  .brand span { font-size: 11px; letter-spacing: .12em; line-height: 1.3; }
+  .chip.unoff { order: 2; flex: 1 1 100%; font-size: 11px; letter-spacing: .03em; padding: 4px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: center; }
   .rail { min-width: 0; }
-  .chips { order: 3; flex: 1 1 100%; width: 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 5px; }
+  .chips { order: 3; flex: 1 1 100%; width: 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 4px; }
   .chips::-webkit-scrollbar { display: none; }
-  .chip { font-size: 10px; padding: 4px 10px; letter-spacing: .08em; }
+  .chip { font-size: 11px; padding: 4px 8px; letter-spacing: .08em; }
   .tnav { order: 4; }
-  .seg button, .btn { font-size: 10.5px; padding: 8px 12px; min-height: 36px; }
-  .simbar { font-size: 10px; letter-spacing: .14em; }
+  .seg button, .btn { font-size: 11px; padding: 8px 12px; min-height: 36px; }
+  .simbar { font-size: 11px; letter-spacing: .14em; }
   .simbar span { font-size: 11px; }
   /* reading order on a phone: the core, how a rule changes, what is in force, then detail */
   .grid { grid-template-areas: "core" "upd" "val" "chain" "eng" "feed" "off" "pol"; }
   .scroll { max-height: 300px; }
   .panel h2 small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .upd .u1 b { white-space: normal; }
-  .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: 12px; }
+  .fb-fab { font-size: 11px; padding: 8px 12px; left: auto; right: 12px; }
   .tour { bottom: 60px; }
   .deck, .lower, .community, .rw-grid, .principles, .grid { grid-template-columns: minmax(0, 1fr); }
-  .readout b { font-size: 17px; }
+  .readout b { font-size: 18px; }
   .thesis h2 { font-size: 15px; }
   .principles { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .pr span { font-size: 10.5px; }
+  .pr span { font-size: 11px; }
   .prov { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
   .prov span { overflow: visible; }
   .core canvas { max-width: 300px; }
@@ -667,15 +785,16 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
 <div id="wave" aria-hidden="true"></div>
 <div class="wrap">
   <header class="rail">
-    <div class="brand"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></div>
+    <a class="brand" href="./" data-full="Back to the start: the HUD."><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></a>
     <button class="chip unoff" type="button" data-open="mAbout" data-full="Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Click for the full notice.">Unofficial community project · not affiliated with IDNI</button>
     <div class="chips">
-      <div class="chip" id="chipMode"><span class="dot sim" id="modeDot"></span>Mode<b id="modeTxt">Simulation</b></div>
+      <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <div class="chip" id="chipOnline" data-full="People looking at Tau HUD right now. Counted by the community read relay at node.tauhud.com, which every open HUD talks to; no cookies, no analytics, nobody is identified; a random token in your browser makes sure you count once, even with several tabs or pages open. “—” means the relay has not answered yet."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</div>
-      <div class="chip" id="chipNet">Network<b id="netId">tau-testnet-v2</b></div>
-      <div class="chip" id="chipHeight">Height<b id="chipH">0</b></div>
-      <button class="chip" type="button" id="btnState">Spec revision<b id="chipRev">1</b></button>
-      <div class="chip" id="chipFeeWrap">Base fee<b id="chipFee">10</b></div>
+      <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b></button>
+      <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b></div>
+      <div class="chip v" id="chipHeight"><b id="chipH">#0</b></div>
+      <button class="chip v" type="button" id="btnState"><b id="chipRev">rev 1</b></button>
+      <div class="chip v" id="chipFeeWrap"><b id="chipFee">10 AGRS</b></div>
     </div>
     <nav class="tnav" data-page="hud" aria-label="Pages and tools">
       <div class="seg" role="group" aria-label="Data source" data-slot="source">
@@ -685,8 +804,8 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <button class="pill primary" type="button" id="btnState2" data-slot="state">Chain state</button>
       <button class="tl" type="button" data-slot="updates" data-open="mFeedback">Updates</button>
       <div class="seg" role="group" aria-label="Detail level" data-slot="view">
-        <button id="btnSimple" aria-pressed="false" data-full="Simple view: plain words, fewer numbers, no stream names.">Simple</button>
-        <button id="btnTech" aria-pressed="true" data-full="Technical view: stream names (i10, o5, o9), hashes and rule text everywhere.">Technical</button>
+        <button id="btnSimple" aria-pressed="false" data-full="Simple view: what each thing means, in words. No keys, hashes or stream names; validators are V1, V2…; transactions show their kind and fee; the node log is hidden.">Simple</button>
+        <button id="btnTech" aria-pressed="true" data-full="Technical view: the same plus keys, hashes, heights, proposal ids, stream names (i10, o5, o9), rule text and the node log.">Technical</button>
       </div>
       <div class="gearbody" data-slot="gear">
         <h4>Node</h4>
@@ -697,7 +816,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         </div>
         <h4>Look</h4>
         <div class="row">
-          <button class="btn ghost" type="button" id="btnRain" aria-pressed="true" data-full="Turns the falling glyphs in the background on or off. Purely decorative.">Rain</button>
+          <button class="btn ghost" type="button" id="btnRain" aria-pressed="false" data-full="Turns the falling glyphs in the background on or off. Purely decorative.">Rain</button>
           <button class="btn ghost gold" type="button" id="btnTour" data-full="About one minute, eight short steps: how rules on Tau change by agreement, pointing at the panels where it happens.">Guided tour</button>
           <button class="btn ghost" type="button" data-open="mAbout" data-full="What this page is, who built it, where each claim comes from, and how to support it.">About</button>
         </div>
@@ -735,10 +854,10 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="core">
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
-          <div><b id="rH">0</b><span>Height</span></div>
-          <div><b id="rM">0</b><span>Waiting</span></div>
+          <div id="rHw"><b id="rH">0</b><span>Height<i id="rHs"></i></span></div>
+          <div id="rMw"><b id="rM">0</b><span>Waiting<i id="rMs"></i></span></div>
           <div id="rTw"><b id="rT">—</b><span id="rTs">Block pace</span></div>
-          <div><b id="rR">0</b><span>User rules</span></div>
+          <div id="rRw"><b id="rR">0</b><span>User rules<i id="rRs"></i></span></div>
         </div>
       </div>
     </article>
@@ -779,7 +898,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     </article>
 
     <article class="panel a-chain">
-      <h2>Blockchain <small id="chainSub">click a block to inspect it below · mouse wheel steps through blocks · bright card = a rule change took effect</small><button class="info" type="button" aria-label="What is this?" data-tip="Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
+      <h2>Blockchain <small id="chainSub">following the newest block</small><button class="info" type="button" aria-label="What is this?" data-tip="Click a block to inspect it below. The mouse wheel glides through the chain, down goes back in time, and older blocks keep loading as you go, back to genesis. The detail below follows the block at the right edge; “back to newest” returns to the live end. A bright card marks a rule change that took effect. Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
       <div class="radar" id="radar"></div>
       <div class="ribbon" id="ribbon"></div>
       <div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div>
@@ -823,6 +942,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fbTitle">
     <button class="close" type="button" data-close aria-label="Close">✕</button>
     <section class="community">
+      <p class="tgstrip"><a href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page. Ask <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> for the height, proposals, your transaction or address.</p>
       <article class="panel fb" id="feedback">
         <h2 id="fbTitle">Your feedback <small>shapes the next version</small><button class="info" type="button" aria-label="What is this?" data-tip="Tell us what you would like to see. Ideas with the most agreement get built first, which is rather in the spirit of the thing.">i</button></h2>
         <form id="fbForm" novalidate>
@@ -850,7 +970,31 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
-          <li><b>v17.0 · 27 Oct 2026</b>New header on every page: HUD · Explore · Learn · Playground as menus with one line per page, Chain state as the only button, Telegram channel in green, Updates with a dot when there is something new, View and settings (node address, rain) on the right. The current section is underlined in green. Same bar on all seven pages; on phones it becomes a tab bar at the bottom. Rationale: Krug’s persistent navigation and “you are here”, Tidwell’s progressive disclosure, Refactoring UI’s emphasize by de-emphasizing.</li>
+          <li><b>v17.24 · 28 Oct 2026</b>Header, right side: the word “View” is gone (the hover on the switch says what Simple and Technical do), the language switch is a two-way pill like Simple/Technical with EN and 中文, and a thin line separates the text links from the two switches. Same on every page.</li>
+          <li><b>v17.23 · 28 Oct 2026</b>Header: the logo and the words “Tau HUD” at the top left are one link back to the main page, on every page.</li>
+          <li><b>v17.22 · 28 Oct 2026</b>Simple and Technical view mean more on the HUD: Simple says what each thing means, Technical adds keys, hashes, heights and stream names. Every hover text in the Chain core now comes in both versions, validators read V1, V2 in Simple and show their key in Technical, the block check hides stream names in Simple, transactions show kind and fee without the hash, and the Validators panel follows the view. The thesis and its four points stay as they are.</li>
+          <li><b>v17.21 · 28 Oct 2026</b>Header: the green “new updates” dot now sits at the top right of the word Updates, two pixels from the last letter, on every page. It used to float far to the right on the HUD.</li>
+          <li><b>v17.20 · 28 Oct 2026</b>Chain core shows every agreed rule change, not just one: the agreement ring carries one marker per change that waits for its activation height, clockwise in activation order, the next one bright, and the label says “4 agreed · next #5028”. An open vote still fills the same ring toward quorum. Hover a marker for the proposal, what it changes and when it takes effect.</li>
+          <li><b>v17.19 · 28 Oct 2026</b>Chain core: Height, Waiting and User rules carry a line of context like Block pace does. Height says when the last block came and how old the chain is, Waiting counts pending transactions and how long the oldest has waited, User rules says how many are in force and where the last one was deployed. Hovering each number explains it. In the circle, whatever your pointer rests on lights up green while its text shows, the outer rim answers to a wider band that reaches outside the ticks, and the three grey arcs that used to turn just inside the rim are now one quiet circle, the validator orbit, with its own text.</li>
+          <li><b>v17.18 · 28 Oct 2026</b>The first donation came in, thank you. About now shows who supported Tau HUD, read straight from the Ethereum chain: one quiet line under the donation address with the number of supporters and the latest donations, each sender only as a shortened address linked to its transaction. Every new donation also gets one thank-you post in the Telegram channel. AGRS and ETH only; no banner, no goal bar. tauhud.com/#donate opens About at the donation address.</li>
+          <li><b>v17.17 · 28 Oct 2026</b>Decode effect: the unresolved glyphs now run a gradient from the settled text outward, white next to the resolved letters, through pale green into full phosphor green by the twelfth glyph, then dimmer the further out.</li>
+          <li><b>v17.16 · 27 Oct 2026</b>Blockchain strip scrolls like a film, and About says what a donation pays for: the mouse wheel glides through the blocks instead of stopping at each one, the detail below follows the block at the right edge, and scrolling back keeps loading older blocks from the relay all the way to genesis; “back to newest” returns to the live end. The donation section is now “Keep it running”: what the project costs (mostly time), what a donation pays for, no banner, no pop-up. The thesis that resolves out of glyph noise on load now does it in phosphor green: brightest at the resolve front, dimmer further out, white once settled, and the paragraph no longer shifts while it resolves.</li>
+          <li><b>v17.15 · 27 Oct 2026</b>Design pass, part two: one type scale and one spacing scale on the HUD, this log shows one line per version with the details folded away, and a search field in the header (⌘K or Ctrl+K) sends a block number, hash or address to the Explorer. Design pass on all pages: Feedback in the footer, compact phone header, offline states, one type scale, readable line length; Telegram posts lead with why it matters.</li>
+          <li><b>v17.14 · 27 Oct 2026</b>Press kit under Learn: a ready paragraph, the facts, the 60 second video in three formats, the logo for dark and light, screenshots and a ZIP of everything. Design pass, part one: red is reserved for offline and down, refusals and the fork step are white with ✕ or a strike; fewer boxes inside Rule changes; panel subtitles in sentence case, instructions moved into the (i) hover; Rules in force now shows revision and fee large and the rest as one sentence; header chips show the value only, the name is in the hover, and a new Consensus chip says who seals blocks; validator keys in the chain state are short with a copy button; the background rain is off unless you switch it on.</li>
+          <li><b>v17.13 · 27 Oct 2026</b>The Live node light can no longer stick on green: the status request times out after 8 seconds, a minute without an answer turns it red, and the relay’s health score colours it (degraded amber, down red). Same on every subpage.</li>
+          <li><b>v17.12 · 27 Oct 2026</b>The Telegram bot answers questions: write height, proposals, a transaction hash or an address to @tauhud_alerts_bot. Mentioned in the Telegram chip, About and here.</li>
+          <li><b>v17.11 · 27 Oct 2026</b>Validators, Rules in force now and Node log fit their column in Technical view: on wide screens the column has the full height, laptops show every panel whole and scroll. The Simple/Technical switch appears only on pages where it changes something.</li>
+          <li><b>v17.10 · 27 Oct 2026</b>Proposal wording matches the Proposals page: “waiting for votes” and “agreed, takes effect soon” in the Chain state detail and validator history, instead of “collecting agreement” and “scheduled”.</li>
+          <li><b>v17.9 · 27 Oct 2026</b>Rule sharing lines wrap instead of ending in “…”; laptops (1280–1599 px wide or under 900 px tall) get a compact four-column step so the page is about 1.6 screens instead of 2.7; no type below 10 px on desktop, and ultra-wide screens scale the HUD a little more.</li>
+          <li><b>v17.8 · 27 Oct 2026</b>Guided tour: each explanation now sits next to the panel it describes, with a pointer at it (below the panel, else beside or above it, always inside the window). On phones it stays a sheet at the bottom.</li>
+          <li><b>v17.7 · 27 Oct 2026</b>The light on “Live node” is a traffic light on every page: green when the community node is synced, amber when it is online but not synced or still catching up, red when it is offline. Hover names the state.</li>
+          <li><b>v17.6 · 27 Oct 2026</b>About breathes: a solid background, 32px around, a clear gap between the notice strip and the columns, wider gutters, consistent spacing under every heading. Still no scrolling on wide screens.</li>
+          <li><b>v17.5 · 27 Oct 2026</b>About fits the screen: on wide screens its sections sit in three columns, so the whole text and the donation address are visible without scrolling. The Telegram offer says what you get: every rule change and chain restart as it happens, a weekly recap picture, HUD updates; the header pill reads “Telegram alerts”, and the Updates panel carries the same line.</li>
+          <li><b>v17.4 · 27 Oct 2026</b>The online counter counts people again, not open tabs: the 20-second status poll was overwriting the relay’s per-person count with its socket count.</li>
+          <li><b>v17.3 · 27 Oct 2026</b>The green “you are here” line under a section name is now exactly as wide as the word and sits right under it (it used to float below the whole button, caret included).</li>
+          <li><b>v17.2 · 27 Oct 2026</b>Every page now carries the whole HUD header: brand row with the page title, the status chips (mode, online, network, height, spec revision, base fee, read from the community relay), Live node / Simulation, View and the gear. Only the title and the active section change when you move between pages.</li>
+          <li><b>v17.1 · 27 Oct 2026</b>Live mode links into the Explorer page: the hash in a block’s identity opens the block there, the id on a transaction card opens the transaction. The Nodes entry in the Explore menu is marked “soon” until that page is online (it led to a 404).</li>
+          <li><b>v17.0 · 27 Oct 2026</b>New header on every page: HUD · Explore · Learn · Playground as menus with one line per page, Chain state as the only button, Telegram channel in green, Updates with a dot when there is something new, View and settings (node address, rain) on the right. The current section is underlined in green. Same bar on all seven pages; on phones it becomes a tab bar at the bottom. The idea: the same navigation everywhere with a clear “you are here”, details only when you ask for them, and emphasis by making everything else quieter.</li>
           <li><b>v16.8 · 27 Oct 2026</b>Validators panel: the three consensus modes (fixed list › list in Tau logic › stake) are shown as a strip at the top, the active one lit in green, a mode the chain ran in before a switch dashed; hover explains each.</li>
           <li><b>v16.7 · 27 Oct 2026</b>The “online” count now counts people, not open connections: a random token in your browser (no cookies, no analytics) tells the relay that your tabs and the subpages are one visitor. Takes effect once the relay is updated.</li>
           <li><b>v16.6 · 27 Oct 2026</b>Chronicle: a new page at <a href="chronicle/">/chronicle/</a> tells the project’s history and milestones; linked from the header.</li>
@@ -896,7 +1040,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
           <li><b>v9.1 · 26 Oct 2026</b>Simple/Technical switch moved to the right side of the header, under the status chips.</li>
           <li><b>v9 · 26 Oct 2026</b>Calmer: blocks every ~8 s. A block’s details now open inline under the block cards instead of a pop-up (the newest block is shown until you pick one). New always-visible panel “Rules in force now” on the right; the node log moved below it and only shows in the Technical view. Block-card footer no longer wraps.</li>
           <li><b>v8 · 26 Oct 2026</b>From a simulated study with 100 reader personas: simulation is now unmissable (banner, watermark in the core, SIM tag on every block card), a Simple/Technical switch with plain-language stream labels, a 5-step tour that follows one rule from proposal to active, clickable blocks with a full detail view (rules in force and agreed at that block), a “Chain state” view of every rule in force right now, no more clipped values, a compact core on laptops, live-node fields only in Live mode with a checklist on failure, a “What is Tau?” link, symbols per transaction type, AGRS amounts, and a rain switch.</li>
-          <li><b>v7 · 26 Oct 2026</b>Wording and hierarchy pass guided by the community’s design library (Made to Stick, Information Dashboard Design, Refactoring UI, Don’t Make Me Think, Albers): one core sentence up top, plain-language panel titles, every number with its context (“7 of 9 needed”), refusals marked ✕ as well as red, stream codes moved into the hover notes, quieter glyph rain.</li>
+          <li><b>v7 · 26 Oct 2026</b>Wording and hierarchy pass: one core sentence up top, plain-language panel titles, every number with its context (“7 of 9 needed”), refusals marked ✕ as well as red, stream codes moved into the hover notes, quieter glyph rain.</li>
           <li><b>v6 · 26 Oct 2026</b>Monochrome like the current tau.net: black, white, greys and hairlines, with phosphor green as the only accent, where data is live or true.</li>
           <li><b>v5 · 26 Oct 2026</b>Rebrand: Tau’s near-black and blue-to-violet gradient for structure, phosphor green reserved for data and truth, champagne for agreement. Matrix glyph rain behind the deck, the thesis decodes on load, hairline glass panels, Sora + JetBrains Mono. AGRS donation address under About.</li>
           <li><b>v4 · 26 Oct 2026</b>Everything on one screen: a 4×2 command grid with a thesis line for newcomers, feedback and about moved into pop-ups.</li>
@@ -928,25 +1072,48 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   </div>
 </div>
 <div class="modal" id="mAbout" hidden>
-  <div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="abTitle">
+  <div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="abTitle">
     <button class="close" type="button" data-close aria-label="Close">✕</button>
     <article class="panel about">
       <h2 id="abTitle"><svg class="mark big" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>About this page</h2>
       <div class="unofficial" role="note">Unofficial community project<span>Built by Tau community members. Not affiliated with, endorsed by or maintained by IDNI or the Tau team. Data in simulation mode is generated in your browser and is not the real chain.</span></div>
-      <p class="tgline"><a class="tg" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Telegram: t.me/tauHUDcom</a> posts every new proposal, agreement and activation on the testnet, plus HUD updates. The quickest way to follow the chain without opening this page.</p>
+      <div class="about-cols">
+      <section class="tgbox">
+        <h3>Follow the chain on Telegram</h3>
+        <ul>
+          <li><b>Every rule change as it happens:</b> new proposal, agreement, activation, dropped proposal.</li>
+          <li><b>Chain restarts</b> of the testnet, the moment our node sees one.</li>
+          <li><b>A weekly recap picture</b> and every HUD update, so you never need to open this page to stay current.</li>
+          <li><b>Ask the bot:</b> height, proposals, your transaction or address. Write to <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot</a>.</li>
+        </ul>
+        <a class="tgjoin" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Join @tauHUDcom ↗</a>
+      </section>
+      <section>
       <h3>Experimental · no claim of accuracy</h3>
       <p>Tau HUD is an experimental community approach to visualising the Tau testnet. We do not claim that the information shown is accurate, complete or current, in simulation or live mode. It is not official information, not financial advice and not technical advice. Check anything that matters against the <a href="https://github.com/IDNI/tau-testnet" target="_blank" rel="noopener">tau-testnet repository</a> and your own node.</p>
+      </section>
+      <section>
       <h3>Where each claim comes from</h3>
       <p>Each principle card at the top carries its source. <span class="prov" style="display:inline-flex;border:0;padding:0;margin:0"><span><i class="seen"></i>seen on the testnet</span></span> means we read it from the community node; <span class="prov" style="display:inline-flex;border:0;padding:0;margin:0"><span><i class="spec"></i>from the protocol</span></span> means it is documented in <a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md" target="_blank" rel="noopener">tau-testnet</a> (README and code, pinned to commit 539d1e2) but we have not watched it happen on the real chain yet. The link on each card goes to the line that backs it. Refusals matter as much as the happy path: the simulation deliberately produces proposals that do not compile, rule offers that collide, and proposals that miss quorum and expire (<a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md#L503" target="_blank" rel="noopener">README §Governance ↗</a>); the “n refused” chip on Transactions filters to what Tau refused.</p>
+      </section>
+      <section>
       <h3>Simulation vs. live node</h3>
       <p>The simulation follows the documented protocol of <a href="https://github.com/IDNI/tau-testnet" target="_blank" rel="noopener">tau-testnet</a>: validators vote on rule changes, accounts write and share their own Tau rules, every block is judged by Tau. It is a model, not the real chain.</p>
       <p>Live mode speaks the node's raw WebSocket protocol (<code>getblocks</code>, <code>getmempool</code>, <code>getgovernance</code>). The default address <code>wss://node.tauhud.com</code> is a read-only community relay in front of a Tau testnet node run for this page (its <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra" target="_blank" rel="noopener">setup is public</a>). To read your own node instead, run it with this page's origin in <code>TAU_WS_ALLOWED_ORIGINS</code> and put its address in the field.</p>
-      <h3 id="donate">Support this project</h3>
-      <p>The HUD is built and hosted by community members. If this is useful to you, AGRS or ETH donations are welcome at this address:</p>
+      </section>
+      <section>
+      <h3 id="donate">Keep it running</h3>
+      <p>Tau HUD is an independent community project, built and maintained by one person in their free time. The server is cheap; the real cost is the time it takes to keep the HUD, the alerts and the bot in step with the testnet. If it is useful to you, a donation of any size helps keep it online and independent. Not affiliated with IDNI.</p>
+      <p class="small" style="margin:0 0 6px">AGRS or ETH, one address for both · What it helps pay for: time · server · domain</p>
       <div class="donate"><svg class="qr" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges" role="img" aria-label="QR code of the donation address"><rect width="33" height="33" fill="#fff"/><path d="M2 2h7v1h-7zM11 2h2v1h-2zM16 2h1v1h-1zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM14 3h1v1h-1zM17 3h1v1h-1zM19 3h2v1h-2zM22 3h1v1h-1zM24 3h1v1h-1zM30 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM13 4h1v1h-1zM17 4h2v1h-2zM20 4h1v1h-1zM24 4h1v1h-1zM26 4h3v1h-3zM30 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM14 5h2v1h-2zM17 5h4v1h-4zM24 5h1v1h-1zM26 5h3v1h-3zM30 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM16 6h1v1h-1zM21 6h2v1h-2zM24 6h1v1h-1zM26 6h3v1h-3zM30 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h2v1h-2zM17 7h1v1h-1zM22 7h1v1h-1zM24 7h1v1h-1zM30 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h7v1h-7zM10 9h1v1h-1zM14 9h1v1h-1zM17 9h1v1h-1zM2 10h1v1h-1zM4 10h5v1h-5zM12 10h1v1h-1zM15 10h1v1h-1zM17 10h4v1h-4zM22 10h1v1h-1zM24 10h5v1h-5zM2 11h4v1h-4zM11 11h3v1h-3zM16 11h1v1h-1zM21 11h1v1h-1zM24 11h1v1h-1zM26 11h1v1h-1zM30 11h1v1h-1zM2 12h4v1h-4zM7 12h2v1h-2zM12 12h2v1h-2zM17 12h2v1h-2zM22 12h8v1h-8zM2 13h1v1h-1zM6 13h1v1h-1zM9 13h1v1h-1zM11 13h2v1h-2zM22 13h2v1h-2zM26 13h2v1h-2zM29 13h2v1h-2zM3 14h1v1h-1zM8 14h3v1h-3zM12 14h2v1h-2zM15 14h1v1h-1zM17 14h4v1h-4zM22 14h1v1h-1zM26 14h1v1h-1zM28 14h2v1h-2zM2 15h1v1h-1zM4 15h1v1h-1zM6 15h1v1h-1zM13 15h1v1h-1zM16 15h1v1h-1zM19 15h1v1h-1zM21 15h1v1h-1zM23 15h5v1h-5zM30 15h1v1h-1zM2 16h4v1h-4zM7 16h2v1h-2zM13 16h3v1h-3zM17 16h2v1h-2zM20 16h1v1h-1zM22 16h1v1h-1zM25 16h1v1h-1zM28 16h2v1h-2zM3 17h1v1h-1zM5 17h1v1h-1zM7 17h1v1h-1zM9 17h2v1h-2zM13 17h2v1h-2zM16 17h2v1h-2zM20 17h2v1h-2zM23 17h1v1h-1zM26 17h2v1h-2zM29 17h1v1h-1zM2 18h1v1h-1zM4 18h1v1h-1zM6 18h4v1h-4zM11 18h1v1h-1zM13 18h4v1h-4zM18 18h2v1h-2zM23 18h1v1h-1zM25 18h1v1h-1zM29 18h2v1h-2zM2 19h3v1h-3zM9 19h2v1h-2zM12 19h2v1h-2zM20 19h3v1h-3zM24 19h1v1h-1zM26 19h1v1h-1zM30 19h1v1h-1zM2 20h1v1h-1zM4 20h1v1h-1zM7 20h3v1h-3zM12 20h3v1h-3zM16 20h2v1h-2zM19 20h2v1h-2zM22 20h1v1h-1zM25 20h1v1h-1zM28 20h1v1h-1zM2 21h1v1h-1zM4 21h4v1h-4zM9 21h1v1h-1zM11 21h1v1h-1zM16 21h1v1h-1zM20 21h1v1h-1zM22 21h1v1h-1zM24 21h1v1h-1zM26 21h1v1h-1zM29 21h1v1h-1zM2 22h1v1h-1zM4 22h2v1h-2zM8 22h6v1h-6zM15 22h3v1h-3zM19 22h2v1h-2zM22 22h8v1h-8zM10 23h4v1h-4zM18 23h2v1h-2zM21 23h2v1h-2zM26 23h2v1h-2zM30 23h1v1h-1zM2 24h7v1h-7zM11 24h5v1h-5zM17 24h1v1h-1zM20 24h3v1h-3zM24 24h1v1h-1zM26 24h4v1h-4zM2 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM17 25h2v1h-2zM20 25h1v1h-1zM22 25h1v1h-1zM26 25h1v1h-1zM29 25h2v1h-2zM2 26h1v1h-1zM4 26h3v1h-3zM8 26h1v1h-1zM10 26h2v1h-2zM13 26h1v1h-1zM17 26h4v1h-4zM22 26h9v1h-9zM2 27h1v1h-1zM4 27h3v1h-3zM8 27h1v1h-1zM10 27h3v1h-3zM14 27h1v1h-1zM22 27h2v1h-2zM25 27h1v1h-1zM27 27h1v1h-1zM29 27h2v1h-2zM2 28h1v1h-1zM4 28h3v1h-3zM8 28h1v1h-1zM10 28h1v1h-1zM15 28h4v1h-4zM21 28h1v1h-1zM24 28h1v1h-1zM26 28h1v1h-1zM28 28h2v1h-2zM2 29h1v1h-1zM8 29h1v1h-1zM11 29h2v1h-2zM17 29h2v1h-2zM22 29h2v1h-2zM25 29h3v1h-3zM29 29h1v1h-1zM2 30h7v1h-7zM10 30h2v1h-2zM13 30h2v1h-2zM17 30h1v1h-1zM19 30h1v1h-1zM21 30h1v1h-1zM23 30h1v1h-1zM26 30h1v1h-1z" fill="#000"/></svg><div class="addr"><code id="agrsAddr">0x23fB76A33A8d70f5c51aB558b85e4b93040003eb</code><button class="btn" type="button" id="copyAddr">Copy</button></div></div>
+      <p class="small thanks" id="donorLine" hidden></p>
       <p class="small" id="copyMsg" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
+      </section>
+      <section>
       <h3>Background reading</h3>
       <p><a href="https://github.com/IDNI/tau-lang" target="_blank" rel="noopener">Tau Language</a> (specifications, not programs) · Ohad Asor's <a href="https://arxiv.org/abs/2407.06214" target="_blank" rel="noopener">Guarded Successor temporal logic</a> and <a href="https://tau.net/assets/files/Theories-and-Applications-of-Boolean-Algebras-0.29-1.pdf" target="_blank" rel="noopener">Theories and Applications of Boolean Algebras</a> · the <a href="https://tau.net/assets/files/Whitepaper.pdf" target="_blank" rel="noopener">Tau whitepaper</a>.</p>
+      </section>
+      </div>
     </article>
   </div>
 </div>
@@ -1031,14 +1198,30 @@ function tickPace() {
   if (i.textContent !== txt) i.textContent = txt;
   updateTiming(pace, paused ? null : Math.max(0, left));
 }
-setInterval(() => { if (S.mode === "live" && !document.querySelector(".a-core:hover")) tickPace(); }, 1000);
+/* the sub-lines under Height, Waiting and User rules: the same treatment as Block pace, each with its own facts */
+const fmtAge = s => s < 90 ? Math.round(s) + " s" : s < 5400 ? Math.round(s / 60) + " min" : s < 172800 ? (s / 3600).toFixed(1) + " h" : (s / 86400).toFixed(1) + " d";
+function tickSubs() {
+  const now = Date.now() / 1000, last = S.blocks[S.blocks.length - 1];
+  const start = S.mode === "live" ? S.chainStart : (S.byHeight.get(0) || {}).ts;
+  const put = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };
+  put("rHs", !last ? "" : `last ${last.ts ? fmtAgo(now - last.ts) : "just now"}` + (start && now > start ? ` · chain ${fmtAge(now - start)}` : ""));
+  const seen = S.memSeen, ids = new Set(S.mempool.map(t => t.id));
+  S.mempool.forEach(t => { if (!seen.has(t.id)) seen.set(t.id, now); }); [...seen.keys()].forEach(k => { if (!ids.has(k)) seen.delete(k); });
+  const oldest = seen.size ? now - Math.min(...seen.values()) : 0;
+  put("rMs", !S.mempool.length ? "nothing pending" : `${S.mempool.length} pending · oldest ${fmtAge(oldest)}`);
+  put("rRs", !S.clauses.size ? "none deployed yet" : `${S.clauses.size} in force` + (S.rulesLastBlock != null ? ` · last at #${fmt(S.rulesLastBlock)}` : ""));
+}
+setInterval(() => { if (!document.querySelector(".a-core:hover")) { if (S.mode === "live") tickPace(); tickSubs(); } }, 1000);
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* Simple view says what a thing means; Technical view adds keys, hashes, heights, stream names and raw values */
+const TECH = () => document.body.dataset.view !== "simple", vt = (simple, tech) => TECH() ? tech : simple;
+const viewText = t => TECH() ? t : String(t).replace(/\s*\((?:[io]\d+(?:\s*[,=]\s*[^)]*)?)\)/g, "");
 
 /* ---------- shared view state ---------- */
 const S = {
   mode: "sim", height: 0, txTotal: 0, mempool: [], blocks: [], validators: [], proposerIdx: 0,
   lastBlockAt: performance.now(), blockTimes: [], fee: 10, quorum: "supermajority", ruleBudget: 8,
-  pulse: 0, amend: 0, specRev: 1, byHeight: new Map(),
+  pulse: 0, amend: 0, specRev: 1, byHeight: new Map(), chainStart: null, memSeen: new Map(), rulesLastBlock: null,
   updates: [],          // governance: {id,title,diff,votes:Set,proposer,activateAt,status,kind,value}
   offers: [],           // rule sharing: {id,from,to,policy,status,expire}
   clauses: new Map(),   // acceptor -> policy  (the per-user o5 specification)
@@ -1160,10 +1343,13 @@ async function runVerdict(b, live) {
 /* ---------- people online: asked from the community relay (node.tauhud.com/status), no analytics ---------- */
 const PRESENCE = { url: "https://node.tauhud.com/status", n: null, timer: null };
 function setRelay(up) {
+  if (PRESENCE.health === "down") up = false;            // the relay's health score (PR #71) wins when it says the testnet is down
+  const degraded = up && PRESENCE.health === "degraded";
   PRESENCE.up = up;
   const synced = PRESENCE.synced !== false;
-  $("liveDot").className = "dot " + (up ? (synced ? "" : "behind") : "off");
-  $("btnLive").dataset.full = !up ? "The community relay is not answering right now." : synced ? "The community relay is online and follows the real testnet chain." : "The community relay is online, but its node is not synced with the real chain yet.";
+  const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
+  $("liveDot").className = "dot " + (up ? (synced && !catching && !degraded ? "" : "behind") : "off");
+  $("btnLive").dataset.full = !up ? (PRESENCE.stale ? "Red: no answer from the relay for over a minute." : PRESENCE.health === "down" ? `Red: the testnet is down (${PRESENCE.healthLabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : degraded ? `Amber: ${PRESENCE.healthLabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.` : "Green: the community node is online and follows the real testnet chain.";
   if (S.mode === "live" && LIVE.status) setMode("live", LIVE.status);
 }
 function setOnline(n) {
@@ -1173,11 +1359,14 @@ function setOnline(n) {
   $("chipOnline").classList.toggle("live", n != null && n > 0);
 }
 async function pollOnline() {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);   // a stalled request must not freeze the light at its last colour
   try {
-    const r = await fetch(PRESENCE.url, { cache: "no-store" });
+    const r = await fetch(PRESENCE.url, { cache: "no-store", signal: ctl.signal });
     if (!r.ok) throw new Error(r.status);
     const j = await r.json();
-    const n = Number(j.clients ?? j.online ?? j.presence);
+    PRESENCE.stale = false;
+    PRESENCE.health = j.health && typeof j.health.state === "string" ? j.health.state : null; PRESENCE.healthLabel = j.health && j.health.label ? String(j.health.label) : "";
+    const n = Number(j.online ?? j.clients ?? j.presence);   // online = people (one per viewer token); clients = sockets
     setOnline(Number.isFinite(n) ? n : null);
     PRESENCE.liveDefault = j.live_default === true;
     if (typeof j.open_governance_admission === "boolean") S.openVoting = j.open_governance_admission;
@@ -1188,8 +1377,32 @@ async function pollOnline() {
     setRelay(!!j.upstream_connected && Number(j.height) > 0);
     if (PRESENCE.up) autoLive();
   } catch { setOnline(null); setRelay(false); }
+  finally { clearTimeout(t); PRESENCE.at = Date.now(); }
 }
-function presenceFromMessage(d) { const n = Number(d && (d.clients ?? d.online ?? d.presence)); if (Number.isFinite(n)) setOnline(n); }
+/* watchdog: a visible tab that has heard nothing from the relay for over a minute shows red, whatever the last colour was */
+setInterval(() => { if (!document.hidden && PRESENCE.at && Date.now() - PRESENCE.at > 70000 && !PRESENCE.stale) { PRESENCE.stale = true; setRelay(false); } }, 5000);
+function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?? d.presence)); if (Number.isFinite(n)) setOnline(n); }
+/* update log: the first clause of every entry is the headline, the rest folds away behind it */
+addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".changes li").forEach(li => {
+    const b = li.querySelector("b"); if (!b) return;
+    const text = li.textContent.replace(b.textContent, "").trim();
+    let cut = text.search(/[:.;]\s/); if (cut < 0 || cut > 90) { const c2 = text.slice(0, 90).search(/,\s|\s\(/); cut = c2 > 20 ? c2 : cut < 0 ? -1 : cut; }
+    if (cut > 90 || (cut < 0 && text.length > 90)) { const sp = text.slice(0, 84).lastIndexOf(" "); cut = sp > 20 ? sp : cut; }
+    const head = cut > 0 ? text.slice(0, cut).replace(/[:.;,]$/, "") + (/[:.;,]\s/.test(text.slice(cut, cut + 2)) ? "" : " …") : text, rest = cut > 0 ? text.slice(cut).replace(/^[:.;,]?\s*/, "") : "";
+    li.innerHTML = ""; li.append(b);
+    if (rest) { const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head; pr.textContent = rest; d.append(sm, pr); li.append(d); }
+    else { const o = document.createElement("div"); o.className = "one"; o.textContent = head; li.append(o); }
+  });
+  /* the newest twelve versions are enough for a visit; the rest unfold on request */
+  const all = [...document.querySelectorAll(".changes li")], older = all.slice(12);
+  if (older.length) {
+    older.forEach(li => { li.hidden = true; });
+    const more = document.createElement("button"); more.type = "button"; more.className = "more-log"; more.textContent = `Show ${older.length} older versions`;
+    more.onclick = () => { const show = older[0].hidden; older.forEach(li => { li.hidden = !show; }); more.textContent = show ? "Show the newest twelve only" : `Show ${older.length} older versions`; };
+    all[0].parentElement.after(more);
+  }
+});
 addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); presenceOpen(); });
 /* a quiet presence socket to the relay: one “hello”, then only its presence pushes, so visitors in simulation count too */
 const PSOCK = { ws: null, wait: 5000, timer: null, url: "wss://node.tauhud.com" };
@@ -1349,7 +1562,8 @@ function txCard(t) {
   const body = t.transfers && t.transfers.length
     ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
     : (t.note || `sender ${acct(t.sender)}`);
-  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span>${short(t.id)} · fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
+  const txid = S.mode === "live" && t.id && !t.rejected ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id);
+  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="txid">${txid} · </span>fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   if (t.rejected) { S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
@@ -1361,22 +1575,58 @@ function markMined(ids) { ids.forEach(id => { const k = "tx_" + id.slice(0, 16);
 
 /* ---------- chain ribbon ---------- */
 const ribbonHold = [];
-addEventListener("DOMContentLoaded", () => $("ribbon").addEventListener("mouseleave", () => { const r = $("ribbon"); if (!ribbonHold.length) return; ribbonHold.length = 0; while (r.children.length > 18) r.firstChild.remove(); if (selectedBlock == null) r.scrollLeft = r.scrollWidth; }));
-function addBlockCard(b) {
-  const r = $("ribbon"), d = document.createElement("div");
-  d.className = "blk" + (b.amended ? " amended" : "");
+/* RIB.back: the visitor scrolled away from the newest end; then nothing trims, nothing auto-scrolls, and older blocks load as the left edge comes near */
+const RIB = { back: false, target: null, raf: 0, loading: false, cap: 2000, page: 100 };
+function ribbonAtEnd(r) { return r.scrollWidth - r.clientWidth - r.scrollLeft < 8; }
+function ribbonReset() { const r = $("ribbon"); RIB.back = false; RIB.target = null; RIB.loading = false; ribbonHold.length = 0; while (r.children.length > 18) r.firstChild.remove(); r.scrollLeft = r.scrollWidth; }
+addEventListener("DOMContentLoaded", () => $("ribbon").addEventListener("mouseleave", () => { const r = $("ribbon"); if (!ribbonHold.length) return; ribbonHold.length = 0; if (RIB.back) return; while (r.children.length > 18) r.firstChild.remove(); if (selectedBlock == null) r.scrollLeft = r.scrollWidth; }));
+function blockCard(b, old) {
+  const d = document.createElement("div");
+  d.className = "blk" + (b.amended ? " amended" : "") + (old ? " old" : "");
   d.dataset.n = b.n; d.dataset.ex = exKey(() => explainBlock(b)); d.onclick = () => showBlock(b); d.title = "Click to inspect"; d.tabIndex = 0; d.onkeydown = e => { if (e.key === "Enter") showBlock(b); };
   const rules = b.txs.filter(t => /rule/.test(t.type)).length;
   d.innerHTML = `<div class="n">#${b.n}</div><span class="simtag">SIM</span><div class="h hx">hash ${short(b.hash)}</div><div class="h hx">state ${short(b.state)}</div><div class="h">by ${acct(b.proposer)}</div><div class="m"><span>${b.txs.length} tx${rules ? ` · ${rules} rule` : ""}</span><span>${b.amended ? "rev " + b.amended + " ✓" : "o6 ✓"}</span></div>`;
+  return d;
+}
+function addBlockCard(b) {
+  const r = $("ribbon"), d = blockCard(b);
   // a new block shows the instant it is sealed, even while the pointer rests on the strip; only the auto-scroll and the trim wait
   r.appendChild(d);
+  if (RIB.back) return;
   if (r.matches(":hover")) { ribbonHold.push(d); return; }
   while (r.children.length > 18) r.firstChild.remove();
   r.scrollLeft = r.scrollWidth;
 }
+/* older blocks go in front of the strip without moving what the visitor is looking at */
+function ribbonPrepend(blocks) {
+  const r = $("ribbon"), have = new Set([...r.children].map(c => Number(c.dataset.n))), frag = document.createDocumentFragment();
+  blocks.filter(b => !have.has(b.n)).sort((a, b) => a.n - b.n).forEach(b => frag.append(blockCard(b, true)));
+  if (!frag.childElementCount) return;
+  const before = r.scrollWidth; r.prepend(frag);
+  const grew = r.scrollWidth - before; r.scrollLeft += grew; if (RIB.target != null) RIB.target += grew;
+}
+function ribbonMaybeLoad() {
+  const r = $("ribbon"); if (RIB.loading || !RIB.back || r.scrollLeft > r.clientWidth * 1.5) return;
+  const first = r.firstElementChild, oldest = first ? Number(first.dataset.n) : 0;
+  if (!(oldest > 0) || r.children.length >= RIB.cap) return;
+  const from = Math.max(0, oldest - RIB.page), count = oldest - from;
+  if (S.mode === "live") { RIB.loading = true; liveSend(`getblockrange ${from} ${count}`); setTimeout(() => { RIB.loading = false; }, 8000); }
+  else { const got = []; for (let n = from; n < oldest; n++) { const b = S.byHeight.get(n); if (b) got.push(b); } ribbonPrepend(got); }
+}
+/* the block at the reading edge (the right end of the strip, where the newest block sits) is the one the detail below shows */
+function ribbonFollow() {
+  const r = $("ribbon"); if (!r.children.length) return;
+  RIB.back = !ribbonAtEnd(r);
+  if (!RIB.back) { const last = S.blocks[S.blocks.length - 1]; if (last && (selectedBlock !== null || shownBlock !== last)) { selectedBlock = null; showBlock(last, false); } return; }
+  const edge = r.getBoundingClientRect().right - r.lastElementChild.getBoundingClientRect().width / 2 - 2;
+  let pick = null; for (const c of r.children) { const k = c.getBoundingClientRect(); if (k.left <= edge) pick = c; else break; }
+  if (pick) { const n = Number(pick.dataset.n), b = S.byHeight.get(n); if (b && selectedBlock !== n) showBlock(b, true); }
+  ribbonMaybeLoad();
+}
 
 /* ---------- user-made rules panels ---------- */
-const STATUS_TXT = { voting: "collecting agreement", scheduled: "agreed · scheduled", active: "active", expired: "expired" };
+const STATUS_TXT = { voting: "waiting for votes", scheduled: "agreed · takes effect soon", active: "active", expired: "expired" };
+function openTxt(open) { const v = open.filter(u => u.status === "voting").length, s = open.length - v; return !open.length ? "0" : [v ? `${v} waiting for votes` : "", s ? `${s} agreed, takes effect soon` : ""].filter(Boolean).join(" · "); }
 function renderUpdates() {
   if (hold("updates", renderUpdates)) return;
   const thr = threshold(), el = $("updates");
@@ -1476,7 +1726,7 @@ function renderRuleWorld() { renderUpdates(); renderOffers(); renderClauses(); }
 function renderGov(extra = {}) {
   if (hold("vals", () => renderGov(extra))) return;
   $("vals").innerHTML = S.validators.map((v, i) =>
-    `<div class="val ${i === S.proposerIdx ? "on" : ""}" data-ex="${exKey(() => explainValidator(v, i))}" data-detail="${dtKey(() => detailValidator(v, i))}"><i></i><span>${acct(v)}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
+    `<div class="val ${i === S.proposerIdx ? "on" : ""}" data-ex="${exKey(() => explainValidator(v, i))}" data-detail="${dtKey(() => detailValidator(v, i))}"><i></i><span>${TECH() ? acct(v) : `Validator ${i + 1}`}</span><span>${i === S.proposerIdx ? "proposing" : "active"}</span></div>`).join("") || `<div class="val"><i></i><span>No validator data yet</span><span></span></div>`;
   const N = S.validators.length;
   const kv = Object.assign({
     "Validators": N ? `${N} active, 1 proposing` : "—",
@@ -1498,6 +1748,7 @@ function renderGov(extra = {}) {
 /* who may seal blocks right now: a fixed validator list (PoA) or a list or stake judged by the Tau rules (stream o7) */
 const MODE_TIP = { validator_set: "Fixed validator list (proof of authority): the host keeps the list, Tau checks every seal against it.", tau_validator_set: "The validator list itself lives in the Tau rules: stream o7 decides who may seal.", stake: "Stake-based: the Tau rules judge eligibility by stake (stream o7)." };
 const MODE_TXT = { validator_set: "fixed validator list (PoA)", tau_validator_set: "validator list kept in Tau logic", stake: "stake-based (Tau judges o7)" };
+const CONS_CHIP = { validator_set: ["Proof of authority", "PoA"], tau_validator_set: ["Validator list in Tau", "Tau list"], stake: ["Proof of stake", "PoS"] };
 const modeLabel = () => S.mode !== "live" ? "fixed validator list (PoA) · simulated" : S.eligMode ? (MODE_TXT[S.eligMode] || esc(S.eligMode)) : "—";
 /* fork radar: competing branches, reorgs and chain restarts, as the node and the relay report them */
 function renderRadar() {
@@ -1520,7 +1771,7 @@ function renderRadar() {
 /* ---------- readouts ---------- */
 function readouts() {
   renderRadar();
-  $("chipH").textContent = $("rH").textContent = fmt(S.height);
+  $("rH").textContent = fmt(S.height); $("chipH").textContent = "#" + fmt(S.height);
   $("rM").textContent = S.mempool.length;
   const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
   $("rT").textContent = pace != null ? fmtSec(pace) : "—";
@@ -1529,9 +1780,15 @@ function readouts() {
     : (live ? "Needs two consecutive blocks with timestamps before a pace can be measured." : "Measured once the first blocks are sealed.");
   tickPace();
   $("rR").textContent = S.clauses.size;
-  $("chipFee").textContent = S.fee;
-  $("chipRev").textContent = S.specRev;
-  $("coreSub").textContent = S.validators.length ? "next proposer " + short(S.validators[(S.proposerIdx + 1) % S.validators.length]) : "—";
+  tickSubs();
+  $("rHw").dataset.full = `Height ${fmt(S.height)}: the number of blocks in the chain, counted from genesis #0. The line under it says when the last block was sealed${S.mode === "live" ? " and how old the chain is, measured from block #1 (genesis carries no time)" : " and how old the simulated chain is"}.`;
+  $("rMw").dataset.full = `Waiting: transactions the node holds but has not sealed into a block yet. “Oldest” counts from when this page first saw the transaction.${S.mode === "live" ? " The alpha node can keep a sealed transaction listed as pending for up to an hour (see Findings)." : ""}`;
+  $("rRw").dataset.full = `User rules: accounts that run their own money rule (o5) on this chain, in force right now. “Last at” names the block where the newest rule was deployed.${S.mode === "live" ? " The live chain has not seen a personal rule yet; the simulation shows how they would look." : ""}`;
+  $("chipFee").textContent = S.fee + " AGRS";
+  $("chipRev").textContent = "rev " + S.specRev;
+  { const m = S.mode === "live" ? S.eligMode || "" : "validator_set", c = CONS_CHIP[m], n = S.validators.length;
+    $("consL").textContent = c ? c[0] + (n ? ` · ${n} validator${n === 1 ? "" : "s"}` : "") : "—"; $("consS").textContent = c ? c[1] + (n ? ` · ${n}` : "") : "—"; }
+  $("coreSub").textContent = S.validators.length ? "next proposer " + (TECH() ? short(S.validators[(S.proposerIdx + 1) % S.validators.length]) : "V" + ((S.proposerIdx + 1) % S.validators.length + 1)) : "—";
 }
 
 /* ---------- block detail + chain state ---------- */
@@ -1542,7 +1799,7 @@ const KV_TIP = {
   "To change a rule": "How many votes a rule change needs before it is scheduled: derived from the validator count and the quorum policy, which is itself part of the chain state. Who may vote is a network setting: validators only, or every account.",
   "Rule txs per block": "The most rule transactions (offers, acceptances, own-rule deployments) a block may carry. A budget set by the rules, not by the proposer.",
   "Accounts with own rules": "Accounts that have deployed a personal Tau rule for their own money, such as a spending limit or a time-lock. The node folds all of them into one spec.",
-  "Open proposals": "Rule changes that are collecting votes or are agreed and waiting for their activation height.",
+  "Open proposals": "Rule changes that are waiting for votes, or are agreed and take effect at their activation height. Same split as on the Proposals page.",
   "Block hash": "The fingerprint of this block: header, transactions and the state hash. The next block names it as its previous block.",
   "Previous block": "The hash of the block before this one. The chain is the sequence of blocks each naming its predecessor.",
   "State hash": "A fingerprint of everything the rules depend on: balances, the consensus rule program, the composite user-rule program, the validator set, pending governance and the quorum policy.",
@@ -1566,14 +1823,14 @@ function blockHtml(b) {
   const sn = b.snap || {}; const gov = b.txs.filter(t => t.kind === "gov"), rules = b.txs.filter(t => /rule/.test(t.type) && t.kind !== "gov");
   const simple = document.body.dataset.view === "simple", H = x => x ? (simple ? `<span title="${esc(x)}">${short(x)}</span>` : esc(x)) : "—";
   return `<p class="lead">${b.txs.length} transaction${b.txs.length === 1 ? "" : "s"} sealed by ${acct(b.proposer)} under spec revision ${sn.specRev ?? "—"}. ${sn.agreed && sn.agreed.length ? "An agreed rule change became active in this block." : "No rule change took effect in this block."}</p>
-    <div class="cols"><section class="${simple ? "" : "ident"}"><h3>Identity</h3>${kvHtml({ "Block hash": H(b.hash), "Previous block": H(b.prev), "State hash": H(b.state), Proposer: S.mode === "live" && b.proposer ? `<a class="acct" href="account/?a=${encodeURIComponent(b.proposer)}" title="Open account">${simple ? short(b.proposer) : esc(b.proposer)}</a>` : H(b.proposer) })}
+    <div class="cols"><section class="${simple ? "" : "ident"}"><h3>Identity</h3>${kvHtml({ "Block hash": S.mode === "live" && b.hash ? `<a class="acct" href="explorer/?b=${encodeURIComponent(b.n)}" title="Open this block in the explorer">${H(b.hash)}</a>` : H(b.hash), "Previous block": H(b.prev), "State hash": H(b.state), Proposer: S.mode === "live" && b.proposer ? `<a class="acct" href="account/?a=${encodeURIComponent(b.proposer)}" title="Open account">${simple ? short(b.proposer) : esc(b.proposer)}</a>` : H(b.proposer) })}
     </section><section><h3>Rules in force at this block</h3>${kvHtml({ "Spec revision": sn.specRev ?? "—", "Base fee": sn.fee != null ? sn.fee + " AGRS per tx" : "—", "Agreement needed": sn.validators ? `${agreeNeed(sn.quorum === "majority" ? Math.floor(sn.validators.length / 2) + 1 : Math.ceil(sn.validators.length * 2 / 3), sn.validators.length)} · ${sn.quorum === "majority" ? "majority" : "two thirds"}` : "—", "Rule txs per block": sn.budget ?? "—", "Accounts with own rules": sn.rules ?? "—" })}
     </section><section><h3>Rule changes agreed here</h3>${sn.agreed && sn.agreed.length ? `<ul>${sn.agreed.map(a => `<li class="gov"><b>${esc(a.title)}</b> <span class="muted">agreed by ${a.votes} validators</span><br><code>${esc(a.diff)}</code></li>`).join("")}</ul>` : `<p class="small muted" style="color:var(--dim);font-size:12px">None. The rules were unchanged in this block.</p>`}
     <h3>Governance transactions (${gov.length})</h3>${gov.length ? `<ul>${gov.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <h3>Rule work (${rules.length})</h3>${rules.length ? `<ul>${rules.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     </section><section><h3>All transactions (${b.txs.length})</h3>${b.txs.length ? `<ul>${b.txs.map(txLine).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">Empty block</p>`}
     <h3>What the state hash commits to</h3><p style="color:var(--dim);font-size:12px;margin:0">Balances, the consensus rule program, the composite user-rule program, the validator set, pending governance and the quorum policy. Change any of them and the hash changes.</p>
-    <p style="margin:10px 0 0;font-size:12px"><a href="history/#${b.n}">See the rules in force at this block (time travel) ›</a></p></section></div>`;
+    <p style="margin:8px 0 0;font-size:12px"><a href="history/#${b.n}">See the rules in force at this block (time travel) ›</a></p></section></div>`;
 }
 /* one-glance block summary: every fact of the full detail, one line each, short hashes; the labels explain themselves on hover */
 function blockSummary(b) {
@@ -1599,14 +1856,14 @@ function showBlock(b, pinned = true) {
     el.dataset.detail = dtKey(() => ({ title, html: blockHtml(b) }));
     if (el.scrollHeight > el.clientHeight + 2) { const lead = el.querySelector(".bsum .lead"); if (lead) lead.remove(); }
   }
-  $("chainSub").textContent = pinned ? `showing #${b.n} · click another block or “newest” to follow the chain` : "click a block to inspect it below · bright card = a rule change took effect";
+  $("chainSub").textContent = pinned ? `showing #${b.n} · back to newest ›` : "following the newest block";
 }
 function renderStatePanel() {
   if (hold("statePanel", renderStatePanel)) return;
   const N = S.validators.length, thr = N ? threshold() : "—";
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
-  $("statePanel").innerHTML = kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "To change a rule": S.mode === "live" ? `${agreeNeed(thr, N)}` : `${thr} of ${N} validators must agree`, "Rule txs per block": S.ruleBudget, "Accounts with own rules": S.clauses.size, "Open proposals": open.length })
-    + `<h3>Agreed rule changes (${active.length})</h3>` + (active.length ? `<ul>${active.slice().reverse().slice(0, 6).map(u => `<li>${esc(u.title)} <span>· since #${u.activeAt}</span></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:11.5px;margin:0">None yet: the chain runs on its genesis rules.</p>`);
+  $("statePanel").innerHTML = `<div class="big2"><div data-full="${KV_TIP["Spec revision"] || ""}"><b>${S.specRev}</b><span>spec revision</span></div><div data-full="${KV_TIP["Base fee"] || ""}"><b>${S.fee}</b><span>AGRS base fee</span></div></div>
+    <p class="sent"><b>${thr} of ${N}</b> validators change a rule · <b>${S.ruleBudget}</b> rule txs per block · <b>${S.clauses.size}</b> account${S.clauses.size === 1 ? "" : "s"} with own rules · <b>${open.length}</b> open proposal${open.length === 1 ? "" : "s"} · ${active.length ? `<b>${active.length}</b> agreed change${active.length === 1 ? "" : "s"}, last at #${active[active.length - 1].activeAt}` : "no agreed change yet"}</p>`;
 }
 function showState() {
   const N = S.validators.length, thr = N ? threshold() : "—";
@@ -1616,13 +1873,14 @@ function showState() {
     `<p class="lead">At height ${fmt(S.height)} the chain runs on spec revision ${S.specRev}: ${active.length} agreed rule change${active.length === 1 ? "" : "s"} so far, ${open.length} open, ${S.clauses.size} account${S.clauses.size === 1 ? "" : "s"} with their own money rules.</p>
     <h3>Consensus rules in force</h3>${kvHtml({ "Spec revision": S.specRev, "Base fee": S.fee + " AGRS per tx", "Agreement needed": `${agreeNeed(thr, N)} · ${S.quorum === "majority" ? "majority" : "two thirds"}`, "Rule txs per block": S.ruleBudget, "State hash (latest)": esc(last.state || "—") })}
     <pre class="rule">${$("ruleText").innerHTML}</pre>
-    <h3>Validators (${N})</h3><ul>${S.validators.map((v, i) => `<li class="${i === S.proposerIdx ? "ok" : ""}"><b>${i === S.proposerIdx ? "proposing" : "active"}</b> <span class="muted">${esc(v)}</span></li>`).join("")}</ul>
+    <h3>Validators (${N})</h3><ul>${S.validators.map((v, i) => `<li class="${i === S.proposerIdx ? "ok" : ""}"><b>${i === S.proposerIdx ? "proposing" : "active"}</b> <code class="key" title="${esc(v)}">${short(v)}</code><button class="copy" type="button" data-copy="${esc(v)}">copy key</button></li>`).join("")}</ul>
     <h3>Rule changes agreed (${active.length})</h3>${active.length ? `<ul>${active.slice().reverse().map(u => `<li class="gov"><b>${esc(u.title)}</b> <span class="muted">active since #${u.activeAt} · ${u.votes.size} votes</span><br><code>${esc(u.diff)}</code></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None yet. The chain still runs on its genesis rules.</p>`}
-    <h3>Open proposals (${open.length})</h3>${open.length ? `<ul>${open.map(u => `<li><b>${esc(u.title)}</b> <span class="muted">${STATUS_TXT[u.status]} · ${u.votes.size} of ${thr} · activates at #${u.activateAt}</span></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
+    <h3>Open proposals (${open.length})</h3>${open.length ? `<p class="muted" style="font-size:12px;margin:0 0 6px">${openTxt(open)}</p>` : ""}${open.length ? `<ul>${open.map(u => `<li><b>${esc(u.title)}</b> <span class="muted">${STATUS_TXT[u.status]} · ${u.votes.size} of ${thr} · activates at #${u.activateAt}</span></li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <h3>Personal money rules (${S.clauses.size})</h3>${S.clauses.size ? `<ul>${[...S.clauses.entries()].map(([a, p]) => `<li class="ok"><b>${esc(p.name)}</b> <span class="muted">${acct(a)}</span><br>${esc(p.label || "")}</li>`).join("")}</ul>` : `<p style="color:var(--dim);font-size:12px">None</p>`}
     <pre class="rule composite">${$("composite").innerHTML}</pre>`;
   openModal("mState");
 }
+$("stBody").addEventListener("click", async e => { const b = e.target.closest(".copy"); if (!b) return; try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "copied"; } catch { b.textContent = "copy failed"; } setTimeout(() => { b.textContent = "copy key"; }, 1500); });
 
 /* ---------- block intake (shared by sim + live) ---------- */
 function ingestBlock(b, live) {
@@ -1643,7 +1901,7 @@ function ingestBlock(b, live) {
     document.querySelectorAll(`#ribbon .blk`).forEach(c => { if (Number(c.dataset.n) >= b.n) c.remove(); });
     S.approvals.forEach(a => { if (a.settledAt != null && a.settledAt >= b.n) { a.status = "open"; a.settledAt = null; } });
   }
-  S.byHeight.set(b.n, b); if (S.byHeight.size > 60) S.byHeight.delete(Math.min(...S.byHeight.keys()));
+  S.byHeight.set(b.n, b); if (S.byHeight.size > 6000) S.byHeight.delete(Math.min(...S.byHeight.keys()));
   if (S.approvals.some(a => a.status === "open")) renderClauses();
   S.blocks.push(b); if (S.blocks.length > 40) S.blocks.shift();
   S.height = b.n; S.txTotal += b.txs.length;
@@ -1670,11 +1928,12 @@ const PROPOSALS = [
 function simInit() {
   S.validators = Array.from({ length: 4 }, () => hex(96));
   SIM.accounts = Array.from({ length: 14 }, () => hex(96));
-  Object.assign(S, { height: 0, blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, fee: 10, specRev: 1, ruleBudget: 8, updates: [], offers: [], byHeight: new Map() }); selectedBlock = null;
+  Object.assign(S, { height: 0, blocks: [], mempool: [], memSeen: new Map(), rulesLastBlock: null, txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, fee: 10, specRev: 1, ruleBudget: 8, updates: [], offers: [], byHeight: new Map() }); selectedBlock = null;
   S.clauses = new Map();
   // a few accounts start with their own policies so the composite is visible from the first frame
   for (let i = 0; i < 3; i++) S.clauses.set(SIM.accounts[i], randomPolicy(SIM.accounts));
   $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; S.refusedN = 0; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
+  RIB.back = false; RIB.target = null; RIB.loading = false; ribbonHold.length = 0;
   const g = { n: 0, hash: "4bf5ee70" + hex(48) + "fbce", state: hex(64), proposer: "0".repeat(96), ts: Math.floor(Date.now() / 1000) - 60, txs: [] };
   g.snap = { specRev: 1, fee: S.fee, quorum: S.quorum, budget: S.ruleBudget, validators: S.validators.slice(), rules: S.clauses.size, agreed: [] };
   S.byHeight.set(0, g); S.blocks.push(g); addBlockCard(g); showBlock(g, false); renderStatePanel();
@@ -1728,7 +1987,7 @@ function simTx() {
       note: `${short(waiting.to)} ${yes ? "accepts" : "rejects"} “${waiting.policy.name}” from ${short(waiting.from)}`,
       apply: () => {
         waiting.status = yes ? "accepted" : "rejected";
-        if (yes) { S.clauses.set(waiting.to, waiting.policy); log(`Clause registry: ${short(waiting.to)} now runs “${waiting.policy.name}” · composite o5 rebuilt`, "ok"); }
+        if (yes) { S.clauses.set(waiting.to, waiting.policy); S.rulesLastBlock = S.height; log(`Clause registry: ${short(waiting.to)} now runs “${waiting.policy.name}” · composite o5 rebuilt`, "ok"); }
       } });
   }
   if (r < 0.52) {                                           // someone shares a rule with someone else
@@ -1739,7 +1998,7 @@ function simTx() {
   if (r < 0.60) {                                           // an account writes its own policy
     const policy = randomPolicy(A);
     return admit({ id: hex(64), type: "rule_deploy", sender, policy, fee: S.fee, note: `${short(sender)} deploys own rule · ${policy.name}: ${policy.label}`,
-      apply: () => { S.clauses.set(sender, policy); log(`Clause registry: ${short(sender)} deployed “${policy.name}”`, "ok"); } });
+      apply: () => { S.clauses.set(sender, policy); S.rulesLastBlock = S.height; log(`Clause registry: ${short(sender)} deployed “${policy.name}”`, "ok"); } });
   }
   // ordinary transfer, checked against the sender's own Tau policy (o5)
   const to = pick(A.filter(a => a !== sender)), amount = 1 + ((Math.random() * (Math.random() < .3 ? 6000 : 1200)) | 0);
@@ -1842,6 +2101,15 @@ function liveMessage(ev) {
       S.approvals.forEach(a => { if (a.status === "open" && a.expireAt && b.n >= a.expireAt) { a.status = "closed"; a.settledAt = b.n; } });
       ingestBlock(b, true);
     });
+  } else if (msg.command === "getblockrange") {
+    if (RIB.probe && d.from === 1) { RIB.probe = false; const h = ((d.blocks || [])[0] || {}).header || {}; if (h.timestamp) S.chainStart = h.timestamp; tickSubs(); return; }
+    RIB.loading = false;
+    const got = (d.blocks || []).map(raw => {
+      const h = raw.header || {}, ids = raw.tx_ids || [];
+      const b = { n: h.block_number ?? 0, hash: raw.block_hash, state: h.state_hash, proposer: h.proposer_pubkey || "", ts: h.timestamp, txs: (raw.transactions || []).map((t, i) => normTx(t, ids[i])), hist: true };
+      if (!S.byHeight.has(b.n)) S.byHeight.set(b.n, b); return S.byHeight.get(b.n);
+    });
+    ribbonPrepend(got); if (got.length) ribbonMaybeLoad();
   } else if (msg.command === "getmempool") {
     S.mempool = (d.transactions || []).map(t => normTx({ ...t, sender_pubkey: t.sender }, t.tx_hash));
     S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } });
@@ -1887,8 +2155,9 @@ function liveMessage(ev) {
 /* forget every block and transaction: on connect, and when the relay reports that the node wiped a dead chain ("reset": true) */
 function liveClear() {
   Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0, approvals: [], reorgs: [], eligMode: "", modeHistory: [] });
-  S.clauses = new Map(); S.byHeight = new Map(); LIVE.seenBlocks.clear(); LIVE.seenTx.clear();
+  S.clauses = new Map(); S.byHeight = new Map(); S.memSeen = new Map(); S.chainStart = null; S.rulesLastBlock = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear();
   $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
+  RIB.back = false; RIB.target = null; RIB.loading = false; ribbonHold.length = 0;
 }
 function liveConnect() {
   liveStop();
@@ -1907,7 +2176,7 @@ function liveConnect() {
     LIVE.everConnected = true; LIVE.retryWait = 5000;
     setMode("live", "Connected");
     ws.send(helloLine());
-    liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool");
+    liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool"); RIB.probe = true; liveSend("getblockrange 1 1");
     LIVE.poll = setInterval(() => { liveSend("getblocks 6"); liveSend("getmempool"); }, 3000);
     LIVE.govPoll = setInterval(() => liveSend("getgovernance"), 15000);
   };
@@ -1956,15 +2225,31 @@ let burst = 0, sparks = [], t0 = performance.now();
 const RULE_HOT_S = 5;
 const ruleState = p => { const age = (performance.now() - (p.lastCheck || 0)) / 1000; return age < RULE_HOT_S ? { hot: true, k: 1 - age / RULE_HOT_S, refused: !!p.lastRefused } : { hot: false, k: 0, refused: false }; };
 const CORE_HITS = [], CORE_RINGS = [];
+/* CORE_MOUSE: where the pointer rests over the core, in canvas units; the frame loop re-runs the hit test there so the hovered element lights up even while it orbits */
+let CORE_MOUSE = null;
+function coreHitAt(x, y) {
+  let best = null, bd = Infinity;
+  for (const h of CORE_HITS) { const d = Math.hypot(h.x - x, h.y - y); if (d <= h.r && d < bd) { best = h; bd = d; } }
+  if (best) return best;
+  const d = Math.hypot(x, y);
+  for (const r of CORE_RINGS) if (Math.abs(d - r.r) <= r.w) return r;
+  return null;
+}
 function coreHit(e) {
   const b = cv.getBoundingClientRect(); if (!b.width) return null;
   const k = cv.width / b.width, C = cv.width / 2, x = (e.clientX - b.left) * k - C, y = (e.clientY - b.top) * k - C;
-  let best = null, bd = Infinity;
-  for (const h of CORE_HITS) { const d = Math.hypot(h.x - x, h.y - y); if (d <= h.r && d < bd) { best = h; bd = d; } }
-  if (best) return best.fn;
-  const d = Math.hypot(x, y);
-  for (const r of CORE_RINGS) if (Math.abs(d - r.r) <= r.w) return r.fn;
-  return null;
+  const h = coreHitAt(x, y); CORE_MOUSE = h ? { x, y } : null;
+  return h ? h.fn : null;
+}
+/* the hovered element glows green under its overlay text: a band for a ring, a halo for a dot, the validator or the core */
+function paintHover() {
+  if (!CORE_MOUSE) return; const h = coreHitAt(CORE_MOUSE.x, CORE_MOUSE.y); if (!h) return;
+  cx.save(); cx.shadowColor = "rgb(57,255,138)";
+  if ("w" in h) { cx.beginPath(); cx.arc(0, 0, h.r, 0, Math.PI * 2); cx.lineWidth = h.w * 2; cx.strokeStyle = "rgba(57,255,138,.10)"; cx.shadowBlur = 0; cx.stroke();
+    cx.beginPath(); cx.arc(0, 0, h.r - h.w, 0, Math.PI * 2); cx.arc(0, 0, h.r + h.w, 0, Math.PI * 2); cx.lineWidth = 1.5; cx.strokeStyle = "rgba(57,255,138,.55)"; cx.shadowBlur = 16; cx.stroke(); }
+  else { cx.beginPath(); cx.arc(h.x, h.y, h.r, 0, Math.PI * 2); cx.fillStyle = "rgba(57,255,138,.12)"; cx.shadowBlur = 0; cx.fill();
+    cx.beginPath(); cx.arc(h.x, h.y, h.r, 0, Math.PI * 2); cx.lineWidth = 2; cx.strokeStyle = "rgba(57,255,138,.7)"; cx.shadowBlur = 18; cx.stroke(); }
+  cx.restore();
 }
 /* labels sit on dark plates and are painted last, above every ring, line and dot: no stroke ever crosses the letters */
 const PLATES = [];
@@ -1987,7 +2272,9 @@ function draw(tm) {
   const cyan = "236,236,240", amber = "255,255,255";
   CORE_HITS.length = 0; const hit = (x, y, r, fn) => CORE_HITS.push({ x, y, r, fn }); const ring = (r, w, fn) => CORE_RINGS.push({ r, w, fn });
   CORE_RINGS.length = 0;
-  ring(C * .90, 20, () => `Outer rim: the consensus spec, revision ${S.specRev}. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`);
+  ring(C * .84, 16, () => `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is ${vt("building", "proposing")} the next block; a white frame around one marks a vote for the open rule change.` + vt("", `\nThe proposer rotates through the set (o7 eligibility); a vote is a consensus_rule_vote transaction.`));
+  ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}. Everything inside obeys it: validators sit on it, accounts and waiting transactions orbit within it, and every block is checked against it.`,
+    `Outer rim: the consensus spec, revision ${S.specRev} (o6 block validity, o7 proposer eligibility, o9 fee = ${S.fee} AGRS). Amended ${S.updates.filter(u => u.status === "active").length} time${S.updates.filter(u => u.status === "active").length === 1 ? "" : "s"} by agreement. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`));
 
   cx.strokeStyle = `rgba(${cyan},.35)`; cx.lineWidth = 2;
   for (let i = 0; i < 120; i++) {
@@ -1995,18 +2282,32 @@ function draw(tm) {
     cx.beginPath(); cx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1); cx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2); cx.stroke();
   }
   const arc = (r, w, a0, len, col, sp) => { cx.beginPath(); cx.lineWidth = w; cx.strokeStyle = col; cx.arc(0, 0, r, a0 + t * sp, a0 + len + t * sp); cx.stroke(); };
-  for (let k = 0; k < 3; k++) arc(C * .84, 6, k * 2.1, 1.4, `rgba(${cyan},.5)`, .25);
+  cx.beginPath(); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${cyan},.22)`; cx.arc(0, 0, C * .84, 0, Math.PI * 2); cx.stroke();   // the validator orbit
 
-  // agreement ring: progress of the open rule change toward quorum
-  const open = S.updates.find(u => u.status === "voting" || u.status === "scheduled");
+  // agreement ring: one ring carries every rule change on its way to law. The open vote fills it clockwise toward quorum;
+  // every agreed change that waits for its activation height sits on it as a marker, clockwise in activation order, the next one bright.
+  const voting = S.updates.filter(u => u.status === "voting"), sched = S.updates.filter(u => u.status === "scheduled").sort((a, b) => Number(a.activateAt) - Number(b.activateAt));
+  const open = voting[0] || null, next = sched[0] || null, blocksLeft = u => Math.max(0, Number(u.activateAt) - S.height), plural = n => n === 1 ? "" : "s";
   cx.beginPath(); cx.lineWidth = 10; cx.strokeStyle = `rgba(${amber},.1)`; cx.arc(0, 0, C * .70, 0, Math.PI * 2); cx.stroke();
-  ring(C * .70, 18, () => !open ? "Agreement ring: empty. No rule change is being voted on right now; it fills clockwise as validators agree."
-    : open.status === "scheduled" ? `Agreed: “${open.title}” activates at block #${open.activateAt}, in ${Math.max(0, open.activateAt - S.height)} block${open.activateAt - S.height === 1 ? "" : "s"}. Until then the old rules apply.`
-    : `Agreement ring: ${open.votes.size} of ${threshold()} validators agree to “${open.title}”. At ${threshold()} it is scheduled for a later block.`);
-  if (open) {
-    const frac = Math.min(1, open.votes.size / threshold());
-    arc(C * .70, 10, -Math.PI / 2, frac * Math.PI * 2, `rgba(${amber},${open.status === "scheduled" ? .95 : .7})`, 0);
-    const agreeTxt = open.status === "scheduled" ? "AGREED · ACTIVATES #" + open.activateAt : `AGREEMENT ${open.votes.size}/${threshold()}`, agreeFont = "600 22px Sora, sans-serif";
+  ring(C * .70, 18, () => {
+    const parts = [];
+    if (open) parts.push(`${open.votes.size} of ${threshold()} validators agree to “${open.title}”; at ${threshold()} it is scheduled for a later block${voting.length > 1 ? ` (${voting.length - 1} more vote${plural(voting.length - 1)} open)` : ""}.`);
+    if (sched.length) parts.push(`${sched.length} agreed change${plural(sched.length)} wait${sched.length === 1 ? "s" : ""} for ${sched.length === 1 ? "its" : "their"} activation height: the markers, clockwise in activation order; the bright one is next, at block #${next.activateAt} (${blocksLeft(next)} block${plural(blocksLeft(next))} away). Until then the old rules apply.`);
+    const txt = parts.length ? "Agreement ring: " + parts.join(" ") : "Agreement ring: empty. No rule change is being voted on or waiting to take effect; it fills clockwise as validators agree.";
+    return txt + (TECH() && sched.length ? "\n" + sched.map(u => `${short(u.id)} → #${u.activateAt}`).join(" · ") : "");
+  });
+  if (sched.length) arc(C * .70, 10, 0, Math.PI * 2, `rgba(${amber},.32)`, 0);   // a full, quiet ring: agreement reached, waiting to take effect
+  if (open) arc(C * .70, 10, -Math.PI / 2, Math.min(1, open.votes.size / threshold()) * Math.PI * 2, `rgba(${amber},.7)`, 0);
+  sched.forEach((u, i) => {   // markers start right of the label at the top and run clockwise, so none sits under the text
+    const a = -Math.PI / 2 + .62 + (i / sched.length) * (Math.PI * 2 - 1.24), x = Math.cos(a) * C * .70, y = Math.sin(a) * C * .70, lead = i === 0;
+    cx.save(); cx.translate(x, y); cx.rotate(Math.PI / 4);
+    cx.fillStyle = `rgba(${amber},${lead ? 1 : .55})`; cx.shadowColor = `rgb(${amber})`; cx.shadowBlur = lead ? 22 : 8;
+    const sz = lead ? 14 : 10; cx.fillRect(-sz / 2, -sz / 2, sz, sz); cx.restore();
+    hit(x, y, 20, () => vt(`Agreed rule change${sched.length > 1 ? ` ${i + 1} of ${sched.length}` : ""}: takes effect at block #${fmt(u.activateAt)}, in ${fmt(blocksLeft(u))} block${plural(blocksLeft(u))}${paceNow() ? ` (about ${fmtAge(blocksLeft(u) * paceNow())})` : ""}. Until then the old rules apply.${lead ? "\nThis one is next." : ""}`,
+      `Agreed ${short(u.id)}: “${u.title}”${u.diff ? ` · ${String(u.diff).replace(/<[^>]+>/g, "").slice(0, 120)}` : ""}.\nActivates at block #${u.activateAt}, in ${blocksLeft(u)} block${plural(blocksLeft(u))}${lead ? " · next to take effect" : ` · ${i + 1} of ${sched.length} waiting`}.${farAhead(u) ? "\nThe height was chosen by the proposal, not by Tau’s speed." : ""}`));
+  });
+  if (open || next) {
+    const agreeTxt = open ? `AGREEMENT ${open.votes.size}/${threshold()}` : sched.length === 1 ? "AGREED · ACTIVATES #" + next.activateAt : `${sched.length} AGREED · NEXT #${next.activateAt}`, agreeFont = "600 22px Sora, sans-serif";
     plate(agreeTxt, 0, belowRing(C * .70, agreeTxt, agreeFont), agreeFont, `rgba(${amber},.95)`);
   }
 
@@ -2021,8 +2322,8 @@ function draw(tm) {
     const s = on ? 30 : 22; cx.fillRect(-s / 2, -s / 2, s, s);
     if (voted) { cx.strokeStyle = `rgba(${amber},.95)`; cx.lineWidth = 3; cx.strokeRect(-s, -s, s * 2, s * 2); }
     cx.restore();
-    plate("V" + (i + 1) + " " + v.slice(0, 6), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
-    hit(x, y, 40, () => `V${i + 1} ${short(v)}\n` + explainValidator(v, i) + (on ? "\nGreen line to the core: its block being sealed." : ""));
+    plate("V" + (i + 1) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
+    hit(x, y, 40, () => vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."));
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
 
@@ -2045,7 +2346,7 @@ function draw(tm) {
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
     const st = ruleState(p), col = st.hot ? (st.refused ? "255,255,255" : "57,255,138") : "170,170,178";
-    hit(x, y, 24, () => `${short(RA[i])} runs its own rule: ${p.name}.\n${policyMeaning(p)} Binds the account, not the key.\n` + (st.hot ? (st.refused ? "White line: the rule just refused a transfer from this account." : "Green line: the rule just checked a transfer from this account and let it pass.") : "Grey line: in force, no transfer from this account checked in the last few seconds."));
+    hit(x, y, 24, () => vt(`This account runs its own money rule: ${p.name}.\n${policyMeaning(p)} It binds the account, not the key.\n`, `${short(RA[i])} runs its own rule: ${p.name}.\n${policyMeaning(p)} Binds the account, not the key; one guarded branch in the composite o5 program.\n`) + (st.hot ? (st.refused ? "White line: the rule just refused a transfer from this account." : "Green line: the rule just checked a transfer from this account and let it pass.") : "Grey line: in force, no transfer from this account checked in the last few seconds."));
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
     cx.shadowBlur = 0; cx.beginPath(); cx.arc(x, y, 12, 0, Math.PI * 2); cx.strokeStyle = `rgba(${col},.45)`; cx.lineWidth = 1.5; cx.stroke();
@@ -2058,7 +2359,7 @@ function draw(tm) {
     const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
     cx.shadowColor = cx.fillStyle; cx.shadowBlur = 14; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 6, 0, Math.PI * 2); cx.fill();
-    hit(Math.cos(a) * r, Math.sin(a) * r, 20, () => `Mempool: ${tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"} ${short(tx.id)}, admitted after the rule check, waiting for the next block.`);
+    hit(Math.cos(a) * r, Math.sin(a) * r, 20, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`); });
   });
   cx.shadowBlur = 0;
 
@@ -2067,7 +2368,8 @@ function draw(tm) {
   const g = cx.createRadialGradient(0, 0, 0, 0, 0, C * .32);
   g.addColorStop(0, "rgba(240,246,255,.95)"); g.addColorStop(.25, `rgba(${core},${.55 + Math.max(p, am) * .4})`); g.addColorStop(1, `rgba(${core},0)`);
   cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, C * (.30 + p * .06), 0, Math.PI * 2); cx.fill();
-  hit(0, 0, C * .30, () => `Block #${S.height}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago, judged under spec revision ${S.specRev}.\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`);
+  hit(0, 0, C * .30, () => { const last = S.blocks[S.blocks.length - 1] || {}; return vt(`Block #${fmt(S.height)}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago under rule version ${S.specRev}.\nEvery block carries the agreed rules of everyone; changing a rule needs ${threshold()} of ${S.validators.length} validators.`,
+    `Block #${S.height}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago, judged under spec revision ${S.specRev}.\nhash ${short(last.hash)} · state ${short(last.state)} · ${(last.txs || []).length} tx · proposer ${short(last.proposer)}\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`); });
   cx.strokeStyle = `rgba(${core},.8)`; cx.lineWidth = 3;
   for (let k = 0; k < 3; k++) { cx.save(); cx.rotate(t * (k % 2 ? -.8 : .6) + k); const r = C * (.17 + k * .04); for (let j = 0; j < 3; j++) { cx.beginPath(); cx.arc(0, 0, r, j * Math.PI * 2 / 3, j * Math.PI * 2 / 3 + 1.75); cx.stroke(); } cx.restore(); }
 
@@ -2081,8 +2383,9 @@ function draw(tm) {
   cx.fillStyle = "#0b0b0e"; cx.font = "600 60px Sora, sans-serif"; cx.textAlign = "center"; cx.textBaseline = "middle";
   cx.fillText("#" + S.height, 0, -8);
   cx.font = "600 19px Sora, sans-serif";
-  cx.fillText(am > .2 ? "SPEC AMENDED · REV " + S.specRev : since < 1.2 ? "SEALED BY AGREEMENT" : "SPEC REV " + S.specRev, 0, 40);
+  cx.fillText(am > .2 ? vt("RULES CHANGED · V", "SPEC AMENDED · REV ") + S.specRev : since < 1.2 ? "SEALED BY AGREEMENT" : vt("RULES V", "SPEC REV ") + S.specRev, 0, 40);
   if (S.mode === "sim") plate("SIMULATION · NO REAL CHAIN DATA", 0, C * .64 + 10, "600 30px Sora, sans-serif", "rgba(236,236,240,.42)");
+  paintHover();
   paintPlates();
   cx.restore();
   requestAnimationFrame(draw);
@@ -2117,14 +2420,36 @@ requestAnimationFrame(draw);
 })();
 
 /* ---------- decode: the thesis resolves out of glyph noise ---------- */
+/* every glyph keeps the width of the letter it will become, so the paragraph never reflows; words stay whole so lines break only at spaces.
+   Unresolved glyphs run a gradient from the settled text outward: white next to the resolved letters, through pale green into
+   full phosphor green by the twelfth glyph, then fading dimmer the further out; white once settled. */
 (() => {
   const el = document.querySelector("[data-decode]"); if (!el || reduced) return;
   const final = el.textContent, pool = "τ∀∃⊨01アイウカキクケ#%&";
-  const t0 = performance.now(), dur = 1800;
+  const chars = []; el.textContent = ""; el.classList.add("decoding");
+  final.split(" ").forEach((word, wi) => {
+    if (wi) el.append(" ");
+    const w = document.createElement("span"); w.className = "dw";
+    [...word].forEach(ch => { const c = document.createElement("span"); c.className = "dc"; c.textContent = ch; w.append(c); chars.push(c); });
+    el.append(w);
+  });
+  chars.forEach(c => { c.style.width = c.getBoundingClientRect().width + "px"; c.dataset.ch = c.textContent; });   // measure first, then start the noise
+  const t0 = performance.now(), dur = 1800, glyph = () => pool[(Math.random() * pool.length) | 0];
+  const W = [255, 255, 255], G = [57, 255, 138], FADE = 12;
+  const tone = d => { const t = d >= FADE ? 1 : (x => x * x * (3 - 2 * x))(d / FADE); return `rgb(${W.map((w, i) => Math.round(w + (G[i] - w) * t)).join(",")})`; };
+  chars.forEach(c => { c.textContent = glyph(); c.className = "dc g"; c.style.color = tone(FADE); c.style.opacity = ".32"; });
   const step = now => {
-    const k = Math.min(1, (now - t0) / dur), n = Math.floor(final.length * k);
-    el.textContent = final.slice(0, n) + final.slice(n).replace(/[^ ]/g, () => pool[(Math.random() * pool.length) | 0]);
-    if (k < 1) requestAnimationFrame(step); else el.textContent = final;
+    const k = Math.min(1, (now - t0) / dur), n = Math.floor(chars.length * (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2));
+    chars.forEach((c, i) => {
+      const d = i - n;
+      if (d < 0) { if (c.className !== "dc") { c.className = "dc"; c.textContent = c.dataset.ch; c.style.opacity = ""; c.style.color = ""; } return; }
+      if (d < 26 || Math.random() < .12) c.textContent = glyph();
+      c.className = d < 4 ? "dc g front" : "dc g";
+      c.style.color = tone(d);
+      c.style.opacity = d < FADE ? "1" : String(Math.max(.32, 1 - (d - FADE) * .035).toFixed(2));
+    });
+    if (k < 1) requestAnimationFrame(step);
+    else { el.textContent = final; el.classList.remove("decoding"); }
   };
   requestAnimationFrame(step);
 })();
@@ -2134,6 +2459,28 @@ const closeModals = () => document.querySelectorAll(".modal").forEach(m => m.hid
 document.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => openModal(b.dataset.open)));
 document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeModals));
 document.querySelectorAll("[data-focus]").forEach(b => b.addEventListener("click", () => setTimeout(() => $(b.dataset.focus).scrollIntoView({ block: "start" }), 50)));
+/* thank-you line under the donation address: read from node.tauhud.com/donations.json, which the server keeps from the Ethereum chain (AGRS and ETH only) */
+const DONORS = { url: "https://node.tauhud.com/donations.json", at: 0 };
+async function loadDonors() {
+  if (Date.now() - DONORS.at < 120000) return; DONORS.at = Date.now();
+  try {
+    const d = await (await fetch(DONORS.url, { cache: "no-store" })).json(), el = $("donorLine");
+    const items = (d.items || []).filter(x => /^0x[0-9a-f]{40}$/i.test(x.from) && /^0x[0-9a-f]{64}$/i.test(x.tx) && (x.asset === "AGRS" || x.asset === "ETH") && isFinite(x.amount));
+    if (!items.length) { el.hidden = true; return; }
+    const short = a => a.slice(0, 6) + "…" + a.slice(-4);
+    const amt = x => { const n = Number(x.amount); return (n >= 100 ? Math.round(n).toLocaleString("en-US") : String(+n.toFixed(n >= 1 ? 2 : 4))) + " " + x.asset; };
+    const day = x => new Date(x.ts * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    const one = x => `<a href="https://etherscan.io/tx/${encodeURIComponent(x.tx)}" target="_blank" rel="noopener" title="See the transaction on Etherscan">${short(x.from)}</a> (${amt(x)}, ${day(x)})`;
+    const n = Math.max(1, parseInt(d.donors, 10) || 1);
+    el.innerHTML = (n === 1 ? "Supported by 1 person so far. Thank you, " : `Supported by ${n} people so far. Thank you, `) + items.slice(0, 3).map(one).join(", ") + (items.length > 3 ? " and everyone before." : ".");
+    el.hidden = false;
+  } catch (e) { DONORS.at = 0; }
+}
+document.querySelectorAll('[data-open="mAbout"]').forEach(b => b.addEventListener("click", loadDonors));
+document.addEventListener("tau-nav", e => { if (e.detail === "about" || e.detail === "donate") loadDonors(); });
+loadDonors();
+/* the brand block is the way home; a chosen language travels with it */
+(() => { const l = new URLSearchParams(location.search).get("lang"), b = document.querySelector("a.brand"); if (l && b) b.href = "./?lang=" + encodeURIComponent(l); })();
 $("copyAddr").addEventListener("click", async () => {
   const code = $("agrsAddr"), msg = $("copyMsg");
   try { await navigator.clipboard.writeText(code.textContent); msg.textContent = "Address copied."; }
@@ -2236,8 +2583,8 @@ function detailValidator(v, i) {
   const apply = () => {
     const w = innerWidth, h = innerHeight;
     // five-column layout from 2200 px; design width 2800 so every panel keeps at least its desktop room, height sets the cap
-    const wide = w >= 2200 && h >= 900;
-    let z = wide ? Math.max(1, Math.min(1.7, w / 2800, h / 950)) : 1;
+    const wide = w >= 1900 && h >= 900;
+    let z = wide ? Math.max(1, Math.min(1.7, w / 2800, h / 1000)) : 1;
     z = Math.round(z * 100) / 100;
     document.documentElement.classList.toggle("wide", wide);
     document.documentElement.classList.toggle("tall", wide && w / h < 2.2);
@@ -2261,6 +2608,7 @@ function detailValidator(v, i) {
 $("chipNet").dataset.ex = exKey(() => `Network id ${$("netId").textContent}: the chain this page shows. ${S.mode === "sim" ? "In simulation it is an imitation of the documented protocol." : "Read from the node at " + $("wsurl").value.trim() + "."}`);
 $("chipHeight").dataset.ex = exKey(() => `Chain height: the newest sealed block is #${fmt(S.height)}. ${S.mode === "sim" ? "Simulated, a block every ~8 s." : "Read from the node; the relay pushes each new block as it is sealed."}`);
 $("btnState").dataset.ex = exKey(() => `Spec revision ${S.specRev}: how many times the consensus rules have changed by agreement (genesis = 1). Click to see every rule in force right now.`);
+$("chipCons").dataset.ex = exKey(() => { const n = S.validators.length, sw = S.modeHistory.length; return `Consensus: ${modeLabel()}.${n ? ` ${n} active validator${n === 1 ? "" : "s"} seal${n === 1 ? "s" : ""} the blocks, each seal signed with BLS and checked by the Tau rules (o7).` : ""}\nTau has no proof of work. The mechanism itself is chain state: a fixed validator list (proof of authority), a validator list kept in the Tau rules, or proof of stake. It switches only through an agreed rule change, like any other rule; ${S.mode === "live" ? (sw ? `${sw} switch${sw === 1 ? "" : "es"} so far` : "no switch so far") : "simulated"}.\nClick to see every rule in force.`; });
 $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transaction, emitted by consensus rule o9. It changes only through an agreed rule change, never by an admin.`);
 
 /* ---------- overflow overlay: hover or tap any clipped text to read all of it ---------- */
@@ -2272,28 +2620,28 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   document.addEventListener("pointerdown", e => { touch = e.pointerType === "touch"; }, true);
   const place = (x, y) => { const w = ovl.offsetWidth, h = ovl.offsetHeight; ovl.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px"; ovl.style.top = (y + 18 + h > innerHeight ? y - h - 10 : y + 18) + "px"; };
   let shownAt = 0;
-  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex && EX.get(el.dataset.ex); ovl.textContent = fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim()); ovl.hidden = false; place(x, y); };
+  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex && EX.get(el.dataset.ex); ovl.textContent = viewText(fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim())); ovl.hidden = false; place(x, y); };
   const hide = () => { cur = null; ovl.hidden = true; };
   document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur && !touch) hide(); });
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
   document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail], button, a, input, select")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
-  const coreShow = e => { const fn = coreHit(e); if (fn) { cur = cv; shownAt = Date.now(); ovl.textContent = fn(); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
+  const coreShow = e => { const fn = coreHit(e); if (fn) { cur = cv; shownAt = Date.now(); ovl.textContent = viewText(fn()); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
-  cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; if (cur === cv && !touch) hide(); });
+  cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; CORE_MOUSE = null; if (cur === cv && !touch) hide(); });
   cv.addEventListener("click", e => { if (touch) coreShow(e); });
 })();
 
 /* ---------- simple / technical view ---------- */
 const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
-function setView(v) { document.body.dataset.view = v; $("btnSimple").setAttribute("aria-pressed", v === "simple"); $("btnTech").setAttribute("aria-pressed", v === "tech"); store.set("tau-view", v); const cur = selectedBlock !== null ? S.byHeight.get(selectedBlock) : S.blocks[S.blocks.length - 1]; if (cur) showBlock(cur, selectedBlock !== null); }
+function setView(v) { document.body.dataset.view = v; $("btnSimple").setAttribute("aria-pressed", v === "simple"); $("btnTech").setAttribute("aria-pressed", v === "tech"); store.set("tau-view", v); if (S.validators.length) renderGov(); const cur = selectedBlock !== null ? S.byHeight.get(selectedBlock) : S.blocks[S.blocks.length - 1]; if (cur) showBlock(cur, selectedBlock !== null); }
 $("btnSimple").onclick = () => setView("simple"); $("btnTech").onclick = () => setView("tech");
 setView(store.get("tau-view") || "simple");
 /* ---------- glyph rain toggle ---------- */
 function setRain(on) { $("rain").classList.toggle("off", !on); $("btnRain").setAttribute("aria-pressed", String(on)); store.set("tau-rain", on ? "1" : "0"); }
 $("btnRain").onclick = () => setRain($("btnRain").getAttribute("aria-pressed") !== "true");
-setRain(store.get("tau-rain") !== "0");
+setRain(store.get("tau-rain") === "1");   // decoration is opt-in
 /* ---------- guided tour for newcomers: how rules change by agreement, about one minute ---------- */
 const TOUR = [
   [".thesis", "Rules change by agreement", "On most chains the code is the law and a few developers can change it. On Tau the rules are written in logic, every block is checked against them, and they change only when the validators agree. This tour shows where each part of that happens."],
@@ -2314,57 +2662,84 @@ function tourShow(i, from) {
   }
   tourI = i; tourOffered = false; const [sel, title, text] = TOUR[i];
   const el = document.querySelector(sel), target = el.classList.contains("panel") ? el : (el.querySelector(".panel") || el);
-  target.classList.add("spot"); target.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
-  const r = target.getBoundingClientRect(); $("tour").classList.toggle("top", r.top + r.height / 2 > innerHeight / 2);
-  document.body.dataset.tour = "1"; $("tour").hidden = false;
+  target.classList.add("spot"); target.scrollIntoView({ block: "nearest", behavior: "auto" });
+  document.body.dataset.tour = "1"; $("tour").hidden = false; TOURPOS.target = target;
   $("tourStep").textContent = `Step ${i + 1} of ${TOUR.length}`; $("tourTitle").textContent = title; $("tourText").textContent = text;
   $("tourBar").firstElementChild.style.width = `${(i + 1) / TOUR.length * 100}%`;
   $("tourBack").textContent = "Back"; $("tourBack").disabled = i === 0; $("tourNext").textContent = i === TOUR.length - 1 ? "Done" : "Next";
   $("tourLink").hidden = i !== TOUR.length - 1;
-  if (from !== "key") $("tourNext").focus();
+  tourPlace();
+  if (from !== "key") $("tourNext").focus({ preventScroll: true });
 }
+/* place the card next to the spotlighted panel: below it, else right, left, above; always inside the viewport; the pointer aims at the panel's centre.
+   On phones (< 900px) the card stays a sheet at the bottom. */
+const TOURPOS = { target: null };
+function tourPlace() {
+  const card = $("tour"), t = TOURPOS.target;
+  if (!t || card.hidden || innerWidth < 900) { card.classList.remove("anchored", "side-top", "side-bottom", "side-left", "side-right"); card.style.left = card.style.top = ""; return; }
+  card.classList.add("anchored"); card.classList.remove("top");
+  card.style.left = "0px"; card.style.top = "0px";
+  const cr = card.getBoundingClientRect(), z = card.offsetWidth ? cr.width / card.offsetWidth : 1;   // html.wide zooms the card
+  const cw = cr.width, ch = cr.height, r = t.getBoundingClientRect(), vw = document.documentElement.clientWidth, vh = innerHeight, m = 14, g = 12;
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const fits = c => c[1] >= g && c[2] >= g && c[1] + cw <= vw - g && c[2] + ch <= vh - g;
+  const sideY = Math.min(Math.max(r.top, g), vh - ch - g);
+  const cands = [["side-top", cx - cw / 2, r.bottom + m], ["side-left", r.right + m, sideY], ["side-right", r.left - m - cw, sideY], ["side-bottom", cx - cw / 2, r.top - m - ch]];
+  let pick = cands.find(fits);
+  if (!pick) pick = r.bottom + m + ch <= vh - g ? cands[0] : r.top - m - ch >= g ? cands[3] : r.right + m + cw <= vw - g ? cands[1] : cands[2];
+  const side = pick[0], l = Math.min(Math.max(pick[1], g), vw - cw - g), tp = Math.min(Math.max(pick[2], g), vh - ch - g);
+  card.classList.remove("side-top", "side-bottom", "side-left", "side-right"); card.classList.add(side);
+  card.style.left = (l / z) + "px"; card.style.top = (tp / z) + "px";
+  card.style.setProperty("--ax", Math.min(Math.max(cx - l, 18), cw - 18) / z + "px");
+  card.style.setProperty("--ay", Math.min(Math.max(cy - tp, 18), ch - 18) / z + "px");
+}
+addEventListener("resize", () => { if (tourI >= 0) tourPlace(); });
+addEventListener("scroll", () => { if (tourI >= 0) tourPlace(); }, { passive: true });
 /* first visit: offer the tour once; “Not now” is remembered, as is finishing it */
 function tourOffer() {
   if (tourI >= 0 || store.get("tau-tour") || innerWidth < 900 || document.querySelector(".modal:not([hidden])")) return;
   tourOffered = true;
-  $("tour").classList.remove("top"); $("tour").hidden = false; $("tourStep").textContent = "New here?"; $("tourTitle").textContent = "How rules change on Tau, in one minute";
+  $("tour").classList.remove("top", "anchored", "side-top", "side-bottom", "side-left", "side-right"); $("tour").style.left = $("tour").style.top = ""; TOURPOS.target = null;
+  $("tour").hidden = false; $("tourStep").textContent = "New here?"; $("tourTitle").textContent = "How rules change on Tau, in one minute";
   $("tourText").textContent = "Eight short steps point at the panels where a rule is proposed, checked, agreed and made law, without a fork or an upgrade. You can stop at any time.";
   $("tourBar").firstElementChild.style.width = "0"; $("tourLink").hidden = true;
   $("tourBack").textContent = "Not now"; $("tourBack").disabled = false; $("tourNext").textContent = "Start the tour";
 }
 $("btnTour").onclick = $("btnTour2").onclick = () => tourShow(0);
-$("btnState").onclick = $("btnState2").onclick = $("btnState3").onclick = showState;
-document.addEventListener("tau-nav", e => { const act = { tour: () => tourShow(0), about: () => openModal("mAbout"), updates: () => openModal("mFeedback"), state: showState }[e.detail]; if (act) act(); });
+$("btnState").onclick = $("chipCons").onclick = $("btnState2").onclick = $("btnState3").onclick = showState;
+document.addEventListener("tau-nav", e => { const act = { tour: () => tourShow(0), about: () => openModal("mAbout"), donate: () => { openModal("mAbout"); setTimeout(() => $("donate").scrollIntoView({ block: "start" }), 50); }, updates: () => openModal("mFeedback"), state: showState }[e.detail]; if (act) act(); });
 /* links from the subpages land here: /#chain-state, /#updates, /#about, /?tour=1 */
 addEventListener("DOMContentLoaded", () => {
   const q = new URLSearchParams(location.search), h = location.hash.replace("#", "");
-  const act = q.get("tour") ? "tour" : { "chain-state": "state", updates: "updates", about: "about" }[h];
+  const act = q.get("tour") ? "tour" : { "chain-state": "state", updates: "updates", about: "about", donate: "donate" }[h];
+  const mode = q.get("mode");
+  if (mode === "sim" || mode === "live") { try { history.replaceState(null, "", location.pathname); } catch (e) {} setTimeout(() => $(mode === "sim" ? "btnSim" : "btnLive").click(), 300); }
   if (!act) return;
   try { history.replaceState(null, "", location.pathname); } catch (e) {}
   setTimeout(() => { if (act === "tour") { tourOffered = true; $("tourOffer") && ($("tourOffer").hidden = true); } document.dispatchEvent(new CustomEvent("tau-nav", { detail: act })); }, 500);
 });
 $("statePanelCard").addEventListener("click", e => { if (!e.target.closest(".info")) showState(); }); $("statePanelCard").style.cursor = "pointer";
 $("feedRej").onclick = () => { const on = $("feedRej").getAttribute("aria-pressed") !== "true"; $("feedRej").setAttribute("aria-pressed", String(on)); $("feed").classList.toggle("only-rej", on); };
-$("chainSub").onclick = () => { selectedBlock = null; const last = S.blocks[S.blocks.length - 1]; if (last) showBlock(last, false); }; $("chainSub").style.cursor = "pointer";
-/* mouse wheel over the block strip steps through blocks: down = back in time, up = toward the newest; one block per notch */
+$("chainSub").onclick = () => { selectedBlock = null; ribbonReset(); const last = S.blocks[S.blocks.length - 1]; if (last) showBlock(last, false); }; $("chainSub").style.cursor = "pointer";
+/* mouse wheel over the block strip glides through the chain: down = back in time, up = toward the newest; sideways trackpad scrolling is native */
 (() => {
-  const r = $("ribbon"); let acc = 0, lastStep = 0;
+  const r = $("ribbon");
+  const glide = () => {
+    RIB.raf = 0; if (RIB.target == null) return;
+    const diff = RIB.target - r.scrollLeft;
+    if (Math.abs(diff) < .6) { r.scrollLeft = RIB.target; RIB.target = null; return; }
+    r.scrollLeft += diff * .16; RIB.raf = requestAnimationFrame(glide);
+  };
   r.addEventListener("wheel", e => {
-    if (!S.blocks.length) return;
+    if (!S.blocks.length || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
     e.preventDefault();
-    acc += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
-    const now = performance.now();
-    if (Math.abs(acc) < 40 || now - lastStep < 90) return;   // one notch (or one trackpad flick) = one block
-    const dir = acc > 0 ? -1 : 1; acc = 0; lastStep = now;
-    const curN = selectedBlock ?? S.blocks[S.blocks.length - 1].n;
-    const idx = S.blocks.findIndex(b => b.n === curN);
-    const nb = S.blocks[Math.max(0, Math.min(S.blocks.length - 1, (idx < 0 ? S.blocks.length - 1 : idx) + dir))];
-    if (!nb || nb.n === curN) return;
-    const newest = nb.n === S.blocks[S.blocks.length - 1].n;
-    if (newest) selectedBlock = null;
-    showBlock(nb, !newest);
-    const card = r.querySelector(`.blk[data-n="${nb.n}"]`); if (card) card.scrollIntoView({ block: "nearest", inline: "center", behavior: reduced ? "auto" : "smooth" });
+    const d = (e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * r.clientWidth : e.deltaY) * 1.4;
+    if (RIB.target == null) RIB.target = r.scrollLeft;
+    RIB.target = Math.max(0, Math.min(r.scrollWidth - r.clientWidth, RIB.target - d));
+    if (reduced) { r.scrollLeft = RIB.target; RIB.target = null; return; }
+    if (!RIB.raf) RIB.raf = requestAnimationFrame(glide);
   }, { passive: false });
+  let tick = 0; r.addEventListener("scroll", () => { if (!tick) tick = requestAnimationFrame(() => { tick = 0; ribbonFollow(); }); }, { passive: true });
 })();
 $("tourNext").onclick = () => tourShow(tourI + 1); $("tourBack").onclick = () => tourShow(tourI - 1); $("tourClose").onclick = () => tourShow(-1);
 document.addEventListener("keydown", e => {
@@ -2403,7 +2778,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.0`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.24`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

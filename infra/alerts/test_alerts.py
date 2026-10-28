@@ -132,15 +132,18 @@ async def main():
         await until(lambda: len(tg.sent) == 5, "agree, drop, activate posted")
         kinds = [s.split(":")[0] for s in tg.sent]
         assert kinds == ["proposed", "proposed", "agreed", "dropped", "active"], kinds
-        assert "Base fee → 30 AGRS" in tg.sent[0], tg.sent[0]
+        assert "Base fee 20 → 30 AGRS" in tg.sent[0], tg.sent[0]
         await until(lambda: len(x.sent) == 5, "x catches up after its failure")
 
         data = json.load(open(os.path.join(os.environ["PUBLIC_DIR"], "proposals.json")))
         st = {p["title"]: p["status"] for p in data["proposals"]}
-        assert st == {"Base fee → 20 AGRS": "active", "Base fee → 30 AGRS": "active", "New consensus rule text": "dropped"}, st
+        assert st == {"Base fee 10 → 20 AGRS": "active", "Base fee 20 → 30 AGRS": "active", "New definition of o5": "dropped"}, st
         assert data["rules"]["revision"] == 3 and data["rules"]["base_fee"] == 30, data["rules"]
         feed = ET.parse(os.path.join(os.environ["PUBLIC_DIR"], "feed.xml")).getroot()
         assert len(feed.findall("{http://www.w3.org/2005/Atom}entry")) == 8
+
+        # --preview reads the chain on its own and posts nothing
+        assert await alerts.preview_latest(2) == 0
 
         # weekly recap: the first run only notes the slot; a passed slot draws and posts once
         assert w.state["recap"]["slot"] == alerts.Watcher.recap_slot(time.time()) and not any(x.startswith("recap") for x in tg.sent)
@@ -176,4 +179,21 @@ def _fast_sleep(real):
     return sleep
 
 
+
+def test_rule_diff():
+    """The rule text diff: changed lines, an added stream, and no difference for the same text."""
+    spec = alerts.explain.clauses(alerts.explain.GENESIS_RULES)
+    d = alerts.explain.diff([FEE_RULE], spec)
+    assert (d["added"], d["removed"], d["streams"]) == (1, 1, ["o9"]), d
+    assert [r[0] for r in d["lines"] if r[0] != " "] == ["-", "+"] and "#x000014" in d["lines"][-2][1], d
+    d = alerts.explain.diff(["always (o10[t]:bv[16] = i15[t]:bv[16])"], spec)
+    assert (d["added"], d["removed"]) == (1, 0), d   # the clause before it keeps its line, only && is added
+    d = alerts.explain.diff([alerts.explain.GENESIS_RULES.replace("    ", "  ")], spec)
+    assert alerts.explain.diff_summary(d) == "no difference", d
+    item = {"kind": "proposed", "headline": "x", "what": [], "why": "", "facts": [], "link": "https://tauhud.com",
+            "diff": {"summary": "no difference", "lines": [], "more": 0}}
+    assert "Rule text diff</b>: none" in alerts.telegram_text(item)
+
+
+test_rule_diff()
 asyncio.run(main())

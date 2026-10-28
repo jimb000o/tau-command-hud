@@ -55,7 +55,10 @@ TRUST_PROXY = os.environ.get("TRUST_PROXY", "1") == "1"
 OPEN_ADMISSION = os.environ.get("TAU_GOVERNANCE_OPEN_ADMISSION", "false").lower() in ("1", "true", "yes")
 
 MAX_CLIENTS = _env_int("MAX_CLIENTS", 500)
-MAX_PER_IP = _env_int("MAX_PER_IP", 8)
+# Every open tauhud.com page holds two sockets (its own and the shared header's), the HUD
+# three, and a closed tab lingers for up to 30 s; so one person with a few tabs needs well
+# over 8. 32 still stops a single address from eating the relay.
+MAX_PER_IP = _env_int("MAX_PER_IP", 32)
 CLIENT_BURST = _env_float("CLIENT_BURST", 20)
 CLIENT_REFILL = _env_float("CLIENT_REFILL_PER_SEC", 2)
 # Account / tx lookups go to the node; this caps them across all visitors.
@@ -90,6 +93,11 @@ SYNC_LAG = _env_int("SYNC_LAG_BLOCKS", 2)
 # a gap between two blocks longer than this is listed as a chain stall
 STALL_SECONDS = _env_int("STALL_SECONDS", 600)
 STATS_CACHE_SECONDS = _env_float("STATS_CACHE_SECONDS", 5)
+# Testnet health score (GET /health-score): 0-100 from seven factors, weights add up to 100.
+HEALTH_BLOCK_SECONDS = _env_float("HEALTH_BLOCK_SECONDS", 60)  # expected block time until the chain shows its own
+HEALTH_OK = _env_int("HEALTH_OK_AT", 80)          # at or above: healthy
+HEALTH_DEGRADED = _env_int("HEALTH_DEGRADED_AT", 50)  # at or above: degraded, below: down
+HEALTH_WEIGHTS = {"node": 20, "sync": 15, "last_block": 20, "pace": 10, "availability": 15, "stability": 15, "mempool": 5}
 # a tx that leaves the mempool counts as dropped only if no block holds it
 # this long afterwards (the block poll may still be catching up)
 DROP_GRACE_SECONDS = _env_float("DROP_GRACE_SECONDS", 30)
@@ -131,6 +139,12 @@ BOARD_KEEP_DAYS = _env_float("BOARD_KEEP_DAYS", 30)
 BOARD_MAX = _env_int("BOARD_MAX", 1000)
 BOARD_SAVE_SECONDS = _env_float("BOARD_SAVE_SECONDS", 60)
 BADGE_PATH = re.compile(r"^/community/badge/([0-9a-f]{12})\.svg$")
+# Public read API for other sites (documented on tauhud.com/developers/): one
+# cached summary and live SVG badges. Versioned so fields can grow without
+# breaking embeds; a field is never renamed or removed within v1.
+API_BADGE_PATH = re.compile(r"^/api/v1/badge/(height|status|proposals|validators|health)\.svg$")
+API_CACHE_SECONDS = _env_float("API_CACHE_SECONDS", 10)
+NETWORK = os.environ.get("TAU_NETWORK", "tau-testnet-v2")
 REPORT_FIELDS = {
     "key": re.compile(r"^[0-9a-f]{32}$"),
     "name": re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$"),
@@ -249,6 +263,9 @@ class Relay:
         self.uptime = self._load_uptime()       # hourly availability buckets and outages
         self.uptime_text: str | None = None
         self.uptime_at = 0.0
+        self.health_cache: tuple[float, dict] | None = None
+        self.health_text: str | None = None
+        self.health_at = 0.0
         self._load_chain()
         self.mempool_seen: dict[str, dict] = {}  # tx_hash -> summary, while in the mempool
         self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
@@ -261,6 +278,8 @@ class Relay:
         self.board_saved_at = 0.0
         self.board_text: str | None = None
         self.board_at = 0.0
+        self.summary_data: dict | None = None
+        self.summary_at = 0.0
 
     # ---------- polling ----------
     async def poll_loop(self, every: float, fn):
@@ -549,6 +568,12 @@ class Relay:
         bucket[0] += 1
         bucket[1] += node_ok
         bucket[2] += synced
+        # health score of this minute: [3] sum, [4] lowest, [5] samples (hours from before the score have none)
+        score = self.health(now, node_ok=node_ok, cached=False)["score"]
+        bucket.extend([0, 100, 0][len(bucket) - 3:])
+        bucket[4] = score if not bucket[5] else min(bucket[4], score)
+        bucket[3] += score
+        bucket[5] += 1
         opened = self.uptime_open
         for kind, bad, detail in (("node", not node_ok, None),
                                   ("sync", node_ok and not synced, {"canonical": canon, "tip": tip})):
@@ -601,7 +626,7 @@ class Relay:
         self.uptime_text = json.dumps({
             "generated_at": round(now), "since": self.uptime.get("since"),
             "sample_seconds": UPTIME_SAMPLE, "sync_lag_blocks": SYNC_LAG, "stall_seconds": STALL_SECONDS,
-            "fields": ["hour", "samples", "node_ok", "synced"],
+            "fields": ["hour", "samples", "node_ok", "synced", "score_sum", "score_min", "score_samples"],
             "hours": hours, "incidents": incidents,
             "restarts": [{"detected_at": r.get("detected_at"), "old_tip": (r.get("old") or {}).get("tip"),
                           "old_tip_ts": (r.get("old") or {}).get("tip_ts"), "new_block1_ts": r.get("new_block1_ts")}
@@ -613,6 +638,106 @@ class Relay:
         }, separators=(",", ":"))
         self.uptime_at = now
         return self.uptime_text
+
+    # ---------- testnet health score: /health-score ----------
+    def expected_block_seconds(self) -> float:
+        """Typical time between blocks: the median gap of the last 100 blocks,
+        leaving out stalls, so a slow hour shows against the chain's own pace."""
+        ts = [self._ts(b) for b in self.ordered_blocks()[-101:] if self._height(b) >= 1]
+        ts = [t for t in ts if t]
+        gaps = sorted(b - a for a, b in zip(ts, ts[1:]) if 0 < b - a <= STALL_SECONDS)
+        if len(gaps) < 5:
+            return HEALTH_BLOCK_SECONDS
+        return float(min(600, max(5, gaps[len(gaps) // 2])))
+
+    def health(self, now: float | None = None, node_ok: bool | None = None, cached: bool = True) -> dict:
+        """Is the testnet healthy, as far as our node can tell? Seven factors,
+        each worth part of 100 points; the breakdown says why."""
+        now = now if now is not None else time.time()
+        if cached and self.health_cache and 0 <= now - self.health_cache[0] < STATS_CACHE_SECONDS:
+            return self.health_cache[1]
+        if node_ok is None:
+            fresh = now - self.updated.get("getblocks", 0) < 3 * max(BLOCK_POLL, UPTIME_SAMPLE / 2)
+            node_ok = self.upstream.connected.is_set() and fresh
+        lin = lambda x, good, bad: max(0.0, min(1.0, (x - bad) / (good - bad)))  # 1 at good, 0 at bad
+        W, factors = HEALTH_WEIGHTS, []
+
+        def add(key, label, frac, value, note=""):
+            factors.append({"key": key, "label": label, "weight": W[key], "points": round(W[key] * frac, 1),
+                            "value": value, "note": note})
+
+        add("node", "Node answering", 1.0 if node_ok else 0.0, "yes" if node_ok else "no",
+            "" if node_ok else "our node does not answer the relay")
+        canon, tip = self.canonical_height(), self.tip_height()
+        lag = (tip - canon) if canon is not None and tip is not None else None
+        if not node_ok or not canon:
+            add("sync", "In sync with the network", 0.0, "unknown" if not node_ok else "syncing",
+                "no verified head" if node_ok else "node not answering")
+        else:
+            add("sync", "In sync with the network", 1.0 if lag is None else lin(lag, SYNC_LAG, 30),
+                "in sync" if lag is None or lag <= 0 else f"{lag} blocks behind",
+                "no peer tip known yet" if lag is None else "")
+        exp = self.expected_block_seconds()
+        ordered = [b for b in self.ordered_blocks() if self._height(b) >= 1 and self._ts(b)]
+        last_ts = self._ts(ordered[-1]) if ordered else None
+        if last_ts is None:
+            add("last_block", "Time since the last block", 0.0, "no blocks", "")
+        else:
+            age = max(0, now - last_ts)
+            add("last_block", "Time since the last block", lin(age, max(3 * exp, 180), 1800), round(age),
+                f"usually {round(exp)} s between blocks")
+        if ordered:
+            window = max(600.0, min(3600.0, now - self._ts(ordered[0])))
+            made = sum(1 for b in ordered if self._ts(b) > now - window)
+            want = window / exp
+            add("pace", "Blocks in the last hour", lin(made / want, 0.75, 0), made,
+                f"about {round(want)} expected" + (f" in {round(window / 60)} min" if window < 3600 else ""))
+        else:
+            add("pace", "Blocks in the last hour", 0.0, 0, "")
+        cut = now - 86400
+        samples = synced = 0
+        for h, v in self.uptime["hours"].items():
+            if int(h) >= cut - 3599:
+                samples += v[0]
+                synced += v[2]
+        if samples:
+            add("availability", "Live and in sync, 24 h", lin(synced / samples, 0.99, 0.8), round(synced / samples, 4),
+                f"{samples} checks")
+        else:
+            add("availability", "Live and in sync, 24 h", 1.0, None, "no record yet")
+        restarts = sum(1 for r in self.state["restarts"] if (r.get("detected_at") or 0) >= cut)
+        reorgs = sum(1 for r in self.state["reorgs"] if (r.get("at") or 0) >= cut)
+        stalls = len(self.chain_stalls(cut))
+        lost = 10 * restarts + 3 * reorgs + 4 * stalls
+        add("stability", "Restarts, reorgs and stalls, 24 h", max(0.0, 1 - lost / W["stability"]),
+            {"restarts": restarts, "reorgs": reorgs, "stalls": stalls},
+            "a restart costs 10 points, a stall over 10 min 4, a reorg 3")
+        waiting = [now - i["seen"] for i in self.mempool_seen.values() if i.get("seen")]
+        oldest = max(waiting) if waiting else 0
+        add("mempool", "Oldest waiting transaction", lin(oldest, 600, 3600), round(oldest),
+            f"{len(waiting)} waiting" if waiting else "mempool empty")
+        score = round(sum(f["points"] for f in factors))
+        # no answer from our node, or no block for 30 minutes, is down whatever the other factors say
+        halted = factors[2]["points"] == 0
+        state = "down" if not node_ok or halted or score < HEALTH_DEGRADED else "healthy" if score >= HEALTH_OK else "degraded"
+        out = {"score": score, "state": state, "label": {"healthy": "Healthy", "degraded": "Degraded", "down": "Down"}[state],
+               "at": round(now), "expected_block_seconds": round(exp), "factors": factors}
+        self.health_cache = (now, out)
+        return out
+
+    def health_json(self) -> str:
+        now = time.time()
+        if self.health_text and now - self.health_at < STATS_CACHE_SECONDS:
+            return self.health_text
+        hours = sorted((int(h), round(v[3] / v[5], 1), v[4]) for h, v in self.uptime["hours"].items()
+                       if len(v) >= 6 and v[5])
+        self.health_text = json.dumps({
+            "generated_at": round(now), **self.health(now),
+            "thresholds": {"healthy": HEALTH_OK, "degraded": HEALTH_DEGRADED},
+            "fields": ["hour", "average", "lowest"], "hours": hours,
+        }, separators=(",", ":"))
+        self.health_at = now
+        return self.health_text
 
     @staticmethod
     def _tx_summary(t: dict) -> dict:
@@ -977,9 +1102,13 @@ class Relay:
             up = self.node_uptime(row, now)
             if span and up is not None:  # days alone would flatter a node that was mostly down
                 right += f" · {round(up * 100)} % up"
-        left = "Tau HUD node"
-        # the site's colours: black, white, phosphor green for a node that is up
-        bg, fg = ("#39ff8a", "#000") if online else ("#2a2a2e", "#ebebee")
+        return self.badge("Tau HUD node", right, online)
+
+    @staticmethod
+    def badge(left: str, right: str, on: bool) -> str:
+        """Shields-style two-part badge in the site's colours: black, white,
+        phosphor green when the value is good news."""
+        bg, fg = ("#39ff8a", "#000") if on else ("#2a2a2e", "#ebebee")
         # Verdana 11px averages about 6.6 px per character; padding 6 px each side
         lw, rw = int(len(left) * 6.6) + 12, int(len(right) * 6.6) + 12
         esc = lambda t: t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -990,6 +1119,76 @@ class Relay:
                 f'<text x="{lw / 2:.1f}" y="14" fill="#fff">{esc(left)}</text>'
                 f'<text x="{lw + rw / 2:.1f}" y="14" fill="{fg}">{esc(right)}</text>'
                 f'</g></svg>')
+
+    # ---------- public API (/api/v1/…) ----------
+    def summary(self) -> dict:
+        """Everything a widget needs in one small object, cached for API_CACHE_SECONDS."""
+        now = time.time()
+        if self.summary_data is not None and now - self.summary_at < API_CACHE_SECONDS:
+            return self.summary_data
+        st = self.status()
+        gov = self.governance()
+        connected = st["upstream_connected"] and "getblocks" in self.updated
+        canon, tip = st["canonical_height"], st["tip_height"]
+        synced = bool(connected and canon and (tip is None or tip - canon <= SYNC_LAG))
+        stamps = [t for t in (self._ts(b) for b in self.ordered_blocks()[-11:]) if t is not None]
+        pace = round((stamps[-1] - stamps[0]) / (len(stamps) - 1), 1) if len(stamps) > 1 and stamps[-1] > stamps[0] else None
+        archived = [u for u in gov.get("archival_update_details") or [] if isinstance(u, dict)]
+        activated = sum(1 for u in archived if u.get("lifecycle") == "activated")
+        fee = None
+        m = re.search(r"o9\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]+)", str(gov.get("consensus_rules") or ""))
+        if m:
+            fee = int(m.group(1), 16)
+        try:
+            mempool = len(json.loads(self.cache["getmempool"])["data"].get("transactions") or [])
+        except (KeyError, TypeError, ValueError, AttributeError):
+            mempool = None
+        proposals = {"waiting": len(gov.get("pending_updates") or []),
+                     "agreed": len(gov.get("scheduled_updates") or []),
+                     "in_force": activated, "dropped": len(archived) - activated}
+        proposals["total"] = sum(proposals.values())
+        self.summary_data = {
+            "api": "tauhud/v1", "network": NETWORK, "generated_at": round(now),
+            "status": "synced" if synced else "catching_up" if connected else "offline",
+            "height": canon, "tip_height": tip,
+            "last_block_ts": stamps[-1] if stamps else None,
+            "last_block_age_seconds": round(now - stamps[-1]) if stamps else None,
+            "pace_seconds": pace,
+            "spec_revision": 1 + activated if gov else None,
+            "base_fee": fee,
+            "validators": len(gov.get("active_validators") or []) if gov else None,
+            "proposals": proposals if gov else None,
+            "mempool": mempool,
+            "viewers": st["online"],
+            "community_nodes": st["community_nodes"],
+            "health": st.get("health"),
+            "docs": "https://tauhud.com/developers/",
+        }
+        self.summary_at = now
+        return self.summary_data
+
+    def api_badge(self, kind: str) -> str:
+        s = self.summary()
+        up = s["status"] == "synced"
+        p = s["proposals"] or {}
+        if kind == "height":
+            return self.badge("Tau block", f"{s['height']:,}" if s["height"] is not None else "offline", up)
+        if kind == "status":
+            return self.badge("Tau testnet", {"synced": "live", "catching_up": "catching up", "offline": "offline"}[s["status"]], up)
+        if kind == "proposals":
+            if not p:
+                return self.badge("Tau rule changes", "unknown", False)
+            right = f"{p['in_force']} in force"
+            if p["waiting"] or p["agreed"]:
+                right = f"{p['waiting'] + p['agreed']} coming up · " + right
+            return self.badge("Tau rule changes", right, bool(p["waiting"] or p["agreed"]))
+        if kind == "validators":
+            n = s["validators"]
+            return self.badge("Tau validators", "unknown" if n is None else f"{n} active", bool(n))
+        h = s["health"] if isinstance(s["health"], dict) else {}
+        score = h.get("score")
+        return self.badge("Tau testnet health", "not rated yet" if score is None else f"{score} / 100",
+                          score is not None and score >= HEALTH_OK)
 
     def community_json(self) -> str:
         """Cached like /stats: the endpoint is public, the build walks the chain once."""
@@ -1052,6 +1251,8 @@ class Relay:
             "restarts": [{"detected_at": r.get("detected_at"), "old_tip": (r.get("old") or {}).get("tip")}
                          for r in self.state["restarts"][-10:]],
             "reorgs": self.state["reorgs"][-10:],
+            # testnet health score, full breakdown and history on /health-score
+            "health": {k: v for k, v in self.health(now).items() if k in ("score", "state", "label")},
             "age_seconds": {k: round(now - v, 1) for k, v in self.updated.items()},
             "uptime_seconds": round(now - self.started),
         }
@@ -1097,11 +1298,31 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.uptime_json().encode())
+        if path == "/health-score":
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.health_json().encode())
         if path == "/community":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.community_json().encode())
+        if path in ("/api", "/api/", "/api/v1", "/api/v1/", "/api/v1/summary"):
+            if path != "/api/v1/summary":
+                return Response(HTTPStatus.FOUND.value, HTTPStatus.FOUND.phrase,
+                                Headers([("Location", "https://tauhud.com/developers/")]), b"")
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers,
+                            json.dumps(self.summary(), separators=(",", ":")).encode())
+        api_badge = API_BADGE_PATH.match(path)
+        if api_badge:
+            headers = Headers([("Content-Type", "image/svg+xml; charset=utf-8"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.api_badge(api_badge.group(1)).encode())
         if request.headers.get("Upgrade", "").lower() != "websocket":
             return connection.respond(HTTPStatus.OK, "Tau HUD read-only relay. Connect with WebSocket; GET /status for health.\n")
         if not self.origin_ok(request.headers.get("Origin")):
@@ -1109,6 +1330,7 @@ class Relay:
         if len(self.clients) >= MAX_CLIENTS:
             return connection.respond(HTTPStatus.SERVICE_UNAVAILABLE, "relay at capacity\n")
         if self.per_ip.get(self.client_ip(connection, request), 0) >= MAX_PER_IP:
+            log.info("refused a socket: one address already holds %s (MAX_PER_IP)", MAX_PER_IP)
             return connection.respond(HTTPStatus.TOO_MANY_REQUESTS, "too many connections from your address\n")
         return None
 

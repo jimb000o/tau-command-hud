@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Proposal Tracker</title>
@@ -48,22 +49,20 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
 .state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
 .state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
-.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+.state.off { color: #fff; border-color: rgba(255,255,255,.4); } .state.off i { background: var(--bad); }   /* the red dot means offline; the text stays white, one colour per meaning */
 .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
 .lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 30em; }
 .sub { margin: 4px 0 0; color: var(--dim); max-width: 60em; }
 .follow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.follow .lbl { font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); margin-right: 2px; }
+.follow .lbl { font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); margin-right: 2px; }
 .btn { display: inline-flex; align-items: center; gap: 8px; font: 600 12px var(--display); letter-spacing: .1em; text-transform: uppercase; text-decoration: none; color: #fff; background: transparent; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 14px; cursor: pointer; white-space: nowrap; }
 .btn svg { width: 15px; height: 15px; fill: currentColor; flex: none; }
 .btn:hover { background: #fff; color: #000; border-color: #fff; }
 .btn.primary { background: var(--ok); color: #000; border-color: var(--ok); }
 .btn.primary:hover { background: #fff; border-color: #fff; }
-.btn.soon { color: var(--dim); border-style: dashed; cursor: default; }
-.btn.soon:hover { background: transparent; color: var(--dim); border-color: var(--hair); }
 .tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-width: 0; }
-.tile h3 { margin: 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.tile h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .tile .v { font: 600 24px/1.2 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 4px; }
 .tile .v small { font: 500 13px var(--display); color: var(--dim); margin-left: 4px; }
 .tile p { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
@@ -82,26 +81,65 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .list > li.voting > button { border-left-color: var(--behind); }
 .list > li.agreed > button, .list > li.active > button { border-left-color: var(--ok); }
 .list > li.dropped > button { border-left-color: var(--line); }
-.list b { color: #fff; font: 600 13.5px/1.35 var(--display); display: block; overflow-wrap: anywhere; }
+.list b { color: #fff; font: 600 14px/1.35 var(--display); display: block; overflow-wrap: anywhere; }
 .list .m { display: block; color: var(--dim); font-size: 12px; margin-top: 2px; }
-.badge { display: inline-block; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; margin-right: 6px; vertical-align: 1px; white-space: nowrap; }
+.badge { display: inline-block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; margin-right: 6px; vertical-align: 1px; white-space: nowrap; }
 .b-voting { color: var(--behind); } .b-agreed, .b-active { color: var(--ok); } .b-dropped { color: var(--dim); }
 .flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 8px 0 6px; }
-.flow span { font: 600 10px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); border-top: 2px solid var(--line); padding-top: 4px; }
+.flow span { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); border-top: 2px solid var(--line); padding-top: 4px; }
 .flow span.done { color: #fff; border-top-color: #fff; }
 .flow span.now { color: var(--behind); border-top-color: var(--behind); }
 .flow span.ok { color: var(--ok); border-top-color: var(--ok); }
 .quorum { position: relative; height: 18px; border: 1px solid var(--hair); border-radius: 4px; overflow: hidden; margin-top: 6px; }
 .quorum .fill { position: absolute; inset: 0 auto 0 0; background: rgba(57,255,138,.28); }
-.quorum span { position: relative; display: block; text-align: center; font-size: 11.5px; line-height: 16px; color: #fff; }
+.quorum span { position: relative; display: block; text-align: center; font-size: 12px; line-height: 16px; color: #fff; }
 .news { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; align-content: start; }
 .news li { padding: 6px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); }
 .news li.k-proposed { border-left-color: var(--behind); } .news li.k-agreed, .news li.k-active { border-left-color: var(--ok); } .news li.k-restart { border-left-color: #fff; }
 .news li b { color: #fff; font-weight: 600; }
 .news li em { font-style: normal; color: var(--dim); }
 .news li a { color: var(--dim); }
-.empty { color: var(--dim); font-size: 12.5px; padding: 18px 4px; }
+.empty { color: var(--dim); font-size: 13px; padding: 18px 4px; }
 .empty b { color: #fff; }
+.grp { margin: 10px 0 6px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.grp:first-child { margin-top: 0; }
+.grp small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
+.list > li.quiet { color: var(--dim); font-size: 13px; padding: 4px 2px 6px; }
+.quorum.wait .fill { background: rgba(255,255,255,.14); }
+/* rules over time: one lane per spec revision, one for the consensus mechanism, one bar per proposal from proposed to its activation block */
+.p-rules { padding-bottom: 10px; }
+.tl { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 5px 12px; align-items: center; }
+.tl .ln { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.tl .tr { position: relative; height: 26px; }
+.tl .tr.props { height: auto; min-height: 14px; }
+.tl .seg { position: absolute; top: 0; bottom: 0; border: 1px solid var(--hair); border-radius: 4px; background: rgba(255,255,255,.04); display: flex; align-items: center; padding: 0 8px; overflow: hidden;
+  font: 600 11px var(--display); color: var(--dim); white-space: nowrap; cursor: pointer; min-width: 3px; }
+.tl .seg:hover, .tl .seg:focus-visible { background: rgba(255,255,255,.1); color: #fff; outline: none; }
+.tl .seg.now { border-color: #fff; color: #fff; background: rgba(255,255,255,.08); }
+.tl .seg.future { border-style: dashed; background: transparent; }
+.tl .seg.maybe { border-style: dotted; background: transparent; color: var(--dim); }
+.tl .seg .t { overflow: hidden; }
+.tick { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 2px solid var(--ok); }
+.tick.future { border-left: 2px dashed #fff; }
+.nowline { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 1px solid var(--ok); box-shadow: 0 0 6px var(--ok); pointer-events: none; }
+.pbar { position: relative; height: 12px; }
+.pbar button { all: unset; position: absolute; top: 0; height: 12px; cursor: pointer; min-width: 8px; color: rgba(255,255,255,.55); background: linear-gradient(currentColor, currentColor) center / 100% 2px no-repeat; }
+.pbar button::before { content: ""; position: absolute; left: -4px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--deck); border: 2px solid currentColor; box-sizing: border-box; }
+.pbar button::after { content: ""; position: absolute; right: -1px; top: 0; width: 2px; height: 12px; background: currentColor; }
+.pbar button:hover, .pbar button:focus-visible { color: #fff; }
+.pbar .active { color: var(--ok); }
+.pbar .voting { color: var(--behind); }
+.pbar .dropped { color: rgba(255,255,255,.25); }
+.axis { position: relative; height: 16px; font: 11px var(--mono); color: var(--dim); }
+.axis span { position: absolute; top: 0; white-space: nowrap; transform: translateX(-50%); }
+.axis span.l { transform: none; } .axis span.r { transform: translateX(-100%); }
+.axis span.now { color: var(--ok); }
+.axis .brk { position: absolute; top: 2px; bottom: 2px; border-left: 1px dashed var(--hair); }
+.tl-note { margin: 6px 0 0; color: var(--dim); font-size: 12px; }
+.tl-note b { color: #fff; font-weight: 600; }
+#tlTip { position: fixed; z-index: 80; max-width: min(420px, 90vw); padding: 8px 11px; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
+#tlTip[hidden] { display: none; }
+@media (max-width: 700px) { .tl { grid-template-columns: 1fr; gap: 3px; } .tl .ln { margin-top: 6px; } .tl .ln:empty { display: none; } .tl .tr { height: 30px; } .pbar { height: 22px; } .pbar button { top: 8px; } }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer a { color: var(--dim); }
 footer p { margin: 0; }
@@ -120,31 +158,53 @@ html.fit .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
 html.fit .lead { font-size: 22px; margin: 0; }
 html.fit .sub { font-size: 12px; margin: 2px 0 0; }
 html.fit header { padding: 4px 0 6px; }
-html.fit .modal .sheet, html.fit .fb-fab { zoom: var(--z); }
-html.fit .modal .sheet { max-height: calc(100% / var(--z)); }
-html.fit .fb-fab { padding: 8px 14px; font-size: 11px; bottom: 8px; left: auto; right: 12px; }
+html.fit .modal .sheet { zoom: var(--z); }
+html.fit .modal .sheet { max-height: calc((100vh - 40px) / var(--z)); }
 
 /* modal */
 .modal { position: fixed; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); overflow: auto; }
 .sheet { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; }
 .sheet .panel { padding-right: 48px; }
+.sheet.w2 { width: min(1500px, 100%); }
+.dcols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0 28px; align-items: start; }
+.dcols > div > :first-child { margin-top: 0; }
+.dcols pre.code { max-height: 38vh; }
+html.fit .dcols pre.code { max-height: calc(38vh / var(--z)); }
+@media (max-width: 900px) { .dcols { grid-template-columns: minmax(0, 1fr); } .dcols > div + div { margin-top: 14px; } }
 .sheet h2 { font: 600 17px/1.35 var(--display); letter-spacing: 0; text-transform: none; color: #fff; }
-.sheet h3 { margin: 14px 0 4px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.sheet h3 { margin: 14px 0 4px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: #fff; cursor: pointer; font: 14px var(--display); z-index: 1; }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .steps li { padding: 5px 10px; border-left: 2px solid var(--hair); }
 .steps li.ok { border-left-color: var(--ok); } .steps li.now { border-left-color: var(--behind); }
 .steps b { color: #fff; font-weight: 600; }
 .steps a { color: var(--dim); }
-pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 40vh; overflow: auto; }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); max-height: 40vh; overflow: auto; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
-.fb-fab:hover { background: var(--ok); }
-@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .follow .lbl { width: 100%; } }
+.nw { white-space: nowrap; }
+details.raw { margin: 14px 0 0; } details.raw > summary { cursor: pointer; min-height: 28px; padding: 4px 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.state.sample { color: #fff; border-color: #fff; } .state.sample i { background: #fff; }
+@media (max-width: 700px) { .follow .lbl { width: 100%; } }
+.list .m.why { color: var(--text); }
+ul.what { margin: 0; padding-left: 18px; } ul.what li { margin: 2px 0; } ul.what b { color: #fff; font-weight: 600; }
+p.why { margin: 0; color: var(--text); } p.why.warn { color: #fff; font-weight: 600; }
 [hidden] { display: none !important; }
+.howto { list-style: none; padding: 14px 4px; color: var(--dim); }
+.howto > b { display: block; color: #fff; font-weight: 600; margin-bottom: 8px; }
+.howto ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: st; }
+.howto ol li { counter-increment: st; display: grid; grid-template-columns: 26px 92px 1fr; gap: 8px; align-items: baseline; }
+.howto ol li::before { content: counter(st); font: 600 11px var(--mono, monospace); color: var(--ok, #39ff8a); }
+.howto em { font-style: normal; color: #fff; }
+/* phone: nothing smaller than 11 px, buttons big enough for a thumb */
+@media (max-width: 700px) {
+  .follow .lbl, .tile h3, .badge, .flow span, .sheet h3 { font-size: 11px; }
+}
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/rulediff.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -164,25 +224,30 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
     <div class="follow" id="follow">
       <span class="lbl">Follow</span>
       <a class="btn primary" id="fTg" href="https://t.me/tauHUDcom" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.9 4.3 18.6 20c-.2 1.1-.9 1.4-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.2-8.3c.4-.4-.1-.6-.6-.2L6 13.6 1.1 12c-1.1-.3-1.1-1.1.2-1.6L20.4 3c.9-.3 1.7.2 1.5 1.3z"/></svg>Telegram</a>
-      <span class="btn soon" id="fX"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.2 2.3h3.4l-7.4 8.4 8.7 11.5h-6.8l-5.3-7-6.1 7H1.3l7.9-9L.9 2.3h7l4.8 6.4 5.5-6.4zm-1.2 17.9h1.9L7.1 4.2H5.1l11.9 16z"/></svg>X · soon</span>
       <a class="btn" id="fRss" href="https://node.tauhud.com/feed.xml" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5v3a12.5 12.5 0 0 1 12.5 12.5h3A15.5 15.5 0 0 0 4 4.5zm0 6v3a6.5 6.5 0 0 1 6.5 6.5h3A9.5 9.5 0 0 0 4 10.5zM6 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>RSS feed</a>
     </div>
   </div>
 
   <div class="tiles" id="tiles"></div>
 
+  <section class="panel p-rules" aria-labelledby="rulesH">
+    <h2 id="rulesH">Rules over time <small id="rulesSub">each block is judged by the rules in force at its height</small></h2>
+    <div class="tl" id="tl"></div>
+    <p class="tl-note" id="tlNote"></p>
+  </section>
+
   <main class="main">
     <section class="panel p-open">
-      <h2>Waiting for a decision <small id="openCount"></small></h2>
-      <div class="scroll"><ul class="list" id="openList"></ul></div>
+      <h2>Coming up <small id="openCount"></small></h2>
+      <div class="scroll" id="openList"></div>
     </section>
     <section class="panel p-all">
-      <h2>All rule changes on this chain <small id="allCount"></small></h2>
+      <h2>Decided on this chain <small id="allCount"></small></h2>
       <div class="chips" id="chips" role="group" aria-label="Filter">
-        <button type="button" data-f="all" aria-pressed="true">All</button>
+        <button type="button" data-f="decided" aria-pressed="true">In force + dropped</button>
         <button type="button" data-f="active" aria-pressed="false">In force</button>
-        <button type="button" data-f="open" aria-pressed="false">Open</button>
         <button type="button" data-f="dropped" aria-pressed="false">Dropped</button>
+        <button type="button" data-f="all" aria-pressed="false">Everything, coming up too</button>
       </div>
       <div class="scroll"><ul class="list" id="allList"></ul></div>
     </section>
@@ -193,7 +258,7 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
   </main>
 
   <footer>
-    <p id="foot">Data: our node at node.tauhud.com replays every block like the node’s own governance code. <a href="https://node.tauhud.com/proposals.json" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra#proposal-tracker-and-alerts" target="_blank" rel="noopener">How it works</a> · <a href="/history/">Time travel</a> · <a href="/stats/">Stats</a> · <a href="/playground/">Rule Playground</a></p>
+    <p id="foot">Data: our node at node.tauhud.com replays every block like the node’s own governance code. <a href="https://node.tauhud.com/proposals.json" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra#proposal-tracker-and-alerts" target="_blank" rel="noopener">How it works</a> · <a href="/history/">Time travel</a> · <a href="/stats/">Stats</a> · <a href="/playground/">Rule Playground</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BProposals%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 
@@ -203,7 +268,6 @@ pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px 
     <article class="panel"><h2 id="dTitle"></h2><div id="dBody"></div></article>
   </div>
 </div>
-<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BProposals%5D%20" target="_blank" rel="noopener">Feedback</a>
 
 <script>
 "use strict";
@@ -216,7 +280,8 @@ const params = new URLSearchParams(location.search);
 const DATA = params.get("data") || "https://node.tauhud.com/proposals.json";
 const POLL = 20000;
 const STATUS = { voting: "waiting for votes", agreed: "agreed", active: "in force", dropped: "dropped" };
-let D = null, filter = "all", failures = 0, hovering = false, pending = false;
+const X_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.2 2.3h3.4l-7.4 8.4 8.7 11.5h-6.8l-5.3-7-6.1 7H1.3l7.9-9L.9 2.3h7l4.8 6.4 5.5-6.4zm-1.2 17.9h1.9L7.1 4.2H5.1l11.9 16z"/></svg>';
+let D = null, filter = "decided", failures = 0, hovering = false, pending = false;
 
 /* ---------------- one screen on wide displays ---------------- */
 function fit() {
@@ -265,47 +330,187 @@ function flow(p) {
   const s = p.status;
   return `<div class="flow"><span class="done">proposed</span><span class="${s === "voting" ? "now" : "done"}">votes</span><span class="${s === "agreed" ? "now" : s === "active" ? "done" : ""}">agreed</span><span class="${s === "active" ? "ok" : ""}">in force</span></div>`;
 }
+// plain-words explanation from the tracker (alerts/explain.py): what changes, why it matters
+const whyOf = p => (p.explain && p.explain.why) || "";
+function explainHtml(p) {
+  const x = p.explain; if (!x) return "";
+  const warn = x.severity === "halt" || x.severity === "unsafe";
+  return `${x.label ? `<p class="note" style="margin:0 0 6px">Proposer’s title: “${esc(x.label)}”</p>` : ""}
+    <h3>What changes</h3>${x.changes.length ? `<ul class="what">${x.changes.map(c => `<li><b>${esc(c.topic)}:</b> ${esc(c.text)}</li>`).join("")}</ul>`
+      : `<p class="note" style="margin:0">Nothing: the text equals the rules already in force.</p>`}
+    <h3>Why it matters</h3><p class="why${warn ? " warn" : ""}">${esc(x.why)}</p>`;
+}
+// rule text diff against the rules in force when it was proposed (assets/rulediff.js)
+const asRd = x => ({ id: x.id, activatedAt: x.activated_at, revisions: x.revisions });
+function diffOf(p) {
+  if (!window.RuleDiff || !p.revisions.length) return null;
+  return p._d || (p._d = RuleDiff.diff(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions));
+}
+function ruleDiff(p) {
+  if (!window.RuleDiff) return "";
+  return RuleDiff.html(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions, { at: p.proposed_at, patch: !!p.patch });
+}
+const diffTag = p => { const d = diffOf(p); return d ? ` · <span class="nw">rule text ${d.same ? "unchanged" : RuleDiff.summary(d)}</span>` : ""; };
 function openCard(p) {
   const need = p.thr, v = p.counted_votes, n = left(p), when = eta(n);
   const line = p.status === "agreed"
     ? `Agreed at #${fmtN(p.approved_at)}. Takes effect at #${fmtN(p.activate_at)}${n > 0 ? `, ${plural(n, "block")} from now${when ? ` (${when})` : ""}` : ""}.`
     : `Needs ${need - v > 0 ? plural(need - v, "more vote") : "no more votes"} by #${fmtN(p.activate_at)}${n > 0 ? ` (${plural(n, "block")}${when ? `, ${when}` : ""})` : ""}, or it is dropped.`;
-  const pct = Math.min(100, need ? v / need * 100 : 0);
+  const agreed = p.status === "agreed", span = p.activate_at - p.approved_at;
+  const pct = agreed ? Math.max(0, Math.min(100, span > 0 ? (span - Math.max(n, 0)) / span * 100 : 100)) : Math.min(100, need ? v / need * 100 : 0);
+  const bar = agreed ? (n > 0 ? `${plural(n, "block")} to go${when ? ` (${when})` : ""} · ${v} of ${need} votes` : "takes effect now") : `${v} of ${need} votes`;
   return `<li class="${p.status}"><button type="button" data-id="${esc(p.id)}"><b>${esc(p.title)}</b>
-    <span class="m">proposed at #${fmtN(p.proposed_at)} by ${short(p.proposer)}${p.proposed_ts ? ` · ${ago(p.proposed_ts)}` : ""}</span>
+    ${whyOf(p) ? `<span class="m why">${esc(whyOf(p))}</span>` : ""}
+    <span class="m">proposed at #${fmtN(p.proposed_at)} by ${short(p.proposer)}${p.proposed_ts ? ` · ${ago(p.proposed_ts)}` : ""}${diffTag(p)}</span>
     ${flow(p)}<span class="m">${line}</span>
-    <div class="quorum" aria-label="${v} of ${need} votes"><div class="fill" style="width:${pct}%"></div><span>${v} of ${need} votes</span></div></button></li>`;
+    <div class="quorum${agreed ? " wait" : ""}" aria-label="${esc(bar)}"><div class="fill" style="width:${pct}%"></div><span>${bar}</span></div></button></li>`;
 }
 function rowOf(p) {
   const st = p.status;
   const m = { active: `in force since #${fmtN(p.activated_at)} · revision ${p.rev}`, agreed: `agreed · takes effect at #${fmtN(p.activate_at)}`,
     voting: `${p.counted_votes} of ${p.thr} votes · deadline #${fmtN(p.activate_at)}`, dropped: `dropped at #${fmtN(p.expired_at)} · ${p.counted_votes} of ${p.thr} votes` }[st];
   return `<li class="${st}"><button type="button" data-id="${esc(p.id)}"><span class="badge b-${st}">${STATUS[st]}</span><b style="display:inline">${esc(p.title)}</b>
-    <span class="m">${m} · proposed at #${fmtN(p.proposed_at)}</span></button></li>`;
+    <span class="m">${m} · proposed at #${fmtN(p.proposed_at)}${diffTag(p)}</span></button></li>`;
 }
 function render() {
   if (hovering) { pending = true; return; }
   pending = false;
   if (!D) return;
   tiles();
+  timeline();
   const P = D.proposals;
-  const open = P.filter(p => p.status === "voting" || p.status === "agreed").sort((a, b) => a.activate_at - b.activate_at);
-  $("openCount").textContent = open.length ? `(${open.length})` : "";
-  $("openList").innerHTML = open.length ? open.map(openCard).join("")
-    : `<li class="empty"><b>Nothing is waiting right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>`;
-  const shown = P.filter(p => filter === "all" || (filter === "open" ? (p.status === "voting" || p.status === "agreed") : p.status === filter));
-  $("allCount").textContent = `(${P.length})`;
+  const by = s => P.filter(p => p.status === s).sort((a, b) => a.activate_at - b.activate_at);
+  const voting = by("voting"), agreed = by("agreed");
+  $("openCount").textContent = voting.length + agreed.length ? `(${voting.length + agreed.length})` : "";
+  $("openList").innerHTML = !voting.length && !agreed.length
+    ? `<ul class="list"><li class="empty"><b>Nothing is coming up right now.</b><br>When someone proposes a rule change, it shows up here with its votes and deadline, and the channels post it.</li>${HOWTO}</ul>`
+    : `<h3 class="grp">Waiting for votes <small>(${voting.length})</small></h3><ul class="list">${voting.length ? voting.map(openCard).join("")
+        : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`
+      + `<h3 class="grp">Agreed, takes effect soon <small>(${agreed.length})</small></h3><ul class="list">${agreed.length ? agreed.map(openCard).join("")
+        : `<li class="quiet">Nothing agreed is waiting to take effect.</li>`}</ul>`;
+  const shown = P.filter(p => filter === "all" || (filter === "decided" ? p.status === "active" || p.status === "dropped" : p.status === filter));
+  $("allCount").textContent = `(${shown.length})`;
   $("allList").innerHTML = shown.length ? shown.map(rowOf).join("")
-    : `<li class="empty">${P.length ? "None with this filter." : "No rule change has been proposed on this chain yet. The genesis rules are in force."}</li>`;
+    : (P.length ? `<li class="empty">None with this filter.</li>` : `<li class="empty">No rule change has been proposed on this chain yet. The genesis rules are in force.</li>${HOWTO}`);
   const E = D.events || [];
   $("newsList").innerHTML = E.length ? E.map(e => `<li class="k-${esc(e.kind)}"><b>${esc(e.headline)}</b><br>${esc(e.body)}<br>
     <em>${e.h ? `block #${fmtN(e.h)} · ` : ""}${ago(e.ts || e.seen)}</em></li>`).join("")
-    : `<li class="empty">No news yet on this chain.</li>`;
+    : NEWS_EMPTY;
   const ch = D.channels || {};
   if (ch.telegram) $("fTg").href = ch.telegram;
-  if (ch.x) $("fX").outerHTML = `<a class="btn" id="fX" href="${esc(ch.x)}" target="_blank" rel="noopener">${$("fX").innerHTML.replace("X · soon", "X")}</a>`;
+  if (ch.x && !$("fX")) $("fRss").insertAdjacentHTML("beforebegin", `<a class="btn" id="fX" href="${esc(ch.x)}" target="_blank" rel="noopener">${X_SVG}X</a>`);
   openFromHash(false);
 }
+
+/* ---------------- rules over time ----------------
+   Rules lane: one segment per spec revision, from the block where it took effect to the next one.
+   Revisions that are agreed but not yet in force follow as dashed segments.
+   Consensus lane: who may seal blocks (eligibility_mode). Genesis is a fixed validator list (proof of authority);
+   only an agreed rule change whose settings carry eligibility_mode switches it.
+   Proposals lane: one bar per proposal from the block it was proposed to its activation block (or deadline).
+   The past and the future have their own scale: activation heights lie thousands of blocks ahead. */
+const CONS = { validator_set: ["Proof of authority", "a fixed validator list: the listed validators take turns sealing blocks, each seal signed with BLS and checked by the Tau rules (o7)"],
+  tau_validator_set: ["Validator list in Tau", "a validator list kept in the Tau rules themselves: rule o7 decides who may seal"],
+  stake: ["Proof of stake", "proof of stake: the Tau rules (o7) judge who may seal by stake"] };
+const consName = m => (CONS[m] || [m])[0];
+const modeOf = p => p.patch && typeof p.patch.eligibility_mode === "string" ? p.patch.eligibility_mode : null;
+let TL = null;
+function timeline() {
+  const P = D.proposals, head = D.chain.head || 0, lo = 0;
+  const act = P.filter(p => p.status === "active").sort((a, b) => a.activated_at - b.activated_at);
+  const agr = P.filter(p => p.status === "agreed").sort((a, b) => a.activate_at - b.activate_at);
+  const vot = P.filter(p => p.status === "voting").sort((a, b) => a.activate_at - b.activate_at);
+  const far = Math.max(head, ...P.map(p => p.activate_at || 0));
+  // the scale squeezes quiet stretches: every gap between two events gets width by the log of its length, so a wait of
+  // thousands of empty blocks does not crush the events around it; within a gap the blocks are evenly spaced
+  const marks = [...new Set([lo, head, far, ...P.flatMap(p => [p.proposed_at, p.activated_at ?? p.expired_at ?? p.activate_at])].filter(h => h != null && h >= lo))].sort((a, b) => a - b);
+  // a short tail after the last event, so the newest (agreed or proposed) stretch has room for its label
+  marks.push(far + Math.max(1, Math.round((far - lo) * 0.02)));
+  const wts = marks.slice(1).map((h, i) => Math.log1p(h - marks[i])); wts[wts.length - 1] = Math.max(wts[wts.length - 1], 0.9 * wts.reduce((a, b) => a + b, 0) / wts.length);
+  const tot = wts.reduce((a, b) => a + b, 0) || 1, cum = [0];
+  wts.forEach(w => cum.push(cum[cum.length - 1] + w / tot));
+  const x = h => { if (h <= marks[0]) return 0; for (let i = 1; i < marks.length; i++) if (h <= marks[i]) return cum[i - 1] + (cum[i] - cum[i - 1]) * (h - marks[i - 1]) / Math.max(1, marks[i] - marks[i - 1]); return 1; };
+  const END = marks[marks.length - 1];
+  const pc = h => (x(h) * 100).toFixed(3) + "%";
+  const rd = q => ({ id: q.id, activatedAt: q.at, revisions: q.revisions });
+  // revision segments: genesis, every activation, then the agreed ones in activation order
+  const bounds = [{ h: lo, rev: 1, ps: [] }];
+  act.forEach(p => { const last = bounds[bounds.length - 1]; if (last.h === p.activated_at) last.ps.push(p), last.rev = p.rev; else bounds.push({ h: p.activated_at, rev: p.rev, ps: [p] }); });
+  let rev = (D.rules && D.rules.revision) || bounds[bounds.length - 1].rev;
+  agr.forEach(p => { const last = bounds[bounds.length - 1]; if (last.h === p.activate_at && last.future) last.ps.push(p), last.rev = ++rev; else bounds.push({ h: p.activate_at, rev: ++rev, ps: [p], future: true }); });
+  const applied = [...act.map(p => ({ id: p.id, at: p.activated_at, revisions: p.revisions })), ...agr.map(p => ({ id: p.id, at: p.activate_at, revisions: p.revisions }))];
+  const segs = bounds.map((b, i) => ({ ...b, to: i + 1 < bounds.length ? bounds[i + 1].h : END, spec: window.RuleDiff ? RuleDiff.specAt(b.h + 1, applied.map(rd)) : null }));
+  // consensus mechanism segments
+  let mode = "validator_set"; const modes = [{ h: lo, m: mode }];
+  [...act.map(p => [p, p.activated_at, false]), ...agr.map(p => [p, p.activate_at, true])].forEach(([p, h, fut]) => { const m = modeOf(p); if (m && m !== mode) { modes.push({ h, m, p, future: fut }); mode = m; } });
+  const msegs = modes.map((s, i) => ({ ...s, to: i + 1 < modes.length ? modes[i + 1].h : END }));
+  const nowM = [...modes].reverse().find(s => !s.future) || modes[0];
+  if (D.rules && D.rules.consensus_mode && !modes.some(s => s.p && !s.future)) nowM.m = D.rules.consensus_mode;
+  const maybe = vot.filter(p => modeOf(p) && modeOf(p) !== mode);
+  TL = { segs, msegs };
+  // labels are never cut: the full text if it fits, else the short one, else none (the hover still names it)
+  const trackW = Math.max(200, ($("tl").clientWidth || 800) - (matchMedia("(max-width: 700px)").matches ? 0 : 128));
+  const label = (txt, w, sh) => { const px = w / 100 * trackW, fits = t => t && t.length * 7.2 + 20 <= px;
+    const t = fits(txt) ? txt : fits(sh) ? sh : ""; return t ? `<span class="t">${esc(t)}</span>` : ""; };
+  const segHtml = (s, i) => { const w = (x(s.to) - x(s.h)) * 100, cur = !s.future && (i + 1 === segs.length || segs[i + 1].future);
+    const txt = `Revision ${s.rev}` + (cur ? " · in force now" : s.future ? " · agreed" : "");
+    return `<div class="seg${cur ? " now" : ""}${s.future ? " future" : ""}" role="button" tabindex="0" data-seg="${i}" aria-label="${esc(txt)}" style="left:${pc(s.h)};width:calc(${w.toFixed(3)}% - 2px)" data-tip="${esc(segTip(s, cur))}">${label(txt, w, `Rev ${s.rev}`)}</div>`; };
+  const ticks = segs.slice(1).map(s => `<i class="tick${s.future ? " future" : ""}" style="left:${pc(s.h)}"></i>`).join("");
+  const mHtml = msegs.map((s, i) => { const w = (x(s.to) - x(s.h)) * 100, cur = s === nowM;
+    const tip = `${consName(s.m)}${cur ? ", in force now" : s.future ? `, agreed: from block #${fmtN(s.h)}` : ""}: ${(CONS[s.m] || ["", s.m])[1]}.` + (s.p ? `\nSwitched by the agreed rule change “${s.p.title}”. Click for the proposal.` : `\nTau has no proof of work. The mechanism is part of the chain state and switches only through an agreed rule change.${modes.length === 1 ? " No switch so far." : ""}`);
+    return `<div class="seg${cur ? " now" : ""}${s.future ? " future" : ""}" ${s.p ? `data-id="${esc(s.p.id)}" ` : ""}role="button" tabindex="0" style="left:${pc(s.h)};width:calc(${w.toFixed(3)}% - 2px)" aria-label="${esc(consName(s.m))}" data-tip="${esc(tip)}">${label(consName(s.m) + (s.m === "validator_set" ? " · fixed validator list" : ""), w, consName(s.m))}</div>`; }).join("")
+    + maybe.map(p => `<div class="seg maybe" data-id="${esc(p.id)}" role="button" tabindex="0" style="left:${pc(p.activate_at)};width:calc(${((1 - x(p.activate_at)) * 100).toFixed(3)}% - 2px);z-index:1;background:var(--deck)" data-tip="${esc(`Proposed: switch to ${consName(modeOf(p))} at block #${fmtN(p.activate_at)}, if enough validators agree by then (${p.counted_votes} of ${p.thr} votes so far). Click for the proposal.`)}">${label("→ " + consName(modeOf(p)) + "?", (1 - x(p.activate_at)) * 100, "→ " + { stake: "PoS", validator_set: "PoA", tau_validator_set: "Tau list" }[modeOf(p)] + "?")}</div>`).join("");
+  const pRows = [...P].sort((a, b) => a.proposed_at - b.proposed_at).map(p => {
+    const end = p.activated_at ?? p.expired_at ?? p.activate_at, w = Math.max(0.4, (x(end) - x(p.proposed_at)) * 100);
+    const what = { active: `in force since #${fmtN(p.activated_at)} (revision ${p.rev})`, agreed: `agreed at #${fmtN(p.approved_at)}, takes effect at #${fmtN(p.activate_at)}${left(p) > 0 ? `, ${plural(left(p), "block")} from now${eta(left(p)) ? ` (${eta(left(p))})` : ""}` : ""}`,
+      voting: `waiting for votes (${p.counted_votes} of ${p.thr}), deadline #${fmtN(p.activate_at)}`, dropped: `dropped at #${fmtN(p.expired_at)}` }[p.status];
+    return `<div class="pbar"><button type="button" class="${p.status}" data-id="${esc(p.id)}" style="left:${pc(p.proposed_at)};width:${w.toFixed(3)}%" aria-label="${esc(p.title)}" data-tip="${esc(`“${p.title}”\nproposed at #${fmtN(p.proposed_at)}, ${what}.${modeOf(p) ? `\nSwitches the consensus mechanism to ${consName(modeOf(p))}.` : ""}\nClick for the rule diff and the votes.`)}"></button></div>`; }).join("");
+  // axis labels at the events, left to right, skipping any that would touch the one before
+  const gap = 100 * 84 / trackW, keep = [lo, head, ...(Math.abs(x(far) - x(head)) * 100 >= gap ? [far] : [])];
+  const shown = marks.filter(h => h <= far && (h !== far || keep.includes(far)) && (keep.includes(h) || keep.every(k => Math.abs(x(k) - x(h)) * 100 >= gap)))
+    .filter((h, i, a) => keep.includes(h) || i === 0 || (x(h) - x(a[i - 1])) * 100 >= gap);
+  const ax = shown.map(h => { const xv = x(h) * 100, isNow = h === head;
+    return `<span class="${isNow ? "now " : ""}${h === lo ? "l" : xv > 95 ? "r" : ""}" style="left:${xv.toFixed(3)}%">${isNow ? "now " : ""}#${fmtN(h)}</span>`; }).join("");
+  $("tl").innerHTML = `<span class="ln">Rules</span><div class="tr">${segs.map(segHtml).join("")}${ticks}<i class="nowline" style="left:${pc(head)}"></i></div>
+    <span class="ln">Consensus</span><div class="tr">${mHtml}<i class="nowline" style="left:${pc(head)}"></i></div>
+    <span class="ln">Proposals</span><div class="tr props">${pRows || `<p class="tl-note" style="margin:0">No rule change proposed yet.</p>`}<i class="nowline" style="left:${pc(head)}"></i></div>
+    <span class="ln"></span><div class="axis">${ax}</div>`;
+  const nextA = agr[0];
+  $("tlNote").innerHTML = `Revision <b>${D.rules ? D.rules.revision : bounds.filter(b => !b.future).pop().rev}</b> is in force. ` +
+    (nextA ? `Next change: <b>#${fmtN(nextA.activate_at)}</b>, ${plural(left(nextA), "block")} from now${eta(left(nextA)) ? ` (${eta(left(nextA))})` : ""}. ` : "No agreed change is waiting. ") +
+    `Consensus: <b>${esc(consName(nowM.m))}</b>${modes.length > 1 ? `, ${plural(modes.filter(s => s.p && !s.future).length, "switch", "switches")} so far` : ", never switched"}.` +
+    ` Not to scale: long stretches without events are drawn shorter.`;
+}
+function segTip(s, cur) {
+  const span = s.future ? `from block #${fmtN(s.h)} (agreed, not yet in force)` : `${s.h ? `from block #${fmtN(s.h)}` : "from genesis"}${cur ? " to now" : ` to #${fmtN(s.to)}`}`;
+  const why = s.ps.length ? `\nStarted by: ${s.ps.map(p => `“${p.title}”`).join(", ")}.` : "\nThe genesis rules: a block is valid if its BLS signature checks out (o6), every listed validator may seal (o7), the base fee is 10 AGRS (o9).";
+  return `Revision ${s.rev}, ${span}.${why}\nClick for the full rule text${s.ps.length ? " and what changed" : ""}.`;
+}
+function openSeg(i) {
+  const s = TL && TL.segs[i]; if (!s) return;
+  const prev = i ? TL.segs[i - 1].spec : null, cur = !s.future && (i + 1 === TL.segs.length || TL.segs[i + 1].future);
+  const text = s.spec ? "always (\n" + [...new Set(Object.keys(s.spec).sort((a, b) => +a.slice(1) - +b.slice(1)).map(k => s.spec[k]))].map(c => "    " + c.trim()).join(" &&\n") + "\n)" : "";
+  lastFocus = document.activeElement; openId = null;
+  $("dTitle").innerHTML = `<span class="badge ${cur ? "b-active" : s.future ? "b-agreed" : "b-dropped"}">${cur ? "in force" : s.future ? "agreed" : "earlier"}</span> Rules revision ${s.rev}`;
+  $("dBody").innerHTML = `<p class="note" style="margin:0">${esc(segTip(s, cur).split("\n")[0])} Every block in this range is judged by exactly this rule text; nodes switch to the next revision on their own at its activation block. No software upgrade, no fork.</p>
+    ${s.ps.map(p => `<h3>What changed: ${esc(p.title)}</h3>${prev && window.RuleDiff ? RuleDiff.html(prev, p.revisions, { at: s.h, patch: !!p.patch }) : ""}<p class="note" style="margin:6px 0 0"><button class="btn" type="button" data-id="${esc(p.id)}">Open the proposal</button></p>`).join("")}
+    <h3>Full rule text of revision ${s.rev}</h3><pre class="code">${esc(text)}</pre>
+    <p class="note">Step through these blocks in <a href="/history/#${Math.max(1, s.h)}">Time travel</a>.</p>`;
+  $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus();
+}
+(() => {
+  const box = document.createElement("div"); box.id = "tlTip"; box.hidden = true; document.body.appendChild(box);
+  const place = (x, y) => { const w = box.offsetWidth, h = box.offsetHeight; box.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px"; box.style.top = (y + 18 + h > innerHeight ? Math.max(8, y - h - 10) : y + 18) + "px"; };
+  const tl = $("tl");
+  tl.addEventListener("mouseover", e => { const t = e.target.closest("[data-tip]"); if (!t) { box.hidden = true; return; } box.textContent = t.dataset.tip; box.hidden = false; place(e.clientX, e.clientY); });
+  tl.addEventListener("mousemove", e => { if (!box.hidden) place(e.clientX, e.clientY); });
+  tl.addEventListener("mouseleave", () => { box.hidden = true; });
+  tl.addEventListener("click", e => { box.hidden = true; const s = e.target.closest("[data-seg]"); if (s) openSeg(+s.dataset.seg); });
+  tl.addEventListener("keydown", e => { if (e.key !== "Enter" && e.key !== " ") return; const t = e.target.closest("[data-seg], [data-id]"); if (!t) return; e.preventDefault(); t.click(); });
+  const p = document.querySelector(".p-rules");
+  p.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") hovering = true; });
+  p.addEventListener("pointerleave", () => { hovering = false; if (pending) render(); });
+})();
 
 /* ---------------- detail ---------------- */
 let lastFocus = null, openId = null;
@@ -325,11 +530,16 @@ function openDetail(p, push) {
   ].filter(Boolean);
   lastFocus = document.activeElement;
   $("dTitle").innerHTML = `<span class="badge b-${p.status}">${STATUS[p.status]}</span> ${esc(p.title)}`;
-  $("dBody").innerHTML = `<ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
-    ${p.revisions.length ? `<h3>Rule text it ${p.status === "active" ? "added" : "would add"}</h3>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}` : ""}
-    ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
+  $("dBody").innerHTML = `<div class="dcols"><div>${explainHtml(p)}<h3>Timeline</h3><ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere;margin:0">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
-    <p class="note">Open any block number to see it in <a href="/history/#${p.proposed_at}">Time travel</a>. Votes count once per account while the change is open.</p>`;
+    <p class="note">Open any block number to see it in <a href="/history/#${p.proposed_at}">Time travel</a>. Votes count once per account while the change is open.</p></div><div>
+    ${ruleDiff(p)}${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
+    ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
+</div></div>`;
+  // a link whose preview on X and Telegram shows a picture of this proposal (infra/share)
+  if (!params.has("sample")) $("dBody").querySelector(".dcols > div:first-child").insertAdjacentHTML("beforeend", `<p style="margin:12px 0 0"><button class="btn" type="button" data-share="https://node.tauhud.com/s/proposal/${esc(p.id.slice(0, 16))}"
+    title="A link that shows a picture of this proposal when you post it on X, Telegram or WhatsApp.">Copy share link</button></p>`);
+  $("mDetail").querySelector(".sheet").classList.add("w2");
   $("mDetail").hidden = false;
   $("mDetail").querySelector(".close").focus();
   if (push) try { history.replaceState(null, "", "#" + p.id.slice(0, 16)); } catch {}
@@ -345,6 +555,10 @@ function openFromHash(force) {
   openDetail(D.proposals.find(p => p.id.startsWith(h)), false);
 }
 $("mDetail").addEventListener("click", e => { if (e.target === $("mDetail") || e.target.closest("[data-close]")) closeModal(); });
+$("dBody").addEventListener("click", e => {
+  const b = e.target.closest("[data-share]"); if (!b || !navigator.clipboard) return;
+  navigator.clipboard.writeText(b.dataset.share).then(() => { const t = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = t; }, 1500); }).catch(() => {});
+});
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("mDetail").hidden) closeModal(); });
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-id]"); if (b) openDetail(D.proposals.find(p => p.id === b.dataset.id), true);
@@ -359,8 +573,47 @@ for (const sel of [".p-open", ".p-all", ".p-news"]) {
   el.addEventListener("pointerleave", () => { hovering = false; if (pending) render(); });
 }
 
+/* shown wherever a list would be empty, so a quiet chain still teaches how rule changes work */
+const HOWTO = `<li class="howto"><b>How a rule change becomes law</b><ol>
+  <li><em>Proposed</em>Someone sends a new rule and the block it would apply from.</li>
+  <li><em>Voting</em>Validators vote yes or no. Each vote shows up here within a block.</li>
+  <li><em>Agreed</em>Once enough validators say yes, the change is locked in.</li>
+  <li><em>In force</em>From its activation block every node runs the new rule.</li></ol></li>`;
+const NEWS_EMPTY = `<li class="empty">No news yet on this chain.<br>When a rule change is proposed, voted on or comes into force, this panel shows the exact post that goes to Telegram and the feed.</li>`;
+/* ---------------- sample data (?sample): every kind of diff without waiting for the chain ---------------- */
+function sample() {
+  const now = Math.round(Date.now() / 1000), head = 4210, at = h => now - (head - h) * 12, V = "a1fe40d5e4f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7d2b";
+  const ex = (title, changes, why, severity = "normal") => ({ title, label: null, changes, unchanged: [], why, severity });
+  const P = (n, o) => ({ id: (n + "f3c9a17be2d40c58e6a91b7d03f2c4e8a5b6c7d8e9f00112233445566778899").slice(0, 64), n, proposer: V, votes: [], dups: [], patch: null,
+    approved_at: null, approved_ts: null, activated_at: null, activated_ts: null, expired_at: null, expired_ts: null, rev: null, thr: 1, counted_votes: 0,
+    proposed_ts: at(o.proposed_at), ...o, title: o.explain.title });
+  const ps = [
+    P(1, { status: "active", proposed_at: 30, activate_at: 3030, approved_at: 31, activated_at: 3030, rev: 2, counted_votes: 1,
+      revisions: ["# Valid blocks need a signature and a height above zero\nalways (\n    o6[t]:bv[16] = (i10[t]:bv[16] & ({ 1 }:bv[16] - (i6[t]:bv[64] = { 0 }:bv[64])))\n)"],
+      votes: [{ h: 31, voter: V, counted: true, approve: true }], explain: ex("New rule for valid blocks", [{ topic: "Which blocks count as valid", text: "depends on the signature check and block height" }], "Changes which blocks the network accepts.") }),
+    P(2, { status: "active", proposed_at: 297, activate_at: 3300, approved_at: 298, activated_at: 3300, rev: 3, counted_votes: 1,
+      revisions: ["always (\n  o6[t]:bv[16] = i10[t]:bv[16] &&\n  o7[t]:bv[16] = { 1 }:bv[16]\n)"],
+      votes: [{ h: 298, voter: V, counted: true, approve: true }], explain: ex("Same rules as now (no real change)", [], "Nothing would change: the text equals the rules already in force. Often a test of the voting itself.", "none") }),
+    P(3, { status: "agreed", proposed_at: 4150, activate_at: 4400, approved_at: 4152, counted_votes: 1,
+      revisions: ["always (o9[t]:bv[24] = { #x000014 }:bv[24])"], votes: [{ h: 4152, voter: V, counted: true, approve: true }],
+      explain: ex("Base fee 10 → 20 AGRS", [{ topic: "Base fee per transaction", text: "10 → 20 AGRS" }], "Every transaction would cost 20 AGRS instead of 10.") }),
+    P(4, { status: "voting", proposed_at: 4198, activate_at: 9198,
+      revisions: ["# ONE PROPOSER\nalways (\n    o7[t]:bv[16] = (i8[t]:bv[384] = { #x" + V + " }:bv[384]) ? { 1 }:bv[16] : { 0 }:bv[16] &&\n    o10[t]:bv[16] = i15[t]:bv[16]\n)"],
+      explain: ex("Only one validator may make blocks + New definition of o10", [{ topic: "Who may make blocks", text: "only validator a1fe40…7d2b" }, { topic: "Output o10", text: "depends on the eligibility mode" }], "Block making would rest with a single validator. Others could no longer add blocks.") }),
+    P(5, { status: "dropped", proposed_at: 1200, activate_at: 3200, expired_at: 3200, revisions: [], patch: { validator_additions: ["b7c2" + "0".repeat(92)] },
+      explain: ex("Admit validator b7c200…0000", [{ topic: "Validators", text: "add b7c200…0000" }], "More parties would make blocks and vote on rule changes.") }),
+    P(6, { status: "voting", proposed_at: 4205, activate_at: 9205, revisions: [], patch: { eligibility_mode: "stake" },
+      explain: ex("Switch consensus to proof of stake", [{ topic: "Who may make blocks", text: "fixed validator list → by stake (o7)" }], "Block making would follow stake instead of a fixed list.") }),
+  ];
+  return { generated_at: now, chain: { head, head_ts: now, first: 0, seconds_per_block: 12 },
+    rules: { revision: 3, base_fee: 10, validators: 1, quorum: "supermajority", votes_needed: 1, open_admission: true },
+    proposals: ps.reverse(), channels: {},
+    events: [{ kind: "proposed", h: 4198, ts: at(4198), headline: "New proposal: Only one validator may make blocks", body: "Sample post. Rule text: +2 lines, −1 line." },
+      { kind: "agreed", h: 4152, ts: at(4152), headline: "Agreed: Base fee 10 → 20 AGRS", body: "Sample post. Rule text: +1 line, −1 line." }] };
+}
 /* ---------------- data ---------------- */
 async function load() {
+  if (params.has("sample")) { D = sample(); setState("sample", "Sample data"); render(); return; }
   try {
     const r = await fetch(DATA, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
@@ -373,8 +626,8 @@ async function load() {
     failures++;
     setState("off", "Offline");
     if (!D) {
-      $("openList").innerHTML = `<li class="empty"><b>The tracker is not reachable right now.</b><br>It retries every ${POLL / 1000} s. The Telegram channel and the feed keep posting meanwhile.</li>`;
-      $("allList").innerHTML = $("newsList").innerHTML = "";
+      $("openList").innerHTML = `<ul class="list"><li class="empty"><b>The tracker is not reachable right now.</b><br>It retries every ${POLL / 1000} s. The Telegram channel and the feed keep posting meanwhile.</li></ul>`;
+      $("allList").innerHTML = HOWTO; $("newsList").innerHTML = NEWS_EMPTY;
     }
   }
 }

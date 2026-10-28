@@ -2,16 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Tau Explorer</title>
-<meta name="description" content="Search the Tau Testnet Alpha: any block, transaction or address, the queue of transactions waiting for a block, and what each transaction did.">
+<meta name="description" content="Find out what happened to any transaction, block or address on the Tau Testnet Alpha: its path from queue to block, which rules checked it, and which waiting transactions are really waiting.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD · Explorer">
-<meta property="og:description" content="Search any block, transaction or address on the Tau testnet, read straight from our own verifying node.">
+<meta property="og:description" content="What happened to it? Trace any transaction, block or address on the Tau testnet, read straight from our own verifying node.">
 <meta property="og:image" content="https://tauhud.com/og.png">
 <meta property="og:url" content="https://tauhud.com/explorer/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,7 +48,6 @@ html.fit .cols > .panel { min-height: 0; display: flex; flex-direction: column; 
 html.fit .scroll { min-height: 0; flex: 1 1 auto; overflow: auto; }
 html.fit footer { padding-top: 6px; }
 html.fit footer p { margin: 0; }
-html.fit .fb-fab, html.fit #tip { zoom: var(--z); }
 
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
@@ -62,50 +62,52 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
 .state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
 .state.wait { color: var(--behind); border-color: rgba(255,177,59,.4); } .state.wait i { background: var(--behind); }
-.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+.state.off { color: #fff; border-color: rgba(255,255,255,.4); } .state.off i { background: var(--bad); }   /* the red dot means offline; the text stays white, one colour per meaning */
 .state.sample { color: #fff; border-color: #fff; } .state.sample i { background: #fff; }
 
-/* search + key numbers in one row on desktop */
-.top { display: grid; gap: 10px 16px; align-items: center; }
-@media (min-width: 1100px) { .top { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } }
-.lead { margin: 0 0 6px; font: 500 clamp(17px, 2.2vw, 21px)/1.25 var(--display); color: #fff; }
+/* the search is the page's one job: it leads, at full contrast; the queue check beside it is the one number no other page has */
+.top { display: grid; gap: 10px 24px; align-items: end; }
+@media (min-width: 1100px) { .top { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); } }
+.lead { margin: 0 0 8px; font: 500 clamp(18px, 2.2vw, 23px)/1.25 var(--display); color: #fff; }
+.lead em { font-style: normal; color: var(--dim); }
 .find { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.find input { flex: 1 1 300px; min-width: 0; background: #0c0c0d; border: 1px solid var(--hair); border-radius: 999px; color: #fff; font: 13px var(--mono); padding: 9px 16px; }
+.find input { flex: 1 1 300px; min-width: 0; background: #0c0c0d; border: 1px solid var(--hair); border-radius: 999px; color: #fff; font: 14px var(--mono); padding: 11px 18px; }
 .find input:focus { outline: 1px solid var(--ok); border-color: var(--ok); }
 .find input.bad { border-color: var(--bad); outline-color: var(--bad); }
 .find .msg { flex: 1 0 100%; color: var(--bad); font-size: 12px; margin: 0; }
-.btn { font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; color: #000; background: #fff; border: 1px solid #fff; border-radius: 999px; padding: 9px 18px; cursor: pointer; white-space: nowrap; text-decoration: none; }
+.btn { font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; color: #000; background: #fff; border: 1px solid #fff; border-radius: 999px; padding: 11px 20px; cursor: pointer; white-space: nowrap; text-decoration: none; }
 .btn:hover { background: var(--ok); border-color: var(--ok); }
-.btn.ghost { background: none; color: #fff; border-color: var(--hair); }
-.btn.ghost:hover { background: #fff; color: #000; border-color: #fff; }
+.try { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; min-height: 28px; }
+.try > span { color: var(--dim); font-size: 12px; margin-right: 2px; }
+.try .chip { font-size: 11px; padding: 5px 11px; letter-spacing: .1em; }
 
-.tiles { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (min-width: 700px) { .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-.tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px; min-width: 0; cursor: default; }
-.tile:hover, .tile:focus-visible { border-color: var(--hair); outline: none; }
-.tile h4 { margin: 0; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
-.tile .v { font: 600 20px/1.2 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 3px; white-space: nowrap; }
-.tile .v small { font: 500 11px var(--display); color: var(--dim); margin-left: 3px; }
-.tile.a .v { color: var(--behind); }
+/* queue check: what our node lists as waiting, held against the chain */
+.qcheck { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 9px 13px; }
+.qcheck:hover, .qcheck:focus-visible { border-color: var(--hair); }
+.qcheck h4 { margin: 0 0 4px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.qcheck .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.qcheck .row div { min-width: 0; }
+.qcheck b { display: block; font: 600 21px/1.15 var(--display); color: #fff; font-variant-numeric: tabular-nums; }
+.qcheck b.a { color: var(--behind); }
+.qcheck span { display: block; color: var(--dim); font-size: 11.5px; line-height: 1.3; }
+.qcheck p { margin: 5px 0 0; color: var(--dim); font-size: 11.5px; }
 
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
 .panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
 .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
-.panel h3 { margin: 12px 0 4px; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #fff; }
-.empty { color: var(--dim); font-size: 12.5px; margin: 4px 0; }
+.panel h3 { margin: 12px 0 4px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #fff; }
+.empty { color: var(--dim); font-size: 13px; margin: 4px 0; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
 .note b { color: #fff; font-weight: 600; }
 
-/* three columns: blocks, transactions, the open item */
+/* two columns: the trail of things to look up, and the open item, which gets the room */
 .cols { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 1100px) { .cols { grid-template-columns: minmax(0, .9fr) minmax(0, 1.15fr) minmax(0, 1.25fr); } }
-@media (max-width: 1099px) { #detail { order: -1; } .cols > .panel:not(#detail) .scroll { max-height: 65vh; overflow: auto; } }
-#blocks .d { white-space: nowrap; }
-@media (max-width: 520px) { #blocks .amt { display: none; } }
+@media (min-width: 1100px) { .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.75fr); } }
+@media (max-width: 1099px) { #detail { order: -1; } #trail .scroll { max-height: 70vh; overflow: auto; } }
 
 /* lists */
 ul.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
-ul.list li > button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; padding: 5px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); cursor: pointer; font: 12.5px/1.45 var(--mono); color: var(--text); }
+ul.list li > button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; padding: 5px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); cursor: pointer; font: 13px/1.45 var(--mono); color: var(--text); }
 ul.list li > button:hover, ul.list li > button:focus-visible { background: rgba(255,255,255,.07); }
 ul.list li.on > button { background: rgba(255,255,255,.09); border-left-color: #fff; }
 ul.list li.q > button { border-left-color: var(--behind); }
@@ -119,54 +121,100 @@ ul.list li.fresh > button { animation: fresh 2.4s ease-out; }
 .list .amt.dim { color: var(--dim); }
 .list .amt.q { color: var(--behind); }
 .filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
-.filters button { font: 600 10.5px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 11px; cursor: pointer; white-space: nowrap; }
+.filters button { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 11px; cursor: pointer; white-space: nowrap; }
 .filters button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
 .filters button:hover:not([aria-pressed="true"]) { color: #fff; border-color: #fff; }
 button.more { all: unset; cursor: pointer; color: var(--dim); font-size: 12px; text-decoration: underline; margin: 8px 0 2px; display: inline-block; }
 button.more:hover { color: #fff; }
 
+/* the trail: a block row, its transactions indented under it; runs of empty blocks fold into one line */
+ul.list li.tx > button { padding-left: 26px; background: transparent; border-left-color: transparent; }
+ul.list li.tx > button:hover, ul.list li.tx > button:focus-visible { background: rgba(255,255,255,.05); }
+ul.list li.tx.on > button { background: rgba(255,255,255,.09); border-left-color: #fff; }
+ul.list li.gap > button { color: var(--dim); background: transparent; }
+ul.list li.sealed > button { border-left-color: var(--line); }
+ul.list li.stuck > button { border-left-color: #fff; }
+.list .d .tag { margin-left: 6px; vertical-align: 1px; }
+
+/* the life of a transaction, left to right (top to bottom on phones) */
+.trace { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); margin: 14px 0 6px; }
+.step { position: relative; padding: 22px 12px 0 0; min-width: 0; }
+.step::before { content: ""; position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: var(--line); }
+.step.done::before, .step.ok::before { background: rgba(255,255,255,.5); }
+.step i { position: absolute; top: 0; left: 0; width: 14px; height: 14px; border-radius: 50%; background: var(--void); border: 2px solid var(--hair); box-sizing: border-box; }
+.step.done i { background: #fff; border-color: #fff; }
+.step.ok i { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 10px rgba(57,255,138,.6); }
+.step.now i { background: var(--behind); border-color: var(--behind); }
+.step.fail i { background: var(--bad); border-color: var(--bad); }
+.step b { display: block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: #fff; }
+.step.todo b { color: var(--dim); }
+.step span { display: block; color: var(--dim); font-size: 12px; line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
+.step span b { display: inline; font: 600 12px var(--mono); letter-spacing: 0; text-transform: none; }
+@media (max-width: 700px) {
+  .trace { grid-template-columns: minmax(0, 1fr); }
+  .step { padding: 0 0 12px 26px; }
+  .step::before { top: 14px; bottom: 0; left: 6px; right: auto; width: 2px; height: auto; }
+  .step:last-child::before { display: none; }
+}
+/* why the network let it through */
+.verdict { border: 1px solid var(--line); border-left: 2px solid var(--ok); border-radius: 6px; padding: 8px 12px; margin: 10px 0 4px; background: rgba(57,255,138,.03); }
+.verdict.no { border-left-color: var(--bad); background: rgba(255,77,109,.03); }
+.verdict.wait { border-left-color: var(--behind); background: rgba(255,177,59,.03); }
+.verdict.plain { border-left-color: var(--hair); background: transparent; }
+.verdict h4 { margin: 0 0 3px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; }
+.verdict p { margin: 2px 0; font-size: 12.5px; color: var(--text); }
+.verdict p em { font-style: normal; color: var(--dim); }
+.split { display: grid; gap: 4px 24px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+td.up { color: var(--ok); } td.down { color: #fff; }
+ul.plain { margin: 6px 0 0; padding-left: 16px; font-size: 12.5px; } ul.plain li { margin: 2px 0; } ul.plain em { font-style: normal; color: var(--dim); }
+
 /* the open item */
-.kind { font: 600 10px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin: 0; }
+.kind { font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin: 0; }
 .title { margin: 2px 0 4px; font: 600 19px/1.25 var(--display); color: #fff; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
-.headline { margin: 0 0 6px; font: 500 13.5px/1.45 var(--display); color: #fff; }
+.headline { margin: 0 0 6px; font: 500 14px/1.45 var(--display); color: #fff; }
 .headline em { font-style: normal; color: var(--dim); }
-.tag { display: inline-block; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 2px 7px; white-space: nowrap; }
+.tag { display: inline-block; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 2px 7px; white-space: nowrap; }
 .tag.g { color: var(--ok); border-color: rgba(57,255,138,.4); }
 .tag.w { color: #fff; border-color: var(--hair); }
 .tag.a { color: var(--behind); border-color: rgba(255,177,59,.4); }
 .tag.r { color: var(--bad); border-color: rgba(255,77,109,.4); }
 .nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
-dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 6px 0 0; font-size: 12.5px; }
+dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 6px 0 0; font-size: 13px; }
 dl.kv dt { color: var(--dim); }
 dl.kv dd { margin: 0; overflow-wrap: anywhere; word-break: break-word; }
 dl.kv code { color: var(--text); }
 @media (max-width: 520px) { dl.kv { grid-template-columns: minmax(0, 1fr); } dl.kv dd { margin-bottom: 4px; } }
 pre, code { font-variant-ligatures: none; }
-pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11.5px/1.5 var(--mono); color: var(--text); max-height: 22em; overflow: auto; }
+pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); max-height: 22em; overflow: auto; }
 details.raw { margin-top: 10px; } details.raw summary { cursor: pointer; color: var(--dim); font-size: 12px; }
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
-th { text-align: left; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { text-align: left; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 a.go { color: #fff; text-decoration: none; border-bottom: 1px dotted var(--hair); cursor: pointer; }
 a.go:hover { border-bottom-color: #fff; }
 .mini { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); margin: 8px 0 2px; }
 .mini div { border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; }
-.mini h4 { margin: 0; font: 600 9.5px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.mini h4 { margin: 0; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
 .mini b { display: block; font: 600 16px/1.3 var(--display); color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .how { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; }
-.how li { margin: 3px 0; color: var(--dim); font-size: 12.5px; }
+.how li { margin: 3px 0; color: var(--dim); font-size: 13px; }
 .how li b { color: #fff; font-weight: 600; }
 .how code { color: #fff; }
 
 #tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(320px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer a { color: var(--dim); }
-.fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); text-decoration: none; }
-.fb-fab:hover { background: var(--ok); }
-html.fit .fb-fab { display: none; }
-@media (max-width: 700px) { .fb-fab { font-size: 11px; padding: 10px 14px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); } .tile .v { font-size: 17px; } }
 [hidden] { display: none !important; }
+/* phone: nothing smaller than 11 px, buttons big enough for a thumb */
+@media (max-width: 700px) {
+  .mini h4, .qcheck h4, .panel h3, .filters button, .kind, .tag, th { font-size: 11px; }
+  .mini h4, .qcheck h4 { letter-spacing: .06em; }
+  .filters button { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+}
+/* running text stays readable: about 70 characters a line, whatever the screen width */
+p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -183,31 +231,27 @@ html.fit .fb-fab { display: none; }
 
   <div class="top">
     <div>
-      <p class="lead">Look up anything on the Tau testnet.</p>
+      <p class="lead">What happened to it? <em>Paste a transaction, block or address.</em></p>
       <form class="find" id="find" autocomplete="off">
-        <input id="q" type="text" spellcheck="false" aria-label="Search" placeholder="Block number, hash or address">
-        <button class="btn" type="submit">Search</button>
+        <input id="q" type="text" spellcheck="false" aria-label="Search" placeholder="Tx hash, block or address">
+        <button class="btn" type="submit">Look up</button>
         <p class="msg" id="qMsg" hidden></p>
       </form>
+      <div class="try" id="try"></div>
     </div>
-    <section class="tiles" id="tiles" aria-label="Key numbers"></section>
+    <button class="qcheck" id="qcheck" type="button" data-trail="queue" data-tip="Our node's queue, checked against the chain. A transaction the node still lists as waiting but that already sits in a block is a known node bug (IDNI issue #81); here it counts as sealed."></button>
   </div>
 
   <main class="cols">
-    <section class="panel">
-      <h2>Blocks <small id="blkSub"></small></h2>
-      <div class="scroll"><ul class="list" id="blocks"></ul><button class="more" id="blkMore" type="button" hidden>Show older blocks</button></div>
-    </section>
-    <section class="panel">
-      <h2>Transactions <small id="txSub"></small></h2>
+    <section class="panel" id="trail">
+      <h2>Trail <small id="trailSub"></small></h2>
       <div class="filters" role="group" aria-label="Show">
-        <button type="button" data-f="all" aria-pressed="true">All</button>
-        <button type="button" data-f="queue" aria-pressed="false">Waiting</button>
-        <button type="button" data-f="transfer" aria-pressed="false">Transfers</button>
-        <button type="button" data-f="rule" aria-pressed="false">Rules</button>
-        <button type="button" data-f="gov" aria-pressed="false">Governance</button>
+        <button type="button" data-trail="latest" aria-pressed="true">Latest</button>
+        <button type="button" data-trail="queue" aria-pressed="false">Queue</button>
+        <button type="button" data-trail="rules" aria-pressed="false">Rules &amp; votes</button>
+        <button type="button" data-trail="refused" aria-pressed="false">Refused</button>
       </div>
-      <div class="scroll"><ul class="list" id="txs"></ul><button class="more" id="txMore" type="button" hidden>Show older transactions</button></div>
+      <div class="scroll"><ul class="list" id="trailList"></ul><button class="more" id="trailMore" type="button" hidden>Show older</button></div>
     </section>
     <section class="panel" id="detail" aria-live="polite">
       <div class="scroll" id="dBody"></div>
@@ -215,10 +259,9 @@ html.fit .fb-fab { display: none; }
   </main>
 
   <footer>
-    <p>Data: our node at node.tauhud.com (tau-testnet pinned to commit 539d1e2), which checks every block itself, served by a read-only relay. Amounts in AGRS. <a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">Source</a> · <a href="/account/">Accounts</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p>Data: our node at node.tauhud.com<span class="vt"> (tau-testnet pinned to commit 539d1e2)</span>, which checks every block itself, served by a read-only relay. Amounts in AGRS. <a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">Source</a> · <a href="/account/">Accounts</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
-<a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a>
 <div id="tip" hidden></div>
 
 <script>
@@ -236,7 +279,7 @@ const TX_NAMES = {
 };
 // one plain sentence per transaction type, for the detail view
 const TX_SAYS = {
-  user_tx: "Moves AGRS from one account to another. Before it lands, the network asks the receiver's own Tau rule (if it has one) whether to accept it.",
+  user_tx: "Moves AGRS from one account to another. Before it lands, the network checks it against its own rules and against the rules accounts set for themselves.",
   rule_deploy: "The sender wrote a Tau rule for its own account, for example who may send it money and how much. The network enforces it from then on.",
   retractable_transfer: "A transfer the sender can still pull back until it is released, at a block height or a time.",
   retract_transfer: "The sender pulled back an earlier retractable transfer before it was released.",
@@ -291,13 +334,15 @@ const blkHref = h => `?b=${h}${qs}`, txHref = x => `?tx=${x}${qs}`, addrHref = a
 const blkLink = h => `<a class="go" href="${blkHref(h)}" data-go="b:${h}">#${fmtN(h)}</a>`;
 const txLink = (x, label) => `<a class="go" href="${txHref(x)}" data-go="tx:${x}">${esc(label || short(x))}</a>`;
 const addrLink = a => isAddr(a) ? `<a class="go" href="${addrHref(a)}" data-go="a:${a}">${esc(short(a))}</a>` : "—";
+// a link whose preview on X and Telegram shows a picture of this block or account (infra/share)
+const shareChip = path => SAMPLE ? "" : `<button class="chip" type="button" data-copy="https://node.tauhud.com/s/${path}" data-tip="A link that shows a picture of this ${path.split("/")[0]} when you post it on X, Telegram or WhatsApp.">Copy share link</button>`;
 const tagHtml = (text, cls) => `<span class="tag ${cls || ""}">${esc(text)}</span>`;
 
 /* ------------------------------ state ------------------------------ */
 // C: the chain as read from the relay, plus indexes built from it. V: what the page shows.
 const C = { ws: null, blocks: [], head: -1, gov: null, mempool: [], dropped: [], droppedTotal: 0, loading: false, nextFrom: 0, retry: 5000, ready: false, legacy: false,
-  byHash: new Map(), txIndex: new Map(), indexedTo: -1, fresh: new Set() };
-const V = { sel: null, filter: "all", blkN: 60, txN: 60, lookups: {}, status: {} };
+  byHash: new Map(), txIndex: new Map(), bySeq: new Map(), ownRules: [], indexedTo: -1, fresh: new Set() };
+const V = { sel: null, trail: "latest", trailN: 40, lookups: {}, status: {} };
 
 /* ------------------------------ relay ------------------------------ */
 function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = text; s.dataset.tip = tipText; }
@@ -319,7 +364,7 @@ function connect() {
   try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
   setState("wait", "Connecting", `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
-  ws.onopen = () => { C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); send("getmempool"); loadFrom(0); askFor(V.sel); };
+  ws.onopen = () => { C.off = false; C.retry = 5000; ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); send("getmempool"); loadFrom(0); askFor(V.sel); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
   ws.onerror = () => {};
@@ -329,10 +374,11 @@ function offline(why) {
   C.ws = null; C.loading = false;
   const w = C.retry; C.retry = Math.min(60000, w * 2);
   setState("off", "Offline", `Our node is not reachable (${why}).\nRetrying in ${w / 1000} s.`);
+  C.off = true; render();   // the empty panels say that the node is offline instead of "reading" forever
   C.retryT = setTimeout(connect, w);
 }
 function loadFrom(from) { C.loading = true; C.nextFrom = from; send(`getblockrange ${from} ${PAGE}`); }
-function reset() { C.blocks = []; C.head = -1; C.byHash.clear(); C.txIndex.clear(); C.indexedTo = -1; }
+function reset() { C.blocks = []; C.head = -1; C.byHash.clear(); C.txIndex.clear(); C.bySeq.clear(); C.ownRules = []; C.indexedTo = -1; }
 function store(raw, live) {
   const h = Number((raw.header || {}).block_number);
   if (!Number.isFinite(h) || h < 0) return;
@@ -345,11 +391,20 @@ function store(raw, live) {
 // tx hash -> where it sits; block hash -> height. Built once per block.
 function index() {
   if (C.indexedTo > C.head) C.indexedTo = -1;
-  if (C.indexedTo === -1) { C.byHash.clear(); C.txIndex.clear(); }
+  if (C.indexedTo === -1) { C.byHash.clear(); C.txIndex.clear(); C.bySeq.clear(); C.ownRules = []; }
+  C.ownRules = C.ownRules.filter(r => r.h <= C.indexedTo);   // a reorg may have replaced the blocks after it
   for (let h = C.indexedTo + 1; h <= C.head; h++) {
     const b = C.blocks[h]; if (!b) continue;
     if (b.block_hash) C.byHash.set(low(b.block_hash), h);
     (b.tx_ids || []).forEach((id, i) => { if (id) C.txIndex.set(low(id), { h, i }); });
+    (b.transactions || []).forEach((t, i) => {
+      if (!t || typeof t !== "object") return;
+      const s = low(t.sender_pubkey);
+      if (t.sequence_number != null) C.bySeq.set(`${s}:${t.sequence_number}`, { h, i });
+      const k = txKind(t);
+      // an account's own rule: one it wrote, or one it took on from an offer
+      if (isAddr(s) && (k === "rule_deploy" || k === "rule_offer_accept") && ruleOf(t)) C.ownRules.push({ a: s, h, i, id: low((b.tx_ids || [])[i] || ""), text: ruleOf(t) });
+    });
   }
   C.indexedTo = C.head;
 }
@@ -434,23 +489,46 @@ function* txsNewestFirst() {
   }
 }
 function txAt(h, i) { const b = C.blocks[h]; const t = b && (b.transactions || [])[i]; return t ? { h, i, t, id: low((b.tx_ids || [])[i] || ""), ts: tsOf(b) } : null; }
-// average gap between the last ten blocks, from their own timestamps
-function pace() {
-  const ts = []; for (let h = C.head; h >= 1 && ts.length < 11; h--) { const t = tsOf(C.blocks[h]); if (t) ts.push(t); }
-  return ts.length >= 2 ? (ts[0] - ts[ts.length - 1]) / (ts.length - 1) : null;
+/* ------------------------------ queue check ------------------------------ */
+// Our node's queue (getmempool) held against the chain. The node keeps listing transactions it already sealed
+// (IDNI issue #81), so "waiting" on its own is not the truth: an entry whose hash is in a block is sealed, one whose
+// sender and sequence number are already used in a block can never land, and one older than STUCK_AFTER is stuck.
+const STUCK_AFTER = 10 * 60;
+function truthOf(m) {
+  const at = C.txIndex.get(low(m.tx_hash));
+  if (at) return { k: "sealed", h: at.h };
+  const used = C.bySeq.get(`${low(m.sender)}:${m.sequence_number}`);
+  if (m.sequence_number != null && used) return { k: "superseded", h: used.h };
+  const since = isoTs(m.received_at), age = since ? Date.now() / 1000 - since : 0;
+  return { k: age > STUCK_AFTER ? "stuck" : "waiting", age };
 }
-function chainNumbers() {
-  let txs = 0; const accounts = new Set();
-  for (let h = 0; h <= C.head; h++) {
-    const b = C.blocks[h]; if (!b) continue;
-    for (const t of b.transactions || []) {
-      if (!t || typeof t !== "object") continue;
-      txs++;
-      if (isAddr(low(t.sender_pubkey))) accounts.add(low(t.sender_pubkey));
-      for (const x of transfersOf(t)) if (isAddr(low(x[1]))) accounts.add(low(x[1]));
-    }
-  }
-  return { txs, accounts: accounts.size };
+function queueCounts() {
+  const n = { sealed: 0, waiting: 0, stuck: 0 };
+  for (const m of C.mempool) { const t = truthOf(m).k; n[t === "superseded" ? "sealed" : t]++; }
+  return n;
+}
+function drawQcheck() {
+  const n = queueCounts(), total = C.mempool.length;
+  const ready = C.ready || SAMPLE;
+  $("qcheck").innerHTML = `<h4>Queue check · our node lists ${fmtN(total)}</h4>
+    <div class="row"><div><b>${ready ? fmtN(n.sealed) : "—"}</b><span>already in a block</span></div>
+    <div><b class="${n.waiting ? "a" : ""}">${ready ? fmtN(n.waiting) : "—"}</b><span>really waiting</span></div>
+    <div><b>${ready ? fmtN(n.stuck) : "—"}</b><span>stuck over 10 min</span></div></div>
+    <p>${!ready ? (C.off ? "Our node is offline right now." : "Reading the chain…") : !total ? "Nothing is waiting. A new transaction shows up here until a block takes it." : n.sealed ? "The node still lists sealed ones as waiting (a known node bug). Click to see each one." : "Click to see each one."}</p>`;
+}
+// a few ways in for someone who has nothing to paste yet
+function drawTry() {
+  if (C.head < 0) { $("try").innerHTML = ""; return; }
+  const chips = [];   // the newest block is already open on the right
+  const w = C.mempool.find(m => truthOf(m).k === "waiting") || C.mempool.find(m => truthOf(m).k === "stuck");
+  if (w) chips.push(`<a class="chip" href="${txHref(low(w.tx_hash))}" data-go="tx:${esc(low(w.tx_hash))}">Waiting tx</a>`);
+  for (const x of txsNewestFirst()) if (CAT[txKind(x.t)] === "rule") { chips.push(`<a class="chip" href="${txHref(x.id || `${x.h}.${x.i}`)}" data-go="tx:${x.id || `${x.h}.${x.i}`}">Own rule</a>`); break; }
+  for (const x of txsNewestFirst()) if (CAT[txKind(x.t)] === "gov") { chips.push(`<a class="chip" href="${txHref(x.id || `${x.h}.${x.i}`)}" data-go="tx:${x.id || `${x.h}.${x.i}`}">Rule vote</a>`); break; }
+  const v = ((C.gov || {}).active_validators || []).map(x => low(typeof x === "string" ? x : (x || {}).pubkey)).find(isAddr);
+  if (v) chips.push(`<a class="chip" href="${addrHref(v)}" data-go="a:${v}">Validator</a>`);
+  const d = C.dropped[C.dropped.length - 1];
+  if (d) chips.push(`<a class="chip" href="${txHref(low(d.tx_hash))}" data-go="tx:${esc(low(d.tx_hash))}">Refused tx</a>`);
+  $("try").innerHTML = `<span>Try</span>${chips.join("")}`;
 }
 
 /* ------------------------------ rendering ------------------------------ */
@@ -458,112 +536,147 @@ let renderT = null;
 function render() { clearTimeout(renderT); renderT = setTimeout(draw, 30); }
 function draw() {
   index();
-  drawTiles(); drawBlocks(); drawTxs(); drawDetail();
+  drawQcheck(); drawTry(); drawTrail(); drawDetail();
   C.fresh.clear();
 }
-function tile(label, value, unit, tipText, cls) {
-  return `<div class="tile ${cls || ""}" tabindex="0" data-tip="${esc(tipText)}"><h4>${esc(label)}</h4><div class="v">${value}${unit ? `<small>${unit}</small>` : ""}</div></div>`;
-}
-function drawTiles() {
-  const n = chainNumbers(), p = pace(), last = tsOf(C.blocks[C.head]);
-  $("tiles").innerHTML = [
-    tile("Height", C.head >= 0 ? fmtN(C.head) : "—", "", `The newest block our node has checked.${last ? `\nMade ${ago(last)}.` : ""}`),
-    tile("Block pace", p ? dur(p) : "—", "", "Average time between the last ten blocks, from their own timestamps."),
-    tile("Transactions", fmtN(n.txs), "", "Every transaction sealed in a block on this chain."),
-    tile("Accounts", fmtN(n.accounts), "", "Accounts that sent or received something on this chain."),
-    tile("Waiting", fmtN(C.mempool.length), "", "Transactions in our node's queue, waiting for the next block.", C.mempool.length ? "a" : ""),
-    tile("Dropped", fmtN(C.droppedTotal), "", "Transactions that left our node's queue without ever reaching a block: refused on a second check, expired or replaced."),
-  ].join("");
-}
 const isSel = (t, v) => V.sel && V.sel.t === t && String(V.sel.v) === String(v);
-function drawBlocks() {
-  const rows = [];
-  for (let h = C.head; h >= 0 && rows.length < V.blkN; h--) {
-    const b = C.blocks[h]; if (!b) continue;
-    const n = (b.transactions || []).length, ts = tsOf(b);
-    rows.push(`<li class="${isSel("b", h) ? "on" : ""} ${C.fresh.has(h) ? "fresh" : ""}"><button type="button" data-go="b:${h}">
-      <span class="h">#${fmtN(h)}</span><span class="d">${n ? `<b>${plural(n, "transaction")}</b>` : `<em>empty</em>`} <em>· ${h === 0 ? "genesis" : esc(ago(ts))}</em></span><span class="amt dim">${esc(short(b.block_hash))}</span></button></li>`);
-  }
-  $("blocks").innerHTML = rows.join("") || `<li class="empty">${C.ready || SAMPLE ? "No blocks yet." : "Reading the chain…"}</li>`;
-  $("blkSub").textContent = C.head >= 0 ? `newest first · ${plural(C.head + 1, "block")}` : "";
-  $("blkMore").hidden = C.head + 1 <= V.blkN;
-}
+const selNow = () => V.sel || (C.head >= 0 ? { t: "b", v: C.head } : null);
+const isOpen = (t, v) => { const s = selNow(); return !!s && s.t === t && String(s.v) === String(v); };
 function txLine(t, kind) {
   const s = low(t.sender_pubkey || t.sender), to = toOf(t), tr = transfersOf(t);
   if (kind === "user_tx" && tr.length > 1) return `${esc(short(s))} → ${tr.length} accounts`;
   return `${esc(short(s))}${to ? ` → ${esc(short(to))}` : ""}`;
 }
-function drawTxs() {
-  const f = V.filter, rows = [];
-  if (f === "all" || f === "queue") {
-    for (const m of C.mempool) rows.push(`<li class="q ${isSel("tx", low(m.tx_hash)) ? "on" : ""}"><button type="button" data-go="tx:${esc(low(m.tx_hash))}">
-      <span class="h">waiting</span><span class="d"><b>${esc(short(m.tx_hash))}</b> <em>· from ${esc(short(low(m.sender)))}${m.operation_count ? ` · ${plural(num(m.operation_count), "operation")}` : ""}</em></span><span class="amt q">${esc(ago(isoTs(m.received_at)))}</span></button></li>`);
-  }
-  let total = 0;
-  if (f !== "queue") {
+const txKey = x => x.id || `${x.h}.${x.i}`;
+function txRow(x, cls) {
+  const k = txKind(x.t), amt = amountOf(x.t);
+  return `<li class="tx ${cls || ""} ${isOpen("tx", txKey(x)) ? "on" : ""}"><button type="button" data-go="tx:${txKey(x)}">
+    <span class="h"></span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${txLine(x.t, k)}</em></span><span class="amt">${amt != null ? fmtA(amt) : ""}</span></button></li>`;
+}
+const TRAIL_SUB = { latest: "blocks and what they hold, newest first", queue: "our node's queue, checked against the chain", rules: "own rules, offers, votes and proposals", refused: "left the queue without reaching a block" };
+function drawTrail() {
+  const f = V.trail, rows = [];
+  let more = false;
+  if (f === "latest") {
+    let shown = 0, gapTop = null, gapN = 0;
+    const flush = () => { if (gapN) { rows.push(`<li class="gap"><button type="button" data-go="b:${gapTop}"><span class="h">#${fmtN(gapTop)}${gapN > 1 ? `–${fmtN(gapTop - gapN + 1)}` : ""}</span><span class="d"><em>${gapN > 1 ? `${fmtN(gapN)} empty blocks` : "empty block"}</em></span><span class="amt"></span></button></li>`); shown++; } gapN = 0; };
+    for (let h = C.head; h >= 0; h--) {
+      if (shown >= V.trailN) { more = true; break; }
+      const b = C.blocks[h]; if (!b) continue;
+      const txs = (b.transactions || []).filter(t => t && typeof t === "object");
+      if (!txs.length && h > 0 && !isOpen("b", h)) { if (!gapN) gapTop = h; gapN++; continue; }
+      flush();
+      rows.push(`<li class="blk ${isOpen("b", h) ? "on" : ""} ${C.fresh.has(h) ? "fresh" : ""}"><button type="button" data-go="b:${h}">
+        <span class="h">#${fmtN(h)}</span><span class="d"><b>${h === 0 ? "Genesis" : plural(txs.length, "transaction")}</b> <em>· ${h === 0 ? "the starting state" : esc(ago(tsOf(b)))}</em></span><span class="amt dim">${h ? esc(fmtTime(tsOf(b))) : ""}</span></button></li>`);
+      shown++;
+      for (let i = 0; i < (b.transactions || []).length; i++) { const x = txAt(h, i); if (x) rows.push(txRow(x, C.fresh.has(h) ? "fresh" : "")); }
+    }
+    flush();
+  } else if (f === "queue") {
+    const list = C.mempool.map(m => ({ m, t: truthOf(m), since: isoTs(m.received_at) || 0 })).sort((a, b) => b.since - a.since);
+    for (const { m, t, since } of list) {
+      const id = low(m.tx_hash);
+      const h = t.k === "sealed" ? `in #${fmtN(t.h)}` : t.k === "superseded" ? "replaced" : t.k === "stuck" ? "stuck" : "waiting";
+      rows.push(`<li class="${t.k === "waiting" ? "q" : t.k === "stuck" ? "stuck" : "sealed"} ${isOpen("tx", id) ? "on" : ""}"><button type="button" data-go="tx:${esc(id)}">
+        <span class="h">${h}</span><span class="d"><b>${esc(short(id))}</b> <em>· from ${esc(short(low(m.sender)))}</em></span><span class="amt ${t.k === "waiting" ? "q" : "dim"}">${esc(ago(since))}</span></button></li>`);
+    }
+  } else if (f === "rules") {
     for (const x of txsNewestFirst()) {
+      if (!["rule", "gov"].includes(CAT[txKind(x.t)])) continue;
+      if (rows.length >= V.trailN * 2) { more = true; break; }
       const k = txKind(x.t);
-      if (f !== "all" && (CAT[k] || "transfer") !== f) continue;
-      total++;
-      if (rows.length >= V.txN) continue;
-      const amt = amountOf(x.t);
-      rows.push(`<li class="${isSel("tx", x.id || `${x.h}.${x.i}`) ? "on" : ""} ${C.fresh.has(x.h) ? "fresh" : ""}"><button type="button" data-go="tx:${x.id || `${x.h}.${x.i}`}">
-        <span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${txLine(x.t, k)}</em></span><span class="amt">${amt != null ? `${fmtA(amt)}` : ""}</span></button></li>`);
+      rows.push(`<li class="${isOpen("tx", txKey(x)) ? "on" : ""}"><button type="button" data-go="tx:${txKey(x)}"><span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${txLine(x.t, k)}</em></span><span class="amt dim">${esc(ago(x.ts))}</span></button></li>`);
+    }
+  } else {
+    for (const d of [...C.dropped].reverse()) {
+      const id = low(d.tx_hash);
+      rows.push(`<li class="${isOpen("tx", id) ? "on" : ""}"><button type="button" data-go="tx:${esc(id)}"><span class="h">${esc(TX_NAMES[d.type] || "Transaction")}</span><span class="d"><b>${esc(short(id))}</b> <em>· from ${esc(short(low(d.sender)))}</em></span><span class="amt dim">${esc(ago(d.left || d.seen))}</span></button></li>`);
     }
   }
-  $("txs").innerHTML = rows.join("") || `<li class="empty">${f === "queue" ? "Nothing is waiting. New transactions show up here until a block takes them." : C.ready || SAMPLE ? "No transactions of this kind yet." : "Reading the chain…"}</li>`;
-  $("txSub").textContent = f === "queue" ? `${plural(C.mempool.length, "transaction")} waiting` : `newest first${C.mempool.length && f === "all" ? ` · ${fmtN(C.mempool.length)} waiting` : ""}`;
-  $("txMore").hidden = f === "queue" || total <= V.txN;
+  const empty = { latest: "No blocks yet.", queue: "Nothing is waiting. A new transaction shows up here until a block takes it.", rules: "Nobody has set a rule or voted yet on this chain.", refused: "No transaction has been refused or dropped since our node started watching." }[f];
+  $("trailList").innerHTML = rows.join("") || `<li class="empty">${C.ready || SAMPLE ? empty : C.off ? "Our node is offline right now. This list fills as soon as it answers again." : "Reading the chain…"}</li>`;
+  $("trailSub").textContent = TRAIL_SUB[f];
+  $("trailMore").hidden = !more;
+  document.querySelectorAll("#trail [data-trail]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.trail === f)));
 }
 
 /* ------------------------------ the open item ------------------------------ */
 function drawDetail() {
-  const s = V.sel, body = $("dBody");
-  const html = !s ? overview() : s.t === "b" ? blockView(Number(s.v)) : s.t === "tx" ? txView(String(s.v)) : s.t === "a" ? addrView(String(s.v)) : s.t === "hits" ? hitsView(s.v) : overview();
+  const s = selNow(), body = $("dBody");
+  const html = !s ? `<p class="kind">Explorer</p><p class="title">${C.off ? "Our node is offline" : "Reading the chain…"}</p><p class="headline">${C.off ? "The newest block opens here as soon as it answers again." : "The newest block opens here in a moment."}</p>`
+    : s.t === "b" ? blockView(Number(s.v)) : s.t === "tx" ? txView(String(s.v)) : s.t === "a" ? addrView(String(s.v)) : s.t === "hits" ? hitsView(s.v) : "";
   if (body.dataset.html !== html) { body.innerHTML = html; body.dataset.html = html; }
 }
-function overview() {
-  const g = C.gov || {}, vals = g.active_validators || [];
-  return `<p class="kind">Explorer</p><p class="title">What you can look up</p>
-    <p class="headline">Click any block or transaction on the left, or search above. Every link here is shareable.</p>
-    <ul class="how">
-      <li><b>A block number</b> like <code>${C.head > 0 ? C.head : 42}</code>: when it was made, who sealed it, what it holds.</li>
-      <li><b>A transaction hash</b> (64 hex characters): is it in a block, still waiting, or was it dropped, and what did it do.</li>
-      <li><b>A block hash</b> (64 hex characters): the same as a block number.</li>
-      <li><b>An address</b> (96 hex characters): its balance and everything it sent or received. The start of one works too.</li>
-    </ul>
-    <h3>Right now</h3>
-    <dl class="kv">
-      <dt>Newest block</dt><dd>${C.head >= 0 ? `${blkLink(C.head)} · ${esc(ago(tsOf(C.blocks[C.head])))}` : "—"}</dd>
-      <dt>Validators</dt><dd>${vals.length ? vals.map(v => addrLink(low(typeof v === "string" ? v : (v || {}).pubkey))).join(", ") : "—"}</dd>
-      <dt>Waiting</dt><dd>${plural(C.mempool.length, "transaction")}</dd>
-    </dl>
-    <p class="note">Our node checks every block against the network's Tau rules before it shows up here. Transactions a rule refuses never reach a block; if they waited in our queue first, you can still find them by hash.</p>`;
+/* rows that only matter to developers hide in View · Simple (body[data-view], set by the shared header) */
+const TECH_ROWS = new Set(["Hash", "Sequence", "Fee limit", "Offer", "Rule change", "Request", "Retractable", "Reason", "Expires"]);
+const kvRow = (a, b) => TECH_ROWS.has(a) ? `<dt class="vt">${a}</dt><dd class="vt">${b}</dd>` : `<dt>${a}</dt><dd>${b}</dd>`;
+/* which rules judged a block: revision 1 is genesis, each rule change the node reports as activated counts one up
+   from the block after its activation height (the change applies at the end of that block, after its transactions) */
+const CONS_NAME = { validator_set: "Proof of authority", tau_validator_set: "Validator list in Tau", stake: "Proof of stake" };
+function rulesAt(h) {
+  const g = C.gov; if (!g) return null;
+  const act = (g.archival_update_details || []).filter(u => u && u.lifecycle === "activated" && Number.isFinite(Number(u.activate_at_height)));
+  return { rev: 1 + act.filter(u => Number(u.activate_at_height) < h).length, here: act.filter(u => Number(u.activate_at_height) === h),
+    mode: CONS_NAME[g.eligibility_mode] || (g.eligibility_mode ? String(g.eligibility_mode) : "Proof of authority") };
 }
+// accounts' own rules (o5) set before block h, transaction i: the composite transfer policy every transfer is checked against
+function ownRulesBefore(h, i = 0) {
+  const authors = new Map();
+  for (const r of C.ownRules) { if (r.h > h || (r.h === h && r.i >= i)) break; authors.set(r.a, r); }
+  return authors;
+}
+const trace = steps => `<div class="trace" style="--n:${steps.length}">${steps.map(([s, b, span]) => `<div class="step ${s}"><i></i><b>${b}</b><span>${span}</span></div>`).join("")}</div>`;
+const nav = (...chips) => `<div class="nav">${chips.filter(Boolean).join("")}</div>`;
+const copyChip = href => `<button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + href)}">Copy link</button>`;
+
 function blockView(h) {
   const b = C.blocks[h];
   if (!b) return notFound(`Block #${fmtN(h)}`, h > C.head ? `The chain is at #${fmtN(C.head)}, so this block does not exist yet.` : "Our node does not hold this block.");
   const hd = b.header || {}, ts = tsOf(b), prev = tsOf(C.blocks[h - 1]), txs = b.transactions || [], prop = low(hd.proposer_pubkey);
-  const confirms = C.head - h + 1;
+  const confirms = C.head - h + 1, R = rulesAt(h), own = ownRulesBefore(h + 1);
+  // what the block changed: net AGRS per account (before fees), and the rules and votes it carried
+  const net = new Map(), effects = [];
+  txs.forEach((t, i) => {
+    if (!t || typeof t !== "object") return;
+    const k = txKind(t), key = low((b.tx_ids || [])[i] || "") || `${h}.${i}`, link = `<a class="go" href="${txHref(key)}" data-go="tx:${key}">${esc(TX_NAMES[k] || k)}</a>`;
+    for (const [f, to, v] of transfersOf(t)) { net.set(low(f), (net.get(low(f)) || 0) - num(v)); net.set(low(to), (net.get(low(to)) || 0) + num(v)); }
+    if (CAT[k] === "rule" || CAT[k] === "gov") effects.push(`${link} <em>· ${txLine(t, k)}</em>`);
+  });
+  const moves = [...net].filter(([, v]) => v).sort((x, y) => y[1] - x[1]);
   const rows = txs.map((t, i) => {
     if (!t || typeof t !== "object") return "";
     const k = txKind(t), id = low((b.tx_ids || [])[i] || ""), amt = amountOf(t);
     return `<tr><td class="n">${i + 1}</td><td><a class="go" href="${txHref(id || `${h}.${i}`)}" data-go="tx:${id || `${h}.${i}`}">${esc(TX_NAMES[k] || k)}</a></td><td>${txLine(t, k)}</td><td class="n">${amt != null ? fmtA(amt) : ""}</td></tr>`;
   }).join("");
-  return `<p class="kind">Block</p><p class="title">#${fmtN(h)} ${h === 0 ? tagHtml("genesis", "w") : tagHtml(`${fmtN(confirms)} deep`, "g")}</p>
+  return `<p class="kind">Block${V.sel ? "" : " · newest"}</p><p class="title">#${fmtN(h)} ${h === 0 ? tagHtml("genesis", "w") : tagHtml(`${fmtN(confirms)} deep`, "g")}</p>
     <p class="headline">${h === 0 ? "The first block. It sets the starting balances and rules every node agrees on." : `Sealed ${esc(ago(ts))}${prev ? ` <em>· ${dur(ts - prev)} after the one before</em>` : ""}, holding ${plural(txs.length, "transaction")}.`}</p>
-    <dl class="kv">
-      <dt>Time</dt><dd>${esc(fmtWhen(ts))}</dd>
-      <dt>Sealed by</dt><dd>${/^0*$/.test(prop) ? "nobody (genesis)" : `${addrLink(prop)}${isValidator(prop) ? " " + tagHtml("validator", "g") : ""}`}</dd>
-      <dt>Block hash</dt><dd><code>${esc(b.block_hash || "—")}</code></dd>
-      <dt>Previous</dt><dd>${h > 0 ? `${blkLink(h - 1)} <code>${esc(short(hd.previous_hash))}</code>` : "—"}</dd>
-      <dt>Merkle root</dt><dd><code>${esc(hd.merkle_root || "—")}</code></dd>
-      <dt>State hash</dt><dd><code>${esc(hd.state_hash || "—")}</code></dd>
-    </dl>
-    <div class="nav">${h > 0 ? `<a class="chip" href="${blkHref(h - 1)}" data-go="b:${h - 1}">← #${fmtN(h - 1)}</a>` : ""}${h < C.head ? `<a class="chip" href="${blkHref(h + 1)}" data-go="b:${h + 1}">#${fmtN(h + 1)} →</a>` : ""}<a class="chip" href="/history/#${h}">Time travel to here</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + blkHref(h))}">Copy link</button></div>
-    ${txs.length ? `<h3>Transactions</h3><table><thead><tr><th class="n">#</th><th>What</th><th>From → to</th><th class="n">AGRS</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
-    <p class="note">The state hash is a fingerprint of every balance and rule after this block. Two nodes that agree on it agree on the whole state.</p>
-    <details class="raw"><summary>Raw block</summary><pre class="code">${esc(JSON.stringify(b, null, 2))}</pre></details>`;
+    ${nav(h > 0 && `<a class="chip" href="${blkHref(h - 1)}" data-go="b:${h - 1}">← #${fmtN(h - 1)}</a>`, h < C.head && `<a class="chip" href="${blkHref(h + 1)}" data-go="b:${h + 1}">#${fmtN(h + 1)} →</a>`, `<a class="chip" href="/history/#${h}">Time travel to here</a>`, copyChip(blkHref(h)), shareChip(`block/${h}`))}
+    <div class="split">
+      <div>
+        <h3>What it changed</h3>
+        ${moves.length ? `<table><thead><tr><th>Account</th><th class="n">AGRS</th></tr></thead><tbody>${moves.map(([a, v]) => `<tr><td>${addrLink(a)}</td><td class="n ${v > 0 ? "up" : "down"}">${v > 0 ? "+" : "−"}${fmtA(Math.abs(v))}</td></tr>`).join("")}</tbody></table>` : ""}
+        ${effects.length ? `<ul class="plain">${effects.map(e => `<li>${e}</li>`).join("")}</ul>` : ""}
+        ${!moves.length && !effects.length ? `<p class="empty">${h === 0 ? "It created the starting balances." : "Nothing: an empty block. The validator still seals one on schedule, which keeps the chain's clock going."}</p>` : moves.length ? `<p class="note">Net change per account, before fees.</p>` : ""}
+      </div>
+      <div>
+        <h3>Who and which rules</h3>
+        <dl class="kv">
+          <dt>Time</dt><dd>${esc(fmtWhen(ts))}</dd>
+          <dt>Sealed by</dt><dd>${/^0*$/.test(prop) ? "nobody (genesis)" : `${addrLink(prop)}${isValidator(prop) ? " " + tagHtml("validator", "g") : ""}`}</dd>
+          ${R ? `<dt>Judged by</dt><dd>network rules, revision ${R.rev} <em>· <a href="/proposals/">rules over time</a></em>${R.here.length ? " " + tagHtml("rules changed here", "g") : ""}</dd><dt>Consensus</dt><dd>${esc(R.mode)}</dd>` : ""}
+          <dt>Own rules</dt><dd>${own.size ? `${plural(own.size, "account")} had set a rule of their own` : "no account had set a rule of its own yet"}</dd>
+          <dt class="vt">Block hash</dt><dd class="vt"><code>${esc(b.block_hash || "—")}</code></dd>
+          <dt class="vt">Previous</dt><dd class="vt">${h > 0 ? `${blkLink(h - 1)} <code>${esc(short(hd.previous_hash))}</code>` : "—"}</dd>
+          <dt class="vt">Merkle root</dt><dd class="vt"><code>${esc(hd.merkle_root || "—")}</code></dd>
+          <dt class="vt">State hash</dt><dd class="vt"><code>${esc(hd.state_hash || "—")}</code></dd>
+        </dl>
+      </div>
+    </div>
+    ${R && R.here.length ? `<p class="note"><b>The rules changed at this block.</b> ${R.here.length === 1 ? "An agreed rule change" : `${R.here.length} agreed rule changes`} took effect at the end of it, so from #${fmtN(h + 1)} on every block is judged by revision ${R.rev + R.here.length}. No fork, no software upgrade. ${R.here.map(u => u.update_id ? `<a href="/proposals/#${esc(String(u.update_id).slice(0, 16))}">See what changed</a>` : "").filter(Boolean).join(" · ")}</p>` : ""}
+    ${txs.length ? `<h3>Transactions in order</h3><table><thead><tr><th class="n">#</th><th>What</th><th>From → to</th><th class="n">AGRS</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
+    <p class="note vt">The state hash is a fingerprint of every balance and rule after this block. Two nodes that agree on it agree on the whole state.</p>
+    <p class="note vp">Every node checked this block against the Tau rules before adding it. Switch View to Technical for its hashes and the raw data.</p>
+    <details class="raw vt"><summary>Raw block</summary><pre class="code">${esc(JSON.stringify(b, null, 2))}</pre></details>`;
 }
 function txView(key) {
   let x = null;
@@ -572,40 +685,74 @@ function txView(key) {
   if (x) return sealedTx(x);
   const m = C.mempool.find(t => low(t.tx_hash) === key);
   const st = V.status[key], dr = C.dropped.find(d => low(d.tx_hash) === key);
-  if (!m && !st && !dr) return SAMPLE || !isHash(key) ? notFound("Transaction", "No transaction with this hash on this chain.") :
+  if (!m && !st && !dr) return SAMPLE || !isHash(key) ? notFound("Transaction", "No transaction with this hash on this chain, and our node has not seen it.") :
     `<p class="kind">Transaction</p><p class="title">${esc(short(key))}</p><p class="headline">Asking our node about this hash…</p><dl class="kv"><dt>Hash</dt><dd><code>${esc(key)}</code></dd></dl>`;
-  const status = m ? "queued" : st ? st.status : dr ? "dropped" : "unknown";
-  const [label, cls, says] = TX_STATUS[status] || (status === "dropped" ? ["Dropped", "r", "It waited in our node's queue and then left it without reaching a block."] : [status, "w", ""]);
+  const truth = m ? truthOf(m) : null;
+  const status = truth ? (truth.k === "superseded" ? "superseded" : "queued") : st ? st.status : dr ? "dropped" : "unknown";
+  const [label, cls, says] = status === "superseded" ? ["Replaced", "r", "Another transaction from the same sender with the same sequence number is already in a block, so this one can never land. Our node still lists it."]
+    : status === "queued" && truth.k === "stuck" ? ["Stuck", "w", `Waiting for ${dur(truth.age)}, much longer than the usual minute or two.`]
+    : TX_STATUS[status] || (status === "dropped" ? ["Dropped", "r", "It waited in our node's queue and then left it without reaching a block."] : [status, "w", ""]);
   const sender = low((m && m.sender) || (st && st.sender) || (dr && dr.sender) || "");
-  const rows = [["Hash", `<code>${esc(key)}</code>`]];
-  if (sender) rows.push(["Sent by", addrLink(sender)]);
-  if (dr && dr.type) rows.push(["What", esc(TX_NAMES[dr.type] || dr.type)]);
   const seq = (m && m.sequence_number) ?? (st && st.sequence_number);
-  if (seq != null) rows.push(["Sequence", fmtN(num(seq))]);
   const recv = isoTs((m && m.received_at) || (st && st.received_at)) || (dr && dr.seen);
-  if (recv) rows.push(["Arrived", `${esc(fmtWhen(recv))} <em>· ${esc(ago(recv))}</em>`]);
   const exp = isoTs((m && m.expires_at) || (st && st.expires_at));
-  if (exp) rows.push(["Expires", esc(fmtWhen(exp))]);
   const left = isoTs(st && st.dropped_at) || (dr && dr.left);
-  if (left && status !== "queued") rows.push(["Left the queue", esc(fmtWhen(left))]);
+  if (st && st.status === "confirmed" && st.block_number != null) return `<p class="kind">Transaction</p><p class="title">${esc(short(key))} ${tagHtml("In a block", "g")}</p><p class="headline">Sealed in ${blkLink(num(st.block_number))}. Our page has not loaded that block yet; it appears here in a moment.</p>`;
+  const signed = ["done", "Signed", sender ? `by ${addrLink(sender)}${seq != null ? ` · no. ${fmtN(num(seq) + 1)}` : ""}` : "by its sender"];
+  const queued = status === "queued" ? [truth.k === "stuck" ? "now" : "now", "Queued", `${recv ? `since ${esc(fmtTime(recv))}` : "now"}${truth && truth.age ? ` · ${esc(dur(truth.age))}` : ""}`]
+    : ["done", "Queued", recv ? `arrived ${esc(fmtWhen(recv))}` : "reached our node"];
+  const failLabel = status === "superseded" ? "Replaced" : label;
+  const checked = status === "queued" ? ["todo", "Checked", "when a block takes it"]
+    : ["fail", failLabel, status === "superseded" ? `sequence already used in ${blkLink(truth.h)}` : left ? `${esc(fmtWhen(left))}${st && st.reason ? ` · <b>${esc(st.reason)}</b>` : ""}` : (st && st.reason ? `<b>${esc(st.reason)}</b>` : "left the queue")];
+  const steps = [signed, queued, checked, ["todo", "Sealed", status === "queued" ? "not yet" : "never"], ["todo", "Settled", "—"]];
+  const why = status === "queued"
+    ? `<div class="verdict wait"><h4>${truth.k === "stuck" ? "Why it may be stuck" : "Still waiting"}</h4>${truth.k === "stuck"
+        ? `<p>A transaction usually lands in the next block or two. One waiting this long often means an earlier transaction from the same sender is missing or stuck, its fee limit is too low, or a rule will refuse it.</p><p><em>${exp ? `Our node lets it go at ${esc(fmtWhen(exp))} if nothing takes it.` : ""}</em></p>`
+        : `<p>It sits in our node's queue until the validator puts it in a block, usually within a minute or two. Every account's own rules and the network's rules check it then.</p>`}</div>`
+    : status === "superseded" ? "" : `<div class="verdict no"><h4>Why it never landed</h4><p>${esc(says)}</p></div>`;
+  const rows = [["Hash", `<code>${esc(key)}</code>`]];
+  if (dr && dr.type) rows.push(["What", esc(TX_NAMES[dr.type] || dr.type)]);
+  if (seq != null) rows.push(["Sequence", fmtN(num(seq))]);
+  if (exp && status === "queued") rows.push(["Expires", esc(fmtWhen(exp))]);
   if (st && st.reason) rows.push(["Reason", `<code>${esc(st.reason)}</code>`]);
   const fee = (m && m.estimated_fee) ?? (st && st.estimated_fee);
   if (fee != null) rows.push(["Fee", `${fmtA(num(fee))} AGRS estimated${(m || st).fee_limit != null ? ` · limit ${fmtA(num((m || st).fee_limit))}` : ""}`]);
-  if (st && st.status === "confirmed" && st.block_number != null) rows.push(["Block", `${blkLink(num(st.block_number))} · ${plural(num(st.confirmations), "confirmation")}`]);
-  return `<p class="kind">Transaction</p><p class="title">${esc(short(key))} ${tagHtml(label, cls)}</p>
-    <p class="headline">${esc(says)}</p>
-    <dl class="kv">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
-    ${status === "queued" ? `<p class="note">Our node only shows a summary while it waits. The full transaction appears here once a block takes it.</p>` : ""}
-    <div class="nav"><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + txHref(key))}">Copy link</button></div>`;
+  return `<p class="kind">Transaction</p><p class="title">${esc(short(key))} ${tagHtml(status === "queued" && truth.k === "waiting" ? "Waiting" : label, status === "queued" && truth.k === "waiting" ? "a" : cls)}</p>
+    <p class="headline">${status === "queued" && truth.k === "waiting" ? "In our node's queue, waiting for the next block." : esc(says)}</p>
+    ${trace(steps)}
+    ${why}
+    <dl class="kv">${rows.map(([a, b]) => kvRow(a, b)).join("")}</dl>
+    ${status === "queued" ? `<p class="note">Our node only shows a summary while it waits. The whole transaction appears here once a block takes it.</p>` : ""}
+    ${nav(sender && `<a class="chip" href="${addrHref(sender)}" data-go="a:${sender}">Sender</a>`, copyChip(txHref(key)))}`;
 }
 function sealedTx(x) {
   const t = x.t, k = txKind(t), s = low(t.sender_pubkey), tr = transfersOf(t), rule = ruleOf(t), st = streamOf(rule);
-  const confirms = C.head - x.h + 1;
+  const confirms = C.head - x.h + 1, R = rulesAt(x.h), own = ownRulesBefore(x.h, x.i);
+  const m = x.id && C.mempool.find(e => low(e.tx_hash) === x.id), seen = m && isoTs(m.received_at), recv = seen && x.ts && seen <= x.ts ? seen : null;
+  const steps = [
+    ["done", "Signed", `by ${addrLink(s)}${t.sequence_number != null ? ` · no. ${fmtN(num(t.sequence_number) + 1)}` : ""}`],
+    ["done", "Queued", recv ? `arrived ${esc(fmtTime(recv))}` : "passed our node's queue"],
+    ["done", "Checked", `by Tau rules${R ? ` · revision ${R.rev}` : ""}${CAT[k] === "transfer" && own.size ? ` + ${plural(own.size, "own rule")}` : ""}`],
+    ["done", "Sealed", `in ${blkLink(x.h)} · ${esc(fmtWhen(x.ts))}`],
+    ["ok", "Settled", `${plural(confirms - 1, "block")} on top`],
+  ];
+  const mine = own.get(s), theirs = [...new Set(tr.map(r => low(r[1])).concat(low(t.recipient_pubkey) || []))].map(a => own.get(a)).filter(Boolean);
+  const ruleLink = r => `<a class="go" href="${txHref(r.id || `${r.h}.${r.i}`)}" data-go="tx:${r.id || `${r.h}.${r.i}`}">set in #${fmtN(r.h)}</a>`;
+  let why = "";
+  if (CAT[k] === "transfer") {
+    why = `<div class="verdict"><h4>Why the network let it through</h4>
+      <p>The network's rules${R ? ` (revision ${R.rev}, ${esc(R.mode.toLowerCase())})` : ""} said yes${own.size ? `, and so did the accounts' own rules: every transfer is checked against the combined rules of every account that set one (${fmtN(own.size)} so far)` : ". No account had set a rule of its own yet"}.</p>
+      ${mine ? `<p><em>The sender has a rule of its own:</em> ${ruleLink(mine)}.</p>` : ""}
+      ${theirs.map(r => `<p><em>The receiver ${addrLink(r.a)} has a rule of its own:</em> ${ruleLink(r)}.</p>`).join("")}</div>`;
+  } else if (CAT[k] === "rule") {
+    why = `<div class="verdict"><h4>What this rule does now</h4><p>${k === "rule_deploy" || k === "rule_offer_accept" ? "From this block on, every transfer is also checked against this rule." : k === "rule_offer" ? "Nothing yet: the receiver decides whether to take it on." : "The offer is closed; nothing changed for the receiver."}</p>${STREAMS[st] ? `<p><em>It decides ${esc(STREAMS[st])}.</em></p>` : ""}</div>`;
+  } else {
+    why = `<div class="verdict"><h4>What this vote does</h4><p>A vote counts once it is in a block. Whether the change takes effect depends on the agreement it reaches before its activation block. <a href="/proposals/">See all proposals</a>.</p></div>`;
+  }
   const rows = [];
   if (x.id) rows.push(["Hash", `<code>${esc(x.id)}</code>`]);
-  rows.push(["Block", `${blkLink(x.h)} · transaction ${x.i + 1} of ${(C.blocks[x.h].transactions || []).length} · ${esc(fmtWhen(x.ts))}`]);
-  rows.push(["Signed by", `${addrLink(s)}${isValidator(s) ? " " + tagHtml("validator", "g") : ""}`]);
-  if (t.sequence_number != null) rows.push(["Sequence", `${fmtN(num(t.sequence_number))} <em>· this sender's transaction number ${fmtN(num(t.sequence_number) + 1)}</em>`]);
+  rows.push(["Position", `transaction ${x.i + 1} of ${(C.blocks[x.h].transactions || []).length} in ${blkLink(x.h)}`]);
+  if (t.sequence_number != null) rows.push(["Sequence", `${fmtN(num(t.sequence_number))}`]);
   if (tr.length === 1) rows.push(["Sent", `<b>${fmtA(num(tr[0][2]))} AGRS</b> ${addrLink(low(tr[0][0]))} → ${addrLink(low(tr[0][1]))}`]);
   if (t.recipient_pubkey) rows.push([k === "rule_offer" ? "Offered to" : "To", addrLink(low(t.recipient_pubkey))]);
   if (t.amount != null) rows.push(["Amount", `<b>${fmtA(num(t.amount))} AGRS</b>`]);
@@ -615,26 +762,28 @@ function sealedTx(x) {
   if (t.activate_at_height != null) rows.push(["Would apply from", blkLink(num(t.activate_at_height))]);
   if (t.approve != null) rows.push(["Vote", yes(t.approve) ? tagHtml("yes", "g") : tagHtml("no", "r")]);
   for (const [f, label] of [["offer_id", "Offer"], ["update_id", "Rule change"], ["request_id", "Request"], ["retractable_id", "Retractable"]])
-    if (t[f]) rows.push([label, `<code>${esc(t[f])}</code>${f === "update_id" ? ` · <a class="go" href="/proposals/">all proposals</a>` : ""}`]);
+    if (t[f]) rows.push([label, `<code>${esc(t[f])}</code>`]);
   if (t.fee_limit != null) rows.push(["Fee limit", `${fmtA(num(t.fee_limit))} AGRS`]);
-  return `<p class="kind">Transaction</p><p class="title">${esc(TX_NAMES[k] || k)} ${tagHtml(`in block · ${fmtN(confirms)} deep`, "g")}</p>
+  return `<p class="kind">Transaction</p><p class="title">${esc(TX_NAMES[k] || k)} ${tagHtml("In a block", "g")}</p>
     <p class="headline">${esc(TX_SAYS[k] || "")}</p>
-    <dl class="kv">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
+    ${trace(steps)}
+    ${m ? `<p class="note"><b>Our node still lists this one as waiting.</b> The chain says it is sealed; that is a known node bug (IDNI issue #81), not a second copy.</p>` : ""}
+    <div class="split"><div>${why}</div><div><dl class="kv">${rows.map(([a, b]) => kvRow(a, b)).join("")}</dl></div></div>
     ${tr.length > 1 ? `<h3>Transfers</h3><table><thead><tr><th>From</th><th>To</th><th class="n">AGRS</th></tr></thead><tbody>${tr.map(([f, to, a]) => `<tr><td>${addrLink(low(f))}</td><td>${addrLink(low(to))}</td><td class="n">${fmtA(num(a))}</td></tr>`).join("")}</tbody></table>` : ""}
-    ${rule ? `<h3>Rule text${st ? ` · ${esc(st)}` : ""}</h3><pre class="code">${esc(rule)}</pre><p class="note">${STREAMS[st] ? `This rule decides ${esc(STREAMS[st])}. ` : ""}Try rules like this in the <a href="/playground/">Rule Playground</a>.</p>` : ""}
-    <div class="nav"><a class="chip" href="/account/?a=${esc(s)}">Sender's account</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + txHref(x.id || `${x.h}.${x.i}`))}">Copy link</button></div>
-    <details class="raw"><summary>Raw transaction</summary><pre class="code">${esc(JSON.stringify(t, null, 2))}</pre></details>`;
+    ${rule ? `<h3>Rule text${st ? ` · ${esc(st)}` : ""}</h3><pre class="code">${esc(rule)}</pre><p class="note">Try rules like this in the <a href="/playground/">Rule Playground</a>.</p>` : ""}
+    ${nav(`<a class="chip" href="${addrHref(s)}" data-go="a:${s}">Sender</a>`, copyChip(txHref(txKey(x))))}
+    <details class="raw vt"><summary>Raw transaction</summary><pre class="code">${esc(JSON.stringify(t, null, 2))}</pre></details>`;
 }
 const isValidator = a => ((C.gov || {}).active_validators || []).some(v => low(typeof v === "string" ? v : (v || {}).pubkey) === a);
 function addrView(a) {
-  let sent = 0, inN = 0, outN = 0, inSum = 0, outSum = 0, proposed = 0, last = null;
+  let sent = 0, inN = 0, inSum = 0, outSum = 0, proposed = 0, last = null;
   const list = [];
   for (let h = 0; h <= C.head; h++) if (low(((C.blocks[h] || {}).header || {}).proposer_pubkey) === a) proposed++;
   for (const x of txsNewestFirst()) {
     const t = x.t, s = low(t.sender_pubkey), mine = s === a;
     let touched = mine, dir = mine ? "out" : "", amt = null;
     for (const [f, to, v] of transfersOf(t)) {
-      if (low(f) === a) { outN++; outSum += num(v); touched = true; dir = "out"; amt = (amt || 0) + num(v); }
+      if (low(f) === a) { outSum += num(v); touched = true; dir = "out"; amt = (amt || 0) + num(v); }
       if (low(to) === a && low(f) !== a) { inN++; inSum += num(v); touched = true; dir = "in"; amt = (amt || 0) + num(v); }
     }
     if (!touched && low(t.recipient_pubkey) === a) { touched = true; dir = "in"; }
@@ -646,29 +795,34 @@ function addrView(a) {
   const st = V.lookups[`getaccountstate ${a}`], sq = V.lookups[`getsequence ${a}`];
   const bal = st && st.chain_balance != null ? num(st.chain_balance) : null;
   const pending = st ? num(st.pending_outgoing) + num(st.pending_fees) : 0;
-  const waiting = C.mempool.filter(m => low(m.sender) === a);
+  const queue = C.mempool.filter(m => low(m.sender) === a).map(m => ({ m, t: truthOf(m) }));
+  const rule = ownRulesBefore(C.head + 1).get(a);
   const known = sent || inN || proposed || bal != null;
   if (!known && (C.ready || SAMPLE) && !st) {
     return `<p class="kind">Address</p><p class="title">${esc(short(a))}</p><p class="headline">Nothing on this chain mentions this address yet.${SAMPLE ? "" : " Asking our node for its balance…"}</p><dl class="kv"><dt>Address</dt><dd><code>${esc(a)}</code></dd></dl>`;
   }
-  return `<p class="kind">Address</p><p class="title">${esc(short(a))}${isValidator(a) ? " " + tagHtml("validator", "g") : ""}</p>
+  return `<p class="kind">Address</p><p class="title">${esc(short(a))}${isValidator(a) ? " " + tagHtml("validator", "g") : ""}${rule ? " " + tagHtml("own rule", "w") : ""}</p>
     <div class="mini">
       <div data-tip="What our node says this account holds now, after every sealed block."><h4>Balance</h4><b>${bal != null ? fmtA(bal) : "…"}</b></div>
       <div><h4>Sent</h4><b>${fmtN(sent)}</b></div>
       <div><h4>Received</h4><b>${fmtN(inN)}</b></div>
       <div><h4>Last active</h4><b>${last ? esc(ago(last)) : "—"}</b></div>
     </div>
+    ${nav(`<a class="chip" href="/account/?a=${esc(a)}${qs}">Full account view</a>`, copyChip(addrHref(a)), shareChip(`address/${a}`))}
+    <div class="split"><div>
+    ${queue.length ? `<div class="verdict ${queue.some(q => q.t.k === "waiting" || q.t.k === "stuck") ? "wait" : "plain"}"><h4>Listed in our node's queue</h4>${queue.map(({ m, t }) => `<p>${txLink(low(m.tx_hash))} <em>· ${t.k === "sealed" ? `already in ${blkLink(t.h)}` : t.k === "superseded" ? `replaced, sequence used in ${blkLink(t.h)}` : t.k === "stuck" ? `stuck for ${esc(dur(t.age))}` : "waiting"}</em></p>`).join("")}</div>` : ""}
+    ${rule ? `<div class="verdict"><h4>Its own rule</h4><p>Set in ${blkLink(rule.h)}. Every transfer is checked against it too.</p><pre class="code">${esc(rule.text)}</pre></div>` : ""}
     <dl class="kv">
-      <dt>Address</dt><dd><code>${esc(a)}</code></dd>
+      <dt class="vt">Address</dt><dd class="vt"><code>${esc(a)}</code></dd>
       <dt>Moved</dt><dd>${fmtA(inSum)} AGRS in · ${fmtA(outSum)} AGRS out</dd>
       ${proposed ? `<dt>Blocks sealed</dt><dd>${fmtN(proposed)}</dd>` : ""}
-      ${sq && sq.sequence_number != null ? `<dt>Next sequence</dt><dd>${fmtN(num(sq.sequence_number))}</dd>` : ""}
+      ${sq && sq.sequence_number != null ? `<dt class="vt">Next sequence</dt><dd class="vt">${fmtN(num(sq.sequence_number))}</dd>` : ""}
       ${pending ? `<dt>On hold</dt><dd>${fmtA(pending)} AGRS for transactions still waiting</dd>` : ""}
-      ${waiting.length ? `<dt>Waiting</dt><dd>${waiting.map(m => txLink(low(m.tx_hash))).join(", ")}</dd>` : ""}
     </dl>
-    <div class="nav"><a class="chip" href="/account/?a=${esc(a)}${qs}">Full account view</a><button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + addrHref(a))}">Copy link</button></div>
-    ${list.length ? `<h3>Latest activity</h3><ul class="list">${list.map(({ x, dir, amt }) => { const k = txKind(x.t); return `<li><button type="button" data-go="tx:${x.id || `${x.h}.${x.i}`}"><span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${dir === "in" ? `from ${esc(short(low(x.t.sender_pubkey)))}` : toOf(x.t) && toOf(x.t) !== a ? `to ${esc(short(toOf(x.t)))}` : esc(ago(x.ts))}</em></span><span class="amt ${dir === "in" ? "" : "dim"}">${amt != null ? `${dir === "in" ? "+" : "−"}${fmtA(amt)}` : ""}</span></button></li>`; }).join("")}</ul>` : ""}
-    <p class="note">Its own rules, rule offers and refusals are in the full account view.</p>`;
+    </div><div>
+    ${list.length ? `<h3>Latest activity</h3><ul class="list">${list.map(({ x, dir, amt }) => { const k = txKind(x.t); return `<li><button type="button" data-go="tx:${txKey(x)}"><span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${dir === "in" ? `from ${esc(short(low(x.t.sender_pubkey)))}` : toOf(x.t) && toOf(x.t) !== a ? `to ${esc(short(toOf(x.t)))}` : esc(ago(x.ts))}</em></span><span class="amt ${dir === "in" ? "" : "dim"}">${amt != null ? `${dir === "in" ? "+" : "−"}${fmtA(amt)}` : ""}</span></button></li>`; }).join("")}</ul>` : ""}
+    </div></div>
+    <p class="note">Its rule offers and refusals are in the full account view.</p>`;
 }
 function hitsView(h) {
   return `<p class="kind">Search</p><p class="title">${plural(h.list.length, "match")} for “${esc(h.q)}”</p>
@@ -676,7 +830,7 @@ function hitsView(h) {
     ${h.list.length > 50 ? `<p class="note">Showing 50. Type a few more characters.</p>` : ""}`;
 }
 function notFound(title, text) {
-  return `<p class="kind">Not found</p><p class="title">${esc(title)}</p><p class="headline">${esc(text)}</p><div class="nav"><button class="chip" type="button" data-go="home">Back to the overview</button></div>`;
+  return `<p class="kind">Not found</p><p class="title">${esc(title)}</p><p class="headline">${esc(text)}</p><div class="nav"><button class="chip" type="button" data-go="home">Newest block</button></div>`;
 }
 
 /* ------------------------------ navigation ------------------------------ */
@@ -737,10 +891,9 @@ document.addEventListener("click", e => {
   if (c) { navigator.clipboard && navigator.clipboard.writeText(c.dataset.copy).then(() => { const t = c.textContent; c.textContent = "Copied"; setTimeout(() => { c.textContent = t; }, 1500); }).catch(() => {}); return; }
   const g = e.target.closest("[data-go]");
   if (g && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); go(parseGo(g.dataset.go), true); return; }
-  const f = e.target.closest("[data-f]");
-  if (f) { V.filter = f.dataset.f; V.txN = 60; document.querySelectorAll("[data-f]").forEach(b => b.setAttribute("aria-pressed", String(b === f))); drawTxs(); return; }
-  if (e.target.id === "blkMore") { V.blkN += 100; drawBlocks(); }
-  if (e.target.id === "txMore") { V.txN += 100; drawTxs(); }
+  const f = e.target.closest("[data-trail]");
+  if (f) { V.trail = f.dataset.trail; V.trailN = 40; drawTrail(); $("trailList").parentElement.scrollTop = 0; return; }
+  if (e.target.id === "trailMore") { V.trailN += 60; drawTrail(); }
 });
 document.addEventListener("keydown", e => {
   if (e.key === "/" && document.activeElement !== $("q")) { e.preventDefault(); $("q").focus(); $("q").select(); }
@@ -773,7 +926,7 @@ function fit() {
 }
 addEventListener("resize", fit);
 // relative times ("2 min ago") stay current
-setInterval(() => { if (C.head >= 0) { drawTiles(); drawBlocks(); } }, 15000);
+setInterval(() => { if (C.head >= 0) { drawQcheck(); drawTrail(); } }, 15000);
 
 /* ------------------------------ sample data (?sample, for previews) ------------------------------ */
 function sampleChain() {
@@ -797,9 +950,12 @@ function sampleChain() {
       transactions: txs, tx_ids: txs.map(() => hex(64)), block_hash: hash }, false);
     prev = hash;
   }
-  C.gov = { active_validators: [prop] };
-  C.mempool = [{ tx_hash: hex(64), sender: accs[5], sequence_number: 3, received_at: new Date((now - 12) * 1000).toISOString(), expires_at: new Date((now + 3588) * 1000).toISOString(), operation_count: 1, status: "pending", fee_limit: 100, estimated_fee: 3 },
-               { tx_hash: hex(64), sender: accs[2], sequence_number: 9, received_at: new Date((now - 41) * 1000).toISOString(), expires_at: new Date((now + 3559) * 1000).toISOString(), operation_count: 2, status: "pending", fee_limit: 100, estimated_fee: 4 }];
+  C.gov = { active_validators: [prop], eligibility_mode: "validator_set", archival_update_details: [{ update_id: hex(64), lifecycle: "activated", activate_at_height: 200 }] };
+  const iso = t => new Date(t * 1000).toISOString();
+  const q = (hash, sender, sq, ago) => ({ tx_hash: hash, sender, sequence_number: sq, received_at: iso(now - ago), expires_at: iso(now - ago + 3600), operation_count: 1, status: "pending", fee_limit: 100, estimated_fee: 3 });
+  C.mempool = [q(hex(64), accs[5], 40, 12), q(hex(64), accs[7], 77, 25 * 60)];
+  // like the live node (IDNI issue #81): transactions already sealed stay listed as waiting for up to an hour
+  for (let h = N - 1, n = 0; h > N - 40 && n < 5; h--) { const b = C.blocks[h]; if (b && b.tx_ids.length) { C.mempool.push(q(b.tx_ids[0], b.transactions[0].sender_pubkey, b.transactions[0].sequence_number, now - b.header.timestamp + 25)); n++; } }
   C.dropped = [{ tx_hash: hex(64), type: "user_tx", sender: accs[6], seen: now - 5400, left: now - 5330 }]; C.droppedTotal = 1;
   V.lookups[`getaccountstate ${accs[1]}`] = { address: accs[1], chain_balance: "24120", pending_outgoing: "0", pending_fees: "0" };
   C.ready = true;
