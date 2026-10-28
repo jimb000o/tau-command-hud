@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="The Daily Consensus · Tau HUD">
-<meta property="og:description" content="Extra! Chain rewrites its own law, no fork required. Twelve years of Tau as a 1920s newspaper you can leaf through.">
+<meta property="og:description" content="Extra! Users rewrite the chain’s law by vote, no fork required. Twelve years of Tau as a 1920s newspaper you can leaf through.">
 <meta property="og:image" content="https://tauhud.com/gazette/img/og.png">
 <meta property="og:url" content="https://tauhud.com/gazette/">
 <meta name="twitter:card" content="summary_large_image">
@@ -233,7 +233,7 @@ const EN = {
   motto: "“Where the rules change by agreement”",
   ui: { coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
   date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
-  toc: ["Front page: chain rewrites its own law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the chain took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
+  toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
   pages: [
 /* ---------------- 1 FRONT PAGE ---------------- */
 `<div class="pg front">
@@ -244,16 +244,16 @@ const EN = {
   </div>
   <div class="dateline"><span>Vol. XIII · No. {{HEIGHT}}</span><span>{{DATE}}</span><span>tauhud.com</span></div>
   <div class="center"><span class="extra">EXTRA</span></div>
-  <div class="banner">Chain rewrites its own law; no fork, no restart</div>
+  <div class="banner">Users rewrite the chain’s law; no fork, no restart</div>
   <div class="grid">
     <div class="u s4">
       <div class="kick">Testnet Alpha · special report</div>
-      <h2>Network Votes to Change How It Agrees, and Every Node Simply Obeys</h2>
+      <h2>Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys</h2>
       <div class="deck">Consensus moves from a fixed list of validators to stake and back again, and not a single machine is reinstalled. Engineers call it the first real demonstration of a blockchain that is governed by its own users.</div>
       <figure class="photo"><img src="img/hud-wide.jpg" width="1100" height="450" style="height:auto;aspect-ratio:1100/450" alt="Halftone photograph of the Tau HUD screen"><figcaption><b>Our camera at the core.</b> The Tau HUD, a community instrument at tauhud.com, follows every block of the testnet as it is sealed. Each point on the orbit is a node; the ring closes when the validators agree.</figcaption></figure>
       <div class="c2"><p class="dc ni">Every blockchain has a rulebook. On most of them it is carved into the software itself, and changing a single line means a <i>hard fork</i>: new software, shipped to every machine, installed by every operator, with the ever-present danger that some refuse and the chain splits in two.</p>
       <p>The Tau network has taken a different road. In its August development report the team described demonstrations in which, in their words, the community can <i>“amend the single clause on the network’s law and activate it on the next block”</i>, without having to modify or redeploy a single node.</p>
-      <p>The clause in question was no small matter. It was consensus itself: who may seal blocks. The network voted to move from a fixed validator list to proof of stake, and then voted to move back. Each time, every node switched by itself at the agreed block.</p>
+      <p>The clause in question was no small matter. It was consensus itself: who may seal blocks. The users voted to move from a fixed validator list to proof of stake, and then voted to move back. Each time, every node switched by itself at the agreed block.</p>
       <p>It works because the rulebook lives on the chain. Since January every block records the exact snapshot of rules it ran under, and since May the consensus logic is written in the Tau Language rather than in Python, so a rule change is simply another transaction. <i>See Page 7.</i></p></div>
     </div>
     <div class="u s2 rl">
@@ -332,7 +332,7 @@ const EN = {
         <g font-size="13" text-anchor="middle">
           <rect x="0" y="184" width="120" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="60" y="211">Proposal</text>
           <rect x="150" y="184" width="130" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="215" y="204">Checked by logic</text><text x="215" y="220" font-size="11" font-style="italic">contradiction? refused</text>
-          <rect x="310" y="184" width="120" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="370" y="204">Agreed</text><text x="370" y="220" font-size="11" font-style="italic">by the validators</text>
+          <rect x="310" y="184" width="120" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="370" y="204">Agreed</text><text x="370" y="220" font-size="11" font-style="italic">by the users’ vote</text>
           <rect x="460" y="184" width="130" height="44" fill="#1b1813"/><text x="525" y="204" fill="#efe5cf" font-weight="700">Law</text><text x="525" y="220" font-size="11" fill="#efe5cf" font-style="italic">at a set block</text>
           <line x1="120" y1="206" x2="148" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><line x1="280" y1="206" x2="308" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><line x1="430" y1="206" x2="458" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/>
           <line x1="590" y1="206" x2="625" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><text x="694" y="203" font-weight="700">one chain</text><text x="694" y="219" font-size="11" font-style="italic">every node switched</text>
@@ -344,7 +344,7 @@ const EN = {
       <h2 class="l">On Other Chains, Code Is Law. On Tau, the Agreement Is Law.</h2>
       <div class="c2"><p class="ni dc">The trouble with a rulebook made of software is that only programmers can open it, and only by sending everybody a new copy. A hard fork is a polite name for that copy. If enough people refuse it, the chain divides, and two currencies walk away from one another like brothers after a will is read.</p>
       <p>Tau keeps the rulebook inside the chain. Users write the rules in the Tau Language, a language of logic, and propose them like any other transaction. Before a proposal can apply it is compiled and checked against the rules already in force. If it contradicts them it is refused at the door and never reaches the chain.</p>
-      <p>A proposal that passes the check is put to the validators. When enough of them agree, it becomes law at a block named in advance, for every node at once. There is no administrator’s key, no emergency switch kept by the founders. Nothing changes without the validators’ consent.</p>
+      <p>A proposal that passes the check is put to the vote. When enough votes agree, it becomes law at a block named in advance, for every node at once. There is no administrator’s key, no emergency switch kept by the founders. Nothing changes unless the vote agrees.</p>
       <p>A Tau team member put it plainly early this year: the governance is highly flexible, and <i>“the system updates itself according to the desired specification.”</i></p></div>
     </div>
     <div class="u s2 rl rt">
@@ -453,14 +453,14 @@ const EN = {
 /* ---------------- 7 2026 ---------------- */
 `<div class="pg">
   <div class="rh"><span>Page 7</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
-  <div class="banner sm">The year the chain took the wheel</div>
+  <div class="banner sm">The year the users took the wheel</div>
   <div class="grid">
     <div class="u s4">
       <div class="kick">2026 · a chronicle</div>
       <h2>From “The Demo” to Programmable Money</h2>
       <div class="c2"><p class="dc ni">January opened with a promise kept: every block now records the exact snapshot of rules it ran under, so a newcomer node can check the state hash instead of replaying all of history. In February the team gave the year its motto. Testnet Alpha, they said, <i>is</i> the demo.</p>
       <p>April brought fork choice and reorganisations, one canonical chain, and user-defined policy checks beside the built-in ones. In May came the decisive step. Consensus was moved out of Python and into Tau logic, so that the users could change it with rules, and a developer command line arrived for nodes, keys and votes.</p>
-      <p>In August the users did change it. The network voted its way from a fixed validator list to stake and back, without redeploying a node. The validator list itself now lives in Tau logic.</p>
+      <p>In August the users did change it. They voted their way from a fixed validator list to stake and back, without redeploying a node. The validator list itself now lives in Tau logic.</p>
       <p>September was declared the product phase: a simple wallet mode with rule templates and sharing, and two more patents granted. In October, co-signed transfers arrived, large payments that need several approvals, with deadlines counted in blocks that no clock can fake. One commonly used specification now loads in 2.4 seconds where it once took 68.</p>
       <p>Mainnet and the real Agoras coin are still ahead. The road, for once, is visible.</p></div>
     </div>
@@ -496,7 +496,7 @@ const EN = {
           <line x1="124" y1="56" x2="234" y2="56" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar2)"/><line x1="324" y1="56" x2="434" y2="56" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar2)"/><line x1="524" y1="56" x2="634" y2="56" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar2)"/>
           <text x="80" y="118" font-style="italic" font-size="13">a rule, written in Tau,</text><text x="80" y="134" font-style="italic" font-size="13">sent as a transaction</text>
           <text x="280" y="118" font-style="italic" font-size="13">compiled against the law</text><text x="280" y="134" font-style="italic" font-size="13">in force; contradictions out</text>
-          <text x="480" y="118" font-style="italic" font-size="13">validators vote; enough</text><text x="480" y="134" font-style="italic" font-size="13">yes votes and it is agreed</text>
+          <text x="480" y="118" font-style="italic" font-size="13">the users vote; enough</text><text x="480" y="134" font-style="italic" font-size="13">yes votes and it is agreed</text>
           <text x="680" y="118" font-style="italic" font-size="13">in force for every node</text><text x="680" y="134" font-style="italic" font-size="13">at the block named ahead</text>
         </g>
       </svg>
@@ -539,7 +539,7 @@ const EN = {
       <div class="kick">From our correspondent at the node</div>
       <h2>A Public Chain, Open to Any Spectator</h2>
       <div class="c2"><p class="dc ni">Testnet Alpha runs in the open, and your correspondent has a seat in the gallery. Tau HUD keeps its own node on the network beside the bootnode of IDNI, the company behind Tau, and prints what it sees.</p>
-      <p>At the moment a single validator, run by IDNI, seals every block, roughly one every eight seconds. Proposals to change the rules arrive as transactions, gather votes and, once agreed, wait for the block at which they take effect. The HUD shows them coming, counts down to them and lights the ring when they land.</p>
+      <p>At the moment a single validator, run by IDNI, seals every block, roughly one every eight seconds. Users propose rule changes as transactions; the proposals gather votes and, once agreed, wait for the block at which they take effect. The HUD shows them coming, counts down to them and lights the ring when they land.</p>
       <p>For the quiet hours there is a simulation that follows the same protocol, with a scheduled event every hour and a change of consensus twice a day. It is marked in amber wherever it appears, so that nobody mistakes the rehearsal for the play.</p>
       <div class="box wire"><p class="ni" id="wire1">{{WIRE}}</p></div></div>
     </div>

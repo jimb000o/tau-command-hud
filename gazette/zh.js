@@ -4,7 +4,7 @@ window.GAZETTE_ZH = {
   motto: "规则经由共识而改变",
   ui: { coverLine: "Tau 的十二年，以及一条能修改自身规则的链：十版新闻、来信、讣告与谜题。", cont: "续前", stop: "最新电讯", front: "头版", pageN: n => `第 ${n} 版`, pagesN: (a, b) => `第 ${a}–${b} 版`, of: "/ 共", tocN: n => `第 ${n} 版`, back: "‹ 上一页", turn: "翻页 ›", contents: "目录", pocket: "袖珍版", broad: "大报版", sOn: "声音 开", sOff: "声音 关", hint: "<b>点击版面</b>即可翻页 · 方向键亦可", hintTouch: "<b>轻触版面</b>即可翻页 · 也可滑动", wireWait: "正在接通节点电报线", wireOff: "节点电报线暂时无声；完整消息请见 tauhud.com", wire: (h, age) => `截至付印之时，测试网位于区块 <span class="live">#${h}</span>${age != null ? `，最近一个区块在本行排版前 ${age} 秒封存` : ""}。实时动态请见 tauhud.com。` },
   date: d => d.toLocaleDateString("zh-CN", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
-  toc: ["头版：区块链改写自身法则", "从 Zennet 出发的漫长道路", "硬分叉是什么", "沉寂四年与一个伟大方程", "一门谈论自身的语言", "工地来电：2025", "区块链接过方向盘的一年", "法律如何制定 · 读者来信", "今日测试网 · 分类广告", "游艺 · 剪下收藏"],
+  toc: ["头版：用户改写链的法则", "从 Zennet 出发的漫长道路", "硬分叉是什么", "沉寂四年与一个伟大方程", "一门谈论自身的语言", "工地来电：2025", "用户接过方向盘的一年", "法律如何制定 · 读者来信", "今日测试网 · 分类广告", "游艺 · 剪下收藏"],
   pages: [
 /* ---------------- 1 头版 ---------------- */
 `<div class="pg front">
@@ -15,16 +15,16 @@ window.GAZETTE_ZH = {
   </div>
   <div class="dateline"><span>第十三卷 · No. {{HEIGHT}}</span><span>{{DATE}}</span><span>tauhud.com</span></div>
   <div class="center"><span class="extra">号外</span></div>
-  <div class="banner">区块链改写自身法则：不分叉，不重启</div>
+  <div class="banner">用户投票改写链的法则：不分叉，不重启</div>
   <div class="grid">
     <div class="u s4">
       <div class="kick">Testnet Alpha · 特别报道</div>
-      <h2>网络投票改变共识方式，所有节点自行遵从</h2>
+      <h2>用户投票改变链的共识方式，所有节点自行遵从</h2>
       <div class="deck">共识从固定验证者名单切换到权益证明，又切换回来，没有重装任何一台机器。工程师称之为第一次真正展示一条由用户自己治理的区块链。</div>
       <figure class="photo"><img src="img/hud-wide.jpg" width="1100" height="450" style="height:auto;aspect-ratio:1100/450" alt="Tau HUD 屏幕的网点照片"><figcaption><b>本报镜头对准核心。</b>Tau HUD 是 tauhud.com 上的社区观测仪，测试网每封存一个区块，它都跟着记录。轨道上的每个点是一个节点；验证者同意时，圆环闭合。</figcaption></figure>
       <div class="c2"><p class="dc ni">每条区块链都有一本规则手册。在大多数链上，它被刻进软件本身，改动一行就意味着一次<i>硬分叉</i>：新软件发往每台机器，由每位运营者安装，而且始终存在有人拒绝、链一分为二的危险。</p>
       <p>Tau 网络走了另一条路。团队在八月的开发报告中介绍了几次演示，用他们的话说，社区可以<i>“修改网络法则中的某一条款，并在下一个区块生效”</i>，无需修改或重新部署任何节点。</p>
-      <p>这一条款可不是小事，它就是共识本身：谁可以封存区块。网络投票从固定验证者名单转向权益证明，随后又投票转回。每一次，所有节点都在约定的区块自行切换。</p>
+      <p>这一条款可不是小事，它就是共识本身：谁可以封存区块。用户投票从固定验证者名单转向权益证明，随后又投票转回。每一次，所有节点都在约定的区块自行切换。</p>
       <p>之所以可行，是因为规则手册就在链上。自一月起，每个区块都记录它所依据的规则快照；自五月起，共识逻辑用 Tau 语言而不是 Python 编写，所以改规则只是又一笔交易。<i>详见第 7 版。</i></p></div>
     </div>
     <div class="u s2 rl">
@@ -103,7 +103,7 @@ window.GAZETTE_ZH = {
         <g font-size="13" text-anchor="middle">
           <rect x="0" y="184" width="120" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="60" y="211">提案</text>
           <rect x="150" y="184" width="130" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="215" y="204">逻辑检查</text><text x="215" y="220" font-size="11" font-style="italic">有矛盾？拒绝</text>
-          <rect x="310" y="184" width="120" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="370" y="204">通过</text><text x="370" y="220" font-size="11" font-style="italic">由验证者同意</text>
+          <rect x="310" y="184" width="120" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="370" y="204">通过</text><text x="370" y="220" font-size="11" font-style="italic">经用户投票</text>
           <rect x="460" y="184" width="130" height="44" fill="#1b1813"/><text x="525" y="204" fill="#efe5cf" font-weight="700">法律</text><text x="525" y="220" font-size="11" fill="#efe5cf" font-style="italic">于预定区块生效</text>
           <line x1="120" y1="206" x2="148" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><line x1="280" y1="206" x2="308" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><line x1="430" y1="206" x2="458" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/>
           <line x1="590" y1="206" x2="625" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><text x="694" y="203" font-weight="700">一条链</text><text x="694" y="219" font-size="11" font-style="italic">所有节点一起切换</text>
@@ -115,7 +115,7 @@ window.GAZETTE_ZH = {
       <h2 class="l">在别的链上，代码即法律；在 Tau 上，共识即法律</h2>
       <div class="c2"><p class="ni dc">用软件写成的规则手册，麻烦在于只有程序员能打开它，而且只能靠给每个人发一份新副本。硬分叉就是这份副本的客气说法。如果拒绝的人够多，链就会分裂，两种货币从此分道扬镳，好比宣读遗嘱后反目的兄弟。</p>
       <p>Tau 把规则手册放在链里。用户用 Tau 语言（一门逻辑语言）编写规则，并像其他交易一样提交提案。提案生效之前，会先被编译，并与已生效的规则逐一比对。与它们矛盾的，在门口就被拒绝，永远到不了链上。</p>
-      <p>通过检查的提案交由验证者表决。足够多的验证者同意后，它在事先指定的区块对所有节点同时成为法律。没有管理员密钥，也没有创始人手里的紧急开关。未经验证者同意，什么都不会改变。</p>
+      <p>通过检查的提案交付表决。赞成票足够时，它在事先指定的区块对所有节点同时成为法律。没有管理员密钥，也没有创始人手里的紧急开关。表决不通过，什么都不会改变。</p>
       <p>今年早些时候，一位 Tau 团队成员说得很直白：治理非常灵活，<i>“系统会按照期望的规格自行更新。”</i></p></div>
     </div>
     <div class="u s2 rl rt">
@@ -224,14 +224,14 @@ window.GAZETTE_ZH = {
 /* ---------------- 7 2026 ---------------- */
 `<div class="pg">
   <div class="rh"><span>第 7 版</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
-  <div class="banner sm">区块链接过方向盘的一年</div>
+  <div class="banner sm">用户接过方向盘的一年</div>
   <div class="grid">
     <div class="u s4">
       <div class="kick">2026 · 编年</div>
       <h2>从“演示”到可编程货币</h2>
       <div class="c2"><p class="dc ni">一月以兑现承诺开场：每个区块现在都记录它所依据的确切规则快照，新加入的节点可以核对状态哈希，而不必重放全部历史。二月，团队为这一年定下格言：Testnet Alpha <i>就是</i>演示。</p>
       <p>四月带来了分叉选择与链重组、唯一的规范链，以及与内置检查并列的用户自定义策略检查。五月迈出决定性一步：共识从 Python 移入 Tau 逻辑，用户可以用规则修改它；同时推出了管理节点、密钥和投票的开发者命令行。</p>
-      <p>八月，用户真的改了它。网络通过投票从固定验证者名单切换到权益证明再切回，没有重新部署任何节点。验证者名单本身如今也存在于 Tau 逻辑中。</p>
+      <p>八月，用户真的改了它。他们通过投票从固定验证者名单切换到权益证明再切回，没有重新部署任何节点。验证者名单本身如今也存在于 Tau 逻辑中。</p>
       <p>九月宣布进入产品阶段：带规则模板与分享功能的简易钱包模式，另有两项专利获批。十月，联署转账上线：大额支付需要多方批准，期限以任何时钟都伪造不了的区块数计算。一个常用规格的加载时间从 68 秒降到 2.4 秒。</p>
       <p>主网和真正的 Agoras 币仍在前方。难得的是，这一次路看得见。</p></div>
     </div>
@@ -267,7 +267,7 @@ window.GAZETTE_ZH = {
           <line x1="124" y1="56" x2="234" y2="56" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar2)"/><line x1="324" y1="56" x2="434" y2="56" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar2)"/><line x1="524" y1="56" x2="634" y2="56" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar2)"/>
           <text x="80" y="118" font-size="13">用 Tau 写一条规则，</text><text x="80" y="134" font-size="13">作为交易发出</text>
           <text x="280" y="118" font-size="13">与现行法律一起编译；</text><text x="280" y="134" font-size="13">有矛盾者出局</text>
-          <text x="480" y="118" font-size="13">验证者投票；赞成票</text><text x="480" y="134" font-size="13">足够即获通过</text>
+          <text x="480" y="118" font-size="13">用户投票；赞成票</text><text x="480" y="134" font-size="13">足够即获通过</text>
           <text x="680" y="118" font-size="13">在预先指定的区块</text><text x="680" y="134" font-size="13">对所有节点生效</text>
         </g>
       </svg>
@@ -310,7 +310,7 @@ window.GAZETTE_ZH = {
       <div class="kick">本报驻节点记者</div>
       <h2>一条公开的链，向所有旁观者开放</h2>
       <div class="c2"><p class="dc ni">Testnet Alpha 公开运行，本报记者在旁听席上有个座位。Tau HUD 在 IDNI（Tau 背后的公司）的引导节点旁运行着自己的节点，并把所见付印。</p>
-      <p>目前由 IDNI 运营的唯一一位验证者封存每个区块，大约每八秒一个。修改规则的提案以交易形式到来，收集投票，一旦通过便等待生效的那个区块。HUD 会提前显示、倒数计时，并在生效时点亮圆环。</p>
+      <p>目前由 IDNI 运营的唯一一位验证者封存每个区块，大约每八秒一个。用户以交易形式提出规则变更，提案收集投票，一旦通过便等待生效的那个区块。HUD 会提前显示、倒数计时，并在生效时点亮圆环。</p>
       <p>冷清时段另有一个遵循同一协议的模拟，每小时安排一次事件，每天两次切换共识。它出现的地方都标成琥珀色，免得有人把彩排当成正戏。</p>
       <div class="box wire"><p class="ni" id="wire1">{{WIRE}}</p></div></div>
     </div>
