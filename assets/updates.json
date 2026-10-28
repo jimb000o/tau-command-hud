@@ -668,5 +668,10 @@
   "tag": "Missions",
   "on": "2026-10-28",
   "html": "Missions: a new page in the Playground menu with six short tasks on a practice chain of your own, one block every two seconds. Vote a change into law, get a rule refused before the vote, let a rule fail at two thirds, lower the bar, survive a validator outage and bring the chain to proof of stake. Each mission ends with where to see the same thing on the real testnet. Progress stays in your browser; share a mission or your progress as a link."
+  },
+  {
+  "tag": "Newspaper",
+  "on": "2026-10-28",
+  "html": "The Daily Consensus on phones: the paper gets most of the screen (the header keeps the brand and the tools, the tab bar stays below), pages no longer slip under the controls, nothing black flickers over the page when you turn it, and in landscape the controls sit at the side so a page shows enough text. The personal notice to the forum member from 2014 now says what is true: the idea grew into a different design."
  }
 ]
