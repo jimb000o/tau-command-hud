@@ -277,6 +277,23 @@ TauI18n.add({ strings: {
   "two thirds": "三分之二",
   "The rule that governs rule changes would change itself: every later proposal needs this share of the validators.": "管理规则变更的规则将改变自身：之后的每项提案都需要这个比例的验证者同意。",
   "Same rules as now (no real change)": "与现在相同的规则（没有实际变化）",
+  // rule changes visitors propose to the simulation (assets/sim.js visitorProposal, assets/simvote.js)
+  "Visitors' proposal: {x}": "访客提案：{x}",
+  "“Visitors' proposal: {x}”": "“访客提案：{x}”",
+  "{x} Proposed by {y}, a visitor, in the Playground. Everyone votes until {z} UTC; more yes than no and the validators vote it in.": "{x} 由访客{y}在规则游乐场提出。所有人投票至 UTC {z}；赞成多于反对，验证者就会投票通过。",
+  "Proposed by {x}": "提出者：{x}",
+  "Your call: {x}?": "由你决定：{x}？",
+  "A visitor's own network rule": "访客自己的网络规则",
+  "The visitors said yes ({n} to {m}). The validators vote it in: {x}, at {y}.": "访客投了赞成（{n} 比 {m}）。验证者投票通过：{x}，于 {y} 生效。",
+  "The visitors did not say yes ({n} to {m}). Nobody votes it in, it lapses at {x} and the old rules stand.": "访客没有赞成（{n} 比 {m}）。没有人投票通过，它在 {x} 失效，旧规则不变。",
+  "The visitors did not vote it in ({n} yes, {m} no), so the validators let it lapse. Only {a} of {b} votes by block #{c}. The old rules stand.": "访客没有投票通过（{n} 赞成，{m} 反对），所以验证者让它失效。到区块 #{c} 只有 {b} 票中的 {a} 票。旧规则不变。",
+  "A new revision of the rules with the visitor's text. The simulation records it but cannot run it; the real node compiles every proposal against the rules in force first.": "带有访客文本的新规则修订版。模拟会记录它但无法运行；真实节点会先把每个提案与现行规则一起编译。",
+  "The base fee is already {n} AGRS, so nothing would change.": "基础手续费已经是 {n} AGRS，所以不会有任何变化。",
+  "No free validator key is left to admit.": "没有可接纳的空闲验证者密钥了。",
+  "At least three validators stay, so nothing would change.": "至少保留三个验证者，所以不会有任何变化。",
+  "That validator is no longer in the set, so nothing would change.": "该验证者已不在集合中，所以不会有任何变化。",
+  "The threshold is already {x}, so nothing would change.": "门槛已经是{x}，所以不会有任何变化。",
+  "The chain already works this way, so nothing would change.": "链已经这样运作，所以不会有任何变化。",
   "Nothing would change: the text equals the rules already in force. Often a test of the voting itself.": "什么都不会改变：文本与已生效的规则相同。往往是对投票本身的测试。",
   "Switch consensus to proof of stake": "将共识切换为权益证明",
   "Who may make blocks": "谁可以出块",
@@ -455,5 +472,7 @@ TauI18n.add({ strings: {
   "No visitor voted. The validators go ahead as planned: {x}, at {y}.": "没有访客投票。验证者按计划进行：{y}，{x}。",
   "Vote yes or no on the HUD or in Proposals: the simulated validators follow the visitors’ majority.": "在 HUD 或提案页投赞成或反对票：模拟中的验证者会听从访客的多数意见。",
   "Vote yes or no in this bar: the simulated validators follow the visitors’ majority.": "在这一栏中投赞成或反对票：模拟中的验证者会听从访客的多数意见。",
-  "Every change is proposed 10 minutes ahead and put to the visitors until 7 minutes in: the simulated validators follow the majority, then it is in force, the path a real rule change takes on Tau.": "每项变更都提前 10 分钟提出，并在前 7 分钟内交由访客投票：模拟中的验证者听从多数意见，随后生效，这正是 Tau 上真实规则变更所走的路径。"
+  "Every change is proposed 10 minutes ahead and put to the visitors until 7 minutes in: the simulated validators follow the majority, then it is in force, the path a real rule change takes on Tau.": "每项变更都提前 10 分钟提出，并在前 7 分钟内交由访客投票：模拟中的验证者听从多数意见，随后生效，这正是 Tau 上真实规则变更所走的路径。",
+  "Give feedback": "提交反馈",
+  "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.": "你想看到什么，哪里坏了？就在这里打开反馈表单。获得最多赞同的想法会最先实现。"
 } });
