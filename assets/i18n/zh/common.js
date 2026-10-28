@@ -474,5 +474,11 @@ TauI18n.add({ strings: {
   "Vote yes or no in this bar: the simulated validators follow the visitors’ majority.": "在这一栏中投赞成或反对票：模拟中的验证者会听从访客的多数意见。",
   "Every change is proposed 10 minutes ahead and put to the visitors until 7 minutes in: the simulated validators follow the majority, then it is in force, the path a real rule change takes on Tau.": "每项变更都提前 10 分钟提出，并在前 7 分钟内交由访客投票：模拟中的验证者听从多数意见，随后生效，这正是 Tau 上真实规则变更所走的路径。",
   "Give feedback": "提交反馈",
-  "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.": "你想看到什么，哪里坏了？就在这里打开反馈表单。获得最多赞同的想法会最先实现。"
+  "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.": "你想看到什么，哪里坏了？就在这里打开反馈表单。获得最多赞同的想法会最先实现。",
+  "Tour": "导览",
+  "Tour of this page": "本页导览",
+  "HUD tour": "HUD 导览",
+  "What each part of this page shows and why it matters, in a few short steps": "本页每个部分显示什么、为什么重要，几个简短步骤讲清楚",
+  "A short guided tour of this page: what each part shows and why it matters. Arrow keys step, Esc ends.": "本页的简短导览：每个部分显示什么、为什么重要。方向键翻页，Esc 结束。",
+  "One minute, eight steps: how rules on Tau change by agreement, pointing at the panels where it happens. Arrow keys step, Esc ends.": "一分钟、八个步骤：Tau 上的规则如何经共识而改变，并指出发生这一切的面板。方向键翻页，Esc 结束。",
 } });
