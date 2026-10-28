@@ -30,7 +30,8 @@ from websockets.datastructures import Headers
 from websockets.exceptions import ConnectionClosed
 from websockets.http11 import Request, Response
 
-from simvotes import SimVotes
+from simpredict import SimPredict
+from simvotes import SimVotes, name_of
 
 log = logging.getLogger("tau-relay")
 
@@ -264,6 +265,8 @@ class Relay:
     def __init__(self, upstream_url: str = UPSTREAM_URL):
         self.upstream = Upstream(upstream_url)
         self.simvotes = SimVotes()   # visitor votes for the simulation (simvotes.py)
+        # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
+        self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.clients: set[ServerConnection] = set()
         self.per_ip: dict[str, int] = {}
         # connection -> viewer token from "hello … viewer=…": one person's tabs, pages and
@@ -1424,7 +1427,10 @@ class Relay:
             ok = self.upstream.connected.is_set() or path == "/status"
             code = HTTPStatus.OK if ok else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
-        sim = self.simvotes.route(path, query, self.client_ip(connection, request))
+        ip = self.client_ip(connection, request)
+        sim = self.simvotes.route(path, query, ip)
+        if sim is None:
+            sim = self.simpredict.route(path, query, ip)
         if sim is not None:
             code = HTTPStatus(sim[0])
             headers = Headers([("Content-Type", "application/json"),

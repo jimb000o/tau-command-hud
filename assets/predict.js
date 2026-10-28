@@ -9,31 +9,21 @@
    TauPredict.open()  opens the sheet (also #predict in the address)      TauPredict.on  true where the simulation is loaded */
 (() => {
   "use strict";
-  if (!window.TauSim) { window.TauPredict = { on: false, open() {} }; return; }   // the HUD may show the simulation before tau-mode is set, so TauSim.on is not required
+  if (!window.TauSim || !TauSim.me) { window.TauPredict = { on: false, open() {} }; return; }   // the HUD may show the simulation before tau-mode is set, so TauSim.on is not required
   const RELAY = "https://node.tauhud.com", AMBER = "#ffb13b";
   const BUCKETS = ["none", "1–2", "3–5", "6–10", "11–20", "21 or more"];
   const WHAT = { stake: "proof of stake takes over", fixed: "the fixed validator list returns", admit: "a new validator joins", remove: "a validator leaves",
     super: "two thirds must agree", major: "more than half must agree" };
-  const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const localTime = new Date().getTimezoneOffset() !== 0;
   const hm = x => { const d = new Date(x * 1000); return localTime ? d.toTimeString().slice(0, 5) : d.toISOString().slice(11, 16); };
   const when = x => localTime ? `${hm(x)} (${new Date(x * 1000).toISOString().slice(11, 16)} UTC)` : `${hm(x)} UTC`;
   const mmss = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
 
-  /* the visitor: the ballot's anonymous identity (sim.js); a stand-in of the same shape until that is loaded */
-  function me() {
-    if (TauSim.me) return TauSim.me();
-    let id = null; try { id = JSON.parse(store.get("tau-sim-id")); } catch (e) {}
-    if (!id || !/^[0-9a-f]{32}$/.test(id.token || "")) {
-      const r = new Uint8Array(16); crypto.getRandomValues(r);
-      id = { token: [...r].map(b => b.toString(16).padStart(2, "0")).join(""), a: r[0] % 24, b: r[1] % 24, c: r[2] % 8 };
-      store.set("tau-sim-id", JSON.stringify(id));
-    }
-    return { ...id, name: `Visitor ${id.a + 1}-${id.b + 1}`, colour: "#d6d6dc" };
-  }
-  const nameOf = row => row.name || (TauSim.nameOf ? TauSim.nameOf(row.a, row.b) : `Visitor ${row.a + 1}-${row.b + 1}`);
-  const colourOf = row => (TauSim.colourOf ? TauSim.colourOf(row.c) : null) || "#d6d6dc";
+  /* the visitor: the ballot's anonymous identity (sim.js); names and colours in the page language from the same lists */
+  const me = () => TauSim.me();
+  const nameOf = row => (TauSim.nameOf ? TauSim.nameOf(row.a, row.b) : row.name) || "A visitor";
+  const colourOf = row => (TauSim.colourOf ? TauSim.colourOf(row.c) : null) || "#c8c8d0";
 
   /* the round open for guesses: the next rule change of the day's programme that is not proposed yet */
   function nextRound() {
@@ -94,7 +84,7 @@ position:fixed;inset:0;z-index:85;background:rgba(3,8,13,.78);display:flex;align
 .tp-err{color:var(--tp-text);font-size:12px;border-left:2px solid var(--tp-hair);padding-left:8px}
 .tp-board{list-style:none;margin:0;padding:0;display:grid;gap:2px}
 .tp-board li{display:grid;grid-template-columns:2.2em 12px minmax(0,1fr) auto;gap:8px;align-items:center;padding:3px 6px;border-radius:4px;font-size:12px}
-.tp-board li.me{background:rgba(255,177,59,.12);outline:1px solid rgba(255,177,59,.45)}
+.tp-board li.rd{grid-template-columns:3.4em 0 minmax(0,1fr) auto;padding:2px 0}.tp-board li.me{background:rgba(255,177,59,.12);outline:1px solid rgba(255,177,59,.45)}
 .tp-board .r{color:var(--tp-dim);text-align:right}.tp-board .d{width:10px;height:10px;border-radius:50%}
 .tp-board .p{font-weight:600;color:#fff;white-space:nowrap}.tp-board .p small{color:var(--tp-dim);font-weight:400}
 .tp-res{display:grid;gap:4px;font-size:12px;border-top:1px solid var(--tp-line);padding-top:8px;margin-top:auto}
@@ -164,7 +154,7 @@ position:fixed;inset:0;z-index:85;background:rgba(3,8,13,.78);display:flex;align
     const dis = !round || S.sending ? " disabled" : "";
     const pressed = (k, v) => S.pick[k] === v ? "true" : "false";
     let c2 = `<h3>${L("Your guess")} <small>${round ? L("round {x}", { x: round.k + 1 }) : ""}</small></h3>
-      <div class="tp-me"><i style="background:${esc(id.colour || colourOf(id))}"></i>${L("You guess as {x}", { x: B(id.name) })}</div>
+      <div class="tp-me"><i style="background:${esc(id.colour || colourOf(id))}"></i>${L("You guess as {x}", { x: B(nameOf(id)) })}</div>
       <div class="tp-q">${round ? L("Does it come into force at {x}?", { x: esc(hm(round.at_ts)) }) : L("Does it come into force?")}</div>
       <div class="tp-opts"><button type="button" class="tp-opt" data-come="1" aria-pressed="${pressed("come", true)}"${dis}>${L("Yes, it comes")}</button><button type="button" class="tp-opt" data-come="0" aria-pressed="${pressed("come", false)}"${dis}>${L("No, it is dropped")}</button></div>
       <div class="tp-q">${L("How many visitors vote on it?")}</div>
@@ -175,7 +165,7 @@ position:fixed;inset:0;z-index:85;background:rgba(3,8,13,.78);display:flex;align
     c2 += `<div class="tp-dim">${L("Points: {x} for yes or no, {y} for the right number of voters, {z} for the group next to it. Vote yourself in the round too: it counts like everyone's.", { x: B(2), y: B(3), z: B(1) })}</div>`;
     if (mineNow && mineNow.guesses > 1) {
       const max = Math.max(1, ...mineNow.buckets);
-      c2 += `<div class="tp-bars">${mineNow.buckets.map((n, i) => `<span>${L(BUCKETS[i])}</span><i style="width:${(n / max * 100).toFixed(0)}%"></i><span>${w}</span>`).join("")}</div><div class="tp-dim">${L("{x} guesses so far, {y} say it comes.", { x: mineNow.guesses, y: mineNow.come_yes })}</div>`;
+      c2 += `<div class="tp-bars">${mineNow.buckets.map((n, i) => `<span>${L(BUCKETS[i])}</span><i style="width:${(n / max * 100).toFixed(0)}%"></i><span>${n}</span>`).join("")}</div><div class="tp-dim">${L("{x} guesses so far, {y} say it comes.", { x: mineNow.guesses, y: mineNow.come_yes })}</div>`;
     }
 
     // column 3: the day's board and the last result
@@ -185,14 +175,16 @@ position:fixed;inset:0;z-index:85;background:rgba(3,8,13,.78);display:flex;align
     else if (!board.length) c3 += `<div class="tp-dim">${L("Nobody has guessed today yet. Lock in a guess and you lead the board: it starts over at midnight UTC together with the simulated chain.")}</div>`;
     else c3 += `<ol class="tp-board">${board.slice(0, 10).map(r => `<li class="${meRow && r.rank === meRow.rank ? "me" : ""}"><span class="r">${r.rank}</span><span class="d" style="background:${esc(colourOf(r))}"></span><span>${esc(nameOf(r))}</span><span class="p">${r.points} <small>${L("pts · {x}/{y} rounds", { x: r.scored, y: r.rounds })}</small></span></li>`).join("")}</ol>`
       + (meRow && meRow.rank > 10 ? `<div class="tp-dim">${L("You: {x} with {y} points.", { x: B("#" + meRow.rank), y: meRow.points })}</div>` : "");
-    if (scored) {
-      const r = scored.result, k = +scored.item.slice(5), t = Date.parse(d.day + "T00:00:00Z") / 1000 + (150 + 450 * k) * 8;
-      const how = r.outcome === "none" ? "a tie or no votes, so the plan stood" : r.outcome === "yes" ? "more yes than no" : "more no than yes";
-      c3 += `<div class="tp-res"><b>${L("Last round, {x}", { x: esc(hm(t)) })}</b><span>${L(r.come ? "It came into force: {x} voted, {y}." : "It was dropped: {x} voted, {y}.", { x: r.voters, y: L(how) })}</span>${scored.mine ? `<span>${L("You: {x}", { x: B("+" + scored.mine.points) })}</span>` : ""}</div>`;
-    } else if (d && d.yesterday && d.yesterday.board && d.yesterday.board.length) {
+    if (d && d.yesterday && d.yesterday.board && d.yesterday.board.length) {
       const y = d.yesterday.board[0];
       c3 += `<div class="tp-res"><b>${L("Yesterday's best")}</b><span>${L("{x} with {y} points.", { x: esc(nameOf(y)), y: y.points })}</span></div>`;
     }
+    // column 1, below: today's finished rounds, newest first, with the visitor's points
+    const done = rounds.filter(r => r.result).slice(-5).reverse(), dayT = d ? Date.parse(d.day + "T00:00:00Z") / 1000 : 0;
+    if (done.length) c1 += `<div class="tp-res"><b>${L("Today's rounds")}</b><ol class="tp-board">${done.map(x => {
+      const r = x.result, t = dayT + (150 + 450 * +x.item.slice(5)) * 8;
+      const how = r.outcome === "none" ? "a tie or no votes, so the plan stood" : r.outcome === "yes" ? "more yes than no" : "more no than yes";
+      return `<li class="rd" title="${esc(L(how))}"><span class="r">${esc(hm(t))}</span><span></span><span>${L(r.come ? "came, {x} voted" : "dropped, {x} voted", { x: r.voters })}</span><span class="p">${x.mine ? "+" + x.mine.points : "—"}</span></li>`; }).join("")}</ol>${meRow ? `<span>${L("Your day: {x} points from {y} rounds, place {z}.", { x: B(meRow.points), y: meRow.scored, z: B("#" + meRow.rank) })}</span>` : ""}</div>`;
     const html = `<div class="tp-head"><span class="tp-tag">${L("Simulation")}</span><h2>${L("Guess the next round")}</h2><p>${L("Every hour the visitors vote on one simulated rule change. Guess the outcome before the vote opens.")}</p></div>
       <div class="tp-grid"><section class="tp-panel">${c1}</section><section class="tp-panel">${c2}</section><section class="tp-panel">${c3}</section></div>`;
     if (html === lastHtml) return; lastHtml = html;

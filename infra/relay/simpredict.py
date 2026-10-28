@@ -16,6 +16,12 @@ import json
 import os
 import re
 import time
+import urllib.parse
+
+try:
+    from simvotes import COLOURS, WORDS_A, WORDS_B   # the identity's name and colour lists
+except ImportError:                                 # pragma: no cover
+    WORDS_A, WORDS_B, COLOURS = 24, 24, 8
 
 DAY = 86400
 SLOT_AT, SLOT_LEN, PACE, SLOTS = 150, 450, 8, 24        # sim.js: slot k proposed at block 150 + 450k, 8 s per block
@@ -194,10 +200,10 @@ class SimPredict:
         try:
             a, b, c, n = (int(q.get(x, "")) for x in ("a", "b", "c", "n"))
             come = q.get("come")
-            if come not in ("0", "1") or not (0 <= n < len(BUCKETS)) or min(a, b, c) < 0 or max(a, b, c) > 999:
+            if come not in ("0", "1") or not (0 <= n < len(BUCKETS)) or not (0 <= a < WORDS_A and 0 <= b < WORDS_B and 0 <= c < COLOURS):
                 raise ValueError
         except ValueError:
-            return 400, {"error": "come must be 1 or 0, n a bucket 0-5, a/b/c small numbers"}
+            return 400, {"error": "come must be 1 or 0, n a bucket 0-5, a/b/c the identity's list positions"}
         k = int(m.group(1))
         if k != self.next_slot(now):
             return 409, {"error": "guesses for this round are closed: they close when the ballot opens at hh:20", "open": self.summary(voter)["open"]}
@@ -222,11 +228,7 @@ class SimPredict:
             self.settle(now)
         if path not in ("/sim/predict", "/sim/predictions"):
             return None
-        q = {}
-        for part in query.split("&"):
-            k, _, v = part.partition("=")
-            if k:
-                q[k] = v
+        q = {k: v[0] for k, v in urllib.parse.parse_qs(query).items()}
         if path == "/sim/predict":
             return self.guess(q, ip)
         voter = q.get("voter", "")

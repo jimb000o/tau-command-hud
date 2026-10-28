@@ -658,5 +658,6 @@
   "tag": "Simulation",
   "on": "2026-10-28",
   "html": "The simulation now shows what Tau refuses, and the day has rhythm. Every hour at hh:40 a rule change that contradicts the rules in force is refused before any vote, with its reason in the Proposals news and the Explorer’s Refused list. At hh:50 a contested proposal, six times today’s fee, gets the proposer’s vote alone and is dropped at hh:58: a quorum that never forms. A rule offer that conflicts with the receiver’s own rule is rejected with the reason in the transaction. Retractable transfers are sometimes pulled back and the money returns. Every half hour a three-minute burst of traffic and a six-minute lull. The kit node bob falls up to 60 blocks behind from minute 35 and catches up from minute 45; the Nodes page shows it as “Catching up”. Simulation mode only."
- }
+ },
+{"tag": "Simulation", "on": "2026-10-28", "html": "Forecasts in the simulation. Every hour the visitors vote on one simulated rule change; before the vote opens at hh:20, anyone can guess whether it comes into force at hh:30 and how many visitors vote. 2 points for yes or no, 3 for the right number of voters, 1 for the group next to it. The board counts the UTC day, like the simulated chain, with the same anonymous two-word name as the ballot and no sign-up. Open it with Guess the next round in the simulation bar or on Proposals; the two simulated consensus posts on Telegram name the day’s best forecasters."}
 ]

@@ -46,7 +46,7 @@ class SimPredictTest(unittest.TestCase):
         self.assertEqual(body["open"], "slot:0")
         self.assertEqual(body["me"]["points"], 0)
         # a changed mind before the close replaces the guess
-        self.put(n="3")
+        self.assertEqual(self.p.route("/sim/predict", f"item=slot%3A0&voter={TOK}&a=1&b=2&c=3&come=1&n=3", "1.1.1.1")[0], 200)   # as URLSearchParams sends it
         self.clock.t = DAY0 + 20 * 60 + 1                     # ballot open: guesses closed
         code, body = self.put(n="2")
         self.assertEqual(code, 409)
@@ -90,6 +90,20 @@ class SimPredictTest(unittest.TestCase):
         self.assertEqual((code, y["board"][0]["points"]), (200, 3))   # yes right, 1 voter is the bucket next to 3-5
         again = SimPredict(self.path, self.votes, self.clock)   # survives a restart
         self.assertEqual(again.state["yesterday"]["day"], "2026-10-28")
+
+    def test_with_the_real_ballot(self):
+        from simvotes import SimVotes
+        votes = SimVotes(os.path.join(self.dir, "v.json"), clock=self.clock)
+        p = SimPredict(os.path.join(self.dir, "p2.json"), votes, self.clock)
+        p.route("/sim/predict", f"item=slot:0&voter={TOK}&a=1&b=2&c=3&come=0&n=1", "1.1.1.1")
+        self.clock.t = DAY0 + 1200 + 5                           # 00:20:05, the ballot is open
+        for i, yes in enumerate((0, 0, 1)):
+            votes.vote("slot:0", f"{i:032x}", bool(yes), 1, 1, 1, f"9.9.9.{i}")
+        self.clock.t = DAY0 + 1200 + 421                         # closed: two no, one yes
+        body = p.summary(TOK)
+        r = [x for x in body["rounds"] if x["item"] == "slot:0"][0]
+        self.assertEqual((r["result"]["come"], r["result"]["voters"], r["mine"]["points"]), (False, 3, 2 + 1))
+        self.assertEqual(body["open"], "slot:1")
 
     def test_other_paths_pass(self):
         self.assertIsNone(self.p.route("/status", "", "1.1.1.1"))
