@@ -131,6 +131,12 @@ start date through a silence.
 while the node reports, grey when offline, "unknown node" for an id it never saw), cached
 5 minutes. The kit's heartbeat log prints the Markdown snippet for it once per start.
 
+`GET /sim/votes` and `GET /sim/vote?item=&voter=&yes=1|0&a=&b=&c=` (CORS `*`, no-store,
+`relay/simvotes.py`) count the visitors' votes on the simulation's hourly rule change: open
+hh:20 to hh:27, one vote per browser token, at most three tokens per address per item, a
+name and colour that are indices into fixed lists (no free text). The simulated validators
+in `assets/sim.js` follow the majority. Kept in `/data/simvotes.json`, cleared at 00:00 UTC.
+
 `GET /peers` (CORS `*`, cached 30 s) is the network as our node sees it: every peer it
 talked to or heard of from another peer (a handshake's peer list) in the last 30 days,
 from the node's patched `getgovernance.peers` (`node/patches/peer-book.py`; the relay
@@ -400,6 +406,7 @@ python relay/test_relay.py
 python relay/test_uptime.py
 python relay/test_health.py
 python relay/test_api.py
+python relay/test_simvotes.py
 ```
 
 Runs the relay against a mock node that enforces the real node's rate limits: read

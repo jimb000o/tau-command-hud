@@ -372,16 +372,18 @@
       const badge = () => {
         const b = document.querySelector("header.trail .chip.unoff.sim"); if (!b || !TauSim.upcoming) return;
         const list = TauSim.upcoming(), u = list[0], left = u ? Math.ceil((u.at_ts - Date.now() / 1000) / 60) : 999;
-        const ev = u && (EVENT[u.kind] || { what: u.short, why: u.title, watch: "" }), soon = !!u && left <= 60;
+        const ev = u && (EVENT[u.kind] || { what: u.short, why: u.title, watch: "" }), soon = !!u && left <= 60, bal = u && u.ballot;
         const text = !soon ? "Simulation · no real chain data"
           : left <= 0 ? `Simulation · now: ${ev.what}`
+          : bal && bal.open ? `Simulation · vote now: ${ev.what} in ${left} min?`
+          : bal && bal.outcome === "no" ? "Simulation · the visitors said no: the rules stay as they are"
           : u.status === "voting" ? `Simulation · validators are voting: ${ev.what} in ${left} min`
           : u.status === "agreed" ? `Simulation · agreed: ${ev.what} in ${left} min`
           : `Simulation · in ${left} min: ${ev.what}`;
         b.classList.toggle("soon", soon && left <= 5);
         if (text === badgeText) return; badgeText = text;
         b.textContent = text; b.dataset.short = soon ? `Simulation · ${left <= 0 ? "now" : `in ${left} min`}: ${u.short}` : text;   // the phone header has room for the short label only
-        b.dataset.tnt = (soon ? `${ev.why} ${ev.watch}\n` : "") + "Every change is proposed 10 minutes ahead, voted on by the simulated validators, then in force: the path a real rule change takes on Tau.\n" + (localTime ? "Next in the simulation (your time, UTC in brackets):" : "Next in the simulation (UTC):") + "\n" + list.map(x => `${when(x.at_ts)} · ${(EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet. Opens the full notice.";
+        b.dataset.tnt = (soon ? `${ev.why} ${ev.watch}\n` : "") + (bal && bal.open ? "Vote yes or no on the HUD or in Proposals: the simulated validators follow the visitors’ majority.\n" : "") + "Every change is proposed 10 minutes ahead and put to the visitors until 7 minutes in: the simulated validators follow the majority, then it is in force, the path a real rule change takes on Tau.\n" + (localTime ? "Next in the simulation (your time, UTC in brackets):" : "Next in the simulation (UTC):") + "\n" + list.map(x => `${when(x.at_ts)} · ${(EVENT[x.kind] || {}).what || x.title}`).join("\n") + "\nSimulated: generated in your browser from the clock, the same on every page. Nothing here happened on the real testnet. Opens the full notice.";
       };
       const tick = () => { CHAIN.st = TauSim.status(); govFrom(TauSim.governance()); CHAIN.polled = true; CHAIN.at = Date.now(); render(); badge(); };
       tick(); setInterval(() => { if (!document.hidden) tick(); }, 1000);
