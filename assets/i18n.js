@@ -43,7 +43,7 @@
   const html = document.documentElement;
   html.lang = "zh-CN"; html.classList.add("i18n-zh", "i18n-wait");
   /* CJK glyphs come from the system fonts (no extra webfont); wide Latin letter-spacing reads badly between ideographs */
-  document.write(`<style id="i18n-css">html.i18n-wait body{visibility:hidden}html.i18n-zh body *:not(svg *){letter-spacing:.03em!important}</style>`);
+  document.write(`<style id="i18n-css">html.i18n-wait body{visibility:hidden}html.i18n-zh body *:not(svg *){letter-spacing:.03em!important}@media (max-width:700px){html.i18n-zh header.trail .chip.unoff::after{content:"非官方 · 与 IDNI 无关"}}</style>`);
   for (const f of ["common", page]) document.write(`<script src="${ROOT.href}assets/i18n/zh/${f}.js"><\/script>`);
 
   const debug = q.get("i18n") === "missing", missing = window.__i18nMissing = new Set();

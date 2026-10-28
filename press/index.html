@@ -272,6 +272,17 @@ footer a { color: var(--dim); }
 <a class="fb-fab" href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BPress%5D%20" target="_blank" rel="noopener">Feedback</a>
 <script>
 "use strict";
+/* Chinese version: the same files recorded in Chinese, logos with the red accent (files end in -zh) */
+if (window.TauI18n && TauI18n.lang === "zh") {
+  const ZH = /^(media\/(tau-in-60-seconds-[^.]+|cover-1080x1080)|shots\/(t\/)?(hud|story|playground|chronicle)-(2560|390)|shots\/t\/(cover-1080x1080|telegram-1024|x-banner-3000x1000)|logo\/(pulse-mark|pulse-app-icon|pulse-mark-1024|app-icon-512|telegram-1024|x-avatar-400|x-banner-1500x500|x-banner-3000x1000)|tau-hud-press-kit)(\.\w+)$/;
+  for (const el of document.querySelectorAll("[src],[href],[poster]")) for (const a of ["src", "href", "poster"]) {
+    const v = el.getAttribute(a), m = v && ZH.exec(v);
+    if (m) el.setAttribute(a, m[1] + "-zh" + m[m.length - 1]);
+  }
+  document.querySelector("video.video").load();
+  for (const c of document.querySelectorAll("p.note code")) if (c.textContent === "#39ff8a") c.textContent = "#ff3b52";
+  const cite = document.getElementById("cite"); cite.textContent = TauI18n.t(cite.textContent);
+}
 document.addEventListener("click", async e => {
   const b = e.target.closest("button[data-copy]");
   if (!b) return;
