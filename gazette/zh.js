@@ -337,7 +337,7 @@ window.GAZETTE_ZH = {
       <p><b>致好奇者。</b>在<a href="/playground/" data-noflip>试验场</a>提交一条规则，安全地看着链接受或拒绝它。</p>
     </div>
     <div class="u s2 rl cls">
-      <p><b>寻人。</b>致论坛成员 HunterMinerCrafter：您 2014 年提到的那个想法已经运行起来了。欢迎来看看。</p>
+      <p><b>寻人。</b>致论坛成员 HunterMinerCrafter：您 2014 年提出的那个想法已经走了很远。今天运行的是一套不同的设计，但它始于那次讨论。欢迎来看看。</p>
       <p><b>建设者。</b>测试网代码已公开。可通过 GitHub 联系团队；仅十月就合并了四个社区拉取请求。</p>
     </div>
     <div class="u full rt"><div class="box"><div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
