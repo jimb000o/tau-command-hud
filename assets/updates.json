@@ -625,6 +625,11 @@
   "html": "Updates now opens in place on every page: the header link and the tab bar open the same overlay as on the HUD, with the log, the effort numbers, feedback and Keep it running, instead of sending you back to the start page. The /#updates deep link still works everywhere. The feedback box that needs no account stays on the HUD; the overlay links to it, to GitHub and to Telegram."
  },
  {
+  "tag": "Proposals",
+  "on": "2026-10-28",
+  "html": "Proposals page: click any event in “Coming up” for a detail sheet, the same as for a proposal: what happens, why it matters, its timeline with block, time and countdown, where to watch it. The page now updates by itself when a block or vote arrives (every few seconds in the simulation), new news flashes once, and “Rules over time” draws the next events of the simulation’s programme ahead of “now” as dashed ghosts, so you see a change coming before it lands."
+ },
+ {
   "tag": "Alerts",
   "on": "2026-10-28",
   "html": "Telegram posts about the real testnet now say so in their first line: “⛓ TESTNET ALPHA · live chain”. That covers rule changes, votes, activations, restarts, new nodes, health alerts and the weekly recap, so they never get mixed up with the simulated posts, which start with “SIMULATION · not the real testnet”."
