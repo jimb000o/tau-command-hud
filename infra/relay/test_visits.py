@@ -72,6 +72,10 @@ r = v.route("/visits.json", "key=" + v.key, "1.1.1.1", H)
 check(r[0] == 200 and "2026-10-28" in json.loads(r[2])["days"], "the report with the key")
 r = v.route("/visits", "key=" + v.key, "1.1.1.1", H)
 check(r[0] == 200 and r[1].startswith("text/html") and b"Tau HUD" in r[2], "the report page")
+r = v.route("/visits/public", "", "1.1.1.1", H)
+pub = json.loads(r[2])["days"]["2026-10-28"]
+check(r[0] == 200 and pub[0] == 4 and pub[1] == 24 and pub[2] == 1 and pub[3]["stats"] == 2, "public totals without a key")
+check("t.me" not in r[2].decode() and "telegram" not in r[2].decode() and "hours" not in r[2].decode(), "no referrers, tags or hours in public")
 check(v.route("/other", "", "1.1.1.1", H) is None, "other paths are left to the relay")
 T[0] += 86400
 hit("p=explorer&r=t.me&l=en&m=sim&w=2560")
