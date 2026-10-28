@@ -802,5 +802,10 @@
   "tag": "Newspaper",
   "on": "2026-10-28",
   "html": "The Daily Consensus now comes out every Monday. The Tau HUD server writes a new front page from the week on the testnet: the headline of the week, the week in figures, the rule changes still waiting and what the visitors decided in the simulation, in English and Chinese. The twelve-year story follows behind it, and older editions stay readable."
+  },
+  {
+  "tag": "Newspaper",
+  "on": "2026-10-28",
+  "html": "The Daily Consensus on phones is now read like a real newspaper: the paper fills the whole screen (the ✕ brings the menu back), shows the whole page, and a double tap or two fingers bring a column closer. Swipe or tap to turn. Aa switches to large type, one story at a time; on phones that allow it, ⛶ goes full screen."
   }
 ]

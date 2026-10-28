@@ -215,6 +215,17 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
   .ctl .opt { display: none; }
   .hint { font-size: 11px; }
 }
+/* phones: reading mode, the paper alone on the screen; the site bar and the tab bar come back with the ✕ */
+html.reading body { padding: 0; height: 100vh; height: 100dvh; }
+html.reading body > header.top, html.reading body > header.trail, html.reading body > nav.tnav, html.reading .tabbar, html.reading .tnav-spacer { display: none !important; }
+html.reading .desk { margin: 0; }
+html.reading .desk.zoomable { touch-action: none; }
+.rbar { display: none; position: absolute; top: max(8px, env(safe-area-inset-top, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); z-index: 35; gap: 6px; }
+.rbar.on { display: flex; }
+@media (max-height: 520px) { .rbar { flex-direction: column; } }
+.rbar button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--hair); background: rgba(9,9,10,.72); color: #fff; font: 600 15px/1 var(--display); cursor: pointer; display: grid; place-items: center; padding: 0; backdrop-filter: blur(6px); }
+.rbar button[hidden] { display: none; }
+html.reading .desk.zoomed .ctl, html.reading .desk.zoomed .hint { opacity: .25; }
 @media (prefers-reduced-motion: reduce) { .leaf, .book { transition-duration: .01s; } .leaf.turning .shade { animation: none; } }
 html.i18n-zh .pg { font-family: "Noto Serif SC", "Songti SC", "SimSun", var(--body); }
 html.i18n-zh .banner, html.i18n-zh h2, html.i18n-zh h3 { font-family: "Noto Serif SC", "Songti SC", var(--head); }
@@ -236,6 +247,7 @@ html.i18n-zh .title { font-family: "Noto Serif SC", "Songti SC", serif; font-wei
     <button class="side prev" id="sPrev" aria-label="Previous page">‹</button>
     <button class="side next" id="sNext" aria-label="Next page">›</button>
     <div class="toc" id="toc" hidden></div>
+    <div class="rbar" id="rbar"><button id="rMode" aria-label="Show the site menu">✕</button><button id="rEd" aria-label="Large type">Aa</button><button id="rFull" aria-label="Full screen" hidden>⛶</button></div>
     <div class="ctl" id="ctl">
       <button id="bPrev" aria-label="Previous page">‹ Back</button>
       <span class="pgno" id="pgno">Front page</span>
@@ -255,7 +267,7 @@ html.i18n-zh .title { font-family: "Noto Serif SC", "Songti SC", serif; font-wei
 const EN = {
   name: "The Daily Consensus",
   motto: "“Where the rules change by agreement”",
-  ui: { week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
+  ui: { rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
   date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
   pages: [
@@ -651,6 +663,9 @@ const EN = {
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const desk = $("desk"), stage = $("stage"), scaler = $("scaler"), book = $("book");
   const touch = matchMedia("(pointer: coarse)").matches;
+  /* on a phone the paper takes the whole screen (reading mode); the ✕ brings the site bar and the tab bar back */
+  const phone = touch && matchMedia("(max-width: 700px), (max-height: 520px)").matches;
+  if (phone) document.documentElement.classList.toggle("reading", store.get("gazette-reading") !== "off");
   const today = ED.date(new Date());
   let HEIGHT = null, AGE = null, WIRE = UI.wireWait;
   const fill = html => html.replaceAll("{{NAME}}", ED.name).replaceAll("{{MOTTO}}", ED.motto).replaceAll("{{DATE}}", today)
@@ -778,11 +793,16 @@ const EN = {
   function choose() {
     const forced = store.get("gazette-edition");
     const ctl = $("ctl"), side = getComputedStyle(ctl).flexDirection === "column";
-    const aw = desk.clientWidth - 24 - (side ? ctl.offsetWidth + 12 : 0), ah = desk.clientHeight - 16 - (side ? 0 : ctl.offsetHeight + 14);
+    /* the phone's small buttons at the top left get their own strip: above the page upright, beside it on its side */
+    const rb = phone ? 56 : 0;
+    const aw = desk.clientWidth - 24 - (side ? ctl.offsetWidth + 12 + rb : 0), ah = desk.clientHeight - 16 - (side ? 0 : ctl.offsetHeight + 14 + rb);
     const sideRoom = aw > 900 ? 140 : 0;
     const sSpread = Math.min(ah / BH, (aw - sideRoom) / (2 * BW)), sSingleB = Math.min(ah / BH, (aw - sideRoom) / BW);
     const minBody = 0.68;   // broadsheet only while its body type stays readable; the fit step sets it a little larger on most pages
-    let ed = forced || (sSpread >= minBody ? "broad" : (sSingleB >= minBody && aw < ah * 1.2 ? "broad" : "pocket"));
+    /* a phone in reading mode shows the whole page like a real newspaper (double-tap or pinch to read closer) when it is at least
+       this large; smaller screens and the large-type choice get the pocket edition */
+    const wholeOnPhone = phone && document.documentElement.classList.contains("reading") && sSingleB >= 0.36;
+    let ed = forced || (wholeOnPhone ? "broad" : sSpread >= minBody ? "broad" : (sSingleB >= minBody && aw < ah * 1.2 ? "broad" : "pocket"));
     let spread, w, h, s;
     if (ed === "broad") {
       spread = aw > ah && sSpread >= Math.min(minBody, sSingleB) * 0.98; w = BW; h = BH;
@@ -818,8 +838,9 @@ const EN = {
     const bw = (m.spread ? 2 * W : W) * scale, bh = H * scale;
     stage.style.width = bw + "px"; stage.style.height = bh + "px";
     const ctl = $("ctl"), side = getComputedStyle(ctl).flexDirection === "column";
-    stage.style.marginLeft = (-bw / 2 - (side ? (ctl.offsetWidth + 12) / 2 : 0)) + "px";
-    stage.style.top = Math.max(8, (desk.clientHeight - (side ? 0 : ctl.offsetHeight + 14) - bh) / 2) + "px"; stage.style.marginTop = "0";
+    const rb = phone ? 56 : 0;
+    stage.style.marginLeft = (-bw / 2 - (side ? (ctl.offsetWidth + 12 - rb) / 2 : 0)) + "px";
+    stage.style.top = Math.max(8 + (side ? 0 : rb), (side ? 0 : rb) + (desk.clientHeight - (side ? 0 : ctl.offsetHeight + 14 + rb) - bh) / 2) + "px"; stage.style.marginTop = "0";
     requestAnimationFrame(zs);
     // land on the same story we were on
     let p = 0;
@@ -828,6 +849,10 @@ const EN = {
     const narrow = desk.clientWidth < 560 || side;
     $("bPrev").textContent = narrow ? "‹" : UI.back; $("bNext").textContent = narrow ? "›" : UI.turn; $("bToc").textContent = narrow ? "☰" : UI.contents;
     $("bToc").setAttribute("aria-label", UI.contents); sndLabel();
+    zreset(false);
+    desk.classList.toggle("zoomable", zoomable());
+    rbar();
+    if (touch) hint.innerHTML = zoomable() ? UI.hintZoom : UI.hintTouch;
     go(p, false);
     buildToc();
   }
@@ -862,6 +887,7 @@ const EN = {
     const n = LEAVES.length, max = MODE.spread ? n : n - 1;
     p = Math.max(0, Math.min(max, p)); if (anim && p === pos) return;
     const old = pos; pos = p;
+    if (old !== pos) zreset(anim);
     LEAVES.forEach((l, j) => { if (j >= Math.min(old, pos) - 2 && j <= Math.max(old, pos) + 1 && l.classList.contains("far")) { l.classList.remove("far"); if (anim) void l.offsetWidth; } });
     LEAVES.forEach((l, j) => {
       const flipped = j < pos, was = l.classList.contains("flipped");
@@ -907,19 +933,101 @@ const EN = {
   $("bToc").onclick = e => { e.stopPropagation(); const t = $("toc"); t.hidden = !t.hidden; $("bToc").setAttribute("aria-expanded", String(!t.hidden)); };
   $("bEd").onclick = e => { e.stopPropagation(); const cur = PAGES[pageAt(pos)] ? PAGES[pageAt(pos)].from : 0; store.set("gazette-edition", MODE.ed === "broad" ? "pocket" : "broad"); build(cur); };
 
+  /* ----- reading on a phone: the whole page; a double tap or two fingers bring it closer, one finger moves it ----- */
+  const Z = { s: 1, x: 0, y: 0 };
+  function zoomable() { return touch && MODE && MODE.ed === "broad" && !MODE.spread; }
+  function zclamp() {
+    const L = stage.offsetLeft, T = stage.offsetTop, w = stage.offsetWidth * Z.s, h = stage.offsetHeight * Z.s, dw = desk.clientWidth, dh = desk.clientHeight;
+    Z.x = w <= dw ? (dw - w) / 2 - L : Math.min(-L, Math.max(dw - L - w, Z.x));
+    Z.y = h <= dh ? (dh - h) / 2 - T : Math.min(-T, Math.max(dh - T - h, Z.y));
+  }
+  function zapply(anim) {
+    stage.style.transition = anim ? "transform .3s ease" : "none"; stage.style.transformOrigin = "0 0";
+    stage.style.transform = Z.s > 1 ? `translate(${Z.x}px, ${Z.y}px) scale(${Z.s})` : "";
+    desk.classList.toggle("zoomed", Z.s > 1);
+  }
+  function zreset(anim) { if (Z.s === 1 && !stage.style.transform) return; Z.s = 1; Z.x = Z.y = 0; zapply(anim); }
+  function zoomAt(px, py, ns, anim) {     /* (px, py) in desk coordinates stays where it is */
+    const L = stage.offsetLeft, T = stage.offsetTop, cx = (px - L - Z.x) / Z.s, cy = (py - T - Z.y) / Z.s;
+    ns = Math.max(1, Math.min(5, ns));
+    if (ns <= 1.02) { zreset(anim); return; }
+    Z.s = ns; Z.x = px - L - cx * ns; Z.y = py - T - cy * ns; zclamp(); zapply(anim);
+  }
+  const pts = new Map(); let pinch = null, panned = false, lastTap = null, tapTimer = null;
+  const deskXY = e => { const r = desk.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  desk.addEventListener("pointermove", e => {
+    if (!pts.has(e.pointerId) || !zoomable()) return;
+    const prevPt = pts.get(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size >= 2 && pinch) {
+      const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+      const r = desk.getBoundingClientRect();
+      zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, pinch.s * d / pinch.d, false); panned = true;
+    } else if (Z.s > 1 && pts.size === 1) {
+      Z.x += e.clientX - prevPt.x; Z.y += e.clientY - prevPt.y; zclamp(); zapply(false);
+      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 10) panned = true;
+    }
+  });
+
   /* ----- input: click/tap halves, keys, swipe ----- */
   let down = null;
-  desk.addEventListener("pointerdown", e => { down = { x: e.clientX, y: e.clientY, t: Date.now() }; });
-  desk.addEventListener("pointerup", e => {
-    if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y; const d = down; down = null;
-    if (e.target.closest("a, button, select, .toc, .ctl, [data-noflip]")) return;
-    if (!$("toc").hidden) { $("toc").hidden = true; $("bToc").setAttribute("aria-expanded", "false"); return; }
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); return; }
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10 || Date.now() - d.t > 900) return;
-    const r = stage.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
-    if (MODE.spread) { if (pos === 0) next(); else x < 0.5 ? prev() : next(); }
-    else x < 0.3 ? prev() : next();
+  desk.addEventListener("pointerdown", e => {
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 1) { down = { x: e.clientX, y: e.clientY, t: Date.now() }; panned = false; }
+    if (pts.size === 2 && zoomable()) { const [a, b] = [...pts.values()]; pinch = { d: Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)), s: Z.s }; panned = true; }
   });
+  desk.addEventListener("pointercancel", e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) down = null; });
+  desk.addEventListener("pointerup", e => {
+    pts.delete(e.pointerId); if (pts.size < 2) pinch = null;
+    if (pts.size) return;                       /* the other finger is still down */
+    if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y; const d = down; down = null;
+    if (e.target.closest("a, button, select, .toc, .ctl, .rbar, [data-noflip]")) return;
+    if (!$("toc").hidden) { $("toc").hidden = true; $("bToc").setAttribute("aria-expanded", "false"); return; }
+    if (panned) return;
+    const zoomed = Z.s > 1;
+    if (!zoomed && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); return; }
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10 || Date.now() - d.t > 900) return;
+    const tap = () => {
+      const r = stage.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
+      if (MODE.spread) { if (pos === 0) next(); else x < 0.5 ? prev() : next(); }
+      else x < 0.3 ? prev() : next();
+    };
+    if (!zoomable()) { tap(); return; }
+    /* a double tap brings the page closer (to about true type size) or back; a single tap turns it, unless it is close */
+    const now = Date.now(), [px, py] = deskXY(e);
+    if (lastTap && now - lastTap.t < 320 && Math.hypot(px - lastTap.x, py - lastTap.y) < 40) {
+      clearTimeout(tapTimer); lastTap = null;
+      if (zoomed) zreset(true); else zoomAt(px, py, Math.max(2, 1 / scale), true);
+      hintOff(); return;
+    }
+    lastTap = { t: now, x: px, y: py };
+    clearTimeout(tapTimer);
+    if (!zoomed) tapTimer = setTimeout(tap, 300);
+  });
+
+  /* ----- the small buttons at the top left on a phone: site menu or whole screen, page or large type, full screen ----- */
+  const canFull = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+  function rbar() {
+    const on = phone, reading = document.documentElement.classList.contains("reading");
+    $("rbar").classList.toggle("on", on);
+    if (!on) return;
+    $("rMode").textContent = reading ? "✕" : "⤢"; $("rMode").setAttribute("aria-label", reading ? UI.rOut : UI.rIn); $("rMode").title = $("rMode").getAttribute("aria-label");
+    $("rEd").textContent = MODE.ed === "broad" ? "Aa" : "▦"; $("rEd").setAttribute("aria-label", MODE.ed === "broad" ? UI.rLarge : UI.rWhole); $("rEd").title = $("rEd").getAttribute("aria-label");
+    $("rFull").hidden = !canFull || !reading; $("rFull").setAttribute("aria-label", UI.rFull); $("rFull").title = UI.rFull;
+  }
+  const curFrom = () => PAGES[pageAt(pos)] ? PAGES[Math.min(pageAt(pos), PAGES.length - 1)].from : 0;
+  $("rMode").onclick = e => {
+    e.stopPropagation(); const cur = curFrom(), reading = !document.documentElement.classList.contains("reading");
+    document.documentElement.classList.toggle("reading", reading); store.set("gazette-reading", reading ? "on" : "off");
+    if (!reading && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    requestAnimationFrame(() => build(cur));
+  };
+  $("rEd").onclick = e => { e.stopPropagation(); const cur = curFrom(); store.set("gazette-edition", MODE.ed === "broad" ? "pocket" : "broad"); build(cur); };
+  $("rFull").onclick = e => {
+    e.stopPropagation();
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else document.documentElement.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
+  };
+  document.addEventListener("fullscreenchange", () => { const cur = curFrom(); setTimeout(() => build(cur), 120); });
   $("bNext").onclick = $("sNext").onclick = e => { e.stopPropagation(); next(); };
   $("bPrev").onclick = $("sPrev").onclick = e => { e.stopPropagation(); prev(); };
   addEventListener("keydown", e => {
@@ -982,7 +1090,12 @@ const EN = {
   Promise.race([Promise.all(FACES.map(f => document.fonts ? document.fonts.load(f) : 0)), new Promise(r => setTimeout(r, 3500))]).then(ready);
   if (document.fonts) document.fonts.addEventListener("loadingdone", () => { if (MODE && MODE.ed === "broad") refit(); });
   book.addEventListener("load", e => { if (e.target.tagName === "IMG") fit(e.target.closest(".pg")); }, true);
-  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const cur = PAGES[pageAt(pos)] ? PAGES[pageAt(pos)].from : 0; build(cur); }, 200); });
+  /* a phone's address bar coming and going changes the height a little: that alone does not reset the page */
+  let rt, lastSize = [innerWidth, innerHeight];
+  addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => {
+    if (phone && innerWidth === lastSize[0] && Math.abs(innerHeight - lastSize[1]) < 140) return;
+    lastSize = [innerWidth, innerHeight]; build(curFrom());
+  }, 200); });
 })();
 </script>
 </body>
