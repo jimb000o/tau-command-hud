@@ -28,7 +28,7 @@ from websockets.asyncio.client import connect
 
 log = logging.getLogger("tau-kit")
 
-KIT_VERSION = "2"
+KIT_VERSION = "3"
 NODE_URL = os.environ.get("NODE_URL", "ws://tau-node:65433")
 NODE_NAME = os.environ.get("NODE_NAME", "").strip()
 REPORT_URL = os.environ.get("REPORT_URL", "wss://node.tauhud.com")
@@ -65,7 +65,7 @@ async def node_status() -> dict:
     data = gov["data"]
     tip = (data.get("network_tip") or {}).get("number")
     return {"height": int(data.get("head_number") or 0), "head": data.get("head_hash") or "",
-            "tip": int(tip) if tip is not None else None}
+            "tip": int(tip) if tip is not None else None, "peer": data.get("peer_id")}
 
 
 def report_key() -> str:
@@ -88,6 +88,8 @@ async def send_report(st: dict) -> dict:
              f"tip={st['tip'] if st['tip'] is not None else 'none'}", f"kit={KIT_VERSION}"]
     if re.fullmatch(r"[0-9a-f]{7,40}", TAU_TESTNET_REF):
         parts.append(f"ref={TAU_TESTNET_REF}")
+    if re.fullmatch(r"[1-9A-HJ-NP-Za-km-z]{20,128}", str(st.get("peer") or "")):
+        parts.append(f"peer={st['peer']}")  # so tauhud.com can tell this node among the network's peers
     (reply,) = await ask(REPORT_URL, "report " + " ".join(parts))
     return reply
 

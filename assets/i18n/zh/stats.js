@@ -204,4 +204,6 @@ TauI18n.add({ strings: {
   "{x} above the median": "比中位数长 {x}",
   "{x} below the median": "比中位数短 {x}",
   "· your local time": "· 你的本地时间",
+  "Our node sees {n} nodes on the network, IDNI’s bootnode and ours included.": "我们的节点在网络中看到 {n} 个节点，包括 IDNI 的引导节点和我们自己的节点。",
+  "Our node sees {n} nodes on the network.": "我们的节点在网络中看到 {n} 个节点。",
 } });

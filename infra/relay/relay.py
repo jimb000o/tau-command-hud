@@ -139,6 +139,17 @@ BOARD_KEEP_DAYS = _env_float("BOARD_KEEP_DAYS", 30)
 BOARD_MAX = _env_int("BOARD_MAX", 1000)
 BOARD_SAVE_SECONDS = _env_float("BOARD_SAVE_SECONDS", 60)
 BADGE_PATH = re.compile(r"^/community/badge/([0-9a-f]{12})\.svg$")
+# The network as our node sees it (GET /peers): every peer the node talked to
+# or heard of from another peer (patched getgovernance.peers, see
+# node/patches/peer-book.py), kept for PEERS_KEEP_DAYS across restarts. Peer IDs
+# only, never addresses.
+PEERS_PATH = os.environ.get("PEERS_PATH", "/data/peers.json")
+PEERS_KEEP_DAYS = _env_float("PEERS_KEEP_DAYS", 30)
+PEERS_MAX = _env_int("PEERS_MAX", 1000)
+PEERS_SAVE_SECONDS = _env_float("PEERS_SAVE_SECONDS", 300)
+PEER_ID = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{20,128}$")  # base58, like 12D3KooW...
+# the network's bootnode, run by IDNI (infra/docker-compose.yml TAU_BOOTSTRAP_PEERS)
+BOOTNODE_ID = os.environ.get("BOOTNODE_PEER_ID", "12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC")
 # Public read API for other sites (documented on tauhud.com/developers/): one
 # cached summary and live SVG badges. Versioned so fields can grow without
 # breaking embeds; a field is never renamed or removed within v1.
@@ -153,6 +164,7 @@ REPORT_FIELDS = {
     "head": re.compile(r"^[0-9a-f]{64}$"),
     "kit": re.compile(r"^[0-9A-Za-z.-]{1,16}$"),
     "ref": re.compile(r"^[0-9a-f]{7,40}$"),
+    "peer": re.compile(r"^[1-9A-HJ-NP-Za-km-z]{20,128}$"),  # its libp2p peer ID (kit 3), names it on /peers
 }
 REPORT_REQUIRED = ("key", "name", "height", "head")
 
@@ -278,6 +290,10 @@ class Relay:
         self.board_saved_at = 0.0
         self.board_text: str | None = None
         self.board_at = 0.0
+        self.peer_book = self._load_peers()      # {"since", "peers": {peer id -> row}}, kept across restarts
+        self.peers_saved_at = 0.0
+        self.peers_text: str | None = None
+        self.peers_at = 0.0
         self.summary_data: dict | None = None
         self.summary_at = 0.0
 
@@ -435,6 +451,12 @@ class Relay:
             return
         if command == "getmempool":
             self.track_mempool(msg.get("data") or {})
+        if command == "getgovernance" and isinstance(msg.get("data"), dict):
+            # served on its own at /peers; it changes with every sync and would
+            # otherwise push governance to every visitor each poll
+            peers = msg["data"].pop("peers", None)
+            if isinstance(peers, list):
+                self.note_peers(peers)
         text = json.dumps(msg, separators=(",", ":"))
         changed = self.cache.get(command) != text
         self.cache[command] = text
@@ -967,7 +989,7 @@ class Relay:
         if (len(fields) != len(args) or any(k not in REPORT_FIELDS or not REPORT_FIELDS[k].match(v) for k, v in fields.items())
                 or any(k not in fields for k in REPORT_REQUIRED)):
             return envelope_error("report", "Usage: report key=<32 hex> name=<1-24 of A-Z a-z 0-9 . _ -> height=<n> "
-                                  "head=<64 hex> [tip=<n>|none] [kit=<version>] [ref=<commit>]", "INVALID_PARAMS")
+                                  "head=<64 hex> [tip=<n>|none] [kit=<version>] [ref=<commit>] [peer=<peer id>]", "INVALID_PARAMS")
         if "tauhud" in fields["name"].lower():
             return envelope_error("report", "That name is reserved.", "INVALID_PARAMS")
         now = time.time()
@@ -984,7 +1006,7 @@ class Relay:
         self.community[node_id] = {
             "id": node_id, "name": fields["name"], "height": int(fields["height"]),
             "tip": int(fields["tip"]) if fields.get("tip", "none") != "none" else None,
-            "head": fields["head"], "kit": fields.get("kit"), "ref": fields.get("ref"),
+            "head": fields["head"], "kit": fields.get("kit"), "ref": fields.get("ref"), "peer": fields.get("peer"),
             # first_seen survives a silence and a relay restart through the leaderboard
             "first_seen": known["first_seen"] if known else self.board.get(node_id, {}).get("first_seen", now),
             "last_seen": now, "ip": ip,
@@ -1018,6 +1040,109 @@ class Relay:
             del self.community[node_id]
         if stale:
             self.community_text = self.board_text = None
+
+    # ---------- the network as our node sees it: /peers ----------
+    def _load_peers(self) -> dict:
+        try:
+            with open(PEERS_PATH) as f:
+                book = json.load(f)
+            if isinstance(book, dict) and isinstance(book.get("peers"), dict):
+                book.setdefault("since", round(time.time()))
+                return book
+        except FileNotFoundError:
+            pass
+        except (OSError, ValueError) as exc:
+            log.warning("cannot read %s: %r; starting a new peer list", PEERS_PATH, exc)
+        return {"since": round(time.time()), "peers": {}}
+
+    def _save_peers(self, now: float):
+        self.peers_saved_at = now
+        tmp = PEERS_PATH + ".tmp"
+        try:
+            with open(tmp, "w") as f:
+                json.dump(self.peer_book, f, separators=(",", ":"))
+            os.replace(tmp, PEERS_PATH)
+        except OSError as exc:
+            if not getattr(self, "_peers_warned", False):
+                log.warning("cannot write %s: %r; the peer list lives in memory only", PEERS_PATH, exc)
+                self._peers_warned = True
+
+    def note_peers(self, peers: list, now: float | None = None):
+        """Merge the node's peer book into ours: keep the earliest first sight
+        and the latest contact; `connected` is whatever the node says now."""
+        now = now if now is not None else time.time()
+        book = self.peer_book["peers"]
+
+        def stamp(v):
+            try:
+                v = float(v)
+            except (TypeError, ValueError):
+                return None
+            return round(min(v, now)) if v > 0 else None
+
+        new = False
+        live = set()
+        for p in peers[:PEERS_MAX]:
+            if not isinstance(p, dict) or not PEER_ID.match(str(p.get("id", ""))):
+                continue
+            pid = p["id"]
+            row = book.get(pid)
+            if row is None:
+                new = True
+                row = book[pid] = {"first_seen": stamp(p.get("first_seen")) or round(now),
+                                   "last_direct": None, "last_heard": None, "head": None}
+            for k in ("last_direct", "last_heard"):
+                v = stamp(p.get(k))
+                if v and (row[k] is None or v > row[k]):
+                    row[k] = v
+            if isinstance(p.get("head"), int) and p["head"] >= 0:
+                row["head"] = p["head"]
+            if p.get("connected") is True:
+                live.add(pid)
+        for pid, row in book.items():
+            row["connected"] = pid in live
+        cutoff = now - PEERS_KEEP_DAYS * 86400
+        for pid in [k for k, r in book.items() if max(r["last_direct"] or 0, r["last_heard"] or 0, r["first_seen"]) < cutoff]:
+            del book[pid]
+        if len(book) > PEERS_MAX:
+            last = lambda k: max(book[k]["last_direct"] or 0, book[k]["last_heard"] or 0)
+            for pid in sorted(book, key=last)[:len(book) - PEERS_MAX]:
+                del book[pid]
+        self.peers_text = None
+        if new or now - self.peers_saved_at >= PEERS_SAVE_SECONDS:
+            self._save_peers(now)
+
+    def peers_json(self) -> str:
+        now = time.time()
+        if self.peers_text is None or now - self.peers_at >= STATS_CACHE_SECONDS:
+            self.peers_at = now
+            # community nodes from kit 3 on say which peer they are; the newest report wins
+            named = {b["peer"]: b for b in sorted(self.board.values(), key=lambda b: b["last_seen"])
+                     if b.get("peer") and b["peer"] != BOOTNODE_ID}
+            rows = []
+            for pid, r in self.peer_book["peers"].items():
+                last = max(r["last_direct"] or 0, r["last_heard"] or 0) or None
+                kit = named.get(pid)
+                rows.append({"id": pid, "label": "IDNI bootnode" if pid == BOOTNODE_ID else None,
+                             "community": {"id": kit["id"], "name": kit["name"]} if kit else None,
+                             "first_seen": r["first_seen"], "last_direct": r["last_direct"],
+                             "last_heard": r["last_heard"], "last_seen": last, "head": r["head"],
+                             "connected": bool(r.get("connected"))})
+            rows.sort(key=lambda r: (r["label"] is None, -(r["last_seen"] or 0)))
+
+            def within(seconds, direct_only=False):
+                return sum(1 for r in rows if ((r["last_direct"] if direct_only else r["last_seen"]) or 0) >= now - seconds)
+
+            self.peers_text = json.dumps({
+                "peers": rows,
+                # met = our node exchanged something with it; seen = met or listed by a peer
+                "counts": {"connected": sum(r["connected"] for r in rows),
+                           "met_30m": within(1800, True), "met_24h": within(86400, True),
+                           "seen_24h": within(86400), "seen_30d": len(rows)},
+                "bootnode": BOOTNODE_ID, "since": self.peer_book["since"],
+                "keep_days": PEERS_KEEP_DAYS, "generated_at": round(now),
+            }, separators=(",", ":"))
+        return self.peers_text
 
     # ---------- leaderboard ----------
     def _load_board(self) -> dict[str, dict]:
@@ -1054,6 +1179,8 @@ class Relay:
             row["minutes"] += 1
             row["counted_at"] = now
         row.update(name=node["name"], last_seen=now, height=node["height"], kit=node["kit"], ref=node["ref"])
+        if node.get("peer"):
+            row["peer"] = node["peer"]
         self.board_text = None
         cutoff = now - BOARD_KEEP_DAYS * 86400
         for k in [k for k, r in self.board.items() if r["last_seen"] < cutoff]:
@@ -1313,6 +1440,11 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.health_json().encode())
+        if path == "/peers":
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=30")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.peers_json().encode())
         if path == "/community":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),

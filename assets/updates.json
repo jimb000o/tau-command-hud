@@ -89,5 +89,6 @@
   {"tag": "Nodes", "on": "2026-10-28", "html": "Nodes: the board is never empty, joining takes three steps, and the page says what you get for running a node."},
   {"tag": "v17.25", "on": "2026-10-28", "html": "The update log lives in one shared file now (assets/updates.json) that every page’s release adds a line to, so the log lists the subpages too; today’s subpage releases are listed here. The green dot in the header keys on the newest entry."},
   {"tag": "Accounts", "on": "2026-10-28", "html": "Accounts: the rich list opens with a clear testnet notice, and its headline says the AGRS are test tokens with no value."},
-  {"tag": "Status", "on": "2026-10-28", "html": "Status: the testnet health score now counts the known mempool bug (IDNI #81). Every transaction that is already in a block but still listed as waiting costs its share of 10 points, and the breakdown lists the bug with what it costs right now."}
+  {"tag": "Status", "on": "2026-10-28", "html": "Status: the testnet health score now counts the known mempool bug (IDNI #81). Every transaction that is already in a block but still listed as waiting costs its share of 10 points, and the breakdown lists the bug with what it costs right now."},
+  {"tag": "Nodes", "on": "2026-10-28", "html": "Nodes: the page now counts every node on the network as our node sees it, IDNI’s bootnode included, not only the ones that run our kit; the <a href=\"stats/\">Stats</a> page says it too."}
 ]
