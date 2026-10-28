@@ -1021,5 +1021,6 @@ TauI18n.add({ strings: {
   "Accounts: a rich list with balances, share of supply, sorting and an account preview.": "账户：富豪榜，含余额、供应占比、排序和账户预览。",
   "Nodes: the board is never empty, joining takes three steps, and the page says what you get for running a node.": "节点：榜单永不为空，加入只需三步，页面说明运行节点能得到什么。",
   "The update log lives in one shared file now (assets/updates.json) that every page’s release adds a line to, so the log lists the subpages too; today’s subpage releases are listed here. The green dot in the header keys on the newest entry.": "更新日志现在放在一个共享文件中（assets/updates.json），每个页面的发布都会在其中加一行，因此日志也会列出子页面的更新；今天的子页面发布已列在这里。页眉中的绿点以最新条目为准。",
-  "Accounts: the rich list opens with a clear testnet notice, and its headline says the AGRS are test tokens with no value.": "账户：富豪榜顶部有醒目的测试网提示，标题也写明这些 AGRS 是没有价值的测试代币。"
+  "Accounts: the rich list opens with a clear testnet notice, and its headline says the AGRS are test tokens with no value.": "账户：富豪榜顶部有醒目的测试网提示，标题也写明这些 AGRS 是没有价值的测试代币。",
+  "Status: the testnet health score now counts the known mempool bug (IDNI #81). Every transaction that is already in a block but still listed as waiting costs its share of 10 points, and the breakdown lists the bug with what it costs right now.": "状态：测试网健康评分现在计入已知的内存池 bug（IDNI #81）。每笔已在区块中却仍被列为等待的交易都会按比例扣除这 10 分中的一部分，明细中会列出这个 bug 以及它当前扣了多少分。",
 } });

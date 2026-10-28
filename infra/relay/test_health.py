@@ -41,7 +41,7 @@ r.mempool_seen["aa"] = {"seen": now - 40 * 60}
 r.updated["getblocks"] = now + 12 * 60
 h = r.health(now + 12 * 60)
 f = {x["key"]: x for x in h["factors"]}
-check(f["last_block"]["points"] < 20 and f["mempool"]["points"] < 5, f"slow block and old tx cost points {h['score']}")
+check(f["last_block"]["points"] < 20 and f["mempool"]["points"] < 10, f"slow block and old tx cost points {h['score']}")
 check(h["state"] in ("healthy", "degraded"), f"short slowdown is not down {h['state']}")
 
 # 40 minutes without a block: the testnet stalls
@@ -66,6 +66,20 @@ r.cache["getgovernance"] = json.dumps({"status": "ok", "data": {"head_number": 1
 r.state["restarts"].append({"detected_at": now - 3600, "old": {"tip": 50}})
 f = {x["key"]: x for x in r.health(now)["factors"]}
 check(f["stability"]["points"] == 5 and f["stability"]["value"]["restarts"] == 1, f"restart costs 10 {f['stability']}")
+
+# IDNI #81: sealed transactions still listed as waiting cost their share and show as a known issue
+r.mempool_seen.clear()
+r.state["restarts"].clear()
+for n in (5, 6, 7):
+    r.blocks[f"{n:064x}"]["tx_ids"] = [f"tx{n}"]
+    r.mempool_seen[f"tx{n}"] = {"seen": now - 120}
+r.mempool_seen["new"] = {"seen": now - 60}
+h = r.health(now)
+f = {x["key"]: x for x in h["factors"]}
+check(f["mempool"]["points"] == 2.5 and f["mempool"]["value"] == {"waiting": 4, "sealed": 3, "oldest": 60}, f"stale mempool costs {f['mempool']}")
+check(h["score"] <= 93 and h["known_issues"][0]["id"] == "IDNI #81" and h["known_issues"][0]["points"] == 7.5, f"known issue listed {h['score']} {h['known_issues']}")
+r.mempool_seen.clear()
+check(r.health(now + 1)["known_issues"] == [], "no known issue once the mempool is clean")
 
 # samples record the score per hour; /health-score serves average and lowest, /status the short form
 r.mempool_seen.clear()
