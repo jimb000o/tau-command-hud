@@ -637,7 +637,27 @@
 
   document.addEventListener("click", e => { if (openEl && !e.target.closest(".tnav .ni-wrap, .tnav-gearwrap, .tsheet, .tabbar")) closeAll(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && openEl) closeAll(); });
-  const init = () => document.querySelectorAll("nav.tnav").forEach(mount);
+  /* cookie-free visitor numbers (infra/relay/visits.py): one ping when a page opens, one more after 30 s visible.
+     Nothing is stored in the browser; ?nostats=1 leaves this browser out of the count (?nostats=0 undoes it). */
+  function countVisit() {
+    try {
+      const q = new URLSearchParams(location.search);
+      if (q.has("nostats")) { if (q.get("nostats") === "0") localStorage.removeItem("tauhud-nostats"); else localStorage.setItem("tauhud-nostats", "1"); }
+      if (localStorage.getItem("tauhud-nostats") === "1") return;
+    } catch (e) {}
+    if (!/^(www\.)?tauhud\.com$|\.github\.io$/.test(location.hostname) || navigator.doNotTrack === "1" || navigator.globalPrivacyControl || navigator.webdriver) return;
+    const pageOf = path => path.slice(ROOT.length).replace(/index\.html$/, "").replace(/\/+$/, "").toLowerCase() || "hud";
+    const page = pageOf(location.pathname);
+    let ref = "";
+    try { const r = new URL(document.referrer); ref = r.host === location.host ? "/" + (r.pathname.startsWith(ROOT) ? pageOf(r.pathname) : "") : r.hostname; } catch (e) {}
+    const q = new URLSearchParams(location.search), zh = /^zh/i.test(document.documentElement.lang) || q.get("lang") === "zh";
+    const base = `https://${RELAY}/v?p=${encodeURIComponent(page)}`;
+    const send = extra => { try { fetch(base + extra, { mode: "no-cors", keepalive: true, credentials: "omit", referrerPolicy: "no-referrer" }).catch(() => {}); } catch (e) {} };
+    send(`&r=${encodeURIComponent(ref)}&s=${encodeURIComponent(q.get("utm_source") || q.get("ref") || "")}&l=${zh ? "zh" : "en"}&m=${SIM ? "sim" : "live"}&w=${innerWidth}`);
+    let shown = 0;
+    const tick = setInterval(() => { if (document.visibilityState === "visible" && ++shown >= 30) { clearInterval(tick); send("&e=1"); } }, 1000);
+  }
+  const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); countVisit(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.TauNav = { LATEST, TELEGRAM, markSeen, closeAll, chain: CHAIN, sim: SIM };
 })();

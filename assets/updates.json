@@ -798,6 +798,7 @@
    "on": "2026-10-28",
    "html": "Hover texts on Vote and Nodes now sit right next to the cursor on wide screens; before, they drifted further away the wider the screen. On Vote, every Try button in the practice terminal now works on its own: if an earlier step is missing, it is done for you first instead of answering “tau: command not found”."
   },
+{"tag": "Visits", "on": "2026-10-28", "html": "Tau HUD now counts its visitors, without cookies and without storing anything in your browser: how often each page is opened and how often it stays open for 30 seconds, which site a visit came from (only its name), language and screen size, kept as daily totals on the Tau HUD server. Addresses are never stored, nothing goes to another company, and browsers with Do Not Track or Global Privacy Control are not counted. It shows which pages help people understand Tau and which need work."},
   {
   "tag": "Newspaper",
   "on": "2026-10-28",
