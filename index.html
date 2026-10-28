@@ -1356,7 +1356,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.33", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.34", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -2251,7 +2251,10 @@ function liveFail(why) {
   log(`Could not reach ${esc($("wsurl").value)}: ${esc(why)}. Is your node running, and is TAU_WS_ALLOWED_ORIGINS set if this page is hosted?`, "err");
   setMode("live", "Offline");
 }
-function autoBack(why) { LIVE.autoFailedAt = performance.now(); log(`Community relay not reachable (${esc(why)}); showing the simulation instead.`, "warn"); liveStop(); setMode("sim"); simStart(); presenceOpen(); }
+function autoBack(why) { LIVE.autoFailedAt = performance.now(); log(`Community relay not reachable (${esc(why)}); showing the simulation instead.`, "warn"); liveStop(); simShow(); }
+/* the simulation picture: the shared clock-driven chain (assets/sim.js) whenever it is loaded, so the HUD continues where every other
+   page is, instead of starting its built-in engine at block 0; the built-in engine stays as the fallback without sim.js */
+function simShow() { LIVE.auto = false; if (window.TauSim) { S.simfeed = true; liveConnect(); } else { S.simfeed = false; setMode("sim"); simStart(); } presenceOpen(); }
 function liveStop() { clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); clearTimeout(LIVE.retry); if (LIVE.ws) { LIVE.ws.onclose = null; LIVE.ws.close(); } LIVE.ws = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); }
 
 /* ---------- mode switching ---------- */
@@ -2276,7 +2279,7 @@ function setMode(mode, status) {
   $("hint").className = "hint" + (!simUI && status === "Offline" ? " err" : "");
 }
 $("btnSim").onclick = () => { if (window.TauSim) { TauSim.set("sim"); return; } store.set("tau-mode", "sim"); LIVE.auto = false; liveStop(); setMode("sim"); simStart(); presenceOpen(); };
-$("btnLive").onclick = () => { if (window.TauSim && S.simfeed) { TauSim.set("live"); return; } store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveConnect(); };
+$("btnLive").onclick = () => { if (window.TauSim && TauSim.on) { TauSim.set("live"); return; } store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveStop(); S.simfeed = false; liveConnect(); };
 $("btnConnect").onclick = () => { store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveConnect(); };
 
 /* =====================================================================
@@ -2857,13 +2860,14 @@ const RELAY = "wss://node.tauhud.com";
    current testnet chain (it sits on an orphan chain; IDNI has not published the current genesis). Flip to true
    once it syncs, or let the relay say so with "live_default": true in /status. */
 const LIVE_DEFAULT = false;
-if (SIMFEED()) { S.simfeed = true; liveConnect(); presenceOpen(); } else { setMode("sim"); simStart(); }
+simShow();
 function autoLive() {
-  if (S.mode !== "sim" || !PRESENCE.up || LIVE.autoFailedAt && performance.now() - LIVE.autoFailedAt < 60000) return;
+  const showingSim = S.mode === "sim" || (S.simfeed && !SIMFEED());   // the opening picture, not a chosen simulation
+  if (!showingSim || !PRESENCE.up || LIVE.autoFailedAt && performance.now() - LIVE.autoFailedAt < 60000) return;
   const pref = store.get("tau-mode");
   if (pref !== "live" && !(LIVE_DEFAULT || PRESENCE.liveDefault)) return;
   if (pref === "sim" || (pref !== "live" && $("wsurl").value.trim() !== RELAY)) return;
-  LIVE.auto = true; LIVE.gotData = false; simStop(); liveConnect();
+  LIVE.auto = true; LIVE.gotData = false; simStop(); liveStop(); S.simfeed = false; liveConnect();
 }
 setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
 /* =====================================================================
@@ -2879,7 +2883,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.33`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.34`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
