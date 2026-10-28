@@ -1564,4 +1564,17 @@ TauI18n.add({ strings: {
   "Tau HUD itself now has news in the Telegram channel. A big new page or feature gets a post of its own, first line “✨ TAU HUD · new on the site”, at most two a day and only between 08:00 and 20:00 UTC; smaller changes are gathered and go out together as one digest at 17:00 UTC. The newest pages and features are announced first, from 08:00 UTC tomorrow.": "Tau HUD 本身的消息现在也会发到 Telegram 频道。重要的新页面或新功能会单独发一条，首行为“✨ TAU HUD · new on the site”，每天最多两条，且只在 UTC 08:00 到 20:00 之间发送；较小的改动会先汇总，在 UTC 17:00 合并为一条摘要发出。最新的页面和功能最先发布，从明天 UTC 08:00 开始。",
   "What if now says short split where it said fork. Two blocks at one height, which the chain settles within a block or two when blocks come faster than the network carries them, are something different from the fork Tau avoids: changing the rules never needs one. The page says so in its intro, in What happens and in the hover of Network delay.": "“如果……会怎样”现在用“短暂分岔”代替“分叉”。当区块产生得比网络传递得更快时，同一高度上会出现两个区块，链会在一两个区块内解决；这与 Tau 所避免的分叉是两回事：改变规则从不需要分叉。页面在简介、“正在发生什么”和“网络延迟”的悬停说明中都写明了这一点。",
   "Every page now has a guided tour of its own, like the HUD’s: a few short steps point at the parts of the page and say what each one shows and why it matters. Offered once on a page’s first visit (“Not now” is remembered for that page), always available from Tour in the header, the gear and, on phones, the Learn sheet. The Playground’s tour walks from your own transfer rule to the validator seat by itself. Arrow keys step, Escape ends; every step in Chinese too.": "每个页面现在都有自己的导览，就像 HUD 那样：几个简短步骤指向页面的各个部分，说明每一部分显示什么、为什么重要。首次访问某个页面时提供一次（该页面会记住“以后再说”），随时可从页眉的“导览”、齿轮菜单以及手机上的“了解”面板打开。试验场的导览会自动从你自己的转账规则走到验证者席位。方向键翻页，Esc 结束；每一步都有中文。",
+  "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys": "用户投票改变链的共识方式，所有节点自行遵从",
+  "Consensus moves from a fixed list of validators to stake and back again, and not a single machine is reinstalled.": "共识从固定验证者名单切换到权益证明，又切换回来，没有重装任何一台机器。",
+  "Advertisement": "广告",
+  "Extra": "号外",
+  "Latest edition": "最新一期",
+  "Read it ›": "阅读 ›",
+  "Where the rules change by agreement": "规则经由共识而改变",
+  "Read the latest edition of The Daily Consensus": "阅读最新一期《共识日报》",
+  "The Daily Consensus: the testnet told as a 1920s newspaper. Front page, the road from Zennet, how a hard fork works, letters to the editor. Opens the latest edition.": "《共识日报》：用一份 1920 年代报纸讲述测试网。头版、从 Zennet 出发的道路、硬分叉是怎么回事、读者来信。打开最新一期。",
+  "The Daily Consensus": "共识日报",
+  "agreed change": "项已通过的变更",
+  "agreed changes": "项已通过的变更",
+  "The Daily Consensus now advertises itself on the HUD: the free space at the bottom of Rules in force now carries a 1920s newspaper advertisement in the HUD's black and white, with the blackletter masthead, a double-ruled dateline, the latest edition's headline and, where the box is tall, the EXTRA stamp, the front-page photo and its deck. It takes only the room the box leaves and shrinks or steps aside when there is none. One click opens the newspaper.": "《共识日报》现在在 HUD 上刊登广告：“当前生效的规则”底部的空白处是一则 1920 年代风格的报纸广告，采用 HUD 的黑白配色，有报头、双线日期栏、最新一期的头条，方框较高时还有“号外”印章、头版照片和导语。它只占用方框剩下的空间，没有空间时会缩小或让开。点击一下即可打开报纸。"
 } });

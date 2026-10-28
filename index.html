@@ -28,7 +28,7 @@
 <title>Tau HUD</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Noto+Serif+SC:wght@900&display=swap">
 <style>
 /* Layout: holographic command deck. Status rail on top, reactor core in the centre flanked by
    the Tau engine (left) and the transaction stream (right), the chain ribbon and logs below. */
@@ -190,6 +190,29 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .statep li span { color: var(--dim); }
 .statep .more { margin-top: 8px; align-self: flex-start; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 4px 8px; cursor: pointer; }
 .statep .more:hover { background: #fff; color: #000; }
+/* the newspaper's advertisement fills what the box leaves free: 1920s type and double rules, in the HUD's black and white */
+.statep #statePanel { flex: 0 1 auto; }
+.gazad { flex: 1 1 0; min-height: 0; margin-top: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; text-align: center; text-decoration: none; color: #e9e6df; padding: 10px 12px; border: 3px double rgba(255,255,255,.32); border-radius: 2px; background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.05), rgba(255,255,255,0) 70%); position: relative; }
+.gazad::before, .gazad::after { content: "✦"; position: absolute; top: 4px; font-size: 9px; color: rgba(255,255,255,.4); }
+.gazad::before { left: 7px; } .gazad::after { right: 7px; }
+.gazad:hover { border-color: rgba(255,255,255,.7); background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.09), rgba(255,255,255,0) 70%); }
+.gazad:hover .ga-cta { background: #fff; color: #000; }
+.gazad[hidden] { display: none; }
+.ga-k { font: 600 9px var(--display); letter-spacing: .34em; text-transform: uppercase; color: var(--dim); }
+.ga-nm { font: 400 clamp(22px, 1.9vw, 34px)/1 "UnifrakturMaguntia", "Old English Text MT", serif; color: #fff; white-space: nowrap; }
+.ga-mo { font: italic 400 12px/1.2 "Playfair Display", Georgia, serif; color: #bdb8ad; }
+.ga-dl { align-self: stretch; display: flex; justify-content: space-between; gap: 8px; padding: 3px 2px; margin: 2px 0; border-top: 3px double rgba(255,255,255,.35); border-bottom: 3px double rgba(255,255,255,.35); font: 600 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: #bdb8ad; }
+.ga-dl i { font-style: normal; white-space: nowrap; }
+.ga-hl { font: 900 clamp(15px, 1.1vw, 21px)/1.15 "Playfair Display", Georgia, serif; color: #fff; text-wrap: balance; max-width: 34ch; }
+.ga-cta { margin-top: 4px; font: 600 10px var(--display); letter-spacing: .2em; text-transform: uppercase; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; padding: 4px 12px; }
+.ga-x { font: 900 11px/1 "Playfair Display", Georgia, serif; letter-spacing: .4em; text-transform: uppercase; color: #fff; border: 1px solid rgba(255,255,255,.5); padding: 3px 4px 3px 9px; }
+.ga-ph { width: min(100%, 300px); height: auto; aspect-ratio: 700 / 574; min-height: 90px; flex: 0 1 auto; object-fit: cover; filter: grayscale(1) contrast(1.05) brightness(.9); border: 1px solid rgba(255,255,255,.3); }
+.ga-dk { font: italic 400 13px/1.35 "Playfair Display", Georgia, serif; color: #bdb8ad; max-width: 40ch; }
+.gazad.c1 .ga-ph, .gazad.c1 .ga-dk, .gazad.c1 .ga-x, .gazad.c2 .ga-ph, .gazad.c2 .ga-dk, .gazad.c2 .ga-x, .gazad.c3 .ga-ph, .gazad.c3 .ga-dk, .gazad.c3 .ga-x { display: none; }   /* a tall box gets the photo and the deck */
+.gazad.c2 .ga-mo, .gazad.c2 .ga-k { display: none; }          /* less room: masthead, headline, link */
+.gazad.c3 .ga-dl { display: none; }                            /* even less: without the dateline */
+html.i18n-zh .ga-nm { font: 900 clamp(22px, 1.7vw, 30px)/1.1 "Noto Serif SC", serif; letter-spacing: .12em; }
+html.i18n-zh .ga-hl, html.i18n-zh .ga-mo { font-family: "Noto Serif SC", serif; }
 .scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .thesis { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr); gap: 8px 16px; align-items: center; padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(90deg, rgba(255,255,255,.07), rgba(16,16,18,.6) 45%, rgba(57,255,138,.04)); position: relative; }
 .thesis::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--brand); border-radius: 2px; }
@@ -974,6 +997,17 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel statep" id="statePanelCard" title="Click to open the full chain state">
         <h2>Rules in force now <small id="stateSub">changes only when the chain agrees</small><button class="info" type="button" aria-label="What is this?" data-tip="The current state of the chain’s law: the consensus rules every block is judged by, how many validators must agree to change them, and the rule changes that have been agreed so far. This panel does not animate; it only changes when a new block changes the rules. The full view with the Tau spec code and every personal rule opens with the button below.">i</button></h2>
         <div class="scroll" id="statePanel"></div>
+        <a class="gazad" id="gazAd" href="gazette/" aria-label="Read the latest edition of The Daily Consensus" data-full="The Daily Consensus: the testnet told as a 1920s newspaper. Front page, the road from Zennet, how a hard fork works, letters to the editor. Opens the latest edition.">
+          <span class="ga-k">Advertisement</span>
+          <span class="ga-nm">The Daily Consensus</span>
+          <span class="ga-mo">Where the rules change by agreement</span>
+          <span class="ga-dl"><i>Latest edition</i><i id="gazNo">No. —</i><i id="gazDate"></i></span>
+          <span class="ga-x">Extra</span>
+          <span class="ga-hl" id="gazHl">Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys</span>
+          <img class="ga-ph" src="gazette/img/hud-core.jpg" width="700" height="574" alt="" loading="lazy" decoding="async">
+          <span class="ga-dk" id="gazDk">Consensus moves from a fixed list of validators to stake and back again, and not a single machine is reinstalled.</span>
+          <span class="ga-cta">Read it ›</span>
+        </a>
         <button class="more" type="button" id="btnState3">Full chain state</button>
       </article>
       <article class="panel logp" id="logPanel" title="Click to open the full log">
@@ -1399,7 +1433,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.48", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.49", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -1936,12 +1970,47 @@ function showBlock(b, pinned = true) {
   }
   $("chainSub").textContent = pinned ? `showing #${b.n} · back to newest ›` : "following the newest block";
 }
+/* the newspaper ad: the newest edition from gazette/latest.json once the newspaper publishes it, else the current front page;
+   shown in three sizes, the largest that fits the room the box leaves, hidden when even the smallest does not fit */
+const GAZ = { at: 0, ed: null };
+function fitGazAd() {
+  const a = $("gazAd"); if (!a) return;
+  a.hidden = false; a.classList.remove("c1", "c2", "c3");
+  const over = () => a.scrollHeight > a.clientHeight + 1 || a.clientHeight < 96;
+  if (over()) a.classList.add("c1");
+  if (over()) a.classList.add("c2");
+  if (over()) a.classList.add("c3");
+  if (over()) a.hidden = true;
+}
+async function loadGazette() {
+  if (Date.now() - GAZ.at < 600000) return; GAZ.at = Date.now();
+  try { const r = await fetch("gazette/latest.json", { cache: "no-cache" }); if (r.ok) GAZ.ed = await r.json(); } catch (e) {}
+  renderGazAd();
+}
+function renderGazAd() {
+  const ed = GAZ.ed || {}, zh = document.documentElement.classList.contains("i18n-zh");
+  const hl = (zh && ed.headline_zh) || ed.headline || "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys";
+  const no = ed.number != null ? Number(ed.number) : S.height || null;
+  $("gazHl").textContent = hl;
+  if (ed.deck || ed.deck_zh) $("gazDk").textContent = (zh && ed.deck_zh) || ed.deck;
+  $("gazNo").textContent = zh ? (no ? `第 ${fmt(no)} 期` : "第 — 期") : no ? `No. ${fmt(no)}` : "No. —";
+  const d = ed.date ? new Date(ed.date + (/T/.test(ed.date) ? "" : "T00:00:00Z")) : new Date();
+  $("gazDate").textContent = isNaN(d) ? "" : d.toLocaleDateString(zh ? "zh-CN" : "en-GB", { day: "numeric", month: zh ? "long" : "short", year: "numeric", timeZone: "UTC" });
+  fitGazAd();
+}
+addEventListener("DOMContentLoaded", () => {
+  loadGazette(); setInterval(loadGazette, 600000);
+  if ("ResizeObserver" in window) new ResizeObserver(() => fitGazAd()).observe($("statePanelCard"));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitGazAd);
+});
 function renderStatePanel() {
   if (hold("statePanel", renderStatePanel)) return;
   const N = S.validators.length, thr = N ? threshold() : "—";
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
   $("statePanel").innerHTML = `<div class="big2"><div data-full="${KV_TIP["Spec revision"] || ""}"><b>${S.specRev}</b><span>spec revision</span></div><div data-full="${KV_TIP["Base fee"] || ""}"><b>${S.fee}</b><span>AGRS base fee</span></div></div>
-    <p class="sent"><b>${thr} of ${N}</b> validators change a rule · <b>${S.ruleBudget}</b> rule txs per block · <b>${S.clauses.size}</b> account${S.clauses.size === 1 ? "" : "s"} with own rules · <b>${open.length}</b> open proposal${open.length === 1 ? "" : "s"} · ${active.length ? `<b>${active.length}</b> agreed change${active.length === 1 ? "" : "s"}, last at #${active[active.length - 1].activeAt}` : "no agreed change yet"}</p>`;
+    <p class="sent"><b>${thr} of ${N}</b> validators change a rule · <b>${S.ruleBudget}</b> rule txs per block · <b>${S.clauses.size}</b> account${S.clauses.size === 1 ? "" : "s"} with own rules · <b>${open.length}</b> open proposal${open.length === 1 ? "" : "s"} · ${active.length ? `<b>${active.length}</b> agreed change${active.length === 1 ? "" : "s"}${Number.isFinite(Number(active[active.length - 1].activeAt)) ? `, last at #${active[active.length - 1].activeAt}` : ""}` : "no agreed change yet"}</p>`;
+  if (!GAZ.ed && $("gazNo")) $("gazNo").textContent = document.documentElement.classList.contains("i18n-zh") ? `第 ${S.height ? fmt(S.height) : "—"} 期` : S.height ? `No. ${fmt(S.height)}` : "No. —";   // the paper numbers its issues by block height
+  fitGazAd();
 }
 function showState() {
   const N = S.validators.length, thr = N ? threshold() : "—";
@@ -2995,7 +3064,7 @@ addEventListener("DOMContentLoaded", () => {
   try { history.replaceState(null, "", location.pathname); } catch (e) {}
   setTimeout(() => { if (act === "tour") { tourOffered = true; $("tourOffer") && ($("tourOffer").hidden = true); } document.dispatchEvent(new CustomEvent("tau-nav", { detail: act })); }, 500);
 });
-$("statePanelCard").addEventListener("click", e => { if (!e.target.closest(".info")) showState(); }); $("statePanelCard").style.cursor = "pointer";
+$("statePanelCard").addEventListener("click", e => { if (!e.target.closest(".info, .gazad")) showState(); }); $("statePanelCard").style.cursor = "pointer";
 $("feedRej").onclick = () => { const on = $("feedRej").getAttribute("aria-pressed") !== "true"; $("feedRej").setAttribute("aria-pressed", String(on)); $("feed").classList.toggle("only-rej", on); };
 $("chainSub").onclick = () => { selectedBlock = null; ribbonReset(); const last = S.blocks[S.blocks.length - 1]; if (last) showBlock(last, false); }; $("chainSub").style.cursor = "pointer";
 /* mouse wheel over the block strip glides through the chain: down = back in time, up = toward the newest; sideways trackpad scrolling is native */
@@ -3128,7 +3197,7 @@ pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); set
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.48`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.49`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
