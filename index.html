@@ -1970,7 +1970,7 @@ function showBlock(b, pinned = true) {
   }
   $("chainSub").textContent = pinned ? `showing #${b.n} · back to newest ›` : "following the newest block";
 }
-/* the newspaper ad: the newest edition from gazette/latest.json once the newspaper publishes it, else the current front page;
+/* the newspaper ad: the newest edition from node.tauhud.com/recap/gazette/latest.json once the weekly edition is out, else the current front page;
    shown in three sizes, the largest that fits the room the box leaves, hidden when even the smallest does not fit */
 const GAZ = { at: 0, ed: null };
 function fitGazAd() {
@@ -1984,7 +1984,8 @@ function fitGazAd() {
 }
 async function loadGazette() {
   if (Date.now() - GAZ.at < 600000) return; GAZ.at = Date.now();
-  try { const r = await fetch("gazette/latest.json", { cache: "no-cache" }); if (r.ok) GAZ.ed = await r.json(); } catch (e) {}
+  // the weekly edition is set by the alerts service on the server, next to the weekly recap
+  try { const r = await fetch("https://node.tauhud.com/recap/gazette/latest.json", { cache: "no-cache" }); if (r.ok) { const j = await r.json(); if (j && typeof j.headline === "string") GAZ.ed = j; } } catch (e) {}
   renderGazAd();
 }
 function renderGazAd() {
@@ -1992,6 +1993,7 @@ function renderGazAd() {
   const hl = (zh && ed.headline_zh) || ed.headline || "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys";
   const no = ed.number != null ? Number(ed.number) : S.height || null;
   $("gazHl").textContent = hl;
+  if (typeof ed.url === "string" && /^https:\/\/tauhud\.com\/gazette\//.test(ed.url)) $("gazAd").href = ed.url.replace(/^https:\/\/tauhud\.com\//, "");   // same site, so the preview and a local copy open their own newspaper
   if (ed.deck || ed.deck_zh) $("gazDk").textContent = (zh && ed.deck_zh) || ed.deck;
   $("gazNo").textContent = zh ? (no ? `第 ${fmt(no)} 期` : "第 — 期") : no ? `No. ${fmt(no)}` : "No. —";
   const d = ed.date ? new Date(ed.date + (/T/.test(ed.date) ? "" : "T00:00:00Z")) : new Date();
