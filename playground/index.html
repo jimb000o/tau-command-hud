@@ -106,6 +106,13 @@ html.wide .log { max-height: 520px; }
 .field input, .field select { width: 100%; max-width: 320px; background: #0c0c0d; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 10px; font: 13px var(--mono); }
 .field textarea { min-height: 72px; }
 .composer pre.code { margin: 0; }
+/* where the proposal goes: this seat alone, or the shared simulation everyone on the site sees (amber = simulation) */
+.where span { border-style: dashed; }
+.where input:checked + span.shared { color: #000; background: var(--behind); border-color: var(--behind); }
+.sentbox { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--behind); border-radius: 8px; font-size: 12.5px; }
+.sentbox b { color: var(--behind); font: 600 12px var(--display); letter-spacing: .12em; text-transform: uppercase; }
+.sentbox.err { border-color: var(--refused); } .sentbox.err b { color: var(--refused); }
+.sentbox a { color: #fff; }
 .ownchecks { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 12px; }
 .ownchecks li { padding: 2px 8px; border-left: 2px solid var(--ok); color: var(--text); }
 .ownchecks li::before { content: "✓ "; color: var(--ok); }
@@ -337,18 +344,27 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
       <div class="idle" id="propIdle"><b>No vote running yet.</b><span>Pick a proposal or write your own to start one. Its rule, the votes and the way to activation then show up here.</span></div>
       <form class="composer" id="composer" hidden autocomplete="off">
         <p class="note" style="margin-top:0">Write a change of your own. It is checked as you type, the way a node checks a proposal before anyone may vote on it.</p>
+        <div class="kinds where" role="radiogroup" aria-label="Who votes on it">
+          <label><input type="radio" name="where" value="seat" checked><span>Just this seat</span></label>
+          <label data-tnt="Your proposal enters the shared simulation that every visitor in Simulation mode sees. Everyone may vote for six minutes; if more say yes than no, the simulated validators vote it in and it takes effect for everyone ten minutes after it was proposed."><input type="radio" name="where" value="shared"><span class="shared">Everyone · simulation</span></label>
+        </div>
         <div class="kinds" role="radiogroup" aria-label="Kind of change">
           <label><input type="radio" name="kind" value="fee" checked><span>Base fee</span></label>
           <label><input type="radio" name="kind" value="add"><span>Add a validator</span></label>
           <label><input type="radio" name="kind" value="remove"><span>Remove a validator</span></label>
+          <label data-shared hidden><input type="radio" name="kind" value="quorum"><span>Threshold</span></label>
+          <label data-shared hidden><input type="radio" name="kind" value="mode"><span>Consensus</span></label>
           <label><input type="radio" name="kind" value="rule"><span>Any rule</span></label>
         </div>
         <div class="field" data-kind="fee"><label for="ownFee">New base fee <small id="ownFeeNow">now 10 AGRS per step</small></label><input id="ownFee" type="number" min="0" max="16777215" step="1" value="8" inputmode="numeric"></div>
         <div class="field" data-kind="add" hidden><label for="ownName">Name of the new validator</label><input id="ownName" type="text" maxlength="16" value="Eve"></div>
+        <div class="field" data-kind="quorum" hidden><label>Votes a rule change needs <small id="ownQuorumNow"></small></label><output id="ownQuorum"></output></div>
+        <div class="field" data-kind="mode" hidden><label>Who may seal blocks <small id="ownModeNow"></small></label><output id="ownMode"></output></div>
         <div class="field" data-kind="remove" hidden><label for="ownRemove">Validator to remove</label><select id="ownRemove"></select></div>
         <div class="field" data-kind="rule" hidden><label for="ownRule">Rule text <small>a network rule, written like the base-fee rule</small></label><textarea id="ownRule" spellcheck="false" rows="3">always (o9[t]:bv[24] = { #x00000c }:bv[24]).</textarea></div>
         <pre class="code" id="ownPreview"></pre>
         <ul class="ownchecks" id="ownChecks"></ul>
+        <div class="sentbox" id="ownSent" hidden aria-live="polite"></div>
         <div class="row">
           <button class="btn primary" id="btnOwn" type="submit">Put it to a vote</button>
           <button class="btn" id="btnOwnCancel" type="button">Cancel</button>
@@ -1106,9 +1122,9 @@ function renderSim() {
   $("proposals").classList.toggle("waiting", !sim.prop && !sim.composing);
   $("composer").hidden = !sim.composing;
   $("propBox").hidden = !sim.prop || sim.composing; $("propIdle").hidden = !!sim.prop || sim.composing;
-  $("ownFeeNow").textContent = `now ${sim.fee} AGRS per step`;
+  if (!isShared()) $("ownFeeNow").textContent = `now ${sim.fee} AGRS per step`;
   const rm = $("ownRemove"), keep = rm.value, others = sim.vals.filter(v => v.id !== "you");
-  if (rm.dataset.ids !== others.map(v => v.id).join()) { rm.innerHTML = others.map(v => `<option value="${v.id}">${esc(v.name)}</option>`).join(""); rm.dataset.ids = others.map(v => v.id).join(); if (others.some(v => v.id === keep)) rm.value = keep; }
+  if (!isShared() && rm.dataset.ids !== others.map(v => v.id).join()) { rm.innerHTML = others.map(v => `<option value="${v.id}">${esc(v.name)}</option>`).join(""); rm.dataset.ids = others.map(v => v.id).join(); if (others.some(v => v.id === keep)) rm.value = keep; }
   if (sim.prop) {
     const p = sim.prop, yes = Object.values(sim.votes).filter(Boolean).length;
     $("propKv").innerHTML = `<dt>Change</dt><dd>${esc(p.what)}</dd><dt>Proposed</dt><dd>block #${p.at}</dd><dt>Votes needed</dt><dd>${p.threshold} of ${p.n} (⌈2·${p.n}/3⌉)</dd>`;
@@ -1142,11 +1158,17 @@ function ownPlan(kind, extreme, removeId) {
   return plan;
 }
 function ownCheck() {
-  const kind = (document.querySelector('#composer input[name="kind"]:checked') || {}).value || "fee";
-  document.querySelectorAll("#composer .field").forEach(f => { f.hidden = f.dataset.kind !== kind; });
+  const shared = isShared();
+  document.querySelectorAll("#composer [data-shared]").forEach(l => { l.hidden = !shared; });
+  let kindEl = document.querySelector('#composer input[name="kind"]:checked');
+  if (!kindEl || kindEl.closest("label").hidden) { kindEl = document.querySelector('#composer input[name="kind"][value="fee"]'); kindEl.checked = true; }
+  const kind = kindEl.value;
+  document.querySelectorAll("#composer .field").forEach(f => { f.hidden = f.dataset.kind !== kind || (shared && kind === "add"); });
+  $("btnOwn").textContent = shared ? "Put it to everyone" : "Put it to a vote";
   const checks = [], ok = (t) => checks.push(["", t]), bad = (t) => checks.push(["bad", t]), info = (t) => checks.push(["info", t]);
   let prop = null;
-  if (kind === "fee") {
+  if (shared) prop = sharedCheck(kind, ok, bad, info);
+  else if (kind === "fee") {
     const raw = $("ownFee").value.trim(), n = Number(raw);
     if (!/^\d+$/.test(raw)) bad("A whole number of AGRS, 0 or more.");
     else if (n > 16777215) bad("At most 16 777 215: o9 is a 24-bit value (bv[24]).");
@@ -1200,13 +1222,89 @@ function ownCheck() {
   $("ownChecks").innerHTML = checks.map(([c, t]) => `<li class="${c}">${esc(t)}</li>`).join("");
   $("ownPreview").textContent = prop ? prop.rule : "";
   $("ownPreview").hidden = !prop;
-  $("btnOwn").disabled = !prop;
-  if (prop) prop.plan = ownPlan(kind, prop.extreme, prop.removeId);
+  $("btnOwn").disabled = !prop || sending;
+  if (prop && !shared) prop.plan = ownPlan(kind, prop.extreme, prop.removeId);
   return prop;
 }
+/* ---------- the shared simulation: a proposal every visitor sees and may vote on (assets/sim.js, the relay's /sim/propose) ---------- */
+const SIM_API = "https://node.tauhud.com";
+let sending = false;
+const isShared = () => !!(window.TauSim && TauSim.chain) && ((document.querySelector('#composer input[name="where"]:checked') || {}).value === "shared");
+const QW = { majority: "more than half", supermajority: "two thirds" };
+const MODE_W = { stake: "by stake (the richest accounts)", validator_set: "the fixed validator list" };
+function sharedCheck(kind, ok, bad, info) {
+  const ru = TauSim.chain.rulesAt(TauSim.head()), N = ru.validators.length, base = { shared: true, kind };
+  info("Everyone on tauhud.com in Simulation mode can vote for six minutes. More yes than no: the simulated validators vote it in, in force ten minutes after it was proposed.");
+  if (kind === "fee") {
+    $("ownFeeNow").textContent = `now ${ru.fee} AGRS per transaction in the simulation`;
+    const raw = $("ownFee").value.trim(), n = Number(raw);
+    if (!/^\d+$/.test(raw) || n < 1 || n > 1000) { bad("A whole number from 1 to 1000 AGRS."); return null; }
+    if (n === ru.fee) { bad(`The simulation's base fee is already ${n}. A proposal has to change something.`); return null; }
+    ok("A whole number that fits o9 (bv[24]).");
+    return { ...base, value: n, what: `Base fee ${ru.fee} → ${n} AGRS`, rule: `always (o9[t]:bv[24] = { ${hex24(n)} }:bv[24]).` };
+  }
+  if (kind === "add") {
+    if (N >= 10) { bad("The simulation already has ten validators."); return null; }
+    ok("The simulation admits its next free validator key.");
+    info(`${N + 1} validators afterwards, so the next change needs ${QW[ru.quorum]} of ${N + 1}.`);
+    return { ...base, value: "", what: "A new validator is admitted", rule: "host_contract_patch.validator_additions = [next free key]" };
+  }
+  if (kind === "remove") {
+    const rm = $("ownRemove"), ids = ru.validators.map(v => v.slice(0, 12)).join();
+    if (rm.dataset.ids !== "sim:" + ids) { rm.innerHTML = ru.validators.map(v => `<option value="${v.slice(0, 12)}">${short(v)}</option>`).join(""); rm.dataset.ids = "sim:" + ids; }
+    if (N <= 3) { bad("At least three validators have to stay in the simulation."); return null; }
+    const v = ru.validators.find(x => x.startsWith(rm.value));
+    if (!v) { bad("Pick a validator."); return null; }
+    ok(`${short(v)} holds a seat in the simulation.`);
+    return { ...base, value: v.slice(0, 12), what: `Validator ${short(v)} is removed`, rule: `host_contract_patch.validator_removals = ["${short(v)}"]` };
+  }
+  if (kind === "quorum") {
+    const to = ru.quorum === "majority" ? "supermajority" : "majority";
+    $("ownQuorumNow").textContent = `now ${QW[ru.quorum]} of the validators`; $("ownQuorum").textContent = `→ ${QW[to]} of the validators`;
+    ok("The rule that governs rule changes changes itself: every later proposal needs this share.");
+    return { ...base, value: to, what: `Agreement threshold → ${QW[to]} of the validators`, rule: `host_contract_patch.vote_quorum = "${to}"` };
+  }
+  if (kind === "mode") {
+    const to = ru.elig === "stake" ? "validator_set" : "stake";
+    $("ownModeNow").textContent = `now ${MODE_W[ru.elig] || ru.elig}`; $("ownMode").textContent = `→ ${MODE_W[to]}`;
+    ok("A consensus switch is a rule change like any other: proposed, voted on, then in force.");
+    return { ...base, value: to, what: to === "stake" ? "Switch consensus to proof of stake" : "Back to the fixed validator list", rule: `host_contract_patch.eligibility_mode = "${to}"` };
+  }
+  const body = stripComments($("ownRule").value).replace(/\s+/g, " ").trim(), outs = [...body.matchAll(/\bo(\d+)\[([^\]]*)\]/g)];
+  let depth = 0, balanced = true;
+  for (const c of body) { if ("([{".includes(c)) depth++; else if (")]}".includes(c) && --depth < 0) { balanced = false; break; } }
+  if (!/^always\s*\(/.test(body) || !body.endsWith(".") || (body.match(/\balways\b/g) || []).length !== 1) { bad("One unit: always ( … ). with the final dot."); return null; }
+  if (!balanced || depth) { bad("Brackets do not match."); return null; }
+  if (body.length > 300) { bad("At most 300 characters for the shared simulation."); return null; }
+  if (!outs.length) { bad("Sets no output stream, so it would change nothing."); return null; }
+  if (outs.some(m => m[2] !== "t")) { bad("Only the current step [t] may be used."); return null; }
+  if (outs.some(m => m[1] === "5")) { bad("o5 is each account’s own transfer answer. Write that on the first tab, not as a network rule."); return null; }
+  ok(`Writes ${[...new Set(outs.map(m => "o" + m[1]))].join(", ")} at step [t].`);
+  const fee = /^always\s*\(\s*o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]{1,6})\s*\}:bv\[24\]\s*\)\s*\.$/.exec(body);
+  info(fee ? `Sets the base fee to ${parseInt(fee[1], 16)}. The simulation will apply it.` : "The simulation records it as a new revision of the rules but cannot run it.");
+  return { ...base, value: body, what: fee ? `Base fee → ${parseInt(fee[1], 16)} AGRS` : "A visitor's own network rule", rule: body };
+}
+function sentBox(cls, title, html) { const b = $("ownSent"); b.className = "sentbox" + (cls ? " " + cls : ""); b.innerHTML = `<b>${esc(title)}</b><span>${html}</span>`; b.hidden = false; }
+async function sendShared(p) {
+  if (sending) return;
+  const me = TauSim.me ? TauSim.me() : null;
+  if (!me) { sentBox("err", "Not sent", "The shared simulation is not available in this browser."); return; }
+  sending = true; $("btnOwn").disabled = true; $("btnOwn").textContent = "Sending…";
+  const q = new URLSearchParams({ voter: me.token, kind: p.kind, value: String(p.value), a: me.a, b: me.b, c: me.c });
+  try {
+    const r = await fetch(`${SIM_API}/sim/propose?${q}`, { cache: "no-store" }), d = await r.json();
+    if (!d.ok) { sentBox("err", "Not sent", esc(d.why || "The simulation did not take it.") + " Your text stays here."); return; }
+    const m = d.meta, hm = x => new Date(x * 1000).toTimeString().slice(0, 5), closes = (m.activate_ts - (m.activate_at - m.close_at) * 8);
+    if (TauSim.vote) TauSim.vote(d.id, true);   // the proposer votes yes, like a validator who proposes
+    if (TauSim.refresh) TauSim.refresh();
+    sentBox("", "In the shared simulation", `${esc(p.what)} enters block #${m.proposed_at} in about 30 seconds. Your yes vote is counted; everyone may vote until ${hm(closes)}, in force at ${hm(m.activate_ts)} if more say yes than no. <a href="../proposals/?mode=sim#${esc(d.id.split(":")[1])}">Watch and vote in Proposals ›</a>`);
+  } catch (e) {
+    sentBox("err", "Not sent", "The Tau HUD server did not answer. Try again in a minute.");
+  } finally { sending = false; ownCheck(); }
+}
 $("composer").addEventListener("input", ownCheck);
-$("composer").addEventListener("change", ownCheck);
-$("composer").addEventListener("submit", ev => { ev.preventDefault(); const p = ownCheck(); if (p) propose("own", { ...p, id: "own" }); });
+$("composer").addEventListener("change", ev => { if (ev.target.name === "where") { $("ownSent").hidden = true; renderSim(); } ownCheck(); });
+$("composer").addEventListener("submit", ev => { ev.preventDefault(); const p = ownCheck(); if (!p) return; if (p.shared) sendShared(p); else propose("own", { ...p, id: "own" }); });
 $("btnOwnCancel").addEventListener("click", () => { sim.composing = false; renderSim(); });
 $("proposals").addEventListener("click", ev => { const b = ev.target.closest("[data-prop]"); if (b && !b.disabled) propose(b.dataset.prop); });
 $("btnYes").addEventListener("click", () => vote(true));

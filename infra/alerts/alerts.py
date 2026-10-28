@@ -105,6 +105,11 @@ SIM_ON = os.environ.get("SIM_ALERTS", "true").lower() in ("1", "true", "yes")
 SIM_SWITCHES = (("stake", 10), ("fixed", 16))
 SIM_PROPOSED_AT, SIM_IN_FORCE_AT = 20 * 60, 30 * 60
 SIM_LINK = f"{SITE}/proposals/?mode=sim"
+# Visitors may propose a rule change to the simulation from the Playground and vote on it (relay/simprops.py, relay/simvotes.py).
+# The channel hears only about the ones visitors voted in, with at least VISITOR_MIN_VOTES votes, at most VISITOR_DAILY_CAP a day.
+VISITOR_MIN_VOTES = int(os.environ.get("SIM_VISITOR_MIN_VOTES", 3))
+VISITOR_DAILY_CAP = int(os.environ.get("SIM_VISITOR_DAILY_CAP", 3))
+VISITOR_EVERY = float(os.environ.get("SIM_VISITOR_POLL_SECONDS", 60))
 FEED_ITEMS = 100
 RANGE = 100           # relay's getblockrange maximum
 REFETCH_TAIL = 6      # blocks re-read every poll so a replaced tip block (reorg) is noticed
@@ -594,6 +599,54 @@ def sim_text(ev: dict) -> str:
 def sim_buttons() -> dict:
     """One button under a simulation post: it opens the site in Simulation mode (the real-testnet buttons would mislead here)."""
     return {"inline_keyboard": [[{"text": "🧪 Watch the simulation", "url": SIM_LINK}]]}
+
+
+# ---------- rule changes visitors voted into the simulation ----------
+QUORUM_WORDS = {"majority": "more than half", "supermajority": "two thirds"}
+
+
+def visitor_title(meta: dict) -> str:
+    """A visitor proposal in a few words, from its fixed kind and value (no free text: relay/simprops.py)."""
+    k, v = meta.get("kind"), meta.get("value")
+    if k == "fee":
+        return f"Base fee → {v} AGRS per transaction"
+    if k == "add":
+        return "A new validator is admitted"
+    if k == "remove":
+        return f"Validator {v}… is removed"
+    if k == "quorum":
+        return f"Agreement threshold → {QUORUM_WORDS.get(v, v)} of the validators"
+    if k == "mode":
+        return "Switch consensus to proof of stake" if v == "stake" else "Back to the fixed validator list"
+    return "A visitor's own network rule"
+
+
+def visitor_ready(votes: dict, now: float) -> list[dict]:
+    """Visitor proposals whose vote has closed with more yes than no and enough votes, and that are not in force yet."""
+    out = []
+    for item_id, it in (votes.get("items") or {}).items():
+        meta = it.get("meta") or {}
+        yes, no = int(it.get("yes") or 0), int(it.get("no") or 0)
+        if (item_id.startswith("visitor:") and it.get("closes", now + 1) <= now < meta.get("activate_ts", 0)
+                and yes > no and yes + no >= VISITOR_MIN_VOTES):
+            out.append({"key": item_id, "yes": yes, "no": no, "meta": meta})
+    return sorted(out, key=lambda x: x["meta"].get("activate_ts", 0))
+
+
+def visitor_text(v: dict) -> str:
+    """The Telegram post for a rule change visitors voted into the simulation: marked as simulation first and last."""
+    e = html.escape
+    meta = v["meta"]
+    hm = datetime.fromtimestamp(meta["activate_ts"], timezone.utc).strftime("%H:%M")
+    out = ["🧪 <b>SIMULATION · not the real testnet</b>", "<b>Visitors voted a rule change into the simulation</b>",
+           e(visitor_title(meta)),
+           "", "<b>Why it matters</b>",
+           e("A visitor wrote this change in the Playground, everyone on the site could vote, and more said yes than no. "
+             "The simulated validators follow the visitors and vote it in: on Tau the rules change by agreement, never by decree."),
+           "", e(f"{v['yes']} yes · {v['no']} no · in force at {hm} UTC (block #{meta.get('activate_at')})"),
+           "", f"<i>{e(SIM_NOTICE)}</i>",
+           "", f"<a href=\"{e(SIM_LINK)}\">Watch it in the simulation</a>"]
+    return "\n".join(out)
 
 
 # ---------------- outlets ----------------
@@ -1126,6 +1179,46 @@ class Watcher:
         if changed:
             self.save_state()
 
+    # ---------- rule changes visitors voted into the simulation ----------
+    async def maybe_visitors(self, now: float | None = None, votes: dict | None = None):
+        """One Telegram post per visitor proposal that was voted in with enough votes, at most VISITOR_DAILY_CAP a day,
+        sent between the close of its vote and the moment it is in force; one missed while the service was down is skipped."""
+        if not SIM_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("visitors", {"posted": {}, "checked": 0})
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        if not tg or st.get("pause_until", 0) > now or (votes is None and now - st.get("checked", 0) < VISITOR_EVERY):
+            return
+        st["checked"] = now
+        if votes is None:
+            try:
+                def get():
+                    with urllib.request.urlopen(RELAY_HTTP + "/sim/votes", timeout=20) as r:
+                        return json.loads(r.read())
+                votes = await asyncio.to_thread(get)
+            except Exception as exc:  # relay restarting: next minute
+                log.info("visitor proposals: relay not readable (%r)", exc)
+                return
+        day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
+        for v in visitor_ready(votes, now):
+            if v["key"] in st["posted"]:
+                continue
+            if sum(1 for t in st["posted"].values() if datetime.fromtimestamp(t, timezone.utc).strftime("%Y-%m-%d") == day) >= VISITOR_DAILY_CAP:
+                break
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, visitor_text(v), sim_buttons())
+                if not ok:
+                    st["pause_until"] = now + (retry or 60)
+                    log.warning("visitor proposal post failed (%s); trying again in a minute", err)
+                    self.save_state()
+                    return
+            st["posted"][v["key"]] = round(now)
+            log.info("simulation: posted visitor proposal %s", v["key"])
+        for k in [k for k, t in st["posted"].items() if now - t > 7 * 86400]:
+            del st["posted"][k]
+        self.save_state()
+
     # ---------- weekly recap ----------
     @staticmethod
     def recap_slot(now: float) -> float:
@@ -1223,6 +1316,7 @@ class Watcher:
                         await self.maybe_health()
                         await self.maybe_newnodes()
                         await self.maybe_sim()
+                        await self.maybe_visitors()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
                 raise
