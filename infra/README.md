@@ -16,6 +16,7 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
   cache. New blocks, mempool and governance changes are pushed to visitors as they happen.
 - **Caddy**: HTTPS with automatic Let's Encrypt certificates; also serves the tracker's `proposals.json` and `feed.xml`.
 - **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect, plus a weekly recap image.
+- **donations** (`alerts/donations.py`): watches the donation address on Ethereum (AGRS and ETH only, public Blockscout API), keeps `/donations.json` for the About section and posts one thank-you per new donation to the channel.
 - **bot** (`alerts/bot.py`): the same Telegram bot answers questions in private chats and groups: height, proposals, a transaction, an address, a block, node status (see "Question bot").
 - **share** (`share/share.py`): share previews, the picture X, Telegram and WhatsApp show under a link (see "Share previews").
 
@@ -249,6 +250,17 @@ then its API key and secret and the account's access token and secret (generated
 switching to Read and write) as `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`,
 `X_ACCESS_SECRET` in `.env`, and `X_PROFILE_URL=https://x.com/<handle>` for the page's
 follow link. Same `up -d alerts` and `--test`.
+
+**Donation thank-yous**: `alerts/donations.py` (service `donations`, same image) reads
+incoming AGRS (contract `0x7388…bdda` only, so look-alike tokens are ignored) and ETH
+transfers to the donation address every 5 minutes, above a small minimum
+(`DONATION_MIN_AGRS`, `DONATION_MIN_ETH`). Each new donation gets one post, the sender
+named only by a shortened address; a donation is remembered and never posted twice, and on
+the first run only donations younger than 3 days are thanked. Transfers from your own
+wallets: list them in `.env` as `DONATION_IGNORE_FROM=0x…,0x…`. With `ETHERSCAN_API_KEY`
+in `.env` it reads Etherscan instead of Blockscout.
+- `docker compose run --rm donations python donations.py --preview` lists what it finds and
+  the post the newest donation would get, and posts nothing.
 
 **Weekly recap**: every Monday 09:00 UTC (`RECAP_WEEKDAY`, `RECAP_HOUR`) `alerts/recap.py`
 draws the past 7 days as one 1200×675 image in the HUD look: blocks and block time,
