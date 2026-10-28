@@ -1412,9 +1412,8 @@ TauI18n.add({ strings: {
   "Starting the simulation: one made-up chain, the same on every page …": "正在启动模拟：一条虚构链，在每个页面上都相同……",
   "Simulation marking in the same amber as the other pages: the Mode chip and its dot, the “Simulation · no real chain data” bar (striped amber) and the SIM tags on the block cards. Amber stays amber in the Chinese version.": "模拟标记与其他页面使用同样的琥珀色：模式标签及其圆点、“模拟 · 没有真实链数据”条（琥珀色条纹）以及区块卡片上的 SIM 标记。中文版中琥珀色保持不变。",
   "The simulation never restarts at block 0 any more: the HUD opens on the shared clock-driven chain from the first frame, the same one every other page shows, so moving between pages continues the same simulation at the same height. The relay still takes over on the HUD once it answers, unless you chose Simulation. The built-in engine remains only as a fallback when the shared engine is not loaded.": "模拟不再从第 0 个区块重新开始：HUD 从第一帧起就显示共享的、按时钟推进的链，与其他每个页面相同，因此在页面之间切换会以相同高度延续同一个模拟。除非你选择了“模拟”，否则中继一旦响应仍会在 HUD 上接管。内置引擎只在共享引擎未加载时作为后备。",
-<<<<<<< Updated upstream
   "Nodes: a node someone starts for a few minutes no longer makes the node count jump; a new node that stays half an hour gets one post in the Telegram channel.": "节点：有人只运行几分钟的节点不再让节点数量跳动；一个停留半小时以上的新节点会在 Telegram 频道发一条消息。",
-=======
+  "Chain core: the hover for another node on the network now says what that node does (keeps its own copy of the chain, checks every block for itself) rather than what it is not; Technical adds the short peer id. The node orbit follows the relay’s steadier online rule for peers and keeps the last good list when one request fails, so the count no longer flickers on refresh.": "链核心：网络上另一个节点的悬停说明现在讲它做什么（保存自己的链副本、自行检查每个区块），而不是它不是什么；技术视图加上了简短的对等节点 ID。节点轨道采用中继更稳定的在线规则来判断对等节点，并在某次请求失败时保留上一份正常列表，因此刷新时数量不再闪动。",
   "Another node on the Tau testnet.": "Tau 测试网上的另一个节点。",
   "Another node on the Tau testnet, at #{m}.": "Tau 测试网上的另一个节点，位于 #{m}。",
   "It keeps its own copy of the chain and checks every block for itself, independently of this page.": "它保存自己的一份链副本，并独立于本页自行检查每个区块。",
@@ -1439,7 +1438,5 @@ TauI18n.add({ strings: {
   "and {n} other node on the testnet": "以及测试网上另外 {n} 个节点",
   "and {n} other nodes on the testnet": "以及测试网上另外 {n} 个节点",
   "1 other node on the testnet": "测试网上另外 1 个节点",
-  "and 1 other node on the testnet": "以及测试网上另外 1 个节点",
-  "Chain core: the hover for another node on the network now says what that node does (keeps its own copy of the chain, checks every block for itself) rather than what it is not; Technical adds the short peer id. The node orbit follows the relay’s steadier online rule for peers and keeps the last good list when one request fails, so the count no longer flickers on refresh.": "链核心：网络上另一个节点的悬停说明现在讲它做什么（保存自己的链副本、自行检查每个区块），而不是它不是什么；技术视图加上了简短的对等节点 ID。节点轨道采用中继更稳定的在线规则来判断对等节点，并在某次请求失败时保留上一份正常列表，因此刷新时数量不再闪动。"
->>>>>>> Stashed changes
+  "and 1 other node on the testnet": "以及测试网上另外 1 个节点"
 } });
