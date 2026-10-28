@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<script>if (window.TauI18n && TauI18n.lang === "zh") document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap"><script src="zh.js"><\/script>');</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>The Daily Consensus</title>
+<meta name="description" content="A newspaper in the style of the 1920s about Tau and Testnet Alpha: twelve years of the project, the chain that changes its own rules, letters, obituaries, puzzles. Turn the pages with a click or a tap.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="The Daily Consensus · Tau HUD">
+<meta property="og:description" content="Extra! Users rewrite the chain’s law by vote, no fork required. Twelve years of Tau as a 1920s newspaper you can leaf through.">
+<meta property="og:image" content="https://tauhud.com/gazette/img/og.png">
+<meta property="og:url" content="https://tauhud.com/gazette/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Limelight&family=Special+Elite&display=swap">
+<style>
+/* The site around the paper keeps the HUD tokens; the paper itself is its own printed world. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --ink: #1b1813; --ink2: #3a342a; --paper: #efe5cf;
+  --black: "UnifrakturMaguntia", "Old English Text MT", serif;
+  --head: "Playfair Display", "Times New Roman", serif;
+  --body: "Old Standard TT", "Times New Roman", Georgia, serif;
+  --deco: "Limelight", "Playfair Display", serif;
+  --wire: "Special Elite", "Courier New", monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono); overflow: hidden;
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+  display: flex; flex-direction: column; }
+body > *, body > nav.tnav { flex: none; }
+body > .desk { flex: 1 1 0; }
+header.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 0 0 4px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+
+/* the desk the paper lies on */
+.desk { position: relative; flex: 1; min-height: 0; margin: 6px calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  background: radial-gradient(ellipse at 50% 40%, #1d1b18 0%, #0e0d0c 60%, #070707 100%); overflow: hidden; user-select: none; -webkit-user-select: none; }
+.stage { position: absolute; left: 50%; top: 50%; }
+.scaler { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.book { position: relative; perspective: 3200px; transition: transform .9s cubic-bezier(.45,.05,.25,1); }
+.leaf { position: absolute; top: 0; transform-origin: 0 50%; transform-style: preserve-3d; transition: transform .95s cubic-bezier(.45,.05,.25,1); }
+/* only the leaves around the open pages are drawn: dozens of 3D layers would exhaust a phone's graphics memory */
+.leaf.far { display: none; }
+.leaf.flipped { transform: rotateY(-180deg); }
+.face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; cursor: pointer; }
+.face.back { transform: rotateY(180deg); }
+.leaf.gone { visibility: hidden; }
+/* the paper: warm stock, fibre noise, foxing, darker edges, a spine shadow toward the fold */
+.paper { background-color: var(--paper); color: var(--ink);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(circle at 82% 12%, rgba(150,110,50,.10) 0 3%, transparent 6%),
+    radial-gradient(circle at 12% 78%, rgba(150,110,50,.08) 0 2%, transparent 5%),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(120,90,40,.22) 100%),
+    linear-gradient(180deg, #f2e9d4, #e8dcc0);
+  box-shadow: inset 0 0 40px rgba(110,80,30,.18); }
+.face.front .paper::after, .face.back .paper::after { content: ""; position: absolute; top: 0; bottom: 0; width: 60px; pointer-events: none; }
+.face.front .paper::after { left: 0; background: linear-gradient(90deg, rgba(60,40,10,.2), rgba(60,40,10,.05) 40%, transparent); }
+.face.back .paper::after { right: 0; background: linear-gradient(270deg, rgba(60,40,10,.2), rgba(60,40,10,.05) 40%, transparent); }
+.single .face.front .paper::after { width: 14px; opacity: .6; }
+.face .shade { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+.face.front .shade { background: linear-gradient(90deg, rgba(0,0,0,.35), rgba(0,0,0,0) 70%); }
+.face.back .shade { background: linear-gradient(270deg, rgba(0,0,0,.35), rgba(0,0,0,0) 70%); }
+.leaf.turning .shade { animation: shade .95s ease-in-out; }
+@keyframes shade { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+.leaf::before { content: ""; position: absolute; inset: 0; box-shadow: 0 18px 50px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.4); pointer-events: none; }
+.book .under { position: absolute; top: 0; height: 100%; background: #0000; box-shadow: 0 30px 80px rgba(0,0,0,.65); pointer-events: none; }
+
+/* ---------- printed page ---------- */
+.pg { position: absolute; inset: 0; padding: 2.0em 2.2em 1.6em; display: flex; flex-direction: column; font: 400 calc(var(--fs, 15px) * var(--k, 1))/1.32 var(--body); color: var(--ink);
+  text-shadow: 0 0 .5px rgba(27,24,19,.55); font-kerning: normal; hyphens: auto; -webkit-hyphens: auto; }
+.pg p { margin: 0 0 .45em; text-align: justify; text-indent: 1.1em; }
+.pg p.cut { text-align-last: justify; }
+.pg p.ni, .pg h2 + p, .pg h3 + p, .pg .deck + p, .pg .by + p, .pg .kick + p { text-indent: 0; }
+.pg a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.rh { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; font: 700 .72em/1 var(--body); letter-spacing: .14em; text-transform: uppercase; padding-bottom: .45em; border-bottom: 3px double var(--ink); margin-bottom: .7em; }
+.rh .nm { font: 400 1.6em/1 var(--black); letter-spacing: .02em; text-transform: none; }
+.grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-content: start; column-gap: 0; }
+.u { padding: 0 .75em; min-width: 0; }
+.rl { border-left: 1px solid rgba(27,24,19,.75); }
+.rt { border-top: 1px solid var(--ink); padding-top: .55em; margin-top: .4em; }
+.s1 { grid-column: span 1; } .s2 { grid-column: span 2; } .s3 { grid-column: span 3; } .s4 { grid-column: span 4; } .s5 { grid-column: span 5; } .s6 { grid-column: span 6; }
+.c2 { column-count: 2; column-gap: 1.3em; column-rule: 1px solid rgba(27,24,19,.45); }
+.c3 { column-count: 3; column-gap: 1.3em; column-rule: 1px solid rgba(27,24,19,.45); }
+.u.full { grid-column: 1 / -1; }
+.banner { font: 900 2.55em/1.0 var(--head); text-transform: uppercase; text-align: center; letter-spacing: -.005em; margin: .1em 0 .2em; }
+.banner.sm { font-size: 2.05em; }
+h2 { font: 900 1.6em/1.04 var(--head); margin: .15em 0 .25em; text-align: center; }
+h2.l { text-align: left; }
+h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacing: .03em; margin: .1em 0 .3em; text-align: center; }
+.kick { font: 700 .72em/1.2 var(--body); letter-spacing: .22em; text-transform: uppercase; text-align: center; margin: .1em 0 .15em; }
+.deck { font: italic 400 1.02em/1.25 var(--head); text-align: center; margin: 0 0 .4em; padding-bottom: .35em; border-bottom: 1px solid rgba(27,24,19,.5); }
+.by { font: 700 .7em/1.2 var(--body); letter-spacing: .14em; text-transform: uppercase; text-align: center; margin: 0 0 .45em; }
+.dc::first-letter { float: left; font: 900 3.25em/.8 var(--head); padding: .06em .08em 0 0; }
+.q { font: italic 400 1.12em/1.3 var(--head); margin: .35em 0 .5em; padding: .35em 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); text-align: center; break-inside: avoid; }
+.q small { display: block; font: 700 .62em/1.3 var(--body); letter-spacing: .14em; text-transform: uppercase; margin-top: .3em; font-style: normal; }
+.box { border: 1.5px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 2px; padding: .55em .7em .45em; margin: .35em .1em .55em; break-inside: avoid; }
+.box p { text-indent: 0; }
+.photo { margin: .2em 0 .45em; break-inside: avoid; }
+.photo img { display: block; width: 100%; filter: sepia(.35) contrast(1.08) brightness(.96); mix-blend-mode: multiply; border: 1px solid var(--ink); }
+.photo figcaption, .cap { font: 400 .78em/1.28 var(--body); margin-top: .3em; text-align: justify; }
+.photo figcaption b, .cap b { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.rule2 { border: 0; border-top: 3px double var(--ink); margin: .35em 0; }
+.small { font-size: .84em; line-height: 1.3; }
+.mono { font-family: var(--wire); }
+.ad { border: 2px solid var(--ink); padding: .5em .6em; text-align: center; margin: .35em .1em .5em; break-inside: avoid; position: relative; }
+.ad .t { font: 400 1.5em/1 var(--deco); letter-spacing: .03em; margin: .1em 0 .2em; }
+.ad p { text-align: center; text-indent: 0; font-size: .9em; }
+.ad .fine { font: italic .72em/1.2 var(--body); margin-top: .2em; }
+.ad.inv { background: var(--ink); color: var(--paper); text-shadow: none; }
+.ad.inv a { color: var(--paper); }
+.wire { font: 400 .86em/1.38 var(--wire); }
+.wire p { text-align: left; text-indent: 0; margin-bottom: .55em; }
+.wire b { font-weight: 400; text-decoration: underline; }
+.cls p { text-indent: 0; font-size: .86em; line-height: 1.28; margin-bottom: .5em; text-align: justify; }
+.cls p { text-align: left; }
+.cls p b:first-child { font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.obit p { text-indent: 0; margin-bottom: .55em; }
+.obit p b:first-child { display: block; text-align: left; font: 700 1em/1.15 var(--head); text-transform: uppercase; letter-spacing: .04em; }
+.ups { transform: rotate(180deg); font-size: .78em; text-align: center; margin-top: .4em; opacity: .9; }
+.ups p { text-align: center; text-indent: 0; }
+.diag svg { display: block; width: 100%; height: auto; }
+.diag text { font-family: var(--body); }
+.diag text:not([fill]) { fill: var(--ink); }
+.coupon { border: 2px dashed var(--ink); padding: .6em .8em; position: relative; margin: .5em .2em; text-align: center; }
+.coupon::before { content: "✂"; position: absolute; top: -.85em; left: 1em; background: var(--paper); padding: 0 .2em; font-size: 1.1em; }
+.coupon p { text-align: center; text-indent: 0; }
+.coupon .t { font: 400 1.5em/1.05 var(--deco); margin: .1em 0 .25em; }
+.idx p { text-indent: 0; display: flex; gap: .3em; margin-bottom: .22em; font-size: .9em; }
+.idx p span { flex: 1; border-bottom: 1px dotted var(--ink); transform: translateY(-.3em); }
+.live { font-weight: 700; }
+.watch p { text-indent: 0; text-align: left; margin: 0 0 .35em; font-size: .92em; line-height: 1.2; }
+.watch i { display: block; font-size: .85em; }
+.gl p { text-indent: 0; font-size: .86em; line-height: 1.28; margin-bottom: .4em; text-align: left; }
+.gl p b { font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+
+/* front page masthead */
+.mast { display: grid; grid-template-columns: 9em minmax(0, 1fr) 9em; align-items: center; gap: .8em; }
+.ear { border: 1.5px solid var(--ink); padding: .4em .5em; font: .7em/1.25 var(--body); text-align: center; }
+.ear b { display: block; font: 700 1.05em/1.1 var(--head); letter-spacing: .08em; text-transform: uppercase; margin-bottom: .15em; }
+.ear.r { justify-self: end; }
+.title { font: 400 3.75em/1 var(--black); text-align: center; white-space: nowrap; letter-spacing: .01em; }
+.motto { text-align: center; font: italic .82em/1.2 var(--head); margin-top: .1em; }
+.dateline { display: flex; justify-content: space-between; gap: 1em; border-top: 3px double var(--ink); border-bottom: 3px double var(--ink); padding: .28em .2em; margin: .45em 0 .4em; font: 700 .68em/1.2 var(--body); letter-spacing: .12em; text-transform: uppercase; }
+.extra { display: inline-block; font: 900 .7em/1 var(--head); letter-spacing: .3em; border: 1.5px solid var(--ink); padding: .2em .5em .15em .8em; margin-bottom: .2em; }
+.center { text-align: center; }
+.stop { border-top: 3px double var(--ink); margin-top: .4em; padding-top: .3em; display: flex; gap: .6em; align-items: baseline; font: .82em/1.3 var(--wire); }
+.stop b { font: 900 1.05em var(--head); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+/* in the pocket edition a photograph never takes more than about a third of the page */
+.pg.pocket .photo img { max-height: calc(var(--H, 600px) * .34); object-fit: cover; }
+.blank .pg { justify-content: center; align-items: center; }
+.blank .ghost { opacity: .12; font: 400 4em var(--black); transform: scaleX(-1); }
+
+/* ---------- controls on the desk ---------- */
+.ctl { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(9,9,10,.82); border: 1px solid var(--hair); border-radius: 999px; padding: 4px; z-index: 30; backdrop-filter: blur(6px); }
+.ctl button, .ctl select { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: #fff; background: transparent; border: 0; border-radius: 999px; min-height: 34px; padding: 0 12px; cursor: pointer; white-space: nowrap; }
+.ctl button:hover { background: rgba(255,255,255,.08); }
+.ctl button:disabled { opacity: .3; cursor: default; background: transparent; }
+.ctl .pgno { font: 500 12px var(--mono); color: var(--dim); padding: 0 8px; white-space: nowrap; }
+.ctl .sep { width: 1px; height: 20px; background: var(--line); }
+.side { position: absolute; top: 50%; transform: translateY(-50%); width: 54px; height: 54px; border-radius: 50%; border: 1px solid var(--hair); background: rgba(9,9,10,.6); color: #fff; font: 400 24px/1 var(--display); cursor: pointer; z-index: 25; display: grid; place-items: center; }
+.side:hover { background: #fff; color: #000; }
+.side:disabled { opacity: 0; pointer-events: none; }
+.side.prev { left: 18px; } .side.next { right: 18px; }
+.hint { position: absolute; bottom: 60px; background: rgba(9,9,10,.85); border: 1px solid var(--hair); border-radius: 999px; padding: 7px 14px; left: 50%; transform: translateX(-50%); font: 500 12px var(--display); color: var(--dim); letter-spacing: .06em; z-index: 20; transition: opacity .6s; white-space: nowrap; pointer-events: none; }
+.hint b { color: #fff; font-weight: 600; }
+.hint.off { opacity: 0; }
+.toc { position: absolute; bottom: 58px; left: 50%; transform: translateX(-50%); background: #111113; border: 1px solid var(--hair); border-radius: 12px; padding: 8px; z-index: 40; display: grid; gap: 2px; min-width: 300px; max-height: calc(100% - 80px); overflow: auto; }
+.toc[hidden] { display: none; }
+.toc button { display: flex; gap: 12px; align-items: baseline; text-align: left; background: transparent; border: 0; color: #fff; font: 500 13px var(--display); padding: 9px 12px; border-radius: 8px; cursor: pointer; }
+.toc button:hover { background: rgba(255,255,255,.06); }
+.toc button span { font: 500 12px var(--mono); color: var(--dim); min-width: 3.2em; }
+.toc button.here span { color: var(--ok); }
+/* phones: the paper gets the room; the bar keeps the brand, the tools on the right and the tab bar below */
+@media (max-width: 700px), (max-height: 520px) {
+  header.trail .chips, body > nav.tnav .tnav-l, body > nav.tnav .tnav-sep { display: none !important; }
+}
+@media (max-height: 520px) {
+  body { padding-top: 6px; }
+  header.trail { padding-bottom: 4px; }
+  header.trail .chip.unoff, header.trail .brand h1.bt, header.top .brand span { display: none; }
+  .side, .ctl .pgno, .ctl .sep { display: none; }
+  .ctl { left: auto; right: max(8px, env(safe-area-inset-right, 0px)); top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; border-radius: 28px; }
+  .ctl button { min-height: 44px; min-width: 44px; padding: 0; }
+  .ctl .opt { display: none; }
+  .hint { bottom: 8px; }
+  .toc { left: auto; right: 72px; bottom: auto; top: 8px; transform: none; max-height: calc(100% - 16px); }
+}
+@media (max-width: 700px) {
+  .side { display: none; }
+  .ctl { bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
+  .ctl button { min-height: 44px; padding: 0 12px; }
+  .ctl .opt { display: none; }
+  .hint { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) { .leaf, .book { transition-duration: .01s; } .leaf.turning .shade { animation: none; } }
+html.i18n-zh .pg { font-family: "Noto Serif SC", "Songti SC", "SimSun", var(--body); }
+html.i18n-zh .banner, html.i18n-zh h2, html.i18n-zh h3 { font-family: "Noto Serif SC", "Songti SC", var(--head); }
+html.i18n-zh .pg p { text-align: justify; }
+html.i18n-zh .title { font-family: "Noto Serif SC", "Songti SC", serif; font-weight: 900; letter-spacing: .12em; }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>The Daily Consensus</span></a>
+  </header>
+  <nav class="tnav" data-page="gazette" aria-label="Pages and tools"></nav>
+
+  <main class="desk" id="desk" aria-label="Newspaper">
+    <div class="hint" id="hint"><b>Click or tap the page</b> to turn it · arrow keys work too</div>
+    <div class="stage" id="stage"><div class="scaler" id="scaler"><div class="book" id="book"></div></div></div>
+    <button class="side prev" id="sPrev" aria-label="Previous page">‹</button>
+    <button class="side next" id="sNext" aria-label="Next page">›</button>
+    <div class="toc" id="toc" hidden></div>
+    <div class="ctl" id="ctl">
+      <button id="bPrev" aria-label="Previous page">‹ Back</button>
+      <span class="pgno" id="pgno">Front page</span>
+      <button id="bNext" aria-label="Next page">Turn ›</button>
+      <span class="sep opt"></span>
+      <button id="bToc" aria-expanded="false">Contents</button>
+      <button id="bEd" class="opt" title="Switch between the full broadsheet and the pocket edition with one story per page">Pocket edition</button>
+      <button id="bSnd" title="Sound of the paper">Sound on</button>
+    </div>
+  </main>
+
+<script>
+"use strict";
+/* ============ THE PAPER (English). zh.js replaces it with window.GAZETTE_ZH. ============
+   Every class="u" block is one story. The broadsheet sets the stories of a page in a 6-column grid;
+   the pocket edition (phones, small laptops) prints each story on its own page. */
+const EN = {
+  name: "The Daily Consensus",
+  motto: "“Where the rules change by agreement”",
+  ui: { coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
+  date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
+  toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
+  pages: [
+/* ---------------- 1 FRONT PAGE ---------------- */
+`<div class="pg front">
+  <div class="mast">
+    <div class="ear"><b>Weather on the chain</b>Fair. Blocks about every eight seconds. A single validator holds the watch. Outlook: the climate may change by vote.</div>
+    <div><div class="title">{{NAME}}</div><div class="motto">{{MOTTO}}</div></div>
+    <div class="ear r"><b>Price: one AGRS</b>Testnet coins carry no value. Printed by Tau HUD, an unofficial community instrument.</div>
+  </div>
+  <div class="dateline"><span>Vol. XIII · No. {{HEIGHT}}</span><span>{{DATE}}</span><span>tauhud.com</span></div>
+  <div class="center"><span class="extra">EXTRA</span></div>
+  <div class="banner">Users rewrite the chain’s law; no fork, no restart</div>
+  <div class="grid">
+    <div class="u s4">
+      <div class="kick">Testnet Alpha · special report</div>
+      <h2>Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys</h2>
+      <div class="deck">Consensus moves from a fixed list of validators to stake and back again, and not a single machine is reinstalled. Engineers call it the first real demonstration of a blockchain that is governed by its own users.</div>
+      <figure class="photo"><img src="img/hud-wide.jpg" width="1100" height="450" style="height:auto;aspect-ratio:1100/450" alt="Halftone photograph of the Tau HUD screen"><figcaption><b>Our camera at the core.</b> The Tau HUD, a community instrument at tauhud.com, follows every block of the testnet as it is sealed. Each point on the orbit is a node; the ring closes when the validators agree.</figcaption></figure>
+      <div class="c2"><p class="dc ni">Every blockchain has a rulebook. On most of them it is carved into the software itself, and changing a single line means a <i>hard fork</i>: new software, shipped to every machine, installed by every operator, with the ever-present danger that some refuse and the chain splits in two.</p>
+      <p>The Tau network has taken a different road. In its August development report the team described demonstrations in which, in their words, the community can <i>“amend the single clause on the network’s law and activate it on the next block”</i>, without having to modify or redeploy a single node.</p>
+      <p>The clause in question was no small matter. It was consensus itself: who may seal blocks. The users voted to move from a fixed validator list to proof of stake, and then voted to move back. Each time, every node switched by itself at the agreed block.</p>
+      <p>It works because the rulebook lives on the chain. Since January every block records the exact snapshot of rules it ran under, and since May the consensus logic is written in the Tau Language rather than in Python, so a rule change is simply another transaction. <i>See Page 7.</i></p></div>
+    </div>
+    <div class="u s2 rl">
+      <h3>Twelve Years in the Making</h3>
+      <p class="ni">It began in 2014 with a shared supercomputer called Zennet and a conversation on an internet forum. It became Tau-Chain and Agoras in 2015, “the New Tau” in 2017, a language in 2024 and a running testnet in 2025. <i>The whole story, Pages 2 to 7.</i></p>
+      <hr class="rule2">
+      <h3>Anyone May Watch</h3>
+      <p class="ni">The testnet is public. Tau HUD runs its own node beside the founders’ bootnode and shows every block, vote and rule change as it happens, with a simulation for quiet hours. <i>Page 9.</i></p>
+      <hr class="rule2">
+      <div class="idx"><h3>In This Edition</h3>
+        <p>The long road from Zennet<span></span>2</p>
+        <p>Why other chains must fork<span></span>3</p>
+        <p>Obituaries<span></span>4</p>
+        <p>A language about itself<span></span>5</p>
+        <p>Telegrams from 2025<span></span>6</p>
+        <p>Machines at the ballot box<span></span>7</p>
+        <p>Letters to the editor<span></span>8</p>
+        <p>Classifieds<span></span>9</p>
+        <p>Puzzles<span></span>10</p>
+      </div>
+      <div class="ad inv"><div class="t">No Fork!</div><p>The only chain that changes its rules the way a club changes its bylaws: by a vote, minuted, in force from the next meeting.</p></div>
+    </div>
+  </div>
+  <div class="stop"><b>Stop press</b><span id="wire0">{{WIRE}}</span></div>
+</div>`,
+/* ---------------- 2 ORIGINS ---------------- */
+`<div class="pg">
+  <div class="rh"><span>Page 2</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
+  <div class="banner sm">A supercomputer, a forum stranger and an idea that would not let go</div>
+  <div class="grid">
+    <div class="u s4">
+      <div class="kick">Origins · 2014 to 2017</div>
+      <h2>The Long Road From Zennet</h2>
+      <div class="by">From our history desk</div>
+      <div class="c2"><p class="dc ni">In August 2014 a software developer named Ohad Asor announced Zennet on the bitcointalk forum: a public, decentralised supercomputer in which anybody could rent out spare computing power and be paid for it on a blockchain.</p>
+      <p>Zennet would not remain the main act. Discussing it with a forum member who signed himself <i>HunterMinerCrafter</i>, Asor heard of a much larger idea, a chain whose own rules could be changed by those who use it. He has never claimed the idea as his own.</p>
+      <div class="q">“The idea for Tau is not mine. I came up with the idea for Zennet and after that I met ‘Hunter Miner Crafter’… At some point in time, he told me about the idea for Tau.”<small>Ohad Asor, interview, 2016</small></div>
+      <p>In February 2015 the plan was made public as Tau-Chain, the platform, and Agoras, a market built on top of it. Zennet’s market for computing power became one kind of market in Agoras.</p>
+      <p>The first explanatory film followed in August 2016. Tau, it said, is a language that comes with a blockchain, and every block holds the conditions for accepting the next one. The rules of the network, in other words, can change.</p>
+      <p>Then came a pause. After a year without blog posts Asor published “The New Tau” on the last day of 2017. The goal had grown: not only a chain with changeable rules, but a way for very large groups to discuss and agree, helped by machines that understand what is said.</p>
+      <div class="q">“Under certain assumptions we can reach truly efficiently scaling discussions.”<small>The New Tau, December 2017</small></div></div>
+    </div>
+    <div class="u s2 rl">
+      <h3>The Million-Person Conversation</h3>
+      <p class="ni">Ask ten people to agree on a rule and you have a meeting. Ask a million and you have a riot. The Tau answer is to let every participant state what they want in a language a machine can read and reason about, so that the machine can tell who agrees with whom, where opinions contradict, and what everyone together has actually said.</p>
+      <p>The same team asked, in a 2016 interview, what makes a blockchain worth having. The answer was Satoshi’s: <i>“a public shared database that everyone writes and no one can cheat”</i>. Tau set out to do the same for rules and knowledge.</p>
+      <div class="ad"><div class="t">AGORAS</div><p>The Market of Tomorrow! Rent computing power. Buy code that provably meets your specification. Consult an expert and pay by the second.</p><div class="fine">Planned since 2015. Not yet open: the real Agoras coin comes with mainnet.</div></div>
+      <div class="box small"><p><b>WHO IS OHAD ASOR?</b> Founder of IDNI, the company behind Tau. A developer with mathematics in the background who, by his own account, went deep into logic only after he began working on Tau.</p></div>
+    </div>
+  </div>
+</div>`,
+/* ---------------- 3 HARD FORK EXPLAINED ---------------- */
+`<div class="pg">
+  <div class="rh"><span>Page 3</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
+  <div class="kick">For the busy reader</div>
+  <div class="banner sm">The hard fork, explained, and why Tau will not need one</div>
+  <div class="grid">
+    <div class="u full diag">
+      <svg viewBox="0 0 760 250" aria-label="Two ways to change the rules">
+        <defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="#1b1813" stroke-width="1.2"/></pattern>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#1b1813"/></marker></defs>
+        <text x="0" y="22" font-size="17" font-weight="700" letter-spacing="2">THE OLD WAY</text>
+        <text x="0" y="40" font-size="13" font-style="italic">most blockchains: months, and a chance of a split</text>
+        <g font-size="13" text-anchor="middle">
+          <rect x="0" y="54" width="120" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="60" y="81">Proposal</text>
+          <rect x="150" y="54" width="130" height="44" fill="url(#hatch)" opacity=".35"/><rect x="150" y="54" width="130" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="215" y="81" font-weight="700">Months of debate</text>
+          <rect x="310" y="54" width="120" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="370" y="81">New software</text>
+          <rect x="460" y="54" width="130" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="525" y="81">All must upgrade</text>
+          <line x1="120" y1="76" x2="148" y2="76" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><line x1="280" y1="76" x2="308" y2="76" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><line x1="430" y1="76" x2="458" y2="76" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/>
+          <line x1="590" y1="76" x2="625" y2="60" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><line x1="590" y1="76" x2="625" y2="94" stroke="#1b1813" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+          <text x="694" y="64" font-weight="700">chain A</text><text x="694" y="100" font-style="italic">chain B?</text>
+        </g>
+        <line x1="0" y1="126" x2="760" y2="126" stroke="#1b1813" stroke-width=".8"/>
+        <text x="0" y="152" font-size="17" font-weight="700" letter-spacing="2">THE TAU WAY</text>
+        <text x="0" y="170" font-size="13" font-style="italic">a rule change is a transaction; the chain stays one</text>
+        <g font-size="13" text-anchor="middle">
+          <rect x="0" y="184" width="120" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="60" y="211">Proposal</text>
+          <rect x="150" y="184" width="130" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="215" y="204">Checked by logic</text><text x="215" y="220" font-size="11" font-style="italic">contradiction? refused</text>
+          <rect x="310" y="184" width="120" height="44" fill="none" stroke="#1b1813" stroke-width="1.5"/><text x="370" y="204">Agreed</text><text x="370" y="220" font-size="11" font-style="italic">by the users’ vote</text>
+          <rect x="460" y="184" width="130" height="44" fill="#1b1813"/><text x="525" y="204" fill="#efe5cf" font-weight="700">Law</text><text x="525" y="220" font-size="11" fill="#efe5cf" font-style="italic">at a set block</text>
+          <line x1="120" y1="206" x2="148" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><line x1="280" y1="206" x2="308" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><line x1="430" y1="206" x2="458" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/>
+          <line x1="590" y1="206" x2="625" y2="206" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar)"/><text x="694" y="203" font-weight="700">one chain</text><text x="694" y="219" font-size="11" font-style="italic">every node switched</text>
+        </g>
+      </svg>
+      <div class="cap"><b>Figure 1.</b> Two ways to change the rules of a blockchain. Drawn for this paper after the “How a rule changes” strip on the Tau HUD.</div>
+    </div>
+    <div class="u s4 rt">
+      <h2 class="l">On Other Chains, Code Is Law. On Tau, the Agreement Is Law.</h2>
+      <div class="c2"><p class="ni dc">The trouble with a rulebook made of software is that only programmers can open it, and only by sending everybody a new copy. A hard fork is a polite name for that copy. If enough people refuse it, the chain divides, and two currencies walk away from one another like brothers after a will is read.</p>
+      <p>Tau keeps the rulebook inside the chain. Users write the rules in the Tau Language, a language of logic, and propose them like any other transaction. Before a proposal can apply it is compiled and checked against the rules already in force. If it contradicts them it is refused at the door and never reaches the chain.</p>
+      <p>A proposal that passes the check is put to the vote. When enough votes agree, it becomes law at a block named in advance, for every node at once. There is no administrator’s key, no emergency switch kept by the founders. Nothing changes unless the vote agrees.</p>
+      <p>A Tau team member put it plainly early this year: the governance is highly flexible, and <i>“the system updates itself according to the desired specification.”</i></p></div>
+    </div>
+    <div class="u s2 rl rt">
+      <h3>Why Logic and Not a Mere Vote?</h3>
+      <p class="ni">A vote can pass nonsense. Two rules may each look reasonable and yet together make every transaction impossible. Because the Tau Language is <i>decidable</i>, the machine can always answer, in finite time, whether a new rule fits with the old ones. The vote decides what people want; the logic makes sure it can be done.</p>
+      <div class="ad"><div class="t">Tired of Forks?</div><p>Try <b>Pointwise Revision</b>, the modern method. Your rules updated while the program runs. No reinstalling, no queues at the upgrade counter.</p><div class="fine">As demonstrated by the Tau team, March 2025.</div></div>
+    </div>
+  </div>
+</div>`,
+/* ---------------- 4 THE QUIET YEARS + OBITUARIES ---------------- */
+`<div class="pg">
+  <div class="rh"><span>Page 4</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
+  <div class="banner sm">In the workshop: four quiet years and one great equation</div>
+  <div class="grid">
+    <div class="u s4">
+      <div class="kick">2019 to 2022</div>
+      <h2>Lean Seasons, Hard Mathematics</h2>
+      <div class="c2"><p class="dc ni">Monthly progress reports began in May 2019, and they were candid. The older films, the team said, were outdated: “the new Tau is very different”. The work had moved to TML, a logic language built on decision diagrams, and to a minimal platform for discussion.</p>
+      <p>The seasons were not all kind. In September 2019 the exchange OpenLedger delisted the AGRS token for low trading volume, and the team went looking for other venues. A video consultation app, Agoras Live, was announced, delayed, renamed Tau Live and in August 2023 paused so that every hand could work on the core.</p>
+      <p>Meanwhile the foundations were being poured. In August 2020 Ohad Asor and Professor Avishai Carmi published the white paper that would guide the following years. In August 2021 Asor reported a complete method for solving systems of Boolean equations over any Boolean algebra. It reads like a footnote. It is the root of today’s Tau Language.</p>
+      <p>In June 2022 the website moved from idni.org to tau.net, and the team separated TML, a tool, from the new Tau Language, which can speak about its own sentences and about time. A language that can describe its own rules is what a chain needs if it is to change them safely.</p></div>
+      <div class="box"><p><b>FROM THE MAILBAG, FEBRUARY 2021.</b> A reader named Victor asked whether Agoras would need proof of stake for its security. The answer: whether Tau will run on proof of stake <i>“will be up by the users, so the consensus can change over time according to whatever the users desire it to be.”</i> Five and a half years later, on Testnet Alpha, the users did exactly that. <i>See Page 1.</i></p></div>
+    </div>
+    <div class="u s2 rl obit">
+      <h3>Obituaries</h3>
+      <p class="center small" style="text-indent:0"><i>The paper notes with respect the passing of the following plans, each of which served its time.</i></p>
+      <p><b>Zennet, as a project of its own</b> 2014 to 2015. The shared supercomputer. Survived by Agoras, in which it lives on as one kind of market.</p>
+      <p><b>Agoras Live, later Tau Live</b> 2020 to 2023. Video consultations paid in crypto. Paused so the core could grow.</p>
+      <p><b>TML, as the foundation</b> Until 2022. Succeeded by the Tau Language, a more capable heir.</p>
+      <p><b>Qtum, Solana and Polkadot, as a base</b> Courted from 2023 to 2024 and politely declined. Tau built its own node.</p>
+      <p><b>The Z3 solver</b> Retired July 2025, replaced by the swifter CVC5.</p>
+      <p><b>The Internet of Languages</b> A plan to let users add new languages. Laid to rest in August 2026: the Tau Language does it better.</p>
+      <p class="center small"><i>No flowers. Donations to the testnet in the form of nodes.</i></p>
+    </div>
+  </div>
+</div>`,
+/* ---------------- 5 THE LANGUAGE ---------------- */
+`<div class="pg">
+  <div class="rh"><span>Page 5</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
+  <div class="banner sm">A language that speaks of itself is set loose on GitHub</div>
+  <div class="grid">
+    <div class="u s4">
+      <div class="kick">2023 to 2024</div>
+      <h2>The Tau Language, Alpha, Goes Public</h2>
+      <div class="deck">Its author says the first real demonstration will be the testnet itself</div>
+      <div class="c2"><p class="dc ni">On the 15th of November, 2024, the Tau Language was released to the public on GitHub in an alpha edition. It is an unusual language. Most programming languages tell a computer what to do. The Tau Language describes what must be true, now and in every future step, and a solver works out how.</p>
+      <p>The groundwork had been laid in the year before. In June 2023 work began on Tau’s own chain, with the stated aim that any part of the blockchain be written in logic and changeable with every new block. In November 2023 the testnet plan was set down: start minimal and let the users define what a valid block is.</p>
+      <p>The team considered building on Qtum, then looked at Solana, Aptos and the Polkadot SDK during 2024, and in the end chose to build its own node. Along the way came a provisional patent on unique user identification, the release of the Tau parser, and in December 2023 a place in Nvidia’s Inception programme.</p>
+      <p>In May 2024 Asor recorded eight lectures on atomless Boolean algebras, the logic underneath the language. Readers of a mathematical disposition will find them on the Tau channel. Readers of every other disposition are advised that the testnet is the friendlier introduction.</p></div>
+    </div>
+    <div class="u s2 rl">
+      <h3>Ask the Logician</h3>
+      <p class="ni"><b>Q.</b> What does “decidable” mean, and why should I care?</p>
+      <p class="ni"><b>A.</b> It means the machine can always answer a question about your rules with a yes or a no, and never hang forever. That is why a Tau chain can check a proposed rule against all the rules in force before it applies, every time.</p>
+      <p class="ni"><b>Q.</b> And “speaks of itself”?</p>
+      <p class="ni"><b>A.</b> The language can treat its own sentences as things to reason about. A rule can be about other rules, including the rule for changing rules.</p>
+      <div class="ad"><div class="t">Now in Alpha</div><p>THE TAU LANGUAGE. Say what must be true; let the solver find the way. Free to all comers.</p><div class="fine">github.com/IDNI/tau-lang</div></div>
+    </div>
+    <div class="u full rt">
+      <div class="box"><h3>Specimen of the New Law-Writing</h3>
+        <div class="grid" style="grid-template-columns:3fr 2fr">
+          <div class="u"><p class="ni wire" style="white-space:pre-line">always (
+  o6[t] = i10[t]  &amp;&amp;
+  o7[t] = { 1 }
+)</p></div>
+          <div class="u rl"><p class="ni small">From the consensus rule of the testnet, in its simplest form. Read aloud: <i>at every step, a block is valid exactly when its signature checks out, and every authorised proposer may seal.</i> Change these lines by vote, and the network changes how it agrees.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`,
+/* ---------------- 6 2025 DISPATCHES ---------------- */
+`<div class="pg">
+  <div class="rh"><span>Page 6</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
+  <div class="banner sm">Twelve months, one network: telegrams from the builders’ yard</div>
+  <div class="grid">
+    <div class="u s3 wire">
+      <div class="kick">By wire · the year 2025</div>
+      <p><b>JAN</b> CORE RULES OF TESTNET NOW WRITTEN AS TAU SPECIFICATIONS STOP ABOUT THIRTY PER CENT OF TESTNET IN TAU STOP SAME INPUTS GIVE SAME OUTPUTS STOP</p>
+      <p><b>MAR</b> POINTWISE REVISION WORKS STOP RUNNING PROGRAM ACCEPTS UPDATES AND MERGES THEM CONSISTENTLY FOR NEXT STEP STOP THIS IS HOW RULES WILL CHANGE STOP</p>
+      <p><b>APR</b> UNITED STATES PATENT GRANTED STOP NODE DESIGN FIXED STOP WRAPPER TALKS TO TAU ONLY THROUGH INPUT AND OUTPUT STREAMS STOP</p>
+      <p><b>MAY</b> EVERY TRANSACTION NOW JUDGED BY TAU STOP VALID ONES WAIT IN MEMPOOL STOP</p>
+      <p><b>JUN</b> ROADMAP OF TWELVE MILESTONES STOP CONSOLE WALLET STOP ONE TRANSACTION MAY CARRY RULES AND TRANSFERS TOGETHER STOP</p>
+      <p><b>JUL</b> BLOCKS PRODUCED AND STORED STOP HASH LINKED WITH MERKLE ROOTS STOP SOLVER CHANGED FROM Z3 TO CVC5 STOP</p>
+    </div>
+    <div class="u s3 rl wire">
+      <div class="kick">continued</div>
+      <p><b>AUG</b> NODE REBUILDS ITS STATE FROM HISTORY ON START STOP NUMBERS OF ANY BIT WIDTH STOP</p>
+      <p><b>SEP</b> PEER TO PEER NETWORKING BY LIBP2P STOP ANDROID WALLET THAT CAN SEND TAU RULES STOP</p>
+      <p><b>OCT</b> FROM ONE NODE TO A NETWORK STOP SIX TAU PROTOCOLS STOP SYNC RUNS HANDSHAKE HEADERS BLOCKS STATE THEN GOSSIP STOP</p>
+      <p><b>NOV</b> TESTNET CODE OPENED TO THE PUBLIC STOP REPOSITORY TAU-TESTNET STOP NODES KEEP THEIR IDENTITY STOP</p>
+      <p><b>DEC</b> FIRST PROOF OF AUTHORITY BLOCKS STOP BLS SIGNATURES STOP EVERY BLOCK SIGNED WITH A STATE HASH STOP HAPPY NEW YEAR STOP</p>
+      <p class="center" style="margin-top:.8em">· · ·</p>
+    </div>
+    <div class="u s4 rt">
+      <h2 class="l">The Trick That Makes It Possible</h2>
+      <div class="c2"><p class="ni dc">Of all the year’s telegrams, March’s is the one to frame. Pointwise revision is the method by which a running Tau program receives a stream of updates and folds what is written there, consistently, into the program for the very next step.</p>
+      <p>Picture a train whose timetable can be revised while it runs, and which arrives at the next station already obeying the new one, without stopping, without being rebuilt, and without two carriages following different timetables. That is a rule change on Tau.</p>
+      <p>Everything else in 2025 was the railway around that train: transactions, blocks, storage, networking, signatures. By December the pieces ran together on a public network.</p></div>
+    </div>
+    <div class="u s2 rl rt">
+      <figure class="photo"><img src="img/hud-core.jpg" width="700" height="574" style="height:auto;aspect-ratio:700/574" alt="Halftone photograph of the chain core on the Tau HUD"><figcaption><b>A night view of the core.</b> A sealed block glows at the centre; validators and nodes ride the rings. Photographed on the Tau HUD.</figcaption></figure>
+    </div>
+  </div>
+</div>`,
+/* ---------------- 7 2026 ---------------- */
+`<div class="pg">
+  <div class="rh"><span>Page 7</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
+  <div class="banner sm">The year the users took the wheel</div>
+  <div class="grid">
+    <div class="u s4">
+      <div class="kick">2026 · a chronicle</div>
+      <h2>From “The Demo” to Programmable Money</h2>
+      <div class="c2"><p class="dc ni">January opened with a promise kept: every block now records the exact snapshot of rules it ran under, so a newcomer node can check the state hash instead of replaying all of history. In February the team gave the year its motto. Testnet Alpha, they said, <i>is</i> the demo.</p>
+      <p>April brought fork choice and reorganisations, one canonical chain, and user-defined policy checks beside the built-in ones. In May came the decisive step. Consensus was moved out of Python and into Tau logic, so that the users could change it with rules, and a developer command line arrived for nodes, keys and votes.</p>
+      <p>In August the users did change it. They voted their way from a fixed validator list to stake and back, without redeploying a node. The validator list itself now lives in Tau logic.</p>
+      <p>September was declared the product phase: a simple wallet mode with rule templates and sharing, and two more patents granted. In October, co-signed transfers arrived, large payments that need several approvals, with deadlines counted in blocks that no clock can fake. One commonly used specification now loads in 2.4 seconds where it once took 68.</p>
+      <p>Mainnet and the real Agoras coin are still ahead. The road, for once, is visible.</p></div>
+    </div>
+    <div class="u s2 rl">
+      <h3>Speak Plainly, and the Chain Will Write It Down</h3>
+      <p class="ni">The wallet’s build mode, shown in July, lets a user describe a rule in ordinary English. An agent writes it in Tau, the user signs it, and it is proposed and accepted like any other.</p>
+      <div class="q">“It takes what you say in plain English and turns it into Tau language. And then Tau does the rest.”<small>Tau team, July 2026 Q&amp;A</small></div>
+    </div>
+    <div class="u full rt">
+      <div class="kick">Science</div>
+      <h2>Machines at the Ballot Box</h2>
+      <div class="c3"><p class="ni dc">In June the testnet was put through an unusual trial. The team built, in its own words, <i>“a full agent swarm, each agent having its own identity, guardrails, and goals”</i>, and set it loose on the network as users and as validators.</p>
+      <p>The agents proposed rules, voted on them and sent money to one another, as realistically as the engineers could arrange. A guard agent inspected their proposals before they went further.</p>
+      <p>Two lessons came out of it. The network held up under the strain, and governance became accountable: every rule on the chain can now be traced back to who proposed it and how it was approved.</p>
+      <p>It is a glimpse of what Tau was always meant to be: a place where people, and the machines working for them, state what they want in a language that can be checked.</p>
+      <p>Whether the voters of the future are men, women or machines, the rulebook stays one, and so does the chain.</p></div>
+    </div>
+  </div>
+</div>`,
+/* ---------------- 8 CIVICS + LETTERS ---------------- */
+`<div class="pg">
+  <div class="rh"><span>Page 8</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
+  <div class="banner sm">How a law is made on Tau</div>
+  <div class="grid">
+    <div class="u full diag">
+      <svg viewBox="0 0 760 150" aria-label="Propose, check, agree, law">
+        <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#1b1813"/></marker></defs>
+        <g font-size="14" text-anchor="middle">
+          <circle cx="80" cy="56" r="40" fill="none" stroke="#1b1813" stroke-width="1.6"/><text x="80" y="52" font-size="26" font-weight="700">I</text><text x="80" y="72" font-size="12" letter-spacing="2">PROPOSE</text>
+          <circle cx="280" cy="56" r="40" fill="none" stroke="#1b1813" stroke-width="1.6"/><text x="280" y="52" font-size="26" font-weight="700">II</text><text x="280" y="72" font-size="12" letter-spacing="2">CHECK</text>
+          <circle cx="480" cy="56" r="40" fill="none" stroke="#1b1813" stroke-width="1.6"/><text x="480" y="52" font-size="26" font-weight="700">III</text><text x="480" y="72" font-size="12" letter-spacing="2">AGREE</text>
+          <circle cx="680" cy="56" r="40" fill="#1b1813"/><text x="680" y="52" font-size="26" font-weight="700" fill="#efe5cf">IV</text><text x="680" y="72" font-size="12" letter-spacing="2" fill="#efe5cf">LAW</text>
+          <line x1="124" y1="56" x2="234" y2="56" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar2)"/><line x1="324" y1="56" x2="434" y2="56" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar2)"/><line x1="524" y1="56" x2="634" y2="56" stroke="#1b1813" stroke-width="1.5" marker-end="url(#ar2)"/>
+          <text x="80" y="118" font-style="italic" font-size="13">a rule, written in Tau,</text><text x="80" y="134" font-style="italic" font-size="13">sent as a transaction</text>
+          <text x="280" y="118" font-style="italic" font-size="13">compiled against the law</text><text x="280" y="134" font-style="italic" font-size="13">in force; contradictions out</text>
+          <text x="480" y="118" font-style="italic" font-size="13">the users vote; enough</text><text x="480" y="134" font-style="italic" font-size="13">yes votes and it is agreed</text>
+          <text x="680" y="118" font-style="italic" font-size="13">in force for every node</text><text x="680" y="134" font-style="italic" font-size="13">at the block named ahead</text>
+        </g>
+      </svg>
+    </div>
+    <div class="u full rt"><div class="kick">Correspondence</div><h2>Letters to the Editor</h2><p class="center small" style="text-indent:0"><i>Drawn from questions readers sent to the Tau team’s monthly Q&amp;A, with the team’s replies, lightly trimmed.</i></p></div>
+    <div class="u s3">
+      <p class="ni"><b>SIR,</b> is governance private on chain, and are trusted third parties required for the network to work? <i>Levan</i></p>
+      <p class="ni small"><b>Reply:</b> Not private at the start, though the users can make it so if they want. Trusted third parties are not necessary. “The governance is highly flexible in that users can specify what the system should function like and the system updates itself.” <i>(January 2026)</i></p>
+      <hr class="rule2">
+      <p class="ni"><b>SIR,</b> does a Tau blockchain require one global account state, or could it use the fragmented model that scales better? <i>Phillip</i></p>
+      <p class="ni small"><b>Reply:</b> “We will start with the global account state, but in principle there shouldn’t be any problem for the users to change it.” <i>(January 2026)</i></p>
+    </div>
+    <div class="u s3 rl">
+      <p class="ni"><b>SIR,</b> is the current work only a bounded fragment of the vision? What is left before mainnet? <i>Kurosawa</i></p>
+      <p class="ni small"><b>Reply:</b> “The core vision is already implemented in the Tau language. And in the blockchain. Now, of course, there is a lot to improve, but it is already there and already working.” <i>(August 2026)</i></p>
+      <hr class="rule2">
+      <p class="ni"><b>SIR,</b> when will the Tau Language reach a version one with tables and arithmetic mature enough for real developers? <i>Kudo Sara</i></p>
+      <p class="ni small"><b>Reply:</b> The core is almost feature complete and arithmetic is live. Next come the full set of temporal logic quantifiers, then tables. <i>(July 2026)</i></p>
+    </div>
+    <div class="u s2 rt">
+      <p class="ni"><b>SIR,</b> is censorship possible in a system like Tau? <i>Bobby</i></p>
+      <p class="ni small"><b>Reply:</b> \u201cIf the users decide that something will happen, then this thing will happen. That\u2019s the whole point.\u201d <i>(January 2023)</i></p>
+    </div>
+    <div class="u s2 rl rt">
+      <p class="ni"><b>SIR,</b> the papers are full of quantum computers cracking keys. How will Tau cope? <i>Agoras Tau</i></p>
+      <p class="ni small"><b>Reply:</b> In the short term by never reusing addresses and keys; in the long term by moving to post-quantum signatures. <i>(June 2026)</i></p>
+    </div>
+    <div class="u s2 rl rt">
+      <p class="ni"><b>SIR,</b> could Tau become the communication layer for networks of AI agents? <i>Smick</i></p>
+      <p class="ni small"><b>Reply:</b> Yes, \u201cbut not as a wire that carries chatter, but as the layer where agents agree on what\u2019s true and what\u2019s allowed.\u201d <i>(June 2026)</i></p>
+    </div>
+  </div>
+</div>`,
+/* ---------------- 9 TODAY + CLASSIFIEDS ---------------- */
+`<div class="pg">
+  <div class="rh"><span>Page 9</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
+  <div class="banner sm">Today on the testnet</div>
+  <div class="grid">
+    <div class="u s4">
+      <div class="kick">From our correspondent at the node</div>
+      <h2>A Public Chain, Open to Any Spectator</h2>
+      <div class="c2"><p class="dc ni">Testnet Alpha runs in the open, and your correspondent has a seat in the gallery. Tau HUD keeps its own node on the network beside the bootnode of IDNI, the company behind Tau, and prints what it sees.</p>
+      <p>At the moment a single validator, run by IDNI, seals every block, roughly one every eight seconds. Users propose rule changes as transactions; the proposals gather votes and, once agreed, wait for the block at which they take effect. The HUD shows them coming, counts down to them and lights the ring when they land.</p>
+      <p>For the quiet hours there is a simulation that follows the same protocol, with a scheduled event every hour and a change of consensus twice a day. It is marked in amber wherever it appears, so that nobody mistakes the rehearsal for the play.</p>
+      <div class="box wire"><p class="ni" id="wire1">{{WIRE}}</p></div></div>
+    </div>
+    <div class="u s2 rl">
+      <h3>Where to Watch</h3>
+      <div class="watch">
+        <p><a href="/" data-noflip>The chain core, live</a> <i>tauhud.com</i></p>
+        <p><a href="/proposals/" data-noflip>Rule changes and votes</a> <i>/proposals</i></p>
+        <p><a href="/explorer/" data-noflip>Every block and transaction</a> <i>/explorer</i></p>
+        <p><a href="/history/" data-noflip>Time travel through blocks</a> <i>/history</i></p>
+        <p><a href="/playground/" data-noflip>Write a rule yourself</a> <i>/playground</i></p>
+        <p><a href="/chronicle/" data-noflip>The full chronicle</a> <i>/chronicle</i></p>
+      </div>
+      <div class="ad inv"><div class="t">Telegraph Service</div><p>Every agreed rule change, every activation, every new node, delivered to your pocket the moment it happens.</p><p><a href="https://t.me/tauHUDcom" target="_blank" rel="noopener" data-noflip>t.me/tauHUDcom</a></p></div>
+    </div>
+    <div class="u full rt"><h3 style="text-align:left;border-bottom:1px solid;padding-bottom:.2em">Classified Advertisements</h3></div>
+    <div class="u s2 cls">
+      <p><b>Wanted.</b> Node operators of steady habits. Run a Tau node and appear on our orbit within thirty minutes. Kit and instructions at <a href="/nodes/" data-noflip>tauhud.com/nodes</a>.</p>
+      <p><b>Situation wanted.</b> Validator, punctual, signs every block, seeks a seat. Will abide by any rule the network agrees.</p>
+    </div>
+    <div class="u s2 rl cls">
+      <p><b>Lost.</b> One hard fork. Not missed. Finder may keep it.</p>
+      <p><b>Notice.</b> Testnet AGRS carry no value whatever. Do not exchange them for your grandmother’s silver.</p>
+      <p><b>For the curious.</b> Propose a rule and watch the chain accept or refuse it, safely, at the <a href="/playground/" data-noflip>Playground</a>.</p>
+    </div>
+    <div class="u s2 rl cls">
+      <p><b>Personal.</b> To the forum member HunterMinerCrafter: the idea you raised in 2014 has come a long way. What runs today is a different design, but it started with that conversation. Do drop by.</p>
+      <p><b>Builders.</b> The testnet code is public. Write to the team through their GitHub; four community pull requests were merged in October alone.</p>
+    </div>
+    <div class="u full rt"><div class="box"><div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+      <div class="u"><h3>The Almanac</h3><p class="ni small">At eight seconds a block the testnet seals about 450 blocks an hour and some 10,800 a day. A rule agreed today is usually set to take effect a fixed number of blocks ahead, so everybody knows the hour in advance.</p></div>
+      <div class="u rl"><h3>Rehearsal Timetable</h3><p class="ni small">In the simulation a special rule change is proposed at twenty past every hour and lands at half past. Consensus changes to proof of stake at 10:30 UTC and back to the fixed list at 16:30 UTC. The rehearsal starts afresh at midnight.</p></div>
+      <div class="u rl"><h3>A Word of Caution</h3><p class="ni small">Tau HUD is an unofficial community project and not affiliated with IDNI. It reads the public testnet and reports what it sees. Where the two disagree, the chain is right and this paper is wrong.</p></div>
+    </div></div></div>
+  </div>
+</div>`,
+/* ---------------- 10 AMUSEMENTS ---------------- */
+`<div class="pg">
+  <div class="rh"><span>Page 10</span><span class="nm">{{NAME}}</span><span>{{DATE}}</span></div>
+  <div class="banner sm">Amusements for the logical mind</div>
+  <div class="grid">
+    <div class="u s3">
+      <h3>The Puzzle of the Three Validators</h3>
+      <p class="ni">On a certain chain a rule change needs <i>more than half</i> of the three validators. Ada votes yes. Cleo always votes the way Ada votes. Bram always votes against Cleo, on principle. Does the change pass?</p>
+      <div class="ups"><p><b>Answer.</b> Yes. Ada and Cleo vote yes, Bram no: two of three is more than half. Bram is advised to find a new principle.</p></div>
+    </div>
+    <div class="u s3 rl">
+      <h3>Contradiction Corner</h3>
+      <p class="ni">Three proposals reach a Tau chain on the same day. Which one is refused at the door?</p>
+      <p class="ni small">(a) Transfers above 1,000 AGRS need two signatures.<br>(b) The base fee is always 6.<br>(c) The base fee is always 7, while (b) is in force.</p>
+      <div class="ups"><p><b>Answer.</b> (c). It contradicts (b), so the compile check refuses it before any vote. Proposals (a) and (b) fit together.</p></div>
+    </div>
+    <div class="u full rt gl"><h3 style="text-align:left">A Glossary for New Readers</h3>
+      <div class="c3"><p><b>Agoras.</b> The planned market on top of Tau, and its coin, AGRS. The real coin comes with mainnet.</p>
+      <p><b>Block.</b> A sealed page of the chain\u2019s ledger. On Tau each records the rules it ran under.</p>
+      <p><b>Bootnode.</b> The first node a newcomer calls to find the rest of the network.</p>
+      <p><b>Consensus.</b> The rule for who may seal blocks and when they count. On Tau, itself a rule.</p>
+      <p><b>Hard fork.</b> A rule change by new software. Splits the chain if some refuse it.</p>
+      <p><b>Mempool.</b> The waiting room of transactions not yet in a block.</p>
+      <p><b>Pointwise revision.</b> Folding a rule update into a running program for its next step.</p>
+      <p><b>Proposal.</b> A rule change sent as a transaction, to be checked and voted on.</p>
+      <p><b>Validator.</b> A node trusted to seal blocks and to vote on proposals.</p></div>
+    </div>
+    <div class="u s4 rt">
+      <h2 class="l">Coming Attractions</h2>
+      <div class="c2"><p class="ni dc">The programme ahead, as announced by the team: tables and abstract data types for the language; the merge of the development branch before the next release; a simple wallet in which rules are written in plain words; and in time, the mainnet and the real Agoras coin, with its markets for computing power, knowledge and expert advice.</p>
+      <p>Your paper cannot promise dates, and neither does the team. But it can promise this: when the next rule changes on Testnet Alpha, Tau HUD will be watching, and so may you.</p></div>
+      <div class="coupon"><div class="t">Clip and Keep</div><p>Watch the chain live at <b>tauhud.com</b> · Alerts at <b>t.me/tauHUDcom</b> · Try a rule at <b>tauhud.com/playground</b> · Read Tau’s own words at <b>tau.net</b></p></div>
+    </div>
+    <div class="u s2 rl rt">
+      <div class="ad"><div class="t">Tau HUD</div><p>Twelve instruments for watching a chain that changes its own rules. Free of charge. Open source.</p><div class="fine">Kept running by time, tools and a modest server.</div></div>
+      <p class="ni small" style="margin-top:.6em"><b>THE COLOPHON.</b> {{NAME}} is printed by Tau HUD, an unofficial community project, not affiliated with IDNI. Facts are drawn from the Tau team’s public videos, posts and papers; quotations from video captions are lightly cleaned. Advertisements, puzzles and the weather are offered in fun.</p>
+    </div>
+  </div>
+</div>`
+  ]
+};
+</script>
+<script>
+"use strict";
+(() => {
+  const ED = (window.TauI18n && TauI18n.lang === "zh" && window.GAZETTE_ZH) || EN;
+  const UI = ED.ui;
+  const $ = id => document.getElementById(id);
+  const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const desk = $("desk"), stage = $("stage"), scaler = $("scaler"), book = $("book");
+  const touch = matchMedia("(pointer: coarse)").matches;
+  const today = ED.date(new Date());
+  let HEIGHT = null, AGE = null, WIRE = UI.wireWait;
+  const fill = html => html.replaceAll("{{NAME}}", ED.name).replaceAll("{{MOTTO}}", ED.motto).replaceAll("{{DATE}}", today)
+    .replaceAll("{{HEIGHT}}", HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—").replaceAll("{{WIRE}}", WIRE);
+
+  /* ----- pages for each edition ----- */
+  const tpl = document.createElement("template");
+  const broadPages = () => ED.pages.map(fill);
+  /* pocket: the stories in reading order at true type size, flowed over as many small pages as they need;
+     a story that does not fit continues on the next page, and a heading never stays alone at the foot of one */
+  function pocketPages(W, H) {
+    const out = [], host = document.createElement("div");
+    host.className = "paper"; host.style.cssText = `position:fixed;left:-99999px;top:0;width:${W}px;height:${H}px;visibility:hidden;--H:${H}px`;
+    document.body.appendChild(host);
+    const HEADY = "H2, H3, .kick, .deck, .by, .banner";
+    const rh = (pi, cont) => `<div class="rh"><span>${pi === 0 ? UI.front : UI.pageN(pi + 1)}</span><span class="nm">${ED.name}</span><span>${cont ? UI.cont : ""}</span></div>`;
+    ED.pages.forEach((html, pi) => {
+      tpl.innerHTML = fill(html);
+      const src = tpl.content.querySelector(".pg"), banner = src.querySelector(".banner");
+      const units = [...src.querySelectorAll(".grid > .u")].filter(u => u.textContent.trim() || u.querySelector("svg, img"));
+      const head = pi === 0
+        ? `<div class="mast" style="grid-template-columns:minmax(0,1fr)"><div><div class="title">${ED.name}</div><div class="motto">${ED.motto}</div></div></div><div class="dateline"><span>No. ${HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—"}</span><span>${today}</span></div>`
+        : rh(pi, false);
+      let pg = null, slot = null, first = true;
+      const open = top => {
+        host.innerHTML = `<div class="pg pocket">${top}<div class="grid" style="grid-template-columns:minmax(0,1fr)"><div class="u"></div></div>${pi === 0 && first ? `<div class="stop"><b>${UI.stop}</b><span id="wire0">${WIRE}</span></div>` : ""}</div>`;
+        pg = host.firstElementChild; slot = pg.querySelector(".u"); fitTitle(pg);
+      };
+      const over = () => { const g = pg.querySelector(".grid"); return pg.scrollHeight > pg.clientHeight + 1 || g.scrollHeight > g.clientHeight + 1; };
+      const close = () => { if (slot.childElementCount || (pi === 0 && first)) out.push({ html: pg.outerHTML, from: pi }); first = false; };
+      open(head + (pi === 0 ? `<div class="center" style="margin-top:.4em"><span class="extra">EXTRA</span></div>` : "") + (banner ? `<div class="banner sm">${banner.innerHTML}</div>` : "") + (pi === 0 ? `<p class="center" style="text-indent:0;font-style:italic;margin-top:.6em">${UI.coverLine}</p>` : ""));
+      units.forEach((u, ui) => {
+        u.querySelectorAll(".c2, .c3").forEach(c => c.replaceWith(...c.childNodes));
+        const kids = [...u.children];
+        const cls = [...u.classList].filter(c => !/^(s\d|rl|rt|full|u)$/.test(c));
+        if (ui > 0 && slot.childElementCount) slot.appendChild(Object.assign(document.createElement("hr"), { className: "rule2" }));
+        let box = document.createElement("div"); box.className = cls.join(" "); slot.appendChild(box);
+        const place = k => {
+          box.appendChild(k);
+          if (!over()) return;
+          /* a long paragraph is split at a word, the rest runs on over the page */
+          if (k.tagName === "P" && !k.closest(".box, .ad, .q")) {
+            const toks = [];
+            [...k.childNodes].forEach(n => n.nodeType === 3 ? n.textContent.split(/(?<=\s)/).forEach(w => w && toks.push(document.createTextNode(w))) : toks.push(n));
+            const set = c => { k.textContent = ""; toks.slice(0, c).forEach(t => k.appendChild(t.cloneNode(true))); };
+            let lo = 0, hi = toks.length;
+            while (lo < hi) { const mid = (lo + hi + 1) >> 1; set(mid); if (over()) hi = mid - 1; else lo = mid; }
+            if (lo >= 6 && toks.length - lo >= 3) {
+              set(lo); k.classList.add("cut");
+              const rest = document.createElement("p"); rest.className = (k.className.replace(/\b(dc|cut)\b/g, "") + " ni").trim();
+              toks.slice(lo).forEach(t => rest.appendChild(t));
+              close(); open(rh(pi, true));
+              box = document.createElement("div"); box.className = cls.join(" "); slot.appendChild(box);
+              return place(rest);
+            }
+            k.textContent = ""; toks.forEach(t => k.appendChild(t));
+          }
+          box.removeChild(k);
+          /* carry trailing headings over with the story they announce */
+          const carry = [k];
+          while (box.lastElementChild && box.lastElementChild.matches(HEADY)) carry.unshift(box.removeChild(box.lastElementChild));
+          if (!box.childElementCount) box.remove();
+          while (slot.lastElementChild && slot.lastElementChild.matches("hr")) slot.lastElementChild.remove();
+          close(); open(rh(pi, true));
+          box = document.createElement("div"); box.className = cls.join(" "); slot.appendChild(box);
+          carry.forEach(c => box.appendChild(c));
+        };
+        kids.forEach(place);
+      });
+      close();
+    });
+    host.remove();
+    return out;
+  }
+
+  /* ----- layout ----- */
+  const BW = 820, BH = 1150;
+  let MODE = null, PAGES = [], LEAVES = [], pos = 0, W = BW, H = BH, scale = 1;
+  function choose() {
+    const forced = store.get("gazette-edition");
+    const ctl = $("ctl"), side = getComputedStyle(ctl).flexDirection === "column";
+    const aw = desk.clientWidth - 24 - (side ? ctl.offsetWidth + 12 : 0), ah = desk.clientHeight - 16 - (side ? 0 : ctl.offsetHeight + 14);
+    const sideRoom = aw > 900 ? 140 : 0;
+    const sSpread = Math.min(ah / BH, (aw - sideRoom) / (2 * BW)), sSingleB = Math.min(ah / BH, (aw - sideRoom) / BW);
+    const minBody = 0.68;   // broadsheet only while its body type stays readable; the fit step sets it a little larger on most pages
+    let ed = forced || (sSpread >= minBody ? "broad" : (sSingleB >= minBody && aw < ah * 1.2 ? "broad" : "pocket"));
+    let spread, w, h, s;
+    if (ed === "broad") {
+      spread = aw > ah && sSpread >= Math.min(minBody, sSingleB) * 0.98; w = BW; h = BH;
+      s = spread ? sSpread : sSingleB;
+    } else {
+      /* pocket pages are printed at true size: as tall as the desk, about as wide as a book page */
+      s = 1; spread = aw - sideRoom >= 2 * 400 && aw > ah;
+      h = Math.max(220, ah);
+      w = spread ? Math.min(Math.round(h * 0.78), Math.floor((aw - sideRoom) / 2)) : Math.min(aw, aw > h ? Math.max(Math.round(h * 0.8), 600) : 600);
+    }
+    return { ed, spread, w, h, s };
+  }
+  function build(keepFrom) {
+    const m = choose();
+    const fromPage = keepFrom != null ? keepFrom : null;
+    MODE = m; W = m.w; H = m.h; scale = m.s;
+    PAGES = m.ed === "broad" ? broadPages().map((html, i) => ({ html, from: i })) : pocketPages(W, H);
+    const per = m.spread ? 2 : 1, n = Math.ceil(PAGES.length / per);
+    desk.classList.toggle("single", !m.spread);
+    book.innerHTML = "";
+    book.style.width = (m.spread ? 2 * W : W) + "px"; book.style.height = H + "px"; book.style.setProperty("--H", H + "px");
+    LEAVES = [];
+    for (let j = 0; j < n; j++) {
+      const leaf = document.createElement("div"); leaf.className = "leaf";
+      leaf.style.left = (m.spread ? W : 0) + "px"; leaf.style.width = W + "px"; leaf.style.height = H + "px";
+      const f = PAGES[j * per], b = m.spread ? PAGES[j * per + 1] : null;
+      leaf.innerHTML = `<div class="face front"><div class="paper" style="position:absolute;inset:0">${f.html}</div><div class="shade"></div></div>` +
+        `<div class="face back"><div class="paper" style="position:absolute;inset:0">${b ? b.html : `<div class="pg"></div>`}</div><div class="shade"></div></div>`;
+      leaf.addEventListener("transitionend", e => { if (e.target === leaf && e.propertyName === "transform") { leaf.classList.remove("turning"); zs(); } });
+      book.appendChild(leaf); LEAVES.push(leaf);
+    }
+    scaler.style.transform = `scale(${scale})`;
+    const bw = (m.spread ? 2 * W : W) * scale, bh = H * scale;
+    stage.style.width = bw + "px"; stage.style.height = bh + "px";
+    const ctl = $("ctl"), side = getComputedStyle(ctl).flexDirection === "column";
+    stage.style.marginLeft = (-bw / 2 - (side ? (ctl.offsetWidth + 12) / 2 : 0)) + "px";
+    stage.style.top = Math.max(8, (desk.clientHeight - (side ? 0 : ctl.offsetHeight + 14) - bh) / 2) + "px"; stage.style.marginTop = "0";
+    requestAnimationFrame(zs);
+    // land on the same story we were on
+    let p = 0;
+    if (fromPage != null) { const k = PAGES.findIndex(x => x.from === fromPage); p = k < 0 ? 0 : (m.spread ? Math.ceil(k / 2) : k); }
+    $("bEd").textContent = m.ed === "broad" ? UI.pocket : UI.broad;
+    const narrow = desk.clientWidth < 560 || side;
+    $("bPrev").textContent = narrow ? "‹" : UI.back; $("bNext").textContent = narrow ? "›" : UI.turn; $("bToc").textContent = narrow ? "☰" : UI.contents;
+    $("bToc").setAttribute("aria-label", UI.contents); sndLabel();
+    go(p, false);
+    buildToc();
+  }
+  /* the biggest type size at which the page still fits; a page never scrolls */
+  function fit(pg) {
+    if (!pg.firstElementChild) return;
+    const base = MODE.ed === "broad" ? 15 : 15; pg.style.setProperty("--fs", base + "px");
+    let lo = MODE.ed === "broad" ? 0.7 : 0.62, hi = MODE.ed === "broad" ? 1.28 : 1;
+    const ok = k => { pg.style.setProperty("--k", k); const g = pg.querySelector(".grid"); return pg.scrollHeight <= pg.clientHeight + 1 && (!g || g.scrollHeight <= g.clientHeight + 1); };
+    if (ok(hi)) return fitTitle(pg);
+    for (let i = 0; i < 9; i++) { const mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid; }
+    pg.style.setProperty("--k", lo);
+    fitTitle(pg);
+  }
+  function fitTitle(pg) {
+    const t = pg.querySelector(".title"); if (!t) return;
+    t.style.fontSize = ""; const base = parseFloat(getComputedStyle(t).fontSize);
+    for (let f = 1; t.scrollWidth > t.clientWidth + 1 && f > 0.4; f -= 0.03) t.style.fontSize = base * f + "px";
+  }
+  function zs() {
+    const n = LEAVES.length;
+    LEAVES.forEach((l, j) => {
+      const flipped = j < pos;
+      if (!l.classList.contains("turning")) l.style.zIndex = flipped ? j + 1 : n - j;
+      l.classList.toggle("gone", !MODE.spread && flipped && !l.classList.contains("turning"));
+      const far = !l.classList.contains("turning") && (j < pos - 2 || j > pos + 1);
+      l.classList.toggle("far", far);
+      if (!far && !l.dataset.fit) { l.dataset.fit = "1"; l.querySelectorAll(".pg").forEach(fit); }
+    });
+  }
+  function go(p, anim = true) {
+    const n = LEAVES.length, max = MODE.spread ? n : n - 1;
+    p = Math.max(0, Math.min(max, p)); if (anim && p === pos) return;
+    const old = pos; pos = p;
+    LEAVES.forEach((l, j) => { if (j >= Math.min(old, pos) - 2 && j <= Math.max(old, pos) + 1 && l.classList.contains("far")) { l.classList.remove("far"); if (anim) void l.offsetWidth; } });
+    LEAVES.forEach((l, j) => {
+      const flipped = j < pos, was = l.classList.contains("flipped");
+      if (flipped !== was) {
+        if (anim) { l.classList.remove("gone"); l.classList.add("turning"); l.style.zIndex = 100 + (flipped ? j : n - j); }
+        if (!anim) l.style.transition = "none";
+        l.classList.toggle("flipped", flipped);
+        if (!anim) { void l.offsetWidth; l.style.transition = ""; }
+      }
+    });
+    if (MODE.spread) book.style.transform = `translateX(${pos === 0 ? -W / 2 : pos === n && PAGES.length % 2 === 0 ? W / 2 : 0}px)`;
+    else book.style.transform = "";
+    zs();
+    if (anim && old !== pos) { sound(); hintOff(); }
+    label();
+    try { history.replaceState(null, "", location.pathname + location.search + (pos ? "#p" + (pageAt(pos) + 1) : "")); } catch (e) {}
+  }
+  const pageAt = p => MODE.spread ? Math.max(0, 2 * p - 1) : p;
+  function label() {
+    const n = LEAVES.length, max = MODE.spread ? n : n - 1;
+    let t;
+    if (MODE.spread) {
+      const a = 2 * pos - 1, b = 2 * pos;
+      const vis = [a, b].filter(i => i >= 0 && i < PAGES.length).map(i => i + 1);
+      t = vis.length === 1 && vis[0] === 1 ? UI.front : (vis.length === 1 ? UI.pageN(vis[0]) : UI.pagesN(vis[0], vis[1])) + ` ${UI.of} ${PAGES.length}`;
+    } else t = pos === 0 ? UI.front + ` · 1 ${UI.of} ${PAGES.length}` : `${UI.pageN(pos + 1)} ${UI.of} ${PAGES.length}`;
+    $("pgno").textContent = t;
+    $("bPrev").disabled = $("sPrev").disabled = pos === 0;
+    $("bNext").disabled = $("sNext").disabled = pos === max;
+  }
+  const next = () => go(pos + 1), prev = () => go(pos - 1);
+
+  /* ----- contents ----- */
+  function buildToc() {
+    const toc = $("toc");
+    toc.innerHTML = ED.toc.map((t, i) => `<button data-i="${i}"><span>${UI.tocN(i + 1)}</span>${t}</button>`).join("");
+    toc.querySelectorAll("button").forEach(b => b.onclick = e => {
+      e.stopPropagation(); const i = +b.dataset.i, k = PAGES.findIndex(x => x.from === i);
+      go(MODE.spread ? Math.ceil(k / 2) : k); toc.hidden = true; $("bToc").setAttribute("aria-expanded", "false");
+    });
+  }
+  $("bToc").onclick = e => { e.stopPropagation(); const t = $("toc"); t.hidden = !t.hidden; $("bToc").setAttribute("aria-expanded", String(!t.hidden)); };
+  $("bEd").onclick = e => { e.stopPropagation(); const cur = PAGES[pageAt(pos)] ? PAGES[pageAt(pos)].from : 0; store.set("gazette-edition", MODE.ed === "broad" ? "pocket" : "broad"); build(cur); };
+
+  /* ----- input: click/tap halves, keys, swipe ----- */
+  let down = null;
+  desk.addEventListener("pointerdown", e => { down = { x: e.clientX, y: e.clientY, t: Date.now() }; });
+  desk.addEventListener("pointerup", e => {
+    if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y; const d = down; down = null;
+    if (e.target.closest("a, button, select, .toc, .ctl, [data-noflip]")) return;
+    if (!$("toc").hidden) { $("toc").hidden = true; $("bToc").setAttribute("aria-expanded", "false"); return; }
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); return; }
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10 || Date.now() - d.t > 900) return;
+    const r = stage.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
+    if (MODE.spread) { if (pos === 0) next(); else x < 0.5 ? prev() : next(); }
+    else x < 0.3 ? prev() : next();
+  });
+  $("bNext").onclick = $("sNext").onclick = e => { e.stopPropagation(); next(); };
+  $("bPrev").onclick = $("sPrev").onclick = e => { e.stopPropagation(); prev(); };
+  addEventListener("keydown", e => {
+    if (e.target.closest && e.target.closest("input, textarea, select")) return;
+    if (document.querySelector(".tsheet:not([hidden]), #tnUpdates:not([hidden])")) return;
+    if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); next(); }
+    else if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); prev(); }
+    else if (e.key === "Home") go(0); else if (e.key === "End") go(1e9);
+  });
+
+  /* ----- hint ----- */
+  const hint = $("hint"); hint.innerHTML = touch ? UI.hintTouch : UI.hint;
+  function hintOff() { hint.classList.add("off"); }
+  setTimeout(hintOff, 6000);
+
+  /* ----- the sound of a page: filtered noise, a sweep down and a soft landing ----- */
+  let AC = null, SND = store.get("gazette-sound") !== "off";
+  const sndLabel = () => { const narrow = desk.clientWidth < 560 || getComputedStyle($("ctl")).flexDirection === "column"; $("bSnd").textContent = narrow ? (SND ? "♪" : "♪̸") : SND ? UI.sOn : UI.sOff; $("bSnd").setAttribute("aria-label", SND ? UI.sOn : UI.sOff); };
+  $("bSnd").onclick = e => { e.stopPropagation(); SND = !SND; store.set("gazette-sound", SND ? "on" : "off"); sndLabel(); };
+  function sound() {
+    if (!SND) return;
+    try {
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      const t = AC.currentTime, len = 0.75, buf = AC.createBuffer(1, AC.sampleRate * len, AC.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) { const x = i / d.length; d[i] = (Math.random() * 2 - 1) * (0.6 + 0.4 * Math.sin(x * 60 + Math.random())); }
+      const src = AC.createBufferSource(); src.buffer = buf;
+      const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.8; bp.frequency.setValueAtTime(3800, t); bp.frequency.exponentialRampToValueAtTime(900, t + len);
+      const g = AC.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.08); g.gain.exponentialRampToValueAtTime(0.05, t + 0.45); g.gain.exponentialRampToValueAtTime(0.18, t + 0.62); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      src.connect(bp).connect(g).connect(AC.destination); src.start(t); src.stop(t + len);
+    } catch (e) {}
+  }
+  sndLabel();
+
+  /* ----- the wire: the real block height from the Tau HUD relay, set into the dateline and the stop press ----- */
+  async function wire() {
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 8000);
+    try {
+      const r = await fetch("https://node.tauhud.com/api/v1/summary", { cache: "no-store", signal: ctl.signal }); if (!r.ok) throw new Error(r.status);
+      const j = await r.json(); const h = Number(j.height ?? j.tip_height);
+      if (!Number.isFinite(h)) throw new Error("no height");
+      HEIGHT = h; AGE = Number.isFinite(Number(j.last_block_age_seconds)) ? Math.round(j.last_block_age_seconds) : null;
+      WIRE = UI.wire(h.toLocaleString("en-US"), AGE);
+    } catch (e) { WIRE = UI.wireOff; }
+    clearTimeout(to);
+    document.querySelectorAll("#wire0, #wire1").forEach(el => { el.innerHTML = WIRE; const pg = el.closest(".pg"); if (pg && MODE) fit(pg); });
+    document.querySelectorAll(".dateline span:first-child").forEach(el => el.textContent = el.textContent.replace(/No\. .*$|—$/, HEIGHT != null ? "No. " + HEIGHT.toLocaleString("en-US") : "No. —"));
+  }
+
+  /* ----- start ----- */
+  const want = /^#p(\d+)$/.exec(location.hash);
+  const startFrom = () => { build(null); if (want) { const k = Math.max(0, +want[1] - 1); go(MODE.spread ? Math.ceil(k / 2) : k, false); } };
+  const ready = () => { startFrom(); wire(); setInterval(() => { if (!document.hidden) wire(); }, 60000); };
+  /* the paper's faces load only when first used; load them before measuring, and measure again if one arrives late */
+  const FACES = ["400 20px UnifrakturMaguntia", "900 20px 'Playfair Display'", "700 20px 'Playfair Display'", "italic 400 20px 'Playfair Display'", "400 20px 'Old Standard TT'", "700 20px 'Old Standard TT'", "italic 400 20px 'Old Standard TT'", "400 20px Limelight", "400 20px 'Special Elite'"].concat(window.GAZETTE_ZH && ED === window.GAZETTE_ZH ? ["900 20px 'Noto Serif SC'", "400 20px 'Noto Serif SC'"] : []);
+  const refit = () => { LEAVES.forEach(l => delete l.dataset.fit); zs(); };
+  Promise.race([Promise.all(FACES.map(f => document.fonts ? document.fonts.load(f) : 0)), new Promise(r => setTimeout(r, 3500))]).then(ready);
+  if (document.fonts) document.fonts.addEventListener("loadingdone", () => { if (MODE && MODE.ed === "broad") refit(); });
+  book.addEventListener("load", e => { if (e.target.tagName === "IMG") fit(e.target.closest(".pg")); }, true);
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const cur = PAGES[pageAt(pos)] ? PAGES[pageAt(pos)].from : 0; build(cur); }, 200); });
+})();
+</script>
+</body>
+</html>

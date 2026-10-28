@@ -5,6 +5,7 @@
 <script src="assets/i18n.js"></script>
 <script src="assets/sim.js"></script>
 <script src="assets/simvote.js"></script>
+<script src="assets/simnode.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <meta name="description" content="Unofficial community HUD for the Tau Testnet Alpha: rule changes by agreement, rule sharing, personal Tau policies, live blocks.">
@@ -373,6 +374,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 /* core */
 .core { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px; justify-items: center; }
 .core canvas { height: 100%; width: auto; max-width: 100%; max-height: 100%; aspect-ratio: 1; display: block; object-fit: contain; }
+/* your own simulated node (assets/simnode.js): a small card in the core's top-left corner, simulation only */
+.core-panel { position: relative; }
+.mynode { position: absolute; left: 14px; top: 46px; z-index: 3; }
+@media (max-width: 900px) { .mynode { position: static; margin: 0 0 8px; } }
+@media (min-width: 901px) and (max-width: 1599px) { .mynode .sn-card > span { display: none; } }   /* laptops: name and progress only, the core stays visible */
 .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: 100%; flex: 0 0 auto; }
 .readout div { text-align: center; padding: 6px 4px; border-top: 1px solid var(--hair); }
 .readout b { display: block; font: 600 22px var(--display); color: #fff; font-variant-numeric: tabular-nums; }
@@ -896,6 +902,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
 
     <article class="panel a-core core-panel">
       <h2>Chain core <small id="coreSub">next proposer —</small><button class="info" type="button" aria-label="What is this?" data-tip="The ring of diamonds is the validator set; the bright one is proposing the next block. The ringed dots on the middle ring are accounts that run their own Tau rules. The dots orbiting the core are transactions waiting in the mempool. The arc shows how close an open rule change is to the agreement it needs. Lines to the core: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle; the green line from a validator is the proposer sealing a block, and at each seal every validator’s line lights briefly as all rules flow into the block.">i</button></h2>
+      <div class="mynode" id="myNode" hidden></div>
       <div class="core">
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
@@ -1111,7 +1118,9 @@ const $ = id => document.getElementById(id);
 const hex = n => { let s = ""; const c = "0123456789abcdef"; for (let i = 0; i < n; i++) s += c[(Math.random() * 16) | 0]; return s; };
 const short = h => h ? (h.length > 14 ? h.slice(0, 6) + "…" + h.slice(-4) : h) : "—";
 /* an account address: on the live chain it links to the account page (full address in the link); in the simulation it is plain text, the accounts do not exist */
-const acct = h => !h ? "—" : S.mode === "live" && !/^0+$/.test(h) ? `<a class="acct" href="account/?a=${encodeURIComponent(h)}" title="Open account ${esc(h)}">${short(h)}</a>` : short(h);
+/* the visitor's own simulated node (assets/simnode.js), when it runs */
+const myNodeKey = () => { try { const m = window.TauSim && TauSim.on && TauSim.node && TauSim.node.get(); return m ? m.key : null; } catch { return null; } };
+const acct = h => !h ? "—" : h === myNodeKey() ? "your node" : S.mode === "live" && !/^0+$/.test(h) ? `<a class="acct" href="account/?a=${encodeURIComponent(h)}" title="Open account ${esc(h)}">${short(h)}</a>` : short(h);
 const now = () => new Date().toLocaleTimeString("de-DE", { hour12: false });
 const pick = a => a[(Math.random() * a.length) | 0];
 const hex6 = n => Math.max(0, Math.min(0xffffff, n | 0)).toString(16).padStart(6, "0");
@@ -1393,7 +1402,7 @@ async function loadLog() {
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
-  const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", "Time travel": "history/", Playground: "playground/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh" };
+  const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh" };
   let day = null, html = "";
   for (const e of order) {
     const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
@@ -1464,6 +1473,10 @@ function foldLog() {
     if (io) io.observe(tail); else { shown = all.length; reveal(); tail.remove(); }
   }
 }
+/* your own node in the simulation (assets/simnode.js): its card in the Chain core, and the orbit refreshed the moment it starts or stops */
+let MYNODE = null;   // its state, refreshed once a second (the canvas reads it every frame)
+addEventListener("DOMContentLoaded", () => { if (!window.TauSimNode) return; TauSimNode.card($("myNode")); const up = () => { MYNODE = SIMFEED() ? TauSimNode.state() : null; }; up(); setInterval(up, 1000); });
+addEventListener("tau-simnode", () => { if (S.simfeed) pollNodes(); });
 addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setInterval(() => { if (!document.hidden) pollOnline(); }, 20000); NET.timer = setInterval(() => { if (!document.hidden && (PRESENCE.up || S.simfeed)) pollNodes(); }, 60000); presenceOpen(); });
 /* a quiet presence socket to the relay: one “hello”, then only its presence pushes, so visitors in simulation count too */
 const PSOCK = { ws: null, wait: 5000, timer: null, url: "wss://node.tauhud.com" };
@@ -1999,7 +2012,7 @@ async function pollNodes() {
     const j = await (await get("/community")).json();
     const list = [];
     if (j.reference) list.push({ kind: "hud", name: "tauhud.com", height: Number(j.reference.height) || 0, head: j.reference.head || "", tip: Number(j.reference.tip) || null, agrees: true, age: 0 });
-    for (const n of Array.isArray(j.nodes) ? j.nodes : []) list.push({ kind: "kit", name: String(n.name || "node"), height: Number(n.height) || 0, head: n.head || "", agrees: n.agrees !== false, age: Number(n.age_seconds) || 0 });
+    for (const n of Array.isArray(j.nodes) ? j.nodes : []) list.push({ kind: "kit", name: String(n.name || "node"), height: Number(n.height) || 0, head: n.head || "", agrees: n.agrees !== false, age: Number(n.age_seconds) || 0, you: !!n.you });
     try {   // peers our node met or heard of in the last day (GET /peers): the bootnode is the validator, already on its orbit; kit nodes are already listed above
       const pj = await (await get("/peers")).json(), now = Date.now() / 1000, kits = new Set(list.map(n => n.name));
       for (const n of Array.isArray(pj.peers) ? pj.peers : []) {
@@ -2440,7 +2453,7 @@ function draw(tm) {
   cx.clearRect(0, 0, W, W);
   cx.save(); cx.translate(C, C);
   const cyan = "236,236,240", amber = "255,255,255";
-  CORE_HITS.length = 0; const hit = (x, y, r, fn, href) => CORE_HITS.push({ x, y, r, fn, href }); const ring = (r, w, fn, href, open) => CORE_RINGS.push({ r, w, fn, href, open });
+  CORE_HITS.length = 0; const hit = (x, y, r, fn, href, open) => CORE_HITS.push({ x, y, r, fn, href, open }); const ring = (r, w, fn, href, open) => CORE_RINGS.push({ r, w, fn, href, open });
   CORE_RINGS.length = 0;
   ring(C * .84, 16, () => `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is ${vt("building", "proposing")} the next block; a white frame around one marks a vote for the open rule change.` + vt("\nNodes that only follow and check the chain sit on the orbit inside.", `\nThe proposer rotates through the set (o7 eligibility); a vote is a consensus_rule_vote transaction.\nNon-sealing nodes sit on the orbit inside.`));
   const nodes = nodesNow(), NR = C * .77, named = nodes.filter(n => n.name);
@@ -2464,9 +2477,13 @@ function draw(tm) {
     if (got) { cx.fillStyle = `rgba(57,255,138,${got * .55})`; cx.fill(); }
     else if (liveHud) { cx.fillStyle = `rgba(57,255,138,${.10 + .22 * br})`; cx.fill(); }
     cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : liveHud ? `rgba(57,255,138,${.55 + .35 * br})` : `rgba(${cyan},${al})`; cx.shadowColor = got || liveHud ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = got ? 12 : liveHud ? 8 + 12 * br : n.kind === "hud" ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
-    if (n.name) { const label = n.kind === "hud" ? "Tau HUD" : n.name, w = cx.measureText(label).width; plate(label, x + Math.sign(x || 1) * (w / 2 + 24), y + 7, "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`); }
+    if (n.you) { cx.save(); cx.setLineDash([4, 5]); cx.lineWidth = 2; cx.strokeStyle = "rgba(57,255,138,.8)"; cx.beginPath(); cx.arc(x, y, 15, 0, Math.PI * 2); cx.stroke(); cx.restore(); }   // your own node: a green halo
+    if (n.you) plate("You · " + n.name, x, y + (y > 0 ? 44 : -26), "500 18px JetBrains Mono, monospace", "rgba(57,255,138,.9)");   // centred above or below the dot, so a long name never runs off the canvas
+    else if (n.name) { const label = n.kind === "hud" ? "Tau HUD" : n.name, w = cx.measureText(label).width; plate(label, x + Math.sign(x || 1) * (w / 2 + 24), y + 7, "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`); }
     const age = n.age ? fmtAge(n.age) + " ago" : "just now", ahead = S.height - n.height;
     const alone = S.mode === "live" && !S.simfeed && nodes.length === 1 && S.validators.length === 1;   // the whole visible network: IDNI's validator and us
+    if (n.you) { hit(x, y, 24, () => vt(`Your node “${n.name}”, simulated in your browser, at #${fmt(n.height)}.\nIt checks every block for itself and made the node orbit after 10 min on the network; it stays 30 min after its last contact.\nUnder proof of stake its stake can win a seat among the validators.\nClick to open your node.`,
+      `${n.name} (your simulated node): #${fmt(n.height)}, ${n.agrees ? "same head as the reference" : "behind the reference"}.\nListed by the 10/30 min presence rule; under eligibility_mode stake it competes for the ${TauSim.node.seats} stake seats (o7).\nClick to open your node.`), null, () => TauSimNode.open()); return; }
     hit(x, y, 24, () => n.kind === "hud"
       ? vt(`Tau HUD’s node: the node behind this page, at #${fmt(n.height)}.\nIt checks and keeps every block and serves what you see here; it seals nothing.${alone ? "\nRight now it is the only node besides IDNI’s validator: together they are the whole visible network." : ""}${S.mode === "live" && !S.simfeed ? "\nIt has applied as the second validator. " : "\n"}Click to open the Nodes page.`,
            `tauhud.com: the relay’s upstream node at #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}${n.tip ? ", network tip #" + fmt(n.tip) : ""}.\nServes this page over wss://node.tauhud.com (getblocks, getmempool, getgovernance); verifies every block, seals none.${alone ? "\nOnly node besides the IDNI validator (PoA, validator_set mode): the two are the whole visible network right now." : ""}${S.mode === "live" && !S.simfeed ? "\nValidator seat requested (BLS key submitted to IDNI). " : "\n"}Click to open the Nodes page.`)
@@ -2548,10 +2565,24 @@ function draw(tm) {
     if (voted) { cx.strokeStyle = `rgba(${amber},.95)`; cx.lineWidth = 3; cx.strokeRect(-s, -s, s * 2, s * 2); }
     cx.restore();
     const idni = S.mode === "live" && !S.simfeed && V === 1;   // the live testnet has one validator: IDNI's bootnode
-    plate((idni ? "IDNI" : "V" + (i + 1)) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
-    hit(x, y, 40, () => vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."));
+    const yours = v === myNodeKey();   // the visitor's own simulated node, seated by its stake under proof of stake
+    plate((idni ? "IDNI" : yours ? "You" : "V" + (i + 1)) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
+    hit(x, y, 40, () => (yours ? vt("Your node, sealing by stake: under proof of stake the six largest stakes take turns, and yours is one of them.\nClick to open your node.\n", `Your simulated node ${short(v)}: one of the ${TauSim.node.seats} largest stakes (o7 eligibility by stake).\nClick to open your node.\n`) : "") + vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."), null, yours ? () => TauSimNode.open() : null);
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
+
+  // your own simulated node, once its stake wins a seat under proof of stake: a green-framed diamond on the validator orbit, in the gap after the second validator (clear of the status card top left)
+  if (MYNODE && MYNODE.seat && !S.validators.includes(MYNODE.key)) {
+    const a = -Math.PI / 2 + .35 + (V > 1 ? 1.5 : .5) * Math.PI * 2 / V, x = Math.cos(a) * vr, y = Math.sin(a) * vr, on = (S.blocks[S.blocks.length - 1] || {}).proposer === MYNODE.key;
+    cx.save(); cx.translate(x, y); cx.rotate(Math.PI / 4);
+    cx.fillStyle = on ? "rgba(57,255,138,1)" : `rgba(${cyan},.85)`; cx.shadowColor = "rgb(57,255,138)"; cx.shadowBlur = on ? 36 : 14;
+    const s = on ? 30 : 22; cx.fillRect(-s / 2, -s / 2, s, s); cx.strokeStyle = "rgba(57,255,138,.9)"; cx.lineWidth = 2; cx.strokeRect(-s, -s, s * 2, s * 2);
+    cx.restore();
+    plate("You", x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", "rgba(57,255,138,.9)");
+    hit(x, y, 40, () => vt(`Your node “${MYNODE.name}”, sealing by stake.\nUnder proof of stake the six largest stakes take turns sealing, and yours ranks #${MYNODE.rank}: ${fmt(MYNODE.sealed)} block${MYNODE.sealed === 1 ? "" : "s"} sealed today.${on ? "\nGreen: it sealed the newest block." : ""}\nClick to open your node.`,
+      `${MYNODE.name} (your simulated node) ${short(MYNODE.key)}: stake ${fmt(MYNODE.stake)} AGRS, rank #${MYNODE.rank}, eligible under eligibility_mode stake (o7).\n${fmt(MYNODE.sealed)} sealed today${MYNODE.lastSeal ? ", last #" + fmt(MYNODE.lastSeal) : ""}.\nClick to open your node.`), null, () => TauSimNode.open());
+    if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
+  }
 
   // synthesis: at every seal, the rules of all validators and all rule-holding accounts flow into the block
   if (S.pulse > 0) {
