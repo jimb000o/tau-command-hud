@@ -42,6 +42,7 @@
   --ok: #39ff8a;            /* the one accent: phosphor green for data and truth */
   --behind: #ffb13b;        /* one exception, Kilian 26 Oct: live but not synced with the real chain */
   --bad: #ff4d6d;
+  --refused: #e5484d;       /* "Tau said no": a muted red for what the rules refused, as on the Playground; bright red stays for offline */
   --dim: #7f7f8a;
   --text: #ebebee;
   --brand: linear-gradient(90deg, #ffffff 0%, #b8b8c2 100%);
@@ -135,7 +136,7 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .detail ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 .detail li { overflow-wrap: anywhere; padding: 6px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); font-size: 12px; }
 .detail li.ok { border-left-color: var(--ok); }
-.detail li.rej { border-left-color: #fff; }
+.detail li.rej { border-left-color: var(--refused); } .detail li.rej b { color: var(--refused); }
 .detail .key { color: var(--dim); font-family: var(--mono); }
 .detail .copy { margin-left: 8px; font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; background: transparent; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 2px 8px; cursor: pointer; }
 .detail .copy:hover { background: #fff; color: #000; }
@@ -150,11 +151,11 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .tx[data-detail]:hover::after, .offer[data-detail]:hover::after, .upd[data-detail]:hover::after { opacity: 1; }
 .detail .checks { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
 .detail .checks i { font: 11px var(--mono); font-style: normal; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--ok); }
-.detail .checks i.bad { color: #fff; border-color: rgba(255,255,255,.5); }
+.detail .checks i.bad { color: var(--refused); border-color: rgba(229,72,77,.55); }
 .detail .checks i.warn { color: var(--amber); }
 .detail .checks i.off { color: var(--dim); }
 .detail .verdict-line { margin: 8px 0 0; padding: 8px 8px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 400 13px var(--display); color: #fff; }
-.detail .verdict-line.bad { border-left-color: #fff; background: rgba(255,255,255,.07); }
+.detail .verdict-line.bad { border-left-color: var(--refused); background: rgba(229,72,77,.08); }
 .detail .lead { font: 400 15px/1.4 var(--display); color: #fff; margin: 0 0 6px; }
 .btn.state { border-color: rgba(255,255,255,.5); color: #fff; }
 .grid { display: grid; gap: 8px; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr);
@@ -382,13 +383,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 /* tx feed */
 .feed { display: grid; gap: 6px; align-content: start; }
 .tx { display: grid; gap: 3px; padding: 6px 8px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--cyan); animation: slidein .45s ease-out; min-width: 0; }
-.tx.rej { border-left-color: #fff; }
+.tx.rej { border-left-color: var(--refused); }
 .tx.gov { border-left-color: var(--amber); }
 .tx.mined { opacity: .55; }
 .tx .top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--dim); }
 .tx .top em { font-style: normal; color: var(--cyan); letter-spacing: .08em; text-transform: uppercase; }
 .tx.gov .top em { color: var(--amber); }
-.tx.rej .top em { color: #fff; }
+.tx.rej .top em { color: var(--refused); }
 .tx .mid { font-size: 12px; overflow-wrap: anywhere; }
 .acct { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--hair); }
 .acct:hover { color: #fff; border-bottom-color: var(--ok); }
@@ -498,9 +499,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .prov a { color: var(--dim); text-decoration: none; border-bottom: 1px dotted var(--hair); flex: 0 0 auto; }
 .prov a:hover { color: #fff; border-color: #fff; }
 .rejchip { margin-left: 8px; font: 400 11px var(--mono); letter-spacing: .04em; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; cursor: pointer; vertical-align: 1px; white-space: nowrap; flex: 0 0 auto; align-self: center; }
-.rejchip.some { color: #fff; border-color: rgba(255,255,255,.45); }
-.rejchip[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
-.rejchip.some { color: #fff; border-color: rgba(255,255,255,.6); }
+.rejchip[aria-pressed="true"] { background: var(--refused); color: #fff; border-color: var(--refused); }
+.rejchip.some { color: var(--refused); border-color: rgba(229,72,77,.6); }
 #feed.only-rej .tx:not(.rej) { display: none; }
 .rw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
 .panel .sub { margin: -6px 0 8px; color: var(--dim); font-size: 11px; }
@@ -554,7 +554,7 @@ small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .pill.voting, .pill.offered { color: var(--amber); }
 .pill.scheduled { color: var(--ok); }
 .pill.active, .pill.accepted { color: var(--ok); }
-.pill.rejected { color: #fff; }
+.pill.rejected { color: var(--refused); }
 .agree { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
 .bar { position: relative; height: 6px; background: rgba(255,255,255,.12); }
 .bar span { position: absolute; inset: 0 auto 0 0; background: #fff; box-shadow: 0 0 10px rgba(255,255,255,.35); transition: width .5s; }
@@ -565,7 +565,8 @@ small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .pips i.on { background: var(--amber); }
 .agree .num { font: 600 12px var(--display); color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .offer { display: grid; gap: 4px; padding: 8px 8px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--ok); font-size: 12px; animation: slidein .45s ease-out; }
-.offer.rejected, .offer.expired { border-left-color: var(--dim); opacity: .65; }
+.offer.expired { border-left-color: var(--dim); opacity: .65; }
+.offer.rejected { border-left-color: var(--refused); opacity: .85; }
 .o1 span:not(.pill) { color: var(--cyan-hi); }
 .o1 .arrow { color: var(--dim); }
 .o1 .pill { margin-left: auto; }
@@ -579,6 +580,7 @@ small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .clause i.k-whitelist { background: var(--ok); }
 .clause i.k-timelock { background: #c4c4cc; }
 .clause i.k-cosign { background: #6e6e78; }
+.clause.refused i { background: var(--refused); } .clause.refused span:last-child { color: var(--refused); }   /* this rule just said no to a transfer */
 .clause i.k-approval { background: #fff; }
 .clause i.k-heightlock { background: #c4c4cc; }
 .clause span:last-child { color: var(--dim); }
@@ -587,7 +589,7 @@ small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .ap i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--amber); }
 .ap.open i { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
 .ap.approved i, .ap.signed i { background: var(--ok); border-color: var(--ok); }
-.ap.declined i { border-color: #fff; background: #fff; }
+.ap.declined i { border-color: var(--refused); background: var(--refused); }
 .ap.expired i, .ap.closed i { border-color: var(--dim); }
 .ap span:last-child { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ap.open span:last-child { color: var(--amber); }
@@ -1385,7 +1387,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.46", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.47", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -1771,7 +1773,7 @@ function renderClauses() {
     return `<div class="ap ${a.status}" data-full="${esc(TIP[a.status] || "")}"><i></i><span>${acct(a.from)} → ${acct(a.to)} <b>${fmt(a.amount)} AGRS</b></span><span>${LBL[a.status] || a.status}</span></div>`;
   }).join("")}</div>` : "";
   $("clauses").innerHTML = (entries.length ? entries.slice(0, 8).map(([acc, p]) =>
-    `<div class="clause" data-ex="${exKey(() => explainClause(acc, p))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}</span><span>${p.name}</span></div>`).join("")
+    `<div class="clause${p.lastRefused && ruleState(p).hot ? " refused" : ""}" data-ex="${exKey(() => explainClause(acc, p) + (p.lastRefused && ruleState(p).hot ? "\nJust refused a transfer from this account." : ""))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}</span><span>${p.name}</span></div>`).join("")
     : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`) + appr;
   // The node composes all accepted clauses into ONE rule per stream (README · Rule sharing)
   const branches = entries.slice(0, 3).map(([acc, p]) => `(i12[t]:bv[384] = { #x${acc.slice(0, 8)}… }:bv[384]) ? ( ${esc(p.body)} )`);
@@ -2307,7 +2309,7 @@ function refusedTx(x) {
     rejected: x.reason || "refused at the door · left the queue without entering a block",
     refLabel: /consensus_rule/.test(type) ? "✕ rule change refused" : /rule/.test(type) ? "✕ rule refused" : "✕ transfer refused" };
   t.note = `${t.sender ? short(t.sender) + " · " : ""}${t.rejected}`;
-  const pol = S.clauses.get(t.sender); if (pol && /o5/.test(t.rejected)) { t.policy = pol; pol.lastCheck = performance.now(); pol.lastRefused = true; }
+  const pol = S.clauses.get(t.sender); if (pol && /o5/.test(t.rejected)) { t.policy = pol; pol.lastCheck = performance.now(); pol.lastRefused = true; renderClauses(); setTimeout(renderClauses, RULE_HOT_S * 1000 + 200); }
   LIVE.seenTx.add(t.id); DROP.cards.set(t.id, t); txCard(t);
   log(`sendtx ${short(t.id)} rejected: ${t.rejected}`, "err");
   if (!x.reason) liveSend("gettxstatus " + t.id);
@@ -2545,7 +2547,7 @@ function draw(tm) {
   const RA = [...S.clauses.keys()];
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
-    const st = ruleState(p), col = st.hot ? (st.refused ? "255,255,255" : "57,255,138") : "170,170,178";
+    const st = ruleState(p), col = st.hot ? (st.refused ? "229,72,77" : "57,255,138") : "170,170,178";
     hit(x, y, 24, () => vt(`This account runs its own money rule: ${p.name}.\n${policyMeaning(p)} It binds the account, not the key.\n`, `${short(RA[i])} runs its own rule: ${p.name}.\n${policyMeaning(p)} Binds the account, not the key; one guarded branch in the composite o5 program.\n`) + (st.hot ? (st.refused ? "White line: the rule just refused a transfer from this account." : "Green line: the rule just checked a transfer from this account and let it pass.") : "Grey line: in force, no transfer from this account checked in the last few seconds."));
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
@@ -3056,7 +3058,7 @@ pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); set
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.46`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.47`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
