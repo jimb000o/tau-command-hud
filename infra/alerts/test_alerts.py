@@ -21,6 +21,7 @@ os.environ.update(RELAY_URL="ws://127.0.0.1:18799", RELAY_HTTP="http://127.0.0.1
                   PUBLIC_DIR=os.path.join(TMP, "public"), POLL_SECONDS="0.3", PROPOSED_HOLD_SECONDS="1.5", TELEGRAM_BOT_TOKEN="", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 _now = time.gmtime()
 os.environ.update(RECAP_WEEKDAY=str(_now.tm_wday), RECAP_HOUR=str(_now.tm_hour))  # a recap slot that just passed
+os.environ["SIM_ALERTS"] = "false"  # simulated posts have their own test (test_sim_alerts.py)
 sys.path.insert(0, os.path.dirname(__file__))
 
 from websockets.asyncio.server import serve  # noqa: E402
@@ -151,6 +152,9 @@ async def main():
         await asyncio.sleep(2)
         assert len(tg.sent) == 6 and tg.sent[5].startswith("agreed:New rule change, agreed right away: Base fee 30 → 40"), tg.sent
         assert "has one validator" in alerts.telegram_text(w.state["items"][0]), alerts.telegram_text(w.state["items"][0])
+        # every real-chain post says so in its first line; simulated posts keep their own
+        assert all(alerts.telegram_text(it).startswith(alerts.REAL_LINE + "\n") for it in w.state["items"])
+        assert not alerts.sim_text(alerts.sim_switches(time.time())[0]).startswith(alerts.REAL_LINE)
 
         # --preview reads the chain on its own and posts nothing
         assert await alerts.preview_latest(2) == 0
