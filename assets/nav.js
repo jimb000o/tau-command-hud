@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.41"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.42"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -238,7 +238,7 @@
       if (text === NEXT.text) return; NEXT.text = text;
       nx.querySelector("b").textContent = text;
       const when = x => new Date(x * 1000).toISOString().slice(0, 16).replace("T", " ");
-      nx.dataset.tnt = (u.why ? u.why + "\n" : "") + `Agreed by the validators; takes effect at block #${fmt(u.activate_at)}, about ${when(u.eta)} UTC, that is ${span(left)}. The time is an estimate from the current block pace.\nNext activations on the live chain (UTC):\n` + rows.slice(0, 3).map(p => `#${fmt(p.activate_at)} · ${when(p.eta)} · ${span(p.eta - now)} · ${p.title}`).join("\n") + "\nWatch it in Proposals.";
+      nx.dataset.tnt = (u.why ? u.why + "\n" : "") + `Agreed by the validators; takes effect at block #${fmt(u.activate_at)}, about ${when(u.eta)} UTC, that is ${span(left)}. The time is an estimate from the current block pace.\nNext activations on the live chain (UTC):\n` + rows.slice(0, 3).map(p => `#${fmt(p.activate_at)} · ${when(p.eta)} · ${p.title} · ${span(p.eta - now)}`).join("\n") + "\nWatch it in Proposals.";
     };
     const pollNext = async () => {
       const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
