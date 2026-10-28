@@ -736,5 +736,11 @@
   "tag": "What if",
   "on": "2026-10-28",
   "html": "What if now says short split where it said fork. Two blocks at one height, which the chain settles within a block or two when blocks come faster than the network carries them, are something different from the fork Tau avoids: changing the rules never needs one. The page says so in its intro, in What happens and in the hover of Network delay."
+ },
+ {
+  "tag": "Guided tour",
+  "on": "2026-10-28",
+  "html": "Every page now has a guided tour of its own, like the HUD’s: a few short steps point at the parts of the page and say what each one shows and why it matters. Offered once on a page’s first visit (“Not now” is remembered for that page), always available from Tour in the header, the gear and, on phones, the Learn sheet. The Playground’s tour walks from your own transfer rule to the validator seat by itself. Arrow keys step, Escape ends; every step in Chinese too.",
+  "major": {"id": "page-tours", "title": "New: a guided tour on every page", "text": "Every page of Tau HUD now explains itself in a few short steps: what each part shows and why it matters. Start it from Tour in the header.", "link": "/playground/#tour"}
  }
 ]

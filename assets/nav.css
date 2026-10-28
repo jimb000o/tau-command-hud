@@ -38,7 +38,7 @@
 .tnav .pill.fbk { background: #fff; border-color: #fff; color: #000; font-weight: 700; }   /* the most visible thing in the header, still monochrome */
 .tnav .pill.fbk svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
 .tnav .pill.fbk:hover, .tnav .pill.fbk:focus-visible { background: #d6d6dc; border-color: #d6d6dc; color: #000; }
-.tnav .tl { font: 500 12px var(--tn-font); letter-spacing: .09em; text-transform: uppercase; color: #a3a3ad; white-space: nowrap; cursor: pointer; text-decoration: none; background: transparent; border: 0; padding: 6px 2px; }
+.tnav .tl { display: inline-block; font: 500 12px var(--tn-font); letter-spacing: .09em; text-transform: uppercase; color: #a3a3ad; white-space: nowrap; cursor: pointer; text-decoration: none; background: transparent; border: 0; padding: 6px 2px; }
 .tnav .tl:hover { color: #fff; }
 .tnav .tn-upd { position: relative; display: inline-flex; }
 .tnav .tn-upd.new::after { content: ""; position: absolute; top: 3px; right: -5px; width: 6px; height: 6px; border-radius: 50%; background: var(--tn-ok); box-shadow: 0 0 6px var(--tn-ok); }
