@@ -28,7 +28,6 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { scroll-snap-type: y proximity; }
 body {
   margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
   padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
@@ -52,11 +51,10 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .dots { display: flex; gap: 8px; justify-content: center; padding: 6px 0 2px; }
 .dots button { all: unset; cursor: pointer; width: 44px; height: 24px; display: grid; place-items: center; }
 .dots button::before { content: ""; width: 22px; height: 3px; border-radius: 2px; background: var(--hair); transition: background .3s; }
-.dots button.on::before { background: var(--ok); box-shadow: 0 0 8px rgba(57,255,138,.6); }
+.dots button.on::before { background: linear-gradient(90deg, var(--ok) var(--p, 100%), var(--hair) var(--p, 100%)); box-shadow: 0 0 8px rgba(57,255,138,.35); }
 .dots button:focus-visible { outline: 1px solid #fff; border-radius: 4px; }
 .steps { position: relative; z-index: 1; }
-.step { min-height: 62svh; display: flex; flex-direction: column; justify-content: center; padding: 28px 0 40px; scroll-snap-align: end; }
-body > header { scroll-snap-align: start; scroll-margin-top: 12px; } .step:first-child { scroll-snap-align: none; }
+.step { min-height: 62svh; display: flex; flex-direction: column; justify-content: center; padding: 28px 0 40px; }
 .step h2 { max-width: 15em; } .step p.s { max-width: 28em; }
 .kick { font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
 .kick b { color: var(--ok); font-weight: 600; }
@@ -80,13 +78,13 @@ body > header { scroll-snap-align: start; scroll-margin-top: 12px; } .step:first
   .story { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); column-gap: clamp(24px, 4vw, 80px); }
   .stage { grid-column: 1; grid-row: 1; height: 100svh; margin: 0; padding: 24px 0 12px; background: none; }
   .steps { grid-column: 2; grid-row: 1; }
-  .step { min-height: 100svh; scroll-snap-align: center; padding: 40px 0; }
+  .step { min-height: 100svh; padding: 40px 0; }
   .step h2 { font-size: clamp(30px, 3vw, 76px); }
   .step p.s { font-size: clamp(17px, 1.3vw, 30px); }
   .step .kick { font-size: clamp(11px, .7vw, 16px); }
 }
 @media (min-width: 900px) and (max-height: 640px) { .step h2 { font-size: 28px; } .step p.s { font-size: 16px; } }
-@media (prefers-reduced-motion: reduce) { html { scroll-snap-type: none; } .hint i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .hint i { animation: none; } }
 
 /* ---------- video mode: ?video=1, the frame recorder seeks the timeline ---------- */
 body.video { padding: 0; overflow: hidden; background-size: auto, 72px 72px, 72px 72px; }
@@ -384,29 +382,91 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
         <button class="btn replay" type="button" id="replay">Play again from the top</button>
         <p class="note">The example (base fee 1 → 2 AGRS, block #5,028) is made up. The steps are how Tau Testnet Alpha handles every rule change today; the <a href="../proposals/">Proposals</a> page lists the real ones.</p>` : "");
     stepsEl.append(sec);
-    const d = document.createElement("button"); d.type = "button"; d.setAttribute("aria-label", "Step " + (i + 1)); d.addEventListener("click", () => sec.scrollIntoView({ behavior: "smooth", block: "center" }));
+    const d = document.createElement("button"); d.type = "button"; d.setAttribute("aria-label", "Step " + (i + 1));
     dotsEl.append(d);
   });
+  /* One step at a time: scrolling stops at each step. While its animation plays, more scrolling only plays it faster;
+     once it has finished, the next scroll moves on. Scrolling back is always allowed and shows the earlier step finished.
+     Wheel, touch and keys go through the same gate; reduced motion shows each step finished, so it is a plain step snap. */
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let active = 0, t0 = performance.now(), raf = 0;
-  const frame = () => {
-    const s = reduce ? DUR - 1 : (performance.now() - t0) / 1000;
-    draw(svg, active, Math.min(s, DUR - .5));
-    raf = s < DUR ? requestAnimationFrame(frame) : 0;
+  const DONE = 9, secs = [...stepsEl.querySelectorAll(".step")], dots = [...dotsEl.children], stageBox = document.querySelector(".stage");
+  let active = 0, t = reduce ? DONE : 0, boost = 0, last = performance.now(), raf = 0, acc = 0, lockUntil = 0, moving = false;
+  const wide = () => matchMedia("(min-width: 900px)").matches;
+  const top = i => i === 0 ? 0 : Math.round(secs[i].getBoundingClientRect().top + scrollY - (wide() ? 0 : stageBox.offsetHeight));
+  const frame = now => {
+    const dt = Math.min(.1, (now - last) / 1000); last = now;
+    if (t < DONE) t = Math.min(DONE, t + dt * (1 + boost));
+    boost *= Math.pow(.25, dt);  // the push fades out within about a second once scrolling stops
+    draw(svg, active, Math.min(t, DUR - .5));
+    dots[active].style.setProperty("--p", (t / DONE * 100).toFixed(1) + "%");
+    raf = t < DONE ? requestAnimationFrame(frame) : 0;
   };
-  const go = i => {
-    if (i === active && raf) return;
-    active = i; t0 = performance.now(); [...dotsEl.children].forEach((d, k) => d.classList.toggle("on", k === i));
-    cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
+  const play = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } };
+  const show = (i, finished) => {
+    active = i; t = finished || reduce ? DONE : 0; boost = 0; acc = 0;
+    dots.forEach((d, k) => { d.classList.toggle("on", k === i); d.style.removeProperty("--p"); });
+    play(); if (!raf) draw(svg, active, DUR - .5);
   };
-  const io = new IntersectionObserver(es => {
-    const vis = es.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-    if (vis && +vis.target.dataset.i !== active) go(+vis.target.dataset.i);
-  }, { rootMargin: "-45% 0px -45% 0px" });
-  stepsEl.querySelectorAll(".step").forEach(s => io.observe(s));
-  document.getElementById("replay").addEventListener("click", () => { scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" }); setTimeout(() => go(0), 400); });
-  [...dotsEl.children][0].classList.add("on");
-  raf = requestAnimationFrame(frame);
+  const goTo = (i, finished) => {
+    i = Math.max(0, Math.min(secs.length - 1, i));
+    moving = true; lockUntil = performance.now() + (reduce ? 250 : 750);
+    scrollTo({ top: top(i), behavior: reduce ? "auto" : "smooth" });
+    setTimeout(() => { moving = false; }, reduce ? 50 : 800);
+    if (i !== active) show(i, finished);
+  };
+  // one push of input: dy > 0 means forward
+  const push = dy => {
+    const now = performance.now(), lastStep = active === secs.length - 1;
+    if (dy > 0 && lastStep) return false;  // the end step scrolls normally (the notes below the buttons)
+    if (dy < 0 && lastStep && scrollY > top(active) + 4) return false;
+    if (now < lockUntil) return true;  // the rest of the gesture that moved on: the new step starts at normal speed
+    if (dy > 0 && t < DONE) { boost = Math.min(9, boost + dy / 30); acc = 0; play(); return true; }
+    if ((acc > 0) !== (dy > 0)) acc = 0;
+    acc += dy;
+    if (acc > 90) goTo(active + 1, false);
+    else if (acc < -90) goTo(active - 1, true);
+    return true;
+  };
+  const inMenu = e => e.target.closest && e.target.closest(".tnav, .tabbar, .tsheet, .tsheet-bg, .tnav-pop, .menu, [role=dialog], dialog, .trail");
+  addEventListener("wheel", e => {
+    if (e.ctrlKey || inMenu(e)) return;
+    const dy = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY;
+    if (push(dy)) e.preventDefault();
+  }, { passive: false });
+  let ty = null;
+  addEventListener("touchstart", e => { ty = e.touches.length === 1 && !inMenu(e) ? e.touches[0].clientY : null; }, { passive: true });
+  addEventListener("touchmove", e => {
+    if (ty == null) return;
+    const y = e.touches[0].clientY, dy = (ty - y) * 1.6; ty = y;
+    if (push(dy)) e.preventDefault();
+  }, { passive: false });
+  addEventListener("touchend", () => { ty = null; }, { passive: true });
+  addEventListener("keydown", e => {
+    if (e.altKey || e.ctrlKey || e.metaKey || /input|textarea|select/i.test(e.target.tagName)) return;
+    const k = e.key, fwd = k === "ArrowDown" || k === "PageDown" || (k === " " && !e.shiftKey && e.target.tagName !== "BUTTON" && e.target.tagName !== "A");
+    const back = k === "ArrowUp" || k === "PageUp" || (k === " " && e.shiftKey);
+    if (k === "Home") { e.preventDefault(); goTo(0, true); return; }
+    if (k === "End") { e.preventDefault(); goTo(secs.length - 1, false); return; }
+    if (!fwd && !back) return;
+    if (fwd && t < DONE) { e.preventDefault(); boost = Math.min(9, boost + 5); play(); return; }
+    if (push(fwd ? 100 : -100)) e.preventDefault();
+  });
+  // a scrollbar drag, find in page or a resize: settle on the step nearest the middle of the screen
+  let settle = 0;
+  addEventListener("scroll", () => {
+    if (moving) return;
+    clearTimeout(settle);
+    settle = setTimeout(() => {
+      const mid = innerHeight * (wide() ? .5 : .7);
+      let best = 0, bd = Infinity;
+      secs.forEach((s, i) => { const r = s.getBoundingClientRect(), d = Math.abs((r.top + r.bottom) / 2 - mid); if (d < bd) { bd = d; best = i; } });
+      if (best !== active) show(best, true);
+    }, 160);
+  }, { passive: true });
+  dots.forEach((d, i) => d.addEventListener("click", () => goTo(i, i < active)));
+  document.getElementById("replay").addEventListener("click", () => goTo(0, false));
+  if (location.hash && /^#step-\d$/.test(location.hash)) { const i = +location.hash.slice(6) - 1; if (secs[i]) setTimeout(() => goTo(i, false), 100); }
+  show(0, false);
 })();
 </script>
 </body>
