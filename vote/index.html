@@ -578,6 +578,9 @@ document.addEventListener("click", async e => {
   }
   const t = e.target.closest("button.try");
   if (!t) return;
+  const n = +t.dataset.try.slice(1);   // each Try works on its own: earlier steps it needs are done for you
+  if (n >= 3 && !X.aliased) { X.cd = X.aliased = true; stepDone(2); hint("Step 2 done for you: tau now runs the command line inside your node."); }
+  if (n >= 4 && !X.key) run("tau keys save --name me");
   if (t.dataset.try === "c5") {   // practice proposal: the same command, built from the simulated chain's rules
     const g = simGov(), payload = { rule_revisions: [g.consensus_rules], activate_at_height: g.head_number + 75, host_contract_patch: null };
     const id = await updateId(payload.rule_revisions, payload.activate_at_height);
@@ -607,9 +610,10 @@ document.addEventListener("mouseover", e => {
 });
 document.addEventListener("mousemove", e => {
   if (tip.hidden) return;
-  const w = tip.offsetWidth, h = tip.offsetHeight;
-  tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + "px";
-  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) + "px";
+  const z = document.documentElement.classList.contains("fit") ? +getComputedStyle(document.documentElement).getPropertyValue("--z") || 1 : 1;   // the tip is zoomed with the page, so are its coordinates
+  const w = tip.offsetWidth * z, h = tip.offsetHeight * z;
+  tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - w - 8)) / z + "px";
+  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) / z + "px";
 });
 document.addEventListener("mouseleave", () => { tip.hidden = true; });
 

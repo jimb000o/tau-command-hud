@@ -789,6 +789,31 @@
   "html": "The Daily Consensus now advertises itself on the HUD: the free space at the bottom of Rules in force now carries a 1920s newspaper advertisement in the HUD's black and white, with the blackletter masthead, a double-ruled dateline, the latest edition's headline and, where the box is tall, the EXTRA stamp, the front-page photo and its deck. It takes only the room the box leaves and shrinks or steps aside when there is none. One click opens the newspaper."
  },
  {
+  "tag": "v17.50",
+  "on": "2026-10-28",
+  "html": "The newspaper block in Rules in force now is no longer an advertisement but a clipping of the front page lying on the HUD: grey-white newsprint with torn edges and a slight tilt, the blackletter masthead, double rules, EXTRA, the headline in the newspaper's own type, the halftone photo and the opening paragraph in two columns with a drop cap. On smaller screens it drops the columns, then the photo, and keeps masthead, headline and the link. One click opens the newspaper."
+ },
+ {
+  "tag": "Vote",
+  "on": "2026-10-28",
+  "html": "Hover texts on Vote and Nodes now sit right next to the cursor on wide screens; before, they drifted further away the wider the screen. On Vote, every Try button in the practice terminal now works on its own: if an earlier step is missing, it is done for you first instead of answering “tau: command not found”."
+ },
+ {
+  "tag": "Visits",
+  "on": "2026-10-28",
+  "html": "Tau HUD now counts its visitors, without cookies and without storing anything in your browser: how often each page is opened and how often it stays open for 30 seconds, which site a visit came from (only its name), language and screen size, kept as daily totals on the Tau HUD server. Addresses are never stored, nothing goes to another company, and browsers with Do Not Track or Global Privacy Control are not counted. It shows which pages help people understand Tau and which need work."
+ },
+ {
+  "tag": "v17.51",
+  "on": "2026-10-28",
+  "html": "Hovers in Chain core now say how healthy the state is. Each opens with a status light and one verdict: green Normal, amber Watch or In progress, red only for a real problem such as no connection or nothing sealed for ten minutes while transactions wait. The waiting room, the block in the core, the validator, node and agreement orbits, the Height, Waiting and Block pace tiles and the height and consensus chips all judge themselves; the three tiles carry the light permanently and the waiting orbit turns amber or red when it needs attention. Thresholds follow the block pace, and a sealed transaction the alpha node still lists (known issue, up to an hour) counts as normal."
+ },
+ {
+  "tag": "What if",
+  "on": "2026-10-28",
+  "html": "The What if tour now says short split where it said fork, like the page itself: two blocks at one height that the next block settles are not the fork Tau avoids, and changing the rules never needs one."
+ },
+ {
   "tag": "Checks",
   "on": "2026-10-28",
   "html": "Checks: every change to the site is now opened in a browser before it goes live, each page in English and Chinese, in the simulation and with the live node offline, on wide screens, so a broken page or a missing Chinese text is caught first. About fifty Chinese texts that were still English are translated, and a rare drawing error in Time travel is fixed."

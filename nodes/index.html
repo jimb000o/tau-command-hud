@@ -520,9 +520,10 @@ document.addEventListener("mouseover", e => {
 });
 document.addEventListener("mousemove", e => {
   if (tip.hidden) return;
-  const w = tip.offsetWidth, h = tip.offsetHeight;
-  tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + "px";
-  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) + "px";
+  const z = document.documentElement.classList.contains("fit") ? +getComputedStyle(document.documentElement).getPropertyValue("--z") || 1 : 1;   // the tip is zoomed with the page, so are its coordinates
+  const w = tip.offsetWidth * z, h = tip.offsetHeight * z;
+  tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - w - 8)) / z + "px";
+  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) / z + "px";
 });
 document.addEventListener("mouseleave", () => { tip.hidden = true; });
 
