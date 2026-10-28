@@ -76,6 +76,7 @@ TauI18n.add({ strings: {
   "You have a key already: tau keys show me": "你已经有密钥了：tau keys show me",
   "Make one first: tau keys save --name me": "请先生成一个：tau keys save --name me",
   "Make your key first: tau keys save --name me": "请先生成你的密钥：tau keys save --name me",
+  "Step 2 done for you: tau now runs the command line inside your node.": "已为你完成第 2 步：tau 现在运行你节点内的命令行。",
   "Nothing open in the simulation right now. Make your own practice proposal: press Try on step 5.": "模拟中目前没有待投票的提案。做一个你自己的练习提案：在第 5 步按“试一试”。",
   "Copy an id into: tau gov vote --key me --update-id <id>  (or press Try on step 4)": "把一个 id 填入：tau gov vote --key me --update-id <id>（或在第 4 步按“试一试”）",
   "That change is no longer open. tau gov list shows what is.": "该变更已不再开放。tau gov list 会显示开放中的提案。",

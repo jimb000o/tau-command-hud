@@ -792,5 +792,10 @@
   "tag": "v17.50",
   "on": "2026-10-28",
   "html": "The newspaper block in Rules in force now is no longer an advertisement but a clipping of the front page lying on the HUD: grey-white newsprint with torn edges and a slight tilt, the blackletter masthead, double rules, EXTRA, the headline in the newspaper's own type, the halftone photo and the opening paragraph in two columns with a drop cap. On smaller screens it drops the columns, then the photo, and keeps masthead, headline and the link. One click opens the newspaper."
- }
+ },
+  {
+   "tag": "Vote",
+   "on": "2026-10-28",
+   "html": "Hover texts on Vote and Nodes now sit right next to the cursor on wide screens; before, they drifted further away the wider the screen. On Vote, every Try button in the practice terminal now works on its own: if an earlier step is missing, it is done for you first instead of answering “tau: command not found”."
+  }
 ]
