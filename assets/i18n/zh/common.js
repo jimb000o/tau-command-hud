@@ -481,4 +481,6 @@ TauI18n.add({ strings: {
   "What each part of this page shows and why it matters, in a few short steps": "本页每个部分显示什么、为什么重要，几个简短步骤讲清楚",
   "A short guided tour of this page: what each part shows and why it matters. Arrow keys step, Esc ends.": "本页的简短导览：每个部分显示什么、为什么重要。方向键翻页，Esc 结束。",
   "One minute, eight steps: how rules on Tau change by agreement, pointing at the panels where it happens. Arrow keys step, Esc ends.": "一分钟、八个步骤：Tau 上的规则如何经共识而改变，并指出发生这一切的面板。方向键翻页，Esc 结束。",
+  "Tau HUD in numbers": "Tau HUD 数据一览",
+  "How many people use this site: visitors per day, growth and the most visited pages": "有多少人在用这个网站：每日访客、增长和最常访问的页面",
 } });

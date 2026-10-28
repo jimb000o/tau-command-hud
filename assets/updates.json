@@ -793,10 +793,25 @@
   "on": "2026-10-28",
   "html": "The newspaper block in Rules in force now is no longer an advertisement but a clipping of the front page lying on the HUD: grey-white newsprint with torn edges and a slight tilt, the blackletter masthead, double rules, EXTRA, the headline in the newspaper's own type, the halftone photo and the opening paragraph in two columns with a drop cap. On smaller screens it drops the columns, then the photo, and keeps masthead, headline and the link. One click opens the newspaper."
  },
-  {
-   "tag": "Vote",
-   "on": "2026-10-28",
-   "html": "Hover texts on Vote and Nodes now sit right next to the cursor on wide screens; before, they drifted further away the wider the screen. On Vote, every Try button in the practice terminal now works on its own: if an earlier step is missing, it is done for you first instead of answering “tau: command not found”."
-  },
-{"tag": "Visits", "on": "2026-10-28", "html": "Tau HUD now counts its visitors, without cookies and without storing anything in your browser: how often each page is opened and how often it stays open for 30 seconds, which site a visit came from (only its name), language and screen size, kept as daily totals on the Tau HUD server. Addresses are never stored, nothing goes to another company, and browsers with Do Not Track or Global Privacy Control are not counted. It shows which pages help people understand Tau and which need work."}
+ {
+  "tag": "Vote",
+  "on": "2026-10-28",
+  "html": "Hover texts on Vote and Nodes now sit right next to the cursor on wide screens; before, they drifted further away the wider the screen. On Vote, every Try button in the practice terminal now works on its own: if an earlier step is missing, it is done for you first instead of answering “tau: command not found”."
+ },
+ {
+  "tag": "Visits",
+  "on": "2026-10-28",
+  "html": "Tau HUD now counts its visitors, without cookies and without storing anything in your browser: how often each page is opened and how often it stays open for 30 seconds, which site a visit came from (only its name), language and screen size, kept as daily totals on the Tau HUD server. Addresses are never stored, nothing goes to another company, and browsers with Do Not Track or Global Privacy Control are not counted. It shows which pages help people understand Tau and which need work."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-28",
+  "html": "New page: Tau HUD in numbers (Learn → Tau HUD in numbers). How many people look at Tau through this site: visitors per day with a 7-day average, growth since counting began, the most visited pages, language and screen size. Pick 7 days, 30 days, 90 days, a year or All for the whole history; click a day to see its pages. Counted on our own server without cookies, only daily totals.",
+  "major": {
+   "id": "in-numbers",
+   "title": "New: Tau HUD in numbers",
+   "text": "How many people look at Tau through this site: visitors per day, growth since the start and the most visited pages. Counted on our own server without cookies.",
+   "link": "/meta/"
+  }
+ }
 ]

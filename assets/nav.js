@@ -26,6 +26,7 @@
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
     findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
     status:     { t: "Status", d: "Uptime, outages, sync gaps and restarts of the community node", i: "◍", h: "status/" },
+    meta:       { t: "Tau HUD in numbers", d: "How many people use this site: visitors per day, growth and the most visited pages", i: "∑", h: "meta/" },
     developers: { t: "Developers", d: "Widgets, badges and a free JSON API for your own site", i: "{}", h: "developers/" },
     press:      { t: "Press kit", d: "Video, logo, screenshots, facts and a ready paragraph, free to use", i: "↓", h: "press/" },
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
@@ -39,10 +40,10 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     { k: "explore", t: "Explore", items: ["explorer", "stats", "history", "account", "nodes", "proposals"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "developers", "press", "tau", "about"], tab: "▸" },
+    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "meta", "developers", "press", "tau", "about"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote"], id: "btnPlayground", tab: "◇", short: "Play" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", meta: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
