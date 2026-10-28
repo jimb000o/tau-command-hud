@@ -81,7 +81,7 @@ def build(stats: dict, community: dict | None, items: list[dict], end: float | N
             overlap = max(0, min(tip_ts, end) - max(b1, start))
             old_blocks += round(tip * overlap / (tip_ts - b1))
 
-    ev = [it for it in items if start <= (it.get("ts") or it.get("seen") or 0) < end]
+    ev = [it for it in items if start <= (it.get("ts") or it.get("seen") or 0) < end and not it.get("practice")]
     count = lambda k: sum(1 for it in ev if it["kind"] == k)  # noqa: E731
     active_titles = [it["headline"].split(": ", 1)[-1] for it in ev if it["kind"] == "active"]
 

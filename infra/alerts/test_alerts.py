@@ -150,8 +150,9 @@ async def main():
         add(block(14, [vote(alerts.update_id(quick))]))
         await until(lambda: len(tg.sent) == 6, "combined post")
         await asyncio.sleep(2)
-        assert len(tg.sent) == 6 and tg.sent[5].startswith("agreed:New rule change, agreed right away: Base fee 30 → 40"), tg.sent
-        assert "has one validator" in alerts.telegram_text(w.state["items"][0]), alerts.telegram_text(w.state["items"][0])
+        assert len(tg.sent) == 6 and tg.sent[5].startswith("agreed:Agreed: Base fee 30 → 40"), tg.sent
+        t = alerts.telegram_text(w.state["items"][0])
+        assert "has one validator" not in t and "<blockquote expandable><b>Details</b>" in t and "1 of 1 vote" in t, t
         # every real-chain post says so in its first line; simulated posts keep their own
         assert all(alerts.telegram_text(it).startswith(alerts.REAL_LINE + "\n") for it in w.state["items"])
         assert not alerts.sim_text(alerts.sim_switches(time.time())[0]).startswith(alerts.REAL_LINE)
@@ -206,7 +207,7 @@ def test_rule_diff():
     assert alerts.explain.diff_summary(d) == "no difference", d
     item = {"kind": "proposed", "headline": "x", "what": [], "why": "", "facts": [], "link": "https://tauhud.com",
             "diff": {"summary": "no difference", "lines": [], "more": 0}}
-    assert "Rule text diff</b>: none" in alerts.telegram_text(item)
+    assert "Rule text diff: none" in alerts.telegram_text(item)
 
 
 test_rule_diff()
