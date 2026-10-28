@@ -1,4 +1,24 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
-
+  "Active validators: their votes turn a proposal into law.": "活跃验证者：他们的投票让提案成为法律。",
+  "agree on changes": "对变更达成同意",
+  "agreed, takes effect soon ·": "已同意，即将生效 ·",
+  "block every ~": "约每",
+  "block every ~{x1} s": "约每 {x1} 秒一个区块",
+  "Coming up": "即将到来",
+  "coming up": "即将到来",
+  "Health": "健康",
+  "in force ·": "生效中 ·",
+  "Live: our node follows the Tau Testnet Alpha and is at the network tip.": "实时：我们的节点跟随 Tau 测试网 Alpha，并处于网络链尖。",
+  "Newest block our node has verified.": "我们的节点已验证的最新区块。",
+  "no answer yet": "尚无应答",
+  "One number for: is the testnet running well right now?": "用一个数字回答：测试网此刻运行良好吗？",
+  "sealed {x} ago": "{x}前封装",
+  "Syncing": "同步中",
+  "Tau HUD widget": "Tau HUD 小组件",
+  "Tau Testnet Alpha ·": "Tau 测试网 Alpha ·",
+  "Testnet": "测试网",
+  "waiting for votes ·": "等待投票 ·",
+  "{n} in force": "{n} 个生效中",
+  "{x1} waiting for votes · {x2} agreed, takes effect soon · {x3} in force · {x4} dropped": "{x1} 个等待投票 · {x2} 个已同意，即将生效 · {x3} 个生效中 · {x4} 个已放弃",
 } });

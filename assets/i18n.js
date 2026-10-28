@@ -33,7 +33,7 @@
   /* placeholder kinds: {n} {m} {a} {b} {c} numbers, {h} {g} hashes or addresses, anything else free text */
   const NUM = "(#?-?[\\d][\\d.,]*)", HASH = "([0-9a-f]{4,}…[0-9a-f]{4,}|[0-9a-f]{8,})";
   const SLOT = { n: NUM, m: NUM, a: NUM, b: NUM, c: NUM, h: HASH, g: HASH, e: "(\\{e\\d+\\})" };   // {e1}: an inline element kept in place
-  function squash(s) { return String(s).replace(/\s+/g, " ").trim(); }
+  function squash(s) { return String(s).replace(/\\n|\s+/g, " ").replace(/ +/g, " ").trim(); }
   if (lang === "en") return;
 
   const page = (() => {
@@ -58,7 +58,7 @@
     for (const [re, rep] of api.patterns) { if (re.test(k)) return k.replace(re, rep); }
     return null;
   };
-  const note = k => { if (debug && !missing.has(k)) { missing.add(k); console.debug("[i18n] missing:", k); } };
+  const note = k => { if (debug && !k.includes("{e") && !missing.has(k)) { missing.add(k); console.debug("[i18n] missing:", k); } };
   /* returns [text, letters translated, letters left in English] */
   const letters = k => k.replace(NOISE, "").replace(/[^A-Za-z]/g, "").length;
   function parts(k, level) {
