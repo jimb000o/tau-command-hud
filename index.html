@@ -182,7 +182,7 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .thesis h2.decoding .dw { white-space: nowrap; }
 .thesis h2 .dc { display: inline-block; text-align: center; clip-path: inset(-2px -1px); }
 .thesis h2 .dc.g { color: var(--ok); }
-.thesis h2 .dc.front { color: #d9ffe9; text-shadow: 0 0 6px rgba(57,255,138,.9), 0 0 14px rgba(57,255,138,.45); }
+.thesis h2 .dc.front { text-shadow: 0 0 6px rgba(57,255,138,.7), 0 0 14px rgba(57,255,138,.35); }
 .modal { position: fixed !important; inset: 0; z-index: 60; background: rgba(3,8,13,.78); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; overflow: hidden; box-sizing: border-box; }
 .modal[hidden] { display: none; }
 .sheet { position: relative; width: min(1100px, 100%); max-height: 100%; flex: 0 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
@@ -962,7 +962,8 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <article class="panel">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed on this page and when, built from your feedback.">i</button></h2>
         <ul class="changes">
-          <li><b>v17.16 · 27 Oct 2026</b>Blockchain strip scrolls like a film, and About says what a donation pays for: the mouse wheel glides through the blocks instead of stopping at each one, the detail below follows the block at the right edge, and scrolling back keeps loading older blocks from the relay all the way to genesis; “back to newest” returns to the live end. The donation section is now “Keep it running”: what the project costs (mostly time), what a donation pays for, no banner, no pop-up. The thesis that resolves out of glyph noise on load now does it in phosphor green: brightest at the resolve front, dimmer further out, white once settled, and the paragraph no longer shifts while it resolves. the mouse wheel glides through the blocks instead of stopping at each one, the detail below follows the block at the right edge, and scrolling back keeps loading older blocks from the relay all the way to genesis. “Back to newest” returns to the live end.</li>
+          <li><b>v17.17 · 28 Oct 2026</b>Decode effect: the unresolved glyphs now run a gradient from the settled text outward, white next to the resolved letters, through pale green into full phosphor green by the twelfth glyph, then dimmer the further out.</li>
+          <li><b>v17.16 · 27 Oct 2026</b>Blockchain strip scrolls like a film, and About says what a donation pays for: the mouse wheel glides through the blocks instead of stopping at each one, the detail below follows the block at the right edge, and scrolling back keeps loading older blocks from the relay all the way to genesis; “back to newest” returns to the live end. The donation section is now “Keep it running”: what the project costs (mostly time), what a donation pays for, no banner, no pop-up. The thesis that resolves out of glyph noise on load now does it in phosphor green: brightest at the resolve front, dimmer further out, white once settled, and the paragraph no longer shifts while it resolves.</li>
           <li><b>v17.15 · 27 Oct 2026</b>Design pass, part two: one type scale and one spacing scale on the HUD, this log shows one line per version with the details folded away, and a search field in the header (⌘K or Ctrl+K) sends a block number, hash or address to the Explorer. Design pass on all pages: Feedback in the footer, compact phone header, offline states, one type scale, readable line length; Telegram posts lead with why it matters.</li>
           <li><b>v17.14 · 27 Oct 2026</b>Press kit under Learn: a ready paragraph, the facts, the 60 second video in three formats, the logo for dark and light, screenshots and a ZIP of everything. Design pass, part one: red is reserved for offline and down, refusals and the fork step are white with ✕ or a strike; fewer boxes inside Rule changes; panel subtitles in sentence case, instructions moved into the (i) hover; Rules in force now shows revision and fee large and the rest as one sentence; header chips show the value only, the name is in the hover, and a new Consensus chip says who seals blocks; validator keys in the chain state are short with a copy button; the background rain is off unless you switch it on.</li>
           <li><b>v17.13 · 27 Oct 2026</b>The Live node light can no longer stick on green: the status request times out after 8 seconds, a minute without an answer turns it red, and the relay’s health score colours it (degraded amber, down red). Same on every subpage.</li>
@@ -2349,7 +2350,8 @@ requestAnimationFrame(draw);
 
 /* ---------- decode: the thesis resolves out of glyph noise ---------- */
 /* every glyph keeps the width of the letter it will become, so the paragraph never reflows; words stay whole so lines break only at spaces.
-   Unresolved glyphs are phosphor green: brightest right at the resolve front, dimmer the further out, white once settled. */
+   Unresolved glyphs run a gradient from the settled text outward: white next to the resolved letters, through pale green into
+   full phosphor green by the twelfth glyph, then fading dimmer the further out; white once settled. */
 (() => {
   const el = document.querySelector("[data-decode]"); if (!el || reduced) return;
   const final = el.textContent, pool = "τ∀∃⊨01アイウカキクケ#%&";
@@ -2362,15 +2364,18 @@ requestAnimationFrame(draw);
   });
   chars.forEach(c => { c.style.width = c.getBoundingClientRect().width + "px"; c.dataset.ch = c.textContent; });   // measure first, then start the noise
   const t0 = performance.now(), dur = 1800, glyph = () => pool[(Math.random() * pool.length) | 0];
-  chars.forEach(c => { c.textContent = glyph(); c.className = "dc g"; c.style.opacity = ".32"; });
+  const W = [255, 255, 255], G = [57, 255, 138], FADE = 12;
+  const tone = d => { const t = d >= FADE ? 1 : (x => x * x * (3 - 2 * x))(d / FADE); return `rgb(${W.map((w, i) => Math.round(w + (G[i] - w) * t)).join(",")})`; };
+  chars.forEach(c => { c.textContent = glyph(); c.className = "dc g"; c.style.color = tone(FADE); c.style.opacity = ".32"; });
   const step = now => {
     const k = Math.min(1, (now - t0) / dur), n = Math.floor(chars.length * (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2));
     chars.forEach((c, i) => {
       const d = i - n;
-      if (d < 0) { if (c.className !== "dc") { c.className = "dc"; c.textContent = c.dataset.ch; c.style.opacity = ""; } return; }
+      if (d < 0) { if (c.className !== "dc") { c.className = "dc"; c.textContent = c.dataset.ch; c.style.opacity = ""; c.style.color = ""; } return; }
       if (d < 26 || Math.random() < .12) c.textContent = glyph();
-      c.className = d < 3 ? "dc g front" : "dc g";
-      c.style.opacity = d < 3 ? "1" : String(Math.max(.32, .92 - d * .04).toFixed(2));
+      c.className = d < 4 ? "dc g front" : "dc g";
+      c.style.color = tone(d);
+      c.style.opacity = d < FADE ? "1" : String(Math.max(.32, 1 - (d - FADE) * .035).toFixed(2));
     });
     if (k < 1) requestAnimationFrame(step);
     else { el.textContent = final; el.classList.remove("decoding"); }
@@ -2680,7 +2685,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.16`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${S.mode} · height ${S.height} · version v17.17`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
