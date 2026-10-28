@@ -104,5 +104,9 @@
   {"tag": "v17.32", "on": "2026-10-28", "html": "One simulation for every page: when you choose Simulation, the HUD now reads the same made-up chain as the Explorer, Accounts, Stats, Nodes and the other pages (generated in your browser from the clock, so every page shows the same block at the same moment) through its live code path, including the node orbit and the validators. The Live node / Simulation switch is shared across pages. The built-in engine remains the opening picture until the relay answers."},
   {"tag": "v17.33", "on": "2026-10-28", "html": "Simulation marking in the same amber as the other pages: the Mode chip and its dot, the “Simulation · no real chain data” bar (striped amber) and the SIM tags on the block cards. Amber stays amber in the Chinese version."},
   {"tag": "v17.34", "on": "2026-10-28", "html": "The simulation never restarts at block 0 any more: the HUD opens on the shared clock-driven chain from the first frame, the same one every other page shows, so moving between pages continues the same simulation at the same height. The relay still takes over on the HUD once it answers, unless you chose Simulation. The built-in engine remains only as a fallback when the shared engine is not loaded."},
+<<<<<<< Updated upstream
   {"tag": "Nodes", "on": "2026-10-28", "html": "Nodes: a node someone starts for a few minutes no longer makes the node count jump; a new node that stays half an hour gets one post in the Telegram channel."}
+=======
+  {"tag": "v17.35", "on": "2026-10-28", "html": "Chain core: the hover for another node on the network now says what that node does (keeps its own copy of the chain, checks every block for itself) rather than what it is not; Technical adds the short peer id. The node orbit follows the relay’s steadier online rule for peers and keeps the last good list when one request fails, so the count no longer flickers on refresh."}
+>>>>>>> Stashed changes
 ]

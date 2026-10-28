@@ -1356,7 +1356,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.34", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.35", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -1968,11 +1968,11 @@ async function pollNodes() {
       const pj = await (await get("/peers")).json(), now = Date.now() / 1000, kits = new Set(list.map(n => n.name));
       for (const n of Array.isArray(pj.peers) ? pj.peers : []) {
         if (n.label || (n.community && kits.has(String(n.community.name)))) continue;
-        const last = Number(n.last_seen) || 0; if (!last || now - last > 86400) continue;
+        const last = Number(n.last_seen) || 0; if ("online" in n ? !n.online : (!last || now - last > 86400)) continue;   // the relay's steady "online" flag when it has one, else seen in the last day
         const ph = Number(n.head) || 0, ref = j.reference ? Number(j.reference.tip) || Number(j.reference.height) || 0 : 0;   // a peer's "head" is its tip height, not a hash
-        list.push({ kind: "peer", name: "", height: ph, head: "", agrees: ph && ref ? Math.abs(ph - ref) <= 2 : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
+        list.push({ kind: "peer", id: String(n.id || ""), name: "", height: ph, head: "", agrees: ph && ref ? Math.abs(ph - ref) <= 2 : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
       }
-    } catch {}
+    } catch { list.push(...NET.nodes.filter(n => n.kind === "peer")); }   // one slow /peers answer must not empty the orbit: keep the last good peer list
     NET.nodes = list; NET.at = Date.now();
   } catch {} finally { clearTimeout(t); }
 }
@@ -1986,7 +1986,7 @@ const PROPOSALS = [
 function simInit() {
   S.validators = Array.from({ length: 4 }, () => hex(96));
   SIM.accounts = Array.from({ length: 14 }, () => hex(96));
-  SIM.nodes = [{ kind: "hud", name: "tauhud.com", agrees: true, age: 0, head: hex(64) }, { kind: "kit", name: "alice-node", agrees: true, age: 42, head: hex(64) }, { kind: "kit", name: "bob", agrees: true, age: 70, head: hex(64) }, { kind: "peer", name: "", agrees: true, age: 12, head: hex(64), connected: true, first: Date.now() / 1000 - 3 * 86400 }];
+  SIM.nodes = [{ kind: "hud", name: "tauhud.com", agrees: true, age: 0, head: hex(64) }, { kind: "kit", name: "alice-node", agrees: true, age: 42, head: hex(64) }, { kind: "kit", name: "bob", agrees: true, age: 70, head: hex(64) }, { kind: "peer", id: "12D3KooWQmSimPeerAbCdEfGhJkLmNpQrStUvWxYz1234567890abcd", name: "", agrees: true, age: 12, head: hex(64), connected: true, first: Date.now() / 1000 - 3 * 86400 }];
   Object.assign(S, { height: 0, blocks: [], mempool: [], memSeen: new Map(), rulesLastBlock: null, txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, fee: 10, specRev: 1, ruleBudget: 8, updates: [], offers: [], byHeight: new Map() }); selectedBlock = null;
   S.clauses = new Map();
   // a few accounts start with their own policies so the composite is visible from the first frame
@@ -2340,7 +2340,7 @@ function draw(tm) {
   ring(C * .84, 16, () => `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is ${vt("building", "proposing")} the next block; a white frame around one marks a vote for the open rule change.` + vt("\nNodes that only follow and check the chain sit on the orbit inside.", `\nThe proposer rotates through the set (o7 eligibility); a vote is a consensus_rule_vote transaction.\nNon-sealing nodes sit on the orbit inside.`));
   const nodes = nodesNow(), NR = C * .77, named = nodes.filter(n => n.name);
   ring(NR, 12, () => {
-    const N = nodes.length, who = named.map(n => n.kind === "hud" ? "Tau HUD’s node" : n.name).join(", ") + (N > named.length ? `${named.length ? " and " : ""}${N - named.length} peer${N - named.length === 1 ? "" : "s"} our node has met` : "");
+    const N = nodes.length, who = named.map(n => n.kind === "hud" ? "Tau HUD’s node" : n.name).join(", ") + (N > named.length ? `${named.length ? ", and " : ""}${N - named.length} other node${N - named.length === 1 ? "" : "s"} on the testnet` : "");
     const simNote = isSim() ? "Simulated nodes. " : "";
     return vt(`${simNote}Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} keep${N === 1 ? "s" : ""} a full copy of the chain and check${N === 1 ? "s" : ""} every block without sealing any${N ? ": " + who : ""}.\nThe validators that seal blocks sit on the orbit just outside.\nMore nodes make the chain harder to fake and easier to check.\nClick to open the Nodes page.`,
       `${simNote}Node orbit: ${N || "no"} non-sealing node${N === 1 ? "" : "s"}${N ? ": " + nodes.map(n => `${n.name || "peer"}${n.height ? " #" + fmt(n.height) : n.head ? " " + short(n.head) : ""}${n.agrees === false ? " (other head)" : ""}`).join(" · ") : ""}.\nThey verify every block against the spec and serve readers; sealing stays with the validator orbit outside.\nSource: the relay’s /community list and its own upstream node.\nClick to open the Nodes page.`);
@@ -2368,8 +2368,8 @@ function draw(tm) {
       : n.kind === "kit"
       ? vt(`${n.name}: a community node run with the node kit.\nAt #${fmt(n.height)}, ${n.agrees ? "same head as Tau HUD’s node" : "a different head than Tau HUD’s node"}.\nLast report ${age}.\nClick to open the Nodes page.`,
            `${n.name} (node kit): #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}, ${n.agrees ? "agrees with" : "differs from"} the reference head${ahead > 0 ? `, ${fmt(ahead)} behind` : ""}.\nReported ${age}; a kit node reports once a minute.\nClick to open the Nodes page.`)
-      : vt(`A node our node ${n.connected ? "is connected to right now" : "has met"}${n.height ? `, at #${fmt(n.height)}` : ""}.\nNobody runs it for this page; it just takes part in the network.\nLast seen ${age}.\nClick to open the Nodes page.`,
-           `Peer of our node${n.height ? ": tip #" + fmt(n.height) : ""}${n.agrees == null ? "" : n.agrees ? ", same height as ours" : ", " + fmt(Math.abs(ahead)) + (ahead > 0 ? " behind us" : " ahead of us")}${n.first ? ", first seen " + fmtLogDate(new Date(n.first * 1000).toISOString().slice(0, 10)) : ""}.\n${n.connected ? "Connected to our node right now." : "Not connected right now; met or heard of earlier."}\nLast seen ${age}.\nClick to open the Nodes page.`), nodesHref);
+      : vt(`Another node on the Tau testnet${n.height ? `, at #${fmt(n.height)}` : ""}.\nIt keeps its own copy of the chain and checks every block for itself, independently of this page.\n${n.connected ? "In touch with our node right now" : "Known to our node"}; last seen ${age}.\nClick to open the Nodes page.`,
+           `Peer${n.id ? " " + n.id.slice(0, 8) + "…" + n.id.slice(-4) : ""}${n.height ? ": tip #" + fmt(n.height) : ""}${n.agrees == null ? "" : n.agrees ? ", same height as ours" : ", " + fmt(Math.abs(ahead)) + (ahead > 0 ? " behind us" : " ahead of us")}${n.first ? ", first seen " + fmtLogDate(new Date(n.first * 1000).toISOString().slice(0, 10)) : ""}.\nIndependent full node: verifies every block against the spec on its own.\n${n.connected ? "Connected to our node right now" : "Known to our node, not connected at the moment"}; last seen ${age}.\nClick to open the Nodes page.`), nodesHref);
   });
   ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}. Everything inside obeys it: validators sit on it, accounts and waiting transactions orbit within it, and every block is checked against it.`,
     `Outer rim: the consensus spec, revision ${S.specRev} (o6 block validity, o7 proposer eligibility, o9 fee = ${S.fee} AGRS). Amended ${S.updates.filter(u => u.status === "active").length} time${S.updates.filter(u => u.status === "active").length === 1 ? "" : "s"} by agreement. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`));
@@ -2883,7 +2883,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.34`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.35`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
