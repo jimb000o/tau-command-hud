@@ -398,6 +398,21 @@ All CORS `*`, read-only, no key.
 Within v1 fields are only added, never renamed or removed. `/api` redirects to the docs.
 The embeddable widget is a static page on tauhud.com (`/embed/?panel=…`) that polls the summary.
 
+## Visitor numbers
+
+`relay/visits.py`: cookie-free counts for the site owner, so it shows which pages people open and stay on.
+Every page's header (`assets/nav.js`) sends `GET /v?p=<page>&r=<referrer>&s=<tag>&l=<lang>&m=<sim|live>&w=<width>`
+when it opens and `GET /v?p=<page>&e=1` after 30 s visible. The relay keeps only daily totals in `/data/visits.json`:
+views, visitors and "stayed 30 s" per page, referring site (host name only), `?ref=`/`utm_source` tag, previous
+Tau HUD page, language, sim or live, screen class, hour of day.
+
+- No cookies and nothing stored in the browser (only `?nostats=1`, on request, leaves a browser out).
+- A visitor is a hash of address + user agent with a random salt that lives in memory and changes at 00:00 UTC;
+  addresses and user agents are never written down. Do Not Track, Global Privacy Control and bots are not counted.
+- Report: `https://node.tauhud.com/visits?key=<key>` (`/visits.json?key=` for the raw counts). The key is
+  `VISITS_KEY` from `.env`, or made once and kept in `/data/visits.key`:
+  `docker compose exec relay cat /data/visits.key`
+
 ## Tests
 
 ```bash
@@ -407,6 +422,7 @@ python relay/test_uptime.py
 python relay/test_health.py
 python relay/test_api.py
 python relay/test_simvotes.py
+python relay/test_visits.py
 ```
 
 Runs the relay against a mock node that enforces the real node's rate limits: read

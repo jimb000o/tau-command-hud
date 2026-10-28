@@ -33,6 +33,7 @@ from websockets.http11 import Request, Response
 from simpredict import SimPredict
 from simprops import SimProps
 from simvotes import SimVotes, name_of
+from visits import Visits
 
 log = logging.getLogger("tau-relay")
 
@@ -269,6 +270,7 @@ class Relay:
         self.simprops = SimProps(self.simvotes)   # rule changes visitors propose to the simulation (simprops.py)
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
+        self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
         self.clients: set[ServerConnection] = set()
         self.per_ip: dict[str, int] = {}
         # connection -> viewer token from "hello … viewer=…": one person's tabs, pages and
@@ -1430,6 +1432,13 @@ class Relay:
             code = HTTPStatus.OK if ok else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
         ip = self.client_ip(connection, request)
+        seen = self.visits.route(path, query, ip, request.headers)
+        if seen is not None:
+            code = HTTPStatus(seen[0])
+            headers = Headers([("Content-Type", seen[1]), ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "no-store"), ("Referrer-Policy", "no-referrer"),
+                               ("X-Robots-Tag", "noindex")])
+            return Response(code.value, code.phrase, headers, seen[2])
         sim = self.simvotes.route(path, query, ip)
         if sim is None:
             prop = self.simprops.route(path, query, ip)
@@ -1555,6 +1564,7 @@ class Relay:
                 loop.add_signal_handler(sig, stop.set_result, None)
             await stop
             server.close()
+        self.visits.save(force=True)
         for t in tasks:
             t.cancel()
 
