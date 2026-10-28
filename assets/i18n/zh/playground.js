@@ -159,4 +159,11 @@ TauI18n.add({ strings: {
   "· quorum ⌈2N/3⌉ of the current validator set, one vote per validator, activation at a later height.": "· 法定票数为当前验证者集合的 ⌈2N/3⌉，每个验证者一票，在之后的高度生效。",
   "“this step”. Only the current step may be read.": "“这一步”。只能读取当前这一步。",
   "”. The testnet would not take this rule.": "”处被拒绝。测试网不会接受这条规则。",
+  "Pick a proposal to vote on": "选择一项要投票的提案",
+  "Every transfer gets cheaper.": "每笔转账都会更便宜。",
+  "Transfers cost twice as much.": "转账费用翻倍。",
+  "Quorum rises to 4 of 5.": "法定票数升到 5 票中的 4 票。",
+  "Propose ›": "提出 ›",
+  "No vote running yet.": "还没有进行中的投票。",
+  "Pick one of the three proposals to start one. Its rule, the votes and the way to activation then show up here.": "选择三项提案之一来开始投票。它的规则、投票和走向生效的过程随后会显示在这里。",
 } });
