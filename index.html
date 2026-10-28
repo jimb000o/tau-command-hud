@@ -1365,7 +1365,7 @@ function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.36", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.37", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
@@ -1961,12 +1961,12 @@ const SIM = { timer: null, txTimer: null, accounts: [], nodes: [] };
 const SIMFEED = () => !!(window.TauSim && TauSim.on), isSim = () => S.mode === "sim" || !!S.simfeed;
 /* nodes that follow and check the chain without sealing blocks: the node behind this page (the relay's upstream),
    community nodes run with the node kit (GET /community), and peers our node talks to (GET /peers, when the relay offers it) */
-const NET = { nodes: [], at: 0, timer: null };
+const NET = { nodes: [], at: 0, timer: null, src: "" };   // src: which feed filled the list ("sim" or "live"); the orbit never shows the other feed’s nodes
 const relayBase = () => PRESENCE.url.replace(/\/status$/, "");
 const nodesHref = () => { const l = new URLSearchParams(location.search).get("lang"); return "nodes/" + (l ? "?lang=" + encodeURIComponent(l) : ""); };
 async function pollNodes() {
   if (S.mode !== "live") return;
-  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+  const feed = S.simfeed ? "sim" : "live", ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
   try {
     const get = path => S.simfeed ? TauSim.fetch(path) : fetch(relayBase() + path, { cache: "no-store", signal: ctl.signal });
     const j = await (await get("/community")).json();
@@ -1981,11 +1981,16 @@ async function pollNodes() {
         const ph = Number(n.head) || 0, ref = j.reference ? Number(j.reference.tip) || Number(j.reference.height) || 0 : 0;   // a peer's "head" is its tip height, not a hash
         list.push({ kind: "peer", id: String(n.id || ""), name: "", height: ph, head: "", agrees: ph && ref ? Math.abs(ph - ref) <= 2 : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
       }
-    } catch { list.push(...NET.nodes.filter(n => n.kind === "peer")); }   // one slow /peers answer must not empty the orbit: keep the last good peer list
-    NET.nodes = list; NET.at = Date.now();
+    } catch { if (NET.src === feed) list.push(...NET.nodes.filter(n => n.kind === "peer")); }   // one slow /peers answer must not empty the orbit: keep the last good peer list
+    if (feed !== (S.simfeed ? "sim" : "live") || S.mode !== "live") return;   // the feed changed while we waited: this answer belongs to the old one
+    NET.nodes = list; NET.at = Date.now(); NET.src = feed;
   } catch {} finally { clearTimeout(t); }
 }
-function nodesNow() { return S.mode === "sim" ? SIM.nodes.map(n => ({ ...n, height: S.height })) : NET.nodes; }
+function nodesNow() {
+  if (S.mode === "sim") return SIM.nodes.map(n => ({ ...n, height: S.height }));
+  if (NET.src === (S.simfeed ? "sim" : "live")) return NET.nodes;
+  return [{ kind: "hud", name: "tauhud.com", height: S.height, head: "", tip: null, agrees: true, age: 0 }];   // until this feed’s first /community answer: only our own node, never the other feed’s list
+}
 const PROPOSALS = [
   () => { const v = pick([6, 8, 12, 15].filter(x => x !== S.fee)); return { kind: "fee", value: v, title: `Change base fee to ${v}`, diff: `o9: #x${hex6(S.fee)} (${S.fee}) → #x${hex6(v)} (${v})` }; },
   () => { const pk = hex(96); return { kind: "validator", value: pk, title: "Admit a new validator", diff: `host_contract_patch.validator_additions += ${short(pk)}` }; },
@@ -2247,7 +2252,7 @@ function liveConnect() {
     liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool"); RIB.probe = true; liveSend("getblockrange 1 1");
     LIVE.poll = setInterval(() => { liveSend("getblocks 6"); liveSend("getmempool"); }, 3000);
     LIVE.govPoll = setInterval(() => liveSend("getgovernance"), 15000);
-    if (S.simfeed) pollNodes();
+    pollNodes();   // fill the orbit from this feed right away, so a switch from the opening simulation never shows its nodes on the live chain
   };
   ws.onmessage = liveMessage;
   ws.onerror = () => liveFail("no connection");
@@ -2903,7 +2908,7 @@ setInterval(() => { if (S.mode === "sim") renderUpdates(); }, 1000);
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.36`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.37`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

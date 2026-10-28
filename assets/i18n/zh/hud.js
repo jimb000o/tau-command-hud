@@ -1481,5 +1481,6 @@ TauI18n.add({ strings: {
   "Nothing waiting: every transaction sent so far is in a block.": "没有等待中的交易：迄今发送的每笔交易都已在区块中。",
   "transfer": "转账",
   "rule-change proposal": "规则变更提案",
-  "Mempool: {h} pending · est. fee {n}": "内存池：{h} 待处理 · 预估手续费 {n}"
+  "Mempool: {h} pending · est. fee {n}": "内存池：{h} 待处理 · 预估手续费 {n}",
+  "Chain core: the node orbit no longer shows the opening simulation’s nodes (alice-node, bob) for a moment after the switch to the live chain. Each node list is tagged with the feed that filled it; the live orbit shows only Tau HUD’s node until the relay’s own answer arrives, and an answer that belongs to the previous feed is discarded. No more flicker between “just us” and “us plus two” on refresh.": "链核心：切换到实时链后，节点轨道不再短暂显示开场模拟的节点（alice-node、bob）。每份节点列表都标记了填充它的数据源；实时轨道在中继自己的回答到达前只显示 Tau HUD 的节点，属于上一个数据源的回答会被丢弃。刷新时不再在“只有我们”和“我们加两个”之间闪动。"
 } });
