@@ -207,4 +207,13 @@ TauI18n.add({ strings: {
   "“{r}” proposed at #{n}, in force since #{m} (revision {a}). {x} Click for the rule diff and the votes.": "“{r}”在 #{n} 提议，自 #{m} 起生效（版本 {a}）。{x} 点击查看规则差异和投票。",
   "“{r}” proposed at #{n}, agreed at #{m}, takes effect at #{a}, {x}. {y} Click for the rule diff and the votes.": "“{r}”在 #{n} 提议，在 #{m} 获同意，于 #{a} 生效，{x}。{y} 点击查看规则差异和投票。",
   "Proof of stake": "权益证明",
+  "“Remove validator {h}”": "“移除验证者 {h}”",
+  "“Back to the fixed validator list”": "“恢复固定验证者名单”",
+  "Scheduled in the simulation": "模拟中已排定",
+  "No proposal is open right now.": "目前没有开放的提案。",
+  "proposed at {x} UTC, in force at {y} UTC ({z})": "{x} UTC 提议，{y} UTC 生效（{z}）",
+  "in force at {y} UTC ({z})": "{y} UTC 生效（{z}）",
+  "in {n} min": "还有 {n} 分钟",
+  "in {n} h {m} min": "还有 {n} 小时 {m} 分钟",
+  "now": "现在",
 } });

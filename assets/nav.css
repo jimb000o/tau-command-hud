@@ -136,3 +136,9 @@ header.trail .chip.unoff.sim:hover { border-color: #ffb13b; }
 body[data-view="simple"] .vt { display: none !important; }
 .vp { display: none; }
 body[data-view="simple"] .vp { display: block; }
+
+/* simulation badge on phones: the countdown text, set by nav.js; Chinese keeps the short note */
+@media (max-width: 700px) {
+  header.trail .chip.unoff.sim::after { content: attr(data-short); }
+  html.i18n-zh header.trail .chip.unoff.sim::after { content: "模拟 · 非真实链上数据"; }
+}
