@@ -181,8 +181,8 @@ def thanks_text(d: dict, donors: int, nth: int) -> str:
     first = ", the first donation to Tau HUD" if nth == 1 else " for Tau HUD"
     who = ("1 person has" if donors == 1 else f"{donors} people have")
     return (f"💚 <b>Thank you, {html.escape(short(d['from']))}</b>\n\n"
-            f"{amt} just came in{first}. It pays for the server and for the time it takes to keep "
-            f"the HUD, the alerts and the bot in step with the testnet.\n\n"
+            f"{amt} just came in{first}. It helps pay for the time it takes to keep the HUD, the alerts "
+            f"and the bot in step with the testnet, and for the server.\n\n"
             f"{who} supported Tau HUD so far. <a href=\"{TX_URL}{d['tx']}\">Transaction</a> · "
             f"<a href=\"{SITE}/#donate\">About</a>")
 
@@ -190,8 +190,8 @@ def thanks_text(d: dict, donors: int, nth: int) -> str:
 def thanks_x(d: dict, donors: int) -> str:
     amt = f"{fmt_amount(Decimal(d['amount']))} {d['asset']}"
     who = "1 person has" if donors == 1 else f"{donors} people have"
-    return (f"💚 Thank you, {short(d['from'])}: {amt} just came in for Tau HUD. It pays for the server and the time "
-            f"to keep it in step with the testnet. {who} supported it so far.\n\n{SITE}")
+    return (f"💚 Thank you, {short(d['from'])}: {amt} just came in for Tau HUD. It helps pay for the time it takes "
+            f"to keep it in step with the testnet, and for the server. {who} supported it so far.\n\n{SITE}")
 
 
 class Donations:
