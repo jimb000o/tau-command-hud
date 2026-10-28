@@ -1,5 +1,15 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "has not voted": "尚未投票",
+  "{n} of {m} (⌈2·{a}/3⌉)": "{m} 票中需 {n} 票（⌈2·{a}/3⌉）",
+  "voted yes": "投了赞成票",
+  "voted no": "投了反对票",
+  "{x1} votes yes.": "{x1} 投赞成票。",
+  "{x1} votes no.": "{x1} 投反对票。",
+  "You vote yes.": "你投了赞成票。",
+  "You vote no.": "你投了反对票。",
+  "block #{n}": "区块 #{n}",
+  "In force. Pick another change to vote again.": "已生效。选择另一项变更再次投票。",
   ", most likely run by IDNI), so the quorum is 1. The network also runs with open governance admission: a proposal or a vote from any key counts, so a single yes vote schedules a change. Here the seat is simulated and only validators vote, which is the code’s default. Counting, quorum and the delay before a change takes effect work as on the real node.": "，很可能由 IDNI 运行），所以法定票数是 1。网络还以开放治理准入运行：任何密钥的提案或投票都算数，所以一张赞成票就能排期一项变更。这里的席位是模拟的，只有验证者能投票，这是代码的默认设置。计票、法定票数和变更生效前的延迟与真实节点一致。",
   ". Personal rules may look at the current step [t] only; one rule reading another step would break every account’s outputs after each rule change.": "。个人规则只能查看当前步 [t]；一条读取其他步的规则会在每次规则变更后破坏每个账户的输出。",
   ". Unofficial community page, not affiliated with IDNI. ·": "。非官方社区页面，与 IDNI 无关。·",
