@@ -164,15 +164,18 @@ weights add up to 100. `factors` lists each with `weight`, `points`, `value` and
 | `sync` in sync with the network | 15 | within 2 blocks of the tip | 30 behind |
 | `last_block` time since the last block | 20 | up to 3 typical block times | 30 min |
 | `pace` blocks in the last hour | 10 | 75 % of the expected count | none |
-| `availability` live and in sync, 24 h | 15 | 99 % of the checks | 80 % |
+| `availability` live and in sync, 24 h | 10 | 99 % of the checks | 80 % |
 | `stability` restarts, reorgs, stalls, 24 h | 15 | none | restart −10, stall −4, reorg −3 |
-| `mempool` oldest waiting transaction | 5 | up to 10 min | 60 min (IDNI #81 shows here) |
+| `mempool` waiting transactions | 10 | none already in a block, oldest real one up to 10 min | all listed ones already in a block (IDNI #81), or a real one waiting 60 min |
 
 The typical block time (`expected_block_seconds`) is the median gap of the last 100
 blocks, stalls left out (60 s until there are enough). `state` is `healthy` from 80
 (`HEALTH_OK_AT`), `degraded` from 50 (`HEALTH_DEGRADED_AT`), else `down`; no answer from
 the node or no block for 30 minutes is `down` whatever the score. `hours` is
-`[hour, average, lowest]` for the last 31 days. `/status` carries `health`
+`[hour, average, lowest]` for the last 31 days. `known_issues` lists testnet bugs that cost
+points right now (`id`, `url`, `title`, `count`, `points`); today only IDNI #81: the node keeps
+transactions that are already in a block listed as waiting, and each costs its share of the
+mempool factor. `/status` carries `health`
 (`score`, `state`, `label`).
 
 ## Rule Playground checker
