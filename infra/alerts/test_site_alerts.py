@@ -137,6 +137,20 @@ w3.state.pop("site", None)
 run(w3, at("2026-10-28", "12:00"), log)
 check(len(w3.state["site"]["majors"]) == 2, "without Telegram the majors stay queued")
 
+# a major marked skip is never posted, and leaves the queue if it was already waiting
+w5 = alerts.Watcher([tg5 := Fake()])
+w5.state.pop("site", None)
+run(w5, at("2026-10-28", "22:00"), log)
+check([m["key"] for m in w5.state["site"]["majors"]] == ["major:gazette", "major:missions"], "both queued before the mark")
+marked = [dict(e, major=dict(e["major"], skip="posted by hand")) if e.get("major", {}).get("id") == "gazette" else e for e in log]
+run(w5, at("2026-10-28", "23:00"), marked)
+run(w5, at("2026-10-29", "08:00"))
+check(len(tg5.sent) == 1 and "Missions" in tg5.sent[0][0], "the skipped major leaves the queue, the next one goes out")
+w6 = alerts.Watcher([])
+w6.state.pop("site", None)
+run(w6, at("2026-10-28", "22:00"), marked)
+check([m["key"] for m in w6.state["site"]["majors"]] == ["major:missions"], "a major marked skip is never queued")
+
 # the real log parses and its majors are complete
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "assets", "updates.json")) as f:
     real = json.load(f)
