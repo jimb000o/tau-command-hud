@@ -445,8 +445,11 @@ def health_problems(h: dict) -> list[str]:
         elif k == "stability" and isinstance(v, dict):
             parts = [plural(v[x], x[:-1]) for x in ("restarts", "stalls", "reorgs") if v.get(x)]
             out.append("In the last 24 hours: " + ", ".join(parts))
-        elif k == "mempool" and isinstance(v, (int, float)):
-            out.append(f"A transaction has been waiting for {fmt_dur(v)}")
+        elif k == "mempool" and isinstance(v, dict):
+            if v.get("sealed"):
+                out.append(f"{plural(v['sealed'], 'transaction')} already in a block still listed as waiting (IDNI #81)")
+            elif v.get("oldest"):
+                out.append(f"A transaction has been waiting for {fmt_dur(v['oldest'])}")
     return out[:3]
 
 

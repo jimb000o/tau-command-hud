@@ -693,6 +693,7 @@ TauI18n.add({ strings: {
   "State hash": "状态哈希",
   "State hash (latest)": "状态哈希（最新）",
   "state {h}": "状态 {h}",
+  "Status: the testnet health score now counts the known mempool bug (IDNI #81). Every transaction that is already in a block but still listed as waiting costs its share of 10 points, and the breakdown lists the bug with what it costs right now.": "状态：测试网健康评分现在计入已知的内存池 bug（IDNI #81）。每笔已在区块中却仍被列为等待的交易都会按比例扣除这 10 分中的一部分，明细中会列出这个 bug 以及它当前扣了多少分。",
   "Step": "步骤",
   "Step 1 of 8": "第 1 步，共 8 步",
   "Step 2 of 8": "第 2 步，共 8 步",

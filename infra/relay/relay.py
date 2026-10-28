@@ -97,7 +97,7 @@ STATS_CACHE_SECONDS = _env_float("STATS_CACHE_SECONDS", 5)
 HEALTH_BLOCK_SECONDS = _env_float("HEALTH_BLOCK_SECONDS", 60)  # expected block time until the chain shows its own
 HEALTH_OK = _env_int("HEALTH_OK_AT", 80)          # at or above: healthy
 HEALTH_DEGRADED = _env_int("HEALTH_DEGRADED_AT", 50)  # at or above: degraded, below: down
-HEALTH_WEIGHTS = {"node": 20, "sync": 15, "last_block": 20, "pace": 10, "availability": 15, "stability": 15, "mempool": 5}
+HEALTH_WEIGHTS = {"node": 20, "sync": 15, "last_block": 20, "pace": 10, "availability": 10, "stability": 15, "mempool": 10}
 # a tx that leaves the mempool counts as dropped only if no block holds it
 # this long afterwards (the block poll may still be catching up)
 DROP_GRACE_SECONDS = _env_float("DROP_GRACE_SECONDS", 30)
@@ -712,16 +712,26 @@ class Relay:
         add("stability", "Restarts, reorgs and stalls, 24 h", max(0.0, 1 - lost / W["stability"]),
             {"restarts": restarts, "reorgs": reorgs, "stalls": stalls},
             "a restart costs 10 points, a stall over 10 min 4, a reorg 3")
-        waiting = [now - i["seen"] for i in self.mempool_seen.values() if i.get("seen")]
-        oldest = max(waiting) if waiting else 0
-        add("mempool", "Oldest waiting transaction", lin(oldest, 600, 3600), round(oldest),
-            f"{len(waiting)} waiting" if waiting else "mempool empty")
+        # The mempool should list only transactions no block holds yet. IDNI #81: the node keeps
+        # sealed ones listed as pending for up to an hour; every such entry costs its share.
+        sealed = {i for b in self.blocks.values() for i in (b.get("tx_ids") or [])}
+        pool = list(self.mempool_seen.items())
+        stale = sum(1 for h, _ in pool if h in sealed)
+        real = [now - i["seen"] for h, i in pool if h not in sealed and i.get("seen")]
+        oldest = max(real) if real else 0
+        add("mempool", "Waiting transactions", (1 - stale / len(pool) if pool else 1.0) * lin(oldest, 600, 3600),
+            {"waiting": len(pool), "sealed": stale, "oldest": round(oldest)},
+            "already in a block but still listed as waiting (IDNI #81)" if stale
+            else "a real one waiting long costs points" if pool else "mempool empty")
+        known = [{"id": "IDNI #81", "url": "https://github.com/IDNI/tau-testnet/issues/81",
+                  "title": "The node lists transactions as waiting that are already in a block",
+                  "count": stale, "points": round(W["mempool"] * stale / len(pool), 1)}] if stale else []
         score = round(sum(f["points"] for f in factors))
         # no answer from our node, or no block for 30 minutes, is down whatever the other factors say
         halted = factors[2]["points"] == 0
         state = "down" if not node_ok or halted or score < HEALTH_DEGRADED else "healthy" if score >= HEALTH_OK else "degraded"
         out = {"score": score, "state": state, "label": {"healthy": "Healthy", "degraded": "Degraded", "down": "Down"}[state],
-               "at": round(now), "expected_block_seconds": round(exp), "factors": factors}
+               "at": round(now), "expected_block_seconds": round(exp), "factors": factors, "known_issues": known}
         self.health_cache = (now, out)
         return out
 

@@ -546,7 +546,11 @@ const FACTOR_WORDS = {
   pace: v => plural(v, "block"),
   availability: v => v == null ? "no record yet" : pct(v),
   stability: v => v && typeof v === "object" ? (["restarts", "stalls", "reorgs"].filter(k => v[k]).map(k => plural(v[k], k.slice(0, -1))).join(", ") || "none") : String(v),
-  mempool: v => v ? `${dur(v)} waiting` : "none waiting",
+  // {waiting, sealed, oldest}; a bare number is the oldest age from a relay before the IDNI #81 count
+  mempool: v => typeof v === "number" ? (v ? `${dur(v)} waiting` : "none waiting")
+    : !v?.waiting ? "none waiting"
+    : v.sealed ? `${v.sealed} of ${v.waiting} already in a block (IDNI #81)`
+    : v.oldest >= 600 ? `${v.waiting} in the mempool, oldest ${dur(v.oldest)}` : `${v.waiting} in the mempool`,
 };
 const fval = f => (FACTOR_WORDS[f.key] || String)(f.value);
 const SHORT = { node: "node answering", sync: "sync with the network", last_block: "time since the last block", pace: "block pace", availability: "24 h uptime", stability: "stability", mempool: "waiting transactions" };
@@ -602,9 +606,10 @@ function openHealth() {
   <table class="ftab"><thead><tr><th>Factor</th><th>Now</th><th style="text-align:right">Points</th></tr></thead><tbody>
   ${H.factors.map(f => `<tr class="${f.points <= 0 ? "zero" : f.weight - f.points >= 1 ? "lost" : ""}"><td><b>${esc(f.label)}</b>${f.note ? `<small>${esc(f.note)}</small>` : ""}</td><td>${esc(fval(f))}</td><td class="pts"><b>${f.points}</b> / ${f.weight}<span class="bar"><i style="width:${(f.points / f.weight * 100).toFixed(0)}%"></i></span></td></tr>`).join("")}
   </tbody></table>
+  ${(H.known_issues || []).length ? `<h3>Known testnet bugs in this score</h3><ul class="steps">${H.known_issues.map(k => `<li class="now"><b><a href="${esc(k.url)}" target="_blank" rel="noopener" style="color:#fff">${esc(k.id)}</a></b> ${esc(k.title)}. <span>Costs ${Math.round(k.points)} points right now: ${k.count} transactions.</span></li>`).join("")}</ul>` : ""}
   <h3>Last 30 days <small style="letter-spacing:0;text-transform:none">line: daily average · band: down to the lowest hour</small></h3>
   ${known.length ? `<svg class="hchart spark" viewBox="0 0 600 120" preserveAspectRatio="none">${sparkSvg(days, 600, 120, "", true)}</svg><div class="axis"><span>${fmtDay(days[0].d)}</span><span>today</span></div>` : `<p class="note">The history starts now; the relay records the score once a minute.</p>`}
-  <p class="note">Get a Telegram post when the testnet goes down and when it is back: <a href="https://t.me/tauHUDcom" target="_blank" rel="noopener" style="color:#fff">t.me/tauHUDcom</a>. The waiting-transaction factor also shows the known mempool bug <a href="https://github.com/IDNI/tau-testnet/issues/81" target="_blank" rel="noopener">IDNI #81</a>. <a href="${BASE}/health-score" target="_blank" rel="noopener">Raw data (JSON)</a></p>`;
+  <p class="note">Get a Telegram post when the testnet goes down and when it is back: <a href="https://t.me/tauHUDcom" target="_blank" rel="noopener" style="color:#fff">t.me/tauHUDcom</a>. The waiting-transaction factor counts the known mempool bug <a href="https://github.com/IDNI/tau-testnet/issues/81" target="_blank" rel="noopener">IDNI #81</a>. <a href="${BASE}/health-score" target="_blank" rel="noopener">Raw data (JSON)</a></p>`;
   $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus();
 }
 $("health").addEventListener("click", openHealth);
@@ -628,17 +633,18 @@ function sampleHealth() {
     hours.push([h, Math.round(a * 10) / 10, Math.round(a - 5 - rnd() * 15)]);
   }
   return {
-    generated_at: now, at: now - 20, score: 91, state: "healthy", label: "Healthy", expected_block_seconds: 62,
+    generated_at: now, at: now - 20, score: 86, state: "healthy", label: "Healthy", expected_block_seconds: 62,
     thresholds: { healthy: 80, degraded: 50 }, hours,
     factors: [
       { key: "node", label: "Node answering", weight: 20, points: 20, value: "yes", note: "" },
       { key: "sync", label: "In sync with the network", weight: 15, points: 15, value: "in sync", note: "" },
       { key: "last_block", label: "Time since the last block", weight: 20, points: 20, value: 41, note: "usually 62 s between blocks" },
       { key: "pace", label: "Blocks in the last hour", weight: 10, points: 10, value: 57, note: "about 58 expected" },
-      { key: "availability", label: "Live and in sync, 24 h", weight: 15, points: 14.2, value: 0.9891, note: "1440 checks" },
+      { key: "availability", label: "Live and in sync, 24 h", weight: 10, points: 9.5, value: 0.9891, note: "1440 checks" },
       { key: "stability", label: "Restarts, reorgs and stalls, 24 h", weight: 15, points: 11, value: { restarts: 0, reorgs: 0, stalls: 1 }, note: "a restart costs 10 points, a stall over 10 min 4, a reorg 3" },
-      { key: "mempool", label: "Oldest waiting transaction", weight: 5, points: 0.8, value: 3100, note: "2 waiting" },
+      { key: "mempool", label: "Waiting transactions", weight: 10, points: 0.4, value: { waiting: 27, sealed: 26, oldest: 40 }, note: "already in a block but still listed as waiting (IDNI #81)" },
     ],
+    known_issues: [{ id: "IDNI #81", url: "https://github.com/IDNI/tau-testnet/issues/81", title: "The node lists transactions as waiting that are already in a block", count: 26, points: 9.6 }],
   };
 }
 
