@@ -139,6 +139,15 @@ strips the list before it pushes governance to visitors). Peer IDs only, never a
 "counts": {"connected", "met_30m", "met_24h", "seen_24h", "seen_30d"}, "bootnode", "since"}`; `label` is
 "IDNI bootnode" for IDNI's bootnode, `community` names a kit node that reported this peer ID
 (kit 3 sends `peer=` with its report). Kept in `/data/peers.json`.
+`steady` is true once our node has known a peer for `PEER_STEADY_SECONDS` (10 min; the bootnode
+always), `online` while a steady peer was seen in the last `PEER_ONLINE_SECONDS` (30 min), and
+`counts.online` counts those: pages count only online peers, so a node someone starts for a few
+minutes never shows up and a peer does not drop out between two polls.
+
+The alerts service posts one Telegram message per genuinely new node (`maybe_newnodes`): a kit
+node or a peer that stayed `NEWNODE_HOLD_SECONDS` (30 min), first seen within the last day, never
+the same node twice, at most `NEWNODE_DAILY_CAP` (3) posts a day; nodes already known when it first
+runs are not posted. `NEWNODE_ALERTS=false` turns it off.
 
 `GET /uptime` (CORS `*`, cached 5 s; used by tauhud.com/status) is the availability
 history for the status page. Once a minute the relay samples whether the node is

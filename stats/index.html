@@ -811,7 +811,7 @@ function renderNodes() {
   const nodes = NODES && Array.isArray(NODES.nodes) ? NODES.nodes : [];
   const ref = NODES && NODES.reference, refTip = ref ? (ref.tip ?? ref.height) : (D && D.tip);
   // the whole network as our node sees it, ours included
-  const seen = PEERS && Array.isArray(PEERS.peers) ? PEERS.peers.filter(p => p.last_seen && Date.now() / 1000 - p.last_seen < 86400) : null;
+  const seen = PEERS && Array.isArray(PEERS.peers) ? PEERS.peers.filter(p => p.online ?? (p.last_seen && Date.now() / 1000 - p.last_seen < 86400)) : null;
   const net = seen ? `Our node sees ${seen.length + 1} nodes on the network${seen.some(p => p.label) ? ", IDNI’s bootnode and ours included" : ""}. ` : "";
   if (!nodes.length) {
     head.textContent = net + "No community node is reporting yet.";
