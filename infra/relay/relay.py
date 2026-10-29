@@ -25,6 +25,7 @@ import os
 import re
 import signal
 import time
+import urllib.parse
 from http import HTTPStatus
 
 from websockets.asyncio.client import connect
@@ -38,7 +39,7 @@ from simprops import SimProps
 from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from slotlease import SlotLease
-from visits import Visits
+from visits import OWN_HOSTS, SITES, Visits
 
 log = logging.getLogger("tau-relay")
 
@@ -55,7 +56,7 @@ UPSTREAM_URL = os.environ.get("UPSTREAM_URL", "ws://tau-node:65433")
 LISTEN_HOST = os.environ.get("LISTEN_HOST", "0.0.0.0")
 LISTEN_PORT = _env_int("LISTEN_PORT", 8080)
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
-    "ALLOWED_ORIGINS", "https://tauhud.com,https://www.tauhud.com,https://jimb000o.github.io"
+    "ALLOWED_ORIGINS", "https://tauhud.com,https://www.tauhud.com,https://jimb000o.github.io,https://agorzilla.com,https://www.agorzilla.com"
 ).split(",") if o.strip()]
 # Caddy overwrites X-Forwarded-For with the real client address, so the relay
 # may trust it when it is only reachable through Caddy.
@@ -246,6 +247,12 @@ def envelope_ok(command: str, data: dict) -> str:
     return json.dumps({"status": "ok", "command": command, "data": data}, separators=(",", ":"))
 
 
+
+def site_of_origin(origin: str) -> str:
+    """Which of our sites a page came from, by its Origin header: "agorzilla", or "" for Tau HUD and anything else."""
+    host = urllib.parse.urlsplit(origin or "").hostname or ""
+    return next((site for site in SITES if host in OWN_HOSTS[site]), "")
+
 class TokenBucket:
     def __init__(self, capacity: float, refill: float):
         self.capacity, self.refill = capacity, refill
@@ -337,7 +344,7 @@ class Relay:
         # once in `online`, keyed like the visit count (visits.person: daily salt + address +
         # user agent, in memory only). Nothing is stored in the browser for it; the viewer
         # token older pages send in "hello … viewer=…" is accepted and ignored.
-        self.viewers: dict[ServerConnection, tuple[str, str]] = {}
+        self.viewers: dict[ServerConnection, tuple[str, str, str]] = {}   # address, user agent, site (from Origin)
         self.blocks: dict[str, dict] = {}       # block_hash -> raw block
         self.total_blocks = 0
         self.cache: dict[str, str] = {}         # command -> envelope text
@@ -1522,14 +1529,18 @@ class Relay:
         return self.community_text
 
     # ---------- presence ----------
-    def online(self) -> int:
+    def online(self, site: str | None = None) -> int:
         """People, not sockets: one browser's tabs, pages and reconnects count once
-        (same address and user agent, hashed with the day's salt like the visit count)."""
-        people = {self.visits.person(ip, ua) for ip, ua in self.viewers.values()}
-        return len(people) + sum(1 for c in self.clients if c not in self.viewers)
+        (same address and user agent, hashed with the day's salt like the visit count).
+        With a site ("agorzilla"), only the people whose page came from that site."""
+        people = {self.visits.person(ip, ua) for ip, ua, s in self.viewers.values() if site is None or s == site}
+        return len(people) + (0 if site else sum(1 for c in self.clients if c not in self.viewers))
+
+    def online_sites(self) -> dict:
+        return {s: self.online(s) for s in SITES}
 
     def presence_envelope(self) -> str:
-        return envelope_ok("presence", {"online": self.online(), "pushed": True})
+        return envelope_ok("presence", {"online": self.online(), "sites": self.online_sites(), "pushed": True})
 
     def push_presence(self):
         broadcast(self.clients, self.presence_envelope())
@@ -1560,6 +1571,7 @@ class Relay:
             "total_blocks": self.total_blocks,
             "clients": len(self.clients),
             "online": self.online(),
+            "online_sites": self.online_sites(),
             "community_nodes": len(self.community),
             # the newest chain restarts and reorgs the relay noticed (full lists on /stats)
             "restarts": [{"detected_at": r.get("detected_at"), "old_tip": (r.get("old") or {}).get("tip")}
@@ -1696,7 +1708,8 @@ class Relay:
         ip = self.client_ip(ws, ws.request)
         self.per_ip[ip] = self.per_ip.get(ip, 0) + 1
         self.clients.add(ws)
-        self.viewers[ws] = (ip, ws.request.headers.get("User-Agent", "") if ws.request else "")
+        headers = ws.request.headers if ws.request else {}
+        self.viewers[ws] = (ip, headers.get("User-Agent", ""), site_of_origin(headers.get("Origin", "")))
         self.push_presence()
         bucket = TokenBucket(CLIENT_BURST, CLIENT_REFILL)
         try:

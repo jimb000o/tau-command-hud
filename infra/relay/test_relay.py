@@ -356,6 +356,17 @@ async def main():
             seen = json.loads(await asyncio.wait_for(a.recv(), 3))
             check(seen["command"] == "presence" and seen["data"]["online"] == 1, "presence pushed on leave")
 
+        # presence per site: a page from agorzilla.com is counted for Agorzilla, and in the total
+        async with connect(url, additional_headers=origin) as a:
+            json.loads(await a.recv())
+            async with connect(url, additional_headers={"Origin": "https://agorzilla.com", "X-Forwarded-For": "198.51.100.9"}) as b:
+                seen = json.loads(await asyncio.wait_for(a.recv(), 3))
+                check(seen["data"]["online"] == 2 and seen["data"]["sites"] == {"agorzilla": 1}, f"presence counts Agorzilla apart {seen['data']}")
+                body3 = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen("http://127.0.0.1:18766/status", timeout=5).read()))
+                check(body3["online_sites"] == {"agorzilla": 1}, f"/status online_sites {body3.get('online_sites')}")
+            seen = json.loads(await asyncio.wait_for(a.recv(), 3))
+            check(seen["data"]["sites"] == {"agorzilla": 0}, "Agorzilla visitor left")
+
         # one person, several sockets: the same browser (address + user agent) counts once,
         # whatever token the page sends; a reconnect that overlaps with the old socket does
         # not add a second person; another browser does
