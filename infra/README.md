@@ -372,6 +372,23 @@ answer) and when it recovers (score 70 or more), each only after the new state h
 the factors that lose the most points. The state on the first run is not posted.
 `HEALTH_ALERTS=false` turns it off.
 
+**Findings** (`alerts/findings.py`): once a minute the watcher also looks for unusual
+things on the real chain and posts each incident once when it starts and once when it
+is over: our node without the IDNI bootnode or any peer (10 min), no new block while
+connected (20 min), ghost transactions (IDNI #81, at most once a day, no recovery post),
+a reorg of 2+ blocks, blocks at under half the usual pace for an hour, a spike of
+dropped transactions, our node 30+ blocks behind (IDNI #78). After a peer outage the
+recovery post says, from the caught-up blocks' timestamps, whether the testnet kept
+going or really paused. The same detector stays quiet for a while after an incident.
+From the 4th start in 6 hours on (`FINDINGS_STORM_AT`, `FINDINGS_STORM_HOURS`) nothing
+is posted one by one; the list goes out once, after 2 calm hours or at 21:00 UTC.
+On X: peer outages without any peer, stalls, reorgs and busy-stretch summaries, at most
+`FINDINGS_X_DAILY_CAP` (3) a day. While a posted finding covers an outage, the health
+alarm above stays quiet. `FINDINGS=false` turns it off.
+
+- `docker compose run --rm alerts python alerts.py --findings-preview` prints what the
+  detectors see now, the replay of the 29 Oct bootnode outage and one of each post.
+
 Logs: `docker compose logs -f alerts`.
 
 ## Question bot

@@ -1127,5 +1127,10 @@
    "link": "/wallet/",
    "image": "/assets/shots/wallet-rules.png"
   }
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-29",
+  "html": "Findings from the chain: the Telegram channel now posts by itself when our read node sees something unusual on the real testnet: no new blocks, the IDNI bootnode gone, ghost transactions (IDNI #81), blocks replaced, a slow pace, many dropped transactions, or our node falling behind (IDNI #78). One post when it starts, one when it is over, never repeated; when it gets wild, the bot collects and posts one summary afterwards. Real outages also go to X, at most three findings a day."
  }
 ]
