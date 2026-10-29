@@ -327,6 +327,7 @@ html.i18n-zh .ga-tx { text-align: left; }
 .dot.sim { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
 .chip.sim b { color: #ffb13b; }
 .chip.next { border-color: rgba(57,255,138,.45); text-decoration: none; cursor: pointer; } .chip.next b { color: var(--ok); } .chip.next:hover { border-color: var(--ok); }
+.chip.next.held { border-color: rgba(255,177,59,.5); } .chip.next.held b { color: var(--behind); }
 .chip.next.soon { animation: nextSoon 1.6s ease-in-out infinite; } @keyframes nextSoon { 50% { box-shadow: 0 0 14px rgba(57,255,138,.7); border-color: var(--ok); } }
 .dot.behind { background: var(--behind); box-shadow: 0 0 8px var(--behind); }
 .dot.off { background: var(--bad); box-shadow: 0 0 8px var(--bad); animation: none; }
@@ -1257,7 +1258,8 @@ function tickPace() {
   if (!live || pace == null || S.lastInterval == null) { if (rTs.textContent !== "Block pace") rTs.textContent = "Block pace"; return updateTiming(pace, null); }
   const last = S.blocks[S.blocks.length - 1], paused = catchingUp(pace);
   const left = Math.round(pace - (performance.now() - S.lastBlockAt) / 1000);
-  const txt = `last block ${fmtSec(S.lastInterval)} · ` + (paused ? `newest block ${fmtAgo(Date.now() / 1000 - last.ts)}` : left >= 0 ? `next in ~${Math.max(0, left)} s` : `next overdue by ${-left} s`);
+  // "took": how long the newest block took after the one before; a long wait since the newest block leads, so the two never read as one number
+  const txt = paused ? `no block for ${fmtAge(Date.now() / 1000 - last.ts)} · the last took ${fmtSec(S.lastInterval)}` : `last took ${fmtSec(S.lastInterval)} · ` + (left >= 0 ? `next in ~${Math.max(0, left)} s` : `next overdue by ${-left} s`);
   let i = rTs.querySelector("i"); if (!i) { rTs.innerHTML = "Block pace<i></i>"; i = rTs.querySelector("i"); }
   if (i.textContent !== txt) i.textContent = txt;
   updateTiming(pace, paused ? null : Math.max(0, left));
@@ -1582,30 +1584,38 @@ async function runVerdict(b, live) {
 /* ---------- people online: asked from the community relay (node.tauhud.com/status), no analytics ---------- */
 const PRESENCE = { url: "https://node.tauhud.com/status", n: null, timer: null };
 /* why the testnet's health score is below full: the factors that lost the most points, in plain words (from the relay's /health-score) */
-const HSC = { at: 0, busy: false, lost: [] };
+const HSC = { at: 0, busy: false, lost: [], age: null };
 let LIVE_TIP = "";   // read on hover (data-ex), so the light's marker never sits in an attribute the translation would see whole
-const HS_NAME = { node: "our node not answering", sync: "being behind the network", last_block: "a slow last block", pace: "fewer blocks than usual this hour",
+const HS_NAME = { node: "our node not answering", sync: "being behind the network", last_block: "no new block for a long time", pace: "fewer blocks than usual this hour",
   availability: "time offline or out of sync today", stability: "restarts, reorgs or stalls today", mempool: "ghost transactions" };
 async function pollHealthWhy() {
   if (HSC.busy || Date.now() - HSC.at < 60000) return;
   HSC.busy = true; const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 8000);
   try { const r = await fetch(PRESENCE.url.replace(/\/status$/, "/health-score"), { cache: "no-store", signal: ctl.signal }); if (!r.ok) throw new Error(r.status);
-    HSC.lost = ((await r.json()).factors || []).map(x => ({ k: x.key, d: Math.round((+x.weight || 0) - (+x.points || 0)) })).filter(x => x.d >= 1 && HS_NAME[x.k]).sort((a, b) => b.d - a.d).slice(0, 2);
+    const fs = (await r.json()).factors || [], lb = fs.find(x => x && x.key === "last_block"); HSC.age = lb && Number.isFinite(+lb.value) ? +lb.value : null;
+    HSC.lost = fs.map(x => ({ k: x.key, d: Math.round((+x.weight || 0) - (+x.points || 0)) })).filter(x => x.d >= 1 && HS_NAME[x.k]).sort((a, b) => b.d - a.d).slice(0, 2);
   } catch (e) {} finally { HSC.at = Date.now(); HSC.busy = false; clearTimeout(tm); setRelay(PRESENCE.up); }
 }
-const healthWhy = () => { const [a, b] = HSC.lost; return !a ? "" : b ? `Lost most on ${HS_NAME[a.k]} (−${a.d}) and ${HS_NAME[b.k]} (−${b.d}).` : `Lost most on ${HS_NAME[a.k]} (−${a.d}).`; };
+const hsName = k => k === "last_block" && HSC.age != null ? `no new block for ${fmtAge(HSC.age)}` : HS_NAME[k];   // the relay's "time since the last block": the wait since the newest one
+const healthWhy = () => { const [a, b] = HSC.lost; return !a ? "" : b ? `Lost most on ${hsName(a.k)} (−${a.d}) and ${hsName(b.k)} (−${b.d}).` : `Lost most on ${hsName(a.k)} (−${a.d}).`; };
+/* the relay calls the testnet "down" in two cases: our node does not answer (offline, red), or it answers but no block came for half an hour.
+   The second is a stalled chain, not a lost connection: amber, or red only when transactions are stuck waiting (the same verdict as the block pace) */
+const stallVerdict = sc => { const p = liveChain() && S.blocks.length ? healthOf("pace") : null;
+  return p && p[0] !== "ok" ? p : ["watch", HSC.age != null ? `Watch: no new block for ${fmtAge(HSC.age)}; the testnet has stalled.` : `Watch: no new blocks right now; the testnet has stalled,${sc || " says its health score"}.`]; };
 function setRelay(up) {
-  if (PRESENCE.health === "down") up = false;            // the relay's health score (PR #71) wins when it says the testnet is down
+  const stalled = up && PRESENCE.health === "down" && !HSC.lost.some(x => x.k === "node");
+  if (PRESENCE.health === "down" && !stalled) up = false;   // the relay's health score (PR #71) wins when it says our node does not answer
   const degraded = up && PRESENCE.health === "degraded";
-  PRESENCE.up = up;
+  PRESENCE.up = up; PRESENCE.stalled = stalled;
   const synced = PRESENCE.synced !== false;
   const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
-  $("liveDot").className = "dot " + (up ? (synced && !catching && !degraded ? "" : "behind") : "off");
-  const sc = PRESENCE.score != null ? ` health ${PRESENCE.score} of 100` : "", why = healthWhy();
-  LIVE_TIP = (!up ? verdict("bad", PRESENCE.stale ? "Problem: no answer from the relay for over a minute." : PRESENCE.health === "down" ? `Problem: the testnet is down,${sc || " says its health score"}.` : "Problem: the community node is offline, the relay is not answering.")
+  const sc = PRESENCE.score != null ? ` health ${PRESENCE.score} of 100` : "", why = healthWhy(), sv = stalled ? stallVerdict(sc) : null;
+  $("liveDot").className = "dot " + (up ? (sv && sv[0] === "bad" ? "off" : synced && !catching && !degraded && !sv ? "" : "behind") : "off");
+  LIVE_TIP = (sv ? verdict(sv[0], sv[1]) : !up ? verdict("bad", PRESENCE.stale ? "Problem: no answer from the relay for over a minute." : PRESENCE.health === "down" ? `Problem: the testnet is down,${sc || " says its health score"}.` : "Problem: the community node is offline, the relay is not answering.")
     : degraded ? verdict("watch", `Watch: testnet${sc || " health"}, degraded.`) : !synced ? verdict("busy", "In progress: online, not synced with the real chain yet.")
     : catching ? verdict("busy", `In progress: catching up, verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.`) : verdict("ok", sc ? `Normal: testnet${sc}.` : "Normal: online and following the real testnet chain."))
     + "Live node: the real testnet, read through our community node." + (why && (degraded || PRESENCE.health === "down") ? `\n${why}` : "");
+  try { renderNext(); } catch (e) {}   // the coming-up chip holds its countdown while the chain stalls
   if (S.mode === "live" && LIVE.status) setMode("live", LIVE.status);
 }
 function setOnline(n) {
@@ -1620,7 +1630,7 @@ async function pollOnline() {
     const r = await fetch(PRESENCE.url, { cache: "no-store", signal: ctl.signal });
     if (!r.ok) throw new Error(r.status);
     const j = await r.json();
-    PRESENCE.stale = false;
+    PRESENCE.stale = false; PRESENCE.okAt = Date.now();
     PRESENCE.health = j.health && typeof j.health.state === "string" ? j.health.state : null; PRESENCE.healthLabel = j.health && j.health.label ? String(j.health.label) : "";
     PRESENCE.score = j.health && Number.isFinite(+j.health.score) ? Math.round(+j.health.score) : null;
     if (PRESENCE.health && PRESENCE.health !== "healthy") pollHealthWhy(); else HSC.lost = [];
@@ -1659,7 +1669,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.79", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.80", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2726,9 +2736,10 @@ function setMode(mode, status) {
   LIVE.status = status;
   const synced = status === "Connected" && PRESENCE.synced !== false, behind = status === "Connected" && !synced;
   const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
-  $("modeDot").className = "dot " + (simUI ? "sim" : synced && !catching ? "" : behind || catching ? "behind" : "off");
-  $("modeTxt").textContent = simUI ? "Simulation" : "Live · " + (behind ? "Not synced" : catching ? `Verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}` : status);
-  $("chipMode").className = "chip " + (simUI ? "sim" : synced && !catching ? "live" : behind || catching ? "behind" : "warn");
+  const stall = !simUI && status === "Connected" && PRESENCE.stalled;   // connected, but no block is coming: amber, the same story as the Live node light
+  $("modeDot").className = "dot " + (simUI ? "sim" : stall ? "behind" : synced && !catching ? "" : behind || catching ? "behind" : "off");
+  $("modeTxt").textContent = simUI ? "Simulation" : "Live · " + (stall ? "Connected, no new blocks" : behind ? "Not synced" : catching ? `Verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}` : status);
+  $("chipMode").className = "chip " + (simUI ? "sim" : stall ? "behind" : synced && !catching ? "live" : behind || catching ? "behind" : "warn");
   $("chipMode").dataset.full = S.simfeed ? "Simulation: one made-up chain that follows the documented protocol, generated in your browser from the clock and the same on every page of Tau HUD. No real chain data." : simUI ? "Simulation: invented but protocol-true activity, no real chain data." : catching ? `Connected and receiving every block (#${fmt(PRESENCE.tip)}), but the node has fully verified the state (balances, rules, votes) only up to block #${fmt(PRESENCE.canon)}. Governance and rule panels show that verified state until the replay catches up.` : behind ? "Connected to the community node, but the node does not follow the real testnet chain yet (it holds blocks the network does not accept). Real transactions, but not the network’s tip." : synced ? "Connected to the community node, which follows the real testnet chain." : "No connection to a node.";
   $("hint").textContent = S.simfeed
     ? "Simulation: one made-up chain, the same on every page of Tau HUD, generated in your browser from the clock. No real chain data. Switch to Live node to read the real testnet through the community relay."
@@ -2856,6 +2867,24 @@ function paintHover() {
 }
 /* labels sit on dark plates and are painted last, above every ring, line and dot: no stroke ever crosses the letters */
 const PLATES = [];
+/* live: when the testnet stops, the core says so and counts the time up, second by second. Amber while our node answers but no block
+   comes (the same threshold as the Block pace tile); red only when the node or the relay does not answer */
+const durLive = s => { s = Math.max(0, Math.floor(s)); const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = String(s % 60).padStart(2, "0");
+  return h ? `${h} h ${String(m).padStart(2, "0")} min ${x} s` : `${m} min ${x} s`; };
+function stallMark(C, t, hit) {
+  if (!liveChain()) return;
+  const last = S.blocks[S.blocks.length - 1], pace = paceNow(), now = Date.now() / 1000;
+  const off = LIVE.status !== "Connected" || PRESENCE.up === false, gone = off ? (PRESENCE.okAt ? now - PRESENCE.okAt / 1000 : null) : null;
+  const since = last && last.ts ? now - last.ts : null, stall = !off && since != null && catchingUp(pace);
+  if (!off && !stall) return;
+  const col = off ? "255,77,109" : "255,177,59", br = .5 + .5 * Math.sin(t * 1.4);
+  cx.save(); cx.setLineDash([6, 10]); cx.lineDashOffset = -t * 6; cx.lineWidth = 2.5; cx.strokeStyle = `rgba(${col},${.35 + .3 * br})`;
+  cx.beginPath(); cx.arc(0, 0, C * .35, 0, Math.PI * 2); cx.stroke(); cx.restore();   // a slow dashed ring around the core: it is waiting
+  const txt = off ? (gone != null ? `Offline · no answer for ${durLive(gone)}` : "Offline · no answer from the node") : `No new block for ${durLive(since)}`;
+  plate(txt, 0, C * .64 + 10, "600 28px Sora, sans-serif", `rgba(${col},.95)`);
+  hit(0, C * .64, 70, () => off ? verdict("bad", "Problem: no answer from our node or the relay.") + "Live node\nBlocks and the waiting room show the last state we heard." : (health("pace") + "Newest block\n" + `Block #${fmt(S.height)} came ${fmtAge(since)} ago; the clock counts until the next one.`));
+  CORE_HITS[CORE_HITS.length - 1].col = col;
+}
 function plate(text, x, y, font, color, alpha) { PLATES.push({ text, x, y, font, color, alpha }); }
 function paintPlates() {
   for (const p of PLATES) {
@@ -3102,6 +3131,7 @@ function draw(tm) {
   cx.font = "600 19px Sora, sans-serif";
   cx.fillText(am > .2 ? vt("RULES CHANGED · V", "SPEC AMENDED · REV ") + S.specRev : since < 1.2 ? "SEALED BY AGREEMENT" : vt("RULES V", "SPEC REV ") + S.specRev, 0, 40);
   if (isSim()) plate("SIMULATION · NO REAL CHAIN DATA", 0, C * .64 + 10, "600 30px Sora, sans-serif", "rgba(236,236,240,.42)");
+  stallMark(C, t, hit);
   paintBounces(C, hit);
   paintHover();
   paintPlates();
@@ -3565,13 +3595,13 @@ function renderNext() {
   const live = S.mode === "live" && !S.simfeed, c = NEXT.chain, now = Date.now() / 1000;
   const rows = live && c ? NEXT.rows.map(p => ({ ...p, eta: Number(c.head_ts) + (Number(p.activate_at) - Number(c.head)) * Number(c.seconds_per_block || 8) })).filter(p => Number.isFinite(p.eta)).sort((a, b) => a.eta - b.eta) : [];
   const u = rows[0]; if (!u) { nx.hidden = true; NEXT.text = ""; return; }
-  const left = u.eta - now, text = left <= 30 ? `Coming up · now: ${u.title}` : `Coming up · ${spanNext(left)}: ${u.title}`;
-  nx.hidden = false; nx.classList.toggle("soon", left <= 300);
+  const held = !!PRESENCE.stalled, left = u.eta - now, text = held ? `Coming up · on hold until blocks resume: ${u.title}` : left <= 30 ? `Coming up · now: ${u.title}` : `Coming up · ${spanNext(left)}: ${u.title}`;
+  nx.hidden = false; nx.classList.toggle("soon", !held && left <= 300); nx.classList.toggle("held", held);   // a stalled chain holds the countdown: it counts blocks, not minutes
   const lang = new URLSearchParams(location.search).get("lang"); nx.href = "proposals/" + (lang ? "?lang=" + encodeURIComponent(lang) : "");
   if (text === NEXT.text) return; NEXT.text = text;
   nx.querySelector("b").textContent = text;
   const when = x => new Date(x * 1000).toISOString().slice(0, 16).replace("T", " ");
-  nx.dataset.full = (u.why ? u.why + "\n" : "") + `Agreed by the validators; takes effect at block #${fmt(u.activate_at)}, about ${when(u.eta)} UTC, that is ${spanNext(left)}. The time is an estimate from the current block pace.\nNext activations on the live chain (UTC):\n` + rows.slice(0, 3).map(p => `#${fmt(p.activate_at)} · ${when(p.eta)} · ${p.title} · ${spanNext(p.eta - now)}`).join("\n") + "\nWatch it in Proposals.";
+  nx.dataset.full = (u.why ? u.why + "\n" : "") + (held ? "No new blocks right now, so it waits; it takes effect once the chain reaches the block.\n" : "") + `Agreed by the validators; takes effect at block #${fmt(u.activate_at)}, about ${when(u.eta)} UTC, that is ${spanNext(left)}. The time is an estimate from the current block pace.\nNext activations on the live chain (UTC):\n` + rows.slice(0, 3).map(p => `#${fmt(p.activate_at)} · ${when(p.eta)} · ${p.title} · ${spanNext(p.eta - now)}`).join("\n") + "\nWatch it in Proposals.";
 }
 async function pollNext() {
   if (!(S.mode === "live" && !S.simfeed)) { renderNext(); return; }

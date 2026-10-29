@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml";
-  const LATEST = "v17.79"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.80"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -352,19 +352,21 @@
     const hB = q("#tnHeight b"), revB = q("#tnRev b"), feeB = q("#tnFee b"), cons = q("#tnCons");
     const render = () => {
       const st = CHAIN.st, health = st && st.health && typeof st.health.state === "string" ? st.health.state : null;
-      const up = !!(st && st.upstream_connected && Number(st.height) > 0) && health !== "down", degraded = up && health === "degraded";
+      // "down" with our node answering is a stalled chain (no block for half an hour), not a lost connection: amber, like the HUD's Live node light
+      const conn = !!(st && st.upstream_connected && Number(st.height) > 0), stalled = conn && health === "down", up = conn, degraded = up && (health === "degraded" || stalled);
+      CHAIN.stalled = stalled;
       const hlabel = st && st.health && st.health.label ? String(st.health.label) : "";
       const synced = up && st.live_default === true;
       const catching = synced && Number(st.tip_height) > 0 && st.canonical_height != null && Number(st.canonical_height) < Number(st.tip_height) - 2;
       const wait = !CHAIN.polled;
       const good = synced && !catching && !degraded;
-      modeB.textContent = SIM ? "Simulation" : wait ? "Live · Connecting" : !up ? "Live · Offline" : degraded ? "Live · Degraded" : !synced ? "Live · Not synced" : catching ? `Verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}` : "Live · Connected";
+      modeB.textContent = SIM ? "Simulation" : wait ? "Live · Connecting" : !up ? "Live · Offline" : stalled ? "Live · Connected, no new blocks" : degraded ? "Live · Degraded" : !synced ? "Live · Not synced" : catching ? `Verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}` : "Live · Connected";
       modeDot.className = "dot " + (SIM ? "sim" : wait ? "none" : !up ? "off" : good ? "" : "behind");
       mode.className = "chip v " + (SIM ? "sim" : wait || !up ? "" : good ? "live" : "behind");   // offline: the red dot is the one signal, the text stays plain
       document.querySelectorAll(".tnav [data-livedot]").forEach(d => {
         if (SIM) { d.className = "dot none"; return; }
         d.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
-        const a = d.closest("a"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + " Opens the HUD in Live mode.";
+        const a = d.closest("a"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : stalled ? `Amber: connected, but no new blocks right now; the testnet has stalled${st.health && st.health.score != null ? ` (health ${st.health.score} of 100)` : ""}.` : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + " Opens the HUD in Live mode.";
       });
       const n = CHAIN.online; onB.textContent = n == null ? "—" : String(n); onDot.className = "dot " + (n == null ? "none" : n > 0 ? "" : "off"); onChip.classList.toggle("live", n != null && n > 0);
       hB.textContent = st && Number(st.height) > 0 ? "#" + fmt(st.height) : "—";
@@ -436,12 +438,12 @@
       const c = NEXT.chain, now = Date.now() / 1000;
       const rows = c ? NEXT.rows.map(p => ({ ...p, eta: Number(c.head_ts) + (Number(p.activate_at) - Number(c.head)) * Number(c.seconds_per_block || 8) })).filter(p => Number.isFinite(p.eta)).sort((a, b) => a.eta - b.eta) : [];
       const u = rows[0]; if (!u) { nx.hidden = true; NEXT.text = ""; return; }
-      const left = u.eta - now, text = left <= 30 ? `Coming up · now: ${u.title}` : `Coming up · ${span(left)}: ${u.title}`;
-      nx.hidden = false; nx.classList.toggle("soon", left <= 300);
+      const held = !!CHAIN.stalled, left = u.eta - now, text = held ? `Coming up · on hold until blocks resume: ${u.title}` : left <= 30 ? `Coming up · now: ${u.title}` : `Coming up · ${span(left)}: ${u.title}`;
+      nx.hidden = false; nx.classList.toggle("soon", !held && left <= 300); nx.classList.toggle("held", held);
       if (text === NEXT.text) return; NEXT.text = text;
       nx.querySelector("b").textContent = text;
       const when = x => new Date(x * 1000).toISOString().slice(0, 16).replace("T", " ");
-      nx.dataset.tnt = (u.why ? u.why + "\n" : "") + `Agreed by the validators; takes effect at block #${fmt(u.activate_at)}, about ${when(u.eta)} UTC, that is ${span(left)}. The time is an estimate from the current block pace.\nNext activations on the live chain (UTC):\n` + rows.slice(0, 3).map(p => `#${fmt(p.activate_at)} · ${when(p.eta)} · ${p.title} · ${span(p.eta - now)}`).join("\n") + "\nWatch it in Proposals.";
+      nx.dataset.tnt = (u.why ? u.why + "\n" : "") + (held ? "No new blocks right now, so it waits; it takes effect once the chain reaches the block.\n" : "") + `Agreed by the validators; takes effect at block #${fmt(u.activate_at)}, about ${when(u.eta)} UTC, that is ${span(left)}. The time is an estimate from the current block pace.\nNext activations on the live chain (UTC):\n` + rows.slice(0, 3).map(p => `#${fmt(p.activate_at)} · ${when(p.eta)} · ${p.title} · ${span(p.eta - now)}`).join("\n") + "\nWatch it in Proposals.";
     };
     const pollNext = async () => {
       const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);

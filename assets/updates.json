@@ -1076,5 +1076,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Header: \"Telegram alerts\" is now \"Get alerts\". It opens the three ways to hear about every rule change, chain restart and new node: Telegram @tauHUDcom on your phone, X @TauHUDcom in your timeline, or the RSS feed. X is also linked in every footer, next to Telegram in the Updates panel, on Proposals, at the end of the Story and on Vote."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "When the testnet stops making blocks, every part of the page now tells the same story. Our node still answers, so the light, the header (\"Live · Connected, no new blocks\") and the Live node hover turn amber, not red; red stays for a node that does not answer. The Chain core shows a slow amber ring and a clock that counts up, \"No new block for 2 h 00 min 10 s\". The Block pace tile reads \"no block for 2.0 h · the last took 61 s\", and the Coming up chip says the rule change is on hold until blocks resume."
  }
 ]
