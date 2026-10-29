@@ -30,6 +30,7 @@ export const PAGES = {
   missions:   ["/missions/", "Missions", "Six short tasks on a practice chain"],
   whatif:     ["/whatif/", "What if", "Move a lever and watch the chain react"],
   vote:       ["/vote/", "Vote for real", "Vote on Tau's rules yourself, practised first"],
+  wallet:     ["/wallet/", "Wallet", "A testnet account with its own rules"],
   status:     ["/status/", "Status", "Uptime, sync gaps and testnet restarts"],
   findings:   ["/findings/", "Findings", "Bugs found while running a node, with their status"],
   meta:       ["/meta/", "Tau HUD in numbers", "Visitors per day, counted without cookies"],

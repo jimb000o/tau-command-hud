@@ -1,4 +1,4 @@
-"""Read-only WebSocket relay between one Tau testnet node and many browsers.
+"""WebSocket relay between one Tau testnet node and many browsers.
 
 The node's own WebSocket (port 65433) allows 32 connections and rate-limits the
 heavy reads (getblocks, getgovernance, gettaustate) to 0.5/s per connection, so
@@ -9,8 +9,11 @@ visitors as soon as the relay sees them.
 
 Visitors speak the same text protocol as the node ("getblocks 12" in, the
 node's JSON envelope out), so the HUD's existing live mode works unchanged.
-Only the read commands below are accepted; sendtx, createblock and everything
-else are refused here and never reach the node.
+Only the read commands below are accepted, plus one narrow write door for the
+testnet wallet (tauhud.com/wallet/): `sendtx` with a transaction the visitor's
+browser already signed, and its dry run `checktx`. Keys never reach the relay.
+createblock, consensus rule proposals and everything else are refused here and
+never reach the node.
 """
 from __future__ import annotations
 
@@ -108,7 +111,7 @@ HEALTH_WEIGHTS = {"node": 20, "sync": 15, "last_block": 20, "pace": 10, "availab
 DROP_GRACE_SECONDS = _env_float("DROP_GRACE_SECONDS", 30)
 UPSTREAM_TIMEOUT = _env_float("UPSTREAM_TIMEOUT_SECONDS", 20)
 # The node allows heavy reads at burst 2, 0.5/s per connection; stay just under.
-HEAVY_COMMANDS = frozenset({"getblocks", "getgovernance", "gettaustate"})
+HEAVY_COMMANDS = frozenset({"getblocks", "getgovernance", "gettaustate", "checktx"})
 HEAVY_BURST = 2
 HEAVY_REFILL = _env_float("HEAVY_REFILL_PER_SEC", 0.45)
 
@@ -121,8 +124,30 @@ LOOKUPS = {
     "getaccountstate": lambda a: len(a) == 1 and HEX.match(a[0]),
     "gettxstatus": lambda a: len(a) == 1 and HEX.match(a[0]),
     "getruleoffers": lambda a: 1 <= len(a) <= 2 and HEX.match(a[0]) and (len(a) == 1 or a[1].lower() in ("in", "out", "all")),
+    # the wallet's inbox: co-signature requests and undo-able (retractable) transfers of one account
+    "getapprovalrequests": lambda a: 1 <= len(a) <= 2 and HEX.match(a[0]) and (len(a) == 1 or a[1].lower() in ("in", "out", "all")),
+    "getruleoffer": lambda a: len(a) == 1 and len(a[0]) == 64 and HEX.match(a[0]),   # the full text, needed to accept an offer
+    "getretractables": lambda a: 1 <= len(a) <= 2 and HEX.match(a[0]) and (len(a) == 1 or a[1].lower() in ("in", "out", "all")),
 }
 CACHED = ("getmempool", "getgovernance", "gettaustate")
+# The wallet's write door. The visitor's browser builds and signs the
+# transaction (BLS, keys stay in the browser); the relay checks only its shape
+# and passes it on, never caching it and never logging its content. Proposing a
+# consensus rule change stays with node operators (consensus_rule_update is not
+# in the list). Both commands share one bucket per address and one for everyone,
+# because the relay holds ONE upstream connection and checktx is a heavy call.
+WALLET_COMMANDS = ("sendtx", "checktx")
+WALLET_TX_TYPES = frozenset({
+    "user_tx", "consensus_rule_vote", "rule_offer", "rule_offer_accept", "rule_offer_reject",
+    "approval_request", "transfer_vote", "retractable_transfer", "retract_transfer",
+})
+TX_MAX_BYTES = _env_int("TX_MAX_BYTES", 8192)
+TX_IP_BURST = _env_float("TX_IP_BURST", 6)
+TX_IP_REFILL = _env_float("TX_IP_PER_MINUTE", 12) / 60
+TX_ALL_BURST = _env_float("TX_ALL_BURST", 20)
+TX_ALL_REFILL = _env_float("TX_ALL_PER_MINUTE", 60) / 60
+PUBKEY = re.compile(r"^[0-9a-f]{96}$")
+SIGNATURE = re.compile(r"^[0-9a-f]{192}$")
 # Presence: how many HUD pages are connected right now. Just a count, pushed on
 # every change and as a heartbeat; nothing about who is behind a connection.
 PRESENCE_HEARTBEAT = _env_float("PRESENCE_HEARTBEAT_SECONDS", 30)
@@ -181,6 +206,25 @@ REPORT_REQUIRED = ("key", "name", "height", "head")
 def envelope_error(command: str, message: str, code: str) -> str:
     return json.dumps({"status": "error", "command": command,
                        "error": {"code": code, "message": message}}, separators=(",", ":"))
+
+
+def wallet_tx(raw: str) -> tuple[str | None, str]:
+    """(compact JSON, "") for a signed tx the wallet door accepts, else (None, reason)."""
+    if len(raw.encode()) > TX_MAX_BYTES:
+        return None, f"Transaction is larger than {TX_MAX_BYTES} bytes."
+    try:
+        tx = json.loads(raw)
+    except ValueError:
+        return None, "Transaction is not valid JSON."
+    if not isinstance(tx, dict):
+        return None, "Transaction must be a JSON object."
+    if tx.get("tx_type") not in WALLET_TX_TYPES:
+        return None, "This transaction type is not accepted here."
+    if not isinstance(tx.get("sender_pubkey"), str) or not PUBKEY.match(tx["sender_pubkey"]):
+        return None, "sender_pubkey must be 96 lowercase hex characters."
+    if not isinstance(tx.get("signature"), str) or not SIGNATURE.match(tx["signature"]):
+        return None, "signature must be 192 lowercase hex characters."
+    return json.dumps(tx, separators=(",", ":"), ensure_ascii=False), ""
 
 
 def envelope_ok(command: str, data: dict) -> str:
@@ -257,7 +301,7 @@ class Upstream:
         try:
             msg = json.loads(raw)
         except (TypeError, ValueError):
-            log.warning("upstream sent non-JSON for %s: %.80s", command, raw)
+            log.warning("upstream sent non-JSON for %s: %.80s", command.split()[0], raw)
             return None
         return msg if isinstance(msg, dict) else None
 
@@ -283,6 +327,8 @@ class Relay:
         self.updated: dict[str, float] = {}
         self.lookup_cache: dict[str, tuple[float, str]] = {}
         self.lookup_bucket = TokenBucket(LOOKUP_BURST, LOOKUP_REFILL)
+        self.tx_bucket = TokenBucket(TX_ALL_BURST, TX_ALL_REFILL)
+        self.tx_per_ip: dict[str, TokenBucket] = {}
         self.started = time.time()
         self.need_full = True                   # fetch the whole chain on the next block poll
         self.full_limit = CHAIN_BLOCKS          # how many blocks a full fetch asks for
@@ -995,8 +1041,29 @@ class Relay:
             self.lookup_cache[key] = (time.monotonic(), text)
             return text
 
-        return envelope_error(cmd, "This relay is read-only. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
-                              "gettaustate, presence, report, " + ", ".join(LOOKUPS), "FORBIDDEN")
+        if cmd in WALLET_COMMANDS:
+            return await self.wallet(cmd, message[len(parts[0]):].strip(), ip)
+
+        return envelope_error(cmd, "Not allowed here. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
+                              "gettaustate, presence, report, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
+                              + " (a transaction signed in your browser)", "FORBIDDEN")
+
+    async def wallet(self, cmd: str, raw: str, ip: str) -> str:
+        """Pass one browser-signed transaction (or its dry run) to the node."""
+        tx, why = wallet_tx(raw)
+        if tx is None:
+            return envelope_error(cmd, why, "INVALID_PARAMS")
+        if len(self.tx_per_ip) > 10000:
+            self.tx_per_ip.clear()
+        mine = self.tx_per_ip.setdefault(ip, TokenBucket(TX_IP_BURST, TX_IP_REFILL))
+        if not mine.take():
+            return envelope_error(cmd, "Too many transactions from here; wait a minute.", "RATE_LIMITED")
+        if not self.tx_bucket.take():
+            return envelope_error(cmd, "Relay is busy; retry shortly.", "BUSY")
+        msg = await self.upstream.request(f"{cmd} {tx}")
+        if msg is None:
+            return envelope_error(cmd, "Node is not reachable right now.", "UPSTREAM_DOWN")
+        return json.dumps(msg, separators=(",", ":"))
 
     # ---------- community nodes ----------
     def report(self, args: list[str], ip: str) -> str:
@@ -1507,7 +1574,7 @@ class Relay:
                                ("Cache-Control", "public, max-age=60")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.api_badge(api_badge.group(1), zh).encode())
         if request.headers.get("Upgrade", "").lower() != "websocket":
-            return connection.respond(HTTPStatus.OK, "Tau HUD read-only relay. Connect with WebSocket; GET /status for health.\n")
+            return connection.respond(HTTPStatus.OK, "Tau HUD relay (reads, plus transactions signed in your browser). Connect with WebSocket; GET /status for health.\n")
         if not self.origin_ok(request.headers.get("Origin")):
             return connection.respond(HTTPStatus.FORBIDDEN, "origin not allowed\n")
         if len(self.clients) >= MAX_CLIENTS:
@@ -1554,7 +1621,7 @@ class Relay:
             asyncio.create_task(self.uptime_loop()),
         ]
         async with serve(self.handler, LISTEN_HOST, LISTEN_PORT, process_request=self.process_request,
-                         max_size=512, max_queue=8, ping_interval=15, ping_timeout=15,
+                         max_size=TX_MAX_BYTES + 64, max_queue=8, ping_interval=15, ping_timeout=15,
                          server_header="tau-hud-relay") as server:
             log.info("relay listening on %s:%s, upstream %s", LISTEN_HOST, LISTEN_PORT, self.upstream.url)
             loop = asyncio.get_running_loop()

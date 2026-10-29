@@ -120,6 +120,11 @@ async def mock_node(ws):
             await ws.send(relay.envelope_ok(cmd, {"rules_state": "always o1[t] = i1[t]."}))
         elif cmd == "getbalance":
             await ws.send(relay.envelope_ok(cmd, {"address": parts[1], "balance": 100000}))
+        elif cmd in ("getapprovalrequests", "getretractables"):
+            await ws.send(relay.envelope_ok(cmd, {"address": parts[1], "requests": [], "retractables": []}))
+        elif cmd in ("sendtx", "checktx"):
+            tx = json.loads(msg[len(cmd):])
+            await ws.send(relay.envelope_ok(cmd, {"ok": True, "tx_hash": "cd" * 32, "seen_type": tx["tx_type"]}))
         else:
             await ws.send(relay.envelope_error(cmd, "should never reach the node", "UNKNOWN_COMMAND"))
 
@@ -210,10 +215,29 @@ async def main():
             before = len(mock["commands"])
             await ask(ws, "getbalance " + "ab" * 48)
             check(not any(c.startswith("getbalance") for c in mock["commands"][before:]), "lookup cached")
-            for bad in ("sendtx {}", "createblock", "getbalance ../../etc", "getblocks -1", "getallaccounts", "history x"):
+            # the wallet's write door: browser-signed txs pass, never cached; anything else is refused
+            good = {"tx_type": "user_tx", "sender_pubkey": "ab" * 48, "sequence_number": 0, "expiration_time": 1,
+                    "fee_limit": "10", "operations": {"0": "always (o5[t]:bv[24] = { #x000001 }:bv[24]).", "1": [["ab" * 48, "cd" * 48, "5"]]},
+                    "signature": "ef" * 96}
+            for c in ("checktx", "sendtx"):
+                before = len(mock["commands"])
+                m = await ask(ws, c + " " + json.dumps(good))
+                check(m["status"] == "ok" and m["data"]["seen_type"] == "user_tx", f"{c} passes through")
+                await ask(ws, c + " " + json.dumps(good))
+                check(sum(x.startswith(c + " ") for x in mock["commands"][before:]) == 2, f"{c} never cached")
+            check((await ask(ws, "getapprovalrequests " + "ab" * 48 + " in"))["status"] == "ok", "wallet inbox lookup passes through")
+            sent = [x for x in mock["commands"] if x.startswith("sendtx ")][-1]
+            check(json.loads(sent[7:])["operations"]["0"] == good["operations"]["0"], "rule text with spaces arrives intact")
+            for label, tx in (("proposal", {**good, "tx_type": "consensus_rule_update"}), ("no signature", {**good, "signature": "x"}),
+                              ("short key", {**good, "sender_pubkey": "ab"}), ("no type", {k: v for k, v in good.items() if k != "tx_type"})):
+                check((await ask(ws, "sendtx " + json.dumps(tx)))["error"]["code"] == "INVALID_PARAMS", f"wallet refuses {label}")
+            check(relay.wallet_tx(json.dumps({**good, "pad": "x" * 9000}))[0] is None, "wallet refuses oversize tx")
+            check((await ask(ws, "sendtx not json"))["error"]["code"] == "INVALID_PARAMS", "wallet refuses non-JSON")
+            check(not any(c.startswith("sendtx") and "consensus_rule_update" in c for c in mock["commands"]), "no proposal reached the node")
+            for bad in ("createblock", "getbalance ../../etc", "getblocks -1", "getallaccounts", "history x"):
                 reply = await ask(ws, bad)
                 check(reply["status"] == "error", f"refused: {bad}")
-            check(not any(c.split()[0] in ("sendtx", "createblock", "getallaccounts", "history") for c in mock["commands"]),
+            check(not any(c.split()[0] in ("createblock", "getallaccounts", "history") for c in mock["commands"]),
                   "no write/heavy command ever reached the node")
 
             # push: a new block arrives without asking
@@ -338,7 +362,7 @@ async def main():
         # oversized message closes the socket
         async with connect(url, additional_headers=origin) as ws:
             json.loads(await ws.recv())  # presence push
-            await ws.send("getblocks " + "1" * 2000)
+            await ws.send("getblocks " + "1" * (relay.TX_MAX_BYTES + 100))
             try:
                 await ws.recv()
                 check(False, "oversized message rejected")

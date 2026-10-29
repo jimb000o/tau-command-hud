@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Tau testnet wallet</title>
+<meta name="description" content="A Tau Testnet Alpha wallet in your browser: an account with its own rules. Send, send with a way back, ask a friend to co-sign, vote on the chain's rules and agree on shared rules with others in a Pakt. Testnet only; test AGRS have no value.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · A testnet wallet with its own rules">
+<meta property="og:description" content="On Tau an account carries rules, not only a balance. Send, take a payment back, ask a friend to co-sign, vote, and agree on shared rules in a Pakt. Testnet only.">
+<meta property="og:image" content="https://tauhud.com/assets/og/wallet.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tauhud.com/wallet/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/wallet.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD and /vote: black and white, phosphor green as the one accent, amber for the simulation and for "waiting". */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --sim: #ffb13b; --refused: #e5484d; --down: #ff4d6d;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+code { color: #fff; font: 12px var(--mono); }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.state { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; color: var(--dim); font-size: 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.state.ok { color: var(--text); } .state.ok i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.sim i, .state.wait i { background: var(--sim); }
+.state.off i { background: var(--down); }
+.intro { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 76ch; }
+.kpis { display: flex; flex-wrap: wrap; gap: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--dim); font-size: 12px; white-space: nowrap; background: rgba(16,16,18,.86); cursor: help; }
+.kpi b { color: #fff; font: 600 13px var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.kpi.hot b { color: var(--ok); } .kpi.wait b { color: var(--sim); }
+/* the testnet line: solid, above everything that holds a balance */
+.testnet { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; border: 1px solid var(--hair); border-left: 3px solid #fff; border-radius: 6px; padding: 6px 12px; color: var(--dim); font-size: 12px; background: rgba(16,16,18,.86); }
+.testnet b { color: #fff; font: 700 11px var(--display); letter-spacing: .2em; }
+.testnet span::before { content: "·"; margin-right: 8px; color: var(--hair); }
+.testnet span:first-of-type::before { content: none; }
+.main { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.col { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 .aside { margin-left: auto; font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.simtag { font: 600 10px var(--display); letter-spacing: .14em; color: #000; padding: 1px 7px; border-radius: 3px; background: repeating-linear-gradient(135deg, var(--sim) 0 6px, #e09a2c 6px 12px); }
+p { margin: 0; }
+.dim { color: var(--dim); }
+.note { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
+.note b { color: var(--text); font-weight: 600; }
+/* account */
+.who { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; }
+.addr { font: 13px var(--mono); color: #fff; overflow-wrap: anywhere; }
+.keyline { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: 12px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; display: inline-block; }
+.dot.ok { background: var(--ok); box-shadow: 0 0 6px var(--ok); } .dot.sim { background: var(--sim); } .dot.off { background: var(--down); }
+.bal { margin: 10px 0 2px; font: 600 34px/1.1 var(--display); color: #fff; font-variant-numeric: tabular-nums; }
+.bal small { font: 500 14px var(--display); color: var(--dim); margin-left: 6px; }
+.balnote { color: var(--dim); font-size: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.empty { border: 1px dashed var(--hair); border-radius: 6px; padding: 10px 12px; color: var(--dim); }
+.empty b { color: var(--text); }
+button.b { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: none; color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 6px 11px; cursor: pointer; }
+button.b:hover:not(:disabled) { color: #000; background: #fff; border-color: #fff; }
+button.b.go { color: #000; background: var(--ok); border-color: var(--ok); }
+button.b.go:hover:not(:disabled) { background: #fff; border-color: #fff; }
+button.b.quiet { color: var(--dim); }
+button.b:disabled { opacity: .35; cursor: default; }
+button.b.big { padding: 9px 16px; font-size: 12px; }
+.secret { margin-top: 8px; border: 1px solid rgba(255,177,59,.45); border-radius: 6px; padding: 8px 10px; }
+.secret pre { margin: 6px 0 0; white-space: pre-wrap; word-break: break-all; font: 12px var(--mono); color: #fff; }
+/* lists: activity, inbox */
+.list { display: grid; gap: 6px; }
+.item { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 2px 8px; align-items: start; border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; }
+.item .dot { margin-top: 6px; }
+.item .t { color: #fff; }
+.item .m { color: var(--dim); font-size: 12px; grid-column: 2 / 4; }
+.item .acts { display: flex; gap: 6px; }
+.item .acts button.b { padding: 3px 8px; }
+.item.ask { border-color: rgba(57,255,138,.45); }
+.item.bad .t { color: var(--refused); }
+/* tabs and forms */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 0 0 10px; }
+.tabs button { font: 600 12px var(--display); letter-spacing: .06em; background: none; color: var(--dim); border: 0; border-bottom: 2px solid transparent; padding: 6px 10px 7px; cursor: pointer; }
+.tabs button[aria-selected=true] { color: #fff; border-bottom-color: var(--ok); }
+.tabs button:hover { color: #fff; }
+.form { display: grid; gap: 8px; }
+.f { display: grid; gap: 3px; }
+.f > span { color: var(--dim); font-size: 12px; }
+input.in, select.in { width: 100%; font: 13px var(--mono); background: #050506; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 9px; }
+input.in:focus, select.in:focus { outline: none; border-color: var(--ok); }
+input.in.bad { border-color: var(--refused); }
+.rform { display: grid; grid-template-columns: 8em minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.rform button.b { height: 35px; }
+.rule .top { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.rule .top button.b { padding: 3px 8px; flex: none; }
+.three { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr) minmax(0, 1.2fr); gap: 8px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.picks { display: flex; flex-wrap: wrap; gap: 4px; }
+.picks button { font: 11px var(--mono); background: none; color: var(--dim); border: 1px dashed var(--hair); border-radius: 999px; padding: 2px 9px; cursor: pointer; }
+.picks button:hover { color: #fff; border-color: #fff; }
+/* before you sign: the object of the action, large, then what follows from it */
+.sign { margin-top: 10px; border: 1px solid var(--hair); border-radius: 8px; padding: 10px 12px; background: #050506; }
+.sign h3 { margin: 0 0 4px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.sign .what { font: 600 22px/1.25 var(--display); color: #fff; overflow-wrap: anywhere; }
+.sign .what .to { font: 500 14px var(--mono); color: var(--dim); }
+.facts { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.facts li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; font-size: 12px; color: var(--dim); }
+.facts li b { color: var(--text); font-weight: 600; }
+.facts li.ok b { color: var(--ok); } .facts li.warn b { color: var(--sim); } .facts li.no b { color: var(--refused); }
+.signrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.signrow .why { color: var(--dim); font-size: 12px; flex: 1 1 200px; }
+.result { margin-top: 6px; font-size: 12px; color: var(--dim); }
+.result:empty { display: none; }
+.result.ok { color: var(--ok); } .result.no { color: var(--refused); } .result.wait { color: var(--sim); }
+/* proposals in the vote tab */
+.props { display: grid; gap: 6px; }
+.prop { border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; cursor: pointer; }
+.prop.sel { border-color: rgba(57,255,138,.55); }
+.prop .t { color: #fff; } .prop .m { color: var(--dim); font-size: 12px; }
+/* rules and Pakt */
+.rule { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+.rule .t { color: #fff; font-weight: 600; }
+.rule.on { border-color: rgba(57,255,138,.45); }
+details.tau { margin-top: 6px; color: var(--dim); font-size: 12px; }
+details.tau summary { cursor: pointer; }
+details.tau pre { margin: 4px 0 0; white-space: pre-wrap; word-break: break-all; font: 11px/1.45 var(--mono); color: #c8c8d0; max-height: 7.5em; overflow: auto; }
+.members { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.mem { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 4px 3px 9px; font-size: 12px; color: var(--text); }
+.mem button { background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px; }
+.mem button:hover { color: #fff; }
+.mem.me { border-color: rgba(57,255,138,.45); padding-right: 9px; }
+.roster { display: grid; gap: 4px; margin-top: 8px; }
+.roster .r { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; }
+.roster .r b { color: #fff; font-weight: 600; }
+.roster .r em { font-style: normal; color: var(--dim); }
+.limit { margin-top: 8px; border-left: 2px solid var(--sim); padding: 2px 0 2px 10px; color: var(--dim); font-size: 12px; }
+.limit b { color: var(--text); font-weight: 600; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+/* hovers: line 1 = light + title, line 2 = verdict, then at most two short lines */
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--dim); }
+#tip .h { display: flex; align-items: center; gap: 7px; color: #fff; font: 600 12px var(--display); }
+#tip .v { color: var(--text); margin-top: 2px; }
+#tip .x { margin-top: 2px; }
+[hidden] { display: none !important; }
+/* landscape from laptop size up: one screen, laid out for about 1600 x 860 CSS px and scaled to the viewport, like /vote */
+html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 10px; }
+html.fit #tip { zoom: var(--z); }
+html.fit .sub { max-width: 112ch; }
+html.fit .wrap > .main { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, .95fr) minmax(0, 1.2fr) minmax(0, 1.1fr); }
+html.fit .col { display: flex; flex-direction: column; min-height: 0; }
+html.fit .col > .panel { min-height: 0; overflow: auto; }
+html.fit .col > .grow { flex: 1 1 0; }
+html.fit .col > .fix { flex: none; }
+html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr) minmax(0, 1.2fr); }
+@media (max-width: 700px) {
+  .three { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  button.b, .tabs button { min-height: 44px; }
+  .picks button { min-height: 32px; }
+  .bal { font-size: 28px; }
+  .two { grid-template-columns: minmax(0, 1fr); }
+  .facts li { grid-template-columns: 80px minmax(0, 1fr); }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="vendor/tau-bls.min.js"></script>
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Wallet</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state" tabindex="0" data-tip="Connection&#10;Connecting to our node…"><i></i><span id="stateText">Connecting</span></span>
+    </div>
+  </header>
+  <nav class="tnav" data-page="wallet" aria-label="Pages and tools"></nav>
+  <div class="intro">
+    <div>
+      <p class="lead">An account with its own rules.</p>
+      <p class="sub" id="sourceLine">On Tau an account is more than a balance: it can carry rules its own payments must pass, accept rules another account offers, and vote on the rules of the whole chain. This wallet lives in your browser and talks to Tau Testnet Alpha.</p>
+    </div>
+    <div class="kpis" aria-label="Key numbers">
+      <span class="kpi" id="kRule" data-tip="Your rule&#10;What your own payments must pass.&#10;Set it on the right; the chain checks it on every payment."><b id="tRule">–</b>rule on this account</span>
+      <span class="kpi" id="kWait" data-tip="Waiting for you&#10;Requests to co-sign and rules offered to you.&#10;They are listed under Activity."><b id="tWait">–</b>waiting for you</span>
+      <span class="kpi" id="kBack" data-tip="Undo-able payments&#10;Payments you can still take back.&#10;Each one is released to its recipient at the block you chose."><b id="tBack">–</b>you can take back</span>
+    </div>
+  </div>
+  <div class="testnet" role="note"><b>TESTNET ONLY</b><span>test AGRS have no value and nothing here can be bought or sold</span><span>your key is made and kept in this browser, never on our server</span><span>never reuse this key for anything of value</span></div>
+  <main class="main">
+    <div class="col">
+      <section class="panel fix" id="acct" aria-label="Your account">
+        <h2>Your account <span class="aside" id="acctAside"></span></h2>
+        <div id="noKey">
+          <div class="empty"><b>No account in this browser yet.</b> Make one: a new key is drawn here, its public half is your address. Nothing is sent until you send something.</div>
+          <div class="row"><button class="b go big" type="button" id="btnNew">Make my account</button><button class="b" type="button" id="btnImport">Use a key I have</button></div>
+          <div id="importBox" hidden style="margin-top:8px">
+            <label class="f"><span>Your private key (64 hex characters)</span><input class="in" id="importSk" type="password" spellcheck="false" autocomplete="off"></label>
+            <div class="row"><button class="b" type="button" id="btnImportGo">Use it</button></div>
+          </div>
+        </div>
+        <div id="hasKey" hidden>
+          <div class="who">
+            <div class="addr" id="addr" translate="no" data-tip="Your address&#10;Your public key, 96 hex characters.&#10;Give it to anyone who sends you test AGRS."></div>
+            <button class="b quiet" type="button" id="btnCopyAddr">Copy</button>
+          </div>
+          <div class="keyline"><span class="dot ok"></span><span>Key kept in this browser only</span></div>
+          <div class="bal" id="bal" data-tip="Balance&#10;What this account holds on the chain.&#10;Test AGRS have no value."><span id="balN">–</span><small>test AGRS</small></div>
+          <div class="balnote" id="balNote"></div>
+          <div class="row">
+            <button class="b" type="button" id="btnBackup">Back up key</button>
+            <a class="b" id="lnkAcct" href="/account/" style="text-decoration:none;display:inline-flex;align-items:center;font:600 11px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--hair);border-radius:6px;padding:6px 11px;color:var(--text)">Open in Accounts</a>
+            <button class="b quiet" type="button" id="btnForget">Forget key</button>
+          </div>
+          <div class="secret" id="secretBox" hidden>
+            <div class="note" style="margin:0"><b>Your private key.</b> Whoever has it controls this account. Keep it for the testnet only.</div>
+            <pre id="secret" translate="no"></pre>
+          </div>
+        </div>
+      </section>
+      <section class="panel grow" id="activity" aria-label="Activity">
+        <h2>Activity <span class="aside" id="actAside"></span></h2>
+        <div class="list" id="inbox"></div>
+        <div class="list" id="log" style="margin-top:6px"></div>
+      </section>
+    </div>
+    <div class="col">
+      <section class="panel grow" id="act" aria-label="Send and vote">
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" id="tabSend" aria-selected="true" data-tab="send" data-tip="Send&#10;A payment that is final once a block holds it.">Send</button>
+          <button type="button" role="tab" id="tabBack" aria-selected="false" data-tab="back" data-tip="Send with a way back&#10;The payment waits until a block you choose; until then you can take it back.">Send with a way back</button>
+          <button type="button" role="tab" id="tabVote" aria-selected="false" data-tab="vote" data-tip="Vote&#10;Say yes to a change of the chain's own rules. Free.">Vote</button>
+        </div>
+        <div class="form" id="payForm">
+          <label class="f"><span>To (an address, 96 hex characters)</span><input class="in" id="to" spellcheck="false" autocomplete="off" placeholder="the recipient's public key"></label>
+          <div class="picks" id="toPicks"></div>
+          <div class="two">
+            <label class="f"><span>Amount in test AGRS</span><input class="in" id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="e.g. 250"></label>
+            <label class="f" id="releaseBox" hidden><span id="releaseLbl">Released after (blocks)</span><input class="in" id="release" type="number" min="2" max="100000" step="1" value="30"></label>
+          </div>
+        </div>
+        <div class="form" id="voteForm" hidden>
+          <div class="props" id="props"></div>
+        </div>
+        <div class="sign" id="sign" aria-live="polite">
+          <h3>Before you sign</h3>
+          <div class="what" id="signWhat"></div>
+          <ul class="facts" id="signFacts"></ul>
+          <div class="signrow"><button class="b go big" type="button" id="btnSign" disabled>Sign and send</button><span class="why" id="signWhy"></span></div>
+          <div class="result" id="result"></div>
+        </div>
+      </section>
+    </div>
+    <div class="col">
+      <section class="panel fix" id="rules" aria-label="Your rule">
+        <h2>Your rule <span class="aside">checked by the chain on every payment you make</span></h2>
+        <div class="rule" id="ruleNow"></div>
+        <div class="form" style="margin-top:8px" id="ruleForm">
+          <div class="rform">
+            <label class="f"><span>Payments above</span><input class="in" id="rAbove" type="number" min="1" step="1" value="1000"></label>
+            <label class="f"><span>need a co-signature from</span><input class="in" id="rWho" spellcheck="false" autocomplete="off" placeholder="a friend's address"></label>
+            <button class="b" type="button" id="btnRule" disabled>Sign this rule</button>
+          </div>
+          <div class="picks" id="whoPicks"></div>
+          <div class="result" id="ruleRes"></div>
+        </div>
+      </section>
+      <section class="panel grow" id="pakt" aria-label="Pakt">
+        <h2>Pakt <span class="aside">accounts that agree on one rule</span></h2>
+        <div class="form" style="margin-top:8px" id="paktForm">
+          <div class="three" id="pFields1">
+            <label class="f"><span>Name</span><input class="in" id="pName" maxlength="32" placeholder="e.g. Garden club"></label>
+            <label class="f"><span>Payments above</span><input class="in" id="pAbove" type="number" min="1" step="1" value="500"></label>
+            <label class="f" id="pFields2"><span>need a yes from</span><select class="in" id="pNeed"><option value="any">one other member</option><option value="all">every other member</option></select></label>
+          </div>
+          <input class="in" id="pAdd" spellcheck="false" autocomplete="off" placeholder="add a member: paste their address, press Enter" aria-label="Add a member">
+          <div class="members"><span class="members" id="members"></span><span class="picks" id="memPicks"></span></div>
+          <div class="row"><button class="b go" type="button" id="btnPakt" disabled>Sign and invite</button><button class="b quiet" type="button" id="btnPaktNew" hidden>Start a new Pakt</button></div>
+          <div class="result" id="paktRes"></div>
+        </div>
+        <div class="roster" id="roster"></div>
+        <details class="tau" id="paktTau" hidden><summary>The rule in Tau</summary><pre id="paktText" translate="no"></pre></details>
+        <div class="limit" id="paktLimit"></div>
+      </section>
+    </div>
+  </main>
+  <footer>
+    <p>Transaction formats and signing as in <a href="https://github.com/IDNI/tau-testnet/tree/main/web-wallet" target="_blank" rel="noopener">IDNI’s tau-testnet web wallet</a>; signed in your browser, sent through <a href="https://node.tauhud.com/status" target="_blank" rel="noopener">node.tauhud.com</a>, which only passes the signed transaction on. Testnet AGRS have no value. · <a href="/vote/">Vote for real</a> · <a href="/account/">Accounts</a> · <a href="/playground/">Playground</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BWallet%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const NODE = "wss://node.tauhud.com", RELAY = "https://node.tauhud.com";
+const SIM = !!(window.TauSim && TauSim.on);   // simulation: every transaction stays in this browser and lands on the made-up chain
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));   // filled first: the dictionary matches templates against the finished text
+/* a template whose filler is already translated (a time, a list of addresses): translate around a stand-in, then put it in */
+const FX = (s, v, raw) => { const ks = Object.keys(raw); let t = F(s, { ...v, ...Object.fromEntries(ks.map((k, i) => [k, "v_" + i])) }); ks.forEach((k, i) => { t = t.replace("v_" + i, raw[k]); }); return t; };
+const short = h => h ? `${h.slice(0, 8)}…${h.slice(-4)}` : "";
+const isAddr = s => /^[0-9a-f]{96}$/.test(s);
+const fmt = n => Number(n).toLocaleString("en-US");
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
+const B = window.TauBLS;
+const MAX_AMOUNT = 2 ** 24 - 1, FAUCET = 100000, NEUTRAL = "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) ).";
+const KEY_STORE = "tauhud-wallet-key", MODE = SIM ? "sim" : "live";
+const logKey = () => `tauhud-wallet-log-${MODE}-${W.pk}`, paktKey = () => `tauhud-wallet-pakt-${MODE}-${W.pk}`;
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) { if (v == null) continue; if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); }
+  for (const k of kids) if (k != null && k !== false) e.append(k);
+  return e;
+}
+
+/* ---------- the account: one BLS key, made and kept in this browser ---------- */
+const W = { sk: null, pk: null, bal: null, chainBal: null, seq: null, tip: null, gov: null, offers: null, reqs: null, rets: null, clause: undefined, log: [], pakt: null, titles: new Map() };
+function loadKey() {
+  try { const k = JSON.parse(store.get(KEY_STORE) || "null"); if (k && /^[0-9a-f]{64}$/.test(k.sk)) setKey(k.sk); } catch (e) {}
+}
+function setKey(skHex) {
+  const sk = B.hexToBytes(skHex), pk = B.bytesToHex(B.pubOf(sk));
+  W.sk = sk; W.pk = pk;
+  store.set(KEY_STORE, JSON.stringify({ sk: skHex, pk }));
+  try { W.log = JSON.parse(store.get(logKey()) || "[]"); } catch (e) { W.log = []; }
+  try { W.pakt = JSON.parse(store.get(paktKey()) || "null"); } catch (e) { W.pakt = null; }
+  W.bal = W.seq = W.offers = W.reqs = W.rets = null; W.clause = undefined;
+  if (SIM) S.born = S.born || TauSim.head();
+  renderAll(); refresh();
+}
+$("btnNew").onclick = () => setKey(B.bytesToHex(B.keygen()));
+$("btnImport").onclick = () => { $("importBox").hidden = false; $("importSk").focus(); };
+$("btnImportGo").onclick = () => {
+  const v = $("importSk").value.trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(v)) { $("importSk").classList.add("bad"); return; }
+  try { setKey(v); $("importSk").value = ""; } catch (e) { $("importSk").classList.add("bad"); }
+};
+$("btnCopyAddr").onclick = async e => { try { await navigator.clipboard.writeText(W.pk); e.target.textContent = T("Copied"); } catch { e.target.textContent = T("Select it"); } setTimeout(() => { e.target.textContent = T("Copy"); }, 1500); };
+$("btnBackup").onclick = () => { const box = $("secretBox"); box.hidden = !box.hidden; $("secret").textContent = box.hidden ? "" : B.bytesToHex(W.sk); };
+$("btnForget").onclick = () => {
+  if (!confirm(T("Forget this key in this browser? Without a backup the account and its test AGRS are gone for good."))) return;
+  store.del(KEY_STORE); W.sk = W.pk = null; W.log = []; W.pakt = null; $("secretBox").hidden = true; renderAll();
+};
+
+/* ---------- talking to the chain: the relay (live) or this browser's simulation ---------- */
+const L = { ws: null, retry: 5000, wait: new Map(), times: [] };
+function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = T(text); s.dataset.tip = tipText; }
+function connect() {
+  if (SIM) { setState("sim", "Simulation", "Simulation\nA made-up chain in your browser.\nYour transactions land on it and nowhere else."); return; }
+  let ws;
+  try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
+  L.ws = ws;
+  setState("wait", "Connecting", "Connection\nReaching node.tauhud.com…");
+  ws.onopen = () => { L.retry = 5000; ws.send("hello version=1"); ws.send("getgovernance"); ws.send("getblocks 12"); };
+  ws.onmessage = ev => {
+    let msg; try { msg = JSON.parse(String(ev.data)); } catch { return; }
+    const q = L.wait.get(msg.command);
+    if (q && q.length && !(msg.data && msg.data.pushed)) { q.shift()(msg); return; }
+    if (msg.status !== "ok") return;
+    if (msg.command === "getgovernance") { W.gov = msg.data; setState("ok", "Live", "Live\nConnected to node.tauhud.com.\nSigned transactions go to Tau Testnet Alpha."); renderVote(); renderSign(); }
+    else if (msg.command === "getblocks") {
+      for (const b of msg.data.blocks || []) if (b.header) L.times.push([b.header.block_number, b.header.timestamp]);
+      L.times = L.times.filter((x, i, a) => a.findIndex(y => y[0] === x[0]) === i).sort((a, b) => a[0] - b[0]).slice(-30);
+      if (msg.data.pushed) { ws.send("getgovernance"); refresh(); }
+    }
+  };
+  ws.onclose = () => { if (L.ws === ws) offline("connection closed"); };
+  ws.onerror = () => {};
+}
+function offline(why) {
+  L.ws = null; for (const q of L.wait.values()) while (q.length) q.shift()(null);
+  const w = L.retry; L.retry = Math.min(60000, w * 2);
+  setState("off", "Offline", `Offline\nOur node is not reachable (${why}).\nRetrying in ${w / 1000} s; nothing can be sent until then.`);
+  setTimeout(connect, w);
+}
+/* one request, one answer: answers come back in order per command */
+function rpc(cmd, timeout = 15000) {
+  if (SIM) return Promise.resolve(S.answer(cmd));
+  return new Promise(res => {
+    if (!L.ws || L.ws.readyState !== 1) return res(null);
+    const c = cmd.split(" ")[0];
+    if (!L.wait.has(c)) L.wait.set(c, []);
+    const q = L.wait.get(c); q.push(res);
+    L.ws.send(cmd);
+    setTimeout(() => { const i = q.indexOf(res); if (i >= 0) { q.splice(i, 1); res(null); } }, timeout);
+  });
+}
+async function lookup(cmd) {   // the relay shares one lookup budget among all visitors: wait and retry when it is busy
+  for (let i = 0; i < 5; i++) {
+    const m = await rpc(cmd);
+    if (!m || m.status === "ok" || (m.error && m.error.code !== "BUSY")) return m;
+    await new Promise(r => setTimeout(r, 600 + i * 500));
+  }
+  return null;
+}
+let refreshing = false;
+async function refresh() {
+  if (!W.pk || refreshing) return;
+  refreshing = true;
+  try {
+    if (SIM) W.gov = TauSim.governance();
+    const seq = await lookup(`getsequence ${W.pk}`);
+    if (seq && seq.status === "ok") { W.seq = seq.data.sequence_number; if (Number.isInteger(seq.data.tip_height)) W.tip = seq.data.tip_height; }
+    const st = await lookup(`getaccountstate ${W.pk}`);
+    if (st && st.status === "ok") { W.chainBal = Number(st.data.chain_balance); W.bal = W.chainBal - Number(st.data.pending_outgoing || 0) - Number(st.data.pending_fees || 0) + Number(st.data.pending_incoming || 0); }
+    const of = await lookup(`getruleoffers ${W.pk} all`);
+    if (of && of.status === "ok") { W.offers = of.data; const c = (of.data.accepted_clauses || []).find(x => x.target_stream === "o5" || x.target_stream === 5); W.clause = c ? c.clause_body : null; }
+    const rq = await lookup(`getapprovalrequests ${W.pk} all`);
+    if (rq && rq.status === "ok") W.reqs = rq.data;
+    const rt = await lookup(`getretractables ${W.pk} all`);
+    if (rt && rt.status === "ok") W.rets = rt.data;
+    await followLog();
+  } finally { refreshing = false; }
+  renderAll();
+}
+const head = () => SIM ? TauSim.head() : (W.gov && W.gov.head_number != null ? W.gov.head_number : W.tip);
+const secsPerBlock = () => { if (SIM) return TauSim.pace; const t = L.times; if (t.length < 3) return null; const a = t[0], b = t[t.length - 1]; return (b[1] - a[1]) / Math.max(1, b[0] - a[0]); };
+const inTime = blocks => { const s = secsPerBlock(); if (!s || blocks < 0) return ""; const m = Math.round(blocks * s / 60); return m < 1 ? T("under a minute") : m < 90 ? F("about {m} min", { m }) : F("about {n} h", { n: Math.round(m / 60) }); };
+const baseFee = () => { const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((W.gov && W.gov.consensus_rules) || ""); return m ? parseInt(m[1], 16) : 10; };
+/* the testnet's faucet: an account whose balance on the chain is 0 counts as 100,000 test AGRS when it pays (engine.py, TESTNET_AUTO_FAUCET) */
+const spendable = () => W.bal == null ? null : W.chainBal === 0 ? FAUCET + W.bal : W.bal;
+
+/* ---------- signing: the node's own preimage (consensus/tx_signing.py), sha256, BLS in this browser ---------- */
+const SIGNED = {
+  user_tx: ["operations"], consensus_rule_vote: ["update_id", "approve"], rule_offer: ["recipient_pubkey", "rule_text", "expire_at_height"],
+  rule_offer_accept: ["offer_id", "rule_text"], rule_offer_reject: ["offer_id"],
+  approval_request: ["recipient_pubkey", "amount", "expire_at_height", "approvers", "custom_inputs"], transfer_vote: ["request_id", "approve", "reason"],
+  retractable_transfer: ["recipient_pubkey", "amount", "release_at_height", "release_at_time"], retract_transfer: ["retractable_id"],
+};
+const DEFAULTS = { operations: {}, approve: true, approvers: {}, custom_inputs: {}, reason: "" };
+function canon(o) {   // Python's json.dumps(sort_keys=True, separators=(",", ":"))
+  if (Array.isArray(o)) return "[" + o.map(canon).join(",") + "]";
+  if (o === null || typeof o !== "object") return JSON.stringify(o === undefined ? null : o).replace(/[\u007f-￿]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+  return "{" + Object.keys(o).sort().map(k => JSON.stringify(k) + ":" + canon(o[k])).join(",") + "}";
+}
+function signTx(tx) {
+  const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type };
+  if (tx.expire_at_height != null) d.expire_at_height = tx.expire_at_height;
+  for (const k of SIGNED[tx.tx_type]) d[k] = k in tx ? tx[k] : (k in DEFAULTS ? DEFAULTS[k] : null);
+  return { ...tx, signature: B.bytesToHex(B.sign(new TextEncoder().encode(canon(d)), W.sk)) };
+}
+let nextSeq = null;   // a second send before the first lands takes the next number
+function base(type, extra) {
+  const h = head() || 0, seq = Math.max(W.seq || 0, nextSeq || 0);
+  const free = ["consensus_rule_vote", "transfer_vote", "retract_transfer"].includes(type);
+  return { tx_type: type, sender_pubkey: W.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 600,
+    expire_at_height: h + 1000, fee_limit: String(free ? 0 : baseFee() * 5), ...extra };
+}
+/* sign, let the node dry-run it (checktx), then send; returns {ok, hash, why} */
+async function submit(tx, label, kind) {
+  if (!W.sk) return { ok: false, why: T("Make your account first.") };
+  if (!SIM && (!L.ws || L.ws.readyState !== 1)) return { ok: false, why: T("Our node is not reachable right now; nothing was sent.") };
+  const signed = signTx(tx), body = JSON.stringify(signed);
+  const chk = await rpc("checktx " + body);
+  if (!chk) return { ok: false, why: T("No answer from the node; nothing was sent. Try again in a minute.") };
+  if (chk.status !== "ok" || (chk.data && chk.data.ok === false)) return { ok: false, why: plain(chk) };
+  const res = await rpc("sendtx " + body);
+  if (!res) return { ok: false, why: T("No answer from the node. It may still arrive: watch Activity.") };
+  if (res.status !== "ok" || (res.data && res.data.ok === false)) return { ok: false, why: plain(res) };
+  nextSeq = tx.sequence_number + 1;
+  const hash = (res.data && res.data.tx_hash) || null;
+  W.log.unshift({ hash, kind, label, at: Date.now(), status: "queued", seq: tx.sequence_number, paid: tx.fee_limit !== "0", extra: res.data && (res.data.update_id || res.data.offer_id || res.data.request_id || res.data.retractable_id) || null });
+  W.log = W.log.slice(0, 40); store.set(logKey(), JSON.stringify(W.log));
+  setTimeout(refresh, SIM ? 50 : 1500);
+  return { ok: true, hash, data: res.data };
+}
+/* the node's refusals, in plain words where we know them */
+function plain(env) {
+  const e = (env && (env.error || (env.data && env.data.ok === false ? env.data : null))) || {}, m = String(e.message || ""), code = e.code || "";
+  if (/author slots are taken|MAX_TIER_AUTHORS|author slot/i.test(m)) return T("Refused before sending: the testnet holds rules for 2 accounts at a time, and both places are taken. Nothing was sent.");
+  if (/user policy \(o5\)/i.test(m)) return T("Refused before sending: your own rule blocks this payment. Above your limit it needs a co-signature.");
+  if (/insufficient|funds/i.test(m)) return T("Refused before sending: not enough test AGRS for the amount and the fee.");
+  if (/sequence/i.test(m)) return T("Refused: an earlier transaction of yours is still on its way. Wait for the next block and try again.");
+  if (/RATE_LIMITED|Too many/i.test(code + m)) return T("Too many transactions from here; wait a minute.");
+  if (/BUSY/.test(code)) return T("The node is busy; try again in a few seconds.");
+  return F("The node refused it, nothing was sent: {x}", { x: (m || code || "no reason given").slice(0, 160) });
+}
+async function followLog() {   // queued → in a block, by tx hash
+  for (const x of W.log.filter(x => x.status === "queued" && x.hash).slice(0, 4)) {
+    const m = await lookup(`gettxstatus ${x.hash}`);
+    if (!m || m.status !== "ok") continue;
+    const d = m.data || {}, s = String(d.status || d.state || "").toLowerCase();
+    if (d.block_number != null || /confirmed|included|mined|sealed|applied/.test(s)) { x.status = "in"; x.block = d.block_number ?? d.height ?? null; }
+    else if (/reject|fail|dropped|expired|invalid/.test(s)) { x.status = "out"; x.why = d.reason || d.error || s; }
+  }
+  if (W.pk) store.set(logKey(), JSON.stringify(W.log));
+}
+
+/* ---------- rules: written for the testnet's user-policy stream o5 (docs/approvals.md in IDNI/tau-testnet) ---------- */
+const hex6 = n => Math.max(0, Math.min(MAX_AMOUNT, Math.floor(n))).toString(16).padStart(6, "0");
+const ALLOW = "(o5[t]:bv[24] = { #x000001 }:bv[24])", BLOCK = "(o5[t]:bv[24] = { #x000000 }:bv[24])";
+const above = n => `i1[t]:bv[24] > { #x${hex6(n)} }:bv[24]`;
+const unsigned = (slot, who) => `!(i${slot}[t]:bv[384] = { #x${who} }:bv[384])`;
+/* any: blocked while none of them signed; all: blocked while any one of them has not signed */
+function coSignRule(limit, approvers, need) {
+  const slots = approvers.map((a, i) => [18 + i, a]);
+  const body = need === "all" ? slots.map(([s, a]) => `(${above(limit)} && ${unsigned(s, a)})`).join(" || ")
+    : `(${above(limit)} && ${slots.map(([s, a]) => unsigned(s, a)).join(" && ")})`;
+  return `always ( ( ${body} ) ? ${BLOCK} : ${ALLOW} ).`;
+}
+/* reading a rule back: the limit and the co-signers, if it is one of ours or shaped like it */
+function readRule(text) {
+  if (!text) return null;
+  if (text.replace(/\s+/g, "") === NEUTRAL.replace(/\s+/g, "")) return null;
+  const lim = /i1\[t\]:bv\[24\]\s*>\s*\{\s*#x([0-9a-f]+)/i.exec(text);
+  const who = [...text.matchAll(/i(1[89]|2[0-5])\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})/gi)].map(m => [Number(m[1]), m[2].toLowerCase()]);
+  const uniq = [...new Map(who.map(w => [w[0], w])).values()];
+  return { limit: lim ? parseInt(lim[1], 16) : null, who: uniq, all: /\|\|/.test(text), text };
+}
+const myRule = () => readRule(W.clause);
+
+/* ---------- the simulation's side of the wallet: your transactions land on the made-up chain, in this browser only ---------- */
+const S = {
+  born: null, txs: [],   // {tx, hash, at}
+  friends: () => TauSim.accounts.slice(1, 13),
+  load() { try { const k = JSON.parse(store.get("tauhud-wallet-sim") || "null"); if (k && k.day === Math.floor(Date.now() / 86400000)) { S.txs = k.txs; S.born = k.born; } } catch (e) {} },
+  save() { store.set("tauhud-wallet-sim", JSON.stringify({ day: Math.floor(Date.now() / 86400000), txs: S.txs.slice(-60), born: S.born })); },
+  hash: s => B.bytesToHex(B.sha256(new TextEncoder().encode(s))),
+  mine: () => S.txs.filter(x => x.tx.sender_pubkey === W.pk),
+  /* everything that follows from your landed transactions, at the current head */
+  state() {
+    const h = TauSim.head(), fee = baseFee(), st = { bal: 0, out: 0, fees: 0, clause: null, offers: [], reqs: [], rets: [], votes: new Map(), pays: [] };
+    const acc = TauSim.account(W.pk); st.bal = Number(acc.chain_balance) || FAUCET;
+    for (const x of S.txs) {
+      const t = x.tx, landed = x.at <= h, mine = t.sender_pubkey === W.pk;
+      if (!mine) continue;
+      if (!landed) { if (t.fee_limit !== "0") st.fees += fee; if (t.tx_type === "user_tx" && t.operations["1"]) st.out += Number(t.operations["1"][0][2]); continue; }
+      if (t.fee_limit !== "0") st.bal -= fee;
+      if (t.tx_type === "user_tx") {
+        if (t.operations["1"]) st.bal -= Number(t.operations["1"][0][2]);
+        if (t.operations["0"]) st.clause = t.operations["0"].replace(/\s+/g, "") === NEUTRAL.replace(/\s+/g, "") ? null : t.operations["0"];
+      }
+      if (t.tx_type === "retractable_transfer") {
+        const back = S.txs.find(y => y.tx.tx_type === "retract_transfer" && y.tx.retractable_id === x.hash && y.at <= h && y.at < t.release_at_height);
+        if (!back) st.bal -= t.amount;
+        st.rets.push({ retractable_id: x.hash, sender_pubkey: W.pk, recipient_pubkey: t.recipient_pubkey, amount: t.amount, release_at_height: t.release_at_height, status: back ? "retracted" : h >= t.release_at_height ? "released" : "open" });
+      }
+      if (t.tx_type === "approval_request") {   // the simulated co-signer signs two blocks after the request lands
+        const signedAt = x.at + 2, done = h >= signedAt;
+        if (done) st.bal -= t.amount;
+        st.reqs.push({ request_id: x.hash, sender_pubkey: W.pk, recipient_pubkey: t.recipient_pubkey, amount: t.amount, expire_at_height: t.expire_at_height, status: done ? "executed" : "pending",
+          approvers: Object.fromEntries(Object.entries(t.approvers).map(([s, p]) => [s, { pubkey: p, state: done ? "approved" : "awaiting" }])) });
+      }
+      if (t.tx_type === "consensus_rule_vote") st.votes.set(t.update_id, x.at);
+      if (t.tx_type === "rule_offer") {   // simulated members agree one to three blocks later
+        const n = parseInt(x.hash.slice(0, 2), 16) % 3 + 1, ok = h >= x.at + n;
+        st.offers.push({ offer_id: x.hash, offerer_pubkey: W.pk, recipient_pubkey: t.recipient_pubkey, status: ok ? "accepted" : "offered", expire_at_height: t.expire_at_height, rule_text: t.rule_text });
+      }
+    }
+    /* one invitation reaches every new simulated account: a member of a simulated Pakt asks you to join */
+    if (S.born != null && h >= S.born + 3) {
+      const from = S.friends()[parseInt(W.pk.slice(0, 2), 16) % 12], rule = coSignRule(800, [from], "any"), id = S.hash("invite" + W.pk);
+      const ans = S.txs.find(y => y.tx.offer_id === id && y.at <= h);
+      st.offers.push({ offer_id: id, offerer_pubkey: from, recipient_pubkey: W.pk, status: ans ? (ans.tx.tx_type === "rule_offer_accept" ? "accepted" : "rejected") : "offered", expire_at_height: S.born + 400, rule_text: rule, invite: true });
+      if (ans && ans.tx.tx_type === "rule_offer_accept") st.clause = rule;
+    }
+    return st;
+  },
+  answer(cmd) {
+    const sp = cmd.indexOf(" "), c = sp < 0 ? cmd : cmd.slice(0, sp), arg = sp < 0 ? "" : cmd.slice(sp + 1);
+    const ok = data => ({ status: "ok", command: c, data }), err = (message, code) => ({ status: "error", command: c, error: { code, message } });
+    const h = TauSim.head();
+    if (c === "checktx" || c === "sendtx") {
+      const tx = JSON.parse(arg), st = S.state(), seqNow = S.mine().length;
+      if (tx.sequence_number < seqNow) return err(`Invalid sequence number: expected ${seqNow}, got ${tx.sequence_number}`, "TX_REJECTED");
+      const amt = tx.tx_type === "user_tx" && tx.operations["1"] ? Number(tx.operations["1"][0][2]) : ["approval_request", "retractable_transfer"].includes(tx.tx_type) ? tx.amount : 0;
+      if (amt + (tx.fee_limit !== "0" ? baseFee() : 0) > st.bal - st.out - st.fees) return err("Insufficient funds", "TX_REJECTED");
+      const r = readRule(st.clause);
+      if (tx.tx_type === "user_tx" && r && r.limit != null && amt > r.limit) return err("Transaction rejected by user policy (o5) for transfer #1", "TX_REJECTED");
+      if (c === "checktx") return ok({ ok: true, tau_evaluated: false });
+      const hash = S.hash(arg), at = h + 1 + S.txs.filter(x => x.at > h).length % 2;
+      S.txs.push({ tx, hash, at }); S.save();
+      return ok({ ok: true, tx_hash: hash, message: "Transaction queued." });
+    }
+    if (c === "getsequence") return ok({ address: W.pk, sequence_number: S.mine().filter(x => x.at <= h).length, tip_height: h });
+    if (c === "getaccountstate") { const st = S.state(); return ok({ address: W.pk, chain_balance: String(st.bal), pending_outgoing: String(st.out), pending_fees: String(st.fees), pending_incoming: "0", sequence_number: S.mine().length }); }
+    if (c === "getruleoffers") { const st = S.state(); return ok({ address: W.pk, accepted_clauses: st.clause ? [{ target_stream: "o5", clause_body: st.clause }] : [], incoming: st.offers.filter(o => o.recipient_pubkey === W.pk), outgoing: st.offers.filter(o => o.offerer_pubkey === W.pk), mempool: [] }); }
+    if (c === "getruleoffer") { const o = S.state().offers.find(o => o.offer_id === arg); return o ? ok(o) : err("Unknown offer", "OFFER_UNKNOWN"); }
+    if (c === "getapprovalrequests") { const st = S.state(); return ok({ address: W.pk, incoming: [], outgoing: st.reqs, mempool: [] }); }
+    if (c === "getretractables") { const st = S.state(); return ok({ address: W.pk, retractables: st.rets.filter(r => r.status === "open"), mempool: [] }); }
+    if (c === "gettxstatus") { const x = S.txs.find(x => x.hash === arg); return ok(x ? (x.at <= h ? { status: "confirmed", block_number: x.at } : { status: "pending" }) : { status: "unknown" }); }
+    return JSON.parse(TauSim.answer(cmd));
+  },
+};
+
+/* ---------- tabs and the "Before you sign" card ---------- */
+let TAB = "send", PICK = null;   // PICK: the proposal chosen in the vote tab
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  TAB = b.dataset.tab;
+  document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+  $("payForm").hidden = TAB === "vote"; $("voteForm").hidden = TAB !== "vote"; $("releaseBox").hidden = TAB !== "back";
+  $("result").textContent = ""; $("result").className = "result";
+  renderVote(); renderSign();
+}));
+["to", "amount", "release"].forEach(id => $(id).addEventListener("input", renderSign));
+function payDraft() {
+  const to = $("to").value.trim().toLowerCase(), amount = Math.floor(Number($("amount").value)), rel = Math.floor(Number($("release").value));
+  return { to, amount, rel };
+}
+function fact(cls, label, text) { return el("li", { class: cls }, el("span", { text: T(label) }), el("b", { text })); }
+/* what the card shows and whether the button may sign; one place for every check (Norman: show the object, check it makes sense) */
+function plan() {
+  const h = head(), fee = baseFee(), sp = spendable(), r = myRule();
+  if (!W.pk) return { what: [T("Make your account first")], facts: [fact("", "Why", T("A key in this browser signs everything you send."))], can: false };
+  if (TAB === "vote") {
+    const open = ((W.gov && W.gov.pending_updates) || []);
+    const p = open.find(u => u.update_id === PICK) || null;
+    if (!p) return { what: [T(open.length ? "Pick a proposal" : "Nothing to vote on right now")], facts: [fact("", "Votes", T("Free. Any account may vote on the testnet (open admission).")), fact("", "Final", T("A yes cannot be taken back; a change nobody agrees to expires."))], can: false };
+    const voted = (W.gov.votes || []).some(v => v.update_id === p.update_id && v.voter_pubkey === W.pk) || W.log.some(x => x.kind === "vote" && x.extra === p.update_id) || (SIM && S.state().votes.has(p.update_id));
+    return { what: [T("Yes to "), el("span", { text: W.titles.get(p.update_id) || F("rule change {h}", { h: short(p.update_id) }) })],
+      facts: [fact("ok", "Fee", T("None: votes are free")), fact("", "Takes effect", F("at block #{a} if enough yes votes arrive", { a: p.activate_at_height })), fact(voted ? "no" : "", "Final", voted ? T("You voted yes on this one already; the node refuses a second.") : T("A yes cannot be taken back."))],
+      can: !voted, tx: () => base("consensus_rule_vote", { update_id: p.update_id, approve: true }), label: () => F("Yes to {x}", { x: short(p.update_id) }), kind: "vote", extraId: p.update_id };
+  }
+  const d = payDraft(), facts = [];
+  const what = [d.amount > 0 ? fmt(d.amount) + " " + T("test AGRS") : T("Amount"), " ", el("span", { class: "to", text: "→ " + (isAddr(d.to) ? short(d.to) : T("recipient")) })];
+  let can = true, why = "";
+  if (!isAddr(d.to)) { can = false; why = T("Enter the recipient's address: 96 hex characters."); }
+  else if (d.to === W.pk) { can = false; why = T("That is your own address."); }
+  if (!(d.amount > 0)) { can = false; why = why || T("Enter an amount of at least 1."); }
+  else if (d.amount > MAX_AMOUNT) { can = false; why = F("The testnet moves at most {n} test AGRS per payment.", { n: fmt(MAX_AMOUNT) }); }
+  else if (sp != null && d.amount + fee > sp) { can = false; why = F("More than you have: {n} test AGRS spendable, fee included.", { n: fmt(Math.max(0, sp - fee)) }); }
+  const big = sp != null && d.amount > 0 && d.amount > sp / 4;
+  const gated = r && r.limit != null && d.amount > r.limit && r.who.length;
+  facts.push(fact(gated ? "warn" : r ? "ok" : "", "Your rule", !r ? T("none: nothing holds this payment") : gated ? FX("above {n}: it waits for {x} to co-sign", { n: fmt(r.limit) }, { x: r.who.map(w => short(w[1])).join(r.all ? " + " : T(" or ")) }) : F("passes: {n} or less needs nobody", { n: fmt(r.limit) })));
+  facts.push(fact("", "Fee", F("{n} test AGRS (you allow up to {m})", { n: fee, m: fee * 5 })));
+  if (TAB === "back") {
+    const rel = Math.max(2, Math.min(100000, d.rel || 0)), at = (h || 0) + rel;
+    facts.push(fact("ok", "Way back", FX("you can take it back until block #{a} ({t})", { a: at }, { t: inTime(rel) || T("later") })));
+    facts.push(fact("", "Arrives", F("at block #{a}, by itself", { a: at })));
+    if (gated) { can = false; why = why || T("Above your rule's limit only a co-signed payment goes through; use Send."); }
+    return { what, facts, can, why, big, kind: "back", label: () => F("{n} test AGRS to {x}, with a way back", { n: fmt(d.amount), x: short(d.to) }),
+      tx: () => { const b = base("retractable_transfer", { recipient_pubkey: d.to, amount: d.amount, release_at_height: at }); b.expire_at_height = Math.min(b.expire_at_height, at); return b; } };
+  }
+  if (gated) facts.push(fact("", "Way back", T("none once your co-signer signs and it is paid")));
+  else facts.push(fact(big ? "warn" : "", "Way back", big ? T("none once a block holds it, and this is more than a quarter of what you have") : T("none once a block holds it. Want one? Use Send with a way back.")));
+  if (gated) {
+    const approvers = Object.fromEntries(r.who.map(([s, p]) => [String(s), p]));
+    return { what, facts, can, why, big, kind: "cosign", label: () => F("{n} test AGRS to {x}, waiting for a co-signature", { n: fmt(d.amount), x: short(d.to) }),
+      tx: () => base("approval_request", { recipient_pubkey: d.to, amount: d.amount, approvers, custom_inputs: {} }) };
+  }
+  return { what, facts, can, why, big, kind: "pay", label: () => F("{n} test AGRS to {x}", { n: fmt(d.amount), x: short(d.to) }),
+    tx: () => base("user_tx", { operations: { "1": [[W.pk, d.to, String(d.amount)]] } }) };
+}
+let P = null;
+function renderSign() {
+  P = plan();
+  $("signWhat").replaceChildren(...P.what);
+  const facts = [...P.facts, fact("", "Leaves this browser", T("only the signed transaction; your key stays here"))];
+  $("signFacts").replaceChildren(...facts);
+  $("btnSign").disabled = !P.can || (!SIM && !(L.ws && L.ws.readyState === 1));
+  $("btnSign").textContent = T(P.kind === "cosign" ? "Sign and ask for co-signature" : P.kind === "vote" ? "Sign my yes" : "Sign and send");
+  $("signWhy").textContent = P.why || (P.can ? T(SIM ? "Lands on the simulated chain only." : "The node checks it first; if it would be refused, nothing is sent.") : "");
+}
+$("btnSign").onclick = async () => {
+  const p = P; if (!p || !p.can) return;
+  $("btnSign").disabled = true;
+  const res = $("result"); res.className = "result wait"; res.textContent = T("Signing in your browser, then asking the node…");
+  const r = await submit(p.tx(), p.label(), p.kind);
+  if (r.ok) {
+    if (p.kind === "vote") { const x = W.log[0]; x.extra = p.extraId; store.set(logKey(), JSON.stringify(W.log)); }
+    res.className = "result ok";
+    res.textContent = p.kind === "cosign" ? T("Sent as a request: it executes the moment your co-signer signs.") : p.kind === "back" ? T("Sent. Until it is released you can take it back under Activity.") : p.kind === "vote" ? T("Your yes is on its way; the next block counts it.") : T("Sent. The next block takes it in.");
+    if (p.kind !== "vote") { $("amount").value = ""; }
+  } else { res.className = "result no"; res.textContent = r.why; }
+  renderAll();
+};
+
+/* ---------- vote tab ---------- */
+async function loadTitles() {
+  try {
+    const j = SIM ? TauSim.proposals() : await (await fetch(RELAY + "/proposals.json", { cache: "no-store" })).json();
+    for (const p of j.proposals || []) if (p.id && p.title) W.titles.set(p.id, p.title);
+    renderVote();
+  } catch (e) {}
+}
+function renderVote() {
+  const box = $("props"), g = W.gov;
+  if (TAB !== "vote") return;
+  const open = (g && g.pending_updates) || [];
+  if (!open.length) { box.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("Nothing open right now.") }), " ", T(SIM ? "The simulation proposes a rule change every hour at 20 past." : "Testnet proposals are rare and agreed within minutes. Telegram @tauHUDcom posts each new one at once."))); return; }
+  if (!open.some(u => u.update_id === PICK)) PICK = open[0].update_id;
+  box.replaceChildren(...open.slice(0, 4).map(u => {
+    const yes = (g.votes || []).filter(v => v.update_id === u.update_id).length;
+    return el("div", { class: "prop" + (u.update_id === PICK ? " sel" : ""), role: "button", tabindex: "0", onclick: () => { PICK = u.update_id; renderVote(); renderSign(); } },
+      el("div", null, el("div", { class: "t", text: W.titles.get(u.update_id) || T("Rule change") }),
+        el("div", { class: "m", text: F("{h} · {a} of {b} yes votes · takes effect at #{c}", { h: short(u.update_id), a: yes, b: g.approval_threshold, c: u.activate_at_height }) })),
+      el("span", { class: "dot " + (u.update_id === PICK ? "ok" : "") }));
+  }));
+}
+
+/* ---------- your rule: a co-signer above a limit ---------- */
+["rAbove", "rWho"].forEach(id => $(id).addEventListener("input", renderRule));
+function ruleDraft() { const lim = Math.floor(Number($("rAbove").value)), who = $("rWho").value.trim().toLowerCase(); return { lim, who, ok: lim >= 1 && lim <= MAX_AMOUNT && isAddr(who) && who !== W.pk }; }
+function renderRule() {
+  const r = myRule(), box = $("ruleNow"), d = ruleDraft();
+  box.className = "rule" + (r ? " on" : "");
+  if (!W.pk) box.replaceChildren(el("span", { class: "dim", text: T("Make your account first; then you can give it a rule.") }));
+  else if (W.clause === undefined) box.replaceChildren(el("span", { class: "dim", text: T("Reading your rule from the chain…") }));
+  else if (!r) box.replaceChildren(el("div", { class: "t", text: T("No rule yet.") }), el("div", { class: "dim", style: "font-size:12px", text: T("Every payment you sign goes through as it is. Give your account a guard below.") }));
+  else box.replaceChildren(el("div", { class: "top" }, el("div", { class: "t", text: r.limit != null && r.who.length ? FX("Payments above {n} test AGRS need {x}", { n: fmt(r.limit) }, { x: r.who.map(w => short(w[1])).join(r.all ? T(" and ") : T(" or ")) }) : T("A rule of your own is in force.") }),
+      el("button", { class: "b quiet", type: "button", text: T("Remove"), "data-tip": T("Remove my rule") + "\n" + T("Signs the neutral rule: every payment goes through again.") + "\n" + T("Frees one of the testnet's two rule places."), onclick: () => sendRule(NEUTRAL, T("Rule removed"), $("ruleRes")) })),
+    el("details", { class: "tau", style: "margin-top:2px" }, el("summary", { text: T("The rule in Tau") }), el("pre", { translate: "no", text: r.text })));
+  $("btnRule").disabled = !W.pk || !d.ok;
+  $("btnRule").textContent = T(r ? "Sign new rule" : "Sign this rule");
+  $("rWho").classList.toggle("bad", !!d.who && !isAddr(d.who));
+}
+async function sendRule(text, label, res) {
+  res.className = "result wait"; res.textContent = T("Signing in your browser, then asking the node…");
+  const r = await submit(base("user_tx", { operations: { "0": text } }), label, "rule");
+  res.className = "result " + (r.ok ? "ok" : "no");
+  res.textContent = r.ok ? T("Sent. The rule is in force from the block that takes it in.") : r.why;
+}
+$("btnRule").onclick = () => { const d = ruleDraft(); if (d.ok) sendRule(coSignRule(d.lim, [d.who], "any"), F("Rule: above {n} needs {x}", { n: fmt(d.lim), x: short(d.who) }), $("ruleRes")); };
+
+/* ---------- Pakt: one rule, offered to every member for their own account ---------- */
+function paktDraft() { return { name: $("pName").value.trim(), lim: Math.floor(Number($("pAbove").value)), need: $("pNeed").value, members: W.pakt ? W.pakt.members : [] }; }
+function ensurePakt() { if (!W.pakt) W.pakt = { members: [], sent: false }; return W.pakt; }
+function addMember(a) {
+  a = a.trim().toLowerCase();
+  if (!isAddr(a) || a === W.pk) { $("pAdd").classList.add("bad"); return; }
+  const p = ensurePakt(); if (p.sent) return;
+  if (!p.members.includes(a) && p.members.length < 7) p.members.push(a);
+  $("pAdd").value = ""; $("pAdd").classList.remove("bad"); savePakt(); renderPakt();
+}
+function savePakt() { if (W.pk) store.set(paktKey(), JSON.stringify(W.pakt)); }
+$("pAdd").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addMember($("pAdd").value); } });
+$("pAdd").addEventListener("change", () => { if (isAddr($("pAdd").value.trim().toLowerCase())) addMember($("pAdd").value); });
+["pName", "pAbove", "pNeed"].forEach(id => $(id).addEventListener("input", renderPakt));
+/* member m's rule: above the limit, the OTHER members' signatures (you included) in the approval slots */
+function ruleFor(m, all, lim, need) { const others = all.filter(x => x !== m).sort(); return coSignRule(lim, others, need); }
+function renderPakt() {
+  const p = W.pakt, d = paktDraft(), sent = !!(p && p.sent);
+  const all = W.pk ? [W.pk, ...((p && p.members) || [])] : [];
+  $("pName").disabled = $("pAbove").disabled = $("pNeed").disabled = $("pAdd").disabled = sent || !W.pk;
+  if (sent) { $("pName").value = p.name; $("pAbove").value = p.lim; $("pNeed").value = p.need; }
+  ["pFields1", "pAdd", "memPicks", "members"].forEach(id => { $(id).hidden = sent; });
+  $("members").replaceChildren(...(W.pk ? [el("span", { class: "mem me", text: T("you") + " · " + short(W.pk) })] : []),
+    ...((p && p.members) || []).map(m => el("span", { class: "mem" }, short(m), sent ? null : el("button", { type: "button", "aria-label": T("Remove"), text: "×", onclick: () => { p.members = p.members.filter(x => x !== m); savePakt(); renderPakt(); } }))));
+  const ok = !!W.pk && !sent && d.members.length >= 1 && d.lim >= 1 && d.lim <= MAX_AMOUNT;
+  $("btnPakt").disabled = !ok; $("btnPakt").hidden = sent; $("btnPaktNew").hidden = !sent;
+  $("btnPakt").textContent = d.members.length ? F("Sign and invite {n}", { n: d.members.length }) : T("Sign and invite");
+  /* the roster: you first, then each member's answer as the chain records it */
+  const rows = [];
+  if (sent) {
+    const st = memberStates(p);
+    rows.push(el("div", { class: "r" }, el("span", { class: "dot " + st.me[0] }), el("span", null, el("b", { text: T("You") }), " ", el("em", { text: short(W.pk) })), el("span", { text: T(st.me[1]) })));
+    for (const m of p.members) { const s = st.of(m); rows.push(el("div", { class: "r" }, el("span", { class: "dot " + s[0] }), el("span", null, el("b", { text: short(m) })), el("span", { text: T(s[1]) }))); }
+    rows.unshift(el("div", { class: "note", style: "margin:0 0 2px" }, p.name ? el("b", { translate: "no", text: p.name }) : el("b", { text: T("Your Pakt") }), " · ", F(p.need === "all" ? "above {n} test AGRS, every other member signs" : "above {n} test AGRS, one other member signs", { n: fmt(p.lim) })));
+  } else if (!d.members.length) {
+    rows.push(el("div", { class: "note", style: "margin:0" }, T("Each member takes this rule for their own account. You invite; they agree in their own wallet.")));
+  } else if (W.pk) {
+    rows.push(el("div", { class: "note", style: "margin:0" }, T("Each member gets the same promise for their own account: "), el("b", { text: F(d.need === "all" ? "a payment above {n} test AGRS waits until every other member signs." : "a payment above {n} test AGRS waits until one other member signs.", { n: fmt(d.lim || 0) }) })));
+  }
+  $("roster").replaceChildren(...rows);
+  const show = sent || (W.pk && d.members.length);
+  $("paktTau").hidden = !show;
+  if (show) $("paktText").textContent = ruleFor(W.pk, all, sent ? p.lim : d.lim || 1, sent ? p.need : d.need);
+  $("paktLimit").replaceChildren(el("b", { text: T("Real-chain limit: ") }), T(SIM
+    ? "Tau Testnet Alpha holds rules for 2 accounts at a time, so a real Pakt binds you and one member. Here everyone may agree."
+    : "the testnet holds rules for 2 accounts at a time, so a Pakt binds you and one member. If both places are taken, the node says so before anything is sent."));
+  renderPicks();
+}
+function memberStates(p) {
+  const out = (W.offers && W.offers.outgoing) || [];
+  const mineOk = myRule() && myRule().who.length === p.members.length;
+  const me = p.myRule === "refused" ? ["off", "your rule refused"] : mineOk ? ["ok", "agreed (your own rule)"] : ["sim", "your rule on its way"];
+  return { me, of: m => {
+    const o = out.filter(x => (x.recipient_pubkey || "").toLowerCase() === m).pop();
+    const local = p.offers && p.offers[m];
+    if (local === "refused") return ["off", "invitation refused by the node"];
+    if (!o) return local ? ["sim", "invited, waiting for the next block"] : ["", "not invited"];
+    return o.status === "accepted" ? ["ok", "agreed"] : o.status === "rejected" ? ["off", "declined"] : o.status === "expired" ? ["", "invitation expired"] : ["sim", "invited, not answered yet"];
+  } };
+}
+$("btnPakt").onclick = async () => {
+  const p = ensurePakt(), d = paktDraft(), res = $("paktRes");
+  if (!p.members.length) return;
+  Object.assign(p, { name: d.name, lim: d.lim, need: d.need, sent: true, offers: {}, at: Date.now() });
+  savePakt(); renderPakt();
+  const all = [W.pk, ...p.members];
+  res.className = "result wait"; res.textContent = T("Signing your own rule, then one invitation per member…");
+  const mine = await submit(base("user_tx", { operations: { "0": ruleFor(W.pk, all, d.lim, d.need) } }), d.name ? F("Pakt {x}: your own rule", { x: d.name }) : T("Pakt: your own rule"), "rule");
+  p.myRule = mine.ok ? "sent" : "refused";
+  let sentN = 0, firstWhy = mine.ok ? "" : mine.why;
+  for (const m of p.members) {
+    const r = await submit(base("rule_offer", { recipient_pubkey: m, rule_text: ruleFor(m, all, d.lim, d.need), fee_limit: String(baseFee() * 5) }), F("Pakt invitation to {x}", { x: short(m) }), "offer");
+    p.offers[m] = r.ok ? "sent" : "refused"; if (r.ok) sentN++; else firstWhy = firstWhy || r.why;
+    savePakt(); renderPakt();
+  }
+  res.className = "result " + (sentN && mine.ok ? "ok" : sentN || mine.ok ? "wait" : "no");
+  res.textContent = (sentN ? T(sentN === 1 ? "Invitation sent. The member accepts in their own wallet, under Activity." : F("{n} invitations sent. Each member accepts in their own wallet, under Activity.", { n: sentN })) : "") + (firstWhy ? " " + firstWhy : "");
+};
+$("btnPaktNew").onclick = () => { W.pakt = { members: [], sent: false }; savePakt(); $("paktRes").textContent = ""; renderPakt(); };
+/* quick picks: in the simulation, its accounts; live, your own Pakt's members for the co-signer field */
+function renderPicks() {
+  const pool = SIM ? S.friends().slice(0, 4) : [];
+  const mk = (list, fn) => list.map(a => el("button", { type: "button", "data-tip": T("Simulated account") + "\n" + T("An account of the made-up chain.") + "\n" + short(a), text: "+ " + short(a), onclick: () => fn(a) }));
+  $("toPicks").replaceChildren(...mk(pool.slice(0, 3), a => { $("to").value = a; renderSign(); }));
+  $("whoPicks").replaceChildren(...mk(pool.slice(1, 3), a => { $("rWho").value = a; renderRule(); }));
+  $("memPicks").replaceChildren(...(W.pakt && W.pakt.sent ? [] : mk(pool.filter(a => !(W.pakt && W.pakt.members.includes(a))).slice(0, 3), addMember)));
+}
+
+/* ---------- activity: what waits for you, then what you sent ---------- */
+async function answerOffer(o, yes) {
+  let text = o.rule_text;
+  if (yes && !text) { const m = await lookup(`getruleoffer ${o.offer_id}`); text = m && m.status === "ok" ? m.data.rule_text : null; }
+  if (yes && !text) { $("actAside").textContent = T("Could not read the offered rule; try again."); return; }
+  const r = await submit(yes ? base("rule_offer_accept", { offer_id: o.offer_id, rule_text: text }) : base("rule_offer_reject", { offer_id: o.offer_id }),
+    yes ? F("Accepted the rule from {x}", { x: short(o.offerer_pubkey) }) : F("Declined the rule from {x}", { x: short(o.offerer_pubkey) }), yes ? "accept" : "decline");
+  $("actAside").textContent = r.ok ? "" : r.why;
+}
+async function answerRequest(q, yes) {
+  const r = await submit(base("transfer_vote", { request_id: q.request_id, approve: yes }), yes ? F("Co-signed {n} test AGRS from {x}", { n: fmt(q.amount), x: short(q.sender_pubkey) }) : F("Declined to co-sign for {x}", { x: short(q.sender_pubkey) }), "vote");
+  $("actAside").textContent = r.ok ? "" : r.why;
+}
+async function takeBack(t) {
+  const r = await submit(base("retract_transfer", { retractable_id: t.retractable_id }), F("Took back {n} test AGRS", { n: fmt(t.amount) }), "retract");
+  $("actAside").textContent = r.ok ? "" : r.why;
+}
+function inboxItems() {
+  const items = [], h = head();
+  const inc = ((W.offers && W.offers.incoming) || []).filter(o => o.status === "offered");
+  for (const o of inc) {
+    const rr = readRule(o.rule_text || o.rule_text_preview || "");
+    items.push(el("div", { class: "item ask" }, el("span", { class: "dot ok" }),
+      el("span", { class: "t", text: F("{x} offers you a rule", { x: short(o.offerer_pubkey) }) }),
+      el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Accept"), onclick: () => answerOffer(o, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerOffer(o, false) })),
+      el("span", { class: "m", text: (rr && rr.limit != null ? F("Your payments above {n} test AGRS would need a co-signature.", { n: fmt(rr.limit) }) : T("A rule for your own payments.")) + " " + (o.invite ? T("A simulated member asks you into a Pakt.") : "") + (h != null && o.expire_at_height ? " " + F("Open until block #{a}.", { a: o.expire_at_height }) : "") })));
+  }
+  for (const q of ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending")) {
+    items.push(el("div", { class: "item ask" }, el("span", { class: "dot ok" }),
+      el("span", { class: "t", text: F("{x} asks you to co-sign {n} test AGRS", { x: short(q.sender_pubkey), n: fmt(q.amount) }) }),
+      el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Co-sign"), onclick: () => answerRequest(q, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerRequest(q, false) })),
+      el("span", { class: "m", text: F("To {x}. Free for you; the payment goes through once its rule is met.", { x: short(q.recipient_pubkey) }) })));
+  }
+  for (const q of ((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "pending")) {
+    const waiting = Object.values(q.approvers || {}).filter(a => a.state === "awaiting").map(a => short(a.pubkey));
+    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x} waits for a co-signature", { n: fmt(q.amount), x: short(q.recipient_pubkey) }) }), el("span"),
+      el("span", { class: "m", text: (waiting.length ? FX("Waiting for {x}.", {}, { x: waiting.join(", ") }) : "") + " " + F("Expires at block #{a}.", { a: q.expire_at_height }) + (SIM ? " " + T("In the simulation your co-signer signs two blocks later.") : "") })));
+  }
+  const rets = ((W.rets && W.rets.retractables) || []);
+  for (const t of rets.filter(t => (t.sender_pubkey || "").toLowerCase() === W.pk && (t.status || "open") === "open")) {
+    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x}, not released yet", { n: fmt(t.amount), x: short(t.recipient_pubkey) }) }),
+      el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Take back"), "data-tip": T("Take it back") + "\n" + T("Free. Possible until the release block.") + "\n" + F("Released at block #{a}.", { a: t.release_at_height }), onclick: () => takeBack(t) })),
+      el("span", { class: "m", text: FX("Released at block #{a} ({t}).", { a: t.release_at_height }, { t: inTime(t.release_at_height - (h || 0)) || T("soon") }) })));
+  }
+  for (const t of rets.filter(t => (t.recipient_pubkey || "").toLowerCase() === W.pk && (t.status || "open") === "open")) {
+    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS on the way from {x}", { n: fmt(t.amount), x: short(t.sender_pubkey) }) }), el("span"),
+      el("span", { class: "m", text: F("Yours at block #{a}, unless the sender takes it back before.", { a: t.release_at_height }) })));
+  }
+  return items;
+}
+function renderActivity() {
+  const inbox = W.pk ? inboxItems() : [];
+  $("inbox").replaceChildren(...inbox);
+  const word = { queued: ["sim", "on its way"], in: ["ok", "in block #{a}"], out: ["off", "refused"] };
+  const rows = W.log.slice(0, 12).map(x => { const w = word[x.status] || word.queued; return el("div", { class: "item" + (x.status === "out" ? " bad" : "") }, el("span", { class: "dot " + w[0] }), el("span", { class: "t", text: x.label }), el("span", { class: "dim", style: "font-size:12px", text: F(w[1], { a: x.block ?? "?" }) }),
+    el("span", { class: "m", text: new Date(x.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + (x.hash ? " · " + short(x.hash) : "") + (x.why ? " · " + x.why : "") })); });
+  if (!W.pk) rows.push(el("div", { class: "empty", text: T("Your payments, votes, rules and invitations show here, with what each one is waiting for.") }));
+  else if (!rows.length && !inbox.length) rows.push(el("div", { class: "empty" }, el("b", { text: T("Nothing yet.") }), " ", T(SIM ? "Send something to a simulated account, or wait a few blocks: someone may invite you into a Pakt." : "Send something, vote, or give your account a rule. Requests to co-sign and rules offered to you appear here too.")));
+  $("log").replaceChildren(...rows);
+  $("actAside").textContent = $("actAside").textContent || "";
+}
+
+/* ---------- account and key numbers ---------- */
+function renderAccount() {
+  $("noKey").hidden = !!W.pk; $("hasKey").hidden = !W.pk;
+  $("acctAside").textContent = W.pk ? (SIM ? T("simulated chain") : "Tau Testnet Alpha") : "";
+  if (!W.pk) return;
+  $("addr").textContent = W.pk;
+  $("lnkAcct").href = "/account/?a=" + W.pk;
+  const sp = spendable();
+  $("balN").textContent = sp == null ? "–" : fmt(sp);
+  $("balNote").textContent = W.bal == null ? T("Reading your balance…")
+    : W.chainBal === 0 ? T("0 on the chain so far: the testnet counts an account at 0 as 100,000 test AGRS when it pays.")
+    : F("Sequence {n}: the number your next transaction carries.", { n: Math.max(W.seq || 0, nextSeq || 0) });
+}
+function renderKpis() {
+  const r = myRule();
+  $("tRule").textContent = !W.pk || W.clause === undefined ? "–" : r ? T("1") : T("no");
+  $("kRule").classList.toggle("hot", !!r);
+  const wait = W.pk ? (((W.offers && W.offers.incoming) || []).filter(o => o.status === "offered").length + ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending").length) : null;
+  $("tWait").textContent = wait == null ? "–" : wait;
+  $("kWait").classList.toggle("wait", !!wait);
+  const back = W.pk && W.rets ? (W.rets.retractables || []).filter(t => (t.sender_pubkey || "").toLowerCase() === W.pk && (t.status || "open") === "open").length : null;
+  $("tBack").textContent = back == null ? "–" : back;
+}
+function renderAll() { renderAccount(); renderKpis(); renderActivity(); renderSign(); renderRule(); renderPakt(); renderVote(); }
+
+/* ---------- hovers: light + title, verdict, at most two short lines ---------- */
+const tip = $("tip");
+document.addEventListener("mouseover", e => {
+  const t = e.target.closest("[data-tip]");
+  if (!t || !t.dataset.tip) { tip.hidden = true; return; }
+  const lines = t.dataset.tip.replace(/\\n/g, "\n").split("\n").map(s => T(s)).slice(0, 4);
+  const light = t.classList.contains("state") ? ($("state").className.match(/\b(ok|sim|wait|off)\b/) || [])[1] : t.closest(".kpi.hot, .rule.on") ? "ok" : t.closest(".kpi.wait") ? "sim" : SIM ? "sim" : "ok";
+  tip.replaceChildren(el("div", { class: "h" }, el("span", { class: "dot " + (light === "wait" ? "sim" : light) }), lines[0]), lines[1] ? el("div", { class: "v", text: lines[1] }) : null, ...lines.slice(2).map(l => el("div", { class: "x", text: l })));
+  tip.hidden = false;
+});
+document.addEventListener("mousemove", e => {
+  if (tip.hidden) return;
+  const z = document.documentElement.classList.contains("fit") ? +getComputedStyle(document.documentElement).getPropertyValue("--z") || 1 : 1;
+  const w = tip.offsetWidth * z, h = tip.offsetHeight * z;
+  tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - w - 8)) / z + "px";
+  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) / z + "px";
+});
+document.addEventListener("mouseleave", () => { tip.hidden = true; });
+
+/* ---------- one screen ---------- */
+function fit() {
+  const w = innerWidth, h = innerHeight, root = document.documentElement;
+  const on = w >= 1200 && h >= 640 && w / h >= 1.3;   // smaller screens scroll
+  const z = on ? Math.max(.82, Math.min(2, w / 1600, h / 860)) : 1;
+  root.classList.toggle("fit", on);
+  root.classList.toggle("wide", on && w / h >= 1.95);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+}
+addEventListener("resize", fit);
+
+/* ---------- start ---------- */
+if (SIM) {
+  $("sourceLine").textContent = T("Simulation: your key is real and signs as on the testnet, but every transaction lands on the made-up chain in this browser and nowhere else. Switch to Live node in the header to use Tau Testnet Alpha.");
+  TauSim.mark();
+  S.load();
+  let seen = TauSim.head();
+  setInterval(() => { const h = TauSim.head(); if (h !== seen) { seen = h; refresh(); } }, 1000);
+}
+fit();
+connect();
+loadKey();
+if (!W.pk) renderAll();
+loadTitles();
+setInterval(loadTitles, 120000);
+if (!SIM) setInterval(() => { if (W.pk && !document.hidden) refresh(); }, 30000);
+</script>
+</body>
+</html>
