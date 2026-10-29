@@ -334,6 +334,14 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
 - `docker compose run --rm alerts python alerts.py --x-preview` prints what X would get now,
   with X's own character count; `--x-test` posts one test post on X only.
 
+**Agorzilla on X**: `alerts/agorzilla.py` also posts each evening's result and every new
+growth stage on Agorzilla's own X account, with the creature on a dark 16:9 card, no links,
+at most `AGORZILLA_X_DAILY_CAP` (8) a day. Keys: an app made at console.x.com while signed
+in as that account, as `AGORZILLA_X_API_KEY`, `AGORZILLA_X_API_SECRET`,
+`AGORZILLA_X_ACCESS_TOKEN`, `AGORZILLA_X_ACCESS_SECRET` in `.env`; then
+`docker compose up -d --build agorzilla` and
+`docker compose run --rm agorzilla python agorzilla.py --x-test` (one test post on X only).
+
 **Donation thank-yous**: `alerts/donations.py` (service `donations`, same image) reads
 incoming AGRS (contract `0x7388…bdda` only, so look-alike tokens are ignored) and ETH
 transfers to the donation address every 5 minutes, above a small minimum

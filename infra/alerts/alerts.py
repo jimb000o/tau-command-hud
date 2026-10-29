@@ -538,11 +538,11 @@ def x_join(lines: list[str]) -> str:
     return out
 
 
-def x_post(lines: list[str], link: str | None = None, keep: int = 1, foot: str = X_REAL) -> str:
+def x_post(lines: list[str], link: str | None = None, keep: int = 1, foot: str = X_REAL, tag: str = X_TAG) -> str:
     """Lines as one post of at most 280 (first line the headline): the last line loses sentences, then whole lines go
     (never the first `keep`), then it is cut. `foot` and the hashtag always close it; the link joins them only with
     X_LINKS (it makes a post 13 times dearer)."""
-    tail = "\n\n" + " · ".join(x for x in (foot, link if link and X_LINKS else None, X_TAG) if x)
+    tail = "\n\n" + " · ".join(x for x in (foot, link if link and X_LINKS else None, tag) if x)
     out = [" ".join(str(x).split()) for x in lines if x and str(x).strip()]
     if not X_LINKS:
         out = [re.sub(r"\s*https?://\S+", "", x) for x in out]
@@ -1126,17 +1126,21 @@ class X(Outlet):
     name = "x"
     URL = "https://api.x.com/2/tweets"
 
+    def __init__(self, keys: dict | None = None):
+        """keys: the four values under the names X_API_KEY … X_ACCESS_SECRET; default the @TauHUDcom ones from .env."""
+        self.keys = keys if keys is not None else X_KEYS
+
     def enabled(self) -> bool:
-        return all(X_KEYS.values())
+        return all(self.keys.values())
 
     def auth_header(self, url: str | None = None) -> str:
-        oauth = {"oauth_consumer_key": X_KEYS["X_API_KEY"], "oauth_nonce": secrets.token_hex(16),
+        oauth = {"oauth_consumer_key": self.keys["X_API_KEY"], "oauth_nonce": secrets.token_hex(16),
                  "oauth_signature_method": "HMAC-SHA1", "oauth_timestamp": str(int(time.time())),
-                 "oauth_token": X_KEYS["X_ACCESS_TOKEN"], "oauth_version": "1.0"}
+                 "oauth_token": self.keys["X_ACCESS_TOKEN"], "oauth_version": "1.0"}
         # a JSON or multipart body is not part of the signature base
         params = "&".join(f"{_pct(k)}={_pct(v)}" for k, v in sorted(oauth.items()))
         base = "&".join(["POST", _pct(url or self.URL), _pct(params)])
-        key = f"{_pct(X_KEYS['X_API_SECRET'])}&{_pct(X_KEYS['X_ACCESS_SECRET'])}"
+        key = f"{_pct(self.keys['X_API_SECRET'])}&{_pct(self.keys['X_ACCESS_SECRET'])}"
         oauth["oauth_signature"] = base64.b64encode(hmac.new(key.encode(), base.encode(), hashlib.sha1).digest()).decode()
         return "OAuth " + ", ".join(f'{_pct(k)}="{_pct(v)}"' for k, v in sorted(oauth.items()))
 
