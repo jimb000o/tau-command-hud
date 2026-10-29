@@ -625,7 +625,7 @@ function connect() {
   try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
   L.ws = ws;
   setState("wait", "Connecting", "Connection\nReaching node.tauhud.com…");
-  ws.onopen = () => { L.retry = 5000; ws.send("hello version=1"); ws.send("getgovernance"); ws.send("getblocks 12"); };
+  ws.onopen = () => { L.retry = 5000; ws.send("hello version=1"); ws.send("getgovernance"); ws.send("getblocks 12"); if (W.pk) refresh(); };   // a key loaded before the node answered reads its balance and rule now, not 30 s later
   ws.onmessage = ev => {
     let msg; try { msg = JSON.parse(String(ev.data)); } catch { return; }
     const q = L.wait.get(msg.command);
