@@ -288,6 +288,7 @@ const FINDINGS = [
     brief: "Our first code fix sent to IDNI: a node that lost every peer now finds its way back.",
     found: "On 29 October IDNI's bootnode refused new peers for about three hours. Nodes that lost it stayed at 0 peers with an old chain even after the bootnode was back, because they dial their bootstrap peers only once, at start.",
     impact: "Every node that loses its last peer would sit still until someone restarts it by hand.",
+    idniBrief: "fixed the outage's cause the same day; our PR adds the reconnect.", idniText: "The same evening IDNI fixed the cause of the outage: after 1,024 failed dials the p2p library raised an overflow and stopped dialing (e88814b), and a node whose network died now restarts instead of mining alone (b1ebfa4). Our fix covers the other half, finding the network again after such an outage.",
     ours: `We sent IDNI the fix as a pull request with four tests: while a node has no peer, it dials its bootstrap peers again every minute. The same change runs in our node (${pr(170)}).`,
   },
   {
