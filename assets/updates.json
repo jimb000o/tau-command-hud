@@ -971,5 +971,10 @@
   "tag": "Menu",
   "on": "2026-10-29",
   "html": "The header menu is sorted by what you came to do: Explore to watch the chain, Learn to understand Tau, Playground to try it yourself, and About for who runs this site, its status, findings, numbers, developers, press and privacy. About is a step quieter than the three sections, the tour of each page now starts from Learn, and pages with a footer list the About links there too."
+ },
+ {
+  "tag": "Privacy",
+  "on": "2026-10-29",
+  "html": "Privacy notice: says plainly that the videos, like the film in the Press kit, come from tauhud.com itself and load only when you press play. There are no YouTube or other third-party players on the site."
  }
 ]
