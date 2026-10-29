@@ -1694,11 +1694,11 @@ function placeAgz() {   // two anchors: the header's bottom line is his ground, 
   const op = a.offsetParent || document.body, opr = op.getBoundingClientRect(), z = op.offsetWidth ? opr.width / op.offsetWidth : 1;
   const R = rail.getBoundingClientRect(), m = mode.getBoundingClientRect(), un = u.getBoundingClientRect(), h = Math.min(78 * z, R.bottom - 4 * z), w = h * 133 / 200;
   a.style.setProperty("--agz-h", Math.round(h / z) + "px");
-  const top = R.bottom - 1 * z - h, blockers = [...document.querySelectorAll(".tnav .tnav-l > *, .tnav .tnav-r > *, .tnav .tnav-nav > *")].map(e => e.getBoundingClientRect()).filter(q => q.width && q.bottom > top && q.top < R.bottom);
+  const top = R.bottom + 4 * z - h, blockers = [...document.querySelectorAll(".tnav .tnav-l > *, .tnav .tnav-r > *, .tnav .tnav-nav > *")].map(e => e.getBoundingClientRect()).filter(q => q.width && q.bottom > top && q.top < R.bottom);
   const gap = 14 * z, pad = 10 * z;
   let right = m.left - gap;
   for (let k = 0; k < 4; k++) { const hitq = blockers.find(q => q.left < right + pad && q.right > right - w - pad); if (!hitq) break; right = hitq.left - gap; }
-  const left = right - w, clash = left < un.right + 16 * z || blockers.some(q => q.left < right + pad && q.right > left - pad);
+  const left = right - w, clash = (un.bottom > top + 6 * z && left < un.right + 16 * z) || blockers.some(q => q.left < right + pad && q.right > left - pad);
   a.classList.toggle("cramped", clash);
   a.style.left = Math.round((left - opr.left) / z) + "px"; a.style.top = Math.round((top - opr.top) / z) + "px";
 }
@@ -1738,7 +1738,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=23.3", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=23.4", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);

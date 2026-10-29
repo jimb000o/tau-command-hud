@@ -1268,5 +1268,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "HUD: Agorzilla now stands on the header line right next to the Live status on every screen. On screens where the page is centred or scaled he used to land too far right with his feet below the line. He also follows the status chips the moment they change width. The core-only view for other sites gains bg=none (transparent) and quiet=1 (no labels or hovers), and tells the page around it when it is ready and when each block lands."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "HUD: Agorzilla now sits a touch lower, so his feet rest on the header line instead of hovering just above it. On screens around 2000 px wide he also stays beside the Live status instead of slipping further right."
  }
 ]
