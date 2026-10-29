@@ -961,5 +961,10 @@
   "tag": "Alerts",
   "on": "2026-10-29",
   "html": "The Updates log is complete and stays that way: eleven entries for the live backend, the node, the relay, the node kit, the weekly recap and the question bot were missing from 26 to 28 October and are now in, and every new pull request must add its entry before it can go live. The Telegram channel shares more of it: up to three new pages or features a day between 06:00 and 23:00 UTC, and the smaller changes as a digest at 12:00 and 18:00 UTC."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-29",
+  "html": "After a night or a busy day the Telegram channel catches up in one post: when four or more new pages and features are waiting, they go out together, a line and a link each, instead of one by one over several days."
  }
 ]

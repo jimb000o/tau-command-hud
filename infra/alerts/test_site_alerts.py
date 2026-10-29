@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 TMP = tempfile.mkdtemp()
 os.environ.update(STATE_PATH=os.path.join(TMP, "alerts.json"), PUBLIC_DIR=TMP, TELEGRAM_BOT_TOKEN="", SITE_URL="https://tauhud.com")
 # the schedule this test walks through (the defaults are wider: 06-23 UTC, three a day, two hours apart, digests at 12 and 18)
-os.environ.update(SITE_POST_HOURS="8-20", SITE_MAJOR_DAILY_CAP="2", SITE_MAJOR_GAP_SECONDS="10800", SITE_DIGEST_HOURS="17")
+os.environ.update(SITE_POST_HOURS="8-20", SITE_MAJOR_DAILY_CAP="2", SITE_MAJOR_GAP_SECONDS="10800", SITE_DIGEST_HOURS="17", SITE_CATCHUP_AT="99")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alerts  # noqa: E402
 
@@ -152,6 +152,24 @@ w6 = alerts.Watcher([])
 w6.state.pop("site", None)
 run(w6, at("2026-10-28", "22:00"), marked)
 check([m["key"] for m in w6.state["site"]["majors"]] == ["major:missions"], "a major marked skip is never queued")
+
+# a backlog of majors: one catch-up post at the start of the posting hours, then the daily rhythm
+alerts.SITE_CATCHUP_AT = 4
+tg9 = Fake()
+w9 = alerts.Watcher([tg9])
+w9.state.pop("site", None)
+many = [major("2026-10-28", "X", f"New page {i}.", f"m{i}", title=f"New: page {i}", link=f"/p{i}/") for i in range(5)]
+run(w9, at("2026-10-28", "22:00"), many)
+check(tg9.sent == [] and len(w9.state["site"]["majors"]) == 5, "queued at night")
+run(w9, at("2026-10-29", "08:00"))
+check(len(tg9.sent) == 1 and "5 new pages and features on Tau HUD since 2026-10-28" in tg9.sent[0][0], "one catch-up post with all five")
+check('<a href="https://tauhud.com/p0/">Page 0</a>' in tg9.sent[0][0] and w9.state["site"]["majors"] == [], "a line and a link each, the queue is empty")
+run(w9, at("2026-10-29", "08:00"), many + [major("2026-10-29", "Y", "New page 9.", "m9", title="New: nine")])
+run(w9, at("2026-10-29", "14:00"))
+check(len(tg9.sent) == 1, "the day's quota is used by the catch-up post")
+run(w9, at("2026-10-30", "08:00"))
+check(len(tg9.sent) == 2 and "nine" in tg9.sent[1][0] and "TAU HUD · new on the site" in tg9.sent[1][0], "next day single posts again")
+alerts.SITE_CATCHUP_AT = 99
 
 # a backfilled entry is logged, never posted
 w7 = alerts.Watcher([])
