@@ -978,6 +978,36 @@
   "html": "The weekly Daily Consensus reads like a paper of the 1920s: headlines in the paper's own words instead of tracker titles, a weather report from the chain, a photograph, a dense lead story and a stop press with the live block. Ballots that only keep the rules as they stand are told once, not one by one."
  },
  {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "The waiting room tells the truth about the alpha node's bug: transactions already sealed in a block but still listed as waiting (IDNI #81) are looked up one by one, drawn as empty rings and marked with their block in Transactions, and the Waiting number counts only what really waits. The hover turns amber when such leftovers are listed or when transactions pile up faster than blocks take them, and the oldest wait now comes from the relay instead of from when you opened the page."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "In Chain core, the glow under a hovered ring, dot or the core now takes the colour of its status light: green when it is normal, amber to watch or while something is in progress, red for a problem."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Transactions already sealed in a block that the node still lists as waiting now stand out: amber dots in a small block frame in Chain core, and an amber frame with their block number in Transactions."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Refused transactions now bounce off the outer rim of Chain core, which works like a shield: each one flies in, knocks on the rim, which flashes where it is hit, and flies off again. A faint mark stays on the rim for a minute; hover it for the reason the rules said no, click it for the details. Live and in the simulation."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Every transaction the node still lists after it was sealed now turns amber in Chain core: the node itself answers \"waiting\" for them, so the page reads the blocks of the last hour and finds each one there. The nodes on the node orbit carry a status light in their hover too: Tau HUD's node is green while live and in step, amber while it catches up, red when it does not answer."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "The red mark a refused transaction leaves on the outer rim of Chain core now fades within a few seconds; nothing stays behind."
+ },
+ {
   "tag": "Newspaper",
   "on": "2026-10-29",
   "html": "The weekly Daily Consensus leads with the week's real news: a milestone such as Tau HUD going live, a rule change taking effect, the simulation switching consensus, new nodes. Ballots that only keep the rules get a small mystery of their own, and the Rehearsal Hall tells the simulation's week: votes, consensus switches, proposals refused at the door, the best tipster."
