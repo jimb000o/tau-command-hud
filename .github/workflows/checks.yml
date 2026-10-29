@@ -38,7 +38,7 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then export PR_TITLE="$TITLE"; fi
           BASE="$RUNNER_TEMP/base-updates.json" node tests/updates.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Shared scripts parse
-        run: for f in assets/*.js assets/i18n/zh/*.js; do node --check "$f" || exit 1; done
+        run: for f in assets/*.js assets/i18n/*/*.js; do node --check "$f" || exit 1; done
 
   pages:
     name: Every page in a browser (English and Chinese)

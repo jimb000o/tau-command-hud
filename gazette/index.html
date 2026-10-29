@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
-<script>if (window.TauI18n && TauI18n.lang === "zh") document.write('<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="zh.js"><\/script>');</script>
+<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script>`);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>The Daily Consensus</title>
@@ -264,6 +264,13 @@ html.i18n-zh .pg { --ind: 2em; }
 html.i18n-zh .pg p.dc::first-letter { initial-letter: normal; float: none; font: inherit; padding: 0; margin: 0; }
 html.i18n-zh .pg p.dc { text-indent: 2em; }
 html.i18n-zh .title { font-family: "Noto Serif SC", "Songti SC", serif; font-weight: 900; letter-spacing: .12em; }
+/* Japanese: a Mincho face where the reader has one, the self-hosted serif otherwise; one-character indent, no drop caps */
+html.i18n-ja .pg { font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP", "Noto Serif SC", var(--body); --ind: 1em; }
+html.i18n-ja .banner, html.i18n-ja h2, html.i18n-ja h3 { font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP", "Noto Serif SC", var(--head); }
+html.i18n-ja .pg p { text-align: justify; }
+html.i18n-ja .pg p.dc::first-letter { initial-letter: normal; float: none; font: inherit; padding: 0; margin: 0; }
+html.i18n-ja .pg p.dc { text-indent: 1em; }
+html.i18n-ja .title { font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP", "Noto Serif SC", serif; font-weight: 900; letter-spacing: .1em; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -695,7 +702,7 @@ const EN = {
 <script>
 "use strict";
 (() => {
-  const ED = (window.TauI18n && TauI18n.lang === "zh" && window.GAZETTE_ZH) || EN;
+  const ED = (window.TauI18n && { zh: window.GAZETTE_ZH, ja: window.GAZETTE_JA }[TauI18n.lang]) || EN;
   const UI = ED.ui;
   window.GAZETTE_AMB = [UI.amb0, UI.amb1, UI.amb2]; window.GAZETTE_HIT = { cup: UI.hitCup, sugar: UI.hitSugar, papers: UI.hitPapers }; window.GAZETTE_NOTE = UI.notes;
   const $ = id => document.getElementById(id);
@@ -712,7 +719,7 @@ const EN = {
 
   /* ----- the weekly edition: written every Monday by the Tau HUD server (infra/alerts/gazette.py), set as the front page ----- */
   let OFF = 0, WEEK = null;
-  const L = ED === EN ? "en" : "zh";
+  const L = ED === EN ? "en" : TauI18n.lang;   /* the weekly edition is written in en and zh; ja reads the English until it has its own */
   const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const txt = x => esc(x && typeof x === "object" ? (x[L] || x.en) : x).replace(/&lt;(\/?)([bi])&gt;/g, "<$1$2>");
   const edParam = /^\d{4}-\d{2}-\d{2}$/.test(new URLSearchParams(location.search).get("edition") || "") ? new URLSearchParams(location.search).get("edition") : "latest";
@@ -1148,7 +1155,7 @@ const EN = {
     startFrom(); wire(); setInterval(() => { if (!document.hidden) wire(); }, 60000);
   };
   /* the paper's faces load only when first used; load them before measuring, and measure again if one arrives late */
-  const FACES = ["400 20px UnifrakturMaguntia", "900 20px 'Playfair Display'", "700 20px 'Playfair Display'", "italic 400 20px 'Playfair Display'", "400 20px 'Old Standard TT'", "700 20px 'Old Standard TT'", "italic 400 20px 'Old Standard TT'", "400 20px Limelight", "400 20px 'Special Elite'"].concat(window.GAZETTE_ZH && ED === window.GAZETTE_ZH ? ["900 20px 'Noto Serif SC'", "400 20px 'Noto Serif SC'"] : []);
+  const FACES = ["400 20px UnifrakturMaguntia", "900 20px 'Playfair Display'", "700 20px 'Playfair Display'", "italic 400 20px 'Playfair Display'", "400 20px 'Old Standard TT'", "700 20px 'Old Standard TT'", "italic 400 20px 'Old Standard TT'", "400 20px Limelight", "400 20px 'Special Elite'"].concat(ED !== EN ? ["900 20px 'Noto Serif SC'", "400 20px 'Noto Serif SC'"] : []);
   const refit = () => { LEAVES.forEach(l => delete l.dataset.fit); zs(); };
   Promise.race([Promise.all(FACES.map(f => document.fonts ? document.fonts.load(f) : 0)), new Promise(r => setTimeout(r, 3500))]).then(ready);
   if (document.fonts) document.fonts.addEventListener("loadingdone", () => { if (MODE && MODE.ed === "broad") refit(); });

@@ -1,23 +1,23 @@
 /* Tau HUD languages. English is the source text in the pages; a translation is a dictionary keyed by that English text
    (assets/i18n/<lang>/common.js for the shared header, plus one file per page). This file runs first in <head>:
-   it picks the language (?lang=zh, then the saved choice, then the browser language), loads the dictionaries,
+   it picks the language (?lang=zh or ?lang=ja, then the saved choice, then the browser language), loads the dictionaries,
    and translates every text node and hover text as the page builds and updates it. A string without a translation
    stays English, so a page never breaks when its English changes. ?i18n=missing lists untranslated strings in the console.
-   Chinese also flips the signal colours to the Chinese convention: red is the positive accent, green means offline or down. */
+   Japanese keeps the English colours. Chinese also flips the signal colours to the Chinese convention: red is the positive accent, green means offline or down. */
 (() => {
   "use strict";
-  const KEY = "tauhud-lang", LANGS = { en: "English", zh: "中文" };
+  const KEY = "tauhud-lang", LANGS = { en: "English", zh: "中文", ja: "日本語" };
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const q = new URLSearchParams(location.search);
-  const norm = l => (l && /^zh/i.test(l) ? "zh" : l && /^en/i.test(l) ? "en" : null);
+  const norm = l => (!l ? null : /^zh/i.test(l) ? "zh" : /^ja/i.test(l) ? "ja" : /^en/i.test(l) ? "en" : null);
   let lang = norm(q.get("lang"));
   if (lang) store.set(KEY, lang);
   else lang = norm(store.get(KEY)) || ((navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]).map(norm).find(Boolean)) || "en";
-  /* the address bar keeps ?lang=zh, so a link copied from the Chinese site opens in Chinese */
-  if (lang === "zh" && q.get("lang") !== "zh") try { const u = new URL(location.href); u.searchParams.set("lang", "zh"); history.replaceState(history.state, "", u.href); } catch (e) {}
+  /* the address bar keeps ?lang=zh (or ja), so a link copied from the Chinese site opens in Chinese */
+  if (lang !== "en" && q.get("lang") !== lang) try { const u = new URL(location.href); u.searchParams.set("lang", lang); history.replaceState(history.state, "", u.href); } catch (e) {}
   const me = document.currentScript, ROOT = me && me.src ? new URL("..", me.src) : new URL("/", location.href);
   const api = window.TauI18n = {
-    lang, langs: LANGS, strings: new Map(), upper: new Map(), patterns: [],
+    lang, langs: LANGS, strings: new Map(), upper: new Map(), patterns: [],   // lang is also the dictionary folder, assets/i18n/<lang>/
     t: s => s, // translate a whole string (English when there is no translation)
     set(l) { if (!LANGS[l] || l === lang) return; store.set(KEY, l); const u = new URL(location.href); u.searchParams.delete("lang"); location.replace(u.href); },
     /* strings: { "English": "译文" }. A key with {a} placeholders is a template: "{n} refused": "{n} 被拒绝";
@@ -46,15 +46,16 @@
     return /^[a-z]+$/.test(p) && p !== "index.html" ? p : "hud";
   })();
   const html = document.documentElement;
-  html.lang = "zh-CN"; html.classList.add("i18n-zh", "i18n-wait");
+  const ZH = lang === "zh";
+  html.lang = ZH ? "zh-CN" : "ja"; html.classList.add("i18n-" + lang, "i18n-cjk", "i18n-wait");
   /* CJK glyphs come from the system fonts (no extra webfont); wide Latin letter-spacing reads badly between ideographs */
-  document.write(`<style id="i18n-css">html.i18n-wait body{visibility:hidden}html.i18n-zh body *:not(svg *){letter-spacing:.03em!important}@media (max-width:700px){html.i18n-zh header.trail .chip.unoff::after{content:"非官方 · 与 IDNI 无关"}}</style>`);
-  for (const f of ["common", page]) document.write(`<script src="${ROOT.href}assets/i18n/zh/${f}.js"><\/script>`);
+  document.write(`<style id="i18n-css">html.i18n-wait body{visibility:hidden}html.i18n-cjk body *:not(svg *){letter-spacing:.03em!important}@media (max-width:700px){html.i18n-cjk header.trail .chip.unoff::after{content:"${ZH ? "非官方 · 与 IDNI 无关" : "非公式 · IDNI とは無関係"}"}}</style>`);
+  for (const f of ["common", page]) document.write(`<script src="${ROOT.href}assets/i18n/${lang}/${f}.js"><\/script>`);
 
   const debug = q.get("i18n") === "missing", missing = window.__i18nMissing = new Set();
   const cache = new Map(), NOISE = /[0-9a-f]*…[0-9a-f]*|\b[0-9a-f]{6,}\b|\bAGRS\b|\b\w+_\w+(\.\w+)*\b|#?\d[\d.,]*/gi;   // hashes, amounts, numbers and code names are not words
   /* a long line built from parts is translated part by part: sentences first, then clauses */
-  const SEPS = [". ", "; ", " · ", ": ", ", "], PUNCT = { ". ": "。", "; ": "；", ": ": "：", " · ": " · ", ", ": "，" };
+  const SEPS = [". ", "; ", " · ", ": ", ", "], PUNCT = { ". ": "。", "; ": ZH ? "；" : "。", ": ": "：", " · ": " · ", ", ": ZH ? "，" : "、" };
   const words = k => /[A-Za-z]{2}/.test(k.replace(NOISE, ""));
   const one = k => {
     const hit = api.strings.get(k);
@@ -180,16 +181,17 @@
     colorEl(root);
   }
 
-  /* ---------- colours: green ↔ red, so red is the positive accent and green means offline or down; amber stays ---------- */
+  /* ---------- colours (Chinese only): green ↔ red, so red is the positive accent and green means offline or down; amber stays ---------- */
   const SWAP = { "57,255,138": "255,59,82", "255,77,109": "57,255,138", "185,255,214": "255,190,198", "230,255,240": "255,232,235", "22,192,96": "214,40,64", "229,72,77": "48,164,108" };
   const HEX = { "39ff8a": "ff3b52", "ff4d6d": "39ff8a", "b9ffd6": "ffbec6", "16c060": "d62840", "e5484d": "30a46c" };
   const COLOR_RE = /#(39ff8a|ff4d6d|b9ffd6|16c060|e5484d)\b|rgba?\(\s*(57\s*,\s*255\s*,\s*138|255\s*,\s*77\s*,\s*109|185\s*,\s*255\s*,\s*214|230\s*,\s*255\s*,\s*240|22\s*,\s*192\s*,\s*96|229\s*,\s*72\s*,\s*77)\s*([,/][^)]*)?\)/gi;
-  const swap = s => typeof s !== "string" || !s ? s : s.replace(COLOR_RE, (m, hex, rgb, rest) => {
+  const swap = s => !ZH || typeof s !== "string" || !s ? s : s.replace(COLOR_RE, (m, hex, rgb, rest) => {
     if (hex) return "#" + HEX[hex.toLowerCase()];
     const k = rgb.replace(/\s+/g, ""); return (rest ? "rgba(" : "rgb(") + SWAP[k] + (rest || "") + ")";
   });
   const mine = new WeakMap();   // element → style/fill values we wrote, so our own write is not swapped back
   function colorEl(el) {
+    if (!ZH) return;
     for (const a of ["style", "fill", "stroke", "stop-color", "color"]) {
       const v = el.getAttribute(a); if (!v) continue;
       const seen = mine.get(el); if (seen && seen[a] === v) continue;
@@ -207,6 +209,7 @@
     }
   }
   function sheets() {
+    if (!ZH) return;
     for (const sh of document.styleSheets) {
       if (doneSheets.has(sh)) continue;
       let list; try { list = sh.cssRules; } catch (e) { continue; }   // cross-origin font sheets
@@ -216,7 +219,7 @@
   }
   // canvas drawings (chain core, rain, charts) pass their colours as strings
   const C2 = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
-  if (C2) for (const p of ["fillStyle", "strokeStyle", "shadowColor"]) {
+  if (C2 && ZH) for (const p of ["fillStyle", "strokeStyle", "shadowColor"]) {
     const d = Object.getOwnPropertyDescriptor(C2, p); if (!d || !d.set) continue;
     Object.defineProperty(C2, p, { configurable: true, enumerable: d.enumerable, get: d.get, set(v) { d.set.call(this, swap(v)); } });
   }
@@ -224,8 +227,8 @@
     const orig = C2[f];
     C2[f] = function (t, ...rest) { if (typeof t === "string" && /[A-Za-z]{2}/.test(t)) { const r = tr(t); if (r != null) t = r; } return orig.call(this, t, ...rest); };
   }
-  if (window.CanvasGradient) { const add = CanvasGradient.prototype.addColorStop; CanvasGradient.prototype.addColorStop = function (o, c) { return add.call(this, o, swap(c)); }; }
-  const icon = () => document.querySelectorAll('link[rel~="icon"][type="image/svg+xml"]').forEach(l => {
+  if (window.CanvasGradient && ZH) { const add = CanvasGradient.prototype.addColorStop; CanvasGradient.prototype.addColorStop = function (o, c) { return add.call(this, o, swap(c)); }; }
+  const icon = () => ZH && document.querySelectorAll('link[rel~="icon"][type="image/svg+xml"]').forEach(l => {
     if (l.dataset.zh) return; l.dataset.zh = "1";
     l.href = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#09090a"/><circle cx="32" cy="32" r="23" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3.5"/><path d="M14 33 H23 L27.5 24 L34.5 43 L39 33 H50" fill="none" stroke="#ff3b52" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
   });

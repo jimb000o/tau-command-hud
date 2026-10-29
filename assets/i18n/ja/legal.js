@@ -1,0 +1,21 @@
+/* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
+TauI18n.add({ strings: {
+  "Privacy": "プライバシー",
+  "Privacy notice: exactly what this site processes (no cookies, no tracking)": "プライバシーのお知らせ：このサイトが処理するものを正確に（Cookie なし、追跡なし）",
+  "What this site does with your data.": "このサイトがあなたのデータをどう扱うか。",
+  "Short answer: almost nothing. No cookies, no tracking, no advertising, no analytics company, no fonts or scripts from other companies. The details below are complete and checked against the site's code.": "短い答え：ほとんど何もしません。Cookie なし、追跡なし、広告なし、分析会社なし、ほかの会社のフォントやスクリプトもなし。以下の詳細は完全で、サイトのコードと照合済みです。",
+  "The legal text is available in German and English. The German version is binding.": "法的な文書はドイツ語と英語で用意しています。ドイツ語版が正本です。",
+  "No cookies": "Cookie なし",
+  "No tracking or profiles": "追跡もプロファイルもなし",
+  "No third-party analytics": "第三者の分析なし",
+  "Fonts served from this site": "フォントはこのサイトから配信",
+  "Visits counted as daily totals only": "訪問は 1 日ごとの合計としてのみ集計",
+  "Tau HUD · unofficial community project ·": "Tau HUD · 非公式のコミュニティプロジェクト ·",
+  "About": "概要",
+  "Tau HUD in numbers": "数字で見る Tau HUD",
+  "Deutsch": "Deutsch",
+  "English": "English",
+  "Privacy · Tau HUD": "プライバシー · Tau HUD",
+  "Language of the legal text": "法的な文書の言語",
+  "In short": "要点",
+} });

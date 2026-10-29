@@ -227,12 +227,12 @@ const KNOWN_RESTARTS = [
   { at: Date.UTC(2026, 9, 27, 13, 30) / 1000, label: "Restart on the same genesis", approx: true },
 ];
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-// Chinese dates are written by the page itself, so a date never waits for a dictionary entry
-const ZH = window.TauI18n && TauI18n.lang === "zh";
-const monName = m => ZH ? `${m + 1}月` : MON[m];
-const fmtDay = ts => { const d = new Date(ts * 1000); return ZH ? `${d.getUTCFullYear()}年${d.getUTCMonth() + 1}月${d.getUTCDate()}日` : `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
-const Z = (en, zh) => ZH ? zh : en;   // a hover line with a date in it, written in both languages here
-const fmtShort = ts => { const d = new Date(ts * 1000); return ZH ? `${d.getUTCMonth() + 1}月${d.getUTCDate()}日` : `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
+// Chinese and Japanese dates are written by the page itself, so a date never waits for a dictionary entry
+const ZH = window.TauI18n && TauI18n.lang === "zh", JA = window.TauI18n && TauI18n.lang === "ja", CJK = ZH || JA;
+const monName = m => CJK ? `${m + 1}月` : MON[m];
+const fmtDay = ts => { const d = new Date(ts * 1000); return CJK ? `${d.getUTCFullYear()}年${d.getUTCMonth() + 1}月${d.getUTCDate()}日` : `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+const Z = (en, zh, ja) => ZH ? zh : JA ? ja : en;   // a hover line with a date in it, written in each language here
+const fmtShort = ts => { const d = new Date(ts * 1000); return CJK ? `${d.getUTCMonth() + 1}月${d.getUTCDate()}日` : `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
 function ago(ts) {
   const s = Math.max(0, Date.now() / 1000 - ts);
   if (s < 3600) return "within the hour";
@@ -303,14 +303,14 @@ function render() {
   }
   const live = FROM === "live" && Date.now() / 1000 - D.generated_at < 3 * 3600;
   st.className = "state " + (live ? "live" : "snap");
-  $("stateText").textContent = live ? "Live from git" : Z(`Snapshot of ${fmtShort(D.generated_at)}`, `${fmtShort(D.generated_at)} 的快照`);
-  st.dataset.tip = live ? `${Z("Read " + ago(D.generated_at), "读取于" + ago(D.generated_at).replace("within the hour", "一小时内").replace(/(\d+) hours? ago/, "$1 小时前").replace(/(\d+) days? ago/, "$1 天前"))}\nFrom IDNI's public git history, refreshed every 30 minutes.` : `${Z("Snapshot of " + fmtDay(D.generated_at), fmtDay(D.generated_at) + " 的快照")}\nOur server's fresh copy is not reachable; this one ships with the page.`;
+  $("stateText").textContent = live ? "Live from git" : Z(`Snapshot of ${fmtShort(D.generated_at)}`, `${fmtShort(D.generated_at)} 的快照`, `${fmtShort(D.generated_at)} 時点のスナップショット`);
+  st.dataset.tip = live ? `${Z("Read " + ago(D.generated_at), "读取于" + ago(D.generated_at).replace("within the hour", "一小时内").replace(/(\d+) hours? ago/, "$1 小时前").replace(/(\d+) days? ago/, "$1 天前"), ago(D.generated_at).replace("within the hour", "1 時間以内").replace(/(\d+) hours? ago/, "$1 時間前").replace(/(\d+) days? ago/, "$1 日前") + "に読み込み")}\nFrom IDNI's public git history, refreshed every 30 minutes.` : `${Z("Snapshot of " + fmtDay(D.generated_at), fmtDay(D.generated_at) + " 的快照", fmtDay(D.generated_at) + " 時点のスナップショット")}\nOur server's fresh copy is not reachable; this one ships with the page.`;
   tiles(); feed(); heat(); areas(); versions(); timeline(); trimAll();
 }
 
 function tiles() {
   const R = D.repos, T = [];
-  for (const r of R) T.push([`Last change · ${short(r.repo)}`, ago(r.head.ts), fmtDay(r.head.ts), "", `Newest commit ${r.head.sha.slice(0, 8)}\n${Z(`${fmtDay(r.head.ts)}, on branch ${r.branch}`, `${fmtDay(r.head.ts)}，分支 ${r.branch}`)}`]);
+  for (const r of R) T.push([`Last change · ${short(r.repo)}`, ago(r.head.ts), fmtDay(r.head.ts), "", `Newest commit ${r.head.sha.slice(0, 8)}\n${Z(`${fmtDay(r.head.ts)}, on branch ${r.branch}`, `${fmtDay(r.head.ts)}，分支 ${r.branch}`, `${fmtDay(r.head.ts)}、ブランチ ${r.branch}`)}`]);
   T.push(["Commits, 4 weeks", fmtN(R.reduce((a, r) => a + r.commits_4w, 0)), R.map(r => `<span translate="no">${short(r.repo)}</span> ${fmtN(r.commits_4w)}`).join(" · "), "", "Commits on the main branches in the last 28 days\nA count of saves, not a measure of work."]);
   const weeks = R[0].weeks.map((_, i) => R.some(r => r.weeks[i] > 0));
   const act = weeks.slice(-12).filter(Boolean).length;
@@ -356,7 +356,7 @@ function heat() {
     h += `<span class="lbl" translate="no">${esc(short(r.repo))}</span>`;
     r.weeks.forEach((v, i) => {
       const ts = week0 + i * 7 * 86400;
-      h += `<span class="c${i === n - 1 ? " now" : ""}${i < n - 26 ? " old" : ""}" tabindex="0" style="background:${shade(v)}" data-tip="${esc(`${plural(v, "commit")}\n${i === n - 1 ? Z(`This week so far, since ${fmtDay(ts)}`, `本周至今，自 ${fmtDay(ts)} 起`) : Z(`Week of ${fmtDay(ts)}`, `${fmtDay(ts)} 那一周`)}`)}"></span>`;
+      h += `<span class="c${i === n - 1 ? " now" : ""}${i < n - 26 ? " old" : ""}" tabindex="0" style="background:${shade(v)}" data-tip="${esc(`${plural(v, "commit")}\n${i === n - 1 ? Z(`This week so far, since ${fmtDay(ts)}`, `本周至今，自 ${fmtDay(ts)} 起`, `${fmtDay(ts)} からの今週分`) : Z(`Week of ${fmtDay(ts)}`, `${fmtDay(ts)} 那一周`, `${fmtDay(ts)} の週`)}`)}"></span>`;
     });
   }
   h += `<span></span>`;
@@ -433,7 +433,7 @@ function timeline() {
       const g = svgEl("g", { tabindex: 0 }, svg);
       svgEl("line", { x1: X(r.runs.ts), x2: X(r.runs.ts), y1: y - laneH + 4, y2: y + 2, stroke: "var(--ok)", "stroke-width": 2 }, g);
       svgEl("rect", { x: X(r.runs.ts) - 5, y: y - laneH + 3, width: 10, height: laneH, fill: "transparent" }, g);
-      g.dataset.tip = `Our node's build\n${Z(`Commit ${r.runs.sha.slice(0, 8)} of ${fmtDay(r.runs.ts)}`, `${fmtDay(r.runs.ts)} 的提交 ${r.runs.sha.slice(0, 8)}`)}`;
+      g.dataset.tip = `Our node's build\n${Z(`Commit ${r.runs.sha.slice(0, 8)} of ${fmtDay(r.runs.ts)}`, `${fmtDay(r.runs.ts)} 的提交 ${r.runs.sha.slice(0, 8)}`, `${fmtDay(r.runs.ts)} のコミット ${r.runs.sha.slice(0, 8)}`)}`;
     }
   });
   // events: tags and testnet restarts

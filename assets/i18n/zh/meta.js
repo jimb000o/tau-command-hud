@@ -46,7 +46,7 @@ TauI18n.add({ strings: {
   "No pages opened yet.": "还没有页面被打开。",
   "Language": "语言",
   "Screen size": "屏幕尺寸",
-  "English": "英文", "Chinese": "中文",
+  "English": "英文", "Chinese": "中文", "Japanese": "日文",
   "Phone": "手机", "Tablet": "平板", "Laptop": "笔记本", "Desktop": "台式机", "Wide": "宽屏", "Unknown": "未知",
   "HUD": "HUD",
   "Counting began on 28 October 2026. The first numbers appear here as soon as people open a page.": "统计从 2026 年 10 月 28 日开始。一旦有人打开页面，第一批数字就会出现在这里。",
