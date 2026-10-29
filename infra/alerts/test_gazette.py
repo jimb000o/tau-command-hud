@@ -102,6 +102,7 @@ for kind, r in cases + [("agreed", week(agreed=3, proposed=3, head=4900))]:
     bad = [x for p in printed_ for x in (p["en"], p["zh"]) if any(c in x for c in ("(", "→", " + ", "「", "Same rules as now"))]
     check(not bad, f"{kind}: no brackets, arrows or tracker titles in print {bad[:1]}")
     check(len(e["banner"]["en"]) <= 52, f"{kind}: the banner fits two balanced lines ({e['banner']['en']})")
+    check(len(e["big"]["en"].split()) <= 5 and 40 < len(e["line"]["en"]) < 150, f"{kind}: a big banner of few words and one line under it ({e['big']['en']})")
     check(e["weather"]["en"].startswith(("Fair.", "Calm.")) and e["caption"]["en"].startswith("<b>The week at the core.</b>"), f"{kind}: weather ear and photo caption")
 check("Quiet Otter" in json.dumps(e["stories"][1]) and "not on the real testnet" in json.dumps(e["stories"][1]), "the rehearsal hall names the best forecaster and says it is the simulation")
 check(e["printed"]["en"] == "Monday, November 9, 2026" and e["printed"]["zh"] == "2026年11月9日 星期一", "printing date in both languages")

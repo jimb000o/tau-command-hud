@@ -178,6 +178,11 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
 .pg.week:not(.pocket) .wside .ad { margin-top: auto; }
 .pg.week:not(.pocket) .wfoot h3 { column-span: all; }
 .pg.week .banner, .pg.week h2 { text-wrap: balance; }
+/* the big-news front: a banner of few words in the largest type the width allows, one line under it, then the story */
+.pg.week .banner.big { font-size: 4.6em; line-height: .92; letter-spacing: -.01em; margin: .05em 0 .12em; }
+.pg.week .wline { font: italic 400 1.18em/1.25 var(--head); text-align: center; margin: 0 auto .45em; max-width: 42em; padding-bottom: .4em; border-bottom: 3px double var(--ink); }
+.pg.week .wlead .kick { margin-bottom: .35em; }
+.pg.week:not(.pocket) .wside .ad { margin-top: auto; }
 .blank .pg { justify-content: center; align-items: center; }
 .blank .ghost { opacity: .12; font: 400 4em var(--black); transform: scaleX(-1); }
 
@@ -705,12 +710,10 @@ const EN = {
   </div>
   <div class="dateline"><span>${UI.weekNo(e.no)}</span><span>${txt(e.printed)}</span><span>${UI.weekOf} ${txt(e.period)}</span></div>
   ${e.extra ? `<div class="center"><span class="extra">EXTRA</span></div>` : ""}
-  <div class="banner">${txt(e.banner)}</div>
+  ${e.big ? `<div class="banner big">${txt(e.big)}</div><div class="wline">${txt(e.line)}</div>` : `<div class="banner">${txt(e.banner)}</div>`}
   <div class="grid">
     <div class="u s4 wlead">
-      <div class="kick">${txt(e.lead.kick)}</div>
-      <h2>${txt(e.lead.h)}</h2>
-      <div class="deck">${txt(e.lead.deck)}</div>
+      ${e.big ? `<div class="kick">${txt(e.lead.kick)}</div>` : `<div class="kick">${txt(e.lead.kick)}</div><h2>${txt(e.lead.h)}</h2><div class="deck">${txt(e.lead.deck)}</div>`}
       <figure class="photo wphoto"><img src="img/hud-wide.jpg" width="1100" height="450" alt="${UI.weekAlt}"><figcaption>${e.caption ? txt(e.caption) : UI.weekCap}</figcaption></figure>
       <div class="c2">${(e.lead.body || []).map((b, j) => `<p${j ? "" : ' class="dc ni"'}>${txt(b)}</p>`).join("")}</div>
     </div>
@@ -719,8 +722,7 @@ const EN = {
       <table class="figs">${figs}</table>
       <hr class="rule2">
       ${story(up)}
-      ${inside ? `<hr class="rule2">${story(inside)}` : ""}
-      <div class="ad inv"><div class="t">${UI.founding}</div><p>${UI.foundingP}</p></div>
+      ${inside ? `<hr class="rule2">${story(inside)}` : `<div class="ad inv"><div class="t">${UI.founding}</div><p>${UI.foundingP}</p></div>`}
     </div>
     <div class="u s4 rt wfoot"><div class="c2">${story(hall)}</div></div>
     <div class="u s2 rl rt wfoot"><div class="box notice"><p>${UI.weekNote}</p></div></div>

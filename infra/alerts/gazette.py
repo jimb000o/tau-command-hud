@@ -187,6 +187,9 @@ def _pick(titles: list[str]) -> dict | None:
 # One-time events that no counter on the chain records. Each is front-page news in the week it falls in.
 MILESTONES = [
     {"at": datetime(2026, 10, 26, tzinfo=timezone.utc).timestamp(), "kind": "launch",
+     "big": t("Tau HUD Opens", "Tau HUD 开张"),
+     "line": t("A community instrument with a node of its own beside the founders' now shows every block, vote and rule change of Testnet Alpha.",
+               "一座拥有自有节点、与创始团队节点并肩的社区观测台，如今展示 Testnet Alpha 的每一个区块、每一次投票和每一项规则变更。"),
      "banner": t("Tau HUD goes live on Testnet Alpha", "Tau HUD 在 Testnet Alpha 上线"),
      "h2": t("A Community Instrument Opens, with a Node of Its Own Beside the Founders'", "社区观测台开张，自有节点与创始团队的节点并肩运行"),
      "deck": t("Since 26 October anyone can watch every block, vote and rule change of the Tau testnet at tauhud.com. "
@@ -231,6 +234,11 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
     if r["active"]:
         n, ph = r["active"], _pick(r["active_titles"])
         out.append({"kind": "active", "score": 90 if ph else 8,
+                    "big": t("The Vote Becomes Law", "投票成为法则"),
+                    "line": (t(f"{cap(ph['en'], False)} takes effect at the appointed block; no node reinstalled, and the chain did not split.",
+                               f"{ph['zh']}于约定区块生效；没有节点重装，链也没有分裂。") if ph else
+                             t("The users reaffirm their rules at the appointed block; no node reinstalled, and the chain did not split.",
+                               "用户在约定区块重申现行规则；没有节点重装，链也没有分裂。")),
                     "banner": (t("A vote of the users becomes law", "用户的投票成为规则") if n == 1 else
                                t(f"{word(n, True)['en']} votes of the users become law", f"用户的{word(n)['zh']}项投票成为规则")),
                     "h2": (t(f"{cap(ph['en'])} Takes Effect at the Appointed Block", f"{ph['zh']}，于约定区块生效") if ph else
@@ -262,6 +270,9 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
         # the lead story when the switching is new or the visitors turned one down (Kilian 2026-10-29: the consensus switch is the
         # title story); a routine week's switches are told in the Rehearsal Hall
         out.append({"kind": "simswitch", "score": 110 if first else 75 if down else -1,
+                    "big": t("No Fork, No Restart", "不分叉，不重启"),
+                    "line": t("The visitors vote to change who seals the blocks, and every node on the rehearsal chain obeys at the named block.",
+                              "访客投票改变由谁封存区块，排练链上的每个节点都在约定的区块照办。"),
                     "banner": t("Users rewrite the chain’s law; no fork, no restart", "用户投票改写链的法则：不分叉，不重启"), "extra": True,
                     "h2": h2,
                     "deck": t("On a practice chain that runs in every visitor's browser, the question of who may seal blocks went to the floor at twenty past the hour "
@@ -286,6 +297,9 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
     if r["new_nodes"]:
         n = r["new_nodes"]
         out.append({"kind": "nodes", "score": 70,
+                    "big": t("More Eyes on the Chain", "更多眼睛盯着链"),
+                    "line": t(f"{word(n, True)['en']} more node{'s take' if n != 1 else ' takes'} up the watch; every node checks every block against the rules in force.",
+                              f"又有{word(n)['zh']}个节点加入守望；每个节点都按现行规则检查每一个区块。"),
                     "banner": t(f"{word(n, True)['en']} more node{'s take' if n != 1 else ' takes'} up the watch", f"又有{word(n)['zh']}个节点加入守望"),
                     "h2": t("More Machines Keep Watch over the Chain", "更多机器守望这条链"),
                     "deck": t("Every node checks every block against the rules in force. The more there are, the more eyes on the chain.",
@@ -298,6 +312,9 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
         if w:
             ph, at = phrase(w["title"]), fmt_n(w.get("activate_at"))
             out.append({"kind": "agreed", "score": 60,
+                        "big": t("The Vote Is In", "票已点清"),
+                        "line": t(f"The users carry {ph['en']}; in force from block #{at}, and until then the rules in force apply.",
+                                  f"用户投票通过{ph['zh']}；自第 {at} 号区块起生效，在此之前现行规则继续适用。"),
                         "banner": (t("The users settle a question of law", "用户以投票议定一项规则") if n == 1 else
                                    t(f"The users settle {word(n)['en']} questions of law", f"用户以投票议定{word(n)['zh']}项规则")),
                         "h2": t(f"Vote Carries for {cap(ph['en'], False)}, in Force from Block #{at}", f"投票通过：{ph['zh']}，自第 {at} 号区块起生效"),
@@ -308,6 +325,9 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
                                   f"在真实的测试网上，用户投票通过了{ph['zh']}，将自第 {at} 号区块起生效。")})
         else:
             out.append({"kind": "agreed", "score": 5,
+                        "big": t("The Rules Hold", "规则如常"),
+                        "line": t(f"{word(n, True)['en']} ballot{'s' if n != 1 else ''} keep{'s' if n == 1 else ''} the rules as they stand: practice for the voting itself.",
+                                  f"{word(n)['zh']}次投票维持现行规则：这是对投票本身的练习。"),
                         "banner": t("Practice ballots, and the rules hold", "练习投票，规则如常"),
                         "h2": t(f"{word(n, True)['en']} Ballot{'s' if n != 1 else ''} Keep{'s' if n == 1 else ''} the Rules as They Stand", f"{word(n)['zh']}次投票维持现行规则"),
                         "deck": t("The users voted, and the vote changed nothing, as it was meant to: a ballot that keeps the rules tests the voting itself.",
@@ -315,6 +335,8 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
                         "para": None})
     if r["restarts"]:
         out.append({"kind": "restart", "score": 50,
+                    "big": t("A Clean Slate", "从头开始"),
+                    "line": t("The testnet begins anew from its first block; Tau HUD follows the new chain from the start.", "测试网从第一个区块重新开始；Tau HUD 从头跟踪新链。"),
                     "banner": t("The testnet begins anew from its first block", "测试网从第一个区块重新开始"),
                     "h2": t("A Clean Slate for Testnet Alpha", "Testnet Alpha 从头开始"),
                     "deck": t("The test network began again from its starting state. Tau HUD follows the new chain from its first block.",
@@ -324,12 +346,18 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
     n = r["proposed"] - sum(1 for p in week if not phrase(p.get("title")))
     if n > 0 and not r["agreed"]:
         out.append({"kind": "proposed", "score": 30,
+                    "big": t("To the Ballot Box", "付诸投票"),
+                    "line": t(f"{word(n, True)['en']} amendment{'s' if n != 1 else ''} laid before the users; checked by logic first, then the votes decide.",
+                              f"{word(n)['zh']}项修订提交用户表决；先经逻辑检查，再由投票决定。"),
                     "banner": t(f"{word(n, True)['en']} amendment{'s' if n != 1 else ''} laid before the users", f"{word(n)['zh']}项修订提交用户表决"),
                     "h2": t("The Ballot Box Is Open on Testnet Alpha", "Testnet Alpha 的投票箱已经打开"),
                     "deck": t("A proposal is checked by logic first; only then do the votes decide. Nothing changes unless the vote agrees.",
                               "提案先经过逻辑检查，然后由投票决定。投票不通过，什么都不会改变。"),
                     "para": None})
     out.append({"kind": "steady", "score": 0,
+                "big": t("A Quiet Week", "平静的一周"),
+                "line": t(f"{blocks} blocks, each sealed by the rules in force; no rule changed, and the chain kept its law.",
+                          f"{blocks} 个区块，每一个都按现行规则封存；没有规则改变，链守住了它的法则。"),
                 "banner": t("A quiet week, and the rules hold", "平静的一周，规则如常"),
                 "h2": t(f"{blocks} Blocks, Each Sealed by the Rules in Force", f"{blocks} 个区块，每一个都按现行规则封存"),
                 "deck": t("No rule changed this week. The chain kept time and kept its law, which is what a rulebook on a chain is for.",
@@ -554,6 +582,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
         "v": 1, "no": no, "date": _d(printed_at).strftime("%Y-%m-%d"), "printed": printed(printed_at),
         "start": round(r["start"]), "end": round(r["end"]), "period": period(r["start"], r["end"]),
         "head": r.get("head"), "kind": kind, "extra": bool(top.get("extra")), "banner": banner, "teaser": deck,
+        "big": top["big"], "line": top["line"],
         "lead": {"kick": kick, "h": h2, "deck": deck, "body": lead_body(r, props, ranked)},
         "weather": weather(r), "caption": caption(r),
         "figures": figures(r),
