@@ -1013,6 +1013,11 @@
   "html": "The weekly Daily Consensus leads with the week's real news: a milestone such as Tau HUD going live, a rule change taking effect, the simulation switching consensus, new nodes. Ballots that only keep the rules get a small mystery of their own, and the Rehearsal Hall tells the simulation's week: votes, consensus switches, proposals refused at the door, the best tipster."
  },
  {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Chain core says less and shows more: every hover there and on the tiles is a status light, one short verdict and at most two short lines. Transactions already sealed but still listed by the node are now called ghost transactions. In the simulation the visitors' vote has its own lane between the rule accounts and the agreement ring, with smaller dots. The outer rim is a quiet energy field that grows with the chain: more field lines and a brighter glow as blocks, agreed changes and withstood refusals add up."
+ },
+ {
   "tag": "Privacy",
   "on": "2026-10-29",
   "html": "Privacy notice: says plainly that the videos, like the film in the Press kit, come from tauhud.com itself and load only when you press play. There are no YouTube or other third-party players on the site."

@@ -1266,7 +1266,7 @@ function tickSubs() {
   S.mempool.forEach(t => { if (!seen.has(t.id)) seen.set(t.id, now); }); [...seen.keys()].forEach(k => { if (!ids.has(k)) seen.delete(k); });
   const oldest = seen.size ? now - Math.min(...seen.values()) : 0;
   const m = memState(); put("rM", String(m.W));
-  put("rMs", !m.M ? "nothing pending" : m.stale ? `${m.M} listed · ${m.stale} already sealed` : `${m.W} pending · oldest ${fmtAge(m.oldest || oldest)}`);
+  put("rMs", !m.M ? "nothing pending" : m.stale ? `${m.M} listed · ${m.stale} ghost${m.stale === 1 ? "" : "s"}` : `${m.W} pending · oldest ${fmtAge(m.oldest || oldest)}`);
   put("rRs", !S.clauses.size ? "none deployed yet" : `${S.clauses.size} in force` + (S.rulesLastBlock != null ? ` · last at #${fmt(S.rulesLastBlock)}` : ""));
 }
 /* ---------- health: how good the current state is, as a status light and one verdict line on top of a hover ----------
@@ -1306,7 +1306,7 @@ function markSealed(id, h) {   // a card in Transactions and the waiting dot lea
   const el = $("tx_" + id.slice(0, 16)) || feedHold.find(d => d.id === "tx_" + id.slice(0, 16)), m = S.mempool.find(x => x.id.toLowerCase() === id.toLowerCase());
   if (m && Number.isFinite(h)) m.block = h;
   if (!el || el.classList.contains("sealed") || !Number.isFinite(h)) return;
-  el.classList.add("sealed"); if (m) el.classList.add("listed"); const sp = el.querySelector(".top > span"); if (sp) sp.insertAdjacentHTML("afterbegin", `<b class="sl">✓ in #${h}</b> · `);
+  el.classList.add("sealed"); if (m) el.classList.add("listed"); const sp = el.querySelector(".top > span"); if (sp) sp.insertAdjacentHTML("afterbegin", `<b class="sl">ghost ✓ #${h}</b> · `);
 }
 /* the relay compares the listed transactions with the whole chain it keeps (/health-score): how many are in fact sealed,
    and how long the oldest really waiting one has waited since the relay first saw it, not since this page opened */
@@ -1348,9 +1348,9 @@ const HEALTH = {
     if (m.W && m.since > Math.max(600, 10 * p)) return ["bad", `Problem: nothing sealed for ${fmtAge(m.since)} while ${wait_s(m.W)}.`];
     const cap = Math.max(m.per || 0, 1), pile = m.per != null && m.W > 3 * cap;
     // IDNI #81: the alpha node keeps listing sealed transactions as waiting for up to an hour, so the list says more than really waits
-    if (m.stale && m.stale >= m.W) return ["watch", `Watch: ${m.stale === m.M ? (m.M === 1 ? "the listed transaction is" : `all ${m.M} listed are`) : `${m.stale} of the ${m.M} listed ${m.stale === 1 ? "is" : "are"}`} already sealed in ${m.stale === 1 ? "a block" : "blocks"}, but the node still lists ${m.stale === 1 ? "it" : "them"} as waiting (known node bug, reported as IDNI #81). ${m.W ? `${m.W === 1 ? "1 really waits" : m.W + " really wait"}.` : "None really waits."}`];
-    if (pile && m.unchecked >= Math.min(3, m.W)) return ["busy", `Checking: ${m.M} are listed, but recent blocks took ${perTxt(m.per)} each; looking up which are already sealed.`];
-    if (pile) return ["watch", `Watch: transactions are piling up: ${m.W} wait, but recent blocks took only ${perTxt(m.per)} each${m.stale ? `; ${m.stale} more are already sealed but still listed (IDNI #81)` : ""}.`];
+    if (m.stale && m.stale >= m.W) return ["watch", `Watch: ${m.stale === m.M ? (m.M === 1 ? "it is a ghost transaction" : `all ${m.M} are ghost transactions`) : `${m.stale} of ${m.M} are ghost transactions`}: already in ${m.M === 1 ? "a block" : "blocks"}, still listed by the node (known bug).`];
+    if (pile && m.unchecked >= Math.min(3, m.W)) return ["busy", `Checking which of the ${m.M} listed are already in blocks.`];
+    if (pile) return ["watch", `Watch: ${m.W} wait, but blocks take only ${perTxt(m.per)} each.`];
     const late = Math.max(300, 8 * p);
     if (m.oldest > late) return ["watch", `Watch: the oldest has waited ${m.pageAge ? "at least " : ""}${fmtAge(m.oldest)}; blocks usually come every ${fmtSec(p)}.`];
     return ["ok", m.W === 1 ? "Normal: the next block takes it in." : m.W <= 1.5 * cap ? "Normal: the next block takes them in." : `Normal: ${m.W} wait; the next few blocks take them in.`];
@@ -1374,12 +1374,12 @@ const HEALTH = {
     if (offline()) return ["bad", "Problem: no connection to a node."];
     const N = S.validators.length;
     if (!N) return ["watch", "Watch: no validator known yet."];
-    if (N === 1) return ["watch", "Watch: a single validator seals every block; if it stops, the chain waits until it is back."];
+    if (N === 1) return ["watch", "Watch: one validator seals every block; if it stops, the chain waits."];
     return ["ok", `Normal: ${N} validators take turns sealing.`];
   },
   agreement() {
     const voting = S.updates.filter(u => u.status === "voting"), sched = S.updates.filter(u => u.status === "scheduled"), thr = threshold();
-    if (voting.length) { const v = voting[0].votes ? voting[0].votes.size : 0; return ["busy", `In progress: ${v} of ${thr} needed votes so far; the change is scheduled once ${thr} agree.`]; }
+    if (voting.length) { const v = voting[0].votes ? voting[0].votes.size : 0; return ["busy", `In progress: ${v} of ${thr} votes; scheduled once ${thr} agree.`]; }
     if (sched.length) return ["ok", sched.length === 1 ? "Normal: 1 agreed change waits for its block; nothing needs a vote." : `Normal: ${sched.length} agreed changes wait for their block; nothing needs a vote.`];
     return ["ok", "Normal: nothing to vote on; the rules in force stay as they are."];
   },
@@ -1505,8 +1505,8 @@ function detailMempool() {
   const ms = memState(), sAt = t => live ? sealedAt(t.id) : null;
   const rows = S.mempool.map(t => `<div><span class="t">${sAt(t) != null ? "sealed" : seen.has(t.id) ? fmtAge(now - seen.get(t.id)) : "—"}</span><span>${sAt(t) != null ? `<b class="ok">✓ ${typeof sAt(t) === "number" ? "in #" + fmt(sAt(t)) : "in a block"}</b>, still listed · ` : ""}${live && t.id ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id)} · ${kind(t)} · ${esc(t.type)} · fee ${esc(t.fee)}</span></div>`).join("");
   return { title: `Waiting transactions · ${M}`,
-    html: `<p class="lead">${isSim() ? "Simulated transactions" : "Transactions"} the node admitted after the rule check and no block has sealed yet. They orbit the core as dots until the next proposer takes them in; the age counts from when this page first saw each one.${live ? " The alpha node keeps a sealed transaction listed for up to an hour (IDNI #81, see Findings): those are marked ✓ with their block and drawn as amber dots in a small frame." : ""}</p>
-    ${checksHtml([[`${ms.W} really waiting`, ms.W ? "" : "off", "Listed and in no block yet."], ...(live ? [[`${ms.stale} already sealed`, ms.stale ? "warn" : "off", "Already in a block but still listed by the node (known bug, IDNI #81)."]] : []), ...(ms.per != null ? [[`${perTxt(ms.per)} per block`, "", "Transactions the last few blocks took on average."]] : []), [`${S.mempool.filter(t => t.kind === "gov").length} proposals`, "", "Rule-change proposals waiting to be sealed (white dots)."], [`${S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length} rule work`, "", "Rule deployments and offers (green dots)."], [`fee ${S.fee} AGRS`, "", "Base fee under the current rule version (o9)."]])}
+    html: `<p class="lead">${isSim() ? "Simulated transactions" : "Transactions"} the node admitted after the rule check and no block has sealed yet. They orbit the core as dots until the next proposer takes them in; the age counts from when this page first saw each one.${live ? " Ghost transactions are already in a block, but the alpha node keeps listing them for up to an hour (IDNI #81, see Findings): they are marked ✓ with their block and drawn as amber dots in a small frame." : ""}</p>
+    ${checksHtml([[`${ms.W} really waiting`, ms.W ? "" : "off", "Listed and in no block yet."], ...(live ? [[`${ms.stale} ghost${ms.stale === 1 ? "" : "s"}`, ms.stale ? "warn" : "off", "Ghost transactions: already in a block, still listed by the node (known bug, IDNI #81)."]] : []), ...(ms.per != null ? [[`${perTxt(ms.per)} per block`, "", "Transactions the last few blocks took on average."]] : []), [`${S.mempool.filter(t => t.kind === "gov").length} proposals`, "", "Rule-change proposals waiting to be sealed (white dots)."], [`${S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length} rule work`, "", "Rule deployments and offers (green dots)."], [`fee ${S.fee} AGRS`, "", "Base fee under the current rule version (o9)."]])}
     <h3>Oldest first</h3><div class="loglist">${rows || `<div><span class="t">—</span><span>Nothing waiting: every transaction sent so far is in a block.</span></div>`}</div>` };
 }
 function detailLog() {
@@ -1625,7 +1625,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.65", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.67", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -1784,7 +1784,7 @@ const proposalMeaning = u => ({
 }[u.kind] || u.diff);
 function explainTx(t) {
   const N = S.validators.length, thr = N ? threshold() : "—";
-  const st = t.rejected ? "Refused at the door, never entered a block." : t.block != null ? `In block #${t.block}.` + (S.mode === "live" && S.mempool.some(x => x.id === t.id) ? " The alpha node still lists it as waiting (known node bug, IDNI #81)." : "") : "In the mempool, waiting for the next block.";
+  const st = t.rejected ? "Refused at the door, never entered a block." : t.block != null ? `In block #${t.block}.` + (S.mode === "live" && S.mempool.some(x => x.id === t.id) ? " A ghost transaction: the node still lists it as waiting (known bug, IDNI #81)." : "") : "In the mempool, waiting for the next block.";
   const pol = t.policy ? `Sender’s own rule: ${t.policy.label}.` : "Sender has no own rule.";
   if (t.dropped) return `${t.rejected.replace(/^refused at the door · /, "")}.\n${t.policy && /o5/.test(t.rejected) ? "The sender’s own rule, enforced against whoever holds the key. " : "Checked at the door by the node, before any block. "}It waited in the queue and left it without entering a block.`;
   switch (t.type) {
@@ -2079,13 +2079,13 @@ function readouts() {
   const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
   $("rT").textContent = pace != null ? fmtSec(pace) : "—";
   $("rTw").dataset.full = pace != null
-    ? (live ? `Average time the last ${S.blockTimes.length} block${S.blockTimes.length === 1 ? "" : "s"} took, from their own timestamps (i7). Last block: ${fmtSec(S.lastInterval)}.\nThe countdown expects the next block after one average interval; a late block shows as overdue.` : `Average of the last ${S.blockTimes.length} simulated block intervals.`)
+    ? (live ? `Average of the last ${S.blockTimes.length} block${S.blockTimes.length === 1 ? "" : "s"}; the last took ${fmtSec(S.lastInterval)}.\nThe countdown shows when the next is due.` : `Average of the last ${S.blockTimes.length} simulated block intervals.`)
     : (live ? "Needs two consecutive blocks with timestamps before a pace can be measured." : "Measured once the first blocks are sealed.");
   tickPace();
   $("rR").textContent = S.clauses.size;
   tickSubs();
-  $("rHw").dataset.full = `Height ${fmt(S.height)}: the number of blocks in the chain, counted from genesis #0. The line under it says when the last block was sealed${S.mode === "live" ? " and how old the chain is, measured from block #1 (genesis carries no time)" : " and how old the simulated chain is"}.`;
-  $("rMw").dataset.full = `Waiting: transactions the node holds but has not sealed into a block yet. “Oldest” counts from when this page first saw the transaction.${S.mode === "live" ? " The alpha node can keep a sealed transaction listed as pending for up to an hour (see Findings)." : ""}`;
+  $("rHw").dataset.full = `Height: blocks in the chain since genesis #0.\nBelow: when the last block came and how old the chain is.`;
+  $("rMw").dataset.full = `Waiting: transactions in no block yet.${S.mode === "live" ? "\nGhost transactions, already sealed but still listed by the node, are counted apart (known bug)." : ""}`;
   $("rRw").dataset.full = `User rules: accounts that run their own money rule (o5) on this chain, in force right now. “Last at” names the block where the newest rule was deployed.${S.mode === "live" ? " The live chain has not seen a personal rule yet; the simulation shows how they would look." : ""}`;
   $("chipFee").textContent = S.fee + " AGRS";
   $("chipRev").textContent = "rev " + S.specRev;
@@ -2552,7 +2552,7 @@ function liveMessage(ev) {
     S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } const h = sealedAt(t.id); if (h != null) { t.block = typeof h === "number" ? h : t.block; if (typeof h === "number") markSealed(t.id, h); } });
     if (TXST.st.size > 400) { const keep = new Set(S.mempool.map(t => t.id.toLowerCase())); TXST.st.forEach((v, k) => { if (!keep.has(k)) TXST.st.delete(k); }); }
     const listedIds = new Set(S.mempool.map(t => "tx_" + t.id.slice(0, 16)));
-    document.querySelectorAll("#feed .tx.sealed").forEach(el => { const on = listedIds.has(el.id); if (el.classList.contains("listed") !== on) { el.classList.toggle("listed", on); el.title = on ? "Already in a block, but the node still lists it as waiting (known node bug, IDNI #81)" : ""; } });
+    document.querySelectorAll("#feed .tx.sealed").forEach(el => { const on = listedIds.has(el.id); if (el.classList.contains("listed") !== on) { el.classList.toggle("listed", on); el.title = on ? "Ghost transaction: already in a block, still listed by the node (known bug, IDNI #81)" : ""; } });
     askTxStatus(); pollRelayMem(); scanBack();
     readouts();
   } else if (msg.command === "getgovernance") {
@@ -2728,6 +2728,7 @@ function hoverCol(h) {
 }
 /* refused transactions bounce off the outer rim: the rule book is a shield, and what it says no to never gets inside. A short flight
    in from the corner, a flash on the rim where it hits, a flight out; a faint notch on the rim fades within a few seconds; until then it can be hovered and clicked */
+const SHIELD = { e: .3 };
 const BOUNCE = { q: [], next: 0 }, B_IN = 700, B_FLY = 1900, B_KEEP = 4000, REF = "229,72,77";
 function bounce(t) {
   const now = performance.now(), at = Math.max(now, BOUNCE.next); BOUNCE.next = at + 420;   // a burst comes in one after another
@@ -2796,13 +2797,13 @@ function draw(tm) {
   const cyan = "236,236,240", amber = "255,255,255";
   CORE_HITS.length = 0; const hit = (x, y, r, fn, href, open) => CORE_HITS.push({ x, y, r, fn, href, open }); const ring = (r, w, fn, href, open) => CORE_RINGS.push({ r, w, fn, href, open });
   CORE_RINGS.length = 0;
-  ring(C * .84, 16, () => health("validators") + `Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"} sit on this circle, just inside the rim. The green one is ${vt("building", "proposing")} the next block; a white frame around one marks a vote for the open rule change.` + vt("\nNodes that only follow and check the chain sit on the orbit inside.", `\nThe proposer rotates through the set (o7 eligibility); a vote is a consensus_rule_vote transaction.\nNon-sealing nodes sit on the orbit inside.`));
+  ring(C * .84, 16, () => health("validators") + vt(`Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? " that seals" : "s that seal"} blocks; the green one builds the next.`, `Validator orbit: ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"}; the proposer rotates (o7), a white frame marks a consensus_rule_vote.`) + (S.updates.some(u => u.status === "voting") ? vt("\nA white frame marks a vote for the open rule change.", "") : ""));
   const nodes = nodesNow(), NR = C * .77, named = nodes.filter(n => n.name);
   ring(NR, 12, () => {
     const N = nodes.length, who = named.map(n => n.kind === "hud" ? "Tau HUD’s node" : n.name).join(", ") + (N > named.length ? `${named.length ? ", and " : ""}${N - named.length} other node${N - named.length === 1 ? "" : "s"} on the testnet` : "");
     const simNote = isSim() ? "Simulated nodes. " : "";
-    return health("nodes") + vt(`${simNote}Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} keep${N === 1 ? "s" : ""} a full copy of the chain and check${N === 1 ? "s" : ""} every block without sealing any${N ? ": " + who : ""}.\nThe validators that seal blocks sit on the orbit just outside.\nMore nodes make the chain harder to fake and easier to check.\nA node shows up here after 10 min on the network and stays 30 min after its last contact, so short tests don’t make the count flicker.\nClick to open the Nodes page.`,
-      `${simNote}Node orbit: ${N || "no"} non-sealing node${N === 1 ? "" : "s"}${N ? ": " + nodes.map(n => `${n.name || "peer"}${n.height ? " #" + fmt(n.height) : n.head ? " " + short(n.head) : ""}${n.agrees === false ? " (other head)" : ""}`).join(" · ") : ""}.\nThey verify every block against the spec and serve readers; sealing stays with the validator orbit outside.\nSource: the relay’s /community list and /peers (listed after 10 min of presence, kept 30 min after last contact, so brief test nodes don’t flicker the count).\nClick to open the Nodes page.`);
+    return health("nodes") + vt(`${simNote}Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} that keep${N === 1 ? "s" : ""} and check${N === 1 ? "s" : ""} every block but seal${N === 1 ? "s" : ""} none.\nClick to open the Nodes page.`,
+      `${simNote}Node orbit: ${N || "no"} non-sealing node${N === 1 ? "" : "s"}, from the relay’s /community and /peers.\nClick to open the Nodes page.`);
   }, nodesHref);
   cx.save(); cx.setLineDash([3, 9]); cx.beginPath(); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${cyan},.16)`; cx.arc(0, 0, NR, 0, Math.PI * 2); cx.stroke(); cx.restore();   // the node orbit: quiet, dashed
   cx.font = "500 18px JetBrains Mono, monospace";
@@ -2826,22 +2827,38 @@ function draw(tm) {
     if (n.you) { hit(x, y, 24, () => vt(`Your node “${n.name}”, simulated in your browser, at #${fmt(n.height)}.\nIt checks every block for itself and made the node orbit after 10 min on the network; it stays 30 min after its last contact.\nUnder proof of stake its stake can win a seat among the validators.\nClick to open your node.`,
       `${n.name} (your simulated node): #${fmt(n.height)}, ${n.agrees ? "same head as the reference" : "behind the reference"}.\nListed by the 10/30 min presence rule; under eligibility_mode stake it competes for the ${TauSim.node.seats} stake seats (o7).\nClick to open your node.`), null, () => TauSimNode.open()); return; }
     hit(x, y, 24, () => nodeHealth(n) + (n.kind === "hud"
-      ? vt(`Tau HUD’s node: the node behind this page, at #${fmt(n.height)}.\nIt checks and keeps every block and serves what you see here; it seals nothing.${alone ? "\nRight now it is the only node besides IDNI’s validator: together they are the whole visible network." : ""}${S.mode === "live" && !S.simfeed ? "\nIt has applied as the second validator. " : "\n"}Click to open the Nodes page.`,
-           `tauhud.com: the relay’s upstream node at #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}${n.tip ? ", network tip #" + fmt(n.tip) : ""}.\nServes this page over wss://node.tauhud.com (getblocks, getmempool, getgovernance); verifies every block, seals none.${alone ? "\nOnly node besides the IDNI validator (PoA, validator_set mode): the two are the whole visible network right now." : ""}${S.mode === "live" && !S.simfeed ? "\nValidator seat requested (BLS key submitted to IDNI). " : "\n"}Click to open the Nodes page.`)
+      ? vt(`Tau HUD’s node: serves this page and checks every block, at #${fmt(n.height)}.\nClick to open the Nodes page.`,
+           `tauhud.com: the relay’s upstream node at #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}; verifies every block, seals none.\nClick to open the Nodes page.`)
       : n.kind === "kit"
-      ? vt(`${n.name}: a community node run with the node kit.\nAt #${fmt(n.height)}, ${n.agrees ? "same head as Tau HUD’s node" : "a different head than Tau HUD’s node"}.\nLast report ${age}.\nClick to open the Nodes page.`,
-           `${n.name} (node kit): #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}, ${n.agrees ? "agrees with" : "differs from"} the reference head${ahead > 0 ? `, ${fmt(ahead)} behind` : ""}.\nReported ${age}; a kit node reports once a minute.\nClick to open the Nodes page.`)
-      : vt(`Another node on the Tau testnet${n.height ? `, at #${fmt(n.height)}` : ""}.\nIt keeps its own copy of the chain and checks every block for itself, independently of this page.\n${n.connected ? "In touch with our node right now" : "Known to our node"}; last seen ${age}.\nClick to open the Nodes page.`,
-           `Peer${n.id ? " " + n.id.slice(0, 8) + "…" + n.id.slice(-4) : ""}${n.height ? ": tip #" + fmt(n.height) : ""}${n.agrees == null ? "" : n.agrees ? ", same height as ours" : ", " + fmt(Math.abs(ahead)) + (ahead > 0 ? " behind us" : " ahead of us")}${n.first ? ", first seen " + fmtLogDate(new Date(n.first * 1000).toISOString().slice(0, 10)) : ""}.\nIndependent full node: verifies every block against the spec on its own.\n${n.connected ? "Connected to our node right now" : "Known to our node, not connected at the moment"}; last seen ${age}.\nClick to open the Nodes page.`)), nodesHref);
+      ? vt(`${n.name}: a community node (node kit) at #${fmt(n.height)}, last report ${age}.\nClick to open the Nodes page.`,
+           `${n.name} (node kit): #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}, reported ${age}.\nClick to open the Nodes page.`)
+      : vt(`Another node on the testnet${n.height ? `, at #${fmt(n.height)}` : ""}, last seen ${age}.\nClick to open the Nodes page.`,
+           `Peer${n.id ? " " + n.id.slice(0, 8) + "…" + n.id.slice(-4) : ""}${n.height ? ": tip #" + fmt(n.height) : ""}, ${n.connected ? "connected" : "not connected"}, last seen ${age}.\nClick to open the Nodes page.`)), nodesHref);
   });
-  ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}. Everything inside obeys it: validators sit on it, accounts and waiting transactions orbit within it, and every block is checked against it.\nWhatever the rules refuse bounces off it like off a shield.`,
-    `Outer rim: the consensus spec, revision ${S.specRev} (o6 block validity, o7 proposer eligibility, o9 fee = ${S.fee} AGRS). Amended ${S.updates.filter(u => u.status === "active").length} time${S.updates.filter(u => u.status === "active").length === 1 ? "" : "s"} by agreement. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`));
+  ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}.\nWhat it refuses bounces off; it grows with every block and agreed change.`,
+    `Outer rim: consensus spec revision ${S.specRev}, amended ${S.updates.filter(u => u.status === "active").length} time${S.updates.filter(u => u.status === "active").length === 1 ? "" : "s"} by agreement.\nEvery block is judged by it (o6 validity, o7 proposer, o9 fee ${S.fee} AGRS).`));
 
   cx.strokeStyle = `rgba(${cyan},.35)`; cx.lineWidth = 2;
   for (let i = 0; i < 120; i++) {
     const a = i / 120 * Math.PI * 2 + t * .05, r1 = C * .95, r2 = r1 - (i % 10 === 0 ? 26 : 10);
     cx.beginPath(); cx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1); cx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2); cx.stroke();
   }
+  // the shield: a quiet energy field around the rule book that grows with the chain (blocks, agreed changes, refusals withstood)
+  { const agreedN = S.updates.filter(u => u.status === "active").length;
+    const goal = Math.min(1, .25 + Math.log10(1 + S.height) / 10 + Math.min(.25, agreedN * .025) + Math.min(.15, (S.refusedN || 0) * .005));
+    SHIELD.e += (goal - SHIELD.e) * .02;
+    const E = SHIELD.e, Rs = C * .955, pl = S.pulse || 0;
+    cx.save();
+    const gl = cx.createRadialGradient(0, 0, Rs - 20, 0, 0, Rs + 22);
+    gl.addColorStop(0, "rgba(236,236,240,0)"); gl.addColorStop(.5, `rgba(236,236,240,${.03 + .05 * E + .05 * pl})`); gl.addColorStop(1, "rgba(236,236,240,0)");
+    cx.fillStyle = gl; cx.beginPath(); cx.arc(0, 0, Rs + 22, 0, Math.PI * 2); cx.arc(0, 0, Rs - 20, 0, Math.PI * 2, true); cx.fill();
+    const n = 2 + Math.round(E * 4);   // field lines running round the rim, in both directions; more of them as the chain grows
+    for (let k = 0; k < n; k++) {
+      const sp = (k % 2 ? -1 : 1) * (.1 + k * .045), a0 = t * sp + k * 2.1, len = .3 + .22 * Math.sin(t * .6 + k * 1.7);
+      cx.beginPath(); cx.lineWidth = 1.2 + E; cx.lineCap = "round"; cx.strokeStyle = `rgba(236,236,240,${.12 + .2 * E + .1 * pl})`; cx.shadowColor = "rgba(236,236,240,.7)"; cx.shadowBlur = 6 + 8 * E;
+      cx.arc(0, 0, Rs + Math.sin(t * 1.1 + k) * 4, a0, a0 + len); cx.stroke();
+    }
+    cx.restore(); }
   const arc = (r, w, a0, len, col, sp) => { cx.beginPath(); cx.lineWidth = w; cx.strokeStyle = col; cx.arc(0, 0, r, a0 + t * sp, a0 + len + t * sp); cx.stroke(); };
   cx.beginPath(); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${cyan},.22)`; cx.arc(0, 0, C * .84, 0, Math.PI * 2); cx.stroke();   // the validator orbit
 
@@ -2852,9 +2869,9 @@ function draw(tm) {
   cx.beginPath(); cx.lineWidth = 10; cx.strokeStyle = `rgba(${amber},.1)`; cx.arc(0, 0, C * .70, 0, Math.PI * 2); cx.stroke();
   ring(C * .70, 18, () => {
     const parts = [];
-    if (open) parts.push(`${open.votes.size} of ${threshold()} validators agree to “${open.title}”; at ${threshold()} it is scheduled for a later block${voting.length > 1 ? ` (${voting.length - 1} more vote${plural(voting.length - 1)} open)` : ""}.`);
-    if (sched.length) parts.push(`${sched.length} agreed change${plural(sched.length)} wait${sched.length === 1 ? "s" : ""} for ${sched.length === 1 ? "its" : "their"} activation height: the markers, clockwise in activation order; the bright one is next, at block #${next.activateAt} (${blocksLeft(next)} block${plural(blocksLeft(next))} away). Until then the old rules apply.`);
-    const txt = health("agreement") + (parts.length ? "Agreement ring: " + parts.join(" ") : "Agreement ring: empty. No rule change is being voted on or waiting to take effect; it fills clockwise as validators agree.");
+    if (open) parts.push(`Agreement ring: the vote on “${open.title}”${voting.length > 1 ? ` and ${voting.length - 1} more` : ""}.`);
+    if (sched.length) parts.push(`The next agreed change takes effect at block #${next.activateAt}, in ${blocksLeft(next)} block${plural(blocksLeft(next))}.`);
+    const txt = health("agreement") + (parts.length ? parts.join("\n") : "Agreement ring: it fills clockwise as validators agree to a change.");
     return txt + (TECH() && sched.length ? "\n" + sched.map(u => `${short(u.id)} → #${u.activateAt}`).join(" · ") : "");
   });
   if (sched.length) arc(C * .70, 10, 0, Math.PI * 2, `rgba(${amber},.32)`, 0);   // a full, quiet ring: agreement reached, waiting to take effect
@@ -2874,24 +2891,24 @@ function draw(tm) {
   // the visitors' vote on the hourly change (simulation only): yes dots run down the right side, no dots down the left, each in the voter's colour
   const vb = SIMBAL && SIMBAL.ballot;
   if (vb && S.simfeed) {
-    const rv = C * .655, step = .075, me = TauSim.me(), mine = vb.mine;
+    const rv = C * .63, step = .032, me = TauSim.me(), mine = vb.mine;   // its own lane, halfway between the agreement ring (.70) and the rule accounts (.56)
     let own = false, yi = 0, ni = 0;
     cx.save(); cx.setLineDash([2, 8]); cx.beginPath(); cx.lineWidth = 1.2; cx.strokeStyle = "rgba(255,177,59,.28)"; cx.arc(0, 0, rv, 0, Math.PI * 2); cx.stroke(); cx.restore();
     const isMe = v => mine != null && v[0] === me.a && v[1] === me.b && v[2] === me.c && v[3] === mine, ordered = [...vb.voters.filter(isMe).slice(0, 1), ...vb.voters.filter(v => !isMe(v)).slice(-47)];   // your own dot first, at the top of its side
+    const twoY = ordered.filter(v => v[3] === 1).length > 30, twoN = ordered.filter(v => v[3] !== 1).length > 30;   // a crowded side splits into two rows, one each side of the lane
     ordered.forEach(v => {
-      const yes = v[3] === 1, i = yes ? yi++ : ni++, a = yes ? -.3 + (i % 16) * step : Math.PI + .3 - (i % 16) * step, rr = rv - Math.floor(i / 16) * 26, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+      const yes = v[3] === 1, i = yes ? yi++ : ni++, two = yes ? twoY : twoN, a = yes ? -.48 + (i % 30) * step : Math.PI + .48 - (i % 30) * step, rr = rv + (two ? (Math.floor(i / 30) ? 8 : -8) : 0), x = Math.cos(a) * rr, y = Math.sin(a) * rr;
       const col = TauSim.colourOf(v[2]), self = !own && isMe(v);
       if (self) own = true;
-      cx.beginPath(); cx.arc(x, y, self ? 12 : 9, 0, Math.PI * 2);
-      if (yes) { cx.fillStyle = col; cx.fill(); } else { cx.lineWidth = 3.5; cx.strokeStyle = col; cx.stroke(); }
-      if (self) { cx.beginPath(); cx.arc(x, y, 18, 0, Math.PI * 2); cx.lineWidth = 2; cx.strokeStyle = "#fff"; cx.stroke(); }
+      cx.beginPath(); cx.arc(x, y, self ? 8 : 5, 0, Math.PI * 2);
+      if (yes) { cx.fillStyle = col; cx.fill(); } else { cx.lineWidth = 2.5; cx.strokeStyle = col; cx.stroke(); }
+      if (self) { cx.beginPath(); cx.arc(x, y, 12, 0, Math.PI * 2); cx.lineWidth = 2; cx.strokeStyle = "#fff"; cx.stroke(); }
     });
     const vTxt = vb.open ? `VISITORS ${vb.yes} YES · ${vb.no} NO` : vb.outcome === "no" ? `VISITORS SAID NO · ${vb.no} TO ${vb.yes}` : vb.outcome === "yes" ? `VISITORS SAID YES · ${vb.yes} TO ${vb.no}` : `NO MAJORITY · AS PLANNED`, vFont = "600 22px Sora, sans-serif";
     plate(vTxt, 0, belowRing(C * .70, vTxt, vFont) + 44, vFont, "rgba(255,177,59,.95)");   // right under the agreement label
     const what = (SIM_EVENT[SIMBAL.kind] || {}).what || SIMBAL.title;
-    ring(rv, 14, () => (vb.open ? `Visitors’ vote: ${what}?\n${vb.yes} yes, ${vb.no} no so far. Filled dots on the right said yes, rings on the left said no, each in the visitor’s colour; ${mine == null ? "you have not voted yet" : "the white circle is you"}.\nVoting closes ${new Date(vb.closes * 1000).toISOString().slice(11, 16)} UTC. Then the simulated validators follow the majority: more yes than no, or no votes at all, and they agree; more no, and the change is dropped.`
-      : `Visitors’ vote, closed: ${vb.yes} yes, ${vb.no} no. ${vb.outcome === "no" ? "The validators hold back, so the change is dropped when its deadline passes and the old rules stand." : "The validators agree, so the change takes effect as planned."}`)
-      + `\nYou vote as ${me.name}: a name and colour made up in your browser, no account. Vote with the buttons in the simulation bar.`);
+    ring(rv, 14, () => vb.open ? `Visitors’ vote: ${what}? ${vb.yes} yes, ${vb.no} no.\nCloses ${new Date(vb.closes * 1000).toISOString().slice(11, 16)} UTC; the simulated validators follow the majority. Vote in the simulation bar.`
+      : `Visitors’ vote, closed: ${vb.yes} yes, ${vb.no} no.\n${vb.outcome === "no" ? "The change is dropped; the old rules stand." : "The change goes ahead as planned."}`);
   }
 
   // validators
@@ -2944,7 +2961,7 @@ function draw(tm) {
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
     const st = ruleState(p), col = st.hot ? (st.refused ? "229,72,77" : "57,255,138") : "170,170,178";
-    hit(x, y, 24, () => vt(`This account runs its own money rule: ${p.name}.\n${policyMeaning(p)} It binds the account, not the key.\n`, `${short(RA[i])} runs its own rule: ${p.name}.\n${policyMeaning(p)} Binds the account, not the key; one guarded branch in the composite o5 program.\n`) + (st.hot ? (st.refused ? "White line: the rule just refused a transfer from this account." : "Green line: the rule just checked a transfer from this account and let it pass.") : "Grey line: in force, no transfer from this account checked in the last few seconds."));
+    hit(x, y, 24, () => vt(`Own money rule: ${p.name}.\n${policyMeaning(p)}\n`, `${short(RA[i])} runs ${p.name} (a branch of the composite o5 program).\n${policyMeaning(p)}\n`) + (st.hot ? (st.refused ? "It just refused a transfer." : "It just let a transfer pass.") : "In force; nothing checked in the last few seconds."));
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
     cx.shadowBlur = 0; cx.beginPath(); cx.arc(x, y, 12, 0, Math.PI * 2); cx.strokeStyle = `rgba(${col},.45)`; cx.lineWidth = 1.5; cx.stroke();
@@ -2965,7 +2982,7 @@ function draw(tm) {
       cx.shadowBlur = 0; cx.beginPath(); cx.strokeStyle = "rgba(255,177,59,.75)"; cx.lineWidth = 1.5; cx.roundRect(x - 8.5, y - 8.5, 17, 17, 3); cx.stroke();
     }
     else { cx.shadowColor = cx.fillStyle; cx.shadowBlur = 14; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 6, 0, Math.PI * 2); cx.fill(); }
-    if (sl) { hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const h = sealedAt(tx.id); return vt(`Already sealed${typeof h === "number" ? ` in block #${fmt(h)}` : " in a block"}. The alpha node still lists it as waiting (known node bug, see Findings); amber dots in a small frame are these.`, `Mempool: ${short(tx.id)} · ${tx.type} · already in ${typeof h === "number" ? "#" + fmt(h) : "a block"}, still listed by getmempool (IDNI #81).`); }); return; }
+    if (sl) { hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const h = sealedAt(tx.id); return vt(`Ghost transaction: already in ${typeof h === "number" ? `block #${fmt(h)}` : "a block"}, still listed by the node (known bug, see Findings).`, `Mempool: ${short(tx.id)} · ${tx.type} · already in ${typeof h === "number" ? "#" + fmt(h) : "a block"}, still listed by getmempool (IDNI #81).`); }); return; }
     hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`); });
   });
   cx.shadowBlur = 0;
@@ -2973,14 +2990,12 @@ function draw(tm) {
     const m = memState(), oldest = m.oldest, W = m.W, st = m.stale;
     const gov = S.mempool.filter(t => t.kind === "gov").length, rule = S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length, xfer = M - gov - rule;
     const mix = [[xfer, "transfer", "transfers"], [rule, "rule work", "rule work"], [gov, "rule-change proposal", "rule-change proposals"]].filter(x => x[0]).map(x => `${x[0]} ${x[0] === 1 ? x[1] : x[2]}`).join(", ");
-    const pace = m.per != null ? vt(` Recent blocks take ${perTxt(m.per)} each.`, ` Last blocks: ${perTxt(m.per)} each.`) : "", age = W ? (m.pageAge ? " since this page opened" : "") : "";
-    const stTxt = st ? vt(`\n${st === M ? (M === 1 ? "It is" : "All of them are") : `${st} of them ${st === 1 ? "is" : "are"}`} already sealed in a block (amber, framed); the alpha node keeps listing ${st === 1 ? "it" : "them"} for up to an hour (known bug, see Findings).`, `\n${st} already sealed (in a known block, gettxstatus confirmed or relay count), still in getmempool: IDNI #81.`) : "";
-    const chk = m.unchecked ? vt(` Still checking ${m.unchecked} against the chain.`, ` ${m.unchecked} not looked up yet.`) : "";
+    const age = (m.pageAge ? "at least " : "") + fmtAge(oldest);
     return health("mempool") + (M
-      ? vt(`Waiting room: ${M} transaction${M === 1 ? "" : "s"} listed (${mix}).${stTxt}\n${W ? `${W === 1 ? "1 really waits" : W + " really wait"} for a block; the oldest for ${fmtAge(oldest)}${age}.` : "None really waits for a block."}${(pace + chk) ? "\n" + (pace + chk).trim() : ""}\nClick to see them one by one.`,
-           `Mempool: ${M} listed (${mix}).${stTxt}\n${W} pending, oldest ${fmtAge(oldest)}${W ? (m.pageAge ? " since this page first saw it" : " since the relay first saw it") : ""}.${(pace + chk) ? "\n" + (pace + chk).trim() : ""}\nAdmitted after the rule check (o5/o6); fee ${S.fee} AGRS each. Click to list them.`)
-      : vt(`Waiting room: empty. Every transaction sent so far has been sealed into a block.\nNew ones appear here as dots until the next block takes them in.\nClick for details.`,
-           `Mempool: empty; nothing pending since the last block.\nAdmitted transactions orbit here until the proposer seals them (one dot each: white proposal, green rule work, grey transfer).\nClick for details.`));
+      ? vt(`${st ? (W ? `${W} really ${W === 1 ? "waits" : "wait"}, the oldest for ${age}.` : "Nothing really waits; the amber framed dots are ghosts.") : `${M} waiting (${mix}), the oldest for ${age}.`}\nClick to see them one by one.`,
+           `Mempool: ${M} listed (${mix}), ${st} ghost${st === 1 ? "" : "s"} (IDNI #81), ${W} pending${W ? `, oldest ${age}` : ""}.\nClick to list them.`)
+      : vt(`Waiting transactions orbit here as dots until a block takes them in.\nClick for details.`,
+           `Mempool empty. Admitted transactions orbit here until the proposer seals them.\nClick for details.`));
   }, null, () => showDetail(dtKey(detailMempool)));
 
   // reactor
@@ -2988,7 +3003,7 @@ function draw(tm) {
   const g = cx.createRadialGradient(0, 0, 0, 0, 0, C * .32);
   g.addColorStop(0, "rgba(240,246,255,.95)"); g.addColorStop(.25, `rgba(${core},${.55 + Math.max(p, am) * .4})`); g.addColorStop(1, `rgba(${core},0)`);
   cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, C * (.30 + p * .06), 0, Math.PI * 2); cx.fill();
-  hit(0, 0, C * .30, () => { const last = S.blocks[S.blocks.length - 1] || {}; return health("pace") + vt(`Block #${fmt(S.height)}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago under rule version ${S.specRev}.\nEvery block carries the agreed rules of everyone; changing a rule needs ${threshold()} of ${S.validators.length} validators.`,
+  hit(0, 0, C * .30, () => { const last = S.blocks[S.blocks.length - 1] || {}; return health("pace") + vt(`Block #${fmt(S.height)} under rule version ${S.specRev}.\nChanging a rule needs ${threshold()} of ${S.validators.length} validators.`,
     `Block #${S.height}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago, judged under spec revision ${S.specRev}.\nhash ${short(last.hash)} · state ${short(last.state)} · ${(last.txs || []).length} tx · proposer ${short(last.proposer)}\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`); });
   cx.strokeStyle = `rgba(${core},.8)`; cx.lineWidth = 3;
   for (let k = 0; k < 3; k++) { cx.save(); cx.rotate(t * (k % 2 ? -.8 : .6) + k); const r = C * (.17 + k * .04); for (let j = 0; j < 3; j++) { cx.beginPath(); cx.arc(0, 0, r, j * Math.PI * 2 / 3, j * Math.PI * 2 / 3 + 1.75); cx.stroke(); } cx.restore(); }
