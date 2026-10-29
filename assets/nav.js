@@ -32,6 +32,7 @@
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
     legal:      { t: "Privacy", d: "Privacy notice: exactly what this site processes (no cookies, no tracking)", i: "§", h: "legal/" },
     about:      { t: "About Tau HUD", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
+    share:      { t: "Share this page", d: "Copy the link, or post it on X, Telegram, Reddit or Hacker News", i: "↗", h: "#share", act: "share" },
     playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
     seat:       { t: "Validator seat", d: "Take a simulated seat and vote a rule change into law", i: "✓", h: "playground/#seat" },
     whatif:     { t: "What if", d: "Move block time, validators and votes needed, and watch the chain react", i: "≈", h: "whatif/" },
@@ -44,7 +45,7 @@
     { k: "explore", t: "Explore", items: ["explorer", "proposals", "account", "nodes", "stats", "history"], tab: "≋" },
     { k: "learn", t: "Learn", items: ["tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote"], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, items: ["about", "status", "findings", "meta", "developers", "press", "legal"], tab: "i" },
+    { k: "about", t: "About", util: true, items: ["about", "share", "status", "findings", "meta", "developers", "press", "legal"], tab: "i" },
   ];
   const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", status: "about", meta: "about", legal: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", whatif: "play" };
   const TIPS = {
@@ -283,12 +284,53 @@
     } catch (e) { UPD.donorsAt = 0; }
   }
 
+  /* Share: this page's own link (without the view switches) and its own preview picture, to copy or to post; on phones the system's share sheet first */
+  let SHARE = null;
+  function shareTarget() {
+    const u = new URL(location.href);
+    ["mode", "lang", "i18n", "tour"].forEach(k => u.searchParams.delete(k));
+    if (/^#(share|updates|tour)$/.test(u.hash)) u.hash = "";
+    if (location.hostname !== "tauhud.com") { u.protocol = "https:"; u.host = "tauhud.com"; u.port = ""; }   // a preview or a mirror still shares the real address
+    const meta = n => { const m = document.querySelector(`meta[property="${n}"]`); return m ? m.content : ""; };
+    return { url: u.href, title: meta("og:title") || document.title || "Tau HUD", text: meta("og:description") };
+  }
+  function openShare() {
+    const s = shareTarget(), e = encodeURIComponent, line = s.title === "Tau HUD" ? "Tau HUD: a live view of Tau Testnet Alpha, where the rules change by agreement" : s.title;
+    if (!SHARE) {
+      SHARE = el("div", "tn-modal tn-share"); SHARE.hidden = true;
+      SHARE.innerHTML = `<div class="tn-sheet" role="dialog" aria-modal="true" aria-labelledby="tnShareTitle"><button class="tn-close" type="button" aria-label="Close">✕</button>
+        <h3 id="tnShareTitle">Share this page</h3><p class="tn-sh-t"></p><div class="tn-sh-link"><code></code><button type="button" class="tn-sh-copy">Copy link</button></div><p class="tn-sh-msg" aria-live="polite"></p>
+        <div class="tn-sh-row"><button type="button" class="tn-sh-native" hidden>Share…</button><a data-n="x" target="_blank" rel="noopener">X</a><a data-n="tg" target="_blank" rel="noopener">Telegram</a><a data-n="rd" target="_blank" rel="noopener">Reddit</a><a data-n="hn" target="_blank" rel="noopener">Hacker News</a></div>
+        <p class="tn-sh-note">The link shows this page's own preview picture. Tau HUD is an unofficial community view of the Tau testnet; nothing here is for sale.</p></div>`;
+      const close = () => { SHARE.hidden = true; };
+      SHARE.querySelector(".tn-close").addEventListener("click", close);
+      SHARE.addEventListener("click", ev => { if (ev.target === SHARE) close(); });
+      document.addEventListener("keydown", ev => { if (ev.key === "Escape" && SHARE && !SHARE.hidden) close(); });
+      SHARE.querySelector(".tn-sh-copy").addEventListener("click", async () => {
+        const code = SHARE.querySelector(".tn-sh-link code"), msg = SHARE.querySelector(".tn-sh-msg");
+        try { await navigator.clipboard.writeText(code.textContent); msg.textContent = "Link copied."; }
+        catch (err) { const r = document.createRange(); r.selectNodeContents(code); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); msg.textContent = "Copy blocked by the browser; the link is selected, press Ctrl/Cmd+C."; }
+      });
+      const nb = SHARE.querySelector(".tn-sh-native");
+      if (navigator.share) { nb.hidden = false; nb.addEventListener("click", () => { const t = shareTarget(); navigator.share({ title: t.title, text: t.text, url: t.url }).catch(() => {}); }); }
+      document.body.append(SHARE);
+    }
+    SHARE.querySelector(".tn-sh-t").textContent = s.title;
+    SHARE.querySelector(".tn-sh-link code").textContent = s.url;
+    SHARE.querySelector(".tn-sh-msg").textContent = "";
+    const href = { x: `https://x.com/intent/post?text=${e(line)}&url=${e(s.url)}`, tg: `https://t.me/share/url?url=${e(s.url)}&text=${e(line)}`,
+      rd: `https://www.reddit.com/submit?url=${e(s.url)}&title=${e(line)}`, hn: `https://news.ycombinator.com/submitlink?u=${e(s.url)}&t=${e(line)}` };
+    SHARE.querySelectorAll("a[data-n]").forEach(a => { a.href = href[a.dataset.n]; });
+    SHARE.hidden = false;
+    SHARE.querySelector(".tn-sh-copy").focus({ preventScroll: true });
+  }
   function item(k, page, isHud, tip) {
     const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : ""));
     a.setAttribute("role", "menuitem");
     a.innerHTML = `<span class="ic">${p.i}</span><b>${esc(p.t)}${p.ext ? ' <span class="ext">↗</span>' : ""}</b><span>${esc(p.d)}</span>`;
     if (p.soon) { a.setAttribute("aria-disabled", "true"); a.title = "This page is not online yet"; }
     else if (p.ext) { a.href = p.h; a.target = "_blank"; a.rel = "noopener"; }
+    else if (p.act === "share") { a.href = "#share"; a.addEventListener("click", e => { e.preventDefault(); closeAll(); openShare(); }); }
     else if (p.act && isHud) { a.href = "#"; a.addEventListener("click", e => { e.preventDefault(); closeAll(); emit(p.act); }); }
     else a.href = ROOT + p.h;
     if (k === page) a.setAttribute("aria-current", "page");
@@ -706,12 +748,12 @@
     if (!f) return;
     const links = [["About", "#about"], ["Status", "status"], ["Findings", "findings"], ["In numbers", "meta"], ["Developers", "developers"], ["Press", "press"], ["Privacy", "legal"]]
       .filter(([, h]) => h !== here && !f.querySelector(h[0] === "#" ? `a[href$="${h}"]` : `a[href$="${h}/"], a[href$="/${h}"]`));
-    if (!links.length) return;
     const as = links.map(([t, h]) => { const a = el("a", "tn-foot", t); a.href = ROOT + (h[0] === "#" ? h : h + "/"); return a; });
     const host = f.querySelector("p:last-of-type") || f; as.forEach(a => host.append(" · ", a));
+    const sh = el("a", "tn-foot", "Share"); sh.href = "#share"; sh.addEventListener("click", e => { e.preventDefault(); openShare(); }); host.append(" · ", sh);
     [["Telegram", TELEGRAM, "t.me/"], ["X", XCOM, "x.com/"]].forEach(([t, h, k]) => { if (f.querySelector(`a[href*="${k}"]`)) return; const a = el("a", "tn-foot", t); a.href = h; a.target = "_blank"; a.rel = "noopener"; host.append(" · ", a); });
   }
-  const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); mountFootLinks(); countVisit(); };
+  const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, markSeen, closeAll, chain: CHAIN, sim: SIM };
+  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM };
 })();
