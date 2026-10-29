@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>if (/[?&]view=core(&|$)/.test(location.search)) document.documentElement.classList.add("coreonly");</script>
 <script src="assets/i18n.js"></script>
 <script src="assets/sim.js"></script>
 <script src="assets/simvote.js"></script>
@@ -437,6 +438,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .core { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px; justify-items: center; }
 /* depth: the outer orbits sit a little lower in the dark, the rim and its field stay as bright as they are */
 .core canvas.depth { -webkit-mask-image: radial-gradient(circle closest-side, #000 60%, rgba(0,0,0,.82) 82%, #000 90%); mask-image: radial-gradient(circle closest-side, #000 60%, rgba(0,0,0,.82) 82%, #000 90%); }
+/* ?view=core: only the Chain core, filling the frame, for other sites (agorzilla.com shows it in a panel); hovers stay, a click opens Tau HUD */
+#coreFoot { display: none; }
+html.coreonly, html.coreonly body { overflow: hidden !important; background: #09090a !important; }
+html.coreonly body * { visibility: hidden; }
+html.coreonly #core, html.coreonly #ovl, html.coreonly #ovl *, html.coreonly #coreFoot { visibility: visible; }
+html.coreonly #core { position: fixed !important; left: 50% !important; top: calc(50% - 10px) !important; transform: translate(-50%, -50%); width: min(100vw, calc(100vh - 24px)) !important; height: min(100vw, calc(100vh - 24px)) !important; max-width: none !important; max-height: none !important; cursor: pointer; }
+html.coreonly #coreFoot { display: block; position: fixed; left: 0; right: 0; bottom: 5px; text-align: center; font: 500 12px/1 var(--mono); letter-spacing: .04em; color: var(--dim); }
 .core canvas { height: 100%; width: auto; max-width: 100%; max-height: 100%; aspect-ratio: 1; display: block; object-fit: contain; }
 /* your own simulated node (assets/simnode.js): a small card in the core's top-left corner, simulation only */
 .core-panel { position: relative; }
@@ -981,6 +989,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <h2>Chain core <small id="coreSub">next proposer —</small><button class="info" type="button" aria-label="What is this?" data-tip="The ring of diamonds is the validator set; the bright one is proposing the next block. The ringed dots on the middle ring are accounts that run their own Tau rules. The dots orbiting the core are transactions waiting in the mempool. The arc shows how close an open rule change is to the agreement it needs. Lines to the core: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle; the green line from a validator is the proposer sealing a block, and at each seal every validator’s line lights briefly as all rules flow into the block.">i</button></h2>
       <div class="mynode" id="myNode" hidden></div>
       <div class="core">
+        <div id="coreFoot" aria-hidden="true"></div>
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
           <div id="rHw" data-health="height"><b id="rH">0</b><span>Height<i id="rHs"></i></span></div>
@@ -1662,6 +1671,8 @@ async function pollOnline() {
   } catch { setOnline(null); setRelay(false); }
   finally { clearTimeout(t); PRESENCE.at = Date.now(); }
 }
+const CORE_ONLY = document.documentElement.classList.contains("coreonly");
+if (CORE_ONLY) setInterval(() => { const f = $("coreFoot"), t = !S.height ? "connecting…" : `block #${fmt(S.height)}` + (isSim() ? " · simulation" : ""); if (f.textContent !== t) f.textContent = t; }, 1000);
 /* Agorzilla (agorzilla.com): a creature on the live testnet that the community feeds with real transactions. Its own site publishes
    today's meals and its stage; until that file may be read from here, the hover says what it is */
 const AGZ = { at: 0, d: null };
@@ -1712,7 +1723,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=22.8", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=23.1", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -3449,7 +3460,9 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
   cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; CORE_MOUSE = null; if (cur === cv && !touch) hide(); });
   /* a drawn element with a page behind it (the nodes) opens that page on click; on touch the first tap explains, the second opens */
-  cv.addEventListener("click", e => { const h = coreHit(e); if (h && (h.href || h.open) && (!touch || cur === cv)) { if (h.open) h.open(); else location.href = h.href(); return; } if (touch) coreShow(e); });
+  cv.addEventListener("click", e => { const h = coreHit(e);
+    if (CORE_ONLY) { window.open(h && h.href ? new URL(h.href(), location.href).href : location.origin + "/", "_blank", "noopener"); return; }   // in a frame elsewhere: a click opens Tau HUD
+    if (h && (h.href || h.open) && (!touch || cur === cv)) { if (h.open) h.open(); else location.href = h.href(); return; } if (touch) coreShow(e); });
 })();
 
 /* ---------- simple / technical view ---------- */
@@ -3579,7 +3592,7 @@ simShow();
 function autoLive() {
   const showingSim = S.mode === "sim" || (S.simfeed && !SIMFEED());   // the opening picture, not a chosen simulation
   if (!showingSim || !PRESENCE.up || LIVE.autoFailedAt && performance.now() - LIVE.autoFailedAt < 60000) return;
-  const pref = store.get("tau-mode");
+  const pref = CORE_ONLY ? "live" : store.get("tau-mode");   // the core-only view always shows the live chain
   if (pref !== "live" && !(LIVE_DEFAULT || PRESENCE.liveDefault)) return;
   if (pref === "sim" || (pref !== "live" && $("wsurl").value.trim() !== RELAY)) return;
   LIVE.auto = true; LIVE.gotData = false; simStop(); liveStop(); S.simfeed = false; liveConnect();
