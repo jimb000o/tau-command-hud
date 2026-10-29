@@ -207,7 +207,7 @@ class Visits:
             if visitor not in self.seen:
                 self.seen.add(visitor)
                 t["visitors"] += 1
-                _bump(t["lang"], "zh" if q.get("l") == "zh" else "en")
+                _bump(t["lang"], q.get("l") if q.get("l") in ("zh", "ja") else "en")
                 if q.get("w"):   # older pages only: the site stopped reading the window width (TDDDG § 25)
                     _bump(t["screen"], screen(q["w"]))
             if (visitor, page) not in self.seen_page:

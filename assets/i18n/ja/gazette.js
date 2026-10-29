@@ -1,0 +1,21 @@
+/* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
+TauI18n.add({ strings: {
+  "EXTRA": "号外",
+  "Newspaper": "新聞",
+  "Next page": "次のページ",
+  "Previous page": "前のページ",
+  "Sound of the paper": "新聞の音",
+  "The café around the paper and Market Street outside: off, quiet or lively": "新聞を囲むカフェと外のマーケット通り：オフ、静か、にぎやか",
+  "Switch between the full broadsheet and the pocket edition with one story per page": "大判の全紙と、1 ページに 1 記事のポケット版を切り替え",
+  "Show the site menu": "サイトのメニューを表示",
+  "Large type": "大きな文字",
+  "Full screen": "全画面",
+  "‹ Back": "‹ 戻る",
+  "Turn ›": "めくる ›",
+  "Contents": "目次",
+  "Pocket edition": "ポケット版",
+  "Broadsheet": "大判",
+  "Sound on": "音オン",
+  "Sound off": "音オフ",
+  "Front page": "一面",
+} });

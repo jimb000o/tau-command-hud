@@ -305,7 +305,7 @@ footer a { color: var(--dim); }
     a.setAttribute("aria-current", String(a.dataset.l === l));
     const u = new URL(location.href); u.searchParams.set("l", a.dataset.l); u.hash = ""; a.href = u.pathname + u.search;
   });
-  if (window.TauI18n && TauI18n.lang === "zh") document.getElementById("zhNote").hidden = false;
+  if (window.TauI18n && TauI18n.lang !== "en") document.getElementById("zhNote").hidden = false;
   if (h) { const t = document.getElementById(h); if (t && !t.closest("[hidden]")) t.scrollIntoView(); }
 })();
 </script>

@@ -205,14 +205,14 @@
   }
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeUpdates(); });
   /* the entries are worded in English and translated with the HUD's dictionary; in Chinese it is fetched once, when the overlay opens */
-  const updDict = () => new Promise(res => { if (!document.documentElement.classList.contains("i18n-zh") || !window.TauI18n) return res(); const sc = document.createElement("script"); sc.src = ROOT + "assets/i18n/zh/hud.js"; sc.onload = sc.onerror = res; document.head.append(sc); });
+  const updDict = () => new Promise(res => { if (!window.TauI18n || TauI18n.lang === "en") return res(); const sc = document.createElement("script"); sc.src = ROOT + "assets/i18n/" + TauI18n.lang + "/hud.js"; sc.onload = sc.onerror = res; document.head.append(sc); });
   async function loadUpdLog() {
     const ul = UPD.el.querySelector(".tn-changes"); let list;
     try { list = await (await fetch(ROOT + "assets/updates.json", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
     catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
     const vers = siteVersions(list); SITE_VER = vers.filter(Boolean).pop() || SITE_VER;
     const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
-    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Wallet: "wallet/", Findings: "findings/", Status: "status/", Stats: "stats/", "Build pulse": "devpulse/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", "Guided tour": "playground/#tour" };
+    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Wallet: "wallet/", Findings: "findings/", Status: "status/", Stats: "stats/", "Build pulse": "devpulse/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "playground/#tour" };
     let day = null, html = "";
     for (const e of order) {
       const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
@@ -476,7 +476,7 @@
     /* the "coming up" chip: agreed rule changes waiting for their activation block, with a countdown from the relay's block pace */
     const NEXT = { rows: [], chain: null, text: "" };
     /* the proposal titles and reasons are worded on the Proposals page; in Chinese its dictionary is borrowed so the chip reads the same here */
-    const dict = new Promise(res => { if (!document.documentElement.classList.contains("i18n-zh") || /\/proposals\/?$/.test(location.pathname) || !window.TauI18n) return res(); const sc = document.createElement("script"); sc.src = ROOT + "assets/i18n/zh/proposals.js"; sc.onload = sc.onerror = res; document.head.append(sc); });
+    const dict = new Promise(res => { if (!window.TauI18n || TauI18n.lang === "en" || /\/proposals\/?$/.test(location.pathname)) return res(); const sc = document.createElement("script"); sc.src = ROOT + "assets/i18n/" + TauI18n.lang + "/proposals.js"; sc.onload = sc.onerror = res; document.head.append(sc); });
     const span = sec => { const m = Math.max(0, Math.round(sec / 60)); if (m < 60) return m <= 0 ? "now" : `in ${m} min`; const h = Math.floor(m / 60); if (h < 24) return `in ~${h} h ${m % 60} min`; return `in ~${Math.floor(h / 24)} d ${h % 24} h`; };
     const renderNext = () => {
       const nx = rail.querySelector("#tnNext"); if (!nx) return;
@@ -564,7 +564,7 @@
   /* guided tours: the HUD keeps its own; a subpage loads assets/tour.js (and its Chinese texts first) */
   function loadTour() {
     if (document.querySelector("script[data-tour]")) return;
-    const files = (window.TauI18n && TauI18n.lang === "zh" ? ["i18n/zh/tour.js"] : []).concat("tour.js");
+    const files = (window.TauI18n && TauI18n.lang !== "en" ? ["i18n/" + TauI18n.lang + "/tour.js"] : []).concat("tour.js");
     files.forEach(f => { const s = el("script"); s.src = ROOT + "assets/" + f; s.async = false; s.dataset.tour = f; document.head.append(s); });
   }
   function startTour(isHud) {
@@ -648,9 +648,9 @@
     if (!isHud) loadTour();
     const I = window.TauI18n;
     right.append(el("span", "tnav-sep"));   // text links on the left of the line, the two switches on the right
-    if (I) {   // language switch: a two-way pill like Simple/Technical, each language in its own script; the choice is remembered
+    if (I) {   // language switch: a pill like Simple/Technical, each language in its own script; the choice is remembered
       const lg = el("div", "seg tn-lang"); lg.setAttribute("role", "group"); lg.setAttribute("aria-label", "Language · 语言"); lg.setAttribute("translate", "no");
-      [["en", "EN", "en", "Read this site in English · 切换到英文"], ["zh", "中文", "zh-CN", "阅读中文版 · Read this site in Chinese"]].forEach(([code, label, tag, t]) => {
+      [["en", "EN", "en", "Read this site in English · 切换到英文"], ["zh", "中文", "zh-CN", "阅读中文版 · Read this site in Chinese"], ["ja", "日本語", "ja", "日本語で読む · Read this site in Japanese"]].forEach(([code, label, tag, t]) => {
         const lb = el("button", "", label); lb.type = "button"; lb.lang = tag; lb.setAttribute("aria-pressed", String(I.lang === code)); tip(lb, t);
         lb.addEventListener("click", () => { if (I.lang !== code) I.set(code); }); lg.append(lb);
       });
@@ -681,7 +681,8 @@
       sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", sec.t);
       sh.append(el("div", "grab"), el("h4", "", esc(sec.t)));
       sec.items.forEach(k => sh.append(item(k, page, isHud)));
-      if (sec.k === "learn" && window.TauI18n) { const I = window.TauI18n, other = I.lang === "zh" ? "en" : "zh", l = el("a", "mi", `<span class="ic">文</span><b>${other === "zh" ? "中文" : "English"}</b><span>${other === "zh" ? "阅读中文版 · Read this site in Chinese" : "Read this site in English"}</span>`); l.href = "#"; l.setAttribute("translate", "no"); l.addEventListener("click", e => { e.preventDefault(); I.set(other); }); sh.append(l); }
+      if (sec.k === "learn" && window.TauI18n) { const I = window.TauI18n, NAME = { en: ["English", "Read this site in English"], zh: ["中文", "阅读中文版 · Read this site in Chinese"], ja: ["日本語", "日本語で読む · Read this site in Japanese"] };
+        for (const other of Object.keys(NAME).filter(c => c !== I.lang)) { const l = el("a", "mi", `<span class="ic">文</span><b>${NAME[other][0]}</b><span>${NAME[other][1]}</span>`); l.href = "#"; l.setAttribute("translate", "no"); l.addEventListener("click", e => { e.preventDefault(); I.set(other); }); sh.append(l); } }
       if (sec.k === "learn" && !isHud) { const t = el("a", "mi", `<span class="ic">?</span><b>Tour of this page</b><span>What each part of this page shows and why it matters, in a few short steps</span>`); t.href = "#tour"; t.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); }); sh.append(t); }
       if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram alerts <span class="ext">↗</span></b><span>@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t);
         const x = el("a", "mi", `<span class="ic">${XLOGO}</span><b>X @TauHUDcom <span class="ext">↗</span></b><span>Real rule changes, new nodes, Testnet today and the Monday recap in your timeline</span>`); x.href = XCOM; x.target = "_blank"; x.rel = "noopener"; sh.append(x); }
@@ -733,10 +734,10 @@
     const page = pageOf(location.pathname);
     let ref = "";
     try { const r = new URL(document.referrer); ref = r.host === location.host ? "/" + (r.pathname.startsWith(ROOT) ? pageOf(r.pathname) : "") : r.hostname; } catch (e) {}
-    const q = new URLSearchParams(location.search), zh = /^zh/i.test(document.documentElement.lang) || q.get("lang") === "zh";
+    const q = new URLSearchParams(location.search), ln = (window.TauI18n && TauI18n.lang) || (/^(zh|ja)$/.test(q.get("lang")) ? q.get("lang") : "en");
     const base = `https://${RELAY}/v?p=${encodeURIComponent(page)}`;
     const send = extra => { try { fetch(base + extra, { mode: "no-cors", keepalive: true, credentials: "omit", referrerPolicy: "no-referrer" }).catch(() => {}); } catch (e) {} };
-    send(`&r=${encodeURIComponent(ref)}&s=${encodeURIComponent(q.get("utm_source") || q.get("ref") || "")}&l=${zh ? "zh" : "en"}&m=${SIM ? "sim" : "live"}`);
+    send(`&r=${encodeURIComponent(ref)}&s=${encodeURIComponent(q.get("utm_source") || q.get("ref") || "")}&l=${ln}&m=${SIM ? "sim" : "live"}`);
     // seconds the page was visible; sent once, when the page is first hidden or left (the relay keeps only a time step)
     let shown = 0, timed = false;
     setInterval(() => { if (document.visibilityState === "visible" && ++shown === 30) send("&e=1"); }, 1000);

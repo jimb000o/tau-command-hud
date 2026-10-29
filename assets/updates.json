@@ -1338,5 +1338,17 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Click a validator in the Chain core and its profile opens: what it sealed, how much traffic it carried and how it voted (the Validators panel's detail has the same link). The header Agorzilla's hover now reads like a Chain core element: a status light, Live with today's meals and wallets, his stage and tonight's vote, all from agorzilla.com. His eyes now look where he looks, and skin lids with a lash line close when he blinks."
+ },
+ {
+  "tag": "Japanese",
+  "on": "2026-10-29",
+  "html": "Japanese version: the whole site now reads in 日本語; switch with the EN | 中文 | 日本語 pill in the header or open any page with ?lang=ja. Every HUD hover, the guided tours, the newspaper as its own Japanese edition, the press kit and the story at tauhud.com/story/ja are translated, and the choice is remembered. Colours stay as in English, green for good news.",
+  "major": {
+   "id": "japanese",
+   "title": "New: Tau HUD in Japanese",
+   "text": "The whole site now reads in 日本語: every page, every HUD hover, the guided tours, the newspaper and the story. Switch with EN | 中文 | 日本語 in the header.",
+   "link": "/?lang=ja",
+   "image": "/assets/shots/japanese.png"
+  }
  }
 ]
