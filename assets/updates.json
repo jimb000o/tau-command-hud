@@ -880,5 +880,15 @@
   "tag": "v17.53",
   "on": "2026-10-29",
   "html": "In numbers and Privacy are back in the Learn menu, so they are easy to find on every page. They also stay at the end of every footer line; the small corner line on pages without a footer is gone."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "The newspaper clipping is seen on smaller and zoomed screens too: below 1900 px the HUD scrolls, so Rules in force now starts under the fold; while Personal money rules is still empty, the clipping takes that empty space instead. The floating Feedback button on the HUD is gone, the Feedback button in the header does the same."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Every release now counts in the version number: the green number in the Updates log is the site version, one step for each release on any page, and a new page or big feature starts the next whole number. The name next to it says which part of the site changed. The HUD's own numbers before this release stay as they were."
  }
 ]
