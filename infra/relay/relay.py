@@ -113,7 +113,6 @@ HEAVY_BURST = 2
 HEAVY_REFILL = _env_float("HEAVY_REFILL_PER_SEC", 0.45)
 
 HEX = re.compile(r"^[0-9a-fA-F]{40,192}$")
-VIEWER_ID = re.compile(r"^[0-9a-fA-F]{16,64}$")  # "hello version=1 viewer=<token>", chosen by the browser
 # command -> validator for its arguments (list of strings). Anything not listed
 # here is refused.
 LOOKUPS = {
@@ -273,9 +272,11 @@ class Relay:
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
         self.clients: set[ServerConnection] = set()
         self.per_ip: dict[str, int] = {}
-        # connection -> viewer token from "hello … viewer=…": one person's tabs, pages and
-        # reconnects count once. Random, chosen by the browser, kept in memory only.
-        self.viewers: dict[ServerConnection, str] = {}
+        # connection -> (address, user agent): one person's tabs, pages and reconnects count
+        # once in `online`, keyed like the visit count (visits.person: daily salt + address +
+        # user agent, in memory only). Nothing is stored in the browser for it; the viewer
+        # token older pages send in "hello … viewer=…" is accepted and ignored.
+        self.viewers: dict[ServerConnection, tuple[str, str]] = {}
         self.blocks: dict[str, dict] = {}       # block_hash -> raw block
         self.total_blocks = 0
         self.cache: dict[str, str] = {}         # command -> envelope text
@@ -940,9 +941,8 @@ class Relay:
             version = fields.get("version", "")
             if version not in ("1", "2"):
                 return f"error unsupported_version expected=1|2 got={version}"
-            viewer = fields.get("viewer", "")
-            if ws is not None and VIEWER_ID.match(viewer):
-                self.viewers[ws] = viewer.lower()
+            # "viewer=<token>" from older pages is accepted for compatibility and ignored:
+            # people are told apart by address and user agent now (see handler)
             return f"ok version={version} env=testnet node=tau-hud-relay"
 
         if cmd == "getblocks":
@@ -1366,9 +1366,10 @@ class Relay:
 
     # ---------- presence ----------
     def online(self) -> int:
-        """People, not sockets: connections that sent a viewer token are counted
-        once per token; connections without one count individually."""
-        return len(set(self.viewers.values())) + sum(1 for c in self.clients if c not in self.viewers)
+        """People, not sockets: one browser's tabs, pages and reconnects count once
+        (same address and user agent, hashed with the day's salt like the visit count)."""
+        people = {self.visits.person(ip, ua) for ip, ua in self.viewers.values()}
+        return len(people) + sum(1 for c in self.clients if c not in self.viewers)
 
     def presence_envelope(self) -> str:
         return envelope_ok("presence", {"online": self.online(), "pushed": True})
@@ -1520,6 +1521,7 @@ class Relay:
         ip = self.client_ip(ws, ws.request)
         self.per_ip[ip] = self.per_ip.get(ip, 0) + 1
         self.clients.add(ws)
+        self.viewers[ws] = (ip, ws.request.headers.get("User-Agent", "") if ws.request else "")
         self.push_presence()
         bucket = TokenBucket(CLIENT_BURST, CLIENT_REFILL)
         try:
@@ -1529,10 +1531,7 @@ class Relay:
                 if not bucket.take():
                     reply = envelope_error("rate_limit", "Rate limit exceeded", "RATE_LIMITED")
                 else:
-                    before = self.online()
                     reply = await self.answer(message.strip(), ip, ws)
-                    if self.online() != before:
-                        self.push_presence()  # a hello with a viewer token merged this socket into a known person
                 await ws.send(reply)
         except ConnectionClosed:
             pass

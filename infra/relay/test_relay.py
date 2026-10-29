@@ -279,42 +279,42 @@ async def main():
             check(len(json.load(f)["reorgs"]) == 1, "reorg persisted to the events file")
         mock["mint"] = True
 
-        # presence: a second visitor raises the count for both, leaving lowers it
+        # presence: a second visitor (another address) raises the count for both, leaving lowers it
         async with connect(url, additional_headers=origin) as a:
             json.loads(await a.recv())
-            async with connect(url, additional_headers=origin) as b:
+            async with connect(url, additional_headers={**origin, "X-Forwarded-For": "198.51.100.7"}) as b:
                 seen = json.loads(await asyncio.wait_for(a.recv(), 3))
                 check(seen["command"] == "presence" and seen["data"]["online"] == 2, "presence pushed on join")
                 check((await ask(b, "presence"))["data"]["online"] == 2, "presence on request")
             seen = json.loads(await asyncio.wait_for(a.recv(), 3))
             check(seen["command"] == "presence" and seen["data"]["online"] == 1, "presence pushed on leave")
 
-        # one person, several sockets: the same viewer token counts once, a reconnect
-        # that overlaps with the old socket does not add a second viewer
+        # one person, several sockets: the same browser (address + user agent) counts once,
+        # whatever token the page sends; a reconnect that overlaps with the old socket does
+        # not add a second person; another browser does
         token = "ab" * 16
+        other = {**origin, "User-Agent": "Mozilla/5.0 (another browser)"}
         async with connect(url, additional_headers=origin) as a:
             json.loads(await a.recv())
             await a.send(f"hello version=1 viewer={token}")
-            check((await a.recv()).startswith("ok version=1"), "hello with viewer token")
+            check((await a.recv()).startswith("ok version=1"), "hello with viewer token still answered")
             async with connect(url, additional_headers=origin) as b:
                 seen = json.loads(await asyncio.wait_for(a.recv(), 3))
-                check(seen["data"]["online"] == 2, "second socket counts until it identifies")
-                await b.send(f"hello version=1 viewer={token}")
-                seen = json.loads(await asyncio.wait_for(a.recv(), 3))
-                check(seen["command"] == "presence" and seen["data"]["online"] == 1, "same viewer token merged: one person")
-                await b.recv()  # the ok to b's hello (b also got the presence push first, order may vary)
-                async with connect(url, additional_headers=origin) as c:
+                check(seen["command"] == "presence" and seen["data"]["online"] == 1, "second socket of the same browser: still one person")
+                json.loads(await b.recv())
+                await b.send("hello version=1 viewer=" + "cd" * 16)
+                check((await b.recv()).startswith("ok version=1"), "a different token does not split one browser")
+                async with connect(url, additional_headers=other) as c:
                     seen = json.loads(await asyncio.wait_for(a.recv(), 3))
-                    check(seen["data"]["online"] == 2, "a socket without a token is another person")
+                    check(seen["data"]["online"] == 2, "another browser is another person")
                     body2 = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen("http://127.0.0.1:18766/status", timeout=5).read()))
                     check(body2["online"] == 2 and body2["clients"] == 3, f"/status online counts people, clients counts sockets {body2['online']}/{body2['clients']}")
+                    json.loads(await c.recv())
                     await c.send("hello version=1 viewer=zz")
-                    reply = await c.recv()
-                    while not reply.startswith("ok") and not reply.startswith("error"):
-                        reply = await c.recv()  # skip c's own presence pushes
-                    check(reply.startswith("ok version=1"), "a malformed viewer token is ignored, hello still ok")
-            for _ in range(2):
+                    check((await c.recv()).startswith("ok version=1"), "a malformed viewer token is ignored, hello still ok")
                 seen = json.loads(await asyncio.wait_for(a.recv(), 3))
+                check(seen["data"]["online"] == 1, "other browser left: one person")
+            seen = json.loads(await asyncio.wait_for(a.recv(), 3))
             check(seen["data"]["online"] == 1, "person still counted once after its other socket closed")
 
         # origin check

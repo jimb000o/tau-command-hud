@@ -48,7 +48,7 @@ Connect to `wss://node.tauhud.com`, send a command as text, get the node's JSON 
 
 | Command | Answered from | Notes |
 |---|---|---|
-| `hello version=1 [viewer=<16–64 hex>]` | relay | `ok version=1 env=testnet node=tau-hud-relay`; `viewer` is a random token the browser keeps in localStorage so one person's tabs, pages and reconnects count once in `online` |
+| `hello version=1` | relay | `ok version=1 env=testnet node=tau-hud-relay`; a `viewer=<token>` field from older pages is accepted and ignored |
 | `getblocks [n]` | cache, last 50 blocks | ascending; `n` capped at 50 |
 | `getblockrange <from> <count>` | cache, whole current chain | blocks with `from <= block_number < from+count`, ascending; `count` 1..100; `{"blocks", "from", "total", "head"}` |
 | `getmempool` | cache, refreshed every 3 s | |
@@ -66,9 +66,10 @@ Pushed without asking:
 - `getblocks` envelopes with only the new blocks and `"pushed": true`,
 - full `getmempool` and `getgovernance` envelopes whenever they change,
 - `presence` envelopes `{"online": n, "pushed": true}` right after connecting, whenever a page
-  joins or leaves, and every 30 s as a heartbeat. `online` counts people: sockets that sent
-  the same `viewer` token count once, sockets without one count individually. The token is
-  random, chosen by the browser, held in memory only while connected and never logged;
+  joins or leaves, and every 30 s as a heartbeat. `online` counts people, not sockets: one
+  browser's tabs, pages and reconnects count once. The relay tells browsers apart the way the
+  visit count does (`visits.py`): the day's random salt hashed with the address and the user
+  agent, in memory only, nothing stored in the browser and nothing logged;
   `/status` reports `online` (people) and `clients` (sockets).
 
 Clients should de-duplicate blocks by `block_hash` (the HUD already does).
