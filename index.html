@@ -335,14 +335,23 @@ html.i18n-zh .ga-tx { text-align: left; }
 .agz .lg.r img { -webkit-mask-image: linear-gradient(90deg, transparent 63%, #000 67%); mask-image: linear-gradient(90deg, transparent 63%, #000 67%); }
 .agz .lg.l, .agz .lg.r { transform-origin: 60% 66%; }
 .agz .bod { transform-origin: 54% 82%; animation: agzBreathe var(--agz-br, 4.2s) ease-in-out infinite; }
-.agz .trunk { -webkit-mask-image: radial-gradient(39.5% 25% at 55.3% 26.3%, transparent 86%, #000 95%), linear-gradient(#000 72%, transparent 77%); -webkit-mask-composite: source-in; mask-image: radial-gradient(39.5% 25% at 55.3% 26.3%, transparent 86%, #000 95%), linear-gradient(#000 72%, transparent 77%); mask-composite: intersect; }
+.agz .trunk { -webkit-mask-image: linear-gradient(#000 72%, transparent 77%); mask-image: linear-gradient(#000 72%, transparent 77%); }   /* the picture with its head area filled with fur, so a turning head never shows a second one */
 .agz .hd { transform-origin: 59.2% 50.9%; }
-.agz .hd img { -webkit-mask-image: radial-gradient(39.5% 25% at 55.3% 26.3%, #000 91%, transparent 100%); mask-image: radial-gradient(39.5% 25% at 55.3% 26.3%, #000 91%, transparent 100%); }
-.agz .lid { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; background: linear-gradient(#6b4a3c, #5a3c30 80%, #2a1712); clip-path: inset(0 0 100% 0); transition: clip-path .25s; }
-.agz .lid.l { left: 53.9%; top: 32.9%; width: 13.4%; height: 9.4%; }
-.agz .lid.r { left: 76.3%; top: 28.9%; width: 13.4%; height: 8.8%; }
-.agz.squint .lid { clip-path: inset(0 0 55% 0); }
-.agz.drowsy .lid { clip-path: inset(0 0 30% 0); transition-duration: 1.2s; }
+.agz .hd > img { -webkit-mask-image: radial-gradient(39.5% 25% at 55.3% 26.3%, #000 96%, transparent 100%); mask-image: radial-gradient(39.5% 25% at 55.3% 26.3%, #000 96%, transparent 100%); }
+/* eyes: each eye's inside slides within a fixed eye shape (the eyes lead, the head follows); skin lids with a lash line slide down to blink */
+@property --blink { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --lid { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --squint { syntax: "<number>"; inherits: true; initial-value: 0; }
+.agz { --lid: 0; --squint: 0; --ex: 0%; --ey: 0%; transition: opacity .2s, filter .2s, --lid .45s ease, --squint .35s ease; }
+.agz.squint { --squint: 1; --lid: .3; }
+.agz.drowsy { --lid: .55; transition: opacity .2s, filter .2s, --lid 1.2s ease, --squint .35s ease; }
+.agz .eye, .agz .lid { position: absolute; -webkit-mask-image: radial-gradient(31.5% 31.5% at 50% 50%, #000 86%, transparent 98%); mask-image: radial-gradient(31.5% 31.5% at 50% 50%, #000 86%, transparent 98%); overflow: hidden; }
+.agz .eye.l, .agz .lid.l { left: 41.97%; top: 25.88%; width: 21.18%; height: 14.39%; }
+.agz .eye.r, .agz .lid.r { left: 68.03%; top: 21.49%; width: 18.82%; height: 13.77%; }
+.agz .eye img { display: block; width: 100%; height: 100%; transform: translate(var(--ex), var(--ey)); transition: transform .12s cubic-bezier(.3, 0, .2, 1); }
+.agz .lid { -webkit-mask-image: radial-gradient(34.5% 34.5% at 50% 50%, #000 92%, transparent 100%); mask-image: radial-gradient(34.5% 34.5% at 50% 50%, #000 92%, transparent 100%); }
+.agz .lid b { position: absolute; left: 0; right: 0; top: 0; height: 84%; border-radius: 0 0 50% 50% / 0 0 26% 26%; background: linear-gradient(#5c4853, #7c6672 48%, #846e7a 70%, #6a5561); box-shadow: inset 0 -1px .5px -.3px rgba(34, 16, 22, .95), 0 .6px .6px rgba(0, 0, 0, .4); transform: translateY(calc(-78% + 62% * max(var(--lid), var(--blink)))); }
+.agz .lid s { position: absolute; left: -6%; right: -6%; bottom: 0; height: 50%; border-radius: 50% 50% 0 0 / 44% 44% 0 0; background: linear-gradient(#6a5561, #85707c 35%, #8d7783); box-shadow: inset 0 .6px .4px -.2px rgba(36, 18, 24, .75); transform: translateY(calc(63% - max(var(--squint) * 30%, max(var(--lid), var(--blink)) * 46%))); }
 .agz .mouth { position: absolute; left: 69.1%; top: 39.4%; width: 8%; height: 2.6%; transform: translate(-50%, -50%) scaleY(0); border-radius: 40% 40% 50% 50%; background: radial-gradient(60% 70% at 50% 75%, #b4504a, #3a0f0d 70%); }
 @keyframes agzBreathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.01, 1.024); } }
 @media (max-width: 1599px) { .agz { display: none; } }
@@ -946,7 +955,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   <header class="rail">
     <a class="brand" href="./" data-full="Back to the start: the HUD."><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></a>
     <button class="chip unoff" type="button" data-open="mAbout" data-full="Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Click for the full notice.">Unofficial community project · not affiliated with IDNI</button>
-    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><i class="sh"></i><span class="dir"><span class="pup"><span class="lg b"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg l"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg r"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="bod"><img class="trunk" src="assets/agorzilla.webp" alt="" draggable="false"><span class="hd"><img src="assets/agorzilla.webp" alt="" draggable="false"><i class="lid l"></i><i class="lid r"></i><i class="mouth"></i></span></span></span></span></a>
+    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><i class="sh"></i><span class="dir"><span class="pup"><span class="lg b"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg l"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg r"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="bod"><img class="trunk" src="assets/rig/agz-body.webp" alt="" draggable="false"><span class="hd"><img src="assets/agorzilla.webp" alt="" draggable="false"><span class="eye l"><img src="assets/rig/agz-eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="assets/rig/agz-eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><i class="mouth"></i></span></span></span></span></a>
     <div class="chips">
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
@@ -1332,6 +1341,8 @@ function tickSubs() {
    Thresholds follow the block pace (8 s in the simulation, measured on the live chain). A transaction already sealed but still listed
    by the alpha node (IDNI #81, up to an hour) is a known quirk, not an alarm. Red only when something is really stuck or offline. */
 const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
+/* a validator's own page: its profile on the accounts page (what it sealed, how much traffic, its votes); the language travels along */
+const valProfile = v => { const l = new URLSearchParams(location.search).get("lang"); return `account/?a=${encodeURIComponent(String(v).toLowerCase().replace(/^0x/, ""))}&view=validator${l ? "&lang=" + encodeURIComponent(l) : ""}`; };
 const liveChain = () => S.mode === "live" && !S.simfeed, offline = () => liveChain() && LIVE.status !== "Connected";
 const SEALED = { h: -1, n: -1, ids: new Set() };
 function sealedIds() {
@@ -1707,7 +1718,7 @@ if (CORE_ONLY) { let told = 0; setInterval(() => {
 }, 500); }
 /* Agorzilla (agorzilla.com): a creature on the live testnet that the community feeds with real transactions. Its own site publishes
    today's meals and its stage; until that file may be read from here, the hover says what it is */
-const AGZ = { at: 0, d: null, room: 0 };
+const AGZ = { at: 0, d: null, room: 0, fail: 0 };
 function placeAgz() {   // two anchors: the header's bottom line is his ground, the Live status chip is what he watches; he never covers a control
   const a = $("agz"), rail = document.querySelector("header.rail"), mode = $("chipMode"), u = document.querySelector(".rail .unoff"); if (!a || !rail || !mode || !u) return;
   if (getComputedStyle(a).display === "none") return;
@@ -1729,18 +1740,29 @@ function placeAgz() {   // two anchors: the header's bottom line is his ground, 
 }
 addEventListener("resize", placeAgz); addEventListener("load", placeAgz); setInterval(placeAgz, 2000);
 try { const ro = new ResizeObserver(() => placeAgz()); ["chipMode", "chipNext"].forEach(id => $(id) && ro.observe($(id))); ro.observe(document.querySelector("header.rail")); document.fonts && document.fonts.ready.then(placeAgz); } catch (e) {}   // the chips change width as data arrives; he follows at once
-async function pollAgz() {
-  if (Date.now() - AGZ.at < 600000 || !$("agz") || getComputedStyle($("agz")).display === "none") return; AGZ.at = Date.now();
+async function pollAgz(force) {   // agorzilla.com's archive, written every 30 min; read every 5 min and again on hover after a minute
+  if (Date.now() - AGZ.at < (force ? 60000 : 300000) || !$("agz") || getComputedStyle($("agz")).display === "none") return; AGZ.at = Date.now();
   const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 8000);
-  try { const r = await fetch("https://agorzilla.com/chain/latest.json", { cache: "no-store", signal: ctl.signal }); if (r.ok) AGZ.d = await r.json(); } catch (e) {} finally { clearTimeout(tm); }
+  try { const r = await fetch("https://agorzilla.com/chain/latest.json", { cache: "no-store", signal: ctl.signal }); if (r.ok) { AGZ.d = await r.json(); AGZ.fail = 0; } else AGZ.fail = Date.now(); } catch (e) { AGZ.fail = Date.now(); } finally { clearTimeout(tm); }
 }
+/* the hover reads like a Chain core element: his name, a status light with one verdict from agorzilla.com's own archive, then at most two short lines */
 function agzTip() {
-  const d = AGZ.d, meals = d && d.today && Number.isFinite(+d.today.meals) ? +d.today.meals : null, stage = d && d.stage_name ? String(d.stage_name) : "";
-  if (meals == null) return "Agorzilla\nA creature on the live testnet that grows when people feed it real transactions.\nClick to visit agorzilla.com.";
-  return verdict(meals ? "ok" : "watch", meals ? `Normal: fed ${meals} time${meals === 1 ? "" : "s"} today${stage ? ` · stage ${stage}` : ""}.` : `Watch: not fed yet today${stage ? ` · stage ${stage}` : ""}.`)
-    + "Agorzilla\nA creature on the live testnet, fed with real transactions.\nClick to visit agorzilla.com.";
+  pollAgz(true);
+  const d = AGZ.d, num = v => Number.isFinite(+v) ? +v : null, now = Date.now() / 1000;
+  const tail = "Click to visit agorzilla.com.";
+  if (!d) return verdict("watch", "Watch: no answer from agorzilla.com right now.") + "Agorzilla\nA creature on the live testnet, fed with real transactions.\n" + tail;
+  const age = num(d.updated_at) != null ? now - num(d.updated_at) : null;
+  if (age != null && age > 2700) return verdict("bad", `Problem: no news from agorzilla.com for ${Math.round(age / 60)} min.`) + "Agorzilla\nA creature on the live testnet, fed with real transactions.\n" + tail;
+  const meals = num(d.today && d.today.meals), wal = num(d.today && d.today.wallets), stage = d.stage_name ? String(d.stage_name) : "";
+  const v = !liveChain() ? verdict("watch", "Live on the testnet. This page shows the simulation.")
+    : meals ? verdict("ok", `Live: fed ${meals} time${meals === 1 ? "" : "s"} by ${wal || 1} wallet${(wal || 1) === 1 ? "" : "s"} today.`)
+    : verdict("ok", "Live: not fed yet today.");
+  const o = d.open || {}, left = num(o.closes_at) != null ? num(o.closes_at) - now : null;
+  const vote = o.category && left != null && left > 0 ? (left < 5400 ? ` Tonight's vote: ${o.category}, closes in ${Math.max(1, Math.round(left / 60))} min.` : ` Tonight's vote: ${o.category}, closes in ${Math.round(left / 3600)} h.`) : "";
+  const line = stage ? `Stage: ${stage}.${vote}` : vote.trim() || "A creature on the live testnet, fed with real transactions.";
+  return v + "Agorzilla\n" + line + "\n" + tail;
 }
-addEventListener("DOMContentLoaded", () => { pollAgz(); setInterval(() => { if (!document.hidden) pollAgz(); }, 600000); });
+addEventListener("DOMContentLoaded", () => { pollAgz(); setInterval(() => { if (!document.hidden) pollAgz(); }, 300000); });
 /* Agorzilla is alive: small things of his own while nothing happens (breathing, blinking, looking around, a scratch, a stretch, a little walk
    to the left where the header has room), and a move for what the network does. Anti-spam: at most 3 moves wait, one of a kind, 8 s between
    moves, the same kind at most once a minute (a block every 20 s), and a burst of events makes him only watch for half a minute. Reduced
@@ -1755,10 +1777,12 @@ const AGZ_LIFE = (() => {
   const go = (el, kf, o) => el.animate(kf, { duration: 700, easing: "ease-in-out", ...o }).finished.catch(() => {});
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const night = () => { const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Europe/Berlin" }).format(new Date())); return h >= 22 || h < 6; };
-  const look = (deg, dx, hold, up = 0) => go(hd, [{ transform: "none" }, { transform: `rotate(${deg}deg) translate(${dx}%, ${up}%)`, offset: .25 }, { transform: `rotate(${deg}deg) translate(${dx}%, ${up}%)`, offset: .75 }, { transform: "none" }], { duration: hold });
+  const eyes = (x, y) => { a.style.setProperty("--ex", x + "%"); a.style.setProperty("--ey", y + "%"); };
+  const look = (deg, dx, hold, up = 0) => { eyes(Math.sign(dx) * 9, up ? Math.sign(up) * 6 : 0); setTimeout(() => eyes(0, 0), hold * .8); return lookHead(deg, dx, hold, up); };
+  const lookHead = (deg, dx, hold, up = 0) => go(hd, [{ transform: "none" }, { transform: `rotate(${deg}deg) translate(${dx}%, ${up}%)`, offset: .25 }, { transform: `rotate(${deg}deg) translate(${dx}%, ${up}%)`, offset: .75 }, { transform: "none" }], { duration: hold });
   const mood = (cls, ms) => { a.classList.add(cls); return wait(ms).then(() => a.classList.remove(cls)); };
   const hop = (hgt = 9) => go(pup, [{ transform: "none" }, { transform: "scale(1.05, .93)", offset: .18 }, { transform: `translateY(-${hgt}%) scale(.97, 1.05)`, offset: .45, easing: "ease-in" }, { transform: "scale(1.04, .95)", offset: .74 }, { transform: "none" }], { duration: 820 });
-  const blink = () => Promise.all(lids.map(l => go(l, [{ clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0 0)", offset: .45 }, { clipPath: "inset(0 0 0 0)", offset: .6 }, { clipPath: "inset(0 0 100% 0)" }], { duration: 190, easing: "linear" })));
+  const blink = () => go(a, [{ "--blink": 0 }, { "--blink": 1, offset: .35 }, { "--blink": 1, offset: .45 }, { "--blink": 0 }], { duration: 260, easing: "linear" });
   /* walking: a real gait from the sliced legs. Diagonal pairs swing together (front left with back right, front right with back left): a paw lifts,
      reaches forward, plants and pushes back while the body rides up on each step. He turns, walks left as far as this screen's header lets him,
      looks about and comes back to his spot facing the Live chip. */
@@ -1908,7 +1932,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=24.5", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=25.1", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -3275,7 +3299,7 @@ function draw(tm) {
     const idni = S.mode === "live" && !S.simfeed && V === 1;   // the live testnet has one validator: IDNI's bootnode
     const yours = v === myNodeKey();   // the visitor's own simulated node, seated by its stake under proof of stake
     plate((idni ? "IDNI" : yours ? "You" : "V" + (i + 1)) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
-    hit(x, y, 40, () => health("validators") + (yours ? vt("Your node, sealing by stake: under proof of stake the six largest stakes take turns, and yours is one of them.\nClick to open your node.\n", `Your simulated node ${short(v)}: one of the ${TauSim.node.seats} largest stakes (o7 eligibility by stake).\nClick to open your node.\n`) : "") + vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."), null, yours ? () => TauSimNode.open() : null);
+    hit(x, y, 40, () => health("validators") + (yours ? vt("Your node, sealing by stake: under proof of stake the six largest stakes take turns, and yours is one of them.\nClick to open your node.\n", `Your simulated node ${short(v)}: one of the ${TauSim.node.seats} largest stakes (o7 eligibility by stake).\nClick to open your node.\n`) : "") + vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6).") + (yours ? "" : "\nClick to open its profile."), yours ? null : () => valProfile(v), yours ? () => TauSimNode.open() : null);
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
 
@@ -3569,7 +3593,8 @@ function detailValidator(v, i) {
   const sealed = S.blocks.filter(b => b.proposer === v).length, open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
   const hist = S.updates.slice(-6).reverse().map(u => `<li class="${u.votes.has(v) ? "ok" : ""}"><b>${esc(u.title)}</b> <span class="muted">${STATUS_TXT[u.status] || u.status}</span><br>${u.votes.has(v) ? "agreed ✓" : u.abstain && u.abstain.has(v) ? "not voting" : "no vote"}</li>`).join("");
   return { title: `Validator V${i + 1}`, html: `<p class="lead">${i === S.proposerIdx ? "Sealing the next block." : "Seals blocks in turn and votes on rule changes."} One of ${S.validators.length} validators; ${threshold()} must agree to change a rule.</p>${kvHtml({ "Public key": esc(v), Role: i === S.proposerIdx ? "proposing now" : "active", "Blocks sealed (recent)": sealed + " of the last " + S.blocks.length, "Open proposals": open.length })}
-    <h3>Votes on rule changes</h3>${hist ? `<ul>${hist}</ul>` : none}` };
+    <h3>Votes on rule changes</h3>${hist ? `<ul>${hist}</ul>` : none}
+    <p><a class="btn" href="${esc(valProfile(v))}">Open validator profile ›</a></p>` };
 }
 
 /* ---------- wide screens: scale the HUD to the viewport instead of stretching its columns ---------- */
