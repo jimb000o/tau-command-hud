@@ -1132,5 +1132,10 @@
   "tag": "Wallet",
   "on": "2026-10-29",
   "html": "Wallet in the simulation: what you send now lands on the shared simulated chain, the one every visitor sees. Pay another visitor by their address and they see it arrive in their wallet under their visitor name; offer them your rule and they can check and accept it; ask them to co-sign and they sign from their own wallet. Your payments show in everyone’s Explorer and Accounts. A vote from the wallet also counts as your visitor vote. Nothing reaches the real testnet, and the simulated chain starts over at 00:00 UTC."
+ },
+ {
+  "tag": "Wallet",
+  "on": "2026-10-29",
+  "html": "Wallet, easier to use: a grey button now says on the screen why it is grey. When both of the testnet’s rule places are taken, the page names who holds them and takes the rule you built into the simulation with one click. Every address now carries three check words, drawn from it, to compare out loud with its owner; a lookalike gets other words, and the lookalike warning now also catches addresses that copy only three characters at each end. Typing a limit ticks its rule block. Activity fits the panel: newest first, the rest in Accounts, and the lookalike lesson can be put away. On a phone the first button is on the first screen. In the simulation the signing card is amber, so it never passes for the real testnet. Testnet only, test AGRS have no value."
  }
 ]
