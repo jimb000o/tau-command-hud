@@ -57,6 +57,7 @@ Connect to `wss://node.tauhud.com`, send a command as text, get the node's JSON 
 | `presence` | relay | `{"online": n}`: pages connected right now |
 | `getbalance <addr>`, `getsequence <addr>`, `getaccountstate <addr>`, `getruleoffers <addr> [in\|out\|all]`, `getapprovalrequests <addr> [in\|out\|all]`, `getretractables <addr> [in\|out\|all]`, `getruleoffer <offer id>`, `getruleconflict <offer id>`, `gettxstatus <hash>` | node, cached 10 s | hex arguments only; global cap 2/s |
 | `sendtx <json>`, `checktx <json>` | node, never cached | the wallet's write door (tauhud.com/wallet/): a transaction the visitor's browser already signed, as one JSON object of at most 8 KB with `tx_type` in `user_tx`, `consensus_rule_vote`, `rule_offer`, `rule_offer_accept`, `rule_offer_reject`, `approval_request`, `transfer_vote`, `retractable_transfer`, `retract_transfer`, a 96-hex `sender_pubkey` and a 192-hex `signature`; `checktx` is the node's dry run (nothing is sent); both share 12/min per address (burst 6) and 60/min for everyone; content is never logged |
+| `leasetx <json>` | node `checktx` once, then kept | the wallet's pre-signed neutral clause for a fair turn on a personal-rule place (see `/lease` below); only that exact shape, same buckets as `sendtx` |
 
 | `report key=<32 hex> name=<name> height=<n> head=<64 hex> [tip=<n>\|none] [kit=<v>] [ref=<commit>]` | relay | community node heartbeat from `kit/heartbeat.py`, see below |
 
@@ -156,6 +157,18 @@ rules at 2 accounts chain-wide and has no command that lists them, so every 5 mi
 relay takes the candidates from its kept blocks (senders of an o5 rule, acceptors of an
 offer) and asks the node `getruleoffers` for each, one at a time. The wallet shows it as
 "x of 2 rule places taken".
+
+Fair turns on those places (`slotlease.py`). **The relay is not read-only here: it holds signed
+transactions and submits them on a timer.** Right after a visitor's wallet sends a rule, it signs
+the neutral clause (which frees the place) for the account's next sequence number and leaves it
+with the socket command `leasetx <json>`; the relay accepts only that exact transaction shape and
+checks it once with `checktx`. A turn lasts 24 h while nobody waits and 30 min while somebody is
+in line (`GET /lease/wait?pk=…`, three accounts per address, kept 3 h). After each rule poll the
+relay runs `checktx` again for a turn that is over and then `sendtx`, one at a time; a removal whose
+sequence number was used meanwhile is marked stale and never retried. The log names the holder
+and the transaction hash, never the payload. `GET /lease[?pk=…]` shows holders, their turns, the
+line and your place in it. Kept in `/data/slotlease.json`. Switch off without a rebuild:
+`SLOTLEASE_ENABLED=0` in `.env`, then `docker compose up -d relay`.
 
 `GET /peers` (CORS `*`, cached 30 s) is the network as our node sees it: every peer it
 talked to or heard of from another peer (a handshake's peer list) in the last 30 days,

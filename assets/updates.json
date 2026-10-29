@@ -1179,5 +1179,10 @@
   "tag": "Newspaper",
   "on": "2026-10-29",
   "html": "Newspaper: one sound switch. With Sound on, the café opens quietly as soon as you touch the page (or when you switch sound on), and Sound off closes it again. Turning the Café button up also turns the sound on, so \"Sound on\" never means silence."
+ },
+ {
+  "tag": "Wallet",
+  "on": "2026-10-29",
+  "html": "Wallet: fair turns on the testnet’s two rule places. Tau Testnet Alpha lets only two accounts hold a personal rule at a time, and whoever holds one keeps it until they remove it. Now, when you sign a rule in the wallet, it also signs the rule’s removal for later and leaves it with our relay. Your turn lasts a day while nobody waits; once someone joins the line, it ends 30 minutes after you took the place, and the relay sends the removal for you, even if your tab is closed. When both places are taken you can join the line, see your place in it, and the page tells you when a place is free."
  }
 ]

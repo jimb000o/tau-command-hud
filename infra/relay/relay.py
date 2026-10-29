@@ -37,6 +37,7 @@ from simpredict import SimPredict
 from simprops import SimProps
 from simvotes import SimVotes, name_of
 from simwallet import SimWallet
+from slotlease import SlotLease
 from visits import Visits
 
 log = logging.getLogger("tau-relay")
@@ -140,6 +141,9 @@ RULES_POLL = _env_float("RULES_POLL_SECONDS", 300)
 RULE_PLACES = _env_int("RULE_PLACES", 2)
 RULES_MAX_CHECKS = _env_int("RULES_MAX_CHECKS", 40)
 NEUTRAL_O5 = "(o5[t]:bv[24]={#x000001}:bv[24])"
+# Fair turns on those places (slotlease.py): the wallet leaves a pre-signed neutral clause here and the relay sends it
+# when the holder's turn is over. One switch turns it off on the server without a rebuild (docker compose up -d).
+SLOTLEASE_ENABLED = os.environ.get("SLOTLEASE_ENABLED", "1") not in ("0", "false", "no", "")
 CACHED = ("getmempool", "getgovernance", "gettaustate")
 # The wallet's write door. The visitor's browser builds and signs the
 # transaction (BLS, keys stay in the browser); the relay checks only its shape
@@ -323,6 +327,7 @@ class Relay:
         self.simvotes = SimVotes()   # visitor votes for the simulation (simvotes.py)
         self.simprops = SimProps(self.simvotes)   # rule changes visitors propose to the simulation (simprops.py)
         self.simwallet = SimWallet()   # the testnet wallet's transactions in simulation mode (simwallet.py)
+        self.lease = SlotLease(places=RULE_PLACES)   # fair turns on the personal-rule places (slotlease.py)
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
@@ -877,6 +882,26 @@ class Relay:
                     break
         self.rules_text = json.dumps({"places": RULE_PLACES, "taken": min(len(holders), RULE_PLACES), "holders": holders,
                                       "checked_at": round(time.time())}, separators=(",", ":"))
+        self.lease.set_holders(holders)
+        if SLOTLEASE_ENABLED:
+            await self.end_turns()
+
+    async def end_turns(self):
+        """Send the pre-signed removal of each holder whose turn is over: checked first, one at a time, after poll_rules."""
+        for addr, raw in self.lease.due():
+            chk = await self.upstream.request(f"checktx {raw}")
+            if not chk or chk.get("status") != "ok" or (chk.get("data") or {}).get("ok") is False:
+                why = str(((chk or {}).get("error") or {}).get("message") or "node not reachable")
+                if chk is not None:
+                    self.lease.sent(addr, False, "stale: " + why)
+                log.info("turn over for %s…: removal not sent (%s)", addr[:12], why[:80])
+                continue
+            res = await self.upstream.request(f"sendtx {raw}")
+            ok = bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
+            why = "" if ok else str(((res or {}).get("error") or {}).get("message") or "node not reachable")
+            if res is not None:
+                self.lease.sent(addr, ok, why)
+            log.info("turn over for %s…: removal %s %s", addr[:12], "sent" if ok else "refused", ((res or {}).get("data") or {}).get("tx_hash") or why[:80])
 
     @staticmethod
     def _tx_summary(t: dict) -> dict:
@@ -1086,6 +1111,9 @@ class Relay:
             self.lookup_cache[key] = (time.monotonic(), text)
             return text
 
+        if cmd == "leasetx":
+            return await self.lease_deposit(message[len(parts[0]):].strip(), ip)
+
         if cmd in WALLET_COMMANDS:
             return await self.wallet(cmd, message[len(parts[0]):].strip(), ip)
 
@@ -1109,6 +1137,23 @@ class Relay:
         if msg is None:
             return envelope_error(cmd, "Node is not reachable right now.", "UPSTREAM_DOWN")
         return json.dumps(msg, separators=(",", ":"))
+
+    async def lease_deposit(self, raw: str, ip: str) -> str:
+        """Keep a pre-signed neutral clause for the holder's turn (slotlease.py), once the node has checked it."""
+        if not SLOTLEASE_ENABLED:
+            return envelope_error("leasetx", "Turns on the rule places are switched off on this relay.", "FORBIDDEN")
+        tx, why = self.lease.check(raw)
+        if tx is None:
+            return envelope_error("leasetx", why, "INVALID_PARAMS")
+        mine = self.tx_per_ip.setdefault(ip, TokenBucket(TX_IP_BURST, TX_IP_REFILL))
+        if not mine.take() or not self.tx_bucket.take():
+            return envelope_error("leasetx", "Too many transactions from here; wait a minute.", "RATE_LIMITED")
+        chk = await self.upstream.request(f"checktx {raw}")
+        if chk is None:
+            return envelope_error("leasetx", "Node is not reachable right now.", "UPSTREAM_DOWN")
+        if chk.get("status") != "ok" or (chk.get("data") or {}).get("ok") is False:
+            return json.dumps({"status": "error", "command": "leasetx", "error": (chk.get("error") or {"message": "refused by the node"})}, separators=(",", ":"))
+        return json.dumps({"status": "ok", "command": "leasetx", "data": self.lease.deposit(raw, tx)}, separators=(",", ":"))
 
     # ---------- community nodes ----------
     def report(self, args: list[str], ip: str) -> str:
@@ -1602,6 +1647,12 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=30")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.peers_json().encode())
+        lease = self.lease.route(path, query, ip) if path.startswith("/lease") else None
+        if lease is not None:
+            headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
+            body = dict(lease[1], enabled=SLOTLEASE_ENABLED)
+            code = HTTPStatus(lease[0])
+            return Response(code.value, code.phrase, headers, json.dumps(body, separators=(",", ":")).encode())
         if path == "/rules":
             ready = self.rules_text is not None
             headers = Headers([("Content-Type", "application/json"),
