@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 
 TMP = tempfile.mkdtemp()
 os.environ.update(STATE_PATH=os.path.join(TMP, "alerts.json"), PUBLIC_DIR=TMP, TELEGRAM_BOT_TOKEN="", SITE_URL="https://tauhud.com")
+# the schedule this test walks through (the defaults are wider: 06-23 UTC, three a day, two hours apart, digests at 12 and 18)
+os.environ.update(SITE_POST_HOURS="8-20", SITE_MAJOR_DAILY_CAP="2", SITE_MAJOR_GAP_SECONDS="10800", SITE_DIGEST_HOURS="17")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alerts  # noqa: E402
 
@@ -150,6 +152,30 @@ w6 = alerts.Watcher([])
 w6.state.pop("site", None)
 run(w6, at("2026-10-28", "22:00"), marked)
 check([m["key"] for m in w6.state["site"]["majors"]] == ["major:missions"], "a major marked skip is never queued")
+
+# a backfilled entry is logged, never posted
+w7 = alerts.Watcher([])
+w7.state.pop("site", None)
+run(w7, at("2026-10-29", "09:00"), [])
+run(w7, at("2026-10-29", "09:30"), [dict(small("2026-10-26", "Relay", "Relay: an old change."), backfill=True),
+                                    dict(major("2026-10-29", "Node", "New: old.", "old-major", title="Old"), backfill=True)])
+check(w7.state["site"]["pending"] == [] and w7.state["site"]["majors"] == [], "backfilled entries are never posted")
+
+# two digest slots a day
+os.environ["SITE_DIGEST_HOURS"] = "12,18"
+import importlib  # noqa: E402
+alerts2 = importlib.reload(alerts)
+alerts2.Watcher.fetch_updates = lambda self: None
+tg8 = Fake()
+w8 = alerts2.Watcher([tg8])
+w8.state["site"] = {"seen": {}, "majors": [], "primed": True, "pending": [{"key": str(i), "at": at("2026-10-29", "09:00"), "area": "HUD", "line": "x.", "on": "2026-10-29"} for i in range(3)]}
+asyncio.run(w8.maybe_site(at("2026-10-29", "11:59")))
+asyncio.run(w8.maybe_site(at("2026-10-29", "12:01")))
+check(len(tg8.sent) == 1, "the 12:00 UTC digest")
+w8.state["site"]["pending"] = [{"key": str(i), "at": at("2026-10-29", "13:00"), "area": "HUD", "line": "y.", "on": "2026-10-29"} for i in range(3)]
+asyncio.run(w8.maybe_site(at("2026-10-29", "17:00")))
+asyncio.run(w8.maybe_site(at("2026-10-29", "18:05")))
+check(len(tg8.sent) == 2, "and the 18:00 UTC digest the same day")
 
 # the real log parses and its majors are complete
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "assets", "updates.json")) as f:

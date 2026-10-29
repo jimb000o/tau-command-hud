@@ -30,7 +30,7 @@ It also announces changes to Tau HUD itself, read from the site's own update
 log (assets/updates.json): an entry with a "major" field gets a post of its
 own (at most SITE_MAJOR_DAILY_CAP a day, SITE_MAJOR_GAP_SECONDS apart, only
 between SITE_POST_HOURS UTC); every other entry waits and goes into one
-digest post of the smaller changes at SITE_DIGEST_HOUR UTC, once enough
+digest post of the smaller changes at SITE_DIGEST_HOURS UTC, once enough
 have gathered. The first run only remembers what is already in the log,
 except majors from the last SITE_MAJOR_MAX_AGE_DAYS days, which are queued.
 
@@ -135,11 +135,11 @@ SIM_LINK = f"{SITE}/proposals/?mode=sim"
 SITE_ON = os.environ.get("SITE_UPDATES", "true").lower() in ("1", "true", "yes")
 SITE_UPDATES_URL = os.environ.get("SITE_UPDATES_URL", f"{SITE}/assets/updates.json")
 SITE_EVERY = float(os.environ.get("SITE_UPDATES_POLL_SECONDS", 600))
-SITE_MAJOR_DAILY_CAP = int(os.environ.get("SITE_MAJOR_DAILY_CAP", 2))
-SITE_MAJOR_GAP = float(os.environ.get("SITE_MAJOR_GAP_SECONDS", 3 * 3600))
+SITE_MAJOR_DAILY_CAP = int(os.environ.get("SITE_MAJOR_DAILY_CAP", 3))
+SITE_MAJOR_GAP = float(os.environ.get("SITE_MAJOR_GAP_SECONDS", 2 * 3600))
 SITE_MAJOR_MAX_AGE_DAYS = int(os.environ.get("SITE_MAJOR_MAX_AGE_DAYS", 3))
-SITE_POST_HOURS = tuple(int(x) for x in os.environ.get("SITE_POST_HOURS", "8-20").split("-"))  # UTC, start included, end not
-SITE_DIGEST_HOUR = int(os.environ.get("SITE_DIGEST_HOUR", 17))   # UTC
+SITE_POST_HOURS = tuple(int(x) for x in os.environ.get("SITE_POST_HOURS", "6-23").split("-"))  # UTC, start included, end not
+SITE_DIGEST_HOURS = tuple(int(x) for x in os.environ.get("SITE_DIGEST_HOURS", "12,18").split(","))   # UTC
 SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smaller changes wait for the next day…
 SITE_DIGEST_MAX_WAIT = float(os.environ.get("SITE_DIGEST_MAX_WAIT_DAYS", 7)) * 86400  # …but not longer than this
 SITE_DIGEST_LINES = 8
@@ -1451,6 +1451,8 @@ class Watcher:
             if k in seen:
                 continue
             seen[k] = round(now)
+            if e.get("backfill"):  # added to the log later for completeness: old news, not posted
+                continue
             if isinstance(e.get("major"), dict):
                 if e["major"].get("skip"):
                     log.info("site updates: major %s is marked skip, not posted", k)
@@ -1497,8 +1499,9 @@ class Watcher:
                 log.info("site updates: posted %s", m["key"])
             self.save_state()
             return  # one post per check: a digest never lands on top of a major
-        slot = datetime.fromtimestamp(now, timezone.utc).replace(hour=SITE_DIGEST_HOUR, minute=0, second=0, microsecond=0).timestamp()
-        due = st["pending"] and now >= slot and st.get("last_digest", 0) < slot and now - st.get("last_major", 0) >= 1800
+        d0 = datetime.fromtimestamp(now, timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+        slot = max((d0 + h * 3600 for h in SITE_DIGEST_HOURS if d0 + h * 3600 <= now), default=None)
+        due = st["pending"] and slot is not None and st.get("last_digest", 0) < slot and now - st.get("last_major", 0) >= 1800
         if due and (len(st["pending"]) >= SITE_DIGEST_MIN or now - st["pending"][0]["at"] >= SITE_DIGEST_MAX_WAIT):
             if await self.site_send(tg, digest_text(st["pending"]), digest_buttons(), now):
                 log.info("site updates: digest of %d posted", len(st["pending"]))

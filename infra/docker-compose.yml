@@ -109,11 +109,11 @@ services:
       RECAP_ENABLED: ${RECAP_ENABLED:-true}
       RECAP_WEEKDAY: ${RECAP_WEEKDAY:-0}
       RECAP_HOUR: ${RECAP_HOUR:-9}
-      # changes to Tau HUD itself, from assets/updates.json: "major" entries one post each, the rest in a 17:00 UTC digest
+      # changes to Tau HUD itself, from assets/updates.json: "major" entries one post each, the rest in digests at 12:00 and 18:00 UTC
       SITE_UPDATES: ${SITE_UPDATES:-true}
-      SITE_MAJOR_DAILY_CAP: ${SITE_MAJOR_DAILY_CAP:-2}
-      SITE_POST_HOURS: ${SITE_POST_HOURS:-8-20}
-      SITE_DIGEST_HOUR: ${SITE_DIGEST_HOUR:-17}
+      SITE_MAJOR_DAILY_CAP: ${SITE_MAJOR_DAILY_CAP:-3}
+      SITE_POST_HOURS: ${SITE_POST_HOURS:-6-23}
+      SITE_DIGEST_HOURS: ${SITE_DIGEST_HOURS:-12,18}
       # "Testnet today": the real chain's day in one evening post; practice votes are counted there, not posted one by one
       TESTNET_TODAY: ${TESTNET_TODAY:-true}
       TESTNET_TODAY_HOUR: ${TESTNET_TODAY_HOUR:-19}
