@@ -35,11 +35,16 @@ import relay  # noqa: E402
 
 HEAVY = {"getblocks", "getgovernance", "gettaustate"}
 mock = {"blocks": [], "heavy_violations": 0, "commands": [], "connections": 0, "mempool": []}
-ALICE, BOB = "ef" * 48, "12" * 48
+ALICE, BOB, CAROL = "ef" * 48, "12" * 48, "34" * 48
+CLAUSE = "always ( (i1[t]:bv[24] > { #x0003e8 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) )."
 
 
 def block(n, chain=0):
     txs = [{"tx_type": "user_tx", "sender_pubkey": ALICE, "operations": {"1": [[ALICE, BOB, "5"]]}}] if n % 3 == 1 else []
+    if n == 8:   # BOB gives his account a rule; CAROL accepted one and later signed the neutral rule
+        txs = [{"tx_type": "user_tx", "sender_pubkey": BOB, "operations": {"0": CLAUSE}}]
+    if n == 11:
+        txs = [{"tx_type": "rule_offer_accept", "sender_pubkey": CAROL, "offer_id": "aa" * 32}]
     return {"block_hash": f"{chain:04x}{n:060x}", "header": {"block_number": n, "timestamp": 1_700_000_000 + 70 * n,
             "proposer_pubkey": "ab" * 48, "state_hash": "cd" * 32}, "tx_ids": [f"{chain:04x}{n:060x}"[::-1]] * len(txs),
             "transactions": txs}
@@ -122,6 +127,11 @@ async def mock_node(ws):
             await ws.send(relay.envelope_ok(cmd, {"address": parts[1], "balance": 100000}))
         elif cmd in ("getapprovalrequests", "getretractables"):
             await ws.send(relay.envelope_ok(cmd, {"address": parts[1], "requests": [], "retractables": []}))
+        elif cmd == "getruleoffers":
+            body = {BOB: CLAUSE, CAROL: "(o5[t]:bv[24] = { #x000001 }:bv[24])"}.get(parts[1])
+            await ws.send(relay.envelope_ok(cmd, {"address": parts[1], "accepted_clauses": [{"target_stream": 5, "clause_body": body}] if body else []}))
+        elif cmd == "getruleconflict":
+            await ws.send(relay.envelope_ok(cmd, {"offer_id": parts[1], "verdict": "clean", "layers": []}))
         elif cmd in ("sendtx", "checktx"):
             tx = json.loads(msg[len(cmd):])
             await ws.send(relay.envelope_ok(cmd, {"ok": True, "tx_hash": "cd" * 32, "seen_type": tx["tx_type"]}))
@@ -226,6 +236,15 @@ async def main():
                 await ask(ws, c + " " + json.dumps(good))
                 check(sum(x.startswith(c + " ") for x in mock["commands"][before:]) == 2, f"{c} never cached")
             check((await ask(ws, "getapprovalrequests " + "ab" * 48 + " in"))["status"] == "ok", "wallet inbox lookup passes through")
+            check((await ask(ws, "getruleconflict " + "aa" * 32))["data"]["verdict"] == "clean", "conflict report passes through")
+            check((await ask(ws, "getruleconflict " + "aa" * 20))["status"] == "error", "conflict report needs a 64-hex offer id")
+            # /rules: the testnet's personal-rule places, from the kept blocks and the node's own answer
+            check(set(r.rule_candidates()) == {BOB, CAROL}, f"rule candidates from blocks {r.rule_candidates()}")
+            await r.poll_rules()
+            ctype, body = await get("/rules")
+            rules = json.loads(body)
+            check(ctype == "application/json" and rules["places"] == 2 and rules["holders"] == [BOB] and rules["taken"] == 1,
+                  f"/rules counts BOB, not CAROL's neutral rule {rules}")
             sent = [x for x in mock["commands"] if x.startswith("sendtx ")][-1]
             check(json.loads(sent[7:])["operations"]["0"] == good["operations"]["0"], "rule text with spaces arrives intact")
             for label, tx in (("proposal", {**good, "tx_type": "consensus_rule_update"}), ("no signature", {**good, "signature": "x"}),
