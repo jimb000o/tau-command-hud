@@ -22,7 +22,7 @@ with open(EVENTS, "w") as f:
 CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
 BOARD = os.path.join(os.path.dirname(EVENTS), "community.json")
 PEERS = os.path.join(os.path.dirname(EVENTS), "peers.json")
-os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 sys.path.insert(0, os.path.dirname(__file__))
@@ -367,6 +367,23 @@ async def main():
                 check(body3["online_sites"] == {"agorzilla": 1}, f"/status online_sites {body3.get('online_sites')}")
             seen = json.loads(await asyncio.wait_for(a.recv(), 3))
             check(seen["data"]["sites"] == {"agorzilla": 0}, "Agorzilla visitor left")
+
+        # the troll box: a joined page gets the history and the new messages of others; refusals go to the sender only
+        async with connect(url, additional_headers=origin) as a:
+            json.loads(await a.recv())
+            async with connect(url, additional_headers={**origin, "X-Forwarded-For": "198.51.100.11"}) as b:
+                json.loads(await b.recv())
+                json.loads(await asyncio.wait_for(a.recv(), 3))   # presence push for b
+                j = await ask(a, "chat join")
+                check(j["status"] == "ok" and j["data"]["enabled"] and j["data"]["messages"] == [], "chat join answers the empty room")
+                said = await ask(b, "chat say " + "ef" * 16 + " 0 1 2 gm%20everyone")
+                check(said["status"] == "ok" and said["data"]["sent"]["text"] == "gm everyone", "chat say posts a message")
+                pushed = json.loads(await asyncio.wait_for(a.recv(), 3))
+                check(pushed["command"] == "chat" and pushed["data"]["new"][0]["name"] == "Quiet Heron", "the joined page gets it pushed")
+                bad = await ask(b, "chat say " + "ef" * 16 + " 0 1 2 wen%20moon")
+                check(bad["status"] == "error" and bad["error"]["code"] in ("TALK", "SLOW"), f"price talk is refused {bad}")
+                body4 = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen("http://127.0.0.1:18766/chat", timeout=5).read()))
+                check([m["text"] for m in body4["messages"]] == ["gm everyone"], "GET /chat lists the room")
 
         # one person, several sockets: the same browser (address + user agent) counts once,
         # whatever token the page sends; a reconnect that overlaps with the old socket does

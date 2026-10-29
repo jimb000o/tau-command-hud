@@ -53,6 +53,9 @@ services:
       TAU_GOVERNANCE_OPEN_ADMISSION: "true"  # keep equal to the node setting above
       VISITS_KEY: ${VISITS_KEY:-}   # key of the visitor numbers report; empty: made once in /data/visits.key
       SLOTLEASE_ENABLED: ${SLOTLEASE_ENABLED:-1}   # fair turns on the rule places (relay/slotlease.py); 0 switches them off
+      CHAT_ENABLED: ${CHAT_ENABLED:-1}   # the troll box on the HUD (relay/chat.py); 0 closes the room
+      CHAT_KEY: ${CHAT_KEY:-}   # key of the troll box admin page /chat/admin; empty: made once in /data/chat.key
+      CHAT_BLOCK_WORDS: ${CHAT_BLOCK_WORDS:-}   # extra words the troll box refuses, comma separated
     volumes:
       # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH),
       # availability history for /uptime (UPTIME_PATH)
