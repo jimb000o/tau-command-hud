@@ -1231,5 +1231,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "HUD: a small Agorzilla breathes in the empty middle of the top line, wherever the header has room for it. Click to visit agorzilla.com, the creature the community feeds with real testnet transactions; its hover shows how often it was fed today and its stage, once agorzilla.com shares those numbers."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "HUD: Agorzilla in the header is bigger and stands exactly in the middle between the notice and the status chips, as tall as both header lines, with a soft shadow under his feet. Where something on the second line would be under him, he steps aside."
  }
 ]

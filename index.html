@@ -318,9 +318,12 @@ html.i18n-zh .ga-tx { text-align: left; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 /* Agorzilla: small, in the empty middle of the top line, breathing; it never makes the line taller */
 .agz { flex: 0 0 0; width: 0; height: 26px; margin: 0 auto; position: relative; line-height: 0; opacity: .9; transition: opacity .2s, filter .2s; }   /* takes no width: it can never push the chips to a new line */
-.agz > span { position: absolute; left: -14px; top: -7px; width: 28px; height: 40px; }
+.agz + .chips { margin-left: 0; }   /* the free space sits on both sides of it, so it stands exactly in the middle of the gap */
+.agz > span { position: absolute; left: -21px; top: -4px; width: 42px; height: 64px; }   /* as tall as both header lines, standing on the second */
+.agz > span::after { content: ""; position: absolute; left: 2px; right: 2px; bottom: -3px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.75), rgba(0,0,0,0)); }   /* a soft ground shadow: it stands, it does not float */
 .agz.cramped { visibility: hidden; }
-.agz img { height: 40px; width: auto; transform-origin: 50% 92%; animation: agzBreathe 4.2s ease-in-out infinite; }
+.agz img { position: relative; z-index: 1; height: 64px; width: auto; transform-origin: 50% 92%; animation: agzBreathe 4.2s ease-in-out infinite; }
+@media (max-width: 2299px) { .agz > span { left: -16px; top: -2px; width: 32px; height: 48px; } .agz img { height: 48px; } }
 .agz:hover { opacity: 1; filter: drop-shadow(0 0 8px rgba(57,255,138,.45)); }
 @keyframes agzBreathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.015, 1.035); } }
 @media (max-width: 1599px) { .agz { display: none; } }
@@ -912,7 +915,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   <header class="rail">
     <a class="brand" href="./" data-full="Back to the start: the HUD."><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></a>
     <button class="chip unoff" type="button" data-open="mAbout" data-full="Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Click for the full notice.">Unofficial community project · not affiliated with IDNI</button>
-    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><span><img src="assets/agorzilla.webp" alt="" width="27" height="40"></span></a>
+    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><span><img src="assets/agorzilla.webp" alt="" width="43" height="64"></span></a>
     <div class="chips">
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
@@ -1667,7 +1670,10 @@ const AGZ = { at: 0, d: null };
 function placeAgz() {   // shown only while the gap between the notice and the chips has room for it
   const a = $("agz"), u = document.querySelector(".rail .unoff"), c = document.querySelector(".rail .chips"); if (!a || !u || !c) return;
   const ur = u.getBoundingClientRect(), cr = c.getBoundingClientRect(), same = Math.abs(ur.top - cr.top) < 20;
-  a.classList.toggle("cramped", !same || cr.left - ur.right < 90);
+  let tight = !same || cr.left - ur.right < 110;
+  if (!tight) { a.classList.remove("cramped"); const r = a.firstElementChild.getBoundingClientRect();   // and nothing on the second line stands under it
+    tight = [...document.querySelectorAll(".tnav .tnav-l > *, .tnav .tnav-r > *, .tnav .tnav-nav > *")].some(e => { const q = e.getBoundingClientRect(); return q.width && q.left < r.right + 12 && q.right > r.left - 12 && q.top < r.bottom && q.bottom > r.top; }); }
+  a.classList.toggle("cramped", tight);
 }
 addEventListener("resize", placeAgz); addEventListener("load", placeAgz); setInterval(placeAgz, 3000);
 async function pollAgz() {
@@ -1704,7 +1710,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=22.6", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=22.7", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
