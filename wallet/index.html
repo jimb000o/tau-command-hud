@@ -71,7 +71,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
 .panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .panel h2 .aside { margin-left: auto; font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
-.simtag { font: 600 10px var(--display); letter-spacing: .14em; color: #000; padding: 1px 7px; border-radius: 3px; background: repeating-linear-gradient(135deg, var(--sim) 0 6px, #e09a2c 6px 12px); }
+.simtag { font: 600 11px var(--display); letter-spacing: .14em; color: #000; padding: 1px 7px; border-radius: 3px; background: repeating-linear-gradient(135deg, var(--sim) 0 6px, #e09a2c 6px 12px); }
 p { margin: 0; }
 .dim { color: var(--dim); }
 .note { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
@@ -187,7 +187,7 @@ footer a { color: var(--dim); }
 .toline .full { color: #fff; letter-spacing: .02em; }
 .toline .full span { margin-right: .5em; }
 .toline.alarm .full { color: var(--refused); }
-.flag { display: inline-block; font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; color: #000; background: var(--sim); border-radius: 3px; padding: 0 6px; margin-right: 6px; }
+.flag { display: inline-block; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: #000; background: var(--sim); border-radius: 3px; padding: 0 6px; margin-right: 6px; }
 .splits { display: grid; gap: 6px; }
 .splitrow { display: grid; grid-template-columns: minmax(0, 1fr) 8em auto; gap: 6px; align-items: center; }
 .splitrow button { background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 15px; padding: 0 6px; }
@@ -219,6 +219,25 @@ input.in.md, select.in.md { width: auto; max-width: 15em; padding: 3px 6px; disp
 .step b { color: var(--text); font-weight: 600; }
 .step .ck { color: var(--ok); font-weight: 700; }
 .step.done b { color: var(--dim); font-weight: 400; text-decoration: line-through; }
+/* a grey button says why on the screen, not only in its hover (touch has no hover) */
+.why2 { margin-top: 6px; color: var(--dim); font-size: 12px; }
+.why2:empty { display: none; }
+.why2 b { color: var(--text); font-weight: 600; }
+.why2 button.b { margin: 4px 0 0; display: block; }
+/* the simulation's signing card is amber and dashed, so it never passes for the real testnet */
+.sign.sim { border: 1px dashed rgba(255,177,59,.6); }
+.sign h3 .simtag { margin-left: 8px; vertical-align: 1px; letter-spacing: .14em; }
+/* check words: three words drawn from an address, to compare out loud with its owner */
+.words { color: var(--text); font: 12px var(--mono); white-space: nowrap; }
+.words i { font-style: normal; color: var(--dim); margin-right: 6px; }
+/* activity: one line per transaction you sent; time and hash in its hover */
+#log .item { padding: 4px 9px; }
+#log .item .dot { margin-top: 6px; }
+.item button.x { background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px; }
+.item button.x:hover { color: #fff; }
+.morelog { font-size: 12px; color: var(--dim); }
+/* on one screen the explanation under a waiting item keeps to one line; all of it is in the item's hover */
+html.fit #inbox .item .m { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 [hidden] { display: none !important; }
 /* landscape from laptop size up: one screen, laid out for about 1600 x 860 CSS px and scaled to the viewport, like /vote */
 html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
@@ -242,6 +261,16 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
   .bookadd #bAddr { grid-column: 1 / -1; grid-row: 2; }
   .splitrow { grid-template-columns: minmax(0, 1fr) 6em auto; }
   .chips button { min-height: 32px; }
+  /* phone: act first, read after. The intro shrinks to three lines (tap for all), the testnet notice runs as one paragraph,
+     and the panels stack account, send, rules, activity */
+  .sub { font-size: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
+  .sub.open { display: block; }
+  .testnet { display: block; padding: 6px 10px; line-height: 1.55; }
+  .testnet b { margin-right: 8px; }
+  .testnet span::before { margin: 0 6px 0 0; }
+  .testnet span { margin-right: 6px; }
+  .main > .col { display: contents; }
+  #acct { order: 1; } #act { order: 2; } #rules { order: 3; } #activity { order: 4; }
 }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
@@ -296,6 +325,7 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
             <div class="keyline"><span class="dot ok"></span><span>Key kept in this browser only</span></div>
           </div>
           <div class="balnote" id="balNote"></div>
+          <div class="balnote" id="myWords"></div>
           <div class="row">
             <button class="b" type="button" id="btnBackup">Back up key</button>
             <a class="b" id="lnkAcct" href="/account/" style="text-decoration:none;display:inline-flex;align-items:center;font:600 11px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--hair);border-radius:6px;padding:6px 11px;color:var(--text)">Open in Accounts</a>
@@ -376,6 +406,7 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
           <div class="probes" id="probes"></div>
           <details class="tau" id="draftTau"><summary>The rule in Tau</summary><pre id="draftText" translate="no"></pre></details>
           <div class="row"><button class="b go" type="button" id="btnRule" disabled>Sign this rule</button><button class="b" type="button" id="btnFreeze">Freeze</button><button class="b quiet" type="button" id="btnRuleOff" hidden>Remove my rule</button></div>
+          <div class="why2" id="ruleWhy"></div>
           <div class="result" id="ruleRes"></div>
         </div>
         <div id="rShare" hidden>
@@ -439,10 +470,17 @@ function saveBook() { store.set(BOOK_KEY, JSON.stringify(BOOK)); }
 const nameOf = a => { const c = BOOK.find(c => c.addr === a); return c ? c.name : null; };
 const tag = a => nameOf(a) || (SIM && TauSim.walletName && TauSim.walletName(a)) || short(a);   // in the simulation another visitor's wallet goes by their visitor name
 /* a lookalike shares its first or last characters with someone in your book but is not them: the address-poisoning trick */
+/* poisoners grind keys until a few characters at both ends match, because that is what people check: 3 at each end, or 5 at one, is enough to warn */
+const same = (a, b) => { let i = 0; while (i < a.length && a[i] === b[i]) i++; return i; };
 function lookalike(a) {
   if (!isAddr(a) || nameOf(a) || a === W.pk) return null;
-  return BOOK.find(c => (c.addr.slice(0, 4) === a.slice(0, 4) && c.addr.slice(-4) === a.slice(-4)) || c.addr.slice(0, 6) === a.slice(0, 6) || c.addr.slice(-6) === a.slice(-6)) || null;
+  const rev = x => [...x].reverse().join(""), ra = rev(a);
+  return BOOK.find(c => { const p = same(c.addr, a), q = same(rev(c.addr), ra); return (p >= 3 && q >= 3) || p >= 5 || q >= 5; }) || null;
 }
+/* check words: three words drawn from an address's hash. Two people compare them out loud; a lookalike that copies both ends still gets other words */
+const WORDS = "acorn amber anchor apple arrow atlas badge baker bamboo banjo barley basil beacon beaver berry bison blade blossom bonnet bottle bramble breeze brick bridge bronze brook bucket bugle cabin cactus camel candle canoe canyon carbon carrot castle cedar cello chalk cherry chess cider cinder circus clover cobalt comet copper coral cotton cougar crane crater cricket crystal cupola dahlia daisy delta denim desert dingo dolphin dragon drum eagle easel ember emerald engine falcon feather fennel fern fiddle flint forest fossil fox galaxy garden garnet gecko geyser ginger glacier goblet granite grape gravel guitar hammer harbor harp hazel heron hickory honey hornet husky iceberg igloo indigo iris island ivory jackal jade jaguar jasmine jelly jigsaw jungle kayak kernel kettle kiwi koala ladder lagoon lantern laurel lemon lilac lily linen lizard lobster locket lotus magnet mango maple marble meadow melon meteor mint mitten mosaic moss muffin nectar needle nickel nutmeg oak oasis olive onyx orbit orchid otter oyster paddle panda papaya parrot pebble pecan pelican pepper piano pine planet plum pollen poppy prism puffin pumpkin quartz quill rabbit radish raven reef ribbon river robin rocket rose ruby saddle saffron salmon sapphire satin shell sierra silver sparrow spruce squid statue stone summit sunset swan tango teapot thistle thunder tiger timber toucan tractor trumpet tulip tundra turtle umbrella valley velvet violet volcano walnut walrus willow window winter wizard yarrow yogurt zebra zenith zinc basket beetle bobcat cocoa cobra dune elm glove gopher jasper lark mammoth marsh opal osprey parsley quail rhubarb sable sequoia stork tapir topaz trout vanilla wombat yak nomad".split(" ");
+const words = a => { const h = B.sha256(new TextEncoder().encode(a)); return [h[8], h[9], h[10]].map(x => WORDS[x]).join(" · "); };
+const wordsEl = a => el("span", { class: "words", translate: "no" }, el("i", { text: T("check words") }), words(a));
 const lookalikeOf = a => a.slice(0, 8) + (S.hash("p1" + a) + S.hash("p2" + a)).slice(0, 84) + a.slice(-4);
 const resolveTo = v => { v = (v || "").trim(); if (isAddr(v.toLowerCase())) return v.toLowerCase(); const c = BOOK.find(c => c.name.toLowerCase() === v.toLowerCase()); return c ? c.addr : v.toLowerCase(); };
 /* the print: eight bars drawn from the address's hash, so two addresses that share their ends still look different */
@@ -498,6 +536,7 @@ document.querySelectorAll("#acctTabs button").forEach(b => b.addEventListener("c
 
 /* ---------- talking to the chain: the relay (live) or this browser's simulation ---------- */
 const L = { ws: null, retry: 5000, wait: new Map(), times: [] };
+const offlineNow = () => !SIM && $("state").classList.contains("off");
 function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = T(text); s.dataset.tip = tipText; }
 function connect() {
   if (SIM) { setState("sim", "Simulation", "Simulation\nA made-up chain, the same for every visitor.\nYour transactions land on it, and others see them.\nNothing reaches the real testnet."); return; }
@@ -525,6 +564,7 @@ function offline(why) {
   L.ws = null; for (const q of L.wait.values()) while (q.length) q.shift()(null);
   const w = L.retry; L.retry = Math.min(60000, w * 2);
   setState("off", "Offline", `Offline\nOur node is not reachable (${why}).\nRetrying in ${w / 1000} s; nothing can be sent until then.`);
+  if (W.pk) renderAll();
   setTimeout(connect, w);
 }
 /* one request, one answer: answers come back in order per command */
@@ -859,6 +899,7 @@ function toLine(a, look) {
   return el("div", { class: "toline" + (look ? " alarm" : "") },
     look ? el("span", { class: "flag", text: T("Lookalike") }) : null, print(a),
     n ? el("b", { translate: "no", style: "color:#fff;margin-right:8px", text: n }) : el("span", { style: "margin-right:8px", text: look ? FX("looks like {x}, but is not {x}'s address", {}, { x: look.name }) : T("not in your address book") }),
+    wordsEl(a), el("br"),
     el("span", { class: "full", translate: "no" }, ...a.match(/.{8}/g).map(g => el("span", { text: g }))));
 }
 /* what the card shows and whether the button may sign; one place for every check: show the object large, check it makes sense */
@@ -940,6 +981,7 @@ function planSplit(fee, sp, r) {
 let P = null;
 function renderSign() {
   P = plan();
+  $("sign").classList.toggle("sim", SIM);
   $("signWhat").replaceChildren(...P.what);
   $("signTo").replaceChildren(...(P.to ? [P.to] : []));
   const facts = [...P.facts, fact("", "Leaves this browser", T("only the signed transaction; your key stays here"))];
@@ -978,7 +1020,8 @@ function renderVote() {
   const box = $("props"), g = W.gov;
   if (TAB !== "vote") return;
   const open = (g && g.pending_updates) || [];
-  if (!open.length) { box.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("Nothing open right now.") }), " ", T(SIM ? "The simulation proposes a rule change every hour at 20 past." : "Testnet proposals are rare and agreed within minutes. Telegram @tauHUDcom posts each new one at once."))); return; }
+  if (!open.length) { box.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("Nothing open right now.") }), " ", T(SIM ? "The simulation proposes a rule change every hour at 20 past." : "Testnet proposals are rare and agreed within minutes. Telegram @tauHUDcom posts each new one at once."),
+    SIM ? null : el("button", { class: "b", type: "button", style: "display:block;margin-top:8px", text: T("Practise in the simulation"), onclick: () => toOtherMode("sim") }))); return; }
   if (!open.some(u => u.update_id === PICK)) PICK = open[0].update_id;
   box.replaceChildren(...open.slice(0, 4).map(u => {
     const yes = (g.votes || []).filter(v => v.update_id === u.update_id).length;
@@ -999,15 +1042,27 @@ document.querySelectorAll("#ruleTabs button").forEach(b => b.addEventListener("c
 }));
 const ONLY = new Set();   // the names picked for "only to"
 let seeded = null;        // the rule the builder was last filled from
-function seedBuilder(r) {
-  const key = r ? r.text : "";
-  if (seeded === key) return;
-  seeded = key;
-  if (!r || r.freeze || r.unknown) return;
+/* a rule carried over from the other mode ("Continue in the simulation"): it fills the builder once and wins over the rule read from the chain */
+const DRAFT_KEY = "tauhud-wallet-draft";
+let carried = (() => { try { const d = JSON.parse(store.get(DRAFT_KEY) || "null"); store.del(DRAFT_KEY); return d && typeof d === "object" ? d : null; } catch (e) { return null; } })();
+function fillBuilder(r) {
   $("cOnly").checked = !!r.only.length; ONLY.clear(); r.only.forEach(a => ONLY.add(a));
   $("cCap").checked = r.cap != null; if (r.cap != null) $("vCap").value = r.cap;
   $("cFrom").checked = r.from != null; if (r.from != null) { const d = new Date(r.from * 1000); $("vFrom").value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
   $("cCo").checked = !!r.co; if (r.co) { $("vCoAbove").value = r.co.limit; $("vCoWho").dataset.want = r.co.who[0]; }
+}
+function toOtherMode(mode) {   // keep the rule being built, then switch the whole site (the page reloads)
+  const d = ruleDraft();
+  if (d.ok) store.set(DRAFT_KEY, JSON.stringify(d.r));
+  if (window.TauSim && TauSim.set) TauSim.set(mode); else location.href = "?mode=" + mode;
+}
+function seedBuilder(r) {
+  const key = r ? r.text : "";
+  if (seeded === key) return;
+  seeded = key;
+  if (carried) { fillBuilder({ only: [], cap: null, from: null, co: null, ...carried }); carried = null; return; }
+  if (!r || r.freeze || r.unknown) return;
+  fillBuilder(r);
 }
 function ruleDraft() {
   const r = { freeze: false, only: [], cap: null, from: null, co: null }, bad = [];
@@ -1018,6 +1073,7 @@ function ruleDraft() {
   const any = r.only.length || r.cap != null || r.from != null || r.co;
   return { r, ok: !!any && !bad.length, bad, text: any ? buildRule(r) : null };
 }
+[["vCap", "cCap"], ["vFrom", "cFrom"], ["vCoAbove", "cCo"], ["vCoWho", "cCo"]].forEach(([v, c]) => $(v).addEventListener("input", () => { $(c).checked = true; }));
 ["cOnly", "cCap", "cFrom", "cCo", "vCap", "vFrom", "vCoAbove", "vCoWho"].forEach(id => $(id).addEventListener("input", () => { renderRule(); renderShare(); }));
 const slotsFull = () => !SIM && W.slots && W.slots.taken >= W.slots.places && !myRule() && !(W.slots.holders || []).includes(W.pk);
 /* test payments: what the rule on the screen would do, before anything is signed */
@@ -1040,7 +1096,7 @@ function renderRule() {
   if (W.clause !== undefined) seedBuilder(r);
   box.className = "rule" + (r ? " on" : "");
   if (!W.pk) box.replaceChildren(el("span", { class: "dim", text: T("Make your account first; then you can give it a rule.") }));
-  else if (W.clause === undefined) box.replaceChildren(el("span", { class: "dim", text: T("Reading your rule from the chain…") }));
+  else if (W.clause === undefined) box.replaceChildren(el("span", { class: "dim", text: T(offlineNow() ? "Our node is not reachable right now; your rule shows when it is back." : "Reading your rule from the chain…") }));
   else box.replaceChildren(el("span", { class: "t", text: (r ? T(r.freeze ? "Frozen" : "In force on this account") : T("No rule yet")) + "  " }), el("span", { class: "dim", style: "font-size:12px", text: describe(r).join(" ") }));
   /* the list picks: names from the address book */
   $("onlyChips").replaceChildren(...BOOK.slice(0, 8).map(c => el("button", { type: "button", "aria-pressed": ONLY.has(c.addr) ? "true" : "false", translate: "no", text: c.name,
@@ -1062,6 +1118,15 @@ function renderRule() {
     : T("Freeze") + "\n" + T("One click: nothing leaves this account until you unfreeze.") + "\n" + T("For a lost phone or a key you no longer trust.");
   $("btnRuleOff").hidden = !r || frozen;
   $("btnRuleOff").dataset.tip = T("Remove my rule") + "\n" + T("Signs the neutral rule: every payment goes through again.") + "\n" + T("Frees one of the testnet's two rule places.");
+  /* why a button is grey, on the screen: a hover never reaches a phone */
+  const why = [];
+  if (W.pk && W.clause !== undefined && slotsFull()) {
+    const held = (W.slots.holders || []).map(tag).join(T(" and "));
+    why.push(el("b", { text: T("Both of the testnet's rule places are taken right now.") }), " ",
+      held ? FX("They are held by {x}; the node refuses a new rule until one is removed.", {}, { x: held }) : T("The node refuses a new rule until one is removed."), " ", T("Build and test yours here, or take it into the simulation, where every account may have a rule."),
+      el("button", { class: "b", type: "button", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }));
+  } else if (W.pk && !d.ok && d.bad.length) why.push(FX("Missing: {x}", {}, { x: d.bad.join(", ") }));
+  $("ruleWhy").replaceChildren(...why);
 }
 async function sendRule(text, label, res) {
   res.className = "result wait"; res.textContent = T("Signing in your browser, then asking the node…");
@@ -1109,7 +1174,8 @@ function renderSlots() {
   $("slotNote").replaceChildren(el("b", { text: T("Real-chain limit: ") }), T(SIM
     ? "Tau Testnet Alpha holds rules for 2 accounts at a time, so a real Pakt binds you and one member. Here everyone may have a rule."
     : mine ? "one of the testnet's two rule places is yours. A Pakt binds you and one member." : s.taken >= s.places ? "both of the testnet's rule places are taken, so the node refuses a new rule until someone removes theirs. Build and test yours here meanwhile."
-    : "the testnet holds rules for 2 accounts at a time, so a Pakt binds you and one member. If both places are taken, the node says so before anything is sent."));
+    : "the testnet holds rules for 2 accounts at a time, so a Pakt binds you and one member. If both places are taken, the node says so before anything is sent."),
+    !SIM && !mine && s.taken >= s.places ? el("button", { class: "b", type: "button", style: "display:block;margin-top:6px", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }) : "");
 }
 
 /* ---------- Pakt: one rule, offered to every member for their own account ---------- */
@@ -1192,14 +1258,15 @@ $("btnPaktNew").onclick = () => { W.pakt = { members: [], sent: false }; savePak
 function renderPicks() {
   const mk = (list, fn) => list.map(c => el("button", { type: "button", translate: "no", "data-tip": c.name + "\n" + T("In your address book.") + "\n" + short(c.addr), text: "+ " + c.name, onclick: () => fn(c) }));
   const pool = BOOK.filter(c => c.addr !== W.pk);
-  $("toPicks").replaceChildren(...mk(pool.slice(0, 6), c => { $("to").value = c.name; renderSign(); }));
+  $("toPicks").replaceChildren(...(pool.length ? mk(pool.slice(0, 6), c => { $("to").value = c.name; renderSign(); })
+    : W.pk ? [el("button", { type: "button", text: T("+ Put someone in your address book first"), onclick: () => $("tabBook").click() })] : []));
   $("memPicks").replaceChildren(...(W.pakt && W.pakt.sent ? [] : mk(pool.filter(c => !(W.pakt && W.pakt.members.includes(c.addr))).slice(0, 4), c => addMember(c.addr))));
   $("bookNames").replaceChildren(...pool.map(c => el("option", { value: c.name })));
 }
 /* the address book itself */
 function renderBook() {
   $("tabBook").textContent = T("Address book") + (BOOK.length ? " · " + BOOK.length : "");
-  $("bookList").replaceChildren(...(BOOK.length ? BOOK.map(c => el("div", { class: "bk" }, who(c.addr),
+  $("bookList").replaceChildren(...(BOOK.length ? BOOK.map(c => el("div", { class: "bk" }, el("span", { style: "display:flex;flex-wrap:wrap;gap:2px 10px;align-items:center;min-width:0" }, who(c.addr), wordsEl(c.addr)),
     el("button", { type: "button", "aria-label": T("Remove"), "data-tip": T("Remove from your address book") + "\n" + F("{x} stays a valid address; only the name goes.", { x: c.name }), text: "×", onclick: () => { BOOK = BOOK.filter(x => x !== c); saveBook(); renderAll(); } })))
     : [el("div", { class: "empty" }, el("b", { text: T("No names yet.") }), " ", T("Add the people you pay. Then you pick a name instead of copying an address, and your rule can allow only them."))]));
   const n = $("bName").value.trim(), a = $("bAddr").value.trim().toLowerCase();
@@ -1209,6 +1276,7 @@ function renderBook() {
   const look = isAddr(a) && !dupe ? lookalike(a) : null;
   $("bookRes").className = "result " + (look || dupe ? "no" : "");
   $("bookRes").textContent = dupe && a && n ? (dupe.addr === a ? FX("Already in your book as {x}.", {}, { x: dupe.name }) : T("That name is taken.")) : look ? FX("Careful: this looks like {x}'s address but is a different one. Add it only if you checked it with them.", {}, { x: look.name }) : "";
+  if (isAddr(a) && !dupe) $("bookRes").append(" ", wordsEl(a), " ", T("Ask them to read their check words; add the address only if the three match."));
 }
 ["bName", "bAddr"].forEach(id => $(id).addEventListener("input", renderBook));
 $("btnBook").onclick = () => {
@@ -1255,10 +1323,12 @@ async function takeBack(t) {
 }
 function inboxItems() {
   const items = [], h = head();
-  if (W.dust) {
+  const dustOff = `tauhud-wallet-dust-off-${W.pk}`;
+  if (W.dust && !store.get(dustOff)) {
     const dz = W.dust;
     items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }),
-      el("span", { class: "t" }, el("span", { class: "flag", text: T("Lookalike") }), FX("{n} test AGRS from an address that looks like {x}'s", { n: dz.amount }, { x: dz.like.name })), el("span"),
+      el("span", { class: "t" }, el("span", { class: "flag", text: T("Lookalike") }), FX("{n} test AGRS from an address that looks like {x}'s", { n: dz.amount }, { x: dz.like.name })),
+      el("button", { class: "x", type: "button", "aria-label": T("Put away"), "data-tip": T("Put away") + "\n" + T("You know the trick now; the payment stays on the chain."), text: "×", onclick: () => { store.set(dustOff, "1"); renderActivity(); } }),
       el("span", { class: "m" }, print(dz.from), el("span", { translate: "no", text: short(dz.from) + "  " }), T("It wants a place in your history next to the real one. Never copy an address from here; pick the name."))));
   }
   for (const x of (W.recv || []).slice(0, 3)) {   // payments from other visitors' wallets on the shared simulated chain
@@ -1308,18 +1378,41 @@ function renderSteps() {
   ];
   const done = steps.filter(x => x[0]).length;
   $("steps").hidden = done === steps.length;
+  /* once something was sent, Activity has its own news: the list shrinks to the one next step */
+  const show = W.log.length ? steps.filter(x => !x[0]).slice(0, 1) : steps;
   $("steps").replaceChildren(el("h3", { text: F("First steps · {a} of {b} done", { a: done, b: steps.length }) }),
-    ...steps.map(([ok, t, x]) => el("div", { class: "step" + (ok ? " done" : "") }, el("span", { class: "ck", text: ok ? "✓" : "○" }), el("span", null, el("b", { text: T(t) }), " ", ok ? null : el("span", { text: T(x) })))));
+    ...show.map(([ok, t, x]) => el("div", { class: "step" + (ok ? " done" : "") }, el("span", { class: "ck", text: ok ? "✓" : "○" }), el("span", null, el("b", { text: T(t) }), " ", ok ? null : el("span", { text: T(x) })))));
 }
 function renderActivity() {
   const inbox = W.pk ? inboxItems() : [];
   $("inbox").replaceChildren(...inbox);
+  $("inbox").querySelectorAll(".item > .m").forEach(m => { m.dataset.tip = m.textContent; });
   const word = { queued: ["sim", "on its way"], in: ["ok", "in block #{a}"], out: ["off", "refused"] };
-  const rows = W.log.slice(0, 12).map(x => { const w = word[x.status] || word.queued; return el("div", { class: "item" + (x.status === "out" ? " bad" : "") }, el("span", { class: "dot " + w[0] }), el("span", { class: "t", text: x.label }), el("span", { class: "dim", style: "font-size:12px", text: F(w[1], { a: x.block ?? "?" }) }),
-    el("span", { class: "m", text: new Date(x.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + (x.hash ? " · " + short(x.hash) : "") + (x.why ? " · " + x.why : "") })); });
-  if (W.pk && !rows.length && !inbox.length) rows.push(el("div", { class: "empty" }, el("b", { text: T("Nothing yet.") }), " ", T(SIM ? "Send something to a simulated account or to another visitor, or wait a few blocks: someone may invite you into a Pakt." : "Send something, vote, or give your account a rule. Requests to co-sign and rules offered to you appear here too.")));
+  const rows = W.log.slice(0, 12).map(x => { const w = word[x.status] || word.queued, when = new Date(x.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+    return el("div", { class: "item" + (x.status === "out" ? " bad" : ""), "data-tip": x.label + "\n" + F(w[1], { a: x.block ?? "?" }) + "\n" + when + (x.hash ? " · " + short(x.hash) : "") },
+      el("span", { class: "dot " + w[0] }), el("span", { class: "t", text: x.label }), el("span", { class: "dim", style: "font-size:12px", text: F(w[1], { a: x.block ?? "?" }) }),
+      x.why ? el("span", { class: "m", text: x.why }) : null); });
+  if (W.pk && W.log.length) rows.push(el("a", { class: "morelog", href: "/account/?a=" + W.pk, hidden: W.log.length <= 12 ? "" : null, text: F("{n} earlier, and everything block by block: Accounts →", { n: Math.max(0, W.log.length - 12) }) }));
+  if (W.pk && !rows.length && !inbox.length) {
+    const other = (() => { try { return JSON.parse(store.get(`tauhud-wallet-log-${SIM ? "live" : "sim"}-${W.pk}`) || "[]").length; } catch (e) { return 0; } })();
+    rows.push(el("div", { class: "empty" }, el("b", { text: T("Nothing yet.") }), " ", T(SIM ? "Send something to a simulated account or to another visitor, or wait a few blocks: someone may invite you into a Pakt." : "Send something, vote, or give your account a rule. Requests to co-sign and rules offered to you appear here too."),
+      other ? " " + T(SIM ? "Your real-testnet history and address book stay with Live node; this is the simulation, a separate chain." : "Your simulation history and address book stay in the simulation; this is the real testnet, a separate chain.") : ""));
+  }
   $("log").replaceChildren(...rows);
   renderSteps();
+  fitLog();
+}
+/* on one screen the newest transactions fill the panel and the rest wait behind the link, so nothing hides in a scroll box */
+function fitLog() {
+  const box = $("activity"), more = $("log").querySelector(".morelog");
+  if (!more) return;
+  const items = [...$("log").querySelectorAll(".item")];
+  items.forEach(x => { x.hidden = false; });
+  let shown = items.length;
+  const label = () => { const n = W.log.length - shown; more.hidden = n <= 0; more.textContent = shown ? F("{n} earlier, and everything block by block: Accounts →", { n }) : F("Your {n} transactions, block by block: Accounts →", { n }); };
+  label();
+  if (!document.documentElement.classList.contains("fit")) return;
+  while (shown > 0 && box.scrollHeight > box.clientHeight + 1) { items[--shown].hidden = true; label(); }
 }
 
 /* ---------- account and key numbers ---------- */
@@ -1331,12 +1424,15 @@ function renderAccount() {
   $("lnkAcct").href = "/account/?a=" + W.pk;
   const sp = spendable();
   $("balN").textContent = sp == null ? "–" : fmt(sp);
-  $("balNote").textContent = W.bal == null ? T("Reading your balance…")
+  $("myWords").replaceChildren(wordsEl(W.pk));
+  $("myWords").dataset.tip = T("Your check words") + "\n" + T("Read them to someone who pays you.") + "\n" + T("Their wallet shows the same three for your address; a lookalike gets others.");
+  $("balNote").textContent = W.bal == null ? T(offlineNow() ? "Our node is not reachable right now; your balance shows when it is back." : "Reading your balance…")
     : W.chainBal === 0 ? T("0 on the chain so far: the testnet counts an account at 0 as 100,000 test AGRS when it pays.")
     : F("Sequence {n}: the number your next transaction carries.", { n: Math.max(W.seq || 0, nextSeq || 0) });
 }
 function renderKpis() {
   const r = myRule();
+  document.querySelector(".kpis").hidden = !W.pk;   // three dashes say nothing before there is an account
   $("tRule").textContent = !W.pk || W.clause === undefined ? "–" : r ? T("1") : T("no");
   $("kRule").classList.toggle("hot", !!r);
   const wait = W.pk ? (((W.offers && W.offers.incoming) || []).filter(o => o.status === "offered").length + ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending").length) : null;
@@ -1376,16 +1472,18 @@ function fit() {
   root.style.setProperty("--z", z);
   root.style.setProperty("--fitH", Math.floor(h / z) + "px");
 }
-addEventListener("resize", fit);
+addEventListener("resize", () => { fit(); fitLog(); });
 
 /* ---------- start ---------- */
 if (SIM) {
   $("sourceLine").textContent = T("Simulation: your key is real and signs as on the testnet, but every transaction lands on the shared made-up chain that every visitor sees, never on the real testnet. Switch to Live node in the header to use Tau Testnet Alpha.");
   TauSim.mark();
+  $("sign").querySelector("h3").append(el("span", { class: "simtag", text: T("Simulation") }));
   S.load();
   let seen = TauSim.head();
   setInterval(() => { const h = TauSim.head(); if (h !== seen) { seen = h; refresh(); } }, 1000);
 }
+$("sourceLine").addEventListener("click", e => e.currentTarget.classList.add("open"));
 fit();
 connect();
 loadBook();
