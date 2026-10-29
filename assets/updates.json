@@ -875,5 +875,10 @@
   "tag": "In numbers",
   "on": "2026-10-29",
   "html": "Tau HUD in numbers: the visitor charts switch between line and bars, a new 24H range shows the last day hour by hour, and the page tables show how long people typically stay on each page. Time on a page is kept only as a rough step such as “1–3 min”, still without cookies."
+ },
+ {
+  "tag": "v17.53",
+  "on": "2026-10-29",
+  "html": "In numbers and Privacy are back in the Learn menu, so they are easy to find on every page. They also stay at the end of every footer line; the small corner line on pages without a footer is gone."
  }
 ]

@@ -212,9 +212,5 @@ body[data-view="simple"] .vp { display: block; }
 @media (max-width: 1100px) { .tn-community { grid-template-columns: minmax(0, 1fr); } .tn-panel h2 { flex-wrap: wrap; row-gap: 2px; } .tn-panel h2 small { white-space: normal; flex: 1 1 140px; line-height: 1.35; } }
 @media (max-width: 700px) { .tn-modal { padding: 8px; } .tn-tgstrip { padding-right: 44px; } .tn-changes { max-height: none; overflow: visible; padding-right: 0; } .tn-btn { font-size: 11px; padding: 8px 12px; min-height: 36px; } }
 @media (max-width: 520px) { .tn-donate { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
-/* "In numbers · Privacy": footer links, or on a page without a footer a quiet line in the bottom right corner */
+/* "In numbers · Privacy" at the end of every footer line */
 a.tn-foot { color: inherit; }
-.tn-footc { position: fixed; right: 10px; bottom: 4px; z-index: 40; padding: 2px 6px; border-radius: 4px; background: rgba(11,11,14,.72); color: #7f7f8a; font: 11px/1.4 "JetBrains Mono", ui-monospace, monospace; }
-.tn-footc a.tn-foot { text-decoration: none; }
-.tn-footc a.tn-foot:hover, .tn-footc a.tn-foot:focus-visible { color: #ebebee; text-decoration: underline; }
-@media print { .tn-footc { display: none; } }

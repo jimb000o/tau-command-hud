@@ -1640,4 +1640,5 @@ TauI18n.add({ strings: {
   "Privacy": "隐私",
   "In numbers and Privacy moved out of the Learn menu into the footer: every page now ends its footer line with “In numbers · Privacy”, and pages without a footer, like the HUD, show the two as a small line in the bottom right corner. Nothing else moves.": "“数据一览”和“隐私”从“了解”菜单移到了页脚：每个页面的页脚行现在以“数据一览 · 隐私”结尾；没有页脚的页面（例如 HUD）会在右下角以一行小字显示这两个链接。其他内容不变。",
   "Tau HUD in numbers: the visitor charts switch between line and bars, a new 24H range shows the last day hour by hour, and the page tables show how long people typically stay on each page. Time on a page is kept only as a rough step such as “1–3 min”, still without cookies.": "数据一览：访客图表可在折线图和柱状图之间切换，新的 24 小时范围按小时显示最近一天，页面表格显示大家通常在每个页面停留多久。页面停留时间只保存为“1–3 分钟”这样的大致区间，同样不使用 Cookie。",
+  "In numbers and Privacy are back in the Learn menu, so they are easy to find on every page. They also stay at the end of every footer line; the small corner line on pages without a footer is gone.": "“数据一览”和“隐私”重新回到“了解”菜单，在每个页面上都很容易找到。它们也继续出现在每个页脚行的末尾；没有页脚的页面右下角的那行小字已移除。"
 } });
