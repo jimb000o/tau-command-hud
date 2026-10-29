@@ -81,9 +81,12 @@
     "Panda", "Tiger", "Whale", "Robin", "Bison", "Koala", "Gecko", "Moose", "Ibex", "Swan", "Yak", "Wren"];
   const ID_A_ZH = ["安静", "迅捷", "明亮", "沉着", "大胆", "聪明", "温和", "勇敢", "敏锐", "幸运", "快乐", "高贵", "耐心", "骄傲", "飞快", "无声", "稳重", "阳光", "睿智", "风趣", "果敢", "热切", "公正", "欢乐"];
   const ID_B_ZH = ["水獭", "苍鹭", "狐狸", "猫头鹰", "猞猁", "獾", "猎隼", "野兔", "狼", "渡鸦", "海豹", "仙鹤", "熊猫", "老虎", "鲸", "知更鸟", "野牛", "考拉", "壁虎", "驼鹿", "羱羊", "天鹅", "牦牛", "鹪鹩"];
+  const ID_A_JA = ["静かな", "素早い", "明るい", "落ち着いた", "大胆な", "賢い", "優しい", "勇敢な", "鋭い", "幸運な", "陽気な", "気高い", "辛抱強い", "誇り高い", "俊敏な", "無口な", "堅実な", "晴れやかな", "物知りの", "機知に富む", "果敢な", "熱心な", "公正な", "愉快な"];
+  const ID_B_JA = ["カワウソ", "サギ", "キツネ", "フクロウ", "オオヤマネコ", "アナグマ", "ハヤブサ", "ノウサギ", "オオカミ", "ワタリガラス", "アザラシ", "ツル", "パンダ", "トラ", "クジラ", "コマドリ", "バイソン", "コアラ", "ヤモリ", "ヘラジカ", "アイベックス", "ハクチョウ", "ヤク", "ミソサザイ"];
   const ID_COLOURS = ["#8fa3d9", "#b39ddb", "#d9a3c4", "#d9c49a", "#8fc7d9", "#a7a0d9", "#c4a3d9", "#c8c8d0"];
   const zhPage = () => document.documentElement.classList.contains("i18n-zh") || /^zh/i.test(document.documentElement.lang || "");
-  const nameOf = (a, b) => ID_A[a] == null || ID_B[b] == null ? (zhPage() ? "一位访客" : "A visitor") : zhPage() ? `${ID_A_ZH[a]}的${ID_B_ZH[b]}` : `${ID_A[a]} ${ID_B[b]}`;
+  const jaPage = () => /^ja/i.test(document.documentElement.lang || "");
+  const nameOf = (a, b) => ID_A[a] == null || ID_B[b] == null ? (zhPage() ? "一位访客" : jaPage() ? "ある訪問者" : "A visitor") : zhPage() ? `${ID_A_ZH[a]}的${ID_B_ZH[b]}` : jaPage() ? `${ID_A_JA[a]}${ID_B_JA[b]}` : `${ID_A[a]} ${ID_B[b]}`;
   let ME = null;
   // The identity is made in memory; it is written to this browser only once the visitor votes, forecasts or proposes
   // (me(true)), so just looking at the simulation stores nothing (TDDDG § 25).

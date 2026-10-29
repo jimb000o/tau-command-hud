@@ -1306,5 +1306,17 @@
   "tag": "In numbers",
   "on": "2026-10-29",
   "html": "Tau HUD in numbers: a new “Testnet transactions” split shows how much of the testnet's traffic comes from Agorzilla (meals and votes), from Tau HUD pages (wallet, playground, vote) and from elsewhere, counted by wallet, not by person. Below it, how many pages were opened from a link on the other site."
+ },
+ {
+  "tag": "Japanese",
+  "on": "2026-10-29",
+  "html": "Japanese version: the whole site now reads in 日本語; switch with the EN | 中文 | 日本語 pill in the header or open any page with ?lang=ja. Every HUD hover, the guided tours, the newspaper as its own Japanese edition, the press kit and the story at tauhud.com/story/ja are translated, and the choice is remembered. Colours stay as in English, green for good news.",
+  "major": {
+   "id": "japanese",
+   "title": "New: Tau HUD in Japanese",
+   "text": "The whole site now reads in 日本語: every page, every HUD hover, the guided tours, the newspaper and the story. Switch with EN | 中文 | 日本語 in the header.",
+   "link": "/?lang=ja",
+   "image": "/assets/shots/japanese.png"
+  }
  }
 ]

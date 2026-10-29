@@ -193,9 +193,9 @@ position:fixed;inset:0;z-index:85;background:rgba(3,8,13,.78);display:flex;align
     if (key) { const g = key === "send" ? body.querySelector(".tp-send") : body.querySelector(key[0] === "c" ? `[data-come="${key.slice(4)}"]` : `[data-n="${key.slice(1)}"]`); if (g) g.focus(); }
   }
 
-  /* Chinese: this sheet's dictionary is loaded on demand, the sheet draws again once it is there */
-  if (window.TauI18n && TauI18n.lang === "zh") {
-    const s = document.createElement("script"); s.src = new URL("i18n/zh/predict.js", document.currentScript ? document.currentScript.src : location.href).href;
+  /* Chinese and Japanese: this sheet's dictionary is loaded on demand, the sheet draws again once it is there */
+  if (window.TauI18n && TauI18n.lang !== "en") {
+    const s = document.createElement("script"); s.src = new URL("i18n/" + TauI18n.lang + "/predict.js", document.currentScript ? document.currentScript.src : location.href).href;
     s.onload = () => { lastHtml = ""; render(); }; document.head.append(s);
   }
 

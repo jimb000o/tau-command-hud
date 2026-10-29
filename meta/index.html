@@ -232,8 +232,8 @@ const $ = id => document.getElementById(id);
 const RELAY = "https://node.tauhud.com";
 const SAMPLE = new URLSearchParams(location.search).has("sample");
 const T = s => (window.TauI18n ? TauI18n.t(s) : s);
-const ZH = !!(window.TauI18n && TauI18n.lang === "zh");
-const fmt = n => Number(n).toLocaleString(ZH ? "zh-CN" : "en-US");
+const ZH = !!(window.TauI18n && TauI18n.lang === "zh"), LOC = { zh: "zh-CN", ja: "ja-JP" }[window.TauI18n && TauI18n.lang];
+const fmt = n => Number(n).toLocaleString(LOC || "en-US");
 const pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "–";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const DAY = 86400000;
@@ -256,7 +256,7 @@ const NAMES = { hud: "HUD", explorer: "Explorer", stats: "Stats", history: "Time
 const pageName = p => { const [a, b] = p.split("/"); return T(NAMES[a] || "/" + a + "/") + (b ? ` (${b})` : ""); };
 const pageHref = p => p.split("/")[0] === "agorzilla" ? "https://agorzilla.com/" : "/" + (p === "hud" ? "" : p + "/");
 const dayKey = t => new Date(t).toISOString().slice(0, 10);
-const dayLabel = (k, long) => new Date(k + "T00:00:00Z").toLocaleDateString(ZH ? "zh-CN" : "en-GB", long ? { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
+const dayLabel = (k, long) => new Date(k + "T00:00:00Z").toLocaleDateString(LOC || "en-GB", long ? { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
 
 /* made-up numbers to preview the page (?sample) */
 function sample() {
@@ -325,8 +325,8 @@ function rangeHours() {
   return out;
 }
 const hourLabel = t => String(new Date(t).getUTCHours()).padStart(2, "0") + ":00";
-const shortDate = t => new Date(t).toLocaleDateString(ZH ? "zh-CN" : "en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
-const monthDate = t => new Date(t).toLocaleDateString(ZH ? "zh-CN" : "en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
+const shortDate = t => new Date(t).toLocaleDateString(LOC || "en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+const monthDate = t => new Date(t).toLocaleDateString(LOC || "en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
 
 /* One line chart in the HUD's style: green line over a soft green fill, faint bars along the bottom for a second
    number (no axis of its own), hairline grid, a crosshair and a small card on hover.
@@ -510,7 +510,7 @@ function drawPages() {
   for (const [, d] of days) { vis += d[0]; for (const [p, v] of Object.entries(d[3] || {})) u[p] = (u[p] || 0) + v; for (const [p, v] of Object.entries(d[4] || {})) lang[p] = (lang[p] || 0) + v; for (const [p, v] of Object.entries(d[5] || {})) scr[p] = (scr[p] || 0) + v; addSteps(time, d[6]); }
   rows($("pages"), Object.entries(u).sort((a, b) => b[1] - a[1]).slice(0, 14), vis, true, time);
   $("pRange").textContent = $("wRange").textContent = range === 1 ? T("today") : range ? T(range === 365 ? "last year" : `last ${range} days`) : T("since counting began");
-  $("splits").innerHTML = (vis ? "" : `<p class="empty">${esc(T("The language split appears with the first visitors."))}</p>`) + split("Language", lang, { en: "English", zh: "Chinese" });
+  $("splits").innerHTML = (vis ? "" : `<p class="empty">${esc(T("The language split appears with the first visitors."))}</p>`) + split("Language", lang, { en: "English", zh: "Chinese", ja: "Japanese" });
   // pages opened from a link on our other site
   const cross = days.reduce((a, [, d]) => a + (d[7] || 0), 0);
   $("cross").innerHTML = `<div class="sp"><span>${esc(T("Between our two sites"))}</span><div class="note"><b>${fmt(cross)}</b> ${esc(T(site ? "pages opened from a link on tauhud.com" : "pages opened from a link on agorzilla.com"))}</div></div>`;
