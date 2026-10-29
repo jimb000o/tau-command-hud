@@ -1093,5 +1093,10 @@
    "link": "/",
    "image": "/assets/shots/share.png"
   }
+ },
+ {
+  "tag": "Findings",
+  "on": "2026-10-29",
+  "html": "Findings: corrected. IDNI has no official bug bounty program right now; it now and then gives ad hoc community rewards for useful findings and effort. The Findings page and its guided tour now say so. We report bugs because they help the testnet, and any reward is IDNI’s own call."
  }
 ]

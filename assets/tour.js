@@ -83,7 +83,7 @@
     findings: { name: "Findings", intro: "What broke while we ran a node for this site, what we reported to IDNI and what got fixed.", steps: [
       { s: "#tiles", t: "Filed, fixed, patched", x: "Issues filed with IDNI, bugs still open, fixes by IDNI and patches running in our node today." },
       { s: ".p-issues", t: "Filed with IDNI", x: "Every issue we reported, with its status live from GitHub. Click a finding for what broke, how we found it and what changed since." },
-      { s: ".p-report", t: "Found a bug yourself?", x: "IDNI runs a bug bounty for the testnet. Here is where to report it and what a report needs so it gets fixed." },
+      { s: ".p-report", t: "Found a bug yourself?", x: "IDNI has no official bounty program, but now and then gives ad hoc community rewards for useful findings and effort. Here is where to report a bug and what a report needs so it gets fixed." },
       { s: ".p-fixes", t: "Also patched in our node", x: "Fixes we run that have no IDNI issue of their own, each with what it does." },
     ] },
     chronicle: { name: "the Chronicle", intro: "Twelve years of Tau on one page, from Zennet in 2014 to a testnet that changes its own rules.", steps: [

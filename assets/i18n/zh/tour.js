@@ -125,7 +125,7 @@ TauI18n.add({ strings: {
   "Filed with IDNI": "已提交给 IDNI",
   "Every issue we reported, with its status live from GitHub. Click a finding for what broke, how we found it and what changed since.": "我们报告的每个问题，状态实时来自 GitHub。点击一项可看出了什么问题、我们如何发现，以及之后的变化。",
   "Found a bug yourself?": "你自己发现了缺陷？",
-  "IDNI runs a bug bounty for the testnet. Here is where to report it and what a report needs so it gets fixed.": "IDNI 为测试网设有漏洞赏金。这里告诉你在哪里报告，以及一份报告需要包含什么才能被修复。",
+  "IDNI has no official bounty program, but now and then gives ad hoc community rewards for useful findings and effort. Here is where to report a bug and what a report needs so it gets fixed.": "IDNI 目前没有官方的漏洞赏金计划，但会不时为有用的发现和付出发放临时的社区奖励。这里告诉你在哪里报告，以及一份报告需要包含什么才能被修复。",
   "Also patched in our node": "我们节点中的其他补丁",
   "Fixes we run that have no IDNI issue of their own, each with what it does.": "我们运行的、没有单独 IDNI 问题的修复，每一项都说明它的作用。",
   "the Chronicle": "编年史",
