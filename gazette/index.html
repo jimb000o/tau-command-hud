@@ -876,6 +876,8 @@ const EN = {
   /* the biggest type size at which the page still fits; a page never scrolls */
   function fit(pg) {
     if (!pg.firstElementChild) return;
+    /* a page that is not drawn right now (a leaf far from the open pages) measures as nothing: fit it when it comes back */
+    if (!pg.clientHeight) { const l = pg.closest(".leaf"); if (l) delete l.dataset.fit; return; }
     const base = MODE.ed === "broad" ? 15 : 15; pg.style.setProperty("--fs", base + "px");
     let lo = MODE.ed === "broad" ? 0.7 : 0.62, hi = MODE.ed === "broad" ? 1.28 : 1;
     const ok = k => { pg.style.setProperty("--k", k); const g = pg.querySelector(".grid"); return pg.scrollHeight <= pg.clientHeight + 1 && (!g || g.scrollHeight <= g.clientHeight + 1); };
