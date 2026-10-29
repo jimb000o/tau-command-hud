@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Site": "站点",
   "In numbers": "数据一览",
   "Tau HUD in numbers": "Tau HUD 数据一览",
   "How many people use this site: visitors per day, growth and the most visited pages": "有多少人在用这个网站：每日访客、增长和最常访问的页面",

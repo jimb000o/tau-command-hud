@@ -1216,5 +1216,10 @@
   "tag": "In numbers",
   "on": "2026-10-29",
   "html": "In numbers can now switch to Agorzilla, our second site at agorzilla.com: its visitors, counted the same cookie-free way and kept apart from Tau HUD's own numbers. The privacy notice covers agorzilla.com too."
+ },
+ {
+  "tag": "Findings",
+  "on": "2026-10-29",
+  "html": "Findings: a second fix is with IDNI. Two tests of time-based rules that were switched off in IDNI's checks pass on real Tau, so we asked to switch them back on. The page also lists our two newest requests, a free place for personal rules and a live consensus switch. With more findings than fit, each card shows its title and status and keeps the short summary for the hover."
  }
 ]
