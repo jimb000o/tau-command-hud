@@ -1745,5 +1745,6 @@ TauI18n.add({ strings: {
   "Watch: {n} blocks ahead of ours.": "注意：比我们的领先 {n} 个区块。",
   "Normal: in step with the chain.": "正常：与链同步。",
   "Every transaction the node still lists after it was sealed now turns amber in Chain core: the node itself answers \"waiting\" for them, so the page reads the blocks of the last hour and finds each one there. The nodes on the node orbit carry a status light in their hover too: Tau HUD's node is green while live and in step, amber while it catches up, red when it does not answer.": "节点在封装后仍继续列出的每笔交易，现在都会在 Chain core 中变成琥珀色：节点本身对它们回答“等待中”，所以页面会读取最近一小时的区块，并在其中逐笔找到它们。节点轨道上的节点在悬停时也带有状态灯：Tau HUD 的节点在实时且同步时为绿色，追赶时为琥珀色，没有响应时为红色。",
-  "The red mark a refused transaction leaves on the outer rim of Chain core now fades within a few seconds; nothing stays behind.": "被拒绝的交易在 Chain core 外圈留下的红色痕迹，现在几秒内就会淡去，不留任何痕迹。"
+  "The red mark a refused transaction leaves on the outer rim of Chain core now fades within a few seconds; nothing stays behind.": "被拒绝的交易在 Chain core 外圈留下的红色痕迹，现在几秒内就会淡去，不留任何痕迹。",
+  "The weekly Daily Consensus leads with the week's real news: a milestone such as Tau HUD going live, a rule change taking effect, the simulation switching consensus, new nodes. Ballots that only keep the rules get a small mystery of their own, and the Rehearsal Hall tells the simulation's week: votes, consensus switches, proposals refused at the door, the best tipster.": "每周的《共识日报》以本周真正的新闻作头条：例如 Tau HUD 上线这样的里程碑、生效的规则变更、模拟链切换共识、新节点。只维持现行规则的投票有一篇自己的小小谜案，“排练厅来稿”讲述模拟中的一周：投票、共识切换、被拒之门外的提案和最准的预测者。",
 } });
