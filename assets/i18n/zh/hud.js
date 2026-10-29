@@ -1735,5 +1735,14 @@ TauI18n.add({ strings: {
   "Never admitted: it left the queue without entering a block.": "从未被接纳：它离开了队列，没有进入任何区块。",
   "the rules said no": "规则说不",
   "Whatever the rules refuse bounces off it like off a shield.": "规则拒绝的一切都会像撞上盾牌一样被它弹开。",
-  "Refused transactions now bounce off the outer rim of Chain core, which works like a shield: each one flies in, knocks on the rim, which flashes where it is hit, and flies off again. A faint mark stays on the rim for a minute; hover it for the reason the rules said no, click it for the details. Live and in the simulation.": "被拒绝的交易现在会从 Chain core 的外圈弹开，外圈就像一面盾牌：每笔交易飞进来，撞上外圈，被撞的地方闪一下，然后再飞走。外圈上会留下一道淡淡的痕迹，持续一分钟；悬停可看到规则拒绝的原因，点击可查看详情。实时链和模拟中都会这样显示。"
+  "Refused transactions now bounce off the outer rim of Chain core, which works like a shield: each one flies in, knocks on the rim, which flashes where it is hit, and flies off again. A faint mark stays on the rim for a minute; hover it for the reason the rules said no, click it for the details. Live and in the simulation.": "被拒绝的交易现在会从 Chain core 的外圈弹开，外圈就像一面盾牌：每笔交易飞进来，撞上外圈，被撞的地方闪一下，然后再飞走。外圈上会留下一道淡淡的痕迹，持续一分钟；悬停可看到规则拒绝的原因，点击可查看详情。实时链和模拟中都会这样显示。",
+  "Problem: Tau HUD’s node is not answering right now.": "问题：Tau HUD 的节点现在没有响应。",
+  "Watch: {n} blocks behind the newest block; catching up.": "注意：落后最新区块 {n} 个区块；正在追赶。",
+  "Normal: live and in step with the network at block {n}.": "正常：实时运行，与网络同步于区块 {n}。",
+  "Normal: in step with the newest simulated block.": "正常：与最新的模拟区块同步。",
+  "Watch: at the same height, but on a different head than ours.": "注意：高度相同，但链头与我们的不同。",
+  "Watch: {n} blocks behind the newest block.": "注意：落后最新区块 {n} 个区块。",
+  "Watch: {n} blocks ahead of ours.": "注意：比我们的领先 {n} 个区块。",
+  "Normal: in step with the chain.": "正常：与链同步。",
+  "Every transaction the node still lists after it was sealed now turns amber in Chain core: the node itself answers \"waiting\" for them, so the page reads the blocks of the last hour and finds each one there. The nodes on the node orbit carry a status light in their hover too: Tau HUD's node is green while live and in step, amber while it catches up, red when it does not answer.": "节点在封装后仍继续列出的每笔交易，现在都会在 Chain core 中变成琥珀色：节点本身对它们回答“等待中”，所以页面会读取最近一小时的区块，并在其中逐笔找到它们。节点轨道上的节点在悬停时也带有状态灯：Tau HUD 的节点在实时且同步时为绿色，追赶时为琥珀色，没有响应时为红色。"
 } });

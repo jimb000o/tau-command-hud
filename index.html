@@ -1276,16 +1276,25 @@ const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
 const liveChain = () => S.mode === "live" && !S.simfeed, offline = () => liveChain() && LIVE.status !== "Connected";
 const SEALED = { h: -1, n: -1, ids: new Set() };
 function sealedIds() {
-  if (SEALED.h !== S.height || SEALED.n !== S.blocks.length || SEALED.k !== S.byHeight.size) {
-    SEALED.h = S.height; SEALED.n = S.blocks.length; SEALED.k = S.byHeight.size; SEALED.ids = new Set();
+  if (SEALED.h !== S.height || SEALED.n !== S.blocks.length || SEALED.k !== S.byHeight.size || SEALED.s !== SCAN.ids.size) {
+    SEALED.h = S.height; SEALED.n = S.blocks.length; SEALED.k = S.byHeight.size; SEALED.s = SCAN.ids.size; SEALED.ids = new Set();
     const add = b => { for (const t of (b && b.txs) || []) if (t && t.id) SEALED.ids.add(String(t.id).toLowerCase()); };
-    S.blocks.slice(-400).forEach(add); if (liveChain()) S.byHeight.forEach(add);
+    S.blocks.slice(-400).forEach(add); if (liveChain()) { S.byHeight.forEach(add); SCAN.ids.forEach(i => SEALED.ids.add(i)); }
   }
   return SEALED.ids;
 }
 /* A listed transaction whose block this page never loaded: the node answers gettxstatus one hash at a time (the relay keeps
    one request in flight), "confirmed" with its block number when it is in fact sealed. */
 const TXST = { st: new Map(), busy: "" };
+const SCAN = { ids: new Set(), lo: null, want: null, at: 0 };
+function scanBack() {   // 25 blocks at a time, further back while a listed transaction has no block yet, at most about two hours (100 blocks)
+  if (!liveChain() || SCAN.want != null || !LIVE.ws || LIVE.ws.readyState !== 1 || !S.blocks.length) return;
+  if (!S.mempool.some(t => sealedAt(t.id) == null)) return;
+  const low = Math.min(...S.blocks.map(b => b.n)), lo = SCAN.lo == null ? low : Math.min(SCAN.lo, low);
+  if (lo <= 0 || S.height - lo >= 100) return;
+  const from = Math.max(0, lo - 25); SCAN.want = from; liveSend(`getblockrange ${from} ${lo - from}`);
+  setTimeout(() => { if (SCAN.want === from) SCAN.want = null; }, 8000);
+}
 const sealedAt = id => { const k = String(id || "").toLowerCase(), v = TXST.st.get(k); return v && v.h != null ? v.h : sealedIds().has(k) ? true : null; };
 function askTxStatus() {
   if (!liveChain() || TXST.busy || !LIVE.ws || LIVE.ws.readyState !== 1) return;
@@ -1382,6 +1391,19 @@ const HEALTH = {
     return ["ok", N === 1 ? "Normal: 1 node checks every block and is in step." : `Normal: ${N} nodes check every block, all in step.`];
   },
 };
+/* one node on the node orbit: Tau HUD's own is green while live and in step, amber while it catches up, red when offline */
+function nodeHealth(n) {
+  if (offline()) return verdict("bad", n.kind === "hud" ? "Problem: Tau HUD’s node is not answering right now." : "Problem: no connection to a node.");
+  const d = n.height && S.height ? S.height - n.height : 0;
+  if (n.kind === "hud") {
+    const lag = syncLag(); if (lag) return verdict("watch", lag);
+    if (d > 5) return verdict("watch", `Watch: ${fmt(d)} blocks behind the newest block; catching up.`);
+    return verdict("ok", liveChain() ? `Normal: live and in step with the network at block #${fmt(S.height)}.` : "Normal: in step with the newest simulated block.");
+  }
+  if (n.agrees === false && Math.abs(d) <= 5) return verdict("watch", "Watch: at the same height, but on a different head than ours.");
+  if (Math.abs(d) > 5) return verdict("watch", d > 0 ? `Watch: ${fmt(d)} blocks behind the newest block.` : `Watch: ${fmt(-d)} blocks ahead of ours.`);
+  return verdict("ok", "Normal: in step with the chain.");
+}
 const healthOf = k => { try { return HEALTH[k] ? HEALTH[k]() : null; } catch (e) { return null; } };
 const health = k => { const r = healthOf(k); return r ? verdict(r[0], r[1]) : ""; };
 const CORE_LV = { mempool: "ok" };
@@ -1603,7 +1625,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.63", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.64", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2511,6 +2533,11 @@ function liveMessage(ev) {
       S.approvals.forEach(a => { if (a.status === "open" && a.expireAt && b.n >= a.expireAt) { a.status = "closed"; a.settledAt = b.n; } });
       ingestBlock(b, true);
     });
+  } else if (msg.command === "getblockrange" && SCAN.want != null && d.from === SCAN.want) {
+    SCAN.lo = SCAN.want; SCAN.want = null; SCAN.at = Date.now();
+    const where = new Map(); (d.blocks || []).forEach(raw => { const n = (raw.header || {}).block_number; (raw.tx_ids || []).forEach(i => { const k = String(i).toLowerCase(); SCAN.ids.add(k); where.set(k, n); }); });
+    S.mempool.forEach(t => { const h = where.get(t.id.toLowerCase()); if (h != null) { TXST.st.set(t.id.toLowerCase(), { h }); markSealed(t.id, h); } });
+    readouts(); setTimeout(scanBack, 200); return;
   } else if (msg.command === "getblockrange") {
     if (RIB.probe && d.from === 1) { RIB.probe = false; const h = ((d.blocks || [])[0] || {}).header || {}; if (h.timestamp) S.chainStart = h.timestamp; tickSubs(); return; }
     RIB.loading = false;
@@ -2526,7 +2553,7 @@ function liveMessage(ev) {
     if (TXST.st.size > 400) { const keep = new Set(S.mempool.map(t => t.id.toLowerCase())); TXST.st.forEach((v, k) => { if (!keep.has(k)) TXST.st.delete(k); }); }
     const listedIds = new Set(S.mempool.map(t => "tx_" + t.id.slice(0, 16)));
     document.querySelectorAll("#feed .tx.sealed").forEach(el => { const on = listedIds.has(el.id); if (el.classList.contains("listed") !== on) { el.classList.toggle("listed", on); el.title = on ? "Already in a block, but the node still lists it as waiting (known node bug, IDNI #81)" : ""; } });
-    askTxStatus(); pollRelayMem();
+    askTxStatus(); pollRelayMem(); scanBack();
     readouts();
   } else if (msg.command === "getgovernance") {
     if (Array.isArray(d.active_validators)) S.validators = d.active_validators.map(v => typeof v === "string" ? v : (v.pubkey || v.validator_pubkey || JSON.stringify(v)));
@@ -2597,7 +2624,7 @@ function refusedTx(x) {
 /* forget every block and transaction: on connect, and when the relay reports that the node wiped a dead chain ("reset": true) */
 function liveClear() {
   Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0, approvals: [], reorgs: [], eligMode: "", modeHistory: [] });
-  TXST.st.clear(); TXST.busy = ""; RMEM.at = 0; RMEM.M = 0;
+  TXST.st.clear(); TXST.busy = ""; RMEM.at = 0; RMEM.M = 0; SCAN.ids.clear(); SCAN.lo = null; SCAN.want = null;
   S.clauses = new Map(); S.byHeight = new Map(); S.memSeen = new Map(); S.chainStart = null; S.rulesLastBlock = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); DROP.seen.clear(); DROP.cards.clear(); DROP.first = true;
   $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
   RIB.back = false; RIB.target = null; RIB.loading = false; ribbonHold.length = 0;
@@ -2798,14 +2825,14 @@ function draw(tm) {
     const alone = S.mode === "live" && !S.simfeed && nodes.length === 1 && S.validators.length === 1;   // the whole visible network: IDNI's validator and us
     if (n.you) { hit(x, y, 24, () => vt(`Your node “${n.name}”, simulated in your browser, at #${fmt(n.height)}.\nIt checks every block for itself and made the node orbit after 10 min on the network; it stays 30 min after its last contact.\nUnder proof of stake its stake can win a seat among the validators.\nClick to open your node.`,
       `${n.name} (your simulated node): #${fmt(n.height)}, ${n.agrees ? "same head as the reference" : "behind the reference"}.\nListed by the 10/30 min presence rule; under eligibility_mode stake it competes for the ${TauSim.node.seats} stake seats (o7).\nClick to open your node.`), null, () => TauSimNode.open()); return; }
-    hit(x, y, 24, () => n.kind === "hud"
+    hit(x, y, 24, () => nodeHealth(n) + (n.kind === "hud"
       ? vt(`Tau HUD’s node: the node behind this page, at #${fmt(n.height)}.\nIt checks and keeps every block and serves what you see here; it seals nothing.${alone ? "\nRight now it is the only node besides IDNI’s validator: together they are the whole visible network." : ""}${S.mode === "live" && !S.simfeed ? "\nIt has applied as the second validator. " : "\n"}Click to open the Nodes page.`,
            `tauhud.com: the relay’s upstream node at #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}${n.tip ? ", network tip #" + fmt(n.tip) : ""}.\nServes this page over wss://node.tauhud.com (getblocks, getmempool, getgovernance); verifies every block, seals none.${alone ? "\nOnly node besides the IDNI validator (PoA, validator_set mode): the two are the whole visible network right now." : ""}${S.mode === "live" && !S.simfeed ? "\nValidator seat requested (BLS key submitted to IDNI). " : "\n"}Click to open the Nodes page.`)
       : n.kind === "kit"
       ? vt(`${n.name}: a community node run with the node kit.\nAt #${fmt(n.height)}, ${n.agrees ? "same head as Tau HUD’s node" : "a different head than Tau HUD’s node"}.\nLast report ${age}.\nClick to open the Nodes page.`,
            `${n.name} (node kit): #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}, ${n.agrees ? "agrees with" : "differs from"} the reference head${ahead > 0 ? `, ${fmt(ahead)} behind` : ""}.\nReported ${age}; a kit node reports once a minute.\nClick to open the Nodes page.`)
       : vt(`Another node on the Tau testnet${n.height ? `, at #${fmt(n.height)}` : ""}.\nIt keeps its own copy of the chain and checks every block for itself, independently of this page.\n${n.connected ? "In touch with our node right now" : "Known to our node"}; last seen ${age}.\nClick to open the Nodes page.`,
-           `Peer${n.id ? " " + n.id.slice(0, 8) + "…" + n.id.slice(-4) : ""}${n.height ? ": tip #" + fmt(n.height) : ""}${n.agrees == null ? "" : n.agrees ? ", same height as ours" : ", " + fmt(Math.abs(ahead)) + (ahead > 0 ? " behind us" : " ahead of us")}${n.first ? ", first seen " + fmtLogDate(new Date(n.first * 1000).toISOString().slice(0, 10)) : ""}.\nIndependent full node: verifies every block against the spec on its own.\n${n.connected ? "Connected to our node right now" : "Known to our node, not connected at the moment"}; last seen ${age}.\nClick to open the Nodes page.`), nodesHref);
+           `Peer${n.id ? " " + n.id.slice(0, 8) + "…" + n.id.slice(-4) : ""}${n.height ? ": tip #" + fmt(n.height) : ""}${n.agrees == null ? "" : n.agrees ? ", same height as ours" : ", " + fmt(Math.abs(ahead)) + (ahead > 0 ? " behind us" : " ahead of us")}${n.first ? ", first seen " + fmtLogDate(new Date(n.first * 1000).toISOString().slice(0, 10)) : ""}.\nIndependent full node: verifies every block against the spec on its own.\n${n.connected ? "Connected to our node right now" : "Known to our node, not connected at the moment"}; last seen ${age}.\nClick to open the Nodes page.`)), nodesHref);
   });
   ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}. Everything inside obeys it: validators sit on it, accounts and waiting transactions orbit within it, and every block is checked against it.\nWhatever the rules refuse bounces off it like off a shield.`,
     `Outer rim: the consensus spec, revision ${S.specRev} (o6 block validity, o7 proposer eligibility, o9 fee = ${S.fee} AGRS). Amended ${S.updates.filter(u => u.status === "active").length} time${S.updates.filter(u => u.status === "active").length === 1 ? "" : "s"} by agreement. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`));

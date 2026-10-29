@@ -996,5 +996,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Refused transactions now bounce off the outer rim of Chain core, which works like a shield: each one flies in, knocks on the rim, which flashes where it is hit, and flies off again. A faint mark stays on the rim for a minute; hover it for the reason the rules said no, click it for the details. Live and in the simulation."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Every transaction the node still lists after it was sealed now turns amber in Chain core: the node itself answers \"waiting\" for them, so the page reads the blocks of the last hour and finds each one there. The nodes on the node orbit carry a status light in their hover too: Tau HUD's node is green while live and in step, amber while it catches up, red when it does not answer."
  }
 ]
