@@ -1056,5 +1056,10 @@
   "tag": "Alerts",
   "on": "2026-10-29",
   "html": "Alerts on X: the alerts service can now post to X as @TauHUDcom, in short texts written for X: rule changes the users agree on, new nodes, “Testnet today”, new pages and features, and the Monday recap with the headline of the week’s paper. Practice votes, the smaller-updates digests and the simulation stay on Telegram. X posts carry no link (the link is in the profile) and stay within a few a day."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-29",
+  "html": "X posts read more easily: the headline comes first, then the text, then one quiet line that says where it comes from, with #TauNet. Where a picture fits, it goes along: a rule change gets its own card with what it does and the votes, a new node and “Testnet today” get the live overview, a new page gets its preview picture."
  }
 ]

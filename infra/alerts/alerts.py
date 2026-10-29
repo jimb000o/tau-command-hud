@@ -113,6 +113,10 @@ X_LINKS = os.environ.get("X_LINKS", "false").lower() in ("1", "true", "yes")
 X_DAILY_CAP = int(os.environ.get("X_DAILY_CAP", 8))
 X_MONTHLY_CAP = int(os.environ.get("X_MONTHLY_CAP", 120))
 X_SIM = os.environ.get("X_SIM", "false").lower() in ("1", "true", "yes")
+# A picture under the X post where one fits: the rule change's card and the live overview from the share service (share/),
+# a new page's own preview picture. Uploading it costs nothing extra; a picture that cannot be had leaves the text alone.
+X_PICTURES = os.environ.get("X_PICTURES", "true").lower() in ("1", "true", "yes")
+SHARE_HTTP = os.environ.get("SHARE_HTTP", "http://share:8070").rstrip("/")
 RELAY_HTTP = os.environ.get("RELAY_HTTP", "http://relay:8080")
 RECAP_ON = os.environ.get("RECAP_ENABLED", "true").lower() in ("1", "true", "yes")
 RECAP_WEEKDAY = int(os.environ.get("RECAP_WEEKDAY", 0))   # 0 = Monday
@@ -496,9 +500,13 @@ def telegram_text(item: dict) -> str:
     return "\n".join(out)
 
 
-X_REAL = "⛓ Tau Testnet Alpha · live chain"
+# An X post: the headline first, a blank line, the text (list lines stay together), a blank line, then one quiet
+# line that says where it comes from, with the hashtag. Simulation posts also open with their marker line.
+X_REAL = "⛓ Live from Tau Testnet Alpha"
 X_SIM_LINE = "🧪 SIMULATION · not the real testnet"
-X_SITE_NOTE = "(An update to the Tau HUD website, not testnet news.)"
+X_SIM_FOOT = "🧪 Simulation, not the real testnet"
+X_SITE_NOTE = "✨ Tau HUD website update, not testnet news"
+X_TAG = "#TauNet"
 
 
 def x_len(s: str) -> int:
@@ -508,31 +516,39 @@ def x_len(s: str) -> int:
                for c in s)
 
 
-def x_post(lines: list[str], link: str | None = None, keep: int = 2, foot: str | None = None) -> str:
-    """Lines as one post of at most 280: the last line loses sentences, then whole lines go (never the first `keep`), then it
-    is cut; `foot` always stays at the end. The link goes there only with X_LINKS (it makes a post 13 times dearer); #Tau always."""
-    tail = (f"\n{foot}" if foot else "") + (f"\n\n{link} #Tau" if link and X_LINKS else "\n\n#Tau")
+def x_join(lines: list[str]) -> str:
+    out = ""
+    for i, x in enumerate(lines):
+        out += x if i == 0 else ("\n" if x.startswith("• ") and lines[i - 1].startswith("• ") else "\n\n") + x
+    return out
+
+
+def x_post(lines: list[str], link: str | None = None, keep: int = 1, foot: str = X_REAL) -> str:
+    """Lines as one post of at most 280 (first line the headline): the last line loses sentences, then whole lines go
+    (never the first `keep`), then it is cut. `foot` and the hashtag always close it; the link joins them only with
+    X_LINKS (it makes a post 13 times dearer)."""
+    tail = "\n\n" + " · ".join(x for x in (foot, link if link and X_LINKS else None, X_TAG) if x)
     out = [" ".join(str(x).split()) for x in lines if x and str(x).strip()]
     if not X_LINKS:
         out = [re.sub(r"\s*https?://\S+", "", x) for x in out]
-    while out and x_len("\n".join(out) + tail) > 280:
+    while out and x_len(x_join(out) + tail) > 280:
         n = len(re.split(r"(?<=[.!?])\s+(?=[A-Z“\"(])", out[-1]))
         if n > 1:
             out[-1] = sentences(out[-1], n - 1)
         elif len(out) > keep:
             out.pop()
         else:
-            text = "\n".join(out)
+            text = x_join(out)
             while text and x_len(text + "…" + tail) > 280:
                 text = text[:-1]
             out = [text.rstrip(" ,;:.\n") + "…"]
-    return "\n".join(out) + tail
+    return x_join(out) + tail
 
 
 def x_text(item: dict) -> str:
     """A rule change on the real chain: the line that says so, the headline, then why it matters as far as it fits."""
     icon = ICONS.get(item["kind"], "•")
-    return x_post([X_REAL, f"{icon} {item['headline']}", item.get("why") or item.get("body")], item.get("link"))
+    return x_post([f"{icon} {item['headline']}", item.get("why") or item.get("body")], item.get("link"))
 
 
 def recap_x(r: dict) -> str:
@@ -542,8 +558,8 @@ def recap_x(r: dict) -> str:
             banner = (json.load(f).get("banner") or {}).get("en")
     except (OSError, ValueError, AttributeError):
         banner = None
-    return x_post([X_REAL, f"📊 Tau testnet weekly recap · {recap.period(r)}"] + [f"• {x}" for x in recap.lines(r, SITE)[:3]]
-                  + ([f"📰 This week's paper: {banner}"] if banner else []), f"{SITE}/stats/", keep=2)
+    return x_post([f"📊 Tau testnet weekly recap · {recap.period(r)}"] + [f"• {x}" for x in recap.lines(r, SITE)[:3]]
+                  + ([f"📰 This week's paper: {banner}"] if banner else []), f"{SITE}/stats/")
 
 
 def health_problems(h: dict) -> list[str]:
@@ -656,7 +672,7 @@ def newnode_x(n: dict, online: int) -> str:
     else:
         head = "🆕 A new node joined the Tau testnet"
         body = f"Our node has seen it for {fmt_dur(n['for'])}" + (f", at block #{fmt_n(n['head'])}" if n.get("head") else "") + "."
-    return x_post([X_REAL, head, f"{body} Nodes online now: {online}."], f"{SITE}/nodes/")
+    return x_post([head, f"{body} Nodes online now: {online}."], f"{SITE}/nodes/")
 
 
 # ---------- the simulation's consensus switches ----------
@@ -739,7 +755,8 @@ def sim_text(ev: dict, forecast: list[str] | None = None) -> str:
 def sim_x(ev: dict) -> str:
     """Only with X_SIM: the switch, marked as simulation first and last."""
     w, hm = SIM_WORDS[ev["kind"]], datetime.fromtimestamp(ev["in_force"], timezone.utc).strftime("%H:%M")
-    return x_post([X_SIM_LINE, w["headline"], f"In force at {hm} UTC unless the visitors vote no.", w["why"]], SIM_LINK, keep=3)
+    return x_post([X_SIM_LINE, w["headline"], f"In force at {hm} UTC unless the visitors vote no.", w["why"]], SIM_LINK, keep=3,
+                  foot=X_SIM_FOOT)
 
 
 def sim_buttons() -> dict:
@@ -797,7 +814,7 @@ def today_text(r: dict) -> str:
 def today_x(r: dict) -> str:
     day = datetime.fromtimestamp(r["end"], timezone.utc)
     pace = f", one every {round(r['pace'])} seconds" if r["pace"] else ""
-    out = [X_REAL, f"📋 Testnet today, {day.day} {day.strftime('%B')}", f"• {plural(r['blocks'], 'block')}{pace}"]
+    out = [f"📋 Testnet today, {day.day} {day.strftime('%B')}", f"• {plural(r['blocks'], 'block')}{pace}"]
     if r["txs"]:
         out.append(f"• {plural(r['txs'], 'transaction')} from {plural(r['senders'], 'account')}")
     out += [f"• {h}" for h in r["events"]]
@@ -806,7 +823,7 @@ def today_x(r: dict) -> str:
     if r["online"]:
         out.append(f"• {plural(r['online'], 'node')} online")
     out += [f"Coming up: {c['title']} at block #{fmt_n(c['at'])}{c['eta']}." for c in r["coming"][:1]]
-    return x_post(out, f"{SITE}/", keep=3)
+    return x_post(out, f"{SITE}/", keep=2)
 
 
 def today_buttons() -> dict:
@@ -872,14 +889,14 @@ def major_text(m: dict) -> str:
 
 def major_x(m: dict) -> str:
     t = re.sub(r"^New:\s*", "", m["title"])
-    return x_post([f"✨ New on Tau HUD: {t[:1].upper() + t[1:]}", m["text"]], m["link"], keep=1, foot=X_SITE_NOTE)
+    return x_post([f"New on Tau HUD: {t[:1].upper() + t[1:]}", m["text"]], m["link"], foot=X_SITE_NOTE)
 
 
 def catchup_x(majors: list[dict]) -> str:
     """One X post for a backlog: the new pages by name, as many as fit."""
     names = [re.sub(r"^New:\s*", "", m["title"]) for m in majors]
-    head = f"✨ {plural(len(majors), 'new page or feature', 'new pages and features')} on Tau HUD"
-    return x_post([head] + [f"• {n[:1].upper() + n[1:]}" for n in names], SITE_LOG_LINK, keep=1, foot=X_SITE_NOTE)
+    head = f"{plural(len(majors), 'new page or feature', 'new pages and features')} on Tau HUD"
+    return x_post([head] + [f"• {n[:1].upper() + n[1:]}" for n in names], SITE_LOG_LINK, foot=X_SITE_NOTE)
 
 
 def major_buttons(m: dict) -> dict:
@@ -1086,17 +1103,29 @@ class X(Outlet):
                                      headers={"Content-Type": "application/json", "Authorization": self.auth_header()})
         return self.call(req)
 
-    def send_photo(self, png, r):
-        body, ctype = multipart({"media_category": "tweet_image"}, {"media": ("recap.png", png, "image/png")})
+    def upload(self, png: bytes, name: str = "picture.png") -> tuple[str | None, float | None, str]:
+        body, ctype = multipart({"media_category": "tweet_image"}, {"media": (name, png, "image/png")})
         req = urllib.request.Request(self.UPLOAD, data=body,
                                      headers={"Content-Type": ctype, "Authorization": self.auth_header(self.UPLOAD)})
         ok, retry, err, reply = self.call(req, want_reply=True)
         if not ok:
-            return ok, retry, "media upload " + err
+            return None, retry, "media upload " + err
         media_id = str((reply.get("data") or {}).get("id") or reply.get("media_id_string") or "")
+        return (media_id, None, "") if media_id else (None, None, "media upload: no id")
+
+    def send_photo(self, png, r):
+        media_id, retry, err = self.upload(png, "recap.png")
         if not media_id:
-            return False, None, "media upload: no id"
+            return False, retry, err
         return self.send_text(recap_x(r), media_id)
+
+    def send_with_picture(self, text: str, picture: str | None) -> tuple[bool, float | None, str]:
+        """The text with the picture at `picture` (a URL) when it can be fetched and uploaded, else the text alone."""
+        png = fetch_picture(picture) if picture and X_PICTURES else None
+        media_id = self.upload(png)[0] if png else None
+        if png and not media_id:
+            log.info("x: picture %s not uploaded, posting the text alone", picture)
+        return self.send_text(text, media_id)
 
     def call(self, req, want_reply=False):
         try:
@@ -1120,7 +1149,39 @@ class X(Outlet):
         return res + ({},) if want_reply else res
 
     def send(self, item):
-        return self.send_text(x_text(item))
+        return self.send_with_picture(x_text(item), item_picture(item))
+
+
+def fetch_picture(url: str) -> bytes | None:
+    """A PNG or JPEG of at most 5 MB (X's limit for pictures), or None."""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "tauhud-alerts"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = r.read(5 * 2**20 + 1)
+    except (urllib.error.URLError, OSError, ValueError) as exc:
+        log.info("x: no picture from %s (%r)", url, exc)
+        return None
+    ok = data[:8] == b"\x89PNG\r\n\x1a\n" or data[:3] == b"\xff\xd8\xff"
+    return data if ok and len(data) <= 5 * 2**20 else None
+
+
+def item_picture(item: dict) -> str:
+    """A rule change: its own card (what it does, the votes, the countdown); a restart: the live overview."""
+    pid = str(item.get("id") or "")
+    return f"{SHARE_HTTP}/og/proposal/{pid}.png" if item.get("kind") != "restart" and re.fullmatch(r"[0-9a-f]{8,64}", pid) \
+        else f"{SHARE_HTTP}/og/hud.png"
+
+
+def page_picture(link: str) -> str | None:
+    """A Tau HUD page's own preview picture (og:image), unless it is the site's general one."""
+    try:
+        req = urllib.request.Request(link, headers={"User-Agent": "tauhud-alerts"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            m = re.search(r'<meta[^>]+property="og:image"[^>]+content="([^"]+)"', r.read(200_000).decode("utf-8", "replace"))
+    except (urllib.error.URLError, OSError, ValueError):
+        return None
+    url = m.group(1) if m else None
+    return url if url and not url.rstrip("/").endswith("/og.png") else None
 
 
 # ---------------- feed and tracker data ----------------
@@ -1389,7 +1450,7 @@ class Watcher:
         st = self.state["x"]
         st["today"], st["this_month"] = st.get("today", 0) + 1, st.get("this_month", 0) + 1
 
-    async def post_x(self, text: str, what: str, now: float | None = None) -> bool:
+    async def post_x(self, text: str, what: str, now: float | None = None, picture: str | None = None) -> bool:
         """The X copy of a post that just went to Telegram. One try: X never holds Telegram up, and a post that failed is
         not sent hours late; over the caps it is left out."""
         o = self.x_on()
@@ -1398,7 +1459,10 @@ class Watcher:
         if not self.x_room(now):
             log.info("x: %s not posted (daily or monthly cap, or paused)", what)
             return False
-        ok, retry, err = await asyncio.to_thread(o.send_text, text)
+        if picture and hasattr(o, "send_with_picture"):
+            ok, retry, err = await asyncio.to_thread(o.send_with_picture, text, picture)
+        else:
+            ok, retry, err = await asyncio.to_thread(o.send_text, text)
         if ok:
             self.x_count()
             log.info("posted to x: %s", what)
@@ -1512,7 +1576,7 @@ class Watcher:
                         return
                 st["day"], st["posted"] = day, posted + 1
                 log.info("newnodes: posted %s", n["key"])
-                await self.post_x(newnode_x(n, nodes_online(peers, board)), "new node " + n["key"], now)
+                await self.post_x(newnode_x(n, nodes_online(peers, board)), "new node " + n["key"], now, f"{SHARE_HTTP}/og/hud.png")
             else:
                 log.info("newnodes: %s recorded without a post (%s)", n["key"], "daily cap" if tg else "telegram off")
             known[n["key"]] = round(now)
@@ -1580,7 +1644,7 @@ class Watcher:
                     return
             log.info("testnet today posted")
             st["slot"] = slot  # recorded before X: a failed X copy must not repeat the Telegram post
-            await self.post_x(today_x(r), "testnet today", now)
+            await self.post_x(today_x(r), "testnet today", now, f"{SHARE_HTTP}/og/hud.png")
         else:
             log.info("testnet today: a quiet day, no post")
         st["slot"] = slot
@@ -1667,7 +1731,7 @@ class Watcher:
                 st["last_major"] = round(now)
                 log.info("site updates: posted %s", m["key"])
                 self.save_state()
-                await self.post_x(major_x(m), "site " + m["key"], now)
+                await self.post_x(major_x(m), "site " + m["key"], now, await asyncio.to_thread(page_picture, m["link"]))
             self.save_state()
             return  # one post per check: a digest never lands on top of a major
         d0 = datetime.fromtimestamp(now, timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
@@ -1926,10 +1990,12 @@ def x_test() -> int:
     if not o.enabled():
         print("x: off (X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN and X_ACCESS_SECRET are not all set in .env)")
         return 1
-    ok, _, err = o.send_text(x_post([X_REAL, "✅ Tau HUD is connected to X",
+    ok, _, err = o.send_text(x_post(["✅ Tau HUD is connected to X",
                                      "This account will post when the users of the Tau testnet agree on a rule change, when a new node "
                                      "joins, and once a day what happened on the chain."]))
-    print("x: sent, look at your profile" if ok else "x: FAILED " + err + X_HINTS.get(err.split(":")[0], ""))
+    hint = "\n   X refuses the same text twice: the earlier test post went out, all is well." if "duplicate" in err \
+        else X_HINTS.get(err.split(":")[0], "")
+    print("x: sent, look at your profile" if ok else "x: FAILED " + err + hint)
     return 0 if ok else 1
 
 
