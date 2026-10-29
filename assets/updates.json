@@ -1041,5 +1041,10 @@
   "tag": "Newspaper",
   "on": "2026-10-29",
   "html": "Newspaper typesetting: drop caps now sit exactly three lines deep, top on the first line and foot on the third, with the rest of the first word in small capitals. Headlines break into even lines and never leave one word alone on the last; body text avoids lone last words, lone lines at the top of a column and runs of hyphens. Chinese pages open every paragraph with a two-character indent and no drop caps. A small line from the composing room under the Stop press: the paper is set with learning machines that can guess wrong, while Tau checks every rule by logic."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Chain core hovers read the same way everywhere: the element's name first with its status light, then one verdict, then at most two short lines. The personal money rules got their own light, and the tiles below the core follow the same order."
  }
 ]

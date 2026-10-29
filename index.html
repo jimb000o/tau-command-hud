@@ -132,12 +132,16 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 #ovl { position: fixed; z-index: 70; max-width: min(520px, 90vw); padding: 8px 12px; white-space: pre-line; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
 #ovl[hidden] { display: none; }
 /* a hover that judges the state opens with a status light and one verdict line: green normal, amber watch or in progress, red only for a real problem */
-#ovl .hv { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--hair); font-weight: 600; color: #fff; white-space: normal; }
+#ovl .hvh { margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--hair); white-space: normal; }
+#ovl .hvh.solo { margin: 0; padding: 0; border: 0; }
+#ovl .hv { display: flex; align-items: baseline; gap: 8px; font-weight: 600; color: #fff; }
+#ovl .hv.nl::before { display: none; }
+#ovl .hvv { margin-top: 2px; color: var(--text); }
 #ovl .hv::before { content: ""; flex: 0 0 auto; width: .7em; height: .7em; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); }
 #ovl.hv-busy .hv::before, #ovl.hv-watch .hv::before { background: var(--behind); box-shadow: 0 0 8px var(--behind); }
 #ovl.hv-watch { border-color: rgba(255,177,59,.5); }
 #ovl.hv-bad { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad), 0 16px 40px -10px rgba(0,0,0,.9); }
-#ovl.hv-bad .hv { color: var(--bad); }
+#ovl.hv-bad .hvv, #ovl.hv-bad .hv:only-child { color: var(--bad); }
 #ovl.hv-bad .hv::before { background: var(--bad); box-shadow: 0 0 10px var(--bad); animation: blink 1.2s infinite; }
 .blk { cursor: pointer; }
 .blk:hover { border-color: var(--cyan); }
@@ -1635,7 +1639,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.71", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.73", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2089,14 +2093,14 @@ function readouts() {
   const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
   $("rT").textContent = pace != null ? fmtSec(pace) : "—";
   $("rTw").dataset.full = pace != null
-    ? (live ? `Average of the last ${S.blockTimes.length} block${S.blockTimes.length === 1 ? "" : "s"}; the last took ${fmtSec(S.lastInterval)}.\nThe countdown shows when the next is due.` : `Average of the last ${S.blockTimes.length} simulated block intervals.`)
-    : (live ? "Needs two consecutive blocks with timestamps before a pace can be measured." : "Measured once the first blocks are sealed.");
+    ? "Block pace\n" + (live ? `Average of the last ${S.blockTimes.length} block${S.blockTimes.length === 1 ? "" : "s"}; the last took ${fmtSec(S.lastInterval)}.\nThe countdown shows when the next is due.` : `Average of the last ${S.blockTimes.length} simulated block intervals.`)
+    : "Block pace\n" + (live ? "Needs two consecutive blocks with timestamps before a pace can be measured." : "Measured once the first blocks are sealed.");
   tickPace();
   $("rR").textContent = S.clauses.size;
   tickSubs();
   $("rHw").dataset.full = `Height: blocks in the chain since genesis #0.\nBelow: when the last block came and how old the chain is.`;
   $("rMw").dataset.full = `Waiting: transactions in no block yet.${S.mode === "live" ? "\nGhost transactions, already sealed but still listed by the node, are counted apart (known bug)." : ""}`;
-  $("rRw").dataset.full = `User rules: accounts that run their own money rule (o5) on this chain, in force right now. “Last at” names the block where the newest rule was deployed.${S.mode === "live" ? " The live chain has not seen a personal rule yet; the simulation shows how they would look." : ""}`;
+  $("rRw").dataset.full = `User rules: accounts with their own money rule (o5) in force now.\n“Last at” is the block of the newest one.${S.mode === "live" ? "\nThe live chain has none yet; the simulation shows how they look." : ""}`;
   $("chipFee").textContent = S.fee + " AGRS";
   $("chipRev").textContent = "rev " + S.specRev;
   { const m = S.mode === "live" ? S.eligMode || "" : "validator_set", c = CONS_CHIP[m], n = S.validators.length;
@@ -2841,8 +2845,8 @@ function draw(tm) {
   ring(NR, 12, () => {
     const N = nodes.length, who = named.map(n => n.kind === "hud" ? "Tau HUD’s node" : n.name).join(", ") + (N > named.length ? `${named.length ? ", and " : ""}${N - named.length} other node${N - named.length === 1 ? "" : "s"} on the testnet` : "");
     const simNote = isSim() ? "Simulated nodes. " : "";
-    return health("nodes") + vt(`${simNote}Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} that keep${N === 1 ? "s" : ""} and check${N === 1 ? "s" : ""} every block but seal${N === 1 ? "s" : ""} none.\nClick to open the Nodes page.`,
-      `${simNote}Node orbit: ${N || "no"} non-sealing node${N === 1 ? "" : "s"}, from the relay’s /community and /peers.\nClick to open the Nodes page.`);
+    return health("nodes") + vt(`Node orbit: ${N || "no"} node${N === 1 ? "" : "s"} that keep${N === 1 ? "s" : ""} and check${N === 1 ? "s" : ""} every block but seal${N === 1 ? "s" : ""} none.\n${simNote}Click to open the Nodes page.`,
+      `Node orbit: ${N || "no"} non-sealing node${N === 1 ? "" : "s"}, from the relay’s /community and /peers.\n${simNote}Click to open the Nodes page.`);
   }, nodesHref);
   cx.save(); cx.setLineDash([3, 9]); cx.beginPath(); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${cyan},.16)`; cx.arc(0, 0, NR, 0, Math.PI * 2); cx.stroke(); cx.restore();   // the node orbit: quiet, dashed
   cx.font = "500 18px JetBrains Mono, monospace";
@@ -2864,7 +2868,7 @@ function draw(tm) {
     else if (n.name) { const label = n.kind === "hud" ? "Tau HUD" : n.name, w = cx.measureText(label).width; plate(label, x + Math.sign(x || 1) * (w / 2 + 24), y + 7, "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`); }
     const age = n.age ? fmtAge(n.age) + " ago" : "just now", ahead = S.height - n.height;
     const alone = S.mode === "live" && !S.simfeed && nodes.length === 1 && S.validators.length === 1;   // the whole visible network: IDNI's validator and us
-    if (n.you) { hit(x, y, 24, () => vt(`Your node “${n.name}”, simulated in your browser, at #${fmt(n.height)}.\nIt checks every block for itself and made the node orbit after 10 min on the network; it stays 30 min after its last contact.\nUnder proof of stake its stake can win a seat among the validators.\nClick to open your node.`,
+    if (n.you) { hit(x, y, 24, () => nodeHealth(n) + vt(`Your node “${n.name}”\nSimulated in your browser at #${fmt(n.height)}; it checks every block for itself.\nClick to open your node.`,
       `${n.name} (your simulated node): #${fmt(n.height)}, ${n.agrees ? "same head as the reference" : "behind the reference"}.\nListed by the 10/30 min presence rule; under eligibility_mode stake it competes for the ${TauSim.node.seats} stake seats (o7).\nClick to open your node.`), null, () => TauSimNode.open()); return; }
     hit(x, y, 24, () => nodeHealth(n) + (n.kind === "hud"
       ? vt(`Tau HUD’s node: serves this page and checks every block, at #${fmt(n.height)}.\nClick to open the Nodes page.`,
@@ -2872,7 +2876,7 @@ function draw(tm) {
       : n.kind === "kit"
       ? vt(`${n.name}: a community node (node kit) at #${fmt(n.height)}, last report ${age}.\nClick to open the Nodes page.`,
            `${n.name} (node kit): #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}, reported ${age}.\nClick to open the Nodes page.`)
-      : vt(`Another node on the testnet${n.height ? `, at #${fmt(n.height)}` : ""}, last seen ${age}.\nClick to open the Nodes page.`,
+      : vt(`Testnet node\nAnother node on the testnet${n.height ? `, at #${fmt(n.height)}` : ""}, last seen ${age}.\nClick to open the Nodes page.`,
            `Peer${n.id ? " " + n.id.slice(0, 8) + "…" + n.id.slice(-4) : ""}${n.height ? ": tip #" + fmt(n.height) : ""}, ${n.connected ? "connected" : "not connected"}, last seen ${age}.\nClick to open the Nodes page.`)), nodesHref);
   });
   ring(C * .93, C * .085, () => health("rim") + vt("Outer rim: what the rules refuse bounces off; it grows with the chain.",
@@ -3002,7 +3006,7 @@ function draw(tm) {
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
     const st = ruleState(p), col = st.hot ? (st.refused ? "229,72,77" : "57,255,138") : "170,170,178";
-    hit(x, y, 24, () => vt(`Own money rule: ${p.name}.\n${policyMeaning(p)}\n`, `${short(RA[i])} runs ${p.name} (a branch of the composite o5 program).\n${policyMeaning(p)}\n`) + (st.hot ? (st.refused ? "It just refused a transfer." : "It just let a transfer pass.") : "In force; nothing checked in the last few seconds."));
+    hit(x, y, 24, () => verdict("ok", st.hot ? (st.refused ? "Normal: it just refused a transfer." : "Normal: it just let a transfer pass.") : "Normal: in force; nothing checked in the last few seconds.") + vt(`${policyMeaning(p)}`, `${policyMeaning(p)}\nAccount ${short(RA[i])}, a branch of the composite o5 program.`));
     dotShadow(x, y, 9, C);
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
@@ -3033,9 +3037,9 @@ function draw(tm) {
     const gov = S.mempool.filter(t => t.kind === "gov").length, rule = S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length, xfer = M - gov - rule;
     const mix = [[xfer, "transfer", "transfers"], [rule, "rule work", "rule work"], [gov, "rule-change proposal", "rule-change proposals"]].filter(x => x[0]).map(x => `${x[0]} ${x[0] === 1 ? x[1] : x[2]}`).join(", ");
     const age = (m.pageAge ? "at least " : "") + fmtAge(oldest);
-    return health("mempool") + (M
+    return health("mempool") + vt("Waiting transactions\n", "Mempool\n") + (M
       ? vt(`${st ? (W ? `${W} really ${W === 1 ? "waits" : "wait"}, the oldest for ${age}.` : "Nothing really waits; the amber framed dots are ghosts.") : `${M} waiting (${mix}), the oldest for ${age}.`}\nClick to see them one by one.`,
-           `Mempool: ${M} listed (${mix}), ${st} ghost${st === 1 ? "" : "s"} (IDNI #81), ${W} pending${W ? `, oldest ${age}` : ""}.\nClick to list them.`)
+           `${M} listed (${mix}), ${st} ghost${st === 1 ? "" : "s"} (IDNI #81), ${W} pending${W ? `, oldest ${age}` : ""}.\nClick to list them.`)
       : vt(`Waiting transactions orbit here as dots until a block takes them in.\nClick for details.`,
            `Mempool empty. Admitted transactions orbit here until the proposer seals them.\nClick for details.`));
   }, null, () => showDetail(dtKey(detailMempool)));
@@ -3045,8 +3049,8 @@ function draw(tm) {
   const g = cx.createRadialGradient(0, 0, 0, 0, 0, C * .32);
   g.addColorStop(0, "rgba(240,246,255,.95)"); g.addColorStop(.25, `rgba(${core},${.55 + Math.max(p, am) * .4})`); g.addColorStop(1, `rgba(${core},0)`);
   cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, C * (.30 + p * .06), 0, Math.PI * 2); cx.fill();
-  hit(0, 0, C * .30, () => { const last = S.blocks[S.blocks.length - 1] || {}; return health("pace") + vt(`Block #${fmt(S.height)} under rule version ${S.specRev}.\nChanging a rule needs ${threshold()} of ${S.validators.length} validators.`,
-    `Block #${S.height}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago, judged under spec revision ${S.specRev}.\nhash ${short(last.hash)} · state ${short(last.state)} · ${(last.txs || []).length} tx · proposer ${short(last.proposer)}\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`); });
+  hit(0, 0, C * .30, () => { const last = S.blocks[S.blocks.length - 1] || {}; return health("pace") + vt(`Newest block\nBlock #${fmt(S.height)} under rule version ${S.specRev}.\nChanging a rule needs ${threshold()} of ${S.validators.length} validators.`,
+    `Newest block\nBlock #${S.height}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago, judged under spec revision ${S.specRev}.\nhash ${short(last.hash)} · state ${short(last.state)} · ${(last.txs || []).length} tx · proposer ${short(last.proposer)}\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`); });
   cx.strokeStyle = `rgba(${core},.8)`; cx.lineWidth = 3;
   for (let k = 0; k < 3; k++) { cx.save(); cx.rotate(t * (k % 2 ? -.8 : .6) + k); const r = C * (.17 + k * .04); for (let j = 0; j < 3; j++) { cx.beginPath(); cx.arc(0, 0, r, j * Math.PI * 2 / 3, j * Math.PI * 2 / 3 + 1.75); cx.stroke(); } cx.restore(); }
 
@@ -3305,19 +3309,34 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   document.addEventListener("pointerdown", e => { touch = e.pointerType === "touch"; }, true);
   const place = (x, y) => { const w = ovl.offsetWidth, h = ovl.offsetHeight; ovl.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px"; ovl.style.top = (y + 18 + h > innerHeight ? y - h - 10 : y + 18) + "px"; };
   let shownAt = 0;
-  const setOvl = str => {
+  /* every hover reads the same way: the element's name first, with its status light next to it, then the one verdict, then at most a few
+     short lines. The name is the start of the first line up to its colon ("Outer rim: …"), or a short first line of its own ("Validator 2 of 5") */
+  const tr1 = x => { try { return window.TauI18n ? TauI18n.t(x) : x; } catch (e) { return x; } };
+  const setOvl = (str, named) => {   // named: Chain core and its tiles, where every hover opens with the element's name
     const m = /^\u2063(ok|busy|watch|bad)\u2063([^\n]*)\n?/.exec(str); ovl.className = m ? "hv-" + m[1] : "";
-    if (!m) { ovl.textContent = str; return; }
-    const d = document.createElement("div"); d.className = "hv"; d.textContent = m[2]; ovl.textContent = ""; ovl.append(d, document.createTextNode(str.slice(m[0].length)));
+    const lines = (m ? str.slice(m[0].length) : str).split("\n").filter(l => l.trim()).map(tr1);
+    let title = null;
+    if (lines.length && named) {
+      const l0 = lines[0], c = /^([^\n]{2,48}?)(?:: |：)(.+)$/.exec(l0);
+      if (l0.length <= 48 && !/[.。!?！？:：]$/.test(l0) && (lines.length > 1 || m)) { title = l0; lines.shift(); }
+      else if (c && !/[.。]\s|[.。]$/.test(c[1])) { title = c[1]; lines[0] = c[2].charAt(0).toUpperCase() + c[2].slice(1); }
+    }
+    ovl.textContent = "";
+    if (!title && !m) { ovl.textContent = lines.join("\n"); return; }
+    const head = document.createElement("div"); head.className = "hvh";
+    const t = document.createElement("div"); t.className = "hv" + (m ? "" : " nl"); t.textContent = title || tr1(m[2]); head.append(t);
+    if (m && title) { const v = document.createElement("div"); v.className = "hvv"; v.textContent = tr1(m[2]); head.append(v); }
+    if (!lines.length) head.classList.add("solo");
+    ovl.append(head); if (lines.length) ovl.append(document.createTextNode(lines.join("\n")));
   };
-  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex && EX.get(el.dataset.ex); setOvl(viewText((el.dataset.health ? health(el.dataset.health) : "") + (fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim())))); ovl.hidden = false; place(x, y); };
+  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex && EX.get(el.dataset.ex); setOvl(viewText((el.dataset.health ? health(el.dataset.health) : "") + (fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim()))), !!el.closest(".core")); ovl.hidden = false; place(x, y); };
   const hide = () => { cur = null; ovl.hidden = true; };
   document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur && !touch) hide(); });
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
   document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail], button, a, input, select")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
-  const coreShow = e => { const h = coreHit(e); if (h) { cur = cv; shownAt = Date.now(); setOvl(viewText(h.fn())); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href || h.open ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
+  const coreShow = e => { const h = coreHit(e); if (h) { cur = cv; shownAt = Date.now(); setOvl(viewText(h.fn()), true); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href || h.open ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
   cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; CORE_MOUSE = null; if (cur === cv && !touch) hide(); });
   /* a drawn element with a page behind it (the nodes) opens that page on click; on touch the first tap explains, the second opens */
