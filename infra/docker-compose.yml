@@ -203,6 +203,25 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Agorzilla's summary (agorzilla.com/chain/latest.json, read by Tau HUD's header and the
+  # evening post): the agorilla repo's tools/archive.cjs --latest, every 10 minutes, from the
+  # site's own checkout. GitHub's 30-minute schedule often skips runs, so the summary is made
+  # here; the archive and its hashes stay with the repo's Action. Caddy (sites/agorzilla.caddy)
+  # serves this file first and falls back to the checkout's copy.
+  agorzilla-latest:
+    image: node:22-alpine
+    command: ["sh", "-c", "while true; do node /repo/tools/archive.cjs --latest || true; sleep 600; done"]
+    environment:
+      AGORILLA_NODE: ws://relay:8080
+      AGORILLA_OUT: /out/chain
+    volumes:
+      - /opt/sites/agorilla:/repo:ro
+      - /opt/sites/agorilla-live:/out
+    depends_on: [relay]
+    mem_limit: 128m
+    restart: unless-stopped
+    logging: *logging
+
   # Question bot (alerts/bot.py): the same Telegram bot answers people who
   # write to it (/height, /proposals, /tx, /address, /block, /status) with data
   # from the relay and proposals.json. Long polling, so no inbound port; it
