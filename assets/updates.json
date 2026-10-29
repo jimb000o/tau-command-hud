@@ -1081,5 +1081,17 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "When the testnet stops making blocks, every part of the page now tells the same story. Our node still answers, so the light, the header (\"Live · Connected, no new blocks\") and the Live node hover turn amber, not red; red stays for a node that does not answer. The Chain core shows a slow amber ring and a clock that counts up, \"No new block for 2 h 00 min 10 s\". The Block pace tile reads \"no block for 2.0 h · the last took 61 s\", and the Coming up chip says the rule change is on hold until blocks resume."
+ },
+ {
+  "tag": "Share",
+  "on": "2026-10-29",
+  "html": "Share any page: “Share this page” in the About menu and “Share” at the end of every footer open a small card with the page’s own link (without your view settings), Copy link, and ready posts for X, Telegram, Reddit and Hacker News; on phones also your own share sheet. Every page now has its own preview picture: a shared link shows that page with its name and tauhud.com, instead of the one Tau HUD picture for all.",
+  "major": {
+   "id": "share",
+   "title": "New: share any page, each with its own preview picture",
+   "text": "Every page of Tau HUD now has a Share card: copy the link or post it to X, Telegram, Reddit or Hacker News. A shared link shows a picture of that very page, the Explorer, the vote guide or the story, so whoever sees it knows what they will open.",
+   "link": "/",
+   "image": "/assets/shots/share.png"
+  }
  }
 ]
