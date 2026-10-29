@@ -160,6 +160,13 @@ class Visits:
         return True
 
     # ---------- counting ----------
+    def person(self, ip: str, ua: str) -> str:
+        """The in-memory key one browser gets today: the daily salt hashed with its address
+        and user agent. Also tells the relay's online counter which sockets belong to one
+        person (tabs, pages, reconnects), without anything stored in the browser."""
+        self._roll()
+        return hashlib.sha256(self.salt + ip.encode() + b"|" + ua.encode()).hexdigest()[:20]
+
     def count(self, q: dict, ip: str, ua: str, dnt: bool = False) -> bool:
         """True if the hit was counted."""
         page = q.get("p", "")
@@ -167,7 +174,7 @@ class Visits:
             return False
         self._roll()
         t = self._today()
-        visitor = hashlib.sha256(self.salt + ip.encode() + b"|" + ua.encode()).hexdigest()[:20]
+        visitor = self.person(ip, ua)
         if q.get("t"):
             try:
                 secs = int(q["t"])
