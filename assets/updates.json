@@ -1174,5 +1174,10 @@
   "tag": "Wallet",
   "on": "2026-10-29",
   "html": "Wallet, round of finishing touches: the first payment to an address outside your address book now offers the way back, one click away. Ask to be paid gives you a link and a QR code with your address and an amount; whoever opens it finds the payment filled in and is asked to check your three words. Someone new who pays you, offers a rule or asks for a co-signature can go into your address book with one click. Laptops around 1366 pixels see the wallet at full size instead of shrunken, phone taps are larger, and the keyboard works everywhere: Enter picks a proposal, arrow keys move between tabs, and the focus is always visible. Activity names the proposal you voted on and marks a co-signed payment as paid. The address book helps when you have no address at hand: it says where to get one and fills in an example name and address with one click; nothing is added until you press Add. The rule builder now says what to fix right at the field (a limit is a whole number, at least 1), the test payments wait until the rule can be signed, and when the testnet's rule places are full the page says so above the builder, with the way into the simulation. Testnet only, test AGRS have no value."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-29",
+  "html": "Newspaper: one sound switch. With Sound on, the café opens quietly as soon as you touch the page (or when you switch sound on), and Sound off closes it again. Turning the Café button up also turns the sound on, so \"Sound on\" never means silence."
  }
 ]

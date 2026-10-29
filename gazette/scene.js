@@ -553,7 +553,15 @@
   const btn = document.getElementById("bAmb");
   if (btn) { let l = 0;
     const label = () => { const L = window.GAZETTE_AMB || ["Café: off", "Café: quiet", "Café: lively"]; btn.textContent = L[l]; btn.setAttribute("aria-pressed", String(l > 0)); };
-    btn.onclick = e => { e.stopPropagation(); l = (l + 1) % 3; AMB.set(l); label(); };
+    const to = n => { l = n; AMB.set(l); label(); };
+    btn.onclick = e => { e.stopPropagation(); to((l + 1) % 3); window.dispatchEvent(new CustomEvent("gazette-cafe", { detail: l })); };
+    /* the page's sound switch leads: on opens the café quietly, off closes it */
+    window.addEventListener("gazette-sound", e => { if (e.detail && !l) to(1); else if (!e.detail && l) to(0); });
+    /* when the reader's sound is already on, the café opens quietly with their first touch of the page (browsers allow sound only after one) */
+    const first = e => { removeEventListener("pointerdown", first, true); removeEventListener("keydown", first, true);
+      if (e.target && e.target.closest && e.target.closest("#bAmb, #bSnd")) return;
+      let on = true; try { on = localStorage.getItem("gazette-sound") !== "off"; } catch (x) {} if (on && !l) to(1); };
+    addEventListener("pointerdown", first, true); addEventListener("keydown", first, true);
     label(); window.addEventListener("gazette-labels", label); }
   layout();
 })();
