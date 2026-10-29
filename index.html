@@ -416,6 +416,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 
 /* core */
 .core { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px; justify-items: center; }
+/* depth: the outer orbits sit a little lower in the dark, the rim and its field stay as bright as they are */
+.core canvas.depth { -webkit-mask-image: radial-gradient(circle closest-side, #000 60%, rgba(0,0,0,.82) 82%, #000 90%); mask-image: radial-gradient(circle closest-side, #000 60%, rgba(0,0,0,.82) 82%, #000 90%); }
 .core canvas { height: 100%; width: auto; max-width: 100%; max-height: 100%; aspect-ratio: 1; display: block; object-fit: contain; }
 /* your own simulated node (assets/simnode.js): a small card in the core's top-left corner, simulation only */
 .core-panel { position: relative; }
@@ -1383,6 +1385,14 @@ const HEALTH = {
     if (sched.length) return ["ok", sched.length === 1 ? "Normal: 1 agreed change waits for its block; nothing needs a vote." : `Normal: ${sched.length} agreed changes wait for their block; nothing needs a vote.`];
     return ["ok", "Normal: nothing to vote on; the rules in force stay as they are."];
   },
+  rim() {   // the rule book: in force and judging every block (green), a change on its way (amber), judging stopped (red)
+    if (offline()) return ["bad", "Problem: no connection to a node; no block is being judged."];
+    const p = healthOf("pace"); if (p && p[0] === "bad") return ["bad", "Problem: blocks have stopped, so nothing is judged."];
+    const sched = S.updates.find(u => u.status === "scheduled"), voting = S.updates.some(u => u.status === "voting");
+    if (sched && Number.isFinite(Number(sched.activateAt))) return farAhead(sched) ? ["ok", `Normal: version ${S.specRev} in force; the next agreed one starts at block #${sched.activateAt}.`] : ["busy", `In progress: a new rule version takes effect at block #${sched.activateAt}.`];
+    if (voting) return ["busy", `In progress: version ${S.specRev} in force; a change is being voted on.`];
+    return ["ok", `Normal: rule book version ${S.specRev} in force.`];
+  },
   nodes() {
     if (offline()) return ["bad", "Problem: no connection to a node."];
     const ns = nodesNow(), N = ns.length, far = ns.filter(n => n.height && Math.abs(n.height - S.height) > 5).length;
@@ -1625,7 +1635,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.67", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.71", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2729,6 +2739,33 @@ function hoverCol(h) {
 /* refused transactions bounce off the outer rim: the rule book is a shield, and what it says no to never gets inside. A short flight
    in from the corner, a flash on the rim where it hits, a flight out; a faint notch on the rim fades within a few seconds; until then it can be hovered and clicked */
 const SHIELD = { e: .3 };
+/* depth: the core lights the scene. A soft bloom from the centre, every orbit a low ridge with a lit inner edge and a soft shadow
+   falling outward (deeper toward the core), a shadow ring under the core, and a small cast shadow for each dot. The still parts are
+   painted once and set as the canvas background; each dot's shadow is one small sprite; the haze is a CSS mask, so none of it costs a frame */
+const DEPTH = { W: 0, bg: null, dot: null };
+function depthLayer(C) {
+  if (DEPTH.W === C * 2) return;
+  const L = document.createElement("canvas"); L.width = L.height = C * 2; const g = L.getContext("2d"); g.translate(C, C);
+  const lg = g.createRadialGradient(0, 0, 0, 0, 0, C * .9);
+  lg.addColorStop(0, "rgba(236,236,240,.085)"); lg.addColorStop(.45, "rgba(236,236,240,.025)"); lg.addColorStop(1, "rgba(236,236,240,0)");
+  g.fillStyle = lg; g.beginPath(); g.arc(0, 0, C * .9, 0, Math.PI * 2); g.fill();
+  for (const [f, z] of [[.84, .15], [.77, .2], [.70, .4], [.56, .6], [.44, .78]]) {   // z: nearness to the core
+    const r = C * f, w = 10 + 10 * z, sg = g.createRadialGradient(0, 0, r, 0, 0, r + w);
+    sg.addColorStop(0, `rgba(0,0,0,${.35 + .3 * z})`); sg.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = sg; g.beginPath(); g.arc(0, 0, r + w, 0, Math.PI * 2); g.arc(0, 0, r, 0, Math.PI * 2, true); g.fill();
+    g.beginPath(); g.lineWidth = 1; g.strokeStyle = `rgba(236,236,240,${.06 + .14 * z})`; g.arc(0, 0, r - 2, 0, Math.PI * 2); g.stroke();
+  }
+  const cs = g.createRadialGradient(0, 0, C * .27, 0, 0, C * .42); cs.addColorStop(0, "rgba(0,0,0,.55)"); cs.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = cs; g.beginPath(); g.arc(0, 0, C * .42, 0, Math.PI * 2); g.fill();
+  const D = document.createElement("canvas"); D.width = D.height = 64; const d = D.getContext("2d"), dg = d.createRadialGradient(32, 32, 0, 32, 32, 32);
+  dg.addColorStop(0, "rgba(0,0,0,.75)"); dg.addColorStop(1, "rgba(0,0,0,0)"); d.fillStyle = dg; d.fillRect(0, 0, 64, 64);
+  Object.assign(DEPTH, { W: C * 2, dot: D });
+  try { cv.style.backgroundImage = `url(${L.toDataURL()})`; cv.style.backgroundSize = "100% 100%"; cv.classList.add("depth"); } catch (e) {}
+}
+function dotShadow(x, y, r, C) {   // falls away from the light at the centre, a little further the further out
+  if (!DEPTH.dot) return; const d = Math.hypot(x, y) || 1, k = 3 + 7 * d / C, R = r * 1.9;
+  cx.save(); cx.shadowBlur = 0; cx.drawImage(DEPTH.dot, x + x / d * k - R, y + y / d * k - R, R * 2, R * 2); cx.restore();
+}
 const BOUNCE = { q: [], next: 0 }, B_IN = 700, B_FLY = 1900, B_KEEP = 4000, REF = "229,72,77";
 function bounce(t) {
   const now = performance.now(), at = Math.max(now, BOUNCE.next); BOUNCE.next = at + 420;   // a burst comes in one after another
@@ -2752,7 +2789,7 @@ function paintBounces(C, hit) {
     }
     if (f >= 0 && f < 1400) {   // the shield flashes where it was hit, the flash spreading along the rim
       const k = f / 1400, span = .06 + k * .22;
-      cx.lineCap = "round"; cx.strokeStyle = `rgba(${REF},${(1 - k) * .9})`; cx.shadowColor = `rgb(${REF})`; cx.shadowBlur = 20 * (1 - k); cx.lineWidth = 2 + 6 * (1 - k);
+      cx.lineCap = "round"; cx.strokeStyle = `rgba(${REF},${(1 - k) * .9})`; cx.shadowColor = `rgb(${REF})`; cx.shadowBlur = 12 * (1 - k); cx.lineWidth = 2 + 6 * (1 - k);
       cx.beginPath(); cx.arc(0, 0, R, b.a - span, b.a + span); cx.stroke();
       if (f < 600) { const q = f / 600; cx.lineWidth = 2; cx.strokeStyle = `rgba(${REF},${.7 * (1 - q)})`; cx.shadowBlur = 0; cx.beginPath(); cx.arc(ix, iy, 8 + 30 * q, 0, Math.PI * 2); cx.stroke(); }   // the knock
     }
@@ -2770,8 +2807,9 @@ function paintHover() {
   if (!CORE_MOUSE) return; const h = coreHitAt(CORE_MOUSE.x, CORE_MOUSE.y); if (!h) return;
   const c = hoverCol(h);
   cx.save(); cx.shadowColor = `rgb(${c})`;
-  if ("w" in h) { cx.beginPath(); cx.arc(0, 0, h.r, 0, Math.PI * 2); cx.lineWidth = h.w * 2; cx.strokeStyle = `rgba(${c},.10)`; cx.shadowBlur = 0; cx.stroke();
-    cx.beginPath(); cx.arc(0, 0, h.r - h.w, 0, Math.PI * 2); cx.arc(0, 0, h.r + h.w, 0, Math.PI * 2); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${c},.55)`; cx.shadowBlur = 16; cx.stroke(); }
+  if ("w" in h) { const lo = h.lo ?? h.r - h.w, hi = Math.min(h.r + h.w, cv.width / 2 * .975);   // never past the canvas edge
+    cx.beginPath(); cx.arc(0, 0, (lo + hi) / 2, 0, Math.PI * 2); cx.lineWidth = hi - lo; cx.strokeStyle = `rgba(${c},.10)`; cx.shadowBlur = 0; cx.stroke();
+    cx.beginPath(); cx.arc(0, 0, lo, 0, Math.PI * 2); cx.arc(0, 0, hi, 0, Math.PI * 2); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${c},.55)`; cx.shadowBlur = 8; cx.stroke(); }
   else { cx.beginPath(); cx.arc(h.x, h.y, h.r, 0, Math.PI * 2); cx.fillStyle = `rgba(${c},.12)`; cx.shadowBlur = 0; cx.fill();
     cx.beginPath(); cx.arc(h.x, h.y, h.r, 0, Math.PI * 2); cx.lineWidth = 2; cx.strokeStyle = `rgba(${c},.7)`; cx.shadowBlur = 18; cx.stroke(); }
   cx.restore();
@@ -2794,6 +2832,7 @@ function draw(tm) {
   const W = cv.width, C = W / 2, t = (tm - t0) / 1000;
   cx.clearRect(0, 0, W, W);
   cx.save(); cx.translate(C, C);
+  depthLayer(C);
   const cyan = "236,236,240", amber = "255,255,255";
   CORE_HITS.length = 0; const hit = (x, y, r, fn, href, open) => CORE_HITS.push({ x, y, r, fn, href, open }); const ring = (r, w, fn, href, open) => CORE_RINGS.push({ r, w, fn, href, open });
   CORE_RINGS.length = 0;
@@ -2815,6 +2854,7 @@ function draw(tm) {
     if (S.pulse > 0) { const q = Math.min(1, (1 - S.pulse) * 1.25), k = .30 + (NR / C - .30) * q; cx.fillStyle = `rgba(57,255,138,${S.pulse})`; cx.beginPath(); cx.arc(x * k / (NR / C), y * k / (NR / C), 4.5, 0, Math.PI * 2); cx.fill(); }   // the sealed block travels out to every node
     // our own node breathes a soft green while it reads the real chain: alive, not alarmed (green stays the one accent; simulation stays grey)
     const liveHud = n.kind === "hud" && S.mode === "live" && !S.simfeed && PRESENCE.up, br = liveHud ? .5 + .5 * Math.sin(t * 1.6) : 0;
+    dotShadow(x, y, n.kind === "hud" ? 10 : 8, C);
     cx.beginPath(); cx.arc(x, y, n.kind === "hud" ? 10 : 8, 0, Math.PI * 2);
     if (got) { cx.fillStyle = `rgba(57,255,138,${got * .55})`; cx.fill(); }
     else if (liveHud) { cx.fillStyle = `rgba(57,255,138,${.10 + .22 * br})`; cx.fill(); }
@@ -2835,8 +2875,9 @@ function draw(tm) {
       : vt(`Another node on the testnet${n.height ? `, at #${fmt(n.height)}` : ""}, last seen ${age}.\nClick to open the Nodes page.`,
            `Peer${n.id ? " " + n.id.slice(0, 8) + "…" + n.id.slice(-4) : ""}${n.height ? ": tip #" + fmt(n.height) : ""}, ${n.connected ? "connected" : "not connected"}, last seen ${age}.\nClick to open the Nodes page.`)), nodesHref);
   });
-  ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}.\nWhat it refuses bounces off; it grows with every block and agreed change.`,
-    `Outer rim: consensus spec revision ${S.specRev}, amended ${S.updates.filter(u => u.status === "active").length} time${S.updates.filter(u => u.status === "active").length === 1 ? "" : "s"} by agreement.\nEvery block is judged by it (o6 validity, o7 proposer, o9 fee ${S.fee} AGRS).`));
+  ring(C * .93, C * .085, () => health("rim") + vt("Outer rim: what the rules refuse bounces off; it grows with the chain.",
+    `Outer rim: spec revision ${S.specRev}; every block is judged by it (o6, o7, o9 fee ${S.fee} AGRS).`));
+  CORE_RINGS[CORE_RINGS.length - 1].lo = C * .895;   // its glow stays inside the canvas: the hover area reaches past the edge, the band does not
 
   cx.strokeStyle = `rgba(${cyan},.35)`; cx.lineWidth = 2;
   for (let i = 0; i < 120; i++) {
@@ -2849,14 +2890,14 @@ function draw(tm) {
     SHIELD.e += (goal - SHIELD.e) * .02;
     const E = SHIELD.e, Rs = C * .955, pl = S.pulse || 0;
     cx.save();
-    const gl = cx.createRadialGradient(0, 0, Rs - 20, 0, 0, Rs + 22);
+    const gl = cx.createRadialGradient(0, 0, Rs - 24, 0, 0, Rs + 10);   // all of the field stays inside the canvas (its edge is C)
     gl.addColorStop(0, "rgba(236,236,240,0)"); gl.addColorStop(.5, `rgba(236,236,240,${.03 + .05 * E + .05 * pl})`); gl.addColorStop(1, "rgba(236,236,240,0)");
-    cx.fillStyle = gl; cx.beginPath(); cx.arc(0, 0, Rs + 22, 0, Math.PI * 2); cx.arc(0, 0, Rs - 20, 0, Math.PI * 2, true); cx.fill();
+    cx.fillStyle = gl; cx.beginPath(); cx.arc(0, 0, Rs + 10, 0, Math.PI * 2); cx.arc(0, 0, Rs - 24, 0, Math.PI * 2, true); cx.fill();
     const n = 2 + Math.round(E * 4);   // field lines running round the rim, in both directions; more of them as the chain grows
     for (let k = 0; k < n; k++) {
       const sp = (k % 2 ? -1 : 1) * (.1 + k * .045), a0 = t * sp + k * 2.1, len = .3 + .22 * Math.sin(t * .6 + k * 1.7);
-      cx.beginPath(); cx.lineWidth = 1.2 + E; cx.lineCap = "round"; cx.strokeStyle = `rgba(236,236,240,${.12 + .2 * E + .1 * pl})`; cx.shadowColor = "rgba(236,236,240,.7)"; cx.shadowBlur = 6 + 8 * E;
-      cx.arc(0, 0, Rs + Math.sin(t * 1.1 + k) * 4, a0, a0 + len); cx.stroke();
+      cx.beginPath(); cx.lineWidth = 1.2 + E; cx.lineCap = "round"; cx.strokeStyle = `rgba(236,236,240,${.12 + .2 * E + .1 * pl})`; cx.shadowColor = "rgba(236,236,240,.7)"; cx.shadowBlur = 4 + 4 * E;
+      cx.arc(0, 0, Rs - 4 + Math.sin(t * 1.1 + k) * 4, a0, a0 + len); cx.stroke();
     }
     cx.restore(); }
   const arc = (r, w, a0, len, col, sp) => { cx.beginPath(); cx.lineWidth = w; cx.strokeStyle = col; cx.arc(0, 0, r, a0 + t * sp, a0 + len + t * sp); cx.stroke(); };
@@ -2915,7 +2956,7 @@ function draw(tm) {
   const V = S.validators.length || 1, vr = C * .84;
   S.validators.forEach((v, i) => {
     const a = i / V * Math.PI * 2 - Math.PI / 2 + .35, x = Math.cos(a) * vr, y = Math.sin(a) * vr, on = i === S.proposerIdx;
-    const voted = open && open.votes.has(v);
+    const voted = open && open.votes.has(v); dotShadow(x, y, on ? 20 : 15, C);
     cx.save(); cx.translate(x, y); cx.rotate(Math.PI / 4);
     cx.fillStyle = on ? "rgba(57,255,138,1)" : `rgba(${cyan},.85)`;
     cx.shadowColor = on ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = on ? 36 : 14;
@@ -2962,6 +3003,7 @@ function draw(tm) {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
     const st = ruleState(p), col = st.hot ? (st.refused ? "229,72,77" : "57,255,138") : "170,170,178";
     hit(x, y, 24, () => vt(`Own money rule: ${p.name}.\n${policyMeaning(p)}\n`, `${short(RA[i])} runs ${p.name} (a branch of the composite o5 program).\n${policyMeaning(p)}\n`) + (st.hot ? (st.refused ? "It just refused a transfer." : "It just let a transfer pass.") : "In force; nothing checked in the last few seconds."));
+    dotShadow(x, y, 9, C);
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
     cx.shadowBlur = 0; cx.beginPath(); cx.arc(x, y, 12, 0, Math.PI * 2); cx.strokeStyle = `rgba(${col},.45)`; cx.lineWidth = 1.5; cx.stroke();
@@ -2974,7 +3016,7 @@ function draw(tm) {
   cx.save(); cx.setLineDash([2, 10]); cx.beginPath(); cx.lineWidth = mlv === "ok" ? 1.2 : 2; cx.strokeStyle = mcol; cx.arc(0, 0, C * .44, 0, Math.PI * 2); cx.stroke(); cx.restore();
   S.mempool.forEach((tx, i) => {
     const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
-    const sl = liveChain() && sealedAt(tx.id) != null;
+    const sl = liveChain() && sealedAt(tx.id) != null; dotShadow(Math.cos(a) * r, Math.sin(a) * r, 6, C);
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
     if (sl) {   // sealed but still listed: an amber dot in a small block frame
       const x = Math.cos(a) * r, y = Math.sin(a) * r;
