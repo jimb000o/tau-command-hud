@@ -1727,5 +1727,13 @@ TauI18n.add({ strings: {
   "Watch: {n} of the {m} listed is already sealed in a block, but the node still lists it as waiting (known node bug, reported as IDNI #81)": "注意：列出的 {m} 笔中有 {n} 笔已封装进区块，但节点仍把它列为等待中（已知的节点缺陷，已报告为 IDNI #81）",
   "Watch: transactions are piling up: {n} wait, but recent blocks took only {x} each; {m} more are already sealed but still listed (IDNI #81)": "注意：交易在堆积：{n} 笔在等，但最近的区块每个只收{x}；另有 {m} 笔已封装但仍被列出（IDNI #81）",
   "In Chain core, the glow under a hovered ring, dot or the core now takes the colour of its status light: green when it is normal, amber to watch or while something is in progress, red for a problem.": "在 Chain core 中，悬停时圆环、圆点或核心下方的光晕现在与其状态灯同色：正常为绿色，需要注意或正在进行时为琥珀色，出现问题时为红色。",
-  "Transactions already sealed in a block that the node still lists as waiting now stand out: amber dots in a small block frame in Chain core, and an amber frame with their block number in Transactions.": "已封装进区块、却仍被节点列为等待中的交易现在一眼可辨：在 Chain core 中显示为带小方框的琥珀色圆点，在 Transactions 中带琥珀色边框并标出所在区块号。"
+  "Transactions already sealed in a block that the node still lists as waiting now stand out: amber dots in a small block frame in Chain core, and an amber frame with their block number in Transactions.": "已封装进区块、却仍被节点列为等待中的交易现在一眼可辨：在 Chain core 中显示为带小方框的琥珀色圆点，在 Transactions 中带琥珀色边框并标出所在区块号。",
+  "Refused by the rules: {x}.": "被规则拒绝：{x}。",
+  "It bounced off the outer rim: what the rules say no to never gets inside.": "它被外圈弹开：规则说不的东西永远进不来。",
+  "Click for the details.": "点击查看详情。",
+  "Refused {h} · {x}: {y}.": "已拒绝 {h} · {x}：{y}。",
+  "Never admitted: it left the queue without entering a block.": "从未被接纳：它离开了队列，没有进入任何区块。",
+  "the rules said no": "规则说不",
+  "Whatever the rules refuse bounces off it like off a shield.": "规则拒绝的一切都会像撞上盾牌一样被它弹开。",
+  "Refused transactions now bounce off the outer rim of Chain core, which works like a shield: each one flies in, knocks on the rim, which flashes where it is hit, and flies off again. A faint mark stays on the rim for a minute; hover it for the reason the rules said no, click it for the details. Live and in the simulation.": "被拒绝的交易现在会从 Chain core 的外圈弹开，外圈就像一面盾牌：每笔交易飞进来，撞上外圈，被撞的地方闪一下，然后再飞走。外圈上会留下一道淡淡的痕迹，持续一分钟；悬停可看到规则拒绝的原因，点击可查看详情。实时链和模拟中都会这样显示。"
 } });

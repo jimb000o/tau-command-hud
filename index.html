@@ -1603,7 +1603,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.62", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.63", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -1846,7 +1846,7 @@ function txCard(t) {
   const txid = S.mode === "live" && t.id && !t.rejected ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id);
   d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="txid">${txid} · </span>fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
-  if (t.rejected) { S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
+  if (t.rejected) { bounce(t); S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
   if (feed.matches(":hover")) { feedHold.push(d); return d; }
   feed.prepend(d);
@@ -2694,9 +2694,49 @@ function coreHit(e) {
    of its status light (green, amber to watch or in progress, red for a problem), read from the verdict twice a second */
 const HOV_LV = { k: "", at: 0, col: "57,255,138" }, LV_COL = { ok: "57,255,138", busy: "255,177,59", watch: "255,177,59", bad: "255,77,109" };
 function hoverCol(h) {
+  if (h.col) return h.col;
   const k = "w" in h ? "r" + h.r : "d" + h.r + ":" + Math.round(h.x / 40) + ":" + Math.round(h.y / 40), now = performance.now();
   if (k !== HOV_LV.k || now - HOV_LV.at > 500) { let t = ""; try { t = String(h.fn ? h.fn() : ""); } catch (e) {} const m = /^\u2063(ok|busy|watch|bad)\u2063/.exec(t); Object.assign(HOV_LV, { k, at: now, col: LV_COL[m ? m[1] : "ok"] }); }
   return HOV_LV.col;
+}
+/* refused transactions bounce off the outer rim: the rule book is a shield, and what it says no to never gets inside. A short flight
+   in from the corner, a flash on the rim where it hits, a flight out; a faint notch stays on the rim for a minute to hover and click */
+const BOUNCE = { q: [], next: 0 }, B_IN = 700, B_FLY = 1900, B_KEEP = 60000, REF = "229,72,77";
+function bounce(t) {
+  const now = performance.now(), at = Math.max(now, BOUNCE.next); BOUNCE.next = at + 420;   // a burst comes in one after another
+  const a = Math.floor(Math.random() * 4) * Math.PI / 2 + Math.PI / 4 + (Math.random() - .5) * .6;   // from a corner, where there is room
+  BOUNCE.q.push({ t, a, at, spin: (Math.random() < .5 ? -1 : 1) * (.3 + Math.random() * .35) });
+  if (BOUNCE.q.length > 24) BOUNCE.q.splice(0, BOUNCE.q.length - 24);
+}
+const refWhy = t => String(t.rejected || "").replace(/^refused( at the door)?\s*·\s*/i, "") || "the rules said no";
+function paintBounces(C, hit) {
+  const now = performance.now(), R = C * .955;
+  BOUNCE.q = BOUNCE.q.filter(b => now - b.at < B_KEEP + B_IN);
+  for (const b of BOUNCE.q) {
+    const e = now - b.at; if (e < 0) continue;
+    const ix = Math.cos(b.a) * R, iy = Math.sin(b.a) * R, f = e - B_IN;
+    cx.save();
+    if (!reduced && e < B_FLY) {
+      let x, y, al;
+      if (e < B_IN) { const k = e / B_IN, r = C * 1.38 - (C * 1.38 - R) * k * k; x = Math.cos(b.a) * r; y = Math.sin(b.a) * r; al = .4 + .6 * k; }
+      else { const k = f / (B_FLY - B_IN), o = b.a + b.spin, d = C * .5 * (1 - (1 - k) * (1 - k)); x = ix + Math.cos(o) * d; y = iy + Math.sin(o) * d; al = 1 - k; }
+      cx.fillStyle = `rgba(${REF},${al})`; cx.shadowColor = `rgb(${REF})`; cx.shadowBlur = 14; cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2); cx.fill();
+    }
+    if (f >= 0 && f < 1400) {   // the shield flashes where it was hit, the flash spreading along the rim
+      const k = f / 1400, span = .06 + k * .22;
+      cx.lineCap = "round"; cx.strokeStyle = `rgba(${REF},${(1 - k) * .9})`; cx.shadowColor = `rgb(${REF})`; cx.shadowBlur = 20 * (1 - k); cx.lineWidth = 2 + 6 * (1 - k);
+      cx.beginPath(); cx.arc(0, 0, R, b.a - span, b.a + span); cx.stroke();
+      if (f < 600) { const q = f / 600; cx.lineWidth = 2; cx.strokeStyle = `rgba(${REF},${.7 * (1 - q)})`; cx.shadowBlur = 0; cx.beginPath(); cx.arc(ix, iy, 8 + 30 * q, 0, Math.PI * 2); cx.stroke(); }   // the knock
+    }
+    if (f >= 0) {
+      const k = Math.min(1, f / B_KEEP); cx.shadowBlur = 0; cx.lineCap = "round"; cx.strokeStyle = `rgba(${REF},${.1 + .55 * (1 - k)})`; cx.lineWidth = 3;
+      cx.beginPath(); cx.arc(0, 0, R + 6, b.a - .025, b.a + .025); cx.stroke();
+      hit(ix, iy, 22, () => vt(`Refused by the rules: ${refWhy(b.t)}.\nIt bounced off the outer rim: what the rules say no to never gets inside.\nClick for the details.`,
+        `Refused ${short(b.t.id)} · ${b.t.type}: ${refWhy(b.t)}.\nNever admitted: it left the queue without entering a block.\nClick for the details.`), null, () => showDetail(dtKey(() => detailTx(b.t))));
+      CORE_HITS[CORE_HITS.length - 1].col = REF;
+    }
+    cx.restore();
+  }
 }
 function paintHover() {
   if (!CORE_MOUSE) return; const h = coreHitAt(CORE_MOUSE.x, CORE_MOUSE.y); if (!h) return;
@@ -2767,7 +2807,7 @@ function draw(tm) {
       : vt(`Another node on the Tau testnet${n.height ? `, at #${fmt(n.height)}` : ""}.\nIt keeps its own copy of the chain and checks every block for itself, independently of this page.\n${n.connected ? "In touch with our node right now" : "Known to our node"}; last seen ${age}.\nClick to open the Nodes page.`,
            `Peer${n.id ? " " + n.id.slice(0, 8) + "…" + n.id.slice(-4) : ""}${n.height ? ": tip #" + fmt(n.height) : ""}${n.agrees == null ? "" : n.agrees ? ", same height as ours" : ", " + fmt(Math.abs(ahead)) + (ahead > 0 ? " behind us" : " ahead of us")}${n.first ? ", first seen " + fmtLogDate(new Date(n.first * 1000).toISOString().slice(0, 10)) : ""}.\nIndependent full node: verifies every block against the spec on its own.\n${n.connected ? "Connected to our node right now" : "Known to our node, not connected at the moment"}; last seen ${age}.\nClick to open the Nodes page.`), nodesHref);
   });
-  ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}. Everything inside obeys it: validators sit on it, accounts and waiting transactions orbit within it, and every block is checked against it.`,
+  ring(C * .93, C * .085, () => vt(`Outer rim: the rule book everyone agreed to, version ${S.specRev}. Everything inside obeys it: validators sit on it, accounts and waiting transactions orbit within it, and every block is checked against it.\nWhatever the rules refuse bounces off it like off a shield.`,
     `Outer rim: the consensus spec, revision ${S.specRev} (o6 block validity, o7 proposer eligibility, o9 fee = ${S.fee} AGRS). Amended ${S.updates.filter(u => u.status === "active").length} time${S.updates.filter(u => u.status === "active").length === 1 ? "" : "s"} by agreement. It encloses everything inside: validators sit on it, rule accounts and the mempool orbit within it, and every block is judged by it.`));
 
   cx.strokeStyle = `rgba(${cyan},.35)`; cx.lineWidth = 2;
@@ -2938,6 +2978,7 @@ function draw(tm) {
   cx.font = "600 19px Sora, sans-serif";
   cx.fillText(am > .2 ? vt("RULES CHANGED · V", "SPEC AMENDED · REV ") + S.specRev : since < 1.2 ? "SEALED BY AGREEMENT" : vt("RULES V", "SPEC REV ") + S.specRev, 0, 40);
   if (isSim()) plate("SIMULATION · NO REAL CHAIN DATA", 0, C * .64 + 10, "600 30px Sora, sans-serif", "rgba(236,236,240,.42)");
+  paintBounces(C, hit);
   paintHover();
   paintPlates();
   cx.restore();
