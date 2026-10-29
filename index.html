@@ -200,6 +200,7 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 /* a clipping of the newspaper's front page lies in what the box leaves free: newsprint and ink, the paper's own type and rules.
    The paper is a neutral grey-white, so the HUD keeps green as its only colour. */
 .statep #statePanel { flex: 0 1 auto; }
+.a-pol.has-gaz > .scroll { flex: 0 1 auto; }   /* no personal rules yet: the clipping takes the empty room below the note */
 .gazad { flex: 1 1 0; min-height: 0; margin: 10px 4px 4px; display: flex; text-decoration: none; position: relative; container: gaz / inline-size; }
 .gazad[hidden] { display: none; }
 .ga-paper { --ink: #1c1c1e; --ink2: #4a4a4e; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; overflow: hidden; padding: 12px 14px 10px; text-align: center; color: var(--ink);
@@ -661,6 +662,7 @@ small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .unofficial span { color: var(--text); font: 12px var(--mono); letter-spacing: 0; text-transform: none; flex: 1 1 320px; min-width: 0; }
 .fb-fab { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #000; background: #fff; border: 0; border-radius: 999px; padding: 12px 24px; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); }
 .fb-fab:hover { filter: brightness(1.15); }
+body:has(nav.tnav .pill.fbk) .fb-fab { display: none; }   /* the header has the Feedback button (v17.48); the floating one stays only as a fallback without it */
 .community { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; }
 .fb form { display: grid; gap: 8px; }
 .fb .follow { margin: 8px 0 0; font-size: 12px; color: var(--dim); }
@@ -692,6 +694,7 @@ a.btn { text-decoration: none; display: inline-block; }
 .changes li.day[hidden] { display: none; }
 .changes li .tag { display: inline-block; justify-self: start; text-transform: none; font: 600 11px var(--mono); letter-spacing: .04em; line-height: 1; padding: 3px 6px; border: 1px solid var(--line); border-radius: 4px; color: var(--cyan-hi); white-space: nowrap; text-decoration: none; margin-top: 1px; }
 .changes li .tag.ver { color: var(--ok); border-color: rgba(57,255,138,.35); }
+.changes li .tags { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
 .changes li a.tag:hover { border-color: var(--cyan-hi); color: #fff; }
 .changes li details, .changes li .one { min-width: 0; }
 .changes li details p { grid-column: 2; }
@@ -967,7 +970,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="feed scroll" id="feed"></div>
     </article>
 
-    <article class="panel a-pol">
+    <article class="panel a-pol" id="polCard">
       <h2>Personal money rules <small id="clauseCount">0 accounts</small><button class="info" type="button" aria-label="What is this?" data-tip="Each account can program its own money: spending limits, recipient whitelists, time-locks, co-signature above a threshold. The node combines all accepted rules into one composite rule per stream, with a guarded branch per account and “allow” for everyone else. The network enforces it on every transfer.">i</button></h2>
       <p class="sub">each account programs its own money · the node folds every rule into one spec</p>
       <div class="scroll">
@@ -1091,9 +1094,9 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       </article>
       </div>
       <article class="panel">
-        <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed and when, newest first. A green number is a version of this page, the HUD. A named entry is a release of another page; those pages carry no version numbers, and the name opens the page.">i</button></h2>
+        <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed and when, newest first. The green number is the site version: it goes up one step with every release on any page, and a new page or big feature starts the next whole number. The name beside it says which part of the site changed and opens it. Before v17.54 only the HUD had numbers.">i</button></h2>
         <div class="effort" id="effortUpd" hidden data-ex="effort"><div><b data-n="commits">—</b><span>changes</span></div><div><b data-n="days">—</b><span>days</span></div><div><b data-n="releases">—</b><span>releases</span></div><em data-n="since"></em></div>
-        <p class="loglegend"><i class="ver"></i>Version of this page, the HUD · <i></i>Release of another page (no version numbers there; the name opens it) · Newest first</p>
+        <p class="loglegend"><i class="ver"></i>Site version, one step per release · <i></i>Part of the site that changed (the name opens it) · Newest first</p>
         <ul class="changes"><li class="day">Loading…</li></ul>
       </article>
     </section>
@@ -1535,19 +1538,36 @@ setInterval(() => { if (!document.hidden && PRESENCE.at && Date.now() - PRESENCE
 function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?? d.presence)); if (Number.isFinite(n)) setOnline(n); }
 /* update log: one shared file, assets/updates.json, that every page’s release appends a line to; newest first on screen */
 const fmtLogDate = iso => { const d = new Date(iso + "T00:00:00Z"); return isNaN(d) ? iso : `${d.getUTCDate()} ${"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+/* the site version: every release counts, on any page. Entries up to v17.53 keep what they showed (a HUD number or a page name);
+   after it every entry adds one to the minor number, an entry with a "major" (a new page or big feature) starts the next whole number,
+   and a backfilled entry (written later about an earlier day) adds nothing. Computed while rendering, so parallel releases never fight over numbers. */
+const SITE_BASE = [17, 53];
+function siteVersions(list) {
+  let on = false, [M, m] = SITE_BASE;
+  return list.map(e => {
+    const tag = String(e && e.tag || "");
+    if (!on) { if (tag === `v${SITE_BASE[0]}.${SITE_BASE[1]}`) on = true; return null; }
+    if (e.backfill) return null;
+    if (e.major) { M += 1; m = 0; } else m += 1;
+    return `v${M}.${m}`;
+  });
+}
+const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.53", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.55", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
-  const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
-  /* a page tag links to its page; a version tag (v17.28) is this page, the HUD */
+  const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
+  const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
+  /* a page tag links to its page; a version tag (v17.28) is this page, the HUD; from v17.54 every entry carries the site version beside its page */
   const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh" };
   let day = null, html = "";
   for (const e of order) {
     const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
     if (on !== day) { day = on; html += `<li class="day">${fmtLogDate(on)}</li>`; }
-    const t = ver ? `<b class="tag ver">${esc(tag)}</b>` : PAGE[tag] ? `<a class="tag" href="${PAGE[tag]}">${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
-    html += `<li data-tag="${esc(tag)}">${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
+    const area = e.sv && (ver || tag === "HUD") ? `<a class="tag" href="./">HUD</a>` : PAGE[tag] ? `<a class="tag" href="${PAGE[tag]}">${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
+    const t = e.sv ? `<span class="tags"><b class="tag ver">${esc(e.sv)}</b>${area}</span>` : ver ? `<b class="tag ver">${esc(tag)}</b>` : area;
+    html += `<li data-tag="${esc(e.sv && ver ? "HUD" : tag)}">${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
   }
   ul.innerHTML = html;
   foldLog();
@@ -2074,8 +2094,18 @@ function showBlock(b, pinned = true) {
 /* the newspaper ad: the newest edition from node.tauhud.com/recap/gazette/latest.json once the weekly edition is out, else the current front page;
    shown in three sizes, the largest that fits the room the box leaves, hidden when even the smallest does not fit */
 const GAZ = { at: 0, ed: null };
+/* the clipping's home is the free space of Rules in force now. When that box starts below the fold (the scrolling layout under
+   1900 px, or a zoomed browser) and Personal money rules is still empty, it moves into that empty panel instead, so it is seen */
+function placeGazAd() {
+  const a = $("gazAd"), home = $("statePanelCard"), pol = $("polCard"); if (!a || !home || !pol) return;
+  const away = home.getBoundingClientRect().top > innerHeight - 160, empty = !S.clauses.size;
+  const host = away && empty ? pol : home;
+  if (a.parentElement !== host) { if (host === home) home.insertBefore(a, $("btnState3")); else pol.append(a); }
+  pol.classList.toggle("has-gaz", host === pol);
+}
 function fitGazAd() {
   const a = $("gazAd"); if (!a) return;
+  placeGazAd();
   a.hidden = false; a.classList.remove("c1", "c2", "c3", "c4", "c5");
   const paper = a.firstElementChild, over = () => paper.scrollHeight > paper.clientHeight + 1 || paper.clientHeight < 96;
   for (const c of ["c1", "c2", "c3", "c4", "c5"]) { if (!over()) return; a.classList.add(c); }
@@ -2102,7 +2132,8 @@ function renderGazAd() {
 }
 addEventListener("DOMContentLoaded", () => {
   loadGazette(); setInterval(loadGazette, 600000);
-  if ("ResizeObserver" in window) new ResizeObserver(() => fitGazAd()).observe($("statePanelCard"));
+  if ("ResizeObserver" in window) { const ro = new ResizeObserver(() => fitGazAd()); ro.observe($("statePanelCard")); ro.observe($("polCard")); }
+  addEventListener("resize", () => fitGazAd());
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitGazAd);
 });
 function renderStatePanel() {
@@ -3306,7 +3337,7 @@ pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); set
   const build = () => {
     const text = $("fbText").value.trim(), cat = document.querySelector('input[name="cat"]:checked').value;
     const title = `[${CAT[cat]}] ${text.split("\n")[0].slice(0, 70) || "Feedback"}`;
-    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version v17.53`;
+    const body = `### What would you like to see?\n\n${text}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${$("fbName").value.trim() || "anonymous"}\nHUD mode: ${isSim() ? "sim" : S.mode} · height ${S.height} · version ${SITE.ver || "v17.53"}`;
     const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
     return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };

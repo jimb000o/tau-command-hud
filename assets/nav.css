@@ -204,7 +204,8 @@ body[data-view="simple"] .vp { display: block; }
 .tn-changes li.day { display: block; padding: 0; border: 0; margin-top: 6px; font: 600 11px var(--u-display); letter-spacing: .12em; text-transform: uppercase; color: var(--u-dim); }
 .tn-changes li.day:first-child { margin-top: 0; } .tn-changes li[hidden] { display: none; } .tn-changes li.sentinel { display: block; height: 1px; padding: 0; border: 0; }
 .tn-changes .tag { display: inline-block; justify-self: start; text-transform: none; font: 600 11px var(--u-mono); letter-spacing: .04em; line-height: 1; padding: 3px 6px; border: 1px solid var(--u-line); border-radius: 4px; color: #fff; white-space: nowrap; text-decoration: none; margin-top: 1px; }
-.tn-changes .tag.ver { color: var(--u-ok); border-color: rgba(57,255,138,.35); } .tn-changes a.tag:hover { border-color: #fff; color: #fff; }
+.tn-changes .tag.ver { color: var(--u-ok); border-color: rgba(57,255,138,.35); }
+.tn-changes .tags { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; } .tn-changes a.tag:hover { border-color: #fff; color: #fff; }
 .tn-changes details, .tn-changes .one { min-width: 0; }
 .tn-changes summary { cursor: pointer; list-style: none; color: #fff; font-weight: 600; line-height: 1.4; } .tn-changes summary::-webkit-details-marker { display: none; }
 .tn-changes summary::after { content: " ›"; color: var(--u-dim); font-weight: 400; } .tn-changes details[open] summary::after { content: " ‹"; }

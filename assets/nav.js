@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.53"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.55"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -81,11 +81,27 @@
   if (SIM) document.documentElement.classList.add("tau-sim");
   const BUBBLE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 5v2h10V8H7zm0 4v2h7v-2H7z"/></svg>';
   const PLANE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.9 3.3 2.6 10.8c-1 .4-1 1 0 1.3l4.9 1.5 11.4-7.2c.5-.3 1-.1.6.2l-9.2 8.3-.4 5.1c.5 0 .7-.2 1-.5l2.4-2.3 5 3.7c.9.5 1.6.2 1.8-.9l3.3-15.5c.3-1.3-.5-1.9-1.5-1.5z"/></svg>';
+  /* the site version: every release counts, on any page. Entries up to v17.53 keep what they showed (a HUD number or a page name);
+     after it every entry adds one to the minor number, an entry with a "major" (a new page or big feature) starts the next whole number,
+     and a backfilled entry (written later about an earlier day) adds nothing. Computed while rendering, so parallel releases never fight over numbers. */
+  const SITE_BASE = [17, 53];
+  function siteVersions(list) {
+    let on = false, [M, m] = SITE_BASE;
+    return list.map(e => {
+      const tag = String(e && e.tag || "");
+      if (!on) { if (tag === `v${SITE_BASE[0]}.${SITE_BASE[1]}`) on = true; return null; }
+      if (e.backfill) return null;
+      if (e.major) { M += 1; m = 0; } else m += 1;
+      return `v${M}.${m}`;
+    });
+  }
+  let SITE_VER = null;
   const emit = action => document.dispatchEvent(new CustomEvent("tau-nav", { detail: action }));
   const markSeen = () => { store.set(SEEN_KEY, LATEST_ID); document.querySelectorAll(".tn-upd.new, .tabbar .new").forEach(e => e.classList.remove("new")); };
   /* the shared update log: newest entry = highest date, then the later line in the file; the dot shows until that entry was seen */
   const checkLog = () => fetch(ROOT + "assets/updates.json", { cache: "no-cache" }).then(r => r.json()).then(list => {
     if (!Array.isArray(list) || !list.length) return;
+    SITE_VER = siteVersions(list).filter(Boolean).pop() || null;
     const top = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i)[0];
     LATEST_ID = `${top.tag}|${top.on}`;
     const fresh = store.get(SEEN_KEY) !== LATEST_ID;
@@ -139,9 +155,9 @@
       </article>
       </div>
       <article class="tn-panel tn-log">
-        <h2>Update log <small>built from your feedback</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="What changed and when, newest first. A green number is a version of this page, the HUD. A named entry is a release of another page; those pages carry no version numbers, and the name opens the page.">i</button></h2>
+        <h2>Update log <small>built from your feedback</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="What changed and when, newest first. The green number is the site version: it goes up one step with every release on any page, and a new page or big feature starts the next whole number. The name beside it says which part of the site changed and opens it. Before v17.54 only the HUD had numbers.">i</button></h2>
         <div class="tn-effort" hidden><div><b data-n="commits">—</b><span>changes</span></div><div><b data-n="days">—</b><span>days</span></div><div><b data-n="releases">—</b><span>releases</span></div><em data-n="since"></em></div>
-        <p class="tn-legend"><i class="ver"></i>Version of this page, the HUD · <i></i>Release of another page (no version numbers there; the name opens it) · Newest first</p>
+        <p class="tn-legend"><i class="ver"></i>Site version, one step per release · <i></i>Part of the site that changed (the name opens it) · Newest first</p>
         <ul class="tn-changes"><li class="day">Loading…</li></ul>
       </article>
       </section></div>`;
@@ -156,7 +172,7 @@
     const build = () => {
       const t = text.value.trim(), cat = (form.querySelector('input[name="tncat"]:checked') || {}).value || "idea";
       const ttl = `[${CAT[cat]}] ${t.split("\n")[0].slice(0, 70) || "Feedback"}`;
-      const body = `### What would you like to see?\n\n${t}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${name.value.trim() || "anonymous"}\nPage: ${title} · mode: ${SIM ? "sim" : "live"} · version ${LATEST}`;
+      const body = `### What would you like to see?\n\n${t}\n\n---\nCategory: ${CAT[cat]}\nFrom: ${name.value.trim() || "anonymous"}\nPage: ${title} · mode: ${SIM ? "sim" : "live"} · version ${SITE_VER || LATEST}`;
       const labels = "feedback," + (cat === "bug" ? "bug" : "enhancement");
       return `https://github.com/jimb000o/tau-command-hud/issues/new?labels=${encodeURIComponent(labels)}&title=${encodeURIComponent(ttl)}&body=${encodeURIComponent(body)}`;
     };
@@ -187,14 +203,16 @@
     const ul = UPD.el.querySelector(".tn-changes"); let list;
     try { list = await (await fetch(ROOT + "assets/updates.json", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
     catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
-    const order = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
+    const vers = siteVersions(list); SITE_VER = vers.filter(Boolean).pop() || SITE_VER;
+    const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
     const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", "Guided tour": "playground/#tour" };
     let day = null, html = "";
     for (const e of order) {
       const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
       if (on !== day) { day = on; html += `<li class="day">${logDate(on)}</li>`; }
-      const t = ver ? `<a class="tag ver" href="${ROOT}">${esc(tag)}</a>` : PAGE[tag] ? `<a class="tag" href="${ROOT}${PAGE[tag]}">${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
-      html += `<li data-tag="${esc(tag)}">${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
+      const area = e.sv && (ver || tag === "HUD") ? `<a class="tag" href="${ROOT}">HUD</a>` : PAGE[tag] ? `<a class="tag" href="${ROOT}${PAGE[tag]}">${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
+      const t = e.sv ? `<span class="tags"><b class="tag ver">${esc(e.sv)}</b>${area}</span>` : ver ? `<a class="tag ver" href="${ROOT}">${esc(tag)}</a>` : area;
+      html += `<li data-tag="${esc(e.sv && ver ? "HUD" : tag)}">${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
     }
     ul.innerHTML = html;
     foldUpdLog(ul);
@@ -677,5 +695,5 @@
   }
   const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); mountFootLinks(); countVisit(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-  window.TauNav = { LATEST, TELEGRAM, markSeen, closeAll, chain: CHAIN, sim: SIM };
+  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, markSeen, closeAll, chain: CHAIN, sim: SIM };
 })();
