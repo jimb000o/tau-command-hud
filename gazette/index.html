@@ -1106,7 +1106,10 @@ const EN = {
   /* ----- the sound of a page: filtered noise, a sweep down and a soft landing ----- */
   let AC = null, SND = store.get("gazette-sound") !== "off";
   const sndLabel = () => { const narrow = desk.clientWidth < 560 || getComputedStyle($("ctl")).flexDirection === "column"; $("bSnd").textContent = narrow ? (SND ? "♪" : "♪̸") : SND ? UI.sOn : UI.sOff; $("bSnd").setAttribute("aria-label", SND ? UI.sOn : UI.sOff); };
-  $("bSnd").onclick = e => { e.stopPropagation(); SND = !SND; store.set("gazette-sound", SND ? "on" : "off"); sndLabel(); };
+  /* one sound switch for the reader: turning sound on also opens the café (quietly), turning it off closes it */
+  const setSnd = (on, tell) => { SND = on; store.set("gazette-sound", SND ? "on" : "off"); sndLabel(); if (tell) window.dispatchEvent(new CustomEvent("gazette-sound", { detail: SND })); };
+  $("bSnd").onclick = e => { e.stopPropagation(); setSnd(!SND, true); };
+  window.addEventListener("gazette-cafe", e => { if (e.detail > 0 && !SND) setSnd(true, false); });
   function sound() {
     if (!SND) return;
     try {
@@ -1158,6 +1161,6 @@ const EN = {
   }, 200); });
 })();
 </script>
-<script src="scene.js?v=4"></script>
+<script src="scene.js?v=5"></script>
 </body>
 </html>
