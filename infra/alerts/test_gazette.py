@@ -137,7 +137,7 @@ e3 = w.make_gazette(w.recap_numbers(END), END + 300)
 idx = json.load(open(os.path.join(g, "editions.json")))
 check(e2["no"] == 2 and e3["no"] == 2 and [x["no"] for x in idx] == [2, 1], "the Monday edition is No. 2; written again the same day it keeps its number")
 check(set(idx[0]) >= {"no", "date", "banner", "teaser", "url"}, "the archive lists number, date, headline, teaser and link")
-check(e2["stories"][1]["body"][0]["en"].startswith("In the simulation, where the visitors decide, two hourly"), "the week's noted day goes into the rehearsal hall")
+check(e2["stories"][1]["body"][0]["en"].startswith("Across town from the real testnet") and "In the simulation, where the visitors decide, two hourly" in json.dumps(e2["stories"][1]), "the week's noted day goes into the rehearsal hall")
 alerts.PUBLIC_DIR, w0 = TMP, alerts.Watcher
 alerts.Watcher = Relay
 code = alerts.gazette_cli(reprint=True)

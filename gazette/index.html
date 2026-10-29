@@ -695,7 +695,7 @@ const EN = {
   function weekPage(e) {
     const figs = (e.figures || []).map(f => `<tr><td>${txt(f.label)}</td><td>${txt(f.value)}</td></tr>`).join("");
     const story = st => st ? `<h3>${txt(st.h)}</h3>${(st.body || []).map((b, j) => `<p${j ? "" : ' class="ni"'}>${txt(b)}</p>`).join("")}` : "";
-    const [up, hall] = e.stories || [];
+    const [up, hall, inside] = e.stories || [];
     return `<div class="pg front week">
   <div class="mast">
     <div class="ear"><b>${UI.weather}</b>${e.weather ? txt(e.weather) : txt(e.period)}</div>
@@ -717,6 +717,7 @@ const EN = {
       <table class="figs">${figs}</table>
       <hr class="rule2">
       ${story(up)}
+      ${inside ? `<hr class="rule2">${story(inside)}` : ""}
       <div class="ad inv"><div class="t">${UI.founding}</div><p>${UI.foundingP}</p></div>
     </div>
     <div class="u s4 rt wfoot"><div class="c2">${story(hall)}</div></div>

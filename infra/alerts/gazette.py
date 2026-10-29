@@ -382,7 +382,7 @@ def lead_body(r: dict, props: list[dict] | None = None, stories: list[dict] | No
     also = [ph for ph in map(phrase, r["active_titles"][1:4]) if ph]
     if also:
         out.append(t("Also put in force this week: " + "; ".join(x["en"] for x in also) + ".", "本周同样生效的还有：" + "；".join(x["zh"] for x in also) + "。"))
-    more = [s["para"] for s in stories[1:] if s.get("para")]
+    more = [s["para"] for s in stories[1:] if s.get("para") and s["score"] > 0]
     for i, p in enumerate(more[:3]):
         out.append(t(("<b>Also this week.</b> " if not i else "") + p["en"], ("<b>本周另讯。</b>" if not i else "") + p["zh"]))
     if r["restarts"]:
@@ -439,30 +439,81 @@ def coming_up(props: list[dict], head: int | None, s: float | None) -> dict:
     return {"h": t("Coming Up on the Testnet", "测试网接下来"), "body": lines}
 
 
-def rehearsal(days: list[dict]) -> dict:
-    """The visitors' week in the simulation."""
+def riddle(r: dict, props: list[dict]) -> dict | None:
+    """An inside story when the week's ballots only kept the rules: told as a small mystery, honest that the chain is still quiet."""
+    week = [p for p in props if r["start"] <= (p.get("proposed_ts") or 0) < r["end"]]
+    keep = sum(1 for p in week if not phrase(p.get("title")))
+    if keep < 3:
+        return None
+    n, N = word(keep), word(keep, True)
+    return {"h": t("The Riddle of the Unchanging Ballots", "不变投票之谜"), "body": [
+        t(f"{N['en']} times this week the users of Testnet Alpha went to the ballot box, and {n['en']} times the question was the same: "
+          "shall the rules stay as they are? Each time the answer was yes. When the votes were counted, not one rule had moved.",
+          f"本周，Testnet Alpha 的用户{n['zh']}次走向投票箱，问题{n['zh']}次都一样：规则是否维持原样？每一次的回答都是赞成。点完票后，没有一条规则挪动过。"),
+        t("What, then, were they voting for? Our correspondent offers a theory. A ballot that keeps the rules is a rehearsal: it proves that a vote "
+          "can be cast, counted and carried, block by block, before a question that matters is put.",
+          "那么，他们究竟在为什么投票？本报记者提出一个推测：维持规则的投票是一场排练。它证明一张选票可以被投出、清点并通过，一个区块接一个区块，好在真正要紧的问题提出之前做好准备。"),
+        t(f"The chain is young and its days are still quiet. But a ballot box tried {n['en']} times is ready for the day the question is a real one.",
+          f"这条链还年轻，日子仍然平静。但一个试过{n['zh']}次的投票箱，已经为真正提问的那一天做好了准备。"),
+    ]}
+
+
+# the simulation runs on every page since 28 October 13:11 UTC (assets/sim.js): every hour a special rule change at hh:20,
+# a contradicting proposal refused at the door at hh:40, a contested one dropped at its deadline at hh:58; a new chain at midnight
+SIM_SINCE = datetime(2026, 10, 28, 13, 11, tzinfo=timezone.utc).timestamp()
+
+
+def rehearsal(days: list[dict], r: dict | None = None, switches: bool = True) -> dict:
+    """The week in the simulation as a feature in the paper's voice: the programme the clock ran, the visitors' votes,
+    their own proposals, the consensus switches, the refusals at the door and the best tipster. Always marked as the
+    simulation."""
     h = t("From the Rehearsal Hall", "排练厅来稿")
-    if not days:
-        return {"h": h, "body": [t("In the simulation the visitors decide: every hour one rule change goes to their vote, and the simulated validators follow the majority. "
-                                   "Try it at tauhud.com in Simulation mode.",
-                                   "在模拟中由访客做主：每小时有一项规则变更交由他们投票，模拟验证者跟随多数。在 tauhud.com 切换到模拟模式即可参与。")]}
+    body = []
+    a = max(r["start"], SIM_SINCE) if r else 0
+    hours = int((r["end"] - a) // 3600) if r and r["end"] > a else 0
+    midnights = int(r["end"] // 86400 - a // 86400) if r and r["end"] > a else 0
+    if hours:
+        body.append(t(f"Across town from the real testnet stands a rehearsal hall: the simulation, a practice chain that runs in every visitor's browser "
+                      f"and where the visitors of tauhud.com hold the gavel. This week the house played {word(hours)['en'] if hours <= 20 else fmt_n(hours)} hour{'s' if hours != 1 else ''} of its programme, "
+                      "a rule change on the floor every hour at twenty past.",
+                      f"在真实测试网的对街，有一座排练厅：模拟。它是一条在每位访客浏览器里运行的练习链，由 tauhud.com 的访客执槌。"
+                      f"本周这座剧院上演了 {fmt_n(hours)} 个小时的节目，每小时二十分都有一项规则变更提上台面。"))
     ballots = sum(d["ballots"] for d in days)
     carried = sum(d["carried"] for d in days)
     turned = sum(d["turned"] for d in days)
     votes = sum(d["votes"] for d in days)
     vprops = sum(d["visitor_props"] for d in days)
     vcarried = sum(d["visitor_carried"] for d in days)
-    nd = len(days)
-    vw = word(votes)["en"] if votes <= 20 else fmt_n(votes)
-    verdict = ([f"let {word(carried)['en']} through"] if carried else []) + ([f"turned down {word(turned)['en']}"] if turned else [])
-    body = [t(f"In the simulation, where the visitors decide, {word(ballots)['en']} hourly rule change{'s' if ballots != 1 else ''} went to a vote of the visitors "
-              f"over {word(nd)['en']} day{'s' if nd != 1 else ''}. They cast {vw} vote{'s' if votes != 1 else ''}"
-              + (f" and {' and '.join(verdict)}." if verdict else "."),
-              f"在由访客做主的模拟中，{word(nd)['zh']}天里共有{word(ballots)['zh']}项每小时的规则变更交由访客投票。"
-              f"他们投出 {fmt_n(votes)} 票" + "".join(f"，{x}" for x in ([f"放行{word(carried)['zh']}项"] if carried else []) + ([f"否决{word(turned)['zh']}项"] if turned else [])) + "。")]
+    if ballots:
+        vw = word(votes)["en"] if votes <= 20 else fmt_n(votes)
+        verdict = ([f"let {word(carried)['en']} pass"] if carried else []) + ([f"sent {word(turned)['en']} home"] if turned else [])
+        body.append(t(f"In the simulation, where the visitors decide, {word(ballots)['en']} hourly rule change{'s' if ballots != 1 else ''} went to a vote of the visitors. "
+                      f"They cast {vw} vote{'s' if votes != 1 else ''}" + (f" and {' and '.join(verdict)}." if verdict else ".")
+                      + " When nobody votes, the simulated validators carry the motion themselves.",
+                      f"在由访客做主的模拟中，共有{word(ballots)['zh']}项每小时的规则变更交由访客投票。他们投出 {fmt_n(votes)} 票"
+                      + "".join(f"，{x}" for x in ([f"放行{word(carried)['zh']}项"] if carried else []) + ([f"否决{word(turned)['zh']}项"] if turned else []))
+                      + "。无人投票时，模拟验证者自行通过动议。"))
+    elif not hours:
+        body.append(t("In the simulation the visitors decide: every hour one rule change goes to their vote, and the simulated validators follow the majority. "
+                      "Try it at tauhud.com in Simulation mode.",
+                      "在模拟中由访客做主：每小时有一项规则变更交由他们投票，模拟验证者跟随多数。在 tauhud.com 切换到模拟模式即可参与。"))
+    sw = [x for x in sim_switches(r["start"], r["end"], days) if not x["down"]] if r and switches else []
+    if sw:
+        n = len(sw)
+        body.append(t(f"Twice a day the hall rewrites its own constitution. Proof of stake takes the stage at half past ten, the fixed validator list returns at half past four; "
+                      f"{word(n)['en']} such change{'s' if n != 1 else ''} came into force this week, and not one machine was reinstalled.",
+                      f"这座排练厅每天两次改写自己的宪章：十点半由权益证明登台，四点半固定验证者名单回归。本周共有{word(n)['zh']}次这样的切换生效，没有一台机器需要重装。"))
     if vprops:
-        body.append(t(f"Visitors also wrote {word(vprops)['en']} rule change{'s' if vprops != 1 else ''} of their own, and {word(vcarried)['en']} {'was' if vcarried == 1 else 'were'} voted in.",
-                      f"访客还亲手写了{word(vprops)['zh']}项规则变更，其中{word(vcarried)['zh']}项获得通过。"))
+        body.append(t(f"Visitors also brought motions of their own: {word(vprops)['en']} rule change{'s' if vprops != 1 else ''} written in the Playground, "
+                      f"{word(vcarried)['en']} of them voted in.",
+                      f"访客还提出了自己的动议：在试验场写成的{word(vprops)['zh']}项规则变更，其中{word(vcarried)['zh']}项获得通过。"))
+    if hours:
+        body.append(t(f"The doorkeeper had a busy week. {word(hours, True)['en'] if hours <= 20 else fmt_n(hours)} proposal{'s' if hours != 1 else ''} that contradicted the rules in force were turned away at the door before a single vote, "
+                      f"because Tau checks a rule by logic first; {word(hours)['en'] if hours <= 20 else fmt_n(hours)} contested motions, backed by their proposer alone, expired at their deadline"
+                      + (f"; and {word(midnights)['en']} time{'s' if midnights != 1 else ''} at midnight the stage was swept and the chain began anew." if midnights else "."),
+                      f"守门人这一周很忙。{fmt_n(hours)} 项与现行规则相矛盾的提案还没投票就被拒之门外，因为 Tau 先用逻辑检查规则；"
+                      f"{fmt_n(hours)} 项只有提案人支持的争议动议在截止时失效"
+                      + (f"；午夜时分舞台清扫了{word(midnights)['zh']}次，链重新开始。" if midnights else "。")))
     best = max((d for d in days if d.get("best")), key=lambda d: d["best"]["points"], default=None)
     if best:
         wd = datetime.strptime(best["day"], "%Y-%m-%d")
@@ -489,7 +540,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
         "lead": {"kick": kick, "h": h2, "deck": deck, "body": lead_body(r, props, ranked)},
         "weather": weather(r), "caption": caption(r),
         "figures": figures(r),
-        "stories": [coming_up(props, r.get("head"), r["pace"]), rehearsal(days)],
+        "stories": [coming_up(props, r.get("head"), r["pace"]), rehearsal(days, r, not any(x["kind"] == "simswitch" and x["score"] > 0 for x in ranked))] + ([m] if (m := riddle(r, props)) else []),
         "url": "https://tauhud.com/gazette/",
         # flat copies for the HUD's notice of the paper (index.html)
         "number": no, "headline": banner["en"], "headline_zh": banner["zh"], "deck": deck["en"], "deck_zh": deck["zh"],
