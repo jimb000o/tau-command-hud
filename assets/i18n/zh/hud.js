@@ -165,6 +165,7 @@ TauI18n.add({ strings: {
   "AGRS or ETH, one address for both · What it pays for: time · server · domain": "AGRS 或 ETH，同一个地址 · 用途：时间 · 服务器 · 域名",
   "AGRS per tx": "AGRS / 笔交易",
   "Alerts": "提醒",
+  "Menu": "菜单",
   "All transactions ({n})": "全部交易（{n}）",
   "All transactions ({x1})": "全部交易（{x1}）",
   "Allow": "允许",
