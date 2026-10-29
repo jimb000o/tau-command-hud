@@ -24,7 +24,7 @@ their credentials are set in .env; without them that channel is simply off.
 
 It also posts findings (findings.py): unusual things our read node sees on
 the real chain, such as no new blocks, the bootnode gone, ghost transactions
-(IDNI #81), a reorg or our node falling behind. One post when an incident
+(IDNI #81), a reorg, our node falling behind or the same proposal again and again. One post when an incident
 starts, one when it is over, never repeated; a busy stretch is collected and
 posted once afterwards instead of one by one.
 
@@ -188,6 +188,8 @@ MAX_TRIES = 8
 # While one yes vote is enough (one validator), a proposal is usually agreed a block or two later.
 # Its "proposed" post waits this long; if it is agreed meanwhile, one combined post goes out instead of two.
 PROPOSED_HOLD = float(os.environ.get("PROPOSED_HOLD_SECONDS", 600))
+# The same headline (same kind, same rule change) posted again within this window gets no post of its own.
+REPEAT_WINDOW = float(os.environ.get("REPEAT_WINDOW_SECONDS", 6 * 3600))
 SOLO_NOTE = ("One yes vote is enough: the testnet has one validator, and any account may vote. "
              "Tau HUD has applied to become a second validator; then a change would need two yes votes.")
 
@@ -778,6 +780,33 @@ def sim_buttons() -> dict:
 
 
 # ---------- "Testnet today" ----------
+def is_practice(it: dict) -> bool:
+    """The rules in force proposed again (nothing changes). Items stored before the flag existed still carry the title."""
+    return bool(it.get("practice") or (it.get("kind") != "restart" and (it.get("severity") == "none"
+                                                                      or "(no real change)" in str(it.get("headline") or ""))))
+
+
+def grouped(lines: list[str]) -> list[str]:
+    """Identical lines once, with how often: "3× Agreed: …" instead of three equal lines; first-seen order kept."""
+    count: dict[str, int] = {}
+    for x in lines:
+        count[x] = count.get(x, 0) + 1
+    return [f"{n}× {x}" if n > 1 else x for x, n in count.items()]
+
+
+def practice_meaning(n: int, proposers: list[str]) -> str:
+    """What a day's practice votes most likely were, from who proposed them."""
+    if not proposers:
+        return "probably people trying the Vote page"
+    top = max(proposers.count(a) for a in set(proposers))
+    k = len(set(proposers))
+    if k == 1 and n >= 3:
+        return "all from one account, which looks like a script or someone testing the vote flow"
+    if top >= 3 and top * 2 > n:
+        return f"{top} of them from one account, which looks like someone testing the vote flow"
+    return f"from {plural(k, 'account')}, probably people trying the Vote page"
+
+
 def today_numbers(stats: dict | None, items: list[dict], props: list[dict], online: int | None, end: float) -> dict:
     """The real chain's last 24 hours up to `end`: blocks, pace, transactions, practice votes, rule events, what comes next."""
     start = end - 86400
@@ -787,15 +816,18 @@ def today_numbers(stats: dict | None, items: list[dict], props: list[dict], onli
     gaps = sorted(b - a for a, b in zip(ts, ts[1:]) if b > a)
     senders = {x for r in rows for x in r[f["senders"]]} if "senders" in f else set()
     recent = [it for it in items if start <= (it.get("seen") or 0) < end and not it.get("folded")]
-    practice = {it.get("id") for it in recent if it.get("practice")}
-    events = [it["headline"] for it in reversed(recent) if not it.get("practice") and it["kind"] in ("agreed", "active", "dropped", "restart")]
+    practice = {it.get("id") for it in recent if is_practice(it)}
+    events = grouped([it["headline"] for it in reversed(recent) if not is_practice(it) and it["kind"] in ("agreed", "active", "dropped", "restart")])
+    by_id = {p.get("id"): p for p in props}
+    proposers = [by_id[i]["proposer"] for i in practice if i in by_id and by_id[i].get("proposer")]
     head = (stats or {}).get("head") or 0
     pace = gaps[len(gaps) // 2] if gaps else None
     coming = [{"title": p["title"], "at": p["activate_at"], "eta": eta_txt(p["activate_at"] - head, pace) if head else ""}
               for p in props if p.get("approved_at") is not None and p.get("activated_at") is None and p.get("expired_at") is None
               and (p.get("explain") or {}).get("severity") != "none"]
     return {"end": end, "blocks": len(rows), "pace": pace, "txs": sum(r[f["txs"]] for r in rows) if "txs" in f else 0,
-            "senders": len(senders), "practice": len(practice), "events": events, "online": online,
+            "senders": len(senders), "practice": len(practice), "practice_why": practice_meaning(len(practice), proposers),
+            "events": events, "online": online,
             "coming": sorted(coming, key=lambda c: c["at"])[:2]}
 
 
@@ -815,8 +847,8 @@ def today_text(r: dict) -> str:
         out.append(f"• {e(h)}")
     if r["practice"]:
         n = r["practice"]
-        out.append(f"• {plural(n, 'practice vote')}: the rules in force were proposed again and agreed. Nothing changes; "
-                   f"{'it tries' if n == 1 else 'they try'} the vote itself. You can try it on the Vote page.")
+        out.append(f"• {plural(n, 'practice vote')}: the rules in force were proposed again and agreed, so nothing changes"
+                   + (f"; {e(r['practice_why'])}." if n > 1 and r.get("practice_why") else ".") + " You can try it on the Vote page.")
     if r["online"]:
         out.append(f"• {plural(r['online'], 'node')} online")
     for c in r["coming"]:
@@ -1425,7 +1457,13 @@ class Watcher:
                 st = it["posted"].get(o.name)
                 if not it["news"] or it["seen"] < meta["since"] or st in ("ok", "skip") or (isinstance(st, int) and st >= MAX_TRIES):
                     continue
-                if it.get("folded") or it.get("practice"):
+                if it.get("folded") or is_practice(it):
+                    continue
+                if any(o2 is not it and o2["posted"].get(o.name) == "ok" and o2["kind"] == it["kind"] and o2["headline"] == it["headline"]
+                       and 0 <= it["seen"] - o2["seen"] < REPEAT_WINDOW for o2 in self.state["items"]):
+                    it["posted"][o.name] = "skip"  # the same news again within hours: no second post (a burst is a finding)
+                    log.info("%s: same as a post of the last hours, left out: %s", o.name, it["headline"])
+                    self.save_state()
                     continue
                 if it["kind"] == "proposed" and it.get("thr") == 1 and time.time() - it["seen"] < PROPOSED_HOLD:
                     break  # wait: it may be agreed in a moment; keep the order of posts
@@ -1558,8 +1596,11 @@ class Watcher:
 
     # ---------- findings: unusual things on the real chain ----------
     def findings_snapshot(self, now: float, with_stats: bool) -> dict:
+        gov = [{"ts": p.get("proposed_ts"), "title": p.get("title"), "proposer": p.get("proposer"),
+                "noop": (p.get("explain") or {}).get("severity") == "none"} for p in getattr(self, "props", None) or []]
         return {"health": self.health_now(), "peers": self.relay_json("/peers"), "status": self.relay_json("/status"),
-                "stats": self.relay_json("/stats") if with_stats else None, "blocks": self.blocks}
+                "stats": self.relay_json("/stats") if with_stats else None, "blocks": self.blocks,
+                "gov": gov if getattr(self, "props", None) is not None else None}
 
     async def maybe_findings(self, now: float | None = None):
         """Run the detectors once a minute (/stats every tenth time) and send what they queued: Telegram first, then the

@@ -1201,5 +1201,10 @@
    "link": "/devpulse/",
    "image": "/assets/shots/devpulse.png"
   }
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-29",
+  "html": "Alerts read patterns, not just events: the same rule change on repeat is now one line (“3× …”) or no second post at all, and practice votes are explained instead of listed, for example “all from one account, which looks like someone testing the vote flow”. When the same proposal comes again and again within an hour, the channel gets one finding that says what it most likely means."
  }
 ]
