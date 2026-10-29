@@ -69,9 +69,10 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .chart .colb.open { fill-opacity: .22; stroke: var(--ok); stroke-opacity: .6; stroke-dasharray: 3 3; }
 .chart .colb.sel { fill-opacity: .95; }
 .chart .colb.on { fill-opacity: .85; }
-.range button { font: 600 11px var(--display); letter-spacing: .12em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 12px; min-height: 28px; cursor: pointer; }
-.range button:hover { color: #fff; border-color: var(--hair); }
-.range button[aria-pressed="true"] { color: #000; background: #fff; border-color: #fff; }
+.sites { display: inline-flex; gap: 4px; margin-top: 10px; }
+.range button, .sites button { font: 600 11px var(--display); letter-spacing: .12em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 12px; min-height: 28px; cursor: pointer; }
+.range button:hover, .sites button:hover { color: #fff; border-color: var(--hair); }
+.range button[aria-pressed="true"], .sites button[aria-pressed="true"] { color: #000; background: #fff; border-color: #fff; }
 .chart { position: relative; flex: 1 1 auto; min-height: 220px; }
 .chart.small { min-height: 150px; }
 .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
@@ -146,7 +147,7 @@ html.fit .chart { min-height: 0; }
 html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 1fr) 420px 420px; }
 html.fit.wide .col.side { display: contents; }
 @media (max-width: 700px) {
-  .range button, .kind button { min-height: 44px; padding: 0 10px; }
+  .range button, .kind button, .sites button { min-height: 44px; padding: 0 10px; }
   .chart { min-height: 200px; }
   td.hide-s, th.hide-s { display: none; }
 }
@@ -162,7 +163,8 @@ html.fit.wide .col.side { display: contents; }
   <nav class="tnav" data-page="meta" aria-label="Pages and tools"></nav>
   <div class="intro">
     <div>
-      <p class="lead">How many people look at Tau through this site.</p>
+      <p class="lead"><span id="leadLine">How many people look at Tau through this site.</span></p>
+      <span class="sites" role="group" aria-label="Site"><button type="button" data-site="">Tau HUD</button><button type="button" data-site="agorzilla" data-tip="Agorzilla, our second site: one creature everyone feeds and shapes on Tau Testnet Alpha.\nCounted the same way, kept apart from Tau HUD's numbers.">Agorzilla</button></span>
       <p class="sub" id="sourceLine">Visitors per day, growth since counting began and the pages people open most. Counted without cookies and without storing anything in your browser; only daily totals are kept.</p>
     </div>
     <div class="kpis" aria-label="Key numbers">
@@ -230,13 +232,22 @@ const pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "–";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const DAY = 86400000;
 const HOUR = 3600000;
-let data = null, range = 30, sel = null, failed = false, kind = "line";   // range 1 = the last 24 hours, hour by hour
+let raw = null, data = null, range = 30, sel = null, failed = false, kind = "line";
+// Agorzilla (agorzilla.com) is counted the same way but apart; the relay lists it under "sites"
+const SITES = { "": "How many people look at Tau through this site.", agorzilla: "How many people visit Agorzilla, our second site." };
+let site = new URLSearchParams(location.search).get("site") || "";
+if (!(site in SITES)) site = "";
+const pickSite = () => {
+  if (!raw) return;
+  const o = site && raw.sites && raw.sites[site];
+  data = !site ? raw : { ...raw, days: (o && o.days) || {}, hours: (o && o.hours) || {} };
+};   // range 1 = the last 24 hours, hour by hour
 try { const r = localStorage.getItem("tauhud-meta-range"); if (r != null && [0, 1, 7, 30, 90, 365].includes(+r)) range = +r; } catch (e) {}
 
 /* page keys from the counter: "hud", "explorer", "story/zh" … */
-const NAMES = { hud: "HUD", explorer: "Explorer", stats: "Stats", history: "Time travel", account: "Accounts", nodes: "Nodes", proposals: "Proposals", story: "Tau in 60 seconds", gazette: "The Daily Consensus", chronicle: "Chronicle", findings: "Findings", status: "Status", developers: "Developers", press: "Press kit", playground: "Playground", whatif: "What if", vote: "Vote for real", missions: "Missions", meta: "In numbers" };
+const NAMES = { hud: "HUD", explorer: "Explorer", stats: "Stats", history: "Time travel", account: "Accounts", nodes: "Nodes", proposals: "Proposals", story: "Tau in 60 seconds", gazette: "The Daily Consensus", chronicle: "Chronicle", findings: "Findings", status: "Status", developers: "Developers", press: "Press kit", playground: "Playground", whatif: "What if", vote: "Vote for real", missions: "Missions", meta: "In numbers", agorzilla: "Agorzilla" };
 const pageName = p => { const [a, b] = p.split("/"); return T(NAMES[a] || "/" + a + "/") + (b ? ` (${b})` : ""); };
-const pageHref = p => "/" + (p === "hud" ? "" : p + "/");
+const pageHref = p => p.split("/")[0] === "agorzilla" ? "https://agorzilla.com/" : "/" + (p === "hud" ? "" : p + "/");
 const dayKey = t => new Date(t).toISOString().slice(0, 10);
 const dayLabel = (k, long) => new Date(k + "T00:00:00Z").toLocaleDateString(ZH ? "zh-CN" : "en-GB", long ? { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
 
@@ -510,6 +521,8 @@ function kpis() {
 }
 
 function render() {
+  document.querySelectorAll(".sites button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.site === site)));
+  $("leadLine").textContent = T(SITES[site]);
   document.querySelectorAll(".range button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.r === range)));
   document.querySelectorAll(".kind button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === kind)));
   if (!data) { if (failed) drawDaily(); return; }
@@ -518,11 +531,11 @@ function render() {
 }
 
 async function load() {
-  if (SAMPLE) { data = sample(); render(); return; }
+  if (SAMPLE) { raw = sample(); raw.sites = { agorzilla: { days: Object.fromEntries(Object.entries(raw.days).slice(-20).map(([k, d]) => [k, [Math.round(d[0] / 4), Math.round(d[1] / 5), Math.round(d[2] / 4), { agorzilla: Math.round(d[0] / 4) }, { en: Math.round(d[0] / 4) }, {}, {}]])), hours: {} } }; pickSite(); render(); return; }
   try {
     const r = await fetch(`${RELAY}/visits/public`, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
-    data = await r.json(); failed = false;
+    raw = await r.json(); failed = false; pickSite();
     // a short history fills the chart better as All (at least a week) than as an empty 30 days
     if (!load.done) { load.done = true; const n = Object.keys(data.days || {}).length; if (range > 1 && n < range) { range = 0; } }
   } catch (e) { failed = true; if (!data) data = null; }
@@ -530,6 +543,10 @@ async function load() {
 }
 
 document.querySelectorAll(".kind button").forEach(b => b.addEventListener("click", () => { kind = b.dataset.kind; render(); }));
+document.querySelectorAll(".sites button").forEach(b => b.addEventListener("click", () => {
+  site = b.dataset.site; sel = null; pickSite(); render();
+  const u = new URL(location.href); if (site) u.searchParams.set("site", site); else u.searchParams.delete("site"); history.replaceState(null, "", u);
+}));
 document.querySelectorAll(".range button").forEach(b => b.addEventListener("click", () => {
   range = +b.dataset.r; try { localStorage.setItem("tauhud-meta-range", range); } catch (e) {}
   render();
