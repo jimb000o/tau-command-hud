@@ -1361,12 +1361,12 @@ function exampleContact() {
 }
 function renderBookHint() {
   const ex = exampleContact(), busy = $("bName").value.trim() || $("bAddr").value.trim();
-  $("bookHint").replaceChildren(
+  $("bookHint").replaceChildren(...[
     T(SIM ? "No address at hand? Ask the person for theirs: their wallet shows it under Your account, with a Copy button. Or try the book with a simulated account:" : "No address at hand? Ask the person for theirs: their wallet shows it under Your account, with a Copy button. Or try the book with a real testnet account:"),
     el("br"),
     ex && !busy ? el("button", { class: "b quiet", type: "button", text: T("Use an example name and address"), "data-tip": T("Fills in an example") + "\n" + T(SIM ? "A simulated account, nobody you know." : "A real testnet account that holds a rule place, nobody you know.") + "\n" + T("Nothing is added until you press Add."),
       onclick: () => { $("bName").value = ex.name; $("bAddr").value = ex.addr; renderBook(); $("btnBook").focus(); } }) : null,
-    W.pk ? el("button", { class: "b quiet", type: "button", text: T("Show my own address"), onclick: () => $("acctTabs").querySelector('[data-atab="acct"]').click() }) : null);
+    W.pk ? el("button", { class: "b quiet", type: "button", text: T("Show my own address"), onclick: () => $("acctTabs").querySelector('[data-atab="acct"]').click() }) : null].filter(Boolean));
 }
 $("btnBook").onclick = () => {
   const n = $("bName").value.trim(), a = $("bAddr").value.trim().toLowerCase();
