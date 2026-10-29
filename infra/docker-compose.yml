@@ -116,10 +116,11 @@ services:
       X_LINKS: ${X_LINKS:-false}
       X_SIM: ${X_SIM:-false}
       X_PICTURES: ${X_PICTURES:-true}   # the rule change's card, the live overview or a new page's picture under the post
-      # weekly recap image (alerts/recap.py): Monday 09:00 UTC unless .env says otherwise
+      # weekly recap image and newspaper (alerts/recap.py, gazette.py): Monday 09:00 German time unless .env says otherwise
       RECAP_ENABLED: ${RECAP_ENABLED:-true}
       RECAP_WEEKDAY: ${RECAP_WEEKDAY:-0}
       RECAP_HOUR: ${RECAP_HOUR:-9}
+      RECAP_TZ: ${RECAP_TZ:-Europe/Berlin}
       # changes to Tau HUD itself, from assets/updates.json: "major" entries one post each, the rest in digests at 12:00 and 18:00 UTC
       SITE_UPDATES: ${SITE_UPDATES:-true}
       SITE_MAJOR_DAILY_CAP: ${SITE_MAJOR_DAILY_CAP:-3}

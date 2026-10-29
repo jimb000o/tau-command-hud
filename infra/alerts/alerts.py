@@ -39,7 +39,7 @@ of their own; one evening summary, "Testnet today" at TESTNET_TODAY_HOUR UTC,
 counts them with the day's blocks, transactions and rule changes, and is
 skipped on a quiet day.
 
-Once a week (Monday 09:00 UTC by default) it also posts a recap image of the
+Once a week (Monday 09:00 German time by default) it also posts a recap image of the
 week (recap.py) and keeps a copy at https://node.tauhud.com/recap/latest.png.
 At the same time it writes that week's edition of The Daily Consensus, the
 site's newspaper (gazette.py), to /recap/gazette/latest.json; the first one is
@@ -77,6 +77,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from xml.sax.saxutils import escape as xml_escape
 
 from websockets.asyncio.client import connect
@@ -120,7 +121,8 @@ SHARE_HTTP = os.environ.get("SHARE_HTTP", "http://share:8070").rstrip("/")
 RELAY_HTTP = os.environ.get("RELAY_HTTP", "http://relay:8080")
 RECAP_ON = os.environ.get("RECAP_ENABLED", "true").lower() in ("1", "true", "yes")
 RECAP_WEEKDAY = int(os.environ.get("RECAP_WEEKDAY", 0))   # 0 = Monday
-RECAP_HOUR = int(os.environ.get("RECAP_HOUR", 9))         # UTC
+RECAP_HOUR = int(os.environ.get("RECAP_HOUR", 9))         # local time in RECAP_TZ
+RECAP_TZ = ZoneInfo(os.environ.get("RECAP_TZ", "Europe/Berlin"))   # 09:00 in Germany, summer and winter
 HEALTH_ON = os.environ.get("HEALTH_ALERTS", "true").lower() in ("1", "true", "yes")
 HEALTH_DOWN_BELOW = float(os.environ.get("HEALTH_DOWN_BELOW", 50))   # also "down" whenever the relay says so
 HEALTH_UP_AT = float(os.environ.get("HEALTH_UP_AT", 70))             # recovered at or above this
@@ -1803,11 +1805,10 @@ class Watcher:
     @staticmethod
     def recap_slot(now: float) -> float:
         """The latest scheduled recap time at or before now."""
-        d = datetime.fromtimestamp(now, timezone.utc).replace(hour=RECAP_HOUR, minute=0, second=0, microsecond=0)
-        d -= timedelta(days=(d.weekday() - RECAP_WEEKDAY) % 7)
-        if d.timestamp() > now:
-            d -= timedelta(days=7)
-        return d.timestamp()
+        day = datetime.fromtimestamp(now, RECAP_TZ).date()
+        day -= timedelta(days=(day.weekday() - RECAP_WEEKDAY) % 7)
+        slot = lambda x: datetime(x.year, x.month, x.day, RECAP_HOUR, tzinfo=RECAP_TZ).timestamp()
+        return slot(day) if slot(day) <= now else slot(day - timedelta(days=7))
 
     def recap_numbers(self, end: float) -> dict:
         def get(path):
