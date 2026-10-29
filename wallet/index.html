@@ -106,6 +106,10 @@ button.b.big { padding: 9px 16px; font-size: 12px; }
 .item .acts { display: flex; gap: 6px; }
 .item .acts button.b { padding: 3px 8px; }
 .item.ask { border-color: rgba(57,255,138,.45); }
+/* an inbox card's buttons sit on their own line under the title, so the title never folds into one word per line */
+.item.ask .acts { grid-column: 2 / 4; flex-wrap: wrap; }
+html.fit #steps.squeezed { display: none; }
+.moreinbox { background: none; border: 0; padding: 2px 0; color: var(--dim); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; text-align: left; }
 .item.bad .t { color: var(--refused); }
 /* tabs and forms */
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 0 0 10px; }
@@ -282,7 +286,7 @@ html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr)
   .blk input[type=checkbox] { width: 22px; height: 22px; margin-top: 0; }
   .blk { grid-template-columns: 26px minmax(0, 1fr); }
   .item button.x, .bk button, .mem button, .splitrow button { min-width: 44px; min-height: 44px; }
-  footer a { display: inline-block; padding: 8px 0; }
+  footer a { display: inline-block; padding: 13px 0; }
   .payme { grid-template-columns: minmax(0, 1fr); } .payme .qr { grid-row: auto; }
   .bal { font-size: 28px; }
   .two { grid-template-columns: minmax(0, 1fr); }
@@ -1462,7 +1466,7 @@ function inboxItems() {
       c ? conflictView(c) : null));
   }
   for (const q of ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending")) {
-    items.push(el("div", { class: "item ask" }, el("span", { class: "dot ok" }),
+    items.push(el("div", { class: "item ask keep" }, el("span", { class: "dot ok" }),
       el("span", { class: "t", text: F("{x} asks you to co-sign {n} test AGRS", { x: tag(q.sender_pubkey), n: fmt(q.amount) }) }),
       el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Co-sign"), onclick: () => answerRequest(q, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerRequest(q, false) }), bookBtn(q.sender_pubkey)),
       el("span", { class: "m", text: F("To {x}. Free for you; the payment goes through once its rule is met.", { x: tag(q.recipient_pubkey) }) })));
@@ -1474,7 +1478,7 @@ function inboxItems() {
   }
   const rets = ((W.rets && W.rets.retractables) || []);
   for (const t of rets.filter(t => (t.sender_pubkey || "").toLowerCase() === W.pk && (t.status || "open") === "open")) {
-    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x}, not released yet", { n: fmt(t.amount), x: tag(t.recipient_pubkey) }) }),
+    items.push(el("div", { class: "item keep" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x}, not released yet", { n: fmt(t.amount), x: tag(t.recipient_pubkey) }) }),
       el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Take back"), "data-tip": T("Take it back") + "\n" + T("Free. Possible until the release block.") + "\n" + F("Released at block #{a}.", { a: t.release_at_height }), onclick: () => takeBack(t) })),
       el("span", { class: "m", text: FX("Released at block #{a} ({t}).", { a: t.release_at_height }, { t: inTime(t.release_at_height - (h || 0)) || T("soon") }) })));
   }
@@ -1520,8 +1524,10 @@ function renderActivity() {
   fitLog();
 }
 /* on one screen the newest transactions fill the panel and the rest wait behind the link, so nothing hides in a scroll box */
+let INBOX_ALL = false;   // the visitor asked to see every inbox card, so the panel may scroll
 function fitLog() {
   const box = $("activity"), more = $("log").querySelector(".morelog");
+  fitInbox(box);
   if (!more) return;
   const items = [...$("log").querySelectorAll(".item")];
   items.forEach(x => { x.hidden = false; });
@@ -1530,6 +1536,25 @@ function fitLog() {
   label();
   if (!document.documentElement.classList.contains("fit")) return;
   while (shown > 0 && box.scrollHeight > box.clientHeight + 1) { items[--shown].hidden = true; label(); }
+  fitInbox(box, true);
+  box.scrollTop = 0;
+}
+/* still too full with every log row folded away: the inbox keeps its first cards, the rest wait behind one line */
+function fitInbox(box, squeeze) {
+  const cards = [...$("inbox").querySelectorAll(":scope > .item")], old = $("inbox").querySelector(".moreinbox");
+  if (old) old.remove();
+  cards.forEach(x => { x.hidden = false; });
+  $("steps").classList.remove("squeezed");
+  if (!squeeze || INBOX_ALL || !document.documentElement.classList.contains("fit")) return;
+  if (box.scrollHeight > box.clientHeight + 1) $("steps").classList.add("squeezed");   // the next-step hint gives way to things waiting for you
+  const btn = el("button", { class: "moreinbox", type: "button", onclick: () => { INBOX_ALL = true; fitLog(); } });
+  $("inbox").append(btn);
+  /* notes without a button go first, then the latest cards; something to answer or take back stays as long as it can */
+  const order = [...cards.filter(x => !x.querySelector(".acts")).reverse(), ...cards.filter(x => x.querySelector(".acts") && !x.classList.contains("keep")).reverse(), ...cards.filter(x => x.classList.contains("keep")).reverse()];
+  let gone = 0;
+  const say = () => { btn.textContent = F("{n} more waiting for you: show all", { n: gone }); btn.hidden = !gone; };
+  say();
+  while (gone < cards.length - 1 && box.scrollHeight > box.clientHeight + 1) { order[gone++].hidden = true; say(); }
 }
 
 /* ---------- account and key numbers ---------- */
