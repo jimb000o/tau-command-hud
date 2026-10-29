@@ -40,6 +40,7 @@
 .tnav .pill.tg svg + svg { width: 11px; height: 11px; margin-left: -2px; }
 .tnav .tn-alm { left: auto; right: 0; }
 .mi .ic svg { width: 13px; height: 13px; fill: currentColor; }
+.mi .ic img { width: 18px; height: auto; display: block; }
 .tnav .pill.fbk { background: #fff; border-color: #fff; color: #000; font-weight: 700; }   /* the most visible thing in the header, still monochrome */
 .tnav .pill.fbk svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
 .tnav .pill.fbk:hover, .tnav .pill.fbk:focus-visible { background: #d6d6dc; border-color: #d6d6dc; color: #000; }
@@ -222,6 +223,13 @@ body[data-view="simple"] .vp { display: block; }
 @media (max-width: 520px) { .tn-donate { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
 /* "In numbers · Privacy" at the end of every footer line */
 a.tn-foot { color: inherit; }
+.tn-social { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; vertical-align: middle; margin-left: 10px; }
+.tn-sol { font: 600 11px var(--display, inherit); letter-spacing: .14em; text-transform: uppercase; color: var(--dim, #8a8a94); margin-right: 2px; }
+a.tn-soc { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 12px; border: 1px solid var(--hair, rgba(255,255,255,.18)); border-radius: 999px; color: #fff; text-decoration: none; font-size: 12px; line-height: 1; }
+a.tn-soc:hover, a.tn-soc:focus-visible { border-color: var(--ok, #39ff8a); color: var(--ok, #39ff8a); }
+a.tn-soc svg { width: 12px; height: 12px; fill: currentColor; }
+a.tn-soc img { height: 16px; width: auto; display: block; }
+@media (max-width: 700px) { .tn-social { display: flex; margin: 8px 0 0; } a.tn-soc { min-height: 44px; padding: 0 14px; } }
 /* Share this page: one small card with the link, Copy and the places to post it */
 .tn-share .tn-sheet { width: min(520px, 100%); padding: 20px; background: var(--u-deck); border: 1px solid var(--u-hair); border-radius: 10px; }
 .tn-share h3 { margin: 0 0 4px; font: 600 12px var(--u-display); letter-spacing: .24em; text-transform: uppercase; color: var(--u-ok); }

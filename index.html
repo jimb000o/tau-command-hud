@@ -280,6 +280,7 @@ html.i18n-zh .ga-tx { text-align: left; }
 .about .tgbox li b { color: #fff; font-weight: 600; }
 .about .tgjoin { display: inline-block; font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--ok); color: var(--ok); text-decoration: none; }
 .about .tgjoin:hover { background: var(--ok); color: #000; }
+.about .tgjoins { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
 .close { position: absolute; top: 6px; right: 6px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: var(--cyan-hi); cursor: pointer; font: 15px var(--display); }
 .about h3 { margin: 12px 0 4px; font: 600 12px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); }
 .about p { margin: 0 0 8px; font-size: 13px; max-width: 80ch; }
@@ -318,15 +319,43 @@ html.i18n-zh .ga-tx { text-align: left; }
 .brand span { font: 400 11px var(--display); letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 /* Agorzilla stands on the header's bottom line, just left of the live status he keeps an eye on (placed by placeAgz) */
-.agz { position: absolute; z-index: 3; line-height: 0; opacity: .95; transition: opacity .2s, filter .2s; }
-.agz > span { position: relative; display: block; }
-.agz > span::after { content: ""; position: absolute; left: 4%; right: 4%; bottom: -3px; height: 9px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.8), rgba(0,0,0,0)); }   /* a soft ground shadow: he stands, he does not float */
+.agz { position: absolute; z-index: 3; display: block; line-height: 0; height: var(--agz-h, 78px); width: calc(var(--agz-h, 78px) * .665); opacity: .95; transition: opacity .2s, filter .2s; }
 .agz.cramped { visibility: hidden; }
-.agz img { position: relative; z-index: 1; height: var(--agz-h, 78px); width: auto; transform-origin: 50% 92%; animation: agzBreathe 4.2s ease-in-out infinite; }
+.agz, .agz * { -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
 .agz:hover { opacity: 1; filter: drop-shadow(0 0 8px rgba(57,255,138,.45)); }
-@keyframes agzBreathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.015, 1.035); } }
+/* a puppet cut from the one picture: legs, trunk and head are the same image under different masks, so he can turn his head, blink and shift his weight; the rock is cut away, the header line is his ground */
+.agz .sh { position: absolute; left: 14%; right: 6%; top: 86.5%; height: 7%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.85), rgba(0,0,0,0)); }   /* a soft ground shadow: he stands, he does not float */
+.agz .dir, .agz .pup, .agz .bod, .agz .hd, .agz .lg, .agz .pup img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.agz .dir, .agz .pup { transform-origin: 54% 90%; }
+/* legs: fur down to the rock's edge plus the whole paws, so the paws stand in front of the header line; each leg is its own slice so he can step */
+.agz .lg { -webkit-mask-image: linear-gradient(transparent 63%, #000 69%, #000 85.4%, transparent 86.4%), radial-gradient(12.5% 3.4% at 51.5% 87.4%, #000 72%, transparent 100%), radial-gradient(14% 3.4% at 80% 87.4%, #000 72%, transparent 100%), radial-gradient(9% 1.9% at 23% 85.4%, #000 60%, transparent 100%);
+  mask-image: linear-gradient(transparent 63%, #000 69%, #000 85.4%, transparent 86.4%), radial-gradient(12.5% 3.4% at 51.5% 87.4%, #000 72%, transparent 100%), radial-gradient(14% 3.4% at 80% 87.4%, #000 72%, transparent 100%), radial-gradient(9% 1.9% at 23% 85.4%, #000 60%, transparent 100%); }
+.agz .lg.b img { -webkit-mask-image: linear-gradient(90deg, #000 32%, transparent 36%); mask-image: linear-gradient(90deg, #000 32%, transparent 36%); }
+.agz .lg.l img { -webkit-mask-image: linear-gradient(90deg, transparent 32%, #000 36%, #000 63%, transparent 67%); mask-image: linear-gradient(90deg, transparent 32%, #000 36%, #000 63%, transparent 67%); }
+.agz .lg.r img { -webkit-mask-image: linear-gradient(90deg, transparent 63%, #000 67%); mask-image: linear-gradient(90deg, transparent 63%, #000 67%); }
+.agz .lg.l, .agz .lg.r { transform-origin: 60% 66%; }
+.agz .bod { transform-origin: 54% 82%; animation: agzBreathe var(--agz-br, 4.2s) ease-in-out infinite; }
+.agz .trunk { -webkit-mask-image: linear-gradient(#000 72%, transparent 77%); mask-image: linear-gradient(#000 72%, transparent 77%); }   /* the picture with its head area filled with fur, so a turning head never shows a second one */
+.agz .hd { transform-origin: 59.2% 50.9%; }
+.agz .hd > img { -webkit-mask-image: radial-gradient(39.5% 25% at 55.3% 26.3%, #000 96%, transparent 100%); mask-image: radial-gradient(39.5% 25% at 55.3% 26.3%, #000 96%, transparent 100%); }
+/* eyes: each eye's inside slides within a fixed eye shape (the eyes lead, the head follows); skin lids with a lash line slide down to blink */
+@property --blink { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --lid { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --squint { syntax: "<number>"; inherits: true; initial-value: 0; }
+.agz { --lid: 0; --squint: 0; --ex: 0%; --ey: 0%; transition: opacity .2s, filter .2s, --lid .45s ease, --squint .35s ease; }
+.agz.squint { --squint: 1; --lid: .3; }
+.agz.drowsy { --lid: .55; transition: opacity .2s, filter .2s, --lid 1.2s ease, --squint .35s ease; }
+.agz .eye, .agz .lid { position: absolute; -webkit-mask-image: radial-gradient(31.5% 31.5% at 50% 50%, #000 86%, transparent 98%); mask-image: radial-gradient(31.5% 31.5% at 50% 50%, #000 86%, transparent 98%); overflow: hidden; }
+.agz .eye.l, .agz .lid.l { left: 41.97%; top: 25.88%; width: 21.18%; height: 14.39%; }
+.agz .eye.r, .agz .lid.r { left: 68.03%; top: 21.49%; width: 18.82%; height: 13.77%; }
+.agz .eye img { display: block; width: 100%; height: 100%; transform: translate(var(--ex), var(--ey)); transition: transform .12s cubic-bezier(.3, 0, .2, 1); }
+.agz .lid { -webkit-mask-image: radial-gradient(34.5% 34.5% at 50% 50%, #000 92%, transparent 100%); mask-image: radial-gradient(34.5% 34.5% at 50% 50%, #000 92%, transparent 100%); }
+.agz .lid b { position: absolute; left: 0; right: 0; top: 0; height: 84%; border-radius: 0 0 50% 50% / 0 0 26% 26%; background: linear-gradient(#5c4853, #7c6672 48%, #846e7a 70%, #6a5561); box-shadow: inset 0 -1px .5px -.3px rgba(34, 16, 22, .95), 0 .6px .6px rgba(0, 0, 0, .4); transform: translateY(calc(-78% + 62% * max(var(--lid), var(--blink)))); }
+.agz .lid s { position: absolute; left: -6%; right: -6%; bottom: 0; height: 50%; border-radius: 50% 50% 0 0 / 44% 44% 0 0; background: linear-gradient(#6a5561, #85707c 35%, #8d7783); box-shadow: inset 0 .6px .4px -.2px rgba(36, 18, 24, .75); transform: translateY(calc(63% - max(var(--squint) * 30%, max(var(--lid), var(--blink)) * 46%))); }
+.agz .mouth { position: absolute; left: 69.1%; top: 39.4%; width: 8%; height: 2.6%; transform: translate(-50%, -50%) scaleY(0); border-radius: 40% 40% 50% 50%; background: radial-gradient(60% 70% at 50% 75%, #b4504a, #3a0f0d 70%); }
+@keyframes agzBreathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.01, 1.024); } }
 @media (max-width: 1599px) { .agz { display: none; } }
-@media (prefers-reduced-motion: reduce) { .agz img { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .agz .bod { animation: none; } }
 .chip { font: 400 11px var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 4px 12px; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); background: rgba(255,255,255,.03); white-space: nowrap; }
 .chip b { color: var(--cyan-hi); font-weight: 600; font-family: var(--mono); letter-spacing: 0; text-transform: none; margin-left: 6px; font-variant-numeric: tabular-nums; }
 .chip.v b { margin-left: 0; }
@@ -926,7 +955,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   <header class="rail">
     <a class="brand" href="./" data-full="Back to the start: the HUD."><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></a>
     <button class="chip unoff" type="button" data-open="mAbout" data-full="Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Click for the full notice.">Unofficial community project · not affiliated with IDNI</button>
-    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><span><img src="assets/agorzilla.webp" alt="" width="43" height="64"></span></a>
+    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><i class="sh"></i><span class="dir"><span class="pup"><span class="lg b"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg l"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg r"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="bod"><img class="trunk" src="assets/rig/agz-body.webp" alt="" draggable="false"><span class="hd"><img src="assets/agorzilla.webp" alt="" draggable="false"><span class="eye l"><img src="assets/rig/agz-eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="assets/rig/agz-eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><i class="mouth"></i></span></span></span></span></a>
     <div class="chips">
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
@@ -1169,15 +1198,16 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="unofficial" role="note">Unofficial community project<span>Built by Tau community members. Not affiliated with, endorsed by or maintained by IDNI or the Tau team. Data in simulation mode is generated in your browser and is not the real chain.</span></div>
       <div class="about-cols">
       <section class="tgbox">
-        <h3>Follow the chain on Telegram</h3>
+        <h3>Follow along</h3>
         <ul>
           <li><b>Every rule change as it happens:</b> new proposal, agreement, activation, dropped proposal.</li>
           <li><b>Chain restarts</b> of the testnet, the moment our node sees one.</li>
           <li><b>A weekly recap picture</b> and every HUD update, so you never need to open this page to stay current.</li>
           <li><b>Also on X:</b> real rule changes, new nodes and the Monday recap at <a href="https://x.com/TauHUDcom" target="_blank" rel="noopener">@TauHUDcom</a>.</li>
+          <li><b>Agorzilla on X:</b> the creature the testnet feeds posts each evening's change and every growth stage at <a href="https://x.com/Agorzilla" target="_blank" rel="noopener">@Agorzilla</a>.</li>
           <li><b>Ask the bot:</b> height, proposals, your transaction or address. Write to <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot</a>.</li>
         </ul>
-        <a class="tgjoin" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Join @tauHUDcom ↗</a>
+        <p class="tgjoins"><a class="tgjoin" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Join @tauHUDcom ↗</a> <a class="tgjoin" href="https://x.com/TauHUDcom" target="_blank" rel="noopener">Follow on X ↗</a> <a class="tgjoin" href="https://x.com/Agorzilla" target="_blank" rel="noopener">Agorzilla on X ↗</a></p>
       </section>
       <section>
       <h3>Experimental · no claim of accuracy</h3>
@@ -1311,6 +1341,8 @@ function tickSubs() {
    Thresholds follow the block pace (8 s in the simulation, measured on the live chain). A transaction already sealed but still listed
    by the alpha node (IDNI #81, up to an hour) is a known quirk, not an alarm. Red only when something is really stuck or offline. */
 const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
+/* a validator's own page: its profile on the accounts page (what it sealed, how much traffic, its votes); the language travels along */
+const valProfile = v => { const l = new URLSearchParams(location.search).get("lang"); return `account/?a=${encodeURIComponent(String(v).toLowerCase().replace(/^0x/, ""))}&view=validator${l ? "&lang=" + encodeURIComponent(l) : ""}`; };
 const liveChain = () => S.mode === "live" && !S.simfeed, offline = () => liveChain() && LIVE.status !== "Connected";
 const SEALED = { h: -1, n: -1, ids: new Set() };
 function sealedIds() {
@@ -1686,7 +1718,7 @@ if (CORE_ONLY) { let told = 0; setInterval(() => {
 }, 500); }
 /* Agorzilla (agorzilla.com): a creature on the live testnet that the community feeds with real transactions. Its own site publishes
    today's meals and its stage; until that file may be read from here, the hover says what it is */
-const AGZ = { at: 0, d: null };
+const AGZ = { at: 0, d: null, room: 0, fail: 0 };
 function placeAgz() {   // two anchors: the header's bottom line is his ground, the Live status chip is what he watches; he never covers a control
   const a = $("agz"), rail = document.querySelector("header.rail"), mode = $("chipMode"), u = document.querySelector(".rail .unoff"); if (!a || !rail || !mode || !u) return;
   if (getComputedStyle(a).display === "none") return;
@@ -1694,28 +1726,190 @@ function placeAgz() {   // two anchors: the header's bottom line is his ground, 
   const op = a.offsetParent || document.body, opr = op.getBoundingClientRect(), z = op.offsetWidth ? opr.width / op.offsetWidth : 1;
   const R = rail.getBoundingClientRect(), m = mode.getBoundingClientRect(), un = u.getBoundingClientRect(), h = Math.min(78 * z, R.bottom - 4 * z), w = h * 133 / 200;
   a.style.setProperty("--agz-h", Math.round(h / z) + "px");
-  const top = R.bottom + 4 * z - h, blockers = [...document.querySelectorAll(".tnav .tnav-l > *, .tnav .tnav-r > *, .tnav .tnav-nav > *")].map(e => e.getBoundingClientRect()).filter(q => q.width && q.bottom > top && q.top < R.bottom);
+  const top = R.bottom + 2 * z - h * .9, blockers = [...document.querySelectorAll(".tnav .tnav-l > *, .tnav .tnav-r > *, .tnav .tnav-nav > *")].map(e => e.getBoundingClientRect()).filter(q => q.width && q.bottom > top && q.top < R.bottom);
   const gap = 14 * z, pad = 10 * z;
   let right = m.left - gap;
   for (let k = 0; k < 4; k++) { const hitq = blockers.find(q => q.left < right + pad && q.right > right - w - pad); if (!hitq) break; right = hitq.left - gap; }
-  const left = right - w, clash = (un.bottom > top + 6 * z && left < un.right + 16 * z) || blockers.some(q => q.left < right + pad && q.right > left - pad);
+  const left = right - w, clash = left < R.left + 8 * z || (un.bottom > top + 6 * z && left < un.right + 16 * z) || blockers.some(q => q.left < right + pad && q.right > left - pad);
   a.classList.toggle("cramped", clash);
+  // room to walk: from his spot to the left, up to the nearest thing in his band (menu, pills, the notice), never to the right of his spot
+  const band = [...blockers, un].filter(q => q.bottom > top + h * .25 && q.top < R.bottom && q.right <= left + pad);
+  const stop = Math.max(R.left + 24 * z, ...band.map(q => q.right + 18 * z));
+  AGZ.room = clash ? 0 : Math.max(0, Math.min(200 * z, left + w * .12 - stop)) / z;
   a.style.left = Math.round((left - opr.left) / z) + "px"; a.style.top = Math.round((top - opr.top) / z) + "px";
 }
 addEventListener("resize", placeAgz); addEventListener("load", placeAgz); setInterval(placeAgz, 2000);
 try { const ro = new ResizeObserver(() => placeAgz()); ["chipMode", "chipNext"].forEach(id => $(id) && ro.observe($(id))); ro.observe(document.querySelector("header.rail")); document.fonts && document.fonts.ready.then(placeAgz); } catch (e) {}   // the chips change width as data arrives; he follows at once
-async function pollAgz() {
-  if (Date.now() - AGZ.at < 600000 || !$("agz") || getComputedStyle($("agz")).display === "none") return; AGZ.at = Date.now();
+async function pollAgz(force) {   // agorzilla.com's archive, written every 30 min; read every 5 min and again on hover after a minute
+  if (Date.now() - AGZ.at < (force ? 60000 : 300000) || !$("agz") || getComputedStyle($("agz")).display === "none") return; AGZ.at = Date.now();
   const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 8000);
-  try { const r = await fetch("https://agorzilla.com/chain/latest.json", { cache: "no-store", signal: ctl.signal }); if (r.ok) AGZ.d = await r.json(); } catch (e) {} finally { clearTimeout(tm); }
+  try { const r = await fetch("https://agorzilla.com/chain/latest.json", { cache: "no-store", signal: ctl.signal }); if (r.ok) { AGZ.d = await r.json(); AGZ.fail = 0; } else AGZ.fail = Date.now(); } catch (e) { AGZ.fail = Date.now(); } finally { clearTimeout(tm); }
 }
+/* the hover reads like a Chain core element: his name, a status light with one verdict from agorzilla.com's own archive, then at most two short lines */
 function agzTip() {
-  const d = AGZ.d, meals = d && d.today && Number.isFinite(+d.today.meals) ? +d.today.meals : null, stage = d && d.stage_name ? String(d.stage_name) : "";
-  if (meals == null) return "Agorzilla\nA creature on the live testnet that grows when people feed it real transactions.\nClick to visit agorzilla.com.";
-  return verdict(meals ? "ok" : "watch", meals ? `Normal: fed ${meals} time${meals === 1 ? "" : "s"} today${stage ? ` · stage ${stage}` : ""}.` : `Watch: not fed yet today${stage ? ` · stage ${stage}` : ""}.`)
-    + "Agorzilla\nA creature on the live testnet, fed with real transactions.\nClick to visit agorzilla.com.";
+  pollAgz(true);
+  const d = AGZ.d, num = v => Number.isFinite(+v) ? +v : null, now = Date.now() / 1000;
+  const tail = "Click to visit agorzilla.com.";
+  if (!d) return verdict("watch", "Watch: no answer from agorzilla.com right now.") + "Agorzilla\nA creature on the live testnet, fed with real transactions.\n" + tail;
+  const age = num(d.updated_at) != null ? now - num(d.updated_at) : null;
+  if (age != null && age > 2700) return verdict("bad", `Problem: no news from agorzilla.com for ${Math.round(age / 60)} min.`) + "Agorzilla\nA creature on the live testnet, fed with real transactions.\n" + tail;
+  const meals = num(d.today && d.today.meals), wal = num(d.today && d.today.wallets), stage = d.stage_name ? String(d.stage_name) : "";
+  const v = !liveChain() ? verdict("watch", "Live on the testnet. This page shows the simulation.")
+    : meals ? verdict("ok", `Live: fed ${meals} time${meals === 1 ? "" : "s"} by ${wal || 1} wallet${(wal || 1) === 1 ? "" : "s"} today.`)
+    : verdict("ok", "Live: not fed yet today.");
+  const o = d.open || {}, left = num(o.closes_at) != null ? num(o.closes_at) - now : null;
+  const vote = o.category && left != null && left > 0 ? (left < 5400 ? ` Tonight's vote: ${o.category}, closes in ${Math.max(1, Math.round(left / 60))} min.` : ` Tonight's vote: ${o.category}, closes in ${Math.round(left / 3600)} h.`) : "";
+  const line = stage ? `Stage: ${stage}.${vote}` : vote.trim() || "A creature on the live testnet, fed with real transactions.";
+  return v + "Agorzilla\n" + line + "\n" + tail;
 }
-addEventListener("DOMContentLoaded", () => { pollAgz(); setInterval(() => { if (!document.hidden) pollAgz(); }, 600000); });
+addEventListener("DOMContentLoaded", () => { pollAgz(); setInterval(() => { if (!document.hidden) pollAgz(); }, 300000); });
+/* Agorzilla is alive: small things of his own while nothing happens (breathing, blinking, looking around, a scratch, a stretch, a little walk
+   to the left where the header has room), and a move for what the network does. Anti-spam: at most 3 moves wait, one of a kind, 8 s between
+   moves, the same kind at most once a minute (a block every 20 s), and a burst of events makes him only watch for half a minute. Reduced
+   motion: he only blinks. A hidden tab, a cramped header or a phone: nothing runs. */
+const AGZ_LIFE = (() => {
+  const a = $("agz"); if (!a) return null;
+  const q = c => a.querySelector(c), dir = q(".dir"), pup = q(".pup"), bod = q(".bod"), legL = q(".lg.l"), legR = q(".lg.r"), legB = q(".lg.b"), hd = q(".hd"), mouth = q(".mouth"), lids = [...a.querySelectorAll(".lid")];
+  const RM = matchMedia("(prefers-reduced-motion: reduce)");
+  const L = { busy: false, queue: [], lastMove: 0, lastKind: {}, recent: [], calm: 0, nextIdle: Date.now() + 4000, prevIdle: "", sig: null, near: 0, x: 0 };
+  const rnd = (lo, hi) => lo + Math.random() * (hi - lo);
+  const ok = () => !document.hidden && a.offsetParent && !a.classList.contains("cramped") && getComputedStyle(a).display !== "none";
+  const go = (el, kf, o) => el.animate(kf, { duration: 700, easing: "ease-in-out", ...o }).finished.catch(() => {});
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const night = () => { const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Europe/Berlin" }).format(new Date())); return h >= 22 || h < 6; };
+  const eyes = (x, y) => { a.style.setProperty("--ex", x + "%"); a.style.setProperty("--ey", y + "%"); };
+  const look = (deg, dx, hold, up = 0) => { eyes(Math.sign(dx) * 9, up ? Math.sign(up) * 6 : 0); setTimeout(() => eyes(0, 0), hold * .8); return lookHead(deg, dx, hold, up); };
+  const lookHead = (deg, dx, hold, up = 0) => go(hd, [{ transform: "none" }, { transform: `rotate(${deg}deg) translate(${dx}%, ${up}%)`, offset: .25 }, { transform: `rotate(${deg}deg) translate(${dx}%, ${up}%)`, offset: .75 }, { transform: "none" }], { duration: hold });
+  const mood = (cls, ms) => { a.classList.add(cls); return wait(ms).then(() => a.classList.remove(cls)); };
+  const hop = (hgt = 9) => go(pup, [{ transform: "none" }, { transform: "scale(1.05, .93)", offset: .18 }, { transform: `translateY(-${hgt}%) scale(.97, 1.05)`, offset: .45, easing: "ease-in" }, { transform: "scale(1.04, .95)", offset: .74 }, { transform: "none" }], { duration: 820 });
+  const blink = () => go(a, [{ "--blink": 0 }, { "--blink": 1, offset: .35 }, { "--blink": 1, offset: .45 }, { "--blink": 0 }], { duration: 260, easing: "linear" });
+  /* walking: a real gait from the sliced legs. Diagonal pairs swing together (front left with back right, front right with back left): a paw lifts,
+     reaches forward, plants and pushes back while the body rides up on each step. He turns, walks left as far as this screen's header lets him,
+     looks about and comes back to his spot facing the Live chip. */
+  const STEP = 340;   // ms per step; with ~6.5 px a step he ambles at about 20 px a second
+  const gait = (leg, ms, phase) => go(leg, [{ transform: "translateX(-3%)" }, { transform: "translate(2.5%, -5.5%) rotate(-5deg)", offset: .3 }, { transform: "translateX(4%)", offset: .5 }, { transform: "translateX(-3%)" }], { duration: STEP * 2, iterations: Math.max(1, Math.round(ms / (STEP * 2))), delay: phase * STEP, easing: "linear" });
+  const stride = (dist, back) => {
+    const ms = Math.max(1200, Math.round(dist / 20 * 1000 / (STEP * 2)) * STEP * 2), from = back ? -dist : 0, to = back ? 0 : -dist;
+    gait(legL, ms, 0); gait(legR, ms, 1); gait(legB, ms, 1);
+    go(bod, [{ transform: "none" }, { transform: "translateY(-1.6%) rotate(-1deg)", offset: .3 }, { transform: "none", offset: .5 }, { transform: "translateY(-1.6%) rotate(1deg)", offset: .8 }, { transform: "none" }], { duration: STEP * 2, iterations: Math.round(ms / (STEP * 2)) });
+    go(hd, [{ transform: "none" }, { transform: "rotate(1.2deg) translateY(.6%)", offset: .5 }, { transform: "none" }], { duration: STEP, iterations: Math.round(ms / STEP) });
+    return go(a, [{ translate: `${from}px 0` }, { translate: `${to}px 0` }], { duration: ms + STEP, easing: "linear", fill: "forwards" }).then(() => { a.style.translate = `${to}px 0`; L.x = to; });
+  };
+  const turn = left => go(dir, [{ transform: left ? "none" : "scaleX(-1)" }, { transform: left ? "scaleX(-.2) translateY(-3%)" : "scaleX(.2) translateY(-3%)", offset: .5 }, { transform: left ? "scaleX(-1)" : "none" }], { duration: 300, fill: "forwards" }).then(() => { dir.style.transform = left ? "scaleX(-1)" : ""; });
+  const goBack = async () => { if (!L.x) return; await turn(false); await stride(-L.x, true); a.style.translate = ""; L.x = 0; };
+  const walk = async () => {
+    const room = Math.floor(AGZ.room || 0); if (room < 28) return look(4, 2, 1600);
+    const dist = Math.round(rnd(.45, 1) * room);
+    await turn(true); await stride(dist, false);
+    await look(-3, -1.5, 1500); if (Math.random() < .5) await go(hd, [{ transform: "none" }, { transform: "rotate(-2deg) translateY(1.6%)", offset: .3 }, { transform: "rotate(-1deg) translateY(.6%)", offset: .5 }, { transform: "rotate(-2deg) translateY(1.6%)", offset: .7 }, { transform: "none" }], { duration: 1100 });
+    await wait(rnd(400, 1200)); await goBack(); await look(4, 2, 1200);
+  };
+  /* special moves, each sized to the room this screen gives him: a backflip needs head room above, a roll and a cartwheel need the line to his left */
+  const headroom = () => { const r = a.getBoundingClientRect(), op = a.offsetParent, z = op && op.offsetWidth ? op.getBoundingClientRect().width / op.offsetWidth : 1; return Math.max(0, r.top / z); };
+  const H = () => a.offsetHeight || 78;
+  const backflip = async () => {
+    const j = Math.min(H() * .5, headroom() - 6); if (j < 12) return dance();
+    pup.style.transformOrigin = "54% 58%";
+    await go(pup, [{ transform: "none" }, { transform: "scale(1.06, .88)", offset: .16 }, { transform: `translateY(${-j}px) scale(.96, 1.06) rotate(-90deg)`, offset: .36, easing: "ease-out" },
+      { transform: `translateY(${-j * 1.05}px) rotate(-200deg)`, offset: .5 }, { transform: `translateY(${-j * .45}px) rotate(-320deg)`, offset: .7, easing: "ease-in" }, { transform: "rotate(-360deg) scale(1.07, .88)", offset: .84 }, { transform: "rotate(-360deg)" }], { duration: 1250 });
+    pup.style.transformOrigin = ""; await look(-3, 0, 700, -2);
+  };
+  const roll = async () => {
+    const room = Math.floor(AGZ.room || 0), dist = Math.min(room, Math.round(H() * 1.7)); if (dist < 90) return dance();
+    await turn(true); pup.style.transformOrigin = "54% 58%";
+    go(pup, [{ transform: "none" }, { transform: "scale(1.05, .9)", offset: .12 }, { transform: "translateY(-6%) rotate(180deg) scale(.9)", offset: .5 }, { transform: "rotate(350deg) scale(1.04, .94)", offset: .88 }, { transform: "rotate(360deg)" }], { duration: 1100, easing: "ease-in-out" });
+    await go(a, [{ translate: "0px 0" }, { translate: `${-dist}px 0` }], { duration: 1100, easing: "cubic-bezier(.4,.1,.5,1)", fill: "forwards" }); a.style.translate = `${-dist}px 0`; L.x = -dist; pup.style.transformOrigin = "";
+    await hop(6); await wait(500); await goBack(); await look(4, 2, 1000);
+  };
+  const cartwheel = async () => {
+    const room = Math.floor(AGZ.room || 0), dist = Math.min(room, Math.round(H() * 2)); if (dist < 120) return roll();
+    await turn(true); pup.style.transformOrigin = "54% 50%";
+    go(pup, [{ transform: "none" }, { transform: "translateY(-10%) rotate(90deg)", offset: .25 }, { transform: "translateY(-14%) rotate(180deg)", offset: .5 }, { transform: "translateY(-10%) rotate(270deg)", offset: .75 }, { transform: "rotate(360deg)" }], { duration: 1300, easing: "linear" });
+    await go(a, [{ translate: "0px 0" }, { translate: `${-dist}px 0` }], { duration: 1300, easing: "linear", fill: "forwards" }); a.style.translate = `${-dist}px 0`; L.x = -dist; pup.style.transformOrigin = "";
+    await go(pup, [{ transform: "none" }, { transform: "scale(1.06, .9)", offset: .4 }, { transform: "none" }], { duration: 400 }); await look(-4, 0, 900, -2); await goBack();
+  };
+  const dance = async () => {   // a little dance on the spot: sway with the beat, a hop, a turn, a head bob
+    const beat = 340;
+    go(hd, [0, 1, 0, -1, 0, 1, 0, -1, 0].map((k, i) => ({ transform: `rotate(${-k * 5}deg) translateY(${Math.abs(k) * 1.2}%)`, offset: i / 8 })), { duration: beat * 8 });
+    await go(pup, [0, 1, 0, -1, 0, 1, 0, -1, 0].map((k, i) => ({ transform: `rotate(${k * 6}deg) translateY(${k ? -3 : 0}%)`, offset: i / 8 })), { duration: beat * 8 });
+    await turn(true); await hop(8); await turn(false); await hop(5);
+  };
+  const IDLE = {
+    glance: () => look(4.5, 2.2, rnd(1400, 2400)),                                                     // a look at the Live chip he keeps an eye on
+    around: async () => { await look(-4, -2, 1100); await look(4, 2, 1000); },
+    weight: () => go(pup, [{ transform: "none" }, { transform: `rotate(${Math.random() < .5 ? -1.6 : 1.6}deg)`, offset: .35 }, { transform: `rotate(${Math.random() < .5 ? -1 : 1}deg)`, offset: .7 }, { transform: "none" }], { duration: 2600 }),
+    sniff: () => go(hd, [0, 1, 0, 1, 0, 1, 0].map((k, i) => ({ transform: k ? "rotate(-1.4deg) translateY(1.2%)" : "none", offset: i / 6 })), { duration: 1100 }),
+    scratch: async () => { go(hd, [{ transform: "none" }, { transform: "rotate(7deg)", offset: .2 }, { transform: "rotate(7deg)", offset: .8 }, { transform: "none" }], { duration: 1600 }); await go(bod, [0, 1, -1, 1, -1, 0].map((k, i) => ({ transform: `rotate(${k * 1.6}deg)`, offset: i / 5 })), { duration: 1500 }); },
+    stretch: () => go(bod, [{ transform: "none" }, { transform: "scale(.97, 1.07)", offset: .4 }, { transform: "scale(.97, 1.07)", offset: .62 }, { transform: "scale(1.02, .98)", offset: .85 }, { transform: "none" }], { duration: 1900 }),
+    yawn: async () => { a.classList.add("squint"); go(hd, [{ transform: "none" }, { transform: "rotate(-5deg) translateY(-1%)", offset: .3 }, { transform: "rotate(-5deg) translateY(-1%)", offset: .7 }, { transform: "none" }], { duration: 1700 });
+      await go(mouth, [{ transform: "translate(-50%, -50%) scaleY(0)" }, { transform: "translate(-50%, -50%) scaleY(1.6) scaleX(1.2)", offset: .35 }, { transform: "translate(-50%, -50%) scaleY(1.6) scaleX(1.2)", offset: .7 }, { transform: "translate(-50%, -50%) scaleY(0)" }], { duration: 1600 }); a.classList.remove("squint"); },
+    sit: () => go(bod, [{ transform: "none" }, { transform: "scale(1.03, .95)", offset: .2 }, { transform: "scale(1.03, .95)", offset: .85 }, { transform: "none" }], { duration: rnd(3000, 4500) }),
+    doze: async () => { a.classList.add("drowsy"); await go(hd, [{ transform: "none" }, { transform: "rotate(3deg) translateY(1%)", offset: .5 }, { transform: "none" }], { duration: 6500 }); a.classList.remove("drowsy"); },
+    walk, backflip, roll, cartwheel, dance,
+  };
+  const SPECIAL = new Set(["backflip", "roll", "cartwheel", "dance"]);
+  const idleWeights = () => {   // more room on this screen, more and bigger moves; a special at most every 25 s, fewer at night
+    const n = night(), st = !!PRESENCE.stalled, room = AGZ.room || 0, sp = Date.now() - (L.lastSpecial || 0) < 25000 ? 0 : n ? .3 : 1;
+    return { glance: st ? 6 : 2.4, around: 1.6, weight: 2, sniff: 1.4, scratch: 1.2, stretch: 1, yawn: n ? 3 : .5, sit: 1, doze: n ? 2 : 0, walk: room >= 28 ? 4 : 0,
+      dance: 1.4 * sp, backflip: headroom() >= 18 ? 1.2 * sp : 0, roll: room >= 90 ? 1 * sp : 0, cartwheel: room >= 120 ? .8 * sp : 0 };
+  };
+  const pickIdle = () => { const w = Object.entries(idleWeights()).filter(([k, v]) => v > 0 && k !== L.prevIdle); let r = Math.random() * w.reduce((t, [, v]) => t + v, 0); for (const [k, v] of w) if ((r -= v) <= 0) return k; return "glance"; };
+  /* the network's moves, each one meant: a block is an ear twitch, an agreed rule a cheer, a refused transfer a head shake, ghosts a squint at Waiting, a stalled chain worry */
+  const EVT = {
+    block: () => go(hd, [{ transform: "none" }, { transform: "rotate(2.5deg) translateY(-1.4%)", offset: .35 }, { transform: "none" }], { duration: 460, easing: "ease-out" }),
+    agreed: async () => { await hop(10); await hop(7); await look(-3, 0, 900, -2); },
+    refused: () => go(hd, [0, -5, 5, -4, 3, 0].map((k, i) => ({ transform: `rotate(${k}deg)`, offset: i / 5 })), { duration: 950 }),
+    ghosts: async () => { a.classList.add("squint"); await look(-2, -1, 2600, 2); a.classList.remove("squint"); },
+    stalled: async () => { a.classList.add("squint"); await look(5, 2.4, 1800); await go(pup, [0, 1, 0, 1, 0, 1, 0].map((k, i) => ({ transform: k ? "translateY(-1.6%)" : "none", offset: i / 6 })), { duration: 1300 }); await look(5, 2.4, 1400); a.classList.remove("squint"); },
+    lonely: async () => { await look(-5, -2.4, 1500); await look(5, 2.4, 1500); },
+    node: async () => { await go(bod, [0, 1, -1, 1, 0].map((k, i) => ({ transform: `rotate(${k * 3}deg)`, offset: i / 4 })), { duration: 900 }); await hop(6); },
+  };
+  const RANK = { stalled: 6, agreed: 5, node: 4, refused: 3, ghosts: 2, lonely: 2, block: 1 };
+  function emit(kind) {
+    const now = Date.now();
+    if (now < L.calm || L.queue.includes(kind) || now - (L.lastKind[kind] || 0) < (kind === "block" ? 20000 : 60000)) return;
+    L.recent = L.recent.filter(t => now - t < 20000); L.recent.push(now);
+    if (L.recent.length > 5) { L.calm = now + 30000; L.queue = []; return; }   // a burst: he just watches for half a minute instead of looping
+    L.queue.push(kind); L.queue.sort((x, y) => RANK[y] - RANK[x]); L.queue.length = Math.min(L.queue.length, 3);
+  }
+  async function run(name, fn) { L.busy = true; try { await fn(); } catch (e) {} L.busy = false; L.lastMove = Date.now(); }
+  function watch() {   // what changed on the network since the last look; the first look only takes the baseline
+    let agreed = 0; for (const u of S.updates) if (u.status === "scheduled" || u.status === "active") agreed++;
+    let ghosts = 0; try { ghosts = memState().stale; } catch (e) {}
+    let nodes = 0; try { nodes = nodesNow().length; } catch (e) {}
+    const now = { h: S.height, agreed, ref: S.refusedN || 0, ghosts, stalled: !!PRESENCE.stalled, nodes, mode: S.mode, live: S.mode !== "live" || LIVE.status === "Connected" };
+    const p = L.sig; L.sig = now;
+    if (!p || p.mode !== now.mode || now.h < p.h) return;
+    if (now.stalled && !p.stalled) emit("stalled");
+    if (now.agreed > p.agreed) emit("agreed");
+    if (now.nodes > p.nodes && p.nodes) emit("node");
+    if (now.ref > p.ref) emit("refused");
+    if (now.ghosts >= 3 && now.ghosts > p.ghosts) emit("ghosts");
+    if (!now.live && p.live) emit("lonely");
+    if (now.h > p.h) emit("block");
+  }
+  function tick() {
+    if (!ok()) return;
+    try { watch(); } catch (e) {}
+    if (L.busy || RM.matches) return;
+    const now = Date.now();
+    if (L.queue.length && now - L.lastMove >= 8000) { const k = L.queue.shift(); L.lastKind[k] = now; run(k, EVT[k]); return; }
+    if (now >= L.nextIdle && now - L.lastMove >= 3000) { const k = pickIdle(); L.prevIdle = k; if (SPECIAL.has(k)) L.lastSpecial = now; L.nextIdle = now + rnd(night() ? 9000 : 4500, night() ? 20000 : 11000); run(k, IDLE[k]); }
+  }
+  setInterval(tick, 700);
+  (function blinkLoop() { setTimeout(async () => { if (ok() && !a.classList.contains("drowsy")) { await blink(); if (Math.random() < .22) { await wait(120); await blink(); } } blinkLoop(); }, rnd(2400, 6800)); })();
+  setInterval(() => bod.style.setProperty("--agz-br", (night() ? rnd(5, 6.2) : rnd(3.6, 4.8)).toFixed(2) + "s"), 20000);
+  /* a pointer close by gets a look, the hover itself a perk of the ears; once in a while, never while he is busy */
+  addEventListener("pointermove", e => {
+    if (L.busy || RM.matches || Date.now() - L.near < 9000 || !ok()) return;
+    const r = a.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, d = Math.hypot(e.clientX - cx, e.clientY - cy);
+    if (d > 260 || d < r.width * .6) return;
+    L.near = Date.now(); const right = e.clientX > cx; run("pointer", () => look(right ? 4.5 : -4.5, right ? 2.2 : -2.2, 1300, e.clientY > cy ? 1.5 : -1));
+  }, { passive: true });
+  a.addEventListener("pointerenter", () => { if (!L.busy && !RM.matches) run("perk", EVT.block); });
+  addEventListener("resize", () => { a.getAnimations().forEach(x => x.cancel()); a.style.translate = ""; dir.style.transform = ""; });
+  return { emit, L, IDLE, EVT, run };
+})();
 /* watchdog: a visible tab that has heard nothing from the relay for over a minute shows red, whatever the last colour was */
 setInterval(() => { if (!document.hidden && PRESENCE.at && Date.now() - PRESENCE.at > 70000 && !PRESENCE.stale) { PRESENCE.stale = true; setRelay(false); } }, 5000);
 function presenceFromMessage(d) { const n = Number(d && (d.online ?? d.clients ?? d.presence)); if (Number.isFinite(n)) setOnline(n); }
@@ -1738,12 +1932,12 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=24.1", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=25.1", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD; from v17.54 every entry carries the site version beside its page */
-  const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh" };
+  const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja" };
   let day = null, html = "";
   for (const e of order) {
     const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
@@ -2301,16 +2495,16 @@ async function loadGazette() {
   renderGazAd();
 }
 function renderGazAd() {
-  const ed = GAZ.ed || {}, zh = document.documentElement.classList.contains("i18n-zh");
+  const ed = GAZ.ed || {}, zh = document.documentElement.classList.contains("i18n-zh"), ja = document.documentElement.classList.contains("i18n-ja");
   const hl = (zh && ed.headline_zh) || ed.headline || "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys";
   const no = ed.number != null ? Number(ed.number) : S.height || null;
   $("gazHl").textContent = hl;
   if (typeof ed.url === "string" && /^https:\/\/tauhud\.com\/gazette\//.test(ed.url)) $("gazAd").href = ed.url.replace(/^https:\/\/tauhud\.com\//, "");   // same site, so the preview and a local copy open their own newspaper
   if (ed.deck || ed.deck_zh) $("gazDk").textContent = (zh && ed.deck_zh) || ed.deck;
   if (ed.text || ed.text_zh) $("gazTx").textContent = (zh && ed.text_zh) || ed.text;
-  $("gazNo").textContent = zh ? (no ? `第 ${fmt(no)} 期` : "第 — 期") : no ? `No. ${fmt(no)}` : "No. —";
+  $("gazNo").textContent = zh || ja ? (no ? `第 ${fmt(no)} ${ja ? "号" : "期"}` : `第 — ${ja ? "号" : "期"}`) : no ? `No. ${fmt(no)}` : "No. —";
   const d = ed.date ? new Date(ed.date + (/T/.test(ed.date) ? "" : "T00:00:00Z")) : new Date();
-  $("gazDate").textContent = isNaN(d) ? "" : d.toLocaleDateString(zh ? "zh-CN" : "en-GB", { day: "numeric", month: zh ? "long" : "short", year: "numeric", timeZone: "UTC" });
+  $("gazDate").textContent = isNaN(d) ? "" : d.toLocaleDateString(zh ? "zh-CN" : ja ? "ja-JP" : "en-GB", { day: "numeric", month: zh || ja ? "long" : "short", year: "numeric", timeZone: "UTC" });
   fitGazAd();
 }
 addEventListener("DOMContentLoaded", () => {
@@ -2325,7 +2519,7 @@ function renderStatePanel() {
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
   $("statePanel").innerHTML = `<div class="big2"><div data-full="${KV_TIP["Spec revision"] || ""}"><b>${S.specRev}</b><span>spec revision</span></div><div data-full="${KV_TIP["Base fee"] || ""}"><b>${S.fee}</b><span>AGRS base fee</span></div></div>
     <p class="sent"><b>${thr} of ${N}</b> validators change a rule · <b>${S.ruleBudget}</b> rule txs per block · <b>${S.clauses.size}</b> account${S.clauses.size === 1 ? "" : "s"} with own rules · <b>${open.length}</b> open proposal${open.length === 1 ? "" : "s"} · ${active.length ? `<b>${active.length}</b> agreed change${active.length === 1 ? "" : "s"}${Number.isFinite(Number(active[active.length - 1].activeAt)) ? `, last at #${active[active.length - 1].activeAt}` : ""}` : "no agreed change yet"}</p>`;
-  if (!GAZ.ed && $("gazNo")) $("gazNo").textContent = document.documentElement.classList.contains("i18n-zh") ? `第 ${S.height ? fmt(S.height) : "—"} 期` : S.height ? `No. ${fmt(S.height)}` : "No. —";   // the paper numbers its issues by block height
+  if (!GAZ.ed && $("gazNo")) $("gazNo").textContent = document.documentElement.classList.contains("i18n-zh") || document.documentElement.classList.contains("i18n-ja") ? `第 ${S.height ? fmt(S.height) : "—"} ${document.documentElement.classList.contains("i18n-ja") ? "号" : "期"}` : S.height ? `No. ${fmt(S.height)}` : "No. —";   // the paper numbers its issues by block height
   fitGazAd();
 }
 function showState() {
@@ -3105,7 +3299,7 @@ function draw(tm) {
     const idni = S.mode === "live" && !S.simfeed && V === 1;   // the live testnet has one validator: IDNI's bootnode
     const yours = v === myNodeKey();   // the visitor's own simulated node, seated by its stake under proof of stake
     plate((idni ? "IDNI" : yours ? "You" : "V" + (i + 1)) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
-    hit(x, y, 40, () => health("validators") + (yours ? vt("Your node, sealing by stake: under proof of stake the six largest stakes take turns, and yours is one of them.\nClick to open your node.\n", `Your simulated node ${short(v)}: one of the ${TauSim.node.seats} largest stakes (o7 eligibility by stake).\nClick to open your node.\n`) : "") + vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6)."), null, yours ? () => TauSimNode.open() : null);
+    hit(x, y, 40, () => health("validators") + (yours ? vt("Your node, sealing by stake: under proof of stake the six largest stakes take turns, and yours is one of them.\nClick to open your node.\n", `Your simulated node ${short(v)}: one of the ${TauSim.node.seats} largest stakes (o7 eligibility by stake).\nClick to open your node.\n`) : "") + vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6).") + (yours ? "" : "\nClick to open its profile."), yours ? null : () => valProfile(v), yours ? () => TauSimNode.open() : null);
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
 
@@ -3399,7 +3593,8 @@ function detailValidator(v, i) {
   const sealed = S.blocks.filter(b => b.proposer === v).length, open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
   const hist = S.updates.slice(-6).reverse().map(u => `<li class="${u.votes.has(v) ? "ok" : ""}"><b>${esc(u.title)}</b> <span class="muted">${STATUS_TXT[u.status] || u.status}</span><br>${u.votes.has(v) ? "agreed ✓" : u.abstain && u.abstain.has(v) ? "not voting" : "no vote"}</li>`).join("");
   return { title: `Validator V${i + 1}`, html: `<p class="lead">${i === S.proposerIdx ? "Sealing the next block." : "Seals blocks in turn and votes on rule changes."} One of ${S.validators.length} validators; ${threshold()} must agree to change a rule.</p>${kvHtml({ "Public key": esc(v), Role: i === S.proposerIdx ? "proposing now" : "active", "Blocks sealed (recent)": sealed + " of the last " + S.blocks.length, "Open proposals": open.length })}
-    <h3>Votes on rule changes</h3>${hist ? `<ul>${hist}</ul>` : none}` };
+    <h3>Votes on rule changes</h3>${hist ? `<ul>${hist}</ul>` : none}
+    <p><a class="btn" href="${esc(valProfile(v))}">Open validator profile ›</a></p>` };
 }
 
 /* ---------- wide screens: scale the HUD to the viewport instead of stretching its columns ---------- */
@@ -3660,7 +3855,7 @@ if (window.TauSim && TauSim.onBallots) TauSim.onBallots(() => { simVoteSig = "";
 simBadge(); setInterval(() => { if (!document.hidden) simBadge(); }, 1000);
 /* the "coming up" chip beside the mode chip: an agreed rule change on the live chain that is not yet in force, counted down from the relay's block pace (the same chip as in every subpage header) */
 const NEXT = { rows: [], chain: null, text: "", dict: null };
-const nextDict = () => NEXT.dict || (NEXT.dict = new Promise(res => { if (!document.documentElement.classList.contains("i18n-zh") || !window.TauI18n) return res(); const sc = document.createElement("script"); sc.src = "assets/i18n/zh/proposals.js"; sc.onload = sc.onerror = res; document.head.append(sc); }));
+const nextDict = () => NEXT.dict || (NEXT.dict = new Promise(res => { if (!window.TauI18n || TauI18n.lang === "en") return res(); const sc = document.createElement("script"); sc.src = "assets/i18n/" + TauI18n.lang + "/proposals.js"; sc.onload = sc.onerror = res; document.head.append(sc); }));
 const spanNext = sec => { const m = Math.max(0, Math.round(sec / 60)); if (m < 60) return m <= 0 ? "now" : `in ${m} min`; const h = Math.floor(m / 60); if (h < 24) return `in ~${h} h ${m % 60} min`; return `in ~${Math.floor(h / 24)} d ${h % 24} h`; };
 function renderNext() {
   const nx = $("chipNext"); if (!nx) return;
