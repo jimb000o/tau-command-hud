@@ -22,6 +22,12 @@ tauhud.com/proposals/) and /public/feed.xml (Atom), which Caddy serves at
 https://node.tauhud.com/. New events are also posted to Telegram and X when
 their credentials are set in .env; without them that channel is simply off.
 
+It also posts findings (findings.py): unusual things our read node sees on
+the real chain, such as no new blocks, the bootnode gone, ghost transactions
+(IDNI #81), a reorg or our node falling behind. One post when an incident
+starts, one when it is over, never repeated; a busy stretch is collected and
+posted once afterwards instead of one by one.
+
 Nothing is posted for what the watcher finds on its very first run, and
 nothing whose block is older than POST_MAX_AGE_SECONDS, so a fresh volume or
 a long outage never floods the channel with old news.
@@ -57,6 +63,7 @@ ten minutes, because the relay starts those over at midnight UTC.
   python alerts.py --sim-preview    print today's two simulation posts (the consensus switches), post nothing
   python alerts.py --today-preview  print the "Testnet today" summary as it stands now, post nothing
   python alerts.py --site-preview   print the site-update posts waiting in assets/updates.json, post nothing
+  python alerts.py --findings-preview  print what the finding detectors see now and every kind of finding post, post nothing
 """
 from __future__ import annotations
 
@@ -83,6 +90,7 @@ from xml.sax.saxutils import escape as xml_escape
 from websockets.asyncio.client import connect
 
 import explain
+import findings
 import gazette
 import recap
 
@@ -110,6 +118,8 @@ X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET"
 # (rule changes, new nodes, "Testnet today", new pages, the weekly recap with the paper's headline), each in a short text
 # without a link (the profile carries tauhud.com), and never more than X_DAILY_CAP / X_MONTHLY_CAP posts. Not on X: practice
 # votes, the smaller-updates digests, health alarms, visitor proposals; the simulation's switches only with X_SIM=true.
+# Findings (findings.py) go to X only for real-chain incidents (no blocks reaching us, no peers, a reorg, a busy stretch),
+# at most FINDINGS_X_DAILY_CAP a day.
 X_LINKS = os.environ.get("X_LINKS", "false").lower() in ("1", "true", "yes")
 X_DAILY_CAP = int(os.environ.get("X_DAILY_CAP", 8))
 X_MONTHLY_CAP = int(os.environ.get("X_MONTHLY_CAP", 120))
@@ -1525,6 +1535,14 @@ class Watcher:
             return
         if now - cand["since"] < HEALTH_CONFIRM:
             return
+        # a posted finding (no peers, no new blocks) already told the channel; its recovery post closes it too
+        if (seen == "down" and findings.covers_outage(self.state.get("findings", {}))) or (seen == "up" and st.get("covered")):
+            log.info("health: testnet %s, not posted (a finding covers it)", seen)
+            st["posted"], st["covered"] = seen, seen == "down"
+            st["down_since"] = cand["since"] if seen == "down" else None
+            st.pop("cand", None)
+            self.save_state()
+            return
         text = health_text(seen, h, st.get("down_since") if seen == "up" else None, now)
         tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
         for o in tg:
@@ -1537,6 +1555,49 @@ class Watcher:
         st["down_since"] = cand["since"] if seen == "down" else None
         st.pop("cand", None)
         self.save_state()
+
+    # ---------- findings: unusual things on the real chain ----------
+    def findings_snapshot(self, now: float, with_stats: bool) -> dict:
+        return {"health": self.health_now(), "peers": self.relay_json("/peers"), "status": self.relay_json("/status"),
+                "stats": self.relay_json("/stats") if with_stats else None, "blocks": self.blocks}
+
+    async def maybe_findings(self, now: float | None = None):
+        """Run the detectors once a minute (/stats every tenth time) and send what they queued: Telegram first, then the
+        X copy where the finding is one for X and today's findings on X are under FINDINGS_X_DAILY_CAP."""
+        if not findings.FINDINGS_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("findings", findings.fresh_state())
+        if now - st.get("checked", 0) >= findings.FINDINGS_EVERY:
+            st["checked"] = now
+            st["n"] = st.get("n", 0) + 1
+            snap = await asyncio.to_thread(self.findings_snapshot, now, st["n"] % 10 == 1)
+            for m in findings.observe(st, snap, now):
+                log.info("finding: %s", m["what"])
+            self.save_state()
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        while st.get("outbox") and st.get("pause_until", 0) <= now:
+            m = st["outbox"][0]
+            if not tg or now - m["at"] > findings.OUTBOX_MAX_AGE or m["tries"] >= MAX_TRIES:
+                log.info("finding %s not posted (%s)", m["what"], "telegram off" if not tg else "too old or failed too often")
+                st["outbox"].pop(0)
+                continue
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, m["tg"])
+                if not ok:
+                    m["tries"] += 1
+                    st["pause_until"] = now + (retry or 60)
+                    log.warning("finding post failed (%s); trying again later", err)
+                    self.save_state()
+                    return
+            st["outbox"].pop(0)
+            day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
+            if st.get("x_day") != day:
+                st["x_day"], st["x_today"] = day, 0
+            if m.get("x") and st["x_today"] < findings.X_DAILY:
+                if await self.post_x(x_post(m["x"]), "finding " + m["what"], now):
+                    st["x_today"] += 1
+            self.save_state()
 
     # ---------- new nodes on the network ----------
     def relay_json(self, path: str) -> dict | None:
@@ -1959,6 +2020,7 @@ class Watcher:
                         await self.deliver()
                         await self.maybe_recap()
                         await self.maybe_gazette()
+                        await self.maybe_findings()
                         await self.maybe_health()
                         await self.maybe_newnodes()
                         await self.maybe_sim()
@@ -2097,6 +2159,68 @@ def site_preview() -> int:
     return 0
 
 
+async def findings_preview() -> int:
+    """What the detectors see right now, then the posts of 29 Oct 2026 (bootnode gone 12:01-15:20 UTC) replayed, then one
+    example of every other finding; posts nothing."""
+    def show(what, p):
+        print(f"[{what}]\n{p['tg']}\n" + (f"--- X ({x_len(x_post(p['x']))}/280):\n{x_post(p['x'])}\n" if p.get("x") else "--- not on X\n")
+              + "-" * 60)
+    w = Watcher([])
+    try:
+        async with connect(RELAY_URL, max_size=64 * 2**20, open_timeout=20) as ws:
+            w.ws = ws
+            await w.sync()
+        now = time.time()
+        conds = findings.conditions(w.findings_snapshot(now, True), now, {})
+        print("Now: " + ("cannot tell (our node or the relay does not answer)" if conds is None else ", ".join(
+            f"{k} {'ON' if v else 'clear'}" for k, v in conds.items()) or "nothing to tell"))
+        st = w.state.get("findings") or {}
+        if st.get("inc"):
+            print("Open incidents: " + ", ".join(f"{k} since {findings.hm(i['since'])}" for k, i in st["inc"].items()))
+    except Exception as exc:
+        print(f"Now: relay not reachable ({exc!r})")
+    print("=" * 60 + "\nReplay of 29 Oct 2026: the IDNI bootnode stops taking peers at 12:01 UTC, back at 15:20 UTC\n" + "=" * 60)
+    for m in findings_case_bootnode():
+        print(f"{findings.hm(m['at'])}  ", end="")
+        show(m["what"], m)
+    print("=" * 60 + "\nOne of each other finding (made-up numbers)\n" + "=" * 60)
+    now = time.time()
+    for key, f in (("stall", {"last_ts": now - 1500, "head": 2484, "exp": 30}), ("ghost", {"sealed": 12, "waiting": 31}),
+                   ("reorg", {"depth": 3, "height": 2481, "count": 1}), ("slow", {"made": 41, "want": 120, "exp": 30}),
+                   ("drops", {"hour": 37, "usual": 2}), ("behind", {"lag": 42}),
+                   ("peers", {"connected": 3, "boot": False, "last_ts": now - 60, "head": 2484})):
+        show(key, {**findings.start_post(key, f, now), "x": findings.start_post(key, f, now)["x"]
+                   if (findings.DETECTORS[key]["x"](f) if callable(findings.DETECTORS[key]["x"]) else findings.DETECTORS[key]["x"]) else None})
+    held = [{"key": k, "at": now - 3600 * i} for i, k in enumerate(["stall", "stall", "reorg", "drops", "stall", "slow"])]
+    show("summary of a busy stretch", findings.summary_post(held, now))
+    print(f"Findings on X: at most {findings.X_DAILY} a day (FINDINGS_X_DAILY_CAP), inside X's {X_DAILY_CAP}. "
+          f"Busy stretch: {findings.STORM_AT} starts in {findings.STORM_HOURS:g} h (FINDINGS_STORM_AT, FINDINGS_STORM_HOURS).")
+    return 0
+
+
+def findings_case_bootnode(t0: float = datetime(2026, 10, 29, 11, 50, tzinfo=timezone.utc).timestamp()) -> list[dict]:
+    """29 Oct 2026, minute by minute: IDNI keeps sealing a block every 30 s, but from 12:01 to 15:20 UTC our node has no
+    peer and sees none of them; then it reconnects and catches up. Returns the posts with the minute they would go out."""
+    st, out, seen = findings.fresh_state(), [], {}
+    chain = {h: {"header": {"timestamp": int(t0 - 3600 + 30 * h)}} for h in range(1, 1000)}  # 30 s blocks from 10:50
+    off, back = t0 + 11 * 60, t0 + 210 * 60
+    for minute in range(0, 240):
+        now = t0 + minute * 60
+        lonely = off <= now < back
+        made = {h: b for h, b in chain.items() if b["header"]["timestamp"] <= now}
+        if not lonely:
+            seen = made
+        age = now - max(b["header"]["timestamp"] for b in seen.values())
+        h = {"expected_block_seconds": 30, "factors": [{"key": "node", "value": "yes"}, {"key": "last_block", "value": age},
+                                                       {"key": "sync", "value": "in sync"}, {"key": "pace", "value": 120},
+                                                       {"key": "mempool", "value": {"waiting": 0, "sealed": 0}}]}
+        peers = {"bootnode": "boot", "counts": {"connected": 0 if lonely else 3},
+                 "peers": [{"id": "boot", "label": "IDNI bootnode", "connected": not lonely}]}
+        for m in findings.observe(st, {"health": h, "peers": peers, "status": {"reorgs": []}, "blocks": dict(seen)}, now):
+            out.append({**m, "at": now})
+    return out
+
+
 def gazette_cli(reprint: bool = False) -> int:
     """Write this week's newspaper edition now, from the 7 days up to now. reprint: set the latest edition again, same
     number, date and week, e.g. after its wording changed."""
@@ -2157,4 +2281,6 @@ if __name__ == "__main__":
         sys.exit(asyncio.run(today_preview()))
     if "--site-preview" in sys.argv:
         sys.exit(site_preview())
+    if "--findings-preview" in sys.argv:
+        sys.exit(asyncio.run(findings_preview()))
     asyncio.run(Watcher().run())
