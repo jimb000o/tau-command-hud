@@ -1021,5 +1021,10 @@
   "tag": "Privacy",
   "on": "2026-10-29",
   "html": "Privacy notice: says plainly that the videos, like the film in the Press kit, come from tauhud.com itself and load only when you press play. There are no YouTube or other third-party players on the site."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-29",
+  "html": "Newspaper: the front page no longer slips out of place after turning pages. The masthead stayed clear of the ear boxes on first load, but if you read further on for a minute and came back, the title ran into the Free of charge box and the stop press line covered the columns. Each page is now measured again when it comes back into view."
  }
 ]
