@@ -116,7 +116,10 @@ button.b.big { padding: 9px 16px; font-size: 12px; }
 .f { display: grid; gap: 3px; }
 .f > span { color: var(--dim); font-size: 12px; }
 input.in, select.in { width: 100%; font: 13px var(--mono); background: #050506; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 9px; }
-input.in:focus, select.in:focus { outline: none; border-color: var(--ok); }
+input.in:focus, select.in:focus { outline: none; border-color: var(--ok); box-shadow: 0 0 0 2px rgba(57,255,138,.35); }
+/* keyboard: every control shows where the focus is */
+button:focus-visible, a:focus-visible, .prop:focus-visible, [role=tab]:focus-visible, .slots:focus-visible, .state:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+.blk:focus-within { border-color: rgba(57,255,138,.7); }
 input.in.bad { border-color: var(--refused); }
 .rform { display: grid; grid-template-columns: 8em minmax(0, 1fr) auto; gap: 8px; align-items: end; }
 .rform button.b { height: 35px; }
@@ -250,17 +253,34 @@ html.fit .col > .panel { min-height: 0; overflow: auto; }
 html.fit .col > .grow { flex: 1 1 0; }
 html.fit .col > .fix { flex: none; }
 html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr) minmax(0, 1.2fr); }
+/* laptops under about 1600 x 860: the same three columns at full size, scrolling a little, rather than shrinking text below 11 px */
+html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.15fr); }
+/* pay-me card: a link with the amount in it, and its QR code */
+.payme { margin-top: 8px; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: start; }
+.payme .qr { width: 132px; height: 132px; background: #fff; padding: 6px; border-radius: 4px; grid-row: span 3; }
+.payme .qr svg { width: 100%; height: 100%; display: block; }
+.payme code { overflow-wrap: anywhere; font-size: 11px; color: var(--text); }
+.from { margin-top: 6px; border-left: 2px solid var(--sim); padding: 2px 0 2px 10px; color: var(--dim); font-size: 12px; }
+.from b { color: var(--text); font-weight: 600; }
 @media (max-width: 700px) {
   .three { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   button.b, .tabs button { min-height: 44px; }
-  .picks button { min-height: 32px; }
+  .picks button { min-height: 44px; padding: 2px 12px; }
+  input.in, select.in { min-height: 44px; }
+  input.in.sm, input.in.md, select.in.md { min-height: 40px; }
+  .blk { padding: 9px 10px; }
+  .blk input[type=checkbox] { width: 22px; height: 22px; margin-top: 0; }
+  .blk { grid-template-columns: 26px minmax(0, 1fr); }
+  .item button.x, .bk button, .mem button, .splitrow button { min-width: 44px; min-height: 44px; }
+  footer a { display: inline-block; padding: 8px 0; }
+  .payme { grid-template-columns: minmax(0, 1fr); } .payme .qr { grid-row: auto; }
   .bal { font-size: 28px; }
   .two { grid-template-columns: minmax(0, 1fr); }
   .facts li { grid-template-columns: 80px minmax(0, 1fr); }
   .bookadd { grid-template-columns: minmax(0, 1fr) auto; }
   .bookadd #bAddr { grid-column: 1 / -1; grid-row: 2; }
   .splitrow { grid-template-columns: minmax(0, 1fr) 6em auto; }
-  .chips button { min-height: 32px; }
+  .chips button { min-height: 44px; padding: 2px 12px; }
   /* phone: act first, read after. The intro shrinks to three lines (tap for all), the testnet notice runs as one paragraph,
      and the panels stack account, send, rules, activity */
   .sub { font-size: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
@@ -329,7 +349,14 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
           <div class="row">
             <button class="b" type="button" id="btnBackup">Back up key</button>
             <a class="b" id="lnkAcct" href="/account/" style="text-decoration:none;display:inline-flex;align-items:center;font:600 11px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--hair);border-radius:6px;padding:6px 11px;color:var(--text)">Open in Accounts</a>
+            <button class="b" type="button" id="btnPayMe" aria-expanded="false" data-tip="Ask to be paid&#10;A link and a QR code with your address in it.&#10;Whoever opens it finds the wallet filled in for you.">Ask to be paid</button>
             <button class="b quiet" type="button" id="btnForget">Forget key</button>
+          </div>
+          <div class="payme" id="payme" hidden>
+            <label class="f" style="margin:0"><span>Amount (optional)</span><input class="in sm" id="payAmt" type="number" min="1" step="1" inputmode="numeric" placeholder="any"></label>
+            <div class="qr" id="payQr" aria-label="QR code of the link"></div>
+            <code id="payLink" translate="no"></code>
+            <div class="row" style="margin:0"><button class="b" type="button" id="btnPayCopy">Copy link</button></div>
           </div>
           <div class="secret" id="secretBox" hidden>
             <div class="note" style="margin:0"><b>Your private key.</b> Whoever has it controls this account. Keep it for the testnet only.</div>
@@ -365,6 +392,7 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
         <div class="form" id="payForm">
           <label class="f"><span>To</span><input class="in" id="to" list="bookNames" spellcheck="false" autocomplete="off" placeholder="pick a name below, or paste an address (96 hex characters)"></label>
           <div class="picks" id="toPicks"></div>
+          <div class="from" id="fromLink" hidden></div>
           <div class="two">
             <label class="f"><span>Amount in test AGRS</span><input class="in" id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="e.g. 250"></label>
             <label class="f" id="releaseBox" hidden><span id="releaseLbl">Released after (blocks)</span><input class="in" id="release" type="number" min="2" max="100000" step="1" value="30"></label>
@@ -382,7 +410,7 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
           <div class="what" id="signWhat"></div>
           <div class="toline" id="signTo"></div>
           <ul class="facts" id="signFacts"></ul>
-          <div class="signrow"><button class="b go big" type="button" id="btnSign" disabled>Sign and send</button><button class="b" type="button" id="btnTry" hidden>Try it anyway</button><span class="why" id="signWhy"></span></div>
+          <div class="signrow"><button class="b go big" type="button" id="btnSign" disabled>Sign and send</button><button class="b" type="button" id="btnTry" hidden>Try it anyway</button><button class="b" type="button" id="btnBack" hidden>Send it with a way back</button><span class="why" id="signWhy"></span></div>
           <div class="result" id="result"></div>
         </div>
       </section>
@@ -529,6 +557,31 @@ $("btnForget").onclick = () => {
   store.del(KEY_STORE); W.sk = W.pk = null; W.log = []; W.pakt = null; W.dust = null; $("secretBox").hidden = true; renderAll();
 };
 
+/* ask to be paid: a link to this wallet with your address (and an amount) filled in, and its QR code */
+const payLink = () => { const n = Math.floor(Number($("payAmt").value)); return location.origin + "/wallet/?to=" + W.pk + (n >= 1 ? "&amount=" + n : "") + (SIM ? "&mode=sim" : ""); };
+let qrLib = null;
+function loadQr() {
+  return qrLib || (qrLib = new Promise((ok, no) => { const s = document.createElement("script"); s.src = "vendor/qrcode.min.js"; s.onload = () => ok(window.qrcode); s.onerror = no; document.head.append(s); }));
+}
+async function renderPayMe() {
+  if ($("payme").hidden || !W.pk) return;
+  const url = payLink(); $("payLink").textContent = url;
+  try { const q = (await loadQr())(0, "M"); q.addData(url); q.make(); $("payQr").innerHTML = q.createSvgTag({ cellSize: 2, margin: 0, scalable: true }); }
+  catch (e) { $("payQr").textContent = ""; }
+}
+$("btnPayMe").onclick = () => { const box = $("payme"); box.hidden = !box.hidden; $("btnPayMe").setAttribute("aria-expanded", box.hidden ? "false" : "true"); renderPayMe(); fitLog(); };
+$("payAmt").addEventListener("input", renderPayMe);
+$("btnPayCopy").onclick = async e => { try { await navigator.clipboard.writeText(payLink()); e.target.textContent = T("Copied"); } catch { e.target.textContent = T("Select it"); } setTimeout(() => { e.target.textContent = T("Copy link"); }, 1500); };
+/* opened from such a link: fill in the payment, say where it came from, take the address out of the URL bar */
+function takeLink() {
+  const q = new URLSearchParams(location.search), to = (q.get("to") || "").trim().toLowerCase(), n = Math.floor(Number(q.get("amount")));
+  if (!isAddr(to)) return;
+  $("to").value = nameOf(to) || to; if (n >= 1) $("amount").value = String(Math.min(n, MAX_AMOUNT));
+  $("fromLink").hidden = false;
+  $("fromLink").replaceChildren(el("b", { text: T("Filled in from a payment link.") }), " ", T("Before you sign, ask the person for their three check words:"), " ", wordsEl(to));
+  q.delete("to"); q.delete("amount");
+  history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash);
+}
 document.querySelectorAll("#acctTabs button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("#acctTabs button").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
   $("acctView").hidden = b.dataset.atab !== "acct"; $("book").hidden = b.dataset.atab !== "book";
@@ -869,6 +922,14 @@ const S = {
 
 /* ---------- tabs and the "Before you sign" card ---------- */
 let TAB = "send", PICK = null;   // PICK: the proposal chosen in the vote tab
+/* tab rows: arrow keys move along, Home and End jump, as in any tab list */
+document.addEventListener("keydown", e => {
+  const t = e.target.closest && e.target.closest('[role=tab]');
+  if (!t || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+  const row = [...t.parentElement.querySelectorAll('[role=tab]')], i = row.indexOf(t);
+  const n = e.key === "Home" ? row[0] : e.key === "End" ? row[row.length - 1] : row[(i + (e.key === "ArrowRight" ? 1 : row.length - 1)) % row.length];
+  e.preventDefault(); n.focus(); n.click();
+});
 document.querySelectorAll("#payTabs button").forEach(b => b.addEventListener("click", () => {
   TAB = b.dataset.tab;
   document.querySelectorAll("#payTabs button").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
@@ -913,7 +974,7 @@ function plan() {
     const voted = (W.gov.votes || []).some(v => v.update_id === p.update_id && v.voter_pubkey === W.pk) || W.log.some(x => x.kind === "vote" && x.extra === p.update_id) || (SIM && S.state().votes.has(p.update_id));
     return { what: [T("Yes to "), el("span", { text: W.titles.get(p.update_id) || F("rule change {h}", { h: short(p.update_id) }) })],
       facts: [fact("ok", "Fee", T("None: votes are free")), ...(SIM ? [fact("", "Counts", T("As your visitor vote while the visitors' vote is open; on the chain itself only validators count."))] : []), fact("", "Takes effect", F("at block #{a} if enough yes votes arrive", { a: p.activate_at_height })), fact(voted ? "no" : "", "Final", voted ? T("You voted yes on this one already; the node refuses a second.") : T("A yes cannot be taken back."))],
-      can: !voted, tx: () => base("consensus_rule_vote", { update_id: p.update_id, approve: true }), label: () => F("Yes to {x}", { x: short(p.update_id) }), kind: "vote", extraId: p.update_id };
+      can: !voted, tx: () => base("consensus_rule_vote", { update_id: p.update_id, approve: true }), label: () => F("Yes to {x}", { x: W.titles.get(p.update_id) || short(p.update_id) }), kind: "vote", extraId: p.update_id };
   }
   if (TAB === "split") return planSplit(fee, sp, r);
   const d = payDraft(), facts = [];
@@ -943,13 +1004,15 @@ function plan() {
       tx: () => { const b = base("retractable_transfer", { recipient_pubkey: d.to, amount: d.amount, release_at_height: at }); b.expire_at_height = Math.min(b.expire_at_height, at); return b; } };
   }
   if (gated) facts.push(fact("", "Way back", T("none once your co-signer signs and it is paid")));
-  else facts.push(fact(big ? "warn" : "", "Way back", big ? T("none once a block holds it, and this is more than a quarter of what you have") : T("none once a block holds it. Want one? Use Send with a way back.")));
+  /* a first payment to an address outside the book: the way back is offered, one click away */
+  const stranger = TAB === "send" && !gated && isAddr(d.to) && d.to !== W.pk && !nameOf(d.to) && !look;
+  if (!gated) facts.push(fact(big || stranger ? "warn" : "", "Way back", stranger ? T("none once a block holds it, and this address is not in your address book. Send it with a way back to keep the chance to take it back.") : big ? T("none once a block holds it, and this is more than a quarter of what you have") : T("none once a block holds it. Want one? Use Send with a way back.")));
   if (gated) {
     const approvers = Object.fromEntries(r.co.slots.map(([s, p]) => [String(s), p]));
-    return { what, to, facts, can, why, big, kind: "cosign", label: () => F("{n} test AGRS to {x}, waiting for a co-signature", { n: fmt(d.amount), x: tag(d.to) }),
+    return { what, to, facts, can, why, big, kind: "cosign", label: () => F("{n} test AGRS to {x}, waiting for a co-signature", { n: fmt(d.amount), x: tag(d.to) }), done: () => F("{n} test AGRS to {x}, co-signed and paid", { n: fmt(d.amount), x: tag(d.to) }),
       tx: () => base("approval_request", { recipient_pubkey: d.to, amount: d.amount, approvers, custom_inputs: {} }) };
   }
-  return { what, to, facts, can, why, tryIt, big, kind: "pay", label: () => F("{n} test AGRS to {x}", { n: fmt(d.amount), x: tag(d.to) }),
+  return { what, to, facts, can, why, tryIt, big, stranger, kind: "pay", label: () => F("{n} test AGRS to {x}", { n: fmt(d.amount), x: tag(d.to) }),
     tx: () => base("user_tx", { operations: { "1": [[W.pk, d.to, String(d.amount)]] } }) };
 }
 function planSplit(fee, sp, r) {
@@ -990,6 +1053,7 @@ function renderSign() {
   $("btnSign").disabled = !P.can || !live;
   $("btnSign").textContent = T(P.kind === "cosign" ? "Sign and ask for co-signature" : P.kind === "vote" ? "Sign my yes" : "Sign and send");
   $("btnTry").hidden = !P.tryIt; $("btnTry").disabled = !live;
+  $("btnBack").hidden = !(P.stranger && P.can);
   $("signWhy").textContent = P.why || (P.can ? T(SIM ? "Lands on the shared simulated chain; every visitor sees it." : "The node checks it first; if it would be refused, nothing is sent.") : "");
 }
 async function signNow(p, trying) {
@@ -998,15 +1062,17 @@ async function signNow(p, trying) {
   const r = await submit(p.tx(), p.label(), p.kind);
   if (r.ok) {
     if (p.kind === "vote") { const x = W.log[0]; x.extra = p.extraId; store.set(logKey(), JSON.stringify(W.log)); }
+    if (p.done) { W.log[0].done = p.done(); store.set(logKey(), JSON.stringify(W.log)); }
     res.className = "result ok";
     res.textContent = p.kind === "cosign" ? T("Sent as a request: it executes the moment your co-signer signs.") : p.kind === "back" ? T("Sent. Until it is released you can take it back under Activity.") : p.kind === "vote" ? T("Your yes is on its way; the next block counts it.") : T("Sent. The next block takes it in.");
-    if (p.kind !== "vote") { $("amount").value = ""; if (p.kind === "split") SPLITS = [{ to: "", amount: "" }, { to: "", amount: "" }]; renderSplits(); }
+    if (p.kind !== "vote") { $("amount").value = ""; $("fromLink").hidden = true; if (p.kind === "split") SPLITS = [{ to: "", amount: "" }, { to: "", amount: "" }]; renderSplits(); }
   } else if (trying && r.policy) { res.className = "result no"; res.textContent = T("Refused, as your rule says: the node turned it away before it reached a block. Nothing left your account."); }
   else { res.className = "result no"; res.textContent = r.why; }
   renderAll();
 }
 $("btnSign").onclick = () => { if (P && P.can) signNow(P, false); };
 $("btnTry").onclick = () => { if (P && P.tryIt) signNow(P, true); };
+$("btnBack").onclick = () => { $("tabBack").click(); $("btnSign").focus(); };
 
 /* ---------- vote tab ---------- */
 async function loadTitles() {
@@ -1025,7 +1091,9 @@ function renderVote() {
   if (!open.some(u => u.update_id === PICK)) PICK = open[0].update_id;
   box.replaceChildren(...open.slice(0, 4).map(u => {
     const yes = (g.votes || []).filter(v => v.update_id === u.update_id).length;
-    return el("div", { class: "prop" + (u.update_id === PICK ? " sel" : ""), role: "button", tabindex: "0", onclick: () => { PICK = u.update_id; renderVote(); renderSign(); } },
+    const choose = () => { PICK = u.update_id; renderVote(); renderSign(); };
+    return el("div", { class: "prop" + (u.update_id === PICK ? " sel" : ""), role: "button", tabindex: "0", "aria-pressed": u.update_id === PICK ? "true" : "false", onclick: choose,
+      onkeydown: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); const n = [...$("props").children].find(x => x.classList.contains("sel")); if (n) n.focus(); } } },
       el("div", null, el("div", { class: "t", text: W.titles.get(u.update_id) || T("Rule change") }),
         el("div", { class: "m", text: F("{h} · {a} of {b} yes votes · takes effect at #{c}", { h: short(u.update_id), a: yes, b: g.approval_threshold, c: u.activate_at_height }) })),
       el("span", { class: "dot " + (u.update_id === PICK ? "ok" : "") }));
@@ -1105,7 +1173,7 @@ function renderRule() {
   const sel = $("vCoWho"), want = sel.value || sel.dataset.want || "";
   sel.replaceChildren(el("option", { value: "", text: T("pick a name") }), ...BOOK.filter(c => c.addr !== W.pk).map(c => el("option", { value: c.addr, translate: "no", text: c.name })));
   sel.value = BOOK.some(c => c.addr === want) ? want : "";
-  $("probes").replaceChildren(...(W.pk ? probes(d.ok ? d.r : r) : []));
+  $("probes").replaceChildren(...probes(d.ok ? d.r : r));
   $("draftTau").hidden = !d.text; $("draftText").textContent = d.text || "";
   const same = d.text && r && d.text.replace(/\s+/g, "") === r.text.replace(/\s+/g, "");
   $("btnRule").disabled = !W.pk || !d.ok || same || slotsFull();
@@ -1286,6 +1354,11 @@ $("btnBook").onclick = () => {
 };
 
 /* ---------- activity: what waits for you, then what you sent ---------- */
+/* someone new wrote to you: one click puts their address into the book form, you give the name */
+function addToBook(a) {
+  $("tabBook").click(); $("bAddr").value = a; $("bName").value = ""; renderBook(); $("bName").focus();
+}
+const bookBtn = a => nameOf(a) || BOOK.length >= 12 ? null : el("button", { class: "b quiet", type: "button", text: T("+ Address book"), "data-tip": T("Put them in your address book") + "\n" + T("Their address goes into the form; you give the name.") + "\n" + T("Check their three words with them first."), onclick: () => addToBook(a) });
 async function answerOffer(o, yes) {
   let text = o.rule_text;
   if (yes && !text) { const m = await lookup(`getruleoffer ${o.offer_id}`); text = m && m.status === "ok" ? m.data.rule_text : null; }
@@ -1333,6 +1406,7 @@ function inboxItems() {
   }
   for (const x of (W.recv || []).slice(0, 3)) {   // payments from other visitors' wallets on the shared simulated chain
     items.push(el("div", { class: "item" }, el("span", { class: "dot ok" }), el("span", { class: "t", text: F("{n} test AGRS from {x}", { n: fmt(x.amount), x: tag(x.from) }) }), el("span", { class: "dim", style: "font-size:12px", text: F("in block #{a}", { a: x.block }) }),
+      bookBtn(x.from) ? el("span", { class: "acts" }, bookBtn(x.from)) : null,
       el("span", { class: "m" }, print(x.from), el("span", { translate: "no", text: short(x.from) + "  " }), T(nameOf(x.from) ? "From your address book." : "Another visitor's wallet. Add them to your address book by name before you pay them back."))));
   }
   const inc = ((W.offers && W.offers.incoming) || []).filter(o => o.status === "offered");
@@ -1341,14 +1415,14 @@ function inboxItems() {
     items.push(el("div", { class: "item ask" }, el("span", { class: "dot ok" }),
       el("span", { class: "t", text: F("{x} offers you a rule", { x: tag(o.offerer_pubkey) }) }),
       el("span", { class: "acts" }, el("button", { class: "b quiet", type: "button", text: T("Check"), "data-tip": T("Check it") + "\n" + T("The node compares it with what you have.") + "\n" + T("Free; nothing is signed."), onclick: () => checkOffer(o) }),
-        el("button", { class: "b", type: "button", text: T("Accept"), onclick: () => answerOffer(o, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerOffer(o, false) })),
+        el("button", { class: "b", type: "button", text: T("Accept"), onclick: () => answerOffer(o, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerOffer(o, false) }), bookBtn(o.offerer_pubkey)),
       el("span", { class: "m", text: (rr ? describe(rr).join(" ") : T("A rule for your own payments.")) + " " + (o.invite ? T("A simulated member asks you into a Pakt.") : "") + (h != null && o.expire_at_height ? " " + F("Open until block #{a}.", { a: o.expire_at_height }) : "") }),
       c ? conflictView(c) : null));
   }
   for (const q of ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending")) {
     items.push(el("div", { class: "item ask" }, el("span", { class: "dot ok" }),
       el("span", { class: "t", text: F("{x} asks you to co-sign {n} test AGRS", { x: tag(q.sender_pubkey), n: fmt(q.amount) }) }),
-      el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Co-sign"), onclick: () => answerRequest(q, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerRequest(q, false) })),
+      el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Co-sign"), onclick: () => answerRequest(q, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerRequest(q, false) }), bookBtn(q.sender_pubkey)),
       el("span", { class: "m", text: F("To {x}. Free for you; the payment goes through once its rule is met.", { x: tag(q.recipient_pubkey) }) })));
   }
   for (const q of ((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "pending")) {
@@ -1372,7 +1446,7 @@ function inboxItems() {
 function renderSteps() {
   const steps = [
     [!!W.pk, "Make your account", "One click; the key stays in this browser."],
-    [BOOK.length > 0, "Put someone in your address book", "Then you pay names, not hex."],
+    [!!W.pk && BOOK.length > 0, "Put someone in your address book", "Then you pay names, not hex."],
     [!!myRule(), "Give your account a rule", "For example: only to people in your book."],
     [W.log.some(x => x.kind === "back"), "Send something with a way back", "And take it back before it is released."],
   ];
@@ -1388,9 +1462,10 @@ function renderActivity() {
   $("inbox").replaceChildren(...inbox);
   $("inbox").querySelectorAll(".item > .m").forEach(m => { m.dataset.tip = m.textContent; });
   const word = { queued: ["sim", "on its way"], in: ["ok", "in block #{a}"], out: ["off", "refused"] };
-  const rows = W.log.slice(0, 12).map(x => { const w = word[x.status] || word.queued, when = new Date(x.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-    return el("div", { class: "item" + (x.status === "out" ? " bad" : ""), "data-tip": x.label + "\n" + F(w[1], { a: x.block ?? "?" }) + "\n" + when + (x.hash ? " · " + short(x.hash) : "") },
-      el("span", { class: "dot " + w[0] }), el("span", { class: "t", text: x.label }), el("span", { class: "dim", style: "font-size:12px", text: F(w[1], { a: x.block ?? "?" }) }),
+  const paid = new Set(((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "executed").map(q => q.request_id));
+  const rows = W.log.slice(0, 12).map(x => { const w = word[x.status] || word.queued, label = x.done && (paid.has(x.extra) || paid.has(x.hash)) ? x.done : x.label, when = new Date(x.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+    return el("div", { class: "item" + (x.status === "out" ? " bad" : ""), "data-tip": label + "\n" + F(w[1], { a: x.block ?? "?" }) + "\n" + when + (x.hash ? " · " + short(x.hash) : "") },
+      el("span", { class: "dot " + w[0] }), el("span", { class: "t", text: label }), el("span", { class: "dim", style: "font-size:12px", text: F(w[1], { a: x.block ?? "?" }) }),
       x.why ? el("span", { class: "m", text: x.why }) : null); });
   if (W.pk && W.log.length) rows.push(el("a", { class: "morelog", href: "/account/?a=" + W.pk, hidden: W.log.length <= 12 ? "" : null, text: F("{n} earlier, and everything block by block: Accounts →", { n: Math.max(0, W.log.length - 12) }) }));
   if (W.pk && !rows.length && !inbox.length) {
@@ -1417,7 +1492,7 @@ function fitLog() {
 
 /* ---------- account and key numbers ---------- */
 function renderAccount() {
-  $("noKey").hidden = !!W.pk; $("hasKey").hidden = !W.pk;
+  $("noKey").hidden = !!W.pk; $("hasKey").hidden = !W.pk; renderPayMe();
   $("acctAside").textContent = W.pk ? (SIM ? T("simulated chain") : "Tau Testnet Alpha") : "";
   if (!W.pk) return;
   $("addr").textContent = W.pk;
@@ -1465,9 +1540,11 @@ document.addEventListener("mouseleave", () => { tip.hidden = true; });
 /* ---------- one screen ---------- */
 function fit() {
   const w = innerWidth, h = innerHeight, root = document.documentElement;
-  const on = w >= 1200 && h >= 640 && w / h >= 1.3;   // smaller screens scroll
-  const z = on ? Math.max(.82, Math.min(2, w / 1600, h / 860)) : 1;
+  const scale = Math.min(2, w / 1600, h / 860);
+  const on = w >= 1200 && h >= 640 && w / h >= 1.3 && scale >= .99;   // one screen only where the 11 px floor holds
+  const z = on ? Math.max(1, scale) : 1;
   root.classList.toggle("fit", on);
+  root.classList.toggle("lap", !on && w >= 1100);
   root.classList.toggle("wide", on && w / h >= 1.95);
   root.style.setProperty("--z", z);
   root.style.setProperty("--fitH", Math.floor(h / z) + "px");
@@ -1487,6 +1564,7 @@ $("sourceLine").addEventListener("click", e => e.currentTarget.classList.add("op
 fit();
 connect();
 loadBook();
+takeLink();
 loadKey();
 loadSlots();
 if (!SIM) setInterval(loadSlots, 60000);
