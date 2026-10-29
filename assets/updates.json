@@ -865,5 +865,10 @@
    "text": "Exactly what Tau HUD processes. No cookies, no tracking, and the fonts now come from the site itself instead of Google.",
    "link": "/legal/"
   }
+ },
+ {
+  "tag": "v17.52",
+  "on": "2026-10-29",
+  "html": "In numbers and Privacy moved out of the Learn menu into the footer: every page now ends its footer line with “In numbers · Privacy”, and pages without a footer, like the HUD, show the two as a small line in the bottom right corner. Nothing else moves."
  }
 ]
