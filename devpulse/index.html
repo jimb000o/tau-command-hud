@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Build pulse</title>
+<meta name="description" content="How Tau's code is moving: the newest commits in IDNI's public repositories, which parts of the code change, the weekly rhythm, tags, and which version our testnet node runs. Unofficial.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Build pulse">
+<meta property="og:description" content="What changed in Tau's public code, which parts move, and which version the testnet node runs.">
+<meta property="og:image" content="https://tauhud.com/assets/og/devpulse.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tauhud.com/devpulse/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/devpulse.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "not live / not synced". */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.hdr-right { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.snap { color: var(--behind); border-color: rgba(255,177,59,.4); } .state.snap i { background: var(--behind); }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 30em; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 76ch; }
+.tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-width: 0; }
+.tile h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.tile .v { font: 600 24px/1.2 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 4px; white-space: nowrap; }
+.tile .v.ok { color: var(--ok); }
+.tile p { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) {
+  .main { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "feed heat heat" "feed areas vers" "time time time"; }
+  .p-feed { grid-area: feed; } .p-heat { grid-area: heat; } .p-areas { grid-area: areas; } .p-vers { grid-area: vers; } .p-time { grid-area: time; }
+}
+.repo { font: 600 11px var(--mono); color: #fff; border: 1px solid var(--hair); border-radius: 4px; padding: 0 5px; white-space: nowrap; }
+.repo.lang { color: var(--dim); }
+
+/* newest commits */
+.feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; align-content: start; }
+.feed li a { display: block; text-decoration: none; padding: 6px 10px; border-left: 2px solid var(--hair); background: rgba(255,255,255,.025); border-radius: 0 6px 6px 0; }
+.feed li a:hover, .feed li a:focus-visible { background: rgba(255,255,255,.07); }
+.feed li.fresh a { border-left-color: var(--ok); }
+.feed .t { display: block; color: #fff; font: 500 13px/1.35 var(--display); overflow-wrap: anywhere; }
+.feed .m { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; color: var(--dim); font-size: 12px; margin-top: 2px; }
+.feed .m code { font: 12px var(--mono); color: var(--dim); }
+
+/* weekly rhythm */
+.heat { display: grid; grid-template-columns: 96px repeat(52, minmax(0, 1fr)); gap: 3px; align-items: center; }
+.heat .lbl { font: 12px var(--mono); color: #fff; white-space: nowrap; }
+.heat .c { aspect-ratio: 1; border-radius: 2px; background: rgba(255,255,255,.05); min-width: 0; }
+.heat .c.now { outline: 1px solid var(--hair); outline-offset: 1px; }
+.heat .mo { font: 11px var(--mono); color: var(--dim); white-space: nowrap; overflow: visible; height: 16px; }
+.scale { display: flex; align-items: center; gap: 4px; color: var(--dim); font-size: 12px; margin-top: 8px; flex-wrap: wrap; }
+.scale i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
+.scale span { margin: 0 6px 0 2px; }
+
+/* which parts move */
+.areas h3, .vers h3 { margin: 0 0 4px; font: 600 12px var(--display); color: #fff; display: flex; gap: 8px; align-items: baseline; }
+.areas h3 small, .vers h3 small { font: 12px var(--mono); color: var(--dim); }
+.areas .blk + .blk, .vers .blk + .blk { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.ar { display: grid; grid-template-columns: 10px minmax(0, 11em) minmax(0, 1fr) 7em; gap: 8px; align-items: center; padding: 2px 0; }
+.ar .lt { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.12); }
+.ar .lt.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.ar code { font: 12px var(--mono); color: #fff; overflow-wrap: anywhere; }
+.ar .bar { position: relative; height: 8px; background: rgba(255,255,255,.04); border-radius: 2px; }
+.ar .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; }
+.ar .bar .b12 { background: rgba(255,255,255,.22); } .ar .bar .b4 { background: #fff; }
+.ar .n { text-align: right; color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ar .n b { color: #fff; font-weight: 600; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; color: var(--dim); font-size: 12px; margin-top: 8px; }
+.legend i { display: inline-block; width: 12px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 0; }
+
+/* versions */
+.vrow { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 2px 0; }
+.vrow .k { color: var(--dim); font-size: 12px; min-width: 7.5em; }
+.vrow code { color: #fff; font: 12px var(--mono); }
+.vrow .ok { color: var(--ok); font-weight: 600; }
+.vrow .note { color: var(--dim); font-size: 12px; }
+.tags { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.tags li { font: 12px var(--mono); color: var(--dim); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
+.tags li b { color: #fff; font-weight: 500; }
+
+/* code beside the chain */
+.tl { display: block; width: 100%; }
+.tl text { font: 11px var(--mono); fill: var(--dim); }
+.tl .lane { font: 12px var(--mono); fill: #fff; }
+.tl .hit { cursor: default; }
+.tl .hit:hover rect.d, .tl .hit:focus rect.d { fill: #fff; }
+
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
+#tip .tv { font: 600 15px var(--display); color: #fff; }
+#tip .tm { color: var(--dim); }
+.empty { color: var(--dim); font-size: 13px; padding: 12px 4px; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+footer p { margin: 0; }
+[hidden] { display: none !important; }
+
+/* one screen on laptops and up (landscape), laid out for 1600×820 and scaled, like the other pages */
+html.fit body { overflow: hidden; height: 100vh; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { max-width: none; zoom: var(--z); height: var(--fitH); display: flex; flex-direction: column; gap: 10px; padding: 6px 0 8px; }
+html.fit .wrap > * { flex: none; }
+html.fit #tip { zoom: var(--z); }
+html.fit .main { flex: 1 1 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; }
+html.fit .panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px 14px; }
+html.fit .panel > * { flex: none; }
+html.fit .panel > .fill { flex: 1 1 0; min-height: 0; overflow: hidden; }
+html.fit .tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+html.fit .lead { font-size: 22px; margin: 0; }
+html.fit .sub { font-size: 12px; margin: 2px 0 0; max-width: none; }
+html.fit header { padding: 4px 0 6px; }
+html.fit .tile { padding: 8px 12px; }
+html.fit .tile .v { font-size: 22px; }
+html.fit .heat .c { aspect-ratio: auto; height: 20px; }
+html.fit .heat { row-gap: 4px; }
+html.fit.short .heat .c { height: 11px; }
+html.fit.short .scale, html.fit.short .p-time .legend, html.fit.short .p-areas .legend { display: none; }
+html.fit.short .panel h2 { margin-bottom: 4px; }
+html.fit.short .main { gap: 8px; }
+html.fit.short .tile p { display: none; }
+/* phone: nothing smaller than 11 px, taps big enough for a thumb */
+@media (max-width: 700px) {
+  .heat { grid-template-columns: 86px repeat(26, minmax(0, 1fr)); gap: 2px; }
+  .heat .lbl { font-size: 11px; }
+  .heat .old { display: none; }
+  .feed li a { min-height: 44px; }
+  .ar { grid-template-columns: 10px minmax(0, 8em) minmax(0, 1fr) 7em; }
+}
+p.sub, .sub, .note, .lead, .empty { max-width: 76ch; }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Build pulse</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state" data-tip="Where these numbers come from.\nRead from IDNI's public git history."><i></i><span id="stateText">Reading git</span></span>
+    </div>
+  </header>
+  <nav class="tnav" data-page="devpulse" aria-label="Pages and tools"></nav>
+  <div>
+    <p class="lead">How Tau’s code is moving.</p>
+    <p class="sub">What changed in IDNI’s public repositories, which parts of the code move, and which version our testnet node runs. Commits come in batches, so a quiet week says little; this page shows what moves, not who is fast. Unofficial, read from public git history.</p>
+  </div>
+  <div class="tiles" id="tiles"></div>
+  <main class="main">
+    <section class="panel p-feed">
+      <h2>Newest changes <small>both repositories, newest first · click to open on GitHub</small></h2>
+      <ul class="feed fill" id="feed"></ul>
+    </section>
+    <section class="panel p-heat">
+      <h2>Rhythm <small>commits per week over a year</small></h2>
+      <div class="heat" id="heat"></div>
+      <div class="scale" id="scale"></div>
+    </section>
+    <section class="panel p-areas areas">
+      <h2>Which parts move <small>commits that touched each area</small></h2>
+      <div class="fill" id="areas"></div>
+      <div class="legend"><span><i style="background:#fff"></i>last 4 weeks</span><span><i style="background:rgba(255,255,255,.22)"></i>last 12 weeks</span><span><i style="background:var(--ok);width:8px;height:8px;border-radius:50%"></i>changed this week</span></div>
+    </section>
+    <section class="panel p-vers vers">
+      <h2>Versions <small>what our node runs, tags</small></h2>
+      <div class="fill" id="vers"></div>
+    </section>
+    <section class="panel p-time">
+      <h2>Code beside the chain <small>commits per day and testnet restarts, last weeks</small></h2>
+      <div id="tl"></div>
+      <div class="legend"><span><i style="background:rgba(255,255,255,.55)"></i>commits that day</span><span><i style="background:var(--ok);width:2px"></i>the commit our node is built from</span><span><i style="background:#fff;width:8px;height:8px;transform:rotate(45deg)"></i>tag</span><span><i style="background:#8a8a94;width:9px;height:9px;border-radius:50%"></i>testnet restart</span><span><i style="border:1.5px solid #8a8a94;width:9px;height:9px;border-radius:50%;background:none"></i>restart from our notes, time approximate</span></div>
+    </section>
+  </main>
+  <footer>
+    <p>Unofficial, not affiliated with IDNI. Counted from the public git history of <a href="https://github.com/IDNI/tau-testnet" target="_blank" rel="noopener" translate="no">IDNI/tau-testnet</a> and <a href="https://github.com/IDNI/tau-lang" target="_blank" rel="noopener" translate="no">IDNI/tau-lang</a>, refreshed every 30 minutes. A commit count says how often code was saved, not how much work was done. <a href="/findings/">Findings</a> · <a href="/stats/">Stats</a> · <a href="/developers/">Developers</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BBuild%20pulse%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtN = n => Number(n).toLocaleString("en-US");
+const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
+const LIVE_URL = "https://node.tauhud.com/devpulse.json", SNAPSHOT = "snapshot.json";
+const SHORT = { "IDNI/tau-testnet": "tau-testnet", "IDNI/tau-lang": "tau-lang" };
+// what our node's tau-lang pin means: IDNI's own testnet build (Dockerfile.standalone) uses the same commit
+const PIN_NOTE = { "IDNI/tau-lang": "the commit IDNI’s own testnet build uses" };
+// Restarts before our relay kept a log (from our node notes, same list as /stats); times approximate.
+const KNOWN_RESTARTS = [
+  { at: Date.UTC(2026, 9, 23, 12) / 1000, label: "New genesis: tau-testnet-v2 started over", approx: true },
+  { at: Date.UTC(2026, 9, 27, 9, 10) / 1000, label: "Restart on the same genesis", approx: true },
+  { at: Date.UTC(2026, 9, 27, 13, 30) / 1000, label: "Restart on the same genesis", approx: true },
+];
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// Chinese dates are written by the page itself, so a date never waits for a dictionary entry
+const ZH = window.TauI18n && TauI18n.lang === "zh";
+const monName = m => ZH ? `${m + 1}月` : MON[m];
+const fmtDay = ts => { const d = new Date(ts * 1000); return ZH ? `${d.getUTCFullYear()}年${d.getUTCMonth() + 1}月${d.getUTCDate()}日` : `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+const Z = (en, zh) => ZH ? zh : en;   // a hover line with a date in it, written in both languages here
+const fmtShort = ts => { const d = new Date(ts * 1000); return ZH ? `${d.getUTCMonth() + 1}月${d.getUTCDate()}日` : `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; };
+function ago(ts) {
+  const s = Math.max(0, Date.now() / 1000 - ts);
+  if (s < 3600) return "within the hour";
+  if (s < 86400) return plural(Math.round(s / 3600), "hour") + " ago";
+  return plural(Math.round(s / 86400), "day") + " ago";
+}
+const short = repo => SHORT[repo] || repo.split("/").pop();
+const chip = repo => `<span class="repo${repo.endsWith("lang") ? " lang" : ""}" translate="no">${esc(short(repo))}</span>`;
+const areaName = a => a === "root files" ? `<span>root files</span>` : `<code translate="no">${esc(a)}</code>`;
+
+/* ---------------- one screen on wide displays ---------------- */
+let ZOOM = 1;
+function fit() {
+  const w = innerWidth, h = innerHeight;
+  const on = w >= 1200 && h >= 700 && w / h >= 1.3;
+  ZOOM = on ? Math.max(1, Math.min(2, w / 1600, h / 820)) : 1;
+  const root = document.documentElement;
+  root.classList.toggle("fit", on);
+  root.classList.toggle("wide", on && w / h >= 2.1);
+  root.classList.toggle("short", on && h / ZOOM < 900);   // laptops: the nav takes two rows, so the panels give up their extras
+  root.style.setProperty("--z", ZOOM);
+  root.style.setProperty("--fitH", Math.floor(h / ZOOM) + "px");
+}
+fit();
+
+/* ---------------- tooltip: a value line and at most two lines of words ---------------- */
+const tip = $("tip");
+function showTip(ev, lines) {
+  tip.replaceChildren(...lines.map(([cls, text]) => { const d = document.createElement("div"); if (cls) d.className = cls; d.textContent = text; return d; }));
+  tip.hidden = false;
+  const r = tip.getBoundingClientRect(), pad = 12;
+  let left = ev.clientX + 14, top = ev.clientY + 14;
+  if (left + r.width > innerWidth - pad) left = ev.clientX - r.width - 14;
+  if (top + r.height > innerHeight - pad) top = ev.clientY - r.height - 14;
+  tip.style.left = Math.max(pad, left) / ZOOM + "px"; tip.style.top = Math.max(pad, top) / ZOOM + "px";
+}
+const hideTip = () => { tip.hidden = true; };
+const tipOf = d => d.dataset.tip.split("\n").map((l, i, all) => [all.length > 1 && i === 0 ? "tv" : "", l]);
+document.addEventListener("pointerover", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d) showTip(e, tipOf(d)); });
+document.addEventListener("pointerout", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d && !d.contains(e.relatedTarget)) hideTip(); });
+document.addEventListener("focusin", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d) { const r = d.getBoundingClientRect(); showTip({ clientX: r.left, clientY: r.bottom }, tipOf(d)); } });
+document.addEventListener("focusout", hideTip);
+
+/* ---------------- data ---------------- */
+let D = null, FROM = "";
+async function getJson(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error(r.status);
+  const j = await r.json();
+  if (!j || !Array.isArray(j.repos) || !j.repos.length) throw new Error("empty");
+  return j;
+}
+async function load() {
+  // the server's file is fresh every 30 minutes; the snapshot in the site is the fallback
+  try { D = await getJson(LIVE_URL); FROM = "live"; } catch (e) {
+    try { if (!D) { D = await getJson(SNAPSHOT); FROM = "snapshot"; } } catch (e2) { D = null; }
+  }
+  render();
+}
+
+/* ---------------- render ---------------- */
+function render() {
+  const st = $("state");
+  if (!D) {
+    st.className = "state"; $("stateText").textContent = "Git history unreachable";
+    ["feed", "areas", "vers"].forEach(id => { $(id).innerHTML = `<p class="empty">The git history could not be read right now. It comes back by itself.</p>`; });
+    return;
+  }
+  const live = FROM === "live" && Date.now() / 1000 - D.generated_at < 3 * 3600;
+  st.className = "state " + (live ? "live" : "snap");
+  $("stateText").textContent = live ? "Live from git" : Z(`Snapshot of ${fmtShort(D.generated_at)}`, `${fmtShort(D.generated_at)} 的快照`);
+  st.dataset.tip = live ? `${Z("Read " + ago(D.generated_at), "读取于" + ago(D.generated_at).replace("within the hour", "一小时内").replace(/(\d+) hours? ago/, "$1 小时前").replace(/(\d+) days? ago/, "$1 天前"))}\nFrom IDNI's public git history, refreshed every 30 minutes.` : `${Z("Snapshot of " + fmtDay(D.generated_at), fmtDay(D.generated_at) + " 的快照")}\nOur server's fresh copy is not reachable; this one ships with the page.`;
+  tiles(); feed(); heat(); areas(); versions(); timeline(); trimAll();
+}
+
+function tiles() {
+  const R = D.repos, T = [];
+  for (const r of R) T.push([`Last change · ${short(r.repo)}`, ago(r.head.ts), fmtDay(r.head.ts), "", `Newest commit ${r.head.sha.slice(0, 8)}\n${Z(`${fmtDay(r.head.ts)}, on branch ${r.branch}`, `${fmtDay(r.head.ts)}，分支 ${r.branch}`)}`]);
+  T.push(["Commits, 4 weeks", fmtN(R.reduce((a, r) => a + r.commits_4w, 0)), R.map(r => `<span translate="no">${short(r.repo)}</span> ${fmtN(r.commits_4w)}`).join(" · "), "", "Commits on the main branches in the last 28 days\nA count of saves, not a measure of work."]);
+  const weeks = R[0].weeks.map((_, i) => R.some(r => r.weeks[i] > 0));
+  const act = weeks.slice(-12).filter(Boolean).length;
+  T.push(["Active weeks", `${act} of 12`, "weeks with at least one commit", "", "Weeks with any commit, either repository\nWork on branches or offline does not show here."]);
+  const tn = R.find(r => r.repo.endsWith("tau-testnet"));
+  if (tn && tn.runs) {
+    const same = tn.runs.ahead === 0;
+    T.push(["Our node runs", tn.runs.sha.slice(0, 7), same ? "newest tau-testnet main" : tn.runs.ahead == null ? "tau-testnet" : `tau-testnet main is ${plural(tn.runs.ahead, "commit")} ahead`, same ? "ok" : "", same ? "Up to date\nOur node is built from the newest tau-testnet commit." : "Our node's build\nWe update after checking a new upstream commit on a test node."]);
+  }
+  $("tiles").innerHTML = T.slice(0, 5).map(([h, v, p, cls, t]) => `<div class="tile" tabindex="0" data-tip="${esc(t)}"><h3>${esc(h)}</h3><div class="v ${cls}">${esc(v)}</div><p>${p.includes("<span") ? p : esc(p)}</p></div>`).join("");
+  $("tiles").querySelectorAll("h3").forEach(h => { h.innerHTML = h.innerHTML.replace(/ · (.+)$/, (m, n) => ` · <span translate="no">${n}</span>`); });
+}
+
+function feed() {
+  const all = D.repos.flatMap(r => r.recent.map(c => ({ ...c, repo: r.repo }))).sort((a, b) => b.ts - a.ts).slice(0, document.documentElement.classList.contains("fit") ? 40 : 10);
+  const now = Date.now() / 1000;
+  $("feed").innerHTML = all.map(c => `<li class="${now - c.ts < 7 * 86400 ? "fresh" : ""}"><a href="https://github.com/${esc(c.repo)}/commit/${esc(c.sha)}" target="_blank" rel="noopener">
+    <span class="t" translate="no">${esc(c.title)}</span>
+    <span class="m">${chip(c.repo)}<span>${ago(c.ts)}</span>${c.areas.length ? `<span>${c.areas.map(areaName).join(", ")}</span>` : ""}<code translate="no">${c.sha.slice(0, 7)}</code></span></a></li>`).join("") || `<li class="empty">No commits in the last year.</li>`;
+}
+// one screen: each panel shows as much as fits, no inner scrolling; pick() names the next thing to leave out
+function trimTo(box, pick) {
+  if (!document.documentElement.classList.contains("fit")) return;
+  while (box.scrollHeight > box.clientHeight + 1) { const e = pick(); if (!e) break; e.remove(); }
+}
+function trimAll() {
+  trimTo($("feed"), () => $("feed").children.length > 1 ? $("feed").lastElementChild : null);
+  trimTo($("areas"), () => {
+    const blk = [...$("areas").querySelectorAll(".blk")].sort((a, b) => b.querySelectorAll(".ar").length - a.querySelectorAll(".ar").length)[0];
+    const rows = blk ? blk.querySelectorAll(".ar") : [];
+    return rows.length > 1 ? rows[rows.length - 1] : null;
+  });
+  trimTo($("vers"), () => { const v = $("vers"); return v.querySelector(".tags li:last-child") || v.querySelector(".tags") || [...v.querySelectorAll(".vrow.extra")].pop() || null; });
+}
+
+function heat() {
+  const R = D.repos, n = R[0].weeks.length, week0 = R[0].week0;
+  // each repository on its own scale: the page compares weeks, not repositories
+  const shadeOf = max => v => v === 0 ? "rgba(255,255,255,.05)" : `rgba(255,255,255,${(0.14 + 0.86 * Math.pow(v / max, 0.7)).toFixed(2)})`;
+  let h = "";
+  for (const r of R) {
+    const max = Math.max(1, ...r.weeks), shade = shadeOf(max);
+    h += `<span class="lbl" translate="no">${esc(short(r.repo))}</span>`;
+    r.weeks.forEach((v, i) => {
+      const ts = week0 + i * 7 * 86400;
+      h += `<span class="c${i === n - 1 ? " now" : ""}${i < n - 26 ? " old" : ""}" tabindex="0" style="background:${shade(v)}" data-tip="${esc(`${plural(v, "commit")}\n${i === n - 1 ? Z(`This week so far, since ${fmtDay(ts)}`, `本周至今，自 ${fmtDay(ts)} 起`) : Z(`Week of ${fmtDay(ts)}`, `${fmtDay(ts)} 那一周`)}`)}"></span>`;
+    });
+  }
+  h += `<span></span>`;
+  let last = -1;
+  for (let i = 0; i < n; i++) {
+    const m = new Date((week0 + i * 7 * 86400) * 1000).getUTCMonth();
+    h += `<span class="mo${i < n - 26 ? " old" : ""}">${m !== last && i < n - 2 ? monName(m) : ""}</span>`;
+    last = m;
+  }
+  $("heat").innerHTML = h;
+  const sc = shadeOf(100);
+  $("scale").innerHTML = `<span>none</span>` + [0, 5, 25, 55, 100].map(v => `<i style="background:${sc(v)}"></i>`).join("") + `<span>the busiest week of that repository</span>` + R.map(r => `<span><span translate="no">${short(r.repo)}</span> ${fmtN(Math.max(...r.weeks))}</span>`).join("");
+}
+
+function areas() {
+  const now = Date.now() / 1000, fitOn = document.documentElement.classList.contains("fit");
+  const rows = fitOn ? (D.repos.length > 1 ? 4 : 9) : 8;
+  $("areas").innerHTML = D.repos.map(r => {
+    const top = r.areas.slice(0, rows), max = Math.max(1, ...top.map(a => a.c12));
+    return `<div class="blk"><h3>${chip(r.repo)}<small>${plural(r.commits_12w, "commit")} in 12 weeks</small></h3>` + top.map(a => {
+      const on = now - a.last < 7 * 86400;
+      return `<div class="ar" tabindex="0" data-tip="${esc(`${plural(a.c4, "commit")} in 4 weeks, ${fmtN(a.c12)} in 12\nLast changed ${ago(a.last)}`)}"><i class="lt${on ? " on" : ""}"></i>${areaName(a.path)}<span class="bar"><i class="b12" style="width:${(a.c12 / max * 100).toFixed(1)}%"></i><i class="b4" style="width:${(a.c4 / max * 100).toFixed(1)}%"></i></span><span class="n"><b>${fmtN(a.c4)}</b> / ${fmtN(a.c12)}</span></div>`;
+    }).join("") + (top.length ? "" : `<p class="empty">No changes in the last 12 weeks.</p>`) + `</div>`;
+  }).join("");
+}
+
+function versions() {
+  $("vers").innerHTML = D.repos.map(r => {
+    const run = r.runs, tags = r.tags || [];
+    let line = "";
+    if (run) {
+      const st = run.ahead === 0 ? `<span class="ok">newest</span>` : run.ahead == null ? "" : `<span>main is ${plural(run.ahead, "commit")} ahead</span>`;
+      line = `<div class="vrow"><span class="k">Our node runs</span><code translate="no">${esc(run.sha.slice(0, 7))}</code>${run.ts ? `<span class="note">${fmtDay(run.ts)}</span>` : ""}${st}</div>` +
+        (PIN_NOTE[r.repo] ? `<div class="vrow extra"><span class="k"></span><span class="note">${esc(PIN_NOTE[r.repo])}</span></div>` : "");
+    }
+    const tagLine = tags.length
+      ? `<div class="vrow"><span class="k">Newest tag</span><code translate="no">${esc(tags[0].name)}</code><span class="note">${fmtDay(tags[0].ts)}</span></div>` +
+        (Date.now() / 1000 - tags[0].ts > 180 * 86400 ? `<div class="vrow extra"><span class="k"></span><span class="note">No tag since; changes ship from main.</span></div>` : "") +
+        `<ul class="tags">${tags.slice(1, 5).map(t => `<li><b translate="no">${esc(t.name)}</b> ${fmtShort(t.ts)}</li>`).join("")}</ul>`
+      : `<div class="vrow extra"><span class="k">Tags</span><span class="note">none yet; the testnet runs from main</span></div>`;
+    const tr = r.tracker || {};
+    const issues = tr.issues_open != null ? `<div class="vrow"><span class="k">On GitHub</span><span class="note">${plural(tr.issues_open, "open issue")} · ${plural(tr.prs_open ?? 0, "open pull request")}${tr.closed_30d != null ? ` · ${fmtN(tr.closed_30d)} closed in 30 days` : ""}</span></div>` : "";
+    return `<div class="blk"><h3>${chip(r.repo)}<small>branch <span translate="no">${esc(r.branch)}</span></small></h3>
+      <div class="vrow extra"><span class="k">Newest commit</span><code translate="no">${esc(r.head.sha.slice(0, 7))}</code><span class="note">${fmtDay(r.head.ts)}</span></div>${line}${tagLine}${issues}</div>`;
+  }).join("");
+}
+
+/* ---------------- code beside the chain: one lane per repository, one for tags and restarts ---------------- */
+const NS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.append(e); return e; }
+function timeline() {
+  const host = $("tl"), narrow = (host.clientWidth || 800) < 600, DAYS = narrow ? 30 : 60, L = narrow ? 88 : 104, Rm = 8;
+  const w = Math.max(320, host.clientWidth || 800), laneH = document.documentElement.classList.contains("short") ? 16 : 22, H = laneH * (D.repos.length + 1) + 22;
+  host.replaceChildren();
+  const svg = svgEl("svg", { class: "tl", width: w, height: H, viewBox: `0 0 ${w} ${H}`, role: "img", "aria-label": "Commits per day and testnet restarts" }, host);
+  const end = Math.floor(Date.now() / 86400000) * 86400 + 86400, start = end - DAYS * 86400;
+  const X = t => L + (t - start) / (end - start) * (w - L - Rm), dayW = (w - L - Rm) / DAYS;
+  const max = Math.max(1, ...D.repos.flatMap(r => r.days.slice(-DAYS)));
+  D.repos.forEach((r, li) => {
+    const y = li * laneH + laneH - 3;
+    svgEl("text", { x: 0, y: y - 4, class: "lane", translate: "no" }, svg).textContent = short(r.repo);
+    svgEl("line", { x1: L, x2: w - Rm, y1: y, y2: y, stroke: "rgba(255,255,255,.12)" }, svg);
+    r.days.forEach((v, i) => {
+      const t = r.day0 + i * 86400;
+      if (t < start || t >= end) return;
+      const g = svgEl("g", { class: "hit", tabindex: v ? 0 : -1 }, svg);
+      const hh = v ? 3 + (laneH - 7) * Math.sqrt(v / max) : 0;
+      if (v) svgEl("rect", { class: "d", x: X(t) + 1, y: y - hh, width: Math.max(1.5, dayW - 2), height: hh, rx: 1, fill: "rgba(255,255,255,.55)" }, g);
+      svgEl("rect", { x: X(t), y: y - laneH + 3, width: dayW, height: laneH - 2, fill: "transparent" }, g);
+      g.dataset.tip = `${plural(v, "commit")}\n${fmtDay(t)}`;
+    });
+    // the commit our node is built from
+    if (r.runs && r.runs.ts && r.runs.ts >= start) {
+      const g = svgEl("g", { tabindex: 0 }, svg);
+      svgEl("line", { x1: X(r.runs.ts), x2: X(r.runs.ts), y1: y - laneH + 4, y2: y + 2, stroke: "var(--ok)", "stroke-width": 2 }, g);
+      svgEl("rect", { x: X(r.runs.ts) - 5, y: y - laneH + 3, width: 10, height: laneH, fill: "transparent" }, g);
+      g.dataset.tip = `Our node's build\n${Z(`Commit ${r.runs.sha.slice(0, 8)} of ${fmtDay(r.runs.ts)}`, `${fmtDay(r.runs.ts)} 的提交 ${r.runs.sha.slice(0, 8)}`)}`;
+    }
+  });
+  // events: tags and testnet restarts
+  const y = D.repos.length * laneH + laneH - 3;
+  svgEl("text", { x: 0, y: y - 4, class: "lane" }, svg).textContent = "testnet";
+  svgEl("line", { x1: L, x2: w - Rm, y1: y - 7, y2: y - 7, stroke: "rgba(255,255,255,.12)" }, svg);
+  const seen = (D.restarts || []).filter(r => r.at).map(r => ({ at: r.at, label: r.old_tip ? `Testnet restart, the old chain ended at block #${fmtN(r.old_tip)}` : "Testnet restart", approx: false }));
+  const ev = [...seen, ...KNOWN_RESTARTS.filter(k => !seen.some(s => Math.abs(s.at - k.at) < 3 * 3600))].filter(e => e.at >= start && e.at < end);
+  ev.forEach(e => {
+    const g = svgEl("g", { tabindex: 0 }, svg), x = X(e.at);
+    svgEl("circle", { cx: x, cy: y - 7, r: 5, fill: e.approx ? "var(--void)" : "#8a8a94", stroke: "#8a8a94", "stroke-width": 1.5 }, g);
+    svgEl("rect", { x: x - 7, y: y - 16, width: 14, height: 18, fill: "transparent" }, g);
+    g.dataset.tip = `${fmtDay(e.at)}\n${e.label}${e.approx ? ". Time from our notes." : "."}`;
+  });
+  D.repos.forEach(r => (r.tags || []).filter(t => t.ts >= start && t.ts < end).forEach(t => {
+    const g = svgEl("g", { tabindex: 0 }, svg), x = X(t.ts);
+    svgEl("path", { d: `M${x},${y - 13} L${x + 5},${y - 7} L${x},${y - 1} L${x - 5},${y - 7}Z`, fill: "#fff" }, g);
+    g.dataset.tip = `${fmtDay(t.ts)}\nNew tag ${t.name}`;
+  }));
+  // date axis: one label a week
+  for (let t = start; t < end; t += (narrow ? 14 : 7) * 86400) svgEl("text", { x: X(t), y: H - 2 }, svg).textContent = fmtShort(t);
+  // keep the last date label clear of the right edge
+  const labels = svg.querySelectorAll("text:not(.lane)"); const lastL = labels[labels.length - 1]; if (lastL && +lastL.getAttribute("x") > w - 50) lastL.remove();
+}
+
+addEventListener("resize", () => { fit(); if (D) render(); });
+load();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (D) render(); });
+setInterval(load, 10 * 60 * 1000);
+</script>
+</body>
+</html>

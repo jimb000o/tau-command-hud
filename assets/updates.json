@@ -1189,5 +1189,17 @@
   "tag": "Wallet",
   "on": "2026-10-29",
   "html": "Wallet: fair turns on the testnet’s two rule places. Tau Testnet Alpha lets only two accounts hold a personal rule at a time, and whoever holds one keeps it until they remove it. Now, when you sign a rule in the wallet, it also signs the rule’s removal for later and leaves it with our relay. Your turn lasts a day while nobody waits; once someone joins the line, it ends 30 minutes after you took the place, and the relay sends the removal for you, even if your tab is closed. When both places are taken you can join the line, see your place in it, and the page tells you when a place is free."
+ },
+ {
+  "tag": "Build pulse",
+  "on": "2026-10-29",
+  "html": "Build pulse, a new page under Explore: how Tau's code is moving, read from the public git history of IDNI's tau-testnet and tau-lang repositories. The newest changes with the parts of the code they touched, a year of weekly rhythm, which areas moved in the last 4 and 12 weeks, tags, and which commit our testnet node is built from compared with the newest one. A timeline lays commits beside the testnet's restarts. Commits come in batches, so the page shows what moves, not who is fast. Unofficial, refreshed every 30 minutes; Developers links to it and to its JSON.",
+  "major": {
+   "id": "devpulse",
+   "title": "New: Build pulse, how Tau's code is moving",
+   "text": "The newest changes in IDNI's public tau-testnet and tau-lang code, which parts move, a year of weekly rhythm and the version the testnet node runs. Read from public git history, unofficial.",
+   "link": "/devpulse/",
+   "image": "/assets/shots/devpulse.png"
+  }
  }
 ]

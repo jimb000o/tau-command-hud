@@ -26,7 +26,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "tests", "out");
 const SETTLE = +(process.env.SETTLE_MS || 4000);   // the pages build in steps (sim chain, dictionaries, first fetches)
 const SKIP = new Set(["assets", "go", "infra", "kit", "tests", "node_modules", "embed"]);   // embed is a widget, checked on its own below
-const LAYOUT = ["account", "chronicle", "explorer", "findings", "gazette", "history", "hud", "missions", "nodes", "playground", "proposals", "stats", "status", "vote", "wallet", "whatif", "developers"];
+const LAYOUT = ["account", "chronicle", "explorer", "findings", "gazette", "history", "hud", "missions", "nodes", "playground", "proposals", "stats", "status", "vote", "wallet", "whatif", "developers", "devpulse"];
 const SCREENS = [[2560, 1440], [2000, 1125]];
 const CLOCK = new Date(process.env.CLOCK || "2026-10-28T10:24:00Z");
 

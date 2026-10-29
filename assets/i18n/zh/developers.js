@@ -77,4 +77,11 @@ TauI18n.add({ strings: {
   "Simulated answer of /api/v1/summary": "/api/v1/summary 的模拟响应",
   "Simulated answer of /api/v1/summary ·": "/api/v1/summary 的模拟响应 ·",
   "Simulated answer of /api/v1/summary · {x1}": "/api/v1/summary 的模拟响应 · {x1}",
+  "How Tau’s code is moving": "Tau 的代码进展如何",
+  "Newest commits, which parts change, the version our node runs.": "最新提交、哪些部分在变化、我们的节点运行的版本。",
+  "Tau’s code changed today": "Tau 的代码今天有改动",
+  "Tau’s code changed 1 day ago": "Tau 的代码 1 天前有改动",
+  "Tau’s code changed {n} days ago": "Tau 的代码 {n} 天前有改动",
+  "{n} commits in 4 weeks; which parts move, and the version our node runs.": "4 周内 {n} 个提交；哪些部分在变化，以及我们的节点运行的版本。",
+  "Tau's code from IDNI's public git history: newest commits, weekly rhythm, code areas, tags, the version our node runs.": "来自 IDNI 公开 git 历史的 Tau 代码：最新提交、每周节奏、代码区域、标签、我们的节点运行的版本。",
 } });
