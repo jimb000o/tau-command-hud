@@ -639,7 +639,8 @@
 
   document.addEventListener("click", e => { if (openEl && !e.target.closest(".tnav .ni-wrap, .tnav-gearwrap, .tsheet, .tabbar")) closeAll(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && openEl) closeAll(); });
-  /* cookie-free visitor numbers (infra/relay/visits.py): one ping when a page opens, one more after 30 s visible.
+  /* cookie-free visitor numbers (infra/relay/visits.py): one ping when a page opens, one more after 30 s visible,
+     one with the visible seconds when the page is hidden or left.
      Nothing is stored in the browser; ?nostats=1 leaves this browser out of the count (?nostats=0 undoes it). */
   function countVisit() {
     try {
@@ -656,8 +657,12 @@
     const base = `https://${RELAY}/v?p=${encodeURIComponent(page)}`;
     const send = extra => { try { fetch(base + extra, { mode: "no-cors", keepalive: true, credentials: "omit", referrerPolicy: "no-referrer" }).catch(() => {}); } catch (e) {} };
     send(`&r=${encodeURIComponent(ref)}&s=${encodeURIComponent(q.get("utm_source") || q.get("ref") || "")}&l=${zh ? "zh" : "en"}&m=${SIM ? "sim" : "live"}`);
-    let shown = 0;
-    const tick = setInterval(() => { if (document.visibilityState === "visible" && ++shown >= 30) { clearInterval(tick); send("&e=1"); } }, 1000);
+    // seconds the page was visible; sent once, when the page is first hidden or left (the relay keeps only a time step)
+    let shown = 0, timed = false;
+    setInterval(() => { if (document.visibilityState === "visible" && ++shown === 30) send("&e=1"); }, 1000);
+    const leave = () => { if (!timed && shown > 0 && document.visibilityState !== "visible") { timed = true; send(`&t=${shown}`); } };
+    document.addEventListener("visibilitychange", leave);
+    addEventListener("pagehide", () => { if (!timed && shown > 0) { timed = true; send(`&t=${shown}`); } });
   }
   const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); countVisit(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();

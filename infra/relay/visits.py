@@ -3,7 +3,9 @@
 Every page's header (assets/nav.js) sends one GET /v when it opens and, if the page stayed visible for 30 seconds,
 one more with e=1. The relay keeps only counts per UTC day: views, visitors and engaged views per page, where people
 came from (the other site's host name, a ?ref= / utm_source tag, or the previous Tau HUD page), language, sim or live
-view and hour of day (screen class only from requests that still carry w=; the pages no longer send it).
+view and hour of day (screen class only from requests that still carry w=; the pages no longer send it). When the page
+is left or hidden, one more GET with t=<seconds the page was visible> adds one to a time step per page (under 10 s,
+10-30 s, 30 s-1 min, 1-3 min, 3-10 min, longer); the seconds themselves are not kept.
 
 A "visitor" is counted with a hash of a random daily salt, the address and the browser's user agent. The salt lives in
 memory only and is replaced at 00:00 UTC, so a hash cannot be traced back or linked across days, and the addresses
@@ -11,11 +13,14 @@ themselves are never stored. Nothing is stored in the visitor's browser. Request
 Control, and bots by user agent, are not counted.
 
 GET /v?p=<page>&r=<referrer>&s=<tag>&l=en|zh&m=sim|live&w=<width>[&e=1]   count (204, empty)
+GET /v?p=<page>&t=<seconds>                                               time on that page, as a step
 GET /visits?key=<key>                                                     the owner's report page (visits.html)
 GET /visits.json?key=<key>[&days=<n>]                                     the counts behind it
 GET /visits/public                                                        totals anyone may see (tauhud.com/meta/): per day
                                                                           visitors, views, stayed, visitors per page, language
-                                                                          and screen; no referrers, tags or hours
+                                                                          and screen, time steps per page, visitors and views
+                                                                          per hour for the last
+                                                                          two days; no referrers or tags
 
 The key comes from VISITS_KEY or, if that is empty, is made once and kept in /data/visits.key.
 """
@@ -43,6 +48,7 @@ TAG = re.compile(r"^[a-z0-9._-]{1,40}$")
 BOT = re.compile(r"bot|crawl|spider|slurp|headless|preview|fetch|curl|wget|python|httpx|go-http|java/|monitor|lighthouse|pingdom|facebookexternalhit|embedly", re.I)
 OWN_HOSTS = ("tauhud.com", "www.tauhud.com", "jimb000o.github.io")
 BURST, REFILL = 20.0, 0.5
+TIME_STEPS = (10, 30, 60, 180, 600)   # seconds; a visible time falls into one of len + 1 steps
 
 
 def screen(width: str) -> str:
@@ -72,6 +78,7 @@ class Visits:
         self.salt = b""
         self.seen: set[str] = set()                   # today's visitor hashes, memory only
         self.seen_page: set[tuple[str, str]] = set()  # (hash, page), memory only
+        self.seen_hour: set[tuple[str, int]] = set()  # (hash, hour), memory only
         self.buckets: dict[str, list] = {}            # address -> [tokens, last], memory only
         self.dirty_since = 0.0
         self.key = os.environ.get("VISITS_KEY", "").strip() or self._load_key(
@@ -130,14 +137,14 @@ class Visits:
         d = int(self.clock() // DAY)
         if d != self.day:
             self.day, self.salt = d, secrets.token_bytes(32)
-            self.seen, self.seen_page = set(), set()
+            self.seen, self.seen_page, self.seen_hour = set(), set(), set()
             for old in [k for k in self.days if k < _day_str(d - KEEP_DAYS)]:
                 del self.days[old]
 
     def _today(self) -> dict:
         return self.days.setdefault(_day_str(self.day), {
             "visitors": 0, "views": {}, "uniques": {}, "engaged": {}, "refs": {}, "sources": {},
-            "flows": {}, "lang": {}, "mode": {}, "screen": {}, "hours": [0] * 24})
+            "flows": {}, "lang": {}, "mode": {}, "screen": {}, "hours": [0] * 24, "hvis": [0] * 24, "time": {}})
 
     def _take(self, ip: str) -> bool:
         now = self.clock()
@@ -161,7 +168,19 @@ class Visits:
         self._roll()
         t = self._today()
         visitor = hashlib.sha256(self.salt + ip.encode() + b"|" + ua.encode()).hexdigest()[:20]
-        if q.get("e") == "1":
+        if q.get("t"):
+            try:
+                secs = int(q["t"])
+            except ValueError:
+                return False
+            if (visitor, page) not in self.seen_page or not 0 <= secs <= DAY:
+                return False
+            tm = t.setdefault("time", {})
+            if page not in tm and len(tm) >= MAX_KEYS["views"]:
+                page = "(other)"
+            row = tm.setdefault(page, [0] * (len(TIME_STEPS) + 1))
+            row[sum(secs >= s for s in TIME_STEPS)] += 1
+        elif q.get("e") == "1":
             if (visitor, page) not in self.seen_page:
                 return False
             _bump(t["engaged"], page, MAX_KEYS["views"])
@@ -177,7 +196,11 @@ class Visits:
                 self.seen_page.add((visitor, page))
                 _bump(t["uniques"], page, MAX_KEYS["views"])
             _bump(t["mode"], "live" if q.get("m") == "live" else "sim")
-            t["hours"][int(self.clock() % DAY // 3600)] += 1
+            hour = int(self.clock() % DAY // 3600)
+            t["hours"][hour] += 1
+            if (visitor, hour) not in self.seen_hour:   # different people in this hour (same daily hash)
+                self.seen_hour.add((visitor, hour))
+                t.setdefault("hvis", [0] * 24)[hour] += 1
             ref = q.get("r", "").lower()
             if ref.startswith("/"):
                 src = ref[1:] or "hud"
@@ -205,15 +228,19 @@ class Visits:
                 "days": {k: v for k, v in sorted(self.days.items()) if k >= first}}
 
     def public(self) -> dict:
-        """Per day [visitors, views, stayed, {page: visitors}, {lang: visitors}, {screen: visitors}], cached for a minute."""
+        """Per day [visitors, views, stayed, {page: visitors}, {lang: visitors}, {screen: visitors}, {page: time steps}], plus for today and
+        yesterday [visitors per hour, views per hour] (the 24-hour chart on /meta/); cached for a minute."""
         now = self.clock()
         if getattr(self, "_pub", None) and now - self._pub[0] < 60:
             return self._pub[1]
         self._roll()
-        out = {"now": round(now), "today": _day_str(self.day), "engaged_seconds": ENGAGED_SECONDS,
+        recent = (_day_str(self.day - 1), _day_str(self.day))
+        out = {"now": round(now), "today": _day_str(self.day), "engaged_seconds": ENGAGED_SECONDS, "time_steps": TIME_STEPS,
                "days": {k: [d.get("visitors", 0), sum(d.get("views", {}).values()), sum(d.get("engaged", {}).values()),
-                            d.get("uniques", {}), d.get("lang", {}), d.get("screen", {})]
-                        for k, d in sorted(self.days.items())}}
+                            d.get("uniques", {}), d.get("lang", {}), d.get("screen", {}), d.get("time", {})]
+                        for k, d in sorted(self.days.items())},
+               "hours": {k: [self.days[k].get("hvis", [0] * 24), self.days[k].get("hours", [0] * 24)]
+                         for k in recent if k in self.days}}
         self._pub = (now, out)
         return out
 
