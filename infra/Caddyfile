@@ -31,3 +31,7 @@
 	# No access log: Caddy would write every visitor's address into the container log. Errors still reach
 	# the container log (docker compose logs caddy); the privacy notice at tauhud.com/legal/ relies on this.
 }
+
+# More sites on this server: one <name>.caddy file each in /opt/sites on the host, with its files next to it.
+# They are server-local and not part of this repository; an empty folder is fine.
+import /srv/sites/*.caddy

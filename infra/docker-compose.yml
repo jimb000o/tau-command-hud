@@ -227,6 +227,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
       - alerts_public:/srv/alerts:ro
+      - /opt/sites:/srv/sites:ro
     networks: [default, checker]
     depends_on: [relay, checker, share]
     restart: unless-stopped
