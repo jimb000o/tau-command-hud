@@ -22,6 +22,10 @@ GET /visits/public                                                        totals
                                                                           per hour for the last
                                                                           two days; no referrers or tags
 
+Agorzilla (agorzilla.com, our second site) sends the same requests with p=agorzilla. Its numbers are kept apart, under
+"sites" -> "agorzilla" in each day, with the same fields, so Tau HUD's own numbers do not change; /visits/public lists
+them under "sites" for the switch on tauhud.com/meta/.
+
 The key comes from VISITS_KEY or, if that is empty, is made once and kept in /data/visits.key.
 """
 from __future__ import annotations
@@ -46,7 +50,8 @@ PAGE = re.compile(r"^[a-z0-9][a-z0-9/_-]{0,47}$")
 HOST = re.compile(r"^[a-z0-9.-]{1,80}\.[a-z]{2,24}$")
 TAG = re.compile(r"^[a-z0-9._-]{1,40}$")
 BOT = re.compile(r"bot|crawl|spider|slurp|headless|preview|fetch|curl|wget|python|httpx|go-http|java/|monitor|lighthouse|pingdom|facebookexternalhit|embedly", re.I)
-OWN_HOSTS = ("tauhud.com", "www.tauhud.com", "jimb000o.github.io")
+OWN_HOSTS = {"": ("tauhud.com", "www.tauhud.com", "jimb000o.github.io"), "agorzilla": ("agorzilla.com", "www.agorzilla.com")}
+SITES = ("agorzilla",)   # other sites we run: a page named like the site, or below it, is counted for that site
 BURST, REFILL = 20.0, 0.5
 TIME_STEPS = (10, 30, 60, 180, 600)   # seconds; a visible time falls into one of len + 1 steps
 
@@ -141,10 +146,15 @@ class Visits:
             for old in [k for k in self.days if k < _day_str(d - KEEP_DAYS)]:
                 del self.days[old]
 
-    def _today(self) -> dict:
-        return self.days.setdefault(_day_str(self.day), {
+    def _today(self, site: str = "") -> dict:
+        t = self.days.setdefault(_day_str(self.day), self._fresh())
+        return t.setdefault("sites", {}).setdefault(site, self._fresh()) if site else t
+
+    @staticmethod
+    def _fresh() -> dict:
+        return {
             "visitors": 0, "views": {}, "uniques": {}, "engaged": {}, "refs": {}, "sources": {},
-            "flows": {}, "lang": {}, "mode": {}, "screen": {}, "hours": [0] * 24, "hvis": [0] * 24, "time": {}})
+            "flows": {}, "lang": {}, "mode": {}, "screen": {}, "hours": [0] * 24, "hvis": [0] * 24, "time": {}}
 
     def _take(self, ip: str) -> bool:
         now = self.clock()
@@ -173,8 +183,9 @@ class Visits:
         if dnt or not ua or BOT.search(ua) or not PAGE.match(page) or not self._take(ip):
             return False
         self._roll()
-        t = self._today()
-        visitor = self.person(ip, ua)
+        site = page.split("/")[0] if page.split("/")[0] in SITES else ""
+        t = self._today(site)
+        visitor = site + self.person(ip, ua)   # one person on both sites is one visitor on each
         if q.get("t"):
             try:
                 secs = int(q["t"])
@@ -215,7 +226,7 @@ class Visits:
                     _bump(t["flows"], f"{src}>{page}", MAX_KEYS["flows"])
             else:
                 host = ref[4:] if ref.startswith("www.") else ref
-                if HOST.match(host) and host not in OWN_HOSTS:
+                if HOST.match(host) and host not in OWN_HOSTS[site]:
                     _bump(t["refs"], host, MAX_KEYS["refs"])
                 elif not ref:
                     _bump(t["refs"], "(direct)", MAX_KEYS["refs"])
@@ -236,18 +247,22 @@ class Visits:
 
     def public(self) -> dict:
         """Per day [visitors, views, stayed, {page: visitors}, {lang: visitors}, {screen: visitors}, {page: time steps}], plus for today and
-        yesterday [visitors per hour, views per hour] (the 24-hour chart on /meta/); cached for a minute."""
+        yesterday [visitors per hour, views per hour] (the 24-hour chart on /meta/); the same again per other site under "sites";
+        cached for a minute."""
         now = self.clock()
         if getattr(self, "_pub", None) and now - self._pub[0] < 60:
             return self._pub[1]
         self._roll()
         recent = (_day_str(self.day - 1), _day_str(self.day))
+
+        def totals(days: dict) -> dict:
+            return {"days": {k: [d.get("visitors", 0), sum(d.get("views", {}).values()), sum(d.get("engaged", {}).values()),
+                                 d.get("uniques", {}), d.get("lang", {}), d.get("screen", {}), d.get("time", {})]
+                             for k, d in sorted(days.items())},
+                    "hours": {k: [days[k].get("hvis", [0] * 24), days[k].get("hours", [0] * 24)] for k in recent if k in days}}
         out = {"now": round(now), "today": _day_str(self.day), "engaged_seconds": ENGAGED_SECONDS, "time_steps": TIME_STEPS,
-               "days": {k: [d.get("visitors", 0), sum(d.get("views", {}).values()), sum(d.get("engaged", {}).values()),
-                            d.get("uniques", {}), d.get("lang", {}), d.get("screen", {}), d.get("time", {})]
-                        for k, d in sorted(self.days.items())},
-               "hours": {k: [self.days[k].get("hvis", [0] * 24), self.days[k].get("hours", [0] * 24)]
-                         for k in recent if k in self.days}}
+               **totals(self.days),
+               "sites": {s: totals({k: d["sites"][s] for k, d in self.days.items() if s in d.get("sites", {})}) for s in SITES}}
         self._pub = (now, out)
         return out
 

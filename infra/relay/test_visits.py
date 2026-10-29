@@ -56,6 +56,18 @@ hit("p=nodes&t=50")
 hit("p=explorer&t=abc")
 t = v.report(1)["days"]["2026-10-28"]
 check(t["time"] == {"explorer": [1, 0, 0, 1, 0, 0]}, "time on a page as steps, only for a page the visitor opened")
+hit("p=agorzilla&r=t.me&l=en&m=live")
+hit("p=agorzilla&r=tauhud.com&l=en&m=live", ip="5.6.7.8")
+hit("p=agorzilla&e=1")
+hit("p=agorzilla&t=200")
+t = v.report(1)["days"]["2026-10-28"]
+a = t["sites"]["agorzilla"]
+check(t["visitors"] == 3 and "agorzilla" not in t["views"], "Agorzilla is counted apart: Tau HUD's numbers stay the same")
+check(a["visitors"] == 2 and a["uniques"] == {"agorzilla": 2} and a["engaged"] == {"agorzilla": 1}, "Agorzilla's own visitors and stayed views")
+check(a["refs"] == {"t.me": 1, "tauhud.com": 1} and a["time"] == {"agorzilla": [0, 0, 0, 0, 1, 0]}, "Agorzilla's referrers and time steps")
+pub = v.public()
+check(pub["sites"]["agorzilla"]["days"]["2026-10-28"][0] == 2 and pub["days"]["2026-10-28"][0] == 3, "public numbers per site")
+v._pub = None
 before = json.dumps(v.report(1))
 hit("p=hud", headers={"User-Agent": UA, "DNT": "1"})
 hit("p=hud", headers={"User-Agent": UA, "Sec-GPC": "1"})

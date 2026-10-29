@@ -4,6 +4,8 @@ TauI18n.add({ strings: {
   "Tau HUD in numbers": "Tau HUD 数据一览",
   "How many people use this site: visitors per day, growth and the most visited pages": "有多少人在用这个网站：每日访客、增长和最常访问的页面",
   "How many people look at Tau through this site.": "有多少人通过这个网站了解 Tau。",
+  "How many people visit Agorzilla, our second site.": "有多少人访问我们的第二个网站 Agorzilla。",
+  "Agorzilla, our second site: one creature everyone feeds and shapes on Tau Testnet Alpha. Counted the same way, kept apart from Tau HUD's numbers.": "Agorzilla 是我们的第二个网站：一个由大家在 Tau Testnet Alpha 上共同喂养、共同塑造的生物。统计方式相同，但与 Tau HUD 的数据分开。",
   "Visitors per day, growth since counting began and the pages people open most. Counted without cookies and without storing anything in your browser; only daily totals are kept.": "每日访客、开始统计以来的增长，以及大家最常打开的页面。统计不使用 Cookie，也不在你的浏览器中存储任何内容；只保存每日总数。",
   "Sample data: made-up numbers to preview the page. Remove ?sample from the address for the real ones.": "示例数据：用于预览页面的虚构数字。去掉地址中的 ?sample 即可查看真实数据。",
   "Different people on this site today so far (UTC day). The same person on two pages counts once.": "今天（UTC 日）到目前为止访问本网站的不同人数。同一个人看了两个页面只算一次。",

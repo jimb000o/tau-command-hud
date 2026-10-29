@@ -1211,5 +1211,10 @@
   "tag": "Findings",
   "on": "2026-10-29",
   "html": "Findings: our first code fix is now with IDNI. When their bootnode refused new peers for three hours on 29 October, nodes that had lost it stayed stuck even after it came back. We sent IDNI a pull request with tests that makes a node with no peers dial its bootstrap peers again every minute; its status shows live on the page."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-29",
+  "html": "In numbers can now switch to Agorzilla, our second site at agorzilla.com: its visitors, counted the same cookie-free way and kept apart from Tau HUD's own numbers. The privacy notice covers agorzilla.com too."
  }
 ]
