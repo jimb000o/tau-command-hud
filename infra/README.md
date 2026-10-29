@@ -276,11 +276,24 @@ back-off; the token is never logged.
    another name), save, then `docker compose up -d alerts`.
 4. Test: `docker compose run --rm alerts python alerts.py --test` posts one message.
 
-**X** (optional): an app at developer.x.com with "Read and write" user authentication,
-then its API key and secret and the account's access token and secret (generated after
-switching to Read and write) as `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`,
-`X_ACCESS_SECRET` in `.env`, and `X_PROFILE_URL=https://x.com/<handle>` for the page's
-follow link. Same `up -d alerts` and `--test`.
+**X** (optional, @TauHUDcom): X bills every post since 2026 (credits bought in the
+console at console.x.com: $0.015 a post, $0.20 for one with a link). An app there with
+user authentication set to "Read and write" (set it before you generate the access token;
+a token made earlier stays read-only and posting fails with 403), then the app's API key
+and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECRET`,
+`X_ACCESS_TOKEN`, `X_ACCESS_SECRET` in `.env` (OAuth 1.0a user context), and
+`X_PROFILE_URL=https://x.com/TauHUDcom` for the page's follow link. Then
+`docker compose up -d --build alerts donations`.
+- What goes to X, each in its own short text: rule changes on the real chain (not practice
+  votes), new nodes, "Testnet today", new pages and features (one line each for a catch-up),
+  the Monday recap picture with the headline of the week's paper, donation thank-yous. Not on
+  X: the smaller-updates digests, health alarms, visitor proposals, and the simulation's
+  switches unless `X_SIM=true`.
+- No links in X posts (`X_LINKS=true` adds them); `X_DAILY_CAP` (8) and `X_MONTHLY_CAP` (120)
+  posts at most, the rest stays on Telegram. An X failure never holds up Telegram; it is
+  logged and that X post is left out.
+- `docker compose run --rm alerts python alerts.py --x-preview` prints what X would get now,
+  with X's own character count; `--x-test` posts one test post on X only.
 
 **Donation thank-yous**: `alerts/donations.py` (service `donations`, same image) reads
 incoming AGRS (contract `0x7388…bdda` only, so look-alike tokens are ignored) and ETH

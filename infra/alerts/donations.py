@@ -35,7 +35,7 @@ import urllib.request
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 
-from alerts import SITE, Telegram, X, write_atomic
+from alerts import SITE, Telegram, X, write_atomic, x_post
 
 log = logging.getLogger("tau-donations")
 
@@ -190,8 +190,9 @@ def thanks_text(d: dict, donors: int, nth: int) -> str:
 def thanks_x(d: dict, donors: int) -> str:
     amt = f"{fmt_amount(Decimal(d['amount']))} {d['asset']}"
     who = "1 person has" if donors == 1 else f"{donors} people have"
-    return (f"💚 Thank you, {short(d['from'])}: {amt} just came in for Tau HUD. It helps pay for the time it takes "
-            f"to keep it in step with the testnet, and for the server. {who} supported it so far.\n\n{SITE}")
+    return x_post([f"💚 Thank you, {short(d['from'])}: {amt} just came in for Tau HUD.",
+                   f"It helps pay for the time it takes to keep it in step with the testnet, and for the server. {who} supported it so far."],
+                  f"{SITE}/#donate")
 
 
 class Donations:
