@@ -58,6 +58,7 @@ TauI18n.add({ strings: {
   "New consensus rule text": "新的共识规则文本",
   "Next block": "下一个区块",
   "No rule change proposed on this chain yet.": "这条链上还没有提议过规则变更。",
+  "No proposal in the loaded blocks. The node lists {n}: see “Agreement in progress”.": "已加载的区块里没有提议。节点列出了 {n} 个：见“正在达成同意”。",
   "not loaded": "未加载",
   "Now": "现在",
   "Now ⏭": "现在 ⏭",
