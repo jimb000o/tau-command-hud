@@ -106,11 +106,11 @@ dropped (and logged as a restart).
 **Bootstrapping from node.tauhud.com.** Our node listens on 4001/tcp, holds the whole verified
 chain and announces `/ip4/2.31.101.42/tcp/4001` (`TAU_ANNOUNCE_ADDRS`), so any tau-testnet
 node can use it as a bootstrap peer next to, or instead of, the IDNI bootnode. Its peer ID is
-printed at start (`docker compose logs tau-node | grep -o 'peer_id=[A-Za-z0-9]*'`); it stays the
-same across restarts (`/data/identity.key`). On the other node:
+`12D3KooWRgGw5yDHBmYEpaCZtNVPYD7xQ3yhh5urM9w7jNtNqpmY` (printed at start, `docker compose logs tau-node | grep -o
+'peer_id=[A-Za-z0-9]*'`; it stays the same across restarts, `/data/identity.key`). On the other node:
 
 ```
-TAU_BOOTSTRAP_PEERS='[{"peer_id":"<node.tauhud.com peer ID>","addrs":["/ip4/2.31.101.42/tcp/4001"]},
+TAU_BOOTSTRAP_PEERS='[{"peer_id":"12D3KooWRgGw5yDHBmYEpaCZtNVPYD7xQ3yhh5urM9w7jNtNqpmY","addrs":["/ip4/2.31.101.42/tcp/4001"]},
                       {"peer_id":"12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC","addrs":["/ip4/34.251.82.246/tcp/4001"]}]'
 ```
 
