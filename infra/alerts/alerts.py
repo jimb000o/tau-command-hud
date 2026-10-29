@@ -143,6 +143,7 @@ SITE_DIGEST_HOURS = tuple(int(x) for x in os.environ.get("SITE_DIGEST_HOURS", "1
 SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smaller changes wait for the next day…
 SITE_DIGEST_MAX_WAIT = float(os.environ.get("SITE_DIGEST_MAX_WAIT_DAYS", 7)) * 86400  # …but not longer than this
 SITE_DIGEST_LINES = 8
+SITE_CATCHUP_AT = int(os.environ.get("SITE_CATCHUP_AT", 4))  # this many majors waiting: one catch-up post with all of them
 SITE_LOG_LINK = f"{SITE}/#updates"
 # "Testnet today": one evening summary of the real chain's last 24 hours, only on a day with something to report.
 # Practice votes (the rules in force proposed again) appear here instead of in posts of their own.
@@ -810,6 +811,20 @@ def digest_text(items: list[dict], lines: int = SITE_DIGEST_LINES) -> str:
     if len(text) > 3900 and lines > 1:  # Telegram's limit is 4096 characters
         return digest_text(items, lines - 1)
     return text
+
+
+def catchup_text(majors: list[dict]) -> str:
+    """One post for a backlog of new pages and features: a line and a link each, oldest first."""
+    e = html.escape
+    since = min((m.get("on") or "" for m in majors), default="")
+    out = [SITE_LINE, f"<b>{plural(len(majors), 'new page or feature', 'new pages and features')} on Tau HUD"
+           + (f" since {e(since)}" if since else "") + "</b>", ""]
+    for m in majors:
+        t = re.sub(r"^New:\s*", "", m["title"])
+        out.append(f"• <a href=\"{e(m['link'])}\">{e(t[:1].upper() + t[1:])}</a>")
+    out += ["", f"<a href=\"{e(SITE_LOG_LINK)}\">Every change in the Updates log</a>", "", f"<i>{e(SITE_NOTICE)}</i>"]
+    text = "\n".join(out)
+    return text if len(text) <= 4000 or len(majors) <= 1 else catchup_text(majors[:-1])
 
 
 def digest_buttons() -> dict:
@@ -1490,6 +1505,18 @@ class Watcher:
         day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
         if st.get("day") != day:
             st["day"], st["count"] = day, 0
+        if len(st["majors"]) >= SITE_CATCHUP_AT and st["count"] == 0:
+            # a backlog (a long night, a busy day): one post with all of it instead of days of single posts
+            batch = list(st["majors"])
+            text = catchup_text(batch)
+            shown = text.count("• ")
+            if await self.site_send(tg, text, digest_buttons(), now):
+                del st["majors"][:shown]
+                st["count"] = SITE_MAJOR_DAILY_CAP
+                st["last_major"] = round(now)
+                log.info("site updates: catch-up post with %d new pages and features", shown)
+            self.save_state()
+            return
         if st["majors"] and st["count"] < SITE_MAJOR_DAILY_CAP and now - st.get("last_major", 0) >= SITE_MAJOR_GAP:
             m = st["majors"][0]
             if await self.site_send(tg, major_text(m), major_buttons(m), now):
