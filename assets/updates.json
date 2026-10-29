@@ -973,6 +973,11 @@
   "html": "The header menu is sorted by what you came to do: Explore to watch the chain, Learn to understand Tau, Playground to try it yourself, and About for who runs this site, its status, findings, numbers, developers, press and privacy. About is a step quieter than the three sections, the tour of each page now starts from Learn, and pages with a footer list the About links there too."
  },
  {
+  "tag": "Newspaper",
+  "on": "2026-10-29",
+  "html": "The weekly Daily Consensus reads like a paper of the 1920s: headlines in the paper's own words instead of tracker titles, a weather report from the chain, a photograph, a dense lead story and a stop press with the live block. Ballots that only keep the rules as they stand are told once, not one by one."
+ },
+ {
   "tag": "Privacy",
   "on": "2026-10-29",
   "html": "Privacy notice: says plainly that the videos, like the film in the Press kit, come from tauhud.com itself and load only when you press play. There are no YouTube or other third-party players on the site."
