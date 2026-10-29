@@ -15,7 +15,7 @@ TauI18n.add({ strings: {
   "{x} median": "中位数 {x}",
   "The middle half took {x} to {y}": "中间一半用时 {x} 至 {y}",
   "The middle half took {x}": "中间一半用时 {x}",
-  "(tau-testnet pinned to commit 539d1e2)": "（tau-testnet 固定在提交 539d1e2）",
+  "(tau-testnet pinned to commit b1ebfa4)": "（tau-testnet 固定在提交 b1ebfa4）",
   ", served by a read-only relay.": "，通过只读中继提供。",
   ", {n} on another.": "，{n} 个在另一条链上。",
   "10 min": "10 分钟",
