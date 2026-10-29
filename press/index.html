@@ -345,6 +345,11 @@ if (window.TauI18n && TauI18n.lang === "zh") {
   for (const t of document.querySelectorAll("time[data-zh]")) t.textContent = t.dataset.zh;   // the Chinese cuts differ by a second or two
   document.getElementById("film").load();
 }
+/* Japanese version: the English files and colours; the story has its own Japanese address */
+if (window.TauI18n && TauI18n.lang === "ja") {
+  for (const a of document.querySelectorAll('a[href="/story/"], a[href="https://tauhud.com/story/"]')) { a.href = "https://tauhud.com/story/ja/"; if (/tauhud\.com\/story$/.test(a.textContent)) a.textContent = "tauhud.com/story/ja"; }
+  const cite = document.getElementById("cite"); cite.textContent = TauI18n.t(cite.textContent);
+}
 /* films: a poster plays its film in the one player and shows that film's files; Tau in 60 seconds is the first */
 const film = document.getElementById("film"), storyPoster = film.getAttribute("poster");
 document.getElementById("films").addEventListener("click", e => {

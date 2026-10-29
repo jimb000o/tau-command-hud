@@ -103,6 +103,9 @@ T[0] += 86400
 hit("p=explorer&r=t.me&l=en&m=sim&w=2560")
 t2 = v.report(2)["days"]
 check(t2["2026-10-29"]["visitors"] == 1 and t2["2026-10-29"]["uniques"] == {"explorer": 1}, "a new day with a new salt counts the same person again")
+hit("p=hud&l=ja&m=live", ip="3.3.3.3")
+hit("p=hud&l=xx&m=live", ip="4.4.4.4")
+check(v.report(1)["days"]["2026-10-29"]["lang"] == {"en": 2, "ja": 1}, "Japanese is its own language, anything unknown counts as English")
 v2 = visits.Visits(os.path.join(d, "x.json"), os.path.join(d, "x.key"), clock)
 v2.days = {"2025-01-01": {}, "2026-10-29": {}}
 v2._roll()

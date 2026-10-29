@@ -1054,7 +1054,7 @@ function blockMakers() {
   return VS;
 }
 const isMaker = a => isValidator(a) || blockMakers().by.has(a);
-const LOC = () => window.TauI18n && TauI18n.lang === "zh" ? "zh-CN" : "en-GB";
+const LOC = () => ({ zh: "zh-CN", ja: "ja-JP" })[(window.TauI18n || {}).lang] || "en-GB";
 // a pause in words: seconds, minutes, hours or days
 function fmtDur(s) {
   if (s == null || !isFinite(s)) return "—";
@@ -1320,7 +1320,7 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-ev]");
   if (b && !e.target.closest("a") && M) { const ev = M.ev[Number(b.dataset.ev)]; if (ev) openEvent(ev); return; }
   const vb = e.target.closest("[data-view]");
-  if (vb && S.addr) { S.view = vb.dataset.view; history.replaceState(history.state, "", accUrl(S.addr) + `&view=${S.view}` + (window.TauI18n && TauI18n.lang === "zh" ? "&lang=zh" : "")); hideTip(); rebuild(); return; }
+  if (vb && S.addr) { S.view = vb.dataset.view; history.replaceState(history.state, "", accUrl(S.addr) + `&view=${S.view}` + ((window.TauI18n || {}).lang && TauI18n.lang !== "en" ? `&lang=${TauI18n.lang}` : "")); hideTip(); rebuild(); return; }
   if (e.target.id === "moreBtn") { S.more += 40; renderActivity(); return; }
   const f = e.target.closest("[data-f]");
   if (f) { S.filter = f.dataset.f; S.more = 20; renderActivity(); fit(); }
