@@ -1066,5 +1066,10 @@
   "tag": "Alerts",
   "on": "2026-10-29",
   "html": "New pages and features get a picture on X: every announcement in the Updates log now brings a screenshot of the new page, which goes under its X post. Pages announced before this get their own preview picture or the Tau HUD one."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Live node: its hover now says why the light is amber. It shows the testnet health score out of 100 and the two things that cost the most points, for example restarts today or ghost transactions. Connected and degraded can be true at the same time: the node answers, but the score is below 80."
  }
 ]

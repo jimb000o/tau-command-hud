@@ -910,7 +910,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     </div>
     <nav class="tnav" data-page="hud" aria-label="Pages and tools">
       <div class="seg" role="group" aria-label="Data source" data-slot="source">
-        <button id="btnLive" aria-pressed="false"><span class="dot none" id="liveDot" aria-hidden="true"></span>Live node</button>
+        <button id="btnLive" aria-pressed="false" data-ex="live"><span class="dot none" id="liveDot" aria-hidden="true"></span>Live node</button>
         <button id="btnSim" aria-pressed="true" data-full="Simulation: invented activity that follows the documented protocol, generated in your browser. No real chain data.">Simulation</button>
       </div>
       <button class="pill primary" type="button" id="btnState2" data-slot="state">Chain state</button>
@@ -1580,6 +1580,19 @@ async function runVerdict(b, live) {
 
 /* ---------- people online: asked from the community relay (node.tauhud.com/status), no analytics ---------- */
 const PRESENCE = { url: "https://node.tauhud.com/status", n: null, timer: null };
+/* why the testnet's health score is below full: the factors that lost the most points, in plain words (from the relay's /health-score) */
+const HSC = { at: 0, busy: false, lost: [] };
+let LIVE_TIP = "";   // read on hover (data-ex), so the light's marker never sits in an attribute the translation would see whole
+const HS_NAME = { node: "our node not answering", sync: "being behind the network", last_block: "a slow last block", pace: "fewer blocks than usual this hour",
+  availability: "time offline or out of sync today", stability: "restarts, reorgs or stalls today", mempool: "ghost transactions" };
+async function pollHealthWhy() {
+  if (HSC.busy || Date.now() - HSC.at < 60000) return;
+  HSC.busy = true; const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 8000);
+  try { const r = await fetch(PRESENCE.url.replace(/\/status$/, "/health-score"), { cache: "no-store", signal: ctl.signal }); if (!r.ok) throw new Error(r.status);
+    HSC.lost = ((await r.json()).factors || []).map(x => ({ k: x.key, d: Math.round((+x.weight || 0) - (+x.points || 0)) })).filter(x => x.d >= 1 && HS_NAME[x.k]).sort((a, b) => b.d - a.d).slice(0, 2);
+  } catch (e) {} finally { HSC.at = Date.now(); HSC.busy = false; clearTimeout(tm); setRelay(PRESENCE.up); }
+}
+const healthWhy = () => { const [a, b] = HSC.lost; return !a ? "" : b ? `Lost most on ${HS_NAME[a.k]} (−${a.d}) and ${HS_NAME[b.k]} (−${b.d}).` : `Lost most on ${HS_NAME[a.k]} (−${a.d}).`; };
 function setRelay(up) {
   if (PRESENCE.health === "down") up = false;            // the relay's health score (PR #71) wins when it says the testnet is down
   const degraded = up && PRESENCE.health === "degraded";
@@ -1587,7 +1600,11 @@ function setRelay(up) {
   const synced = PRESENCE.synced !== false;
   const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
   $("liveDot").className = "dot " + (up ? (synced && !catching && !degraded ? "" : "behind") : "off");
-  $("btnLive").dataset.full = !up ? (PRESENCE.stale ? "Red: no answer from the relay for over a minute." : PRESENCE.health === "down" ? `Red: the testnet is down (${PRESENCE.healthLabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : degraded ? `Amber: ${PRESENCE.healthLabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.` : "Green: the community node is online and follows the real testnet chain.";
+  const sc = PRESENCE.score != null ? ` health ${PRESENCE.score} of 100` : "", why = healthWhy();
+  LIVE_TIP = (!up ? verdict("bad", PRESENCE.stale ? "Problem: no answer from the relay for over a minute." : PRESENCE.health === "down" ? `Problem: the testnet is down,${sc || " says its health score"}.` : "Problem: the community node is offline, the relay is not answering.")
+    : degraded ? verdict("watch", `Watch: testnet${sc || " health"}, degraded.`) : !synced ? verdict("busy", "In progress: online, not synced with the real chain yet.")
+    : catching ? verdict("busy", `In progress: catching up, verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.`) : verdict("ok", sc ? `Normal: testnet${sc}.` : "Normal: online and following the real testnet chain."))
+    + "Live node: the real testnet, read through our community node." + (why && (degraded || PRESENCE.health === "down") ? `\n${why}` : "");
   if (S.mode === "live" && LIVE.status) setMode("live", LIVE.status);
 }
 function setOnline(n) {
@@ -1604,6 +1621,8 @@ async function pollOnline() {
     const j = await r.json();
     PRESENCE.stale = false;
     PRESENCE.health = j.health && typeof j.health.state === "string" ? j.health.state : null; PRESENCE.healthLabel = j.health && j.health.label ? String(j.health.label) : "";
+    PRESENCE.score = j.health && Number.isFinite(+j.health.score) ? Math.round(+j.health.score) : null;
+    if (PRESENCE.health && PRESENCE.health !== "healthy") pollHealthWhy(); else HSC.lost = [];
     const n = Number(j.online ?? j.clients ?? j.presence);   // online = people (one per viewer token); clients = sockets
     setOnline(Number.isFinite(n) ? n : null);
     PRESENCE.liveDefault = j.live_default === true;
@@ -1639,7 +1658,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.74", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.78", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -3345,7 +3364,7 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
     if (!lines.length) head.classList.add("solo");
     ovl.append(head); if (lines.length) ovl.append(document.createTextNode(lines.join("\n")));
   };
-  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex && EX.get(el.dataset.ex); setOvl(viewText((el.dataset.health ? health(el.dataset.health) : "") + (fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim()))), !!el.closest(".core")); ovl.hidden = false; place(x, y); };
+  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex === "live" ? () => LIVE_TIP : el.dataset.ex && EX.get(el.dataset.ex); setOvl(viewText((el.dataset.health ? health(el.dataset.health) : "") + (fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim()))), !!el.closest(".core, #btnLive")); ovl.hidden = false; place(x, y); };
   const hide = () => { cur = null; ovl.hidden = true; };
   document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur && !touch) hide(); });
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
