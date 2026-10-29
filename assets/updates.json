@@ -1226,5 +1226,17 @@
   "tag": "Alerts",
   "on": "2026-10-29",
   "html": "Alerts: Agorzilla's evening now comes to the Telegram channel. When its daily choice closes at 18:00 UTC, one short post says what changed, how many days it has lived and what is open tonight. Telegram only, test AGRS only."
+ },
+ {
+  "tag": "Wallet",
+  "on": "2026-10-29",
+  "html": "Wallet, ready for everyone: on Live node, while both of the testnet’s rule places are taken, the Rules panel now says so in one line with both ways out, Continue in the simulation or Join the line, and everything fits on one screen again. A sign button that cannot sign yet is now an outline instead of a dim green. Your place in the line shows the moment you make your account. Tabbing through the rule fields no longer ticks them. Testnet only, test AGRS have no value.",
+  "major": {
+   "id": "wallet-roundup",
+   "title": "Wallet: a day of fixes, ready to try",
+   "text": "The Tau HUD testnet wallet after a day of rounds with simulated users: check words on every address, a way back for first payments, a pay-me link with QR code, fair turns on the two live rule places, and clear reasons wherever a button is grey. Keys stay in your browser. Testnet only, test AGRS have no value.",
+   "link": "/wallet/",
+   "image": "/assets/shots/wallet-roundup.png"
+  }
  }
 ]

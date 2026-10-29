@@ -94,6 +94,8 @@ button.b.go { color: #000; background: var(--ok); border-color: var(--ok); }
 button.b.go:hover:not(:disabled) { background: #fff; border-color: #fff; }
 button.b.quiet { color: var(--dim); }
 button.b:disabled { opacity: .35; cursor: default; }
+/* a sign button that cannot sign yet must not look like one that can: outline, no green fill */
+button.b.go:disabled { opacity: 1; background: transparent; color: var(--dim); border-color: var(--hair); border-style: dashed; }
 button.b.big { padding: 9px 16px; font-size: 12px; }
 .secret { margin-top: 8px; border: 1px solid rgba(255,177,59,.45); border-radius: 6px; padding: 8px 10px; }
 .secret pre { margin: 6px 0 0; white-space: pre-wrap; word-break: break-all; font: 12px var(--mono); color: #fff; }
@@ -108,6 +110,7 @@ button.b.big { padding: 9px 16px; font-size: 12px; }
 .item.ask { border-color: rgba(57,255,138,.45); }
 /* an inbox card's buttons sit on their own line under the title, so the title never folds into one word per line */
 .item.ask .acts { grid-column: 2 / 4; flex-wrap: wrap; }
+html.fit #steps.tight .step.done, html.fit #steps.tight .step span span { display: none; }
 html.fit #steps.squeezed { display: none; }
 .moreinbox { background: none; border: 0; padding: 2px 0; color: var(--dim); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; text-align: left; }
 .item.bad .t { color: var(--refused); }
@@ -231,7 +234,8 @@ input.in.md, select.in.md { width: auto; max-width: 15em; padding: 3px 6px; disp
 .why2.fix { color: var(--sim); }
 /* a block that cannot be signed as typed: amber frame and the fix right at the field */
 .blk.bad, .blk.bad:focus-within { border-color: var(--sim); }
-.blk.bad input.in, .blk.bad select.in, .blk.bad input.in:focus { border-color: var(--sim); box-shadow: none; }
+.blk.bad input.in, .blk.bad select.in { border-color: var(--sim); }
+.blk.bad input.in:focus, .blk.bad select.in:focus { border-color: var(--sim); box-shadow: 0 0 0 2px rgba(255,177,59,.35); }
 .fixit { display: block; color: var(--sim); font-size: 12px; margin-top: 3px; }
 .fixit:empty { display: none; }
 .slotsbar { margin: 6px 0; border-left: 2px solid var(--sim); padding: 4px 0 4px 10px; font-size: 12px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
@@ -568,6 +572,7 @@ function setKey(skHex) {
   W.bal = W.seq = W.offers = W.reqs = W.rets = null; W.clause = undefined;
   if (SIM) S.born = S.born || TauSim.head();
   renderAll(); refresh();
+  if (!SIM) loadLease();   // a new or imported key sees its place in the line now, not at the next minute's poll
 }
 $("btnNew").onclick = () => setKey(B.bytesToHex(B.keygen()));
 $("btnImport").onclick = () => { $("importBox").hidden = false; $("importSk").focus(); };
@@ -1178,7 +1183,7 @@ function ruleDraft() {
 }
 [["vCap", "cCap"], ["vFrom", "cFrom"], ["vCoAbove", "cCo"], ["vCoWho", "cCo"]].forEach(([v, c]) => {
   $(v).addEventListener("input", () => { $(c).checked = true; });
-  $(v).addEventListener("focus", () => { if (!$(c).checked) { $(c).checked = true; renderRule(); renderShare(); } });   // clicking into a value means you want that block
+  $(v).addEventListener("pointerdown", () => { if (!$(c).checked) { $(c).checked = true; renderRule(); renderShare(); } });   // clicking into a value means you want that block; tabbing past it does not
 });
 ["cOnly", "cCap", "cFrom", "cCo", "vCap", "vFrom", "vCoAbove", "vCoWho"].forEach(id => $(id).addEventListener("input", () => { renderRule(); renderShare(); }));
 const slotsFull = () => !SIM && W.slots && W.slots.taken >= W.slots.places && !myRule() && !(W.slots.holders || []).includes(W.pk);
@@ -1230,15 +1235,28 @@ function renderRule() {
   $("slotsBar").hidden = !full;
   if (full) {
     const held = (W.slots.holders || []).map(tag).join(T(" and "));
-    $("slotsBar").replaceChildren(el("span", null, el("b", { text: T("Signing a rule on the live testnet is not possible right now:") }), " ",
-      held ? FX("both rule places are taken, by {x}. Build and test yours here, then take it into the simulation, where every account may have a rule.", {}, { x: held }) : T("both rule places are taken. Build and test yours here, then take it into the simulation, where every account may have a rule.")),
+    /* one short line: the line for a live turn below says the rest, so the blocks stay in view */
+    $("slotsBar").replaceChildren(el("span", null, el("b", { text: held ? FX("Live: both rule places are taken, by {x}.", {}, { x: held }) : T("Live: both rule places are taken.") }), " ",
+      T("Test yours here and sign it in the simulation, where every account may have a rule.")),
       el("button", { class: "b", type: "button", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }));
   }
   renderLease(full);
+  /* not in the line yet: one bar with both ways out, so the rule blocks stay in view on one screen */
+  if (full && !$("leaseBar").hidden && W.lease && !W.lease.position && !(W.slots.holders || []).includes(W.pk)) {
+    $("leaseBar").hidden = true;
+    $("slotsBar").replaceChildren(el("span", null, el("b", { text: T("Live: both rule places are taken.") }), " ",
+      T("Test yours here; sign it in the simulation now, or join the line for a live turn of 30 minutes.")),
+      el("span", { class: "row", style: "margin:0" }, el("button", { class: "b", type: "button", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }),
+        el("button", { class: "b", type: "button", text: T("Join the line"), "data-tip": T("Join the line") + "\n" + T("A holder keeps a place 30 minutes once someone is waiting.") + "\n" + T("This page tells you when a place is yours to take."), onclick: () => joinLine(true) })));
+  }
+  else if (full && !$("leaseBar").hidden && W.lease && W.lease.position) {   // in the line: its bar says it all, with the way into the simulation beside it
+    $("slotsBar").hidden = true;
+    $("leaseBar").append(el("button", { class: "b", type: "button", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }));
+  }
   const why = [];
   if (W.pk && d.bad.length) why.push(el("b", { text: T("Not ready to sign:") }), " ", d.bad.join(T("; ")));
   else if (W.pk && !d.text && !r) why.push(T("Tick at least one block above."));
-  else if (full) why.push(T("Grey because both rule places are taken; see the line above the blocks."));
+  else if (full) why.push(T("Grey while both live rule places are taken."));
   $("ruleWhy").className = "why2" + (W.pk && d.bad.length ? " fix" : "");
   $("ruleWhy").replaceChildren(...why);
 }
@@ -1618,7 +1636,7 @@ let INBOX_ALL = false;   // the visitor asked to see every inbox card, so the pa
 function fitLog() {
   const box = $("activity"), more = $("log").querySelector(".morelog");
   fitInbox(box);
-  if (!more) return;
+  if (!more) { fitInbox(box, true); return; }
   const items = [...$("log").querySelectorAll(".item")];
   items.forEach(x => { x.hidden = false; });
   let shown = items.length;
@@ -1636,8 +1654,10 @@ function fitInbox(box, squeeze) {
   const cards = [...$("inbox").querySelectorAll(":scope > .item")], old = $("inbox").querySelector(".moreinbox");
   if (old) old.remove();
   cards.forEach(x => { x.hidden = false; });
-  $("steps").classList.remove("squeezed");
+  $("steps").classList.remove("tight", "squeezed");
   if (!squeeze || INBOX_ALL || !document.documentElement.classList.contains("fit")) return;
+  /* first the done steps and the explanations go, then the whole list */
+  if (box.scrollHeight > box.clientHeight + 1) $("steps").classList.add("tight");
   if (box.scrollHeight > box.clientHeight + 1) $("steps").classList.add("squeezed");   // the next-step hint gives way to things waiting for you
   const btn = el("button", { class: "moreinbox", type: "button", onclick: () => { INBOX_ALL = true; fitLog(); } });
   $("inbox").append(btn);

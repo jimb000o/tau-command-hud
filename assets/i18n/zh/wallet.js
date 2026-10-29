@@ -530,4 +530,11 @@ TauI18n.add({ strings: {
   "Relay: ": "中继：",
   "tomorrow {x}": "明天 {x}",
   "The relay did not answer.": "中继没有回应。",
+  "Live: both rule places are taken, by {x}.": "实时：两个规则名额都已被 {x} 占用。",
+  "Live: both rule places are taken.": "实时：两个规则名额都已被占用。",
+  "Test yours here and sign it in the simulation, where every account may have a rule.": "在这里测试你的规则，然后在模拟里签名，那里每个账户都可以有规则。",
+  "Test yours here; sign it in the simulation now, or join the line for a live turn of 30 minutes.": "在这里测试你的规则；现在就在模拟里签名，或者排队等一次 30 分钟的实时机会。",
+  "Grey while both live rule places are taken.": "两个实时规则名额都被占用时，按钮是灰色的。",
+  "This page tells you when a place is yours to take.": "轮到你时，这个页面会告诉你。",
+  "A holder keeps a place 30 minutes once someone is waiting.": "一旦有人排队，占用者只能保留名额 30 分钟。",
 } });
