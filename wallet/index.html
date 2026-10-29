@@ -414,7 +414,7 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
 "use strict";
 const $ = id => document.getElementById(id);
 const NODE = "wss://node.tauhud.com", RELAY = "https://node.tauhud.com";
-const SIM = !!(window.TauSim && TauSim.on);   // simulation: every transaction stays in this browser and lands on the made-up chain
+const SIM = !!(window.TauSim && TauSim.on);   // simulation: every transaction lands on the shared made-up chain (assets/sim.js), never on the real testnet
 const T = s => (window.TauI18n ? TauI18n.t(s) : s);
 const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));   // filled first: the dictionary matches templates against the finished text
 /* a template whose filler is already translated (a time, a list of addresses): translate around a stand-in, then put it in */
@@ -437,7 +437,7 @@ function loadBook() {
 }
 function saveBook() { store.set(BOOK_KEY, JSON.stringify(BOOK)); }
 const nameOf = a => { const c = BOOK.find(c => c.addr === a); return c ? c.name : null; };
-const tag = a => nameOf(a) || short(a);
+const tag = a => nameOf(a) || (SIM && TauSim.walletName && TauSim.walletName(a)) || short(a);   // in the simulation another visitor's wallet goes by their visitor name
 /* a lookalike shares its first or last characters with someone in your book but is not them: the address-poisoning trick */
 function lookalike(a) {
   if (!isAddr(a) || nameOf(a) || a === W.pk) return null;
@@ -500,7 +500,7 @@ document.querySelectorAll("#acctTabs button").forEach(b => b.addEventListener("c
 const L = { ws: null, retry: 5000, wait: new Map(), times: [] };
 function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = T(text); s.dataset.tip = tipText; }
 function connect() {
-  if (SIM) { setState("sim", "Simulation", "Simulation\nA made-up chain in your browser.\nYour transactions land on it and nowhere else."); return; }
+  if (SIM) { setState("sim", "Simulation", "Simulation\nA made-up chain, the same for every visitor.\nYour transactions land on it, and others see them.\nNothing reaches the real testnet."); return; }
   let ws;
   try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
   L.ws = ws;
@@ -563,7 +563,7 @@ async function refresh() {
     if (rq && rq.status === "ok") W.reqs = rq.data;
     const rt = await lookup(`getretractables ${W.pk} all`);
     if (rt && rt.status === "ok") W.rets = rt.data;
-    if (SIM) W.dust = S.state().dust;
+    if (SIM) { const st = S.state(); W.dust = st.dust; W.recv = st.recv; }
     await followLog();
   } finally { refreshing = false; }
   if (SIM) loadSlots();
@@ -614,6 +614,10 @@ async function submit(tx, label, kind) {
   if (!res) return { ok: false, why: T("No answer from the node. It may still arrive: watch Activity.") };
   if (res.status !== "ok" || (res.data && res.data.ok === false)) return { ok: false, why: plain(res), policy: byRule(res) };
   nextSeq = tx.sequence_number + 1;
+  if (SIM && tx.tx_type === "consensus_rule_vote") {   // the visitors' ballot is how a visitor has a say in the simulation
+    const p = TauSim.chain.props().find(p => p.id === tx.update_id), item = p && (p.slot != null ? "slot:" + p.slot : p.visitor ? p.visitor.item : null);
+    if (item) TauSim.vote(item, tx.approve !== false);
+  }
   const hash = (res.data && res.data.tx_hash) || null;
   W.log.unshift({ hash, kind, label, at: Date.now(), status: "queued", seq: tx.sequence_number, paid: tx.fee_limit !== "0", extra: res.data && (res.data.update_id || res.data.offer_id || res.data.request_id || res.data.retractable_id) || null });
   W.log = W.log.slice(0, 40); store.set(logKey(), JSON.stringify(W.log));
@@ -716,27 +720,43 @@ function describe(r) {
   return out;
 }
 
-/* ---------- the simulation's side of the wallet: your transactions land on the made-up chain, in this browser only ---------- */
+/* ---------- the simulation's side of the wallet: your transactions land on the shared made-up chain ----------
+   Each signed transaction goes to the relay (GET /sim/tx), which fixes the block it lands in; every visitor's browser puts
+   it into the same simulated chain (assets/sim.js), so others see your payments in their Explorer and you see theirs arrive.
+   If the relay cannot be reached, the transaction lands in this browser's copy only (shared: false). */
 const S = {
-  born: null, txs: [],   // {tx, hash, at}
+  born: null, txs: [],   // {tx, hash, at, shared}
   friends: () => TauSim.accounts.slice(1, 13),
   load() { try { const k = JSON.parse(store.get("tauhud-wallet-sim") || "null"); if (k && k.day === Math.floor(Date.now() / 86400000)) { S.txs = k.txs; S.born = k.born; } } catch (e) {} },
   save() { store.set("tauhud-wallet-sim", JSON.stringify({ day: Math.floor(Date.now() / 86400000), txs: S.txs.slice(-60), born: S.born })); },
   hash: s => B.bytesToHex(B.sha256(new TextEncoder().encode(s))),
   mine: () => S.txs.filter(x => x.tx.sender_pubkey === W.pk),
-  /* everything that follows from your landed transactions, at the current head */
+  shared: () => S.txs.some(x => x.shared && x.tx.sender_pubkey === W.pk),
+  /* everything that follows from your transactions at the current head: the shared chain for what reached it, this browser for the rest */
   state() {
-    const h = TauSim.head(), fee = baseFee(), st = { bal: 0, out: 0, fees: 0, clause: null, offers: [], reqs: [], rets: [], votes: new Map(), pays: [], dust: null };
-    const acc = TauSim.account(W.pk); st.bal = Number(acc.chain_balance) || FAUCET;
+    const h = TauSim.head(), fee = baseFee(), st = { bal: 0, out: 0, fees: 0, clause: null, offers: [], reqs: [], inreqs: [], rets: [], votes: new Map(), pays: [], dust: null, local: false };
+    const acc = TauSim.account(W.pk), view = TauSim.wallet(W.pk);
+    st.bal = (Number(acc.chain_balance) || 0) + (view.faucet_at == null ? FAUCET : 0);   // the faucet's 100,000 come with the first transaction
+    let clauseAt = view.rule_at != null ? view.rule_at : -1;
+    st.clause = view.rule;
+    st.rets = view.retractables.filter(r => r.sender_pubkey === W.pk);
+    st.reqs = view.requests.filter(r => r.sender_pubkey === W.pk);
+    st.inreqs = view.requests.filter(r => r.sender_pubkey !== W.pk && r.status === "pending");
+    st.recv = view.received;
+    const ro = TauSim.answer(`getruleoffers ${W.pk}`), offers = ((JSON.parse(ro).data || {}).offers || []);
+    st.offers = offers.map(o => ({ offer_id: o.offer_id, offerer_pubkey: o.offerer_pubkey, recipient_pubkey: o.recipient_pubkey, status: o.status, expire_at_height: o.expire_at_height, rule_text: o.rule_text, ...(o.reason ? { reason: o.reason } : {}) }));
     for (const x of S.txs) {
       const t = x.tx, landed = x.at <= h, mine = t.sender_pubkey === W.pk;
       if (!mine) continue;
+      if (t.tx_type === "consensus_rule_vote") st.votes.set(t.update_id, x.at);
       const sent = t.tx_type === "user_tx" && t.operations["1"] ? t.operations["1"].reduce((n, o) => n + Number(o[2]), 0) : 0;
       if (!landed) { if (t.fee_limit !== "0") st.fees += fee; st.out += sent; continue; }
+      if (x.shared) continue;   // landed on the shared chain: already in the balance and the lists above
+      st.local = true;
       if (t.fee_limit !== "0") st.bal -= fee;
       if (t.tx_type === "user_tx") {
         st.bal -= sent;
-        if (t.operations["0"]) st.clause = t.operations["0"].replace(/\s+/g, "") === NEUTRAL.replace(/\s+/g, "") ? null : t.operations["0"];
+        if (t.operations["0"] && x.at > clauseAt) { clauseAt = x.at; st.clause = t.operations["0"].replace(/\s+/g, "") === NEUTRAL.replace(/\s+/g, "") ? null : t.operations["0"]; }
       }
       if (t.tx_type === "retractable_transfer") {
         const back = S.txs.find(y => y.tx.tx_type === "retract_transfer" && y.tx.retractable_id === x.hash && y.at <= h && y.at < t.release_at_height);
@@ -749,7 +769,6 @@ const S = {
         st.reqs.push({ request_id: x.hash, sender_pubkey: W.pk, recipient_pubkey: t.recipient_pubkey, amount: t.amount, expire_at_height: t.expire_at_height, status: done ? "executed" : "pending",
           approvers: Object.fromEntries(Object.entries(t.approvers).map(([s, p]) => [s, { pubkey: p, state: done ? "approved" : "awaiting" }])) });
       }
-      if (t.tx_type === "consensus_rule_vote") st.votes.set(t.update_id, x.at);
       if (t.tx_type === "rule_offer") {   // simulated members agree one to three blocks later
         const n = parseInt(x.hash.slice(0, 2), 16) % 3 + 1, ok = h >= x.at + n;
         st.offers.push({ offer_id: x.hash, offerer_pubkey: W.pk, recipient_pubkey: t.recipient_pubkey, status: ok ? "accepted" : "offered", expire_at_height: t.expire_at_height, rule_text: t.rule_text });
@@ -760,7 +779,7 @@ const S = {
       const from = S.friends()[parseInt(W.pk.slice(0, 2), 16) % 12], rule = coSignRule(800, [from], "any"), id = S.hash("invite" + W.pk);
       const ans = S.txs.find(y => y.tx.offer_id === id && y.at <= h);
       st.offers.push({ offer_id: id, offerer_pubkey: from, recipient_pubkey: W.pk, status: ans ? (ans.tx.tx_type === "rule_offer_accept" ? "accepted" : "rejected") : "offered", expire_at_height: S.born + 400, rule_text: rule, invite: true });
-      if (ans && ans.tx.tx_type === "rule_offer_accept") st.clause = rule;
+      if (ans && ans.tx.tx_type === "rule_offer_accept" && !ans.shared && ans.at > clauseAt) st.clause = rule;
     }
     /* and a lookalike of the first name in your address book sends you a crumb, so its address sits in your history: the poisoning trick */
     if (S.born != null && h >= S.born + 5 && BOOK.length) { st.dust = { from: lookalikeOf(BOOK[0].addr), like: BOOK[0], amount: 1, at: S.born + 5 }; st.bal += 1; }
@@ -783,9 +802,13 @@ const S = {
         if (!j.ok) return err(`Transaction rejected by user policy (o5) for transfer #${i + 1}`, "TX_REJECTED");
       }
       if (c === "checktx") return ok({ ok: true, tau_evaluated: false });
-      const hash = S.hash(arg), at = h + 1 + S.txs.filter(x => x.at > h).length % 2;
-      S.txs.push({ tx, hash, at }); S.save();
-      return ok({ ok: true, tx_hash: hash, message: "Transaction queued." });
+      const local = () => { const hash = S.hash(arg), at = h + 1 + S.txs.filter(x => x.at > h).length % 2; S.txs.push({ tx, hash, at, shared: false }); S.save(); return ok({ ok: true, tx_hash: hash, message: "Transaction queued in this browser only." }); };
+      if (!TauSim.walletSend) return local();
+      return TauSim.walletSend(arg).then(j => {
+        if (j && j.ok) { if (!S.txs.some(x => x.hash === j.hash)) S.txs.push({ tx, hash: j.hash, at: j.h, shared: true }); S.save(); return ok({ ok: true, tx_hash: j.hash, message: "Transaction queued for the shared simulated chain." }); }
+        if (!j || j.error === "offline") return local();
+        return err((j.why || j.error || "refused") + "", j.error === "rate" ? "RATE_LIMITED" : "SIM_REFUSED");
+      });
     }
     if (c === "getsequence") return ok({ address: W.pk, sequence_number: S.mine().filter(x => x.at <= h).length, tip_height: h });
     if (c === "getaccountstate") { const st = S.state(); return ok({ address: W.pk, chain_balance: String(st.bal), pending_outgoing: String(st.out), pending_fees: String(st.fees), pending_incoming: "0", sequence_number: S.mine().length }); }
@@ -797,9 +820,9 @@ const S = {
         { layer: "registry_collision", status: st.clause ? "warn" : "ok" }, { layer: "bv_widths", status: "ok" }, { layer: "compile", status: "ok" }] });
     }
     if (c === "getruleoffer") { const o = S.state().offers.find(o => o.offer_id === arg); return o ? ok(o) : err("Unknown offer", "OFFER_UNKNOWN"); }
-    if (c === "getapprovalrequests") { const st = S.state(); return ok({ address: W.pk, incoming: [], outgoing: st.reqs, mempool: [] }); }
+    if (c === "getapprovalrequests") { const st = S.state(); return ok({ address: W.pk, incoming: st.inreqs, outgoing: st.reqs, mempool: [] }); }
     if (c === "getretractables") { const st = S.state(); return ok({ address: W.pk, retractables: st.rets.filter(r => r.status === "open"), mempool: [] }); }
-    if (c === "gettxstatus") { const x = S.txs.find(x => x.hash === arg); return ok(x ? (x.at <= h ? { status: "confirmed", block_number: x.at } : { status: "pending" }) : { status: "unknown" }); }
+    if (c === "gettxstatus") { const x = S.txs.find(x => x.hash === arg); if (x && x.shared) return JSON.parse(TauSim.answer(cmd)); return ok(x ? (x.at <= h ? { status: "confirmed", block_number: x.at } : { status: "pending" }) : { status: "unknown" }); }
     return JSON.parse(TauSim.answer(cmd));
   },
 };
@@ -845,10 +868,10 @@ function plan() {
   if (TAB === "vote") {
     const open = ((W.gov && W.gov.pending_updates) || []);
     const p = open.find(u => u.update_id === PICK) || null;
-    if (!p) return { what: [T(open.length ? "Pick a proposal" : "Nothing to vote on right now")], facts: [fact("", "Votes", T("Free. Any account may vote on the testnet (open admission).")), fact("", "Final", T("A yes cannot be taken back; a change nobody agrees to expires."))], can: false };
+    if (!p) return { what: [T(open.length ? "Pick a proposal" : "Nothing to vote on right now")], facts: [fact("", "Votes", T(SIM ? "Free. In the simulation only validators' votes count; your yes also counts as your visitor vote, which they follow." : "Free. Any account may vote on the testnet (open admission).")), fact("", "Final", T("A yes cannot be taken back; a change nobody agrees to expires."))], can: false };
     const voted = (W.gov.votes || []).some(v => v.update_id === p.update_id && v.voter_pubkey === W.pk) || W.log.some(x => x.kind === "vote" && x.extra === p.update_id) || (SIM && S.state().votes.has(p.update_id));
     return { what: [T("Yes to "), el("span", { text: W.titles.get(p.update_id) || F("rule change {h}", { h: short(p.update_id) }) })],
-      facts: [fact("ok", "Fee", T("None: votes are free")), fact("", "Takes effect", F("at block #{a} if enough yes votes arrive", { a: p.activate_at_height })), fact(voted ? "no" : "", "Final", voted ? T("You voted yes on this one already; the node refuses a second.") : T("A yes cannot be taken back."))],
+      facts: [fact("ok", "Fee", T("None: votes are free")), ...(SIM ? [fact("", "Counts", T("As your visitor vote while the visitors' vote is open; on the chain itself only validators count."))] : []), fact("", "Takes effect", F("at block #{a} if enough yes votes arrive", { a: p.activate_at_height })), fact(voted ? "no" : "", "Final", voted ? T("You voted yes on this one already; the node refuses a second.") : T("A yes cannot be taken back."))],
       can: !voted, tx: () => base("consensus_rule_vote", { update_id: p.update_id, approve: true }), label: () => F("Yes to {x}", { x: short(p.update_id) }), kind: "vote", extraId: p.update_id };
   }
   if (TAB === "split") return planSplit(fee, sp, r);
@@ -925,7 +948,7 @@ function renderSign() {
   $("btnSign").disabled = !P.can || !live;
   $("btnSign").textContent = T(P.kind === "cosign" ? "Sign and ask for co-signature" : P.kind === "vote" ? "Sign my yes" : "Sign and send");
   $("btnTry").hidden = !P.tryIt; $("btnTry").disabled = !live;
-  $("signWhy").textContent = P.why || (P.can ? T(SIM ? "Lands on the simulated chain only." : "The node checks it first; if it would be refused, nothing is sent.") : "");
+  $("signWhy").textContent = P.why || (P.can ? T(SIM ? "Lands on the shared simulated chain; every visitor sees it." : "The node checks it first; if it would be refused, nothing is sent.") : "");
 }
 async function signNow(p, trying) {
   const res = $("result"); res.className = "result wait"; res.textContent = T("Signing in your browser, then asking the node…");
@@ -1238,6 +1261,10 @@ function inboxItems() {
       el("span", { class: "t" }, el("span", { class: "flag", text: T("Lookalike") }), FX("{n} test AGRS from an address that looks like {x}'s", { n: dz.amount }, { x: dz.like.name })), el("span"),
       el("span", { class: "m" }, print(dz.from), el("span", { translate: "no", text: short(dz.from) + "  " }), T("It wants a place in your history next to the real one. Never copy an address from here; pick the name."))));
   }
+  for (const x of (W.recv || []).slice(0, 3)) {   // payments from other visitors' wallets on the shared simulated chain
+    items.push(el("div", { class: "item" }, el("span", { class: "dot ok" }), el("span", { class: "t", text: F("{n} test AGRS from {x}", { n: fmt(x.amount), x: tag(x.from) }) }), el("span", { class: "dim", style: "font-size:12px", text: F("in block #{a}", { a: x.block }) }),
+      el("span", { class: "m" }, print(x.from), el("span", { translate: "no", text: short(x.from) + "  " }), T(nameOf(x.from) ? "From your address book." : "Another visitor's wallet. Add them to your address book by name before you pay them back."))));
+  }
   const inc = ((W.offers && W.offers.incoming) || []).filter(o => o.status === "offered");
   for (const o of inc) {
     const rr = readRule(o.rule_text || o.rule_text_preview || ""), c = CONF.get(o.offer_id);
@@ -1257,7 +1284,7 @@ function inboxItems() {
   for (const q of ((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "pending")) {
     const waiting = Object.values(q.approvers || {}).filter(a => a.state === "awaiting").map(a => tag(a.pubkey));
     items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x} waits for a co-signature", { n: fmt(q.amount), x: tag(q.recipient_pubkey) }) }), el("span"),
-      el("span", { class: "m", text: (waiting.length ? FX("Waiting for {x}.", {}, { x: waiting.join(", ") }) : "") + " " + F("Expires at block #{a}.", { a: q.expire_at_height }) + (SIM ? " " + T("In the simulation your co-signer signs two blocks later.") : "") })));
+      el("span", { class: "m", text: (waiting.length ? FX("Waiting for {x}.", {}, { x: waiting.join(", ") }) : "") + " " + F("Expires at block #{a}.", { a: q.expire_at_height }) + (SIM ? " " + T(Object.values(q.approvers || {}).some(a => a.state === "awaiting" && TauSim.isNative(a.pubkey)) ? "In the simulation your co-signer signs two blocks later." : "Another visitor co-signs from their own wallet.") : "") })));
   }
   const rets = ((W.rets && W.rets.retractables) || []);
   for (const t of rets.filter(t => (t.sender_pubkey || "").toLowerCase() === W.pk && (t.status || "open") === "open")) {
@@ -1290,7 +1317,7 @@ function renderActivity() {
   const word = { queued: ["sim", "on its way"], in: ["ok", "in block #{a}"], out: ["off", "refused"] };
   const rows = W.log.slice(0, 12).map(x => { const w = word[x.status] || word.queued; return el("div", { class: "item" + (x.status === "out" ? " bad" : "") }, el("span", { class: "dot " + w[0] }), el("span", { class: "t", text: x.label }), el("span", { class: "dim", style: "font-size:12px", text: F(w[1], { a: x.block ?? "?" }) }),
     el("span", { class: "m", text: new Date(x.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + (x.hash ? " · " + short(x.hash) : "") + (x.why ? " · " + x.why : "") })); });
-  if (W.pk && !rows.length && !inbox.length) rows.push(el("div", { class: "empty" }, el("b", { text: T("Nothing yet.") }), " ", T(SIM ? "Send something to a simulated account, or wait a few blocks: someone may invite you into a Pakt." : "Send something, vote, or give your account a rule. Requests to co-sign and rules offered to you appear here too.")));
+  if (W.pk && !rows.length && !inbox.length) rows.push(el("div", { class: "empty" }, el("b", { text: T("Nothing yet.") }), " ", T(SIM ? "Send something to a simulated account or to another visitor, or wait a few blocks: someone may invite you into a Pakt." : "Send something, vote, or give your account a rule. Requests to co-sign and rules offered to you appear here too.")));
   $("log").replaceChildren(...rows);
   renderSteps();
 }
@@ -1353,7 +1380,7 @@ addEventListener("resize", fit);
 
 /* ---------- start ---------- */
 if (SIM) {
-  $("sourceLine").textContent = T("Simulation: your key is real and signs as on the testnet, but every transaction lands on the made-up chain in this browser and nowhere else. Switch to Live node in the header to use Tau Testnet Alpha.");
+  $("sourceLine").textContent = T("Simulation: your key is real and signs as on the testnet, but every transaction lands on the shared made-up chain that every visitor sees, never on the real testnet. Switch to Live node in the header to use Tau Testnet Alpha.");
   TauSim.mark();
   S.load();
   let seen = TauSim.head();

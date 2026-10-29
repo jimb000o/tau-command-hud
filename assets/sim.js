@@ -134,7 +134,8 @@
   const TXI = new Map(), DROP = new Map(), ACC = new Map();
   function init(dayIndex) {
     DAYI = dayIndex; G = dayIndex * DAY; R = prng(mix(dayIndex * 7919 + 17));
-    ST = { seq: new Map(), bal: new Map(Object.entries(GENESIS)), rules: new Map(), offers: [], open: [], retractables: [], props: [], dropped: [], nextPropAt: 12 + ((R() * 20) | 0), curH: -1, cur: null };
+    ST = { seq: new Map(), bal: new Map(Object.entries(GENESIS)), rules: new Map(), offers: [], open: [], retractables: [], props: [], dropped: [], nextPropAt: 12 + ((R() * 20) | 0), curH: -1, cur: null,
+      w: { bal: new Map(), led: new Map(), faucet: new Map(), rets: new Map(), reqs: new Map(), due: [], tx: new Set(), by: new Map(), ruleAt: new Map(), recv: [] } };
     TXI.clear(); DROP.clear(); ACC.clear();
     B = [{ header: { block_number: 0, previous_hash: "0".repeat(64), timestamp: 0, merkle_root: "0".repeat(64), proposer_pubkey: "0".repeat(96), state_hash: hexOf(R, 64) },
       transactions: [], tx_ids: [], block_hash: GENESIS_HASH, _arrive: [], _dropped: [], _fee: FEE0 }];
@@ -241,6 +242,95 @@
     if (ST.curH !== h) { ST.cur = ST.curH === h - 1 && ST.cur && !ST.props.some(p => p.activate_at === h && p.approved_at != null) ? ST.cur : rulesAt(h); ST.curH = h; }
     return ST.cur;
   }
+  /* ---------- visitors' wallets: transactions the testnet wallet signed in simulation mode ----------
+     /wallet/ sends them to the relay (infra/relay/simwallet.py, GET /sim/tx), which fixes the block each one lands in; every
+     browser reads the day's list (GET /sim/wallet) and puts them in here, so they are part of the one chain everyone sees.
+     They take nothing from the day's random stream. A wallet account gets the testnet's 100,000 test AGRS from the faucet
+     with its first transaction; its balance lives apart from the made-up accounts, so it never seals a block under stake.
+     The chain decides what lands, the way the node does: not enough balance, nothing to pull back, an offer that is not
+     yours: the transaction is refused with a reason. A made-up account answers a wallet the way the wallet promises:
+     it accepts an offered rule one to three blocks later and co-signs two blocks after a request. A vote from a wallet is on
+     the chain but not counted: only validators vote on rule changes (the visitors' ballot is how a visitor has a say). */
+  const FAUCET = 100000, NATIVE = new Set([...VALIDATORS0, ...ACCOUNTS, ...SPARE]);
+  const walletOf = o => o.day === DAYI && Array.isArray(o.wallet) ? o.wallet : [];
+  const WBY = { src: null, at: new Map() };   // the day's wallet transactions by block
+  const NEUTRAL_O5 = "always((o5[t]:bv[24]={#x000001}:bv[24])).";
+  const wBal = a => NATIVE.has(a) ? ST.bal.get(a) || 0 : ST.w.bal.get(a) || 0;
+  function wMove(a, d, n) {
+    if (NATIVE.has(a)) ST.bal.set(a, (ST.bal.get(a) || 0) + d); else ST.w.bal.set(a, (ST.w.bal.get(a) || 0) + d);
+    const l = ST.w.led.get(a) || { moves: [], seq: [] }; l.moves.push([n, d]); ST.w.led.set(a, l);
+  }
+  const wSeq = (a, n) => { const l = ST.w.led.get(a) || { moves: [], seq: [] }; l.seq.push(n); ST.w.led.set(a, l); };
+  const wRule = (a, text, n) => {
+    const off = String(text).replace(/\s+/g, "") === NEUTRAL_O5;
+    if (off) ST.rules.delete(a); else ST.rules.set(a, { name: NATIVE.has(a) ? "Pakt rule" : "Own rule", text, blocks: () => false, wallet: true, at: n });
+    ST.w.ruleAt.set(a, (ST.w.ruleAt.get(a) || []).concat([[n, off ? null : text]]));
+  };
+  const needAll = a => { const r = ST.rules.get(a); return !!r && (r.text.match(/i1\[t\]:bv\[24\]\s*>\s*\{/g) || []).length > 1; };
+  function wallets(n, fee, prevT, t, put, drop) {
+    const due = ST.w.due.filter(d => d.n === n); ST.w.due = ST.w.due.filter(d => d.n !== n);
+    for (const d of due) d.fn();
+    const list = walletOf(OUTSIDE);
+    if (WBY.src !== list) { WBY.src = list; WBY.at = new Map(); for (const w of list) WBY.at.set(w.h, (WBY.at.get(w.h) || []).concat([w])); }
+    for (const w of (WBY.at.get(n) || []).slice().sort((a, b) => a.i - b.i)) {
+      if (TXI.has(w.hash) || DROP.has(w.hash)) continue;
+      const tx = w.tx, s = tx && tx.sender_pubkey;
+      if (!s || NATIVE.has(s)) continue;   // only a wallet's own account, never one of the made-up ones
+      if (!ST.w.faucet.has(s)) { ST.w.faucet.set(s, n); wMove(s, FAUCET, n); if (w.by) ST.w.by.set(s, w.by); }
+      const arrive = Math.round(Math.max(prevT + 0.3 * (t - prevT), Math.min(w.ts || t, t - 1)));
+      const paid = tx.fee_limit !== "0", cost = paid ? fee : 0, k = tx.tx_type;
+      const pays = k === "user_tx" ? ((tx.operations || {})["1"] || []).map(x => [x[1], Number(x[2])]) : ["retractable_transfer"].includes(k) ? [[tx.recipient_pubkey, Number(tx.amount)]] : [];
+      const spend = pays.reduce((a, x) => a + x[1], 0) + (k === "approval_request" ? Number(tx.amount) : 0);
+      const no = why => drop(w, s, k, arrive, why);
+      if (paid && Number(tx.fee_limit) < fee) { no(`fee limit ${tx.fee_limit} AGRS is below the base fee of ${fee} AGRS`); continue; }
+      if (spend + cost > wBal(s)) { no(`not enough balance: ${spend + cost} AGRS needed with the fee, ${wBal(s)} available`); continue; }
+      const ret = k === "retract_transfer" ? ST.w.rets.get(tx.retractable_id) : null;
+      if (k === "retract_transfer" && (!ret || ret.from !== s || ret.status !== "open" || n >= ret.release)) { no("nothing to pull back: the transfer is unknown, not yours, or already released"); continue; }
+      if (ret && wBal(ret.to) < ret.amount) { no("the recipient has already spent it"); continue; }
+      const offer = /^rule_offer_(accept|reject)$/.test(k) ? ST.offers.find(o => o.id === tx.offer_id) : null;
+      if (offer && (offer.to !== s || offer.status !== "offered" || n >= offer.expire)) { no("the offer is not open to this account"); continue; }
+      const req = k === "transfer_vote" ? ST.w.reqs.get(tx.request_id) : null;
+      if (k === "transfer_vote" && (!req || !Object.values(req.approvers).includes(s) || req.status !== "pending")) { no("not a co-signer of an open request"); continue; }
+      put(tx, w.hash, arrive);
+      if (cost) wMove(s, -cost, n);
+      wSeq(s, n);
+      for (const [to, a] of pays) { wMove(s, -a, n); wMove(to, a, n); if (!NATIVE.has(to)) ST.w.recv.push({ to, from: s, amount: a, h: n, hash: w.hash }); }
+      if (k === "user_tx" && (tx.operations || {})["0"]) wRule(s, tx.operations["0"], n);
+      if (k === "retractable_transfer") ST.w.rets.set(w.hash, { id: w.hash, from: s, to: tx.recipient_pubkey, amount: Number(tx.amount), release: Number(tx.release_at_height), h: n, status: "open" });
+      if (ret) { wMove(ret.to, -ret.amount, n); wMove(s, ret.amount, n); ret.status = "retracted"; ret.at = n; }
+      if (k === "rule_offer") {
+        const o = { id: w.hash, from: s, to: tx.recipient_pubkey, rule: { name: "Offered rule", text: tx.rule_text }, h: n, expire: Number(tx.expire_at_height) || n + 400, status: "offered", wallet: true };
+        ST.offers.push(o);
+        if (NATIVE.has(o.to)) ST.w.due.push({ n: n + (parseInt(w.hash.slice(0, 2), 16) % 3) + 1, fn: () => {
+          if (o.status !== "offered") return;
+          put({ sender_pubkey: o.to, sequence_number: ST.seq.get(o.to) || 0, fee_limit: "100", expiration_time: ts(n) + 3600, tx_type: "rule_offer_accept", offer_id: o.id, rule_text: o.rule.text }, hexFrom(o.id + ":accept", 64), null, o.to);
+          o.status = "accepted"; wRule(o.to, o.rule.text, o.h);
+        } });
+      }
+      if (offer) { offer.status = k === "rule_offer_accept" ? "accepted" : "rejected"; if (k === "rule_offer_accept") wRule(s, offer.rule.text, n); }
+      else if (k === "rule_offer_accept") wRule(s, tx.rule_text, n);   // an offer from outside this day's chain (the wallet's welcome invitation) is taken as offered
+      if (k === "approval_request") {
+        const q = { id: w.hash, from: s, to: tx.recipient_pubkey, amount: Number(tx.amount), approvers: tx.approvers || {}, all: needAll(s), signed: new Set(), declined: new Set(), h: n, expire: Number(tx.expire_at_height) || n + 1000, status: "pending" };
+        ST.w.reqs.set(q.id, q);
+        Object.values(q.approvers).filter(a => NATIVE.has(a)).forEach(a => ST.w.due.push({ n: n + 2, fn: () => {
+          if (q.status !== "pending") return;
+          put({ sender_pubkey: a, sequence_number: ST.seq.get(a) || 0, fee_limit: "0", expiration_time: ts(n) + 3600, tx_type: "transfer_vote", request_id: q.id, approve: true, reason: "" }, hexFrom(q.id + ":sign:" + a, 64), null, a);
+          q.signed.add(a); settle(q, n + 2);
+        } }));
+      }
+      if (req) { (tx.approve ? req.signed : req.declined).add(s); settle(req, n); }
+    }
+  }
+  /* a co-signature request pays out once enough have signed: one of them, or all where the sender's rule asks for all */
+  function settle(q, n) {
+    const all = Object.values(q.approvers);
+    if (q.status !== "pending") return;
+    if (q.declined.size && (q.all || q.declined.size >= all.length)) { q.status = "declined"; q.at = n; return; }
+    if (q.signed.size < (q.all ? all.length : 1)) return;
+    if (wBal(q.from) < q.amount) { q.status = "failed"; q.at = n; return; }
+    wMove(q.from, -q.amount, n); wMove(q.to, q.amount, n); q.status = "executed"; q.at = n;
+    if (!NATIVE.has(q.to)) ST.w.recv.push({ to: q.to, from: q.from, amount: q.amount, h: n, hash: q.id });
+  }
   function makeBlock(n) {
     const prev = B[n - 1], rules = curRules(n - 1), N = rules.validators.length, fee = rules.fee;
     // who seals this block: the validators in turn, or under proof of stake the six richest accounts (validators included) in turn
@@ -288,6 +378,11 @@
       p.tx_id = putQuiet({ ...base(p.proposer), tx_type: "consensus_rule_update", update_id: p.id, rule_revisions: p.revisions, activate_at_height: p.activate_at, ...(p.patch ? { host_contract_patch: p.patch } : {}) }, v.item);
       ST.props.push(p);
     }
+    // visitors' wallets: their transactions of this block, and what the made-up accounts answer them
+    const wPut = (tx, id, arr, native) => { txs.push(tx); ids.push(id); arrive.push(arr == null ? Math.round(prevT + 0.5 * (t - prevT)) : arr); TXI.set(id, { h: n, i: txs.length - 1 }); ST.w.tx.add(tx);
+      if (native) { ST.seq.set(native, (ST.seq.get(native) || 0) + 1); wSeq(native, n); if (tx.fee_limit !== "0") wMove(native, -fee, n); } };
+    const wDrop = (w, s, k, arr, why) => { const d = { tx_hash: w.hash, type: k, sender: s, seq: w.tx.sequence_number, seen: arr, left: t, why, h: n, wallet: true }; dropped.push(d); ST.dropped.push(d); DROP.set(w.hash, d); };
+    wallets(n, fee, prevT, t, wPut, wDrop);
     const ordinary = ST.props.filter(p => !p.visitor);   // the day's own rhythm does not wait for visitors
     const want = specialAt(n), extra = extraAt(n), last = ordinary[ordinary.length - 1], busy = last && ["voting", "agreed"].includes(statusAt(last, n - 1));
     if (extra === "contra") refuse("consensus_rule_update", pick(R, rules.validators), CONTRA_WHY);   // refused at the door: never a proposal, never a vote
@@ -386,17 +481,20 @@
     if (!ACC.has(key)) {
       let bal = GENESIS[addr] || 0, seq = 0;
       for (let n = 1; n <= h; n++) for (const tx of B[n].transactions) {
+        if (ST.w.tx.has(tx)) continue;   // a wallet's transaction and the answers to it: in the ledger below
         const back = tx.tx_type === "retract_transfer" ? retracted(tx) : null;   // a pulled-back transfer returns its amount
         if (tx.sender_pubkey === addr) { bal -= B[n]._fee; seq++; if (txType(tx) === "user_tx" || tx.tx_type === "retractable_transfer") bal -= amountOf(tx); else if (back) bal += back.amount; }
         else if (toOf(tx) === addr && (txType(tx) === "user_tx" || tx.tx_type === "retractable_transfer")) bal += amountOf(tx);
         else if (back && back.to === addr) bal -= back.amount;
       }
+      const l = ST.w.led.get(addr);
+      if (l) { for (const [n, d] of l.moves) if (n <= h) bal += d; seq += l.seq.filter(n => n <= h).length; }
       if (ACC.size > 2000) ACC.clear();
       ACC.set(key, { bal, seq });
     }
     const a = ACC.get(key), nb = B[h + 1];
     let out = 0, inc = 0, fees = 0;
-    nb.transactions.forEach((tx, i) => { if (nb._arrive[i] > t) return; if (tx.sender_pubkey === addr) { fees += nb._fee; if (txType(tx) === "user_tx" || tx.tx_type === "retractable_transfer") out += amountOf(tx); } else if (toOf(tx) === addr) inc += amountOf(tx); });
+    nb.transactions.forEach((tx, i) => { if (nb._arrive[i] > t || ST.w.tx.has(tx)) return; if (tx.sender_pubkey === addr) { fees += nb._fee; if (txType(tx) === "user_tx" || tx.tx_type === "retractable_transfer") out += amountOf(tx); } else if (toOf(tx) === addr) inc += amountOf(tx); });
     return { address: addr, chain_balance: String(a.bal), pending_outgoing: String(out), pending_incoming: String(inc), pending_fees: String(fees), escrowed_out: "0", sequence_number: a.seq };
   }
   function ruleOffers(addr, dir, t) {
@@ -618,6 +716,10 @@
       if (!a || !b || a.proposed_at !== b.proposed_at) first = Math.min(first, (a || b).proposed_at, (b || a).proposed_at);
       else if ((a.outcome === "yes") !== (b.outcome === "yes")) first = Math.min(first, b.close_at + VISITOR_VOTE_AT);
     }
+    // wallets: a transaction that appears or vanishes touches the block it lands in
+    const pw = new Set(walletOf(prev).map(w => w.hash)), nw = new Set(walletOf(next).map(w => w.hash));
+    for (const w of walletOf(next)) if (!pw.has(w.hash)) first = Math.min(first, w.h);
+    for (const w of walletOf(prev)) if (!nw.has(w.hash)) first = Math.min(first, w.h);
     return first;
   }
   function applyOutside(next) {
@@ -644,9 +746,52 @@
       const visitors = Object.entries(j.items).filter(([id, it]) => /^visitor:[0-9a-f]{12}$/.test(id) && it && it.meta && Number.isInteger(it.meta.proposed_at))
         .map(([id, it]) => ({ item: id, kind: it.meta.kind, value: it.meta.value, by: it.meta.by, proposed_at: it.meta.proposed_at, close_at: it.meta.close_at, activate_at: it.meta.activate_at,
           outcome: it.outcome ? (it.yes > it.no ? "yes" : "no") : null })).sort((a, b) => a.proposed_at - b.proposed_at || (a.item < b.item ? -1 : 1));
-      applyOutside({ ...OUTSIDE, day: DAYI, slots, visitors });
+      applyOutside({ ...OUTSIDE, day: DAYI, slots, visitors, wallet: await walletList(j.wallet) });
     }
     if (JSON.stringify(j.items) !== was) BAL_FNS.forEach(fn => { try { fn(BALLOTS); } catch (e) {} });
+  }
+  /* the day's wallet transactions: only what is new since the last look (the tally says how many there are) */
+  async function walletList(count) {
+    let have = walletOf(OUTSIDE).filter(w => Number.isInteger(w.i)).sort((a, b) => a.i - b.i);
+    if (!Number.isInteger(count)) return have;   // a relay without wallets yet
+    if (count < have.length) have = [];          // the relay started the day afresh
+    have = have.filter((w, k) => w.i === k);     // keep the unbroken start, fetch the rest
+    while (Number.isInteger(count) && have.length < count) {
+      const r = await fetch(`${RELAY}/sim/wallet?from=${have.length}`, { cache: "no-store" });
+      if (!r.ok) break;
+      const j = await r.json();
+      if (!j || j.day !== dayKey() || !Array.isArray(j.txs) || !j.txs.length) break;
+      for (const w of j.txs) if (w && w.i === have.length && /^[0-9a-f]{64}$/.test(w.hash) && w.tx && Number.isInteger(w.h)) have.push({ i: w.i, h: w.h, ts: w.ts, hash: w.hash, by: w.by, tx: w.tx });
+      if (j.txs[j.txs.length - 1].i !== have.length - 1) break;
+    }
+    return have;
+  }
+  /* a wallet sends: the relay fixes the block, and this browser knows at once */
+  async function walletSend(raw) {
+    const m = me(true);
+    try {
+      const r = await fetch(`${RELAY}/sim/tx?tx=${encodeURIComponent(raw)}&voter=${m.token}&a=${m.a}&b=${m.b}&c=${m.c}`, { cache: "no-store" });
+      const j = await r.json();
+      if (j && j.ok && !walletOf(OUTSIDE).some(w => w.hash === j.hash)) {
+        sync();
+        const tx = JSON.parse(raw); delete tx.signature;
+        const list = walletOf(OUTSIDE).concat([{ i: j.i, h: j.h, ts: now(), hash: j.hash, by: [m.a, m.b, m.c], tx }]).sort((a, b) => a.i - b.i);
+        applyOutside({ ...OUTSIDE, day: DAYI, wallet: list });
+      }
+      return j || { ok: false, error: "bad" };
+    } catch (e) { return { ok: false, error: "offline" }; }
+  }
+  /* what the chain holds for one wallet account */
+  function walletView(addr, t) {
+    t = at(t);
+    const h = sync(t); addr = String(addr).toLowerCase();
+    const f = ST.w.faucet.get(addr), st = (x, open) => x.at != null && x.at <= h ? x.status : open;
+    const rets = [...ST.w.rets.values()].filter(x => x.h <= h && (x.from === addr || x.to === addr)).map(x => ({ retractable_id: x.id, sender_pubkey: x.from, recipient_pubkey: x.to, amount: x.amount, release_at_height: x.release,
+      status: x.status === "retracted" && x.at <= h ? "retracted" : h >= x.release ? "released" : "open" }));
+    const reqs = [...ST.w.reqs.values()].filter(x => x.h <= h && (x.from === addr || Object.values(x.approvers).includes(addr))).map(x => ({ request_id: x.id, sender_pubkey: x.from, recipient_pubkey: x.to, amount: x.amount, expire_at_height: x.expire,
+      status: st(x, h >= x.expire ? "expired" : "pending"), approvers: Object.fromEntries(Object.entries(x.approvers).map(([sl, p]) => [sl, { pubkey: p, state: x.signed.has(p) ? "approved" : x.declined.has(p) ? "declined" : "awaiting" }])) }));
+    const ra = (ST.w.ruleAt.get(addr) || []).filter(x => x[0] <= h).pop(), ruleOn = !!ra;
+    return { address: addr, faucet_at: f != null && f <= h ? f : null, rule: ruleOn ? ra[1] : null, rule_at: ruleOn ? ra[0] : null, retractables: rets, requests: reqs, received: ST.w.recv.filter(x => x.to === addr && x.h <= h).slice(-6).reverse().map(x => ({ from: x.from, amount: x.amount, block: x.h, tx_hash: x.hash })), name: ST.w.by.has(addr) ? TauSimName(ST.w.by.get(addr)) : null };
   }
   // poll quickly while a ballot is open or has just closed, slowly otherwise
   function ballotPace() {
@@ -833,7 +978,7 @@
       try { const u = new URL(location.href); u.searchParams.delete("mode"); u.searchParams.delete("sample"); if (u.href === location.href) location.reload(); else location.href = u.href; } catch (e) { location.reload(); }
     },
     head: () => sync(), block: n => { sync(); return B[n] ? pub(B[n]) : null; }, ts: n => { sync(); return ts(n); },
-    refresh: () => refreshOutside().catch(() => {}), me, vote: castVote, ballots: () => BALLOTS, ballot: k => ballotOf(k), ballotFor: item => ballotFor(item), onBallots: fn => { BAL_FNS.add(fn); return () => BAL_FNS.delete(fn); }, nameOf, colourOf: c => ID_COLOURS[c] || "#c8c8d0", colours: ID_COLOURS, ballotSeconds: BALLOT_SECONDS, ready: () => FIRST,
+    refresh: () => refreshOutside().catch(() => {}), me, walletSend, wallet: walletView, walletName: a => { sync(); const b = ST.w.by.get(String(a).toLowerCase()); return b ? TauSimName(b) : null; }, isNative: a => NATIVE.has(String(a).toLowerCase()), faucet: FAUCET, vote: castVote, ballots: () => BALLOTS, ballot: k => ballotOf(k), ballotFor: item => ballotFor(item), onBallots: fn => { BAL_FNS.add(fn); return () => BAL_FNS.delete(fn); }, nameOf, colourOf: c => ID_COLOURS[c] || "#c8c8d0", colours: ID_COLOURS, ballotSeconds: BALLOT_SECONDS, ready: () => FIRST,
     socket, fetch: fetchSim, answer, node, status, stats, uptime, health, community, board, peers, summary, proposals, upcoming, governance, mempool, account,
     chain: { rulesAt: h => { sync(); return rulesAt(h); }, props: () => { sync(); return ST.props; }, arrivals: n => { sync(); return B[n] ? B[n]._arrive : []; }, dropped: n => { sync(); return B[n] ? B[n]._dropped : []; }, headAt: t => { rollDay(t); return headAt(t); }, genesisTs: () => { sync(); return G; } },
     /* marks a page: the title says so, and a footer line that names the data source gets the simulation's line instead */

@@ -36,6 +36,7 @@ from websockets.http11 import Request, Response
 from simpredict import SimPredict
 from simprops import SimProps
 from simvotes import SimVotes, name_of
+from simwallet import SimWallet
 from visits import Visits
 
 log = logging.getLogger("tau-relay")
@@ -321,6 +322,7 @@ class Relay:
         self.upstream = Upstream(upstream_url)
         self.simvotes = SimVotes()   # visitor votes for the simulation (simvotes.py)
         self.simprops = SimProps(self.simvotes)   # rule changes visitors propose to the simulation (simprops.py)
+        self.simwallet = SimWallet()   # the testnet wallet's transactions in simulation mode (simwallet.py)
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
@@ -1551,6 +1553,10 @@ class Relay:
                                ("X-Robots-Tag", "noindex")])
             return Response(code.value, code.phrase, headers, seen[2])
         sim = self.simvotes.route(path, query, ip)
+        if sim is not None and path == "/sim/votes":
+            sim[1]["wallet"] = self.simwallet.count()   # pages fetch /sim/wallet only when this grows
+        if sim is None:
+            sim = self.simwallet.route(path, query, ip)
         if sim is None:
             prop = self.simprops.route(path, query, ip)
             sim = None if prop is None else (200, prop)
