@@ -324,6 +324,8 @@ chain, plans are IDNI's, testnet AGRS have no value, nothing is offered.
 
 - `docker compose run --rm alerts python alerts.py --gazette-now` writes an edition of
   the last 7 days now (it keeps the number if one is already out today).
+- `docker compose run --rm alerts python alerts.py --gazette-reprint` prints the latest
+  edition again with the current wording: same number, date and week.
 
 **Health alerts**: once a minute the watcher reads `/health-score` and posts to Telegram
 when the testnet goes down (score under 50, the relay says `down`, or the relay does not

@@ -53,6 +53,7 @@ ten minutes, because the relay starts those over at midnight UTC.
   python alerts.py --recap-preview  draw this week's recap and save it, post nothing
   python alerts.py --recap-now      draw the recap and post it to each configured channel
   python alerts.py --gazette-now    write this week's newspaper edition now (same number if one is already out today)
+  python alerts.py --gazette-reprint  print the latest edition again with the current wording (same number, date and week)
   python alerts.py --sim-preview    print today's two simulation posts (the consensus switches), post nothing
   python alerts.py --today-preview  print the "Testnet today" summary as it stands now, post nothing
   python alerts.py --site-preview   print the site-update posts waiting in assets/updates.json, post nothing
@@ -1830,11 +1831,16 @@ def site_preview() -> int:
     return 0
 
 
-def gazette_cli() -> int:
-    """Write this week's newspaper edition now, from the 7 days up to now."""
+def gazette_cli(reprint: bool = False) -> int:
+    """Write this week's newspaper edition now, from the 7 days up to now. reprint: set the latest edition again, same
+    number, date and week, e.g. after its wording changed."""
     w = Watcher()
     try:
-        e = w.make_gazette(w.recap_numbers(time.time()), time.time())
+        end = time.time()
+        if reprint:
+            with open(os.path.join(PUBLIC_DIR, "recap", "gazette", "latest.json")) as f:
+                end = float(json.load(f)["end"])
+        e = w.make_gazette(w.recap_numbers(end), end)
     except Exception as exc:
         print(f"gazette: FAILED {exc}")
         return 1
@@ -1873,8 +1879,8 @@ if __name__ == "__main__":
         sys.exit(asyncio.run(preview_latest()))
     if "--recap-now" in sys.argv or "--recap-preview" in sys.argv:
         sys.exit(recap_cli("--recap-now" in sys.argv))
-    if "--gazette-now" in sys.argv:
-        sys.exit(gazette_cli())
+    if "--gazette-now" in sys.argv or "--gazette-reprint" in sys.argv:
+        sys.exit(gazette_cli("--gazette-reprint" in sys.argv))
     if "--sim-preview" in sys.argv:
         sys.exit(sim_preview())
     if "--today-preview" in sys.argv:

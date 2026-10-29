@@ -169,6 +169,14 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
 .stop b { font: 900 1.05em var(--head); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
 /* in the pocket edition a photograph never takes more than about a third of the page */
 .pg.pocket .photo img { max-height: calc(var(--H, 600px) * .34); object-fit: cover; }
+/* the weekly front: the top row takes the page and the photograph takes what the words leave, so no column ends in a gap */
+.pg.week:not(.pocket) .grid { grid-template-rows: 1fr auto; }
+.pg.week:not(.pocket) .wlead, .pg.week:not(.pocket) .wside { display: flex; flex-direction: column; }
+.pg.week:not(.pocket) .wphoto { flex: 1 1 0; min-height: 6em; display: flex; flex-direction: column; }
+.pg.week:not(.pocket) .wphoto img { flex: 1 1 0; min-height: 0; height: 0; object-fit: cover; object-position: 50% 45%; }
+.pg.week:not(.pocket) .wside .ad { margin-top: auto; }
+.pg.week:not(.pocket) .wfoot h3 { column-span: all; }
+.pg.week .banner, .pg.week h2 { text-wrap: balance; }
 .blank .pg { justify-content: center; align-items: center; }
 .blank .ghost { opacity: .12; font: 400 4em var(--black); transform: scaleX(-1); }
 
@@ -266,7 +274,7 @@ html.i18n-zh .title { font-family: "Noto Serif SC", "Songti SC", serif; font-wei
 const EN = {
   name: "The Daily Consensus",
   motto: "“Where the rules change by agreement”",
-  ui: { rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
+  ui: { rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
   date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
   pages: [
@@ -686,30 +694,35 @@ const EN = {
   })();
   function weekPage(e) {
     const figs = (e.figures || []).map(f => `<tr><td>${txt(f.label)}</td><td>${txt(f.value)}</td></tr>`).join("");
-    const stories = (e.stories || []).map((st, i) => `<div class="u s3${i % 2 ? " rl" : ""} rt"><h3>${txt(st.h)}</h3>${(st.body || []).map((b, j) => `<p${j ? "" : ' class="ni"'}>${txt(b)}</p>`).join("")}</div>`).join("");
+    const story = st => st ? `<h3>${txt(st.h)}</h3>${(st.body || []).map((b, j) => `<p${j ? "" : ' class="ni"'}>${txt(b)}</p>`).join("")}` : "";
+    const [up, hall] = e.stories || [];
     return `<div class="pg front week">
   <div class="mast">
-    <div class="ear"><b>${UI.weekEar}</b>${txt(e.period)}</div>
+    <div class="ear"><b>${UI.weather}</b>${e.weather ? txt(e.weather) : txt(e.period)}</div>
     <div><div class="title">{{NAME}}</div><div class="motto">{{MOTTO}}</div></div>
     <div class="ear r"><b>${UI.free}</b>${UI.freeP}</div>
   </div>
-  <div class="dateline"><span>${UI.weekNo(e.no)}</span><span>${txt(e.printed)}</span><span>tauhud.com</span></div>
+  <div class="dateline"><span>${UI.weekNo(e.no)}</span><span>${txt(e.printed)}</span><span>${UI.weekOf} ${txt(e.period)}</span></div>
   <div class="banner">${txt(e.banner)}</div>
   <div class="grid">
-    <div class="u s4">
+    <div class="u s4 wlead">
       <div class="kick">${txt(e.lead.kick)}</div>
       <h2>${txt(e.lead.h)}</h2>
       <div class="deck">${txt(e.lead.deck)}</div>
+      <figure class="photo wphoto"><img src="img/hud-wide.jpg" width="1100" height="450" alt="${UI.weekAlt}"><figcaption>${e.caption ? txt(e.caption) : UI.weekCap}</figcaption></figure>
       <div class="c2">${(e.lead.body || []).map((b, j) => `<p${j ? "" : ' class="dc ni"'}>${txt(b)}</p>`).join("")}</div>
     </div>
-    <div class="u s2 rl">
+    <div class="u s2 rl wside">
       <h3>${UI.figures}</h3>
       <table class="figs">${figs}</table>
+      <hr class="rule2">
+      ${story(up)}
       <div class="ad inv"><div class="t">${UI.founding}</div><p>${UI.foundingP}</p></div>
     </div>
-    ${stories}
-    <div class="u full"><p class="wknote">${UI.weekNote}</p></div>
+    <div class="u s4 rt wfoot"><div class="c2">${story(hall)}</div></div>
+    <div class="u s2 rl rt wfoot"><div class="box notice"><p>${UI.weekNote}</p></div></div>
   </div>
+  <div class="stop"><b>${UI.stop}</b><span id="wire2">${WIRE}</span></div>
 </div>`;
   }
   const num = i => i - OFF + 1;                                  /* the printed page number of page i (the weekly front has none) */
@@ -1071,7 +1084,7 @@ const EN = {
       WIRE = UI.wire(h.toLocaleString("en-US"), AGE);
     } catch (e) { WIRE = UI.wireOff; }
     clearTimeout(to);
-    document.querySelectorAll("#wire0, #wire1").forEach(el => { el.innerHTML = WIRE; const pg = el.closest(".pg"); if (pg && MODE) fit(pg); });
+    document.querySelectorAll("#wire0, #wire1, #wire2").forEach(el => { el.innerHTML = WIRE; const pg = el.closest(".pg"); if (pg && MODE) fit(pg); });
     document.querySelectorAll(".pg:not(.week) .dateline span:first-child").forEach(el => el.textContent = el.textContent.replace(/No\. .*$|—$/, HEIGHT != null ? "No. " + HEIGHT.toLocaleString("en-US") : "No. —"));
   }
 
