@@ -57,6 +57,11 @@ for i in range(1, 40):
     out = findings.observe(st, snap(health(sealed=0)), T + 60 * i)
     check(out == [], f"end of an incident from before the first run is quiet ({i})") if out else None
 check(not st["inc"], "the old incident is closed")
+st = findings.fresh_state()
+out = []
+for i in range(0, 40):  # on at the first run, held longer than its 15-minute hold: still not news
+    out += findings.observe(st, snap(health(sealed=9, waiting=20)), T + 60 * i)
+check(out == [] and st["inc"]["ghost"].get("quiet"), "first run: an incident with a hold is not posted when the hold passes")
 
 # 3. a new ghost incident: posted after 15 minutes, once, Telegram only, with IDNI #81; no recovery post
 st = findings.fresh_state()
