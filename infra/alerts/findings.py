@@ -37,6 +37,7 @@ STORM_HOURS = float(os.environ.get("FINDINGS_STORM_HOURS", 6))  # …within this
 CALM = float(os.environ.get("FINDINGS_CALM_SECONDS", 2 * 3600))
 SUMMARY_HOUR = int(os.environ.get("FINDINGS_SUMMARY_HOUR", 21))  # UTC
 STALL_MIN = float(os.environ.get("FINDINGS_STALL_SECONDS", 1200))
+VOTES_BURST = int(os.environ.get("FINDINGS_VOTES_BURST", 5))  # the same proposal this often within an hour
 OUTBOX_MAX_AGE = 2 * 3600
 ISSUE = "https://github.com/IDNI/tau-testnet/issues/"
 FOOT = "🔎 Seen by the Tau HUD read node. We share findings because they help the testnet."
@@ -55,6 +56,8 @@ DETECTORS = {
                "label": "blocks much slower than usual"},
     "drops":  {"hold": 0, "end_hold": 3600, "cooldown": 21600, "x": False, "recovery": False,
                "label": "many transactions dropped"},
+    "votes":  {"hold": 0, "end_hold": 3600, "cooldown": 21600, "x": False, "recovery": False,
+               "label": "the same proposal again and again"},
     "behind": {"hold": 900, "end_hold": 300, "cooldown": 10800, "x": False, "recovery": True,
                "label": "our node behind the network"},
 }
@@ -161,6 +164,21 @@ def conditions(snap: dict, now: float, st: dict) -> dict | None:
         elif hour < 5:
             out["drops"] = False
 
+    gov = snap.get("gov")
+    if gov is not None:
+        groups: dict = {}
+        for p in gov:
+            if isinstance(p.get("ts"), (int, float)) and p["ts"] >= now - 3600:
+                groups.setdefault((p.get("title"), p.get("noop")), []).append(p)
+        big = max(groups.values(), key=len, default=[])
+        if len(big) >= VOTES_BURST:
+            who = [p.get("proposer") for p in big]
+            out["votes"] = {"n": len(big), "title": str(big[0].get("title") or "a rule change"), "noop": bool(big[0].get("noop")),
+                            "accounts": len(set(who)), "top": max(who.count(a) for a in set(who)),
+                            "span": max(p["ts"] for p in big) - min(p["ts"] for p in big)}
+        elif len(big) < 2:
+            out["votes"] = False
+
     status = snap.get("status")
     if status is not None:
         seen = st.get("reorg_seen")
@@ -236,6 +254,24 @@ def start_post(key: str, f: dict, now: float) -> dict:
                 "(refused on re-check, expired or replaced). Maybe someone is testing hard.")
         xb = what
         facts = [f"Usually about {f['usual']:.0f} an hour"]
+    elif key == "votes":
+        n, k, span = f["n"], f["accounts"], fmt_dur(max(60, f["span"]))
+        if f["noop"] and k == 1:
+            head = "🗳 One account repeats the same vote"
+            what = (f"One account proposed the rules in force again {n} times within {span}. Nothing changes; it looks like a "
+                    "script or someone testing the vote flow, not a real rule change.")
+        elif f["noop"]:
+            head = "🗳 Many practice votes at once"
+            what = (f"{n} proposals within {span} restate the rules in force, from {plural(k, 'account')}"
+                    + (f" ({f['top']} from one of them)" if f["top"] * 2 > n else "")
+                    + ". Nothing changes; probably people trying the Vote page" + (" or one of them testing the flow." if f["top"] * 2 > n else "."))
+        else:
+            head = f"🗳 The same rule change proposed {n} times"
+            what = (f"“{f['title']}” was proposed {n} times within {span} by {plural(k, 'account')}. "
+                    "Only one copy can take effect; the rest look like retries or a test.")
+        xb = what
+        facts = []
+        link = (f"{SITE}/proposals/", "All proposals on Tau HUD")
     else:  # behind
         head = "🐌 Our node fell behind the network"
         what = f"Our read node is {plural(f['lag'], 'block')} behind the newest block its peers report, so Tau HUD shows older data for now."

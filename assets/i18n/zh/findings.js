@@ -1,5 +1,16 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "{a} bugs, {b} requests, {c} fix": "{a} 个 bug，{b} 个请求，{c} 个修复",
+  "{a} bugs, {b} requests, {c} fixes": "{a} 个 bug，{b} 个请求，{c} 个修复",
+  "fix(network): re-dial bootstrap peers while the node has no peer": "fix(network)：节点没有对等节点时重新连接引导节点",
+  "Our first code fix sent to IDNI: a node that lost every peer now finds its way back.": "我们发给 IDNI 的第一个代码修复：失去所有对等节点的节点现在能自己重新连上。",
+  "On 29 October IDNI's bootnode refused new peers for about three hours. Nodes that lost it stayed at 0 peers with an old chain even after the bootnode was back, because they dial their bootstrap peers only once, at start.": "10 月 29 日，IDNI 的引导节点约三个小时拒绝新的对等节点。失去它的节点即使在引导节点恢复后，仍停留在 0 个对等节点和旧的链上，因为它们只在启动时连接一次引导节点。",
+  "Every node that loses its last peer would sit still until someone restarts it by hand.": "每个失去最后一个对等节点的节点都会停住，直到有人手动重启它。",
+  "We sent IDNI the fix as a pull request with four tests: while a node has no peer, it dials its bootstrap peers again every minute. The same change runs in our node ({x1}).": "我们以带四个测试的 pull request 把修复发给了 IDNI：节点没有对等节点时，每分钟重新连接一次引导节点。同样的改动正在我们的节点中运行（{x1}）。",
+  "Under review": "审核中",
+  "Merged": "已合并",
+  "Closed": "已关闭",
+  "Pull request open on GitHub": "GitHub 上的 pull request 仍开放",
   ", last activity {x1}": "，最近活动 {x1}",
   ", step by step, so someone else can repeat it.": "，一步一步，让别人也能重复。",
   "2 partly: fix landed, issue still open": "2 个部分修复：修复已合并，issue 仍未关闭",
