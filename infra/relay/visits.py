@@ -246,7 +246,8 @@ class Visits:
                 "days": {k: v for k, v in sorted(self.days.items()) if k >= first}}
 
     def public(self) -> dict:
-        """Per day [visitors, views, stayed, {page: visitors}, {lang: visitors}, {screen: visitors}, {page: time steps}], plus for today and
+        """Per day [visitors, views, stayed, {page: visitors}, {lang: visitors}, {screen: visitors}, {page: time steps},
+        pages opened from our other site], plus for today and
         yesterday [visitors per hour, views per hour] (the 24-hour chart on /meta/); the same again per other site under "sites";
         cached for a minute."""
         now = self.clock()
@@ -255,14 +256,17 @@ class Visits:
         self._roll()
         recent = (_day_str(self.day - 1), _day_str(self.day))
 
-        def totals(days: dict) -> dict:
+        def totals(days: dict, site: str = "") -> dict:
+            # the last field: pages opened from a link on our other site (agorzilla.com <-> tauhud.com)
+            other = {h[4:] if h.startswith("www.") else h for s_, hs in OWN_HOSTS.items() if s_ != site for h in hs}
             return {"days": {k: [d.get("visitors", 0), sum(d.get("views", {}).values()), sum(d.get("engaged", {}).values()),
-                                 d.get("uniques", {}), d.get("lang", {}), d.get("screen", {}), d.get("time", {})]
+                                 d.get("uniques", {}), d.get("lang", {}), d.get("screen", {}), d.get("time", {}),
+                                 sum(n for h, n in d.get("refs", {}).items() if h in other)]
                              for k, d in sorted(days.items())},
                     "hours": {k: [days[k].get("hvis", [0] * 24), days[k].get("hours", [0] * 24)] for k in recent if k in days}}
         out = {"now": round(now), "today": _day_str(self.day), "engaged_seconds": ENGAGED_SECONDS, "time_steps": TIME_STEPS,
                **totals(self.days),
-               "sites": {s: totals({k: d["sites"][s] for k, d in self.days.items() if s in d.get("sites", {})}) for s in SITES}}
+               "sites": {s: totals({k: d["sites"][s] for k, d in self.days.items() if s in d.get("sites", {})}, s) for s in SITES}}
         self._pub = (now, out)
         return out
 

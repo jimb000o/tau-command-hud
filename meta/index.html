@@ -124,10 +124,14 @@ td a { text-decoration: none; } td a:hover { text-decoration: underline; }
 .splitkey { color: var(--dim); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .splitkey b { color: var(--text); font-weight: 600; }
 .row2 { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); min-width: 0; }
-@media (min-width: 900px) { .row2 { grid-template-columns: minmax(0, 1fr) 300px; } }
+@media (min-width: 900px) { .row2 { grid-template-columns: minmax(0, 1fr) 440px; } }
 html.fit .row2 { gap: 12px; min-height: 0; }
 .who { overflow: auto; }
 .who .sp { margin-top: 10px; } .who .sp:first-child { margin-top: 0; }
+.who .sp .note { color: var(--dim); font-size: 12px; margin-top: 2px; }
+.who .sp .note b { color: var(--text); font-weight: 600; }
+.split.tx i:nth-child(1) { background: var(--ok); } .split.tx i:nth-child(2) { background: #fff; } .split.tx i:nth-child(3) { background: rgba(255,255,255,.28); }
+.splitkey i.k { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 0; }
 .who .sp > span { color: var(--dim); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-family: var(--display); font-weight: 600; }
 .tablewrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
 .empty { color: var(--dim); padding: 8px 0; }
@@ -194,8 +198,10 @@ html.fit.wide .col.side { display: contents; }
           <div class="chart small" id="cGrowth"></div>
         </section>
         <section class="panel who">
-          <h2>Who visits <span class="aside" id="wRange"></span></h2>
+          <h2>Where it comes from <span class="aside" id="wRange"></span></h2>
           <div id="splits"></div>
+          <div id="txsplit"></div>
+          <div id="cross"></div>
         </section>
       </div>
     </div>
@@ -235,6 +241,7 @@ const HOUR = 3600000;
 let raw = null, data = null, range = 30, sel = null, failed = false, kind = "line";
 // Agorzilla (agorzilla.com) is counted the same way but apart; the relay lists it under "sites"
 const SITES = { "": "How many people look at Tau through this site.", agorzilla: "How many people visit Agorzilla, our second site." };
+let txs = null;   // relay /api/v1/sources
 let site = new URLSearchParams(location.search).get("site") || "";
 if (!(site in SITES)) site = "";
 const pickSite = () => {
@@ -504,6 +511,28 @@ function drawPages() {
   rows($("pages"), Object.entries(u).sort((a, b) => b[1] - a[1]).slice(0, 14), vis, true, time);
   $("pRange").textContent = $("wRange").textContent = range === 1 ? T("today") : range ? T(range === 365 ? "last year" : `last ${range} days`) : T("since counting began");
   $("splits").innerHTML = (vis ? "" : `<p class="empty">${esc(T("The language split appears with the first visitors."))}</p>`) + split("Language", lang, { en: "English", zh: "Chinese" });
+  // pages opened from a link on our other site
+  const cross = days.reduce((a, [, d]) => a + (d[7] || 0), 0);
+  $("cross").innerHTML = `<div class="sp"><span>${esc(T("Between our two sites"))}</span><div class="note"><b>${fmt(cross)}</b> ${esc(T(site ? "pages opened from a link on tauhud.com" : "pages opened from a link on agorzilla.com"))}</div></div>`;
+  drawTx();
+}
+
+/* where the testnet's transactions come from (relay /api/v1/sources): the whole testnet, whichever site is chosen */
+const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote"], ["other", "elsewhere", "everything else: other wallets, scripts and test tools. On this testnet that is mostly a handful of very busy test wallets, so a small share can still be many people."]];
+function drawTx() {
+  const el = $("txsplit");
+  if (!txs) { el.innerHTML = ""; return; }
+  const keys = range === 1 ? [data.today] : rangeDays().map(([k]) => k);
+  const tot = { agorzilla: [0, 0], tauhud: [0, 0], other: [0, 0] };
+  let n = 0;
+  for (const k of keys) { const d = txs.days[k]; if (!d) continue; n++; for (const g in tot) { tot[g][0] += (d[g] || [0, 0])[0]; tot[g][1] += (d[g] || [0, 0])[1]; } }
+  const all = tot.agorzilla[0] + tot.tauhud[0] + tot.other[0];
+  const wallets = g => n ? Math.round(tot[g][1] / n) : 0;
+  const head = `<span data-tip="${esc(T("Transactions in the testnet's blocks, sorted by where they came from. Counted by the Tau HUD relay from the blocks it keeps; one person can hold several wallets."))}">${esc(T("Testnet transactions"))}</span>`;
+  if (!all) { el.innerHTML = `<div class="sp">${head}<div class="note">${esc(T("No transactions in this range yet."))}</div></div>`; return; }
+  el.innerHTML = `<div class="sp">${head}<div class="split tx">${TX_GROUPS.map(([g]) => `<i style="width:${(100 * tot[g][0] / all).toFixed(1)}%"></i>`).join("")}</div>` +
+    `<div class="splitkey">${TX_GROUPS.map(([g, name, what], i) => `<span data-tip="${esc(`${T(what)}\n${fmt(tot[g][0])} ${T("transactions")} · ${fmt(wallets(g))} ${T(n === 1 ? "wallets" : "wallets a day on average")}`)}"><i class="k" style="background:${["var(--ok)", "#fff", "rgba(255,255,255,.28)"][i]}"></i>${esc(T(name))} <b>${pct(tot[g][0], all)}</b></span>`).join("")}</div>` +
+    `<div class="note"><b>${fmt(all)}</b> ${esc(T("transactions"))} · ${esc(T("counted by wallet, not by person"))}</div></div>`;
 }
 
 function kpis() {
@@ -531,11 +560,13 @@ function render() {
 }
 
 async function load() {
-  if (SAMPLE) { raw = sample(); raw.sites = { agorzilla: { days: Object.fromEntries(Object.entries(raw.days).slice(-20).map(([k, d]) => [k, [Math.round(d[0] / 4), Math.round(d[1] / 5), Math.round(d[2] / 4), { agorzilla: Math.round(d[0] / 4) }, { en: Math.round(d[0] / 4) }, {}, {}]])), hours: {} } }; pickSite(); render(); return; }
+  if (SAMPLE) { raw = sample(); raw.sites = { agorzilla: { days: Object.fromEntries(Object.entries(raw.days).slice(-20).map(([k, d]) => [k, [Math.round(d[0] / 4), Math.round(d[1] / 5), Math.round(d[2] / 4), { agorzilla: Math.round(d[0] / 4) }, { en: Math.round(d[0] / 4) }, {}, {}]])), hours: {} } }; txs = { days: Object.fromEntries(Object.keys(raw.days).map((k, i) => [k, { agorzilla: [i > 120 ? 30 + i % 9 * 4 : 0, i > 120 ? 9 + i % 5 : 0], tauhud: [8 + i % 7, 3 + i % 3], other: [20 + i % 11, 4] }])) };
+    pickSite(); render(); return; }
   try {
     const r = await fetch(`${RELAY}/visits/public`, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
     raw = await r.json(); failed = false; pickSite();
+    try { const s = await fetch(`${RELAY}/api/v1/sources`, { cache: "no-store" }); if (s.ok) txs = await s.json(); } catch (e) {}
     // a short history fills the chart better as All (at least a week) than as an empty 30 days
     if (!load.done) { load.done = true; const n = Object.keys(data.days || {}).length; if (range > 1 && n < range) { range = 0; } }
   } catch (e) { failed = true; if (!data) data = null; }
