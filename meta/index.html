@@ -518,7 +518,7 @@ function drawPages() {
 }
 
 /* where the testnet's transactions come from (relay /api/v1/sources): the whole testnet, whichever site is chosen */
-const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote"], ["other", "elsewhere", "everything else: other wallets, scripts and tools"]];
+const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote"], ["other", "elsewhere", "everything else: other wallets, scripts and test tools. On this testnet that is mostly a handful of very busy test wallets, so a small share can still be many people."]];
 function drawTx() {
   const el = $("txsplit");
   if (!txs) { el.innerHTML = ""; return; }
