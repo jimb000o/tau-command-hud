@@ -1134,6 +1134,23 @@
   "html": "Wallet in the simulation: what you send now lands on the shared simulated chain, the one every visitor sees. Pay another visitor by their address and they see it arrive in their wallet under their visitor name; offer them your rule and they can check and accept it; ask them to co-sign and they sign from their own wallet. Your payments show in everyone’s Explorer and Accounts. A vote from the wallet also counts as your visitor vote. Nothing reaches the real testnet, and the simulated chain starts over at 00:00 UTC."
  },
  {
+  "tag": "Alerts",
+  "on": "2026-10-29",
+  "html": "Findings from the chain: the Telegram channel now posts by itself when our read node sees something unusual on the real testnet: no new blocks, the IDNI bootnode gone, ghost transactions (IDNI #81), blocks replaced, a slow pace, many dropped transactions, or our node falling behind (IDNI #78). One post when it starts, one when it is over, never repeated; when it gets wild, the bot collects and posts one summary afterwards. Real outages also go to X, at most three findings a day."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-29",
+  "html": "Newspaper: The Daily Consensus now lies on a marble café table by the window, on a 1920s city street at eight in the morning. Outside, streetcars come and go (the one coming in rings its bell), people walk to work, a newsboy holds up the morning edition and steam rises from a grate; the coffee steams. Everything is drawn in your browser, without photographs. New button Café: off by default, one click for the café's sounds (voices, cups and spoons, the street, the streetcar), two for a gramophone playing a slow swing blues, all made in the browser, no recordings.",
+  "major": {
+   "id": "gazette-cafe",
+   "title": "New: read the paper in a 1920s café",
+   "text": "The Daily Consensus lies on a café table by the window; outside, streetcars, passers-by and a newsboy on a city morning. Press Café for its sounds, or a gramophone. All drawn and played in your browser.",
+   "link": "/gazette/",
+   "image": "/assets/shots/gazette-cafe.png"
+  }
+ },
+ {
   "tag": "Wallet",
   "on": "2026-10-29",
   "html": "Wallet, easier to use: a grey button now says on the screen why it is grey. When both of the testnet’s rule places are taken, the page names who holds them and takes the rule you built into the simulation with one click. Every address now carries three check words, drawn from it, to compare out loud with its owner; a lookalike gets other words, and the lookalike warning now also catches addresses that copy only three characters at each end. Typing a limit ticks its rule block. Activity fits the panel: newest first, the rest in Accounts, and the lookalike lesson can be put away. On a phone the first button is on the first screen. In the simulation the signing card is amber, so it never passes for the real testnet. Testnet only, test AGRS have no value."
