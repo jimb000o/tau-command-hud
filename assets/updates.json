@@ -1159,5 +1159,10 @@
   "tag": "Newspaper",
   "on": "2026-10-29",
   "html": "Newspaper: the café scene grows. When the paper opens, a Market Street car of the twenties and thirties (route 21, clerestory roof, fender) pulls away from right beside the window and runs down the street into the morning haze, drawn in depth. The Café button now goes off, quiet, lively: quiet is soft rather than silent, the hum is gone and the gramophone plays a gentler blues with clarinet, piano, bass and brushes. Through the glass you hear Market Street at eight: the streetcar's foot gong, hooves and a cart, a Model T and its klaxon, footsteps, the newsboy, gulls and a foghorn from the bay. Click the coffee, the sugar or yesterday's papers on the table. All sound stays off until you turn it on."
+ },
+ {
+  "tag": "Wallet",
+  "on": "2026-10-29",
+  "html": "Wallet, round of finishing touches: the first payment to an address outside your address book now offers the way back, one click away. Ask to be paid gives you a link and a QR code with your address and an amount; whoever opens it finds the payment filled in and is asked to check your three words. Someone new who pays you, offers a rule or asks for a co-signature can go into your address book with one click. Laptops around 1366 pixels see the wallet at full size instead of shrunken, phone taps are larger, and the keyboard works everywhere: Enter picks a proposal, arrow keys move between tabs, and the focus is always visible. Activity names the proposal you voted on and marks a co-signed payment as paid. Testnet only, test AGRS have no value."
  }
 ]
