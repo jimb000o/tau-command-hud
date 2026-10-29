@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.51"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.52"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -41,10 +41,10 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     { k: "explore", t: "Explore", items: ["explorer", "stats", "history", "account", "nodes", "proposals"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "meta", "developers", "press", "tau", "about", "legal"], tab: "▸" },
+    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "developers", "press", "tau", "about"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote"], id: "btnPlayground", tab: "◇", short: "Play" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", meta: "learn", legal: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
@@ -664,7 +664,18 @@
     document.addEventListener("visibilitychange", leave);
     addEventListener("pagehide", () => { if (!timed && shown > 0) { timed = true; send(`&t=${shown}`); } });
   }
-  const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); countVisit(); };
+  /* "In numbers" and "Privacy" live in the footer line of every page, not in the Learn menu (Kilian, 29 Oct); a page without a footer gets them as a quiet corner link */
+  function mountFootLinks() {
+    if (!document.querySelector("nav.tnav") || document.querySelector(".tn-foot")) return;
+    const f = [...document.querySelectorAll("footer")].find(x => !x.closest("nav, .tn-modal"));
+    const here = location.pathname.slice(ROOT.length).replace(/index\.html$/, "").replace(/\/+$/, "");
+    const links = [["In numbers", "meta"], ["Privacy", "legal"]].filter(([, h]) => h !== here && !(f && f.querySelector(`a[href$="${h}/"]`)));
+    if (!links.length) return;
+    const as = links.map(([t, h]) => { const a = el("a", "tn-foot", t); a.href = ROOT + h + "/"; return a; });
+    if (f) { const host = f.querySelector("p:last-of-type") || f; as.forEach(a => host.append(" · ", a)); return; }
+    const box = el("div", "tn-footc"); as.forEach((a, k) => { if (k) box.append(" · "); box.append(a); }); document.body.append(box);
+  }
+  const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); mountFootLinks(); countVisit(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.TauNav = { LATEST, TELEGRAM, markSeen, closeAll, chain: CHAIN, sim: SIM };
 })();
