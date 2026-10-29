@@ -4,7 +4,7 @@ Lets tauhud.com show the real Tau testnet instead of the simulation:
 
 ```
 browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-node ──p2p──▶ testnet
-          node.tauhud.com         read-only    65433, internal   4001
+          node.tauhud.com   reads + signed tx  65433, internal   4001
 ```
 
 - **tau-node**: an [IDNI/tau-testnet](https://github.com/IDNI/tau-testnet) read node
@@ -55,11 +55,12 @@ Connect to `wss://node.tauhud.com`, send a command as text, get the node's JSON 
 | `getgovernance` | cache, refreshed every 15 s | |
 | `gettaustate` | cache, refreshed every 30 s | `{"rules_state": "…"}` |
 | `presence` | relay | `{"online": n}`: pages connected right now |
-| `getbalance <addr>`, `getsequence <addr>`, `getaccountstate <addr>`, `getruleoffers <addr> [in\|out\|all]`, `gettxstatus <hash>` | node, cached 10 s | hex arguments only; global cap 2/s |
+| `getbalance <addr>`, `getsequence <addr>`, `getaccountstate <addr>`, `getruleoffers <addr> [in\|out\|all]`, `getapprovalrequests <addr> [in\|out\|all]`, `getretractables <addr> [in\|out\|all]`, `getruleoffer <offer id>`, `gettxstatus <hash>` | node, cached 10 s | hex arguments only; global cap 2/s |
+| `sendtx <json>`, `checktx <json>` | node, never cached | the wallet's write door (tauhud.com/wallet/): a transaction the visitor's browser already signed, as one JSON object of at most 8 KB with `tx_type` in `user_tx`, `consensus_rule_vote`, `rule_offer`, `rule_offer_accept`, `rule_offer_reject`, `approval_request`, `transfer_vote`, `retractable_transfer`, `retract_transfer`, a 96-hex `sender_pubkey` and a 192-hex `signature`; `checktx` is the node's dry run (nothing is sent); both share 12/min per address (burst 6) and 60/min for everyone; content is never logged |
 
 | `report key=<32 hex> name=<name> height=<n> head=<64 hex> [tip=<n>\|none] [kit=<v>] [ref=<commit>]` | relay | community node heartbeat from `kit/heartbeat.py`, see below |
 
-Anything else (`sendtx`, `createblock`, `getallaccounts`, `history`, …) gets
+Anything else (`createblock`, a `consensus_rule_update` proposal, `getallaccounts`, `history`, …) gets
 `{"status":"error","error":{"code":"FORBIDDEN"}}` and never reaches the node.
 
 Pushed without asking:

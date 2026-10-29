@@ -212,6 +212,8 @@ TauI18n.add({ strings: {
   "Uptime, outages, sync gaps and restarts of the community node": "社区节点的在线率、中断、同步缺口和重启",
   "validator": "验证者",
   "Vote for real": "真实投票",
+  "Wallet": "钱包",
+  "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt": "一个带有自己规则的测试网账户：转账、撤回、共同签名、投票、结成盟约",
   "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat, play six short missions on a practice chain, or vote on the real testnet yourself.": "编写你自己的转账规则并用测试网自己的检查来运行它，坐上模拟的验证者席位，在练习链上玩六个简短任务，或亲自在真实测试网上投票。",
   "Vote on the real testnet yourself: node, key, ready commands, practised first": "亲自在真实测试网上投票：节点、密钥、现成命令，先练习",
   "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat, or vote on the real testnet yourself.": "编写你自己的转账规则并用测试网自己的检查来运行它，坐上模拟的验证者席位，或亲自在真实测试网上投票。",

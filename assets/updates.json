@@ -1098,5 +1098,17 @@
   "tag": "Findings",
   "on": "2026-10-29",
   "html": "Findings: corrected. IDNI has no official bug bounty program right now; it now and then gives ad hoc community rewards for useful findings and effort. The Findings page and its guided tour now say so. We report bugs because they help the testnet, and any reward is IDNI’s own call."
+ },
+ {
+  "tag": "Wallet",
+  "on": "2026-10-29",
+  "html": "New page: Wallet (Playground → Wallet). A Tau Testnet Alpha account in your browser, built around what makes Tau different: an account carries rules, not only a balance. Make a key in one click (it stays in your browser), send test AGRS, or send with a way back: the payment waits until a block you choose, and until then you can take it back. Give your account a rule, for example payments above 1,000 need a friend’s co-signature; the chain checks it on every payment. Vote yes on open rule changes, free. And form a Pakt: a group whose members each accept the same rule for their own account, invited by rule offers and agreed in each member’s own wallet. Before you sign, the page shows in large type what goes to whom, which rule applies, the fee and whether there is a way back; the node checks every transaction before it is sent. Testnet only: test AGRS have no value, and the key should never be reused for anything of value. The testnet holds rules for only 2 accounts at a time, so a real Pakt binds you and one member today; the simulation shows the whole idea.",
+  "major": {
+   "id": "wallet",
+   "title": "New: a testnet wallet with its own rules",
+   "text": "On Tau an account carries rules, not only a balance. Send test AGRS, take a payment back before it is released, ask a friend to co-sign, vote on the chain's rules, and agree on one rule with others in a Pakt. Keys stay in your browser. Testnet only, test AGRS have no value.",
+   "link": "/wallet/",
+   "image": "/assets/shots/wallet.png"
+  }
  }
 ]
