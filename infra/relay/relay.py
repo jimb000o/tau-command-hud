@@ -39,6 +39,7 @@ from simprops import SimProps
 from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from slotlease import SlotLease
+from txsources import TxSources
 from visits import OWN_HOSTS, SITES, Visits
 
 log = logging.getLogger("tau-relay")
@@ -358,6 +359,8 @@ class Relay:
         self.full_limit = CHAIN_BLOCKS          # how many blocks a full fetch asks for
         self.chain_file_ok = True
         self.state = self._load_state()         # restarts, dropped txs, last chain seen
+        self.sources = TxSources()              # which transactions came through this relay, for /api/v1/sources
+        self.sources_text, self.sources_at = None, 0.0
         self.uptime = self._load_uptime()       # hourly availability buckets and outages
         self.uptime_text: str | None = None
         self.uptime_at = 0.0
@@ -908,6 +911,8 @@ class Relay:
             why = "" if ok else str(((res or {}).get("error") or {}).get("message") or "node not reachable")
             if res is not None:
                 self.lease.sent(addr, ok, why)
+            if ok:
+                self.sources.note((res.get("data") or {}).get("tx_hash"))
             log.info("turn over for %s…: removal %s %s", addr[:12], "sent" if ok else "refused", ((res or {}).get("data") or {}).get("tx_hash") or why[:80])
 
     @staticmethod
@@ -1122,13 +1127,13 @@ class Relay:
             return await self.lease_deposit(message[len(parts[0]):].strip(), ip)
 
         if cmd in WALLET_COMMANDS:
-            return await self.wallet(cmd, message[len(parts[0]):].strip(), ip)
+            return await self.wallet(cmd, message[len(parts[0]):].strip(), ip, self.viewers.get(ws, (0, 0, ""))[2] if ws else "")
 
         return envelope_error(cmd, "Not allowed here. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
                               "gettaustate, presence, report, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
                               + " (a transaction signed in your browser)", "FORBIDDEN")
 
-    async def wallet(self, cmd: str, raw: str, ip: str) -> str:
+    async def wallet(self, cmd: str, raw: str, ip: str, site: str = "") -> str:
         """Pass one browser-signed transaction (or its dry run) to the node."""
         tx, why = wallet_tx(raw)
         if tx is None:
@@ -1143,6 +1148,8 @@ class Relay:
         msg = await self.upstream.request(f"{cmd} {tx}")
         if msg is None:
             return envelope_error(cmd, "Node is not reachable right now.", "UPSTREAM_DOWN")
+        if cmd == "sendtx" and msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False:
+            self.sources.note((msg.get("data") or {}).get("tx_hash"), site)   # for "where the transactions come from"
         return json.dumps(msg, separators=(",", ":"))
 
     async def lease_deposit(self, raw: str, ip: str) -> str:
@@ -1687,6 +1694,14 @@ class Relay:
                                ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers,
                             json.dumps(self.summary(), separators=(",", ":")).encode())
+        if path == "/api/v1/sources":
+            if self.sources_text is None or time.monotonic() - self.sources_at >= 60:
+                self.sources_text = json.dumps(self.sources.by_day(self.ordered_blocks()), separators=(",", ":"))
+                self.sources_at = time.monotonic()
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.sources_text.encode())
         api_badge = API_BADGE_PATH.match(path)
         if api_badge:
             headers = Headers([("Content-Type", "image/svg+xml; charset=utf-8"),

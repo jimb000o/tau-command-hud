@@ -8,7 +8,7 @@ import sys
 import tempfile
 
 TMP = tempfile.mkdtemp()
-os.environ.update(UPTIME_PATH=os.path.join(TMP, "u.json"), EVENTS_PATH=os.path.join(TMP, "e.json"),
+os.environ.update(UPTIME_PATH=os.path.join(TMP, "u.json"), EVENTS_PATH=os.path.join(TMP, "e.json"), SENT_PATH=os.path.join(TMP, "s.json"),
                   CHAIN_PATH=os.path.join(TMP, "c.jsonl"), BOARD_PATH=os.path.join(TMP, "b.json"), API_CACHE_SECONDS="0")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import relay  # noqa: E402
