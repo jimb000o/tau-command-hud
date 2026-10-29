@@ -107,7 +107,9 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
 .kick { font: 700 .72em/1.2 var(--body); letter-spacing: .22em; text-transform: uppercase; text-align: center; margin: .1em 0 .15em; }
 .deck { font: italic 400 1.02em/1.25 var(--head); text-align: center; margin: 0 0 .4em; padding-bottom: .35em; border-bottom: 1px solid rgba(27,24,19,.5); }
 .by { font: 700 .7em/1.2 var(--body); letter-spacing: .14em; text-transform: uppercase; text-align: center; margin: 0 0 .45em; }
-.dc::first-letter { float: left; font: 900 3.25em/.8 var(--head); padding: .06em .08em 0 0; }
+/* a true three-line drop cap: its top on the first line's capitals, its foot on the third line's baseline */
+.dc::first-letter { float: left; font: 900 4.62em/.74 var(--head); padding: .04em .07em 0 0; }
+@supports (initial-letter: 3) { .dc::first-letter { float: none; font: 900 1em var(--head); padding: 0; margin-right: .1em; initial-letter: 3; } }
 .q { font: italic 400 1.12em/1.3 var(--head); margin: .35em 0 .5em; padding: .35em 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); text-align: center; break-inside: avoid; }
 .q small { display: block; font: 700 .62em/1.3 var(--body); letter-spacing: .14em; text-transform: uppercase; margin-top: .3em; font-style: normal; }
 .box { border: 1.5px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 2px; padding: .55em .7em .45em; margin: .35em .1em .55em; break-inside: avoid; }
@@ -166,6 +168,7 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
 .extra { display: inline-block; font: 900 .7em/1 var(--head); letter-spacing: .3em; border: 1.5px solid var(--ink); padding: .2em .5em .15em .8em; margin-bottom: .2em; }
 .center { text-align: center; }
 .stop { border-top: 3px double var(--ink); margin-top: .4em; padding-top: .3em; display: flex; gap: .6em; align-items: baseline; font: .82em/1.3 var(--wire); }
+.faith { margin-top: .3em; text-align: center; hyphens: none; font: italic .74em/1.3 var(--body); opacity: .8; }
 .stop b { font: 900 1.05em var(--head); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
 /* in the pocket edition a photograph never takes more than about a third of the page */
 .pg.pocket .photo img { max-height: calc(var(--H, 600px) * .34); object-fit: cover; }
@@ -177,7 +180,9 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
 .pg.week:not(.pocket) .wphoto { flex: 1 1 0; max-height: 20em; }
 .pg.week:not(.pocket) .wside .ad { margin-top: auto; }
 .pg.week:not(.pocket) .wfoot h3 { column-span: all; }
-.pg.week .banner, .pg.week h2 { text-wrap: balance; }
+/* headlines break into even lines, never one word alone on the last; body paragraphs avoid a lone last word too */
+.banner, .wline, h2, h3, .kick, .deck, .ad .t, .box b { text-wrap: balance; }
+.pg p { text-wrap: pretty; }
 /* the big-news front: a banner of few words in the largest type the width allows, one line under it, then the story */
 .pg.week .banner.big { font-size: 4.6em; line-height: .92; letter-spacing: -.01em; margin: .05em 0 .12em; }
 .pg.week .wline { font: italic 400 1.18em/1.25 var(--head); text-align: center; margin: 0 auto .45em; max-width: 42em; padding-bottom: .4em; border-bottom: 3px double var(--ink); }
@@ -280,7 +285,7 @@ html.i18n-zh .title { font-family: "Noto Serif SC", "Songti SC", serif; font-wei
 const EN = {
   name: "The Daily Consensus",
   motto: "“Where the rules change by agreement”",
-  ui: { rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
+  ui: { rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", faith: "From the composing room: this paper is set by learning machines, which guess well and now and then guess wrong. Tau is built the other way: a logic machine that checks every rule before it applies. Read us in good faith; for proof, consult the chain.", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
   date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
   pages: [
@@ -327,6 +332,7 @@ const EN = {
     </div>
   </div>
   <div class="stop"><b>Stop press</b><span id="wire0">{{WIRE}}</span></div>
+  <div class="faith">{{FAITH}}</div>
 </div>`,
 /* ---------------- 2 ORIGINS ---------------- */
 `<div class="pg">
@@ -660,7 +666,7 @@ const EN = {
     </div>
     <div class="u s2 rl rt">
       <div class="ad"><div class="t">Tau HUD</div><p>Twelve instruments for watching a chain that changes its own rules. Free of charge. Open source.</p><div class="fine">Kept running by time, tools and a modest server.</div></div>
-      <div class="box small notice" style="margin-top:.6em"><p class="ni"><b>NOTICE TO READERS.</b> {{NAME}} is a friendly, unofficial paper made by Tau HUD, a community project not affiliated with IDNI. It is written to inform and to entertain, not as financial advice, and nothing in it is for sale. Testnet AGRS are for practice and have no value. Where these pages speak of plans, they report what IDNI has said, and plans can change. Facts come from the Tau team’s public videos, posts and papers; quotations from captions are lightly cleaned. Puzzles and the weather are offered in fun.</p></div>
+      <div class="box small notice" style="margin-top:.6em"><p class="ni"><b>NOTICE TO READERS.</b> {{NAME}} is a friendly, unofficial paper made by Tau HUD, a community project not affiliated with IDNI. It is written to inform and to entertain, not as financial advice, and nothing in it is for sale. Testnet AGRS are for practice and have no value. Where these pages speak of plans, they report what IDNI has said, and plans can change. Facts come from the Tau team’s public videos, posts and papers; quotations from captions are lightly cleaned. It is put together in good faith, but it is an experiment and may contain mistakes; where it matters, check the source. Puzzles and the weather are offered in fun.</p></div>
     </div>
   </div>
 </div>`
@@ -682,7 +688,7 @@ const EN = {
   const today = ED.date(new Date());
   let HEIGHT = null, AGE = null, WIRE = UI.wireWait;
   const fill = html => html.replaceAll("{{NAME}}", ED.name).replaceAll("{{MOTTO}}", ED.motto).replaceAll("{{DATE}}", today)
-    .replaceAll("{{HEIGHT}}", HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—").replaceAll("{{WIRE}}", WIRE);
+    .replaceAll("{{HEIGHT}}", HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—").replaceAll("{{WIRE}}", WIRE).replaceAll("{{FAITH}}", UI.faith);
 
   /* ----- the weekly edition: written every Monday by the Tau HUD server (infra/alerts/gazette.py), set as the front page ----- */
   let OFF = 0, WEEK = null;
@@ -728,6 +734,7 @@ const EN = {
     <div class="u s2 rl rt wfoot"><div class="box notice"><p>${UI.weekNote}</p></div></div>
   </div>
   <div class="stop"><b>${UI.stop}</b><span id="wire2">${WIRE}</span></div>
+  <div class="faith">${UI.faith}</div>
 </div>`;
   }
   const num = i => i - OFF + 1;                                  /* the printed page number of page i (the weekly front has none) */
@@ -752,10 +759,12 @@ const EN = {
       const head = front || wk
         ? `<div class="mast" style="grid-template-columns:minmax(0,1fr)"><div><div class="title">${ED.name}</div><div class="motto">${ED.motto}</div></div></div><div class="dateline"><span>${wk ? UI.weekNo(WEEK.no) : "No. " + (HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—")}</span><span>${wk ? txt(WEEK.printed) : today}</span></div>`
         : rh(pi, false);
-      let pg = null, slot = null, first = true;
+      let pg = null, slot = null, first = true, late = null;
       const open = top => {
-        host.innerHTML = `<div class="pg pocket${wk ? " week" : ""}">${top}<div class="grid" style="grid-template-columns:minmax(0,1fr)"><div class="u"></div></div>${front && first ? `<div class="stop"><b>${UI.stop}</b><span id="wire0">${WIRE}</span></div>` : ""}</div>`;
+        host.innerHTML = `<div class="pg pocket${wk ? " week" : ""}">${top}<div class="grid" style="grid-template-columns:minmax(0,1fr)"><div class="u"></div></div>${front && first ? `<div class="stop"><b>${UI.stop}</b><span id="wire0">${WIRE}</span></div>` : ""}${(front || wk) && first ? `<div class="faith">${UI.faith}</div>` : ""}</div>`;
         pg = host.firstElementChild; slot = pg.querySelector(".u"); fitTitle(pg);
+        /* on a short screen the cover has no room for the good-faith line: it closes the story instead */
+        const f = pg.querySelector(".faith"); if (f && over()) late = pg.removeChild(f);
       };
       const over = () => { const g = pg.querySelector(".grid"); return pg.scrollHeight > pg.clientHeight + 1 || g.scrollHeight > g.clientHeight + 1; };
       const close = () => { if (slot.childElementCount || ((front || wk) && first)) out.push({ html: pg.outerHTML, from: pi }); first = false; };
@@ -798,6 +807,7 @@ const EN = {
         };
         kids.forEach(place);
       });
+      if (late) { slot.appendChild(late); if (over()) { slot.removeChild(late); close(); open(rh(pi, true)); slot.appendChild(late); } }
       close();
     });
     host.remove();
@@ -874,8 +884,16 @@ const EN = {
     buildToc();
   }
   /* the biggest type size at which the page still fits; a page never scrolls */
+  const HEADS = ".banner, .wline, h2, h3, .deck, .ad .t", BAL = window.CSS && CSS.supports && CSS.supports("text-wrap", "balance");
+  /* where the browser cannot balance a headline, at least the last two words stay together */
+  function glue(pg) {
+    if (BAL || pg.dataset.glued) return; pg.dataset.glued = "1";
+    pg.querySelectorAll(HEADS).forEach(h => { const w = document.createTreeWalker(h, NodeFilter.SHOW_TEXT); let last = null; while (w.nextNode()) if (/\S\s+\S/.test(w.currentNode.textContent)) last = w.currentNode;
+      if (last) last.textContent = last.textContent.replace(/\s+(\S+\s*)$/, "\u00a0$1"); });
+  }
   function fit(pg) {
     if (!pg.firstElementChild) return;
+    glue(pg);
     /* a page that is not drawn right now (a leaf far from the open pages) measures as nothing: fit it when it comes back */
     if (!pg.clientHeight) { const l = pg.closest(".leaf"); if (l) delete l.dataset.fit; return; }
     const base = MODE.ed === "broad" ? 15 : 15; pg.style.setProperty("--fs", base + "px");

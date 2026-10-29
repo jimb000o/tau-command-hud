@@ -2,7 +2,7 @@
 window.GAZETTE_ZH = {
   name: "共识日报",
   motto: "规则经由共识而改变",
-  ui: { rOut: "显示网站菜单", rIn: "全屏阅读", rFull: "全屏", rLarge: "大字版，一次一篇", rWhole: "整版", hintZoom: "<b>轻触</b>翻页 · <b>双击</b>或双指放大细读", week: "本周", weekNo: n => `周刊 · 第 ${n} 期`, weekEar: "本期所载", weather: "链上天气", weekAlt: "Tau HUD 屏幕的网版照片", weekOf: "本周", weekCap: "<b>本周的核心。</b>Tau HUD 跟踪测试网封存的每一个区块。轨道上的每个点都是一个节点；验证者达成一致时，圆环便合上。", figures: "一周数字", founding: "创刊特稿", foundingP: "Tau 的十二年：从 2014 年的一篇论坛帖子，到一条由用户投票修改规则的链。请翻页。", weekNote: "由非官方社区项目 Tau HUD 读取公开测试网与模拟写成。测试网 AGRS 仅供练习，没有价值。每周一出版新一期；完整的“读者须知”见末版。", free: "免费赠阅", freeP: "由 Tau HUD 印行，非官方社区项目。", coverLine: "Tau 的十二年，以及一条能修改自身规则的链：十版新闻、来信、讣告与谜题。", cont: "续前", stop: "最新电讯", front: "头版", pageN: n => `第 ${n} 版`, pagesN: (a, b) => `第 ${a}–${b} 版`, of: "/ 共", tocN: n => `第 ${n} 版`, back: "‹ 上一页", turn: "翻页 ›", contents: "目录", pocket: "袖珍版", broad: "大报版", sOn: "声音 开", sOff: "声音 关", hint: "<b>点击版面</b>即可翻页 · 方向键亦可", hintTouch: "<b>轻触版面</b>即可翻页 · 也可滑动", wireWait: "正在接通节点电报线", wireOff: "节点电报线暂时无声；完整消息请见 tauhud.com", wire: (h, age) => `截至付印之时，测试网位于区块 <span class="live">#${h}</span>${age != null ? `，最近一个区块在本行排版前 ${age} 秒封存` : ""}。实时动态请见 tauhud.com。` },
+  ui: { rOut: "显示网站菜单", rIn: "全屏阅读", rFull: "全屏", rLarge: "大字版，一次一篇", rWhole: "整版", hintZoom: "<b>轻触</b>翻页 · <b>双击</b>或双指放大细读", week: "本周", weekNo: n => `周刊 · 第 ${n} 期`, weekEar: "本期所载", weather: "链上天气", weekAlt: "Tau HUD 屏幕的网版照片", weekOf: "本周", weekCap: "<b>本周的核心。</b>Tau HUD 跟踪测试网封存的每一个区块。轨道上的每个点都是一个节点；验证者达成一致时，圆环便合上。", figures: "一周数字", founding: "创刊特稿", foundingP: "Tau 的十二年：从 2014 年的一篇论坛帖子，到一条由用户投票修改规则的链。请翻页。", weekNote: "由非官方社区项目 Tau HUD 读取公开测试网与模拟写成。测试网 AGRS 仅供练习，没有价值。每周一出版新一期；完整的“读者须知”见末版。", free: "免费赠阅", freeP: "由 Tau HUD 印行，非官方社区项目。", coverLine: "Tau 的十二年，以及一条能修改自身规则的链：十版新闻、来信、讣告与谜题。", cont: "续前", stop: "最新电讯", faith: "排字房启事：本报由会学习的机器排印，它们大多猜得不错，偶尔也会猜错。Tau 走的是另一条路：一台逻辑机器，每条规则生效之前都要先经检验。请本着诚意读报；要找证据，请查链上。", front: "头版", pageN: n => `第 ${n} 版`, pagesN: (a, b) => `第 ${a}–${b} 版`, of: "/ 共", tocN: n => `第 ${n} 版`, back: "‹ 上一页", turn: "翻页 ›", contents: "目录", pocket: "袖珍版", broad: "大报版", sOn: "声音 开", sOff: "声音 关", hint: "<b>点击版面</b>即可翻页 · 方向键亦可", hintTouch: "<b>轻触版面</b>即可翻页 · 也可滑动", wireWait: "正在接通节点电报线", wireOff: "节点电报线暂时无声；完整消息请见 tauhud.com", wire: (h, age) => `截至付印之时，测试网位于区块 <span class="live">#${h}</span>${age != null ? `，最近一个区块在本行排版前 ${age} 秒封存` : ""}。实时动态请见 tauhud.com。` },
   date: d => d.toLocaleDateString("zh-CN", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["头版：用户改写链的法则", "从 Zennet 出发的漫长道路", "硬分叉是什么", "沉寂四年与一个伟大方程", "一门谈论自身的语言", "工地来电：2025", "用户接过方向盘的一年", "法律如何制定 · 读者来信", "今日测试网 · 分类广告", "游艺 · 剪下收藏"],
   pages: [
@@ -49,6 +49,7 @@ window.GAZETTE_ZH = {
     </div>
   </div>
   <div class="stop"><b>最新电讯</b><span id="wire0">{{WIRE}}</span></div>
+  <div class="faith">{{FAITH}}</div>
 </div>`,
 /* ---------------- 2 起源 ---------------- */
 `<div class="pg">
@@ -382,7 +383,7 @@ window.GAZETTE_ZH = {
     </div>
     <div class="u s2 rl rt">
       <div class="ad"><div class="t">Tau HUD</div><p>十二件仪器，观看一条能修改自身规则的链。免费。开源。</p><div class="fine">靠时间、工具和一台朴素的服务器维持运转。</div></div>
-      <div class="box small notice" style="margin-top:.6em"><p class="ni"><b>读者须知。</b>《{{NAME}}》是社区项目 Tau HUD 制作的一份友好的非官方报纸，与 IDNI 无关。它为传递资讯、带来乐趣而写，不是财务建议，报中也没有任何东西出售。测试网 AGRS 仅供练习，没有价值。文中谈到的计划，转述的是 IDNI 自己说过的话，计划可能改变。事实取自 Tau 团队公开的视频、文章与论文；字幕引文略经整理。谜题与天气仅供一乐。</p></div>
+      <div class="box small notice" style="margin-top:.6em"><p class="ni"><b>读者须知。</b>《{{NAME}}》是社区项目 Tau HUD 制作的一份友好的非官方报纸，与 IDNI 无关。它为传递资讯、带来乐趣而写，不是财务建议，报中也没有任何东西出售。测试网 AGRS 仅供练习，没有价值。文中谈到的计划，转述的是 IDNI 自己说过的话，计划可能改变。事实取自 Tau 团队公开的视频、文章与论文；字幕引文略经整理。本报本着诚意编写，但属实验之作，难免有误；事关紧要之处，请查证原始出处。谜题与天气仅供一乐。</p></div>
     </div>
   </div>
 </div>`
