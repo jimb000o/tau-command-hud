@@ -522,6 +522,8 @@ X_SIM_LINE = "🧪 SIMULATION · not the real testnet"
 X_SIM_FOOT = "🧪 Simulation, not the real testnet"
 X_SITE_NOTE = "✨ Tau HUD website update, not testnet news"
 X_TAG = "#TauNet"
+# Every X post carries these two, once, at the very end after the source line (Kilian, 29 Oct 2026); never more tags.
+X_MUST = ("#TauNet", "$AGRS")
 
 
 def x_len(s: str) -> int:
@@ -542,6 +544,7 @@ def x_post(lines: list[str], link: str | None = None, keep: int = 1, foot: str =
     """Lines as one post of at most 280 (first line the headline): the last line loses sentences, then whole lines go
     (never the first `keep`), then it is cut. `foot` and the hashtag always close it; the link joins them only with
     X_LINKS (it makes a post 13 times dearer)."""
+    tag = " ".join([tag] + [t for t in X_MUST if t not in (tag or "").split()]).strip()
     tail = "\n\n" + " · ".join(x for x in (foot, link if link and X_LINKS else None, tag) if x)
     out = [" ".join(str(x).split()) for x in lines if x and str(x).strip()]
     if not X_LINKS:

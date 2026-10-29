@@ -324,7 +324,7 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
   X: the smaller-updates digests, health alarms, visitor proposals, and the simulation's
   switches unless `X_SIM=true`.
 - Layout: the headline first, the text, then one line saying where it comes from, with
-  `#TauNet`. A picture goes along where one fits (`X_PICTURES`): a rule change's card and the
+  `#TauNet $AGRS` (always both, once, never more tags). A picture goes along where one fits (`X_PICTURES`): a rule change's card and the
   live overview from the share service, a new page's screenshot (`"image": "/assets/shots/<id>.png"` in its
   `major`, required by CI for every new major), else its own preview picture, else the site's; the post stays
   $0.015, and without a picture the text goes alone.
