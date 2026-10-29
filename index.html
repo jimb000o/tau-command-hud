@@ -280,6 +280,7 @@ html.i18n-zh .ga-tx { text-align: left; }
 .about .tgbox li b { color: #fff; font-weight: 600; }
 .about .tgjoin { display: inline-block; font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--ok); color: var(--ok); text-decoration: none; }
 .about .tgjoin:hover { background: var(--ok); color: #000; }
+.about .tgjoins { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
 .close { position: absolute; top: 6px; right: 6px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--deck); color: var(--cyan-hi); cursor: pointer; font: 15px var(--display); }
 .about h3 { margin: 12px 0 4px; font: 600 12px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); }
 .about p { margin: 0 0 8px; font-size: 13px; max-width: 80ch; }
@@ -1169,15 +1170,16 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="unofficial" role="note">Unofficial community project<span>Built by Tau community members. Not affiliated with, endorsed by or maintained by IDNI or the Tau team. Data in simulation mode is generated in your browser and is not the real chain.</span></div>
       <div class="about-cols">
       <section class="tgbox">
-        <h3>Follow the chain on Telegram</h3>
+        <h3>Follow along</h3>
         <ul>
           <li><b>Every rule change as it happens:</b> new proposal, agreement, activation, dropped proposal.</li>
           <li><b>Chain restarts</b> of the testnet, the moment our node sees one.</li>
           <li><b>A weekly recap picture</b> and every HUD update, so you never need to open this page to stay current.</li>
           <li><b>Also on X:</b> real rule changes, new nodes and the Monday recap at <a href="https://x.com/TauHUDcom" target="_blank" rel="noopener">@TauHUDcom</a>.</li>
+          <li><b>Agorzilla on X:</b> the creature the testnet feeds posts each evening's change and every growth stage at <a href="https://x.com/Agorzilla" target="_blank" rel="noopener">@Agorzilla</a>.</li>
           <li><b>Ask the bot:</b> height, proposals, your transaction or address. Write to <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot</a>.</li>
         </ul>
-        <a class="tgjoin" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Join @tauHUDcom ↗</a>
+        <p class="tgjoins"><a class="tgjoin" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Join @tauHUDcom ↗</a> <a class="tgjoin" href="https://x.com/TauHUDcom" target="_blank" rel="noopener">Follow on X ↗</a> <a class="tgjoin" href="https://x.com/Agorzilla" target="_blank" rel="noopener">Agorzilla on X ↗</a></p>
       </section>
       <section>
       <h3>Experimental · no claim of accuracy</h3>
@@ -1738,7 +1740,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=24.1", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=24.2", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);

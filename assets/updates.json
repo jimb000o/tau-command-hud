@@ -1301,5 +1301,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Donations, worded plainly: the About section and the Updates card are now called Donations and say that a donation is a voluntary gift that buys nothing, with no promise about the future of the site. The thank-you posts and the privacy notice say the same."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Follow along, easier to find: every page's footer ends with Follow and the marks for Telegram, X and Agorzilla on X. The Get alerts menu and About also link Agorzilla on X, and About has a button for each channel."
  }
 ]
