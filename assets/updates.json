@@ -1306,5 +1306,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Follow along, easier to find: every page's footer ends with Follow and the marks for Telegram, X and Agorzilla on X. The Get alerts menu and About also link Agorzilla on X, and About has a button for each channel."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Agorzilla on the HUD is alive: he breathes, blinks, looks around and at the Live status, scratches, stretches, yawns in the evening and walks a little to the left where the header has room, never further right than his spot. He also reacts to the network: an ear twitch for a block, a cheer for an agreed rule, a head shake for a refused transfer, a squint when ghosts pile up and worry when no block comes. Never more than one move every 8 seconds; with reduced motion he only blinks."
  }
 ]
