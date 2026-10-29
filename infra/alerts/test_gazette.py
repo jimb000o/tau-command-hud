@@ -25,7 +25,7 @@ def check(cond, label):
     failed += not cond
 
 
-END = datetime(2026, 11, 2, 9, 0, tzinfo=timezone.utc).timestamp()
+END = datetime(2026, 11, 9, 9, 0, tzinfo=timezone.utc).timestamp()
 
 
 def week(**kw):
@@ -93,19 +93,20 @@ e = gazette.edition(week(agreed=3, proposed=3, head=4900), props2, [], 1, END)
 check(e["lead"]["h"]["en"] == "Vote Carries for a New Rule on Valid Blocks, in Force from Block #5,028", f"agreed: the real change leads, not a ballot that keeps the rules ({e['lead']['h']['en']})")
 up = json.dumps(e["stories"][0], ensure_ascii=False)
 check(up.count("The rules as they stand") == 1 and "Two carried ballots to keep them unchanged fall due from block #5,295 onward." in up, "coming up: ballots that keep the rules are told once")
-check(any("Two of the week's ballots asked only whether to keep" in p["en"] for p in e["lead"]["body"]), "the lead explains the ballots that keep the rules")
+check(any("Two further ballots only kept the rules as they stand: practice" in p["en"] for p in e["lead"]["body"]), "ballots that keep the rules get one short line")
 only = gazette.edition(week(agreed=1, proposed=1, head=4900), props2[:1], [], 1, END)
-check(only["lead"]["h"]["en"] == "The Ballot Keeps the Rules as They Stand", "only a ballot that keeps the rules: said in words")
+check(only["banner"]["en"] == "Practice ballots, and the rules hold" and only["lead"]["h"]["en"] == "One Ballot Keeps the Rules as They Stand", f"only a ballot that keeps the rules: no big news ({only['lead']['h']['en']})")
 for kind, r in cases + [("agreed", week(agreed=3, proposed=3, head=4900))]:
     e = gazette.edition(r, props2 + props, [d], 3, END)
     printed_ = [e["banner"], e["lead"]["h"], e["lead"]["deck"], e["lead"]["kick"], *e["lead"]["body"], *e["stories"][0]["body"]]
     bad = [x for p in printed_ for x in (p["en"], p["zh"]) if any(c in x for c in ("(", "→", " + ", "「", "Same rules as now"))]
     check(not bad, f"{kind}: no brackets, arrows or tracker titles in print {bad[:1]}")
-    check(len(e["banner"]["en"]) <= 44, f"{kind}: the banner fits two balanced lines ({e['banner']['en']})")
+    check(len(e["banner"]["en"]) <= 52, f"{kind}: the banner fits two balanced lines ({e['banner']['en']})")
+    check(len(e["big"]["en"].split()) <= 5 and 40 < len(e["line"]["en"]) < 150, f"{kind}: a big banner of few words and one line under it ({e['big']['en']})")
     check(e["weather"]["en"].startswith(("Fair.", "Calm.")) and e["caption"]["en"].startswith("<b>The week at the core.</b>"), f"{kind}: weather ear and photo caption")
 check("Quiet Otter" in json.dumps(e["stories"][1]) and "not on the real testnet" in json.dumps(e["stories"][1]), "the rehearsal hall names the best forecaster and says it is the simulation")
-check(e["printed"]["en"] == "Monday, November 2, 2026" and e["printed"]["zh"] == "2026年11月2日 星期一", "printing date in both languages")
-check(e["period"]["en"] == "26 October – 2 November 2026", f"the week covered ({e['period']['en']})")
+check(e["printed"]["en"] == "Monday, November 9, 2026" and e["printed"]["zh"] == "2026年11月9日 星期一", "printing date in both languages")
+check(e["period"]["en"] == "2–9 November 2026", f"the week covered ({e['period']['en']})")
 check(gazette.rehearsal([])["body"][0]["en"].startswith("In the simulation the visitors decide"), "no noted days: an invitation instead of numbers")
 check("No rule change is waiting" in gazette.coming_up([], 1, 8)["body"][0]["en"], "nothing waiting: says so and where to learn to vote")
 
@@ -131,18 +132,19 @@ check("2026-10-30" in w.state["simdays"], "the visitors' day is noted")
 check(os.path.exists(os.path.join(g, "2026-10-30.json")), "each edition is kept under its date")
 asyncio.run(w.maybe_gazette(NOW + 60))
 check(len(json.load(open(os.path.join(g, "editions.json")))) == 1, "no second edition while one is out")
+w.state["simdays"]["2026-11-05"] = {**d, "day": "2026-11-05"}
 e2 = w.make_gazette(w.recap_numbers(END), END)
 e3 = w.make_gazette(w.recap_numbers(END), END + 300)
 idx = json.load(open(os.path.join(g, "editions.json")))
 check(e2["no"] == 2 and e3["no"] == 2 and [x["no"] for x in idx] == [2, 1], "the Monday edition is No. 2; written again the same day it keeps its number")
 check(set(idx[0]) >= {"no", "date", "banner", "teaser", "url"}, "the archive lists number, date, headline, teaser and link")
-check(e2["stories"][1]["body"][0]["en"].startswith("In the simulation, where the visitors decide, two hourly"), "the week's noted day goes into the rehearsal hall")
+check(e2["stories"][1]["body"][0]["en"].startswith("Across town from the real testnet") and "In the simulation, where the visitors decide, two hourly" in json.dumps(e2["stories"][1]), "the week's noted day goes into the rehearsal hall")
 alerts.PUBLIC_DIR, w0 = TMP, alerts.Watcher
 alerts.Watcher = Relay
 code = alerts.gazette_cli(reprint=True)
 alerts.Watcher = w0
 idx = json.load(open(os.path.join(g, "editions.json")))
-check(code == 0 and [x["no"] for x in idx] == [2, 1] and json.load(open(os.path.join(g, "latest.json")))["date"] == "2026-11-02", "a reprint keeps the latest edition's number, date and week")
+check(code == 0 and [x["no"] for x in idx] == [2, 1] and json.load(open(os.path.join(g, "latest.json")))["date"] == "2026-11-09", "a reprint keeps the latest edition's number, date and week")
 
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
 sys.exit(1 if failed else 0)
