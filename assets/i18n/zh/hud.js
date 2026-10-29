@@ -1775,6 +1775,9 @@ TauI18n.add({ strings: {
   "Node orbit: {n} non-sealing nodes, from the relay’s /community and /peers.": "节点轨道：{n} 个不封装区块的节点，来自中继的 /community 和 /peers。",
   "Node orbit: {n} non-sealing node, from the relay’s /community and /peers.": "节点轨道：{n} 个不封装区块的节点，来自中继的 /community 和 /peers。",
   "Outer rim: the rule book everyone agreed to, version {n}.": "外圈：大家共同同意的规则手册，第 {n} 版。",
+  "Normal: rule book version {n} in force.": "正常：规则手册第 {n} 版生效中。",
+  "Outer rim: what the rules refuse bounces off; it grows with the chain.": "外圈：规则拒绝的会被弹开；它随链一起增强。",
+  "Outer rim: spec revision {n}; every block is judged by it (o6, o7, o9 fee {m} AGRS).": "外圈：规范第 {n} 版；每个区块都按它评判（o6、o7、o9 手续费 {m} AGRS）。",
   "What it refuses bounces off; it grows with every block and agreed change.": "它拒绝的会被弹开；它随着每个区块和每项已同意的变更而增强。",
   "Outer rim: consensus spec revision {n}, amended {m} times by agreement.": "外圈：共识规范第 {n} 版，经同意修订 {m} 次。",
   "Outer rim: consensus spec revision {n}, amended {m} time by agreement.": "外圈：共识规范第 {n} 版，经同意修订 {m} 次。",
@@ -1834,5 +1837,6 @@ TauI18n.add({ strings: {
   "Mempool: {n} listed ({x}), {m} ghost (IDNI #81), {a} pending.": "内存池：列出 {n} 笔（{x}），{m} 笔幽灵交易（IDNI #81），{a} 笔待处理。",
   "Ghost transactions, already sealed but still listed by the node, are counted apart (known bug).": "幽灵交易（已封装却仍被节点列出）单独计数（已知缺陷）。",
   "Chain core says less and shows more: every hover there and on the tiles is a status light, one short verdict and at most two short lines. Transactions already sealed but still listed by the node are now called ghost transactions. In the simulation the visitors' vote has its own lane between the rule accounts and the agreement ring, with smaller dots. The outer rim is a quiet energy field that grows with the chain: more field lines and a brighter glow as blocks, agreed changes and withstood refusals add up.": "Chain core 说得更少、显示得更多：这里和各个数据块上的每个悬停提示，都只有一盏状态灯、一句简短判断，外加最多两行短文。已封装却仍被节点列出的交易，现在称为幽灵交易。在模拟中，访客投票在账户规则和共识环之间有了自己的轨道，圆点也更小。外圈是一道安静的能量场，会随链一起增强：随着区块、已同意的变更和被挡下的拒绝不断累积，场线更多，光晕更亮。",
+  "Chain core: the outer rim's energy field and its hover glow now stay fully inside the picture at every screen size, so nothing is cut off at the top or bottom any more. The rim's hover is a status light, one verdict and one short line.": "链核心：外圈的能量场及其悬停光晕现在在任何屏幕尺寸下都完整显示在画面内，顶部和底部不再被截断。外圈的悬停提示是一盏状态灯、一句结论和一行短说明。",
   "Privacy notice: says plainly that the videos, like the film in the Press kit, come from tauhud.com itself and load only when you press play. There are no YouTube or other third-party players on the site.": "隐私说明：明确写出视频（例如媒体资料包中的影片）直接来自 tauhud.com，只有在你点击播放时才会加载。网站上没有 YouTube 或其他第三方播放器。",
 } });

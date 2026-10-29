@@ -1021,5 +1021,10 @@
   "tag": "Privacy",
   "on": "2026-10-29",
   "html": "Privacy notice: says plainly that the videos, like the film in the Press kit, come from tauhud.com itself and load only when you press play. There are no YouTube or other third-party players on the site."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Chain core: the outer rim's energy field and its hover glow now stay fully inside the picture at every screen size, so nothing is cut off at the top or bottom any more. The rim's hover is a status light, one verdict and one short line."
  }
 ]
