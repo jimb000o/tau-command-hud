@@ -93,7 +93,7 @@ e = gazette.edition(week(agreed=3, proposed=3, head=4900), props2, [], 1, END)
 check(e["lead"]["h"]["en"] == "Vote Carries for a New Rule on Valid Blocks, in Force from Block #5,028", f"agreed: the real change leads, not a ballot that keeps the rules ({e['lead']['h']['en']})")
 up = json.dumps(e["stories"][0], ensure_ascii=False)
 check(up.count("The rules as they stand") == 1 and "Two carried ballots to keep them unchanged fall due from block #5,295 onward." in up, "coming up: ballots that keep the rules are told once")
-check(any("Two further ballots only kept the rules as they stand" in p["en"] for p in e["lead"]["body"]), "ballots that keep the rules get one short line")
+check(any("Two further ballots only kept the rules as they stand: practice" in p["en"] for p in e["lead"]["body"]), "ballots that keep the rules get one short line")
 only = gazette.edition(week(agreed=1, proposed=1, head=4900), props2[:1], [], 1, END)
 check(only["banner"]["en"] == "Practice ballots, and the rules hold" and only["lead"]["h"]["en"] == "One Ballot Keeps the Rules as They Stand", f"only a ballot that keeps the rules: no big news ({only['lead']['h']['en']})")
 for kind, r in cases + [("agreed", week(agreed=3, proposed=3, head=4900))]:

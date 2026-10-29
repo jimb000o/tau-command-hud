@@ -173,7 +173,8 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
 .pg.week:not(.pocket) .grid { grid-template-rows: 1fr auto; }
 .pg.week:not(.pocket) .wlead, .pg.week:not(.pocket) .wside { display: flex; flex-direction: column; }
 .pg.week:not(.pocket) .wphoto { flex: 1 1 0; min-height: 6em; display: flex; flex-direction: column; }
-.pg.week:not(.pocket) .wphoto img { flex: 1 1 0; min-height: 0; height: 0; object-fit: cover; object-position: 50% 45%; }
+.pg.week:not(.pocket) .wphoto img { flex: 1 1 0; min-height: 0; height: 0; max-height: 17em; object-fit: cover; object-position: 50% 45%; }
+.pg.week:not(.pocket) .wphoto { flex: 1 1 0; max-height: 20em; }
 .pg.week:not(.pocket) .wside .ad { margin-top: auto; }
 .pg.week:not(.pocket) .wfoot h3 { column-span: all; }
 .pg.week .banner, .pg.week h2 { text-wrap: balance; }
@@ -682,7 +683,7 @@ const EN = {
   let OFF = 0, WEEK = null;
   const L = ED === EN ? "en" : "zh";
   const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const txt = x => esc(x && typeof x === "object" ? (x[L] || x.en) : x).replace(/&lt;(\/?)b&gt;/g, "<$1b>");
+  const txt = x => esc(x && typeof x === "object" ? (x[L] || x.en) : x).replace(/&lt;(\/?)([bi])&gt;/g, "<$1$2>");
   const edParam = /^\d{4}-\d{2}-\d{2}$/.test(new URLSearchParams(location.search).get("edition") || "") ? new URLSearchParams(location.search).get("edition") : "latest";
   const weekFetch = (async () => {
     const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 5000);

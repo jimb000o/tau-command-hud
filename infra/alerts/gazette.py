@@ -192,11 +192,11 @@ MILESTONES = [
      "deck": t("Since 26 October anyone can watch every block, vote and rule change of the Tau testnet at tauhud.com. "
                "Tau HUD is an unofficial community project, not part of IDNI.",
                "自 10 月 26 日起，任何人都可以在 tauhud.com 观看 Tau 测试网的每一个区块、每一次投票和每一项规则变更。Tau HUD 是非官方社区项目，不隶属于 IDNI。"),
-     "para": t("On 26 October Tau HUD opened at tauhud.com, a live view of the Tau testnet read from a node of its own. That node runs beside "
-               "the founders' bootnode, the first on Testnet Alpha outside IDNI's own as far as the network shows. It reads and checks every "
-               "block; it seals none.",
-               "10 月 26 日，Tau HUD 在 tauhud.com 开张：它从自己的节点读取 Tau 测试网的实时情况。这个节点与创始团队的引导节点并肩运行，"
-               "就网络所见，是 Testnet Alpha 上第一个 IDNI 之外的节点。它读取并检查每一个区块，但不封存区块。")},
+     "paras": [t("On 26 October a new instrument opened at tauhud.com. Tau HUD reads Testnet Alpha from a node of its own, the first beside the "
+                 "founders' bootnode as far as the network shows, and lays every block, vote and rule change before anyone who cares to look. "
+                 "It seals nothing and sells nothing; it is an unofficial community project, and the paper in your hands is printed on its presses.",
+                 "10 月 26 日，一座新的观测台在 tauhud.com 开张。Tau HUD 从自己的节点读取 Testnet Alpha，就网络所见，这是创始团队引导节点之外的第一个节点；"
+                 "它把每一个区块、每一次投票和每一项规则变更摆在任何愿意看的人面前。它不封存区块，也不出售任何东西；它是非官方社区项目，而您手中这份报纸正是在它的印刷机上印出来的。")]},
 ]
 # The simulation switches consensus twice a day since 28 October 15:28 UTC (assets/sim.js STAKE_SLOT / FIXED_SLOT):
 # proof of stake at 10:30 UTC, the fixed validator list again at 16:30 UTC, each put to the visitors' vote at hh:20.
@@ -245,36 +245,44 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
     first = r["start"] <= SIM_SWITCH_SINCE < r["end"]
     if sw:
         n, kinds, votes = len(sw), {s["kind"] for s in sw}, sum(s["votes"] for s in due)
-        h2 = (t("On the Rehearsal Chain, Proof of Stake by Morning and the Validator List by Evening", "排练链上：上午改行权益证明，傍晚回到验证者名单") if kinds == {"stake", "fixed"} else
-              t("On the Rehearsal Chain, Proof of Stake Takes the Seal by Vote", "排练链上：权益证明经投票接掌出块") if kinds == {"stake"} else
-              t("On the Rehearsal Chain, the Validator List Returns by Vote", "排练链上：验证者名单经投票回归"))
+        h2 = (t("Proof of Stake by Morning, the Validator List by Evening, and Every Node Obeys", "上午权益证明，傍晚验证者名单，每个节点都照办") if kinds == {"stake", "fixed"} else
+              t("The Visitors Vote, and the Rehearsal Chain Hands the Seal to Proof of Stake", "访客投票，排练链把出块之权交给权益证明") if kinds == {"stake"} else
+              t("The Visitors Vote, and the Rehearsal Chain Changes Who Seals Its Blocks", "访客投票，排练链改变了由谁封存区块"))
         s0 = sw[0]
-        when = {"stake": t("half past ten in the morning", "上午十点半"), "fixed": t("half past four in the afternoon", "下午四点半")}[s0["kind"]]
+        when = {"stake": t("half past ten on {d} morning", "{d}上午十点半"), "fixed": t("half past four on {d} afternoon", "{d}下午四点半")}[s0["kind"]]
+        # the Chinese opens with the weekday, not a figure (the drop cap)
         wd = _d(s0["at"])
-        to = {"stake": t("from a fixed list of validators to proof of stake, where the largest holders take turns", "从固定的验证者名单改为权益证明，由持有最多的账户轮流出块"),
-              "fixed": t("from proof of stake back to its fixed list of validators", "从权益证明回到固定的验证者名单")}[s0["kind"]]
+        when = t(when["en"].format(d=wd.strftime("%A")), when["zh"].format(d=f"星期{ZH_WEEKDAY[wd.weekday()]}（{wd.month}月{wd.day}日）"))
+        to = {"stake": t("from the fixed list of validators to proof of stake, where the largest holders take turns", "从固定的验证者名单转到权益证明，由持有最多的账户轮流出块"),
+              "fixed": t("from proof of stake back to the fixed list of validators", "从权益证明回到固定的验证者名单")}[s0["kind"]]
+        times = (t("once", "一次") if n == 1 else t(f"{word(n)['en']} times", f"{word(n)['zh']}次"))
+        answer = (t(f"the visitors answered with {fmt_n(votes)} vote{'s' if votes != 1 else ''}", f"访客以 {fmt_n(votes)} 票作答") if votes else
+                  t("no visitor voted, so the simulated validators carried it themselves", "没有访客投票，于是模拟验证者自行通过"))
+        turned = (t(f" and turned down {word(down)['en']} of them", f"，并否决了其中{word(down)['zh']}次") if down else t("", ""))
         # the lead story when the switching is new or the visitors turned one down (Kilian 2026-10-29: the consensus switch is the
         # title story); a routine week's switches are told in the Rehearsal Hall
         out.append({"kind": "simswitch", "score": 110 if first else 75 if down else -1,
                     "banner": t("Users rewrite the chain’s law; no fork, no restart", "用户投票改写链的法则：不分叉，不重启"), "extra": True,
                     "h2": h2,
-                    "deck": t("Not one machine reinstalled. In the simulation that runs in every visitor's browser the visitors voted "
-                              "and the simulated validators followed. On Tau, how blocks are made is a rule like any other.",
-                              "没有一台机器需要重装。在每位访客浏览器里运行的模拟中，访客投票，模拟验证者照办。在 Tau 上，怎样出块也只是一条规则。"),
-                    "para": t(f"At {when['en']} on {wd.strftime('%A')}, UTC, the rehearsal chain changed the way it chooses who seals its blocks: {to['en']}. "
-                              "The question went to the floor at twenty past, the visitors of tauhud.com cast their votes, and ten minutes later every simulated node "
-                              "switched at the same agreed block. Nobody had to install a thing"
-                              + (f"; it happened {word(n)['en']} times this week" if n > 1 else "")
-                              + (f", {fmt_n(votes)} vote{'s' if votes != 1 else ''} were cast" if votes else "")
-                              + (f", and the visitors turned down {word(down)['en']} switch{'es' if down != 1 else ''}" if down else "")
-                              + ". On most chains such a change means a hard fork. On Tau it is a rule change like any other, and this was its rehearsal: "
-                              "it happened in the simulation, not on the real testnet.",
-                              f"{wd.month}月{wd.day}日 星期{ZH_WEEKDAY[wd.weekday()]}{when['zh']}（UTC），排练链改变了它挑选出块者的方式：{to['zh']}。"
-                              "二十分时问题提上台面，tauhud.com 的访客投下选票，十分钟后，每一个模拟节点都在同一个约定的区块切换。没有人需要安装任何东西"
-                              + (f"；本周共切换了{word(n)['zh']}次" if n > 1 else "")
-                              + (f"，共投出 {fmt_n(votes)} 票" if votes else "")
-                              + (f"，访客否决了{word(down)['zh']}次切换" if down else "")
-                              + "。在大多数链上，这样的变更意味着一次硬分叉；在 Tau 上，它和其他规则变更一样，而这正是它的排练：它发生在模拟中，而不是真实的测试网上。")})
+                    "deck": t("On a practice chain that runs in every visitor's browser, the question of who may seal blocks went to the floor at twenty past the hour "
+                              "and was law by half past. Nobody shipped software and nobody switched a machine off: Tau treats consensus as a rule like any other.",
+                              "在一条于每位访客浏览器里运行的练习链上，由谁封存区块这个问题于二十分提上台面，半点即成法则。没有人发布软件，没有人关掉任何机器：在 Tau 上，共识只是一条普通的规则。"),
+                    "paras": [
+                        t(f"At {when['en']}, UTC, a blockchain changed the law of who may seal its blocks, and nothing happened. No operator ran to a terminal, "
+                          "no new software was shipped, no machine was switched off and on again. The nodes read the new rule at the agreed block and went on sealing "
+                          "as before. That is the whole story, and it is why it stands at the top of this page.",
+                          f"{when['zh']}（UTC），一条区块链改变了由谁封存区块的法则，而什么也没有发生。没有操作员奔向终端，没有新软件发布，没有机器关机重启。"
+                          "节点在约定的区块读到新规则，照旧封存。这就是全部的故事，也是它登上本版之首的原因。"),
+                        t(f"The chain in question is a rehearsal: the simulation at tauhud.com, a practice copy of the testnet that runs in every visitor's browser, "
+                          f"where the visitors hold the gavel. Twice a day it puts to them the largest question a chain can ask. This week the question was put {times['en']}; "
+                          f"{answer['en']}{turned['en']}; and at the named block the seal passed {to['en']}.",
+                          f"这条链是一场排练：tauhud.com 上的模拟，一份在每位访客浏览器里运行的测试网练习副本，由访客执槌。它每天两次向他们提出一条链所能提出的最大问题。"
+                          f"本周这个问题被提出了{times['zh']}；{answer['zh']}{turned['zh']}；在约定的区块，出块之权{to['zh']}。"),
+                        t("On most chains that change is a hard fork: new software for every machine, and the danger that some refuse and the chain splits in two. "
+                          "On Tau it is a transaction, checked by logic, carried by vote, in force at a block named in advance. The rehearsal hall runs the same law as "
+                          "Testnet Alpha; the real chain only waits for its users to ask the same question.",
+                          "在大多数链上，这样的变更意味着硬分叉：每台机器都要换新软件，还有人拒绝、链一分为二的危险。在 Tau 上，它只是一笔交易：经逻辑检查，经投票通过，"
+                          "在事先约定的区块生效。排练厅运行的法则与 Testnet Alpha 相同；真实的链只等它的用户提出同样的问题。")]})
     if r["new_nodes"]:
         n = r["new_nodes"]
         out.append({"kind": "nodes", "score": 70,
@@ -295,6 +303,7 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
                         "h2": t(f"Vote Carries for {cap(ph['en'], False)}, in Force from Block #{at}", f"投票通过：{ph['zh']}，自第 {at} 号区块起生效"),
                         "deck": t("The votes are counted. The change waits for the block named in advance, and until then the rules in force apply.",
                                   "票已点清。变更等待事先约定的区块，在此之前现行规则继续适用。"),
+                        "lead_only": True,
                         "para": t(f"On the real testnet the users carried {ph['en']}; it takes effect at block #{at}.",
                                   f"在真实的测试网上，用户投票通过了{ph['zh']}，将自第 {at} 号区块起生效。")})
         else:
@@ -355,49 +364,46 @@ def caption(r: dict) -> dict:
 
 
 def lead_body(r: dict, props: list[dict] | None = None, stories: list[dict] | None = None) -> list[dict]:
-    """The lead story: the top story told first, then the week on the chain, the other news, ballots that keep the
-    rules in one short line."""
+    """The lead story: the top story's paragraphs, the other news as 'Also this week', then the week on the chain itself."""
     stories = stories or []
+    paras = lambda st: st.get("paras") or ([st["para"]] if st.get("para") else [])  # noqa: E731
+    out = list(paras(stories[0])) if stories else []
+    more = [p for st in stories[1:] if st["score"] > 0 and not st.get("lead_only") for p in paras(st)][:3]
+    for i, p in enumerate(more):
+        out.append(t(("<b>Also this week.</b> " if not i else "") + p["en"], ("<b>本周另讯。</b>" if not i else "") + p["zh"]))
     blocks = fmt_n(r["blocks"] + r["old_blocks"])
     pc = pace(r["pace"])
-    per = period(r["start"], r["end"])
-    out = [stories[0]["para"]] if stories and stories[0].get("para") else []
-    out.append(t(f"From {per['en']} the Tau testnet sealed {'about ' if r['old_blocks'] else ''}{blocks} blocks, one about every {pc['en']}. "
-                 f"{fmt_n(r['txs'])} transactions came from {fmt_n(r['accounts'])} accounts"
-                 + (f", {fmt_n(r['transfers'])} of them transfers." if r["transfers"] else "."),
-                 f"Tau 测试网在{per['zh']}封存了{'约 ' if r['old_blocks'] else ' '}{blocks} 个区块，大约每 {pc['zh']}一个。"
-                 f"{fmt_n(r['accounts'])} 个账户发出了 {fmt_n(r['txs'])} 笔交易"
-                 + (f"，其中 {fmt_n(r['transfers'])} 笔是转账。" if r["transfers"] else "。")))
     week = [p for p in props or [] if r["start"] <= (p.get("proposed_ts") or 0) < r["end"]]
     keep = sum(1 for p in week if not phrase(p.get("title")))
     real = max(0, r["proposed"] - keep)
+    carried = max(0, min(real, r["agreed"] - keep))
+    quiet = not real and not r["active"] and not r["restarts"]
+    en = (f"On Testnet Alpha itself the week was {'quiet and ' if quiet else ''}orderly: {'about ' if r['old_blocks'] else ''}{blocks} blocks sealed, one about every {pc['en']}, "
+          f"{fmt_n(r['txs'])} transactions from {fmt_n(r['accounts'])} accounts.")
+    zh = (f"Testnet Alpha 本身这一周{'平静而' if quiet else ''}有序：封存{'约 ' if r['old_blocks'] else ' '}{blocks} 个区块，大约每 {pc['zh']}一个，"
+          f"{fmt_n(r['accounts'])} 个账户发出 {fmt_n(r['txs'])} 笔交易。")
+    nxt = next((p for p in _sorted(props or []) if p.get("status") == "agreed" and phrase(p.get("title")) and (p.get("activate_at") or 0) > (r.get("head") or 0)), None)
+    at = t(f", {phrase(nxt['title'])['en']} in force from block #{fmt_n(nxt['activate_at'])}", f"，{phrase(nxt['title'])['zh']}自第 {fmt_n(nxt['activate_at'])} 号区块起生效") if nxt else t("", "")
     if real:
-        carried = max(0, min(real, r["agreed"] - keep))
-        parts_en = [f"{word(real)['en']} proposed"] + ([f"{word(carried)['en']} carried"] if carried else [])
-        parts_zh = [f"提出{word(real)['zh']}项"] + ([f"通过{word(carried)['zh']}项"] if carried else [])
-        for k, en, zh in (("active", "put in force", "生效"), ("dropped", "dropped", "被放弃")):
-            if r[k]:
-                parts_en.append(f"{word(r[k])['en']} {en}")
-                parts_zh.append(f"{zh}{word(r[k])['zh']}项")
-        out.append(t(f"On the rules themselves: {', '.join(parts_en)}. On Tau a rule change is a transaction like any other. "
-                     "It is checked by logic, voted on, and switched on at a block named in advance.",
-                     f"在规则本身上：{'，'.join(parts_zh)}。在 Tau 上，规则变更和其他交易一样是一笔交易，先经逻辑检查，再经投票，然后在事先约定的区块启用。"))
+        en += (f" {word(real, True)['en']} rule change{'s were' if real != 1 else ' was'} proposed" + (f" and {word(carried)['en']} carried{at['en']}" if carried else "")
+               + (f", {word(r['active'])['en']} put in force" if r["active"] else "") + (f", {word(r['dropped'])['en']} dropped" if r["dropped"] else "") + ".")
+        zh += f"提出{word(real)['zh']}项规则变更" + (f"，通过{word(carried)['zh']}项{at['zh']}" if carried else "") + (f"，生效{word(r['active'])['zh']}项" if r["active"] else "") + (f"，放弃{word(r['dropped'])['zh']}项" if r["dropped"] else "") + "。"
     if keep:
-        out.append(t(f"{word(keep, True)['en']} {'further ' if real else ''}ballot{'s' if keep != 1 else ''} only kept the rules as they stand: practice for the voting itself.",
-                     f"另有{word(keep)['zh']}次投票只是维持现行规则，是对投票本身的练习。" if real else f"本周有{word(keep)['zh']}次投票只是维持现行规则，是对投票本身的练习。"))
+        en += (f" {word(keep, True)['en']} {'further ' if real else ''}ballot{'s' if keep != 1 else ''} only kept the rules as they stand"
+               + (": see <i>The Riddle of the Unchanging Ballots</i>." if keep >= 3 else ": practice for the voting itself."))
+        zh += f"{'另有' if real else '本周有'}{word(keep)['zh']}次投票只是维持现行规则" + ("，详见《不变投票之谜》。" if keep >= 3 else "，是对投票本身的练习。")
     elif not real:
-        out.append(t("No rule change was proposed on the real testnet this week. Anyone with an account may propose the next one.",
-                     "本周真实的测试网上没有人提出规则变更。任何拥有账户的人都可以提出下一项。"))
+        en += " No rule change was proposed; anyone with an account may propose the next one."
+        zh += "没有人提出规则变更；任何拥有账户的人都可以提出下一项。"
     also = [ph for ph in map(phrase, r["active_titles"][1:4]) if ph]
     if also:
-        out.append(t("Also put in force this week: " + "; ".join(x["en"] for x in also) + ".", "本周同样生效的还有：" + "；".join(x["zh"] for x in also) + "。"))
-    more = [s["para"] for s in stories[1:] if s.get("para") and s["score"] > 0]
-    for i, p in enumerate(more[:3]):
-        out.append(t(("<b>Also this week.</b> " if not i else "") + p["en"], ("<b>本周另讯。</b>" if not i else "") + p["zh"]))
+        en += " Also put in force: " + "; ".join(x["en"] for x in also) + "."
+        zh += "同样生效的还有：" + "；".join(x["zh"] for x in also) + "。"
     if r["restarts"]:
-        out.append(t(f"The testnet started a new chain {'once' if r['restarts'] == 1 else word(r['restarts'])['en'] + ' times'} this week; balances and history began again from the starting state.",
-                     f"本周测试网重新开始了{word(r['restarts'])['zh']}次新链，余额和历史从初始状态重新开始。"))
-    if not more:
+        en += f" The testnet started a new chain {'once' if r['restarts'] == 1 else word(r['restarts'])['en'] + ' times'}; balances and history began again from the starting state."
+        zh += f"测试网重新开始了{word(r['restarts'])['zh']}次新链，余额和历史从初始状态重新开始。"
+    out.append(t(en, zh))
+    if len(out) == 1:
         out.append(t("Nothing of this needed a new version of the software. Every node read the rules from the chain and followed them, "
                      "which is the whole idea: the users decide, and the machines keep the minutes.",
                      "这一切都不需要新版本的软件。每个节点都从链上读取规则并照办，这正是全部的用意：用户做决定，机器记录在案。"))
@@ -457,13 +463,15 @@ def riddle(r: dict, props: list[dict]) -> dict | None:
     n, N = word(keep), word(keep, True)
     return {"h": t("The Riddle of the Unchanging Ballots", "不变投票之谜"), "body": [
         t(f"{N['en']} times this week the users of Testnet Alpha went to the ballot box, and {n['en']} times the question was the same: "
-          "shall the rules stay as they are? Each time the answer was yes. When the votes were counted, not one rule had moved.",
-          f"本周，Testnet Alpha 的用户{n['zh']}次走向投票箱，问题{n['zh']}次都一样：规则是否维持原样？每一次的回答都是赞成。点完票后，没有一条规则挪动过。"),
-        t("What, then, were they voting for? Our correspondent offers a theory. A ballot that keeps the rules is a rehearsal: it proves that a vote "
-          "can be cast, counted and carried, block by block, before a question that matters is put.",
-          "那么，他们究竟在为什么投票？本报记者提出一个推测：维持规则的投票是一场排练。它证明一张选票可以被投出、清点并通过，一个区块接一个区块，好在真正要紧的问题提出之前做好准备。"),
-        t(f"The chain is young and its days are still quiet. But a ballot box tried {n['en']} times is ready for the day the question is a real one.",
-          f"这条链还年轻，日子仍然平静。但一个试过{n['zh']}次的投票箱，已经为真正提问的那一天做好了准备。"),
+          "shall the rules stay as they are? Each time the answer was yes. The votes were counted, the blocks were sealed, and not one rule had moved.",
+          f"本周，Testnet Alpha 的用户{n['zh']}次走向投票箱，问题{n['zh']}次都一样：规则是否维持原样？每一次的回答都是赞成。票点清了，区块封存了，没有一条规则挪动过。"),
+        t("A paper could call that a dull week. Our correspondent calls it something else. Before a chain changes a rule that matters, someone must show that "
+          "the machinery of changing one works at all: that a proposal can be written, admitted by the logic that checks it, carried by vote and sealed at the "
+          f"block named in advance. {N['en']} times that machinery was wound and run, and {n['en']} times it ran true.",
+          "一份报纸大可称之为乏味的一周。本报记者却另有看法。在一条链改变一项要紧的规则之前，得有人证明改变规则的机器确实能转：提案可以写出来，"
+          f"能通过检查它的逻辑，能经投票通过，并在事先约定的区块封存。这台机器被上了{n['zh']}次发条、转了{n['zh']}次，{n['zh']}次都转得准。"),
+        t("The chain is young and its days are quiet. But the ballot box has been tried, and the first question worth asking will find it ready.",
+          "这条链还年轻，日子仍然平静。但投票箱已经试过了，第一个值得一问的问题到来时，它已准备停当。"),
     ]}
 
 
@@ -483,10 +491,10 @@ def rehearsal(days: list[dict], r: dict | None = None, switches: bool = True) ->
     midnights = int(r["end"] // 86400 - a // 86400) if r and r["end"] > a else 0
     if hours:
         body.append(t(f"Across town from the real testnet stands a rehearsal hall: the simulation, a practice chain that runs in every visitor's browser "
-                      f"and where the visitors of tauhud.com hold the gavel. This week the house played {word(hours)['en'] if hours <= 20 else fmt_n(hours)} hour{'s' if hours != 1 else ''} of its programme, "
-                      "a rule change on the floor every hour at twenty past.",
+                      f"and where the visitors of tauhud.com hold the gavel. This week the house played {word(hours)['en'] if hours <= 20 else fmt_n(hours)} hour{'s' if hours != 1 else ''} of its programme: "
+                      "a motion on the floor every hour at twenty past, law by half past, and the visitors' verdict in between.",
                       f"在真实测试网的对街，有一座排练厅：模拟。它是一条在每位访客浏览器里运行的练习链，由 tauhud.com 的访客执槌。"
-                      f"本周这座剧院上演了 {fmt_n(hours)} 个小时的节目，每小时二十分都有一项规则变更提上台面。"))
+                      f"本周这座剧院上演了 {fmt_n(hours)} 个小时的节目：每小时二十分一项动议提上台面，半点即成法则，其间由访客裁决。"))
     ballots = sum(d["ballots"] for d in days)
     carried = sum(d["carried"] for d in days)
     turned = sum(d["turned"] for d in days)
@@ -541,7 +549,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
     kick = {"active": t("Testnet Alpha · rule change", "Testnet Alpha · 规则变更"), "agreed": t("Testnet Alpha · the ballot is counted", "Testnet Alpha · 计票完毕"),
             "restart": t("Testnet Alpha · a fresh start", "Testnet Alpha · 重新开始"), "proposed": t("Testnet Alpha · put to the vote", "Testnet Alpha · 付诸投票"),
             "nodes": t("Testnet Alpha · the network", "Testnet Alpha · 网络"), "steady": t("Testnet Alpha · the week", "Testnet Alpha · 本周"),
-            "launch": t("Testnet Alpha · a new instrument", "Testnet Alpha · 新的观测台"), "simswitch": t("Simulation · not the real testnet", "模拟 · 不是真实的测试网")}[kind]
+            "launch": t("Testnet Alpha · a new instrument", "Testnet Alpha · 新的观测台"), "simswitch": t("Rehearsal chain · not the real testnet", "排练链 · 不是真实的测试网")}[kind]
     return {
         "v": 1, "no": no, "date": _d(printed_at).strftime("%Y-%m-%d"), "printed": printed(printed_at),
         "start": round(r["start"]), "end": round(r["end"]), "period": period(r["start"], r["end"]),
