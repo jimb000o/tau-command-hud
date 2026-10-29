@@ -140,7 +140,7 @@
   function tram(g, W, H, { x: xc, z: zr, away }) {
     const { f, P } = geo(W, H), L = 14, s = Math.sign(xc), Xs = xc - s * 1.3, Xo = xc + s * 1.3, zf = zr + L, Xm = xc;
     /* farther off everything sinks into the morning haze */
-    const hz = Math.min(0.78, Math.max(0, (zr - 6) / 200)), T = (v, a = 1) => tone(v + (0.6 - v) * hz, a);
+    const hz = Math.min(0.6, Math.max(0, (zr - 6) / 260)), T = (v, a = 1) => tone(v + (0.6 - v) * hz, a);
     const sc = z => f / z;
     const poly = (pts, fill) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(...p) : g.moveTo(...p)); g.closePath(); g.fillStyle = fill; g.fill(); };
     const side = (y0, y1, za, zb, fill, x = Xs) => poly([P(x, y0, za), P(x, y1, za), P(x, y1, zb), P(x, y0, zb)], fill);
@@ -213,13 +213,25 @@
     for (let k = -1; k <= 1; k++) { const p = t * 0.6 + k * 1.7, x0 = x + k * r * 0.22;
       g.strokeStyle = `rgba(255,240,220,${Math.min(0.3, (0.07 + 0.03 * Math.sin(p * 1.3)) * up)})`; g.lineWidth = r * 0.16 * Math.sqrt(up);
       g.beginPath(); g.moveTo(x0, y - r * 0.8); g.bezierCurveTo(x0 + Math.sin(p) * r * 0.5, y - r * 1.4, x0 + Math.sin(p + 2) * r * 0.5, y - r * 1.9, x0 + Math.sin(p + 1) * r * 0.3, y - r * 2.6 * Math.sqrt(up)); g.stroke(); }
+    /* and for a moment the steam writes a tau above the cup */
+    if (stir != null) { const a = Math.sin(Math.PI * Math.min(1, Math.max(0, (stir - 0.1) / 0.8))) * 0.42;
+      g.fillStyle = `rgba(255,242,222,${a})`; g.font = `italic 400 ${r * 1.7}px Georgia, serif`; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText("τ", x + Math.sin(stir * 5) * r * 0.08, y - r * (2.1 + stir * 0.6)); }
     g.restore();
     /* the sugar: a thin stream of grains from the spout, a small heap on the marble */
     const su = touched("sugar"); if (su != null && SUGAR) { const { x: sx, y: sy, r: sr } = SUGAR, R = rnd(5), flow = su < 0.5;
       g.fillStyle = "rgba(255,250,240,0.85)";
       for (let k = 0; k < 40; k++) { const ph = (R() + su * 6) % 1; if (!flow && ph > (1 - su) * 2 - 0.4) continue;
         g.fillRect(sx + sr * 1.4 + R() * sr * 0.5, sy - sr * 1.5 + ph * sr * 2.7, Math.max(1, sr * 0.08), Math.max(1, sr * 0.08)); }
-      const hp = Math.min(1, su * 3) * (su > 0.85 ? (1 - su) / 0.15 : 1); g.fillStyle = `rgba(255,250,240,${0.7 * hp})`; g.beginPath(); g.ellipse(sx + sr * 1.65, sy + sr * 1.2, sr * 0.6, sr * 0.2, 0, Math.PI, 0); g.fill(); }
+      /* the grains settle as cubes in a row, linked: a little chain, the newest block lit for a moment */
+      const fade = su > 0.85 ? (1 - su) / 0.15 : 1, c = sr * 0.72;
+      for (let k = 0; k < 4; k++) { const t0 = 0.2 + k * 0.1, a = Math.min(1, Math.max(0, (su - t0) / 0.06)) * fade; if (!a) continue;
+        const bx = sx - sr * 1.2 + k * c * 1.8, by = sy + sr * 2.5 - c;
+        if (k) { g.strokeStyle = `rgba(255,250,240,${0.6 * a})`; g.lineWidth = Math.max(1, c * 0.12); g.beginPath(); g.moveTo(bx - c * 0.9, by + c * 0.5); g.lineTo(bx, by + c * 0.5); g.stroke(); }
+        g.fillStyle = `rgba(250,244,232,${0.95 * a})`; g.fillRect(bx, by, c, c);
+        g.fillStyle = `rgba(255,255,250,${a})`; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + c * 0.3, by - c * 0.25); g.lineTo(bx + c * 1.3, by - c * 0.25); g.lineTo(bx + c, by); g.fill();
+        g.fillStyle = `rgba(200,190,170,${0.9 * a})`; g.beginPath(); g.moveTo(bx + c, by); g.lineTo(bx + c * 1.3, by - c * 0.25); g.lineTo(bx + c * 1.3, by + c * 0.75); g.lineTo(bx + c, by + c); g.fill();
+        if (k === 3) { const glow = Math.max(0, 1 - (su - t0) / 0.25) * a; if (glow > 0) { g.fillStyle = `rgba(90,210,130,${0.55 * glow})`; g.fillRect(bx - 1, by - 1, c + 2, c + 2); } } } }
     /* the papers: the top copy lifts at its corner and settles again */
     const pa = touched("papers"); if (pa != null && PAPERS) { const { x: px, y: py, pw, ph } = PAPERS, lift = Math.sin(Math.PI * pa);
       g.save(); g.translate(px, py); g.rotate(-0.08);
@@ -514,16 +526,29 @@
   })();
   /* the things on the table answer a click: the coffee is stirred, the sugar pours, the old papers rustle */
   const TOUCH = {};
-  const touched = (k, now = performance.now()) => TOUCH[k] != null && now - TOUCH[k] < 2200 ? (now - TOUCH[k]) / 2200 : null;
+  const touched = (k, now = performance.now()) => TOUCH[k] != null && now - TOUCH[k] < 4500 ? (now - TOUCH[k]) / 4500 : null;
   const HOT = {};
   function hotspots() {
     for (const [k, b] of Object.entries(HITS)) { let el = HOT[k];
       if (!el) { el = HOT[k] = document.createElement("button"); el.className = "scene-hit"; el.setAttribute("data-noflip", ""); el.dataset.k = k;
-        el.onclick = e => { e.stopPropagation(); TOUCH[k] = performance.now(); AMB.play(k); loop(); }; desk.appendChild(el); }
+        el.onclick = e => { e.stopPropagation(); TOUCH[k] = performance.now(); AMB.play(k); note(k); loop(); }; desk.appendChild(el); }
       const tip = (window.GAZETTE_HIT || {})[k] || { cup: "Stir the coffee", sugar: "Sugar", papers: "Yesterday's papers" }[k]; el.title = tip; el.setAttribute("aria-label", tip);
       Object.assign(el.style, { left: b.x + "px", top: b.y + "px", width: b.w + "px", height: b.h + "px" }); }
   }
   window.addEventListener("gazette-labels", hotspots);
+  /* each answer comes with a short note about the chain: the real block height from the wire, when the wire has it */
+  let NOTE = null, noteT = 0;
+  function note(k) {
+    const b = HITS[k]; if (!b) return;
+    const L = window.GAZETTE_LIVE || {}, N = window.GAZETTE_NOTE || {}, h = Number.isFinite(L.height) ? L.height : null;
+    const age = h != null && Number.isFinite(L.age) ? L.age + Math.round((Date.now() - L.at) / 1000) : null;
+    if (!N[k]) return; const txt = N[k](h, age);
+    if (!NOTE) { NOTE = document.createElement("div"); NOTE.className = "scene-note"; NOTE.setAttribute("role", "status"); desk.appendChild(NOTE); }
+    NOTE.textContent = txt; NOTE.classList.add("on");
+    const w = Math.min(300, desk.clientWidth * 0.3); NOTE.style.width = w + "px";
+    NOTE.style.left = Math.max(8, Math.min(desk.clientWidth - w - 8, b.x + b.w / 2 - w / 2)) + "px"; NOTE.style.bottom = (desk.clientHeight - b.y + 8) + "px";
+    clearTimeout(noteT); noteT = setTimeout(() => NOTE.classList.remove("on"), 6500);
+  }
   /* the button cycles: off, quiet, lively; it always starts off */
   const btn = document.getElementById("bAmb");
   if (btn) { let l = 0;
