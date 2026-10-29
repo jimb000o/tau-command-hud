@@ -1306,5 +1306,10 @@
   "tag": "In numbers",
   "on": "2026-10-29",
   "html": "Tau HUD in numbers: a new “Testnet transactions” split shows how much of the testnet's traffic comes from Agorzilla (meals and votes), from Tau HUD pages (wallet, playground, vote) and from elsewhere, counted by wallet, not by person. Below it, how many pages were opened from a link on the other site."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Follow along, easier to find: every page's footer ends with Follow and the marks for Telegram, X and Agorzilla on X. The Get alerts menu and About also link Agorzilla on X, and About has a button for each channel."
  }
 ]

@@ -4,8 +4,8 @@
    anything missing is generated as a link to the HUD. */
 (() => {
   "use strict";
-  const TELEGRAM = "https://t.me/tauHUDcom", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml";
-  const LATEST = "v24.1"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const TELEGRAM = "https://t.me/tauHUDcom", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml", AGZX = "https://x.com/Agorzilla";
+  const LATEST = "v24.3"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -618,7 +618,8 @@
     tgm.hidden = true; tgm.setAttribute("role", "menu"); tgm.setAttribute("aria-label", "Get alerts");
     [[TELEGRAM, PLANE, "Telegram @tauHUDcom", "To your phone the moment it happens: rule changes, restarts, new nodes, a weekly recap"],
      [XCOM, XLOGO, "X @TauHUDcom", "In your timeline: real rule changes, new nodes, Testnet today and the Monday recap"],
-     [RSS, RSSI, "RSS feed", "Every rule change in your feed reader"]].forEach(([h, ic, t, d]) => {
+     [RSS, RSSI, "RSS feed", "Every rule change in your feed reader"],
+     [AGZX, `<img src="${ROOT}assets/agorzilla.webp" alt="">`, "Agorzilla on X", "The creature the testnet feeds: each evening's change and every growth stage"]].forEach(([h, ic, t, d]) => {
       const a = el("a", "mi", `<span class="ic">${ic}</span><b>${esc(t)} <span class="ext">↗</span></b><span>${esc(d)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; a.setAttribute("role", "menuitem"); a.addEventListener("click", closeAll); tgm.append(a);
     });
     tgb.addEventListener("click", () => { tgm.style.top = innerWidth <= 700 ? Math.round(tgb.getBoundingClientRect().bottom + 8) + "px" : ""; toggle(tgb, tgm); });   // phone: a full-width panel under the header
@@ -753,9 +754,13 @@
     const as = links.map(([t, h]) => { const a = el("a", "tn-foot", t); a.href = ROOT + (h[0] === "#" ? h : h + "/"); return a; });
     const host = f.querySelector("p:last-of-type") || f; as.forEach(a => host.append(" · ", a));
     const sh = el("a", "tn-foot", "Share"); sh.href = "#share"; sh.addEventListener("click", e => { e.preventDefault(); openShare(); }); host.append(" · ", sh);
-    [["Telegram", TELEGRAM, "t.me/"], ["X", XCOM, "x.com/"]].forEach(([t, h, k]) => { if (f.querySelector(`a[href*="${k}"]`)) return; const a = el("a", "tn-foot", t); a.href = h; a.target = "_blank"; a.rel = "noopener"; host.append(" · ", a); });
+    /* socials as their own group at the end of the line, with their marks, so they read as a way to follow along and not as one more link */
+    f.querySelectorAll('a[href*="t.me/tauHUDcom"], a[href*="x.com/TauHUDcom"]').forEach(a => { if (a.previousSibling && a.previousSibling.nodeType === 3) a.previousSibling.textContent = a.previousSibling.textContent.replace(/\s*·\s*$/, " "); a.remove(); });
+    const so = el("span", "tn-social", `<span class="tn-sol">Follow</span>`);
+    [[TELEGRAM, PLANE, "Telegram"], [XCOM, XLOGO, "X"], [AGZX, `<img src="${ROOT}assets/agorzilla.webp" alt="">`, "Agorzilla"]].forEach(([h, ic, t]) => { const a = el("a", "tn-soc", `${ic}<span>${esc(t)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; so.append(a); });
+    host.append(" ", so);
   }
   const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM };
+  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM };
 })();
