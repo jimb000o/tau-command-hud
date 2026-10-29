@@ -158,6 +158,7 @@ tauhud.com's node:
 | `peer-addrs` | The bootnode announces `/ip4/0.0.0.0/tcp/4001`; dialing that made the node dial itself after a restart. |
 | `chain-reset` | The testnet gets restarted on the same genesis without notice (twice on 2026-10-27); the node detects that, wipes and resyncs. |
 | `validator-gate` | Never propose while the key is not in the active validator set. |
+| `bootstrap-redial` | Bootstrap peers were dialed at start only; a node that lost its last peer stayed peerless until a restart (2026-10-29, three hours). Now it dials them again every minute while it has no peer. |
 
 Two settings must match the network and are set for you: the genesis from
 `networks/tau-testnet-v2/genesis.json`, and `TAU_GOVERNANCE_OPEN_ADMISSION=true` (votes
