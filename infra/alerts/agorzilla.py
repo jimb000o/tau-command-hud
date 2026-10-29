@@ -41,7 +41,7 @@ X_OUT = X({k: os.environ.get("AGORZILLA_" + k, "").strip() for k in ("X_API_KEY"
 X_PICTURE = os.environ.get("AGORZILLA_X_PICTURE", "https://agorzilla.com/assets/agorilla.webp").strip()
 X_DAILY_CAP = int(os.environ.get("AGORZILLA_X_DAILY_CAP", 8))
 X_FOOT = "🦍 A shared creature on Tau Testnet Alpha · test AGRS, no value"
-X_TAG = "#Agorzilla #TauNet"
+X_TAG = "#TauNet $AGRS"   # every Agorzilla post on X carries these two, once, at the end
 
 
 def esc(s) -> str:
