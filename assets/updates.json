@@ -1321,5 +1321,17 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Agorzilla on the HUD now really walks: his legs step in turn, front left with back right, while his body rides up on each step, and his paws stand in front of the header line. Now and then he does a special move, sized to the room on your screen: a little dance, a backflip where there is head room, a roll or a cartwheel along the line where there is space to his left. Agorzilla also has its own entry in the Playground menu."
+ },
+ {
+  "tag": "Accounts",
+  "on": "2026-10-29",
+  "html": "Accounts: every validator has its own profile now. Open a validator’s account and it shows the blocks it made over time and its share of all blocks, the pauses between its blocks, the hours of the last 7 days in which it made one, every validator side by side, what it sent by kind, the fees it paid, and how it voted on rule changes. The Account button shows its balance and rules as before.",
+  "major": {
+   "id": "validator-profile",
+   "title": "Validator profiles: who makes the blocks, and how reliably",
+   "text": "Open any validator on Tau HUD and see the blocks it made over time, its share of all blocks, the pauses between them, the hours it was up in the last 7 days, and how it voted on rule changes. Live from our node, or in the simulation with six validators. Testnet only, test AGRS have no value.",
+   "link": "/account/",
+   "image": "/assets/shots/validator-profile.png"
+  }
  }
 ]
