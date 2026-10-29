@@ -352,7 +352,11 @@ html.i18n-zh .ga-tx { text-align: left; }
 .agz .lid { -webkit-mask-image: radial-gradient(34.5% 34.5% at 50% 50%, #000 92%, transparent 100%); mask-image: radial-gradient(34.5% 34.5% at 50% 50%, #000 92%, transparent 100%); }
 .agz .lid b { position: absolute; left: 0; right: 0; top: 0; height: 84%; border-radius: 0 0 50% 50% / 0 0 26% 26%; background: linear-gradient(#5c4853, #7c6672 48%, #846e7a 70%, #6a5561); box-shadow: inset 0 -1px .5px -.3px rgba(34, 16, 22, .95), 0 .6px .6px rgba(0, 0, 0, .4); transform: translateY(calc(-78% + 62% * max(var(--lid), var(--blink)))); }
 .agz .lid s { position: absolute; left: -6%; right: -6%; bottom: 0; height: 50%; border-radius: 50% 50% 0 0 / 44% 44% 0 0; background: linear-gradient(#6a5561, #85707c 35%, #8d7783); box-shadow: inset 0 .6px .4px -.2px rgba(36, 18, 24, .75); transform: translateY(calc(63% - max(var(--squint) * 30%, max(var(--lid), var(--blink)) * 46%))); }
-.agz .mouth { position: absolute; left: 69.1%; top: 39.4%; width: 8%; height: 2.6%; transform: translate(-50%, -50%) scaleY(0); border-radius: 40% 40% 50% 50%; background: radial-gradient(60% 70% at 50% 75%, #b4504a, #3a0f0d 70%); }
+/* the mouth opens dark with a pink tongue inside (yawn, cheer); now and then the tongue peeks out on its own */
+.agz .mouth { position: absolute; left: 69.4%; top: 39.6%; width: 10.5%; height: 3.8%; transform: translate(-50%, -50%) scale(1, 0); transform-origin: 50% 25%; overflow: hidden; border-radius: 45% 45% 50% 50% / 35% 35% 65% 65%; background: radial-gradient(70% 60% at 50% 30%, #1a0608, #3a1114 70%, #4d1c20); box-shadow: 0 0 0 .4px rgba(70, 40, 46, .9); }
+.agz .mouth u { position: absolute; left: 16%; right: 16%; bottom: -14%; height: 58%; border-radius: 50% 50% 45% 45%; background: radial-gradient(60% 60% at 50% 30%, #ea96a0, #b9596a 78%); }
+.agz .tg { position: absolute; left: 69.8%; top: 39.3%; width: 5%; height: 3%; border-radius: 10% 10% 50% 50%; background: radial-gradient(60% 70% at 50% 25%, #f1a2ab, #c4606d 82%); box-shadow: inset 0 .3px .3px rgba(90, 30, 40, .6); transform: translate(-50%, 0) scaleY(0); transform-origin: 50% 0; transition: transform .16s ease-out; }
+.agz.blep .tg { transform: translate(-50%, 0) scaleY(1); }
 @keyframes agzBreathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.01, 1.024); } }
 @media (max-width: 1599px) { .agz { display: none; } }
 @media (prefers-reduced-motion: reduce) { .agz .bod { animation: none; } }
@@ -955,7 +959,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   <header class="rail">
     <a class="brand" href="./" data-full="Back to the start: the HUD."><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></a>
     <button class="chip unoff" type="button" data-open="mAbout" data-full="Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Click for the full notice.">Unofficial community project · not affiliated with IDNI</button>
-    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><i class="sh"></i><span class="dir"><span class="pup"><span class="lg b"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg l"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg r"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="bod"><img class="trunk" src="assets/rig/agz-body.webp" alt="" draggable="false"><span class="hd"><img src="assets/agorzilla.webp" alt="" draggable="false"><span class="eye l"><img src="assets/rig/agz-eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="assets/rig/agz-eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><i class="mouth"></i></span></span></span></span></a>
+    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><i class="sh"></i><span class="dir"><span class="pup"><span class="lg b"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg l"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg r"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="bod"><img class="trunk" src="assets/rig/agz-body.webp" alt="" draggable="false"><span class="hd"><img src="assets/agorzilla.webp" alt="" draggable="false"><span class="eye l"><img src="assets/rig/agz-eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="assets/rig/agz-eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><i class="mouth"><u></u></i><i class="tg"></i></span></span></span></span></a>
     <div class="chips">
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
@@ -1302,6 +1306,8 @@ const paceNow = () => S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b,
 /* a scheduled change whose activation height lies far beyond the protocol minimum: the wait is the proposal’s choice, not Tau’s speed */
 const farAhead = u => u && u.status === "scheduled" && Number.isFinite(Number(u.activateAt)) && Number(u.activateAt) - S.height > Math.max(30, 3 * (S.minActBlocks || 0));
 /* blocks from proposal to agreement, when this page saw both */
+// blocks from proposal to law; null when either height is unknown (live data and the simulation can lack the proposal height)
+const lawIn = u => { const at = Number.isFinite(u.activeAt) ? u.activeAt : u.activateAt; return u && Number.isFinite(at) && Number.isFinite(u.proposedAt) && at >= u.proposedAt ? Math.max(1, at - u.proposedAt) : null; };
 const agreedIn = u => u && Number.isFinite(u.proposedAt) && Number.isFinite(u.agreedAt) && u.agreedAt >= u.proposedAt ? Math.max(1, u.agreedAt - u.proposedAt) : null;
 const fmtAgo = s => s < 90 ? Math.round(s) + " s ago" : s < 5400 ? Math.round(s / 60) + " min ago" : s < 172800 ? (s / 3600).toFixed(1) + " h ago" : Math.round(s / 86400) + " d ago";
 /* the node is still replaying the chain (or the chain is idle): the countdown would measure replay speed, so it pauses */
@@ -1842,22 +1848,23 @@ const AGZ_LIFE = (() => {
     scratch: async () => { go(hd, [{ transform: "none" }, { transform: "rotate(7deg)", offset: .2 }, { transform: "rotate(7deg)", offset: .8 }, { transform: "none" }], { duration: 1600 }); await go(bod, [0, 1, -1, 1, -1, 0].map((k, i) => ({ transform: `rotate(${k * 1.6}deg)`, offset: i / 5 })), { duration: 1500 }); },
     stretch: () => go(bod, [{ transform: "none" }, { transform: "scale(.97, 1.07)", offset: .4 }, { transform: "scale(.97, 1.07)", offset: .62 }, { transform: "scale(1.02, .98)", offset: .85 }, { transform: "none" }], { duration: 1900 }),
     yawn: async () => { a.classList.add("squint"); go(hd, [{ transform: "none" }, { transform: "rotate(-5deg) translateY(-1%)", offset: .3 }, { transform: "rotate(-5deg) translateY(-1%)", offset: .7 }, { transform: "none" }], { duration: 1700 });
-      await go(mouth, [{ transform: "translate(-50%, -50%) scaleY(0)" }, { transform: "translate(-50%, -50%) scaleY(1.6) scaleX(1.2)", offset: .35 }, { transform: "translate(-50%, -50%) scaleY(1.6) scaleX(1.2)", offset: .7 }, { transform: "translate(-50%, -50%) scaleY(0)" }], { duration: 1600 }); a.classList.remove("squint"); },
+      await go(mouth, [{ transform: "translate(-50%, -50%) scale(.8, 0)" }, { transform: "translate(-50%, -50%) scale(1.1, 1.25)", offset: .35 }, { transform: "translate(-50%, -50%) scale(1.15, 1.35)", offset: .7 }, { transform: "translate(-50%, -50%) scale(.8, 0)" }], { duration: 1600 }); a.classList.remove("squint"); },
     sit: () => go(bod, [{ transform: "none" }, { transform: "scale(1.03, .95)", offset: .2 }, { transform: "scale(1.03, .95)", offset: .85 }, { transform: "none" }], { duration: rnd(3000, 4500) }),
+    blep: async () => { go(hd, [{ transform: "none" }, { transform: "rotate(3deg)", offset: .2 }, { transform: "rotate(3deg)", offset: .8 }, { transform: "none" }], { duration: 1500 }); await wait(250); a.classList.add("blep"); await wait(900); a.classList.remove("blep"); await wait(300); },
     doze: async () => { a.classList.add("drowsy"); await go(hd, [{ transform: "none" }, { transform: "rotate(3deg) translateY(1%)", offset: .5 }, { transform: "none" }], { duration: 6500 }); a.classList.remove("drowsy"); },
     walk, backflip, roll, cartwheel, dance,
   };
   const SPECIAL = new Set(["backflip", "roll", "cartwheel", "dance"]);
   const idleWeights = () => {   // more room on this screen, more and bigger moves; a special at most every 25 s, fewer at night
     const n = night(), st = !!PRESENCE.stalled, room = AGZ.room || 0, sp = Date.now() - (L.lastSpecial || 0) < 25000 ? 0 : n ? .3 : 1;
-    return { glance: st ? 6 : 2.4, around: 1.6, weight: 2, sniff: 1.4, scratch: 1.2, stretch: 1, yawn: n ? 3 : .5, sit: 1, doze: n ? 2 : 0, walk: room >= 28 ? 4 : 0,
+    return { glance: st ? 6 : 2.4, around: 1.6, blep: n ? .3 : .9, weight: 2, sniff: 1.4, scratch: 1.2, stretch: 1, yawn: n ? 3 : .5, sit: 1, doze: n ? 2 : 0, walk: room >= 28 ? 4 : 0,
       dance: 1.4 * sp, backflip: headroom() >= 18 ? 1.2 * sp : 0, roll: room >= 90 ? 1 * sp : 0, cartwheel: room >= 120 ? .8 * sp : 0 };
   };
   const pickIdle = () => { const w = Object.entries(idleWeights()).filter(([k, v]) => v > 0 && k !== L.prevIdle); let r = Math.random() * w.reduce((t, [, v]) => t + v, 0); for (const [k, v] of w) if ((r -= v) <= 0) return k; return "glance"; };
   /* the network's moves, each one meant: a block is an ear twitch, an agreed rule a cheer, a refused transfer a head shake, ghosts a squint at Waiting, a stalled chain worry */
   const EVT = {
     block: () => go(hd, [{ transform: "none" }, { transform: "rotate(2.5deg) translateY(-1.4%)", offset: .35 }, { transform: "none" }], { duration: 460, easing: "ease-out" }),
-    agreed: async () => { await hop(10); await hop(7); await look(-3, 0, 900, -2); },
+    agreed: async () => { go(mouth, [{ transform: "translate(-50%, -50%) scale(.8, 0)" }, { transform: "translate(-50%, -50%) scale(1, .9)", offset: .2 }, { transform: "translate(-50%, -50%) scale(1, .9)", offset: .8 }, { transform: "translate(-50%, -50%) scale(.8, 0)" }], { duration: 1900 }); await hop(10); await hop(7); await look(-3, 0, 900, -2); },
     refused: () => go(hd, [0, -5, 5, -4, 3, 0].map((k, i) => ({ transform: `rotate(${k}deg)`, offset: i / 5 })), { duration: 950 }),
     ghosts: async () => { a.classList.add("squint"); await look(-2, -1, 2600, 2); a.classList.remove("squint"); },
     stalled: async () => { a.classList.add("squint"); await look(5, 2.4, 1800); await go(pup, [0, 1, 0, 1, 0, 1, 0].map((k, i) => ({ transform: k ? "translateY(-1.6%)" : "none", offset: i / 6 })), { duration: 1300 }); await look(5, 2.4, 1400); a.classList.remove("squint"); },
@@ -1932,7 +1939,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=25.1", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=25.2", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2285,8 +2292,8 @@ function renderUpdates() {
   }
 
   $("contrastCap").innerHTML = failed ? `<b>“${esc(failed.title)}”</b> missed quorum: ${failed.votes.size} of ${thr} validators by block #${failed.activateAt}. Archived without effect, the old rules stand. <b>Tau refuses by default.</b>`
-    : !cur ? (lastActive ? `<b>“${esc(lastActive.title)}”</b> went from proposal to law in ${Math.max(1, lastActive.activeAt - lastActive.proposedAt)} blocks and is absorbed into the network. Waiting for the next proposal.` : "On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b>")
-    : cur.status === "active" ? `<b>“${esc(cur.title)}”</b> went from proposal to law in ${Math.max(1, cur.activeAt - cur.proposedAt)} blocks. No fork, no upgrade, no admin.`
+    : !cur ? (lastActive ? `<b>“${esc(lastActive.title)}”</b> went from proposal to law${lawIn(lastActive) ? ` in ${lawIn(lastActive)} blocks` : ""} and is absorbed into the network. Waiting for the next proposal.` : "On Tau a rule change is a transaction: checked, agreed by quorum and live a few blocks later. <b>No fork, no upgrade, no admin.</b>")
+    : cur.status === "active" ? `<b>“${esc(cur.title)}”</b> went from proposal to law${lawIn(cur) ? ` in ${lawIn(cur)} blocks` : ""}. No fork, no upgrade, no admin.`
     : cur.status === "scheduled" && farAhead(cur) ? `<b>“${esc(cur.title)}”</b> is agreed${agreedIn(cur) ? ` (${agreedIn(cur)} block${agreedIn(cur) === 1 ? "" : "s"} from proposal to agreement)` : ""}. It becomes law at block #${cur.activateAt}, a height the proposal itself chose: ${Math.max(0, cur.activateAt - S.height)} blocks ahead${paceNow() ? `, ~${fmtCount(Math.max(0, cur.activateAt - S.height) * paceNow())} at the current pace` : ""}. The wait is the proposer’s choice, not Tau’s. Nobody has to upgrade anything.`
     : cur.status === "scheduled" ? `<b>“${esc(cur.title)}”</b> is agreed and becomes law at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Nobody has to upgrade anything.`
     : `<b>“${esc(cur.title)}”</b> is collecting agreement: ${cur.votes.size} of ${thr} validators so far. It becomes law at #${cur.activateAt} if enough agree.`;

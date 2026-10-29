@@ -1338,5 +1338,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Click a validator in the Chain core and its profile opens: what it sealed, how much traffic it carried and how it voted (the Validators panel's detail has the same link). The header Agorzilla's hover now reads like a Chain core element: a status light, Live with today's meals and wallets, his stage and tonight's vote, all from agorzilla.com. His eyes now look where he looks, and skin lids with a lash line close when he blinks."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "The header Agorzilla's mouth opens for real now: dark inside with a pink tongue when he yawns, a little open on a cheer when a vote passes, and now and then his tongue peeks out on its own. Also fixed: the rule change card under the Chain core no longer says “NaN blocks” when the proposal's height is unknown."
  }
 ]
