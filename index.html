@@ -443,6 +443,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .tx.rej { border-left-color: var(--refused); }
 .tx.sealed { border-left-color: rgba(57,255,138,.45); }
 .tx .sl { font-weight: 500; color: var(--ok); }
+.tx.sealed.listed { border-left-color: #ffb13b; box-shadow: inset 0 0 0 1px rgba(255,177,59,.45); }
+.tx.sealed.listed .sl { color: #ffb13b; }
 .tx.gov { border-left-color: var(--amber); }
 .tx.mined { opacity: .55; }
 .tx .top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--dim); }
@@ -1295,7 +1297,7 @@ function markSealed(id, h) {   // a card in Transactions and the waiting dot lea
   const el = $("tx_" + id.slice(0, 16)) || feedHold.find(d => d.id === "tx_" + id.slice(0, 16)), m = S.mempool.find(x => x.id.toLowerCase() === id.toLowerCase());
   if (m && Number.isFinite(h)) m.block = h;
   if (!el || el.classList.contains("sealed") || !Number.isFinite(h)) return;
-  el.classList.add("sealed"); const sp = el.querySelector(".top > span"); if (sp) sp.insertAdjacentHTML("afterbegin", `<b class="sl">✓ in #${h}</b> · `);
+  el.classList.add("sealed"); if (m) el.classList.add("listed"); const sp = el.querySelector(".top > span"); if (sp) sp.insertAdjacentHTML("afterbegin", `<b class="sl">✓ in #${h}</b> · `);
 }
 /* the relay compares the listed transactions with the whole chain it keeps (/health-score): how many are in fact sealed,
    and how long the oldest really waiting one has waited since the relay first saw it, not since this page opened */
@@ -1481,7 +1483,7 @@ function detailMempool() {
   const ms = memState(), sAt = t => live ? sealedAt(t.id) : null;
   const rows = S.mempool.map(t => `<div><span class="t">${sAt(t) != null ? "sealed" : seen.has(t.id) ? fmtAge(now - seen.get(t.id)) : "—"}</span><span>${sAt(t) != null ? `<b class="ok">✓ ${typeof sAt(t) === "number" ? "in #" + fmt(sAt(t)) : "in a block"}</b>, still listed · ` : ""}${live && t.id ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id)} · ${kind(t)} · ${esc(t.type)} · fee ${esc(t.fee)}</span></div>`).join("");
   return { title: `Waiting transactions · ${M}`,
-    html: `<p class="lead">${isSim() ? "Simulated transactions" : "Transactions"} the node admitted after the rule check and no block has sealed yet. They orbit the core as dots until the next proposer takes them in; the age counts from when this page first saw each one.${live ? " The alpha node keeps a sealed transaction listed for up to an hour (IDNI #81, see Findings): those are marked ✓ with their block and drawn as empty rings." : ""}</p>
+    html: `<p class="lead">${isSim() ? "Simulated transactions" : "Transactions"} the node admitted after the rule check and no block has sealed yet. They orbit the core as dots until the next proposer takes them in; the age counts from when this page first saw each one.${live ? " The alpha node keeps a sealed transaction listed for up to an hour (IDNI #81, see Findings): those are marked ✓ with their block and drawn as amber dots in a small frame." : ""}</p>
     ${checksHtml([[`${ms.W} really waiting`, ms.W ? "" : "off", "Listed and in no block yet."], ...(live ? [[`${ms.stale} already sealed`, ms.stale ? "warn" : "off", "Already in a block but still listed by the node (known bug, IDNI #81)."]] : []), ...(ms.per != null ? [[`${perTxt(ms.per)} per block`, "", "Transactions the last few blocks took on average."]] : []), [`${S.mempool.filter(t => t.kind === "gov").length} proposals`, "", "Rule-change proposals waiting to be sealed (white dots)."], [`${S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length} rule work`, "", "Rule deployments and offers (green dots)."], [`fee ${S.fee} AGRS`, "", "Base fee under the current rule version (o9)."]])}
     <h3>Oldest first</h3><div class="loglist">${rows || `<div><span class="t">—</span><span>Nothing waiting: every transaction sent so far is in a block.</span></div>`}</div>` };
 }
@@ -1601,7 +1603,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.61", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.62", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2522,6 +2524,8 @@ function liveMessage(ev) {
     S.mempool = (d.transactions || []).map(t => normTx({ ...t, sender_pubkey: t.sender }, t.tx_hash));
     S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } const h = sealedAt(t.id); if (h != null) { t.block = typeof h === "number" ? h : t.block; if (typeof h === "number") markSealed(t.id, h); } });
     if (TXST.st.size > 400) { const keep = new Set(S.mempool.map(t => t.id.toLowerCase())); TXST.st.forEach((v, k) => { if (!keep.has(k)) TXST.st.delete(k); }); }
+    const listedIds = new Set(S.mempool.map(t => "tx_" + t.id.slice(0, 16)));
+    document.querySelectorAll("#feed .tx.sealed").forEach(el => { const on = listedIds.has(el.id); if (el.classList.contains("listed") !== on) { el.classList.toggle("listed", on); el.title = on ? "Already in a block, but the node still lists it as waiting (known node bug, IDNI #81)" : ""; } });
     askTxStatus(); pollRelayMem();
     readouts();
   } else if (msg.command === "getgovernance") {
@@ -2888,9 +2892,13 @@ function draw(tm) {
     const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
     const sl = liveChain() && sealedAt(tx.id) != null;
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
-    if (sl) { cx.shadowBlur = 0; cx.strokeStyle = "rgba(200,200,210,.45)"; cx.lineWidth = 1.5; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 5, 0, Math.PI * 2); cx.stroke(); }
+    if (sl) {   // sealed but still listed: an amber dot in a small block frame
+      const x = Math.cos(a) * r, y = Math.sin(a) * r;
+      cx.fillStyle = "rgba(255,177,59,.9)"; cx.shadowColor = "rgb(255,177,59)"; cx.shadowBlur = 8; cx.arc(x, y, 4, 0, Math.PI * 2); cx.fill();
+      cx.shadowBlur = 0; cx.beginPath(); cx.strokeStyle = "rgba(255,177,59,.75)"; cx.lineWidth = 1.5; cx.roundRect(x - 8.5, y - 8.5, 17, 17, 3); cx.stroke();
+    }
     else { cx.shadowColor = cx.fillStyle; cx.shadowBlur = 14; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 6, 0, Math.PI * 2); cx.fill(); }
-    if (sl) { hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const h = sealedAt(tx.id); return vt(`Already sealed${typeof h === "number" ? ` in block #${fmt(h)}` : " in a block"}. The alpha node still lists it as waiting (known node bug, see Findings); empty rings are these.`, `Mempool: ${short(tx.id)} · ${tx.type} · already in ${typeof h === "number" ? "#" + fmt(h) : "a block"}, still listed by getmempool (IDNI #81).`); }); return; }
+    if (sl) { hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const h = sealedAt(tx.id); return vt(`Already sealed${typeof h === "number" ? ` in block #${fmt(h)}` : " in a block"}. The alpha node still lists it as waiting (known node bug, see Findings); amber dots in a small frame are these.`, `Mempool: ${short(tx.id)} · ${tx.type} · already in ${typeof h === "number" ? "#" + fmt(h) : "a block"}, still listed by getmempool (IDNI #81).`); }); return; }
     hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`); });
   });
   cx.shadowBlur = 0;
@@ -2899,7 +2907,7 @@ function draw(tm) {
     const gov = S.mempool.filter(t => t.kind === "gov").length, rule = S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length, xfer = M - gov - rule;
     const mix = [[xfer, "transfer", "transfers"], [rule, "rule work", "rule work"], [gov, "rule-change proposal", "rule-change proposals"]].filter(x => x[0]).map(x => `${x[0]} ${x[0] === 1 ? x[1] : x[2]}`).join(", ");
     const pace = m.per != null ? vt(` Recent blocks take ${perTxt(m.per)} each.`, ` Last blocks: ${perTxt(m.per)} each.`) : "", age = W ? (m.pageAge ? " since this page opened" : "") : "";
-    const stTxt = st ? vt(`\n${st === M ? (M === 1 ? "It is" : "All of them are") : `${st} of them ${st === 1 ? "is" : "are"}`} already sealed in a block (empty ${st === 1 ? "ring" : "rings"}); the alpha node keeps listing ${st === 1 ? "it" : "them"} for up to an hour (known bug, see Findings).`, `\n${st} already sealed (in a known block, gettxstatus confirmed or relay count), still in getmempool: IDNI #81.`) : "";
+    const stTxt = st ? vt(`\n${st === M ? (M === 1 ? "It is" : "All of them are") : `${st} of them ${st === 1 ? "is" : "are"}`} already sealed in a block (amber, framed); the alpha node keeps listing ${st === 1 ? "it" : "them"} for up to an hour (known bug, see Findings).`, `\n${st} already sealed (in a known block, gettxstatus confirmed or relay count), still in getmempool: IDNI #81.`) : "";
     const chk = m.unchecked ? vt(` Still checking ${m.unchecked} against the chain.`, ` ${m.unchecked} not looked up yet.`) : "";
     return health("mempool") + (M
       ? vt(`Waiting room: ${M} transaction${M === 1 ? "" : "s"} listed (${mix}).${stTxt}\n${W ? `${W === 1 ? "1 really waits" : W + " really wait"} for a block; the oldest for ${fmtAge(oldest)}${age}.` : "None really waits for a block."}${(pace + chk) ? "\n" + (pace + chk).trim() : ""}\nClick to see them one by one.`,

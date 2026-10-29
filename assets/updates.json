@@ -986,5 +986,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "In Chain core, the glow under a hovered ring, dot or the core now takes the colour of its status light: green when it is normal, amber to watch or while something is in progress, red for a problem."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Transactions already sealed in a block that the node still lists as waiting now stand out: amber dots in a small block frame in Chain core, and an amber frame with their block number in Transactions."
  }
 ]
