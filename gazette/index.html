@@ -56,6 +56,8 @@ header.top { display: flex; flex-wrap: wrap; align-items: center; justify-conten
 /* the city street around the paper (scene.js) */
 .scene { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .scene-hit { position: absolute; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 40%; }
+.scene-note { position: absolute; z-index: 5; padding: 8px 11px; font: italic 13px/1.4 Georgia, "Noto Serif SC", serif; color: rgba(240,226,198,.95); background: rgba(22,16,10,.8); border: 1px solid rgba(226,201,152,.3); border-radius: 3px; pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .4s, transform .4s; }
+.scene-note.on { opacity: 1; transform: none; }
 .scene-hit:focus-visible { outline: 1px solid rgba(226,201,152,.6); outline-offset: 2px; }
 .stage { position: absolute; left: 50%; top: 50%; }
 .scaler { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
@@ -299,7 +301,10 @@ html.i18n-zh .title { font-family: "Noto Serif SC", "Songti SC", serif; font-wei
 const EN = {
   name: "The Daily Consensus",
   motto: "“Where the rules change by agreement”",
-  ui: { amb0: "Café: off", amb1: "Café: quiet", amb2: "Café: lively", hitCup: "Stir the coffee", hitSugar: "Sugar", hitPapers: "Yesterday's papers", rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", faith: "From the composing room: this paper is set by learning machines, which guess well and now and then guess wrong. Tau is built the other way: a logic machine that checks every rule before it applies. Read us in good faith; for proof, consult the chain.", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
+  ui: { amb0: "Café: off", amb1: "Café: quiet", amb2: "Café: lively", hitCup: "Stir the coffee", hitSugar: "Sugar", hitPapers: "Yesterday's papers", notes: {
+    cup: (h, a) => h != null ? `The steam spells τ. Block #${h.toLocaleString("en-US")} is the newest on the testnet${a != null ? `, sealed ${a} s ago` : ""}; another comes about every 8 seconds.` : "The steam spells τ. On the testnet a new block comes about every 8 seconds.",
+    sugar: () => "Cube by cube, a chain. Every block is checked against the rules in force before it joins.",
+    papers: h => `Extra! On Tau the rules change by agreement: proposed, voted on, checked by logic before they apply. No fork needed.${h != null ? ` As of block #${h.toLocaleString("en-US")}.` : ""}` }, rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", faith: "From the composing room: this paper is set by learning machines, which guess well and now and then guess wrong. Tau is built the other way: a logic machine that checks every rule before it applies. Read us in good faith; for proof, consult the chain.", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
   date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
   pages: [
@@ -692,7 +697,7 @@ const EN = {
 (() => {
   const ED = (window.TauI18n && TauI18n.lang === "zh" && window.GAZETTE_ZH) || EN;
   const UI = ED.ui;
-  window.GAZETTE_AMB = [UI.amb0, UI.amb1, UI.amb2]; window.GAZETTE_HIT = { cup: UI.hitCup, sugar: UI.hitSugar, papers: UI.hitPapers };
+  window.GAZETTE_AMB = [UI.amb0, UI.amb1, UI.amb2]; window.GAZETTE_HIT = { cup: UI.hitCup, sugar: UI.hitSugar, papers: UI.hitPapers }; window.GAZETTE_NOTE = UI.notes;
   const $ = id => document.getElementById(id);
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const desk = $("desk"), stage = $("stage"), scaler = $("scaler"), book = $("book");
@@ -1123,7 +1128,7 @@ const EN = {
       const r = await fetch("https://node.tauhud.com/api/v1/summary", { cache: "no-store", signal: ctl.signal }); if (!r.ok) throw new Error(r.status);
       const j = await r.json(); const h = Number(j.height ?? j.tip_height);
       if (!Number.isFinite(h)) throw new Error("no height");
-      HEIGHT = h; AGE = Number.isFinite(Number(j.last_block_age_seconds)) ? Math.round(j.last_block_age_seconds) : null;
+      HEIGHT = h; AGE = Number.isFinite(Number(j.last_block_age_seconds)) ? Math.round(j.last_block_age_seconds) : null; window.GAZETTE_LIVE = { height: h, age: AGE, at: Date.now() };
       WIRE = UI.wire(h.toLocaleString("en-US"), AGE);
     } catch (e) { WIRE = UI.wireOff; }
     clearTimeout(to);
@@ -1153,6 +1158,6 @@ const EN = {
   }, 200); });
 })();
 </script>
-<script src="scene.js"></script>
+<script src="scene.js?v=4"></script>
 </body>
 </html>
