@@ -67,6 +67,12 @@ check(alerts.item_picture({"kind": "agreed", "id": "ab12cd34ef"}).endswith("/og/
 check(alerts.item_picture({"kind": "restart", "id": None}).endswith("/og/hud.png"), "restart: the live overview")
 check(alerts.x_len("🧪 a https://example.com/very/long/path") == 2 + 3 + 23, "x_len: emoji 2, link 23")
 
+m = alerts.major_item({"on": "2026-10-30", "html": "x", "major": {"id": "a", "title": "New: A", "link": "/a/", "image": "/assets/shots/a.png"}})
+check(alerts.major_picture(m) == alerts.SITE + "/assets/shots/a.png", "major: its screenshot from the update log goes under the X post")
+alerts.page_picture = lambda link: None
+check(alerts.major_picture(alerts.major_item({"on": "x", "html": "x", "major": {"id": "b", "link": "/b/"}})) == alerts.SITE + "/og.png",
+      "major without a screenshot: the site's picture")
+
 alerts.X_LINKS = True
 t = alerts.x_text({"kind": "agreed", "headline": "h", "why": "w", "link": "https://tauhud.com/proposals/"})
 check(t.endswith("https://tauhud.com/proposals/ · #TauNet"), "X_LINKS=true puts the link back")

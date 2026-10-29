@@ -1061,5 +1061,10 @@
   "tag": "Alerts",
   "on": "2026-10-29",
   "html": "X posts read more easily: the headline comes first, then the text, then one quiet line that says where it comes from, with #TauNet. Where a picture fits, it goes along: a rule change gets its own card with what it does and the votes, a new node and “Testnet today” get the live overview, a new page gets its preview picture."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-29",
+  "html": "New pages and features get a picture on X: every announcement in the Updates log now brings a screenshot of the new page, which goes under its X post. Pages announced before this get their own preview picture or the Tau HUD one."
  }
 ]
