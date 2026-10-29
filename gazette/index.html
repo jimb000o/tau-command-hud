@@ -703,6 +703,7 @@ const EN = {
     <div class="ear r"><b>${UI.free}</b>${UI.freeP}</div>
   </div>
   <div class="dateline"><span>${UI.weekNo(e.no)}</span><span>${txt(e.printed)}</span><span>${UI.weekOf} ${txt(e.period)}</span></div>
+  ${e.extra ? `<div class="center"><span class="extra">EXTRA</span></div>` : ""}
   <div class="banner">${txt(e.banner)}</div>
   <div class="grid">
     <div class="u s4 wlead">

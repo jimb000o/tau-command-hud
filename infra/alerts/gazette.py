@@ -256,11 +256,11 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
         # the lead story when the switching is new or the visitors turned one down (Kilian 2026-10-29: the consensus switch is the
         # title story); a routine week's switches are told in the Rehearsal Hall
         out.append({"kind": "simswitch", "score": 110 if first else 75 if down else -1,
-                    "banner": t("Users vote; the chain changes how it agrees", "用户投票，链改变了达成一致的方式"),
+                    "banner": t("Users rewrite the chain’s law; no fork, no restart", "用户投票改写链的法则：不分叉，不重启"), "extra": True,
                     "h2": h2,
-                    "deck": t("No fork, no restart, not one machine reinstalled. In the simulation that runs in every visitor's browser the visitors voted "
+                    "deck": t("Not one machine reinstalled. In the simulation that runs in every visitor's browser the visitors voted "
                               "and the simulated validators followed. On Tau, how blocks are made is a rule like any other.",
-                              "没有分叉，没有重启，没有一台机器重装。在每位访客浏览器里运行的模拟中，访客投票，模拟验证者照办。在 Tau 上，怎样出块也只是一条规则。"),
+                              "没有一台机器需要重装。在每位访客浏览器里运行的模拟中，访客投票，模拟验证者照办。在 Tau 上，怎样出块也只是一条规则。"),
                     "para": t(f"At {when['en']} on {wd.strftime('%A')}, UTC, the rehearsal chain changed the way it chooses who seals its blocks: {to['en']}. "
                               "The question went to the floor at twenty past, the visitors of tauhud.com cast their votes, and ten minutes later every simulated node "
                               "switched at the same agreed block. Nobody had to install a thing"
@@ -545,7 +545,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
     return {
         "v": 1, "no": no, "date": _d(printed_at).strftime("%Y-%m-%d"), "printed": printed(printed_at),
         "start": round(r["start"]), "end": round(r["end"]), "period": period(r["start"], r["end"]),
-        "head": r.get("head"), "kind": kind, "banner": banner, "teaser": deck,
+        "head": r.get("head"), "kind": kind, "extra": bool(top.get("extra")), "banner": banner, "teaser": deck,
         "lead": {"kick": kick, "h": h2, "deck": deck, "body": lead_body(r, props, ranked)},
         "weather": weather(r), "caption": caption(r),
         "figures": figures(r),
