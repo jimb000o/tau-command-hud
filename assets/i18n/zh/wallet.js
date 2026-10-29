@@ -496,4 +496,5 @@ TauI18n.add({ strings: {
   "put your co-signer in your address book first": "请先把共同签名人加入通讯录",
   "Fix the amber block above first; then these lines show what the rule does.": "请先修正上面琥珀色的规则项；之后这里会显示规则的效果。",
   "Not ready to sign:": "还不能签名：",
+  "{n} more waiting for you: show all": "还有 {n} 项等你处理：全部显示",
 } });
