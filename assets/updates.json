@@ -938,6 +938,16 @@
   "html": "In numbers and Privacy moved out of the Learn menu into the footer: every page now ends its footer line with “In numbers · Privacy”, and pages without a footer, like the HUD, show the two as a small line in the bottom right corner. Nothing else moves."
  },
  {
+  "tag": "In numbers",
+  "on": "2026-10-29",
+  "html": "Tau HUD in numbers: the visitor charts switch between line and bars, a new 24H range shows the last day hour by hour, and the page tables show how long people typically stay on each page. Time on a page is kept only as a rough step such as “1–3 min”, still without cookies."
+ },
+ {
+  "tag": "v17.53",
+  "on": "2026-10-29",
+  "html": "In numbers and Privacy are back in the Learn menu, so they are easy to find on every page. They also stay at the end of every footer line; the small corner line on pages without a footer is gone."
+ },
+ {
   "tag": "Alerts",
   "on": "2026-10-29",
   "html": "The Updates log is complete and stays that way: eleven entries for the live backend, the node, the relay, the node kit, the weekly recap and the question bot were missing from 26 to 28 October and are now in, and every new pull request must add its entry before it can go live. The Telegram channel shares more of it: up to three new pages or features a day between 06:00 and 23:00 UTC, and the smaller changes as a digest at 12:00 and 18:00 UTC."

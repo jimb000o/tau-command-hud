@@ -50,6 +50,12 @@ hit("p=explorer&e=1")
 hit("p=nodes&e=1")
 t = v.report(1)["days"]["2026-10-28"]
 check(t["engaged"] == {"explorer": 1}, "an engaged ping counts only for a page the visitor opened")
+hit("p=explorer&t=95")
+hit("p=explorer&t=4")
+hit("p=nodes&t=50")
+hit("p=explorer&t=abc")
+t = v.report(1)["days"]["2026-10-28"]
+check(t["time"] == {"explorer": [1, 0, 0, 1, 0, 0]}, "time on a page as steps, only for a page the visitor opened")
 before = json.dumps(v.report(1))
 hit("p=hud", headers={"User-Agent": UA, "DNT": "1"})
 hit("p=hud", headers={"User-Agent": UA, "Sec-GPC": "1"})
@@ -75,7 +81,10 @@ check(r[0] == 200 and r[1].startswith("text/html") and b"Tau HUD" in r[2], "the 
 r = v.route("/visits/public", "", "1.1.1.1", H)
 pub = json.loads(r[2])["days"]["2026-10-28"]
 check(r[0] == 200 and pub[0] == 4 and pub[1] == 24 and pub[2] == 1 and pub[3]["stats"] == 2, "public totals without a key")
-check("t.me" not in r[2].decode() and "telegram" not in r[2].decode() and "hours" not in r[2].decode(), "no referrers, tags or hours in public")
+check("t.me" not in r[2].decode() and "telegram" not in r[2].decode(), "no referrers or tags in public")
+hrs = json.loads(r[2])["hours"]["2026-10-28"]
+check(pub[6] == {"explorer": [1, 0, 0, 1, 0, 0]}, "time steps per page are public")
+check(hrs[0][10] == 4 and hrs[1][10] == 24, "visitors and views per hour for the 24-hour chart")
 check(v.route("/other", "", "1.1.1.1", H) is None, "other paths are left to the relay")
 T[0] += 86400
 hit("p=explorer&r=t.me&l=en&m=sim&w=2560")

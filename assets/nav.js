@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.52"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.53"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -41,10 +41,10 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     { k: "explore", t: "Explore", items: ["explorer", "stats", "history", "account", "nodes", "proposals"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "developers", "press", "tau", "about"], tab: "▸" },
+    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "meta", "developers", "press", "tau", "about", "legal"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote"], id: "btnPlayground", tab: "◇", short: "Play" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", meta: "learn", legal: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
@@ -639,7 +639,8 @@
 
   document.addEventListener("click", e => { if (openEl && !e.target.closest(".tnav .ni-wrap, .tnav-gearwrap, .tsheet, .tabbar")) closeAll(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && openEl) closeAll(); });
-  /* cookie-free visitor numbers (infra/relay/visits.py): one ping when a page opens, one more after 30 s visible.
+  /* cookie-free visitor numbers (infra/relay/visits.py): one ping when a page opens, one more after 30 s visible,
+     one with the visible seconds when the page is hidden or left.
      Nothing is stored in the browser; ?nostats=1 leaves this browser out of the count (?nostats=0 undoes it). */
   function countVisit() {
     try {
@@ -656,19 +657,23 @@
     const base = `https://${RELAY}/v?p=${encodeURIComponent(page)}`;
     const send = extra => { try { fetch(base + extra, { mode: "no-cors", keepalive: true, credentials: "omit", referrerPolicy: "no-referrer" }).catch(() => {}); } catch (e) {} };
     send(`&r=${encodeURIComponent(ref)}&s=${encodeURIComponent(q.get("utm_source") || q.get("ref") || "")}&l=${zh ? "zh" : "en"}&m=${SIM ? "sim" : "live"}`);
-    let shown = 0;
-    const tick = setInterval(() => { if (document.visibilityState === "visible" && ++shown >= 30) { clearInterval(tick); send("&e=1"); } }, 1000);
+    // seconds the page was visible; sent once, when the page is first hidden or left (the relay keeps only a time step)
+    let shown = 0, timed = false;
+    setInterval(() => { if (document.visibilityState === "visible" && ++shown === 30) send("&e=1"); }, 1000);
+    const leave = () => { if (!timed && shown > 0 && document.visibilityState !== "visible") { timed = true; send(`&t=${shown}`); } };
+    document.addEventListener("visibilitychange", leave);
+    addEventListener("pagehide", () => { if (!timed && shown > 0) { timed = true; send(`&t=${shown}`); } });
   }
-  /* "In numbers" and "Privacy" live in the footer line of every page, not in the Learn menu (Kilian, 29 Oct); a page without a footer gets them as a quiet corner link */
+  /* "In numbers" and "Privacy" sit in the Learn menu and again at the end of every page's footer line (Kilian, 29 Oct); a page without a footer has them in Learn only */
   function mountFootLinks() {
     if (!document.querySelector("nav.tnav") || document.querySelector(".tn-foot")) return;
     const f = [...document.querySelectorAll("footer")].find(x => !x.closest("nav, .tn-modal"));
     const here = location.pathname.slice(ROOT.length).replace(/index\.html$/, "").replace(/\/+$/, "");
+    if (!f) return;
     const links = [["In numbers", "meta"], ["Privacy", "legal"]].filter(([, h]) => h !== here && !(f && f.querySelector(`a[href$="${h}/"]`)));
     if (!links.length) return;
     const as = links.map(([t, h]) => { const a = el("a", "tn-foot", t); a.href = ROOT + h + "/"; return a; });
-    if (f) { const host = f.querySelector("p:last-of-type") || f; as.forEach(a => host.append(" · ", a)); return; }
-    const box = el("div", "tn-footc"); as.forEach((a, k) => { if (k) box.append(" · "); box.append(a); }); document.body.append(box);
+    const host = f.querySelector("p:last-of-type") || f; as.forEach(a => host.append(" · ", a));
   }
   const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); mountFootLinks(); countVisit(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
