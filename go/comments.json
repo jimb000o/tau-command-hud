@@ -1,0 +1,7 @@
+{
+  "idni-80-update": {
+    "label": "Follow-up comment on IDNI/tau-testnet #80 (validator request)",
+    "url": "https://github.com/IDNI/tau-testnet/issues/80#issuecomment-new",
+    "text": "Quick update from our side. The node behind this request has been running since Oct 27 at node.tauhud.com and is fully synced to the tip (status: https://tauhud.com/status/). The key stays idle until it appears in the active set; the node will not propose before that (validator-gate patch, infra/node/patches in jimb000o/tau-command-hud). Pubkey again for convenience: 80ad4a20099a0d9002c67ffd0094587c2238fbe84d24d41861481936bce25779a64f4ba12ef7825051a9507f11d536b8. Happy to adjust anything on our end, or to test a second validator on a staging genesis first if that is easier for you. Thanks!"
+  }
+}
