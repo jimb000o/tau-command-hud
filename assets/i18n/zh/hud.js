@@ -2008,4 +2008,6 @@ TauI18n.add({ strings: {
   "Japanese": "日文",
   "Troll box: a live public chat on the HUD. Open it with the Troll box pill at the bottom right and talk with everyone who is looking at Tau right now, under your random animal name, no account. The rules run on their own: one message every few seconds, no links, no price or trading talk (testnet AGRS has no value), three reports hide a message, and everything is gone after 24 hours. Details in the privacy notice.": "闲聊箱：HUD 上的实时公开聊天。点右下角的“闲聊箱”按钮打开，用随机的动物名字和此刻正在看 Tau 的所有人聊天，无需账户。规则自动运行：每隔几秒一条，不能发链接，不谈价格或交易（测试网 AGRS 没有价值），三次举报即隐藏一条消息，所有内容 24 小时后消失。详见隐私说明。",
   "Accounts: the validator profile reads the whole chain faster and, while it reads, says how far it got (“1,900 of 3,116 blocks”) instead of showing numbers that look final.": "账户：验证者档案读取整条链更快了，读取期间会显示进度（“3,116 个区块中的 1,900 个”），而不是显示看起来已经是最终结果的数字。",
+  "≥ {n} blocks · ~{m} s": "≥ {n} 个区块 · 约 {m} 秒",
+  "Japanese, second round: the Monday front page of The Daily Consensus is now written in Japanese too, and every older entry in this Updates log reads in Japanese.": "日文第二轮：《共识日报》每周一的头版现在也有日文版，本更新日志里的所有旧条目也都可以用日文阅读。"
 } });
