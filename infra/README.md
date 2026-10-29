@@ -321,8 +321,8 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
 - What goes to X, each in its own short text: rule changes on the real chain (not practice
   votes), new nodes, "Testnet today", new pages and features (one line each for a catch-up),
   the Monday recap picture with the headline of the week's paper, donation thank-yous. Not on
-  X: the smaller-updates digests, health alarms, visitor proposals, and the simulation's
-  switches unless `X_SIM=true`.
+  X: the smaller-updates digests, health alarms, visitor proposals, the simulation's
+  switches unless `X_SIM=true`, and a major with `"x": false` (announced on X by hand, with its link).
 - Layout: the headline first, the text, then one line saying where it comes from, with
   `#TauNet $AGRS` (always both, once, never more tags). A picture goes along where one fits (`X_PICTURES`): a rule change's card and the
   live overview from the share service, a new page's screenshot (`"image": "/assets/shots/<id>.png"` in its
