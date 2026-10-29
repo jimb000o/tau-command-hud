@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.55"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v17.58"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -31,7 +31,7 @@
     press:      { t: "Press kit", d: "Video, logo, screenshots, facts and a ready paragraph, free to use", i: "↓", h: "press/" },
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
     legal:      { t: "Privacy", d: "Privacy notice: exactly what this site processes (no cookies, no tracking)", i: "§", h: "legal/" },
-    about:      { t: "About", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
+    about:      { t: "About Tau HUD", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
     seat:       { t: "Validator seat", d: "Take a simulated seat and vote a rule change into law", i: "✓", h: "playground/#seat" },
     whatif:     { t: "What if", d: "Move block time, validators and votes needed, and watch the chain react", i: "≈", h: "whatif/" },
@@ -40,11 +40,13 @@
   };
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
-    { k: "explore", t: "Explore", items: ["explorer", "stats", "history", "account", "nodes", "proposals"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["story", "gazette", "tour", "chronicle", "findings", "status", "meta", "developers", "press", "tau", "about", "legal"], tab: "▸" },
+    /* grouped by what a visitor came to do (Kilian, 29 Oct): watch the chain, understand Tau, try it, and who runs this site; five to seven entries each */
+    { k: "explore", t: "Explore", items: ["explorer", "proposals", "account", "nodes", "stats", "history"], tab: "≋" },
+    { k: "learn", t: "Learn", items: ["tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote"], id: "btnPlayground", tab: "◇", short: "Play" },
+    { k: "about", t: "About", util: true, items: ["about", "status", "findings", "meta", "developers", "press", "legal"], tab: "i" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "learn", status: "learn", meta: "learn", legal: "learn", developers: "learn", press: "learn", playground: "play", missions: "play", vote: "play", whatif: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", status: "about", meta: "about", legal: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
@@ -52,8 +54,6 @@
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
     gear: "Settings: node address and Connect, background rain.",
     gearSub: "Settings: which node this page reads, guided tour, about.",
-    tour: "A short guided tour of this page: what each part shows and why it matters. Arrow keys step, Esc ends.",
-    tourHud: "One minute, eight steps: how rules on Tau change by agreement, pointing at the panels where it happens. Arrow keys step, Esc ends.",
     live: "Live node: this page reads the real testnet through the community relay at node.tauhud.com. The choice holds on every page.",
     sim: "Simulation: invented activity that follows the documented protocol, generated in your browser. The same made-up chain on every page, eight seconds per block, a fresh start every day at 00:00 UTC. No real chain data. The choice holds on every page.",
     simMode: "Simulation: this page shows a made-up chain generated in your browser, the same on every page. No real chain data. Switch to Live node for the real testnet.",
@@ -550,9 +550,10 @@
       if (sec.single) {
         const a = el("a", "ni" + (here === sec.k ? " here" : ""), `<span class="lbl">${esc(sec.t)}</span>`); a.href = ROOT; if (here === sec.k) a.setAttribute("aria-current", "page"); tip(a, TIPS.hud); bar.append(a); return;
       }
-      const w = el("div", "ni-wrap"), b = el("button", "ni" + (here === sec.k ? " here" : ""), `<span class="lbl">${esc(sec.t)}</span><span class="caret">▾</span>`);
+      const w = el("div", "ni-wrap"), b = el("button", "ni" + (sec.util ? " util" : "") + (here === sec.k ? " here" : ""), `<span class="lbl">${esc(sec.t)}</span><span class="caret">▾</span>`);
       b.type = "button"; b.setAttribute("aria-haspopup", "true"); b.setAttribute("aria-expanded", "false"); if (sec.id) b.id = sec.id;
       const m = el("div", "menu"); m.hidden = true; m.setAttribute("role", "menu"); m.setAttribute("aria-label", sec.t);
+      if (sec.k === "learn" && !isHud) { const t = el("a", "mi", `<span class="ic">?</span><b>Tour of this page</b><span>What each part of this page shows and why it matters, in a few short steps</span>`); t.href = "#tour"; t.setAttribute("role", "menuitem"); t.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); }); m.append(t); }
       sec.items.forEach(k => m.append(item(k, page, isHud)));
       b.addEventListener("click", () => toggle(b, m));
       w.append(b, m); bar.append(w);
@@ -581,9 +582,8 @@
       const css = el("style"); css.textContent = `.tnav .tn-search { display: flex; align-items: center; margin: 0; } .tnav .tn-search input { width: 150px; box-sizing: border-box; padding: 4px 8px; font: 12px var(--tn-mono); color: #fff; background: rgba(255,255,255,.04); border: 1px solid var(--tn-hair); border-radius: 999px; outline: none; } .tnav .tn-search input::placeholder { color: var(--tn-dim); } .tnav .tn-search input:focus { border-color: #fff; width: 220px; } .tnav .tn-search input::-webkit-search-cancel-button { display: none; } @media (max-width: 700px) { .tnav .tn-search { display: none; } }`; document.head.append(css);
     }
     /* every page has a short guided tour of its own (assets/tour.js); on the HUD this starts the HUD's tour */
-    const tourA = el("a", "tl", "Tour"); tourA.href = isHud ? "?tour=1" : "#tour"; tip(tourA, isHud ? TIPS.tourHud : TIPS.tour);
-    tourA.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(isHud); });
-    right.append(tourA, updWrap);
+    /* at most four or five utilities on the line (Feedback, Telegram, Search, Updates); the tour starts from Learn and, on the HUD, from its own buttons */
+    right.append(updWrap);
     if (!isHud) loadTour();
     const I = window.TauI18n;
     right.append(el("span", "tnav-sep"));   // text links on the left of the line, the two switches on the right
@@ -682,15 +682,16 @@
     document.addEventListener("visibilitychange", leave);
     addEventListener("pagehide", () => { if (!timed && shown > 0) { timed = true; send(`&t=${shown}`); } });
   }
-  /* "In numbers" and "Privacy" sit in the Learn menu and again at the end of every page's footer line (Kilian, 29 Oct); a page without a footer has them in Learn only */
+  /* the About menu once more at the end of every page's footer line (Kilian, 29 Oct); a page without a footer has it in the header only */
   function mountFootLinks() {
     if (!document.querySelector("nav.tnav") || document.querySelector(".tn-foot")) return;
     const f = [...document.querySelectorAll("footer")].find(x => !x.closest("nav, .tn-modal"));
     const here = location.pathname.slice(ROOT.length).replace(/index\.html$/, "").replace(/\/+$/, "");
     if (!f) return;
-    const links = [["In numbers", "meta"], ["Privacy", "legal"]].filter(([, h]) => h !== here && !(f && f.querySelector(`a[href$="${h}/"]`)));
+    const links = [["About", "#about"], ["Status", "status"], ["Findings", "findings"], ["In numbers", "meta"], ["Developers", "developers"], ["Press", "press"], ["Privacy", "legal"]]
+      .filter(([, h]) => h !== here && !f.querySelector(h[0] === "#" ? `a[href$="${h}"]` : `a[href$="${h}/"], a[href$="/${h}"]`));
     if (!links.length) return;
-    const as = links.map(([t, h]) => { const a = el("a", "tn-foot", t); a.href = ROOT + h + "/"; return a; });
+    const as = links.map(([t, h]) => { const a = el("a", "tn-foot", t); a.href = ROOT + (h[0] === "#" ? h : h + "/"); return a; });
     const host = f.querySelector("p:last-of-type") || f; as.forEach(a => host.append(" · ", a));
   }
   const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); mountFootLinks(); countVisit(); };

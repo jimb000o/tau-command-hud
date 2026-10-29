@@ -494,5 +494,7 @@ TauI18n.add({ strings: {
   "Site version, one step per release": "网站版本，每次发布前进一步",
   "Part of the site that changed (the name opens it)": "有变化的网站部分（点名称即可打开）",
   "{e1}Site version, one step per release · {e2}Part of the site that changed (the name opens it) · Newest first": "{e1}网站版本，每次发布前进一步 · {e2}有变化的网站部分（点名称即可打开） · 最新的在最上面",
-  "What changed and when, newest first. The green number is the site version: it goes up one step with every release on any page, and a new page or big feature starts the next whole number. The name beside it says which part of the site changed and opens it. Before v17.54 only the HUD had numbers.": "变化内容和时间，最新的在最上面。绿色数字是网站版本：任何页面每发布一次就前进一步，新页面或大功能则进入下一个整数版本。旁边的名称说明网站的哪个部分有变化，点它即可打开。v17.54 之前只有 HUD 有版本号。"
+  "What changed and when, newest first. The green number is the site version: it goes up one step with every release on any page, and a new page or big feature starts the next whole number. The name beside it says which part of the site changed and opens it. Before v17.54 only the HUD had numbers.": "变化内容和时间，最新的在最上面。绿色数字是网站版本：任何页面每发布一次就前进一步，新页面或大功能则进入下一个整数版本。旁边的名称说明网站的哪个部分有变化，点它即可打开。v17.54 之前只有 HUD 有版本号。",
+  "About Tau HUD": "关于 Tau HUD",
+  "Press": "媒体"
 } });

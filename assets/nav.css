@@ -11,6 +11,7 @@
 .tnav .ni { font: 600 12px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; color: #a3a3ad; padding: 8px 13px; border-radius: 8px; white-space: nowrap; cursor: pointer; position: relative; user-select: none; background: transparent; border: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
 .tnav .ni:hover { color: #fff; background: rgba(255,255,255,.04); }
 .tnav .ni.here { color: #fff; }
+.tnav .ni.util:not(.here):not([aria-expanded="true"]):not(:hover) { color: var(--tn-dim); font-weight: 500; }   /* About holds the utilities: a step quieter than the three sections */
 .tnav .ni .lbl { position: relative; display: inline-block; line-height: 1.2; }
 /* "you are here": a 2px line exactly as wide as the word, 3px under it (not under the caret, not on the row's edge) */
 .tnav .ni.here .lbl::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; border-radius: 1px; background: var(--tn-ok); box-shadow: 0 0 8px var(--tn-ok); }
@@ -111,7 +112,7 @@ header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite
   .tnav .pill.tg { padding: 0; width: 44px; justify-content: center; }
   .tnav .pill.fbk span { display: none; } .tnav .pill.fbk { padding: 0; width: 44px; justify-content: center; }
   .tnav .tnav-gear { width: 44px; height: 44px; }
-  .tabbar { display: grid; position: fixed; left: 0; right: 0; bottom: 0; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--tn-hair, rgba(255,255,255,.18)); background: #0c0c0e; z-index: 50; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .tabbar { display: grid; position: fixed; left: 0; right: 0; bottom: 0; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--tn-hair, rgba(255,255,255,.18)); background: #0c0c0e; z-index: 50; padding-bottom: env(safe-area-inset-bottom, 0px); }
   .tabbar a, .tabbar button { font: 600 11px var(--display, sans-serif); letter-spacing: .05em; text-transform: uppercase; color: var(--dim, #8a8a94); text-align: center; padding: 8px 0 9px; display: flex; flex-direction: column; align-items: center; gap: 3px; background: transparent; border: 0; text-decoration: none; cursor: pointer; position: relative; }
   .tabbar em { font: 500 15px var(--mono, monospace); font-style: normal; color: #888; }
   .tabbar .on { color: #fff; } .tabbar .on em { color: var(--ok, #39ff8a); }
