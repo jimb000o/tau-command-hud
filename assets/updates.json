@@ -1273,5 +1273,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "HUD: Agorzilla now sits a touch lower, so his feet rest on the header line instead of hovering just above it. On screens around 2000 px wide he also stays beside the Live status instead of slipping further right."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-29",
+  "html": "Every post on X from @TauHUDcom now ends with #TauNet and $AGRS, once, after the line that says where it comes from. No other tags are added, and the caps and the no-repeat rules stay."
  }
 ]
