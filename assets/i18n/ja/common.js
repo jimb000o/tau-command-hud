@@ -532,6 +532,12 @@ TauI18n.add({ strings: {
   "Link copied.": "リンクをコピーしました。",
   "Copy blocked by the browser; the link is selected, press Ctrl/Cmd+C.": "ブラウザがコピーをブロックしました。リンクは選択済みなので、Ctrl/Cmd+C を押してください。",
   "The link shows this page's own preview picture. Tau HUD is an unofficial community view of the Tau testnet; nothing here is for sale.": "リンクにはこのページ専用のプレビュー画像が表示されます。Tau HUD は Tau テストネットの非公式なコミュニティビューで、ここで売っているものはありません。",
+  "One creature the whole testnet feeds: give it a meal, choose tomorrow's change": "テストネット全体で育てる 1 匹の生き物：ごはんをあげて、明日の変更を選ぼう",
+  "Agorzilla on X": "X の Agorzilla",
+  "The creature the testnet feeds: each evening's change and every growth stage": "テストネットが育てる生き物：毎晩の変更と成長の各段階",
+  "Follow": "フォロー",
+  "Agorzilla": "Agorzilla",
+  "X": "X"
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 送信者自身のルールが拒否しました（o5 = 0 · ${TauI18n.t(r)}）`]] });
