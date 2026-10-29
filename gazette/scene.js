@@ -41,7 +41,7 @@
     }
     /* streetcar rails, two tracks, catching the light */
     g.lineWidth = 1;
-    for (const x of [-4.2, -2.8, 2.8, 4.2]) { const a = P(x, 0, 0.8), b = P(x, 0, 400); gr = g.createLinearGradient(a[0], a[1], b[0], b[1]); gr.addColorStop(0, tone(0.5, 0.15)); gr.addColorStop(1, tone(0.95, 0.7)); g.strokeStyle = gr; g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); }
+    for (const x of [-6.2, -4.8, 4.8, 6.2]) { const a = P(x, 0, 0.8), b = P(x, 0, 400); gr = g.createLinearGradient(a[0], a[1], b[0], b[1]); gr.addColorStop(0, tone(0.5, 0.15)); gr.addColorStop(1, tone(0.95, 0.7)); g.strokeStyle = gr; g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); }
     /* buildings: block after block on both sides, hazier with distance */
     for (const s of [-1, 1]) {
       let z = 3; const blocks = [];
@@ -80,7 +80,7 @@
     { const t0 = P(-1.6, 0, 330), t1 = P(1.6, 74, 330); g.fillStyle = tone(0.55, 0.8); g.fillRect(t0[0], t1[1], t1[0] - t0[0], t0[1] - t1[1]); }
     /* overhead wires for the streetcars */
     g.strokeStyle = tone(0.08, 0.55); g.lineWidth = 1;
-    for (const x of [-3.5, 3.5]) { const a = P(x, 6.2, 0.7), b = P(x, 6.2, 400); g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); }
+    for (const x of [-5.5, 5.5]) { const a = P(x, 6.2, 0.7), b = P(x, 6.2, 400); g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); }
     for (let z = 3; z < 200; z *= 1.45) { const a = P(-SW, 7, z), b = P(SW, 7, z); g.beginPath(); g.moveTo(...a); g.quadraticCurveTo(cx, (a[1] + b[1]) / 2 + 4 * f / z * 0.02, ...b); g.stroke(); }
     /* poles with lamps */
     for (const s of [-1, 1]) for (let z = 3; z < 160; z *= 1.6) { const a = P(s * (KERB - 0.4), 0, z), b = P(s * (KERB - 0.4), 7.2, z); g.strokeStyle = tone(0.06 + Math.min(0.4, z / 300), 0.9); g.lineWidth = Math.max(1, 0.25 * f / z); g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); }
@@ -99,17 +99,6 @@
     g.clearRect(0, 0, W, H);
     /* the morning light breathes as small clouds pass the sun */
     g.fillStyle = tone(1, 0.05 + 0.04 * Math.sin(t / 9) * Math.sin(t / 23)); g.fillRect(0, 0, W, H);
-    const car = (x, z, dir) => {
-      const w = 2.6, h = 3.4, a = P(x - w / 2, 0.3, z), b = P(x + w / 2, h, z), sc = f / z;
-      g.fillStyle = tone(0.1 + z / 400); g.fillRect(a[0], b[1], b[0] - a[0], a[1] - b[1]);
-      g.fillStyle = tone(0.75, 0.6); for (let i = 0; i < 3; i++) g.fillRect(a[0] + (0.15 + i * 0.8) * sc, b[1] + 0.45 * sc, 0.6 * sc, 0.9 * sc);
-      g.fillStyle = tone(0.35); g.fillRect(a[0] - 0.1 * sc, b[1] - 0.25 * sc, (w + 0.2) * sc, 0.25 * sc);
-      g.strokeStyle = tone(0.05, 0.8); g.lineWidth = Math.max(1, 0.06 * sc); g.beginPath(); g.moveTo(a[0] + w / 2 * sc, b[1] - 0.25 * sc); g.lineTo(a[0] + (w / 2 + dir * 0.9) * sc, P(0, 6.2, z)[1]); g.stroke();
-      if (dir < 0) { g.fillStyle = tone(1, 0.8); g.beginPath(); g.arc(a[0] + w / 2 * sc, a[1] - 0.8 * sc, 0.1 * sc, 0, 7); g.fill(); }
-      g.fillStyle = tone(0, 0.3); g.fillRect(a[0], a[1], b[0] - a[0], 0.15 * sc);
-    };
-    const c = carAt(t), cars = [];
-    if (c.inbound && !busy) cars.push([-3.5, c.inbound, -1]); if (c.outbound) cars.push([3.5, c.outbound, 1]);
     /* people, far ones first */
     const ppl = WALK.map(p => { let z = p.z + p.v * t; z = 4 + (((z - 4) % 116) + 116) % 116; return { p, z }; });
     const items = ppl.map(o => ({ z: o.z, draw: () => {
@@ -120,7 +109,7 @@
       g.fillStyle = col; g.beginPath(); g.moveTo(px - w / 2, py - h * 0.3); g.lineTo(px - w * 0.42, py - h * 0.82); g.lineTo(px + w * 0.42, py - h * 0.82); g.lineTo(px + w / 2, py - h * 0.3); g.fill();
       g.beginPath(); g.arc(px, py - h * 0.88, w * 0.26, 0, 7); g.fill();
       g.fillRect(px - w * 0.36, py - h * 0.99, w * 0.72, h * 0.03); g.fillRect(px - w * 0.2, py - h * 1.06, w * 0.4, h * 0.08);
-    } })).concat(cars.map(([x, z, d]) => ({ z, draw: () => car(x, z, d) })));
+    } }));
     items.sort((a, b) => b.z - a.z).forEach(i => i.draw());
     /* parked at the kerb on our side: a motor car, and a newsboy calling the morning edition */
     { const z = 9.5, sc = f / z, [x, y] = P(KERB - 1.2, 0, z), w = 3.8 * sc, h = 1.7 * sc;
@@ -139,56 +128,78 @@
     for (let k = 0; k < 5; k++) { const u = ((t * 0.18 + k / 5) % 1), z = 16, sc = f / z, [x, y] = P(KERB + 2.2, 0, z);
       g.fillStyle = `rgba(235,220,190,${0.13 * (1 - u)})`; g.beginPath(); g.ellipse(x + Math.sin(t + k) * 0.4 * sc, y - u * 4 * sc, (0.5 + u * 1.6) * sc, (0.4 + u) * sc, 0, 0, 7); g.fill(); }
   }
-  /* ----- the opening streetcar: a Market Street car of the twenties and thirties (single deck, clerestory roof,
-     route box, fender) leaves from right beside us and runs away down the street, drawn in depth ----- */
+  /* ----- the streetcars: Market Street cars of the twenties and thirties (single deck, arched clerestory roof,
+     route box, fender), drawn as solid bodies in the street's perspective. One leaves from right beside us when
+     the paper opens and runs away down the street; then they come and go on both tracks. ----- */
   const INTRO = { delay: 1.2, z0: 2.6, v: 4.6, a: 0.09, end: 175 };
   const introAt = e => { e -= INTRO.delay; return e < 0 ? null : INTRO.z0 + INTRO.v * e + INTRO.a * e * e; };
-  function tram(g, W, H, zr, t) {
-    g.clearRect(0, 0, W, H); if (zr == null || zr > INTRO.end) return;
-    const { f, P } = geo(W, H), L = 14, X0 = -4.8, X1 = -2.2, zf = zr + L;
-    const haze = z => Math.min(0.75, z / 230);
+  function trams(g, W, H, cars) {
+    g.clearRect(0, 0, W, H);
+    cars.filter(c => c.z != null && c.z < 180).sort((a, b) => b.z - a.z).forEach(c => tram(g, W, H, c));
+  }
+  function tram(g, W, H, { x: xc, z: zr, away }) {
+    const { f, P } = geo(W, H), L = 14, s = Math.sign(xc), Xs = xc - s * 1.3, Xo = xc + s * 1.3, zf = zr + L, Xm = xc;
+    /* farther off everything sinks into the morning haze */
+    const hz = Math.min(0.78, Math.max(0, (zr - 6) / 200)), T = (v, a = 1) => tone(v + (0.6 - v) * hz, a);
+    const sc = z => f / z;
     const poly = (pts, fill) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(...p) : g.moveTo(...p)); g.closePath(); g.fillStyle = fill; g.fill(); };
-    /* a quad on the side of the car (x = X1, facing the middle of the street): y0..y1 high, za..zb along */
-    const side = (y0, y1, za, zb, fill) => poly([P(X1, y0, za), P(X1, y1, za), P(X1, y1, zb), P(X1, y0, zb)], fill);
-    /* a quad on the near end (z = zr): xa..xb across, y0..y1 high */
+    const side = (y0, y1, za, zb, fill, x = Xs) => poly([P(x, y0, za), P(x, y1, za), P(x, y1, zb), P(x, y0, zb)], fill);
     const end = (xa, xb, y0, y1, fill, z = zr) => poly([P(xa, y0, z), P(xa, y1, z), P(xb, y1, z), P(xb, y0, z)], fill);
+    const Xe = Xs - s * 0.35, zc0 = zr + 0.45, lerpX = u => Xo + (Xe - Xo) * u;   /* across the end, 0 = outer edge, 1 = the corner toward us */
+    const sideGrad = (a, b) => { const p = P(Xs, 1, zr), q = P(Xs, 1, zf), l = g.createLinearGradient(p[0], p[1], q[0], q[1]); l.addColorStop(0, T(a)); l.addColorStop(1, T(b)); return l; };
     g.save();
-    /* its shadow on the cobbles, thrown toward us by the low sun at the end of the street */
-    poly([P(X0 - 0.2, 0.01, zr - 1.4), P(X1 + 0.5, 0.01, zr - 1.4), P(X1 + 0.5, 0.01, zf), P(X0 - 0.2, 0.01, zf)], tone(0, 0.32));
-    /* the side: dark lower panel, cream window band, letterboard, clerestory; lighter toward the sun */
-    const gr = (a, b) => { const p = P(X1, 1, zr), q = P(X1, 1, zf), l = g.createLinearGradient(p[0], 0, q[0], 0); l.addColorStop(0, tone(a)); l.addColorStop(1, tone(b)); return l; };
-    side(0.55, 1.75, zr, zf, gr(0.08, 0.2));
-    side(1.75, 3.0, zr, zf, gr(0.42, 0.6));
-    side(3.0, 3.35, zr, zf, gr(0.1, 0.24));
-    side(3.35, 3.7, zr + 0.6, zf - 0.6, gr(0.18, 0.34));
-    /* windows: two on each platform, eight in the saloon, people inside */
-    const wins = [[0.25, 1.2], [1.35, 2.3]]; for (let i = 0; i < 8; i++) wins.push([2.8 + i * 1.08, 3.7 + i * 1.08]); wins.push([L - 2.3, L - 1.35], [L - 1.2, L - 0.25]);
-    wins.forEach(([a, b], i) => { side(1.9, 2.85, zr + a, zr + b, tone(0.66 + 0.1 * (i / wins.length), 0.85));
-      if (i > 1 && i < wins.length - 2 && (i * 7) % 3) { const m = zr + (a + b) / 2, [hx, hy] = P(X1 - 0.3, 2.35, m), r = 0.2 * f / m; g.fillStyle = tone(0.15, 0.8); g.beginPath(); g.arc(hx, hy, r, 0, 7); g.fill(); g.fillRect(hx - r * 1.3, hy + r * 0.8, r * 2.6, r * 2.2); } });
-    for (let i = 0; i < 8; i++) { const m = zr + 3.25 + i * 1.08; side(3.12, 3.28, m - 0.25, m + 0.25, tone(0.62, 0.7)); }  /* clerestory lights */
-    side(1.75, 1.82, zr, zf, tone(0.75, 0.9)); side(2.98, 3.02, zr, zf, tone(0.75, 0.6));       /* belt rails */
-    /* the trucks and wheels, under the car */
-    side(0.2, 0.62, zr + 1.0, zr + 4.0, tone(0.04)); side(0.2, 0.62, zf - 4.0, zf - 1.0, tone(0.04));
-    for (const c of [1.7, 3.3, L - 3.3, L - 1.7]) { const zc = zr + c, pts = []; for (let k = 0; k < 14; k++) { const a = k / 14 * 6.283; pts.push(P(X1 + 0.05, 0.42 + 0.4 * Math.sin(a), zc + 0.4 * Math.cos(a))); }
-      poly(pts, tone(0.03)); const [hx, hy] = P(X1 + 0.06, 0.42, zc); g.fillStyle = tone(0.5, 0.7); g.beginPath(); g.arc(hx, hy, 0.07 * f / zc, 0, 7); g.fill(); }
-    /* the near end, in its own shadow: platform with big windows, route box, headlamp, fender */
-    end(X0, X1, 0.55, 3.35, tone(0.06));
-    end(X0, X1, 3.35, 3.6, tone(0.12), zr + 0.6);
-    end(X0 + 0.2, X1 - 0.2, 1.85, 2.95, tone(0.55, 0.8));
-    end(X0 + 1.25, X0 + 1.35, 1.85, 2.95, tone(0.06));
-    end(X0 + 0.9, X1 - 0.9, 3.38, 3.72, tone(0.85), zr + 0.3);                                       /* route box */
-    { const [bx, by] = P((X0 + X1) / 2, 3.55, zr + 0.3), sc = f / (zr + 0.3); g.fillStyle = tone(0.04); g.font = `700 ${Math.max(6, 0.28 * sc)}px Georgia, serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("21", bx, by); }
-    { const [lx, ly] = P((X0 + X1) / 2, 1.2, zr - 0.05), sc = f / zr; g.fillStyle = tone(0.7, 0.9); g.beginPath(); g.arc(lx, ly, 0.11 * sc, 0, 7); g.fill(); }
-    /* the lifeguard fender: a low slatted tray just ahead of the wheels */
-    poly([P(X0 + 0.15, 0.32, zr - 0.05), P(X1 - 0.15, 0.32, zr - 0.05), P(X1 - 0.15, 0.16, zr - 0.45), P(X0 + 0.15, 0.16, zr - 0.45)], tone(0.05, 0.55));
-    for (let k = 0; k < 9; k++) { const xa = X0 + 0.2 + k * 0.27; poly([P(xa, 0.32, zr - 0.05), P(xa + 0.06, 0.32, zr - 0.05), P(xa + 0.06, 0.16, zr - 0.45), P(xa, 0.16, zr - 0.45)], tone(0.12, 0.9)); }
-    end(X0 + 1.3, X0 + 1.34, 0.6, 1.8, tone(0.14));                                                    /* the door seam */
-    /* rim light: the sun ahead catches the roof edge */
-    g.strokeStyle = tone(0.95, 0.55); g.lineWidth = Math.max(1, 0.04 * f / zr); g.beginPath(); g.moveTo(...P(X1, 3.7, zr + 0.6)); g.lineTo(...P(X1, 3.7, zf - 0.6)); g.stroke();
-    /* trolley pole up to the wire */
-    { const a = P(X1 - 1.0, 3.7, zf - 2), b = P(-3.5, 6.2, zf + 2.5); g.strokeStyle = tone(0.05, 0.9); g.lineWidth = Math.max(1, 0.05 * f / zf); g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); }
-    /* farther off it sinks into the morning haze like everything else */
-    const hz = haze(zr); if (hz > 0.02) { g.globalCompositeOperation = "source-atop"; g.fillStyle = tone(0.62, hz); g.fillRect(0, 0, W, H); }
+    /* the shadow on the cobbles, thrown toward us by the low sun at the end of the street */
+    poly([P(Xo + s * 0.3, 0.01, zr - 1.6), P(Xs - s * 0.6, 0.01, zr - 1.6), P(Xs - s * 0.6, 0.01, zf), P(Xo + s * 0.3, 0.01, zf)], tone(0, 0.34 * (1 - hz)));
+    /* the side toward us: skirt, dark lower panel, belt rail, window band, letterboard, clerestory */
+    side(0.35, 0.6, zr + 0.4, zf - 0.4, T(0.03));
+    side(0.6, 1.8, zr, zf, sideGrad(0.1, 0.26));
+    side(1.8, 3.0, zr, zf, sideGrad(0.34, 0.5));
+    side(3.0, 3.3, zr, zf, sideGrad(0.16, 0.3));
+    side(3.3, 3.5, zr + 0.05, zf - 0.05, sideGrad(0.24, 0.4));                 /* the curve of the roof toward the clerestory */
+    side(3.5, 3.85, zr + 1.2, zf - 1.2, sideGrad(0.2, 0.34), Xs + s * 0.55);  /* the clerestory, set back from the side */
+    for (let i = 0; i < 9; i++) { const m = zr + 2.1 + i * 1.2; side(3.58, 3.76, m - 0.3, m + 0.3, T(0.72, 0.8), Xs + s * 0.55); }
+    /* the roof's top edge catches the sun */
+    g.strokeStyle = T(0.95, 0.65); g.lineWidth = Math.max(1, 0.05 * sc(zr)); g.beginPath(); g.moveTo(...P(Xs + s * 0.1, 3.5, zr + 0.1)); g.lineTo(...P(Xs + s * 0.1, 3.5, zf - 0.1)); g.stroke();
+    g.beginPath(); g.moveTo(...P(Xs + s * 0.55, 3.86, zr + 1.2)); g.lineTo(...P(Xs + s * 0.55, 3.86, zf - 1.2)); g.stroke();
+    /* windows: the platforms' and nine in the saloon, lit warm, with posts between them and riders inside */
+    const wins = [[0.3, 1.3]]; for (let i = 0; i < 9; i++) wins.push([2.2 + i * 1.05, 3.05 + i * 1.05]); wins.push([L - 1.3, L - 0.3]);
+    wins.forEach(([a, b], i) => { side(1.95, 2.85, zr + a, zr + b, T(0.78, 0.92));
+      side(1.95, 2.2, zr + a, zr + b, T(0.95, 0.5));                           /* the sky in the glass */
+      if (i > 0 && i < wins.length - 1 && (i * 5) % 3) { const m = zr + (a + b) / 2, [hx, hy] = P(Xs + s * 0.4, 2.35, m), r = 0.19 * sc(m);
+        g.fillStyle = T(0.2, 0.85); g.beginPath(); g.arc(hx, hy, r, 0, 7); g.fill(); g.fillRect(hx - r * 1.2, hy + r * 0.8, r * 2.4, r * 2); } });
+    side(1.8, 1.86, zr, zf, T(0.8, 0.9)); side(2.96, 3.0, zr, zf, T(0.7, 0.7));
+    /* the platform door and the step */
+    side(0.6, 1.8, zr + 0.3, zr + 1.3, T(0.05, 0.6)); side(0.3, 0.45, zr + 0.2, zr + 1.4, T(0.2));
+    /* "Market Street Railway" on the letterboard, and the car number */
+    { const [lx, ly] = P(Xs, 3.15, zr + L / 2), k = sc(zr + L / 2); if (k > 7) { g.fillStyle = T(0.75, 0.8); g.font = `600 ${0.2 * k}px Georgia, serif`; g.textAlign = "center"; g.textBaseline = "middle";
+      g.save(); const a = P(Xs, 3.15, zr + L / 2 - 1), b = P(Xs, 3.15, zr + L / 2 + 1); g.translate(lx, ly); g.rotate(Math.atan2(b[1] - a[1], b[0] - a[0]) + (s > 0 ? Math.PI : 0));
+      const n0 = P(Xs, 3.15, zr + 3), n1 = P(Xs, 3.15, zf - 3), room = Math.hypot(n1[0] - n0[0], n1[1] - n0[1]), wd = g.measureText("MARKET STREET RAILWAY").width;
+      g.scale(Math.min(1, room / wd), 1); g.fillText("MARKET STREET RAILWAY", 0, 0); g.restore(); } }
+    /* trucks and wheels under the skirt */
+    for (const c of [1.9, 3.5, L - 3.5, L - 1.9]) { const zc = zr + c, pts = []; for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; pts.push(P(Xs + s * 0.1, 0.42 + 0.4 * Math.sin(a), zc + 0.4 * Math.cos(a))); }
+      poly(pts, T(0.02)); const [hx, hy] = P(Xs + s * 0.08, 0.42, zc); g.fillStyle = T(0.55, 0.8); g.beginPath(); g.arc(hx, hy, 0.08 * sc(zc), 0, 7); g.fill(); }
+    side(0.15, 0.35, zr + 1.3, zr + 4.1, T(0.06)); side(0.15, 0.35, zf - 4.1, zf - 1.3, T(0.06));
+    /* the near end: a little in shadow, lighter toward its edge; arched roof, three windows, route box, lamp, fender */
+    { const l = g.createLinearGradient(...P(Xm, 0.6, zr), ...P(Xm, 3.3, zr)); l.addColorStop(0, T(0.04)); l.addColorStop(0.6, T(0.1)); l.addColorStop(1, T(0.16)); end(Xo, Xe, 0.6, 3.3, l); }
+    { const pts = []; for (let k = 0; k <= 12; k++) { const u = k / 12; pts.push(P(lerpX(u), 3.3 + 0.5 * Math.sin(Math.PI * u), zr + 0.05)); } pts.push(P(Xe, 3.3, zr), P(Xo, 3.3, zr)); poly(pts, T(0.14)); }
+    /* the angled corner between end and side, half lit, with its own window */
+    const cham = (y0, y1, fill) => poly([P(Xe, y0, zr), P(Xe, y1, zr), P(Xs, y1, zc0), P(Xs, y0, zc0)], fill);
+    cham(0.6, 3.3, T(0.22)); cham(1.95, 2.95, T(0.8, 0.9)); cham(1.95, 2.2, T(0.95, 0.5)); cham(3.3, 3.5, T(0.3));
+    for (const xp of [Xo, Xe]) { g.strokeStyle = T(xp === Xe ? 0.7 : 0.3, 0.6); g.lineWidth = Math.max(1, 0.05 * sc(zr)); g.beginPath(); g.moveTo(...P(xp, 0.6, zr)); g.lineTo(...P(xp, 3.3, zr)); g.stroke(); }
+    for (const [a, b] of [[0.08, 0.34], [0.38, 0.62], [0.66, 0.92]]) { end(lerpX(a), lerpX(b), 1.95, 2.95, T(0.74, 0.92)); end(lerpX(a), lerpX(b), 1.95, 2.2, T(0.95, 0.45)); }
+    end(lerpX(0.3), lerpX(0.7), 3.42, 3.75, T(0.88), zr + 0.02);
+    { const [bx, by] = P(Xm, 3.585, zr), k = sc(zr); g.fillStyle = T(0.04); g.font = `700 ${Math.max(5, 0.27 * k)}px Georgia, serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("21", bx, by); }
+    { const [lx, ly] = P(Xm, 1.25, zr - 0.05), k = sc(zr), lit = !away;
+      if (lit) { const gl = g.createRadialGradient(lx, ly, 0, lx, ly, 1.2 * k); gl.addColorStop(0, "rgba(255,236,190,0.35)"); gl.addColorStop(1, "rgba(255,236,190,0)"); g.fillStyle = gl; g.fillRect(lx - 1.2 * k, ly - 1.2 * k, 2.4 * k, 2.4 * k); }
+      g.fillStyle = lit ? "rgba(255,240,205,0.95)" : T(0.55, 0.9); g.beginPath(); g.arc(lx, ly, 0.12 * k, 0, 7); g.fill(); }
+    end(Xo, Xe, 0.55, 0.62, T(0.4, 0.8), zr - 0.02);                                  /* bumper */
+    poly([P(Xo - s * 0.1, 0.34, zr - 0.05), P(Xe, 0.34, zr - 0.05), P(Xe, 0.16, zr - 0.5), P(Xo - s * 0.1, 0.16, zr - 0.5)], T(0.04, 0.6));
+    for (let k = 0; k < 9; k++) { const u = 0.06 + k * 0.11; poly([P(lerpX(u), 0.34, zr - 0.05), P(lerpX(u + 0.025), 0.34, zr - 0.05), P(lerpX(u + 0.025), 0.16, zr - 0.5), P(lerpX(u), 0.16, zr - 0.5)], T(0.16, 0.9)); }
+    /* rim light down the near corner */
+    g.strokeStyle = T(0.85, 0.5); g.lineWidth = Math.max(1, 0.035 * sc(zr)); g.beginPath(); g.moveTo(...P(Xs, 0.6, zc0)); g.lineTo(...P(Xs, 3.3, zc0)); g.stroke();
+    /* the trolley pole trails behind, up to the wire */
+    { const base = away ? zr + 3 : zf - 3, tip = away ? zr - 1.5 : zf + 1.5, a = P(xc, 3.86, base), b = P(xc, 6.2, tip);
+      g.strokeStyle = T(0.05, 0.95); g.lineWidth = Math.max(1, 0.06 * sc(base)); g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); }
     g.restore();
   }
   /* the coffee steams */
@@ -346,7 +357,8 @@
     raf = 0; if (!W) return;
     const t = T0 != null ? T0 : (Date.now() / 1000) % 86400;
     const zi = still() ? null : introAt(TI != null ? TI : (now - LOAD) / 1000), busy = still() ? false : zi != null ? zi <= INTRO.end : TI == null && now - LOAD < INTRO.delay * 1000;
-    live(LIVE.getContext("2d"), W, H, t, busy); tram(TRAM.getContext("2d"), W, H, zi, t); steam(STEAM.getContext("2d"), W, H, t);
+    live(LIVE.getContext("2d"), W, H, t, busy);
+    trams(TRAM.getContext("2d"), W, H, [{ x: -5.5, z: zi, away: true }, { x: -5.5, z: busy ? null : carAt(t).inbound, away: false }, { x: 5.5, z: carAt(t).outbound, away: true }]); steam(STEAM.getContext("2d"), W, H, t);
     /* the inbound streetcar rings its bell as it passes the corner; the opening one as it sets off */
     const c = carAt(t), near = !busy && c.inbound != null && c.inbound < 46 && c.inbound > 38, off = zi != null && zi < 4;
     if ((near && !bell) || (off && !introBell)) AMB.bell(); bell = near; introBell = introBell || off;
