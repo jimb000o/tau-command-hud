@@ -160,6 +160,24 @@
   "html": "A third live state: while the community node is connected but not synced with the real chain, the relay light and the mode chip turn amber and read “Live · Not synced”. Green and “Connected” only when the node follows the network’s tip."
  },
  {
+  "tag": "Live",
+  "on": "2026-10-26",
+  "html": "Tau HUD gets its own live backend: a read-only node of the Tau testnet on its own server, a relay that caches the chain for every page, and HTTPS at node.tauhud.com. The site moved to tauhud.com and is open source under the MIT license.",
+  "backfill": true
+ },
+ {
+  "tag": "Node",
+  "on": "2026-10-26",
+  "html": "The Tau HUD node builds and syncs on a small ARM server: the Tau language binding compiles there, sync reads whole replies, pages past 2,000 blocks, stops when the head does not move and logs every block it rejects.",
+  "backfill": true
+ },
+ {
+  "tag": "Relay",
+  "on": "2026-10-26",
+  "html": "The relay counts the pages open right now and reports the chain height every page agrees on, so the HUD can show how many people watch and whether the live node is in step.",
+  "backfill": true
+ },
+ {
   "tag": "v14.5",
   "on": "2026-10-27",
   "html": "Hardening: the page tells the browser to upgrade any insecure request, and a pasted ws:// node address becomes wss:// on an https page (localhost excepted), so the lock stays intact."
@@ -343,6 +361,48 @@
   "tag": "v17.16",
   "on": "2026-10-27",
   "html": "Blockchain strip scrolls like a film, and About says what a donation pays for: the mouse wheel glides through the blocks instead of stopping at each one, the detail below follows the block at the right edge, and scrolling back keeps loading older blocks from the relay all the way to genesis; “back to newest” returns to the live end. The donation section is now “Keep it running”: what the project costs (mostly time), what a donation pays for, no banner, no pop-up. The thesis that resolves out of glyph noise on load now does it in phosphor green: brightest at the resolve front, dimmer further out, white once settled, and the paragraph no longer shifts while it resolves."
+ },
+ {
+  "tag": "Node",
+  "on": "2026-10-27",
+  "html": "The node follows IDNI’s published genesis and starts over by itself when the testnet restarts; it counts votes from any account like the network does, never dials its own address, and rebuilds without losing the long Tau language build.",
+  "backfill": true
+ },
+ {
+  "tag": "Relay",
+  "on": "2026-10-27",
+  "html": "The relay keeps the whole chain: its full history, a log of restarts and reorganisations, block statistics for Stats and block ranges for Time travel. Its status page reports the network tip, open voting and the restart history.",
+  "backfill": true
+ },
+ {
+  "tag": "Validator",
+  "on": "2026-10-27",
+  "html": "The Tau HUD node is ready to take a validator seat as soon as IDNI admits it (off until then), and a diagnosis tool shows why a handshake with the bootnode fails.",
+  "backfill": true
+ },
+ {
+  "tag": "Node kit",
+  "on": "2026-10-27",
+  "html": "Node operator kit: one command installs a Tau testnet node on your own machine, and an opt-in report puts it on the Nodes board.",
+  "backfill": true
+ },
+ {
+  "tag": "Telegram",
+  "on": "2026-10-27",
+  "html": "Weekly recap: every Monday at 09:00 UTC the Telegram channel gets one picture of the testnet’s week, with blocks, transactions, rule changes and nodes; a copy stays on the server.",
+  "backfill": true
+ },
+ {
+  "tag": "Telegram",
+  "on": "2026-10-27",
+  "html": "Question bot @tauhud_alerts_bot: ask it for the height, the open proposals, a transaction, an address, a block or the status, in a private chat or in the channel’s discussion group. Buttons under every channel post open it.",
+  "backfill": true
+ },
+ {
+  "tag": "Relay",
+  "on": "2026-10-27",
+  "html": "The online counter counts people, not browser tabs.",
+  "backfill": true
  },
  {
   "tag": "v17.17",
@@ -856,6 +916,12 @@
   "html": "In numbers: the charts are now lines with a soft fill instead of blocks. Visitors per day as a green line with the pages opened as faint bars below, growth in the same style, a crosshair with the day's numbers on hover, and today shown as still counting. A short history opens as All, so the first days fill the chart."
  },
  {
+  "tag": "Relay",
+  "on": "2026-10-28",
+  "html": "More visitors at once: the relay accepts 32 connections per address instead of 8, so a school or office behind one address can all watch.",
+  "backfill": true
+ },
+ {
   "tag": "Privacy",
   "on": "2026-10-29",
   "html": "New page: privacy notice, in the Learn menu and under the gear. Exactly what the site processes, in German and English. Along with it the site got more private: the fonts now come from tauhud.com itself instead of Google, the server keeps no access logs, the online counter no longer stores an id in your browser, the simulation stores your anonymous name only once you vote, forecast or propose, and the visit count no longer reads your screen width.",
@@ -870,5 +936,10 @@
   "tag": "v17.52",
   "on": "2026-10-29",
   "html": "In numbers and Privacy moved out of the Learn menu into the footer: every page now ends its footer line with “In numbers · Privacy”, and pages without a footer, like the HUD, show the two as a small line in the bottom right corner. Nothing else moves."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-29",
+  "html": "The Updates log is complete and stays that way: eleven entries for the live backend, the node, the relay, the node kit, the weekly recap and the question bot were missing from 26 to 28 October and are now in, and every new pull request must add its entry before it can go live. The Telegram channel shares more of it: up to three new pages or features a day between 06:00 and 23:00 UTC, and the smaller changes as a digest at 12:00 and 18:00 UTC."
  }
 ]

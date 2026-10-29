@@ -2,6 +2,8 @@
    - it is valid JSON, a list of {tag, on, html[, major]} with a date in "on" and a unique id in each "major"
    - no merge-conflict markers in it or in the Chinese dictionaries
    - with BASE=<file> (the log on the target branch): no entry there is missing here, so a merge did not drop one
+   - with BASE and PR_TITLE (a pull request): the pull request adds at least one entry, so every release is in the log;
+     a change nobody would notice (a test, a typo in a comment) says "[no log]" in its title
    - every entry has its Chinese text in assets/i18n/zh/hud.js (keyed by the English html)
 
    Run: node tests/updates.mjs        BASE=/tmp/base-updates.json node tests/updates.mjs */
@@ -41,7 +43,7 @@ if (list) {
         majors.add(m.id);
       }
     }
-    for (const k of Object.keys(e)) if (!["tag", "on", "html", "major"].includes(k)) fail(`${at} has an unknown field "${k}"`);
+    for (const k of Object.keys(e)) if (!["tag", "on", "html", "major", "backfill"].includes(k)) fail(`${at} has an unknown field "${k}"`);
   });
 
   if (process.env.BASE) {
@@ -51,6 +53,11 @@ if (list) {
     const count = l => l.reduce((m, e) => m.set(e.tag + " of " + e.on, (m.get(e.tag + " of " + e.on) || 0) + 1), new Map());
     const here = count(list);
     for (const [k, n] of count(base)) if ((here.get(k) || 0) < n) fail(`entry ${k} from the target branch is missing (a merge dropped it?): ${n} there, ${here.get(k) || 0} here`);
+    const title = process.env.PR_TITLE;
+    if (title !== undefined && base.length && list.length <= base.length && !/\[no log\]/i.test(title))
+      fail(`this pull request adds no entry to the Updates log. Every release gets one: append {tag, on, html} to assets/updates.json `
+         + `(and its Chinese to assets/i18n/zh/hud.js); a new page or big feature also gets "major" for its own Telegram post. `
+         + `Only a change no visitor would notice may say "[no log]" in its title.`);
   }
 
   /* the zh dictionary for the log; a dictionary only calls TauI18n.add */
