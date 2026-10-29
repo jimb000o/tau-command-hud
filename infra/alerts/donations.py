@@ -181,9 +181,8 @@ def thanks_text(d: dict, donors: int, nth: int) -> str:
     first = ", the first donation to Tau HUD" if nth == 1 else " for Tau HUD"
     who = ("1 person has" if donors == 1 else f"{donors} people have")
     return (f"💚 <b>Thank you, {html.escape(short(d['from']))}</b>\n\n"
-            f"{amt} just came in{first}. It helps pay for the time it takes to keep the HUD, the alerts "
-            f"and the bot in step with the testnet, and for the server.\n\n"
-            f"{who} supported Tau HUD so far. <a href=\"{TX_URL}{d['tx']}\">Transaction</a> · "
+            f"{amt} just came in{first}. A voluntary gift, nothing is owed in return.\n\n"
+            f"{who} donated so far. <a href=\"{TX_URL}{d['tx']}\">Transaction</a> · "
             f"<a href=\"{SITE}/#donate\">About</a>")
 
 
@@ -191,7 +190,7 @@ def thanks_x(d: dict, donors: int) -> str:
     amt = f"{fmt_amount(Decimal(d['amount']))} {d['asset']}"
     who = "1 person has" if donors == 1 else f"{donors} people have"
     return x_post([f"💚 Thank you, {short(d['from'])}: {amt} just came in for Tau HUD.",
-                   f"It helps pay for the time it takes to keep it in step with the testnet, and for the server. {who} supported it so far."],
+                   f"A voluntary gift, nothing is owed in return. {who} donated so far."],
                   f"{SITE}/#donate")
 
 

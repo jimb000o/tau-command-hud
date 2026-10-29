@@ -522,7 +522,7 @@ X_SIM_LINE = "🧪 SIMULATION · not the real testnet"
 X_SIM_FOOT = "🧪 Simulation, not the real testnet"
 X_SITE_NOTE = "✨ Tau HUD website update, not testnet news"
 X_TAG = "#TauNet"
-# Every X post carries these two, once, at the very end after the source line (Kilian, 29 Oct 2026); never more tags.
+# Every X post carries these two, once, at the very end after the source line (29 Oct 2026); never more tags.
 X_MUST = ("#TauNet", "$AGRS")
 
 

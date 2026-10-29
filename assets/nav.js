@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml";
-  const LATEST = "v23.4"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v24.1"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -43,7 +43,7 @@
   };
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
-    /* grouped by what a visitor came to do (Kilian, 29 Oct): watch the chain, understand Tau, try it, and who runs this site; five to seven entries each */
+    /* grouped by what a visitor came to do (29 Oct): watch the chain, understand Tau, try it, and who runs this site; five to seven entries each */
     { k: "explore", t: "Explore", items: ["explorer", "proposals", "account", "nodes", "stats", "history", "devpulse"], tab: "≋" },
     { k: "learn", t: "Learn", items: ["tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote", "wallet"], id: "btnPlayground", tab: "◇", short: "Play" },
@@ -152,9 +152,9 @@
         <p class="tn-follow"><a href="${TELEGRAM}" rel="noopener" data-full="A Telegram channel that posts every new proposal, agreement and activation on the testnet. Opens Telegram.">Follow rule changes on Telegram ›</a> <span>· <a href="${XCOM}" target="_blank" rel="noopener">on X</a> · <a href="${ROOT}proposals/${q}">proposal tracker</a></span></p>
       </article>
       <article class="tn-panel tn-keep">
-        <h2>Keep it running <small>one person, free time</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built and maintained by one person in their free time. The address and the QR code are the same as in About; the numbers above show what the time goes into.">i</button></h2>
-        <p class="lead small">Most of what Tau HUD costs is time: following a testnet that changes by agreement and keeping the HUD, the alerts and the bot in step with it. The development tools behind that work are not free either. The server is the smallest part. Donations help cover these costs and are received with thanks.</p>
-        <p class="small">AGRS or ETH, one address for both · What it helps pay for: time · tools · server · domain</p>
+        <h2>Donations <small>voluntary, nothing in return</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built by one person in their free time. The address and the QR code are the same as in About. A donation is a voluntary gift: nothing is promised or owed in return.">i</button></h2>
+        <p class="lead small">Tau HUD is free to use. If you find it useful, a donation is welcome. It is a voluntary gift and buys nothing: no access, no feature, no say and no promise about the future of the site. What comes in may go toward the time, tools and server behind it.</p>
+        <p class="small">AGRS or ETH, one address for both · voluntary, nothing owed in return</p>
         <div class="tn-donate">${DONATE.qr}<div class="tn-addr"><code>${DONATE.addr}</code><button class="tn-btn" type="button">Copy</button></div></div>
         <p class="small tn-thanks" hidden></p>
         <p class="small tn-copymsg" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
@@ -742,7 +742,7 @@
     document.addEventListener("visibilitychange", leave);
     addEventListener("pagehide", () => { if (!timed && shown > 0) { timed = true; send(`&t=${shown}`); } });
   }
-  /* the About menu once more at the end of every page's footer line (Kilian, 29 Oct); a page without a footer has it in the header only */
+  /* the About menu once more at the end of every page's footer line (29 Oct); a page without a footer has it in the header only */
   function mountFootLinks() {
     if (!document.querySelector("nav.tnav") || document.querySelector(".tn-foot")) return;
     const f = [...document.querySelectorAll("footer")].find(x => !x.closest("nav, .tn-modal"));
