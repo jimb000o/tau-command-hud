@@ -180,6 +180,7 @@ TauI18n.add({ strings: {
   "Get alerts": "获取提醒",
   "Get alerts: Telegram, X or RSS": "获取提醒：Telegram、X 或 RSS",
   "Get alerts: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.": "获取提醒：每一次规则变更、链重启和新节点，第一时间通过 Telegram、X 或 RSS 送达。无需在本站注册账号。",
+  "One creature the whole testnet feeds: give it a meal, choose tomorrow's change": "整个测试网一起喂养的一个生物：喂它一顿，选出明天的变化",
   "Agorzilla on X": "Agorzilla 的 X",
   "The creature the testnet feeds: each evening's change and every growth stage": "由测试网喂养的生物：每晚的变化和每个成长阶段",
   "Follow": "关注",

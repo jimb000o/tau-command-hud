@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml", AGZX = "https://x.com/Agorzilla";
-  const LATEST = "v24.4"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v24.5"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -37,6 +37,7 @@
     playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
     seat:       { t: "Validator seat", d: "Take a simulated seat and vote a rule change into law", i: "✓", h: "playground/#seat" },
     whatif:     { t: "What if", d: "Move block time, validators and votes needed, and watch the chain react", i: "≈", h: "whatif/" },
+    agorzilla:  { t: "Agorzilla", d: "One creature the whole testnet feeds: give it a meal, choose tomorrow's change", i: `<img src="${ROOT}assets/agorzilla.webp" alt="">`, h: "https://agorzilla.com", ext: true },
     wallet:     { t: "Wallet", d: "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt", i: "◈", h: "wallet/" },
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
     missions:   { t: "Missions", d: "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake", i: "★", h: "missions/" },
@@ -46,7 +47,7 @@
     /* grouped by what a visitor came to do (29 Oct): watch the chain, understand Tau, try it, and who runs this site; five to seven entries each */
     { k: "explore", t: "Explore", items: ["explorer", "proposals", "account", "nodes", "stats", "history", "devpulse"], tab: "≋" },
     { k: "learn", t: "Learn", items: ["tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
-    { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote", "wallet"], id: "btnPlayground", tab: "◇", short: "Play" },
+    { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote", "wallet", "agorzilla"], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, items: ["about", "share", "status", "findings", "meta", "developers", "press", "legal"], tab: "i" },
   ];
   const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", status: "about", meta: "about", legal: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", whatif: "play" };
