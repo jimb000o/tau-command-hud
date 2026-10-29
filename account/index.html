@@ -545,7 +545,13 @@ function offline(why) {
   C.off = true; rebuild();   // the empty panels say that the node is offline instead of "reading" forever
   C.retryT = setTimeout(connect, w);
 }
-function loadFrom(from) { C.loading = true; C.nextFrom = from; send(`getblockrange ${from} ${PAGE}`); }
+// the first page says how long the chain is; the rest is asked for a few pages at a time, so a long chain loads in seconds, not minutes
+const PARALLEL = 4;
+function loadFrom(from) { C.loading = true; C.nextFrom = from; C.want = null; C.inflight = new Set([from]); send(`getblockrange ${from} ${PAGE}`); }
+function loadMore() {
+  while (C.inflight.size < PARALLEL && C.nextFrom <= C.want) { const f = C.nextFrom; C.nextFrom += PAGE; C.inflight.add(f); send(`getblockrange ${f} ${PAGE}`); }
+  if (!C.inflight.size) { C.loading = false; live(); rebuild(); }
+}
 function store(raw) {
   const h = Number((raw.header || {}).block_number);
   if (!Number.isFinite(h) || h < 0) return;
@@ -582,14 +588,19 @@ function onMessage(ev) {
   const d = msg.data || {}, cmd = msg.command;
   if (cmd === "getblockrange") {
     if (msg.status !== "ok") {
-      if ((msg.error || {}).code === "NOT_READY") setTimeout(() => loadFrom(C.nextFrom), 3000); else { C.legacy = true; send("getblocks 50"); }
+      if ((msg.error || {}).code === "NOT_READY") setTimeout(() => loadFrom(0), 3000); else { C.legacy = true; C.loading = false; send("getblocks 50"); }
       return;
     }
+    if (!C.inflight) return;
     (d.blocks || []).forEach(store);
-    const head = Number.isFinite(d.head) ? d.head : C.head, next = C.nextFrom + PAGE;
-    setState("wait", "Loading", `Read ${plural(C.head + 1, "block")} of ${fmtN(head + 1)}…`);
-    if ((d.blocks || []).length && next <= head) { loadFrom(next); return; }
-    C.loading = false; live(); rebuild();
+    const from = Number.isFinite(d.from) ? d.from : [...C.inflight][0];
+    C.inflight.delete(from);
+    if (C.want == null) { C.want = Number.isFinite(d.head) ? d.head : C.head; C.nextFrom = from + PAGE; }
+    const got = C.blocks.reduce(n => n + 1, 0);
+    setState("wait", "Loading", `Read ${plural(got, "block")} of ${fmtN(C.want + 1)}…`);
+    C.loadedN = got;
+    if ((!S.addr || !$("vcols").hidden) && Date.now() - (C.progT || 0) > 800) { C.progT = Date.now(); rebuild(); }   // the progress line moves while the chain loads
+    loadMore();
   } else if (cmd === "getblocks") {
     if (msg.status !== "ok") return;
     if (d.reset) { C.blocks = []; C.head = -1; offerIds.clear(); if (!C.legacy) setTimeout(() => loadFrom(0), 500); }
@@ -1043,7 +1054,7 @@ function blockMakers() {
   return VS;
 }
 const isMaker = a => isValidator(a) || blockMakers().by.has(a);
-const LOC = () => window.TauI18n && TauI18n.lang === "zh" ? "zh-CN" : "en-GB";
+const LOC = () => ({ zh: "zh-CN", ja: "ja-JP" })[(window.TauI18n || {}).lang] || "en-GB";
 // a pause in words: seconds, minutes, hours or days
 function fmtDur(s) {
   if (s == null || !isFinite(s)) return "—";
@@ -1072,6 +1083,17 @@ function validatorView(a) {
   return { mine, all, set, gaps, longest, med: median(gaps.map(g => g.s)), hours, start, nowH, upH, ofH, makers, share: all.length ? mine.length / all.length : 0, inSet: set.includes(a) };
 }
 function renderValidator() {
+  // half a chain would look like a validator that stopped: while blocks load, say how far, and show no numbers yet
+  if (C.loading && !SAMPLE) {
+    const of = C.want != null ? fmtN(C.want + 1) : "…";
+    $("tiles").innerHTML = tile("Reading the chain", `${fmtN(C.loadedN || 0)} of ${of}`, "blocks read so far; the profile fills in when all are here", "Our node sends the chain a hundred blocks at a time.\nA validator’s numbers need every block.", "blocks");
+    for (const id of ["vBlkHead", "vGapHead"]) $(id).innerHTML = `Reading the chain… <span>${fmtN(C.loadedN || 0)} of ${of} blocks</span>`;
+    for (const id of ["vBlkSub", "vBlkNote", "vGapNote", "vHoursNote", "vMoney"]) $(id).textContent = "";
+    for (const id of ["vBlkChart", "vGapChart", "vHours", "vDist", "vKinds"]) $(id).replaceChildren();
+    $("vBody").innerHTML = `<tr><td colspan="4" class="empty">Reading the chain…</td></tr>`;
+    $("vGov").innerHTML = `<li class="empty">Reading the chain…</li>`;
+    return;
+  }
   const a = S.addr, V = validatorView(a), st = S.lookups.getaccountstate, gb = S.lookups.getbalance;
   const last = V.mine[V.mine.length - 1], first = V.mine[0];
   const N = V.set.length, fair = N ? 1 / N : null;
@@ -1298,7 +1320,7 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-ev]");
   if (b && !e.target.closest("a") && M) { const ev = M.ev[Number(b.dataset.ev)]; if (ev) openEvent(ev); return; }
   const vb = e.target.closest("[data-view]");
-  if (vb && S.addr) { S.view = vb.dataset.view; history.replaceState(history.state, "", accUrl(S.addr) + `&view=${S.view}` + (window.TauI18n && TauI18n.lang === "zh" ? "&lang=zh" : "")); hideTip(); rebuild(); return; }
+  if (vb && S.addr) { S.view = vb.dataset.view; history.replaceState(history.state, "", accUrl(S.addr) + `&view=${S.view}` + ((window.TauI18n || {}).lang && TauI18n.lang !== "en" ? `&lang=${TauI18n.lang}` : "")); hideTip(); rebuild(); return; }
   if (e.target.id === "moreBtn") { S.more += 40; renderActivity(); return; }
   const f = e.target.closest("[data-f]");
   if (f) { S.filter = f.dataset.f; S.more = 20; renderActivity(); fit(); }

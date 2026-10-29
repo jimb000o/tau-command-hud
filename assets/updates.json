@@ -1367,5 +1367,10 @@
    "link": "/",
    "image": "/assets/shots/trollbox.png"
   }
+ },
+ {
+  "tag": "Accounts",
+  "on": "2026-10-29",
+  "html": "Accounts: the validator profile reads the whole chain faster and, while it reads, says how far it got (“1,900 of 3,116 blocks”) instead of showing numbers that look final."
  }
 ]
