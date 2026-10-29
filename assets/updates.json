@@ -1316,5 +1316,17 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Agorzilla on the HUD is alive: he breathes, blinks, looks around and at the Live status, scratches, stretches, yawns in the evening and walks a little to the left where the header has room, never further right than his spot. He also reacts to the network: an ear twitch for a block, a cheer for an agreed rule, a head shake for a refused transfer, a squint when ghosts pile up and worry when no block comes. Never more than one move every 8 seconds; with reduced motion he only blinks."
+ },
+ {
+  "tag": "Accounts",
+  "on": "2026-10-29",
+  "html": "Accounts: every validator has its own profile now. Open a validator’s account and it shows the blocks it made over time and its share of all blocks, the pauses between its blocks, the hours of the last 7 days in which it made one, every validator side by side, what it sent by kind, the fees it paid, and how it voted on rule changes. The Account button shows its balance and rules as before.",
+  "major": {
+   "id": "validator-profile",
+   "title": "Validator profiles: who makes the blocks, and how reliably",
+   "text": "Open any validator on Tau HUD and see the blocks it made over time, its share of all blocks, the pauses between them, the hours it was up in the last 7 days, and how it voted on rule changes. Live from our node, or in the simulation with six validators. Testnet only, test AGRS have no value.",
+   "link": "/account/",
+   "image": "/assets/shots/validator-profile.png"
+  }
  }
 ]
