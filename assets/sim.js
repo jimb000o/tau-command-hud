@@ -42,7 +42,8 @@
     store.set(KEY, urlMode);
     try { const u = new URL(location.href); u.searchParams.delete("mode"); history.replaceState(null, "", u.pathname + u.search + u.hash); } catch (e) {}
   }
-  const ON = store.get(KEY) === "sim" && !q.has("sample");
+  const CORE = q.get("view") === "core";   // the core-only view for other sites (?view=core) always shows the live chain
+  const ON = store.get(KEY) === "sim" && !q.has("sample") && !CORE;
 
   /* ---------- deterministic randomness ---------- */
   const prng = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
@@ -972,7 +973,7 @@
 
   window.TauSim = {
     on: ON, pace: PACE, network: NETWORK, genesis: GENESIS, validators: VALIDATORS0, accounts: ACCOUNTS, genesisHash: GENESIS_HASH,
-    mode: () => (store.get(KEY) === "sim" ? "sim" : "live"),
+    mode: () => (store.get(KEY) === "sim" && !CORE ? "sim" : "live"),
     set(mode) {
       store.set(KEY, mode === "sim" ? "sim" : "live");
       try { const u = new URL(location.href); u.searchParams.delete("mode"); u.searchParams.delete("sample"); if (u.href === location.href) location.reload(); else location.href = u.href; } catch (e) { location.reload(); }

@@ -1253,5 +1253,10 @@
    "link": "/wallet/",
    "image": "/assets/shots/wallet-roundup.png"
   }
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "HUD: tauhud.com/?view=core shows only the Chain core of the live chain, filling the frame, with the block height underneath, for other sites to show in a frame. The hovers work as on the HUD, and a click opens Tau HUD. Agorzilla's site uses it to show that its falling blocks and the HUD follow the same chain."
  }
 ]
