@@ -976,5 +976,10 @@
   "tag": "Newspaper",
   "on": "2026-10-29",
   "html": "The weekly Daily Consensus reads like a paper of the 1920s: headlines in the paper's own words instead of tracker titles, a weather report from the chain, a photograph, a dense lead story and a stop press with the live block. Ballots that only keep the rules as they stand are told once, not one by one."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-29",
+  "html": "The weekly Daily Consensus leads with the week's real news: a milestone such as Tau HUD going live, a rule change taking effect, the simulation switching consensus, new nodes. Ballots that only keep the rules as they stand get one short line instead of the headline."
  }
 ]
