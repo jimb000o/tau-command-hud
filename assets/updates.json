@@ -1357,6 +1357,18 @@
   "html": "The header Agorzilla's mouth opens for real now: dark inside with a pink tongue when he yawns, a little open on a cheer when a vote passes, and now and then his tongue peeks out on its own. Also fixed: the rule change card under the Chain core no longer says “NaN blocks” when the proposal's height is unknown."
  },
  {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Troll box: a live public chat on the HUD. Open it with the Troll box pill at the bottom right and talk with everyone who is looking at Tau right now, under your random animal name, no account. The rules run on their own: one message every few seconds, no links, no price or trading talk (testnet AGRS has no value), three reports hide a message, and everything is gone after 24 hours. Details in the privacy notice.",
+  "major": {
+   "id": "trollbox",
+   "title": "New: the Tau HUD troll box",
+   "text": "A live public chat right on the HUD: talk with everyone watching Tau, under a random animal name, no account. Kind rules run on their own: no links, no price talk, three reports hide a message, everything is gone after 24 hours. Testnet only, test AGRS have no value.",
+   "link": "/",
+   "image": "/assets/shots/trollbox.png"
+  }
+ },
+ {
   "tag": "Accounts",
   "on": "2026-10-29",
   "html": "Accounts: the validator profile reads the whole chain faster and, while it reads, says how far it got (“1,900 of 3,116 blocks”) instead of showing numbers that look final."

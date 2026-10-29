@@ -342,6 +342,12 @@ in as that account, as `AGORZILLA_X_API_KEY`, `AGORZILLA_X_API_SECRET`,
 `docker compose up -d --build agorzilla` and
 `docker compose run --rm agorzilla python agorzilla.py --x-test` (one test post on X only).
 
+**Agorzilla's summary**: service `agorzilla-latest` runs the agorilla repo's
+`tools/archive.cjs --latest` every 10 minutes from the site checkout in `/opt/sites/agorilla`
+and writes `/opt/sites/agorilla-live/chain/latest.json`. `sites/agorzilla.caddy` (copied to
+`/opt/sites/`) serves that file first and the checkout's copy otherwise, so the summary no longer
+waits for GitHub's schedule; the archive and its hashes stay with the repo's own Action.
+
 **Donation thank-yous**: `alerts/donations.py` (service `donations`, same image) reads
 incoming AGRS (contract `0x7388…bdda` only, so look-alike tokens are ignored) and ETH
 transfers to the donation address every 5 minutes, above a small minimum
