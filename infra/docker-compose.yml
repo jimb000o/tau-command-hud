@@ -178,6 +178,22 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Agorzilla's evening (alerts/agorzilla.py): reads agorzilla.com/chain/latest.json
+  # every 10 minutes and posts each newly closed evening once to the Telegram
+  # channel (never to X). AGORZILLA_POSTS=0 turns it off.
+  agorzilla:
+    build: ./alerts
+    command: ["python", "agorzilla.py"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+      AGORZILLA_POSTS: ${AGORZILLA_POSTS:-1}
+    volumes:
+      - alerts_state:/state     # remembers the last evening posted, /state/agorzilla.json
+    mem_limit: 64m
+    restart: unless-stopped
+    logging: *logging
+
   # Question bot (alerts/bot.py): the same Telegram bot answers people who
   # write to it (/height, /proposals, /tx, /address, /block, /status) with data
   # from the relay and proposals.json. Long polling, so no inbound port; it
