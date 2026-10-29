@@ -1316,5 +1316,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Agorzilla on the HUD is alive: he breathes, blinks, looks around and at the Live status, scratches, stretches, yawns in the evening and walks a little to the left where the header has room, never further right than his spot. He also reacts to the network: an ear twitch for a block, a cheer for an agreed rule, a head shake for a refused transfer, a squint when ghosts pile up and worry when no block comes. Never more than one move every 8 seconds; with reduced motion he only blinks."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Agorzilla on the HUD now really walks: his legs step in turn, front left with back right, while his body rides up on each step, and his paws stand in front of the header line. Now and then he does a special move, sized to the room on your screen: a little dance, a backflip where there is head room, a roll or a cartwheel along the line where there is space to his left. Agorzilla also has its own entry in the Playground menu."
  }
 ]
