@@ -105,6 +105,11 @@ services:
       X_ACCESS_TOKEN: ${X_ACCESS_TOKEN:-}
       X_ACCESS_SECRET: ${X_ACCESS_SECRET:-}
       X_PROFILE_URL: ${X_PROFILE_URL:-}
+      # X is paid per post ($0.015, $0.20 with a link): short texts without links, at most this many a day and a month
+      X_DAILY_CAP: ${X_DAILY_CAP:-8}
+      X_MONTHLY_CAP: ${X_MONTHLY_CAP:-120}
+      X_LINKS: ${X_LINKS:-false}
+      X_SIM: ${X_SIM:-false}
       # weekly recap image (alerts/recap.py): Monday 09:00 UTC unless .env says otherwise
       RECAP_ENABLED: ${RECAP_ENABLED:-true}
       RECAP_WEEKDAY: ${RECAP_WEEKDAY:-0}
