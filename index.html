@@ -1383,6 +1383,14 @@ const HEALTH = {
     if (sched.length) return ["ok", sched.length === 1 ? "Normal: 1 agreed change waits for its block; nothing needs a vote." : `Normal: ${sched.length} agreed changes wait for their block; nothing needs a vote.`];
     return ["ok", "Normal: nothing to vote on; the rules in force stay as they are."];
   },
+  rim() {   // the rule book: in force and judging every block (green), a change on its way (amber), judging stopped (red)
+    if (offline()) return ["bad", "Problem: no connection to a node; no block is being judged."];
+    const p = healthOf("pace"); if (p && p[0] === "bad") return ["bad", "Problem: blocks have stopped, so nothing is judged."];
+    const sched = S.updates.find(u => u.status === "scheduled"), voting = S.updates.some(u => u.status === "voting");
+    if (sched && Number.isFinite(Number(sched.activateAt))) return farAhead(sched) ? ["ok", `Normal: version ${S.specRev} in force; the next agreed one starts at block #${sched.activateAt}.`] : ["busy", `In progress: a new rule version takes effect at block #${sched.activateAt}.`];
+    if (voting) return ["busy", `In progress: version ${S.specRev} in force; a change is being voted on.`];
+    return ["ok", `Normal: rule book version ${S.specRev} in force.`];
+  },
   nodes() {
     if (offline()) return ["bad", "Problem: no connection to a node."];
     const ns = nodesNow(), N = ns.length, far = ns.filter(n => n.height && Math.abs(n.height - S.height) > 5).length;
@@ -2836,7 +2844,7 @@ function draw(tm) {
       : vt(`Another node on the testnet${n.height ? `, at #${fmt(n.height)}` : ""}, last seen ${age}.\nClick to open the Nodes page.`,
            `Peer${n.id ? " " + n.id.slice(0, 8) + "…" + n.id.slice(-4) : ""}${n.height ? ": tip #" + fmt(n.height) : ""}, ${n.connected ? "connected" : "not connected"}, last seen ${age}.\nClick to open the Nodes page.`)), nodesHref);
   });
-  ring(C * .93, C * .085, () => verdict("ok", `Normal: rule book version ${S.specRev} in force.`) + vt("Outer rim: what the rules refuse bounces off; it grows with the chain.",
+  ring(C * .93, C * .085, () => health("rim") + vt("Outer rim: what the rules refuse bounces off; it grows with the chain.",
     `Outer rim: spec revision ${S.specRev}; every block is judged by it (o6, o7, o9 fee ${S.fee} AGRS).`));
   CORE_RINGS[CORE_RINGS.length - 1].lo = C * .895;   // its glow stays inside the canvas: the hover area reaches past the edge, the band does not
 

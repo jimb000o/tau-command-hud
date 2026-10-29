@@ -1025,6 +1025,6 @@
  {
   "tag": "HUD",
   "on": "2026-10-29",
-  "html": "Chain core: the outer rim's energy field and its hover glow now stay fully inside the picture at every screen size, so nothing is cut off at the top or bottom any more. The rim's hover is a status light, one verdict and one short line."
+  "html": "Chain core: the outer rim's energy field and its hover glow now stay fully inside the picture at every screen size, so nothing is cut off at the top or bottom any more. The rim's hover now has its status light like the rest: green while the rule book is in force and every block is judged, amber while a rule change is on its way, red only if judging has stopped."
  }
 ]
