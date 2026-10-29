@@ -95,7 +95,8 @@ class TxSources:
                 ts = int((b.get("header") or {}).get("timestamp"))
             except (TypeError, ValueError):
                 continue
-            first = ts if first is None else min(first, ts)
+            if ts > 0:   # the genesis block carries time 0
+                first = ts if first is None else min(first, ts)
             day = time.strftime("%Y-%m-%d", time.gmtime(ts))
             ids = b.get("tx_ids") or []
             for i, tx in enumerate(b.get("transactions") or []):

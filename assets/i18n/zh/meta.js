@@ -84,7 +84,7 @@ TauI18n.add({ strings: {
   "Transactions in the testnet's blocks, sorted by where they came from. Counted by the Tau HUD relay from the blocks it keeps; one person can hold several wallets.": "测试网区块中的交易，按来源分类。由 Tau HUD 中继根据它保存的区块统计；一个人可以拥有多个钱包。",
   "meals and votes: payments to Agorzilla's bowl and ballot boxes": "喂食和投票：付给 Agorzilla 食盆和投票箱的交易",
   "sent from a Tau HUD page: wallet, playground, vote": "从 Tau HUD 页面发送：钱包、试验场、投票",
-  "everything else: other wallets, scripts and tools": "其他所有：别的钱包、脚本和工具",
+  "everything else: other wallets, scripts and test tools. On this testnet that is mostly a handful of very busy test wallets, so a small share can still be many people.": "其他所有：别的钱包、脚本和测试工具。在这个测试网上，主要是少数几个非常活跃的测试钱包，所以占比小也可能代表很多人。",
   "elsewhere": "其他来源",
   "transactions": "笔交易",
   "wallets": "个钱包",

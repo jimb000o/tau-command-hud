@@ -36,6 +36,7 @@ check(json.load(open(path))["sent"] == {"h2": "", "h5": "agorzilla"}, "only hash
 check(txsources.TxSources(path).sent == s.sent, "remembered after a restart")
 day1, day2 = 1_793_145_600, 1_793_232_000   # 2026-10-28, 2026-10-29
 blocks = [
+    {"header": {"timestamp": 0}, "tx_ids": [], "transactions": []},
     {"header": {"timestamp": day1 + 60}, "tx_ids": ["h1", "h2", "h3"],
      "transactions": [tx(A, BOWL), tx(B, C), tx(C, A)]},
     {"header": {"timestamp": day1 + 120}, "tx_ids": ["h4"], "transactions": [tx(A, BOWL.upper())]},
