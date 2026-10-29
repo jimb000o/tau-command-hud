@@ -316,7 +316,7 @@ def observe(st: dict, snap: dict, now: float) -> list[dict]:
     def begin(key: str, inc: dict):
         d = DETECTORS[key]
         inc["start"] = now
-        if not st["primed"]:
+        if not st["primed"] or inc.get("old"):
             inc["quiet"] = True
             return
         st["log"].append(now)
@@ -345,7 +345,8 @@ def observe(st: dict, snap: dict, now: float) -> list[dict]:
         inc = st["inc"].get(key)
         if c:
             if not inc:
-                inc = st["inc"][key] = {"since": now, "start": None, "facts": c}
+                # already on at the first run: how things are, not news, also once its hold has passed
+                inc = st["inc"][key] = {"since": now, "start": None, "facts": c, **({} if st["primed"] else {"old": True})}
             inc["facts"] = {**inc["facts"], **{k: v for k, v in c.items() if k not in ("last_ts", "head") or inc["start"] is None}}
             inc["clear_since"] = None
             if inc["start"] is None and now - inc["since"] >= d["hold"]:

@@ -475,4 +475,12 @@ TauI18n.add({ strings: {
   "Their address goes into the form; you give the name.": "对方的地址会填进表单；名字由你来起。",
   "Check their three words with them first.": "先和对方核对三个核对词。",
   "{n} test AGRS to {x}, co-signed and paid": "{n} 测试 AGRS 给 {x}，已共同签名并付款",
+  "No address at hand? Ask the person for theirs: their wallet shows it under Your account, with a Copy button. Or try the book with a simulated account:": "手上没有地址？向对方要：他们的钱包在“你的账户”下显示地址，旁边有“复制”按钮。也可以先用一个模拟账户试试通讯录：",
+  "No address at hand? Ask the person for theirs: their wallet shows it under Your account, with a Copy button. Or try the book with a real testnet account:": "手上没有地址？向对方要：他们的钱包在“你的账户”下显示地址，旁边有“复制”按钮。也可以先用一个真实的测试网账户试试通讯录：",
+  "Use an example name and address": "使用示例名字和地址",
+  "Fills in an example": "填入一个示例",
+  "A simulated account, nobody you know.": "一个模拟账户，不是你认识的人。",
+  "A real testnet account that holds a rule place, nobody you know.": "一个占有规则名额的真实测试网账户，不是你认识的人。",
+  "Nothing is added until you press Add.": "在你按“添加”之前什么都不会加进去。",
+  "Show my own address": "显示我自己的地址",
 } });
