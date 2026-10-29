@@ -1127,5 +1127,17 @@
    "link": "/wallet/",
    "image": "/assets/shots/wallet-rules.png"
   }
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-29",
+  "html": "Newspaper: The Daily Consensus now lies on a marble café table by the window, on a 1920s city street at eight in the morning. Outside, streetcars come and go (the one coming in rings its bell), people walk to work, a newsboy holds up the morning edition and steam rises from a grate; the coffee steams. Everything is drawn in your browser, without photographs. New button Café: off by default, one click for the café's sounds (voices, cups and spoons, the street, the streetcar), two for a gramophone playing a slow swing blues, all made in the browser, no recordings.",
+  "major": {
+   "id": "gazette-cafe",
+   "title": "New: read the paper in a 1920s café",
+   "text": "The Daily Consensus lies on a café table by the window; outside, streetcars, passers-by and a newsboy on a city morning. Press Café for its sounds, or a gramophone. All drawn and played in your browser.",
+   "link": "/gazette/",
+   "image": "/assets/shots/gazette-cafe.png"
+  }
  }
 ]
