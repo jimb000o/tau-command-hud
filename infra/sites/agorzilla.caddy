@@ -1,0 +1,28 @@
+# agorzilla.com: the agorilla checkout in /opt/sites/agorilla (git pull every 10 minutes by cron).
+# Copy to /opt/sites/agorzilla.caddy; the main Caddyfile imports /srv/sites/*.caddy.
+agorzilla.com, www.agorzilla.com {
+	encode gzip
+	root * /srv/sites/agorilla
+	# the summary made every 10 minutes by the agorzilla-latest service; the checkout's copy if it is missing
+	@live {
+		path /chain/latest.json
+		file {
+			root /srv/sites/agorilla-live
+		}
+	}
+	handle @live {
+		root * /srv/sites/agorilla-live
+		header Cache-Control no-cache
+		header Access-Control-Allow-Origin *
+		file_server
+	}
+	@public path / /index.html /assets/* /chain/*
+	handle @public {
+		header /chain/* Cache-Control no-cache
+		header /chain/latest.json Access-Control-Allow-Origin *
+		file_server
+	}
+	handle {
+		respond 404
+	}
+}

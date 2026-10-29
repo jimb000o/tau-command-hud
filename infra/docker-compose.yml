@@ -53,6 +53,9 @@ services:
       TAU_GOVERNANCE_OPEN_ADMISSION: "true"  # keep equal to the node setting above
       VISITS_KEY: ${VISITS_KEY:-}   # key of the visitor numbers report; empty: made once in /data/visits.key
       SLOTLEASE_ENABLED: ${SLOTLEASE_ENABLED:-1}   # fair turns on the rule places (relay/slotlease.py); 0 switches them off
+      CHAT_ENABLED: ${CHAT_ENABLED:-1}   # the troll box on the HUD (relay/chat.py); 0 closes the room
+      CHAT_KEY: ${CHAT_KEY:-}   # key of the troll box admin page /chat/admin; empty: made once in /data/chat.key
+      CHAT_BLOCK_WORDS: ${CHAT_BLOCK_WORDS:-}   # extra words the troll box refuses, comma separated
     volumes:
       # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH),
       # availability history for /uptime (UPTIME_PATH)
@@ -197,6 +200,25 @@ services:
     volumes:
       - alerts_state:/state     # remembers the last evening posted, /state/agorzilla.json
     mem_limit: 64m
+    restart: unless-stopped
+    logging: *logging
+
+  # Agorzilla's summary (agorzilla.com/chain/latest.json, read by Tau HUD's header and the
+  # evening post): the agorilla repo's tools/archive.cjs --latest, every 10 minutes, from the
+  # site's own checkout. GitHub's 30-minute schedule often skips runs, so the summary is made
+  # here; the archive and its hashes stay with the repo's Action. Caddy (sites/agorzilla.caddy)
+  # serves this file first and falls back to the checkout's copy.
+  agorzilla-latest:
+    image: node:22-alpine
+    command: ["sh", "-c", "while true; do node /repo/tools/archive.cjs --latest || true; sleep 600; done"]
+    environment:
+      AGORILLA_NODE: ws://relay:8080
+      AGORILLA_OUT: /out/chain
+    volumes:
+      - /opt/sites/agorilla:/repo:ro
+      - /opt/sites/agorilla-live:/out
+    depends_on: [relay]
+    mem_limit: 128m
     restart: unless-stopped
     logging: *logging
 

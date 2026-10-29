@@ -1,0 +1,45 @@
+/* Troll box (assets/chat.js): a pill at the bottom right, a panel above it. Monochrome, green only for the live dot. */
+.tb-pill { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 45;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+  font: 600 11px/1 var(--display, "Sora", sans-serif); letter-spacing: .18em; text-transform: uppercase;
+  color: var(--text, #ebebee); background: #121214; border: 1px solid var(--hair, rgba(255,255,255,.18)); box-shadow: 0 10px 30px -10px rgba(0,0,0,.9); }
+.tb-pill:hover { border-color: rgba(255,255,255,.4); }
+.tb-pill[hidden], .tb-box[hidden], .tb-note[hidden], .tb-form[hidden] { display: none; }
+.tb-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok, #39ff8a); box-shadow: 0 0 8px var(--ok, #39ff8a); }
+.tb-box { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 46;
+  width: 360px; height: min(520px, calc(100vh - 140px)); display: flex; flex-direction: column; box-sizing: border-box;
+  background: #101012; border: 1px solid var(--hair, rgba(255,255,255,.18)); border-radius: 10px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.95);
+  font: 12px/1.45 var(--mono, ui-monospace, monospace); color: var(--text, #ebebee); letter-spacing: 0; }
+.tb-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 0 14px; }
+.tb-tl { font: 600 11px/1 var(--display, "Sora", sans-serif); letter-spacing: .18em; text-transform: uppercase; }
+.tb-x { width: 36px; height: 36px; border: 0; background: none; color: var(--dim, #7f7f8a); font-size: 20px; cursor: pointer; border-radius: 6px; }
+.tb-x:hover { color: var(--text, #ebebee); background: rgba(255,255,255,.06); }
+.tb-rules { margin: 2px 14px 8px; color: var(--dim, #7f7f8a); font-size: 11px; line-height: 1.4; }
+.tb-list { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 6px 14px; list-style: none; border-top: 1px solid var(--line, rgba(255,255,255,.09)); overscroll-behavior: contain; }
+.tb-m { position: relative; padding: 3px 24px 3px 0; overflow-wrap: anywhere; }
+.tb-m.gone { opacity: .35; }
+.tb-t { color: var(--dim, #7f7f8a); margin-right: 6px; font-size: 11px; }
+.tb-nm { font-weight: 600; margin-right: 6px; }
+.tb-rp { position: absolute; right: 0; top: 1px; width: 22px; height: 22px; border: 0; background: none; color: var(--dim, #7f7f8a); cursor: pointer; opacity: 0; font-size: 12px; border-radius: 4px; }
+.tb-m:hover .tb-rp, .tb-rp:focus-visible { opacity: 1; }
+.tb-rp:hover { color: var(--text, #ebebee); background: rgba(255,255,255,.06); }
+.tb-note { margin: 0; padding: 6px 14px; color: var(--dim, #7f7f8a); font-size: 11px; border-top: 1px solid var(--line, rgba(255,255,255,.09)); }
+.tb-form { display: flex; gap: 6px; padding: 8px 10px 4px; border-top: 1px solid var(--line, rgba(255,255,255,.09)); }
+.tb-in { flex: 1; min-width: 0; height: 36px; padding: 0 10px; box-sizing: border-box; background: #0a0a0b; color: var(--text, #ebebee);
+  border: 1px solid var(--hair, rgba(255,255,255,.18)); border-radius: 6px; font: 12px var(--mono, ui-monospace, monospace); }
+.tb-in:focus { outline: none; border-color: rgba(255,255,255,.5); }
+.tb-send { height: 36px; padding: 0 14px; border: 0; border-radius: 6px; background: #fff; color: #000; cursor: pointer;
+  font: 600 11px/1 var(--display, "Sora", sans-serif); letter-spacing: .12em; text-transform: uppercase; }
+.tb-send:disabled { opacity: .5; cursor: default; }
+.tb-who { margin: 0; padding: 2px 14px 8px; color: var(--dim, #7f7f8a); font-size: 11px; }
+.tb-who::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: var(--me, #c8c8d0); vertical-align: 1px; }
+html.wide .tb-pill, html.wide .tb-box { zoom: var(--z, 1); }
+html.coreonly .tb-pill, html.coreonly .tb-box { display: none; }
+/* phones: above the bottom tab bar, the panel as a sheet; 44 px taps */
+@media (max-width: 720px) {
+  .tb-pill { right: 12px; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); min-height: 44px; }
+  .tb-box { left: 8px; right: 8px; width: auto; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); height: min(70vh, calc(100vh - 140px)); }
+  .tb-x, .tb-in, .tb-send { height: 44px; min-width: 44px; }
+  .tb-in { font-size: 16px; }   /* iOS does not zoom into a 16 px field */
+  .tb-rp { opacity: 1; width: 32px; height: 32px; top: -3px; }
+}
