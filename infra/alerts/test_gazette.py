@@ -137,6 +137,12 @@ idx = json.load(open(os.path.join(g, "editions.json")))
 check(e2["no"] == 2 and e3["no"] == 2 and [x["no"] for x in idx] == [2, 1], "the Monday edition is No. 2; written again the same day it keeps its number")
 check(set(idx[0]) >= {"no", "date", "banner", "teaser", "url"}, "the archive lists number, date, headline, teaser and link")
 check(e2["stories"][1]["body"][0]["en"].startswith("In the simulation, where the visitors decide, two hourly"), "the week's noted day goes into the rehearsal hall")
+alerts.PUBLIC_DIR, w0 = TMP, alerts.Watcher
+alerts.Watcher = Relay
+code = alerts.gazette_cli(reprint=True)
+alerts.Watcher = w0
+idx = json.load(open(os.path.join(g, "editions.json")))
+check(code == 0 and [x["no"] for x in idx] == [2, 1] and json.load(open(os.path.join(g, "latest.json")))["date"] == "2026-11-02", "a reprint keeps the latest edition's number, date and week")
 
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
 sys.exit(1 if failed else 0)
