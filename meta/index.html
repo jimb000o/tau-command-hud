@@ -55,7 +55,15 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; }
 .panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .panel h2 .aside { margin-left: auto; font: 12px var(--mono); letter-spacing: 0; text-transform: none; }
-.range { display: inline-flex; gap: 4px; margin-left: auto; }
+.range, .kind { display: inline-flex; gap: 4px; }
+.kind { margin-left: auto; padding-right: 8px; border-right: 1px solid var(--line); }
+.kind button { font: 600 11px var(--display); letter-spacing: .12em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 12px; min-height: 28px; cursor: pointer; text-transform: uppercase; }
+.kind button:hover { color: #fff; border-color: var(--hair); }
+.kind button[aria-pressed="true"] { color: var(--ok); border-color: rgba(57,255,138,.6); }
+.chart .colb { fill: var(--ok); fill-opacity: .55; }
+.chart .colb.open { fill-opacity: .22; stroke: var(--ok); stroke-opacity: .6; stroke-dasharray: 3 3; }
+.chart .colb.sel { fill-opacity: .95; }
+.chart .colb.on { fill-opacity: .85; }
 .range button { font: 600 11px var(--display); letter-spacing: .12em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 12px; min-height: 28px; cursor: pointer; }
 .range button:hover { color: #fff; border-color: var(--hair); }
 .range button[aria-pressed="true"] { color: #000; background: #fff; border-color: #fff; }
@@ -96,7 +104,10 @@ table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { text-align: left; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 td { padding: 5px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
-td.w { width: 38%; }
+td.w { width: 15%; }
+th.n { white-space: nowrap; }
+td.tm { white-space: nowrap; color: var(--dim); }
+td.tm.dim { opacity: .5; }
 .meter { height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden; }
 .meter i { display: block; height: 100%; background: #fff; }
 tr:first-child .meter i { background: var(--ok); }
@@ -130,7 +141,7 @@ html.fit .chart { min-height: 0; }
 html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 1fr) 420px 420px; }
 html.fit.wide .col.side { display: contents; }
 @media (max-width: 700px) {
-  .range button { min-height: 44px; padding: 0 10px; }
+  .range button, .kind button { min-height: 44px; padding: 0 10px; }
   .chart { min-height: 200px; }
   td.hide-s, th.hide-s { display: none; }
 }
@@ -159,13 +170,16 @@ html.fit.wide .col.side { display: contents; }
   <main class="main">
     <div class="col">
       <section class="panel" id="pDaily">
-        <h2>Visitors per day
+        <h2><span id="dailyTitle">Visitors per day</span>
+          <span class="kind" role="group" aria-label="Chart type">
+            <button type="button" data-kind="line" aria-label="Line chart">Line</button><button type="button" data-kind="bar" aria-label="Bar chart">Bars</button>
+          </span>
           <span class="range" role="group" aria-label="Time range">
-            <button type="button" data-r="7">7D</button><button type="button" data-r="30">30D</button><button type="button" data-r="90">90D</button><button type="button" data-r="365">1Y</button><button type="button" data-r="0">All</button>
+            <button type="button" data-r="1">24H</button><button type="button" data-r="7">7D</button><button type="button" data-r="30">30D</button><button type="button" data-r="90">90D</button><button type="button" data-r="365">1Y</button><button type="button" data-r="0">All</button>
           </span>
         </h2>
         <div class="chart" id="cDaily"></div>
-        <div class="legend"><span><i></i>visitors per day (click a day for its pages)</span><span><i class="o"></i>today, still counting</span><span id="lgAvg"><i class="a"></i>7-day average</span><span><i class="v"></i>pages opened</span></div>
+        <div class="legend"><span id="lgMain"><i></i>visitors per day (click a day for its pages)</span><span id="lgOpen"><i class="o"></i>today, still counting</span><span id="lgAvg"><i class="a"></i>7-day average</span><span id="lgVol"><i class="v"></i>pages opened</span></div>
       </section>
       <div class="row2">
         <section class="panel" id="pGrowth">
@@ -196,7 +210,7 @@ html.fit.wide .col.side { display: contents; }
       </section>
     </div>
   </main>
-  <footer>Counted on our own server, not by another company: a page sends one small request when it opens and one more after 30 seconds in view. Nothing is stored in your browser, addresses are never stored, and browsers with Do Not Track or Global Privacy Control are not counted. A visitor is recognised for one day only. Data: <a href="https://node.tauhud.com/visits/public">JSON</a>.</footer>
+  <footer>Counted on our own server, not by another company: a page sends one small request when it opens, one after 30 seconds in view and one when you leave it with how long it was in view (only a rough step such as “1–3 min” is kept). Nothing is stored in your browser, addresses are never stored, and browsers with Do Not Track or Global Privacy Control are not counted. A visitor is recognised for one day only. Data: <a href="https://node.tauhud.com/visits/public">JSON</a>.</footer>
 </div>
 <div id="tip" hidden></div>
 <script>
@@ -210,8 +224,9 @@ const fmt = n => Number(n).toLocaleString(ZH ? "zh-CN" : "en-US");
 const pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "–";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const DAY = 86400000;
-let data = null, range = 30, sel = null, failed = false;
-try { const r = localStorage.getItem("tauhud-meta-range"); if (r != null && [0, 7, 30, 90, 365].includes(+r)) range = +r; } catch (e) {}
+const HOUR = 3600000;
+let data = null, range = 30, sel = null, failed = false, kind = "line";   // range 1 = the last 24 hours, hour by hour
+try { const r = localStorage.getItem("tauhud-meta-range"); if (r != null && [0, 1, 7, 30, 90, 365].includes(+r)) range = +r; } catch (e) {}
 
 /* page keys from the counter: "hud", "explorer", "story/zh" … */
 const NAMES = { hud: "HUD", explorer: "Explorer", stats: "Stats", history: "Time travel", account: "Accounts", nodes: "Nodes", proposals: "Proposals", story: "Tau in 60 seconds", gazette: "The Daily Consensus", chronicle: "Chronicle", findings: "Findings", status: "Status", developers: "Developers", press: "Press kit", playground: "Playground", whatif: "What if", vote: "Vote for real", missions: "Missions", meta: "In numbers" };
@@ -231,9 +246,16 @@ function sample() {
     const v = Math.round(base * (.75 + .5 * rnd()) * (i === 0 ? .55 : 1)), u = {};
     for (const p in pages) u[p] = Math.max(0, Math.round(v * pages[p] * (.7 + .6 * rnd())));
     const views = Math.round(v * 2.6);
-    days[k] = [v, views, Math.round(views * (.35 + .2 * rnd())), u, { en: Math.round(v * .8), zh: v - Math.round(v * .8) }, { phone: Math.round(v * .35), laptop: Math.round(v * .3), desktop: Math.round(v * .25), wide: Math.round(v * .1) }];
+    days[k] = [v, views, Math.round(views * (.35 + .2 * rnd())), u, { en: Math.round(v * .8), zh: v - Math.round(v * .8) }, { phone: Math.round(v * .35), laptop: Math.round(v * .3), desktop: Math.round(v * .25), wide: Math.round(v * .1) }, {}];
+    for (const p in u) { const lean = p === "hud" || p === "gazette" || p === "playground" ? 2 : 0; days[k][6][p] = [0, 1, 2, 3, 4, 5].map(j => Math.round(u[p] * Math.exp(-((j - 1.5 - lean) ** 2) / 2) * (.6 + .8 * rnd()))); }
   }
-  return { today: dayKey(today), days };
+  const hours = {};   // the last two days hour by hour, for 24H
+  for (const k of [dayKey(today - DAY), dayKey(today)]) {
+    const v = [], pv = [], nowH = new Date(today).getUTCHours();
+    for (let hh = 0; hh < 24; hh++) { const n = k === dayKey(today) && hh > nowH ? 0 : Math.round((4 + 9 * Math.sin((hh - 6) / 24 * Math.PI * 2) ** 2) * (.6 + .8 * rnd())); v.push(n); pv.push(Math.round(n * 2.5)); }
+    hours[k] = [v, pv];
+  }
+  return { now: Math.floor(today / 1000), today: dayKey(today), days, hours };
 }
 
 /* every calendar day of the range, zero where nothing was counted; not before counting began */
@@ -241,7 +263,7 @@ function rangeDays() {
   const keys = Object.keys(data.days).sort();
   if (!keys.length) return [];
   const end = Date.parse(data.today + "T00:00:00Z"), first = Date.parse(keys[0] + "T00:00:00Z");
-  const start = range ? Math.max(first, end - (range - 1) * DAY) : first;
+  const start = range ? Math.max(first, end - (Math.max(1, range) - 1) * DAY) : first;
   const out = [];
   for (let t = start; t <= end; t += DAY) { const k = dayKey(t); out.push([k, data.days[k] || [0, 0, 0, {}, {}, {}]]); }
   return out;
@@ -255,13 +277,31 @@ function ticks(lo, hi, want = 4) {
   for (let v = a; v < hi + step; v += step) { out.push(v); if (v >= hi) break; }
   return out;
 }
-/* the dates the chart spans: the chosen range ending today; "All" from the first counted day, at least a week */
+/* what the chart spans: the chosen range ending today, one point a day; "All" from the first counted day, at least
+   a week; 24H the last 24 hours ending with the current one, one point an hour */
 function domain() {
-  const end = Date.parse(data.today + "T00:00:00Z"), keys = Object.keys(data.days).sort();
+  const keys = Object.keys(data.days).sort();
+  if (range === 1) {
+    const end = Math.floor((data.now ? data.now * 1000 : Date.now()) / HOUR) * HOUR, hk = Object.keys(data.hours || {}).sort();
+    const first = hk.length ? Date.parse(hk[0] + "T00:00:00Z") : end;
+    return { start: end - 23 * HOUR, end, first, step: HOUR };
+  }
+  const end = Date.parse(data.today + "T00:00:00Z");
   const first = keys.length ? Date.parse(keys[0] + "T00:00:00Z") : end;
   const start = range ? end - (range - 1) * DAY : Math.min(first, end - 6 * DAY);
-  return { start, end, first };
+  return { start, end, first, step: DAY };
 }
+/* the last 24 hours: visitors and pages per hour; an hour counted before the relay kept visitors per hour has no point */
+function rangeHours() {
+  const { start, end } = domain(), out = [];
+  for (let t = start; t <= end; t += HOUR) {
+    const k = dayKey(t), hh = new Date(t).getUTCHours(), d = (data.hours || {})[k];
+    const vis = d ? d[0][hh] : 0, views = d ? d[1][hh] : 0;
+    out.push({ k, t, hh, v: views > 0 && !vis ? null : vis, vol: views, open: t === end });
+  }
+  return out;
+}
+const hourLabel = t => String(new Date(t).getUTCHours()).padStart(2, "0") + ":00";
 const shortDate = t => new Date(t).toLocaleDateString(ZH ? "zh-CN" : "en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 const monthDate = t => new Date(t).toLocaleDateString(ZH ? "zh-CN" : "en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
 
@@ -269,26 +309,29 @@ const monthDate = t => new Date(t).toLocaleDateString(ZH ? "zh-CN" : "en-GB", { 
    number (no axis of its own), hairline grid, a crosshair and a small card on hover.
    pts: [{t, v, vol?, open?}] in time order; opts: {label, lo0, avg, onPick, tip(pt) -> html} */
 function lineChart(box, pts, opts) {
-  const { start, end, first } = domain();
+  const { start, end, first, step } = domain();
   const w = Math.max(box.clientWidth, 10), h = Math.max(box.clientHeight, 10);
-  const vals = pts.map(p => p.v), hi = Math.max(1, ...vals), lo = opts.lo0 ? 0 : Math.min(...vals);
+  const vals = pts.map(p => p.v), hi = Math.max(opts.bars ? 1 : 1, ...vals), lo = opts.lo0 ? 0 : Math.min(...vals);
   const tk = ticks(opts.lo0 ? 0 : lo - (hi - lo) * .15, hi + (hi - lo || hi) * .12);
   const yMin = tk[0], yMax = tk[tk.length - 1];
   const lab = Math.max(...tk.map(v => fmt(v).length)) * 7 + 14, L = lab, R = 10, top = 10, B = 22, cw = w - L - R, ch = h - top - B;
   const x = t => L + (end === start ? cw / 2 : cw * (t - start) / (end - start));
   const y = v => top + ch - ch * (v - yMin) / (yMax - yMin || 1);
-  const uid = box.id;
+  const uid = box.id, path = arr => arr.map((p, i) => (i ? "L" : "M") + x(p.t).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
   let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(opts.label)}"><defs><linearGradient id="g-${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#39ff8a" stop-opacity=".22"/><stop offset="1" stop-color="#39ff8a" stop-opacity="0"/></linearGradient></defs>`;
   for (const v of tk) s += `<line class="grid" x1="${L}" x2="${w - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="axis" x="${L - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${fmt(v)}</text>`;
   // days in the range before counting began: shaded, said once
   if (first > start) {
-    const xb = x(first - DAY / 2);
+    const xb = x(first - step / 2);
     s += `<rect class="before" x="${L}" y="${top}" width="${Math.max(0, xb - L).toFixed(1)}" height="${ch}"/>`;
     if (xb - L > 150) s += `<text class="before-t" x="${((L + xb) / 2).toFixed(1)}" y="${(top + ch / 2).toFixed(1)}" text-anchor="middle">${esc(T("before counting began"))}</text>`;
   }
   // x labels: days, or months on long ranges
-  const days = (end - start) / DAY + 1, maxLabels = Math.max(2, Math.floor(cw / 78));
-  if (days > 120) {
+  const days = (end - start) / step + 1, maxLabels = Math.max(2, Math.floor(cw / 78));
+  if (step === HOUR) {
+    const every = [1, 2, 3, 4, 6, 12].find(e => days / e <= maxLabels) || 12;
+    for (let i = days - 1; i >= 0; i--) { const t = start + i * HOUR; if (new Date(t).getUTCHours() % every === 0) s += `<text class="axis" x="${x(t).toFixed(1)}" y="${h - 5}" text-anchor="middle">${esc(hourLabel(t))}</text>`; }
+  } else if (days > 120) {
     const d = new Date(start); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + 1);
     const every = Math.ceil(((end - start) / (30 * DAY)) / maxLabels);
     for (let i = 0; d.getTime() <= end; i++, d.setUTCMonth(d.getUTCMonth() + 1)) if (i % every === 0) s += `<text class="axis" x="${x(d.getTime()).toFixed(1)}" y="${h - 5}" text-anchor="middle">${esc(monthDate(d.getTime()))}</text>`;
@@ -298,19 +341,27 @@ function lineChart(box, pts, opts) {
   }
   // faint volume bars along the bottom
   const vmax = Math.max(1, ...pts.map(p => p.vol || 0)), vh = ch * .22, bw = Math.max(1, Math.min(14, cw / days * .6));
-  if (pts.some(p => p.vol)) pts.forEach((p, i) => { if (p.vol) s += `<rect class="vol" data-i="${i}" x="${(x(p.t) - bw / 2).toFixed(1)}" y="${(top + ch - vh * p.vol / vmax).toFixed(1)}" width="${bw.toFixed(1)}" height="${(vh * p.vol / vmax).toFixed(1)}" rx="1"/>`; });
-  // the line and its fill; the still-counting day is joined with a dashed piece
-  const closed = pts.filter(p => !p.open), last = pts[pts.length - 1];
-  const path = arr => arr.map((p, i) => (i ? "L" : "M") + x(p.t).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
-  if (pts.length > 1) {
-    s += `<path d="${path(pts)} L${x(last.t).toFixed(1)} ${top + ch} L${x(pts[0].t).toFixed(1)} ${top + ch} Z" fill="url(#g-${uid})"/>`;
-    if (closed.length > 1) s += `<path class="line" d="${path(closed)}"/>`;
-    if (last.open && closed.length) s += `<path class="line open" d="${path([closed[closed.length - 1], last])}"/>`;
+  if (opts.bars) {
+    // columns instead of the line: one per day (or hour), the still-counting one hollow
+    const cwid = Math.max(1, Math.min(28, cw / days * .72));
+    pts.forEach((p, i) => { if (p.v == null) return; const hh = Math.max(p.v ? 2 : 0, y(yMin) - y(p.v)); s += `<rect class="colb${p.open ? " open" : ""}${p.k === sel && step === DAY ? " sel" : ""}" data-i="${i}" x="${(x(p.t) - cwid / 2).toFixed(1)}" y="${(y(yMin) - hh).toFixed(1)}" width="${cwid.toFixed(1)}" height="${hh.toFixed(1)}" rx="${Math.min(3, cwid / 3).toFixed(1)}"/>`; });
+  } else if (pts.some(p => p.vol)) pts.forEach((p, i) => { if (p.vol) s += `<rect class="vol" data-i="${i}" x="${(x(p.t) - bw / 2).toFixed(1)}" y="${(top + ch - vh * p.vol / vmax).toFixed(1)}" width="${bw.toFixed(1)}" height="${(vh * p.vol / vmax).toFixed(1)}" rx="1"/>`; });
+  // the line and its fill; the still-counting day is joined with a dashed piece; hours without a count leave a gap
+  if (!opts.bars) {
+    const known = pts.filter(p => p.v != null), closed = known.filter(p => !p.open), last = known[known.length - 1];
+    if (known.length > 1) {
+      s += `<path d="${path(known)} L${x(last.t).toFixed(1)} ${top + ch} L${x(known[0].t).toFixed(1)} ${top + ch} Z" fill="url(#g-${uid})"/>`;
+      if (closed.length > 1) s += `<path class="line" d="${path(closed)}"/>`;
+      if (last.open && closed.length) s += `<path class="line open" d="${path([closed[closed.length - 1], last])}"/>`;
+    }
   }
   if (opts.avg && opts.avg.length > 1) s += `<path class="avg" d="${path(opts.avg)}"/>`;
   // points stay visible while there are few of them, so a short history still reads as data
-  if (pts.length <= 45) pts.forEach(p => { s += `<circle class="pt${p.k === sel ? " sel" : ""}" cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${pts.length <= 10 ? 4 : 3}"/>`; });
-  else { const sp = pts.find(p => p.k === sel); if (sp) s += `<circle class="pt sel" cx="${x(sp.t).toFixed(1)}" cy="${y(sp.v).toFixed(1)}" r="4"/>`; }
+  if (!opts.bars) {
+    const known = pts.filter(p => p.v != null);
+    if (known.length <= 45) known.forEach(p => { s += `<circle class="pt${p.k === sel && step === DAY ? " sel" : ""}" cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${known.length <= 10 ? 4 : 3}"/>`; });
+    else { const sp = known.find(p => p.k === sel); if (sp && step === DAY) s += `<circle class="pt sel" cx="${x(sp.t).toFixed(1)}" cy="${y(sp.v).toFixed(1)}" r="4"/>`; }
+  }
   s += `<line class="xh" id="xh-${uid}" y1="${top}" y2="${top + ch}" visibility="hidden"/><circle class="hov" id="hv-${uid}" r="5" visibility="hidden"/>`;
   s += `<rect class="ov" x="${L}" y="${top}" width="${cw}" height="${ch}"/></svg><div class="ctip" hidden></div>`;
   box.innerHTML = s;
@@ -318,28 +369,44 @@ function lineChart(box, pts, opts) {
   const ov = box.querySelector(".ov"), xh = box.querySelector(".xh"), hv = box.querySelector(".hov"), tipEl = box.querySelector(".ctip");
   const near = e => {
     const r = box.getBoundingClientRect(), z = r.width / w, mx = (e.clientX - r.left) / z;
-    let best = null, bd = 1e9; for (const p of pts) { const d = Math.abs(x(p.t) - mx); if (d < bd) { bd = d; best = p; } }
+    let best = null, bd = 1e9; for (const p of pts) { if (p.v == null && !p.vol) continue; const d = Math.abs(x(p.t) - mx); if (d < bd) { bd = d; best = p; } }
     return bd < Math.max(24, cw / days) ? best : null;
   };
   ov.addEventListener("mousemove", e => {
     const p = near(e);
     box.querySelectorAll(".vol.on").forEach(v => v.classList.remove("on"));
     if (!p) { xh.setAttribute("visibility", "hidden"); hv.setAttribute("visibility", "hidden"); tipEl.hidden = true; return; }
-    const px = x(p.t), py = y(p.v);
+    const px = x(p.t), py = y(p.v == null ? yMin : p.v);
     xh.setAttribute("x1", px); xh.setAttribute("x2", px); xh.setAttribute("visibility", "visible");
     hv.setAttribute("cx", px); hv.setAttribute("cy", py); hv.setAttribute("visibility", "visible");
-    const vb = box.querySelector(`.vol[data-i="${pts.indexOf(p)}"]`); if (vb) vb.classList.add("on");
+    box.querySelectorAll(".colb.on").forEach(v => v.classList.remove("on"));
+    const vb = box.querySelector(`.vol[data-i="${pts.indexOf(p)}"], .colb[data-i="${pts.indexOf(p)}"]`); if (vb) vb.classList.add("on");
+    hv.setAttribute("visibility", opts.bars || p.v == null ? "hidden" : "visible");
     tipEl.innerHTML = opts.tip(p); tipEl.hidden = false;
     const tw = tipEl.offsetWidth, left = px + 14 + tw > w ? px - 14 - tw : px + 14;
     tipEl.style.left = Math.max(0, left) + "px"; tipEl.style.top = Math.max(0, Math.min(py - 20, h - tipEl.offsetHeight - B)) + "px";
   });
-  ov.addEventListener("mouseleave", () => { xh.setAttribute("visibility", "hidden"); hv.setAttribute("visibility", "hidden"); tipEl.hidden = true; box.querySelectorAll(".vol.on").forEach(v => v.classList.remove("on")); });
+  ov.addEventListener("mouseleave", () => { xh.setAttribute("visibility", "hidden"); hv.setAttribute("visibility", "hidden"); tipEl.hidden = true; box.querySelectorAll(".vol.on, .colb.on").forEach(v => v.classList.remove("on")); });
   if (opts.onPick) ov.addEventListener("click", e => { const p = near(e); if (p) opts.onPick(p); });
 }
 
 function drawDaily() {
   const box = $("cDaily"), days = data ? rangeDays() : [];
   if (!days.length) { box.innerHTML = `<p class="empty">${esc(T(failed ? "The counter could not be reached. It will try again in a minute." : "Counting began on 28 October 2026. The first numbers appear here as soon as people open a page."))}</p>`; return; }
+  $("dailyTitle").textContent = T(range === 1 ? "Visitors per hour" : "Visitors per day");
+  $("lgMain").lastChild.textContent = T(range === 1 ? "visitors per hour (click for that day's pages)" : "visitors per day (click a day for its pages)");
+  $("lgOpen").lastChild.textContent = T(range === 1 ? "this hour, still counting" : "today, still counting");
+  $("lgVol").hidden = kind === "bar";
+  if (range === 1) {
+    $("lgAvg").hidden = true;
+    lineChart(box, rangeHours(), {
+      label: T("Visitors per hour"), lo0: true, bars: kind === "bar",
+      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${hourLabel(p.t)}–${hourLabel(p.t + HOUR)} UTC${p.open ? " · " + esc(T("still counting")) : ""}</div>` +
+        (p.v == null ? esc(T("visitors per hour are counted from 29 October 2026")) : `<b>${fmt(p.v)}</b> ${esc(T("visitors"))}`) + `<br><b>${fmt(p.vol)}</b> ${esc(T("pages opened"))}`,
+      onPick: p => { sel = p.k; render(); },
+    });
+    return;
+  }
   const pts = days.map(([k, d]) => ({ k, t: Date.parse(k + "T00:00:00Z"), v: d[0], vol: d[1], open: k === data.today }));
   // 7-day average of full days, once there are at least two weeks to compare
   const all = Object.keys(data.days).sort(), full = all.filter(k => k !== data.today);
@@ -350,7 +417,7 @@ function drawDaily() {
   }).filter(Boolean);
   $("lgAvg").hidden = !avg;
   lineChart(box, pts, {
-    label: T("Visitors per day"), lo0: true, avg,
+    label: T("Visitors per day"), lo0: true, avg, bars: kind === "bar",
     tip: p => `<div class="d">${esc(dayLabel(p.k, true))}${p.open ? " · " + esc(T("still counting")) : ""}</div><b>${fmt(p.v)}</b> ${esc(T("visitors"))}<br><b>${fmt(p.vol)}</b> ${esc(T("pages opened"))}`,
     onPick: p => { sel = p.k; render(); },
   });
@@ -359,23 +426,44 @@ function drawDaily() {
 function drawGrowth() {
   const box = $("cGrowth"), days = rangeDays(), all = Object.keys(data.days).sort();
   if (!days.length || !days.some(d => d[1][0])) { box.innerHTML = `<p class="empty">${esc(T("The climb starts with the first visitors."))}</p>`; $("growthNote").textContent = ""; return; }
+  if (range === 1) {
+    let run = 0;
+    const pts = rangeHours().map(p => { run += p.v || 0; return { ...p, add: p.v || 0, v: run }; });
+    lineChart(box, pts, {
+      label: T("Visits added up"), lo0: true, bars: kind === "bar",
+      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + HOUR)} UTC</div><b>${fmt(p.v)}</b> ${esc(T("visits in the last 24 hours"))}<br>+${fmt(p.add)} ${esc(T("that hour"))}`,
+      onPick: p => { sel = p.k; render(); },
+    });
+    $("growthNote").textContent = `+${fmt(run)} ${T("visits in the last 24 hours")}`;
+    return;
+  }
   // visits added up from the very first day, so every range shows the same climb
   let before = 0; for (const k of all) if (k < days[0][0]) before += data.days[k][0];
   let run = before;
   const pts = days.map(([k, d]) => { run += d[0]; return { k, t: Date.parse(k + "T00:00:00Z"), v: run, add: d[0], open: k === data.today }; });
   lineChart(box, pts, {
-    label: T("Visits added up"), lo0: !range || before === 0,
+    label: T("Visits added up"), lo0: !range || before === 0 || kind === "bar", bars: kind === "bar",
     tip: p => `<div class="d">${esc(dayLabel(p.k, true))}</div><b>${fmt(p.v)}</b> ${esc(T("visits in total"))}<br>+${fmt(p.add)} ${esc(T("that day"))}`,
     onPick: p => { sel = p.k; render(); },
   });
   $("growthNote").textContent = range ? `+${fmt(run - before)} ${T("visits in this range")} · ${fmt(run)} ${T("in total")}` : `${fmt(run)} ${T("visits since counting began")}`;
 }
 
-function rows(el, list, total, link) {
+/* typical time on a page: the step the middle visit falls into (the relay keeps steps, not seconds) */
+const STEP_NAMES = ["under 10 s", "10–30 s", "30 s–1 min", "1–3 min", "3–10 min", "over 10 min"];
+function typical(steps) {
+  const n = steps ? steps.reduce((a, b) => a + b, 0) : 0;
+  if (!n) return null;
+  let run = 0;
+  for (let i = 0; i < steps.length; i++) { run += steps[i]; if (run >= n / 2) return { i, n }; }
+}
+function addSteps(into, obj) { for (const [p, st] of Object.entries(obj || {})) { const a = into[p] || (into[p] = [0, 0, 0, 0, 0, 0]); st.forEach((c, i) => { a[i] += c; }); } }
+function rows(el, list, total, link, time) {
   if (!list.length) { el.innerHTML = `<tr><td class="empty">${esc(T("No pages opened yet."))}</td></tr>`; return; }
   const max = list[0][1];
-  el.innerHTML = `<tr><th>${esc(T("Page"))}</th><th class="n">${esc(T("visitors"))}</th><th class="n hide-s">${esc(T("share"))}</th><th></th></tr>` +
-    list.map(([p, v]) => `<tr><td>${link ? `<a href="${pageHref(p)}">${esc(pageName(p))}</a>` : esc(pageName(p))}</td><td class="n">${fmt(v)}</td><td class="n hide-s">${pct(v, total)}</td><td class="w"><div class="meter"><i style="width:${(100 * v / max).toFixed(1)}%"></i></div></td></tr>`).join("");
+  const tcell = p => { const m = typical((time || {})[p]); return m ? `<td class="n tm" data-tip="${esc(`${T("half the visits were shorter, half longer")} · ${fmt(m.n)} ${T("timed visits")}`)}">${esc(T(STEP_NAMES[m.i]))}</td>` : `<td class="n tm dim">–</td>`; };
+  el.innerHTML = `<tr><th>${esc(T("Page"))}</th><th class="n">${esc(T("visitors"))}</th><th class="n" data-tip="${esc(T("How long a visit to this page typically lasts, while the page is in view."))}">${esc(T("typical time"))}</th><th></th></tr>` +
+    list.map(([p, v]) => `<tr><td>${link ? `<a href="${pageHref(p)}">${esc(pageName(p))}</a>` : esc(pageName(p))}</td><td class="n" data-tip="${esc(`${pct(v, total)} ${T("of the visitors")}`)}">${fmt(v)}</td>${tcell(p)}<td class="w"><div class="meter"><i style="width:${(100 * v / max).toFixed(1)}%"></i></div></td></tr>`).join("");
 }
 function split(title, obj, names) {
   const ent = Object.entries(obj).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]), tot = ent.reduce((a, e) => a + e[1], 0);
@@ -390,15 +478,15 @@ function drawDay() {
   $("dVis").textContent = fmt(d[0]); $("dViews").textContent = fmt(d[1]);
   $("dPer").textContent = d[0] ? (d[1] / d[0]).toFixed(1) : "–"; $("dStay").textContent = pct(d[2], d[1]);
   const list = Object.entries(d[3] || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  rows($("dPages"), list, d[0], false);
+  rows($("dPages"), list, d[0], false, d[6]);
 }
 
 function drawPages() {
-  const days = rangeDays(), u = {}, lang = {}, scr = {};
+  const days = rangeDays(), u = {}, lang = {}, scr = {}, time = {};
   let vis = 0;
-  for (const [, d] of days) { vis += d[0]; for (const [p, v] of Object.entries(d[3] || {})) u[p] = (u[p] || 0) + v; for (const [p, v] of Object.entries(d[4] || {})) lang[p] = (lang[p] || 0) + v; for (const [p, v] of Object.entries(d[5] || {})) scr[p] = (scr[p] || 0) + v; }
-  rows($("pages"), Object.entries(u).sort((a, b) => b[1] - a[1]).slice(0, 14), vis, true);
-  $("pRange").textContent = $("wRange").textContent = range ? T(range === 365 ? "last year" : `last ${range} days`) : T("since counting began");
+  for (const [, d] of days) { vis += d[0]; for (const [p, v] of Object.entries(d[3] || {})) u[p] = (u[p] || 0) + v; for (const [p, v] of Object.entries(d[4] || {})) lang[p] = (lang[p] || 0) + v; for (const [p, v] of Object.entries(d[5] || {})) scr[p] = (scr[p] || 0) + v; addSteps(time, d[6]); }
+  rows($("pages"), Object.entries(u).sort((a, b) => b[1] - a[1]).slice(0, 14), vis, true, time);
+  $("pRange").textContent = $("wRange").textContent = range === 1 ? T("today") : range ? T(range === 365 ? "last year" : `last ${range} days`) : T("since counting began");
   $("splits").innerHTML = (vis ? "" : `<p class="empty">${esc(T("The language split appears with the first visitors."))}</p>`) + split("Language", lang, { en: "English", zh: "Chinese" });
 }
 
@@ -418,6 +506,7 @@ function kpis() {
 
 function render() {
   document.querySelectorAll(".range button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.r === range)));
+  document.querySelectorAll(".kind button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === kind)));
   if (!data) { if (failed) drawDaily(); return; }
   if (!sel || !rangeDays().some(([k]) => k === sel)) sel = data.today;
   kpis(); drawDaily(); drawGrowth(); drawDay(); drawPages();
@@ -430,11 +519,12 @@ async function load() {
     if (!r.ok) throw new Error(r.status);
     data = await r.json(); failed = false;
     // a short history fills the chart better as All (at least a week) than as an empty 30 days
-    if (!load.done) { load.done = true; const n = Object.keys(data.days || {}).length; if (range && n < range) { range = 0; } }
+    if (!load.done) { load.done = true; const n = Object.keys(data.days || {}).length; if (range > 1 && n < range) { range = 0; } }
   } catch (e) { failed = true; if (!data) data = null; }
   render();
 }
 
+document.querySelectorAll(".kind button").forEach(b => b.addEventListener("click", () => { kind = b.dataset.kind; render(); }));
 document.querySelectorAll(".range button").forEach(b => b.addEventListener("click", () => {
   range = +b.dataset.r; try { localStorage.setItem("tauhud-meta-range", range); } catch (e) {}
   render();
