@@ -23,6 +23,7 @@ export const PAGES = {
   account:    ["/account/", "Accounts", "Balance, own rules and refusals of any address"],
   nodes:      ["/nodes/", "Community nodes", "Who runs a node, for how long, on which chain"],
   stats:      ["/stats/", "Testnet stats", "Block pace, transactions, accounts and restarts"],
+  devpulse:   ["/devpulse/", "Build pulse", "How Tau's code is moving, from public git history"],
   history:    ["/history/", "Time travel", "Every block with the rules in force at that moment"],
   story:      ["/story/", "Tau in 60 seconds", "How Tau changes its rules without a fork"],
   chronicle:  ["/chronicle/", "Chronicle", "Twelve years of Tau, from Zennet to the testnet"],

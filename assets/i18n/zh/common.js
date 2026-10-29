@@ -233,6 +233,8 @@ TauI18n.add({ strings: {
   "What is Tau?": "Tau 是什么？",
   "Who built this page, sources, how to support it": "谁制作了本页、资料来源、如何支持",
   "Widgets, badges and a free JSON API for your own site": "用于你自己网站的小组件、徽章和免费 JSON API",
+  "Build pulse": "开发脉搏",
+  "How Tau's code is moving: newest commits, which parts change, the version our node runs": "Tau 的代码进展如何：最新提交、哪些部分在变化、我们的节点运行的版本",
   "Write a transfer rule and run the testnet's own checks on it": "编写一条转账规则，并用测试网自己的检查来运行它",
   "{a} h {b} m": "{a} 小时 {b} 分钟",
   "{a} h {b} min": "{a} 小时 {b} 分钟",

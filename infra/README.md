@@ -17,6 +17,7 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
 - **Caddy**: HTTPS with automatic Let's Encrypt certificates; also serves the tracker's `proposals.json` and `feed.xml`.
 - **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect, plus a weekly recap image.
 - **donations** (`alerts/donations.py`): watches the donation address on Ethereum (AGRS and ETH only, public Blockscout API), keeps `/donations.json` for the About section and posts one thank-you per new donation to the channel.
+- **devpulse** (`alerts/devpulse.py`): keeps blob-less git clones of IDNI's public tau-testnet and tau-lang repositories and writes `/devpulse.json` every 30 minutes for tauhud.com/devpulse/ (newest commits, weekly rhythm, code areas, tags, how far upstream is ahead of the commits in `node/Dockerfile`). Open issue and pull request counts come from the public GitHub search API, a few requests an hour, no token.
 - **bot** (`alerts/bot.py`): the same Telegram bot answers questions in private chats and groups: height, proposals, a transaction, an address, a block, node status (see "Question bot").
 - **share** (`share/share.py`): share previews, the picture X, Telegram and WhatsApp show under a link (see "Share previews").
 

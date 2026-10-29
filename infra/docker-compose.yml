@@ -159,6 +159,25 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Build pulse (alerts/devpulse.py): keeps blob-less clones of IDNI's public
+  # repositories and writes devpulse.json for tauhud.com/devpulse/ every 30
+  # minutes: newest commits, weekly rhythm, code areas, tags, how far upstream
+  # is ahead of the commits our node is built from (read from node/Dockerfile).
+  devpulse:
+    build: ./alerts
+    command: ["python", "devpulse.py"]
+    environment:
+      RELAY_HTTP: http://relay:8080
+      TAU_TESTNET_REF: ${TAU_TESTNET_REF}
+    volumes:
+      - alerts_state:/state     # the clones, in /state/devpulse
+      - alerts_public:/public   # devpulse.json, served by Caddy
+      - ./node/Dockerfile:/pins/Dockerfile:ro
+    depends_on: [relay]
+    mem_limit: 256m
+    restart: unless-stopped
+    logging: *logging
+
   # Question bot (alerts/bot.py): the same Telegram bot answers people who
   # write to it (/height, /proposals, /tx, /address, /block, /status) with data
   # from the relay and proposals.json. Long polling, so no inbound port; it
