@@ -6,9 +6,9 @@
   const desk = document.getElementById("desk"); if (!desk) return;
   if (/[?&]scene=off\b/.test(location.search)) return;
   const layer = cls => { const c = document.createElement("canvas"); c.className = "scene " + cls; c.setAttribute("aria-hidden", "true"); desk.insertBefore(c, desk.querySelector(".stage")); return c; };
-  const BG = layer("bg"), LIVE = layer("live"), ROOM = layer("room"), STEAM = layer("steam"), FX = layer("fx");
+  const BG = layer("bg"), LIVE = layer("live"), TRAM = layer("tram"), ROOM = layer("room"), STEAM = layer("steam"), FX = layer("fx");
   const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches || desk.clientWidth < 900;
-  let CUP = null;
+  let CUP = null, HITS = {}, SUGAR = null, PAPERS = null;
 
   /* a seeded random, so the street looks the same on every visit */
   const rnd = s => () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -94,7 +94,7 @@
   /* ----- what moves outside: streetcars both ways, people walking to work, steam from a grate ----- */
   const CYCLE = 64, WALK = (() => { const R = rnd(8); return Array.from({ length: 46 }, () => ({ s: R() < 0.5 ? -1 : 1, x: KERB + 0.8 + R() * (SW - KERB - 1.6), z: 4 + R() * 116, v: (R() < 0.5 ? -1 : 1) * (1.1 + R() * 0.5), h: 1.6 + R() * 0.22, w: R() })); })();
   const carAt = t => { const u = (t % CYCLE) / 42, v = ((t + CYCLE / 2) % CYCLE) / 42; return { inbound: u <= 1 ? 150 - 144 * u : null, outbound: v <= 1 ? 6 + 150 * v : null }; };
-  function live(g, W, H, t) {
+  function live(g, W, H, t, busy) {
     const { f, P } = geo(W, H);
     g.clearRect(0, 0, W, H);
     /* the morning light breathes as small clouds pass the sun */
@@ -109,7 +109,7 @@
       g.fillStyle = tone(0, 0.3); g.fillRect(a[0], a[1], b[0] - a[0], 0.15 * sc);
     };
     const c = carAt(t), cars = [];
-    if (c.inbound) cars.push([-3.5, c.inbound, -1]); if (c.outbound) cars.push([3.5, c.outbound, 1]);
+    if (c.inbound && !busy) cars.push([-3.5, c.inbound, -1]); if (c.outbound) cars.push([3.5, c.outbound, 1]);
     /* people, far ones first */
     const ppl = WALK.map(p => { let z = p.z + p.v * t; z = 4 + (((z - 4) % 116) + 116) % 116; return { p, z }; });
     const items = ppl.map(o => ({ z: o.z, draw: () => {
@@ -139,15 +139,83 @@
     for (let k = 0; k < 5; k++) { const u = ((t * 0.18 + k / 5) % 1), z = 16, sc = f / z, [x, y] = P(KERB + 2.2, 0, z);
       g.fillStyle = `rgba(235,220,190,${0.13 * (1 - u)})`; g.beginPath(); g.ellipse(x + Math.sin(t + k) * 0.4 * sc, y - u * 4 * sc, (0.5 + u * 1.6) * sc, (0.4 + u) * sc, 0, 0, 7); g.fill(); }
   }
+  /* ----- the opening streetcar: a Market Street car of the twenties and thirties (single deck, clerestory roof,
+     route box, fender) leaves from right beside us and runs away down the street, drawn in depth ----- */
+  const INTRO = { delay: 1.2, z0: 2.6, v: 4.6, a: 0.09, end: 175 };
+  const introAt = e => { e -= INTRO.delay; return e < 0 ? null : INTRO.z0 + INTRO.v * e + INTRO.a * e * e; };
+  function tram(g, W, H, zr, t) {
+    g.clearRect(0, 0, W, H); if (zr == null || zr > INTRO.end) return;
+    const { f, P } = geo(W, H), L = 14, X0 = -4.8, X1 = -2.2, zf = zr + L;
+    const haze = z => Math.min(0.75, z / 230);
+    const poly = (pts, fill) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(...p) : g.moveTo(...p)); g.closePath(); g.fillStyle = fill; g.fill(); };
+    /* a quad on the side of the car (x = X1, facing the middle of the street): y0..y1 high, za..zb along */
+    const side = (y0, y1, za, zb, fill) => poly([P(X1, y0, za), P(X1, y1, za), P(X1, y1, zb), P(X1, y0, zb)], fill);
+    /* a quad on the near end (z = zr): xa..xb across, y0..y1 high */
+    const end = (xa, xb, y0, y1, fill, z = zr) => poly([P(xa, y0, z), P(xa, y1, z), P(xb, y1, z), P(xb, y0, z)], fill);
+    g.save();
+    /* its shadow on the cobbles, thrown toward us by the low sun at the end of the street */
+    poly([P(X0 - 0.2, 0.01, zr - 1.4), P(X1 + 0.5, 0.01, zr - 1.4), P(X1 + 0.5, 0.01, zf), P(X0 - 0.2, 0.01, zf)], tone(0, 0.32));
+    /* the side: dark lower panel, cream window band, letterboard, clerestory; lighter toward the sun */
+    const gr = (a, b) => { const p = P(X1, 1, zr), q = P(X1, 1, zf), l = g.createLinearGradient(p[0], 0, q[0], 0); l.addColorStop(0, tone(a)); l.addColorStop(1, tone(b)); return l; };
+    side(0.55, 1.75, zr, zf, gr(0.08, 0.2));
+    side(1.75, 3.0, zr, zf, gr(0.42, 0.6));
+    side(3.0, 3.35, zr, zf, gr(0.1, 0.24));
+    side(3.35, 3.7, zr + 0.6, zf - 0.6, gr(0.18, 0.34));
+    /* windows: two on each platform, eight in the saloon, people inside */
+    const wins = [[0.25, 1.2], [1.35, 2.3]]; for (let i = 0; i < 8; i++) wins.push([2.8 + i * 1.08, 3.7 + i * 1.08]); wins.push([L - 2.3, L - 1.35], [L - 1.2, L - 0.25]);
+    wins.forEach(([a, b], i) => { side(1.9, 2.85, zr + a, zr + b, tone(0.66 + 0.1 * (i / wins.length), 0.85));
+      if (i > 1 && i < wins.length - 2 && (i * 7) % 3) { const m = zr + (a + b) / 2, [hx, hy] = P(X1 - 0.3, 2.35, m), r = 0.2 * f / m; g.fillStyle = tone(0.15, 0.8); g.beginPath(); g.arc(hx, hy, r, 0, 7); g.fill(); g.fillRect(hx - r * 1.3, hy + r * 0.8, r * 2.6, r * 2.2); } });
+    for (let i = 0; i < 8; i++) { const m = zr + 3.25 + i * 1.08; side(3.12, 3.28, m - 0.25, m + 0.25, tone(0.62, 0.7)); }  /* clerestory lights */
+    side(1.75, 1.82, zr, zf, tone(0.75, 0.9)); side(2.98, 3.02, zr, zf, tone(0.75, 0.6));       /* belt rails */
+    /* the trucks and wheels, under the car */
+    side(0.2, 0.62, zr + 1.0, zr + 4.0, tone(0.04)); side(0.2, 0.62, zf - 4.0, zf - 1.0, tone(0.04));
+    for (const c of [1.7, 3.3, L - 3.3, L - 1.7]) { const zc = zr + c, pts = []; for (let k = 0; k < 14; k++) { const a = k / 14 * 6.283; pts.push(P(X1 + 0.05, 0.42 + 0.4 * Math.sin(a), zc + 0.4 * Math.cos(a))); }
+      poly(pts, tone(0.03)); const [hx, hy] = P(X1 + 0.06, 0.42, zc); g.fillStyle = tone(0.5, 0.7); g.beginPath(); g.arc(hx, hy, 0.07 * f / zc, 0, 7); g.fill(); }
+    /* the near end, in its own shadow: platform with big windows, route box, headlamp, fender */
+    end(X0, X1, 0.55, 3.35, tone(0.06));
+    end(X0, X1, 3.35, 3.6, tone(0.12), zr + 0.6);
+    end(X0 + 0.2, X1 - 0.2, 1.85, 2.95, tone(0.55, 0.8));
+    end(X0 + 1.25, X0 + 1.35, 1.85, 2.95, tone(0.06));
+    end(X0 + 0.9, X1 - 0.9, 3.38, 3.72, tone(0.85), zr + 0.3);                                       /* route box */
+    { const [bx, by] = P((X0 + X1) / 2, 3.55, zr + 0.3), sc = f / (zr + 0.3); g.fillStyle = tone(0.04); g.font = `700 ${Math.max(6, 0.28 * sc)}px Georgia, serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("21", bx, by); }
+    { const [lx, ly] = P((X0 + X1) / 2, 1.2, zr - 0.05), sc = f / zr; g.fillStyle = tone(0.7, 0.9); g.beginPath(); g.arc(lx, ly, 0.11 * sc, 0, 7); g.fill(); }
+    /* the lifeguard fender: a low slatted tray just ahead of the wheels */
+    poly([P(X0 + 0.15, 0.32, zr - 0.05), P(X1 - 0.15, 0.32, zr - 0.05), P(X1 - 0.15, 0.16, zr - 0.45), P(X0 + 0.15, 0.16, zr - 0.45)], tone(0.05, 0.55));
+    for (let k = 0; k < 9; k++) { const xa = X0 + 0.2 + k * 0.27; poly([P(xa, 0.32, zr - 0.05), P(xa + 0.06, 0.32, zr - 0.05), P(xa + 0.06, 0.16, zr - 0.45), P(xa, 0.16, zr - 0.45)], tone(0.12, 0.9)); }
+    end(X0 + 1.3, X0 + 1.34, 0.6, 1.8, tone(0.14));                                                    /* the door seam */
+    /* rim light: the sun ahead catches the roof edge */
+    g.strokeStyle = tone(0.95, 0.55); g.lineWidth = Math.max(1, 0.04 * f / zr); g.beginPath(); g.moveTo(...P(X1, 3.7, zr + 0.6)); g.lineTo(...P(X1, 3.7, zf - 0.6)); g.stroke();
+    /* trolley pole up to the wire */
+    { const a = P(X1 - 1.0, 3.7, zf - 2), b = P(-3.5, 6.2, zf + 2.5); g.strokeStyle = tone(0.05, 0.9); g.lineWidth = Math.max(1, 0.05 * f / zf); g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); }
+    /* farther off it sinks into the morning haze like everything else */
+    const hz = haze(zr); if (hz > 0.02) { g.globalCompositeOperation = "source-atop"; g.fillStyle = tone(0.62, hz); g.fillRect(0, 0, W, H); }
+    g.restore();
+  }
   /* the coffee steams */
   function steam(g, W, H, t) {
     g.clearRect(0, 0, W, H); if (!CUP) return;
-    const { x, y, r } = CUP;
+    const { x, y, r } = CUP, stir = touched("cup"), up = stir == null ? 1 : 1 + 2.2 * Math.sin(Math.PI * Math.min(1, stir * 1.4));
     g.save(); g.globalCompositeOperation = "screen"; g.lineCap = "round";
+    /* stirred: rings run across the coffee and the steam rises thick for a moment */
+    if (stir != null) for (let k = 0; k < 3; k++) { const u = (stir * 2.5 + k / 3) % 1, a = (1 - stir) * (1 - u) * 0.5;
+      g.strokeStyle = `rgba(255,235,205,${a})`; g.lineWidth = Math.max(1, r * 0.03); g.beginPath(); g.ellipse(x, y - r * 0.64, r * 0.64 * u, r * 0.12 * u, 0, 0, 7); g.stroke(); }
     for (let k = -1; k <= 1; k++) { const p = t * 0.6 + k * 1.7, x0 = x + k * r * 0.22;
-      g.strokeStyle = `rgba(255,240,220,${0.07 + 0.03 * Math.sin(p * 1.3)})`; g.lineWidth = r * 0.16;
-      g.beginPath(); g.moveTo(x0, y - r * 0.8); g.bezierCurveTo(x0 + Math.sin(p) * r * 0.5, y - r * 1.4, x0 + Math.sin(p + 2) * r * 0.5, y - r * 1.9, x0 + Math.sin(p + 1) * r * 0.3, y - r * 2.6); g.stroke(); }
+      g.strokeStyle = `rgba(255,240,220,${Math.min(0.3, (0.07 + 0.03 * Math.sin(p * 1.3)) * up)})`; g.lineWidth = r * 0.16 * Math.sqrt(up);
+      g.beginPath(); g.moveTo(x0, y - r * 0.8); g.bezierCurveTo(x0 + Math.sin(p) * r * 0.5, y - r * 1.4, x0 + Math.sin(p + 2) * r * 0.5, y - r * 1.9, x0 + Math.sin(p + 1) * r * 0.3, y - r * 2.6 * Math.sqrt(up)); g.stroke(); }
     g.restore();
+    /* the sugar: a thin stream of grains from the spout, a small heap on the marble */
+    const su = touched("sugar"); if (su != null && SUGAR) { const { x: sx, y: sy, r: sr } = SUGAR, R = rnd(5), flow = su < 0.5;
+      g.fillStyle = "rgba(255,250,240,0.85)";
+      for (let k = 0; k < 40; k++) { const ph = (R() + su * 6) % 1; if (!flow && ph > (1 - su) * 2 - 0.4) continue;
+        g.fillRect(sx + sr * 1.4 + R() * sr * 0.5, sy - sr * 1.5 + ph * sr * 2.7, Math.max(1, sr * 0.08), Math.max(1, sr * 0.08)); }
+      const hp = Math.min(1, su * 3) * (su > 0.85 ? (1 - su) / 0.15 : 1); g.fillStyle = `rgba(255,250,240,${0.7 * hp})`; g.beginPath(); g.ellipse(sx + sr * 1.65, sy + sr * 1.2, sr * 0.6, sr * 0.2, 0, Math.PI, 0); g.fill(); }
+    /* the papers: the top copy lifts at its corner and settles again */
+    const pa = touched("papers"); if (pa != null && PAPERS) { const { x: px, y: py, pw, ph } = PAPERS, lift = Math.sin(Math.PI * pa);
+      g.save(); g.translate(px, py); g.rotate(-0.08);
+      const cx0 = pw / 2, cy0 = ph / 2, s = pw * 0.38 * lift;
+      g.fillStyle = "rgba(0,0,0,0.25)"; g.beginPath(); g.moveTo(cx0 - s, cy0); g.lineTo(cx0, cy0 - s * 0.8); g.lineTo(cx0 + s * 0.15, cy0 + s * 0.15); g.fill();
+      g.fillStyle = tone(0.85); g.beginPath(); g.moveTo(cx0 - s, cy0); g.lineTo(cx0, cy0 - s * 0.8); g.lineTo(cx0 - s * 0.9, cy0 - s * 1.2); g.fill();
+      g.fillStyle = tone(0.3, 0.4); g.fillRect(cx0 - s * 0.8, cy0 - s * 0.9, s * 0.4, Math.max(1, s * 0.05)); g.restore(); }
   }
 
   /* ----- the café, closer to life: wood, brass, lace, marble and the morning sun through the glass ----- */
@@ -219,7 +287,7 @@
     const tr = H - tab;
     CUP = { x: W * 0.84, y: tab + tr * 0.5, r: Math.min(W * 0.045, tr * 0.55) }; cup(CUP.x, CUP.y, CUP.r);
     /* a sugar dispenser, glass with a metal cap, on the left */
-    { const x = W * 0.075, y = tab + tr * 0.42, r = Math.min(W * 0.012, tr * 0.2);
+    { const x = W * 0.075, y = tab + tr * 0.42, r = Math.min(W * 0.012, tr * 0.2); SUGAR = { x, y, r };
       shadow(x + r * 0.6, y + r * 1.25, r * 1.8, r * 0.4);
       g.fillStyle = "rgba(250,240,220,0.22)"; g.fillRect(x - r, y - r * 1.2, r * 2, r * 2.4);
       g.fillStyle = "rgba(255,250,240,0.55)"; g.fillRect(x - r, y - r * 0.1, r * 2, r * 1.3);
@@ -228,7 +296,7 @@
     /* folded papers of other days, left of the cup of the day */
     { const x = W * 0.2, y = tab + tr * 0.55; g.save(); g.translate(x, y); g.rotate(-0.08);
       shadow(10, 18, W * 0.06, 14, 0.4);
-      const pw = W * 0.1, ph = tr * 0.42;
+      const pw = W * 0.1, ph = tr * 0.42; PAPERS = { x, y, pw, ph };
       for (let k = 2; k >= 0; k--) { g.fillStyle = lin(0, -ph / 2, 0, ph / 2, [[0, tone(0.9 - k * 0.06)], [1, tone(0.74 - k * 0.06)]]); g.fillRect(-pw / 2 + k * 5, -ph / 2 - k * 6, pw, ph);
         g.fillStyle = "rgba(0,0,0,0.25)"; g.fillRect(-pw / 2 + k * 5, ph / 2 - k * 6 - 2, pw, 2); }
       /* masthead, a headline and columns of type on the top copy */
@@ -236,6 +304,9 @@
       g.fillStyle = tone(0.2, 0.5); g.fillRect(-pw * 0.44, -ph * 0.22, pw * 0.88, ph * 0.08);
       g.fillStyle = tone(0.3, 0.35); for (let c = 0; c < 4; c++) for (let l = 0; l < 6; l++) g.fillRect(-pw * 0.44 + c * pw * 0.225, -ph * 0.06 + l * ph * 0.075, pw * 0.2, ph * 0.03);
       g.restore(); }
+    { const c = CUP, su = SUGAR, p = PAPERS;
+      HITS = { cup: { x: c.x - c.r * 1.4, y: c.y - c.r * 1.2, w: c.r * 2.8, h: c.r * 1.8 }, sugar: { x: su.x - su.r * 1.6, y: su.y - su.r * 2.6, w: su.r * 3.2, h: su.r * 4.2 },
+        papers: { x: p.x - p.pw * 0.6, y: p.y - p.ph * 0.75, w: p.pw * 1.2, h: p.ph * 1.4 } }; }
     /* the room behind us: warm lamplight from above */
     const gr = g.createRadialGradient(W / 2, -H * 0.2, 0, W / 2, -H * 0.2, H * 1.1); gr.addColorStop(0, "rgba(255,210,150,0.12)"); gr.addColorStop(1, "rgba(255,210,150,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   }
@@ -264,100 +335,187 @@
     soft(fit(BG, K()), W, H, 4.5);
     room(fit(ROOM, K()), W, H);
     finish(fit(FX, K()), W, H);
-    fit(LIVE, 0.4); fit(STEAM, 0.5);  /* low resolution: soft like the rest of the street, and cheap to redraw */
+    fit(LIVE, 0.4); fit(TRAM, 0.75); fit(STEAM, 0.5); hotspots();  /* low resolution: soft like the rest of the street, and cheap to redraw */
     frame(performance.now());
   }
   const T0 = (/[?&]scene-t=(\d+)/.exec(location.search) || [])[1] != null ? +RegExp.$1 : null;
-  let last = 0, raf = 0, bell = false;
+  let last = 0, raf = 0, bell = false, introBell = false;
+  /* the opening streetcar counts from page load; ?scene-intro=<seconds> freezes it for a picture */
+  const LOAD = performance.now(), TI = (/[?&]scene-intro=([\d.]+)/.exec(location.search) || [])[1] != null ? +RegExp.$1 : null;
   function frame(now) {
     raf = 0; if (!W) return;
     const t = T0 != null ? T0 : (Date.now() / 1000) % 86400;
-    live(LIVE.getContext("2d"), W, H, t); steam(STEAM.getContext("2d"), W, H, t);
-    /* the inbound streetcar rings its bell as it passes the corner */
-    const c = carAt(t), near = c.inbound != null && c.inbound < 46 && c.inbound > 38;
-    if (near && !bell) AMB.bell(); bell = near; AMB.rumble(c.inbound != null ? Math.max(0, 1 - c.inbound / 50) : 0);
+    const zi = still() ? null : introAt(TI != null ? TI : (now - LOAD) / 1000), busy = still() ? false : zi != null ? zi <= INTRO.end : TI == null && now - LOAD < INTRO.delay * 1000;
+    live(LIVE.getContext("2d"), W, H, t, busy); tram(TRAM.getContext("2d"), W, H, zi, t); steam(STEAM.getContext("2d"), W, H, t);
+    /* the inbound streetcar rings its bell as it passes the corner; the opening one as it sets off */
+    const c = carAt(t), near = !busy && c.inbound != null && c.inbound < 46 && c.inbound > 38, off = zi != null && zi < 4;
+    if ((near && !bell) || (off && !introBell)) AMB.bell(); bell = near; introBell = introBell || off;
+    AMB.rumble(busy && zi != null ? Math.max(0, 1 - zi / 40) : !busy && c.inbound != null ? Math.max(0, 1 - c.inbound / 50) : 0);
     last = now; loop();
   }
-  function loop() { if (!raf && !document.hidden && !still()) raf = requestAnimationFrame(n => n - last >= 40 ? frame(n) : (raf = 0, loop())); }
+  function loop() { if (!raf && !document.hidden && (!still() || Object.keys(TOUCH).some(k => touched(k) != null))) raf = requestAnimationFrame(n => n - last >= 40 ? frame(n) : (raf = 0, loop())); }
   document.addEventListener("visibilitychange", () => { loop(); AMB.pause(document.hidden); });
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(layout, 150); }).observe(desk);
 
-  /* ----- the café, to hear: off until asked for; everything is made here, no recordings ----- */
+  /* ----- the café, to hear: off until asked for; everything is made here, no recordings.
+     Inside: voices, cups, the register. Through the glass: Market Street at eight, streetcars with their
+     foot gongs, hooves and a cart, a Model T and its klaxon, footsteps, the newsboy, gulls and a foghorn
+     from the bay. Each sound comes at its own random time, so nothing repeats in a loop. ----- */
   const AMB = (() => {
-    let A = null, master, level = 0, rumbleG, timers = [], music = null;
+    let A = null, master, street, level = 0, rumbleG, timers = [], music = null, N, BR;
     const noise = secs => { const b = A.createBuffer(1, A.sampleRate * secs, A.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
-    const loopSrc = buf => { const s = A.createBufferSource(); s.buffer = buf; s.loop = true; s.start(); return s; };
+    /* brown noise: soft, without the hiss of white noise */
+    const brown = secs => { const b = A.createBuffer(1, A.sampleRate * secs, A.sampleRate), d = b.getChannelData(0); let v = 0; for (let i = 0; i < d.length; i++) { v = (v + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = v * 3.5; } return b; };
+    const loopSrc = (buf, off = 0) => { const s = A.createBufferSource(); s.buffer = buf; s.loop = true; s.start(0, off); return s; };
     const chain = (...n) => { for (let i = 0; i < n.length - 1; i++) n[i].connect(n[i + 1]); return n[n.length - 1]; };
     const filt = (type, f, q = 0.7) => { const b = A.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; };
     const gain = v => { const g = A.createGain(); g.gain.value = v; return g; };
+    const pan = p => { if (!A.createStereoPanner) return gain(1); const n = A.createStereoPanner(); n.pan.value = p; return n; };
+    const rand = (a, b) => a + Math.random() * (b - a);
+    const every = (fn, a, b) => { const go = () => { timers.push(setTimeout(() => { if (level && !document.hidden) fn(); go(); }, rand(a, b) * 1000)); }; go(); };
+    const burst = (t, dur, f, q, v, to, buf = N) => { const s = A.createBufferSource(), g = gain(0); s.buffer = buf; chain(s, filt("bandpass", f, q), g, to);
+      g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.start(t, Math.random() * 2, dur + 0.05); };
+    const tone1 = (t, f, dur, v, to, type = "sine", att = 0.004) => { const o = A.createOscillator(), g = gain(0); o.type = type; o.frequency.value = f; chain(o, g, to);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.start(t); o.stop(t + dur + 0.05); return o; };
+    /* something that passes the window: a panner that travels from one side to the other */
+    const passing = (secs, v, from = rand(-0.9, -0.5) * (Math.random() < 0.5 ? -1 : 1)) => { const t = A.currentTime, p = pan(from), g = gain(0); chain(g, p, street);
+      if (p.pan) { p.pan.setValueAtTime(from, t); p.pan.linearRampToValueAtTime(-from, t + secs); }
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + secs * 0.45); g.gain.linearRampToValueAtTime(0, t + secs); return g; };
+
+    /* the streetcar's foot gong: a struck bronze bell, clang-clang */
+    function gong(times = 2, v = 0.07, to = street) { const t0 = A.currentTime + 0.02, f0 = rand(1180, 1260);
+      for (let k = 0; k < times; k++) { const t = t0 + k * rand(0.2, 0.26);
+        for (const [m, a, d] of [[1, 1, 2.2], [2.32, 0.5, 1.2], [2.98, 0.28, 0.9], [4.16, 0.18, 0.5], [5.43, 0.1, 0.3]]) tone1(t, f0 * m, d, v * a * (k ? 0.85 : 1), to);
+        burst(t, 0.025, 3500, 1, v * 0.8, to); } }
     function start() {
-      A = new (window.AudioContext || window.webkitAudioContext)();
-      master = gain(0); master.connect(A.destination);
-      const N = noise(4);
-      /* the room: voices across the café, a murmur that rises and falls */
-      for (const [f, v] of [[480, 0.05], [1150, 0.02]]) { const g = gain(v); chain(loopSrc(N), filt("bandpass", f, 0.9), g, master);
-        timers.push(setInterval(() => g.gain.setTargetAtTime(v * (0.4 + Math.random() * 1.2), A.currentTime, 0.12), 260)); }
-      chain(loopSrc(N), filt("lowpass", 180), gain(0.025), master);
-      /* the street through the glass: traffic, and the streetcar's rumble as it comes close */
-      rumbleG = gain(0.015); chain(loopSrc(N), filt("lowpass", 95), rumbleG, master);
-      /* cups and spoons */
-      const clink = () => { if (level) { const t = A.currentTime, f = 2400 + Math.random() * 1800;
-          for (const [m, a] of [[1, 0.035], [2.71, 0.012]]) { const o = A.createOscillator(), g = gain(0); o.frequency.value = f * m; chain(o, g, master); g.gain.setValueAtTime(a, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35); o.start(t); o.stop(t + 0.4); }
-          if (Math.random() < 0.4) { const s = A.createBufferSource(), g = gain(0); s.buffer = N; chain(s, filt("bandpass", 1700, 3), g, master); g.gain.setValueAtTime(0.06, t + 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.56); s.start(t + 0.5, Math.random() * 3, 0.1); } }
-        timers.push(setTimeout(clink, 2500 + Math.random() * 7000)); };
-      clink();
+      A = new (window.AudioContext || window.webkitAudioContext)(); N = noise(3); BR = brown(6);
+      master = gain(0); chain(master, filt("highpass", 130, 0.6), A.destination);  /* nothing below 130 Hz: no hum */
+      /* the street is heard through the window glass */
+      street = gain(1); chain(street, filt("lowpass", 2600), filt("highpass", 90), master);
+      /* the café: a few tables talking, each voice rising and falling in syllables, now and then a pause */
+      for (let k = 0; k < 6; k++) { const g = gain(0), f = rand(380, 900), v = rand(0.035, 0.06); chain(loopSrc(BR, rand(0, 5)), filt("highpass", 250), filt("bandpass", f, 2.2), filt("peaking", f * 2.6, 1.5), g, pan(rand(-0.8, 0.8)), master);
+        let talk = Math.random() < 0.6;
+        timers.push(setInterval(() => { if (Math.random() < 0.02) talk = !talk; g.gain.setTargetAtTime(talk ? v * (0.15 + Math.random()) : 0, A.currentTime, 0.04); }, rand(110, 170))); }
+      /* the street's own wash of traffic, and the streetcar's rumble as it comes close */
+      chain(loopSrc(BR, 2), filt("highpass", 300), filt("bandpass", 700, 0.7), gain(0.03), street);
+      rumbleG = gain(0); chain(loopSrc(BR, 4), filt("lowpass", 160), rumbleG, street);
+      /* cups, spoons, saucers */
+      every(() => { const t = A.currentTime, f = rand(2600, 4200), p = pan(rand(-0.7, 0.7)); p.connect(master);
+        for (const [m, a] of [[1, 0.03], [2.71, 0.01]]) tone1(t, f * m, 0.35, a, p);
+        if (Math.random() < 0.4) burst(t + 0.4, 0.06, 1700, 3, 0.05, p); }, 2, 8);
+      /* the register, now and then */
+      every(() => { const t = A.currentTime, p = pan(0.6); p.connect(master); for (let k = 0; k < 3; k++) burst(t + k * 0.05, 0.03, 2500, 2, 0.05, p); tone1(t + 0.18, 1900, 0.9, 0.025, p); tone1(t + 0.18, 2850, 0.6, 0.012, p); }, 40, 90);
+      /* streetcars that pass without stopping: wheels on the joints, the motor, a gong at the crossing */
+      every(() => { const g = passing(rand(9, 13), 0.9), t = A.currentTime; chain(loopSrc(BR), filt("lowpass", 200), gain(0.25), g);
+        const m = A.createOscillator(); m.type = "sawtooth"; m.frequency.setValueAtTime(90, t); m.frequency.linearRampToValueAtTime(150, t + 5); chain(m, filt("lowpass", 300), gain(0.03), g); m.start(t); m.stop(t + 14);
+        for (let k = 0; k < 10; k++) { const tk = t + 2 + k * 0.9; burst(tk, 0.06, 300, 2, 0.12, g, BR); burst(tk + 0.12, 0.06, 300, 2, 0.1, g, BR); }
+        if (Math.random() < 0.7) setTimeout(() => level && gong(Math.random() < 0.3 ? 3 : 2, 0.05), rand(3000, 6000)); }, 35, 70);
+      /* hooves and a delivery cart */
+      every(() => { const secs = rand(8, 12), g = passing(secs, 1), t = A.currentTime, step = rand(0.42, 0.5);
+        for (let k = 0; k < secs / step; k++) { const tk = t + k * step; burst(tk, 0.05, rand(1400, 2000), 4, 0.12, g); tone1(tk, rand(420, 480), 0.06, 0.03, g); burst(tk + step * 0.28, 0.04, rand(1300, 1800), 4, 0.08, g); }
+        chain(loopSrc(BR, 1), filt("lowpass", 260), gain(0.18), g);
+        const c = A.createOscillator(); c.type = "sawtooth"; c.frequency.value = 380; const l = A.createOscillator(), lg = gain(40); l.frequency.value = 0.9; chain(l, lg, c.frequency);
+        const cg = gain(0); chain(c, filt("bandpass", 900, 6), cg, g); for (let k = 0; k < secs; k += 1.8) { cg.gain.setTargetAtTime(0.012, t + k, 0.05); cg.gain.setTargetAtTime(0, t + k + 0.35, 0.08); }
+        c.start(t); l.start(t); c.stop(t + secs); l.stop(t + secs); }, 25, 60);
+      /* a Model T: the putter of four cylinders, and sometimes its klaxon */
+      every(() => { const secs = rand(6, 9), g = passing(secs, 1), t = A.currentTime, o = A.createOscillator(), am = gain(0), lfo = A.createOscillator(), ld = gain(0.5);
+        o.type = "square"; o.frequency.value = 55; lfo.type = "square"; lfo.frequency.setValueAtTime(14, t); lfo.frequency.linearRampToValueAtTime(19, t + secs);
+        chain(lfo, ld, am.gain); chain(o, filt("lowpass", 380), am, gain(0.08), g); o.start(t); lfo.start(t); o.stop(t + secs); lfo.stop(t + secs);
+        if (Math.random() < 0.5) { const tk = t + secs * rand(0.3, 0.5); for (let k = 0; k < 2; k++) { const a = tk + k * 0.55, h = A.createOscillator(), hg = gain(0); h.type = "sawtooth";
+          h.frequency.setValueAtTime(260, a); h.frequency.exponentialRampToValueAtTime(560, a + 0.3); chain(h, filt("bandpass", 1000, 2.5), hg, g); hg.gain.setValueAtTime(0, a); hg.gain.linearRampToValueAtTime(0.06, a + 0.05); hg.gain.setValueAtTime(0.06, a + 0.38); hg.gain.linearRampToValueAtTime(0, a + 0.45); h.start(a); h.stop(a + 0.5); } } }, 20, 45);
+      /* people walking past on the pavement */
+      every(() => { const n = Math.floor(rand(8, 16)), step = rand(0.5, 0.62), g = passing(n * step, 1), t = A.currentTime;
+        for (let k = 0; k < n; k++) burst(t + k * step + rand(-0.02, 0.02), 0.045, rand(2200, 3200), 1.5, 0.05, g); }, 6, 16);
+      /* the newsboy: "Extra!" and "Paper!", a voice made of two vowels */
+      every(() => { const t = A.currentTime + 0.05, p = pan(rand(0.2, 0.6)), out = gain(1); chain(out, p, street);
+        const word = (t, f0, vowels) => { const o = A.createOscillator(), g = gain(0); o.type = "sawtooth"; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 1.25, t + 0.12); o.frequency.linearRampToValueAtTime(f0 * 0.8, t + 0.5);
+          const f1 = filt("bandpass", vowels[0][0], 6), f2 = filt("bandpass", vowels[0][1], 8), mix = gain(1); o.connect(f1); o.connect(f2); f1.connect(mix); f2.connect(mix); chain(mix, g, out);
+          vowels.forEach(([a, b], i) => { const at = t + i * 0.22; f1.frequency.linearRampToValueAtTime(a, at + 0.05); f2.frequency.linearRampToValueAtTime(b, at + 0.05); });
+          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.05, t + 0.04); g.gain.setValueAtTime(0.05, t + 0.18); g.gain.linearRampToValueAtTime(0.01, t + 0.24); g.gain.linearRampToValueAtTime(0.045, t + 0.3); g.gain.linearRampToValueAtTime(0, t + 0.5); o.start(t); o.stop(t + 0.55); };
+        const f0 = rand(270, 320); word(t, f0, [[530, 1840], [750, 1200]]); burst(t + 0.2, 0.05, 4000, 2, 0.03, out); word(t + 0.7, f0, [[530, 1840], [750, 1200]]);
+        if (Math.random() < 0.5) word(t + 1.6, f0 * 0.95, [[660, 1700], [500, 1400]]); }, 18, 40);
+      /* from the bay: gulls, and once in a while the foghorn */
+      every(() => { const t = A.currentTime, p = pan(rand(-0.9, 0.9)); p.connect(street); const n = Math.floor(rand(2, 4));
+        for (let k = 0; k < n; k++) { const a = t + k * rand(0.35, 0.5), o = A.createOscillator(), g = gain(0); o.type = "triangle";
+          o.frequency.setValueAtTime(1500, a); o.frequency.exponentialRampToValueAtTime(950, a + 0.28); const w = A.createOscillator(), wg = gain(60); w.frequency.value = 22; chain(w, wg, o.frequency);
+          chain(o, filt("bandpass", 1300, 2), g, p); g.gain.setValueAtTime(0, a); g.gain.linearRampToValueAtTime(0.012, a + 0.04); g.gain.linearRampToValueAtTime(0, a + 0.3); o.start(a); w.start(a); o.stop(a + 0.32); w.stop(a + 0.32); } }, 20, 50);
+      every(() => { const t = A.currentTime, g = gain(0); chain(g, filt("lowpass", 420), street);
+        for (const f of [98, 147]) { const o = A.createOscillator(); o.type = "sawtooth"; o.frequency.value = f; o.connect(g); o.start(t); o.stop(t + 4.2); }
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.03, t + 0.8); g.gain.setValueAtTime(0.03, t + 3); g.gain.linearRampToValueAtTime(0, t + 4.2); }, 80, 160);
     }
-    /* a gramophone at the back: a slow twelve-bar blues in F, swung, through a horn and a worn record */
+
+    /* a gramophone at the back: a slow twelve-bar blues in F, swung, with a clarinet, a piano, a walking bass and brushes */
     function gramophone() {
-      const out = gain(0.11), shaper = A.createWaveShaper(), curve = new Float32Array(256);
-      for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(2.2 * x); } shaper.curve = curve;
-      chain(shaper, filt("highpass", 320), filt("lowpass", 3000), out, master);
-      const hiss = gain(0.012); chain(loopSrc(noise(3)), filt("bandpass", 2500, 0.5), hiss, master);
-      const cr = noise(2), d = cr.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() < 0.0006 ? (Math.random() * 2 - 1) : 0;
-      const crackle = gain(0.25); chain(loopSrc(cr), filt("highpass", 1500), crackle, master);
-      const BRUSH = noise(0.2), BPM = 104, beat = 60 / BPM, sw = beat * 2 / 3;
-      const F = 174.61, n = s => F * Math.pow(2, s / 12);
-      const BARS = [0, 0, 0, 0, 5, 5, 0, 0, 7, 5, 0, 7];   /* roots in semitones above F */
-      const BLUES = [0, 3, 5, 6, 7, 10, 12, 15];
-      const note = (f, t, len, type, v, to) => { const o = A.createOscillator(), g = gain(0); o.type = type; o.frequency.value = f; chain(o, g, to || shaper);
-        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + len); o.start(t); o.stop(t + len + 0.05); return o; };
-      const horn = gain(1); const hb = filt("bandpass", 1100, 1.6); chain(horn, hb, shaper);
-      let bar = 0, next = A.currentTime + 0.3, R = rnd(1925);
+      const out = gain(0.16), shaper = A.createWaveShaper(), curve = new Float32Array(256);
+      for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(1.3 * x) / Math.tanh(1.3); } shaper.curve = curve;
+      chain(shaper, filt("highpass", 160), filt("peaking", 1200, 0.8), filt("lowpass", 3800), out, master);
+      const hiss = gain(0.003); chain(loopSrc(noise(3)), filt("bandpass", 3000, 0.6), hiss, master);
+      const cr = noise(2), d = cr.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() < 0.0004 ? (Math.random() * 2 - 1) : 0;
+      const crackle = gain(0.12); chain(loopSrc(cr), filt("highpass", 2000), crackle, master);
+      const BPM = 92, beat = 60 / BPM, at8 = (t, k) => t + Math.floor(k / 2) * beat + (k % 2) * beat * 2 / 3;
+      const F = 174.61, hz = s => F * Math.pow(2, s / 12);
+      const BARS = [0, 5, 0, 0, 5, 5, 0, 0, 7, 5, 0, 7];   /* a quick change to the four in bar two */
+      /* the tune: a riff stated, answered and resolved (semitones above F, length in swung eighths) */
+      const RIFF = [[[12, 1], [15, 1], [17, 1], [18, 1], [19, 3], [15, 1], [null, 8]], [[12, 1], [15, 1], [17, 1], [18, 1], [19, 3], [15, 1], [null, 8]],
+        [[19, 2], [17, 1], [15, 1], [12, 2], [10, 2], [12, 6], [null, 2]], [[7, 1], [10, 1], [12, 1], [15, 2], [12, 1], [10, 1], [7, 1], [5, 4], [3, 1], [0, 3]]];
+      const pluck = (t, f, v, len) => { for (const [m, a, dk] of [[1, 1, 1], [2, 0.45, 0.6], [3, 0.2, 0.4], [4, 0.08, 0.3]]) tone1(t, f * m * (1 + rand(-0.001, 0.001)), len * dk, v * a, shaper); };
+      const clar = (t, f, len, v) => { const o = A.createOscillator(), g = gain(0), vib = A.createOscillator(), vg = gain(0); o.type = "square"; o.frequency.value = f;
+        vib.frequency.value = 5.2; chain(vib, vg, o.frequency); vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * 0.006, t + Math.min(len, 0.4));
+        chain(o, filt("lowpass", 1500, 0.9), g, shaper); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.035); g.gain.setValueAtTime(v * 0.85, t + len * 0.8); g.gain.linearRampToValueAtTime(0, t + len + 0.06);
+        o.start(t); vib.start(t); o.stop(t + len + 0.1); vib.stop(t + len + 0.1); };
+      let bar = 0, next = A.currentTime + 0.3;
       const tick = () => {
-        while (next < A.currentTime + 0.5) {
-          const root = BARS[bar % 12], nr = BARS[(bar + 1) % 12], t = next;
-          /* walking bass: root, third, fifth, a step toward the next chord */
-          [0, 4, 7, nr - 1 - (nr - 1 > 6 ? 12 : 0)].forEach((s, i) => note(n(root + s - 24), t + i * beat, beat * 0.9, "triangle", 0.5));
-          /* piano on two and four */
-          for (const b of [1, 3]) [4, 10, 14].forEach(s => note(n(root + s), t + b * beat, 0.32, "triangle", 0.09));
-          /* brushes */
-          for (const b of [1, 3]) { const s = A.createBufferSource(), g = gain(0); s.buffer = BRUSH; chain(s, filt("highpass", 3000), g, shaper); g.gain.setValueAtTime(0.07, t + b * beat); g.gain.exponentialRampToValueAtTime(0.0001, t + b * beat + 0.18); s.start(t + b * beat); }
-          /* a muted horn answers every other pair of bars */
-          if ((bar >> 1) % 2 === 0) { let at = t;
-            for (let k = 0; k < 6; k++) { const s = BLUES[Math.floor(R() * BLUES.length)], o = note(n(s + 12), at, 0.28, "sawtooth", 0.07, horn);
-              const v = A.createOscillator(), vg = gain(4); v.frequency.value = 5.5; chain(v, vg, o.frequency); v.start(at); v.stop(at + 0.3); at += k % 2 ? beat - sw : sw; } }
+        while (next < A.currentTime + 0.6) {
+          const t = next, root = BARS[bar % 12], nr = BARS[(bar + 1) % 12];
+          /* walking bass: root, third, fifth, a half step into the next chord */
+          [0, 4, 7, nr + 1].forEach((s, i) => pluck(t + i * beat, hz(root + s - 24 - (i === 3 && nr + 1 > 9 ? 12 : 0)), 0.16, 0.7));
+          /* piano: a Charleston figure on the chord's third, seventh and ninth */
+          for (const k of [0, 3]) for (const s of [4, 10, 14]) pluck(at8(t, k), hz(root + s), 0.035, 0.9);
+          /* brushes: a swish on every beat, a tap on two and four */
+          for (let b = 0; b < 4; b++) { burst(t + b * beat, 0.22, 6000, 0.7, 0.012, shaper); burst(at8(t, b * 2 + 1), 0.08, 7000, 0.8, 0.008, shaper); }
+          for (const b of [1, 3]) burst(t + b * beat, 0.07, 2500, 1, 0.025, shaper);
+          /* the clarinet: a phrase over each pair of bars, every other chorus a little lower */
+          const ph = bar % 2 ? null : RIFF[[0, null, 1, null, 2, 3][(bar % 12) / 2]];
+          if (ph) { const sh = Math.floor(bar / 12) % 2 ? -5 : 0; let k = 0;
+            for (const [s, l] of ph) { if (s != null) clar(at8(t, k), hz(s + sh), l * beat / 2 * 0.95, 0.03); k += l; } }
           next += 4 * beat; bar++;
         }
       };
-      const id = setInterval(tick, 120); tick();
-      return { stop() { clearInterval(id); out.gain.setTargetAtTime(0, A.currentTime, 0.3); hiss.gain.setTargetAtTime(0, A.currentTime, 0.3); crackle.gain.setTargetAtTime(0, A.currentTime, 0.3); } };
+      const id = setInterval(tick, 150); tick();
+      return { stop() { clearInterval(id); for (const g of [out, hiss, crackle]) g.gain.setTargetAtTime(0, A.currentTime, 0.3); } };
     }
+    const VOL = [0, 0.35, 0.9];
     return {
       set(l) { level = l; if (l && !A) start(); if (!A) return; if (l) A.resume();
-        master.gain.setTargetAtTime(l ? 0.9 : 0, A.currentTime, 0.4);
-        if (l === 2 && !music) music = gramophone(); if (l !== 2 && music) { music.stop(); music = null; } },
-      bell() { if (!A || !level) return; const t0 = A.currentTime;
-        for (const t of [t0, t0 + 0.38]) for (const [m, a] of [[1, 0.05], [2.4, 0.025], [3.9, 0.012], [5.4, 0.006]]) {
-          const o = A.createOscillator(), g = gain(0), lp = filt("lowpass", 2600); o.frequency.value = 1040 * m; chain(o, lp, g, master);
-          g.gain.setValueAtTime(a, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.8 / m); o.start(t); o.stop(t + 2); } },
-      rumble(v) { if (A && rumbleG) rumbleG.gain.setTargetAtTime(0.015 + 0.12 * v, A.currentTime, 0.5); },
+        master.gain.setTargetAtTime(VOL[l], A.currentTime, 0.5);
+        if (l && !music) music = gramophone(); if (!l && music) { music.stop(); music = null; } },
+      on: () => !!(A && level),
+      bell() { if (A && level) gong(2, 0.08); },
+      rumble(v) { if (A && rumbleG) rumbleG.gain.setTargetAtTime(0.35 * v, A.currentTime, 0.5); },
       pause(h) { if (A && level) h ? A.suspend() : A.resume(); },
+      /* the things on the table, when clicked */
+      play(what) { if (!A || !level) return; const t = A.currentTime;
+        if (what === "cup") { for (let k = 0; k < 4; k++) { const f = rand(3000, 3600); tone1(t + k * 0.16, f, 0.3, 0.05, master); tone1(t + k * 0.16, f * 2.71, 0.2, 0.015, master); } burst(t + 0.75, 0.08, 1500, 2, 0.06, master); }
+        if (what === "sugar") for (let k = 0; k < 5; k++) burst(t + k * 0.13, 0.11, rand(5000, 7000), 1.2, 0.06, master);
+        if (what === "papers") for (let k = 0; k < 7; k++) burst(t + k * 0.05 + rand(0, 0.03), 0.09, rand(2500, 4500), 0.8, 0.05, master); },
     };
   })();
-  /* the button cycles: off, the café, the café with its gramophone; it always starts off */
+  /* the things on the table answer a click: the coffee is stirred, the sugar pours, the old papers rustle */
+  const TOUCH = {};
+  const touched = (k, now = performance.now()) => TOUCH[k] != null && now - TOUCH[k] < 2200 ? (now - TOUCH[k]) / 2200 : null;
+  const HOT = {};
+  function hotspots() {
+    for (const [k, b] of Object.entries(HITS)) { let el = HOT[k];
+      if (!el) { el = HOT[k] = document.createElement("button"); el.className = "scene-hit"; el.setAttribute("data-noflip", ""); el.dataset.k = k;
+        el.onclick = e => { e.stopPropagation(); TOUCH[k] = performance.now(); AMB.play(k); loop(); }; desk.appendChild(el); }
+      const tip = (window.GAZETTE_HIT || {})[k] || { cup: "Stir the coffee", sugar: "Sugar", papers: "Yesterday's papers" }[k]; el.title = tip; el.setAttribute("aria-label", tip);
+      Object.assign(el.style, { left: b.x + "px", top: b.y + "px", width: b.w + "px", height: b.h + "px" }); }
+  }
+  window.addEventListener("gazette-labels", hotspots);
+  /* the button cycles: off, quiet, lively; it always starts off */
   const btn = document.getElementById("bAmb");
   if (btn) { let l = 0;
-    const label = () => { const L = window.GAZETTE_AMB || ["Café: quiet", "Café: sounds", "Café: + gramophone"]; btn.textContent = L[l]; btn.setAttribute("aria-pressed", String(l > 0)); };
+    const label = () => { const L = window.GAZETTE_AMB || ["Café: off", "Café: quiet", "Café: lively"]; btn.textContent = L[l]; btn.setAttribute("aria-pressed", String(l > 0)); };
     btn.onclick = e => { e.stopPropagation(); l = (l + 1) % 3; AMB.set(l); label(); };
     label(); window.addEventListener("gazette-labels", label); }
   layout();
