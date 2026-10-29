@@ -162,6 +162,8 @@ html.fit .cards { flex: 1 1 auto; grid-template-columns: repeat(2, minmax(0, 1fr
 html.fit .cards > li { display: flex; min-height: 0; }
 html.fit .cards > li > button { display: flex; flex-direction: column; height: 100%; }
 html.fit .cards > li > button .m { margin-top: auto; padding-top: 4px; }
+/* more findings than fit with their one-line brief: title and status only, the brief moves to the hover and the detail view */
+html.fit .cards.tight .brief { display: none; }
 html.fit .report .btns:first-of-type { grid-template-columns: 1fr 1fr; }
 html.fit .report h3 { margin-top: 6px; }
 html.fit .report ol { gap: 1px; }
@@ -275,11 +277,32 @@ const CACHE_KEY = "tauhud-findings-v3", CACHE_MS = 10 * 60 * 1000;
 // Issues we filed with IDNI. Add a new one here; title and status come from GitHub.
 const FINDINGS = [
   {
+    n: 88, kind: "fix", title: "test: run the two complex time-rule tests again on real Tau",
+    brief: "Two tests IDNI had switched off pass on real Tau; this switches them back on.",
+    found: "Two tests of time-based rules (a temporary spending limit and a co-signer vault that opens after a date) were switched off in IDNI's checks. On real Tau they pass, and so do IDNI's probes for fees that are a share of the amount.",
+    impact: "Switched-off tests protect nothing. Running them again catches it if a later change breaks time-based rules.",
+    ours: "We ran the tests in our node's image against the same Tau version the testnet uses and sent IDNI the change as a pull request; without real Tau the two tests now skip instead of failing.",
+  },
+  {
     n: 86, kind: "fix", title: "fix(network): re-dial bootstrap peers while the node has no peer",
     brief: "Our first code fix sent to IDNI: a node that lost every peer now finds its way back.",
     found: "On 29 October IDNI's bootnode refused new peers for about three hours. Nodes that lost it stayed at 0 peers with an old chain even after the bootnode was back, because they dial their bootstrap peers only once, at start.",
     impact: "Every node that loses its last peer would sit still until someone restarts it by hand.",
     ours: `We sent IDNI the fix as a pull request with four tests: while a node has no peer, it dials its bootstrap peers again every minute. The same change runs in our node (${pr(170)}).`,
+  },
+  {
+    n: 85, kind: "request", title: "Testnet Alpha: could one of the two o5 policy slots be freed for community testing?",
+    brief: "Not a bug: only two accounts on the whole testnet can hold a personal rule.",
+    found: "Not a bug: the testnet allows two personal rules at a time, a limit IDNI measured, and two genesis accounts hold both places. We asked whether one place could be freed for testers.",
+    impact: "Without a free place nobody else can try spending limits or co-signer rules on the live chain.",
+    ours: "The wallet says when both places are taken and offers the simulation; a freed place would rotate between testers on our side.",
+  },
+  {
+    n: 84, kind: "request", title: "Testnet Alpha: could you run a consensus mode switch on the live chain?",
+    brief: "Not a bug: we asked to see the consensus change by agreement on the live chain.",
+    found: "Not a bug: Tau can change how blocks are agreed on by a vote, without a new node version. The live testnet has not done this yet, so we asked whether it could.",
+    impact: "It is the clearest demonstration of what makes Tau different, and visitors could watch it go from proposal to law.",
+    ours: "The HUD already follows the consensus mode and would show a switch the moment it is agreed and again when it takes effect.",
   },
   {
     n: 83, kind: "request", title: "Testnet Alpha: ideas to make governance visible (real rule changes, shorter activation, refusals, second validator)",
@@ -381,13 +404,16 @@ async function fetchIssues() {
 function sampleIssues() {
   const d = n => new Date(Date.now() - n * 3600e3).toISOString();
   return {
-    86: { title: FINDINGS[0].title, state: "open", comments: 0, created_at: d(0.05), updated_at: d(0.05), labels: [] },
-    83: { title: FINDINGS[1].title, state: "open", comments: 0, created_at: d(0.1), updated_at: d(0.1), labels: [] },
-    82: { title: FINDINGS[2].title, state: "open", comments: 0, created_at: d(0.3), updated_at: d(0.3), labels: [] },
-    81: { title: FINDINGS[3].title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
-    80: { title: FINDINGS[4].title, state: "open", comments: 0, created_at: d(2), updated_at: d(2), labels: [] },
-    79: { title: FINDINGS[5].title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
-    78: { title: FINDINGS[6].title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
+    88: { title: FINDINGS.find(f => f.n === 88).title, state: "open", comments: 0, created_at: d(0.02), updated_at: d(0.02), labels: [] },
+    86: { title: FINDINGS.find(f => f.n === 86).title, state: "open", comments: 0, created_at: d(0.05), updated_at: d(0.05), labels: [] },
+    85: { title: FINDINGS.find(f => f.n === 85).title, state: "open", comments: 0, created_at: d(0.4), updated_at: d(0.4), labels: [] },
+    84: { title: FINDINGS.find(f => f.n === 84).title, state: "open", comments: 0, created_at: d(50), updated_at: d(50), labels: [] },
+    83: { title: FINDINGS.find(f => f.n === 83).title, state: "open", comments: 0, created_at: d(0.1), updated_at: d(0.1), labels: [] },
+    82: { title: FINDINGS.find(f => f.n === 82).title, state: "open", comments: 0, created_at: d(0.3), updated_at: d(0.3), labels: [] },
+    81: { title: FINDINGS.find(f => f.n === 81).title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
+    80: { title: FINDINGS.find(f => f.n === 80).title, state: "open", comments: 0, created_at: d(2), updated_at: d(2), labels: [] },
+    79: { title: FINDINGS.find(f => f.n === 79).title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
+    78: { title: FINDINGS.find(f => f.n === 78).title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
   };
 }
 function status(i, f) {
@@ -419,10 +445,19 @@ function render() {
       <span class="t"><span class="badge b-${cls}">${label}</span><span class="num">#${f.n}</span><b>${esc(i ? i.title : f.title)}</b></span>
       <p class="full">${esc(f.found)}</p><p class="brief">${esc(f.brief)}</p>${f.idniText ? `<p class="idni full"><b>IDNI:</b> ${esc(f.idniText)}</p><p class="idni brief"><b>IDNI:</b> ${esc(f.idniBrief)}</p>` : ""}<span class="m">${meta}</span></button></li>`;
   }).join("");
+  fitCards();
   $("fixes").innerHTML = FIXES.map(([t, d]) => `<li><b>${t}</b><span>${d}</span></li>`).join("");
   // on one screen each patch is one line: its name and PR; the sentence stays in the tooltip
   $("fixes").querySelectorAll("li").forEach(li => { li.title = li.querySelector("span").textContent; });
 }
+function fitCards() {
+  const c = $("cards");
+  c.classList.remove("tight");
+  c.querySelectorAll("button[data-ix]").forEach(b => { b.title = FINDINGS[+b.dataset.ix].brief; });
+  if (!document.documentElement.classList.contains("fit")) return;
+  if ([...c.children].some(li => li.firstElementChild.scrollHeight > li.clientHeight + 1)) c.classList.add("tight");
+}
+addEventListener("resize", () => requestAnimationFrame(fitCards));
 $("cards").addEventListener("click", e => {
   const b = e.target.closest("button[data-ix]"); if (!b) return;
   const f = FINDINGS[+b.dataset.ix], i = ISSUES[f.n], [, label] = status(i, f);
