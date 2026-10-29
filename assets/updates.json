@@ -981,5 +981,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "The waiting room tells the truth about the alpha node's bug: transactions already sealed in a block but still listed as waiting (IDNI #81) are looked up one by one, drawn as empty rings and marked with their block in Transactions, and the Waiting number counts only what really waits. The hover turns amber when such leftovers are listed or when transactions pile up faster than blocks take them, and the oldest wait now comes from the relay instead of from when you opened the page."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "In Chain core, the glow under a hovered ring, dot or the core now takes the colour of its status light: green when it is normal, amber to watch or while something is in progress, red for a problem."
  }
 ]

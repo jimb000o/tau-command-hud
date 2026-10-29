@@ -1601,7 +1601,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.60", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.61", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2686,14 +2686,22 @@ function coreHit(e) {
   const h = coreHitAt(x, y); CORE_MOUSE = h ? { x, y } : null;
   return h;
 }
-/* the hovered element glows green under its overlay text: a band for a ring, a halo for a dot, the validator or the core */
+/* the hovered element glows under its overlay text: a band for a ring, a halo for a dot, the validator or the core; in the colour
+   of its status light (green, amber to watch or in progress, red for a problem), read from the verdict twice a second */
+const HOV_LV = { k: "", at: 0, col: "57,255,138" }, LV_COL = { ok: "57,255,138", busy: "255,177,59", watch: "255,177,59", bad: "255,77,109" };
+function hoverCol(h) {
+  const k = "w" in h ? "r" + h.r : "d" + h.r + ":" + Math.round(h.x / 40) + ":" + Math.round(h.y / 40), now = performance.now();
+  if (k !== HOV_LV.k || now - HOV_LV.at > 500) { let t = ""; try { t = String(h.fn ? h.fn() : ""); } catch (e) {} const m = /^\u2063(ok|busy|watch|bad)\u2063/.exec(t); Object.assign(HOV_LV, { k, at: now, col: LV_COL[m ? m[1] : "ok"] }); }
+  return HOV_LV.col;
+}
 function paintHover() {
   if (!CORE_MOUSE) return; const h = coreHitAt(CORE_MOUSE.x, CORE_MOUSE.y); if (!h) return;
-  cx.save(); cx.shadowColor = "rgb(57,255,138)";
-  if ("w" in h) { cx.beginPath(); cx.arc(0, 0, h.r, 0, Math.PI * 2); cx.lineWidth = h.w * 2; cx.strokeStyle = "rgba(57,255,138,.10)"; cx.shadowBlur = 0; cx.stroke();
-    cx.beginPath(); cx.arc(0, 0, h.r - h.w, 0, Math.PI * 2); cx.arc(0, 0, h.r + h.w, 0, Math.PI * 2); cx.lineWidth = 1.5; cx.strokeStyle = "rgba(57,255,138,.55)"; cx.shadowBlur = 16; cx.stroke(); }
-  else { cx.beginPath(); cx.arc(h.x, h.y, h.r, 0, Math.PI * 2); cx.fillStyle = "rgba(57,255,138,.12)"; cx.shadowBlur = 0; cx.fill();
-    cx.beginPath(); cx.arc(h.x, h.y, h.r, 0, Math.PI * 2); cx.lineWidth = 2; cx.strokeStyle = "rgba(57,255,138,.7)"; cx.shadowBlur = 18; cx.stroke(); }
+  const c = hoverCol(h);
+  cx.save(); cx.shadowColor = `rgb(${c})`;
+  if ("w" in h) { cx.beginPath(); cx.arc(0, 0, h.r, 0, Math.PI * 2); cx.lineWidth = h.w * 2; cx.strokeStyle = `rgba(${c},.10)`; cx.shadowBlur = 0; cx.stroke();
+    cx.beginPath(); cx.arc(0, 0, h.r - h.w, 0, Math.PI * 2); cx.arc(0, 0, h.r + h.w, 0, Math.PI * 2); cx.lineWidth = 1.5; cx.strokeStyle = `rgba(${c},.55)`; cx.shadowBlur = 16; cx.stroke(); }
+  else { cx.beginPath(); cx.arc(h.x, h.y, h.r, 0, Math.PI * 2); cx.fillStyle = `rgba(${c},.12)`; cx.shadowBlur = 0; cx.fill();
+    cx.beginPath(); cx.arc(h.x, h.y, h.r, 0, Math.PI * 2); cx.lineWidth = 2; cx.strokeStyle = `rgba(${c},.7)`; cx.shadowBlur = 18; cx.stroke(); }
   cx.restore();
 }
 /* labels sit on dark plates and are painted last, above every ring, line and dot: no stroke ever crosses the letters */

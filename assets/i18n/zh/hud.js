@@ -1725,5 +1725,6 @@ TauI18n.add({ strings: {
   "Watch: the listed transaction is already sealed in a block, but the node still lists it as waiting (known node bug, reported as IDNI #81)": "注意：列出的这笔交易已封装进区块，但节点仍把它列为等待中（已知的节点缺陷，已报告为 IDNI #81）",
   "Watch: {n} of the {m} listed are already sealed in blocks, but the node still lists them as waiting (known node bug, reported as IDNI #81)": "注意：列出的 {m} 笔中有 {n} 笔已封装进区块，但节点仍把它们列为等待中（已知的节点缺陷，已报告为 IDNI #81）",
   "Watch: {n} of the {m} listed is already sealed in a block, but the node still lists it as waiting (known node bug, reported as IDNI #81)": "注意：列出的 {m} 笔中有 {n} 笔已封装进区块，但节点仍把它列为等待中（已知的节点缺陷，已报告为 IDNI #81）",
-  "Watch: transactions are piling up: {n} wait, but recent blocks took only {x} each; {m} more are already sealed but still listed (IDNI #81)": "注意：交易在堆积：{n} 笔在等，但最近的区块每个只收{x}；另有 {m} 笔已封装但仍被列出（IDNI #81）"
+  "Watch: transactions are piling up: {n} wait, but recent blocks took only {x} each; {m} more are already sealed but still listed (IDNI #81)": "注意：交易在堆积：{n} 笔在等，但最近的区块每个只收{x}；另有 {m} 笔已封装但仍被列出（IDNI #81）",
+  "In Chain core, the glow under a hovered ring, dot or the core now takes the colour of its status light: green when it is normal, amber to watch or while something is in progress, red for a problem.": "在 Chain core 中，悬停时圆环、圆点或核心下方的光晕现在与其状态灯同色：正常为绿色，需要注意或正在进行时为琥珀色，出现问题时为红色。"
 } });
