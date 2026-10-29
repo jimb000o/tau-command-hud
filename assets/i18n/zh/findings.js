@@ -1,5 +1,7 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "The same evening IDNI fixed the cause of the outage: after 1,024 failed dials the p2p library raised an overflow and stopped dialing (e88814b), and a node whose network died now restarts instead of mining alone (b1ebfa4). Our fix covers the other half, finding the network again after such an outage.": "同一天晚上 IDNI 修复了这次中断的原因：p2p 库在 1,024 次连接失败后抛出溢出错误并停止拨号（e88814b）；网络线程崩溃的节点现在会重启，而不是独自继续出块（b1ebfa4）。我们的修复补上另一半：在这样的中断之后重新找到网络。",
+  "fixed the outage's cause the same day; our PR adds the reconnect.": "当天就修复了中断的原因；我们的 PR 补上重新连接。",
   "test: run the two complex time-rule tests again on real Tau": "test：在真实 Tau 上重新运行两个复杂的时间规则测试",
   "Two tests IDNI had switched off pass on real Tau; this switches them back on.": "IDNI 关闭的两个测试在真实 Tau 上通过了；这个改动把它们重新打开。",
   "Two tests of time-based rules (a temporary spending limit and a co-signer vault that opens after a date) were switched off in IDNI's checks. On real Tau they pass, and so do IDNI's probes for fees that are a share of the amount.": "两个关于时间规则的测试（临时支出上限，以及在某个日期后解锁的共同签名金库）在 IDNI 的检查中被关闭了。在真实 Tau 上它们都通过了，IDNI 关于按金额比例收费的探测测试也全部通过。",

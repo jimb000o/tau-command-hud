@@ -1280,6 +1280,11 @@
   "html": "Every post on X from @TauHUDcom now ends with #TauNet and $AGRS, once, after the line that says where it comes from. No other tags are added, and the caps and the no-repeat rules stay."
  },
  {
+  "tag": "Node",
+  "on": "2026-10-29",
+  "html": "Node: our node now runs IDNI's newest testnet software (b1ebfa4). It carries IDNI's two fixes from the evening of 29 October: the p2p overflow that stopped the bootnode from accepting peers for three hours, and a restart for a node whose network has died. Findings shows both next to our own reconnect fix."
+ },
+ {
   "tag": "Agorzilla",
   "on": "2026-10-29",
   "html": "New: Agorzilla, our second site at agorzilla.com. One creature that everyone shares on Tau Testnet Alpha: each meal is a real testnet transaction from a test wallet the page makes in your browser, and every evening at 18:00 UTC the change most wallets picked becomes part of it. Test AGRS have no value; feeding buys nothing. The small Agorzilla in the HUD header leads there too.",
