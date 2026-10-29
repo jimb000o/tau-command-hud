@@ -70,6 +70,10 @@ w.state["items"] = [item("agreed", "b", True, now, "Agreed: Same rules as now (n
                     item("agreed", "a", False, now, "Agreed: Base fee 20 → 30 AGRS")]
 asyncio.run(w.deliver())
 check(len(tg.sent) == 1 and "Base fee" in tg.sent[0][0], "a real change is posted, the practice vote is not")
+w.state["items"].insert(0, item("agreed", "a2", False, now + 60, "Agreed: Base fee 20 → 30 AGRS"))
+w.state["items"][0]["key"] = "c:agreed:a2"
+asyncio.run(w.deliver())
+check(len(tg.sent) == 1 and w.state["items"][0]["posted"]["telegram"] == "skip", "the same news an hour later is not posted again")
 
 # the evening summary
 items = [item("agreed", "b", True, T - 3600, "Agreed: Same rules as now (no real change)"),
@@ -83,7 +87,20 @@ check(r["practice"] == 2 and r["events"] == ["Agreed: Base fee 20 → 30 AGRS"],
 check([c["title"] for c in r["coming"]] == ["Base fee 20 → 30 AGRS"], "coming up: real changes only")
 t = alerts.today_text(r)
 check(t.startswith(alerts.REAL_LINE + "\n📋 <b>Testnet today, 28 October</b>"), "real-chain first line, then the date")
-check("2,159 blocks, one every 40 seconds" in t and "2 practice votes" in t and "they try the vote itself" in t, "plain lines")
+check("2,159 blocks, one every 40 seconds" in t and "2 practice votes" in t and "nothing changes" in t, "plain lines")
+# stored before practice votes had their flag (the 29 Oct summary listed four of them as rule changes): still practice
+old = [item("agreed", f"o{i}", False, T - 600 * i, "New rule change, agreed right away: Same rules as now (no real change)")
+       for i in range(1, 5)] + [item("agreed", "a", False, T - 7200, "Agreed: Base fee 20 → 30 AGRS"),
+                                item("active", "d", False, T - 500, "Now in force: Base fee 20 → 30 AGRS"),
+                                item("active", "e", False, T - 400, "Now in force: Base fee 20 → 30 AGRS")]
+props = PROPS + [{"id": f"o{i}", "title": "x", "proposer": "acct1" if i < 4 else "acct2"} for i in range(1, 5)]
+r = alerts.today_numbers(STATS, old, props, 2, T)
+check(r["practice"] == 4 and "New rule change" not in " ".join(r["events"]), f"old no-change items count as practice {r['events']}")
+check(sorted(r["events"]) == ["2× Now in force: Base fee 20 → 30 AGRS", "Agreed: Base fee 20 → 30 AGRS"], f"equal lines grouped {r['events']}")
+t = alerts.today_text(r)
+check("4 practice votes" in t and "3 of them from one account" in t and t.count("Same rules as now") == 0, "practice votes explained, not listed")
+check(alerts.practice_meaning(5, ["a"] * 5).startswith("all from one account"), "one account: looks like a test")
+check("probably people trying the Vote page" in alerts.practice_meaning(4, ["a", "b", "c", "d"]), "many accounts: the Vote page")
 check("Coming up: Base fee 20 → 30 AGRS at block #5,030" in t, "what comes next")
 check(alerts.today_buttons()["inline_keyboard"][0][1]["url"].endswith("/vote/"), "a button to the Vote page")
 quiet = alerts.today_numbers({"fields": STATS["fields"], "blocks": STATS["blocks"][:5]}, [], [], 2, T)

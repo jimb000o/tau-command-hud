@@ -112,6 +112,14 @@ check(len(quiet) == 1 and quiet[0]["what"] == "summary" and "7× blocks replaced
       f"one summary after 2 calm hours {[q['what'] for q in quiet]} {quiet and quiet[0]['tg']}")
 check(st["storm"] is None and not st["held"], "the stretch is over")
 
+# 6b. the same proposal again and again: one finding with the likely meaning, Telegram only
+st = findings.fresh_state()
+findings.observe(st, {**snap(), "gov": []}, T)
+gov = [{"ts": T + 60 * i, "title": "Same rules as now (no real change)", "proposer": "acct1", "noop": True} for i in range(6)]
+got = findings.observe(st, {**snap(), "gov": gov[:4]}, T + 300) + findings.observe(st, {**snap(), "gov": gov}, T + 400)
+check([g["what"] for g in got] == ["votes start"] and "One account" in got[0]["tg"] and not got[0]["x"], f"vote burst {got}")
+check(findings.observe(st, {**snap(), "gov": gov}, T + 500) == [], "posted once")
+
 # 7. our node falling behind: IDNI #78; not while our node has no peers
 st = findings.fresh_state()
 findings.observe(st, snap(), T)
