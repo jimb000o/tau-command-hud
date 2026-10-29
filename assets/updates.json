@@ -976,5 +976,10 @@
   "tag": "Newspaper",
   "on": "2026-10-29",
   "html": "The weekly Daily Consensus reads like a paper of the 1920s: headlines in the paper's own words instead of tracker titles, a weather report from the chain, a photograph, a dense lead story and a stop press with the live block. Ballots that only keep the rules as they stand are told once, not one by one."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "The waiting room tells the truth about the alpha node's bug: transactions already sealed in a block but still listed as waiting (IDNI #81) are looked up one by one, drawn as empty rings and marked with their block in Transactions, and the Waiting number counts only what really waits. The hover turns amber when such leftovers are listed or when transactions pile up faster than blocks take them, and the oldest wait now comes from the relay instead of from when you opened the page."
  }
 ]

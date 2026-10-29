@@ -441,6 +441,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); out
 .feed { display: grid; gap: 6px; align-content: start; }
 .tx { display: grid; gap: 3px; padding: 6px 8px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--cyan); animation: slidein .45s ease-out; min-width: 0; }
 .tx.rej { border-left-color: var(--refused); }
+.tx.sealed { border-left-color: rgba(57,255,138,.45); }
+.tx .sl { font-weight: 500; color: var(--ok); }
 .tx.gov { border-left-color: var(--amber); }
 .tx.mined { opacity: .55; }
 .tx .top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--dim); }
@@ -1261,7 +1263,8 @@ function tickSubs() {
   const seen = S.memSeen, ids = new Set(S.mempool.map(t => t.id));
   S.mempool.forEach(t => { if (!seen.has(t.id)) seen.set(t.id, now); }); [...seen.keys()].forEach(k => { if (!ids.has(k)) seen.delete(k); });
   const oldest = seen.size ? now - Math.min(...seen.values()) : 0;
-  put("rMs", !S.mempool.length ? "nothing pending" : `${S.mempool.length} pending · oldest ${fmtAge(oldest)}`);
+  const m = memState(); put("rM", String(m.W));
+  put("rMs", !m.M ? "nothing pending" : m.stale ? `${m.M} listed · ${m.stale} already sealed` : `${m.W} pending · oldest ${fmtAge(m.oldest || oldest)}`);
   put("rRs", !S.clauses.size ? "none deployed yet" : `${S.clauses.size} in force` + (S.rulesLastBlock != null ? ` · last at #${fmt(S.rulesLastBlock)}` : ""));
 }
 /* ---------- health: how good the current state is, as a status light and one verdict line on top of a hover ----------
@@ -1271,15 +1274,54 @@ const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
 const liveChain = () => S.mode === "live" && !S.simfeed, offline = () => liveChain() && LIVE.status !== "Connected";
 const SEALED = { h: -1, n: -1, ids: new Set() };
 function sealedIds() {
-  if (SEALED.h !== S.height || SEALED.n !== S.blocks.length) { SEALED.h = S.height; SEALED.n = S.blocks.length; SEALED.ids = new Set(); for (const b of S.blocks.slice(-400)) for (const t of b.txs || []) if (t && t.id) SEALED.ids.add(t.id); }
+  if (SEALED.h !== S.height || SEALED.n !== S.blocks.length || SEALED.k !== S.byHeight.size) {
+    SEALED.h = S.height; SEALED.n = S.blocks.length; SEALED.k = S.byHeight.size; SEALED.ids = new Set();
+    const add = b => { for (const t of (b && b.txs) || []) if (t && t.id) SEALED.ids.add(String(t.id).toLowerCase()); };
+    S.blocks.slice(-400).forEach(add); if (liveChain()) S.byHeight.forEach(add);
+  }
   return SEALED.ids;
 }
-function memState() {
-  const now = Date.now() / 1000, sealed = sealedIds(), wait = S.mempool.filter(t => !sealed.has(t.id)), last = S.blocks[S.blocks.length - 1];
-  const ages = wait.map(t => now - (S.memSeen.get(t.id) || now)), perf = (performance.now() - S.lastBlockAt) / 1000;
-  const since = liveChain() && last && last.ts ? Math.max(0, now - last.ts) : perf;
-  return { M: S.mempool.length, W: wait.length, oldest: ages.length ? Math.max(...ages) : 0, since, pace: paceNow() ?? (liveChain() ? null : 8) };
+/* A listed transaction whose block this page never loaded: the node answers gettxstatus one hash at a time (the relay keeps
+   one request in flight), "confirmed" with its block number when it is in fact sealed. */
+const TXST = { st: new Map(), busy: "" };
+const sealedAt = id => { const k = String(id || "").toLowerCase(), v = TXST.st.get(k); return v && v.h != null ? v.h : sealedIds().has(k) ? true : null; };
+function askTxStatus() {
+  if (!liveChain() || TXST.busy || !LIVE.ws || LIVE.ws.readyState !== 1) return;
+  const t = S.mempool.find(x => /^[0-9a-f]{64}$/i.test(x.id) && sealedAt(x.id) == null && !TXST.st.has(x.id.toLowerCase()));
+  if (!t) return;
+  const k = TXST.busy = t.id.toLowerCase(); liveSend("gettxstatus " + t.id); setTimeout(() => { if (TXST.busy === k) { TXST.busy = ""; askTxStatus(); } }, 6000);
 }
+function markSealed(id, h) {   // a card in Transactions and the waiting dot learn that the block already holds it
+  const el = $("tx_" + id.slice(0, 16)) || feedHold.find(d => d.id === "tx_" + id.slice(0, 16)), m = S.mempool.find(x => x.id.toLowerCase() === id.toLowerCase());
+  if (m && Number.isFinite(h)) m.block = h;
+  if (!el || el.classList.contains("sealed") || !Number.isFinite(h)) return;
+  el.classList.add("sealed"); const sp = el.querySelector(".top > span"); if (sp) sp.insertAdjacentHTML("afterbegin", `<b class="sl">✓ in #${h}</b> · `);
+}
+/* the relay compares the listed transactions with the whole chain it keeps (/health-score): how many are in fact sealed,
+   and how long the oldest really waiting one has waited since the relay first saw it, not since this page opened */
+const RMEM = { at: 0, M: 0, sealed: 0, oldest: 0, busy: false };
+async function pollRelayMem() {
+  if (RMEM.busy || !liveChain() || $("wsurl").value.trim() !== RELAY || Date.now() - RMEM.at < 30000) return;
+  RMEM.busy = true; const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const r = await fetch(relayBase() + "/health-score", { cache: "no-store", signal: ctl.signal }); if (!r.ok) throw new Error(r.status);
+    const f = ((await r.json()).factors || []).find(x => x && x.key === "mempool"), v = f && f.value;
+    if (v && Number.isFinite(+v.waiting)) Object.assign(RMEM, { M: +v.waiting, sealed: +v.sealed || 0, oldest: +v.oldest || 0 });
+  } catch (e) {} finally { RMEM.at = Date.now(); RMEM.busy = false; clearTimeout(tm); }
+}
+function memState() {
+  const now = Date.now() / 1000, live = liveChain(), last = S.blocks[S.blocks.length - 1], M = S.mempool.length;
+  const wait = S.mempool.filter(t => sealedAt(t.id) == null), unchecked = live ? wait.filter(t => !TXST.st.has(t.id.toLowerCase())).length : 0;
+  let stale = M - wait.length;
+  const rel = live && RMEM.M > 0 && Date.now() - RMEM.at < 90000;
+  if (rel) stale = Math.max(stale, Math.min(M, Math.round(M * RMEM.sealed / RMEM.M)));
+  const W = M - stale, ages = wait.map(t => now - (S.memSeen.get(t.id) || now)), perf = (performance.now() - S.lastBlockAt) / 1000;
+  const since = live && last && last.ts ? Math.max(0, now - last.ts) : perf;
+  const lastN = S.blocks.slice(-6), per = lastN.length >= 3 ? lastN.reduce((a, b) => a + ((b.txs || []).length), 0) / lastN.length : null;
+  const pageAge = !(rel && RMEM.sealed < RMEM.M), oldest = !W ? 0 : pageAge ? (ages.length ? Math.max(...ages) : 0) : RMEM.oldest;
+  return { M, W, stale, unchecked, oldest, pageAge, per, since, pace: paceNow() ?? (live ? null : 8) };
+}
+const perTxt = per => per == null ? "" : per < 0.5 ? "less than 1 transaction" : per < 1.5 ? "about 1 transaction" : `about ${Math.round(per)} transactions`;
 const syncLag = () => {
   if (!liveChain() || LIVE.status !== "Connected") return "";
   if (PRESENCE.synced === false) return "Watch: the community node is not in step with the network yet; the blocks are real, but not the newest.";
@@ -1293,11 +1335,14 @@ const HEALTH = {
     const m = memState(), p = m.pace || 8, live = liveChain();
     if (!m.M) return ["ok", "Normal: nothing waiting, every transaction sent so far is in a block."];
     if (m.W && m.since > Math.max(600, 10 * p)) return ["bad", `Problem: nothing sealed for ${fmtAge(m.since)} while ${wait_s(m.W)}.`];
-    if (!m.W) return ["ok", m.M === 1 ? "Normal: it is already in a block; the alpha node keeps sealed transactions listed for up to an hour (known issue)." : "Normal: they are already in blocks; the alpha node keeps sealed transactions listed for up to an hour (known issue)."];
-    const late = Math.max(300, 8 * p), flowing = m.since < Math.max(3 * p, 180);
-    if (m.oldest > late && live && flowing && m.oldest < 3900) return ["ok", "Normal: blocks keep coming; the alpha node can list a sealed transaction for up to an hour (known issue)."];
-    if (m.oldest > late) return ["watch", `Watch: the oldest has waited ${fmtAge(m.oldest)}; blocks usually come every ${fmtSec(p)}.`];
-    return ["ok", m.W === 1 ? "Normal: the next block takes it in." : "Normal: the next block takes them in."];
+    const cap = Math.max(m.per || 0, 1), pile = m.per != null && m.W > 3 * cap;
+    // IDNI #81: the alpha node keeps listing sealed transactions as waiting for up to an hour, so the list says more than really waits
+    if (m.stale && m.stale >= m.W) return ["watch", `Watch: ${m.stale === m.M ? (m.M === 1 ? "the listed transaction is" : `all ${m.M} listed are`) : `${m.stale} of the ${m.M} listed ${m.stale === 1 ? "is" : "are"}`} already sealed in ${m.stale === 1 ? "a block" : "blocks"}, but the node still lists ${m.stale === 1 ? "it" : "them"} as waiting (known node bug, reported as IDNI #81). ${m.W ? `${m.W === 1 ? "1 really waits" : m.W + " really wait"}.` : "None really waits."}`];
+    if (pile && m.unchecked >= Math.min(3, m.W)) return ["busy", `Checking: ${m.M} are listed, but recent blocks took ${perTxt(m.per)} each; looking up which are already sealed.`];
+    if (pile) return ["watch", `Watch: transactions are piling up: ${m.W} wait, but recent blocks took only ${perTxt(m.per)} each${m.stale ? `; ${m.stale} more are already sealed but still listed (IDNI #81)` : ""}.`];
+    const late = Math.max(300, 8 * p);
+    if (m.oldest > late) return ["watch", `Watch: the oldest has waited ${m.pageAge ? "at least " : ""}${fmtAge(m.oldest)}; blocks usually come every ${fmtSec(p)}.`];
+    return ["ok", m.W === 1 ? "Normal: the next block takes it in." : m.W <= 1.5 * cap ? "Normal: the next block takes them in." : `Normal: ${m.W} wait; the next few blocks take them in.`];
   },
   pace() {
     if (offline()) return ["bad", "Problem: no connection to a node."];
@@ -1433,10 +1478,11 @@ function log(msg, cls = "") {
 function detailMempool() {
   const seen = S.memSeen, now = Date.now() / 1000, M = S.mempool.length, live = S.mode === "live" && !S.simfeed;
   const kind = t => t.kind === "gov" ? "rule-change proposal" : /rule/.test(t.type) ? "rule work" : "transfer";
-  const rows = S.mempool.map(t => `<div><span class="t">${seen.has(t.id) ? fmtAge(now - seen.get(t.id)) : "—"}</span><span>${live && t.id ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id)} · ${kind(t)} · ${esc(t.type)} · fee ${esc(t.fee)}</span></div>`).join("");
+  const ms = memState(), sAt = t => live ? sealedAt(t.id) : null;
+  const rows = S.mempool.map(t => `<div><span class="t">${sAt(t) != null ? "sealed" : seen.has(t.id) ? fmtAge(now - seen.get(t.id)) : "—"}</span><span>${sAt(t) != null ? `<b class="ok">✓ ${typeof sAt(t) === "number" ? "in #" + fmt(sAt(t)) : "in a block"}</b>, still listed · ` : ""}${live && t.id ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id)} · ${kind(t)} · ${esc(t.type)} · fee ${esc(t.fee)}</span></div>`).join("");
   return { title: `Waiting transactions · ${M}`,
-    html: `<p class="lead">${isSim() ? "Simulated transactions" : "Transactions"} the node admitted after the rule check and no block has sealed yet. They orbit the core as dots until the next proposer takes them in; the age counts from when this page first saw each one.${live ? " The alpha node can keep a sealed transaction listed for up to an hour (IDNI #81, see Findings)." : ""}</p>
-    ${checksHtml([[`${M} waiting`, M ? "" : "off", "Transactions in the node’s mempool right now."], [`${S.mempool.filter(t => t.kind === "gov").length} proposals`, "", "Rule-change proposals waiting to be sealed (white dots)."], [`${S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length} rule work`, "", "Rule deployments and offers (green dots)."], [`fee ${S.fee} AGRS`, "", "Base fee under the current rule version (o9)."]])}
+    html: `<p class="lead">${isSim() ? "Simulated transactions" : "Transactions"} the node admitted after the rule check and no block has sealed yet. They orbit the core as dots until the next proposer takes them in; the age counts from when this page first saw each one.${live ? " The alpha node keeps a sealed transaction listed for up to an hour (IDNI #81, see Findings): those are marked ✓ with their block and drawn as empty rings." : ""}</p>
+    ${checksHtml([[`${ms.W} really waiting`, ms.W ? "" : "off", "Listed and in no block yet."], ...(live ? [[`${ms.stale} already sealed`, ms.stale ? "warn" : "off", "Already in a block but still listed by the node (known bug, IDNI #81)."]] : []), ...(ms.per != null ? [[`${perTxt(ms.per)} per block`, "", "Transactions the last few blocks took on average."]] : []), [`${S.mempool.filter(t => t.kind === "gov").length} proposals`, "", "Rule-change proposals waiting to be sealed (white dots)."], [`${S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length} rule work`, "", "Rule deployments and offers (green dots)."], [`fee ${S.fee} AGRS`, "", "Base fee under the current rule version (o9)."]])}
     <h3>Oldest first</h3><div class="loglist">${rows || `<div><span class="t">—</span><span>Nothing waiting: every transaction sent so far is in a block.</span></div>`}</div>` };
 }
 function detailLog() {
@@ -1555,7 +1601,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.55", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.60", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -1714,7 +1760,7 @@ const proposalMeaning = u => ({
 }[u.kind] || u.diff);
 function explainTx(t) {
   const N = S.validators.length, thr = N ? threshold() : "—";
-  const st = t.rejected ? "Refused at the door, never entered a block." : t.block != null ? `In block #${t.block}.` : "In the mempool, waiting for the next block.";
+  const st = t.rejected ? "Refused at the door, never entered a block." : t.block != null ? `In block #${t.block}.` + (S.mode === "live" && S.mempool.some(x => x.id === t.id) ? " The alpha node still lists it as waiting (known node bug, IDNI #81)." : "") : "In the mempool, waiting for the next block.";
   const pol = t.policy ? `Sender’s own rule: ${t.policy.label}.` : "Sender has no own rule.";
   if (t.dropped) return `${t.rejected.replace(/^refused at the door · /, "")}.\n${t.policy && /o5/.test(t.rejected) ? "The sender’s own rule, enforced against whoever holds the key. " : "Checked at the door by the node, before any block. "}It waited in the queue and left it without entering a block.`;
   switch (t.type) {
@@ -2005,7 +2051,7 @@ function renderRadar() {
 function readouts() {
   renderRadar();
   $("rH").textContent = fmt(S.height); $("chipH").textContent = "#" + fmt(S.height);
-  $("rM").textContent = S.mempool.length;
+  $("rM").textContent = memState().W;
   const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
   $("rT").textContent = pace != null ? fmtSec(pace) : "—";
   $("rTw").dataset.full = pace != null
@@ -2393,11 +2439,19 @@ function normTx(raw, idHint) {
     approvers: raw.approvers && typeof raw.approvers === "object" ? Object.values(raw.approvers).map(a => typeof a === "string" ? a : (a && a.pubkey) || "").filter(Boolean) : [],
   };
 }
+const d0 = msg => msg.data || {};
 function liveMessage(ev) {
   const text = String(ev.data);
   if (text.startsWith("ok version")) { log("Handshake: " + esc(text), "ok"); return; }
   if (text.startsWith("error")) { log("Node: " + esc(text), "err"); return; }
   let msg; try { msg = JSON.parse(text); } catch { return; }
+  if (msg.command === "gettxstatus" && TXST.busy && (msg.status !== "ok" || String(d0(msg).tx_hash || "").toLowerCase() === TXST.busy)) {
+    const k = TXST.busy, d = d0(msg); TXST.busy = "";
+    if (msg.status === "ok") { TXST.st.set(k, d.status === "confirmed" ? { h: Number(d.block_number) } : { s: String(d.status || "unknown") }); if (d.status === "confirmed") markSealed(k, Number(d.block_number)); }
+    setTimeout(askTxStatus, msg.status === "ok" ? 120 : 1500);
+    if (msg.status === "ok" && !DROP.cards.has(d.tx_hash)) return;
+    if (msg.status !== "ok") return;
+  }
   if (msg.status !== "ok") { log(`${esc(msg.command || "rpc")}: ${esc(msg.error?.code)} ${esc(msg.error?.message || "")}`, "err"); return; }
   const d = msg.data || {};
   presenceFromMessage(d);
@@ -2423,6 +2477,7 @@ function liveMessage(ev) {
       const h = raw.header || {}, ids = raw.tx_ids || [];
       const txs = (raw.transactions || []).map((t, i) => normTx(t, ids[i]));
       const b = { n: h.block_number ?? 0, hash: raw.block_hash, state: h.state_hash, proposer: h.proposer_pubkey || "", ts: h.timestamp, txs };
+      txs.forEach(t => { t.block = b.n; });
       if (b.proposer && !/^0+$/.test(b.proposer) && !S.validators.includes(b.proposer)) S.validators.push(b.proposer);
       let ruleWork = false;
       txs.forEach(t => {   // what a block says about personal rules and rule sharing (README · Rule sharing): read before the card is drawn
@@ -2445,6 +2500,7 @@ function liveMessage(ev) {
         // first seen in the mempool, where the node lists only hash and type: now the block says what the rule work was
         const el = $("tx_" + t.id.slice(0, 16)) || feedHold.find(d => d.id === "tx_" + t.id.slice(0, 16));
         if (el && t.note && !t.transfers.length) { el.querySelector(".mid").textContent = t.note; el.dataset.ex = exKey(() => explainTx(t)); el.dataset.detail = dtKey(() => detailTx(t)); }
+        if (el) markSealed(t.id, b.n);
       });
       txs.forEach(t => {
         if (t.type === "approval_request" && !S.approvals.some(a => a.id === t.id)) { t.note = `${short(t.sender)} → ${short(t.to)} ${fmt(t.amount)} AGRS · waits for ${t.approvers.map(short).join(", ") || "an approver"} · until #${t.expireAt}`; S.approvals.push({ id: t.id, from: t.sender, to: t.to, amount: t.amount, approver: t.approvers[0] || "", approvers: t.approvers, since: b.n, expireAt: t.expireAt, status: "open" }); }
@@ -2464,7 +2520,9 @@ function liveMessage(ev) {
     ribbonPrepend(got); if (got.length) ribbonMaybeLoad();
   } else if (msg.command === "getmempool") {
     S.mempool = (d.transactions || []).map(t => normTx({ ...t, sender_pubkey: t.sender }, t.tx_hash));
-    S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } });
+    S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } const h = sealedAt(t.id); if (h != null) { t.block = typeof h === "number" ? h : t.block; if (typeof h === "number") markSealed(t.id, h); } });
+    if (TXST.st.size > 400) { const keep = new Set(S.mempool.map(t => t.id.toLowerCase())); TXST.st.forEach((v, k) => { if (!keep.has(k)) TXST.st.delete(k); }); }
+    askTxStatus(); pollRelayMem();
     readouts();
   } else if (msg.command === "getgovernance") {
     if (Array.isArray(d.active_validators)) S.validators = d.active_validators.map(v => typeof v === "string" ? v : (v.pubkey || v.validator_pubkey || JSON.stringify(v)));
@@ -2535,6 +2593,7 @@ function refusedTx(x) {
 /* forget every block and transaction: on connect, and when the relay reports that the node wiped a dead chain ("reset": true) */
 function liveClear() {
   Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0, approvals: [], reorgs: [], eligMode: "", modeHistory: [] });
+  TXST.st.clear(); TXST.busy = ""; RMEM.at = 0; RMEM.M = 0;
   S.clauses = new Map(); S.byHeight = new Map(); S.memSeen = new Map(); S.chainStart = null; S.rulesLastBlock = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); DROP.seen.clear(); DROP.cards.clear(); DROP.first = true;
   $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
   RIB.back = false; RIB.target = null; RIB.loading = false; ribbonHold.length = 0;
@@ -2819,19 +2878,24 @@ function draw(tm) {
   cx.save(); cx.setLineDash([2, 10]); cx.beginPath(); cx.lineWidth = mlv === "ok" ? 1.2 : 2; cx.strokeStyle = mcol; cx.arc(0, 0, C * .44, 0, Math.PI * 2); cx.stroke(); cx.restore();
   S.mempool.forEach((tx, i) => {
     const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
+    const sl = liveChain() && sealedAt(tx.id) != null;
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
-    cx.shadowColor = cx.fillStyle; cx.shadowBlur = 14; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 6, 0, Math.PI * 2); cx.fill();
+    if (sl) { cx.shadowBlur = 0; cx.strokeStyle = "rgba(200,200,210,.45)"; cx.lineWidth = 1.5; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 5, 0, Math.PI * 2); cx.stroke(); }
+    else { cx.shadowColor = cx.fillStyle; cx.shadowBlur = 14; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 6, 0, Math.PI * 2); cx.fill(); }
+    if (sl) { hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const h = sealedAt(tx.id); return vt(`Already sealed${typeof h === "number" ? ` in block #${fmt(h)}` : " in a block"}. The alpha node still lists it as waiting (known node bug, see Findings); empty rings are these.`, `Mempool: ${short(tx.id)} · ${tx.type} · already in ${typeof h === "number" ? "#" + fmt(h) : "a block"}, still listed by getmempool (IDNI #81).`); }); return; }
     hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`); });
   });
   cx.shadowBlur = 0;
   ring(C * .44, 30, () => {   // the waiting room: every dot on this orbit is a transaction the node admitted but no block has sealed yet
-    const seen = S.memSeen, oldest = seen.size ? Date.now() / 1000 - Math.min(...seen.values()) : 0;
+    const m = memState(), oldest = m.oldest, W = m.W, st = m.stale;
     const gov = S.mempool.filter(t => t.kind === "gov").length, rule = S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length, xfer = M - gov - rule;
     const mix = [[xfer, "transfer", "transfers"], [rule, "rule work", "rule work"], [gov, "rule-change proposal", "rule-change proposals"]].filter(x => x[0]).map(x => `${x[0]} ${x[0] === 1 ? x[1] : x[2]}`).join(", ");
-    const liveNote = S.mode === "live" && !S.simfeed ? vt("\nThe alpha node can keep a sealed transaction listed here for up to an hour (see Findings).", "\nAlpha quirk: the node keeps sealed txs in getmempool for up to 60 min (IDNI #81), so a dot here may already sit in a block.") : "";
+    const pace = m.per != null ? vt(` Recent blocks take ${perTxt(m.per)} each.`, ` Last blocks: ${perTxt(m.per)} each.`) : "", age = W ? (m.pageAge ? " since this page opened" : "") : "";
+    const stTxt = st ? vt(`\n${st === M ? (M === 1 ? "It is" : "All of them are") : `${st} of them ${st === 1 ? "is" : "are"}`} already sealed in a block (empty ${st === 1 ? "ring" : "rings"}); the alpha node keeps listing ${st === 1 ? "it" : "them"} for up to an hour (known bug, see Findings).`, `\n${st} already sealed (in a known block, gettxstatus confirmed or relay count), still in getmempool: IDNI #81.`) : "";
+    const chk = m.unchecked ? vt(` Still checking ${m.unchecked} against the chain.`, ` ${m.unchecked} not looked up yet.`) : "";
     return health("mempool") + (M
-      ? vt(`Waiting room: ${M} transaction${M === 1 ? "" : "s"} sent to the network and checked at the door, not yet sealed into a block (${mix}).\nThe next block takes them in; the oldest has waited ${fmtAge(oldest)}.${liveNote}\nClick to see them one by one.`,
-           `Mempool: ${M} pending tx (${mix}), oldest ${fmtAge(oldest)} since this page first saw it.\nAdmitted after the rule check (o5/o6); the proposer pulls them into the next block, fee ${S.fee} AGRS each.${liveNote}\nClick to list them.`)
+      ? vt(`Waiting room: ${M} transaction${M === 1 ? "" : "s"} listed (${mix}).${stTxt}\n${W ? `${W === 1 ? "1 really waits" : W + " really wait"} for a block; the oldest for ${fmtAge(oldest)}${age}.` : "None really waits for a block."}${(pace + chk) ? "\n" + (pace + chk).trim() : ""}\nClick to see them one by one.`,
+           `Mempool: ${M} listed (${mix}).${stTxt}\n${W} pending, oldest ${fmtAge(oldest)}${W ? (m.pageAge ? " since this page first saw it" : " since the relay first saw it") : ""}.${(pace + chk) ? "\n" + (pace + chk).trim() : ""}\nAdmitted after the rule check (o5/o6); fee ${S.fee} AGRS each. Click to list them.`)
       : vt(`Waiting room: empty. Every transaction sent so far has been sealed into a block.\nNew ones appear here as dots until the next block takes them in.\nClick for details.`,
            `Mempool: empty; nothing pending since the last block.\nAdmitted transactions orbit here until the proposer seals them (one dot each: white proposal, green rule work, grey transfer).\nClick for details.`));
   }, null, () => showDetail(dtKey(detailMempool)));
