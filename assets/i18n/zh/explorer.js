@@ -1,6 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
-  "(tau-testnet pinned to commit 539d1e2)": "（tau-testnet 固定在提交 539d1e2）",
+  "(tau-testnet pinned to commit b1ebfa4)": "（tau-testnet 固定在提交 b1ebfa4）",
   ", holding {n} transaction.": "，包含 {n} 笔交易。",
   ", holding {n} transactions.": "，包含 {n} 笔交易。",
   ", which checks every block itself, served by a read-only relay. Amounts in AGRS.": "，它自己检查每个区块，并通过只读中继提供数据。金额单位为 AGRS。",

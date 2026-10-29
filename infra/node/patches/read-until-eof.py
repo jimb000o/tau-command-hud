@@ -47,8 +47,11 @@ assert "read_stream_to_eof" not in src, "libp2p_compat.py: already patched"
 compat.write_text(src.replace(anchor, HELPER + anchor, 1))
 
 src = service.read_text()
-old_import = "from .libp2p_compat import apply_quic_cleanup_shim  # noqa: E402"
-assert src.count(old_import) == 1, "service.py: import anchor not found"
+# the import line names every shim upstream installs (539d1e2: one, e88814b: two), so find it by its start
+import re
+imports = re.findall(r"^from \.libp2p_compat import [^\n]*apply_quic_cleanup_shim[^\n]*$", src, re.M)
+assert len(imports) == 1, "service.py: import anchor not found"
+old_import = imports[0]
 src = src.replace(old_import, old_import + "\nfrom .libp2p_compat import read_stream_to_eof  # noqa: E402", 1)
 for n in ("2 * 1024 * 1024", "20 * 1024 * 1024"):
     old = f"resp_raw = await stream.read({n})"
