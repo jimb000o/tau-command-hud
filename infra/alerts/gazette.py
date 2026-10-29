@@ -245,27 +245,36 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
     first = r["start"] <= SIM_SWITCH_SINCE < r["end"]
     if sw:
         n, kinds, votes = len(sw), {s["kind"] for s in sw}, sum(s["votes"] for s in due)
-        h2 = (t("Proof of Stake by Morning, the Fixed Validator List by Evening", "上午改行权益证明，傍晚回到固定验证者名单") if kinds == {"stake", "fixed"} else
-              t("The Simulated Chain Turns to Proof of Stake", "模拟链改行权益证明") if kinds == {"stake"} else
-              t("The Simulated Chain Returns to Its Fixed Validator List", "模拟链回到固定验证者名单"))
-        out.append({"kind": "simswitch", "score": 80 if first else 75 if down else -1,
-                    "banner": t("The simulation switches consensus by vote", "模拟链经投票切换共识机制"),
+        h2 = (t("On the Rehearsal Chain, Proof of Stake by Morning and the Validator List by Evening", "排练链上：上午改行权益证明，傍晚回到验证者名单") if kinds == {"stake", "fixed"} else
+              t("On the Rehearsal Chain, Proof of Stake Takes the Seal by Vote", "排练链上：权益证明经投票接掌出块") if kinds == {"stake"} else
+              t("On the Rehearsal Chain, the Validator List Returns by Vote", "排练链上：验证者名单经投票回归"))
+        s0 = sw[0]
+        when = {"stake": t("half past ten in the morning", "上午十点半"), "fixed": t("half past four in the afternoon", "下午四点半")}[s0["kind"]]
+        wd = _d(s0["at"])
+        to = {"stake": t("from a fixed list of validators to proof of stake, where the largest holders take turns", "从固定的验证者名单改为权益证明，由持有最多的账户轮流出块"),
+              "fixed": t("from proof of stake back to its fixed list of validators", "从权益证明回到固定的验证者名单")}[s0["kind"]]
+        # the lead story when the switching is new or the visitors turned one down (Kilian 2026-10-29: the consensus switch is the
+        # title story); a routine week's switches are told in the Rehearsal Hall
+        out.append({"kind": "simswitch", "score": 110 if first else 75 if down else -1,
+                    "banner": t("Users vote; the chain changes how it agrees", "用户投票，链改变了达成一致的方式"),
                     "h2": h2,
-                    "deck": t("In the simulation the visitors vote on every switch and the simulated validators follow their majority. "
-                              "It is a rehearsal, not the real testnet; on Tau the same change would need no fork either.",
-                              "在模拟中，访客为每一次切换投票，模拟验证者跟随多数。这是一场排练，不是真实的测试网；在 Tau 上，同样的变更也不需要分叉。"),
-                    "para": t(f"In the simulation, which runs in every visitor's browser, the chain changed how it agrees on blocks: "
-                              + ({"stake": "to proof of stake at 10:30 UTC", "fixed": "back to its fixed validator list at 16:30 UTC"}[sw[0]["kind"]] if n == 1 else
-                                 f"{word(n)['en']} times this week, to proof of stake at 10:30 UTC and back to the fixed validator list at 16:30")
-                              + (", after a vote of the visitors" if n == 1 else ", each switch put to the visitors' vote first")
-                              + (f"; they cast {fmt_n(votes)} vote{'s' if votes != 1 else ''}" if votes else "")
-                              + (f" and turned down {word(down)['en']}" if down else "")
-                              + ". No node was reinstalled: on Tau a consensus switch is a rule change like any other.",
-                              "在每位访客浏览器里运行的模拟中，链改变了它就区块达成一致的方式："
-                              + ({"stake": "10:30 UTC 改行权益证明", "fixed": "16:30 UTC 回到固定验证者名单"}[sw[0]["kind"]] if n == 1 else
-                                 f"本周共{word(n)['zh']}次，10:30 UTC 改行权益证明，16:30 回到固定验证者名单")
-                              + "，每次都先交由访客投票" + (f"，访客共投出 {fmt_n(votes)} 票" if votes else "") + (f"，否决了{word(down)['zh']}次" if down else "")
-                              + "。没有节点需要重装：在 Tau 上，切换共识和其他规则变更一样。")})
+                    "deck": t("No fork, no restart, not one machine reinstalled. In the simulation that runs in every visitor's browser the visitors voted "
+                              "and the simulated validators followed. On Tau, how blocks are made is a rule like any other.",
+                              "没有分叉，没有重启，没有一台机器重装。在每位访客浏览器里运行的模拟中，访客投票，模拟验证者照办。在 Tau 上，怎样出块也只是一条规则。"),
+                    "para": t(f"At {when['en']} on {wd.strftime('%A')}, UTC, the rehearsal chain changed the way it chooses who seals its blocks: {to['en']}. "
+                              "The question went to the floor at twenty past, the visitors of tauhud.com cast their votes, and ten minutes later every simulated node "
+                              "switched at the same agreed block. Nobody had to install a thing"
+                              + (f"; it happened {word(n)['en']} times this week" if n > 1 else "")
+                              + (f", {fmt_n(votes)} vote{'s' if votes != 1 else ''} were cast" if votes else "")
+                              + (f", and the visitors turned down {word(down)['en']} switch{'es' if down != 1 else ''}" if down else "")
+                              + ". On most chains such a change means a hard fork. On Tau it is a rule change like any other, and this was its rehearsal: "
+                              "it happened in the simulation, not on the real testnet.",
+                              f"{wd.month}月{wd.day}日 星期{ZH_WEEKDAY[wd.weekday()]}{when['zh']}（UTC），排练链改变了它挑选出块者的方式：{to['zh']}。"
+                              "二十分时问题提上台面，tauhud.com 的访客投下选票，十分钟后，每一个模拟节点都在同一个约定的区块切换。没有人需要安装任何东西"
+                              + (f"；本周共切换了{word(n)['zh']}次" if n > 1 else "")
+                              + (f"，共投出 {fmt_n(votes)} 票" if votes else "")
+                              + (f"，访客否决了{word(down)['zh']}次切换" if down else "")
+                              + "。在大多数链上，这样的变更意味着一次硬分叉；在 Tau 上，它和其他规则变更一样，而这正是它的排练：它发生在模拟中，而不是真实的测试网上。")})
     if r["new_nodes"]:
         n = r["new_nodes"]
         out.append({"kind": "nodes", "score": 70,
