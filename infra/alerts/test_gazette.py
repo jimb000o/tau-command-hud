@@ -37,9 +37,9 @@ def week(**kw):
 
 
 def texts(x):
-    """every {en, zh} pair anywhere in an edition"""
+    """every {en, zh, ja} text anywhere in an edition"""
     if isinstance(x, dict):
-        if set(x) == {"en", "zh"}:
+        if set(x) == {"en", "zh", "ja"}:
             yield x
         else:
             for v in x.values():
@@ -72,11 +72,11 @@ for kind, r in cases:
     e = gazette.edition(r, props, [d], 3, END)
     check(e["kind"] == kind, f"{kind}: the headline follows the week ({e['banner']['en']})")
     pairs = list(texts(e))
-    check(all(p["en"].strip() and p["zh"].strip() for p in pairs), f"{kind}: every line has English and Chinese ({len(pairs)} lines)")
+    check(pairs and all(p["en"].strip() and p["zh"].strip() and p["ja"].strip() for p in pairs), f"{kind}: every line has English, Chinese and Japanese ({len(pairs)} lines)")
     words = json.dumps(e, ensure_ascii=False).lower()
     check(not any(b in words for b in BANNED), f"{kind}: no promotional or promising words")
 e = gazette.edition(cases[0][1], props, [d], 3, END)
-check(e["lead"]["h"]["en"] == "A Base Fee of 7 Takes Effect at the Appointed Block" and "基本手续费定为 7" in e["lead"]["h"]["zh"], f"the rule now in force is named in the lead, in the paper's words ({e['lead']['h']['en']})")
+check(e["lead"]["h"]["en"] == "A Base Fee of 7 Takes Effect at the Appointed Block" and "基本手续费定为 7" in e["lead"]["h"]["zh"] and "基本手数料を 7 とする定め" in e["lead"]["h"]["ja"], f"the rule now in force is named in the lead, in the paper's words ({e['lead']['h']['en']})")
 up = json.dumps(e["stories"][0], ensure_ascii=False)
 check("A Base Fee of 6." in up and "#12,450" in up and "One more proposal is open" in up, "coming up: the carried change with its block, then the open votes")
 
@@ -99,13 +99,13 @@ check(only["banner"]["en"] == "Practice ballots, and the rules hold" and only["l
 for kind, r in cases + [("agreed", week(agreed=3, proposed=3, head=4900))]:
     e = gazette.edition(r, props2 + props, [d], 3, END)
     printed_ = [e["banner"], e["lead"]["h"], e["lead"]["deck"], e["lead"]["kick"], *e["lead"]["body"], *e["stories"][0]["body"]]
-    bad = [x for p in printed_ for x in (p["en"], p["zh"]) if any(c in x for c in ("(", "→", " + ", "「", "Same rules as now"))]
+    bad = [x for p in printed_ for x in (p["en"], p["zh"], p["ja"]) if any(c in x for c in ("(", "→", " + ", "「", "Same rules as now"))]
     check(not bad, f"{kind}: no brackets, arrows or tracker titles in print {bad[:1]}")
     check(len(e["banner"]["en"]) <= 52, f"{kind}: the banner fits two balanced lines ({e['banner']['en']})")
     check(len(e["big"]["en"].split()) <= 5 and 40 < len(e["line"]["en"]) < 150, f"{kind}: a big banner of few words and one line under it ({e['big']['en']})")
     check(e["weather"]["en"].startswith(("Fair.", "Calm.")) and e["caption"]["en"].startswith("<b>The week at the core.</b>"), f"{kind}: weather ear and photo caption")
 check("Quiet Otter" in json.dumps(e["stories"][1]) and "not on the real testnet" in json.dumps(e["stories"][1]), "the rehearsal hall names the best forecaster and says it is the simulation")
-check(e["printed"]["en"] == "Monday, November 9, 2026" and e["printed"]["zh"] == "2026年11月9日 星期一", "printing date in both languages")
+check(e["printed"]["en"] == "Monday, November 9, 2026" and e["printed"]["zh"] == "2026年11月9日 星期一" and e["printed"]["ja"] == "2026年11月9日 月曜日", "printing date in all three languages")
 check(e["period"]["en"] == "2–9 November 2026", f"the week covered ({e['period']['en']})")
 check(gazette.rehearsal([])["body"][0]["en"].startswith("In the simulation the visitors decide"), "no noted days: an invitation instead of numbers")
 check("No rule change is waiting" in gazette.coming_up([], 1, 8)["body"][0]["en"], "nothing waiting: says so and where to learn to vote")

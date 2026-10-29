@@ -2,8 +2,8 @@
 
 sim_day() keeps what the visitors did in the simulation on one UTC day (relay /sim/votes and /sim/predictions start over
 at midnight, so alerts.py notes the day shortly before). edition() turns the weekly recap numbers (recap.build), the rule
-changes still waiting (proposals.json) and the noted simulation days into one edition: every line in English and in
-Chinese. alerts.py writes it next to the recap image every Monday as /recap/gazette/<date>.json and
+changes still waiting (proposals.json) and the noted simulation days into one edition: every line in English, Chinese
+and Japanese. alerts.py writes it next to the recap image every Monday as /recap/gazette/<date>.json and
 /recap/gazette/latest.json; gazette/index.html sets it as the front page and the HUD shows a small notice of it.
 
 The words stay careful: what happened is read from the chain; plans are IDNI's; testnet AGRS have no value; nothing is
@@ -15,14 +15,15 @@ import re
 from datetime import datetime, timezone
 
 ZH_WEEKDAY = "一二三四五六日"
+JA_WEEKDAY = "月火水木金土日"
 
 
 def fmt_n(n) -> str:
     return f"{int(round(n or 0)):,}"
 
 
-def t(en: str, zh: str) -> dict:
-    return {"en": en, "zh": zh}
+def t(en: str, zh: str, ja: str) -> dict:
+    return {"en": en, "zh": zh, "ja": ja}
 
 
 def _d(ts: float) -> datetime:
@@ -33,35 +34,37 @@ def period(start: float, end: float) -> dict:
     a, b = _d(start), _d(end - 1)
     en = f"{a.day}–{b.day} {b.strftime('%B %Y')}" if a.month == b.month else f"{a.day} {a.strftime('%B')} – {b.day} {b.strftime('%B %Y')}"
     zh = f"{a.year}年{a.month}月{a.day}日至{b.month}月{b.day}日" if a.year == b.year else f"{a.year}年{a.month}月{a.day}日至{b.year}年{b.month}月{b.day}日"
-    return t(en, zh)
+    ja = f"{a.year}年{a.month}月{a.day}日〜{b.month}月{b.day}日" if a.year == b.year else f"{a.year}年{a.month}月{a.day}日〜{b.year}年{b.month}月{b.day}日"
+    return t(en, zh, ja)
 
 
 def printed(ts: float) -> dict:
     d = _d(ts)
-    return t(f"{d.strftime('%A')}, {d.strftime('%B')} {d.day}, {d.year}", f"{d.year}年{d.month}月{d.day}日 星期{ZH_WEEKDAY[d.weekday()]}")
+    return t(f"{d.strftime('%A')}, {d.strftime('%B')} {d.day}, {d.year}", f"{d.year}年{d.month}月{d.day}日 星期{ZH_WEEKDAY[d.weekday()]}",
+             f"{d.year}年{d.month}月{d.day}日 {JA_WEEKDAY[d.weekday()]}曜日")
 
 
 def pace(s: float | None) -> dict:
     if not s:
-        return t("—", "—")
+        return t("—", "—", "—")
     if s < 120:
-        return t(f"{s:.0f} seconds", f"{s:.0f} 秒")
-    return t(f"{s / 60:.1f} minutes", f"{s / 60:.1f} 分钟")
+        return t(f"{s:.0f} seconds", f"{s:.0f} 秒", f"{s:.0f} 秒")
+    return t(f"{s / 60:.1f} minutes", f"{s / 60:.1f} 分钟", f"{s / 60:.1f} 分")
 
 
 def eta(blocks: int, s: float | None) -> dict:
     """About how long until a block, in words."""
     if not s or blocks <= 0:
-        return t("soon", "很快")
+        return t("soon", "很快", "まもなく")
     sec = blocks * s
     if sec < 3600:
         m = max(1, round(sec / 60))
-        return t(f"in about {m} minute{'s' if m != 1 else ''}", f"约 {m} 分钟后")
+        return t(f"in about {m} minute{'s' if m != 1 else ''}", f"约 {m} 分钟后", f"およそ {m} 分後")
     if sec < 172800:
         h = round(sec / 3600)
-        return t(f"in about {h} hour{'s' if h != 1 else ''}", f"约 {h} 小时后")
+        return t(f"in about {h} hour{'s' if h != 1 else ''}", f"约 {h} 小时后", f"およそ {h} 時間後")
     d = round(sec / 86400)
-    return t(f"in about {d} days", f"约 {d} 天后")
+    return t(f"in about {d} days", f"约 {d} 天后", f"およそ {d} 日後")
 
 
 # ---------------- one day of the simulation ----------------
@@ -103,10 +106,11 @@ NUM_ZH = "零一两三四五六七八九十"
 
 
 def word(n: int, big: bool = False) -> dict:
-    """A small count in words, as a paper of the day would set it: 'three', '三'; larger ones in figures."""
+    """A small count in words, as a paper of the day would set it: 'three', '三'; larger ones in figures. Japanese papers
+    set counts in figures."""
     en = NUM_EN[n] if 0 <= n < len(NUM_EN) else fmt_n(n)
     zh = (NUM_ZH[n] if n <= 10 else ("十" + NUM_ZH[n - 10] if n < 20 else fmt_n(n))) if n >= 0 else str(n)
-    return t(en.capitalize() if big else en, zh)
+    return t(en.capitalize() if big else en, zh, fmt_n(n))
 
 
 def _fee(m) -> str:
@@ -118,32 +122,33 @@ def _fee(m) -> str:
 # headline ("a base fee of 7", "一项新的手续费公式"), with no brackets and no arrows. None means the rules stay as they are.
 _PHRASES = [
     (r"^Same rules as now", None),
-    (r"^Base fee [\d,]+ → ([\d,]+)(?: AGRS)?$", lambda m: t(f"a base fee of {_fee(m)}", f"基本手续费改为 {_fee(m)}")),
-    (r"^Base fee ([\d,]+)(?: AGRS)?$", lambda m: t(f"a base fee of {_fee(m)}", f"基本手续费定为 {_fee(m)}")),
-    (r"^New fee formula", lambda m: t("a new formula for fees", "新的手续费公式")),
-    (r"^Every validator may make blocks", lambda m: t("an open door for every validator", "所有验证者均可出块")),
-    (r"^Stop all block making", lambda m: t("a halt to all block making", "停止一切出块")),
-    (r"^Only one validator may make blocks", lambda m: t("a single maker of blocks", "仅由一位验证者出块")),
-    (r"^New rule for who makes blocks", lambda m: t("a new rule on who makes blocks", "关于谁来出块的新规则")),
-    (r"^Blocks need a valid signature", lambda m: t("signed blocks only", "只认签名有效的区块")),
-    (r"^Accept blocks without signature check", lambda m: t("blocks without a signature check", "免验签名的区块")),
-    (r"^Reject all blocks", lambda m: t("the refusal of every block", "拒绝一切区块")),
-    (r"^New rule for valid blocks", lambda m: t("a new rule on valid blocks", "关于有效区块的新规则")),
-    (r"^Admit validator", lambda m: t("a new validator", "接纳一位新验证者")),
-    (r"^Remove validator", lambda m: t("the retirement of a validator", "撤下一位验证者")),
-    (r"^Votes needed: (.+)$", lambda m: t(f"a vote of {m.group(1)} for every change", f"每项变更须获 {'三分之二' if 'two' in m.group(1) else '过半'} 票数")),
-    (r"^(\d+) rule transactions per block", lambda m: t(f"{m.group(1)} rule changes to a block", f"每个区块至多 {m.group(1)} 项规则变更")),
-    (r"^Fees go to", lambda m: t("a new hand to receive the fees", "手续费改由新的接收者领取")),
-    (r"^Consensus switches to proof of stake", lambda m: t("a turn to proof of stake", "改行权益证明")),
-    (r"^Consensus switches to proof of authority", lambda m: t("a return to proof of authority", "回到权威证明")),
-    (r"^Consensus switches to", lambda m: t("a new way of agreeing on blocks", "新的出块共识方式")),
-    (r"^Co-signed transfers on", lambda m: t("co-signed transfers", "联署转账")),
-    (r"^Co-signed transfers off", lambda m: t("an end to co-signed transfers", "停用联署转账")),
+    (r"^Base fee [\d,]+ → ([\d,]+)(?: AGRS)?$", lambda m: t(f"a base fee of {_fee(m)}", f"基本手续费改为 {_fee(m)}", f"基本手数料 {_fee(m)} への変更")),
+    (r"^Base fee ([\d,]+)(?: AGRS)?$", lambda m: t(f"a base fee of {_fee(m)}", f"基本手续费定为 {_fee(m)}", f"基本手数料を {_fee(m)} とする定め")),
+    (r"^New fee formula", lambda m: t("a new formula for fees", "新的手续费公式", "新しい手数料の計算式")),
+    (r"^Every validator may make blocks", lambda m: t("an open door for every validator", "所有验证者均可出块", "全バリデーターへの門戸開放")),
+    (r"^Stop all block making", lambda m: t("a halt to all block making", "停止一切出块", "全ブロック生成の停止")),
+    (r"^Only one validator may make blocks", lambda m: t("a single maker of blocks", "仅由一位验证者出块", "ただ一人のブロック生成者")),
+    (r"^New rule for who makes blocks", lambda m: t("a new rule on who makes blocks", "关于谁来出块的新规则", "誰がブロックを生成するかの新ルール")),
+    (r"^Blocks need a valid signature", lambda m: t("signed blocks only", "只认签名有效的区块", "有効な署名のあるブロックに限る定め")),
+    (r"^Accept blocks without signature check", lambda m: t("blocks without a signature check", "免验签名的区块", "署名検査なしのブロック")),
+    (r"^Reject all blocks", lambda m: t("the refusal of every block", "拒绝一切区块", "全ブロックの拒否")),
+    (r"^New rule for valid blocks", lambda m: t("a new rule on valid blocks", "关于有效区块的新规则", "有効なブロックの新ルール")),
+    (r"^Admit validator", lambda m: t("a new validator", "接纳一位新验证者", "新しいバリデーターの受け入れ")),
+    (r"^Remove validator", lambda m: t("the retirement of a validator", "撤下一位验证者", "バリデーター一名の退任")),
+    (r"^Votes needed: (.+)$", lambda m: t(f"a vote of {m.group(1)} for every change", f"每项变更须获 {'三分之二' if 'two' in m.group(1) else '过半'} 票数",
+                                          f"すべての変更に{'3 分の 2' if 'two' in m.group(1) else '過半数'}の賛成を要する定め")),
+    (r"^(\d+) rule transactions per block", lambda m: t(f"{m.group(1)} rule changes to a block", f"每个区块至多 {m.group(1)} 项规则变更", f"1 ブロックあたりルール変更 {m.group(1)} 件")),
+    (r"^Fees go to", lambda m: t("a new hand to receive the fees", "手续费改由新的接收者领取", "手数料の新しい受取人")),
+    (r"^Consensus switches to proof of stake", lambda m: t("a turn to proof of stake", "改行权益证明", "プルーフ・オブ・ステークへの転換")),
+    (r"^Consensus switches to proof of authority", lambda m: t("a return to proof of authority", "回到权威证明", "プルーフ・オブ・オーソリティへの復帰")),
+    (r"^Consensus switches to", lambda m: t("a new way of agreeing on blocks", "新的出块共识方式", "ブロックの新しい合意方式")),
+    (r"^Co-signed transfers on", lambda m: t("co-signed transfers", "联署转账", "共同署名付きの送金")),
+    (r"^Co-signed transfers off", lambda m: t("an end to co-signed transfers", "停用联署转账", "共同署名付き送金の廃止")),
 ]
 
 
 def phrase(title: str | None) -> dict | None:
-    """The proposal title as a headline phrase {en, zh}, or None when the rules would stay as they are."""
+    """The proposal title as a headline phrase {en, zh, ja}, or None when the rules would stay as they are."""
     title = (title or "").strip()
     parts = [p for p in re.split(r" \+ (?!\d+ more$)", title) if p]
     more = sum(int(m) for m in re.findall(r" \+ (\d+) more$", title))
@@ -157,13 +162,14 @@ def phrase(title: str | None) -> dict | None:
                     out.append(fn(m))
                 break
         else:
-            out.append(t("an amendment to the rules", "一项规则修订"))
+            out.append(t("an amendment to the rules", "一项规则修订", "ルールの改正"))
     if not out:
         return None
     if len(out) == 1 and not more:
         return out[0]
     rest = len(out) - 1 + more
-    return t(f"{out[0]['en']} and {word(rest)['en']} more amendment{'s' if rest != 1 else ''}", f"{out[0]['zh']}等 {rest + 1} 项修订")
+    return t(f"{out[0]['en']} and {word(rest)['en']} more amendment{'s' if rest != 1 else ''}", f"{out[0]['zh']}等 {rest + 1} 项修订",
+             f"{out[0]['ja']}ほか計 {rest + 1} 件の改正")
 
 
 def cap(s: str, first: bool = True) -> str:
@@ -187,19 +193,24 @@ def _pick(titles: list[str]) -> dict | None:
 # One-time events that no counter on the chain records. Each is front-page news in the week it falls in.
 MILESTONES = [
     {"at": datetime(2026, 10, 26, tzinfo=timezone.utc).timestamp(), "kind": "launch",
-     "big": t("Tau HUD Opens", "Tau HUD 开张"),
+     "big": t("Tau HUD Opens", "Tau HUD 开张", "Tau HUD 開業"),
      "line": t("A community instrument with a node of its own beside the founders' now shows every block, vote and rule change of Testnet Alpha.",
-               "一座拥有自有节点、与创始团队节点并肩的社区观测台，如今展示 Testnet Alpha 的每一个区块、每一次投票和每一项规则变更。"),
-     "banner": t("Tau HUD goes live on Testnet Alpha", "Tau HUD 在 Testnet Alpha 上线"),
-     "h2": t("A Community Instrument Opens, with a Node of Its Own Beside the Founders'", "社区观测台开张，自有节点与创始团队的节点并肩运行"),
+               "一座拥有自有节点、与创始团队节点并肩的社区观测台，如今展示 Testnet Alpha 的每一个区块、每一次投票和每一项规则变更。",
+               "創設チームのノードの隣に自前のノードを持つコミュニティの観測器が、テストネット Alpha のすべてのブロック、投票、ルール変更を見せ始めた。"),
+     "banner": t("Tau HUD goes live on Testnet Alpha", "Tau HUD 在 Testnet Alpha 上线", "Tau HUD、テストネット Alpha で始動"),
+     "h2": t("A Community Instrument Opens, with a Node of Its Own Beside the Founders'", "社区观测台开张，自有节点与创始团队的节点并肩运行",
+             "コミュニティの観測器が開業、創設チームの隣に自前のノード"),
      "deck": t("Since 26 October anyone can watch every block, vote and rule change of the Tau testnet at tauhud.com. "
                "Tau HUD is an unofficial community project, not part of IDNI.",
-               "自 10 月 26 日起，任何人都可以在 tauhud.com 观看 Tau 测试网的每一个区块、每一次投票和每一项规则变更。Tau HUD 是非官方社区项目，不隶属于 IDNI。"),
+               "自 10 月 26 日起，任何人都可以在 tauhud.com 观看 Tau 测试网的每一个区块、每一次投票和每一项规则变更。Tau HUD 是非官方社区项目，不隶属于 IDNI。",
+               "10 月 26 日から、誰でも tauhud.com で Tau テストネットのすべてのブロック、投票、ルール変更を見られるようになった。Tau HUD は非公式のコミュニティプロジェクトで、IDNI の一部ではない。"),
      "paras": [t("On 26 October a new instrument opened at tauhud.com. Tau HUD reads Testnet Alpha from a node of its own, the first beside the "
                  "founders' bootnode as far as the network shows, and lays every block, vote and rule change before anyone who cares to look. "
                  "It seals nothing and sells nothing; it is an unofficial community project, and the paper in your hands is printed on its presses.",
                  "10 月 26 日，一座新的观测台在 tauhud.com 开张。Tau HUD 从自己的节点读取 Testnet Alpha，就网络所见，这是创始团队引导节点之外的第一个节点；"
-                 "它把每一个区块、每一次投票和每一项规则变更摆在任何愿意看的人面前。它不封存区块，也不出售任何东西；它是非官方社区项目，而您手中这份报纸正是在它的印刷机上印出来的。")]},
+                 "它把每一个区块、每一次投票和每一项规则变更摆在任何愿意看的人面前。它不封存区块，也不出售任何东西；它是非官方社区项目，而您手中这份报纸正是在它的印刷机上印出来的。",
+                 "10 月 26 日、tauhud.com に新しい観測器が開業した。Tau HUD は自前のノードからテストネット Alpha を読み取る。ネットワークで見るかぎり、創設チームのブートノードの隣に立つ最初のノードであり、"
+                 "すべてのブロック、投票、ルール変更を、見たいと思う誰の前にも並べる。ブロックを生成することも、何かを売ることもない。非公式のコミュニティプロジェクトであり、あなたの手にあるこの新聞もその印刷機で刷られている。")]},
 ]
 # The simulation switches consensus twice a day since 28 October 15:28 UTC (assets/sim.js STAKE_SLOT / FIXED_SLOT):
 # proof of stake at 10:30 UTC, the fixed validator list again at 16:30 UTC, each put to the visitors' vote at hh:20.
@@ -234,51 +245,65 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
     if r["active"]:
         n, ph = r["active"], _pick(r["active_titles"])
         out.append({"kind": "active", "score": 90 if ph else 8,
-                    "big": t("The Vote Becomes Law", "投票成为法则"),
+                    "big": t("The Vote Becomes Law", "投票成为法则", "投票、法となる"),
                     "line": (t(f"{cap(ph['en'], False)} takes effect at the appointed block; no node reinstalled, and the chain did not split.",
-                               f"{ph['zh']}于约定区块生效；没有节点重装，链也没有分裂。") if ph else
+                               f"{ph['zh']}于约定区块生效；没有节点重装，链也没有分裂。",
+                               f"{ph['ja']}が約束のブロックで施行。入れ直したノードはなく、チェーンも割れなかった。") if ph else
                              t("The users reaffirm their rules at the appointed block; no node reinstalled, and the chain did not split.",
-                               "用户在约定区块重申现行规则；没有节点重装，链也没有分裂。")),
-                    "banner": (t("A vote of the users becomes law", "用户的投票成为规则") if n == 1 else
-                               t(f"{word(n, True)['en']} votes of the users become law", f"用户的{word(n)['zh']}项投票成为规则")),
-                    "h2": (t(f"{cap(ph['en'])} Takes Effect at the Appointed Block", f"{ph['zh']}，于约定区块生效") if ph else
-                           t("The Users Reaffirm Their Rules at the Appointed Block", "用户在约定区块重申现行规则")),
+                               "用户在约定区块重申现行规则；没有节点重装，链也没有分裂。",
+                               "利用者が約束のブロックで現行ルールを再確認。入れ直したノードはなく、チェーンも割れなかった。")),
+                    "banner": (t("A vote of the users becomes law", "用户的投票成为规则", "利用者の投票、法となる") if n == 1 else
+                               t(f"{word(n, True)['en']} votes of the users become law", f"用户的{word(n)['zh']}项投票成为规则", f"利用者の投票 {word(n)['ja']} 件、法となる")),
+                    "h2": (t(f"{cap(ph['en'])} Takes Effect at the Appointed Block", f"{ph['zh']}，于约定区块生效", f"{ph['ja']}、約束のブロックで施行") if ph else
+                           t("The Users Reaffirm Their Rules at the Appointed Block", "用户在约定区块重申现行规则", "利用者、約束のブロックで現行ルールを再確認")),
                     "deck": t("Agreed by vote on Testnet Alpha and switched on at the block named in advance. No node was reinstalled and the chain did not split.",
-                              "在 Testnet Alpha 上经投票达成一致，并在事先约定的区块启用。没有节点需要重装，链也没有分裂。"),
+                              "在 Testnet Alpha 上经投票达成一致，并在事先约定的区块启用。没有节点需要重装，链也没有分裂。",
+                              "テストネット Alpha で投票により合意され、前もって決めたブロックで有効になった。入れ直したノードはなく、チェーンも割れなかった。"),
                     "para": (t(f"On the real testnet {ph['en']} took effect at the block the users had named, with no node reinstalled.",
-                               f"在真实的测试网上，{ph['zh']}在用户约定的区块生效，没有节点需要重装。") if ph else None)})
+                               f"在真实的测试网上，{ph['zh']}在用户约定的区块生效，没有节点需要重装。",
+                               f"本物のテストネットでは、{ph['ja']}が利用者の決めたブロックで施行された。入れ直したノードはない。") if ph else None)})
     due = sim_switches(r["start"], r["end"], days or [])
     sw, down = [s for s in due if not s["down"]], sum(s["down"] for s in due)
     # news in the week the switching began, or when the visitors turned one down; a routine week's switches are only a line
     first = r["start"] <= SIM_SWITCH_SINCE < r["end"]
     if sw:
         n, kinds, votes = len(sw), {s["kind"] for s in sw}, sum(s["votes"] for s in due)
-        h2 = (t("Proof of Stake by Morning, the Validator List by Evening, and Every Node Obeys", "上午权益证明，傍晚验证者名单，每个节点都照办") if kinds == {"stake", "fixed"} else
-              t("The Visitors Vote, and the Rehearsal Chain Hands the Seal to Proof of Stake", "访客投票，排练链把出块之权交给权益证明") if kinds == {"stake"} else
-              t("The Visitors Vote, and the Rehearsal Chain Changes Who Seals Its Blocks", "访客投票，排练链改变了由谁封存区块"))
+        h2 = (t("Proof of Stake by Morning, the Validator List by Evening, and Every Node Obeys", "上午权益证明，傍晚验证者名单，每个节点都照办",
+                "朝はプルーフ・オブ・ステーク、夕はバリデーターリスト、全ノードが従う") if kinds == {"stake", "fixed"} else
+              t("The Visitors Vote, and the Rehearsal Chain Hands the Seal to Proof of Stake", "访客投票，排练链把出块之权交给权益证明",
+                "訪問者が投票、リハーサルのチェーンは生成の権をプルーフ・オブ・ステークへ") if kinds == {"stake"} else
+              t("The Visitors Vote, and the Rehearsal Chain Changes Who Seals Its Blocks", "访客投票，排练链改变了由谁封存区块",
+                "訪問者が投票、リハーサルのチェーンはブロックの生成者を変える"))
         s0 = sw[0]
-        when = {"stake": t("half past ten on {d} morning", "{d}上午十点半"), "fixed": t("half past four on {d} afternoon", "{d}下午四点半")}[s0["kind"]]
-        # the Chinese opens with the weekday, not a figure (the drop cap)
+        when = {"stake": t("half past ten on {d} morning", "{d}上午十点半", "{d}午前 10 時半"),
+                "fixed": t("half past four on {d} afternoon", "{d}下午四点半", "{d}午後 4 時半")}[s0["kind"]]
+        # the Chinese and Japanese open with the weekday, not a figure (the drop cap)
         wd = _d(s0["at"])
-        when = t(when["en"].format(d=wd.strftime("%A")), when["zh"].format(d=f"星期{ZH_WEEKDAY[wd.weekday()]}（{wd.month}月{wd.day}日）"))
-        to = {"stake": t("from the fixed list of validators to proof of stake, where the largest holders take turns", "从固定的验证者名单转到权益证明，由持有最多的账户轮流出块"),
-              "fixed": t("from proof of stake back to the fixed list of validators", "从权益证明回到固定的验证者名单")}[s0["kind"]]
-        times = (t("once", "一次") if n == 1 else t(f"{word(n)['en']} times", f"{word(n)['zh']}次"))
-        answer = (t(f"the visitors answered with {fmt_n(votes)} vote{'s' if votes != 1 else ''}", f"访客以 {fmt_n(votes)} 票作答") if votes else
-                  t("no visitor voted, so the simulated validators carried it themselves", "没有访客投票，于是模拟验证者自行通过"))
-        turned = (t(f" and turned down {word(down)['en']} of them", f"，并否决了其中{word(down)['zh']}次") if down else t("", ""))
+        when = t(when["en"].format(d=wd.strftime("%A")), when["zh"].format(d=f"星期{ZH_WEEKDAY[wd.weekday()]}（{wd.month}月{wd.day}日）"),
+                 when["ja"].format(d=f"{JA_WEEKDAY[wd.weekday()]}曜日、{wd.month}月{wd.day}日の"))
+        to = {"stake": t("from the fixed list of validators to proof of stake, where the largest holders take turns", "从固定的验证者名单转到权益证明，由持有最多的账户轮流出块",
+                         "固定のバリデーターリストから、最大の保有者が交代で生成するプルーフ・オブ・ステークへ"),
+              "fixed": t("from proof of stake back to the fixed list of validators", "从权益证明回到固定的验证者名单", "プルーフ・オブ・ステークから固定のバリデーターリストへ")}[s0["kind"]]
+        times = (t("once", "一次", "1 回") if n == 1 else t(f"{word(n)['en']} times", f"{word(n)['zh']}次", f"{word(n)['ja']} 回"))
+        answer = (t(f"the visitors answered with {fmt_n(votes)} vote{'s' if votes != 1 else ''}", f"访客以 {fmt_n(votes)} 票作答", f"訪問者は {fmt_n(votes)} 票で答え") if votes else
+                  t("no visitor voted, so the simulated validators carried it themselves", "没有访客投票，于是模拟验证者自行通过",
+                    "投票した訪問者はなく、シミュレーションのバリデーターが自ら可決し"))
+        turned = (t(f" and turned down {word(down)['en']} of them", f"，并否决了其中{word(down)['zh']}次", f"、うち {word(down)['ja']} 回を否決し") if down else t("", "", ""))
         # the lead story when the switching is new or the visitors turned one down (2026-10-29: the consensus switch is the
         # title story); a routine week's switches are told in the Rehearsal Hall
         out.append({"kind": "simswitch", "score": 110 if first else 75 if down else -1,
-                    "big": t("No Fork, No Restart", "不分叉，不重启"),
+                    "big": t("No Fork, No Restart", "不分叉，不重启", "フォークなし、再起動なし"),
                     "line": t("In the simulation, the visitors vote to change who seals the blocks and every simulated node obeys at the named block. "
                               "On the real testnet the rules held.",
-                              "在模拟中，访客投票改变由谁封存区块，每个模拟节点都在约定的区块照办。真实的测试网上规则如常。"),
-                    "banner": t("Users rewrite the chain’s law; no fork, no restart", "用户投票改写链的法则：不分叉，不重启"), "extra": True,
+                              "在模拟中，访客投票改变由谁封存区块，每个模拟节点都在约定的区块照办。真实的测试网上规则如常。",
+                              "シミュレーションで訪問者がブロックの生成者を変える投票をし、すべてのシミュレーションのノードが約束のブロックで従った。本物のテストネットのルールは変わらず。"),
+                    "banner": t("Users rewrite the chain’s law; no fork, no restart", "用户投票改写链的法则：不分叉，不重启",
+                                "利用者がチェーンの法を書き換え、フォークも再起動もなし"), "extra": True,
                     "h2": h2,
                     "deck": t("On a practice chain that runs in every visitor's browser, the question of who may seal blocks went to the floor at twenty past the hour "
                               "and was law by half past. Nobody shipped software and nobody switched a machine off: Tau treats consensus as a rule like any other.",
-                              "在一条于每位访客浏览器里运行的练习链上，由谁封存区块这个问题于二十分提上台面，半点即成法则。没有人发布软件，没有人关掉任何机器：在 Tau 上，共识只是一条普通的规则。"),
+                              "在一条于每位访客浏览器里运行的练习链上，由谁封存区块这个问题于二十分提上台面，半点即成法则。没有人发布软件，没有人关掉任何机器：在 Tau 上，共识只是一条普通的规则。",
+                              "訪問者それぞれのブラウザーで動く練習用のチェーンで、誰がブロックを生成できるかという問いが毎時 20 分に議場へ上がり、30 分には法となった。ソフトウェアを配った者も、マシンを止めた者もいない。Tau にとって合意は、ほかと同じ一つのルールである。"),
                     "paras": [
                         t(f"At {when['en']}, UTC, a chain changed the law of who may seal its blocks, and nothing happened. Not the real Testnet Alpha, "
                           "whose week is told below, but its rehearsal: the simulation that runs on tauhud.com. No operator ran to a terminal, "
@@ -286,84 +311,109 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
                           "as before. That is the whole story, and it is why it stands at the top of this page.",
                           f"{when['zh']}（UTC），一条链改变了由谁封存区块的法则，而什么也没有发生。这不是真实的 Testnet Alpha（它这一周的情况见下文），"
                           "而是它的排练：在 tauhud.com 上运行的模拟。没有操作员奔向终端，没有新软件发布，没有机器关机重启。"
-                          "节点在约定的区块读到新规则，照旧封存。这就是全部的故事，也是它登上本版之首的原因。"),
+                          "节点在约定的区块读到新规则，照旧封存。这就是全部的故事，也是它登上本版之首的原因。",
+                          f"{when['ja']}（UTC）、あるチェーンが誰がブロックを生成できるかの法を変えた。そして何も起きなかった。本物のテストネット Alpha（その一週間は下に記す）ではなく、"
+                          "そのリハーサル、tauhud.com で動くシミュレーションでのことだ。端末へ駆けつけた運用者も、新しいソフトウェアの配布も、マシンの再起動もなかった。"
+                          "ノードは約束のブロックで新しいルールを読み、これまでどおり生成を続けた。話はそれで全部であり、だからこそこの面の頭に置かれている。"),
                         t(f"The simulation is a practice copy of the testnet that runs in every visitor's browser, where the visitors hold the gavel. Twice a day it puts to them the largest question a chain can ask. This week the question was put {times['en']}; "
                           f"{answer['en']}{turned['en']}; and at the named block the seal passed {to['en']}.",
                           f"模拟是一份在每位访客浏览器里运行的测试网练习副本，由访客执槌。它每天两次向他们提出一条链所能提出的最大问题。"
-                          f"本周这个问题被提出了{times['zh']}；{answer['zh']}{turned['zh']}；在约定的区块，出块之权{to['zh']}。"),
+                          f"本周这个问题被提出了{times['zh']}；{answer['zh']}{turned['zh']}；在约定的区块，出块之权{to['zh']}。",
+                          f"シミュレーションは、訪問者それぞれのブラウザーで動くテストネットの練習用の写しで、議長の木槌を握るのは訪問者だ。1 日に 2 回、チェーンが問いうる最大の問いを彼らに投げかける。今週この問いが出されたのは {times['ja']}。"
+                          f"{answer['ja']}{turned['ja']}、約束のブロックで生成の権は{to['ja']}移った。"),
                         t("On most chains that change is a hard fork: new software for every machine, and the danger that some refuse and the chain splits in two. "
                           "On Tau it is a transaction, checked by logic, carried by vote, in force at a block named in advance. The rehearsal hall runs the same law as "
                           "Testnet Alpha; the real chain only waits for its users to ask the same question.",
                           "在大多数链上，这样的变更意味着硬分叉：每台机器都要换新软件，还有人拒绝、链一分为二的危险。在 Tau 上，它只是一笔交易：经逻辑检查，经投票通过，"
-                          "在事先约定的区块生效。排练厅运行的法则与 Testnet Alpha 相同；真实的链只等它的用户提出同样的问题。")]})
+                          "在事先约定的区块生效。排练厅运行的法则与 Testnet Alpha 相同；真实的链只等它的用户提出同样的问题。",
+                          "たいていのチェーンでは、この変更はハードフォークになる。すべてのマシンに新しいソフトウェアを入れ、拒む者が出てチェーンが二つに割れる危険を伴う。"
+                          "Tau ではそれはトランザクションであり、論理で検査され、投票で可決され、前もって決めたブロックで施行される。リハーサルの館はテストネット Alpha と同じ法で動いている。本物のチェーンは、利用者が同じ問いを投げかけるのを待つばかりだ。")]})
     if r["new_nodes"]:
         n = r["new_nodes"]
         out.append({"kind": "nodes", "score": 70,
-                    "big": t("More Eyes on the Chain", "更多眼睛盯着链"),
+                    "big": t("More Eyes on the Chain", "更多眼睛盯着链", "チェーンを見守る目が増える"),
                     "line": t(f"{word(n, True)['en']} more node{'s take' if n != 1 else ' takes'} up the watch; every node checks every block against the rules in force.",
-                              f"又有{word(n)['zh']}个节点加入守望；每个节点都按现行规则检查每一个区块。"),
-                    "banner": t(f"{word(n, True)['en']} more node{'s take' if n != 1 else ' takes'} up the watch", f"又有{word(n)['zh']}个节点加入守望"),
-                    "h2": t("More Machines Keep Watch over the Chain", "更多机器守望这条链"),
+                              f"又有{word(n)['zh']}个节点加入守望；每个节点都按现行规则检查每一个区块。",
+                              f"見張りに加わるノードがさらに {word(n)['ja']} 台。どのノードもすべてのブロックを施行中のルールと照らして検査する。"),
+                    "banner": t(f"{word(n, True)['en']} more node{'s take' if n != 1 else ' takes'} up the watch", f"又有{word(n)['zh']}个节点加入守望",
+                                f"見張りのノード、さらに {word(n)['ja']} 台"),
+                    "h2": t("More Machines Keep Watch over the Chain", "更多机器守望这条链", "チェーンを見守るマシンが増える"),
                     "deck": t("Every node checks every block against the rules in force. The more there are, the more eyes on the chain.",
-                              "每个节点都会按照现行规则检查每一个区块。节点越多，盯着这条链的眼睛就越多。"),
+                              "每个节点都会按照现行规则检查每一个区块。节点越多，盯着这条链的眼睛就越多。",
+                              "どのノードもすべてのブロックを施行中のルールと照らして検査する。数が増えるほど、チェーンを見守る目が増える。"),
                     "para": t(f"{word(n, True)['en']} new node{'s' if n != 1 else ''} joined Testnet Alpha this week, {word(r['nodes'])['en']} community node{'s' if r['nodes'] != 1 else ''} in all.",
-                              f"本周有{word(n)['zh']}个新节点加入 Testnet Alpha，社区节点共{word(r['nodes'])['zh']}个。")})
+                              f"本周有{word(n)['zh']}个新节点加入 Testnet Alpha，社区节点共{word(r['nodes'])['zh']}个。",
+                              f"今週、新しいノード {word(n)['ja']} 台がテストネット Alpha に加わり、コミュニティノードは計 {word(r['nodes'])['ja']} 台になった。")})
     if r["agreed"]:
         n = r["agreed"]
         w = next((p for p in _sorted(waiting) if phrase(p.get("title"))), None)
         if w:
             ph, at = phrase(w["title"]), fmt_n(w.get("activate_at"))
             out.append({"kind": "agreed", "score": 60,
-                        "big": t("The Vote Is In", "票已点清"),
+                        "big": t("The Vote Is In", "票已点清", "開票終わる"),
                         "line": t(f"The users carry {ph['en']}; in force from block #{at}, and until then the rules in force apply.",
-                                  f"用户投票通过{ph['zh']}；自第 {at} 号区块起生效，在此之前现行规则继续适用。"),
-                        "banner": (t("The users settle a question of law", "用户以投票议定一项规则") if n == 1 else
-                                   t(f"The users settle {word(n)['en']} questions of law", f"用户以投票议定{word(n)['zh']}项规则")),
-                        "h2": t(f"Vote Carries for {cap(ph['en'], False)}, in Force from Block #{at}", f"投票通过：{ph['zh']}，自第 {at} 号区块起生效"),
+                                  f"用户投票通过{ph['zh']}；自第 {at} 号区块起生效，在此之前现行规则继续适用。",
+                                  f"利用者が{ph['ja']}を可決。ブロック #{at} から施行され、それまでは現行ルールが適用される。"),
+                        "banner": (t("The users settle a question of law", "用户以投票议定一项规则", "利用者、法の問いを一つ決する") if n == 1 else
+                                   t(f"The users settle {word(n)['en']} questions of law", f"用户以投票议定{word(n)['zh']}项规则", f"利用者、法の問いを {word(n)['ja']} 件決する")),
+                        "h2": t(f"Vote Carries for {cap(ph['en'], False)}, in Force from Block #{at}", f"投票通过：{ph['zh']}，自第 {at} 号区块起生效",
+                                f"{ph['ja']}を可決、ブロック #{at} から施行"),
                         "deck": t("The votes are counted. The change waits for the block named in advance, and until then the rules in force apply.",
-                                  "票已点清。变更等待事先约定的区块，在此之前现行规则继续适用。"),
+                                  "票已点清。变更等待事先约定的区块，在此之前现行规则继续适用。",
+                                  "開票は終わった。変更は前もって決めたブロックを待ち、それまでは現行ルールが適用される。"),
                         "lead_only": True,
                         "para": t(f"On the real testnet the users carried {ph['en']}; it takes effect at block #{at}.",
-                                  f"在真实的测试网上，用户投票通过了{ph['zh']}，将自第 {at} 号区块起生效。")})
+                                  f"在真实的测试网上，用户投票通过了{ph['zh']}，将自第 {at} 号区块起生效。",
+                                  f"本物のテストネットでは、利用者が{ph['ja']}を可決した。ブロック #{at} で施行される。")})
         else:
             out.append({"kind": "agreed", "score": 5,
-                        "big": t("The Rules Hold", "规则如常"),
+                        "big": t("The Rules Hold", "规则如常", "ルールは変わらず"),
                         "line": t(f"{word(n, True)['en']} ballot{'s' if n != 1 else ''} keep{'s' if n == 1 else ''} the rules as they stand: practice for the voting itself.",
-                                  f"{word(n)['zh']}次投票维持现行规则：这是对投票本身的练习。"),
-                        "banner": t("Practice ballots, and the rules hold", "练习投票，规则如常"),
-                        "h2": t(f"{word(n, True)['en']} Ballot{'s' if n != 1 else ''} Keep{'s' if n == 1 else ''} the Rules as They Stand", f"{word(n)['zh']}次投票维持现行规则"),
+                                  f"{word(n)['zh']}次投票维持现行规则：这是对投票本身的练习。",
+                                  f"{word(n)['ja']} 件の投票が現行ルールを維持。投票そのものの練習である。"),
+                        "banner": t("Practice ballots, and the rules hold", "练习投票，规则如常", "練習の投票、ルールは変わらず"),
+                        "h2": t(f"{word(n, True)['en']} Ballot{'s' if n != 1 else ''} Keep{'s' if n == 1 else ''} the Rules as They Stand", f"{word(n)['zh']}次投票维持现行规则",
+                                f"{word(n)['ja']} 件の投票、現行ルールを維持"),
                         "deck": t("The users voted, and the vote changed nothing, as it was meant to: a ballot that keeps the rules tests the voting itself.",
-                                  "用户投了票，而投票如预期般没有改变任何东西：维持规则的投票检验的是投票本身。"),
+                                  "用户投了票，而投票如预期般没有改变任何东西：维持规则的投票检验的是投票本身。",
+                                  "利用者は投票し、狙いどおり何も変わらなかった。ルールを維持する投票は、投票そのものを試すものだ。"),
                         "para": None})
     if r["restarts"]:
         out.append({"kind": "restart", "score": 50,
-                    "big": t("A Clean Slate", "从头开始"),
-                    "line": t("The testnet begins anew from its first block; Tau HUD follows the new chain from the start.", "测试网从第一个区块重新开始；Tau HUD 从头跟踪新链。"),
-                    "banner": t("The testnet begins anew from its first block", "测试网从第一个区块重新开始"),
-                    "h2": t("A Clean Slate for Testnet Alpha", "Testnet Alpha 从头开始"),
+                    "big": t("A Clean Slate", "从头开始", "一からの出直し"),
+                    "line": t("The testnet begins anew from its first block; Tau HUD follows the new chain from the start.", "测试网从第一个区块重新开始；Tau HUD 从头跟踪新链。",
+                              "テストネットが最初のブロックからやり直し。Tau HUD は新しいチェーンを最初から追う。"),
+                    "banner": t("The testnet begins anew from its first block", "测试网从第一个区块重新开始", "テストネット、最初のブロックからやり直し"),
+                    "h2": t("A Clean Slate for Testnet Alpha", "Testnet Alpha 从头开始", "テストネット Alpha、一から出直し"),
                     "deck": t("The test network began again from its starting state. Tau HUD follows the new chain from its first block.",
-                              "测试网从初始状态重新开始。Tau HUD 从新链的第一个区块起继续跟踪。"),
+                              "测试网从初始状态重新开始。Tau HUD 从新链的第一个区块起继续跟踪。",
+                              "テストネットワークは初期状態から再出発した。Tau HUD は新しいチェーンを最初のブロックから追っている。"),
                     "para": None})
     week = [p for p in props or [] if r["start"] <= (p.get("proposed_ts") or 0) < r["end"]]
     n = r["proposed"] - sum(1 for p in week if not phrase(p.get("title")))
     if n > 0 and not r["agreed"]:
         out.append({"kind": "proposed", "score": 30,
-                    "big": t("To the Ballot Box", "付诸投票"),
+                    "big": t("To the Ballot Box", "付诸投票", "投票箱へ"),
                     "line": t(f"{word(n, True)['en']} amendment{'s' if n != 1 else ''} laid before the users; checked by logic first, then the votes decide.",
-                              f"{word(n)['zh']}项修订提交用户表决；先经逻辑检查，再由投票决定。"),
-                    "banner": t(f"{word(n, True)['en']} amendment{'s' if n != 1 else ''} laid before the users", f"{word(n)['zh']}项修订提交用户表决"),
-                    "h2": t("The Ballot Box Is Open on Testnet Alpha", "Testnet Alpha 的投票箱已经打开"),
+                              f"{word(n)['zh']}项修订提交用户表决；先经逻辑检查，再由投票决定。",
+                              f"改正案 {word(n)['ja']} 件が利用者に諮られた。まず論理で検査され、そのあと票が決める。"),
+                    "banner": t(f"{word(n, True)['en']} amendment{'s' if n != 1 else ''} laid before the users", f"{word(n)['zh']}项修订提交用户表决",
+                                f"改正案 {word(n)['ja']} 件、利用者に諮られる"),
+                    "h2": t("The Ballot Box Is Open on Testnet Alpha", "Testnet Alpha 的投票箱已经打开", "テストネット Alpha の投票箱が開く"),
                     "deck": t("A proposal is checked by logic first; only then do the votes decide. Nothing changes unless the vote agrees.",
-                              "提案先经过逻辑检查，然后由投票决定。投票不通过，什么都不会改变。"),
+                              "提案先经过逻辑检查，然后由投票决定。投票不通过，什么都不会改变。",
+                              "提案はまず論理で検査され、それから票が決める。投票で合意されないかぎり、何も変わらない。"),
                     "para": None})
     out.append({"kind": "steady", "score": 0,
-                "big": t("A Quiet Week", "平静的一周"),
+                "big": t("A Quiet Week", "平静的一周", "静かな一週間"),
                 "line": t(f"{blocks} blocks, each sealed by the rules in force; no rule changed, and the chain kept its law.",
-                          f"{blocks} 个区块，每一个都按现行规则封存；没有规则改变，链守住了它的法则。"),
-                "banner": t("A quiet week, and the rules hold", "平静的一周，规则如常"),
-                "h2": t(f"{blocks} Blocks, Each Sealed by the Rules in Force", f"{blocks} 个区块，每一个都按现行规则封存"),
+                          f"{blocks} 个区块，每一个都按现行规则封存；没有规则改变，链守住了它的法则。",
+                          f"{blocks} ブロック、どれも施行中のルールで生成。ルールは変わらず、チェーンはその法を守った。"),
+                "banner": t("A quiet week, and the rules hold", "平静的一周，规则如常", "静かな一週間、ルールは変わらず"),
+                "h2": t(f"{blocks} Blocks, Each Sealed by the Rules in Force", f"{blocks} 个区块，每一个都按现行规则封存", f"{blocks} ブロック、どれも施行中のルールで生成"),
                 "deck": t("No rule changed this week. The chain kept time and kept its law, which is what a rulebook on a chain is for.",
-                          "本周没有规则改变。链按时出块、守住它的规则，这正是写在链上的规则手册的用处。"),
+                          "本周没有规则改变。链按时出块、守住它的规则，这正是写在链上的规则手册的用处。",
+                          "今週、ルールは何も変わらなかった。チェーンは時を刻み、法を守った。チェーン上の規則集とはそのためにある。"),
                 "para": None})
     return sorted(out, key=lambda s: -s["score"])
 
@@ -377,20 +427,23 @@ def headline(r: dict, waiting: list[dict], days: list[dict] | None = None) -> tu
 def weather(r: dict) -> dict:
     """The ear on the left of the masthead: the week's chain told as a weather report."""
     pc = pace(r["pace"])
-    sky = t("Fair", "晴") if r["pace"] and r["pace"] <= 20 else t("Calm", "平静")
+    sky = t("Fair", "晴", "晴れ") if r["pace"] and r["pace"] <= 20 else t("Calm", "平静", "穏やか")
     n = r.get("nodes") or 0
-    watch = (t(f"{word(n, True)['en']} community node{'s keep' if n != 1 else ' keeps'} watch.", f"{word(n)['zh']}个社区节点守望。") if n else
-             t("The founders' node and Tau HUD keep watch.", "创始团队的节点与 Tau HUD 守望。"))
+    watch = (t(f"{word(n, True)['en']} community node{'s keep' if n != 1 else ' keeps'} watch.", f"{word(n)['zh']}个社区节点守望。", f"コミュニティノード {word(n)['ja']} 台が見張る。") if n else
+             t("The founders' node and Tau HUD keep watch.", "创始团队的节点与 Tau HUD 守望。", "創設チームのノードと Tau HUD が見張る。"))
     return t(f"{sky['en']}. A block about every {pc['en']}. {watch['en']} Outlook: the climate may change by vote.",
-             f"{sky['zh']}。大约每 {pc['zh']}一个区块。{watch['zh']}展望：气候可经投票改变。")
+             f"{sky['zh']}。大约每 {pc['zh']}一个区块。{watch['zh']}展望：气候可经投票改变。",
+             f"{sky['ja']}。およそ {pc['ja']}ごとにブロック。{watch['ja']}見通し：気候は投票で変更可能。")
 
 
 def caption(r: dict) -> dict:
     blocks = ("about " if r["old_blocks"] else "") + fmt_n(r["blocks"] + r["old_blocks"])
+    blocks_ja = ("約 " if r["old_blocks"] else "") + fmt_n(r["blocks"] + r["old_blocks"])
     per = period(r["start"], r["end"])
     return t(f"<b>The week at the core.</b> In the week of {per['en']}, {blocks} blocks were sealed on the testnet, each one photographed as it passed "
              "through the Tau HUD. Every point on the orbit is a node; the ring closes when the validators agree.",
-             f"<b>本周的核心。</b>{per['zh']}，测试网封存了 {blocks} 个区块，每一个经过 Tau HUD 时都被摄下。轨道上的每个点都是一个节点；验证者达成一致时，圆环便合上。")
+             f"<b>本周的核心。</b>{per['zh']}，测试网封存了 {blocks} 个区块，每一个经过 Tau HUD 时都被摄下。轨道上的每个点都是一个节点；验证者达成一致时，圆环便合上。",
+             f"<b>今週の中核。</b>{per['ja']}の一週間に、テストネットでは {blocks_ja} ブロックが生成され、どれも Tau HUD を通るときに撮影された。軌道上の点はそれぞれノード。バリデーターが合意すると輪が閉じる。")
 
 
 def lead_body(r: dict, props: list[dict] | None = None, stories: list[dict] | None = None) -> list[dict]:
@@ -400,7 +453,7 @@ def lead_body(r: dict, props: list[dict] | None = None, stories: list[dict] | No
     out = list(paras(stories[0])) if stories else []
     more = [p for st in stories[1:] if st["score"] > 0 and not st.get("lead_only") for p in paras(st)][:3]
     for i, p in enumerate(more):
-        out.append(t(("<b>Also this week.</b> " if not i else "") + p["en"], ("<b>本周另讯。</b>" if not i else "") + p["zh"]))
+        out.append(t(("<b>Also this week.</b> " if not i else "") + p["en"], ("<b>本周另讯。</b>" if not i else "") + p["zh"], ("<b>今週はほかにも。</b>" if not i else "") + p["ja"]))
     blocks = fmt_n(r["blocks"] + r["old_blocks"])
     pc = pace(r["pace"])
     week = [p for p in props or [] if r["start"] <= (p.get("proposed_ts") or 0) < r["end"]]
@@ -412,48 +465,59 @@ def lead_body(r: dict, props: list[dict] | None = None, stories: list[dict] | No
           f"{fmt_n(r['txs'])} transactions from {fmt_n(r['accounts'])} accounts.")
     zh = (f"真实的链 Testnet Alpha 这一周{'平静而' if quiet else ''}有序：封存{'约 ' if r['old_blocks'] else ' '}{blocks} 个区块，大约每 {pc['zh']}一个，"
           f"{fmt_n(r['accounts'])} 个账户发出 {fmt_n(r['txs'])} 笔交易。")
+    ja = (f"本物のチェーン、テストネット Alpha の一週間は{'静かで' if quiet else ''}整然としていた。生成されたブロックは{'約 ' if r['old_blocks'] else ' '}{blocks}、およそ {pc['ja']}に 1 つ。"
+          f"{fmt_n(r['accounts'])} のアカウントから {fmt_n(r['txs'])} 件のトランザクション。")
     nxt = next((p for p in _sorted(props or []) if p.get("status") == "agreed" and phrase(p.get("title")) and (p.get("activate_at") or 0) > (r.get("head") or 0)), None)
-    at = t(f", {phrase(nxt['title'])['en']} in force from block #{fmt_n(nxt['activate_at'])}", f"，{phrase(nxt['title'])['zh']}自第 {fmt_n(nxt['activate_at'])} 号区块起生效") if nxt else t("", "")
+    at = t(f", {phrase(nxt['title'])['en']} in force from block #{fmt_n(nxt['activate_at'])}", f"，{phrase(nxt['title'])['zh']}自第 {fmt_n(nxt['activate_at'])} 号区块起生效",
+           f"（{phrase(nxt['title'])['ja']}はブロック #{fmt_n(nxt['activate_at'])} から施行）") if nxt else t("", "", "")
     if real:
         en += (f" {word(real, True)['en']} rule change{'s were' if real != 1 else ' was'} proposed" + (f" and {word(carried)['en']} carried{at['en']}" if carried else "")
                + (f", {word(r['active'])['en']} put in force" if r["active"] else "") + (f", {word(r['dropped'])['en']} dropped" if r["dropped"] else "") + ".")
         zh += f"提出{word(real)['zh']}项规则变更" + (f"，通过{word(carried)['zh']}项{at['zh']}" if carried else "") + (f"，生效{word(r['active'])['zh']}项" if r["active"] else "") + (f"，放弃{word(r['dropped'])['zh']}项" if r["dropped"] else "") + "。"
+        ja += f"ルール変更の提案は {word(real)['ja']} 件" + (f"、可決 {word(carried)['ja']} 件{at['ja']}" if carried else "") + (f"、施行 {word(r['active'])['ja']} 件" if r["active"] else "") + (f"、取り下げ {word(r['dropped'])['ja']} 件" if r["dropped"] else "") + "。"
     if keep:
         en += (f" {word(keep, True)['en']} {'further ' if real else ''}ballot{'s' if keep != 1 else ''} only kept the rules as they stand"
                + (": see <i>The Riddle of the Unchanging Ballots</i>." if keep >= 3 else ": practice for the voting itself."))
         zh += f"{'另有' if real else '本周有'}{word(keep)['zh']}次投票只是维持现行规则" + ("，详见《不变投票之谜》。" if keep >= 3 else "，是对投票本身的练习。")
+        ja += f"{'ほかに' if real else '今週は'} {word(keep)['ja']} 件の投票が現行ルールを維持しただけだった" + ("。詳しくは<i>変わらない投票の謎</i>を。" if keep >= 3 else "。投票そのものの練習である。")
     elif not real:
         en += " No rule change was proposed; anyone with an account may propose the next one."
         zh += "没有人提出规则变更；任何拥有账户的人都可以提出下一项。"
+        ja += "ルール変更の提案はなかった。アカウントを持つ人なら誰でも次の提案ができる。"
     also = [ph for ph in map(phrase, r["active_titles"][1:4]) if ph]
     if also:
         en += " Also put in force: " + "; ".join(x["en"] for x in also) + "."
         zh += "同样生效的还有：" + "；".join(x["zh"] for x in also) + "。"
+        ja += "ほかに施行されたもの：" + "、".join(x["ja"] for x in also) + "。"
     if r["restarts"]:
         en += f" The testnet started a new chain {'once' if r['restarts'] == 1 else word(r['restarts'])['en'] + ' times'}; balances and history began again from the starting state."
         zh += f"测试网重新开始了{word(r['restarts'])['zh']}次新链，余额和历史从初始状态重新开始。"
-    out.append(t(en, zh))
+        ja += f"テストネットは新しいチェーンを {word(r['restarts'])['ja']} 回始め、残高と履歴は初期状態からやり直しになった。"
+    out.append(t(en, zh, ja))
     if len(out) == 1:
         out.append(t("Nothing of this needed a new version of the software. Every node read the rules from the chain and followed them, "
                      "which is the whole idea: the users decide, and the machines keep the minutes.",
-                     "这一切都不需要新版本的软件。每个节点都从链上读取规则并照办，这正是全部的用意：用户做决定，机器记录在案。"))
+                     "这一切都不需要新版本的软件。每个节点都从链上读取规则并照办，这正是全部的用意：用户做决定，机器记录在案。",
+                     "このどれにも新しい版のソフトウェアは要らなかった。どのノードもチェーンからルールを読み、それに従った。それこそが肝心な点だ。利用者が決め、機械が議事録をつける。"))
     return out
 
 
 def figures(r: dict) -> list[dict]:
     blocks = ("≈" if r["old_blocks"] else "") + fmt_n(r["blocks"] + r["old_blocks"])
     pc = pace(r["pace"])
-    rows = [(t("Blocks sealed", "封存的区块"), t(blocks, blocks)),
-            (t("One block about every", "大约每隔"), pc),
-            (t("Transactions", "交易"), t(fmt_n(r["txs"]), fmt_n(r["txs"]))),
-            (t("Accounts that sent one", "发出交易的账户"), t(fmt_n(r["accounts"]), fmt_n(r["accounts"]))),
-            (t("Rule changes proposed", "提出的规则变更"), t(str(r["proposed"]), str(r["proposed"]))),
-            (t("Agreed by vote", "投票达成一致"), t(str(r["agreed"]), str(r["agreed"]))),
-            (t("Taken effect", "已经生效"), t(str(r["active"]), str(r["active"]))),
-            (t("Community nodes online", "在线社区节点"), t(str(r["nodes"]) + (f" (+{r['new_nodes']})" if r["new_nodes"] else ""),
-                                                          str(r["nodes"]) + (f"（新增 {r['new_nodes']}）" if r["new_nodes"] else "")))]
+    same = lambda s: t(s, s, s)  # noqa: E731
+    rows = [(t("Blocks sealed", "封存的区块", "生成されたブロック"), same(blocks)),
+            (t("One block about every", "大约每隔", "ブロックの間隔、およそ"), pc),
+            (t("Transactions", "交易", "トランザクション"), same(fmt_n(r["txs"]))),
+            (t("Accounts that sent one", "发出交易的账户", "送信したアカウント"), same(fmt_n(r["accounts"]))),
+            (t("Rule changes proposed", "提出的规则变更", "提案されたルール変更"), same(str(r["proposed"]))),
+            (t("Agreed by vote", "投票达成一致", "投票で合意"), same(str(r["agreed"]))),
+            (t("Taken effect", "已经生效", "施行済み"), same(str(r["active"]))),
+            (t("Community nodes online", "在线社区节点", "オンラインのコミュニティノード"), t(str(r["nodes"]) + (f" (+{r['new_nodes']})" if r["new_nodes"] else ""),
+                                                                              str(r["nodes"]) + (f"（新增 {r['new_nodes']}）" if r["new_nodes"] else ""),
+                                                                              str(r["nodes"]) + (f"（新規 {r['new_nodes']}）" if r["new_nodes"] else "")))]
     if r["restarts"]:
-        rows.append((t("Fresh chains", "新链"), t(str(r["restarts"]), str(r["restarts"]))))
+        rows.append((t("Fresh chains", "新链", "新しいチェーン"), same(str(r["restarts"]))))
     return [{"label": a, "value": b} for a, b in rows]
 
 
@@ -467,21 +531,25 @@ def coming_up(props: list[dict], head: int | None, s: float | None) -> dict:
     for p in [p for p in agreed if phrase(p.get("title"))][:3]:
         ph, w = phrase(p["title"]), eta(p["activate_at"] - head, s)
         lines.append(t(f"<b>{cap(ph['en'])}.</b> Carried by vote; in force from block #{fmt_n(p['activate_at'])}, {w['en']}.",
-                       f"<b>{ph['zh']}。</b>已经投票通过，自第 {fmt_n(p['activate_at'])} 号区块起生效，{w['zh']}。"))
+                       f"<b>{ph['zh']}。</b>已经投票通过，自第 {fmt_n(p['activate_at'])} 号区块起生效，{w['zh']}。",
+                       f"<b>{ph['ja']}。</b>投票で可決。ブロック #{fmt_n(p['activate_at'])} から施行、{w['ja']}。"))
     keep = [p for p in agreed if not phrase(p.get("title"))]
     if keep:
         n, first = len(keep), fmt_n(keep[0]["activate_at"])
         lines.append(t(f"<b>The rules as they stand.</b> {word(n, True)['en']} carried ballot{'s' if n != 1 else ''} to keep them unchanged "
                        + (f"falls due at block #{first}." if n == 1 else f"fall due from block #{first} onward."),
-                       f"<b>维持现行规则。</b>另有{word(n)['zh']}项已通过的维持原状投票，" + (f"将在第 {first} 号区块到期。" if n == 1 else f"自第 {first} 号区块起陆续到期。")))
+                       f"<b>维持现行规则。</b>另有{word(n)['zh']}项已通过的维持原状投票，" + (f"将在第 {first} 号区块到期。" if n == 1 else f"自第 {first} 号区块起陆续到期。"),
+                       f"<b>現行ルールのまま。</b>ルールを変えずに保つ可決済みの投票 {word(n)['ja']} 件が、" + (f"ブロック #{first} で期日を迎える。" if n == 1 else f"ブロック #{first} から順に期日を迎える。")))
     if voting:
         n = len(voting)
         lines.append(t(f"{word(n, True)['en']} more proposal{'s are' if n != 1 else ' is'} open for votes. Each needs its yes votes before its deadline block, or it is dropped and nothing changes.",
-                       f"另有{word(n)['zh']}项提案正在投票。每一项都必须在截止区块之前获得足够的赞成票，否则会被放弃，什么也不会改变。"))
+                       f"另有{word(n)['zh']}项提案正在投票。每一项都必须在截止区块之前获得足够的赞成票，否则会被放弃，什么也不会改变。",
+                       f"ほかに {word(n)['ja']} 件の提案が投票受付中。どれも期限のブロックまでに賛成票を集めなければ取り下げとなり、何も変わらない。"))
     if not lines:
         lines.append(t("No rule change is waiting for its block. The next one starts with a proposal; how to vote is explained at tauhud.com/vote.",
-                       "目前没有等待生效的规则变更。下一项从一份提案开始；如何投票，请看 tauhud.com/vote。"))
-    return {"h": t("Coming Up on the Testnet", "测试网接下来"), "body": lines}
+                       "目前没有等待生效的规则变更。下一项从一份提案开始；如何投票，请看 tauhud.com/vote。",
+                       "施行のブロックを待っているルール変更はない。次の変更は提案から始まる。投票のしかたは tauhud.com/vote で。"))
+    return {"h": t("Coming Up on the Testnet", "测试网接下来", "テストネットのこれから"), "body": lines}
 
 
 def riddle(r: dict, props: list[dict]) -> dict | None:
@@ -491,17 +559,21 @@ def riddle(r: dict, props: list[dict]) -> dict | None:
     if keep < 3:
         return None
     n, N = word(keep), word(keep, True)
-    return {"h": t("The Riddle of the Unchanging Ballots", "不变投票之谜"), "body": [
+    return {"h": t("The Riddle of the Unchanging Ballots", "不变投票之谜", "変わらない投票の謎"), "body": [
         t(f"{N['en']} times this week the users of Testnet Alpha went to the ballot box, and {n['en']} times the question was the same: "
           "shall the rules stay as they are? Each time the answer was yes. The votes were counted, the blocks were sealed, and not one rule had moved.",
-          f"本周，Testnet Alpha 的用户{n['zh']}次走向投票箱，问题{n['zh']}次都一样：规则是否维持原样？每一次的回答都是赞成。票点清了，区块封存了，没有一条规则挪动过。"),
+          f"本周，Testnet Alpha 的用户{n['zh']}次走向投票箱，问题{n['zh']}次都一样：规则是否维持原样？每一次的回答都是赞成。票点清了，区块封存了，没有一条规则挪动过。",
+          f"今週、テストネット Alpha の利用者は {n['ja']} 回投票箱へ向かい、{n['ja']} 回とも問いは同じだった。ルールをこのままにしておくか。答えは毎回、賛成だった。票は数えられ、ブロックは生成され、ルールは一つも動かなかった。"),
         t("A paper could call that a dull week. Our correspondent calls it something else. Before a chain changes a rule that matters, someone must show that "
           "the machinery of changing one works at all: that a proposal can be written, admitted by the logic that checks it, carried by vote and sealed at the "
           f"block named in advance. {N['en']} times that machinery was wound and run, and {n['en']} times it ran true.",
           "一份报纸大可称之为乏味的一周。本报记者却另有看法。在一条链改变一项要紧的规则之前，得有人证明改变规则的机器确实能转：提案可以写出来，"
-          f"能通过检查它的逻辑，能经投票通过，并在事先约定的区块封存。这台机器被上了{n['zh']}次发条、转了{n['zh']}次，{n['zh']}次都转得准。"),
+          f"能通过检查它的逻辑，能经投票通过，并在事先约定的区块封存。这台机器被上了{n['zh']}次发条、转了{n['zh']}次，{n['zh']}次都转得准。",
+          "退屈な一週間と呼ぶ新聞もあるだろう。本紙の記者の見方は違う。チェーンが大事なルールを変える前に、ルールを変える仕掛けがそもそも動くことを、誰かが示さねばならない。"
+          f"提案が書け、それを検査する論理に通され、投票で可決され、前もって決めたブロックで生成されること。その仕掛けは {n['ja']} 回ねじを巻かれて動き、{n['ja']} 回とも正確に動いた。"),
         t("The chain is young and its days are quiet. But the ballot box has been tried, and the first question worth asking will find it ready.",
-          "这条链还年轻，日子仍然平静。但投票箱已经试过了，第一个值得一问的问题到来时，它已准备停当。"),
+          "这条链还年轻，日子仍然平静。但投票箱已经试过了，第一个值得一问的问题到来时，它已准备停当。",
+          "チェーンはまだ若く、日々は静かだ。だが投票箱は試された。問うに値する最初の問いが来たとき、それは準備を整えて待っている。"),
     ]}
 
 
@@ -514,7 +586,7 @@ def rehearsal(days: list[dict], r: dict | None = None, switches: bool = True) ->
     """The week in the simulation as a feature in the paper's voice: the programme the clock ran, the visitors' votes,
     their own proposals, the consensus switches, the refusals at the door and the best tipster. Always marked as the
     simulation."""
-    h = t("From the Rehearsal Hall", "排练厅来稿")
+    h = t("From the Rehearsal Hall", "排练厅来稿", "リハーサルの館より")
     body = []
     a = max(r["start"], SIM_SINCE) if r else 0
     hours = int((r["end"] - a) // 3600) if r and r["end"] > a else 0
@@ -524,7 +596,9 @@ def rehearsal(days: list[dict], r: dict | None = None, switches: bool = True) ->
                       f"and where the visitors of tauhud.com hold the gavel. This week the house played {word(hours)['en'] if hours <= 20 else fmt_n(hours)} hour{'s' if hours != 1 else ''} of its programme: "
                       "a motion on the floor every hour at twenty past, law by half past, and the visitors' verdict in between.",
                       f"在真实测试网的对街，有一座排练厅：模拟。它是一条在每位访客浏览器里运行的练习链，由 tauhud.com 的访客执槌。"
-                      f"本周这座剧院上演了 {fmt_n(hours)} 个小时的节目：每小时二十分一项动议提上台面，半点即成法则，其间由访客裁决。"))
+                      f"本周这座剧院上演了 {fmt_n(hours)} 个小时的节目：每小时二十分一项动议提上台面，半点即成法则，其间由访客裁决。",
+                      f"本物のテストネットの向かいに、リハーサルの館が建っている。シミュレーション、すなわち訪問者それぞれのブラウザーで動く練習用のチェーンで、木槌を握るのは tauhud.com の訪問者だ。"
+                      f"今週この館は {fmt_n(hours)} 時間の演目を上演した。毎時 20 分に動議が議場に上がり、30 分には法となり、その間に訪問者が裁定を下す。"))
     ballots = sum(d["ballots"] for d in days)
     carried = sum(d["carried"] for d in days)
     turned = sum(d["turned"] for d in days)
@@ -539,34 +613,45 @@ def rehearsal(days: list[dict], r: dict | None = None, switches: bool = True) ->
                       + " When nobody votes, the simulated validators carry the motion themselves.",
                       f"在由访客做主的模拟中，共有{word(ballots)['zh']}项每小时的规则变更交由访客投票。他们投出 {fmt_n(votes)} 票"
                       + "".join(f"，{x}" for x in ([f"放行{word(carried)['zh']}项"] if carried else []) + ([f"否决{word(turned)['zh']}项"] if turned else []))
-                      + "。无人投票时，模拟验证者自行通过动议。"))
+                      + "。无人投票时，模拟验证者自行通过动议。",
+                      f"訪問者が決めるシミュレーションでは、毎時のルール変更 {word(ballots)['ja']} 件が訪問者の投票にかけられた。投じられた票は {fmt_n(votes)}"
+                      + "".join(f"、{x}" for x in ([f"可決 {word(carried)['ja']} 件"] if carried else []) + ([f"否決 {word(turned)['ja']} 件"] if turned else []))
+                      + "。誰も投票しないときは、シミュレーションのバリデーターが自ら動議を可決する。"))
     elif not hours:
         body.append(t("In the simulation the visitors decide: every hour one rule change goes to their vote, and the simulated validators follow the majority. "
                       "Try it at tauhud.com in Simulation mode.",
-                      "在模拟中由访客做主：每小时有一项规则变更交由他们投票，模拟验证者跟随多数。在 tauhud.com 切换到模拟模式即可参与。"))
+                      "在模拟中由访客做主：每小时有一项规则变更交由他们投票，模拟验证者跟随多数。在 tauhud.com 切换到模拟模式即可参与。",
+                      "シミュレーションでは訪問者が決める。毎時ルール変更が 1 件投票にかけられ、シミュレーションのバリデーターは多数に従う。tauhud.com のシミュレーションモードでお試しを。"))
     sw = [x for x in sim_switches(r["start"], r["end"], days) if not x["down"]] if r and switches else []
     if sw:
         n = len(sw)
         body.append(t(f"Twice a day the hall rewrites its own constitution. Proof of stake takes the stage at half past ten, the fixed validator list returns at half past four; "
                       f"{word(n)['en']} such change{'s' if n != 1 else ''} came into force this week, and not one machine was reinstalled.",
-                      f"这座排练厅每天两次改写自己的宪章：十点半由权益证明登台，四点半固定验证者名单回归。本周共有{word(n)['zh']}次这样的切换生效，没有一台机器需要重装。"))
+                      f"这座排练厅每天两次改写自己的宪章：十点半由权益证明登台，四点半固定验证者名单回归。本周共有{word(n)['zh']}次这样的切换生效，没有一台机器需要重装。",
+                      f"館は 1 日に 2 回、自らの憲章を書き換える。10 時半にプルーフ・オブ・ステークが舞台に上がり、4 時半に固定のバリデーターリストが戻る。今週こうした変更が {word(n)['ja']} 回施行され、入れ直したマシンは 1 台もなかった。"))
     if vprops:
         body.append(t(f"Visitors also brought motions of their own: {word(vprops)['en']} rule change{'s' if vprops != 1 else ''} written in the Playground, "
                       f"{word(vcarried)['en']} of them voted in.",
-                      f"访客还提出了自己的动议：在试验场写成的{word(vprops)['zh']}项规则变更，其中{word(vcarried)['zh']}项获得通过。"))
+                      f"访客还提出了自己的动议：在试验场写成的{word(vprops)['zh']}项规则变更，其中{word(vcarried)['zh']}项获得通过。",
+                      f"訪問者は自分たちの動議も持ち込んだ。プレイグラウンドで書かれたルール変更 {word(vprops)['ja']} 件のうち、{word(vcarried)['ja']} 件が可決された。"))
     if hours:
         body.append(t(f"The doorkeeper had a busy week. {word(hours, True)['en'] if hours <= 20 else fmt_n(hours)} proposal{'s' if hours != 1 else ''} that contradicted the rules in force were turned away at the door before a single vote, "
                       f"because Tau checks a rule by logic first; {word(hours)['en'] if hours <= 20 else fmt_n(hours)} contested motions, backed by their proposer alone, expired at their deadline"
                       + (f"; and {word(midnights)['en']} time{'s' if midnights != 1 else ''} at midnight the stage was swept and the chain began anew." if midnights else "."),
                       f"守门人这一周很忙。{fmt_n(hours)} 项与现行规则相矛盾的提案还没投票就被拒之门外，因为 Tau 先用逻辑检查规则；"
                       f"{fmt_n(hours)} 项只有提案人支持的争议动议在截止时失效"
-                      + (f"；午夜时分舞台清扫了{word(midnights)['zh']}次，链重新开始。" if midnights else "。")))
+                      + (f"；午夜时分舞台清扫了{word(midnights)['zh']}次，链重新开始。" if midnights else "。"),
+                      f"門番は忙しい一週間だった。施行中のルールと矛盾する提案 {fmt_n(hours)} 件が、1 票も投じられないうちに入口で追い返された。Tau はまず論理でルールを検査するからだ。"
+                      f"提案者だけが支持する争いのある動議 {fmt_n(hours)} 件は期限で失効した"
+                      + (f"。そして深夜 0 時に {word(midnights)['ja']} 回、舞台が掃き清められ、チェーンは最初からやり直した。" if midnights else "。")))
     best = max((d for d in days if d.get("best")), key=lambda d: d["best"]["points"], default=None)
     if best:
         wd = datetime.strptime(best["day"], "%Y-%m-%d")
         body.append(t(f"The sharpest forecaster of the week was {best['best']['name']}, with {best['best']['points']} points on {wd.strftime('%A')}.",
-                      f"本周最准的预测者是 {best['best']['name']}，星期{ZH_WEEKDAY[wd.weekday()]}拿下 {best['best']['points']} 分。"))
-    body.append(t("All of this happened in the simulation, not on the real testnet.", "以上都发生在模拟中，而不是真实的测试网上。"))
+                      f"本周最准的预测者是 {best['best']['name']}，星期{ZH_WEEKDAY[wd.weekday()]}拿下 {best['best']['points']} 分。",
+                      f"今週いちばん鋭い予想者は {best['best']['name']}。{JA_WEEKDAY[wd.weekday()]}曜日に {best['best']['points']} ポイントを挙げた。"))
+    body.append(t("All of this happened in the simulation, not on the real testnet.", "以上都发生在模拟中，而不是真实的测试网上。",
+                  "以上はすべてシミュレーションでの出来事で、本物のテストネットのことではない。"))
     return {"h": h, "body": body}
 
 
@@ -576,10 +661,14 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
     ranked = news(r, waiting, days, props)
     top = ranked[0]
     banner, h2, deck, kind = top["banner"], top["h2"], top["deck"], top["kind"]
-    kick = {"active": t("Testnet Alpha · rule change", "Testnet Alpha · 规则变更"), "agreed": t("Testnet Alpha · the ballot is counted", "Testnet Alpha · 计票完毕"),
-            "restart": t("Testnet Alpha · a fresh start", "Testnet Alpha · 重新开始"), "proposed": t("Testnet Alpha · put to the vote", "Testnet Alpha · 付诸投票"),
-            "nodes": t("Testnet Alpha · the network", "Testnet Alpha · 网络"), "steady": t("Testnet Alpha · the week", "Testnet Alpha · 本周"),
-            "launch": t("Testnet Alpha · a new instrument", "Testnet Alpha · 新的观测台"), "simswitch": t("Simulation · not the real testnet", "模拟 · 不是真实的测试网")}[kind]
+    kick = {"active": t("Testnet Alpha · rule change", "Testnet Alpha · 规则变更", "テストネット Alpha · ルール変更"),
+            "agreed": t("Testnet Alpha · the ballot is counted", "Testnet Alpha · 计票完毕", "テストネット Alpha · 開票終了"),
+            "restart": t("Testnet Alpha · a fresh start", "Testnet Alpha · 重新开始", "テストネット Alpha · 再出発"),
+            "proposed": t("Testnet Alpha · put to the vote", "Testnet Alpha · 付诸投票", "テストネット Alpha · 投票へ"),
+            "nodes": t("Testnet Alpha · the network", "Testnet Alpha · 网络", "テストネット Alpha · ネットワーク"),
+            "steady": t("Testnet Alpha · the week", "Testnet Alpha · 本周", "テストネット Alpha · 今週"),
+            "launch": t("Testnet Alpha · a new instrument", "Testnet Alpha · 新的观测台", "テストネット Alpha · 新しい観測器"),
+            "simswitch": t("Simulation · not the real testnet", "模拟 · 不是真实的测试网", "シミュレーション · 本物のテストネットではない")}[kind]
     return {
         "v": 1, "no": no, "date": _d(printed_at).strftime("%Y-%m-%d"), "printed": printed(printed_at),
         "start": round(r["start"]), "end": round(r["end"]), "period": period(r["start"], r["end"]),
@@ -591,7 +680,8 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
         "stories": [coming_up(props, r.get("head"), r["pace"]), rehearsal(days, r, not any(x["kind"] == "simswitch" and x["score"] > 0 for x in ranked))] + ([m] if (m := riddle(r, props)) else []),
         "url": "https://tauhud.com/gazette/",
         # flat copies for the HUD's notice of the paper (index.html)
-        "number": no, "headline": banner["en"], "headline_zh": banner["zh"], "deck": deck["en"], "deck_zh": deck["zh"],
+        "number": no, "headline": banner["en"], "headline_zh": banner["zh"], "headline_ja": banner["ja"],
+        "deck": deck["en"], "deck_zh": deck["zh"], "deck_ja": deck["ja"],
     }
 
 
@@ -599,4 +689,4 @@ def summary(e: dict) -> dict:
     """The few fields the HUD's notice and the archive list need."""
     return {"no": e["no"], "date": e["date"], "printed": e["printed"], "period": e["period"], "banner": e["banner"], "teaser": e["teaser"],
             "kind": e["kind"], "url": e["url"], "number": e["no"], "headline": e["banner"]["en"], "headline_zh": e["banner"]["zh"],
-            "deck": e["teaser"]["en"], "deck_zh": e["teaser"]["zh"]}
+            "headline_ja": e["banner"].get("ja", ""), "deck": e["teaser"]["en"], "deck_zh": e["teaser"]["zh"], "deck_ja": e["teaser"].get("ja", "")}
