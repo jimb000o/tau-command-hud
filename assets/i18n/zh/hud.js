@@ -1744,5 +1744,6 @@ TauI18n.add({ strings: {
   "Watch: {n} blocks behind the newest block.": "注意：落后最新区块 {n} 个区块。",
   "Watch: {n} blocks ahead of ours.": "注意：比我们的领先 {n} 个区块。",
   "Normal: in step with the chain.": "正常：与链同步。",
-  "Every transaction the node still lists after it was sealed now turns amber in Chain core: the node itself answers \"waiting\" for them, so the page reads the blocks of the last hour and finds each one there. The nodes on the node orbit carry a status light in their hover too: Tau HUD's node is green while live and in step, amber while it catches up, red when it does not answer.": "节点在封装后仍继续列出的每笔交易，现在都会在 Chain core 中变成琥珀色：节点本身对它们回答“等待中”，所以页面会读取最近一小时的区块，并在其中逐笔找到它们。节点轨道上的节点在悬停时也带有状态灯：Tau HUD 的节点在实时且同步时为绿色，追赶时为琥珀色，没有响应时为红色。"
+  "Every transaction the node still lists after it was sealed now turns amber in Chain core: the node itself answers \"waiting\" for them, so the page reads the blocks of the last hour and finds each one there. The nodes on the node orbit carry a status light in their hover too: Tau HUD's node is green while live and in step, amber while it catches up, red when it does not answer.": "节点在封装后仍继续列出的每笔交易，现在都会在 Chain core 中变成琥珀色：节点本身对它们回答“等待中”，所以页面会读取最近一小时的区块，并在其中逐笔找到它们。节点轨道上的节点在悬停时也带有状态灯：Tau HUD 的节点在实时且同步时为绿色，追赶时为琥珀色，没有响应时为红色。",
+  "The red mark a refused transaction leaves on the outer rim of Chain core now fades within a few seconds; nothing stays behind.": "被拒绝的交易在 Chain core 外圈留下的红色痕迹，现在几秒内就会淡去，不留任何痕迹。"
 } });

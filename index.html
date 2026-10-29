@@ -1625,7 +1625,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.64", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.65", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2727,8 +2727,8 @@ function hoverCol(h) {
   return HOV_LV.col;
 }
 /* refused transactions bounce off the outer rim: the rule book is a shield, and what it says no to never gets inside. A short flight
-   in from the corner, a flash on the rim where it hits, a flight out; a faint notch stays on the rim for a minute to hover and click */
-const BOUNCE = { q: [], next: 0 }, B_IN = 700, B_FLY = 1900, B_KEEP = 60000, REF = "229,72,77";
+   in from the corner, a flash on the rim where it hits, a flight out; a faint notch on the rim fades within a few seconds; until then it can be hovered and clicked */
+const BOUNCE = { q: [], next: 0 }, B_IN = 700, B_FLY = 1900, B_KEEP = 4000, REF = "229,72,77";
 function bounce(t) {
   const now = performance.now(), at = Math.max(now, BOUNCE.next); BOUNCE.next = at + 420;   // a burst comes in one after another
   const a = Math.floor(Math.random() * 4) * Math.PI / 2 + Math.PI / 4 + (Math.random() - .5) * .6;   // from a corner, where there is room

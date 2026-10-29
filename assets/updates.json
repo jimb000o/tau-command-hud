@@ -1001,5 +1001,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Every transaction the node still lists after it was sealed now turns amber in Chain core: the node itself answers \"waiting\" for them, so the page reads the blocks of the last hour and finds each one there. The nodes on the node orbit carry a status light in their hover too: Tau HUD's node is green while live and in step, amber while it catches up, red when it does not answer."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "The red mark a refused transaction leaves on the outer rim of Chain core now fades within a few seconds; nothing stays behind."
  }
 ]
