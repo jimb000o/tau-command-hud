@@ -52,6 +52,7 @@ services:
       TRUST_PROXY: "1"
       TAU_GOVERNANCE_OPEN_ADMISSION: "true"  # keep equal to the node setting above
       VISITS_KEY: ${VISITS_KEY:-}   # key of the visitor numbers report; empty: made once in /data/visits.key
+      SLOTLEASE_ENABLED: ${SLOTLEASE_ENABLED:-1}   # fair turns on the rule places (relay/slotlease.py); 0 switches them off
     volumes:
       # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH),
       # availability history for /uptime (UPTIME_PATH)

@@ -247,6 +247,30 @@ async def main():
                   f"/rules counts BOB, not CAROL's neutral rule {rules}")
             sent = [x for x in mock["commands"] if x.startswith("sendtx ")][-1]
             check(json.loads(sent[7:])["operations"]["0"] == good["operations"]["0"], "rule text with spaces arrives intact")
+            # fair turns on the rule places: a pre-signed neutral clause, checked once, sent when the turn is over
+            free = {"tx_type": "user_tx", "sender_pubkey": BOB, "sequence_number": 7, "expiration_time": int(time.time()) + 3 * 86400,
+                    "fee_limit": "50", "expire_at_height": 9000, "operations": {"0": "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) )."}, "signature": "ef" * 96}
+            check((await ask(ws, "leasetx " + json.dumps({**free, "operations": {"0": CLAUSE}})))["error"]["code"] == "INVALID_PARAMS", "a turn takes only the neutral clause")
+            before = len(mock["commands"])
+            m = await ask(ws, "leasetx " + json.dumps(free))
+            check(m["status"] == "ok" and m["data"]["until"] > time.time() + 3600, f"the removal is kept; nobody waits, so a long turn {m}")
+            check(sum(x.startswith("checktx ") for x in mock["commands"][before:]) == 1 and not any(x.startswith("sendtx ") for x in mock["commands"][before:]), "kept after one checktx, not sent")
+            ctype, body = await get("/lease/wait?pk=" + "56" * 48)
+            st = json.loads(body)
+            check(st["ok"] and st["position"] == 1 and st["waiting"] == 1, f"a visitor joins the line {st}")
+            ctype, body = await get("/lease?pk=" + BOB)
+            st = json.loads(body)
+            check(st["holders"][0]["managed"] and st["mine"]["status"] == "held" and st["mine"]["until"] <= time.time() + 31 * 60,
+                  f"the holder's turn is listed and, with someone waiting, shrinks to 30 minutes {st}")
+            r.lease.leases[BOB]["start"] -= 3600   # the turn began an hour ago and somebody waits
+            before = len(mock["commands"])
+            await r.poll_rules()
+            sent = [x for x in mock["commands"][before:] if x.startswith("sendtx ")]
+            check(len(sent) == 1 and json.loads(sent[0][7:]) == free, "the turn is over: the removal goes to the node, as signed")
+            check(r.lease.leases[BOB]["status"] == "sent", "and is marked sent, once")
+            before = len(mock["commands"])
+            await r.poll_rules()
+            check(not any(x.startswith("sendtx ") for x in mock["commands"][before:]), "never sent twice")
             for label, tx in (("proposal", {**good, "tx_type": "consensus_rule_update"}), ("no signature", {**good, "signature": "x"}),
                               ("short key", {**good, "sender_pubkey": "ab"}), ("no type", {k: v for k, v in good.items() if k != "tx_type"})):
                 check((await ask(ws, "sendtx " + json.dumps(tx)))["error"]["code"] == "INVALID_PARAMS", f"wallet refuses {label}")

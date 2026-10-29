@@ -1184,5 +1184,10 @@
   "tag": "Wallet",
   "on": "2026-10-29",
   "html": "Wallet, round three: on a phone a bar stays on top with Account, Send, Rules and Activity, and shows a number when something waits for you. Ask to be paid gets a Share button on phones. Your address book can go along between the simulation and Live node; each address keeps its check words, and the simulation's made-up accounts stay behind. With a full inbox your own last two payments stay in view. Clicking into a rule's value ticks its block. When the real testnet has nothing to vote on, one button takes you to the Telegram alerts. Testnet only, test AGRS have no value."
+ },
+ {
+  "tag": "Wallet",
+  "on": "2026-10-29",
+  "html": "Wallet: fair turns on the testnet’s two rule places. Tau Testnet Alpha lets only two accounts hold a personal rule at a time, and whoever holds one keeps it until they remove it. Now, when you sign a rule in the wallet, it also signs the rule’s removal for later and leaves it with our relay. Your turn lasts a day while nobody waits; once someone joins the line, it ends 30 minutes after you took the place, and the relay sends the removal for you, even if your tab is closed. When both places are taken you can join the line, see your place in it, and the page tells you when a place is free."
  }
 ]

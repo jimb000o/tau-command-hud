@@ -450,6 +450,7 @@ html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr)
         <div id="rMine">
           <div class="rule" id="ruleNow"></div>
           <div class="slotsbar" id="slotsBar" hidden></div>
+          <div class="slotsbar" id="leaseBar" hidden></div>
           <div class="build" id="build">
             <label class="blk" id="bkOnly"><input type="checkbox" id="cOnly"><span><b>Only to people in my address book</b><span class="sub2" id="onlyNote">A lookalike address is refused by the chain.</span><span class="chips" id="onlyChips"></span><span class="fixit" id="fxOnly"></span></span></label>
             <label class="blk" id="bkCap"><input type="checkbox" id="cCap"><span><b>At most</b> <input class="in sm" id="vCap" type="number" min="1" step="1" value="5000"> <b>test AGRS per payment</b><span class="fixit" id="fxCap"></span></span></label>
@@ -694,7 +695,7 @@ const secsPerBlock = () => { if (SIM) return TauSim.pace; const t = L.times; if 
 const inTime = blocks => { const s = secsPerBlock(); if (!s || blocks < 0) return ""; const m = Math.round(blocks * s / 60); return m < 1 ? T("under a minute") : m < 90 ? F("about {m} min", { m }) : F("about {n} h", { n: Math.round(m / 60) }); };
 const baseFee = () => { const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((W.gov && W.gov.consensus_rules) || ""); return m ? parseInt(m[1], 16) : 10; };
 /* the testnet's faucet: an account whose balance on the chain is 0 counts as 100,000 test AGRS when it pays (engine.py, TESTNET_AUTO_FAUCET) */
-const spendable = () => W.bal == null ? null : W.chainBal === 0 ? FAUCET + W.bal : W.bal;
+const spendable = () => W.bal == null ? null : (W.chainBal === 0 ? FAUCET + W.bal : W.bal) - (!SIM && W.lease && W.lease.mine && W.lease.mine.status === "held" ? baseFee() * 5 : 0);   // a held turn keeps the fee for its removal
 
 /* ---------- signing: the node's own preimage (consensus/tx_signing.py), sha256, BLS in this browser ---------- */
 const SIGNED = {
@@ -734,6 +735,7 @@ async function submit(tx, label, kind) {
   if (!res) return { ok: false, why: T("No answer from the node. It may still arrive: watch Activity.") };
   if (res.status !== "ok" || (res.data && res.data.ok === false)) return { ok: false, why: plain(res), policy: byRule(res) };
   nextSeq = tx.sequence_number + 1;
+  if (!SIM && takesPlace(tx)) depositTurn(tx.sequence_number + 1);   // the place's way back, signed now, sent by the relay when the turn is over
   if (SIM && tx.tx_type === "consensus_rule_vote") {   // the visitors' ballot is how a visitor has a say in the simulation
     const p = TauSim.chain.props().find(p => p.id === tx.update_id), item = p && (p.slot != null ? "slot:" + p.slot : p.visitor ? p.visitor.item : null);
     if (item) TauSim.vote(item, tx.approve !== false);
@@ -1232,6 +1234,7 @@ function renderRule() {
       held ? FX("both rule places are taken, by {x}. Build and test yours here, then take it into the simulation, where every account may have a rule.", {}, { x: held }) : T("both rule places are taken. Build and test yours here, then take it into the simulation, where every account may have a rule.")),
       el("button", { class: "b", type: "button", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }));
   }
+  renderLease(full);
   const why = [];
   if (W.pk && d.bad.length) why.push(el("b", { text: T("Not ready to sign:") }), " ", d.bad.join(T("; ")));
   else if (W.pk && !d.text && !r) why.push(T("Tick at least one block above."));
@@ -1269,11 +1272,65 @@ $("btnShare").onclick = async () => {
   res.textContent = r.ok ? FX("Offered. {x} sees it under Activity, checks it and accepts or declines.", {}, { x: tag(to) }) : r.why;
 };
 
+/* fair turns on the live places: with a rule, the wallet also signs the neutral rule for the account's next transaction
+   and leaves it with the relay (leasetx), which sends it when the turn is over: after a day, or 30 minutes after the
+   turn began once someone is waiting. Any later transaction uses that number, so the wallet signs a fresh one each time. */
+const isNeutral = t => String(t || "").replace(/\s+/g, "") === NEUTRAL.replace(/\s+/g, "");
+function takesPlace(tx) {
+  const rule = tx.tx_type === "user_tx" && tx.operations && tx.operations["0"];
+  if (rule) return !isNeutral(rule);
+  return tx.tx_type === "rule_offer_accept" || !!myRule();
+}
+async function depositTurn(seq) {
+  const tx = { ...base("user_tx", { operations: { "0": NEUTRAL } }), sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 7 * 86400, expire_at_height: (head() || 0) + 9000 };
+  const r = await rpc("leasetx " + JSON.stringify(signTx(tx)));
+  W.turnErr = r && r.status === "ok" ? null : (r && r.error && r.error.message) || T("The relay did not answer.");
+  loadLease();
+}
+async function loadLease() {
+  if (SIM || !W.pk) { W.lease = null; return; }
+  try { const j = await (await fetch(`${RELAY}/lease?pk=${W.pk}`, { cache: "no-store" })).json(); if (j && j.places) W.lease = j; } catch (e) {}
+  renderRule();
+}
+async function joinLine(on) {
+  try { const j = await (await fetch(`${RELAY}/lease/${on ? "wait" : "leave"}?pk=${W.pk}`, { cache: "no-store" })).json(); if (j && j.places) W.lease = j; } catch (e) {}
+  renderRule();
+}
+const hhmm = t => { const x = new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }); return new Date(t * 1000).toDateString() === new Date().toDateString() ? x : FX("tomorrow {x}", {}, { x }); };
+/* what the lease bar says: your turn, your place in line, or a place that just freed for you */
+function renderLease(full) {
+  const L2 = W.lease, bar = $("leaseBar");
+  const mine = W.pk && W.slots && (W.slots.holders || []).includes(W.pk);
+  if (SIM || !W.pk || !L2 || !L2.enabled || (!mine && !full && !L2.position)) { bar.hidden = true; return; }
+  bar.hidden = false;
+  const m = L2.mine, items = [];
+  if (mine && m && m.status === "held") {
+    items.push(el("span", null, el("b", { text: FX("Your rule place: until {t}.", {}, { t: hhmm(m.until) }) }), " ",
+      T(L2.waiting ? "Someone is waiting, so your turn is 30 minutes from when you took the place. Then the relay sends the removal you signed with your rule." : "While nobody waits a turn lasts a day; once someone joins the line, 30 minutes from when you took it. Then the relay sends the removal you signed with your rule.")));
+  } else if (mine) {
+    items.push(el("span", null, el("b", { text: T("Your rule place has no end yet.") }), " ", T(m && m.status === "failed" ? "The removal signed earlier no longer fits your account. Sign a new one so others get their turn." : "Sign its removal now; the relay sends it when your turn is over, so others get theirs.")));
+    items.push(el("button", { class: "b", type: "button", text: T("Sign my turn"), onclick: () => depositTurn(Math.max(W.seq || 0, nextSeq || 0)) }));
+  } else if (L2.position) {
+    const next = (L2.holders || []).filter(h => h.managed && h.until).map(h => h.until).sort()[0];
+    items.push(el("span", null, el("b", { text: F(full ? "You are number {n} in line." : "A place is free: sign your rule now.", { n: L2.position }) }), " ",
+      full ? (next ? FX("The next turn ends at {t}; this page tells you then.", {}, { t: hhmm(next) }) : T("This page tells you when a place frees.")) : T("Anyone may take it; the line only shows the fair order.")));
+    items.push(el("button", { class: "b quiet", type: "button", text: T("Leave the line"), onclick: () => joinLine(false) }));
+    if (!full && !document.hasFocus()) document.title = "● " + document.title.replace(/^● /, "");
+  } else if (full) {
+    items.push(el("span", null, el("b", { text: T("Turns are fair:") }), " ", T("a holder keeps a place 30 minutes once someone is waiting. Join the line and this page tells you when it is yours to take.")));
+    items.push(el("button", { class: "b", type: "button", text: T("Join the line"), onclick: () => joinLine(true) }));
+  }
+  if (W.turnErr) items.push(el("span", { class: "dim", text: T("Relay: ") + W.turnErr }));
+  bar.replaceChildren(...items);
+}
+addEventListener("focus", () => { document.title = document.title.replace(/^● /, ""); });
+
 /* the testnet's two rule places: who holds them (the relay reads them every few minutes) */
 async function loadSlots() {
   if (SIM) { const mine = !!myRule(); W.slots = { places: 2, taken: mine ? 2 : 1, holders: [S.friends()[5], ...(mine ? [W.pk] : [])] }; renderSlots(); return; }
   try { const j = await (await fetch(RELAY + "/rules", { cache: "no-store" })).json(); if (j && j.places) W.slots = j; } catch (e) {}
   renderSlots();
+  loadLease();
 }
 function renderSlots() {
   const s = W.slots, box = $("slots");
