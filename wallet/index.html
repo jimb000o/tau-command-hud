@@ -224,6 +224,14 @@ input.in.md, select.in.md { width: auto; max-width: 15em; padding: 3px 6px; disp
 .step.done b { color: var(--dim); font-weight: 400; text-decoration: line-through; }
 /* a grey button says why on the screen, not only in its hover (touch has no hover) */
 .why2 { margin-top: 6px; color: var(--dim); font-size: 12px; }
+.why2.fix { color: var(--sim); }
+/* a block that cannot be signed as typed: amber frame and the fix right at the field */
+.blk.bad, .blk.bad:focus-within { border-color: var(--sim); }
+.blk.bad input.in, .blk.bad select.in, .blk.bad input.in:focus { border-color: var(--sim); box-shadow: none; }
+.fixit { display: block; color: var(--sim); font-size: 12px; margin-top: 3px; }
+.fixit:empty { display: none; }
+.slotsbar { margin: 6px 0; border-left: 2px solid var(--sim); padding: 4px 0 4px 10px; font-size: 12px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.slotsbar b { color: var(--text); font-weight: 600; }
 .why2:empty { display: none; }
 .why2 b { color: var(--text); font-weight: 600; }
 .why2 button.b { margin: 4px 0 0; display: block; }
@@ -428,11 +436,12 @@ html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr)
         </div>
         <div id="rMine">
           <div class="rule" id="ruleNow"></div>
+          <div class="slotsbar" id="slotsBar" hidden></div>
           <div class="build" id="build">
-            <label class="blk" id="bkOnly"><input type="checkbox" id="cOnly"><span><b>Only to people in my address book</b><span class="sub2" id="onlyNote">A lookalike address is refused by the chain.</span><span class="chips" id="onlyChips"></span></span></label>
-            <label class="blk" id="bkCap"><input type="checkbox" id="cCap"><span><b>At most</b> <input class="in sm" id="vCap" type="number" min="1" step="1" value="5000"> <b>test AGRS per payment</b></span></label>
-            <label class="blk" id="bkFrom"><input type="checkbox" id="cFrom"><span><b>Nothing leaves before</b> <input class="in md" id="vFrom" type="date"></span></label>
-            <label class="blk" id="bkCo"><input type="checkbox" id="cCo"><span><b>Above</b> <input class="in sm" id="vCoAbove" type="number" min="1" step="1" value="1000"> <b>a co-signature from</b> <select class="in md" id="vCoWho"></select></span></label>
+            <label class="blk" id="bkOnly"><input type="checkbox" id="cOnly"><span><b>Only to people in my address book</b><span class="sub2" id="onlyNote">A lookalike address is refused by the chain.</span><span class="chips" id="onlyChips"></span><span class="fixit" id="fxOnly"></span></span></label>
+            <label class="blk" id="bkCap"><input type="checkbox" id="cCap"><span><b>At most</b> <input class="in sm" id="vCap" type="number" min="1" step="1" value="5000"> <b>test AGRS per payment</b><span class="fixit" id="fxCap"></span></span></label>
+            <label class="blk" id="bkFrom"><input type="checkbox" id="cFrom"><span><b>Nothing leaves before</b> <input class="in md" id="vFrom" type="date"><span class="fixit" id="fxFrom"></span></span></label>
+            <label class="blk" id="bkCo"><input type="checkbox" id="cCo"><span><b>Above</b> <input class="in sm" id="vCoAbove" type="number" min="1" step="1" value="1000"> <b>a co-signature from</b> <select class="in md" id="vCoWho"></select><span class="fixit" id="fxCo"></span></span></label>
           </div>
           <div class="probes" id="probes"></div>
           <details class="tau" id="draftTau"><summary>The rule in Tau</summary><pre id="draftText" translate="no"></pre></details>
@@ -1136,13 +1145,18 @@ function seedBuilder(r) {
   fillBuilder(r);
 }
 function ruleDraft() {
-  const r = { freeze: false, only: [], cap: null, from: null, co: null }, bad = [];
-  if ($("cOnly").checked) { r.only = [...ONLY].filter(isAddr).slice(0, MAX_ONLY); if (!r.only.length) bad.push(T("pick at least one name for your list")); }
-  if ($("cCap").checked) { const n = Math.floor(Number($("vCap").value)); if (n >= 1 && n < MAX_AMOUNT) r.cap = n; else bad.push(T("a limit of at least 1")); }
-  if ($("cFrom").checked) { const v = $("vFrom").value; const t = v ? Math.floor(new Date(v + "T00:00:00").getTime() / 1000) : NaN; if (t > 0) r.from = t; else bad.push(T("a date")); }
-  if ($("cCo").checked) { const n = Math.floor(Number($("vCoAbove").value)), w = $("vCoWho").value; if (n >= 1 && n <= MAX_AMOUNT && isAddr(w) && w !== W.pk) r.co = { limit: n, who: [w], slots: [[18, w]], need: "any" }; else bad.push(T("a co-signer from your address book")); }
+  const r = { freeze: false, only: [], cap: null, from: null, co: null }, bad = [], at = {};
+  const no = (k, x) => { at[k] = x; bad.push(x); };
+  /* amounts are whole test AGRS: 0,42 or an empty field is said at the field, not only in a hover */
+  const whole = (v, max) => { const n = Number(v); return v === "" || !isFinite(n) ? T("enter a whole number of test AGRS, at least 1") : n !== Math.floor(n) ? T("whole test AGRS only, no decimals: at least 1") : n < 1 ? T("at least 1 test AGRS") : n > max ? F("at most {n} test AGRS", { n: fmt(max) }) : null; };
+  if ($("cOnly").checked) { r.only = [...ONLY].filter(isAddr).slice(0, MAX_ONLY); if (!r.only.length) no("only", T("pick at least one name for your list")); }
+  if ($("cCap").checked) { const e = whole($("vCap").value, MAX_AMOUNT - 1); if (e) no("cap", e); else r.cap = Number($("vCap").value); }
+  if ($("cFrom").checked) { const v = $("vFrom").value; const t = v ? Math.floor(new Date(v + "T00:00:00").getTime() / 1000) : NaN; if (t > 0) r.from = t; else no("from", T("pick a date")); }
+  if ($("cCo").checked) { const e = whole($("vCoAbove").value, MAX_AMOUNT), w = $("vCoWho").value;
+    if (e) no("co", e); else if (!isAddr(w) || w === W.pk) no("co", T(BOOK.length ? "pick a co-signer from your address book" : "put your co-signer in your address book first"));
+    else r.co = { limit: Number($("vCoAbove").value), who: [w], slots: [[18, w]], need: "any" }; }
   const any = r.only.length || r.cap != null || r.from != null || r.co;
-  return { r, ok: !!any && !bad.length, bad, text: any ? buildRule(r) : null };
+  return { r, ok: !!any && !bad.length, bad, at, text: any && !bad.length ? buildRule(r) : null };
 }
 [["vCap", "cCap"], ["vFrom", "cFrom"], ["vCoAbove", "cCo"], ["vCoWho", "cCo"]].forEach(([v, c]) => $(v).addEventListener("input", () => { $(c).checked = true; }));
 ["cOnly", "cCap", "cFrom", "cCo", "vCap", "vFrom", "vCoAbove", "vCoWho"].forEach(id => $(id).addEventListener("input", () => { renderRule(); renderShare(); }));
@@ -1176,7 +1190,8 @@ function renderRule() {
   const sel = $("vCoWho"), want = sel.value || sel.dataset.want || "";
   sel.replaceChildren(el("option", { value: "", text: T("pick a name") }), ...BOOK.filter(c => c.addr !== W.pk).map(c => el("option", { value: c.addr, translate: "no", text: c.name })));
   sel.value = BOOK.some(c => c.addr === want) ? want : "";
-  $("probes").replaceChildren(...probes(d.ok ? d.r : r));
+  [["only", "bkOnly", "fxOnly"], ["cap", "bkCap", "fxCap"], ["from", "bkFrom", "fxFrom"], ["co", "bkCo", "fxCo"]].forEach(([k, b, f]) => { $(b).classList.toggle("bad", !!d.at[k]); $(f).textContent = d.at[k] ? "↳ " + d.at[k] : ""; });
+  $("probes").replaceChildren(...(d.bad.length ? [el("h3", { text: T("Test payments against this rule") }), el("div", { class: "probe" }, el("span", { class: "dot sim" }), el("em", { text: T("Fix the amber block above first; then these lines show what the rule does.") }))] : probes(d.ok ? d.r : r)));
   $("draftTau").hidden = !d.text; $("draftText").textContent = d.text || "";
   const same = d.text && r && d.text.replace(/\s+/g, "") === r.text.replace(/\s+/g, "");
   $("btnRule").disabled = !W.pk || !d.ok || same || slotsFull();
@@ -1190,13 +1205,19 @@ function renderRule() {
   $("btnRuleOff").hidden = !r || frozen;
   $("btnRuleOff").dataset.tip = T("Remove my rule") + "\n" + T("Signs the neutral rule: every payment goes through again.") + "\n" + T("Frees one of the testnet's two rule places.");
   /* why a button is grey, on the screen: a hover never reaches a phone */
-  const why = [];
-  if (W.pk && W.clause !== undefined && slotsFull()) {
+  const full = W.pk && W.clause !== undefined && slotsFull();
+  $("slotsBar").hidden = !full;
+  if (full) {
     const held = (W.slots.holders || []).map(tag).join(T(" and "));
-    why.push(el("b", { text: T("Both of the testnet's rule places are taken right now.") }), " ",
-      held ? FX("They are held by {x}; the node refuses a new rule until one is removed.", {}, { x: held }) : T("The node refuses a new rule until one is removed."), " ", T("Build and test yours here, or take it into the simulation, where every account may have a rule."),
+    $("slotsBar").replaceChildren(el("span", null, el("b", { text: T("Signing a rule on the live testnet is not possible right now:") }), " ",
+      held ? FX("both rule places are taken, by {x}. Build and test yours here, then take it into the simulation, where every account may have a rule.", {}, { x: held }) : T("both rule places are taken. Build and test yours here, then take it into the simulation, where every account may have a rule.")),
       el("button", { class: "b", type: "button", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }));
-  } else if (W.pk && !d.ok && d.bad.length) why.push(FX("Missing: {x}", {}, { x: d.bad.join(", ") }));
+  }
+  const why = [];
+  if (W.pk && d.bad.length) why.push(el("b", { text: T("Not ready to sign:") }), " ", d.bad.join(T("; ")));
+  else if (W.pk && !d.text && !r) why.push(T("Tick at least one block above."));
+  else if (full) why.push(T("Grey because both rule places are taken; see the line above the blocks."));
+  $("ruleWhy").className = "why2" + (W.pk && d.bad.length ? " fix" : "");
   $("ruleWhy").replaceChildren(...why);
 }
 async function sendRule(text, label, res) {
