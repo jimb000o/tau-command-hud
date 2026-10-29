@@ -65,7 +65,8 @@ One line a minute:
 ```
 
 - `catching up, n behind`: still downloading blocks. Normal for the first minutes.
-- `no peer seen yet`: the node has not reached the bootnode yet. Check that 4001/tcp is open.
+- `no peer seen yet`: the node has not reached a bootstrap peer yet (IDNI's bootnode or
+  node.tauhud.com, both in `TAU_BOOTSTRAP_PEERS`). Check that 4001/tcp is open.
 - `node not reachable yet`: the node is still building or starting.
 - `DIFFERENT chain from tauhud.com`: your node follows other blocks than tauhud.com's. Rerun
   the install command (it picks up the current pinned commit), and if it stays, open an
@@ -170,6 +171,6 @@ from non-validators count; with `false` a node stops verifying at the first such
 - **Disk full**: `docker buildx prune -af --filter type=regular`, then run the install
   command again. Keep at least 40 GB of disk.
 - **`no peer seen yet` for more than a few minutes**: 4001/tcp is blocked somewhere, or
-  the bootnode `34.251.82.246:4001` is down.
+  both bootstrap peers (`34.251.82.246:4001`, `2.31.101.42:4001`) are down.
 
 Questions or problems: [open an issue](https://github.com/jimb000o/tau-command-hud/issues/new?title=%5BNode%20kit%5D%20).
