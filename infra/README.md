@@ -55,7 +55,7 @@ Connect to `wss://node.tauhud.com`, send a command as text, get the node's JSON 
 | `getgovernance` | cache, refreshed every 15 s | |
 | `gettaustate` | cache, refreshed every 30 s | `{"rules_state": "…"}` |
 | `presence` | relay | `{"online": n}`: pages connected right now |
-| `getbalance <addr>`, `getsequence <addr>`, `getaccountstate <addr>`, `getruleoffers <addr> [in\|out\|all]`, `getapprovalrequests <addr> [in\|out\|all]`, `getretractables <addr> [in\|out\|all]`, `getruleoffer <offer id>`, `gettxstatus <hash>` | node, cached 10 s | hex arguments only; global cap 2/s |
+| `getbalance <addr>`, `getsequence <addr>`, `getaccountstate <addr>`, `getruleoffers <addr> [in\|out\|all]`, `getapprovalrequests <addr> [in\|out\|all]`, `getretractables <addr> [in\|out\|all]`, `getruleoffer <offer id>`, `getruleconflict <offer id>`, `gettxstatus <hash>` | node, cached 10 s | hex arguments only; global cap 2/s |
 | `sendtx <json>`, `checktx <json>` | node, never cached | the wallet's write door (tauhud.com/wallet/): a transaction the visitor's browser already signed, as one JSON object of at most 8 KB with `tx_type` in `user_tx`, `consensus_rule_vote`, `rule_offer`, `rule_offer_accept`, `rule_offer_reject`, `approval_request`, `transfer_vote`, `retractable_transfer`, `retract_transfer`, a 96-hex `sender_pubkey` and a 192-hex `signature`; `checktx` is the node's dry run (nothing is sent); both share 12/min per address (burst 6) and 60/min for everyone; content is never logged |
 
 | `report key=<32 hex> name=<name> height=<n> head=<64 hex> [tip=<n>\|none] [kit=<v>] [ref=<commit>]` | relay | community node heartbeat from `kit/heartbeat.py`, see below |
@@ -149,6 +149,13 @@ while the node reports, grey when offline, "unknown node" for an id it never saw
 hh:20 to hh:27, one vote per browser token, at most three tokens per address per item, a
 name and colour that are indices into fixed lists (no free text). The simulated validators
 in `assets/sim.js` follow the majority. Kept in `/data/simvotes.json`, cleared at 00:00 UTC.
+
+`GET /rules` (CORS `*`, cached 60 s) says who holds the testnet's personal-rule places:
+`{"places": 2, "taken": 1, "holders": ["<address>"], "checked_at": …}`. The node caps o5
+rules at 2 accounts chain-wide and has no command that lists them, so every 5 minutes the
+relay takes the candidates from its kept blocks (senders of an o5 rule, acceptors of an
+offer) and asks the node `getruleoffers` for each, one at a time. The wallet shows it as
+"x of 2 rule places taken".
 
 `GET /peers` (CORS `*`, cached 30 s) is the network as our node sees it: every peer it
 talked to or heard of from another peer (a handshake's peer list) in the last 30 days,

@@ -1115,5 +1115,17 @@
   "tag": "Newspaper",
   "on": "2026-10-29",
   "html": "The weekly Daily Consensus and the Monday recap picture now come out every Monday at 09:00 German time, all year round (08:00 UTC in winter, 07:00 UTC in summer)."
+ },
+ {
+  "tag": "Wallet",
+  "on": "2026-10-29",
+  "html": "Wallet, round two: rules you can build and test. Under Rules, tick the blocks you want: payments only to people in your address book, at most an amount per payment, nothing leaves before a date, a co-signer above a limit. Test payments show what the rule would do before you sign, and one click freezes the account. The address book is the defence against lookalike addresses: you pick names, the page shows the full address with a print, and an address that copies someone’s first and last characters is stopped. New too: Split pays several people in one transaction, all or none; Share offers your rule to someone, who sees the node’s own conflict check before accepting; and the Rules header shows how many of the testnet’s 2 personal-rule places are taken. Tour included. A community wallet, not the official Tau wallet; test AGRS have no value.",
+  "major": {
+   "id": "wallet-rules",
+   "title": "Wallet: build a rule, test it, then sign",
+   "text": "Give your testnet account a rule from simple blocks: only to people in your address book, a limit per payment, a date lock, a co-signer. Test payments show what it does before you sign, and a lookalike address is stopped. Testnet only, test AGRS have no value.",
+   "link": "/wallet/",
+   "image": "/assets/shots/wallet-rules.png"
+  }
  }
 ]

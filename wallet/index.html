@@ -171,13 +171,61 @@ footer a { color: var(--dim); }
 #tip .h { display: flex; align-items: center; gap: 7px; color: #fff; font: 600 12px var(--display); }
 #tip .v { color: var(--text); margin-top: 2px; }
 #tip .x { margin-top: 2px; }
+/* address prints: the same address always draws the same eight bars; a lookalike that shares the first and last characters draws different ones */
+.print { display: inline-flex; gap: 1px; align-items: flex-end; height: 12px; vertical-align: -1px; margin-right: 6px; flex: none; }
+.print i { width: 3px; background: #fff; border-radius: 1px; }
+.who2 { display: inline-flex; align-items: center; min-width: 0; }
+.who2 b { color: #fff; font-weight: 600; margin-right: 6px; }
+.who2 .hx { color: var(--dim); }
+#acctTabs .aside { margin-left: auto; align-self: center; color: var(--dim); font-size: 11px; }
+.balrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.bookadd { display: grid; grid-template-columns: 7em minmax(0, 1fr) auto; gap: 6px; margin-top: 6px; }
+.bk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 4px 4px 4px 9px; font-size: 12px; }
+.bk button { background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 14px; padding: 0 6px; }
+.bk button:hover { color: #fff; }
+.toline { margin-top: 6px; font: 12px/1.6 var(--mono); color: var(--dim); overflow-wrap: anywhere; }
+.toline .full { color: #fff; letter-spacing: .02em; }
+.toline .full span { margin-right: .5em; }
+.toline.alarm .full { color: var(--refused); }
+.flag { display: inline-block; font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; color: #000; background: var(--sim); border-radius: 3px; padding: 0 6px; margin-right: 6px; }
+.splits { display: grid; gap: 6px; }
+.splitrow { display: grid; grid-template-columns: minmax(0, 1fr) 8em auto; gap: 6px; align-items: center; }
+.splitrow button { background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 15px; padding: 0 6px; }
+.build { display: grid; gap: 6px; margin-top: 8px; }
+.blk { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.blk:has(input[type=checkbox]:checked) { border-color: rgba(57,255,138,.45); }
+.blk input[type=checkbox] { margin: 3px 0 0; accent-color: var(--ok); }
+.blk b { color: var(--text); font-weight: 600; }
+.blk .sub2 { color: var(--dim); font-size: 12px; margin-left: 6px; }
+input.in.sm { width: 7em; padding: 3px 6px; display: inline-block; }
+input.in.md, select.in.md { width: auto; max-width: 15em; padding: 3px 6px; display: inline-block; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.chips button { font: 11px var(--mono); background: none; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 2px 9px; cursor: pointer; }
+.chips button[aria-pressed=true] { color: #000; background: var(--ok); border-color: var(--ok); }
+.probes { display: grid; gap: 4px; margin-top: 8px; }
+.probes h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.probe { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; }
+.probe em { font-style: normal; color: var(--dim); }
+.probe .no { color: var(--refused); } .probe .yes { color: var(--ok); } .probe .wait { color: var(--sim); }
+.slots { display: inline-flex; align-items: center; gap: 6px; cursor: help; }
+.slots .pip { width: 16px; height: 6px; border-radius: 2px; border: 1px solid var(--hair); }
+.slots .pip.taken { background: var(--dim); border-color: var(--dim); }
+.slots .pip.mine { background: var(--ok); border-color: var(--ok); }
+.conflict { margin-top: 4px; display: grid; gap: 2px; font-size: 12px; grid-column: 2 / 4; }
+.conflict .ok { color: var(--ok); } .conflict .warn { color: var(--sim); } .conflict .no { color: var(--refused); }
+.steps { display: grid; gap: 4px; margin-top: 8px; }
+.steps h3 { margin: 0 0 2px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.step { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; font-size: 12px; color: var(--dim); }
+.step b { color: var(--text); font-weight: 600; }
+.step .ck { color: var(--ok); font-weight: 700; }
+.step.done b { color: var(--dim); font-weight: 400; text-decoration: line-through; }
 [hidden] { display: none !important; }
 /* landscape from laptop size up: one screen, laid out for about 1600 x 860 CSS px and scaled to the viewport, like /vote */
 html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
 html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 10px; }
 html.fit #tip { zoom: var(--z); }
 html.fit .sub { max-width: 112ch; }
-html.fit .wrap > .main { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, .95fr) minmax(0, 1.2fr) minmax(0, 1.1fr); }
+html.fit .wrap > .main { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.15fr); }
 html.fit .col { display: flex; flex-direction: column; min-height: 0; }
 html.fit .col > .panel { min-height: 0; overflow: auto; }
 html.fit .col > .grow { flex: 1 1 0; }
@@ -190,6 +238,10 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
   .bal { font-size: 28px; }
   .two { grid-template-columns: minmax(0, 1fr); }
   .facts li { grid-template-columns: 80px minmax(0, 1fr); }
+  .bookadd { grid-template-columns: minmax(0, 1fr) auto; }
+  .bookadd #bAddr { grid-column: 1 / -1; grid-row: 2; }
+  .splitrow { grid-template-columns: minmax(0, 1fr) 6em auto; }
+  .chips button { min-height: 32px; }
 }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
@@ -216,11 +268,16 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
       <span class="kpi" id="kBack" data-tip="Undo-able payments&#10;Payments you can still take back.&#10;Each one is released to its recipient at the block you chose."><b id="tBack">–</b>you can take back</span>
     </div>
   </div>
-  <div class="testnet" role="note"><b>TESTNET ONLY</b><span>test AGRS have no value and nothing here can be bought or sold</span><span>your key is made and kept in this browser, never on our server</span><span>never reuse this key for anything of value</span></div>
+  <div class="testnet" role="note"><b>TESTNET ONLY</b><span>test AGRS have no value; nothing here is bought or sold</span><span>your key stays in this browser, never on our server</span><span>never reuse this key for anything of value</span><span>not the official Tau wallet</span></div>
   <main class="main">
     <div class="col">
       <section class="panel fix" id="acct" aria-label="Your account">
-        <h2>Your account <span class="aside" id="acctAside"></span></h2>
+        <div class="tabs" role="tablist" id="acctTabs">
+          <button type="button" role="tab" aria-selected="true" data-atab="acct" data-tip="Your account&#10;Your address, balance and key.">Your account</button>
+          <button type="button" role="tab" aria-selected="false" data-atab="book" id="tabBook" data-tip="Address book&#10;Names you check, not hex you copy.&#10;Every name shows up wherever you pick a person.">Address book</button>
+          <span class="aside" id="acctAside"></span>
+        </div>
+        <div id="acctView">
         <div id="noKey">
           <div class="empty"><b>No account in this browser yet.</b> Make one: a new key is drawn here, its public half is your address. Nothing is sent until you send something.</div>
           <div class="row"><button class="b go big" type="button" id="btnNew">Make my account</button><button class="b" type="button" id="btnImport">Use a key I have</button></div>
@@ -234,8 +291,10 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
             <div class="addr" id="addr" translate="no" data-tip="Your address&#10;Your public key, 96 hex characters.&#10;Give it to anyone who sends you test AGRS."></div>
             <button class="b quiet" type="button" id="btnCopyAddr">Copy</button>
           </div>
-          <div class="keyline"><span class="dot ok"></span><span>Key kept in this browser only</span></div>
-          <div class="bal" id="bal" data-tip="Balance&#10;What this account holds on the chain.&#10;Test AGRS have no value."><span id="balN">–</span><small>test AGRS</small></div>
+          <div class="balrow">
+            <div class="bal" id="bal" data-tip="Balance&#10;What this account holds on the chain.&#10;Test AGRS have no value."><span id="balN">–</span><small>test AGRS</small></div>
+            <div class="keyline"><span class="dot ok"></span><span>Key kept in this browser only</span></div>
+          </div>
           <div class="balnote" id="balNote"></div>
           <div class="row">
             <button class="b" type="button" id="btnBackup">Back up key</button>
@@ -247,27 +306,43 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
             <pre id="secret" translate="no"></pre>
           </div>
         </div>
+        </div>
+        <div id="book" hidden>
+        <div class="list" id="bookList"></div>
+        <div class="bookadd" id="bookAdd">
+          <input class="in" id="bName" maxlength="20" placeholder="name" aria-label="Name">
+          <input class="in" id="bAddr" spellcheck="false" autocomplete="off" placeholder="their address, 96 hex characters" aria-label="Address">
+          <button class="b" type="button" id="btnBook" disabled>Add</button>
+        </div>
+        <div class="result" id="bookRes"></div>
+        </div>
       </section>
       <section class="panel grow" id="activity" aria-label="Activity">
         <h2>Activity <span class="aside" id="actAside"></span></h2>
         <div class="list" id="inbox"></div>
         <div class="list" id="log" style="margin-top:6px"></div>
+        <div class="steps" id="steps"></div>
       </section>
     </div>
     <div class="col">
       <section class="panel grow" id="act" aria-label="Send and vote">
-        <div class="tabs" role="tablist">
+        <div class="tabs" role="tablist" id="payTabs">
           <button type="button" role="tab" id="tabSend" aria-selected="true" data-tab="send" data-tip="Send&#10;A payment that is final once a block holds it.">Send</button>
           <button type="button" role="tab" id="tabBack" aria-selected="false" data-tab="back" data-tip="Send with a way back&#10;The payment waits until a block you choose; until then you can take it back.">Send with a way back</button>
+          <button type="button" role="tab" id="tabSplit" aria-selected="false" data-tab="split" data-tip="Split&#10;Several people in one transaction: all paid or none.">Split</button>
           <button type="button" role="tab" id="tabVote" aria-selected="false" data-tab="vote" data-tip="Vote&#10;Say yes to a change of the chain's own rules. Free.">Vote</button>
         </div>
         <div class="form" id="payForm">
-          <label class="f"><span>To (an address, 96 hex characters)</span><input class="in" id="to" spellcheck="false" autocomplete="off" placeholder="the recipient's public key"></label>
+          <label class="f"><span>To</span><input class="in" id="to" list="bookNames" spellcheck="false" autocomplete="off" placeholder="pick a name below, or paste an address (96 hex characters)"></label>
           <div class="picks" id="toPicks"></div>
           <div class="two">
             <label class="f"><span>Amount in test AGRS</span><input class="in" id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="e.g. 250"></label>
             <label class="f" id="releaseBox" hidden><span id="releaseLbl">Released after (blocks)</span><input class="in" id="release" type="number" min="2" max="100000" step="1" value="30"></label>
           </div>
+        </div>
+        <div class="form" id="splitForm" hidden>
+          <div class="splits" id="splits"></div>
+          <div class="row" style="margin-top:0"><button class="b quiet" type="button" id="btnSplitAdd">+ Another person</button><span class="dim" id="splitSum" style="font-size:12px;align-self:center"></span></div>
         </div>
         <div class="form" id="voteForm" hidden>
           <div class="props" id="props"></div>
@@ -275,42 +350,57 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
         <div class="sign" id="sign" aria-live="polite">
           <h3>Before you sign</h3>
           <div class="what" id="signWhat"></div>
+          <div class="toline" id="signTo"></div>
           <ul class="facts" id="signFacts"></ul>
-          <div class="signrow"><button class="b go big" type="button" id="btnSign" disabled>Sign and send</button><span class="why" id="signWhy"></span></div>
+          <div class="signrow"><button class="b go big" type="button" id="btnSign" disabled>Sign and send</button><button class="b" type="button" id="btnTry" hidden>Try it anyway</button><span class="why" id="signWhy"></span></div>
           <div class="result" id="result"></div>
         </div>
       </section>
     </div>
     <div class="col">
-      <section class="panel fix" id="rules" aria-label="Your rule">
-        <h2>Your rule <span class="aside">checked by the chain on every payment you make</span></h2>
-        <div class="rule" id="ruleNow"></div>
-        <div class="form" style="margin-top:8px" id="ruleForm">
-          <div class="rform">
-            <label class="f"><span>Payments above</span><input class="in" id="rAbove" type="number" min="1" step="1" value="1000"></label>
-            <label class="f"><span>need a co-signature from</span><input class="in" id="rWho" spellcheck="false" autocomplete="off" placeholder="a friend's address"></label>
-            <button class="b" type="button" id="btnRule" disabled>Sign this rule</button>
+      <section class="panel grow" id="rules" aria-label="Rules">
+        <h2>Rules <span class="aside slots" id="slots" tabindex="0"></span></h2>
+        <div class="tabs" role="tablist" id="ruleTabs">
+          <button type="button" role="tab" aria-selected="true" data-rtab="mine" data-tip="Your rule&#10;What your own payments must pass, checked by the chain.">Your rule</button>
+          <button type="button" role="tab" aria-selected="false" data-rtab="share" data-tip="Share a rule&#10;Offer your rule to someone; they accept it in their own wallet.">Share</button>
+          <button type="button" role="tab" aria-selected="false" data-rtab="pakt" data-tip="Pakt&#10;Accounts that agree on one rule, each for their own money.">Pakt</button>
+        </div>
+        <div id="rMine">
+          <div class="rule" id="ruleNow"></div>
+          <div class="build" id="build">
+            <label class="blk" id="bkOnly"><input type="checkbox" id="cOnly"><span><b>Only to people in my address book</b><span class="sub2" id="onlyNote">A lookalike address is refused by the chain.</span><span class="chips" id="onlyChips"></span></span></label>
+            <label class="blk" id="bkCap"><input type="checkbox" id="cCap"><span><b>At most</b> <input class="in sm" id="vCap" type="number" min="1" step="1" value="5000"> <b>test AGRS per payment</b></span></label>
+            <label class="blk" id="bkFrom"><input type="checkbox" id="cFrom"><span><b>Nothing leaves before</b> <input class="in md" id="vFrom" type="date"></span></label>
+            <label class="blk" id="bkCo"><input type="checkbox" id="cCo"><span><b>Above</b> <input class="in sm" id="vCoAbove" type="number" min="1" step="1" value="1000"> <b>a co-signature from</b> <select class="in md" id="vCoWho"></select></span></label>
           </div>
-          <div class="picks" id="whoPicks"></div>
+          <div class="probes" id="probes"></div>
+          <details class="tau" id="draftTau"><summary>The rule in Tau</summary><pre id="draftText" translate="no"></pre></details>
+          <div class="row"><button class="b go" type="button" id="btnRule" disabled>Sign this rule</button><button class="b" type="button" id="btnFreeze">Freeze</button><button class="b quiet" type="button" id="btnRuleOff" hidden>Remove my rule</button></div>
           <div class="result" id="ruleRes"></div>
         </div>
-      </section>
-      <section class="panel grow" id="pakt" aria-label="Pakt">
-        <h2>Pakt <span class="aside">accounts that agree on one rule</span></h2>
-        <div class="form" style="margin-top:8px" id="paktForm">
-          <div class="three" id="pFields1">
-            <label class="f"><span>Name</span><input class="in" id="pName" maxlength="32" placeholder="e.g. Garden club"></label>
-            <label class="f"><span>Payments above</span><input class="in" id="pAbove" type="number" min="1" step="1" value="500"></label>
-            <label class="f" id="pFields2"><span>need a yes from</span><select class="in" id="pNeed"><option value="any">one other member</option><option value="all">every other member</option></select></label>
-          </div>
-          <input class="in" id="pAdd" spellcheck="false" autocomplete="off" placeholder="add a member: paste their address, press Enter" aria-label="Add a member">
-          <div class="members"><span class="members" id="members"></span><span class="picks" id="memPicks"></span></div>
-          <div class="row"><button class="b go" type="button" id="btnPakt" disabled>Sign and invite</button><button class="b quiet" type="button" id="btnPaktNew" hidden>Start a new Pakt</button></div>
-          <div class="result" id="paktRes"></div>
+        <div id="rShare" hidden>
+          <p class="note" style="margin:0 0 8px">Offer the rule you built under Your rule to someone. They read it in plain words, the node checks it against what they have, and they accept or decline in their own wallet.</p>
+          <label class="f"><span>To</span><select class="in" id="shareTo"></select></label>
+          <div class="rule" id="shareWhat" style="margin-top:8px"></div>
+          <div class="row"><button class="b go" type="button" id="btnShare" disabled>Sign and offer</button></div>
+          <div class="result" id="shareRes"></div>
         </div>
-        <div class="roster" id="roster"></div>
-        <details class="tau" id="paktTau" hidden><summary>The rule in Tau</summary><pre id="paktText" translate="no"></pre></details>
-        <div class="limit" id="paktLimit"></div>
+        <div id="rPakt" hidden>
+          <div class="form" id="paktForm">
+            <div class="three" id="pFields1">
+              <label class="f"><span>Name</span><input class="in" id="pName" maxlength="32" placeholder="e.g. Garden club"></label>
+              <label class="f"><span>Payments above</span><input class="in" id="pAbove" type="number" min="1" step="1" value="500"></label>
+              <label class="f" id="pFields2"><span>need a yes from</span><select class="in" id="pNeed"><option value="any">one other member</option><option value="all">every other member</option></select></label>
+            </div>
+            <input class="in" id="pAdd" spellcheck="false" autocomplete="off" placeholder="add a member: paste their address, press Enter" aria-label="Add a member">
+            <div class="members"><span class="members" id="members"></span><span class="picks" id="memPicks"></span></div>
+            <div class="row"><button class="b go" type="button" id="btnPakt" disabled>Sign and invite</button><button class="b quiet" type="button" id="btnPaktNew" hidden>Start a new Pakt</button></div>
+            <div class="result" id="paktRes"></div>
+          </div>
+          <div class="roster" id="roster"></div>
+          <details class="tau" id="paktTau" hidden><summary>The rule in Tau</summary><pre id="paktText" translate="no"></pre></details>
+          <div class="limit" id="slotNote"></div>
+        </div>
       </section>
     </div>
   </main>
@@ -319,6 +409,7 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, .9fr) minmax(0, 1
   </footer>
 </div>
 <div id="tip" hidden></div>
+<datalist id="bookNames"></datalist>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -327,7 +418,7 @@ const SIM = !!(window.TauSim && TauSim.on);   // simulation: every transaction s
 const T = s => (window.TauI18n ? TauI18n.t(s) : s);
 const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));   // filled first: the dictionary matches templates against the finished text
 /* a template whose filler is already translated (a time, a list of addresses): translate around a stand-in, then put it in */
-const FX = (s, v, raw) => { const ks = Object.keys(raw); let t = F(s, { ...v, ...Object.fromEntries(ks.map((k, i) => [k, "v_" + i])) }); ks.forEach((k, i) => { t = t.replace("v_" + i, raw[k]); }); return t; };
+const FX = (s, v, raw) => { const ks = Object.keys(raw); let t = F(s, { ...v, ...Object.fromEntries(ks.map((k, i) => [k, "v_" + i])) }); ks.forEach((k, i) => { t = t.split("v_" + i).join(raw[k]); }); return t; };
 const short = h => h ? `${h.slice(0, 8)}…${h.slice(-4)}` : "";
 const isAddr = s => /^[0-9a-f]{96}$/.test(s);
 const fmt = n => Number(n).toLocaleString("en-US");
@@ -336,6 +427,34 @@ const B = window.TauBLS;
 const MAX_AMOUNT = 2 ** 24 - 1, FAUCET = 100000, NEUTRAL = "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) ).";
 const KEY_STORE = "tauhud-wallet-key", MODE = SIM ? "sim" : "live";
 const logKey = () => `tauhud-wallet-log-${MODE}-${W.pk}`, paktKey = () => `tauhud-wallet-pakt-${MODE}-${W.pk}`;
+
+/* ---------- address book and address prints: people pick names they know instead of copying hex from a history ---------- */
+const BOOK_KEY = `tauhud-wallet-book-${MODE}`;
+let BOOK = [];
+function loadBook() {
+  try { BOOK = JSON.parse(store.get(BOOK_KEY) || "[]").filter(c => c && c.name && isAddr(c.addr)); } catch (e) { BOOK = []; }
+  if (SIM && store.get(BOOK_KEY) == null) { const f = S.friends(); BOOK = [{ name: "Jack", addr: f[0] }, { name: "Mia", addr: f[1] }, { name: "Lena", addr: f[2] }]; saveBook(); }
+}
+function saveBook() { store.set(BOOK_KEY, JSON.stringify(BOOK)); }
+const nameOf = a => { const c = BOOK.find(c => c.addr === a); return c ? c.name : null; };
+const tag = a => nameOf(a) || short(a);
+/* a lookalike shares its first or last characters with someone in your book but is not them: the address-poisoning trick */
+function lookalike(a) {
+  if (!isAddr(a) || nameOf(a) || a === W.pk) return null;
+  return BOOK.find(c => (c.addr.slice(0, 4) === a.slice(0, 4) && c.addr.slice(-4) === a.slice(-4)) || c.addr.slice(0, 6) === a.slice(0, 6) || c.addr.slice(-6) === a.slice(-6)) || null;
+}
+const lookalikeOf = a => a.slice(0, 8) + (S.hash("p1" + a) + S.hash("p2" + a)).slice(0, 84) + a.slice(-4);
+const resolveTo = v => { v = (v || "").trim(); if (isAddr(v.toLowerCase())) return v.toLowerCase(); const c = BOOK.find(c => c.name.toLowerCase() === v.toLowerCase()); return c ? c.addr : v.toLowerCase(); };
+/* the print: eight bars drawn from the address's hash, so two addresses that share their ends still look different */
+function print(a) {
+  const h = B.sha256(new TextEncoder().encode(a));
+  return el("span", { class: "print", "aria-hidden": "true" }, ...[...h.slice(0, 8)].map(x => el("i", { style: `height:${3 + (x % 10)}px;opacity:${(.45 + (x >> 4) / 30).toFixed(2)}` })));
+}
+function who(a) {
+  const n = nameOf(a);
+  return el("span", { class: "who2", "data-tip": (n || T("Not in your address book")) + "\n" + T(n ? "In your address book." : "Check it before you sign.") + "\n" + a.slice(0, 24) + "…" + a.slice(-8) },
+    print(a), n ? el("b", { translate: "no", text: n }) : null, el("span", { class: "hx", translate: "no", text: short(a) }));
+}
 function el(tag, attrs, ...kids) {
   const e = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs || {})) { if (v == null) continue; if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); }
@@ -369,8 +488,13 @@ $("btnCopyAddr").onclick = async e => { try { await navigator.clipboard.writeTex
 $("btnBackup").onclick = () => { const box = $("secretBox"); box.hidden = !box.hidden; $("secret").textContent = box.hidden ? "" : B.bytesToHex(W.sk); };
 $("btnForget").onclick = () => {
   if (!confirm(T("Forget this key in this browser? Without a backup the account and its test AGRS are gone for good."))) return;
-  store.del(KEY_STORE); W.sk = W.pk = null; W.log = []; W.pakt = null; $("secretBox").hidden = true; renderAll();
+  store.del(KEY_STORE); W.sk = W.pk = null; W.log = []; W.pakt = null; W.dust = null; $("secretBox").hidden = true; renderAll();
 };
+
+document.querySelectorAll("#acctTabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#acctTabs button").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+  $("acctView").hidden = b.dataset.atab !== "acct"; $("book").hidden = b.dataset.atab !== "book";
+}));
 
 /* ---------- talking to the chain: the relay (live) or this browser's simulation ---------- */
 const L = { ws: null, retry: 5000, wait: new Map(), times: [] };
@@ -439,8 +563,10 @@ async function refresh() {
     if (rq && rq.status === "ok") W.reqs = rq.data;
     const rt = await lookup(`getretractables ${W.pk} all`);
     if (rt && rt.status === "ok") W.rets = rt.data;
+    if (SIM) W.dust = S.state().dust;
     await followLog();
   } finally { refreshing = false; }
+  if (SIM) loadSlots();
   renderAll();
 }
 const head = () => SIM ? TauSim.head() : (W.gov && W.gov.head_number != null ? W.gov.head_number : W.tip);
@@ -483,10 +609,10 @@ async function submit(tx, label, kind) {
   const signed = signTx(tx), body = JSON.stringify(signed);
   const chk = await rpc("checktx " + body);
   if (!chk) return { ok: false, why: T("No answer from the node; nothing was sent. Try again in a minute.") };
-  if (chk.status !== "ok" || (chk.data && chk.data.ok === false)) return { ok: false, why: plain(chk) };
+  if (chk.status !== "ok" || (chk.data && chk.data.ok === false)) return { ok: false, why: plain(chk), policy: byRule(chk) };
   const res = await rpc("sendtx " + body);
   if (!res) return { ok: false, why: T("No answer from the node. It may still arrive: watch Activity.") };
-  if (res.status !== "ok" || (res.data && res.data.ok === false)) return { ok: false, why: plain(res) };
+  if (res.status !== "ok" || (res.data && res.data.ok === false)) return { ok: false, why: plain(res), policy: byRule(res) };
   nextSeq = tx.sequence_number + 1;
   const hash = (res.data && res.data.tx_hash) || null;
   W.log.unshift({ hash, kind, label, at: Date.now(), status: "queued", seq: tx.sequence_number, paid: tx.fee_limit !== "0", extra: res.data && (res.data.update_id || res.data.offer_id || res.data.request_id || res.data.retractable_id) || null });
@@ -494,11 +620,12 @@ async function submit(tx, label, kind) {
   setTimeout(refresh, SIM ? 50 : 1500);
   return { ok: true, hash, data: res.data };
 }
+const byRule = env => /user policy \(o5\)/i.test(JSON.stringify((env && (env.error || env.data)) || {}));
 /* the node's refusals, in plain words where we know them */
 function plain(env) {
   const e = (env && (env.error || (env.data && env.data.ok === false ? env.data : null))) || {}, m = String(e.message || ""), code = e.code || "";
   if (/author slots are taken|MAX_TIER_AUTHORS|author slot/i.test(m)) return T("Refused before sending: the testnet holds rules for 2 accounts at a time, and both places are taken. Nothing was sent.");
-  if (/user policy \(o5\)/i.test(m)) return T("Refused before sending: your own rule blocks this payment. Above your limit it needs a co-signature.");
+  if (/user policy \(o5\)/i.test(m)) return T("Refused before sending: your own rule stops this payment. Nothing left your account.");
   if (/insufficient|funds/i.test(m)) return T("Refused before sending: not enough test AGRS for the amount and the fee.");
   if (/sequence/i.test(m)) return T("Refused: an earlier transaction of yours is still on its way. Wait for the next block and try again.");
   if (/RATE_LIMITED|Too many/i.test(code + m)) return T("Too many transactions from here; wait a minute.");
@@ -516,28 +643,78 @@ async function followLog() {   // queued → in a block, by tx hash
   if (W.pk) store.set(logKey(), JSON.stringify(W.log));
 }
 
-/* ---------- rules: written for the testnet's user-policy stream o5 (docs/approvals.md in IDNI/tau-testnet) ---------- */
+/* ---------- rules: written for the testnet's user-policy stream o5 (docs/approvals.md in IDNI/tau-testnet) ----------
+   One rule per account: every block below is one condition, and the payment is stopped when any of them holds.
+   What a rule may read there: amount (i1), recipient (i4), block time (i5) and the co-signature slots (i18 to i25).
+   The node refuses balance (i2) and custom inputs (i13 to i15) in a personal rule, so there is no minimum balance or code block. */
 const hex6 = n => Math.max(0, Math.min(MAX_AMOUNT, Math.floor(n))).toString(16).padStart(6, "0");
 const ALLOW = "(o5[t]:bv[24] = { #x000001 }:bv[24])", BLOCK = "(o5[t]:bv[24] = { #x000000 }:bv[24])";
+const FREEZE = "always ( (o5[t]:bv[24] = { #x000000 }:bv[24]) ).", MAX_ONLY = 5;
 const above = n => `i1[t]:bv[24] > { #x${hex6(n)} }:bv[24]`;
 const unsigned = (slot, who) => `!(i${slot}[t]:bv[384] = { #x${who} }:bv[384])`;
 /* any: blocked while none of them signed; all: blocked while any one of them has not signed */
-function coSignRule(limit, approvers, need) {
+function coSignCond(limit, approvers, need) {
   const slots = approvers.map((a, i) => [18 + i, a]);
-  const body = need === "all" ? slots.map(([s, a]) => `(${above(limit)} && ${unsigned(s, a)})`).join(" || ")
+  return need === "all" ? `(${slots.map(([s, a]) => `(${above(limit)} && ${unsigned(s, a)})`).join(" || ")})`
     : `(${above(limit)} && ${slots.map(([s, a]) => unsigned(s, a)).join(" && ")})`;
-  return `always ( ( ${body} ) ? ${BLOCK} : ${ALLOW} ).`;
 }
-/* reading a rule back: the limit and the co-signers, if it is one of ours or shaped like it */
+function coSignRule(limit, approvers, need) { return `always ( ${coSignCond(limit, approvers, need)} ? ${BLOCK} : ${ALLOW} ).`; }
+function buildRule(r) {
+  if (!r) return null;
+  if (r.freeze) return FREEZE;
+  const c = [];
+  if (r.only && r.only.length) c.push("(" + r.only.map(a => `!(i4[t]:bv[384] = { #x${a} }:bv[384])`).join(" && ") + ")");
+  if (r.cap != null) c.push(`(i1[t]:bv[24] >= { #x${hex6(r.cap + 1)} }:bv[24])`);
+  if (r.from != null) c.push(`(i5[t]:bv[64] < {${Math.floor(r.from)}}:bv[64])`);
+  if (r.co) c.push(coSignCond(r.co.limit, r.co.who, r.co.need || "any"));
+  return c.length ? `always ( ${c.join(" || ")} ? ${BLOCK} : ${ALLOW} ).` : null;
+}
+/* reading a rule back: ours, or any rule shaped like ours */
 function readRule(text) {
   if (!text) return null;
-  if (text.replace(/\s+/g, "") === NEUTRAL.replace(/\s+/g, "")) return null;
+  const flat = text.replace(/\s+/g, "");
+  if (flat === NEUTRAL.replace(/\s+/g, "")) return null;
+  const r = { freeze: false, only: [], cap: null, from: null, co: null, text };
+  if (flat === FREEZE.replace(/\s+/g, "")) return { ...r, freeze: true };
+  r.only = [...new Set([...text.matchAll(/i4\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})/gi)].map(m => m[1].toLowerCase()))];
+  const cap = /i1\[t\]:bv\[24\]\s*>=\s*\{\s*#x([0-9a-f]+)/i.exec(text);
+  if (cap) r.cap = parseInt(cap[1], 16) - 1;
+  const from = /i5\[t\]:bv\[64\]\s*<\s*\{\s*(\d+)\s*\}/i.exec(text);
+  if (from) r.from = Number(from[1]);
   const lim = /i1\[t\]:bv\[24\]\s*>\s*\{\s*#x([0-9a-f]+)/i.exec(text);
-  const who = [...text.matchAll(/i(1[89]|2[0-5])\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})/gi)].map(m => [Number(m[1]), m[2].toLowerCase()]);
-  const uniq = [...new Map(who.map(w => [w[0], w])).values()];
-  return { limit: lim ? parseInt(lim[1], 16) : null, who: uniq, all: /\|\|/.test(text), text };
+  const slots = [...new Map([...text.matchAll(/i(1[89]|2[0-5])\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})/gi)].map(m => [Number(m[1]), [Number(m[1]), m[2].toLowerCase()]])).values()];
+  if (lim && slots.length) r.co = { limit: parseInt(lim[1], 16), who: slots.map(x => x[1]), slots, need: (text.match(/i1\[t\]:bv\[24\]\s*>\s*\{/g) || []).length > 1 ? "all" : "any" };
+  r.unknown = !r.only.length && r.cap == null && r.from == null && !r.co;
+  return r;
 }
 const myRule = () => readRule(W.clause);
+/* what a rule does to one payment: the reasons it stops it, and whether it waits for a co-signature */
+const WHY = { frozen: "your account is frozen", list: "not on your list", cap: "above your limit per payment", date: "before your date" };
+function judge(r, p) {
+  if (!r || r.unknown) return { ok: true, why: [], co: false, unknown: !!(r && r.unknown) };
+  const why = [];
+  if (r.freeze) why.push("frozen");
+  if (r.only.length && !r.only.includes(p.to)) why.push("list");
+  if (r.cap != null && p.amount > r.cap) why.push("cap");
+  if (r.from != null && (p.ts || Date.now() / 1000) < r.from) why.push("date");
+  let co = false;
+  if (r.co && p.amount > r.co.limit) { const got = r.co.who.filter(w => p.signed && p.signed.has(w)).length; co = r.co.need === "all" ? got < r.co.who.length : got === 0; }
+  return { ok: !why.length && !co, why, co };
+}
+const whyText = j => j.why.map(x => T(WHY[x])).join(", ");
+const dayOf = secs => new Date(secs * 1000).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+/* a rule in plain sentences */
+function describe(r) {
+  if (!r) return [T("Every payment goes through as signed.")];
+  if (r.freeze) return [T("Nothing leaves this account.")];
+  if (r.unknown) return [T("A rule of its own, written by hand. Read it in Tau below.")];
+  const out = [];
+  if (r.only.length) out.push(FX("Payments only to {x}.", {}, { x: r.only.map(tag).join(", ") }));
+  if (r.cap != null) out.push(F("At most {n} test AGRS per payment.", { n: fmt(r.cap) }));
+  if (r.from != null) out.push(FX("Nothing leaves before {x}.", {}, { x: dayOf(r.from) }));
+  if (r.co) out.push(FX(r.co.need === "all" ? "Above {n} test AGRS, {x} all co-sign." : "Above {n} test AGRS, {x} co-signs.", { n: fmt(r.co.limit) }, { x: r.co.who.map(tag).join(r.co.need === "all" ? T(" and ") : T(" or ")) }));
+  return out;
+}
 
 /* ---------- the simulation's side of the wallet: your transactions land on the made-up chain, in this browser only ---------- */
 const S = {
@@ -549,15 +726,16 @@ const S = {
   mine: () => S.txs.filter(x => x.tx.sender_pubkey === W.pk),
   /* everything that follows from your landed transactions, at the current head */
   state() {
-    const h = TauSim.head(), fee = baseFee(), st = { bal: 0, out: 0, fees: 0, clause: null, offers: [], reqs: [], rets: [], votes: new Map(), pays: [] };
+    const h = TauSim.head(), fee = baseFee(), st = { bal: 0, out: 0, fees: 0, clause: null, offers: [], reqs: [], rets: [], votes: new Map(), pays: [], dust: null };
     const acc = TauSim.account(W.pk); st.bal = Number(acc.chain_balance) || FAUCET;
     for (const x of S.txs) {
       const t = x.tx, landed = x.at <= h, mine = t.sender_pubkey === W.pk;
       if (!mine) continue;
-      if (!landed) { if (t.fee_limit !== "0") st.fees += fee; if (t.tx_type === "user_tx" && t.operations["1"]) st.out += Number(t.operations["1"][0][2]); continue; }
+      const sent = t.tx_type === "user_tx" && t.operations["1"] ? t.operations["1"].reduce((n, o) => n + Number(o[2]), 0) : 0;
+      if (!landed) { if (t.fee_limit !== "0") st.fees += fee; st.out += sent; continue; }
       if (t.fee_limit !== "0") st.bal -= fee;
       if (t.tx_type === "user_tx") {
-        if (t.operations["1"]) st.bal -= Number(t.operations["1"][0][2]);
+        st.bal -= sent;
         if (t.operations["0"]) st.clause = t.operations["0"].replace(/\s+/g, "") === NEUTRAL.replace(/\s+/g, "") ? null : t.operations["0"];
       }
       if (t.tx_type === "retractable_transfer") {
@@ -584,6 +762,8 @@ const S = {
       st.offers.push({ offer_id: id, offerer_pubkey: from, recipient_pubkey: W.pk, status: ans ? (ans.tx.tx_type === "rule_offer_accept" ? "accepted" : "rejected") : "offered", expire_at_height: S.born + 400, rule_text: rule, invite: true });
       if (ans && ans.tx.tx_type === "rule_offer_accept") st.clause = rule;
     }
+    /* and a lookalike of the first name in your address book sends you a crumb, so its address sits in your history: the poisoning trick */
+    if (S.born != null && h >= S.born + 5 && BOOK.length) { st.dust = { from: lookalikeOf(BOOK[0].addr), like: BOOK[0], amount: 1, at: S.born + 5 }; st.bal += 1; }
     return st;
   },
   answer(cmd) {
@@ -593,10 +773,15 @@ const S = {
     if (c === "checktx" || c === "sendtx") {
       const tx = JSON.parse(arg), st = S.state(), seqNow = S.mine().length;
       if (tx.sequence_number < seqNow) return err(`Invalid sequence number: expected ${seqNow}, got ${tx.sequence_number}`, "TX_REJECTED");
-      const amt = tx.tx_type === "user_tx" && tx.operations["1"] ? Number(tx.operations["1"][0][2]) : ["approval_request", "retractable_transfer"].includes(tx.tx_type) ? tx.amount : 0;
+      const pays = tx.tx_type === "user_tx" ? (tx.operations["1"] || []).map(o => ({ to: o[1], amount: Number(o[2]) }))
+        : ["approval_request", "retractable_transfer"].includes(tx.tx_type) ? [{ to: tx.recipient_pubkey, amount: tx.amount }] : [];
+      const amt = pays.reduce((n, x) => n + x.amount, 0);
       if (amt + (tx.fee_limit !== "0" ? baseFee() : 0) > st.bal - st.out - st.fees) return err("Insufficient funds", "TX_REJECTED");
       const r = readRule(st.clause);
-      if (tx.tx_type === "user_tx" && r && r.limit != null && amt > r.limit) return err("Transaction rejected by user policy (o5) for transfer #1", "TX_REJECTED");
+      for (const [i, x] of pays.entries()) {   // a co-signature request waits for its co-signer; everything else meets the rule now
+        const j = judge(r, { ...x, ts: Date.now() / 1000, signed: new Set(tx.tx_type === "approval_request" && r && r.co ? r.co.who : []) });
+        if (!j.ok) return err(`Transaction rejected by user policy (o5) for transfer #${i + 1}`, "TX_REJECTED");
+      }
       if (c === "checktx") return ok({ ok: true, tau_evaluated: false });
       const hash = S.hash(arg), at = h + 1 + S.txs.filter(x => x.at > h).length % 2;
       S.txs.push({ tx, hash, at }); S.save();
@@ -605,6 +790,12 @@ const S = {
     if (c === "getsequence") return ok({ address: W.pk, sequence_number: S.mine().filter(x => x.at <= h).length, tip_height: h });
     if (c === "getaccountstate") { const st = S.state(); return ok({ address: W.pk, chain_balance: String(st.bal), pending_outgoing: String(st.out), pending_fees: String(st.fees), pending_incoming: "0", sequence_number: S.mine().length }); }
     if (c === "getruleoffers") { const st = S.state(); return ok({ address: W.pk, accepted_clauses: st.clause ? [{ target_stream: "o5", clause_body: st.clause }] : [], incoming: st.offers.filter(o => o.recipient_pubkey === W.pk), outgoing: st.offers.filter(o => o.offerer_pubkey === W.pk), mempool: [] }); }
+    if (c === "getruleconflict") {
+      const st = S.state(), o = st.offers.find(o => o.offer_id === arg);
+      if (!o) return err("Unknown offer", "OFFER_UNKNOWN");
+      return ok({ offer_id: arg, verdict: st.clause ? "warn" : "clean", layers: [{ layer: "shape", status: "ok" }, { layer: "reserved_domains", status: "ok" },
+        { layer: "registry_collision", status: st.clause ? "warn" : "ok" }, { layer: "bv_widths", status: "ok" }, { layer: "compile", status: "ok" }] });
+    }
     if (c === "getruleoffer") { const o = S.state().offers.find(o => o.offer_id === arg); return o ? ok(o) : err("Unknown offer", "OFFER_UNKNOWN"); }
     if (c === "getapprovalrequests") { const st = S.state(); return ok({ address: W.pk, incoming: [], outgoing: st.reqs, mempool: [] }); }
     if (c === "getretractables") { const st = S.state(); return ok({ address: W.pk, retractables: st.rets.filter(r => r.status === "open"), mempool: [] }); }
@@ -615,20 +806,39 @@ const S = {
 
 /* ---------- tabs and the "Before you sign" card ---------- */
 let TAB = "send", PICK = null;   // PICK: the proposal chosen in the vote tab
-document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+document.querySelectorAll("#payTabs button").forEach(b => b.addEventListener("click", () => {
   TAB = b.dataset.tab;
-  document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
-  $("payForm").hidden = TAB === "vote"; $("voteForm").hidden = TAB !== "vote"; $("releaseBox").hidden = TAB !== "back";
+  document.querySelectorAll("#payTabs button").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+  $("payForm").hidden = TAB === "vote" || TAB === "split"; $("splitForm").hidden = TAB !== "split"; $("voteForm").hidden = TAB !== "vote"; $("releaseBox").hidden = TAB !== "back";
   $("result").textContent = ""; $("result").className = "result";
-  renderVote(); renderSign();
+  renderVote(); renderSplits(); renderSign();
 }));
 ["to", "amount", "release"].forEach(id => $(id).addEventListener("input", renderSign));
 function payDraft() {
-  const to = $("to").value.trim().toLowerCase(), amount = Math.floor(Number($("amount").value)), rel = Math.floor(Number($("release").value));
-  return { to, amount, rel };
+  return { to: resolveTo($("to").value), amount: Math.floor(Number($("amount").value)), rel: Math.floor(Number($("release").value)) };
 }
+/* split: several people in one transaction, all paid or none */
+let SPLITS = [{ to: "", amount: "" }, { to: "", amount: "" }];
+function renderSplits() {
+  if (TAB !== "split") return;
+  $("splits").replaceChildren(...SPLITS.map((x, i) => el("div", { class: "splitrow" },
+    el("input", { class: "in", value: x.to, spellcheck: "false", autocomplete: "off", list: "bookNames", placeholder: T("name or address"), "aria-label": T("To"), oninput: e => { x.to = e.target.value; renderSign(); } }),
+    el("input", { class: "in", value: x.amount, type: "number", min: "1", step: "1", placeholder: T("amount"), "aria-label": T("Amount in test AGRS"), oninput: e => { x.amount = e.target.value; renderSign(); } }),
+    el("button", { type: "button", "aria-label": T("Remove"), text: "×", onclick: () => { SPLITS.splice(i, 1); if (!SPLITS.length) SPLITS.push({ to: "", amount: "" }); renderSplits(); renderSign(); } }))));
+  $("btnSplitAdd").disabled = SPLITS.length >= 6;
+}
+$("btnSplitAdd").onclick = () => { if (SPLITS.length < 6) SPLITS.push({ to: "", amount: "" }); renderSplits(); };
 function fact(cls, label, text) { return el("li", { class: cls }, el("span", { text: T(label) }), el("b", { text })); }
-/* what the card shows and whether the button may sign; one place for every check (Norman: show the object, check it makes sense) */
+/* the recipient, in full: 96 characters in groups of eight, its print, and its name or the warning that it has none */
+function toLine(a, look) {
+  if (!isAddr(a)) return null;
+  const n = nameOf(a);
+  return el("div", { class: "toline" + (look ? " alarm" : "") },
+    look ? el("span", { class: "flag", text: T("Lookalike") }) : null, print(a),
+    n ? el("b", { translate: "no", style: "color:#fff;margin-right:8px", text: n }) : el("span", { style: "margin-right:8px", text: look ? FX("looks like {x}, but is not {x}'s address", {}, { x: look.name }) : T("not in your address book") }),
+    el("span", { class: "full", translate: "no" }, ...a.match(/.{8}/g).map(g => el("span", { text: g }))));
+}
+/* what the card shows and whether the button may sign; one place for every check: show the object large, check it makes sense */
 function plan() {
   const h = head(), fee = baseFee(), sp = spendable(), r = myRule();
   if (!W.pk) return { what: [T("Make your account first")], facts: [fact("", "Why", T("A key in this browser signs everything you send."))], can: false };
@@ -641,59 +851,97 @@ function plan() {
       facts: [fact("ok", "Fee", T("None: votes are free")), fact("", "Takes effect", F("at block #{a} if enough yes votes arrive", { a: p.activate_at_height })), fact(voted ? "no" : "", "Final", voted ? T("You voted yes on this one already; the node refuses a second.") : T("A yes cannot be taken back."))],
       can: !voted, tx: () => base("consensus_rule_vote", { update_id: p.update_id, approve: true }), label: () => F("Yes to {x}", { x: short(p.update_id) }), kind: "vote", extraId: p.update_id };
   }
+  if (TAB === "split") return planSplit(fee, sp, r);
   const d = payDraft(), facts = [];
-  const what = [d.amount > 0 ? fmt(d.amount) + " " + T("test AGRS") : T("Amount"), " ", el("span", { class: "to", text: "→ " + (isAddr(d.to) ? short(d.to) : T("recipient")) })];
-  let can = true, why = "";
-  if (!isAddr(d.to)) { can = false; why = T("Enter the recipient's address: 96 hex characters."); }
+  const what = [d.amount > 0 ? fmt(d.amount) + " " + T("test AGRS") : T("Amount"), " ", el("span", { class: "to", text: "→ " + (isAddr(d.to) ? tag(d.to) : T("recipient")) })];
+  const look = lookalike(d.to), j = isAddr(d.to) && d.amount > 0 ? judge(r, { to: d.to, amount: d.amount }) : { ok: true, why: [], co: false };
+  let can = true, why = "", tryIt = false;
+  if (!isAddr(d.to)) { can = false; why = T("Pick a name or paste the recipient's address: 96 hex characters."); }
   else if (d.to === W.pk) { can = false; why = T("That is your own address."); }
   if (!(d.amount > 0)) { can = false; why = why || T("Enter an amount of at least 1."); }
   else if (d.amount > MAX_AMOUNT) { can = false; why = F("The testnet moves at most {n} test AGRS per payment.", { n: fmt(MAX_AMOUNT) }); }
   else if (sp != null && d.amount + fee > sp) { can = false; why = F("More than you have: {n} test AGRS spendable, fee included.", { n: fmt(Math.max(0, sp - fee)) }); }
   const big = sp != null && d.amount > 0 && d.amount > sp / 4;
-  const gated = r && r.limit != null && d.amount > r.limit && r.who.length;
-  facts.push(fact(gated ? "warn" : r ? "ok" : "", "Your rule", !r ? T("none: nothing holds this payment") : gated ? FX("above {n}: it waits for {x} to co-sign", { n: fmt(r.limit) }, { x: r.who.map(w => short(w[1])).join(r.all ? " + " : T(" or ")) }) : F("passes: {n} or less needs nobody", { n: fmt(r.limit) })));
+  const gated = j.co && !j.why.length && TAB === "send";
+  if (j.why.length) {
+    facts.push(fact("no", "Your rule", FX("stops it: {x}", {}, { x: whyText(j) })));
+    if (can) { can = false; tryIt = true; why = T("Your rule stops this payment, so nothing would leave. Try it anyway to watch the node refuse it."); }
+  } else facts.push(fact(j.co ? "warn" : r ? "ok" : "", "Your rule", !r ? T("none: nothing holds this payment") : r.unknown ? T("a rule written by hand: the node judges it") : j.co ? FX("above {n}: it waits for {x} to co-sign", { n: fmt(r.co.limit) }, { x: r.co.who.map(tag).join(r.co.need === "all" ? " + " : T(" or ")) }) : T("passes")));
+  if (look && !j.why.includes("list")) { can = false; tryIt = false; why = FX("This address looks like {x}'s but is a different one: that is how lookalike scams work. Pick {x} from your address book, or add this one under its own name first.", {}, { x: look.name }); }
   facts.push(fact("", "Fee", F("{n} test AGRS (you allow up to {m})", { n: fee, m: fee * 5 })));
+  const to = toLine(d.to, look);
   if (TAB === "back") {
     const rel = Math.max(2, Math.min(100000, d.rel || 0)), at = (h || 0) + rel;
     facts.push(fact("ok", "Way back", FX("you can take it back until block #{a} ({t})", { a: at }, { t: inTime(rel) || T("later") })));
     facts.push(fact("", "Arrives", F("at block #{a}, by itself", { a: at })));
-    if (gated) { can = false; why = why || T("Above your rule's limit only a co-signed payment goes through; use Send."); }
-    return { what, facts, can, why, big, kind: "back", label: () => F("{n} test AGRS to {x}, with a way back", { n: fmt(d.amount), x: short(d.to) }),
+    if (j.co && !j.why.length) { can = false; why = why || T("Above your rule's limit only a co-signed payment goes through; use Send."); }
+    return { what, to, facts, can, why, tryIt, big, kind: "back", label: () => F("{n} test AGRS to {x}, with a way back", { n: fmt(d.amount), x: tag(d.to) }),
       tx: () => { const b = base("retractable_transfer", { recipient_pubkey: d.to, amount: d.amount, release_at_height: at }); b.expire_at_height = Math.min(b.expire_at_height, at); return b; } };
   }
   if (gated) facts.push(fact("", "Way back", T("none once your co-signer signs and it is paid")));
   else facts.push(fact(big ? "warn" : "", "Way back", big ? T("none once a block holds it, and this is more than a quarter of what you have") : T("none once a block holds it. Want one? Use Send with a way back.")));
   if (gated) {
-    const approvers = Object.fromEntries(r.who.map(([s, p]) => [String(s), p]));
-    return { what, facts, can, why, big, kind: "cosign", label: () => F("{n} test AGRS to {x}, waiting for a co-signature", { n: fmt(d.amount), x: short(d.to) }),
+    const approvers = Object.fromEntries(r.co.slots.map(([s, p]) => [String(s), p]));
+    return { what, to, facts, can, why, big, kind: "cosign", label: () => F("{n} test AGRS to {x}, waiting for a co-signature", { n: fmt(d.amount), x: tag(d.to) }),
       tx: () => base("approval_request", { recipient_pubkey: d.to, amount: d.amount, approvers, custom_inputs: {} }) };
   }
-  return { what, facts, can, why, big, kind: "pay", label: () => F("{n} test AGRS to {x}", { n: fmt(d.amount), x: short(d.to) }),
+  return { what, to, facts, can, why, tryIt, big, kind: "pay", label: () => F("{n} test AGRS to {x}", { n: fmt(d.amount), x: tag(d.to) }),
     tx: () => base("user_tx", { operations: { "1": [[W.pk, d.to, String(d.amount)]] } }) };
+}
+function planSplit(fee, sp, r) {
+  const rows = SPLITS.map(x => ({ to: resolveTo(x.to), amount: Math.floor(Number(x.amount)) })).filter(x => x.to || x.amount);
+  const total = rows.reduce((n, x) => n + (x.amount > 0 ? x.amount : 0), 0);
+  $("splitSum").textContent = rows.length ? F("{n} test AGRS to {m} people", { n: fmt(total), m: rows.length }) : "";
+  const what = [fmt(total) + " " + T("test AGRS"), " ", el("span", { class: "to", text: "→ " + (rows.length ? rows.map(x => isAddr(x.to) ? tag(x.to) : "?").join(", ") : T("recipients")) })];
+  const facts = [fact("ok", "All or none", T("one transaction: every person is paid in the same block, or nobody is"))];
+  let can = rows.length >= 2, why = rows.length >= 2 ? "" : T("Add at least two people; for one, use Send."), tryIt = false;
+  const bad = rows.find(x => !isAddr(x.to) || x.to === W.pk || !(x.amount > 0) || x.amount > MAX_AMOUNT);
+  if (bad) { can = false; why = why || T("Every line needs a name or address from your book and an amount of at least 1."); }
+  if (new Set(rows.map(x => x.to)).size < rows.length) { can = false; why = why || T("Each person once, please."); }
+  if (sp != null && total + fee > sp) { can = false; why = why || F("More than you have: {n} test AGRS spendable, fee included.", { n: fmt(Math.max(0, sp - fee)) }); }
+  const looks = rows.map(x => [x, lookalike(x.to)]).filter(y => y[1]);
+  const js = rows.filter(x => isAddr(x.to) && x.amount > 0).map(x => [x, judge(r, x)]);
+  const stop = js.filter(([, j]) => j.why.length), wait = js.filter(([, j]) => j.co && !j.why.length);
+  if (stop.length) {
+    facts.push(fact("no", "Your rule", FX("stops it: {x}", {}, { x: stop.map(([x, j]) => tag(x.to) + " (" + whyText(j) + ")").join(", ") })));
+    if (can) { can = false; tryIt = true; why = T("Your rule stops part of it, so nothing would leave. Try it anyway to watch the node refuse it."); }
+  } else facts.push(fact(r ? "ok" : "", "Your rule", r ? T("passes for every person") : T("none: nothing holds this payment")));
+  if (wait.length) { can = false; tryIt = false; why = why || T("A split cannot wait for a co-signature. Send the part above your limit on its own."); }
+  if (looks.length && !stop.some(([, j]) => j.why.includes("list"))) { can = false; tryIt = false; why = FX("{x} looks like someone in your address book but is a different address. Pick the name instead.", {}, { x: short(looks[0][0].to) }); }
+  facts.push(fact("", "Fee", F("{n} test AGRS (you allow up to {m})", { n: fee, m: fee * 5 })));
+  facts.push(fact("", "Way back", T("none once a block holds it")));
+  const valid = rows.filter(x => isAddr(x.to) && x.amount > 0);
+  return { what, facts, can, why, tryIt, kind: "split", label: () => F("{n} test AGRS split among {m}", { n: fmt(total), m: valid.length }),
+    tx: () => base("user_tx", { operations: { "1": valid.map(x => [W.pk, x.to, String(x.amount)]) } }) };
 }
 let P = null;
 function renderSign() {
   P = plan();
   $("signWhat").replaceChildren(...P.what);
+  $("signTo").replaceChildren(...(P.to ? [P.to] : []));
   const facts = [...P.facts, fact("", "Leaves this browser", T("only the signed transaction; your key stays here"))];
   $("signFacts").replaceChildren(...facts);
-  $("btnSign").disabled = !P.can || (!SIM && !(L.ws && L.ws.readyState === 1));
+  const live = SIM || (L.ws && L.ws.readyState === 1);
+  $("btnSign").disabled = !P.can || !live;
   $("btnSign").textContent = T(P.kind === "cosign" ? "Sign and ask for co-signature" : P.kind === "vote" ? "Sign my yes" : "Sign and send");
+  $("btnTry").hidden = !P.tryIt; $("btnTry").disabled = !live;
   $("signWhy").textContent = P.why || (P.can ? T(SIM ? "Lands on the simulated chain only." : "The node checks it first; if it would be refused, nothing is sent.") : "");
 }
-$("btnSign").onclick = async () => {
-  const p = P; if (!p || !p.can) return;
-  $("btnSign").disabled = true;
+async function signNow(p, trying) {
   const res = $("result"); res.className = "result wait"; res.textContent = T("Signing in your browser, then asking the node…");
+  $("btnSign").disabled = $("btnTry").disabled = true;
   const r = await submit(p.tx(), p.label(), p.kind);
   if (r.ok) {
     if (p.kind === "vote") { const x = W.log[0]; x.extra = p.extraId; store.set(logKey(), JSON.stringify(W.log)); }
     res.className = "result ok";
     res.textContent = p.kind === "cosign" ? T("Sent as a request: it executes the moment your co-signer signs.") : p.kind === "back" ? T("Sent. Until it is released you can take it back under Activity.") : p.kind === "vote" ? T("Your yes is on its way; the next block counts it.") : T("Sent. The next block takes it in.");
-    if (p.kind !== "vote") { $("amount").value = ""; }
-  } else { res.className = "result no"; res.textContent = r.why; }
+    if (p.kind !== "vote") { $("amount").value = ""; if (p.kind === "split") SPLITS = [{ to: "", amount: "" }, { to: "", amount: "" }]; renderSplits(); }
+  } else if (trying && r.policy) { res.className = "result no"; res.textContent = T("Refused, as your rule says: the node turned it away before it reached a block. Nothing left your account."); }
+  else { res.className = "result no"; res.textContent = r.why; }
   renderAll();
-};
+}
+$("btnSign").onclick = () => { if (P && P.can) signNow(P, false); };
+$("btnTry").onclick = () => { if (P && P.tryIt) signNow(P, true); };
 
 /* ---------- vote tab ---------- */
 async function loadTitles() {
@@ -718,21 +966,79 @@ function renderVote() {
   }));
 }
 
-/* ---------- your rule: a co-signer above a limit ---------- */
-["rAbove", "rWho"].forEach(id => $(id).addEventListener("input", renderRule));
-function ruleDraft() { const lim = Math.floor(Number($("rAbove").value)), who = $("rWho").value.trim().toLowerCase(); return { lim, who, ok: lim >= 1 && lim <= MAX_AMOUNT && isAddr(who) && who !== W.pk }; }
+/* ---------- rules: your rule, built from blocks; share it; or agree on one in a Pakt ---------- */
+let RTAB = "mine";
+document.querySelectorAll("#ruleTabs button").forEach(b => b.addEventListener("click", () => {
+  RTAB = b.dataset.rtab;
+  document.querySelectorAll("#ruleTabs button").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+  $("rMine").hidden = RTAB !== "mine"; $("rShare").hidden = RTAB !== "share"; $("rPakt").hidden = RTAB !== "pakt";
+  renderRule(); renderShare(); renderPakt();
+}));
+const ONLY = new Set();   // the names picked for "only to"
+let seeded = null;        // the rule the builder was last filled from
+function seedBuilder(r) {
+  const key = r ? r.text : "";
+  if (seeded === key) return;
+  seeded = key;
+  if (!r || r.freeze || r.unknown) return;
+  $("cOnly").checked = !!r.only.length; ONLY.clear(); r.only.forEach(a => ONLY.add(a));
+  $("cCap").checked = r.cap != null; if (r.cap != null) $("vCap").value = r.cap;
+  $("cFrom").checked = r.from != null; if (r.from != null) { const d = new Date(r.from * 1000); $("vFrom").value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+  $("cCo").checked = !!r.co; if (r.co) { $("vCoAbove").value = r.co.limit; $("vCoWho").dataset.want = r.co.who[0]; }
+}
+function ruleDraft() {
+  const r = { freeze: false, only: [], cap: null, from: null, co: null }, bad = [];
+  if ($("cOnly").checked) { r.only = [...ONLY].filter(isAddr).slice(0, MAX_ONLY); if (!r.only.length) bad.push(T("pick at least one name for your list")); }
+  if ($("cCap").checked) { const n = Math.floor(Number($("vCap").value)); if (n >= 1 && n < MAX_AMOUNT) r.cap = n; else bad.push(T("a limit of at least 1")); }
+  if ($("cFrom").checked) { const v = $("vFrom").value; const t = v ? Math.floor(new Date(v + "T00:00:00").getTime() / 1000) : NaN; if (t > 0) r.from = t; else bad.push(T("a date")); }
+  if ($("cCo").checked) { const n = Math.floor(Number($("vCoAbove").value)), w = $("vCoWho").value; if (n >= 1 && n <= MAX_AMOUNT && isAddr(w) && w !== W.pk) r.co = { limit: n, who: [w], slots: [[18, w]], need: "any" }; else bad.push(T("a co-signer from your address book")); }
+  const any = r.only.length || r.cap != null || r.from != null || r.co;
+  return { r, ok: !!any && !bad.length, bad, text: any ? buildRule(r) : null };
+}
+["cOnly", "cCap", "cFrom", "cCo", "vCap", "vFrom", "vCoAbove", "vCoWho"].forEach(id => $(id).addEventListener("input", () => { renderRule(); renderShare(); }));
+const slotsFull = () => !SIM && W.slots && W.slots.taken >= W.slots.places && !myRule() && !(W.slots.holders || []).includes(W.pk);
+/* test payments: what the rule on the screen would do, before anything is signed */
+function probes(r) {
+  const friend = BOOK[0], other = "f0" + S.hash("someone new" + (W.pk || "")).slice(0, 62) + S.hash("x" + (W.pk || ""));
+  const list = [];
+  if (friend) list.push([F("100 test AGRS to {x}", { x: friend.name }), { to: friend.addr, amount: 100 }]);
+  if (friend) list.push([FX("100 test AGRS to a lookalike of {x}", {}, { x: friend.name }), { to: lookalikeOf(friend.addr), amount: 100 }]);
+  list.push([T("100 test AGRS to someone new"), { to: other.slice(0, 96), amount: 100 }]);
+  const big = Math.max(20000, ((r && r.cap) || 0) + 1, ((r && r.co && r.co.limit) || 0) + 1);
+  list.push([FX("{n} test AGRS to {x}", { n: fmt(big) }, { x: friend ? friend.name : T("someone new") }), { to: friend ? friend.addr : other.slice(0, 96), amount: big }]);
+  return [el("h3", { text: T("Test payments against this rule") }), ...list.map(([label, p]) => {
+    const j = judge(r, p), cls = j.why.length ? "no" : j.co ? "wait" : "yes";
+    return el("div", { class: "probe" }, el("span", { class: "dot " + (cls === "no" ? "" : cls === "wait" ? "sim" : "ok") }), el("em", { text: label }),
+      el("span", { class: cls, text: j.why.length ? FX("stopped: {x}", {}, { x: whyText(j) }) : j.co ? T("waits for a co-signature") : T("goes through") }));
+  })];
+}
 function renderRule() {
   const r = myRule(), box = $("ruleNow"), d = ruleDraft();
+  if (W.clause !== undefined) seedBuilder(r);
   box.className = "rule" + (r ? " on" : "");
   if (!W.pk) box.replaceChildren(el("span", { class: "dim", text: T("Make your account first; then you can give it a rule.") }));
   else if (W.clause === undefined) box.replaceChildren(el("span", { class: "dim", text: T("Reading your rule from the chain…") }));
-  else if (!r) box.replaceChildren(el("div", { class: "t", text: T("No rule yet.") }), el("div", { class: "dim", style: "font-size:12px", text: T("Every payment you sign goes through as it is. Give your account a guard below.") }));
-  else box.replaceChildren(el("div", { class: "top" }, el("div", { class: "t", text: r.limit != null && r.who.length ? FX("Payments above {n} test AGRS need {x}", { n: fmt(r.limit) }, { x: r.who.map(w => short(w[1])).join(r.all ? T(" and ") : T(" or ")) }) : T("A rule of your own is in force.") }),
-      el("button", { class: "b quiet", type: "button", text: T("Remove"), "data-tip": T("Remove my rule") + "\n" + T("Signs the neutral rule: every payment goes through again.") + "\n" + T("Frees one of the testnet's two rule places."), onclick: () => sendRule(NEUTRAL, T("Rule removed"), $("ruleRes")) })),
-    el("details", { class: "tau", style: "margin-top:2px" }, el("summary", { text: T("The rule in Tau") }), el("pre", { translate: "no", text: r.text })));
-  $("btnRule").disabled = !W.pk || !d.ok;
+  else box.replaceChildren(el("span", { class: "t", text: (r ? T(r.freeze ? "Frozen" : "In force on this account") : T("No rule yet")) + "  " }), el("span", { class: "dim", style: "font-size:12px", text: describe(r).join(" ") }));
+  /* the list picks: names from the address book */
+  $("onlyChips").replaceChildren(...BOOK.slice(0, 8).map(c => el("button", { type: "button", "aria-pressed": ONLY.has(c.addr) ? "true" : "false", translate: "no", text: c.name,
+    onclick: e => { e.preventDefault(); if (ONLY.has(c.addr)) ONLY.delete(c.addr); else if (ONLY.size < MAX_ONLY) ONLY.add(c.addr); $("cOnly").checked = ONLY.size > 0; renderRule(); renderShare(); } })));
+  $("onlyNote").textContent = BOOK.length ? T("A lookalike address is refused by the chain.") : T("Add names to your address book first.");
+  const sel = $("vCoWho"), want = sel.value || sel.dataset.want || "";
+  sel.replaceChildren(el("option", { value: "", text: T("pick a name") }), ...BOOK.filter(c => c.addr !== W.pk).map(c => el("option", { value: c.addr, translate: "no", text: c.name })));
+  sel.value = BOOK.some(c => c.addr === want) ? want : "";
+  $("probes").replaceChildren(...(W.pk ? probes(d.ok ? d.r : r) : []));
+  $("draftTau").hidden = !d.text; $("draftText").textContent = d.text || "";
+  const same = d.text && r && d.text.replace(/\s+/g, "") === r.text.replace(/\s+/g, "");
+  $("btnRule").disabled = !W.pk || !d.ok || same || slotsFull();
   $("btnRule").textContent = T(r ? "Sign new rule" : "Sign this rule");
-  $("rWho").classList.toggle("bad", !!d.who && !isAddr(d.who));
+  $("btnRule").dataset.tip = T(r ? "Sign new rule" : "Sign this rule") + "\n" + (d.ok ? T("Replaces your rule from the next block on.") : d.bad.length ? FX("Missing: {x}", {}, { x: d.bad.join(", ") }) : T("Tick at least one block above.")) + "\n" + T("Uses one of the testnet's two rule places.");
+  const frozen = r && r.freeze;
+  $("btnFreeze").textContent = T(frozen ? "Unfreeze" : "Freeze");
+  $("btnFreeze").disabled = !W.pk || W.clause === undefined || (!frozen && slotsFull());
+  $("btnFreeze").dataset.tip = frozen ? T("Unfreeze") + "\n" + T("Signs the neutral rule: payments go through again.") + "\n" + T("Build a new rule afterwards if you want one.")
+    : T("Freeze") + "\n" + T("One click: nothing leaves this account until you unfreeze.") + "\n" + T("For a lost phone or a key you no longer trust.");
+  $("btnRuleOff").hidden = !r || frozen;
+  $("btnRuleOff").dataset.tip = T("Remove my rule") + "\n" + T("Signs the neutral rule: every payment goes through again.") + "\n" + T("Frees one of the testnet's two rule places.");
 }
 async function sendRule(text, label, res) {
   res.className = "result wait"; res.textContent = T("Signing in your browser, then asking the node…");
@@ -740,7 +1046,48 @@ async function sendRule(text, label, res) {
   res.className = "result " + (r.ok ? "ok" : "no");
   res.textContent = r.ok ? T("Sent. The rule is in force from the block that takes it in.") : r.why;
 }
-$("btnRule").onclick = () => { const d = ruleDraft(); if (d.ok) sendRule(coSignRule(d.lim, [d.who], "any"), F("Rule: above {n} needs {x}", { n: fmt(d.lim), x: short(d.who) }), $("ruleRes")); };
+$("btnRule").onclick = () => { const d = ruleDraft(); if (d.ok) sendRule(d.text, T("Rule: ") + describe(d.r).join(" "), $("ruleRes")); };
+$("btnFreeze").onclick = () => { const r = myRule(); if (r && r.freeze) sendRule(NEUTRAL, T("Unfrozen"), $("ruleRes")); else sendRule(FREEZE, T("Account frozen: nothing leaves"), $("ruleRes")); };
+$("btnRuleOff").onclick = () => sendRule(NEUTRAL, T("Rule removed"), $("ruleRes"));
+
+/* share: your built rule, offered to someone in your book */
+function renderShare() {
+  if (RTAB !== "share") return;
+  const d = ruleDraft(), sel = $("shareTo"), want = sel.value;
+  sel.replaceChildren(el("option", { value: "", text: T("pick a name") }), ...BOOK.filter(c => c.addr !== W.pk).map(c => el("option", { value: c.addr, translate: "no", text: c.name })));
+  sel.value = BOOK.some(c => c.addr === want) ? want : "";
+  $("shareWhat").replaceChildren(...(d.ok ? [el("div", { class: "t", text: T("They would get this rule for their own payments:") }), ...describe(d.r).map(t => el("div", { class: "dim", style: "font-size:12px", text: t }))]
+    : [el("span", { class: "dim", text: T("Build a rule under Your rule first; it is offered as it stands there.") })]));
+  $("btnShare").disabled = !W.pk || !d.ok || !isAddr(sel.value);
+}
+$("shareTo").addEventListener("input", renderShare);
+$("btnShare").onclick = async () => {
+  const d = ruleDraft(), to = $("shareTo").value, res = $("shareRes");
+  if (!d.ok || !isAddr(to)) return;
+  res.className = "result wait"; res.textContent = T("Signing in your browser, then asking the node…");
+  const r = await submit(base("rule_offer", { recipient_pubkey: to, rule_text: d.text }), F("Rule offered to {x}", { x: tag(to) }), "offer");
+  res.className = "result " + (r.ok ? "ok" : "no");
+  res.textContent = r.ok ? FX("Offered. {x} sees it under Activity, checks it and accepts or declines.", {}, { x: tag(to) }) : r.why;
+};
+
+/* the testnet's two rule places: who holds them (the relay reads them every few minutes) */
+async function loadSlots() {
+  if (SIM) { const mine = !!myRule(); W.slots = { places: 2, taken: mine ? 2 : 1, holders: [S.friends()[5], ...(mine ? [W.pk] : [])] }; renderSlots(); return; }
+  try { const j = await (await fetch(RELAY + "/rules", { cache: "no-store" })).json(); if (j && j.places) W.slots = j; } catch (e) {}
+  renderSlots();
+}
+function renderSlots() {
+  const s = W.slots, box = $("slots");
+  if (!s) { box.replaceChildren(); $("slotNote").replaceChildren(); return; }
+  const mine = W.pk && (s.holders || []).includes(W.pk), pips = [];
+  for (let i = 0; i < s.places; i++) pips.push(el("span", { class: "pip " + (i < s.taken ? (mine && i === 0 ? "mine" : "taken") : "") }));
+  box.replaceChildren(...pips, el("span", { text: F("{a} of {b} rule places taken", { a: s.taken, b: s.places }) }));
+  box.dataset.tip = T("Rule places on the testnet") + "\n" + (mine ? T("One of them is yours.") : s.taken >= s.places ? T("Both are taken right now.") : F("{n} free: a rule you sign now takes it.", { n: s.places - s.taken })) + "\n" + T("Tau Testnet Alpha holds personal rules for 2 accounts at a time.") + "\n" + T("Removing a rule frees its place.");
+  $("slotNote").replaceChildren(el("b", { text: T("Real-chain limit: ") }), T(SIM
+    ? "Tau Testnet Alpha holds rules for 2 accounts at a time, so a real Pakt binds you and one member. Here everyone may have a rule."
+    : mine ? "one of the testnet's two rule places is yours. A Pakt binds you and one member." : s.taken >= s.places ? "both of the testnet's rule places are taken, so the node refuses a new rule until someone removes theirs. Build and test yours here meanwhile."
+    : "the testnet holds rules for 2 accounts at a time, so a Pakt binds you and one member. If both places are taken, the node says so before anything is sent."));
+}
 
 /* ---------- Pakt: one rule, offered to every member for their own account ---------- */
 function paktDraft() { return { name: $("pName").value.trim(), lim: Math.floor(Number($("pAbove").value)), need: $("pNeed").value, members: W.pakt ? W.pakt.members : [] }; }
@@ -765,7 +1112,7 @@ function renderPakt() {
   if (sent) { $("pName").value = p.name; $("pAbove").value = p.lim; $("pNeed").value = p.need; }
   ["pFields1", "pAdd", "memPicks", "members"].forEach(id => { $(id).hidden = sent; });
   $("members").replaceChildren(...(W.pk ? [el("span", { class: "mem me", text: T("you") + " · " + short(W.pk) })] : []),
-    ...((p && p.members) || []).map(m => el("span", { class: "mem" }, short(m), sent ? null : el("button", { type: "button", "aria-label": T("Remove"), text: "×", onclick: () => { p.members = p.members.filter(x => x !== m); savePakt(); renderPakt(); } }))));
+    ...((p && p.members) || []).map(m => el("span", { class: "mem" }, tag(m), sent ? null : el("button", { type: "button", "aria-label": T("Remove"), text: "×", onclick: () => { p.members = p.members.filter(x => x !== m); savePakt(); renderPakt(); } }))));
   const ok = !!W.pk && !sent && d.members.length >= 1 && d.lim >= 1 && d.lim <= MAX_AMOUNT;
   $("btnPakt").disabled = !ok; $("btnPakt").hidden = sent; $("btnPaktNew").hidden = !sent;
   $("btnPakt").textContent = d.members.length ? F("Sign and invite {n}", { n: d.members.length }) : T("Sign and invite");
@@ -774,7 +1121,7 @@ function renderPakt() {
   if (sent) {
     const st = memberStates(p);
     rows.push(el("div", { class: "r" }, el("span", { class: "dot " + st.me[0] }), el("span", null, el("b", { text: T("You") }), " ", el("em", { text: short(W.pk) })), el("span", { text: T(st.me[1]) })));
-    for (const m of p.members) { const s = st.of(m); rows.push(el("div", { class: "r" }, el("span", { class: "dot " + s[0] }), el("span", null, el("b", { text: short(m) })), el("span", { text: T(s[1]) }))); }
+    for (const m of p.members) { const s = st.of(m); rows.push(el("div", { class: "r" }, el("span", { class: "dot " + s[0] }), el("span", null, el("b", { translate: "no", text: tag(m) })), el("span", { text: T(s[1]) }))); }
     rows.unshift(el("div", { class: "note", style: "margin:0 0 2px" }, p.name ? el("b", { translate: "no", text: p.name }) : el("b", { text: T("Your Pakt") }), " · ", F(p.need === "all" ? "above {n} test AGRS, every other member signs" : "above {n} test AGRS, one other member signs", { n: fmt(p.lim) })));
   } else if (!d.members.length) {
     rows.push(el("div", { class: "note", style: "margin:0" }, T("Each member takes this rule for their own account. You invite; they agree in their own wallet.")));
@@ -785,14 +1132,11 @@ function renderPakt() {
   const show = sent || (W.pk && d.members.length);
   $("paktTau").hidden = !show;
   if (show) $("paktText").textContent = ruleFor(W.pk, all, sent ? p.lim : d.lim || 1, sent ? p.need : d.need);
-  $("paktLimit").replaceChildren(el("b", { text: T("Real-chain limit: ") }), T(SIM
-    ? "Tau Testnet Alpha holds rules for 2 accounts at a time, so a real Pakt binds you and one member. Here everyone may agree."
-    : "the testnet holds rules for 2 accounts at a time, so a Pakt binds you and one member. If both places are taken, the node says so before anything is sent."));
   renderPicks();
 }
 function memberStates(p) {
   const out = (W.offers && W.offers.outgoing) || [];
-  const mineOk = myRule() && myRule().who.length === p.members.length;
+  const mr = myRule(), mineOk = !!(mr && mr.co && mr.co.who.length === p.members.length);
   const me = p.myRule === "refused" ? ["off", "your rule refused"] : mineOk ? ["ok", "agreed (your own rule)"] : ["sim", "your rule on its way"];
   return { me, of: m => {
     const o = out.filter(x => (x.recipient_pubkey || "").toLowerCase() === m).pop();
@@ -813,7 +1157,7 @@ $("btnPakt").onclick = async () => {
   p.myRule = mine.ok ? "sent" : "refused";
   let sentN = 0, firstWhy = mine.ok ? "" : mine.why;
   for (const m of p.members) {
-    const r = await submit(base("rule_offer", { recipient_pubkey: m, rule_text: ruleFor(m, all, d.lim, d.need), fee_limit: String(baseFee() * 5) }), F("Pakt invitation to {x}", { x: short(m) }), "offer");
+    const r = await submit(base("rule_offer", { recipient_pubkey: m, rule_text: ruleFor(m, all, d.lim, d.need), fee_limit: String(baseFee() * 5) }), F("Pakt invitation to {x}", { x: tag(m) }), "offer");
     p.offers[m] = r.ok ? "sent" : "refused"; if (r.ok) sentN++; else firstWhy = firstWhy || r.why;
     savePakt(); renderPakt();
   }
@@ -821,14 +1165,34 @@ $("btnPakt").onclick = async () => {
   res.textContent = (sentN ? T(sentN === 1 ? "Invitation sent. The member accepts in their own wallet, under Activity." : F("{n} invitations sent. Each member accepts in their own wallet, under Activity.", { n: sentN })) : "") + (firstWhy ? " " + firstWhy : "");
 };
 $("btnPaktNew").onclick = () => { W.pakt = { members: [], sent: false }; savePakt(); $("paktRes").textContent = ""; renderPakt(); };
-/* quick picks: in the simulation, its accounts; live, your own Pakt's members for the co-signer field */
+/* quick picks: names from your address book, never addresses from a history */
 function renderPicks() {
-  const pool = SIM ? S.friends().slice(0, 4) : [];
-  const mk = (list, fn) => list.map(a => el("button", { type: "button", "data-tip": T("Simulated account") + "\n" + T("An account of the made-up chain.") + "\n" + short(a), text: "+ " + short(a), onclick: () => fn(a) }));
-  $("toPicks").replaceChildren(...mk(pool.slice(0, 3), a => { $("to").value = a; renderSign(); }));
-  $("whoPicks").replaceChildren(...mk(pool.slice(1, 3), a => { $("rWho").value = a; renderRule(); }));
-  $("memPicks").replaceChildren(...(W.pakt && W.pakt.sent ? [] : mk(pool.filter(a => !(W.pakt && W.pakt.members.includes(a))).slice(0, 3), addMember)));
+  const mk = (list, fn) => list.map(c => el("button", { type: "button", translate: "no", "data-tip": c.name + "\n" + T("In your address book.") + "\n" + short(c.addr), text: "+ " + c.name, onclick: () => fn(c) }));
+  const pool = BOOK.filter(c => c.addr !== W.pk);
+  $("toPicks").replaceChildren(...mk(pool.slice(0, 6), c => { $("to").value = c.name; renderSign(); }));
+  $("memPicks").replaceChildren(...(W.pakt && W.pakt.sent ? [] : mk(pool.filter(c => !(W.pakt && W.pakt.members.includes(c.addr))).slice(0, 4), c => addMember(c.addr))));
+  $("bookNames").replaceChildren(...pool.map(c => el("option", { value: c.name })));
 }
+/* the address book itself */
+function renderBook() {
+  $("tabBook").textContent = T("Address book") + (BOOK.length ? " · " + BOOK.length : "");
+  $("bookList").replaceChildren(...(BOOK.length ? BOOK.map(c => el("div", { class: "bk" }, who(c.addr),
+    el("button", { type: "button", "aria-label": T("Remove"), "data-tip": T("Remove from your address book") + "\n" + F("{x} stays a valid address; only the name goes.", { x: c.name }), text: "×", onclick: () => { BOOK = BOOK.filter(x => x !== c); saveBook(); renderAll(); } })))
+    : [el("div", { class: "empty" }, el("b", { text: T("No names yet.") }), " ", T("Add the people you pay. Then you pick a name instead of copying an address, and your rule can allow only them."))]));
+  const n = $("bName").value.trim(), a = $("bAddr").value.trim().toLowerCase();
+  const dupe = BOOK.find(c => c.addr === a || c.name.toLowerCase() === n.toLowerCase());
+  $("btnBook").disabled = !n || !isAddr(a) || !!dupe || BOOK.length >= 12;
+  $("bAddr").classList.toggle("bad", !!a && !isAddr(a));
+  const look = isAddr(a) && !dupe ? lookalike(a) : null;
+  $("bookRes").className = "result " + (look || dupe ? "no" : "");
+  $("bookRes").textContent = dupe && a && n ? (dupe.addr === a ? FX("Already in your book as {x}.", {}, { x: dupe.name }) : T("That name is taken.")) : look ? FX("Careful: this looks like {x}'s address but is a different one. Add it only if you checked it with them.", {}, { x: look.name }) : "";
+}
+["bName", "bAddr"].forEach(id => $(id).addEventListener("input", renderBook));
+$("btnBook").onclick = () => {
+  const n = $("bName").value.trim(), a = $("bAddr").value.trim().toLowerCase();
+  if (!n || !isAddr(a) || BOOK.some(c => c.addr === a)) return;
+  BOOK.push({ name: n, addr: a }); saveBook(); $("bName").value = $("bAddr").value = ""; renderAll();
+};
 
 /* ---------- activity: what waits for you, then what you sent ---------- */
 async function answerOffer(o, yes) {
@@ -836,11 +1200,30 @@ async function answerOffer(o, yes) {
   if (yes && !text) { const m = await lookup(`getruleoffer ${o.offer_id}`); text = m && m.status === "ok" ? m.data.rule_text : null; }
   if (yes && !text) { $("actAside").textContent = T("Could not read the offered rule; try again."); return; }
   const r = await submit(yes ? base("rule_offer_accept", { offer_id: o.offer_id, rule_text: text }) : base("rule_offer_reject", { offer_id: o.offer_id }),
-    yes ? F("Accepted the rule from {x}", { x: short(o.offerer_pubkey) }) : F("Declined the rule from {x}", { x: short(o.offerer_pubkey) }), yes ? "accept" : "decline");
+    yes ? F("Accepted the rule from {x}", { x: tag(o.offerer_pubkey) }) : F("Declined the rule from {x}", { x: tag(o.offerer_pubkey) }), yes ? "accept" : "decline");
   $("actAside").textContent = r.ok ? "" : r.why;
 }
+/* the node's own check of an offered rule against what you have, before you accept (advisory: it cannot prove a rule free of contradictions) */
+const CONF = new Map();
+const LAYER = { shape: "fits the rule format", reserved_domains: "touches nothing reserved", registry_collision: "your current rule", bv_widths: "number sizes match", compile: "the node could build it" };
+async function checkOffer(o) {
+  CONF.set(o.offer_id, "…"); renderActivity();
+  const m = await lookup(`getruleconflict ${o.offer_id}`);
+  CONF.set(o.offer_id, m && m.status === "ok" ? m.data : (m && m.error && m.error.message) || T("No answer from the node; try again."));
+  renderActivity();
+}
+function conflictView(c) {
+  if (c === "…") return el("div", { class: "conflict" }, el("span", { class: "dim", text: T("The node is checking it…") }));
+  if (typeof c === "string") return el("div", { class: "conflict" }, el("span", { class: "no", text: c }));
+  const cls = { ok: "ok", clean: "ok", warn: "warn", conflict: "no" };
+  return el("div", { class: "conflict" },
+    el("span", { class: cls[c.verdict] || "", text: T(c.verdict === "clean" ? "The node found no conflict." : c.verdict === "warn" ? "The node found something to know first:" : "The node found a conflict:") }),
+    ...(c.layers || []).filter(l => l.status !== "ok" || c.verdict === "clean").slice(0, 4).map(l => el("span", { class: cls[l.status] || "" },
+      (l.status === "ok" ? "✓ " : "· ") + (l.layer === "registry_collision" ? T(l.status === "ok" ? "you have no rule yet, nothing is replaced" : "accepting replaces the rule you have now") : T(LAYER[l.layer] || l.layer)))),
+    el("span", { class: "dim", text: T("A clean check is not proof: read the rule before you accept.") }));
+}
 async function answerRequest(q, yes) {
-  const r = await submit(base("transfer_vote", { request_id: q.request_id, approve: yes }), yes ? F("Co-signed {n} test AGRS from {x}", { n: fmt(q.amount), x: short(q.sender_pubkey) }) : F("Declined to co-sign for {x}", { x: short(q.sender_pubkey) }), "vote");
+  const r = await submit(base("transfer_vote", { request_id: q.request_id, approve: yes }), yes ? F("Co-signed {n} test AGRS from {x}", { n: fmt(q.amount), x: tag(q.sender_pubkey) }) : F("Declined to co-sign for {x}", { x: tag(q.sender_pubkey) }), "vote");
   $("actAside").textContent = r.ok ? "" : r.why;
 }
 async function takeBack(t) {
@@ -849,36 +1232,57 @@ async function takeBack(t) {
 }
 function inboxItems() {
   const items = [], h = head();
+  if (W.dust) {
+    const dz = W.dust;
+    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }),
+      el("span", { class: "t" }, el("span", { class: "flag", text: T("Lookalike") }), FX("{n} test AGRS from an address that looks like {x}'s", { n: dz.amount }, { x: dz.like.name })), el("span"),
+      el("span", { class: "m" }, print(dz.from), el("span", { translate: "no", text: short(dz.from) + "  " }), T("It wants a place in your history next to the real one. Never copy an address from here; pick the name."))));
+  }
   const inc = ((W.offers && W.offers.incoming) || []).filter(o => o.status === "offered");
   for (const o of inc) {
-    const rr = readRule(o.rule_text || o.rule_text_preview || "");
+    const rr = readRule(o.rule_text || o.rule_text_preview || ""), c = CONF.get(o.offer_id);
     items.push(el("div", { class: "item ask" }, el("span", { class: "dot ok" }),
-      el("span", { class: "t", text: F("{x} offers you a rule", { x: short(o.offerer_pubkey) }) }),
-      el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Accept"), onclick: () => answerOffer(o, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerOffer(o, false) })),
-      el("span", { class: "m", text: (rr && rr.limit != null ? F("Your payments above {n} test AGRS would need a co-signature.", { n: fmt(rr.limit) }) : T("A rule for your own payments.")) + " " + (o.invite ? T("A simulated member asks you into a Pakt.") : "") + (h != null && o.expire_at_height ? " " + F("Open until block #{a}.", { a: o.expire_at_height }) : "") })));
+      el("span", { class: "t", text: F("{x} offers you a rule", { x: tag(o.offerer_pubkey) }) }),
+      el("span", { class: "acts" }, el("button", { class: "b quiet", type: "button", text: T("Check"), "data-tip": T("Check it") + "\n" + T("The node compares it with what you have.") + "\n" + T("Free; nothing is signed."), onclick: () => checkOffer(o) }),
+        el("button", { class: "b", type: "button", text: T("Accept"), onclick: () => answerOffer(o, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerOffer(o, false) })),
+      el("span", { class: "m", text: (rr ? describe(rr).join(" ") : T("A rule for your own payments.")) + " " + (o.invite ? T("A simulated member asks you into a Pakt.") : "") + (h != null && o.expire_at_height ? " " + F("Open until block #{a}.", { a: o.expire_at_height }) : "") }),
+      c ? conflictView(c) : null));
   }
   for (const q of ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending")) {
     items.push(el("div", { class: "item ask" }, el("span", { class: "dot ok" }),
-      el("span", { class: "t", text: F("{x} asks you to co-sign {n} test AGRS", { x: short(q.sender_pubkey), n: fmt(q.amount) }) }),
+      el("span", { class: "t", text: F("{x} asks you to co-sign {n} test AGRS", { x: tag(q.sender_pubkey), n: fmt(q.amount) }) }),
       el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Co-sign"), onclick: () => answerRequest(q, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerRequest(q, false) })),
-      el("span", { class: "m", text: F("To {x}. Free for you; the payment goes through once its rule is met.", { x: short(q.recipient_pubkey) }) })));
+      el("span", { class: "m", text: F("To {x}. Free for you; the payment goes through once its rule is met.", { x: tag(q.recipient_pubkey) }) })));
   }
   for (const q of ((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "pending")) {
-    const waiting = Object.values(q.approvers || {}).filter(a => a.state === "awaiting").map(a => short(a.pubkey));
-    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x} waits for a co-signature", { n: fmt(q.amount), x: short(q.recipient_pubkey) }) }), el("span"),
+    const waiting = Object.values(q.approvers || {}).filter(a => a.state === "awaiting").map(a => tag(a.pubkey));
+    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x} waits for a co-signature", { n: fmt(q.amount), x: tag(q.recipient_pubkey) }) }), el("span"),
       el("span", { class: "m", text: (waiting.length ? FX("Waiting for {x}.", {}, { x: waiting.join(", ") }) : "") + " " + F("Expires at block #{a}.", { a: q.expire_at_height }) + (SIM ? " " + T("In the simulation your co-signer signs two blocks later.") : "") })));
   }
   const rets = ((W.rets && W.rets.retractables) || []);
   for (const t of rets.filter(t => (t.sender_pubkey || "").toLowerCase() === W.pk && (t.status || "open") === "open")) {
-    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x}, not released yet", { n: fmt(t.amount), x: short(t.recipient_pubkey) }) }),
+    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x}, not released yet", { n: fmt(t.amount), x: tag(t.recipient_pubkey) }) }),
       el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Take back"), "data-tip": T("Take it back") + "\n" + T("Free. Possible until the release block.") + "\n" + F("Released at block #{a}.", { a: t.release_at_height }), onclick: () => takeBack(t) })),
       el("span", { class: "m", text: FX("Released at block #{a} ({t}).", { a: t.release_at_height }, { t: inTime(t.release_at_height - (h || 0)) || T("soon") }) })));
   }
   for (const t of rets.filter(t => (t.recipient_pubkey || "").toLowerCase() === W.pk && (t.status || "open") === "open")) {
-    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS on the way from {x}", { n: fmt(t.amount), x: short(t.sender_pubkey) }) }), el("span"),
+    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS on the way from {x}", { n: fmt(t.amount), x: tag(t.sender_pubkey) }) }), el("span"),
       el("span", { class: "m", text: F("Yours at block #{a}, unless the sender takes it back before.", { a: t.release_at_height }) })));
   }
   return items;
+}
+/* first steps: the empty Activity panel shows the way in, with what is already done */
+function renderSteps() {
+  const steps = [
+    [!!W.pk, "Make your account", "One click; the key stays in this browser."],
+    [BOOK.length > 0, "Put someone in your address book", "Then you pay names, not hex."],
+    [!!myRule(), "Give your account a rule", "For example: only to people in your book."],
+    [W.log.some(x => x.kind === "back"), "Send something with a way back", "And take it back before it is released."],
+  ];
+  const done = steps.filter(x => x[0]).length;
+  $("steps").hidden = done === steps.length;
+  $("steps").replaceChildren(el("h3", { text: F("First steps · {a} of {b} done", { a: done, b: steps.length }) }),
+    ...steps.map(([ok, t, x]) => el("div", { class: "step" + (ok ? " done" : "") }, el("span", { class: "ck", text: ok ? "✓" : "○" }), el("span", null, el("b", { text: T(t) }), " ", ok ? null : el("span", { text: T(x) })))));
 }
 function renderActivity() {
   const inbox = W.pk ? inboxItems() : [];
@@ -886,10 +1290,9 @@ function renderActivity() {
   const word = { queued: ["sim", "on its way"], in: ["ok", "in block #{a}"], out: ["off", "refused"] };
   const rows = W.log.slice(0, 12).map(x => { const w = word[x.status] || word.queued; return el("div", { class: "item" + (x.status === "out" ? " bad" : "") }, el("span", { class: "dot " + w[0] }), el("span", { class: "t", text: x.label }), el("span", { class: "dim", style: "font-size:12px", text: F(w[1], { a: x.block ?? "?" }) }),
     el("span", { class: "m", text: new Date(x.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + (x.hash ? " · " + short(x.hash) : "") + (x.why ? " · " + x.why : "") })); });
-  if (!W.pk) rows.push(el("div", { class: "empty", text: T("Your payments, votes, rules and invitations show here, with what each one is waiting for.") }));
-  else if (!rows.length && !inbox.length) rows.push(el("div", { class: "empty" }, el("b", { text: T("Nothing yet.") }), " ", T(SIM ? "Send something to a simulated account, or wait a few blocks: someone may invite you into a Pakt." : "Send something, vote, or give your account a rule. Requests to co-sign and rules offered to you appear here too.")));
+  if (W.pk && !rows.length && !inbox.length) rows.push(el("div", { class: "empty" }, el("b", { text: T("Nothing yet.") }), " ", T(SIM ? "Send something to a simulated account, or wait a few blocks: someone may invite you into a Pakt." : "Send something, vote, or give your account a rule. Requests to co-sign and rules offered to you appear here too.")));
   $("log").replaceChildren(...rows);
-  $("actAside").textContent = $("actAside").textContent || "";
+  renderSteps();
 }
 
 /* ---------- account and key numbers ---------- */
@@ -915,7 +1318,7 @@ function renderKpis() {
   const back = W.pk && W.rets ? (W.rets.retractables || []).filter(t => (t.sender_pubkey || "").toLowerCase() === W.pk && (t.status || "open") === "open").length : null;
   $("tBack").textContent = back == null ? "–" : back;
 }
-function renderAll() { renderAccount(); renderKpis(); renderActivity(); renderSign(); renderRule(); renderPakt(); renderVote(); }
+function renderAll() { renderAccount(); renderBook(); renderKpis(); renderActivity(); renderSign(); renderRule(); renderShare(); renderPakt(); renderVote(); renderSlots(); }
 
 /* ---------- hovers: light + title, verdict, at most two short lines ---------- */
 const tip = $("tip");
@@ -958,7 +1361,10 @@ if (SIM) {
 }
 fit();
 connect();
+loadBook();
 loadKey();
+loadSlots();
+if (!SIM) setInterval(loadSlots, 60000);
 if (!W.pk) renderAll();
 loadTitles();
 setInterval(loadTitles, 120000);

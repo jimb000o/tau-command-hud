@@ -111,7 +111,7 @@ HEALTH_WEIGHTS = {"node": 20, "sync": 15, "last_block": 20, "pace": 10, "availab
 DROP_GRACE_SECONDS = _env_float("DROP_GRACE_SECONDS", 30)
 UPSTREAM_TIMEOUT = _env_float("UPSTREAM_TIMEOUT_SECONDS", 20)
 # The node allows heavy reads at burst 2, 0.5/s per connection; stay just under.
-HEAVY_COMMANDS = frozenset({"getblocks", "getgovernance", "gettaustate", "checktx"})
+HEAVY_COMMANDS = frozenset({"getblocks", "getgovernance", "gettaustate", "checktx", "getruleconflict"})
 HEAVY_BURST = 2
 HEAVY_REFILL = _env_float("HEAVY_REFILL_PER_SEC", 0.45)
 
@@ -128,7 +128,17 @@ LOOKUPS = {
     "getapprovalrequests": lambda a: 1 <= len(a) <= 2 and HEX.match(a[0]) and (len(a) == 1 or a[1].lower() in ("in", "out", "all")),
     "getruleoffer": lambda a: len(a) == 1 and len(a[0]) == 64 and HEX.match(a[0]),   # the full text, needed to accept an offer
     "getretractables": lambda a: 1 <= len(a) <= 2 and HEX.match(a[0]) and (len(a) == 1 or a[1].lower() in ("in", "out", "all")),
+    # the node's own conflict report for a rule offered to you, before you accept it (advisory, node-local)
+    "getruleconflict": lambda a: len(a) == 1 and len(a[0]) == 64 and HEX.match(a[0]),
 }
+# /rules: who holds one of the testnet's personal-rule (o5) places. The node caps
+# them at 2 chain-wide (consensus/approvals.py MAX_TIER_AUTHORS) and has no
+# command that lists them, so the relay takes the candidates from the blocks it
+# keeps (senders of an o5 rule, acceptors of an offer) and asks the node for each.
+RULES_POLL = _env_float("RULES_POLL_SECONDS", 300)
+RULE_PLACES = _env_int("RULE_PLACES", 2)
+RULES_MAX_CHECKS = _env_int("RULES_MAX_CHECKS", 40)
+NEUTRAL_O5 = "(o5[t]:bv[24]={#x000001}:bv[24])"
 CACHED = ("getmempool", "getgovernance", "gettaustate")
 # The wallet's write door. The visitor's browser builds and signs the
 # transaction (BLS, keys stay in the browser); the relay checks only its shape
@@ -358,6 +368,7 @@ class Relay:
         self.peers_at = 0.0
         self.summary_data: dict | None = None
         self.summary_at = 0.0
+        self.rules_text: str | None = None      # /rules, refreshed by poll_rules
 
     # ---------- polling ----------
     async def poll_loop(self, every: float, fn):
@@ -832,6 +843,38 @@ class Relay:
         }, separators=(",", ":"))
         self.health_at = now
         return self.health_text
+
+    def rule_candidates(self) -> list[str]:
+        """Accounts that may hold an o5 rule: newest first, from the kept blocks."""
+        seen: dict[str, int] = {}
+        for b in self.ordered_blocks():
+            h = self._height(b)
+            for t in b.get("transactions") or []:
+                if not isinstance(t, dict):
+                    continue
+                ops = t.get("operations") if isinstance(t.get("operations"), dict) else {}
+                rule = ops.get("0") if isinstance(ops.get("0"), str) else ""
+                if (t.get("tx_type") in (None, "user_tx") and "o5" in rule) or t.get("tx_type") == "rule_offer_accept":
+                    who = str(t.get("sender_pubkey") or "").lower()
+                    if HEX.match(who):
+                        seen[who] = h
+        return sorted(seen, key=lambda a: -seen[a])
+
+    async def poll_rules(self):
+        holders = []
+        for i, a in enumerate(self.rule_candidates()[:RULES_MAX_CHECKS]):
+            if i:
+                await asyncio.sleep(2.5)   # getruleoffers is in the node's expensive tier (0.5/s)
+            msg = await self.upstream.request(f"getruleoffers {a} in")
+            data = (msg or {}).get("data") if (msg or {}).get("status") == "ok" else None
+            if not isinstance(data, dict):
+                return   # keep the last answer rather than publish a partial one
+            for c in data.get("accepted_clauses") or []:
+                if str(c.get("target_stream")) in ("5", "o5") and re.sub(r"\s+", "", str(c.get("clause_body") or "")) not in (NEUTRAL_O5, NEUTRAL_O5[1:-1]):
+                    holders.append(a)
+                    break
+        self.rules_text = json.dumps({"places": RULE_PLACES, "taken": min(len(holders), RULE_PLACES), "holders": holders,
+                                      "checked_at": round(time.time())}, separators=(",", ":"))
 
     @staticmethod
     def _tx_summary(t: dict) -> dict:
@@ -1553,6 +1596,14 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=30")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.peers_json().encode())
+        if path == "/rules":
+            ready = self.rules_text is not None
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
+            body = (self.rules_text or '{"error":"relay is still reading the rule places"}').encode()
+            return Response(code.value, code.phrase, headers, body)
         if path == "/community":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
@@ -1619,6 +1670,7 @@ class Relay:
             asyncio.create_task(self.poll_loop(STATE_POLL, lambda: self.poll_cached("gettaustate", False))),
             asyncio.create_task(self.presence_loop()),
             asyncio.create_task(self.uptime_loop()),
+            asyncio.create_task(self.poll_loop(RULES_POLL, self.poll_rules)),
         ]
         async with serve(self.handler, LISTEN_HOST, LISTEN_PORT, process_request=self.process_request,
                          max_size=TX_MAX_BYTES + 64, max_queue=8, ping_interval=15, ping_timeout=15,

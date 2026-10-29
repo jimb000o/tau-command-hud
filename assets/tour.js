@@ -119,6 +119,16 @@
       { s: "#agree", t: "Rule changes need votes", x: "Every rule change needs yes votes from the validators before its deadline. Raise the bar or take validators offline and see what passes." },
       { s: ".side > section.panel:nth-of-type(1)", t: "What happens, in plain words", x: "One verdict for your settings, in plain words. The panel below counts what changed since your last move." },
     ] },
+    wallet: { name: "the wallet", intro: "A testnet account with its own rules: send, take back, co-sign, and give your account a rule the chain enforces.", steps: [
+      { s: "#acct", go: "#acctTabs button[data-atab=acct]", t: "Your account, in this browser", x: "A key is drawn here and never leaves it. Its public half is your address; the balance is in test AGRS, which have no value." },
+      { s: "#acct", go: "#tabBook", t: "Names, not hex", x: "Put the people you pay in your address book. You pick a name, the page shows the full address with its print, and a lookalike that copies the first and last characters stands out." },
+      { s: "#act", go: "#tabSend", t: "Send, take back, split, vote", x: "Send a payment, send one with a way back that you can take back until it is released, pay several people at once, or say yes to a rule change of the chain." },
+      { s: "#sign", t: "Before you sign", x: "The amount and the recipient in large type, then what your rule says, the fee and whether there is a way back. If your rule would stop it, nothing is sent." },
+      { s: "#build", go: "#ruleTabs button[data-rtab=mine]", t: "Give your account a rule", x: "Tick the blocks you want: only to people in your book, a limit per payment, a date before which nothing leaves, a co-signer for larger payments. The chain checks it on every payment, even one signed with a stolen key." },
+      { s: "#probes", t: "Test it before you sign", x: "Example payments run against the rule on the screen: to a friend, to a lookalike, to someone new and a large one. You see what goes through before anything is signed." },
+      { s: "#slots", t: "Two rule places", x: "Tau Testnet Alpha holds personal rules for 2 accounts at a time. This shows how many are taken and whether one is yours." },
+      { s: "#activity", t: "What waits for you", x: "Rules offered to you, with the node's own check, requests to co-sign, payments you can still take back and everything you sent. On a first visit it shows the first steps." },
+    ] },
     vote: { name: "Vote for real", intro: "Vote on the real testnet yourself, after practising the same commands here first.", steps: [
       { s: ".intro .kpis", t: "Open now", x: "Proposals waiting for votes, yes votes needed and who may vote, read from the chain." },
       { s: "#real", t: "Step by step on the real testnet", x: "From running your own node to the ready command for your vote. Every step says how long it takes." },
