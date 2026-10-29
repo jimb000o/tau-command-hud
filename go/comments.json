@@ -4,24 +4,17 @@
     "url": "https://github.com/IDNI/tau-testnet/issues/80#issuecomment-new",
     "text": "Quick update from our side. The node behind this request has been running since Oct 27 at node.tauhud.com and is fully synced to the tip (status: https://tauhud.com/status/). The key stays idle until it appears in the active set; the node will not propose before that (validator-gate patch, infra/node/patches in jimb000o/tau-command-hud). Pubkey again for convenience: 80ad4a20099a0d9002c67ffd0094587c2238fbe84d24d41861481936bce25779a64f4ba12ef7825051a9507f11d536b8. Happy to adjust anything on our end, or to test a second validator on a staging genesis first if that is easier for you. Thanks!"
   },
-  "launch-hn-comment": {
-    "label": "Hacker News: your first comment under the Show HN post (open your post, paste, press add comment)",
-    "url": "https://news.ycombinator.com/newest",
-    "text": "Hi HN. Tau HUD is an unofficial, community-built live view of Tau Testnet Alpha, the public test network of Tau, run by IDNI.\n\nWhat makes Tau unusual: the chain's own rules (fees, who seals blocks, how many votes a change needs) are written in a logic language. A proposed rule is checked before it can apply, and it becomes law once enough participants vote for it, with no hard fork and no admin key. Each account can also set rules of its own for its money, which the node enforces.\n\nThe site runs its own node and relay and shows blocks, proposals and votes as they happen. The real testnet is quiet (one validator, few transactions), so every page also has a clearly marked Simulation mode: a deterministic made-up chain generated in your browser, where you can watch or practise a rule change by vote from start to finish.\n\nThings to try: the Explorer (\"what happened to my transaction?\"), Time travel (the rules in force at any block), the Rule Playground, and Vote, a step-by-step guide to casting a real vote with IDNI's own command line.\n\nStatic site, MIT licensed, no cookies or tracking: https://github.com/jimb000o/tau-command-hud. Testnet tokens have no value and nothing is sold. Feedback is very welcome, especially on what is confusing.",
-    "button": "Copy and open Hacker News",
-    "hint": "The text is copied for you. Open your Show HN post, paste with Ctrl+V into the comment box and press add comment."
-  },
   "launch-tg-tau": {
     "label": "Tau community on Telegram: introduce Tau HUD",
     "url": "https://t.me/tauchain",
-    "text": "Hi everyone. I have been building Tau HUD, an unofficial community dashboard for Tau Testnet Alpha: https://tauhud.com\n\nIt runs its own node and shows blocks, proposals and votes as they happen. Also there:\n· Explorer: what happened to a transaction, block or address\n· Time travel: the rules in force at any block\n· Rule Playground: write a rule and run the testnet's own checks on it\n· Vote: a step-by-step guide to vote on the real testnet with the tau-testnet CLI, practised first in a simulation\n· The Daily Consensus, a weekly 1920s style newspaper of the testnet\n\nAlerts for every rule change and chain restart: t.me/tauHUDcom and x.com/TauHUDcom\n\nNot affiliated with IDNI, testnet AGRS have no value. Feedback and bug reports are very welcome.",
+    "text": "hey everyone :) i built a little live dashboard for the testnet: https://tauhud.com\nblocks, proposals and votes as they happen, plus a guide to vote yourself. unofficial, just a fan project. feedback very welcome!",
     "button": "Copy and open Telegram",
     "hint": "The text is copied for you. In the Tau group, paste with Ctrl+V and send."
   },
   "launch-tg-own": {
     "label": "Our channel @tauHUDcom: launch post",
     "url": "https://t.me/tauHUDcom",
-    "text": "Tau HUD goes public today\n\nUntil now this channel and the site grew quietly. Today we are telling the Tau community, Hacker News and Reddit about it.\n\nEvery page now has a Share card (in the About menu and in every footer) with its own preview picture. If one page helped you understand Tau, send it to one person who would like it.\n\n👉 tauhud.com",
+    "text": "Tau HUD is now out in the wild 👋\nEvery page has a Share button with its own preview picture. If a page helped you get Tau, send it to one friend who'd like it.\ntauhud.com",
     "button": "Copy and open Telegram",
     "hint": "The text is copied for you. In the channel, paste with Ctrl+V and send."
   }
