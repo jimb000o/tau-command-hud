@@ -34,6 +34,7 @@ from websockets.datastructures import Headers
 from websockets.exceptions import ConnectionClosed
 from websockets.http11 import Request, Response
 
+from chat import Chat, parse_say
 from simpredict import SimPredict
 from simprops import SimProps
 from simvotes import SimVotes, name_of
@@ -339,6 +340,9 @@ class Relay:
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
+        self.chat = Chat()       # the troll box (chat.py); pushes go to the sockets that joined it
+        self.chat_subs: set[ServerConnection] = set()
+        self.chat.on_hide = lambda mid: broadcast(self.chat_subs, envelope_ok("chat", {"hide": [mid]}))
         self.clients: set[ServerConnection] = set()
         self.per_ip: dict[str, int] = {}
         # connection -> (address, user agent): one person's tabs, pages and reconnects count
@@ -1097,6 +1101,9 @@ class Relay:
         if cmd == "presence":
             return self.presence_envelope()
 
+        if cmd == "chat":
+            return self.chat_command(args, ws)
+
         if cmd == "report":
             return self.report(args, ip)
 
@@ -1549,6 +1556,30 @@ class Relay:
     def presence_envelope(self) -> str:
         return envelope_ok("presence", {"online": self.online(), "sites": self.online_sites(), "pushed": True})
 
+    def chat_command(self, args: list[str], ws: ServerConnection | None) -> str:
+        """The troll box over the socket: join / leave / say / report (chat.py has the rules)."""
+        sub = args[0].lower() if args else ""
+        ip, ua = (self.viewers.get(ws) or ("?", ""))[:2] if ws is not None else ("?", "")
+        person = self.visits.person(ip, ua)
+        if sub == "join":
+            if ws is not None:
+                self.chat_subs.add(ws)
+            return envelope_ok("chat", self.chat.recent())
+        if sub == "leave":
+            self.chat_subs.discard(ws)
+            return envelope_ok("chat", {"left": True})
+        if sub == "say":
+            parsed = parse_say(args[1:])
+            r = self.chat.say(person, *parsed) if parsed else {"error": "bad", "message": "Usage: chat say <token> <a> <b> <c> <text>"}
+            if r.get("ok"):
+                broadcast(self.chat_subs - {ws} if ws is not None else self.chat_subs, envelope_ok("chat", {"new": [r["msg"]]}))
+                return envelope_ok("chat", {"sent": r["msg"]})
+            return envelope_error("chat", r["message"], r["error"].upper())
+        if sub == "report" and len(args) == 3 and args[1].isdigit():
+            r = self.chat.report(person, int(args[1]), args[2])
+            return envelope_ok("chat", {"reported": int(args[1]), "hidden": r.get("hidden", False)}) if r.get("ok") else envelope_error("chat", r["message"], "BAD")
+        return envelope_error("chat", "Usage: chat join | leave | say <token> <a> <b> <c> <text> | report <id> <token>", "INVALID_PARAMS")
+
     def push_presence(self):
         broadcast(self.clients, self.presence_envelope())
 
@@ -1616,6 +1647,12 @@ class Relay:
                                ("Cache-Control", "no-store"), ("Referrer-Policy", "no-referrer"),
                                ("X-Robots-Tag", "noindex")])
             return Response(code.value, code.phrase, headers, seen[2])
+        said = self.chat.route(path, query) if path.startswith("/chat") else None
+        if said is not None:
+            code = HTTPStatus(said[0])
+            headers = Headers([("Content-Type", said[1]), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store"),
+                               ("Referrer-Policy", "no-referrer"), ("X-Robots-Tag", "noindex")])
+            return Response(code.value, code.phrase, headers, said[2])
         sim = self.simvotes.route(path, query, ip)
         if sim is not None and path == "/sim/votes":
             sim[1]["wallet"] = self.simwallet.count()   # pages fetch /sim/wallet only when this grows
@@ -1740,6 +1777,7 @@ class Relay:
             pass
         finally:
             self.clients.discard(ws)
+            self.chat_subs.discard(ws)
             self.viewers.pop(ws, None)
             self.per_ip[ip] -= 1
             if self.per_ip[ip] <= 0:
