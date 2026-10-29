@@ -517,5 +517,15 @@ TauI18n.add({ strings: {
   "{e1}Site version, one step per release · {e2}Part of the site that changed (the name opens it) · Newest first": "{e1}网站版本，每次发布前进一步 · {e2}有变化的网站部分（点名称即可打开） · 最新的在最上面",
   "What changed and when, newest first. The green number is the site version: it goes up one step with every release on any page, and a new page or big feature starts the next whole number. The name beside it says which part of the site changed and opens it. Before v17.54 only the HUD had numbers.": "变化内容和时间，最新的在最上面。绿色数字是网站版本：任何页面每发布一次就前进一步，新页面或大功能则进入下一个整数版本。旁边的名称说明网站的哪个部分有变化，点它即可打开。v17.54 之前只有 HUD 有版本号。",
   "About Tau HUD": "关于 Tau HUD",
-  "Press": "媒体"
+  "Press": "媒体",
+  "Share this page": "分享本页",
+  "Reddit": "Reddit",
+  "Hacker News": "Hacker News",
+  "Share": "分享",
+  "Share…": "分享…",
+  "Copy the link, or post it on X, Telegram, Reddit or Hacker News": "复制链接，或发布到 X、Telegram、Reddit 或 Hacker News",
+  "Copy link": "复制链接",
+  "Link copied.": "链接已复制。",
+  "Copy blocked by the browser; the link is selected, press Ctrl/Cmd+C.": "浏览器阻止了复制；链接已选中，请按 Ctrl/Cmd+C。",
+  "The link shows this page's own preview picture. Tau HUD is an unofficial community view of the Tau testnet; nothing here is for sale.": "链接会显示本页自己的预览图。Tau HUD 是 Tau 测试网的非官方社区视图；这里没有任何东西出售。"
 } });

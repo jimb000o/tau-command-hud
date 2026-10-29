@@ -222,3 +222,17 @@ body[data-view="simple"] .vp { display: block; }
 @media (max-width: 520px) { .tn-donate { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
 /* "In numbers · Privacy" at the end of every footer line */
 a.tn-foot { color: inherit; }
+/* Share this page: one small card with the link, Copy and the places to post it */
+.tn-share .tn-sheet { width: min(520px, 100%); padding: 20px; background: var(--u-deck); border: 1px solid var(--u-hair); border-radius: 10px; }
+.tn-share h3 { margin: 0 0 4px; font: 600 12px var(--u-display); letter-spacing: .24em; text-transform: uppercase; color: var(--u-ok); }
+.tn-share .tn-sh-t { margin: 0 40px 12px 0; font: 600 15px var(--u-display); color: #fff; }
+.tn-share .tn-sh-link { display: flex; gap: 8px; align-items: center; }
+.tn-share .tn-sh-link code { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--u-line); border-radius: 6px; font: 12px var(--u-mono); color: #fff; overflow-wrap: anywhere; user-select: all; }
+.tn-share button, .tn-share .tn-sh-row a { min-height: 36px; padding: 8px 14px; border: 1px solid var(--u-hair); border-radius: 999px; background: transparent; color: #fff; font: 600 12px var(--u-mono); text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; }
+.tn-share .tn-sh-copy { border-color: rgba(57,255,138,.6); color: var(--u-ok); white-space: nowrap; }
+.tn-share .tn-sh-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.tn-share .tn-sh-row a:hover, .tn-share button:hover { border-color: var(--u-ok); }
+.tn-share .tn-sh-msg { min-height: 18px; margin: 6px 0; font-size: 12px; color: var(--u-ok); }
+.tn-share .tn-sh-note { margin: 14px 0 0; font-size: 12px; color: var(--u-dim); }
+.tn-share .tn-close { top: 10px; right: 10px; }
+@media (max-width: 700px) { .tn-share .tn-sh-link { flex-wrap: wrap; } .tn-share button, .tn-share .tn-sh-row a { min-height: 44px; } }
