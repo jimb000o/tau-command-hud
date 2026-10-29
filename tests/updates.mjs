@@ -4,10 +4,12 @@
    - with BASE=<file> (the log on the target branch): no entry there is missing here, so a merge did not drop one
    - with BASE and PR_TITLE (a pull request): the pull request adds at least one entry, so every release is in the log;
      a change nobody would notice (a test, a typo in a comment) says "[no log]" in its title
+   - with BASE: a "major" new in the pull request names its screenshot for the X post, "image": "/assets/shots/<id>.png",
+     and every named screenshot is in the repository and at most 5 MB
    - every entry has its Chinese text in assets/i18n/zh/hud.js (keyed by the English html)
 
    Run: node tests/updates.mjs        BASE=/tmp/base-updates.json node tests/updates.mjs */
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -28,7 +30,7 @@ catch (e) { fail(`assets/updates.json is not valid JSON: ${e.message}`); }
 if (list && !Array.isArray(list)) { fail("assets/updates.json must be a list"); list = null; }
 
 if (list) {
-  const majors = new Set();
+  const majors = new Set(), images = [];
   list.forEach((e, i) => {
     const at = `entry ${i + 1} (${e && e.tag})`;
     if (!e || typeof e !== "object") return fail(`${at} is not an object`);
@@ -41,10 +43,21 @@ if (list) {
         for (const k of ["id", "title", "text", "link"]) if (typeof m[k] !== "string" || !m[k].trim()) fail(`${at} "major" has no "${k}"`);
         if (majors.has(m.id)) fail(`${at} "major" id "${m.id}" is used twice`);
         majors.add(m.id);
+        if ("image" in m) {   // the screenshot under the X post: "/assets/shots/<id>.png" (or .jpg), 16:9, at most 5 MB
+          if (typeof m.image !== "string" || !/^\/assets\/shots\/[a-z0-9-]+\.(png|jpg)$/.test(m.image))
+            fail(`${at} "major" image should look like "/assets/shots/${m.id}.png": ${m.image}`);
+          else images.push([at, m.image]);
+        }
       }
     }
     for (const k of Object.keys(e)) if (!["tag", "on", "html", "major", "backfill"].includes(k)) fail(`${at} has an unknown field "${k}"`);
   });
+
+  for (const [at, img] of images) {
+    let size = -1;
+    try { size = (await stat(join(ROOT, img))).size; } catch { fail(`${at} "major" image ${img} is not in the repository`); }
+    if (size > 5 * 2 ** 20) fail(`${at} "major" image ${img} is over 5 MB (X takes pictures up to 5 MB)`);
+  }
 
   if (process.env.BASE) {
     let base = [];
@@ -53,6 +66,11 @@ if (list) {
     const count = l => l.reduce((m, e) => m.set(e.tag + " of " + e.on, (m.get(e.tag + " of " + e.on) || 0) + 1), new Map());
     const here = count(list);
     for (const [k, n] of count(base)) if ((here.get(k) || 0) < n) fail(`entry ${k} from the target branch is missing (a merge dropped it?): ${n} there, ${here.get(k) || 0} here`);
+    /* a new page or big feature brings its screenshot for the X post */
+    const old = new Set(base.filter(e => e && e.major).map(e => e.major.id));
+    for (const e of list) if (e && e.major && !old.has(e.major.id) && !e.major.image && !e.major.skip)
+      fail(`the new "major" ${e.major.id} has no "image": add a 16:9 screenshot of it as assets/shots/${e.major.id}.png `
+         + `(PNG or JPEG, at most 5 MB, about 1600×900) and "image": "/assets/shots/${e.major.id}.png" in its "major"`);
     const title = process.env.PR_TITLE;
     if (title !== undefined && base.length && list.length <= base.length && !/\[no log\]/i.test(title))
       fail(`this pull request adds no entry to the Updates log. Every release gets one: append {tag, on, html} to assets/updates.json `

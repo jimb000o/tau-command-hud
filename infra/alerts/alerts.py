@@ -143,6 +143,7 @@ SIM_PROPOSED_AT, SIM_IN_FORCE_AT = 20 * 60, 30 * 60
 SIM_LINK = f"{SITE}/proposals/?mode=sim"
 # Changes to Tau HUD itself, from the update log every release appends to. Mark an entry as worth its own post with
 #   "major": {"id": "unique-slug", "title": "…", "text": "one or two plain sentences", "link": "/page/"}
+# plus "image": "/assets/shots/<id>.png", a 16:9 screenshot (PNG or JPEG, at most 5 MB) that goes under the X post,
 # and add "skip": "why" to a major that must not be posted (already announced by hand); it also leaves the queue.
 # (text and link are optional: the entry's first two sentences and the home page). Everything else is bundled into a digest.
 SITE_ON = os.environ.get("SITE_UPDATES", "true").lower() in ("1", "true", "yes")
@@ -869,7 +870,7 @@ def site_link(link: str | None) -> str:
 def major_item(e: dict) -> dict:
     m = e["major"]
     return {"title": str(m.get("title") or site_area(e)), "text": str(m.get("text") or sentences(plain(e.get("html")), 2)),
-            "link": site_link(m.get("link")), "on": e.get("on")}
+            "link": site_link(m.get("link")), "on": e.get("on"), **({"image": site_link(m["image"])} if m.get("image") else {})}
 
 
 def digest_item(e: dict) -> dict:
@@ -1170,6 +1171,11 @@ def item_picture(item: dict) -> str:
     pid = str(item.get("id") or "")
     return f"{SHARE_HTTP}/og/proposal/{pid}.png" if item.get("kind") != "restart" and re.fullmatch(r"[0-9a-f]{8,64}", pid) \
         else f"{SHARE_HTTP}/og/hud.png"
+
+
+def major_picture(m: dict) -> str:
+    """The screenshot the update log names for it ("image"), else the page's own preview picture, else the site's."""
+    return m.get("image") or page_picture(m["link"]) or f"{SITE}/og.png"
 
 
 def page_picture(link: str) -> str | None:
@@ -1720,7 +1726,7 @@ class Watcher:
                 st["last_major"] = round(now)
                 log.info("site updates: catch-up post with %d new pages and features", shown)
                 self.save_state()
-                await self.post_x(catchup_x(batch[:shown]), "site catch-up", now)
+                await self.post_x(catchup_x(batch[:shown]), "site catch-up", now, await asyncio.to_thread(major_picture, batch[0]))
             self.save_state()
             return
         if st["majors"] and st["count"] < SITE_MAJOR_DAILY_CAP and now - st.get("last_major", 0) >= SITE_MAJOR_GAP:
@@ -1731,7 +1737,7 @@ class Watcher:
                 st["last_major"] = round(now)
                 log.info("site updates: posted %s", m["key"])
                 self.save_state()
-                await self.post_x(major_x(m), "site " + m["key"], now, await asyncio.to_thread(page_picture, m["link"]))
+                await self.post_x(major_x(m), "site " + m["key"], now, await asyncio.to_thread(major_picture, m))
             self.save_state()
             return  # one post per check: a digest never lands on top of a major
         d0 = datetime.fromtimestamp(now, timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()

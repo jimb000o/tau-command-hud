@@ -291,7 +291,8 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
   switches unless `X_SIM=true`.
 - Layout: the headline first, the text, then one line saying where it comes from, with
   `#TauNet`. A picture goes along where one fits (`X_PICTURES`): a rule change's card and the
-  live overview from the share service, a new page's own preview picture; the post stays
+  live overview from the share service, a new page's screenshot (`"image": "/assets/shots/<id>.png"` in its
+  `major`, required by CI for every new major), else its own preview picture, else the site's; the post stays
   $0.015, and without a picture the text goes alone.
 - No links in X posts (`X_LINKS=true` adds them); `X_DAILY_CAP` (8) and `X_MONTHLY_CAP` (120)
   posts at most, the rest stays on Telegram. An X failure never holds up Telegram; it is
