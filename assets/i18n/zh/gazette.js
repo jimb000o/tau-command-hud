@@ -5,6 +5,7 @@ TauI18n.add({ strings: {
   "Next page": "下一页",
   "Previous page": "上一页",
   "Sound of the paper": "翻报纸的声音",
+  "The café around the paper: off, its sounds, or its sounds with a gramophone": "报纸周围的咖啡馆：关闭、它的声音，或者加上一台留声机",
   "Switch between the full broadsheet and the pocket edition with one story per page": "在整版大报和每页一篇的袖珍版之间切换",
   "Show the site menu": "显示网站菜单",
   "Large type": "大字号",
