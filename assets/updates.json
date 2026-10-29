@@ -1132,5 +1132,10 @@
   "tag": "Wallet",
   "on": "2026-10-29",
   "html": "Wallet in the simulation: what you send now lands on the shared simulated chain, the one every visitor sees. Pay another visitor by their address and they see it arrive in their wallet under their visitor name; offer them your rule and they can check and accept it; ask them to co-sign and they sign from their own wallet. Your payments show in everyone’s Explorer and Accounts. A vote from the wallet also counts as your visitor vote. Nothing reaches the real testnet, and the simulated chain starts over at 00:00 UTC."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-29",
+  "html": "Findings from the chain: the Telegram channel now posts by itself when our read node sees something unusual on the real testnet: no new blocks, the IDNI bootnode gone, ghost transactions (IDNI #81), blocks replaced, a slow pace, many dropped transactions, or our node falling behind (IDNI #78). One post when it starts, one when it is over, never repeated; when it gets wild, the bot collects and posts one summary afterwards. Real outages also go to X, at most three findings a day."
  }
 ]
