@@ -32,7 +32,7 @@ class Evening(unittest.TestCase):
         A.step(LATEST, s, send=lambda m: True, send_x=lambda m, st: xs.append(m) or True)
         self.assertEqual(len(xs), 2)
         self.assertTrue(xs[0].startswith("🦍 Evening 1: Pendant light became Rose\n\nWhite 4 · Rose 9 · Blue 2"))
-        self.assertTrue(xs[0].endswith("#Agorzilla #TauNet"))
+        self.assertTrue(xs[0].endswith("#TauNet $AGRS"))
         self.assertNotIn("http", xs[0] + xs[1])
         self.assertNotIn("agorzilla.com", xs[0] + xs[1])
         self.assertNotIn("<b>", xs[0])
