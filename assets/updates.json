@@ -1321,5 +1321,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Agorzilla on the HUD now really walks: his legs step in turn, front left with back right, while his body rides up on each step, and his paws stand in front of the header line. Now and then he does a special move, sized to the room on your screen: a little dance, a backflip where there is head room, a roll or a cartwheel along the line where there is space to his left. Agorzilla also has its own entry in the Playground menu."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Click a validator in the Chain core and its profile opens: what it sealed, how much traffic it carried and how it voted (the Validators panel's detail has the same link). The header Agorzilla's hover now reads like a Chain core element: a status light, Live with today's meals and wallets, his stage and tonight's vote, all from agorzilla.com. His eyes now look where he looks, and skin lids with a lash line close when he blinks."
  }
 ]
