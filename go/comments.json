@@ -17,5 +17,12 @@
     "text": "Tau HUD is now out in the wild 👋\nEvery page has a Share button with its own preview picture. If a page helped you get Tau, send it to one friend who'd like it.\ntauhud.com",
     "button": "Copy and open Telegram",
     "hint": "The text is copied for you. In the channel, paste with Ctrl+V and send."
+  },
+  "agorzilla-tg-tau": {
+    "label": "Tau community on Telegram: say hi from Agorzilla",
+    "url": "https://t.me/tauchain",
+    "text": "hey everyone :) made a little side thing on the testnet: https://agorzilla.com\none creature everyone feeds with test AGRS, every meal is a real tx, and each evening the most-picked change sticks. just for fun, no value. would love to know what you think!",
+    "button": "Copy and open Telegram",
+    "hint": "The text is copied for you. In the Tau group, paste with Ctrl+V and send."
   }
 }

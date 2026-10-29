@@ -1285,6 +1285,19 @@
   "html": "Node: our node now runs IDNI's newest testnet software (b1ebfa4). It carries IDNI's two fixes from the evening of 29 October: the p2p overflow that stopped the bootnode from accepting peers for three hours, and a restart for a node whose network has died. Findings shows both next to our own reconnect fix."
  },
  {
+  "tag": "Agorzilla",
+  "on": "2026-10-29",
+  "html": "New: Agorzilla, our second site at agorzilla.com. One creature that everyone shares on Tau Testnet Alpha: each meal is a real testnet transaction from a test wallet the page makes in your browser, and every evening at 18:00 UTC the change most wallets picked becomes part of it. Test AGRS have no value; feeding buys nothing. The small Agorzilla in the HUD header leads there too.",
+  "major": {
+   "id": "agorzilla",
+   "title": "New: Agorzilla, one creature the whole testnet feeds and shapes",
+   "text": "Each meal is a real transaction on Tau Testnet Alpha, sent from a test wallet the page makes in your browser. Every evening at 18:00 UTC the change most wallets picked becomes part of it. Test AGRS have no value.",
+   "link": "https://agorzilla.com",
+   "image": "/assets/shots/agorzilla.png",
+   "x": false
+  }
+ },
+ {
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Donations, worded plainly: the About section and the Updates card are now called Donations and say that a donation is a voluntary gift that buys nothing, with no promise about the future of the site. The thank-you posts and the privacy notice say the same."

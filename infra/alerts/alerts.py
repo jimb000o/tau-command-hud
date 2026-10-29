@@ -917,7 +917,8 @@ def site_link(link: str | None) -> str:
 def major_item(e: dict) -> dict:
     m = e["major"]
     return {"title": str(m.get("title") or site_area(e)), "text": str(m.get("text") or sentences(plain(e.get("html")), 2)),
-            "link": site_link(m.get("link")), "on": e.get("on"), **({"image": site_link(m["image"])} if m.get("image") else {})}
+            "link": site_link(m.get("link")), "on": e.get("on"), **({"image": site_link(m["image"])} if m.get("image") else {}),
+            **({"x": False} if m.get("x") is False else {})}
 
 
 def digest_item(e: dict) -> dict:
@@ -932,7 +933,13 @@ def digest_item(e: dict) -> dict:
 def major_text(m: dict) -> str:
     e = html.escape
     return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", "", e(m["text"]), "",
-                      f"<a href=\"{e(m['link'])}\">Open it on tauhud.com</a>", "", f"<i>{e(SITE_NOTICE)}</i>"])
+                      f"<a href=\"{e(m['link'])}\">Open it on {e(link_host(m['link']))}</a>", "", f"<i>{e(SITE_NOTICE)}</i>"])
+
+
+def link_host(link: str) -> str:
+    """Where a link goes, as people say it: tauhud.com, or another site the log points at (agorzilla.com)."""
+    host = urllib.parse.urlsplit(link).hostname or ""
+    return host.removeprefix("www.") or "tauhud.com"
 
 
 def major_x(m: dict) -> str:
@@ -1848,7 +1855,8 @@ class Watcher:
                 st["last_major"] = round(now)
                 log.info("site updates: posted %s", m["key"])
                 self.save_state()
-                await self.post_x(major_x(m), "site " + m["key"], now, await asyncio.to_thread(major_picture, m))
+                if m.get("x", True):  # "x": false in the log: announced on X by hand, with its link
+                    await self.post_x(major_x(m), "site " + m["key"], now, await asyncio.to_thread(major_picture, m))
             self.save_state()
             return  # one post per check: a digest never lands on top of a major
         d0 = datetime.fromtimestamp(now, timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
