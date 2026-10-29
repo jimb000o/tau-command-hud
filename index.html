@@ -316,14 +316,12 @@ html.i18n-zh .ga-tx { text-align: left; }
 .brand h1 { margin: 0; font: 600 22px/1 var(--display); letter-spacing: .06em; text-transform: none; background: var(--brand); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); }
 .brand span { font: 400 11px var(--display); letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
-/* Agorzilla: small, in the empty middle of the top line, breathing; it never makes the line taller */
-.agz { flex: 0 0 0; width: 0; height: 26px; margin: 0 auto; position: relative; line-height: 0; opacity: .9; transition: opacity .2s, filter .2s; }   /* takes no width: it can never push the chips to a new line */
-.agz + .chips { margin-left: 0; }   /* the free space sits on both sides of it, so it stands exactly in the middle of the gap */
-.agz > span { position: absolute; left: -21px; top: -4px; width: 42px; height: 64px; }   /* as tall as both header lines, standing on the second */
-.agz > span::after { content: ""; position: absolute; left: 2px; right: 2px; bottom: -3px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.75), rgba(0,0,0,0)); }   /* a soft ground shadow: it stands, it does not float */
+/* Agorzilla stands on the header's bottom line, just left of the live status he keeps an eye on (placed by placeAgz) */
+.agz { position: absolute; z-index: 3; line-height: 0; opacity: .95; transition: opacity .2s, filter .2s; }
+.agz > span { position: relative; display: block; }
+.agz > span::after { content: ""; position: absolute; left: 4%; right: 4%; bottom: -3px; height: 9px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.8), rgba(0,0,0,0)); }   /* a soft ground shadow: he stands, he does not float */
 .agz.cramped { visibility: hidden; }
-.agz img { position: relative; z-index: 1; height: 64px; width: auto; transform-origin: 50% 92%; animation: agzBreathe 4.2s ease-in-out infinite; }
-@media (max-width: 2299px) { .agz > span { left: -16px; top: -2px; width: 32px; height: 48px; } .agz img { height: 48px; } }
+.agz img { position: relative; z-index: 1; height: var(--agz-h, 78px); width: auto; transform-origin: 50% 92%; animation: agzBreathe 4.2s ease-in-out infinite; }
 .agz:hover { opacity: 1; filter: drop-shadow(0 0 8px rgba(57,255,138,.45)); }
 @keyframes agzBreathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.015, 1.035); } }
 @media (max-width: 1599px) { .agz { display: none; } }
@@ -1667,13 +1665,17 @@ async function pollOnline() {
 /* Agorzilla (agorzilla.com): a creature on the live testnet that the community feeds with real transactions. Its own site publishes
    today's meals and its stage; until that file may be read from here, the hover says what it is */
 const AGZ = { at: 0, d: null };
-function placeAgz() {   // shown only while the gap between the notice and the chips has room for it
-  const a = $("agz"), u = document.querySelector(".rail .unoff"), c = document.querySelector(".rail .chips"); if (!a || !u || !c) return;
-  const ur = u.getBoundingClientRect(), cr = c.getBoundingClientRect(), same = Math.abs(ur.top - cr.top) < 20;
-  let tight = !same || cr.left - ur.right < 110;
-  if (!tight) { a.classList.remove("cramped"); const r = a.firstElementChild.getBoundingClientRect();   // and nothing on the second line stands under it
-    tight = [...document.querySelectorAll(".tnav .tnav-l > *, .tnav .tnav-r > *, .tnav .tnav-nav > *")].some(e => { const q = e.getBoundingClientRect(); return q.width && q.left < r.right + 12 && q.right > r.left - 12 && q.top < r.bottom && q.bottom > r.top; }); }
-  a.classList.toggle("cramped", tight);
+function placeAgz() {   // two anchors: the header's bottom line is his ground, the Live status chip is what he watches; he never covers a control
+  const a = $("agz"), rail = document.querySelector("header.rail"), mode = $("chipMode"), u = document.querySelector(".rail .unoff"); if (!a || !rail || !mode || !u) return;
+  if (getComputedStyle(a).display === "none") return;
+  const R = rail.getBoundingClientRect(), m = mode.getBoundingClientRect(), un = u.getBoundingClientRect(), h = Math.min(78, Math.round(R.bottom - 4)), w = Math.round(h * 133 / 200);
+  a.style.setProperty("--agz-h", h + "px");
+  const top = R.bottom - 1 - h, blockers = [...document.querySelectorAll(".tnav .tnav-l > *, .tnav .tnav-r > *, .tnav .tnav-nav > *")].map(e => e.getBoundingClientRect()).filter(q => q.width && q.bottom > top && q.top < R.bottom);
+  let right = m.left - 14;
+  for (let k = 0; k < 4; k++) { const hitq = blockers.find(q => q.left < right + 10 && q.right > right - w - 10); if (!hitq) break; right = hitq.left - 14; }
+  const left = right - w, clash = left < un.right + 16 || blockers.some(q => q.left < right + 10 && q.right > left - 10);
+  a.classList.toggle("cramped", clash);
+  a.style.left = Math.round(left + scrollX) + "px"; a.style.top = Math.round(top + scrollY) + "px";
 }
 addEventListener("resize", placeAgz); addEventListener("load", placeAgz); setInterval(placeAgz, 3000);
 async function pollAgz() {
@@ -1710,7 +1712,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=22.7", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=22.8", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);

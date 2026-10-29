@@ -1236,5 +1236,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "HUD: Agorzilla in the header is bigger and stands exactly in the middle between the notice and the status chips, as tall as both header lines, with a soft shadow under his feet. Where something on the second line would be under him, he steps aside."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "HUD: Agorzilla now stands on the header's bottom line, right next to the live status he keeps an eye on, and a little taller. He never covers a button: where the header is too tight for him, on smaller screens and phones, he stays away."
  }
 ]
