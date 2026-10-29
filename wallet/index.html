@@ -276,7 +276,13 @@ html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr)
 .bookhint button { margin: 4px 6px 0 0; }
 .from { margin-top: 6px; border-left: 2px solid var(--sim); padding: 2px 0 2px 10px; color: var(--dim); font-size: 12px; }
 .from b { color: var(--text); font-weight: 600; }
+/* phones: the page is long, so a bar stays on top with the four places that matter, and a number when something waits */
+.jump { display: none; }
 @media (max-width: 700px) {
+  .jump { display: flex; position: sticky; top: 0; z-index: 20; background: var(--void); border-bottom: 1px solid var(--hair); margin: 0 -16px 8px; padding: 0 8px; }
+  .jump a { flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--text); text-decoration: none; font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; }
+  .jump b { background: var(--ok); color: #000; border-radius: 9px; padding: 0 6px; font-size: 11px; }
+  .panel { scroll-margin-top: 52px; }
   .three { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   button.b, .tabs button { min-height: 44px; }
   .picks button { min-height: 44px; padding: 2px 12px; }
@@ -332,6 +338,9 @@ html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr)
     </div>
   </div>
   <div class="testnet" role="note"><b>TESTNET ONLY</b><span>test AGRS have no value; nothing here is bought or sold</span><span>your key stays in this browser, never on our server</span><span>never reuse this key for anything of value</span><span>not the official Tau wallet</span></div>
+  <nav class="jump" id="jump" aria-label="Jump to">
+    <a href="#acct">Account</a><a href="#act">Send</a><a href="#rules">Rules</a><a href="#activity">Activity <b id="jumpN" hidden></b></a>
+  </nav>
   <main class="main">
     <div class="col">
       <section class="panel fix" id="acct" aria-label="Your account">
@@ -370,7 +379,7 @@ html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr)
             <label class="f" style="margin:0"><span>Amount (optional)</span><input class="in sm" id="payAmt" type="number" min="1" step="1" inputmode="numeric" placeholder="any"></label>
             <div class="qr" id="payQr" aria-label="QR code of the link"></div>
             <code id="payLink" translate="no"></code>
-            <div class="row" style="margin:0"><button class="b" type="button" id="btnPayCopy">Copy link</button></div>
+            <div class="row" style="margin:0"><button class="b" type="button" id="btnPayCopy">Copy link</button><button class="b" type="button" id="btnPayShare" hidden>Share</button></div>
           </div>
           <div class="secret" id="secretBox" hidden>
             <div class="note" style="margin:0"><b>Your private key.</b> Whoever has it controls this account. Keep it for the testnet only.</div>
@@ -587,6 +596,8 @@ async function renderPayMe() {
 }
 $("btnPayMe").onclick = () => { const box = $("payme"); box.hidden = !box.hidden; $("btnPayMe").setAttribute("aria-expanded", box.hidden ? "false" : "true"); renderPayMe(); fitLog(); };
 $("payAmt").addEventListener("input", renderPayMe);
+/* phones have a share sheet (Telegram, Signal, mail…): offer it where the browser has one */
+if (navigator.share) { $("btnPayShare").hidden = false; $("btnPayShare").onclick = () => navigator.share({ title: T("Pay me on Tau Testnet Alpha"), text: T("Test AGRS only, they have no value. Check my three words before you pay."), url: payLink() }).catch(() => {}); }
 $("btnPayCopy").onclick = async e => { try { await navigator.clipboard.writeText(payLink()); e.target.textContent = T("Copied"); } catch { e.target.textContent = T("Select it"); } setTimeout(() => { e.target.textContent = T("Copy link"); }, 1500); };
 /* opened from such a link: fill in the payment, say where it came from, take the address out of the URL bar */
 function takeLink() {
@@ -1103,7 +1114,8 @@ function renderVote() {
   if (TAB !== "vote") return;
   const open = (g && g.pending_updates) || [];
   if (!open.length) { box.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("Nothing open right now.") }), " ", T(SIM ? "The simulation proposes a rule change every hour at 20 past." : "Testnet proposals are rare and agreed within minutes. Telegram @tauHUDcom posts each new one at once."),
-    SIM ? null : el("button", { class: "b", type: "button", style: "display:block;margin-top:8px", text: T("Practise in the simulation"), onclick: () => toOtherMode("sim") }))); return; }
+    SIM ? null : el("span", { class: "row", style: "margin-top:8px" }, el("button", { class: "b", type: "button", text: T("Practise in the simulation"), onclick: () => toOtherMode("sim") }),
+      el("a", { class: "b quiet", href: "https://t.me/tauHUDcom", target: "_blank", rel: "noopener", style: "text-decoration:none;display:inline-flex;align-items:center", text: T("Tell me on Telegram") })))); return; }
   if (!open.some(u => u.update_id === PICK)) PICK = open[0].update_id;
   box.replaceChildren(...open.slice(0, 4).map(u => {
     const yes = (g.votes || []).filter(v => v.update_id === u.update_id).length;
@@ -1162,7 +1174,10 @@ function ruleDraft() {
   const any = r.only.length || r.cap != null || r.from != null || r.co;
   return { r, ok: !!any && !bad.length, bad, at, text: any && !bad.length ? buildRule(r) : null };
 }
-[["vCap", "cCap"], ["vFrom", "cFrom"], ["vCoAbove", "cCo"], ["vCoWho", "cCo"]].forEach(([v, c]) => $(v).addEventListener("input", () => { $(c).checked = true; }));
+[["vCap", "cCap"], ["vFrom", "cFrom"], ["vCoAbove", "cCo"], ["vCoWho", "cCo"]].forEach(([v, c]) => {
+  $(v).addEventListener("input", () => { $(c).checked = true; });
+  $(v).addEventListener("focus", () => { if (!$(c).checked) { $(c).checked = true; renderRule(); renderShare(); } });   // clicking into a value means you want that block
+});
 ["cOnly", "cCap", "cFrom", "cCo", "vCap", "vFrom", "vCoAbove", "vCoWho"].forEach(id => $(id).addEventListener("input", () => { renderRule(); renderShare(); }));
 const slotsFull = () => !SIM && W.slots && W.slots.taken >= W.slots.places && !myRule() && !(W.slots.holders || []).includes(W.pk);
 /* test payments: what the rule on the screen would do, before anything is signed */
@@ -1391,7 +1406,25 @@ function renderBookHint() {
     el("br"),
     ex && !busy ? el("button", { class: "b quiet", type: "button", text: T("Use an example name and address"), "data-tip": T("Fills in an example") + "\n" + T(SIM ? "A simulated account, nobody you know." : "A real testnet account that holds a rule place, nobody you know.") + "\n" + T("Nothing is added until you press Add."),
       onclick: () => { $("bName").value = ex.name; $("bAddr").value = ex.addr; renderBook(); $("btnBook").focus(); } }) : null,
-    W.pk ? el("button", { class: "b quiet", type: "button", text: T("Show my own address"), onclick: () => $("acctTabs").querySelector('[data-atab="acct"]').click() }) : null].filter(Boolean));
+    W.pk ? el("button", { class: "b quiet", type: "button", text: T("Show my own address"), onclick: () => $("acctTabs").querySelector('[data-atab="acct"]').click() }) : null,
+    takeable().length ? el("button", { class: "b quiet", type: "button", text: F(SIM ? "Take the book to Live node too ({n})" : "Take the book to the simulation too ({n})", { n: takeable().length }),
+      "data-tip": T("Copy names to the other chain") + "\n" + T("Simulation and Live node keep separate address books.") + "\n" + T("Each address keeps its check words; simulated accounts stay behind."), onclick: takeBook }) : null,
+    TOOK ? el("span", { class: "dim", text: " " + TOOK }) : null].filter(Boolean));
+}
+/* the other chain's book: the same people, minus the made-up accounts of the simulation, which do not exist on the real testnet */
+let TOOK = "";
+const otherKey = () => `tauhud-wallet-book-${SIM ? "live" : "sim"}`;
+function takeable() {
+  let other = []; try { other = JSON.parse(store.get(otherKey()) || "[]"); } catch (e) {}
+  const made = SIM ? new Set(S.friends()) : new Set();
+  return BOOK.filter(c => !made.has(c.addr) && !other.some(o => o.addr === c.addr || o.name.toLowerCase() === c.name.toLowerCase()));
+}
+function takeBook() {
+  let other = []; try { other = JSON.parse(store.get(otherKey()) || "[]"); } catch (e) {}
+  const add = takeable().slice(0, Math.max(0, 12 - other.length));
+  store.set(otherKey(), JSON.stringify([...other, ...add]));
+  TOOK = F(SIM ? "Done: your Live node book has them too ({n})." : "Done: your simulation book has them too ({n}).", { n: add.length });
+  renderBookHint();
 }
 $("btnBook").onclick = () => {
   const n = $("bName").value.trim(), a = $("bAddr").value.trim().toLowerCase();
@@ -1535,8 +1568,10 @@ function fitLog() {
   const label = () => { const n = W.log.length - shown; more.hidden = n <= 0; more.textContent = shown ? F("{n} earlier, and everything block by block: Accounts →", { n }) : F("Your {n} transactions, block by block: Accounts →", { n }); };
   label();
   if (!document.documentElement.classList.contains("fit")) return;
-  while (shown > 0 && box.scrollHeight > box.clientHeight + 1) { items[--shown].hidden = true; label(); }
+  /* your own last two payments stay as long as the inbox can give way; only then they fold too */
+  while (shown > Math.min(2, items.length) && box.scrollHeight > box.clientHeight + 1) { items[--shown].hidden = true; label(); }
   fitInbox(box, true);
+  while (shown > 0 && box.scrollHeight > box.clientHeight + 1) { items[--shown].hidden = true; label(); }
   box.scrollTop = 0;
 }
 /* still too full with every log row folded away: the inbox keeps its first cards, the rest wait behind one line */
@@ -1579,6 +1614,7 @@ function renderKpis() {
   $("kRule").classList.toggle("hot", !!r);
   const wait = W.pk ? (((W.offers && W.offers.incoming) || []).filter(o => o.status === "offered").length + ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending").length) : null;
   $("tWait").textContent = wait == null ? "–" : wait;
+  $("jumpN").hidden = !wait; $("jumpN").textContent = wait || "";
   $("kWait").classList.toggle("wait", !!wait);
   const back = W.pk && W.rets ? (W.rets.retractables || []).filter(t => (t.sender_pubkey || "").toLowerCase() === W.pk && (t.status || "open") === "open").length : null;
   $("tBack").textContent = back == null ? "–" : back;
