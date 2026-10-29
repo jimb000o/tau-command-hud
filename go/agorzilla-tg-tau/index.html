@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Copy and post</title>
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{background:#09090a;color:#ebebee;font:16px/1.5 system-ui,sans-serif;margin:0;display:grid;place-items:center;min-height:100vh;padding:16px;box-sizing:border-box}
+main{width:min(720px,100%)}
+h1{font-size:15px;font-weight:600;margin:0 0 12px;color:#a1a1aa}
+textarea{width:100%;box-sizing:border-box;min-height:220px;background:#111113;color:#ebebee;border:1px solid #2a2a2e;border-radius:8px;padding:12px;font:14px/1.5 ui-monospace,monospace;resize:vertical}
+button{margin-top:12px;min-height:44px;padding:0 20px;background:#39ff8a;color:#09090a;border:0;border-radius:8px;font:600 15px system-ui,sans-serif;cursor:pointer}
+button:disabled{background:#2a2a2e;color:#71717a;cursor:default}
+p{font-size:13px;color:#a1a1aa;margin:8px 0 0}
+</style>
+</head><body><main>
+<h1 id="label">Loading…</h1>
+<textarea id="text" readonly></textarea>
+<button id="go" disabled>Copy and open</button>
+<p id="hint">The text is copied for you. Paste it with Ctrl+V where it opens.</p>
+</main>
+<script src="../comment.js"></script>
+</body></html>
