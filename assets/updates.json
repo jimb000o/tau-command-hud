@@ -1036,5 +1036,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Chain core has depth: the core lights the scene, every orbit is a low ridge with a soft shadow falling outward, and each dot casts a small shadow. The outer orbits sit a little lower in the dark, the rim and its field stay as bright as before. It costs no extra work per frame."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-29",
+  "html": "Newspaper typesetting: drop caps now sit exactly three lines deep, top on the first line and foot on the third, with the rest of the first word in small capitals. Headlines break into even lines and never leave one word alone on the last; body text avoids lone last words, lone lines at the top of a column and runs of hyphens. Chinese pages open every paragraph with a two-character indent and no drop caps. A small line from the composing room under the Stop press: the paper is set with learning machines that can guess wrong, while Tau checks every rule by logic."
  }
 ]
