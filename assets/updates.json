@@ -1369,6 +1369,11 @@
   }
  },
  {
+  "tag": "Accounts",
+  "on": "2026-10-29",
+  "html": "Accounts: the validator profile reads the whole chain faster and, while it reads, says how far it got (“1,900 of 3,116 blocks”) instead of showing numbers that look final."
+ },
+ {
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "The header Agorzilla gets a finer face. He is now built from the full-size picture at twice the sharpness, and his head is cut above the neck with the ears, so a turn or a tilt no longer shows a seam or a blurred second face behind it; a new head move starts where the last one is, so it never jumps. His lids are skin from around his eyes with a dark lash line and meet low in the eye like a smile, and his brows lift when a block lands and draw in when he worries. The tongue is a real tongue now, with a groove and a shine: it comes out of his mouth for a peek with a wiggle, or licks his lips from one corner to the other. Also: his hover no longer says Problem when agorzilla.com's news is under an hour old, which is normal; it says when it was updated."
