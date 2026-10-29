@@ -271,23 +271,25 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
         # title story); a routine week's switches are told in the Rehearsal Hall
         out.append({"kind": "simswitch", "score": 110 if first else 75 if down else -1,
                     "big": t("No Fork, No Restart", "不分叉，不重启"),
-                    "line": t("The visitors vote to change who seals the blocks, and every node on the rehearsal chain obeys at the named block.",
-                              "访客投票改变由谁封存区块，排练链上的每个节点都在约定的区块照办。"),
+                    "line": t("In the simulation, the visitors vote to change who seals the blocks and every simulated node obeys at the named block. "
+                              "On the real testnet the rules held.",
+                              "在模拟中，访客投票改变由谁封存区块，每个模拟节点都在约定的区块照办。真实的测试网上规则如常。"),
                     "banner": t("Users rewrite the chain’s law; no fork, no restart", "用户投票改写链的法则：不分叉，不重启"), "extra": True,
                     "h2": h2,
                     "deck": t("On a practice chain that runs in every visitor's browser, the question of who may seal blocks went to the floor at twenty past the hour "
                               "and was law by half past. Nobody shipped software and nobody switched a machine off: Tau treats consensus as a rule like any other.",
                               "在一条于每位访客浏览器里运行的练习链上，由谁封存区块这个问题于二十分提上台面，半点即成法则。没有人发布软件，没有人关掉任何机器：在 Tau 上，共识只是一条普通的规则。"),
                     "paras": [
-                        t(f"At {when['en']}, UTC, a blockchain changed the law of who may seal its blocks, and nothing happened. No operator ran to a terminal, "
+                        t(f"At {when['en']}, UTC, a chain changed the law of who may seal its blocks, and nothing happened. Not the real Testnet Alpha, "
+                          "whose week is told below, but its rehearsal: the simulation that runs on tauhud.com. No operator ran to a terminal, "
                           "no new software was shipped, no machine was switched off and on again. The nodes read the new rule at the agreed block and went on sealing "
                           "as before. That is the whole story, and it is why it stands at the top of this page.",
-                          f"{when['zh']}（UTC），一条区块链改变了由谁封存区块的法则，而什么也没有发生。没有操作员奔向终端，没有新软件发布，没有机器关机重启。"
+                          f"{when['zh']}（UTC），一条链改变了由谁封存区块的法则，而什么也没有发生。这不是真实的 Testnet Alpha（它这一周的情况见下文），"
+                          "而是它的排练：在 tauhud.com 上运行的模拟。没有操作员奔向终端，没有新软件发布，没有机器关机重启。"
                           "节点在约定的区块读到新规则，照旧封存。这就是全部的故事，也是它登上本版之首的原因。"),
-                        t(f"The chain in question is a rehearsal: the simulation at tauhud.com, a practice copy of the testnet that runs in every visitor's browser, "
-                          f"where the visitors hold the gavel. Twice a day it puts to them the largest question a chain can ask. This week the question was put {times['en']}; "
+                        t(f"The simulation is a practice copy of the testnet that runs in every visitor's browser, where the visitors hold the gavel. Twice a day it puts to them the largest question a chain can ask. This week the question was put {times['en']}; "
                           f"{answer['en']}{turned['en']}; and at the named block the seal passed {to['en']}.",
-                          f"这条链是一场排练：tauhud.com 上的模拟，一份在每位访客浏览器里运行的测试网练习副本，由访客执槌。它每天两次向他们提出一条链所能提出的最大问题。"
+                          f"模拟是一份在每位访客浏览器里运行的测试网练习副本，由访客执槌。它每天两次向他们提出一条链所能提出的最大问题。"
                           f"本周这个问题被提出了{times['zh']}；{answer['zh']}{turned['zh']}；在约定的区块，出块之权{to['zh']}。"),
                         t("On most chains that change is a hard fork: new software for every machine, and the danger that some refuse and the chain splits in two. "
                           "On Tau it is a transaction, checked by logic, carried by vote, in force at a block named in advance. The rehearsal hall runs the same law as "
@@ -406,9 +408,9 @@ def lead_body(r: dict, props: list[dict] | None = None, stories: list[dict] | No
     real = max(0, r["proposed"] - keep)
     carried = max(0, min(real, r["agreed"] - keep))
     quiet = not real and not r["active"] and not r["restarts"]
-    en = (f"On Testnet Alpha itself the week was {'quiet and ' if quiet else ''}orderly: {'about ' if r['old_blocks'] else ''}{blocks} blocks sealed, one about every {pc['en']}, "
+    en = (f"On the real chain, Testnet Alpha, the week was {'quiet and ' if quiet else ''}orderly: {'about ' if r['old_blocks'] else ''}{blocks} blocks sealed, one about every {pc['en']}, "
           f"{fmt_n(r['txs'])} transactions from {fmt_n(r['accounts'])} accounts.")
-    zh = (f"Testnet Alpha 本身这一周{'平静而' if quiet else ''}有序：封存{'约 ' if r['old_blocks'] else ' '}{blocks} 个区块，大约每 {pc['zh']}一个，"
+    zh = (f"真实的链 Testnet Alpha 这一周{'平静而' if quiet else ''}有序：封存{'约 ' if r['old_blocks'] else ' '}{blocks} 个区块，大约每 {pc['zh']}一个，"
           f"{fmt_n(r['accounts'])} 个账户发出 {fmt_n(r['txs'])} 笔交易。")
     nxt = next((p for p in _sorted(props or []) if p.get("status") == "agreed" and phrase(p.get("title")) and (p.get("activate_at") or 0) > (r.get("head") or 0)), None)
     at = t(f", {phrase(nxt['title'])['en']} in force from block #{fmt_n(nxt['activate_at'])}", f"，{phrase(nxt['title'])['zh']}自第 {fmt_n(nxt['activate_at'])} 号区块起生效") if nxt else t("", "")
@@ -577,7 +579,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
     kick = {"active": t("Testnet Alpha · rule change", "Testnet Alpha · 规则变更"), "agreed": t("Testnet Alpha · the ballot is counted", "Testnet Alpha · 计票完毕"),
             "restart": t("Testnet Alpha · a fresh start", "Testnet Alpha · 重新开始"), "proposed": t("Testnet Alpha · put to the vote", "Testnet Alpha · 付诸投票"),
             "nodes": t("Testnet Alpha · the network", "Testnet Alpha · 网络"), "steady": t("Testnet Alpha · the week", "Testnet Alpha · 本周"),
-            "launch": t("Testnet Alpha · a new instrument", "Testnet Alpha · 新的观测台"), "simswitch": t("Rehearsal chain · not the real testnet", "排练链 · 不是真实的测试网")}[kind]
+            "launch": t("Testnet Alpha · a new instrument", "Testnet Alpha · 新的观测台"), "simswitch": t("Simulation · not the real testnet", "模拟 · 不是真实的测试网")}[kind]
     return {
         "v": 1, "no": no, "date": _d(printed_at).strftime("%Y-%m-%d"), "printed": printed(printed_at),
         "start": round(r["start"]), "end": round(r["end"]), "period": period(r["start"], r["end"]),
