@@ -1228,6 +1228,11 @@
   "html": "Alerts: Agorzilla's evening now comes to the Telegram channel. When its daily choice closes at 18:00 UTC, one short post says what changed, how many days it has lived and what is open tonight. Telegram only, test AGRS only."
  },
  {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "HUD: a small Agorzilla breathes in the empty middle of the top line, wherever the header has room for it. Click to visit agorzilla.com, the creature the community feeds with real testnet transactions; its hover shows how often it was fed today and its stage, once agorzilla.com shares those numbers."
+ },
+ {
   "tag": "Wallet",
   "on": "2026-10-29",
   "html": "Wallet, ready for everyone: on Live node, while both of the testnet’s rule places are taken, the Rules panel now says so in one line with both ways out, Continue in the simulation or Join the line, and everything fits on one screen again. A sign button that cannot sign yet is now an outline instead of a dim green. Your place in the line shows the moment you make your account. Tabbing through the rule fields no longer ticks them. Testnet only, test AGRS have no value.",
