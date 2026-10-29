@@ -1046,5 +1046,10 @@
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "Chain core hovers read the same way everywhere: the element's name first with its status light, then one verdict, then at most two short lines. The personal money rules got their own light, and the tiles below the core follow the same order."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Node log: no more \"Relay is busy\" lines on live. The page used to ask for the rules of up to 40 accounts at once, and the relay, which shares a small allowance among all visitors, turned most of them away, so those rules never loaded. Lookups now go out one by one, and one that is turned away is tried again a little later."
  }
 ]

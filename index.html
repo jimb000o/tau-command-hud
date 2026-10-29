@@ -1639,7 +1639,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.73", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.74", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2463,6 +2463,21 @@ function simStop() { clearTimeout(SIM.timer); clearTimeout(SIM.txTimer); }
    ===================================================================== */
 const LIVE = { ws: null, poll: null, govPoll: null, seenBlocks: new Set(), seenTx: new Set() };
 function liveSend(cmd) { if (LIVE.ws && LIVE.ws.readyState === 1) LIVE.ws.send(cmd); }
+/* lookups (an account's rules, a refusal's reason) share a small allowance on the relay with every other visitor: they go out one by one,
+   a little apart, and one the relay turns away as busy goes back in the queue for a later try instead of into the node log */
+const LQ = { q: [], sent: [], tries: new Map(), t: 0, wait: 0 };
+function lookup(cmd) { if (!LQ.q.includes(cmd)) LQ.q.push(cmd); pumpLQ(); }
+function pumpLQ() {
+  if (LQ.t || !LQ.q.length) return;
+  LQ.t = setTimeout(() => { LQ.t = 0; const c = LQ.q.shift(); if (c && LIVE.ws && LIVE.ws.readyState === 1) { LQ.sent.push(c); if (LQ.sent.length > 20) LQ.sent.shift(); liveSend(c); } pumpLQ(); }, 700 + LQ.wait);
+  LQ.wait = 0;
+}
+function lookupBusy(name) {   // true when a busy reply belonged to a queued lookup; it is retried up to three times, further apart each time
+  const i = LQ.sent.findIndex(c => c.split(" ")[0] === name); if (i < 0) return false;
+  const c = LQ.sent.splice(i, 1)[0], n = (LQ.tries.get(c) || 0) + 1; LQ.tries.set(c, n);
+  if (n <= 3) { LQ.q.push(c); LQ.wait = 1500 * n; pumpLQ(); }
+  return true;
+}
 function normTx(raw, idHint) {
   const ops = (raw && raw.operations) || {};
   const transfers = Array.isArray(ops["1"]) ? ops["1"] : [];
@@ -2486,10 +2501,11 @@ function liveMessage(ev) {
   if (msg.command === "gettxstatus" && TXST.busy && (msg.status !== "ok" || String(d0(msg).tx_hash || "").toLowerCase() === TXST.busy)) {
     const k = TXST.busy, d = d0(msg); TXST.busy = "";
     if (msg.status === "ok") { TXST.st.set(k, d.status === "confirmed" ? { h: Number(d.block_number) } : { s: String(d.status || "unknown") }); if (d.status === "confirmed") markSealed(k, Number(d.block_number)); }
-    setTimeout(askTxStatus, msg.status === "ok" ? 120 : 1500);
+    setTimeout(askTxStatus, msg.status === "ok" ? 900 : 4000);   // gently: the relay's lookup allowance is shared by every visitor
     if (msg.status === "ok" && !DROP.cards.has(d.tx_hash)) return;
     if (msg.status !== "ok") return;
   }
+  if (msg.status !== "ok" && msg.error?.code === "BUSY" && lookupBusy(msg.command)) return;
   if (msg.status !== "ok") { log(`${esc(msg.command || "rpc")}: ${esc(msg.error?.code)} ${esc(msg.error?.message || "")}`, "err"); return; }
   const d = msg.data || {};
   presenceFromMessage(d);
@@ -2617,7 +2633,7 @@ async function pollDropped() {
     const r = await (S.simfeed ? TauSim.fetch("/stats") : fetch(relayBase() + "/stats", { cache: "no-store", signal: ctl.signal }));
     if (!r.ok) throw new Error(r.status);
     const d = await r.json(); if (feed !== (S.simfeed ? "sim" : "live")) return;
-    if (DROP.first && Array.isArray(d.accounts)) d.accounts.slice(0, 40).forEach(a => { if (/^[0-9a-f]{96}$/i.test(a)) liveSend(`getruleoffers ${a} all`); });
+    if (DROP.first && Array.isArray(d.accounts)) d.accounts.slice(0, 40).forEach(a => { if (/^[0-9a-f]{96}$/i.test(a)) lookup(`getruleoffers ${a} all`); });
     const all = Array.isArray(d.dropped) ? d.dropped : [];
     if (DROP.first) all.slice(0, -4).forEach(x => x && x.tx_hash && DROP.seen.add(x.tx_hash));
     const list = all.slice(DROP.first ? -4 : -60); DROP.first = false;
@@ -2633,7 +2649,7 @@ function refusedTx(x) {
   const pol = S.clauses.get(t.sender); if (pol && /o5/.test(t.rejected)) { t.policy = pol; pol.lastCheck = performance.now(); pol.lastRefused = true; renderClauses(); setTimeout(renderClauses, RULE_HOT_S * 1000 + 200); }
   LIVE.seenTx.add(t.id); DROP.cards.set(t.id, t); txCard(t);
   log(`sendtx ${short(t.id)} rejected: ${t.rejected}`, "err");
-  if (!x.reason) liveSend("gettxstatus " + t.id);
+  if (!x.reason) lookup("gettxstatus " + t.id);
 }
 /* forget every block and transaction: on connect, and when the relay reports that the node wiped a dead chain ("reset": true) */
 function liveClear() {
