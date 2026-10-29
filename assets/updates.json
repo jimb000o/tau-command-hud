@@ -1278,5 +1278,10 @@
   "tag": "Alerts",
   "on": "2026-10-29",
   "html": "Every post on X from @TauHUDcom now ends with #TauNet and $AGRS, once, after the line that says where it comes from. No other tags are added, and the caps and the no-repeat rules stay."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-29",
+  "html": "Donations, worded plainly: the About section and the Updates card are now called Donations and say that a donation is a voluntary gift that buys nothing, with no promise about the future of the site. The thank-you posts and the privacy notice say the same."
  }
 ]

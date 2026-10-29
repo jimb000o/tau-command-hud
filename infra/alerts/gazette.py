@@ -267,7 +267,7 @@ def news(r: dict, waiting: list[dict], days: list[dict] | None = None, props: li
         answer = (t(f"the visitors answered with {fmt_n(votes)} vote{'s' if votes != 1 else ''}", f"访客以 {fmt_n(votes)} 票作答") if votes else
                   t("no visitor voted, so the simulated validators carried it themselves", "没有访客投票，于是模拟验证者自行通过"))
         turned = (t(f" and turned down {word(down)['en']} of them", f"，并否决了其中{word(down)['zh']}次") if down else t("", ""))
-        # the lead story when the switching is new or the visitors turned one down (Kilian 2026-10-29: the consensus switch is the
+        # the lead story when the switching is new or the visitors turned one down (2026-10-29: the consensus switch is the
         # title story); a routine week's switches are told in the Rehearsal Hall
         out.append({"kind": "simswitch", "score": 110 if first else 75 if down else -1,
                     "big": t("No Fork, No Restart", "不分叉，不重启"),
