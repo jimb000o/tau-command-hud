@@ -275,6 +275,13 @@ const CACHE_KEY = "tauhud-findings-v3", CACHE_MS = 10 * 60 * 1000;
 // Issues we filed with IDNI. Add a new one here; title and status come from GitHub.
 const FINDINGS = [
   {
+    n: 86, kind: "fix", title: "fix(network): re-dial bootstrap peers while the node has no peer",
+    brief: "Our first code fix sent to IDNI: a node that lost every peer now finds its way back.",
+    found: "On 29 October IDNI's bootnode refused new peers for about three hours. Nodes that lost it stayed at 0 peers with an old chain even after the bootnode was back, because they dial their bootstrap peers only once, at start.",
+    impact: "Every node that loses its last peer would sit still until someone restarts it by hand.",
+    ours: `We sent IDNI the fix as a pull request with four tests: while a node has no peer, it dials its bootstrap peers again every minute. The same change runs in our node (${pr(170)}).`,
+  },
+  {
     n: 83, kind: "request", title: "Testnet Alpha: ideas to make governance visible (real rule changes, shorter activation, refusals, second validator)",
     brief: "Not a bug: ideas that would make rule changes visible on the live chain.",
     found: "Not a bug: the live chain has seen three proposals so far, two of them changing nothing, and each takes 3 to 4 days to apply. We suggested real rule changes, shorter activation, visible refusals and a second validator.",
@@ -365,7 +372,7 @@ async function fetchIssues() {
       if (!r.ok) return;
       const j = await r.json();
       out[f.n] = { title: j.title, state: j.state, state_reason: j.state_reason, comments: j.comments, created_at: j.created_at,
-        updated_at: j.updated_at, closed_at: j.closed_at, labels: (j.labels || []).map(l => l.name) };
+        updated_at: j.updated_at, closed_at: j.closed_at, merged_at: j.pull_request ? j.pull_request.merged_at : null, labels: (j.labels || []).map(l => l.name) };
     } catch {}
   }));
   if (Object.keys(out).length === FINDINGS.length) keep(out);
@@ -374,15 +381,17 @@ async function fetchIssues() {
 function sampleIssues() {
   const d = n => new Date(Date.now() - n * 3600e3).toISOString();
   return {
-    83: { title: FINDINGS[0].title, state: "open", comments: 0, created_at: d(0.1), updated_at: d(0.1), labels: [] },
-    82: { title: FINDINGS[1].title, state: "open", comments: 0, created_at: d(0.3), updated_at: d(0.3), labels: [] },
-    81: { title: FINDINGS[2].title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
-    80: { title: FINDINGS[3].title, state: "open", comments: 0, created_at: d(2), updated_at: d(2), labels: [] },
-    79: { title: FINDINGS[4].title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
-    78: { title: FINDINGS[5].title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
+    86: { title: FINDINGS[0].title, state: "open", comments: 0, created_at: d(0.05), updated_at: d(0.05), labels: [] },
+    83: { title: FINDINGS[1].title, state: "open", comments: 0, created_at: d(0.1), updated_at: d(0.1), labels: [] },
+    82: { title: FINDINGS[2].title, state: "open", comments: 0, created_at: d(0.3), updated_at: d(0.3), labels: [] },
+    81: { title: FINDINGS[3].title, state: "open", comments: 0, created_at: d(1), updated_at: d(1), labels: [] },
+    80: { title: FINDINGS[4].title, state: "open", comments: 0, created_at: d(2), updated_at: d(2), labels: [] },
+    79: { title: FINDINGS[5].title, state: "open", comments: 1, created_at: d(30), updated_at: d(20), labels: ["build"] },
+    78: { title: FINDINGS[6].title, state: "closed", state_reason: "completed", comments: 4, created_at: d(40), updated_at: d(9), closed_at: d(9), labels: [] },
   };
 }
 function status(i, f) {
+  if (f && f.kind === "fix") return !i ? ["unknown", "Status unknown"] : i.state === "open" ? ["open", "Under review"] : i.merged_at ? ["fixed", "Merged"] : ["closed", "Closed"];
   if (!i) return f && f.idni === "partly" ? ["partly", "Partly fixed"] : ["unknown", "Status unknown"];
   if (i.state === "open") return f && f.idni === "partly" ? ["partly", "Partly fixed"] : ["open", "Open"];
   return i.state_reason === "not_planned" ? ["closed", "Closed, not planned"] : ["fixed", f && f.kind === "request" ? "Done" : "Fixed"];
@@ -392,11 +401,11 @@ function status(i, f) {
 let ISSUES = {};
 function render() {
   const got = FINDINGS.filter(f => ISSUES[f.n]);
-  const st = FINDINGS.filter(f => f.kind !== "request").map(f => status(ISSUES[f.n], f)[0]);
+  const st = FINDINGS.filter(f => !f.kind).map(f => status(ISSUES[f.n], f)[0]);
   $("state").className = "state " + (got.length ? "live" : "off");
   $("stateText").textContent = got.length ? (SAMPLE ? "Sample data" : "Live from GitHub") : "GitHub unreachable";
   const tiles = [
-    ["Filed with IDNI", FINDINGS.length, `${plural(FINDINGS.filter(f => f.kind !== "request").length, "bug")}, ${plural(FINDINGS.filter(f => f.kind === "request").length, "request")}`],
+    ["Filed with IDNI", FINDINGS.length, `${plural(FINDINGS.filter(f => !f.kind).length, "bug")}, ${plural(FINDINGS.filter(f => f.kind === "request").length, "request")}, ${plural(FINDINGS.filter(f => f.kind === "fix").length, "fix", "fixes")}`],
     ["Open bugs", got.length ? st.filter(s => s === "open").length : "—", "waiting for IDNI"],
     ["Fixed by IDNI", st.filter(s => s === "fixed" || s === "partly").length, st.some(s => s === "partly") ? `${st.filter(s => s === "partly").length} partly: fix landed, issue still open` : "closed as done"],
     ["Patched by us", PATCHES, "running in our node today"],
@@ -422,8 +431,8 @@ $("cards").addEventListener("click", e => {
     <h3>What we found</h3><p>${esc(f.found)}</p>
     <h3>Why it matters</h3><p>${esc(f.impact)}</p>
     <h3>What we did</h3><p>${f.ours}</p>
-    <h3>At IDNI</h3>${f.idniText ? `<p>${esc(f.idniText)}</p>` : ""}<p>${i ? `${i.state === "open" ? "Issue open on GitHub" : label}. Filed ${fmtDay(i.created_at)}, ${plural(i.comments || 0, "comment")}${i.closed_at ? `, closed ${fmtDay(i.closed_at)}` : `, last activity ${ago(i.updated_at)}`}.` : "Status could not be read from GitHub right now."}</p>
-    <p><a class="btn" href="https://github.com/${REPO}/issues/${f.n}" target="_blank" rel="noopener">Open on GitHub</a></p>`;
+    <h3>At IDNI</h3>${f.idniText ? `<p>${esc(f.idniText)}</p>` : ""}<p>${i ? `${i.state === "open" ? (f.kind === "fix" ? "Pull request open on GitHub" : "Issue open on GitHub") : label}. Filed ${fmtDay(i.created_at)}, ${plural(i.comments || 0, "comment")}${i.closed_at ? `, closed ${fmtDay(i.closed_at)}` : `, last activity ${ago(i.updated_at)}`}.` : "Status could not be read from GitHub right now."}</p>
+    <p><a class="btn" href="https://github.com/${REPO}/${f.kind === "fix" ? "pull" : "issues"}/${f.n}" target="_blank" rel="noopener">Open on GitHub</a></p>`;
   $("mDetail").hidden = false; $("mDetail").querySelector(".close").focus();
 });
 function closeModal() { $("mDetail").hidden = true; }
