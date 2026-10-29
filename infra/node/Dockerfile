@@ -91,6 +91,7 @@ RUN python3 -I /patches/peer-addrs.py /src
 RUN python3 -I /patches/chain-reset.py /src
 RUN python3 -I /patches/validator-gate.py /src
 RUN python3 -I /patches/peer-book.py /src
+RUN python3 -I /patches/bootstrap-redial.py /src
 
 
 FROM python:3.14-slim-trixie@sha256:82abc9f53600280b0757126f83c5a7d47088592d2acb6b4c0b9e97f76865508c AS runtime
