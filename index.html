@@ -2756,7 +2756,7 @@ function paintBounces(C, hit) {
       if (f < 600) { const q = f / 600; cx.lineWidth = 2; cx.strokeStyle = `rgba(${REF},${.7 * (1 - q)})`; cx.shadowBlur = 0; cx.beginPath(); cx.arc(ix, iy, 8 + 30 * q, 0, Math.PI * 2); cx.stroke(); }   // the knock
     }
     if (f >= 0) {
-      const k = Math.min(1, f / B_KEEP); cx.shadowBlur = 0; cx.lineCap = "round"; cx.strokeStyle = `rgba(${REF},${.1 + .55 * (1 - k)})`; cx.lineWidth = 3;
+      const k = Math.min(1, f / B_KEEP); cx.shadowBlur = 0; cx.lineCap = "round"; cx.strokeStyle = `rgba(${REF},${.65 * (1 - k)})`; cx.lineWidth = 3;
       cx.beginPath(); cx.arc(0, 0, R + 6, b.a - .025, b.a + .025); cx.stroke();
       hit(ix, iy, 22, () => vt(`Refused by the rules: ${refWhy(b.t)}.\nIt bounced off the outer rim: what the rules say no to never gets inside.\nClick for the details.`,
         `Refused ${short(b.t.id)} · ${b.t.type}: ${refWhy(b.t)}.\nNever admitted: it left the queue without entering a block.\nClick for the details.`), null, () => showDetail(dtKey(() => detailTx(b.t))));
