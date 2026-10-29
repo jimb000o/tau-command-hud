@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. Commands and node answers stay as they are. */
 TauI18n.add({ strings: {
+  "X @TauHUDcom": "X 账号 @TauHUDcom",
   "Vote on Tau": "在 Tau 上投票",
   "Vote": "投票",
   "Vote on Tau’s rules yourself.": "亲自为 Tau 的规则投票。",

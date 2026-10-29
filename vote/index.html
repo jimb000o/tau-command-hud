@@ -359,7 +359,7 @@ function renderOpen() {
       T(SIM ? "The simulation proposes a change every hour at 20 past, or practise on your own proposal in step 5."
             : "Testnet proposals have been agreed within minutes so far. Telegram posts each new one at once, or propose your own in step 5."),
       last ? el("span", { text: " " + F("Agreed and waiting to take effect: {id} at #{a}.", { id: short(last.update_id), a: last.activate_at_height }) }) : null,
-      SIM ? null : el("span", null, " ", el("a", { href: "https://t.me/tauHUDcom", target: "_blank", rel: "noopener", text: "@tauHUDcom" }))));
+      SIM ? null : el("span", null, " ", el("a", { href: "https://t.me/tauHUDcom", target: "_blank", rel: "noopener", text: "@tauHUDcom" }), " · ", el("a", { href: "https://x.com/TauHUDcom", target: "_blank", rel: "noopener", text: "X @TauHUDcom" }))));
     $("s4small").textContent = T("one command per proposal");
     return;
   }

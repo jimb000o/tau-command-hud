@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "X @TauHUDcom": "X 账号 @TauHUDcom",
   "A rule that contradicts them is refused at the door and never reaches the chain.": "与它们矛盾的规则会在门口被拒绝，永远到不了链上。",
   "A validator proposes the new rule. Our example: raise the base fee from 1 to 2 AGRS.": "一个验证者提议新规则。我们的例子：把基础手续费从 1 AGRS 提高到 2 AGRS。",
   "Agreed": "已同意",

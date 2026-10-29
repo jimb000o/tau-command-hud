@@ -4,8 +4,8 @@
    anything missing is generated as a link to the HUD. */
 (() => {
   "use strict";
-  const TELEGRAM = "https://t.me/tauHUDcom";
-  const LATEST = "v17.78"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const TELEGRAM = "https://t.me/tauHUDcom", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml";
+  const LATEST = "v17.79"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -19,7 +19,7 @@
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
     account:    { t: "Accounts", d: "Balance, own rules, offers and refusals of any address", i: "@", h: "account/", view: true },
     nodes:      { t: "Nodes", d: "Community nodes that follow the chain, with badges for uptime and sync", i: "◎", h: "nodes/" },
-    proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with Telegram and RSS alerts", i: "§", h: "proposals/" },
+    proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with alerts on Telegram, X and RSS", i: "§", h: "proposals/" },
     story:      { t: "Tau in 60 seconds", d: "Propose, check, agree, law: how Tau changes its rules without a fork", i: "▶", h: "story/" },
     tour:       { t: "Guided tour", d: "One minute, eight steps: how rules change by agreement", i: "▸", h: "?tour=1", act: "tour" },
     gazette:    { t: "The Daily Consensus", d: "Tau as a 1920s newspaper, a new edition every Monday: turn the pages with a click or a tap", i: "❡", h: "gazette/" },
@@ -51,6 +51,7 @@
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
     telegram: "Join @tauHUDcom on Telegram: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Questions (height, proposals, your transaction or address): write to @tauhud_alerts_bot. Opens Telegram.",
+    alerts: "Get alerts: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.",
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
     gear: "Settings: node address and Connect, background rain.",
     gearSub: "Settings: which node this page reads, guided tour, about.",
@@ -80,6 +81,8 @@
   const SIM = !!(window.TauSim && TauSim.on);
   if (SIM) document.documentElement.classList.add("tau-sim");
   const BUBBLE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 5v2h10V8H7zm0 4v2h7v-2H7z"/></svg>';
+  const XLOGO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L1.8 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg>';
+  const RSSI = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="18.5" r="2.5"/><path d="M3 10.5a10.5 10.5 0 0 1 10.5 10.5h-3A7.5 7.5 0 0 0 3 13.5zM3 4a17 17 0 0 1 17 17h-3A14 14 0 0 0 3 7z"/></svg>';
   const PLANE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.9 3.3 2.6 10.8c-1 .4-1 1 0 1.3l4.9 1.5 11.4-7.2c.5-.3 1-.1.6.2l-9.2 8.3-.4 5.1c.5 0 .7-.2 1-.5l2.4-2.3 5 3.7c.9.5 1.6.2 1.8-.9l3.3-15.5c.3-1.3-.5-1.9-1.5-1.5z"/></svg>';
   /* the site version: every release counts, on any page. Entries up to v17.53 keep what they showed (a HUD number or a page name);
      after it every entry adds one to the minor number, an entry with a "major" (a new page or big feature) starts the next whole number,
@@ -119,7 +122,7 @@
     /* the same markup as the HUD's own overlay, so both look alike; the feedback form opens a pre-filled GitHub issue, as on the public HUD */
     m.innerHTML = `<div class="tn-sheet" role="dialog" aria-modal="true" aria-labelledby="tnUpdTitle"><button class="tn-close" type="button" aria-label="Close">✕</button>
       <section class="tn-community">
-      <p class="tn-tgstrip"><a href="${TELEGRAM}" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page. Ask <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> for the height, proposals, your transaction or address.</p>
+      <p class="tn-tgstrip"><a href="${TELEGRAM}" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page; <a href="${XCOM}" target="_blank" rel="noopener">X @TauHUDcom ↗</a> posts them to your timeline. Ask <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> for the height, proposals, your transaction or address.</p>
       <div class="tn-col">
       <article class="tn-panel tn-fb">
         <h2 id="tnUpdTitle">Your feedback <small>shapes the next version</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="Tell us what you would like to see. Ideas with the most agreement get built first, which is rather in the spirit of the thing.">i</button></h2>
@@ -143,7 +146,7 @@
             <span class="tn-status" aria-live="polite">Feedback becomes a public GitHub issue (free account needed). Upvote ideas you like with 👍.</span>
           </div>
         </form>
-        <p class="tn-follow"><a href="${TELEGRAM}" rel="noopener" data-full="A Telegram channel that posts every new proposal, agreement and activation on the testnet. Opens Telegram.">Follow rule changes on Telegram ›</a> <span>· <a href="${ROOT}proposals/${q}">proposal tracker</a></span></p>
+        <p class="tn-follow"><a href="${TELEGRAM}" rel="noopener" data-full="A Telegram channel that posts every new proposal, agreement and activation on the testnet. Opens Telegram.">Follow rule changes on Telegram ›</a> <span>· <a href="${XCOM}" target="_blank" rel="noopener">on X</a> · <a href="${ROOT}proposals/${q}">proposal tracker</a></span></p>
       </article>
       <article class="tn-panel tn-keep">
         <h2>Keep it running <small>one person, free time</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built and maintained by one person in their free time. The address and the QR code are the same as in About; the numbers above show what the time goes into.">i</button></h2>
@@ -563,7 +566,17 @@
     if (!state) { state = el("a", "pill primary", "Chain state"); state.href = ROOT + "#chain-state"; }
     state.classList.add("pill", "primary"); tip(state, TIPS.state);
     left.append(state);
-    const tg = el("a", "pill tg", `${PLANE}<span>Telegram alerts</span>`); tg.href = TELEGRAM; tg.target = "_blank"; tg.rel = "noopener"; tg.setAttribute("aria-label", "Telegram channel tauHUDcom"); tip(tg, TIPS.telegram);
+    /* alerts: one pill named for what you get, not for the app; it opens the three ways to get them */
+    const tg = el("div", "ni-wrap tn-alerts"), tgb = el("button", "pill tg", `${PLANE}${XLOGO}<span>Get alerts</span>`), tgm = el("div", "menu tn-alm");
+    tgb.type = "button"; tgb.setAttribute("aria-haspopup", "true"); tgb.setAttribute("aria-expanded", "false"); tgb.setAttribute("aria-label", "Get alerts: Telegram, X or RSS"); tip(tgb, TIPS.alerts);
+    tgm.hidden = true; tgm.setAttribute("role", "menu"); tgm.setAttribute("aria-label", "Get alerts");
+    [[TELEGRAM, PLANE, "Telegram @tauHUDcom", "To your phone the moment it happens: rule changes, restarts, new nodes, a weekly recap"],
+     [XCOM, XLOGO, "X @TauHUDcom", "In your timeline: real rule changes, new nodes, Testnet today and the Monday recap"],
+     [RSS, RSSI, "RSS feed", "Every rule change in your feed reader"]].forEach(([h, ic, t, d]) => {
+      const a = el("a", "mi", `<span class="ic">${ic}</span><b>${esc(t)} <span class="ext">↗</span></b><span>${esc(d)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; a.setAttribute("role", "menuitem"); a.addEventListener("click", closeAll); tgm.append(a);
+    });
+    tgb.addEventListener("click", () => { tgm.style.top = innerWidth <= 700 ? Math.round(tgb.getBoundingClientRect().bottom + 8) + "px" : ""; toggle(tgb, tgm); });   // phone: a full-width panel under the header
+    tg.append(tgb, tgm);
     /* feedback, impossible to miss: opens the feedback form in place, the HUD's own on the start page */
     const fbk = el("button", "pill fbk", `${BUBBLE}<span>Feedback</span>`); fbk.type = "button"; fbk.setAttribute("aria-label", "Give feedback"); tip(fbk, TIPS.feedback);
     fbk.addEventListener("click", () => { closeAll(); if (isHud && slots.updates) { slots.updates.click(); setTimeout(() => { const t = document.getElementById("fbText"); if (t) t.focus({ preventScroll: true }); }, 60); } else openUpdates(page, true); });
@@ -622,7 +635,8 @@
       sec.items.forEach(k => sh.append(item(k, page, isHud)));
       if (sec.k === "learn" && window.TauI18n) { const I = window.TauI18n, other = I.lang === "zh" ? "en" : "zh", l = el("a", "mi", `<span class="ic">文</span><b>${other === "zh" ? "中文" : "English"}</b><span>${other === "zh" ? "阅读中文版 · Read this site in Chinese" : "Read this site in English"}</span>`); l.href = "#"; l.setAttribute("translate", "no"); l.addEventListener("click", e => { e.preventDefault(); I.set(other); }); sh.append(l); }
       if (sec.k === "learn" && !isHud) { const t = el("a", "mi", `<span class="ic">?</span><b>Tour of this page</b><span>What each part of this page shows and why it matters, in a few short steps</span>`); t.href = "#tour"; t.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); }); sh.append(t); }
-      if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram alerts <span class="ext">↗</span></b><span>@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t); }
+      if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram alerts <span class="ext">↗</span></b><span>@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t);
+        const x = el("a", "mi", `<span class="ic">${XLOGO}</span><b>X @TauHUDcom <span class="ext">↗</span></b><span>Real rule changes, new nodes, Testnet today and the Monday recap in your timeline</span>`); x.href = XCOM; x.target = "_blank"; x.rel = "noopener"; sh.append(x); }
       bg.addEventListener("click", closeAll);
       b.addEventListener("click", () => { const open = sh.hidden; closeAll(); if (open) { bg.hidden = sh.hidden = false; b.setAttribute("aria-expanded", "true"); openEl = sh; } });
       bar.append(b); sheets.push(bg, sh);
@@ -693,8 +707,9 @@
     if (!links.length) return;
     const as = links.map(([t, h]) => { const a = el("a", "tn-foot", t); a.href = ROOT + (h[0] === "#" ? h : h + "/"); return a; });
     const host = f.querySelector("p:last-of-type") || f; as.forEach(a => host.append(" · ", a));
+    [["Telegram", TELEGRAM, "t.me/"], ["X", XCOM, "x.com/"]].forEach(([t, h, k]) => { if (f.querySelector(`a[href*="${k}"]`)) return; const a = el("a", "tn-foot", t); a.href = h; a.target = "_blank"; a.rel = "noopener"; host.append(" · ", a); });
   }
   const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); mountFootLinks(); countVisit(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, markSeen, closeAll, chain: CHAIN, sim: SIM };
+  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, markSeen, closeAll, chain: CHAIN, sim: SIM };
 })();

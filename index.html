@@ -1068,7 +1068,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fbTitle">
     <button class="close" type="button" data-close aria-label="Close">✕</button>
     <section class="community">
-      <p class="tgstrip"><a href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page. Ask <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> for the height, proposals, your transaction or address.</p>
+      <p class="tgstrip"><a href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page; <a href="https://x.com/TauHUDcom" target="_blank" rel="noopener">X @TauHUDcom ↗</a> posts them to your timeline. Ask <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> for the height, proposals, your transaction or address.</p>
       <div class="col">
       <article class="panel fb" id="feedback">
         <h2 id="fbTitle">Your feedback <small>shapes the next version</small><button class="info" type="button" aria-label="What is this?" data-tip="Tell us what you would like to see. Ideas with the most agreement get built first, which is rather in the spirit of the thing.">i</button></h2>
@@ -1092,7 +1092,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
             <span class="status" id="fbStatus" aria-live="polite">Feedback becomes a public GitHub issue (free account needed). Upvote ideas you like with 👍.</span>
           </div>
         </form>
-        <p class="follow"><a href="https://t.me/tauHUDcom" rel="noopener" data-full="A Telegram channel that posts every new proposal, agreement and activation on the testnet. Opens Telegram.">Follow rule changes on Telegram ›</a> <span>· <a href="proposals/">proposal tracker</a></span></p>
+        <p class="follow"><a href="https://t.me/tauHUDcom" rel="noopener" data-full="A Telegram channel that posts every new proposal, agreement and activation on the testnet. Opens Telegram.">Follow rule changes on Telegram ›</a> <span>· <a href="https://x.com/TauHUDcom" target="_blank" rel="noopener">on X</a> · <a href="proposals/">proposal tracker</a></span></p>
       </article>
       <article class="panel keep" id="keepUpd">
         <h2>Keep it running <small>one person, free time</small><button class="info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built and maintained by one person in their free time. The address and the QR code are the same as in About; the numbers above show what the time goes into.">i</button></h2>
@@ -1144,6 +1144,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
           <li><b>Every rule change as it happens:</b> new proposal, agreement, activation, dropped proposal.</li>
           <li><b>Chain restarts</b> of the testnet, the moment our node sees one.</li>
           <li><b>A weekly recap picture</b> and every HUD update, so you never need to open this page to stay current.</li>
+          <li><b>Also on X:</b> real rule changes, new nodes and the Monday recap at <a href="https://x.com/TauHUDcom" target="_blank" rel="noopener">@TauHUDcom</a>.</li>
           <li><b>Ask the bot:</b> height, proposals, your transaction or address. Write to <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot</a>.</li>
         </ul>
         <a class="tgjoin" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">Join @tauHUDcom ↗</a>
@@ -1658,7 +1659,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=17.78", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=17.79", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);

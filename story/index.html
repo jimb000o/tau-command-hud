@@ -379,7 +379,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     const sec = document.createElement("section"); sec.className = "step"; sec.id = "step-" + (i + 1); sec.dataset.i = i;
     sec.innerHTML = textHtml(st, i) +
       (i === 0 ? '<span class="hint"><i></i>Scroll</span>' : "") +
-      (st.end ? `<div class="cta"><a class="btn primary" href="../">Watch it live</a><a class="btn" href="../playground/#seat">Vote in the Playground</a><a class="btn" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">${TG}Telegram alerts</a></div>
+      (st.end ? `<div class="cta"><a class="btn primary" href="../">Watch it live</a><a class="btn" href="../playground/#seat">Vote in the Playground</a><a class="btn" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">${TG}Telegram alerts</a><a class="btn" href="https://x.com/TauHUDcom" target="_blank" rel="noopener">X @TauHUDcom</a></div>
         <button class="btn replay" type="button" id="replay">Play again from the top</button>
         <p class="note">The example (base fee 1 → 2 AGRS, block #5,028) is made up. The steps are how Tau Testnet Alpha handles every rule change today; the <a href="../proposals/">Proposals</a> page lists the real ones.</p>` : "");
     stepsEl.append(sec);

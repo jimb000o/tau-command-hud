@@ -36,6 +36,10 @@
 .tnav .pill.tg { border-color: rgba(57,255,138,.6); color: var(--tn-ok); }
 .tnav .pill.tg svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
 .tnav .pill.tg:hover { background: var(--tn-ok); border-color: var(--tn-ok); color: #000; }
+.tnav .pill.tg[aria-expanded="true"] { background: rgba(57,255,138,.12); }
+.tnav .pill.tg svg + svg { width: 11px; height: 11px; margin-left: -2px; }
+.tnav .tn-alm { left: auto; right: 0; }
+.mi .ic svg { width: 13px; height: 13px; fill: currentColor; }
 .tnav .pill.fbk { background: #fff; border-color: #fff; color: #000; font-weight: 700; }   /* the most visible thing in the header, still monochrome */
 .tnav .pill.fbk svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
 .tnav .pill.fbk:hover, .tnav .pill.fbk:focus-visible { background: #d6d6dc; border-color: #d6d6dc; color: #000; }
@@ -110,6 +114,7 @@ header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite
   .tnav .pill { font-size: 11px; padding: 0 14px; min-height: 44px; letter-spacing: .08em; }
   .tnav .pill.tg span { display: none; }
   .tnav .pill.tg { padding: 0; width: 44px; justify-content: center; }
+  .tnav .tn-alm { position: fixed; left: 16px; right: 16px; width: auto; max-width: none; z-index: 60; }
   .tnav .pill.fbk span { display: none; } .tnav .pill.fbk { padding: 0; width: 44px; justify-content: center; }
   .tnav .tnav-gear { width: 44px; height: 44px; }
   .tabbar { display: grid; position: fixed; left: 0; right: 0; bottom: 0; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--tn-hair, rgba(255,255,255,.18)); background: #0c0c0e; z-index: 50; padding-bottom: env(safe-area-inset-bottom, 0px); }
