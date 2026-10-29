@@ -1179,5 +1179,10 @@
   "tag": "Newspaper",
   "on": "2026-10-29",
   "html": "Newspaper: one sound switch. With Sound on, the café opens quietly as soon as you touch the page (or when you switch sound on), and Sound off closes it again. Turning the Café button up also turns the sound on, so \"Sound on\" never means silence."
+ },
+ {
+  "tag": "Wallet",
+  "on": "2026-10-29",
+  "html": "Wallet, round three: on a phone a bar stays on top with Account, Send, Rules and Activity, and shows a number when something waits for you. Ask to be paid gets a Share button on phones. Your address book can go along between the simulation and Live node; each address keeps its check words, and the simulation's made-up accounts stay behind. With a full inbox your own last two payments stay in view. Clicking into a rule's value ticks its block. When the real testnet has nothing to vote on, one button takes you to the Telegram alerts. Testnet only, test AGRS have no value."
  }
 ]
