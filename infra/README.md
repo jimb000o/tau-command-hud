@@ -103,6 +103,17 @@ dropped (and logged as a restart).
 
 ## Community nodes
 
+**Bootstrapping from node.tauhud.com.** Our node listens on 4001/tcp, holds the whole verified
+chain and announces `/ip4/2.31.101.42/tcp/4001` (`TAU_ANNOUNCE_ADDRS`), so any tau-testnet
+node can use it as a bootstrap peer next to, or instead of, the IDNI bootnode. Its peer ID is
+printed at start (`docker compose logs tau-node | grep -o 'peer_id=[A-Za-z0-9]*'`); it stays the
+same across restarts (`/data/identity.key`). On the other node:
+
+```
+TAU_BOOTSTRAP_PEERS='[{"peer_id":"<node.tauhud.com peer ID>","addrs":["/ip4/2.31.101.42/tcp/4001"]},
+                      {"peer_id":"12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC","addrs":["/ip4/34.251.82.246/tcp/4001"]}]'
+```
+
 Nodes run with the operator kit ([`kit/`](../kit/README.md)) can report their head once a
 minute with `report` (opt-in: only when the operator sets `NODE_NAME`). `key` is a random
 secret the reporter keeps; the relay shows only the first 12 hex of its SHA-256 as `id`, so

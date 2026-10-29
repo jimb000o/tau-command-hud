@@ -18,6 +18,11 @@ services:
       TAU_NETWORK_ID: tau-testnet-v2
       TAU_BOOTSTRAP_PEERS: '[{"peer_id":"12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC","addrs":["/ip4/34.251.82.246/tcp/4001"]}]'
       TAU_NETWORK_LISTEN: /ip4/0.0.0.0/tcp/4001
+      # The address other nodes are told to dial us at. Without it the node
+      # advertises its bind address /ip4/0.0.0.0/tcp/4001 (the IDNI bootnode's
+      # bug, IDNI #82), and a peer that bootstraps from us would dial itself
+      # after a restart. Override in .env when the server's address changes.
+      TAU_ANNOUNCE_ADDRS: ${TAU_ANNOUNCE_ADDRS:-/ip4/2.31.101.42/tcp/4001}
       # Validator mode, off unless .env sets TAU_VALIDATOR=true (README:
       # "Validator seat"). Only proposes once the key is in the validator set.
       TAU_MINING_ENABLED: ${TAU_VALIDATOR:-false}
