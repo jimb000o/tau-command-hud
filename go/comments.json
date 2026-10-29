@@ -7,14 +7,14 @@
   "launch-tg-tau": {
     "label": "Tau community on Telegram: introduce Tau HUD",
     "url": "https://t.me/tauchain",
-    "text": "Hi everyone. I have been building Tau HUD, an unofficial community dashboard for Tau Testnet Alpha: https://tauhud.com\n\nIt runs its own node and shows blocks, proposals and votes as they happen. Also there:\n· Explorer: what happened to a transaction, block or address\n· Time travel: the rules in force at any block\n· Rule Playground: write a rule and run the testnet's own checks on it\n· Vote: a step-by-step guide to vote on the real testnet with the tau-testnet CLI, practised first in a simulation\n· The Daily Consensus, a weekly 1920s style newspaper of the testnet\n\nAlerts for every rule change and chain restart: t.me/tauHUDcom and x.com/TauHUDcom\n\nNot affiliated with IDNI, testnet AGRS have no value. Feedback and bug reports are very welcome.",
+    "text": "hey everyone :) i built a little live dashboard for the testnet: https://tauhud.com\nblocks, proposals and votes as they happen, plus a guide to vote yourself. unofficial, just a fan project. feedback very welcome!",
     "button": "Copy and open Telegram",
     "hint": "The text is copied for you. In the Tau group, paste with Ctrl+V and send."
   },
   "launch-tg-own": {
     "label": "Our channel @tauHUDcom: launch post",
     "url": "https://t.me/tauHUDcom",
-    "text": "Tau HUD goes public today\n\nUntil now this channel and the site grew quietly. Today we are telling the Tau community, Hacker News and Reddit about it.\n\nEvery page now has a Share card (in the About menu and in every footer) with its own preview picture. If one page helped you understand Tau, send it to one person who would like it.\n\n👉 tauhud.com",
+    "text": "Tau HUD is now out in the wild 👋\nEvery page has a Share button with its own preview picture. If a page helped you get Tau, send it to one friend who'd like it.\ntauhud.com",
     "button": "Copy and open Telegram",
     "hint": "The text is copied for you. In the channel, paste with Ctrl+V and send."
   }
