@@ -1865,7 +1865,7 @@ async function loadLog() {
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD; from v17.54 every entry carries the site version beside its page */
-  const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh" };
+  const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja" };
   let day = null, html = "";
   for (const e of order) {
     const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
@@ -2423,16 +2423,16 @@ async function loadGazette() {
   renderGazAd();
 }
 function renderGazAd() {
-  const ed = GAZ.ed || {}, zh = document.documentElement.classList.contains("i18n-zh");
+  const ed = GAZ.ed || {}, zh = document.documentElement.classList.contains("i18n-zh"), ja = document.documentElement.classList.contains("i18n-ja");
   const hl = (zh && ed.headline_zh) || ed.headline || "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys";
   const no = ed.number != null ? Number(ed.number) : S.height || null;
   $("gazHl").textContent = hl;
   if (typeof ed.url === "string" && /^https:\/\/tauhud\.com\/gazette\//.test(ed.url)) $("gazAd").href = ed.url.replace(/^https:\/\/tauhud\.com\//, "");   // same site, so the preview and a local copy open their own newspaper
   if (ed.deck || ed.deck_zh) $("gazDk").textContent = (zh && ed.deck_zh) || ed.deck;
   if (ed.text || ed.text_zh) $("gazTx").textContent = (zh && ed.text_zh) || ed.text;
-  $("gazNo").textContent = zh ? (no ? `第 ${fmt(no)} 期` : "第 — 期") : no ? `No. ${fmt(no)}` : "No. —";
+  $("gazNo").textContent = zh || ja ? (no ? `第 ${fmt(no)} ${ja ? "号" : "期"}` : `第 — ${ja ? "号" : "期"}`) : no ? `No. ${fmt(no)}` : "No. —";
   const d = ed.date ? new Date(ed.date + (/T/.test(ed.date) ? "" : "T00:00:00Z")) : new Date();
-  $("gazDate").textContent = isNaN(d) ? "" : d.toLocaleDateString(zh ? "zh-CN" : "en-GB", { day: "numeric", month: zh ? "long" : "short", year: "numeric", timeZone: "UTC" });
+  $("gazDate").textContent = isNaN(d) ? "" : d.toLocaleDateString(zh ? "zh-CN" : ja ? "ja-JP" : "en-GB", { day: "numeric", month: zh || ja ? "long" : "short", year: "numeric", timeZone: "UTC" });
   fitGazAd();
 }
 addEventListener("DOMContentLoaded", () => {
@@ -2447,7 +2447,7 @@ function renderStatePanel() {
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
   $("statePanel").innerHTML = `<div class="big2"><div data-full="${KV_TIP["Spec revision"] || ""}"><b>${S.specRev}</b><span>spec revision</span></div><div data-full="${KV_TIP["Base fee"] || ""}"><b>${S.fee}</b><span>AGRS base fee</span></div></div>
     <p class="sent"><b>${thr} of ${N}</b> validators change a rule · <b>${S.ruleBudget}</b> rule txs per block · <b>${S.clauses.size}</b> account${S.clauses.size === 1 ? "" : "s"} with own rules · <b>${open.length}</b> open proposal${open.length === 1 ? "" : "s"} · ${active.length ? `<b>${active.length}</b> agreed change${active.length === 1 ? "" : "s"}${Number.isFinite(Number(active[active.length - 1].activeAt)) ? `, last at #${active[active.length - 1].activeAt}` : ""}` : "no agreed change yet"}</p>`;
-  if (!GAZ.ed && $("gazNo")) $("gazNo").textContent = document.documentElement.classList.contains("i18n-zh") ? `第 ${S.height ? fmt(S.height) : "—"} 期` : S.height ? `No. ${fmt(S.height)}` : "No. —";   // the paper numbers its issues by block height
+  if (!GAZ.ed && $("gazNo")) $("gazNo").textContent = document.documentElement.classList.contains("i18n-zh") || document.documentElement.classList.contains("i18n-ja") ? `第 ${S.height ? fmt(S.height) : "—"} ${document.documentElement.classList.contains("i18n-ja") ? "号" : "期"}` : S.height ? `No. ${fmt(S.height)}` : "No. —";   // the paper numbers its issues by block height
   fitGazAd();
 }
 function showState() {
@@ -3782,7 +3782,7 @@ if (window.TauSim && TauSim.onBallots) TauSim.onBallots(() => { simVoteSig = "";
 simBadge(); setInterval(() => { if (!document.hidden) simBadge(); }, 1000);
 /* the "coming up" chip beside the mode chip: an agreed rule change on the live chain that is not yet in force, counted down from the relay's block pace (the same chip as in every subpage header) */
 const NEXT = { rows: [], chain: null, text: "", dict: null };
-const nextDict = () => NEXT.dict || (NEXT.dict = new Promise(res => { if (!document.documentElement.classList.contains("i18n-zh") || !window.TauI18n) return res(); const sc = document.createElement("script"); sc.src = "assets/i18n/zh/proposals.js"; sc.onload = sc.onerror = res; document.head.append(sc); }));
+const nextDict = () => NEXT.dict || (NEXT.dict = new Promise(res => { if (!window.TauI18n || TauI18n.lang === "en") return res(); const sc = document.createElement("script"); sc.src = "assets/i18n/" + TauI18n.lang + "/proposals.js"; sc.onload = sc.onerror = res; document.head.append(sc); }));
 const spanNext = sec => { const m = Math.max(0, Math.round(sec / 60)); if (m < 60) return m <= 0 ? "now" : `in ${m} min`; const h = Math.floor(m / 60); if (h < 24) return `in ~${h} h ${m % 60} min`; return `in ~${Math.floor(h / 24)} d ${h % 24} h`; };
 function renderNext() {
   const nx = $("chipNext"); if (!nx) return;
