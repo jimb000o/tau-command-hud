@@ -67,6 +67,7 @@ check(a["visitors"] == 2 and a["uniques"] == {"agorzilla": 2} and a["engaged"] =
 check(a["refs"] == {"t.me": 1, "tauhud.com": 1} and a["time"] == {"agorzilla": [0, 0, 0, 0, 1, 0]}, "Agorzilla's referrers and time steps")
 pub = v.public()
 check(pub["sites"]["agorzilla"]["days"]["2026-10-28"][0] == 2 and pub["days"]["2026-10-28"][0] == 3, "public numbers per site")
+check(pub["sites"]["agorzilla"]["days"]["2026-10-28"][7] == 1 and pub["days"]["2026-10-28"][7] == 0, "pages opened from a link on our other site")
 v._pub = None
 before = json.dumps(v.report(1))
 hit("p=hud", headers={"User-Agent": UA, "DNT": "1"})

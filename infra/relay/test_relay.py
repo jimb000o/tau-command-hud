@@ -22,7 +22,7 @@ with open(EVENTS, "w") as f:
 CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
 BOARD = os.path.join(os.path.dirname(EVENTS), "community.json")
 PEERS = os.path.join(os.path.dirname(EVENTS), "peers.json")
-os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 sys.path.insert(0, os.path.dirname(__file__))
@@ -235,6 +235,7 @@ async def main():
                 check(m["status"] == "ok" and m["data"]["seen_type"] == "user_tx", f"{c} passes through")
                 await ask(ws, c + " " + json.dumps(good))
                 check(sum(x.startswith(c + " ") for x in mock["commands"][before:]) == 2, f"{c} never cached")
+            check(r.sources.sent.get("cd" * 32) == "", "a sent transaction is remembered as Tau HUD's")
             check((await ask(ws, "getapprovalrequests " + "ab" * 48 + " in"))["status"] == "ok", "wallet inbox lookup passes through")
             check((await ask(ws, "getruleconflict " + "aa" * 32))["data"]["verdict"] == "clean", "conflict report passes through")
             check((await ask(ws, "getruleconflict " + "aa" * 20))["status"] == "error", "conflict report needs a 64-hex offer id")
@@ -541,6 +542,10 @@ async def main():
             check(relay.BOOTNODE_ID in json.load(f)["peers"], "peer list saved")
 
         # public API: the summary and its badges over HTTP, open to any origin
+        ctype, text = await get("/api/v1/sources")
+        src = json.loads(text)
+        check(ctype == "application/json" and isinstance(src["days"], dict) and all(set(d) == {"agorzilla", "tauhud", "other"} for d in src["days"].values()),
+              "/api/v1/sources: transactions per day by source")
         ctype, text = await get("/api/v1/summary")
         api = json.loads(text)
         check(ctype.startswith("application/json") and api["api"] == "tauhud/v1" and api["height"] >= 1
