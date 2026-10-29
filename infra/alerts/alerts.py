@@ -105,6 +105,14 @@ TELEGRAM_CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()
 # the question bot (bot.py, same token): every channel post carries buttons that open it; empty = no buttons
 TELEGRAM_BOT_NAME = os.environ.get("TELEGRAM_BOT_USERNAME", "tauhud_alerts_bot").strip().lstrip("@")
 X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")}
+# X (@TauHUDcom) is paid per post since 2026: $0.015 a post, $0.20 for one with a link in it. So X gets the real chain's news
+# (rule changes, new nodes, "Testnet today", new pages, the weekly recap with the paper's headline), each in a short text
+# without a link (the profile carries tauhud.com), and never more than X_DAILY_CAP / X_MONTHLY_CAP posts. Not on X: practice
+# votes, the smaller-updates digests, health alarms, visitor proposals; the simulation's switches only with X_SIM=true.
+X_LINKS = os.environ.get("X_LINKS", "false").lower() in ("1", "true", "yes")
+X_DAILY_CAP = int(os.environ.get("X_DAILY_CAP", 8))
+X_MONTHLY_CAP = int(os.environ.get("X_MONTHLY_CAP", 120))
+X_SIM = os.environ.get("X_SIM", "false").lower() in ("1", "true", "yes")
 RELAY_HTTP = os.environ.get("RELAY_HTTP", "http://relay:8080")
 RECAP_ON = os.environ.get("RECAP_ENABLED", "true").lower() in ("1", "true", "yes")
 RECAP_WEEKDAY = int(os.environ.get("RECAP_WEEKDAY", 0))   # 0 = Monday
@@ -488,17 +496,54 @@ def telegram_text(item: dict) -> str:
     return "\n".join(out)
 
 
+X_REAL = "⛓ Tau Testnet Alpha · live chain"
+X_SIM_LINE = "🧪 SIMULATION · not the real testnet"
+X_SITE_NOTE = "(An update to the Tau HUD website, not testnet news.)"
+
+
+def x_len(s: str) -> int:
+    """Length as X counts it: a link is 23, most Latin text 1 a character, emoji and Chinese 2."""
+    s = re.sub(r"https?://\S+", "x" * 23, s)
+    return sum(1 if (o := ord(c)) <= 0x10FF or 0x2000 <= o <= 0x200D or 0x2010 <= o <= 0x201F or 0x2032 <= o <= 0x2037 else 2
+               for c in s)
+
+
+def x_post(lines: list[str], link: str | None = None, keep: int = 2, foot: str | None = None) -> str:
+    """Lines as one post of at most 280: the last line loses sentences, then whole lines go (never the first `keep`), then it
+    is cut; `foot` always stays at the end. The link goes there only with X_LINKS (it makes a post 13 times dearer); #Tau always."""
+    tail = (f"\n{foot}" if foot else "") + (f"\n\n{link} #Tau" if link and X_LINKS else "\n\n#Tau")
+    out = [" ".join(str(x).split()) for x in lines if x and str(x).strip()]
+    if not X_LINKS:
+        out = [re.sub(r"\s*https?://\S+", "", x) for x in out]
+    while out and x_len("\n".join(out) + tail) > 280:
+        n = len(re.split(r"(?<=[.!?])\s+(?=[A-Z“\"(])", out[-1]))
+        if n > 1:
+            out[-1] = sentences(out[-1], n - 1)
+        elif len(out) > keep:
+            out.pop()
+        else:
+            text = "\n".join(out)
+            while text and x_len(text + "…" + tail) > 280:
+                text = text[:-1]
+            out = [text.rstrip(" ,;:.\n") + "…"]
+    return "\n".join(out) + tail
+
+
 def x_text(item: dict) -> str:
-    # X counts every link as 23 characters
-    tail = f"\n\n{item['link']} #Tau"
-    room = 280 - 23 - len(" #Tau") - 2
-    icon = ICONS.get(item["kind"], "")
-    for text in (f"{icon} {item['headline']}\n{item.get('why') or item['body']}",
-                 f"{icon} {item['headline']}"):
-        text = text.strip()
-        if len(text) <= room:
-            return text + tail
-    return text[: room - 1] + "…" + tail
+    """A rule change on the real chain: the line that says so, the headline, then why it matters as far as it fits."""
+    icon = ICONS.get(item["kind"], "•")
+    return x_post([X_REAL, f"{icon} {item['headline']}", item.get("why") or item.get("body")], item.get("link"))
+
+
+def recap_x(r: dict) -> str:
+    """The Monday recap picture's text on X: the week in three lines, and the headline of this week's paper."""
+    try:
+        with open(os.path.join(PUBLIC_DIR, "recap", "gazette", "latest.json")) as f:
+            banner = (json.load(f).get("banner") or {}).get("en")
+    except (OSError, ValueError, AttributeError):
+        banner = None
+    return x_post([X_REAL, f"📊 Tau testnet weekly recap · {recap.period(r)}"] + [f"• {x}" for x in recap.lines(r, SITE)[:3]]
+                  + ([f"📰 This week's paper: {banner}"] if banner else []), f"{SITE}/stats/", keep=2)
 
 
 def health_problems(h: dict) -> list[str]:
@@ -604,6 +649,16 @@ def newnode_text(n: dict, online: int) -> str:
     return "\n".join([REAL_LINE, head, body, f"Nodes online now: {online}.", "", link])
 
 
+def newnode_x(n: dict, online: int) -> str:
+    if n["kind"] == "kit":
+        head = f"🆕 New community node: {n['name']}"
+        body = f"Someone started a Tau testnet node with the Tau HUD kit and it has checked every block for {fmt_dur(n['for'])}."
+    else:
+        head = "🆕 A new node joined the Tau testnet"
+        body = f"Our node has seen it for {fmt_dur(n['for'])}" + (f", at block #{fmt_n(n['head'])}" if n.get("head") else "") + "."
+    return x_post([X_REAL, head, f"{body} Nodes online now: {online}."], f"{SITE}/nodes/")
+
+
 # ---------- the simulation's consensus switches ----------
 def sim_switches(t: float) -> list[dict]:
     """The simulated consensus switches of the UTC day that holds `t`, in order: when each is proposed, in force, and when the other one follows."""
@@ -681,6 +736,12 @@ def sim_text(ev: dict, forecast: list[str] | None = None) -> str:
     return "\n".join(out)
 
 
+def sim_x(ev: dict) -> str:
+    """Only with X_SIM: the switch, marked as simulation first and last."""
+    w, hm = SIM_WORDS[ev["kind"]], datetime.fromtimestamp(ev["in_force"], timezone.utc).strftime("%H:%M")
+    return x_post([X_SIM_LINE, w["headline"], f"In force at {hm} UTC unless the visitors vote no.", w["why"]], SIM_LINK, keep=3)
+
+
 def sim_buttons() -> dict:
     """One button under a simulation post: it opens the site in Simulation mode (the real-testnet buttons would mislead here)."""
     return {"inline_keyboard": [[{"text": "🧪 Watch the simulation", "url": SIM_LINK}]]}
@@ -731,6 +792,21 @@ def today_text(r: dict) -> str:
     for c in r["coming"]:
         out += ["", f"Coming up: {e(c['title'])} at block #{fmt_n(c['at'])}{e(c['eta'])}."]
     return "\n".join(out)
+
+
+def today_x(r: dict) -> str:
+    day = datetime.fromtimestamp(r["end"], timezone.utc)
+    pace = f", one every {round(r['pace'])} seconds" if r["pace"] else ""
+    out = [X_REAL, f"📋 Testnet today, {day.day} {day.strftime('%B')}", f"• {plural(r['blocks'], 'block')}{pace}"]
+    if r["txs"]:
+        out.append(f"• {plural(r['txs'], 'transaction')} from {plural(r['senders'], 'account')}")
+    out += [f"• {h}" for h in r["events"]]
+    if r["practice"]:
+        out.append(f"• {plural(r['practice'], 'practice vote')}, the rules stay as they are")
+    if r["online"]:
+        out.append(f"• {plural(r['online'], 'node')} online")
+    out += [f"Coming up: {c['title']} at block #{fmt_n(c['at'])}{c['eta']}." for c in r["coming"][:1]]
+    return x_post(out, f"{SITE}/", keep=3)
 
 
 def today_buttons() -> dict:
@@ -792,6 +868,18 @@ def major_text(m: dict) -> str:
     e = html.escape
     return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", "", e(m["text"]), "",
                       f"<a href=\"{e(m['link'])}\">Open it on tauhud.com</a>", "", f"<i>{e(SITE_NOTICE)}</i>"])
+
+
+def major_x(m: dict) -> str:
+    t = re.sub(r"^New:\s*", "", m["title"])
+    return x_post([f"✨ New on Tau HUD: {t[:1].upper() + t[1:]}", m["text"]], m["link"], keep=1, foot=X_SITE_NOTE)
+
+
+def catchup_x(majors: list[dict]) -> str:
+    """One X post for a backlog: the new pages by name, as many as fit."""
+    names = [re.sub(r"^New:\s*", "", m["title"]) for m in majors]
+    head = f"✨ {plural(len(majors), 'new page or feature', 'new pages and features')} on Tau HUD"
+    return x_post([head] + [f"• {n[:1].upper() + n[1:]}" for n in names], SITE_LOG_LINK, keep=1, foot=X_SITE_NOTE)
 
 
 def major_buttons(m: dict) -> dict:
@@ -1008,7 +1096,7 @@ class X(Outlet):
         media_id = str((reply.get("data") or {}).get("id") or reply.get("media_id_string") or "")
         if not media_id:
             return False, None, "media upload: no id"
-        return self.send_text(recap.caption_x(r, SITE), media_id)
+        return self.send_text(recap_x(r), media_id)
 
     def call(self, req, want_reply=False):
         try:
@@ -1256,15 +1344,22 @@ class Watcher:
                 continue
             for it in reversed(self.state["items"]):
                 st = it["posted"].get(o.name)
-                if not it["news"] or it["seen"] < meta["since"] or st == "ok" or (isinstance(st, int) and st >= MAX_TRIES):
+                if not it["news"] or it["seen"] < meta["since"] or st in ("ok", "skip") or (isinstance(st, int) and st >= MAX_TRIES):
                     continue
                 if it.get("folded") or it.get("practice"):
                     continue
                 if it["kind"] == "proposed" and it.get("thr") == 1 and time.time() - it["seen"] < PROPOSED_HOLD:
                     break  # wait: it may be agreed in a moment; keep the order of posts
+                if o.name == "x" and not self.x_room():
+                    it["posted"][o.name] = "skip"  # over the caps: Telegram, the feed and the page still have it
+                    log.info("x: over the daily or monthly cap, left out: %s", it["headline"])
+                    self.save_state()
+                    continue
                 ok, retry, err = await asyncio.to_thread(o.send, it)
                 if ok:
                     it["posted"][o.name] = "ok"
+                    if o.name == "x":
+                        self.x_count()
                     log.info("posted to %s: %s", o.name, it["headline"])
                 else:
                     it["posted"][o.name] = (st if isinstance(st, int) else 0) + 1
@@ -1274,6 +1369,45 @@ class Watcher:
                     break
                 self.save_state()
                 await asyncio.sleep(3)  # Telegram allows ~20 posts a minute per channel
+
+    # ---------- X: a few posts a day, paid per post ----------
+    def x_on(self):
+        return next((o for o in self.outlets if o.name == "x" and o.enabled()), None)
+
+    def x_room(self, now: float | None = None) -> bool:
+        """True while today's and this month's X posts are under X_DAILY_CAP and X_MONTHLY_CAP."""
+        d = datetime.fromtimestamp(now if now is not None else time.time(), timezone.utc)
+        st = self.state.setdefault("x", {})
+        day, month = d.strftime("%Y-%m-%d"), d.strftime("%Y-%m")
+        if st.get("day") != day:
+            st["day"], st["today"] = day, 0
+        if st.get("month") != month:
+            st["month"], st["this_month"] = month, 0
+        return st["today"] < X_DAILY_CAP and st["this_month"] < X_MONTHLY_CAP and st.get("pause_until", 0) <= d.timestamp()
+
+    def x_count(self):
+        st = self.state["x"]
+        st["today"], st["this_month"] = st.get("today", 0) + 1, st.get("this_month", 0) + 1
+
+    async def post_x(self, text: str, what: str, now: float | None = None) -> bool:
+        """The X copy of a post that just went to Telegram. One try: X never holds Telegram up, and a post that failed is
+        not sent hours late; over the caps it is left out."""
+        o = self.x_on()
+        if not o:
+            return False
+        if not self.x_room(now):
+            log.info("x: %s not posted (daily or monthly cap, or paused)", what)
+            return False
+        ok, retry, err = await asyncio.to_thread(o.send_text, text)
+        if ok:
+            self.x_count()
+            log.info("posted to x: %s", what)
+        else:
+            if retry:
+                self.state["x"]["pause_until"] = (now if now is not None else time.time()) + retry
+            log.warning("x post failed (%s): %s left out", err, what)
+        self.save_state()
+        return ok
 
     # ---------- testnet health ----------
     def health_now(self) -> dict | None:
@@ -1378,6 +1512,7 @@ class Watcher:
                         return
                 st["day"], st["posted"] = day, posted + 1
                 log.info("newnodes: posted %s", n["key"])
+                await self.post_x(newnode_x(n, nodes_online(peers, board)), "new node " + n["key"], now)
             else:
                 log.info("newnodes: %s recorded without a post (%s)", n["key"], "daily cap" if tg else "telegram off")
             known[n["key"]] = round(now)
@@ -1412,6 +1547,8 @@ class Watcher:
             st["posted"][ev["key"]] = round(now)
             changed = True
             log.info("simulation: posted %s", ev["key"])
+            if X_SIM:
+                await self.post_x(sim_x(ev), "simulation " + ev["key"], now)
         for k in [k for k, t in st["posted"].items() if now - t > 7 * 86400]:
             del st["posted"][k]
             changed = True
@@ -1442,6 +1579,8 @@ class Watcher:
                     self.save_state()
                     return
             log.info("testnet today posted")
+            st["slot"] = slot  # recorded before X: a failed X copy must not repeat the Telegram post
+            await self.post_x(today_x(r), "testnet today", now)
         else:
             log.info("testnet today: a quiet day, no post")
         st["slot"] = slot
@@ -1516,6 +1655,8 @@ class Watcher:
                 st["count"] = SITE_MAJOR_DAILY_CAP
                 st["last_major"] = round(now)
                 log.info("site updates: catch-up post with %d new pages and features", shown)
+                self.save_state()
+                await self.post_x(catchup_x(batch[:shown]), "site catch-up", now)
             self.save_state()
             return
         if st["majors"] and st["count"] < SITE_MAJOR_DAILY_CAP and now - st.get("last_major", 0) >= SITE_MAJOR_GAP:
@@ -1525,6 +1666,8 @@ class Watcher:
                 st["count"] += 1
                 st["last_major"] = round(now)
                 log.info("site updates: posted %s", m["key"])
+                self.save_state()
+                await self.post_x(major_x(m), "site " + m["key"], now)
             self.save_state()
             return  # one post per check: a digest never lands on top of a major
         d0 = datetime.fromtimestamp(now, timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
@@ -1713,6 +1856,8 @@ class Watcher:
             got = st["posted"].get(o.name)
             if not o.enabled() or got == "ok" or (isinstance(got, int) and got >= 3) or st.get("pause_until", 0) > time.time():
                 continue
+            if o.name == "x" and not self.x_room():
+                continue
             try:
                 with open(os.path.join(PUBLIC_DIR, "recap", st["file"]), "rb") as f:
                     png = f.read()
@@ -1722,6 +1867,8 @@ class Watcher:
             if ok:
                 st["posted"][o.name] = "ok"
                 log.info("recap posted to %s", o.name)
+                if o.name == "x":
+                    self.x_count()
             else:
                 st["posted"][o.name] = (got if isinstance(got, int) else 0) + 1
                 st["pause_until"] = time.time() + (retry or 300)
@@ -1771,6 +1918,52 @@ def send_test() -> int:
         print(f"{o.name}: {'sent' if ok else 'FAILED ' + err}")
         code |= 0 if ok else 1
     return code
+
+
+def x_test() -> int:
+    """One test post on X only (the Telegram channel gets nothing)."""
+    o = X()
+    if not o.enabled():
+        print("x: off (X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN and X_ACCESS_SECRET are not all set in .env)")
+        return 1
+    ok, _, err = o.send_text(x_post([X_REAL, "✅ Tau HUD is connected to X",
+                                     "This account will post when the users of the Tau testnet agree on a rule change, when a new node "
+                                     "joins, and once a day what happened on the chain."]))
+    print("x: sent, look at your profile" if ok else "x: FAILED " + err + X_HINTS.get(err.split(":")[0], ""))
+    return 0 if ok else 1
+
+
+X_HINTS = {"HTTP 401": "\n   The keys do not match: copy all four again into .env (no spaces, no quotes), then rebuild.",
+           "HTTP 403": "\n   No write permission: set the app to Read and Write, then REGENERATE the Access Token and Secret.",
+           "HTTP 402": "\n   No credits: buy credits in the X Developer Console (Billing).",
+           "HTTP 429": "\n   Too many posts right now: try again in 15 minutes."}
+
+
+async def x_preview() -> int:
+    """Print what X would get right now, with X's own length count; posts nothing."""
+    def show(what, text):
+        print(f"[{what}] {x_len(text)}/280 · {'link inside: $0.20' if 'http' in text else 'no link: $0.015'}\n{text}\n" + "-" * 60)
+    w = Watcher([])
+    async with connect(RELAY_URL, max_size=64 * 2**20, open_timeout=20) as ws:
+        w.ws = ws
+        await w.sync()
+    props, events, now = replay(w.blocks, w.gov)
+    by_id, pace = {p["id"]: p for p in props}, block_pace(w.blocks)
+    for ev in events[-3:]:
+        show(ev["kind"], x_text({"kind": ev["kind"], **describe(ev, by_id.get(ev["id"]), now.get("head", 0), pace)}))
+    peers, board = w.relay_json("/peers"), w.relay_json("/community/board")
+    online = nodes_online(peers, board)
+    show("testnet today", today_x(today_numbers(w.relay_json("/stats"), w.state["items"], props, online, time.time())))
+    show("new node (example)", newnode_x({"kind": "peer", "id": "12D3KooWexample", "for": 1800, "head": now.get("head")}, online))
+    entries = w.fetch_updates() or []
+    majors = [major_item(e) for e in entries if isinstance(e.get("major"), dict)][-2:]
+    for m in majors:
+        show("site", major_x(m))
+    if majors:
+        show("site catch-up", catchup_x(majors))
+    print(f"Caps: {X_DAILY_CAP} a day, {X_MONTHLY_CAP} a month (X_DAILY_CAP, X_MONTHLY_CAP); links {'on' if X_LINKS else 'off'} (X_LINKS);"
+          f" simulation {'on' if X_SIM else 'off'} (X_SIM). X is {'ON' if X().enabled() else 'off: keys not in .env'}.")
+    return 0
 
 
 async def preview_latest(n: int = 6) -> int:
@@ -1875,6 +2068,10 @@ if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if "--test" in sys.argv:
         sys.exit(send_test())
+    if "--x-test" in sys.argv:
+        sys.exit(x_test())
+    if "--x-preview" in sys.argv:
+        sys.exit(asyncio.run(x_preview()))
     if "--preview" in sys.argv:
         sys.exit(asyncio.run(preview_latest()))
     if "--recap-now" in sys.argv or "--recap-preview" in sys.argv:
