@@ -110,6 +110,7 @@ services:
       X_MONTHLY_CAP: ${X_MONTHLY_CAP:-120}
       X_LINKS: ${X_LINKS:-false}
       X_SIM: ${X_SIM:-false}
+      X_PICTURES: ${X_PICTURES:-true}   # the rule change's card, the live overview or a new page's picture under the post
       # weekly recap image (alerts/recap.py): Monday 09:00 UTC unless .env says otherwise
       RECAP_ENABLED: ${RECAP_ENABLED:-true}
       RECAP_WEEKDAY: ${RECAP_WEEKDAY:-0}
