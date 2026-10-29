@@ -324,7 +324,7 @@ in `.env` it reads Etherscan instead of Blockscout.
 - `docker compose run --rm donations python donations.py --preview` lists what it finds and
   the post the newest donation would get, and posts nothing.
 
-**Weekly recap**: every Monday 09:00 UTC (`RECAP_WEEKDAY`, `RECAP_HOUR`) `alerts/recap.py`
+**Weekly recap**: every Monday 09:00 German time, 08:00 UTC in winter and 07:00 UTC in summer (`RECAP_WEEKDAY`, `RECAP_HOUR`, `RECAP_TZ`) `alerts/recap.py`
 draws the past 7 days as one 1200×675 image in the HUD look: blocks and block time,
 transactions and active accounts, blocks per day, rule changes (proposed, agreed, in force,
 dropped), chain restarts, community nodes (new ones this week) and the most active accounts.

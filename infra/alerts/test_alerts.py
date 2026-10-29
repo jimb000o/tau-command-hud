@@ -20,7 +20,7 @@ TMP = tempfile.mkdtemp()
 os.environ.update(RELAY_URL="ws://127.0.0.1:18799", RELAY_HTTP="http://127.0.0.1:18799", STATE_PATH=os.path.join(TMP, "state", "alerts.json"),
                   PUBLIC_DIR=os.path.join(TMP, "public"), POLL_SECONDS="0.3", PROPOSED_HOLD_SECONDS="1.5", TELEGRAM_BOT_TOKEN="", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 _now = time.gmtime()
-os.environ.update(RECAP_WEEKDAY=str(_now.tm_wday), RECAP_HOUR=str(_now.tm_hour))  # a recap slot that just passed
+os.environ.update(RECAP_WEEKDAY=str(_now.tm_wday), RECAP_HOUR=str(_now.tm_hour), RECAP_TZ="UTC")  # a recap slot that just passed
 os.environ["SIM_ALERTS"] = "false"  # simulated posts have their own test (test_sim_alerts.py)
 sys.path.insert(0, os.path.dirname(__file__))
 

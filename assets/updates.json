@@ -1110,5 +1110,10 @@
    "link": "/wallet/",
    "image": "/assets/shots/wallet.png"
   }
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-29",
+  "html": "The weekly Daily Consensus and the Monday recap picture now come out every Monday at 09:00 German time, all year round (08:00 UTC in winter, 07:00 UTC in summer)."
  }
 ]
