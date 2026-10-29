@@ -1221,5 +1221,10 @@
   "tag": "Findings",
   "on": "2026-10-29",
   "html": "Findings: a second fix is with IDNI. Two tests of time-based rules that were switched off in IDNI's checks pass on real Tau, so we asked to switch them back on. The page also lists our two newest requests, a free place for personal rules and a live consensus switch. With more findings than fit, each card shows its title and status and keeps the short summary for the hover."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-29",
+  "html": "Alerts: Agorzilla's evening now comes to the Telegram channel. When its daily choice closes at 18:00 UTC, one short post says what changed, how many days it has lived and what is open tonight. Telegram only, test AGRS only."
  }
 ]
