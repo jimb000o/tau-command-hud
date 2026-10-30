@@ -153,6 +153,9 @@ RULES_POLL = _env_float("RULES_POLL_SECONDS", 300)
 RULE_PLACES = _env_int("RULE_PLACES", 2)
 RULES_MAX_CHECKS = _env_int("RULES_MAX_CHECKS", 40)
 NEUTRAL_O5 = "(o5[t]:bv[24]={#x000001}:bv[24])"
+# /rulewall: every personal rule in the kept blocks, for the rules wall on tauhud.com/rules/
+RULEWALL_MAX = _env_int("RULEWALL_MAX", 200)
+RULEWALL_MAX_TEXT = 4000
 # Fair turns on those places (slotlease.py): the wallet leaves a pre-signed neutral clause here and the relay sends it
 # when the holder's turn is over. One switch turns it off on the server without a rebuild (docker compose up -d).
 SLOTLEASE_ENABLED = os.environ.get("SLOTLEASE_ENABLED", "1") not in ("0", "false", "no", "")
@@ -397,6 +400,8 @@ class Relay:
         self.board = self._load_board()          # node id -> leaderboard row, kept across restarts
         self.board_saved_at = 0.0
         self.board_text: str | None = None
+        self.rulewall_text: str | None = None   # /rulewall, rebuilt at most once a minute
+        self.rulewall_at = 0.0
         self.board_at = 0.0
         self.peer_book = self._load_peers()      # {"since", "peers": {peer id -> row}}, kept across restarts
         self.peers_saved_at = 0.0
@@ -895,6 +900,44 @@ class Relay:
                     if HEX.match(who):
                         seen[who] = h
         return sorted(seen, key=lambda a: -seen[a])
+
+    def rulewall(self) -> list[dict]:
+        """Every personal (o5) rule the kept blocks hold, one entry per rule text: who wrote it first and every
+        account that took the same rule since (deployed the same text, or accepted it as an offer), newest first.
+        A removal (the neutral clause) is not a rule."""
+        flat = lambda x: re.sub(r"\s+", "", x)
+        neutral = {flat(NEUTRAL_O5), flat(NEUTRAL_O5[1:-1]), flat("always (" + NEUTRAL_O5 + ").")}
+        rules: dict[str, dict] = {}
+        for b in self.ordered_blocks():
+            h, ts = self._height(b), (b.get("header") or {}).get("timestamp")
+            for t in b.get("transactions") or []:
+                if not isinstance(t, dict):
+                    continue
+                kind = t.get("tx_type") or "user_tx"
+                ops = t.get("operations") if isinstance(t.get("operations"), dict) else {}
+                text = ops.get("0") if kind == "user_tx" else t.get("rule_text") if kind == "rule_offer_accept" else None
+                who = str(t.get("sender_pubkey") or "").lower()
+                if not isinstance(text, str) or "o5" not in text or not HEX.match(who) or len(text) > RULEWALL_MAX_TEXT:
+                    continue
+                key = flat(text)
+                if key in neutral:
+                    continue
+                r = rules.get(key)
+                if r is None:
+                    r = rules[key] = {"text": text.strip(), "author": who, "first": h, "first_ts": ts, "users": [], "last": h}
+                if who not in r["users"]:
+                    r["users"].append(who)
+                r["last"] = h
+        out = sorted(rules.values(), key=lambda r: (-len(r["users"]), -r["last"]))
+        return out[:RULEWALL_MAX]
+
+    def rulewall_json(self) -> str:
+        now = time.time()
+        if self.rulewall_text is None or now - self.rulewall_at >= 60:
+            self.rulewall_at = now
+            self.rulewall_text = json.dumps({"rules": self.rulewall(), "height": self.height(), "generated_at": round(now)},
+                                            separators=(",", ":"))
+        return self.rulewall_text
 
     async def poll_rules(self):
         holders = []
@@ -1787,6 +1830,11 @@ class Relay:
             body = dict(lease[1], enabled=SLOTLEASE_ENABLED)
             code = HTTPStatus(lease[0])
             return Response(code.value, code.phrase, headers, json.dumps(body, separators=(",", ":")).encode())
+        if path == "/rulewall":
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.rulewall_json().encode())
         if path == "/rules":
             ready = self.rules_text is not None
             headers = Headers([("Content-Type", "application/json"),

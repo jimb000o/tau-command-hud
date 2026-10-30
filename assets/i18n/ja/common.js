@@ -562,3 +562,9 @@ TauI18n.add({ strings: {
   "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.": "はじめて？4 ステップで Tau を試せます：テストウォレット、チェーンがチェックする自分だけのルール、それを封じるブロック、Agorzilla へのごはん。数分で、インストール不要。",
   "Back to Start here": "「ここから始める」に戻る",
 } });
+/* Rules wall: menu entry and the wallet's way back */
+TauI18n.add({ strings: {
+  "Rules wall": "ルールの壁",
+  "The rules people gave their own accounts; take one for yours to agree": "みんなが自分のアカウントに付けたルール。自分のアカウントにも採用すれば、それが賛成のしるし",
+  "Back to the rules wall": "ルールの壁に戻る",
+} });
