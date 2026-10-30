@@ -169,6 +169,8 @@ TauI18n.add({ strings: {
   "Step through the chain block by block and see the rules at any height": "逐块回溯整条链，查看任意高度时的规则",
   "Switch to English": "Switch to English",
   "Take a simulated seat and vote a rule change into law": "坐上一个模拟席位，投票让一项规则变更成为法律",
+  "My Tau card": "我的 Tau 卡片",
+  "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post": "一张图看你的钱包：写过的规则、投票、Agorzilla 餐数、咖啡馆印章；可直接分享",
   "Missions": "任务",
   "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake": "练习链上的六个小任务：通过一条规则、让一条失败、挺过宕机、切换到权益证明",
   "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat and vote a rule change into law, or play six short missions on a practice chain.": "编写你自己的转账规则并用测试网自己的检查来运行它，坐上一个模拟验证者席位投票让一项规则变更成为法律，或者在练习链上玩六个小任务。",
@@ -566,4 +568,10 @@ TauI18n.add({ strings: {
   "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla": "四步试用 Tau：一个测试钱包、一条你自己的规则、一个封存它的区块、喂 Agorzilla 一顿饭",
   "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.": "第一次来？四步试用 Tau：一个测试钱包、一条由链来检查的你自己的规则、一个封存它的区块、喂 Agorzilla 一顿饭。几分钟，无需安装。",
   "Back to Start here": "返回“从这里开始”",
+} });
+/* Rules wall: menu entry and the wallet's way back */
+TauI18n.add({ strings: {
+  "Rules wall": "规则墙",
+  "The rules people gave their own accounts; take one for yours to agree": "大家给自己账户设的规则；为你的账户采用一条，就是表示赞同",
+  "Back to the rules wall": "返回规则墙",
 } });

@@ -1621,6 +1621,30 @@
   }
  },
  {
+  "tag": "My Tau card",
+  "on": "2026-10-30",
+  "html": "My Tau card: one picture of what your test wallet did on the testnet, its three check words as its name, rules written, votes on rule changes and for Agorzilla, Agorzilla meals and the café stamps from your walk. Post it on X, copy the link (its preview shows your card on X, Telegram and WhatsApp) or save the picture; a list shows what is still open on your card and where to do it. Test AGRS only: nothing on the card is priced or promised. Open it from the wallet or under Playground.",
+  "major": {
+   "id": "card",
+   "title": "New: My Tau card",
+   "text": "Your test wallet on one picture: rules written, votes, Agorzilla meals and café stamps, ready to post. Test AGRS only, nothing priced or promised.",
+   "link": "/card/",
+   "image": "/assets/shots/card.png"
+  }
+ },
+ {
+  "tag": "Rules wall",
+  "on": "2026-10-30",
+  "html": "Rules wall: a new page under Playground shows every personal rule accounts gave themselves on the testnet, read from the blocks, one card per rule in plain words. A dot for every wallet that took the same rule, a green mark on the rules in force right now, and the Tau text one click away. To agree with a limit, a date or a freeze, “Take this rule” opens your wallet with it in the builder, and you check and sign; a rule with someone's names in it you make like it with your own. Sorted by most taken or newest; on the simulation it shows the made-up chain's rules.",
+  "major": {
+   "id": "rules",
+   "title": "New: the rules wall",
+   "text": "Every personal rule people gave their own accounts on the Tau testnet, read from the blocks. To agree with one, take it for your own account: a real transaction, counted on the wall.",
+   "link": "/rules/",
+   "image": "/assets/shots/rules.png"
+  }
+ },
+ {
   "tag": "Agorzilla",
   "on": "2026-10-30",
   "html": "Agorzilla's evening is now a small ritual: the last minute before 18:00 UTC counts down above its head, the count waits for the first block after the evening so a vote sealed in the last seconds still counts, then the result is revealed. Visitors who come later that evening see the reveal once. After each evening a photograph of Agorzilla just before and just after goes with the evening post on Telegram and X."

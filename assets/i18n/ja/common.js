@@ -169,6 +169,8 @@ TauI18n.add({ strings: {
   "Step through the chain block by block and see the rules at any height": "チェーンをブロックごとにたどり、任意の高さでのルールを見る",
   "Switch to English": "英語に切り替え",
   "Take a simulated seat and vote a rule change into law": "シミュレーションの席に座り、ルール変更を投票で施行させる",
+  "My Tau card": "マイ Tau カード",
+  "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post": "あなたのウォレットを 1 枚の画像に：書いたルール、投票、Agorzilla の食事、カフェのスタンプ。そのまま投稿できます",
   "Missions": "ミッション",
   "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake": "練習用チェーンで 6 つの短い課題：ルールを通す、ルールを落とす、障害を乗り切る、プルーフ・オブ・ステークに切り替える",
   "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat and vote a rule change into law, or play six short missions on a practice chain.": "自分の送金ルールを書いてテストネット自身の検証にかける、シミュレーションのバリデーター席に座ってルール変更を投票で施行させる、または練習用チェーンで 6 つの短いミッションに挑戦する。",
@@ -561,4 +563,10 @@ TauI18n.add({ strings: {
   "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla": "4 ステップで Tau を試す：テストウォレット、自分だけのルール、それを封じるブロック、Agorzilla へのごはん",
   "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.": "はじめて？4 ステップで Tau を試せます：テストウォレット、チェーンがチェックする自分だけのルール、それを封じるブロック、Agorzilla へのごはん。数分で、インストール不要。",
   "Back to Start here": "「ここから始める」に戻る",
+} });
+/* Rules wall: menu entry and the wallet's way back */
+TauI18n.add({ strings: {
+  "Rules wall": "ルールの壁",
+  "The rules people gave their own accounts; take one for yours to agree": "みんなが自分のアカウントに付けたルール。自分のアカウントにも採用すれば、それが賛成のしるし",
+  "Back to the rules wall": "ルールの壁に戻る",
 } });
