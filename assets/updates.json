@@ -1919,5 +1919,10 @@
   "tag": "Menu",
   "on": "2026-10-30",
   "html": "Header and menus, tidied for a site that has grown to 35 pages. Each page names itself at the top, as in “Tau HUD / Playground / White Rabbit Key”. Live node and Simulation sit with the chain numbers in the first row, and the note that this is an unofficial community project is quieter but stays on every page. The menus are sorted into small groups: Explore has the chain now and the road to mainnet (Status, Findings and Road to mainnet moved here), Playground has practice, the real testnet and games, and About keeps this site and our work for others. Chain state is the first entry under Explore. On the right: Search, Follow the chain, one Feedback & updates button, a language menu and the gear, which now holds Simple or Technical."
+ },
+ {
+  "tag": "Menu",
+  "on": "2026-10-30",
+  "html": "Playground menu: the games column is now called “Games on the live testnet”, and White Rabbit Key and Agorzilla carry the pulsing green live dot. Both run on the real testnet: your White Rabbit Key vote can go on chain, and Agorzilla is fed by real transactions."
  }
 ]

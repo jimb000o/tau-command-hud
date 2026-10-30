@@ -570,6 +570,7 @@ TauI18n.add({ strings: {
   "Language · 语言 · 言語": "语言 · Language · 言語",
   "Settings: view, node, guided tour, about": "设置：视图、节点、导览、关于",
   "Settings: view, node address, background rain": "设置：视图、节点地址、背景代码雨",
+  "Games on the live testnet": "在真实测试网上的游戏",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 发送方自己的规则说不 (o5 = 0 · ${TauI18n.t(r)})`]] });
