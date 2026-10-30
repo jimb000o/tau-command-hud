@@ -26,6 +26,7 @@
     soundHint: "Best with sound",
     ticket: "Café ticket", admit: "Admit one", ticketTip: "Talk to all four regulars, then find the door.",
     thisWeek: "this week", more: "Click to go on", stamped: "{name} stamped your ticket: {what}", stampFor: { mae: "Agreement", elias: "Chain", prof: "Logic", sully: "Testnet" }, full: "Your ticket is full. The door is open to you.",
+    gold: { t: "Golden ticket", sub: "The Daily Consensus · Café", admit: "Admits one reader who knows how rules change by agreement.", at: "Turned gold at block {n}", purr: "Déjà looks at the ticket, then at you, and purrs." },
     sep: ", ", and: " and ",
     places: { window: "Your table by the window", counter: "The counter", wire: "The wire corner", back: "The back room", door: "The door" },
     board: ["House Rules", "1. Mind the cups.", "2. Anyone may propose a rule.", "3. The regulars vote.", "4. Most hands carry it.", "5. Rule 4 may be voted on, too.", "Proposed: pie on Fridays", "Carried"],
@@ -78,6 +79,12 @@
         ],
         task: { q: "Here's my ticket.", ask: ["Say, got a ticket? Hold it up, pal. Up there in the corner."], hint: "Click your café ticket.",
           done: ["Mae, Elias, the Professor… all there. And now you know it's happening right now, on a testnet anybody can try.", "That's my stamp: Testnet. Full house, pal. You're ready for the street."] },
+        gold: ["Hold it. Hold it right there, pal. Up to the light.",
+          "Would ya look at that. Gold.",
+          "Four stamps and it turns. Mae calls it the oldest trick in the café. I call it the best part of my day.",
+          "You walked in not knowing how a rule gets changed. Now you could explain it to the cop on the corner. He'd still ask for a copy.",
+          "Block {n} was coming down the wire when it turned. Elias'll remember. He remembers all of 'em.",
+          "Keep it somewhere safe. It ain't worth a dime, mind. That's the beauty of it."],
         shut: "Door's shut till your ticket's full, pal. House rules.",
         out: { q: "Step outside", a: ["Go on, pal. Read all about it."] },
         bye: { q: "See you around, Sully.", a: ["Don't be a stranger."] } },
@@ -665,14 +672,17 @@
       chalk() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02; hit(A, out, t, 5200, 4, 0.12, 0.03); hit(A, out, t + 0.14, 4700, 5, 0.08, 0.025); },
       clack() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02; hit(A, out, t, 2200, 8, 0.03, 0.14); ping(A, out, t, 1900, 0.06, 0.03); },
       hiss() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02; hit(A, out, t, 6000, 0.6, 1.3, 0.04); },
+      /* the ticket turns gold: a rising chime and a little glitter */
+      gold() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02; [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, k) => { ping(A, out, t + k * 0.12, f, 2 - k * 0.2, 0.045); ping(A, out, t + k * 0.12, f * 2, 0.9, 0.01); });
+        for (let k = 0; k < 12; k++) ping(A, out, t + 0.7 + Math.random() * 1.6, 2800 + Math.random() * 2600, 0.45, 0.007); },
       ching() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02; for (let k = 0; k < 3; k++) hit(A, out, t + k * 0.05, 2500, 2, 0.03, 0.06); ping(A, out, t + 0.18, 2000, 0.9, 0.03); ping(A, out, t + 0.18, 3010, 0.6, 0.015); },
       rustle() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02; for (let k = 0; k < 6; k++) hit(A, out, t + k * 0.06, 2500 + Math.random() * 2000, 0.8, 0.09, 0.05); },
       bell() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02; for (let k = 0; k < 7; k++) { const tk = t + k * (0.07 + Math.random() * 0.05), f = 2400 + Math.random() * 300; ping(A, out, tk, f, 0.9 - k * 0.08, 0.05 * (1 - k / 9)); ping(A, out, tk, f * 2.76, 0.4, 0.012); } },
       creak() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02, o = A.createOscillator(), b = A.createBiquadFilter(); o.type = "sawtooth"; o.frequency.setValueAtTime(90, t); o.frequency.linearRampToValueAtTime(140, t + 0.6); o.frequency.linearRampToValueAtTime(70, t + 1.1);
         b.type = "bandpass"; b.frequency.value = 900; b.Q.value = 9; o.connect(b); b.connect(env(A, out, t, 0.1, 1.1, 0.05)); o.start(t); o.stop(t + 1.3); },
       whoosh() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02, s = A.createBufferSource(), b = A.createBiquadFilter(), g = A.createGain();
-        s.buffer = noise(A); s.loop = true; b.type = "bandpass"; b.Q.value = 1.2; b.frequency.setValueAtTime(400, t); b.frequency.exponentialRampToValueAtTime(3000, t + 1.4); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.12, t + 1.0); g.gain.linearRampToValueAtTime(0, t + 1.6);
-        s.connect(b); b.connect(g); g.connect(out); s.start(t); s.stop(t + 1.7); hit(A, out, t + 1.6, 200, 1, 0.2, 0.3); },
+        s.buffer = noise(A); s.loop = true; b.type = "bandpass"; b.Q.value = 1.2; b.frequency.setValueAtTime(400, t); b.frequency.exponentialRampToValueAtTime(3000, t + 1.4); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.07, t + 1.0); g.gain.linearRampToValueAtTime(0, t + 1.6);
+        s.connect(b); b.connect(g); g.connect(out); s.start(t); s.stop(t + 1.7); hit(A, out, t + 1.6, 160, 1, 0.18, 0.14); },
       /* the café cat: a soft meow that rises and falls (or a short "mrrp"), and a purr */
       meow(short) { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02, d = short ? 0.22 : 0.62, o = A.createOscillator(), f1 = A.createBiquadFilter(), f2 = A.createBiquadFilter(), m = A.createGain(), r = 1 + (Math.random() - 0.5) * 0.12;
         o.type = "sawtooth"; o.frequency.setValueAtTime(520 * r, t); o.frequency.linearRampToValueAtTime((short ? 860 : 780) * r, t + d * 0.3); o.frequency.linearRampToValueAtTime((short ? 700 : 470) * r, t + d);
@@ -824,7 +834,7 @@
     hintEl.textContent = touch ? TX.hintTouch : TX.hint;
     if (ST.on) place();
   }
-  function ticket() { const s = $(".ct-s"); s.innerHTML = ""; ["mae", "elias", "prof", "sully"].forEach((id, i) => { const w = document.createElement("span"), b = document.createElement("i"); w.className = "ct-slot"; b.className = ST.stamps.has(id) ? "on" : ""; b.textContent = ST.stamps.has(id) ? (TX.people[id].name.replace(/^The /, "")[0] || "") : ""; b.style.setProperty("--r", (i * 37 % 20 - 10) + "deg");
+  function ticket() { const tk = $(".cafe-ticket"); tk.classList.toggle("gold", !!ST.gold); $(".ct-t").textContent = ST.gold ? TX.gold.t : TX.ticket; const s = $(".ct-s"); s.innerHTML = ""; ["mae", "elias", "prof", "sully"].forEach((id, i) => { const w = document.createElement("span"), b = document.createElement("i"); w.className = "ct-slot"; b.className = ST.stamps.has(id) ? "on" : ""; b.textContent = ST.stamps.has(id) ? (TX.people[id].name.replace(/^The /, "")[0] || "") : ""; b.style.setProperty("--r", (i * 37 % 20 - 10) + "deg");
       const l = document.createElement("small"); l.textContent = TX.stampFor[id]; w.append(b, l); w.classList.toggle("on", ST.stamps.has(id)); s.appendChild(w); });
     $(".cafe-ticket").setAttribute("aria-label", `${TX.ticket}: ${ST.stamps.size} / 4`); }
   const nb = d => ORDER[(ORDER.indexOf(ST.area) + d + ORDER.length) % ORDER.length];
@@ -1064,7 +1074,7 @@
   function done() {
     const T = ST.talk; if (!T) return; const who = T.who, K = TX.people[who].task; ST.task = null; say.style.visibility = ""; if (ST.zoomBack) { ST.zoomT = ST.zoomBack; ST.zoomBack = 0; } $(".cafe-ticket").classList.remove("offer");
     if (who === "elias") AUDIO.ticker();
-    say.classList.remove("ask"); sayCh.innerHTML = ""; lines(K.done, () => { stamp(who); edges(); choices(); });
+    say.classList.remove("ask"); sayCh.innerHTML = ""; lines(K.done, () => { stamp(who); if (who === "sully" && ST.stamps.size === 4) golden(() => { edges(); choices(); }); else { edges(); choices(); } });
   }
   /* the board, clicked while Mae waits: the tally goes up mark by mark and the rule is carried */
   function chalkIn() { ST.task = null; TALLY.at = performance.now() - 1800; ST.zoomBack = ST.zoomT; ST.zoomT = 1; say.style.visibility = "hidden"; catDeja(); [0, 900, 1800, 2700, 3600, 5400].forEach(ms => setTimeout(() => ST.area === "counter" && AUDIO.chalk(), ms)); note.classList.remove("on"); setTimeout(done, 6400); }
@@ -1075,7 +1085,41 @@
   function stamp(who) {
     ST.stamps.add(who); keepStamp(who); ticket(); AUDIO.stamp(); const tk = $(".cafe-ticket"); tk.classList.remove("thud"); void tk.offsetWidth; tk.classList.add("thud");
     catLead(who === "sully" ? 1400 : 1100);
-    let msg = fmt(TX.stamped, { name: TX.people[who].name, what: TX.stampFor[who] }); if (ST.stamps.size === 4) msg += " " + TX.full; flash(msg);
+    let msg = fmt(TX.stamped, { name: TX.people[who].name, what: TX.stampFor[who] }); if (ST.stamps.size === 4) msg += " " + TX.full; if (who !== "sully") flash(msg);
+  }
+  /* ----- the last stamp: Sully holds the full ticket up to the light, and it turns gold ----- */
+  function golden(then) {
+    const tk = $(".cafe-ticket"), ur = ui.getBoundingClientRect(), r0 = tk.getBoundingClientRect(), n = live(), G = TX.gold, sb = say.getBoundingClientRect();
+    /* held up beside Sully's face, on the side with room, so the reader still sees him; on a narrow screen above the words */
+    const pb = ST.boxes.person, cr = cv.getBoundingClientRect(), hx = pb ? pb.hx + cr.left - ur.left : ur.width / 2, hy = pb ? pb.hy + cr.top - ur.top : ur.height * 0.4;
+    const floor = (say.hidden ? ur.bottom : sb.top) - ur.top - 14, gap = Math.max(40, ur.width * 0.05), tb = ui.querySelector(".cafe-top").getBoundingClientRect(), ceil = Math.max(8, tb.bottom - ur.top + 6);
+    let w = Math.max(200, Math.min(ur.width * 0.82, Math.max(400, ur.height * 0.42), (floor - ceil) / 0.6)), left = (ur.width - w) / 2;
+    const roomL = hx - gap - 12, roomR = ur.width - hx - gap - 12, side = Math.max(roomL, roomR);
+    if (side >= Math.min(300, ur.width * 0.4)) { w = Math.min(w, side); left = roomL >= roomR ? hx - gap - w : hx + gap; }
+    const h = w * 0.6, top = Math.max(ceil, Math.min(hy - h * 0.35, floor - h));
+    const ov = document.createElement("div"); ov.className = "cafe-gold"; ov.style.cssText = `--w:${w}px;--h:${h}px;left:${left}px;top:${top}px`;
+    const stamps = ["mae", "elias", "prof", "sully"].map((k, i) => `<i style="--r:${i * 37 % 20 - 10}deg">${esc(TX.people[k].name.replace(/^The /, "")[0] || "")}</i>`).join("");
+    ov.innerHTML = `<div class="cg-in"><div class="cg-f"><span class="cg-ft">${esc(TX.ticket)}</span><span class="cg-s">${stamps}</span></div>` +
+      `<div class="cg-b"><b>${esc(G.t)}</b><small>${esc(G.sub)}</small><span class="cg-s">${stamps}</span><p>${esc(G.admit)}</p>${n != null ? `<em>${esc(fmt(G.at, { n: num(n) }))}</em>` : ""}</div></div>` +
+      `<div class="cg-dust">${Array.from({ length: 16 }, (_, i) => `<i style="--x:${(i * 61 % 100)}%;--d:${(i * 7 % 11) * 0.12}s;--s:${0.6 + (i * 13 % 7) / 7}"></i>`).join("")}</div>`;
+    ui.appendChild(ov); tk.style.visibility = "hidden"; ST.goldOv = ov;
+    const from = `translate(${r0.left + r0.width / 2 - ur.left - left - w / 2}px, ${r0.top + r0.height / 2 - ur.top - top - h / 2}px) scale(${r0.width / w}) rotate(2deg)`;
+    if (!RM) ov.animate([{ transform: from, opacity: 0.6 }, { transform: "none", opacity: 1 }], { duration: 900, easing: "cubic-bezier(.2,.8,.2,1)" });
+    AUDIO.rustle();
+    const [first, ...rest] = TX.people.sully.gold, more = rest.filter(l => n != null || !l.includes("{n}")).map(l => fmt(l, { n: n != null ? num(n) : "" }));
+    lines([first], () => {
+      ov.classList.add("turn"); AUDIO.gold(); say.style.visibility = "hidden";
+      setTimeout(() => { say.style.visibility = ""; lines(more, () => goldDone(then)); }, RM ? 600 : 2600);
+    });
+  }
+  function goldDone(then) {
+    const ov = ST.goldOv, tk = $(".cafe-ticket"); ST.goldOv = null; ST.gold = true; ticket();
+    const fin = () => { if (ov) ov.remove(); tk.style.visibility = ""; tk.classList.remove("thud"); void tk.offsetWidth; tk.classList.add("thud"); AUDIO.stamp();
+      setTimeout(() => { if (CAT.room === ST.area && !CAT.hide && CAT.box && !END.on) { AUDIO.purr(); flash(TX.gold.purr, CAT.box); } }, 900); if (then) then(); };
+    if (!ov || RM) return fin();
+    const r1 = tk.getBoundingClientRect(), o = ov.getBoundingClientRect();
+    ov.animate([{ transform: "none" }, { transform: `translate(${r1.left + r1.width / 2 - o.left - o.width / 2}px, ${r1.top + r1.height / 2 - o.top - o.height / 2}px) scale(${r1.width / o.width}) rotateY(180deg) rotate(2deg)`, opacity: 0.8 }],
+      { duration: 800, easing: "cubic-bezier(.5,0,.3,1)", fill: "forwards" }).onfinish = fin;
   }
   function closeTalk() { say.style.visibility = ""; ST.zoomBack = 0; if (!ST.talk) return; if (ST.task === "ticket") $(".cafe-ticket").classList.remove("offer"); if (ST.task !== "chalk") ST.task = null; clearInterval(TYPE && TYPE.id); TYPE = null; ST.talk = null; ST.mouthT = 0; ST.zoomT = 1; say.hidden = true; }
   let flashT = 0; function flash(s, box) { note.textContent = s; note.classList.add("on"); note.style.left = box ? Math.max(8, Math.min(W - 300, box.x + box.w / 2 - 150)) + "px" : ""; note.style.top = box ? Math.max(70, box.y - 60) + "px" : ""; note.classList.toggle("free", !!box);
@@ -1203,6 +1247,7 @@
   let STREET = null;
   const street = () => { if (!STREET) { STREET = document.createElement("canvas"); STREET.width = Math.round(W * K); STREET.height = Math.round(H * K); const x = STREET.getContext("2d"); x.setTransform(K, 0, 0, K, 0, 0); S.street(x, W, H); } return STREET; };
   function outside() {
+    if (ST.goldOv) goldDone();
     END.on = true; END.t0 = performance.now(); END.card = -1; hintEl.classList.remove("on"); note.classList.remove("on"); desk.classList.add("cafe-ending"); ui.querySelector(".cafe-top").classList.add("gone");
     AUDIO.bell(); setTimeout(AUDIO.creak, 150); S.amb.mix({ street: 1.7, open: 1, music: 0.35 }); setTimeout(AUDIO.swell, 1400);
     $(".cafe-end").hidden = false; loop();
@@ -1250,7 +1295,7 @@
       if (navigator.clipboard) navigator.clipboard.writeText(url).then(ok, () => prompt(E.copy, url)); else prompt(E.copy, url); };
     setTimeout(() => p.querySelector("[data-e=paper]").focus({ preventScroll: true }), quiet ? 300 : 1800);
   }
-  function reset() { ST.stamps.clear(); TALLY.at = null; END.on = false; END.paper = false; desk.classList.remove("cafe-ending"); ui.querySelector(".cafe-top").classList.remove("gone"); ticket(); }
+  function reset() { ST.gold = false; if (ST.goldOv) { ST.goldOv.remove(); ST.goldOv = null; $(".cafe-ticket").style.visibility = ""; } ST.stamps.clear(); TALLY.at = null; END.on = false; END.paper = false; desk.classList.remove("cafe-ending"); ui.querySelector(".cafe-top").classList.remove("gone"); ticket(); }
 
   /* the canvas follows the desk */
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
@@ -1263,5 +1308,5 @@
   /* ?cafe=<room> opens the café there (and ?cafe-talk=<who>&cafe-line=<n> for pictures) */
   { const m = /[?&]cafe=(\w+)/.exec(location.search); if (m) window.CAFE_CAT = () => CAT.seen; if (m) setTimeout(() => { enter(); if (AREAS[m[1]] && m[1] !== "window") { ST.area = m[1]; catPut(m[1], "wait"); desk.classList.add("cafe-away"); place(); mix(); }
     const lk = /[?&]cafe-look=(\w+)/.exec(location.search); if (lk) setTimeout(() => { const b = (ST.boxes.props || []).find(q => q.id === lk[1]); lookAt(lk[1], b); }, 1200);
-    const tk = /[?&]cafe-talk=(\w+)/.exec(location.search); if (tk) setTimeout(() => { if (tk[1] === "end") { ["mae", "elias", "prof", "sully"].forEach(k => ST.stamps.add(k)); ticket(); outside(); } else talk(tk[1]); }, 400); }, 300); }
+    const tk = /[?&]cafe-talk=(\w+)/.exec(location.search); if (tk) setTimeout(() => { if (tk[1] === "end") { ["mae", "elias", "prof", "sully"].forEach(k => ST.stamps.add(k)); ticket(); outside(); } else if (tk[1] === "gold") { ["mae", "elias", "prof"].forEach(k => ST.stamps.add(k)); ticket(); talk("sully"); } else talk(tk[1]); }, 400); }, 300); }
 })();
