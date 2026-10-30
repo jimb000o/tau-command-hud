@@ -12,7 +12,7 @@ One key in infra/.env (never in the repository), whichever you have:
   infra/rabbit-art/paint.sh draft hall bar       three new ones for some places (again if none is right)
   infra/rabbit-art/paint.sh keep island=2 hall=1 ...   puts those on the island; the game shows them at once
   infra/rabbit-art/paint.sh drop hall            back to the drawn picture for that place
-paint.sh runs this file in the share container, which has Pillow for small WebP files; plain python3 works too.
+paint.sh runs this file with the server's python3; with Pillow (apt-get install -y python3-pil) the pictures are small WebP files.
 """
 import argparse
 import base64
