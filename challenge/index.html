@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Rule challenge of the week</title>
+<meta name="description" content="Every Monday the Daily Consensus sets a small task: write a rule that does something. Answer it with a real rule in your test wallet; good answers are shown here. No prizes.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Rule challenge of the week">
+<meta property="og:description" content="A small task every Monday, answered with a real rule on Tau Testnet Alpha. Good answers are shown on the site. No prizes.">
+<meta property="og:image" content="https://tauhud.com/assets/og/challenge.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tauhud.com/challenge/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/challenge.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber for what is still open. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --amber: #ffb13b;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.lead { margin: 4px 0 0; font: 500 clamp(20px, 2.4vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 80em; }
+.sub b { color: var(--text); font-weight: 500; }
+.main { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
+.col { display: grid; gap: 14px; min-width: 0; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; min-width: 0; }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.panel h2 .n { color: #fff; letter-spacing: .04em; }
+.panel p { margin: 0 0 8px; }
+.task-panel { border-color: rgba(57,255,138,.28); }
+.kick { font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--ok); display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.kick .till { color: var(--dim); letter-spacing: .08em; text-transform: none; font: 12px var(--mono); }
+.panel .title { margin: 10px 0 6px; letter-spacing: 0; text-transform: none; display: block; font: 700 clamp(26px, 3.2vw, 44px)/1.12 var(--display); color: #fff; }
+.task { margin: 0 0 12px; font: 500 clamp(16px, 1.5vw, 21px)/1.45 var(--display); color: var(--text); }
+.why { color: var(--dim); margin: 0 0 14px; max-width: 60em; }
+.why b { color: var(--text); font-weight: 500; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.b { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: none; color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 0 12px; min-height: 36px; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; }
+.b:hover { border-color: #fff; color: #fff; }
+.b.go { border-color: var(--ok); color: var(--ok); }
+.b.go:hover { background: rgba(57,255,138,.08); }
+.how { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.how li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; }
+.how li i { font-style: normal; color: var(--ok); font: 600 12px var(--display); }
+.fine { color: var(--dim); font-size: 12px; margin: 10px 0 0; }
+.answers { list-style: none; margin: 0; padding: 0; display: grid; }
+.answers li { display: grid; grid-template-columns: 22px minmax(0, 15em) minmax(0, 1fr) auto auto; gap: 12px; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--line); }
+.answers li:first-child { border-top: 0; }
+.answers .k { color: var(--dim); font: 600 12px var(--display); text-align: right; }
+.answers b { font: 600 13.5px var(--display); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.answers small { color: var(--dim); font-size: 11.5px; white-space: nowrap; }
+.answers .p { color: var(--text); font-size: 12.5px; min-width: 0; }
+.answers li.more { display: block; color: var(--dim); font-size: 12px; }
+.answers a { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--hair); white-space: nowrap; }
+.answers a:hover { color: #fff; border-color: #fff; }
+.empty { color: var(--dim); padding: 6px 0; }
+.empty b { color: var(--text); font-weight: 500; }
+.state { display: inline-flex; align-items: center; gap: 8px; color: var(--text); }
+.state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+.mine { color: var(--ok); font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-left: 6px; }
+[hidden] { display: none !important; }
+@media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
+@media (max-width: 1000px) { .main { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .answers li { grid-template-columns: 22px minmax(0, 1fr) auto; row-gap: 2px; } .answers .p, .answers small { grid-column: 2 / 3; } .answers a { grid-row: 1; grid-column: 3; } }
+@media (max-width: 700px) { .b { min-height: 44px; } .answers a { padding: 12px 0; } }
+@media (prefers-reduced-motion: reduce) { .state::before { animation: none; } }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Rule challenge</span></a>
+  </header>
+  <nav class="tnav" data-page="challenge" aria-label="Pages and tools"></nav>
+  <div>
+    <p class="lead">A small task every Monday, answered with a real rule.</p>
+    <p class="sub">The Daily Consensus sets it with each edition. Answer it in your <b>test wallet</b>: good answers are shown here and in the next edition. <b>No prizes</b>: test AGRS have no value, and nothing here is priced or promised.</p>
+  </div>
+  <main class="main">
+    <div class="col">
+      <section class="panel task-panel" aria-labelledby="cTitle">
+        <div class="kick"><span>Challenge of the week</span><span class="till" id="till"></span></div>
+        <h2 class="title" id="cTitle"><span class="state" id="state">Asking our node</span></h2>
+        <p class="task" id="cTask"></p>
+        <p class="why" id="cWhy"></p>
+        <div class="btns">
+          <a class="b go" href="/wallet/#rules-mine">Write it in the wallet ›</a>
+          <a class="b" href="/playground/">Try a rule first</a>
+          <a class="b" href="/gazette/">Read the paper</a>
+        </div>
+      </section>
+      <section class="panel" aria-labelledby="hHow">
+        <h2 id="hHow">How an answer counts</h2>
+        <ul class="how">
+          <li><i>1</i><span>Make a test wallet if you have none: free, and the key stays in your browser.</span></li>
+          <li><i>2</i><span>Write your own rule under Rules in the wallet, the way the task asks.</span></li>
+          <li><i>3</i><span>Once a block seals it while the challenge is open, it shows up here on its own, within a few minutes. Each wallet counts once, with its first rule that fits.</span></li>
+        </ul>
+        <p class="fine">Answers are read from the public testnet and shown by the wallet's three check words and what the rule does, in plain words. A new challenge starts every Monday at 09:00 German time.</p>
+      </section>
+    </div>
+    <div class="col">
+      <section class="panel" aria-labelledby="hNow">
+        <h2 id="hNow">Good answers so far <span class="n" id="nNow"></span></h2>
+        <ul class="answers" id="now"></ul>
+      </section>
+      <section class="panel" id="pLast" hidden aria-labelledby="hLast">
+        <h2 id="hLast">Last week <span class="n" id="lastTitle"></span></h2>
+        <ul class="answers" id="last"></ul>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
+const L = window.TauI18n ? TauI18n.lang : "en";
+const tx = x => (x && (x[L] || x.en)) || "";   // the server writes every line in English, Chinese and Japanese
+const nf = new Intl.NumberFormat("en-US");
+let mine = null;
+try { const k = JSON.parse(localStorage.getItem("tauhud-wallet-key") || "null"); if (k && /^[0-9a-f]{96}$/.test(k.pk)) mine = k.pk; } catch (e) {}
+/* the three check words, as in the wallet: sha256 of the address text, bytes 8 to 10 */
+const WORDS = "acorn amber anchor apple arrow atlas badge baker bamboo banjo barley basil beacon beaver berry bison blade blossom bonnet bottle bramble breeze brick bridge bronze brook bucket bugle cabin cactus camel candle canoe canyon carbon carrot castle cedar cello chalk cherry chess cider cinder circus clover cobalt comet copper coral cotton cougar crane crater cricket crystal cupola dahlia daisy delta denim desert dingo dolphin dragon drum eagle easel ember emerald engine falcon feather fennel fern fiddle flint forest fossil fox galaxy garden garnet gecko geyser ginger glacier goblet granite grape gravel guitar hammer harbor harp hazel heron hickory honey hornet husky iceberg igloo indigo iris island ivory jackal jade jaguar jasmine jelly jigsaw jungle kayak kernel kettle kiwi koala ladder lagoon lantern laurel lemon lilac lily linen lizard lobster locket lotus magnet mango maple marble meadow melon meteor mint mitten mosaic moss muffin nectar needle nickel nutmeg oak oasis olive onyx orbit orchid otter oyster paddle panda papaya parrot pebble pecan pelican pepper piano pine planet plum pollen poppy prism puffin pumpkin quartz quill rabbit radish raven reef ribbon river robin rocket rose ruby saddle saffron salmon sapphire satin shell sierra silver sparrow spruce squid statue stone summit sunset swan tango teapot thistle thunder tiger timber toucan tractor trumpet tulip tundra turtle umbrella valley velvet violet volcano walnut walrus willow window winter wizard yarrow yogurt zebra zenith zinc basket beetle bobcat cocoa cobra dune elm glove gopher jasper lark mammoth marsh opal osprey parsley quail rhubarb sable sequoia stork tapir topaz trout vanilla wombat yak nomad".split(" ");
+const words = async a => { const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(a))); return [h[8], h[9], h[10]].map(x => WORDS[x]).join(" · "); };
+const lang = L !== "en" ? "&lang=" + L : "";
+
+async function list(el, answers, empty, max, total) {
+  if (!answers || !answers.length) { el.innerHTML = `<li class="empty"></li>`; el.firstChild.innerHTML = empty; return; }
+  const rows = await Promise.all(answers.slice(0, max).map(async (x, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="k"></span><b translate="no"></b><span class="p"></span><small></small><a></a>`;
+    li.querySelector(".k").textContent = i + 1;
+    li.querySelector("b").textContent = await words(x.addr);
+    if (x.addr === mine) li.querySelector("b").insertAdjacentHTML("beforeend", `<span class="mine">${T("you")}</span>`);
+    li.querySelector(".p").textContent = tx(x.plain);
+    li.querySelector("small").textContent = F("sealed in block #{n}", { n: nf.format(x.h) });
+    const a = li.querySelector("a"); a.href = "/card/?a=" + x.addr + lang; a.textContent = T("Card") + " ›";
+    return li;
+  }));
+  const rest = (total || answers.length) - rows.length;
+  if (rest > 0) { const li = document.createElement("li"); li.className = "more"; li.textContent = F(rest === 1 ? "and 1 more" : "and {n} more", { n: nf.format(rest) }); rows.push(li); }
+  el.replaceChildren(...rows);
+}
+
+async function load() {
+  let d = null;
+  try { const r = await fetch("https://node.tauhud.com/recap/gazette/challenge.json", { cache: "no-store" }); if (r.ok) d = await r.json(); } catch (e) {}
+  const c = d && d.now;
+  if (!c) {
+    $("cTitle").innerHTML = `<span class="state"></span>`; $("cTitle").firstChild.textContent = T("Our node can't be reached right now");
+    $("cTask").textContent = T("The challenge comes from our node. Try again in a minute.");
+    await list($("now"), [], T("Nothing to show while our node is out of reach."));
+    return;
+  }
+  $("cTitle").textContent = tx(c.title); $("cTask").textContent = tx(c.task); $("cWhy").textContent = tx(c.why);
+  const end = new Date(c.ends * 1000);
+  $("till").textContent = F("until {d}", { d: end.toLocaleString(L === "en" ? "en-GB" : L, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) });
+  $("nNow").textContent = c.count ? nf.format(c.count) : "";
+  await list($("now"), c.answers, `<b>${T("No answer yet.")}</b> ${T("The first rule that fits shows up here a few minutes after a block seals it.")}`, 10, c.count);
+  const l = d.last;
+  if (l) {
+    $("pLast").hidden = false; $("lastTitle").textContent = tx(l.title) + (l.count ? " · " + nf.format(l.count) : "");
+    await list($("last"), l.answers, T("No rule fitted last week's task."), 5, l.count);
+  }
+}
+load();
+setInterval(() => { if (!document.hidden) load(); }, 120000);
+</script>
+</body>
+</html>

@@ -171,6 +171,8 @@ TauI18n.add({ strings: {
   "Take a simulated seat and vote a rule change into law": "坐上一个模拟席位，投票让一项规则变更成为法律",
   "My Tau card": "我的 Tau 卡片",
   "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post": "一张图看你的钱包：写过的规则、投票、Agorzilla 餐数、咖啡馆印章；可直接分享",
+  "Rule challenge": "每周规则挑战",
+  "A small task every Monday, answered with a real rule in your wallet; good answers are shown, no prizes": "每周一一个小任务，用钱包里的一条真规则作答；好答案会展示出来，没有奖品",
   "Missions": "任务",
   "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake": "练习链上的六个小任务：通过一条规则、让一条失败、挺过宕机、切换到权益证明",
   "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat and vote a rule change into law, or play six short missions on a practice chain.": "编写你自己的转账规则并用测试网自己的检查来运行它，坐上一个模拟验证者席位投票让一项规则变更成为法律，或者在练习链上玩六个小任务。",

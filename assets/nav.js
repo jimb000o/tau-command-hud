@@ -44,6 +44,7 @@
     wallet:     { t: "Wallet", d: "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt", i: "◈", h: "wallet/" },
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
     card:       { t: "My Tau card", d: "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post", i: "▣", h: "card/" },
+    challenge:  { t: "Rule challenge", d: "A small task every Monday, answered with a real rule in your wallet; good answers are shown, no prizes", i: "✎", h: "challenge/" },
     missions:   { t: "Missions", d: "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake", i: "★", h: "missions/" },
   };
   const SECTIONS = [
@@ -51,10 +52,10 @@
     /* grouped by what a visitor came to do (29 Oct): watch the chain, understand Tau, try it, and who runs this site; five to seven entries each */
     { k: "explore", t: "Explore", items: ["explorer", "proposals", "account", "nodes", "stats", "history", "devpulse"], tab: "≋" },
     { k: "learn", t: "Learn", items: ["start", "tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
-    { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote", "wallet", "rules", "card", "agorzilla"], id: "btnPlayground", tab: "◇", short: "Play" },
+    { k: "play", t: "Playground", items: ["playground", "seat", "missions", "challenge", "whatif", "vote", "wallet", "rules", "card", "agorzilla"], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, items: ["about", "share", "status", "findings", "roadmap", "meta", "developers", "press", "legal"], tab: "i" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", start: "learn", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", roadmap: "about", status: "about", meta: "about", legal: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", rules: "play", card: "play", whatif: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", start: "learn", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", roadmap: "about", status: "about", meta: "about", legal: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", rules: "play", card: "play", challenge: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",

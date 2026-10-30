@@ -1303,6 +1303,7 @@ def write_atomic(path: str, text: str):
 class Watcher:
     def __init__(self, outlets: list[Outlet] | None = None):
         self.blocks: dict[int, dict] = {}
+        self.challenge_at = 0.0
         self.gov: dict | None = None
         self.ws = None
         self.outlets = outlets if outlets is not None else [Telegram(), X()]
@@ -2005,6 +2006,9 @@ class Watcher:
         same = next((x for x in index if x.get("date") == date), None)
         no = same["no"] if same else max((x.get("no", 0) for x in index), default=0) + 1
         e = gazette.edition(r, props, days, no, printed_at)
+        if not same:   # a new edition closes the week's rule challenge and sets the next one
+            self.rotate_challenge(printed_at)
+        self.attach_challenge(e)
         text = json.dumps(e, ensure_ascii=False, separators=(",", ":"))
         write_atomic(os.path.join(d, date + ".json"), text)
         write_atomic(os.path.join(d, "latest.json"), text)
@@ -2043,6 +2047,57 @@ class Watcher:
             except Exception as exc:  # the café keeps its fixed talk until Monday
                 log.warning("gazette: café talk for the edition out failed (%r)", exc)
             self.save_state()
+
+    # ---------- the weekly rule challenge (gazette.py): set with each edition, answered with real rules ----------
+    def challenge_ends(self, now: float) -> float:
+        return self.recap_slot(now + 7 * 86400)   # the next Monday edition
+
+    def rotate_challenge(self, now: float):
+        """Close the open challenge with its final answers and open the next one from now."""
+        cur = self.state.get("challenge")
+        if cur:
+            got = gazette.challenge_answers(self.blocks, cur["id"], cur["since"], now)
+            self.state["challenge_last"] = {**gazette.challenge_block(cur["id"], cur["since"], now), **got}
+        nxt = gazette.next_challenge(cur and cur["id"])
+        self.state["challenge"] = {"id": nxt["id"], "since": now, "ends": self.challenge_ends(now)}
+        self.save_state()
+        log.info("challenge: %s open until %s", nxt["id"], datetime.fromtimestamp(self.state["challenge"]["ends"], timezone.utc))
+
+    def attach_challenge(self, e: dict):
+        cur, last = self.state.get("challenge"), self.state.get("challenge_last")
+        if cur:
+            e["challenge"] = gazette.challenge_block(cur["id"], cur["since"], cur["ends"])
+        if last:
+            e["challenge_last"] = {k: last[k] for k in ("id", "title", "task", "count")} | {"answers": last["answers"][:3]}
+
+    async def maybe_challenge(self, now: float | None = None):
+        """Every two minutes: write /recap/gazette/challenge.json with the open challenge and its answers so far.
+        The first time, open a challenge right away and add it to the edition already out."""
+        if not RECAP_ON:
+            return
+        now = now if now is not None else time.time()
+        if now - self.challenge_at < 120:
+            return
+        self.challenge_at = now
+        d = os.path.join(PUBLIC_DIR, "recap", "gazette")
+        if not self.state.get("challenge"):
+            self.rotate_challenge(now)
+            try:
+                with open(os.path.join(d, "latest.json")) as f:
+                    e = json.load(f)
+                self.attach_challenge(e)
+                text = json.dumps(e, ensure_ascii=False, separators=(",", ":"))
+                write_atomic(os.path.join(d, e["date"] + ".json"), text)
+                write_atomic(os.path.join(d, "latest.json"), text)
+                log.info("challenge: added to edition No. %s", e.get("no"))
+            except (OSError, ValueError, KeyError):
+                pass
+        cur = self.state["challenge"]
+        out = {"now": {**gazette.challenge_block(cur["id"], cur["since"], cur["ends"]),
+                       **gazette.challenge_answers(self.blocks, cur["id"], cur["since"], now + 3600, limit=24)},
+               "last": self.state.get("challenge_last"), "updated": round(now)}
+        os.makedirs(d, exist_ok=True)
+        write_atomic(os.path.join(d, "challenge.json"), json.dumps(out, ensure_ascii=False, separators=(",", ":")))
 
     def gazette_cafe(self):
         """Once: give the edition already out (printed before the café had a talk of the week) its café block."""
@@ -2128,6 +2183,7 @@ class Watcher:
                         await self.deliver()
                         await self.maybe_recap()
                         await self.maybe_gazette()
+                        await self.maybe_challenge()
                         await self.maybe_findings()
                         await self.maybe_health()
                         await self.maybe_newnodes()
