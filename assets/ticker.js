@@ -41,7 +41,8 @@
   /* ---------- the newest Updates log entries, first sentence ---------- */
   let NEWS = [], newsAt = 0;
   const firstSentence = s => { const m = /^(.{12,150}?(?:\.(?=\s|$)|。))/.exec(s); return m ? m[1] : s.length > 150 ? s.slice(0, 147) + "…" : s; };
-  const loadNews = () => fetch("assets/updates.json", { cache: "no-cache" }).then(r => r.json()).then(list => {
+  /* the first read shares the page's one download of the log (nav.js TauLog); the 15-minute refresh fetches it anew */
+  const loadNews = first => (first && window.TauLog ? Promise.resolve(TauLog()) : fetch("assets/updates.json", { cache: "no-cache" }).then(r => r.json())).then(list => {
     NEWS = (Array.isArray(list) ? list : []).slice(-3).reverse().map(e => {
       const plain = String(e.html || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
       if (!plain || !translated(plain)) return null;
@@ -131,12 +132,12 @@
 
   Promise.all([
     fetch("assets/ticker.json", { cache: "no-cache" }).then(r => r.json()).then(j => { if (j && typeof j === "object") CFG = { ...CFG, ...j }; }).catch(() => {}),
-    loadNews(),
+    loadNews(true),
   ]).then(() => {
     const m = (CFG.move || {})[lang] || "left"; dir = m === "right" ? 1 : -1; box.classList.toggle("rtl", dir > 0);
     W = view.clientWidth;
     /* the facts need the page's first readings; give the chain a moment */
     setTimeout(() => { if (reduced) still(); else requestAnimationFrame(frame); }, 1200);
-    setInterval(loadNews, 15 * 60 * 1000);
+    setInterval(() => loadNews(false), 15 * 60 * 1000);
   });
 })();

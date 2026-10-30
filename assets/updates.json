@@ -1694,6 +1694,11 @@
  {
   "tag": "HUD",
   "on": "2026-10-30",
+  "html": "Faster first screen on the HUD: the files it waits for now download at the same time instead of one after another, so on a slow phone connection the first picture appears about a second sooner (2.4 s → 1.5 s in our test with a throttled phone). The update log is downloaded once per page instead of twice."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
   "html": "HUD: a news line under the four principles, which became shorter cards with their source in the corner. Live facts from the chain, the newest updates, pointers to useful pages and now and then our Telegram and X; each item decodes out of falling glyphs where it enters. Hover to pause, click to open. With reduced motion the items change in place."
  }
 ]
