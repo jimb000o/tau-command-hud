@@ -11,8 +11,11 @@ One key in infra/.env (never in the repository), whichever you have:
   infra/rabbit-art/paint.sh draft all            three paintings of each place -> https://node.tauhud.com/rico/art/drafts/
   infra/rabbit-art/paint.sh draft hall bar       three new ones for some places (again if none is right)
   infra/rabbit-art/paint.sh keep island=2 hall=1 ...   puts those on the island; the game shows them at once
+  infra/rabbit-art/paint.sh draft island --like island=1 market=2 bar=2   three more, painted like those drafts
+  infra/rabbit-art/paint.sh draft island --sketch bay --like ...   the new harbour island (sketch.py); keeping one of
+      these moves the places, streets and lights in the game to match it
   infra/rabbit-art/paint.sh drop hall            back to the drawn picture for that place
-paint.sh runs this file in the share container, which has Pillow for small WebP files; plain python3 works too.
+paint.sh runs this file with the server's python3; with Pillow (apt-get install -y python3-pil) the pictures are small WebP files.
 """
 import argparse
 import base64
@@ -40,6 +43,35 @@ STYLE = ("Repaint this picture as a lush, hand-painted background for a classic 
          "building, path, window, door, piece of furniture and object exactly as in the input picture; only the "
          "painting changes. No people, no animals in the foreground, no text, no letters, no numbers, no logos, no "
          "signatures, no frame, no user interface.")
+LIKE = ("The first picture is the layout to repaint. The other pictures are finished paintings from the same game, "
+        "chosen as the best: paint in exactly their style, palette, brushwork, outlines, light and richness of detail, so "
+        "that it looks painted by the same artist on the same day, and take what is good in them further.")
+DETAIL = {
+    "island": "Paint it like a hand-painted adventure game background seen from a high hill: crisp fine ink lines, smooth "
+              "painted colour gradients, clean readable shapes, every roof tiled and every wall weathered, winding sandy "
+              "paths with fences, steps and little bridges, washing lines, crates, rowing boats on the beach, flowers on "
+              "the window sills, fishing nets, birds over the sea, sunlit leaves with bright highlights and deep shadows "
+              "under the trees, foam on the reef, clear water showing the sand below. Rich in small things to discover, "
+              "but calm and readable at a glance.",
+}
+# new sketches of the island (sketch.py writes plates/<name>.jpg and plates/<name>.json, where everything stands)
+SKETCH = {
+    "bay": "The whole island as the map screen of a classic cartoon adventure game, seen from the sea at a high angle: "
+           "one great lumpy green peak in the middle, covered in rounded masses of rainforest up to a bald rock crown, "
+           "a waterfall down its front; steep stylised cliffs with vertical rock striations along the front shore, "
+           "rocks scattered in the surf, a small wreck on the rocks; on a plateau on the left a little village with a "
+           "cool blue Georgian embassy with a veranda and a warm terracotta embassy villa; a red and white lighthouse "
+           "on the cliff point at the far left; on the right a harbour town glowing in a turquoise bay: tall narrow "
+           "brightly painted gabled houses climbing the slope, a white colonial council house with a clock tower on "
+           "top, a market square under a flaming red flamboyant tree, a wooden pier, a tall ship at anchor, small "
+           "boats; a yellow radio shack with a tall mast on the hill above, a stone rum distillery with a chimney, a "
+           "beach bar with a thatched roof on the bay's beach; palms along the shores. Style: exaggerated, organic, "
+           "slightly whimsical shapes, rich painterly brushwork, curling spiral clouds with painted swirls in the sky, "
+           "deep saturated turquoise and teal water that glows in the shallows, cinematic light, warm glowing windows "
+           "in the town, a sense of mystery and adventure; its own island, nothing copied. The input is a rough "
+           "sketch: keep where every building, the bay, the pier, the peak and the lighthouse stand and how big they "
+           "are, but paint it all far richer, with many more small details of island life.",
+}
 SCENE = {
     "island": "A small tropical island seen from above at an angle, in the open sea under a clear blue sky: a white "
               "domed council hall with columns in the middle, a round market square with a fountain and striped stalls, "
@@ -92,7 +124,7 @@ def provider():
              "  echo 'GEMINI_API_KEY=YOUR_KEY' >> /opt/tau-command-hud/infra/.env")
 
 
-def post(url, data, headers, timeout=240):
+def post(url, data, headers, timeout=150):
     for attempt in range(4):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=headers), timeout=timeout) as r:
@@ -110,10 +142,16 @@ def post(url, data, headers, timeout=240):
             sys.exit(f"The painter could not be reached: {e}")
 
 
-def paint_gemini(plate, prompt, n, model):
+def mime(raw):
+    return "image/png" if raw[:4] == b"\x89PNG" else "image/jpeg" if raw[:2] == b"\xff\xd8" else "image/webp"
+
+
+def paint_gemini(plate, prompt, n, model, refs=()):
     out = []
-    for _ in range(n):   # one picture per call
-        body = {"contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(plate).decode()}}]}],
+    pics = [{"inline_data": {"mime_type": mime(r), "data": base64.b64encode(r).decode()}} for r in (plate, *refs)]
+    for i in range(n):   # one picture per call
+        print(f"    painting {i + 1} of {n} ...", flush=True)
+        body = {"contents": [{"parts": [{"text": prompt}, *pics]}],
                 "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": "16:9"}}}
         r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                  json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": api_key("GEMINI_API_KEY")})
@@ -125,11 +163,15 @@ def paint_gemini(plate, prompt, n, model):
     return out
 
 
-def paint_openai(plate, prompt, n, model):
+def paint_openai(plate, prompt, n, model, refs=()):
     b = "----rabbit" + hashlib.sha1(plate).hexdigest()[:12]
     fields = {"model": model, "prompt": prompt, "n": str(n), "size": "1536x1024", "quality": "medium", "input_fidelity": "high"}
     body = b"".join(f"--{b}\r\nContent-Disposition: form-data; name=\"{k}\"\r\n\r\n{v}\r\n".encode() for k, v in fields.items())
-    body += f"--{b}\r\nContent-Disposition: form-data; name=\"image\"; filename=\"plate.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n".encode() + plate + f"\r\n--{b}--\r\n".encode()
+    name = "image[]" if refs else "image"
+    for i, raw in enumerate((plate, *refs)):
+        f = "plate.jpg" if i == 0 else f"like-{i}.{mime(raw)[6:]}"
+        body += f"--{b}\r\nContent-Disposition: form-data; name=\"{name}\"; filename=\"{f}\"\r\nContent-Type: {mime(raw)}\r\n\r\n".encode() + raw + b"\r\n"
+    body += f"--{b}--\r\n".encode()
     r = post("https://api.openai.com/v1/images/edits", body,
              {"Content-Type": f"multipart/form-data; boundary={b}", "Authorization": "Bearer " + api_key("OPENAI_API_KEY")})
     return [base64.b64decode(d["b64_json"]) for d in r.get("data", [])]
@@ -194,21 +236,43 @@ def cmd_draft(a):
     model = a.model or ("gemini-2.5-flash-image" if p == "gemini" else "gpt-image-1")
     path = os.path.join(a.out, "drafts", "drafts.json")
     drafts = load(path)
-    print(f"{len(who)} places, {a.n} paintings each, with {model}.")
+    sketch = getattr(a, "sketch", None)
+    if sketch and (who != ["island"] or sketch not in SKETCH):
+        sys.exit(f"A sketch is for the island only: draft island --sketch {' | '.join(SKETCH)}")
+    refs = [open(f, "rb").read() for f in liked(a, drafts)]
+    print(f"{len(who)} places, {a.n} paintings each, with {model}" + (f", painted like {len(refs)} chosen pictures." if refs else "."))
     for id in who:
-        plate = open(os.path.join(PLATES, id + ".jpg"), "rb").read()
-        raws = (paint_gemini if p == "gemini" else paint_openai)(plate, STYLE + " The picture: " + SCENE[id], a.n, model)
-        names = []
-        for i, raw in enumerate(raws, 1):
+        plate = open(os.path.join(PLATES, (sketch or id) + ".jpg"), "rb").read()
+        prompt = STYLE + " The picture: " + (SKETCH[sketch] if sketch else SCENE[id]) + (" " + DETAIL[id] if id in DETAIL else "") + (" " + LIKE if refs else "")
+        raws = (paint_gemini if p == "gemini" else paint_openai)(plate, prompt, a.n, model, refs)
+        names = drafts.get(id, []) if refs or sketch else []   # these join the earlier ones, so those stay pickable
+        for i, raw in enumerate(raws, len(names) + 1):
             data, kind = small(raw)
             f = f"{id}-{i}-{hashlib.sha1(data).hexdigest()[:8]}.{kind}"
             write(os.path.join(a.out, "drafts", f), data)
             names.append(f)
-        drafts[id] = names
+            if sketch:
+                drafts.setdefault("sketch", {})[f] = sketch
+        drafts[id] = list(names)
         write(path, json.dumps(drafts, indent=1).encode())
         page(a)
         print(f"  {id}: {len(names)} paintings")
     print("Look: https://node.tauhud.com/rico/art/drafts/")
+
+
+def liked(a, drafts):
+    """--like hall=3 market=2 (drafts) or --like hall (the painting kept for it) -> paths of those pictures."""
+    kept = load(os.path.join(a.out, "index.json")).get("scenes", {})
+    out = []
+    for pick in getattr(a, "like", None) or []:
+        id, _, n = pick.partition("=")
+        try:
+            out.append(os.path.join(a.out, "drafts", drafts[id][int(n) - 1]) if n else os.path.join(a.out, kept[id]))
+        except (KeyError, ValueError, IndexError):
+            sys.exit(f"No painting {pick!r} to paint like.")
+    if len(out) > 5:
+        sys.exit("At most 5 pictures to paint like; the painter loses the thread with more.")
+    return out
 
 
 def cmd_keep(a):
@@ -224,6 +288,12 @@ def cmd_keep(a):
             sys.exit(f"No painting {pick!r}. Run: infra/rabbit-art/paint.sh draft {id if id in SCENE else 'all'}")
         shutil.copyfile(os.path.join(a.out, "drafts", f), os.path.join(a.out, f))
         idx["scenes"][id] = f
+        if id == "island":   # a painting of a new sketch brings where everything stands on it
+            sk = drafts.get("sketch", {}).get(f)
+            if sk:
+                idx["layout"] = json.load(open(os.path.join(PLATES, sk + ".json")))
+            else:
+                idx.pop("layout", None)
         print(f"{id}: {f}")
     write(path, json.dumps(idx, indent=1).encode())
     print("Done. The island shows them now: https://tauhud.com/rabbit/ (reload)")
@@ -234,6 +304,8 @@ def cmd_drop(a):
     idx = load(path)
     for id in a.places:
         idx.get("scenes", {}).pop(id, None)
+        if id == "island":
+            idx.pop("layout", None)
     write(path, json.dumps(idx, indent=1).encode())
     print("Back to the drawn pictures for: " + ", ".join(a.places))
 
@@ -246,6 +318,8 @@ def main():
     d.add_argument("places", nargs="+", help="all, or some of: " + " ".join(PLACES))
     d.add_argument("--n", type=int, default=3)
     d.add_argument("--model", default=None)
+    d.add_argument("--sketch", default=None, help="island only: paint a new sketch instead, e.g. bay")
+    d.add_argument("--like", nargs="+", metavar="PLACE=N", help="paint in the style of these drafts, e.g. island=1 market=2")
     k = sub.add_parser("keep")
     k.add_argument("picks", nargs="+", help="place=N, e.g. island=2 hall=1")
     r = sub.add_parser("drop")

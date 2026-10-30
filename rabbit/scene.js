@@ -589,6 +589,8 @@
 
   /* the white rabbit: hops from place to place, sits up and twitches its ears; it shows newcomers where to go */
   const RB = { x: 860, y: 690, tx: 860, ty: 690, hop: 0, dir: 1, next: 0 };
+  /* the lighthouse lamp, the radio mast's light, where people gather and where the cat walks: a new layout moves them */
+  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712] };
   function rabbitStep(dt, t) {
     const d = Math.hypot(RB.tx - RB.x, RB.ty - RB.y);
     if (d > 2) { RB.hop += dt * 0.012; const v = Math.min(d, dt * 0.11); RB.x += (RB.tx - RB.x) / d * v; RB.y += (RB.ty - RB.y) / d * v; RB.dir = RB.tx > RB.x ? 1 : -1; }
@@ -851,12 +853,29 @@
     fetch(ART.base + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j => {
       Object.entries((j && j.scenes) || {}).forEach(([id, f]) => {
         const im = new Image(); im.crossOrigin = "anonymous"; im.decoding = "async";
-        im.onload = () => { ART.img[id] = im; if (id === "island") { S.base = null; if (S.c) size(); } else delete roomCache[id]; };
+        im.onload = () => {
+          ART.img[id] = im;
+          if (id !== "island") { delete roomCache[id]; return; }
+          if (j.layout && painted("island")) useLayout(j.layout);
+          S.base = null; if (S.c) size();
+        };
         im.src = ART.base + f;
       });
     }, () => {});
   } catch (e) {}
   const painted = id => !!ART.img[id] && !/[?&]art=drawn/.test(location.search);
+  /* a painted island drawn from a new sketch (infra/rabbit-art/sketch.py) brings its layout: where the places stand,
+     the streets people walk, the windows that light up, smoke, torches and water, the lamp and the mast */
+  function useLayout(L) {
+    for (const id in PLACES) if (L.places && L.places[id]) Object.assign(PLACES[id], L.places[id]);
+    if (L.walk) { WALK.splice(0, WALK.length, ...L.walk); FOLK.forEach((f, i) => { f.path = WALK[i % WALK.length]; }); }
+    if (L.fx) FX.splice(0, FX.length, ...L.fx);
+    if (L.windows) WINDOWS.splice(0, WINDOWS.length, ...L.windows);
+    for (const k in SPOT) if (L[k]) SPOT[k] = L[k];
+    if (L.rabbit) { RB.x = RB.tx = L.rabbit[0]; RB.y = RB.ty = L.rabbit[1]; }
+    ART.layout = true;
+    if (S.focusId) focus(S.focusId, S.focusSide);
+  }
   /* a picture drawn to cover the box, cropped in the middle (the painted ones are not always exactly 16:9) */
   function cover(g, im, w, h) {
     const k = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
@@ -990,7 +1009,7 @@
     FOLK.forEach((f, i) => {
       if (!S.still) { f.k += f.v * dt * f.dir; if (f.k > 1 || f.k < 0) { f.dir *= -1; f.k = Math.max(0, Math.min(1, f.k)); } }
       let [x, y] = alongPath(f.path, f.k);
-      if (S.gather > 0) { const a = i / FOLK.length * Math.PI * 2, gx2 = 790 + Math.cos(a) * 70, gy2 = 640 + Math.sin(a) * 18; x = lerp(x, gx2, S.gather); y = lerp(y, gy2, S.gather); }
+      if (S.gather > 0) { const a = i / FOLK.length * Math.PI * 2, gx2 = SPOT.gather[0] + Math.cos(a) * 70, gy2 = SPOT.gather[1] + Math.sin(a) * 18; x = lerp(x, gx2, S.gather); y = lerp(y, gy2, S.gather); }
       items.push([y, () => person(w, x, y, t, f, i)]);
     });
     rabbitStep(S.still ? 999 : dt, t); items.push([RB.y, () => rabbit(w, t)]);
@@ -1009,13 +1028,13 @@
       g.globalCompositeOperation = "lighter";
       WINDOWS.forEach(([x, y, ww, wh], i) => { const fl = 0.85 + 0.15 * Math.sin(t * 0.003 + i * 2.1); g.fillStyle = `rgba(255,190,90,${sky.light * (pi ? 0.3 : 0.75) * fl})`; if (pi) { g.beginPath(); g.arc(x + ww / 2, y + wh / 2, Math.max(ww, wh) * 0.7, 0, Math.PI * 2); g.fill(); } else g.fillRect(x, y, ww, wh); g.fillStyle = `rgba(255,170,70,${sky.light * 0.08})`; g.beginPath(); g.arc(x + ww / 2, y + wh / 2, 8, 0, Math.PI * 2); g.fill(); });
       islandGlow(g, t, sky.light);
-      const a = t * 0.0006, bx = 300, by = 445;
+      const a = t * 0.0006, [bx, by] = SPOT.beam;
       gr = g.createRadialGradient(bx, by, 0, bx, by, 520); gr.addColorStop(0, `rgba(57,255,138,${0.42 * sky.light})`); gr.addColorStop(1, "rgba(57,255,138,0)");
       g.fillStyle = gr; g.beginPath(); g.moveTo(bx, by); g.arc(bx, by, 520, a - 0.08, a + 0.08); g.closePath(); g.fill();
       g.globalCompositeOperation = "source-over";
     }
-    g.fillStyle = `rgba(57,255,138,${0.65 + 0.35 * Math.sin(t * 0.004)})`; g.beginPath(); g.arc(300, 445, 4.5, 0, Math.PI * 2); g.fill();
-    if (Math.floor(t / 700) % 2) { g.fillStyle = "#ff4a3a"; g.beginPath(); g.arc(1112, 299, 3, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = `rgba(57,255,138,${0.65 + 0.35 * Math.sin(t * 0.004)})`; g.beginPath(); g.arc(SPOT.beam[0], SPOT.beam[1], 4.5, 0, Math.PI * 2); g.fill();
+    if (Math.floor(t / 700) % 2) { g.fillStyle = "#ff4a3a"; g.beginPath(); g.arc(SPOT.blink[0], SPOT.blink[1], 3, 0, Math.PI * 2); g.fill(); }
     /* gulls */
     for (let i = 0; i < 4; i++) { const x = wl + ((t * 0.02 * (1 + i * 0.15) + i * 420) % ((wr - wl) + 200)) - 100, y = 170 + i * 26 + Math.sin(t * 0.0009 + i) * 18; gull(g, x, y, t, i); }
     /* inside a place: the room opens from the place in a widening circle and fills the view */
@@ -1087,7 +1106,7 @@
     host(fn) { S.hostFn = fn; },
     hostAt(bottom) { S.hostBottom = bottom; },
     gather(v) { S.gather = v; },
-    cat(twice) { S.cat = { t0: performance.now(), d: 9000, x0: 370, y0: 700, x1: 1180, y1: 712, twice: !!twice }; },
+    cat(twice) { S.cat = { t0: performance.now(), d: 9000, x0: SPOT.cat[0], y0: SPOT.cat[1], x1: SPOT.cat[2], y1: SPOT.cat[3], twice: !!twice }; },
     onFrame(f) { S.onFrame = f; },
     /* the rabbit hops to a place and waits beside it (null: it wanders) */
     rabbit(id) { RB.goal = id; if (id && PLACES[id]) { const p = PLACES[id]; RB.tx = p.x + (id === "book" ? 46 : 0) + (p.x > 800 ? -40 : 40); RB.ty = p.y + 16; } },
