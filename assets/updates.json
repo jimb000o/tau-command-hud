@@ -1397,5 +1397,10 @@
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "Tau HUD in numbers: the testnet transactions split now shows IDNI's genesis accounts on their own (the 11 accounts the testnet started with, which make most of the traffic), next to Agorzilla, Tau HUD and other wallets."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The troll box moved to the top of the right column, where the Validators were, and reads like a classic troll box: one line per message, name and text, so about fifteen messages fit at once on a wide screen. The Validators now sit under the block strip, next to the block detail."
  }
 ]

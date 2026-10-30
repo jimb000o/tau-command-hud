@@ -555,11 +555,15 @@ html.coreonly #coreFoot { display: block; position: fixed; left: 0; right: 0; bo
 .blk.sel { border-color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,.5); }
 .blk.old { animation: none; }
 .blkdetail { flex: 1 1 auto; min-height: 0; overflow: auto; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
-/* under the block strip: the block detail on the left, on wide screens the troll box on the right (assets/chat.js mounts itself into #tbHost); elsewhere the troll box stays a pill */
+/* wide screens: the troll box is the top of the right column (assets/chat.js mounts itself into #tbHost), the Validators sit under the block strip
+   next to the block detail (moved there by script); elsewhere the Validators stay in the column and the troll box is a pill */
 .chainlow { flex: 1 1 auto; min-height: 0; display: flex; gap: 16px; }
 .chainlow > .blkdetail { flex: 1 1 0; min-width: 0; }
-.tbhost { display: none; }
-html.wide .tbhost { display: flex; flex: 1 1 0; min-width: 0; min-height: 0; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+.valslot, .a-tb { display: none; }
+html.wide .valslot { display: flex; flex: 1 1 0; min-width: 0; min-height: 0; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+html.wide .valslot > .gov { flex: 1 1 auto; min-height: 0; overflow: auto; align-content: start; border: 0; border-radius: 0; background: none; box-shadow: none; padding: 0; }
+html.wide .a-tb { display: flex; flex: 0 0 48%; min-height: 0; padding: 0; overflow: hidden; }
+html.wide .a-tb .tb-inline { border: 0; background: none; }
 .blkdetail .lead { font-size: 13px; }
 .blkdetail h3:first-child, .blkdetail section > h3:first-child { margin-top: 0; }
 .blkdetail .cols section { min-width: 0; }
@@ -1097,7 +1101,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <h2>Blockchain <small id="chainSub">following the newest block</small><button class="info" type="button" aria-label="What is this?" data-tip="Click a block to inspect it below. The mouse wheel glides through the chain, down goes back in time, and older blocks keep loading as you go, back to genesis. The detail below follows the block at the right edge; “back to newest” returns to the live end. A bright card marks a rule change that took effect. Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
       <div class="radar" id="radar"></div>
       <div class="ribbon" id="ribbon"></div>
-      <div class="chainlow"><div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div><div class="tbhost" id="tbHost"></div></div>
+      <div class="chainlow"><div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div><div class="valslot" id="valSlot"></div></div>
     </article>
 
     <article class="panel a-off">
@@ -1107,6 +1111,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     </article>
 
     <div class="stack a-val">
+      <article class="panel a-tb" id="tbHost" aria-label="Troll box"></article>
       <article class="panel gov">
         <h2>Validators <small id="govSub">seal and vote</small><button class="info" type="button" aria-label="What is this?" data-tip="The accounts allowed to seal blocks. The set lives on the chain and changes only through an agreed rule change. The approval threshold is derived from the quorum policy, which is itself part of the state hash, so it cannot be changed quietly.">i</button></h2>
         <div class="modes" id="modes" data-full="Who may seal the next block. The mode is chain state and changes only by an agreed rule change."></div>
@@ -1978,7 +1983,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=27.5", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=27.7", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -3656,6 +3661,10 @@ function detailValidator(v, i) {
     document.documentElement.style.setProperty("--z", z);
   };
   apply(); addEventListener("resize", apply);
+  /* and the troll box takes the Validators' place at the top of the right column, the Validators go under the block strip */
+  const g = document.querySelector(".stack .gov"), slot = $("valSlot"), tb = $("tbHost");
+  const swap = () => { const w = document.documentElement.classList.contains("wide"); if (!g || !slot || !tb) return; if (w && g.parentNode !== slot) slot.append(g); else if (!w && g.parentNode === slot) tb.after(g); };
+  swap(); addEventListener("resize", swap);
 })();
 
 /* ---------- chain core: a true circle at every size (the canvas box is the largest square that fits its panel) ---------- */
