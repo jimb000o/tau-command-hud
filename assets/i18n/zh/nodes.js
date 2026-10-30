@@ -163,4 +163,5 @@ TauI18n.add({ strings: {
   "Runs the Tau HUD kit and reports to tauhud.com once a minute. Online nodes rank first, then the longest running, then the steadiest.": "运行 Tau HUD 套件，每分钟向 tauhud.com 报告一次。在线节点排在前面，然后是运行最久的，再然后是最稳定的。",
   "Its badge": "它的徽章",
   "offline": "离线",
+  "Click for its details and badge.": "点击查看详情和徽章。",
 } });
