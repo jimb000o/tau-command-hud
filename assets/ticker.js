@@ -27,7 +27,7 @@
   const FACTS = [
     () => { const h = num(txt("rH")); return h && { text: `Chain at block #${h}`, href: "explorer/" }; },
     () => { const n = txt("rM"); return /^\d+$/.test(n) && { text: n === "1" ? "1 tx waiting for the next block" : `${n} txs waiting for the next block`, href: "explorer/" }; },
-    () => { const t = txt("rMs"), m = /(\d+) ghosts?\b/.exec(t) || /(\d+) 笔幽灵/.exec(t) || /幽霊 (\d+)/.exec(t); return m && { text: m[1] === "1" ? "1 ghost tx in the waiting list right now" : `${m[1]} ghost txs in the waiting list right now`, href: "https://github.com/IDNI/tau-testnet/issues/81" }; },
+    () => { const t = txt("rMs"), m = /(\d+) ghosts?\b/.exec(t) || /(\d+) 笔幽灵/.exec(t) || /幽霊 (\d+)/.exec(t); return m && { text: m[1] === "1" ? "1 ghost tx in the waiting list right now" : `${m[1]} ghost txs in the waiting list right now`, href: "https://github.com/IDNI/tau-testnet/issues/81", mark: "ghost" }; },
     () => { const n = txt("rR"); return /^\d+$/.test(n) && n !== "0" && { text: n === "1" ? "1 personal money rule in force" : `${n} personal money rules in force`, href: "rules/" }; },
     () => { const e = document.querySelector("#tnOnline .n, #chipOnline b"), n = e ? e.textContent.trim() : ""; return /^\d+$/.test(n) && +n > 1 && { text: `${n} people on Tau HUD right now`, href: "" }; },
   ];
@@ -35,7 +35,7 @@
   const fact = () => {
     for (let i = 0; i < FACTS.length; i++) {
       const f = FACTS[factAt++ % FACTS.length](); if (!f) continue;
-      return { kind: "live", sim: sim(), text: f.text, href: f.href };
+      return { kind: "live", sim: sim(), text: f.text, href: f.href, mark: f.mark };
     }
     return null;
   };
@@ -88,7 +88,7 @@
       if (k === "live") it = fact();
       else if (k === "news") it = NEWS.length ? NEWS[newsAt++ % NEWS.length] : null;
       else if (k === "gazette") { it = gazette(); if (it && it.out) it = null; }
-      else if (k === "head") { const n = from((CFG.headlines || []).filter(h => !h.until || Date.now() < Date.parse(h.until)), headAt++); it = n && { kind: "note", text: n.text, href: n.href }; }
+      else if (k === "head") { const n = from((CFG.headlines || []).filter(h => !h.until || Date.now() < Date.parse(h.until)), headAt++); it = n && { kind: "note", text: n.text, href: n.href, mark: n.mark }; }
       else if (k === "pick") { const p = from(CFG.picks, pickAt++); it = p && { kind: "x", text: p.text, href: p.href, quote: true }; }
       else if (k === "invite") { const v = from(CFG.invites, inviteAt++); it = v && { kind: v.kind === "tg" ? "tg" : "x", text: v.text, href: v.href }; }
       if (it && it.text && (it.raw || translated(it.text))) return it;
@@ -101,7 +101,8 @@
     const a = document.createElement(it.href ? "a" : "span"); a.className = "tk-it k-" + it.kind;
     if (it.href) { a.href = it.href; if (/^https?:/.test(it.href)) { a.target = "_blank"; a.rel = "noopener"; } }
     const mark = document.createElement("i"); mark.className = "tk-mk";
-    if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" ? "" : it.kind === "news" ? "+" : it.kind === "paper" ? "✦" : "›";
+    if (it.mark === "ghost") mark.classList.add("m-ghost");   // the chain core's ghost: an amber dot in a small block frame
+    else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" ? "" : it.kind === "news" ? "+" : it.kind === "paper" ? "✦" : "›";
     a.append(mark);
     if (it.sim) { const s = document.createElement("em"); s.textContent = tr("Simulation"); a.append(s); }
     let text = it.raw ? it.text : tr(it.text); if (it.quote) text = (lang === "en" ? "“" : "「") + text + (lang === "en" ? "”" : "」");
