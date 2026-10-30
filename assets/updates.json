@@ -1633,6 +1633,18 @@
   }
  },
  {
+  "tag": "Rules wall",
+  "on": "2026-10-30",
+  "html": "Rules wall: a new page under Playground shows every personal rule accounts gave themselves on the testnet, read from the blocks, one card per rule in plain words. A dot for every wallet that took the same rule, a green mark on the rules in force right now, and the Tau text one click away. To agree with a limit, a date or a freeze, “Take this rule” opens your wallet with it in the builder, and you check and sign; a rule with someone's names in it you make like it with your own. Sorted by most taken or newest; on the simulation it shows the made-up chain's rules.",
+  "major": {
+   "id": "rules",
+   "title": "New: the rules wall",
+   "text": "Every personal rule people gave their own accounts on the Tau testnet, read from the blocks. To agree with one, take it for your own account: a real transaction, counted on the wall.",
+   "link": "/rules/",
+   "image": "/assets/shots/rules.png"
+  }
+ },
+ {
   "tag": "Rule challenge",
   "on": "2026-10-30",
   "html": "Rule challenge: every Monday the Daily Consensus sets a small task, like a rule that stops any payment above a limit, or one that pays only friends. You answer it with a real rule in your test wallet. Once a block seals it, it shows up on the new Rule challenge page within minutes, by the wallet's three check words and what the rule does in plain words; the next edition prints last week's good answers. The front page of the paper has the task in a box. No prizes: test AGRS have no value. Find it under Playground.",

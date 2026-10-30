@@ -248,6 +248,11 @@ async def main():
                   f"/rules counts BOB, not CAROL's neutral rule {rules}")
             sent = [x for x in mock["commands"] if x.startswith("sendtx ")][-1]
             check(json.loads(sent[7:])["operations"]["0"] == good["operations"]["0"], "rule text with spaces arrives intact")
+            # /rulewall: one entry per rule text, the neutral clause left out
+            ctype, body = await get("/rulewall")
+            wall = json.loads(body)["rules"]
+            check(ctype == "application/json" and len(wall) == 1 and wall[0]["author"] == BOB and wall[0]["users"] == [BOB] and wall[0]["first"] == 8,
+                  f"/rulewall lists BOB's rule once {wall}")
             # fair turns on the rule places: a pre-signed neutral clause, checked once, sent when the turn is over
             free = {"tx_type": "user_tx", "sender_pubkey": BOB, "sequence_number": 7, "expiration_time": int(time.time()) + 3 * 86400,
                     "fee_limit": "50", "expire_at_height": 9000, "operations": {"0": "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) )."}, "signature": "ef" * 96}
