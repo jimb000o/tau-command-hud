@@ -1,7 +1,7 @@
 /* The island's sound: an original calypso for steel pan, marimba, bass and hand drums, played live in the
    visitor's browser (no recordings), plus the sea, gulls and small sounds for the game. On by default;
    browsers only allow sound after a first tap, so the page shows "♪ Tap for sound" until then.
-   window.COVE_SOUND = { start, on, set({ music, radio, tense, place }), sfx(name), toggle() }
+   window.COVE_SOUND = { start, on, set({ music, radio, tense, place }), sfx(name), speak(clips), toggle() }
    Each place on the island plays the tune in its own arrangement (STYLES). */
 (() => {
   const BPM = 104, STEP = 60 / BPM / 4, SWING = 0.16;   // sixteenth notes, the off sixteenths a little late
@@ -202,7 +202,7 @@
   function apply() {
     if (!S.ctx) return;
     const t = S.ctx.currentTime;
-    S.music.gain.setTargetAtTime(S.on ? 0.55 * want.music : 0, t, 0.4);
+    S.music.gain.setTargetAtTime(S.on ? 0.55 * want.music * (S.duck ? 0.3 : 1) : 0, t, S.duck ? 0.15 : 0.4);
     S.amb.gain.setTargetAtTime(S.on ? want.amb : 0, t, 0.6);
     S.radio.type = want.radio ? "bandpass" : "allpass"; S.radio.frequency.value = 1400; S.radio.Q.value = want.radio ? 0.9 : 0.0001;
     S.tense = want.tense;
@@ -219,15 +219,36 @@
       return S.ctx.state === "running";
     } catch (e) { return false; }
   }
+  /* Rico's voice (rico.js): the clips one after the other, after the jingle, through a small-radio colour; the music
+     steps back while he talks. Resolves with how many seconds he will talk. */
+  async function speak(bufs) {
+    if (!S.ctx || !S.on) return false;
+    const c = S.ctx, list = [];
+    for (const b of bufs) { try { list.push(await c.decodeAudioData(b)); } catch (e) { return false; } }
+    if (!S.voice) {
+      const hp = c.createBiquadFilter(), pk = c.createBiquadFilter(), g = c.createGain(), comp = c.createDynamicsCompressor();
+      hp.type = "highpass"; hp.frequency.value = 160; pk.type = "peaking"; pk.frequency.value = 2600; pk.Q.value = 0.8; pk.gain.value = 3;
+      comp.threshold.value = -20; comp.ratio.value = 3; g.gain.value = 1.1;
+      hp.connect(pk); pk.connect(comp); comp.connect(g); g.connect(S.master); S.voice = hp;
+    }
+    if (S.talking) S.talking.forEach(n => { try { n.stop(); } catch (e) {} });
+    let at = c.currentTime + 0.55; S.talking = [];
+    for (const buf of list) { const n = c.createBufferSource(); n.buffer = buf; n.connect(S.voice); n.start(at); S.talking.push(n); at += buf.duration + 0.18; }
+    S.duck = true; apply();
+    const mine = S.talking;
+    const secs = at - c.currentTime;
+    setTimeout(() => { if (S.talking === mine) { S.duck = false; S.talking = null; apply(); } }, secs * 1000);
+    return secs;
+  }
   window.COVE_SOUND = {
-    start, sfx,
+    start, sfx, speak,
     /* on: the music is really playing (a browser lets it start only after the first click, tap or key) */
     get on() { return S.on && !!S.ctx && S.ctx.state === "running"; }, get wanted() { return S.want; },
     set onchange(f) { S.cb = f; },
     set(o) { Object.assign(want, o); apply(); },
     toggle() {
       S.want = !S.want; try { localStorage.setItem("tauhud-rabbit-sound", S.want ? "on" : "off"); } catch (e) {}
-      if (S.want) start(); else { S.on = false; apply(); }
+      if (S.want) start(); else { S.on = false; if (S.talking) S.talking.forEach(n => { try { n.stop(); } catch (e) {} }); S.talking = null; S.duck = false; apply(); }
       return S.want;
     },
   };

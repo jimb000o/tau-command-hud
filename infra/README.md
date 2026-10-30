@@ -563,6 +563,23 @@ Tau HUD page, language, sim or live, screen class, hour of day.
   `VISITS_KEY` from `.env`, or made once and kept in `/data/visits.key`:
   `docker compose exec relay cat /data/visits.key`
 
+## Rico's voice (White Rabbit Key)
+
+Rico, the DJ on Radio Coco in /rabbit/, speaks his lines aloud when the server has his clips. Every line he can say
+is fixed in `rabbit/rico.js` (numbers and block heights are only shown, never spoken), about 50 lines and under
+4,000 characters, so the clips are made once with ElevenLabs and kept in `/opt/sites/rico`, which Caddy serves at
+`https://node.tauhud.com/rico/`. A line without its clip stays text, as before.
+
+```
+echo 'ELEVENLABS_API_KEY=YOUR_KEY' >> /opt/tau-command-hud/infra/.env
+cd /opt/tau-command-hud && python3 infra/rico/make.py samples          # then listen at https://node.tauhud.com/rico/samples/
+cd /opt/tau-command-hud && python3 infra/rico/make.py make --voice NAME
+```
+
+`voices` lists the account's voices (a Voice Library voice must first be added to My Voices), `lines` shows the
+lines and their characters without a key. After new lines in rico.js, run `make` again: it only makes the new ones;
+a different `--voice` makes them all again.
+
 ## Tests
 
 ```bash
