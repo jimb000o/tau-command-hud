@@ -258,4 +258,6 @@ TauI18n.add({ strings: {
   "Every transaction would cost {n} AGRS instead of {m}: six times today's fee. Only the proposer votes yes; the other validators let the deadline pass. Needs {a} of {b} validators by block #{c}.": "すべてのトランザクションが {m} AGRS ではなく {n} AGRS かかるようになります：いまの手数料の 6 倍です。賛成は提案者だけで、他のバリデーターは期限を過ぎさせます。ブロック #{c} までにバリデーター {b} 人中 {a} 人が必要。",
   "Nothing agreed is waiting to take effect.": "施行待ちの合意済みのものはありません。",
   "{n} min": "{n} 分",
+  "Telegram alerts": "Telegram 通知",
+  "A message from @tauhud_alerts_bot on every vote and when it is decided. Only your chat id is kept; /stop ends it.": "投票があるたび、そして結果が決まったときに @tauhud_alerts_bot がお知らせします。保存するのはチャット ID だけ。/stop で終了。",
 } });

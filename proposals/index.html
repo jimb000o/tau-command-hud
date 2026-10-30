@@ -308,6 +308,8 @@ const fmtN = n => Number(n).toLocaleString("en-US");
 const plural = (n, w, ws) => `${fmtN(n)} ${n === 1 ? w : (ws || w + "s")}`;
 const params = new URLSearchParams(location.search);
 const SIM = !params.has("sample") && !!(window.TauSim && TauSim.on);   // simulation mode: the same made-up chain as every other page (assets/sim.js)
+// a t.me link that opens @tauhud_alerts_bot with this address (or "p" + rule change id) filled in, base64url to fit Telegram's 64 characters (infra/alerts/follow.py)
+const tgAlerts = (hex, rule) => "https://t.me/tauhud_alerts_bot?start=" + (rule ? "p" : "") + btoa(String.fromCharCode(...hex.match(/../g).map(x => parseInt(x, 16)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const DATA = params.get("data") || "https://node.tauhud.com/proposals.json";
 const POLL = SIM ? 3000 : 10000;   // the simulation is local and cheap; live reads the tracker file, rewritten after every block
 const STATUS = { voting: "waiting for votes", agreed: "agreed", active: "in force", dropped: "dropped" };
@@ -624,7 +626,8 @@ function openDetail(p, push) {
 </div></div>`;
   // a link whose preview on X and Telegram shows a picture of this proposal (infra/share)
   if (!params.has("sample") && !SIM) $("dBody").querySelector(".dcols > div:first-child").insertAdjacentHTML("beforeend", `<p style="margin:12px 0 0"><button class="btn" type="button" data-share="https://node.tauhud.com/s/proposal/${esc(p.id.slice(0, 16))}"
-    title="A link that shows a picture of this proposal when you post it on X, Telegram or WhatsApp.">Copy share link</button></p>`);
+    title="A link that shows a picture of this proposal when you post it on X, Telegram or WhatsApp.">Copy share link</button>${(p.status === "voting" || p.status === "agreed") && /^[0-9a-f]{64}$/.test(p.id)
+    ? ` <a class="btn" href="${esc(tgAlerts(p.id, true))}" target="_blank" rel="noopener" style="text-decoration:none" title="A message from @tauhud_alerts_bot on every vote and when it is decided. Only your chat id is kept; /stop ends it.">Telegram alerts</a>` : ""}</p>`);
   $("mDetail").querySelector(".sheet").classList.add("w2");
   $("mDetail").hidden = false;
   $("mDetail").querySelector(".close").focus();

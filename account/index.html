@@ -377,6 +377,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
           </div>
           <button class="chip" type="button" id="copyBtn">Copy address</button>
           <a class="chip" id="shareBtn" href="#">Link to this account</a>
+          <a class="chip" id="tgBtn" href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener" data-tip="Get a Telegram message when this account moves&#10;Opens @tauhud_alerts_bot with the address filled in; press Start.&#10;Only your chat id and what you follow are kept. /stop ends it." hidden>Telegram alerts</a>
         </div>
       </div>
       <section class="tiles" id="tiles" aria-label="Key numbers"></section>
@@ -940,11 +941,15 @@ const isValidator = a => ((C.gov || {}).active_validators || []).some(v => low(t
 function tile(label, value, sub, tipText, unit) {
   return `<div class="tile" tabindex="0" data-tip="${esc(tipText)}"><h4>${esc(label)}</h4><div class="v">${value}${unit ? `<small>${unit}</small>` : ""}</div>${sub ? `<p>${sub}</p>` : ""}</div>`;
 }
+// a t.me link that opens @tauhud_alerts_bot with this address (or "p" + rule change id) filled in, base64url to fit Telegram's 64 characters (infra/alerts/follow.py)
+const tgAlerts = (hex, rule) => "https://t.me/tauhud_alerts_bot?start=" + (rule ? "p" : "") + btoa(String.fromCharCode(...hex.match(/../g).map(x => parseInt(x, 16)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 function renderAccount() {
   show("acct");
   const a = S.addr, st = S.lookups.getaccountstate, gb = S.lookups.getbalance, ro = S.lookups.getruleoffers, sq = S.lookups.getsequence;
   $("addr").textContent = a;
   $("shareBtn").href = accUrl(a);
+  $("tgBtn").hidden = SAMPLE || SIM;   // made-up accounts have nothing to follow
+  if (!SAMPLE && !SIM) $("tgBtn").href = tgAlerts(a);
   const known = M.firstSeen != null || a in GENESIS || M.proposed > 0;
   $("roles").innerHTML = [
     a in GENESIS ? `<span class="tag w" data-tip="Funded in the genesis block with ${fmtA(GENESIS[a])} AGRS.">genesis account</span>` : "",
