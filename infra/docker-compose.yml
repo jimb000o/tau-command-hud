@@ -121,20 +121,18 @@ services:
       X_PROFILE_URL: ${X_PROFILE_URL:-}
       # X is paid per post ($0.015, $0.20 with a link): short texts without links, at most this many a day and a month
       X_DAILY_CAP: ${X_DAILY_CAP:-8}
-      X_MONTHLY_CAP: ${X_MONTHLY_CAP:-120}
+      X_MONTHLY_CAP: ${X_MONTHLY_CAP:-240}
       X_LINKS: ${X_LINKS:-false}
-      X_SIM: ${X_SIM:-false}
+      X_SIM: ${X_SIM:-true}
       X_PICTURES: ${X_PICTURES:-true}   # the rule change's card, the live overview or a new page's picture under the post
       # weekly recap image and newspaper (alerts/recap.py, gazette.py): Monday 09:00 German time unless .env says otherwise
       RECAP_ENABLED: ${RECAP_ENABLED:-true}
       RECAP_WEEKDAY: ${RECAP_WEEKDAY:-0}
       RECAP_HOUR: ${RECAP_HOUR:-9}
       RECAP_TZ: ${RECAP_TZ:-Europe/Berlin}
-      # changes to Tau HUD itself, from assets/updates.json: "major" entries one post each, the rest in digests at 12:00 and 18:00 UTC
+      # changes to Tau HUD itself, from assets/updates.json, at fixed times (UTC): everything new since the last one in one post
       SITE_UPDATES: ${SITE_UPDATES:-true}
-      SITE_MAJOR_DAILY_CAP: ${SITE_MAJOR_DAILY_CAP:-3}
-      SITE_POST_HOURS: ${SITE_POST_HOURS:-6-23}
-      SITE_DIGEST_HOURS: ${SITE_DIGEST_HOURS:-12,18}
+      SITE_SLOTS: ${SITE_SLOTS:-8,12,16}
       # "Testnet today": the real chain's day in one evening post; practice votes are counted there, not posted one by one
       TESTNET_TODAY: ${TESTNET_TODAY:-true}
       TESTNET_TODAY_HOUR: ${TESTNET_TODAY_HOUR:-19}

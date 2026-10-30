@@ -33,11 +33,11 @@ nothing whose block is older than POST_MAX_AGE_SECONDS, so a fresh volume or
 a long outage never floods the channel with old news.
 
 It also announces changes to Tau HUD itself, read from the site's own update
-log (assets/updates.json): an entry with a "major" field gets a post of its
-own (at most SITE_MAJOR_DAILY_CAP a day, SITE_MAJOR_GAP_SECONDS apart, only
-between SITE_POST_HOURS UTC); every other entry waits and goes into one
-digest post of the smaller changes at SITE_DIGEST_HOURS UTC, once enough
-have gathered. The first run only remembers what is already in the log,
+log (assets/updates.json), at the fixed SITE_SLOTS times (UTC): an entry
+with a "major" field gets a post of its own, and when several are waiting
+they go out together in one post, so none waits a day; every other entry
+waits for a slot with no major and goes into one digest post of the smaller
+changes, once enough have gathered. Each goes to Telegram and X. The first run only remembers what is already in the log,
 except majors from the last SITE_MAJOR_MAX_AGE_DAYS days, which are queued.
 
 Practice votes (proposals that only repeat the rules in force) get no post
@@ -114,16 +114,18 @@ TELEGRAM_CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()
 # the question bot (bot.py, same token): every channel post carries buttons that open it; empty = no buttons
 TELEGRAM_BOT_NAME = os.environ.get("TELEGRAM_BOT_USERNAME", "tauhud_alerts_bot").strip().lstrip("@")
 X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")}
-# X (@TauHUDcom) is paid per post since 2026: $0.015 a post, $0.20 for one with a link in it. So X gets the real chain's news
-# (rule changes, new nodes, "Testnet today", new pages, the weekly recap with the paper's headline), each in a short text
-# without a link (the profile carries tauhud.com), and never more than X_DAILY_CAP / X_MONTHLY_CAP posts. Not on X: practice
-# votes, the smaller-updates digests, health alarms, visitor proposals; the simulation's switches only with X_SIM=true.
+# X (@TauHUDcom) is paid per post since 2026: $0.015 a post, $0.20 for one with a link in it. So X gets what Telegram gets
+# (rule changes, new nodes, "Testnet today", the site's news and smaller changes, the weekly recap with the paper's headline,
+# the simulation's switches unless X_SIM=false), each in a short text without a link (the profile carries tauhud.com), and
+# never more than X_DAILY_CAP / X_MONTHLY_CAP posts (240 a month: about $3.60). The simulation and the smaller site changes
+# leave the day's last X_RESERVE posts for the real chain. Not on X: practice votes, health alarms, visitor proposals.
 # Findings (findings.py) go to X only for real-chain incidents (no blocks reaching us, no peers, a reorg, a busy stretch),
 # at most FINDINGS_X_DAILY_CAP a day.
 X_LINKS = os.environ.get("X_LINKS", "false").lower() in ("1", "true", "yes")
 X_DAILY_CAP = int(os.environ.get("X_DAILY_CAP", 8))
-X_MONTHLY_CAP = int(os.environ.get("X_MONTHLY_CAP", 120))
-X_SIM = os.environ.get("X_SIM", "false").lower() in ("1", "true", "yes")
+X_MONTHLY_CAP = int(os.environ.get("X_MONTHLY_CAP", 240))
+X_RESERVE = int(os.environ.get("X_RESERVE", 2))
+X_SIM = os.environ.get("X_SIM", "true").lower() in ("1", "true", "yes")
 # A picture under the X post where one fits: the rule change's card and the live overview from the share service (share/),
 # a new page's own preview picture. Uploading it costs nothing extra; a picture that cannot be had leaves the text alone.
 X_PICTURES = os.environ.get("X_PICTURES", "true").lower() in ("1", "true", "yes")
@@ -165,15 +167,14 @@ SIM_LINK = f"{SITE}/proposals/?mode=sim"
 SITE_ON = os.environ.get("SITE_UPDATES", "true").lower() in ("1", "true", "yes")
 SITE_UPDATES_URL = os.environ.get("SITE_UPDATES_URL", f"{SITE}/assets/updates.json")
 SITE_EVERY = float(os.environ.get("SITE_UPDATES_POLL_SECONDS", 600))
-SITE_MAJOR_DAILY_CAP = int(os.environ.get("SITE_MAJOR_DAILY_CAP", 3))
-SITE_MAJOR_GAP = float(os.environ.get("SITE_MAJOR_GAP_SECONDS", 2 * 3600))
 SITE_MAJOR_MAX_AGE_DAYS = int(os.environ.get("SITE_MAJOR_MAX_AGE_DAYS", 3))
-SITE_POST_HOURS = tuple(int(x) for x in os.environ.get("SITE_POST_HOURS", "6-23").split("-"))  # UTC, start included, end not
-SITE_DIGEST_HOURS = tuple(int(x) for x in os.environ.get("SITE_DIGEST_HOURS", "12,18").split(","))   # UTC
-SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smaller changes wait for the next day…
+# Fixed times for the site's own news, UTC (09:00, 13:00 and 17:00 German winter time): at each, everything new since the
+# last one goes out as one post on Telegram and X; one new page or feature gets its own post with its screenshot.
+SITE_SLOTS = tuple(sorted(int(x) for x in os.environ.get("SITE_SLOTS", "8,12,16").split(",")))
+SITE_SLOT_HOURS = float(os.environ.get("SITE_SLOT_HOURS", 4))  # a slot not used by then is over: nothing new at night
+SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smaller changes wait for a later slot…
 SITE_DIGEST_MAX_WAIT = float(os.environ.get("SITE_DIGEST_MAX_WAIT_DAYS", 7)) * 86400  # …but not longer than this
 SITE_DIGEST_LINES = 8
-SITE_CATCHUP_AT = int(os.environ.get("SITE_CATCHUP_AT", 4))  # this many majors waiting: one catch-up post with all of them
 SITE_LOG_LINK = f"{SITE}/#updates"
 # "Testnet today": one evening summary of the real chain's last 24 hours, only on a day with something to report.
 # Practice votes (the rules in force proposed again) appear here instead of in posts of their own.
@@ -969,6 +970,12 @@ def catchup_x(majors: list[dict]) -> str:
     return x_post([head] + [f"• {n[:1].upper() + n[1:]}" for n in names], SITE_LOG_LINK, foot=X_SITE_NOTE)
 
 
+def digest_x(items: list[dict]) -> str:
+    """The smaller changes on X: how many, then a short line each, as many as fit."""
+    return x_post([f"🛠 {plural(len(items), 'smaller change')} to Tau HUD"] + [f"• {i['area']}: {i['line']}" for i in items],
+                  foot=X_SITE_NOTE)
+
+
 def major_buttons(m: dict) -> dict:
     return {"inline_keyboard": [[{"text": "✨ Open it", "url": m["link"]}, {"text": "📜 All updates", "url": SITE_LOG_LINK}]]}
 
@@ -1007,9 +1014,10 @@ def digest_buttons() -> dict:
     return {"inline_keyboard": [[{"text": "📜 Updates log", "url": SITE_LOG_LINK}]]}
 
 
-def in_post_hours(t: float) -> bool:
-    h = datetime.fromtimestamp(t, timezone.utc).hour
-    return SITE_POST_HOURS[0] <= h < SITE_POST_HOURS[1]
+def site_slot(t: float) -> float | None:
+    """The latest SITE_SLOTS time at or before t, today or yesterday."""
+    d0 = datetime.fromtimestamp(t, timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+    return max((d + h * 3600 for d in (d0 - 86400, d0) for h in SITE_SLOTS if d + h * 3600 <= t), default=None)
 
 
 # ---------- rule changes visitors voted into the simulation ----------
@@ -1523,8 +1531,9 @@ class Watcher:
     def x_on(self):
         return next((o for o in self.outlets if o.name == "x" and o.enabled()), None)
 
-    def x_room(self, now: float | None = None) -> bool:
-        """True while today's and this month's X posts are under X_DAILY_CAP and X_MONTHLY_CAP."""
+    def x_room(self, now: float | None = None, spare: bool = False) -> bool:
+        """True while today's and this month's X posts are under X_DAILY_CAP and X_MONTHLY_CAP; `spare` posts (the
+        simulation, the smaller site changes) leave the day's last X_RESERVE for the real chain's news."""
         d = datetime.fromtimestamp(now if now is not None else time.time(), timezone.utc)
         st = self.state.setdefault("x", {})
         day, month = d.strftime("%Y-%m-%d"), d.strftime("%Y-%m")
@@ -1532,19 +1541,20 @@ class Watcher:
             st["day"], st["today"] = day, 0
         if st.get("month") != month:
             st["month"], st["this_month"] = month, 0
-        return st["today"] < X_DAILY_CAP and st["this_month"] < X_MONTHLY_CAP and st.get("pause_until", 0) <= d.timestamp()
+        return st["today"] < X_DAILY_CAP - (X_RESERVE if spare else 0) and st["this_month"] < X_MONTHLY_CAP \
+            and st.get("pause_until", 0) <= d.timestamp()
 
     def x_count(self):
         st = self.state["x"]
         st["today"], st["this_month"] = st.get("today", 0) + 1, st.get("this_month", 0) + 1
 
-    async def post_x(self, text: str, what: str, now: float | None = None, picture: str | None = None) -> bool:
+    async def post_x(self, text: str, what: str, now: float | None = None, picture: str | None = None, spare: bool = False) -> bool:
         """The X copy of a post that just went to Telegram. One try: X never holds Telegram up, and a post that failed is
         not sent hours late; over the caps it is left out."""
         o = self.x_on()
         if not o:
             return False
-        if not self.x_room(now):
+        if not self.x_room(now, spare):
             log.info("x: %s not posted (daily or monthly cap, or paused)", what)
             return False
         if picture and hasattr(o, "send_with_picture"):
@@ -1754,7 +1764,7 @@ class Watcher:
             changed = True
             log.info("simulation: posted %s", ev["key"])
             if X_SIM:
-                await self.post_x(sim_x(ev), "simulation " + ev["key"], now)
+                await self.post_x(sim_x(ev), "simulation " + ev["key"], now, spare=True)
         for k in [k for k, t in st["posted"].items() if now - t > 7 * 86400]:
             del st["posted"][k]
             changed = True
@@ -1853,44 +1863,40 @@ class Watcher:
                 self.take_updates(entries, now)
             self.save_state()
         tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
-        if not tg or st.get("pause_until", 0) > now or not in_post_hours(now):
+        slot = site_slot(now)
+        if not tg or st.get("pause_until", 0) > now or slot is None or st.get("slot", 0) >= slot or now - slot >= SITE_SLOT_HOURS * 3600:
             return
-        day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
-        if st.get("day") != day:
-            st["day"], st["count"] = day, 0
-        if len(st["majors"]) >= SITE_CATCHUP_AT and st["count"] == 0:
-            # a backlog (a long night, a busy day): one post with all of it instead of days of single posts
+        if st["majors"]:
+            # one post per slot: a single new page or feature on its own, several together, so none waits for another day
             batch = list(st["majors"])
-            text = catchup_text(batch)
-            shown = text.count("• ")
-            if await self.site_send(tg, text, digest_buttons(), now):
-                del st["majors"][:shown]
-                st["count"] = SITE_MAJOR_DAILY_CAP
-                st["last_major"] = round(now)
-                log.info("site updates: catch-up post with %d new pages and features", shown)
-                self.save_state()
-                await self.post_x(catchup_x(batch[:shown]), "site catch-up", now, await asyncio.to_thread(major_picture, batch[0]))
+            if len(batch) == 1:
+                m = batch[0]
+                if not await self.site_send(tg, major_text(m), major_buttons(m), now, m.get("image")):
+                    return
+                shown, text_x, for_x = 1, major_x(m), [m] if m.get("x", True) else []
+            else:
+                text = catchup_text(batch)
+                shown = text.count("\n• ")
+                if not await self.site_send(tg, text, digest_buttons(), now):
+                    return
+                for_x = [m for m in batch[:shown] if m.get("x", True)]  # "x": false in the log: announced on X by hand
+                text_x = major_x(for_x[0]) if len(for_x) == 1 else catchup_x(for_x)
+            del st["majors"][:shown]
+            st["slot"], st["last_major"] = slot, round(now)
+            log.info("site updates: posted %s", ", ".join(m["key"] for m in batch[:shown]))
+            self.save_state()
+            if for_x:
+                pic = next((m["image"] for m in for_x if m.get("image")), None) or await asyncio.to_thread(major_picture, for_x[0])
+                await self.post_x(text_x, "site " + ", ".join(m["key"] for m in for_x), now, pic)
             self.save_state()
             return
-        if st["majors"] and st["count"] < SITE_MAJOR_DAILY_CAP and now - st.get("last_major", 0) >= SITE_MAJOR_GAP:
-            m = st["majors"][0]
-            if await self.site_send(tg, major_text(m), major_buttons(m), now, m.get("image")):
-                st["majors"].pop(0)
-                st["count"] += 1
-                st["last_major"] = round(now)
-                log.info("site updates: posted %s", m["key"])
+        if st["pending"] and (len(st["pending"]) >= SITE_DIGEST_MIN or now - st["pending"][0]["at"] >= SITE_DIGEST_MAX_WAIT):
+            items = list(st["pending"])
+            if await self.site_send(tg, digest_text(items), digest_buttons(), now):
+                log.info("site updates: digest of %d posted", len(items))
+                st["pending"], st["slot"], st["last_digest"] = [], slot, round(now)
                 self.save_state()
-                if m.get("x", True):  # "x": false in the log: announced on X by hand, with its link
-                    await self.post_x(major_x(m), "site " + m["key"], now, await asyncio.to_thread(major_picture, m))
-            self.save_state()
-            return  # one post per check: a digest never lands on top of a major
-        d0 = datetime.fromtimestamp(now, timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-        slot = max((d0 + h * 3600 for h in SITE_DIGEST_HOURS if d0 + h * 3600 <= now), default=None)
-        due = st["pending"] and slot is not None and st.get("last_digest", 0) < slot and now - st.get("last_major", 0) >= 1800
-        if due and (len(st["pending"]) >= SITE_DIGEST_MIN or now - st["pending"][0]["at"] >= SITE_DIGEST_MAX_WAIT):
-            if await self.site_send(tg, digest_text(st["pending"]), digest_buttons(), now):
-                log.info("site updates: digest of %d posted", len(st["pending"]))
-                st["pending"], st["last_digest"] = [], round(now)
+                await self.post_x(digest_x(items), "site digest", now, spare=True)
             self.save_state()
 
     async def site_send(self, tg: list, text: str, buttons: dict, now: float, picture: str | None = None) -> bool:

@@ -1831,6 +1831,11 @@
   }
  },
  {
+  "tag": "Alerts",
+  "on": "2026-10-30",
+  "html": "Alerts: news about the site now goes out at fixed times, 09:00, 13:00 and 17:00 German time, on Telegram and X together. One new page gets its own post with its screenshot; when several are waiting they go out in one post, so none waits for another day and nothing is posted at night. The smaller changes and the simulation's two daily switches now go to X too, within 8 posts a day."
+ },
+ {
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "News line: the ghost lines wear the same mark as the ghosts in the chain core, an amber dot in a small block frame."
