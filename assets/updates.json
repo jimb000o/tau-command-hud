@@ -1787,6 +1787,18 @@
   "html": "About window and Updates panel: the Donations part now shows the running costs in one line (about €6 + $200 a month, not counting time), from the same list as the Donations page, and each donation's value when it came in: euros in English, yuan in Chinese, yen in Japanese."
  },
  {
+  "tag": "Explorer",
+  "on": "2026-10-30",
+  "html": "Explorer: the Chain core now sits beside what you look up and marks it: a waiting transaction on its orbit, a sealed one replaying its way into the block, the validator that sealed a block, an account's own rule. Above the trail a chain band shows the newest blocks side by side, a bar per transaction, with what waits for the next block at the end; what is open glows green, a click opens any block. The path of a transaction lights up from Signed to where it stands, and a transaction that never landed is no longer shown in red.",
+  "major": {
+   "id": "explorer-core",
+   "title": "Explorer: the Chain core shows what you look up",
+   "text": "Look up a transaction, block or address and the Chain core marks it, while a band of the newest blocks shows where it sits in the chain.",
+   "link": "/explorer/",
+   "image": "/assets/shots/explorer-core.png"
+  }
+ },
+ {
   "tag": "Gazette",
   "on": "2026-10-30",
   "html": "Daily Consensus café: the four regulars now tell what really happened in the week, why it matters to you, and a small lesson about exactly that. Network test changes are called tests, and wallets are not counted as people. The Professor also talks about the Taumorrow round, a chess engine written in Tau, and the café picks up its result by itself once the public game records are out."
