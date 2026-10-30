@@ -42,6 +42,7 @@ from simprops import SimProps
 from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from slotlease import SlotLease
+from island import Island
 from txsources import TxSources
 from visits import OWN_HOSTS, SITES, Visits
 
@@ -351,6 +352,7 @@ class Relay:
         self.simprops = SimProps(self.simvotes)   # rule changes visitors propose to the simulation (simprops.py)
         self.simwallet = SimWallet()   # the testnet wallet's transactions in simulation mode (simwallet.py)
         self.lease = SlotLease(places=RULE_PLACES)   # fair turns on the personal-rule places (slotlease.py)
+        self.island = Island()   # White Rabbit Key: the rival candidates' moves as test transactions (island.py)
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
@@ -384,6 +386,7 @@ class Relay:
         self.chain_file_ok = True
         self.state = self._load_state()         # restarts, dropped txs, last chain seen
         self.sources = TxSources()              # which transactions came through this relay, for /api/v1/sources
+        self.sources.bots = {pk: c for c, pk in self.island.pk.items()}   # White Rabbit Key's rival moves
         self.sources_text, self.sources_at = None, 0.0
         self.uptime = self._load_uptime()       # hourly availability buckets and outages
         self.uptime_text: str | None = None
@@ -1193,6 +1196,12 @@ class Relay:
             self.lookup_cache[key] = (time.monotonic(), text)
             return text
 
+        if cmd == "islandmove":   # White Rabbit Key: a rival's move in a visitor's game, sent by the island bot (island.py)
+            if len(args) != 2:
+                return envelope_error(cmd, "Usage: islandmove <candidate> <kind>", "INVALID_PARAMS")
+            ok, data = self.island.accept(args[0].lower(), args[1].lower(), ip)
+            return envelope_ok(cmd, data) if ok else envelope_error(cmd, data, "FORBIDDEN" if "off" in data else "INVALID_PARAMS")
+
         if cmd == "leasetx":
             return await self.lease_deposit(message[len(parts[0]):].strip(), ip)
 
@@ -1208,7 +1217,7 @@ class Relay:
                                      self.via.get(ws, "") if ws else "")
 
         return envelope_error(cmd, "Not allowed here. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
-                              "gettaustate, presence, report, via, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
+                              "gettaustate, presence, report, via, islandmove, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
                               + " (a transaction signed in your browser)", "FORBIDDEN")
 
     async def wallet(self, cmd: str, raw: str, ip: str, site: str = "", via: str = "") -> str:
@@ -1800,6 +1809,10 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
+        isl = self.island.route(path)
+        if isl is not None:
+            headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())
         if path == "/stats":
             ready = "getblocks" in self.updated
             body = self.stats_json().encode() if ready else b'{"error":"relay is still syncing with the node"}'
@@ -1934,6 +1947,7 @@ class Relay:
     async def run(self):
         tasks = [
             asyncio.create_task(self.upstream.run()),
+            asyncio.create_task(self.island.run(self.upstream.request, self.governance)),
             asyncio.create_task(self.poll_loop(BLOCK_POLL, self.poll_blocks)),
             asyncio.create_task(self.poll_loop(MEMPOOL_POLL, lambda: self.poll_cached("getmempool", True))),
             asyncio.create_task(self.poll_loop(GOV_POLL, lambda: self.poll_cached("getgovernance", True))),

@@ -1797,5 +1797,137 @@
    "link": "/explorer/",
    "image": "/assets/shots/explorer-core.png"
   }
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The HUD news line announces a community event until Sunday night: on Sunday 1 November at 12:00 UTC, Taumorrow Chess, an independent chess engine written in the Tau language, plays ten games against Claude Opus 5.5 (chess.taumorrow.com). Headlines in the news line can now carry an end time and then leave by themselves."
+ },
+ {
+  "tag": "Gazette",
+  "on": "2026-10-30",
+  "html": "Daily Consensus café: the four regulars now tell what really happened in the week, why it matters to you, and a small lesson about exactly that. Network test changes are called tests, and wallets are not counted as people. The Professor also talks about the Taumorrow round, a chess engine written in Tau, and the café picks up its result by itself once the public game records are out."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: on the day a new Daily Consensus comes out, “Fresh off the press” opens the line and every round of it, from the drop until midnight in your language’s time zone."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: the ghosts get their headline. Ghost transactions are already sealed in a block but the node still lists them as waiting (a known bug, IDNI #81); the line says how many are haunting the waiting list right now. Transactions are now written “txs” on the line."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-30",
+  "html": "White Rabbit Key: a small island election game under Playground. Four candidates, five days, three moves a day: propose laws at the Council Hall, talk on the market square, buy a line on Radio Coco, take an embassy's money for a promise, make pacts at the beach bar. Every move is written into the Book in the lighthouse, where anyone can read it; a law that contradicts one in force is refused before anyone votes, and rumours last only until people read the Book. A white rabbit shows newcomers the way, the island turns from morning to night, and an island tune plays in your browser. If you like, a law you pass and your final vote go to the testnet as real transactions of 1 test AGRS.",
+  "major": {
+   "id": "rabbit",
+   "title": "New: White Rabbit Key, an island election game",
+   "text": "Four candidates, five days, one island. Every move goes into a Book nobody can edit, and a law that contradicts one in force is refused before anyone votes. Your vote can go on the testnet.",
+   "link": "/rabbit/",
+   "image": "/assets/shots/rabbit.png"
+  }
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-30",
+  "html": "Alerts: news about the site now goes out at fixed times, 09:00, 13:00 and 17:00 German time, on Telegram and X together. One new page gets its own post with its screenshot; when several are waiting they go out in one post, so none waits for another day and nothing is posted at night. The smaller changes and the simulation's two daily switches now go to X too, within 8 posts a day."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: the ghost lines wear the same mark as the ghosts in the chain core, an amber dot in a small block frame."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-30",
+  "html": "Alerts: the Monday 09:00 post on Telegram and X now announces the new Daily Consensus first: its number, its headline and how it opens, with a link to read it on Telegram. The week in numbers follows in the same post, so it is one Monday post, not two."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-30",
+  "html": "Alerts: posts can now be planned ahead in one calendar file, and the bot sends each at its time on Telegram and X. November is planned: the Taumorrow chess round on Sunday 1 November, a page worth a look every Wednesday, and the rule challenge's last days every Friday."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-30",
+  "html": "White Rabbit Key: the island is now painted like a screen-printed travel poster, in flat inks with hand-drawn lines and printed dots; the music starts with the first click, tap or key; the game has its own picture in the Playground menu."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-30",
+  "html": "White Rabbit Key: click a place and the whole view goes inside it, painted room by room, with the person you talk to standing in front of you; every place plays the tune in its own way; the islanders are drawn anew; Rico talks on Radio Coco at the bottom of the screen, jokes about the game and reads the chain weather from the testnet."
+ },
+ {
+  "tag": "Agorzilla",
+  "on": "2026-10-30",
+  "html": "Agorzilla on Tau HUD now looks as the evenings decided: the HUD, the My Tau card and Start read the same chain state as agorzilla.com, so his pendant light and fur change by themselves after each vote. The first evening's post goes out even when it is the very first one the bot sees."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-30",
+  "html": "White Rabbit Key: every line in the island's Book is now also a transaction on Tau Testnet Alpha. The rivals send 1 test AGRS from their own campaign wallets through the island bot on our relay; your moves go from your test wallet in the browser once you tick the box, with no extra step. A ⛓ in the Book marks them."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-30",
+  "html": "White Rabbit Key: Rico on Radio Coco can now speak. Each of his jokes and his chain weather is spoken once with a real voice and kept on our server; after the jingle he talks and the music steps back. The weather comes in bands (fog, calm, breeze, choppy seas, showers) and the exact numbers stay on screen. A line without its voice clip is shown as text, as before."
+ },
+ {
+  "tag": "Gazette",
+  "on": "2026-10-30",
+  "html": "Daily Consensus café: when Sully gives the last stamp, he holds your full ticket up to the light and it turns gold, with a few words from him and a purr from Déjà. The golden ticket stays in the corner, and your Tau card shows it too. The sound of a page turning is about 40 % quieter."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: in the simulation it leaves out the lines that only concern the real chain, such as the ghosts in the waiting room, and switching between the two starts the line afresh."
+ },
+ {
+  "tag": "Gazette",
+  "on": "2026-10-30",
+  "html": "Daily Consensus café: the Professor now tells you about Taumorrow, who built a chess engine in the Tau language that plays Claude, and the books in the back room hold a printout of its games."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-30",
+  "html": "White Rabbit Key: the island is painted again with far more care. Every place now has its own shape: the Council Hall stands on steps with a flag on its dome, the North Wind embassy has a veranda and a picket fence, the South Current embassy has arches and a courtyard fountain, Radio Coco has a record on the roof and loudspeakers, Bar La Ola a thatched roof, torches and a string of lights, the pier barrels, bollards and a fishing boat. New to look at: the rebels' camp with tents, a fire and a lookout, the coconut works with its smoking chimney, a banana grove, five islanders' cottages with washing on the line, huts on stilts in the shallows, and a waterfall on the volcano with a stream down to the sea. Smoke, fire, falling water and the fountain move; at night the fires, torches and the bar's bulbs glow."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-30",
+  "html": "In numbers: a fourth view, White Rabbit Key. It shows what the island game writes on the testnet, read from the public blocks: the island's moves per day or hour, the rivals' moves sent by the island bot, the players' own Book lines, their ballots for each candidate, player wallets and the visitors of the game."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-30",
+  "html": "White Rabbit Key: everyone on the island now speaks. Whoever you meet in a place says their line aloud in their own voice, Lola at the bar and on the square, Old Sam at the lighthouse and the pier, Hana at the Council Hall, the candidates when you offer them a pact and the two ambassadors in their embassies; your choices are never read out. When you put a line on Radio Coco, Rico calls it out on air like a DJ who cannot believe his luck. Each islander has a voice of their own, made once on the server; until a voice is there, the line is shown as before."
+ },
+ {
+  "tag": "Gazette",
+  "on": "2026-10-30",
+  "html": "Daily Consensus café: the Professor now names Logix, the mastermind behind Taumorrow, who set up the chess match of Tau against Claude."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: one short ghost line, “Ghosts in the waiting room”, with the live count, instead of two. Hover any item on the line to read in a sentence or two what is behind it."
+ },
+ {
+  "tag": "Menu",
+  "on": "2026-10-30",
+  "html": "Header and menus, tidied for a site that has grown to 35 pages. Each page names itself at the top, as in “Tau HUD / Playground / White Rabbit Key”. Live node and Simulation sit with the chain numbers in the first row, and the note that this is an unofficial community project is quieter but stays on every page. The menus are sorted into small groups: Explore has the chain now and the road to mainnet (Status, Findings and Road to mainnet moved here), Playground has practice, the real testnet and games, and About keeps this site and our work for others. Chain state is the first entry under Explore. On the right: Search, Follow the chain, one Feedback & updates button, a language menu and the gear, which now holds Simple or Technical."
+ },
+ {
+  "tag": "Menu",
+  "on": "2026-10-30",
+  "html": "Playground menu: the games column is now called “Games on the live testnet”, and White Rabbit Key and Agorzilla carry the pulsing green live dot. Both run on the real testnet: your White Rabbit Key vote can go on chain, and Agorzilla is fed by real transactions."
+ },
+ {
+  "tag": "Menu",
+  "on": "2026-10-30",
+  "html": "Playground menu: Déjà, the café cat, joins White Rabbit Key and Agorzilla under “Games on the live testnet”. She eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change."
  }
 ]

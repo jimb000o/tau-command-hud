@@ -56,6 +56,13 @@ class Evening(unittest.TestCase):
         self.assertTrue(m.startswith("🦍 Agorzilla grew into Young after 3 days lived\n\nIt was Little one until now."))
         self.assertEqual(len(xs), 1)
 
+    def test_first_evening_ever_is_posted(self):
+        s, out = {}, []
+        A.step(dict(LATEST, rounds=[]), s, send=lambda m, png=None: True, send_x=lambda m, st, png=None: True, picture=lambda r: None)
+        A.step(dict(LATEST, rounds=LATEST["rounds"][:1]), s, send=lambda m, png=None: out.append(m) or True,
+               send_x=lambda m, st, png=None: True, now=LATEST["rounds"][0].get("t", 0) + 7200, picture=lambda r: None)
+        self.assertEqual(len(out), 1)
+
     def test_failed_send_retries_later(self):
         s = {"last": -1}
         A.step(LATEST, s, send=lambda m: False, send_x=lambda m, st: True)

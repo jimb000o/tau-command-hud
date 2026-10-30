@@ -148,6 +148,8 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .tk span { display: flex; gap: 4px; justify-content: center; }
 .tk span i { width: 18px; height: 18px; border-radius: 50%; border: 1px dashed rgba(42,31,18,.35); display: grid; place-items: center; font: 400 10px/1 "Limelight", "Playfair Display", serif; font-style: normal; }
 .tk span i.on { border: 2px double rgba(60,28,14,.85); color: rgba(60,28,14,.9); transform: rotate(var(--r)); background: radial-gradient(circle, rgba(60,28,14,.08), transparent 70%); }
+.tk.gold { background: radial-gradient(120% 90% at 30% 20%, #fff3c4 0%, #f1cd6b 35%, #c9962e 70%, #8a5f17 100%); color: #3a2506; box-shadow: 0 8px 16px rgba(0,0,0,.6), 0 0 12px rgba(240,200,100,.3); }
+.tk.gold span i.on { border-color: rgba(70,40,6,.8); color: rgba(70,40,6,.9); }
 .paper:hover .tk, .paper:focus-visible .tk { transform: rotate(-3deg) translateY(-6px); }
 .paper:focus-visible { outline: none; } .paper:focus-visible .tk { box-shadow: 0 0 0 2px var(--ok); }
 .say { margin: 6px 0 0; min-height: 3em; max-width: 30em; text-align: center; color: var(--text); font-size: 12.5px; line-height: 1.5; }
@@ -172,6 +174,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<link rel="stylesheet" href="../assets/agz-look.css">
 </head>
 <body>
 <div class="wrap">
@@ -193,7 +196,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <div class="pal">
           <i class="sh2"></i>
           <a class="paper" id="paper" href="/gazette/walk/"><span class="np" aria-hidden="true"><b>The Daily Consensus</b><i></i></span><span class="tk" id="tk"><em>Café ticket</em><span id="tkS"></span></span></a>
-          <button class="agz" id="agz" type="button" aria-label="Agorzilla"><span class="dir"><span class="mover"><span class="legs"><img src="../assets/rig/hi/feet.webp" alt="" width="760" height="1140" draggable="false"></span><span class="body"><span class="puppet"><img class="trunk" src="../assets/rig/hi/body.webp" alt="" width="760" height="1140" draggable="false"><span class="head"><span class="gaze"><img class="face" src="../assets/rig/hi/head.webp" alt="" width="760" height="1140" draggable="false"><span class="eye l"><img src="../assets/rig/hi/eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="../assets/rig/hi/eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><img class="brow l" src="../assets/rig/hi/brow-l.webp" alt="" draggable="false"><img class="brow r" src="../assets/rig/hi/brow-r.webp" alt="" draggable="false"><i class="tear"></i><i class="tear r"></i></span></span></span></span></span></span></button>
+          <button class="agz" id="agz" data-agz-look type="button" aria-label="Agorzilla"><span class="dir"><span class="mover agz-fur"><span class="legs"><img src="../assets/rig/hi/feet.webp" alt="" width="760" height="1140" draggable="false"></span><span class="body"><span class="puppet"><img class="trunk" src="../assets/rig/hi/body.webp" alt="" width="760" height="1140" draggable="false"><i class="agz-pl"></i><span class="head"><span class="gaze"><img class="face" src="../assets/rig/hi/head.webp" alt="" width="760" height="1140" draggable="false"><span class="eye l"><img src="../assets/rig/hi/eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="../assets/rig/hi/eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><img class="brow l" src="../assets/rig/hi/brow-l.webp" alt="" draggable="false"><img class="brow r" src="../assets/rig/hi/brow-r.webp" alt="" draggable="false"><i class="tear"></i><i class="tear r"></i></span></span></span></span></span></span></button>
         </div>
         <figcaption class="say" id="say" aria-live="polite"></figcaption>
       </figure>
@@ -227,6 +230,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
   </main>
 </div>
 <script src="agz.js"></script>
+<script src="../assets/agz-look.js" data-poll></script>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -326,7 +330,7 @@ function draw(c, hash, stamps = STAMPS, full = c) {
       g.font = `700 20px ${SORA}`; g.fillStyle = C.ok; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(l, x, y + 1); g.textBaseline = "top";
     } else { g.lineWidth = 1; g.strokeStyle = C.hair; g.setLineDash([7, 6]); g.beginPath(); g.arc(x, y, 26, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
   });
-  txt(F("{n} of 4 · the café walk", { n: stamps }), xs[3] + 20, y0 + 120, `400 13px ${MONO}`, C.dim);
+  txt(stamps >= 4 ? T("Golden ticket · the café walk") : F("{n} of 4 · the café walk", { n: stamps }), xs[3] + 20, y0 + 120, `400 13px ${MONO}`, C.dim);
   /* the sentence */
   rr(40, 412, W - 40, 552, 10, C.deck, C.line);
   const l = full ? line(full) : ""; g.font = fit(l, 26, 600, SORA, W - 130); g.fillStyle = C.white; g.textAlign = "left"; g.fillText(l, 64, 438);
@@ -384,7 +388,8 @@ function ticket() {
   let have = [];
   if (OWN) { try { have = JSON.parse(store.get("tauhud-cafe-stamps") || "[]"); } catch (e) {} } else have = who.slice(0, STAMPS);
   $("tkS").replaceChildren(...who.map((k, i) => { const b = document.createElement("i"); if (have.includes(k)) { b.className = "on"; b.textContent = ini[k]; b.style.setProperty("--r", (i * 37 % 20 - 10) + "deg"); } return b; }));
-  const p = $("paper"); p.title = T(STAMPS >= 4 ? "Your café ticket is full: all four regulars of the Daily Consensus café stamped it." : "The café of the Daily Consensus: four regulars, and each stamps your ticket. Walk in.");
+  const tk = $("tk"); tk.classList.toggle("gold", STAMPS >= 4); tk.querySelector("em").textContent = T(STAMPS >= 4 ? "Golden ticket" : "Café ticket");
+  const p = $("paper"); p.title = T(STAMPS >= 4 ? "Your golden ticket: all four regulars of the Daily Consensus café stamped it, and Sully turned it gold." : "The café of the Daily Consensus: four regulars, and each stamps your ticket. Walk in.");
   p.setAttribute("aria-label", T("Café ticket") + ": " + STAMPS + " / 4. " + p.title);
 }
 ticket();

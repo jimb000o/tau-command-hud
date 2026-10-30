@@ -324,10 +324,14 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
 `X_PROFILE_URL=https://x.com/TauHUDcom` for the page's follow link. Then
 `docker compose up -d --build alerts donations`.
 - What goes to X, each in its own short text: rule changes on the real chain (not practice
-  votes), new nodes, "Testnet today", new pages and features (one line each for a catch-up),
+  votes), new nodes, "Testnet today", new pages and features (one line each when several go
+  together), the smaller site changes, the simulation's switches (`X_SIM=false` leaves them out),
   the Monday recap picture with the headline of the week's paper, donation thank-yous. Not on
-  X: the smaller-updates digests, health alarms, visitor proposals, the simulation's
-  switches unless `X_SIM=true`, and a major with `"x": false` (announced on X by hand, with its link).
+  X: health alarms, visitor proposals, and a major with `"x": false` (announced on X by hand, with its link).
+- Site news goes out at fixed times, `SITE_SLOTS` (UTC, default 8,12,16 = 09:00, 13:00, 17:00 German
+  winter time): one new page or feature gets its own post, several waiting go together in one post,
+  and when none is waiting the smaller changes go out once 3 have gathered (or one has waited a week).
+  A slot unused 4 hours after its time is over, so nothing posts at night.
 - A round-up is a major with `"lines"` ({label, text, link, x} per change: Telegram gets a line and a link
   each, X the short `x` lines that fit) and `"covers"` (the major ids it replaces; they and the digest so far are
   not posted on their own). A major's `"image"` also shows large above its Telegram text.
@@ -336,9 +340,13 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
   live overview from the share service, a new page's screenshot (`"image": "/assets/shots/<id>.png"` in its
   `major`, required by CI for every new major), else its own preview picture, else the site's; the post stays
   $0.015, and without a picture the text goes alone.
-- No links in X posts (`X_LINKS=true` adds them); `X_DAILY_CAP` (8) and `X_MONTHLY_CAP` (120)
-  posts at most, the rest stays on Telegram. An X failure never holds up Telegram; it is
+- No links in X posts (`X_LINKS=true` adds them); `X_DAILY_CAP` (8) and `X_MONTHLY_CAP` (240, about
+  $3.60) posts at most, the rest stays on Telegram. The simulation and the smaller changes leave the
+  day's last `X_RESERVE` (2) posts for the real chain. An X failure never holds up Telegram; it is
   logged and that X post is left out.
+- Posts planned ahead live in `assets/posts-plan.json` (the month's calendar: a spotlight on a page on Wednesdays,
+  the rule challenge's last days on Fridays, dated events): each is sent once at its `at` time (UTC) on Telegram and
+  X, or within 3 hours after it, never later. `--plan-preview` prints the ones still to come; `POSTS_PLAN=false` stops them.
 - `docker compose run --rm alerts python alerts.py --x-preview` prints what X would get now,
   with X's own character count; `--x-test` posts one test post on X only.
 
@@ -554,6 +562,23 @@ Tau HUD page, language, sim or live, screen class, hour of day.
 - Report: `https://node.tauhud.com/visits?key=<key>` (`/visits.json?key=` for the raw counts). The key is
   `VISITS_KEY` from `.env`, or made once and kept in `/data/visits.key`:
   `docker compose exec relay cat /data/visits.key`
+
+## Rico's voice (White Rabbit Key)
+
+Rico, the DJ on Radio Coco in /rabbit/, speaks his lines aloud when the server has his clips. Every line he can say
+is fixed in `rabbit/rico.js` (numbers and block heights are only shown, never spoken), about 50 lines and under
+4,000 characters, so the clips are made once with ElevenLabs and kept in `/opt/sites/rico`, which Caddy serves at
+`https://node.tauhud.com/rico/`. A line without its clip stays text, as before.
+
+```
+echo 'ELEVENLABS_API_KEY=YOUR_KEY' >> /opt/tau-command-hud/infra/.env
+cd /opt/tau-command-hud && python3 infra/rico/make.py samples          # then listen at https://node.tauhud.com/rico/samples/
+cd /opt/tau-command-hud && python3 infra/rico/make.py make --voice NAME
+```
+
+`design` draws three new voices from a description (Caribbean radio host by default) and `keep N` keeps one as "Rico" and makes every clip; both need a key with Voice Generation: Access and Voices: Write. `voices` lists the account's voices (a Voice Library voice must first be added to My Voices), `lines` shows the
+lines and their characters without a key. After new lines in rico.js, run `make` again: it only makes the new ones;
+a different `--voice` makes them all again.
 
 ## Tests
 

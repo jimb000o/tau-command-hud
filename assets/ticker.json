@@ -1,5 +1,5 @@
 {
-  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages.",
+  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; a headline with until (an ISO time in UTC) leaves the line at that time; mode live shows a headline only on the real chain, mode sim only in the simulation, no mode in both; mark ghost puts the chain core's ghost symbol in front and the live ghost count in the text; tip: the short hover text with more context (at most about 140 characters, two lines); picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages.",
   "move": {
     "en": "left",
     "zh": "left",
@@ -7,44 +7,69 @@
   },
   "headlines": [
     {
+      "text": "Sun 12:00 UTC: Tau chess engine vs Claude Opus 5.5",
+      "href": "https://chess.taumorrow.com/",
+      "until": "2026-11-02T00:00:00Z",
+      "tip": "A chess engine written in the Tau language plays ten live games against Claude Opus 5.5. An independent community project."
+    },
+    {
       "text": "Rule challenge: a new task for your wallet every Monday",
-      "href": "challenge/"
+      "href": "challenge/",
+      "tip": "Every Monday the Daily Consensus sets a small task. You answer it with a real rule in your test wallet."
+    },
+    {
+      "text": "Ghosts in the waiting room",
+      "href": "https://github.com/IDNI/tau-testnet/issues/81",
+      "mode": "live",
+      "mark": "ghost",
+      "tip": "Ghost transactions are already sealed in a block, but the node still lists them as waiting. A known testnet bug (IDNI #81)."
     },
     {
       "text": "Most network rule changes so far are tests that change nothing",
-      "href": "proposals/"
+      "href": "proposals/",
+      "mode": "live",
+      "tip": "Most rule changes sent to the network so far were test traffic that left the rules as they were. Proposals shows each one."
     },
     {
       "text": "Rules wall: every personal rule on the testnet",
-      "href": "rules/"
+      "href": "rules/",
+      "mode": "live",
+      "tip": "Every personal rule accounts gave themselves on the testnet, read from the blocks, one card per rule in plain words."
     },
     {
       "text": "My Tau card: your rules, votes and stamps on one card",
-      "href": "card/"
+      "href": "card/",
+      "tip": "One picture of what your test wallet did on the testnet: rules written, votes, Agorzilla meals and café stamps."
     },
     {
       "text": "Road to mainnet: what must be fixed first, as we see it",
-      "href": "roadmap/"
+      "href": "roadmap/",
+      "tip": "What we found on the testnet that we think should be fixed before mainnet, each item with proof anyone can check."
     },
     {
       "text": "Telegram alerts now follow any account or rule change",
-      "href": "account/"
+      "href": "account/",
+      "tip": "Follow an account or an open rule change, and our Telegram bot writes to you when something happens."
     },
     {
       "text": "Start here: try Tau in four steps",
-      "href": "start/"
+      "href": "start/",
+      "tip": "Make a test wallet, give your account a rule every node checks, watch a block seal it, and feed Agorzilla."
     },
     {
       "text": "The Daily Consensus: a new edition every Monday",
-      "href": "gazette/"
+      "href": "gazette/",
+      "tip": "Our weekly paper about the testnet. Each language gets its edition on Monday at 09:00 in its own time."
     },
     {
       "text": "Agorzilla: one creature the whole testnet feeds",
-      "href": "https://agorzilla.com"
+      "href": "https://agorzilla.com",
+      "tip": "A creature that grows with the testnet: wallets feed it, and every evening visitors vote on how it grows."
     },
     {
       "text": "A stolen key still obeys your limits: rules bind the account",
-      "href": "playground/"
+      "href": "playground/",
+      "tip": "A rule binds the account, not the key: a limit holds even when someone else signs with your key. Try rules in the Playground."
     }
   ],
   "picks": [],
@@ -52,12 +77,14 @@
     {
       "kind": "tg",
       "text": "Chain news on Telegram: t.me/tauHUDcom",
-      "href": "https://t.me/tauHUDcom"
+      "href": "https://t.me/tauHUDcom",
+      "tip": "Our Telegram channel: rule changes, new nodes and a short digest of the testnet every day."
     },
     {
       "kind": "x",
       "text": "Follow @TauHUDcom on X",
-      "href": "https://x.com/TauHUDcom"
+      "href": "https://x.com/TauHUDcom",
+      "tip": "Our X account: rule changes, new nodes, the testnet each evening and a weekly review."
     }
   ]
 }

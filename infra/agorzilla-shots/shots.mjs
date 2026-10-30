@@ -4,7 +4,8 @@
    the evening card and the family album). The evening post
    (alerts/agorzilla.py) puts the two side by side; agorzilla.com serves them under /evenings/.
    It reads chain/latest.json every SHOTS_SECONDS (default 2 min) and pictures every evening listed there that it has not
-   pictured yet, so a fresh start also fills in the last seven. Nothing is posted from here.
+   pictured yet, so a fresh start also fills in the last seven. When the page itself changes (its ?v= version), every
+   evening it has pictured is pictured again, so the album always shows how the page draws it now. Nothing is posted from here.
 
    node shots.mjs            the loop
    node shots.mjs --once 3   picture evening 3 now (also when it has a picture already) and stop */
@@ -51,23 +52,34 @@ async function picture(n) {
   } finally { await browser.close(); }
 }
 
+// the page's version: index.html loads app.js?v=<n>, bumped with every change to how it looks
+async function look() {
+  const r = await fetch(`${SITE}/`, { headers: { "Cache-Control": "no-cache", "User-Agent": "tauhud-agorzilla-shots/1 (+https://tauhud.com)" } });
+  const m = /app\.js\?v=(\d+)/.exec(await r.text());
+  return m ? m[1] : null;
+}
+
+async function pictured() {
+  try { return JSON.parse(await readFile(join(OUT, "evenings.json"), "utf8")); } catch { return []; }
+}
+
 async function remember(n, files) {
   const f = join(OUT, "evenings.json");
-  let list = [];
-  try { list = JSON.parse(await readFile(f, "utf8")); } catch {}
+  let list = await pictured();
   list = list.filter(x => x.n !== n).concat({ n, ...files, at: Math.floor(Date.now() / 1000) }).sort((a, b) => a.n - b.n);
   await writeFile(f + ".tmp", JSON.stringify(list, null, 1) + "\n");
   await rename(f + ".tmp", f);
 }
 
 async function pass(force) {
-  const l = await latest();
-  const todo = force != null ? [force] : (l.rounds || []).map(r => r.n);
+  const l = await latest(), v = await look(), had = new Map((await pictured()).map(x => [x.n, x]));
+  const todo = force != null ? [force] : [...new Set([...had.keys(), ...(l.rounds || []).map(r => r.n)])].sort((a, b) => b - a);   // newest first
   for (const n of todo) {
-    if (force == null && await exists(join(OUT, `evening-${n}-after.jpg`))) continue;
-    log(`evening ${n + 1}: picturing`);
+    const old = had.get(n);
+    if (force == null && await exists(join(OUT, `evening-${n}-after.jpg`)) && (!v || (old && old.look === v))) continue;
+    log(`evening ${n + 1}: picturing${old && old.look !== v ? ` again (page v=${v})` : ""}`);
     const files = await picture(n);
-    if (files) { await remember(n, files); log(`evening ${n + 1}: done`); }
+    if (files) { await remember(n, { ...files, look: v }); log(`evening ${n + 1}: done`); }
     else log(`evening ${n + 1}: the page does not know it yet, next pass`);
   }
 }

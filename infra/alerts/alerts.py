@@ -33,11 +33,11 @@ nothing whose block is older than POST_MAX_AGE_SECONDS, so a fresh volume or
 a long outage never floods the channel with old news.
 
 It also announces changes to Tau HUD itself, read from the site's own update
-log (assets/updates.json): an entry with a "major" field gets a post of its
-own (at most SITE_MAJOR_DAILY_CAP a day, SITE_MAJOR_GAP_SECONDS apart, only
-between SITE_POST_HOURS UTC); every other entry waits and goes into one
-digest post of the smaller changes at SITE_DIGEST_HOURS UTC, once enough
-have gathered. The first run only remembers what is already in the log,
+log (assets/updates.json), at the fixed SITE_SLOTS times (UTC): an entry
+with a "major" field gets a post of its own, and when several are waiting
+they go out together in one post, so none waits a day; every other entry
+waits for a slot with no major and goes into one digest post of the smaller
+changes, once enough have gathered. Each goes to Telegram and X. The first run only remembers what is already in the log,
 except majors from the last SITE_MAJOR_MAX_AGE_DAYS days, which are queued.
 
 Practice votes (proposals that only repeat the rules in force) get no post
@@ -63,6 +63,7 @@ ten minutes, because the relay starts those over at midnight UTC.
   python alerts.py --sim-preview    print today's two simulation posts (the consensus switches), post nothing
   python alerts.py --today-preview  print the "Testnet today" summary as it stands now, post nothing
   python alerts.py --site-preview   print the site-update posts waiting in assets/updates.json, post nothing
+  python alerts.py --plan-preview   print the planned posts still to come (assets/posts-plan.json), post nothing
   python alerts.py --findings-preview  print what the finding detectors see now and every kind of finding post, post nothing
 """
 from __future__ import annotations
@@ -114,16 +115,18 @@ TELEGRAM_CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()
 # the question bot (bot.py, same token): every channel post carries buttons that open it; empty = no buttons
 TELEGRAM_BOT_NAME = os.environ.get("TELEGRAM_BOT_USERNAME", "tauhud_alerts_bot").strip().lstrip("@")
 X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")}
-# X (@TauHUDcom) is paid per post since 2026: $0.015 a post, $0.20 for one with a link in it. So X gets the real chain's news
-# (rule changes, new nodes, "Testnet today", new pages, the weekly recap with the paper's headline), each in a short text
-# without a link (the profile carries tauhud.com), and never more than X_DAILY_CAP / X_MONTHLY_CAP posts. Not on X: practice
-# votes, the smaller-updates digests, health alarms, visitor proposals; the simulation's switches only with X_SIM=true.
+# X (@TauHUDcom) is paid per post since 2026: $0.015 a post, $0.20 for one with a link in it. So X gets what Telegram gets
+# (rule changes, new nodes, "Testnet today", the site's news and smaller changes, the weekly recap with the paper's headline,
+# the simulation's switches unless X_SIM=false), each in a short text without a link (the profile carries tauhud.com), and
+# never more than X_DAILY_CAP / X_MONTHLY_CAP posts (240 a month: about $3.60). The simulation and the smaller site changes
+# leave the day's last X_RESERVE posts for the real chain. Not on X: practice votes, health alarms, visitor proposals.
 # Findings (findings.py) go to X only for real-chain incidents (no blocks reaching us, no peers, a reorg, a busy stretch),
 # at most FINDINGS_X_DAILY_CAP a day.
 X_LINKS = os.environ.get("X_LINKS", "false").lower() in ("1", "true", "yes")
 X_DAILY_CAP = int(os.environ.get("X_DAILY_CAP", 8))
-X_MONTHLY_CAP = int(os.environ.get("X_MONTHLY_CAP", 120))
-X_SIM = os.environ.get("X_SIM", "false").lower() in ("1", "true", "yes")
+X_MONTHLY_CAP = int(os.environ.get("X_MONTHLY_CAP", 240))
+X_RESERVE = int(os.environ.get("X_RESERVE", 2))
+X_SIM = os.environ.get("X_SIM", "true").lower() in ("1", "true", "yes")
 # A picture under the X post where one fits: the rule change's card and the live overview from the share service (share/),
 # a new page's own preview picture. Uploading it costs nothing extra; a picture that cannot be had leaves the text alone.
 X_PICTURES = os.environ.get("X_PICTURES", "true").lower() in ("1", "true", "yes")
@@ -165,16 +168,21 @@ SIM_LINK = f"{SITE}/proposals/?mode=sim"
 SITE_ON = os.environ.get("SITE_UPDATES", "true").lower() in ("1", "true", "yes")
 SITE_UPDATES_URL = os.environ.get("SITE_UPDATES_URL", f"{SITE}/assets/updates.json")
 SITE_EVERY = float(os.environ.get("SITE_UPDATES_POLL_SECONDS", 600))
-SITE_MAJOR_DAILY_CAP = int(os.environ.get("SITE_MAJOR_DAILY_CAP", 3))
-SITE_MAJOR_GAP = float(os.environ.get("SITE_MAJOR_GAP_SECONDS", 2 * 3600))
 SITE_MAJOR_MAX_AGE_DAYS = int(os.environ.get("SITE_MAJOR_MAX_AGE_DAYS", 3))
-SITE_POST_HOURS = tuple(int(x) for x in os.environ.get("SITE_POST_HOURS", "6-23").split("-"))  # UTC, start included, end not
-SITE_DIGEST_HOURS = tuple(int(x) for x in os.environ.get("SITE_DIGEST_HOURS", "12,18").split(","))   # UTC
-SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smaller changes wait for the next day…
+# Fixed times for the site's own news, UTC (09:00, 13:00 and 17:00 German winter time): at each, everything new since the
+# last one goes out as one post on Telegram and X; one new page or feature gets its own post with its screenshot.
+SITE_SLOTS = tuple(sorted(int(x) for x in os.environ.get("SITE_SLOTS", "8,12,16").split(",")))
+SITE_SLOT_HOURS = float(os.environ.get("SITE_SLOT_HOURS", 4))  # a slot not used by then is over: nothing new at night
+SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smaller changes wait for a later slot…
 SITE_DIGEST_MAX_WAIT = float(os.environ.get("SITE_DIGEST_MAX_WAIT_DAYS", 7)) * 86400  # …but not longer than this
 SITE_DIGEST_LINES = 8
-SITE_CATCHUP_AT = int(os.environ.get("SITE_CATCHUP_AT", 4))  # this many majors waiting: one catch-up post with all of them
 SITE_LOG_LINK = f"{SITE}/#updates"
+# Posts planned ahead (the month's calendar): assets/posts-plan.json on the site, each sent once at its time on Telegram
+# and X, or within PLAN_WINDOW_HOURS after it (a later restart); after that it is over, never posted late.
+PLAN_ON = os.environ.get("POSTS_PLAN", "true").lower() in ("1", "true", "yes")
+PLAN_URL = os.environ.get("POSTS_PLAN_URL", f"{SITE}/assets/posts-plan.json")
+PLAN_WINDOW = float(os.environ.get("PLAN_WINDOW_HOURS", 3)) * 3600
+PLAN_FOOT = "✨ From Tau HUD"
 # "Testnet today": one evening summary of the real chain's last 24 hours, only on a day with something to report.
 # Practice votes (the rules in force proposed again) appear here instead of in posts of their own.
 TODAY_ON = os.environ.get("TESTNET_TODAY", "true").lower() in ("1", "true", "yes")
@@ -573,15 +581,47 @@ def x_text(item: dict) -> str:
     return x_post([f"{icon} {item['headline']}", item.get("why") or item.get("body")], item.get("link"))
 
 
-def recap_x(r: dict) -> str:
-    """The Monday recap picture's text on X: the week in three lines, and the headline of this week's paper."""
+def paper_out(r: dict) -> dict | None:
+    """This Monday's edition of The Daily Consensus (latest.json, printed earlier the same day), or None."""
     try:
         with open(os.path.join(PUBLIC_DIR, "recap", "gazette", "latest.json")) as f:
-            banner = (json.load(f).get("banner") or {}).get("en")
-    except (OSError, ValueError, AttributeError):
-        banner = None
-    return x_post([f"📊 Tau testnet weekly recap · {recap.period(r)}"] + [f"• {x}" for x in recap.lines(r, SITE)[:3]]
-                  + ([f"📰 This week's paper: {banner}"] if banner else []), f"{SITE}/stats/")
+            e = json.load(f)
+    except (OSError, ValueError):
+        return None
+    day = datetime.fromtimestamp(r["end"] - 1, timezone.utc).strftime("%Y-%m-%d")
+    if not isinstance(e, dict) or e.get("date") != day or not (e.get("banner") or {}).get("en"):
+        return None
+    return e
+
+
+def recap_x(r: dict) -> str:
+    """The Monday post on X: the new Daily Consensus first (number, headline, its opening), then the week in numbers as far
+    as they fit; without an edition of today, the recap alone."""
+    e = paper_out(r)
+    week = [f"• {x}" for x in recap.lines(r, SITE)[:3]]
+    if not e:
+        return x_post([f"📊 Tau testnet weekly recap · {recap.period(r)}"] + week, f"{SITE}/stats/")
+    teaser = (e.get("teaser") or {}).get("en") or ""
+    return x_post([f"📰 The Daily Consensus No. {e.get('no')} is out", f"“{e['banner']['en']}”", sentences(teaser, 1)] + week[:2],
+                  f"{SITE}/gazette/", keep=2)
+
+
+def recap_caption(r: dict) -> str:
+    """The Monday post on Telegram (a photo caption, at most 1024 characters): the new edition, then the week in numbers."""
+    e = paper_out(r)
+    if not e:
+        return recap.caption_html(r, SITE)
+    q = html.escape
+    teaser = (e.get("teaser") or {}).get("en") or ""
+    for n in (2, 1, 0):
+        text = (f"📰 <b>THE DAILY CONSENSUS · No. {q(str(e.get('no')))} is out</b>\n\n<b>{q(e['banner']['en'])}</b>\n"
+                + (f"{q(sentences(teaser, n))}\n" if n else "")
+                + f"\n<a href=\"{SITE}/gazette/\">Read this week's edition</a>\n\n"
+                + f"📊 <b>The week on the testnet</b> · {q(recap.period(r))}\n" + "\n".join("• " + q(x) for x in recap.lines(r, SITE)[:3])
+                + f"\n\n<a href=\"{SITE}/stats/\">Stats</a> · <a href=\"{SITE}/proposals/\">Rule changes</a>")
+        if len(re.sub(r"<[^>]+>", "", text)) <= 1000:
+            return text
+    return text
 
 
 def health_problems(h: dict) -> list[str]:
@@ -969,6 +1009,12 @@ def catchup_x(majors: list[dict]) -> str:
     return x_post([head] + [f"• {n[:1].upper() + n[1:]}" for n in names], SITE_LOG_LINK, foot=X_SITE_NOTE)
 
 
+def digest_x(items: list[dict]) -> str:
+    """The smaller changes on X: how many, then a short line each, as many as fit."""
+    return x_post([f"🛠 {plural(len(items), 'smaller change')} to Tau HUD"] + [f"• {i['area']}: {i['line']}" for i in items],
+                  foot=X_SITE_NOTE)
+
+
 def major_buttons(m: dict) -> dict:
     return {"inline_keyboard": [[{"text": "✨ Open it", "url": m["link"]}, {"text": "📜 All updates", "url": SITE_LOG_LINK}]]}
 
@@ -1007,9 +1053,10 @@ def digest_buttons() -> dict:
     return {"inline_keyboard": [[{"text": "📜 Updates log", "url": SITE_LOG_LINK}]]}
 
 
-def in_post_hours(t: float) -> bool:
-    h = datetime.fromtimestamp(t, timezone.utc).hour
-    return SITE_POST_HOURS[0] <= h < SITE_POST_HOURS[1]
+def site_slot(t: float) -> float | None:
+    """The latest SITE_SLOTS time at or before t, today or yesterday."""
+    d0 = datetime.fromtimestamp(t, timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+    return max((d + h * 3600 for d in (d0 - 86400, d0) for h in SITE_SLOTS if d + h * 3600 <= t), default=None)
 
 
 # ---------- rule changes visitors voted into the simulation ----------
@@ -1115,7 +1162,7 @@ class Telegram(Outlet):
         return self.call("sendMessage", body, "application/json")
 
     def send_photo(self, png, r):
-        fields = {"chat_id": TELEGRAM_CHAT, "caption": recap.caption_html(r, SITE), "parse_mode": "HTML"}
+        fields = {"chat_id": TELEGRAM_CHAT, "caption": recap_caption(r), "parse_mode": "HTML"}
         if TELEGRAM_BOT_NAME:
             fields["reply_markup"] = json.dumps(ask_buttons())
         body, ctype = multipart(fields,
@@ -1523,8 +1570,9 @@ class Watcher:
     def x_on(self):
         return next((o for o in self.outlets if o.name == "x" and o.enabled()), None)
 
-    def x_room(self, now: float | None = None) -> bool:
-        """True while today's and this month's X posts are under X_DAILY_CAP and X_MONTHLY_CAP."""
+    def x_room(self, now: float | None = None, spare: bool = False) -> bool:
+        """True while today's and this month's X posts are under X_DAILY_CAP and X_MONTHLY_CAP; `spare` posts (the
+        simulation, the smaller site changes) leave the day's last X_RESERVE for the real chain's news."""
         d = datetime.fromtimestamp(now if now is not None else time.time(), timezone.utc)
         st = self.state.setdefault("x", {})
         day, month = d.strftime("%Y-%m-%d"), d.strftime("%Y-%m")
@@ -1532,19 +1580,20 @@ class Watcher:
             st["day"], st["today"] = day, 0
         if st.get("month") != month:
             st["month"], st["this_month"] = month, 0
-        return st["today"] < X_DAILY_CAP and st["this_month"] < X_MONTHLY_CAP and st.get("pause_until", 0) <= d.timestamp()
+        return st["today"] < X_DAILY_CAP - (X_RESERVE if spare else 0) and st["this_month"] < X_MONTHLY_CAP \
+            and st.get("pause_until", 0) <= d.timestamp()
 
     def x_count(self):
         st = self.state["x"]
         st["today"], st["this_month"] = st.get("today", 0) + 1, st.get("this_month", 0) + 1
 
-    async def post_x(self, text: str, what: str, now: float | None = None, picture: str | None = None) -> bool:
+    async def post_x(self, text: str, what: str, now: float | None = None, picture: str | None = None, spare: bool = False) -> bool:
         """The X copy of a post that just went to Telegram. One try: X never holds Telegram up, and a post that failed is
         not sent hours late; over the caps it is left out."""
         o = self.x_on()
         if not o:
             return False
-        if not self.x_room(now):
+        if not self.x_room(now, spare):
             log.info("x: %s not posted (daily or monthly cap, or paused)", what)
             return False
         if picture and hasattr(o, "send_with_picture"):
@@ -1754,7 +1803,7 @@ class Watcher:
             changed = True
             log.info("simulation: posted %s", ev["key"])
             if X_SIM:
-                await self.post_x(sim_x(ev), "simulation " + ev["key"], now)
+                await self.post_x(sim_x(ev), "simulation " + ev["key"], now, spare=True)
         for k in [k for k, t in st["posted"].items() if now - t > 7 * 86400]:
             del st["posted"][k]
             changed = True
@@ -1791,6 +1840,56 @@ class Watcher:
             log.info("testnet today: a quiet day, no post")
         st["slot"] = slot
         self.save_state()
+
+    # ---------- posts planned ahead (assets/posts-plan.json) ----------
+    def fetch_plan(self) -> list | None:
+        try:
+            req = urllib.request.Request(PLAN_URL, headers={"Cache-Control": "no-cache", "User-Agent": "tauhud-alerts"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                data = json.load(r)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            log.warning("plan: cannot read %s (%r)", PLAN_URL, exc)
+            return None
+        return [p for p in data.get("posts", []) if isinstance(p, dict)] if isinstance(data, dict) else None
+
+    async def maybe_plan(self, now: float | None = None, posts: list | None = None):
+        """Each planned post once, at its time: Telegram (with its picture and button), then X (one try, within the caps)."""
+        if not PLAN_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("plan", {"posted": {}, "posts": []})
+        if now - st.get("checked", 0) >= SITE_EVERY or posts is not None:
+            st["checked"] = now
+            posts = posts if posts is not None else await asyncio.to_thread(self.fetch_plan)
+            if posts is not None:
+                st["posts"] = posts
+            self.save_state()
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        if not tg or st.get("pause_until", 0) > now:
+            return
+        for p in st["posts"]:
+            try:
+                at = datetime.fromisoformat(str(p["at"]).replace("Z", "+00:00")).timestamp()
+            except (KeyError, ValueError):
+                continue
+            if p.get("id") in st["posted"] or not (at <= now < at + PLAN_WINDOW) or not p.get("tg"):
+                continue
+            pic = site_link(p["image"]) if p.get("image") else None
+            buttons = {"inline_keyboard": [[{"text": p.get("button") or "Open it", "url": site_link(p["link"])}]]} if p.get("link") else None
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, p["tg"], buttons, pic) if pic else \
+                    await asyncio.to_thread(o.send_text, p["tg"], buttons)
+                if not ok:
+                    st["pause_until"] = now + (retry or 300)
+                    log.warning("plan: %s failed (%s); trying again later", p["id"], err)
+                    self.save_state()
+                    return
+            st["posted"][p["id"]] = round(now)
+            log.info("plan: posted %s", p["id"])
+            self.save_state()
+            if p.get("x"):
+                await self.post_x(x_post(p["x"], foot=p.get("foot") or PLAN_FOOT), "plan " + p["id"], now, pic)
+            return  # one planned post per check
 
     # ---------- changes to Tau HUD itself ----------
     def fetch_updates(self) -> list | None:
@@ -1853,44 +1952,40 @@ class Watcher:
                 self.take_updates(entries, now)
             self.save_state()
         tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
-        if not tg or st.get("pause_until", 0) > now or not in_post_hours(now):
+        slot = site_slot(now)
+        if not tg or st.get("pause_until", 0) > now or slot is None or st.get("slot", 0) >= slot or now - slot >= SITE_SLOT_HOURS * 3600:
             return
-        day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
-        if st.get("day") != day:
-            st["day"], st["count"] = day, 0
-        if len(st["majors"]) >= SITE_CATCHUP_AT and st["count"] == 0:
-            # a backlog (a long night, a busy day): one post with all of it instead of days of single posts
+        if st["majors"]:
+            # one post per slot: a single new page or feature on its own, several together, so none waits for another day
             batch = list(st["majors"])
-            text = catchup_text(batch)
-            shown = text.count("• ")
-            if await self.site_send(tg, text, digest_buttons(), now):
-                del st["majors"][:shown]
-                st["count"] = SITE_MAJOR_DAILY_CAP
-                st["last_major"] = round(now)
-                log.info("site updates: catch-up post with %d new pages and features", shown)
-                self.save_state()
-                await self.post_x(catchup_x(batch[:shown]), "site catch-up", now, await asyncio.to_thread(major_picture, batch[0]))
+            if len(batch) == 1:
+                m = batch[0]
+                if not await self.site_send(tg, major_text(m), major_buttons(m), now, m.get("image")):
+                    return
+                shown, text_x, for_x = 1, major_x(m), [m] if m.get("x", True) else []
+            else:
+                text = catchup_text(batch)
+                shown = text.count("\n• ")
+                if not await self.site_send(tg, text, digest_buttons(), now):
+                    return
+                for_x = [m for m in batch[:shown] if m.get("x", True)]  # "x": false in the log: announced on X by hand
+                text_x = major_x(for_x[0]) if len(for_x) == 1 else catchup_x(for_x)
+            del st["majors"][:shown]
+            st["slot"], st["last_major"] = slot, round(now)
+            log.info("site updates: posted %s", ", ".join(m["key"] for m in batch[:shown]))
+            self.save_state()
+            if for_x:
+                pic = next((m["image"] for m in for_x if m.get("image")), None) or await asyncio.to_thread(major_picture, for_x[0])
+                await self.post_x(text_x, "site " + ", ".join(m["key"] for m in for_x), now, pic)
             self.save_state()
             return
-        if st["majors"] and st["count"] < SITE_MAJOR_DAILY_CAP and now - st.get("last_major", 0) >= SITE_MAJOR_GAP:
-            m = st["majors"][0]
-            if await self.site_send(tg, major_text(m), major_buttons(m), now, m.get("image")):
-                st["majors"].pop(0)
-                st["count"] += 1
-                st["last_major"] = round(now)
-                log.info("site updates: posted %s", m["key"])
+        if st["pending"] and (len(st["pending"]) >= SITE_DIGEST_MIN or now - st["pending"][0]["at"] >= SITE_DIGEST_MAX_WAIT):
+            items = list(st["pending"])
+            if await self.site_send(tg, digest_text(items), digest_buttons(), now):
+                log.info("site updates: digest of %d posted", len(items))
+                st["pending"], st["slot"], st["last_digest"] = [], slot, round(now)
                 self.save_state()
-                if m.get("x", True):  # "x": false in the log: announced on X by hand, with its link
-                    await self.post_x(major_x(m), "site " + m["key"], now, await asyncio.to_thread(major_picture, m))
-            self.save_state()
-            return  # one post per check: a digest never lands on top of a major
-        d0 = datetime.fromtimestamp(now, timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-        slot = max((d0 + h * 3600 for h in SITE_DIGEST_HOURS if d0 + h * 3600 <= now), default=None)
-        due = st["pending"] and slot is not None and st.get("last_digest", 0) < slot and now - st.get("last_major", 0) >= 1800
-        if due and (len(st["pending"]) >= SITE_DIGEST_MIN or now - st["pending"][0]["at"] >= SITE_DIGEST_MAX_WAIT):
-            if await self.site_send(tg, digest_text(st["pending"]), digest_buttons(), now):
-                log.info("site updates: digest of %d posted", len(st["pending"]))
-                st["pending"], st["last_digest"] = [], round(now)
+                await self.post_x(digest_x(items), "site digest", now, spare=True)
             self.save_state()
 
     async def site_send(self, tg: list, text: str, buttons: dict, now: float, picture: str | None = None) -> bool:
@@ -2027,7 +2122,9 @@ class Watcher:
         date = datetime.fromtimestamp(printed_at, timezone.utc).strftime("%Y-%m-%d")
         same = next((x for x in index if x.get("date") == date), None)
         no = same["no"] if same else max((x.get("no", 0) for x in index), default=0) + 1
-        e = gazette.edition(r, props, days, no, printed_at)
+        chess = self.chess(r["end"])
+        e = gazette.edition(r, props, days, no, printed_at, chess)
+        e["chess"] = chess and {k: chess.get(k) for k in ("date", "played")}
         e["drops"] = self.drops(printed_at)
         prev = next((x for x in index if x.get("date") != date), None)
         if prev:   # what each language's readers still see until their own drop
@@ -2066,8 +2163,13 @@ class Watcher:
             except Exception as exc:  # retried in ten minutes
                 log.warning("gazette: first edition failed (%r)", exc)
             self.save_state()
-        if RECAP_ON and not st.get("cafe"):
-            st["cafe"] = now
+        if RECAP_ON:
+            try:
+                await asyncio.to_thread(self.maybe_chess, now)
+            except Exception as exc:
+                log.warning("gazette: chess check failed (%r)", exc)
+        if RECAP_ON and st.get("cafe_v") != gazette.CAFE_V:   # once per new way of writing the talk
+            st["cafe_v"] = gazette.CAFE_V
             try:
                 await asyncio.to_thread(self.gazette_cafe)
             except Exception as exc:  # the café keeps its fixed talk until Monday
@@ -2147,15 +2249,54 @@ class Watcher:
         os.makedirs(d, exist_ok=True)
         write_atomic(os.path.join(d, "challenge.json"), json.dumps(out, ensure_ascii=False, separators=(",", ":")))
 
+    def chess(self, end: float) -> dict | None:
+        """The Taumorrow chess round of the week ending at end (gazette.CHESS_ROUNDS), with the result as last read from the records."""
+        return gazette.chess_round(end, self.state.get("chess"))
+
+    def chess_result(self, date: str) -> dict | None:
+        """{date, played, engine, model, draws} of the round on date, read from the public records (a folder named …-<date>), or None."""
+        api = "https://api.github.com/repos/taumorrow/taumorrow-chess-records/contents/"
+        req = urllib.request.Request(api, headers={"User-Agent": "tauhud-alerts", "Accept": "application/vnd.github+json"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            dirs = [x["name"] for x in json.load(r) if x.get("type") == "dir" and x.get("name", "").endswith(date)]
+        if not dirs:
+            return None
+        raw = f"https://raw.githubusercontent.com/taumorrow/taumorrow-chess-records/HEAD/{urllib.parse.quote(dirs[0])}/index.md"
+        with urllib.request.urlopen(urllib.request.Request(raw, headers={"User-Agent": "tauhud-alerts"}), timeout=20) as r:
+            score = gazette.chess_score(r.read().decode("utf-8", "replace"))
+        return score and {"date": date} | score
+
+    def maybe_chess(self, now: float):
+        """Every half hour from a round's start until three days after: look for its result; when it changes, the café is told again."""
+        st = self.state.setdefault("gazette", {})
+        c = next((x for x in gazette.CHESS_ROUNDS if x["start"] <= now < x["start"] + 3 * 86400), None)
+        if not c or now - st.get("chess_tried", 0) < 1800 or (self.state.get("chess") or {}).get("date") == c["date"] and \
+                int(self.state["chess"].get("played") or 0) >= c["games"]:
+            return
+        st["chess_tried"] = now
+        try:
+            got = self.chess_result(c["date"])
+        except Exception as exc:  # tried again in half an hour
+            log.info("gazette: chess records not read (%r)", exc)
+            return
+        if got and got != self.state.get("chess"):
+            self.state["chess"] = got
+            log.info("gazette: chess round %s: %s", c["date"], got)
+            self.gazette_cafe()
+        self.save_state()
+
     def gazette_cafe(self):
-        """Once: give the edition already out (printed before the café had a talk of the week) its café block."""
+        """Give the edition already out the café talk as it is written now: once per CAFE_V, and again when a chess result comes in."""
         d = os.path.join(PUBLIC_DIR, "recap", "gazette")
         try:
             with open(os.path.join(d, "latest.json")) as f:
                 e = json.load(f)
         except (OSError, ValueError):
             return
-        if e.get("cafe") or not e.get("end"):
+        if not e.get("end"):
+            return
+        c = self.chess(e["end"])
+        if e.get("cafe_v") == gazette.CAFE_V and (e.get("chess") or None) == (c and {k: c.get(k) for k in ("date", "played")}):
             return
         try:
             with open(os.path.join(PUBLIC_DIR, "proposals.json")) as f:
@@ -2165,7 +2306,10 @@ class Watcher:
         r = self.recap_numbers(e["end"])
         days = [x for k, x in sorted((self.state.get("simdays") or {}).items())
                 if r["start"] <= datetime.strptime(k, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() + 43200 < r["end"]]
-        e["cafe"] = gazette.cafe(r, props, days, e.get("no") or 1, e["banner"], e.get("teaser") or e["lead"]["deck"])
+        chess = self.chess(r["end"])
+        e["cafe"] = gazette.cafe(r, props, days, e.get("no") or 1, e["banner"], e.get("teaser") or e["lead"]["deck"], chess)
+        e["cafe_v"] = gazette.CAFE_V
+        e["chess"] = chess and {k: chess.get(k) for k in ("date", "played")}
         text = json.dumps(e, ensure_ascii=False, separators=(",", ":"))
         write_atomic(os.path.join(d, e["date"] + ".json"), text)
         write_atomic(os.path.join(d, "latest.json"), text)
@@ -2234,6 +2378,7 @@ class Watcher:
                         await self.maybe_newnodes()
                         await self.maybe_sim()
                         await self.maybe_site()
+                        await self.maybe_plan()
                         await self.maybe_today()
                         await self.maybe_visitors()
                         await asyncio.sleep(POLL_SECONDS)
@@ -2244,6 +2389,7 @@ class Watcher:
                 await self.maybe_health()  # a relay that stays away is news too
                 await self.maybe_sim()     # needs no relay
                 await self.maybe_site()    # neither does this
+                await self.maybe_plan()
                 await asyncio.sleep(10)
 
 
@@ -2368,6 +2514,21 @@ def site_preview() -> int:
     return 0
 
 
+def plan_preview() -> int:
+    """The planned posts still to come, as Telegram and X would get them."""
+    posts = Watcher([]).fetch_plan()
+    if posts is None:
+        print(f"cannot read {PLAN_URL}")
+        return 1
+    now = time.time()
+    for p in sorted(posts, key=lambda p: str(p.get("at"))):
+        if datetime.fromisoformat(str(p["at"]).replace("Z", "+00:00")).timestamp() + PLAN_WINDOW < now:
+            continue
+        x = x_post(p["x"], foot=p.get("foot") or PLAN_FOOT) if p.get("x") else None
+        print(f"[{p['at']} · {p['id']}]\n{p['tg']}\n" + (f"--- X ({x_len(x)}/280):\n{x}\n" if x else "--- not on X\n") + "-" * 60)
+    return 0
+
+
 async def findings_preview() -> int:
     """What the detectors see right now, then the posts of 29 Oct 2026 (bootnode gone 12:01-15:20 UTC) replayed, then one
     example of every other finding; posts nothing."""
@@ -2458,6 +2619,7 @@ def recap_cli(post: bool) -> int:
         return 1
     print("recap drawn: https://" + FEED_URL.split("//", 1)[-1].split("/", 1)[0] + "/recap/latest.png")
     print("\n".join("  " + x for x in recap.lines(r, SITE)))
+    print("--- Telegram:\n" + recap_caption(r) + "\n--- X:\n" + recap_x(r))
     code = 0
     if post:
         for o in (Telegram(), X()):
@@ -2488,6 +2650,8 @@ if __name__ == "__main__":
         sys.exit(sim_preview())
     if "--today-preview" in sys.argv:
         sys.exit(asyncio.run(today_preview()))
+    if "--plan-preview" in sys.argv:
+        sys.exit(plan_preview())
     if "--site-preview" in sys.argv:
         sys.exit(site_preview())
     if "--findings-preview" in sys.argv:
