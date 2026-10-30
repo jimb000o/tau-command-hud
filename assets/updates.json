@@ -1575,5 +1575,10 @@
    "link": "/roadmap/",
    "image": "/assets/shots/roadmap.png"
   }
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-30",
+  "html": "In numbers now shows our sites' share of user transactions: everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Their transactions and our share of all transactions stay on the page, one line below."
  }
 ]
