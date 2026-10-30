@@ -356,6 +356,14 @@ and writes `/opt/sites/agorilla-live/chain/latest.json`. `sites/agorzilla.caddy`
 `/opt/sites/`) serves that file first and the checkout's copy otherwise, so the summary no longer
 waits for GitHub's schedule; the archive and its hashes stay with the repo's own Action.
 
+**Agorzilla's evening pictures**: service `agorzilla-shots` (`agorzilla-shots/shots.mjs`, a
+headless Chromium) opens `agorzilla.com/?shot=<evening>` after each evening and photographs the
+creature just before and just after it into the volume `agorzilla_shots`
+(`evening-<n>-before.jpg`, `-after.jpg`, `evenings.json`). The evening post sets the two side by
+side on one card for Telegram and X (it waits up to 25 minutes for them, then posts the text
+alone); agorzilla.com serves them under `/evenings/`. Picture one evening again by hand:
+`docker compose run --rm agorzilla-shots node shots.mjs --once <n>` (n counts from 0).
+
 **Donation thank-yous**: `alerts/donations.py` (service `donations`, same image) reads
 incoming AGRS (contract `0x7388…bdda` only, so look-alike tokens are ignored) and ETH
 transfers to the donation address every 5 minutes, above a small minimum

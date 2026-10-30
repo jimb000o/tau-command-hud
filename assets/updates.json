@@ -1648,5 +1648,10 @@
   "tag": "Gazette",
   "on": "2026-10-30",
   "html": "The Daily Consensus fills the screen. A new ⛶ button (or the F key) lays the paper alone across the whole screen on a computer, with Esc or ✕ to come back; where a browser cannot go full screen, the site bars still step aside. Tablets now open in the same reading mode as phones, with the whole page and pinch to read closer. Turn a phone or tablet on its side and the paper opens like a book, two pages side by side, and a page that is short on height sets its type a little smaller instead of being cut off at the foot."
+ },
+ {
+  "tag": "Agorzilla",
+  "on": "2026-10-30",
+  "html": "Agorzilla's evening is now a small ritual: the last minute before 18:00 UTC counts down above its head, the count waits for the first block after the evening so a vote sealed in the last seconds still counts, then the result is revealed. Visitors who come later that evening see the reveal once. After each evening a photograph of Agorzilla just before and just after goes with the evening post on Telegram and X."
  }
 ]
