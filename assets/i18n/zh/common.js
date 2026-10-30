@@ -569,3 +569,9 @@ TauI18n.add({ strings: {
   "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.": "第一次来？四步试用 Tau：一个测试钱包、一条由链来检查的你自己的规则、一个封存它的区块、喂 Agorzilla 一顿饭。几分钟，无需安装。",
   "Back to Start here": "返回“从这里开始”",
 } });
+/* Rules wall: menu entry and the wallet's way back */
+TauI18n.add({ strings: {
+  "Rules wall": "规则墙",
+  "The rules people gave their own accounts; take one for yours to agree": "大家给自己账户设的规则；为你的账户采用一条，就是表示赞同",
+  "Back to the rules wall": "返回规则墙",
+} });
