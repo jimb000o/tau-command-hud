@@ -387,7 +387,11 @@
      foot gongs, hooves and a cart, a Model T and its klaxon, footsteps, the newsboy, gulls and a foghorn
      from the bay. Each sound comes at its own random time, so nothing repeats in a loop. ----- */
   const AMB = (() => {
-    let A = null, master, street, level = 0, rumbleG, timers = [], music = null, N, BR;
+    let A = null, master, street, glass, level = 0, rumbleG, timers = [], music = null, N, BR;
+    /* the café walk (cafe.js) moves the listener: the street nearer or farther, the gramophone louder in the back room */
+    const MIX = { street: 1, open: 0, music: 1 };
+    const mix = () => { if (!A) return; const t = A.currentTime; street.gain.setTargetAtTime(MIX.street, t, 0.6);
+      glass.frequency.setTargetAtTime(2600 + 9000 * MIX.open, t, 0.6); if (music) music.out.gain.setTargetAtTime(0.16 * MIX.music, t, 0.6); };
     const noise = secs => { const b = A.createBuffer(1, A.sampleRate * secs, A.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
     /* brown noise: soft, without the hiss of white noise */
     const brown = secs => { const b = A.createBuffer(1, A.sampleRate * secs, A.sampleRate), d = b.getChannelData(0); let v = 0; for (let i = 0; i < d.length; i++) { v = (v + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = v * 3.5; } return b; };
@@ -416,7 +420,7 @@
       A = new (window.AudioContext || window.webkitAudioContext)(); N = noise(3); BR = brown(6);
       master = gain(0); chain(master, filt("highpass", 130, 0.6), A.destination);  /* nothing below 130 Hz: no hum */
       /* the street is heard through the window glass */
-      street = gain(1); chain(street, filt("lowpass", 2600), filt("highpass", 90), master);
+      street = gain(MIX.street); glass = filt("lowpass", 2600); chain(street, glass, filt("highpass", 90), master);
       /* the café: a few tables talking, each voice rising and falling in syllables, now and then a pause */
       for (let k = 0; k < 6; k++) { const g = gain(0), f = rand(380, 900), v = rand(0.035, 0.06); chain(loopSrc(BR, rand(0, 5)), filt("highpass", 250), filt("bandpass", f, 2.2), filt("peaking", f * 2.6, 1.5), g, pan(rand(-0.8, 0.8)), master);
         let talk = Math.random() < 0.6;
@@ -507,13 +511,15 @@
         }
       };
       const id = setInterval(tick, 150); tick();
-      return { stop() { clearInterval(id); for (const g of [out, hiss, crackle]) g.gain.setTargetAtTime(0, A.currentTime, 0.3); } };
+      return { out, stop() { clearInterval(id); for (const g of [out, hiss, crackle]) g.gain.setTargetAtTime(0, A.currentTime, 0.3); } };
     }
     const VOL = [0, 0.35, 0.9];
     return {
       set(l) { level = l; if (l && !A) start(); if (!A) return; if (l) A.resume();
         master.gain.setTargetAtTime(VOL[l], A.currentTime, 0.5);
-        if (l && !music) music = gramophone(); if (!l && music) { music.stop(); music = null; } },
+        if (l && !music) { music = gramophone(); mix(); } if (!l && music) { music.stop(); music = null; } },
+      mix(o) { Object.assign(MIX, o); mix(); },
+      ctx: () => A && level ? { A, out: master } : null,
       on: () => !!(A && level),
       bell() { if (A && level) gong(2, 0.08); },
       rumble(v) { if (A && rumbleG) rumbleG.gain.setTargetAtTime(0.35 * v, A.currentTime, 0.5); },
@@ -565,4 +571,6 @@
     addEventListener("pointerdown", first, true); addEventListener("keydown", first, true);
     label(); window.addEventListener("gazette-labels", label); }
   layout();
+  /* for the café walk (cafe.js): the drawn layers, the street on its own, and the sound */
+  window.GAZETTE_SCENE = { layers: [BG, LIVE, TRAM, ROOM, STEAM, FX], street, tone, rnd, still, amb: AMB, amb_btn: btn };
 })();
