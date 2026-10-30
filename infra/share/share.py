@@ -8,7 +8,12 @@ fills the gap on node.tauhud.com:
   GET /og/block/<n>.png              one block: transactions, who sealed it
   GET /og/proposal/<id>.png          one rule change: what it does, votes, countdown
   GET /og/address/<96 hex>.png       one account: balance, activity
-  GET /s/  /s/block/<n>  /s/proposal/<id>  /s/address/<hex>
+  GET /og/card/<96 hex>.png?c=<0-4>  "My Tau card": one wallet's rules, votes,
+                                     Agorzilla meals and café stamps (the stamps
+                                     live in the visitor's browser, so the link
+                                     carries them as c)
+  GET /og/card/<96 hex>.json         the same numbers, for the card page
+  GET /s/  /s/block/<n>  /s/proposal/<id>  /s/address/<hex>  /s/card/<hex>
                                      a tiny page with og:/twitter: tags for that
                                      picture that sends people on to the real page
 
@@ -47,9 +52,19 @@ CACHE_MAX = 400
 
 ADDR = re.compile(r"^[0-9a-f]{96}$")
 PROP = re.compile(r"^[0-9a-f]{8,64}$")
-ROUTE = re.compile(r"^/(og|s)(?:/(block|proposal|address)/([0-9a-z]+?))?(?:\.png)?/?$")
+ROUTE = re.compile(r"^/(og|s)(?:/(block|proposal|address|card)/([0-9a-z]+?))?(?:\.png)?/?$")
+CARD_JSON = re.compile(r"^/og/card/([0-9a-f]{96})\.json$")
 
 TRANSFERISH = {"user_tx", "retractable_transfer", "approval_request"}
+
+# Agorzilla (agorzilla.com, its assets/core.js): a meal is a transaction that pays the bowl at least 1 test AGRS,
+# and counts once an hour per wallet; paying ballot box k in the same transaction votes for option k that evening.
+# Nobody holds a key for these addresses.
+BOWL = "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108"
+BOXES = ("931c4e3b949dd5a77c226e2409f617aa9603f15075f20902c849855f24fb5439113afa3869fc415a3786fe5f30321392",
+         "92cfce4449523a48ab02f88d5acfa85b74860c87eaf501c48320c99a8a142191ba022199c3b20474ff19f7b72f4563a4",
+         "afbdeb43eb62d4a95f2f679686488a14a033cbddb45dec0ac7181d40a668f4af3c8b1c9df05b3b2bc33e664a2a8dd98b")
+AGZ_BORN, MEAL_COOLDOWN = 1793296800, 3600   # 29 Oct 2026 18:00 UTC
 
 
 def low(v) -> str:
@@ -295,14 +310,62 @@ def address_numbers(a: str) -> dict:
     return c
 
 
+def card_numbers(a: str) -> dict:
+    """What one wallet has done on this chain: rules written, votes, Agorzilla meals. No balance: nothing is priced."""
+    c = {"addr": a, "own": 0, "offered": 0, "proposed": 0, "rule_votes": 0, "agz_votes": 0, "meals": 0,
+         "first_h": None, "first_ts": None, "txs": 0, "head": CHAIN.head}
+    last_meal = None
+    for h in range(0, CHAIN.head + 1):
+        b = CHAIN.blocks.get(h) or {}
+        for t in b.get("transactions") or []:
+            if not isinstance(t, dict) or low(t.get("sender_pubkey")) != a:
+                continue
+            c["txs"] += 1
+            if c["first_h"] is None:
+                c["first_h"], c["first_ts"] = h, ts_of(b)
+            k = kind_of(t)
+            if k == "rule_deploy":
+                c["own"] += 1
+            elif k == "rule_offer":
+                c["offered"] += 1
+            elif k == "consensus_rule_update":
+                c["proposed"] += 1
+            elif k == "consensus_rule_vote":
+                c["rule_votes"] += 1
+            fed, box = 0, 0
+            for f, to, v in (x[:3] for x in transfers(t)):
+                if low(f) != a or num(v) < 1:
+                    continue
+                if low(to) == BOWL:
+                    fed += num(v)
+                elif not box and low(to) in BOXES:
+                    box = BOXES.index(low(to)) + 1
+            ts = ts_of(b) or 0
+            if fed >= 1 and ts >= AGZ_BORN:
+                if last_meal is None or ts - last_meal >= MEAL_COOLDOWN:
+                    c["meals"] += 1
+                    last_meal = ts
+                if box:
+                    c["agz_votes"] += 1
+    c["rules"] = c["own"] + c["offered"] + c["proposed"]
+    c["votes"] = c["rule_votes"] + c["agz_votes"]
+    return c
+
+
+def stamps_of(query: str) -> int:
+    """Café stamps from ?c=0..4 (they are kept in the visitor's browser, not on the chain)."""
+    m = re.search(r"(?:^|&)c=([0-4])(?:&|$)", query or "")
+    return int(m.group(1)) if m else 0
+
+
 # ---------------- pictures, cached ----------------
 _cache: dict[str, tuple[float, bytes]] = {}
 _render = threading.Semaphore(2)
 
 
-def picture(kind: str | None, arg: str | None) -> tuple[bytes, int]:
+def picture(kind: str | None, arg: str | None, stamps: int = 0) -> tuple[bytes, int]:
     """PNG bytes and how long they may be cached (seconds)."""
-    key = f"{kind}:{arg}:{CHAIN.head}"
+    key = f"{kind}:{arg}:{stamps}:{CHAIN.head}"
     hit = _cache.get(key)
     if hit and hit[0] > time.monotonic():
         return hit[1], 60
@@ -320,6 +383,8 @@ def picture(kind: str | None, arg: str | None) -> tuple[bytes, int]:
             elif kind == "proposal":
                 p, data = find_proposal(arg)
                 img = cards.proposal(p, CHAIN.head, CHAIN.pace()) if p else cards.generic()
+            elif kind == "card":
+                img = cards.my_card(card_numbers(arg), stamps)
             else:
                 img = cards.address(address_numbers(arg))
         except Exception:  # noqa: BLE001 - a broken card must still give the crawler a picture
@@ -332,7 +397,7 @@ def picture(kind: str | None, arg: str | None) -> tuple[bytes, int]:
 
 
 # ---------------- link pages ----------------
-def page(kind: str | None, arg: str | None) -> str:
+def page(kind: str | None, arg: str | None, stamps: int = 0) -> str:
     if kind is None:
         target, title = SITE + "/", f"Tau HUD · live at block #{cards.fmt_n(CHAIN.head)}" if CHAIN.ready else "Tau HUD"
         desc = "Where the rules change by agreement. The Tau Testnet Alpha, live: blocks, rule changes, votes, validators."
@@ -349,12 +414,18 @@ def page(kind: str | None, arg: str | None) -> str:
         title = f"{p['title']} · Tau HUD" if p else "Rule change · Tau HUD"
         desc = proposal_line(p) if p else "A proposed rule change on the Tau Testnet Alpha."
         img = f"{PUBLIC}/og/proposal/{arg}.png?h={CHAIN.head}"
+    elif kind == "card":
+        n = card_numbers(arg)
+        q = f"?a={arg}" + (f"&c={stamps}" if stamps else "")
+        target, title = f"{SITE}/card/{q}", f"{cards.words(arg)} · My Tau card"
+        desc = cards.card_line(n) + " Test AGRS only, nothing priced or promised."
+        img = f"{PUBLIC}/og/card/{arg}.png?c={stamps}&h={CHAIN.head}"
     else:
         target, title = f"{SITE}/explorer/?a={arg}", f"Address {cards.short(arg)} · Tau HUD"
         desc = "Balance, transactions and rules of an account on the Tau Testnet Alpha."
         img = f"{PUBLIC}/og/address/{arg}.png?h={CHAIN.head}"
     e = lambda s: html.escape(str(s), quote=True)  # noqa: E731
-    url = PUBLIC + "/s/" + (f"{kind}/{arg}" if kind else "")
+    url = PUBLIC + "/s/" + (f"{kind}/{arg}" if kind else "") + (f"?c={stamps}" if kind == "card" and stamps else "")
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <title>{e(title)}</title>
 <meta name="description" content="{e(desc)}">
@@ -407,7 +478,7 @@ def parse(path: str):
         return None
     if kind == "proposal" and not PROP.match(arg):
         return None
-    if kind == "address" and not ADDR.match(arg):
+    if kind in ("address", "card") and not ADDR.match(arg):
         return None
     return what, kind, arg
 
@@ -416,17 +487,22 @@ class Handler(BaseHTTPRequestHandler):
     server_version = "tau-hud-share"
 
     def do_GET(self):
-        path = self.path.split("?")[0]
+        path, _, query = self.path.partition("?")
         if path == "/og/health":
             return self.send(HTTPStatus.OK, b"ok\n" if CHAIN.ready else b"waiting for the relay\n", "text/plain", 0)
+        j = CARD_JSON.match(path.lower())
+        if j:
+            if not CHAIN.ready:
+                return self.send(HTTPStatus.SERVICE_UNAVAILABLE, b'{"error":"reading the chain"}', "application/json", 0)
+            return self.send(HTTPStatus.OK, json.dumps(card_numbers(j.group(1))).encode(), "application/json", 20)
         r = parse(path)
         if not r:
             return self.send(HTTPStatus.NOT_FOUND, b"not found\n", "text/plain", 300)
         what, kind, arg = r
         if what == "og":
-            body, ttl = picture(kind, arg)
+            body, ttl = picture(kind, arg, stamps_of(query))
             return self.send(HTTPStatus.OK, body, "image/png", ttl)
-        return self.send(HTTPStatus.OK, page(kind, arg).encode(), "text/html; charset=utf-8", 60)
+        return self.send(HTTPStatus.OK, page(kind, arg, stamps_of(query)).encode(), "text/html; charset=utf-8", 60)
 
     do_HEAD = do_GET
 

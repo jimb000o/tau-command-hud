@@ -169,6 +169,8 @@ TauI18n.add({ strings: {
   "Step through the chain block by block and see the rules at any height": "チェーンをブロックごとにたどり、任意の高さでのルールを見る",
   "Switch to English": "英語に切り替え",
   "Take a simulated seat and vote a rule change into law": "シミュレーションの席に座り、ルール変更を投票で施行させる",
+  "My Tau card": "マイ Tau カード",
+  "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post": "あなたのウォレットを 1 枚の画像に：書いたルール、投票、Agorzilla の食事、カフェのスタンプ。そのまま投稿できます",
   "Missions": "ミッション",
   "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake": "練習用チェーンで 6 つの短い課題：ルールを通す、ルールを落とす、障害を乗り切る、プルーフ・オブ・ステークに切り替える",
   "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat and vote a rule change into law, or play six short missions on a practice chain.": "自分の送金ルールを書いてテストネット自身の検証にかける、シミュレーションのバリデーター席に座ってルール変更を投票で施行させる、または練習用チェーンで 6 つの短いミッションに挑戦する。",
