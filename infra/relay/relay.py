@@ -35,6 +35,7 @@ from websockets.exceptions import ConnectionClosed
 from websockets.http11 import Request, Response
 
 from chat import Chat, parse_say
+from chatai import ChatAI
 from simpredict import SimPredict
 from simprops import SimProps
 from simvotes import SimVotes, name_of
@@ -350,6 +351,8 @@ class Relay:
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
         self.chat = Chat()       # the troll box (chat.py); pushes go to the sockets that joined it
         self.chat_subs: set[ServerConnection] = set()
+        self.chatai = ChatAI()   # optional second look by Claude (chatai.py); off without CHAT_AI_KEY
+        self.chat_checks: set[asyncio.Task] = set()
         self.chat.on_hide = lambda mid: broadcast(self.chat_subs, envelope_ok("chat", {"hide": [mid]}))
         self.clients: set[ServerConnection] = set()
         self.per_ip: dict[str, int] = {}
@@ -1581,12 +1584,22 @@ class Relay:
             r = self.chat.say(person, *parsed) if parsed else {"error": "bad", "message": "Usage: chat say <token> <a> <b> <c> <text>"}
             if r.get("ok"):
                 broadcast(self.chat_subs - {ws} if ws is not None else self.chat_subs, envelope_ok("chat", {"new": [r["msg"]]}))
+                if self.chatai.on:
+                    task = asyncio.create_task(self.chat_ai_check(r["msg"]["id"], r["msg"]["text"]))
+                    self.chat_checks.add(task)
+                    task.add_done_callback(self.chat_checks.discard)
                 return envelope_ok("chat", {"sent": r["msg"]})
             return envelope_error("chat", r["message"], r["error"].upper())
         if sub == "report" and len(args) == 3 and args[1].isdigit():
             r = self.chat.report(person, int(args[1]), args[2])
             return envelope_ok("chat", {"reported": int(args[1]), "hidden": r.get("hidden", False)}) if r.get("ok") else envelope_error("chat", r["message"], "BAD")
         return envelope_error("chat", "Usage: chat join | leave | say <token> <a> <b> <c> <text> | report <id> <token>", "INVALID_PARAMS")
+
+    async def chat_ai_check(self, mid: int, text: str):
+        """The live moderator's second look: a message Claude flags disappears for everyone (chat.flag pushes the hide)."""
+        why = await self.chatai.verdict(text, self.chat.before(mid))
+        if why and self.chat.flag(mid):
+            log.info("chat: the AI moderator removed message %s (%s)", mid, why)
 
     def push_presence(self):
         broadcast(self.clients, self.presence_envelope())
