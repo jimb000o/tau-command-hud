@@ -1745,5 +1745,10 @@
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "In numbers, On the testnet: a new ring and list show where our transactions started. Agorzilla, Déjà the café cat, and for Tau HUD the page that led to the wallet: Start here, the rules wall, the HUD, the Tau card and so on. Pages count from today; only a page name is kept next to a transaction. Déjà's meals now count for Agorzilla too."
+ },
+ {
+  "tag": "Privacy",
+  "on": "2026-10-30",
+  "html": "Privacy notice: section 8 now also covers the testnet wallet. For each transaction our server passes on, it keeps only the hash, the site and the name of the page that led to the wallet, never your address or browser."
  }
 ]
