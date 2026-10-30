@@ -193,5 +193,26 @@ e5 = w2.make_gazette(w2.recap_numbers(END), NOW + 3 * 86400 + 300)
 check(e5["challenge"]["id"] == "friends", "written again the same day, the challenge stays")
 check("bounty" not in json.dumps(gazette.CHALLENGES, default=str).lower() and "prize" not in json.dumps([c["task"] for c in gazette.CHALLENGES]).lower(), "careful words")
 
+# ---- each language's paper comes out at 09:00 in its readers' own time ----
+W = alerts.Watcher
+MON = datetime(2026, 11, 2, 0, 0, tzinfo=timezone.utc).timestamp()   # Monday 09:00 in Tokyo
+check(W.print_slot(MON + 1800) == MON and W.print_slot(MON - 60) == MON - 7 * 86400, "the paper is printed at the week's first drop, 09:00 Tokyo")
+dr = W.drops(MON)
+check(dr == {"ja": MON, "zh": MON + 3600, "en": MON + 8 * 3600}, "drops: Tokyo 09:00, Beijing 09:00, German 09:00 (winter)")
+JUL = datetime(2026, 7, 6, 0, 0, tzinfo=timezone.utc).timestamp()
+check(W.drops(JUL)["en"] == JUL + 7 * 3600, "German summer time moves the English drop to 07:00 UTC")
+check(set(W.drops(NOW).values()) == {round(NOW)}, "an edition printed off the schedule (the first, a reprint) is out for everyone at once")
+w3 = Relay(outlets=[])
+w3.state.pop("printing", None)
+asyncio.run(w3.maybe_print(MON + 600))
+check(w3.state["printing"]["slot"] == MON, "first start: the printing waits for the next Monday")
+w3.state["printing"]["slot"] = MON - 7 * 86400
+asyncio.run(w3.maybe_print(MON + 600))
+lt = json.load(open(os.path.join(g, "latest.json")))
+check(lt["date"] == "2026-11-02" and lt["drops"]["zh"] == MON + 3600 and lt.get("prev") and lt["prev"] != lt["date"], "Monday's edition carries its drops and the edition before")
+check(json.load(open(os.path.join(g, "editions.json")))[0]["drops"]["en"] == MON + 8 * 3600, "the archive lists the drops too")
+asyncio.run(w3.maybe_print(MON + 1200))
+check(w3.state["printing"]["slot"] == MON and json.load(open(os.path.join(g, "editions.json")))[0]["no"] == lt["no"], "printed once per week")
+
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
 sys.exit(1 if failed else 0)

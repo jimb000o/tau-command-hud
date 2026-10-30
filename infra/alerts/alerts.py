@@ -133,6 +133,10 @@ RECAP_ON = os.environ.get("RECAP_ENABLED", "true").lower() in ("1", "true", "yes
 RECAP_WEEKDAY = int(os.environ.get("RECAP_WEEKDAY", 0))   # 0 = Monday
 RECAP_HOUR = int(os.environ.get("RECAP_HOUR", 9))         # local time in RECAP_TZ
 RECAP_TZ = ZoneInfo(os.environ.get("RECAP_TZ", "Europe/Berlin"))   # 09:00 in Germany, summer and winter
+# The weekly paper comes out for each language at RECAP_HOUR on RECAP_WEEKDAY in its readers' own time: Japanese first
+# (09:00 Tokyo), then Chinese (09:00 Beijing), then English (09:00 German time). It is printed once, at the first drop;
+# each language's page shows it from its own drop and the edition before until then.
+DROP_TZ = {"ja": ZoneInfo("Asia/Tokyo"), "zh": ZoneInfo("Asia/Shanghai"), "en": RECAP_TZ}
 HEALTH_ON = os.environ.get("HEALTH_ALERTS", "true").lower() in ("1", "true", "yes")
 HEALTH_DOWN_BELOW = float(os.environ.get("HEALTH_DOWN_BELOW", 50))   # also "down" whenever the relay says so
 HEALTH_UP_AT = float(os.environ.get("HEALTH_UP_AT", 70))             # recovered at or above this
@@ -1942,12 +1946,30 @@ class Watcher:
 
     # ---------- weekly recap ----------
     @staticmethod
-    def recap_slot(now: float) -> float:
-        """The latest scheduled recap time at or before now."""
-        day = datetime.fromtimestamp(now, RECAP_TZ).date()
+    def recap_slot(now: float, tz=None) -> float:
+        """The latest scheduled recap time at or before now (in German time, or in tz)."""
+        tz = tz or RECAP_TZ
+        day = datetime.fromtimestamp(now, tz).date()
         day -= timedelta(days=(day.weekday() - RECAP_WEEKDAY) % 7)
-        slot = lambda x: datetime(x.year, x.month, x.day, RECAP_HOUR, tzinfo=RECAP_TZ).timestamp()
+        slot = lambda x: datetime(x.year, x.month, x.day, RECAP_HOUR, tzinfo=tz).timestamp()
         return slot(day) if slot(day) <= now else slot(day - timedelta(days=7))
+
+    @classmethod
+    def print_slot(cls, now: float) -> float:
+        """The latest weekly printing at or before now: the first drop of the week, 09:00 in Tokyo, furthest east."""
+        return cls.recap_slot(now, DROP_TZ["ja"])
+
+    @classmethod
+    def drops(cls, printed_at: float) -> dict:
+        """When each language's readers get an edition printed at printed_at: its own drop that week, or at once
+        for an edition printed outside the schedule (the first one, a reprint)."""
+        out = {}
+        for lang, tz in DROP_TZ.items():
+            nxt = cls.recap_slot(printed_at + 7 * 86400 - 1, tz)   # the first drop in tz at or after printed_at
+            while nxt - 7 * 86400 >= printed_at:
+                nxt -= 7 * 86400
+            out[lang] = round(nxt) if nxt - printed_at < 12 * 3600 else round(printed_at)
+        return out
 
     def recap_numbers(self, end: float) -> dict:
         def get(path):
@@ -2006,6 +2028,10 @@ class Watcher:
         same = next((x for x in index if x.get("date") == date), None)
         no = same["no"] if same else max((x.get("no", 0) for x in index), default=0) + 1
         e = gazette.edition(r, props, days, no, printed_at)
+        e["drops"] = self.drops(printed_at)
+        prev = next((x for x in index if x.get("date") != date), None)
+        if prev:   # what each language's readers still see until their own drop
+            e["prev"] = prev["date"]
         if not same:   # a new edition closes the week's rule challenge and sets the next one
             self.rotate_challenge(printed_at)
         self.attach_challenge(e)
@@ -2048,9 +2074,31 @@ class Watcher:
                 log.warning("gazette: café talk for the edition out failed (%r)", exc)
             self.save_state()
 
+    async def maybe_print(self, now: float | None = None):
+        """Print the weekly edition at the week's first drop (09:00 Tokyo, Monday); each language's page shows it from
+        its own 09:00 (the edition carries the three times)."""
+        if not RECAP_ON:
+            return
+        now = now if now is not None else time.time()
+        slot, st = self.print_slot(now), self.state.setdefault("printing", {})
+        if not st.get("slot"):   # first run: the next printing is the next Monday's
+            st["slot"] = slot
+            self.save_state()
+            return
+        if slot <= st["slot"] or now - slot > 86400 or now - st.get("tried", 0) < 600:
+            return
+        st["tried"] = now
+        try:
+            r = await asyncio.to_thread(self.recap_numbers, slot)
+            await asyncio.to_thread(self.make_gazette, r, slot)
+            st["slot"] = slot
+        except Exception as exc:  # retried in ten minutes
+            log.warning("gazette: edition failed (%r)", exc)
+        self.save_state()
+
     # ---------- the weekly rule challenge (gazette.py): set with each edition, answered with real rules ----------
     def challenge_ends(self, now: float) -> float:
-        return self.recap_slot(now + 7 * 86400)   # the next Monday edition
+        return self.print_slot(now + 7 * 86400)   # the next Monday edition
 
     def rotate_challenge(self, now: float):
         """Close the open challenge with its final answers and open the next one from now."""
@@ -2141,10 +2189,6 @@ class Watcher:
             st = self.state["recap"] = {"slot": slot, "posted": {}, "r": r,
                                         "file": datetime.fromtimestamp(slot, timezone.utc).strftime("%Y-%m-%d") + ".png"}
             self.save_state()
-            try:
-                self.make_gazette(r, slot)
-            except Exception as exc:  # the recap goes out regardless
-                log.warning("gazette: edition failed (%r)", exc)
         if "r" not in st or time.time() - st["slot"] > 86400:  # nothing drawn, or a day late: skip this week's post
             return
         for o in self.outlets:
@@ -2182,6 +2226,7 @@ class Watcher:
                             self.process()
                         await self.deliver()
                         await self.maybe_recap()
+                        await self.maybe_print()
                         await self.maybe_gazette()
                         await self.maybe_challenge()
                         await self.maybe_findings()

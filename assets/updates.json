@@ -1775,5 +1775,10 @@
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "In numbers on a phone: the One day table under On the testnet stays inside its panel instead of spilling sideways; the headings take less spacing and the site names may break."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "The Daily Consensus now comes out for each language at 09:00 on Monday in its readers' own time: Japanese at 09:00 Japan time, Chinese at 09:00 Beijing time, English at 09:00 German time. Until your own drop the paper shows last week's edition and says when this week's comes out, in your time zone."
  }
 ]
