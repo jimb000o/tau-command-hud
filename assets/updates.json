@@ -1526,6 +1526,11 @@
  {
   "tag": "Newspaper",
   "on": "2026-10-30",
+  "html": "Newspaper: the streetcar coming toward you on the left now rolls all the way out past the edge of the window, its last car-length included, instead of vanishing while its tail was still in view."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
   "html": "Newspaper: the café walk is now a proper little journey. Rooms go in order: from your window table only to the right, and the next room opens once the regular there has stamped your ticket; the door stays shut until the ticket is full. Each stamp is earned with a small task after the talk: chalk the regulars' vote onto Mae's board, glue the slip that follows the last block onto Elias's tape, spot the rule that contradicts the one in force for the Professor, and show Sully your ticket. The ticket names what each stamp stands for: Agreement, Chain, Logic, Testnet. A gentle nudge for the first step: Mae calls over from the counter, the way there catches the light, and a regular you have not spoken to yet glows softly with their name. With a full ticket you can also simply click the door to step out; the cards on Market Street now stay long enough to read (a click or a key goes on); the Extra! has a quiet “Pass the paper on” with X, a link to copy, or the phone's own share sheet, and the link opens straight into the café; arrow keys move between answers in a talk."
  }
 ]
