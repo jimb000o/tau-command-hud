@@ -1,18 +1,63 @@
 {
-  "_how": "The HUD news line (assets/ticker.js). picks: our X posts worth reposting, {text, href} with href the post's x.com address; notes: useful pointers on the site; invites: Telegram and X. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages.",
-  "move": { "en": "left", "zh": "left", "ja": "left" },
-  "picks": [],
-  "notes": [
-    { "text": "New here? Start here walks you through Tau in a few short steps", "href": "start/" },
-    { "text": "A stolen key still obeys your own limits: a rule binds the account, not the device", "href": "playground/" },
-    { "text": "Every Monday a rule challenge: a small task, answered with a real rule", "href": "challenge/" },
-    { "text": "The Daily Consensus: a new edition every Monday", "href": "gazette/" },
-    { "text": "Every rule change is compiled on its own before it can enter the chain", "href": "proposals/" },
-    { "text": "Get a Telegram message when an account you follow moves: @tauhud_alerts_bot", "href": "https://t.me/tauhud_alerts_bot" },
-    { "text": "Try writing a Tau rule in the Playground", "href": "playground/" }
+  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages.",
+  "move": {
+    "en": "left",
+    "zh": "left",
+    "ja": "left"
+  },
+  "headlines": [
+    {
+      "text": "Rule challenge: a new task for your wallet every Monday",
+      "href": "challenge/"
+    },
+    {
+      "text": "Most network rule changes so far are tests that change nothing",
+      "href": "proposals/"
+    },
+    {
+      "text": "Rules wall: every personal rule on the testnet",
+      "href": "rules/"
+    },
+    {
+      "text": "My Tau card: your rules, votes and stamps on one card",
+      "href": "card/"
+    },
+    {
+      "text": "Road to mainnet: what must be fixed first, as we see it",
+      "href": "roadmap/"
+    },
+    {
+      "text": "Telegram alerts now follow any account or rule change",
+      "href": "account/"
+    },
+    {
+      "text": "Start here: try Tau in four steps",
+      "href": "start/"
+    },
+    {
+      "text": "The Daily Consensus: a new edition every Monday",
+      "href": "gazette/"
+    },
+    {
+      "text": "Agorzilla: one creature the whole testnet feeds",
+      "href": "https://agorzilla.com"
+    },
+    {
+      "text": "A stolen key still obeys your limits: rules bind the account",
+      "href": "playground/"
+    }
   ],
+  "picks": [],
   "invites": [
-    { "kind": "tg", "text": "Chain news on Telegram: t.me/tauHUDcom", "href": "https://t.me/tauHUDcom" },
-    { "kind": "x", "text": "Follow @TauHUDcom on X", "href": "https://x.com/TauHUDcom" }
+    {
+      "kind": "tg",
+      "text": "Chain news on Telegram: t.me/tauHUDcom",
+      "href": "https://t.me/tauHUDcom"
+    },
+    {
+      "kind": "x",
+      "text": "Follow @TauHUDcom on X",
+      "href": "https://x.com/TauHUDcom"
+    }
   ]
 }
