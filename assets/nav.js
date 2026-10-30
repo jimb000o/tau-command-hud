@@ -60,7 +60,7 @@
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
     telegram: "Join @tauHUDcom on Telegram: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Questions (height, proposals, your transaction or address): write to @tauhud_alerts_bot. Opens Telegram.",
-    alerts: "Get alerts: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.",
+    alerts: "Follow the chain: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.",
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
     gear: "Settings: node address and Connect, background rain.",
     gearSub: "Settings: which node this page reads, guided tour, about.",
@@ -630,9 +630,11 @@
       left.append(go);
     }
     /* alerts: one pill named for what you get, not for the app; it opens the three ways to get them */
-    const tg = el("div", "ni-wrap tn-alerts"), tgb = el("button", "pill tg", `${PLANE}${XLOGO}<span>Get alerts</span>`), tgm = el("div", "menu tn-alm");
-    tgb.type = "button"; tgb.setAttribute("aria-haspopup", "true"); tgb.setAttribute("aria-expanded", "false"); tgb.setAttribute("aria-label", "Get alerts: Telegram, X or RSS"); tip(tgb, TIPS.alerts);
-    tgm.hidden = true; tgm.setAttribute("role", "menu"); tgm.setAttribute("aria-label", "Get alerts");
+    /* the label is set here: the simulated node on the HUD uses "Follow the chain" for a sync step with another meaning */
+    const FOLLOW = { zh: "关注这条链", ja: "チェーンを追う" };
+    const tg = el("div", "ni-wrap tn-alerts"), tgb = el("button", "pill tg", `${PLANE}${XLOGO}<span translate="no">${FOLLOW[window.TauI18n && TauI18n.lang] || "Follow the chain"}</span>`), tgm = el("div", "menu tn-alm");
+    tgb.type = "button"; tgb.setAttribute("aria-haspopup", "true"); tgb.setAttribute("aria-expanded", "false"); tgb.setAttribute("aria-label", "Follow the chain: Telegram, X or RSS"); tip(tgb, TIPS.alerts);
+    tgm.hidden = true; tgm.setAttribute("role", "menu"); tgm.setAttribute("aria-label", "Follow the chain");
     [[TELEGRAM, PLANE, "Telegram @tauHUDcom", "To your phone the moment it happens: rule changes, restarts, new nodes, a weekly recap"],
      [XCOM, XLOGO, "X @TauHUDcom", "In your timeline: real rule changes, new nodes, Testnet today and the Monday recap"],
      [RSS, RSSI, "RSS feed", "Every rule change in your feed reader"],

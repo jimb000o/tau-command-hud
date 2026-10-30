@@ -35,6 +35,8 @@
 <script src="assets/chat.js" defer></script>
 <script src="assets/predict.js" defer></script>
 <script src="assets/rulediff.js" defer></script>
+<link rel="stylesheet" href="assets/ticker.css">
+<script src="assets/ticker.js" defer></script>
 </head>
 <body>
 <title>Tau HUD</title>
@@ -1051,6 +1053,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. A stolen key still obeys your limits.</span><em>see it: Transactions · red “✕ refused”</em><div class="prov" data-full="Documented in tau-testnet: stream o5 is the sender’s own policy, 0 = block, enforced at admission (sendtx.py:1310) and again when the block is applied. Refusals here are simulated; we have not yet seen one on the testnet."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/engine.py#L1880" target="_blank" rel="noopener">engine.py:1880 ↗</a></div></div>
       <div class="pr"><b>Money with terms</b><span>A transfer can be returnable until a release point, locked until a time, or co-signed above an amount.</span><em>see it: Personal money rules</em><div class="prov" data-full="Documented in tau-testnet: retractable_transfer parks funds in escrow until a release height or time; whitelists use i4, time-locks i5, limits i1. Not yet observed on the testnet by us."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md#L573" target="_blank" rel="noopener">README §Retractable ↗</a></div></div>
     </div>
+    <div class="tick" id="tick" translate="no" aria-label="News line: live facts, updates and pointers"><span class="tk-lab"><i></i><b>News</b></span><div class="tk-view"><div class="tk-track"></div></div></div>
   </section>
 
   <main class="grid">
