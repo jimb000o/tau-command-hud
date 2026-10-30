@@ -846,7 +846,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
 def summary(e: dict) -> dict:
     """The few fields the HUD's notice and the archive list need."""
     return {"no": e["no"], "date": e["date"], "printed": e["printed"], "period": e["period"], "banner": e["banner"], "teaser": e["teaser"],
-            "kind": e["kind"], "url": e["url"], "number": e["no"], "headline": e["banner"]["en"], "headline_zh": e["banner"]["zh"],
+            "kind": e["kind"], "url": e["url"], "drops": e.get("drops"), "number": e["no"], "headline": e["banner"]["en"], "headline_zh": e["banner"]["zh"],
             "headline_ja": e["banner"].get("ja", ""), "deck": e["teaser"]["en"], "deck_zh": e["teaser"]["zh"], "deck_ja": e["teaser"].get("ja", "")}
 
 
