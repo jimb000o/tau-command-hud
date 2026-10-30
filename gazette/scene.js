@@ -419,6 +419,7 @@
         burst(t, 0.025, 3500, 1, v * 0.8, to); } }
     function start() {
       A = new (window.AudioContext || window.webkitAudioContext)(); N = noise(3); BR = brown(6);
+      A.onstatechange = () => window.dispatchEvent(new CustomEvent("gazette-live", { detail: A.state === "running" }));
       master = gain(0); chain(master, filt("highpass", 130, 0.6), A.destination);  /* nothing below 130 Hz: no hum */
       /* the street is heard through the window glass */
       street = gain(MIX.street); glass = filt("lowpass", 2600); chain(street, glass, filt("highpass", 90), master);
@@ -522,6 +523,8 @@
       mix(o) { Object.assign(MIX, o); mix(); },
       ctx: () => A && level ? { A, out: master } : null,
       on: () => !!(A && level),
+      /* really heard: the browser lets a page sound only after the reader's first touch (or on sites it trusts) */
+      live: () => !!(A && level && A.state === "running"),
       bell() { if (A && level) gong(2, 0.08); },
       rumble(v) { if (A && rumbleG) rumbleG.gain.setTargetAtTime(0.35 * v, A.currentTime, 0.5); },
       pause(h) { if (A && level) h ? A.suspend() : A.resume(); },
@@ -565,10 +568,11 @@
     btn.onclick = e => { e.stopPropagation(); to((l + 1) % 3); window.dispatchEvent(new CustomEvent("gazette-cafe", { detail: l })); };
     /* the page's sound switch leads: on opens the café quietly, off closes it */
     window.addEventListener("gazette-sound", e => { if (e.detail && !l) to(1); else if (!e.detail && l) to(0); });
-    /* when the reader's sound is already on, the café opens quietly with their first touch of the page (browsers allow sound only after one) */
-    const first = e => { removeEventListener("pointerdown", first, true); removeEventListener("keydown", first, true);
-      if (e.target && e.target.closest && e.target.closest("#bAmb, #bSnd")) return;
-      let on = true; try { on = localStorage.getItem("gazette-sound") !== "off"; } catch (x) {} if (on && !l) to(1); };
+    /* sound is on unless the reader turned it off: the café is set going at once (some browsers let it play straight
+       away), and the reader's first touch of the page wakes it wherever the browser was holding it back */
+    const stored = () => { try { return localStorage.getItem("gazette-sound") !== "off"; } catch (x) { return true; } };
+    if (stored()) to(1);
+    const first = () => { removeEventListener("pointerdown", first, true); removeEventListener("keydown", first, true); if (stored()) l ? AMB.set(l) : to(1); };
     addEventListener("pointerdown", first, true); addEventListener("keydown", first, true);
     label(); window.addEventListener("gazette-labels", label); }
   layout();
