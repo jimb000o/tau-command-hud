@@ -57,20 +57,27 @@ DETAIL = {
 # new sketches of the island (sketch.py writes plates/<name>.jpg and plates/<name>.json, where everything stands)
 SKETCH = {
     "bay": "The whole island as the map screen of a classic cartoon adventure game, seen from the sea at a high angle: "
-           "one great lumpy green peak in the middle, covered in rounded masses of rainforest up to a bald rock crown, "
-           "a waterfall down its front; steep stylised cliffs with vertical rock striations along the front shore, "
-           "rocks scattered in the surf, a small wreck on the rocks; on a plateau on the left a little village with a "
-           "cool blue Georgian embassy with a veranda and a warm terracotta embassy villa; a red and white lighthouse "
-           "on the cliff point at the far left; on the right a harbour town glowing in a turquoise bay: tall narrow "
-           "brightly painted gabled houses climbing the slope, a white colonial council house with a clock tower on "
-           "top, a market square under a flaming red flamboyant tree, a wooden pier, a tall ship at anchor, small "
-           "boats; a yellow radio shack with a tall mast on the hill above, a stone rum distillery with a chimney, a "
-           "beach bar with a thatched roof on the bay's beach; palms along the shores. Style: exaggerated, organic, "
-           "slightly whimsical shapes, rich painterly brushwork, curling spiral clouds with painted swirls in the sky, "
-           "deep saturated turquoise and teal water that glows in the shallows, cinematic light, warm glowing windows "
-           "in the town, a sense of mystery and adventure; its own island, nothing copied. The input is a rough "
-           "sketch: keep where every building, the bay, the pier, the peak and the lighthouse stand and how big they "
-           "are, but paint it all far richer, with many more small details of island life.",
+           "a big, wild, deeply tropical island, diverse and full of secrets, not a tidy town. A smoking green peak "
+           "in the middle with a waterfall into a jungle pool; dense rainforest with huge leaves, banana plants and "
+           "palms hides most of the island, so places peek out of the green instead of all being in plain view, and "
+           "only a few sandy tracks link them. On the right a ramshackle harbour: wooden shacks on stilts over the "
+           "water, a fishing village of palm-thatched huts, a wooden pier, nets, canoes and a small sailing boat; a "
+           "market of bamboo stalls under a huge flaming red flamboyant tree; shacks of planks and rusty corrugated "
+           "tin painted in bright Caribbean colours, laundry lines, hammocks, chickens. A weathered colonial council "
+           "house with a small bell tower and palm-frond awnings is the one official building in town. In a jungle "
+           "clearing a ramshackle bamboo radio shack with a tin roof and a mast made of a tall pole and wires. Deep in "
+           "the jungle a rebels' camp with tents and a campfire. A banana plantation in rows on the east slope. On "
+           "two separate green hills on the left, each behind its own garden wall, the two embassies: the only "
+           "buildings that look foreign, a cool blue Georgian house and a warm terracotta villa. A lagoon with "
+           "mangroves bitten into the west coast, and alone on a rocky islet in its mouth a red and white lighthouse. "
+           "Far out on a sandy point on the right a bamboo beach bar with a palm-thatch roof and torches. A wreck on "
+           "the reef, rocks in the surf, a turquoise reef round it all. Nothing European about the island apart from "
+           "the embassies and the council house: wood, bamboo, palm thatch, stilts, tin and bright paint. Style: "
+           "bright, saturated, comic-like painted adventure art, exaggerated organic shapes, rich painterly brushwork, "
+           "curling spiral clouds, deep glowing turquoise water, warm light, humour and a sense of adventure; its own "
+           "island, nothing copied. The input is a rough sketch: keep where every building, the lagoon, the harbour, "
+           "the pier, the peak and the lighthouse stand and how big they are, but paint it all far richer, with many "
+           "more small details of island life.",
 }
 SCENE = {
     "island": "A small tropical island seen from above at an angle, in the open sea under a clear blue sky: a white "
@@ -251,8 +258,11 @@ def cmd_draft(a):
             f = f"{id}-{i}-{hashlib.sha1(data).hexdigest()[:8]}.{kind}"
             write(os.path.join(a.out, "drafts", f), data)
             names.append(f)
-            if sketch:
-                drafts.setdefault("sketch", {})[f] = sketch
+            if sketch:   # the layout as it was for this painting, so a later sketch cannot move its places
+                lay = open(os.path.join(PLATES, sketch + ".json"), "rb").read()
+                name = f"layout-{hashlib.sha1(lay).hexdigest()[:8]}.json"
+                write(os.path.join(a.out, "drafts", name), lay)
+                drafts.setdefault("sketch", {})[f] = name
         drafts[id] = list(names)
         write(path, json.dumps(drafts, indent=1).encode())
         page(a)
@@ -290,8 +300,8 @@ def cmd_keep(a):
         idx["scenes"][id] = f
         if id == "island":   # a painting of a new sketch brings where everything stands on it
             sk = drafts.get("sketch", {}).get(f)
-            if sk:
-                idx["layout"] = json.load(open(os.path.join(PLATES, sk + ".json")))
+            if sk:   # paintings of the first harbour sketch (before layouts were stored with them) use plates/bay-1.json
+                idx["layout"] = json.load(open(os.path.join(a.out, "drafts", sk) if sk.endswith(".json") else os.path.join(PLATES, sk + "-1.json")))
             else:
                 idx.pop("layout", None)
         print(f"{id}: {f}")

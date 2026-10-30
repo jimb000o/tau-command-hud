@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""A new island for White Rabbit Key, drawn as a rough sketch for the painter: one great green peak rising out of the
-sea, cliffs and rocks along the front, a harbour town glowing in a bay on the right, a little village of the embassies
-on a plateau on the left, the lighthouse on a cliff point, swirling clouds. It writes the sketch (plates/bay.jpg) and, from the same numbers, where everything stands
+"""A new island for White Rabbit Key, drawn as a rough sketch for the painter: a big, wild tropical island. A smoking
+peak in the middle under dense jungle, a shanty harbour of wooden and tin shacks round a market, a fishing village of
+huts on stilts at the pier, a bamboo radio shack hidden in a jungle clearing, a rebels' camp, a banana plantation,
+mangroves and a lagoon, the embassies on their own hills, the lighthouse alone on a rocky islet, the beach bar far out
+on a sandy point. Not everything is joined by a road, and not everything is seen at a glance. It writes the sketch (plates/bay.jpg) and, from the same numbers, where everything stands
 on it (plates/bay.json): the places a click finds, the streets people walk, windows that light up at night, smoke,
 torches, the waterfall, the lighthouse beam, the radio mast and the coast the surf runs along. When a painting of this
 sketch is kept, paint.py puts that layout next to it in index.json and rabbit/scene.js follows it.
@@ -22,29 +24,29 @@ R = random.Random(7)
 # where the places stand: ground point and the box a click finds them in (world = 1600 x 900, as in scene.js);
 # all inside what the game shows of the world at once (about x 200 to 1400, y 110 to 790)
 PLACES = {
-    "hall":   {"x": 1090, "y": 520, "box": [1020, 410, 140, 120], "name": "Council Hall"},
-    "market": {"x": 1080, "y": 640, "box": [990, 600, 180, 70], "name": "Market square"},
-    "radio":  {"x": 1300, "y": 430, "box": [1250, 270, 110, 170], "name": "Radio Coco"},
-    "north":  {"x": 380, "y": 470, "box": [320, 390, 120, 90], "name": "North Wind Embassy"},
-    "south":  {"x": 520, "y": 420, "box": [470, 355, 100, 75], "name": "South Current Embassy"},
-    "bar":    {"x": 1320, "y": 690, "box": [1255, 640, 130, 70], "name": "Bar La Ola"},
-    "book":   {"x": 270, "y": 640, "box": [235, 450, 75, 200], "name": "The Lighthouse"},
-    "pier":   {"x": 1190, "y": 745, "box": [1140, 700, 110, 100], "name": "The pier"},
+    "hall":   {"x": 1010, "y": 520, "box": [945, 420, 130, 110], "name": "Council Hall"},
+    "market": {"x": 1090, "y": 640, "box": [1000, 600, 180, 70], "name": "Market square"},
+    "radio":  {"x": 760, "y": 575, "box": [705, 420, 110, 165], "name": "Radio Coco"},
+    "north":  {"x": 420, "y": 420, "box": [355, 345, 130, 85], "name": "North Wind Embassy"},
+    "south":  {"x": 600, "y": 470, "box": [548, 405, 104, 75], "name": "South Current Embassy"},
+    "bar":    {"x": 1345, "y": 690, "box": [1278, 632, 134, 72], "name": "Bar La Ola"},
+    "book":   {"x": 262, "y": 712, "box": [228, 500, 70, 220], "name": "The Lighthouse"},
+    "pier":   {"x": 1190, "y": 752, "box": [1135, 705, 110, 100], "name": "The pier"},
 }
-WALK = [[[270, 650], [330, 560], [380, 480]], [[380, 480], [520, 430]], [[520, 430], [640, 520], [800, 610], [990, 640]],
-        [[1090, 530], [1080, 610]], [[1170, 650], [1250, 690], [1320, 700]], [[1300, 440], [1220, 540], [1160, 620]],
-        [[1100, 660], [1180, 712]]]
-BAY = (1240, 820, 230, 120)   # the harbour: centre and radii of the water in front of the town
+# only a few roads: the harbour streets, the embassy road, a jungle trail to the radio, the beach to the bar
+WALK = [[[1010, 530], [1050, 590], [1090, 630]], [[1090, 650], [1150, 700], [1190, 715]], [[1170, 660], [1250, 690], [1330, 700]],
+        [[420, 430], [500, 450], [600, 478]], [[600, 478], [660, 540], [760, 585]], [[940, 640], [1000, 650], [1060, 645]],
+        [[880, 760], [1000, 770], [1120, 760]]]
 
 
 def coast():
-    """The island's outline: wide, a cliff point on the left for the lighthouse, the harbour cut in on the right."""
+    """The island's outline: big and ragged, a lagoon bitten out of the left, a sandy point far out on the right."""
     pts = []
-    for i in range(140):
-        a = i / 140 * math.pi * 2
-        r = 1 + 0.06 * math.sin(a * 3 + 0.4) + 0.035 * math.sin(a * 7 + 2) + 0.02 * math.sin(a * 13) + (R.random() - 0.5) * 0.03
-        r += max(0, -math.cos(a)) ** 6 * max(0, math.sin(a) + 0.2) * 0.12
-        pts.append([round(800 + math.cos(a) * 700 * r), round(560 + math.sin(a) * 250 * r)])
+    for i in range(160):
+        a = i / 160 * math.pi * 2
+        r = 1 + 0.07 * math.sin(a * 3 + 0.4) + 0.05 * math.sin(a * 5 + 2) + 0.03 * math.sin(a * 11) + (R.random() - 0.5) * 0.04
+        r += max(0, math.cos(a)) ** 8 * max(0, math.sin(a) + 0.4) * 0.12      # the bar's sandy point
+        pts.append([round(820 + math.cos(a) * 660 * r), round(540 + math.sin(a) * 260 * r)])
     return pts
 
 
@@ -115,141 +117,165 @@ def swirl(d, x, y, r, turns, col, width):
     d.line(pts, fill=col, width=width, joint="curve")
 
 
+def hut(d, x, y, w, h, wall, win, stilts=0, roof="#c9a24a", tin=False):
+    """A wooden or bamboo hut with a palm-thatch (or rusty tin) roof, on stilts when it stands in water or a swamp."""
+    if stilts:
+        for sx in (x - w / 2 + 3, x, x + w / 2 - 3):
+            d.line([(sx, y), (sx, y + stilts)], fill="#6b4422", width=3)
+    poly(d, [[x - w / 2, y], [x + w / 2, y], [x + w / 2, y - h], [x - w / 2, y - h]], wall)
+    for k in range(int(w // 5)):   # planks or bamboo
+        d.line([(x - w / 2 + 2 + k * 5, y - 1), (x - w / 2 + 2 + k * 5, y - h + 1)], fill=(60, 30, 10, 60), width=1)
+    rh = h * 0.75
+    if tin:
+        poly(d, [[x - w / 2 - 5, y - h], [x + w / 2 + 5, y - h + 4], [x + w / 2 + 2, y - h - rh * 0.6], [x - w / 2 - 2, y - h - rh * 0.5]], "#a8643a")
+    else:
+        poly(d, [[x - w / 2 - 8, y - h + 3], [x + w / 2 + 8, y - h + 3], [x, y - h - rh]], roof)
+        for k in range(5):
+            f = k / 4
+            d.line([(x, y - h - rh), (x - w / 2 - 8 + f * (w + 16), y - h + 3)], fill=(110, 70, 20, 120), width=1)
+    wx, wy = x + w / 5, y - h * 0.7
+    d.rectangle([wx - 3, wy, wx + 4, wy + 7], fill="#24323c")
+    win.append([round(wx - 3), round(wy), 7, 7])
+    d.rectangle([x - w / 4 - 4, y - h * 0.6, x - w / 4 + 4, y], fill="#3a2a1a")
+
+
+def tent(d, x, y, w, c="#5f6b3a"):
+    poly(d, [[x - w / 2, y], [x + w / 2, y], [x, y - w * 0.6]], c)
+    d.polygon([(x - 4, y), (x + 4, y), (x, y - w * 0.3)], fill="#22303a")
+
+
 def main():
     im = Image.new("RGB", (W, H))
     d = ImageDraw.Draw(im, "RGBA")
     for y in range(H):   # sky and sea
         if y < HZ:
             f = y / HZ
-            c = (round(60 + 110 * f), round(150 + 70 * f), round(215 + 25 * f))
+            c = (round(70 + 100 * f), round(160 + 60 * f), round(220 + 20 * f))
         else:
             f = (y - HZ) / (H - HZ)
-            c = (round(30 - 14 * f), round(160 - 70 * f), round(195 - 60 * f))
+            c = (round(30 - 14 * f), round(165 - 70 * f), round(200 - 60 * f))
         d.line([(0, y), (W, y)], fill=c)
-    for x, y, r, col in [(260, 90, 70, (235, 245, 250)), (520, 60, 46, (225, 240, 248)), (1180, 80, 80, (240, 248, 252)),
-                         (1460, 150, 54, (225, 240, 248)), (880, 40, 40, (230, 244, 250))]:
+    for x, y, r in [(240, 80, 60), (1180, 70, 70), (1470, 150, 50), (560, 50, 40)]:
         for k in range(3):
-            swirl(d, x + k * 30, y + k * 8, r - k * 12, 1.4, col, 16 - k * 4)
-    d.ellipse([1330, 40, 1420, 130], fill=(255, 248, 225))   # the sun
+            swirl(d, x + k * 28, y + k * 7, r - k * 11, 1.4, (240, 248, 252), 15 - k * 4)
     win, fx = [], []
     shore = coast()
-    # reef and shallows, a ring of rocks, then the land
-    poly(d, [[800 + (x - 800) * 1.06, 560 + (y - 560) * 1.14] for x, y in shore], (110, 210, 205, 255), None)
-    poly(d, [[800 + (x - 800) * 1.02, 560 + (y - 560) * 1.05] for x, y in shore], (160, 228, 218, 255), None)
-    poly(d, shore, "#4e8a46")
-    for k in range(60):   # rocks in the surf
-        a = R.random() * math.pi + 0.05
-        x, y = 800 + math.cos(a) * 720 * (1.02 + R.random() * 0.05), 560 + math.sin(a) * 262 * (1.02 + R.random() * 0.08)
-        s = 6 + R.random() * 12
-        poly(d, [[x - s, y + s * 0.4], [x - s * 0.3, y - s * 0.8], [x + s * 0.7, y - s * 0.5], [x + s, y + s * 0.4]], "#5d7a86")
-    # the cliffs along the front: steep rock faces under the grass
-    front = [p for p in shore if p[1] > 600 and p[0] < 1060]
-    for i in range(len(front) - 1):
-        (x0, y0), (x1, y1) = front[i], front[i + 1]
-        poly(d, [[x0, y0 - 46], [x1, y1 - 46], [x1, y1], [x0, y0]], "#7a8f98" if i % 2 else "#6a808a", None)
-        d.line([(x0, y0 - 44), (x0 + (R.random() - 0.5) * 8, y0)], fill="#4a5e68", width=2)
-    poly(d, [[800 + (x - 800) * 0.96, 540 + (y - 560) * 0.86] for x, y in shore], "#5f9e4a", None)
-    # the great peak: rainforest to the top, a bald rock crown, a waterfall down its front into the cliffs
-    ridge = []   # a lumpy, leaning silhouette rather than a cone
+    poly(d, [[820 + (x - 820) * 1.06, 540 + (y - 540) * 1.13] for x, y in shore], (110, 212, 205, 255), None)
+    poly(d, [[820 + (x - 820) * 1.02, 540 + (y - 540) * 1.05] for x, y in shore], (165, 230, 218, 255), None)
+    poly(d, shore, "#efd49c")
+    poly(d, [[820 + (x - 820) * 0.95, 528 + (y - 540) * 0.86] for x, y in shore], "#4f9a46", None)
+    # the lagoon bitten into the west coast, mangroves round it
+    d.ellipse([130, 510, 430, 790], fill=(120, 214, 200))   # it opens to the sea in the south-west
+    d.ellipse([170, 640, 400, 800], fill=(150, 225, 212))
+    for k in range(22):
+        a = math.pi * 1.05 + k / 21 * math.pi * 1.15
+        mx, my = 280 + math.cos(a) * 150, 650 + math.sin(a) * 140
+        tree(d, mx, my, 9, "#2d6a3a", "#4a8c44")
+        d.line([(mx - 6, my + 6), (mx - 9, my + 14)], fill="#5a4030", width=2)
+        d.line([(mx + 6, my + 6), (mx + 9, my + 14)], fill="#5a4030", width=2)
+    # the lighthouse alone on its rocky islet off the south-west, a rowing boat tied up below
+    poly(d, [[212, 722], [236, 696], [290, 694], [318, 718], [292, 740], [228, 740]], "#7a8f98")
+    poly(d, [[244, 712], [282, 712], [275, 545], [251, 545]], "#fbf3df")
+    for k in range(3):
+        y0 = 702 - k * 52
+        poly(d, [[244 + k * 2, y0], [282 - k * 2, y0], [281 - k * 2, y0 - 22], [245 + k * 2, y0 - 22]], "#d8483a", None)
+    poly(d, [[246, 545], [280, 545], [276, 528], [250, 528]], "#22303a")
+    poly(d, [[250, 528], [276, 528], [263, 508]], "#d8483a")
+    win.append([259, 640, 7, 10])
+    poly(d, [[300, 752], [326, 752], [322, 758], [304, 758]], "#e2674f")
+    # the smoking peak, jungle up its flanks, a waterfall into a pool
+    ridge = []
     for k in range(41):
         f = k / 40
-        x = 360 + f * 760
-        top = 70 + (abs(f - 0.55) / 0.55) ** 1.4 * 530
-        ridge.append([x, top + math.sin(f * 23) * 14 + math.sin(f * 9 + 1) * 18 * (1 - abs(f - 0.55))])
-    poly(d, ridge + [[1120, 600], [360, 600]], "#3b7a44")
-    for k in range(6):   # big rounded shoulders of forest on the flanks
-        cx, cy, r = [(520, 470, 90), (640, 330, 80), (950, 330, 70), (1040, 470, 90), (780, 520, 110), (860, 230, 60)][k]
-        d.ellipse([cx - r, cy - r * 0.8, cx + r, cy + r * 0.8], fill=["#357540", "#3f8048", "#326e3c", "#3a7a44", "#2f6a38", "#3d7c46"][k])
-    poly(d, [[700, 150], [740, 90], [800, 70], [850, 110], [820, 160], [760, 170]], "#8a8f7a")
-    for k in range(140):
-        x = 420 + R.random() * 680
-        y = 160 + R.random() * 460
-        edge = 600 - (y - 70) * 0.0
-        if abs(x - 790) < (y - 70) * 0.62 and y < 600:
-            tree(d, x, y, 9 + R.random() * 12, R.choice(["#2f6a38", "#356f3e", "#2b6034"]), "#4f9a48")
-    d.polygon([(742, 420), (754, 420), (772, 700), (756, 700)], fill="#e8f6fa")
-    fx += [{"k": "falls", "x": 742, "y": 420, "w": 12, "h": 280}, {"k": "splash", "x": 762, "y": 760}]
-    # the plateau on the left with the embassies' little village, the lighthouse on the cliff point
-    d.ellipse([290, 400, 600, 520], fill="#6fae50")
-    poly(d, [[220, 660], [250, 630], [300, 632], [330, 664], [300, 690], [236, 690]], "#7a8f98")
-    poly(d, [[252, 640], [292, 640], [284, 470], [260, 470]], "#fbf3df")
-    for k in range(3):
-        y0 = 630 - k * 56
-        poly(d, [[252 + k * 2, y0], [292 - k * 2, y0], [291 - k * 2, y0 - 24], [253 + k * 2, y0 - 24]], "#d8483a", None)
-    poly(d, [[254, 470], [290, 470], [286, 452], [258, 452]], "#22303a")
-    poly(d, [[258, 452], [286, 452], [272, 432]], "#d8483a")
-    win.append([268, 560, 7, 10])
-    # streets: sand paths winding from the plateau round the foot of the peak down to the town
-    for p in WALK:
-        d.line([tuple(q) for q in p], fill="#d9b67e", width=9, joint="curve")
-    house(d, 380, 470, 110, 50, "#cfe1ec", "#284b63", win, roof_h=26, shutters="#284b63", porch=True)
-    d.line([(436, 470), (436, 396)], fill="#22303a", width=2)
-    house(d, 520, 420, 84, 40, "#f0b48a", "#c0533f", win, roof_h=20, shutters="#8a3b2a")
-    for x, y, wall, roof in [(310, 520, "#f2b134", "#c0533f"), (460, 510, "#7fd0c2", "#6a6a72"), (580, 480, "#e86fa0", "#c0533f")]:
-        house(d, x, y, 30, 20, wall, roof, win, roof_h=12)
-    # the harbour on the right: the bay, the town climbing the slope above it, the hall on top, the radio on the hill
-    sea = Image.new("L", (W, H), 0)
-    bx, by, brx, bry = BAY
-    ImageDraw.Draw(sea).ellipse([bx - brx, by - bry, bx + brx, by + bry], fill=255)
-    im.paste((90, 200, 200), (0, 0), sea)
-    d.arc([bx - brx - 8, by - bry - 8, bx + brx + 8, by + bry + 8], 190, 350, fill="#efd49c", width=14)
-    d.arc([bx - brx - 14, by - bry - 14, bx + brx + 14, by + bry + 14], 200, 290, fill="#9a8f80", width=8)
-    for k, (x, y) in enumerate([(1000, 560), (1040, 590), (1150, 570), (1190, 600), (1230, 630), (960, 610), (1150, 480), (1200, 520),
-                                (1010, 470), (980, 520)]):
-        facade(d, x, y, 30, 40, ["#e2674f", "#f2b134", "#3aa6a0", "#e86fa0", "#6fa8ff", "#a3e05a", "#ffe066", "#ff9f40", "#c9a0ff", "#fbf3df"][k], win)
-    d.rectangle([1024, 520, 1156, 530], fill="#d9cdb0", outline="#22303a")
-    house(d, 1090, 520, 124, 58, "#fbf3df", "#2c8c88", win, roof_h=24, porch=True)
-    poly(d, [[1076, 438], [1104, 438], [1104, 408], [1076, 408]], "#fbf3df")
-    d.ellipse([1082, 412, 1098, 428], fill="#fbf3df", outline="#22303a", width=2)
-    poly(d, [[1072, 408], [1108, 408], [1090, 388]], "#2c8c88")
-    fx.append({"k": "flag", "x": 1090, "y": 388, "c0": "#2c8c88", "c1": "#fbf3df", "h": 18})
-    d.ellipse([990, 612, 1170, 668], fill="#e8d3a6", outline="#b89a6a", width=2)
-    for k, sx in enumerate([1020, 1050, 1110, 1140]):
-        sy = 650 if k in (1, 2) else 636
+        x = 560 + f * 600
+        top = 110 + (abs(f - 0.5) / 0.5) ** 1.3 * 340
+        ridge.append([x, top + math.sin(f * 19) * 12])
+    poly(d, ridge + [[1160, 470], [560, 470]], "#3b7a44")
+    poly(d, [[830, 118], [860, 104], [890, 112], [900, 140], [820, 146]], "#7d7466")
+    fx.append({"k": "smoke", "x": 862, "y": 106, "s": 2.0, "c": "#d8d2c6"})
+    d.polygon([(930, 300), (940, 300), (946, 420), (934, 420)], fill="#e8f6fa")
+    d.ellipse([910, 420, 970, 446], fill=(110, 210, 210))
+    fx += [{"k": "falls", "x": 930, "y": 300, "w": 10, "h": 120}, {"k": "splash", "x": 940, "y": 430}]
+    # dense jungle everywhere between the places, big leaves, banana plants
+    clear = [(p["x"], p["y"], 80) for p in PLACES.values()] + [(1090, 600, 120), (280, 650, 170), (620, 640, 50)]
+    for k in range(520):
+        x, y = 260 + R.random() * 1160, 300 + R.random() * 470
+        inside = (x - 820) ** 2 / 620 ** 2 + (y - 540) ** 2 / 240 ** 2 < 0.85
+        if inside and all((x - cx) ** 2 + ((y - cy) * 1.6) ** 2 > cr ** 2 for cx, cy, cr in clear):
+            tree(d, x, y, 9 + R.random() * 14, R.choice(["#2f6a38", "#356f3e", "#2b6034", "#3f8048"]), R.choice(["#4f9a48", "#5fae46", "#6fbf4a"]))
+    for k in range(18):   # the banana plantation in rows on the east slope
+        bx, by = 1180 + (k % 6) * 26, 470 + (k // 6) * 24
+        d.line([(bx, by), (bx, by - 16)], fill="#6b7a3a", width=2)
+        for a in (-0.9, -0.3, 0.3, 0.9):
+            d.line([(bx, by - 16), (bx + math.sin(a) * 14, by - 16 + abs(a) * 8)], fill="#8fc04e", width=4)
+    # the embassies, each on its own hill with a garden wall: the only buildings that look like they come from elsewhere
+    d.ellipse([340, 400, 500, 450], fill="#6fae50")
+    house(d, 420, 420, 104, 46, "#cfe1ec", "#284b63", win, roof_h=24, shutters="#284b63", porch=True)
+    d.line([(468, 420), (468, 352)], fill="#22303a", width=2)
+    d.ellipse([540, 450, 660, 494], fill="#7cb658")
+    house(d, 600, 470, 80, 38, "#f0b48a", "#c0533f", win, roof_h=18, shutters="#8a3b2a")
+    # Radio Coco: a bamboo shack with a rusty tin roof in a jungle clearing, a mast made of a tall pole and wire
+    d.ellipse([700, 545, 830, 600], fill="#7cb658")
+    hut(d, 760, 578, 60, 34, "#c99a5a", win, tin=True)
+    d.line([(785, 560), (778, 426)], fill="#5a4030", width=4)
+    d.line([(752, 572), (778, 426), (808, 572)], fill="#22303a", width=1)
+    # the rebels' camp: tents, a fire, crates, deep in the jungle
+    for tx, tc in [(600, 650, ), (640, 640)] if False else [(600, "#5f6b3a"), (640, "#6b7444")]:
+        tent(d, tx, 650, 30, tc)
+    fx += [{"k": "fire", "x": 622, "y": 660, "s": 0.8}, {"k": "smoke", "x": 622, "y": 650, "s": 0.6, "c": "#d9d2c4"}]
+    # the council hall: colonial, but weathered, with palm-frond awnings and a bell tower; the town round it is
+    # wooden shacks, tin roofs and bright paint, laundry lines between them
+    d.ellipse([930, 500, 1090, 545], fill="#d9c79a")
+    house(d, 1010, 520, 112, 50, "#f3ead2", "#7c4b2a", win, roof_h=22, shutters="#2c8c88", porch=True)
+    poly(d, [[996, 448], [1024, 448], [1024, 420], [996, 420]], "#f3ead2")
+    poly(d, [[992, 420], [1028, 420], [1010, 400]], "#7c4b2a")
+    fx.append({"k": "flag", "x": 1010, "y": 400, "c0": "#2c8c88", "c1": "#fbf3df", "h": 16})
+    for k, (x, y) in enumerate([(930, 600), (960, 630), (1180, 600), (1220, 625), (1140, 560), (1080, 575), (900, 650), (1250, 660)]):
+        hut(d, x, y, 34, 24, ["#e2674f", "#f2b134", "#3aa6a0", "#e86fa0", "#6fa8ff", "#a3e05a", "#ffe066", "#ff9f40"][k], win, tin=k % 2 == 0)
+    d.line([(930, 586), (960, 614)], fill="#fbf3df", width=1)
+    # the market: stalls under a huge flamboyant tree on the harbour front
+    d.ellipse([1000, 615, 1180, 668], fill="#e8d3a6", outline="#b89a6a", width=2)
+    for k, sx in enumerate([1030, 1060, 1120, 1150]):
+        sy = 652 if k in (1, 2) else 638
         d.rectangle([sx - 12, sy - 10, sx + 12, sy], fill="#b98a52", outline="#22303a")
         for j in range(3):
-            d.rectangle([sx - 14 + j * 9, sy - 18, sx - 5 + j * 9, sy - 10], fill=("#e2674f" if (j + k) % 2 else "#fbf3df"))
-    d.line([(1080, 642), (1080, 610)], fill="#6b4422", width=5)
-    d.ellipse([1046, 580, 1114, 614], fill="#e2432f", outline="#7a2a1e", width=2)
-    d.ellipse([1240, 400, 1360, 450], fill="#5f9e48")
-    house(d, 1300, 432, 64, 34, "#e9b44c", "#7c4b2a", win, roof_h=16, shutters="#c0533f")
-    d.line([(1322, 398), (1312, 272)], fill="#22303a", width=3)
-    d.line([(1296, 398), (1312, 272), (1340, 398)], fill="#22303a", width=1)
-    house(d, 1420, 560, 70, 32, "#b5694a", "#6a6a72", win, roof_h=14, shutters="#4c3a2a")
-    d.rectangle([1440, 480, 1450, 536], fill="#9a5038", outline="#22303a")
-    fx.append({"k": "smoke", "x": 1445, "y": 478, "s": 1.0, "c": "#c8c2b8"})
-    house(d, 1320, 692, 92, 30, "#c98c55", "#d9bf6a", win, roof_h=22, shutters="#2c8c88", porch=True)
+            d.rectangle([sx - 14 + j * 9, sy - 18, sx - 5 + j * 9, sy - 10], fill=("#e2674f" if (j + k) % 2 else "#f2b134"))
+    d.line([(1090, 644), (1090, 610)], fill="#6b4422", width=5)
+    d.ellipse([1052, 580, 1128, 616], fill="#e2432f", outline="#7a2a1e", width=2)
+    # the harbour water, the fishing village of huts on stilts, the pier, boats
+    d.ellipse([1060, 700, 1320, 840], fill=(95, 205, 200))
+    for x in (1090, 1130, 1250, 1290):
+        hut(d, x, 728, 30, 20, "#c99a5a", win, stilts=22)
+    poly(d, [[1176, 700], [1200, 700], [1218, 800], [1190, 802]], "#a8794a")
+    d.line([(1214, 796), (1214, 772)], fill="#22303a", width=2)
+    win.append([1210, 766, 7, 6])
+    for sx, sy in [(1110, 800), (1270, 790), (1160, 830)]:
+        poly(d, [[sx - 16, sy - 3], [sx + 16, sy - 3], [sx + 11, sy + 5], [sx - 12, sy + 5]], R.choice(["#e2674f", "#3aa6a0", "#f2b134"]))
+    poly(d, [[1290, 818], [1360, 818], [1350, 834], [1298, 834]], "#6b4422")
+    d.line([(1325, 818), (1325, 760)], fill="#22303a", width=3)
+    d.polygon([(1327, 762), (1356, 812), (1327, 812)], fill="#fbf3df", outline="#22303a")
+    # Bar La Ola: a bamboo beach bar with a palm-thatch roof far out on the sandy point, torches, a string of bulbs
+    hut(d, 1345, 690, 96, 30, "#c98c55", win, roof="#d9bf6a")
     for k in range(8):
         f = k / 7
-        fx.append({"k": "bulb", "x": round(1276 + f * 88), "y": round(652 + math.sin(f * math.pi * 2) ** 2 * 6), "c": k % 3})
-    for tx in (1262, 1380):
+        fx.append({"k": "bulb", "x": round(1300 + f * 90), "y": round(648 + math.sin(f * math.pi * 2) ** 2 * 6), "c": k % 3})
+    for tx in (1290, 1402):
         d.line([(tx, 692), (tx, 670)], fill="#6b4422", width=3)
         fx.append({"k": "torch", "x": tx, "y": 668})
-    poly(d, [[1172, 700], [1196, 700], [1214, 800], [1186, 802]], "#a8794a")
-    for k in range(11):
-        d.line([(1172 + k * 1.4, 704 + k * 9), (1196 + k * 1.7, 704 + k * 9)], fill="#7a5530", width=1)
-    d.line([(1210, 796), (1210, 772)], fill="#22303a", width=2)
-    win.append([1206, 766, 7, 6])
-    # a tall ship at anchor in the harbour, small boats, a wreck on the rocks below the cliffs
-    poly(d, [[1300, 800], [1400, 800], [1386, 822], [1312, 822]], "#6b4422")
-    for mx, mh in [(1325, 90), (1350, 110), (1375, 84)]:
-        d.line([(mx, 800), (mx, 800 - mh)], fill="#22303a", width=3)
-        for k in range(3):
-            y0 = 800 - mh + 8 + k * 26
-            poly(d, [[mx - 20 + k * 2, y0], [mx + 20 - k * 2, y0], [mx + 22 - k * 2, y0 + 20], [mx - 22 + k * 2, y0 + 20]], "#fbf3df")
-    for sx, sy in [(1110, 790), (1260, 770), (1150, 840)]:
-        poly(d, [[sx - 18, sy - 3], [sx + 18, sy - 3], [sx + 12, sy + 5], [sx - 14, sy + 5]], R.choice(["#e2674f", "#3aa6a0", "#f2b134"]))
-    poly(d, [[560, 830], [620, 816], [650, 840], [600, 852]], "#5a4030")
-    d.line([(600, 830), (612, 780)], fill="#3a2a1a", width=3)
-    # palms along the shore and round the town
-    palms = [(330, 600), (350, 650), (450, 560), (600, 520), (940, 640), (1180, 660), (1400, 680), (1440, 620), (1240, 470),
-             (960, 450), (1380, 470), (320, 440), (620, 440)]
+    # a wreck on the reef, canoes on the front beach, hammocks between palms
+    poly(d, [[560, 820], [620, 806], [650, 830], [600, 842]], "#5a4030")
+    d.line([(600, 820), (612, 772)], fill="#3a2a1a", width=3)
+    for cx in (880, 930, 990):
+        poly(d, [[cx - 16, 766], [cx + 16, 766], [cx + 10, 772], [cx - 10, 772]], R.choice(["#e2674f", "#3aa6a0", "#f2b134"]))
+    palms = [(860, 740), (1030, 740), (1400, 650), (1430, 600), (1260, 600), (480, 470), (690, 520), (1040, 470), (380, 650),
+             (450, 700), (520, 740), (1440, 700), (900, 560)]
     for i, (x, y) in enumerate(palms):
         palm(d, x, y, 44 + (i * 7) % 18, ((i * 13) % 9 - 4) * 2)
+    d.line([(450, 690), (520, 730)], fill="#e2674f", width=3)   # a hammock
     im = im.filter(ImageFilter.SMOOTH)
     im.save(os.path.join(HERE, "plates", "bay.jpg"), quality=90)
     layout = {"places": PLACES, "walk": WALK, "windows": win, "fx": fx,
-              "beam": [272, 462], "blink": [1312, 272], "gather": [1080, 645], "rabbit": [940, 640], "cat": [960, 690, 1300, 712]}
+              "beam": [263, 536], "blink": [778, 426], "gather": [1090, 648], "rabbit": [960, 660], "cat": [880, 770, 1120, 762]}
     with open(os.path.join(HERE, "plates", "bay.json"), "w") as f:
         json.dump(layout, f, separators=(",", ":"))
     print("plates/bay.jpg and plates/bay.json")
