@@ -1377,5 +1377,10 @@
   "tag": "Japanese",
   "on": "2026-10-29",
   "html": "Japanese, second round: the Monday front page of The Daily Consensus is now written in Japanese too, and every older entry in this Updates log reads in Japanese."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The troll box has its own place on the HUD now: on wide screens it sits right under the block strip, next to the block detail, always open, with the newest messages at the bottom and the field to write in below them. On smaller screens and phones it stays the Troll box pill at the bottom right."
  }
 ]
