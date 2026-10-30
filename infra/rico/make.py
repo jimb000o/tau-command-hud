@@ -12,6 +12,8 @@ The key is read from ELEVENLABS_API_KEY in infra/.env (never in the repository).
   python3 infra/rico/make.py design all             three voices for each islander -> https://node.tauhud.com/rico/samples/
   python3 infra/rico/make.py design lola            three new ones for one islander (again if none is right)
   python3 infra/rico/make.py keep rico=2 lola=1     keeps those designs as their voices and makes every clip with them
+  python3 infra/rico/make.py library rico           twelve ready voices from the ElevenLabs Voice Library that fit Rico
+  python3 infra/rico/make.py keep rico=L3           keeps library voice 3 (L) instead of a design
   python3 infra/rico/make.py make                   makes whatever clips are missing, for everyone with a voice
   python3 infra/rico/make.py make --voice rico=Name gives someone a voice already in the account, then makes the clips
   python3 infra/rico/make.py voices                 the voices in the account
@@ -29,6 +31,7 @@ import re
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -44,9 +47,9 @@ SAMPLE = ("This is Rico on Radio Coco, ninety-seven point three! Chain weather. 
 
 # who they are, for Voice Design; a description is between 20 and 1000 characters
 CAST = {
-    "rico": ("Rico", "A charismatic Caribbean radio DJ in his forties, rich warm voice with a lilting island accent, lively and "
-                     "entertaining, big showman energy, playful pauses, a smile in every line, evening beach radio, clear and "
-                     "easy to understand."),
+    "rico": ("Rico", "An energetic African-American man in his thirties, a radio DJ with a deep, warm, booming voice, fast "
+                     "and punchy hype delivery, big grin you can hear, rhythmic and funky like a late-night soul and party radio "
+                     "host, laughs between lines, never shouts, clear American English, very easy to understand."),
     "lola": ("Lola", "A warm, sassy Caribbean woman in her fifties who runs a beach bar, husky laugh in her voice, quick wit, "
                      "motherly but teasing, relaxed island accent, clear and easy to understand."),
     "sam": ("Old Sam", "An old lighthouse keeper in his seventies, slow gravelly voice, calm and kind, a little dry humour, "
@@ -239,12 +242,62 @@ def cmd_design(a):
     print("Keep the ones you like with: python3 infra/rico/make.py keep " + " ".join(f"{w}=1" for w in who))
 
 
+# what to look for in the Voice Library, which holds voices their speakers shared for use
+FIND = {"rico": {"gender": "male", "accent": "african-american", "search": "radio"},
+        "lola": {"gender": "female", "search": "caribbean"}, "baako": {"gender": "male", "search": "african"},
+        "sam": {"gender": "male", "age": "old"}, "tobias": {"gender": "male", "age": "old", "search": "narrator"},
+        "marisol": {"gender": "female", "accent": "latin"}, "hana": {"gender": "female", "search": "calm"},
+        "frost": {"gender": "male", "accent": "british"}, "salado": {"gender": "male", "accent": "latin"}}
+
+
+def cmd_library(a):
+    """Ready voices from the ElevenLabs Voice Library for one islander, with their previews on the samples page."""
+    w = a.who
+    if w not in CAST:
+        sys.exit(f"No islander {w!r}. They are: {', '.join(CAST)}")
+    q = dict(FIND.get(w, {}), **({"search": a.search} if a.search else {}))
+    found = []
+    for drop in ([], ["search"], ["search", "accent"]):   # widen the search when nothing fits
+        params = "&".join(f"{k}={urllib.parse.quote(v)}" for k, v in q.items() if k not in drop)
+        found = json.loads(call(f"/shared-voices?page_size=12&{params}")).get("voices", [])
+        if found:
+            break
+    if not found:
+        sys.exit("The Voice Library had nothing for that. Try: python3 infra/rico/make.py library " + w + " \"some words\"")
+    path = os.path.join(a.out, "library.json")
+    lib = load(path, {})
+    lib[w] = [{"owner": v["public_owner_id"], "id": v["voice_id"], "name": v.get("name", "")} for v in found]
+    write(path, json.dumps(lib, indent=1).encode())
+    rows = []
+    for i, v in enumerate(found, 1):
+        about = " · ".join(x for x in (v.get("accent"), v.get("age"), v.get("descriptive"), v.get("use_case")) if x)
+        rows.append(f"<li><b>L{i} {html.escape(v.get('name', ''))}</b> <small>{html.escape(about)}</small> &nbsp; "
+                    f"<code>{w}=L{i}</code><br><small>{html.escape((v.get('description') or '')[:160])}</small><br>"
+                    f"<audio controls preload=none src='{html.escape(v.get('preview_url') or '')}'></audio></li>")
+    write(os.path.join(a.out, "samples", "library.html"),
+          page(rows, f"{CAST[w][0]}: voices from the Voice Library", f"Keep one with: python3 infra/rico/make.py keep {w}=L1"))
+    print(f"{len(found)} voices. Listen: https://node.tauhud.com/rico/samples/library.html")
+    print(f"Keep one with: python3 infra/rico/make.py keep {w}=L1   (or L2, L3 ...)")
+
+
 def cmd_keep(a):
     """Keep design N for each islander as their voice in the account, then make every clip with them."""
     designs = load(os.path.join(a.out, "design.json"), {})
     idx = index(a.out)
     for pick in a.picks:
         w, _, n = pick.partition("=")
+        if n.upper().startswith("L"):   # a voice from the Voice Library: added to the account as it is
+            try:
+                v = load(os.path.join(a.out, "library.json"), {})[w][int(n[1:]) - 1]
+            except (KeyError, ValueError, IndexError):
+                sys.exit(f"No library voice {pick!r}. Run: python3 infra/rico/make.py library {w}")
+            # used straight from the library by its id: nothing is created in the account, so the free plan works too
+            vid, name = v["id"], v["name"]
+            idx["voices"][w] = {"id": vid, "name": name}
+            idx["clips"] = [k for k in idx["clips"] if k not in {key(w, t) for x, t in lines() if x == w}]
+            write(os.path.join(a.out, "index.json"), json.dumps(idx, indent=1).encode())
+            print(f"{CAST.get(w, (w,))[0]} speaks with {name} from the Voice Library ({vid}).")
+            continue
         try:
             d = designs[w]
             gid = d["ids"][int(n) - 1]
@@ -317,12 +370,15 @@ def main():
     d = sub.add_parser("design")
     d.add_argument("who", nargs="?", default="all")
     d.add_argument("description", nargs="?", default=None)
+    lb = sub.add_parser("library")
+    lb.add_argument("who", nargs="?", default="rico")
+    lb.add_argument("search", nargs="?", default=None)
     k = sub.add_parser("keep")
-    k.add_argument("picks", nargs="+", help="who=N, e.g. rico=2 lola=1")
+    k.add_argument("picks", nargs="+", help="who=N (a design) or who=LN (a library voice), e.g. rico=L2 lola=1")
     m = sub.add_parser("make")
     m.add_argument("--voice", action="append", help="who=voice name in the account (a bare name is Rico's)")
     a = p.parse_args()
-    {"voices": cmd_voices, "samples": cmd_samples, "lines": cmd_lines, "make": cmd_make, "design": cmd_design, "keep": cmd_keep}[a.cmd](a)
+    {"voices": cmd_voices, "samples": cmd_samples, "lines": cmd_lines, "make": cmd_make, "design": cmd_design, "keep": cmd_keep, "library": cmd_library}[a.cmd](a)
 
 
 if __name__ == "__main__":
