@@ -1474,5 +1474,10 @@
     }
    ]
   }
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The online count in the header now opens the Tau HUD tab of Tau HUD in numbers when you click it, and its hover says how people are really counted: once per person by our relay, from address and browser hashed with a daily salt, nothing stored in your browser."
  }
 ]
