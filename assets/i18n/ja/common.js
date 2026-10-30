@@ -565,6 +565,7 @@ TauI18n.add({ strings: {
   "Language · 语言 · 言語": "言語 · Language · 语言",
   "Settings: view, node, guided tour, about": "設定：表示、ノード、ガイドツアー、概要",
   "Settings: view, node address, background rain": "設定：表示、ノードのアドレス、背景の雨",
+  "Games on the live testnet": "本物のテストネットで動くゲーム",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 送信者自身のルールが拒否しました（o5 = 0 · ${TauI18n.t(r)}）`]] });

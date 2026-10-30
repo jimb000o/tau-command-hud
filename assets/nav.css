@@ -277,3 +277,6 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 .tnav-pop > .row .seg { flex: none; }
 @media (max-width: 700px) { header.trail .crumb .sep:first-child, header.trail .crumb .sec, header.trail .crumb .sec + .sep { display: none; } }   /* phone: the page name alone; the tab bar shows the section */
 @media (min-width: 701px) and (max-width: 1899px) { header.rail > .brand > span { display: none; } }   /* the HUD's tagline gives way so row 1 stays one line; the HUD itself says it below */
+/* games that run on the live testnet: the pulsing green dot the site uses for live things, before the name */
+.mi b .tn-live { display: inline-block; width: 7px; height: 7px; margin: 0 8px 1px 0; vertical-align: middle; border-radius: 50%; background: var(--tn-ok); box-shadow: 0 0 7px var(--tn-ok); animation: tnblink 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .mi b .tn-live { animation: none; } }
