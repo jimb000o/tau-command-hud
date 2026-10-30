@@ -1506,6 +1506,7 @@
   "html": "Newspaper: look up from the paper and walk through the café. A new button Look up lays The Daily Consensus down on the table; click the left or right edge to walk from your window table to the counter, the wire corner, the back room and the door. Four regulars talk in the paper's period voice, each in their own murmured voice made in your browser: Mae explains the house rules the regulars vote on, Elias reads the chain off the ticker tape with the live block height, the Professor shows why a contradiction is caught before the vote, and Sully the newsboy says it is all happening now on a testnet open to anybody. Each one stamps your café ticket; with four stamps you step out onto Market Street and an Extra! lands at your feet. Sound follows Café: off, quiet or lively; phones get a lighter version.",
   "major": {
    "id": "gazette-cafe-walk",
+   "skip": "posted by hand with a video on 2026-10-30",
    "title": "New: walk through the 1920s café",
    "text": "Look up from The Daily Consensus and walk the café: a waitress, a wire clerk, a professor and a newsboy explain how Tau's rules change by agreement. Collect four stamps, then step out onto Market Street. Drawn and voiced in your browser.",
    "link": "/gazette/",
