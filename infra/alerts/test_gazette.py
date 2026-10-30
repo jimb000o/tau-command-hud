@@ -163,5 +163,35 @@ asyncio.run(w.maybe_gazette(NOW + 120))
 back = json.load(open(os.path.join(g, "latest.json")))
 check(back.get("cafe", {}).get("mae") and back["no"] == old["no"] and json.load(open(os.path.join(g, old["date"] + ".json"))).get("cafe"), "an edition printed before the café talk gets it once, number and date unchanged")
 
+
+# ---- the weekly rule challenge ----
+ALLOW, BLOCK = "(o5[t]:bv[24] = { #x000001 }:bv[24])", "(o5[t]:bv[24] = { #x000000 }:bv[24])"
+cap_rule = f"always ( (i1[t]:bv[24] >= {{ #x0001f5 }}:bv[24]) ? {BLOCK} : {ALLOW} )."
+list_rule = f"always ( (!(i4[t]:bv[384] = {{ #x{'b' * 96} }}:bv[384])) || (i1[t]:bv[24] >= {{ #x000065 }}:bv[24]) ? {BLOCK} : {ALLOW} )."
+r1, r2 = gazette.read_rule(cap_rule), gazette.read_rule(list_rule)
+check(r1["cap"] == 500 and gazette.read_rule("always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) ).") is None and gazette.read_rule("o5[t] = 1") is None, "the wallet's rules are read back; the neutral rule and foreign text are not answers")
+check(gazette.rule_plain(r1)["en"] == "No payment above 500 test AGRS." and gazette.rule_plain(r2)["en"] == "No payment above 100 test AGRS; pays only 1 address." and gazette.rule_plain(r2)["zh"] and gazette.rule_plain(r2)["ja"], "a rule in plain words, three languages")
+check(all(c["title"]["zh"] and c["task"]["ja"] and c["why"]["en"] for c in gazette.CHALLENGES) and gazette.next_challenge(gazette.CHALLENGES[-1]["id"])["id"] == gazette.CHALLENGES[0]["id"], "every challenge in three languages; they turn in a circle")
+A1, A2, A3 = "a1" * 48, "a2" * 48, "a3" * 48
+blk = lambda h, ts, txs: {"header": {"block_number": h, "timestamp": ts}, "transactions": txs}
+chain = {10: blk(10, NOW - 10, [{"sender_pubkey": A1, "operations": {"0": cap_rule}}]),   # before the challenge opened
+         11: blk(11, NOW + 10, [{"sender_pubkey": A2, "operations": {"0": cap_rule}}, {"sender_pubkey": A3, "operations": {"1": [[A3, A1, "5"]]}}]),
+         12: blk(12, NOW + 20, [{"sender_pubkey": A2, "operations": {"0": list_rule}}, {"sender_pubkey": A1, "operations": {"0": list_rule}}])}
+got = gazette.challenge_answers(chain, "ceiling", NOW, NOW + 100)
+check(got["count"] == 2 and [x["addr"] for x in got["answers"]] == [A2, A1] and got["answers"][0]["h"] == 11, "answers: each wallet once, first rule that fits, in order, only while the challenge is open")
+check(gazette.challenge_answers(chain, "friends", NOW, NOW + 100)["count"] == 2 and gazette.challenge_answers(chain, "twokeys", NOW, NOW + 100)["count"] == 0, "each challenge has its own test")
+w2 = Relay(outlets=[])
+w2.blocks = chain
+w2.state.pop("challenge", None), w2.state.pop("challenge_last", None)   # as on the first start with this feature
+asyncio.run(w2.maybe_challenge(NOW))
+cj = json.load(open(os.path.join(g, "challenge.json")))
+check(cj["now"]["id"] == "ceiling" and cj["now"]["ends"] > NOW and cj["now"]["count"] == 2 and cj["last"] is None, "challenge.json: the open challenge with its answers so far")
+check(json.load(open(os.path.join(g, "latest.json"))).get("challenge", {}).get("id") == "ceiling", "the edition already out gets the challenge")
+e4 = w2.make_gazette(w2.recap_numbers(END), NOW + 3 * 86400)
+check(e4["challenge"]["id"] == "friends" and e4["challenge_last"]["id"] == "ceiling" and e4["challenge_last"]["count"] == 2, "a new edition closes the challenge with its answers and sets the next")
+e5 = w2.make_gazette(w2.recap_numbers(END), NOW + 3 * 86400 + 300)
+check(e5["challenge"]["id"] == "friends", "written again the same day, the challenge stays")
+check("bounty" not in json.dumps(gazette.CHALLENGES, default=str).lower() and "prize" not in json.dumps([c["task"] for c in gazette.CHALLENGES]).lower(), "careful words")
+
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
 sys.exit(1 if failed else 0)

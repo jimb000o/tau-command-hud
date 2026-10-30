@@ -848,3 +848,132 @@ def summary(e: dict) -> dict:
     return {"no": e["no"], "date": e["date"], "printed": e["printed"], "period": e["period"], "banner": e["banner"], "teaser": e["teaser"],
             "kind": e["kind"], "url": e["url"], "number": e["no"], "headline": e["banner"]["en"], "headline_zh": e["banner"]["zh"],
             "headline_ja": e["banner"].get("ja", ""), "deck": e["teaser"]["en"], "deck_zh": e["teaser"]["zh"], "deck_ja": e["teaser"].get("ja", "")}
+
+
+# ---------------- the rule challenge: a small task each Monday, answered with a real rule in the wallet ----------------
+# Answers are read from the chain: a personal rule (user_tx with operations "0") sealed while the challenge is open that
+# does what the task asks. Good answers are shown on /challenge/ and in the next edition. There are no prizes.
+NEUTRAL = "always((o5[t]:bv[24]={#x000001}:bv[24]))."
+FREEZE = "always((o5[t]:bv[24]={#x000000}:bv[24]))."
+
+
+def read_rule(text: str) -> dict | None:
+    """A personal rule as the wallet writes it (wallet/index.html readRule): the conditions that stop a payment."""
+    if not isinstance(text, str) or not text.strip():
+        return None
+    flat = re.sub(r"\s+", "", text)
+    if flat == NEUTRAL:
+        return None
+    r = {"freeze": flat == FREEZE, "only": [], "cap": None, "from": None, "co": None}
+    if r["freeze"]:
+        return r
+    r["only"] = list(dict.fromkeys(m.lower() for m in re.findall(r"i4\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})", text, re.I)))
+    if m := re.search(r"i1\[t\]:bv\[24\]\s*>=\s*\{\s*#x([0-9a-f]+)", text, re.I):
+        r["cap"] = int(m.group(1), 16) - 1
+    if m := re.search(r"i5\[t\]:bv\[64\]\s*<\s*\{\s*(\d+)\s*\}", text, re.I):
+        r["from"] = int(m.group(1))
+    lim = re.search(r"i1\[t\]:bv\[24\]\s*>\s*\{\s*#x([0-9a-f]+)", text, re.I)
+    who = list(dict.fromkeys(m.lower() for m in re.findall(r"i(?:1[89]|2[0-5])\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})", text, re.I)))
+    if lim and who:
+        r["co"] = {"limit": int(lim.group(1), 16), "who": len(who), "all": len(re.findall(r"i1\[t\]:bv\[24\]\s*>\s*\{", text)) > 1}
+    if not (r["only"] or r["cap"] is not None or r["from"] is not None or r["co"]):
+        return None   # not a rule shaped like the wallet's: nothing we can say about it in plain words
+    return r
+
+
+def parts(r: dict) -> int:
+    return bool(r["only"]) + (r["cap"] is not None) + (r["from"] is not None) + bool(r["co"])
+
+
+def rule_plain(r: dict) -> dict:
+    """What a rule does, in plain words, three languages. Built from the parsed rule only, never from free text."""
+    if r["freeze"]:
+        return t("Freezes the wallet: no payment goes out.", "冻结钱包：任何付款都发不出去。", "ウォレットを凍結：支払いは一切出ない。")
+    en, zh, ja = [], [], []
+    if r["cap"] is not None:
+        en.append(f"no payment above {fmt_n(r['cap'])} test AGRS"); zh.append(f"单笔不超过 {fmt_n(r['cap'])} 测试 AGRS"); ja.append(f"1 回 {fmt_n(r['cap'])} テスト AGRS まで")
+    if r["only"]:
+        n = len(r["only"])
+        en.append(f"pays only {n} address{'es' if n != 1 else ''}"); zh.append(f"只付给 {n} 个地址"); ja.append(f"支払い先は {n} 件のアドレスだけ")
+    if r["from"] is not None:
+        d = _d(r["from"])
+        en.append(f"nothing goes out before {d.day} {d.strftime('%b %Y')}"); zh.append(f"{d.year}年{d.month}月{d.day}日前不付款"); ja.append(f"{d.year}年{d.month}月{d.day}日まで支払わない")
+    if r["co"]:
+        c, lim = r["co"], fmt_n(r["co"]["limit"])
+        if c["all"] and c["who"] > 1:
+            en.append(f"above {lim} test AGRS all {c['who']} co-signers must sign"); zh.append(f"超过 {lim} AGRS 需 {c['who']} 位共同签名人全部签名"); ja.append(f"{lim} AGRS を超えると共同署名者 {c['who']} 人全員の署名が必要")
+        else:
+            en.append(f"above {lim} test AGRS a co-signer must sign"); zh.append(f"超过 {lim} AGRS 需一位共同签名人签名"); ja.append(f"{lim} AGRS を超えると共同署名者の署名が必要")
+    s = "; ".join(en)
+    return t(s[:1].upper() + s[1:] + ".", "；".join(zh) + "。", "、".join(ja) + "。")
+
+
+CHALLENGES = [
+    {"id": "ceiling", "fits": lambda r, ts: r["cap"] is not None and not r["freeze"],
+     "title": t("A ceiling for every payment", "给每笔付款设上限", "支払いごとに上限を"),
+     "task": t("Write a rule that stops any single payment above a limit you choose.", "写一条规则：任何一笔超过你所选上限的付款都会被拦下。", "自分で決めた上限を超える支払いを、1 回ごとに止めるルールを書こう。"),
+     "why": t("A limit per payment is the simplest guard there is: one mistyped zero cannot empty the wallet.",
+              "单笔上限是最简单的防护：多打一个零也掏不空钱包。", "1 回ごとの上限は、いちばん簡単な守り。ゼロを 1 つ打ち間違えても、ウォレットは空にならない。")},
+    {"id": "friends", "fits": lambda r, ts: 1 <= len(r["only"]) <= 3,
+     "title": t("Only to friends", "只付给朋友", "友だちにだけ"),
+     "task": t("Write a rule that lets your wallet pay one, two or three addresses, and no one else.", "写一条规则：钱包只能付给一个、两个或三个地址，别人一概不行。", "1 つ、2 つ、または 3 つのアドレスにだけ支払えて、ほかには払えないルールを書こう。"),
+     "why": t("A short list of who may be paid is how a thief's address is stopped before the money moves.",
+              "一张简短的收款名单，能在钱动之前就拦住小偷的地址。", "払ってよい相手の短いリストがあれば、お金が動く前に泥棒のアドレスを止められる。")},
+    {"id": "twokeys", "fits": lambda r, ts: bool(r["co"]),
+     "title": t("Two keys for big payments", "大额付款要两把钥匙", "大きな支払いには鍵を 2 本"),
+     "task": t("Write a rule that holds payments above a limit until another wallet co-signs them.", "写一条规则：超过上限的付款要等另一个钱包共同签名才放行。", "上限を超える支払いは、別のウォレットが共同署名するまで止めておくルールを書こう。"),
+     "why": t("A second signature is how a company or a family keeps one stolen key from moving everything.",
+              "第二个签名，是公司或家庭防止一把被盗钥匙转走一切的办法。", "2 つめの署名があれば、盗まれた鍵 1 本ですべてを動かされずに済む。会社や家族が使うやり方だ。")},
+    {"id": "until", "fits": lambda r, ts: r["from"] is not None and r["from"] > ts,
+     "title": t("Hold it until a date", "到日子再说", "その日まで待つ"),
+     "task": t("Write a rule that stops every payment until a date in the future you pick.", "写一条规则：在你选定的未来某天之前，所有付款都被拦下。", "自分で選んだ未来の日付まで、すべての支払いを止めるルールを書こう。"),
+     "why": t("A lock with a date is a savings jar: the chain itself keeps you from spending early.",
+              "带日期的锁就像存钱罐：链本身让你没法提前花掉。", "日付つきの鍵は貯金箱。早く使ってしまわないよう、チェーンそのものが見張ってくれる。")},
+    {"id": "both", "fits": lambda r, ts: not r["freeze"] and parts(r) >= 2,
+     "title": t("Belt and braces", "双保险", "二重の備え"),
+     "task": t("Write one rule with at least two conditions, for example a limit and a list of who may be paid.", "写一条至少含两个条件的规则，比如一个上限加一张收款名单。", "条件が 2 つ以上あるルールを 1 つ書こう。たとえば上限と、払ってよい相手のリスト。"),
+     "why": t("Rules combine: each condition you add closes one more way for a payment to go wrong.",
+              "规则可以组合：每多加一个条件，付款出错的路就少一条。", "ルールは組み合わせられる。条件を 1 つ足すごとに、支払いが間違う道が 1 つ閉じる。")},
+    {"id": "allsign", "fits": lambda r, ts: bool(r["co"]) and r["co"]["all"] and r["co"]["who"] >= 2,
+     "title": t("Everyone must agree", "全体同意", "全員の同意"),
+     "task": t("Write a rule where payments above a limit need the signature of every one of two or more co-signers.", "写一条规则：超过上限的付款，需要两位或更多共同签名人全部签名。", "上限を超える支払いには、2 人以上の共同署名者全員の署名が要るルールを書こう。"),
+     "why": t("Agreement of all is the strictest form of the idea Tau is built on: nothing changes unless everyone says yes.",
+              "全体同意是 Tau 核心理念最严格的形式：除非人人点头，否则什么都不变。", "全員の同意は、Tau の土台にある考えのいちばん厳しい形。全員が賛成しない限り、何も変わらない。")},
+]
+CHALLENGE_IDS = [c["id"] for c in CHALLENGES]
+
+
+def challenge_of(cid: str) -> dict:
+    return next((c for c in CHALLENGES if c["id"] == cid), CHALLENGES[0])
+
+
+def next_challenge(cid: str | None) -> dict:
+    return CHALLENGES[(CHALLENGE_IDS.index(cid) + 1) % len(CHALLENGES)] if cid in CHALLENGE_IDS else CHALLENGES[0]
+
+
+def challenge_answers(blocks: dict, cid: str, since: float, until: float, limit: int = 12) -> dict:
+    """The good answers: each wallet's first rule sealed in [since, until) that does what the task asks, in order."""
+    c, seen, out = challenge_of(cid), set(), []
+    for h in sorted(blocks):
+        b = blocks[h] or {}
+        ts = float((b.get("header") or {}).get("timestamp") or 0)
+        if not (since <= ts < until):
+            continue
+        for tx in b.get("transactions") or []:
+            if not isinstance(tx, dict):
+                continue
+            a = str(tx.get("sender_pubkey") or "").lower()
+            ops = tx.get("operations") or {}
+            r = read_rule(ops.get("0")) if isinstance(ops, dict) else None
+            if not r or a in seen or not re.fullmatch(r"[0-9a-f]{96}", a) or not c["fits"](r, ts):
+                continue
+            seen.add(a)
+            out.append({"addr": a, "h": h, "ts": round(ts), "plain": rule_plain(r)})
+    return {"count": len(out), "answers": out[:limit]}
+
+
+def challenge_block(cid: str, since: float, ends: float) -> dict:
+    """The challenge as an edition and /challenge/ show it."""
+    c = challenge_of(cid)
+    return {"id": c["id"], "title": c["title"], "task": c["task"], "why": c["why"], "since": round(since), "ends": round(ends),
+            "url": "https://tauhud.com/challenge/"}

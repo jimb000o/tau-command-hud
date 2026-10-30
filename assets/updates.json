@@ -1631,5 +1631,17 @@
    "link": "/card/",
    "image": "/assets/shots/card.png"
   }
+ },
+ {
+  "tag": "Rule challenge",
+  "on": "2026-10-30",
+  "html": "Rule challenge: every Monday the Daily Consensus sets a small task, like a rule that stops any payment above a limit, or one that pays only friends. You answer it with a real rule in your test wallet. Once a block seals it, it shows up on the new Rule challenge page within minutes, by the wallet's three check words and what the rule does in plain words; the next edition prints last week's good answers. The front page of the paper has the task in a box. No prizes: test AGRS have no value. Find it under Playground.",
+  "major": {
+   "id": "challenge",
+   "title": "New: a rule challenge every Monday",
+   "text": "Each Monday the Daily Consensus sets a small task: write a rule that does something. Answer it with a real rule in your test wallet; good answers are shown on the site. No prizes.",
+   "link": "/challenge/",
+   "image": "/assets/shots/challenge.png"
+  }
  }
 ]
