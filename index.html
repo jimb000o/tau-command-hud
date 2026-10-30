@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="assets/chat.css">
 <script src="assets/chat.js" defer></script>
 <script src="assets/predict.js" defer></script>
+<script src="assets/rulediff.js" defer></script>
 <link rel="stylesheet" href="assets/ticker.css">
 <script src="assets/ticker.js" defer></script>
 </head>
@@ -2223,6 +2224,7 @@ function explainTx(t) {
     case "rule_offer_reject": return `${t.reason ? t.reason + ". " : ""}Declined after the conflict report. Nothing changes.\n${st}`;
     case "retract_transfer": return `A retractable transfer pulled back by its sender before the release point: the money returns. Only the sender can do this, and only until the release block.\n${st}`;
     case "consensus_rule_update": { const u = t.update || t.proposal || {};
+      if (testChange(t)) return `${TEST_TIP}\n${st}`;
       return `${proposalMeaning(u)}\n` + (t.rejected ? "Contradicts the live spec: the staging compile failed." : t.update ? `Compiled in isolation ✓. ${agreeHave(t.update.votes.size, thr)}; active at #${t.update.activateAt} if agreed.` : `Needs ${agreeNeed(thr, N)}.`); }
     case "consensus_rule_vote": return t.update ? `${t.update.votes.size}/${thr} needed votes; active at #${t.update.activateAt} once agreed.\n${st}` : st;
     default: return st;
@@ -2264,6 +2266,13 @@ function explainComposite() {
 }
 
 
+/* a network rule change that only rewrites the text: it decides exactly like the starting rules (assets/rulediff.js checks it on random inputs) */
+const TEST_TIP = "Test change: checked on 400 random inputs, this rule text decides exactly like the network's starting rules. The extra part is a maths fact that is always true, so nothing changes.";
+function testChange(t) {
+  if (t.type !== "consensus_rule_update" || !t.revisions || t.patch || !window.RuleDiff) return false;
+  if (t.isTest === undefined) t.isTest = (RuleDiff.effect(RuleDiff.clauses(RuleDiff.GENESIS), t.revisions) || {}).same === true;
+  return t.isTest;
+}
 /* ---------- tx feed ---------- */
 const TYPE_LABEL = {
   user_tx: "⇄ transfer", rule_deploy: "◆ own rule deployed", rule_offer: "⤳ rule offered", rule_offer_accept: "✓ rule accepted",
@@ -2286,7 +2295,7 @@ function txCard(t) {
   const ruleish = /rule/.test(t.type);
   d.className = "tx" + (t.kind === "gov" ? " gov" : ruleish ? " rl" : "") + (t.rejected ? " rej" : "");
   d.id = "tx_" + t.id.slice(0, 16);
-  const label = t.rejected ? (t.refLabel || "✕ " + t.rejected) : (TYPE_LABEL[t.type] || t.type);
+  const label = t.rejected ? (t.refLabel || "✕ " + t.rejected) : testChange(t) ? "§ test change · no effect" : (TYPE_LABEL[t.type] || t.type);
   const body = t.transfers && t.transfers.length
     ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
     : (t.note || `sender ${acct(t.sender)}`);
@@ -2899,6 +2908,7 @@ function normTx(raw, idHint) {
     kind: /consensus_rule/.test(type) ? "gov" : "", fee: raw.estimated_fee ?? raw.fee_limit ?? "—", transfers,
     // co-signature approvals (approvals.md): a request parks a transfer, a transfer_vote signs or declines it
     to: raw.recipient_pubkey || "", amount: Number(raw.amount) || 0, expireAt: Number(raw.expire_at_height) || 0, approve: raw.approve !== false,
+    revisions: Array.isArray(raw.rule_revisions) ? raw.rule_revisions : null, patch: raw.host_contract_patch || null,
     rule: typeof ops["0"] === "string" ? ops["0"] : "", ruleText: raw.rule_text || "", offerId: raw.offer_id || "", reason: raw.reason || "", retractId: raw.retractable_id || "",
     approvers: raw.approvers && typeof raw.approvers === "object" ? Object.values(raw.approvers).map(a => typeof a === "string" ? a : (a && a.pubkey) || "").filter(Boolean) : [],
   };
@@ -3004,7 +3014,8 @@ function liveMessage(ev) {
     const asId = u => typeof u === "string" ? u : (u.update_id || "");
     const mk = (u, status) => {
       const id = asId(u);
-      return { id, status, title: "Consensus rule update", diff: Array.isArray(u.rule_revisions) ? esc(u.rule_revisions.join(" ")).slice(0, 160) : "rule revision",
+      const test = testChange({ type: "consensus_rule_update", revisions: Array.isArray(u.rule_revisions) ? u.rule_revisions : null, patch: u.host_contract_patch });
+      return { id, status, title: test ? "Test change · no effect" : "Consensus rule update", test, diff: Array.isArray(u.rule_revisions) ? esc(u.rule_revisions.join(" ")).slice(0, 160) : "rule revision",
         votes: new Set(votes.filter(v => v.update_id === id).map(v => v.voter_pubkey)), activateAt: u.activate_at_height ?? "—", activeAt: "—" };
     };
     S.updates = [...(d.archival_update_details || []).map(u => mk(u, u.lifecycle === "activated" ? "active" : "expired")),
@@ -3694,7 +3705,7 @@ function detailUpdate(u) {
   const lead = { voting: `Collecting agreement: ${u.votes.size} of ${thr} validators so far. Becomes law at #${u.activateAt} (${left} blocks) if enough agree, else expires.`, scheduled: `Agreed by ${u.votes.size} of ${N}. Becomes law at block #${u.activateAt}, in ${left} blocks; nobody upgrades anything.`, active: `Law since block #${u.activeAt}. Every block since is judged by the amended spec.`, expired: `Missed quorum: ${u.votes.size} of ${thr} by #${u.activateAt}. Archived without effect; the old rules stand.` }[u.status] || u.status;
   const votes = S.validators.map((v, i) => { const yes = u.votes.has(v), ab = u.abstain && u.abstain.has(v); return `<li class="${yes ? "ok" : ""}"><b>V${i + 1}${v === u.proposer ? " · proposer" : ""}</b> <span class="muted">${short(v)}</span><br>${yes ? "agreed ✓" : ab ? "not voting on this one" : u.status === "voting" ? "not voted yet" : "did not vote"}</li>`; }).join("");
   return { title: `Rule change · ${esc(u.title)}`, html: `<p class="lead">${esc(lead)}</p>${kvHtml({ Status: STATUS_TXT[u.status] || u.status, "Proposed by": esc(u.proposer || "—"), "Proposed at": u.proposedAt != null ? "#" + u.proposedAt : "—", "Activates at": "#" + u.activateAt, Agreement: `${u.votes.size} of ${thr} needed (${S.quorum === "majority" ? "majority" : "two thirds"} of ${N})`, "Update id": esc(u.id) })}
-    <h3>What it changes</h3>${verdictHtml(u.status !== "expired", proposalMeaning(u))}<pre class="rule">${esc(u.diff)}</pre>
+    <h3>What it changes</h3>${verdictHtml(u.status !== "expired", u.test ? TEST_TIP : proposalMeaning(u))}<pre class="rule">${esc(u.diff)}</pre>
     <h3>Votes (${u.votes.size} of ${N})</h3><ul>${votes}</ul>
     <h3>How it got here</h3>${checksHtml([
       ["proposed ✓", "", "Sent as a consensus_rule_update transaction: the full new consensus spec, with an activation height a few blocks ahead."],

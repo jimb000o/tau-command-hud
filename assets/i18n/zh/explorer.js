@@ -292,4 +292,7 @@ TauI18n.add({ strings: {
   "The sender pulled back the retractable transfer named below before its release block: the amount returns to the sender, the receiver never gets it.": "发送方在释放区块之前撤回了下面列出的可撤回转账：金额退回发送方，接收方永远收不到。",
   "Read {n} blocks of {m}…": "已读取 {m} 个区块中的 {n} 个…",
   "· {x} after the one before": "· 比前一个晚 {x}",
+  "test change · no effect": "测试性变更 · 无效果",
+  "Checked on 400 random inputs: this rule text decides exactly like the network's starting rules. The extra part is a maths fact that is always true, so nothing changes. It looks like the network testing its vote machinery.": "已用 400 组随机输入检验：这段规则文本的判定与网络的初始规则完全相同。多出来的部分是一个恒为真的数学事实，所以什么都没变。看起来是网络在测试它的投票机制。",
+  "Test change: no effect.": "测试性变更：无效果。",
 } });

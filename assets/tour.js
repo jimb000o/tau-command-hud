@@ -137,6 +137,13 @@
       { s: ".follow", t: "Follow your vote", x: "Paste your public key and this page shows when your vote reaches the chain." },
       { s: ".facts", t: "Good to know", x: "Any account may vote, two thirds decide, a vote is free and counts once, and nothing changes at once." },
     ] },
+    card: { name: "your Tau card", intro: "One picture of what your test wallet did on Tau Testnet Alpha, with Agorzilla reading it beside you.", steps: [
+      { s: "#card", t: "Your card", x: "Read straight from the testnet: rules written, votes cast, Agorzilla meals and café stamps. A tile lights up once something is in it. Nothing on it is priced or promised." },
+      { s: "#agz", t: "Agorzilla reads it with you", x: "His mood is your card. An empty card makes him cry; every rule, vote, meal and stamp cheers him up, and a full card makes him beam. Tap him." },
+      { s: "#paper", t: "Stamps from the café", x: "This week's Daily Consensus lies at his feet, your café ticket on top. In the paper's café four regulars each stamp the ticket. Click it to walk in." },
+      { s: "#pFill", t: "Fill your card", x: "What is still open, each with the page where you do it." },
+      { s: "#pShare", t: "Pass it on", x: "Post it on X or copy the link: the link shows this card as its preview on X, Telegram and WhatsApp." },
+    ] },
     gazette: { cta: false, name: "The Daily Consensus", intro: "Twelve years of Tau as a 1920s newspaper.", steps: [
       { s: "#stage", t: "Turn the pages", x: "Click or tap the page to turn it. The arrow keys work too." },
       { s: "#ctl", t: "Contents and pocket edition", x: "Jump to any story from the contents, switch to the pocket edition for small screens, or turn the sound on." },

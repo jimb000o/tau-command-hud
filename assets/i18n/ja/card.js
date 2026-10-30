@@ -72,4 +72,16 @@ TauI18n.add({ strings: {
   "My Tau card:": "マイ Tau カード：",
   "A Tau card:": "Tau カード：",
   "Test AGRS only, nothing priced.": "テスト AGRS のみ、値段はありません。",
+  "Agorzilla is reading the card with you.": "Agorzilla があなたと一緒にカードを読んでいます。",
+  "An empty card. Agorzilla was so hoping for one rule.": "空っぽのカード。Agorzilla はルールが 1 つでもあればと願っていました。",
+  "He's cheering up a little. There's still room on the card.": "少し元気が出てきました。カードにはまだ空きがあります。",
+  "Half a card. He's started to enjoy this.": "カードの半分。楽しくなってきたようです。",
+  "Nearly full. Agorzilla is properly pleased.": "もうすぐいっぱい。Agorzilla はとても満足そうです。",
+  "A full card. Agorzilla couldn't be happier.": "カードがいっぱい。Agorzilla はこれ以上ないほど幸せです。",
+  "No wallet, no card. Agorzilla is waiting for you.": "ウォレットがなければカードもありません。Agorzilla が待っています。",
+  "Café ticket": "カフェの券",
+  "The Daily Consensus": "The Daily Consensus",
+  "Your café ticket is full: all four regulars of the Daily Consensus café stamped it.": "カフェの券がいっぱいです：Daily Consensus のカフェの常連 4 人全員がスタンプを押しました。",
+  "The café of the Daily Consensus: four regulars, and each stamps your ticket. Walk in.": "Daily Consensus のカフェ：4 人の常連が、それぞれ券にスタンプを押してくれます。どうぞ中へ。",
+  "Agorzilla": "Agorzilla"
 } });

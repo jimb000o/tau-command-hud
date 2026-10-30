@@ -265,4 +265,11 @@ TauI18n.add({ strings: {
   "{n} min": "{n} 分钟",
   "Telegram alerts": "Telegram 提醒",
   "A message from @tauhud_alerts_bot on every vote and when it is decided. Only your chat id is kept; /stop ends it.": "每次有人投票以及最终结果出来时，@tauhud_alerts_bot 会发消息给你。只保存你的聊天 ID；发送 /stop 即可结束。",
+  "test change · behaviour stays the same": "测试性变更 · 行为不变",
+  "Checked on 400 random inputs: the new text decides exactly like the rules in force. The extra part is a maths fact that is always true, so nothing changes.": "已用 400 组随机输入检验：新文本的判定与现行规则完全相同。多出来的部分是一个恒为真的数学事实，所以什么都没变。",
+  "Test change: behaviour stays the same.": "测试性变更：行为不变。",
+  "Rule text changes proposed so far: {n}.": "至今提出的规则文本变更：{n}。",
+  "Changed behaviour: {n}.": "改变了行为：{n}。",
+  "Kept it exactly as it was (test changes): {n}.": "行为完全不变（测试性变更）：{n}。",
+  "Could not be checked: {n}.": "无法检验：{n}。",
 } });
