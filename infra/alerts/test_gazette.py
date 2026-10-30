@@ -146,5 +146,22 @@ alerts.Watcher = w0
 idx = json.load(open(os.path.join(g, "editions.json")))
 check(code == 0 and [x["no"] for x in idx] == [2, 1] and json.load(open(os.path.join(g, "latest.json")))["date"] == "2026-11-09", "a reprint keeps the latest edition's number, date and week")
 
+
+# ---- the café walk's talk of the week ----
+c = e2["cafe"]
+check(set(c) == {"mae", "elias", "prof", "sully"} and all(v["greet"]["en"] and v["q"]["en"] and v["a"] for v in c.values()), "each regular has a line, a question and an answer for the week")
+check("Friday's pie" in c["mae"]["greet"]["en"] and "practice votes in the simulation" in json.dumps(c["mae"]), "Mae: the pie of the week, and the visitors' practice votes called practice")
+check("10,500 blocks" in c["elias"]["greet"]["en"] and "front page" in c["sully"]["greet"]["en"] and e2["banner"]["en"].rstrip(".!") in c["sully"]["greet"]["en"], "Elias counts the week's blocks, Sully calls the headline")
+check(gazette.cafe(week(), [], [], 1, e2["banner"], e2["teaser"])["mae"]["greet"] != gazette.cafe(week(), [], [], 2, e2["banner"], e2["teaser"])["mae"]["greet"], "the running jokes turn with the edition")
+check(len(json.dumps(c, ensure_ascii=False).encode()) < 9000, "the café block stays small (a few KB a week)")
+q = gazette.cafe(week(restarts=1, dropped=2), [], [], 3, e2["banner"], e2["teaser"])
+check("fresh start" in json.dumps(q) and "dropped at the deadline" in json.dumps(q), "a fresh chain and dropped proposals are told")
+old = json.load(open(os.path.join(g, "latest.json"))); old.pop("cafe")
+json.dump(old, open(os.path.join(g, "latest.json"), "w"))
+w.state["gazette"].pop("cafe", None)
+asyncio.run(w.maybe_gazette(NOW + 120))
+back = json.load(open(os.path.join(g, "latest.json")))
+check(back.get("cafe", {}).get("mae") and back["no"] == old["no"] and json.load(open(os.path.join(g, old["date"] + ".json"))).get("cafe"), "an edition printed before the café talk gets it once, number and date unchanged")
+
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
 sys.exit(1 if failed else 0)

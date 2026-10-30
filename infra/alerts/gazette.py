@@ -655,6 +655,163 @@ def rehearsal(days: list[dict], r: dict | None = None, switches: bool = True) ->
     return {"h": h, "body": body}
 
 
+# ---------------- the café behind the paper: what the regulars talk about this week ----------------
+# gazette/cafe.js adds these to the café walk: each regular says one more line on greeting and has a "this week" question.
+# The facts come from the week (the same numbers as the paper); the running jokes turn with the edition number, so two quiet
+# weeks still sound different. Warm and a little funny, and every answer teaches one small thing.
+PIES = [t("apple", "苹果", "アップル"), t("cherry", "樱桃", "チェリー"), t("rhubarb", "大黄", "ルバーブ"), t("pecan", "山核桃", "ピーカン"),
+        t("plum", "李子", "プラム"), t("pumpkin", "南瓜", "かぼちゃ"), t("blueberry", "蓝莓", "ブルーベリー"), t("peach", "桃子", "ピーチ")]
+CHESS = [t("I played myself four times this week. Won twice, lost twice. I still cannot say which of us is better.",
+           "这周我跟自己下了四盘。赢两盘，输两盘。到现在我也说不清我们俩谁更强。",
+           "今週は自分と四局指した。二勝二敗。どちらの私が強いのか、いまだに分からん。"),
+         t("On Tuesday I resigned to myself. Very gracious of me, I thought.",
+           "星期二我向自己认输了。我觉得自己相当有风度。",
+           "火曜日、私は自分に投了した。我ながら潔かったと思う。"),
+         t("A draw again. Logic is a stern opponent when it is also you.",
+           "又是和棋。当对手也是你自己时，逻辑是个严厉的对手。",
+           "また引き分けだ。相手も自分となると、論理は手ごわい。"),
+         t("I lost the bishop again. I suspect myself.",
+           "我又丢了那个象。我怀疑是我自己干的。",
+           "またビショップをなくした。犯人は私だと睨んでいる。")]
+LESSONS = [t("A small lesson for your pocket: a rule and its opposite cannot both stand. One of them must go before anyone votes.",
+             "给你一句随身带着的小道理：一条规则和它的反面不能同时成立。在投票之前，其中一条必须退场。",
+             "ポケットに入れておく小さな教訓だ。ルールとその反対は両立しない。投票の前に、どちらかが去らねばならない。"),
+           t("Here is a pretty one: if every change needs a vote, then changing how many votes are needed also needs a vote. Delightful, isn't it?",
+             "这个很漂亮：如果每项变更都需要投票，那么改变需要多少票，也需要投票。妙吧？",
+             "きれいな話をひとつ。どの変更にも投票が要るなら、必要な票数を変えることにも投票が要る。愉快だろう？"),
+           t("Remember: the check does not say whether a rule is wise, only whether it is possible. Wisdom is still your job.",
+             "记住：检查不会告诉你一条规则是否明智，只告诉你它是否可能。明智与否，仍是你的事。",
+             "覚えておきなさい。検査はルールが賢いかどうかは言わない。可能かどうかだけだ。賢さは、今もあなたの仕事だ。")]
+ASIDES = [t("My granddad used to say the wire is just people agreeing on what they heard. He would have liked this.",
+            "我爷爷常说，电报线不过是人们对听到的东西达成一致。他会喜欢这个的。",
+            "じいさんがよく言っていた。電信なんて、聞いたことについて皆が合意するだけのことだって。じいさんならこれを気に入っただろう。"),
+          t("Every station on the line keeps its own copy. That is the whole trick: nobody has to trust me.",
+            "线上每个站都留着自己的一份。全部的诀窍就在这儿：谁都不必信我。",
+            "線上の局はどこも自分の写しを持っている。からくりはそれだけさ。誰も私を信じなくていい。"),
+          t("I dream in dots and dashes some nights. Mae says that is not normal. Mae has never sat this wire.",
+            "有些晚上我做梦都是点和划。梅说这不正常。梅可从没守过这条线。",
+            "夜によってはトンツーの夢を見る。メイは普通じゃないと言う。メイはこの線についたことがないからな。")]
+STREET = [t("My ma read it twice. She says she still don't get the blockchain part, but she likes the part where folks vote.",
+            "我妈读了两遍。她说区块链那部分她还是不懂，但她喜欢大家投票的那部分。",
+            "うちのおふくろは二回読んだ。ブロックチェーンのところはまだ分からないけど、みんなで投票するところは好きだってさ。"),
+          t("A fella asked me if it makes you rich. I says no, mister, it's a testnet: test AGRS are for learning, not for spending. He took a paper anyway.",
+            "有个家伙问我这能不能让人发财。我说不能，先生，这是测试网：测试 AGRS 是用来学习的，不是用来花的。他还是拿了一份报纸。",
+            "ある旦那に、これで金持ちになれるのかって聞かれた。いいや旦那、テストネットだよ、テスト用の AGRS は学ぶためのもので、使うためじゃない。それでも旦那は一部持ってった。"),
+          t("Even the cop on the corner stopped to read the headline. Then he told me to quit shouting. Then he asked for a copy.",
+            "连街角的警察都停下来看标题。然后他叫我别嚷嚷了。然后他要了一份。",
+            "角のお巡りまで足を止めて見出しを読んでた。それから怒鳴るなって言って、それから一部くれって。")]
+
+
+def cafe(r: dict, props: list[dict], days: list[dict], no: int, banner: dict, deck: dict) -> dict:
+    """What the four regulars of the café walk talk about this week: {who: {greet, q, a: [...]}}, every line in three languages."""
+    n = max(0, int(no or 0))
+    waiting = [p for p in props if p.get("status") == "agreed" and (p.get("activate_at") or 0) > (r.get("head") or 0)]
+    week_props = [p for p in props if r["start"] <= (p.get("proposed_ts") or 0) < r["end"]]
+    keep = sum(1 for p in week_props if not phrase(p.get("title")))
+    ph_active, ph_wait = _pick(r.get("active_titles") or []), _pick([p.get("title") for p in _sorted(waiting)])
+    sim_votes = sum(int(d.get("votes") or 0) for d in days)
+    pie = PIES[n % len(PIES)]
+
+    # Mae: the rules, and how they change
+    if r.get("active") and ph_active:
+        mae = [t(f"Big week, love. {cap(ph_active['en'])} took effect on Testnet Alpha, at the very block they named beforehand.",
+                 f"大日子啊，亲爱的。{ph_active['zh']}在 Testnet Alpha 上生效了，就在事先说好的那个区块。",
+                 f"大きな週だったわよ。{ph_active['ja']}がテストネット Alpha で施行されたの。前もって決めた、まさにそのブロックで。"),
+               t("Nobody closed the shop and nobody reinstalled a thing. The rule simply changed, because enough hands went up.",
+                 "谁也没关店，谁也没重装什么。规则就这么变了，因为举手的人够多。",
+                 "誰も店を閉めなかったし、何も入れ直さなかった。手を挙げた人が足りたから、ルールがただ変わったのよ。")]
+    elif ph_wait:
+        mae = [t(f"They agreed on {ph_wait['en']}. It is not in force yet: it switches on at a block they named in advance.",
+                 f"他们就{ph_wait['zh']}达成了一致。它还没生效：要到事先约定的那个区块才启用。",
+                 f"{ph_wait['ja']}で合意したの。まだ効いてはいない。前もって決めたブロックで切り替わるのよ。"),
+               t("Same as my pies: the new one starts on Friday, not the minute you vote. Everybody knows when, so nobody gets a surprise in their coffee.",
+                 "就像我的馅饼：新口味从周五开始，而不是你一投完票就开始。大家都知道是什么时候，所以谁的咖啡里都不会冒出意外。",
+                 "うちのパイと同じ。新しいのは金曜から、投票した瞬間からじゃない。いつか皆が知ってるから、コーヒーに驚きが入ることはないの。")]
+    elif keep:
+        mae = [t(f"Mostly they voted to keep the rules as they are{'' if keep == 1 else ', ' + word(keep)['en'] + ' times'}. Sounds dull, doesn't it?",
+                 f"大多是投票维持现行规则{'' if keep == 1 else '，一共' + word(keep)['zh'] + '次'}。听着挺无聊，是吧？",
+                 f"ほとんどはルールをこのままにする投票だったわ{'' if keep == 1 else '、' + word(keep)['ja'] + ' 回も'}。退屈に聞こえるでしょ？"),
+               t("It isn't. Each time, you learn the voting itself works. You try the lock before you need the door.",
+                 "并不无聊。每一次，你都知道了投票本身是管用的。要用门之前，先试试锁。",
+                 "そうでもないの。そのたびに、投票そのものが動くと分かる。扉が要る前に、鍵を試しておくのよ。")]
+    elif r.get("proposed"):
+        mae = [t(f"{word(r['proposed'], True)['en']} new proposal{'s' if r['proposed'] != 1 else ''} went up on the board this week. The regulars are still chewing.",
+                 f"这周板子上贴出了{word(r['proposed'])['zh']}项新提议。常客们还在琢磨。",
+                 f"今週は新しい提案が {word(r['proposed'])['ja']} 件、板に上がったわ。常連さんたちはまだ噛みしめてるところ。"),
+               t("Nobody rushes a vote in my café. A rule you will live with deserves a second cup.",
+                 "在我的咖啡馆里，谁也不催着投票。一条你要跟它过日子的规则，值得再来一杯。",
+                 "うちの店では誰も投票を急かさない。一緒に暮らすルールには、もう一杯の価値があるの。")]
+    else:
+        mae = [t("Quiet week on the board, love. Not one new proposal.", "这周板子上很安静，亲爱的。一项新提议都没有。",
+                 "今週の板は静かだったわ。新しい提案はひとつもなし。"),
+               t("Quiet is fine. A good café isn't the one with the most rules. It's the one where you could change them if you wanted.",
+                 "安静也挺好。好咖啡馆不是规矩最多的那家，而是你想改规矩时就能改的那家。",
+                 "静かでいいの。いい喫茶店はルールがいちばん多い店じゃない。変えたいときに変えられる店よ。")]
+    if sim_votes:
+        mae.append(t(f"Mind you, the visitors on the HUD cast {fmt_n(sim_votes)} practice votes in the simulation. Practice, like rehearsing a toast.",
+                     f"对了，HUD 上的访客在模拟里投了 {fmt_n(sim_votes)} 张练习票。只是练习，就像排练祝酒词。",
+                     f"それにね、HUD の訪問者たちはシミュレーションで {fmt_n(sim_votes)} 票の練習投票をしたの。練習よ、乾杯の挨拶のリハーサルみたいなもの。"))
+
+    # Elias: the wire, the blocks
+    blocks = r["blocks"] + r.get("old_blocks", 0)
+    if r.get("restarts"):
+        elias = [t("We had a fresh start this week: the testnet began a new chain from block one.",
+                   "这周我们重新开始了：测试网从第一个区块起了一条新链。", "今週は出直しがあった。テストネットがブロック一から新しいチェーンを始めたんだ。"),
+                 t("On a test line that happens. You do not learn how a bridge holds by never putting weight on it.",
+                   "在试验线路上，这种事会发生。你不往桥上压东西，就永远不知道它撑不撑得住。",
+                   "試験線ではそういうこともある。橋に重みをかけずに、どれだけ持つかは分からない。")]
+    else:
+        elias = [t(f"Steady as a clock: about one block every {pace(r.get('pace'))['en']}.", f"稳得像钟一样：大约每 {pace(r.get('pace'))['zh']}一个区块。",
+                   f"時計のように正確さ。だいたい {pace(r.get('pace'))['ja']}ごとにブロックがひとつ。")]
+        elias.append(t(f"{fmt_n(r['txs'])} transactions rode along in them.", f"里面一共搭载了 {fmt_n(r['txs'])} 笔交易。",
+                       f"そこに {fmt_n(r['txs'])} 件の取引が乗っていた。") if r.get("txs") else
+                     t("Mostly empty, rolling along like a streetcar at night: nobody on board, still on time.",
+                       "大多是空的，像夜里的电车一样往前开：车上没人，照样准点。", "ほとんど空っぽで、夜の路面電車みたいに走ってる。誰も乗ってないのに、時間どおりだ。"))
+    if r.get("new_nodes"):
+        k = r["new_nodes"]
+        elias.append(t(f"And {word(k)['en']} new station{'s' if k != 1 else ''} joined the line. Another copy of the tape, and every copy makes a forgery harder.",
+                       f"还有{word(k)['zh']}个新站接入了线路。又多一份纸带，每多一份，造假就更难一分。",
+                       f"それに新しい局が {word(k)['ja']} つ線に加わった。紙テープの写しがまた増えた。写しが増えるほど、偽造は難しくなる。"))
+    elias.append(ASIDES[n % len(ASIDES)])
+
+    # the Professor: logic
+    if r.get("dropped"):
+        k = r["dropped"]
+        prof = [t(f"{word(k, True)['en']} proposal{'s' if k != 1 else ''} ran out of time and {'were' if k != 1 else 'was'} dropped at the deadline. Not refused: simply not enough hands.",
+                  f"有{word(k)['zh']}项提议到了期限没能通过，就此作罢。不是被拒绝，只是举手的人不够。",
+                  f"{word(k)['ja']} 件の提案が期限切れで取り下げられた。拒まれたのではない。手が足りなかっただけだ。"),
+                t("A proposal nobody wants dies politely. I find that rather civilised.", "没人想要的提议，会体面地退场。我觉得这相当文明。",
+                  "誰も望まない提案は、礼儀正しく消えていく。なかなか文明的だと思うね。")]
+    else:
+        prof = [t("On the real chain nobody tried anything foolish this week. A pity for me, good for everyone else.",
+                  "这周在真正的链上，没人试图干什么蠢事。对我来说可惜，对别人来说是好事。",
+                  "今週、本物のチェーンでは誰も馬鹿な真似をしなかった。私には残念、皆には幸いだ。")]
+    prof.append(t("In the simulation a contradicting proposal knocks at the door every hour, and every hour the check sends it home before anyone votes.",
+                  "在模拟里，每小时都有一项自相矛盾的提议来敲门，而每小时检查都会在任何人投票之前把它打发回家。",
+                  "シミュレーションでは毎時、矛盾した提案が戸を叩く。そして毎時、誰かが投票する前に検査がそれを家に帰す。"))
+    prof.append(LESSONS[n % len(LESSONS)])
+
+    # Sully: the headline
+    head = {k: banner[k].rstrip(".!") for k in ("en", "zh", "ja")}
+    sully = [deck, STREET[n % len(STREET)]]
+
+    q = t("What's new this week?", "这周有什么新鲜事？", "今週は何か新しいことは？")
+    return {
+        "mae": {"greet": t(f"Oh, and Friday's pie this week is {pie['en']}. The regulars voted. The Professor voted for lemon again, and lost again.",
+                           f"对了，这周五的馅饼是{pie['zh']}的。常客们投的票。教授又投了柠檬，又输了。",
+                           f"そうそう、今週の金曜のパイは{pie['ja']}よ。常連さんの投票で決まったの。教授はまたレモンに入れて、また負けたわ。"),
+                "q": t("What did they vote on this week, out on the real chain?", "这周，真正的链上大家投了什么票？", "今週、本物のチェーンでは何に投票したの？"),
+                "a": mae},
+        "elias": {"greet": t(f"{fmt_n(blocks)} blocks came down the wire this week. My fingers know every one of them.",
+                             f"这周有 {fmt_n(blocks)} 个区块从线上过来。我的手指认得每一个。",
+                             f"今週は {fmt_n(blocks)} のブロックが線を通ってきた。指が一つ残らず覚えてる。"),
+                  "q": t("Anything odd on the wire this week?", "这周线上有什么怪事吗？", "今週、線に何か変わったことは？"), "a": elias},
+        "prof": {"greet": CHESS[n % len(CHESS)], "q": t("Did the logic catch anything this week?", "这周逻辑抓到什么了吗？", "今週、論理は何か捕まえましたか？"), "a": prof},
+        "sully": {"greet": t(f"This week's front page: {head['en']}. Hot off the press!", f"本周头版：{head['zh']}。刚印出来的！", f"今週の一面は「{head['ja']}」。刷りたてだよ！"),
+                  "q": q, "a": sully},
+    }
+
+
 def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: float) -> dict:
     """One weekly edition. r: recap.build(); props: proposals.json "proposals"; days: sim_day() of the week."""
     waiting = [p for p in props if p.get("status") == "agreed" and (p.get("activate_at") or 0) > (r.get("head") or 0)]
@@ -678,6 +835,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
         "weather": weather(r), "caption": caption(r),
         "figures": figures(r),
         "stories": [coming_up(props, r.get("head"), r["pace"]), rehearsal(days, r, not any(x["kind"] == "simswitch" and x["score"] > 0 for x in ranked))] + ([m] if (m := riddle(r, props)) else []),
+        "cafe": cafe(r, props, days, no, banner, deck),
         "url": "https://tauhud.com/gazette/",
         # flat copies for the HUD's notice of the paper (index.html)
         "number": no, "headline": banner["en"], "headline_zh": banner["zh"], "headline_ja": banner["ja"],

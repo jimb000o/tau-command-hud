@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
-<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=4"><\/script>`);</script>
+<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=5"><\/script>`);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>The Daily Consensus</title>
@@ -348,6 +348,7 @@ html.i18n-ja .title { font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho Pro
 .ct-slot.on small { color: rgba(60,28,14,.95); }
 .cafe-ticket.offer { cursor: pointer; animation: cafeOffer 1.4s ease-in-out infinite; outline: none; }
 @keyframes cafeOffer { 50% { transform: rotate(-2deg) scale(1.1); box-shadow: 0 0 0 3px rgba(255,220,160,.6), 0 6px 24px rgba(255,210,140,.45); } }
+.cs-ch button i.wk { font-style: italic; font-size: .82em; opacity: .7; margin-left: .6em; letter-spacing: .04em; }
 .cs-ch button.pick { font: 400 16px/1.3 'Special Elite', 'Courier New', monospace !important; padding: 8px 14px !important; margin: 3px 0; text-align: left; }
 .cs-ch button.pick::before { display: none; }
 .cs-ch button.pick.slip { background: linear-gradient(180deg, #efe3c4, #dccb9f) !important; color: #2a1f12 !important; border-radius: 1px; box-shadow: 0 2px 8px rgba(0,0,0,.5); transform: rotate(-.4deg); }
@@ -1330,7 +1331,7 @@ const EN = {
   const want = /^#p(\d+)$/.exec(location.hash);
   const startFrom = () => { build(null); if (want) { const k = Math.max(0, PAGES.findIndex(x => x.from === Math.max(0, +want[1] - 1) + OFF)); go(MODE.spread ? Math.ceil(k / 2) : k, false); } };
   const ready = async () => {
-    WEEK = await weekFetch;
+    WEEK = await weekFetch; window.GAZETTE_WEEK = WEEK;   /* the café walk takes this week's talk from it (cafe.js) */
     if (WEEK) { ED.pages.unshift(weekPage(WEEK)); ED.toc.unshift(`${UI.week}: ${txt(WEEK.banner)}`); OFF = 1; }
     startFrom(); wire(); setInterval(() => { if (!document.hidden) wire(); }, 60000);
   };
@@ -1349,6 +1350,6 @@ const EN = {
 })();
 </script>
 <script src="scene.js?v=9"></script>
-<script src="cafe.js?v=4"></script>
+<script src="cafe.js?v=5"></script>
 </body>
 </html>

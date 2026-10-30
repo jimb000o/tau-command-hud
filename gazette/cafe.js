@@ -22,7 +22,7 @@
     hintTouch: "Swipe or tap the edges to walk, and tap someone to talk",
     soundHint: "Best with sound",
     ticket: "Café ticket", admit: "Admit one", ticketTip: "Talk to all four regulars, then find the door.",
-    more: "Click to go on", stamped: "{name} stamped your ticket: {what}", stampFor: { mae: "Agreement", elias: "Chain", prof: "Logic", sully: "Testnet" }, full: "Your ticket is full. The door is open to you.",
+    thisWeek: "this week", more: "Click to go on", stamped: "{name} stamped your ticket: {what}", stampFor: { mae: "Agreement", elias: "Chain", prof: "Logic", sully: "Testnet" }, full: "Your ticket is full. The door is open to you.",
     sep: ", ", and: " and ",
     places: { window: "Your table by the window", counter: "The counter", wire: "The wire corner", back: "The back room", door: "The door" },
     board: ["House Rules", "1. Mind the cups.", "2. Anyone may propose a rule.", "3. The regulars vote.", "4. Most hands carry it.", "5. Rule 4 may be voted on, too.", "Proposed: pie on Fridays", "Carried"],
@@ -857,8 +857,12 @@
     let open = P.greet;
     if (who === "sully") { const miss = ["mae", "elias", "prof"].filter(k => !ST.stamps.has(k)).map(k => TX.people[k].name);
       open = miss.length ? P.greet.concat(fmt(P.missing, { who: miss.length > 1 ? miss.slice(0, -1).join(TX.sep) + TX.and + miss[miss.length - 1] : miss[0] })) : P.greetDone; }
+    const W = wk(who); if (W && W.greet) { const k = who === "sully" && open !== P.greetDone ? P.greet.length : open.length; open = open.slice(0, k).concat(tr(W.greet), open.slice(k)); }
     lines(open, () => choices());
   }
+  /* this week's talk: the Monday edition (infra/alerts/gazette.py cafe()) brings a line and a question for each regular */
+  const wk = who => { const c = window.GAZETTE_WEEK && window.GAZETTE_WEEK.cafe; return c && c[who]; };
+  const tr = o => o && typeof o === "object" ? (o[LANG] || o.en) : o;
   function lines(arr, done) { let i = 0; const nx = () => { if (i >= arr.length) return done(); typeLine(line(arr[i++]), nx); }; nx(); }
   function typeLine(s, next) {
     clearInterval(TYPE && TYPE.id); sayCh.innerHTML = ""; say.classList.remove("ask"); say.classList.add("typing");
@@ -877,6 +881,7 @@
     say.classList.add("ask"); sayCh.innerHTML = "";
     const add = (q, fn, dim) => { const b = document.createElement("button"); b.textContent = q; if (dim) b.className = "dim"; b.onclick = e => { e.stopPropagation(); fn(); }; sayCh.appendChild(b); };
     P.ask.forEach(a => add(a.q, () => answer(a), T.asked.has(a.id)));
+    const W = wk(T.who); if (W && W.q && W.a) { add(tr(W.q), () => { T.asked.add("week"); lines(W.a.map(tr), choices); }, T.asked.has("week")); const tag = document.createElement("i"); tag.className = "wk"; tag.textContent = TX.thisWeek; sayCh.lastChild.appendChild(tag); }
     const key = P.ask.find(a => a.key); if (key && T.asked.has(key.id) && !ST.stamps.has(T.who)) { sayCh.insertBefore(sayCh.lastChild, sayCh.firstChild); add(P.task.q, () => task()); sayCh.insertBefore(sayCh.lastChild, sayCh.firstChild); }
     if (T.who === "sully" && all) add(P.out.q, () => { lines(P.out.a, () => { closeTalk(); outside(); }); });
     add(P.bye.q, () => lines(P.bye.a, closeTalk));
@@ -1017,7 +1022,7 @@
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
 
   /* other languages come in their own small file */
-  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=4`; s.onload = labels; document.head.appendChild(s); }
+  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=5`; s.onload = labels; document.head.appendChild(s); }
   labels();
   /* ?walk (the shared link) opens the café straight away */
   if (/[?&]walk\b/.test(location.search)) setTimeout(() => enter(), 600);

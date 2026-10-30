@@ -8,7 +8,7 @@ window.CAFE_JA = {
   hintTouch: "スワイプか端をタップして歩き、人をタップして話す",
   soundHint: "音があるともっと楽しめます",
   ticket: "カフェの券", admit: "一名様", ticketTip: "四人の常連全員と話してから、扉へ。",
-  more: "クリックで続く", stamped: "{name}が券にスタンプを押してくれた：{what}", stampFor: { mae: "合意", elias: "チェーン", prof: "論理", sully: "テストネット" }, full: "券がいっぱいになった。扉が開いた。",
+  thisWeek: "今週", more: "クリックで続く", stamped: "{name}が券にスタンプを押してくれた：{what}", stampFor: { mae: "合意", elias: "チェーン", prof: "論理", sully: "テストネット" }, full: "券がいっぱいになった。扉が開いた。",
   sep: "、", and: "と",
   places: { window: "窓際のあなたの席", counter: "カウンター", wire: "電信の一角", back: "奥の部屋", door: "扉" },
   board: ["店のきまり", "1. カップに気をつけること。", "2. 誰でもきまりを提案できる。", "3. 常連が投票する。", "4. 過半数の挙手で決まる。", "5. 第4条も投票で変えられる。", "提案：金曜はパイ", "可決"],

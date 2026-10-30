@@ -8,7 +8,7 @@ window.CAFE_ZH = {
   hintTouch: "左右滑动或点边缘走动，点人物交谈",
   soundHint: "开声音更好",
   ticket: "咖啡馆票", admit: "一人", ticketTip: "和四位常客都聊一聊，然后去门口。",
-  more: "点击继续", stamped: "{name}给你的票盖了章：{what}", stampFor: { mae: "共识", elias: "链", prof: "逻辑", sully: "测试网" }, full: "你的票盖满了。门为你打开了。",
+  thisWeek: "本周", more: "点击继续", stamped: "{name}给你的票盖了章：{what}", stampFor: { mae: "共识", elias: "链", prof: "逻辑", sully: "测试网" }, full: "你的票盖满了。门为你打开了。",
   sep: "、", and: "和",
   places: { window: "你靠窗的桌子", counter: "柜台", wire: "电报角", back: "里屋", door: "门口" },
   board: ["店规", "1. 小心杯子。", "2. 人人都可以提出规则。", "3. 常客们投票。", "4. 多数举手即通过。", "5. 第 4 条也可以投票修改。", "提议：周五供应馅饼", "通过"],
