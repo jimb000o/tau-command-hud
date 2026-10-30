@@ -286,6 +286,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 html.wide .src { max-width: none; columns: 2; column-gap: 40px; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/chainload.js"></script>
 <script src="../assets/nav.js" defer></script>
 </head>
 <body>
@@ -306,7 +307,7 @@ html.wide .src { max-width: none; columns: 2; column-gap: 40px; }
     <span class="warn" id="connWarn" hidden></span>
   </div>
 
-  <section class="panel" id="pTl">
+  <section class="panel" id="pTl" data-chainwait>
     <h2>The chain, block by block <small><span class="kbd">← → one block · Shift + ← → next rule event · wheel or + − to zoom, drag the strip below to move</span><span class="touch">drag the timeline or the slider · tap a bar for its rule change</span></small></h2>
     <div class="tlwrap" id="tlwrap">
       <svg id="tl" height="200" role="img" aria-label="Timeline of blocks and rule changes"></svg>
@@ -339,7 +340,7 @@ html.wide .src { max-width: none; columns: 2; column-gap: 40px; }
     </div>
   </section>
 
-  <div class="cols">
+  <div class="cols" data-chainwait>
     <section class="panel" id="pRules">
       <h2>Rules in force <b id="rH">#–</b></h2>
       <div id="rulesBody"><p class="empty">Waiting for blocks.</p></div>
@@ -659,7 +660,7 @@ function connect() {
     .catch(() => {});
 }
 function offline(why) {
-  C.ws = null; C.loading = false;
+  C.ws = null; C.loading = false; CL("stop");
   const w = C.retry; C.retry = Math.min(20000, w * 2); C.fails++;
   // the relay accepts a few connections per address, and every open Tau HUD tab uses two
   const hint = C.fails >= 3 ? " If many Tau HUD tabs are open, closing a few frees a slot." : "";
@@ -671,8 +672,9 @@ function offline(why) {
 const retrySoon = () => { if (!C.ws && !params.has("sample") && C.retryT) connect(); };
 document.addEventListener("visibilitychange", () => { if (!document.hidden) retrySoon(); });
 addEventListener("online", retrySoon);
+const CL = (f, ...a) => window.TauChainLoad && TauChainLoad[f](...a);   // the shared "reading the chain" bar (assets/chainload.js)
 function loadFrom(from) {
-  C.loading = true; C.nextFrom = from;
+  C.loading = true; C.nextFrom = from; CL("progress", Math.max(0, C.head + 1), C.want || 0);
   send(`getblockrange ${from} ${PAGE}`);
 }
 function store(raw) {
@@ -697,9 +699,10 @@ function onMessage(ev) {
     (d.blocks || []).forEach(store);
     const head = Number.isFinite(d.head) ? d.head : C.head;
     const next = C.nextFrom + PAGE;
+    C.want = head + 1; CL("progress", C.head + 1, head + 1);
     setConn("wait", "Loading", `Read ${plural(Math.max(0, C.head + 1), "block")} of ${fmtN(head + 1)}…`);
     if ((d.blocks || []).length && next <= head) { loadFrom(next); rebuild(); return; }
-    C.loading = false; C.partial = false; C.first = 0;
+    C.loading = false; C.partial = false; C.first = 0; CL("done");
     noteHoles(); live(); rebuild();
   } else if (msg.command === "getblocks") {
     if (msg.status !== "ok") return;
@@ -744,7 +747,7 @@ function noteHoles() {
   if (n && !C.legacy) C.holeT = setTimeout(() => { if (!C.loading && holes().length) loadFrom(holes()[0][0]); }, 15000);
 }
 function legacy() {   // relay without getblockrange: the newest 50 blocks only
-  C.legacy = true; send("getblocks 50");
+  C.legacy = true; CL("stop"); send("getblocks 50");
 }
 function resetChain() {
   C.blocks = []; C.head = -1; C.first = 0; VIEW = null; uidCache.clear(); H.orphanVotes = [];
