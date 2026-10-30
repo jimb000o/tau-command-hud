@@ -83,5 +83,7 @@ TauI18n.add({ strings: {
   "The Daily Consensus": "The Daily Consensus",
   "Your café ticket is full: all four regulars of the Daily Consensus café stamped it.": "カフェの券がいっぱいです：Daily Consensus のカフェの常連 4 人全員がスタンプを押しました。",
   "The café of the Daily Consensus: four regulars, and each stamps your ticket. Walk in.": "Daily Consensus のカフェ：4 人の常連が、それぞれ券にスタンプを押してくれます。どうぞ中へ。",
-  "Agorzilla": "Agorzilla"
+  "Agorzilla": "Agorzilla",
+  "Tau HUD and this card are free, built in spare time.": "Tau HUD とこのカードは無料で、空き時間に作っています。",
+  "Donations are voluntary ›": "寄付は任意です ›",
 } });

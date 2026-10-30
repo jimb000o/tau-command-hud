@@ -445,6 +445,16 @@ PRIVACY = ("I keep only this chat's id and what you follow, nothing else. /stop 
            f'<a href="{e(SITE)}/legal/?l=en">Privacy</a>')
 
 
+# shown once, under a chat's very first follow: quiet, voluntary, nothing promised
+DONATE_NOTE = (f'Tau HUD and this bot are free, built in spare time. Donations are welcome and voluntary, nothing is owed '
+               f'in return: <a href="{e(SITE)}/donate/">what it costs</a>')
+
+
+def first_follow(store: Store, cid) -> bool:
+    c = store.chat(cid) or {"a": [], "p": []}
+    return len(c["a"]) + len(c["p"]) == 1
+
+
 def find_prop(pj: dict | None, x: str) -> dict | None:
     for p in (pj or {}).get("proposals") or []:
         if str(p.get("id", "")).startswith(x):
@@ -497,7 +507,8 @@ def command(store: Store, cid, intent: str, arg: str | None, pj: dict | None, pr
         return "\n".join([head, "",
                           "I write when it sends or receives test AGRS, when its own rule lands in a block, on rule offers and "
                           "co-sign requests, when it votes, and on every vote on a rule change it proposes.", "",
-                          "Test AGRS have no value. <code>/unfollow " + x[:16] + "</code> ends this one. " + PRIVACY])
+                          "Test AGRS have no value. <code>/unfollow " + x[:16] + "</code> ends this one. " + PRIVACY]
+                         + (["", DONATE_NOTE] if r == "added" and first_follow(store, cid) else []))
     if PID.match(x):
         p = find_prop(pj, x)
         if not p:
@@ -511,5 +522,6 @@ def command(store: Store, cid, intent: str, arg: str | None, pj: dict | None, pr
             return "I am watching for as many people as I can right now. Please try again in a few days."
         return "\n".join([("🗳️ <b>Following</b> " if r == "added" else "You already follow ") + prop_title(p),
                           prop_state(p), "", "I write on every vote and when it is agreed, takes effect or is dropped. "
-                          "Then I stop following it by myself. " + PRIVACY])
+                          "Then I stop following it by myself. " + PRIVACY]
+                         + (["", DONATE_NOTE] if r == "added" and first_follow(store, cid) else []))
     return "That is not an address (96 characters) or a rule change id. Copy it from tauhud.com and try again."

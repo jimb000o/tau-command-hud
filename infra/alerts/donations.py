@@ -50,6 +50,14 @@ PUBLIC_PATH = os.path.join(os.environ.get("PUBLIC_DIR", "/public"), "donations.j
 BLOCKSCOUT = os.environ.get("BLOCKSCOUT_API", "https://eth.blockscout.com/api/v2").rstrip("/")
 ETHERSCAN_KEY = os.environ.get("ETHERSCAN_API_KEY", "").strip()
 TX_URL = "https://etherscan.io/tx/"
+# value of each donation in money, read once when it comes in (CoinGecko, no key needed; COINGECKO_API_KEY for the demo plan):
+# the price at that moment if it is found within an hour, else the price of that day. Shown on tauhud.com/donate/ in the
+# reader's currency: euros and dollars in English, yuan in Chinese, yen in Japanese.
+COINGECKO = os.environ.get("COINGECKO_API", "https://api.coingecko.com/api/v3").rstrip("/")
+COINGECKO_KEY = os.environ.get("COINGECKO_API_KEY", "").strip()
+FIAT = ("eur", "usd", "cny", "jpy")
+COIN_ID = {"ETH": "ethereum", "AGRS": os.environ.get("AGRS_COINGECKO_ID", "").strip()}
+FIAT_TRIES = 5
 UA = {"User-Agent": "tauhud-donations/1 (+https://tauhud.com)", "Accept": "application/json"}
 
 
@@ -147,6 +155,39 @@ def fetch_etherscan() -> list[dict]:
     return [f for f in found if f["to"] == me]
 
 
+def coin_id(asset: str) -> str:
+    if not COIN_ID.get(asset) and asset == "AGRS":
+        COIN_ID["AGRS"] = get_json(f"{COINGECKO}/coins/ethereum/contract/{AGRS_CONTRACT}" + _cg_key("?")).get("id") or ""
+    return COIN_ID.get(asset) or ""
+
+
+def _cg_key(sep: str) -> str:
+    return f"{sep}x_cg_demo_api_key={urllib.parse.quote(COINGECKO_KEY)}" if COINGECKO_KEY else ""
+
+
+def price_of(asset: str, ts: float, now: float | None = None) -> tuple[dict, str] | None:
+    """Price of one coin in each currency of FIAT, and how it was taken: "now" (within the hour) or "day"."""
+    cid = coin_id(asset)
+    if not cid:
+        return None
+    now = now or time.time()
+    if now - ts < 3600:
+        got, how = get_json(f"{COINGECKO}/simple/price?ids={cid}&vs_currencies={','.join(FIAT)}" + _cg_key("&")).get(cid) or {}, "now"
+    else:
+        day = datetime.fromtimestamp(ts, timezone.utc).strftime("%d-%m-%Y")
+        got = ((get_json(f"{COINGECKO}/coins/{cid}/history?date={day}&localization=false" + _cg_key("&"))
+                .get("market_data") or {}).get("current_price") or {})
+        how = "day"
+    if not all(isinstance(got.get(c), (int, float)) and got[c] > 0 for c in FIAT):
+        return None
+    return {c: Decimal(str(got[c])) for c in FIAT}, how
+
+
+def fiat_value(amount: Decimal, price: dict) -> dict:
+    return {c: float((amount * price[c]).quantize(Decimal("1") if c == "jpy" else Decimal("0.01"), rounding=ROUND_HALF_UP))
+            for c in FIAT}
+
+
 def why_not(f: dict) -> str | None:
     """None when this transfer counts as a donation, else the reason it does not."""
     if not f["tx"] or not f["ok"]:
@@ -169,10 +210,14 @@ def summary(donations: list[dict]) -> dict:
     totals: dict[str, Decimal] = {}
     for d in donations:
         totals[d["asset"]] = totals.get(d["asset"], Decimal(0)) + Decimal(d["amount"])
-    return {"address": ADDRESS, "updated": int(time.time()), "donors": len({d["from"] for d in donations}),
-            "count": len(donations), "totals": {k: fmt_amount(v) for k, v in totals.items()},
-            "items": [{"tx": d["tx"], "from": d["from"], "asset": d["asset"], "amount": d["amount"],
-                       "ts": d["ts"], "block": d["block"]} for d in donations[:50]]}
+    out = {"address": ADDRESS, "updated": int(time.time()), "donors": len({d["from"] for d in donations}),
+           "count": len(donations), "totals": {k: fmt_amount(v) for k, v in totals.items()},
+           "items": [dict({"tx": d["tx"], "from": d["from"], "asset": d["asset"], "amount": d["amount"],
+                           "ts": d["ts"], "block": d["block"]}, **({"fiat": d["fiat"], "fiat_at": d.get("fiat_at", "day")}
+                                                                if d.get("fiat") else {})) for d in donations[:50]]}
+    if donations and all(d.get("fiat") for d in donations):   # a sum only when every donation has its value
+        out["totals_fiat"] = {c: round(sum(d["fiat"][c] for d in donations), 0 if c == "jpy" else 2) for c in FIAT}
+    return out
 
 
 def thanks_text(d: dict, donors: int, nth: int) -> str:
@@ -235,6 +280,22 @@ class Donations:
         news.sort(key=lambda d: d["ts"])
         return news
 
+    def add_fiat(self, now: float | None = None):
+        """Give each donation its value in money once; a failed lookup is tried again on the next rounds, at most FIAT_TRIES times."""
+        for d in self.state["donations"]:
+            if d.get("fiat") or d.get("fiat_tries", 0) >= FIAT_TRIES:
+                continue
+            try:
+                got = price_of(d["asset"], d["ts"], now)
+            except (urllib.error.URLError, OSError, ValueError) as exc:
+                log.info("no price for %s yet (%r)", d["key"][:14], exc)
+                got = None
+            if got:
+                d["fiat"], d["fiat_at"] = fiat_value(Decimal(d["amount"]), got[0]), got[1]
+            else:
+                d["fiat_tries"] = d.get("fiat_tries", 0) + 1
+            time.sleep(1.5)   # the free price service allows a few calls a minute
+
     def write_public(self):
         try:
             os.makedirs(os.path.dirname(PUBLIC_PATH) or ".", exist_ok=True)
@@ -265,6 +326,7 @@ class Donations:
 
     def step(self):
         news = self.update(self.fetch())
+        self.add_fiat()
         self.write_public()
         self.save()
         self.thank(news + [d for d in self.pending() if d not in news])
