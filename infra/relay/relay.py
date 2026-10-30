@@ -74,6 +74,13 @@ MAX_CLIENTS = _env_int("MAX_CLIENTS", 500)
 MAX_PER_IP = _env_int("MAX_PER_IP", 32)
 CLIENT_BURST = _env_float("CLIENT_BURST", 20)
 CLIENT_REFILL = _env_float("CLIENT_REFILL_PER_SEC", 2)
+# Reads answered from the relay's own memory (the cached commands, getblocks,
+# getblockrange, presence) get a second, larger budget per connection and are
+# never refused: over budget the connection waits for the next token instead.
+# A page loading the whole chain in 100-block pages used to lose an answer to
+# the general limit and wait for it forever (accounts stopped at block 1,400).
+CHAIN_BURST = _env_float("CHAIN_BURST", 40)
+CHAIN_REFILL = _env_float("CHAIN_REFILL_PER_SEC", 10)
 # Account / tx lookups go to the node; this caps them across all visitors.
 LOOKUP_BURST = _env_float("LOOKUP_BURST", 5)
 LOOKUP_REFILL = _env_float("LOOKUP_REFILL_PER_SEC", 2)
@@ -148,6 +155,7 @@ NEUTRAL_O5 = "(o5[t]:bv[24]={#x000001}:bv[24])"
 # when the holder's turn is over. One switch turns it off on the server without a rebuild (docker compose up -d).
 SLOTLEASE_ENABLED = os.environ.get("SLOTLEASE_ENABLED", "1") not in ("0", "false", "no", "")
 CACHED = ("getmempool", "getgovernance", "gettaustate")
+FROM_MEMORY = CACHED + ("getblocks", "getblockrange", "presence")   # answered without the node: CHAIN_* budget
 # The wallet's write door. The visitor's browser builds and signs the
 # transaction (BLS, keys stay in the browser); the relay checks only its shape
 # and passes it on, never caching it and never logging its content. Proposing a
@@ -1764,14 +1772,23 @@ class Relay:
         self.viewers[ws] = (ip, headers.get("User-Agent", ""), site_of_origin(headers.get("Origin", "")))
         self.push_presence()
         bucket = TokenBucket(CLIENT_BURST, CLIENT_REFILL)
+        chain_bucket = TokenBucket(CHAIN_BURST, CHAIN_REFILL)
         try:
             async for message in ws:
                 if not isinstance(message, str):
                     message = message.decode("utf-8", errors="replace")
-                if not bucket.take():
-                    reply = envelope_error("rate_limit", "Rate limit exceeded", "RATE_LIMITED")
+                line = message.strip()
+                cmd = line.split(None, 1)[0].lower() if line else ""
+                if cmd in FROM_MEMORY:
+                    await chain_bucket.wait()   # slow down, never drop: the page is waiting for exactly this answer
+                    reply = await self.answer(line, ip, ws)
+                elif not bucket.take():
+                    reply = json.dumps({"status": "error", "command": cmd or "rate_limit",
+                                        "error": {"code": "RATE_LIMITED", "request": line[:120],
+                                                  "message": f"Rate limit exceeded: {CLIENT_BURST:g} messages, then {CLIENT_REFILL:g}/s per connection."}},
+                                       separators=(",", ":"))
                 else:
-                    reply = await self.answer(message.strip(), ip, ws)
+                    reply = await self.answer(line, ip, ws)
                 await ws.send(reply)
         except ConnectionClosed:
             pass
