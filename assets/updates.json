@@ -1692,6 +1692,11 @@
   "html": "Network rule changes: a check now tells real changes from test changes. On the testnet all 43 rule changes so far rewrite the rule for valid blocks with an extra maths fact that is always true (for example a × b = b × a), so the network decides exactly as before. The HUD feed, the Explorer and Proposals now mark these “test change · no effect”, checked on 400 random inputs, and Proposals counts how many changed behaviour."
  },
  {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "Faster first screen on the HUD: the files it waits for now download at the same time instead of one after another, so on a slow phone connection the first picture appears about a second sooner (2.4 s → 1.5 s in our test with a throttled phone). The update log is downloaded once per page instead of twice."
+ },
+ {
   "tag": "My Tau card",
   "on": "2026-10-30",
   "html": "My Tau card: Agorzilla beside your card now has the soft face from agorzilla.com, so the painted mouth itself moves. With an empty card the corners of his mouth sink, his brows rise in worry, his shoulders slump, he sighs slowly and now and then a sob and a tear come. As the card fills, he straightens up, smiles, chuckles and bounces. His eyes stay calm and only glance at the card and at you."
