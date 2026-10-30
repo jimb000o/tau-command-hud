@@ -83,5 +83,7 @@ TauI18n.add({ strings: {
   "The Daily Consensus": "共识日报",
   "Your café ticket is full: all four regulars of the Daily Consensus café stamped it.": "你的咖啡馆票已经盖满：《共识日报》咖啡馆的四位常客都盖过章了。",
   "The café of the Daily Consensus: four regulars, and each stamps your ticket. Walk in.": "《共识日报》的咖啡馆：四位常客，每人都会给你的票盖一个章。进去看看吧。",
-  "Agorzilla": "Agorzilla"
+  "Agorzilla": "Agorzilla",
+  "Tau HUD and this card are free, built in spare time.": "Tau HUD 和这张卡片都免费，用业余时间搭建。",
+  "Donations are voluntary ›": "捐赠出于自愿 ›",
 } });
