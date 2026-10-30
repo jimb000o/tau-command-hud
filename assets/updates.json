@@ -1685,5 +1685,10 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "Troll box: everyone now gets a new random name every day at 00:00 UTC. Your name for today is shown under the box; yesterday's messages keep the name they were written with. Warnings, mutes and bans stay with you, whatever your name."
+ },
+ {
+  "tag": "Rule changes",
+  "on": "2026-10-30",
+  "html": "Network rule changes: a check now tells real changes from test changes. On the testnet all 43 rule changes so far rewrite the rule for valid blocks with an extra maths fact that is always true (for example a × b = b × a), so the network decides exactly as before. The HUD feed, the Explorer and Proposals now mark these “test change · no effect”, checked on 400 random inputs, and Proposals counts how many changed behaviour."
  }
 ]

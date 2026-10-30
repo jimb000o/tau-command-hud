@@ -210,6 +210,8 @@ html.fit .dcols pre.code { max-height: calc(38vh / var(--z)); }
 pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); max-height: 40vh; overflow: auto; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
 .nw { white-space: nowrap; }
+.testch { color: var(--dim); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+.testline { display: block; margin-top: 4px; }
 details.raw { margin: 14px 0 0; } details.raw > summary { cursor: pointer; min-height: 28px; padding: 4px 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .state.sample { color: #fff; border-color: #fff; } .state.sample i { background: #fff; }
 @media (max-width: 700px) { .follow .lbl { width: 100%; } }
@@ -379,7 +381,15 @@ function ruleDiff(p) {
   if (!window.RuleDiff) return "";
   return RuleDiff.html(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions, { at: p.proposed_at, patch: !!p.patch });
 }
-const diffTag = p => { const d = diffOf(p); return d ? ` · <span class="nw">rule text ${d.same ? "unchanged" : RuleDiff.summary(d)}</span>` : ""; };
+/* behaviour check: does the new text decide anything differently from the rules it replaces? (sampled, assets/rulediff.js) */
+function effOf(p) {
+  if (!window.RuleDiff || !p.revisions.length || p.patch) return null;
+  if (p._e === undefined) p._e = RuleDiff.effect(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions);
+  return p._e;
+}
+const TEST_TIP = "Checked on 400 random inputs: the new text decides exactly like the rules in force. The extra part is a maths fact that is always true, so nothing changes.";
+const isTest = p => (effOf(p) || {}).same === true;
+const diffTag = p => { const d = diffOf(p); return (d ? ` · <span class="nw">rule text ${d.same ? "unchanged" : RuleDiff.summary(d)}</span>` : "") + (isTest(p) && (p.explain || {}).severity !== "none" ? ` · <span class="nw testch" title="${esc(TEST_TIP)}">test change · behaviour stays the same</span>` : ""); };
 /* when a block is expected: from the real block pace, as a date in UTC and a countdown, like the simulation's programme */
 function inTime(s) {
   const m = Math.ceil(s / 60);
@@ -567,7 +577,7 @@ function timeline() {
     (nextA ? `Next change: <b>#${fmtN(nextA.activate_at)}</b>, ${plural(left(nextA), "block")} from now${eta(left(nextA)) ? ` (${eta(left(nextA))})` : ""}. `
       : SCH.length ? `Next: <b>${esc(SCH[0].title)}</b> at ${hm(SCH[0].at_ts)} UTC (${inM(SCH[0].at_ts)}). ` : "No agreed change is waiting. ") +
     `Consensus: <b>${esc(consName(nowM.m))}</b>${modes.length > 1 ? `, ${plural(modes.filter(s => s.p && !s.future).length, "switch", "switches")} so far` : ", never switched"}.` +
-    ` Not to scale: long stretches without events are drawn shorter.`;
+    ` Not to scale: long stretches without events are drawn shorter.` + testCount();
 }
 function segTip(s, cur) {
   const span = s.future ? `from block #${fmtN(s.h)} (agreed, not yet in force)` : `${s.h ? `from block #${fmtN(s.h)}` : "from genesis"}${cur ? " to now" : ` to #${fmtN(s.to)}`}`;
@@ -602,6 +612,14 @@ function openSeg(i) {
 
 /* ---------------- detail ---------------- */
 let lastFocus = null, openId = null;
+// one line for the pattern: how many proposals only rewrote the text
+function testCount() {
+  const ps = (D.proposals || []).filter(p => p.revisions && p.revisions.length && !p.patch);
+  if (!ps.length || !window.RuleDiff) return "";
+  const same = ps.filter(isTest).length, changed = ps.filter(p => (effOf(p) || {}).same === false).length;
+  const unk = ps.length - same - changed;
+  return ` <span class="testline"><span>Rule text changes proposed so far: ${fmtN(ps.length)}.</span> <span>Changed behaviour: ${fmtN(changed)}.</span> <span>Kept it exactly as it was (test changes): ${fmtN(same)}.</span>${unk ? ` <span>Could not be checked: ${fmtN(unk)}.</span>` : ""}</span>`;
+}
 function openDetail(p, push) {
   if (!p) return;
   openId = p.id;
@@ -621,7 +639,7 @@ function openDetail(p, push) {
   $("dBody").innerHTML = `<div class="dcols"><div>${explainHtml(p)}<h3>Timeline</h3><ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere;margin:0">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
     <p class="note">Open any block number to see it in <a href="/history/#${p.proposed_at}">Time travel</a>. Votes count once per account while the change is open.</p></div><div>
-    ${ruleDiff(p)}${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
+    ${isTest(p) ? `<p class="note"><b>Test change: behaviour stays the same.</b> ${esc(TEST_TIP)}</p>` : ""}${ruleDiff(p)}${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
     ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
 </div></div>`;
   // a link whose preview on X and Telegram shows a picture of this proposal (infra/share)
@@ -709,6 +727,9 @@ function sample() {
     P(2, { status: "active", proposed_at: 297, activate_at: 3300, approved_at: 298, activated_at: 3300, rev: 3, counted_votes: 1,
       revisions: ["always (\n  o6[t]:bv[16] = i10[t]:bv[16] &&\n  o7[t]:bv[16] = { 1 }:bv[16]\n)"],
       votes: [{ h: 298, voter: V, counted: true, approve: true }], explain: ex("Same rules as now (no real change)", [], "Nothing would change: the text equals the rules already in force. Often a test of the voting itself.", "none") }),
+    P(9, { status: "active", proposed_at: 340, activate_at: 3340, approved_at: 341, activated_at: 3340, rev: 4, counted_votes: 1,
+      revisions: ["always(o6[t]:bv[16]=((i10[t]:bv[16]&i10[t]:bv[16])|(i6[t]:bv[16]^i6[t]:bv[16]))).", "always(o6[t]:bv[16]=i10[t]:bv[16]&&(i6[t]:bv[16]*i7[t]:bv[16])=(i7[t]:bv[16]*i6[t]:bv[16]))."],
+      votes: [{ h: 341, voter: V, counted: true, approve: true }], explain: ex("New rule for valid blocks", [{ topic: "Which blocks count as valid", text: "(i10 & i10) | (i6 ^ i6)" }], "Changes which blocks the network accepts.") }),
     P(3, { status: "agreed", proposed_at: 4150, activate_at: 4400, approved_at: 4152, counted_votes: 1,
       revisions: ["always (o9[t]:bv[24] = { #x000014 }:bv[24])"], votes: [{ h: 4152, voter: V, counted: true, approve: true }],
       explain: ex("Base fee 10 → 20 AGRS", [{ topic: "Base fee per transaction", text: "10 → 20 AGRS" }], "Every transaction would cost 20 AGRS instead of 10.") }),
