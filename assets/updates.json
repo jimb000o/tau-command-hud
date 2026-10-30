@@ -1675,5 +1675,10 @@
   "tag": "Newspaper",
   "on": "2026-10-30",
   "html": "Newspaper café: a black café cat now sits on the windowsill when you look up, then pads to the way on and waits there, looking back over its shoulder, in every room. If you hesitate it meows softly; click it for a purr and a word. When Mae's pie vote is chalked in, it walks by twice, the very same way. The café sounds now start quietly with “Look up” whenever the page sound is on. Also fixed: the café no longer drops an empty stamp into your Tau card."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "HUD: a news line under the four principles, which became shorter cards with their source in the corner. Live facts from the chain, the newest updates, pointers to useful pages and now and then our Telegram and X; each item decodes out of falling glyphs where it enters. Hover to pause, click to open. With reduced motion the items change in place."
  }
 ]

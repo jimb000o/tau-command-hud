@@ -1,0 +1,18 @@
+{
+  "_how": "The HUD news line (assets/ticker.js). picks: our X posts worth reposting, {text, href} with href the post's x.com address; notes: useful pointers on the site; invites: Telegram and X. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages.",
+  "move": { "en": "left", "zh": "left", "ja": "left" },
+  "picks": [],
+  "notes": [
+    { "text": "New here? Start here walks you through Tau in a few short steps", "href": "start/" },
+    { "text": "A stolen key still obeys your own limits: a rule binds the account, not the device", "href": "playground/" },
+    { "text": "Every Monday a rule challenge: a small task, answered with a real rule", "href": "challenge/" },
+    { "text": "The Daily Consensus: a new edition every Monday", "href": "gazette/" },
+    { "text": "Every rule change is compiled on its own before it can enter the chain", "href": "proposals/" },
+    { "text": "Get a Telegram message when an account you follow moves: @tauhud_alerts_bot", "href": "https://t.me/tauhud_alerts_bot" },
+    { "text": "Try writing a Tau rule in the Playground", "href": "playground/" }
+  ],
+  "invites": [
+    { "kind": "tg", "text": "Chain news on Telegram: t.me/tauHUDcom", "href": "https://t.me/tauHUDcom" },
+    { "kind": "x", "text": "Follow @TauHUDcom on X", "href": "https://x.com/TauHUDcom" }
+  ]
+}
