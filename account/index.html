@@ -272,17 +272,22 @@ html.fit .vcols .col > .panel.grow { flex: 1 1 0; min-height: 150px; }
 .chart .tx.rule { fill: rgba(255,255,255,.62); }
 .chart .tx.gov { fill: var(--ok); }
 .chart .hit.go { cursor: pointer; }
+.chart .unread { fill: rgba(255,177,59,.05); }
+.chart .readhead { stroke: var(--behind); stroke-width: 1.5; filter: drop-shadow(0 0 3px rgba(255,177,59,.8)); }
+/* while the chain is read the numbers are counts so far: amber, and white once every block is in */
+.tile .v { transition: color .6s ease; }
+html.chain-reading .tile .v, html.chain-reading .headline { color: var(--behind); }
 ul.sealed { gap: 2px; }
 ul.sealed li.blk { display: grid; gap: 1px; }
-ul.list.sealed li > button:not(.btn) { grid-template-columns: 7.6em 5em 12.5em minmax(0, 1fr) auto; font-size: 12.5px; padding: 4px 8px; }
+ul.list.sealed li > button:not(.btn) { grid-template-columns: 9em 5em 12.5em minmax(0, 1fr) auto; font-size: 12.5px; padding: 4px 8px; }
 ul.sealed li > button.rule { border-left-color: rgba(255,255,255,.55); }
 ul.sealed li > button.transfer { border-left-color: #fff; }
 ul.sealed li > button.gov { border-left-color: var(--ok); }
 ul.sealed .w, ul.sealed .b { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
 ul.sealed .k { color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-ul.sealed li.run, ul.sealed li.pause { display: grid; grid-template-columns: 7.6em 8.4em minmax(0, 1fr); gap: 2px 10px; padding: 3px 8px 3px 10px; font: 12px/1.45 var(--mono); color: var(--dim); }
+ul.sealed li.run, ul.sealed li.pause { display: grid; grid-template-columns: 9em 8.4em minmax(0, 1fr); gap: 2px 10px; padding: 3px 8px 3px 10px; font: 12px/1.45 var(--mono); color: var(--dim); }
 ul.sealed li.run .d em { font-style: normal; opacity: .7; }
-ul.sealed li.pause { grid-template-columns: 7.6em minmax(0, 1fr); color: var(--text); border-top: 1px dashed var(--hair); border-bottom: 1px dashed var(--hair); margin: 3px 0; }
+ul.sealed li.pause { grid-template-columns: 9em minmax(0, 1fr); color: var(--text); border-top: 1px dashed var(--hair); border-bottom: 1px dashed var(--hair); margin: 3px 0; }
 ul.sealed li.flash { animation: sealflash 1.6s ease-out; }
 @keyframes sealflash { 0%, 30% { background: rgba(57,255,138,.16); } 100% { background: transparent; } }
 .vcols .panel h3, .vcols .panel h3:first-of-type { margin-top: 12px; }
@@ -377,6 +382,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
           </div>
           <button class="chip" type="button" id="copyBtn">Copy address</button>
           <a class="chip" id="shareBtn" href="#">Link to this account</a>
+          <a class="chip" id="tgBtn" href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener" data-tip="Get a Telegram message when this account moves&#10;Opens @tauhud_alerts_bot with the address filled in; press Start.&#10;Only your chat id and what you follow are kept. /stop ends it." hidden>Telegram alerts</a>
         </div>
       </div>
       <section class="tiles" id="tiles" aria-label="Key numbers"></section>
@@ -550,15 +556,17 @@ const offerIds = new Map(); // tx object -> offer id (hex)
 
 /* ------------------------------ relay ------------------------------ */
 function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = text; s.dataset.tip = tipText; }
-// the relay allows each visitor a burst of 20 messages and then 2 a second, and answers anything above that with a bare
-// "rate_limit" that does not say which request it refused; so the page paces itself a little below that
-const OUT = { q: [], tokens: 12, t: Date.now(), timer: null };
-function send(cmd) { if (C.ws && C.ws.readyState === 1) { OUT.q.push(cmd); flush(); } }
+// the relay allows each visitor a burst of 20 lookups and then 2 a second; reading blocks has its own, larger budget
+// (40, then 10 a second). The page paces itself a little below both, each in its own queue.
+const OUT = { q: [], tokens: 12, t: Date.now(), timer: null, cq: [], ctokens: 30 };
+function send(cmd) { if (C.ws && C.ws.readyState === 1) { (/^getblock/.test(cmd) ? OUT.cq : OUT.q).push(cmd); flush(); } }
 function flush() {
-  const now = Date.now(); OUT.tokens = Math.min(12, OUT.tokens + (now - OUT.t) / 1000 * 1.7); OUT.t = now;
+  const now = Date.now(), dt = (now - OUT.t) / 1000; OUT.t = now;
+  OUT.tokens = Math.min(12, OUT.tokens + dt * 1.7); OUT.ctokens = Math.min(30, OUT.ctokens + dt * 8);
+  while (OUT.cq.length && OUT.ctokens >= 1 && C.ws && C.ws.readyState === 1) { OUT.ctokens--; C.ws.send(OUT.cq.shift()); }
   while (OUT.q.length && OUT.tokens >= 1 && C.ws && C.ws.readyState === 1) { OUT.tokens--; C.ws.send(OUT.q.shift()); }
   clearTimeout(OUT.timer);
-  if (OUT.q.length) OUT.timer = setTimeout(flush, 350);
+  if (OUT.q.length || OUT.cq.length) OUT.timer = setTimeout(flush, 150);
 }
 // one random id per page view, kept in memory only (nothing stored in the browser), the same one nav.js sends, so the relay's online counter counts this page once
 function viewerId() {
@@ -575,7 +583,7 @@ function connect() {
   try { ws = SIM ? TauSim.socket() : new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
   setState("wait", "Connecting", SIM ? "Building the simulated chain…" : `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
-  ws.onopen = () => { C.off = false; C.retry = 5000; OUT.q = []; OUT.tokens = 11; OUT.t = Date.now(); ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); if (S.addr) lookup(S.addr); };
+  ws.onopen = () => { C.off = false; C.retry = 5000; OUT.q = []; OUT.cq = []; OUT.tokens = 11; OUT.ctokens = 30; OUT.t = Date.now(); ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); if (S.addr) lookup(S.addr); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
   ws.onerror = () => {};
@@ -589,8 +597,9 @@ function offline(why) {
   C.retryT = setTimeout(connect, w);
 }
 // the first page says how long the chain is; the rest is asked for a few pages at a time, so a long chain loads in seconds, not minutes
-const PARALLEL = 4;
-const CL = (f, ...a) => window.TauChainLoad && TauChainLoad[f](...a);   // the shared "reading the chain" bar (assets/chainload.js)
+const PARALLEL = 6;
+const CL = (f, ...a) => window.TauChainLoad && TauChainLoad[f](...a);   // the shared "reading the chain" band (assets/chainload.js)
+if (window.TauChainLoad) TauChainLoad.live = true;   // this page builds itself up while the blocks arrive, so the band says the numbers count up
 function loadFrom(from) { CL("progress", C.loadedN || 0, C.want != null ? C.want + 1 : 0); C.loading = true; C.nextFrom = from; C.want = null; C.inflight = new Map([[from, Date.now()]]); send(`getblockrange ${from} ${PAGE}`); watchRanges(); }
 // a page the relay refused (rate limit) or never answered is asked for again
 function watchRanges() {
@@ -642,7 +651,7 @@ function onMessage(ev) {
   if (cmd === "getblockrange") {
     if (msg.status !== "ok") {
       const code = (msg.error || {}).code;
-      if (code === "RATE_LIMITED") { OUT.tokens = -2; return; }   // the watchdog asks for the page again
+      if (code === "RATE_LIMITED") { OUT.ctokens = -10; return; }   // the watchdog asks for the page again
       if (code === "NOT_READY") setTimeout(() => loadFrom(0), 3000); else { C.legacy = true; C.loading = false; CL("stop"); send("getblocks 50"); }
       return;
     }
@@ -654,7 +663,7 @@ function onMessage(ev) {
     const got = C.blocks.reduce(n => n + 1, 0);
     setState("wait", "Loading", `Read ${plural(got, "block")} of ${fmtN(C.want + 1)}…`);
     C.loadedN = got; CL("progress", got, C.want + 1);
-    if ((!S.addr || !$("vcols").hidden) && Date.now() - (C.progT || 0) > 800) { C.progT = Date.now(); rebuild(); }   // the progress line moves while the chain loads
+    if (Date.now() - (C.progT || 0) > 700) { C.progT = Date.now(); rebuild(); }   // the page builds itself up while the chain loads
     loadMore();
   } else if (cmd === "getblocks") {
     if (msg.status !== "ok") return;
@@ -851,7 +860,7 @@ function rebuild() { clearTimeout(rebuildT); rebuildT = setTimeout(async () => {
   building = true;
   try {
     if (S.addr) { M = await account(S.addr); renderAccount(); }
-    else if (!(C.loading && !SAMPLE && directory.drawn)) { renderDir(); directory.drawn = true; }   // a half-read chain would re-sort the list every second
+    else renderDir();
   } finally { building = false; }
 }, 40); }
 
@@ -940,11 +949,15 @@ const isValidator = a => ((C.gov || {}).active_validators || []).some(v => low(t
 function tile(label, value, sub, tipText, unit) {
   return `<div class="tile" tabindex="0" data-tip="${esc(tipText)}"><h4>${esc(label)}</h4><div class="v">${value}${unit ? `<small>${unit}</small>` : ""}</div>${sub ? `<p>${sub}</p>` : ""}</div>`;
 }
+// a t.me link that opens @tauhud_alerts_bot with this address (or "p" + rule change id) filled in, base64url to fit Telegram's 64 characters (infra/alerts/follow.py)
+const tgAlerts = (hex, rule) => "https://t.me/tauhud_alerts_bot?start=" + (rule ? "p" : "") + btoa(String.fromCharCode(...hex.match(/../g).map(x => parseInt(x, 16)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 function renderAccount() {
   show("acct");
   const a = S.addr, st = S.lookups.getaccountstate, gb = S.lookups.getbalance, ro = S.lookups.getruleoffers, sq = S.lookups.getsequence;
   $("addr").textContent = a;
   $("shareBtn").href = accUrl(a);
+  $("tgBtn").hidden = SAMPLE || SIM;   // made-up accounts have nothing to follow
+  if (!SAMPLE && !SIM) $("tgBtn").href = tgAlerts(a);
   const known = M.firstSeen != null || a in GENESIS || M.proposed > 0;
   $("roles").innerHTML = [
     a in GENESIS ? `<span class="tag w" data-tip="Funded in the genesis block with ${fmtA(GENESIS[a])} AGRS.">genesis account</span>` : "",
@@ -1141,18 +1154,6 @@ function validatorView(a) {
   return { mine, all, set, gaps, longest, med: median(gaps.map(g => g.s)), hours, start, nowH, upH, ofH, makers, share: all.length ? mine.length / all.length : 0, inSet: set.includes(a) };
 }
 function renderValidator() {
-  // half a chain would look like a validator that stopped: while blocks load, say how far, and show no numbers yet
-  if (C.loading && !SAMPLE) {
-    const of = C.want != null ? fmtN(C.want + 1) : "…";
-    $("tiles").innerHTML = tile("Reading the chain", `${fmtN(C.loadedN || 0)} of ${of}`, "blocks read so far; the profile fills in when all are here", "Our node sends the chain a hundred blocks at a time.\nA validator’s numbers need every block.", "blocks");
-    for (const id of ["vSealHead", "vRunHead"]) $(id).innerHTML = `Reading the chain… <span>${fmtN(C.loadedN || 0)} of ${of} blocks</span>`;
-    for (const id of ["vGapNote", "vHoursNote", "vMoney", "vSetNote"]) $(id).textContent = "";
-    for (const id of ["vStrip", "vGapChart", "vHours", "vDist", "vKinds"]) $(id).replaceChildren();
-    $("vSealed").innerHTML = `<li class="empty">Reading the chain…</li>`;
-    $("vBody").innerHTML = `<tr><td colspan="4" class="empty">Reading the chain…</td></tr>`;
-    $("vGov").innerHTML = `<li class="empty">Reading the chain…</li>`;
-    return;
-  }
   const a = S.addr, V = validatorView(a), st = S.lookups.getaccountstate, gb = S.lookups.getbalance;
   const last = V.mine[V.mine.length - 1], first = V.mine[0];
   const N = V.set.length;
@@ -1173,9 +1174,12 @@ function renderValidator() {
     tile("Last block", last ? (last.ts ? ago(last.ts) : `#${fmtN(last.h)}`) : "—", last ? `block #${fmtN(last.h)}` : "has not made one", "When it last sealed a block."),
     tile("Online", up != null ? pct(up) : "—", V.ofH ? `${fmtN(V.upH)} of ${fmtN(V.ofH)} hours, last 7 days` : "no blocks in 7 days", "Hours of the last 7 days in which it made at least one block.\nA rough sign of how often it was running."),
   ].join("");
+  countUp($("tiles"));
 
-  // one time axis for the strip and the pauses: from the first block on the chain to the newest
-  const tsAll = V.all.filter(b => b.ts), ax = { t0: tsAll.length ? tsAll[0].ts : 0, t1: tsAll.length ? Math.max(tsAll[0].ts + 1, tsAll[tsAll.length - 1].ts) : 1 };
+  // one time axis for the strip and the pauses: from the first block on the chain to the newest; while the chain
+  // is read it runs to now, so the blocks fill it from the left and the reading head shows how far it got
+  const tsAll = V.all.filter(b => b.ts), reading = C.loading && !SAMPLE, tLast = tsAll.length ? tsAll[tsAll.length - 1].ts : 0;
+  const ax = { t0: tsAll.length ? tsAll[0].ts : 0, t1: tsAll.length ? Math.max(tsAll[0].ts + 1, reading ? Math.max(tLast, Date.now() / 1000) : tLast) : 1, head: reading ? tLast : null };
 
   // what it sealed: blocks with transactions, empty stretches folded, long stops called out
   const emptyN = V.mine.length - txBlocks;
@@ -1225,6 +1229,23 @@ function renderValidator() {
   // the charts last: they take the height the filled panels leave them
   drawStrip($("vStrip"), V, ax);
   drawGaps($("vGapChart"), V.gaps, V.med, V.longest, ax);
+}
+// while the chain is read, a tile's number rolls from what it showed to what it shows now
+const LASTV = new Map(), NUMV = /^([\d,]+(?:\.\d+)?)(%?)$/;
+function countUp(host) {
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  host.querySelectorAll(".tile").forEach(t => {
+    const v = t.querySelector(".v"), txt = v && v.firstChild && v.firstChild.nodeType === 3 ? v.firstChild : null;
+    if (!txt) return;
+    const key = t.querySelector("h4").textContent, now = txt.textContent.trim(), prev = LASTV.get(key); LASTV.set(key, now);
+    const m = NUMV.exec(now), pm = prev && NUMV.exec(prev);
+    if (calm || !C.loading || !m || !pm || pm[2] !== m[2]) return;
+    const a = +pm[1].replace(/,/g, ""), b = +m[1].replace(/,/g, ""), dec = (m[1].split(".")[1] || "").length;
+    if (a === b) return;
+    const t0 = performance.now(), D = 650;
+    const step = at => { if (!txt.isConnected) return; const k = Math.min(1, (at - t0) / D), x = a + (b - a) * (1 - Math.pow(1 - k, 3)); txt.textContent = (dec ? x.toFixed(dec) : fmtN(x)) + m[2]; if (k < 1) requestAnimationFrame(step); };
+    txt.textContent = prev; requestAnimationFrame(step);
+  });
 }
 // the four groups the filter offers
 const vCat = k => k === "consensus_rule_update" || k === "consensus_rule_vote" ? "gov" : k === "rule_deploy" || k.startsWith("rule_offer") ? "rule" : "transfer";
@@ -1306,6 +1327,7 @@ function drawStrip(host, V, ax) {
   for (const b of V.mine) if (b.ts) cols.add(Math.round(X(b.ts)));
   const y0 = LY("blk") - lh * 0.36, y1 = LY("blk") + lh * 0.36;
   mk("path", { class: "hair", d: [...cols].map(px => `M${px} ${y0.toFixed(1)}V${y1.toFixed(1)}`).join("") });
+  if (ax.head) { const hx = X(ax.head); mk("rect", { class: "unread", x: hx, y: m.t, width: Math.max(0, W - m.r - hx), height: H - m.t - m.b }); mk("line", { class: "readhead", x1: hx, x2: hx, y1: m.t, y2: H - m.b }); }
   // transactions: per lane and pixel column, a dot that grows with how many
   const dots = new Map();
   for (const e of VSE.all) if (e.txs && e.ts) for (const r of e.txs) { const key = `${r.cat}|${Math.round(X(e.ts) / 3) * 3}`; dots.set(key, (dots.get(key) || 0) + 1); }

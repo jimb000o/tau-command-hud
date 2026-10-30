@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const TELEGRAM = "https://t.me/tauHUDcom", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml", AGZX = "https://x.com/Agorzilla";
-  const LATEST = "v29.6"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
+  const LATEST = "v30.4"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
   const RELAY = "node.tauhud.com", NET = "tau-testnet-v2";
@@ -21,6 +21,7 @@
     nodes:      { t: "Nodes", d: "Community nodes that follow the chain, with badges for uptime and sync", i: "◎", h: "nodes/" },
     proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with alerts on Telegram, X and RSS", i: "§", h: "proposals/" },
     story:      { t: "Tau in 60 seconds", d: "Propose, check, agree, law: how Tau changes its rules without a fork", i: "▶", h: "story/" },
+    start:      { t: "Start here", d: "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla", i: "➜", h: "start/" },
     tour:       { t: "Guided tour", d: "One minute, eight steps: how rules change by agreement", i: "▸", h: "?tour=1", act: "tour" },
     gazette:    { t: "The Daily Consensus", d: "Tau as a 1920s newspaper, a new edition every Monday: turn the pages with a click or a tap", i: "❡", h: "gazette/" },
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
@@ -48,11 +49,11 @@
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     /* grouped by what a visitor came to do (29 Oct): watch the chain, understand Tau, try it, and who runs this site; five to seven entries each */
     { k: "explore", t: "Explore", items: ["explorer", "proposals", "account", "nodes", "stats", "history", "devpulse"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
+    { k: "learn", t: "Learn", items: ["start", "tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote", "wallet", "card", "agorzilla"], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, items: ["about", "share", "status", "findings", "roadmap", "meta", "developers", "press", "legal"], tab: "i" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", roadmap: "about", status: "about", meta: "about", legal: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", card: "play", whatif: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", start: "learn", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", roadmap: "about", status: "about", meta: "about", legal: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", card: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
@@ -615,6 +616,13 @@
     if (!state) { state = el("a", "pill primary", "Chain state"); state.href = ROOT + "#chain-state"; }
     state.classList.add("pill", "primary"); tip(state, TIPS.state);
     left.append(state);
+    /* first visits: one way in, until its four steps are done (start/ keeps the count) */
+    const started = (() => { try { return +localStorage.getItem("tauhud-start") || 0; } catch (e) { return 0; } })();
+    if (page !== "start" && started < 4) {
+      const go = el("a", "pill start", started ? `Start here <b>${started}/4</b>` : "Start here"); go.href = ROOT + "start/";
+      tip(go, "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.");
+      left.append(go);
+    }
     /* alerts: one pill named for what you get, not for the app; it opens the three ways to get them */
     const tg = el("div", "ni-wrap tn-alerts"), tgb = el("button", "pill tg", `${PLANE}${XLOGO}<span>Get alerts</span>`), tgm = el("div", "menu tn-alm");
     tgb.type = "button"; tgb.setAttribute("aria-haspopup", "true"); tgb.setAttribute("aria-expanded", "false"); tgb.setAttribute("aria-label", "Get alerts: Telegram, X or RSS"); tip(tgb, TIPS.alerts);

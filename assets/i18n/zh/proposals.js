@@ -263,4 +263,6 @@ TauI18n.add({ strings: {
   "Every transaction would cost {n} AGRS instead of {m}: six times today's fee. Only the proposer votes yes; the other validators let the deadline pass. Needs {a} of {b} validators by block #{c}.": "每笔交易将花费 {n} AGRS，而不是 {m}：是今天手续费的六倍。只有提议者投赞成票，其他验证者任由截止期限过去。需要在区块 #{c} 之前获得 {b} 个验证者中的 {a} 个。",
   "Nothing agreed is waiting to take effect.": "没有已通过、等待生效的变更。",
   "{n} min": "{n} 分钟",
+  "Telegram alerts": "Telegram 提醒",
+  "A message from @tauhud_alerts_bot on every vote and when it is decided. Only your chat id is kept; /stop ends it.": "每次有人投票以及最终结果出来时，@tauhud_alerts_bot 会发消息给你。只保存你的聊天 ID；发送 /stop 即可结束。",
 } });

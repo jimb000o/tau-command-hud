@@ -472,6 +472,30 @@ Making it visible in the channel:
 
 Logs: `docker compose logs -f bot`.
 
+### Personal alerts
+
+In a private chat the bot also follows things for one person (`alerts/follow.py`), opt-in only:
+
+| Command | What it does |
+|---|---|
+| `/follow <address>` | a message when the account sends or receives test AGRS, its own rule lands in a block, it gets or makes a rule offer or co-sign request, it votes, and on every vote on a rule change it proposed |
+| `/follow <rule change id>` (or its first 16 characters) | a message on every vote and when it is agreed, takes effect or is dropped; then it stops by itself |
+| `/unfollow <address or id>`, `/unfollow all` | drops one, or everything |
+| `/following` | the list |
+| `/stop` | forgets the chat completely |
+
+tauhud.com links straight to it: "Telegram alerts" on an account page, in the wallet and on a proposal
+open `t.me/<bot>?start=<code>`, the code being the address (48 bytes) in base64url, or `p` + the rule change id
+(32 bytes) in base64url, so the person only presses Start.
+
+Stored in `/state/follows.json` (volume `alerts_state`): per chat its Telegram chat id, what it follows and since
+when, nothing else; plus the last block looked at and each rule change's status and vote count. `/stop`, blocking the
+bot, or 60 days with nothing followed deletes a chat. Every `FOLLOW_EVERY` (20) s the bot reads the new blocks from
+the relay and `proposals.json`; one message per chat per round, at most `FOLLOW_HOURLY` (20) an hour per chat, then
+one "pausing" note. Limits: `FOLLOW_MAX_ADDRESSES` 10 and `FOLLOW_MAX_PROPOSALS` 20 per chat, `FOLLOW_MAX_CHATS`
+5000. After a chain restart, or more than `FOLLOW_BACKLOG` (300) blocks missed, it starts at the tip without old news.
+`docker compose exec bot python -c "import follow; print(len(follow.Store().chats))"` shows how many chats follow something.
+
 ## Share previews
 
 tauhud.com is static, so every page has one og:image and the crawlers of X and
