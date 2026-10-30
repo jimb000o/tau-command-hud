@@ -1,6 +1,6 @@
 /* Tau HUD shared header bar (row 2 on every page). Loaded by assets/nav.js.
    Monochrome, one green accent, nothing truncated, no layout shift when a menu opens. */
-.tnav, .tsheet, .tabbar, header.trail { --tn-ok: var(--ok, #39ff8a); --tn-dim: var(--dim, #8a8a94); --tn-hair: var(--hair, rgba(255,255,255,.18)); --tn-line: var(--line, rgba(255,255,255,.09)); --tn-font: var(--display, "Sora", "Segoe UI", sans-serif); --tn-mono: var(--mono, "JetBrains Mono", ui-monospace, Menlo, monospace);
+.tnav, .tsheet, .tabbar, header.trail, header.rail { --tn-ok: var(--ok, #39ff8a); --tn-dim: var(--dim, #8a8a94); --tn-hair: var(--hair, rgba(255,255,255,.18)); --tn-line: var(--line, rgba(255,255,255,.09)); --tn-font: var(--display, "Sora", "Segoe UI", sans-serif); --tn-mono: var(--mono, "JetBrains Mono", ui-monospace, Menlo, monospace);
 }
 .tnav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; flex: 1 1 100%; min-width: 0; position: relative; }
 .tnav-l, .tnav-r { display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -61,8 +61,8 @@
 .tnav .tn-upd { position: relative; display: inline-flex; }
 .tnav .tn-upd.new::after { content: ""; position: absolute; top: 3px; right: -5px; width: 6px; height: 6px; border-radius: 50%; background: var(--tn-ok); box-shadow: 0 0 6px var(--tn-ok); }
 .tnav .vlab { display: none; }
-.tnav .seg.tn-lang > button { padding: 7px 10px; letter-spacing: .06em; }
-.tnav .seg.tn-lang > button[lang="zh-CN"] { font-weight: 500; letter-spacing: .04em; }
+:is(.tnav, header.trail, header.rail) .seg.tn-lang > button { padding: 7px 10px; letter-spacing: .06em; }
+:is(.tnav, header.trail, header.rail) .seg.tn-lang > button[lang="zh-CN"] { font-weight: 500; letter-spacing: .04em; }
 .tnav .tnav-gear { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--tn-hair); display: grid; place-items: center; color: var(--tn-dim); font-size: 15px; cursor: pointer; background: transparent; flex: none; padding: 0; line-height: 1; }
 .tnav .tnav-gear:hover, .tnav .tnav-gear[aria-expanded="true"] { color: #fff; border-color: #fff; }
 .tnav-gearwrap { position: relative; }
@@ -102,18 +102,18 @@ header.trail .chip.next.held { border-color: rgba(255,177,59,.5); } header.trail
 header.trail .chip.next.soon { animation: navSoonLive 1.6s ease-in-out infinite; } @keyframes navSoonLive { 50% { box-shadow: 0 0 14px rgba(57,255,138,.7); border-color: var(--tn-ok); } }
 header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite; } @keyframes navSoon { 50% { box-shadow: 0 0 14px rgba(255,177,59,.8); border-color: #ffb13b; } }
 .state.sim { color: #ffb13b; border-color: #ffb13b; } .state.sim i { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
-.tnav .seg.tn-src > button[aria-pressed="true"]:last-child { background: #ffb13b; color: #000; }
+:is(.tnav, header.trail, header.rail) .seg.tn-src > button[aria-pressed="true"]:last-child { background: #ffb13b; color: #000; }
 @keyframes tnblink { 50% { opacity: .35; } }
 /* row 2 controls on subpages, same look as the HUD's */
-.tnav .seg { display: inline-flex; border: 1px solid var(--tn-hair); border-radius: 999px; overflow: hidden; }
-.tnav .seg > a, .tnav .seg > button { font: 600 12px var(--tn-font); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--tn-dim); border: 0; padding: 7px 12px; cursor: pointer; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; }
-.tnav .seg > [aria-pressed="true"] { background: #fff; color: #000; }
-.tnav .seg > a:hover, .tnav .seg > button:hover { color: #fff; }
-.tnav .seg > [aria-pressed="true"]:hover { color: #000; }
-.tnav .seg [data-livedot] { width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; display: inline-block; background: var(--tn-ok); box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(57,255,138,.95); }
-.tnav .seg [data-livedot].behind { background: #ffb13b; box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,177,59,.9); }
-.tnav .seg [data-livedot].off { background: #ff4d6d; box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,77,109,.9); }   /* red only here: node offline (decided 27 Oct) */
-.tnav .seg [data-livedot].none { background: #9a9aa2; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
+:is(.tnav, header.trail, header.rail) .seg { display: inline-flex; border: 1px solid var(--tn-hair); border-radius: 999px; overflow: hidden; }
+:is(.tnav, header.trail, header.rail) .seg > a, :is(.tnav, header.trail, header.rail) .seg > button { font: 600 12px var(--tn-font); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--tn-dim); border: 0; padding: 7px 12px; cursor: pointer; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; }
+:is(.tnav, header.trail, header.rail) .seg > [aria-pressed="true"] { background: #fff; color: #000; }
+:is(.tnav, header.trail, header.rail) .seg > a:hover, :is(.tnav, header.trail, header.rail) .seg > button:hover { color: #fff; }
+:is(.tnav, header.trail, header.rail) .seg > [aria-pressed="true"]:hover { color: #000; }
+:is(.tnav, header.trail, header.rail) .seg [data-livedot] { width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; display: inline-block; background: var(--tn-ok); box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(57,255,138,.95); }
+:is(.tnav, header.trail, header.rail) .seg [data-livedot].behind { background: #ffb13b; box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,177,59,.9); }
+:is(.tnav, header.trail, header.rail) .seg [data-livedot].off { background: #ff4d6d; box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,77,109,.9); }   /* red only here: node offline (decided 27 Oct) */
+:is(.tnav, header.trail, header.rail) .seg [data-livedot].none { background: #9a9aa2; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
 .tnav-pop .gearbody { display: flex; flex-direction: column; gap: 10px; }
 .tnav-pop code { font: 500 12px var(--tn-mono); color: #fff; }
 .tnav-pop .hint { color: var(--tn-dim); font: 400 11px/1.45 var(--tn-font); }
@@ -124,7 +124,7 @@ header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite
 .tabbar, .tsheet, .tsheet-bg { display: none; }
 @media (max-width: 700px), (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
   .tnav { gap: 6px 8px; }
-  .tnav-sep, .tnav-nav, .tnav .tn-upd, .tnav .vlab, .tnav .seg.tn-lang { display: none; }   /* phone: the language lives in the Learn sheet */
+  .tnav-sep, .tnav-nav, .tnav .tn-upd:not(.tn-fbk), .tnav .vlab, .tnav .tn-lang { display: none; }   /* phone: the language lives in the Learn sheet */
   .tnav-r { margin-left: auto; gap: 8px; }
   .tnav .pill { font-size: 11px; padding: 0 14px; min-height: 44px; letter-spacing: .08em; }
   .tnav .pill.tg span { display: none; }
@@ -157,7 +157,7 @@ header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite
   header.trail .chips { order: 3; flex: 1 1 100%; width: 100%; flex-wrap: wrap; gap: 6px; margin: 0; }
   header.trail .chip { font-size: 11px; padding: 4px 9px; letter-spacing: .04em; }
   header.trail #tnNet, header.trail #tnRev, header.trail #tnFee { display: none; }
-  .tnav .seg > a, .tnav .seg > button { font-size: 11px; padding: 0 12px; min-height: 44px; }
+  :is(.tnav, header.trail, header.rail) .seg > a, :is(.tnav, header.trail, header.rail) .seg > button { font-size: 11px; padding: 0 12px; min-height: 44px; }
   .tour { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
 }
 
@@ -258,3 +258,22 @@ a.tn-soc img { height: 16px; width: auto; display: block; }
 .tn-share .tn-sh-note { margin: 14px 0 0; font-size: 12px; color: var(--u-dim); }
 .tn-share .tn-close { top: 10px; right: 10px; }
 @media (max-width: 700px) { .tn-share .tn-sh-link { flex-wrap: wrap; } .tn-share button, .tn-share .tn-sh-row a { min-height: 44px; } }
+
+/* header v2 (30 Oct): site / section / page in row 1, a quiet unofficial note, Live/Simulation with the chain chips,
+   one Feedback & updates button and a small language menu on the right */
+header.trail .crumb { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+header.trail .crumb .sep { color: #55555c; font: 400 17px var(--tn-font); }
+header.trail .crumb .sec { color: var(--tn-dim); font: 500 15px var(--tn-font); white-space: nowrap; }
+header.trail .crumb h1.bt { margin: 0; font: 600 18px/1.2 var(--tn-font); letter-spacing: .01em; text-transform: none; color: #fff; white-space: nowrap; }
+header.trail .unoff.q, header.rail > button.chip.unoff.unoff { font: 400 11px var(--tn-font); letter-spacing: .02em; text-transform: none; color: var(--tn-dim); background: transparent; border: 0; border-bottom: 1px dotted #55555c; border-radius: 0; padding: 0 0 1px; text-decoration: none; white-space: nowrap; cursor: pointer; }
+header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color: #fff; border-bottom-color: #fff; }
+:is(header.trail, header.rail) .chips > .seg.tn-src { margin-right: 4px; }
+:is(header.trail, header.rail) .chips > .seg.tn-src > button { font-size: 11px; padding: 5px 12px; }
+:is(header.trail, header.rail) .seg.tn-src > button[aria-pressed="true"]:last-child { background: #ffb13b; color: #000; }
+.tnav .tn-fbk.new::after { top: -2px; right: -2px; width: 8px; height: 8px; }
+.tnav .tn-langb { gap: 6px; padding: 7px 12px; letter-spacing: .06em; }
+.tnav .tn-langb .caret { color: var(--tn-dim); font-size: 11px; }
+.tnav .menu.tn-langm { left: auto; right: 0; }
+.tnav-pop > .row .seg { flex: none; }
+@media (max-width: 700px) { header.trail .crumb .sep:first-child, header.trail .crumb .sec, header.trail .crumb .sec + .sep { display: none; } }   /* phone: the page name alone; the tab bar shows the section */
+@media (min-width: 701px) and (max-width: 1899px) { header.rail > .brand > span { display: none; } }   /* the HUD's tagline gives way so row 1 stays one line; the HUD itself says it below */

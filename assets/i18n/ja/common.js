@@ -557,6 +557,14 @@ TauI18n.add({ strings: {
   "Every number on this page counts up as the blocks arrive.": "ブロックが届くにつれて、このページの数字はすべて増えていきます。",
   "This page fills in once every block is read.": "すべてのブロックを読み終えると、このページが表示されます。",
   "{n}%": "{n}%",
+  "Feedback & updates": "フィードバックと更新",
+  "Feedback and updates": "フィードバックと更新",
+  "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.": "見たいもの、壊れているところ、最近の変更：フィードバックフォームと更新ログがここにあります。最も多く賛同されたアイデアから作ります。",
+  "Settings: Simple or Technical view, node address and Connect, background rain.": "設定：シンプル／技術表示、ノードのアドレスと接続、背景の雨。",
+  "Settings: Simple or Technical view, which node this page reads, guided tour, about.": "設定：シンプル／技術表示、このページが読むノード、ガイドツアー、概要。",
+  "Language · 语言 · 言語": "言語 · Language · 语言",
+  "Settings: view, node, guided tour, about": "設定：表示、ノード、ガイドツアー、概要",
+  "Settings: view, node address, background rain": "設定：表示、ノードのアドレス、背景の雨",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 送信者自身のルールが拒否しました（o5 = 0 · ${TauI18n.t(r)}）`]] });

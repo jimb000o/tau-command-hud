@@ -562,6 +562,14 @@ TauI18n.add({ strings: {
   "Every number on this page counts up as the blocks arrive.": "区块陆续到达时，本页的每个数字都会随之增长。",
   "This page fills in once every block is read.": "读完全部区块后，本页内容就会出现。",
   "{n}%": "{n}%",
+  "Feedback & updates": "反馈与更新",
+  "Feedback and updates": "反馈与更新",
+  "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.": "你想看到什么、哪里坏了、最近改了什么：反馈表和更新日志都在这里。获得最多赞同的想法优先实现。",
+  "Settings: Simple or Technical view, node address and Connect, background rain.": "设置：简洁或技术视图、节点地址与连接、背景代码雨。",
+  "Settings: Simple or Technical view, which node this page reads, guided tour, about.": "设置：简洁或技术视图、本页读取哪个节点、导览、关于。",
+  "Language · 语言 · 言語": "语言 · Language · 言語",
+  "Settings: view, node, guided tour, about": "设置：视图、节点、导览、关于",
+  "Settings: view, node address, background rain": "设置：视图、节点地址、背景代码雨",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 发送方自己的规则说不 (o5 = 0 · ${TauI18n.t(r)})`]] });

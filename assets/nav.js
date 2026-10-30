@@ -63,12 +63,12 @@
   SECTIONS.forEach(s => (s.items || []).forEach(k => { if (P[k] && !P[k].ext && !P[k].act && !/#/.test(P[k].h)) SECTION_OF[k] = s.k; }));
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
-    feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
+    feedback: "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.",
     telegram: "Join @tauHUDcom on Telegram: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Questions (height, proposals, your transaction or address): write to @tauhud_alerts_bot. Opens Telegram.",
     alerts: "Follow the chain: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.",
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
-    gear: "Settings: node address and Connect, background rain.",
-    gearSub: "Settings: which node this page reads, guided tour, about.",
+    gear: "Settings: Simple or Technical view, node address and Connect, background rain.",
+    gearSub: "Settings: Simple or Technical view, which node this page reads, guided tour, about.",
     live: "Live node: this page reads the real testnet through the community relay at node.tauhud.com. The choice holds on every page.",
     sim: "Simulation: invented activity that follows the documented protocol, generated in your browser. The same made-up chain on every page, eight seconds per block, a fresh start every day at 00:00 UTC. No real chain data. The choice holds on every page.",
     simMode: "Simulation: this page shows a made-up chain generated in your browser, the same on every page. No real chain data. Switch to Live node for the real testnet.",
@@ -382,12 +382,15 @@
   function mountRail(nav, page) {
     const old = nav.previousElementSibling && nav.previousElementSibling.tagName === "HEADER" ? nav.previousElementSibling : null;
     const tEl = old && old.querySelector(".brand span");
-    const title = (tEl && tEl.textContent.trim()) || (P[page] && P[page].t) || "";
+    const title = (P[page] && P[page].t) || (tEl && tEl.textContent.trim()) || "";   // the same words as the menu entry that led here
     const own = old && old.querySelector("#state");
     const rail = el("header", "trail");
-    const brand = el("a", "brand", `${MARK}<span class="bn">Tau HUD</span><h1 class="bt">${esc(title)}</h1>`);  // the page title is the heading, the logo is not
+    /* site / section / page: the page name is the heading, readable at a glance; the section says which menu holds it */
+    const sec = SECTIONS.find(x => x.k === SECTION_OF[page] && !x.single);
+    const brand = el("a", "brand", `${MARK}<span class="bn">Tau HUD</span>`);
+    const crumb = el("div", "crumb", (sec ? `<span class="sep">/</span><span class="sec">${esc(sec.t)}</span>` : "") + `<span class="sep">/</span><h1 class="bt">${esc(title)}</h1>`);
     const lang = new URLSearchParams(location.search).get("lang"); brand.href = ROOT + (lang ? "?lang=" + encodeURIComponent(lang) : ""); brand.dataset.tnt = "Back to the HUD";
-    const unoff = el("a", "chip unoff" + (SIM ? " sim" : ""), SIM ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = SIM ? TIPS.simBadge : TIPS.unoff;
+    const unoff = el("a", SIM ? "chip unoff sim" : "unoff q", SIM ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = SIM ? TIPS.simBadge : TIPS.unoff;
     const chips = el("div", "chips");
     const chip = (tag, id, cls, html, t) => { const c = el(tag, "chip" + (cls ? " " + cls : ""), html); c.id = id; c.dataset.tnt = t; return c; };
     chips.append(
@@ -404,7 +407,7 @@
       const nx = el("a", "chip next", "<b></b>"); nx.id = "tnNext"; nx.hidden = true; nx.href = ROOT + "proposals/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); chips.append(nx);
     }
     if (own) chips.append(own);
-    rail.append(brand, unoff, chips);
+    rail.append(brand, crumb, unoff, chips);
     if (old) old.replaceWith(rail); else nav.before(rail);
     feedChips(rail);
     return rail;
@@ -446,10 +449,10 @@
       modeB.textContent = SIM ? "Simulation" : wait ? "Live · Connecting" : !up ? "Live · Offline" : stalled ? "Live · Connected, no new blocks" : degraded ? "Live · Degraded" : !synced ? "Live · Not synced" : catching ? `Verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}` : "Live · Connected";
       modeDot.className = "dot " + (SIM ? "sim" : wait ? "none" : !up ? "off" : good ? "" : "behind");
       mode.className = "chip v " + (SIM ? "sim" : wait || !up ? "" : good ? "live" : "behind");   // offline: the red dot is the one signal, the text stays plain
-      document.querySelectorAll(".tnav [data-livedot]").forEach(d => {
+      document.querySelectorAll("[data-livedot]").forEach(d => {
         if (SIM) { d.className = "dot none"; return; }
         d.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
-        const a = d.closest("a"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : stalled ? `Amber: connected, but no new blocks right now; the testnet has stalled${st.health && st.health.score != null ? ` (health ${st.health.score} of 100)` : ""}.` : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + " Opens the HUD in Live mode.";
+        const a = d.closest("a, button"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : stalled ? `Amber: connected, but no new blocks right now; the testnet has stalled${st.health && st.health.score != null ? ` (health ${st.health.score} of 100)` : ""}.` : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + (a.tagName === "A" ? " Opens the HUD in Live mode." : "");
       });
       const n = CHAIN.online; onB.textContent = n == null ? "—" : String(n); onDot.className = "dot " + (n == null ? "none" : n > 0 ? "" : "off"); onChip.classList.toggle("live", n != null && n > 0);
       hB.textContent = st && Number(st.height) > 0 ? "#" + fmt(st.height) : "—";
@@ -639,7 +642,12 @@
     // the Simple/Technical switch appears only where it changes something (`view: true` in P); the stored choice stays global
     if (!isHud) { const c = subControls(tip); slots.source = slots.source || c.src; slots.view = slots.view || (P[page] && P[page].view ? c.view : null); slots.gear = slots.gear || c.gear; mountRail(nav, page); if (!tipsOn) { tipsOn = true; hoverTips(); } }
     const left = el("div", "tnav-l"), right = el("div", "tnav-r"), bar = el("div", "tnav-nav");
-    if (slots.source) { left.append(slots.source); left.append(el("span", "tnav-sep")); }
+    /* Live/Simulation sits with the chain chips in row 1, in place of the chip that only repeated it */
+    const railChips = document.querySelector(isHud ? "header.rail .chips" : "header.trail .chips");
+    if (slots.source && railChips) {
+      slots.source.classList.add("tn-src"); railChips.prepend(slots.source);
+      const dup = railChips.querySelector("#tnMode, #chipMode"); if (dup) dup.style.display = "none";
+    } else if (slots.source) { left.append(slots.source); left.append(el("span", "tnav-sep")); }
     SECTIONS.forEach(sec => {
       if (sec.single) {
         const a = el("a", "ni" + (here === sec.k ? " here" : ""), `<span class="lbl">${esc(sec.t)}</span>`); a.href = ROOT; if (here === sec.k) a.setAttribute("aria-current", "page"); tip(a, TIPS.hud); bar.append(a); return;
@@ -658,10 +666,7 @@
       w.append(b, m); bar.append(w);
     });
     left.append(bar);
-    let state = slots.state;
-    if (!state) { state = el("a", "pill primary", "Chain state"); state.href = ROOT + "#chain-state"; }
-    state.classList.add("pill", "primary"); tip(state, TIPS.state);
-    left.append(state);
+    if (slots.state) slots.state.remove();   // the chain state is the first entry under Explore and behind the rev chip
     /* first visits: one way in, until its four steps are done (start/ keeps the count) */
     const started = (() => { try { return +localStorage.getItem("tauhud-start") || 0; } catch (e) { return 0; } })();
     if (page !== "start" && started < 4) {
@@ -684,9 +689,10 @@
     tgb.addEventListener("click", () => { tgm.style.top = innerWidth <= 700 ? Math.round(tgb.getBoundingClientRect().bottom + 8) + "px" : ""; toggle(tgb, tgm); });   // phone: a full-width panel under the header
     tg.append(tgb, tgm);
     /* feedback, impossible to miss: opens the feedback form in place, the HUD's own on the start page */
-    const fbk = el("button", "pill fbk", `${BUBBLE}<span>Feedback</span>`); fbk.type = "button"; fbk.setAttribute("aria-label", "Give feedback"); tip(fbk, TIPS.feedback);
-    fbk.addEventListener("click", () => { closeAll(); if (isHud && slots.updates) { slots.updates.click(); setTimeout(() => { const t = document.getElementById("fbText"); if (t) t.focus({ preventScroll: true }); }, 60); } else openUpdates(page, true); });
-    right.append(fbk, tg);
+    /* feedback and the update log open the same overlay, so they are one button; the green dot says something new shipped */
+    const fbk = el("button", "pill fbk", `${BUBBLE}<span>Feedback &amp; updates</span>`); fbk.type = "button"; fbk.setAttribute("aria-label", "Feedback and updates"); tip(fbk, TIPS.feedback);
+    fbk.addEventListener("click", () => { closeAll(); markSeen(); if (isHud && slots.updates) slots.updates.click(); else openUpdates(page); });
+    const fbkWrap = el("span", "tn-upd tn-fbk"); fbkWrap.append(fbk);
     let upd = slots.updates;
     if (!upd) { upd = el("a", "", "Updates"); upd.href = "#updates"; upd.addEventListener("click", e => { e.preventDefault(); openUpdates(page); }); }   // opens in place; the HUD keeps its own overlay with the feedback box
     upd.classList.add("tl"); tip(upd, TIPS.updates);
@@ -700,28 +706,32 @@
       document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); si.focus(); si.select(); } });
       const css = el("style"); css.textContent = `.tnav .tn-search { display: flex; align-items: center; margin: 0; } .tnav .tn-search input { width: 150px; box-sizing: border-box; padding: 4px 8px; font: 12px var(--tn-mono); color: #fff; background: rgba(255,255,255,.04); border: 1px solid var(--tn-hair); border-radius: 999px; outline: none; } .tnav .tn-search input::placeholder { color: var(--tn-dim); } .tnav .tn-search input:focus { border-color: #fff; width: 220px; } .tnav .tn-search input::-webkit-search-cancel-button { display: none; } @media (max-width: 700px) { .tnav .tn-search { display: none; } }`; document.head.append(css);
     }
-    /* every page has a short guided tour of its own (assets/tour.js); on the HUD this starts the HUD's tour */
-    /* at most four or five utilities on the line (Feedback, Telegram, Search, Updates); the tour starts from Learn and, on the HUD, from its own buttons */
-    right.append(updWrap);
+    /* at most five utilities on the line: Search, Follow, Feedback & updates, language, settings; the tour starts from Learn */
+    right.append(tg, fbkWrap);
     if (!isHud) loadTour();
     const I = window.TauI18n;
-    right.append(el("span", "tnav-sep"));   // text links on the left of the line, the two switches on the right
-    if (I) {   // language switch: a pill like Simple/Technical, each language in its own script; the choice is remembered
-      const lg = el("div", "seg tn-lang"); lg.setAttribute("role", "group"); lg.setAttribute("aria-label", "Language · 语言"); lg.setAttribute("translate", "no");
-      [["en", "EN", "en", "Read this site in English · 切换到英文"], ["zh", "中文", "zh-CN", "阅读中文版 · Read this site in Chinese"], ["ja", "日本語", "ja", "日本語で読む · Read this site in Japanese"]].forEach(([code, label, tag, t]) => {
-        const lb = el("button", "", label); lb.type = "button"; lb.lang = tag; lb.setAttribute("aria-pressed", String(I.lang === code)); tip(lb, t);
-        lb.addEventListener("click", () => { if (I.lang !== code) I.set(code); }); lg.append(lb);
+    if (I) {   // language: one small menu showing the language you read in; each language is written in its own script; the choice is remembered
+      const LANGS = [["en", "EN", "English", "en", "Read this site in English · 切换到英文"], ["zh", "中文", "中文", "zh-CN", "阅读中文版 · Read this site in Chinese"], ["ja", "日本語", "日本語", "ja", "日本語で読む · Read this site in Japanese"]];
+      const cur = LANGS.find(l => l[0] === I.lang) || LANGS[0];
+      const lw = el("div", "ni-wrap tn-lang"), lb = el("button", "pill tn-langb", `<span lang="${cur[3]}">${cur[1]}</span><span class="caret">▾</span>`), lm = el("div", "menu tn-langm");
+      lw.setAttribute("translate", "no"); lb.type = "button"; lb.setAttribute("aria-haspopup", "true"); lb.setAttribute("aria-expanded", "false"); lb.setAttribute("aria-label", "Language · 语言 · 言語"); tip(lb, "Language · 语言 · 言語");
+      lm.hidden = true; lm.setAttribute("role", "menu"); lm.setAttribute("aria-label", "Language · 语言 · 言語");
+      LANGS.forEach(([code, , name, tag, t]) => {
+        const a = el("a", "mi" + (code === I.lang ? " here" : ""), `<span class="ic">文</span><b lang="${tag}">${name}</b><span>${esc(t)}</span>`); a.href = "#"; a.setAttribute("role", "menuitem");
+        a.addEventListener("click", e => { e.preventDefault(); closeAll(); if (I.lang !== code) I.set(code); }); lm.append(a);
       });
-      right.append(lg);
+      lb.addEventListener("click", () => toggle(lb, lm));
+      lw.append(lb, lm); right.append(lw);
     }
-    if (slots.view) { tip(slots.view, "View: Simple says what each thing means; Technical adds keys, hashes, heights and stream names."); right.append(slots.view); }
-    if (slots.gear) {
+    if (slots.gear) {   // settings, including the Simple/Technical view where a page has one
       const gw = el("div", "tnav-gearwrap"), gb = el("button", "tnav-gear", "⚙"), pop = el("div", "tnav-pop");
-      gb.type = "button"; gb.setAttribute("aria-label", isHud ? "Settings: node address, background rain" : "Settings: node, guided tour, about"); gb.setAttribute("aria-haspopup", "true"); gb.setAttribute("aria-expanded", "false"); tip(gb, isHud ? TIPS.gear : TIPS.gearSub);
-      pop.hidden = true; pop.append(slots.gear);
+      gb.type = "button"; gb.setAttribute("aria-label", isHud ? "Settings: view, node address, background rain" : "Settings: view, node, guided tour, about"); gb.setAttribute("aria-haspopup", "true"); gb.setAttribute("aria-expanded", "false"); tip(gb, isHud ? TIPS.gear : TIPS.gearSub);
+      pop.hidden = true;
+      if (slots.view) { tip(slots.view, "View: Simple says what each thing means; Technical adds keys, hashes, heights and stream names."); const vh = el("h4", "", "View"), vr = el("div", "row"); vr.append(slots.view); pop.append(vh, vr); }
+      pop.append(slots.gear);
       gb.addEventListener("click", () => toggle(gb, pop));
       gw.append(gb, pop); right.append(gw);
-    }
+    } else if (slots.view) right.append(slots.view);
     nav.innerHTML = ""; nav.append(left, right);
     mountPhone(nav, page, isHud, here, upd);
     checkLog();

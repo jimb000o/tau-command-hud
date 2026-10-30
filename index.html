@@ -1818,7 +1818,7 @@ if (CORE_ONLY) { let told = 0; setInterval(() => {
    today's meals and its stage; until that file may be read from here, the hover says what it is */
 const AGZ = { at: 0, d: null, room: 0, fail: 0 };
 function placeAgz() {   // two anchors: the header's bottom line is his ground, the Live status chip is what he watches; he never covers a control
-  const a = $("agz"), rail = document.querySelector("header.rail"), mode = $("chipMode"), u = document.querySelector(".rail .unoff"); if (!a || !rail || !mode || !u) return;
+  const a = $("agz"), rail = document.querySelector("header.rail"), mode = document.querySelector("header.rail .chips > .seg") || $("chipMode"), u = document.querySelector(".rail .unoff"); if (!a || !rail || !mode || !u) return;   // he watches the Live/Simulation switch (header v2)
   if (getComputedStyle(a).display === "none") return;
   // measured on screen, placed in the scaled layout (wide screens scale the whole page, so screen px are not layout px)
   const op = a.offsetParent || document.body, opr = op.getBoundingClientRect(), z = op.offsetWidth ? opr.width / op.offsetWidth : 1;

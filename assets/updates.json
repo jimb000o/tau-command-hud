@@ -1914,5 +1914,10 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "News line: one short ghost line, “Ghosts in the waiting room”, with the live count, instead of two. Hover any item on the line to read in a sentence or two what is behind it."
+ },
+ {
+  "tag": "Menu",
+  "on": "2026-10-30",
+  "html": "Header and menus, tidied for a site that has grown to 35 pages. Each page names itself at the top, as in “Tau HUD / Playground / White Rabbit Key”. Live node and Simulation sit with the chain numbers in the first row, and the note that this is an unofficial community project is quieter but stays on every page. The menus are sorted into small groups: Explore has the chain now and the road to mainnet (Status, Findings and Road to mainnet moved here), Playground has practice, the real testnet and games, and About keeps this site and our work for others. Chain state is the first entry under Explore. On the right: Search, Follow the chain, one Feedback & updates button, a language menu and the gear, which now holds Simple or Technical."
  }
 ]
