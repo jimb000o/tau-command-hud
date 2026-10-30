@@ -881,7 +881,7 @@
      on is open, pads to it and sits again looking back over its shoulder. When a rule is carried it walks by
      twice, the very same way. Spots are fractions of the room: [x, y of the paws, sitting height]. ----- */
   const CAT_AT = { window: { wait: [0.47, 0.79, 0.17], exit: [0.925, 0.79, 0.17] }, counter: { wait: [0.11, 0.7, 0.13], exit: [0.92, 0.7, 0.13] },
-    wire: { wait: [0.07, 0.95, 0.14], exit: [0.925, 0.95, 0.14] }, back: { wait: [0.07, 0.95, 0.14], exit: [0.925, 0.95, 0.14] }, door: { wait: [0.9, 0.95, 0.14], exit: [0.44, 0.77, 0.09] } };
+    wire: { wait: [0.08, 0.8, 0.11], exit: [0.92, 0.8, 0.11] }, back: { wait: [0.08, 0.8, 0.11], exit: [0.92, 0.8, 0.11] }, door: { wait: [0.88, 0.8, 0.11], exit: [0.44, 0.77, 0.09] } };
   const CAT = { room: "window", spot: "wait", x: 0.47, y: 0.79, s: 0.17, walk: null, face: 1, look: 0, mew: 0, n: -1, box: null };
   const catOpen = r => r === "door" ? ST.stamps.size === 4 : r === "window" || ST.stamps.has(HOST[r]);
   function catPut(room, spot) { const a = CAT_AT[room][spot]; Object.assign(CAT, { room, spot, x: a[0], y: a[1], s: a[2], walk: null, gl: null, hide: false, face: room === "door" ? -1 : 1, look: 1 }); }
@@ -896,12 +896,22 @@
       x = w.x0 + (w.a[0] - w.x0) * k; y = w.y0 + (w.a[1] - w.y0) * k; s = w.s0 + (w.a[2] - w.s0) * k;
       if (u >= 1) { Object.assign(CAT, { x: w.a[0], y: w.a[1], s: w.a[2], walk: null, look: 1 }); const f = w.then; w.then = null; f && f(); } }
     /* on a narrow screen the cat is smaller and never steps past the edge */
-    const S = s * H * Math.min(1, W / H), X = Math.max(S * 0.5, Math.min(W - S * 0.5, x * W)) + dx, Y = y * H;
+    const S = s * H * Math.min(1, W / H);
+    let X = Math.max(S * 0.5, Math.min(W - S * 0.5, x * W)), Y = y * H;
+    /* while the view leans in toward a regular she is kept inside what is still on the screen, never cut off at an edge */
+    if (ST.zoom > 1.001 && dx === 0) { const z = ST.zoom, lo = ST.zx - ST.zx / z, hi = ST.zx + (W - ST.zx) / z, bot = ST.zy + (H - ST.zy) / z, top = ST.zy - ST.zy / z, m = S * 0.55;
+      X = Math.max(lo + m, Math.min(hi - m, X)); Y = Math.max(top + S * 1.1, Math.min(bot - S * 0.06, Y)); }
+    /* where the words of a talk would hide her (a short screen), she sits up on the top edge of the words' frame instead */
+    if (dx === 0 && !say.hidden && say.style.visibility !== "hidden") { const r = say.getBoundingClientRect(), d = cv.getBoundingClientRect(), z = ST.zoom, sx = v => ST.zx + (v - ST.zx) * z,
+        bx = r.left - d.left, by = r.top - d.top, l = sx(X - S * 0.45), rr = sx(X + S * 0.45), b = ST.zy + (Y + S * 0.05 - ST.zy) * z;
+      if (rr > bx && l < bx + r.width && b > by) Y = ST.zy + (by - 2 - ST.zy) / z; }
+    X += dx;
     const gl = CAT.gl, gu = gl ? Math.min(1, (now - gl.t0) / gl.d) : 0;
     if (gl && gu >= 1) { CAT.gl = null; CAT.hide = gl.dir === "out"; const f = gl.then; gl.then = null; f && f(); }
     if (CAT.hide && !CAT.gl) { if (dx === 0) CAT.box = null; return; }
     if (CAT.gl) catGlitchDraw(X, Y, S, now, t, CAT.gl.dir === "in" ? gu : 1 - gu); else { g.save(); g.translate(X, Y); catBody(g, S, now, t); g.restore(); }
     if (dx === 0) CAT.box = CAT.gl ? null : { x: X - S * 0.45, y: Y - S * 1.05, w: S * 0.9, h: S * 1.1 };
+    if (dx === 0) { const z = ST.zoom, sx = v => ST.zx + (v - ST.zx) * z, sy = v => ST.zy + (v - ST.zy) * z; CAT.seen = { l: sx(X - S * 0.45), r: sx(X + S * 0.45), t: sy(Y - S * 1.05), b: sy(Y + S * 0.05) }; }
   }
   /* when the chain carries a rule, she breaks up into slipping bands of picture and comes back together:
      drawn once into a small canvas, then laid down strip by strip, each strip pushed sideways, with a pale and a dark
@@ -1246,12 +1256,12 @@
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
 
   /* other languages come in their own small file */
-  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=10`; s.onload = labels; document.head.appendChild(s); }
+  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=11`; s.onload = labels; document.head.appendChild(s); }
   labels();
   /* ?walk (the shared link) opens the café straight away */
   if (/[?&]walk\b/.test(location.search)) setTimeout(() => enter(), 600);
   /* ?cafe=<room> opens the café there (and ?cafe-talk=<who>&cafe-line=<n> for pictures) */
-  { const m = /[?&]cafe=(\w+)/.exec(location.search); if (m) setTimeout(() => { enter(); if (AREAS[m[1]] && m[1] !== "window") { ST.area = m[1]; catPut(m[1], "wait"); desk.classList.add("cafe-away"); place(); mix(); }
+  { const m = /[?&]cafe=(\w+)/.exec(location.search); if (m) window.CAFE_CAT = () => CAT.seen; if (m) setTimeout(() => { enter(); if (AREAS[m[1]] && m[1] !== "window") { ST.area = m[1]; catPut(m[1], "wait"); desk.classList.add("cafe-away"); place(); mix(); }
     const lk = /[?&]cafe-look=(\w+)/.exec(location.search); if (lk) setTimeout(() => { const b = (ST.boxes.props || []).find(q => q.id === lk[1]); lookAt(lk[1], b); }, 1200);
     const tk = /[?&]cafe-talk=(\w+)/.exec(location.search); if (tk) setTimeout(() => { if (tk[1] === "end") { ["mae", "elias", "prof", "sully"].forEach(k => ST.stamps.add(k)); ticket(); outside(); } else talk(tk[1]); }, 400); }, 300); }
 })();
