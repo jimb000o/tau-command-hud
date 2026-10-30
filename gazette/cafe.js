@@ -681,8 +681,8 @@
       creak() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02, o = A.createOscillator(), b = A.createBiquadFilter(); o.type = "sawtooth"; o.frequency.setValueAtTime(90, t); o.frequency.linearRampToValueAtTime(140, t + 0.6); o.frequency.linearRampToValueAtTime(70, t + 1.1);
         b.type = "bandpass"; b.frequency.value = 900; b.Q.value = 9; o.connect(b); b.connect(env(A, out, t, 0.1, 1.1, 0.05)); o.start(t); o.stop(t + 1.3); },
       whoosh() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02, s = A.createBufferSource(), b = A.createBiquadFilter(), g = A.createGain();
-        s.buffer = noise(A); s.loop = true; b.type = "bandpass"; b.Q.value = 1.2; b.frequency.setValueAtTime(400, t); b.frequency.exponentialRampToValueAtTime(3000, t + 1.4); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.12, t + 1.0); g.gain.linearRampToValueAtTime(0, t + 1.6);
-        s.connect(b); b.connect(g); g.connect(out); s.start(t); s.stop(t + 1.7); hit(A, out, t + 1.6, 200, 1, 0.2, 0.3); },
+        s.buffer = noise(A); s.loop = true; b.type = "bandpass"; b.Q.value = 1.2; b.frequency.setValueAtTime(400, t); b.frequency.exponentialRampToValueAtTime(3000, t + 1.4); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.07, t + 1.0); g.gain.linearRampToValueAtTime(0, t + 1.6);
+        s.connect(b); b.connect(g); g.connect(out); s.start(t); s.stop(t + 1.7); hit(A, out, t + 1.6, 160, 1, 0.18, 0.14); },
       /* the café cat: a soft meow that rises and falls (or a short "mrrp"), and a purr */
       meow(short) { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02, d = short ? 0.22 : 0.62, o = A.createOscillator(), f1 = A.createBiquadFilter(), f2 = A.createBiquadFilter(), m = A.createGain(), r = 1 + (Math.random() - 0.5) * 0.12;
         o.type = "sawtooth"; o.frequency.setValueAtTime(520 * r, t); o.frequency.linearRampToValueAtTime((short ? 860 : 780) * r, t + d * 0.3); o.frequency.linearRampToValueAtTime((short ? 700 : 470) * r, t + d);

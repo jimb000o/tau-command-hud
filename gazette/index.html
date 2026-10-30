@@ -1397,7 +1397,7 @@ const EN = {
   /* the first press on a waiting button starts the sound instead of turning it off */
   $("bSnd").onclick = e => { e.stopPropagation(); if (wasWaiting) { wasWaiting = false; sndLabel(); return; } setSnd(!SND, true); };
   window.addEventListener("gazette-cafe", e => { if (e.detail > 0 && !SND) setSnd(true, false); });
-  /* the turn of a broadsheet: the sheet lifts, sweeps through the air and settles. Soft pink noise, low-passed, with a
+  /* the turn of a broadsheet (kept soft, under the café: about 40 % quieter since 30 October, the landing pat half): the sheet lifts, sweeps through the air and settles. Soft pink noise, low-passed, with a
      few paper fibres crackling, varied a little each time so no two turns sound the same; every ramp starts and ends at zero */
   function sound() {
     if (!SND) return;
@@ -1414,13 +1414,13 @@ const EN = {
       lp.frequency.setValueAtTime(700 * k, t); lp.frequency.linearRampToValueAtTime(2300 * k, t + len * 0.35); lp.frequency.exponentialRampToValueAtTime(500 * k, t + len);
       const hp = AC.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 140;
       const g = AC.createGain(); g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.05 * vol, t + 0.06); g.gain.linearRampToValueAtTime(0.13 * vol, t + len * 0.4);
-      g.gain.linearRampToValueAtTime(0.06 * vol, t + len * 0.78); g.gain.linearRampToValueAtTime(0, t + len);
+      g.gain.linearRampToValueAtTime(0.03 * vol, t + 0.06); g.gain.linearRampToValueAtTime(0.078 * vol, t + len * 0.4);
+      g.gain.linearRampToValueAtTime(0.036 * vol, t + len * 0.78); g.gain.linearRampToValueAtTime(0, t + len);
       src.connect(hp).connect(lp).connect(g).connect(AC.destination); src.start(t); src.stop(t + len + 0.05);
       /* the landing: a soft, low pat as the page lies down */
       const land = t + len * 0.8, ps = AC.createBufferSource(); ps.buffer = buf;
-      const pl = AC.createBiquadFilter(); pl.type = "lowpass"; pl.frequency.value = 380 * k; pl.Q.value = 0.9;
-      const pg = AC.createGain(); pg.gain.setValueAtTime(0, land); pg.gain.linearRampToValueAtTime(0.22 * vol, land + 0.012); pg.gain.exponentialRampToValueAtTime(0.002, land + 0.16); pg.gain.linearRampToValueAtTime(0, land + 0.18);
+      const pl = AC.createBiquadFilter(); pl.type = "lowpass"; pl.frequency.value = 300 * k; pl.Q.value = 0.9;
+      const pg = AC.createGain(); pg.gain.setValueAtTime(0, land); pg.gain.linearRampToValueAtTime(0.11 * vol, land + 0.02); pg.gain.exponentialRampToValueAtTime(0.002, land + 0.16); pg.gain.linearRampToValueAtTime(0, land + 0.18);
       ps.connect(pl).connect(pg).connect(AC.destination); ps.start(land, r(0, 0.05)); ps.stop(land + 0.2);
     } catch (e) {}
   }
