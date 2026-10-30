@@ -12,6 +12,10 @@ answers from the same sources the pages use:
   /status              node online, in sync, availability, restarts       relay /uptime
   /help
 
+Personal alerts (follow.py), opt-in in a private chat: /follow <address or rule change id>, /unfollow,
+/following, /stop. The bot then writes when a followed account moves or a followed rule change gets a
+vote, reading the same blocks and proposals.json. It keeps only the chat id and what it follows.
+
 Plain questions work too in a private chat: "height?", "last proposal?",
 "is my tx in? <hash>", or just a hash or an address. In groups it only
 answers commands (Telegram's privacy mode hides everything else anyway).
@@ -42,6 +46,8 @@ import urllib.error
 import urllib.request
 
 from websockets.asyncio.client import connect
+
+import follow
 
 log = logging.getLogger("tau-bot")
 
@@ -79,6 +85,9 @@ COMMANDS = [  # command, menu text in Telegram, line in /help
     ("address", "Balance of an address: /address <address>", "/address &lt;address&gt;  balance of an address"),
     ("block", "One block: /block <number>", "/block &lt;number&gt;  what one block holds"),
     ("status", "Is the testnet running?", "/status  is the testnet running and in sync?"),
+    ("follow", "Alerts when an account moves: /follow <address>", "/follow &lt;address&gt;  a message when it moves (or a rule change id: every vote)"),
+    ("following", "What you follow", "/following  what you follow, /unfollow to drop one"),
+    ("stop", "Stop all alerts, forget this chat", "/stop  stop all alerts, I forget this chat"),
     ("help", "What I can answer", ""),
 ]
 e = html.escape
@@ -337,7 +346,8 @@ async def answer_address(src: Sources, a: str | None) -> str:
         out.append(f"+{fmt_a(in_q)} incoming, waiting for a block.")
     if _num(d.get("escrowed_out")):
         out.append(f"{fmt_a(d['escrowed_out'])} held for retractable transfers.")
-    out += ["", link(f"/account/?a={a}", "History, rules and transfers on the Account page")]
+    out += ["", link(f"/account/?a={a}", "History, rules and transfers on the Account page"),
+            f"🔔 <code>/follow {a}</code> and I write when it moves."]
     return "\n".join(out)
 
 
@@ -428,6 +438,9 @@ def howto_text(bot_name: str) -> str:
 
 
 # ---------------- reading a question ----------------
+FOLLOW_INTENTS = ("follow", "unfollow", "following", "stop")
+
+
 def parse(text: str, bot_name: str, private: bool) -> tuple[str, str | None] | None:
     """(intent, argument) for a message, or None when it is not for the bot."""
     t = (text or "").strip()
@@ -439,14 +452,21 @@ def parse(text: str, bot_name: str, private: bool) -> tuple[str, str | None] | N
             return None  # a command for another bot in the same group
         cmd, arg = m.group(1).lower(), m.group(3).strip()
         if cmd == "start" and arg:  # deep link from a button: t.me/<bot>?start=height
+            code = follow.start_code(arg)  # or from tauhud.com: ?start=<address or rule change id, base64url>
+            if code:
+                return "follow", code
             cmd, arg = arg.split("_", 1)[0].lower(), ""
         alias = {"start": "help", "h": "height", "height": "height", "p": "proposals", "proposal": "proposals",
                  "proposals": "proposals", "rules": "proposals", "votes": "proposals", "tx": "tx", "a": "address",
                  "address": "address", "balance": "address", "account": "address", "b": "block", "block": "block",
-                 "status": "status", "health": "status", "help": "help"}
+                 "status": "status", "health": "status", "help": "help", "follow": "follow", "watch": "follow",
+                 "subscribe": "follow", "unfollow": "unfollow", "unwatch": "unfollow", "unsubscribe": "unfollow",
+                 "following": "following", "alerts": "following", "list": "following", "stop": "stop"}
         if cmd not in alias:
             return ("help", None) if private else None
         intent = alias[cmd]
+        if intent in FOLLOW_INTENTS:
+            return intent, arg.split()[0] if arg.split() else None
         if intent == "tx":
             h = HASH.search(arg)
             return "tx", (h.group(1).lower() if h else None)
@@ -462,6 +482,9 @@ def parse(text: str, bot_name: str, private: bool) -> tuple[str, str | None] | N
             return None
         t = re.sub(rf"@{re.escape(bot_name)}", "", t, flags=re.I).strip()
     low = t.lower()
+    w = re.match(r"^(follow|watch|unfollow|unwatch|stop)\b\s*(\S*)", low)
+    if w and (w.group(1) == "stop" and not w.group(2) or w.group(1) != "stop"):
+        return {"watch": "follow", "unwatch": "unfollow"}.get(w.group(1), w.group(1)), w.group(2) or None
     a = ADDR.search(t)
     if a:
         return "address", a.group(1).lower()
@@ -545,6 +568,8 @@ class Bot:
         self.busy = asyncio.Semaphore(4)
         self.answered = 0
         self.tasks: set[asyncio.Task] = set()
+        self.store = follow.Store()
+        self.watcher = follow.Watcher(self.store, self.notify, self.src.lookup, self.src.proposals, self.head)
 
     def channel_chat(self, chat: dict) -> bool:
         """True for the alerts channel (or any channel): never answered into."""
@@ -584,6 +609,12 @@ class Bot:
             if not b.warned:
                 b.warned = True
                 await self.reply(chat, msg, f"That is a lot of questions. Ask again in {round(USER_REFILL)} seconds.")
+            return
+        if q[0] in FOLLOW_INTENTS:
+            # only a real private chat: the channel's Direct Messages chat is shared by everyone who writes to it
+            text = follow.command(self.store, chat["id"], q[0], q[1], self.src.proposals(), chat.get("type") == "private")
+            await self.reply(chat, msg, text)
+            self.answered += 1
             return
         async with self.busy:
             try:
@@ -637,6 +668,32 @@ class Bot:
         if not r.get("ok"):
             log.warning("sendMessage failed: %s %s", r.get("error_code", ""), r.get("description", ""))
 
+    def head(self) -> int | None:
+        f = chain_facts(self.src)
+        return f["height"] if f else None
+
+    async def notify(self, cid: str, text: str) -> str:
+        """A personal alert: 'ok', 'gone' (the person blocked the bot or the chat is gone) or 'error'."""
+        r = await asyncio.to_thread(self.tg.call, "sendMessage", {
+            "chat_id": int(cid), "text": text, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}})
+        if r.get("ok"):
+            return "ok"
+        if r.get("error_code") == 403 or (r.get("error_code") == 400 and "chat not found" in str(r.get("description", "")).lower()):
+            log.info("a followed chat is gone (%s); forgetting it", r.get("error_code"))
+            return "gone"
+        log.warning("alert failed: %s %s", r.get("error_code", ""), r.get("description", ""))
+        return "error"
+
+    async def watch(self):
+        while True:
+            try:
+                await self.watcher.round()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                log.exception("follow round")
+            await asyncio.sleep(follow.EVERY)
+
     async def poll_once(self):
         r = await asyncio.to_thread(self.tg.call, "getUpdates",
                                     {"offset": self.offset, "timeout": POLL_TIMEOUT, "allowed_updates": ["message", "channel_post"]},
@@ -664,6 +721,8 @@ class Bot:
             while True:
                 await asyncio.sleep(3600)
         await self.setup()
+        self.tasks.add(asyncio.create_task(self.watch()))
+        log.info("personal alerts: %d chats follow something", len(self.store.chats))
         while True:
             try:
                 await self.poll_once()

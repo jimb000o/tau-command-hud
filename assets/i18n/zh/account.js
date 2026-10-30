@@ -376,4 +376,6 @@ TauI18n.add({ strings: {
   "Transaction id": "交易 ID",
   "{n} accounts": "{n} 个账户",
   "Matches the balance our node reports.": "与我们节点报告的余额一致。",
+  "Telegram alerts": "Telegram 提醒",
+  "Get a Telegram message when this account moves Opens @tauhud_alerts_bot with the address filled in; press Start. Only your chat id and what you follow are kept. /stop ends it.": "这个账户有动静时，在 Telegram 收到消息 打开 @tauhud_alerts_bot，地址已填好，按 Start 即可。只保存你的聊天 ID 和你关注的内容。发送 /stop 即可结束。",
 } });
