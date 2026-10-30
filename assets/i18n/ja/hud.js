@@ -2104,4 +2104,5 @@ TauI18n.add({ strings: {
   "Full screen: only the HUD": "全画面：HUD だけを表示",
   "Back to the full site": "サイト全体に戻る",
   "Loading band: “Reading the chain” now has its own slim line above the header instead of covering it. When every block is read it turns green, folds back into a single line, and the line parts in the middle and runs out to both edges. On the HUD, Explorer, Accounts and Time travel.": "読み込みバー：「チェーンを読み込み中」はヘッダーを覆わず、ヘッダーの上に専用の細い行を持つようになりました。すべてのブロックを読み終えると緑になり、一本の線にたたまれ、その線が真ん中から分かれて両端へ消えていきます。HUD、エクスプローラー、アカウント、タイムトラベルで。",
+  "In numbers: smoother, finer charts. 7D now shows every hour and 30D every six hours instead of one point a day, drawn as a soft curve that never rises above or dips below a real count. The dots on every point are gone: only the newest value keeps one, and pointing at the line still shows each hour.": "数字で見る：グラフがより細かく、なめらかになりました。7 日表示は 1 日 1 点ではなく 1 時間ごと、30 日表示は 6 時間ごとに表示。やわらかな曲線ですが、実際の数より上にも下にもはみ出しません。すべての点の丸は外し、最新の値だけに残しました。線にカーソルを当てれば各時間の数字も見られます。",
 } });

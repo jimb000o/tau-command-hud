@@ -19,7 +19,7 @@ GET /api/v1/sources
              seen in that group in the blocks the relay holds, returning = also seen there on an earlier day
   ours       {"YYYY-MM-DD": [...]} the same for Agorzilla and Tau HUD together (a wallet on both counts once)
   totals     {group or "ours": {"7": n, "30": n, "all": n}} distinct wallets over the last 7 / 30 days / all held
-  hours      {"YYYY-MM-DD": [24 counts]} our two sites' transactions per UTC hour, the last two days with any
+  hours      {"YYYY-MM-DD": [24 counts]} our two sites' transactions per UTC hour, the last 31 days with any
   agorzilla  {"YYYY-MM-DD": {"meals", "snacks", "votes", "asks", "agrs", "wallets", "new", "hours"}}
   since, sent_since   first block time held, first remembered send
 
@@ -234,7 +234,7 @@ class TxSources:
                     since = time.strftime("%Y-%m-%d", time.gmtime(last - (n - 1) * 86400))
                     totals[k][str(n)] = sum(1 for d in wallets.values() if d >= since)
                 totals[k]["all"] = len(wallets)
-        recent = sorted(hours)[-2:]
+        recent = sorted(hours)[-31:]
         return {"days": dict(sorted(days.items())), "ours": dict(sorted(ours.items())), "totals": totals,
                 "hours": {d: hours[d] for d in recent}, "agorzilla": dict(sorted(agz.items())),
                 "since": first, "sent_since": round(self.since)}

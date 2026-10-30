@@ -81,11 +81,14 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .chart .axis { fill: var(--dim); }
 .chart .line { fill: none; stroke: var(--ok); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .chart .line.open { stroke-dasharray: 3 4; }
+.chart .line.fine { stroke-width: 1.6; }
 .chart .avg { fill: none; stroke: rgba(255,255,255,.45); stroke-width: 1.5; stroke-dasharray: 2 4; }
 .chart .vol { fill: rgba(255,255,255,.10); }
 .chart .vol.on { fill: rgba(255,255,255,.28); }
 .chart .pt { fill: var(--void); stroke: var(--ok); stroke-width: 2; }
 .chart .pt.sel { fill: var(--ok); }
+.chart .pt.end { fill: var(--ok); stroke: var(--void); stroke-width: 2; }
+.chart .pt.end.open { fill: var(--void); stroke: var(--ok); }
 .chart .before { fill: rgba(255,255,255,.025); }
 .chart .before-t { fill: var(--dim); font-size: 11px; }
 .chart .xh { stroke: rgba(255,255,255,.35); stroke-width: 1; }
@@ -285,8 +288,8 @@ function sample() {
     days[k] = [v, views, Math.round(views * (.35 + .2 * rnd())), u, { en: Math.round(v * .8), zh: v - Math.round(v * .8) }, { phone: Math.round(v * .35), laptop: Math.round(v * .3), desktop: Math.round(v * .25), wide: Math.round(v * .1) }, {}];
     for (const p in u) { const lean = p === "hud" || p === "gazette" || p === "playground" ? 2 : 0; days[k][6][p] = [0, 1, 2, 3, 4, 5].map(j => Math.round(u[p] * Math.exp(-((j - 1.5 - lean) ** 2) / 2) * (.6 + .8 * rnd()))); }
   }
-  const hours = {};   // the last two days hour by hour, for 24H
-  for (const k of [dayKey(today - DAY), dayKey(today)]) {
+  const hours = {};   // the last 31 days hour by hour, for 24H, 7D and 30D
+  for (let i = 30; i >= 0; i--) { const k = dayKey(today - i * DAY);
     const v = [], pv = [], nowH = new Date(today).getUTCHours();
     for (let hh = 0; hh < 24; hh++) { const n = k === dayKey(today) && hh > nowH ? 0 : Math.round((4 + 9 * Math.sin((hh - 6) / 24 * Math.PI * 2) ** 2) * (.6 + .8 * rnd())); v.push(n); pv.push(Math.round(n * 2.5)); }
     hours[k] = [v, pv];
@@ -329,27 +332,43 @@ function ticks(lo, hi, want = 4) {
   for (let v = a; v < hi + step; v += step) { out.push(v); if (v >= hi) break; }
   return out;
 }
+/* hour by hour: 24H always; 7D, 30D and an "All" of up to a month too, once the relay sends every day of that span by
+   the hour (it keeps 31 days); otherwise one point a day */
+function hourly() {
+  if (range === 1) return true;
+  if (!data || !(range === 7 || range === 30 || range === 0)) return false;
+  const keys = Object.keys(data.days).sort(), today = Date.parse(data.today + "T00:00:00Z");
+  if (!keys.length || (!range && Date.parse(keys[0] + "T00:00:00Z") < today - 30 * DAY)) return false;
+  const from = dayKey(today - ((range || 31) - 1) * DAY), hrs = data.hours || {};
+  return keys.filter(k => k >= from && (data.days[k][1] || 0) > 0).every(k => hrs[k]);
+}
 /* what the chart spans: the chosen range ending today, one point a day; "All" from the first counted day, at least
-   a week; 24H the last 24 hours ending with the current one, one point an hour */
+   a week; hour by hour (see hourly()) it ends with the current hour */
 function domain() {
   const keys = Object.keys(data.days).sort();
-  if (range === 1) {
-    const end = Math.floor((data.now ? data.now * 1000 : Date.now()) / HOUR) * HOUR, hk = Object.keys(data.hours || {}).sort();
+  if (hourly()) {
+    // 30 days in six-hour steps (4 a day), so the line stays readable; shorter spans hour by hour
+    const step = range === 30 ? 6 * HOUR : HOUR, end = Math.floor((data.now ? data.now * 1000 : Date.now()) / step) * step, hk = Object.keys(data.hours || {}).sort();
     const first = data.hourFirst != null ? Math.floor(data.hourFirst / HOUR) * HOUR : hk.length ? Date.parse(hk[0] + "T00:00:00Z") : end;
-    return { start: end - 23 * HOUR, end, first, step: HOUR };
+    const k0 = keys.length ? Date.parse(keys[0] + "T00:00:00Z") : end;
+    const start = range ? end - (range * 24 * HOUR / step - 1) * step : Math.min(k0, end - (7 * 24 - 1) * HOUR);
+    return { start, end, first: Math.min(first, k0), step };
   }
   const end = Date.parse(data.today + "T00:00:00Z");
   const first = keys.length ? Date.parse(keys[0] + "T00:00:00Z") : end;
   const start = range ? end - (range - 1) * DAY : Math.min(first, end - 6 * DAY);
   return { start, end, first, step: DAY };
 }
-/* the last 24 hours: visitors and pages per hour; an hour counted before the relay kept visitors per hour has no point */
+/* the range hour by hour (or in six-hour steps on 30D): visitors and pages per step; a step counted before the relay
+   kept visitors per hour has no point */
 function rangeHours() {
-  const { start, end } = domain(), out = [];
-  for (let t = start; t <= end; t += HOUR) {
+  const { start, end, step } = domain(), out = [];
+  for (let t = start; t <= end; t += step) {
     const k = dayKey(t), hh = new Date(t).getUTCHours(), d = (data.hours || {})[k];
-    const vis = d ? d[0][hh] : 0, views = d ? d[1][hh] : 0;
-    out.push({ k, t, hh, v: views > 0 && !vis ? null : vis, vol: views, open: t === end });
+    let vis = 0, views = 0;
+    for (let j = hh; j < hh + step / HOUR; j++) { vis += d ? d[0][j] || 0 : 0; views += d ? d[1][j] || 0 : 0; }
+    const counted = ((data.days[k] || [])[1] || 0) > 0;
+    out.push({ k, t, hh, step, v: (views > 0 && !vis) || (!d && counted) ? null : vis, vol: views, open: t === end });
   }
   return out;
 }
@@ -369,8 +388,20 @@ function lineChart(box, pts, opts) {
   const lab = Math.max(...tk.map(v => fmt(v).length)) * 7 + 14, L = lab, R = 10, top = 10, B = 22, cw = w - L - R, ch = h - top - B;
   const x = t => L + (end === start ? cw / 2 : cw * (t - start) / (end - start));
   const y = v => top + ch - ch * (v - yMin) / (yMax - yMin || 1);
-  const uid = box.id, path = arr => arr.map((p, i) => (i ? "L" : "M") + x(p.t).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
-  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(opts.label)}"><defs><linearGradient id="g-${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#39ff8a" stop-opacity=".22"/><stop offset="1" stop-color="#39ff8a" stop-opacity="0"/></linearGradient></defs>`;
+  const uid = box.id, f = n => n.toFixed(1);
+  /* a monotone curve through the points (Fritsch–Carlson): smooth, but it never swings above or below a real value */
+  const path = arr => {
+    const X = arr.map(p => x(p.t)), Y = arr.map(p => y(p.v)), n = arr.length;
+    if (n < 3) return arr.map((p, i) => (i ? "L" : "M") + f(X[i]) + " " + f(Y[i])).join(" ");
+    const d = [], m = [];
+    for (let i = 0; i < n - 1; i++) d.push((Y[i + 1] - Y[i]) / (X[i + 1] - X[i] || 1));
+    m[0] = d[0]; m[n - 1] = d[n - 2];
+    for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : 2 * d[i - 1] * d[i] / (d[i - 1] + d[i]);
+    let s = "M" + f(X[0]) + " " + f(Y[0]);
+    for (let i = 0; i < n - 1; i++) { const h3 = (X[i + 1] - X[i]) / 3; s += `C${f(X[i] + h3)} ${f(Y[i] + m[i] * h3)} ${f(X[i + 1] - h3)} ${f(Y[i + 1] - m[i + 1] * h3)} ${f(X[i + 1])} ${f(Y[i + 1])}`; }
+    return s;
+  };
+  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(opts.label)}"><defs><linearGradient id="g-${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#39ff8a" stop-opacity=".18"/><stop offset="1" stop-color="#39ff8a" stop-opacity="0"/></linearGradient></defs>`;
   for (const v of tk) s += `<line class="grid" x1="${L}" x2="${w - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="axis" x="${L - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${fmt(v)}</text>`;
   // days in the range before counting began: shaded, said once
   if (first > start) {
@@ -380,7 +411,11 @@ function lineChart(box, pts, opts) {
   }
   // x labels: days, or months on long ranges
   const days = (end - start) / step + 1, maxLabels = Math.max(2, Math.floor(cw / 78));
-  if (step === HOUR) {
+  if (step < DAY && end - start > 2 * DAY) {
+    // several days hour by hour: a date at each midnight that fits
+    const nd = Math.round((end - start) / DAY), every = Math.ceil(nd / maxLabels), endDay = Math.floor(end / DAY) * DAY;
+    for (let t = start + ((DAY - start % DAY) % DAY); t <= end; t += DAY) if ((Math.round((endDay - t) / DAY) % every) === 0 && x(t) - L > 24) s += `<text class="axis" x="${x(t).toFixed(1)}" y="${h - 5}" text-anchor="middle">${esc(shortDate(t))}</text>`;
+  } else if (step === HOUR) {
     const every = [1, 2, 3, 4, 6, 12].find(e => days / e <= maxLabels) || 12;
     for (let i = days - 1; i >= 0; i--) { const t = start + i * HOUR; if (new Date(t).getUTCHours() % every === 0) s += `<text class="axis" x="${x(t).toFixed(1)}" y="${h - 5}" text-anchor="middle">${esc(hourLabel(t))}</text>`; }
   } else if (days > 120) {
@@ -403,16 +438,18 @@ function lineChart(box, pts, opts) {
     const known = pts.filter(p => p.v != null), closed = known.filter(p => !p.open), last = known[known.length - 1];
     if (known.length > 1) {
       s += `<path d="${path(known)} L${x(last.t).toFixed(1)} ${top + ch} L${x(known[0].t).toFixed(1)} ${top + ch} Z" fill="url(#g-${uid})"/>`;
-      if (closed.length > 1) s += `<path class="line" d="${path(closed)}"/>`;
+      if (closed.length > 1) s += `<path class="line${known.length > 60 ? " fine" : ""}" d="${path(closed)}"/>`;
       if (last.open && closed.length) s += `<path class="line open" d="${path([closed[closed.length - 1], last])}"/>`;
     }
   }
   if (opts.avg && opts.avg.length > 1) s += `<path class="avg" d="${path(opts.avg)}"/>`;
-  // points stay visible while there are few of them, so a short history still reads as data
+  // no dot on every point (the hover shows each one): only the newest value and the picked day; a history of
+  // three points or fewer keeps its dots so it still reads as data
   if (!opts.bars) {
-    const known = pts.filter(p => p.v != null);
-    if (known.length <= 45) known.forEach(p => { s += `<circle class="pt${p.k === sel && step === DAY ? " sel" : ""}" cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${known.length <= 10 ? 4 : 3}"/>`; });
-    else { const sp = known.find(p => p.k === sel); if (sp && step === DAY) s += `<circle class="pt sel" cx="${x(sp.t).toFixed(1)}" cy="${y(sp.v).toFixed(1)}" r="4"/>`; }
+    const known = pts.filter(p => p.v != null), last = known[known.length - 1], sp = step === DAY && known.find(p => p.k === sel);
+    if (known.length <= 3) known.forEach(p => { if (p !== last && p !== sp) s += `<circle class="pt" cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="3.5"/>`; });
+    if (sp && sp !== last) s += `<circle class="pt sel" cx="${x(sp.t).toFixed(1)}" cy="${y(sp.v).toFixed(1)}" r="4"/>`;
+    if (last) s += `<circle class="pt end${last.open ? " open" : ""}" cx="${x(last.t).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="4"/>`;
   }
   s += `<line class="xh" id="xh-${uid}" y1="${top}" y2="${top + ch}" visibility="hidden"/><circle class="hov" id="hv-${uid}" r="5" visibility="hidden"/>`;
   s += `<rect class="ov" x="${L}" y="${top}" width="${cw}" height="${ch}"/></svg><div class="ctip" hidden></div>`;
@@ -446,16 +483,17 @@ function drawDaily() {
   const box = $("cDaily"), days = data ? rangeDays() : [];
   const net = NET();
   if (!days.length) { if (net) $("dailyTitle").textContent = T("Wallets acting through our sites per day"); box.innerHTML = `<p class="empty">${esc(T(net ? "The testnet numbers appear here once the relay has read the blocks." : failed ? "The counter could not be reached. It will try again in a minute." : "Counting began on 28 October 2026. The first numbers appear here as soon as people open a page."))}</p>`; return; }
-  $("dailyTitle").textContent = T(net ? (range === 1 ? "Transactions through our sites per hour" : "Wallets acting through our sites per day") : range === 1 ? "Visitors per hour" : "Visitors per day");
-  $("lgMain").lastChild.textContent = T(net ? (range === 1 ? "transactions per hour (click for that day)" : "wallets per day (click a day for details)") : range === 1 ? "visitors per hour (click for that day's pages)" : "visitors per day (click a day for its pages)");
-  $("lgOpen").lastChild.textContent = T(range === 1 ? "this hour, still counting" : "today, still counting");
+  const hr = hourly(), six = hr && domain().step > HOUR;
+  $("dailyTitle").textContent = T(net ? (six ? "Transactions through our sites per 6 hours" : hr ? "Transactions through our sites per hour" : "Wallets acting through our sites per day") : six ? "Visitors per 6 hours" : hr ? "Visitors per hour" : "Visitors per day");
+  $("lgMain").lastChild.textContent = T(net ? (six ? "transactions per 6 hours (click for that day)" : hr ? "transactions per hour (click for that day)" : "wallets per day (click a day for details)") : six ? "visitors per 6 hours (click for that day's pages)" : hr ? "visitors per hour (click for that day's pages)" : "visitors per day (click a day for its pages)");
+  $("lgOpen").lastChild.textContent = T(six ? "these 6 hours, still counting" : hr ? "this hour, still counting" : "today, still counting");
   $("lgVol").lastChild.textContent = T(net ? "transactions" : "pages opened");
-  $("lgVol").hidden = kind === "bar" || (net && range === 1);
-  if (range === 1) {
+  $("lgVol").hidden = kind === "bar" || (net && hr);
+  if (hr) {
     $("lgAvg").hidden = true;
     lineChart(box, rangeHours(), {
       label: T(net ? "Transactions through our sites per hour" : "Visitors per hour"), lo0: true, bars: kind === "bar",
-      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${hourLabel(p.t)}–${hourLabel(p.t + HOUR)} UTC${p.open ? " · " + esc(T("still counting")) : ""}</div>` +
+      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${hourLabel(p.t)}–${hourLabel(p.t + p.step)} UTC${p.open ? " · " + esc(T("still counting")) : ""}</div>` +
         (net ? `<b>${fmt(p.v || 0)}</b> ${esc(T("transactions"))}` : (p.v == null ? esc(T("visitors per hour are counted from 29 October 2026")) : `<b>${fmt(p.v)}</b> ${esc(T("visitors"))}`) + `<br><b>${fmt(p.vol)}</b> ${esc(T("pages opened"))}`),
       onPick: p => { sel = p.k; render(); },
     });
@@ -481,15 +519,37 @@ function drawDaily() {
 
 function drawGrowth() {
   const box = $("cGrowth"), days = rangeDays(), all = Object.keys(data.days).sort(), net = NET();
-  $("growthTitle").textContent = T(net ? (range === 1 ? "Transactions added up" : "Wallets reached") : "Growth");
+  $("growthTitle").textContent = T(net ? (hourly() ? "Transactions added up" : "Wallets reached") : "Growth");
   if (net) return drawNetGrowth(box, days, all);
   if (!days.length || !days.some(d => d[1][0])) { box.innerHTML = `<p class="empty">${esc(T("The climb starts with the first visitors."))}</p>`; $("growthNote").textContent = ""; return; }
+  if (range !== 1 && hourly()) {
+    // several days hour by hour: each day's visits spread over its hours by when people came, so the line climbs
+    // smoothly and still ends each day on that day's real total
+    let run = 0; for (const k of all) if (k < dayKey(domain().start)) run += data.days[k][0];
+    const before = run, hrs = rangeHours(), spread = {};
+    for (const p of hrs) { const sp = spread[p.k] || (spread[p.k] = { w: [], sum: 0 }); const wgt = p.v != null ? p.v : p.vol || 0; sp.w.push(wgt); sp.sum += wgt; }
+    const seen = {};
+    const pts = hrs.map(p => {
+      const total = (data.days[p.k] || [0])[0], sp = spread[p.k], i = seen[p.k] = (seen[p.k] || 0) + 1;
+      const share = sp.sum ? sp.w[i - 1] / sp.sum : 1 / sp.w.length, add = total * share;
+      run += add;
+      return { ...p, add: Math.round(add), v: run };
+    });
+    pts.forEach(p => { p.v = Math.round(p.v); });
+    lineChart(box, pts, {
+      label: T("Visits added up"), lo0: !range || before === 0 || kind === "bar", bars: kind === "bar",
+      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + p.step)} UTC</div><b>≈ ${fmt(p.v)}</b> ${esc(T("visits in total"))}`,
+      onPick: p => { sel = p.k; render(); },
+    });
+    $("growthNote").textContent = `+${fmt(Math.round(run - before))} ${T("visits in this range")} · ${fmt(Math.round(run))} ${T("in total")}`;
+    return;
+  }
   if (range === 1) {
     let run = 0;
     const pts = rangeHours().map(p => { run += p.v || 0; return { ...p, add: p.v || 0, v: run }; });
     lineChart(box, pts, {
       label: T("Visits added up"), lo0: true, bars: kind === "bar",
-      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + HOUR)} UTC</div><b>${fmt(p.v)}</b> ${esc(T("visits in the last 24 hours"))}<br>+${fmt(p.add)} ${esc(T("that hour"))}`,
+      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + p.step)} UTC</div><b>${fmt(p.v)}</b> ${esc(T("visits in the last 24 hours"))}${p.step === HOUR ? `<br>+${fmt(p.add)} ${esc(T("that hour"))}` : ""}`,
       onPick: p => { sel = p.k; render(); },
     });
     $("growthNote").textContent = `+${fmt(run)} ${T("visits in the last 24 hours")}`;
@@ -510,15 +570,15 @@ function drawGrowth() {
 /* wallets that acted through our sites, added up from the first one (each wallet once) */
 function drawNetGrowth(box, days, all) {
   if (!days.length || !all.some(k => data.days[k][2])) { box.innerHTML = `<p class="empty">${esc(T("The climb starts with the first wallet that acts through our sites."))}</p>`; $("growthNote").textContent = ""; return; }
-  if (range === 1) {
+  if (hourly()) {
     let run = 0;
     const pts = rangeHours().map(p => { run += p.v || 0; return { ...p, add: p.v || 0, v: run }; });
     lineChart(box, pts, {
       label: T("Transactions added up"), lo0: true, bars: kind === "bar",
-      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + HOUR)} UTC</div><b>${fmt(p.v)}</b> ${esc(T("transactions in the last 24 hours"))}<br>+${fmt(p.add)} ${esc(T("that hour"))}`,
+      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + p.step)} UTC</div><b>${fmt(p.v)}</b> ${esc(T(range === 1 ? "transactions in the last 24 hours" : "transactions in this range"))}${p.step === HOUR ? `<br>+${fmt(p.add)} ${esc(T("that hour"))}` : ""}`,
       onPick: p => { sel = p.k; render(); },
     });
-    $("growthNote").textContent = `+${fmt(run)} ${T("transactions in the last 24 hours")}`;
+    $("growthNote").textContent = `+${fmt(run)} ${T(range === 1 ? "transactions in the last 24 hours" : "transactions in this range")}`;
     return;
   }
   let before = 0; for (const k of all) if (k < days[0][0]) before += data.days[k][2];
@@ -704,7 +764,7 @@ async function load() {
     txs.ours = Object.fromEntries(ks.map((k, i) => { const w = 3 + Math.round(i / 6) + (i > 120 ? 9 + i % 5 : 0); return [k, [w, 8 + i % 7 + (i > 120 ? 30 + i % 9 * 4 : 0), Math.max(1, Math.round(w / 5)), Math.round(w * .6), 400 + i * 9]]; }));
     txs.totals = { ours: { 7: 61, 30: 148, all: 205 }, agorzilla: { 7: 41, 30: 52, all: 52 } };
     txs.since = Math.floor(Date.now() / 1000) - 140 * 86400;
-    txs.hours = { [raw.today]: Array.from({ length: 24 }, (_, h) => h <= new Date().getUTCHours() ? 2 + (h * 7) % 9 : 0) };
+    txs.hours = Object.fromEntries(ks.slice(-31).map((k, i) => [k, Array.from({ length: 24 }, (_, h) => k === raw.today && h > new Date().getUTCHours() ? 0 : (h * 7 + i * 5) % 9)]));
     txs.agorzilla = Object.fromEntries(ks.slice(-20).map((k, i) => [k, { meals: 30 + i * 2, snacks: 6 + i % 4, votes: 12 + i % 7, asks: 3 + i % 3, agrs: 160 + i * 11, wallets: 9 + i % 5, new: 2 + i % 3, hours: Array.from({ length: 24 }, (_, h) => (h > 16 && h < 21 ? 4 : 1)) }]));
     agzLatest = { stage_name: "Baby", rounds: [{ category: "Aura", winner: "Emerald" }], open: { category: "Pendant light" } };
     pickSite(); render(); return; }
@@ -718,7 +778,7 @@ async function load() {
     if (site === "net" && SITE_ASKED == null && !(txs && txs.ours)) site = "";
     pickSite();
     // a short history fills the chart better as All (at least a week) than as an empty 30 days
-    if (!load.done) { load.done = true; const n = Object.keys(data.days || {}).length; if (range > 1 && n < range) { range = 0; } }
+    if (!load.done) { load.done = true; const n = Object.keys(data.days || {}).length; if (range > 1 && n < range && !(range === 7 && hourly())) { range = 0; } }
   } catch (e) { failed = true; if (!data) data = null; }
   render();
 }

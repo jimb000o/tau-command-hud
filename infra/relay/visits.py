@@ -44,6 +44,7 @@ log = logging.getLogger("relay.visits")
 
 DAY = 86400
 KEEP_DAYS = 400
+HOUR_DAYS = 31     # days whose hour-by-hour counts /visits/public shows (24H, 7D and 30D on /meta/)
 ENGAGED_SECONDS = 30          # nav.js sends e=1 after this much visible time
 MAX_KEYS = {"views": 150, "refs": 300, "sources": 100, "flows": 400}   # distinct keys per day; the rest goes to "(other)"
 PAGE = re.compile(r"^[a-z0-9][a-z0-9/_-]{0,47}$")
@@ -247,14 +248,14 @@ class Visits:
 
     def public(self) -> dict:
         """Per day [visitors, views, stayed, {page: visitors}, {lang: visitors}, {screen: visitors}, {page: time steps},
-        pages opened from our other site], plus for today and
-        yesterday [visitors per hour, views per hour] (the 24-hour chart on /meta/); the same again per other site under "sites";
+        pages opened from our other site], plus for the last HOUR_DAYS days [visitors per hour, views per hour] (the 24H,
+        7D and 30D charts on /meta/); the same again per other site under "sites";
         cached for a minute."""
         now = self.clock()
         if getattr(self, "_pub", None) and now - self._pub[0] < 60:
             return self._pub[1]
         self._roll()
-        recent = (_day_str(self.day - 1), _day_str(self.day))
+        recent = [_day_str(self.day - i) for i in range(HOUR_DAYS - 1, -1, -1)]
 
         def totals(days: dict, site: str = "") -> dict:
             # the last field: pages opened from a link on our other site (agorzilla.com <-> tauhud.com)

@@ -2108,4 +2108,5 @@ TauI18n.add({ strings: {
   "Full screen: only the HUD": "全屏：只显示 HUD",
   "Back to the full site": "返回完整网站",
   "Loading band: “Reading the chain” now has its own slim line above the header instead of covering it. When every block is read it turns green, folds back into a single line, and the line parts in the middle and runs out to both edges. On the HUD, Explorer, Accounts and Time travel.": "加载条：“正在读取链”现在在页头上方有自己的一条细线，不再盖住页头。所有区块读完后它变绿，收拢成一条线，然后这条线从中间分开，向两边退去。适用于 HUD、区块浏览器、账户和时光回溯。",
+  "In numbers: smoother, finer charts. 7D now shows every hour and 30D every six hours instead of one point a day, drawn as a soft curve that never rises above or dips below a real count. The dots on every point are gone: only the newest value keeps one, and pointing at the line still shows each hour.": "数据一览：图表更细腻、更顺滑。7 天视图现在显示每个小时，30 天视图每 6 小时一个点，不再是一天一个点；曲线柔和，但绝不会高于或低于真实的数字。每个点上的圆点去掉了，只有最新的值保留一个，鼠标指向曲线仍能看到每个小时。",
 } });
