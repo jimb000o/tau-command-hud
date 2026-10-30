@@ -164,4 +164,6 @@ TauI18n.add({ strings: {
   "Its badge": "它的徽章",
   "offline": "离线",
   "Click for its details and badge.": "点击查看详情和徽章。",
+  "None of them has been seen in the last 30 minutes, so the chain core and \"nodes online\" leave them out.": "过去 30 分钟内都没有见到它们，所以链核心和“节点在线”不计入它们。",
+  "offline · no kit": "离线 · 未用套件",
 } });

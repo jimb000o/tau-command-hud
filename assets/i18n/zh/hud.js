@@ -2051,4 +2051,5 @@ TauI18n.add({ strings: {
   "New: the road to mainnet, as we see it": "新页面：我们眼中的通往主网之路",
   "Ten things we found on the Tau testnet that we think should be fixed before mainnet, each with proof and a path to a fix. Our view, not IDNI's plan, and we may be wrong: comment on any item.": "我们在 Tau 测试网上发现的十件事，我们认为应在主网前修复，每一件都附证据和修复路径。这是我们的看法，不是 IDNI 的计划，也可能是错的：欢迎在任何一项下评论。",
   "In numbers now shows our sites' share of user transactions: everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Their transactions and our share of all transactions stay on the page, one line below.": "“数据一览”现在显示我们网站在用户交易中的占比：用户交易指测试网上除 IDNI 的 11 个创世账户以外的全部交易；IDNI 测试时，大部分流量来自这些账户。它们的交易数以及我们在全部交易中的占比仍在页面上，就在下一行。",
+  "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out.": "节点：当“其他节点”在过去 30 分钟内都没有出现时，这一行变灰并标为离线，并用一句话说明为什么链核心和“节点在线”不计入它们。",
 } });

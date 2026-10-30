@@ -2047,4 +2047,5 @@ TauI18n.add({ strings: {
   "New: the road to mainnet, as we see it": "新ページ：私たちから見たメインネットへの道",
   "Ten things we found on the Tau testnet that we think should be fixed before mainnet, each with proof and a path to a fix. Our view, not IDNI's plan, and we may be wrong: comment on any item.": "Tau テストネットで見つけた、メインネット前に直すべきだと考える十のこと。どれも証拠と修正の道筋つき。私たちの見方で、IDNI の計画ではなく、間違っているかもしれません。どの項目にもコメントできます。",
   "In numbers now shows our sites' share of user transactions: everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Their transactions and our share of all transactions stay on the page, one line below.": "「数字で見る」は、ユーザーのトランザクションに占める私たちのサイトの割合を表示するようになりました。ユーザーのトランザクションとは、IDNI の 11 のジェネシスアカウントを除くテストネットの全トランザクションです。IDNI のテスト中は、トラフィックの大半がこれらのアカウントから来ます。それらのトランザクション数と、全体に占める私たちの割合も、すぐ下の行に残しています。",
+  "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out.": "ノード：「ほかのピア」が直近 30 分間どれも見えていないとき、その行はグレーになり「オフライン」と表示されます。チェーンコアと「オンラインのノード」に含まれない理由も一行で説明します。",
 } });

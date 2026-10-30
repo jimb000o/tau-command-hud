@@ -351,6 +351,7 @@ function network(now) {
   return { recent, boot: recent.find(p => p.label), others: recent.filter(p => !p.label && !p.community),
            kit: recent.filter(p => !p.label && p.community) };
 }
+const OFF_PEERS = "None of them has been seen in the last 30 minutes, so the chain core and \"nodes online\" leave them out.";
 const shortId = id => `${id.slice(0, 8)}…${id.slice(-4)}`;
 async function getJSON(path) {
   const r = await (SIM ? TauSim.fetch(path) : fetch(RELAY + path, { cache: "no-store" }));
@@ -434,12 +435,14 @@ function render() {
   // peers without the kit: no name, no rank, one line for all of them
   if (net.others.length) {
     const top = Math.max(...net.others.map(p => p.head ?? -1)), last = Math.max(...net.others.map(p => p.last_seen));
-    body.append(el("tr", { class: "ref", "data-card": "peers", "data-tip": T("Nodes without the kit: our node met them or heard of them from another peer.\nThey have no name and no rank.") + "\n" + net.others.slice(0, 6).map(p => shortId(p.id)).join(" · ") + (net.others.length > 6 ? " …" : "") },
+    // same rule as the HUD's chain core and the "nodes online" chip: only peers seen in the last 30 min count as online
+    const live = net.others.some(p => p.online ?? p.connected);
+    body.append(el("tr", { class: "ref" + (live ? "" : " off"), "data-card": "peers", "data-tip": T("Nodes without the kit: our node met them or heard of them from another peer.\nThey have no name and no rank.") + (live ? "" : "\n" + T(OFF_PEERS)) + "\n" + net.others.slice(0, 6).map(p => shortId(p.id)).join(" · ") + (net.others.length > 6 ? " …" : "") },
       el("td", { class: "n rank", text: "·" }),
-      el("td", null, el("span", { class: "dot" + (net.others.some(p => p.connected) ? " on" : "") }), el("span", { class: "name", text: T("Other peers") }), el("span", { class: "tag", text: String(net.others.length) })),
+      el("td", null, el("span", { class: "dot" + (live ? " on" : "") }), el("span", { class: "name", text: T("Other peers") }), el("span", { class: "tag", text: String(net.others.length) })),
       el("td", { text: "–" }), el("td", { class: "hide-s", text: "–" }),
       el("td", { class: "n hide-s", text: top >= 0 ? `#${top}` : "–" }),
-      el("td", { class: "rank", text: T("no kit") }),
+      el("td", { class: "rank", text: T(live ? "no kit" : "offline · no kit") }),
       el("td", { class: "hide-s", text: T(ago(now - last)) })));
   }
   const me = location.hash.slice(1);
@@ -576,7 +579,7 @@ function openCard(key, push = true) {
     acts.push(el("a", { href: "../status/", text: T("Uptime and outages") }));
   } else if (c.kind === "peers") {
     title = T("Other peers"); tag = String(c.list.length); on = c.list.some(p => p.online ?? p.connected); last = Math.max(...c.list.map(p => p.last_seen));
-    what = T("Nodes our node met, or heard of from another peer, that do not run the Tau HUD kit. They have no name and no rank. Click one for its details.");
+    what = T("Nodes our node met, or heard of from another peer, that do not run the Tau HUD kit. They have no name and no rank. Click one for its details.") + (on ? "" : " " + T(OFF_PEERS));
     box.replaceChildren(el("button", { class: "x", type: "button", "aria-label": T("Close"), text: "✕" }),
       el("h3", { id: "cardTitle", text: title }), cardState(on, last, now), el("p", { class: "what", text: what }),
       el("ul", { class: "peers" }, ...c.list.map(p => { const li = el("li", null, el("span", null, el("span", { class: "dot" + ((p.online ?? p.connected) ? " on" : "") }), " " + shortId(p.id)), el("span", { class: "rank", text: (p.head != null ? `#${p.head} · ` : "") + T(ago(now - p.last_seen)) })); li.addEventListener("click", () => openCard("peer:" + p.id)); return li; })));
