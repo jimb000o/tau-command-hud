@@ -16,6 +16,10 @@
       "href": "challenge/"
     },
     {
+      "text": "Ghosts in the waiting room: sealed, yet still listed as waiting",
+      "href": "https://github.com/IDNI/tau-testnet/issues/81"
+    },
+    {
       "text": "Most network rule changes so far are tests that change nothing",
       "href": "proposals/"
     },
