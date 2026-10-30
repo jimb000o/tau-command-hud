@@ -62,6 +62,7 @@
         ask: [
           { id: "logic", key: true, q: "Why is the board the point?", a: ["On a chessboard an illegal move simply cannot be made. The rules are exact, so anyone can check them.", "Tau writes its rules in a language just as exact: the Tau Language. A machine can read a rule and work out precisely what it allows.", "So before anyone votes, a proposed rule is checked against the rules in force. If it contradicts them, that is caught before the vote."] },
           { id: "nonsense", q: "Mae says nonsense never reaches her board.", a: ["Nonsense is the polite word for a contradiction. “The doors open at seven” and “the doors never open.”", "Both cannot be true at once. The machine sees it and says so, before anyone has to argue.", "Mae's café runs on goodwill. Tau hopes to run on goodwill and logic."] },
+          { id: "taumorrow", q: "Do you ever play anyone but yourself?", a: ["Lately, no. I have been studying someone else's games instead.", "Taumorrow, one of the community, built a chess engine in the Tau language and sets it against Claude, the AI, ten games at a time.", "On 18 October the engine won nine of ten, every one by checkmate. Every move is published at chess.taumorrow.com, so anyone can replay them.", "Exact rules, checked by a machine, played in the open. If you see Taumorrow, say the Professor tips his hat."] },
           { id: "done", q: "Is any of this finished?", a: ["Finished? My dear friend, nothing worth doing is ever finished.", "This is a testnet: a rehearsal held in public. Plans change, mistakes are found and mended.", "Which is precisely why it is worth watching now."] },
         ],
         task: { q: "Let me find the contradiction.", ask: ["Then try it yourself. The rule in force: “The doors open at seven.”", "A regular proposes one of these. Which one could never pass the check?"],
@@ -101,7 +102,7 @@
       ticker: h => h != null ? `The ticker clicks: block ${h.toLocaleString()}, linked to block ${(h - 1).toLocaleString()}.` : "The ticker clicks: another block, linked to the one before.",
       clocks: "New York, London, Berlin, Tokyo. The wire never sleeps, and neither does the chain.",
       gramophone: "A slow blues in F. Somebody in the back room keeps winding it.",
-      books: "Logic, logic, more logic, chess, and one cookbook.",
+      books: "Logic, logic, more logic, chess, one cookbook, and a thick printout: every game of a chess engine written in Tau, by Taumorrow.",
       slate: "Chalk on slate: if A, then B. A. Therefore B. And A with not-A is where it stops.",
       coats: "The regulars' hats and coats. One of them has hung here since 1919.",
       bell: "A little brass bell over the door. It rings when somebody leaves.",
