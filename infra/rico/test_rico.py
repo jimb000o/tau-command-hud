@@ -26,6 +26,17 @@ assert {w for w, t in ls} == set(make.CAST), "someone speaks without a voice des
 assert make.key("rico", "Chain weather.") == hashlib.sha1("rico|Chain weather.".encode()).hexdigest()[:16]
 print(f"{len(ls)} lines, {sum(len(t) for w, t in ls)} characters")
 
+# spoken to you in the places, on air on the radio; every loosened line is still a line of the game
+for t in make.SAY:
+    assert t in texts, f"make.py SAY has a line the game does not: {t[:60]}"
+assert make.said("lola", "Not today. Show me how you vote first.") == "[warm, teasing] Not today. Show me how you vote first, then we'll talk."
+assert make.said("rico", "Hana broke a pact!").startswith(make.ON_AIR)
+assert make.said("rico", "Rico accepts tips, song requests and alibis.").startswith(make.RADIO)
+assert make.said("rico", "Done. And this one’s true, so let them check. The Book backs you up.").startswith(make.TAG["rico"])
+assert make.said("salado", "35 coins, today. All we ask is that you propose “A road round the island” before the election. A small thing between friends.", "x") == \
+    "Thirty-five coins. Today. All we ask is that you propose a road round the island before the election. A small thing, between friends."
+assert not any(make.said(w, t, "eleven_multilingual_v2").startswith("[") for w, t in ls), "tags would be read out by v2"
+
 # every line the game asks for exists, said by whoever the game shows
 src = open(os.path.join(make.REPO, "rabbit", "rico.js"), encoding="utf-8").read()
 game = open(os.path.join(make.REPO, "rabbit", "game.js"), encoding="utf-8").read()
@@ -56,7 +67,7 @@ print("ok")
 
 # design and keep, against a stand-in for ElevenLabs
 calls = []
-def fake(path, body=None, accept="application/json", missing_ok=False):
+def fake(path, body=None, accept="application/json", missing_ok=False, **kw):
     calls.append(path)
     if path == "/text-to-voice/design":
         assert 100 <= len(body["text"]) <= 1000 and 20 <= len(body["voice_description"]) <= 1000
