@@ -2107,4 +2107,5 @@ TauI18n.add({ strings: {
   "On a phone, the HUD now turns with you. Held on its side, the header folds into three short rows and the panels sit two by two, with the tab bar below. A new ⛶ button at the top right shows the HUD alone on the whole screen; ✕ brings the site back. Where the phone allows it the browser goes full screen too, on an iPhone the site bars step aside.": "在手机上，HUD 现在会随屏幕一起转动。横过来时，页眉收成三行短栏，面板两两并排，下方是标签栏。右上角新的 ⛶ 按钮让 HUD 独占整个屏幕；✕ 返回网站。手机支持时浏览器也会进入全屏；在 iPhone 上，网站的菜单栏会让开。",
   "Full screen: only the HUD": "全屏：只显示 HUD",
   "Back to the full site": "返回完整网站",
+  "Loading band: “Reading the chain” now has its own slim line above the header instead of covering it. When every block is read it turns green, folds back into a single line, and the line parts in the middle and runs out to both edges. On the HUD, Explorer, Accounts and Time travel.": "加载条：“正在读取链”现在在页头上方有自己的一条细线，不再盖住页头。所有区块读完后它变绿，收拢成一条线，然后这条线从中间分开，向两边退去。适用于 HUD、区块浏览器、账户和时光回溯。",
 } });

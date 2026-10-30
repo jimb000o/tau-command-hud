@@ -2103,4 +2103,5 @@ TauI18n.add({ strings: {
   "On a phone, the HUD now turns with you. Held on its side, the header folds into three short rows and the panels sit two by two, with the tab bar below. A new ⛶ button at the top right shows the HUD alone on the whole screen; ✕ brings the site back. Where the phone allows it the browser goes full screen too, on an iPhone the site bars step aside.": "スマートフォンで、HUD が画面の向きに合わせて変わるようになりました。横にすると、ヘッダーは短い 3 行にまとまり、パネルが 2 列に並び、下にタブバーが付きます。右上の新しい ⛶ ボタンで HUD だけを画面いっぱいに表示し、✕ でサイトに戻ります。対応している端末ではブラウザも全画面になり、iPhone ではサイトのバーが脇に退きます。",
   "Full screen: only the HUD": "全画面：HUD だけを表示",
   "Back to the full site": "サイト全体に戻る",
+  "Loading band: “Reading the chain” now has its own slim line above the header instead of covering it. When every block is read it turns green, folds back into a single line, and the line parts in the middle and runs out to both edges. On the HUD, Explorer, Accounts and Time travel.": "読み込みバー：「チェーンを読み込み中」はヘッダーを覆わず、ヘッダーの上に専用の細い行を持つようになりました。すべてのブロックを読み終えると緑になり、一本の線にたたまれ、その線が真ん中から分かれて両端へ消えていきます。HUD、エクスプローラー、アカウント、タイムトラベルで。",
 } });

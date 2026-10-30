@@ -1720,5 +1720,10 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "On a phone, the HUD now turns with you. Held on its side, the header folds into three short rows and the panels sit two by two, with the tab bar below. A new ⛶ button at the top right shows the HUD alone on the whole screen; ✕ brings the site back. Where the phone allows it the browser goes full screen too, on an iPhone the site bars step aside."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "Loading band: “Reading the chain” now has its own slim line above the header instead of covering it. When every block is read it turns green, folds back into a single line, and the line parts in the middle and runs out to both edges. On the HUD, Explorer, Accounts and Time travel."
  }
 ]
