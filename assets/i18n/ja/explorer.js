@@ -292,4 +292,7 @@ TauI18n.add({ strings: {
   "The sender pulled back the retractable transfer named below before its release block: the amount returns to the sender, the receiver never gets it.": "送信者は、下に記載の取り消し可能な送金を解放ブロックの前に取り戻しました：金額は送信者に戻り、受け取り手には届きません。",
   "Read {n} blocks of {m}…": "{m} ブロック中 {n} ブロックを読み込み…",
   "· {x} after the one before": "· 前のブロックから {x}",
+  "test change · no effect": "テスト変更 · 効果なし",
+  "Checked on 400 random inputs: this rule text decides exactly like the network's starting rules. The extra part is a maths fact that is always true, so nothing changes. It looks like the network testing its vote machinery.": "400 組のランダムな入力で確認：このルール文はネットワークの初期ルールとまったく同じ判定をします。追加部分は常に真になる数学的事実なので、何も変わりません。ネットワークが投票の仕組みを試しているようです。",
+  "Test change: no effect.": "テスト変更：効果なし。",
 } });

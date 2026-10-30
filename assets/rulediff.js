@@ -143,6 +143,130 @@
       <div class="rd-code" role="table" aria-label="Rule text diff">${d.rows.map(r => `<div class="rd-l rd-${r.op === "+" ? "add" : r.op === "-" ? "del" : "ctx"}" role="row"><span class="rd-g" aria-label="${r.op === "+" ? "added" : r.op === "-" ? "removed" : "unchanged"}">${r.op === "+" ? "+" : r.op === "-" ? "−" : ""}</span><span class="rd-t" style="--n:${r.i}">${r.html}</span></div>`).join("")}</div></details>`;
   }
 
+  /* ---- behaviour check: does a proposal change what the rules decide, or only how they are written?
+     The proposed clauses and the clauses they replace are both evaluated on the same random inputs (plus the
+     edge values 0, 1, max and the top bit) for every output value worth trying. Same answer every time: the
+     proposal keeps the behaviour. The check is a sample, not a proof, and the pages say so. Anything the
+     evaluator cannot read (an unknown operator, a stream it cannot type) gives null, and the pages then say nothing. */
+  function lex(src) {
+    const re = /\s+|:bv\[(\d+)\]|\{\s*(#x[0-9a-fA-F]+|#b[01]+|\d+)\s*\}|([io])(\d+)\[t\]|&&|\|\||<<|>>|<=|>=|!=|[-+*\/%&|^=<>!?:()]/y;
+    const out = []; let m; re.lastIndex = 0;
+    while (re.lastIndex < src.length) {
+      const at = re.lastIndex; m = re.exec(src);
+      if (!m || m.index !== at) return null;
+      if (/^\s+$/.test(m[0])) continue;
+      if (m[1]) out.push({ t: "w", w: +m[1] });
+      else if (m[2]) out.push({ t: "c", v: m[2][1] === "x" ? BigInt("0" + m[2].slice(1)) : m[2][1] === "b" ? BigInt("0" + m[2].slice(1)) : BigInt(m[2]) });
+      else if (m[3]) out.push({ t: "s", s: m[3] + m[4] });
+      else out.push({ t: "o", o: m[0] });
+    }
+    return out;
+  }
+  // precedence climbing; nodes: {k:"s"|"c", w} | {k:"u", o, a} | {k:"b", o, a, b} | {k:"?", c, a, b}
+  const BIN = [["||"], ["&&"], ["=", "!=", "<", "<=", ">", ">="], ["|"], ["^"], ["&"], ["<<", ">>"], ["+", "-"], ["*", "/", "%"]];
+  function parse(src) {
+    const tk = lex(src); if (!tk) return null;
+    let i = 0;
+    const peek = () => tk[i], isOp = o => tk[i] && tk[i].t === "o" && tk[i].o === o;
+    const width = () => (tk[i] && tk[i].t === "w") ? tk[i++].w : 0;
+    function atom() {
+      const x = tk[i++]; if (!x) throw 0;
+      if (x.t === "o" && x.o === "(") { const e = tern(); if (!isOp(")")) throw 0; i++; const w = width(); if (w) e.w = w; return e; }
+      if (x.t === "o" && x.o === "!") return { k: "u", o: "!", a: level(2) };
+      if (x.t === "s") return { k: "s", s: x.s, w: width() };
+      if (x.t === "c") return { k: "c", v: x.v, w: width() };
+      throw 0;
+    }
+    function level(l) {
+      if (l >= BIN.length) return atom();
+      let a = level(l + 1);
+      while (peek() && peek().t === "o" && BIN[l].includes(peek().o)) { const o = tk[i++].o; a = { k: "b", o, a, b: level(l + 1) }; }
+      return a;
+    }
+    function tern() {
+      const c = level(0);
+      if (!isOp("?")) return c;
+      i++; const a = tern(); if (!isOp(":")) throw 0; i++;
+      return { k: "?", c, a, b: tern() };
+    }
+    try { const e = tern(); return i === tk.length ? e : null; } catch (e) { return null; }
+  }
+  const CMP = { "=": (x, y) => x === y, "!=": (x, y) => x !== y, "<": (x, y) => x < y, "<=": (x, y) => x <= y, ">": (x, y) => x > y, ">=": (x, y) => x >= y };
+  function wOf(n, W) {
+    if (n.k === "s") return n.w || W[n.s] || 0;
+    if (n.k === "c") return n.w || 0;
+    if (n.k === "b" && !CMP[n.o] && n.o !== "&&" && n.o !== "||") return n.w || Math.max(wOf(n.a, W), wOf(n.b, W));
+    if (n.k === "?") return Math.max(wOf(n.a, W), wOf(n.b, W));
+    return 0;
+  }
+  function ev(n, env, W, w) {
+    const mask = w ? (1n << BigInt(w)) - 1n : -1n;
+    switch (n.k) {
+      case "s": { const v = env[n.s]; if (v === undefined) throw 0; return v; }
+      case "c": return n.v & (w ? mask : -1n);
+      case "u": return !ev(n.a, env, W, 0);
+      case "?": return ev(n.c, env, W, 0) ? ev(n.a, env, W, w) : ev(n.b, env, W, w);
+      case "b": {
+        if (n.o === "&&") return !!ev(n.a, env, W, 0) && !!ev(n.b, env, W, 0);
+        if (n.o === "||") return !!ev(n.a, env, W, 0) || !!ev(n.b, env, W, 0);
+        if (CMP[n.o]) { const cw = Math.max(wOf(n.a, W), wOf(n.b, W)); if (!cw) throw 0; return CMP[n.o](ev(n.a, env, W, cw), ev(n.b, env, W, cw)); }
+        const bw = w || wOf(n, W); if (!bw) throw 0;
+        const m = (1n << BigInt(bw)) - 1n, x = ev(n.a, env, W, bw), y = ev(n.b, env, W, bw);
+        if (typeof x !== "bigint" || typeof y !== "bigint") throw 0;
+        switch (n.o) {
+          case "+": return (x + y) & m; case "-": return (x - y) & m; case "*": return (x * y) & m;
+          case "/": return y ? x / y : m; case "%": return y ? x % y : x;
+          case "&": return x & y; case "|": return x | y; case "^": return x ^ y;
+          case "<<": return y >= BigInt(bw) ? 0n : (x << y) & m; case ">>": return y >= BigInt(bw) ? 0n : x >> y;
+        }
+      }
+    }
+    throw 0;
+  }
+  function streams(n, W, acc) {
+    if (!n) return acc;
+    if (n.k === "s") { if (n.w) W[n.s] = n.w; acc.add(n.s); }
+    ["a", "b", "c"].forEach(k => n[k] && typeof n[k] === "object" && streams(n[k], W, acc));
+    return acc;
+  }
+  // a value worth trying for an output: what "oN = expr" would give it
+  function defs(n, out, acc) {
+    if (!n) return acc;
+    if (n.k === "b" && n.o === "&&") { defs(n.a, out, acc); defs(n.b, out, acc); }
+    else if (n.k === "b" && n.o === "=" && n.a.k === "s" && n.a.s === out) acc.push(n.b);
+    return acc;
+  }
+  function rnd(w) { let v = 0n; for (let b = 0; b < w; b += 30) v = (v << 30n) | BigInt(Math.floor(Math.random() * 2 ** 30)); return v & ((1n << BigInt(w)) - 1n); }
+  /* effect(spec, revisions, samples) -> { same: true|false, samples } or null when it cannot tell */
+  function effect(spec, revisions, samples = 400) {
+    if (!Array.isArray(revisions) || !revisions.length) return null;
+    const W = {}, news = [], olds = [];
+    for (const r of revisions) { const e = parse(body(r)); if (!e) return null; news.push(e); }
+    const touched = new Set(); news.forEach(e => streams(e, W, new Set()).forEach(s => s[0] === "o" && touched.add(s)));
+    for (const o of touched) { const c = spec[o]; if (c == null) return null; const e = parse(c); if (!e) return null; olds.push(e); }
+    const all = new Set(); [...news, ...olds].forEach(e => streams(e, W, all));
+    if ([...all].some(s => !W[s])) return null;
+    const ins = [...all].filter(s => s[0] === "i"), outs = [...touched];
+    const holds = (list, env) => list.every(e => !!ev(e, env, W, 0));
+    try {
+      for (let k = 0; k < samples; k++) {
+        const env = {};
+        ins.forEach(s => { const w = W[s], top = (1n << BigInt(w)) - 1n; env[s] = [0n, 1n, top, 1n << BigInt(w - 1)][k] ?? rnd(w); });
+        // per output: its value under either version, its neighbours, and the edges
+        const cand = {};
+        outs.forEach(o => {
+          const w = W[o], top = (1n << BigInt(w)) - 1n, vs = new Set([0n, 1n, top, rnd(w)]);
+          [...news, ...olds].forEach(e => defs(e, o, []).forEach(d => { try { const v = ev(d, env, W, w); if (typeof v === "bigint") { vs.add(v); vs.add(v ^ 1n); } } catch (x) {} }));
+          cand[o] = [...vs];
+        });
+        // every combination of the candidate output values (outputs are few)
+        const combos = outs.reduce((acc, o) => acc.flatMap(c => cand[o].map(v => ({ ...c, [o]: v }))), [{}]);
+        for (const c of combos) { const e2 = { ...env, ...c }; if (holds(news, e2) !== holds(olds, e2)) return { same: false, samples }; }
+      }
+    } catch (x) { return null; }
+    return { same: true, samples };
+  }
+
   let styled = false;
   function style() {
     if (styled || typeof document === "undefined") return;
@@ -176,5 +300,5 @@
     document.head.appendChild(s);
   }
 
-  window.RuleDiff = { GENESIS, clauses, apply, specAt, diff, summary, html };
+  window.RuleDiff = { GENESIS, clauses, apply, specAt, diff, summary, html, effect };
 })();

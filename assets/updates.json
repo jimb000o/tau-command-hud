@@ -1670,5 +1670,10 @@
   "tag": "Start here",
   "on": "2026-10-30",
   "html": "Start here: the wallet steps now happen right on the page. “Open the wallet”, “Write my rule” and “Feed it from my wallet” open just that one step beside its card, with a single ready choice (a limit of 1,000 test AGRS per payment for the rule), a tick when it is done, and the card turns green. The rule seals on the simulation too, without a trip to the wallet. The whole wallet stays one link away."
+ },
+ {
+  "tag": "Rule changes",
+  "on": "2026-10-30",
+  "html": "Network rule changes: a check now tells real changes from test changes. On the testnet all 43 rule changes so far rewrite the rule for valid blocks with an extra maths fact that is always true (for example a × b = b × a), so the network decides exactly as before. The HUD feed, the Explorer and Proposals now mark these “test change · no effect”, checked on 400 random inputs, and Proposals counts how many changed behaviour."
  }
 ]

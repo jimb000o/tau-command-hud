@@ -117,6 +117,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .empty { color: var(--dim); font-size: 13px; margin: 4px 0; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
 .note b { color: #fff; font-weight: 600; }
+.testch { font: 11px var(--mono); color: var(--dim); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; white-space: nowrap; }
 
 /* two columns: the trail of things to look up, and the open item, which gets the room */
 .cols { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
@@ -255,6 +256,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/chainload.js"></script>
+<script src="../assets/rulediff.js"></script>
 <script src="../assets/nav.js" defer></script>
 </head>
 <body>
@@ -587,10 +589,19 @@ function txLine(t, kind) {
   return `${esc(short(s))}${to ? ` → ${esc(short(to))}` : ""}`;
 }
 const txKey = x => x.id || `${x.h}.${x.i}`;
+/* a network rule change that only rewrites the text: it decides exactly like the starting rules (assets/rulediff.js checks it on random inputs) */
+const TEST_TIP = "Checked on 400 random inputs: this rule text decides exactly like the network's starting rules. The extra part is a maths fact that is always true, so nothing changes. It looks like the network testing its vote machinery.";
+const EFF = new WeakMap();
+const testChange = t => {
+  if (!t || t.tx_type !== "consensus_rule_update" || !Array.isArray(t.rule_revisions) || t.host_contract_patch || !window.RuleDiff) return false;
+  if (!EFF.has(t)) EFF.set(t, (RuleDiff.effect(RuleDiff.clauses(RuleDiff.GENESIS), t.rule_revisions) || {}).same === true);
+  return EFF.get(t);
+};
+const testTag = t => testChange(t) ? ` <span class="testch" title="${esc(TEST_TIP)}">test change · no effect</span>` : "";
 function txRow(x, cls) {
   const k = txKind(x.t), amt = amountOf(x.t);
   return `<li class="tx ${cls || ""} ${isOpen("tx", txKey(x)) ? "on" : ""}"><button type="button" data-go="tx:${txKey(x)}">
-    <span class="h"></span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${txLine(x.t, k)}</em></span><span class="amt">${amt != null ? fmtA(amt) : ""}</span></button></li>`;
+    <span class="h"></span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b>${testTag(x.t)} <em>· ${txLine(x.t, k)}</em></span><span class="amt">${amt != null ? fmtA(amt) : ""}</span></button></li>`;
 }
 const TRAIL_SUB = { latest: "newest first; a block with one transaction is one line", queue: "our node's queue, checked against the chain", rules: "own rules, offers, votes and proposals", refused: "left the queue without reaching a block" };
 function drawTrail() {
@@ -610,7 +621,7 @@ function drawTrail() {
       if (one) {
         const k = txKind(one.t), amt = amountOf(one.t);
         rows.push(`<li class="blk ${isOpen("b", h) || isOpen("tx", txKey(one)) ? "on" : ""} ${fresh}"><button type="button" data-go="tx:${txKey(one)}"${clock}>
-          <span class="h">#${fmtN(h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${txLine(one.t, k)}<span class="ago"> · ${esc(ago(tsOf(b)))}</span></em></span><span class="amt">${amt != null ? fmtA(amt) : ""}</span></button></li>`);
+          <span class="h">#${fmtN(h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b>${testTag(one.t)} <em>· ${txLine(one.t, k)}<span class="ago"> · ${esc(ago(tsOf(b)))}</span></em></span><span class="amt">${amt != null ? fmtA(amt) : ""}</span></button></li>`);
         shown++; continue;
       }
       rows.push(`<li class="blk ${isOpen("b", h) ? "on" : ""} ${fresh}"><button type="button" data-go="b:${h}"${clock}>
@@ -632,7 +643,7 @@ function drawTrail() {
       if (!["rule", "gov"].includes(CAT[txKind(x.t)])) continue;
       if (rows.length >= V.trailN * 2) { more = true; break; }
       const k = txKind(x.t);
-      rows.push(`<li class="${isOpen("tx", txKey(x)) ? "on" : ""}"><button type="button" data-go="tx:${txKey(x)}"><span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b> <em>· ${txLine(x.t, k)}</em></span><span class="amt dim">${esc(ago(x.ts))}</span></button></li>`);
+      rows.push(`<li class="${isOpen("tx", txKey(x)) ? "on" : ""}"><button type="button" data-go="tx:${txKey(x)}"><span class="h">#${fmtN(x.h)}</span><span class="d"><b>${esc(TX_NAMES[k] || k)}</b>${testTag(x.t)} <em>· ${txLine(x.t, k)}</em></span><span class="amt dim">${esc(ago(x.ts))}</span></button></li>`);
     }
   } else {
     for (const d of [...C.dropped].reverse()) {
@@ -708,7 +719,7 @@ function blockView(h) {
   const net = new Map(), effects = [];
   txs.forEach((t, i) => {
     if (!t || typeof t !== "object") return;
-    const k = txKind(t), key = low((b.tx_ids || [])[i] || "") || `${h}.${i}`, link = `<a class="go" href="${txHref(key)}" data-go="tx:${key}">${esc(TX_NAMES[k] || k)}</a>`;
+    const k = txKind(t), key = low((b.tx_ids || [])[i] || "") || `${h}.${i}`, link = `<a class="go" href="${txHref(key)}" data-go="tx:${key}">${esc(TX_NAMES[k] || k)}</a>${testTag(t)}`;
     for (const [f, to, v] of transfersOf(t)) { net.set(low(f), (net.get(low(f)) || 0) - num(v)); net.set(low(to), (net.get(low(to)) || 0) + num(v)); }
     if (CAT[k] === "rule" || CAT[k] === "gov") effects.push(`${link} <em>· ${txLine(t, k)}</em>`);
   });
@@ -716,7 +727,7 @@ function blockView(h) {
   const rows = txs.map((t, i) => {
     if (!t || typeof t !== "object") return "";
     const k = txKind(t), id = low((b.tx_ids || [])[i] || ""), amt = amountOf(t);
-    return `<tr><td class="n">${i + 1}</td><td><a class="go" href="${txHref(id || `${h}.${i}`)}" data-go="tx:${id || `${h}.${i}`}">${esc(TX_NAMES[k] || k)}</a></td><td>${txLine(t, k)}</td><td class="n">${amt != null ? fmtA(amt) : ""}</td></tr>`;
+    return `<tr><td class="n">${i + 1}</td><td><a class="go" href="${txHref(id || `${h}.${i}`)}" data-go="tx:${id || `${h}.${i}`}">${esc(TX_NAMES[k] || k)}</a>${testTag(t)}</td><td>${txLine(t, k)}</td><td class="n">${amt != null ? fmtA(amt) : ""}</td></tr>`;
   }).join("");
   return `<p class="kind">Block${V.sel ? "" : " · newest"}</p><p class="title">#${fmtN(h)} ${h === 0 ? tagHtml("genesis", "w") : tagHtml(`${fmtN(confirms)} deep`, "g")}</p>
     <p class="headline">${h === 0 ? "The first block. It sets the starting balances and rules every node agrees on." : `Sealed ${esc(ago(ts))}${prev ? ` <em>· ${dur(ts - prev)} after the one before</em>` : ""}, holding ${plural(txs.length, "transaction")}.`}</p>
@@ -843,7 +854,7 @@ function sealedTx(x) {
   const to1 = toOf(t), amt = amountOf(t);
   const what = CAT[k] === "transfer" && amt != null ? `<b>${fmtA(amt)} AGRS</b> from ${addrLink(s)} to ${to1 ? addrLink(to1) : plural(tr.length, "account")}.`
     : k === "rule_deploy" ? `${addrLink(s)} set a rule for its own account.` : to1 ? `From ${addrLink(s)} to ${addrLink(to1)}.` : `From ${addrLink(s)}.`;
-  return `<p class="kind">Transaction</p><p class="title">${esc(TX_NAMES[k] || k)} ${x.id ? `<code>${esc(short(x.id))}</code>` : ""} ${tagHtml("In a block", "g")}</p>
+  return `<p class="kind">Transaction</p><p class="title">${esc(TX_NAMES[k] || k)}${testTag(t)} ${x.id ? `<code>${esc(short(x.id))}</code>` : ""} ${tagHtml("In a block", "g")}</p>
     <p class="headline">Arrived: sealed in ${blkLink(x.h)} ${esc(ago(x.ts))}. ${what}</p>
     ${trace(steps)}
     ${m ? `<p class="note"><b>Our node still lists this one as waiting.</b> The chain says it is sealed; that is a known node bug (IDNI issue #81), not a second copy.</p>` : ""}
@@ -851,6 +862,7 @@ function sealedTx(x) {
     ${tr.length > 1 ? `<h3>Transfers</h3><table><thead><tr><th>From</th><th>To</th><th class="n">AGRS</th></tr></thead><tbody>${tr.map(([f, to, a]) => `<tr><td>${addrLink(low(f))}</td><td>${addrLink(low(to))}</td><td class="n">${fmtA(num(a))}</td></tr>`).join("")}</tbody></table>` : ""}
     ${rule ? `<h3>Rule text${st ? ` · ${esc(st)}` : ""}</h3><pre class="code">${esc(rule)}</pre><p class="note">Try rules like this in the <a href="/playground/">Rule Playground</a>.</p>` : ""}
     ${nav(`<a class="chip" href="${addrHref(s)}" data-go="a:${s}">Sender</a>`, copyChip(txHref(txKey(x))))}
+    ${testChange(t) ? `<p class="note"><b>Test change: no effect.</b> ${esc(TEST_TIP)}</p>` : ""}
     <p class="note type">${esc(TX_SAYS[k] || "")}</p>
     <details class="raw vt"><summary>Raw transaction</summary><pre class="code">${esc(JSON.stringify(t, null, 2))}</pre></details>`;
 }
@@ -1021,7 +1033,7 @@ function sampleChain() {
     if (n === 1) txs.push(tx(accs[0], { operations: { "1": [[accs[0], accs[1], "25000"], [accs[0], accs[2], "25000"], [accs[0], accs[3], "10000"]] } }));
     else if (n === 40) txs.push(tx(accs[1], { operations: { "0": "o5[t] = i2[t] <= { #x00000000000003E8 }:bv[64]" } }));
     else if (n === 88) txs.push(tx(accs[2], { tx_type: "rule_offer", recipient_pubkey: accs[3], rule_text: "o5[t] = i2[t] <= { #x0000000000002710 }:bv[64]", expire_at_height: 300 }));
-    else if (n === 150) txs.push(tx(prop, { tx_type: "consensus_rule_update", update_id: hex(64), activate_at_height: 400 }));
+    else if (n === 150) txs.push(tx(prop, { tx_type: "consensus_rule_update", update_id: hex(64), activate_at_height: 400, rule_revisions: ["always(o6[t]:bv[16]=i10[t]:bv[16]&&(i6[t]:bv[16]*i7[t]:bv[16])=(i7[t]:bv[16]*i6[t]:bv[16]))."] }));
     else if (n === 151) txs.push(tx(accs[4], { tx_type: "consensus_rule_vote", update_id: hex(64), approve: true }));
     else if (n > 0) for (let k = 0; k < 3; k++) if (rnd() < 0.35) { const f = accs[Math.floor(rnd() * 9)], t = accs[Math.floor(rnd() * 9)]; if (f !== t) txs.push(tx(f, { operations: { "1": [[f, t, String(10 + Math.floor(rnd() * 900))]] } })); }
     ts += n ? 58 + Math.floor(rnd() * 12) : 0;
