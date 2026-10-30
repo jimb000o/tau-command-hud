@@ -271,7 +271,7 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
           <h2>Before you start</h2>
           <details><summary>Is it safe for my server?</summary><p>It opens only SSH and the peer port 4001. The node’s own interfaces stay inside Docker; nothing on the server is shared.</p></details>
           <details><summary>Does it need looking after?</summary><p>No. It restarts by itself and resyncs when the testnet restarts. To update, run the same command again.</p></details>
-          <details><summary>What does tauhud.com learn?</summary><p>The name, height, latest block hash and kit version, once a minute. No address, no keys. Leave the name empty and nothing is sent.</p></details>
+          <details><summary>What does tauhud.com learn?</summary><p>The name, height, latest block hash and kit version, once a minute, and during setup which step it reached, with a random install id. No address, no keys. Leave the name empty and nothing is sent.</p></details>
           <details><summary>How do I stop?</summary><p><code>cd /opt/tau-node-kit/kit &amp;&amp; docker compose down</code></p></details>
         </section>
       </div>
@@ -547,6 +547,8 @@ $("pick").addEventListener("change", e => { if (e.target.value) location.hash = 
 document.addEventListener("click", async e => {
   const b = e.target.closest("button.copy[data-copy]");
   if (!b) return;
+  // the install command copied: one count for "where setups stop" on In numbers (relay setupfunnel.py), nothing about you
+  if (b.dataset.copy === "cmd") fetch(RELAY + "/setup?s=copied", { mode: "no-cors", keepalive: true }).catch(() => {});
   try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); b.textContent = T("Copied"); }
   catch { b.textContent = T("Select it"); }
   setTimeout(() => { b.textContent = T("Copy"); }, 1600);

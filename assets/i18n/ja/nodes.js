@@ -98,7 +98,7 @@ TauI18n.add({ strings: {
   "Show that you run a node: in a GitHub README, on your website or in a forum signature. It stays up to date by itself.": "ノードを動かしていることを示しましょう：GitHub の README、ウェブサイト、フォーラムの署名に。自動で最新の状態に保たれます。",
   "Since its first report to tauhud.com.": "tauhud.com への最初の報告から。",
   "tauhud.com’s own node. It runs the same kit, and every other row is compared with it. It does not count as a community node.": "tauhud.com 自身のノード。同じキットを動かしていて、ほかのすべての行はこれと比較されます。コミュニティノードには数えません。",
-  "The name, height, latest block hash and kit version, once a minute. No address, no keys. Leave the name empty and nothing is sent.": "名前、高さ、最新のブロックハッシュ、キットのバージョンを 1 分に 1 回。アドレスも鍵もなし。名前を空にすれば何も送られません。",
+  "The name, height, latest block hash and kit version, once a minute, and during setup which step it reached, with a random install id. No address, no keys. Leave the name empty and nothing is sent.": "名前、高さ、最新のブロックハッシュ、キットのバージョンを 1 分に 1 回。セットアップ中は、どの手順まで進んだかもランダムなインストール ID とともに送ります。アドレスも鍵も送りません。名前を空にすれば何も送られません。",
   "The node that has been running longest among those online.": "オンラインのもののうち、最も長く動いているノード。",
   "The people who keep the Tau testnet checkable.": "Tau テストネットを検証可能に保っている人たち。",
   "the yardstick": "物差し",

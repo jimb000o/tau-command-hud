@@ -98,7 +98,7 @@ TauI18n.add({ strings: {
   "Show that you run a node: in a GitHub README, on your website or in a forum signature. It stays up to date by itself.": "展示你在运行节点：放在 GitHub README、你的网站或论坛签名中。它会自动保持最新。",
   "Since its first report to tauhud.com.": "自它首次向 tauhud.com 报告起。",
   "tauhud.com’s own node. It runs the same kit, and every other row is compared with it. It does not count as a community node.": "tauhud.com 自己的节点。它运行同一个套件，其他每一行都与它比较。它不算作社区节点。",
-  "The name, height, latest block hash and kit version, once a minute. No address, no keys. Leave the name empty and nothing is sent.": "名字、高度、最新区块哈希和套件版本，每分钟一次。没有地址，没有密钥。名字留空就什么都不发送。",
+  "The name, height, latest block hash and kit version, once a minute, and during setup which step it reached, with a random install id. No address, no keys. Leave the name empty and nothing is sent.": "名字、高度、最新区块哈希和套件版本，每分钟一次；安装时还会报告进行到哪一步，附带一个随机的安装 ID。不发送地址，不发送密钥。名字留空就什么都不发送。",
   "The node that has been running longest among those online.": "在线节点中运行时间最长的那个。",
   "The people who keep the Tau testnet checkable.": "让 Tau 测试网保持可核查的人们。",
   "the yardstick": "基准",
