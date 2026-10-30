@@ -2148,4 +2148,12 @@ TauI18n.add({ strings: {
   "Documented in tau-testnet: retractable_transfer parks funds in escrow until a release height or time; whitelists use i4, time-locks i5, limits i1. Personal rules are in force on the testnet (22 rule changes by 2 accounts, our count of 30 October), but a returnable, time-locked or co-signed payment we have not seen there yet.": "tau-testnet 中有记载：retractable_transfer 会把资金托管到某个释放高度或时间；白名单用 i4，时间锁用 i5，限额用 i1。测试网上已有个人规则生效（我们 10 月 30 日的统计：2 个账户共 22 次规则变更），但可退回、定时锁定或需共同签名的付款，我们在那里还没有见过。",
   "Daily Consensus café: the four regulars now tell what really happened in the week, why it matters to you, and a small lesson about exactly that. Network test changes are called tests, and wallets are not counted as people. The Professor also talks about the Taumorrow round, a chess engine written in Tau, and the café picks up its result by itself once the public game records are out.": "《每日共识》咖啡馆：四位常客现在讲述这一周真正发生了什么、它对你意味着什么，以及正好关于这件事的一个小道理。网络的测试变更就叫测试，钱包不算作人。教授还会谈到 Taumorrow 的对局，一个用 Tau 写的国际象棋引擎；公开棋谱一发布，咖啡馆就会自动拿到结果。",
   "News line: on the day a new Daily Consensus comes out, “Fresh off the press” opens the line and every round of it, from the drop until midnight in your language’s time zone.": "快讯：新一期《共识日报》出刊当天，从出刊起到当地午夜，“油墨未干”会作为快讯的第一条，并在每一轮重复出现（北京时间）。",
+  "Ghosts in the waiting room: sealed, yet still listed as waiting": "等候室里的幽灵：已经上链，却仍被列为等待中",
+  "{n} ghost transactions in the waiting list right now": "此刻等待列表里有 {n} 笔幽灵交易",
+  "1 ghost transaction in the waiting list right now": "此刻等待列表里有 1 笔幽灵交易",
+  "News line: the ghosts get their headline. Ghost transactions are already sealed in a block but the node still lists them as waiting (a known bug, IDNI #81); the line says how many are haunting the waiting list right now. Transactions are now written “txs” on the line.": "快讯：幽灵也上了标题。幽灵交易已经封进区块，节点却仍把它们列为等待中（已知问题，IDNI #81）；快讯会显示此刻有多少笔在等待列表里游荡。快讯上的交易现在写作“txs”。",
+  "{n} ghost txs in the waiting list right now": "此刻等待列表里有 {n} 笔幽灵交易",
+  "1 ghost tx in the waiting list right now": "此刻等待列表里有 1 笔幽灵交易",
+  "{n} txs waiting for the next block": "{n} 笔交易等待下一个区块",
+  "1 tx waiting for the next block": "1 笔交易等待下一个区块",
 } });

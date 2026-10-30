@@ -1812,5 +1812,10 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "News line: on the day a new Daily Consensus comes out, “Fresh off the press” opens the line and every round of it, from the drop until midnight in your language’s time zone."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: the ghosts get their headline. Ghost transactions are already sealed in a block but the node still lists them as waiting (a known bug, IDNI #81); the line says how many are haunting the waiting list right now. Transactions are now written “txs” on the line."
  }
 ]

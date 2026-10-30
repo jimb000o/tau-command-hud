@@ -23,9 +23,11 @@
   const txt = id => { const e = document.getElementById(id); return e ? e.textContent.trim() : ""; };
   const num = s => /^[\d.,]+$/.test(s) && s !== "0" ? s : "";
   const sim = () => document.body.dataset.mode !== "live";
+  /* the Waiting readout is already translated in zh and ja, so the ghost count is read in each language */
   const FACTS = [
     () => { const h = num(txt("rH")); return h && { text: `Chain at block #${h}`, href: "explorer/" }; },
-    () => { const n = txt("rM"); return /^\d+$/.test(n) && { text: n === "1" ? "1 transaction waiting for the next block" : `${n} transactions waiting for the next block`, href: "explorer/" }; },
+    () => { const n = txt("rM"); return /^\d+$/.test(n) && { text: n === "1" ? "1 tx waiting for the next block" : `${n} txs waiting for the next block`, href: "explorer/" }; },
+    () => { const t = txt("rMs"), m = /(\d+) ghosts?\b/.exec(t) || /(\d+) 笔幽灵/.exec(t) || /幽霊 (\d+)/.exec(t); return m && { text: m[1] === "1" ? "1 ghost tx in the waiting list right now" : `${m[1]} ghost txs in the waiting list right now`, href: "https://github.com/IDNI/tau-testnet/issues/81" }; },
     () => { const n = txt("rR"); return /^\d+$/.test(n) && n !== "0" && { text: n === "1" ? "1 personal money rule in force" : `${n} personal money rules in force`, href: "rules/" }; },
     () => { const e = document.querySelector("#tnOnline .n, #chipOnline b"), n = e ? e.textContent.trim() : ""; return /^\d+$/.test(n) && +n > 1 && { text: `${n} people on Tau HUD right now`, href: "" }; },
   ];
