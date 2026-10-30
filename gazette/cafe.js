@@ -16,7 +16,7 @@
 
   /* ============ the words (English) ============ */
   const CAFE_EN = {
-    enter: "Look up", enterTip: "Look up from the paper: walk through the café and meet the regulars",
+    loading: "One moment…", loadingSub: "The café is being set for you", enter: "Look up", enterTip: "Look up from the paper: walk through the café and meet the regulars",
     back: "The paper", backTip: "Back to the paper",
     hint: "Click the left or right edge to walk around · click someone to talk",
     hintTouch: "Swipe or tap the edges to walk · tap someone to talk",
@@ -115,7 +115,7 @@
 
   /* walls, ceiling and the lamp pools that every room shares */
   function walls(g, G, o) {
-    const { W, H, P } = G, ov = H * 0.3, xl = G.X(-ov, ZB), xr = G.X(W + ov, ZB), R = rnd(o.seed || 7);
+    const { W, H, P } = G, ov = H * 0.2, xl = G.X(-ov, ZB), xr = G.X(W + ov, ZB), R = rnd(o.seed || 7);
     const [, ceilY] = P(0, 3.6, ZB), [, floorY] = P(0, 0, ZB);
     /* the pressed-tin ceiling, running toward us */
     g.fillStyle = lin(g, 0, 0, 0, ceilY, [[0, tone(0.02)], [1, tone(0.1)]]); g.fillRect(-ov, 0, W + 2 * ov, ceilY + 1);
@@ -149,10 +149,11 @@
       glow(g, x, y, r * 4, 0.35 * k); });
     (o.sconces || []).forEach(([X, Y]) => { const [x, y] = P(X, Y, ZB), r = G.s(ZB) * 0.07; glow(g, x, y, r * 9, 0.22);
       g.fillStyle = tone(0.5); g.fillRect(x - r * 0.15, y, r * 0.3, r * 1.6); g.fillStyle = "rgba(255,240,205,.95)"; g.beginPath(); g.ellipse(x, y - r * 0.2, r * 0.55, r * 0.75, 0, 0, 7); g.fill(); });
+    floor(g, G, o);
   }
   /* the floor: small black and white tiles, polished, the lamps shining in it */
   function floor(g, G, o) {
-    const { W, H, P } = G, ov = H * 0.3, [, fy] = P(0, 0, ZB);
+    const { W, H, P } = G, ov = H * 0.2, [, fy] = P(0, 0, ZB);
     g.fillStyle = lin(g, 0, fy, 0, H, [[0, tone(0.2)], [1, tone(0.1)]]); g.fillRect(-ov, fy, W + 2 * ov, H - fy);
     const step = 0.36, xl = G.X(-ov, ZB), xr = G.X(W + ov, ZB);
     for (let z = ZB, row = 0; z > 0.9; z -= step * (z > 3 ? 1 : 0.8), row++) { const z1 = z - step * (z > 3 ? 1 : 0.8);
@@ -365,7 +366,7 @@
       mix: { street: 0.55, music: 0.85 },
       layers: [
         { z: ZB, draw(g, G) {
-          walls(g, G, { seed: 11, lamps: [[-1.3, 4.4], [1.6, 4.4]], wain: 0.9 });
+          walls(g, G, { pools: [[-1.3, 4.2], [1.6, 4.2]], seed: 11, lamps: [[-1.3, 4.4], [1.6, 4.4]], wain: 0.9 });
           const { P } = G;
           /* the back bar: a long mirror, shelves of cups, gold lettering */
           quad(g, P, [[-2.6, 1.0, ZB - 0.02], [1.0, 1.0, ZB - 0.02], [1.0, 2.5, ZB - 0.02], [-2.6, 2.5, ZB - 0.02]], tone(0.04));
@@ -404,7 +405,6 @@
           g.fillStyle = "#3a2a14"; g.fillRect(ux + s * 0.2, uy - s * 0.2, s * 0.12, s * 0.04);
           for (let k = 0; k < 10; k++) { const u = (t * 0.22 + k / 10) % 1; puff(g, ux + Math.sin(t * 0.8 + k * 1.7) * s * 0.05 * (1 + u * 2), uy - s * (1.05 + u * 0.7), s * (0.06 + u * 0.18), 0.12 * Math.sin(u * Math.PI)); }
         } },
-        { z: 3.6, draw(g, G) { floor(g, G, { pools: [[-1.3, 4.2], [1.6, 4.2]] }); } },
         { z: 2.3, draw(g, G) {
           /* the counter: mahogany panels, a marble top, a brass foot rail; the register and a pie under glass on it */
           box(g, G, -3.4, 3.4, 0, 1.05, 2.3, 2.9, { front: lin(g, 0, G.P(0, 1.05, 2.3)[1], 0, G.H, [[0, tone(0.2)], [0.1, tone(0.13)], [1, tone(0.04)]]), top: lin(g, 0, G.P(0, 1.05, 2.9)[1], 0, G.P(0, 1.05, 2.3)[1], [[0, tone(0.55)], [1, tone(0.72)]]) });
@@ -430,7 +430,7 @@
         { z: 1.7, draw(g, G) {
           /* stools in the foreground, out of focus: red leather gone sepia, chrome posts */
           for (const X of [-1.5, 0.45, 2.4]) { const [x, y] = G.P(X, 0.78, 1.7), s = G.s(1.7);
-            g.save(); g.filter = `blur(${Math.round(s * 0.02)}px)`; g.fillStyle = tone(0.55, 0.9); g.fillRect(x - s * 0.02, y, s * 0.04, G.H - y);
+            g.save(); g.fillStyle = tone(0.55, 0.9); g.fillRect(x - s * 0.02, y, s * 0.04, G.H - y);
             g.fillStyle = lin(g, 0, y - s * 0.08, 0, y + s * 0.06, [[0, tone(0.3)], [1, tone(0.03)]]); g.beginPath(); g.ellipse(x, y, s * 0.2, s * 0.06, 0, 0, 7); g.fill(); g.fillRect(x - s * 0.2, y, s * 0.4, s * 0.05);
             g.fillStyle = tone(0.65, 0.5); g.beginPath(); g.ellipse(x - s * 0.06, y - s * 0.02, s * 0.08, s * 0.015, 0, 0, 7); g.fill(); g.restore(); }
         } },
@@ -443,7 +443,7 @@
       mix: { street: 0.4, music: 0.7 },
       layers: [
         { z: ZB, draw(g, G) {
-          walls(g, G, { seed: 23, lamps: [[0.3, 4.6, 2.8, 0.8]], sconces: [[-2.8, 2.2]] });
+          walls(g, G, { pools: [[0.3, 4.4, 0.8], [-1.7, 4.2, 0.5]], seed: 23, lamps: [[0.3, 4.6, 2.8, 0.8]], sconces: [[-2.8, 2.2]] });
           const { P } = G;
           text(g, TX.wireSign.toUpperCase(), ...P(0.2, 3.05, ZB), G.s(ZB) * 0.15, { w: 700, fill: "rgba(240,215,160,.8)", stroke: "rgba(0,0,0,.5)", face: "Georgia, 'Noto Serif SC', serif" });
           /* a cork board with pinned telegrams */
@@ -478,7 +478,6 @@
           g.strokeStyle = tone(0.45, 0.5); g.lineWidth = 1; for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(bx - bs * 0.19, by - bs * 0.3 + k * bs * 0.06); g.lineTo(bx + bs * 0.19, by - bs * 0.3 + k * bs * 0.06); g.stroke(); }
           g.strokeStyle = tone(0.85, 0.9); g.lineWidth = Math.max(2, bs * 0.03); for (let k = 0; k < 6; k++) { g.beginPath(); g.ellipse(bx + Math.sin(k * 2) * bs * 0.07, by - bs * 0.34 - k * bs * 0.012, bs * 0.08, bs * 0.03, k, 0, 5); g.stroke(); }
         } },
-        { z: 3.6, draw(g, G) { floor(g, G, { pools: [[0.3, 4.4, 0.8], [-1.7, 4.2, 0.5]] }); } },
         { z: 2.45, draw(g, G) {
           /* Elias's desk: the telegraph key, a banker's lamp, papers and a spike of telegrams */
           box(g, G, -0.75, 1.3, 0, 0.78, 2.45, 3.05, { front: lin(g, 0, G.P(0, 0.78, 2.45)[1], 0, G.H, [[0, tone(0.18)], [1, tone(0.04)]]), top: tone(0.36) });
@@ -492,7 +491,7 @@
         } },
         { z: 1.4, draw(g, G) {
           /* a hat stand close by, out of focus */
-          const [x, y] = G.P(2.1, 0, 1.4), s = G.s(1.4); g.save(); g.filter = `blur(${Math.round(s * 0.015)}px)`; g.fillStyle = tone(0.04); g.fillRect(x - s * 0.025, G.P(0, 1.9, 1.4)[1], s * 0.05, G.H);
+          const [x, y] = G.P(2.1, 0, 1.4), s = G.s(1.4); g.save(); g.fillStyle = tone(0.04); g.fillRect(x - s * 0.025, G.P(0, 1.9, 1.4)[1], s * 0.05, G.H);
           g.beginPath(); g.ellipse(x - s * 0.1, G.P(0, 1.85, 1.4)[1], s * 0.22, s * 0.07, 0, 0, 7); g.fill(); g.fillRect(x - s * 0.22, G.P(0, 1.95, 1.4)[1], s * 0.24, s * 0.11); g.restore();
         } },
       ],
@@ -504,7 +503,7 @@
       mix: { street: 0.25, music: 2.4 },
       layers: [
         { z: ZB, draw(g, G) {
-          walls(g, G, { seed: 41, lamps: [[0, 3.2, 2.15, 1.25]], wain: 0.95 });
+          walls(g, G, { pools: [[0, 3.0, 1.3]], seed: 41, lamps: [[0, 3.2, 2.15, 1.25]], wain: 0.95 });
           const { P } = G;
           /* bookshelves to both sides */
           for (const [a, b] of [[-3.6, -1.3], [1.5, 3.6]]) { quad(g, P, [[a, 0, ZB - 0.3], [b, 0, ZB - 0.3], [b, 2.9, ZB - 0.3], [a, 2.9, ZB - 0.3]], tone(0.05));
@@ -533,7 +532,6 @@
           /* music in the air: notes rising from the horn, now and then */
           if (AUDIO.on()) for (let k = 0; k < 3; k++) { const u = ((t * 0.18) + k / 3) % 1; text(g, k % 2 ? "♪" : "♫", x - s * (0.4 + u * 0.3), y - s * (0.95 + u * 0.6), s * 0.1, { fill: `rgba(240,225,190,${0.35 * Math.sin(u * Math.PI)})` }); }
         } },
-        { z: 3.6, draw(g, G) { floor(g, G, { pools: [[0, 3.0, 1.3]] }); } },
         { z: 2.3, draw(g, G) {
           /* the chess table under the lamp: a small round top, the board in perspective, the pieces mid-game */
           const { P } = G, top = 0.74;
@@ -546,7 +544,7 @@
         } },
         { z: 1.3, draw(g, G) {
           /* an armchair's wing close by on the left, out of focus */
-          const [x, y] = G.P(-1.55, 1.1, 1.3), s = G.s(1.3); g.save(); g.filter = `blur(${Math.round(s * 0.02)}px)`;
+          const [x, y] = G.P(-1.55, 1.1, 1.3), s = G.s(1.3); g.save();
           g.fillStyle = lin(g, x - s * 0.3, 0, x + s * 0.3, 0, [[0, tone(0.02)], [1, tone(0.16)]]); g.beginPath(); g.moveTo(x - s * 0.4, G.H); g.lineTo(x - s * 0.35, y); g.quadraticCurveTo(x, y - s * 0.25, x + s * 0.25, y + s * 0.05); g.lineTo(x + s * 0.3, G.H); g.fill(); g.restore();
         } },
       ],
@@ -558,7 +556,7 @@
       mix: { street: 1.25, music: 0.6 },
       layers: [
         { z: ZB, draw(g, G) {
-          walls(g, G, { seed: 57, lamps: [[1.4, 4.4, 2.8, 0.7]], wain: 1.0 });
+          walls(g, G, { pools: [[1.4, 4.2, 0.7], [-0.6, 4.6, 1.2]], seed: 57, lamps: [[1.4, 4.4, 2.8, 0.7]], wain: 1.0 });
           const { P } = G, d = DOOR;
           /* the door frame and the door itself; its glass is filled in live, the street behind it */
           quad(g, P, [[d.x0 - 0.15, 0, ZB - 0.01], [d.x1 + 0.15, 0, ZB - 0.01], [d.x1 + 0.15, 2.55, ZB - 0.01], [d.x0 - 0.15, 2.55, ZB - 0.01]], tone(0.04));
@@ -599,10 +597,9 @@
           g.strokeStyle = tone(0.5); g.lineWidth = Math.max(1, s * 0.012); g.beginPath(); g.moveTo(bx - s * 0.25, by - s * 0.1); g.lineTo(bx, by - s * 0.1); g.stroke();
           g.save(); g.translate(bx, by - s * 0.1); g.rotate(sw2); g.fillStyle = lin(g, -s * 0.08, 0, s * 0.08, 0, [[0, "#5a4426"], [0.4, "#f2dca8"], [1, "#3a2a14"]]); g.beginPath(); g.moveTo(-s * 0.03, s * 0.02); g.quadraticCurveTo(-s * 0.04, s * 0.11, -s * 0.08, s * 0.14); g.lineTo(s * 0.08, s * 0.14); g.quadraticCurveTo(s * 0.04, s * 0.11, s * 0.03, s * 0.02); g.fill(); g.restore();
         } },
-        { z: 3.6, draw(g, G) { floor(g, G, { pools: [[1.4, 4.2, 0.7], [-0.6, 4.6, 1.2]] }); } },
         { z: 1.4, draw(g, G) {
           /* the end of the counter close by on the right, out of focus */
-          const [x, y] = G.P(1.6, 1.05, 1.4), s = G.s(1.4); g.save(); g.filter = `blur(${Math.round(s * 0.02)}px)`;
+          const [x, y] = G.P(1.6, 1.05, 1.4), s = G.s(1.4); g.save();
           g.fillStyle = lin(g, 0, y, 0, G.H, [[0, tone(0.5)], [0.05, tone(0.12)], [1, tone(0.02)]]); g.fillRect(x, y, G.W, G.H - y); g.restore();
         } },
       ],
@@ -666,16 +663,30 @@
   const g = cv.getContext("2d");
   const BAKED = {};
   function size() {
-    W = desk.clientWidth; H = desk.clientHeight; K = Math.min(1.5, window.devicePixelRatio || 1) * (small() ? 0.9 : 1);
-    cv.width = Math.round(W * K); cv.height = Math.round(H * K); for (const k in BAKED) delete BAKED[k]; FIN = null; STREET = null;
+    W = desk.clientWidth; H = desk.clientHeight; K = Math.min(1.25, window.devicePixelRatio || 1, Math.sqrt(2.6e6 / Math.max(1, W * H)));
+    cv.width = Math.round(W * K); cv.height = Math.round(H * K); for (const k in BAKED) delete BAKED[k]; for (const k in PART) delete PART[k]; FIN = null; STREET = null;
   }
-  function bake(name) {
-    if (BAKED[name]) return BAKED[name]; const A = AREAS[name]; if (!A.layers) return null;
-    const ov = Math.round(H * 0.3), G = geom(W, H, 0);
-    BAKED[name] = A.layers.map(L => { const c = document.createElement("canvas"); c.width = Math.round((W + 2 * ov) * K); c.height = Math.round(H * K);
-      const x = c.getContext("2d"); x.setTransform(K, 0, 0, K, ov * K, 0); L.draw(x, G); return { c, ov }; });
-    return BAKED[name];
+  /* a room is drawn once per size, layer by layer, a frame apart, and each layer is painted once into a tiny
+     canvas so the browser does the heavy work now and not on the first step into the room */
+  const PART = {}, WARM = document.createElement("canvas"); WARM.width = WARM.height = 2;
+  function bakeLayer(name) {
+    const A = AREAS[name], ov = Math.round(H * 0.2), G = geom(W, H, 0), done = PART[name] || (PART[name] = []), L = A.layers[done.length];
+    const c = document.createElement("canvas"); c.width = Math.round((W + 2 * ov) * K); c.height = Math.round(H * K);
+    const x = c.getContext("2d"); x.setTransform(K, 0, 0, K, ov * K, 0); L.draw(x, G); WARM.getContext("2d").drawImage(c, 0, 0, 2, 2);
+    done.push({ c, ov }); if (done.length === A.layers.length) { BAKED[name] = done; delete PART[name]; }
   }
+  const ready = name => !AREAS[name].layers || !!BAKED[name];
+  function bake(name) { while (!ready(name)) bakeLayer(name); return BAKED[name]; }
+  /* get rooms ready a layer per frame; onStep(done, total) for the loading card */
+  let PREP = null;
+  function prep(names, onStep) {
+    const todo = names.filter((n, i) => names.indexOf(n) === i && !ready(n)), total = todo.reduce((a, n) => a + AREAS[n].layers.length - (PART[n] || []).length, 0);
+    let n = 0; const job = {}; PREP = job;
+    return new Promise(res => { const step = () => { if (PREP !== job || !ST.on) return res(false); const nx = todo.find(k => !ready(k)); if (!nx) { onStep && onStep(total, total); return res(true); }
+      bakeLayer(nx); n++; onStep && onStep(n, total); setTimeout(() => requestAnimationFrame(step), 0); }; requestAnimationFrame(step); });
+  }
+  /* only the room you are in and the two beside it stay drawn, so a big screen does not run out of memory */
+  function keep() { const near = [ST.area, nb(1), nb(-1)]; for (const k in BAKED) if (!near.includes(k)) delete BAKED[k]; for (const k in PART) if (!near.includes(k)) delete PART[k]; }
   /* grain and the dark toward the edges, as in the street scene */
   let FIN = null;
   function finish() {
@@ -742,6 +753,10 @@
     <div class="cafe-say" role="dialog" aria-live="polite" hidden><div class="cs-who"><b></b><i></i></div><p class="cs-line"></p><div class="cs-ch"></div><span class="cs-more" aria-hidden="true">▾</span></div>
     <div class="cafe-end" hidden><p class="ce-card"></p><div class="ce-paper" hidden></div></div>`;
   desk.appendChild(ui);
+  /* the card that shows while the café is being set: the paper is already going, the rooms are being drawn */
+  const wait = document.createElement("div"); wait.className = "cafe-load"; wait.dataset.noflip = ""; wait.setAttribute("role", "status"); wait.hidden = true;
+  wait.innerHTML = `<b></b><i></i><span class="cl-bar"><span></span></span>`; desk.appendChild(wait);
+  const waitShow = (on, u = 0) => { wait.hidden = !on; if (!on) return; wait.querySelector("b").textContent = TX.loading; wait.querySelector("i").textContent = TX.loadingSub; wait.querySelector(".cl-bar span").style.width = Math.round(u * 100) + "%"; };
   const $ = s => ui.querySelector(s);
   const say = $(".cafe-say"), sayLine = $(".cs-line"), sayCh = $(".cs-ch"), note = $(".cafe-note"), hintEl = $(".cafe-hint");
   /* stop the paper's own page turning while the reader walks the café */
@@ -772,24 +787,32 @@
   window.addEventListener("gazette-cafe", sndLabel); window.addEventListener("gazette-labels", labels);
 
   /* ----- in and out ----- */
-  function enter() {
-    if (ST.on) return; size(); ST.on = true; ST.area = "window"; ST.cam = ST.camT = 0; ST.zoom = 1.08; ST.zoomT = 1; ST.zx = W / 2; ST.zy = H / 2; ST.last = 0;
-    desk.classList.add("cafe-on"); desk.classList.remove("cafe-away"); ui.hidden = false; labels(); place(); mix();
-    hintEl.classList.add("on"); clearTimeout(hintEl._t); hintEl._t = setTimeout(() => hintEl.classList.remove("on"), 7000);
-    if (!AUDIO.on()) { note.textContent = "♪ " + TX.soundHint + " → " + ($(".cafe-snd").textContent.slice(2)); }
-    loop(); setTimeout(() => $(".cafe-edge.r").focus({ preventScroll: true }), 900);
+  /* in: the paper goes down at once and a card says the café is being set; the rooms on either side are drawn,
+     then the café opens (a card is shown only if that takes longer than a blink) */
+  function enter(quick) {
+    if (ST.on) return; ST.on = true; ST.area = "window"; ST.cam = ST.camT = 0; ST.zoom = 1.08; ST.zoomT = 1; ST.last = 0;
+    desk.classList.add("cafe-on", "cafe-wait"); desk.classList.remove("cafe-away"); labels(); mix();
+    const t0 = performance.now(); let shown = false; const card = setTimeout(() => { shown = true; waitShow(true, 0); }, 150);
+    requestAnimationFrame(() => { if (!ST.on) return; if (W !== desk.clientWidth || H !== desk.clientHeight || !cv.width) size(); ST.zx = W / 2; ST.zy = H / 2; loop();
+      (quick ? Promise.resolve(true) : prep([nb(1), nb(-1)], (n, t) => shown && waitShow(true, t ? n / t : 1))).then(ok => {
+        clearTimeout(card); if (!ST.on) return; const rest = shown ? Math.max(0, 350 - (performance.now() - t0)) : 0;
+        setTimeout(() => { if (!ST.on) return; waitShow(false); desk.classList.remove("cafe-wait"); ui.hidden = false; place();
+          hintEl.classList.add("on"); clearTimeout(hintEl._t); hintEl._t = setTimeout(() => hintEl.classList.remove("on"), 7000);
+          setTimeout(() => $(".cafe-edge.r").focus({ preventScroll: true }), 300); }, rest); }); });
   }
   function leave() {
-    if (!ST.on) return; ST.on = false; closeTalk(); END.on = false; $(".cafe-end").hidden = true; $(".ce-paper").hidden = true;
+    if (!ST.on) return; ST.on = false; PREP = null; waitShow(false); desk.classList.remove("cafe-wait"); closeTalk(); END.on = false; $(".cafe-end").hidden = true; $(".ce-paper").hidden = true;
     desk.classList.remove("cafe-on", "cafe-away"); ui.hidden = true; S.amb.mix({ street: 1, open: 0, music: 1 }); bIn.focus({ preventScroll: true });
   }
   const mix = () => S.amb.mix(Object.assign({ open: 0 }, AREAS[ST.area].mix));
   function walk(d) {
-    if (!ST.on || ST.pan || END.on) return; closeTalk(); const to = nb(d), slow = RM || small();
+    if (!ST.on || ST.pan || END.on || ST.busy) return; closeTalk(); const to = nb(d), slow = RM || small();
+    /* a room not drawn yet (a quick walker): the card for a moment, then the step */
+    if (!ready(to)) { ST.busy = true; const card = setTimeout(() => waitShow(true, 0), 150); prep([to], (n, t) => waitShow(!wait.hidden, n / t)).then(() => { clearTimeout(card); waitShow(false); ST.busy = false; if (ST.on) walk(d); }); return; }
     ST.pan = { from: ST.area, to, dir: d, t0: performance.now(), d: slow ? 450 : 950, fade: slow }; ST.area = to; ST.zoomT = 1;
     desk.classList.toggle("cafe-away", to !== "window"); AUDIO.steps(slow ? 2 : 3); note.classList.remove("on"); place(); mix(); bake(to); loop();
   }
-  function arrived() { if (ST.area === "wire") AUDIO.ticker(); }
+  function arrived() { if (ST.area === "wire") AUDIO.ticker(); keep(); prep([nb(1), nb(-1)]); }
 
   /* ----- talking ----- */
   let TYPE = null;
@@ -918,7 +941,7 @@
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
 
   /* other languages come in their own small file */
-  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=1`; s.onload = labels; document.head.appendChild(s); }
+  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=2`; s.onload = labels; document.head.appendChild(s); }
   labels();
   /* ?cafe=<room> opens the café there (and ?cafe-talk=<who>&cafe-line=<n> for pictures) */
   { const m = /[?&]cafe=(\w+)/.exec(location.search); if (m) setTimeout(() => { enter(); if (AREAS[m[1]] && m[1] !== "window") { ST.area = m[1]; desk.classList.add("cafe-away"); place(); mix(); }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
-<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=1"><\/script>`);</script>
+<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=2"><\/script>`);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>The Daily Consensus</title>
@@ -281,9 +281,22 @@ html.i18n-ja .title { font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho Pro
 .desk.cafe-on .ctl, .desk.cafe-on .side, .desk.cafe-on .hint, .desk.cafe-on .toc, .desk.cafe-on .rbar { opacity: 0; pointer-events: none; transition: opacity .4s; }
 .desk.cafe-on.cafe-away .scene-hit, .desk.cafe-ending .scene-hit, .desk.cafe-on .scene-note { display: none; }
 .desk.cafe-on .scene-hit { z-index: 2; }
-.cafe-in-btn { position: relative; }
-.cafe-in-btn::after { content: ""; position: absolute; inset: 0; border-radius: 999px; box-shadow: 0 0 0 0 rgba(226,201,152,.5); animation: cafeCall 2.6s ease-out 3s 3; pointer-events: none; }
-@keyframes cafeCall { 0% { box-shadow: 0 0 0 0 rgba(226,201,152,.45); } 100% { box-shadow: 0 0 0 12px rgba(226,201,152,0); } }
+/* the way into the café: lit green like the HUD's live light, breathing, so it reads as something special */
+.ctl button.cafe-in-btn { position: relative; color: #fff; background: rgba(57,255,138,.1); box-shadow: inset 0 0 0 1px rgba(57,255,138,.75), 0 0 14px rgba(57,255,138,.35); padding-left: 26px; }
+.ctl button.cafe-in-btn:hover { background: rgba(57,255,138,.2); box-shadow: inset 0 0 0 1px var(--ok), 0 0 22px rgba(57,255,138,.55); }
+.cafe-in-btn::before { content: ""; position: absolute; left: 11px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); animation: cafeDot 1.6s ease-in-out infinite; }
+.cafe-in-btn::after { content: ""; position: absolute; inset: 0; border-radius: 999px; pointer-events: none; animation: cafeCall 2.4s ease-out 1.2s infinite; }
+@keyframes cafeDot { 50% { opacity: .35; transform: scale(.75); } }
+@keyframes cafeCall { 0% { box-shadow: 0 0 0 0 rgba(57,255,138,.55); } 70%, 100% { box-shadow: 0 0 0 12px rgba(57,255,138,0); } }
+@media (max-width: 700px), (max-height: 520px) { .ctl button.cafe-in-btn { padding-left: 0; } .cafe-in-btn::before { left: 5px; top: 8px; width: 6px; height: 6px; margin-top: 0; } }
+@media (prefers-reduced-motion: reduce) { .cafe-in-btn::before, .cafe-in-btn::after { animation: none; } }
+/* while the café is being set */
+.cafe-load { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 45; min-width: 260px; padding: 18px 26px 16px; text-align: center; background: rgba(8,7,6,.92); border: 3px double rgba(226,201,152,.55); outline: 1px solid rgba(226,201,152,.15); outline-offset: 4px; box-shadow: 0 20px 60px rgba(0,0,0,.7); animation: cafeSay .3s ease; }
+.cafe-load[hidden] { display: none; }
+.cafe-load b { display: block; font: 400 17px/1.2 var(--deco); letter-spacing: .14em; text-transform: uppercase; color: rgba(240,215,160,.95); }
+.cafe-load i { display: block; margin: 6px 0 12px; font: italic 15px/1.3 var(--body); color: rgba(240,226,198,.85); }
+.cl-bar { display: block; height: 3px; background: rgba(226,201,152,.18); border-radius: 2px; overflow: hidden; }
+.cl-bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, rgba(226,180,90,.7), rgba(250,215,140,1)); transition: width .2s; }
 .cafe-ui { position: absolute; inset: 0; z-index: 40; pointer-events: none; font: 15px/1.45 var(--body); color: #efe5cf; }
 .cafe-ui[hidden] { display: none; }
 .cafe-ui button { pointer-events: auto; font: inherit; color: inherit; cursor: pointer; }
@@ -1286,6 +1299,6 @@ const EN = {
 })();
 </script>
 <script src="scene.js?v=7"></script>
-<script src="cafe.js?v=1"></script>
+<script src="cafe.js?v=2"></script>
 </body>
 </html>

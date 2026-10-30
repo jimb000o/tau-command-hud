@@ -1,5 +1,6 @@
 /* カフェの散策（cafe.js）の日本語。キーは cafe.js の CAFE_EN と一対一で対応しています。 */
 window.CAFE_JA = {
+  loading: "少々お待ちください……", loadingSub: "カフェの支度をしています",
   enter: "顔を上げる", enterTip: "新聞から顔を上げて、カフェを歩き、常連たちに会う",
   back: "新聞", backTip: "新聞に戻る",
   hint: "画面の左右の端をクリックして歩く · 人をクリックして話す",
