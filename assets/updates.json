@@ -1690,5 +1690,10 @@
   "tag": "Rule changes",
   "on": "2026-10-30",
   "html": "Network rule changes: a check now tells real changes from test changes. On the testnet all 43 rule changes so far rewrite the rule for valid blocks with an extra maths fact that is always true (for example a × b = b × a), so the network decides exactly as before. The HUD feed, the Explorer and Proposals now mark these “test change · no effect”, checked on 400 random inputs, and Proposals counts how many changed behaviour."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper café: the café cat now has a name, Déjà. When Mae's pie vote is chalked in and the rule is carried, she breaks up into slipping bands of picture, comes back together, walks across the counter, breaks up again at the far end, and then takes the very same walk once more."
  }
 ]
