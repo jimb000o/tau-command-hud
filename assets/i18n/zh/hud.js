@@ -2156,4 +2156,7 @@ TauI18n.add({ strings: {
   "1 ghost tx in the waiting list right now": "此刻等待列表里有 1 笔幽灵交易",
   "{n} txs waiting for the next block": "{n} 笔交易等待下一个区块",
   "1 tx waiting for the next block": "1 笔交易等待下一个区块",
+  "White Rabbit Key: a small island election game under Playground. Four candidates, five days, three moves a day: propose laws at the Council Hall, talk on the market square, buy a line on Radio Coco, take an embassy's money for a promise, make pacts at the beach bar. Every move is written into the Book in the lighthouse, where anyone can read it; a law that contradicts one in force is refused before anyone votes, and rumours last only until people read the Book. A white rabbit shows newcomers the way, the island turns from morning to night, and an island tune plays in your browser. If you like, a law you pass and your final vote go to the testnet as real transactions of 1 test AGRS.": "白兔礁：“试验场”下的一个岛上选举小游戏。四位候选人，五天，每天三步：在议事厅提出法律、在集市广场讲话、在 Radio Coco 买一句话、拿大使馆的钱换一个承诺、在海滩酒吧结盟。每一步都会写进灯塔里的账本，谁都可以读；与生效中法律相矛盾的法律在投票前就被拒绝，谣言只管用到大家读账本为止。一只白兔给新来的人带路，小岛从早到晚变换，岛上的曲子在你的浏览器里演奏。愿意的话，你通过的法律和最后一票会作为 1 测试 AGRS 的真实交易发到测试网。",
+  "New: White Rabbit Key, an island election game": "新：白兔礁，一个岛上选举游戏",
+  "Four candidates, five days, one island. Every move goes into a Book nobody can edit, and a law that contradicts one in force is refused before anyone votes. Your vote can go on the testnet.": "四位候选人，五天，一座岛。每一步都写进一本谁都改不了的账本，与生效中法律相矛盾的法律在投票前就被拒绝。你的一票可以上测试网。",
 } });

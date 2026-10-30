@@ -1817,5 +1817,17 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "News line: the ghosts get their headline. Ghost transactions are already sealed in a block but the node still lists them as waiting (a known bug, IDNI #81); the line says how many are haunting the waiting list right now. Transactions are now written “txs” on the line."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-30",
+  "html": "White Rabbit Key: a small island election game under Playground. Four candidates, five days, three moves a day: propose laws at the Council Hall, talk on the market square, buy a line on Radio Coco, take an embassy's money for a promise, make pacts at the beach bar. Every move is written into the Book in the lighthouse, where anyone can read it; a law that contradicts one in force is refused before anyone votes, and rumours last only until people read the Book. A white rabbit shows newcomers the way, the island turns from morning to night, and an island tune plays in your browser. If you like, a law you pass and your final vote go to the testnet as real transactions of 1 test AGRS.",
+  "major": {
+   "id": "rabbit",
+   "title": "New: White Rabbit Key, an island election game",
+   "text": "Four candidates, five days, one island. Every move goes into a Book nobody can edit, and a law that contradicts one in force is refused before anyone votes. Your vote can go on the testnet.",
+   "link": "/rabbit/",
+   "image": "/assets/shots/rabbit.png"
+  }
  }
 ]

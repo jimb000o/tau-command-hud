@@ -583,4 +583,6 @@ TauI18n.add({ strings: {
   "What the site costs each month and every donation received, on chain; voluntary, nothing in return": "网站每月的花费和收到的每一笔捐赠，链上可查；自愿，不求回报",
   "What it costs, and every donation on chain ›": "花费，以及链上的每一笔捐赠 ›",
   "Running costs: about {v} a month, not counting time.": "运行费用：每月约 {v}，不含时间。",
+  "White Rabbit Key": "白兔礁",
+  "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet": "一个岛上选举游戏：法律、盟约、谣言，还有一本谁都改不了的账本；你的一票可以上测试网",
 } });
