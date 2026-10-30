@@ -111,7 +111,11 @@
   const emit = action => document.dispatchEvent(new CustomEvent("tau-nav", { detail: action }));
   const markSeen = () => { store.set(SEEN_KEY, LATEST_ID); document.querySelectorAll(".tn-upd.new, .tabbar .new").forEach(e => e.classList.remove("new")); };
   /* the shared update log: newest entry = highest date, then the later line in the file; the dot shows until that entry was seen */
-  const checkLog = () => fetch(ROOT + "assets/updates.json", { cache: "no-cache" }).then(r => r.json()).then(list => {
+  /* one download of the log per page view, shared by the dot, the Updates overlay and the HUD's own log (window.TauLog) */
+  let logP = null;
+  const getLog = () => logP || (logP = fetch(ROOT + "assets/updates.json", { cache: "no-cache" }).then(r => r.json()).catch(e => { logP = null; throw e; }));
+  window.TauLog = getLog;
+  const checkLog = () => getLog().then(list => {
     if (!Array.isArray(list) || !list.length) return;
     SITE_VER = siteVersions(list).filter(Boolean).pop() || null;
     const top = list.map((e, i) => ({ ...e, i })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i)[0];
@@ -213,7 +217,7 @@
   const updDict = () => new Promise(res => { if (!window.TauI18n || TauI18n.lang === "en") return res(); const sc = document.createElement("script"); sc.src = ROOT + "assets/i18n/" + TauI18n.lang + "/hud.js"; sc.onload = sc.onerror = res; document.head.append(sc); });
   async function loadUpdLog() {
     const ul = UPD.el.querySelector(".tn-changes"); let list;
-    try { list = await (await fetch(ROOT + "assets/updates.json", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+    try { list = await getLog(); if (!Array.isArray(list)) throw new Error("not a list"); }
     catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
     const vers = siteVersions(list); SITE_VER = vers.filter(Boolean).pop() || SITE_VER;
     const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
