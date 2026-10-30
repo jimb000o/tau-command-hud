@@ -111,4 +111,10 @@ TauI18n.add({ strings: {
   "counted by wallet, not by person": "人ではなくウォレット単位で数えています",
   "No transactions in this range yet.": "この期間にはまだトランザクションがありません。",
   "Japanese": "日本語",
+  "IDNI genesis": "IDNI ジェネシス",
+  "IDNI genesis accounts: sent by the 11 accounts the testnet started with (its genesis file), which IDNI set up and uses for testing. They make most of the testnet's transactions, so a small share for the others can still be many people.": "IDNI ジェネシスアカウント：テストネット開始時からある 11 のアカウント（ジェネシスファイル）が送ったもの。IDNI が用意し、テストに使っています。テストネットのトランザクションの大半はここから来るため、ほかの割合が小さくても多くの人がいることがあります。",
+  "others": "その他",
+  "everything else: other wallets, scripts and tools": "それ以外すべて：ほかのウォレット、スクリプト、ツール",
+  "Opened from tauhud.com": "tauhud.com から開かれた",
+  "Opened from agorzilla.com": "agorzilla.com から開かれた",
 } });

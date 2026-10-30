@@ -1379,6 +1379,11 @@
   "html": "Japanese, second round: the Monday front page of The Daily Consensus is now written in Japanese too, and every older entry in this Updates log reads in Japanese."
  },
  {
+  "tag": "Privacy",
+  "on": "2026-10-29",
+  "html": "Privacy notice: the troll box is now in the short summary too, and section 7 spells out that there is no account or cookie, what the operator sees, and how to get a message of yours removed sooner than the 24 hours."
+ },
+ {
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "Tau HUD in numbers: the testnet transactions split now shows IDNI's genesis accounts on their own (the 11 accounts the testnet started with, which make most of the traffic), next to Agorzilla, Tau HUD and other wallets."
