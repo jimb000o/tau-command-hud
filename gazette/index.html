@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
-<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=5"><\/script>`);</script>
+<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=6"><\/script>`);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>The Daily Consensus</title>
@@ -364,6 +364,36 @@ html.i18n-ja .title { font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho Pro
 @keyframes cafeBeckon { 50% { transform: translateX(7px); } }
 @media (prefers-reduced-motion: reduce) { .cafe-edge.call .ce-ch { animation: none; } }
 .cafe-hint.on { opacity: 1; }
+/* a closer look at a thing in the room: a vignette beside the reader, like leaning in */
+.cafe-look { pointer-events: auto; position: absolute; top: 50%; right: 4%; width: min(500px, 44%); transform: translateY(-58%) scale(.6); opacity: 0; transition: transform .32s cubic-bezier(.2,.8,.25,1), opacity .25s; cursor: zoom-out;
+  background: radial-gradient(ellipse at 50% 40%, rgba(40,30,20,.96), rgba(10,8,6,.97)); border: 3px double rgba(226,201,152,.55); outline: 1px solid rgba(226,201,152,.15); outline-offset: 5px; padding: 18px 20px 14px; box-shadow: 0 30px 80px rgba(0,0,0,.75); }
+.cafe-look.left { right: auto; left: 4%; }
+.cafe-look.on { transform: translateY(-58%) scale(1); opacity: 1; }
+.cafe-look .lk-x { position: absolute; top: 6px; right: 8px; background: none; border: 0; color: rgba(226,201,152,.7); font: 16px var(--body); cursor: pointer; padding: 6px 8px; min-width: 32px; min-height: 32px; }
+.lk-pic { position: relative; min-height: 180px; display: flex; align-items: center; justify-content: center; }
+.lk-photo { overflow: hidden; box-shadow: inset 0 0 60px 20px rgba(10,8,6,.95); }
+.lk-crop { width: 100%; height: auto; max-height: 300px; object-fit: contain; filter: sepia(.35) contrast(1.15) brightness(1.55); -webkit-mask-image: radial-gradient(ellipse at center, #000 42%, transparent 72%); mask-image: radial-gradient(ellipse at center, #000 42%, transparent 72%); }
+.lk-cap { margin: 12px 4px 2px; font: italic 15px/1.45 var(--body); color: rgba(240,226,198,.9); }
+.lk-cap b { font-weight: 400; font-style: normal; color: rgba(250,238,212,.98); }
+.lk-tape { width: 100%; flex: 1 1 100%; display: flex; flex-direction: column; gap: 9px; padding: 10px 0; }
+.lk-slip { font: 400 15px/1.35 var(--wire); color: #2a1f12; background: linear-gradient(180deg, #efe3c4, #d8c597); padding: 9px 16px; box-shadow: 0 3px 10px rgba(0,0,0,.55); display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; transform: rotate(-.6deg); opacity: .78; }
+.lk-slip:nth-child(2) { transform: rotate(.4deg); margin-left: 12px; } .lk-slip:nth-child(3) { transform: rotate(-.2deg); margin-left: 24px; opacity: .6; }
+.lk-slip.new { opacity: 1; animation: lkSlip .9s steps(18) both; } .lk-slip b { font-weight: 400; letter-spacing: .12em; } .lk-slip i { font-style: normal; opacity: .7; width: 100%; font-size: 13px; }
+@keyframes lkSlip { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.lk-chalk { width: 100%; flex: 1 1 100%; background: radial-gradient(ellipse at 40% 30%, #2c2b27, #161513); border: 10px solid #4a3622; box-shadow: inset 0 0 30px rgba(0,0,0,.8), 0 6px 20px rgba(0,0,0,.6); padding: 16px 22px; font: 400 18px/1.5 var(--wire); color: rgba(236,233,224,.9); text-shadow: 0 0 1px rgba(255,255,255,.5), 0 0 6px rgba(255,255,255,.12); }
+.lk-chalk p { margin: 0; } .lk-chalk .h { text-align: center; font-size: 22px; letter-spacing: .08em; margin-bottom: 6px; } .lk-chalk .prop { margin-top: 10px; border-top: 1px dashed rgba(236,233,224,.35); padding-top: 8px; }
+.lk-chalk .tally { letter-spacing: .1em; font-size: 22px; } .lk-chalk .carried { color: rgba(236,233,224,1); font-size: 20px; }
+.lk-chalk.slate { font-size: 22px; } .lk-chalk.slate .bot { margin-top: 10px; font-size: 26px; }
+.lk-clocks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; width: 100%; flex: 1 1 100%; padding: 8px 0; }
+.lk-clocks figure { margin: 0; text-align: center; width: 100%; justify-self: stretch; } .lk-clocks svg { width: 100%; max-width: 110px; height: auto; display: block; margin: 0 auto; }
+.lk-clocks .rim { fill: #6b4f2c; } .lk-clocks .face { fill: #ecdfc0; } .lk-clocks .ink line { stroke: #2a1f12; } .lk-clocks .sec line { stroke: #8a3b1c; } .lk-clocks .pin { fill: #2a1f12; }
+.lk-clocks figcaption { font: 400 12px/1.3 var(--wire); color: rgba(240,226,198,.85); margin-top: 6px; letter-spacing: .06em; }
+.lk-paper { position: relative; width: 86%; background: linear-gradient(180deg, #efe3c4, #d6c393); color: #22180c; padding: 14px 18px 18px; box-shadow: 0 8px 24px rgba(0,0,0,.6); transform: rotate(-1.2deg); }
+.lp-name { font: 400 28px/1 UnifrakturMaguntia, serif; text-align: center; } .lp-rule { border-top: 3px double #22180c; margin: 8px 0; }
+.lp-head { font: 900 22px/1.15 'Playfair Display', 'Noto Serif SC', serif; text-align: center; margin: 6px 0 10px; }
+.lp-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; height: 60px; } .lp-cols span { background: repeating-linear-gradient(180deg, rgba(34,24,12,.35) 0 2px, transparent 2px 7px); }
+.lp-string { position: absolute; left: 22%; top: -8px; bottom: -8px; width: 3px; background: linear-gradient(90deg, #8a6a3e, #c9a46a, #8a6a3e); box-shadow: 0 0 3px rgba(0,0,0,.5); }
+@media (max-width: 760px) { .cafe-look, .cafe-look.left { left: 12px; right: 12px; width: auto; top: 46%; } .lk-chalk { font-size: 15px; } .lk-chalk .h { font-size: 18px; } .lk-chalk.slate { font-size: 18px; } .lp-head { font-size: 18px; } .lk-cap { font-size: 14px; } }
 .cafe-note { position: absolute; left: 50%; top: 72px; transform: translateX(-50%); max-width: min(300px, 80%); padding: 8px 12px; font: italic 14px/1.4 var(--body); color: rgba(240,226,198,.96); background: rgba(22,16,10,.86); border: 1px solid rgba(226,201,152,.32); border-radius: 3px; opacity: 0; transition: opacity .4s; }
 .cafe-note.free { transform: none; width: 300px; }
 .cafe-note.on { opacity: 1; }
@@ -1350,6 +1380,6 @@ const EN = {
 })();
 </script>
 <script src="scene.js?v=9"></script>
-<script src="cafe.js?v=5"></script>
+<script src="cafe.js?v=6"></script>
 </body>
 </html>

@@ -27,7 +27,7 @@
     places: { window: "Your table by the window", counter: "The counter", wire: "The wire corner", back: "The back room", door: "The door" },
     board: ["House Rules", "1. Mind the cups.", "2. Anyone may propose a rule.", "3. The regulars vote.", "4. Most hands carry it.", "5. Rule 4 may be voted on, too.", "Proposed: pie on Fridays", "Carried"],
     clocks: ["New York", "London", "Berlin", "Tokyo"], wireSign: "Wire Service · Telegrams",
-    tape: h => h != null ? `BLOCK ${h} … LINKED TO ${h - 1} … ` : "BLOCK … LINKED TO THE ONE BEFORE … ",
+    tape: h => h != null ? `BLOCK ${h.toLocaleString("en-US")} … LINKED TO ${(h - 1).toLocaleString("en-US")} … ` : "BLOCK … LINKED TO THE ONE BEFORE … ",
     logic: ["If A, then B.", "A.", "Therefore B.", "A and not A: ⊥"],
     people: {
       mae: { name: "Mae", role: "runs the counter",
@@ -79,6 +79,7 @@
         out: { q: "Step outside", a: ["Go on, pal. Read all about it."] },
         bye: { q: "See you around, Sully.", a: ["Don't be a stranger."] } },
     },
+    look: {"slip": {"block": "BLOCK", "mark": "carries the mark of block {m}", "markN": "carries the mark of the block before", "at": "came over the wire at {t} UTC", "head": "This Week on the Testnet"}, "urn": "Mae says it holds forty cups. The Professor says thirty-eight and a half. They have agreed to disagree.", "pie": "Four regulars for, one against. If it carries, it waits under glass until Friday, the day named in advance. On the chain a rule switches on at a block named in advance, the same way.", "register": "There is no drawer in it for rules. Nobody can pay to have a rule changed: only votes count.", "board": "Rule 5 is the clever one: the rule on how rules change is on the same board, and can be voted on too.", "ticker": "Each slip carries the mark of the one before. Tear one out and the next no longer fits.", "clocks": "Four cities, one tape. The validators sit in different places, and the chain keeps one order for all of them: block after block.", "gramophone": "The record skips at the second chorus. Nobody has proposed a new one yet.", "books": "The cookbook is the Professor's. He says baking is logic you can eat.", "slate": "⊥ is the logician's mark for “this cannot be.” When it appears, a proposal stops before any vote.", "coats": "The coat from 1919 has a ticket in its pocket. Nobody remembers whose. Nobody has voted to move it.", "bell": "It rings the same for everyone who leaves. Mae likes that about it.", "bundle": "Hot off the press: this week's front page, tied with string."},
     props: {
       urn: "The big brass urn. It has been hissing since six.",
       pie: "A lemon pie under glass. Not on the house rules yet. Pie on Fridays is up for a vote.",
@@ -479,7 +480,7 @@
             hand(((h % 12) + m / 60) / 12 * 6.283, r * 0.5, Math.max(1.5, r * 0.08)); hand(m / 60 * 6.283, r * 0.75, Math.max(1, r * 0.05));
             text(g, name.toUpperCase(), x, y + r * 1.45, r * 0.32, { w: 700, fill: tone(0.7), max: r * 3 }); });
           /* the ticker under its glass bell, printing; the tape runs down into a basket */
-          const [tx, ty] = P(-1.55, 0.95, 3.6), s = G.s(3.6), h = live(), msg = TX.tape(h != null ? num(h) : null).repeat(3);
+          const [tx, ty] = P(-1.55, 0.95, 3.6), s = G.s(3.6), h = live(), msg = TX.tape(h).repeat(3);
           g.fillStyle = lin(g, tx - s * 0.2, 0, tx + s * 0.2, 0, [[0, "#3a2a14"], [0.45, "#c8a868"], [1, "#2a1c0c"]]); g.fillRect(tx - s * 0.18, ty - s * 0.12, s * 0.36, s * 0.12);
           g.fillStyle = tone(0.12); g.fillRect(tx - s * 0.12, ty - s * 0.32, s * 0.24, s * 0.2);
           g.fillStyle = "#d8b878"; g.beginPath(); g.arc(tx, ty - s * 0.36, s * 0.09, 0, 7); g.fill(); g.fillStyle = tone(0.1); g.save(); g.translate(tx, ty - s * 0.36); g.rotate(t * 4); g.fillRect(-s * 0.08, -s * 0.008, s * 0.16, s * 0.016); g.restore();
@@ -489,7 +490,7 @@
           const tw = s * 0.06, off = (t * s * 0.12) % (s * 10);
           g.save(); g.fillStyle = tone(0.88); g.beginPath(); g.moveTo(tx + s * 0.1, ty - s * 0.2); g.lineTo(tx + s * 0.45, ty - s * 0.2); g.quadraticCurveTo(tx + s * 0.62, ty - s * 0.18, tx + s * 0.6, ty + s * 0.15); g.lineTo(tx + s * 0.56, ty + s * 0.6); g.lineTo(tx + s * 0.5, ty + s * 0.6); g.lineTo(tx + s * 0.54, ty + s * 0.15); g.quadraticCurveTo(tx + s * 0.55, ty - s * 0.14, tx + s * 0.45, ty - s * 0.14); g.lineTo(tx + s * 0.1, ty - s * 0.14); g.fill();
           g.beginPath(); g.rect(tx + s * 0.1, ty - s * 0.2, s * 0.36, tw); g.clip(); g.font = `${tw * 0.75}px 'Special Elite', 'Courier New', monospace`; g.textBaseline = "middle"; g.fillStyle = tone(0.1);
-          g.fillText(msg, tx + s * 0.46 - g.measureText(msg).width + off % g.measureText(TX.tape(h != null ? num(h) : null)).width, ty - s * 0.17); g.restore();
+          g.fillText(msg, tx + s * 0.46 - g.measureText(msg).width + off % g.measureText(TX.tape(h)).width, ty - s * 0.17); g.restore();
           /* the basket of tape */
           const [bx, by] = P(-0.95, 0, 3.1), bs = G.s(3.1); g.fillStyle = lin(g, bx - bs * 0.2, 0, bx + bs * 0.2, 0, [[0, tone(0.3)], [1, tone(0.1)]]); g.beginPath(); g.moveTo(bx - bs * 0.2, by - bs * 0.32); g.lineTo(bx + bs * 0.2, by - bs * 0.32); g.lineTo(bx + bs * 0.16, by); g.lineTo(bx - bs * 0.16, by); g.fill();
           g.strokeStyle = tone(0.45, 0.5); g.lineWidth = 1; for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(bx - bs * 0.19, by - bs * 0.3 + k * bs * 0.06); g.lineTo(bx + bs * 0.19, by - bs * 0.3 + k * bs * 0.06); g.stroke(); }
@@ -761,6 +762,9 @@
         if (u >= 1) { ST.pan = null; arrived(); } }
       else drawArea(ST.area, 0, t);
       g.restore();
+      /* a faint glint on the thing under the pointer (or picked with Tab): it can be looked at more closely */
+      const hp = !ST.pan && !ST.talk && !LOOK && ST.hoverProp && ST.hoverProp !== "door" && (ST.boxes.props || []).find(q => q.id === ST.hoverProp);
+      if (hp) { g.save(); g.globalCompositeOperation = "screen"; glow(g, hp.x + hp.w / 2, hp.y + hp.h / 2, Math.max(hp.w, hp.h) * 0.75, 0.09 + 0.03 * Math.sin(t * 3)); g.restore(); }
       if (ST.area !== "window" || ST.pan) g.drawImage(finish(), 0, 0, W, H);
     }
     loop();
@@ -926,6 +930,45 @@
 
   /* ----- clicks on the room ----- */
   const PROP_SOUND = { urn: () => AUDIO.hiss(), register: () => AUDIO.ching(), ticker: () => AUDIO.ticker(), clocks: () => AUDIO.key(), books: () => AUDIO.rustle(), bundle: () => AUDIO.rustle(), bell: () => AUDIO.bell(), slate: () => AUDIO.chalk(), board: () => AUDIO.chalk(), pie: () => AUDIO.clack(), coats: () => AUDIO.rustle(), gramophone: () => AUDIO.clack() };
+  /* ----- a closer look: a click on a thing in the room opens it up beside the reader, as if leaning in ----- */
+  const look = document.createElement("div"); look.className = "cafe-look"; look.setAttribute("role", "dialog"); look.hidden = true;
+  look.innerHTML = `<div class="lk-pic"></div><p class="lk-cap"></p><button class="lk-x" aria-label="✕">✕</button>`; ui.appendChild(look);
+  let LOOK = null;
+  const ZONES = { "New York": "America/New_York", London: "Europe/London", Berlin: "Europe/Berlin", Tokyo: "Asia/Tokyo" };
+  const clockSvg = (d, tz) => { const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" }).formatToParts(d).map(x => [x.type, +x.value]));
+    const hand = (a, l, w) => `<line x1="50" y1="50" x2="${50 + l * Math.sin(a)}" y2="${50 - l * Math.cos(a)}" stroke-width="${w}" stroke-linecap="round"/>`;
+    const ticks = [...Array(12)].map((_, i) => { const a = i * Math.PI / 6; return `<line x1="${50 + 38 * Math.sin(a)}" y1="${50 - 38 * Math.cos(a)}" x2="${50 + 43 * Math.sin(a)}" y2="${50 - 43 * Math.cos(a)}" stroke-width="${i % 3 ? 1.2 : 2.6}"/>`; }).join("");
+    return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" class="rim"/><circle cx="50" cy="50" r="44" class="face"/><g class="ink">${ticks}${hand((p.hour % 12 + p.minute / 60) * Math.PI / 6, 24, 3.4)}${hand((p.minute + p.second / 60) * Math.PI / 30, 34, 2.2)}</g><g class="sec">${hand(p.second * Math.PI / 30, 38, 0.9)}</g><circle cx="50" cy="50" r="2.6" class="pin"/></svg>`; };
+  const LOOKS = {
+    ticker: () => { const h = live(), L = TX.look.slip, a = window.GAZETTE_LIVE && Number.isFinite(window.GAZETTE_LIVE.age) ? window.GAZETTE_LIVE.at - window.GAZETTE_LIVE.age * 1000 : null;
+      const tm = a ? new Date(a).toISOString().slice(11, 19) : null;
+      return `<div class="lk-tape">${[0, 1, 2].map(k => { const n = h != null ? h - k : null; return `<div class="lk-slip${k ? "" : " new"}"><b>${L.block} ${n != null ? num(n) : "…"}</b><span>${n != null ? fmt(L.mark, { m: num(n - 1) }) : L.markN}</span>${!k && tm ? `<i>${fmt(L.at, { t: tm })}</i>` : ""}</div>`; }).join("")}</div>`; },
+    board: () => `<div class="lk-chalk board">${TX.board.map((l, i) => i === TX.board.length - 1 ? (ST.stamps.has("mae") ? `<p class="carried">${l} ✓</p>` : `<p class="tally">|||| &nbsp;|</p>`) : `<p${i ? (i === TX.board.length - 2 ? ' class="prop"' : "") : ' class="h"'}>${l}</p>`).join("")}</div>`,
+    slate: () => `<div class="lk-chalk slate">${TX.logic.map((l, i) => `<p${i === TX.logic.length - 1 ? ' class="bot"' : ""}>${l}</p>`).join("")}</div>`,
+    clocks: () => `<div class="lk-clocks">${TX.clocks.map((c, i) => `<figure>${clockSvg(new Date(), Object.values(ZONES)[i])}<figcaption>${c}</figcaption></figure>`).join("")}</div>`,
+    bundle: () => { const wk = window.GAZETTE_WEEK, name = (window.GAZETTE_ZH && LANG === "zh" && window.GAZETTE_ZH.name) || (window.GAZETTE_JA && LANG === "ja" && window.GAZETTE_JA.name) || "The Daily Consensus";
+      return `<div class="lk-paper"><div class="lp-name">${name}</div><div class="lp-rule"></div><div class="lp-head">${esc(wk && wk.banner ? tr(wk.banner) : TX.look.slip.head)}</div><div class="lp-cols"><span></span><span></span><span></span></div><div class="lp-string"></div></div>`; },
+  };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function crop(b) {
+    const m = 0.22, x = Math.max(0, b.x - b.w * m), y = Math.max(0, b.y - b.h * m), w = Math.min(W - x, b.w * (1 + 2 * m)), h = Math.min(H - y, b.h * (1 + 2 * m));
+    const c = document.createElement("canvas"), s = Math.min(3, 420 / Math.max(w, h)); c.width = Math.round(w * s * 1.5); c.height = Math.round(h * s * 1.5);
+    c.getContext("2d").drawImage(cv, x * K, y * K, w * K, h * K, 0, 0, c.width, c.height); c.className = "lk-crop"; return c;
+  }
+  function lookAt(id, box) {
+    if (!box) return; const pic = look.querySelector(".lk-pic"), v = TX.props[id];
+    pic.innerHTML = ""; pic.className = "lk-pic " + (LOOKS[id] ? "lk-of-" + id : "lk-photo");
+    if (LOOKS[id]) pic.innerHTML = LOOKS[id](); else pic.appendChild(crop(box));
+    look.querySelector(".lk-cap").innerHTML = `<b>${esc(typeof v === "function" ? v(live()) : v)}</b> ${esc(TX.look[id] || "")}`;
+    const left = box.x + box.w / 2 > W / 2; look.classList.toggle("left", left);
+    look.style.transformOrigin = `${left ? "100%" : "0%"} ${Math.round(Math.max(0, Math.min(1, (box.y + box.h / 2) / H)) * 100)}%`;
+    look.hidden = false; requestAnimationFrame(() => look.classList.add("on")); note.classList.remove("on"); hintEl.classList.remove("on");
+    clearInterval(LOOK && LOOK.tick); LOOK = { id, tick: id === "clocks" ? setInterval(() => { const f = look.querySelectorAll(".lk-clocks figure svg"); f.forEach((s, i) => s.outerHTML = clockSvg(new Date(), Object.values(ZONES)[i])); }, 1000) : 0 };
+    (PROP_SOUND[id] || (() => {}))();
+    look.querySelector(".lk-x").focus({ preventScroll: true });
+  }
+  function lookOff() { if (!LOOK) return false; clearInterval(LOOK.tick); LOOK = null; if (look.contains(document.activeElement)) document.activeElement.blur(); look.classList.remove("on"); setTimeout(() => { if (!LOOK) look.hidden = true; }, 260); return true; }
+  look.addEventListener("click", e => { e.stopPropagation(); lookOff(); });
   const at = e => { const r = cv.getBoundingClientRect(); let x = e.clientX - r.left, y = e.clientY - r.top; if (ST.zoom > 1.001) { x = (x - ST.zx) / ST.zoom + ST.zx; y = (y - ST.zy) / ST.zoom + ST.zy; } return [x, y]; };
   const inside = (b, [x, y]) => b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
   function pick(e) {
@@ -939,12 +982,13 @@
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) return walk(dx < 0 ? 1 : -1);
     if (Math.abs(dx) > 10 || Math.abs(dy) > 10) return;
+    if (lookOff()) return;
     if (ST.talk) return adv();
     const h = pick(e); if (!h) return;
     if (h.person) return talk(h.person);
     if (h.prop.id === "board" && ST.task === "chalk") return chalkIn();
     if (h.prop.id === "door") { if (["mae", "elias", "prof", "sully"].every(k => ST.stamps.has(k))) return outside(); return flash(TX.people.sully.shut, h.prop); }
-    const v = TX.props[h.prop.id]; (PROP_SOUND[h.prop.id] || (() => {}))(); flash(typeof v === "function" ? v(live()) : v, h.prop); });
+    lookAt(h.prop.id, h.prop); });
   cv.addEventListener("click", e => e.stopPropagation());
   cv.addEventListener("pointermove", e => { if (!ST.on) return; const r = cv.getBoundingClientRect(); if (!touch && !RM) ST.camT = ((e.clientX - r.left) / r.width - 0.5) * 0.36;
     const h = pick(e); cv.style.cursor = h ? "pointer" : ""; ST.hover = h && h.person || null; ST.hoverProp = h && h.prop ? h.prop.id : null; });
@@ -954,15 +998,23 @@
   /* the keyboard: arrows walk, Enter and Space go on, numbers choose, Escape steps back */
   addEventListener("keydown", e => { if (!ST.on) return; if (e.target.closest && e.target.closest("input, textarea, select")) return;
     e.stopImmediatePropagation();
-    if (e.key === "Escape") { e.preventDefault(); return ST.talk ? closeTalk() : END.on ? leave() : leave(); }
+    if (e.key === "Escape") { e.preventDefault(); return lookOff() || (ST.talk ? closeTalk() : leave()); }
+    if (LOOK) { if (e.key === "Enter" || e.key === " " || /^Arrow/.test(e.key)) { e.preventDefault(); lookOff(); } return; }
     if (END.on) { if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") { if (!(e.target.closest && e.target.closest(".ce-paper"))) { e.preventDefault(); nextCard(); } } return; }
     if (ST.task === "chalk" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); return chalkIn(); }
     if (ST.talk) { if (/^Arrow/.test(e.key)) { e.preventDefault(); const bs = [...sayCh.querySelectorAll("button:not(.no)")]; if (!bs.length) return;
         const i = bs.indexOf(document.activeElement), d = e.key === "ArrowUp" || e.key === "ArrowLeft" ? -1 : 1; bs[i < 0 ? (d > 0 ? 0 : bs.length - 1) : (i + d + bs.length) % bs.length].focus(); return; }
       if (/^[1-9]$/.test(e.key) && say.classList.contains("ask")) { const b = sayCh.querySelectorAll("button")[+e.key - 1]; if (b) b.click(); return; }
       if ((e.key === "Enter" || e.key === " ") && !(e.target.closest && e.target.closest(".cs-ch button"))) { e.preventDefault(); adv(); } return; }
-    if (e.key === "ArrowLeft") { e.preventDefault(); walk(-1); } else if (e.key === "ArrowRight") { e.preventDefault(); walk(1); }
-    else if ((e.key === "Enter" || e.key === " ") && !(e.target.closest && e.target.closest("button")) && AREAS[ST.area].person) { e.preventDefault(); talk(AREAS[ST.area].person.id); } }, true);
+    /* Tab picks out the things in the room one by one (a faint glint), Enter leans in */
+    const things = (ST.boxes.props || []).filter(q => q.id !== "door" || ST.stamps.size === 4);
+    if (e.key === "Tab" && ST.area !== "window" && !ST.pan && things.length && !(e.target.closest && e.target.closest("button"))) { const i = things.findIndex(q => q.id === ST.kProp), j = i + (e.shiftKey ? -1 : 1);
+      if (i >= 0 && (j < 0 || j >= things.length)) { ST.kProp = ST.hoverProp = null; return; }   /* past the last thing: Tab goes on to the buttons */
+      e.preventDefault(); ST.kProp = ST.hoverProp = things[i < 0 ? (e.shiftKey ? things.length - 1 : 0) : j].id; return; }
+    if (e.key === "ArrowLeft") { e.preventDefault(); ST.kProp = null; walk(-1); } else if (e.key === "ArrowRight") { e.preventDefault(); ST.kProp = null; walk(1); }
+    else if ((e.key === "Enter" || e.key === " ") && !(e.target.closest && e.target.closest("button"))) { const k = ST.kProp && things.find(q => q.id === ST.kProp);
+      if (k) { e.preventDefault(); if (k.id === "door") return outside(); if (k.id === "board" && ST.task === "chalk") return chalkIn(); return lookAt(k.id, k); }
+      if (AREAS[ST.area].person) { e.preventDefault(); talk(AREAS[ST.area].person.id); } } }, true);
 
   /* ============ the ending: out through the door onto Market Street ============ */
   let STREET = null;
@@ -1022,11 +1074,12 @@
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
 
   /* other languages come in their own small file */
-  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=5`; s.onload = labels; document.head.appendChild(s); }
+  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=6`; s.onload = labels; document.head.appendChild(s); }
   labels();
   /* ?walk (the shared link) opens the café straight away */
   if (/[?&]walk\b/.test(location.search)) setTimeout(() => enter(), 600);
   /* ?cafe=<room> opens the café there (and ?cafe-talk=<who>&cafe-line=<n> for pictures) */
   { const m = /[?&]cafe=(\w+)/.exec(location.search); if (m) setTimeout(() => { enter(); if (AREAS[m[1]] && m[1] !== "window") { ST.area = m[1]; desk.classList.add("cafe-away"); place(); mix(); }
+    const lk = /[?&]cafe-look=(\w+)/.exec(location.search); if (lk) setTimeout(() => { const b = (ST.boxes.props || []).find(q => q.id === lk[1]); lookAt(lk[1], b); }, 1200);
     const tk = /[?&]cafe-talk=(\w+)/.exec(location.search); if (tk) setTimeout(() => { if (tk[1] === "end") { ["mae", "elias", "prof", "sully"].forEach(k => ST.stamps.add(k)); ticket(); outside(); } else talk(tk[1]); }, 400); }, 300); }
 })();
