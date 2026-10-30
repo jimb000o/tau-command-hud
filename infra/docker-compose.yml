@@ -50,6 +50,7 @@ services:
       UPSTREAM_URL: ws://tau-node:65433
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       TRUST_PROXY: "1"
+      MAX_PER_IP: ${MAX_PER_IP:-96}   # sockets per address; every open page holds 2 to 4 (2026-10-30: 32 was hit by one visitor with many tabs)
       TAU_GOVERNANCE_OPEN_ADMISSION: "true"  # keep equal to the node setting above
       VISITS_KEY: ${VISITS_KEY:-}   # key of the visitor numbers report; empty: made once in /data/visits.key
       SLOTLEASE_ENABLED: ${SLOTLEASE_ENABLED:-1}   # fair turns on the rule places (relay/slotlease.py); 0 switches them off

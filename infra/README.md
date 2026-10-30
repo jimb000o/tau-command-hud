@@ -82,7 +82,7 @@ the reply is `{"status":"error","command":<the command>,"error":{"code":"RATE_LI
 Reads answered from the relay's memory (`getblocks`, `getblockrange`, the cached commands, `presence`)
 have their own budget of 40 then 10/s per connection and are never refused: over it the connection
 waits for the next token, so a page loading the chain in 100-block pages always gets every answer.
-32 connections per IP (every open page holds two or three sockets), 500 in total,
+96 connections per IP (`MAX_PER_IP` in `.env`; every open page holds two to four sockets: header, page, presence, chat), 500 in total,
 512-byte messages. Browser origins allowed: tauhud.com, www.tauhud.com,
 jimb000o.github.io and localhost (`ALLOWED_ORIGINS` in `.env`).
 
