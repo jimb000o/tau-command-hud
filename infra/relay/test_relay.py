@@ -294,11 +294,27 @@ async def main():
                     break
             check(pushed is not None and len(pushed["data"]["blocks"]) >= 1, "new block pushed to visitor")
 
-            # per-client rate limit
-            for _ in range(25):
+            # per-client rate limit: reads from the relay's memory are slowed, never refused
+            for _ in range(45):
                 await ws.send("getmempool")
+            replies = [json.loads(await ws.recv()) for _ in range(45)]
+            check(all(x.get("status") == "ok" for x in replies if not x.get("data", {}).get("pushed")),
+                  "45 cached reads in a burst all answered (CHAIN budget waits instead of refusing)")
+            for i in range(30):
+                await ws.send(f"getblockrange {i} 1")
+            got = set()
+            while len(got) < 30:
+                x = json.loads(await asyncio.wait_for(ws.recv(), 10))
+                if x.get("command") == "getblockrange" and x.get("status") == "ok":
+                    got.add(x["data"]["from"])
+            check(got == set(range(30)), "30 chain pages in a burst: every page answered")
+            # other commands are refused over the general budget, and the refusal names the request
+            for _ in range(25):
+                await ws.send("nosuchcommand 7")
             replies = [json.loads(await ws.recv()) for _ in range(25)]
-            check(any(x.get("error", {}).get("code") == "RATE_LIMITED" for x in replies), "visitor rate limit")
+            refused = [x for x in replies if x.get("error", {}).get("code") == "RATE_LIMITED"]
+            check(refused and all(x["command"] == "nosuchcommand" and x["error"]["request"] == "nosuchcommand 7" for x in refused),
+                  f"general rate limit names the refused request ({len(refused)} refused)")
 
         # chain reset: the node comes back with a shorter chain of other blocks
         # (testnet restarted on the same genesis); the relay drops the dead chain

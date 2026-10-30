@@ -77,7 +77,12 @@ Pushed without asking:
 
 Clients should de-duplicate blocks by `block_hash` (the HUD already does).
 
-Limits: 20 messages burst then 2/s per connection, 32 connections per IP (every open page holds two or three sockets), 500 in total,
+Limits: 20 messages burst then 2/s per connection for commands that reach the node or write; over that
+the reply is `{"status":"error","command":<the command>,"error":{"code":"RATE_LIMITED","request":<the line>}}`.
+Reads answered from the relay's memory (`getblocks`, `getblockrange`, the cached commands, `presence`)
+have their own budget of 40 then 10/s per connection and are never refused: over it the connection
+waits for the next token, so a page loading the chain in 100-block pages always gets every answer.
+32 connections per IP (every open page holds two or three sockets), 500 in total,
 512-byte messages. Browser origins allowed: tauhud.com, www.tauhud.com,
 jimb000o.github.io and localhost (`ALLOWED_ORIGINS` in `.env`).
 
