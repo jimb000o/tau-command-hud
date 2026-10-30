@@ -250,7 +250,10 @@ const SUBS = { net: "Wallets that acted on Tau Testnet Alpha through Agorzilla o
 SUBS.agorzilla = SUBS[""];
 let agzLatest = null;   // agorzilla.com/chain/latest.json: the creature's own summary
 let txs = null;   // relay /api/v1/sources
-const SITE_ASKED = new URLSearchParams(location.search).get("site");
+// deep links: ?view=testnet | tauhud | agorzilla (the older ?site= still works)
+const VIEWS = { testnet: "net", tauhud: "", agorzilla: "agorzilla" }, VIEW_OF = { net: "testnet", "": "tauhud", agorzilla: "agorzilla" };
+const Q0 = new URLSearchParams(location.search);
+const SITE_ASKED = Q0.has("view") ? VIEWS[Q0.get("view")] : Q0.get("site");
 let site = SITE_ASKED ?? "net";
 if (!(site in SITES)) site = "net";
 const pickSite = () => {
@@ -717,7 +720,7 @@ async function load() {
 document.querySelectorAll(".kind button").forEach(b => b.addEventListener("click", () => { kind = b.dataset.kind; render(); }));
 document.querySelectorAll(".sites button").forEach(b => b.addEventListener("click", () => {
   site = b.dataset.site; sel = null; pickSite(); render();
-  const u = new URL(location.href); if (site) u.searchParams.set("site", site); else u.searchParams.delete("site"); history.replaceState(null, "", u);
+  const u = new URL(location.href); u.searchParams.delete("site"); u.searchParams.set("view", VIEW_OF[site]); history.replaceState(null, "", u);
 }));
 document.querySelectorAll(".range button").forEach(b => b.addEventListener("click", () => {
   range = +b.dataset.r; try { localStorage.setItem("tauhud-meta-range", range); } catch (e) {}
