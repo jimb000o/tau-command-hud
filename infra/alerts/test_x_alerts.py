@@ -52,6 +52,22 @@ texts = {
     "sim": alerts.sim_x(alerts.sim_switches(1_800_000_000)[0]),
     "zh": alerts.x_post(["⛓ 测试网" * 40, "第二行"]),
 }
+# the Monday post: the new Daily Consensus first, the week's numbers after it
+alerts.recap.lines = lambda r, site: ["10,800 blocks, one every 8 seconds", "12 transactions from 3 accounts", "2 rule changes"]
+alerts.recap.period = lambda r: "26 Oct – 2 Nov"
+week = {"end": 1793606400}   # Mon 2 Nov 2026 08:00 UTC
+os.makedirs(os.path.join(TMP, "recap", "gazette"))
+texts["recap"] = alerts.recap_x(week)
+check(texts["recap"].startswith("📊 Tau testnet weekly recap") and alerts.recap_caption(week).startswith("⛓"), "no edition today: the recap alone")
+with open(os.path.join(TMP, "recap", "gazette", "latest.json"), "w") as f:
+    import json
+    json.dump({"no": 2, "date": "2026-11-02", "banner": {"en": "A vote of the users becomes law"},
+               "teaser": {"en": long_why}}, f)
+texts["paper"] = alerts.recap_x(week)
+cap = alerts.recap_caption(week)
+check(texts["paper"].startswith("📰 The Daily Consensus No. 2 is out\n\n“A vote of the users becomes law”"), "Monday on X: the paper first")
+check(cap.startswith("📰 <b>THE DAILY CONSENSUS · No. 2 is out</b>") and "/gazette/" in cap and "• 12 transactions" in cap
+      and len(re.sub(r"<[^>]+>", "", cap)) <= 1024, "Monday on Telegram: the paper, its link, the week, within a photo caption")
 for k, t in texts.items():
     check(alerts.x_len(t) <= 280, f"{k}: {alerts.x_len(t)} of 280 as X counts it")
     check("http" not in t and "tauhud.com/" not in t, f"{k}: no link (a link costs $0.20 instead of $0.015)")

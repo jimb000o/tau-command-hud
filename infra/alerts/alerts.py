@@ -574,15 +574,47 @@ def x_text(item: dict) -> str:
     return x_post([f"{icon} {item['headline']}", item.get("why") or item.get("body")], item.get("link"))
 
 
-def recap_x(r: dict) -> str:
-    """The Monday recap picture's text on X: the week in three lines, and the headline of this week's paper."""
+def paper_out(r: dict) -> dict | None:
+    """This Monday's edition of The Daily Consensus (latest.json, printed earlier the same day), or None."""
     try:
         with open(os.path.join(PUBLIC_DIR, "recap", "gazette", "latest.json")) as f:
-            banner = (json.load(f).get("banner") or {}).get("en")
-    except (OSError, ValueError, AttributeError):
-        banner = None
-    return x_post([f"📊 Tau testnet weekly recap · {recap.period(r)}"] + [f"• {x}" for x in recap.lines(r, SITE)[:3]]
-                  + ([f"📰 This week's paper: {banner}"] if banner else []), f"{SITE}/stats/")
+            e = json.load(f)
+    except (OSError, ValueError):
+        return None
+    day = datetime.fromtimestamp(r["end"] - 1, timezone.utc).strftime("%Y-%m-%d")
+    if not isinstance(e, dict) or e.get("date") != day or not (e.get("banner") or {}).get("en"):
+        return None
+    return e
+
+
+def recap_x(r: dict) -> str:
+    """The Monday post on X: the new Daily Consensus first (number, headline, its opening), then the week in numbers as far
+    as they fit; without an edition of today, the recap alone."""
+    e = paper_out(r)
+    week = [f"• {x}" for x in recap.lines(r, SITE)[:3]]
+    if not e:
+        return x_post([f"📊 Tau testnet weekly recap · {recap.period(r)}"] + week, f"{SITE}/stats/")
+    teaser = (e.get("teaser") or {}).get("en") or ""
+    return x_post([f"📰 The Daily Consensus No. {e.get('no')} is out", f"“{e['banner']['en']}”", sentences(teaser, 1)] + week[:2],
+                  f"{SITE}/gazette/", keep=2)
+
+
+def recap_caption(r: dict) -> str:
+    """The Monday post on Telegram (a photo caption, at most 1024 characters): the new edition, then the week in numbers."""
+    e = paper_out(r)
+    if not e:
+        return recap.caption_html(r, SITE)
+    q = html.escape
+    teaser = (e.get("teaser") or {}).get("en") or ""
+    for n in (2, 1, 0):
+        text = (f"📰 <b>THE DAILY CONSENSUS · No. {q(str(e.get('no')))} is out</b>\n\n<b>{q(e['banner']['en'])}</b>\n"
+                + (f"{q(sentences(teaser, n))}\n" if n else "")
+                + f"\n<a href=\"{SITE}/gazette/\">Read this week's edition</a>\n\n"
+                + f"📊 <b>The week on the testnet</b> · {q(recap.period(r))}\n" + "\n".join("• " + q(x) for x in recap.lines(r, SITE)[:3])
+                + f"\n\n<a href=\"{SITE}/stats/\">Stats</a> · <a href=\"{SITE}/proposals/\">Rule changes</a>")
+        if len(re.sub(r"<[^>]+>", "", text)) <= 1000:
+            return text
+    return text
 
 
 def health_problems(h: dict) -> list[str]:
@@ -1123,7 +1155,7 @@ class Telegram(Outlet):
         return self.call("sendMessage", body, "application/json")
 
     def send_photo(self, png, r):
-        fields = {"chat_id": TELEGRAM_CHAT, "caption": recap.caption_html(r, SITE), "parse_mode": "HTML"}
+        fields = {"chat_id": TELEGRAM_CHAT, "caption": recap_caption(r), "parse_mode": "HTML"}
         if TELEGRAM_BOT_NAME:
             fields["reply_markup"] = json.dumps(ask_buttons())
         body, ctype = multipart(fields,
@@ -2513,6 +2545,7 @@ def recap_cli(post: bool) -> int:
         return 1
     print("recap drawn: https://" + FEED_URL.split("//", 1)[-1].split("/", 1)[0] + "/recap/latest.png")
     print("\n".join("  " + x for x in recap.lines(r, SITE)))
+    print("--- Telegram:\n" + recap_caption(r) + "\n--- X:\n" + recap_x(r))
     code = 0
     if post:
         for o in (Telegram(), X()):
