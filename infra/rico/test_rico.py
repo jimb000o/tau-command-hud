@@ -63,6 +63,9 @@ def fake(path, body=None, accept="application/json", missing_ok=False):
         return json.dumps({"previews": [{"audio_base_64": base64.b64encode(b"mp3-%d" % i).decode(), "generated_voice_id": f"g{i}"} for i in range(3)]}).encode()
     if path == "/text-to-voice":
         return json.dumps({"voice_id": "v-" + body["voice_name"].split()[0].lower() + body["generated_voice_id"]}).encode()
+    if path.startswith("/shared-voices"):
+        assert "gender=male" in path
+        return json.dumps({"voices": [{"public_owner_id": "o", "voice_id": f"v-lib{i}", "name": f"Lib {i}", "preview_url": "https://x/p.mp3"} for i in range(3)]}).encode()
     if path.startswith("/text-to-speech/v-"):
         return b"clip"
     raise AssertionError(path)
@@ -80,4 +83,9 @@ with tempfile.TemporaryDirectory() as out:
     n = len(calls)
     make.cmd_make(types.SimpleNamespace(out=out, voice=None))
     assert len(calls) == n, "made a clip twice"
+    make.cmd_library(types.SimpleNamespace(out=out, who="rico", search=None))
+    assert "rico=L3" in open(os.path.join(out, "samples", "library.html")).read()
+    make.cmd_keep(types.SimpleNamespace(out=out, picks=["rico=L2"]))
+    idx = json.load(open(os.path.join(out, "index.json")))
+    assert idx["voices"]["rico"]["id"] == "v-lib1" and not any(c.startswith("/voices/add") for c in calls)
 print("design ok")
