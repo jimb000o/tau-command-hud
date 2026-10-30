@@ -172,15 +172,10 @@ const L = window.TauI18n ? TauI18n.lang : "en";
 const G = (s, v) => { const ks = Object.keys(v); let o = T(ks.reduce((x, k, i) => x.split("{" + k + "}").join("904170" + i), s)); ks.forEach((k, i) => { o = o.split("904170" + i).join(v[k]); }); return o; };
 const ADDR = "0x23fB76A33A8d70f5c51aB558b85e4b93040003eb", AGRS = "0x738865301a9b7dd80dc3666dd48cf034ec42bdda";
 const nf = new Intl.NumberFormat("en-US");
-/* monthly running costs as billed, each in the currency of its bill; time comes first and is never priced. null = bill not in yet, the row stays hidden */
-const COSTS = [
-  { t: "Server", d: "Hetzner CAX11 at node.tauhud.com: the community node, the relay, alerts and bots", amount: 6, cur: "EUR" },
-  { t: "AI assistant", d: "Claude Max plan (20x), the AI tool the site is built and run with", amount: 200, cur: "USD" },
-  { t: "Domains", d: "tauhud.com and agorzilla.com", amount: null, cur: "EUR" },
-  { t: "X account", d: "the bot that posts rule changes on X", amount: null, cur: "USD" },
-];
 const cost = (n, c) => new Intl.NumberFormat(c === "USD" ? "en-US" : L === "en" ? "en-GB" : L, { style: "currency", currency: c, maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
-(() => {
+(async () => {
+  let COSTS = [];
+  try { COSTS = (await (await fetch("../assets/costs.json", { cache: "no-cache" })).json()).items || []; } catch (e) {}
   const ul = $("costs"), known = COSTS.filter(c => typeof c.amount === "number");
   const li = (t, d, v, cls) => { const e = document.createElement("li"); e.innerHTML = `<b></b><span class="v"></span><small></small>`; e.querySelector("b").textContent = T(t); e.querySelector("small").textContent = T(d); const s = e.querySelector(".v"); s.textContent = v; if (cls) s.classList.add(cls); return e; };
   ul.append(li("Time", "Building and running the site, in spare time. Not paid and not counted in hours.", T("unpaid"), "time"));

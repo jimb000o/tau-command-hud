@@ -582,4 +582,5 @@ TauI18n.add({ strings: {
   "Follow the chain: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.": "关注这条链：每一次规则变更、链重启和新节点，第一时间通过 Telegram、X 或 RSS 送达。无需在本站注册账号。",
   "What the site costs each month and every donation received, on chain; voluntary, nothing in return": "网站每月的花费和收到的每一笔捐赠，链上可查；自愿，不求回报",
   "What it costs, and every donation on chain ›": "花费，以及链上的每一笔捐赠 ›",
+  "Running costs: about {v} a month, not counting time.": "运行费用：每月约 {v}，不含时间。",
 } });
