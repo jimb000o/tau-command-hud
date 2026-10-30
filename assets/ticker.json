@@ -1,5 +1,5 @@
 {
-  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; a headline with until (an ISO time in UTC) leaves the line at that time; mark ghost puts the chain core's ghost symbol in front; picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages.",
+  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; a headline with until (an ISO time in UTC) leaves the line at that time; mode live shows a headline only on the real chain, mode sim only in the simulation, no mode in both; mark ghost puts the chain core's ghost symbol in front; picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages.",
   "move": {
     "en": "left",
     "zh": "left",
@@ -18,15 +18,18 @@
     {
       "text": "Ghosts in the waiting room: sealed, yet still listed as waiting",
       "href": "https://github.com/IDNI/tau-testnet/issues/81",
+      "mode": "live",
       "mark": "ghost"
     },
     {
       "text": "Most network rule changes so far are tests that change nothing",
-      "href": "proposals/"
+      "href": "proposals/",
+      "mode": "live"
     },
     {
       "text": "Rules wall: every personal rule on the testnet",
-      "href": "rules/"
+      "href": "rules/",
+      "mode": "live"
     },
     {
       "text": "My Tau card: your rules, votes and stamps on one card",
