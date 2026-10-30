@@ -1740,5 +1740,10 @@
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "In numbers: smoother, finer charts. 7D now shows every hour and 30D every six hours instead of one point a day, drawn as a soft curve that never rises above or dips below a real count. The dots on every point are gone: only the newest value keeps one, and pointing at the line still shows each hour."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: real headlines instead of long update texts. Short lines on what is new on the testnet and on Tau HUD, the titles of new features, live chain numbers, and when the next Daily Consensus comes out: in German time in English, Beijing time in Chinese, Japan time in Japanese."
  }
 ]

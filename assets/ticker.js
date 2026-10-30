@@ -1,7 +1,7 @@
-/* The HUD's news line under the four principles: live facts read off this page, the newest entries of the Updates log,
-   hand-picked posts of ours and a few useful pointers, mixed so most of what scrolls by helps the visitor.
-   Hand-picked content lives in assets/ticker.json (picks: our X posts worth reposting; notes: pointers on the site;
-   invites: Telegram and X). Each item decodes out of falling glyphs where it enters the line, then reads as plain text.
+/* The HUD's news line under the four principles: short headlines about what is new on the testnet and on Tau HUD,
+   live facts read off this page, the headlines of new features from the Updates log, hand-picked posts of ours and
+   now and then Telegram and X. Hand-picked content lives in assets/ticker.json (headlines; picks: our X posts worth
+   reposting; invites). Each item decodes out of falling glyphs where it enters the line, then reads as plain text.
    Hover or focus pauses it; with reduced motion the items change in place instead of moving. */
 (() => {
   "use strict";
@@ -24,10 +24,10 @@
   const num = s => /^[\d.,]+$/.test(s) && s !== "0" ? s : "";
   const sim = () => document.body.dataset.mode !== "live";
   const FACTS = [
-    () => { const h = num(txt("rH")); return h && { text: `Newest block #${h}, checked against the rules in force`, href: "explorer/" }; },
+    () => { const h = num(txt("rH")); return h && { text: `Chain at block #${h}`, href: "explorer/" }; },
     () => { const n = txt("rM"); return /^\d+$/.test(n) && { text: n === "1" ? "1 transaction waiting for the next block" : `${n} transactions waiting for the next block`, href: "explorer/" }; },
-    () => { const n = txt("rR"); return /^\d+$/.test(n) && n !== "0" && { text: n === "1" ? "1 personal money rule in force on the chain" : `${n} personal money rules in force on the chain`, href: "rules/" }; },
-    () => { const e = document.querySelector("#tnOnline .n, #chipOnline b"), n = e ? e.textContent.trim() : ""; return /^\d+$/.test(n) && +n > 1 && { text: `${n} people watching Tau HUD right now`, href: "" }; },
+    () => { const n = txt("rR"); return /^\d+$/.test(n) && n !== "0" && { text: n === "1" ? "1 personal money rule in force" : `${n} personal money rules in force`, href: "rules/" }; },
+    () => { const e = document.querySelector("#tnOnline .n, #chipOnline b"), n = e ? e.textContent.trim() : ""; return /^\d+$/.test(n) && +n > 1 && { text: `${n} people on Tau HUD right now`, href: "" }; },
   ];
   let factAt = 0;
   const fact = () => {
@@ -38,28 +38,53 @@
     return null;
   };
 
-  /* ---------- the newest Updates log entries, first sentence ---------- */
+  /* ---------- new features: the headline of each "major" Updates log entry (the one the channels post), never the
+     long log text; a feature already among the hand-written headlines, and round-ups, are left out ---------- */
   let NEWS = [], newsAt = 0;
-  const firstSentence = s => { const m = /^(.{12,150}?(?:\.(?=\s|$)|。))/.exec(s); return m ? m[1] : s.length > 150 ? s.slice(0, 147) + "…" : s; };
+  const path = h => String(h || "").replace(/^\//, "").replace(/[?#].*$/, "");
   /* the first read shares the page's one download of the log (nav.js TauLog); the 15-minute refresh fetches it anew */
   const loadNews = first => (first && window.TauLog ? Promise.resolve(TauLog()) : fetch("assets/updates.json", { cache: "no-cache" }).then(r => r.json())).then(list => {
-    NEWS = (Array.isArray(list) ? list : []).slice(-3).reverse().map(e => {
-      const plain = String(e.html || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
-      if (!plain || !translated(plain)) return null;
-      return { kind: "news", text: firstSentence(tr(plain)), raw: true, href: e.major && e.major.link ? String(e.major.link).replace(/^\//, "") : "" };
-    }).filter(Boolean);
+    const have = new Set((CFG.headlines || []).map(h => path(h.href)));
+    NEWS = (Array.isArray(list) ? list : []).filter(e => e && e.major && e.major.title && !/^roundup/.test(e.major.id || "")).slice(-6).reverse()
+      .filter(e => !have.has(path(e.major.link))).slice(0, 4)
+      .map(e => ({ kind: "news", text: String(e.major.title), href: path(e.major.link) === "" ? "" : String(e.major.link).replace(/^\//, "") }));
   }).catch(() => {});
 
+  /* ---------- when the Daily Consensus comes out, in the reader's own time: German time in English, China time in
+     Chinese, Japan time in Japanese (ticker.json "gazette" per language; the server writes the edition every Monday) ---------- */
+  const GZ = { en: { tz: "Europe/Berlin", day: 1, hour: 9 }, zh: { tz: "Asia/Shanghai", day: 1, hour: 9 }, ja: { tz: "Asia/Tokyo", day: 1, hour: 9 } };
+  const GZT = {
+    en: { next: "Next Daily Consensus: {d} {t} German time", out: "New Daily Consensus out today", today: "today", tomorrow: "tomorrow", days: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
+    zh: { next: "下一期《共识日报》：{d} {t}（北京时间）", out: "新一期《共识日报》今天出刊", today: "今天", tomorrow: "明天", days: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"] },
+    ja: { next: "次のコンセンサス日報：{d} {t}（日本時間）", out: "今週のコンセンサス日報、本日発行", today: "今日", tomorrow: "明日", days: ["日曜", "月曜", "火曜", "水曜", "木曜", "金曜", "土曜"] },
+  };
+  const gazette = () => {
+    const g = { ...GZ[lang], ...((CFG.gazette || {})[lang] || {}) }, w = GZT[lang] || GZT.en;
+    let wd, mins;
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", { timeZone: g.tz, weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+      const v = k => (parts.find(x => x.type === k) || {}).value;
+      wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(v("weekday")); mins = +v("hour") * 60 + +v("minute");
+    } catch (e) { return null; }
+    if (wd < 0) return null;
+    const since = (wd * 1440 + mins - g.day * 1440 - g.hour * 60 + 10080) % 10080;   // minutes since the last edition
+    if (since < 1440) return { kind: "note", text: w.out, href: "gazette/", raw: true };
+    let off = (g.day - wd + 7) % 7; if (off === 0 && mins >= g.hour * 60) off = 7;
+    const d = off === 0 ? w.today : off === 1 ? w.tomorrow : w.days[g.day];
+    return { kind: "note", text: w.next.replace("{d}", d).replace("{t}", String(g.hour).padStart(2, "0") + ":00"), href: "gazette/", raw: true };
+  };
+
   /* ---------- the rotation: facts carry the line, the rest is mixed in ---------- */
-  const SLOTS = ["live", "note", "live", "news", "live", "pick", "live", "invite"];
-  let slot = 0, noteAt = 0, pickAt = 0, inviteAt = 0;
+  const SLOTS = ["head", "live", "gazette", "news", "live", "head", "pick", "live", "head", "invite"];
+  let slot = 0, headAt = 0, pickAt = 0, inviteAt = 0;
   const from = (list, at) => list.length ? list[at % list.length] : null;
   const next = () => {
     for (let tries = 0; tries < SLOTS.length * 2; tries++) {
       const k = SLOTS[slot++ % SLOTS.length]; let it = null;
       if (k === "live") it = fact();
       else if (k === "news") it = NEWS.length ? NEWS[newsAt++ % NEWS.length] : null;
-      else if (k === "note") { const n = from(CFG.notes, noteAt++); it = n && { kind: "note", text: n.text, href: n.href }; }
+      else if (k === "gazette") it = gazette();
+      else if (k === "head") { const n = from(CFG.headlines || [], headAt++); it = n && { kind: "note", text: n.text, href: n.href }; }
       else if (k === "pick") { const p = from(CFG.picks, pickAt++); it = p && { kind: "x", text: p.text, href: p.href, quote: true }; }
       else if (k === "invite") { const v = from(CFG.invites, inviteAt++); it = v && { kind: v.kind === "tg" ? "tg" : "x", text: v.text, href: v.href }; }
       if (it && it.text && (it.raw || translated(it.text))) return it;
@@ -137,8 +162,7 @@
   addEventListener("resize", () => { W = view.clientWidth; });
 
   Promise.all([
-    fetch("assets/ticker.json", { cache: "no-cache" }).then(r => r.json()).then(j => { if (j && typeof j === "object") CFG = { ...CFG, ...j }; }).catch(() => {}),
-    loadNews(true),
+    fetch("assets/ticker.json", { cache: "no-cache" }).then(r => r.json()).then(j => { if (j && typeof j === "object") CFG = { ...CFG, ...j }; }).catch(() => {}).then(() => loadNews(true)),
     /* letters are measured once, so wait for the page's monospace font: measured in a fallback font they keep its wider spacing */
     Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), new Promise(r => setTimeout(r, 4000))]),
   ]).then(() => {
