@@ -106,7 +106,7 @@
     if (it.href) { a.href = it.href; if (/^https?:/.test(it.href)) { a.target = "_blank"; a.rel = "noopener"; } }
     const mark = document.createElement("i"); mark.className = "tk-mk";
     if (it.mark === "ghost") mark.classList.add("m-ghost");   // the chain core's ghost: an amber dot in a small block frame
-    else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" ? "" : it.kind === "news" ? "+" : it.kind === "paper" ? "✦" : "›";
+    else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" || it.fresh ? "" : it.kind === "news" ? "+" : it.kind === "paper" ? "✦" : "›";
     if (it.fresh) a.classList.add("fresh");
     a.append(mark);
     if (it.sim) { const s = document.createElement("em"); s.textContent = tr("Simulation"); a.append(s); }
