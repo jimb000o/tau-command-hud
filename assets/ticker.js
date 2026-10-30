@@ -43,13 +43,15 @@
   /* ---------- new features: the headline of each "major" Updates log entry (the one the channels post), never the
      long log text; a feature already among the hand-written headlines, and round-ups, are left out ---------- */
   let NEWS = [], newsAt = 0;
+  const FRESH = 3 * 86400000;   // the newest feature pulses green, like the live light, for its first three days
   const path = h => String(h || "").replace(/^\//, "").replace(/[?#].*$/, "");
   /* the first read shares the page's one download of the log (nav.js TauLog); the 15-minute refresh fetches it anew */
   const loadNews = first => (first && window.TauLog ? Promise.resolve(TauLog()) : fetch("assets/updates.json", { cache: "no-cache" }).then(r => r.json())).then(list => {
     const have = new Set((CFG.headlines || []).map(h => path(h.href)));
     NEWS = (Array.isArray(list) ? list : []).filter(e => e && e.major && e.major.title && !/^roundup/.test(e.major.id || "")).slice(-6).reverse()
       .filter(e => !have.has(path(e.major.link))).slice(0, 4)
-      .map(e => ({ kind: "news", text: String(e.major.title), href: path(e.major.link) === "" ? "" : String(e.major.link).replace(/^\//, "") }));
+      .map((e, i) => ({ kind: "news", text: String(e.major.title), href: path(e.major.link) === "" ? "" : String(e.major.link).replace(/^\//, ""),
+        fresh: i === 0 && Date.now() - Date.parse(e.on + "T00:00:00Z") < FRESH }));
   }).catch(() => {});
 
   /* ---------- when the Daily Consensus comes out, in the reader's own time: German time in English, China time in
@@ -103,6 +105,7 @@
     const mark = document.createElement("i"); mark.className = "tk-mk";
     if (it.mark === "ghost") mark.classList.add("m-ghost");   // the chain core's ghost: an amber dot in a small block frame
     else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" ? "" : it.kind === "news" ? "+" : it.kind === "paper" ? "✦" : "›";
+    if (it.fresh) a.classList.add("fresh");
     a.append(mark);
     if (it.sim) { const s = document.createElement("em"); s.textContent = tr("Simulation"); a.append(s); }
     let text = it.raw ? it.text : tr(it.text); if (it.quote) text = (lang === "en" ? "“" : "「") + text + (lang === "en" ? "”" : "」");
