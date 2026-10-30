@@ -260,4 +260,11 @@ TauI18n.add({ strings: {
   "{n} min": "{n} 分",
   "Telegram alerts": "Telegram 通知",
   "A message from @tauhud_alerts_bot on every vote and when it is decided. Only your chat id is kept; /stop ends it.": "投票があるたび、そして結果が決まったときに @tauhud_alerts_bot がお知らせします。保存するのはチャット ID だけ。/stop で終了。",
+  "test change · behaviour stays the same": "テスト変更 · 動作は同じ",
+  "Checked on 400 random inputs: the new text decides exactly like the rules in force. The extra part is a maths fact that is always true, so nothing changes.": "400 組のランダムな入力で確認：新しい文は現行ルールとまったく同じ判定をします。追加部分は常に真になる数学的事実なので、何も変わりません。",
+  "Test change: behaviour stays the same.": "テスト変更：動作は同じです。",
+  "Rule text changes proposed so far: {n}.": "これまでに提案されたルール文の変更：{n}。",
+  "Changed behaviour: {n}.": "動作が変わったもの：{n}。",
+  "Kept it exactly as it was (test changes): {n}.": "動作がまったく同じもの（テスト変更）：{n}。",
+  "Could not be checked: {n}.": "確認できなかったもの：{n}。",
 } });
