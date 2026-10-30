@@ -33,3 +33,6 @@ a.tk-it:focus-visible { outline: 1px solid var(--hair); outline-offset: -2px; }
 .tk-tx b.g { color: var(--ok); text-shadow: 0 0 6px rgba(57,255,138,.55); }
 .tk-tx b.hd { color: #fff; text-shadow: 0 0 6px #fff, 0 0 12px var(--ok); }
 @media (pointer: coarse), (max-width: 700px) { .tick { height: 44px; line-height: 44px; } .tk-it { top: 0; bottom: 0; } .tk-lab { padding: 0 8px; } }
+/* the morning a new Daily Consensus is out: the first item, a shade brighter */
+.k-paper .tk-tx { color: #fff; }
+.k-paper .tk-mk { color: var(--ok); }

@@ -1807,5 +1807,10 @@
   "tag": "Gazette",
   "on": "2026-10-30",
   "html": "Daily Consensus café: the four regulars now tell what really happened in the week, why it matters to you, and a small lesson about exactly that. Network test changes are called tests, and wallets are not counted as people. The Professor also talks about the Taumorrow round, a chess engine written in Tau, and the café picks up its result by itself once the public game records are out."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: on the day a new Daily Consensus comes out, “Fresh off the press” opens the line and every round of it, from the drop until midnight in your language’s time zone."
  }
 ]
