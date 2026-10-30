@@ -2128,4 +2128,5 @@ TauI18n.add({ strings: {
   "{n} people on Tau HUD right now": "今 {n} 人が Tau HUD に",
   "News line: real headlines instead of long update texts. Short lines on what is new on the testnet and on Tau HUD, the titles of new features, live chain numbers, and when the next Daily Consensus comes out: in German time in English, Beijing time in Chinese, Japan time in Japanese.": "ニュースの行：長い更新文の代わりに本物の見出しを。テストネットと Tau HUD の新しい動き、新機能の見出し、チェーンのライブ数値、そして次のコンセンサス日報の発行時刻：日本語では日本時間で表示します。",
   "News line: the gap between items is now about two letters wide.": "ニュースの行：項目の間隔が約 2 文字分になりました。",
+  "Privacy notice: section 8 now also covers the testnet wallet. For each transaction our server passes on, it keeps only the hash, the site and the name of the page that led to the wallet, never your address or browser.": "プライバシー通知：第 8 節にテストネットのウォレットを追加しました。サーバーが中継する取引ごとに残すのは、ハッシュ、サイト、ウォレットへ導いたページ名だけで、あなたのアドレスやブラウザの情報は残しません。",
 } });

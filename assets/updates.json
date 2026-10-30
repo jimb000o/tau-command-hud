@@ -1760,5 +1760,10 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "News line: real headlines instead of long update texts. Short lines on what is new on the testnet and on Tau HUD, the titles of new features, live chain numbers, and when the next Daily Consensus comes out: in German time in English, Beijing time in Chinese, Japan time in Japanese."
+ },
+ {
+  "tag": "Privacy",
+  "on": "2026-10-30",
+  "html": "Privacy notice: section 8 now also covers the testnet wallet. For each transaction our server passes on, it keeps only the hash, the site and the name of the page that led to the wallet, never your address or browser."
  }
 ]

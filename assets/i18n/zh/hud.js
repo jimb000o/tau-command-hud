@@ -2132,4 +2132,5 @@ TauI18n.add({ strings: {
   "{n} people on Tau HUD right now": "此刻有 {n} 人在 Tau HUD 上",
   "News line: real headlines instead of long update texts. Short lines on what is new on the testnet and on Tau HUD, the titles of new features, live chain numbers, and when the next Daily Consensus comes out: in German time in English, Beijing time in Chinese, Japan time in Japanese.": "快讯：用真正的标题代替冗长的更新说明。简短报道测试网和 Tau HUD 上的新动态、新功能的标题、实时链上数据，以及下一期《共识日报》的出刊时间：中文显示北京时间。",
   "News line: the gap between items is now about two letters wide.": "快讯：各条之间的间距现在约为两个字符宽。",
+  "Privacy notice: section 8 now also covers the testnet wallet. For each transaction our server passes on, it keeps only the hash, the site and the name of the page that led to the wallet, never your address or browser.": "隐私说明：第 8 节现在也涵盖测试网钱包。对于我们服务器转发的每笔交易，只保留哈希、网站和把你带到钱包的页面名称，从不保存你的地址或浏览器信息。",
 } });
