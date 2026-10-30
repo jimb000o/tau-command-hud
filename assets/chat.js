@@ -23,6 +23,18 @@
       "You just said that.": "你刚说过这句。", "The room is busy; try again in a minute.": "聊天室太忙，请一分钟后再试。",
       "You are muted for today.": "你今天已被禁言。", "That did not look like a message.": "这看起来不像一条消息。",
       "Not sent.": "未发送。",
+      "No price or trading talk: testnet AGRS has no value.": "不谈价格或交易：测试网 AGRS 没有价值。",
+      "No wallet addresses or keys here.": "这里不能发钱包地址或密钥。",
+      "That looks like a scam, so it is not posted.": "这看起来像诈骗，所以没有发出。",
+      "No sexual content here.": "这里不能发色情内容。",
+      "No insults or threats here.": "这里不能辱骂或威胁。",
+      "Please don't shout in capitals.": "请不要全用大写字母喊。",
+      "That looks like spam.": "这看起来像刷屏。",
+      "That was just said.": "这句刚刚有人说过。",
+      "You are muted for {n} more minutes.": "你还要禁言 {n} 分钟。",
+      "You are out of the troll box until 00:00 UTC.": "你被移出闲聊箱，直到 UTC 00:00。",
+      "This is a warning; the next strike mutes you for 10 minutes.": "这是一次警告；再犯一次将禁言 10 分钟。",
+      "You are muted for {n} minutes.": "你被禁言 {n} 分钟。",
     },
     ja: {
       "Troll box": "トロールボックス", "Chat with everyone on Tau HUD": "Tau HUD のみんなとチャット", "Close": "閉じる",
@@ -36,10 +48,24 @@
       "You just said that.": "それはさっき書きました。", "The room is busy; try again in a minute.": "混み合っています。1 分後にもう一度。",
       "You are muted for today.": "今日はミュートされています。", "That did not look like a message.": "メッセージとして読めませんでした。",
       "Not sent.": "送信されませんでした。",
+      "No price or trading talk: testnet AGRS has no value.": "価格や取引の話はなし：テストネットの AGRS に価値はありません。",
+      "No wallet addresses or keys here.": "ウォレットのアドレスや鍵は書けません。",
+      "That looks like a scam, so it is not posted.": "詐欺のように見えるため投稿されません。",
+      "No sexual content here.": "性的な内容は書けません。",
+      "No insults or threats here.": "侮辱や脅しは書けません。",
+      "Please don't shout in capitals.": "大文字で叫ばないでください。",
+      "That looks like spam.": "スパムのように見えます。",
+      "That was just said.": "それはさっき書かれました。",
+      "You are muted for {n} more minutes.": "あと {n} 分ミュートされています。",
+      "You are out of the troll box until 00:00 UTC.": "UTC 00:00 までトロールボックスから外されています。",
+      "This is a warning; the next strike mutes you for 10 minutes.": "これは警告です。次の違反で 10 分間ミュートされます。",
+      "You are muted for {n} minutes.": "{n} 分間ミュートされました。",
     },
   };
   const D = DICT[L] || {};
   const t = (s, x) => (D[s] || s).replace("{x}", x == null ? "" : x);
+  /* a relay answer is one or two fixed sentences, a number in them as {n} */
+  const tr = msg => String(msg).split(/(?<=\.) /).map(p => { const n = (p.match(/\d+/) || [""])[0], k = p.replace(/\d+/, "{n}"); return D[p] || (n && D[k] ? D[k].replace("{n}", n) : p); }).join(L === "en" ? " " : "");
 
   /* the visitor's name: the simulation's identity when the page has it, else one made here the same way */
   const ME = (() => {
@@ -99,7 +125,7 @@
     me.onmessage = ev => {
       let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
       if (!m || m.command !== "chat") return;
-      if (m.status !== "ok") { setNote(t((m.error && m.error.message) || "Not sent.")); send.disabled = false; return; }
+      if (m.status !== "ok") { setNote(tr((m.error && m.error.message) || "Not sent.")); send.disabled = false; return; }
       const d = m.data || {};
       if (d.messages) {
         list.textContent = ""; seen = new Set();

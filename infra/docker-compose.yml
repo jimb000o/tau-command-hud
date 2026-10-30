@@ -56,6 +56,9 @@ services:
       CHAT_ENABLED: ${CHAT_ENABLED:-1}   # the troll box on the HUD (relay/chat.py); 0 closes the room
       CHAT_KEY: ${CHAT_KEY:-}   # key of the troll box admin page /chat/admin; empty: made once in /data/chat.key
       CHAT_BLOCK_WORDS: ${CHAT_BLOCK_WORDS:-}   # extra words the troll box refuses, comma separated
+      CHAT_AI_KEY: ${CHAT_AI_KEY:-}   # Anthropic API key for the troll box's AI moderator (relay/chatai.py); empty: off
+      CHAT_AI_MODEL: ${CHAT_AI_MODEL:-claude-haiku-5-5}
+      CHAT_AI_DAILY: ${CHAT_AI_DAILY:-3000}   # at most this many AI checks per UTC day
     volumes:
       # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH),
       # availability history for /uptime (UPTIME_PATH)

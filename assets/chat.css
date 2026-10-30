@@ -59,3 +59,8 @@ html.coreonly .tb-pill, html.coreonly .tb-box { display: none; }
   .tb-in { font-size: 16px; }   /* iOS does not zoom into a 16 px field */
   .tb-rp { opacity: 1; width: 32px; height: 32px; top: -3px; }
 }
+/* few messages, little room: the HUD's panel is as tall as its messages (at least six lines), up to its usual share of
+   the column; the panels below take the rest */
+html.wide .panel.a-tb { flex: 0 1 auto; max-height: 48%; }
+html.wide .a-tb .tb-inline { flex: 0 1 auto; }
+.tb-inline .tb-list { flex: 0 1 auto; min-height: calc(6 * 1.32em + 8px); }
