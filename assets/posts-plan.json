@@ -1,0 +1,115 @@
+{
+ "about": "Posts planned ahead: the alerts bot sends each once at its time (UTC) on Telegram and X. tg: Telegram HTML; x: lines for X, no links; foot: X source line; link/button: Telegram button; image: picture above the Telegram text and under the X post.",
+ "posts": [
+  {
+   "id": "chess-2026-11-01",
+   "at": "2026-11-01T10:00:00Z",
+   "tg": "♟ <b>TODAY · chess in Tau</b>\n<b>A chess engine written in Tau plays Claude Opus 5.5: ten games, live from 12:00 UTC.</b>\n\nLast time, against Claude Sonnet 5.5, the engine won nine of ten, every one by checkmate. The engine is Taumorrow's own project: written in the Tau language by a community member, independent of IDNI, and not on the chain.",
+   "x": [
+    "♟ Today: a chess engine written in Tau plays Claude Opus 5.5",
+    "Ten games, live from 12:00 UTC. Last time, against Claude Sonnet 5.5, the engine won nine of ten, every one by checkmate."
+   ],
+   "foot": "♟ Taumorrow's community project, not on the chain",
+   "link": "https://chess.taumorrow.com",
+   "button": "♟ Watch live"
+  },
+  {
+   "id": "spot-start",
+   "at": "2026-11-04T14:00:00Z",
+   "tg": "✨ <b>TAU HUD · worth a look</b>\n<b>Try Tau in four steps</b>\n\nA test wallet, a rule of your own that every node checks, a block that seals it, and a meal for Agorzilla. A few minutes in your browser, nothing to install; test AGRS have no value.\n\n<i>An update to the Tau HUD website, not news from the testnet.</i>",
+   "x": [
+    "Try Tau in four steps, in your browser",
+    "A test wallet, a rule of your own that every node checks, a block that seals it, and a meal for Agorzilla. Nothing to install; test AGRS have no value."
+   ],
+   "foot": "✨ Tau HUD website, not testnet news",
+   "link": "/start/",
+   "button": "✨ Open it",
+   "image": "/assets/shots/start.png"
+  },
+  {
+   "id": "challenge-2026-11-06",
+   "at": "2026-11-06T14:00:00Z",
+   "tg": "✍️ <b>RULE CHALLENGE · last days</b>\n<b>This week's task closes when the next Daily Consensus is printed, Monday 9 November.</b>\n\nWrite a rule that does it, sign it in your test wallet, and it counts on the real testnet. Good answers are shown on the site. No prizes; test AGRS have no value.",
+   "x": [
+    "✍️ This week's Tau rule challenge closes Monday 9 November",
+    "Answer it with a real rule from a test wallet on Tau Testnet Alpha; good answers are shown on Tau HUD. No prizes, test AGRS have no value."
+   ],
+   "foot": "✨ From Tau HUD",
+   "link": "/challenge/",
+   "button": "✍️ This week's task"
+  },
+  {
+   "id": "spot-rules",
+   "at": "2026-11-11T14:00:00Z",
+   "tg": "✨ <b>TAU HUD · worth a look</b>\n<b>The rules wall</b>\n\nEvery personal rule people gave their own accounts on the Tau testnet, read from the blocks. To agree with one, take it for your own account: a real transaction, counted on the wall.\n\n<i>An update to the Tau HUD website, not news from the testnet.</i>",
+   "x": [
+    "The rules wall: every personal rule on the Tau testnet",
+    "Read from the blocks. To agree with one, take it for your own account: a real transaction, counted on the wall."
+   ],
+   "foot": "✨ Tau HUD website, not testnet news",
+   "link": "/rules/",
+   "button": "✨ Open it",
+   "image": "/assets/shots/rules.png"
+  },
+  {
+   "id": "challenge-2026-11-13",
+   "at": "2026-11-13T14:00:00Z",
+   "tg": "✍️ <b>RULE CHALLENGE · last days</b>\n<b>This week's task closes when the next Daily Consensus is printed, Monday 16 November.</b>\n\nWrite a rule that does it, sign it in your test wallet, and it counts on the real testnet. Good answers are shown on the site. No prizes; test AGRS have no value.",
+   "x": [
+    "✍️ This week's Tau rule challenge closes Monday 16 November",
+    "Answer it with a real rule from a test wallet on Tau Testnet Alpha; good answers are shown on Tau HUD. No prizes, test AGRS have no value."
+   ],
+   "foot": "✨ From Tau HUD",
+   "link": "/challenge/",
+   "button": "✍️ This week's task"
+  },
+  {
+   "id": "spot-missions",
+   "at": "2026-11-18T14:00:00Z",
+   "tg": "✨ <b>TAU HUD · worth a look</b>\n<b>Missions: six short tasks on a practice chain</b>\n\nVote a change into law, get a rule refused before the vote, let a rule fail at two thirds, lower the bar, survive a validator outage and bring the chain to proof of stake. Each mission ends with where to see the same thing on the real testnet.\n\n<i>An update to the Tau HUD website, not news from the testnet.</i>",
+   "x": [
+    "Missions: six short tasks on a practice chain of your own",
+    "Vote a change into law, get a rule refused before the vote, survive a validator outage. Each ends with where to see the same on the real testnet."
+   ],
+   "foot": "✨ Tau HUD website, not testnet news",
+   "link": "/missions/",
+   "button": "✨ Open it"
+  },
+  {
+   "id": "challenge-2026-11-20",
+   "at": "2026-11-20T14:00:00Z",
+   "tg": "✍️ <b>RULE CHALLENGE · last days</b>\n<b>This week's task closes when the next Daily Consensus is printed, Monday 23 November.</b>\n\nWrite a rule that does it, sign it in your test wallet, and it counts on the real testnet. Good answers are shown on the site. No prizes; test AGRS have no value.",
+   "x": [
+    "✍️ This week's Tau rule challenge closes Monday 23 November",
+    "Answer it with a real rule from a test wallet on Tau Testnet Alpha; good answers are shown on Tau HUD. No prizes, test AGRS have no value."
+   ],
+   "foot": "✨ From Tau HUD",
+   "link": "/challenge/",
+   "button": "✍️ This week's task"
+  },
+  {
+   "id": "spot-whatif",
+   "at": "2026-11-25T14:00:00Z",
+   "tg": "✨ <b>TAU HUD · worth a look</b>\n<b>What if: a sandbox chain with levers</b>\n\nMove the block time, the number of validators and the votes a rule change needs, switch validators off or slow the network down, and watch the chain react. It runs only in your browser, and the link keeps your levers.\n\n<i>An update to the Tau HUD website, not news from the testnet.</i>",
+   "x": [
+    "What if: a sandbox chain with levers",
+    "Move the block time, the validators and the votes a rule change needs, switch validators off, and watch the chain react: forks, gaps, rules that never pass."
+   ],
+   "foot": "✨ Tau HUD website, not testnet news",
+   "link": "/whatif/",
+   "button": "✨ Open it"
+  },
+  {
+   "id": "challenge-2026-11-27",
+   "at": "2026-11-27T14:00:00Z",
+   "tg": "✍️ <b>RULE CHALLENGE · last days</b>\n<b>This week's task closes when the next Daily Consensus is printed, Monday 30 November.</b>\n\nWrite a rule that does it, sign it in your test wallet, and it counts on the real testnet. Good answers are shown on the site. No prizes; test AGRS have no value.",
+   "x": [
+    "✍️ This week's Tau rule challenge closes Monday 30 November",
+    "Answer it with a real rule from a test wallet on Tau Testnet Alpha; good answers are shown on Tau HUD. No prizes, test AGRS have no value."
+   ],
+   "foot": "✨ From Tau HUD",
+   "link": "/challenge/",
+   "button": "✍️ This week's task"
+  }
+ ]
+}
