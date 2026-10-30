@@ -44,6 +44,8 @@ code { color: #fff; font: 12px var(--mono); }
 .wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 .wrap > *, .wrap > .tnav { flex: none; }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.backhud { margin-left: 8px; padding: 14px 4px; font: 400 12px var(--mono); color: var(--dim); text-decoration: none; white-space: nowrap; }
+.backhud:hover, .backhud:focus-visible { color: var(--text); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
 .mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
 .mark .pulse { stroke: var(--ok); }
@@ -332,7 +334,7 @@ html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr)
   <nav class="tnav" data-page="wallet" aria-label="Pages and tools"></nav>
   <div class="intro">
     <div>
-      <p class="lead">An account with its own rules.</p>
+      <p class="lead">An account with its own rules. <a class="backhud" id="backHud" href="/" hidden></a></p>
       <p class="sub" id="sourceLine">On Tau an account is more than a balance: it can carry rules its own payments must pass, accept rules another account offers, and vote on the rules of the whole chain. This wallet lives in your browser and talks to Tau Testnet Alpha.</p>
     </div>
     <div class="kpis" aria-label="Key numbers">
@@ -1143,6 +1145,23 @@ document.querySelectorAll("#ruleTabs button").forEach(b => b.addEventListener("c
   $("rMine").hidden = RTAB !== "mine"; $("rShare").hidden = RTAB !== "share"; $("rPakt").hidden = RTAB !== "pakt";
   renderRule(); renderShare(); renderPakt();
 }));
+/* deep links: /wallet/#rules-share opens that tab (#rules-mine, #rules-pakt too); ?from=hud adds a way back to the HUD */
+function takeRulesHash() {
+  const m = /^#rules-(mine|share|pakt)$/.exec(location.hash);
+  if (!m) return;
+  const b = document.querySelector('#ruleTabs button[data-rtab="' + m[1] + '"]');
+  if (b) b.click();
+  $("rules").scrollIntoView({ block: "start" });
+}
+window.addEventListener("hashchange", takeRulesHash);
+(() => {
+  const q = new URLSearchParams(location.search);
+  if (q.get("from") !== "hud") return;
+  const lang = q.get("lang");
+  $("backHud").href = "/" + (lang ? "?lang=" + encodeURIComponent(lang) : "");
+  $("backHud").textContent = "‹ " + T("Back to the HUD");
+  $("backHud").hidden = false;
+})();
 const ONLY = new Set();   // the names picked for "only to"
 let seeded = null;        // the rule the builder was last filled from
 /* a rule carried over from the other mode ("Continue in the simulation"): it fills the builder once and wins over the rule read from the chain */
@@ -1745,6 +1764,7 @@ fit();
 connect();
 loadBook();
 takeLink();
+takeRulesHash();
 loadKey();
 loadSlots();
 if (!SIM) setInterval(loadSlots, 60000);

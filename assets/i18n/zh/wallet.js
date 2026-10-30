@@ -459,6 +459,7 @@ TauI18n.add({ strings: {
   "You know the trick now; the payment stays on the chain.": "你已经认识这个把戏了；这笔付款仍留在链上。",
   "+ Put someone in your address book first": "+ 先把某人加入地址簿",
   "Filled in from a payment link.": "已按付款链接填好。",
+  "Back to the HUD": "返回 HUD",
   "Before you sign, ask the person for their three check words:": "签名前，请对方念出他们的三个核对词：",
   "Then you pay names, not hex.": "之后你付款时选名字，而不是复制十六进制。",
   "Ask to be paid": "请人付款给我",
