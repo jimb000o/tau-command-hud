@@ -113,6 +113,31 @@ SAY = {
 }
 
 
+# nothing on screen shorthand is read out as it is written: "txs" is "transactions", 40 is "forty"
+SHORT = [(r"\btxs\b", "transactions"), (r"\btx\b", "transaction"), (r"\bAGRS\b", "Agoras"), (r"\bvs\.?(?=\s)", "versus"),
+         (r"\be\.g\.", "for example"), (r"\bOK\b", "okay"), (r"%", " percent"), (r"\s&\s", " and ")]
+ONES = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen".split()
+TENS = "_ _ twenty thirty forty fifty sixty seventy eighty ninety".split()
+
+
+def number(n):
+    if n < 20:
+        return ONES[n]
+    if n < 100:
+        return TENS[n // 10] + ("-" + ONES[n % 10] if n % 10 else "")
+    if n < 1000:
+        return ONES[n // 100] + " hundred" + (" and " + number(n % 100) if n % 100 else "")
+    return str(n)
+
+
+def spoken(text):
+    """The words as a person says them: no abbreviations, numbers written out (sentence start capitalised)."""
+    for pat, word in SHORT:
+        text = re.sub(pat, word, text, flags=re.I if pat != r"\bOK\b" else 0)
+    text = re.sub(r"\d+", lambda m: number(int(m[0])), text)
+    return re.sub(r"(^|[.!?]\s+|\]\s*)([a-z])", lambda m: m[1] + m[2].upper(), text)
+
+
 def said(who, text, model=MODEL):
     """What is sent to ElevenLabs for a line: loosened up for speaking, with how it is said in front (v3 only)."""
     m = re.match(r"We are counting on you for “(.+)”\. We would hate to remind the island in public\.$", text)
@@ -123,6 +148,7 @@ def said(who, text, model=MODEL):
         out = f"{COINS.get(n[1], n[1])} coins. Today. All we ask is that you propose {LAWS.get(n[2], n[2])} before the election. A small thing, between friends."
     else:
         out = SAY.get(text, text)
+    out = spoken(out)
     if not model.startswith("eleven_v3"):
         return out
     air = who == "rico" and text not in SAY
@@ -410,18 +436,23 @@ def cmd_make(a):
         idx["voices"][w] = {"id": v["voice_id"], "name": v["name"]}
     idx_path = os.path.join(a.out, "index.json")
     ls = lines()
-    have = lambda w, t: key(w, t) in idx["clips"] and os.path.exists(os.path.join(a.out, key(w, t) + ".mp3"))
+    model = getattr(a, "model", None) or MODEL
+    done = idx.setdefault("said", {})   # what each clip says, so a changed spoken text is made again by itself
+    def fresh(w, t):
+        now = hashlib.sha1(said(w, t, model).encode()).hexdigest()[:12]
+        return done.get(key(w, t), now) == now and (key(w, t) in done or spoken(SAY.get(t, t)) == SAY.get(t, t))
+    have = lambda w, t: key(w, t) in idx["clips"] and os.path.exists(os.path.join(a.out, key(w, t) + ".mp3")) and fresh(w, t)
     todo = [(w, t) for w, t in ls if w in idx["voices"] and not have(w, t)]
     silent = sorted({w for w, t in ls if w not in idx["voices"]})
     print(f"{len(todo)} of {len(ls)} lines to make, {sum(len(t) for w, t in todo)} characters."
           + (f" No voice yet for: {', '.join(silent)}." if silent else ""))
     for i, (w, t) in enumerate(todo, 1):
         k = key(w, t)
-        model = getattr(a, "model", None) or MODEL
         loud = w == "rico" and t not in SAY and t.endswith("!")   # the callouts; his other radio lines stay natural
         write(os.path.join(a.out, k + ".mp3"), speak(idx["voices"][w]["id"], said(w, t, model), LOUD if loud else SETTINGS, model))
         if k not in idx["clips"]:
             idx["clips"].append(k)
+        done[k] = hashlib.sha1(said(w, t, model).encode()).hexdigest()[:12]
         write(idx_path, json.dumps(idx, indent=1).encode())   # after each clip, so a stop halfway keeps what is made
         print(f"  {i}/{len(todo)} {w}: {t[:64]}")
     idx["clips"] = [k for k in idx["clips"] if os.path.exists(os.path.join(a.out, k + ".mp3"))]

@@ -100,3 +100,10 @@ with tempfile.TemporaryDirectory() as out:
     idx = json.load(open(os.path.join(out, "index.json")))
     assert idx["voices"]["rico"]["id"] == "v-lib1" and not any(c.startswith("/voices/add") for c in calls)
 print("design ok")
+
+# nothing is read out in screen shorthand
+for w, t in make.lines():
+    s = make.said(w, t)
+    assert not re.search(r"\btxs?\b|\d|AGRS", s, re.I), s
+assert make.spoken("Day 3 of 5, 40 txs.") == "Day three of five, forty transactions."
+print("spoken ok")
