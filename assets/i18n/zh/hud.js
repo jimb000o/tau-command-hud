@@ -1899,6 +1899,7 @@ TauI18n.add({ strings: {
   "{n} listed ({x}), {m} ghost (IDNI {a}), {b} pending.": "列出 {n} 笔（{x}），{m} 笔幽灵交易（IDNI {a}），{b} 笔待处理。",
   "Normal: in force; nothing checked in the last few seconds.": "正常：生效中；最近几秒没有检查。",
   "Normal: it just refused a transfer.": "正常：它刚刚拒绝了一笔转账。",
+  "Normal: its rule just refused a transfer; the shield held.": "正常：它的规则刚刚拒绝了一笔转账；护盾挡住了。",
   "Normal: it just let a transfer pass.": "正常：它刚刚放行了一笔转账。",
   "Account {h}, a branch of the composite o5 program.": "账户 {h}，组合 o5 程序的一个分支。",
   "User rules: accounts with their own money rule (o5) in force now.": "用户规则：当前有自己资金规则（o5）生效的账户。",
@@ -2199,4 +2200,5 @@ TauI18n.add({ strings: {
   "Playground menu: Déjà, the café cat, joins White Rabbit Key and Agorzilla under “Games on the live testnet”. She eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change.": "试验场菜单：咖啡馆的猫 Déjà 加入“在真实测试网上的游戏”，和白兔礁、Agorzilla 在一起。一天内有三个钱包各给她 1 个测试 AGRS 她才吃饭，每次规则变更她都会跑过去。",
   "In numbers: a new Nodes view shows how many nodes were on Tau Testnet Alpha before Tau HUD went live and since, hour by hour, with the launch marked. The relay now counts the nodes every hour; the days before, back to our node's first day, are estimated from when each node was first and last seen and say so. Side by side: nodes at once on average, the most at once and community nodes, before and since; and who runs the nodes online now.": "数据一览：新增“节点”视图，按小时显示 Tau HUD 上线之前和之后 Tau Testnet Alpha 上有多少节点，并标出上线时刻。中继现在每小时统计一次节点；更早的日子（直到我们节点运行的第一天）根据每个节点首次和最后一次被看到的时间估算，并注明是估算。上线前后对照：平均同时在线节点、同时最多节点和社区节点；以及当前在线节点由谁运行。",
   "In numbers, Nodes view: “Setting up a node” shows how far people get with the node kit, from copying the install command on the Nodes page through the install steps (Docker, the long build, the node starting) to the first report, catching up with the chain and still running, and where setups stop with an error. The install script sends its steps only when a node name is set, with a random install id and no address; the Nodes page and the privacy policy say so.": "数据一览的“节点”视图：“搭建节点”显示大家用节点套件能走到哪一步：从在节点页面复制安装命令，到各个安装步骤（Docker、漫长的构建、节点启动），再到首次报告、追上链和仍在运行，以及安装在哪一步出错停下。安装脚本只在设置了节点名时才发送步骤，附带随机安装 ID，不含地址；节点页面和隐私政策都已写明。",
+  "Chain core: when an account’s own rule refuses a transfer, the red energy now runs out from the core and stops at a shield around the account, which flashes where it is hit while sparks glance off. The account stays lit: the refused money never reached it.": "链核心：当一个账户自己的规则拒绝一笔转账时，红色能量从核心涌出，停在账户周围的护盾上；护盾在被击中处闪光，火花向两侧弹开。账户本身保持明亮：被拒绝的钱从未到达它。",
 } });
