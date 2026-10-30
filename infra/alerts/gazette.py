@@ -733,7 +733,7 @@ def chess_round(end: float, found: dict | None = None) -> dict | None:
         c["done"] = int(c.get("played") or 0) >= c["games"]
     return c
 
-CAFE_V = 3   # raise when the talk is written differently: the edition already out is rewritten once
+CAFE_V = 4   # raise when the talk is written differently: the edition already out is rewritten once
 
 
 def chess_talk(c: dict | None, end: float) -> list[dict] | None:
@@ -766,9 +766,9 @@ def chess_talk(c: dict | None, end: float) -> list[dict] | None:
                  f"一个用 Tau 写的国际象棋引擎正在和 {opp} 下{word(g)['zh']}盘。目前下完{word(played)['zh']}盘：{e} 比 {m}{dr['zh']}。我把自己的棋盘放到一边看着。",
                  f"Tau で書かれたチェスエンジンが {opp} と {g} 局を指している。ここまで {played} 局で {e} 対 {m}{dr['ja']}。私は自分の盤をわきに置いて見ている。")
     return [head] + ([c["last"]] if c.get("last") and not played else []) + [
-            t("Taumorrow built it, one of the community: an independent project, not something on the testnet chain. What I like: it is built on Tau, the same language the testnet writes its rules in. My hat is off to Taumorrow.",
-              "这是社区里的 Taumorrow 做的：一个独立项目，不是测试网链上的东西。我喜欢的是：它建立在 Tau 之上，测试网的规则也是用这门语言写的。我向 Taumorrow 脱帽致敬。",
-              "作ったのはコミュニティの Taumorrow だ。独立したプロジェクトで、テストネットのチェーンの上のものではない。私が気に入っているのは、テストネットがルールを書くのと同じ Tau という言語の上に作られていることだ。Taumorrow には脱帽だよ。"),
+            t("The mastermind is Logix, the mind behind Taumorrow: an independent project, not something on the testnet chain. What I like: it is built on Tau, the same language the testnet writes its rules in. My hat is off to Logix.",
+              "幕后主谋是 Logix，Taumorrow 背后的那个头脑：一个独立项目，不是测试网链上的东西。我喜欢的是：它建立在 Tau 之上，测试网的规则也是用这门语言写的。我向 Logix 脱帽致敬。",
+              "黒幕は Logix、Taumorrow の頭脳だ。独立したプロジェクトで、テストネットのチェーンの上のものではない。私が気に入っているのは、テストネットがルールを書くのと同じ Tau という言語の上に作られていることだ。Logix には脱帽だよ。"),
             t("Its earlier games are all published move by move, so anyone can replay them and check. That is the only kind of chess I respect: the kind you do not have to take on trust.",
               "而且它以前的每一盘都一步一步公开了，谁都可以重放、核对。我只尊重这样的棋：不必凭信任去接受的那种。",
               "しかもこれまでの対局はすべて一手ずつ公開されていて、誰でも並べ直して確かめられる。私が敬意を払うのはそういうチェスだけだ。信用で受け取らなくていいチェスだ。")]
