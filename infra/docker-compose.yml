@@ -241,6 +241,7 @@ services:
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
     volumes:
       - alerts_public:/public:ro   # proposals.json, written by alerts
+      - alerts_state:/state        # follows.json: personal alerts, only chat ids and what each follows (alerts/follow.py)
     depends_on: [relay, alerts]
     mem_limit: 128m
     restart: unless-stopped

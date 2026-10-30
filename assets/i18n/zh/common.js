@@ -560,3 +560,10 @@ TauI18n.add({ strings: {
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 发送方自己的规则说不 (o5 = 0 · ${TauI18n.t(r)})`]] });
+/* Start here: the first-visit path (start/), its header pill and the wallet's way back */
+TauI18n.add({ strings: {
+  "Start here": "从这里开始",
+  "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla": "四步试用 Tau：一个测试钱包、一条你自己的规则、一个封存它的区块、喂 Agorzilla 一顿饭",
+  "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.": "第一次来？四步试用 Tau：一个测试钱包、一条由链来检查的你自己的规则、一个封存它的区块、喂 Agorzilla 一顿饭。几分钟，无需安装。",
+  "Back to Start here": "返回“从这里开始”",
+} });

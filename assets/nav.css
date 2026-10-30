@@ -33,6 +33,11 @@
 .tnav .pill { font: 600 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--tn-hair); color: var(--tn-dim); white-space: nowrap; cursor: pointer; background: transparent; display: inline-flex; align-items: center; gap: 7px; text-decoration: none; }
 .tnav .pill.primary { border-color: rgba(255,255,255,.6); color: #fff; background: rgba(255,255,255,.06); }
 .tnav .pill.primary:hover { background: #fff; color: #000; }
+.tnav .pill.start { border-color: rgba(57,255,138,.6); color: var(--tn-ok); }
+.tnav .pill.start b { color: #fff; font-weight: 600; margin-left: 2px; }
+.tnav .pill.start:hover { background: var(--tn-ok); border-color: var(--tn-ok); color: #000; }
+.tnav .pill.start:hover b { color: #000; }
+@media (max-width: 1399px) { .tnav .pill.start { display: none; } }   /* the Learn menu has it too; the line stays one line */
 .tnav .pill.tg { border-color: rgba(57,255,138,.6); color: var(--tn-ok); }
 .tnav .pill.tg svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
 .tnav .pill.tg:hover { background: var(--tn-ok); border-color: var(--tn-ok); color: #000; }

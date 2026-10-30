@@ -376,4 +376,6 @@ TauI18n.add({ strings: {
   "Transaction id": "トランザクション ID",
   "{n} accounts": "{n} アカウント",
   "Matches the balance our node reports.": "ノードが報告する残高と一致します。",
+  "Telegram alerts": "Telegram 通知",
+  "Get a Telegram message when this account moves Opens @tauhud_alerts_bot with the address filled in; press Start. Only your chat id and what you follow are kept. /stop ends it.": "このアカウントが動いたら Telegram でお知らせ @tauhud_alerts_bot がアドレス入力済みで開きます。Start を押すだけ。保存するのはチャット ID とフォロー対象だけ。/stop で終了。",
 } });
