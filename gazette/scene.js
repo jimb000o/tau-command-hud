@@ -93,8 +93,9 @@
 
   /* ----- what moves outside: streetcars both ways, people walking to work, steam from a grate ----- */
   const CYCLE = 64, WALK = (() => { const R = rnd(8); return Array.from({ length: 46 }, () => ({ s: R() < 0.5 ? -1 : 1, x: KERB + 0.8 + R() * (SW - KERB - 1.6), z: 4 + R() * 116, v: (R() < 0.5 ? -1 : 1) * (1.1 + R() * 0.5), h: 1.6 + R() * 0.22, w: R() })); })();
-  const carAt = t => { const u = (t % CYCLE) / 42, v = ((t + CYCLE / 2) % CYCLE) / 42; return { inbound: u <= 1 ? 176 - 175 * u : null, outbound: v <= 1 ? 1 + 177 * v : null }; };
-  /* cars come out of the haze and leave past the edge of the window beside us, never popping in or out in view */
+  const carAt = t => { const u = (t % CYCLE) / 42, v = ((t + CYCLE / 2) % CYCLE) / 42; return { inbound: u <= 1 ? 176 - 190 * u : null, outbound: v <= 1 ? -14 + 192 * v : null }; };
+  /* cars come out of the haze and leave past the edge of the window beside us, never popping in or out in view:
+     a car runs on until its far end (14 m behind its near end) has passed us too */
   function live(g, W, H, t, busy) {
     const { f, P } = geo(W, H);
     g.clearRect(0, 0, W, H);
@@ -136,13 +137,13 @@
   const introAt = e => { e -= INTRO.delay; return e < 0 ? null : INTRO.z0 + INTRO.v * e + INTRO.a * e * e; };
   function trams(g, W, H, cars) {
     g.clearRect(0, 0, W, H);
-    cars.filter(c => c.z != null && c.z < 178).sort((a, b) => b.z - a.z).forEach(c => tram(g, W, H, c));
+    cars.filter(c => c.z != null && c.z < 178 && c.z > -14).sort((a, b) => b.z - a.z).forEach(c => tram(g, W, H, c));
   }
   function tram(g, W, H, { x: xc, z: zr, away }) {
     const { f, P: P0 } = geo(W, H), P = (X, Y, z) => P0(X, Y, Math.max(0.35, z)), L = 14, s = Math.sign(xc), Xs = xc - s * 1.3, Xo = xc + s * 1.3, zf = zr + L, Xm = xc;
     /* farther off everything sinks into the morning haze */
     const hz = Math.min(0.6, Math.max(0, (zr - 6) / 260)), T = (v, a = 1) => tone(v + (0.6 - v) * hz, a);
-    const sc = z => f / z;
+    const sc = z => f / Math.max(0.35, z);
     const poly = (pts, fill) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(...p) : g.moveTo(...p)); g.closePath(); g.fillStyle = fill; g.fill(); };
     const side = (y0, y1, za, zb, fill, x = Xs) => poly([P(x, y0, za), P(x, y1, za), P(x, y1, zb), P(x, y0, zb)], fill);
     const end = (xa, xb, y0, y1, fill, z = zr) => poly([P(xa, y0, z), P(xa, y1, z), P(xb, y1, z), P(xb, y0, z)], fill);
@@ -375,7 +376,7 @@
     /* the inbound streetcar rings its bell as it passes the corner; the opening one as it sets off */
     const c = carAt(t), near = !busy && c.inbound != null && c.inbound < 46 && c.inbound > 38, off = zi != null && zi < 4;
     if ((near && !bell) || (off && !introBell)) AMB.bell(); bell = near; introBell = introBell || off;
-    AMB.rumble(busy && zi != null ? Math.max(0, 1 - zi / 40) : !busy && c.inbound != null ? Math.max(0, 1 - c.inbound / 50) : 0);
+    AMB.rumble(busy && zi != null ? Math.max(0, 1 - zi / 40) : !busy && c.inbound != null ? Math.max(0, Math.min(1, 1 - c.inbound / 50)) : 0);
     last = now; loop();
   }
   function loop() { if (!raf && !document.hidden && (!still() || Object.keys(TOUCH).some(k => touched(k) != null))) raf = requestAnimationFrame(n => n - last >= 40 ? frame(n) : (raf = 0, loop())); }
