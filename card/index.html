@@ -174,6 +174,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<link rel="stylesheet" href="../assets/agz-look.css">
 </head>
 <body>
 <div class="wrap">
@@ -195,7 +196,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <div class="pal">
           <i class="sh2"></i>
           <a class="paper" id="paper" href="/gazette/walk/"><span class="np" aria-hidden="true"><b>The Daily Consensus</b><i></i></span><span class="tk" id="tk"><em>Café ticket</em><span id="tkS"></span></span></a>
-          <button class="agz" id="agz" type="button" aria-label="Agorzilla"><span class="dir"><span class="mover"><span class="legs"><img src="../assets/rig/hi/feet.webp" alt="" width="760" height="1140" draggable="false"></span><span class="body"><span class="puppet"><img class="trunk" src="../assets/rig/hi/body.webp" alt="" width="760" height="1140" draggable="false"><span class="head"><span class="gaze"><img class="face" src="../assets/rig/hi/head.webp" alt="" width="760" height="1140" draggable="false"><span class="eye l"><img src="../assets/rig/hi/eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="../assets/rig/hi/eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><img class="brow l" src="../assets/rig/hi/brow-l.webp" alt="" draggable="false"><img class="brow r" src="../assets/rig/hi/brow-r.webp" alt="" draggable="false"><i class="tear"></i><i class="tear r"></i></span></span></span></span></span></span></button>
+          <button class="agz" id="agz" data-agz-look type="button" aria-label="Agorzilla"><span class="dir"><span class="mover agz-fur"><span class="legs"><img src="../assets/rig/hi/feet.webp" alt="" width="760" height="1140" draggable="false"></span><span class="body"><span class="puppet"><img class="trunk" src="../assets/rig/hi/body.webp" alt="" width="760" height="1140" draggable="false"><i class="agz-pl"></i><span class="head"><span class="gaze"><img class="face" src="../assets/rig/hi/head.webp" alt="" width="760" height="1140" draggable="false"><span class="eye l"><img src="../assets/rig/hi/eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="../assets/rig/hi/eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><img class="brow l" src="../assets/rig/hi/brow-l.webp" alt="" draggable="false"><img class="brow r" src="../assets/rig/hi/brow-r.webp" alt="" draggable="false"><i class="tear"></i><i class="tear r"></i></span></span></span></span></span></span></button>
         </div>
         <figcaption class="say" id="say" aria-live="polite"></figcaption>
       </figure>
@@ -229,6 +230,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
   </main>
 </div>
 <script src="agz.js"></script>
+<script src="../assets/agz-look.js" data-poll></script>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
