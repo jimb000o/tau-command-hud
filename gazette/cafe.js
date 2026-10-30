@@ -18,8 +18,8 @@
   const CAFE_EN = {
     call: "From the counter, Mae: “Fresh pot on, hon, if you're looking up.”", loading: "One moment…", loadingSub: "The café is being set for you", enter: "Look up", enterTip: "Look up from the paper: walk through the café and meet the regulars",
     back: "The paper", backTip: "Back to the paper",
-    cat: { deja: "Déjà vu: the cat went by twice, the very same way. In here that means a rule just changed.",
-      lines: ["Déjà, the café cat. Nobody owns her. Everybody agreed to feed her, and that is a rule too.", "Prrr. She sits on whatever proposal you are reading. That is her vote.",
+    cat: { bowl: "Her bowl is real: feed her at agorzilla.com/cat ›", deja: "Déjà vu: the cat went by twice, the very same way. In here that means a rule just changed.",
+      lines: ["Déjà, the café cat. Nobody owns her. Everybody agreed to feed her, and that is a rule too: she eats on a day when three wallets feed her.", "Prrr. She sits on whatever proposal you are reading. That is her vote.",
         "Mrrp. She doesn't follow the chain. She follows the warm spot by the coffee urn.", "Mae says the cat was here before the house rules. She has never voted, and somehow she always gets her way."] },
     hint: "Walk with the edges of the room or ← →, and click someone to talk",
     hintTouch: "Swipe or tap the edges to walk, and tap someone to talk",
@@ -882,7 +882,7 @@
      twice, the very same way. Spots are fractions of the room: [x, y of the paws, sitting height]. ----- */
   const CAT_AT = { window: { wait: [0.47, 0.79, 0.17], exit: [0.925, 0.79, 0.17] }, counter: { wait: [0.11, 0.7, 0.13], exit: [0.92, 0.7, 0.13] },
     wire: { wait: [0.07, 0.95, 0.14], exit: [0.925, 0.95, 0.14] }, back: { wait: [0.07, 0.95, 0.14], exit: [0.925, 0.95, 0.14] }, door: { wait: [0.9, 0.95, 0.14], exit: [0.44, 0.77, 0.09] } };
-  const CAT = { room: "window", spot: "wait", x: 0.47, y: 0.79, s: 0.17, walk: null, face: 1, look: 0, mew: 0, n: 0, box: null };
+  const CAT = { room: "window", spot: "wait", x: 0.47, y: 0.79, s: 0.17, walk: null, face: 1, look: 0, mew: 0, n: -1, box: null };
   const catOpen = r => r === "door" ? ST.stamps.size === 4 : r === "window" || ST.stamps.has(HOST[r]);
   function catPut(room, spot) { const a = CAT_AT[room][spot]; Object.assign(CAT, { room, spot, x: a[0], y: a[1], s: a[2], walk: null, gl: null, hide: false, face: room === "door" ? -1 : 1, look: 1 }); }
   function catGo(spot, ms, then) { const a = CAT_AT[CAT.room][spot], d = Math.hypot(a[0] - CAT.x, (a[1] - CAT.y) * 0.6);
@@ -987,7 +987,9 @@
       if (last) { CAT.walk.then = () => here() && flash(TX.cat.deja); return; }
       setTimeout(() => here() && catGlitch("out", 460, () => { CAT.walk = null; setTimeout(() => here() && pass(true), 320); }), 2300 - 460); };
     setTimeout(() => { if (here()) catGlitch("out", 420, () => setTimeout(() => here() && pass(false), 250)); }, 700); }
-  function catClick() { const L = TX.cat.lines; CAT.n = (CAT.n + 1) % L.length; if (CAT.n % 2) AUDIO.purr(); else catMew(true); CAT.mew = performance.now(); flash(L[CAT.n], CAT.box); }
+  function catClick() { const L = TX.cat.lines; CAT.n = (CAT.n + 1) % L.length; if (CAT.n % 2) AUDIO.purr(); else catMew(true); CAT.mew = performance.now(); flash(L[CAT.n], CAT.box);
+    /* the first line is the one about her food, and that rule is real: her bowl is on the testnet */
+    if (CAT.n === 0) { const a = document.createElement("a"); a.href = "https://agorzilla.com/cat/"; a.target = "_blank"; a.rel = "noopener"; a.textContent = TX.cat.bowl; note.appendChild(a); clearTimeout(flashT); flashT = setTimeout(() => note.classList.remove("on"), 9000); } }
   function arrived() { ST.arriveAt = performance.now(); if (ST.area === "wire") AUDIO.ticker(); keep(); prep([nb(1), nb(-1)]); }
 
   /* ----- talking ----- */
@@ -1244,7 +1246,7 @@
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
 
   /* other languages come in their own small file */
-  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=9`; s.onload = labels; document.head.appendChild(s); }
+  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=10`; s.onload = labels; document.head.appendChild(s); }
   labels();
   /* ?walk (the shared link) opens the café straight away */
   if (/[?&]walk\b/.test(location.search)) setTimeout(() => enter(), 600);

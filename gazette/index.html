@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
-<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=9"><\/script>`);</script>
+<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=10"><\/script>`);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>The Daily Consensus</title>
@@ -407,6 +407,10 @@ html.i18n-ja .title { font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho Pro
 .cafe-note { position: absolute; left: 50%; top: 72px; transform: translateX(-50%); max-width: min(300px, 80%); padding: 8px 12px; font: italic 14px/1.4 var(--body); color: rgba(240,226,198,.96); background: rgba(22,16,10,.86); border: 1px solid rgba(226,201,152,.32); border-radius: 3px; opacity: 0; transition: opacity .4s; }
 .cafe-note.free { transform: none; width: 300px; }
 .cafe-note.on { opacity: 1; }
+.cafe-note a { pointer-events: auto; display: block; margin-top: 5px; color: #f3dfb4; font-style: normal; text-decoration: underline; text-underline-offset: 3px; }
+#bSnd.wake { animation: sndWake 1.8s ease-in-out infinite; }
+@keyframes sndWake { 0%, 100% { box-shadow: 0 0 0 0 rgba(236,214,170,0); } 50% { box-shadow: 0 0 0 5px rgba(236,214,170,.28); background: rgba(255,255,255,.1); } }
+@media (prefers-reduced-motion: reduce) { #bSnd.wake { animation: none; box-shadow: 0 0 0 2px rgba(236,214,170,.4); } }
 /* the words: a picture-show title card, black, double-ruled, the speaker's name in deco capitals */
 .cafe-say { pointer-events: auto; position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(760px, calc(100% - 28px)); background: rgba(8,7,6,.94); border: 3px double rgba(226,201,152,.55); outline: 1px solid rgba(226,201,152,.15); outline-offset: 4px; padding: 14px 22px 16px; cursor: pointer; box-shadow: 0 20px 60px rgba(0,0,0,.7); animation: cafeSay .35s ease; }
 .cafe-say[hidden] { display: none; }
@@ -511,7 +515,7 @@ const EN = {
   ui: { amb0: "Café: off", amb1: "Café: quiet", amb2: "Café: lively", hitCup: "Stir the coffee", hitSugar: "Sugar", hitPapers: "Yesterday's papers", notes: {
     cup: (h, a) => h != null ? `The steam spells τ. Block #${h.toLocaleString("en-US")} is the newest on the testnet${a != null ? `, sealed ${a} s ago` : ""}; another comes about every 8 seconds.` : "The steam spells τ. On the testnet a new block comes about every 8 seconds.",
     sugar: () => "Cube by cube, a chain. Every block is checked against the rules in force before it joins.",
-    papers: h => `Extra! On Tau the rules change by agreement: proposed, voted on, checked by logic before they apply. No fork needed.${h != null ? ` As of block #${h.toLocaleString("en-US")}.` : ""}` }, rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLeave: "Back to the site", fullHint: "The paper on the whole screen · <b>Esc</b> or <b>✕</b> brings the site back", rLang: "Language", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", chal: "Rule challenge of the week", chalGo: "Answer it in your wallet; good answers at tauhud.com/challenge. No prizes.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", faith: "From the composing room: this paper is set by learning machines, which guess well and now and then guess wrong. Tau is built the other way: a logic machine that checks every rule before it applies. Read us in good faith; for proof, consult the chain.", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
+    papers: h => `Extra! On Tau the rules change by agreement: proposed, voted on, checked by logic before they apply. No fork needed.${h != null ? ` As of block #${h.toLocaleString("en-US")}.` : ""}` }, rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLeave: "Back to the site", fullHint: "The paper on the whole screen · <b>Esc</b> or <b>✕</b> brings the site back", rLang: "Language", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", chal: "Rule challenge of the week", chalGo: "Answer it in your wallet; good answers at tauhud.com/challenge. No prizes.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", faith: "From the composing room: this paper is set by learning machines, which guess well and now and then guess wrong. Tau is built the other way: a logic machine that checks every rule before it applies. Read us in good faith; for proof, consult the chain.", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", sTap: "♪ Tap for sound", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
   date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
   pages: [
@@ -1343,10 +1347,19 @@ const EN = {
 
   /* ----- the sound of a page: filtered noise, a sweep down and a soft landing ----- */
   let AC = null, SND = store.get("gazette-sound") !== "off";
-  const sndLabel = () => { const narrow = desk.clientWidth < 900 || getComputedStyle($("ctl")).flexDirection === "column"; $("bSnd").textContent = narrow ? (SND ? "♪" : "♪̸") : SND ? UI.sOn : UI.sOff; $("bSnd").setAttribute("aria-label", SND ? UI.sOn : UI.sOff); };
+  /* sound is on from the start; until the reader's first touch the browser holds it back, so the button says so and glows */
+  let touched = false, wasWaiting = false, heard = false;
+  const waiting = () => SND && !touched && !heard;
+  const sndLabel = () => { const narrow = desk.clientWidth < 900 || getComputedStyle($("ctl")).flexDirection === "column", w = waiting(), b = $("bSnd");
+    b.textContent = w ? (narrow ? "♪" : UI.sTap) : narrow ? (SND ? "♪" : "♪̸") : SND ? UI.sOn : UI.sOff; b.setAttribute("aria-label", w ? UI.sTap : SND ? UI.sOn : UI.sOff); b.classList.toggle("wake", w); };
+  const wake = () => { wasWaiting = waiting(); touched = true; removeEventListener("pointerdown", wake, true); removeEventListener("keydown", wake, true); setTimeout(sndLabel, 0); };
+  addEventListener("pointerdown", wake, true); addEventListener("keydown", wake, true); window.addEventListener("gazette-live", e => { if (!touched) heard = e.detail; sndLabel(); });
+  /* a browser that trusts the site lets the café play before any touch */
+  addEventListener("load", () => setTimeout(() => { const A = window.GAZETTE_SCENE && GAZETTE_SCENE.amb; if (!touched && A && A.live && A.live()) { heard = true; sndLabel(); } }, 300));
   /* one sound switch for the reader: turning sound on also opens the café (quietly), turning it off closes it */
   const setSnd = (on, tell) => { SND = on; store.set("gazette-sound", SND ? "on" : "off"); sndLabel(); if (tell) window.dispatchEvent(new CustomEvent("gazette-sound", { detail: SND })); };
-  $("bSnd").onclick = e => { e.stopPropagation(); setSnd(!SND, true); };
+  /* the first press on a waiting button starts the sound instead of turning it off */
+  $("bSnd").onclick = e => { e.stopPropagation(); if (wasWaiting) { wasWaiting = false; sndLabel(); return; } setSnd(!SND, true); };
   window.addEventListener("gazette-cafe", e => { if (e.detail > 0 && !SND) setSnd(true, false); });
   /* the turn of a broadsheet: the sheet lifts, sweeps through the air and settles. Soft pink noise, low-passed, with a
      few paper fibres crackling, varied a little each time so no two turns sound the same; every ramp starts and ends at zero */
@@ -1415,7 +1428,7 @@ const EN = {
   }, 200); });
 })();
 </script>
-<script src="scene.js?v=10"></script>
-<script src="cafe.js?v=9"></script>
+<script src="scene.js?v=11"></script>
+<script src="cafe.js?v=10"></script>
 </body>
 </html>
