@@ -5,4 +5,4 @@ set -eu
 cd "$(dirname "$0")/../.."
 mkdir -p /opt/sites/rico/art
 exec docker compose -f infra/docker-compose.yml run --rm --no-deps -T \
-  -v "$PWD:/repo:ro" -v /opt/sites/rico/art:/art --entrypoint python3 share /repo/infra/rabbit-art/paint.py --out /art "$@"
+  -v "$PWD:/repo:ro" -v /opt/sites/rico/art:/art --entrypoint python3 share -u /repo/infra/rabbit-art/paint.py --out /art "$@"

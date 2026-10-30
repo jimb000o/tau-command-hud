@@ -92,7 +92,7 @@ def provider():
              "  echo 'GEMINI_API_KEY=YOUR_KEY' >> /opt/tau-command-hud/infra/.env")
 
 
-def post(url, data, headers, timeout=240):
+def post(url, data, headers, timeout=150):
     for attempt in range(4):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=headers), timeout=timeout) as r:
@@ -112,7 +112,8 @@ def post(url, data, headers, timeout=240):
 
 def paint_gemini(plate, prompt, n, model):
     out = []
-    for _ in range(n):   # one picture per call
+    for i in range(n):   # one picture per call
+        print(f"    painting {i + 1} of {n} ...", flush=True)
         body = {"contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(plate).decode()}}]}],
                 "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": "16:9"}}}
         r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
