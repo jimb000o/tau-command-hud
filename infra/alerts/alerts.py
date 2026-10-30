@@ -918,7 +918,10 @@ def major_item(e: dict) -> dict:
     m = e["major"]
     return {"title": str(m.get("title") or site_area(e)), "text": str(m.get("text") or sentences(plain(e.get("html")), 2)),
             "link": site_link(m.get("link")), "on": e.get("on"), **({"image": site_link(m["image"])} if m.get("image") else {}),
-            **({"x": False} if m.get("x") is False else {})}
+            **({"x": False} if m.get("x") is False else {}),
+            **({"lines": [{"label": str(l.get("label", "")), "text": str(l.get("text", "")), "link": site_link(l.get("link")),
+                           "x": str(l.get("x") or l.get("label", ""))} for l in m["lines"] if isinstance(l, dict)]}
+               if isinstance(m.get("lines"), list) else {})}
 
 
 def digest_item(e: dict) -> dict:
@@ -931,7 +934,13 @@ def digest_item(e: dict) -> dict:
 
 
 def major_text(m: dict) -> str:
+    """A major's channel post; a round-up ("lines" in the log) lists each change with its link instead of one text."""
     e = html.escape
+    if m.get("lines"):
+        body = [e(m["text"]), ""] if m.get("text") else []
+        body += [f"• <a href=\"{e(l['link'])}\">{e(l['label'])}</a>: {e(l['text'])}" for l in m["lines"]] + [""]
+        return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", ""] + body
+                         + [f"<a href=\"{e(SITE_LOG_LINK)}\">Every change in the Updates log</a>", "", f"<i>{e(SITE_NOTICE)}</i>"])
     return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", "", e(m["text"]), "",
                       f"<a href=\"{e(m['link'])}\">Open it on {e(link_host(m['link']))}</a>", "", f"<i>{e(SITE_NOTICE)}</i>"])
 
@@ -943,6 +952,8 @@ def link_host(link: str) -> str:
 
 
 def major_x(m: dict) -> str:
+    if m.get("lines"):  # a round-up: the title and one short line per change, as many as fit
+        return x_post([m["title"]] + [f"• {l['x']}" for l in m["lines"]], m["link"], foot=X_SITE_NOTE)
     t = re.sub(r"^New:\s*", "", m["title"])
     return x_post([f"New on Tau HUD: {t[:1].upper() + t[1:]}", m["text"]], m["link"], foot=X_SITE_NOTE)
 
@@ -1088,8 +1099,10 @@ class Telegram(Outlet):
     def enabled(self) -> bool:
         return bool(TELEGRAM_TOKEN and TELEGRAM_CHAT)
 
-    def send_text(self, text: str, buttons: dict | None = None) -> tuple[bool, float | None, str]:
-        msg = {"chat_id": TELEGRAM_CHAT, "text": text, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}}
+    def send_text(self, text: str, buttons: dict | None = None, picture: str | None = None) -> tuple[bool, float | None, str]:
+        """`picture`: a public image URL shown large above the text (a link preview of it), else no preview at all."""
+        preview = {"url": picture, "prefer_large_media": True, "show_above_text": True} if picture else {"is_disabled": True}
+        msg = {"chat_id": TELEGRAM_CHAT, "text": text, "parse_mode": "HTML", "link_preview_options": preview}
         if buttons is not None:
             msg["reply_markup"] = buttons
         elif TELEGRAM_BOT_NAME:
@@ -1800,6 +1813,13 @@ class Watcher:
                 if e["major"].get("skip"):
                     log.info("site updates: major %s is marked skip, not posted", k)
                 elif str(e.get("on") or "") >= oldest:
+                    covers = e["major"].get("covers") or []
+                    if covers:  # a round-up: the changes it names are not posted on their own, nor the digest so far
+                        gone = {"major:" + str(c) for c in covers}
+                        st["majors"] = [m for m in st["majors"] if m["key"] not in gone]
+                        for g in gone:
+                            seen.setdefault(g, round(now))
+                        st["pending"] = []
                     st["majors"].append({"key": k, **major_item(e)})
                 else:
                     log.info("site updates: major %s is older than %d days, not posted", k, SITE_MAJOR_MAX_AGE_DAYS)
@@ -1849,7 +1869,7 @@ class Watcher:
             return
         if st["majors"] and st["count"] < SITE_MAJOR_DAILY_CAP and now - st.get("last_major", 0) >= SITE_MAJOR_GAP:
             m = st["majors"][0]
-            if await self.site_send(tg, major_text(m), major_buttons(m), now):
+            if await self.site_send(tg, major_text(m), major_buttons(m), now, m.get("image")):
                 st["majors"].pop(0)
                 st["count"] += 1
                 st["last_major"] = round(now)
@@ -1868,10 +1888,11 @@ class Watcher:
                 st["pending"], st["last_digest"] = [], round(now)
             self.save_state()
 
-    async def site_send(self, tg: list, text: str, buttons: dict, now: float) -> bool:
+    async def site_send(self, tg: list, text: str, buttons: dict, now: float, picture: str | None = None) -> bool:
         st = self.state["site"]
         for o in tg:
-            ok, retry, err = await asyncio.to_thread(o.send_text, text, buttons)
+            ok, retry, err = await asyncio.to_thread(o.send_text, text, buttons, picture) if picture else \
+                await asyncio.to_thread(o.send_text, text, buttons)
             if not ok:
                 st["pause_until"] = now + (retry or 300)
                 log.warning("site update post failed (%s); trying again later", err)

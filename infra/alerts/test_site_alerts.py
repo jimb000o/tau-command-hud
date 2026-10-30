@@ -175,7 +175,40 @@ run(w9, at("2026-10-30", "08:00"))
 check(len(tg9.sent) == 2 and "nine" in tg9.sent[1][0] and "TAU HUD · new on the site" in tg9.sent[1][0], "next day single posts again")
 alerts.SITE_CATCHUP_AT = 99
 
-# a backfilled entry is logged, never posted
+# a round-up: one post with a line and a link per change; the majors it covers and the digest so far are not posted
+class FakePic(Fake):
+    def send_text(self, text, buttons=None, picture=None):
+        self.sent.append((text, buttons, picture))
+        return True, None, ""
+
+
+tgr = FakePic()
+wr = alerts.Watcher([tgr])
+wr.state.pop("site", None)
+run(wr, at("2026-10-29", "05:00"), [])
+covered = [major("2026-10-29", "HUD", "Troll box: a chat.", "trollbox", title="New: Troll box"),
+           major("2026-10-29", "Japanese", "Japanese.", "japanese", title="New: Japanese"), small("2026-10-29", "HUD", "HUD: he walks.")]
+run(wr, at("2026-10-29", "05:10"), covered)
+check(len(wr.state["site"]["majors"]) == 2 and len(wr.state["site"]["pending"]) == 1, "two majors and a small change wait")
+ru = major("2026-10-30", "Round-up", "Round-up.", "roundup-1", title="What's new on Tau HUD", link="/",
+           image="/assets/shots/roundup-1.png", covers=["trollbox", "japanese", "never-seen"],
+           lines=[{"label": "Troll box", "text": "a live chat on the HUD.", "link": "/", "x": "Troll box, a live chat"},
+                  {"label": "Agorzilla", "text": "one creature everyone feeds.", "link": "https://agorzilla.com"}])
+ru["major"]["text"] = "A busy few days."
+run(wr, at("2026-10-29", "05:20"), covered + [ru])
+check([m["key"] for m in wr.state["site"]["majors"]] == ["major:roundup-1"] and wr.state["site"]["pending"] == [],
+      "the round-up replaces the majors it covers and the digest so far")
+run(wr, at("2026-10-29", "08:00"))
+t, _, pic = tgr.sent[0]
+check(len(tgr.sent) == 1 and '• <a href="https://tauhud.com/">Troll box</a>: a live chat on the HUD.' in t
+      and '<a href="https://agorzilla.com">Agorzilla</a>' in t and "A busy few days." in t, "one post, a line and a link per change")
+check(pic == "https://tauhud.com/assets/shots/roundup-1.png", "its screenshot shows above the text")
+x = alerts.major_x(alerts.major_item(ru))
+check(x.startswith("What's new on Tau HUD\n\n• Troll box, a live chat\n• Agorzilla") and "http" not in x and x.endswith("#TauNet $AGRS"),
+      "X: the title and a short line per change, no links")
+run(wr, at("2026-10-29", "12:00"), covered + [ru])
+check(len(tgr.sent) == 1, "the covered majors never come back")
+
 w7 = alerts.Watcher([])
 w7.state.pop("site", None)
 run(w7, at("2026-10-29", "09:00"), [])
