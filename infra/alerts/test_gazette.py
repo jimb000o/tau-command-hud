@@ -221,7 +221,7 @@ check("43 rule changes" in c3["mae"]["a"][0]["en"] and "four wallets" in c3["mae
 check("Wallets, mind, not people" in json.dumps(c3["elias"]) and "from 23 wallets" in json.dumps(c3["elias"]), "Elias counts wallets, not people")
 ch = {"opponent": "Claude Opus 5.5", "start": END - 12 * 3600, "games": 10, "played": 10, "engine": 9, "model": 1, "done": True}
 c4 = gazette.cafe(week(), [], [], 4, e2["banner"], e2["teaser"], ch)
-check("chess engine written in Tau played ten games against Claude Opus 5.5. It won nine, lost one." in c4["prof"]["greet"]["en"] and "not something on the testnet chain" in json.dumps(c4["prof"]), "a finished chess round: result, and never 'on the chain'")
+check("chess engine written in Tau played ten games against Claude Opus 5.5. It won nine, lost one." in c4["prof"]["greet"]["en"] and "not something on the testnet chain" in json.dumps(c4["prof"]) and "Taumorrow built it" in json.dumps(c4["prof"]), "a finished chess round: result, and never 'on the chain'")
 c5 = gazette.cafe(week(), [], [], 4, e2["banner"], e2["teaser"], ch | {"played": 6, "engine": 5, "done": False})
 check("Six done so far: 5 to 1" in c5["prof"]["greet"]["en"], "a round still being played")
 check(gazette.cafe(week(), [], [], 4, e2["banner"], e2["teaser"], ch | {"start": END - 30 * 86400})["prof"]["greet"]["en"] in json.dumps(gazette.CHESS), "an old round is not talked about")

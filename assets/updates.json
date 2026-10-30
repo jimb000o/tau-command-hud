@@ -1884,5 +1884,10 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "News line: in the simulation it leaves out the lines that only concern the real chain, such as the ghosts in the waiting room, and switching between the two starts the line afresh."
+ },
+ {
+  "tag": "Gazette",
+  "on": "2026-10-30",
+  "html": "Daily Consensus café: the Professor now tells you about Taumorrow, who built a chess engine in the Tau language that plays Claude, and the books in the back room hold a printout of its games."
  }
 ]
