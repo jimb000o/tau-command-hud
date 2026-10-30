@@ -516,7 +516,16 @@ const offerIds = new Map(); // tx object -> offer id (hex)
 
 /* ------------------------------ relay ------------------------------ */
 function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = text; s.dataset.tip = tipText; }
-function send(cmd) { if (C.ws && C.ws.readyState === 1) C.ws.send(cmd); }
+// the relay allows each visitor a burst of 20 messages and then 2 a second, and answers anything above that with a bare
+// "rate_limit" that does not say which request it refused; so the page paces itself a little below that
+const OUT = { q: [], tokens: 12, t: Date.now(), timer: null };
+function send(cmd) { if (C.ws && C.ws.readyState === 1) { OUT.q.push(cmd); flush(); } }
+function flush() {
+  const now = Date.now(); OUT.tokens = Math.min(12, OUT.tokens + (now - OUT.t) / 1000 * 1.7); OUT.t = now;
+  while (OUT.q.length && OUT.tokens >= 1 && C.ws && C.ws.readyState === 1) { OUT.tokens--; C.ws.send(OUT.q.shift()); }
+  clearTimeout(OUT.timer);
+  if (OUT.q.length) OUT.timer = setTimeout(flush, 350);
+}
 // one random id per page view, kept in memory only (nothing stored in the browser), the same one nav.js sends, so the relay's online counter counts this page once
 function viewerId() {
   try {
@@ -532,7 +541,7 @@ function connect() {
   try { ws = SIM ? TauSim.socket() : new WebSocket(NODE); } catch (e) { return offline(e.message); }
   C.ws = ws;
   setState("wait", "Connecting", SIM ? "Building the simulated chain…" : `Reading the chain from ${NODE.replace(/^wss?:\/\//, "")}…`);
-  ws.onopen = () => { C.off = false; C.retry = 5000; setTimeout(pumpBalances, 500); ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); if (S.addr) lookup(S.addr); };
+  ws.onopen = () => { C.off = false; C.retry = 5000; OUT.q = []; OUT.tokens = 11; OUT.t = Date.now(); ws.send("hello version=1" + (viewerId() ? " viewer=" + viewerId() : "")); send("getgovernance"); loadFrom(0); if (S.addr) lookup(S.addr); };
   ws.onmessage = onMessage;
   ws.onclose = () => { if (C.ws === ws) offline("connection closed"); };
   ws.onerror = () => {};
@@ -547,10 +556,18 @@ function offline(why) {
 }
 // the first page says how long the chain is; the rest is asked for a few pages at a time, so a long chain loads in seconds, not minutes
 const PARALLEL = 4;
-function loadFrom(from) { C.loading = true; C.nextFrom = from; C.want = null; C.inflight = new Set([from]); send(`getblockrange ${from} ${PAGE}`); }
+function loadFrom(from) { C.loading = true; C.nextFrom = from; C.want = null; C.inflight = new Map([[from, Date.now()]]); send(`getblockrange ${from} ${PAGE}`); watchRanges(); }
+// a page the relay refused (rate limit) or never answered is asked for again
+function watchRanges() {
+  clearTimeout(C.rangeT);
+  if (!C.loading || !C.inflight) return;
+  const now = Date.now();
+  for (const [f, at] of C.inflight) if (now - at > 8000) { C.inflight.set(f, now); send(`getblockrange ${f} ${PAGE}`); }
+  C.rangeT = setTimeout(watchRanges, 2000);
+}
 function loadMore() {
-  while (C.inflight.size < PARALLEL && C.nextFrom <= C.want) { const f = C.nextFrom; C.nextFrom += PAGE; C.inflight.add(f); send(`getblockrange ${f} ${PAGE}`); }
-  if (!C.inflight.size) { C.loading = false; live(); rebuild(); }
+  while (C.inflight.size < PARALLEL && C.nextFrom <= C.want) { const f = C.nextFrom; C.nextFrom += PAGE; C.inflight.set(f, Date.now()); send(`getblockrange ${f} ${PAGE}`); }
+  if (!C.inflight.size) { C.loading = false; clearTimeout(C.rangeT); live(); rebuild(); pumpBalances(); }
 }
 function store(raw) {
   const h = Number((raw.header || {}).block_number);
@@ -569,7 +586,7 @@ const BAL = new Map(), balQ = [];
 let balBusy = null, balT = null;
 function queueBalances(addrs) { for (const a of addrs) if (!balQ.includes(a)) balQ.push(a); pumpBalances(); }
 function pumpBalances() {
-  if (balBusy || !balQ.length || SAMPLE || !C.ws || C.ws.readyState !== 1) return;
+  if (balBusy || !balQ.length || SAMPLE || C.loading || !C.ws || C.ws.readyState !== 1) return;   // the blocks first
   balBusy = balQ.shift(); send(`getbalance ${balBusy}`);
   clearTimeout(balT); balT = setTimeout(() => { balBusy = null; pumpBalances(); }, 4000);   // no answer: move on
 }
@@ -586,6 +603,7 @@ function onMessage(ev) {
   if (/^ok version/.test(text) || /^error/.test(text)) return;
   let msg; try { msg = JSON.parse(text); } catch { return; }
   const d = msg.data || {}, cmd = msg.command;
+  if (cmd === "rate_limit") { OUT.tokens = -2; return; }   // over the relay's budget: pause about two seconds; the watchdog asks again
   if (cmd === "getblockrange") {
     if (msg.status !== "ok") {
       if ((msg.error || {}).code === "NOT_READY") setTimeout(() => loadFrom(0), 3000); else { C.legacy = true; C.loading = false; send("getblocks 50"); }
@@ -593,7 +611,7 @@ function onMessage(ev) {
     }
     if (!C.inflight) return;
     (d.blocks || []).forEach(store);
-    const from = Number.isFinite(d.from) ? d.from : [...C.inflight][0];
+    const from = Number.isFinite(d.from) ? d.from : [...C.inflight.keys()][0];
     C.inflight.delete(from);
     if (C.want == null) { C.want = Number.isFinite(d.head) ? d.head : C.head; C.nextFrom = from + PAGE; }
     const got = C.blocks.reduce(n => n + 1, 0);
