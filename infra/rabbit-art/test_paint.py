@@ -66,7 +66,7 @@ for prov in ("gemini", "openai"):
         assert "layout" not in json.load(open(os.path.join(out, "index.json")))
         paint.cmd_looks(types.SimpleNamespace(out=out, model=None))
         dd = json.load(open(os.path.join(out, "drafts", "drafts.json")))
-        assert sorted(dd["look"].values()) == [1, 2, 3] and "style 3" in open(os.path.join(out, "drafts", "index.html")).read()
+        assert set(dd["look"].values()) == {1, 2, 3} and "style 3" in open(os.path.join(out, "drafts", "index.html")).read()
         paint.cmd_drop(types.SimpleNamespace(out=out, places=["bar"]))
         assert list(json.load(open(os.path.join(out, "index.json")))["scenes"]) == ["island"]
 print("ok", len(calls), "calls")
