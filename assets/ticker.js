@@ -92,7 +92,7 @@
       if (k === "live") it = fact();
       else if (k === "news") it = NEWS.length ? NEWS[newsAt++ % NEWS.length] : null;
       else if (k === "gazette") { it = gazette(); if (it && it.out) it = null; }
-      else if (k === "head") { const n = from((CFG.headlines || []).filter(h => !h.until || Date.now() < Date.parse(h.until)), headAt++); it = n && { kind: "note", text: n.text, href: n.href, mark: n.mark }; }
+      else if (k === "head") { const n = from((CFG.headlines || []).filter(h => (!h.until || Date.now() < Date.parse(h.until)) && (!h.mode || (h.mode === "live") !== sim())), headAt++); it = n && { kind: "note", text: n.text, href: n.href, mark: n.mark }; }
       else if (k === "pick") { const p = from(CFG.picks, pickAt++); it = p && { kind: "x", text: p.text, href: p.href, quote: true }; }
       else if (k === "invite") { const v = from(CFG.invites, inviteAt++); it = v && { kind: v.kind === "tg" ? "tg" : "x", text: v.text, href: v.href }; }
       if (it && it.text && (it.raw || translated(it.text))) return it;
@@ -170,6 +170,10 @@
   for (const ev of ["mouseenter", "focusin"]) view.addEventListener(ev, () => { paused = true; box.classList.add("held"); });
   for (const ev of ["mouseleave", "focusout"]) view.addEventListener(ev, () => { paused = false; box.classList.remove("held"); });
   addEventListener("resize", () => { W = view.clientWidth; });
+  /* switching between the real chain and the simulation starts the line afresh, so no line of the other mode stays on it */
+  let mode = document.body.dataset.mode;
+  new MutationObserver(() => { if (document.body.dataset.mode === mode) return; mode = document.body.dataset.mode; if (reduced) return; items.forEach(el => el.remove()); items = []; })
+    .observe(document.body, { attributes: true, attributeFilter: ["data-mode"] });
 
   Promise.all([
     fetch("assets/ticker.json", { cache: "no-cache" }).then(r => r.json()).then(j => { if (j && typeof j === "object") CFG = { ...CFG, ...j }; }).catch(() => {}).then(() => loadNews(true)),

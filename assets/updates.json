@@ -1879,5 +1879,10 @@
   "tag": "Gazette",
   "on": "2026-10-30",
   "html": "Daily Consensus café: when Sully gives the last stamp, he holds your full ticket up to the light and it turns gold, with a few words from him and a purr from Déjà. The golden ticket stays in the corner, and your Tau card shows it too. The sound of a page turning is about 40 % quieter."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: in the simulation it leaves out the lines that only concern the real chain, such as the ghosts in the waiting room, and switching between the two starts the line afresh."
  }
 ]
