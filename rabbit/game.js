@@ -75,59 +75,116 @@
     hana: "adf1b27a6cfe88b1c73f12ed38eaaef535f892ee2f2b695030427ecaef7d4e43deb89f7849f2f5550cc5eec711652174",
   };
 
-  /* ---------- portraits: painted faces that blink and talk ---------- */
   const looks = id => CANDS[id] || FOLK[id] || { skin: "#c68642", hair: "#222", style: "short", shirt: "#ddd" };
-  function face(g, id, t, talk, mood = 0) {
-    const L = looks(id), W = g.canvas.width, H = g.canvas.height, s = W / 120;
+  /* ---------- portraits: painted like the island, in flat inks with a hand-drawn line ----------
+     every islander has their own head, nose and posture; one side of the face is shaded in printed dots */
+  const INK = "#22303a";
+  const HEADS = {   // w, h: half-width and half-height of the head; jaw: how wide the chin is (0 narrow, 1 square); nose; bg: the colour of their print
+    marisol: { w: 21, h: 27, jaw: 0.35, nose: "straight", bg: "#2c8c88" }, tobias: { w: 24, h: 30, jaw: 0.9, nose: "long", bg: "#284b63" },
+    baako: { w: 27, h: 26, jaw: 0.7, nose: "round", bg: "#e9b44c" }, hana: { w: 21, h: 25, jaw: 0.25, nose: "button", bg: "#e2674f" },
+    rico: { w: 23, h: 27, jaw: 0.55, nose: "round", bg: "#e889a6" }, frost: { w: 19, h: 31, jaw: 0.3, nose: "hook", bg: "#7fb2d0" },
+    salado: { w: 27, h: 27, jaw: 0.8, nose: "round", bg: "#d9653f" }, lola: { w: 22, h: 26, jaw: 0.35, nose: "button", bg: "#2c8c88" },
+    sam: { w: 24, h: 28, jaw: 0.6, nose: "long", bg: "#5c9a4c" },
+  };
+  function face(g, id, t, talk, mood = 0, bare = false) {
+    const L = looks(id), H0 = HEADS[id] || { w: 22, h: 27, jaw: 0.5, nose: "straight", bg: "#2c8c88" }, W = g.canvas.width, s = W / 120;
     g.setTransform(s, 0, 0, s, 0, 0); g.clearRect(0, 0, 120, 120);
-    let gr = g.createRadialGradient(60, 40, 10, 60, 60, 80); gr.addColorStop(0, "rgba(255,240,210,.22)"); gr.addColorStop(1, "rgba(255,240,210,0)"); g.fillStyle = gr; g.fillRect(0, 0, 120, 120);
-    const bob = Math.sin(t * 0.002) * 0.8;
+    g.lineJoin = "round"; g.lineCap = "round";
+    const ink = (w = 2) => { g.strokeStyle = INK; g.lineWidth = w; g.stroke(); };
+    /* the print behind them: a disc in their colour with a few rays */
+    if (!bare) {
+      g.fillStyle = H0.bg; g.globalAlpha = 0.9; g.beginPath(); g.arc(60, 56, 50, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+      g.save(); g.beginPath(); g.arc(60, 56, 50, 0, Math.PI * 2); g.clip();
+      g.fillStyle = "rgba(251,243,223,.14)"; for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6 + t * 0.00005; g.beginPath(); g.moveTo(60, 56); g.arc(60, 56, 60, a, a + 0.18); g.closePath(); g.fill(); }
+      g.restore();
+    }
+    const bob = Math.sin(t * 0.002 + id.length) * 0.8, tilt = Math.sin(t * 0.0009 + id.length * 2) * 0.025 + (talk ? Math.sin(t * 0.006) * 0.02 : 0);
     g.translate(0, bob);
-    /* shoulders */
-    g.fillStyle = L.shirt; g.beginPath(); g.moveTo(14, 120); g.quadraticCurveTo(20, 88, 60, 86); g.quadraticCurveTo(100, 88, 106, 120); g.fill();
-    g.fillStyle = "rgba(0,0,0,.12)"; g.beginPath(); g.moveTo(60, 86); g.quadraticCurveTo(100, 88, 106, 120); g.lineTo(84, 120); g.quadraticCurveTo(80, 96, 60, 92); g.fill();
-    if (L.acc === "scarf") { g.fillStyle = L.accC; g.beginPath(); g.ellipse(60, 90, 22, 7, 0, 0, Math.PI * 2); g.fill(); }
-    /* neck and head */
-    g.fillStyle = L.skin; g.fillRect(52, 74, 16, 16);
-    if (L.style === "curls" || L.style === "bob" || L.style === "bun") { g.fillStyle = L.hair; g.beginPath(); g.ellipse(60, 52, 30, 33, 0, 0, Math.PI * 2); g.fill(); }
-    if (L.style === "curls") for (let i = 0; i < 12; i++) { const a = Math.PI * (0.9 + i / 11 * 1.2); g.beginPath(); g.arc(60 + Math.cos(a) * 31, 54 + Math.sin(a) * 33, 7, 0, Math.PI * 2); g.fill(); }
-    if (L.style === "afro") { g.fillStyle = L.hair; g.beginPath(); g.arc(60, 42, 32, 0, Math.PI * 2); g.fill(); }
-    gr = g.createLinearGradient(36, 0, 84, 0); gr.addColorStop(0, L.skin); gr.addColorStop(1, shade(L.skin, -0.18));
-    g.fillStyle = gr; g.beginPath(); g.ellipse(60, 54, 23, 27, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = shade(L.skin, -0.1); g.beginPath(); g.ellipse(37, 56, 4, 6, 0, 0, Math.PI * 2); g.ellipse(83, 56, 4, 6, 0, 0, Math.PI * 2); g.fill();
+    const cx = 60, cy = 54, hw = H0.w, hh = H0.h;
+    /* the torso: a flat shape with its collar, outlined */
+    g.fillStyle = L.shirt; g.beginPath(); g.moveTo(10, 122); g.bezierCurveTo(12, 96, 30, 86, 60, 85); g.bezierCurveTo(90, 86, 108, 96, 110, 122); g.closePath(); g.fill(); ink(2.2);
+    g.save(); g.clip(); dotsIn(g, 70, 84, 112, 122, 4, 1.3, "rgba(34,48,58,.35)"); g.restore();
+    torso(g, id, L, ink);
+    /* neck */
+    g.fillStyle = L.skin; g.beginPath(); g.moveTo(cx - 8, cy + hh - 8); g.lineTo(cx - 9, 88); g.quadraticCurveTo(cx, 92, cx + 9, 88); g.lineTo(cx + 8, cy + hh - 8); g.closePath(); g.fill(); ink(1.8);
+    g.save(); g.translate(cx, cy + hh); g.rotate(tilt); g.translate(-cx, -(cy + hh));
+    /* hair behind the head */
+    g.fillStyle = L.hair;
+    if (L.style === "afro") { g.beginPath(); for (let k = 0; k <= 18; k++) { const a = Math.PI * (0.85 + k / 18 * 1.3), r = 34 + (k % 2) * 4; k ? g.lineTo(cx + Math.cos(a) * r, cy - 8 + Math.sin(a) * r) : g.moveTo(cx + Math.cos(a) * r, cy - 8 + Math.sin(a) * r); } g.closePath(); g.fill(); ink(2); }
+    if (L.style === "curls") { for (let k = 0; k < 13; k++) { const a = Math.PI * (0.8 + k / 12 * 1.4); g.beginPath(); g.arc(cx + Math.cos(a) * (hw + 6), cy + 2 + Math.sin(a) * (hh + 4), 8, 0, Math.PI * 2); g.fill(); ink(1.6); } }
+    if (L.style === "bob") { g.beginPath(); g.moveTo(cx - hw - 6, cy + 16); g.lineTo(cx - hw - 4, cy - 10); g.quadraticCurveTo(cx, cy - hh - 16, cx + hw + 4, cy - 10); g.lineTo(cx + hw + 6, cy + 16); g.closePath(); g.fill(); ink(2); }
+    if (L.style === "bun") { g.beginPath(); g.ellipse(cx + 2, cy - hh - 4, 16, 10, 0.1, 0, Math.PI * 2); g.fill(); ink(2); }
+    /* the head */
+    const head = () => { g.beginPath(); g.moveTo(cx, cy - hh); g.bezierCurveTo(cx + hw * 1.15, cy - hh, cx + hw, cy + hh * 0.2, cx + hw * (0.55 + H0.jaw * 0.35), cy + hh * 0.75); g.quadraticCurveTo(cx + hw * 0.3, cy + hh * 1.02, cx, cy + hh); g.quadraticCurveTo(cx - hw * 0.3, cy + hh * 1.02, cx - hw * (0.55 + H0.jaw * 0.35), cy + hh * 0.75); g.bezierCurveTo(cx - hw, cy + hh * 0.2, cx - hw * 1.15, cy - hh, cx, cy - hh); g.closePath(); };
+    g.fillStyle = L.skin; [-1, 1].forEach(d => { g.beginPath(); g.ellipse(cx + d * (hw + 1), cy + 2, 4.5, 7, 0, 0, Math.PI * 2); g.fill(); ink(1.8); });
+    head(); g.fill(); ink(2.2);
+    g.save(); head(); g.clip();
+    g.fillStyle = shade(L.skin, -0.14); g.beginPath(); g.ellipse(cx + hw * 0.85, cy + 6, hw * 0.55, hh * 1.2, 0, 0, Math.PI * 2); g.fill();
+    dotsIn(g, cx + 2, cy - hh, cx + hw + 2, cy + hh, 3.4, 1.1, "rgba(34,48,58,.28)");
+    g.fillStyle = "rgba(226,103,79,.38)"; [-1, 1].forEach(d => { for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2; g.beginPath(); g.arc(cx + d * hw * 0.55 + Math.cos(a) * 3.2, cy + 10 + Math.sin(a) * 2, 0.9, 0, Math.PI * 2); g.fill(); } });
+    g.restore();
     /* hair on top */
     g.fillStyle = L.hair;
-    if (L.style === "short") { g.beginPath(); g.ellipse(60, 34, 23, 12, 0, Math.PI, 0); g.fill(); }
-    if (L.style === "side") { g.beginPath(); g.moveTo(37, 46); g.quadraticCurveTo(40, 24, 64, 26); g.quadraticCurveTo(84, 28, 83, 46); g.quadraticCurveTo(70, 34, 37, 46); g.fill(); }
-    if (L.style === "bob") { g.beginPath(); g.moveTo(36, 62); g.quadraticCurveTo(34, 26, 60, 26); g.quadraticCurveTo(86, 26, 84, 62); g.lineTo(80, 62); g.quadraticCurveTo(78, 38, 56, 36); g.quadraticCurveTo(42, 40, 40, 62); g.fill(); }
-    if (L.style === "bun") { g.beginPath(); g.arc(60, 22, 9, 0, Math.PI * 2); g.fill(); g.beginPath(); g.ellipse(60, 36, 24, 12, 0, Math.PI, 0); g.fill(); }
-    if (L.style === "curls") { g.beginPath(); g.ellipse(60, 33, 24, 11, 0, Math.PI, 0); g.fill(); }
-    /* eyes: blink every few seconds, look toward the reader */
-    const blink = (t % 3700) < 120 ? 0.1 : 1, look = Math.sin(t * 0.0007) * 1.2;
-    for (const x of [51, 69]) {
-      g.fillStyle = "#fff"; g.beginPath(); g.ellipse(x, 54, 5, 3.6 * blink, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = "#2a1a10"; g.beginPath(); g.arc(x + look, 54.5, 2.3 * Math.max(blink, 0.3), 0, Math.PI * 2); g.fill();
-      g.fillStyle = "rgba(255,255,255,.8)"; g.fillRect(x + look + 0.6, 53, 1, 1);
+    const top = (pts) => { g.beginPath(); pts(); g.closePath(); g.fill(); ink(2); };
+    if (L.style === "short") top(() => { g.moveTo(cx - hw - 1, cy - 6); g.quadraticCurveTo(cx - hw, cy - hh - 6, cx, cy - hh - 5); g.quadraticCurveTo(cx + hw, cy - hh - 6, cx + hw + 1, cy - 6); g.quadraticCurveTo(cx + hw * 0.4, cy - hh + 4, cx, cy - hh + 6); g.quadraticCurveTo(cx - hw * 0.5, cy - hh + 4, cx - hw - 1, cy - 6); });
+    if (L.style === "side") top(() => { g.moveTo(cx - hw - 2, cy - 2); g.quadraticCurveTo(cx - hw - 4, cy - hh - 8, cx + 4, cy - hh - 7); g.quadraticCurveTo(cx + hw + 6, cy - hh - 4, cx + hw + 2, cy - 4); g.quadraticCurveTo(cx + hw * 0.2, cy - hh + 2, cx - hw * 0.5, cy - hh + 10); g.quadraticCurveTo(cx - hw + 2, cy - 10, cx - hw - 2, cy - 2); });
+    if (L.style === "bob") top(() => { g.moveTo(cx - hw - 3, cy + 4); g.quadraticCurveTo(cx - hw - 2, cy - hh - 6, cx, cy - hh - 6); g.quadraticCurveTo(cx + hw + 2, cy - hh - 6, cx + hw + 3, cy + 4); g.lineTo(cx + hw - 3, cy - 4); g.lineTo(cx + 6, cy - hh + 10); g.lineTo(cx - hw + 3, cy - 6); });
+    if (L.style === "bun" || L.style === "curls") top(() => { g.moveTo(cx - hw - 1, cy - 2); g.quadraticCurveTo(cx - hw - 2, cy - hh - 6, cx, cy - hh - 5); g.quadraticCurveTo(cx + hw + 2, cy - hh - 6, cx + hw + 1, cy - 2); g.quadraticCurveTo(cx + hw * 0.6, cy - hh + 6, cx, cy - hh + 5); g.quadraticCurveTo(cx - hw * 0.6, cy - hh + 6, cx - hw - 1, cy - 2); });
+    if (L.style === "afro") top(() => { g.moveTo(cx - hw - 2, cy - 4); g.quadraticCurveTo(cx, cy - hh - 2, cx + hw + 2, cy - 4); g.quadraticCurveTo(cx, cy - hh + 8, cx - hw - 2, cy - 4); });
+    if (L.style !== "bald") { g.strokeStyle = "rgba(251,243,223,.25)"; g.lineWidth = 1; for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(cx - 10 + k * 6, cy - hh - 3); g.quadraticCurveTo(cx - 6 + k * 6, cy - hh, cx - 4 + k * 7, cy - hh + 4); g.stroke(); } }
+    /* eyes: almond shapes under a heavy ink lid; they blink and glance */
+    const blink = (t + id.length * 900) % 4100 < 130 ? 0.08 : 1, look = Math.sin(t * 0.0007 + id.length) * 1.4, ey = cy + 1;
+    for (const d of [-1, 1]) {
+      const ex = cx + d * hw * 0.42;
+      g.fillStyle = "#fbf6ea"; g.beginPath(); g.moveTo(ex - 6, ey); g.quadraticCurveTo(ex, ey - 5 * blink, ex + 6, ey); g.quadraticCurveTo(ex, ey + 3.6 * blink, ex - 6, ey); g.fill();
+      if (blink > 0.5) { g.save(); g.clip(); g.fillStyle = "#3a2412"; g.beginPath(); g.arc(ex + look, ey, 3, 0, Math.PI * 2); g.fill(); g.fillStyle = INK; g.beginPath(); g.arc(ex + look, ey, 1.5, 0, Math.PI * 2); g.fill(); g.fillStyle = "#fff"; g.fillRect(ex + look + 0.6, ey - 1.8, 1.3, 1.3); g.restore(); }
+      g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.moveTo(ex - 6.5, ey + 0.4); g.quadraticCurveTo(ex, ey - 5.6 * blink, ex + 6.5, ey - 0.4); g.stroke();
+      g.lineWidth = 1; g.beginPath(); g.moveTo(ex - 4, ey + 3.4 * blink); g.quadraticCurveTo(ex, ey + 4.2 * blink, ex + 4, ey + 3 * blink); g.stroke();
+      /* brows: the mood lives here */
+      const br = mood < 0 ? 2.4 : mood > 0 ? -2 : 0, talkUp = talk ? Math.abs(Math.sin(t * 0.004)) * 1.2 : 0;
+      g.strokeStyle = L.hair === "#eee" || L.hair === "#e0e0e0" || L.hair === "#9a9aa0" ? "#6a6a70" : L.hair; g.lineWidth = id === "frost" || id === "salado" || id === "sam" ? 3.4 : 2.6;
+      g.beginPath(); g.moveTo(ex - 7 * d * -1, ey - 8 - talkUp + (d < 0 ? 0 : 0)); g.quadraticCurveTo(ex, ey - 11 - talkUp - br * 0.3, ex + 7 * d, ey - 8 + br - talkUp); g.stroke();
     }
-    g.strokeStyle = shade(L.hair === "#eee" || L.hair === "#e0e0e0" ? "#999" : L.hair, 0); g.lineWidth = 1.8; g.lineCap = "round";
-    const br = mood < 0 ? 2 : mood > 0 ? -1.5 : 0;
-    g.beginPath(); g.moveTo(45, 47 + br); g.lineTo(56, 46 - br * 0.5); g.moveTo(64, 46 - br * 0.5); g.lineTo(75, 47 + br); g.stroke();
-    /* nose and mouth: the mouth moves while the line is being said */
-    g.strokeStyle = shade(L.skin, -0.3); g.lineWidth = 1.4; g.beginPath(); g.moveTo(60, 56); g.quadraticCurveTo(57, 63, 61, 64); g.stroke();
-    const open = talk ? Math.abs(Math.sin(t * 0.025)) * 4 + Math.abs(Math.sin(t * 0.011)) * 2 : 0;
-    g.fillStyle = "#5a2a2a"; g.beginPath(); g.ellipse(60, 70 + open * 0.2, 7, 1.2 + open, 0, 0, Math.PI * 2); g.fill();
-    if (!talk) { g.strokeStyle = shade(L.skin, -0.35); g.lineWidth = 1.6; g.beginPath(); g.moveTo(53, 69); g.quadraticCurveTo(60, 69 + mood * 3 + 1, 67, 69); g.stroke(); }
-    /* what they wear */
-    if (L.acc === "glasses") { g.strokeStyle = L.accC; g.lineWidth = 1.5; g.strokeRect(44, 50, 13, 9); g.strokeRect(63, 50, 13, 9); g.beginPath(); g.moveTo(57, 54); g.lineTo(63, 54); g.stroke(); }
-    if (L.acc === "monocle") { g.strokeStyle = L.accC; g.lineWidth = 1.5; g.beginPath(); g.arc(69, 54, 6.5, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.moveTo(75, 56); g.quadraticCurveTo(80, 70, 76, 84); g.stroke(); }
-    if (L.acc === "mustache") { g.fillStyle = L.accC; g.beginPath(); g.ellipse(55, 66, 6, 2.6, 0.2, 0, Math.PI * 2); g.ellipse(65, 66, 6, 2.6, -0.2, 0, Math.PI * 2); g.fill(); }
-    if (L.acc === "beard") { g.fillStyle = L.accC; g.beginPath(); g.moveTo(38, 60); g.quadraticCurveTo(42, 92, 60, 92); g.quadraticCurveTo(78, 92, 82, 60); g.quadraticCurveTo(70, 76, 60, 74); g.quadraticCurveTo(50, 76, 38, 60); g.fill(); }
-    if (L.acc === "cap") { g.fillStyle = L.accC; g.beginPath(); g.ellipse(60, 33, 26, 10, 0, Math.PI, 0); g.fill(); g.fillRect(34, 32, 52, 5); g.fillStyle = "#111"; g.fillRect(36, 36, 48, 3); g.fillStyle = "#d9b44a"; g.beginPath(); g.arc(60, 28, 3, 0, Math.PI * 2); g.fill(); }
-    if (L.acc === "straw") { g.fillStyle = L.accC; g.beginPath(); g.ellipse(60, 34, 36, 7, 0, 0, Math.PI * 2); g.fill(); g.beginPath(); g.ellipse(60, 30, 19, 11, 0, Math.PI, 0); g.fill(); g.fillStyle = "#8a5a2a"; g.fillRect(41, 29, 38, 3); }
-    if (L.acc === "phones") { g.strokeStyle = "#222"; g.lineWidth = 4; g.beginPath(); g.arc(60, 50, 27, Math.PI * 1.05, Math.PI * 1.95); g.stroke(); g.fillStyle = L.accC; g.fillRect(31, 46, 8, 14); g.fillRect(81, 46, 8, 14); }
-    if (L.acc === "flower") { g.fillStyle = L.accC; for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; g.beginPath(); g.arc(80 + Math.cos(a) * 4, 34 + Math.sin(a) * 4, 3.4, 0, Math.PI * 2); g.fill(); } g.fillStyle = "#ffd84a"; g.beginPath(); g.arc(80, 34, 2.4, 0, Math.PI * 2); g.fill(); }
-    if (L.acc === "beard" || L.style === "bald") { g.fillStyle = "rgba(255,255,255,.12)"; g.beginPath(); g.ellipse(54, 36, 8, 4, -0.3, 0, Math.PI * 2); g.fill(); }
+    /* the nose, each one different */
+    g.strokeStyle = INK; g.lineWidth = 1.8; g.beginPath();
+    const ny = cy + 3;
+    if (H0.nose === "long") { g.moveTo(cx - 1, ny - 4); g.quadraticCurveTo(cx + 5, ny + 6, cx + 3, ny + 11); g.quadraticCurveTo(cx, ny + 13, cx - 3, ny + 11); }
+    else if (H0.nose === "hook") { g.moveTo(cx, ny - 5); g.quadraticCurveTo(cx + 7, ny + 2, cx + 4, ny + 10); g.lineTo(cx - 1, ny + 9); }
+    else if (H0.nose === "round") { g.moveTo(cx - 2, ny - 2); g.quadraticCurveTo(cx - 1, ny + 4, cx - 5, ny + 7); g.quadraticCurveTo(cx, ny + 12, cx + 5, ny + 7); g.quadraticCurveTo(cx + 2, ny + 4, cx + 2, ny - 2); }
+    else if (H0.nose === "button") { g.moveTo(cx - 3, ny + 7); g.quadraticCurveTo(cx, ny + 10, cx + 3, ny + 7); }
+    else { g.moveTo(cx + 1, ny - 3); g.lineTo(cx + 3, ny + 8); g.lineTo(cx - 2, ny + 9); }
+    g.stroke();
+    /* the mouth: an ink line when quiet, open and moving while the line is said */
+    const my = cy + hh * 0.62, open = talk ? Math.abs(Math.sin(t * 0.025)) * 3.6 + Math.abs(Math.sin(t * 0.011)) * 2 : 0, mw = 7 + (id === "baako" || id === "rico" ? 2 : 0);
+    if (open > 0.6) { g.fillStyle = "#5a1f22"; g.beginPath(); g.moveTo(cx - mw, my); g.quadraticCurveTo(cx, my - 1.5, cx + mw, my); g.quadraticCurveTo(cx, my + open * 2, cx - mw, my); g.fill(); ink(1.8); g.fillStyle = "#e2674f"; g.beginPath(); g.ellipse(cx, my + open * 0.9, mw * 0.45, open * 0.45, 0, 0, Math.PI); g.fill(); }
+    else { g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(cx - mw, my - mood); g.quadraticCurveTo(cx, my + 3.4 + mood * 3, cx + mw, my - mood); g.stroke(); g.lineWidth = 1.2; g.beginPath(); g.moveTo(cx + mw + 1, my - 2 - mood); g.lineTo(cx + mw - 1, my + 1); g.stroke(); }
+    accessories(g, id, L, cx, cy, hw, hh, t, ink);
+    g.restore();
     g.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  function dotsIn(g, x0, y0, x1, y1, step, r, c) { g.fillStyle = c; for (let y = y0; y < y1; y += step) for (let x = x0 + ((y / step) % 2 ? step / 2 : 0); x < x1; x += step) { const k = (x - x0) / (x1 - x0); g.beginPath(); g.arc(x, y, r * k + 0.2, 0, Math.PI * 2); g.fill(); } }
+  function torso(g, id, L, ink) {
+    if (id === "tobias") { g.fillStyle = "#1f3550"; g.beginPath(); g.moveTo(10, 122); g.bezierCurveTo(12, 96, 30, 86, 52, 85); g.lineTo(60, 104); g.lineTo(68, 85); g.bezierCurveTo(90, 86, 108, 96, 110, 122); g.closePath(); g.fill(); ink(2.2); g.fillStyle = "#e9b44c"; [[60, 110], [60, 118]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 2.4, 0, Math.PI * 2); g.fill(); ink(1); }); [[22, 96], [98, 96]].forEach(([x, y]) => { g.beginPath(); g.ellipse(x, y, 12, 4, x < 60 ? 0.4 : -0.4, 0, Math.PI * 2); g.fill(); ink(1.4); }); }
+    if (id === "frost" || id === "salado") { const suit = id === "frost" ? "#2a3f66" : "#c0533f"; g.fillStyle = suit; g.beginPath(); g.moveTo(10, 122); g.bezierCurveTo(12, 96, 30, 86, 50, 85); g.lineTo(60, 120); g.lineTo(70, 85); g.bezierCurveTo(90, 86, 108, 96, 110, 122); g.closePath(); g.fill(); ink(2.2); g.fillStyle = id === "frost" ? "#7fb2d0" : "#e9b44c"; g.beginPath(); g.moveTo(57, 92); g.lineTo(63, 92); g.lineTo(64, 116); g.lineTo(60, 120); g.lineTo(56, 116); g.closePath(); g.fill(); ink(1.4); if (id === "salado") { g.fillStyle = "#fbf3df"; g.beginPath(); g.moveTo(32, 100); g.lineTo(38, 96); g.lineTo(40, 103); g.closePath(); g.fill(); ink(1.2); } }
+    if (id === "rico" || id === "baako") { g.fillStyle = id === "rico" ? "#fbf3df" : "#2f6440"; for (let k = 0; k < 9; k++) { const x = 22 + (k * 37) % 78, y = 96 + (k * 13) % 22; for (let p = 0; p < 5; p++) { const a = p / 5 * Math.PI * 2; g.beginPath(); g.ellipse(x + Math.cos(a) * 2.4, y + Math.sin(a) * 2.4, 2.2, 1.3, a, 0, Math.PI * 2); g.fill(); } g.fillStyle = id === "rico" ? "#e9b44c" : "#fbf3df"; g.beginPath(); g.arc(x, y, 1.2, 0, Math.PI * 2); g.fill(); g.fillStyle = id === "rico" ? "#fbf3df" : "#2f6440"; } g.fillStyle = L.shirt; g.beginPath(); g.moveTo(48, 86); g.lineTo(60, 102); g.lineTo(72, 86); g.lineTo(66, 85); g.lineTo(60, 94); g.lineTo(54, 85); g.closePath(); g.fill(); ink(1.6); }
+    if (id === "hana") { g.fillStyle = "#fbf3df"; g.beginPath(); g.moveTo(46, 86); g.lineTo(60, 96); g.lineTo(74, 86); g.lineTo(70, 98); g.lineTo(60, 100); g.lineTo(50, 98); g.closePath(); g.fill(); ink(1.6); g.fillStyle = "#e9b44c"; g.fillRect(84, 100, 4, 16); g.beginPath(); g.rect(84, 100, 4, 16); ink(1); }
+    if (id === "sam") { g.strokeStyle = "rgba(251,243,223,.25)"; g.lineWidth = 1.4; for (let x = 16; x < 106; x += 6) { g.beginPath(); g.moveTo(x, 96); g.lineTo(x + 2, 122); g.stroke(); } g.fillStyle = L.shirt; g.beginPath(); g.ellipse(60, 88, 20, 6, 0, 0, Math.PI * 2); g.fill(); ink(1.8); }
+    if (id === "lola") { g.fillStyle = "#e2674f"; g.beginPath(); g.moveTo(40, 122); g.lineTo(44, 98); g.lineTo(76, 98); g.lineTo(80, 122); g.closePath(); g.fill(); ink(1.8); g.strokeStyle = "#e2674f"; g.lineWidth = 3; g.beginPath(); g.moveTo(44, 98); g.lineTo(50, 86); g.moveTo(76, 98); g.lineTo(70, 86); g.stroke(); }
+    if (L.acc === "scarf") { g.fillStyle = L.accC; g.beginPath(); g.moveTo(40, 88); g.quadraticCurveTo(60, 98, 80, 88); g.quadraticCurveTo(82, 94, 76, 96); g.lineTo(82, 116); g.lineTo(72, 114); g.lineTo(70, 98); g.quadraticCurveTo(54, 100, 40, 94); g.closePath(); g.fill(); ink(1.8); g.fillStyle = "rgba(251,243,223,.7)"; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(46 + k * 7, 93 + Math.sin(k) * 1.5, 1.2, 0, Math.PI * 2); g.fill(); } }
+  }
+  function accessories(g, id, L, cx, cy, hw, hh, t, ink) {
+    const A = L.acc;
+    if (A === "glasses") { g.strokeStyle = INK; g.lineWidth = 2; [-1, 1].forEach(d => { g.beginPath(); g.rect(cx + d * hw * 0.42 - 7.5, cy - 5, 15, 11); g.stroke(); }); g.beginPath(); g.moveTo(cx - 3, cy - 1); g.lineTo(cx + 3, cy - 1); g.stroke(); g.fillStyle = "rgba(255,255,255,.35)"; [-1, 1].forEach(d => { g.beginPath(); g.moveTo(cx + d * hw * 0.42 - 5, cy + 4); g.lineTo(cx + d * hw * 0.42, cy - 4); g.lineTo(cx + d * hw * 0.42 + 2, cy - 4); g.lineTo(cx + d * hw * 0.42 - 3, cy + 4); g.fill(); }); }
+    if (A === "monocle") { g.strokeStyle = "#e9b44c"; g.lineWidth = 2.2; g.beginPath(); g.arc(cx + hw * 0.42, cy + 1, 8, 0, Math.PI * 2); g.stroke(); g.strokeStyle = INK; g.lineWidth = 1; g.stroke(); g.strokeStyle = "#e9b44c"; g.lineWidth = 1.2; g.beginPath(); g.moveTo(cx + hw * 0.42 + 7, cy + 5); g.quadraticCurveTo(cx + hw + 6, cy + 24, cx + hw - 2, cy + 36); g.stroke(); }
+    if (A === "mustache") { g.fillStyle = L.accC; g.beginPath(); g.moveTo(cx, cy + 12); g.bezierCurveTo(cx - 6, cy + 9, cx - 16, cy + 10, cx - 20, cy + 6); g.bezierCurveTo(cx - 18, cy + 16, cx - 6, cy + 18, cx, cy + 15); g.bezierCurveTo(cx + 6, cy + 18, cx + 18, cy + 16, cx + 20, cy + 6); g.bezierCurveTo(cx + 16, cy + 10, cx + 6, cy + 9, cx, cy + 12); g.fill(); ink(1.6); }
+    if (A === "beard") { g.fillStyle = "#f4efe4"; g.beginPath(); g.moveTo(cx - hw - 1, cy + 2); g.bezierCurveTo(cx - hw, cy + hh + 18, cx - 6, cy + hh + 26, cx, cy + hh + 24); g.bezierCurveTo(cx + 6, cy + hh + 26, cx + hw, cy + hh + 18, cx + hw + 1, cy + 2); g.bezierCurveTo(cx + hw * 0.6, cy + 14, cx + 8, cy + 10, cx, cy + 14); g.bezierCurveTo(cx - 8, cy + 10, cx - hw * 0.6, cy + 14, cx - hw - 1, cy + 2); g.fill(); ink(2); g.strokeStyle = "rgba(34,48,58,.3)"; g.lineWidth = 1; for (let k = -3; k <= 3; k++) { g.beginPath(); g.moveTo(cx + k * 5, cy + 18); g.quadraticCurveTo(cx + k * 6, cy + hh + 6, cx + k * 3, cy + hh + 18); g.stroke(); } g.fillStyle = "#5a1f22"; g.beginPath(); g.ellipse(cx, cy + hh * 0.62, 5, 1.6 + (L.talking || 0), 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#1f2a3a"; g.beginPath(); g.moveTo(cx - hw - 6, cy - hh + 8); g.quadraticCurveTo(cx, cy - hh - 18, cx + hw + 6, cy - hh + 8); g.closePath(); g.fill(); ink(2); g.fillStyle = "#1f2a3a"; g.beginPath(); g.ellipse(cx, cy - hh + 8, hw + 10, 4, 0, 0, Math.PI * 2); g.fill(); ink(2); g.fillStyle = "#e9b44c"; g.beginPath(); g.arc(cx, cy - hh, 3, 0, Math.PI * 2); g.fill(); ink(1); }
+    if (A === "cap") { g.fillStyle = L.accC; g.beginPath(); g.moveTo(cx - hw - 3, cy - hh + 8); g.quadraticCurveTo(cx - hw - 4, cy - hh - 12, cx + 4, cy - hh - 12); g.quadraticCurveTo(cx + hw + 6, cy - hh - 10, cx + hw + 3, cy - hh + 8); g.closePath(); g.fill(); ink(2); g.fillStyle = INK; g.beginPath(); g.moveTo(cx - hw - 4, cy - hh + 8); g.lineTo(cx + hw + 4, cy - hh + 8); g.quadraticCurveTo(cx + hw + 2, cy - hh + 14, cx, cy - hh + 14); g.quadraticCurveTo(cx - hw - 2, cy - hh + 14, cx - hw - 4, cy - hh + 8); g.fill(); g.fillStyle = "#fbf3df"; g.fillRect(cx - hw - 2, cy - hh + 2, hw * 2 + 4, 4); g.fillStyle = "#e9b44c"; g.beginPath(); g.moveTo(cx, cy - hh - 8); g.lineTo(cx + 4, cy - hh - 2); g.lineTo(cx, cy - hh + 3); g.lineTo(cx - 4, cy - hh - 2); g.closePath(); g.fill(); ink(1); }
+    if (A === "straw") { g.fillStyle = "#e9c46a"; g.beginPath(); g.ellipse(cx, cy - hh + 6, hw + 20, 7, 0, 0, Math.PI * 2); g.fill(); ink(2); g.beginPath(); g.moveTo(cx - hw + 2, cy - hh + 5); g.quadraticCurveTo(cx - hw, cy - hh - 16, cx, cy - hh - 16); g.quadraticCurveTo(cx + hw, cy - hh - 16, cx + hw - 2, cy - hh + 5); g.closePath(); g.fill(); ink(2); g.fillStyle = "#e2674f"; g.fillRect(cx - hw + 2, cy - hh - 1, hw * 2 - 4, 5); g.strokeStyle = "rgba(34,48,58,.35)"; g.lineWidth = 1; for (let k = -5; k <= 5; k++) { g.beginPath(); g.moveTo(cx + k * 4, cy - hh - 14); g.lineTo(cx + k * 5, cy - hh + 4); g.stroke(); } }
+    if (A === "phones") { g.strokeStyle = INK; g.lineWidth = 5; g.beginPath(); g.arc(cx, cy - 6, hw + 12, Math.PI * 1.08, Math.PI * 1.92); g.stroke(); g.strokeStyle = "#e9b44c"; g.lineWidth = 2.5; g.stroke(); [-1, 1].forEach(d => { g.fillStyle = L.accC; g.beginPath(); g.ellipse(cx + d * (hw + 5), cy + 2, 7, 11, 0, 0, Math.PI * 2); g.fill(); ink(2); g.fillStyle = INK; g.beginPath(); g.ellipse(cx + d * (hw + 6), cy + 2, 3, 6, 0, 0, Math.PI * 2); g.fill(); });
+      g.fillStyle = INK; [-1, 1].forEach(d => { g.beginPath(); g.moveTo(cx + d * 2, cy - 4); g.lineTo(cx + d * (hw * 0.42 + 9), cy - 5); g.quadraticCurveTo(cx + d * (hw * 0.42 + 8), cy + 6, cx + d * hw * 0.42, cy + 5); g.quadraticCurveTo(cx + d * 3, cy + 4, cx + d * 2, cy - 4); g.fill(); }); g.fillRect(cx - 3, cy - 4, 6, 2); g.fillStyle = "rgba(127,208,194,.7)"; [-1, 1].forEach(d => { g.beginPath(); g.moveTo(cx + d * (hw * 0.42 + 5), cy - 3); g.lineTo(cx + d * (hw * 0.42 + 2), cy + 2); g.lineTo(cx + d * (hw * 0.42), cy + 2); g.lineTo(cx + d * (hw * 0.42 + 3), cy - 3); g.fill(); }); }
+    if (A === "flower") { [["#e889a6", 0], ["#e9b44c", 1]].forEach(([c, j]) => { const fx = cx + hw + 2 - j * 8, fy = cy - hh + 6 + j * 4; g.fillStyle = c; for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2 + j; g.beginPath(); g.ellipse(fx + Math.cos(a) * 5, fy + Math.sin(a) * 5, 4.5, 3, a, 0, Math.PI * 2); g.fill(); ink(1.2); } g.fillStyle = "#e2674f"; g.beginPath(); g.arc(fx, fy, 2.4, 0, Math.PI * 2); g.fill(); }); g.fillStyle = "#e9b44c"; g.beginPath(); g.arc(cx - hw - 1, cy + 12, 2.6, 0, Math.PI * 2); g.fill(); ink(1); }
+    if (A === "scarf") { g.fillStyle = L.accC; g.beginPath(); g.moveTo(cx - hw - 3, cy - 2); g.quadraticCurveTo(cx - hw - 4, cy - hh - 14, cx + 2, cy - hh - 16); g.quadraticCurveTo(cx + hw + 6, cy - hh - 12, cx + hw + 3, cy - 2); g.quadraticCurveTo(cx + hw * 0.5, cy - hh + 2, cx, cy - hh + 3); g.quadraticCurveTo(cx - hw * 0.5, cy - hh + 2, cx - hw - 3, cy - 2); g.fill(); ink(2); g.fillStyle = "rgba(251,243,223,.75)"; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(cx - 14 + k * 6, cy - hh - 6 + Math.sin(k * 1.3) * 3, 1.3, 0, Math.PI * 2); g.fill(); } g.beginPath(); g.moveTo(cx + hw + 1, cy - hh - 4); g.quadraticCurveTo(cx + hw + 14, cy - hh - 10 + Math.sin(t * 0.003) * 2, cx + hw + 12, cy - hh + 6); g.strokeStyle = L.accC; g.lineWidth = 4; g.stroke(); }
   }
   function shade(hex, k) {
     const n = parseInt(hex.slice(1).padEnd(6, hex.slice(1)), 16), c = [n >> 16 & 255, n >> 8 & 255, n & 255].map(v => Math.max(0, Math.min(255, Math.round(v + (k > 0 ? (255 - v) * k : v * k)))));
@@ -282,7 +339,8 @@
     $("cvCoins").textContent = F("{n} coins", { n: G.coins[G.me] });
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
     const last = G.news[G.news.length - 1];
-    $("cvNews").textContent = last ? last.s : T("The Key Crier: five days to the election. Everything anyone does is written in the Book.");
+    if (last && last !== DJ.said) { DJ.said = last; onAir(F("From the Book: {x}", { x: last.s }), 1); }
+    else if (!DJ.text) $("cvNews").textContent = last ? last.s : T("The Key Crier: five days to the election. Everything anyone does is written in the Book.");
     SC.setHour(G.over ? 2.4 : G.move >= MOVES ? 3 : G.move * 0.9);
     SC.rabbit(G.over || G.move >= MOVES ? null : hint()[0]);
   }
@@ -298,22 +356,24 @@
   function openCard(place, build) {
     closeCard(true);
     const side = innerWidth < 760 ? 0 : (SC.places[place] && SC.places[place].x > 820 ? -1 : 1);
-    if (place) SC.focus(place, side); SC.glow(place);
+    if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "bar" ? 1 : 0.6 }); } SC.glow(place);
     const box = el("section", { class: "cv-card" + (side < 0 ? " left" : ""), role: "dialog", "aria-modal": "false" });
     const close = el("button", { type: "button", class: "cv-x", "aria-label": T("Back to the island"), onclick: () => closeCard(), text: "✕" });
     box.append(close);
     build(box);
     $("cvStage").append(box); UI.card = box; $("cvStage").classList.add("carded");
+    SC.hostAt(innerWidth < 760 ? box.offsetTop : null);   // on a phone the one you talk to stands above the sheet
     SND.sfx("open");
     setTimeout(() => { const b = box.querySelector(".cv-acts button:not([disabled])"); if (b && !matchMedia("(pointer: coarse)").matches) b.focus({ preventScroll: true }); }, 50);
   }
   function closeCard(keep) {
-    if (UI.card) { UI.card.remove(); UI.card = null; } $("cvStage").classList.remove("carded");
-    if (!keep) { SC.focus(null); SC.glow(null); SND.set({ radio: false, tense: false }); }
+    if (UI.card) { UI.card.remove(); UI.card = null; } $("cvStage").classList.remove("carded"); SC.host(null);
+    if (!keep) { SC.focus(null); SC.glow(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); }
   }
   /* a card: who speaks, what they say, what you can do */
   function scene(box, who, title, line, acts, extra) {
     const f = portrait(who, innerWidth < 760 ? 64 : 92, 0);
+    SC.host((g, t) => face(g, who, t, t < f._f.talk, f._f.mood, true));   // the one you talk to stands in the room, life-size
     box.append(el("div", { class: "cv-who" }, f, el("div", null, el("b", { translate: "no", text: nm(who) }), el("small", { text: T((CANDS[who] || FOLK[who] || {}).role || "") }))));
     if (title) box.append(el("h3", { text: title }));
     if (line) { const q = el("p", { class: "cv-line", text: line }); box.append(q); say(f, Math.min(4200, 600 + line.length * 38)); }
@@ -492,6 +552,88 @@
     "Rico says he only plays hits. The Book says he plays whatever is paid for.", "Old Sam reminds readers that the Book is open every day and has never once been wrong about who did what.",
     "Classified: honest candidate wanted. Must not mind being written down.", "The black cat was seen crossing the square. Twice. Sam says it is nothing.",
   ];
+
+  /* ---------- Radio Coco: Rico at the microphone, now and then, about what is going on ---------- */
+  const DJ = { said: null, text: "", face: null, next: performance.now() + 9000, last: -1 };
+  function onAir(line, urgent) {
+    const box = $("cvRadio"); if (!box) return;
+    if (!DJ.face) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }
+    DJ.text = line; box.classList.add("live");
+    const out = $("cvNews"); out.textContent = ""; let i = 0;
+    clearInterval(DJ.type); DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); } }, 28);
+    say(DJ.face, Math.min(6000, 700 + line.length * 45));
+    if (!urgent) SND.sfx("jingle");
+    clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), Math.min(9000, 2500 + line.length * 60));
+    DJ.next = performance.now() + 38000 + Math.random() * 30000;
+  }
+  /* what Rico can say: lines that come from the game as it stands, and a few from the island's habits */
+  function djLines() {
+    if (!G) return [];
+    const L = [], laws = G.laws, by = {}; laws.forEach(l => (by[l.by] = (by[l.by] || 0) + 1));
+    const top = Object.keys(by).sort((a, b) => by[b] - by[a])[0], liesOut = G.lies.filter(l => l.out).length;
+    if (!laws.length) L.push(T("No laws yet on this island. Rico's only rule: the request line is open, the coconut stand is not."));
+    if (top && by[top] >= 2) L.push(F("{x} has written more laws than anyone. The island has asked for a nap.", { x: nm(top) }));
+    if (G.pacts.some(p => !p.broken)) { const p = G.pacts.filter(p => !p.broken).slice(-1)[0]; L.push(F("Pact news: {x} and {y} shook hands at La Ola. Lola counted the fingers afterwards.", { x: nm(p.a), y: nm(p.b) })); }
+    if (G.pacts.some(p => p.broken)) L.push(T("A pact was broken. Rico won't say who. The Book already did."));
+    if (G.deals.length) L.push(T("An embassy envelope was seen near the council. Rico saw nothing. Rico is very expensive to see things."));
+    if (G.lies.length) L.push(F("Rumours on air this week: {n}. Rumours the Book has shown up: {m}. Rico only plays them, folks.", { n: G.lies.length, m: liesOut }));
+    if (inForce("quiet")) L.push(T("Quiet after ten is the law now. This is Rico, whispering."));
+    if (inForce("reef")) L.push(T("The reef is protected. The fish have issued a statement: blub."));
+    if (inForce("harbour")) L.push(T("A deep harbour for cruise ships. Tobias has already ordered a bigger hat."));
+    if (inForce("night")) L.push(T("Night market every Friday! Rico will be there selling rumours at half price. Joke. The Book is watching."));
+    if (inForce("concerts")) L.push(T("Beach concerts on Sundays are law. Rico has cancelled every other plan until the election."));
+    if (inForce("copy")) L.push(T("There is a copy of the Book on the square now. More readers, fewer rumours. Bad for business, good for the island."));
+    if (G.move >= MOVES) L.push(T("The lighthouse turns green, the candidates go quiet, and the Book keeps writing. Goodnight, island."));
+    L.push(F("Day {n} of {m}. If you still don't know who to vote for, neither do the gulls.", { n: G.day, m: DAYS }));
+    L.push(T("Fun fact: a law that contradicts one in force is refused before anyone votes. Rico tried 'Rico plays all night' and 'Quiet after ten'. Rico lost to Rico."));
+    L.push(T("This next one goes out to whoever bought last night's rumour. You know who you are. So does the Book."));
+    L.push(T("Four candidates have asked for the same song tonight. It is called 'Vote for me'."));
+    L.push(T("Weather: warm, with scattered promises and a front of envelopes moving in from the embassies."));
+    L.push(T("Old Sam has read the Book every night this week. The Book has not read Sam once. Respect."));
+    L.push(F("{x}, you have {n} coins. Rico accepts tips, song requests and alibis.", { x: nm(G.me), n: G.coins[G.me] }));
+    return L;
+  }
+  /* the chain weather: Rico reads the real testnet (or the simulation, in simulation mode) and turns it into a forecast */
+  const WX = { at: 0, line: null, n: 0 };
+  function chainWeather(done) {
+    if (performance.now() - WX.at < 90000 && WX.line) return done(WX.line);
+    let ws; try { ws = window.TauSim && TauSim.on ? TauSim.socket() : new WebSocket("wss://node.tauhud.com"); } catch (e) { return done(null); }
+    const blocks = new Map(); let pool = null, fin = false;
+    const finish = () => {
+      if (fin) return; fin = true; try { ws.close(); } catch (e) {}
+      const bs = [...blocks.values()].sort((a, b) => a.header.block_number - b.header.block_number).slice(-12);
+      if (!bs.length) return done(null);
+      const sim = window.TauSim && TauSim.on, tag = sim ? " " + T("(simulation)") : "", last = bs[bs.length - 1], h = last.header.block_number;
+      const ts = Number(last.header.timestamp) || 0, age = ts ? Math.max(0, Date.now() / 1000 - (ts > 1e12 ? ts / 1000 : ts)) / 60 : 0;
+      const txs = bs.reduce((n, b) => n + (b.transactions || []).length, 0), rules = bs.filter(b => (b.transactions || []).some(tx => tx.operations && tx.operations["0"])).map(b => b.header.block_number);
+      const wait = Array.isArray(pool) ? pool.length : pool && Array.isArray(pool.transactions) ? pool.transactions.length : pool && Array.isArray(pool.mempool) ? pool.mempool.length : 0;
+      let now;
+      if (age > 10) now = F("Chain weather{x}: thick fog. No new block for {n} minutes. Rico recommends patience and a lemonade.", { x: tag, n: Math.round(age) });
+      else if (!txs) now = F("Chain weather{x}: dead calm. The last {n} blocks came in empty. A good day for fishing.", { x: tag, n: bs.length });
+      else if (txs <= bs.length / 2) now = F("Chain weather{x}: a light breeze, {n} txs over the last {m} blocks, up to block {y}.", { x: tag, n: txs, m: bs.length, y: String(h) });
+      else now = F("Chain weather{x}: choppy seas, {n} txs rolling in over the last {m} blocks, up to block {y}. Hold on to your hats.", { x: tag, n: txs, m: bs.length, y: String(h) });
+      if (rules.length) now += " " + F("A wallet put a new rule on itself in block {y}: a little local weather of its own.", { y: String(rules[rules.length - 1]) });
+      now += " " + (wait ? F("Forecast: showers, {n} txs are waiting for the next block.", { n: wait }) : T("Forecast: clear skies, unless somebody sends something."));
+      WX.at = performance.now(); WX.line = now; done(now);
+    };
+    const stop = setTimeout(finish, 7000);
+    ws.onopen = () => { ws.send("hello version=1"); setTimeout(() => { try { ws.send("getmempool"); ws.send("getblocks"); } catch (e) {} }, 200); };
+    ws.onmessage = ev => {
+      let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
+      if (m.status !== "ok") return;
+      if (m.command === "getmempool") pool = m.data;
+      if ((m.command === "getblocks" || m.command === "getblockrange") && m.data && Array.isArray(m.data.blocks)) m.data.blocks.forEach(b => b && b.header && blocks.set(b.header.block_number, b));
+      if (pool !== null && blocks.size) { clearTimeout(stop); setTimeout(finish, 300); }
+    };
+    ws.onerror = () => { clearTimeout(stop); finish(); };
+  }
+  setInterval(() => {
+    if (!G || G.over || G.counting || document.hidden || performance.now() < DJ.next) return;
+    if (++WX.n % 3 === 1) { DJ.next = performance.now() + 60000; chainWeather(line => { if (line) onAir(line); else DJ.next = 0; }); return; }
+    const L = djLines(); if (!L.length) return;
+    let k = Math.floor(Math.random() * L.length); if (k === DJ.last && L.length > 1) k = (k + 1) % L.length; DJ.last = k;
+    onAir(L[k]);
+  }, 2000);
 
   /* ---------- election night ---------- */
   function election() {
@@ -672,9 +814,14 @@
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     const sb = $("cvSound");
     const showSound = () => { sb.textContent = SND.on ? "♪ " + T("Sound on") : SND.wanted ? "♪ " + T("Tap for sound") : "♪ " + T("Sound off"); sb.setAttribute("aria-pressed", SND.on ? "true" : "false"); };
-    sb.onclick = e => { e.stopPropagation(); if (!SND.on && SND.wanted) SND.start(); else SND.toggle(); showSound(); };
-    const wake = () => { if (!SND.on && SND.wanted) { SND.start(); showSound(); } };
-    addEventListener("pointerdown", wake, { once: true }); addEventListener("keydown", wake, { once: true });
+    let woke = 0;   // the press that just started the music must not also switch it off
+    sb.onclick = e => { e.stopPropagation(); if (Date.now() - woke < 800) return showSound(); if (!SND.on && SND.wanted) SND.start(); else SND.toggle(); showSound(); };
+    /* the music starts as the page opens; where the browser holds it back, it starts on the first click, tap or key anywhere */
+    const GESTURES = ["pointerdown", "touchstart", "keydown", "click"];
+    const wake = () => { if (!SND.on && SND.wanted) { SND.start(); woke = Date.now(); } showSound(); if (SND.on || !SND.wanted) GESTURES.forEach(n => removeEventListener(n, wake, true)); };
+    GESTURES.forEach(n => addEventListener(n, wake, true));
+    SND.onchange = showSound;
+    if (SND.wanted) SND.start();
     showSound();
     const fs = $("cvFull");
     if (document.fullscreenEnabled) fs.onclick = () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else $("cvStage").requestFullscreen({ navigationUI: "hide" }).catch(() => {}); };
@@ -688,6 +835,6 @@
     else if (q.get("rabbit") === "paper" && G) morning(3);
   }
   setTimeout(readBallot, 1200);
-  window.COVE_GAME = { get state() { return G; }, begin, endDay };
+  window.COVE_GAME = { get state() { return G; }, begin, endDay, face };
   wire();
 })();
