@@ -38,6 +38,7 @@
 .tnav .pill.start:hover { background: var(--tn-ok); border-color: var(--tn-ok); color: #000; }
 .tnav .pill.start:hover b { color: #000; }
 @media (max-width: 1399px) { .tnav .pill.start { display: none; } }   /* the Learn menu has it too; the line stays one line */
+@media (max-width: 2199px) { .tnav form.tn-search input { width: 96px; } }   /* room for "Follow the chain" on one line at 2000 wide */
 .tnav .pill.tg { border-color: rgba(57,255,138,.6); color: var(--tn-ok); }
 .tnav .pill.tg svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
 .tnav .pill.tg:hover { background: var(--tn-ok); border-color: var(--tn-ok); color: #000; }
