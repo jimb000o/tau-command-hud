@@ -876,6 +876,22 @@
     ART.layout = true; ART.whole = L.view === "whole";
     if (S.focusId) focus(S.focusId, S.focusSide);
   }
+  /* a wide screen shows more than the painting: beside it, the same painting, wide, out of focus and a shade darker,
+     so its sea and sky carry on to the edges without a seam or a strip of drawn sky (as a cinema does with a narrow film) */
+  function sides(g, wl, wt, wr, wb) {
+    const im = ART.img.island;
+    if (!S.blur || S.blur.im !== im) {
+      const c = document.createElement("canvas"); c.width = 96; c.height = 54; const cg = c.getContext("2d");
+      cg.filter = "blur(3px)"; cg.drawImage(im, -6, -4, 108, 62); cg.filter = "none";
+      cg.fillStyle = "rgba(10,24,34,.38)"; cg.fillRect(0, 0, 96, 54); c.im = im; S.blur = c;
+    }
+    const w = wr - wl, h = Math.max(wb - wt, w * 9 / 16);
+    g.save(); g.imageSmoothingQuality = "high"; g.drawImage(S.blur, wl, (wt + wb) / 2 - h / 2, w, h); g.restore();
+    [[0, -1], [WW, 1]].forEach(([x, d]) => {   // the painting's edge melts into it
+      const gr = g.createLinearGradient(x, 0, x + d * 90, 0); gr.addColorStop(0, "rgba(10,24,34,.35)"); gr.addColorStop(1, "rgba(10,24,34,0)");
+      g.fillStyle = gr; g.fillRect(Math.min(x, x + d * 90), wt, 90, wb - wt);
+    });
+  }
   /* a picture drawn to cover the box, cropped in the middle (the painted ones are not always exactly 16:9) */
   function cover(g, im, w, h) {
     const k = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
@@ -958,6 +974,7 @@
     for (let i = 0; i < 4; i++) { const f0 = Math.pow(i / 4, 1.6), f1 = Math.pow((i + 1) / 4, 1.6); g.fillStyle = rgb(mix(sky.sea, sky.seaB, i / 3)); g.fillRect(0, lerp(hzY, H, f0), W, lerp(hzY, H, f1) - lerp(hzY, H, f0) + 1); }
     view(g);
     const [wl] = toWorld(0, 0), [wr, wb] = toWorld(S.W, S.H), [, wt] = toWorld(0, 0);
+    if (S.base && S.base.painted && (wl < 0 || wr > WW)) sides(g, wl, wt, wr, wb);
     /* stars as small printed crosses, the sun as a disc in rings with slow rays, the moon as a crescent */
     const nt = Math.max(0, 1 - Math.abs((S.hour % 4) - 3) * 1.4);
     if (nt > 0) { const R = rnd(9); for (let i = 0; i < 140; i++) { const x = wl + R() * (wr - wl), y = wt + R() * (HZ - wt - 10), r = 0.8 + R() * 1.8, al = nt * (0.35 + R() * 0.65) * (0.7 + 0.3 * Math.sin(t * 0.002 + i)); g.fillStyle = `rgba(251,243,223,${al})`; g.fillRect(x - r, y - 0.5, r * 2, 1); g.fillRect(x - 0.5, y - r, 1, r * 2); } }
@@ -1050,8 +1067,10 @@
       if (S.hostFn) {
         if (!S.hostC) { S.hostC = document.createElement("canvas"); S.hostC.width = S.hostC.height = 600; }
         const hg = S.hostC.getContext("2d"); S.hostFn(hg, t);
-        /* life-size in the frame: the head in the upper middle, the shoulders cut by the bottom edge */
-        const hb = phone ? (S.hostBottom || S.H * 0.47) * S.K : H, hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : Math.min(H * 0.66, W * 0.36), hx = phone ? W / 2 : W * (S.focusSide > 0 ? 0.3 : 0.7), hy = hb - hs * (phone ? 0.8 : 0.9) + (1 - e) * hs * 0.25;
+        /* a medium shot: in the middle of the room the card leaves free, eyes about a third down, standing on the radio
+           bar instead of behind it, so the room around them (window, desk, map) still tells where we are */
+        const cw = Math.min(470, S.W * 0.42) * S.K + 32 * S.K, fx = S.focusSide > 0 ? (W - cw) / 2 : S.focusSide < 0 ? cw + (W - cw) / 2 : W / 2;
+        const hb = phone ? (S.hostBottom || S.H * 0.47) * S.K : H - 60 * S.K, hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : Math.min(H * 0.56, (W - cw) * 0.5), hx = phone ? W / 2 : fx, hy = hb - hs * (phone ? 0.8 : 0.86) + (1 - e) * hs * 0.25;
         w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, hx - hs / 2, hy, hs, hs);
       }
       w.setTransform(1, 0, 0, 1, 0, 0);
@@ -1081,7 +1100,9 @@
   /* lean in on a place, keeping the space for the card on the far side; null goes back to the whole cove */
   /* the whole island, as large as the screen allows: on a tall phone the island fills the width, the sky gives way */
   function home() {
-    if (ART.whole && S.W >= 760) return { x: 800, y: 450, z: 1 };   // a painted island framed as a whole picture is shown whole
+    /* a painted island framed as a whole picture is shown whole; on a very wide screen it leans in a little, giving up
+       at most a seventh of its height (sea at the top and bottom) to fill more of the width */
+    if (ART.whole && S.W >= 760) return { x: 800, y: 450, z: Math.max(1, Math.min(S.W / (WW * fitScale()), 1.16)) };
     const f = fitScale(), z = Math.max(1, Math.min(S.W / (1220 * f), S.H / (690 * f)));
     return { x: 800, y: z > 1.05 ? Math.max(450, 900 - S.H / (f * z) / 2 - 10) : 450, z };
   }
