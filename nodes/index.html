@@ -149,6 +149,30 @@ footer a { color: var(--dim); }
 html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
 html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 12px; }
 html.fit #tip { zoom: var(--z); }
+/* node card: one node's facts, opened by clicking its row */
+tr[data-card] { cursor: pointer; }
+tr[data-card]:hover td { background: rgba(255,255,255,.05); }
+#card { position: fixed; inset: 0; z-index: 96; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.62); }
+#card[hidden] { display: none; }
+#card .box { position: relative; width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #0c0c0e; border: 1px solid var(--hair); border-radius: 10px; padding: 18px 20px 16px; }
+html.fit #card .box { zoom: var(--z); max-height: calc(var(--fitH) - 32px); }
+#card h3 { margin: 0 34px 4px 0; font: 600 19px/1.3 var(--display); color: #fff; overflow-wrap: anywhere; }
+#card .state { margin: 0 0 12px; color: var(--dim); }
+#card .state .dot { margin-right: 6px; }
+#card dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0 0 12px; }
+#card dt { color: var(--dim); }
+#card dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+#card dd small { color: var(--dim); font-size: 12px; }
+#card .what { margin: 0 0 14px; color: var(--dim); max-width: 76ch; }
+#card .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+#card .acts a, #card .acts button { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; text-decoration: none; color: #fff; background: none; border: 1px solid var(--hair); border-radius: 6px; padding: 9px 12px; cursor: pointer; min-height: 36px; }
+#card .acts a:hover, #card .acts button:hover { background: #fff; color: #000; border-color: #fff; }
+#card .x { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 6px; background: none; color: var(--dim); font-size: 16px; cursor: pointer; }
+#card .x:hover { color: #fff; border-color: var(--hair); }
+#card ul.peers { list-style: none; margin: 0 0 14px; padding: 0; }
+#card ul.peers li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); cursor: pointer; }
+#card ul.peers li:hover { color: #fff; }
+@media (max-width: 700px) { #card .acts a, #card .acts button, #card .x { min-height: 44px; } #card .x { width: 44px; } }
 html.fit .sub { max-width: 118ch; }
 html.fit .col1, html.fit .col3 { display: contents; }
 html.fit .wrap > .main { flex: 1 1 0; min-height: 0; gap: 12px; grid-template-columns: minmax(0, 1.3fr) minmax(440px, 1fr);
@@ -253,6 +277,7 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
   </footer>
 </div>
 <div id="tip" hidden></div>
+<div id="card" hidden role="dialog" aria-modal="true" aria-labelledby="cardTitle"><div class="box" id="cardBox"></div></div>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -317,7 +342,7 @@ function samplePeers() {
   const list = [Object.assign(mk("12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC", 2 * d, 1412), { label: "IDNI bootnode" }),
     mk("12D3KooWBerLinArmxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 12 * d, 1412, { id: "a1b2c3d4e5f6", name: "berlin-arm" }),
     mk("12D3KooWNoKitPeerAxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 3 * d, 1411), mk("12D3KooWNoKitPeerBxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 5 * 3600, 1412)];
-  return { peers: list, counts: { connected: 4, met_30m: 4, met_24h: 4, seen_24h: 4, seen_30d: 4 }, generated_at: now };
+  return { peers: list, counts: { connected: 4, met_30m: 4, met_24h: 4, seen_24h: 4, seen_30d: 4 }, validators: ["ab".repeat(48)], generated_at: now };
 }
 /* the network as our node sees it (GET /peers): the bootnode, kit nodes that said which peer they are, everyone else */
 function network(now) {
@@ -383,7 +408,13 @@ function render() {
     el("th", { class: "hide-s", text: "Last report" }));
   const body = el("tbody");
   // IDNI's bootnode: the network's entry point, where our node gets its blocks
-  if (net.boot) body.append(el("tr", { class: "ref", "data-tip": T("IDNI’s bootnode: every node joins the network through it.\nRunning counts from when our node first met it.") + "\n" + net.boot.id },
+  const CARDS = render.cards = {};
+  if (net.boot) CARDS.idni = { kind: "idni", p: net.boot };
+  if (ref) CARDS.tauhud = { kind: "tauhud" };
+  if (net.others.length) CARDS.peers = { kind: "peers", list: net.others };
+  for (const p of net.others) CARDS["peer:" + p.id] = { kind: "peer", p };
+  for (const r of list) CARDS["kit:" + r.id] = { kind: "kit", r, rank: list.indexOf(r) + 1, p: net.recent.find(p => p.community && p.community.id === r.id) };
+  if (net.boot) body.append(el("tr", { class: "ref", "data-card": "idni", "data-tip": T("IDNI’s bootnode: every node joins the network through it.\nRunning counts from when our node first met it.") + "\n" + net.boot.id },
     el("td", { class: "n rank", text: "·" }),
     el("td", null, el("span", { class: "dot" + (net.boot.connected ? " on" : "") }), el("span", { class: "name", text: "IDNI" }), el("span", { class: "tag", text: T("bootnode") })),
     el("td", { text: span(now - net.boot.first_seen) }),
@@ -392,7 +423,7 @@ function render() {
     el("td", { class: "rank", text: T("entry point") }),
     el("td", { class: "hide-s", text: T(ago(now - net.boot.last_seen)) })));
   // our node: the yardstick every other row is compared with, so the board is never empty
-  if (ref) body.append(el("tr", { class: "ref", "data-tip": "tauhud.com’s own node. It runs the same kit,\nand every other row is compared with it.\nIt does not count as a community node." },
+  if (ref) body.append(el("tr", { class: "ref", "data-card": "tauhud", "data-tip": "tauhud.com’s own node. It runs the same kit,\nand every other row is compared with it.\nIt does not count as a community node." },
     el("td", { class: "n rank", text: "·" }),
     el("td", null, el("span", { class: "dot" + (ref.online ? " on" : "") }), el("span", { class: "name", text: "tauhud.com" }), el("span", { class: "tag", text: T("reference") })),
     el("td", { text: ref.since ? span(now - ref.since) : "–" }),
@@ -403,7 +434,7 @@ function render() {
   // peers without the kit: no name, no rank, one line for all of them
   if (net.others.length) {
     const top = Math.max(...net.others.map(p => p.head ?? -1)), last = Math.max(...net.others.map(p => p.last_seen));
-    body.append(el("tr", { class: "ref", "data-tip": T("Nodes without the kit: our node met them or heard of them from another peer.\nThey have no name and no rank.") + "\n" + net.others.slice(0, 6).map(p => shortId(p.id)).join(" · ") + (net.others.length > 6 ? " …" : "") },
+    body.append(el("tr", { class: "ref", "data-card": "peers", "data-tip": T("Nodes without the kit: our node met them or heard of them from another peer.\nThey have no name and no rank.") + "\n" + net.others.slice(0, 6).map(p => shortId(p.id)).join(" · ") + (net.others.length > 6 ? " …" : "") },
       el("td", { class: "n rank", text: "·" }),
       el("td", null, el("span", { class: "dot" + (net.others.some(p => p.connected) ? " on" : "") }), el("span", { class: "name", text: T("Other peers") }), el("span", { class: "tag", text: String(net.others.length) })),
       el("td", { text: "–" }), el("td", { class: "hide-s", text: "–" }),
@@ -415,8 +446,8 @@ function render() {
   list.forEach((r, i) => {
     const chain = r.online ? el("span", { class: `agree ${r.agrees}`, "data-tip": AGREE_TIP[r.agrees] || "", text: AGREE[r.agrees] || "–" })
       : el("span", { class: "rank", text: "offline" });
-    const tr = el("tr", { "data-id": r.id, class: [r.online ? "" : "off", r.id === me ? "me" : "", r.you ? "you" : ""].join(" ").trim(),
-                          "data-tip": `${r.name} · id ${r.id}\nsince ${date(r.first_seen)} · kit ${r.kit || "?"} · tau-testnet ${r.ref || "?"}\nClick for its badge.` },
+    const tr = el("tr", { "data-id": r.id, "data-card": "kit:" + r.id, class: [r.online ? "" : "off", r.id === me ? "me" : "", r.you ? "you" : ""].join(" ").trim(),
+                          "data-tip": `${r.name} · id ${r.id}\nsince ${date(r.first_seen)} · kit ${r.kit || "?"} · tau-testnet ${r.ref || "?"}\nClick for its details and badge.` },
       el("td", { class: "n rank", text: i + 1 }),
       el("td", null, el("span", { class: "dot" + (r.online ? " on" : "") }), el("span", { class: "name", text: r.name }), r.you ? el("span", { class: "tag", text: T("you · simulated") }) : null),
       el("td", { text: span(now - r.first_seen) }),
@@ -424,7 +455,7 @@ function render() {
       el("td", { class: "n hide-s", text: r.height != null ? `#${r.height}` : "–" }),
       el("td", null, chain),
       el("td", { class: "hide-s", text: ago(now - r.last_seen) }));
-    tr.addEventListener("click", () => { if (r.you && window.TauSimNode) { TauSimNode.open(); return; } location.hash = r.id; pick(r.id); });
+    tr.addEventListener("click", e => { if (r.you && window.TauSimNode) { e.stopPropagation(); TauSimNode.open(); } });
     body.append(tr);
   });
   // the next free place, in green: what your row will look like
@@ -507,12 +538,95 @@ function pick(id) {
 }
 $("pick").addEventListener("change", e => { if (e.target.value) location.hash = e.target.value; pick(e.target.value); });
 document.addEventListener("click", async e => {
-  const b = e.target.closest("button.copy");
+  const b = e.target.closest("button.copy[data-copy]");
   if (!b) return;
   try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); b.textContent = T("Copied"); }
   catch { b.textContent = T("Select it"); }
   setTimeout(() => { b.textContent = T("Copy"); }, 1600);
 });
+
+/* ---------- node card: click a row for one node's facts; #node=<key> opens it from a link ---------- */
+function heightLine(h) {
+  if (h == null) return "–";
+  const ours = ref && ref.height, d = ours != null ? ours - h : null;
+  const rel = d == null ? "" : Math.abs(d) <= 2 ? T("at our tip") : d > 0 ? T("{n} blocks behind ours").replace("{n}", d.toLocaleString("en-US")) : T("{n} blocks ahead of ours").replace("{n}", (-d).toLocaleString("en-US"));
+  return el("span", null, `#${h.toLocaleString("en-US")} `, rel ? el("small", { text: rel }) : null);
+}
+function when(ts, now) { return ts ? `${date(ts)} · ${T(ago(now - ts))}` : "–"; }
+function cardState(on, last, now) {
+  return el("p", { class: "state" }, el("span", { class: "dot" + (on ? " on" : "") }),
+    on ? T("Online now") : last ? T("Offline · last seen {t}").replace("{t}", T(ago(now - last))) : T("Offline"));
+}
+function openCard(key, push = true) {
+  const c = (render.cards || {})[key];
+  if (!c) return;
+  const now = Date.now() / 1000, box = $("cardBox"), kv = [], acts = [];
+  let title, tag, on, last, what;
+  const peerId = p => p ? el("span", null, p.id + " ", el("button", { class: "copy", type: "button", "data-text": p.id, text: T("Copy") })) : null;
+  if (c.kind === "idni") {
+    const p = c.p; title = "IDNI"; tag = T("bootnode"); on = p.online ?? p.connected; last = p.last_seen;
+    kv.push(["Peer ID", peerId(p)], ["Known since", when(p.first_seen, now)], ["Last contact", when(p.last_seen, now)], ["Height", heightLine(p.head)]);
+    what = T("IDNI’s bootnode, the network’s entry point: every new node joins through it, and our node gets its blocks from it. IDNI also runs the validator that seals the blocks.");
+    const v = (peers && peers.validators) || [];
+    if (v.length === 1) acts.push(el("a", { href: "../account/?a=" + v[0], text: T("Validator profile") }));
+  } else if (c.kind === "tauhud") {
+    title = "tauhud.com"; tag = T("reference"); on = ref.online; last = on ? now : null;
+    kv.push(["Running", ref.since ? span(now - ref.since) : "–"], ["Uptime", ref.uptime != null ? `${(ref.uptime * 100).toFixed(1)} %` : "–"], ["Height", heightLine(ref.height)]);
+    what = T("The node behind this site. It runs the same kit as everyone else and checks every block; every other row is compared with it. It does not count as a community node.");
+    acts.push(el("a", { href: "../status/", text: T("Uptime and outages") }));
+  } else if (c.kind === "peers") {
+    title = T("Other peers"); tag = String(c.list.length); on = c.list.some(p => p.online ?? p.connected); last = Math.max(...c.list.map(p => p.last_seen));
+    what = T("Nodes our node met, or heard of from another peer, that do not run the Tau HUD kit. They have no name and no rank. Click one for its details.");
+    box.replaceChildren(el("button", { class: "x", type: "button", "aria-label": T("Close"), text: "✕" }),
+      el("h3", { id: "cardTitle", text: title }), cardState(on, last, now), el("p", { class: "what", text: what }),
+      el("ul", { class: "peers" }, ...c.list.map(p => { const li = el("li", null, el("span", null, el("span", { class: "dot" + ((p.online ?? p.connected) ? " on" : "") }), " " + shortId(p.id)), el("span", { class: "rank", text: (p.head != null ? `#${p.head} · ` : "") + T(ago(now - p.last_seen)) })); li.addEventListener("click", () => openCard("peer:" + p.id)); return li; })));
+    return showCard(key, push);
+  } else if (c.kind === "peer") {
+    const p = c.p; title = T("Peer {id}").replace("{id}", shortId(p.id)); tag = T("no kit"); on = p.online ?? p.connected; last = p.last_seen;
+    kv.push(["Peer ID", peerId(p)], ["First seen", when(p.first_seen, now)], ["Last seen", when(p.last_seen, now)], ["Height", heightLine(p.head)],
+      ["How we know it", p.last_direct ? T("our node talked to it") : T("another peer listed it")]);
+    const behind = p.head != null && ref && ref.height != null ? ref.height - p.head : 0;
+    what = T("A node that does not run the Tau HUD kit, so it has no name and no rank.")
+      + (behind > 10 ? " " + T("When we last saw it, it was {n} blocks behind: it had not caught up with the chain yet.".replace("{n}", behind.toLocaleString("en-US"))) : "")
+      + (on ? "" : " " + T("It drops off this list a day after it was last seen."));
+  } else {
+    const r = c.r; title = r.name; tag = T("community node"); on = r.online; last = r.last_seen;
+    kv.push(["Rank", `${c.rank}`], ["Running", span(now - r.first_seen)], ["Uptime", r.uptime != null ? `${(r.uptime * 100).toFixed(1)} %` : T("new")],
+      ["Height", heightLine(r.height)], ["Chain", r.online ? T(AGREE[r.agrees] || "–") : T("offline")], ["Last report", when(r.last_seen, now)],
+      ["Node ID", r.id], ...(c.p ? [["Peer ID", peerId(c.p)]] : []), ["Software", `kit ${r.kit || "?"} · tau-testnet ${r.ref || "?"}`]);
+    what = T("Runs the Tau HUD kit and reports to tauhud.com once a minute. Online nodes rank first, then the longest running, then the steadiest.");
+    const b = el("button", { type: "button", text: T("Its badge") });
+    b.addEventListener("click", () => { closeCard(); location.hash = r.id; pick(r.id); $("badgeDemo").closest("section").scrollIntoView({ behavior: "smooth", block: "nearest" }); });
+    acts.push(b);
+  }
+  box.replaceChildren(el("button", { class: "x", type: "button", "aria-label": T("Close"), text: "✕" }),
+    el("h3", { id: "cardTitle" }, title, " ", el("span", { class: "tag", text: tag })), cardState(on, last, now),
+    el("dl", null, ...kv.flatMap(([k, v]) => [el("dt", { text: T(k) }), el("dd", null, v)])),
+    el("p", { class: "what", text: what }), ...(acts.length ? [el("div", { class: "acts" }, ...acts)] : []));
+  showCard(key, push);
+}
+function showCard(key, push) {
+  $("card").hidden = false; tip.hidden = true;
+  if (push && location.hash !== "#node=" + key) history.replaceState(null, "", "#node=" + encodeURIComponent(key));
+  $("cardBox").querySelector(".x").focus();
+}
+function closeCard() {
+  if ($("card").hidden) return;
+  $("card").hidden = true;
+  if (location.hash.startsWith("#node=")) history.replaceState(null, "", location.pathname + location.search);
+}
+document.addEventListener("click", e => {
+  if (!$("card").hidden) {
+    if (e.target.closest(".x") || e.target === $("card")) closeCard();
+    const cp = e.target.closest("#card button[data-text]");
+    if (cp) { navigator.clipboard.writeText(cp.dataset.text).then(() => { cp.textContent = T("Copied"); }, () => { cp.textContent = T("Select it"); }); setTimeout(() => { cp.textContent = T("Copy"); }, 1600); }
+    return;
+  }
+  const tr = e.target.closest("tr[data-card]");
+  if (tr) openCard(tr.dataset.card);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeCard(); });
+function cardFromHash() { const m = location.hash.match(/^#node=(.+)$/); if (m) openCard(decodeURIComponent(m[1]), false); }
 
 /* ---------- hover tips: short, only what the page does not already say ---------- */
 const tip = $("tip");
@@ -538,7 +652,7 @@ if (SIM) { $("sourceLine").textContent = "Simulation: made-up nodes on the simul
 updateCmd();
 fit();
 render();
-load();
+load().then(cardFromHash);
 setInterval(load, 60000);
 </script>
 </body>
