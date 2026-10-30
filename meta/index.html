@@ -99,6 +99,12 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .vs .l { color: var(--dim); font-size: 12px; }
 .vs b { font: 600 20px var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
 .vs b.up { color: var(--ok); }
+.funnel { margin-top: 12px; }
+.funnel > span { color: var(--dim); font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+.funnel table { margin-top: 4px; font-size: 12px; }
+.funnel td { padding: 2px 8px 2px 0; border: 0; line-height: 1.35; }
+.funnel td.w { width: 38%; }
+.funnel .note { margin-top: 6px; color: var(--dim); font-size: 11px; line-height: 1.45; }
 .vs-note { color: var(--dim); font-size: 11px; line-height: 1.5; margin-top: 10px; }
 #cGrowth.vsbox { height: auto; display: block; }
 .chart .xh { stroke: rgba(255,255,255,.35); stroke-width: 1; }
@@ -347,7 +353,7 @@ const RB = () => site === "rabbit";
    community nodes, estimated]; hours[k] = [nodes per hour]; a span of hours shows its highest hour, not the sum */
 const ND = () => site === "nodes";
 const LAUNCH = Date.UTC(2026, 9, 29, 16, 45);   // the launch posts went out on 29 October 2026
-let nh = null, peers = null;   // relay /nodes/history and /peers
+let nh = null, peers = null, setupSt = null;   // relay /nodes/history, /peers and /setup/stats
 function nodesData() {
   if (!nh || !nh.days) return null;
   const today = (raw && raw.today) || dayKey(Date.now()), now = (raw && raw.now) || Math.floor(Date.now() / 1000);
@@ -969,6 +975,38 @@ function drawRabbitPages() {
     `<div class="splitkey"><span>${esc(T("last 7 days"))} <b>${fmt(tot["7"] || 0)}</b></span><span>${esc(T("last 30 days"))} <b>${fmt(tot["30"] || 0)}</b></span><span>${esc(T("all"))} <b>${fmt(tot.all || 0)}</b></span></div></div>` : "";
 }
 
+/* setting up a node, step by step (relay /setup/stats): the install command copied on the Nodes page, the install
+   script's steps (sent only when a node name is set), then the named nodes' reports. Counts, never people */
+const mins = m => m == null ? "–" : m < 90 ? `${fmt(m)} ${T("min")}` : m < 2880 ? `${(Math.round(m / 6) / 10).toLocaleString(LOC || "en-US")} ${T("h")}` : `${fmt(Math.round(m / 1440))} ${T("days")}`;
+function setupFunnel() {
+  if (!setupSt || !setupSt.installs) return "";
+  const I = setupSt.installs, r = I.reached || {}, f = I.failed || {}, m = I.minutes || {}, N = setupSt.nodes || {};
+  const copied = Object.values(setupSt.days || {}).reduce((a, d) => a + (d.copied || 0), 0);
+  const steps = [
+    ["install command copied", copied, "Times the install command was copied on the Nodes page. One person can copy it twice; copying is not running."],
+    ["setup started", r.start, "Install scripts that started with a node name set (without a name the script sends nothing)."],
+    ["Docker ready", r.docker, "Setups that got through the system packages and Docker.", "docker"],
+    ["build began", r.build, "Setups that started the one-time tau-lang build, about 1.5 hours on a small server.", "build"],
+    ["node running", r.up, "Setups whose node was built and started.", "up"],
+    ["first report", N.reported, "Named nodes that reported to tauhud.com at least once, in the last 30 days."],
+    ["caught up with the chain", N.synced, "Named nodes whose head matched our chain within a few blocks of the tip."],
+    ["still running", N.running, "Named nodes that reported in the last 15 minutes."],
+  ];
+  const max = Math.max(1, ...steps.map(x => x[1] || 0));
+  const tipOf = ([, n, what, key]) => T(what) + (key && m[key] != null ? `\n${T("typically reached after")} ${mins(m[key])}` : "") + (key && f[key] ? `\n${fmt(f[key])} ${T("stopped with an error at this step")}` : "");
+  return `<div class="sp funnel"><span data-tip="${esc(T("How far people get when they set up a node with the Tau HUD kit. The install steps count only setups with a node name; nothing ties a count to a person or an address."))}">${esc(T("Setting up a node"))}</span>` +
+    `<table>${steps.map(x => `<tr data-tip="${esc(tipOf(x))}"><td>${esc(T(x[0]))}</td><td class="n">${fmt(x[1] || 0)}</td><td class="w"><div class="meter"><i style="width:${(100 * (x[1] || 0) / max).toFixed(1)}%"></i></div></td></tr>`).join("")}</table></div>`;
+}
+const STEP_LABEL = { start: "server check", packages: "system packages", docker: "Docker", kit: "kit download", build: "build", up: "node start" };
+/* where setups stop, in words: errors by step, how long quiet nodes had run, how long catching up took */
+function setupNote() {
+  if (!setupSt || !setupSt.installs) return "";
+  const f = setupSt.installs.failed || {}, N = setupSt.nodes || {}, stops = Object.entries(f).filter(([, n]) => n);
+  const body = `${stops.length ? esc(T("Stopped with an error")) + ": " + stops.map(([k, n]) => `${esc(T(STEP_LABEL[k] || k))} <b>${fmt(n)}</b>`).join(" · ") + ". " : ""}` +
+    `${N.ran != null ? esc(T("Nodes that went quiet had typically run")) + ` <b>${esc(mins(N.ran))}</b>. ` : ""}${N.to_sync != null ? esc(T("Catching up took")) + ` <b>${esc(mins(N.to_sync))}</b>.` : ""}`;
+  return `<div class="sp"><span data-tip="${esc(T("Typical values are medians: half took less, half more."))}">${esc(T("Where setups stop"))}</span><div class="note">${body || esc(T("No setup has stopped with an error yet."))}</div></div>`;
+}
+
 /* the network right now (relay /peers): who runs the nodes our node sees */
 function drawNodesPages() {
   const rows = (peers && peers.peers) || [], on = rows.filter(r => r.online), c = (peers && peers.counts) || {};
@@ -978,13 +1016,13 @@ function drawNodesPages() {
     t(fmt(on.length + 1), "online now", "Nodes seen in the last 30 minutes, our node included.") +
     t(fmt(c.connected || 0), "connected to ours", "Nodes our node holds a direct connection to right now.") +
     t(fmt(c.met_24h || 0), "met in 24 hours", "Nodes our node exchanged something with in the last 24 hours.") +
-    t(fmt(c.seen_30d || 0), "seen in 30 days", "Every node our node met or heard of in the last 30 days.") + `</div>`;
+    t(fmt(c.seen_30d || 0), "seen in 30 days", "Every node our node met or heard of in the last 30 days.") + `</div>` + setupFunnel();
   const ent = [["idni", idni], ["comm", comm], ["other", other], ["ours", 1]].filter(e => e[1]), sum = ent.reduce((a, e) => a + e[1], 0);
   const names = { idni: "IDNI bootnode", comm: "community nodes", other: "other peers", ours: "Tau HUD's node" }, col = { idni: "rgba(255,255,255,.45)", comm: "var(--ok)", other: "rgba(255,255,255,.2)", ours: "#fff" };
-  $("splits").innerHTML = peers ? `<div class="sp"><span data-tip="${esc(T("The nodes online now, by who runs them."))}">${esc(T("Who runs them, now"))}</span><em class="cnt"> · ${fmt(sum)}</em><div class="split tx">${ent.map(([k, n]) => `<i style="width:${(100 * n / sum).toFixed(1)}%;background:${col[k]}"></i>`).join("")}</div>` +
+  $("splits").innerHTML = peers ? `<div class="sp"><span data-tip="${esc(T("The nodes online now, by who runs them. A node counts in an hour when our node had contact with it then and has known it for 10 minutes, so test nodes that come and go for a minute stay out. Only peer counts are kept, no addresses."))}">${esc(T("Who runs them, now"))}</span><em class="cnt"> · ${fmt(sum)}</em><div class="split tx">${ent.map(([k, n]) => `<i style="width:${(100 * n / sum).toFixed(1)}%;background:${col[k]}"></i>`).join("")}</div>` +
     `<div class="splitkey">${ent.map(([k, n]) => `<span><i class="k" style="background:${col[k]}"></i>${esc(T(names[k]))} <b>${fmt(n)}</b></span>`).join("")}</div></div>` : "";
   $("txsplit").innerHTML = ""; $("starts").innerHTML = "";
-  $("cross").innerHTML = `<div class="sp"><span>${esc(T("How it is counted"))}</span><div class="note">${esc(T("A node counts in an hour when our node had contact with it then and has known it for 10 minutes, so test nodes that come and go for a minute stay out. Only peer counts are kept, no addresses."))} <a href="/nodes/">${esc(T("Nodes"))} →</a></div></div>`;
+  $("cross").innerHTML = setupNote() || `<div class="sp"><span>${esc(T("How it is counted"))}</span><div class="note">${esc(T("A node counts in an hour when our node had contact with it then and has known it for 10 minutes, so test nodes that come and go for a minute stay out. Only peer counts are kept, no addresses."))} <a href="/nodes/">${esc(T("Nodes"))} →</a></div></div>`;
 }
 
 function drawPages() {
@@ -1115,6 +1153,7 @@ async function load() {
       nh = { since: since / 1000, recorded: rec / 1000, days: {}, hours: {} };
       for (let t = since; t <= nowH; t += HOUR) { const k = dayKey(t), n = 2 + (t >= LAUNCH ? 2 + (t / HOUR) % 3 : (t / HOUR) % 2) + (t >= LAUNCH + 20 * HOUR ? 1 : 0);
         (nh.hours[k] = nh.hours[k] || Array(24).fill(0))[new Date(t).getUTCHours()] = n; const d = nh.days[k] = nh.days[k] || [0, 0, 0, t < rec ? 1 : 0]; d[0] = Math.max(d[0], n); d[1] = Math.max(d[1], n + 2); d[2] = t >= LAUNCH ? 2 : 0; }
+      setupSt = { days: { [raw.today]: { copied: 23 } }, installs: { reached: { start: 11, packages: 10, docker: 9, kit: 9, build: 8, up: 5 }, failed: { start: 1, docker: 1, build: 3 }, minutes: { docker: 4, build: 6, up: 104 }, total: 11 }, nodes: { reported: 5, synced: 4, running: 3, stopped: 2, to_sync: 38, ran: 2900 } };
       peers = { counts: { connected: 3, met_24h: 7, seen_30d: 12 }, peers: [{ label: "IDNI bootnode", online: true }, { community: { name: "kilo" }, online: true }, { community: { name: "pi" }, online: true }, { online: true }, { online: false }] }; }
     txs.totals.rabbit = { 7: 21, 30: 21, all: 21 };
     for (const k of ks.slice(-8)) raw.days[k][3].rabbit = Math.round(raw.days[k][0] * .15);
@@ -1126,7 +1165,7 @@ async function load() {
     raw = await r.json(); failed = false;
     try { const s = await fetch(`${RELAY}/api/v1/sources`, { cache: "no-store" }); if (s.ok) txs = await s.json(); } catch (e) {}
     try { const a = await fetch("https://agorzilla.com/chain/latest.json", { cache: "no-store" }); if (a.ok) agzLatest = await a.json(); } catch (e) {}
-    try { const [a, b] = await Promise.all([fetch(`${RELAY}/nodes/history`, { cache: "no-store" }), fetch(`${RELAY}/peers`, { cache: "no-store" })]); if (a.ok) nh = await a.json(); if (b.ok) peers = await b.json(); } catch (e) {}
+    try { const [a, b, c] = await Promise.all([fetch(`${RELAY}/nodes/history`, { cache: "no-store" }), fetch(`${RELAY}/peers`, { cache: "no-store" }), fetch(`${RELAY}/setup/stats`, { cache: "no-store" })]); if (a.ok) nh = await a.json(); if (b.ok) peers = await b.json(); if (c.ok) setupSt = await c.json(); } catch (e) {}
     // until the relay counts by site (or when it cannot be reached), the page opens on Tau HUD's visitors
     if (site === "net" && SITE_ASKED == null && !(txs && txs.ours)) site = "";
     pickSite();

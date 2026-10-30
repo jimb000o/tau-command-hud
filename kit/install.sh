@@ -29,6 +29,23 @@ if [[ -n "${NODE_NAME:-}" && ! "$NODE_NAME" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$
   die "NODE_NAME: 1-24 of A-Z a-z 0-9 . _ - , starting with a letter or digit."
 fi
 
+# Only with a name (the same opt-in as the node's reports): tell tauhud.com how far this setup gets, so the Nodes view
+# on tauhud.com/meta/ can show where setups stop. Sent: a random install id made on this server, the step and the
+# seconds since the script began. No address is kept. Without NODE_NAME nothing is sent.
+T0=$(date +%s); STEP=start; IID=
+if [[ -n "${NODE_NAME:-}" ]]; then
+  mkdir -p /var/lib/tau-node-kit
+  [[ -s /var/lib/tau-node-kit/install-id ]] || od -An -N8 -tx1 /dev/urandom | tr -d ' \n' > /var/lib/tau-node-kit/install-id
+  IID=$(cat /var/lib/tau-node-kit/install-id)
+fi
+ping_step() {  # step [failed at]
+  [[ -n "$IID" ]] && command -v curl >/dev/null || return 0
+  curl -fsS -m 5 -o /dev/null "https://node.tauhud.com/setup?i=$IID&s=$1&t=$(( $(date +%s) - T0 ))${2:+&at=$2}" 2>/dev/null || true
+}
+step() { STEP=$1; ping_step "$1"; }
+trap 'rc=$?; [[ $rc -eq 0 ]] || ping_step fail "$STEP"' EXIT
+step start
+
 say "Checking the server"
 ram_gb=$(awk '/MemTotal/ {printf "%d", $2/1024/1024 + 0.5}' /proc/meminfo)
 cpus=$(nproc)
@@ -42,6 +59,7 @@ export DEBIAN_FRONTEND=noninteractive
 say "System packages and automatic security updates"
 apt-get update -q
 apt-get install -yq ca-certificates curl git ufw unattended-upgrades
+step packages
 
 if ! command -v docker >/dev/null; then
   say "Docker (official repository)"
@@ -54,6 +72,7 @@ if ! command -v docker >/dev/null; then
   apt-get install -yq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 fi
 systemctl enable --now docker
+step docker
 
 # Keep the tau-lang build layers in the BuildKit cache (otherwise an unrelated
 # change rebuilds tau-lang for ~90 minutes), but cap the cache so it cannot
@@ -101,8 +120,11 @@ if [[ -n "${PUBLIC_DOMAIN:-}" ]]; then setenv PUBLIC_DOMAIN "$PUBLIC_DOMAIN"; se
 if [[ -n "${TAU_BUILD_JOBS:-}" ]]; then setenv TAU_BUILD_JOBS "$TAU_BUILD_JOBS"
 elif [[ $ram_gb -ge 8 ]] && grep -q '^TAU_BUILD_JOBS=1$' .env; then setenv TAU_BUILD_JOBS 2; fi
 
+step kit
 say "Building and starting (the first build compiles tau-lang: about 1.5 hours on 2 CPU / 4 GB)"
+step build
 docker compose up -d --build
+step up
 docker image prune -f >/dev/null   # each rebuild leaves the previous image behind
 
 name=$(grep '^NODE_NAME=' .env | cut -d= -f2)

@@ -1934,5 +1934,10 @@
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "In numbers: a new Nodes view shows how many nodes were on Tau Testnet Alpha before Tau HUD went live and since, hour by hour, with the launch marked. The relay now counts the nodes every hour; the days before, back to our node's first day, are estimated from when each node was first and last seen and say so. Side by side: nodes at once on average, the most at once and community nodes, before and since; and who runs the nodes online now."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-30",
+  "html": "In numbers, Nodes view: “Setting up a node” shows how far people get with the node kit, from copying the install command on the Nodes page through the install steps (Docker, the long build, the node starting) to the first report, catching up with the chain and still running, and where setups stop with an error. The install script sends its steps only when a node name is set, with a random install id and no address; the Nodes page and the privacy policy say so."
  }
 ]

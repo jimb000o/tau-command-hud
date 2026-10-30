@@ -45,6 +45,7 @@ from slotlease import SlotLease
 from island import Island
 from txsources import TxSources
 from nodehist import NodeHistory
+from setupfunnel import SetupFunnel
 from visits import OWN_HOSTS, SITES, Visits
 
 log = logging.getLogger("tau-relay")
@@ -411,6 +412,7 @@ class Relay:
         self.board_at = 0.0
         self.peer_book = self._load_peers()      # {"since", "peers": {peer id -> row}}, kept across restarts
         self.nodehist = NodeHistory()             # nodes on the network hour by hour, for /nodes/history (nodehist.py)
+        self.setup = SetupFunnel()                # how far node setups get, for /setup/stats (setupfunnel.py)
         self.peers_saved_at = 0.0
         self.peers_text: str | None = None
         self.peers_at = 0.0
@@ -1290,7 +1292,13 @@ class Relay:
         if not known:
             log.info("community node joined: %s (%s)", fields["name"], node_id)
         self.note_board(self.community[node_id], now)
-        return envelope_ok("report", {"id": node_id, "agrees": self.agreement(self.community[node_id], self.hash_at())})
+        hashes = self.hash_at()
+        agrees = self.agreement(self.community[node_id], hashes)
+        row = self.board.get(node_id)
+        # the first report on our chain within a few blocks of our tip: the node has caught up (/setup/stats)
+        if row is not None and not row.get("synced_at") and agrees == "same" and hashes and int(fields["height"]) >= max(hashes) - 5:
+            row["synced_at"] = now
+        return envelope_ok("report", {"id": node_id, "agrees": agrees})
 
     def hash_at(self) -> dict[int, str]:
         """height -> block hash of the chain we hold (one block per height)."""
@@ -1399,6 +1407,25 @@ class Relay:
     def community_peers(self) -> set:
         """Peer IDs of community nodes (kit 3 on reports its peer ID to the board)."""
         return {b["peer"] for b in self.board.values() if b.get("peer") and b["peer"] != BOOTNODE_ID}
+
+    def setup_json(self) -> str:
+        """The setup funnel: install traces (setupfunnel.py), then the named nodes on the board."""
+        now = time.time()
+        out = self.setup.stats()
+        rows = list(self.board.values())
+        online = {k for k, n in self.community.items() if now - n["last_seen"] <= COMMUNITY_TTL}
+        mid = lambda xs: sorted(xs)[len(xs) // 2] if xs else None
+        stopped = [r for r in rows if r["id"] not in online]
+        out["nodes"] = {
+            "reported": len(rows), "synced": sum(1 for r in rows if r.get("synced_at")), "running": len(online & set(self.board)),
+            "stopped": len(stopped),
+            # medians, in minutes: from the first report to caught up, and how long a node that went quiet had run
+            "to_sync": mid([round((r["synced_at"] - r["first_seen"]) / 60) for r in rows if r.get("synced_at")]),
+            "ran": mid([round((r["last_seen"] - r["first_seen"]) / 60) for r in stopped]),
+            "keep_days": BOARD_KEEP_DAYS,
+        }
+        out["generated_at"] = round(now)
+        return json.dumps(out, separators=(",", ":"))
 
     def nodes_history_json(self) -> str:
         now = time.time()
@@ -1865,6 +1892,13 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.health_json().encode())
+        if path == "/setup":
+            self.setup.note({k: v[0] for k, v in urllib.parse.parse_qs(query).items() if v}, ip)
+            headers = Headers([("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store"), ("Referrer-Policy", "no-referrer")])
+            return Response(HTTPStatus.NO_CONTENT.value, HTTPStatus.NO_CONTENT.phrase, headers, b"")
+        if path == "/setup/stats":
+            headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.setup_json().encode())
         if path == "/nodes/history":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
