@@ -89,5 +89,38 @@ check(fresh.update([old], NOW) == [], "fresh volume: a month-old donation is not
 check(dn.fmt_amount(Decimal("50.000000000000000000")) == "50" and dn.fmt_amount(Decimal("1234.5")) == "1,235",
       "amounts read cleanly")
 
+# value in money: the price service is faked; "now" within the hour, the day's price for older ones
+calls = []
+
+
+def fake_json(url):
+    calls.append(url)
+    if "/contract/" in url:
+        return {"id": "agoras"}
+    if "/simple/price" in url:
+        return {"agoras": {"eur": 0.2, "usd": 0.25, "cny": 1.8, "jpy": 38}, "ethereum": {"eur": 3000, "usd": 3500, "cny": 25000, "jpy": 500000}}
+    if "/history" in url:
+        return {"market_data": {"current_price": {"eur": 0.1, "usd": 0.12, "cny": 0.9, "jpy": 19}}}
+    raise ValueError(url)
+
+
+dn.get_json, dn.time.sleep = fake_json, lambda s: None
+w.add_fiat(NOW + 180)
+by = {d["tx"]: d for d in w.state["donations"]}
+check(by["0xeth"]["fiat"] == {"eur": 30.0, "usd": 35.0, "cny": 250.0, "jpy": 5000.0} and by["0xeth"]["fiat_at"] == "now",
+      "fresh ETH donation valued at the current price")
+check(by["0xold"]["fiat"]["eur"] == 2.0 and by["0xold"]["fiat_at"] == "day", "old donation valued at that day's price")
+n = len(calls)
+w.add_fiat(NOW + 240)
+check(len(calls) == n, "a value is looked up only once")
+s = dn.summary(w.state["donations"])
+check(s["totals_fiat"]["eur"] == 30.0 + 2.0 + 5.0 and s["items"][0]["fiat"]["jpy"] == 5000.0, "public file carries values and their sum")
+dn.get_json = lambda url: (_ for _ in ()).throw(OSError("down"))
+w.state["donations"].append({"key": "x", "tx": "0xx", "from": DONOR, "asset": "AGRS", "amount": "1", "ts": NOW, "block": 2})
+for _ in range(7):
+    w.add_fiat(NOW + 300)
+check(w.state["donations"][-1].get("fiat_tries") == dn.FIAT_TRIES, "price service down: tried a few times, then left alone")
+check("totals_fiat" not in dn.summary(w.state["donations"]), "no sum while one donation has no value")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

@@ -385,7 +385,7 @@ window.GAZETTE_ZH = {
       <div class="coupon"><div class="t">剪下收藏</div><p>实时观看：<b>tauhud.com</b> · 提醒：<b>t.me/tauHUDcom</b> · 试写规则：<b>tauhud.com/playground</b> · Tau 官方：<b>tau.net</b></p></div>
     </div>
     <div class="u s2 rl rt">
-      <div class="ad"><div class="t">Tau HUD</div><p>十二件仪器，观看一条能修改自身规则的链。免费。开源。</p><div class="fine">靠时间、工具和一台朴素的服务器维持运转。</div></div>
+      <div class="ad"><div class="t">Tau HUD</div><p>十二件仪器，观看一条能修改自身规则的链。免费。开源。</p><div class="fine">欢迎自愿捐赠，不承诺任何回报。详见 tauhud.com/donate。</div></div>
       <div class="box small notice" style="margin-top:.6em"><p class="ni"><b>读者须知。</b>《{{NAME}}》是社区项目 Tau HUD 制作的一份友好的非官方报纸，与 IDNI 无关。它为传递资讯、带来乐趣而写，不是财务建议，报中也没有任何东西出售。测试网 AGRS 仅供练习，没有价值。文中谈到的计划，转述的是 IDNI 自己说过的话，计划可能改变。事实取自 Tau 团队公开的视频、文章与论文；字幕引文略经整理。本报本着诚意编写，但属实验之作，难免有误；事关紧要之处，请查证原始出处。谜题与天气仅供一乐。</p></div>
     </div>
   </div>

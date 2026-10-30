@@ -385,7 +385,7 @@ window.GAZETTE_JA = {
       <div class="coupon"><div class="t">切り抜いて保存</div><p>ライブで見る：<b>tauhud.com</b> · 通知：<b>t.me/tauHUDcom</b> · ルールを試す：<b>tauhud.com/playground</b> · Tau 公式：<b>tau.net</b></p></div>
     </div>
     <div class="u s2 rl rt">
-      <div class="ad"><div class="t">Tau HUD</div><p>自らのルールを変えるチェーンを見るための 12 の計器。無料。オープンソース。</p><div class="fine">時間と道具と、質素なサーバー一台で動いています。</div></div>
+      <div class="ad"><div class="t">Tau HUD</div><p>自らのルールを変えるチェーンを見るための 12 の計器。無料。オープンソース。</p><div class="fine">寄付は任意で歓迎、見返りの約束はありません。詳しくは tauhud.com/donate。</div></div>
       <div class="box small notice" style="margin-top:.6em"><p class="ni"><b>読者へのお知らせ。</b>『{{NAME}}』は、コミュニティプロジェクト Tau HUD がつくる親しみやすい非公式の新聞で、IDNI とは無関係です。情報と楽しみのために書かれたもので、投資の助言ではなく、紙面で売っているものは何もありません。テストネットの AGRS は練習用で、価値はありません。ここで語られる計画は IDNI 自身の発言を伝えたもので、変わることがあります。事実は Tau チームが公開した動画、記事、論文から取りました。字幕からの引用は少し整えてあります。本紙は善意で編集していますが、実験的な試みであり、誤りもありえます。大事なことは元の出典をご確認ください。パズルと天気はお楽しみのためだけのものです。</p></div>
     </div>
   </div>

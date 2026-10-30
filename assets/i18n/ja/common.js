@@ -575,4 +575,6 @@ TauI18n.add({ strings: {
   "Follow the chain": "チェーンを追う",
   "Follow the chain: Telegram, X or RSS": "チェーンを追う：Telegram、X、RSS",
   "Follow the chain: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.": "チェーンを追う：すべてのルール変更、チェーンの再起動、新しいノードをその場で、Telegram、X、RSS で。このサイトのアカウントは不要です。",
+  "What the site costs each month and every donation received, on chain; voluntary, nothing in return": "サイトの毎月の費用と受け取ったすべての寄付をチェーン上で；任意、見返りなし",
+  "What it costs, and every donation on chain ›": "かかる費用と、チェーン上のすべての寄付 ›",
 } });
