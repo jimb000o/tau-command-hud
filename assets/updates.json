@@ -1481,6 +1481,11 @@
   "html": "The online count in the header now opens the Tau HUD tab of Tau HUD in numbers when you click it, and its hover says how people are really counted: once per person by our relay, from address and browser hashed with a daily salt, nothing stored in your browser."
  },
  {
+  "tag": "Accounts",
+  "on": "2026-10-30",
+  "html": "Accounts, Explorer and Time travel: while a page is still reading the chain, a thin amber bar runs along the top and a small label at the bottom says how far it got (“1,300 of 3,116 blocks”). The numbers stay dimmed until every block is in, the rich list no longer re-sorts while blocks arrive, and when it is done the label turns green for a moment."
+ },
+ {
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "Troll box: a much stricter filter and a live moderator. Sexual content, slurs, insults, threats, scams and spam are refused, also when written as p0rn or p o r n or with look-alike letters. Breaking the rules earns strikes: a warning, then 10 minutes muted, then an hour, then out until 00:00 UTC, and the messages of someone who is out disappear for everyone at once. You always see why and for how long."

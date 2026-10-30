@@ -254,6 +254,7 @@ footer a { color: var(--dim); }
 p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/chainload.js"></script>
 <script src="../assets/nav.js" defer></script>
 </head>
 <body>
@@ -406,13 +407,14 @@ function connect() {
   loadDropped();
 }
 function offline(why) {
-  C.ws = null; C.loading = false;
+  C.ws = null; C.loading = false; CL("stop");
   const w = C.retry; C.retry = Math.min(60000, w * 2);
   setState("off", "Offline", `Our node is not reachable (${why}).\nRetrying in ${w / 1000} s.`);
   C.off = true; render();   // the empty panels say that the node is offline instead of "reading" forever
   C.retryT = setTimeout(connect, w);
 }
-function loadFrom(from) { C.loading = true; C.nextFrom = from; send(`getblockrange ${from} ${PAGE}`); }
+const CL = (f, ...a) => window.TauChainLoad && TauChainLoad[f](...a);   // the shared "reading the chain" bar (assets/chainload.js)
+function loadFrom(from) { C.loading = true; C.nextFrom = from; CL("progress", Math.max(0, C.head + 1), C.want || 0); send(`getblockrange ${from} ${PAGE}`); }
 function reset() { C.blocks = []; C.head = -1; C.byHash.clear(); C.txIndex.clear(); C.bySeq.clear(); C.lastSeq.clear(); C.ownRules = []; C.indexedTo = -1; }
 function store(raw, live) {
   const h = Number((raw.header || {}).block_number);
@@ -461,14 +463,15 @@ function onMessage(ev) {
   const d = msg.data || {}, cmd = msg.command;
   if (cmd === "getblockrange") {
     if (msg.status !== "ok") {
-      if (["NOT_READY", "RATE_LIMITED"].includes((msg.error || {}).code)) setTimeout(() => loadFrom(C.nextFrom), 3000); else { C.legacy = true; send("getblocks 50"); }
+      if (["NOT_READY", "RATE_LIMITED"].includes((msg.error || {}).code)) setTimeout(() => loadFrom(C.nextFrom), 3000); else { C.legacy = true; CL("stop"); send("getblocks 50"); }
       return;
     }
     (d.blocks || []).forEach(b => store(b, false));
     const head = Number.isFinite(d.head) ? d.head : C.head, next = C.nextFrom + PAGE;
+    C.want = head + 1; CL("progress", C.head + 1, head + 1);
     setState("wait", "Loading", `Read ${plural(C.head + 1, "block")} of ${fmtN(head + 1)}…`);
     if ((d.blocks || []).length && next <= head) { loadFrom(next); return; }
-    C.loading = false; live(); render(); askFor(V.sel);
+    C.loading = false; CL("done"); live(); render(); askFor(V.sel);
   } else if (cmd === "getblocks") {
     if (msg.status !== "ok") return;
     if (d.reset) { reset(); if (!C.legacy) setTimeout(() => loadFrom(0), 500); }
