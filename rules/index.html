@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Rules wall</title>
+<meta name="description" content="Every personal rule that accounts gave themselves on Tau Testnet Alpha, read from the blocks. Agree with one by taking it for your own account: a real transaction, counted here.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Rules wall">
+<meta property="og:description" content="The rules people gave their own accounts on the Tau testnet. Take one for yours: that is how you agree.">
+<meta property="og:image" content="https://tauhud.com/assets/shots/rules.png">
+<meta property="og:image:width" content="1600">
+<meta property="og:image:height" content="900">
+<meta property="og:url" content="https://tauhud.com/rules/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/shots/rules.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as /start and /vote: black and white, phosphor green as the one accent, amber for the simulation. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --sim: #ffb13b; --refused: #e5484d;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.state { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; color: var(--dim); font-size: 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.state.ok { color: var(--text); } .state.ok i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.sim i { background: var(--sim); }
+.state.off i { background: #ff4d6d; }
+.intro { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
+.lead { margin: 6px 0 0; font: 600 clamp(22px, 3vw, 32px)/1.2 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 86ch; }
+.sub b { color: var(--text); font-weight: 600; }
+.kpis { display: flex; flex-wrap: wrap; gap: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--dim); font-size: 12px; white-space: nowrap; background: rgba(16,16,18,.86); cursor: help; }
+.kpi b { color: #fff; font: 600 13px var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.kpi.hot b { color: var(--ok); }
+.main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.seg { margin-left: auto; display: inline-flex; border: 1px solid var(--hair); border-radius: 999px; overflow: hidden; letter-spacing: .08em; }
+.seg button { font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; background: none; color: var(--dim); border: 0; padding: 5px 12px; cursor: pointer; min-height: 28px; }
+.seg button[aria-pressed="true"] { background: #fff; color: #000; }
+/* the wall: one card per rule text */
+.wall { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-content: start; }
+.card { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: rgba(255,255,255,.015); min-width: 0; animation: rise .5s both; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+.card.live { border-color: rgba(57,255,138,.45); }
+.card .what { font: 500 14px/1.4 var(--display); color: #fff; }
+.card .what div + div { margin-top: 2px; }
+.card .meta { color: var(--dim); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.card .meta a { color: var(--dim); }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--ok); border: 1px solid rgba(57,255,138,.45); border-radius: 999px; padding: 2px 8px; }
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.agree { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 12px; }
+.agree .dots { display: inline-flex; gap: 3px; flex-wrap: wrap; }
+.agree .dots i { width: 9px; height: 9px; border-radius: 50%; background: #fff; opacity: .85; }
+.agree .dots i.a { background: var(--ok); opacity: 1; }
+.agree b { color: #fff; font-weight: 600; }
+.card details { font-size: 11.5px; color: var(--dim); }
+.card summary { cursor: pointer; }
+.card pre { margin: 6px 0 0; background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: 11px/1.5 var(--mono); color: #fff; white-space: pre-wrap; word-break: break-all; max-height: 120px; overflow: auto; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.b { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; font: 600 11px var(--display); letter-spacing: .06em; text-decoration: none; color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 7px; padding: 5px 12px; cursor: pointer; }
+.b:hover { color: #000; background: #fff; border-color: #fff; }
+.b.go { color: #000; background: var(--ok); border-color: var(--ok); }
+.b.go:hover { background: #fff; border-color: #fff; }
+.empty { border: 1px dashed var(--hair); border-radius: 8px; padding: 16px; color: var(--dim); }
+.empty b { color: var(--text); }
+.skel { height: 150px; border-radius: 8px; border: 1px solid var(--line); background: linear-gradient(90deg, rgba(255,255,255,.02), rgba(255,255,255,.06), rgba(255,255,255,.02)); background-size: 200% 100%; animation: shimmer 1.4s infinite linear; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+ul.facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+ul.facts li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; color: var(--dim); }
+ul.facts li::before { content: "·"; color: var(--ok); font-weight: 700; text-align: center; }
+ul.facts b { color: #fff; font-weight: 600; }
+.side { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.side .b { margin-top: 10px; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
+[hidden] { display: none !important; }
+@media (min-width: 1000px) { .main { grid-template-columns: minmax(0, 1fr) minmax(260px, 320px); } }
+/* landscape from laptop size up: one screen; the wall scrolls inside its panel */
+html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 12px; }
+html.fit #tip { zoom: var(--z); }
+html.fit .wrap > .main { flex: 1 1 0; min-height: 0; }
+html.fit .main > .panel { min-height: 0; display: flex; flex-direction: column; }
+html.fit .wall { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 4px; }
+html.fit .side { min-height: 0; overflow: auto; }
+@media (max-width: 700px) {
+  .b { min-height: 44px; flex: 1 1 auto; }
+  .seg button { min-height: 36px; }
+  .wall { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Rules wall</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state" tabindex="0" data-tip="Connecting to our node…"><i></i><span id="stateText">Connecting</span></span>
+    </div>
+  </header>
+  <nav class="tnav" data-page="rules" aria-label="Pages and tools"></nav>
+  <div class="intro">
+    <div>
+      <p class="lead">Rules people gave their own accounts.</p>
+      <p class="sub" id="subLine">Every personal rule on Tau Testnet Alpha, read from the blocks. <b>To agree with one, take it for your own account:</b> that is a real transaction, and it counts here.</p>
+    </div>
+    <div class="kpis" aria-label="Key numbers">
+      <span class="kpi" data-tip="Different rules written so far, each counted once however many accounts took it."><b id="kRules">–</b>rules</span>
+      <span class="kpi" data-tip="Accounts that gave themselves one of these rules, or accepted one offered to them."><b id="kWallets">–</b>wallets with a rule</span>
+      <span class="kpi hot" id="kLive" data-tip="The testnet holds personal rules for 2 accounts at a time. These rules are in force right now."><b id="kNow">–</b>in force now</span>
+    </div>
+  </div>
+  <main class="main">
+    <section class="panel">
+      <h2>The wall <span class="seg" role="group" aria-label="Order"><button type="button" id="sortTop" aria-pressed="true">Most taken</button><button type="button" id="sortNew" aria-pressed="false">Newest</button></span></h2>
+      <div class="wall" id="wall" aria-live="polite"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+    </section>
+    <div class="side">
+      <section class="panel">
+        <h2>How agreeing works</h2>
+        <ul class="facts">
+          <li><span><b>Take it.</b> “Take this rule” fills your wallet with the same rule. You sign it, and from the next block every node checks your payments against it.</span></li>
+          <li><span><b>Counted from the chain.</b> Each account that runs the same rule adds a dot. Nobody can add one without signing.</span></li>
+          <li><span><b>Two places at a time.</b> When both are taken the wallet puts you in a fair line, or you take the rule on the simulation.</span></li>
+          <li><span><b>Change it first.</b> The wallet shows the rule in its builder; adjust the limit or the names before you sign.</span></li>
+        </ul>
+        <a class="b go" href="/wallet/?from=rules#rules-mine">Write your own rule</a>
+      </section>
+    </div>
+  </main>
+  <footer>
+    <p>Read from the blocks our node at <a href="https://node.tauhud.com/rulewall" target="_blank" rel="noopener">node.tauhud.com</a> keeps; nothing is sent until you sign in the wallet. Test AGRS have no value. · <a href="/start/">Start here</a> · <a href="/wallet/">Wallet</a> · <a href="/playground/">Playground</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRules%20wall%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const RELAY = "https://node.tauhud.com";
+const SIM = !!(window.TauSim && TauSim.on);
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
+const short = h => h ? `${h.slice(0, 8)}…${h.slice(-4)}` : "";
+const fmt = n => Number(n).toLocaleString("en-US");
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) { if (v == null) continue; if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); }
+  for (const k of kids) if (k != null && k !== false) e.append(k);
+  return e;
+}
+const lang = (() => { const l = window.TauI18n && TauI18n.lang; return l && l !== "en" ? "&lang=" + l : ""; })();
+const me = (() => { try { const k = JSON.parse(store.get("tauhud-wallet-key") || "null"); return k && k.pk; } catch (e) { return null; } })();
+/* names from the visitor's own address book, so a rule "only to Mia" reads like that */
+const BOOK = (() => { try { return JSON.parse(store.get(`tauhud-wallet-book-${SIM ? "sim" : "live"}`) || "[]"); } catch (e) { return []; } })();
+const tag = a => { const c = BOOK.find(c => c && c.addr === a); return c ? c.name : a === me ? T("you") : short(a); };
+
+/* ---------- reading a rule: the wallet's shapes (wallet/index.html readRule), plus the hand-written shapes the simulation uses ---------- */
+const NEUTRAL = "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) ).", FREEZE = "always ( (o5[t]:bv[24] = { #x000000 }:bv[24]) ).";
+const flat = s => String(s || "").replace(/\s+/g, "");
+function readRule(text) {
+  const f = flat(text);
+  if (f === flat(NEUTRAL)) return null;
+  const r = { freeze: false, only: [], cap: null, from: null, co: null, text };
+  if (f === flat(FREEZE)) return { ...r, freeze: true };
+  r.only = [...new Set([...text.matchAll(/i4\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})/gi)].map(m => m[1].toLowerCase()))];
+  const cap = /i1\[t\]:bv\[24\]\s*>=\s*\{\s*#x([0-9a-f]+)/i.exec(text);
+  if (cap) r.cap = parseInt(cap[1], 16) - 1;
+  const from = /i5\[t\]:bv\[64\]\s*<\s*\{\s*(\d+)\s*\}/i.exec(text);
+  if (from) r.from = Number(from[1]);
+  const lim = /i1\[t\]:bv\[24\]\s*>\s*\{\s*#x([0-9a-f]+)/i.exec(text);
+  const slots = [...new Map([...text.matchAll(/i(1[89]|2[0-5])\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})/gi)].map(m => [Number(m[1]), [Number(m[1]), m[2].toLowerCase()]])).values()];
+  if (lim && slots.length) r.co = { limit: parseInt(lim[1], 16), who: slots.map(x => x[1]), slots, need: (text.match(/i1\[t\]:bv\[24\]\s*>\s*\{/g) || []).length > 1 ? "all" : "any" };
+  r.unknown = !r.only.length && r.cap == null && r.from == null && !r.co;
+  r.wallet = !r.unknown && /\?\s*\(o5/.test(text);   // built by the wallet's builder: it can be taken as it is
+  return r;
+}
+/* other common shapes, in plain words only (spending limit on i2, lock until a block on i6) */
+function extra(text) {
+  const out = [], lim = /i2\[t\]\s*<=\s*\{\s*#x([0-9a-f]+)\s*\}/i.exec(text), lock = /i6\[t\]:bv\[64\]\s*>=\s*\{\s*(\d+)\s*\}/i.exec(text);
+  if (lim) out.push(F("At most {n} test AGRS per payment.", { n: fmt(parseInt(lim[1], 16)) }));
+  if (lock) out.push(F("Nothing leaves before block #{n}.", { n: lock[1] }));
+  const sig = /i1[89]\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})/i.exec(text);
+  if (sig) out.push(F("More only with a co-signature from {x}.", { x: tag(sig[1].toLowerCase()) }));
+  const to = /i4\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})/i.exec(text);
+  if (to && !out.length) out.push(F("Payments only to {x}.", { x: tag(to[1].toLowerCase()) }));
+  return out;
+}
+const dayOf = secs => new Date(secs * 1000).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+function describe(text) {
+  const r = readRule(text);
+  if (!r) return [T("Every payment goes through as signed.")];
+  if (r.freeze) return [T("Nothing leaves this account.")];
+  if (r.unknown) { const x = extra(text); return x.length ? x : [T("A rule of its own, written by hand. Read it in Tau below.")]; }
+  const out = [];
+  if (r.only.length) out.push(F("Payments only to {x}.", { x: r.only.map(tag).join(", ") }));
+  if (r.cap != null) out.push(F("At most {n} test AGRS per payment.", { n: fmt(r.cap) }));
+  if (r.from != null) out.push(F("Nothing leaves before {x}.", { x: dayOf(r.from) }));
+  if (r.co) out.push(F(r.co.need === "all" ? "Above {n} test AGRS, {x} all co-sign." : "Above {n} test AGRS, {x} co-signs.", { n: fmt(r.co.limit), x: r.co.who.map(tag).join(r.co.need === "all" ? T(" and ") : T(" or ")) }));
+  return out;
+}
+
+/* ---------- the wall: from the relay (live), or built here from the simulated chain ---------- */
+const W = { rules: null, holders: new Set(), sort: "top" };
+function wallFrom(blocks) {   // the same reading as the relay's /rulewall (infra/relay/relay.py rulewall)
+  const neutral = new Set([flat(NEUTRAL), flat("(o5[t]:bv[24]={#x000001}:bv[24])")]), rules = new Map();
+  for (const b of blocks) {
+    const h = (b.header || {}).block_number;
+    for (const t of b.transactions || []) {
+      const kind = t.tx_type || "user_tx", ops = t.operations || {};
+      const text = kind === "user_tx" ? ops["0"] : kind === "rule_offer_accept" ? t.rule_text : null, who = String(t.sender_pubkey || "").toLowerCase();
+      if (typeof text !== "string" || !text.includes("o5") || !/^[0-9a-f]{96}$/.test(who)) continue;
+      const key = flat(text);
+      if (neutral.has(key)) continue;
+      let r = rules.get(key);
+      if (!r) rules.set(key, r = { text: text.trim(), author: who, first: h, first_ts: (b.header || {}).timestamp, users: [], last: h });
+      if (!r.users.includes(who)) r.users.push(who);
+      r.last = h;
+    }
+  }
+  return [...rules.values()];
+}
+async function load() {
+  if (SIM) {
+    const head = TauSim.head(), blocks = [];
+    for (let n = 0; n <= head; n++) { const b = TauSim.block(n); if (b) blocks.push(b); }
+    W.rules = wallFrom(blocks);
+    setState("sim", "Simulation", "Simulation\nThe rules on the made-up chain, the same for every visitor.\nRules you take here stay on the simulation.");
+  } else {
+    try {
+      const j = await (await fetch(RELAY + "/rulewall", { cache: "no-store" })).json();
+      W.rules = j.rules || [];
+      setState("ok", "Live", "Live\nRead from the blocks our node keeps.\nRefreshed every minute.");
+    } catch (e) { if (!W.rules) W.rules = null; setState("off", "Offline", "Offline\nOur node is not reachable right now.\nThe wall comes back by itself."); }
+    try { const j = await (await fetch(RELAY + "/rules", { cache: "no-store" })).json(); W.holders = new Set(j.holders || []); } catch (e) {}
+  }
+  render();
+}
+function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = T(text); s.dataset.tip = tipText; }
+
+/* a holder runs this rule right now: its newest rule is this one, and the node lists it on a rule place */
+function inForce(r) { return !SIM && r.users.some(u => W.holders.has(u) && newest.get(u) === r); }
+let newest = new Map();
+function render() {
+  const wall = $("wall");
+  if (W.rules == null) { wall.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("The wall could not be read.") }), " ", T("Our node is not answering; this page tries again in a minute."))); return; }
+  newest = new Map();
+  [...W.rules].sort((a, b) => a.last - b.last).forEach(r => r.users.forEach(u => newest.set(u, r)));
+  const list = [...W.rules].sort(W.sort === "top" ? (a, b) => b.users.length - a.users.length || b.last - a.last : (a, b) => b.first - a.first);
+  $("kRules").textContent = fmt(W.rules.length);
+  $("kWallets").textContent = fmt(new Set(W.rules.flatMap(r => r.users)).size);
+  $("kNow").textContent = SIM ? "–" : fmt(W.rules.filter(inForce).length);
+  if (!list.length) { wall.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("No rules on the chain yet.") }), " ", T("Be the first: write one in the wallet, and it shows up here after the next block."))); return; }
+  wall.replaceChildren(...list.map((r, i) => card(r, i)));
+}
+function card(r, i) {
+  const rr = readRule(r.text), live = inForce(r), mine = me && r.users.includes(me);
+  const dots = el("span", { class: "dots", "aria-hidden": "true" }, ...r.users.slice(0, 24).map(u => el("i", { class: u === r.author ? "a" : null })));
+  const n = r.users.length;
+  /* limits, dates and a freeze carry over as they are; names (only to, co-signers) are the author's own people, so those you make like it */
+  const personal = rr && (rr.only.length || rr.co);
+  const take = mine ? el("span", { class: "chip", text: T("yours too") })
+    : rr && (rr.wallet || rr.freeze) && !personal ? el("button", { class: "b go", type: "button", text: T("Take this rule"), "data-tip": T("Take this rule") + "\n" + T("Opens your wallet with this rule in the builder. You check it and sign."), onclick: () => takeRule(rr) })
+    : personal ? el("a", { class: "b go", href: "/wallet/?from=rules" + (SIM ? "&mode=sim" : "") + lang + "#rules-mine", text: T("Make one like it"), "data-tip": T("Make one like it") + "\n" + T("Its names are the author's own people. Pick yours in the wallet's builder.") })
+    : null;
+  return el("article", { class: "card" + (live ? " live" : ""), style: `animation-delay:${Math.min(i, 12) * 40}ms` },
+    el("div", { class: "what" }, ...describe(r.text).map(t => el("div", { text: t }))),
+    el("div", { class: "agree" }, dots, el("span", null, el("b", { text: fmt(n) }), " ", T(n === 1 ? "wallet runs it" : "wallets took it"))),
+    el("div", { class: "meta" },
+      live ? el("span", { class: "chip", text: T("in force now") }) : null,
+      el("span", null, T("by") + " ", el("a", { href: "/account/?a=" + r.author + (SIM ? "&mode=sim" : ""), translate: "no", text: tag(r.author) })),
+      el("span", { text: F("first in block #{n}", { n: r.first }) })),
+    el("details", null, el("summary", { text: T("Read it in Tau") }), el("pre", { translate: "no", text: r.text })),
+    el("div", { class: "acts" }, take,
+      el("button", { class: "b", type: "button", text: T("Copy"), onclick: async e => { try { await navigator.clipboard.writeText(r.text); e.target.textContent = T("Copied"); } catch (x) { e.target.textContent = T("Select it"); } setTimeout(() => { e.target.textContent = T("Copy"); }, 1500); } })));
+}
+/* the wallet takes a rule carried in its draft key once (wallet/index.html DRAFT_KEY), and fills its builder with it */
+function takeRule(r) {
+  store.set("tauhud-wallet-draft", JSON.stringify({ freeze: r.freeze, only: r.only, cap: r.cap, from: r.from, co: r.co }));
+  location.href = "/wallet/?from=rules" + (SIM ? "&mode=sim" : "") + lang + "#rules-mine";
+}
+$("sortTop").onclick = () => { W.sort = "top"; $("sortTop").setAttribute("aria-pressed", "true"); $("sortNew").setAttribute("aria-pressed", "false"); render(); };
+$("sortNew").onclick = () => { W.sort = "new"; $("sortNew").setAttribute("aria-pressed", "true"); $("sortTop").setAttribute("aria-pressed", "false"); render(); };
+
+/* ---------- hover tips ---------- */
+const tip = $("tip");
+document.addEventListener("mouseover", e => {
+  const t = e.target.closest("[data-tip]");
+  if (!t || !t.dataset.tip) { tip.hidden = true; return; }
+  tip.textContent = T(t.dataset.tip.replace(/\\n/g, "\n"));
+  tip.hidden = false;
+});
+document.addEventListener("mousemove", e => {
+  if (tip.hidden) return;
+  const z = document.documentElement.classList.contains("fit") ? +getComputedStyle(document.documentElement).getPropertyValue("--z") || 1 : 1;
+  const w = tip.offsetWidth * z, h = tip.offsetHeight * z;
+  tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - w - 8)) / z + "px";
+  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) / z + "px";
+});
+document.addEventListener("mouseleave", () => { tip.hidden = true; });
+
+/* ---------- one screen ---------- */
+function fit() {
+  const w = innerWidth, h = innerHeight, root = document.documentElement;
+  const on = w >= 1200 && h >= 640 && w / h >= 1.3;
+  const z = on ? Math.max(.82, Math.min(2, w / 1600, h / 860)) : 1;
+  root.classList.toggle("fit", on);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+}
+addEventListener("resize", fit);
+
+if (SIM) TauSim.mark();
+fit();
+load();
+setInterval(() => { if (!document.hidden) load(); }, 60000);
+</script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>My Tau card</title>
+<meta name="description" content="One picture of what your test wallet did on Tau Testnet Alpha: rules written, votes, Agorzilla meals and café stamps. Post it or keep it. Test AGRS only, nothing priced or promised.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · My Tau card">
+<meta property="og:description" content="One picture of what your test wallet did on Tau Testnet Alpha: rules written, votes, Agorzilla meals and café stamps.">
+<meta property="og:image" content="https://tauhud.com/assets/og/card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tauhud.com/card/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/card.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --amber: #ffb13b;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.lead { margin: 4px 0 0; font: 500 clamp(20px, 2.4vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 80em; }
+.sub b { color: var(--text); font-weight: 500; }
+.main { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+.stage { position: relative; min-width: 0; }
+#card { display: block; width: min(100%, calc((100vh - 250px) * 1200 / 630)); min-width: min(100%, 560px); aspect-ratio: 1200 / 630; height: auto; border-radius: 10px; border: 1px solid var(--line); background: #09090a; transition: opacity .5s, filter .5s; }
+.stage.reading #card { opacity: .5; filter: saturate(.2); }
+.state { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px; border: 1px solid rgba(255,177,59,.45); background: rgba(9,9,10,.92); font: 13px var(--mono); white-space: nowrap; }
+.state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: pulse 1.2s ease-in-out infinite; }
+.stage.reading .state { display: inline-flex; }
+@keyframes pulse { 50% { opacity: .35; } }
+.side { display: grid; gap: 12px; min-width: 0; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.panel p { margin: 0 0 8px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.b { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: none; color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 0 12px; min-height: 36px; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; }
+.b:hover { border-color: #fff; color: #fff; }
+.b.go { border-color: var(--ok); color: var(--ok); }
+.b.go:hover { background: rgba(57,255,138,.08); }
+.fine { color: var(--dim); font-size: 12px; margin: 10px 0 0; }
+.fill { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.fill li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+.fill li:first-child { border-top: 0; }
+.fill .dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--hair); justify-self: center; }
+.fill li.done .dot { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 6px rgba(57,255,138,.5); }
+.fill b { font: 500 13px var(--display); color: #fff; display: block; }
+.fill small { color: var(--dim); font-size: 11.5px; }
+.fill a { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--hair); white-space: nowrap; }
+.fill a:hover { color: #fff; border-color: #fff; }
+.look { display: flex; gap: 8px; }
+.look input { flex: 1; min-width: 0; background: rgba(0,0,0,.4); color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; min-height: 36px; font: 12px var(--mono); }
+.look input.bad { border-color: #e5484d; }
+.none { color: var(--text); }
+.none b { color: #fff; font-family: var(--display); font-weight: 600; }
+[hidden] { display: none !important; }
+@media (max-width: 1100px) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  #card { width: 100%; min-width: 0; }
+}
+@media (max-width: 700px) {
+  .state { font-size: 11px; padding: 8px 12px; }
+  .b { min-height: 44px; }
+  .look input { min-height: 44px; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>My Tau card</span></a>
+  </header>
+  <nav class="tnav" data-page="card" aria-label="Pages and tools"></nav>
+  <div>
+    <p class="lead" id="lead">Your wallet on one card, ready to post.</p>
+    <p class="sub">Rules written, votes cast, <b>Agorzilla</b> meals and <b>café</b> stamps, read straight from the testnet. Test AGRS have no value: nothing on this card is priced or promised.</p>
+  </div>
+  <main class="main">
+    <div class="stage reading" id="stage">
+      <canvas id="card" width="2400" height="1260" role="img" aria-label="My Tau card"></canvas>
+      <div class="state" id="state" role="status" aria-live="polite">Reading the chain</div>
+    </div>
+    <div class="side">
+      <section class="panel" id="pShare" aria-labelledby="hShare">
+        <h2 id="hShare">Pass it on</h2>
+        <div class="btns">
+          <a class="b go" id="bX" target="_blank" rel="noopener">Post on X</a>
+          <button class="b" type="button" id="bCopy">Copy the link</button>
+          <button class="b" type="button" id="bSave">Save the picture</button>
+          <button class="b" type="button" id="bShare" hidden>Share</button>
+        </div>
+        <p class="fine">The link shows this card as its preview on X, Telegram and WhatsApp.</p>
+      </section>
+      <section class="panel" id="pNone" hidden>
+        <h2>No wallet here yet</h2>
+        <p class="none"><b>This browser has no test wallet.</b> Make one in a few seconds: it is free, the key stays in this browser, and your card starts filling with your first rule.</p>
+        <div class="btns"><a class="b go" href="/wallet/">Make my wallet</a></div>
+      </section>
+      <section class="panel" id="pFill" aria-labelledby="hFill">
+        <h2 id="hFill">Fill your card</h2>
+        <ul class="fill" id="fill"></ul>
+      </section>
+      <section class="panel" aria-labelledby="hLook">
+        <h2 id="hLook">Someone else's card</h2>
+        <form class="look" id="look"><input id="lookIn" placeholder="Address (96 hex characters)" spellcheck="false" autocomplete="off" aria-label="Address"><button class="b" type="submit">Show</button></form>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
+/* a template whose filler is already translated (a date, a list): translate around a stand-in, then put it in */
+const FX = (s, raw) => { const ks = Object.keys(raw); let t = F(s, Object.fromEntries(ks.map((k, i) => [k, "v_" + i]))); ks.forEach((k, i) => { t = t.split("v_" + i).join(raw[k]); }); return t; };
+const NODE = "https://node.tauhud.com", L = window.TauI18n ? TauI18n.lang : "en";
+const isAddr = s => /^[0-9a-f]{96}$/.test(s);
+const nf = new Intl.NumberFormat("en-US");
+const short = h => h.slice(0, 6) + "…" + h.slice(-4);
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } } };
+
+/* whose card: ?a= in the address, else the wallet kept in this browser (wallet/index.html, tauhud-wallet-key) */
+const q = new URLSearchParams(location.search);
+let mine = null;
+try { const k = JSON.parse(store.get("tauhud-wallet-key") || "null"); if (k && isAddr(k.pk)) mine = k.pk; } catch (e) {}
+const A = isAddr((q.get("a") || "").toLowerCase()) ? q.get("a").toLowerCase() : mine;
+const OWN = !!A && A === mine;
+/* café stamps live in this browser (gazette/cafe.js keeps them); a shared link carries them as c */
+let STAMPS = 0;
+if (OWN) { try { STAMPS = new Set(JSON.parse(store.get("tauhud-cafe-stamps") || "[]")).size; } catch (e) {} }
+else STAMPS = Math.max(0, Math.min(4, parseInt(q.get("c"), 10) || 0));
+STAMPS = Math.min(4, STAMPS);
+
+/* the three check words, as in the wallet: sha256 of the address text, bytes 8 to 10 */
+const WORDS = "acorn amber anchor apple arrow atlas badge baker bamboo banjo barley basil beacon beaver berry bison blade blossom bonnet bottle bramble breeze brick bridge bronze brook bucket bugle cabin cactus camel candle canoe canyon carbon carrot castle cedar cello chalk cherry chess cider cinder circus clover cobalt comet copper coral cotton cougar crane crater cricket crystal cupola dahlia daisy delta denim desert dingo dolphin dragon drum eagle easel ember emerald engine falcon feather fennel fern fiddle flint forest fossil fox galaxy garden garnet gecko geyser ginger glacier goblet granite grape gravel guitar hammer harbor harp hazel heron hickory honey hornet husky iceberg igloo indigo iris island ivory jackal jade jaguar jasmine jelly jigsaw jungle kayak kernel kettle kiwi koala ladder lagoon lantern laurel lemon lilac lily linen lizard lobster locket lotus magnet mango maple marble meadow melon meteor mint mitten mosaic moss muffin nectar needle nickel nutmeg oak oasis olive onyx orbit orchid otter oyster paddle panda papaya parrot pebble pecan pelican pepper piano pine planet plum pollen poppy prism puffin pumpkin quartz quill rabbit radish raven reef ribbon river robin rocket rose ruby saddle saffron salmon sapphire satin shell sierra silver sparrow spruce squid statue stone summit sunset swan tango teapot thistle thunder tiger timber toucan tractor trumpet tulip tundra turtle umbrella valley velvet violet volcano walnut walrus willow window winter wizard yarrow yogurt zebra zenith zinc basket beetle bobcat cocoa cobra dune elm glove gopher jasper lark mammoth marsh opal osprey parsley quail rhubarb sable sequoia stork tapir topaz trout vanilla wombat yak nomad".split(" ");
+const sha = async a => new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(a)));
+
+const shareUrl = () => `${NODE}/s/card/${A}` + (STAMPS ? `?c=${STAMPS}` : "");
+
+function line(c) {
+  const p = [];
+  if (c.rules) p.push(F(c.rules === 1 ? "wrote 1 rule" : "wrote {n} rules", { n: c.rules }));
+  if (c.votes) p.push(F(c.votes === 1 ? "cast 1 vote" : "cast {n} votes", { n: c.votes }));
+  if (c.meals) p.push(c.meals === 1 ? T("fed Agorzilla once") : F("fed Agorzilla {n} times", { n: c.meals }));
+  if (!p.length) return T("Just arrived on Tau Testnet Alpha.");
+  return FX("This wallet {x}.", { x: p.length > 1 ? p.slice(0, -1).join(L === "zh" ? "，" : L === "ja" ? "、" : ", ") + (L === "zh" ? "，并" : L === "ja" ? "、" : " and ") + p[p.length - 1] : p[0] });
+}
+
+/* ---------- the picture: the same 1200×630 card the share service draws for link previews (infra/share/cards.py), in this page's language ---------- */
+const S = 2, W = 1200, H = 630;
+const SORA = '"Sora", "PingFang SC", "Hiragino Sans", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif', MONO = '"JetBrains Mono", "PingFang SC", "Hiragino Sans", "Microsoft YaHei", ui-monospace, monospace';
+const C = { void: "#09090a", deck: "#121214", line: "#26262a", hair: "#3c3c42", white: "#ffffff", text: "#ebebee", dim: "#8a8a94", ok: "#39ff8a", grid: "#101012" };
+function draw(c, hash, stamps = STAMPS, full = c) {
+  const cv = $("card"), g = cv.getContext("2d");
+  g.setTransform(S, 0, 0, S, 0, 0); g.textBaseline = "top";
+  g.fillStyle = C.void; g.fillRect(0, 0, W, H);
+  g.strokeStyle = C.grid; g.lineWidth = 1;
+  for (let x = 0; x < W; x += 96) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = 0; y < H; y += 96) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  const txt = (s, x, y, f, col, right) => { g.font = f; g.fillStyle = col; g.textAlign = right ? "right" : "left"; g.fillText(s, x, y); return g.measureText(s).width; };
+  const fit = (s, size, weight, fam, width) => { let z = size; g.font = `${weight} ${z}px ${fam}`; while (z > 10 && g.measureText(s).width > width) { z -= 1; g.font = `${weight} ${z}px ${fam}`; } return g.font; };
+  const rr = (x0, y0, x1, y1, r, fill, stroke) => { g.beginPath(); g.roundRect(x0, y0, x1 - x0, y1 - y0, r); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1; g.stroke(); } };
+  /* frame: logo, name, kind chip, rules, footer */
+  const k = 52 / 64; g.lineWidth = 3.2 * k; g.strokeStyle = C.white; g.lineJoin = g.lineCap = "round";
+  g.beginPath(); g.arc(40 + 32 * k, 30 + 32 * k, 25 * k, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = C.ok; g.beginPath(); [[13, 33], [23, 33], [27.5, 24], [34.5, 43], [39, 33], [51, 33]].forEach(([px, py], i) => g[i ? "lineTo" : "moveTo"](40 + px * k, 30 + py * k)); g.stroke();
+  txt("Tau HUD", 104, 34, `700 24px ${SORA}`, C.white);
+  txt(T("Tau Testnet Alpha, live"), 104, 66, `400 14px ${MONO}`, C.dim);
+  g.font = `600 13px ${SORA}`; const kind = T("MY TAU CARD"), kw = g.measureText(kind).width;
+  rr(W - 40 - kw - 32, 42, W - 40, 74, 16, null, C.hair); txt(kind, W - 56, 50, `600 13px ${SORA}`, C.text, true);
+  g.fillStyle = C.line; g.fillRect(40, 104, W - 80, 1); g.fillRect(40, 576, W - 80, 1);
+  const fx = txt("tauhud.com", 40, 590, `700 16px ${SORA}`, C.white); txt("/card/", 40 + fx, 590, `500 16px ${SORA}`, C.dim);
+  txt(T("unofficial community view"), W - 40, 594, `400 13px ${MONO}`, C.dim, true);
+  if (!A) return;
+  /* who: the address print (bars from its hash), the three words, since when */
+  for (let i = 0; i < 8; i++) { const x = hash[i], bh = 18 + (x % 10) * 5, v = Math.round(255 * (.45 + (x >> 4) / 30)); rr(40 + i * 13, 196 - bh, 48 + i * 13, 196, 2, `rgb(${v},${v},${v})`); }
+  const name = [hash[8], hash[9], hash[10]].map(x => WORDS[x]).join(" · ");
+  g.font = fit(name, 46, 700, SORA, 1000); g.fillStyle = C.white; g.textAlign = "left"; g.fillText(name, 160, 126);
+  const since = c.first_ts ? FX("on the testnet since {d}", { d: new Date(c.first_ts * 1000).toLocaleDateString(window.TauI18n && TauI18n.lang !== "en" ? TauI18n.lang : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) }) : T("new on the testnet");
+  txt(short(A) + " · " + since, 162, 186, `400 16px ${MONO}`, C.dim);
+  /* four tiles */
+  const y0 = 232, y1 = 392, gap = 20, w = (W - 80 - 3 * gap) / 4, xs = [0, 1, 2, 3].map(i => 40 + i * (w + gap));
+  const tile = (i, title, val, note) => {
+    rr(xs[i], y0, xs[i] + w, y1, 10, C.deck, C.line);
+    txt(T(title).toUpperCase(), xs[i] + 20, y0 + 16, `600 12px ${SORA}`, C.dim);
+    if (val != null) txt(val, xs[i] + 20, y0 + 40, `600 40px ${SORA}`, C.white);
+    g.font = fit(note, 13, 400, MONO, w - 40); g.fillStyle = C.dim; g.fillText(note, xs[i] + 20, y0 + 104);
+  };
+  const rn = [["own", "{n} own"], ["offered", "{n} offered"], ["proposed", "{n} proposed"]].filter(([key]) => c[key]).map(([key, s]) => F(s, { n: c[key] }));
+  tile(0, "Rules written", nf.format(c.rules || 0), rn.join(" · ") || T("own rules, offers, changes"));
+  tile(1, "Votes cast", nf.format(c.votes || 0), F("{n} on rules · {m} for Agorzilla", { n: c.rule_votes || 0, m: c.agz_votes || 0 }));
+  tile(2, "Agorzilla meals", nf.format(c.meals || 0), T("one counts per hour"));
+  rr(xs[3], y0, xs[3] + w, y1, 10, C.deck, C.line);
+  txt(T("Café stamps").toUpperCase(), xs[3] + 20, y0 + 16, `600 12px ${SORA}`, C.dim);
+  const step = (w - 40 - 56) / 3;
+  "ACLT".split("").forEach((l, i) => {
+    const x = xs[3] + 48 + i * step, y = y0 + 74;
+    if (i < stamps) {
+      g.lineWidth = 2.5; g.strokeStyle = C.ok; g.beginPath(); g.arc(x, y, 26, 0, Math.PI * 2); g.stroke();
+      g.lineWidth = 1; g.strokeStyle = "#1e7846"; g.beginPath(); g.arc(x, y, 21, 0, Math.PI * 2); g.stroke();
+      g.font = `700 20px ${SORA}`; g.fillStyle = C.ok; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(l, x, y + 1); g.textBaseline = "top";
+    } else { g.lineWidth = 1; g.strokeStyle = C.hair; g.setLineDash([7, 6]); g.beginPath(); g.arc(x, y, 26, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
+  });
+  txt(F("{n} of 4 · the café walk", { n: stamps }), xs[3] + 20, y0 + 120, `400 13px ${MONO}`, C.dim);
+  /* the sentence */
+  rr(40, 412, W - 40, 552, 10, C.deck, C.line);
+  const l = full ? line(full) : ""; g.font = fit(l, 26, 600, SORA, W - 130); g.fillStyle = C.white; g.textAlign = "left"; g.fillText(l, 64, 438);
+  const l2 = T("Helping test the rules of Tau Testnet Alpha, where rules change by agreement.");
+  g.font = fit(l2, 15, 400, MONO, W - 130); g.fillStyle = C.text; g.fillText(l2, 64, 484);
+  const l3 = T("Test AGRS have no value. Nothing on this card is priced or promised.");
+  g.font = fit(l3, 14, 400, MONO, W - 130); g.fillStyle = C.dim; g.fillText(l3, 64, 512);
+  if (l) $("card").setAttribute("aria-label", name + ". " + l);
+}
+
+/* ---------- what is still open on the card, with the way to do it ---------- */
+function fillList(c) {
+  const rows = [
+    [c.rules > 0, "Write a rule", "Your own transfer rule, checked by the testnet.", "/wallet/#rules-mine", "Wallet"],
+    [c.votes > 0, "Cast a vote", "Say yes or no to a rule change, or to Agorzilla's evening question.", "/proposals/", "Rule changes"],
+    [c.meals > 0, "Feed Agorzilla", "One test AGRS is a meal; every wallet's meals shape it.", "https://agorzilla.com", "Agorzilla"],
+    [STAMPS >= 4, "Walk through the café", "Four regulars, four stamps on your ticket.", "/gazette/walk/", "The café"],
+  ];
+  $("fill").replaceChildren(...rows.map(([done, t, d, h, go]) => {
+    const li = document.createElement("li"); li.className = done ? "done" : "";
+    li.innerHTML = `<span class="dot" aria-hidden="true"></span><span><b></b><small></small></span>`;
+    li.querySelector("b").textContent = T(t) + (done ? " ✓" : ""); li.querySelector("small").textContent = T(d);
+    if (!done) { const a = document.createElement("a"); a.href = h; a.textContent = T(go) + " ›"; if (/^https:/.test(h)) { a.target = "_blank"; a.rel = "noopener"; } li.append(a); }
+    return li;
+  }));
+}
+
+/* ---------- loading ---------- */
+let NUMS = null;
+async function load() {
+  if (!A) { $("pNone").hidden = false; $("pShare").hidden = true; $("pFill").hidden = true; $("stage").classList.remove("reading"); draw({}, null); paintEmpty(); return; }
+  if (!OWN) { $("lead").textContent = T("A wallet's card from Tau Testnet Alpha."); if (!mine) $("pNone").hidden = false; }
+  const hash = await sha(A);
+  draw({}, hash, 0, null); setX();
+  try {
+    const r = await fetch(`${NODE}/og/card/${A}.json`, { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    NUMS = await r.json();
+    $("stage").classList.remove("reading");
+    fillList(NUMS); setX();
+    /* the card fills up: numbers count up from 0, stamps land one by one */
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches, t0 = performance.now(), MS = 1100;
+    const step = now => {
+      const f = still ? 1 : Math.min(1, (now - t0) / MS), e = 1 - Math.pow(1 - f, 3), n = {};
+      for (const k in NUMS) n[k] = typeof NUMS[k] === "number" && !/_ts$|_h$/.test(k) ? Math.round(NUMS[k] * e) : NUMS[k];
+      draw(n, hash, Math.floor(STAMPS * e + 1e-9), f < 1 ? null : NUMS);
+      if (f < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  } catch (e) {
+    $("state").textContent = T("Our node can't be reached right now. Try again in a minute.");
+    fillList({});
+  }
+  if (!OWN) $("pFill").hidden = true;
+}
+/* no wallet: a quiet placeholder card */
+function paintEmpty() {
+  const g = $("card").getContext("2d");
+  g.font = `600 26px ${SORA}`; g.fillStyle = C.text; g.textAlign = "center"; g.fillText(T("Your card appears here once you have a test wallet."), W / 2, 320);
+  g.textAlign = "left";
+}
+
+/* ---------- pass it on ---------- */
+function shareText() { return (OWN ? T("My Tau card:") : T("A Tau card:")) + " " + (NUMS ? line(NUMS) : "") + " " + T("Test AGRS only, nothing priced.") + " #TauNet"; }
+const setX = () => { $("bX").href = "https://x.com/intent/post?text=" + encodeURIComponent(shareText()) + "&url=" + encodeURIComponent(shareUrl()); };
+$("bCopy").onclick = async e => { const b = e.currentTarget; try { await navigator.clipboard.writeText(shareUrl()); b.textContent = T("Copied"); } catch (x) { prompt(T("Copy the link"), shareUrl()); } setTimeout(() => { b.textContent = T("Copy the link"); }, 1800); };
+const blob = () => new Promise(ok => $("card").toBlob(ok, "image/png"));
+$("bSave").onclick = async () => { const b = await blob(); if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "my-tau-card.png"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+if (navigator.share) {
+  $("bShare").hidden = false;
+  $("bShare").onclick = async () => {
+    const b = await blob(), f = b && new File([b], "my-tau-card.png", { type: "image/png" });
+    const data = { title: T("My Tau card"), text: shareText(), url: shareUrl() };
+    if (f && navigator.canShare && navigator.canShare({ files: [f] })) data.files = [f];
+    navigator.share(data).catch(() => {});
+  };
+}
+$("look").onsubmit = e => { e.preventDefault(); const v = $("lookIn").value.trim().toLowerCase(); if (!isAddr(v)) { $("lookIn").classList.add("bad"); return; } location.href = "/card/?a=" + v + (window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : ""); };
+$("lookIn").addEventListener("input", () => $("lookIn").classList.remove("bad"));
+/* the webfonts first, so the canvas draws in Sora and JetBrains Mono */
+(document.fonts ? Promise.race([Promise.all([document.fonts.load(`700 46px Sora`), document.fonts.load(`400 16px "JetBrains Mono"`)]), new Promise(r => setTimeout(r, 2500))]) : Promise.resolve()).then(load, load);
+</script>
+</body>
+</html>

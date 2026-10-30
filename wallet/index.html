@@ -378,6 +378,7 @@ html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr)
           <div class="row">
             <button class="b" type="button" id="btnBackup">Back up key</button>
             <a class="b" id="lnkAcct" href="/account/" style="text-decoration:none;display:inline-flex;align-items:center;font:600 11px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--hair);border-radius:6px;padding:6px 11px;color:var(--text)">Open in Accounts</a>
+            <a class="b" id="lnkCard" href="/card/" style="text-decoration:none;display:inline-flex;align-items:center;font:600 11px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--hair);border-radius:6px;padding:6px 11px;color:var(--text)" data-tip="My Tau card&#10;Your rules, votes, Agorzilla meals and café stamps on one picture.&#10;Ready to post; nothing on it is priced.">My Tau card</a>
             <a class="b" id="lnkTg" href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener" hidden data-tip="Telegram alerts&#10;A message from @tauhud_alerts_bot when this wallet sends, receives or its rule lands in a block.&#10;Only your chat id and this address are kept. /stop ends it." style="text-decoration:none;display:inline-flex;align-items:center;font:600 11px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--hair);border-radius:6px;padding:6px 11px;color:var(--text)">Telegram alerts</a>
             <button class="b" type="button" id="btnPayMe" aria-expanded="false" data-tip="Ask to be paid&#10;A link and a QR code with your address in it.&#10;Whoever opens it finds the wallet filled in for you.">Ask to be paid</button>
             <button class="b quiet" type="button" id="btnForget">Forget key</button>
@@ -1146,7 +1147,7 @@ document.querySelectorAll("#ruleTabs button").forEach(b => b.addEventListener("c
   $("rMine").hidden = RTAB !== "mine"; $("rShare").hidden = RTAB !== "share"; $("rPakt").hidden = RTAB !== "pakt";
   renderRule(); renderShare(); renderPakt();
 }));
-/* deep links: /wallet/#rules-share opens that tab (#rules-mine, #rules-pakt too); ?from=hud (or ?from=start) adds a way back to the HUD (or to Start here) */
+/* deep links: /wallet/#rules-share opens that tab (#rules-mine, #rules-pakt too); ?from=hud (start, rules) adds a way back to that page */
 function takeRulesHash() {
   const m = /^#rules-(mine|share|pakt)$/.exec(location.hash);
   if (!m) return;
@@ -1158,14 +1159,16 @@ window.addEventListener("hashchange", takeRulesHash);
 (() => {
   const q = new URLSearchParams(location.search);
   const from = q.get("from");
-  if (from !== "hud" && from !== "start") return;
+  const back = { hud: ["/", "Back to the HUD"], start: ["/start/", "Back to Start here"], rules: ["/rules/", "Back to the rules wall"] }[from];
+  if (!back) return;
   const lang = q.get("lang");
-  $("backHud").href = (from === "start" ? "/start/" : "/") + (lang ? "?lang=" + encodeURIComponent(lang) : "");
-  $("backHud").textContent = "‹ " + T(from === "start" ? "Back to Start here" : "Back to the HUD");
+  $("backHud").href = back[0] + (lang ? "?lang=" + encodeURIComponent(lang) : "");
+  $("backHud").textContent = "‹ " + T(back[1]);
   $("backHud").hidden = false;
 })();
 const ONLY = new Set();   // the names picked for "only to"
 let seeded = null;        // the rule the builder was last filled from
+let keepDraft = false;    // the builder holds a carried rule (another mode, or the rules wall): the chain's answer does not replace it
 /* a rule carried over from the other mode ("Continue in the simulation"): it fills the builder once and wins over the rule read from the chain */
 const DRAFT_KEY = "tauhud-wallet-draft";
 let carried = (() => { try { const d = JSON.parse(store.get(DRAFT_KEY) || "null"); store.del(DRAFT_KEY); return d && typeof d === "object" ? d : null; } catch (e) { return null; } })();
@@ -1184,8 +1187,8 @@ function seedBuilder(r) {
   const key = r ? r.text : "";
   if (seeded === key) return;
   seeded = key;
-  if (carried) { fillBuilder({ only: [], cap: null, from: null, co: null, ...carried }); carried = null; return; }
-  if (!r || r.freeze || r.unknown) return;
+  if (carried) { fillBuilder({ only: [], cap: null, from: null, co: null, ...carried }); carried = null; keepDraft = true; return; }
+  if (keepDraft || !r || r.freeze || r.unknown) return;   // a carried rule stays in the builder after the chain's answer comes in
   fillBuilder(r);
 }
 function ruleDraft() {
@@ -1225,7 +1228,7 @@ function probes(r) {
 }
 function renderRule() {
   const r = myRule(), box = $("ruleNow"), d = ruleDraft();
-  if (W.clause !== undefined) seedBuilder(r);
+  if (W.clause !== undefined || carried) seedBuilder(r);   // a carried rule fills the builder at once, before the chain answers
   box.className = "rule" + (r ? " on" : "");
   if (!W.pk) box.replaceChildren(el("span", { class: "dim", text: T("Make your account first; then you can give it a rule.") }));
   else if (W.clause === undefined) box.replaceChildren(el("span", { class: "dim", text: T(offlineNow() ? "Our node is not reachable right now; your rule shows when it is back." : "Reading your rule from the chain…") }));
