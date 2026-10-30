@@ -56,21 +56,21 @@ DETAIL = {
 }
 # new sketches of the island (sketch.py writes plates/<name>.jpg and plates/<name>.json, where everything stands)
 SKETCH = {
-    "bay": "A Caribbean harbour island seen from the sea at a high angle, around noon: a sheltered turquoise bay in "
-           "front that opens to the open sea, with sailing boats and fishing boats at anchor and a wooden pier running "
-           "out into it; round the back of the bay a stone quay with a row of tall, brightly painted gabled harbour "
-           "houses with shutters and balconies, and a market square with striped stalls under a huge flaming red "
-           "flamboyant tree; behind the town two steep green volcanic peaks covered in rainforest with a waterfall "
-           "and a stream running down to the bay; up on a terrace a white colonial council house with green shutters, "
-           "a veranda, a clock tower and broad steps; on the hillside to the left a cool blue Georgian embassy with a "
-           "veranda and a warm terracotta embassy villa with arches; on a green knoll to the right a little yellow "
-           "wooden radio station with a tall mast; a stone rum distillery with a chimney on the east slope; a beach "
-           "bar with a thatched roof on the right beach; on a rocky point on the left a red and white lighthouse "
-           "with a keeper's cottage; little pastel clapboard houses with tin roofs up the slopes, palm trees along "
-           "the beaches, huts on stilts in the shallows, a coral reef with surf round the island. Very Caribbean, "
-           "warm and alive, a place you want to walk around in. The input is a rough sketch: keep where every building, the bay, the pier, "
-           "the peaks and the lighthouse stand and how big they are, but paint it all far richer, with many more small "
-           "details of island life.",
+    "bay": "The whole island as the map screen of a classic cartoon adventure game, seen from the sea at a high angle: "
+           "one great lumpy green peak in the middle, covered in rounded masses of rainforest up to a bald rock crown, "
+           "a waterfall down its front; steep stylised cliffs with vertical rock striations along the front shore, "
+           "rocks scattered in the surf, a small wreck on the rocks; on a plateau on the left a little village with a "
+           "cool blue Georgian embassy with a veranda and a warm terracotta embassy villa; a red and white lighthouse "
+           "on the cliff point at the far left; on the right a harbour town glowing in a turquoise bay: tall narrow "
+           "brightly painted gabled houses climbing the slope, a white colonial council house with a clock tower on "
+           "top, a market square under a flaming red flamboyant tree, a wooden pier, a tall ship at anchor, small "
+           "boats; a yellow radio shack with a tall mast on the hill above, a stone rum distillery with a chimney, a "
+           "beach bar with a thatched roof on the bay's beach; palms along the shores. Style: exaggerated, organic, "
+           "slightly whimsical shapes, rich painterly brushwork, curling spiral clouds with painted swirls in the sky, "
+           "deep saturated turquoise and teal water that glows in the shallows, cinematic light, warm glowing windows "
+           "in the town, a sense of mystery and adventure; its own island, nothing copied. The input is a rough "
+           "sketch: keep where every building, the bay, the pier, the peak and the lighthouse stand and how big they "
+           "are, but paint it all far richer, with many more small details of island life.",
 }
 SCENE = {
     "island": "A small tropical island seen from above at an angle, in the open sea under a clear blue sky: a white "
