@@ -2080,4 +2080,7 @@ TauI18n.add({ strings: {
   "Test change · no effect": "测试性变更 · 无效果",
   "Test change: checked on 400 random inputs, this rule text decides exactly like the network's starting rules. The extra part is a maths fact that is always true, so nothing changes.": "测试性变更：已用 400 组随机输入检验，这段规则文本的判定与网络的初始规则完全相同。多出来的部分是一个恒为真的数学事实，所以什么都没变。",
   "Network rule changes: a check now tells real changes from test changes. On the testnet all 43 rule changes so far rewrite the rule for valid blocks with an extra maths fact that is always true (for example a × b = b × a), so the network decides exactly as before. The HUD feed, the Explorer and Proposals now mark these “test change · no effect”, checked on 400 random inputs, and Proposals counts how many changed behaviour.": "网络规则变更：现在有一个检验，能把真正的变更和测试性变更区分开。测试网上迄今的 43 次规则变更都是把有效区块的规则重写一遍，再加一个恒为真的数学事实（例如 a × b = b × a），所以网络的判定和以前完全一样。HUD 动态、浏览器和提案页现在把它们标为“测试性变更 · 无效果”（用 400 组随机输入检验），提案页还会统计有多少次真正改变了行为。",
+  "Full screen: only the HUD": "全屏：只显示 HUD",
+  "Back to the full site": "返回完整网站",
+  "On a phone, the HUD now turns with you. Held on its side, the header folds into three short rows and the panels sit two by two, with the tab bar below. A new ⛶ button at the top right shows the HUD alone on the whole screen; ✕ brings the site back. Where the phone allows it the browser goes full screen too, on an iPhone the site bars step aside.": "在手机上，HUD 现在会随屏幕一起转动。横过来时，页眉收成三行短栏，面板两两并排，下方是标签栏。右上角新的 ⛶ 按钮让 HUD 独占整个屏幕；✕ 返回网站。手机支持时浏览器也会进入全屏；在 iPhone 上，网站的菜单栏会让开。",
 } });
