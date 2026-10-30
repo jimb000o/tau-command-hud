@@ -160,7 +160,7 @@ const A = isAddr((q.get("a") || "").toLowerCase()) ? q.get("a").toLowerCase() : 
 const OWN = !!A && A === mine;
 /* café stamps live in this browser (gazette/cafe.js keeps them); a shared link carries them as c */
 let STAMPS = 0;
-if (OWN) { try { STAMPS = new Set(JSON.parse(store.get("tauhud-cafe-stamps") || "[]")).size; } catch (e) {} }
+if (OWN) { try { STAMPS = new Set(JSON.parse(store.get("tauhud-cafe-stamps") || "[]").filter(x => ["mae", "elias", "prof", "sully"].includes(x))).size; } catch (e) {} }
 else STAMPS = Math.max(0, Math.min(4, parseInt(q.get("c"), 10) || 0));
 STAMPS = Math.min(4, STAMPS);
 

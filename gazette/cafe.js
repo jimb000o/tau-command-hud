@@ -18,6 +18,9 @@
   const CAFE_EN = {
     call: "From the counter, Mae: “Fresh pot on, hon, if you're looking up.”", loading: "One moment…", loadingSub: "The café is being set for you", enter: "Look up", enterTip: "Look up from the paper: walk through the café and meet the regulars",
     back: "The paper", backTip: "Back to the paper",
+    cat: { deja: "Déjà vu: the cat went by twice, the very same way. In here that means a rule just changed.",
+      lines: ["The café cat. Nobody owns her. Everybody agreed to feed her, and that is a rule too.", "Prrr. She sits on whatever proposal you are reading. That is her vote.",
+        "Mrrp. She doesn't follow the chain. She follows the warm spot by the coffee urn.", "Mae says the cat was here before the house rules. She has never voted, and somehow she always gets her way."] },
     hint: "Walk with the edges of the room or ← →, and click someone to talk",
     hintTouch: "Swipe or tap the edges to walk, and tap someone to talk",
     soundHint: "Best with sound",
@@ -670,6 +673,15 @@
       whoosh() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02, s = A.createBufferSource(), b = A.createBiquadFilter(), g = A.createGain();
         s.buffer = noise(A); s.loop = true; b.type = "bandpass"; b.Q.value = 1.2; b.frequency.setValueAtTime(400, t); b.frequency.exponentialRampToValueAtTime(3000, t + 1.4); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.12, t + 1.0); g.gain.linearRampToValueAtTime(0, t + 1.6);
         s.connect(b); b.connect(g); g.connect(out); s.start(t); s.stop(t + 1.7); hit(A, out, t + 1.6, 200, 1, 0.2, 0.3); },
+      /* the café cat: a soft meow that rises and falls (or a short "mrrp"), and a purr */
+      meow(short) { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02, d = short ? 0.22 : 0.62, o = A.createOscillator(), f1 = A.createBiquadFilter(), f2 = A.createBiquadFilter(), m = A.createGain(), r = 1 + (Math.random() - 0.5) * 0.12;
+        o.type = "sawtooth"; o.frequency.setValueAtTime(520 * r, t); o.frequency.linearRampToValueAtTime((short ? 860 : 780) * r, t + d * 0.3); o.frequency.linearRampToValueAtTime((short ? 700 : 470) * r, t + d);
+        f1.type = f2.type = "bandpass"; f1.frequency.setValueAtTime(900, t); f1.frequency.linearRampToValueAtTime(1400, t + d * 0.4); f1.frequency.linearRampToValueAtTime(800, t + d); f2.frequency.value = 2600; f1.Q.value = 4; f2.Q.value = 6; m.gain.value = 1;
+        o.connect(f1); o.connect(f2); f1.connect(m); f2.connect(m); m.connect(env(A, out, t, 0.05, d, 0.05)); o.start(t); o.stop(t + d + 0.1); },
+      purr() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02, s = A.createBufferSource(), lp = A.createBiquadFilter(), g = A.createGain(), lfo = A.createOscillator(), dep = A.createGain();
+        s.buffer = noise(A); s.loop = true; lp.type = "lowpass"; lp.frequency.value = 320; lfo.frequency.value = 26; dep.gain.value = 0.05; lfo.connect(dep); dep.connect(g.gain);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.06, t + 0.3); g.gain.setValueAtTime(0.06, t + 1.6); g.gain.linearRampToValueAtTime(0, t + 2.1);
+        s.connect(lp); lp.connect(g); g.connect(out); s.start(t); s.stop(t + 2.2); lfo.start(t); lfo.stop(t + 2.2); },
       /* the feeling at the end: a warm chord that opens slowly, like the morning */
       swell() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.05, lp = A.createBiquadFilter(), g = A.createGain(); lp.type = "lowpass"; lp.frequency.setValueAtTime(300, t); lp.frequency.exponentialRampToValueAtTime(2600, t + 7);
         g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.06, t + 5); g.gain.setValueAtTime(0.06, t + 11); g.gain.linearRampToValueAtTime(0, t + 18); lp.connect(g); g.connect(out);
@@ -724,7 +736,7 @@
   /* one room on the screen, shifted by dx (walking) and by the reader's head (cam) */
   function drawArea(name, dx, t) {
     const A = AREAS[name]; g.save(); g.translate(dx, 0);
-    if (name === "window") { for (const c of S.layers) g.drawImage(c, 0, 0, W, H); g.restore();
+    if (name === "window") { for (const c of S.layers) g.drawImage(c, 0, 0, W, H); g.restore(); if (CAT.room === name) drawCat(dx, t);
       if (dx === 0) ST.boxes = { person: null, props: Object.entries((S.hits && S.hits()) || {}).map(([id, b]) => ({ id, x: b.x, y: b.y, w: b.w, h: b.h })) }; return; }
     const G = geom(W, H, ST.cam), layers = bake(name), P = A.person, items = A.layers.map((L, i) => ({ z: L.z, i })).concat(P ? [{ z: P.z, p: true }] : []).sort((a, b) => b.z - a.z);
     for (const it of items) {
@@ -744,6 +756,7 @@
       g.drawImage(b.c, -b.ov + sh, 0, W + 2 * b.ov, H);
       if (L.live) L.live(g, G, t);
     }
+    if (CAT.room === name) drawCat(0, t);
     /* dust in the lamplight */
     if (!RM) { g.save(); g.globalCompositeOperation = "screen"; for (const m of MOTES) { const x = ((m.x + Math.sin(t * 0.05 * m.v + m.p) * 0.05) % 1) * W, y = ((m.y - t * 0.006 * m.v) % 1 + 1) % 1 * H * 0.8;
       g.fillStyle = `rgba(255,236,200,${0.25 + 0.2 * Math.sin(t * m.v + m.p)})`; g.fillRect(x, y, 1.6, 1.6); } g.restore(); }
@@ -824,6 +837,10 @@
      then the café opens (a card is shown only if that takes longer than a blink) */
   function enter(quick) {
     if (ST.on) return; ST.on = true; ST.talked = false; ST.area = "window"; ST.cam = ST.camT = 0; ST.zoom = 1.08; ST.zoomT = 1; ST.last = 0;
+    /* the café is heard from the first step whenever the site's sound is on: "Look up" is the click that may start it */
+    let snd = "on"; try { snd = localStorage.getItem("gazette-sound") || "on"; } catch (e) {}
+    if (snd !== "off" && S.amb_btn && !AUDIO.on()) { S.amb_btn.click(); setTimeout(() => { sndLabel(); mix(); }, 50); }
+    catPut("window", "wait");
     desk.classList.add("cafe-on", "cafe-wait"); desk.classList.remove("cafe-away"); labels(); mix();
     const t0 = performance.now(); let shown = false; const card = setTimeout(() => { shown = true; waitShow(true, 0); }, 150);
     requestAnimationFrame(() => { if (!ST.on) return; if (W !== desk.clientWidth || H !== desk.clientHeight || !cv.width) size(); ST.zx = W / 2; ST.zy = H / 2; loop();
@@ -831,6 +848,8 @@
         clearTimeout(card); if (!ST.on) return; const rest = shown ? Math.max(0, 350 - (performance.now() - t0)) : 0;
         setTimeout(() => { if (!ST.on) return; waitShow(false); desk.classList.remove("cafe-wait"); ui.hidden = false; place();
           hintEl.classList.add("on"); clearTimeout(hintEl._t); ST.walked = false;
+          /* the cat on the sill looks at the reader, gets up and pads to the way on; if nobody follows, a soft meow */
+          catLead(1500); [6500, 17000].forEach((ms, i) => setTimeout(() => { if (ST.on && !ST.walked && ST.area === "window" && !CAT.walk) catMew(!!i); }, ms));
           /* nobody has moved yet: from the right, Mae calls over once and the way to the counter catches the light */
           clearTimeout(ST.callT); ST.callT = setTimeout(() => { if (!ST.on || ST.walked || ST.area !== "window") return; const e = $(".cafe-edge.r"), c = $(".cafe-call");
             e.classList.add("call"); c.textContent = TX.call; c.classList.add("on"); for (let k = 0; k < 9; k++) setTimeout(() => ST.on && !ST.walked && AUDIO.syllable("mae", k === 0), 300 + k * 110); }, 2400);
@@ -850,10 +869,85 @@
     if (!canGo(d)) { if (d > 0 && HOST[ST.area] && IDX() < ORDER.length - 1) { const who = HOST[ST.area]; flash(TX.people[who].wait); for (let k = 0; k < 6; k++) setTimeout(() => AUDIO.syllable(who, !k), k * 110); } return; } closeTalk(); const to = nb(d), slow = RM || small();
     /* a room not drawn yet (a quick walker): the card for a moment, then the step */
     if (!ready(to)) { ST.busy = true; const card = setTimeout(() => waitShow(true, 0), 150); prep([to], (n, t) => waitShow(!wait.hidden, n / t)).then(() => { clearTimeout(card); waitShow(false); ST.busy = false; if (ST.on) walk(d); }); return; }
+    catPut(to, catOpen(to) ? "exit" : "wait");
     ST.pan = { from: ST.area, to, dir: d, t0: performance.now(), d: slow ? 450 : 950, fade: slow }; ST.area = to; ST.zoomT = 1; ST.hover = null;
     if (!ST.walked) { ST.walked = true; clearTimeout(ST.callT); hintEl.classList.remove("on"); $(".cafe-edge.r").classList.remove("call"); $(".cafe-call").classList.remove("on"); }
     desk.classList.toggle("cafe-away", to !== "window"); AUDIO.steps(slow ? 2 : 3); note.classList.remove("on"); place(); mix(); bake(to); loop();
   }
+  /* ----- the café cat: black, quiet, always a room ahead. It sits where the reader is, gets up once the way
+     on is open, pads to it and sits again looking back over its shoulder. When a rule is carried it walks by
+     twice, the very same way. Spots are fractions of the room: [x, y of the paws, sitting height]. ----- */
+  const CAT_AT = { window: { wait: [0.47, 0.79, 0.17], exit: [0.925, 0.79, 0.17] }, counter: { wait: [0.11, 0.7, 0.13], exit: [0.92, 0.7, 0.13] },
+    wire: { wait: [0.07, 0.95, 0.14], exit: [0.925, 0.95, 0.14] }, back: { wait: [0.07, 0.95, 0.14], exit: [0.925, 0.95, 0.14] }, door: { wait: [0.9, 0.95, 0.14], exit: [0.44, 0.77, 0.09] } };
+  const CAT = { room: "window", spot: "wait", x: 0.47, y: 0.79, s: 0.17, walk: null, face: 1, look: 0, mew: 0, n: 0, box: null };
+  const catOpen = r => r === "door" ? ST.stamps.size === 4 : r === "window" || ST.stamps.has(HOST[r]);
+  function catPut(room, spot) { const a = CAT_AT[room][spot]; Object.assign(CAT, { room, spot, x: a[0], y: a[1], s: a[2], walk: null, face: room === "door" ? -1 : 1, look: 1 }); }
+  function catGo(spot, ms, then) { const a = CAT_AT[CAT.room][spot], d = Math.hypot(a[0] - CAT.x, (a[1] - CAT.y) * 0.6);
+    CAT.walk = { x0: CAT.x, y0: CAT.y, s0: CAT.s, a, t0: performance.now(), d: ms || Math.max(1100, d * 5600), then }; CAT.spot = spot; CAT.face = a[0] >= CAT.x ? 1 : -1; }
+  /* after a stamp (or at the start), the cat gets up and goes to the way on */
+  function catLead(delay) { const r = CAT.room; setTimeout(() => { if (ST.on && CAT.room === r && CAT.spot !== "exit" && !CAT.walk && catOpen(r)) catGo("exit"); }, delay); }
+  function catMew(short) { CAT.mew = performance.now(); AUDIO.meow(short); }
+  function drawCat(dx, t) {
+    const now = performance.now(), w = CAT.walk; let x = CAT.x, y = CAT.y, s = CAT.s, u = 1;
+    if (w) { u = Math.min(1, (now - w.t0) / w.d); const k = u * u * (3 - 2 * u);
+      x = w.x0 + (w.a[0] - w.x0) * k; y = w.y0 + (w.a[1] - w.y0) * k; s = w.s0 + (w.a[2] - w.s0) * k;
+      if (u >= 1) { Object.assign(CAT, { x: w.a[0], y: w.a[1], s: w.a[2], walk: null, look: 1 }); const f = w.then; w.then = null; f && f(); } }
+    /* on a narrow screen the cat is smaller and never steps past the edge */
+    const S = s * H * Math.min(1, W / H), X = Math.max(S * 0.5, Math.min(W - S * 0.5, x * W)) + dx, Y = y * H, f = CAT.face;
+    g.save(); g.translate(X, Y);
+    /* the shadow under it */
+    g.fillStyle = "rgba(0,0,0,.38)"; g.beginPath(); g.ellipse(0, 0, S * (CAT.walk ? 0.42 : 0.3), S * 0.04, 0, 0, 7); g.fill();
+    g.scale(S * f, S);
+    const fur = "#0b0907", rim = "rgba(255,232,196,.32)", lw = 1 / S;
+    g.fillStyle = fur; g.strokeStyle = fur; g.lineCap = g.lineJoin = "round";
+    const mew = Math.max(0, 1 - (now - CAT.mew) / 700), tilt = Math.sin(Math.min(1, (now - CAT.mew) / 700) * Math.PI) * 0.12;
+    let hx, hy, eyes;
+    if (CAT.walk) {
+      /* walking: a long low body, four legs in a diagonal gait, the tail up like a question mark */
+      const ph = (now - CAT.walk.t0) / 1000 * 7.5, bob = Math.abs(Math.sin(ph)) * 0.015;
+      const leg = (lx, o, back) => { const a = Math.sin(ph + o) * 0.42, kx = lx + Math.sin(a) * 0.12, ky = -0.2, fx = lx + Math.sin(a) * 0.26 + (back ? -0.02 : 0.02), fy = -Math.max(0, Math.sin(ph + o + 1.6)) * 0.06;
+        g.lineWidth = 0.085; g.beginPath(); g.moveTo(lx, -0.4 - bob); g.quadraticCurveTo(kx + (back ? -0.06 : 0.04), ky, fx, fy); g.stroke(); };
+      leg(0.22, Math.PI, false); leg(-0.24, 0, true);
+      g.beginPath(); g.moveTo(-0.37, -0.42 - bob); g.bezierCurveTo(-0.4, -0.62, -0.2, -0.64, -0.02, -0.59 - bob); g.bezierCurveTo(0.12, -0.56, 0.24, -0.66, 0.36, -0.62 - bob);
+      g.bezierCurveTo(0.44, -0.58, 0.42, -0.36, 0.3, -0.3 - bob); g.bezierCurveTo(0.12, -0.22, -0.16, -0.24, -0.3, -0.29 - bob); g.closePath(); g.fill();
+      leg(0.26, 0, false); leg(-0.2, Math.PI, true);
+      const sw = Math.sin(ph * 0.5) * 0.05; g.lineWidth = 0.08; g.beginPath(); g.moveTo(-0.33, -0.5 - bob); g.bezierCurveTo(-0.52, -0.56, -0.56, -0.8, -0.5 + sw, -0.92); g.stroke();
+      g.lineWidth = 0.06; g.beginPath(); g.moveTo(-0.5 + sw, -0.92); g.quadraticCurveTo(-0.46 + sw, -1.0, -0.4 + sw * 1.4, -0.97); g.stroke();
+      hx = 0.44; hy = -0.68 - bob; eyes = 1;
+    } else {
+      /* sitting: a pear of a body, the chest toward the way on, the tail curled round the paws and flicking at the tip */
+      const fl = Math.sin(t * 1.7) * 0.5 + Math.sin(t * 4.3) * 0.2, br = Math.sin(t * 1.9) * 0.006;
+      g.beginPath(); g.moveTo(-0.3, 0); g.bezierCurveTo(-0.38, -0.26, -0.26, -0.6 - br, -0.04, -0.66 - br); g.bezierCurveTo(0.1, -0.67, 0.18, -0.5, 0.16, -0.34);
+      g.bezierCurveTo(0.15, -0.2, 0.2, -0.06, 0.22, 0); g.closePath(); g.fill();
+      g.lineWidth = 0.075; g.beginPath(); g.moveTo(-0.28, -0.03); g.bezierCurveTo(-0.12, 0.03, 0.2, 0.03, 0.34, -0.03); g.quadraticCurveTo(0.42, -0.08 - fl * 0.06, 0.4 + fl * 0.04, -0.17 - fl * 0.06); g.stroke();
+      g.lineWidth = 0.07; g.beginPath(); g.moveTo(0.12, -0.3); g.lineTo(0.15, -0.01); g.stroke();
+      hx = 0.03; hy = -0.78 - br; eyes = 0;
+    }
+    /* the head: turned toward the reader when it sits, ears up, two amber eyes that blink now and then */
+    g.save(); g.translate(hx, hy); g.rotate(-tilt * (CAT.walk ? 0 : 1));
+    g.beginPath(); g.ellipse(0, 0, 0.15, 0.13, 0, 0, 7); g.fill();
+    if (!CAT.walk) { g.beginPath(); g.ellipse(0, 0.07, 0.08, 0.06, 0, 0, 7); g.fill(); }
+    else { g.beginPath(); g.ellipse(0.11, 0.04, 0.07, 0.055, 0, 0, 7); g.fill(); }
+    const ear = (ex, lean) => { g.beginPath(); g.moveTo(ex - 0.06, -0.08); g.lineTo(ex + lean, -0.24); g.lineTo(ex + 0.07, -0.07); g.closePath(); g.fill(); };
+    if (CAT.walk) { ear(-0.02, 0.01); ear(0.07, 0.03); } else { ear(-0.08, -0.03); ear(0.08, 0.03); }
+    const blink = (t % 4.7) < 0.14 ? 0.15 : 1, eh = 0.026 * blink, glow = "rgba(232,196,110,.95)";
+    g.fillStyle = glow;
+    const eye = ex => { g.beginPath(); g.ellipse(ex, -0.005, 0.03, eh, 0, 0, 7); g.fill(); if (blink > 0.5) { g.fillStyle = fur; g.beginPath(); g.ellipse(ex - (eyes ? -0.004 : 0.004 * f), -0.005, 0.008, eh * 0.9, 0, 0, 7); g.fill(); g.fillStyle = glow; } };
+    if (CAT.walk) eye(0.1); else { eye(-0.055); eye(0.055); }
+    if (mew > 0 && !CAT.walk) { g.fillStyle = "#2a1712"; g.beginPath(); g.ellipse(0, 0.085, 0.022, 0.03 * mew, 0, 0, 7); g.fill(); }
+    g.restore();
+    /* the lamp catches the top of the fur */
+    g.globalCompositeOperation = "screen"; g.strokeStyle = rim; g.lineWidth = lw * 1.4;
+    g.beginPath(); if (CAT.walk) { g.moveTo(-0.32, -0.58); g.bezierCurveTo(-0.15, -0.63, 0.12, -0.56, 0.3, -0.63); } else { g.moveTo(-0.27, -0.3); g.bezierCurveTo(-0.24, -0.55, -0.12, -0.64, -0.04, -0.66); } g.stroke();
+    g.beginPath(); g.ellipse(hx, hy, 0.15, 0.13, 0, Math.PI * 1.1, Math.PI * 1.75); g.stroke();
+    g.restore();
+    if (dx === 0) CAT.box = { x: X - S * 0.45, y: Y - S * 1.05, w: S * 0.9, h: S * 1.1 };
+  }
+  /* the rule is carried and the cat walks by. Then it walks by again, the very same way. */
+  function catDeja() { if (CAT.room !== "counter") return; const go = () => { catPut("counter", "wait"); CAT.face = 1; catGo("exit", 2300); };
+    setTimeout(() => { if (!ST.on || ST.area !== "counter") return; go(); CAT.walk.then = () => setTimeout(() => { if (!ST.on || ST.area !== "counter") return; go();
+      CAT.walk.then = () => flash(TX.cat.deja); }, 260); }, 700); }
+  function catClick() { const L = TX.cat.lines; CAT.n = (CAT.n + 1) % L.length; if (CAT.n % 2) AUDIO.purr(); else catMew(true); CAT.mew = performance.now(); flash(L[CAT.n], CAT.box); }
   function arrived() { ST.arriveAt = performance.now(); if (ST.area === "wire") AUDIO.ticker(); keep(); prep([nb(1), nb(-1)]); }
 
   /* ----- talking ----- */
@@ -916,21 +1010,22 @@
         sayCh.querySelector("button").focus({ preventScroll: true }); } });
   }
   function done() {
-    const T = ST.talk; if (!T) return; const who = T.who, K = TX.people[who].task; ST.task = null; $(".cafe-ticket").classList.remove("offer");
+    const T = ST.talk; if (!T) return; const who = T.who, K = TX.people[who].task; ST.task = null; say.style.visibility = ""; if (ST.zoomBack) { ST.zoomT = ST.zoomBack; ST.zoomBack = 0; } $(".cafe-ticket").classList.remove("offer");
     if (who === "elias") AUDIO.ticker();
     say.classList.remove("ask"); sayCh.innerHTML = ""; lines(K.done, () => { stamp(who); edges(); choices(); });
   }
   /* the board, clicked while Mae waits: the tally goes up mark by mark and the rule is carried */
-  function chalkIn() { ST.task = null; TALLY.at = performance.now() - 1800; [0, 900, 1800, 2700, 3600, 5400].forEach(ms => setTimeout(() => ST.area === "counter" && AUDIO.chalk(), ms)); note.classList.remove("on"); setTimeout(done, 6400); }
+  function chalkIn() { ST.task = null; TALLY.at = performance.now() - 1800; ST.zoomBack = ST.zoomT; ST.zoomT = 1; say.style.visibility = "hidden"; catDeja(); [0, 900, 1800, 2700, 3600, 5400].forEach(ms => setTimeout(() => ST.area === "counter" && AUDIO.chalk(), ms)); note.classList.remove("on"); setTimeout(done, 6400); }
   $(".cafe-ticket").addEventListener("click", e => { if (ST.task !== "ticket") return; e.stopPropagation(); AUDIO.rustle(); done(); });
   $(".cafe-ticket").addEventListener("keydown", e => { if (ST.task === "ticket" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); AUDIO.rustle(); done(); } });
   /* every stamp ever earned in this browser, for the reader's Tau card (/card/); the walk itself starts fresh each time */
-  function keep(who) { try { const k = "tauhud-cafe-stamps", had = JSON.parse(localStorage.getItem(k) || "[]"); if (!had.includes(who)) localStorage.setItem(k, JSON.stringify([...had, who])); } catch (e) {} }
+  function keepStamp(who) { try { const k = "tauhud-cafe-stamps", had = JSON.parse(localStorage.getItem(k) || "[]").filter(x => typeof x === "string"); localStorage.setItem(k, JSON.stringify(had.includes(who) ? had : [...had, who])); } catch (e) {} }
   function stamp(who) {
-    ST.stamps.add(who); keep(who); ticket(); AUDIO.stamp(); const tk = $(".cafe-ticket"); tk.classList.remove("thud"); void tk.offsetWidth; tk.classList.add("thud");
+    ST.stamps.add(who); keepStamp(who); ticket(); AUDIO.stamp(); const tk = $(".cafe-ticket"); tk.classList.remove("thud"); void tk.offsetWidth; tk.classList.add("thud");
+    catLead(who === "sully" ? 1400 : 1100);
     let msg = fmt(TX.stamped, { name: TX.people[who].name, what: TX.stampFor[who] }); if (ST.stamps.size === 4) msg += " " + TX.full; flash(msg);
   }
-  function closeTalk() { if (!ST.talk) return; if (ST.task === "ticket") $(".cafe-ticket").classList.remove("offer"); if (ST.task !== "chalk") ST.task = null; clearInterval(TYPE && TYPE.id); TYPE = null; ST.talk = null; ST.mouthT = 0; ST.zoomT = 1; say.hidden = true; }
+  function closeTalk() { say.style.visibility = ""; ST.zoomBack = 0; if (!ST.talk) return; if (ST.task === "ticket") $(".cafe-ticket").classList.remove("offer"); if (ST.task !== "chalk") ST.task = null; clearInterval(TYPE && TYPE.id); TYPE = null; ST.talk = null; ST.mouthT = 0; ST.zoomT = 1; say.hidden = true; }
   let flashT = 0; function flash(s, box) { note.textContent = s; note.classList.add("on"); note.style.left = box ? Math.max(8, Math.min(W - 300, box.x + box.w / 2 - 150)) + "px" : ""; note.style.top = box ? Math.max(70, box.y - 60) + "px" : ""; note.classList.toggle("free", !!box);
     clearTimeout(flashT); flashT = setTimeout(() => note.classList.remove("on"), 6000); }
 
@@ -1004,6 +1099,7 @@
   const inside = (b, [x, y]) => b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
   function pick(e) {
     if (ST.pan || END.on) return null; const p = at(e), b = ST.boxes;
+    if (!ST.talk && CAT.room === ST.area && inside(CAT.box, p)) return { cat: true };
     if (ST.area !== "window" && inside(b.person, p)) return { person: b.person.id };
     const pr = (b.props || []).find(q => inside(q, p)); return pr ? { prop: pr } : null;
   }
@@ -1019,13 +1115,14 @@
     if (h && h.prop && h.prop.id === "board" && ST.task === "chalk") return chalkIn();
     if (ST.talk) return adv();
     if (!h) return;
+    if (h.cat) return catClick();
     if (h.person) return talk(h.person);
     if (h.prop.id === "board" && ST.task === "chalk") return chalkIn();
     if (h.prop.id === "door") { if (["mae", "elias", "prof", "sully"].every(k => ST.stamps.has(k))) return outside(); return flash(TX.people.sully.shut, h.prop); }
     lookAt(h.prop.id, h.prop); });
   cv.addEventListener("click", e => e.stopPropagation());
   cv.addEventListener("pointermove", e => { if (!ST.on) return; const r = cv.getBoundingClientRect(); if (!touch && !RM) ST.camT = ((e.clientX - r.left) / r.width - 0.5) * 0.36;
-    const h = pick(e); cv.style.cursor = h ? "pointer" : ""; ST.hover = h && h.person || null; ST.hoverProp = h && h.prop ? h.prop.id : null; });
+    const h = pick(e); cv.style.cursor = h ? "pointer" : ""; ST.hover = h && h.person || null; if (h && h.cat) { ST.hoverProp = null; return; } ST.hoverProp = h && h.prop ? h.prop.id : null; });
   ui.addEventListener("click", e => { const k = e.target.closest("[data-k]"); if (!k) return; e.stopPropagation();
     if (k.dataset.k === "back") leave(); else if (k.dataset.k === "left") walk(-1); else if (k.dataset.k === "right") walk(1);
     else if (k.dataset.k === "snd" && S.amb_btn) { S.amb_btn.click(); setTimeout(() => { sndLabel(); mix(); }, 50); } });
@@ -1107,12 +1204,12 @@
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
 
   /* other languages come in their own small file */
-  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=7`; s.onload = labels; document.head.appendChild(s); }
+  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=8`; s.onload = labels; document.head.appendChild(s); }
   labels();
   /* ?walk (the shared link) opens the café straight away */
   if (/[?&]walk\b/.test(location.search)) setTimeout(() => enter(), 600);
   /* ?cafe=<room> opens the café there (and ?cafe-talk=<who>&cafe-line=<n> for pictures) */
-  { const m = /[?&]cafe=(\w+)/.exec(location.search); if (m) setTimeout(() => { enter(); if (AREAS[m[1]] && m[1] !== "window") { ST.area = m[1]; desk.classList.add("cafe-away"); place(); mix(); }
+  { const m = /[?&]cafe=(\w+)/.exec(location.search); if (m) setTimeout(() => { enter(); if (AREAS[m[1]] && m[1] !== "window") { ST.area = m[1]; catPut(m[1], "wait"); desk.classList.add("cafe-away"); place(); mix(); }
     const lk = /[?&]cafe-look=(\w+)/.exec(location.search); if (lk) setTimeout(() => { const b = (ST.boxes.props || []).find(q => q.id === lk[1]); lookAt(lk[1], b); }, 1200);
     const tk = /[?&]cafe-talk=(\w+)/.exec(location.search); if (tk) setTimeout(() => { if (tk[1] === "end") { ["mae", "elias", "prof", "sully"].forEach(k => ST.stamps.add(k)); ticket(); outside(); } else talk(tk[1]); }, 400); }, 300); }
 })();
