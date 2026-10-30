@@ -1539,6 +1539,11 @@
   "html": "Newspaper: the language switch works while you read. Pick EN, 中文 or 日本語 and the same page opens in the new language (it used to do nothing on any page past the front). On a phone in reading mode a 文 button on the paper’s top bar carries the switch, and the café button is in your language from the start."
  },
  {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The HUD now leads to where you can do it yourself: under Personal money rules a quiet “write your own rule ›” opens your wallet at Your rule, and under Rule sharing “share a rule with someone ›” opens it at Share. A “Back to the HUD” link in the wallet brings you back, and your language comes along."
+ },
+ {
   "tag": "Accounts",
   "on": "2026-10-30",
   "html": "Accounts: the validator profile now shows what a validator actually did, and when. Its main column lists every block it made with the transactions inside (time, block, kind, amount, from → to), newest first; runs of empty blocks fold into one line and long stops are called out. A strip above it puts its blocks and the transactions in them on one time line, with a lane per kind; a click there jumps to that moment in the list, and a filter narrows it to transfers, rules or governance. Four numbers on top: blocks made, transactions sealed, last block, online. Pauses and hours now sit together under “When it ran”, on the same time axis, and empty parts say why they are empty (a validator like IDNI signs nothing itself; it seals what others send)."
