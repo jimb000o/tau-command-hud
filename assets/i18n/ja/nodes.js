@@ -162,4 +162,6 @@ TauI18n.add({ strings: {
   "Runs the Tau HUD kit and reports to tauhud.com once a minute. Online nodes rank first, then the longest running, then the steadiest.": "Tau HUD キットを使い、1 分ごとに tauhud.com へ報告します。オンラインのノードが先、次に稼働期間の長いもの、次に安定しているものの順です。",
   "Its badge": "バッジ",
   "Click for its details and badge.": "クリックで詳細とバッジを表示。",
+  "None of them has been seen in the last 30 minutes, so the chain core and \"nodes online\" leave them out.": "どれも直近 30 分間見えていないため、チェーンコアと「オンラインのノード」には含まれません。",
+  "offline · no kit": "オフライン · キットなし",
 } });
