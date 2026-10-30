@@ -1,11 +1,16 @@
 {
-  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages.",
+  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; a headline with until (an ISO time in UTC) leaves the line at that time; picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages.",
   "move": {
     "en": "left",
     "zh": "left",
     "ja": "left"
   },
   "headlines": [
+    {
+      "text": "Sun 12:00 UTC: Tau chess engine vs Claude Opus 5.5",
+      "href": "https://chess.taumorrow.com/",
+      "until": "2026-11-02T00:00:00Z"
+    },
     {
       "text": "Rule challenge: a new task for your wallet every Monday",
       "href": "challenge/"
