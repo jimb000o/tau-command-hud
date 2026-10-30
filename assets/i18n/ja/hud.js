@@ -2152,5 +2152,8 @@ TauI18n.add({ strings: {
   "1 ghost tx in the waiting list right now": "今、待機リストに幽霊取引が 1 件",
   "{n} txs waiting for the next block": "{n} 件の取引が次のブロックを待っています",
   "1 tx waiting for the next block": "1 件の取引が次のブロックを待っています",
+  "White Rabbit Key: a small island election game under Playground. Four candidates, five days, three moves a day: propose laws at the Council Hall, talk on the market square, buy a line on Radio Coco, take an embassy's money for a promise, make pacts at the beach bar. Every move is written into the Book in the lighthouse, where anyone can read it; a law that contradicts one in force is refused before anyone votes, and rumours last only until people read the Book. A white rabbit shows newcomers the way, the island turns from morning to night, and an island tune plays in your browser. If you like, a law you pass and your final vote go to the testnet as real transactions of 1 test AGRS.": "ホワイトラビット・キー：「プレイグラウンド」にある小さな島の選挙ゲーム。候補者 4 人、5 日間、1 日 3 手：議事堂で法案を出す、市場の広場で話す、Radio Coco で一言買う、大使館の金を約束と引き換えに受け取る、ビーチバーで協定を結ぶ。すべての手は灯台の帳簿に書かれ、誰でも読めます。施行中の法律と矛盾する法案は投票の前に却下され、噂が効くのはみんなが帳簿を読むまで。白いウサギが初めての人を案内し、島は朝から夜へ移り、島の曲があなたのブラウザで鳴ります。希望すれば、可決した法案と最後の一票を 1 テスト AGRS の本物の取引としてテストネットに送れます。",
+  "New: White Rabbit Key, an island election game": "新着：ホワイトラビット・キー、島の選挙ゲーム",
+  "Four candidates, five days, one island. Every move goes into a Book nobody can edit, and a law that contradicts one in force is refused before anyone votes. Your vote can go on the testnet.": "候補者 4 人、5 日間、島ひとつ。すべての手は誰にも書き換えられない帳簿に残り、施行中の法律と矛盾する法案は投票の前に却下されます。あなたの票はテストネットに送れます。",
   "News line: the ghost lines wear the same mark as the ghosts in the chain core, an amber dot in a small block frame.": "ニュースの行：幽霊の項目に、チェーンコアの幽霊取引と同じ印が付きました。小さなブロック枠の中の琥珀色の点です。",
 } });

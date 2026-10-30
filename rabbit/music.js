@@ -1,0 +1,159 @@
+/* The island's sound: an original calypso for steel pan, marimba, bass and hand drums, played live in the
+   visitor's browser (no recordings), plus the sea, gulls and small sounds for the game. On by default;
+   browsers only allow sound after a first tap, so the page shows "♪ Tap for sound" until then.
+   window.COVE_SOUND = { start, on, set({ music, radio, tense }), sfx(name), toggle() } */
+(() => {
+  const BPM = 104, STEP = 60 / BPM / 4, SWING = 0.16;   // sixteenth notes, the off sixteenths a little late
+  /* the tune: 16 bars, A then B; each note is [sixteenth in the bar, midi note, length in sixteenths] */
+  const A = [
+    [[0, 72, 2], [2, 69, 1], [3, 72, 2], [6, 74, 2], [8, 72, 3], [11, 69, 1], [12, 65, 4]],
+    [[0, 70, 2], [2, 74, 1], [3, 77, 2], [6, 74, 2], [8, 77, 3], [11, 74, 1], [12, 70, 4]],
+    [[0, 76, 2], [2, 74, 1], [3, 72, 2], [6, 70, 2], [8, 67, 3], [11, 70, 1], [12, 72, 4]],
+    [[0, 69, 3], [3, 72, 3], [6, 77, 6], [12, 76, 2], [14, 74, 2]],
+    [[0, 72, 2], [2, 69, 1], [3, 72, 2], [6, 74, 2], [8, 77, 3], [11, 79, 1], [12, 81, 4]],
+    [[0, 79, 2], [2, 77, 1], [3, 74, 2], [6, 77, 2], [8, 74, 3], [11, 72, 1], [12, 69, 4]],
+    [[0, 70, 2], [2, 74, 2], [4, 79, 2], [6, 77, 2], [8, 76, 2], [10, 74, 2], [12, 72, 2], [14, 70, 2]],
+    [[0, 69, 4], [4, 65, 2], [6, 69, 2], [8, 72, 8]],
+  ];
+  const B = [
+    [[2, 74, 2], [4, 74, 2], [6, 77, 4], [12, 74, 2], [14, 72, 2]],
+    [[0, 69, 6], [8, 72, 2], [10, 69, 2], [12, 65, 4]],
+    [[2, 70, 2], [4, 70, 2], [6, 74, 4], [12, 72, 2], [14, 70, 2]],
+    [[0, 69, 8], [10, 72, 2], [12, 74, 2], [14, 76, 2]],
+    [[0, 77, 3], [3, 74, 3], [6, 69, 2], [8, 74, 3], [11, 77, 1], [12, 81, 4]],
+    [[0, 79, 3], [3, 74, 3], [6, 70, 2], [8, 74, 4], [12, 79, 4]],
+    [[0, 76, 2], [2, 79, 2], [4, 76, 2], [6, 72, 2], [8, 70, 2], [10, 67, 2], [12, 64, 4]],
+    [[0, 65, 4], [4, 69, 2], [6, 72, 2], [8, 77, 8]],
+  ];
+  const TUNE = [...A, ...B];
+  /* chords and bass roots per bar (two per bar where the harmony moves on beat 3) */
+  const CH = { F: [[53, 57, 60], 41, 48], Bb: [[58, 62, 65], 46, 53], C7: [[55, 58, 60, 64], 48, 43], Dm: [[57, 62, 65], 50, 45], Gm: [[55, 58, 62], 43, 50] };
+  const HARM = ["F", "Bb", "C7", "F", "F", "Dm", ["Gm", "C7"], "F", "Bb", "F", "C7", "F", "Dm", "Gm", "C7", "F"];
+  const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  const S = { ctx: null, on: false, want: true, master: null, music: null, amb: null, rev: null, radio: null, mvol: 1, tense: false, bar: 0, step: 0, next: 0, timer: 0, noise: null, sea: null };
+  try { S.want = localStorage.getItem("tauhud-rabbit-sound") !== "off"; } catch (e) {}
+
+  function build() {
+    const c = S.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    S.master = c.createGain(); S.master.gain.value = 0.8; S.master.connect(c.destination);
+    /* a small room of reverb, made from decaying noise */
+    const len = c.sampleRate * 1.8, ir = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+    S.rev = c.createConvolver(); S.rev.buffer = ir; const rg = c.createGain(); rg.gain.value = 0.22; S.rev.connect(rg); rg.connect(S.master);
+    /* the music bus; at the radio it goes through a small speaker (a band-pass) */
+    S.music = c.createGain(); S.music.gain.value = 0;
+    S.radio = c.createBiquadFilter(); S.radio.type = "allpass";
+    S.music.connect(S.radio); S.radio.connect(S.master); S.radio.connect(S.rev);
+    S.amb = c.createGain(); S.amb.gain.value = 0; S.amb.connect(S.master);
+    const nb = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), nd = nb.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1; S.noise = nb;
+    /* the sea: noise through a low filter that breathes like waves on a beach */
+    const sea = c.createBufferSource(); sea.buffer = nb; sea.loop = true;
+    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 420;
+    const sg = c.createGain(); sg.gain.value = 0.18;
+    const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 0.11; lg.gain.value = 0.14; lfo.connect(lg); lg.connect(sg.gain);
+    const lfo2 = c.createOscillator(), lg2 = c.createGain(); lfo2.frequency.value = 0.07; lg2.gain.value = 260; lfo2.connect(lg2); lg2.connect(lp.frequency);
+    sea.connect(lp); lp.connect(sg); sg.connect(S.amb); sea.start(); lfo.start(); lfo2.start();
+    S.next = c.currentTime + 0.1;
+    S.timer = setInterval(tick, 25);
+    setInterval(() => { if (S.on && Math.random() < 0.35) gull(); }, 7000);
+  }
+  /* ---------- the instruments ---------- */
+  function env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); }
+  function pan(t, m, dur, v = 0.22) {   // steel pan: a bright fundamental, its octave and twelfth, a slight shimmer
+    const c = S.ctx, out = c.createGain(); out.connect(S.music);
+    [[1, 1], [2, 0.5], [3, 0.2], [4.02, 0.08]].forEach(([r, a], i) => {
+      const o = c.createOscillator(), g = c.createGain(); o.frequency.value = hz(m) * r; o.detune.value = (i ? 4 : 0);
+      env(g, t, 0.006, v * a, Math.min(1.4, 0.35 + dur * 0.9) / (1 + i * 0.6)); o.connect(g); g.connect(out); o.start(t); o.stop(t + 2);
+    });
+    const vib = c.createOscillator(), vg = c.createGain(); vib.frequency.value = 5.5; vg.gain.value = 0.05; vib.connect(vg); vg.connect(out.gain); vib.start(t); vib.stop(t + 2);
+  }
+  function marimba(t, m, v = 0.08) {
+    const c = S.ctx;
+    [[1, 1, 0.28], [3.93, 0.25, 0.06]].forEach(([r, a, d]) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = hz(m) * r; env(g, t, 0.004, v * a, d); o.connect(g); g.connect(S.music); o.start(t); o.stop(t + 0.5); });
+  }
+  function bass(t, m, dur) {
+    const c = S.ctx, o = c.createOscillator(), o2 = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+    o.type = "triangle"; o.frequency.value = hz(m); o2.frequency.value = hz(m) / 2; f.type = "lowpass"; f.frequency.value = 700;
+    env(g, t, 0.01, 0.32, Math.max(0.18, dur * STEP * 1.2)); o.connect(f); o2.connect(f); f.connect(g); g.connect(S.music); o.start(t); o2.start(t); o.stop(t + 1); o2.stop(t + 1);
+  }
+  function hit(t, type, v = 1) {
+    const c = S.ctx, g = c.createGain(); g.connect(S.music);
+    if (type === "shaker") { const n = c.createBufferSource(), f = c.createBiquadFilter(); n.buffer = S.noise; f.type = "highpass"; f.frequency.value = 6500; env(g, t, 0.004, 0.05 * v, 0.045); n.connect(f); f.connect(g); n.start(t, Math.random()); n.stop(t + 0.1); }
+    if (type === "conga" || type === "congaHi") { const o = c.createOscillator(); const f0 = type === "conga" ? 190 : 285; o.frequency.setValueAtTime(f0 * 1.3, t); o.frequency.exponentialRampToValueAtTime(f0, t + 0.05); env(g, t, 0.003, 0.22 * v, 0.22); o.connect(g); o.start(t); o.stop(t + 0.4); }
+    if (type === "clave") { const o = c.createOscillator(); o.frequency.value = 2400; env(g, t, 0.002, 0.07 * v, 0.05); o.connect(g); o.start(t); o.stop(t + 0.1); }
+    if (type === "kick") { const o = c.createOscillator(); o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.12); env(g, t, 0.004, 0.35 * v, 0.2); o.connect(g); o.start(t); o.stop(t + 0.3); }
+  }
+  function gull() {
+    const c = S.ctx, t = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.type = "sawtooth";
+    const f = c.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 2200; f.Q.value = 6;
+    for (let i = 0; i < 3; i++) { o.frequency.setValueAtTime(1500, t + i * 0.22); o.frequency.exponentialRampToValueAtTime(900, t + i * 0.22 + 0.18); }
+    g.gain.setValueAtTime(0.0001, t); for (let i = 0; i < 3; i++) { g.gain.exponentialRampToValueAtTime(0.025, t + i * 0.22 + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.22 + 0.19); }
+    o.connect(f); f.connect(g); g.connect(S.amb); o.start(t); o.stop(t + 0.8);
+  }
+  /* ---------- the band ---------- */
+  const CLAVE = [[0, 6, 12], [4, 8]];   // two bars, three then two
+  function play(bar, st, t) {
+    const b = bar % 16, h = HARM[b], ch = CH[Array.isArray(h) ? (st < 8 ? h[0] : h[1]) : h];
+    /* drums */
+    hit(t, "shaker", st % 2 ? 0.6 : (st % 4 === 2 ? 1.2 : 0.8));
+    if (st === 0 || st === 8) hit(t, "kick", 0.8);
+    if (st === 6 || st === 14) hit(t, "conga", 0.9); if (st === 7 || st === 15 || st === 3) hit(t, "congaHi", 0.6);
+    if (CLAVE[bar % 2].includes(st)) hit(t, "clave");
+    /* bass: root and fifth, the calypso bounce */
+    const BASS = { 0: [1, 3], 3: [1, 1], 6: [2, 2], 8: [1, 3], 11: [1, 1], 14: [2, 2] };
+    if (BASS[st]) bass(t, ch[BASS[st][0]], BASS[st][1]);
+    if (S.tense) return;   // a tense moment: drums and bass only
+    /* marimba on the off-beats */
+    if (st % 4 === 2) ch[0].forEach((m, i) => marimba(t + i * 0.008, m + 12, 0.05));
+    /* the tune on steel pan; the second time round an octave lower with a harmony a third under */
+    for (const [s, m, d] of TUNE[b]) if (s === st) { const lap = Math.floor(bar / 16) % 2; pan(t, lap ? m - 12 : m, d * STEP, 0.2); if (lap) pan(t + 0.01, m - 15 - (m % 12 === 9 ? 1 : 0), d * STEP, 0.08); }
+  }
+  function tick() {
+    if (!S.ctx || !S.on) return;
+    while (S.next < S.ctx.currentTime + 0.12) {
+      const t = S.next + (S.step % 2 ? STEP * SWING : 0);
+      play(S.bar, S.step, t);
+      S.next += STEP; S.step++; if (S.step === 16) { S.step = 0; S.bar++; }
+    }
+  }
+  /* ---------- small sounds for the game ---------- */
+  function sfx(name) {
+    if (!S.ctx || !S.on) return;
+    const c = S.ctx, t = c.currentTime;
+    const tone = (f, at, d, v = 0.12, type = "sine") => { const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = f; env(g, t + at, 0.005, v, d); o.connect(g); g.connect(S.master); o.start(t + at); o.stop(t + at + d + 0.1); };
+    if (name === "tap") tone(1320, 0, 0.06, 0.05);
+    if (name === "open") { tone(784, 0, 0.12, 0.06); tone(1175, 0.06, 0.16, 0.05); }
+    if (name === "coin") { tone(1568, 0, 0.08, 0.08, "square"); tone(2093, 0.07, 0.2, 0.06, "square"); }
+    if (name === "yes") { tone(523, 0, 0.18, 0.1); tone(659, 0.09, 0.18, 0.1); tone(784, 0.18, 0.4, 0.1); }
+    if (name === "no") { tone(220, 0, 0.3, 0.14, "triangle"); tone(185, 0.12, 0.4, 0.12, "triangle"); }
+    if (name === "stamp") { const n = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); n.buffer = S.noise; f.type = "lowpass"; f.frequency.value = 900; env(g, t, 0.002, 0.5, 0.12); n.connect(f); f.connect(g); g.connect(S.master); n.start(t); n.stop(t + 0.2); }
+    if (name === "cheer") { for (let i = 0; i < 4; i++) { const n = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); n.buffer = S.noise; f.type = "bandpass"; f.frequency.value = 900 + i * 500; f.Q.value = 1.4; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 0.3 + i * 0.1); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.4); n.connect(f); f.connect(g); g.connect(S.master); n.start(t, i * 0.3); n.stop(t + 2.6); } [0, 0.15, 0.3].forEach((a, i) => pan(t + a, [77, 81, 84][i], 0.5, 0.18)); }
+    if (name === "glitch") { for (let i = 0; i < 6; i++) tone(200 + Math.random() * 1800, i * 0.035, 0.03, 0.05, "square"); }
+    if (name === "meow") { const o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter(); o.type = "sawtooth"; f.type = "bandpass"; f.frequency.value = 1100; f.Q.value = 3; o.frequency.setValueAtTime(520, t); o.frequency.linearRampToValueAtTime(780, t + 0.18); o.frequency.linearRampToValueAtTime(420, t + 0.5); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55); o.connect(f); f.connect(g); g.connect(S.master); o.start(t); o.stop(t + 0.6); }
+  }
+  /* ---------- the mix ---------- */
+  const want = { music: 1, radio: false, tense: false, amb: 1 };
+  function apply() {
+    if (!S.ctx) return;
+    const t = S.ctx.currentTime;
+    S.music.gain.setTargetAtTime(S.on ? 0.55 * want.music : 0, t, 0.4);
+    S.amb.gain.setTargetAtTime(S.on ? want.amb : 0, t, 0.6);
+    S.radio.type = want.radio ? "bandpass" : "allpass"; S.radio.frequency.value = 1400; S.radio.Q.value = want.radio ? 0.9 : 0.0001;
+    S.tense = want.tense;
+  }
+  function start() {
+    if (!S.want) return false;
+    try { if (!S.ctx) build(); S.ctx.resume(); S.on = true; apply(); return true; } catch (e) { return false; }
+  }
+  window.COVE_SOUND = {
+    start, sfx,
+    get on() { return S.on; }, get wanted() { return S.want; },
+    set(o) { Object.assign(want, o); apply(); },
+    toggle() {
+      S.want = !S.want; try { localStorage.setItem("tauhud-rabbit-sound", S.want ? "on" : "off"); } catch (e) {}
+      if (S.want) start(); else { S.on = false; apply(); }
+      return S.want;
+    },
+  };
+})();
