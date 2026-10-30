@@ -241,4 +241,16 @@ TauI18n.add({ strings: {
   "Wallets reached, or visits, added up over time.": "触达的钱包或访问次数随时间累计。",
   "Agorzilla and pages": "Agorzilla 与页面",
   "On the testnet: what Agorzilla's meals and votes add up to. In the visitor views: the most visited pages.": "在“测试网上”视图中：Agorzilla 的喂食和投票加起来有多少。在访客视图中：最常访问的页面。",
+  "your Tau card": "你的 Tau 卡片",
+  "One picture of what your test wallet did on Tau Testnet Alpha, with Agorzilla reading it beside you.": "一张图看你的测试钱包在 Tau 测试网 Alpha 上做过什么，Agorzilla 就在旁边陪你一起看。",
+  "Your card": "你的卡片",
+  "Read straight from the testnet: rules written, votes cast, Agorzilla meals and café stamps. A tile lights up once something is in it. Nothing on it is priced or promised.": "直接从测试网读取：写过的规则、投过的票、喂 Agorzilla 的次数和咖啡馆印章。格子里一有内容就会亮起来。卡片上的东西没有价格，也没有任何承诺。",
+  "Agorzilla reads it with you": "Agorzilla 和你一起看",
+  "His mood is your card. An empty card makes him cry; every rule, vote, meal and stamp cheers him up, and a full card makes him beam. Tap him.": "他的心情就是你的卡片。空卡片会让他掉眼泪；每条规则、每张票、每顿饭、每个印章都会让他开心一点，满卡时他笑得合不拢嘴。点点他试试。",
+  "Stamps from the café": "咖啡馆的印章",
+  "This week's Daily Consensus lies at his feet, your café ticket on top. In the paper's café four regulars each stamp the ticket. Click it to walk in.": "本周的《共识日报》就放在他脚边，上面是你的咖啡馆票。在报纸里的咖啡馆，四位常客各会给票盖一个章。点它就能走进去。",
+  "Fill your card": "填满你的卡片",
+  "What is still open, each with the page where you do it.": "还没完成的事，每一项都附上去做它的页面。",
+  "Pass it on": "分享出去",
+  "Post it on X or copy the link: the link shows this card as its preview on X, Telegram and WhatsApp.": "发到 X 或复制链接：这个链接在 X、Telegram 和 WhatsApp 上会以这张卡片作为预览。"
 } });
