@@ -19,7 +19,9 @@
   const api = window.TauI18n = {
     lang, langs: LANGS, strings: new Map(), upper: new Map(), patterns: [],   // lang is also the dictionary folder, assets/i18n/<lang>/
     t: s => s, // translate a whole string (English when there is no translation)
-    set(l) { if (!LANGS[l] || l === lang) return; store.set(KEY, l); const u = new URL(location.href); u.searchParams.delete("lang"); location.replace(u.href); },
+    set(l) { if (!LANGS[l] || l === lang) return; store.set(KEY, l); const u = new URL(location.href); u.searchParams.delete("lang");
+      /* same address apart from the #part (English with #p6 on the newspaper): replace() would only jump to the anchor, so reload; the #part is kept */
+      if (u.href === location.href) location.reload(); else location.replace(u.href); },
     /* strings: { "English": "译文" }. A key with {a} placeholders is a template: "{n} refused": "{n} 被拒绝";
        whatever fills a placeholder is translated too when it is words (a quoted rule name, a state). */
     add(dict) {

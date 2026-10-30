@@ -1534,6 +1534,11 @@
   "html": "Newspaper: the café walk is now a proper little journey. Rooms go in order: from your window table only to the right, and the next room opens once the regular there has stamped your ticket; the door stays shut until the ticket is full. Each stamp is earned with a small task after the talk: chalk the regulars' vote onto Mae's board, glue the slip that follows the last block onto Elias's tape, spot the rule that contradicts the one in force for the Professor, and show Sully your ticket. The ticket names what each stamp stands for: Agreement, Chain, Logic, Testnet. A gentle nudge for the first step: Mae calls over from the counter, the way there catches the light, and a regular you have not spoken to yet glows softly with their name. With a full ticket you can also simply click the door to step out; the cards on Market Street now stay long enough to read (a click or a key goes on); the Extra! has a quiet “Pass the paper on” with X, a link to copy, or the phone's own share sheet, and the link opens straight into the café; arrow keys move between answers in a talk."
  },
  {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper: the language switch works while you read. Pick EN, 中文 or 日本語 and the same page opens in the new language (it used to do nothing on any page past the front). On a phone in reading mode a 文 button on the paper’s top bar carries the switch, and the café button is in your language from the start."
+ },
+ {
   "tag": "Accounts",
   "on": "2026-10-30",
   "html": "Accounts: the validator profile now shows what a validator actually did, and when. Its main column lists every block it made with the transactions inside (time, block, kind, amount, from → to), newest first; runs of empty blocks fold into one line and long stops are called out. A strip above it puts its blocks and the transactions in them on one time line, with a lane per kind; a click there jumps to that moment in the list, and a filter narrows it to transfers, rules or governance. Four numbers on top: blocks made, transactions sealed, last block, online. Pauses and hours now sit together under “When it ran”, on the same time axis, and empty parts say why they are empty (a validator like IDNI signs nothing itself; it seals what others send)."

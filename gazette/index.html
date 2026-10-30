@@ -253,6 +253,12 @@ html.reading .desk.zoomable { touch-action: none; }
 @media (max-height: 520px) { .rbar { flex-direction: column; } }
 .rbar button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--hair); background: rgba(9,9,10,.72); color: #fff; font: 600 15px/1 var(--display); cursor: pointer; display: grid; place-items: center; padding: 0; backdrop-filter: blur(6px); }
 .rbar button[hidden] { display: none; }
+.rbar { align-items: flex-start; }
+.rlang { display: flex; gap: 4px; padding: 0; }
+.rlang[hidden] { display: none; }
+.rbar .rlang button { width: auto; min-width: 44px; padding: 0 12px; border-radius: 22px; font: 600 13px/1 var(--display); }
+.rbar .rlang button[aria-pressed="true"] { background: #fff; color: #09090a; }
+@media (max-height: 520px) { .rlang { flex-direction: column; } }
 html.reading .desk.zoomed .ctl, html.reading .desk.zoomed .hint { opacity: .25; }
 @media (prefers-reduced-motion: reduce) { .leaf, .book { transition-duration: .01s; } .leaf.turning .shade { animation: none; } }
 html.i18n-zh .pg { font-family: "Noto Serif SC", "Songti SC", "SimSun", var(--body); }
@@ -434,7 +440,7 @@ html.i18n-zh .cs-line, html.i18n-ja .cs-line { font-family: "Noto Serif SC", "No
     <button class="side prev" id="sPrev" aria-label="Previous page">‹</button>
     <button class="side next" id="sNext" aria-label="Next page">›</button>
     <div class="toc" id="toc" hidden></div>
-    <div class="rbar" id="rbar"><button id="rMode" aria-label="Show the site menu">✕</button><button id="rEd" aria-label="Large type">Aa</button><button id="rFull" aria-label="Full screen" hidden>⛶</button></div>
+    <div class="rbar" id="rbar"><button id="rMode" aria-label="Show the site menu">✕</button><button id="rEd" aria-label="Large type">Aa</button><button id="rFull" aria-label="Full screen" hidden>⛶</button><button id="rLang" aria-label="Language" aria-expanded="false" translate="no">文</button><div class="rlang" id="rLangs" hidden translate="no"></div></div>
     <div class="ctl" id="ctl">
       <button id="bPrev" aria-label="Previous page">‹ Back</button>
       <span class="pgno" id="pgno">Front page</span>
@@ -458,7 +464,7 @@ const EN = {
   ui: { amb0: "Café: off", amb1: "Café: quiet", amb2: "Café: lively", hitCup: "Stir the coffee", hitSugar: "Sugar", hitPapers: "Yesterday's papers", notes: {
     cup: (h, a) => h != null ? `The steam spells τ. Block #${h.toLocaleString("en-US")} is the newest on the testnet${a != null ? `, sealed ${a} s ago` : ""}; another comes about every 8 seconds.` : "The steam spells τ. On the testnet a new block comes about every 8 seconds.",
     sugar: () => "Cube by cube, a chain. Every block is checked against the rules in force before it joins.",
-    papers: h => `Extra! On Tau the rules change by agreement: proposed, voted on, checked by logic before they apply. No fork needed.${h != null ? ` As of block #${h.toLocaleString("en-US")}.` : ""}` }, rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", faith: "From the composing room: this paper is set by learning machines, which guess well and now and then guess wrong. Tau is built the other way: a logic machine that checks every rule before it applies. Read us in good faith; for proof, consult the chain.", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
+    papers: h => `Extra! On Tau the rules change by agreement: proposed, voted on, checked by logic before they apply. No fork needed.${h != null ? ` As of block #${h.toLocaleString("en-US")}.` : ""}` }, rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLang: "Language", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", faith: "From the composing room: this paper is set by learning machines, which guess well and now and then guess wrong. Tau is built the other way: a logic machine that checks every rule before it applies. Read us in good faith; for proof, consult the chain.", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
   date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
   pages: [
@@ -852,6 +858,7 @@ const EN = {
   const ED = (window.TauI18n && { zh: window.GAZETTE_ZH, ja: window.GAZETTE_JA }[TauI18n.lang]) || EN;
   const UI = ED.ui;
   window.GAZETTE_AMB = [UI.amb0, UI.amb1, UI.amb2]; window.GAZETTE_HIT = { cup: UI.hitCup, sugar: UI.hitSugar, papers: UI.hitPapers }; window.GAZETTE_NOTE = UI.notes;
+  document.getElementById("bAmb").textContent = UI.amb0;   /* the café starts off; scene.js relabels it when it changes */
   const $ = id => document.getElementById(id);
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const desk = $("desk"), stage = $("stage"), scaler = $("scaler"), book = $("book");
@@ -1236,6 +1243,17 @@ const EN = {
     requestAnimationFrame(() => build(cur));
   };
   $("rEd").onclick = e => { e.stopPropagation(); const cur = curFrom(); store.set("gazette-edition", MODE.ed === "broad" ? "pocket" : "broad"); build(cur); };
+  /* language on a phone while reading: the site bar is hidden, so the reading bar carries the switch; the page reloads on the same #page */
+  { const I = window.TauI18n, box = $("rLangs"), b = $("rLang");
+    b.setAttribute("aria-label", UI.rLang || "Language"); b.title = b.getAttribute("aria-label");
+    if (!I) b.hidden = true;
+    else {
+      [["en", "EN", "en"], ["zh", "中文", "zh-CN"], ["ja", "日本語", "ja"]].forEach(([code, label, tag]) => {
+        const x = document.createElement("button"); x.type = "button"; x.textContent = label; x.lang = tag; x.setAttribute("aria-pressed", String(I.lang === code));
+        x.onclick = e => { e.stopPropagation(); if (I.lang !== code) I.set(code); else { box.hidden = true; b.setAttribute("aria-expanded", "false"); } }; box.append(x);
+      });
+      b.onclick = e => { e.stopPropagation(); box.hidden = !box.hidden; b.setAttribute("aria-expanded", String(!box.hidden)); };
+    } }
   $("rFull").onclick = e => {
     e.stopPropagation();
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
