@@ -303,6 +303,9 @@ html.i18n-zh .ga-tx { text-align: left; }
 .gov .kv { margin: 6px 0 0; }
 .gov .seat { display: inline-block; margin-top: 8px; font: 11px var(--mono); letter-spacing: .04em; color: var(--dim); text-decoration: none; }
 .gov .seat:hover { color: var(--ok); }
+.panel > .own { flex: none; align-self: flex-start; margin-top: 6px; font: 11px var(--mono); letter-spacing: .04em; color: var(--dim); text-decoration: none; }
+.panel > .own:hover, .panel > .own:focus-visible { color: var(--ok); }
+@media (max-width: 760px) { .panel > .own { display: inline-flex; align-items: center; min-height: 44px; margin-top: 0; } }
 .btn.ghost:hover { color: #fff; border-color: var(--cyan); background: rgba(236,236,240,.08); }
 .chip.unoff { cursor: pointer; border-color: var(--hair); color: var(--text); background: rgba(255,255,255,.06); white-space: normal; text-align: left; max-width: 100%; color: var(--amber); border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.08); }
 
@@ -1076,6 +1079,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         <div class="clauses" id="clauses"></div>
         <pre class="rule composite" id="composite"></pre>
       </div>
+      <a class="own" id="ownRule" href="wallet/?from=hud#rules-mine" data-full="Opens your wallet on the testnet at Your rule: pick a rule your own payments must pass, sign it, and it shows up here a block later.&#10;Test AGRS only, they have no value.">write your own rule ›</a>
     </article>
 
     <article class="panel a-upd">
@@ -1110,6 +1114,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <h2>Rule sharing <small id="offerCount">0 waiting</small><button class="info" type="button" aria-label="What is this?" data-tip="One account sends a Tau rule to another. The recipient reads it, runs a conflict report (shape, reserved streams, bit widths, does it compile together with the rules already in force) and then accepts it into their own specification or rejects it. Accepting replaces the recipient’s current rule on that stream.">i</button></h2>
       <p class="sub">one account offers a rule, the other checks it and accepts or rejects</p>
       <div class="offers scroll" id="offers"></div>
+      <a class="own" id="ownShare" href="wallet/?from=hud#rules-share" data-full="Opens your wallet on the testnet at Share: offer your rule to another account. They read it, the node checks it, and they accept or decline in their own wallet.&#10;Test AGRS only, they have no value.">share a rule with someone ›</a>
     </article>
 
     <div class="stack a-val">
@@ -1375,7 +1380,8 @@ function tickSubs() {
    by the alpha node (IDNI #81, up to an hour) is a known quirk, not an alarm. Red only when something is really stuck or offline. */
 const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
 /* a validator's own page: its profile on the accounts page (what it sealed, how much traffic, its votes); the language travels along */
-{ const c = $("chipOnline"), l = new URLSearchParams(location.search).get("lang"); if (c && l) c.href = "meta/?view=tauhud&lang=" + encodeURIComponent(l); }   // the online chip opens Tau HUD in numbers on its Tau HUD tab, in the same language
+{ const c = $("chipOnline"), l = new URLSearchParams(location.search).get("lang"); if (c && l) c.href = "meta/?view=tauhud&lang=" + encodeURIComponent(l); }
+{ const l = new URLSearchParams(location.search).get("lang"); if (l) [["ownRule", "mine"], ["ownShare", "share"]].forEach(([id, t]) => { const a = $(id); if (a) a.href = `wallet/?from=hud&lang=${encodeURIComponent(l)}#rules-${t}`; }); }   // the rule panels open the wallet at the matching tab, in the same language   // the online chip opens Tau HUD in numbers on its Tau HUD tab, in the same language
 const valProfile = v => { const l = new URLSearchParams(location.search).get("lang"); return `account/?a=${encodeURIComponent(String(v).toLowerCase().replace(/^0x/, ""))}&view=validator${l ? "&lang=" + encodeURIComponent(l) : ""}`; };
 const liveChain = () => S.mode === "live" && !S.simfeed, offline = () => liveChain() && LIVE.status !== "Connected";
 const SEALED = { h: -1, n: -1, ids: new Set() };
@@ -1986,7 +1992,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=28.4", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=29.6", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
