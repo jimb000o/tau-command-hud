@@ -1581,5 +1581,10 @@
   "on": "2026-10-30",
   "html": "In numbers now shows our sites' share of user transactions: everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Their transactions and our share of all transactions stay on the page, one line below."
  },
- {"tag": "Nodes", "on": "2026-10-30", "html": "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out."}
+ {"tag": "Nodes", "on": "2026-10-30", "html": "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out."},
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "Agorzilla in the header moves more like a body with depth. When he turns, his eyes go first, then his head, and he swings round through a three-quarter and a front view instead of flipping like a card. For the roll he curls up into a ball of fur that turns exactly as far as it travels, under a light that stays where it is, and opens up again at the end; the backflip is now a tucked flip in the same way."
+ }
 ]

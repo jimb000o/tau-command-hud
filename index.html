@@ -333,6 +333,14 @@ html.i18n-zh .ga-tx { text-align: left; }
 .agz .sh { position: absolute; left: 14%; right: 6%; top: 86.5%; height: 7%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.85), rgba(0,0,0,0)); }   /* a soft ground shadow: he stands, he does not float */
 .agz .dir, .agz .pup, .agz .bod, .agz .hd, .agz .lg, .agz .pup img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .agz .dir, .agz .pup { transform-origin: 54% 90%; }
+/* what the cut-out puppet cannot do on its own: the in-between views of a turn (three-quarter, front, the other three-quarter) and the curl into a ball,
+   seven frames drawn from the same picture (assets/rig/agz-moves.webp); while one shows, the puppet steps aside. The ball rolls under a light that stays put. */
+.agz .spr { position: absolute; inset: 0; display: none; pointer-events: none; }
+.agz.sp .spr { display: block; } .agz.sp .dir { visibility: hidden; }
+.agz .spr i, .agz .spr b { position: absolute; display: block; }
+.agz .spr i { inset: 0; background: var(--agz-mv) 0 0 / 700% 100% no-repeat; transform-origin: 49.1% 56.4%; }
+.agz .spr b { left: 4.1%; width: 90%; top: 26.4%; height: 60%; border-radius: 50%; opacity: 0; background: radial-gradient(circle at 36% 30%, rgba(255, 236, 214, .17), transparent 42%), radial-gradient(circle at 46% 42%, transparent 50%, rgba(0, 0, 0, .55) 100%); }
+.agz .spr.ball b { opacity: 1; }
 /* legs: fur down to the rock's edge plus the whole paws, so the paws stand in front of the header line; each leg is its own slice so he can step */
 .agz .lg { -webkit-mask-image: linear-gradient(transparent 63%, #000 69%, #000 85.4%, transparent 86.4%), radial-gradient(12.5% 3.4% at 51.5% 87.4%, #000 72%, transparent 100%), radial-gradient(14% 3.4% at 80% 87.4%, #000 72%, transparent 100%), radial-gradient(9% 1.9% at 23% 85.4%, #000 60%, transparent 100%);
   mask-image: linear-gradient(transparent 63%, #000 69%, #000 85.4%, transparent 86.4%), radial-gradient(12.5% 3.4% at 51.5% 87.4%, #000 72%, transparent 100%), radial-gradient(14% 3.4% at 80% 87.4%, #000 72%, transparent 100%), radial-gradient(9% 1.9% at 23% 85.4%, #000 60%, transparent 100%); }
@@ -988,7 +996,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   <header class="rail">
     <a class="brand" href="./" data-full="Back to the start: the HUD."><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></a>
     <button class="chip unoff" type="button" data-open="mAbout" data-full="Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Click for the full notice.">Unofficial community project · not affiliated with IDNI</button>
-    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><i class="sh"></i><span class="dir"><span class="pup"><span class="lg b"><img src="assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="lg l"><img src="assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="lg r"><img src="assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="bod"><img class="trunk" src="assets/rig/agz-body.webp" alt="" draggable="false"><span class="hd"><img src="assets/rig/agz-head.webp" alt="" draggable="false"><span class="eye l"><img src="assets/rig/agz-eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="assets/rig/agz-eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><img class="brow l" src="assets/rig/agz-brow-l.webp" alt="" draggable="false"><img class="brow r" src="assets/rig/agz-brow-r.webp" alt="" draggable="false"><i class="mouth"><u></u></i><span class="tgw"><i class="slit"></i><svg class="tg" viewBox="0 0 20 22" preserveAspectRatio="none" aria-hidden="true"><defs><radialGradient id="agzTg" cx=".5" cy=".28" r=".8"><stop offset="0" stop-color="#f7b3bb"/><stop offset=".5" stop-color="#e3808e"/><stop offset="1" stop-color="#a8475a"/></radialGradient></defs><path d="M1.5 0H18.5V9.5C18.5 16.8 14.6 21.5 10 21.5S1.5 16.8 1.5 9.5Z" fill="url(#agzTg)"/><path d="M10 1.5V12.5" stroke="#a03c4d" stroke-width="1.4" stroke-linecap="round" opacity=".5"/><ellipse cx="6.6" cy="12.6" rx="2.3" ry="1.5" fill="#fff" opacity=".3"/></svg></span></span></span></span></span></a>
+    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><i class="sh"></i><span class="dir"><span class="pup"><span class="lg b"><img src="assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="lg l"><img src="assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="lg r"><img src="assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="bod"><img class="trunk" src="assets/rig/agz-body.webp" alt="" draggable="false"><span class="hd"><img src="assets/rig/agz-head.webp" alt="" draggable="false"><span class="eye l"><img src="assets/rig/agz-eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="assets/rig/agz-eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><img class="brow l" src="assets/rig/agz-brow-l.webp" alt="" draggable="false"><img class="brow r" src="assets/rig/agz-brow-r.webp" alt="" draggable="false"><i class="mouth"><u></u></i><span class="tgw"><i class="slit"></i><svg class="tg" viewBox="0 0 20 22" preserveAspectRatio="none" aria-hidden="true"><defs><radialGradient id="agzTg" cx=".5" cy=".28" r=".8"><stop offset="0" stop-color="#f7b3bb"/><stop offset=".5" stop-color="#e3808e"/><stop offset="1" stop-color="#a8475a"/></radialGradient></defs><path d="M1.5 0H18.5V9.5C18.5 16.8 14.6 21.5 10 21.5S1.5 16.8 1.5 9.5Z" fill="url(#agzTg)"/><path d="M10 1.5V12.5" stroke="#a03c4d" stroke-width="1.4" stroke-linecap="round" opacity=".5"/><ellipse cx="6.6" cy="12.6" rx="2.3" ry="1.5" fill="#fff" opacity=".3"/></svg></span></span></span></span></span><span class="spr" aria-hidden="true"><i></i><b></b></span></a>
     <div class="chips">
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
@@ -1812,7 +1820,7 @@ addEventListener("DOMContentLoaded", () => { pollAgz(); setInterval(() => { if (
    motion: he only blinks. A hidden tab, a cramped header or a phone: nothing runs. */
 const AGZ_LIFE = (() => {
   const a = $("agz"); if (!a) return null;
-  const q = c => a.querySelector(c), dir = q(".dir"), pup = q(".pup"), bod = q(".bod"), legL = q(".lg.l"), legR = q(".lg.r"), legB = q(".lg.b"), hd = q(".hd"), mouth = q(".mouth"), tg = q(".tg"), slit = q(".slit"), lids = [...a.querySelectorAll(".lid")];
+  const q = c => a.querySelector(c), spr = q(".spr"), sf = q(".spr i"), sh = q(".sh"), dir = q(".dir"), pup = q(".pup"), bod = q(".bod"), legL = q(".lg.l"), legR = q(".lg.r"), legB = q(".lg.b"), hd = q(".hd"), mouth = q(".mouth"), tg = q(".tg"), slit = q(".slit"), lids = [...a.querySelectorAll(".lid")];
   const RM = matchMedia("(prefers-reduced-motion: reduce)");
   const L = { busy: false, queue: [], lastMove: 0, lastKind: {}, recent: [], calm: 0, nextIdle: Date.now() + 4000, prevIdle: "", sig: null, near: 0, x: 0 };
   const rnd = (lo, hi) => lo + Math.random() * (hi - lo);
@@ -1845,7 +1853,29 @@ const AGZ_LIFE = (() => {
     go(hd, [{ transform: "none" }, { transform: "rotate(1.2deg) translateY(.6%)", offset: .5 }, { transform: "none" }], { duration: STEP, iterations: Math.round(ms / STEP) });
     return go(a, [{ translate: `${from}px 0` }, { translate: `${to}px 0` }], { duration: ms + STEP, easing: "linear", fill: "forwards" }).then(() => { a.style.translate = `${to}px 0`; L.x = to; });
   };
-  const turn = left => go(dir, [{ transform: left ? "none" : "scaleX(-1)" }, { transform: left ? "scaleX(-.2) translateY(-3%)" : "scaleX(.2) translateY(-3%)", offset: .5 }, { transform: left ? "scaleX(-1)" : "none" }], { duration: 300, fill: "forwards" }).then(() => { dir.style.transform = left ? "scaleX(-1)" : ""; });
+  /* the frames for turns and the ball load once the page has settled; until then he turns the old way, a quick flip */
+  const MV = { ok: false };
+  const loadMv = () => { const im = new Image(); im.onload = () => { a.style.setProperty("--agz-mv", `url("${im.src}")`); MV.ok = true; }; im.src = "assets/rig/agz-moves.webp"; };
+  if (document.readyState === "complete") setTimeout(loadMv, 1500); else addEventListener("load", () => setTimeout(loadMv, 1500), { once: true });
+  const show = (i, mirror) => { sf.style.backgroundPositionX = i / 6 * 100 + "%"; spr.style.transform = mirror ? "scaleX(-1)" : ""; };
+  const sprite = on => { a.classList.toggle("sp", on); if (!on) spr.classList.remove("ball"); };
+  const facingLeft = () => /-1/.test(dir.style.transform);
+  const hold = (el, kf, ms) => go(el, kf, { duration: ms, fill: "forwards" });   // a pose kept while the frames play; release() lets go of it
+  const release = el => el.getAnimations().filter(x => !(window.CSSAnimation && x instanceof CSSAnimation) && !(window.CSSTransition && x instanceof CSSTransition)).forEach(x => x.cancel());
+  const flip = left => go(dir, [{ transform: left ? "none" : "scaleX(-1)" }, { transform: left ? "scaleX(-.2) translateY(-3%)" : "scaleX(.2) translateY(-3%)", offset: .5 }, { transform: left ? "scaleX(-1)" : "none" }], { duration: 300, fill: "forwards" }).then(() => { release(dir); dir.style.transform = left ? "scaleX(-1)" : ""; });
+  /* a turn the way a body turns: the eyes go first, the head follows, then he swings round through three-quarter and front view to the other side, lifting a little off his paws */
+  const turn = async left => {
+    if (left === facingLeft()) return;
+    if (!MV.ok) return flip(left);
+    eyes(-9, 0); lookHead(-5, -2.5, 300); await wait(140);
+    const seq = left ? [[0, 0], [1, 0], [2, 0], [3, 0], [2, 1], [1, 1], [0, 1]] : [[0, 1], [1, 1], [2, 1], [3, 0], [2, 0], [1, 0], [0, 0]], FR = 55;
+    show(...seq[0]); sprite(true);
+    spr.animate([{ translate: "0 0" }, { translate: "0 -3%", offset: .45 }, { translate: "0 0" }], { duration: FR * seq.length, easing: "ease-in-out" });
+    sh.animate([{ transform: "none" }, { transform: "scaleX(.86)", offset: .5 }, { transform: "none" }], { duration: FR * seq.length });
+    for (const [i, m] of seq) { show(i, m); await wait(FR); }
+    dir.style.transform = left ? "scaleX(-1)" : ""; eyes(0, 0); sprite(false);
+    await go(pup, [{ transform: "scale(1.03, .96)" }, { transform: "none" }], { duration: 200, easing: "ease-out" });   // settles onto his paws
+  };
   const goBack = async () => { if (!L.x) return; await turn(false); await stride(-L.x, true); a.style.translate = ""; L.x = 0; };
   const walk = async () => {
     const room = Math.floor(AGZ.room || 0); if (room < 28) return look(4, 2, 1600);
@@ -1859,6 +1889,19 @@ const AGZ_LIFE = (() => {
   const H = () => a.offsetHeight || 78;
   const backflip = async () => {
     const j = Math.min(H() * .5, headroom() - 6); if (j < 12) return dance();
+    if (MV.ok) {   // a tucked backflip: crouch, spring up curling into a ball, turn over once under the light, open up and land
+      const m = facingLeft(), T = 1150, rot = -360;   // head first over his back, whichever way he faces (the mirrored frame turns it round)
+      await hold(pup, [{ transform: "none" }, { transform: "scale(1.06, .88)" }], 200);
+      show(4, m); sprite(true);
+      spr.animate([{ translate: "0 0", easing: "cubic-bezier(.2, .7, .4, 1)" }, { translate: `0 ${-j}px`, offset: .5, easing: "cubic-bezier(.6, 0, .8, .3)" }, { translate: "0 0" }], { duration: T });
+      sh.animate([{ transform: "none", opacity: 1 }, { transform: "scale(.6)", opacity: .45, offset: .5 }, { transform: "none", opacity: 1 }], { duration: T });
+      await wait(60); show(5, m); await wait(60); show(6, m); spr.classList.add("ball");
+      await sf.animate([{ transform: "none" }, { transform: `rotate(${rot}deg)` }], { duration: T - 300, easing: "cubic-bezier(.3, .1, .6, 1)" }).finished.catch(() => {});
+      spr.classList.remove("ball"); show(5, m); await wait(60); show(4, m); await wait(60);
+      sprite(false); release(pup);
+      await go(pup, [{ transform: "scale(1.07, .88)" }, { transform: "scale(.98, 1.03)", offset: .5 }, { transform: "none" }], { duration: 380 });
+      return look(-3, 0, 700, -2);
+    }
     pup.style.transformOrigin = "54% 58%";
     await go(pup, [{ transform: "none" }, { transform: "scale(1.06, .88)", offset: .16 }, { transform: `translateY(${-j}px) scale(.96, 1.06) rotate(-90deg)`, offset: .36, easing: "ease-out" },
       { transform: `translateY(${-j * 1.05}px) rotate(-200deg)`, offset: .5 }, { transform: `translateY(${-j * .45}px) rotate(-320deg)`, offset: .7, easing: "ease-in" }, { transform: "rotate(-360deg) scale(1.07, .88)", offset: .84 }, { transform: "rotate(-360deg)" }], { duration: 1250 });
@@ -1866,7 +1909,19 @@ const AGZ_LIFE = (() => {
   };
   const roll = async () => {
     const room = Math.floor(AGZ.room || 0), dist = Math.min(room, Math.round(H() * 1.7)); if (dist < 90) return dance();
-    await turn(true); pup.style.transformOrigin = "54% 58%";
+    await turn(true);
+    if (MV.ok) {   // he curls into a ball and rolls: the ball turns exactly as far as it travels, the light on it stays where it is, then he opens up again
+      const m = facingLeft(), T = 1150, r = .3 * H(), turns = Math.max(1, Math.round(dist / r / (2 * Math.PI))), rot = (m ? 1 : -1) * 360 * turns;
+      await hold(pup, [{ transform: "none" }, { transform: "scale(1.05, .9)" }], 160);
+      show(4, m); sprite(true); await wait(60); show(5, m); await wait(60); show(6, m); spr.classList.add("ball");
+      sf.animate([{ transform: "none" }, { transform: `rotate(${rot}deg)` }], { duration: T, easing: "cubic-bezier(.4, .1, .5, 1)" });
+      spr.animate([{ translate: "0 0" }, { translate: "0 -5%", offset: .12 }, { translate: "0 0", offset: .26 }, { translate: "0 -1.5%", offset: .4 }, { translate: "0 0", offset: .52 }], { duration: T });
+      await go(a, [{ translate: "0px 0" }, { translate: `${-dist}px 0` }], { duration: T, easing: "cubic-bezier(.4,.1,.5,1)", fill: "forwards" }); a.style.translate = `${-dist}px 0`; L.x = -dist;
+      sf.getAnimations().forEach(x => x.cancel()); spr.classList.remove("ball"); show(5, m); await wait(60); show(4, m); await wait(60);
+      sprite(false); release(pup);
+      await hop(6); await wait(500); await goBack(); return look(4, 2, 1000);
+    }
+    pup.style.transformOrigin = "54% 58%";
     go(pup, [{ transform: "none" }, { transform: "scale(1.05, .9)", offset: .12 }, { transform: "translateY(-6%) rotate(180deg) scale(.9)", offset: .5 }, { transform: "rotate(350deg) scale(1.04, .94)", offset: .88 }, { transform: "rotate(360deg)" }], { duration: 1100, easing: "ease-in-out" });
     await go(a, [{ translate: "0px 0" }, { translate: `${-dist}px 0` }], { duration: 1100, easing: "cubic-bezier(.4,.1,.5,1)", fill: "forwards" }); a.style.translate = `${-dist}px 0`; L.x = -dist; pup.style.transformOrigin = "";
     await hop(6); await wait(500); await goBack(); await look(4, 2, 1000);
@@ -1992,7 +2047,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=29.6", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=30.3", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
