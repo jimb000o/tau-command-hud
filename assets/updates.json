@@ -1670,5 +1670,10 @@
   "tag": "Start here",
   "on": "2026-10-30",
   "html": "Start here: the wallet steps now happen right on the page. “Open the wallet”, “Write my rule” and “Feed it from my wallet” open just that one step beside its card, with a single ready choice (a limit of 1,000 test AGRS per payment for the rule), a tick when it is done, and the card turns green. The rule seals on the simulation too, without a trip to the wallet. The whole wallet stays one link away."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper café: a black café cat now sits on the windowsill when you look up, then pads to the way on and waits there, looking back over its shoulder, in every room. If you hesitate it meows softly; click it for a purr and a word. When Mae's pie vote is chalked in, it walks by twice, the very same way. The café sounds now start quietly with “Look up” whenever the page sound is on. Also fixed: the café no longer drops an empty stamp into your Tau card."
  }
 ]
