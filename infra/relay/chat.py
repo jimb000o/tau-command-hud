@@ -169,11 +169,11 @@ def same(text: str) -> str:
     return re.sub(r"[\W_]+", "", text.lower())
 
 
-def judge(text: str, extra: list[str] | None = None) -> str | None:
-    """Why a cleaned text is not posted (a REASONS code), or None."""
+def judge(text: str, extra: list[str] | None = None, max_len: int = MAX_LEN) -> str | None:
+    """Why a cleaned text is not posted (a REASONS code), or None. max_len: the road-to-mainnet comments allow longer texts."""
     if not text:
         return "empty"
-    if len(text) > MAX_LEN:
+    if len(text) > max_len:
         return "long"
     low, f = text.lower(), fold(text)
     spaced = re.sub(r"\b(\w) (?=\w\b)", r"\1", f)   # "p o r n" -> "porn"
@@ -233,6 +233,7 @@ class Chat:
         self.room: list[float] = []
         self.next_id = 1
         self.on_hide = None                  # relay.py: tells the open pages to drop a hidden message
+        self.on_ban = None                   # roadmap.py: the same clean-up in the road-to-mainnet comments
         self._load()
 
     # ---------- storage ----------
@@ -313,6 +314,8 @@ class Chat:
         if kind == "ban":
             self.banned[person] = (now // 86400 + 1) * 86400
             self.sweep(person)
+            if self.on_ban:
+                self.on_ban(person)
         elif kind == "mute":
             self.muted[person] = now + secs
         return STEP_TEXT[kind].replace("{n}", str((secs or 0) // 60))
@@ -488,7 +491,8 @@ class Chat:
                 "<title>Troll box · admin</title><style>body{background:#0b0b0d;color:#ddd;font:13px/1.5 monospace;margin:16px}"
                 "td{padding:6px 8px;border-bottom:1px solid #222;vertical-align:top}tr.h{opacity:.4}a{color:#39ff8a}</style>"
                 f"<h1>Troll box · last 24 h</h1><p>Room {'open' if self.enabled else 'closed (CHAT_ENABLED=0)'} · "
-                f"{len(self.msgs)} messages · Hide also puts the writer out until 00:00 UTC.</p><table>{rows}</table>"
+                f"{len(self.msgs)} messages · Hide also puts the writer out until 00:00 UTC · "
+                f"<a href='/roadmap/admin?key={key}'>Road-to-mainnet comments</a></p><table>{rows}</table>"
                 f"<h2>Strikes today</h2><p>1 warning · 2 muted 10 min · 3 muted 1 h · 4 out until 00:00 UTC. "
                 f"Kept in memory only, gone at the day change or a restart.</p><table>{srows}</table>")
         return 200, "text/html; charset=utf-8", page.encode()

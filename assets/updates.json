@@ -1562,5 +1562,17 @@
   "tag": "Newspaper",
   "on": "2026-10-30",
   "html": "Newspaper: the café ticket is bigger and grows with your screen, with each stamp's name easy to read. A closer look now opens right beside the thing you clicked, in a spot that keeps the regulars, the house rules, the signs and the talk in view. The coffee, the sugar and yesterday's papers on your own table by the window open up too. And on the Extra! at the end, “Pass the paper on” is now a clear box with buttons to post on X or copy the link."
+ },
+ {
+  "tag": "Roadmap",
+  "on": "2026-10-30",
+  "html": "Road to mainnet: a new page lists what we found on the testnet that we think should be fixed before mainnet, in two groups, must and should. Each item has the problem, why it matters, proof anyone can check (the IDNI issue, our pull requests, IDNI's own code and tests, the HUD pages), a path to a fix in the way IDNI works, and the IDNI video that backs it; its status comes live from GitHub. It is our view, not IDNI's plan, and it may be wrong, so every item has comments: same name and same rules as the troll box, no account and no captcha, one comment a minute, links only to GitHub, tauhud.com and YouTube, three reports hide one, and someone put out of the troll box for the day is out of the comments too. You can also say “I see this too”. Find it under About.",
+  "major": {
+   "id": "roadmap",
+   "title": "New: the road to mainnet, as we see it",
+   "text": "Ten things we found on the Tau testnet that we think should be fixed before mainnet, each with proof and a path to a fix. Our view, not IDNI's plan, and we may be wrong: comment on any item.",
+   "link": "/roadmap/",
+   "image": "/assets/shots/roadmap.png"
+  }
  }
 ]
