@@ -1474,5 +1474,10 @@
     }
    ]
   }
+ },
+ {
+  "tag": "Accounts",
+  "on": "2026-10-30",
+  "html": "Accounts, Explorer and Time travel: while a page is still reading the chain, a thin amber bar runs along the top and a small label at the bottom says how far it got (“1,300 of 3,116 blocks”). The numbers stay dimmed until every block is in, the rich list no longer re-sorts while blocks arrive, and when it is done the label turns green for a moment."
  }
 ]

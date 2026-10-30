@@ -537,7 +537,12 @@ TauI18n.add({ strings: {
   "The creature the testnet feeds: each evening's change and every growth stage": "テストネットが育てる生き物：毎晩の変更と成長の各段階",
   "Follow": "フォロー",
   "Agorzilla": "Agorzilla",
-  "X": "X"
+  "X": "X",
+  "Reading the chain": "チェーンを読み込み中",
+  "{n} of {m} blocks": "{m} ブロック中 {n}",
+  "asking our node…": "ノードに問い合わせ中…",
+  "Up to date": "最新",
+  "every block read": "すべてのブロックを読み込みました",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 送信者自身のルールが拒否しました（o5 = 0 · ${TauI18n.t(r)}）`]] });

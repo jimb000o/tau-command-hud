@@ -542,7 +542,12 @@ TauI18n.add({ strings: {
   "Copy link": "复制链接",
   "Link copied.": "链接已复制。",
   "Copy blocked by the browser; the link is selected, press Ctrl/Cmd+C.": "浏览器阻止了复制；链接已选中，请按 Ctrl/Cmd+C。",
-  "The link shows this page's own preview picture. Tau HUD is an unofficial community view of the Tau testnet; nothing here is for sale.": "链接会显示本页自己的预览图。Tau HUD 是 Tau 测试网的非官方社区视图；这里没有任何东西出售。"
+  "The link shows this page's own preview picture. Tau HUD is an unofficial community view of the Tau testnet; nothing here is for sale.": "链接会显示本页自己的预览图。Tau HUD 是 Tau 测试网的非官方社区视图；这里没有任何东西出售。",
+  "Reading the chain": "正在读取链",
+  "{n} of {m} blocks": "{m} 个区块中的 {n} 个",
+  "asking our node…": "正在询问我们的节点…",
+  "Up to date": "已是最新",
+  "every block read": "所有区块已读取",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 发送方自己的规则说不 (o5 = 0 · ${TauI18n.t(r)})`]] });

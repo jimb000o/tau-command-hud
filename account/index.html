@@ -276,6 +276,7 @@ html.fit .vcols .col > .panel.grow { flex: 1 1 0; min-height: 150px; }
 p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/chainload.js"></script>
 <script src="../assets/nav.js" defer></script>
 </head>
 <body>
@@ -548,7 +549,7 @@ function connect() {
   loadDropped();
 }
 function offline(why) {
-  C.ws = null; C.loading = false;
+  C.ws = null; C.loading = false; CL("stop");
   const w = C.retry; C.retry = Math.min(60000, w * 2);
   setState("off", "Offline", `Our node is not reachable (${why}).\nRetrying in ${w / 1000} s.`);
   C.off = true; rebuild();   // the empty panels say that the node is offline instead of "reading" forever
@@ -556,7 +557,8 @@ function offline(why) {
 }
 // the first page says how long the chain is; the rest is asked for a few pages at a time, so a long chain loads in seconds, not minutes
 const PARALLEL = 4;
-function loadFrom(from) { C.loading = true; C.nextFrom = from; C.want = null; C.inflight = new Map([[from, Date.now()]]); send(`getblockrange ${from} ${PAGE}`); watchRanges(); }
+const CL = (f, ...a) => window.TauChainLoad && TauChainLoad[f](...a);   // the shared "reading the chain" bar (assets/chainload.js)
+function loadFrom(from) { CL("progress", C.loadedN || 0, C.want != null ? C.want + 1 : 0); C.loading = true; C.nextFrom = from; C.want = null; C.inflight = new Map([[from, Date.now()]]); send(`getblockrange ${from} ${PAGE}`); watchRanges(); }
 // a page the relay refused (rate limit) or never answered is asked for again
 function watchRanges() {
   clearTimeout(C.rangeT);
@@ -567,7 +569,7 @@ function watchRanges() {
 }
 function loadMore() {
   while (C.inflight.size < PARALLEL && C.nextFrom <= C.want) { const f = C.nextFrom; C.nextFrom += PAGE; C.inflight.set(f, Date.now()); send(`getblockrange ${f} ${PAGE}`); }
-  if (!C.inflight.size) { C.loading = false; clearTimeout(C.rangeT); live(); rebuild(); pumpBalances(); }
+  if (!C.inflight.size) { C.loading = false; clearTimeout(C.rangeT); CL("done"); live(); rebuild(); pumpBalances(); }
 }
 function store(raw) {
   const h = Number((raw.header || {}).block_number);
@@ -608,7 +610,7 @@ function onMessage(ev) {
     if (msg.status !== "ok") {
       const code = (msg.error || {}).code;
       if (code === "RATE_LIMITED") { OUT.tokens = -2; return; }   // the watchdog asks for the page again
-      if (code === "NOT_READY") setTimeout(() => loadFrom(0), 3000); else { C.legacy = true; C.loading = false; send("getblocks 50"); }
+      if (code === "NOT_READY") setTimeout(() => loadFrom(0), 3000); else { C.legacy = true; C.loading = false; CL("stop"); send("getblocks 50"); }
       return;
     }
     if (!C.inflight) return;
@@ -618,7 +620,7 @@ function onMessage(ev) {
     if (C.want == null) { C.want = Number.isFinite(d.head) ? d.head : C.head; C.nextFrom = from + PAGE; }
     const got = C.blocks.reduce(n => n + 1, 0);
     setState("wait", "Loading", `Read ${plural(got, "block")} of ${fmtN(C.want + 1)}…`);
-    C.loadedN = got;
+    C.loadedN = got; CL("progress", got, C.want + 1);
     if ((!S.addr || !$("vcols").hidden) && Date.now() - (C.progT || 0) > 800) { C.progT = Date.now(); rebuild(); }   // the progress line moves while the chain loads
     loadMore();
   } else if (cmd === "getblocks") {
@@ -814,7 +816,10 @@ let rebuildT = null, building = false;
 function rebuild() { clearTimeout(rebuildT); rebuildT = setTimeout(async () => {
   if (building) return rebuild();
   building = true;
-  try { if (S.addr) { M = await account(S.addr); renderAccount(); } else renderDir(); } finally { building = false; }
+  try {
+    if (S.addr) { M = await account(S.addr); renderAccount(); }
+    else if (!(C.loading && !SAMPLE && directory.drawn)) { renderDir(); directory.drawn = true; }   // a half-read chain would re-sort the list every second
+  } finally { building = false; }
 }, 40); }
 
 function show(view) { $("dir").hidden = view !== "dir"; $("acct").hidden = view !== "acct"; $("allBtn").setAttribute("aria-pressed", String(view === "dir")); fit(); }
