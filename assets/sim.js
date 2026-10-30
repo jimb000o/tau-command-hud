@@ -557,9 +557,12 @@
     if (r() < 0.10) { const s = base + ((r() * 86000) | 0); out.push({ kind: "relay", start: s, end: s + 60 + ((r() * 400) | 0) }); }
     return out;
   }
+  // the made-up nodes never run longer than the real Tau HUD has: each keeps its share of our age until it reaches its own
+  const LAUNCH = Date.UTC(2026, 9, 26) / 1000, AGE_SHARE = { "alice-node": .9, bob: .55, "lab-box": .25 };
+  const daysOf = (n, t) => Math.min(n.days, Math.max(.05, (t - LAUNCH) / DAY * (AGE_SHARE[n.name] || .5)));
   function uptimeHours(t) {
     t = at(t);
-    const since = Math.floor((t - 31 * DAY) / 3600) * 3600, incidents = [];
+    const since = Math.floor(Math.max(t - 31 * DAY, LAUNCH) / 3600) * 3600, incidents = [];   // never longer than Tau HUD has really been running
     for (let d = Math.floor(since / DAY); d <= DAYI; d++) for (const i of incidentsOfDay(d)) if (i.end <= t && i.start >= since) incidents.push(i);
     const down = (H, kind) => incidents.filter(i => i.kind === kind).reduce((s, i) => s + Math.max(0, Math.min(i.end, H + 3600) - Math.max(i.start, H)), 0) / 60;
     const hours = [];
@@ -610,7 +613,7 @@
   // bob falls behind every hour from minute 35: one block per ten seconds, up to 60 behind, then catches up over two minutes from minute 45
   const lagOf = (n, t) => { if (n.name !== "bob") return n.lag; const m = ((t % 3600) + 3600) % 3600; return m >= 2100 && m < 2700 ? Math.min(60, 1 + (((m - 2100) / 10) | 0)) : m >= 2700 && m < 2820 ? Math.max(n.lag, 60 - (((m - 2700) / 2) | 0)) : n.lag; };
   const nodeRow = (n, t, h) => { const lag = Math.min(lagOf(n, t), h); return { id: n.id, name: n.name, height: h - lag, head: B[h - lag].block_hash, tip: h, kit: n.kit, ref: "539d1e2", peer: n.peer,
-    first_seen: Math.round(t - n.days * DAY), last_seen: Math.round(t - (n.online ? 20 + 30 * Math.min(lag, 2) : 3 * DAY)) }; };
+    first_seen: Math.round(t - daysOf(n, t) * DAY), last_seen: Math.round(t - (n.online ? 20 + 30 * Math.min(lag, 2) : 3 * DAY)) }; };
   function community(t) {
     t = at(t);
     const h = sync(t);
@@ -622,7 +625,7 @@
     t = at(t);
     const h = sync(t);
     const y = mineRow(t, h), yours = y ? [{ ...y.row, online: y.p.listed, days: Math.floor((t - y.p.first) / DAY), uptime: Math.round(Math.min(1, y.p.up / Math.max(1, t - y.p.first)) * 1000) / 1000, agrees: y.p.listed ? (h - y.row.height > 2 ? "behind" : "same") : null }] : [];
-    const row = n => { const r = nodeRow(n, t, h); return { id: r.id, name: r.name, first_seen: r.first_seen, last_seen: r.last_seen, online: n.online, days: Math.floor(n.days), uptime: n.uptime, height: n.online ? r.height : h - 1300, kit: n.kit, ref: "539d1e2", agrees: n.online ? (lagOf(n, t) > 2 ? "behind" : "same") : null }; };
+    const row = n => { const r = nodeRow(n, t, h); return { id: r.id, name: r.name, first_seen: r.first_seen, last_seen: r.last_seen, online: n.online, days: Math.floor(daysOf(n, t)), uptime: n.uptime, height: n.online ? r.height : h - 1300, kit: n.kit, ref: "539d1e2", agrees: n.online ? (lagOf(n, t) > 2 ? "behind" : "same") : null }; };
     const on = yours.filter(r => r.online), off = yours.filter(r => !r.online);   // in the board's own order: online nodes first
     return { nodes: [...NODES.filter(n => n.online).map(row), ...on, ...NODES.filter(n => !n.online).map(row), ...off],
       keep_days: 30, generated_at: Math.round(t), simulation: true };
@@ -630,7 +633,7 @@
   function peers(t) {
     t = at(t);
     const h = sync(t), mk = (id, days, head, extra) => ({ id, label: null, community: null, first_seen: Math.round(t - days * DAY), last_direct: Math.round(t - 40), last_heard: null, last_seen: Math.round(t - 40), head, connected: true, ...extra });
-    const list = [mk(BOOTNODE, 9, h, {}), ...NODES.filter(n => n.online && n.peer).map(n => mk(n.peer, n.days, Math.max(0, h - lagOf(n, t)), { community: { id: n.id, name: n.name } })),
+    const list = [mk(BOOTNODE, 9, h, {}), ...NODES.filter(n => n.online && n.peer).map(n => mk(n.peer, daysOf(n, t), Math.max(0, h - lagOf(n, t)), { community: { id: n.id, name: n.name } })),
       mk(STRANGERS[0], 3, h - 1, {}), mk(STRANGERS[1], 0.2, h, { connected: false, last_direct: Math.round(t - 2 * 3600), last_seen: Math.round(t - 2 * 3600) })];
     const y = mineRow(t, h); if (y && y.p.listed) list.push({ ...mk(y.row.peer, (t - y.p.first) / DAY, y.row.height, { community: { id: y.row.id, name: y.row.name }, you: true }), last_seen: y.row.last_seen, last_direct: y.row.last_seen, connected: y.p.on, steady: true, online: true });
     const within = s => list.filter(p => p.last_seen >= t - s).length;
