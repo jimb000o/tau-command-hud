@@ -63,6 +63,16 @@ button.chip:hover { border-color: #fff; }
 .news { position: absolute; z-index: 3; left: 12px; right: 12px; bottom: 10px; display: flex; gap: 10px; align-items: center; min-height: 34px; padding: 6px 14px; border-radius: 10px; background: var(--glass); border: 1px solid var(--hair); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .news b { font: 700 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--ok); white-space: nowrap; }
 .news span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* the radio at the bottom: Rico at the microphone, his line typed out as he says it */
+.news.radio { padding-left: 6px; min-height: 46px; }
+.news.radio #cvDJ { flex: none; width: 40px; height: 40px; margin: -10px 0 -4px; }
+.news.radio #cvDJ canvas { width: 40px; height: 40px; display: block; }
+.news.radio b { display: inline-flex; align-items: center; gap: 6px; color: var(--ok); }
+.news.radio .onair { width: 7px; height: 7px; border-radius: 50%; background: #e9b44c; box-shadow: 0 0 6px #e9b44c; }
+.news.radio.live .onair { animation: cvAir 1s steps(2) infinite; }
+@keyframes cvAir { 50% { opacity: .25; } }
+.news.radio.live #cvNews { color: #fbf3df; }
+.news.radio #cvNews { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.35; }
 #cvTip { position: absolute; z-index: 4; pointer-events: none; padding: 5px 10px; border-radius: 6px; background: #050506; border: 1px solid var(--hair); font: 600 12.5px var(--display); color: #fff; white-space: nowrap; }
 #cvToast { position: absolute; z-index: 6; left: 50%; top: 58px; transform: translate(-50%, -8px); opacity: 0; transition: .3s; padding: 8px 16px; border-radius: 999px; background: #050506; border: 1px solid var(--ok); color: #fff; font: 600 13px var(--display); pointer-events: none; max-width: calc(100% - 32px); text-align: center; }
 #cvToast.on { opacity: 1; transform: translate(-50%, 0); }
@@ -173,6 +183,7 @@ footer a { color: var(--dim); }
   .bar .opt { display: none; }
   .news { left: 8px; right: 8px; bottom: 8px; padding: 6px 10px; }
   .news b { display: none; }
+  .news.radio #cvNews { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 12px; }
   #cvToast { top: auto; bottom: 52px; }
   .stage.carded #cvToast { top: 96px; bottom: auto; }
   .cv-card, .cv-card.left, .cv-card.intro, .cv-card.end { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 72%; transform: none; border-radius: 16px 16px 0 0; padding: 16px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
@@ -210,7 +221,7 @@ footer a { color: var(--dim); }
       <button class="chip opt" id="cvReset" type="button">New game</button>
     </div>
     <div class="places" id="cvPlaces" aria-label="Places on the island"></div>
-    <div class="news"><b>The Key Crier</b><span id="cvNews">Five days to the election.</span></div>
+    <div class="news radio" id="cvRadio"><i id="cvDJ"></i><b><span class="onair"></span>Radio Coco 97.3</b><span id="cvNews">Five days to the election.</span></div>
     <div id="cvTip" hidden></div>
     <div id="cvToast" role="status" aria-live="polite"></div>
   </main>

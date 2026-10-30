@@ -45,7 +45,7 @@
     wallet:     { t: "Wallet", d: "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt", i: "◈", h: "wallet/" },
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
     card:       { t: "My Tau card", d: "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post", i: "▣", h: "card/" },
-    rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: "☼", h: "rabbit/" },
+    rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/" },
     challenge:  { t: "Rule challenge", d: "A small task every Monday, answered with a real rule in your wallet; good answers are shown, no prizes", i: "✎", h: "challenge/" },
     missions:   { t: "Missions", d: "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake", i: "★", h: "missions/" },
   };
