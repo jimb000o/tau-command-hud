@@ -873,7 +873,7 @@
     if (L.windows) WINDOWS.splice(0, WINDOWS.length, ...L.windows);
     for (const k in SPOT) if (L[k]) SPOT[k] = L[k];
     if (L.rabbit) { RB.x = RB.tx = L.rabbit[0]; RB.y = RB.ty = L.rabbit[1]; }
-    ART.layout = true;
+    ART.layout = true; ART.whole = L.view === "whole";
     if (S.focusId) focus(S.focusId, S.focusSide);
   }
   /* a picture drawn to cover the box, cropped in the middle (the painted ones are not always exactly 16:9) */
@@ -1081,6 +1081,7 @@
   /* lean in on a place, keeping the space for the card on the far side; null goes back to the whole cove */
   /* the whole island, as large as the screen allows: on a tall phone the island fills the width, the sky gives way */
   function home() {
+    if (ART.whole && S.W >= 760) return { x: 800, y: 450, z: 1 };   // a painted island framed as a whole picture is shown whole
     const f = fitScale(), z = Math.max(1, Math.min(S.W / (1220 * f), S.H / (690 * f)));
     return { x: 800, y: z > 1.05 ? Math.max(450, 900 - S.H / (f * z) / 2 - 10) : 450, z };
   }

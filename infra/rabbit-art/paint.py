@@ -16,6 +16,7 @@ One key in infra/.env (never in the repository), whichever you have:
   infra/rabbit-art/paint.sh draft hall --look 2  paint in one of those styles
   infra/rabbit-art/paint.sh draft island --sketch bay --like ...   the new harbour island (sketch.py); keeping one of
       these moves the places, streets and lights in the game to match it
+  infra/rabbit-art/paint.sh keep island=14 --layout island-14   with places set by hand on that painting
   infra/rabbit-art/paint.sh drop hall            back to the drawn picture for that place
 paint.sh runs this file with the server's python3; with Pillow (apt-get install -y python3-pil) the pictures are small WebP files.
 """
@@ -375,7 +376,9 @@ def cmd_keep(a):
         idx["scenes"][id] = f
         if id == "island":   # a painting of a new sketch brings where everything stands on it
             sk = drafts.get("sketch", {}).get(f)
-            if sk:   # paintings of the first harbour sketch (before layouts were stored with them) use plates/bay-1.json
+            if getattr(a, "layout", None):   # a layout drawn by hand over this very painting (plates/<name>.json)
+                idx["layout"] = json.load(open(os.path.join(PLATES, a.layout + ".json")))
+            elif sk:   # paintings of the first harbour sketch (before layouts were stored with them) use plates/bay-1.json
                 idx["layout"] = json.load(open(os.path.join(a.out, "drafts", sk) if sk.endswith(".json") else os.path.join(PLATES, sk + "-1.json")))
             else:
                 idx.pop("layout", None)
@@ -411,6 +414,7 @@ def main():
     lk.add_argument("--model", default=None)
     k = sub.add_parser("keep")
     k.add_argument("picks", nargs="+", help="place=N, e.g. island=2 hall=1")
+    k.add_argument("--layout", default=None, help="island only: where everything stands on that painting, plates/<name>.json")
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()

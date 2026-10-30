@@ -66,6 +66,8 @@ for prov in ("gemini", "openai"):
         dj = os.path.join(out, "drafts", "drafts.json"); dd = json.load(open(dj)); dd["sketch"][dd["island"][0]] = "bay"; json.dump(dd, open(dj, "w"))
         paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=1"]))   # an early painting: the first layout
         assert json.load(open(os.path.join(out, "index.json")))["layout"]["places"]["hall"]["x"] == 1090
+        paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=2"], layout="island-14"))
+        assert json.load(open(os.path.join(out, "index.json")))["layout"]["view"] == "whole"
         paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=2"]))
         assert "layout" not in json.load(open(os.path.join(out, "index.json")))
         paint.REFS = os.path.join(out, "refs"); os.makedirs(os.path.join(paint.REFS, "2"))
