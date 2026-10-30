@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <script>{ const q = new URLSearchParams(location.search), c = document.documentElement.classList; if (q.get("view") === "core") { c.add("coreonly"); if (q.get("bg") === "none") c.add("bgnone"); if (q.get("quiet") === "1") c.add("corequiet"); } }</script>
 <script src="assets/i18n.js"></script>
+<script src="assets/chainload.js"></script>
 <script src="assets/sim.js"></script>
 <script src="assets/simvote.js"></script>
 <script src="assets/simnode.js"></script>
@@ -1985,7 +1986,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=28.1", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=28.4", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2871,6 +2872,7 @@ function liveMessage(ev) {
   }
   if (msg.command === "getblocks") {
     LIVE.gotData = true; setRelay(true);
+    if (window.TauChainLoad && TauChainLoad.reading) { TauChainLoad.done(); const t = document.querySelector(".chainload-tag span"); if (t) t.textContent = "the newest blocks are in"; }   // the HUD reads the newest blocks, not the whole chain
     if (d.reset && S.blocks.length) { const n = S.restarts + 1; liveClear(); S.restarts = n; log("Chain reset: the node discarded a chain the network abandoned and starts again from genesis. Block numbers restart.", "warn"); renderGov(); renderUpdates(); renderClauses(); }
     (d.blocks || []).filter(b => !LIVE.seenBlocks.has(b.block_hash)).forEach(raw => {
       LIVE.seenBlocks.add(raw.block_hash);
@@ -3021,6 +3023,7 @@ function liveConnect() {
     LIVE.everConnected = true; LIVE.retryWait = 5000;
     setMode("live", "Connected");
     ws.send(helloLine());
+    if (!S.simfeed && window.TauChainLoad) TauChainLoad.progress(0, 12);   // the shared "reading the chain" bar until the first blocks are in
     liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool"); RIB.probe = true; liveSend("getblockrange 1 1");
     LIVE.poll = setInterval(() => { liveSend("getblocks 6"); liveSend("getmempool"); }, 3000);
     LIVE.govPoll = setInterval(() => liveSend("getgovernance"), 15000);
@@ -3029,11 +3032,12 @@ function liveConnect() {
   };
   ws.onmessage = liveMessage;
   ws.onerror = () => liveFail("no connection");
-  ws.onclose = () => { if (S.mode === "live") { log("Connection closed", "err"); setMode("live", "Offline"); clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); clearInterval(LIVE.dropPoll);
+  ws.onclose = () => { if (window.TauChainLoad) TauChainLoad.stop(); if (S.mode === "live") { log("Connection closed", "err"); setMode("live", "Offline"); clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); clearInterval(LIVE.dropPoll);
     if (LIVE.auto && !LIVE.gotData) { autoBack("connection closed"); return; }
     if (LIVE.auto) { const w = LIVE.retryWait || 5000; LIVE.retryWait = Math.min(60000, w * 2); log(`Reconnecting in ${w / 1000} s …`, "warn"); LIVE.retry = setTimeout(() => { if (S.mode === "live" && LIVE.auto) liveConnect(); }, w); } } };
 }
 function liveFail(why) {
+  if (window.TauChainLoad) TauChainLoad.stop();
   if (LIVE.auto && !LIVE.gotData) { autoBack(why); return; }
   log(`Could not reach ${esc($("wsurl").value)}: ${esc(why)}. Is your node running, and is TAU_WS_ALLOWED_ORIGINS set if this page is hosted?`, "err");
   setMode("live", "Offline");
@@ -3042,7 +3046,7 @@ function autoBack(why) { LIVE.autoFailedAt = performance.now(); log(`Community r
 /* the simulation picture: the shared clock-driven chain (assets/sim.js) whenever it is loaded, so the HUD continues where every other
    page is, instead of starting its built-in engine at block 0; the built-in engine stays as the fallback without sim.js */
 function simShow() { LIVE.auto = false; if (window.TauSim) { S.simfeed = true; liveConnect(); } else { S.simfeed = false; setMode("sim"); simStart(); } presenceOpen(); }
-function liveStop() { clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); clearInterval(LIVE.dropPoll); clearTimeout(LIVE.retry); if (LIVE.ws) { LIVE.ws.onclose = null; LIVE.ws.close(); } LIVE.ws = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); }
+function liveStop() { if (window.TauChainLoad) TauChainLoad.stop(); clearInterval(LIVE.poll); clearInterval(LIVE.govPoll); clearInterval(LIVE.dropPoll); clearTimeout(LIVE.retry); if (LIVE.ws) { LIVE.ws.onclose = null; LIVE.ws.close(); } LIVE.ws = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); }
 
 /* ---------- mode switching ---------- */
 function setMode(mode, status) {

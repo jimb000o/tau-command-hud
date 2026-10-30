@@ -1489,5 +1489,10 @@
   "tag": "Newspaper",
   "on": "2026-10-30",
   "html": "Newspaper: a softer page turn. The sheet lifts, sweeps through the air and settles with a low pat, each turn a little different. The streetcars outside no longer pop up behind the paper: they come out of the haze at the end of the street and leave past the edge of the window right beside you."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The HUD shows when it is still reading the chain, like Accounts, Explorer and Time travel: on opening the live chain a thin amber bar runs along the top and a small label says it is reading, the numbers stay dimmed until the newest blocks are in, then the bar turns green and says so."
  }
 ]
