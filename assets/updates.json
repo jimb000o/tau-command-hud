@@ -1672,6 +1672,21 @@
   "html": "Start here: the wallet steps now happen right on the page. “Open the wallet”, “Write my rule” and “Feed it from my wallet” open just that one step beside its card, with a single ready choice (a limit of 1,000 test AGRS per payment for the rule), a tick when it is done, and the card turns green. The rule seals on the simulation too, without a trip to the wallet. The whole wallet stays one link away."
  },
  {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper café: a black café cat now sits on the windowsill when you look up, then pads to the way on and waits there, looking back over its shoulder, in every room. If you hesitate it meows softly; click it for a purr and a word. When Mae's pie vote is chalked in, it walks by twice, the very same way. The café sounds now start quietly with “Look up” whenever the page sound is on. Also fixed: the café no longer drops an empty stamp into your Tau card."
+ },
+ {
+  "tag": "My Tau card",
+  "on": "2026-10-30",
+  "html": "My Tau card: Agorzilla now stands beside your card and reads it with you. His mood is the card: an empty one makes him cry, every rule, vote, meal and café stamp cheers him up, and a full card makes him beam. At his feet lies this week's Daily Consensus with your café ticket on top, stamped by the regulars you met; click it to walk into the café. Tiles with something in them light up, and the page has its own guided tour."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "Troll box: everyone now gets a new random name every day at 00:00 UTC. Your name for today is shown under the box; yesterday's messages keep the name they were written with. Warnings, mutes and bans stay with you, whatever your name."
+ },
+ {
   "tag": "Rule changes",
   "on": "2026-10-30",
   "html": "Network rule changes: a check now tells real changes from test changes. On the testnet all 43 rule changes so far rewrite the rule for valid blocks with an extra maths fact that is always true (for example a × b = b × a), so the network decides exactly as before. The HUD feed, the Explorer and Proposals now mark these “test change · no effect”, checked on 400 random inputs, and Proposals counts how many changed behaviour."
