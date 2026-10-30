@@ -1841,5 +1841,6 @@
   "html": "News line: the ghost lines wear the same mark as the ghosts in the chain core, an amber dot in a small block frame."
  },
   {"tag": "Alerts", "on": "2026-10-30", "html": "Alerts: the Monday 09:00 post on Telegram and X now announces the new Daily Consensus first: its number, its headline and how it opens, with a link to read it on Telegram. The week in numbers follows in the same post, so it is one Monday post, not two."},
+  {"tag": "Alerts", "on": "2026-10-30", "html": "Alerts: posts can now be planned ahead in one calendar file, and the bot sends each at its time on Telegram and X. November is planned: the Taumorrow chess round on Sunday 1 November, a page worth a look every Wednesday, and the rule challenge's last days every Friday."},
   {"tag": "Agorzilla", "on": "2026-10-30", "html": "Agorzilla on Tau HUD now looks as the evenings decided: the HUD, the My Tau card and Start read the same chain state as agorzilla.com, so his pendant light and fur change by themselves after each vote. The first evening's post goes out even when it is the very first one the bot sees."}
 ]
