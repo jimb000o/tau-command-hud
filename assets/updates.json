@@ -1909,5 +1909,10 @@
   "tag": "Gazette",
   "on": "2026-10-30",
   "html": "Daily Consensus café: the Professor now names Logix, the mastermind behind Taumorrow, who set up the chess match of Tau against Claude."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: one short ghost line, “Ghosts in the waiting room”, with the live count, instead of two. Hover any item on the line to read in a sentence or two what is behind it."
  }
 ]
