@@ -1752,6 +1752,16 @@
   "html": "Donations: the monthly costs now include the AI assistant the site is built and run with (Claude Max plan, $200 a month), each cost in the currency of its bill. Running costs: about €6 + $200 a month, not counting time."
  },
  {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: the gap between items is now about two letters wide."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: real headlines instead of long update texts. Short lines on what is new on the testnet and on Tau HUD, the titles of new features, live chain numbers, and when the next Daily Consensus comes out: in German time in English, Beijing time in Chinese, Japan time in Japanese."
+ },
+ {
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "In numbers on a phone: the One day table under On the testnet stays inside its panel instead of spilling sideways; the headings take less spacing and the site names may break."
