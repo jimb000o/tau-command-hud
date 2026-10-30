@@ -16,13 +16,13 @@
 
   /* ============ the words (English) ============ */
   const CAFE_EN = {
-    loading: "One moment…", loadingSub: "The café is being set for you", enter: "Look up", enterTip: "Look up from the paper: walk through the café and meet the regulars",
+    call: "From the counter, Mae: “Fresh pot on, hon, if you're looking up.”", loading: "One moment…", loadingSub: "The café is being set for you", enter: "Look up", enterTip: "Look up from the paper: walk through the café and meet the regulars",
     back: "The paper", backTip: "Back to the paper",
-    hint: "Click the left or right edge to walk around · click someone to talk",
-    hintTouch: "Swipe or tap the edges to walk · tap someone to talk",
+    hint: "Walk with the edges of the room or ← →, and click someone to talk",
+    hintTouch: "Swipe or tap the edges to walk, and tap someone to talk",
     soundHint: "Best with sound",
     ticket: "Café ticket", admit: "Admit one", ticketTip: "Talk to all four regulars, then find the door.",
-    more: "Click to go on", stamped: "{name} stamped your ticket", full: "Your ticket is full. Sully is waiting at the door.",
+    more: "Click to go on", stamped: "{name} stamped your ticket: {what}", stampFor: { mae: "Agreement", elias: "Chain", prof: "Logic", sully: "Testnet" }, full: "Your ticket is full. The door is open to you.",
     sep: ", ", and: " and ",
     places: { window: "Your table by the window", counter: "The counter", wire: "The wire corner", back: "The back room", door: "The door" },
     board: ["House Rules", "1. Mind the cups.", "2. Anyone may propose a rule.", "3. The regulars vote.", "4. Most hands carry it.", "5. Rule 4 may be voted on, too.", "Proposed: pie on Fridays", "Carried"],
@@ -37,6 +37,9 @@
           { id: "rule4", q: "Can you vote on the voting rule, too?", a: ["Rule four says how many hands it takes. And sure, you can vote on rule four.", "Took us a whole winter. But nobody had to shut the café and open a new one across the street.", "Elsewhere they'd call that a fork. Here we call it Tuesday."] },
           { id: "nonsense", q: "What if somebody chalks up nonsense?", a: ["Then the Professor in the back room gets that look on his face.", "Go ask him why nonsense never makes it onto my board."] },
         ],
+        task: { q: "I'll chalk it in.", ask: ["Speaking of which: the regulars just voted on pie on Fridays. Four hands for, one against.", "Go on, hon, you chalk it in. The board's right there."], hint: "Click the board to chalk in the vote.",
+          done: ["Look at that. Pie on Fridays, carried, because the regulars agreed and you chalked it in.", "That's how a rule changes in this house. It earns you the house stamp for Agreement."] },
+        wait: "Hold on, hon. You haven't chalked anything in yet.",
         bye: { q: "Thanks, Mae.", a: ["Go on, the coffee's not going anywhere."] } },
       elias: { name: "Elias", role: "minds the wire",
         greet: ["Hold on… hold on… there. Another one, just came over the wire.", "Every slip on this tape is a block. Care to look?"],
@@ -45,6 +48,10 @@
           { id: "who", q: "Who keeps the tape running?", a: ["Validators. Operators in different towns, each with a copy of the tape.", "They agree on the next slip before it's glued on. Nobody alone decides what's true.", "It's a test line, mind you. Still being tried, still being mended."] },
           { id: "vote", q: "And when Mae's regulars pass a new rule?", a: ["Then it comes over the wire like anything else, on a block.", "From that slip on, everybody on the line runs by the new rule. Same tape. No second line."] },
         ],
+        task: { q: "Let me glue on the next slip.", ask: ["Here, make yourself useful. Three slips just came in, and only one belongs on the end of the tape.", { h: "The last slip on the tape is block {h}. Find the one that carries its mark.", n: "Find the one that carries the mark of the last slip on the tape." }],
+          slip: "Block {n} · follows {m}", wrong: "That one doesn't carry the mark of the last slip. Look again.",
+          done: ["Glued on, and it fits: it carries the mark of the last slip, so nobody can sneak a false one in between.", "You just kept a chain. That's the wire's stamp: Chain."] },
+        wait: "Not so fast. The tape isn't done with you yet.",
         bye: { q: "I'll let you get back to it.", a: ["Mind the tape on your way."] } },
       prof: { name: "The Professor", role: "plays chess against himself",
         greet: ["Ah. A newcomer. Sit, sit. But do not touch the bishop.", "Do you play? No matter. The board is the point."],
@@ -53,6 +60,10 @@
           { id: "nonsense", q: "Mae says nonsense never reaches her board.", a: ["Nonsense is the polite word for a contradiction. “The doors open at seven” and “the doors never open.”", "Both cannot be true at once. The machine sees it and says so, before anyone has to argue.", "Mae's café runs on goodwill. Tau hopes to run on goodwill and logic."] },
           { id: "done", q: "Is any of this finished?", a: ["Finished? My dear friend, nothing worth doing is ever finished.", "This is a testnet: a rehearsal held in public. Plans change, mistakes are found and mended.", "Which is precisely why it is worth watching now."] },
         ],
+        task: { q: "Let me find the contradiction.", ask: ["Then try it yourself. The rule in force: “The doors open at seven.”", "A regular proposes one of these. Which one could never pass the check?"],
+          opts: ["Coffee is served from seven.", "The doors never open.", "Pie on Fridays."], right: 1, wrong: "No, that one can live beside the rule in force. Look for the one that cannot.",
+          done: ["Precisely. Both cannot be true at once, so the check refuses it before anyone votes.", "You caught a contradiction before the vote. My stamp: Logic."] },
+        wait: "Sit a moment longer. We have not finished.",
         bye: { q: "I'll leave you to your game.", a: ["Mind the bishop."] } },
       sully: { name: "Sully", role: "sells the morning edition",
         greet: ["Extra! Extra!… Oh, it's you, pal. Leaving already?", "You ain't heard the half of it yet."],
@@ -62,6 +73,9 @@
           { id: "news", key: true, q: "What's the big news, Sully?", a: ["The news is it's happening right now, pal. Not someday. On a testnet, open to anybody.", "You can watch the blocks come in, try out rules in a playground, even make yourself a practice wallet.", "Practice money, mind. Nothing to buy, nothing to sell. It's for learning how the thing works."] },
           { id: "care", q: "Why should anybody care?", a: ["My pop says the rules always got made upstairs, by somebody he never met.", "This here's the first I heard of rules the people who use 'em get to write and vote on.", "That's a story. That's front page."] },
         ],
+        task: { q: "Here's my ticket.", ask: ["Say, got a ticket? Hold it up, pal. Up there in the corner."], hint: "Click your café ticket.",
+          done: ["Mae, Elias, the Professor… all there. And now you know it's happening right now, on a testnet anybody can try.", "That's my stamp: Testnet. Full house, pal. You're ready for the street."] },
+        shut: "Door's shut till your ticket's full, pal. House rules.",
         out: { q: "Step outside", a: ["Go on, pal. Read all about it."] },
         bye: { q: "See you around, Sully.", a: ["Don't be a stranger."] } },
     },
@@ -85,6 +99,8 @@
       deck: "Waitress: “the users vote.” Wire clerk: “every block carries the last.” Professor: “contradictions are caught before the vote.” Newsboy: “it's happening now, on a testnet open to anybody.”",
       block: { h: "Tau Testnet Alpha stood at block {h} as our reader stepped outside.", n: "Tau Testnet Alpha kept adding blocks as our reader stepped outside." },
       fine: "Testnet only. Nothing for sale; test AGRS are for practice.",
+      share: "Pass the paper on", onX: "On X", copy: "Copy the link", copied: "Link copied",
+      shareText: "I walked through a 1920s café and came out knowing how Tau's rules change by agreement. #TauNet",
       paper: "Back to the paper", live: "Watch the testnet live", play: "Try a rule in the playground", again: "Walk in again",
     },
   };
@@ -390,6 +406,7 @@
           box(g, G, -2.7, 1.1, 0, 0.95, ZB - 0.6, ZB - 0.05, { front: tone(0.07), top: tone(0.35), side: tone(0.04) });
         }, live(g, G, t) {
           const { P } = G, cs = G.s(ZB) * 0.11;
+          if (ST.task === "chalk") { const [gx, gy] = P(2.3, 2.0, ZB); g.save(); g.globalCompositeOperation = "screen"; glow(g, gx, gy, G.s(ZB) * 1.4, 0.12 + 0.06 * Math.sin(t * 3)); g.restore(); }
           /* the chalk: tally marks for pie on Fridays, one by one while Mae explains, and then "Carried" */
           const n = TALLY.at == null ? 2 : Math.min(7, 2 + Math.floor((performance.now() - TALLY.at) / 900));
           const [x0, y] = P(2.35, 1.4, ZB); g.strokeStyle = "rgba(240,236,225,.85)"; g.lineWidth = Math.max(1, cs * 0.09); g.lineCap = "round";
@@ -590,6 +607,8 @@
           if (!END.on) { g.save(); g.globalCompositeOperation = "screen"; const f0 = P(d.x0 + 0.1, 0, ZB - 0.1), f1 = P(d.x1 - 0.1, 0, ZB - 0.1), n0 = P(d.x0 + 0.9, 0, 2.2), n1 = P(d.x1 + 0.6, 0, 2.2);
             g.fillStyle = lin(g, 0, f0[1], 0, n0[1], [[0, "rgba(255,230,180,.16)"], [1, "rgba(255,230,180,0)"]]); poly(g, [f0, f1, n1, n0]); g.fill();
             g.fillStyle = lin(g, a[0], a[1], a[0], f0[1], [[0, "rgba(255,230,180,.06)"], [1, "rgba(255,230,180,.0)"]]); poly(g, [a, [b[0], a[1]], [n1[0], n1[1]], [n0[0], n0[1]]]); g.fill(); g.restore(); }
+          /* with a full ticket the door's glass brightens, more so under the pointer: it can be opened now */
+          if (ST.stamps.size === 4 && !END.on) { g.save(); g.globalCompositeOperation = "screen"; glow(g, a[0] + w / 2, a[1] + h / 2, Math.max(w, h) * 1.1, (ST.hoverProp === "door" ? 0.32 : 0.14) + 0.05 * Math.sin(t * 2.5)); g.restore(); }
           /* the brass push plate and handle */
           const [hx, hy] = P(d.x1 - 0.12, 1.0, ZB - 0.04), s = G.s(ZB); g.fillStyle = "#c8a868"; g.fillRect(hx - s * 0.05, hy - s * 0.15, s * 0.04, s * 0.3);
           /* the bell over the door, swinging when the door opens */
@@ -655,7 +674,7 @@
   })();
 
   /* ============ the reader's walk ============ */
-  const ST = { on: false, area: "window", pan: null, cam: 0, camT: 0, zoom: 1, zoomT: 1, zx: 0, zy: 0, talk: null, stamps: new Set(), boxes: {}, mouth: 0, mouthT: 0, last: 0 };
+  const ST = { arriveAt: 0, walked: true, talked: false, hover: null, on: false, area: "window", pan: null, cam: 0, camT: 0, zoom: 1, zoomT: 1, zx: 0, zy: 0, talk: null, stamps: new Set(), boxes: {}, mouth: 0, mouthT: 0, last: 0 };
   const END = { on: false, t0: 0 };
   let W = 0, H = 0, K = 1, raf = 0;
   const cv = document.createElement("canvas"); cv.className = "cafe-cv"; cv.setAttribute("aria-hidden", "true"); cv.dataset.noflip = "";
@@ -704,9 +723,14 @@
     if (name === "window") { for (const c of S.layers) g.drawImage(c, 0, 0, W, H); g.restore(); return; }
     const G = geom(W, H, ST.cam), layers = bake(name), P = A.person, items = A.layers.map((L, i) => ({ z: L.z, i })).concat(P ? [{ z: P.z, p: true }] : []).sort((a, b) => b.z - a.z);
     for (const it of items) {
-      if (it.p) { const [x, y] = G.P(P.X, P.Y, P.z), s = G.s(P.z), talk = ST.talk && ST.talk.who === P.id && dx === 0;
+      if (it.p) { const [x, y] = G.P(P.X, P.Y, P.z), s = G.s(P.z), talk = ST.talk && ST.talk.who === P.id && dx === 0, hx0 = x + P.head[0] * s, hy0 = y + P.head[1] * s;
+        /* a regular who has not been spoken to yet: a little warmer in the light after a moment, more so under the pointer */
+        const inv = dx || talk || END.on ? 0 : ST.hover === P.id ? 1 : !ST.talked && performance.now() - ST.arriveAt > 1800 ? 0.35 + 0.25 * Math.sin(t * 2) : 0;
+        if (inv > 0) { g.save(); g.globalCompositeOperation = "screen"; glow(g, hx0, hy0 + s * 0.25, s * 0.6, 0.14 * inv); g.restore(); }
         g.save(); g.translate(x, y); g.scale(s, s); P.draw(g, RM ? 0 : t, { talk, mouth: ST.mouth, look: [-(ST.cam / 0.25) * 0.3 + (P.X < 0 ? 0.2 : -0.2), 0.1] }); g.restore();
-        const hx = x + P.head[0] * s, hy = y + P.head[1] * s; if (dx === 0) ST.boxes.person = { id: P.id, x: hx - s * 0.32, y: hy - s * 0.2, w: s * 0.64, h: (y - hy) + s * 0.25, hx, hy };
+        const hx = hx0, hy = hy0;
+        if (inv > 0) text(g, TX.people[P.id].name + "  · · ·", hx, hy - s * 0.24, Math.max(13, s * 0.042), { it: true, fill: `rgba(245,228,190,${Math.min(1, 0.4 + 0.6 * inv)})`, stroke: "rgba(0,0,0,.55)", face: "'Old Standard TT', Georgia, 'Noto Serif SC', serif" });
+        if (dx === 0) ST.boxes.person = { id: P.id, x: hx - s * 0.32, y: hy - s * 0.2, w: s * 0.64, h: (y - hy) + s * 0.25, hx, hy };
         /* the Professor's pipe smoke curls up into the lamp */
         if (P.smoke && !(talk && ST.mouth > 0.1)) for (let k = 0; k < 12; k++) { const u = ((t * 0.1) + k / 12) % 1, sx = x + P.smoke[0] * s + Math.sin(t * 0.6 + k * 1.3 + u * 4) * s * 0.025 * (1 + u * 4), sy = y + P.smoke[1] * s - u * s * 0.55;
           puff(g, sx, sy, s * (0.012 + u * 0.07), 0.16 * Math.sin(u * Math.PI) * (1 - u * 0.5)); }
@@ -749,7 +773,7 @@
   ui.innerHTML = `<div class="cafe-top"><button class="cafe-back" data-k="back"></button><div class="cafe-place" aria-live="polite"></div>
       <div class="cafe-right"><button class="cafe-snd" data-k="snd"></button><div class="cafe-ticket" role="img"><span class="ct-t"></span><span class="ct-s"></span></div></div></div>
     <button class="cafe-edge l" data-k="left"><span class="ce-ch">‹</span><span class="ce-n"></span></button><button class="cafe-edge r" data-k="right"><span class="ce-n"></span><span class="ce-ch">›</span></button>
-    <div class="cafe-hint"></div><div class="cafe-note" role="status"></div>
+    <div class="cafe-hint"></div><p class="cafe-call" aria-live="polite"></p><div class="cafe-note" role="status"></div>
     <div class="cafe-say" role="dialog" aria-live="polite" hidden><div class="cs-who"><b></b><i></i></div><p class="cs-line"></p><div class="cs-ch"></div><span class="cs-more" aria-hidden="true">▾</span></div>
     <div class="cafe-end" hidden><p class="ce-card"></p><div class="ce-paper" hidden></div></div>`;
   desk.appendChild(ui);
@@ -776,10 +800,11 @@
     hintEl.textContent = touch ? TX.hintTouch : TX.hint;
     if (ST.on) place();
   }
-  function ticket() { const s = $(".ct-s"); s.innerHTML = ""; ["mae", "elias", "prof", "sully"].forEach((id, i) => { const b = document.createElement("i"); b.className = ST.stamps.has(id) ? "on" : ""; b.textContent = ST.stamps.has(id) ? (TX.people[id].name.replace(/^The /, "")[0] || "") : ""; b.style.setProperty("--r", (i * 37 % 20 - 10) + "deg"); s.appendChild(b); });
+  function ticket() { const s = $(".ct-s"); s.innerHTML = ""; ["mae", "elias", "prof", "sully"].forEach((id, i) => { const w = document.createElement("span"), b = document.createElement("i"); w.className = "ct-slot"; b.className = ST.stamps.has(id) ? "on" : ""; b.textContent = ST.stamps.has(id) ? (TX.people[id].name.replace(/^The /, "")[0] || "") : ""; b.style.setProperty("--r", (i * 37 % 20 - 10) + "deg");
+      const l = document.createElement("small"); l.textContent = TX.stampFor[id]; w.append(b, l); w.classList.toggle("on", ST.stamps.has(id)); s.appendChild(w); });
     $(".cafe-ticket").setAttribute("aria-label", `${TX.ticket}: ${ST.stamps.size} / 4`); }
   const nb = d => ORDER[(ORDER.indexOf(ST.area) + d + ORDER.length) % ORDER.length];
-  function edges() { $(".cafe-edge.l .ce-n").textContent = TX.places[nb(-1)]; $(".cafe-edge.r .ce-n").textContent = TX.places[nb(1)];
+  function edges() { const l = $(".cafe-edge.l"), r = $(".cafe-edge.r"); l.hidden = IDX() === 0; r.hidden = IDX() === ORDER.length - 1; r.classList.toggle("shut", !canGo(1)); $(".cafe-edge.l .ce-n").textContent = TX.places[nb(-1)]; $(".cafe-edge.r .ce-n").textContent = TX.places[nb(1)];
     $(".cafe-edge.l").setAttribute("aria-label", TX.places[nb(-1)]); $(".cafe-edge.r").setAttribute("aria-label", TX.places[nb(1)]); }
   function place() { const p = $(".cafe-place"); p.classList.remove("on"); void p.offsetWidth; p.textContent = TX.places[ST.area]; p.classList.add("on"); edges(); }
   /* the sound button mirrors the café's own Off / Quiet / Lively */
@@ -790,14 +815,17 @@
   /* in: the paper goes down at once and a card says the café is being set; the rooms on either side are drawn,
      then the café opens (a card is shown only if that takes longer than a blink) */
   function enter(quick) {
-    if (ST.on) return; ST.on = true; ST.area = "window"; ST.cam = ST.camT = 0; ST.zoom = 1.08; ST.zoomT = 1; ST.last = 0;
+    if (ST.on) return; ST.on = true; ST.talked = false; ST.area = "window"; ST.cam = ST.camT = 0; ST.zoom = 1.08; ST.zoomT = 1; ST.last = 0;
     desk.classList.add("cafe-on", "cafe-wait"); desk.classList.remove("cafe-away"); labels(); mix();
     const t0 = performance.now(); let shown = false; const card = setTimeout(() => { shown = true; waitShow(true, 0); }, 150);
     requestAnimationFrame(() => { if (!ST.on) return; if (W !== desk.clientWidth || H !== desk.clientHeight || !cv.width) size(); ST.zx = W / 2; ST.zy = H / 2; loop();
       (quick ? Promise.resolve(true) : prep([nb(1), nb(-1)], (n, t) => shown && waitShow(true, t ? n / t : 1))).then(ok => {
         clearTimeout(card); if (!ST.on) return; const rest = shown ? Math.max(0, 350 - (performance.now() - t0)) : 0;
         setTimeout(() => { if (!ST.on) return; waitShow(false); desk.classList.remove("cafe-wait"); ui.hidden = false; place();
-          hintEl.classList.add("on"); clearTimeout(hintEl._t); hintEl._t = setTimeout(() => hintEl.classList.remove("on"), 7000);
+          hintEl.classList.add("on"); clearTimeout(hintEl._t); ST.walked = false;
+          /* nobody has moved yet: from the right, Mae calls over once and the way to the counter catches the light */
+          clearTimeout(ST.callT); ST.callT = setTimeout(() => { if (!ST.on || ST.walked || ST.area !== "window") return; const e = $(".cafe-edge.r"), c = $(".cafe-call");
+            e.classList.add("call"); c.textContent = TX.call; c.classList.add("on"); for (let k = 0; k < 9; k++) setTimeout(() => ST.on && !ST.walked && AUDIO.syllable("mae", k === 0), 300 + k * 110); }, 2400);
           setTimeout(() => $(".cafe-edge.r").focus({ preventScroll: true }), 300); }, rest); }); });
   }
   function leave() {
@@ -805,19 +833,25 @@
     desk.classList.remove("cafe-on", "cafe-away"); ui.hidden = true; S.amb.mix({ street: 1, open: 0, music: 1 }); bIn.focus({ preventScroll: true });
   }
   const mix = () => S.amb.mix(Object.assign({ open: 0 }, AREAS[ST.area].mix));
+  /* the café is walked in order: rightward only once the regular here has stamped the ticket, back any time, never round
+     the corner from the window to the door */
+  const IDX = () => ORDER.indexOf(ST.area), HOST = { counter: "mae", wire: "elias", back: "prof", door: "sully" };
+  const canGo = d => d < 0 ? IDX() > 0 : IDX() < ORDER.length - 1 && (ST.area === "window" || ST.stamps.has(HOST[ST.area]));
   function walk(d) {
-    if (!ST.on || ST.pan || END.on || ST.busy) return; closeTalk(); const to = nb(d), slow = RM || small();
+    if (!ST.on || ST.pan || END.on || ST.busy) return;
+    if (!canGo(d)) { if (d > 0 && HOST[ST.area] && IDX() < ORDER.length - 1) { const who = HOST[ST.area]; flash(TX.people[who].wait); for (let k = 0; k < 6; k++) setTimeout(() => AUDIO.syllable(who, !k), k * 110); } return; } closeTalk(); const to = nb(d), slow = RM || small();
     /* a room not drawn yet (a quick walker): the card for a moment, then the step */
     if (!ready(to)) { ST.busy = true; const card = setTimeout(() => waitShow(true, 0), 150); prep([to], (n, t) => waitShow(!wait.hidden, n / t)).then(() => { clearTimeout(card); waitShow(false); ST.busy = false; if (ST.on) walk(d); }); return; }
-    ST.pan = { from: ST.area, to, dir: d, t0: performance.now(), d: slow ? 450 : 950, fade: slow }; ST.area = to; ST.zoomT = 1;
+    ST.pan = { from: ST.area, to, dir: d, t0: performance.now(), d: slow ? 450 : 950, fade: slow }; ST.area = to; ST.zoomT = 1; ST.hover = null;
+    if (!ST.walked) { ST.walked = true; clearTimeout(ST.callT); hintEl.classList.remove("on"); $(".cafe-edge.r").classList.remove("call"); $(".cafe-call").classList.remove("on"); }
     desk.classList.toggle("cafe-away", to !== "window"); AUDIO.steps(slow ? 2 : 3); note.classList.remove("on"); place(); mix(); bake(to); loop();
   }
-  function arrived() { if (ST.area === "wire") AUDIO.ticker(); keep(); prep([nb(1), nb(-1)]); }
+  function arrived() { ST.arriveAt = performance.now(); if (ST.area === "wire") AUDIO.ticker(); keep(); prep([nb(1), nb(-1)]); }
 
   /* ----- talking ----- */
   let TYPE = null;
   function talk(who) {
-    if (ST.talk || ST.pan) return; const P = TX.people[who], box = ST.boxes.person; ST.talk = { who, asked: new Set() };
+    if (ST.talk || ST.pan) return; const P = TX.people[who], box = ST.boxes.person; ST.talk = { who, asked: new Set() }; ST.talked = true; ST.hover = null;
     if (box) { ST.zx = box.hx; ST.zy = box.hy + H * 0.08; ST.zoomT = small() ? 1.08 : 1.22; }
     say.hidden = false; $(".cs-who b").textContent = P.name; $(".cs-who i").textContent = P.role; hintEl.classList.remove("on"); note.classList.remove("on");
     let open = P.greet;
@@ -843,22 +877,45 @@
     say.classList.add("ask"); sayCh.innerHTML = "";
     const add = (q, fn, dim) => { const b = document.createElement("button"); b.textContent = q; if (dim) b.className = "dim"; b.onclick = e => { e.stopPropagation(); fn(); }; sayCh.appendChild(b); };
     P.ask.forEach(a => add(a.q, () => answer(a), T.asked.has(a.id)));
+    const key = P.ask.find(a => a.key); if (key && T.asked.has(key.id) && !ST.stamps.has(T.who)) { sayCh.insertBefore(sayCh.lastChild, sayCh.firstChild); add(P.task.q, () => task()); sayCh.insertBefore(sayCh.lastChild, sayCh.firstChild); }
     if (T.who === "sully" && all) add(P.out.q, () => { lines(P.out.a, () => { closeTalk(); outside(); }); });
     add(P.bye.q, () => lines(P.bye.a, closeTalk));
     const f = sayCh.querySelector("button:not(.dim)") || sayCh.querySelector("button"); if (f) f.focus({ preventScroll: true });
   }
   function answer(a) {
     const T = ST.talk; T.asked.add(a.id);
-    if (T.who === "mae" && a.id === "rules") { TALLY.at = performance.now() + 2500; [3200, 4100, 5000, 5900, 6800, 8600].forEach(ms => setTimeout(() => ST.area === "counter" && AUDIO.chalk(), ms)); }
     if (T.who === "elias" && a.id === "tape") { AUDIO.ticker(); }
     if (T.who === "prof" && a.id === "logic") { setTimeout(AUDIO.clack, 600); }
-    lines(a.a, () => { if (a.key && !ST.stamps.has(T.who)) stamp(T.who); choices(); });
+    lines(a.a, () => { if (a.key && !ST.stamps.has(T.who)) task(); else choices(); });
   }
+  /* ----- each regular hands you something to do, and the stamp comes with it ----- */
+  function task() {
+    const T = ST.talk, who = T.who, K = TX.people[who].task; T.task = who;
+    lines(K.ask, () => {
+      say.classList.add("ask"); sayCh.innerHTML = "";
+      if (who === "mae") { ST.task = "chalk"; flash(K.hint, ST.boxes.props && ST.boxes.props.find(p => p.id === "board")); }
+      else if (who === "sully") { ST.task = "ticket"; $(".cafe-ticket").classList.add("offer"); $(".cafe-ticket").tabIndex = 0; $(".cafe-ticket").focus({ preventScroll: true }); }
+      else { ST.task = who; const h = live(), base = h != null ? h : 3100;
+        const opts = who === "elias" ? [[base + 1, base - 3], [base + 1, base], [base + 4, base + 2]].map(([n, m]) => fmt(K.slip, { n: num(n), m: num(m) })) : K.opts;
+        const right = who === "elias" ? 1 : K.right, order = who === "elias" ? [2, 0, 1] : [0, 1, 2];
+        order.forEach(i => { const b = document.createElement("button"); b.className = "pick " + (who === "elias" ? "slip" : "chalk"); b.textContent = opts[i];
+          b.onclick = e => { e.stopPropagation(); if (i === right) { AUDIO.clack(); done(); } else { AUDIO.syllable(who); b.classList.add("no"); sayLine.textContent = K.wrong; } }; sayCh.appendChild(b); });
+        sayCh.querySelector("button").focus({ preventScroll: true }); } });
+  }
+  function done() {
+    const T = ST.talk; if (!T) return; const who = T.who, K = TX.people[who].task; ST.task = null; $(".cafe-ticket").classList.remove("offer");
+    if (who === "elias") AUDIO.ticker();
+    say.classList.remove("ask"); sayCh.innerHTML = ""; lines(K.done, () => { stamp(who); edges(); choices(); });
+  }
+  /* the board, clicked while Mae waits: the tally goes up mark by mark and the rule is carried */
+  function chalkIn() { ST.task = null; TALLY.at = performance.now() - 1800; [0, 900, 1800, 2700, 3600, 5400].forEach(ms => setTimeout(() => ST.area === "counter" && AUDIO.chalk(), ms)); note.classList.remove("on"); setTimeout(done, 6400); }
+  $(".cafe-ticket").addEventListener("click", e => { if (ST.task !== "ticket") return; e.stopPropagation(); AUDIO.rustle(); done(); });
+  $(".cafe-ticket").addEventListener("keydown", e => { if (ST.task === "ticket" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); AUDIO.rustle(); done(); } });
   function stamp(who) {
     ST.stamps.add(who); ticket(); AUDIO.stamp(); const tk = $(".cafe-ticket"); tk.classList.remove("thud"); void tk.offsetWidth; tk.classList.add("thud");
-    let msg = fmt(TX.stamped, { name: TX.people[who].name }); if (ST.stamps.size === 4) msg += " " + TX.full; flash(msg);
+    let msg = fmt(TX.stamped, { name: TX.people[who].name, what: TX.stampFor[who] }); if (ST.stamps.size === 4) msg += " " + TX.full; flash(msg);
   }
-  function closeTalk() { if (!ST.talk) return; clearInterval(TYPE && TYPE.id); TYPE = null; ST.talk = null; ST.mouthT = 0; ST.zoomT = 1; say.hidden = true; }
+  function closeTalk() { if (!ST.talk) return; if (ST.task === "ticket") $(".cafe-ticket").classList.remove("offer"); if (ST.task !== "chalk") ST.task = null; clearInterval(TYPE && TYPE.id); TYPE = null; ST.talk = null; ST.mouthT = 0; ST.zoomT = 1; say.hidden = true; }
   let flashT = 0; function flash(s, box) { note.textContent = s; note.classList.add("on"); note.style.left = box ? Math.max(8, Math.min(W - 300, box.x + box.w / 2 - 150)) + "px" : ""; note.style.top = box ? Math.max(70, box.y - 60) + "px" : ""; note.classList.toggle("free", !!box);
     clearTimeout(flashT); flashT = setTimeout(() => note.classList.remove("on"), 6000); }
 
@@ -880,11 +937,12 @@
     if (ST.talk) return adv();
     const h = pick(e); if (!h) return;
     if (h.person) return talk(h.person);
-    if (h.prop.id === "door") { const P = TX.people.sully; return talk("sully"); }
+    if (h.prop.id === "board" && ST.task === "chalk") return chalkIn();
+    if (h.prop.id === "door") { if (["mae", "elias", "prof", "sully"].every(k => ST.stamps.has(k))) return outside(); return flash(TX.people.sully.shut, h.prop); }
     const v = TX.props[h.prop.id]; (PROP_SOUND[h.prop.id] || (() => {}))(); flash(typeof v === "function" ? v(live()) : v, h.prop); });
   cv.addEventListener("click", e => e.stopPropagation());
   cv.addEventListener("pointermove", e => { if (!ST.on) return; const r = cv.getBoundingClientRect(); if (!touch && !RM) ST.camT = ((e.clientX - r.left) / r.width - 0.5) * 0.36;
-    const h = pick(e); cv.style.cursor = h ? "pointer" : ""; });
+    const h = pick(e); cv.style.cursor = h ? "pointer" : ""; ST.hover = h && h.person || null; ST.hoverProp = h && h.prop ? h.prop.id : null; });
   ui.addEventListener("click", e => { const k = e.target.closest("[data-k]"); if (!k) return; e.stopPropagation();
     if (k.dataset.k === "back") leave(); else if (k.dataset.k === "left") walk(-1); else if (k.dataset.k === "right") walk(1);
     else if (k.dataset.k === "snd" && S.amb_btn) { S.amb_btn.click(); setTimeout(() => { sndLabel(); mix(); }, 50); } });
@@ -892,8 +950,11 @@
   addEventListener("keydown", e => { if (!ST.on) return; if (e.target.closest && e.target.closest("input, textarea, select")) return;
     e.stopImmediatePropagation();
     if (e.key === "Escape") { e.preventDefault(); return ST.talk ? closeTalk() : END.on ? leave() : leave(); }
-    if (END.on) return;
-    if (ST.talk) { if (/^[1-9]$/.test(e.key) && say.classList.contains("ask")) { const b = sayCh.querySelectorAll("button")[+e.key - 1]; if (b) b.click(); return; }
+    if (END.on) { if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") { if (!(e.target.closest && e.target.closest(".ce-paper"))) { e.preventDefault(); nextCard(); } } return; }
+    if (ST.task === "chalk" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); return chalkIn(); }
+    if (ST.talk) { if (/^Arrow/.test(e.key)) { e.preventDefault(); const bs = [...sayCh.querySelectorAll("button:not(.no)")]; if (!bs.length) return;
+        const i = bs.indexOf(document.activeElement), d = e.key === "ArrowUp" || e.key === "ArrowLeft" ? -1 : 1; bs[i < 0 ? (d > 0 ? 0 : bs.length - 1) : (i + d + bs.length) % bs.length].focus(); return; }
+      if (/^[1-9]$/.test(e.key) && say.classList.contains("ask")) { const b = sayCh.querySelectorAll("button")[+e.key - 1]; if (b) b.click(); return; }
       if ((e.key === "Enter" || e.key === " ") && !(e.target.closest && e.target.closest(".cs-ch button"))) { e.preventDefault(); adv(); } return; }
     if (e.key === "ArrowLeft") { e.preventDefault(); walk(-1); } else if (e.key === "ArrowRight") { e.preventDefault(); walk(1); }
     else if ((e.key === "Enter" || e.key === " ") && !(e.target.closest && e.target.closest("button")) && AREAS[ST.area].person) { e.preventDefault(); talk(AREAS[ST.area].person.id); } }, true);
@@ -906,7 +967,14 @@
     AUDIO.bell(); setTimeout(AUDIO.creak, 150); S.amb.mix({ street: 1.7, open: 1, music: 0.35 }); setTimeout(AUDIO.swell, 1400);
     $(".cafe-end").hidden = false; loop();
   }
-  const CARD = 3600, OPEN = 1800;
+  const OPEN = 1800, cardMs = k => Math.max(4000, 1000 + 60 * [...TX.end.lines[k]].length * (/zh|ja/.test(LANG) ? 2.2 : 1));
+  function showCard(k, now = performance.now()) {
+    const c = $(".ce-card"), n = TX.end.lines.length; END.card = k; END.cardAt = now; c.classList.remove("on");
+    if (k >= n) { if (!END.paper) { END.paper = true; setTimeout(() => extra(RM || small()), 700); } return; }
+    setTimeout(() => { if (END.card !== k) return; c.textContent = TX.end.lines[k]; c.classList.add("on"); }, k ? 900 : 0);
+  }
+  const nextCard = () => { if (END.on && END.card >= 0 && !END.paper && performance.now() - END.cardAt > 1200) showCard(END.card + 1); };
+  ui.querySelector(".cafe-end").addEventListener("click", e => { if (!e.target.closest(".ce-paper")) nextCard(); });
   function endFrame(now, t) {
     const e = now - END.t0, quiet = RM || small(), n = TX.end.lines.length;
     if (e < OPEN) {
@@ -915,24 +983,32 @@
       g.fillStyle = rad(g, W * 0.38, H * 0.45, 0, Math.max(W, H) * (0.2 + u * 1.2), [[0, `rgba(255,246,225,${a})`], [0.6, `rgba(250,225,175,${a * 0.85})`], [1, `rgba(250,225,175,${a * 0.2})`]]); g.fillRect(0, 0, W, H);
       return; }
     /* on the pavement: the street, sharp now, the streetcars running; the view drifts slowly down the street */
-    const u = (e - OPEN) / (CARD * (n + 1)), z = quiet ? 1 : 1 + Math.min(1, u) * 0.16, cx = W * 0.2, cy = H * 0.46;
+    const u = (e - OPEN) / 26000, z = quiet ? 1 : 1 + Math.min(1, u) * 0.16, cx = W * 0.2, cy = H * 0.46;
     g.save(); g.translate(cx, cy); g.scale(z, z); g.translate(-cx, -cy); g.drawImage(street(), 0, 0, W, H); g.drawImage(S.layers[1], 0, 0, W, H); g.drawImage(S.layers[2], 0, 0, W, H); g.restore();
     const vig = g.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.3, W / 2, H * 0.5, Math.max(W, H) * 0.8); vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = vig; g.fillRect(0, 0, W, H);
     const fl = Math.max(0, 1 - (e - OPEN) / 2200); if (fl > 0) { g.fillStyle = `rgba(255,246,225,${fl})`; g.fillRect(0, 0, W, H); }
-    /* the cards, one by one, like a picture show */
-    const k = Math.floor((e - OPEN - 1200) / CARD);
-    if (k !== END.card && k >= 0 && k < n) { END.card = k; const c = $(".ce-card"); c.classList.remove("on"); void c.offsetWidth; c.textContent = TX.end.lines[k]; c.classList.add("on"); }
-    if (k >= n && !END.paper) { END.paper = true; $(".ce-card").classList.remove("on"); extra(quiet); }
+    /* the cards, one by one, like a picture show; each stays long enough to read (a click or a key goes on) */
+    if (END.card < 0 && e > OPEN + 1200) showCard(0, now);
+    else if (END.card >= 0 && END.card < n && now - END.cardAt > cardMs(END.card)) showCard(END.card + 1, now);
   }
   /* the Extra! comes spinning in and lands, the reader's own front page */
   function extra(quiet) {
     const E = TX.end, h = live(), p = $(".ce-paper"), name = (window.GAZETTE_ZH && LANG === "zh" && window.GAZETTE_ZH.name) || (window.GAZETTE_JA && LANG === "ja" && window.GAZETTE_JA.name) || "The Daily Consensus";
     const d = new Date(), date = d.toLocaleDateString(LANG === "en" ? "en-US" : LANG, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
     p.innerHTML = `<div class="cp-mast">${name.replace(/\{\{NAME\}\}/g, "")}</div><div class="cp-date">${date}</div><div class="cp-extra">${E.extra}</div><h2 class="cp-head">${E.head}</h2><p class="cp-deck">${E.deck}</p><p class="cp-block">${h != null ? fmt(E.block.h, { h: num(h) }) : E.block.n}</p><p class="cp-fine">${E.fine}</p>
-      <div class="cp-go"><button data-e="paper">${E.paper}</button><a href="/">${E.live}</a><a href="/playground/">${E.play}</a><button data-e="again">${E.again}</button></div>`;
+      <div class="cp-go"><button data-e="paper">${E.paper}</button><a href="/">${E.live}</a><a href="/playground/">${E.play}</a><button data-e="again">${E.again}</button></div>
+      <div class="cp-share"><button data-e="share">${E.share}</button><span class="cp-row" hidden><a data-e="x" target="_blank" rel="noopener">${E.onX}</a><button data-e="copy">${E.copy}</button></span></div>`;
     p.hidden = false; p.classList.toggle("quiet", quiet); if (!quiet) AUDIO.whoosh(); else AUDIO.rustle();
     p.querySelector("[data-e=paper]").onclick = e => { e.stopPropagation(); reset(); leave(); };
     p.querySelector("[data-e=again]").onclick = e => { e.stopPropagation(); reset(); leave(); enter(); };
+    /* pass the paper on: the phone's own share sheet where there is one, otherwise X and a link to copy */
+    const url = "https://tauhud.com/gazette/walk/" + (LANG !== "en" ? "?lang=" + LANG : ""), x = p.querySelector("[data-e=x]");
+    x.href = "https://x.com/intent/post?text=" + encodeURIComponent(E.shareText) + "&url=" + encodeURIComponent(url);
+    p.querySelector("[data-e=share]").onclick = e => { e.stopPropagation();
+      if (navigator.share && touch) { navigator.share({ title: E.head, text: E.shareText, url }).catch(() => {}); return; }
+      const r = p.querySelector(".cp-row"); r.hidden = !r.hidden; if (!r.hidden) x.focus({ preventScroll: true }); };
+    p.querySelector("[data-e=copy]").onclick = e => { e.stopPropagation(); const b = e.currentTarget, ok = () => { b.textContent = E.copied; setTimeout(() => b.textContent = E.copy, 2500); };
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(ok, () => prompt(E.copy, url)); else prompt(E.copy, url); };
     setTimeout(() => p.querySelector("[data-e=paper]").focus({ preventScroll: true }), quiet ? 300 : 1800);
   }
   function reset() { ST.stamps.clear(); TALLY.at = null; END.on = false; END.paper = false; desk.classList.remove("cafe-ending"); ui.querySelector(".cafe-top").classList.remove("gone"); ticket(); }
@@ -941,8 +1017,10 @@
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
 
   /* other languages come in their own small file */
-  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=2`; s.onload = labels; document.head.appendChild(s); }
+  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=4`; s.onload = labels; document.head.appendChild(s); }
   labels();
+  /* ?walk (the shared link) opens the café straight away */
+  if (/[?&]walk\b/.test(location.search)) setTimeout(() => enter(), 600);
   /* ?cafe=<room> opens the café there (and ?cafe-talk=<who>&cafe-line=<n> for pictures) */
   { const m = /[?&]cafe=(\w+)/.exec(location.search); if (m) setTimeout(() => { enter(); if (AREAS[m[1]] && m[1] !== "window") { ST.area = m[1]; desk.classList.add("cafe-away"); place(); mix(); }
     const tk = /[?&]cafe-talk=(\w+)/.exec(location.search); if (tk) setTimeout(() => { if (tk[1] === "end") { ["mae", "elias", "prof", "sully"].forEach(k => ST.stamps.add(k)); ticket(); outside(); } else talk(tk[1]); }, 400); }, 300); }
