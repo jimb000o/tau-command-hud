@@ -2114,4 +2114,5 @@ TauI18n.add({ strings: {
   "Donations are voluntary ›": "捐赠出于自愿 ›",
   "News line: items now follow each other at a short fixed gap and the letters keep their normal spacing on wide screens (the scaled-up HUD at 3440 spread both apart). On load the first items decode where they stand.": "快讯：各条之间现在保持固定的短间距，宽屏上字母也保持正常间距（3440 宽时放大的 HUD 曾把两者都拉开）。加载时，最先出现的几条在原地解码。",
   "In numbers: smoother, finer charts. 7D now shows every hour and 30D every six hours instead of one point a day, drawn as a soft curve that never rises above or dips below a real count. The dots on every point are gone: only the newest value keeps one, and pointing at the line still shows each hour.": "数据一览：图表更细腻、更顺滑。7 天视图现在显示每个小时，30 天视图每 6 小时一个点，不再是一天一个点；曲线柔和，但绝不会高于或低于真实的数字。每个点上的圆点去掉了，只有最新的值保留一个，鼠标指向曲线仍能看到每个小时。",
+  "Donations: the monthly costs now include the AI assistant the site is built and run with (Claude Max plan, $200 a month), each cost in the currency of its bill. Running costs: about €6 + $200 a month, not counting time.": "捐赠：每月花费现在包括搭建和运行本站所用的 AI 助手（Claude Max 套餐，每月 200 美元），每项费用按其账单币种列出。运行费用：每月约 6 欧元 + 200 美元，不含时间。",
 } });

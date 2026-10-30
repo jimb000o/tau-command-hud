@@ -72,4 +72,7 @@ TauI18n.add({ strings: {
   "Read from Ethereum every five minutes. Only AGRS of the real token contract and ETH count; tiny amounts and look-alike tokens are left out. Money values are the price when the donation came in, or that day's price for older ones (CoinGecko). Not advice, and no price of anything is promised.": "5 分ごとにイーサリアムから読み取ります。本物のトークン契約の AGRS と ETH だけを数え、ごく少額や偽物のトークンは除きます。金額は寄付が届いた時点の価格、古いものはその日の価格です（CoinGecko）。助言ではなく、どんな価格も約束しません。",
   "QR code of the donation address": "寄付アドレスの QR コード",
   "Privacy notice, section 11 ›": "プライバシー通知、第 11 節 ›",
+  "AI assistant": "AI アシスタント",
+  "Claude Max plan (20x), the AI tool the site is built and run with": "Claude Max プラン（20x）、サイトを作り動かすのに使う AI ツール",
+  "Amounts as billed, rounded, each in the currency of its bill. Domains and the X account are added here once their bills are in.": "金額は請求額を丸めたもので、それぞれ請求の通貨です。ドメインと X アカウントは請求が届き次第ここに加えます。",
 } });

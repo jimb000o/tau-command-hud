@@ -148,7 +148,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <h2 id="hCost">What it costs <span class="n">per month</span></h2>
         <ul class="rows" id="costs"></ul>
         <div class="sum"><span>Running costs, not counting time</span><b id="costSum"></b></div>
-        <p class="fine" id="costNote">Amounts as billed, rounded. Domains, the X account and tools are added here once their bills are in.</p>
+        <p class="fine" id="costNote">Amounts as billed, rounded, each in the currency of its bill. Domains and the X account are added here once their bills are in.</p>
         <p class="fine">Work on the site is counted rather than claimed: <span id="effort">changes pushed to the public repository, counted live from GitHub</span>. <a href="/#updates">Update log ›</a></p>
       </section>
     </div>
@@ -172,20 +172,21 @@ const L = window.TauI18n ? TauI18n.lang : "en";
 const G = (s, v) => { const ks = Object.keys(v); let o = T(ks.reduce((x, k, i) => x.split("{" + k + "}").join("904170" + i), s)); ks.forEach((k, i) => { o = o.split("904170" + i).join(v[k]); }); return o; };
 const ADDR = "0x23fB76A33A8d70f5c51aB558b85e4b93040003eb", AGRS = "0x738865301a9b7dd80dc3666dd48cf034ec42bdda";
 const nf = new Intl.NumberFormat("en-US");
-/* monthly running costs in euros as billed; time comes first and is never priced. null = bill not in yet, the row stays hidden */
+/* monthly running costs as billed, each in the currency of its bill; time comes first and is never priced. null = bill not in yet, the row stays hidden */
 const COSTS = [
-  { t: "Server", d: "Hetzner CAX11 at node.tauhud.com: the community node, the relay, alerts and bots", eur: 6 },
-  { t: "Domains", d: "tauhud.com and agorzilla.com", eur: null },
-  { t: "X account", d: "the bot that posts rule changes on X", eur: null },
-  { t: "Tools", d: "software and services used to build the site", eur: null },
+  { t: "Server", d: "Hetzner CAX11 at node.tauhud.com: the community node, the relay, alerts and bots", amount: 6, cur: "EUR" },
+  { t: "AI assistant", d: "Claude Max plan (20x), the AI tool the site is built and run with", amount: 200, cur: "USD" },
+  { t: "Domains", d: "tauhud.com and agorzilla.com", amount: null, cur: "EUR" },
+  { t: "X account", d: "the bot that posts rule changes on X", amount: null, cur: "USD" },
 ];
-const eur = n => new Intl.NumberFormat(L === "en" ? "en-GB" : L, { style: "currency", currency: "EUR", maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
+const cost = (n, c) => new Intl.NumberFormat(c === "USD" ? "en-US" : L === "en" ? "en-GB" : L, { style: "currency", currency: c, maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
 (() => {
-  const ul = $("costs"), known = COSTS.filter(c => typeof c.eur === "number");
+  const ul = $("costs"), known = COSTS.filter(c => typeof c.amount === "number");
   const li = (t, d, v, cls) => { const e = document.createElement("li"); e.innerHTML = `<b></b><span class="v"></span><small></small>`; e.querySelector("b").textContent = T(t); e.querySelector("small").textContent = T(d); const s = e.querySelector(".v"); s.textContent = v; if (cls) s.classList.add(cls); return e; };
   ul.append(li("Time", "Building and running the site, in spare time. Not paid and not counted in hours.", T("unpaid"), "time"));
-  known.forEach(c => ul.append(li(c.t, c.d, G("about {v}", { v: eur(c.eur) }))));
-  $("costSum").textContent = G("about {v} a month", { v: eur(known.reduce((a, c) => a + c.eur, 0)) });
+  known.forEach(c => ul.append(li(c.t, c.d, G("about {v}", { v: cost(c.amount, c.cur) }))));
+  const sums = {}; known.forEach(c => { sums[c.cur] = (sums[c.cur] || 0) + c.amount; });   // bills in different currencies are added up per currency, never converted
+  $("costSum").textContent = G("about {v} a month", { v: Object.entries(sums).map(([c, n]) => cost(n, c)).join(" + ") });
   $("costNote").hidden = known.length === COSTS.length;
 })();
 /* copy + wallet links (EIP-681: an Ethereum wallet app opens with the address filled in; AGRS as a token transfer) */
