@@ -93,7 +93,8 @@
 
   /* ----- what moves outside: streetcars both ways, people walking to work, steam from a grate ----- */
   const CYCLE = 64, WALK = (() => { const R = rnd(8); return Array.from({ length: 46 }, () => ({ s: R() < 0.5 ? -1 : 1, x: KERB + 0.8 + R() * (SW - KERB - 1.6), z: 4 + R() * 116, v: (R() < 0.5 ? -1 : 1) * (1.1 + R() * 0.5), h: 1.6 + R() * 0.22, w: R() })); })();
-  const carAt = t => { const u = (t % CYCLE) / 42, v = ((t + CYCLE / 2) % CYCLE) / 42; return { inbound: u <= 1 ? 150 - 144 * u : null, outbound: v <= 1 ? 6 + 150 * v : null }; };
+  const carAt = t => { const u = (t % CYCLE) / 42, v = ((t + CYCLE / 2) % CYCLE) / 42; return { inbound: u <= 1 ? 176 - 175 * u : null, outbound: v <= 1 ? 1 + 177 * v : null }; };
+  /* cars come out of the haze and leave past the edge of the window beside us, never popping in or out in view */
   function live(g, W, H, t, busy) {
     const { f, P } = geo(W, H);
     g.clearRect(0, 0, W, H);
@@ -135,10 +136,10 @@
   const introAt = e => { e -= INTRO.delay; return e < 0 ? null : INTRO.z0 + INTRO.v * e + INTRO.a * e * e; };
   function trams(g, W, H, cars) {
     g.clearRect(0, 0, W, H);
-    cars.filter(c => c.z != null && c.z < 180).sort((a, b) => b.z - a.z).forEach(c => tram(g, W, H, c));
+    cars.filter(c => c.z != null && c.z < 178).sort((a, b) => b.z - a.z).forEach(c => tram(g, W, H, c));
   }
   function tram(g, W, H, { x: xc, z: zr, away }) {
-    const { f, P } = geo(W, H), L = 14, s = Math.sign(xc), Xs = xc - s * 1.3, Xo = xc + s * 1.3, zf = zr + L, Xm = xc;
+    const { f, P: P0 } = geo(W, H), P = (X, Y, z) => P0(X, Y, Math.max(0.35, z)), L = 14, s = Math.sign(xc), Xs = xc - s * 1.3, Xo = xc + s * 1.3, zf = zr + L, Xm = xc;
     /* farther off everything sinks into the morning haze */
     const hz = Math.min(0.6, Math.max(0, (zr - 6) / 260)), T = (v, a = 1) => tone(v + (0.6 - v) * hz, a);
     const sc = z => f / z;
@@ -147,7 +148,7 @@
     const end = (xa, xb, y0, y1, fill, z = zr) => poly([P(xa, y0, z), P(xa, y1, z), P(xb, y1, z), P(xb, y0, z)], fill);
     const Xe = Xs - s * 0.35, zc0 = zr + 0.45, lerpX = u => Xo + (Xe - Xo) * u;   /* across the end, 0 = outer edge, 1 = the corner toward us */
     const sideGrad = (a, b) => { const p = P(Xs, 1, zr), q = P(Xs, 1, zf), l = g.createLinearGradient(p[0], p[1], q[0], q[1]); l.addColorStop(0, T(a)); l.addColorStop(1, T(b)); return l; };
-    g.save();
+    g.save(); g.globalAlpha = Math.max(0, Math.min(1, (178 - zr) / 28));
     /* the shadow on the cobbles, thrown toward us by the low sun at the end of the street */
     poly([P(Xo + s * 0.3, 0.01, zr - 1.6), P(Xs - s * 0.6, 0.01, zr - 1.6), P(Xs - s * 0.6, 0.01, zf), P(Xo + s * 0.3, 0.01, zf)], tone(0, 0.34 * (1 - hz)));
     /* the side toward us: skirt, dark lower panel, belt rail, window band, letterboard, clerestory */
