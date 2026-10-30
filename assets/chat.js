@@ -77,7 +77,7 @@
   function add(m) {
     if (seen.has(m.id)) return;
     seen.add(m.id);
-    const li = el("li", "tb-m"); li.dataset.id = m.id;
+    const li = el("li", "tb-m"); li.dataset.id = m.id; li.title = stamp(m.ts);
     const nm = el("b", "tb-nm", nameOf(m)); nm.style.color = COLOURS[m.c] || COLOURS[7];
     const rp = el("button", "tb-rp", "⚑"); rp.type = "button"; rp.title = rp.ariaLabel = t("Report");
     rp.onclick = () => { if (!ws || ws.readyState !== 1 || reported.has(m.id)) return; reported.add(m.id); ws.send(`chat report ${m.id} ${ME(false).token}`); li.classList.add("gone"); rp.title = t("Reported"); };
