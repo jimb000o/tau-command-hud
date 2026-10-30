@@ -1851,5 +1851,6 @@
   "tag": "White Rabbit Key",
   "on": "2026-10-30",
   "html": "White Rabbit Key: click a place and the whole view goes inside it, painted room by room, with the person you talk to standing in front of you; every place plays the tune in its own way; the islanders are drawn anew; Rico talks on Radio Coco at the bottom of the screen, jokes about the game and reads the chain weather from the testnet."
- }
+ },
+  {"tag": "Agorzilla", "on": "2026-10-30", "html": "Agorzilla on Tau HUD now looks as the evenings decided: the HUD, the My Tau card and Start read the same chain state as agorzilla.com, so his pendant light and fur change by themselves after each vote. The first evening's post goes out even when it is the very first one the bot sees."}
 ]

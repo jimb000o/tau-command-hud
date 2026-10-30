@@ -286,10 +286,11 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
     now = time.time() if now is None else now
     rounds = sorted(latest.get("rounds") or [], key=lambda r: r["n"])
     if not rounds:
+        state.setdefault("last", -1)   # no evening yet: the first one ever is news, not history
         return []
-    if "last" not in state:            # first pass: remember, do not post history
-        state["last"] = rounds[-1]["n"]
-        return []
+    if "last" not in state:            # first pass: remember, do not post history; the last 6 h are still news
+        old = [r["n"] for r in rounds if not r.get("t") or now - r["t"] > 6 * 3600]
+        state["last"] = old[-1] if old else rounds[0]["n"] - 1
     sent = []
     for r in rounds:
         if r["n"] <= state["last"]:
@@ -321,6 +322,13 @@ def main():
                                             foot=X_FOOT, tag=X_TAG))
         print("x: sent, look at the profile" if ok else "x: FAILED " + err)
         sys.exit(0 if ok else 1)
+    if "--repost" in sys.argv:          # post evening N again on the running service's next pass (it reads the state each pass)
+        n = int(sys.argv[sys.argv.index("--repost") + 1])
+        state = load()
+        state["last"] = n - 1
+        save(state)
+        print(f"evening {n + 1} goes out on the next pass (within {EVERY} s)")
+        sys.exit(0)
     if not (ENABLED and (TOKEN or X_OUT.enabled())):
         log.info("off (AGORZILLA_POSTS=0, or neither TELEGRAM_BOT_TOKEN nor the AGORZILLA_X keys)")
         while True:
