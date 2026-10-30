@@ -79,8 +79,11 @@
         out: { q: "Step outside", a: ["Go on, pal. Read all about it."] },
         bye: { q: "See you around, Sully.", a: ["Don't be a stranger."] } },
     },
-    look: {"slip": {"block": "BLOCK", "mark": "carries the mark of block {m}", "markN": "carries the mark of the block before", "at": "came over the wire at {t} UTC", "head": "This Week on the Testnet"}, "urn": "Mae says it holds forty cups. The Professor says thirty-eight and a half. They have agreed to disagree.", "pie": "Four regulars for, one against. If it carries, it waits under glass until Friday, the day named in advance. On the chain a rule switches on at a block named in advance, the same way.", "register": "There is no drawer in it for rules. Nobody can pay to have a rule changed: only votes count.", "board": "Rule 5 is the clever one: the rule on how rules change is on the same board, and can be voted on too.", "ticker": "Each slip carries the mark of the one before. Tear one out and the next no longer fits.", "clocks": "Four cities, one tape. The validators sit in different places, and the chain keeps one order for all of them: block after block.", "gramophone": "The record skips at the second chorus. Nobody has proposed a new one yet.", "books": "The cookbook is the Professor's. He says baking is logic you can eat.", "slate": "⊥ is the logician's mark for “this cannot be.” When it appears, a proposal stops before any vote.", "coats": "The coat from 1919 has a ticket in its pocket. Nobody remembers whose. Nobody has voted to move it.", "bell": "It rings the same for everyone who leaves. Mae likes that about it.", "bundle": "Hot off the press: this week's front page, tied with string."},
+    look: {"slip": {"block": "BLOCK", "mark": "carries the mark of block {m}", "markN": "carries the mark of the block before", "at": "came over the wire at {t} UTC", "head": "This Week on the Testnet", "papers": "Rules Change by Agreement"}, "urn": "Mae says it holds forty cups. The Professor says thirty-eight and a half. They have agreed to disagree.", "pie": "Four regulars for, one against. If it carries, it waits under glass until Friday, the day named in advance. On the chain a rule switches on at a block named in advance, the same way.", "register": "There is no drawer in it for rules. Nobody can pay to have a rule changed: only votes count.", "board": "Rule 5 is the clever one: the rule on how rules change is on the same board, and can be voted on too.", "ticker": "Each slip carries the mark of the one before. Tear one out and the next no longer fits.", "clocks": "Four cities, one tape. The validators sit in different places, and the chain keeps one order for all of them: block after block.", "gramophone": "The record skips at the second chorus. Nobody has proposed a new one yet.", "books": "The cookbook is the Professor's. He says baking is logic you can eat.", "slate": "⊥ is the logician's mark for “this cannot be.” When it appears, a proposal stops before any vote.", "coats": "The coat from 1919 has a ticket in its pocket. Nobody remembers whose. Nobody has voted to move it.", "bell": "It rings the same for everyone who leaves. Mae likes that about it.", "bundle": "Hot off the press: this week's front page, tied with string."},
     props: {
+      cup: "Your coffee, still warm. Someone stirred a τ into the steam.",
+      sugar: "A stack of sugar cubes, one on top of the other.",
+      papers: "Yesterday's papers, folded on the table.",
       urn: "The big brass urn. It has been hissing since six.",
       pie: "A lemon pie under glass. Not on the house rules yet. Pie on Fridays is up for a vote.",
       register: "The register rings up cups, not rules. Rules go on the board.",
@@ -100,7 +103,7 @@
       deck: "Waitress: “the users vote.” Wire clerk: “every block carries the last.” Professor: “contradictions are caught before the vote.” Newsboy: “it's happening now, on a testnet open to anybody.”",
       block: { h: "Tau Testnet Alpha stood at block {h} as our reader stepped outside.", n: "Tau Testnet Alpha kept adding blocks as our reader stepped outside." },
       fine: "Testnet only. Nothing for sale; test AGRS are for practice.",
-      share: "Pass the paper on", onX: "On X", copy: "Copy the link", copied: "Link copied",
+      share: "Pass the paper on", shareSub: "Walk a friend through the café: the link opens straight inside.", shareMore: "More…", onX: "Post on X", copy: "Copy the link", copied: "Link copied",
       shareText: "I walked through a 1920s café and came out knowing how Tau's rules change by agreement. #TauNet",
       paper: "Back to the paper", live: "Watch the testnet live", play: "Try a rule in the playground", again: "Walk in again",
     },
@@ -721,7 +724,8 @@
   /* one room on the screen, shifted by dx (walking) and by the reader's head (cam) */
   function drawArea(name, dx, t) {
     const A = AREAS[name]; g.save(); g.translate(dx, 0);
-    if (name === "window") { for (const c of S.layers) g.drawImage(c, 0, 0, W, H); g.restore(); return; }
+    if (name === "window") { for (const c of S.layers) g.drawImage(c, 0, 0, W, H); g.restore();
+      if (dx === 0) ST.boxes = { person: null, props: Object.entries((S.hits && S.hits()) || {}).map(([id, b]) => ({ id, x: b.x, y: b.y, w: b.w, h: b.h })) }; return; }
     const G = geom(W, H, ST.cam), layers = bake(name), P = A.person, items = A.layers.map((L, i) => ({ z: L.z, i })).concat(P ? [{ z: P.z, p: true }] : []).sort((a, b) => b.z - a.z);
     for (const it of items) {
       if (it.p) { const [x, y] = G.P(P.X, P.Y, P.z), s = G.s(P.z), talk = ST.talk && ST.talk.who === P.id && dx === 0, hx0 = x + P.head[0] * s, hy0 = y + P.head[1] * s;
@@ -946,8 +950,9 @@
     board: () => `<div class="lk-chalk board">${TX.board.map((l, i) => i === TX.board.length - 1 ? (ST.stamps.has("mae") ? `<p class="carried">${l} ✓</p>` : `<p class="tally">|||| &nbsp;|</p>`) : `<p${i ? (i === TX.board.length - 2 ? ' class="prop"' : "") : ' class="h"'}>${l}</p>`).join("")}</div>`,
     slate: () => `<div class="lk-chalk slate">${TX.logic.map((l, i) => `<p${i === TX.logic.length - 1 ? ' class="bot"' : ""}>${l}</p>`).join("")}</div>`,
     clocks: () => `<div class="lk-clocks">${TX.clocks.map((c, i) => `<figure>${clockSvg(new Date(), Object.values(ZONES)[i])}<figcaption>${c}</figcaption></figure>`).join("")}</div>`,
-    bundle: () => { const wk = window.GAZETTE_WEEK, name = (window.GAZETTE_ZH && LANG === "zh" && window.GAZETTE_ZH.name) || (window.GAZETTE_JA && LANG === "ja" && window.GAZETTE_JA.name) || "The Daily Consensus";
-      return `<div class="lk-paper"><div class="lp-name">${name}</div><div class="lp-rule"></div><div class="lp-head">${esc(wk && wk.banner ? tr(wk.banner) : TX.look.slip.head)}</div><div class="lp-cols"><span></span><span></span><span></span></div><div class="lp-string"></div></div>`; },
+    papers: () => LOOKS.bundle(TX.look.slip.papers),
+    bundle: head => { const wk = window.GAZETTE_WEEK, name = (window.GAZETTE_ZH && LANG === "zh" && window.GAZETTE_ZH.name) || (window.GAZETTE_JA && LANG === "ja" && window.GAZETTE_JA.name) || "The Daily Consensus";
+      return `<div class="lk-paper"><div class="lp-name">${name}</div><div class="lp-rule"></div><div class="lp-head">${esc(head || (wk && wk.banner ? tr(wk.banner) : TX.look.slip.head))}</div><div class="lp-cols"><span></span><span></span><span></span></div><div class="lp-string"></div></div>`; },
   };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   function crop(b) {
@@ -955,16 +960,40 @@
     const c = document.createElement("canvas"), s = Math.min(3, 420 / Math.max(w, h)); c.width = Math.round(w * s * 1.5); c.height = Math.round(h * s * 1.5);
     c.getContext("2d").drawImage(cv, x * K, y * K, w * K, h * K, 0, 0, c.width, c.height); c.className = "lk-crop"; return c;
   }
-  function lookAt(id, box) {
-    if (!box) return; const pic = look.querySelector(".lk-pic"), v = TX.props[id];
+  const TABLE = { cup: 1, sugar: 1, papers: 1 };   /* the things on your own table by the window (scene.js) */
+  /* where the close-up goes: next to the thing, over as little of the story as it can (the regular, the board, the slate, the door, the words) */
+  function spot(box, w, h) {
+    const gap = 18, top = small() ? 96 : 70, bot = 12, keep = [], b = ST.boxes, pad = r => ({ x: r.x - 12, y: r.y - 12, w: r.w + 24, h: r.h + 24 });
+    if (b.person) keep.push({ ...pad({ x: b.person.x, y: b.person.y - b.person.w * 0.4, w: b.person.w, h: b.person.h + b.person.w * 0.4 }), k: 3 });
+    for (const q of b.props || []) if (q !== box && /^(board|slate|clocks|door|ticker|papers)$/.test(q.id)) keep.push({ ...pad(q), k: 2 });
+    if (!say.hidden) { const r = say.getBoundingClientRect(), u = ui.getBoundingClientRect(); keep.push({ x: r.left - u.left, y: r.top - u.top, w: r.width, h: r.height, k: 3 }); }
+    /* the painted signs over the counter and the wire are part of the picture too */
+    for (const [a, x0, y0, x1, y1] of [["counter", 0.3, 0.17, 0.62, 0.3], ["wire", 0.38, 0.17, 0.64, 0.28]]) if (ST.area === a) keep.push({ x: W * x0, y: H * y0, w: W * (x1 - x0), h: H * (y1 - y0), k: 2 });
+    keep.push({ ...pad(box), k: 6 });
+    const ov = (a, c) => Math.max(0, Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x)) * Math.max(0, Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y));
+    const cl = (x, y) => ({ x: Math.max(12, Math.min(W - w - 12, x)), y: Math.max(top, Math.min(H - h - bot, y)), w, h });
+    const cx = box.x + box.w / 2, cy = box.y + box.h / 2, c = [];
+    for (const f of [0.5, 0.15, 0.85]) {
+      c.push(cl(box.x + box.w + gap, cy - h * f), cl(box.x - gap - w, cy - h * f), cl(cx - w * f, box.y - gap - h), cl(cx - w * f, box.y + box.h + gap)); }
+    let best = null;
+    for (const r of c) { const cost = keep.reduce((a, k) => a + ov(r, k) * k.k, 0) / (w * h) * 1000 + Math.hypot(r.x + w / 2 - cx, r.y + h / 2 - cy) * 0.4; if (!best || cost < best.cost) best = { ...r, cost }; }
+    return best;
+  }
+  function lookAt(id, box, tries = 0) {
+    if (!box) return; const pic = look.querySelector(".lk-pic"), N = window.GAZETTE_NOTE || {}, v = TX.props[id];
     pic.innerHTML = ""; pic.className = "lk-pic " + (LOOKS[id] ? "lk-of-" + id : "lk-photo");
     if (LOOKS[id]) pic.innerHTML = LOOKS[id](); else pic.appendChild(crop(box));
-    look.querySelector(".lk-cap").innerHTML = `<b>${esc(typeof v === "function" ? v(live()) : v)}</b> ${esc(TX.look[id] || "")}`;
-    const left = box.x + box.w / 2 > W / 2; look.classList.toggle("left", left);
-    look.style.transformOrigin = `${left ? "100%" : "0%"} ${Math.round(Math.max(0, Math.min(1, (box.y + box.h / 2) / H)) * 100)}%`;
-    look.hidden = false; requestAnimationFrame(() => look.classList.add("on")); note.classList.remove("on"); hintEl.classList.remove("on");
+    const L = window.GAZETTE_LIVE || {}, age = Number.isFinite(L.age) ? L.age + Math.round((Date.now() - L.at) / 1000) : null;
+    const more = TABLE[id] && N[id] ? N[id](live(), age) : TX.look[id] || "";
+    look.querySelector(".lk-cap").innerHTML = `<b>${esc(typeof v === "function" ? v(live()) : v || "")}</b> ${esc(more)}`;
+    look.classList.remove("on"); look.hidden = false; look.style.visibility = "hidden"; look.style.left = "0px"; look.style.top = "0px";
+    const w = look.offsetWidth, h = look.offsetHeight; if (!w || !h) { look.hidden = true; return tries < 40 && setTimeout(() => lookAt(id, box, tries + 1), 150); }
+    const r = spot(box, w, h);
+    look.style.left = Math.round(r.x) + "px"; look.style.top = Math.round(r.y) + "px"; look.style.visibility = "";
+    look.style.transformOrigin = `${Math.round(Math.max(0, Math.min(1, (box.x + box.w / 2 - r.x) / w)) * 100)}% ${Math.round(Math.max(0, Math.min(1, (box.y + box.h / 2 - r.y) / h)) * 100)}%`;
+    requestAnimationFrame(() => look.classList.add("on")); note.classList.remove("on"); hintEl.classList.remove("on");
     clearInterval(LOOK && LOOK.tick); LOOK = { id, tick: id === "clocks" ? setInterval(() => { const f = look.querySelectorAll(".lk-clocks figure svg"); f.forEach((s, i) => s.outerHTML = clockSvg(new Date(), Object.values(ZONES)[i])); }, 1000) : 0 };
-    (PROP_SOUND[id] || (() => {}))();
+    if (TABLE[id] && S.touch) S.touch(id); else (PROP_SOUND[id] || (() => {}))();
     look.querySelector(".lk-x").focus({ preventScroll: true });
   }
   function lookOff() { if (!LOOK) return false; clearInterval(LOOK.tick); LOOK = null; if (look.contains(document.activeElement)) document.activeElement.blur(); look.classList.remove("on"); setTimeout(() => { if (!LOOK) look.hidden = true; }, 260); return true; }
@@ -972,8 +1001,8 @@
   const at = e => { const r = cv.getBoundingClientRect(); let x = e.clientX - r.left, y = e.clientY - r.top; if (ST.zoom > 1.001) { x = (x - ST.zx) / ST.zoom + ST.zx; y = (y - ST.zy) / ST.zoom + ST.zy; } return [x, y]; };
   const inside = (b, [x, y]) => b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
   function pick(e) {
-    if (ST.area === "window" || ST.pan || END.on) return null; const p = at(e), b = ST.boxes;
-    if (inside(b.person, p)) return { person: b.person.id };
+    if (ST.pan || END.on) return null; const p = at(e), b = ST.boxes;
+    if (ST.area !== "window" && inside(b.person, p)) return { person: b.person.id };
     const pr = (b.props || []).find(q => inside(q, p)); return pr ? { prop: pr } : null;
   }
   let down = null;
@@ -1011,7 +1040,7 @@
       if ((e.key === "Enter" || e.key === " ") && !(e.target.closest && e.target.closest(".cs-ch button"))) { e.preventDefault(); adv(); } return; }
     /* Tab picks out the things in the room one by one (a faint glint), Enter leans in */
     const things = (ST.boxes.props || []).filter(q => q.id !== "door" || ST.stamps.size === 4);
-    if (e.key === "Tab" && ST.area !== "window" && !ST.pan && things.length && !(e.target.closest && e.target.closest("button"))) { const i = things.findIndex(q => q.id === ST.kProp), j = i + (e.shiftKey ? -1 : 1);
+    if (e.key === "Tab" && !ST.pan && things.length && !(e.target.closest && e.target.closest("button"))) { const i = things.findIndex(q => q.id === ST.kProp), j = i + (e.shiftKey ? -1 : 1);
       if (i >= 0 && (j < 0 || j >= things.length)) { ST.kProp = ST.hoverProp = null; return; }   /* past the last thing: Tab goes on to the buttons */
       e.preventDefault(); ST.kProp = ST.hoverProp = things[i < 0 ? (e.shiftKey ? things.length - 1 : 0) : j].id; return; }
     if (e.key === "ArrowLeft") { e.preventDefault(); ST.kProp = null; walk(-1); } else if (e.key === "ArrowRight") { e.preventDefault(); ST.kProp = null; walk(1); }
@@ -1056,17 +1085,16 @@
     const E = TX.end, h = live(), p = $(".ce-paper"), name = (window.GAZETTE_ZH && LANG === "zh" && window.GAZETTE_ZH.name) || (window.GAZETTE_JA && LANG === "ja" && window.GAZETTE_JA.name) || "The Daily Consensus";
     const d = new Date(), date = d.toLocaleDateString(LANG === "en" ? "en-US" : LANG, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
     p.innerHTML = `<div class="cp-mast">${name.replace(/\{\{NAME\}\}/g, "")}</div><div class="cp-date">${date}</div><div class="cp-extra">${E.extra}</div><h2 class="cp-head">${E.head}</h2><p class="cp-deck">${E.deck}</p><p class="cp-block">${h != null ? fmt(E.block.h, { h: num(h) }) : E.block.n}</p><p class="cp-fine">${E.fine}</p>
-      <div class="cp-go"><button data-e="paper">${E.paper}</button><a href="/">${E.live}</a><a href="/playground/">${E.play}</a><button data-e="again">${E.again}</button></div>
-      <div class="cp-share"><button data-e="share">${E.share}</button><span class="cp-row" hidden><a data-e="x" target="_blank" rel="noopener">${E.onX}</a><button data-e="copy">${E.copy}</button></span></div>`;
+      <div class="cp-share"><b class="cp-sh">☞ ${E.share}</b><i class="cp-sub">${E.shareSub}</i><span class="cp-row"><a data-e="x" target="_blank" rel="noopener">${E.onX}</a><button data-e="copy">${E.copy}</button><button data-e="share" hidden>${E.shareMore}</button></span></div>
+      <div class="cp-go"><button data-e="paper">${E.paper}</button><a href="/">${E.live}</a><a href="/playground/">${E.play}</a><button data-e="again">${E.again}</button></div>`;
     p.hidden = false; p.classList.toggle("quiet", quiet); if (!quiet) AUDIO.whoosh(); else AUDIO.rustle();
     p.querySelector("[data-e=paper]").onclick = e => { e.stopPropagation(); reset(); leave(); };
     p.querySelector("[data-e=again]").onclick = e => { e.stopPropagation(); reset(); leave(); enter(); };
     /* pass the paper on: the phone's own share sheet where there is one, otherwise X and a link to copy */
     const url = "https://tauhud.com/gazette/walk/" + (LANG !== "en" ? "?lang=" + LANG : ""), x = p.querySelector("[data-e=x]");
     x.href = "https://x.com/intent/post?text=" + encodeURIComponent(E.shareText) + "&url=" + encodeURIComponent(url);
-    p.querySelector("[data-e=share]").onclick = e => { e.stopPropagation();
-      if (navigator.share && touch) { navigator.share({ title: E.head, text: E.shareText, url }).catch(() => {}); return; }
-      const r = p.querySelector(".cp-row"); r.hidden = !r.hidden; if (!r.hidden) x.focus({ preventScroll: true }); };
+    const sh = p.querySelector("[data-e=share]"); sh.hidden = !navigator.share;
+    sh.onclick = e => { e.stopPropagation(); navigator.share({ title: E.head, text: E.shareText, url }).catch(() => {}); };
     p.querySelector("[data-e=copy]").onclick = e => { e.stopPropagation(); const b = e.currentTarget, ok = () => { b.textContent = E.copied; setTimeout(() => b.textContent = E.copy, 2500); };
       if (navigator.clipboard) navigator.clipboard.writeText(url).then(ok, () => prompt(E.copy, url)); else prompt(E.copy, url); };
     setTimeout(() => p.querySelector("[data-e=paper]").focus({ preventScroll: true }), quiet ? 300 : 1800);
@@ -1077,7 +1105,7 @@
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
 
   /* other languages come in their own small file */
-  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=6`; s.onload = labels; document.head.appendChild(s); }
+  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=7`; s.onload = labels; document.head.appendChild(s); }
   labels();
   /* ?walk (the shared link) opens the café straight away */
   if (/[?&]walk\b/.test(location.search)) setTimeout(() => enter(), 600);
