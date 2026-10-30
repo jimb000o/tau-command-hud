@@ -121,17 +121,17 @@ td a { text-decoration: none; } td a:hover { text-decoration: underline; }
 .split { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: rgba(255,255,255,.08); margin: 4px 0 2px; }
 .split i { display: block; height: 100%; }
 .split i:nth-child(1) { background: #fff; } .split i:nth-child(2) { background: rgba(255,255,255,.5); } .split i:nth-child(3) { background: rgba(255,255,255,.28); } .split i:nth-child(4) { background: rgba(255,255,255,.14); }
-.splitkey { color: var(--dim); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.splitkey { color: var(--dim); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .splitkey b { color: var(--text); font-weight: 600; }
 .row2 { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); min-width: 0; }
 @media (min-width: 900px) { .row2 { grid-template-columns: minmax(0, 1fr) 440px; } }
 html.fit .row2 { gap: 12px; min-height: 0; }
 .who { overflow: auto; }
-.who .sp { margin-top: 10px; } .who .sp:first-child { margin-top: 0; }
+.who .sp { margin-top: 8px; } .who .sp:first-child { margin-top: 0; }
 .who .sp .note { color: var(--dim); font-size: 12px; margin-top: 2px; }
+.who .sp .cnt { color: var(--text); font: 600 11px var(--display); letter-spacing: .14em; font-style: normal; }
 .who .sp .note b { color: var(--text); font-weight: 600; }
-.split.tx i:nth-child(1) { background: var(--ok); } .split.tx i:nth-child(2) { background: #fff; } .split.tx i:nth-child(3) { background: rgba(255,255,255,.28); }
-.splitkey i.k { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 0; }
+.splitkey i.k { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
 .who .sp > span { color: var(--dim); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-family: var(--display); font-weight: 600; }
 .tablewrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
 .empty { color: var(--dim); padding: 8px 0; }
@@ -513,26 +513,27 @@ function drawPages() {
   $("splits").innerHTML = (vis ? "" : `<p class="empty">${esc(T("The language split appears with the first visitors."))}</p>`) + split("Language", lang, { en: "English", zh: "Chinese", ja: "Japanese" });
   // pages opened from a link on our other site
   const cross = days.reduce((a, [, d]) => a + (d[7] || 0), 0);
-  $("cross").innerHTML = `<div class="sp"><span>${esc(T("Between our two sites"))}</span><div class="note"><b>${fmt(cross)}</b> ${esc(T(site ? "pages opened from a link on tauhud.com" : "pages opened from a link on agorzilla.com"))}</div></div>`;
+  $("cross").innerHTML = `<div class="sp"><span data-tip="${esc(`${fmt(cross)} ${T(site ? "pages opened from a link on tauhud.com" : "pages opened from a link on agorzilla.com")}`)}">${esc(T(site ? "Opened from tauhud.com" : "Opened from agorzilla.com"))}</span><em class="cnt"> · ${fmt(cross)}</em></div>`;
   drawTx();
 }
 
 /* where the testnet's transactions come from (relay /api/v1/sources): the whole testnet, whichever site is chosen */
-const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote"], ["other", "elsewhere", "everything else: other wallets, scripts and test tools. On this testnet that is mostly a handful of very busy test wallets, so a small share can still be many people."]];
+const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote"], ["idni", "IDNI genesis", "IDNI genesis accounts: sent by the 11 accounts the testnet started with (its genesis file), which IDNI set up and uses for testing. They make most of the testnet's transactions, so a small share for the others can still be many people."], ["other", "others", "everything else: other wallets, scripts and tools"]];
+const TX_COLORS = ["var(--ok)", "#fff", "rgba(255,255,255,.45)", "rgba(255,255,255,.2)"];
+const share = (a, b) => b && a && 100 * a / b < 1 ? "<1%" : pct(a, b);
 function drawTx() {
   const el = $("txsplit");
   if (!txs) { el.innerHTML = ""; return; }
   const keys = range === 1 ? [data.today] : rangeDays().map(([k]) => k);
-  const tot = { agorzilla: [0, 0], tauhud: [0, 0], other: [0, 0] };
+  const tot = { agorzilla: [0, 0], tauhud: [0, 0], idni: [0, 0], other: [0, 0] };
   let n = 0;
   for (const k of keys) { const d = txs.days[k]; if (!d) continue; n++; for (const g in tot) { tot[g][0] += (d[g] || [0, 0])[0]; tot[g][1] += (d[g] || [0, 0])[1]; } }
-  const all = tot.agorzilla[0] + tot.tauhud[0] + tot.other[0];
+  const all = Object.values(tot).reduce((a, v) => a + v[0], 0);
   const wallets = g => n ? Math.round(tot[g][1] / n) : 0;
   const head = `<span data-tip="${esc(T("Transactions in the testnet's blocks, sorted by where they came from. Counted by the Tau HUD relay from the blocks it keeps; one person can hold several wallets."))}">${esc(T("Testnet transactions"))}</span>`;
   if (!all) { el.innerHTML = `<div class="sp">${head}<div class="note">${esc(T("No transactions in this range yet."))}</div></div>`; return; }
-  el.innerHTML = `<div class="sp">${head}<div class="split tx">${TX_GROUPS.map(([g]) => `<i style="width:${(100 * tot[g][0] / all).toFixed(1)}%"></i>`).join("")}</div>` +
-    `<div class="splitkey">${TX_GROUPS.map(([g, name, what], i) => `<span data-tip="${esc(`${T(what)}\n${fmt(tot[g][0])} ${T("transactions")} · ${fmt(wallets(g))} ${T(n === 1 ? "wallets" : "wallets a day on average")}`)}"><i class="k" style="background:${["var(--ok)", "#fff", "rgba(255,255,255,.28)"][i]}"></i>${esc(T(name))} <b>${pct(tot[g][0], all)}</b></span>`).join("")}</div>` +
-    `<div class="note"><b>${fmt(all)}</b> ${esc(T("transactions"))} · ${esc(T("counted by wallet, not by person"))}</div></div>`;
+  el.innerHTML = `<div class="sp">${head}<em class="cnt"> · ${fmt(all)}</em><div class="split tx">${TX_GROUPS.map(([g], i) => `<i style="width:${(100 * tot[g][0] / all).toFixed(1)}%;background:${TX_COLORS[i]}"></i>`).join("")}</div>` +
+    `<div class="splitkey">${TX_GROUPS.map(([g, name, what], i) => `<span data-tip="${esc(`${T(what)}\n${fmt(tot[g][0])} ${T("transactions")} · ${fmt(wallets(g))} ${T(n === 1 ? "wallets" : "wallets a day on average")}`)}"><i class="k" style="background:${TX_COLORS[i]}"></i>${esc(T(name))} <b>${share(tot[g][0], all)}</b></span>`).join("")}</div>` + `</div>`;
 }
 
 function kpis() {
@@ -560,7 +561,7 @@ function render() {
 }
 
 async function load() {
-  if (SAMPLE) { raw = sample(); raw.sites = { agorzilla: { days: Object.fromEntries(Object.entries(raw.days).slice(-20).map(([k, d]) => [k, [Math.round(d[0] / 4), Math.round(d[1] / 5), Math.round(d[2] / 4), { agorzilla: Math.round(d[0] / 4) }, { en: Math.round(d[0] / 4) }, {}, {}]])), hours: {} } }; txs = { days: Object.fromEntries(Object.keys(raw.days).map((k, i) => [k, { agorzilla: [i > 120 ? 30 + i % 9 * 4 : 0, i > 120 ? 9 + i % 5 : 0], tauhud: [8 + i % 7, 3 + i % 3], other: [20 + i % 11, 4] }])) };
+  if (SAMPLE) { raw = sample(); raw.sites = { agorzilla: { days: Object.fromEntries(Object.entries(raw.days).slice(-20).map(([k, d]) => [k, [Math.round(d[0] / 4), Math.round(d[1] / 5), Math.round(d[2] / 4), { agorzilla: Math.round(d[0] / 4) }, { en: Math.round(d[0] / 4) }, {}, {}]])), hours: {} } }; txs = { days: Object.fromEntries(Object.keys(raw.days).map((k, i) => [k, { agorzilla: [i > 120 ? 30 + i % 9 * 4 : 0, i > 120 ? 9 + i % 5 : 0], tauhud: [8 + i % 7, 3 + i % 3], idni: [900 + i % 13 * 20, 8], other: [6 + i % 11, 4] }])) };
     pickSite(); render(); return; }
   try {
     const r = await fetch(`${RELAY}/visits/public`, { cache: "no-store" });
