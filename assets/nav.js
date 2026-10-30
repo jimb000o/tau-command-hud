@@ -33,6 +33,7 @@
     developers: { t: "Developers", d: "Widgets, badges and a free JSON API for your own site", i: "{}", h: "developers/" },
     press:      { t: "Press kit", d: "Video, logo, screenshots, facts and a ready paragraph, free to use", i: "↓", h: "press/" },
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
+    donate:     { t: "Donations", d: "What the site costs each month and every donation received, on chain; voluntary, nothing in return", i: "♡", h: "donate/" },
     legal:      { t: "Privacy", d: "Privacy notice: exactly what this site processes (no cookies, no tracking)", i: "§", h: "legal/" },
     about:      { t: "About Tau HUD", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     share:      { t: "Share this page", d: "Copy the link, or post it on X, Telegram, Reddit or Hacker News", i: "↗", h: "#share", act: "share" },
@@ -53,9 +54,9 @@
     { k: "explore", t: "Explore", items: ["explorer", "proposals", "account", "nodes", "stats", "history", "devpulse"], tab: "≋" },
     { k: "learn", t: "Learn", items: ["start", "tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "challenge", "whatif", "vote", "wallet", "rules", "card", "agorzilla"], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, items: ["about", "share", "status", "findings", "roadmap", "meta", "developers", "press", "legal"], tab: "i" },
+    { k: "about", t: "About", util: true, items: ["about", "share", "donate", "status", "findings", "roadmap", "meta", "developers", "press", "legal"], tab: "i" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", start: "learn", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", roadmap: "about", status: "about", meta: "about", legal: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", rules: "play", card: "play", challenge: "play", whatif: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", start: "learn", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", roadmap: "about", status: "about", meta: "about", legal: "about", donate: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", rules: "play", card: "play", challenge: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
@@ -167,6 +168,7 @@
         <p class="small">AGRS or ETH, one address for both · voluntary, nothing owed in return</p>
         <div class="tn-donate">${DONATE.qr}<div class="tn-addr"><code>${DONATE.addr}</code><button class="tn-btn" type="button">Copy</button></div></div>
         <p class="small tn-thanks" hidden></p>
+        <p class="small"><a href="${ROOT}donate/">What it costs, and every donation on chain ›</a></p>
         <p class="small tn-copymsg" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
       </article>
       </div>
@@ -221,7 +223,7 @@
     catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
     const vers = siteVersions(list); SITE_VER = vers.filter(Boolean).pop() || SITE_VER;
     const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
-    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Wallet: "wallet/", Findings: "findings/", Roadmap: "roadmap/", Status: "status/", Stats: "stats/", "Build pulse": "devpulse/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "playground/#tour" };
+    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Wallet: "wallet/", Findings: "findings/", Roadmap: "roadmap/", Status: "status/", Stats: "stats/", "Build pulse": "devpulse/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "playground/#tour", Donations: "donate/" };
     let day = null, html = "";
     for (const e of order) {
       const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);

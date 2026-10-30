@@ -2104,5 +2104,9 @@ TauI18n.add({ strings: {
   "Full screen: only the HUD": "全画面：HUD だけを表示",
   "Back to the full site": "サイト全体に戻る",
   "Loading band: “Reading the chain” now has its own slim line above the header instead of covering it. When every block is read it turns green, folds back into a single line, and the line parts in the middle and runs out to both edges. On the HUD, Explorer, Accounts and Time travel.": "読み込みバー：「チェーンを読み込み中」はヘッダーを覆わず、ヘッダーの上に専用の細い行を持つようになりました。すべてのブロックを読み終えると緑になり、一本の線にたたまれ、その線が真ん中から分かれて両端へ消えていきます。HUD、エクスプローラー、アカウント、タイムトラベルで。",
+  "Donations have their own page, tauhud.com/donate: the address with its QR code and a button that opens a wallet app, what the site costs each month (time first, unpaid), and every donation received with its transaction on Etherscan. Each donation also shows what it was worth when it came in: euros and dollars in English, yuan in Chinese, yen in Japanese. Voluntary, nothing in return. The Donations cards link to it, and so do the last step of the tour, the My Tau card and the Daily Consensus.": "寄付に専用ページ tauhud.com/donate ができました：QR コード付きのアドレスとウォレットアプリを開くボタン、サイトの毎月の費用（まず時間、無報酬）、受け取ったすべての寄付とその Etherscan 上の取引。各寄付には届いた時点の価値も表示します：英語ではユーロとドル、中国語では人民元、日本語では円。任意で、見返りはありません。寄付カード、ツアーの最後のステップ、My Tau カード、Daily Consensus からリンクしています。",
+  "What it costs, and every donation on chain ›": "かかる費用と、チェーン上のすべての寄付 ›",
+  "Tau HUD is free, built in spare time.": "Tau HUD は無料で、空き時間に作っています。",
+  "Donations are voluntary ›": "寄付は任意です ›",
   "In numbers: smoother, finer charts. 7D now shows every hour and 30D every six hours instead of one point a day, drawn as a soft curve that never rises above or dips below a real count. The dots on every point are gone: only the newest value keeps one, and pointing at the line still shows each hour.": "数字で見る：グラフがより細かく、なめらかになりました。7 日表示は 1 日 1 点ではなく 1 時間ごと、30 日表示は 6 時間ごとに表示。やわらかな曲線ですが、実際の数より上にも下にもはみ出しません。すべての点の丸は外し、最新の値だけに残しました。線にカーソルを当てれば各時間の数字も見られます。",
 } });

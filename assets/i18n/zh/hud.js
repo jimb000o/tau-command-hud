@@ -2108,5 +2108,9 @@ TauI18n.add({ strings: {
   "Full screen: only the HUD": "全屏：只显示 HUD",
   "Back to the full site": "返回完整网站",
   "Loading band: “Reading the chain” now has its own slim line above the header instead of covering it. When every block is read it turns green, folds back into a single line, and the line parts in the middle and runs out to both edges. On the HUD, Explorer, Accounts and Time travel.": "加载条：“正在读取链”现在在页头上方有自己的一条细线，不再盖住页头。所有区块读完后它变绿，收拢成一条线，然后这条线从中间分开，向两边退去。适用于 HUD、区块浏览器、账户和时光回溯。",
+  "Donations have their own page, tauhud.com/donate: the address with its QR code and a button that opens a wallet app, what the site costs each month (time first, unpaid), and every donation received with its transaction on Etherscan. Each donation also shows what it was worth when it came in: euros and dollars in English, yuan in Chinese, yen in Japanese. Voluntary, nothing in return. The Donations cards link to it, and so do the last step of the tour, the My Tau card and the Daily Consensus.": "捐赠有了自己的页面 tauhud.com/donate：带二维码的地址和一个可打开钱包应用的按钮、网站每月的花费（先列时间，无报酬），以及收到的每一笔捐赠及其在 Etherscan 上的交易。每笔捐赠还会显示到账时的价值：英文版用欧元和美元，中文版用人民币，日文版用日元。自愿，不求回报。捐赠卡片、导览的最后一步、我的 Tau 卡片和《共识日报》都链接到这里。",
+  "What it costs, and every donation on chain ›": "花费，以及链上的每一笔捐赠 ›",
+  "Tau HUD is free, built in spare time.": "Tau HUD 免费，用业余时间搭建。",
+  "Donations are voluntary ›": "捐赠出于自愿 ›",
   "In numbers: smoother, finer charts. 7D now shows every hour and 30D every six hours instead of one point a day, drawn as a soft curve that never rises above or dips below a real count. The dots on every point are gone: only the newest value keeps one, and pointing at the line still shows each hour.": "数据一览：图表更细腻、更顺滑。7 天视图现在显示每个小时，30 天视图每 6 小时一个点，不再是一天一个点；曲线柔和，但绝不会高于或低于真实的数字。每个点上的圆点去掉了，只有最新的值保留一个，鼠标指向曲线仍能看到每个小时。",
 } });
