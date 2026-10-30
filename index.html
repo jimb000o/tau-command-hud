@@ -338,8 +338,7 @@ html.i18n-zh .ga-tx { text-align: left; }
 .agz .lg.l, .agz .lg.r { transform-origin: 60% 66%; }
 .agz .bod { transform-origin: 54% 82%; animation: agzBreathe var(--agz-br, 4.2s) ease-in-out infinite; }
 .agz .trunk { -webkit-mask-image: linear-gradient(#000 72%, transparent 77%); mask-image: linear-gradient(#000 72%, transparent 77%); }   /* the picture with its head area filled with fur, so a turning head never shows a second one */
-.agz .hd { transform-origin: 59.2% 50.9%; }
-.agz .hd > img { -webkit-mask-image: radial-gradient(39.5% 25% at 55.3% 26.3%, #000 96%, transparent 100%); mask-image: radial-gradient(39.5% 25% at 55.3% 26.3%, #000 96%, transparent 100%); }
+.agz .hd { transform-origin: 56% 48%; will-change: transform; }   /* the head layer is everything above the neck, ears included, feathered at the neck (assets/rig/agz-head.webp) */
 /* eyes: each eye's inside slides within a fixed eye shape (the eyes lead, the head follows); skin lids with a lash line slide down to blink */
 @property --blink { syntax: "<number>"; inherits: true; initial-value: 0; }
 @property --lid { syntax: "<number>"; inherits: true; initial-value: 0; }
@@ -348,17 +347,31 @@ html.i18n-zh .ga-tx { text-align: left; }
 .agz.squint { --squint: 1; --lid: .3; }
 .agz.drowsy { --lid: .55; transition: opacity .2s, filter .2s, --lid 1.2s ease, --squint .35s ease; }
 .agz .eye, .agz .lid { position: absolute; -webkit-mask-image: radial-gradient(31.5% 31.5% at 50% 50%, #000 86%, transparent 98%); mask-image: radial-gradient(31.5% 31.5% at 50% 50%, #000 86%, transparent 98%); overflow: hidden; }
+.agz .lid { pointer-events: none; }
 .agz .eye.l, .agz .lid.l { left: 41.97%; top: 25.88%; width: 21.18%; height: 14.39%; }
 .agz .eye.r, .agz .lid.r { left: 68.03%; top: 21.49%; width: 18.82%; height: 13.77%; }
 .agz .eye img { display: block; width: 100%; height: 100%; transform: translate(var(--ex), var(--ey)); transition: transform .12s cubic-bezier(.3, 0, .2, 1); }
-.agz .lid { -webkit-mask-image: radial-gradient(34.5% 34.5% at 50% 50%, #000 92%, transparent 100%); mask-image: radial-gradient(34.5% 34.5% at 50% 50%, #000 92%, transparent 100%); }
-.agz .lid b { position: absolute; left: 0; right: 0; top: 0; height: 84%; border-radius: 0 0 50% 50% / 0 0 26% 26%; background: linear-gradient(#5c4853, #7c6672 48%, #846e7a 70%, #6a5561); box-shadow: inset 0 -1px .5px -.3px rgba(34, 16, 22, .95), 0 .6px .6px rgba(0, 0, 0, .4); transform: translateY(calc(-78% + 62% * max(var(--lid), var(--blink)))); }
-.agz .lid s { position: absolute; left: -6%; right: -6%; bottom: 0; height: 50%; border-radius: 50% 50% 0 0 / 44% 44% 0 0; background: linear-gradient(#6a5561, #85707c 35%, #8d7783); box-shadow: inset 0 .6px .4px -.2px rgba(36, 18, 24, .75); transform: translateY(calc(63% - max(var(--squint) * 30%, max(var(--lid), var(--blink)) * 46%))); }
-/* the mouth opens dark with a pink tongue inside (yawn, cheer); now and then the tongue peeks out on its own */
+/* lids in the skin tone around each eye (assets/rig/agz-lid-*.webp), curved, with a dark lash edge and a soft shadow on the eye below it */
+.agz .lid { -webkit-mask-image: radial-gradient(32% 32% at 50% 50%, #000 86%, transparent 99%); mask-image: radial-gradient(32% 32% at 50% 50%, #000 86%, transparent 99%); }   /* inside the dark rim, so a closed eye keeps its outline */
+.agz .lid b, .agz .lid s { position: absolute; left: -4%; right: -4%; background-size: 100% 100%; }
+.agz .lid b { top: 0; height: 84%; border-radius: 0 0 50% 50% / 0 0 30% 30%; box-shadow: inset 0 -1.6px .9px -.4px rgba(26, 10, 15, 1), 0 1px 1.4px rgba(0, 0, 0, .45); z-index: 1; transform: translateY(calc(-78% + 70% * max(var(--lid), var(--blink)))); }   /* closed, upper and lower lid meet low in the eye: the lash line curves like a smile */
+.agz .lid s { bottom: 0; height: 50%; border-radius: 50% 50% 0 0 / 40% 40% 0 0; box-shadow: inset 0 .7px .5px -.3px rgba(36, 18, 24, .7), 0 -.5px 1px rgba(0, 0, 0, .25); transform: translateY(calc(63% - max(var(--squint) * 30%, max(var(--lid), var(--blink)) * 33%))); }
+.agz .lid.l b { background-image: url("assets/rig/agz-lid-l-up.webp"); } .agz .lid.l s { background-image: url("assets/rig/agz-lid-l-lo.webp"); }
+.agz .lid.r b { background-image: url("assets/rig/agz-lid-r-up.webp"); } .agz .lid.r s { background-image: url("assets/rig/agz-lid-r-lo.webp"); }
+/* brows: the arch of skin and fur above each eye as its own piece; they lift when something catches his eye and draw in when he worries */
+@property --bu { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --bf { syntax: "<number>"; inherits: true; initial-value: 0; }
+.agz { --bu: 0; --bf: 0; }
+.agz .brow { position: absolute; transform-origin: 50% 100%; transition: transform .22s cubic-bezier(.3, 0, .2, 1); }
+.agz .brow.l { left: 40%; top: 19.12%; width: 25.13%; height: 13.07%; transform: translateY(calc(var(--bu) * -11%)) rotate(calc(var(--bf) * 7deg)); }
+.agz .brow.r { left: 66.18%; top: 15%; width: 22.5%; height: 12.46%; transform: translateY(calc(var(--bu) * -11%)) rotate(calc(var(--bf) * -7deg)); }
+.agz.squint { --bf: .6; --bu: -.25; } .agz.perk { --bu: 1; } .agz.worry { --bf: -.7; --bu: .35; }
+/* the mouth opens dark with a pink tongue inside (yawn, cheer); the tongue itself comes out of the mouth for a peek or a lick */
 .agz .mouth { position: absolute; left: 69.4%; top: 39.6%; width: 10.5%; height: 3.8%; transform: translate(-50%, -50%) scale(1, 0); transform-origin: 50% 25%; overflow: hidden; border-radius: 45% 45% 50% 50% / 35% 35% 65% 65%; background: radial-gradient(70% 60% at 50% 30%, #1a0608, #3a1114 70%, #4d1c20); box-shadow: 0 0 0 .4px rgba(70, 40, 46, .9); }
 .agz .mouth u { position: absolute; left: 16%; right: 16%; bottom: -14%; height: 58%; border-radius: 50% 50% 45% 45%; background: radial-gradient(60% 60% at 50% 30%, #ea96a0, #b9596a 78%); }
-.agz .tg { position: absolute; left: 69.8%; top: 39.3%; width: 5%; height: 3%; border-radius: 10% 10% 50% 50%; background: radial-gradient(60% 70% at 50% 25%, #f1a2ab, #c4606d 82%); box-shadow: inset 0 .3px .3px rgba(90, 30, 40, .6); transform: translate(-50%, 0) scaleY(0); transform-origin: 50% 0; transition: transform .16s ease-out; }
-.agz.blep .tg { transform: translate(-50%, 0) scaleY(1); }
+.agz .tgw { position: absolute; left: 69.6%; top: 39.1%; width: 12%; height: 5.2%; transform: translateX(-50%); overflow: hidden; pointer-events: none; }   /* below the upper lip: what is above it is inside the mouth */
+.agz .slit { position: absolute; left: 26%; width: 48%; top: -30%; height: 60%; border-radius: 50%; background: radial-gradient(closest-side, #1a0608 55%, rgba(26, 6, 8, 0)); transform: scaleY(0); }
+.agz .tg { position: absolute; left: 28%; top: 0; width: 44%; height: 100%; overflow: visible; transform: translateY(-105%); transform-origin: 50% 0; filter: drop-shadow(0 .5px .4px rgba(40, 10, 16, .55)); }
 @keyframes agzBreathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.01, 1.024); } }
 @media (max-width: 1599px) { .agz { display: none; } }
 @media (prefers-reduced-motion: reduce) { .agz .bod { animation: none; } }
@@ -966,7 +979,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   <header class="rail">
     <a class="brand" href="./" data-full="Back to the start: the HUD."><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>where the rules change by agreement · testnet alpha</span></a>
     <button class="chip unoff" type="button" data-open="mAbout" data-full="Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Click for the full notice.">Unofficial community project · not affiliated with IDNI</button>
-    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><i class="sh"></i><span class="dir"><span class="pup"><span class="lg b"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg l"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="lg r"><img src="assets/agorzilla.webp" alt="" draggable="false"></span><span class="bod"><img class="trunk" src="assets/rig/agz-body.webp" alt="" draggable="false"><span class="hd"><img src="assets/agorzilla.webp" alt="" draggable="false"><span class="eye l"><img src="assets/rig/agz-eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="assets/rig/agz-eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><i class="mouth"><u></u></i><i class="tg"></i></span></span></span></span></a>
+    <a class="agz" id="agz" href="https://agorzilla.com" target="_blank" rel="noopener" data-ex="agz" aria-label="Agorzilla, a creature fed by transactions on the live testnet. Opens agorzilla.com"><i class="sh"></i><span class="dir"><span class="pup"><span class="lg b"><img src="assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="lg l"><img src="assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="lg r"><img src="assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="bod"><img class="trunk" src="assets/rig/agz-body.webp" alt="" draggable="false"><span class="hd"><img src="assets/rig/agz-head.webp" alt="" draggable="false"><span class="eye l"><img src="assets/rig/agz-eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="assets/rig/agz-eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><img class="brow l" src="assets/rig/agz-brow-l.webp" alt="" draggable="false"><img class="brow r" src="assets/rig/agz-brow-r.webp" alt="" draggable="false"><i class="mouth"><u></u></i><span class="tgw"><i class="slit"></i><svg class="tg" viewBox="0 0 20 22" preserveAspectRatio="none" aria-hidden="true"><defs><radialGradient id="agzTg" cx=".5" cy=".28" r=".8"><stop offset="0" stop-color="#f7b3bb"/><stop offset=".5" stop-color="#e3808e"/><stop offset="1" stop-color="#a8475a"/></radialGradient></defs><path d="M1.5 0H18.5V9.5C18.5 16.8 14.6 21.5 10 21.5S1.5 16.8 1.5 9.5Z" fill="url(#agzTg)"/><path d="M10 1.5V12.5" stroke="#a03c4d" stroke-width="1.4" stroke-linecap="round" opacity=".5"/><ellipse cx="6.6" cy="12.6" rx="2.3" ry="1.5" fill="#fff" opacity=".3"/></svg></span></span></span></span></span></a>
     <div class="chips">
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
@@ -1765,7 +1778,10 @@ function agzTip() {
   const tail = "Click to visit agorzilla.com.";
   if (!d) return verdict("watch", "Watch: no answer from agorzilla.com right now.") + "Agorzilla\nA creature on the live testnet, fed with real transactions.\n" + tail;
   const age = num(d.updated_at) != null ? now - num(d.updated_at) : null;
-  if (age != null && age > 2700) return verdict("bad", `Problem: no news from agorzilla.com for ${Math.round(age / 60)} min.`) + "Agorzilla\nA creature on the live testnet, fed with real transactions.\n" + tail;
+  // its chain file is rebuilt about every 30 min and copied to the server every 10, so up to ~45 min old is normal; only hours without news are a problem
+  if (age != null && age > 7200) return verdict("bad", `Problem: no news from agorzilla.com for ${Math.round(age / 3600)} h.`) + "Agorzilla\nA creature on the live testnet, fed with real transactions.\n" + tail;
+  if (age != null && age > 4500) return verdict("watch", `Watch: the last news from agorzilla.com is ${Math.round(age / 60)} min old.`) + "Agorzilla\nA creature on the live testnet, fed with real transactions.\n" + tail;
+  const upd = age == null ? tail : age < 120 ? `Updated just now. ${tail}` : `Updated ${Math.round(age / 60)} min ago. ${tail}`;
   const meals = num(d.today && d.today.meals), wal = num(d.today && d.today.wallets), stage = d.stage_name ? String(d.stage_name) : "";
   const v = !liveChain() ? verdict("watch", "Live on the testnet. This page shows the simulation.")
     : meals ? verdict("ok", `Live: fed ${meals} time${meals === 1 ? "" : "s"} by ${wal || 1} wallet${(wal || 1) === 1 ? "" : "s"} today.`)
@@ -1773,7 +1789,7 @@ function agzTip() {
   const o = d.open || {}, left = num(o.closes_at) != null ? num(o.closes_at) - now : null;
   const vote = o.category && left != null && left > 0 ? (left < 5400 ? ` Tonight's vote: ${o.category}, closes in ${Math.max(1, Math.round(left / 60))} min.` : ` Tonight's vote: ${o.category}, closes in ${Math.round(left / 3600)} h.`) : "";
   const line = stage ? `Stage: ${stage}.${vote}` : vote.trim() || "A creature on the live testnet, fed with real transactions.";
-  return v + "Agorzilla\n" + line + "\n" + tail;
+  return v + "Agorzilla\n" + line + "\n" + upd;
 }
 addEventListener("DOMContentLoaded", () => { pollAgz(); setInterval(() => { if (!document.hidden) pollAgz(); }, 300000); });
 /* Agorzilla is alive: small things of his own while nothing happens (breathing, blinking, looking around, a scratch, a stretch, a little walk
@@ -1782,12 +1798,19 @@ addEventListener("DOMContentLoaded", () => { pollAgz(); setInterval(() => { if (
    motion: he only blinks. A hidden tab, a cramped header or a phone: nothing runs. */
 const AGZ_LIFE = (() => {
   const a = $("agz"); if (!a) return null;
-  const q = c => a.querySelector(c), dir = q(".dir"), pup = q(".pup"), bod = q(".bod"), legL = q(".lg.l"), legR = q(".lg.r"), legB = q(".lg.b"), hd = q(".hd"), mouth = q(".mouth"), lids = [...a.querySelectorAll(".lid")];
+  const q = c => a.querySelector(c), dir = q(".dir"), pup = q(".pup"), bod = q(".bod"), legL = q(".lg.l"), legR = q(".lg.r"), legB = q(".lg.b"), hd = q(".hd"), mouth = q(".mouth"), tg = q(".tg"), slit = q(".slit"), lids = [...a.querySelectorAll(".lid")];
   const RM = matchMedia("(prefers-reduced-motion: reduce)");
   const L = { busy: false, queue: [], lastMove: 0, lastKind: {}, recent: [], calm: 0, nextIdle: Date.now() + 4000, prevIdle: "", sig: null, near: 0, x: 0 };
   const rnd = (lo, hi) => lo + Math.random() * (hi - lo);
   const ok = () => !document.hidden && a.offsetParent && !a.classList.contains("cramped") && getComputedStyle(a).display !== "none";
-  const go = (el, kf, o) => el.animate(kf, { duration: 700, easing: "ease-in-out", ...o }).finished.catch(() => {});
+  /* a new move on a part that is still moving starts where that part is right now, so the head never jumps back to rest first */
+  const go = (el, kf, o) => {
+    if (kf[0] && "transform" in kf[0] && !(o && o.iterations > 1)) {
+      const on = el.getAnimations().filter(x => !(window.CSSAnimation && x instanceof CSSAnimation) && !(window.CSSTransition && x instanceof CSSTransition) && x.playState === "running" && x.effect.getKeyframes().some(k => k.transform));   // ours only: the breathing stays
+      if (on.length) { const cur = getComputedStyle(el).transform; on.forEach(x => x.cancel()); kf = [{ ...kf[0], transform: cur }, ...kf.slice(1)]; }
+    }
+    return el.animate(kf, { duration: 700, easing: "ease-in-out", ...o }).finished.catch(() => {});
+  };
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const night = () => { const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Europe/Berlin" }).format(new Date())); return h >= 22 || h < 6; };
   const eyes = (x, y) => { a.style.setProperty("--ex", x + "%"); a.style.setProperty("--ey", y + "%"); };
@@ -1847,6 +1870,14 @@ const AGZ_LIFE = (() => {
     await go(pup, [0, 1, 0, -1, 0, 1, 0, -1, 0].map((k, i) => ({ transform: `rotate(${k * 6}deg) translateY(${k ? -3 : 0}%)`, offset: i / 8 })), { duration: beat * 8 });
     await turn(true); await hop(8); await turn(false); await hop(5);
   };
+  /* the tongue comes out of the mouth: a peek with a little wiggle, or a lick along the lips from one corner to the other */
+  const TONGUE = {
+    blep: [["translateY(-105%)", 0], ["translateY(-4%) scaleY(1.06)", .2, "cubic-bezier(.2, .9, .3, 1.3)"], ["translateY(-12%) rotate(6deg)", .38], ["translateY(-9%) rotate(-6deg)", .54], ["translateY(-11%) rotate(3deg)", .68], ["translateY(-11%)", .82], ["translateY(-105%)", 1]],
+    lick: [["translateY(-105%)", 0], ["translateY(-26%)", .14], ["translate(52%, -42%) rotate(-24deg) scaleY(.9)", .34], ["translate(52%, -44%) rotate(-20deg) scaleY(.9)", .42], ["translate(-52%, -42%) rotate(24deg) scaleY(.9)", .68], ["translate(-50%, -44%) rotate(20deg) scaleY(.9)", .74], ["translateY(-24%)", .88], ["translateY(-105%)", 1]],
+  };
+  const tongue = kind => { const d = kind === "lick" ? 1700 : 1500;
+    go(slit, [{ transform: "scaleY(0)" }, { transform: "scaleY(1)", offset: .1 }, { transform: "scaleY(1)", offset: .9 }, { transform: "scaleY(0)" }], { duration: d });
+    return go(tg, TONGUE[kind].map(([t, offset, easing]) => ({ transform: t, offset, ...(easing ? { easing } : {}) })), { duration: d }); };
   const IDLE = {
     glance: () => look(4.5, 2.2, rnd(1400, 2400)),                                                     // a look at the Live chip he keeps an eye on
     around: async () => { await look(-4, -2, 1100); await look(4, 2, 1000); },
@@ -1857,25 +1888,26 @@ const AGZ_LIFE = (() => {
     yawn: async () => { a.classList.add("squint"); go(hd, [{ transform: "none" }, { transform: "rotate(-5deg) translateY(-1%)", offset: .3 }, { transform: "rotate(-5deg) translateY(-1%)", offset: .7 }, { transform: "none" }], { duration: 1700 });
       await go(mouth, [{ transform: "translate(-50%, -50%) scale(.8, 0)" }, { transform: "translate(-50%, -50%) scale(1.1, 1.25)", offset: .35 }, { transform: "translate(-50%, -50%) scale(1.15, 1.35)", offset: .7 }, { transform: "translate(-50%, -50%) scale(.8, 0)" }], { duration: 1600 }); a.classList.remove("squint"); },
     sit: () => go(bod, [{ transform: "none" }, { transform: "scale(1.03, .95)", offset: .2 }, { transform: "scale(1.03, .95)", offset: .85 }, { transform: "none" }], { duration: rnd(3000, 4500) }),
-    blep: async () => { go(hd, [{ transform: "none" }, { transform: "rotate(3deg)", offset: .2 }, { transform: "rotate(3deg)", offset: .8 }, { transform: "none" }], { duration: 1500 }); await wait(250); a.classList.add("blep"); await wait(900); a.classList.remove("blep"); await wait(300); },
+    blep: async () => { go(hd, [{ transform: "none" }, { transform: "rotate(3deg)", offset: .2 }, { transform: "rotate(3deg)", offset: .8 }, { transform: "none" }], { duration: 1700 }); await wait(200); await tongue("blep"); },
+    lick: async () => { go(hd, [{ transform: "none" }, { transform: "rotate(-2deg) translateY(-.6%)", offset: .25 }, { transform: "rotate(2deg) translateY(-.6%)", offset: .65 }, { transform: "none" }], { duration: 1900 }); await wait(150); await tongue("lick"); },
     doze: async () => { a.classList.add("drowsy"); await go(hd, [{ transform: "none" }, { transform: "rotate(3deg) translateY(1%)", offset: .5 }, { transform: "none" }], { duration: 6500 }); a.classList.remove("drowsy"); },
     walk, backflip, roll, cartwheel, dance,
   };
   const SPECIAL = new Set(["backflip", "roll", "cartwheel", "dance"]);
   const idleWeights = () => {   // more room on this screen, more and bigger moves; a special at most every 25 s, fewer at night
     const n = night(), st = !!PRESENCE.stalled, room = AGZ.room || 0, sp = Date.now() - (L.lastSpecial || 0) < 25000 ? 0 : n ? .3 : 1;
-    return { glance: st ? 6 : 2.4, around: 1.6, blep: n ? .3 : .9, weight: 2, sniff: 1.4, scratch: 1.2, stretch: 1, yawn: n ? 3 : .5, sit: 1, doze: n ? 2 : 0, walk: room >= 28 ? 4 : 0,
+    return { glance: st ? 6 : 2.4, around: 1.6, blep: n ? .3 : .8, lick: n ? .2 : .6, weight: 2, sniff: 1.4, scratch: 1.2, stretch: 1, yawn: n ? 3 : .5, sit: 1, doze: n ? 2 : 0, walk: room >= 28 ? 4 : 0,
       dance: 1.4 * sp, backflip: headroom() >= 18 ? 1.2 * sp : 0, roll: room >= 90 ? 1 * sp : 0, cartwheel: room >= 120 ? .8 * sp : 0 };
   };
   const pickIdle = () => { const w = Object.entries(idleWeights()).filter(([k, v]) => v > 0 && k !== L.prevIdle); let r = Math.random() * w.reduce((t, [, v]) => t + v, 0); for (const [k, v] of w) if ((r -= v) <= 0) return k; return "glance"; };
   /* the network's moves, each one meant: a block is an ear twitch, an agreed rule a cheer, a refused transfer a head shake, ghosts a squint at Waiting, a stalled chain worry */
   const EVT = {
-    block: () => go(hd, [{ transform: "none" }, { transform: "rotate(2.5deg) translateY(-1.4%)", offset: .35 }, { transform: "none" }], { duration: 460, easing: "ease-out" }),
-    agreed: async () => { go(mouth, [{ transform: "translate(-50%, -50%) scale(.8, 0)" }, { transform: "translate(-50%, -50%) scale(1, .9)", offset: .2 }, { transform: "translate(-50%, -50%) scale(1, .9)", offset: .8 }, { transform: "translate(-50%, -50%) scale(.8, 0)" }], { duration: 1900 }); await hop(10); await hop(7); await look(-3, 0, 900, -2); },
-    refused: () => go(hd, [0, -5, 5, -4, 3, 0].map((k, i) => ({ transform: `rotate(${k}deg)`, offset: i / 5 })), { duration: 950 }),
+    block: () => { mood("perk", 520); return go(hd, [{ transform: "none" }, { transform: "rotate(2.5deg) translateY(-1.4%)", offset: .35 }, { transform: "none" }], { duration: 460, easing: "ease-out" }); },
+    agreed: async () => { mood("perk", 1900); go(mouth, [{ transform: "translate(-50%, -50%) scale(.8, 0)" }, { transform: "translate(-50%, -50%) scale(1, .9)", offset: .2 }, { transform: "translate(-50%, -50%) scale(1, .9)", offset: .8 }, { transform: "translate(-50%, -50%) scale(.8, 0)" }], { duration: 1900 }); await hop(10); await hop(7); await look(-3, 0, 900, -2); },
+    refused: () => (mood("squint", 950), go(hd, [0, -5, 5, -4, 3, 0].map((k, i) => ({ transform: `rotate(${k}deg)`, offset: i / 5 })), { duration: 950 })),
     ghosts: async () => { a.classList.add("squint"); await look(-2, -1, 2600, 2); a.classList.remove("squint"); },
-    stalled: async () => { a.classList.add("squint"); await look(5, 2.4, 1800); await go(pup, [0, 1, 0, 1, 0, 1, 0].map((k, i) => ({ transform: k ? "translateY(-1.6%)" : "none", offset: i / 6 })), { duration: 1300 }); await look(5, 2.4, 1400); a.classList.remove("squint"); },
-    lonely: async () => { await look(-5, -2.4, 1500); await look(5, 2.4, 1500); },
+    stalled: async () => { a.classList.add("worry"); await look(5, 2.4, 1800); await go(pup, [0, 1, 0, 1, 0, 1, 0].map((k, i) => ({ transform: k ? "translateY(-1.6%)" : "none", offset: i / 6 })), { duration: 1300 }); await look(5, 2.4, 1400); a.classList.remove("worry"); },
+    lonely: async () => { a.classList.add("worry"); await look(-5, -2.4, 1500); await look(5, 2.4, 1500); a.classList.remove("worry"); },
     node: async () => { await go(bod, [0, 1, -1, 1, 0].map((k, i) => ({ transform: `rotate(${k * 3}deg)`, offset: i / 4 })), { duration: 900 }); await hop(6); },
   };
   const RANK = { stalled: 6, agreed: 5, node: 4, refused: 3, ghosts: 2, lonely: 2, block: 1 };
@@ -1946,7 +1978,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=27.4", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=27.5", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
@@ -2510,11 +2542,11 @@ async function loadGazette() {
 }
 function renderGazAd() {
   const ed = GAZ.ed || {}, zh = document.documentElement.classList.contains("i18n-zh"), ja = document.documentElement.classList.contains("i18n-ja");
-  const hl = (zh && ed.headline_zh) || ed.headline || "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys";
+  const hl = (zh && ed.headline_zh) || (ja && ed.headline_ja) || ed.headline || "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys";
   const no = ed.number != null ? Number(ed.number) : S.height || null;
   $("gazHl").textContent = hl;
   if (typeof ed.url === "string" && /^https:\/\/tauhud\.com\/gazette\//.test(ed.url)) $("gazAd").href = ed.url.replace(/^https:\/\/tauhud\.com\//, "");   // same site, so the preview and a local copy open their own newspaper
-  if (ed.deck || ed.deck_zh) $("gazDk").textContent = (zh && ed.deck_zh) || ed.deck;
+  if (ed.deck || ed.deck_zh) $("gazDk").textContent = (zh && ed.deck_zh) || (ja && ed.deck_ja) || ed.deck;
   if (ed.text || ed.text_zh) $("gazTx").textContent = (zh && ed.text_zh) || ed.text;
   $("gazNo").textContent = zh || ja ? (no ? `第 ${fmt(no)} ${ja ? "号" : "期"}` : `第 — ${ja ? "号" : "期"}`) : no ? `No. ${fmt(no)}` : "No. —";
   const d = ed.date ? new Date(ed.date + (/T/.test(ed.date) ? "" : "T00:00:00Z")) : new Date();
