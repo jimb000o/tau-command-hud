@@ -179,6 +179,10 @@ html.fit.wide .col.side { display: contents; }
   .range button, .kind button, .sites button { min-height: 44px; padding: 0 10px; }
   .chart { min-height: 200px; }
   td.hide-s, th.hide-s { display: none; }
+  /* One day: four columns on a phone; the headings take less spacing and may break, so the table stays inside the panel */
+  #dPages th { letter-spacing: .04em; white-space: normal; }
+  #dPages td, #dPages th { padding-left: 4px; padding-right: 4px; }
+  #dPages td:first-child { white-space: normal; }
 }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">

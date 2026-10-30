@@ -2134,4 +2134,5 @@ TauI18n.add({ strings: {
   "News line: the gap between items is now about two letters wide.": "快讯：各条之间的间距现在约为两个字符宽。",
   "Privacy notice: section 8 now also covers the testnet wallet. For each transaction our server passes on, it keeps only the hash, the site and the name of the page that led to the wallet, never your address or browser.": "隐私说明：第 8 节现在也涵盖测试网钱包。对于我们服务器转发的每笔交易，只保留哈希、网站和把你带到钱包的页面名称，从不保存你的地址或浏览器信息。",
   "Newspaper café: Déjà, the café cat, now always stays fully on the screen. On very wide and very short screens, and while the view leans in toward a regular, she keeps inside the frame, and where the words of a talk would cover her she sits up on their frame.": "报纸咖啡馆：咖啡馆的猫 Déjà 现在总是完整地留在屏幕里。在很宽或很矮的屏幕上，以及画面靠近某位常客时，她都待在画面之内；对话文字会挡住她的地方，她就坐到文字框的上沿。",
+  "In numbers on a phone: the One day table under On the testnet stays inside its panel instead of spilling sideways; the headings take less spacing and the site names may break.": "手机上的“数据一览”：“测试网上”视图里的“单日”表格不再向侧面溢出，留在面板内；表头字距收紧，站点名称可以换行。",
 } });
