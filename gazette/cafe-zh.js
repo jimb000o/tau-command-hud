@@ -1,5 +1,6 @@
 /* 咖啡馆漫步（cafe.js）的中文。键与 cafe.js 里的 CAFE_EN 一一对应。 */
 window.CAFE_ZH = {
+  loading: "请稍候……", loadingSub: "正在为你布置咖啡馆",
   enter: "抬起头", enterTip: "从报纸上抬起头：在咖啡馆里走一走，见见常客们",
   back: "报纸", backTip: "回到报纸",
   hint: "点击画面左右边缘走动 · 点击人物交谈",

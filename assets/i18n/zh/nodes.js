@@ -22,6 +22,8 @@ TauI18n.add({ strings: {
   "bootnode": "引导节点",
   "Chain": "链",
   "Click for its badge.": "点击获取它的徽章。",
+  "Click for its details and badge.": "点击查看它的详情和徽章。",
+  "{x1} · id {x2} since {x3} · kit {x4} · tau-testnet {x5} Click for its details and badge.": "{x1} · ID {x2} 自 {x3} 起 · 套件 {x4} · tau-testnet {x5} 点击查看它的详情和徽章。",
   "Community Nodes": "社区节点",
   "Community nodes": "社区节点",
   "Community nodes that reported in the last 15 minutes.": "最近 15 分钟内报告过的社区节点。",
