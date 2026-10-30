@@ -1581,11 +1581,7 @@
   "on": "2026-10-30",
   "html": "In numbers now shows our sites' share of user transactions: everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Their transactions and our share of all transactions stay on the page, one line below."
  },
- {
-  "tag": "Nodes",
-  "on": "2026-10-30",
-  "html": "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out."
- },
+ {"tag": "Nodes", "on": "2026-10-30", "html": "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out."},
  {
   "tag": "Accounts",
   "on": "2026-10-30",
