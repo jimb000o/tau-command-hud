@@ -1,0 +1,29 @@
+{
+ "about": "Monthly running costs as billed, each in the currency of its bill; amount null = bill not in yet, not shown. Time is never priced. Read by /donate/, the About window and the Updates panel.",
+ "items": [
+  {
+   "t": "Server",
+   "d": "Hetzner CAX11 at node.tauhud.com: the community node, the relay, alerts and bots",
+   "amount": 6,
+   "cur": "EUR"
+  },
+  {
+   "t": "AI assistant",
+   "d": "Claude Max plan (20x), the AI tool the site is built and run with",
+   "amount": 200,
+   "cur": "USD"
+  },
+  {
+   "t": "Domains",
+   "d": "tauhud.com and agorzilla.com",
+   "amount": null,
+   "cur": "EUR"
+  },
+  {
+   "t": "X account",
+   "d": "the bot that posts rule changes on X",
+   "amount": null,
+   "cur": "USD"
+  }
+ ]
+}

@@ -168,6 +168,7 @@
         <p class="small">AGRS or ETH, one address for both · voluntary, nothing owed in return</p>
         <div class="tn-donate">${DONATE.qr}<div class="tn-addr"><code>${DONATE.addr}</code><button class="tn-btn" type="button">Copy</button></div></div>
         <p class="small tn-thanks" hidden></p>
+        <p class="small tn-cost" hidden></p>
         <p class="small"><a href="${ROOT}donate/">What it costs, and every donation on chain ›</a></p>
         <p class="small tn-copymsg" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
       </article>
@@ -283,6 +284,7 @@
     e.querySelector('[data-n="commits"]').textContent = fmt(git.commits); e.querySelector('[data-n="days"]').textContent = String(days); e.querySelector('[data-n="releases"]').textContent = String(releases); e.querySelector('[data-n="since"]').textContent = `since ${logDate(git.since)}`; e.hidden = false;
   }
   async function loadUpdDonors() {
+    loadUpdCosts();
     if (Date.now() - UPD.donorsAt < 120000) return; UPD.donorsAt = Date.now();
     try {
       const d = await (await fetch(DONATE.donors, { cache: "no-store" })).json(), line = UPD.el.querySelector(".tn-thanks");
@@ -291,11 +293,25 @@
       const short = a => a.slice(0, 6) + "…" + a.slice(-4);
       const amt = x => { const n = Number(x.amount); return (n >= 100 ? Math.round(n).toLocaleString("en-US") : String(+n.toFixed(n >= 1 ? 2 : 4))) + " " + x.asset; };
       const day = x => new Date(x.ts * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-      const one = x => `<a href="https://etherscan.io/tx/${encodeURIComponent(x.tx)}" target="_blank" rel="noopener">${short(x.from)}</a> (${amt(x)}, ${day(x)})`;
+      const cur = { zh: "CNY", ja: "JPY" }[window.TauI18n && TauI18n.lang] || "EUR";   // its value when it came in, in the reader's currency
+      const worth = x => { const v = x.fiat && x.fiat[cur.toLowerCase()]; return Number.isFinite(v) ? " ≈ " + new Intl.NumberFormat(cur === "EUR" ? "en-GB" : cur === "CNY" ? "zh-CN" : "ja", { style: "currency", currency: cur, maximumFractionDigits: cur === "JPY" ? 0 : 2 }).format(v) : ""; };
+      const one = x => `<a href="https://etherscan.io/tx/${encodeURIComponent(x.tx)}" target="_blank" rel="noopener">${short(x.from)}</a> (${amt(x)}${worth(x)}, ${day(x)})`;
       const n = Math.max(1, parseInt(d.donors, 10) || 1);
       line.innerHTML = (n === 1 ? "Supported by 1 person so far. Thank you, " : `Supported by ${n} people so far. Thank you, `) + items.slice(0, 3).map(one).join(", ") + (items.length > 3 ? " and everyone before." : ".");
       line.hidden = false;
     } catch (e) { UPD.donorsAt = 0; }
+  }
+  /* running costs in one line, from the same list as the Donations page; each bill in its own currency, never converted */
+  async function loadUpdCosts() {
+    if (UPD.costs) return; UPD.costs = true;
+    try {
+      const items = ((await (await fetch(ROOT + "assets/costs.json", { cache: "no-cache" })).json()).items || []).filter(c => typeof c.amount === "number" && /^[A-Z]{3}$/.test(c.cur));
+      if (!items.length) return;
+      const sums = {}; items.forEach(c => { sums[c.cur] = (sums[c.cur] || 0) + c.amount; });
+      const el = UPD.el.querySelector(".tn-cost");
+      el.textContent = `Running costs: about ${Object.entries(sums).map(([c, n]) => new Intl.NumberFormat(c === "USD" ? "en-US" : "en-GB", { style: "currency", currency: c, maximumFractionDigits: n % 1 ? 2 : 0 }).format(n)).join(" + ")} a month, not counting time.`;
+      el.hidden = false;
+    } catch (e) { UPD.costs = false; }
   }
 
   /* Share: this page's own link (without the view switches) and its own preview picture, to copy or to post; on phones the system's share sheet first */
