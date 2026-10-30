@@ -107,6 +107,7 @@ TauI18n.add({ strings: {
   "Network id tau-testnet-v2: the chain every page shows, read from the community node.": "ネットワーク ID tau-testnet-v2：すべてのページが表示するチェーンで、コミュニティノードから読んでいます。",
   "Newest block the community node has verified.": "コミュニティノードが検証した最新のブロック。",
   "Node": "ノード",
+  "Gazette": "コンセンサス日報",
   "Nodes": "ノード",
   "Nov": "11月",
   "Nov {n}": "11月{n}日",

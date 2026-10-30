@@ -2104,4 +2104,7 @@ TauI18n.add({ strings: {
   "Rules on Tau change only by agreement": "Tau 上的规则只能经同意而改变",
   "HUD: a news line under the four principles, which became shorter cards with their source in the corner. Live facts from the chain, the newest updates, pointers to useful pages and now and then our Telegram and X; each item decodes out of falling glyphs where it enters. Hover to pause, click to open. With reduced motion the items change in place. The header button “Get alerts” is now “Follow the chain”, with the same Telegram, X and RSS links.": "HUD：四条原则下方新增一条快讯，原则变成了更短的卡片，来源放在角落。链上的实时数据、最新更新、有用页面的指引，偶尔也有我们的 Telegram 和 X；每一条在进入时从落下的字符中解码出来。悬停可暂停，点击可打开。开启“减少动态效果”时，各条在原地切换。页头按钮“获取提醒”现在叫“关注这条链”，链接仍是 Telegram、X 和 RSS。",
   "News line: live facts, updates and pointers": "快讯：实时数据、更新和指引",
+  "On a phone, the HUD now turns with you. Held on its side, the header folds into three short rows and the panels sit two by two, with the tab bar below. A new ⛶ button at the top right shows the HUD alone on the whole screen; ✕ brings the site back. Where the phone allows it the browser goes full screen too, on an iPhone the site bars step aside.": "在手机上，HUD 现在会随屏幕一起转动。横过来时，页眉收成三行短栏，面板两两并排，下方是标签栏。右上角新的 ⛶ 按钮让 HUD 独占整个屏幕；✕ 返回网站。手机支持时浏览器也会进入全屏；在 iPhone 上，网站的菜单栏会让开。",
+  "Full screen: only the HUD": "全屏：只显示 HUD",
+  "Back to the full site": "返回完整网站",
 } });

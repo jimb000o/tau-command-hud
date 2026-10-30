@@ -994,6 +994,40 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+/* ---------- phones: on its side, and the HUD on the whole screen (mobile thread; one block, kept apart from the rules above) ---------- */
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  body { padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+  .wrap { gap: 8px; padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+  /* the header in three short rows: brand and notice; the chips and the tools; source and chain state */
+  .rail { gap: 6px 8px; padding-bottom: 6px; min-width: 0; }
+  .rail > nav.tnav { display: contents; }
+  .rail > .brand { order: 1; min-height: 46px; } .rail > .chip.unoff { order: 2; } .rail > .chips { order: 3; } .rail .tnav-r { order: 4; margin-left: auto; } .rail .tnav-l { order: 5; }
+  .rail .tn-search, .brand span, #chipNet, #btnState, #chipFeeWrap { display: none; }
+  .brand { flex: 0 1 auto; min-width: 0; align-items: baseline; }
+  .brand h1 { font-size: 20px; white-space: nowrap; }
+  .brand span { font-size: 11px; letter-spacing: .12em; }
+  .chip.unoff { font-size: 11px; letter-spacing: .03em; padding: 4px 8px; }
+  .chips { flex: 0 1 auto; min-width: 0; margin-left: 0; gap: 4px; }
+  .chip { font-size: 11px; padding: 4px 8px; letter-spacing: .06em; }
+  .simbar, .simbar span { font-size: 11px; }
+  /* two columns side by side: the core beside how a rule changes, then what is in force, then the detail */
+  .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "core upd" "val chain" "eng feed" "off pol"; }
+  .core canvas { max-width: 100%; max-height: 300px; }
+  .scroll { max-height: 240px; }
+  .tour { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+}
+/* the full-screen button: on touch screens only, at the top right of the header; ✕ brings the site back */
+.hfs, .hfs-x { display: none; }
+@media (pointer: coarse) {
+  header.rail { position: relative; }
+  header.rail > .brand { margin-right: 48px; }
+  .hfs { display: grid; place-items: center; position: absolute; top: 0; right: 0; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--hair); background: rgba(12,12,14,.8); color: #fff; font: 600 17px/1 var(--display); padding: 0; cursor: pointer; }
+  html.hudfull header.rail, html.hudfull .tabbar, html.hudfull .tnav-spacer, html.hudfull .tb-pill, html.hudfull .fb-fab { display: none !important; }
+  html.hudfull body { padding-top: max(8px, env(safe-area-inset-top, 0px)); }
+  html.hudfull .wrap { padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+  html.hudfull .hfs-x { display: grid; place-items: center; position: fixed; z-index: 60; top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--hair); background: rgba(12,12,14,.72); color: #fff; font: 600 17px/1 var(--display); padding: 0; cursor: pointer; backdrop-filter: blur(6px); opacity: .55; }
+  html.hudfull .hfs-x:active, html.hudfull .hfs-x:focus-visible { opacity: 1; }
+}
 </style>
 
 <canvas id="rain" aria-hidden="true"></canvas>
@@ -4049,6 +4083,26 @@ pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); set
 
 })();
 
+</script>
+
+<script>
+/* ---------- phones: the HUD on the whole screen (mobile thread; one block). ⛶ in the header hides the site bars and asks the
+   browser for full screen where it can (an iPhone cannot: there the bars still step aside); ✕ or leaving full screen brings them back ---------- */
+(() => {
+  const rail = document.querySelector("header.rail"); if (!rail) return;
+  const root = document.documentElement, canFull = !!(document.fullscreenEnabled && root.requestFullscreen);
+  const btn = (cls, txt, label) => { const b = document.createElement("button"); b.type = "button"; b.className = cls; b.textContent = txt; b.setAttribute("aria-label", label); b.title = label; return b; };
+  const on = btn("hfs", "⛶", "Full screen: only the HUD"), off = btn("hfs-x", "✕", "Back to the full site");
+  rail.appendChild(on); document.body.appendChild(off);
+  const set = full => {
+    root.classList.toggle("hudfull", full);
+    if (full && canFull && !document.fullscreenElement) root.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
+    if (!full && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    dispatchEvent(new Event("resize"));
+  };
+  on.onclick = () => set(true); off.onclick = () => set(false);
+  document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && root.classList.contains("hudfull")) set(false); });
+})();
 </script>
 
 </body>

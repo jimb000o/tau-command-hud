@@ -113,9 +113,10 @@ header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite
 .tnav-pop .hint { color: var(--tn-dim); font: 400 11px/1.45 var(--tn-font); }
 .tnav-pop .pill { font: 600 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--tn-hair); color: var(--tn-dim); text-decoration: none; white-space: nowrap; }
 .tnav-pop .pill:hover { color: #fff; border-color: #fff; }
-/* phone: row 2 keeps source, chain state, Telegram and gear; sections move to a bottom tab bar */
+/* phone: row 2 keeps source, chain state, Telegram and gear; sections move to a bottom tab bar.
+   A phone on its side (short and wide) gets the same compact header and tab bar instead of the desktop rows */
 .tabbar, .tsheet, .tsheet-bg { display: none; }
-@media (max-width: 700px) {
+@media (max-width: 700px), (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
   .tnav { gap: 6px 8px; }
   .tnav-sep, .tnav-nav, .tnav .tn-upd, .tnav .vlab, .tnav .seg.tn-lang { display: none; }   /* phone: the language lives in the Learn sheet */
   .tnav-r { margin-left: auto; gap: 8px; }
@@ -159,7 +160,7 @@ body[data-view="simple"] .vt { display: none !important; }
 body[data-view="simple"] .vp { display: block; }
 
 /* simulation badge on phones: the countdown text, set by nav.js; Chinese keeps the short note */
-@media (max-width: 700px) {
+@media (max-width: 700px), (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
   header.trail .chip.unoff.sim::after { content: attr(data-short); }
   html.i18n-zh header.trail .chip.unoff.sim::after { content: "模拟 · 非真实链上数据"; }
 }

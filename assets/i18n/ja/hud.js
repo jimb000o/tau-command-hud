@@ -2100,4 +2100,7 @@ TauI18n.add({ strings: {
   "Rules on Tau change only by agreement": "Tau のルールは合意によってのみ変わります",
   "HUD: a news line under the four principles, which became shorter cards with their source in the corner. Live facts from the chain, the newest updates, pointers to useful pages and now and then our Telegram and X; each item decodes out of falling glyphs where it enters. Hover to pause, click to open. With reduced motion the items change in place. The header button “Get alerts” is now “Follow the chain”, with the same Telegram, X and RSS links.": "HUD：4つの原則の下にニュースの行を追加し、原則は出典を隅に置いた短いカードになりました。チェーンのライブ情報、最新の更新、役立つページへの案内、ときどき私たちの Telegram と X。各項目は入ってくるところで降る文字からデコードされます。ホバーで一時停止、クリックで開きます。動きを減らす設定では、その場で切り替わります。ヘッダーのボタン「通知を受け取る」は「チェーンを追う」になりました。リンクは同じ Telegram、X、RSS です。",
   "News line: live facts, updates and pointers": "ニュース：ライブ情報、更新、案内",
+  "On a phone, the HUD now turns with you. Held on its side, the header folds into three short rows and the panels sit two by two, with the tab bar below. A new ⛶ button at the top right shows the HUD alone on the whole screen; ✕ brings the site back. Where the phone allows it the browser goes full screen too, on an iPhone the site bars step aside.": "スマートフォンで、HUD が画面の向きに合わせて変わるようになりました。横にすると、ヘッダーは短い 3 行にまとまり、パネルが 2 列に並び、下にタブバーが付きます。右上の新しい ⛶ ボタンで HUD だけを画面いっぱいに表示し、✕ でサイトに戻ります。対応している端末ではブラウザも全画面になり、iPhone ではサイトのバーが脇に退きます。",
+  "Full screen: only the HUD": "全画面：HUD だけを表示",
+  "Back to the full site": "サイト全体に戻る",
 } });

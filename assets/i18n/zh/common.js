@@ -107,6 +107,7 @@ TauI18n.add({ strings: {
   "Network id tau-testnet-v2: the chain every page shows, read from the community node.": "网络 ID tau-testnet-v2：每个页面显示的链，从社区节点读取。",
   "Newest block the community node has verified.": "社区节点已验证的最新区块。",
   "Node": "节点",
+  "Gazette": "共识日报",
   "Nodes": "节点",
   "Nov": "11月",
   "Nov {n}": "{n}年11月",
