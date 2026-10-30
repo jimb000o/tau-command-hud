@@ -81,19 +81,23 @@
     a.append(body);
     return a;
   }
-  /* letters get a fixed width once laid out, so a glyph in their place never shifts the line */
+  /* letters get a fixed width once laid out, so a glyph in their place never shifts the line. Layout sizes, not screen
+     sizes: on wide screens the HUD is scaled up as a whole (html.wide), and a scaled width would spread letters and items apart */
+  const lw = e => { const r = e.getBoundingClientRect(), z = e.offsetWidth ? r.width / e.offsetWidth : 1; return r.width / (z || 1); };
   function measure(el) {
-    el._chars = Array.from(el.querySelectorAll(".tk-tx b")).map(c => { const w = c.getBoundingClientRect().width; c.style.width = w + "px"; return { c, x: c.offsetLeft, w, st: 0 }; });
-    el._w = el.getBoundingClientRect().width;
+    el._chars = Array.from(el.querySelectorAll(".tk-tx b")).map(c => { const w = lw(c); c.style.width = w + "px"; return { c, x: c.offsetLeft, w, st: 0 }; });
+    el._w = lw(el);
   }
 
   /* ---------- motion ---------- */
-  const SPEED = 46, ZONE = 150, GAP = 56;   // px per second; how far in from the edge a letter is still a glyph; space between items
+  const SPEED = 46, ZONE = 150, GAP = 44;   // px per second; how far in from the edge a letter is still a glyph; space between items
   let items = [], last = 0, paused = false, W = 0, dir = -1, tick = 0;
   const add = () => {
     const el = build(next()); track.append(el); measure(el);
     const prev = items[items.length - 1];
-    el._x = dir < 0 ? (prev ? Math.max(W, prev._x + prev._w + GAP) : W * .55) : (prev ? Math.min(-el._w, prev._x - el._w - GAP) : W * .45 - el._w);
+    /* one fixed gap after the item before; the first items start inside the line and decode where they stand */
+    el._x = dir < 0 ? (prev ? prev._x + prev._w + GAP : W * .3) : (prev ? prev._x - el._w - GAP : W * .7 - el._w);
+    if (dir < 0 ? el._x < W : el._x + el._w > 0) el._born = performance.now();
     items.push(el);
   };
   function frame(t) {
@@ -106,14 +110,16 @@
     for (const el of items) {
       el.style.transform = `translate3d(${el._x.toFixed(1)}px,0,0)`;
       const base = el._x + (el._chars.length ? el._chars[0].c.parentNode.offsetLeft : 0);
-      for (const ch of el._chars) {
+      const age = el._born ? t - el._born : 1e9; if (el._born && age > 400 + el._chars.length * 22) el._born = 0;
+      el._chars.forEach((ch, i) => {
         const x = base + ch.x, depth = dir < 0 ? W - x : x + ch.w;   // distance from the entering edge
-        const st = depth < 0 ? 0 : depth < ZONE * .85 ? 1 : depth < ZONE ? 2 : 3;   // outside, glyph, head, read
+        const born = age - 300 - i * 22;   // an item that starts inside the line decodes letter by letter
+        const st = depth < 0 ? 0 : depth < ZONE * .85 || born < 0 ? 1 : depth < ZONE || born < 80 ? 2 : 3;   // outside, glyph, head, read
         if (st !== ch.st) { ch.c.className = st === 1 ? "g" : st === 2 ? "hd" : ""; if (st >= 2) ch.c.textContent = ch.c.dataset.c; ch.st = st; }
         if (st === 1 && scramble && ch.c.dataset.c.trim()) ch.c.textContent = glyph();
-        if (st === 1) ch.c.style.opacity = (.25 + .75 * depth / ZONE).toFixed(2);
+        if (st === 1) ch.c.style.opacity = (.25 + .75 * Math.min(1, depth / ZONE)).toFixed(2);
         else if (ch.c.style.opacity) ch.c.style.opacity = "";
-      }
+      });
     }
     requestAnimationFrame(frame);
   }
@@ -133,6 +139,8 @@
   Promise.all([
     fetch("assets/ticker.json", { cache: "no-cache" }).then(r => r.json()).then(j => { if (j && typeof j === "object") CFG = { ...CFG, ...j }; }).catch(() => {}),
     loadNews(true),
+    /* letters are measured once, so wait for the page's monospace font: measured in a fallback font they keep its wider spacing */
+    Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), new Promise(r => setTimeout(r, 4000))]),
   ]).then(() => {
     const m = (CFG.move || {})[lang] || "left"; dir = m === "right" ? 1 : -1; box.classList.toggle("rtl", dir > 0);
     W = view.clientWidth;
