@@ -14,6 +14,7 @@
   const ROOT = src ? new URL("..", src).pathname : "/";
   const P = {
     hud:        { t: "HUD", d: "The chain core live: blocks, rules and agreement as they happen", i: "◉", h: "" },
+    state:      { t: "Chain state", d: "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules", i: "≡", h: "#chain-state", act: "state" },
     explorer:   { t: "Explorer", d: "Find any block, transaction or address", i: "⌕", h: "explorer/", view: true },
     stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/", view: true },
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
@@ -51,13 +52,15 @@
   };
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
-    /* grouped by what a visitor came to do (29 Oct): watch the chain, understand Tau, try it, and who runs this site; five to seven entries each */
-    { k: "explore", t: "Explore", items: ["explorer", "proposals", "account", "nodes", "stats", "history", "devpulse"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["start", "tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
-    { k: "play", t: "Playground", items: ["playground", "seat", "missions", "challenge", "whatif", "vote", "wallet", "rules", "card", "rabbit", "agorzilla"], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, items: ["about", "share", "donate", "status", "findings", "roadmap", "meta", "developers", "press", "legal"], tab: "i" },
+    /* grouped by what a visitor came to do (29 Oct); inside each menu small labelled groups (30 Oct), so no menu is one long list */
+    { k: "explore", t: "Explore", groups: [["The chain now", ["state", "explorer", "proposals", "account", "rules", "stats", "history"]], ["Road to mainnet", ["nodes", "status", "findings", "roadmap", "devpulse"]]], tab: "≋" },
+    { k: "learn", t: "Learn", groups: [["First steps", ["start", "tour", "story"]], ["Read and watch", ["gazette", "chronicle", "tau"]]], tab: "▸" },
+    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "seat", "whatif"]], ["On the real testnet", ["wallet", "vote", "challenge", "card"]], ["Games", ["rabbit", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
+    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", start: "learn", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", roadmap: "about", status: "about", meta: "about", legal: "about", donate: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", rules: "play", card: "play", challenge: "play", rabbit: "play", whatif: "play" };
+  SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
+  const SECTION_OF = { hud: "hud" };
+  SECTIONS.forEach(s => (s.items || []).forEach(k => { if (P[k] && !P[k].ext && !P[k].act && !/#/.test(P[k].h)) SECTION_OF[k] = s.k; }));
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
@@ -81,8 +84,8 @@
     fee: "Base fee in AGRS that every transaction pays, set by the consensus rule o9.",
     cons: "Consensus: who may seal the next block. Tau has no proof of work. The mechanism is part of the chain state: a fixed validator list (proof of authority), a validator list kept in the Tau rules, or proof of stake. It switches only through an agreed rule change. Opens the chain state in the HUD.",
     hud: "The chain core live: blocks, rules and agreement as they happen.",
-    explore: "Chain data pages: Explorer, Stats, Time travel, Accounts, Nodes, Proposals.",
-    learn: "Tau in 60 seconds, Guided tour, Chronicle, Findings, Status, Developers, Press kit, What is Tau?, About.",
+    explore: "The chain now: chain state, Explorer, Proposals, Accounts, Rules wall, Stats, Time travel. Road to mainnet: Nodes, Status, Findings, Build pulse.",
+    learn: "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Chronicle, What is Tau?",
     play: "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat, play six short missions on a practice chain, move the levers of a sandbox chain, or vote on the real testnet yourself.",
   };
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -368,6 +371,13 @@
     return a;
   }
 
+  /* "Tour of this page": every subpage has a short tour of its own (assets/tour.js), listed under First steps */
+  function pageTour() {
+    const t = el("a", "mi", `<span class="ic">?</span><b>Tour of this page</b><span>What each part of this page shows and why it matters, in a few short steps</span>`);
+    t.href = "#tour"; t.setAttribute("role", "menuitem"); t.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); });
+    return t;
+  }
+
   /* ---------- row 1 on subpages: the HUD's brand row with the page title where the tagline sits, and the same chips fed by the relay ---------- */
   function mountRail(nav, page) {
     const old = nav.previousElementSibling && nav.previousElementSibling.tagName === "HEADER" ? nav.previousElementSibling : null;
@@ -610,7 +620,13 @@
   function toggle(btn, panel) {
     const open = panel.hidden;
     closeAll();
-    if (open) { panel.hidden = false; btn.setAttribute("aria-expanded", "true"); openEl = panel; }
+    if (open) {
+      panel.hidden = false; btn.setAttribute("aria-expanded", "true"); openEl = panel;
+      if (panel.classList.contains("cols")) {   // a wide menu never runs off the right edge of the window
+        panel.style.left = ""; const r = panel.getBoundingClientRect(), over = r.right - (innerWidth - 16);
+        if (over > 0) panel.style.left = -Math.min(over, r.left - 16) + "px";
+      }
+    }
   }
 
   function mount(nav) {
@@ -631,8 +647,13 @@
       const w = el("div", "ni-wrap"), b = el("button", "ni" + (sec.util ? " util" : "") + (here === sec.k ? " here" : ""), `<span class="lbl">${esc(sec.t)}</span><span class="caret">▾</span>`);
       b.type = "button"; b.setAttribute("aria-haspopup", "true"); b.setAttribute("aria-expanded", "false"); if (sec.id) b.id = sec.id;
       const m = el("div", "menu"); m.hidden = true; m.setAttribute("role", "menu"); m.setAttribute("aria-label", sec.t);
-      if (sec.k === "learn" && !isHud) { const t = el("a", "mi", `<span class="ic">?</span><b>Tour of this page</b><span>What each part of this page shows and why it matters, in a few short steps</span>`); t.href = "#tour"; t.setAttribute("role", "menuitem"); t.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); }); m.append(t); }
-      sec.items.forEach(k => m.append(item(k, page, isHud)));
+      m.classList.add("cols"); m.style.setProperty("--cols", sec.groups.length);
+      sec.groups.forEach(([h, keys]) => {
+        const col = el("div", "mcol"); col.setAttribute("role", "group"); col.setAttribute("aria-label", h); col.append(el("h5", "", esc(h)));
+        keys.forEach(k => col.append(item(k, page, isHud)));
+        if (sec.k === "learn" && keys.includes("tour") && !isHud) col.insertBefore(pageTour(), col.querySelector(".mi:nth-of-type(2)"));
+        m.append(col);
+      });
       b.addEventListener("click", () => toggle(b, m));
       w.append(b, m); bar.append(w);
     });
@@ -717,10 +738,9 @@
       const bg = el("div", "tsheet-bg"), sh = el("div", "tsheet"); bg.hidden = sh.hidden = true;
       sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", sec.t);
       sh.append(el("div", "grab"), el("h4", "", esc(sec.t)));
-      sec.items.forEach(k => sh.append(item(k, page, isHud)));
+      sec.groups.forEach(([h, keys]) => { sh.append(el("h5", "", esc(h))); keys.forEach(k => sh.append(item(k, page, isHud))); if (sec.k === "learn" && keys.includes("tour") && !isHud) sh.append(pageTour()); });
       if (sec.k === "learn" && window.TauI18n) { const I = window.TauI18n, NAME = { en: ["English", "Read this site in English"], zh: ["中文", "阅读中文版 · Read this site in Chinese"], ja: ["日本語", "日本語で読む · Read this site in Japanese"] };
         for (const other of Object.keys(NAME).filter(c => c !== I.lang)) { const l = el("a", "mi", `<span class="ic">文</span><b>${NAME[other][0]}</b><span>${NAME[other][1]}</span>`); l.href = "#"; l.setAttribute("translate", "no"); l.addEventListener("click", e => { e.preventDefault(); I.set(other); }); sh.append(l); } }
-      if (sec.k === "learn" && !isHud) { const t = el("a", "mi", `<span class="ic">?</span><b>Tour of this page</b><span>What each part of this page shows and why it matters, in a few short steps</span>`); t.href = "#tour"; t.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); }); sh.append(t); }
       if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram alerts <span class="ext">↗</span></b><span>@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t);
         const x = el("a", "mi", `<span class="ic">${XLOGO}</span><b>X @TauHUDcom <span class="ext">↗</span></b><span>Real rule changes, new nodes, Testnet today and the Monday recap in your timeline</span>`); x.href = XCOM; x.target = "_blank"; x.rel = "noopener"; sh.append(x); }
       bg.addEventListener("click", closeAll);

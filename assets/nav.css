@@ -18,6 +18,12 @@
 .tnav .ni[aria-expanded="true"] { color: #fff; background: rgba(255,255,255,.07); }
 .tnav .caret { color: var(--tn-dim); font-size: 11px; }
 .tnav .menu { position: absolute; top: calc(100% + 12px); left: 0; background: #111113; border: 1px solid var(--tn-hair); border-radius: 12px; padding: 10px; display: grid; gap: 2px; width: max-content; max-width: min(520px, calc(100vw - 32px)); box-shadow: 0 20px 50px rgba(0,0,0,.6); z-index: 45; text-transform: none; letter-spacing: 0; }
+/* menus with labelled groups: one column per group, each group named in small caps */
+.tnav .menu.cols { grid-template-columns: repeat(var(--cols, 2), minmax(240px, 300px)); gap: 4px 14px; max-width: calc(100vw - 32px); padding: 12px; }
+.tnav .mcol { display: grid; gap: 2px; align-content: start; min-width: 0; }
+.tnav .mcol h5, .tsheet h5 { margin: 4px 12px 6px; font: 500 11px var(--tn-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tn-dim); }
+.tnav .mcol .mi b { white-space: normal; }
+@media (max-width: 1100px) { .tnav .menu.cols { grid-template-columns: repeat(2, minmax(220px, 280px)); } }
 .tnav .menu[hidden], .tsheet[hidden], .tsheet-bg[hidden], .tnav-pop[hidden] { display: none; }
 .mi { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; color: inherit; text-align: left; background: transparent; border: 0; font: inherit; }
 .mi:hover, .mi:focus-visible { background: rgba(255,255,255,.05); }
@@ -135,6 +141,7 @@ header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite
   .tsheet { display: block; position: fixed; left: 0; right: 0; bottom: 0; background: #101012; border-top: 1px solid var(--hair, rgba(255,255,255,.18)); border-radius: 16px 16px 0 0; padding: 12px 12px calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 52; box-shadow: 0 -20px 50px rgba(0,0,0,.7); max-height: 80vh; overflow: auto; }
   .tsheet .grab { width: 38px; height: 4px; border-radius: 4px; background: #333; margin: 0 auto 10px; }
   .tsheet h4 { margin: 6px 4px 4px; font: 600 11px var(--mono, monospace); letter-spacing: .18em; text-transform: uppercase; color: var(--ok, #39ff8a); }
+  .tsheet h5 { margin: 14px 6px 2px; }
   .tsheet .mi { padding: 9px 6px; }
   .tsheet .mi b { white-space: normal; }
   /* room for the tab bar, so the last row can scroll clear of it */
