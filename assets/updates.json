@@ -1735,5 +1735,10 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "News line: items now follow each other at a short fixed gap and the letters keep their normal spacing on wide screens (the scaled-up HUD at 3440 spread both apart). On load the first items decode where they stand."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-30",
+  "html": "In numbers: smoother, finer charts. 7D now shows every hour and 30D every six hours instead of one point a day, drawn as a soft curve that never rises above or dips below a real count. The dots on every point are gone: only the newest value keeps one, and pointing at the line still shows each hour."
  }
 ]
