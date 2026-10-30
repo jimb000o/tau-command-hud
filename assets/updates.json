@@ -1539,6 +1539,11 @@
   "html": "Newspaper: the language switch works while you read. Pick EN, 中文 or 日本語 and the same page opens in the new language (it used to do nothing on any page past the front). On a phone in reading mode a 文 button on the paper’s top bar carries the switch, and the café button is in your language from the start."
  },
  {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The HUD now leads to where you can do it yourself: under Personal money rules a quiet “write your own rule ›” opens your wallet at Your rule, and under Rule sharing “share a rule with someone ›” opens it at Share. A “Back to the HUD” link in the wallet brings you back, and your language comes along."
+ },
+ {
   "tag": "Newspaper",
   "on": "2026-10-30",
   "html": "Newspaper: the regulars of the café now talk about the week. Each Monday edition brings one new line from each of them and a “What's new this week?” question: Mae on the votes of the real chain (and Friday's pie), Elias on the blocks that came down the wire, the Professor on what the logic caught, Sully on the front page. The running jokes turn from week to week, and an old edition opened from the archive brings back its own café talk."
