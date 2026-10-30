@@ -1665,5 +1665,10 @@
    "link": "/challenge/",
    "image": "/assets/shots/challenge.png"
   }
+ },
+ {
+  "tag": "Start here",
+  "on": "2026-10-30",
+  "html": "Start here: the wallet steps now happen right on the page. “Open the wallet”, “Write my rule” and “Feed it from my wallet” open just that one step beside its card, with a single ready choice (a limit of 1,000 test AGRS per payment for the rule), a tick when it is done, and the card turns green. The rule seals on the simulation too, without a trip to the wallet. The whole wallet stays one link away."
  }
 ]

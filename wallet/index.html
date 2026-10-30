@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
+<script>/* ?focus=account|rule|feed: one step of Start here, shown alone inside its page (start/index.html) */
+(() => { const f = new URLSearchParams(location.search).get("focus"); if (/^(account|rule|feed)$/.test(f || "")) document.documentElement.classList.add("focus", "focus-" + f); })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Tau testnet wallet</title>
@@ -318,6 +320,19 @@ html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr)
   .main > .col { display: contents; }
   #acct { order: 1; } #act { order: 2; } #rules { order: 3; } #activity { order: 4; }
 }
+/* focus: one step of Start here, inside its page; everything but that step's panel is out of the way */
+html.focus body { background: transparent; background-image: none; padding: 0; height: auto; overflow: auto; }
+html.focus header, html.focus .tnav, html.focus .tabbar, html.focus .tnav-spacer, html.focus .intro, html.focus .testnet, html.focus .jump, html.focus footer,
+html.focus .tt-card, html.focus .tt-ring, html.focus .tabs, html.focus #activity, html.focus #fromLink, html.focus #toPicks { display: none !important; }
+html.focus .wrap { zoom: 1; height: auto; padding: 0; gap: 0; }
+html.focus .main { display: block; }
+html.focus .main > .col { display: contents; }
+html.focus .panel { border: 0; background: none; padding: 4px 2px; box-shadow: none; }
+html.focus-account #act, html.focus-account #rules, html.focus-rule #acct, html.focus-rule #act, html.focus-feed #acct, html.focus-feed #rules { display: none !important; }
+html.focus-account #hasKey .row, html.focus-account #balNote, html.focus-account #myWords { display: none !important; }
+html.focus-rule #bkOnly, html.focus-rule #bkFrom, html.focus-rule #bkCo, html.focus-rule #probes, html.focus-rule #btnFreeze, html.focus-rule #btnRuleOff, html.focus-rule #slots { display: none !important; }
+html.focus-rule #rules h2 { display: none; }
+html.focus-feed #signFacts { display: none; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="vendor/tau-bls.min.js"></script>
@@ -1775,6 +1790,8 @@ loadBook();
 takeLink();
 takeRulesHash();
 loadKey();
+/* Start here's rule step: one ready choice, a limit per payment, unless a rule was carried in or the account already has one */
+if (document.documentElement.classList.contains("focus-rule") && !carried && !$("cCap").checked) { $("cCap").checked = true; $("vCap").value = "1000"; $("cCap").dispatchEvent(new Event("input", { bubbles: true })); }
 loadSlots();
 if (!SIM) setInterval(loadSlots, 60000);
 if (!W.pk) renderAll();

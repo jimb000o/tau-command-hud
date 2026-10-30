@@ -109,4 +109,11 @@ TauI18n.add({ strings: {
   "every node says no": "每个节点都拒绝",
   "it goes through": "付款通过",
   "next block": "下一个区块",
+  "Step {n}": "第 {n} 步",
+  "Close": "关闭",
+  "Signed in your browser; nothing else of the wallet is needed.": "在你的浏览器里签名；钱包的其他部分都用不到。",
+  "See the whole wallet ›": "查看完整钱包 ›",
+  "Rule signed and sent.": "规则已签名并发送。",
+  "Meal sent.": "饭已送出。",
+  "The simulation makes a block every eight seconds; this card turns green by itself.": "模拟每八秒出一个区块；这张卡片会自己变绿。",
 } });

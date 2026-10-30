@@ -135,6 +135,20 @@ ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; gr
 .facts li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 6px; }
 .facts li::before { content: "·"; color: var(--ok); font-weight: 700; text-align: center; }
 .facts b { color: var(--text); font-weight: 600; }
+/* one step of the wallet, opened beside its card: the wallet in focus mode (wallet/?focus=…), nothing else of it */
+.drawer { position: fixed; z-index: 60; display: flex; flex-direction: column; background: #0c0c0e; border: 1px solid rgba(57,255,138,.55); border-radius: 12px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.9), 0 0 0 1px rgba(57,255,138,.08); overflow: hidden; animation: pop .28s cubic-bezier(.2,.8,.2,1); }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+.drawer .dh { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.drawer .dh b { font: 600 15px var(--display); color: #fff; }
+.drawer .dh small { color: var(--dim); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+.drawer .dh button { margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: none; color: var(--text); cursor: pointer; font-size: 14px; }
+.drawer iframe { flex: 1 1 auto; width: 100%; border: 0; background: transparent; min-height: 0; }
+.drawer .df { display: flex; justify-content: space-between; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--dim); font-size: 11.5px; }
+.drawer .df a { color: var(--dim); }
+.drawer.ok { border-color: var(--ok); }
+.drawer .doneflash { position: absolute; inset: 52px 0 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; background: rgba(12,12,14,.94); color: var(--ok); font: 600 18px var(--display); animation: pop .3s both; }
+.drawer .doneflash i { width: 54px; height: 54px; border-radius: 50%; background: var(--ok); color: #000; font: 700 28px/54px var(--display); text-align: center; font-style: normal; box-shadow: 0 0 30px rgba(57,255,138,.6); }
+.dimmer { position: fixed; inset: 0; z-index: 59; background: rgba(0,0,0,.45); }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer a { color: var(--dim); }
 #tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
@@ -258,8 +272,14 @@ const isMeal = x => x.kind === "pay" && x.status !== "out" && /Agorzilla/.test(x
 /* the newest rule: live first (that is the real testnet), the simulation otherwise */
 function rule() {
   const l = S.live.find(isRule); if (l) return { ...l, sim: false, status: S.status.get(l.hash) || l };
-  const s = S.sim.find(isRule); if (s) return { ...s, sim: true, status: s };
+  const s = S.sim.find(isRule); if (s) return { ...s, sim: true, status: simStatus(s) };
   return null;
+}
+/* the simulation: the wallet keeps the block each of its transactions lands in (tauhud-wallet-sim), so sealed = that block is out */
+function simStatus(x) {
+  if (x.status !== "queued" || !window.TauSim) return x;
+  try { const k = JSON.parse(store.get("tauhud-wallet-sim") || "null"), t = k && (k.txs || []).find(t => t.hash === x.hash); if (t && TauSim.head() >= t.at) return { status: "in", block: t.at }; } catch (e) {}
+  return x;
 }
 function meal() { const m = S.live.find(isMeal); return m ? { ...m, status: S.status.get(m.hash) || m } : null; }
 const sealed = x => x && x.status && x.status.status === "in";
@@ -365,9 +385,9 @@ function render() {
     g3.setAttribute("aria-disabled", "true");
     say(3, el("b", { text: T("The node did not take this one.") }), T("Open the wallet: Activity says why, and you can sign it again."));
   } else if (r) {
-    g3.setAttribute("aria-disabled", r.hash ? "false" : "true"); g3.href = r.sim ? "/wallet/?from=start&mode=sim" + lang : "/explorer/?q=" + (r.hash || "");
-    g3.textContent = T(r.sim ? "Follow it in the wallet" : "See it in the Explorer");
-    say(3, el("b", { class: "wait", text: T("On its way to a block…") }), T(r.sim ? "The simulation makes a block every eight seconds; the wallet follows it." : "The testnet makes a block about every minute; this card turns green by itself."));
+    g3.setAttribute("aria-disabled", r.hash ? "false" : "true"); g3.href = "/explorer/?" + (r.sim ? "mode=sim&" : "") + "q=" + (r.hash || "");
+    g3.textContent = T("See it in the Explorer");
+    say(3, el("b", { class: "wait", text: T("On its way to a block…") }), T(r.sim ? "The simulation makes a block every eight seconds; this card turns green by itself." : "The testnet makes a block about every minute; this card turns green by itself."));
   } else { g3.setAttribute("aria-disabled", "true"); say(3, T("Waiting for step 2.")); }
 
   /* 4: a meal, always on the real testnet */
@@ -393,12 +413,61 @@ function render() {
 }
 
 /* the wallet names the bowl "Agorzilla", so the payment reads as a meal, not as a stranger's address */
-$("go4").addEventListener("click", () => {
+$("go4").addEventListener("feed", () => {
   try {
     const book = JSON.parse(store.get(BOOK_LIVE) || "[]");
     if (Array.isArray(book) && !book.some(c => c && c.addr === BOWL)) { book.push({ name: "Agorzilla", addr: BOWL }); store.set(BOOK_LIVE, JSON.stringify(book)); }
   } catch (e) {}
 });
+
+/* ---------- the wallet's steps, opened here: one panel beside the card, the rest of the wallet stays out of the way ---------- */
+const STEP = { go1: ["account", 0, "Make your test wallet"], go2: ["rule", 1, "Give your account a rule"], go4: ["feed", 3, "Feed Agorzilla"] };
+let drawer = null;
+function openStep(id) {
+  const [focus, idx, title] = STEP[id], a = $(id), card = a.closest(".step");
+  closeStep();
+  const url = a.getAttribute("href").replace("?", "?focus=" + focus + "&");
+  const d = el("div", { class: "drawer", role: "dialog", "aria-label": T(title) },
+    el("div", { class: "dh" }, el("small", { text: F("Step {n}", { n: idx + 1 }) }), el("b", { text: T(title) }), el("button", { type: "button", "aria-label": T("Close"), text: "✕" })),
+    el("iframe", { src: url, title: T(title) }),
+    el("div", { class: "df" }, el("span", { text: T("Signed in your browser; nothing else of the wallet is needed.") }), el("a", { href: a.getAttribute("href"), text: T("See the whole wallet ›") })));
+  const dim = el("div", { class: "dimmer" });
+  d.querySelector(".dh button").onclick = closeStep; dim.onclick = closeStep;
+  document.body.append(dim, d);
+  drawer = { d, dim, idx, was: doneNow()[idx] };
+  place(card);
+  /* the panel is as tall as its step: the wallet's focused panel, measured (same site), between 240 px and the window */
+  const fr = d.querySelector("iframe"), fitH = () => { try { const b = fr.contentDocument && fr.contentDocument.querySelector(".wrap"); if (b && drawer && drawer.d === d) { const want = Math.min(innerHeight - 140, Math.max(240, b.scrollHeight + 16)); fr.style.height = want + "px"; fr.style.flex = "none"; d.style.height = "auto"; place(card); } } catch (e) {} };
+  fr.addEventListener("load", () => { fitH(); drawer && (drawer.fit = setInterval(fitH, 700)); });
+}
+/* beside the card, never over it: to its right, or to its left for the last one; a bottom sheet on phones */
+function place(card) {
+  if (!drawer) return;
+  const d = drawer.d, r = card.getBoundingClientRect(), W = innerWidth, H = innerHeight, g = 16;
+  if (W < 760) { Object.assign(d.style, { left: "0", right: "0", bottom: "0", top: "auto", width: "auto", height: Math.min(H - 60, 620) + "px", borderRadius: "14px 14px 0 0" }); return; }
+  const w = Math.min(560, Math.max(380, W * .34)), h = d.style.height === "auto" ? d.offsetHeight : Math.min(H - 2 * g, 640);
+  let left = r.right + g; if (left + w > W - g) left = r.left - g - w; if (left < g) left = Math.max(g, (W - w) / 2);
+  const top = Math.min(Math.max(g, r.top - 20), H - h - g);
+  Object.assign(d.style, { left: left + "px", top: top + "px", width: w + "px" });
+  if (d.style.height !== "auto") d.style.height = h + "px";
+}
+function closeStep() { if (!drawer) return; clearInterval(drawer.fit); drawer.d.remove(); drawer.dim.remove(); drawer = null; }
+function doneNow() { read(); const r = rule(), m = meal(); return [!!S.pk, !!r, sealed(r), !!m]; }
+/* the step is done: a tick in the panel, then it closes and the card turns green */
+function checkOpen() {
+  if (!drawer || drawer.was) return;
+  if (doneNow()[drawer.idx]) {
+    const o = drawer; o.was = true; o.d.classList.add("ok");
+    o.d.append(el("div", { class: "doneflash" }, el("i", { text: "✓" }), el("span", { text: T(["Your wallet is ready.", "Rule signed and sent.", "", "Meal sent."][o.idx]) })));
+    setTimeout(() => { if (drawer === o) closeStep(); }, 1600);
+  }
+}
+Object.keys(STEP).forEach(id => $(id).addEventListener("click", e => { if (e.metaKey || e.ctrlKey || e.shiftKey || $(id).getAttribute("aria-disabled") === "true" || (id === "go1" && S.pk)) return; e.preventDefault();
+  if (id === "go4" && SIM) { location.href = "/start/?mode=live#feed"; return; }   // Agorzilla lives on the real testnet: the page switches to Live node, then opens the meal
+  if (id === "go4") $(id).dispatchEvent(new Event("feed")); openStep(id); }));
+if (location.hash === "#feed" && !SIM) { history.replaceState(null, "", location.pathname + location.search); setTimeout(() => { if (S.pk) $("go4").click(); }, 300); }
+addEventListener("keydown", e => { if (e.key === "Escape") closeStep(); });
+addEventListener("resize", () => { if (drawer) place($(Object.keys(STEP).find(k => STEP[k][1] === drawer.idx)).closest(".step")); });
 
 /* ---------- hover tips ---------- */
 const tip = $("tip");
@@ -434,10 +503,11 @@ fit();
 render();
 connect();
 loadPlaces();
-addEventListener("storage", e => { if (e.key && e.key.startsWith("tauhud-wallet")) { render(); follow(); } });
+addEventListener("storage", e => { if (e.key && e.key.startsWith("tauhud-wallet")) { render(); follow(); checkOpen(); } });
 addEventListener("pageshow", () => { render(); follow(); });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); follow(); loadPlaces(); } });
 setInterval(() => { if (!document.hidden) follow(); }, 20000);
+if (SIM) { let seen = TauSim.head(); setInterval(() => { const h = TauSim.head(); if (h !== seen) { seen = h; render(); checkOpen(); } }, 1000); }
 setInterval(() => { if (!document.hidden) loadPlaces(); }, 120000);
 </script>
 </body>
