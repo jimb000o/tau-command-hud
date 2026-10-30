@@ -49,6 +49,7 @@ html.fit body { padding: 0; overflow: hidden; height: 100vh; }
 html.fit .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px;
   transform: scale(var(--z)); transform-origin: 0 0; grid-template-rows: auto auto auto minmax(0, 1fr) auto; }
 html.fit .cols { min-height: 0; }
+html.fit .cols > #band { min-height: 0; }
 html.fit .cols > .panel { min-height: 0; display: flex; flex-direction: column; }
 html.fit .scroll { min-height: 0; flex: 1 1 auto; overflow: auto; }
 html.fit footer { padding-top: 6px; }
@@ -106,6 +107,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .qcheck .row div { min-width: 0; }
 .qcheck b { display: block; font: 600 21px/1.15 var(--display); color: #fff; font-variant-numeric: tabular-nums; }
 .qcheck b.a { color: var(--behind); }
+.qcheck b.z { color: var(--dim); }   /* a zero is quiet; only what needs a look stands out */
 .qcheck span { display: block; color: var(--dim); font-size: 11.5px; line-height: 1.3; }
 .qcheck p { margin: 5px 0 0; color: var(--dim); font-size: 11.5px; }
 .qcheck .more-q { color: #fff; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
@@ -121,8 +123,57 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 
 /* two columns: the trail of things to look up, and the open item, which gets the room */
 .cols { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 1100px) { .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.75fr); } }
-@media (max-width: 1099px) { #detail { order: -1; } #trail .scroll { max-height: 70vh; overflow: auto; } }
+/* the chain band runs over the trail and the open item; the Chain core takes the full height on the right */
+.cols { grid-template-areas: "band" "detail" "core" "trail"; }
+#band { grid-area: band; } #trail { grid-area: trail; } #detail { grid-area: detail; } #corep { grid-area: core; }
+@media (min-width: 1100px) { .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) var(--coreW, 340px); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "band band core" "trail detail core"; } }
+@media (max-width: 1099px) { #trail .scroll { max-height: 70vh; overflow: auto; } }
+
+/* the chain band: the newest blocks side by side on one line, a bar per transaction; what is open glows green */
+.band { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 7px 14px 8px; min-width: 0; }
+.band-h { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 16px; flex-wrap: wrap; margin-bottom: 4px; }
+@media (min-width: 1100px) and (max-width: 1500px) { .band-h .key { display: none; } }   /* the hover says what a bar is; the range stays */
+.band-h h2 { margin: 0; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.band-h h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; margin-left: 8px; }
+.band-h .rng { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.band-h .key { display: inline-flex; gap: 12px; margin-right: 14px; }
+.band-h .key i { display: inline-block; width: 9px; height: 5px; border-radius: 1px; margin-right: 5px; vertical-align: 2px; background: rgba(235,235,238,.6); }
+.band-h .key i.r { background: none; box-shadow: inset 0 0 0 1px rgba(235,235,238,.85); }
+.band-h .key i.n { background: var(--behind); }
+.bars { position: relative; display: flex; align-items: flex-end; gap: 4px; height: 54px; }
+.bars::before { content: ""; position: absolute; left: 0; right: 0; bottom: 5px; height: 1px; background: linear-gradient(90deg, transparent, var(--hair) 6%, var(--hair)); }   /* the chain itself: every block hangs on it */
+.blk { all: unset; position: relative; flex: 1 1 0; min-width: 7px; max-width: 22px; height: 100%; display: flex; flex-direction: column-reverse; gap: 2px; cursor: pointer; }
+.blk .base { flex: none; height: 11px; border: 1px solid rgba(255,255,255,.34); border-radius: 2px; background: #141416; box-sizing: border-box; transition: border-color .2s, background .2s, box-shadow .2s; }
+.blk.empty .base { border-color: rgba(255,255,255,.16); }
+.blk .c { flex: none; height: 5px; border-radius: 1px; background: rgba(235,235,238,.55); transition: background .2s; }
+.blk .c.r { background: none; box-shadow: inset 0 0 0 1px rgba(235,235,238,.8); }
+.blk .c.more { height: 7px; background: rgba(235,235,238,.9); }
+.blk:hover .base, .blk:focus-visible .base { border-color: #fff; }
+.blk:hover .c:not(.r), .blk:focus-visible .c:not(.r) { background: #fff; }
+.blk.on .base { border-color: var(--ok); background: rgba(57,255,138,.2); box-shadow: 0 0 12px rgba(57,255,138,.55); }
+.blk.on .c:not(.r) { background: rgba(57,255,138,.75); } .blk.on .c.r { box-shadow: inset 0 0 0 1px var(--ok); }
+.blk .c.me { background: var(--ok) !important; box-shadow: 0 0 8px var(--ok) !important; }
+.blk.on::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 0; height: 0; margin-left: -4px; border: 4px solid transparent; border-bottom-color: var(--ok); }
+.blk.head .base { border-color: rgba(255,255,255,.7); }
+.blk.new { animation: drop 1s cubic-bezier(.2,.8,.25,1); }
+@keyframes drop { 0% { transform: translateY(-30px); opacity: 0; } 60% { opacity: 1; } }
+.blk.next .base { border: 1px dashed rgba(255,177,59,.75); background: none; }
+.blk.next .c { background: var(--behind); animation: wait 2.4s ease-in-out infinite; }
+@keyframes wait { 50% { opacity: .45; } }
+.blk.next.idle .base { border-color: rgba(255,255,255,.22); }
+.bars .gap { flex: none; align-self: flex-end; height: 11px; line-height: 11px; padding: 0 6px; color: var(--dim); font-size: 11px; white-space: nowrap; background: var(--deck); position: relative; }
+@media (prefers-reduced-motion: reduce) { .blk.new, .blk.next .c { animation: none; } }
+@media (max-width: 700px) { .band-h .key { display: none; } .bars { height: 58px; } }
+
+/* the Chain core of the HUD, framed: whatever is open on the left is marked in it */
+#corep { display: flex; flex-direction: column; }
+.corebox { position: relative; display: grid; place-items: center; min-height: 0; }
+.corebox iframe { display: block; border: 0; width: 100%; aspect-ratio: 1; background: transparent; color-scheme: normal; }
+.corehint { margin: 6px 0 0; color: var(--dim); font-size: 12px; line-height: 1.45; min-height: 2.9em; }
+.corehint b { color: var(--ok); font-weight: 600; }
+html.fit #corep .corebox { flex: 1 1 auto; }
+html.fit #corep .corebox iframe { position: absolute; inset: 0; margin: auto; width: auto; height: 100%; max-width: 100%; max-height: 100%; }
+@media (max-width: 1099px) { #corep .corebox iframe { width: min(100%, 460px); } }
 
 /* lists */
 ul.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
@@ -156,6 +207,7 @@ ul.list li.stuck > button { border-left-color: #fff; }
 .list .d .tag { margin-left: 6px; vertical-align: 1px; }
 /* where the trail column is narrow, "4 min ago" would push a one-transaction block onto two lines: it moves to the hover */
 @media (min-width: 701px) and (max-width: 1599px) { .list .d .ago { display: none; } }
+html.fit .list .d .ago { display: none; }   /* beside the band and the core the trail is narrow on every desktop: the age is in the band and the hover */
 
 /* the life of a transaction, left to right (top to bottom on phones) */
 .trace { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); margin: 14px 0 6px; }
@@ -166,7 +218,13 @@ ul.list li.stuck > button { border-left-color: #fff; }
 .step.done i { background: #fff; border-color: #fff; }
 .step.ok i { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 10px rgba(57,255,138,.6); }
 .step.now i { background: var(--behind); border-color: var(--behind); }
-.step.fail i { background: var(--bad); border-color: var(--bad); }
+.step.fail i { background: var(--void); border: 2px dashed #fff; }   /* never landed: a hollow, dashed stop; red stays for offline only */
+.trace { position: relative; }
+.trace .run { position: absolute; top: 2px; left: var(--to); width: 10px; height: 10px; margin-left: 2px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 12px var(--ok), 0 0 26px rgba(57,255,138,.5); opacity: 0; pointer-events: none; z-index: 1; animation: run 1.5s cubic-bezier(.3,.1,.2,1) .15s both; }
+@keyframes run { 0% { left: 0; opacity: 0; } 12% { opacity: 1; } 80% { opacity: 1; } 100% { left: var(--to); opacity: 0; } }
+.trace.still .run { animation: none; }
+@media (prefers-reduced-motion: reduce) { .trace .run { animation: none; } }
+@media (max-width: 700px) { .trace .run { display: none; } }
 .step b { display: block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: #fff; }
 .step.todo b { color: var(--dim); }
 .step span { display: block; color: var(--dim); font-size: 12px; line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
@@ -179,7 +237,7 @@ ul.list li.stuck > button { border-left-color: #fff; }
 }
 /* why the network let it through */
 .verdict { border: 1px solid var(--line); border-left: 2px solid var(--ok); border-radius: 6px; padding: 8px 12px; margin: 10px 0 4px; background: rgba(57,255,138,.03); }
-.verdict.no { border-left-color: var(--bad); background: rgba(255,77,109,.03); }
+.verdict.no { border-left-color: #fff; border-left-style: dashed; background: rgba(255,255,255,.025); }
 .verdict.wait { border-left-color: var(--behind); background: rgba(255,177,59,.03); }
 .verdict.plain { border-left-color: var(--hair); background: transparent; }
 .verdict h4 { margin: 0 0 3px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; }
@@ -211,7 +269,7 @@ ol.seq li b { font-weight: 600; color: var(--text); font-variant-numeric: tabula
 .tag.g { color: var(--ok); border-color: rgba(57,255,138,.4); }
 .tag.w { color: #fff; border-color: var(--hair); }
 .tag.a { color: var(--behind); border-color: rgba(255,177,59,.4); }
-.tag.r { color: var(--bad); border-color: rgba(255,77,109,.4); }
+.tag.r { color: #fff; border-color: #fff; border-style: dashed; }
 .nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
 dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 6px 0 0; font-size: 13px; }
 dl.kv dt { color: var(--dim); }
@@ -283,6 +341,11 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   </div>
 
   <main class="cols">
+  <section class="band" id="band" aria-label="The newest blocks">
+    <div class="band-h"><h2>Chain<small id="bandSub">newest on the right</small></h2>
+      <span><span class="key"><span><i></i>transfer</span><span><i class="r"></i>rule or vote</span><span><i class="n"></i>waiting for the next block</span></span><span class="rng" id="bandRng"></span></span></div>
+    <div class="bars" id="bars"></div>
+  </section>
     <section class="panel" id="trail">
       <h2>Trail <small id="trailSub"></small></h2>
       <div class="filters" role="group" aria-label="Show">
@@ -295,6 +358,11 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     </section>
     <section class="panel" id="detail" aria-live="polite">
       <div class="scroll" id="dBody"></div>
+    </section>
+    <section class="panel" id="corep">
+      <h2>Chain core <small id="coreSub">the same core as on the HUD</small></h2>
+      <div class="corebox"><iframe id="coreFrame" title="Chain core" tabindex="-1"></iframe></div>
+      <p class="corehint" id="coreHint"></p>
     </section>
   </main>
 
@@ -552,9 +620,9 @@ function drawQcheck() {
   const n = queueCounts(), total = C.mempool.length;
   const ready = C.ready || SAMPLE;
   $("qcheck").innerHTML = `<h4>Queue check · our node lists ${fmtN(total)}</h4>
-    <div class="row"><div><b class="${n.waiting ? "a" : ""}">${ready ? fmtN(n.waiting) : "—"}</b><span>really waiting</span></div>
-    <div><b>${ready ? fmtN(n.stuck) : "—"}</b><span>stuck over 10 min</span></div>
-    <div><b>${ready ? fmtN(n.sealed) : "—"}</b><span>listed, but already in a block</span></div></div>
+    <div class="row"><div><b class="${n.waiting ? "a" : ready ? "z" : ""}">${ready ? fmtN(n.waiting) : "—"}</b><span>really waiting</span></div>
+    <div><b class="${ready && !n.stuck ? "z" : ""}">${ready ? fmtN(n.stuck) : "—"}</b><span>stuck over 10 min</span></div>
+    <div><b class="${ready && !n.sealed ? "z" : ""}">${ready ? fmtN(n.sealed) : "—"}</b><span>listed, but already in a block</span></div></div>
     <p>${!ready ? (C.off ? "Our node is offline right now." : "Reading the chain…") : !total ? "Nothing is waiting. A new transaction shows up here until a block takes it." : `${n.sealed ? "Sealed ones still listed are a known node bug. " : ""}<span class="more-q">Show the queue →</span>`}</p>`;
 }
 // a few ways in for someone who has nothing to paste yet
@@ -577,7 +645,7 @@ let renderT = null;
 function render() { clearTimeout(renderT); renderT = setTimeout(draw, 30); }
 function draw() {
   index();
-  drawQcheck(); drawTry(); drawTrail(); drawDetail();
+  drawQcheck(); drawTry(); drawBand(); drawTrail(); drawDetail(); coreFocus();
   C.fresh.clear();
 }
 const isSel = (t, v) => V.sel && V.sel.t === t && String(V.sel.v) === String(v);
@@ -663,7 +731,8 @@ function drawDetail() {
   const s = selNow(), body = $("dBody");
   const html = !s ? `<p class="kind">Explorer</p><p class="title">${C.off ? "Our node is offline" : "Reading the chain…"}</p><p class="headline">${C.off ? "The newest block opens here as soon as it answers again." : "The newest block opens here in a moment."}</p>`
     : s.t === "b" ? blockView(Number(s.v)) : s.t === "tx" ? txView(String(s.v)) : s.t === "a" ? addrView(String(s.v)) : s.t === "hits" ? hitsView(s.v) : "";
-  if (body.dataset.html !== html) { body.innerHTML = html; body.dataset.html = html; }
+  const key = JSON.stringify(s);
+  if (body.dataset.html !== html) { body.innerHTML = html; body.dataset.html = html; if (body.dataset.sel === key) body.querySelectorAll(".trace").forEach(t => t.classList.add("still")); body.dataset.sel = key; }
 }
 /* rows that only matter to developers hide in View · Simple (body[data-view], set by the shared header) */
 const TECH_ROWS = new Set(["Hash", "Sequence", "Fee limit", "Offer", "Rule change", "Request", "Retractable", "Reason", "Expires"]);
@@ -683,7 +752,9 @@ function ownRulesBefore(h, i = 0) {
   for (const r of C.ownRules) { if (r.h > h || (r.h === h && r.i >= i)) break; authors.set(r.a, r); }
   return authors;
 }
-const trace = steps => `<div class="trace" style="--n:${steps.length}">${steps.map(([s, b, span]) => `<div class="step ${s}"><i></i><b>${b}</b><span>${span}</span></div>`).join("")}</div>`;
+// a light runs along the path to where the transaction stands now, once each time an item opens
+const trace = steps => { const k = steps.reduce((m, [st], i) => st !== "todo" ? i : m, 0);
+  return `<div class="trace" style="--n:${steps.length};--to:${(k / steps.length * 100).toFixed(2)}%"><span class="run" aria-hidden="true"></span>${steps.map(([s, b, span]) => `<div class="step ${s}"><i></i><b>${b}</b><span>${span}</span></div>`).join("")}</div>`; };
 const nav = (...chips) => `<div class="nav">${chips.filter(Boolean).join("")}</div>`;
 const copyChip = href => `<button class="chip" type="button" data-copy="${esc(location.origin + location.pathname + href)}">Copy link</button>`;
 
@@ -991,6 +1062,98 @@ document.addEventListener("keydown", e => {
   if (e.key === "/" && document.activeElement !== $("q")) { e.preventDefault(); $("q").focus(); $("q").select(); }
 });
 
+/* ------------------------------ chain band ------------------------------ */
+// The newest blocks as one line of links: a block is a small box on the chain, a bar above it per transaction (filled: a transfer,
+// hollow: rule work or a vote), empty blocks stay low. After the newest block a dashed slot holds what really waits for the next one.
+// When the open block is older than the band reaches, it stands at the left, and a gap says how many blocks lie between.
+const L = s => window.TauI18n ? TauI18n.t(s) : s;
+const BAND = { n: 0 };
+function resolveTx(v) {
+  const m = /^(\d+)\.(\d+)$/.exec(v); if (m) return txAt(Number(m[1]), Number(m[2]));
+  const at = C.txIndex.get(v); return at ? txAt(at.h, at.i) : null;
+}
+function blkTip(h) {
+  const b = C.blocks[h], list = (b && b.transactions || []).filter(t => t && typeof t === "object"), ts = tsOf(b);
+  if (!list.length) return `#${fmtN(h)} · empty block${ts ? " · " + ago(ts) : ""}`;
+  const kinds = new Map(); list.forEach(t => { const n = TX_NAMES[txKind(t)] || txKind(t); kinds.set(n, (kinds.get(n) || 0) + 1); });
+  const amt = list.reduce((s, t) => s + (CAT[txKind(t)] === "transfer" ? num(amountOf(t)) : 0), 0);
+  return `#${fmtN(h)} · ${plural(list.length, "transaction")}${ts ? " · " + ago(ts) : ""}\n${[...kinds].map(([n, k]) => k > 1 ? `${k} × ${n}` : n).join(", ")}${amt ? ` · ${fmtA(amt)} AGRS` : ""}`;
+}
+function blkHtml(h, cls, meIdx) {
+  const b = C.blocks[h], list = (b && b.transactions || []).filter(t => t && typeof t === "object"), n = list.length, show = Math.min(n, 6);
+  let cells = "";
+  for (let i = 0; i < show; i++) {
+    const t = list[i], more = i === 5 && n > 6, rule = CAT[txKind(t)] !== "transfer";
+    cells += `<i class="c${rule && !more ? " r" : ""}${more ? " more" : ""}${i === meIdx || (more && meIdx >= 5) ? " me" : ""}"></i>`;
+  }
+  return `<button type="button" class="blk${n ? "" : " empty"} ${cls}" data-go="b:${h}" data-tip="${esc(blkTip(h))}" aria-label="Block ${h}"><i class="base"></i>${cells}</button>`;
+}
+function drawBand() {
+  const bars = $("bars"), w = bars.clientWidth || 600;
+  if (C.head < 0) { bars.innerHTML = ""; $("bandRng").textContent = ""; return; }
+  const N = Math.max(12, Math.min(96, Math.floor((w - 24) / 16))), s = selNow();
+  let selH = null, meIdx = -1;
+  if (s && s.t === "b") selH = Number(s.v);
+  if (s && s.t === "tx") { const x = resolveTx(String(s.v)); if (x) { selH = x.h; meIdx = (C.blocks[x.h].transactions || []).filter(t => t && typeof t === "object").indexOf(x.t); } }
+  const old = selH != null && selH < C.head - N + 2 && C.blocks[selH], from = Math.max(0, C.head - N + (old ? 4 : 2));
+  const parts = [];
+  if (old) parts.push(blkHtml(selH, "on", meIdx), `<span class="gap">⋯ ${fmtN(from - selH - 1)} ⋯</span>`);
+  for (let h = from; h <= C.head; h++) if (C.blocks[h]) parts.push(blkHtml(h, [h === selH ? "on" : "", h === C.head ? "head" : "", C.fresh.has(h) && C.ready ? "new" : ""].join(" "), h === selH ? meIdx : -1));
+  const q = queueCounts(), waiting = q.waiting + q.stuck, cells = Array.from({ length: Math.min(6, waiting) }, () => `<i class="c"></i>`).join("");
+  parts.push(`<button type="button" class="blk next${waiting ? "" : " idle"}" data-trail="queue" data-tip="${esc(waiting ? `Next block · ${plural(waiting, "transaction")} really waiting\nClick to show the queue.` : "Next block · nothing waits for it right now")}" aria-label="Next block"><i class="base"></i>${cells}</button>`);
+  const html = parts.join("");
+  if (bars.dataset.html !== html) { bars.innerHTML = html; bars.dataset.html = html; }
+  const first = C.blocks[from], ts = tsOf(first);
+  const rng = `<span>#${fmtN(from)}${ts ? " · " + ago(ts) : ""}</span> → <span>#${fmtN(C.head)} · now</span>`;
+  if ($("bandRng").dataset.html !== rng) { $("bandRng").innerHTML = rng; $("bandRng").dataset.html = rng; }
+}
+
+/* ------------------------------ the Chain core ------------------------------ */
+// The HUD's Chain core in a frame (?view=core&follow=1: same mode as this page). This page tells it what is open, and it marks it:
+// a waiting transaction on its orbit, a sealed one replays its way into the block, an account's own rule, a validator, a block.
+const CORE = { msg: null, sent: "" };
+function coreFocus() {
+  const s = selNow(), up = x => (window.TauI18n && TauI18n.lang !== "en" ? L(x) : x.toUpperCase());
+  let m = { keys: [], label: "", block: null, sealed: null }, hint = "";
+  const ruleAccts = new Set(C.ownRules.map(r => r.a)), vals = ((C.gov || {}).active_validators || []).map(v => low(typeof v === "string" ? v : (v || {}).pubkey));
+  const say = (lead, rest) => `<b>${esc(lead)}</b> · ${rest}`;   // a short name, then whole sentences (each translates on its own)
+  if (s && s.t === "tx") {
+    const v = String(s.v), x = resolveTx(v), q = C.mempool.find(e => low(e.tx_hash) === v);
+    if (x) {
+      const a = [low(x.t.sender_pubkey), toOf(x.t)].filter(k => k && (ruleAccts.has(k) || vals.includes(k))), back = C.head - x.h;
+      m = { keys: a, label: up(`Sealed in #${fmtN(x.h)}`), block: x.h, sealed: x.h };
+      hint = say(`Sealed in #${fmtN(x.h)}`, `${back ? `${plural(back, "block")} before the newest.` : "The newest block."} The core replays its last step: from the waiting orbit into the block.${a.length ? " Accounts with their own rule that it passed are marked." : ""}`);
+    } else if (q) {
+      m = { keys: [v], label: up("This transaction") };
+      hint = say("Waiting", "This transaction circles on the waiting orbit until a block takes it in.");
+    } else hint = say("Not in the core", "It never reached a block.");
+  } else if (s && s.t === "b") {
+    const h = Number(s.v), b = C.blocks[h], p = b ? low((b.header || {}).proposer_pubkey) : "", back = C.head - h;
+    m = { keys: p ? [p] : [], label: up(back ? `Block #${fmtN(h)} · ${fmtN(back)} back` : `Block #${fmtN(h)} · newest`), block: h };
+    hint = b ? say(`Block #${fmtN(h)}`, `${back ? `${plural(back, "block")} before the newest one in the centre.` : "The newest, the one in the centre."} The validator that sealed it is marked on the outer orbit.`) : "";
+  } else if (s && s.t === "a") {
+    const a = String(s.v), waits = C.mempool.filter(e => low(e.sender) === a && truthOf(e).k !== "sealed").map(e => low(e.tx_hash));
+    const isV = vals.includes(a), own = ruleAccts.has(a);
+    m = { keys: [a, ...waits], label: up(isV ? "This validator" : own ? "This account's rule" : waits.length ? "Its waiting transaction" : "") };
+    hint = isV ? say("Validator", "This account seals blocks; it is marked on the validator orbit.") : own ? say("Own rule", "This account runs its own Tau rule; it is marked on the rules orbit, where every transfer to it is checked.")
+      : say("Plain account", "No rule of its own, so no dot in the core; its transfers pass straight through." + (waits.length ? " Its waiting transactions are marked on the waiting orbit." : ""));
+  }
+  if ($("coreHint").dataset.html !== hint) { $("coreHint").innerHTML = hint; $("coreHint").dataset.html = hint; }
+  CORE.msg = { type: "tauhud-focus", ...m }; coreSend();
+}
+function coreSend(force) {
+  const f = $("coreFrame"), k = JSON.stringify(CORE.msg);
+  if (!f.contentWindow || !CORE.msg || (!force && k === CORE.sent)) return;
+  try { f.contentWindow.postMessage(CORE.msg, location.origin); CORE.sent = k; } catch (e) {}
+}
+setInterval(() => coreSend(true), 2000);   // the frame may still be starting; it ignores a mark it already shows
+function coreStart() {
+  const f = $("coreFrame"), lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "";
+  f.src = `/?view=core&follow=1&bg=none${lang}`;
+  f.addEventListener("load", () => coreSend(true));
+  $("coreSub").textContent = SIM ? "the same core as on the HUD · simulation" : "the same core as on the HUD · live";
+}
+
 /* ------------------------------ tooltip ------------------------------ */
 const tip = $("tip");
 function showTip(ev, text) {
@@ -1015,10 +1178,20 @@ function fit() {
   ZOOM = one && w >= 1700 ? Math.max(1, Math.min(2, w / 1560, h / 820)) : 1;
   document.documentElement.classList.toggle("fit", one);
   document.documentElement.style.setProperty("--z", ZOOM);
+  coreSize();
+}
+// the core is square: as tall as its column allows, never wider than a third of the page
+function coreSize() {
+  const cols = document.querySelector(".cols"), p = $("corep"); if (!cols || !p) return;
+  if (!document.documentElement.classList.contains("fit")) { document.documentElement.style.removeProperty("--coreW"); return; }
+  const h = cols.clientHeight - p.querySelector("h2").offsetHeight - $("coreHint").offsetHeight - 40, wmax = cols.clientWidth * .32;
+  document.documentElement.style.setProperty("--coreW", Math.round(Math.max(240, Math.min(h, wmax)) + 28) + "px");
+  drawBand();
 }
 addEventListener("resize", fit);
 // relative times ("2 min ago") stay current
-setInterval(() => { if (C.head >= 0) { drawQcheck(); drawTrail(); } }, 15000);
+setInterval(() => { if (C.head >= 0) { drawQcheck(); drawBand(); drawTrail(); } }, 15000);
+if (window.ResizeObserver) new ResizeObserver(() => coreSize()).observe(document.querySelector(".cols"));
 
 /* ------------------------------ sample data (?sample, for previews) ------------------------------ */
 function sampleChain() {
@@ -1058,6 +1231,7 @@ function sampleChain() {
 /* ------------------------------ start ------------------------------ */
 fit();
 if (SIM) TauSim.mark();
+coreStart();
 if (SAMPLE) sampleChain(); else connect();
 V.sel = fromUrl();
 go(V.sel, false);

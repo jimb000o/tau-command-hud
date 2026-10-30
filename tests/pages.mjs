@@ -91,6 +91,8 @@ async function visit(name, path, { mode, lang, w = 1600, h = 900, layout = false
     for (const k of miss) add(name, run, KNOWN.has(norm(k)) ? "zh-known" : !confirmed || confirmed.has(norm(k)) ? "zh" : "zh-once", k);
   }
   if (layout) {
+    /* the loading band folds its line away over 0.7 s (assets/chainload.js); the page is measured once it has */
+    await page.waitForFunction(() => !document.documentElement.classList.contains("chain-fold"), null, { timeout: 4000 }).catch(() => {});
     const m = await page.evaluate(() => { const s = document.scrollingElement || document.documentElement; return { sh: s.scrollHeight, sw: s.scrollWidth, ih: innerHeight, iw: innerWidth }; }).catch(() => null);
     if (m && m.sh > m.ih + 2) add(name, run, "layout", `page scrolls: content ${m.sh}px tall in a ${m.ih}px window`);
     if (m && m.sw > m.iw + 2) add(name, run, "layout", `page spills sideways: content ${m.sw}px wide in a ${m.iw}px window`);
