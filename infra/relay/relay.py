@@ -44,6 +44,7 @@ from simwallet import SimWallet
 from slotlease import SlotLease
 from island import Island
 from txsources import TxSources
+from nodehist import NodeHistory
 from visits import OWN_HOSTS, SITES, Visits
 
 log = logging.getLogger("tau-relay")
@@ -409,6 +410,7 @@ class Relay:
         self.rulewall_at = 0.0
         self.board_at = 0.0
         self.peer_book = self._load_peers()      # {"since", "peers": {peer id -> row}}, kept across restarts
+        self.nodehist = NodeHistory()             # nodes on the network hour by hour, for /nodes/history (nodehist.py)
         self.peers_saved_at = 0.0
         self.peers_text: str | None = None
         self.peers_at = 0.0
@@ -1384,6 +1386,27 @@ class Relay:
         self.peers_text = None
         if new or now - self.peers_saved_at >= PEERS_SAVE_SECONDS:
             self._save_peers(now)
+        # the peers online now (as on /peers) go into this hour of the node history
+        self.nodehist.note([pid for pid, r in book.items() if self.peer_steady(pid, r)
+                            and now - max(r["last_direct"] or 0, r["last_heard"] or 0) < PEER_ONLINE],
+                           self.community_peers(), now)
+
+    def peer_steady(self, pid: str, r: dict) -> bool:
+        """Known for PEER_STEADY seconds (the bootnode always): test nodes that come and go for a minute stay out."""
+        last = max(r.get("last_direct") or 0, r.get("last_heard") or 0)
+        return pid == BOOTNODE_ID or last - r["first_seen"] >= PEER_STEADY
+
+    def community_peers(self) -> set:
+        """Peer IDs of community nodes (kit 3 on reports its peer ID to the board)."""
+        return {b["peer"] for b in self.board.values() if b.get("peer") and b["peer"] != BOOTNODE_ID}
+
+    def nodes_history_json(self) -> str:
+        now = time.time()
+        if getattr(self, "nodehist_text", None) is None or now - self.nodehist_at >= STATS_CACHE_SECONDS:
+            self.nodehist_at = now
+            self.nodehist_text = json.dumps(self.nodehist.history(self.peer_book, self.community_peers(), self.peer_steady, now),
+                                            separators=(",", ":"))
+        return self.nodehist_text
 
     def peers_json(self) -> str:
         now = time.time()
@@ -1842,6 +1865,11 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.health_json().encode())
+        if path == "/nodes/history":
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.nodes_history_json().encode())
         if path == "/peers":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
