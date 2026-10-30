@@ -109,4 +109,11 @@ TauI18n.add({ strings: {
   "every node says no": "すべてのノードが拒否",
   "it goes through": "支払いは通る",
   "next block": "次のブロック",
+  "Step {n}": "ステップ {n}",
+  "Close": "閉じる",
+  "Signed in your browser; nothing else of the wallet is needed.": "ブラウザで署名します。ウォレットのほかの部分は必要ありません。",
+  "See the whole wallet ›": "ウォレット全体を見る ›",
+  "Rule signed and sent.": "ルールに署名して送信しました。",
+  "Meal sent.": "ごはんを送りました。",
+  "The simulation makes a block every eight seconds; this card turns green by itself.": "シミュレーションは 8 秒ごとにブロックを作ります。このカードは自動で緑になります。",
 } });
