@@ -1857,5 +1857,10 @@
   "tag": "White Rabbit Key",
   "on": "2026-10-30",
   "html": "White Rabbit Key: every line in the island's Book is now also a transaction on Tau Testnet Alpha. The rivals send 1 test AGRS from their own campaign wallets through the island bot on our relay; your moves go from your test wallet in the browser once you tick the box, with no extra step. A ⛓ in the Book marks them."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-30",
+  "html": "White Rabbit Key: Rico on Radio Coco can now speak. Each of his jokes and his chain weather is spoken once with a real voice and kept on our server; after the jingle he talks and the music steps back. The weather comes in bands (fog, calm, breeze, choppy seas, showers) and the exact numbers stay on screen. A line without its voice clip is shown as text, as before."
  }
 ]

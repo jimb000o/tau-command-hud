@@ -24,6 +24,13 @@
 	handle @share {
 		reverse_proxy share:8070
 	}
+	# Rico's voice for Radio Coco in White Rabbit Key: clips made once by infra/rico/make.py into /opt/sites/rico.
+	handle /rico/* {
+		root * /srv/sites
+		header Access-Control-Allow-Origin *
+		header Cache-Control "public, max-age=120"
+		file_server
+	}
 	# Everything else is the relay.
 	handle {
 		reverse_proxy relay:8080

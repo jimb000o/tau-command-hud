@@ -9,7 +9,10 @@
   const $ = id => document.getElementById(id);
   const T = s => (window.TauI18n ? TauI18n.t(s) : s);
   const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
-  const SC = window.COVE_SCENE, SND = window.COVE_SOUND;
+  const SC = window.COVE_SCENE, SND = window.COVE_SOUND, RICO = window.RICO;
+  /* a part of what Rico says: spoken aloud when the server has his clip (rico.js), or only shown */
+  const V = (k, v) => ({ t: v ? F(RICO.L[k], v) : T(RICO.L[k]), v: v ? RICO.fill(RICO.L[k], v) : RICO.L[k] });
+  const Q = (s, v) => ({ t: v ? F(s, v) : T(s), v: null });
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
   function el(tag, attrs, ...kids) {
     const e = document.createElement(tag);
@@ -341,7 +344,7 @@
     $("cvCoins").textContent = F("{n} coins", { n: G.coins[G.me] });
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
     const last = G.news[G.news.length - 1];
-    if (last && last !== DJ.said) { DJ.said = last; onAir(F("From the Book: {x}", { x: last.s }), 1); }
+    if (last && last !== DJ.said) { DJ.said = last; onAir([V("book"), Q(last.s)], 1); }
     else if (!DJ.text) $("cvNews").textContent = last ? last.s : T("The Key Crier: five days to the election. Everything anyone does is written in the Book.");
     SC.setHour(G.over ? 2.4 : G.move >= MOVES ? 3 : G.move * 0.9);
     SC.rabbit(G.over || G.move >= MOVES ? null : hint()[0]);
@@ -560,6 +563,8 @@
   function onAir(line, urgent) {
     const box = $("cvRadio"); if (!box) return;
     if (!DJ.face) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }
+    const parts = typeof line === "string" ? [{ t: line, v: null }] : line;
+    line = parts.map(p => p.t).join(window.TauI18n && /^(zh|ja)$/.test(TauI18n.lang) ? "" : " ");
     DJ.text = line; box.classList.add("live");
     const out = $("cvNews"); out.textContent = ""; let i = 0;
     clearInterval(DJ.type); DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); } }, 28);
@@ -567,32 +572,40 @@
     if (!urgent) SND.sfx("jingle");
     clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), Math.min(9000, 2500 + line.length * 60));
     DJ.next = performance.now() + 38000 + Math.random() * 30000;
+    /* his voice, when the clips are there: the mouth and the on-air light follow it */
+    const said = DJ.text;
+    RICO.speak(parts).then(secs => {
+      if (!secs || DJ.text !== said) return;
+      say(DJ.face, secs * 1000);
+      clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), secs * 1000 + 800);
+      DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 30000);
+    }, () => {});
   }
   /* what Rico can say: lines that come from the game as it stands, and a few from the island's habits */
   function djLines() {
     if (!G) return [];
     const L = [], laws = G.laws, by = {}; laws.forEach(l => (by[l.by] = (by[l.by] || 0) + 1));
     const top = Object.keys(by).sort((a, b) => by[b] - by[a])[0], liesOut = G.lies.filter(l => l.out).length;
-    if (!laws.length) L.push(T("No laws yet on this island. Rico's only rule: the request line is open, the coconut stand is not."));
-    if (top && by[top] >= 2) L.push(F("{x} has written more laws than anyone. The island has asked for a nap.", { x: nm(top) }));
-    if (G.pacts.some(p => !p.broken)) { const p = G.pacts.filter(p => !p.broken).slice(-1)[0]; L.push(F("Pact news: {x} and {y} shook hands at La Ola. Lola counted the fingers afterwards.", { x: nm(p.a), y: nm(p.b) })); }
-    if (G.pacts.some(p => p.broken)) L.push(T("A pact was broken. Rico won't say who. The Book already did."));
-    if (G.deals.length) L.push(T("An embassy envelope was seen near the council. Rico saw nothing. Rico is very expensive to see things."));
-    if (G.lies.length) L.push(F("Rumours on air this week: {n}. Rumours the Book has shown up: {m}. Rico only plays them, folks.", { n: G.lies.length, m: liesOut }));
-    if (inForce("quiet")) L.push(T("Quiet after ten is the law now. This is Rico, whispering."));
-    if (inForce("reef")) L.push(T("The reef is protected. The fish have issued a statement: blub."));
-    if (inForce("harbour")) L.push(T("A deep harbour for cruise ships. Tobias has already ordered a bigger hat."));
-    if (inForce("night")) L.push(T("Night market every Friday! Rico will be there selling rumours at half price. Joke. The Book is watching."));
-    if (inForce("concerts")) L.push(T("Beach concerts on Sundays are law. Rico has cancelled every other plan until the election."));
-    if (inForce("copy")) L.push(T("There is a copy of the Book on the square now. More readers, fewer rumours. Bad for business, good for the island."));
-    if (G.move >= MOVES) L.push(T("The lighthouse turns green, the candidates go quiet, and the Book keeps writing. Goodnight, island."));
-    L.push(F("Day {n} of {m}. If you still don't know who to vote for, neither do the gulls.", { n: G.day, m: DAYS }));
-    L.push(T("Fun fact: a law that contradicts one in force is refused before anyone votes. Rico tried 'Rico plays all night' and 'Quiet after ten'. Rico lost to Rico."));
-    L.push(T("This next one goes out to whoever bought last night's rumour. You know who you are. So does the Book."));
-    L.push(T("Four candidates have asked for the same song tonight. It is called 'Vote for me'."));
-    L.push(T("Weather: warm, with scattered promises and a front of envelopes moving in from the embassies."));
-    L.push(T("Old Sam has read the Book every night this week. The Book has not read Sam once. Respect."));
-    L.push(F("{x}, you have {n} coins. Rico accepts tips, song requests and alibis.", { x: nm(G.me), n: G.coins[G.me] }));
+    if (!laws.length) L.push([V("noLaws")]);
+    if (top && by[top] >= 2) L.push([V("topLaws", { x: nm(top) })]);
+    if (G.pacts.some(p => !p.broken)) { const p = G.pacts.filter(p => !p.broken).slice(-1)[0]; L.push([V("pact", { x: nm(p.a), y: nm(p.b) })]); }
+    if (G.pacts.some(p => p.broken)) L.push([V("broken")]);
+    if (G.deals.length) L.push([V("envelope")]);
+    if (G.lies.length) L.push([V("rumours"), Q("({n} on air, {m} shown up)", { n: G.lies.length, m: liesOut })]);
+    if (inForce("quiet")) L.push([V("quiet")]);
+    if (inForce("reef")) L.push([V("reef")]);
+    if (inForce("harbour")) L.push([V("harbour")]);
+    if (inForce("night")) L.push([V("night")]);
+    if (inForce("concerts")) L.push([V("concerts")]);
+    if (inForce("copy")) L.push([V("copy")]);
+    if (G.move >= MOVES) L.push([V("night5")]);
+    L.push([V("day", { n: G.day, m: DAYS })]);
+    L.push([V("fact")]);
+    L.push([V("dedicate")]);
+    L.push([V("song")]);
+    L.push([V("warm")]);
+    L.push([V("sam")]);
+    L.push([Q("{x}, you have {n} coins.", { x: nm(G.me), n: G.coins[G.me] }), V("tips")]);
     return L;
   }
   /* the chain weather: Rico reads the real testnet (or the simulation, in simulation mode) and turns it into a forecast */
@@ -605,17 +618,16 @@
       if (fin) return; fin = true; try { ws.close(); } catch (e) {}
       const bs = [...blocks.values()].sort((a, b) => a.header.block_number - b.header.block_number).slice(-12);
       if (!bs.length) return done(null);
-      const sim = window.TauSim && TauSim.on, tag = sim ? " " + T("(simulation)") : "", last = bs[bs.length - 1], h = last.header.block_number;
+      const sim = window.TauSim && TauSim.on, last = bs[bs.length - 1], h = last.header.block_number;
       const ts = Number(last.header.timestamp) || 0, age = ts ? Math.max(0, Date.now() / 1000 - (ts > 1e12 ? ts / 1000 : ts)) / 60 : 0;
       const txs = bs.reduce((n, b) => n + (b.transactions || []).length, 0), rules = bs.filter(b => (b.transactions || []).some(tx => tx.operations && tx.operations["0"])).map(b => b.header.block_number);
       const wait = Array.isArray(pool) ? pool.length : pool && Array.isArray(pool.transactions) ? pool.transactions.length : pool && Array.isArray(pool.mempool) ? pool.mempool.length : 0;
-      let now;
-      if (age > 10) now = F("Chain weather{x}: thick fog. No new block for {n} minutes. Rico recommends patience and a lemonade.", { x: tag, n: Math.round(age) });
-      else if (!txs) now = F("Chain weather{x}: dead calm. The last {n} blocks came in empty. A good day for fishing.", { x: tag, n: bs.length });
-      else if (txs <= bs.length / 2) now = F("Chain weather{x}: a light breeze, {n} txs over the last {m} blocks, up to block {y}.", { x: tag, n: txs, m: bs.length, y: String(h) });
-      else now = F("Chain weather{x}: choppy seas, {n} txs rolling in over the last {m} blocks, up to block {y}. Hold on to your hats.", { x: tag, n: txs, m: bs.length, y: String(h) });
-      if (rules.length) now += " " + F("A wallet put a new rule on itself in block {y}: a little local weather of its own.", { y: String(rules[rules.length - 1]) });
-      now += " " + (wait ? F("Forecast: showers, {n} txs are waiting for the next block.", { n: wait }) : T("Forecast: clear skies, unless somebody sends something."));
+      const now = [V(sim ? "wxSim" : "wxChain")], at = String(h);
+      if (age > 10) now.push(V("fog"), Q("(last block {y}, {n} minutes ago)", { y: at, n: Math.round(age) }));
+      else if (!txs) now.push(V("calm"), Q("({n} empty blocks, up to block {y})", { n: bs.length, y: at }));
+      else now.push(V(txs <= bs.length / 2 ? "breeze" : "choppy"), Q("({n} txs in the last {m} blocks, up to block {y})", { n: txs, m: bs.length, y: at }));
+      if (rules.length) now.push(V("rule"), Q("(block {y})", { y: String(rules[rules.length - 1]) }));
+      now.push(...(wait ? [V("showers"), Q("({n} waiting)", { n: wait })] : [V("clear")]));
       WX.at = performance.now(); WX.line = now; done(now);
     };
     const stop = setTimeout(finish, 7000);
