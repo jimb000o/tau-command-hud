@@ -204,7 +204,8 @@ services:
       AGORZILLA_X_DAILY_CAP: ${AGORZILLA_X_DAILY_CAP:-8}
     volumes:
       - alerts_state:/state     # remembers the last evening posted, /state/agorzilla.json
-    mem_limit: 64m
+      - agorzilla_shots:/shots:ro   # the evening's before/after photographs (agorzilla-shots below)
+    mem_limit: 128m
     restart: unless-stopped
     logging: *logging
 
@@ -224,6 +225,20 @@ services:
       - /opt/sites/agorilla-live:/out
     depends_on: [relay]
     mem_limit: 128m
+    restart: unless-stopped
+    logging: *logging
+
+  # Agorzilla's evening pictures (agorzilla-shots/shots.mjs): after each evening a headless
+  # Chromium opens agorzilla.com like a visitor and photographs the creature just before and
+  # just after it; the evening post above sets the two side by side, agorzilla.com shows them
+  # under /evenings/ (sites/agorzilla.caddy). Reads latest.json every 2 minutes, works a minute
+  # or so once a day.
+  agorzilla-shots:
+    build: ./agorzilla-shots
+    volumes:
+      - agorzilla_shots:/shots
+    shm_size: 256m
+    mem_limit: 768m
     restart: unless-stopped
     logging: *logging
 
@@ -278,6 +293,7 @@ services:
       - caddy_config:/config
       - alerts_public:/srv/alerts:ro
       - /opt/sites:/srv/sites:ro
+      - agorzilla_shots:/srv/agorzilla-shots:ro
     networks: [default, checker]
     depends_on: [relay, checker, share]
     restart: unless-stopped
@@ -294,5 +310,6 @@ volumes:
   relay_data:
   alerts_state:
   alerts_public:
+  agorzilla_shots:
   caddy_data:
   caddy_config:

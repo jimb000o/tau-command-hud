@@ -16,6 +16,13 @@ agorzilla.com, www.agorzilla.com {
 		header Access-Control-Allow-Origin *
 		file_server
 	}
+	# the evening photographs (agorzilla-shots service): evening-<n>-before/after.jpg and evenings.json
+	handle_path /evenings/* {
+		root * /srv/agorzilla-shots
+		header Cache-Control "public, max-age=300"
+		header Access-Control-Allow-Origin *
+		file_server
+	}
 	@public path / /index.html /assets/* /chain/*
 	handle @public {
 		header /chain/* Cache-Control no-cache

@@ -11,6 +11,13 @@ post 13 times dearer) with the creature on a dark card, at most
 AGORZILLA_X_DAILY_CAP posts a day. X never holds Telegram up: one try each.
 X also gets a post when the creature reaches a new growth stage.
 
+When an evening changed something, both posts carry a before/after picture:
+the agorzilla-shots service (agorzilla-shots/shots.mjs) photographs the real
+page just before and just after the evening into AGORZILLA_SHOTS; this job
+sets the two side by side on one card. It waits for them up to
+AGORZILLA_SHOTS_WAIT seconds after the evening (default 25 min), then posts
+without them.
+
 The first pass only remembers the newest evening, so a fresh start never
 posts old evenings.
 
@@ -42,6 +49,9 @@ X_PICTURE = os.environ.get("AGORZILLA_X_PICTURE", "https://agorzilla.com/assets/
 X_DAILY_CAP = int(os.environ.get("AGORZILLA_X_DAILY_CAP", 8))
 X_FOOT = "🦍 A shared creature on Tau Testnet Alpha · test AGRS, no value"
 X_TAG = "#TauNet $AGRS"   # every Agorzilla post on X carries these two, once, at the end
+SHOTS = os.environ.get("AGORZILLA_SHOTS", "/shots").strip()
+SHOTS_WAIT = float(os.environ.get("AGORZILLA_SHOTS_WAIT", 1500))
+FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 
 
 def esc(s) -> str:
@@ -93,8 +103,8 @@ def x_text(r: dict, latest: dict) -> str:
     return x_post([head, body, grow + ".", tonight], foot=X_FOOT, tag=X_TAG)
 
 
-def post_x(msg: str, state: dict, now: float | None = None) -> bool:
-    """One try on Agorzilla's X account, within the daily cap; with the picture when there is one."""
+def post_x(msg: str, state: dict, now: float | None = None, png: bytes | None = None) -> bool:
+    """One try on Agorzilla's X account, within the daily cap; with the evening's picture, else the creature's card."""
     if not X_OUT.enabled():
         return False
     day = time.strftime("%Y-%m-%d", time.gmtime(now if now is not None else time.time()))
@@ -103,7 +113,7 @@ def post_x(msg: str, state: dict, now: float | None = None) -> bool:
     if state["x_n"] >= X_DAILY_CAP:
         log.info("x: daily cap reached, left out")
         return False
-    png = card()
+    png = png or card()
     media = X_OUT.upload(png, "agorzilla.png")[0] if png else None
     ok, _, err = X_OUT.send_text(msg, media)
     if ok:
@@ -141,6 +151,75 @@ def card() -> bytes | None:
     return _card[0]
 
 
+def shots_of(r: dict) -> tuple[str, str] | None:
+    """The paths of the evening's two photographs, when both are there."""
+    if not SHOTS:
+        return None
+    b, a = (os.path.join(SHOTS, f"evening-{r['n']}-{side}.jpg") for side in ("before", "after"))
+    return (b, a) if os.path.exists(b) and os.path.exists(a) else None
+
+
+def shot_info(r: dict) -> dict:
+    """What the agorzilla-shots service saw: the part's value (and colour) before and after the evening."""
+    try:
+        with open(os.path.join(SHOTS, "evenings.json"), encoding="utf-8") as f:
+            return next((x for x in json.load(f) if x.get("n") == r["n"]), {})
+    except (OSError, ValueError):
+        return {}
+
+
+def evening_card(r: dict) -> bytes | None:
+    """Before and after side by side on Agorzilla's dark green, 1600×900 PNG: what changed in the title, the part's
+    value under each photograph, the count in the foot. None when the evening changed nothing or its photographs are not there."""
+    if not r.get("winner"):
+        return None
+    paths = shots_of(r)
+    if not paths:
+        return None
+    try:
+        import io
+
+        from PIL import Image, ImageDraw, ImageFont, ImageOps
+        W, H, bg, cream, muted, green = 1600, 900, "#06120d", "#f3e2b8", "#9fb8aa", "#6ee7a0"
+        im = Image.new("RGB", (W, H), bg)
+        d = ImageDraw.Draw(im)
+        font = lambda size: ImageFont.truetype(os.path.join(FONTS, "Sora.ttf"), size)  # noqa: E731
+        info = shot_info(r)
+        d.text((W // 2, 60), f"Evening {r['n'] + 1} · {r['category']} became {r['winner']}", font=font(46), fill=cream, anchor="mm")
+        box_w, box_h, top, gap = 660, 680, 112, 100
+        for k, (path, side) in enumerate(zip(paths, ("before", "after"))):
+            x = (W - 2 * box_w - gap) // 2 + k * (box_w + gap)
+            pic = ImageOps.fit(Image.open(path).convert("RGB"), (box_w, box_h), centering=(.5, .45))
+            mask = Image.new("L", (box_w, box_h), 0)
+            ImageDraw.Draw(mask).rounded_rectangle((0, 0, box_w - 1, box_h - 1), 26, fill=255)
+            im.paste(pic, (x, top), mask)
+            d.rounded_rectangle((x, top, x + box_w - 1, top + box_h - 1), 26, outline=green if k else "#2a4a3b", width=3)
+            d.text((x + 28, top + 26), side.upper(), font=font(24), fill=green if k else muted)
+            value = info.get(side + "_value") or (r["winner"] if k else None)
+            if value:   # a chip at the foot of the photograph: the part's value then, with its colour when it has one
+                f, colour = font(28), info.get(side + "_color")
+                tw = d.textlength(value, font=f) + (34 if colour else 0)
+                cx, cy = x + box_w // 2, top + box_h - 46
+                d.rounded_rectangle((cx - tw / 2 - 22, cy - 26, cx + tw / 2 + 22, cy + 26), 26, fill="#0b1f17", outline=green if k else "#2a4a3b", width=2)
+                tx = cx - tw / 2
+                if colour:
+                    d.ellipse((tx, cy - 11, tx + 22, cy + 11), fill=colour)
+                    tx += 34
+                d.text((tx, cy), value, font=f, fill=cream, anchor="lm")
+        ax, ay = W // 2, top + box_h // 2   # an arrow from before to after
+        d.line((ax - 30, ay, ax + 22, ay), fill=cream, width=6)
+        d.polygon([(ax + 34, ay), (ax + 12, ay - 18), (ax + 12, ay + 18)], fill=cream)
+        tally = " · ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
+        foot = f"{tally} wallets{', a tie settled by the state hash' if r.get('tie') else ''} · test AGRS, no value · agorzilla.com"
+        d.text((W // 2, H - 50), foot, font=font(24), fill=muted, anchor="mm")
+        out = io.BytesIO()
+        im.save(out, "PNG", optimize=True)
+        return out.getvalue()
+    except Exception as e:  # noqa: BLE001 - no picture, the text goes alone
+        log.info("evening card: not made (%s)", e)
+        return None
+
+
 def growth_x(old: str, latest: dict) -> str:
     lived = latest.get("lived")
     head = f"🦍 Agorzilla grew into {latest.get('stage_name', '')}" + (f" after {plural(lived, 'day', 'days')} lived" if lived is not None else "")
@@ -168,9 +247,15 @@ def fetch() -> dict:
         return json.load(r)
 
 
-def post(msg: str) -> bool:
-    body = json.dumps({"chat_id": CHAT, "text": msg, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}}).encode()
-    req = urllib.request.Request(f"https://api.telegram.org/bot{TOKEN}/sendMessage", body, {"Content-Type": "application/json"})
+def post(msg: str, png: bytes | None = None) -> bool:
+    """The evening on the channel; with its picture as a photo with the text under it."""
+    if png:
+        from alerts import multipart
+        body, ctype = multipart({"chat_id": CHAT, "caption": msg, "parse_mode": "HTML"}, {"photo": ("agorzilla-evening.png", png, "image/png")})
+        req = urllib.request.Request(f"https://api.telegram.org/bot{TOKEN}/sendPhoto", body, {"Content-Type": ctype})
+    else:
+        body = json.dumps({"chat_id": CHAT, "text": msg, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}}).encode()
+        req = urllib.request.Request(f"https://api.telegram.org/bot{TOKEN}/sendMessage", body, {"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
             return bool(json.load(r).get("ok"))
@@ -194,9 +279,11 @@ def save(s: dict):
     os.replace(tmp, STATE)
 
 
-def step(latest: dict, state: dict, send=post, send_x=post_x) -> list[str]:
+def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None = None, picture=evening_card) -> list[str]:
     """Post the evenings newer than the last one posted; returns the texts sent. Updates state in place.
-    Telegram decides (a failed send is tried again next pass); the X copy follows once, never late."""
+    Telegram decides (a failed send is tried again next pass); the X copy follows once, never late.
+    An evening that changed something waits up to SHOTS_WAIT for its before/after picture."""
+    now = time.time() if now is None else now
     rounds = sorted(latest.get("rounds") or [], key=lambda r: r["n"])
     if not rounds:
         return []
@@ -207,13 +294,19 @@ def step(latest: dict, state: dict, send=post, send_x=post_x) -> list[str]:
     for r in rounds:
         if r["n"] <= state["last"]:
             continue
+        png = picture(r)
+        if not png and r.get("winner") and r.get("t") and now - r["t"] < SHOTS_WAIT:
+            break                      # its photographs are being made; next pass
         msg = text(r, latest)
         if TOKEN or send is not post:
-            if not send(msg):
+            if not (send(msg, png) if png else send(msg)):
                 break                  # try again next pass
         state["last"] = r["n"]
         sent.append(msg)
-        send_x(x_text(r, latest), state)
+        if png:
+            send_x(x_text(r, latest), state, png=png)
+        else:
+            send_x(x_text(r, latest), state)
     return sent
 
 
