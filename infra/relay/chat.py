@@ -135,15 +135,15 @@ REASONS = {
     "repeat": "That was just said.",
     "busy": "The room is busy; try again in a minute.",
     "muted": "You are muted for {n} more minutes.",
-    "banned": "You are out of the troll box until 00:00 UTC.",
-    "closed": "The troll box is closed right now.",
+    "banned": "You are out of the chat until 00:00 UTC.",
+    "closed": "The chat is closed right now.",
     "bad": "That did not look like a message.",
 }
 HARD = {"sex", "slur", "harm", "scam"}
 SOFT = {"link", "talk", "addr", "shout", "spam", "repeat"}
 STEP_TEXT = {"warn": "This is a warning; the next strike mutes you for 10 minutes.",
              "mute": "You are muted for {n} minutes.",
-             "ban": "You are out of the troll box until 00:00 UTC."}
+             "ban": "You are out of the chat until 00:00 UTC."}
 
 
 def clean(text: str) -> str:

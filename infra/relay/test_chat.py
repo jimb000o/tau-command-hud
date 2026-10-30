@@ -75,7 +75,7 @@ r3 = c.say("s1", tok(5), 2, 2, 2, "kill yourself")
 check("muted for 60 minutes" in r3["message"], f"strike 3 mutes an hour: {r3['message']}")
 T[0] += 3601
 r4 = c.say("s1", tok(5), 2, 2, 2, "send nudes")
-check("out of the troll box until 00:00 UTC" in r4["message"], f"strike 4 bans for the day: {r4['message']}")
+check("out of the chat until 00:00 UTC" in r4["message"], f"strike 4 bans for the day: {r4['message']}")
 check(ok["msg"]["id"] in hidden, "the live moderator removes all of a banned visitor's messages for everyone")
 T[0] += 3600
 check(c.say("s1", tok(5), 2, 2, 2, "hello again")["error"] == "banned", "still out later that day")

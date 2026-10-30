@@ -12,11 +12,11 @@
   const L = window.TauI18n ? TauI18n.lang : "en";
   const DICT = {
     zh: {
-      "Troll box": "闲聊箱", "Chat with everyone on Tau HUD": "和 Tau HUD 上的所有人聊天", "Close": "关闭",
+      "Chat with everyone on Tau HUD": "和 Tau HUD 上的所有人聊天", "Close": "关闭",
       "Be kind. No prices, trading or links. Messages vanish after 24 hours; three reports hide one.": "友善一点。不谈价格、交易，不发链接。消息 24 小时后消失；三次举报即隐藏。",
       "Say something…": "说点什么…", "Send": "发送", "Report": "举报", "Reported": "已举报",
       "You are {x}": "你是 {x}", "connecting…": "连接中…", "No messages in the last 24 hours. Say hello.": "过去 24 小时没有消息。打个招呼吧。",
-      "The troll box can’t reach the relay right now.": "闲聊箱暂时连不上中继。", "The troll box is closed right now.": "闲聊箱暂时关闭。",
+      "The chat can’t reach the relay right now.": "聊天暂时连不上中继。", "The chat is closed right now.": "聊天暂时关闭。",
       "No links or handles here.": "这里不能发链接或账号。", "No price, trading or giveaway talk: testnet AGRS has no value.": "不谈价格、交易或赠送：测试网 AGRS 没有价值。",
       "That word is not welcome here.": "这里不欢迎这个词。", "At most 200 characters.": "最多 200 个字符。", "Nothing to send.": "没有可发送的内容。",
       "One message every few seconds, please.": "请每隔几秒发一条。", "That is a lot for one hour; take a break.": "这一小时说得够多了，休息一下吧。",
@@ -32,16 +32,16 @@
       "That looks like spam.": "这看起来像刷屏。",
       "That was just said.": "这句刚刚有人说过。",
       "You are muted for {n} more minutes.": "你还要禁言 {n} 分钟。",
-      "You are out of the troll box until 00:00 UTC.": "你被移出闲聊箱，直到 UTC 00:00。",
+      "You are out of the chat until 00:00 UTC.": "你被移出聊天，直到 UTC 00:00。",
       "This is a warning; the next strike mutes you for 10 minutes.": "这是一次警告；再犯一次将禁言 10 分钟。",
       "You are muted for {n} minutes.": "你被禁言 {n} 分钟。",
     },
     ja: {
-      "Troll box": "トロールボックス", "Chat with everyone on Tau HUD": "Tau HUD のみんなとチャット", "Close": "閉じる",
+      "Chat with everyone on Tau HUD": "Tau HUD のみんなとチャット", "Close": "閉じる",
       "Be kind. No prices, trading or links. Messages vanish after 24 hours; three reports hide one.": "やさしく。価格・取引・リンクの話はなし。メッセージは 24 時間で消え、3 件の報告で非表示になります。",
       "Say something…": "なにか書く…", "Send": "送信", "Report": "報告", "Reported": "報告済み",
       "You are {x}": "あなたは {x}", "connecting…": "接続中…", "No messages in the last 24 hours. Say hello.": "この 24 時間のメッセージはありません。あいさつをどうぞ。",
-      "The troll box can’t reach the relay right now.": "トロールボックスは今リレーに接続できません。", "The troll box is closed right now.": "トロールボックスは今閉まっています。",
+      "The chat can’t reach the relay right now.": "チャットは今リレーに接続できません。", "The chat is closed right now.": "チャットは今閉まっています。",
       "No links or handles here.": "リンクやアカウント名は書けません。", "No price, trading or giveaway talk: testnet AGRS has no value.": "価格・取引・配布の話はなし：テストネットの AGRS に価値はありません。",
       "That word is not welcome here.": "その言葉はここでは歓迎されません。", "At most 200 characters.": "200 文字まで。", "Nothing to send.": "送る内容がありません。",
       "One message every few seconds, please.": "数秒に 1 件でお願いします。", "That is a lot for one hour; take a break.": "この 1 時間はたくさん書きました。少し休みましょう。",
@@ -57,11 +57,13 @@
       "That looks like spam.": "スパムのように見えます。",
       "That was just said.": "それはさっき書かれました。",
       "You are muted for {n} more minutes.": "あと {n} 分ミュートされています。",
-      "You are out of the troll box until 00:00 UTC.": "UTC 00:00 までトロールボックスから外されています。",
+      "You are out of the chat until 00:00 UTC.": "UTC 00:00 までチャットから外されています。",
       "This is a warning; the next strike mutes you for 10 minutes.": "これは警告です。次の違反で 10 分間ミュートされます。",
       "You are muted for {n} minutes.": "{n} 分間ミュートされました。",
     },
   };
+  /* the room's name, one place per language */
+  const ROOM = { en: "Troll box", zh: "闲聊箱", ja: "トロールボックス" }[L] || "Troll box";
   const D = DICT[L] || {};
   const t = (s, x) => (D[s] || s).replace("{x}", x == null ? "" : x);
   /* a relay answer is one or two fixed sentences, a number in them as {n} */
@@ -82,9 +84,9 @@
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const pill = el("button", "tb-pill");
   pill.type = "button"; pill.setAttribute("aria-expanded", "false"); pill.title = t("Chat with everyone on Tau HUD");
-  pill.append(el("span", "tb-dot"), el("span", "tb-pl", t("Troll box")));
-  const box = el("section", "tb-box"); box.hidden = true; box.setAttribute("aria-label", t("Troll box"));
-  const head = el("div", "tb-head"); head.append(el("span", "tb-tl", t("Troll box")));
+  pill.append(el("span", "tb-dot"), el("span", "tb-pl", ROOM));
+  const box = el("section", "tb-box"); box.hidden = true; box.setAttribute("aria-label", ROOM);
+  const head = el("div", "tb-head"); head.append(el("span", "tb-tl", ROOM));
   const x = el("button", "tb-x", "×"); x.type = "button"; x.title = x.ariaLabel = t("Close"); head.append(x);
   const rules = el("p", "tb-rules", t("Be kind. No prices, trading or links. Messages vanish after 24 hours; three reports hide one."));
   const list = el("ol", "tb-list"); list.setAttribute("translate", "no"); list.setAttribute("aria-live", "polite");
@@ -119,7 +121,7 @@
   function connect() {
     if (ws) return;
     setNote(t("connecting…"));
-    try { ws = new WebSocket(SOCKET); } catch (e) { ws = null; setNote(t("The troll box can’t reach the relay right now.")); return; }
+    try { ws = new WebSocket(SOCKET); } catch (e) { ws = null; setNote(t("The chat can’t reach the relay right now.")); return; }
     const me = ws;
     me.onopen = () => { wait = 3000; me.send("hello version=1"); me.send("chat join"); };
     me.onmessage = ev => {
@@ -130,7 +132,7 @@
       if (d.messages) {
         list.textContent = ""; seen = new Set();
         d.messages.forEach(add); list.scrollTop = list.scrollHeight;
-        setNote(d.enabled === false ? t("The troll box is closed right now.") : d.messages.length ? "" : t("No messages in the last 24 hours. Say hello."));
+        setNote(d.enabled === false ? t("The chat is closed right now.") : d.messages.length ? "" : t("No messages in the last 24 hours. Say hello."));
         form.hidden = d.enabled === false;
       }
       (d.new || []).forEach(add);
@@ -142,7 +144,7 @@
       if (me._dead) return; me._dead = true;
       if (ws === me) ws = null;
       send.disabled = false;
-      if (!box.hidden) { setNote(t("The troll box can’t reach the relay right now.")); retry = setTimeout(connect, wait); wait = Math.min(60000, wait * 2); }
+      if (!box.hidden) { setNote(t("The chat can’t reach the relay right now.")); retry = setTimeout(connect, wait); wait = Math.min(60000, wait * 2); }
     };
   }
   function disconnect() { clearTimeout(retry); if (ws) { const w = ws; ws = null; w._dead = true; try { w.send("chat leave"); w.close(); } catch (e) {} } }
