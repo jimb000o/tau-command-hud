@@ -1866,6 +1866,11 @@
   "html": "Agorzilla on Tau HUD now looks as the evenings decided: the HUD, the My Tau card and Start read the same chain state as agorzilla.com, so his pendant light and fur change by themselves after each vote. The first evening's post goes out even when it is the very first one the bot sees."
  },
  {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-30",
+  "html": "White Rabbit Key: every line in the island's Book is now also a transaction on Tau Testnet Alpha. The rivals send 1 test AGRS from their own campaign wallets through the island bot on our relay; your moves go from your test wallet in the browser once you tick the box, with no extra step. A ⛓ in the Book marks them."
+ },
+ {
   "tag": "Gazette",
   "on": "2026-10-30",
   "html": "Daily Consensus café: when Sully gives the last stamp, he holds your full ticket up to the light and it turns gold, with a few words from him and a purr from Déjà. The golden ticket stays in the corner, and your Tau card shows it too. The sound of a page turning is about 40 % quieter."
