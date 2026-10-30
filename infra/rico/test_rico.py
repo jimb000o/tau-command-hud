@@ -107,3 +107,5 @@ for w, t in make.lines():
     assert not re.search(r"\btxs?\b|\d|AGRS", s, re.I), s
 assert make.spoken("Day 3 of 5, 40 txs.") == "Day three of five, forty transactions."
 print("spoken ok")
+assert not re.search(r"\btxs?\b|\d", make.SAMPLE + " ".join(make.sample(w) for w in make.CAST), re.I)
+print("samples spoken ok")

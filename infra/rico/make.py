@@ -43,7 +43,7 @@ API = "https://api.elevenlabs.io/v1"
 MODEL = "eleven_v3"   # the most natural one, and it takes [tags] for how a line is said
 SETTINGS = {"stability": 0.5, "similarity_boost": 0.8}   # v3 takes 0 (creative), 0.5 (natural) or 1 (steady)
 LOUD = {"stability": 0.0, "similarity_boost": 0.8}       # Rico on air: as lively as it gets
-SAMPLE = ("This is Rico on Radio Coco, ninety-seven point three! Chain weather. A light breeze, a few txs in the "
+SAMPLE = ("This is Rico on Radio Coco, ninety-seven point three! Chain weather. A light breeze, a few transactions in the "
           "last blocks. Forecast: clear skies, unless somebody sends something.")
 
 # who they are, for Voice Design; a description is between 20 and 1000 characters
