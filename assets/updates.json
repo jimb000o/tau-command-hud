@@ -1685,5 +1685,10 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "Troll box: everyone now gets a new random name every day at 00:00 UTC. Your name for today is shown under the box; yesterday's messages keep the name they were written with. Warnings, mutes and bans stay with you, whatever your name."
+ },
+ {
+  "tag": "My Tau card",
+  "on": "2026-10-30",
+  "html": "My Tau card: Agorzilla beside your card now has the soft face from agorzilla.com, so the painted mouth itself moves. With an empty card the corners of his mouth sink, his brows rise in worry, his shoulders slump, he sighs slowly and now and then a sob and a tear come. As the card fills, he straightens up, smiles, chuckles and bounces. His eyes stay calm and only glance at the card and at you."
  }
 ]
