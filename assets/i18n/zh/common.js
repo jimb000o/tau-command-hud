@@ -577,4 +577,7 @@ TauI18n.add({ strings: {
   "Rules wall": "规则墙",
   "The rules people gave their own accounts; take one for yours to agree": "大家给自己账户设的规则；为你的账户采用一条，就是表示赞同",
   "Back to the rules wall": "返回规则墙",
+  "Follow the chain": "关注这条链",
+  "Follow the chain: Telegram, X or RSS": "关注这条链：Telegram、X 或 RSS",
+  "Follow the chain: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.": "关注这条链：每一次规则变更、链重启和新节点，第一时间通过 Telegram、X 或 RSS 送达。无需在本站注册账号。",
 } });

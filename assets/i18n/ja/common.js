@@ -572,4 +572,7 @@ TauI18n.add({ strings: {
   "Rules wall": "ルールの壁",
   "The rules people gave their own accounts; take one for yours to agree": "みんなが自分のアカウントに付けたルール。自分のアカウントにも採用すれば、それが賛成のしるし",
   "Back to the rules wall": "ルールの壁に戻る",
+  "Follow the chain": "チェーンを追う",
+  "Follow the chain: Telegram, X or RSS": "チェーンを追う：Telegram、X、RSS",
+  "Follow the chain: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.": "チェーンを追う：すべてのルール変更、チェーンの再起動、新しいノードをその場で、Telegram、X、RSS で。このサイトのアカウントは不要です。",
 } });
