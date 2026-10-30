@@ -562,6 +562,14 @@ TauI18n.add({ strings: {
   "Every number on this page counts up as the blocks arrive.": "区块陆续到达时，本页的每个数字都会随之增长。",
   "This page fills in once every block is read.": "读完全部区块后，本页内容就会出现。",
   "{n}%": "{n}%",
+  "Feedback & updates": "反馈与更新",
+  "Feedback and updates": "反馈与更新",
+  "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.": "你想看到什么、哪里坏了、最近改了什么：反馈表和更新日志都在这里。获得最多赞同的想法优先实现。",
+  "Settings: Simple or Technical view, node address and Connect, background rain.": "设置：简洁或技术视图、节点地址与连接、背景代码雨。",
+  "Settings: Simple or Technical view, which node this page reads, guided tour, about.": "设置：简洁或技术视图、本页读取哪个节点、导览、关于。",
+  "Language · 语言 · 言語": "语言 · Language · 言語",
+  "Settings: view, node, guided tour, about": "设置：视图、节点、导览、关于",
+  "Settings: view, node address, background rain": "设置：视图、节点地址、背景代码雨",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 发送方自己的规则说不 (o5 = 0 · ${TauI18n.t(r)})`]] });
@@ -585,4 +593,15 @@ TauI18n.add({ strings: {
   "Running costs: about {v} a month, not counting time.": "运行费用：每月约 {v}，不含时间。",
   "White Rabbit Key": "白兔礁",
   "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet": "一个岛上选举游戏：法律、盟约、谣言，还有一本谁都改不了的账本；你的一票可以上测试网",
+  "The chain now": "链的现状",
+  "First steps": "第一步",
+  "Read and watch": "阅读与观看",
+  "Practise · simulated": "练习 · 模拟",
+  "On the real testnet": "在真实测试网上",
+  "Games": "游戏",
+  "This site": "本站",
+  "Use our work": "使用我们的成果",
+  "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules": "当前生效的每条规则：手续费、同意门槛、验证者、已通过的变更、个人规则",
+  "The chain now: chain state, Explorer, Proposals, Accounts, Rules wall, Stats, Time travel. Road to mainnet: Nodes, Status, Findings, Build pulse.": "链的现状：链状态、区块浏览器、提案、账户、规则墙、统计、时光回溯。通往主网之路：节点、运行状态、问题报告、开发脉搏。",
+  "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Chronicle, What is Tau?": "第一步：从这里开始、本页导览、导览、60 秒了解 Tau。阅读与观看：共识日报、编年史、Tau 是什么？",
 } });

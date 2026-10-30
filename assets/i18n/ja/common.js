@@ -557,6 +557,14 @@ TauI18n.add({ strings: {
   "Every number on this page counts up as the blocks arrive.": "ブロックが届くにつれて、このページの数字はすべて増えていきます。",
   "This page fills in once every block is read.": "すべてのブロックを読み終えると、このページが表示されます。",
   "{n}%": "{n}%",
+  "Feedback & updates": "フィードバックと更新",
+  "Feedback and updates": "フィードバックと更新",
+  "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.": "見たいもの、壊れているところ、最近の変更：フィードバックフォームと更新ログがここにあります。最も多く賛同されたアイデアから作ります。",
+  "Settings: Simple or Technical view, node address and Connect, background rain.": "設定：シンプル／技術表示、ノードのアドレスと接続、背景の雨。",
+  "Settings: Simple or Technical view, which node this page reads, guided tour, about.": "設定：シンプル／技術表示、このページが読むノード、ガイドツアー、概要。",
+  "Language · 语言 · 言語": "言語 · Language · 语言",
+  "Settings: view, node, guided tour, about": "設定：表示、ノード、ガイドツアー、概要",
+  "Settings: view, node address, background rain": "設定：表示、ノードのアドレス、背景の雨",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 送信者自身のルールが拒否しました（o5 = 0 · ${TauI18n.t(r)}）`]] });
@@ -580,4 +588,15 @@ TauI18n.add({ strings: {
   "Running costs: about {v} a month, not counting time.": "運営費：月約 {v}（時間は含まず）。",
   "White Rabbit Key": "ホワイトラビット・キー",
   "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet": "島の選挙ゲーム：法律、協定、噂、そして誰にも書き換えられない帳簿。あなたの票はテストネットに送れます",
+  "The chain now": "いまのチェーン",
+  "First steps": "はじめの一歩",
+  "Read and watch": "読む・観る",
+  "Practise · simulated": "練習 · シミュレーション",
+  "On the real testnet": "本物のテストネットで",
+  "Games": "ゲーム",
+  "This site": "このサイト",
+  "Use our work": "私たちの成果を使う",
+  "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules": "いま有効なすべてのルール：手数料、合意のしきい値、バリデーター、合意済みの変更、個人ルール",
+  "The chain now: chain state, Explorer, Proposals, Accounts, Rules wall, Stats, Time travel. Road to mainnet: Nodes, Status, Findings, Build pulse.": "いまのチェーン：チェーンの状態、エクスプローラー、提案、アカウント、ルールの壁、統計、タイムトラベル。メインネットへの道：ノード、ステータス、発見事項、開発の鼓動。",
+  "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Chronicle, What is Tau?": "はじめの一歩：ここから始める、このページのツアー、ガイドツアー、60 秒でわかる Tau。読む・観る：コンセンサス日報、クロニクル、Tau とは？",
 } });

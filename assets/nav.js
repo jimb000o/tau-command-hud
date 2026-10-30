@@ -14,6 +14,7 @@
   const ROOT = src ? new URL("..", src).pathname : "/";
   const P = {
     hud:        { t: "HUD", d: "The chain core live: blocks, rules and agreement as they happen", i: "◉", h: "" },
+    state:      { t: "Chain state", d: "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules", i: "≡", h: "#chain-state", act: "state" },
     explorer:   { t: "Explorer", d: "Find any block, transaction or address", i: "⌕", h: "explorer/", view: true },
     stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/", view: true },
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
@@ -51,21 +52,23 @@
   };
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
-    /* grouped by what a visitor came to do (29 Oct): watch the chain, understand Tau, try it, and who runs this site; five to seven entries each */
-    { k: "explore", t: "Explore", items: ["explorer", "proposals", "account", "nodes", "stats", "history", "devpulse"], tab: "≋" },
-    { k: "learn", t: "Learn", items: ["start", "tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
-    { k: "play", t: "Playground", items: ["playground", "seat", "missions", "challenge", "whatif", "vote", "wallet", "rules", "card", "rabbit", "agorzilla"], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, items: ["about", "share", "donate", "status", "findings", "roadmap", "meta", "developers", "press", "legal"], tab: "i" },
+    /* grouped by what a visitor came to do (29 Oct); inside each menu small labelled groups (30 Oct), so no menu is one long list */
+    { k: "explore", t: "Explore", groups: [["The chain now", ["state", "explorer", "proposals", "account", "rules", "stats", "history"]], ["Road to mainnet", ["nodes", "status", "findings", "roadmap", "devpulse"]]], tab: "≋" },
+    { k: "learn", t: "Learn", groups: [["First steps", ["start", "tour", "story"]], ["Read and watch", ["gazette", "chronicle", "tau"]]], tab: "▸" },
+    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "seat", "whatif"]], ["On the real testnet", ["wallet", "vote", "challenge", "card"]], ["Games", ["rabbit", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
+    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", start: "learn", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", roadmap: "about", status: "about", meta: "about", legal: "about", donate: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", rules: "play", card: "play", challenge: "play", rabbit: "play", whatif: "play" };
+  SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
+  const SECTION_OF = { hud: "hud" };
+  SECTIONS.forEach(s => (s.items || []).forEach(k => { if (P[k] && !P[k].ext && !P[k].act && !/#/.test(P[k].h)) SECTION_OF[k] = s.k; }));
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
-    feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
+    feedback: "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.",
     telegram: "Join @tauHUDcom on Telegram: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Questions (height, proposals, your transaction or address): write to @tauhud_alerts_bot. Opens Telegram.",
     alerts: "Follow the chain: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.",
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
-    gear: "Settings: node address and Connect, background rain.",
-    gearSub: "Settings: which node this page reads, guided tour, about.",
+    gear: "Settings: Simple or Technical view, node address and Connect, background rain.",
+    gearSub: "Settings: Simple or Technical view, which node this page reads, guided tour, about.",
     live: "Live node: this page reads the real testnet through the community relay at node.tauhud.com. The choice holds on every page.",
     sim: "Simulation: invented activity that follows the documented protocol, generated in your browser. The same made-up chain on every page, eight seconds per block, a fresh start every day at 00:00 UTC. No real chain data. The choice holds on every page.",
     simMode: "Simulation: this page shows a made-up chain generated in your browser, the same on every page. No real chain data. Switch to Live node for the real testnet.",
@@ -81,8 +84,8 @@
     fee: "Base fee in AGRS that every transaction pays, set by the consensus rule o9.",
     cons: "Consensus: who may seal the next block. Tau has no proof of work. The mechanism is part of the chain state: a fixed validator list (proof of authority), a validator list kept in the Tau rules, or proof of stake. It switches only through an agreed rule change. Opens the chain state in the HUD.",
     hud: "The chain core live: blocks, rules and agreement as they happen.",
-    explore: "Chain data pages: Explorer, Stats, Time travel, Accounts, Nodes, Proposals.",
-    learn: "Tau in 60 seconds, Guided tour, Chronicle, Findings, Status, Developers, Press kit, What is Tau?, About.",
+    explore: "The chain now: chain state, Explorer, Proposals, Accounts, Rules wall, Stats, Time travel. Road to mainnet: Nodes, Status, Findings, Build pulse.",
+    learn: "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Chronicle, What is Tau?",
     play: "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat, play six short missions on a practice chain, move the levers of a sandbox chain, or vote on the real testnet yourself.",
   };
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -368,16 +371,26 @@
     return a;
   }
 
+  /* "Tour of this page": every subpage has a short tour of its own (assets/tour.js), listed under First steps */
+  function pageTour() {
+    const t = el("a", "mi", `<span class="ic">?</span><b>Tour of this page</b><span>What each part of this page shows and why it matters, in a few short steps</span>`);
+    t.href = "#tour"; t.setAttribute("role", "menuitem"); t.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); });
+    return t;
+  }
+
   /* ---------- row 1 on subpages: the HUD's brand row with the page title where the tagline sits, and the same chips fed by the relay ---------- */
   function mountRail(nav, page) {
     const old = nav.previousElementSibling && nav.previousElementSibling.tagName === "HEADER" ? nav.previousElementSibling : null;
     const tEl = old && old.querySelector(".brand span");
-    const title = (tEl && tEl.textContent.trim()) || (P[page] && P[page].t) || "";
+    const title = (P[page] && P[page].t) || (tEl && tEl.textContent.trim()) || "";   // the same words as the menu entry that led here
     const own = old && old.querySelector("#state");
     const rail = el("header", "trail");
-    const brand = el("a", "brand", `${MARK}<span class="bn">Tau HUD</span><h1 class="bt">${esc(title)}</h1>`);  // the page title is the heading, the logo is not
+    /* site / section / page: the page name is the heading, readable at a glance; the section says which menu holds it */
+    const sec = SECTIONS.find(x => x.k === SECTION_OF[page] && !x.single);
+    const brand = el("a", "brand", `${MARK}<span class="bn">Tau HUD</span>`);
+    const crumb = el("div", "crumb", (sec ? `<span class="sep">/</span><span class="sec">${esc(sec.t)}</span>` : "") + `<span class="sep">/</span><h1 class="bt">${esc(title)}</h1>`);
     const lang = new URLSearchParams(location.search).get("lang"); brand.href = ROOT + (lang ? "?lang=" + encodeURIComponent(lang) : ""); brand.dataset.tnt = "Back to the HUD";
-    const unoff = el("a", "chip unoff" + (SIM ? " sim" : ""), SIM ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = SIM ? TIPS.simBadge : TIPS.unoff;
+    const unoff = el("a", SIM ? "chip unoff sim" : "unoff q", SIM ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = SIM ? TIPS.simBadge : TIPS.unoff;
     const chips = el("div", "chips");
     const chip = (tag, id, cls, html, t) => { const c = el(tag, "chip" + (cls ? " " + cls : ""), html); c.id = id; c.dataset.tnt = t; return c; };
     chips.append(
@@ -394,7 +407,7 @@
       const nx = el("a", "chip next", "<b></b>"); nx.id = "tnNext"; nx.hidden = true; nx.href = ROOT + "proposals/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); chips.append(nx);
     }
     if (own) chips.append(own);
-    rail.append(brand, unoff, chips);
+    rail.append(brand, crumb, unoff, chips);
     if (old) old.replaceWith(rail); else nav.before(rail);
     feedChips(rail);
     return rail;
@@ -436,10 +449,10 @@
       modeB.textContent = SIM ? "Simulation" : wait ? "Live · Connecting" : !up ? "Live · Offline" : stalled ? "Live · Connected, no new blocks" : degraded ? "Live · Degraded" : !synced ? "Live · Not synced" : catching ? `Verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}` : "Live · Connected";
       modeDot.className = "dot " + (SIM ? "sim" : wait ? "none" : !up ? "off" : good ? "" : "behind");
       mode.className = "chip v " + (SIM ? "sim" : wait || !up ? "" : good ? "live" : "behind");   // offline: the red dot is the one signal, the text stays plain
-      document.querySelectorAll(".tnav [data-livedot]").forEach(d => {
+      document.querySelectorAll("[data-livedot]").forEach(d => {
         if (SIM) { d.className = "dot none"; return; }
         d.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
-        const a = d.closest("a"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : stalled ? `Amber: connected, but no new blocks right now; the testnet has stalled${st.health && st.health.score != null ? ` (health ${st.health.score} of 100)` : ""}.` : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + " Opens the HUD in Live mode.";
+        const a = d.closest("a, button"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : stalled ? `Amber: connected, but no new blocks right now; the testnet has stalled${st.health && st.health.score != null ? ` (health ${st.health.score} of 100)` : ""}.` : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + (a.tagName === "A" ? " Opens the HUD in Live mode." : "");
       });
       const n = CHAIN.online; onB.textContent = n == null ? "—" : String(n); onDot.className = "dot " + (n == null ? "none" : n > 0 ? "" : "off"); onChip.classList.toggle("live", n != null && n > 0);
       hB.textContent = st && Number(st.height) > 0 ? "#" + fmt(st.height) : "—";
@@ -610,7 +623,13 @@
   function toggle(btn, panel) {
     const open = panel.hidden;
     closeAll();
-    if (open) { panel.hidden = false; btn.setAttribute("aria-expanded", "true"); openEl = panel; }
+    if (open) {
+      panel.hidden = false; btn.setAttribute("aria-expanded", "true"); openEl = panel;
+      if (panel.classList.contains("cols")) {   // a wide menu never runs off the right edge of the window
+        panel.style.left = ""; const r = panel.getBoundingClientRect(), over = r.right - (innerWidth - 16);
+        if (over > 0) panel.style.left = -Math.min(over, r.left - 16) + "px";
+      }
+    }
   }
 
   function mount(nav) {
@@ -623,7 +642,12 @@
     // the Simple/Technical switch appears only where it changes something (`view: true` in P); the stored choice stays global
     if (!isHud) { const c = subControls(tip); slots.source = slots.source || c.src; slots.view = slots.view || (P[page] && P[page].view ? c.view : null); slots.gear = slots.gear || c.gear; mountRail(nav, page); if (!tipsOn) { tipsOn = true; hoverTips(); } }
     const left = el("div", "tnav-l"), right = el("div", "tnav-r"), bar = el("div", "tnav-nav");
-    if (slots.source) { left.append(slots.source); left.append(el("span", "tnav-sep")); }
+    /* Live/Simulation sits with the chain chips in row 1, in place of the chip that only repeated it */
+    const railChips = document.querySelector(isHud ? "header.rail .chips" : "header.trail .chips");
+    if (slots.source && railChips) {
+      slots.source.classList.add("tn-src"); railChips.prepend(slots.source);
+      const dup = railChips.querySelector("#tnMode, #chipMode"); if (dup) dup.style.display = "none";
+    } else if (slots.source) { left.append(slots.source); left.append(el("span", "tnav-sep")); }
     SECTIONS.forEach(sec => {
       if (sec.single) {
         const a = el("a", "ni" + (here === sec.k ? " here" : ""), `<span class="lbl">${esc(sec.t)}</span>`); a.href = ROOT; if (here === sec.k) a.setAttribute("aria-current", "page"); tip(a, TIPS.hud); bar.append(a); return;
@@ -631,16 +655,18 @@
       const w = el("div", "ni-wrap"), b = el("button", "ni" + (sec.util ? " util" : "") + (here === sec.k ? " here" : ""), `<span class="lbl">${esc(sec.t)}</span><span class="caret">▾</span>`);
       b.type = "button"; b.setAttribute("aria-haspopup", "true"); b.setAttribute("aria-expanded", "false"); if (sec.id) b.id = sec.id;
       const m = el("div", "menu"); m.hidden = true; m.setAttribute("role", "menu"); m.setAttribute("aria-label", sec.t);
-      if (sec.k === "learn" && !isHud) { const t = el("a", "mi", `<span class="ic">?</span><b>Tour of this page</b><span>What each part of this page shows and why it matters, in a few short steps</span>`); t.href = "#tour"; t.setAttribute("role", "menuitem"); t.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); }); m.append(t); }
-      sec.items.forEach(k => m.append(item(k, page, isHud)));
+      m.classList.add("cols"); m.style.setProperty("--cols", sec.groups.length);
+      sec.groups.forEach(([h, keys]) => {
+        const col = el("div", "mcol"); col.setAttribute("role", "group"); col.setAttribute("aria-label", h); col.append(el("h5", "", esc(h)));
+        keys.forEach(k => col.append(item(k, page, isHud)));
+        if (sec.k === "learn" && keys.includes("tour") && !isHud) col.insertBefore(pageTour(), col.querySelector(".mi:nth-of-type(2)"));
+        m.append(col);
+      });
       b.addEventListener("click", () => toggle(b, m));
       w.append(b, m); bar.append(w);
     });
     left.append(bar);
-    let state = slots.state;
-    if (!state) { state = el("a", "pill primary", "Chain state"); state.href = ROOT + "#chain-state"; }
-    state.classList.add("pill", "primary"); tip(state, TIPS.state);
-    left.append(state);
+    if (slots.state) slots.state.remove();   // the chain state is the first entry under Explore and behind the rev chip
     /* first visits: one way in, until its four steps are done (start/ keeps the count) */
     const started = (() => { try { return +localStorage.getItem("tauhud-start") || 0; } catch (e) { return 0; } })();
     if (page !== "start" && started < 4) {
@@ -663,9 +689,10 @@
     tgb.addEventListener("click", () => { tgm.style.top = innerWidth <= 700 ? Math.round(tgb.getBoundingClientRect().bottom + 8) + "px" : ""; toggle(tgb, tgm); });   // phone: a full-width panel under the header
     tg.append(tgb, tgm);
     /* feedback, impossible to miss: opens the feedback form in place, the HUD's own on the start page */
-    const fbk = el("button", "pill fbk", `${BUBBLE}<span>Feedback</span>`); fbk.type = "button"; fbk.setAttribute("aria-label", "Give feedback"); tip(fbk, TIPS.feedback);
-    fbk.addEventListener("click", () => { closeAll(); if (isHud && slots.updates) { slots.updates.click(); setTimeout(() => { const t = document.getElementById("fbText"); if (t) t.focus({ preventScroll: true }); }, 60); } else openUpdates(page, true); });
-    right.append(fbk, tg);
+    /* feedback and the update log open the same overlay, so they are one button; the green dot says something new shipped */
+    const fbk = el("button", "pill fbk", `${BUBBLE}<span>Feedback &amp; updates</span>`); fbk.type = "button"; fbk.setAttribute("aria-label", "Feedback and updates"); tip(fbk, TIPS.feedback);
+    fbk.addEventListener("click", () => { closeAll(); markSeen(); if (isHud && slots.updates) slots.updates.click(); else openUpdates(page); });
+    const fbkWrap = el("span", "tn-upd tn-fbk"); fbkWrap.append(fbk);
     let upd = slots.updates;
     if (!upd) { upd = el("a", "", "Updates"); upd.href = "#updates"; upd.addEventListener("click", e => { e.preventDefault(); openUpdates(page); }); }   // opens in place; the HUD keeps its own overlay with the feedback box
     upd.classList.add("tl"); tip(upd, TIPS.updates);
@@ -679,28 +706,32 @@
       document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); si.focus(); si.select(); } });
       const css = el("style"); css.textContent = `.tnav .tn-search { display: flex; align-items: center; margin: 0; } .tnav .tn-search input { width: 150px; box-sizing: border-box; padding: 4px 8px; font: 12px var(--tn-mono); color: #fff; background: rgba(255,255,255,.04); border: 1px solid var(--tn-hair); border-radius: 999px; outline: none; } .tnav .tn-search input::placeholder { color: var(--tn-dim); } .tnav .tn-search input:focus { border-color: #fff; width: 220px; } .tnav .tn-search input::-webkit-search-cancel-button { display: none; } @media (max-width: 700px) { .tnav .tn-search { display: none; } }`; document.head.append(css);
     }
-    /* every page has a short guided tour of its own (assets/tour.js); on the HUD this starts the HUD's tour */
-    /* at most four or five utilities on the line (Feedback, Telegram, Search, Updates); the tour starts from Learn and, on the HUD, from its own buttons */
-    right.append(updWrap);
+    /* at most five utilities on the line: Search, Follow, Feedback & updates, language, settings; the tour starts from Learn */
+    right.append(tg, fbkWrap);
     if (!isHud) loadTour();
     const I = window.TauI18n;
-    right.append(el("span", "tnav-sep"));   // text links on the left of the line, the two switches on the right
-    if (I) {   // language switch: a pill like Simple/Technical, each language in its own script; the choice is remembered
-      const lg = el("div", "seg tn-lang"); lg.setAttribute("role", "group"); lg.setAttribute("aria-label", "Language · 语言"); lg.setAttribute("translate", "no");
-      [["en", "EN", "en", "Read this site in English · 切换到英文"], ["zh", "中文", "zh-CN", "阅读中文版 · Read this site in Chinese"], ["ja", "日本語", "ja", "日本語で読む · Read this site in Japanese"]].forEach(([code, label, tag, t]) => {
-        const lb = el("button", "", label); lb.type = "button"; lb.lang = tag; lb.setAttribute("aria-pressed", String(I.lang === code)); tip(lb, t);
-        lb.addEventListener("click", () => { if (I.lang !== code) I.set(code); }); lg.append(lb);
+    if (I) {   // language: one small menu showing the language you read in; each language is written in its own script; the choice is remembered
+      const LANGS = [["en", "EN", "English", "en", "Read this site in English · 切换到英文"], ["zh", "中文", "中文", "zh-CN", "阅读中文版 · Read this site in Chinese"], ["ja", "日本語", "日本語", "ja", "日本語で読む · Read this site in Japanese"]];
+      const cur = LANGS.find(l => l[0] === I.lang) || LANGS[0];
+      const lw = el("div", "ni-wrap tn-lang"), lb = el("button", "pill tn-langb", `<span lang="${cur[3]}">${cur[1]}</span><span class="caret">▾</span>`), lm = el("div", "menu tn-langm");
+      lw.setAttribute("translate", "no"); lb.type = "button"; lb.setAttribute("aria-haspopup", "true"); lb.setAttribute("aria-expanded", "false"); lb.setAttribute("aria-label", "Language · 语言 · 言語"); tip(lb, "Language · 语言 · 言語");
+      lm.hidden = true; lm.setAttribute("role", "menu"); lm.setAttribute("aria-label", "Language · 语言 · 言語");
+      LANGS.forEach(([code, , name, tag, t]) => {
+        const a = el("a", "mi" + (code === I.lang ? " here" : ""), `<span class="ic">文</span><b lang="${tag}">${name}</b><span>${esc(t)}</span>`); a.href = "#"; a.setAttribute("role", "menuitem");
+        a.addEventListener("click", e => { e.preventDefault(); closeAll(); if (I.lang !== code) I.set(code); }); lm.append(a);
       });
-      right.append(lg);
+      lb.addEventListener("click", () => toggle(lb, lm));
+      lw.append(lb, lm); right.append(lw);
     }
-    if (slots.view) { tip(slots.view, "View: Simple says what each thing means; Technical adds keys, hashes, heights and stream names."); right.append(slots.view); }
-    if (slots.gear) {
+    if (slots.gear) {   // settings, including the Simple/Technical view where a page has one
       const gw = el("div", "tnav-gearwrap"), gb = el("button", "tnav-gear", "⚙"), pop = el("div", "tnav-pop");
-      gb.type = "button"; gb.setAttribute("aria-label", isHud ? "Settings: node address, background rain" : "Settings: node, guided tour, about"); gb.setAttribute("aria-haspopup", "true"); gb.setAttribute("aria-expanded", "false"); tip(gb, isHud ? TIPS.gear : TIPS.gearSub);
-      pop.hidden = true; pop.append(slots.gear);
+      gb.type = "button"; gb.setAttribute("aria-label", isHud ? "Settings: view, node address, background rain" : "Settings: view, node, guided tour, about"); gb.setAttribute("aria-haspopup", "true"); gb.setAttribute("aria-expanded", "false"); tip(gb, isHud ? TIPS.gear : TIPS.gearSub);
+      pop.hidden = true;
+      if (slots.view) { tip(slots.view, "View: Simple says what each thing means; Technical adds keys, hashes, heights and stream names."); const vh = el("h4", "", "View"), vr = el("div", "row"); vr.append(slots.view); pop.append(vh, vr); }
+      pop.append(slots.gear);
       gb.addEventListener("click", () => toggle(gb, pop));
       gw.append(gb, pop); right.append(gw);
-    }
+    } else if (slots.view) right.append(slots.view);
     nav.innerHTML = ""; nav.append(left, right);
     mountPhone(nav, page, isHud, here, upd);
     checkLog();
@@ -717,10 +748,9 @@
       const bg = el("div", "tsheet-bg"), sh = el("div", "tsheet"); bg.hidden = sh.hidden = true;
       sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", sec.t);
       sh.append(el("div", "grab"), el("h4", "", esc(sec.t)));
-      sec.items.forEach(k => sh.append(item(k, page, isHud)));
+      sec.groups.forEach(([h, keys]) => { sh.append(el("h5", "", esc(h))); keys.forEach(k => sh.append(item(k, page, isHud))); if (sec.k === "learn" && keys.includes("tour") && !isHud) sh.append(pageTour()); });
       if (sec.k === "learn" && window.TauI18n) { const I = window.TauI18n, NAME = { en: ["English", "Read this site in English"], zh: ["中文", "阅读中文版 · Read this site in Chinese"], ja: ["日本語", "日本語で読む · Read this site in Japanese"] };
         for (const other of Object.keys(NAME).filter(c => c !== I.lang)) { const l = el("a", "mi", `<span class="ic">文</span><b>${NAME[other][0]}</b><span>${NAME[other][1]}</span>`); l.href = "#"; l.setAttribute("translate", "no"); l.addEventListener("click", e => { e.preventDefault(); I.set(other); }); sh.append(l); } }
-      if (sec.k === "learn" && !isHud) { const t = el("a", "mi", `<span class="ic">?</span><b>Tour of this page</b><span>What each part of this page shows and why it matters, in a few short steps</span>`); t.href = "#tour"; t.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); }); sh.append(t); }
       if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram alerts <span class="ext">↗</span></b><span>@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t);
         const x = el("a", "mi", `<span class="ic">${XLOGO}</span><b>X @TauHUDcom <span class="ext">↗</span></b><span>Real rule changes, new nodes, Testnet today and the Monday recap in your timeline</span>`); x.href = XCOM; x.target = "_blank"; x.rel = "noopener"; sh.append(x); }
       bg.addEventListener("click", closeAll);
