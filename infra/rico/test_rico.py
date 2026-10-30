@@ -32,3 +32,30 @@ if node:
                         capture_output=True, text=True, check=True).stdout
     assert json.loads(js) == ls, "rico.js all() and make.py lines() differ"
 print("ok")
+
+# design and keep, against a stand-in for ElevenLabs
+import base64
+import tempfile
+import types
+calls = []
+def fake(path, body=None, accept="application/json", missing_ok=False):
+    calls.append(path)
+    if path == "/text-to-voice/design":
+        return json.dumps({"previews": [{"audio_base_64": base64.b64encode(b"mp3-%d" % i).decode(), "generated_voice_id": f"g{i}"} for i in range(3)]}).encode()
+    if path == "/text-to-voice":
+        assert body["generated_voice_id"] == "g1" and body["voice_name"] == "Rico"
+        return json.dumps({"voice_id": "v-rico"}).encode()
+    if path == "/voices":
+        return json.dumps({"voices": [{"voice_id": "v-rico", "name": "Rico"}]}).encode()
+    if path.startswith("/text-to-speech/v-rico"):
+        return b"clip"
+    raise AssertionError(path)
+make.call = fake
+with tempfile.TemporaryDirectory() as out:
+    make.cmd_design(types.SimpleNamespace(out=out, description=make.DESIGN))
+    assert open(os.path.join(out, "samples", "design-2.mp3"), "rb").read() == b"mp3-1"
+    assert "keep 3" in open(os.path.join(out, "samples", "index.html")).read()
+    make.cmd_keep(types.SimpleNamespace(out=out, n=2, name="Rico"))
+    idx = json.load(open(os.path.join(out, "index.json")))
+    assert idx["voice"] == "v-rico" and len(idx["clips"]) == len(ls)
+print("design ok")

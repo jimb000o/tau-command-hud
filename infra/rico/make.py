@@ -11,9 +11,13 @@ The key is read from ELEVENLABS_API_KEY in infra/.env (never in the repository).
   python3 infra/rico/make.py voices                 the voices in the account
   python3 infra/rico/make.py samples [name ...]     one sample per voice -> https://node.tauhud.com/rico/samples/
   python3 infra/rico/make.py make --voice <name>    every clip with that voice (prints the characters first)
+  python3 infra/rico/make.py design                 three new voices drawn from DESIGN -> https://node.tauhud.com/rico/samples/
+  python3 infra/rico/make.py keep 2                 keeps design 2 as the voice "Rico" and makes every clip with it
   python3 infra/rico/make.py lines                  the lines and how many characters they are, no key needed
+design and keep need a key with Voice Generation: Access and Voices: Write.
 """
 import argparse
+import base64
 import hashlib
 import html
 import json
@@ -33,6 +37,10 @@ MODEL = "eleven_multilingual_v2"
 SETTINGS = {"stability": 0.38, "similarity_boost": 0.8, "style": 0.5, "use_speaker_boost": True}
 SAMPLE = ("This is Rico on Radio Coco, ninety-seven point three! Chain weather. A light breeze, a few txs in the "
           "last blocks. Forecast: clear skies, unless somebody sends something.")
+
+DESIGN = ("A charismatic Caribbean radio host in his forties, rich warm voice with a lilting island accent, lively and "
+          "entertaining, smooth showman energy, playful pauses, a smile in every line, evening beach radio, clear and "
+          "easy to understand.")
 
 
 def lines(src=None):
@@ -72,7 +80,7 @@ def api_key():
     return k
 
 
-def call(path, body=None, accept="application/json"):
+def call(path, body=None, accept="application/json", missing_ok=False):
     req = urllib.request.Request(API + path, data=json.dumps(body).encode() if body is not None else None,
                                  headers={"xi-api-key": api_key(), "Content-Type": "application/json", "Accept": accept})
     for attempt in range(4):
@@ -81,6 +89,8 @@ def call(path, body=None, accept="application/json"):
                 return r.read()
         except urllib.error.HTTPError as e:
             msg = e.read().decode("utf-8", "replace")[:300]
+            if missing_ok and e.code in (404, 405):
+                return None
             if e.code == 429 and attempt < 3:
                 time.sleep(5 * (attempt + 1))
                 continue
@@ -136,12 +146,51 @@ def cmd_samples(a):
         write(os.path.join(a.out, "samples", f), speak(v["voice_id"], SAMPLE))
         rows.append(f'<li><b>{html.escape(v["name"])}</b><br><audio controls preload="none" src="{f}"></audio></li>')
         print("  made", v["name"])
-    page = ("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>Rico: voices</title>"
-            "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:640px;margin:2em auto;padding:0 16px}"
-            "li{margin:1.2em 0;list-style:none}audio{width:100%}</style><h1>Rico on Radio Coco: pick a voice</h1>"
-            f"<p>{html.escape(SAMPLE)}</p><ul>{''.join(rows)}</ul>")
-    write(os.path.join(a.out, "samples", "index.html"), page.encode())
+    write(os.path.join(a.out, "samples", "index.html"), page(rows, "Rico on Radio Coco: pick a voice", SAMPLE))
     print("Listen: https://node.tauhud.com/rico/samples/")
+
+
+def page(rows, title, text):
+    return ("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>Rico: voices</title>"
+            "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:640px;margin:2em auto;padding:0 16px}"
+            "li{margin:1.2em 0;list-style:none}audio{width:100%}code{color:#7f7}</style>"
+            f"<h1>{html.escape(title)}</h1><p>{html.escape(text)}</p><ul>{''.join(rows)}</ul>").encode()
+
+
+def cmd_design(a):
+    """Three voices drawn from a description (ElevenLabs Voice Design); nothing is kept in the account yet."""
+    body = {"voice_description": a.description, "text": SAMPLE}
+    r = call("/text-to-voice/design", dict(body, model_id="eleven_multilingual_ttv_v2"), missing_ok=True)
+    if r is None:
+        r = call("/text-to-voice/create-previews", body)
+    previews = json.loads(r)["previews"][:3]
+    rows, ids = [], []
+    for i, p in enumerate(previews, 1):
+        f = f"design-{i}.mp3"
+        write(os.path.join(a.out, "samples", f), base64.b64decode(p["audio_base_64"]))
+        ids.append(p["generated_voice_id"])
+        rows.append(f"<li><b>Design {i}</b> &nbsp; <code>python3 infra/rico/make.py keep {i}</code><br>"
+                    f"<audio controls preload=none src='{f}'></audio></li>")
+    write(os.path.join(a.out, "design.json"), json.dumps({"description": a.description, "ids": ids}).encode())
+    write(os.path.join(a.out, "samples", "index.html"), page(rows, "Rico on Radio Coco: three designs", a.description))
+    print(f"{len(ids)} designs made. Listen: https://node.tauhud.com/rico/samples/")
+    print("Keep one with: python3 infra/rico/make.py keep 1   (or 2, 3); none right? run design again.")
+
+
+def cmd_keep(a):
+    """Keep design N in the account as the voice "Rico", then make every clip with it."""
+    try:
+        d = json.load(open(os.path.join(a.out, "design.json")))
+        gid = d["ids"][a.n - 1]
+    except (OSError, ValueError, KeyError, IndexError):
+        sys.exit("No such design. Run: python3 infra/rico/make.py design")
+    body = {"voice_name": a.name, "voice_description": d["description"][:500], "generated_voice_id": gid}
+    r = call("/text-to-voice", body, missing_ok=True)
+    if r is None:
+        r = call("/text-to-voice/create-voice-from-preview", body)
+    print(f"Kept design {a.n} as the voice {a.name} ({json.loads(r).get('voice_id')}).")
+    a.voice = json.loads(r).get("voice_id") or a.name
+    cmd_make(a)
 
 
 def cmd_lines(a):
@@ -183,10 +232,15 @@ def main():
     s.add_argument("names", nargs="*")
     s.add_argument("--max", type=int, default=12)
     sub.add_parser("lines")
+    d = sub.add_parser("design")
+    d.add_argument("description", nargs="?", default=DESIGN)
+    k = sub.add_parser("keep")
+    k.add_argument("n", type=int)
+    k.add_argument("--name", default="Rico")
     m = sub.add_parser("make")
     m.add_argument("--voice", required=True)
     a = p.parse_args()
-    {"voices": cmd_voices, "samples": cmd_samples, "lines": cmd_lines, "make": cmd_make}[a.cmd](a)
+    {"voices": cmd_voices, "samples": cmd_samples, "lines": cmd_lines, "make": cmd_make, "design": cmd_design, "keep": cmd_keep}[a.cmd](a)
 
 
 if __name__ == "__main__":

@@ -576,7 +576,7 @@ cd /opt/tau-command-hud && python3 infra/rico/make.py samples          # then li
 cd /opt/tau-command-hud && python3 infra/rico/make.py make --voice NAME
 ```
 
-`voices` lists the account's voices (a Voice Library voice must first be added to My Voices), `lines` shows the
+`design` draws three new voices from a description (Caribbean radio host by default) and `keep N` keeps one as "Rico" and makes every clip; both need a key with Voice Generation: Access and Voices: Write. `voices` lists the account's voices (a Voice Library voice must first be added to My Voices), `lines` shows the
 lines and their characters without a key. After new lines in rico.js, run `make` again: it only makes the new ones;
 a different `--voice` makes them all again.
 

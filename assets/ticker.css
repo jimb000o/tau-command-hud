@@ -39,10 +39,8 @@ a.tk-it:focus-visible { outline: 1px solid var(--hair); outline-offset: -2px; }
 /* ghost transactions wear the chain core's mark: an amber dot in a small block frame */
 .tk-it .tk-mk.m-ghost { width: 11px; height: 11px; border: 1px solid rgba(255,177,59,.75); border-radius: 2px; box-sizing: border-box; margin: 0 1px; }
 .tk-it .tk-mk.m-ghost::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: #ffb13b; box-shadow: 0 0 5px #ffb13b; }
-/* the island election game's headline: a green light that pulses like the HUD's live light */
-.k-news.fresh .tk-mk { font-size: 0; }
-.k-news.fresh .tk-mk::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px 1px rgba(57,255,138,.9); animation: tkFresh 1.6s ease-in-out infinite; }
+/* the island election game's headline: green text that glows, with the same small live dot as a live item */
+.k-news.fresh .tk-mk::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 5px var(--ok); animation: tkPulse 2.4s ease-in-out infinite; }
 .k-news.fresh .tk-tx { color: var(--ok); animation: tkFreshText 1.6s ease-in-out infinite; }
-@keyframes tkFresh { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.25); filter: brightness(1.4); } }
 @keyframes tkFreshText { 0%, 100% { text-shadow: 0 0 0 rgba(57,255,138,0); } 50% { text-shadow: 0 0 9px rgba(57,255,138,.75); } }
 @media (prefers-reduced-motion: reduce) { .k-news.fresh .tk-mk::before, .k-news.fresh .tk-tx { animation: none; } }
