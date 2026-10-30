@@ -555,6 +555,11 @@ html.coreonly #coreFoot { display: block; position: fixed; left: 0; right: 0; bo
 .blk.sel { border-color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,.5); }
 .blk.old { animation: none; }
 .blkdetail { flex: 1 1 auto; min-height: 0; overflow: auto; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
+/* under the block strip: the block detail on the left, on wide screens the troll box on the right (assets/chat.js mounts itself into #tbHost); elsewhere the troll box stays a pill */
+.chainlow { flex: 1 1 auto; min-height: 0; display: flex; gap: 16px; }
+.chainlow > .blkdetail { flex: 1 1 0; min-width: 0; }
+.tbhost { display: none; }
+html.wide .tbhost { display: flex; flex: 1 1 0; min-width: 0; min-height: 0; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
 .blkdetail .lead { font-size: 13px; }
 .blkdetail h3:first-child, .blkdetail section > h3:first-child { margin-top: 0; }
 .blkdetail .cols section { min-width: 0; }
@@ -1092,7 +1097,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <h2>Blockchain <small id="chainSub">following the newest block</small><button class="info" type="button" aria-label="What is this?" data-tip="Click a block to inspect it below. The mouse wheel glides through the chain, down goes back in time, and older blocks keep loading as you go, back to genesis. The detail below follows the block at the right edge; “back to newest” returns to the live end. A bright card marks a rule change that took effect. Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
       <div class="radar" id="radar"></div>
       <div class="ribbon" id="ribbon"></div>
-      <div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div>
+      <div class="chainlow"><div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div><div class="tbhost" id="tbHost"></div></div>
     </article>
 
     <article class="panel a-off">
@@ -1973,7 +1978,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=27.3", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=27.5", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);

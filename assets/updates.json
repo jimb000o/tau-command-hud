@@ -1379,6 +1379,16 @@
   "html": "Japanese, second round: the Monday front page of The Daily Consensus is now written in Japanese too, and every older entry in this Updates log reads in Japanese."
  },
  {
+  "tag": "Privacy",
+  "on": "2026-10-29",
+  "html": "Privacy notice: the troll box is now in the short summary too, and section 7 spells out that there is no account or cookie, what the operator sees, and how to get a message of yours removed sooner than the 24 hours."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The troll box has its own place on the HUD now: on wide screens it sits right under the block strip, next to the block detail, always open, with the newest messages at the bottom and the field to write in below them. On smaller screens and phones it stays the Troll box pill at the bottom right."
+ },
+ {
   "tag": "HUD",
   "on": "2026-10-29",
   "html": "The header Agorzilla gets a finer face. He is now built from the full-size picture at twice the sharpness, and his head is cut above the neck with the ears, so a turn or a tilt no longer shows a seam or a blurred second face behind it; a new head move starts where the last one is, so it never jumps. His lids are skin from around his eyes with a dark lash line and meet low in the eye like a smile, and his brows lift when a block lands and draw in when he worries. The tongue is a real tongue now, with a groove and a shine: it comes out of his mouth for a peek with a wiggle, or licks his lips from one corner to the other. Also: his hover no longer says Problem when agorzilla.com's news is under an hour old, which is normal; it says when it was updated."
