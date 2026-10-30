@@ -606,7 +606,9 @@ function onMessage(ev) {
   if (cmd === "rate_limit") { OUT.tokens = -2; return; }   // over the relay's budget: pause about two seconds; the watchdog asks again
   if (cmd === "getblockrange") {
     if (msg.status !== "ok") {
-      if ((msg.error || {}).code === "NOT_READY") setTimeout(() => loadFrom(0), 3000); else { C.legacy = true; C.loading = false; send("getblocks 50"); }
+      const code = (msg.error || {}).code;
+      if (code === "RATE_LIMITED") { OUT.tokens = -2; return; }   // the watchdog asks for the page again
+      if (code === "NOT_READY") setTimeout(() => loadFrom(0), 3000); else { C.legacy = true; C.loading = false; send("getblocks 50"); }
       return;
     }
     if (!C.inflight) return;

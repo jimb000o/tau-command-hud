@@ -43,13 +43,23 @@ blocks = [
     {"header": {"timestamp": day1 + 120}, "tx_ids": ["h4"], "transactions": [tx(A, BOWL.upper())]},
     {"header": {"timestamp": day2 + 60}, "tx_ids": ["h5", "h6"], "transactions": [tx(B, C), tx(A, B)]},
     {"header": {"timestamp": day2 + 90}, "tx_ids": ["h8", "h9"], "transactions": [tx(G, B), tx(G, C)]},
+    {"header": {"timestamp": day2 + 7200}, "tx_ids": ["h10", "h11"], "transactions": [tx(A, BOWL), tx(C, BOWL)]},
     {"header": {}, "tx_ids": ["h7"], "transactions": [tx(A, B)]},
 ]
 out = s.by_day(blocks)
-check(out["days"]["2026-10-28"] == {"agorzilla": [2, 1], "tauhud": [1, 1], "idni": [0, 0], "other": [1, 1]},
+check(out["days"]["2026-10-28"] == {"agorzilla": [2, 1, 1, 0, 10], "tauhud": [1, 1, 1, 0, 5], "idni": [0, 0, 0, 0, 0], "other": [1, 1, 1, 0, 5]},
       "a meal is Agorzilla's, a relay send Tau HUD's, the rest other; wallets counted once a day")
-check(out["days"]["2026-10-29"] == {"agorzilla": [1, 1], "tauhud": [0, 0], "idni": [2, 1], "other": [1, 1]},
+check(out["days"]["2026-10-29"] == {"agorzilla": [3, 3, 2, 1, 15], "tauhud": [0, 0, 0, 0, 0], "idni": [2, 1, 1, 0, 10], "other": [1, 1, 1, 0, 5]},
       "a send from agorzilla.com through the relay counts for Agorzilla, a genesis account for IDNI")
+z = out["agorzilla"]["2026-10-28"]
+check(z["meals"] == 2 and z["snacks"] == 1 and z["agrs"] == 10 and z["wallets"] == 1 and z["new"] == 1 and z["hours"][0] == 2,
+      "Agorzilla per day: meals, a second meal within the hour is a snack, test AGRS fed, wallets")
+z = out["agorzilla"]["2026-10-29"]
+check(z["meals"] == 2 and z["new"] == 1 and z["snacks"] == 0, "a wallet's first meal counts as new, a meal hours later is no snack")
+check(out["ours"]["2026-10-28"] == [3, 2, 2, 0, 15] and out["ours"]["2026-10-29"] == [3, 3, 1, 2, 15],
+      "our two sites together: a wallet on both counts once; returning wallets")
+check(out["totals"]["ours"] == {"7": 3, "30": 3, "all": 3} and out["totals"]["tauhud"]["all"] == 1, "distinct wallets over 7 / 30 days / all")
+check(out["hours"]["2026-10-29"][0] == 1 and out["hours"]["2026-10-29"][2] == 2, "our transactions per hour")
 check(out["since"] == day1 + 60 and len(out["days"]) == 2, "blocks without a time are left out")
 for i in range(txsources.SENT_MAX + 5):
     s.sent[f"x{i}"] = ""
