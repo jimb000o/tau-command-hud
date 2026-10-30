@@ -3,7 +3,9 @@
    The name is the simulation's random animal name (TauSim.me), written to this browser only when the visitor sends a
    message. The relay keeps a message 24 hours with that name and the text, never an address; links, price talk and slurs
    are refused there, three reports hide a message. Include with <link rel="stylesheet" href="assets/chat.css"> and
-   <script src="assets/chat.js" defer></script>; window.TAU_CHAT_RELAY overrides the relay (a host, or a ws:// address for tests). */
+   <script src="assets/chat.js" defer></script>; window.TAU_CHAT_RELAY overrides the relay (a host, or a ws:// address for tests).
+   A page with a visible <div id="tbHost"> (the HUD on wide screens) gets the room as a panel inside it instead of the pill:
+   always open, connected while the tab is visible. When the host is hidden (a smaller screen) it is the pill again. */
 (() => {
   "use strict";
   const RELAY = window.TAU_CHAT_RELAY || "node.tauhud.com", SOCKET = /^wss?:\/\//.test(RELAY) ? RELAY : `wss://${RELAY}`;
@@ -119,14 +121,16 @@
   }
   function disconnect() { clearTimeout(retry); if (ws) { const w = ws; ws = null; w._dead = true; try { w.send("chat leave"); w.close(); } catch (e) {} } }
 
+  let inline = false;
   function open(on) {
+    if (inline) return;
     box.hidden = !on; pill.hidden = on; pill.setAttribute("aria-expanded", String(on));
     document.documentElement.classList.toggle("tb-open", on);
     if (on) { showWho(); connect(); setTimeout(() => input.focus({ preventScroll: true }), 0); } else disconnect();
   }
   pill.onclick = () => open(true);
   x.onclick = () => { open(false); pill.focus(); };
-  box.addEventListener("keydown", e => { if (e.key === "Escape") { open(false); pill.focus(); } });
+  box.addEventListener("keydown", e => { if (e.key === "Escape" && !inline) { open(false); pill.focus(); } });
   form.onsubmit = e => {
     e.preventDefault();
     const text = input.value.replace(/\s+/g, " ").trim();
@@ -137,9 +141,20 @@
     ws.send(`chat say ${m.token} ${m.a} ${m.b} ${m.c} ${encodeURIComponent(text)}`);
     setTimeout(() => { send.disabled = false; }, 4000);
   };
-  document.addEventListener("visibilitychange", () => { if (!box.hidden && !document.hidden && !ws) connect(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) { if (inline) disconnect(); } else if (!box.hidden && !ws) connect(); });
 
-  const mount = () => document.body.append(pill, box);
+  /* the panel form: inside #tbHost while that is shown, back to the pill when it is not */
+  function place() {
+    const h = document.getElementById("tbHost"), show = !!(h && h.offsetWidth > 0);
+    if (show && !inline) {
+      const wasOpen = !box.hidden; if (wasOpen) open(false);
+      inline = true; h.append(box); box.classList.add("tb-inline"); box.hidden = false; pill.hidden = true; x.hidden = true;
+      showWho(); if (!document.hidden) connect();
+    } else if (!show && inline) {
+      inline = false; disconnect(); box.classList.remove("tb-inline"); x.hidden = false; document.body.append(box); box.hidden = true; pill.hidden = false;
+    }
+  }
+  const mount = () => { document.body.append(pill, box); place(); addEventListener("resize", place); };
   if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount);
   window.TauChat = { open: () => open(true), close: () => open(false) };
 })();

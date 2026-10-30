@@ -2011,5 +2011,6 @@ TauI18n.add({ strings: {
   "≥ {n} blocks · ~{m} s": "≥ {n} 个区块 · 约 {m} 秒",
   "Japanese, second round: the Monday front page of The Daily Consensus is now written in Japanese too, and every older entry in this Updates log reads in Japanese.": "日文第二轮：《共识日报》每周一的头版现在也有日文版，本更新日志里的所有旧条目也都可以用日文阅读。",
   "Privacy notice: the troll box is now in the short summary too, and section 7 spells out that there is no account or cookie, what the operator sees, and how to get a message of yours removed sooner than the 24 hours.": "隐私说明：闲聊箱现在也写进了简要说明，第 7 节写明没有账户、没有 Cookie、运营者能看到什么，以及如何让你自己的消息在 24 小时之前就被移除。",
+  "The troll box has its own place on the HUD now: on wide screens it sits right under the block strip, next to the block detail, always open, with the newest messages at the bottom and the field to write in below them. On smaller screens and phones it stays the Troll box pill at the bottom right.": "闲聊箱现在在 HUD 上有了自己的位置：在宽屏上，它就在区块条下方、区块详情旁边，始终打开，最新消息在底部，下面是输入框。在较小的屏幕和手机上，它仍然是右下角的“闲聊箱”按钮。",
   "Tau HUD in numbers: the testnet transactions split now shows IDNI's genesis accounts on their own (the 11 accounts the testnet started with, which make most of the traffic), next to Agorzilla, Tau HUD and other wallets.": "数据一览：测试网交易比例现在单独显示 IDNI 的创世账户（测试网启动时就有的 11 个账户，产生了大部分交易），与 Agorzilla、Tau HUD 和其他钱包并列。",
 } });

@@ -1384,6 +1384,11 @@
   "html": "Privacy notice: the troll box is now in the short summary too, and section 7 spells out that there is no account or cookie, what the operator sees, and how to get a message of yours removed sooner than the 24 hours."
  },
  {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The troll box has its own place on the HUD now: on wide screens it sits right under the block strip, next to the block detail, always open, with the newest messages at the bottom and the field to write in below them. On smaller screens and phones it stays the Troll box pill at the bottom right."
+ },
+ {
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "Tau HUD in numbers: the testnet transactions split now shows IDNI's genesis accounts on their own (the 11 accounts the testnet started with, which make most of the traffic), next to Agorzilla, Tau HUD and other wallets."
