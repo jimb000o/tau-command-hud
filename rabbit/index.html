@@ -68,6 +68,7 @@ button.chip:hover { border-color: #fff; }
 .news.radio #cvDJ { flex: none; width: 40px; height: 40px; margin: -10px 0 -4px; }
 .news.radio #cvDJ canvas { width: 40px; height: 40px; display: block; }
 .news.radio b { display: inline-flex; align-items: center; gap: 6px; color: var(--ok); }
+.cv-tx { color: var(--ok); text-decoration: none; font-size: 11px; }
 .news.radio .onair { width: 7px; height: 7px; border-radius: 50%; background: #e9b44c; box-shadow: 0 0 6px #e9b44c; }
 .news.radio.live .onair { animation: cvAir 1s steps(2) infinite; }
 @keyframes cvAir { 50% { opacity: .25; } }
@@ -227,6 +228,7 @@ footer a { color: var(--dim); }
   </main>
   <footer><p>A game, drawn and played in your browser. Laws and votes you choose to sign go to Tau Testnet Alpha with test AGRS, which have no value. The candidates, the island and the embassies are made up.</p></footer>
 </div>
+<script src="../wallet/vendor/tau-bls.min.js"></script>
 <script src="scene.js"></script>
 <script src="music.js"></script>
 <script src="game.js"></script>
