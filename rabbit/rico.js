@@ -1,9 +1,10 @@
-/* Rico's voice on Radio Coco. Every line Rico can say aloud is fixed and listed here (RICO.L), so the server can
-   speak each one once with a voice from the ElevenLabs account (infra/rico/make.py) and keep the clips at
-   node.tauhud.com/rico/<sha1 of the English text, 16 hex>.mp3, listed in index.json. Numbers and block heights are
-   never spoken, only shown, so a small fixed set covers everything. A line whose clip is missing is simply shown
-   as text, as before.
-   window.RICO = { L, all(), speak(parts) }: a line is a list of parts { t: shown text, v: spoken English or null }. */
+/* The islanders' voices. Every line anyone can say aloud is fixed and listed here: Rico's lines on the radio strip
+   (RICO.L) and what each islander says when you walk in (RICO.CAST). The server speaks each one once with that
+   islander's voice (infra/rico/make.py) and keeps the clips at node.tauhud.com/rico/<key>.mp3, listed in index.json;
+   the key is the first 16 hex of sha1("<who>|<English text>"). Numbers and block heights are never spoken, only
+   shown, so a fixed set covers everything. A line whose clip is missing is simply shown as text, as before.
+   rabbit/voices.json is the list the server reads (node tests/voices.mjs --write makes it; the tests check it).
+   window.RICO = { L, CAST, all(), speak(parts, who) }: a line is a list of parts { t: shown text, v: spoken English or null }. */
 (() => {
   "use strict";
   const BASE = "https://node.tauhud.com/rico/";
@@ -42,8 +43,33 @@
     showers: "Forecast: showers, txs are waiting for the next block.",
     clear: "Forecast: clear skies, unless somebody sends something.",
   };
+  /* what the islanders say in the places (the same English as in game.js, which the tests check) */
+  const LAWT = { harbour: "A deep harbour for cruise ships", road: "A road round the island" };
+  const EMBV = { frost: ["harbour", 40], salado: ["road", 35] };
+  const CAST = [
+    ["hana", "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."],
+    ["sam", "Sam keeps the minutes today. Pick a law; the other three candidates vote, two yes and it is law."],
+    ["lola", "Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."],
+    ["rico", "Twenty-five coins and I play anything, baby. I don’t check, I just spin. But the Book writes down who paid me, every time."],
+    ["lola", "A pact means you vote for each other’s laws. Break one and the whole island knows by breakfast. Lemonade’s on the house."],
+    ["sam", "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing."],
+    ["sam", "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."],
+    ["sam", "Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."],
+    ["sam", "Three moves a day, five days, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."],
+    ["sam", "Two laws that cannot both hold would leave the island not knowing what is allowed, so the Book will not take it. Repeal the old one first, or pick another law."],
+    ["rico", "Done, it’s out there. Half the island is talking. The other half will read the Book tomorrow, and the Book says you paid me."],
+    ["rico", "Done. And this one’s true, so let them check. The Book backs you up."],
+    ["rico", "This just in on Radio Coco, ninety-seven point three!"],
+    ...NAMES.map(n => n.toLowerCase()).flatMap(c => [[c, "Fine. I vote for yours, you vote for mine. Lola is our witness, and the Book is our memory."], [c, "After what you did? Buy yourself a lemonade."], [c, "Not today. Show me how you vote first."]]),
+    ...Object.entries(EMBV).flatMap(([who, [law, n]]) => [[who, `We are counting on you for “${LAWT[law]}”. We would hate to remind the island in public.`], [who, `${n} coins, today. All we ask is that you propose “${LAWT[law]}” before the election. A small thing between friends.`]]),
+  ];
+  /* what Rico can put on air: the four rumours that are not true, and the true things the Book has seen */
+  const LIES = ["Marisol fishes inside the reef at night", "Tobias wants to sell the lighthouse", "Baako’s coconuts are imported", "Hana wants school on Sundays"];
+  const EMBN = { "North Wind Embassy": 40, "South Current Embassy": 35 };
+  const CLAIMS = [...LIES, ...NAMES.flatMap(x => [...Object.entries(EMBN).map(([y, n]) => `${x} took ${n} coins from the ${y}`), ...NAMES.filter(y => y !== x).map(y => `${x} paid for the rumour about ${y}`), `${x} broke a pact`])];
+  CLAIMS.forEach(c => CAST.push(["rico", c + "!"]));
   const fill = (s, v) => s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));
-  /* every English text Rico can speak: the server makes one clip for each */
+  /* every line anyone can speak, as [who, English]: the server makes one clip for each */
   function all() {
     const out = [];
     for (const [k, s] of Object.entries(L)) {
@@ -52,29 +78,29 @@
       else if (k === "day") for (let n = 1; n <= DAYS; n++) out.push(fill(s, { n, m: DAYS }));
       else out.push(s);
     }
-    return out;
+    return [...out.map(t => ["rico", t]), ...CAST];
   }
 
   /* the clips the server has made so far */
   let have = null;
   const ready = fetch(BASE + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null))
     .then(j => { have = new Set((j && j.clips) || []); }, () => { have = new Set(); });
-  async function key(s) {
-    const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(s));
+  async function key(who, s) {
+    const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(who + "|" + s));
     return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
   }
   const cache = new Map();
   const clip = k => { if (!cache.has(k)) cache.set(k, fetch(BASE + k + ".mp3").then(r => (r.ok ? r.arrayBuffer() : null), () => null)); return cache.get(k); };
-  /* speak a line: all its spoken parts, in order, or nothing at all when one clip is missing */
-  async function speak(parts) {
+  /* speak a line in someone's voice: all its spoken parts, in order, or nothing at all when one clip is missing */
+  async function speak(parts, who = "rico") {
     const SND = window.COVE_SOUND;
     if (!SND || !SND.on || !SND.speak || !window.crypto || !crypto.subtle) return false;
     await ready;
-    const keys = await Promise.all(parts.filter(p => p.v).map(p => key(p.v)));
+    const keys = await Promise.all(parts.filter(p => p.v).map(p => key(who, p.v)));
     if (!keys.length || !keys.every(k => have.has(k))) return false;
     const bufs = await Promise.all(keys.map(clip));
     if (bufs.some(b => !b)) return false;
     return SND.speak(bufs.map(b => b.slice(0)));
   }
-  window.RICO = { L, NAMES, all, speak, fill };
+  window.RICO = { L, CAST, NAMES, all, speak, fill, key };
 })();

@@ -7,12 +7,18 @@
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
-  const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+  /* every translated text remembers its English, so a line shown in Chinese or Japanese is still spoken in English */
+  const ENG = new Map();
+  const T = s => { const r = window.TauI18n ? TauI18n.t(s) : s; if (r !== s) ENG.set(r, s); return r; };
   const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
+  const EN = s => ENG.get(s) || s;
   const SC = window.COVE_SCENE, SND = window.COVE_SOUND, RICO = window.RICO;
   /* a part of what Rico says: spoken aloud when the server has his clip (rico.js), or only shown */
   const V = (k, v) => ({ t: v ? F(RICO.L[k], v) : T(RICO.L[k]), v: v ? RICO.fill(RICO.L[k], v) : RICO.L[k] });
   const Q = (s, v) => ({ t: v ? F(s, v) : T(s), v: null });
+  /* a part anyone says in a place: shown in the visitor's language, spoken in English (RICO.CAST has the clips) */
+  const S = s => ({ t: T(s), v: s });
+  const join = parts => parts.map(p => p.t).join(window.TauI18n && /^(zh|ja)$/.test(TauI18n.lang) ? "" : " ");
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
   function el(tag, attrs, ...kids) {
     const e = document.createElement(tag);
@@ -326,7 +332,7 @@
   }
   /* a true thing one can say about a rival, straight from the Book */
   function factAbout(c) {
-    const d = G.deals.find(d => d.by === c); if (d) return F("{x} took {n} coins from the {y}", { x: nm(c), n: EMB[d.emb].coins, y: T(EMB[d.emb].name) });
+    const d = G.deals.find(d => d.by === c); if (d) return F("{x} took {n} coins from the {y}", { x: nm(c), n: EMB[d.emb].coins, y: EMB[d.emb].name });   // the dictionary translates the filling too
     const l = G.lies.find(l => l.by === c && l.lie); if (l) return F("{x} paid for the rumour about {y}", { x: nm(c), y: nm(l.about) });
     const b = G.pacts.find(p => p.broken && p.a === c); if (b) return F("{x} broke a pact", { x: nm(c) });
     return null;
@@ -373,15 +379,21 @@
   }
   function closeCard(keep) {
     if (UI.card) { UI.card.remove(); UI.card = null; } $("cvStage").classList.remove("carded"); SC.host(null);
-    if (!keep) { SC.focus(null); SC.glow(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); }
+    if (!keep) { SC.focus(null); SC.glow(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); SND.hush(); }
   }
-  /* a card: who speaks, what they say, what you can do */
+  /* a card: who speaks, what they say (aloud, in their own voice, when the server has the clip), what you can do;
+     the buttons are never read out. A line is text, or a list of parts as RICO.speak takes them. */
   function scene(box, who, title, line, acts, extra) {
+    const parts = !line ? null : typeof line === "string" ? [{ t: line, v: EN(line) }] : line;
+    if (parts) line = join(parts);
     const f = portrait(who, innerWidth < 760 ? 64 : 92, 0);
     SC.host((g, t) => face(g, who, t, t < f._f.talk, f._f.mood, true));   // the one you talk to stands in the room, life-size
     box.append(el("div", { class: "cv-who" }, f, el("div", null, el("b", { translate: "no", text: nm(who) }), el("small", { text: T((CANDS[who] || FOLK[who] || {}).role || "") }))));
     if (title) box.append(el("h3", { text: title }));
-    if (line) { const q = el("p", { class: "cv-line", text: line }); box.append(q); say(f, Math.min(4200, 600 + line.length * 38)); }
+    if (line) {
+      box.append(el("p", { class: "cv-line", text: line })); say(f, Math.min(4200, 600 + line.length * 38));
+      RICO.speak(parts, who).then(secs => { if (secs && UI.card === box) { say(f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
+    }
     if (extra) box.append(extra);
     if (acts) box.append(el("div", { class: "cv-acts" }, acts));
     return f;
@@ -422,7 +434,7 @@
         if (fact) acts.push(btn(fact, () => doRumour(c, fact, false), { off: !movesLeft() || G.coins[G.me] < RUMOUR, sub: T("True: it is in the Book"), go: true }));
         acts.push(btn(LIES[c], () => doRumour(c, LIES[c], true), { off: !movesLeft() || G.coins[G.me] < RUMOUR, sub: T("Not true"), warn: true }));
       });
-      scene(box, "rico", T("Radio Coco"), F("Twenty-five coins and I play anything, baby. I don’t check, I just spin. But the Book writes down who paid me, every time. You have {n} coins.", { n: G.coins[G.me] }), [el("p", { class: "cv-h", text: F("Put a line on air ({n} coins, one move)", { n: RUMOUR }) }), ...acts]);
+      scene(box, "rico", T("Radio Coco"), [S("Twenty-five coins and I play anything, baby. I don’t check, I just spin. But the Book writes down who paid me, every time."), Q("You have {n} coins.", { n: G.coins[G.me] })], [el("p", { class: "cv-h", text: F("Put a line on air ({n} coins, one move)", { n: RUMOUR }) }), ...acts]);
     },
     north(box) { embassy(box, "north"); },
     south(box) { embassy(box, "south"); },
@@ -454,7 +466,7 @@
   }
   function embassy(box, e) {
     const E = EMB[e], took = G.deals.find(d => d.by === G.me && d.emb === e);
-    const line = took ? F("We are counting on you for “{x}”. We would hate to remind the island in public.", { x: T(LAWS[E.wants].t) }) : F("{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.", { n: E.coins, x: T(LAWS[E.wants].t) });
+    const line = took ? F("We are counting on you for “{x}”. We would hate to remind the island in public.", { x: LAWS[E.wants].t }) : F("{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.", { n: E.coins, x: LAWS[E.wants].t });
     scene(box, E.who, T(E.name), line, took ? [btn(T("Leave"), () => closeCard())] : [
       btn(F("Take the {n} coins and promise", { n: E.coins }), () => { deal(G.me, e); SND.sfx("coin"); toast(T("The promise is in the Book now.")); spend(); if (UI.card) openCard(e, PLACE[e]); }, { off: !movesLeft(), sub: F("people who care about {x} will not like it", { x: Object.keys(LAWS[E.wants].fx).filter(k => LAWS[E.wants].fx[k] < 0).map(k => T(TOPICS[k])).join(", ") }) }),
       btn(T("Politely decline"), () => closeCard()),
@@ -464,7 +476,7 @@
     const r = propose(G.me, id);
     if (r.refused) {
       SND.sfx("no");
-      openCard("hall", box => scene(box, "sam", T("Refused before any vote"), F("“{x}” contradicts “{y}”, which is in force. Two laws that cannot both hold would leave the island not knowing what is allowed, so the Book will not take it. Repeal the old one first, or pick another law.", { x: T(LAWS[id].t), y: T(LAWS[r.refused.id].t) }), [btn(F("Propose repealing “{x}”", { x: T(LAWS[r.refused.id].t) }), () => doRepeal(r.refused.id), { off: G.move + 1 >= MOVES + 1 }), btn(T("Back to the hall"), () => openCard("hall", PLACE.hall))]));
+      openCard("hall", box => scene(box, "sam", T("Refused before any vote"), [Q("“{x}” contradicts “{y}”, which is in force.", { x: T(LAWS[id].t), y: T(LAWS[r.refused.id].t) }), S("Two laws that cannot both hold would leave the island not knowing what is allowed, so the Book will not take it. Repeal the old one first, or pick another law.")], [btn(F("Propose repealing “{x}”", { x: T(LAWS[r.refused.id].t) }), () => doRepeal(r.refused.id), { off: G.move + 1 >= MOVES + 1 }), btn(T("Back to the hall"), () => openCard("hall", PLACE.hall))]));
       spend(); return;
     }
     vote(G.me, id, r.votes);
@@ -513,7 +525,10 @@
   function doRumour(c, claim, lie) {
     rumour(G.me, c, claim, lie); SND.sfx("coin");
     news(F("Radio Coco: “{x}”", { x: claim }));
-    openCard("radio", box => scene(box, "rico", T("On air"), lie ? T("Done, it’s out there. Half the island is talking. The other half will read the Book tomorrow, and the Book says you paid me.") : T("Done. And this one’s true, so let them check. The Book backs you up."), [btn(T("Continue"), () => closeCard())]));
+    /* Rico calls it out on air, loud and happy, then tells you what you bought */
+    const aired = [S("This just in on Radio Coco, ninety-seven point three!"), { t: "“" + T(claim) + "”", v: EN(claim) + "!" },
+      S(lie ? "Done, it’s out there. Half the island is talking. The other half will read the Book tomorrow, and the Book says you paid me." : "Done. And this one’s true, so let them check. The Book backs you up.")];
+    openCard("radio", box => scene(box, "rico", T("On air"), aired, [btn(T("Continue"), () => closeCard())]));
     spend();
   }
   function doPact(c, gift) {
@@ -564,7 +579,7 @@
     const box = $("cvRadio"); if (!box) return;
     if (!DJ.face) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }
     const parts = typeof line === "string" ? [{ t: line, v: null }] : line;
-    line = parts.map(p => p.t).join(window.TauI18n && /^(zh|ja)$/.test(TauI18n.lang) ? "" : " ");
+    line = join(parts);
     DJ.text = line; box.classList.add("live");
     const out = $("cvNews"); out.textContent = ""; let i = 0;
     clearInterval(DJ.type); DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); } }, 28);
@@ -574,6 +589,7 @@
     DJ.next = performance.now() + 38000 + Math.random() * 30000;
     /* his voice, when the clips are there: the mouth and the on-air light follow it */
     const said = DJ.text;
+    if (UI.card) return;   // someone in the open card is talking to you; the strip only shows it
     RICO.speak(parts).then(secs => {
       if (!secs || DJ.text !== said) return;
       say(DJ.face, secs * 1000);
@@ -916,6 +932,6 @@
     else if (q.get("rabbit") === "paper" && G) morning(3);
   }
   setTimeout(readBallot, 1200);
-  window.COVE_GAME = { get state() { return G; }, begin, endDay, face };
+  window.COVE_GAME = { get state() { return G; }, begin, endDay, face, open: p => openCard(p, PLACE[p]) };
   wire();
 })();

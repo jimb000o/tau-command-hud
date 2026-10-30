@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
-"""Rico's voice for Radio Coco in White Rabbit Key (rabbit/rico.js).
+"""The islanders' voices in White Rabbit Key: Rico on Radio Coco and everyone you meet in the places (rabbit/rico.js).
 
-Speaks every fixed line Rico can say once with an ElevenLabs voice and keeps the clips where Caddy serves them,
-https://node.tauhud.com/rico/<first 16 hex of sha1(English text)>.mp3, with index.json listing what is there.
-The game plays a line aloud only when all its clips are listed; otherwise it shows the text as before.
-Clips are made once: running it again only makes the lines that are new (or all of them for a new voice).
+Speaks every fixed line once, each in that islander's own ElevenLabs voice, and keeps the clips where Caddy serves
+them, https://node.tauhud.com/rico/<first 16 hex of sha1("<who>|<English text>")>.mp3, with index.json listing what
+is there. The game plays a line aloud only when all its clips are listed; otherwise it shows the text as before.
+Clips are made once: running it again only makes the lines that are new (or all of someone's lines for a new voice).
+The lines come from rabbit/voices.json (node tests/voices.mjs --write makes it from rico.js).
 
 The key is read from ELEVENLABS_API_KEY in infra/.env (never in the repository). Plain Python 3, no packages.
 
+  python3 infra/rico/make.py design all             three voices for each islander -> https://node.tauhud.com/rico/samples/
+  python3 infra/rico/make.py design lola            three new ones for one islander (again if none is right)
+  python3 infra/rico/make.py keep rico=2 lola=1     keeps those designs as their voices and makes every clip with them
+  python3 infra/rico/make.py make                   makes whatever clips are missing, for everyone with a voice
+  python3 infra/rico/make.py make --voice rico=Name gives someone a voice already in the account, then makes the clips
   python3 infra/rico/make.py voices                 the voices in the account
-  python3 infra/rico/make.py samples [name ...]     one sample per voice -> https://node.tauhud.com/rico/samples/
-  python3 infra/rico/make.py make --voice <name>    every clip with that voice (prints the characters first)
-  python3 infra/rico/make.py design                 three new voices drawn from DESIGN -> https://node.tauhud.com/rico/samples/
-  python3 infra/rico/make.py keep 2                 keeps design 2 as the voice "Rico" and makes every clip with it
-  python3 infra/rico/make.py lines                  the lines and how many characters they are, no key needed
+  python3 infra/rico/make.py samples [name ...]     one sample per account voice -> https://node.tauhud.com/rico/samples/
+  python3 infra/rico/make.py lines                  the lines, who says them and how many characters, no key needed
 design and keep need a key with Voice Generation: Access and Voices: Write.
 """
 import argparse
@@ -30,41 +33,60 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
-RICO_JS = os.path.join(REPO, "rabbit", "rico.js")
+VOICES_JSON = os.path.join(REPO, "rabbit", "voices.json")
 OUT = "/opt/sites/rico"
 API = "https://api.elevenlabs.io/v1"
 MODEL = "eleven_multilingual_v2"
 SETTINGS = {"stability": 0.38, "similarity_boost": 0.8, "style": 0.5, "use_speaker_boost": True}
+LOUD = {"stability": 0.3, "similarity_boost": 0.8, "style": 0.75, "use_speaker_boost": True}   # Rico calling it out on air
 SAMPLE = ("This is Rico on Radio Coco, ninety-seven point three! Chain weather. A light breeze, a few txs in the "
           "last blocks. Forecast: clear skies, unless somebody sends something.")
 
-DESIGN = ("A charismatic Caribbean radio host in his forties, rich warm voice with a lilting island accent, lively and "
-          "entertaining, smooth showman energy, playful pauses, a smile in every line, evening beach radio, clear and "
-          "easy to understand.")
+# who they are, for Voice Design; a description is between 20 and 1000 characters
+CAST = {
+    "rico": ("Rico", "A charismatic Caribbean radio DJ in his forties, rich warm voice with a lilting island accent, lively and "
+                     "entertaining, big showman energy, playful pauses, a smile in every line, evening beach radio, clear and "
+                     "easy to understand."),
+    "lola": ("Lola", "A warm, sassy Caribbean woman in her fifties who runs a beach bar, husky laugh in her voice, quick wit, "
+                     "motherly but teasing, relaxed island accent, clear and easy to understand."),
+    "sam": ("Old Sam", "An old lighthouse keeper in his seventies, slow gravelly voice, calm and kind, a little dry humour, "
+                       "speaks like someone who has read every page twice, gentle island accent, clear."),
+    "marisol": ("Marisol", "A brisk, friendly Caribbean fisherwoman in her thirties, bright confident voice, straight talker, "
+                           "warm and practical, light Spanish-island accent, clear and easy to understand."),
+    "tobias": ("Tobias", "A pompous, theatrical harbour master in his sixties who loves a ceremony, booming self-important "
+                         "voice, rolling words, comic grandeur, clear and easy to understand."),
+    "baako": ("Baako", "A jovial coconut farmer in his forties, deep round friendly voice, easy laugh, West African and "
+                       "Caribbean lilt, relaxed and generous, clear and easy to understand."),
+    "hana": ("Hana", "A precise, calm schoolteacher in her thirties, clear crisp voice, patient and a little strict, "
+                     "warm underneath, neutral accent, very easy to understand."),
+    "frost": ("Ambassador Frost", "A cool, polished northern diplomat in his fifties, smooth measured voice, crisp consonants, "
+                                  "politely menacing, every word weighed, clear."),
+    "salado": ("Ambassador Salado", "A charming southern diplomat in his fifties, velvet voice, warm Latin accent, flattering "
+                                    "and smooth, a hint of a smile that is not quite friendly, clear."),
+}
+DESIGN = CAST["rico"][1]
 
 
-def lines(src=None):
-    """Every English text Rico can speak, read from rico.js the same way its all() builds it."""
-    src = src if src is not None else open(RICO_JS, encoding="utf-8").read()
-    names = re.findall(r'"([^"]+)"', re.search(r"const NAMES = \[([^\]]*)\]", src).group(1))
-    days = int(re.search(r"const DAYS = (\d+);", src).group(1))
-    body = re.search(r"const L = \{(.*?)\n  \};", src, re.S).group(1)
-    out = []
-    for key, text in re.findall(r'^\s*(\w+): "((?:[^"\\]|\\.)*)",', body, re.M):
-        text = json.loads('"' + text + '"')
-        if key == "topLaws":
-            out += [text.replace("{x}", x) for x in names]
-        elif key == "pact":
-            out += [text.replace("{x}", x).replace("{y}", y) for x in names for y in names if x != y]
-        elif key == "day":
-            out += [text.replace("{n}", str(n)).replace("{m}", str(days)) for n in range(1, days + 1)]
-        else:
-            out.append(text)
-    return out
+def lines(path=None):
+    """Every line anyone can speak, as (who, English text), in the order rico.js all() builds them."""
+    return [(r["who"], r["text"]) for r in json.load(open(path or VOICES_JSON, encoding="utf-8"))]
 
 
-def key(text):
-    return hashlib.sha1(text.encode("utf-8")).hexdigest()[:16]
+def sample(who):
+    """A Voice Design preview text for someone: their own lines, 100 to 1000 characters."""
+    if who == "rico":
+        return SAMPLE
+    t = ""
+    for w, x in lines():
+        if w == who and len(t) < 160:
+            t = (t + " " + x).strip()
+    while len(t) < 100:
+        t = (t + " " + t).strip()
+    return t[:1000]
+
+
+def key(who, text):
+    return hashlib.sha1(f"{who}|{text}".encode("utf-8")).hexdigest()[:16]
 
 
 def api_key():
@@ -114,9 +136,9 @@ def find_voice(name):
     sys.exit(f"No voice called {name!r}. The account has: " + ", ".join(v["name"] for v in vs))
 
 
-def speak(voice_id, text):
+def speak(voice_id, text, settings=SETTINGS):
     return call(f"/text-to-speech/{voice_id}?output_format=mp3_44100_128",
-                {"text": text, "model_id": MODEL, "voice_settings": SETTINGS}, accept="audio/mpeg")
+                {"text": text, "model_id": MODEL, "voice_settings": settings}, accept="audio/mpeg")
 
 
 def slug(s):
@@ -151,80 +173,140 @@ def cmd_samples(a):
 
 
 def page(rows, title, text):
-    return ("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>Rico: voices</title>"
+    return ("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>White Rabbit Key: voices</title>"
             "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:640px;margin:2em auto;padding:0 16px}"
-            "li{margin:1.2em 0;list-style:none}audio{width:100%}code{color:#7f7}</style>"
+            "li{margin:1.2em 0;list-style:none}audio{width:100%}code{color:#7f7}h2{margin-top:2em}</style>"
             f"<h1>{html.escape(title)}</h1><p>{html.escape(text)}</p><ul>{''.join(rows)}</ul>").encode()
 
 
+def load(path, empty):
+    try:
+        return json.load(open(path))
+    except (OSError, ValueError):
+        return empty
+
+
+def index(out):
+    idx = load(os.path.join(out, "index.json"), {})
+    if "voice" in idx:   # the first index, when only Rico spoke: his voice stays, his clips are named anew
+        idx = {"voices": {"rico": {"id": idx["voice"], "name": idx.get("name", "Rico")}}, "clips": []}
+    idx.setdefault("voices", {})
+    idx.setdefault("clips", [])
+    idx["model"] = MODEL
+    return idx
+
+
+def design_page(out, designs):
+    rows = []
+    for who in CAST:
+        d = designs.get(who)
+        if not d:
+            continue
+        rows.append(f"<h2>{html.escape(CAST[who][0])}</h2><p><small>{html.escape(d['text'])}</small></p>")
+        for i in range(1, len(d["ids"]) + 1):
+            rows.append(f"<li><b>{i}</b> &nbsp; <code>{who}={i}</code><br>"
+                        f"<audio controls preload=none src='design-{who}-{i}.mp3'></audio></li>")
+    keep = " ".join(f"{w}=1" for w in CAST if w in designs)
+    write(os.path.join(out, "samples", "index.html"),
+          page(rows, "White Rabbit Key: pick a voice for everyone",
+               f"Then on the server: python3 infra/rico/make.py keep {keep}   (with the numbers you like)"))
+
+
 def cmd_design(a):
-    """Three voices drawn from a description (ElevenLabs Voice Design); nothing is kept in the account yet."""
-    body = {"voice_description": a.description, "text": SAMPLE}
-    r = call("/text-to-voice/design", dict(body, model_id="eleven_multilingual_ttv_v2"), missing_ok=True)
-    if r is None:
-        r = call("/text-to-voice/create-previews", body)
-    previews = json.loads(r)["previews"][:3]
-    rows, ids = [], []
-    for i, p in enumerate(previews, 1):
-        f = f"design-{i}.mp3"
-        write(os.path.join(a.out, "samples", f), base64.b64decode(p["audio_base_64"]))
-        ids.append(p["generated_voice_id"])
-        rows.append(f"<li><b>Design {i}</b> &nbsp; <code>python3 infra/rico/make.py keep {i}</code><br>"
-                    f"<audio controls preload=none src='{f}'></audio></li>")
-    write(os.path.join(a.out, "design.json"), json.dumps({"description": a.description, "ids": ids}).encode())
-    write(os.path.join(a.out, "samples", "index.html"), page(rows, "Rico on Radio Coco: three designs", a.description))
-    print(f"{len(ids)} designs made. Listen: https://node.tauhud.com/rico/samples/")
-    print("Keep one with: python3 infra/rico/make.py keep 1   (or 2, 3); none right? run design again.")
+    """Three voices for each islander named, drawn from their description (ElevenLabs Voice Design); nothing is kept yet."""
+    who = list(CAST) if a.who in ("all", None) else [a.who]
+    for w in who:
+        if w not in CAST:
+            sys.exit(f"No islander {w!r}. They are: {', '.join(CAST)}")
+    path = os.path.join(a.out, "design.json")
+    designs = load(path, {})
+    if "ids" in designs:   # the first design.json, Rico's only
+        designs = {"rico": {"description": designs.get("description", DESIGN), "text": SAMPLE, "ids": designs["ids"]}}
+    for w in who:
+        desc = a.description if a.description and len(who) == 1 else CAST[w][1]
+        body = {"voice_description": desc, "text": sample(w)}
+        r = call("/text-to-voice/design", dict(body, model_id="eleven_multilingual_ttv_v2"), missing_ok=True)
+        if r is None:
+            r = call("/text-to-voice/create-previews", body)
+        previews = json.loads(r)["previews"][:3]
+        for i, p in enumerate(previews, 1):
+            write(os.path.join(a.out, "samples", f"design-{w}-{i}.mp3"), base64.b64decode(p["audio_base_64"]))
+        designs[w] = {"description": desc, "text": body["text"], "ids": [p["generated_voice_id"] for p in previews]}
+        write(path, json.dumps(designs, indent=1).encode())
+        print(f"  {CAST[w][0]}: {len(previews)} designs")
+    design_page(a.out, designs)
+    print("Listen: https://node.tauhud.com/rico/samples/")
+    print("Keep the ones you like with: python3 infra/rico/make.py keep " + " ".join(f"{w}=1" for w in who))
 
 
 def cmd_keep(a):
-    """Keep design N in the account as the voice "Rico", then make every clip with it."""
-    try:
-        d = json.load(open(os.path.join(a.out, "design.json")))
-        gid = d["ids"][a.n - 1]
-    except (OSError, ValueError, KeyError, IndexError):
-        sys.exit("No such design. Run: python3 infra/rico/make.py design")
-    body = {"voice_name": a.name, "voice_description": d["description"][:500], "generated_voice_id": gid}
-    r = call("/text-to-voice", body, missing_ok=True)
-    if r is None:
-        r = call("/text-to-voice/create-voice-from-preview", body)
-    print(f"Kept design {a.n} as the voice {a.name} ({json.loads(r).get('voice_id')}).")
-    a.voice = json.loads(r).get("voice_id") or a.name
+    """Keep design N for each islander as their voice in the account, then make every clip with them."""
+    designs = load(os.path.join(a.out, "design.json"), {})
+    idx = index(a.out)
+    for pick in a.picks:
+        w, _, n = pick.partition("=")
+        try:
+            d = designs[w]
+            gid = d["ids"][int(n) - 1]
+        except (KeyError, ValueError, IndexError):
+            sys.exit(f"No design {pick!r}. Run: python3 infra/rico/make.py design {w if w in CAST else 'all'}")
+        name = CAST[w][0] if w in CAST else w
+        body = {"voice_name": f"{name} (White Rabbit Key)", "voice_description": d["description"][:500], "generated_voice_id": gid}
+        r = call("/text-to-voice", body, missing_ok=True)
+        if r is None:
+            r = call("/text-to-voice/create-voice-from-preview", body)
+        vid = json.loads(r).get("voice_id")
+        if not vid:
+            sys.exit(f"ElevenLabs kept {name}'s voice but sent no id back: {r[:200]!r}")
+        idx["voices"][w] = {"id": vid, "name": body["voice_name"]}
+        idx["clips"] = [k for k in idx["clips"] if k not in {key(w, t) for x, t in lines() if x == w}]   # their lines anew
+        write(os.path.join(a.out, "index.json"), json.dumps(idx, indent=1).encode())
+        print(f"Kept {name} design {n} ({vid}).")
+    a.voice = []
     cmd_make(a)
 
 
 def cmd_lines(a):
     ls = lines()
-    for t in ls:
-        print(key(t), t)
-    print(f"{len(ls)} lines, {sum(map(len, ls))} characters.")
+    for w, t in ls:
+        print(key(w, t), f"{w:<8}", t)
+    by = {}
+    for w, t in ls:
+        by[w] = by.get(w, 0) + len(t)
+    print(f"{len(ls)} lines, {sum(by.values())} characters: " + ", ".join(f"{w} {n}" for w, n in by.items()))
 
 
 def cmd_make(a):
-    v = find_voice(a.voice)
+    idx = index(a.out)
+    for pick in a.voice or []:
+        w, _, name = pick.partition("=")
+        if not name:   # the old way, "make --voice Name": Rico's voice
+            w, name = "rico", w
+        v = find_voice(name)
+        if idx["voices"].get(w, {}).get("id") != v["voice_id"]:
+            idx["clips"] = [k for k in idx["clips"] if k not in {key(w, t) for x, t in lines() if x == w}]
+        idx["voices"][w] = {"id": v["voice_id"], "name": v["name"]}
     idx_path = os.path.join(a.out, "index.json")
-    try:
-        idx = json.load(open(idx_path))
-    except (OSError, ValueError):
-        idx = {}
-    if idx.get("voice") != v["voice_id"]:
-        idx = {"voice": v["voice_id"], "name": v["name"], "model": MODEL, "clips": []}
     ls = lines()
-    todo = [t for t in ls if key(t) not in idx["clips"] or not os.path.exists(os.path.join(a.out, key(t) + ".mp3"))]
-    print(f"Voice {v['name']}: {len(todo)} of {len(ls)} lines to make, {sum(map(len, todo))} characters.")
-    for i, t in enumerate(todo, 1):
-        write(os.path.join(a.out, key(t) + ".mp3"), speak(v["voice_id"], t))
-        if key(t) not in idx["clips"]:
-            idx["clips"].append(key(t))
+    have = lambda w, t: key(w, t) in idx["clips"] and os.path.exists(os.path.join(a.out, key(w, t) + ".mp3"))
+    todo = [(w, t) for w, t in ls if w in idx["voices"] and not have(w, t)]
+    silent = sorted({w for w, t in ls if w not in idx["voices"]})
+    print(f"{len(todo)} of {len(ls)} lines to make, {sum(len(t) for w, t in todo)} characters."
+          + (f" No voice yet for: {', '.join(silent)}." if silent else ""))
+    for i, (w, t) in enumerate(todo, 1):
+        k = key(w, t)
+        write(os.path.join(a.out, k + ".mp3"), speak(idx["voices"][w]["id"], t, LOUD if w == "rico" and t.endswith("!") else SETTINGS))
+        if k not in idx["clips"]:
+            idx["clips"].append(k)
         write(idx_path, json.dumps(idx, indent=1).encode())   # after each clip, so a stop halfway keeps what is made
-        print(f"  {i}/{len(todo)} {t[:70]}")
+        print(f"  {i}/{len(todo)} {w}: {t[:64]}")
     idx["clips"] = [k for k in idx["clips"] if os.path.exists(os.path.join(a.out, k + ".mp3"))]
     write(idx_path, json.dumps(idx, indent=1).encode())
-    print(f"Done: {len(idx['clips'])} clips with {v['name']}. Rico now talks on https://tauhud.com/rabbit/")
+    print(f"Done: {len(idx['clips'])} clips. The island talks on https://tauhud.com/rabbit/")
 
 
 def main():
-    p = argparse.ArgumentParser(description="Rico's voice for Radio Coco")
+    p = argparse.ArgumentParser(description="The islanders' voices in White Rabbit Key")
     p.add_argument("--out", default=OUT)
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("voices")
@@ -233,12 +315,12 @@ def main():
     s.add_argument("--max", type=int, default=12)
     sub.add_parser("lines")
     d = sub.add_parser("design")
-    d.add_argument("description", nargs="?", default=DESIGN)
+    d.add_argument("who", nargs="?", default="all")
+    d.add_argument("description", nargs="?", default=None)
     k = sub.add_parser("keep")
-    k.add_argument("n", type=int)
-    k.add_argument("--name", default="Rico")
+    k.add_argument("picks", nargs="+", help="who=N, e.g. rico=2 lola=1")
     m = sub.add_parser("make")
-    m.add_argument("--voice", required=True)
+    m.add_argument("--voice", action="append", help="who=voice name in the account (a bare name is Rico's)")
     a = p.parse_args()
     {"voices": cmd_voices, "samples": cmd_samples, "lines": cmd_lines, "make": cmd_make, "design": cmd_design, "keep": cmd_keep}[a.cmd](a)
 

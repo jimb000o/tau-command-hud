@@ -1,7 +1,7 @@
 /* The island's sound: an original calypso for steel pan, marimba, bass and hand drums, played live in the
    visitor's browser (no recordings), plus the sea, gulls and small sounds for the game. On by default;
    browsers only allow sound after a first tap, so the page shows "♪ Tap for sound" until then.
-   window.COVE_SOUND = { start, on, set({ music, radio, tense, place }), sfx(name), speak(clips), toggle() }
+   window.COVE_SOUND = { start, on, set({ music, radio, tense, place }), sfx(name), speak(clips), hush(), toggle() }
    Each place on the island plays the tune in its own arrangement (STYLES). */
 (() => {
   const BPM = 104, STEP = 60 / BPM / 4, SWING = 0.16;   // sixteenth notes, the off sixteenths a little late
@@ -219,8 +219,8 @@
       return S.ctx.state === "running";
     } catch (e) { return false; }
   }
-  /* Rico's voice (rico.js): the clips one after the other, after the jingle, through a small-radio colour; the music
-     steps back while he talks. Resolves with how many seconds he will talk. */
+  /* a voice (rico.js): the clips one after the other, after the jingle, through a small-radio colour; the music
+     steps back while someone talks. Resolves with how many seconds they will talk. */
   async function speak(bufs) {
     if (!S.ctx || !S.on) return false;
     const c = S.ctx, list = [];
@@ -240,8 +240,13 @@
     setTimeout(() => { if (S.talking === mine) { S.duck = false; S.talking = null; apply(); } }, secs * 1000);
     return secs;
   }
+  /* whoever is talking stops (a card closed) */
+  function hush() {
+    if (S.talking) S.talking.forEach(n => { try { n.stop(); } catch (e) {} });
+    S.talking = null; if (S.duck) { S.duck = false; apply(); }
+  }
   window.COVE_SOUND = {
-    start, sfx, speak,
+    start, sfx, speak, hush,
     /* on: the music is really playing (a browser lets it start only after the first click, tap or key) */
     get on() { return S.on && !!S.ctx && S.ctx.state === "running"; }, get wanted() { return S.want; },
     set onchange(f) { S.cb = f; },
