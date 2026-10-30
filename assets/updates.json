@@ -1407,5 +1407,10 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "The troll box moved to the top of the right column, where the Validators were, and reads like a classic troll box: one line per message, name and text, so about fifteen messages fit at once on a wide screen. The Validators now sit under the block strip, next to the block detail."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-30",
+  "html": "Tau HUD in numbers now opens on “On the testnet”: how many wallets act on the testnet through Agorzilla or a Tau HUD page each day, how many are new and how many come back, their share of all transactions, and what Agorzilla's meals, votes and wishes add up to. Counted from the public blocks; a wallet is a key, not a person. The visitor numbers of both sites are one click away."
  }
 ]
