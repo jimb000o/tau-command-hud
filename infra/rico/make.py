@@ -10,7 +10,7 @@ The lines come from rabbit/voices.json (node tests/voices.mjs --write makes it f
 The key is read from ELEVENLABS_API_KEY in infra/.env (never in the repository). Plain Python 3, no packages.
 
   python3 infra/rico/make.py design all             three voices for each islander -> https://node.tauhud.com/rico/samples/
-  python3 infra/rico/make.py design lola            three new ones for one islander (again if none is right)
+  python3 infra/rico/make.py design lola sam        three new ones for some islanders (again if none is right)
   python3 infra/rico/make.py keep rico=2 lola=1     keeps those designs as their voices and makes every clip with them
   python3 infra/rico/make.py library rico           twelve ready voices from the ElevenLabs Voice Library that fit Rico
   python3 infra/rico/make.py keep rico=L3           keeps library voice 3 (L) instead of a design
@@ -18,6 +18,7 @@ The key is read from ELEVENLABS_API_KEY in infra/.env (never in the repository).
   python3 infra/rico/make.py make --voice rico=Name gives someone a voice already in the account, then makes the clips
   python3 infra/rico/make.py voices                 the voices in the account
   python3 infra/rico/make.py samples [name ...]     one sample per account voice -> https://node.tauhud.com/rico/samples/
+  python3 infra/rico/make.py say                    the lines exactly as they are sent to be spoken
   python3 infra/rico/make.py lines                  the lines, who says them and how many characters, no key needed
 design and keep need a key with Voice Generation: Access and Voices: Write.
 """
@@ -39,9 +40,9 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 VOICES_JSON = os.path.join(REPO, "rabbit", "voices.json")
 OUT = "/opt/sites/rico"
 API = "https://api.elevenlabs.io/v1"
-MODEL = "eleven_multilingual_v2"
-SETTINGS = {"stability": 0.38, "similarity_boost": 0.8, "style": 0.5, "use_speaker_boost": True}
-LOUD = {"stability": 0.3, "similarity_boost": 0.8, "style": 0.75, "use_speaker_boost": True}   # Rico calling it out on air
+MODEL = "eleven_v3"   # the most natural one, and it takes [tags] for how a line is said
+SETTINGS = {"stability": 0.5, "similarity_boost": 0.8}   # v3 takes 0 (creative), 0.5 (natural) or 1 (steady)
+LOUD = {"stability": 0.0, "similarity_boost": 0.8}       # Rico on air: as lively as it gets
 SAMPLE = ("This is Rico on Radio Coco, ninety-seven point three! Chain weather. A light breeze, a few txs in the "
           "last blocks. Forecast: clear skies, unless somebody sends something.")
 
@@ -50,8 +51,8 @@ CAST = {
     "rico": ("Rico", "An energetic African-American man in his thirties, a radio DJ with a deep, warm, booming voice, fast "
                      "and punchy hype delivery, big grin you can hear, rhythmic and funky like a late-night soul and party radio "
                      "host, laughs between lines, never shouts, clear American English, very easy to understand."),
-    "lola": ("Lola", "A warm, sassy Caribbean woman in her fifties who runs a beach bar, husky laugh in her voice, quick wit, "
-                     "motherly but teasing, relaxed island accent, clear and easy to understand."),
+    "lola": ("Lola", "An energetic African-American Caribbean woman around thirty who runs a beach bar, bright warm voice full "
+                     "of life, quick laugh, playful and teasing, light island lilt, clear and easy to understand."),
     "sam": ("Old Sam", "An old lighthouse keeper in his seventies, slow gravelly voice, calm and kind, a little dry humour, "
                        "speaks like someone who has read every page twice, gentle island accent, clear."),
     "marisol": ("Marisol", "A brisk, friendly Caribbean fisherwoman in her thirties, bright confident voice, straight talker, "
@@ -68,6 +69,64 @@ CAST = {
                                     "and smooth, a hint of a smile that is not quite friendly, clear."),
 }
 DESIGN = CAST["rico"][1]
+TALK = (" Talks naturally and casually, straight to the person in front of them, like a real conversation, "
+        "never reading aloud or narrating.")
+
+# how each one says their lines to you (v3 audio tags); Rico on air has his own
+TAG = {"rico": "[friendly, leaning in]", "lola": "[warm, teasing]", "sam": "[slowly, kindly]", "marisol": "[friendly, direct]",
+       "tobias": "[pompous]", "baako": "[warmly, with a chuckle]", "hana": "[calm, patient]", "frost": "[coolly]",
+       "salado": "[smooth, charming]"}
+ON_AIR = "[excited radio DJ]"   # the callouts that end in "!"
+RADIO = "[radio DJ, playful]"     # his other lines on the radio strip
+LAWS = {"A deep harbour for cruise ships": "a deep harbour for cruise ships", "A road round the island": "a road round the island"}
+COINS = {"40": "Forty", "35": "Thirty-five"}
+# the lines as they are said, to you, in a place: the same words as on screen, only loosened up for speaking
+SAY = {
+    "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first.":
+        "Okay, so, pick a law. The other three candidates vote on it, and two yeses make it law. Oh, and the Book checks it against the laws we already have, first.",
+    "Sam keeps the minutes today. Pick a law; the other three candidates vote, two yes and it is law.":
+        "I'm keeping the minutes today. Go on, pick a law. The other three candidates vote, and two yeses make it law.",
+    "Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it.":
+        "Honey, everyone passes through here. Talk about what people actually care about. And if you already passed a law for it? Counts double.",
+    "Twenty-five coins and I play anything, baby. I don’t check, I just spin. But the Book writes down who paid me, every time.":
+        "Twenty-five coins and I'll play anything, baby. I don't check, I just spin. But, heh, the Book writes down who paid me. Every single time.",
+    "A pact means you vote for each other’s laws. Break one and the whole island knows by breakfast. Lemonade’s on the house.":
+        "So, a pact means you two vote for each other's laws. Break one, and the whole island knows by breakfast. Here, lemonade's on the house.",
+    "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing.":
+        "Every move on this island gets written in here, with the name of whoever made it. Nobody can tear out a page. Not even me. And reading? Costs you nothing.",
+    "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page.":
+        "Empty, for now. But every move on this island will be written in here, with the name of whoever made it. Nobody can tear out a page.",
+    "Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks.":
+        "Boats, gulls, and a black cat that sometimes walks past twice. Nothing to do out here but think. Tau Testnet Alpha's out there too, you know. The Book on this island works a lot like its blocks.",
+    "Three moves a day, five days, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book.":
+        "Three moves a day, five days, and then the island votes. Each of the ten islanders cares about two things. Laws and talk about those, that's what wins them over. Rumours? They work for a day. Until people read the Book.",
+    "Two laws that cannot both hold would leave the island not knowing what is allowed, so the Book will not take it. Repeal the old one first, or pick another law.":
+        "Two laws that can't both hold would leave the whole island not knowing what's allowed. So the Book won't take it. Repeal the old one first, or pick another law.",
+    "Done, it’s out there. Half the island is talking. The other half will read the Book tomorrow, and the Book says you paid me.":
+        "Done, it's out there. Half the island's talking already. The other half reads the Book tomorrow, and the Book says you paid me.",
+    "Done. And this one’s true, so let them check. The Book backs you up.":
+        "Done. And this one's true, so let 'em check. The Book's got your back.",
+    "Fine. I vote for yours, you vote for mine. Lola is our witness, and the Book is our memory.":
+        "Fine. I vote for yours, you vote for mine. Lola's our witness, and the Book is our memory.",
+    "After what you did? Buy yourself a lemonade.": "After what you did? Ha. Buy yourself a lemonade.",
+    "Not today. Show me how you vote first.": "Not today. Show me how you vote first, then we'll talk.",
+}
+
+
+def said(who, text, model=MODEL):
+    """What is sent to ElevenLabs for a line: loosened up for speaking, with how it is said in front (v3 only)."""
+    m = re.match(r"We are counting on you for “(.+)”\. We would hate to remind the island in public\.$", text)
+    n = re.match(r"(\d+) coins, today\. All we ask is that you propose “(.+)” before the election\. A small thing between friends\.$", text)
+    if m:
+        out = f"We're counting on you for {LAWS.get(m[1], m[1])}. We would hate to have to remind the island. In public."
+    elif n:
+        out = f"{COINS.get(n[1], n[1])} coins. Today. All we ask is that you propose {LAWS.get(n[2], n[2])} before the election. A small thing, between friends."
+    else:
+        out = SAY.get(text, text)
+    if not model.startswith("eleven_v3"):
+        return out
+    air = who == "rico" and text not in SAY
+    return f"{(ON_AIR if text.endswith('!') else RADIO) if air else TAG.get(who, '')} {out}".strip()
 
 
 def lines(path=None):
@@ -76,13 +135,13 @@ def lines(path=None):
 
 
 def sample(who):
-    """A Voice Design preview text for someone: their own lines, 100 to 1000 characters."""
+    """A Voice Design preview text for someone: their own lines as they say them to you, 100 to 1000 characters."""
     if who == "rico":
-        return SAMPLE
+        return SAMPLE + " " + SAY["Twenty-five coins and I play anything, baby. I don’t check, I just spin. But the Book writes down who paid me, every time."]
     t = ""
     for w, x in lines():
         if w == who and len(t) < 160:
-            t = (t + " " + x).strip()
+            t = (t + " " + said(w, x, "plain")).strip()
     while len(t) < 100:
         t = (t + " " + t).strip()
     return t[:1000]
@@ -105,7 +164,7 @@ def api_key():
     return k
 
 
-def call(path, body=None, accept="application/json", missing_ok=False):
+def call(path, body=None, accept="application/json", missing_ok=False, retry_400=False):
     req = urllib.request.Request(API + path, data=json.dumps(body).encode() if body is not None else None,
                                  headers={"xi-api-key": api_key(), "Content-Type": "application/json", "Accept": accept})
     for attempt in range(4):
@@ -114,7 +173,7 @@ def call(path, body=None, accept="application/json", missing_ok=False):
                 return r.read()
         except urllib.error.HTTPError as e:
             msg = e.read().decode("utf-8", "replace")[:300]
-            if missing_ok and e.code in (404, 405):
+            if (missing_ok and e.code in (404, 405)) or (retry_400 and e.code in (400, 422)):
                 return None
             if e.code == 429 and attempt < 3:
                 time.sleep(5 * (attempt + 1))
@@ -139,9 +198,11 @@ def find_voice(name):
     sys.exit(f"No voice called {name!r}. The account has: " + ", ".join(v["name"] for v in vs))
 
 
-def speak(voice_id, text, settings=SETTINGS):
+def speak(voice_id, text, settings=SETTINGS, model=MODEL):
+    if not model.startswith("eleven_v3"):
+        settings = dict(settings, stability=max(0.3, settings["stability"]), style=0.5, use_speaker_boost=True)
     return call(f"/text-to-speech/{voice_id}?output_format=mp3_44100_128",
-                {"text": text, "model_id": MODEL, "voice_settings": settings}, accept="audio/mpeg")
+                {"text": text, "model_id": model, "voice_settings": settings}, accept="audio/mpeg")
 
 
 def slug(s):
@@ -217,7 +278,8 @@ def design_page(out, designs):
 
 def cmd_design(a):
     """Three voices for each islander named, drawn from their description (ElevenLabs Voice Design); nothing is kept yet."""
-    who = list(CAST) if a.who in ("all", None) else [a.who]
+    names = [a.who] if isinstance(a.who, str) else list(a.who or ["all"])
+    who = list(CAST) if "all" in names else names
     for w in who:
         if w not in CAST:
             sys.exit(f"No islander {w!r}. They are: {', '.join(CAST)}")
@@ -227,8 +289,10 @@ def cmd_design(a):
         designs = {"rico": {"description": designs.get("description", DESIGN), "text": SAMPLE, "ids": designs["ids"]}}
     for w in who:
         desc = a.description if a.description and len(who) == 1 else CAST[w][1]
-        body = {"voice_description": desc, "text": sample(w)}
-        r = call("/text-to-voice/design", dict(body, model_id="eleven_multilingual_ttv_v2"), missing_ok=True)
+        body = {"voice_description": (desc + TALK)[:1000], "text": sample(w)}
+        r = call("/text-to-voice/design", dict(body, model_id="eleven_ttv_v3"), missing_ok=True, retry_400=True)
+        if r is None:
+            r = call("/text-to-voice/design", dict(body, model_id="eleven_multilingual_ttv_v2"), missing_ok=True)
         if r is None:
             r = call("/text-to-voice/create-previews", body)
         previews = json.loads(r)["previews"][:3]
@@ -329,6 +393,11 @@ def cmd_lines(a):
     print(f"{len(ls)} lines, {sum(by.values())} characters: " + ", ".join(f"{w} {n}" for w, n in by.items()))
 
 
+def cmd_say(a):
+    for w, t in lines():
+        print(f"{w:<8}", said(w, t))
+
+
 def cmd_make(a):
     idx = index(a.out)
     for pick in a.voice or []:
@@ -348,7 +417,9 @@ def cmd_make(a):
           + (f" No voice yet for: {', '.join(silent)}." if silent else ""))
     for i, (w, t) in enumerate(todo, 1):
         k = key(w, t)
-        write(os.path.join(a.out, k + ".mp3"), speak(idx["voices"][w]["id"], t, LOUD if w == "rico" and t.endswith("!") else SETTINGS))
+        model = getattr(a, "model", None) or MODEL
+        loud = w == "rico" and t not in SAY and t.endswith("!")   # the callouts; his other radio lines stay natural
+        write(os.path.join(a.out, k + ".mp3"), speak(idx["voices"][w]["id"], said(w, t, model), LOUD if loud else SETTINGS, model))
         if k not in idx["clips"]:
             idx["clips"].append(k)
         write(idx_path, json.dumps(idx, indent=1).encode())   # after each clip, so a stop halfway keeps what is made
@@ -367,18 +438,21 @@ def main():
     s.add_argument("names", nargs="*")
     s.add_argument("--max", type=int, default=12)
     sub.add_parser("lines")
+    sub.add_parser("say")
     d = sub.add_parser("design")
-    d.add_argument("who", nargs="?", default="all")
-    d.add_argument("description", nargs="?", default=None)
+    d.add_argument("who", nargs="*", default=["all"], help="all, or the islanders to design, e.g. lola sam")
+    d.add_argument("--description", default=None, help="instead of the one in CAST (one islander only)")
     lb = sub.add_parser("library")
     lb.add_argument("who", nargs="?", default="rico")
     lb.add_argument("search", nargs="?", default=None)
     k = sub.add_parser("keep")
+    k.add_argument("--model", default=MODEL, help="eleven_v3, or eleven_multilingual_v2 if v3 is not there")
     k.add_argument("picks", nargs="+", help="who=N (a design) or who=LN (a library voice), e.g. rico=L2 lola=1")
     m = sub.add_parser("make")
+    m.add_argument("--model", default=MODEL, help="eleven_v3, or eleven_multilingual_v2 if v3 is not there")
     m.add_argument("--voice", action="append", help="who=voice name in the account (a bare name is Rico's)")
     a = p.parse_args()
-    {"voices": cmd_voices, "samples": cmd_samples, "lines": cmd_lines, "make": cmd_make, "design": cmd_design, "keep": cmd_keep, "library": cmd_library}[a.cmd](a)
+    {"voices": cmd_voices, "samples": cmd_samples, "lines": cmd_lines, "make": cmd_make, "design": cmd_design, "keep": cmd_keep, "library": cmd_library, "say": cmd_say}[a.cmd](a)
 
 
 if __name__ == "__main__":
