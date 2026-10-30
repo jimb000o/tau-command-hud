@@ -763,8 +763,8 @@
       else drawArea(ST.area, 0, t);
       g.restore();
       /* a faint glint on the thing under the pointer (or picked with Tab): it can be looked at more closely */
-      const hp = !ST.pan && !ST.talk && !LOOK && ST.hoverProp && ST.hoverProp !== "door" && (ST.boxes.props || []).find(q => q.id === ST.hoverProp);
-      if (hp) { g.save(); g.globalCompositeOperation = "screen"; glow(g, hp.x + hp.w / 2, hp.y + hp.h / 2, Math.max(hp.w, hp.h) * 0.75, 0.09 + 0.03 * Math.sin(t * 3)); g.restore(); }
+      const armed = ST.task === "chalk" && ST.hoverProp === "board", hp = !ST.pan && (!ST.talk || armed) && !LOOK && ST.hoverProp && ST.hoverProp !== "door" && (ST.boxes.props || []).find(q => q.id === ST.hoverProp);
+      if (hp) { g.save(); g.globalCompositeOperation = "screen"; glow(g, hp.x + hp.w / 2, hp.y + hp.h / 2, Math.max(hp.w, hp.h) * 0.75, armed ? 0.22 + 0.06 * Math.sin(t * 4) : 0.09 + 0.03 * Math.sin(t * 3)); g.restore(); }
       if (ST.area !== "window" || ST.pan) g.drawImage(finish(), 0, 0, W, H);
     }
     loop();
@@ -983,8 +983,11 @@
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) return walk(dx < 0 ? 1 : -1);
     if (Math.abs(dx) > 10 || Math.abs(dy) > 10) return;
     if (lookOff()) return;
+    const h = pick(e);
+    /* Mae's task: the board takes the chalk even while her words are still on screen */
+    if (h && h.prop && h.prop.id === "board" && ST.task === "chalk") return chalkIn();
     if (ST.talk) return adv();
-    const h = pick(e); if (!h) return;
+    if (!h) return;
     if (h.person) return talk(h.person);
     if (h.prop.id === "board" && ST.task === "chalk") return chalkIn();
     if (h.prop.id === "door") { if (["mae", "elias", "prof", "sully"].every(k => ST.stamps.has(k))) return outside(); return flash(TX.people.sully.shut, h.prop); }
