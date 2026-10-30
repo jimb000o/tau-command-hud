@@ -43,15 +43,17 @@
   /* ---------- new features: the headline of each "major" Updates log entry (the one the channels post), never the
      long log text; a feature already among the hand-written headlines, and round-ups, are left out ---------- */
   let NEWS = [], newsAt = 0;
-  const FRESH = 3 * 86400000;   // the newest feature pulses green, like the live light, for its first three days
+  const GLOW = "rabbit/";   // the one headline that pulses green, like the live light: the island election game
   const path = h => String(h || "").replace(/^\//, "").replace(/[?#].*$/, "");
   /* the first read shares the page's one download of the log (nav.js TauLog); the 15-minute refresh fetches it anew */
   const loadNews = first => (first && window.TauLog ? Promise.resolve(TauLog()) : fetch("assets/updates.json", { cache: "no-cache" }).then(r => r.json())).then(list => {
     const have = new Set((CFG.headlines || []).map(h => path(h.href)));
-    NEWS = (Array.isArray(list) ? list : []).filter(e => e && e.major && e.major.title && !/^roundup/.test(e.major.id || "")).slice(-6).reverse()
-      .filter(e => !have.has(path(e.major.link))).slice(0, 4)
-      .map((e, i) => ({ kind: "news", text: String(e.major.title), href: path(e.major.link) === "" ? "" : String(e.major.link).replace(/^\//, ""),
-        fresh: i === 0 && Date.now() - Date.parse(e.on + "T00:00:00Z") < FRESH }));
+    const majors = (Array.isArray(list) ? list : []).filter(e => e && e.major && e.major.title && !/^roundup/.test(e.major.id || ""));
+    const pick = majors.slice(-6).reverse().filter(e => !have.has(path(e.major.link))).slice(0, 4);
+    const glow = majors.filter(e => path(e.major.link) === GLOW).pop();   // the game stays on the line, first, after newer features
+    NEWS = (glow ? [glow, ...pick.filter(e => e !== glow).slice(0, 3)] : pick)
+      .map(e => ({ kind: "news", text: String(e.major.title), href: path(e.major.link) === "" ? "" : String(e.major.link).replace(/^\//, ""),
+        fresh: path(e.major.link) === GLOW }));
   }).catch(() => {});
 
   /* ---------- when the Daily Consensus comes out, in the reader's own time: German time in English, China time in
