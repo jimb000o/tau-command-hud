@@ -1581,5 +1581,21 @@
   "on": "2026-10-30",
   "html": "In numbers now shows our sites' share of user transactions: everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Their transactions and our share of all transactions stay on the page, one line below."
  },
- {"tag": "Nodes", "on": "2026-10-30", "html": "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out."}
+ {
+  "tag": "Nodes",
+  "on": "2026-10-30",
+  "html": "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out."
+ },
+ {
+  "tag": "Start here",
+  "on": "2026-10-30",
+  "html": "Start here: a new page for first visits tries Tau in four steps. Make a test wallet, give your account a rule that every node checks, watch a block seal it, and feed Agorzilla. Each card turns green by itself once your wallet has done the step, and on the HUD and every page a green “Start here” in the header shows how far you got, until all four are done. The wallet has a way back to it.",
+  "major": {
+   "id": "start",
+   "title": "New: try Tau in four steps",
+   "text": "A test wallet, a rule of your own that every node checks, a block that seals it, and a meal for Agorzilla. A few minutes in your browser, nothing to install; test AGRS have no value.",
+   "link": "/start/",
+   "image": "/assets/shots/start.png"
+  }
+ }
 ]

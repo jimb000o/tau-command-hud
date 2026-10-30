@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Start here</title>
+<meta name="description" content="Try Tau in four steps: make a test wallet, give your account a rule the chain itself checks, watch a block seal it, and feed Agorzilla. A few minutes in your browser, nothing to install, test AGRS have no value.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Try Tau in four steps">
+<meta property="og:description" content="A test wallet, a rule of your own that every node checks, a block that seals it, and a meal for Agorzilla. A few minutes, nothing to install.">
+<meta property="og:image" content="https://tauhud.com/assets/shots/start.png">
+<meta property="og:image:width" content="1600">
+<meta property="og:image:height" content="900">
+<meta property="og:url" content="https://tauhud.com/start/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/shots/start.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD and /vote: black and white, phosphor green as the one accent, amber for "on its way" and the simulation. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --sim: #ffb13b; --refused: #e5484d;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.state { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; color: var(--dim); font-size: 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.state.ok { color: var(--text); } .state.ok i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.sim i { background: var(--sim); }
+.state.off i { background: #ff4d6d; }
+
+/* the promise and the progress, side by side */
+.intro { display: grid; gap: 10px 32px; align-items: end; }
+.lead { margin: 6px 0 0; font: 600 clamp(24px, 3.4vw, 38px)/1.15 var(--display); color: #fff; }
+.sub { margin: 6px 0 0; color: var(--dim); max-width: 78ch; font-size: 14px; }
+.sub b { color: var(--text); font-weight: 600; }
+.prog { display: grid; gap: 6px; min-width: 260px; }
+.prog .row { display: flex; justify-content: space-between; gap: 12px; color: var(--dim); font-size: 12px; }
+.prog .row b { color: #fff; font: 600 15px var(--display); }
+.bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.06); border: 1px solid var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--ok); box-shadow: 0 0 12px rgba(57,255,138,.6); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+
+/* four steps, left to right; the next one is lit, done ones are ticked */
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); counter-reset: s; }
+.step { position: relative; display: flex; flex-direction: column; gap: 8px; background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 10px; padding: 16px 16px 14px; min-width: 0; counter-increment: s; transition: border-color .4s, box-shadow .4s, opacity .4s; }
+.step .num { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--hair); color: #fff; font: 600 14px/28px var(--display); text-align: center; flex: none; }
+.step .num::before { content: counter(s); }
+.step .top { display: flex; align-items: center; gap: 10px; }
+.step h2 { margin: 0; font: 600 17px/1.25 var(--display); color: #fff; }
+.step .when { margin-left: auto; color: var(--dim); font-size: 11px; white-space: nowrap; }
+.step p { margin: 0; color: var(--dim); }
+.step p b { color: var(--text); font-weight: 600; }
+.step .say { min-height: 44px; display: flex; flex-direction: column; justify-content: center; gap: 2px; border-top: 1px solid var(--line); padding-top: 8px; margin-top: auto; color: var(--dim); font-size: 12px; }
+.step .say b { color: #fff; font-weight: 600; }
+.step .say .ok { color: var(--ok); font-weight: 600; }
+.step .say .wait { color: var(--sim); font-weight: 600; }
+.step .say .wait::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--sim); margin-right: 6px; vertical-align: 1px; animation: blink 1.2s infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.b { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; font: 600 12px var(--display); letter-spacing: .06em; text-decoration: none; color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 7px; padding: 6px 14px; cursor: pointer; }
+.b:hover { color: #000; background: #fff; border-color: #fff; }
+.b.go { color: #000; background: var(--ok); border-color: var(--ok); }
+.b.go:hover { background: #fff; border-color: #fff; }
+.b[aria-disabled="true"] { opacity: .35; pointer-events: none; }
+.step.next { border-color: rgba(57,255,138,.55); box-shadow: 0 0 0 1px rgba(57,255,138,.1), 0 18px 44px -24px rgba(57,255,138,.45); }
+.step.next .num { border-color: var(--ok); color: var(--ok); }
+.step.next .b.go { animation: glow 2.4s ease-in-out infinite; }
+@keyframes glow { 50% { box-shadow: 0 0 18px rgba(57,255,138,.55); } }
+.step.done .num { background: var(--ok); border-color: var(--ok); color: #000; }
+.step.done .num::before { content: "✓"; }
+.step.done .b.go { color: var(--text); background: none; border-color: var(--hair); }
+.step.later { opacity: .62; }
+.step.waiting .num { border-color: var(--sim); color: var(--sim); }
+.mini { color: var(--dim); font-size: 11.5px; }
+.mini b { color: var(--text); font-weight: 600; }
+.places { display: inline-flex; gap: 4px; vertical-align: -1px; margin: 0 4px 0 2px; }
+.places i { width: 10px; height: 10px; border-radius: 3px; border: 1px solid var(--hair); }
+.places i.taken { background: var(--dim); border-color: var(--dim); }
+.places i.mine { background: var(--ok); border-color: var(--ok); }
+
+/* each card's picture: what the step makes, drawn from your own wallet once it exists */
+.vis { flex: 1 1 auto; min-height: 96px; display: flex; align-items: center; justify-content: center; position: relative; }
+.keycard { width: min(230px, 92%); aspect-ratio: 1.6; border-radius: 12px; border: 1px dashed var(--hair); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px; color: var(--dim); font-size: 11px; transition: border-color .5s, background .5s; }
+.keycard .pr { display: flex; gap: 4px; align-items: flex-end; height: 26px; }
+.keycard .pr i { width: 8px; border-radius: 2px; background: var(--hair); height: 6px; transition: height .7s cubic-bezier(.2,.8,.2,1), background .7s; }
+.keycard .ad { font-size: 12px; letter-spacing: .04em; }
+.done .keycard { border-style: solid; border-color: rgba(57,255,138,.45); background: linear-gradient(135deg, rgba(57,255,138,.08), rgba(255,255,255,.02)); color: var(--text); }
+.done .keycard .pr i { background: var(--ok); }
+.rulebox { width: min(260px, 94%); border: 1px dashed var(--hair); border-radius: 8px; padding: 10px 12px; font-size: 11.5px; line-height: 1.6; color: var(--dim); }
+.rulebox .k { color: var(--text); }
+.rulebox .v { color: var(--dim); }
+.done .rulebox { border-style: solid; border-color: rgba(57,255,138,.45); }
+.done .rulebox .v { color: var(--ok); }
+.chainrow { display: flex; gap: 8px; align-items: center; }
+.chainrow i { width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--hair); background: rgba(255,255,255,.03); position: relative; }
+.chainrow i + i::before { content: ""; position: absolute; right: 100%; top: 50%; width: 8px; border-top: 1px solid var(--hair); }
+.chainrow i.me { width: 46px; height: 46px; border-style: dashed; }
+.waiting .chainrow i.me { border-color: var(--sim); border-style: solid; animation: blink 1.2s infinite; }
+.done .chainrow i.me { border-color: var(--ok); border-style: solid; background: rgba(57,255,138,.18); box-shadow: 0 0 18px rgba(57,255,138,.4); animation: none; }
+.chainrow em { position: absolute; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); font: 11px var(--mono); color: var(--dim); font-style: normal; white-space: nowrap; }
+.done .chainrow em { color: var(--ok); }
+.creature { height: min(150px, 100%); max-width: 70%; object-fit: contain; filter: drop-shadow(0 10px 22px rgba(0,0,0,.7)) grayscale(.3); transition: filter .6s, transform .6s; }
+.done .creature { filter: drop-shadow(0 10px 22px rgba(57,255,138,.25)); transform: translateY(-4px); }
+/* the end: what you did, and where to go next */
+.finale { display: grid; gap: 10px 24px; align-items: center; background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.finale.all { border-color: rgba(57,255,138,.55); }
+.finale h3 { margin: 0; font: 600 15px var(--display); color: #fff; }
+.finale p { margin: 2px 0 0; color: var(--dim); }
+.facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px 22px; color: var(--dim); font-size: 12px; }
+.facts li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 6px; }
+.facts li::before { content: "·"; color: var(--ok); font-weight: 700; text-align: center; }
+.facts b { color: var(--text); font-weight: 600; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
+[hidden] { display: none !important; }
+@media (min-width: 760px) { ol.steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } .intro { grid-template-columns: minmax(0, 1fr) auto; } .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1200px) { ol.steps { grid-template-columns: repeat(4, minmax(0, 1fr)); } .finale { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr); } }
+/* landscape from laptop size up: one screen, laid out for about 1600 x 860 CSS px and scaled to the viewport, like /vote */
+html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 16px; }
+html.fit #tip { zoom: var(--z); }
+html.fit ol.steps { flex: 1 1 0; min-height: 0; }
+html.fit .step { overflow: hidden; }
+@media (max-width: 700px) {
+  .b { min-height: 44px; flex: 1 1 auto; }
+  .step .when { display: none; }
+  .mini, .facts, footer { font-size: 12px; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Start here</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state" tabindex="0" data-tip="Connecting to our node…"><i></i><span id="stateText">Connecting</span></span>
+    </div>
+  </header>
+  <nav class="tnav" data-page="start" aria-label="Pages and tools"></nav>
+  <div class="intro">
+    <div>
+      <p class="lead">Try Tau in four steps.</p>
+      <p class="sub" id="subLine">On Tau the rules change by agreement, and every account can carry <b>a rule of its own that the chain itself checks</b>. Try it on Tau Testnet Alpha: a few minutes in this browser, nothing to install. Test AGRS have no value.</p>
+    </div>
+    <div class="prog" aria-live="polite">
+      <div class="row"><span id="progText">Not started yet</span><b id="progNum">0 of 4</b></div>
+      <div class="bar"><i id="progBar"></i></div>
+    </div>
+  </div>
+  <ol class="steps">
+    <li class="step" id="s1">
+      <div class="top"><span class="num" aria-hidden="true"></span><h2>Make your test wallet</h2><span class="when">one click</span></div>
+      <p>A key made in this browser and never sent anywhere. Your first transaction brings <b>100,000 test AGRS</b> from the testnet’s faucet.</p>
+      <div class="vis" aria-hidden="true"><div class="keycard"><span>TEST WALLET · this browser</span><span class="pr" id="print"></span><span class="ad" id="kAddr" translate="no">no key yet</span></div></div>
+      <div class="acts"><a class="b go" id="go1" href="/wallet/?from=start">Open the wallet</a></div>
+      <div class="say" id="say1"><span>No wallet in this browser yet.</span></div>
+    </li>
+    <li class="step" id="s2">
+      <div class="top"><span class="num" aria-hidden="true"></span><h2>Give your account a rule</h2><span class="when">about a minute</span></div>
+      <p>For example: no payment above 1,000 test AGRS. From then on <b>every node checks your payments against it</b>, not an app.</p>
+      <div class="vis" aria-hidden="true"><div class="rulebox"><div><span class="k">if</span> a payment &gt; 1,000</div><div>&nbsp;&nbsp;<span class="k">then</span> <span class="v">every node says no</span></div><div><span class="k">else</span> <span class="v">it goes through</span></div></div></div>
+      <div class="acts"><a class="b go" id="go2" href="/wallet/?from=start#rules-mine">Write my rule</a></div>
+      <p class="mini" id="places" data-tip="Rule places\nThe testnet holds personal rules for 2 accounts at a time.\nWhen both are taken, the wallet puts you in a fair line, or you try it on the simulation."></p>
+      <div class="say" id="say2"><span>Waiting for step 1.</span></div>
+    </li>
+    <li class="step" id="s3">
+      <div class="top"><span class="num" aria-hidden="true"></span><h2>Watch it sealed</h2><span class="when">the next block</span></div>
+      <p>A block takes your rule in. From then on it is part of the chain’s state, and the Explorer shows it like any other transaction.</p>
+      <div class="vis" aria-hidden="true"><div class="chainrow"><i></i><i></i><i></i><i class="me"><em id="blockNo">next block</em></i></div></div>
+      <div class="acts"><a class="b go" id="go3" href="/explorer/" aria-disabled="true">See it in the Explorer</a></div>
+      <div class="say" id="say3"><span>Waiting for step 2.</span></div>
+    </li>
+    <li class="step" id="s4">
+      <div class="top"><span class="num" aria-hidden="true"></span><h2>Feed Agorzilla</h2><span class="when">5 test AGRS</span></div>
+      <p>One creature the whole testnet feeds. Each meal is a payment, and every evening the wallets that fed it <b>vote on how it changes</b>.</p>
+      <div class="vis" aria-hidden="true"><img class="creature" src="../assets/agorzilla.webp" alt=""></div>
+      <div class="acts"><a class="b go" id="go4" href="/wallet/?from=start">Feed it from my wallet</a><a class="b" href="https://agorzilla.com" target="_blank" rel="noopener">Meet it first ↗</a></div>
+      <div class="say" id="say4"><span>Agorzilla lives on the real testnet.</span></div>
+    </li>
+  </ol>
+  <section class="finale" id="finale">
+    <div>
+      <h3 id="finTitle">Where this happens</h3>
+      <p id="finText">Every step is a real transaction on Tau Testnet Alpha, signed in your browser. This page only reads what your wallet did and what the chain says.</p>
+      <div class="acts" id="finActs" style="margin-top:8px" hidden></div>
+    </div>
+    <ul class="facts">
+      <li><span><b>Your key stays here.</b> It lives in this browser; back it up in the wallet if you want to keep the account.</span></li>
+      <li><span><b>Nothing is sold.</b> Test AGRS have no value and are only for trying things out.</span></li>
+      <li><span><b>Two rule places.</b> The testnet holds personal rules for 2 accounts at a time; the line is fair, and the simulation is always open.</span></li>
+      <li><span><b>Unofficial.</b> Built by Tau community members, not by IDNI or the Tau team.</span></li>
+    </ul>
+  </section>
+  <footer>
+    <p>Reads your wallet in this browser and the chain from <a href="https://node.tauhud.com/status" target="_blank" rel="noopener">node.tauhud.com</a>; nothing is sent until you sign in the wallet. · <a href="/wallet/">Wallet</a> · <a href="/playground/">Playground</a> · <a href="/missions/">Missions</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BStart%20here%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const NODE = "wss://node.tauhud.com", RELAY = "https://node.tauhud.com";
+const SIM = !!(window.TauSim && TauSim.on);
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
+const short = h => h ? `${h.slice(0, 8)}…${h.slice(-4)}` : "";
+const isAddr = s => /^[0-9a-f]{96}$/.test(s);
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+/* the wallet's own storage (wallet/index.html): the key, and one activity log per chain */
+const KEY_STORE = "tauhud-wallet-key", BOOK_LIVE = "tauhud-wallet-book-live", PROGRESS = "tauhud-start";
+/* Agorzilla's bowl: a payment to it is a meal (agorzilla.com assets/core.js BOWL) */
+const BOWL = "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108";
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) { if (v == null) continue; if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v); }
+  for (const k of kids) if (k != null && k !== false) e.append(k);
+  return e;
+}
+const lang = (() => { const l = window.TauI18n && TauI18n.lang; return l && l !== "en" ? "&lang=" + l : ""; })();
+
+/* ---------- what the wallet did, read from this browser ---------- */
+const S = { pk: null, live: [], sim: [], status: new Map(), places: null, lease: null, ws: null, retry: 5000 };
+function read() {
+  try { const k = JSON.parse(store.get(KEY_STORE) || "null"); S.pk = k && isAddr(k.pk) ? k.pk : null; } catch (e) { S.pk = null; }
+  const log = mode => { try { return S.pk ? JSON.parse(store.get(`tauhud-wallet-log-${mode}-${S.pk}`) || "[]") : []; } catch (e) { return []; } };
+  S.live = log("live"); S.sim = log("sim");
+}
+const isRule = x => x.kind === "rule" && x.status !== "out";
+const isMeal = x => x.kind === "pay" && x.status !== "out" && /Agorzilla/.test(x.label || "");
+/* the newest rule: live first (that is the real testnet), the simulation otherwise */
+function rule() {
+  const l = S.live.find(isRule); if (l) return { ...l, sim: false, status: S.status.get(l.hash) || l };
+  const s = S.sim.find(isRule); if (s) return { ...s, sim: true, status: s };
+  return null;
+}
+function meal() { const m = S.live.find(isMeal); return m ? { ...m, status: S.status.get(m.hash) || m } : null; }
+const sealed = x => x && x.status && x.status.status === "in";
+
+/* ---------- the chain: our relay, for the transactions still on their way ---------- */
+function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = T(text); s.dataset.tip = tipText; }
+const waiting = new Map();
+function connect() {
+  if (SIM) { setState("sim", "Simulation", "Simulation\nSteps 1 to 3 run on the made-up chain, the same for every visitor.\nAgorzilla lives on the real testnet, so step 4 always uses Live node."); return; }
+  let ws;
+  try { ws = new WebSocket(NODE); } catch (e) { return offline(); }
+  S.ws = ws;
+  ws.onopen = () => { S.retry = 5000; ws.send("hello version=1"); setState("ok", "Live", "Live\nConnected to node.tauhud.com.\nThis page reads Tau Testnet Alpha."); follow(); };
+  ws.onmessage = ev => {
+    let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
+    if (m.command !== "gettxstatus") return;
+    const q = waiting.get("tx"); if (q && q.length) q.shift()(m);
+  };
+  ws.onclose = () => { if (S.ws === ws) offline(); };
+  ws.onerror = () => {};
+}
+function offline() {
+  S.ws = null; const w = S.retry; S.retry = Math.min(60000, w * 2);
+  setState("off", "Offline", `Offline\nOur node is not reachable right now.\nRetrying in ${w / 1000} s. Your wallet keeps its key either way.`);
+  setTimeout(connect, w);
+}
+function txStatus(hash) {
+  return new Promise(res => {
+    if (!S.ws || S.ws.readyState !== 1) return res(null);
+    if (!waiting.has("tx")) waiting.set("tx", []);
+    const q = waiting.get("tx"); q.push(res); S.ws.send("gettxstatus " + hash);
+    setTimeout(() => { const i = q.indexOf(res); if (i >= 0) { q.splice(i, 1); res(null); } }, 12000);
+  });
+}
+/* queued → in a block, the same reading as the wallet's Activity */
+async function follow() {
+  for (const x of [S.live.find(isRule), S.live.find(isMeal)]) {
+    if (!x || !x.hash || x.status !== "queued" || (S.status.get(x.hash) || {}).status === "in") continue;
+    const m = await txStatus(x.hash);
+    if (!m || m.status !== "ok") continue;
+    const d = m.data || {}, s = String(d.status || d.state || "").toLowerCase();
+    if (d.block_number != null || /confirmed|included|mined|sealed|applied/.test(s)) S.status.set(x.hash, { status: "in", block: d.block_number ?? d.height ?? null });
+    else if (/reject|fail|dropped|expired|invalid/.test(s)) S.status.set(x.hash, { status: "out" });
+  }
+  render();
+}
+async function loadPlaces() {
+  if (SIM) return;
+  try { const j = await (await fetch(RELAY + "/rules", { cache: "no-store" })).json(); if (j && j.places) S.places = j; } catch (e) {}
+  if (S.pk) try { const j = await (await fetch(`${RELAY}/lease?pk=${S.pk}`, { cache: "no-store" })).json(); if (j && j.places) S.lease = j; } catch (e) {}
+  render();
+}
+
+/* ---------- the four cards ---------- */
+function say(n, ...kids) { $("say" + n).replaceChildren(...kids.map(k => typeof k === "string" ? el("span", { text: k }) : k)); }
+function render() {
+  read();
+  const r = rule(), m = meal(), sim = SIM ? "&mode=sim" : "";
+  const done = [!!S.pk, !!r, sealed(r), !!m && sealed(m)];
+  const count = done.filter(Boolean).length, next = done.indexOf(false);
+  store.set(PROGRESS, String(count));   // the "Start here" pill in the header shows it on every page
+  ["s1", "s2", "s3", "s4"].forEach((id, i) => {
+    const c = $(id);
+    c.classList.toggle("done", done[i]); c.classList.toggle("next", i === next); c.classList.toggle("later", next >= 0 && i > next && !done[i]);
+  });
+  $("progNum").textContent = F("{a} of {b}", { a: count, b: 4 });
+  $("progText").textContent = T(count === 0 ? "Not started yet" : count === 4 ? "All four done" : ["Not started yet", "Wallet made", "Rule sent", "Rule sealed"][next]);
+  $("progBar").style.width = (count / 4 * 100) + "%";
+
+  /* the pictures: your key's print (as in the wallet), the block that takes your rule */
+  const bars = S.pk ? [...S.pk.slice(0, 16).match(/../g)].map(x => 6 + (parseInt(x, 16) % 20)) : Array(8).fill(6);
+  $("print").replaceChildren(...bars.slice(0, 8).map(hgt => el("i", { style: "height:" + hgt + "px" })));
+  $("kAddr").textContent = S.pk ? short(S.pk) : T("no key yet");
+  $("s3").classList.toggle("waiting", !!r && !sealed(r) && r.status.status !== "out");
+  $("blockNo").textContent = r && sealed(r) && r.status.block != null ? "#" + r.status.block : T("next block");
+
+  /* 1: the wallet */
+  $("go1").href = "/wallet/?from=start" + sim + lang;
+  $("go1").textContent = T(S.pk ? "Open my wallet" : "Open the wallet");
+  if (S.pk) say(1, el("b", { class: "ok", text: T("Your wallet is ready.") }), el("span", null, T("Address") + " ", el("a", { href: "/account/?a=" + S.pk, translate: "no", text: short(S.pk) })));
+  else say(1, T("No wallet in this browser yet."), T("In the wallet press “Make my account”."));
+
+  /* 2: the rule, and the testnet's two rule places */
+  $("go2").href = "/wallet/?from=start" + sim + lang + "#rules-mine";
+  $("go2").setAttribute("aria-disabled", S.pk ? "false" : "true");
+  const P = S.places;
+  if (P && !SIM) {
+    const holders = P.holders || [], taken = Math.min(P.places, P.taken != null ? P.taken : holders.length);
+    $("places").replaceChildren(T("Rule places on the testnet:"), el("span", { class: "places", "aria-hidden": "true" }, ...Array.from({ length: P.places }, (_, i) => el("i", { class: i < taken ? (holders[i] === S.pk ? "mine" : "taken") : "" }))),
+      el("b", { text: taken >= P.places ? T("both taken") : F("{n} free", { n: P.places - taken }) }), " · ", T(taken >= P.places ? "join the fair line, or try it on the simulation" : "take one now"));
+  } else if (SIM) $("places").textContent = T("Simulation: a rule place is always free here.");
+  if (r) say(2, el("b", { class: "ok", text: T(r.sim ? "Rule sent on the simulation." : "Rule sent to the testnet.") }), el("span", { text: r.label || "" }));
+  else if (S.lease && S.lease.position) say(2, el("b", { class: "wait", text: F("You are number {n} in line for a rule place.", { n: S.lease.position }) }), T("The wallet tells you when it is yours. Meanwhile try it on the simulation."));
+  else say(2, T(S.pk ? "Pick a rule in the wallet and sign it." : "Waiting for step 1."));
+
+  /* 3: sealed */
+  const g3 = $("go3");
+  if (r && sealed(r)) {
+    g3.setAttribute("aria-disabled", "false");
+    g3.href = r.sim ? "/explorer/?mode=sim" + (r.hash ? "&q=" + r.hash : "") : "/explorer/?q=" + (r.hash || S.pk);
+    say(3, el("b", { class: "ok", text: r.status.block != null ? F("Sealed in block #{n}.", { n: r.status.block }) : T("Sealed in a block.") }), T(r.sim ? "On the simulation. Every node there now checks your payments against it." : "Every node of the testnet now checks your payments against it."));
+  } else if (r && r.status.status === "out") {
+    g3.setAttribute("aria-disabled", "true");
+    say(3, el("b", { text: T("The node did not take this one.") }), T("Open the wallet: Activity says why, and you can sign it again."));
+  } else if (r) {
+    g3.setAttribute("aria-disabled", r.hash ? "false" : "true"); g3.href = r.sim ? "/wallet/?from=start&mode=sim" + lang : "/explorer/?q=" + (r.hash || "");
+    g3.textContent = T(r.sim ? "Follow it in the wallet" : "See it in the Explorer");
+    say(3, el("b", { class: "wait", text: T("On its way to a block…") }), T(r.sim ? "The simulation makes a block every eight seconds; the wallet follows it." : "The testnet makes a block about every minute; this card turns green by itself."));
+  } else { g3.setAttribute("aria-disabled", "true"); say(3, T("Waiting for step 2.")); }
+
+  /* 4: a meal, always on the real testnet */
+  $("go4").href = "/wallet/?from=start&mode=live&to=" + BOWL + "&amount=5" + lang;
+  $("go4").setAttribute("aria-disabled", S.pk ? "false" : "true");
+  if (m && sealed(m)) say(4, el("b", { class: "ok", text: T("Agorzilla had your meal.") }), el("span", null, T("Tonight’s vote is open on") + " ", el("a", { href: "https://agorzilla.com", target: "_blank", rel: "noopener", text: "agorzilla.com ↗" })));
+  else if (m && m.status.status === "out") say(4, el("b", { text: T("The node did not take this meal.") }), T("Open the wallet: Activity says why."));
+  else if (m) say(4, el("b", { class: "wait", text: T("Your meal is on its way…") }), T("It counts once a block takes it in."));
+  else say(4, T("Agorzilla lives on the real testnet."), T(S.pk ? "The wallet fills in the payment; you check it and sign." : "Make your wallet first."));
+
+  /* the end */
+  const fin = $("finale"), acts = $("finActs");
+  fin.classList.toggle("all", count === 4);
+  if (count === 4) {
+    $("finTitle").textContent = T("All four done.");
+    $("finText").textContent = T("Your account carries a rule the chain checks for you, and Agorzilla has a meal from you. From here:");
+    acts.hidden = false;
+    acts.replaceChildren(
+      el("a", { class: "b go", href: "/account/?a=" + S.pk, text: T("My account, block by block") }),
+      el("a", { class: "b", href: "/wallet/?from=start" + lang + "#rules-share", text: T("Share my rule with someone") }),
+      el("a", { class: "b", href: "/vote/", text: T("Vote on the chain’s own rules") }));
+  } else { $("finTitle").textContent = T("Where this happens"); $("finText").textContent = T("Every step is a real transaction on Tau Testnet Alpha, signed in your browser. This page only reads what your wallet did and what the chain says."); acts.hidden = true; }
+}
+
+/* the wallet names the bowl "Agorzilla", so the payment reads as a meal, not as a stranger's address */
+$("go4").addEventListener("click", () => {
+  try {
+    const book = JSON.parse(store.get(BOOK_LIVE) || "[]");
+    if (Array.isArray(book) && !book.some(c => c && c.addr === BOWL)) { book.push({ name: "Agorzilla", addr: BOWL }); store.set(BOOK_LIVE, JSON.stringify(book)); }
+  } catch (e) {}
+});
+
+/* ---------- hover tips ---------- */
+const tip = $("tip");
+document.addEventListener("mouseover", e => {
+  const t = e.target.closest("[data-tip]");
+  if (!t || !t.dataset.tip) { tip.hidden = true; return; }
+  tip.textContent = T(t.dataset.tip.replace(/\\n/g, "\n"));
+  tip.hidden = false;
+});
+document.addEventListener("mousemove", e => {
+  if (tip.hidden) return;
+  const z = document.documentElement.classList.contains("fit") ? +getComputedStyle(document.documentElement).getPropertyValue("--z") || 1 : 1;
+  const w = tip.offsetWidth * z, h = tip.offsetHeight * z;
+  tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - w - 8)) / z + "px";
+  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) / z + "px";
+});
+document.addEventListener("mouseleave", () => { tip.hidden = true; });
+
+/* ---------- one screen ---------- */
+function fit() {
+  const w = innerWidth, h = innerHeight, root = document.documentElement;
+  const on = w >= 1200 && h >= 640 && w / h >= 1.3;
+  const z = on ? Math.max(.82, Math.min(2, w / 1600, h / 860)) : 1;
+  root.classList.toggle("fit", on);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+}
+addEventListener("resize", fit);
+
+/* ---------- start: coming back from the wallet (another tab, or the back button) shows the new state at once ---------- */
+if (SIM) TauSim.mark();
+fit();
+render();
+connect();
+loadPlaces();
+addEventListener("storage", e => { if (e.key && e.key.startsWith("tauhud-wallet")) { render(); follow(); } });
+addEventListener("pageshow", () => { render(); follow(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); follow(); loadPlaces(); } });
+setInterval(() => { if (!document.hidden) follow(); }, 20000);
+setInterval(() => { if (!document.hidden) loadPlaces(); }, 120000);
+</script>
+</body>
+</html>

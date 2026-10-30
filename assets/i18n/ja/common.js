@@ -549,3 +549,10 @@ TauI18n.add({ strings: {
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 送信者自身のルールが拒否しました（o5 = 0 · ${TauI18n.t(r)}）`]] });
+/* Start here: the first-visit path (start/), its header pill and the wallet's way back */
+TauI18n.add({ strings: {
+  "Start here": "ここから始める",
+  "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla": "4 ステップで Tau を試す：テストウォレット、自分だけのルール、それを封じるブロック、Agorzilla へのごはん",
+  "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.": "はじめて？4 ステップで Tau を試せます：テストウォレット、チェーンがチェックする自分だけのルール、それを封じるブロック、Agorzilla へのごはん。数分で、インストール不要。",
+  "Back to Start here": "「ここから始める」に戻る",
+} });
