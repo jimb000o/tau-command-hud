@@ -61,6 +61,20 @@ check(out["ours"]["2026-10-28"] == [3, 2, 2, 0, 15] and out["ours"]["2026-10-29"
 check(out["totals"]["ours"] == {"7": 3, "30": 3, "all": 3} and out["totals"]["tauhud"]["all"] == 1, "distinct wallets over 7 / 30 days / all")
 check(out["hours"]["2026-10-29"][0] == 1 and out["hours"]["2026-10-29"][2] == 2, "our transactions per hour")
 check(out["since"] == day1 + 60 and len(out["days"]) == 2, "blocks without a time are left out")
+check(out["starts"]["2026-10-28"] == {"agorzilla": {"meal": 2}, "tauhud:": {"send": 1}} and out["starts"]["2026-10-29"] == {"agorzilla": {"other": 1, "meal": 2}},
+      "where our transactions started: Agorzilla meals (a plain send from agorzilla.com is other); a Tau HUD send from before pages were kept has no page")
+DEJA = txsources.DEJA
+s.note("v1", "", "start")
+s.note("v2", "", "relay")
+s.note("v3", "agorzilla")
+check(s.sent["v1"] == "|start" and s.sent["v3"] == "agorzilla", "the page is kept next to the site, only when there is one")
+out = s.by_day([{"header": {"timestamp": day2 + 60}, "tx_ids": ["v1", "v2", "v3"],
+                 "transactions": [{"tx_type": "user_tx", "sender_pubkey": A, "operations": {"0": "always o5 = 1."}},
+                                  {"tx_type": "consensus_rule_vote", "sender_pubkey": B},
+                                  tx(C, DEJA)]}])
+check(out["starts"]["2026-10-29"] == {"tauhud:start": {"rule": 1}, "tauhud:relay": {"vote": 1}, "deja": {"meal": 1}},
+      "a rule sent from the wallet opened from /start/, the relay's own send, a meal for Déjà")
+check(out["days"]["2026-10-29"]["tauhud"][0] == 2 and out["days"]["2026-10-29"]["agorzilla"][0] == 1, "the page does not change the site")
 for i in range(txsources.SENT_MAX + 5):
     s.sent[f"x{i}"] = ""
 s.note("last")

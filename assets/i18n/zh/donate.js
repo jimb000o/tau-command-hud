@@ -72,4 +72,7 @@ TauI18n.add({ strings: {
   "Read from Ethereum every five minutes. Only AGRS of the real token contract and ETH count; tiny amounts and look-alike tokens are left out. Money values are the price when the donation came in, or that day's price for older ones (CoinGecko). Not advice, and no price of anything is promised.": "每五分钟从以太坊读取一次。只计算真实代币合约的 AGRS 和 ETH；极小金额和仿冒代币不计入。金额价值按捐赠到账时的价格计算，较早的按当天价格（数据来自 CoinGecko）。这不是建议，也不承诺任何价格。",
   "QR code of the donation address": "捐赠地址的二维码",
   "Privacy notice, section 11 ›": "隐私说明，第 11 节 ›",
+  "AI assistant": "AI 助手",
+  "Claude Max plan (20x), the AI tool the site is built and run with": "Claude Max 套餐（20x），搭建和运行本站所用的 AI 工具",
+  "Amounts as billed, rounded, each in the currency of its bill. Domains and the X account are added here once their bills are in.": "金额按账单取整，各按账单币种列出。域名和 X 账号在账单到来后再加进来。",
 } });

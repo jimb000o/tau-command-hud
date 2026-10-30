@@ -168,6 +168,7 @@ FROM_MEMORY = CACHED + ("getblocks", "getblockrange", "presence")   # answered w
 # in the list). Both commands share one bucket per address and one for everyone,
 # because the relay holds ONE upstream connection and checktx is a heavy call.
 WALLET_COMMANDS = ("sendtx", "checktx")
+VIA = re.compile(r"^[a-z0-9-]{1,24}(/[a-z]{2})?$")   # a page name: start, rules, card, hud, story/zh …
 WALLET_TX_TYPES = frozenset({
     "user_tx", "consensus_rule_vote", "rule_offer", "rule_offer_accept", "rule_offer_reject",
     "approval_request", "transfer_vote", "retractable_transfer", "retract_transfer",
@@ -368,6 +369,7 @@ class Relay:
         # user agent, in memory only). Nothing is stored in the browser for it; the viewer
         # token older pages send in "hello … viewer=…" is accepted and ignored.
         self.viewers: dict[ServerConnection, tuple[str, str, str]] = {}   # address, user agent, site (from Origin)
+        self.via: dict[ServerConnection, str] = {}   # the page that led this socket's visitor to the wallet
         self.blocks: dict[str, dict] = {}       # block_hash -> raw block
         self.total_blocks = 0
         self.cache: dict[str, str] = {}         # command -> envelope text
@@ -974,7 +976,7 @@ class Relay:
             if res is not None:
                 self.lease.sent(addr, ok, why)
             if ok:
-                self.sources.note((res.get("data") or {}).get("tx_hash"))
+                self.sources.note((res.get("data") or {}).get("tx_hash"), "", "relay")
             log.info("turn over for %s…: removal %s %s", addr[:12], "sent" if ok else "refused", ((res or {}).get("data") or {}).get("tx_hash") or why[:80])
 
     @staticmethod
@@ -1194,14 +1196,22 @@ class Relay:
         if cmd == "leasetx":
             return await self.lease_deposit(message[len(parts[0]):].strip(), ip)
 
+        if cmd == "via":   # the Tau HUD page that led this visitor to the wallet, kept with the hashes it sends
+            if len(args) != 1 or not VIA.match(args[0]):
+                return envelope_error(cmd, "Usage: via <page>", "INVALID_PARAMS")
+            if ws:
+                self.via[ws] = args[0]
+            return envelope_ok(cmd, {"via": args[0]})
+
         if cmd in WALLET_COMMANDS:
-            return await self.wallet(cmd, message[len(parts[0]):].strip(), ip, self.viewers.get(ws, (0, 0, ""))[2] if ws else "")
+            return await self.wallet(cmd, message[len(parts[0]):].strip(), ip, self.viewers.get(ws, (0, 0, ""))[2] if ws else "",
+                                     self.via.get(ws, "") if ws else "")
 
         return envelope_error(cmd, "Not allowed here. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
-                              "gettaustate, presence, report, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
+                              "gettaustate, presence, report, via, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
                               + " (a transaction signed in your browser)", "FORBIDDEN")
 
-    async def wallet(self, cmd: str, raw: str, ip: str, site: str = "") -> str:
+    async def wallet(self, cmd: str, raw: str, ip: str, site: str = "", via: str = "") -> str:
         """Pass one browser-signed transaction (or its dry run) to the node."""
         tx, why = wallet_tx(raw)
         if tx is None:
@@ -1217,7 +1227,7 @@ class Relay:
         if msg is None:
             return envelope_error(cmd, "Node is not reachable right now.", "UPSTREAM_DOWN")
         if cmd == "sendtx" and msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False:
-            self.sources.note((msg.get("data") or {}).get("tx_hash"), site)   # for "where the transactions come from"
+            self.sources.note((msg.get("data") or {}).get("tx_hash"), site, via)   # for "where the transactions come from"
         return json.dumps(msg, separators=(",", ":"))
 
     async def lease_deposit(self, raw: str, ip: str) -> str:
@@ -1915,6 +1925,7 @@ class Relay:
             self.chat_subs.discard(ws)
             self.road_subs.discard(ws)
             self.viewers.pop(ws, None)
+            self.via.pop(ws, None)
             self.per_ip[ip] -= 1
             if self.per_ip[ip] <= 0:
                 del self.per_ip[ip]

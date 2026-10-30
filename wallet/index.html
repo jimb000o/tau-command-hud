@@ -641,6 +641,15 @@ document.querySelectorAll("#acctTabs button").forEach(b => b.addEventListener("c
 
 /* ---------- talking to the chain: the relay (live) or this browser's simulation ---------- */
 const L = { ws: null, retry: 5000, wait: new Map(), times: [] };
+/* the page that led here (?from=, else the page linked from), told to the relay once per connection so /meta/ can show
+   which page our transactions started on; only a page name, nothing about the visitor */
+const VIA = (() => {
+  const f = new URLSearchParams(location.search).get("from");
+  if (/^[a-z0-9-]{1,24}$/.test(f || "")) return f;
+  let r; try { r = new URL(document.referrer); } catch (e) { return "direct"; }
+  if (r.host === location.host) return r.pathname.split("/")[1] || "hud";
+  return /(^|\.)agorzilla\.com$/.test(r.hostname) ? "agorzilla" : "elsewhere";
+})();
 const offlineNow = () => !SIM && $("state").classList.contains("off");
 function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = T(text); s.dataset.tip = tipText; }
 function connect() {
@@ -649,7 +658,7 @@ function connect() {
   try { ws = new WebSocket(NODE); } catch (e) { return offline(e.message); }
   L.ws = ws;
   setState("wait", "Connecting", "Connection\nReaching node.tauhud.com…");
-  ws.onopen = () => { L.retry = 5000; ws.send("hello version=1"); ws.send("getgovernance"); ws.send("getblocks 12"); if (W.pk) refresh(); };   // a key loaded before the node answered reads its balance and rule now, not 30 s later
+  ws.onopen = () => { L.retry = 5000; ws.send("hello version=1"); if (/^[a-z0-9-]{1,24}$/.test(VIA)) ws.send("via " + VIA); ws.send("getgovernance"); ws.send("getblocks 12"); if (W.pk) refresh(); };   // a key loaded before the node answered reads its balance and rule now, not 30 s later
   ws.onmessage = ev => {
     let msg; try { msg = JSON.parse(String(ev.data)); } catch { return; }
     const q = L.wait.get(msg.command);

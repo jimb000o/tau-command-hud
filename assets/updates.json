@@ -1742,6 +1742,16 @@
   "html": "In numbers: smoother, finer charts. 7D now shows every hour and 30D every six hours instead of one point a day, drawn as a soft curve that never rises above or dips below a real count. The dots on every point are gone: only the newest value keeps one, and pointing at the line still shows each hour."
  },
  {
+  "tag": "In numbers",
+  "on": "2026-10-30",
+  "html": "In numbers, On the testnet: a new ring and list show where our transactions started. Agorzilla, Déjà the café cat, and for Tau HUD the page that led to the wallet: Start here, the rules wall, the HUD, the Tau card and so on. Pages count from today; only a page name is kept next to a transaction. Déjà's meals now count for Agorzilla too."
+ },
+ {
+  "tag": "Donations",
+  "on": "2026-10-30",
+  "html": "Donations: the monthly costs now include the AI assistant the site is built and run with (Claude Max plan, $200 a month), each cost in the currency of its bill. Running costs: about €6 + $200 a month, not counting time."
+ },
+ {
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "News line: real headlines instead of long update texts. Short lines on what is new on the testnet and on Tau HUD, the titles of new features, live chain numbers, and when the next Daily Consensus comes out: in German time in English, Beijing time in Chinese, Japan time in Japanese."
