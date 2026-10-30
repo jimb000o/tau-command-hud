@@ -12,6 +12,8 @@ One key in infra/.env (never in the repository), whichever you have:
   infra/rabbit-art/paint.sh draft hall bar       three new ones for some places (again if none is right)
   infra/rabbit-art/paint.sh keep island=2 hall=1 ...   puts those on the island; the game shows them at once
   infra/rabbit-art/paint.sh draft island --like island=1 market=2 bar=2   three more, painted like those drafts
+  infra/rabbit-art/paint.sh looks                the island in each of the three styles, to choose one
+  infra/rabbit-art/paint.sh draft hall --look 2  paint in one of those styles
   infra/rabbit-art/paint.sh draft island --sketch bay --like ...   the new harbour island (sketch.py); keeping one of
       these moves the places, streets and lights in the game to match it
   infra/rabbit-art/paint.sh drop hall            back to the drawn picture for that place
@@ -57,20 +59,43 @@ DETAIL = {
 # new sketches of the island (sketch.py writes plates/<name>.jpg and plates/<name>.json, where everything stands)
 SKETCH = {
     "bay": "The whole island as the map screen of a classic cartoon adventure game, seen from the sea at a high angle: "
-           "one great lumpy green peak in the middle, covered in rounded masses of rainforest up to a bald rock crown, "
-           "a waterfall down its front; steep stylised cliffs with vertical rock striations along the front shore, "
-           "rocks scattered in the surf, a small wreck on the rocks; on a plateau on the left a little village with a "
-           "cool blue Georgian embassy with a veranda and a warm terracotta embassy villa; a red and white lighthouse "
-           "on the cliff point at the far left; on the right a harbour town glowing in a turquoise bay: tall narrow "
-           "brightly painted gabled houses climbing the slope, a white colonial council house with a clock tower on "
-           "top, a market square under a flaming red flamboyant tree, a wooden pier, a tall ship at anchor, small "
-           "boats; a yellow radio shack with a tall mast on the hill above, a stone rum distillery with a chimney, a "
-           "beach bar with a thatched roof on the bay's beach; palms along the shores. Style: exaggerated, organic, "
-           "slightly whimsical shapes, rich painterly brushwork, curling spiral clouds with painted swirls in the sky, "
-           "deep saturated turquoise and teal water that glows in the shallows, cinematic light, warm glowing windows "
-           "in the town, a sense of mystery and adventure; its own island, nothing copied. The input is a rough "
-           "sketch: keep where every building, the bay, the pier, the peak and the lighthouse stand and how big they "
-           "are, but paint it all far richer, with many more small details of island life.",
+           "a big, wild, deeply tropical island, diverse and full of secrets, not a tidy town. A smoking green peak "
+           "in the middle with a waterfall into a jungle pool; dense rainforest with huge leaves, banana plants and "
+           "palms hides most of the island, so places peek out of the green instead of all being in plain view, and "
+           "only a few sandy tracks link them. On the right a ramshackle harbour: wooden shacks on stilts over the "
+           "water, a fishing village of palm-thatched huts, a wooden pier, nets, canoes and a small sailing boat; a "
+           "market of bamboo stalls under a huge flaming red flamboyant tree; shacks of planks and rusty corrugated "
+           "tin painted in bright Caribbean colours, laundry lines, hammocks, chickens. A weathered colonial council "
+           "house with a small bell tower and palm-frond awnings is the one official building in town. In a jungle "
+           "clearing a ramshackle bamboo radio shack with a tin roof and a mast made of a tall pole and wires. Deep in "
+           "the jungle a rebels' camp with tents and a campfire. A banana plantation in rows on the east slope. On "
+           "two separate green hills on the left, each behind its own garden wall, the two embassies: the only "
+           "buildings that look foreign, a cool blue Georgian house and a warm terracotta villa. A lagoon with "
+           "mangroves bitten into the west coast, and alone on a rocky islet in its mouth a red and white lighthouse. "
+           "Far out on a sandy point on the right a bamboo beach bar with a palm-thatch roof and torches. A wreck on "
+           "the reef, rocks in the surf, a turquoise reef round it all. Nothing European about the island apart from "
+           "the embassies and the council house: wood, bamboo, palm thatch, stilts, tin and bright paint. Its own "
+           "island, nothing copied. The input is a rough sketch: keep where every building, the lagoon, the harbour, "
+           "the pier, the peak and the lighthouse stand and how big they are, but paint it all far richer, with many "
+           "more small details of island life.",
+}
+# three ways to paint the whole game (paint.sh looks paints the island once in each, to choose from)
+LOOK_BASE = ("Turn this rough sketch into a finished background for a 2D adventure game. No people, no text, no letters, "
+             "no numbers, no logos, no signatures, no frame, no user interface. Style: ")
+LOOKS = {
+    1: "a lush hand-painted background from a late-1990s point-and-click adventure: gouache and watercolour on paper "
+       "with fine, confident dark ink outlines, soft painted colour gradients, near-realistic proportions, a huge "
+       "amount of hand-placed detail (worn wood, cracked plaster, moss, laundry, crates, ropes), warm cinematic sunlight "
+       "with deep cool shadows and soft bounced light, atmospheric haze in the distance, calm and elegant.",
+    2: "a cartoon adventure game painting: strongly exaggerated, bulging organic shapes, nothing straight, buildings "
+       "leaning and crooked, knobbly mountains, curling spiral clouds with painted swirls, huge leaves and palms framing "
+       "the foreground, deep glowing turquoise and teal water with bright shallows, saturated jungle greens, thick "
+       "visible painterly brushstrokes, dark outlines that swell and taper, warm glowing windows, playful, humorous and "
+       "a little mysterious, like a hand-painted animated film background.",
+    3: "early-1990s Amiga point-and-click adventure pixel art, upscaled: thick black comic outlines, flat saturated "
+       "colours in a limited palette with ordered dithering for shading, chunky visible pixels, cartoon caricature "
+       "shapes, bold tropical colours (bright turquoise sea, vivid greens, red and yellow accents), jungle leaves "
+       "framing the foreground, cheerful comic-book humour.",
 }
 SCENE = {
     "island": "A small tropical island seen from above at an angle, in the open sea under a clear blue sky: a white "
@@ -177,7 +202,7 @@ def paint_openai(plate, prompt, n, model, refs=()):
     return [base64.b64decode(d["b64_json"]) for d in r.get("data", [])]
 
 
-def small(raw):
+def small(raw, pixel=False):
     """A 1600 x 900 WebP (cropped to 16:9) when Pillow is there, else the picture as it came."""
     try:
         from PIL import Image
@@ -190,7 +215,9 @@ def small(raw):
         c = int(h * 16 / 9); im = im.crop(((w - c) // 2, 0, (w - c) // 2 + c, h))
     else:
         c = int(w * 9 / 16); im = im.crop((0, (h - c) // 2, w, (h - c) // 2 + c))
-    buf = io.BytesIO(); im.resize((1600, 900), Image.LANCZOS).save(buf, "WEBP", quality=80, method=5)
+    if pixel:   # real pixels: 400 x 225 in 48 colours, blown up four times without smoothing
+        im = im.resize((400, 225), Image.LANCZOS).quantize(48, dither=Image.Dither.NONE).convert("RGB").resize((1600, 900), Image.NEAREST)
+    buf = io.BytesIO(); im.resize((1600, 900), Image.LANCZOS).save(buf, "WEBP", quality=80 if not pixel else 90, method=5)
     return buf.getvalue(), "webp"
 
 
@@ -216,7 +243,9 @@ def page(a):
             continue
         rows.append(f"<h2>{id}</h2><div class=row>")
         for i, f in enumerate(drafts[id], 1):
-            rows.append(f"<figure><a href='{f}'><img src='{f}' loading=lazy></a><figcaption><code>{id}={i}</code></figcaption></figure>")
+            look = drafts.get("look", {}).get(f)
+            tag = f" &middot; style {look}" if look else ""
+            rows.append(f"<figure><a href='{f}'><img src='{f}' loading=lazy></a><figcaption><code>{id}={i}</code>{tag}</figcaption></figure>")
         rows.append("</div>")
     keep = " ".join(f"{id}=1" for id in PLACES if id in drafts)
     write(os.path.join(a.out, "drafts", "index.html"), (
@@ -243,16 +272,23 @@ def cmd_draft(a):
     print(f"{len(who)} places, {a.n} paintings each, with {model}" + (f", painted like {len(refs)} chosen pictures." if refs else "."))
     for id in who:
         plate = open(os.path.join(PLATES, (sketch or id) + ".jpg"), "rb").read()
-        prompt = STYLE + " The picture: " + (SKETCH[sketch] if sketch else SCENE[id]) + (" " + DETAIL[id] if id in DETAIL else "") + (" " + LIKE if refs else "")
+        look = getattr(a, "look", None)
+        what = SKETCH[sketch] if sketch else SCENE[id] + (" " + DETAIL[id] if id in DETAIL else "")
+        prompt = (LOOK_BASE + LOOKS[look] + " The picture: " + what if look else STYLE + " The picture: " + what) + (" " + LIKE if refs else "")
         raws = (paint_gemini if p == "gemini" else paint_openai)(plate, prompt, a.n, model, refs)
-        names = drafts.get(id, []) if refs or sketch else []   # these join the earlier ones, so those stay pickable
+        names = drafts.get(id, []) if refs or sketch or look else []   # these join the earlier ones, so those stay pickable
         for i, raw in enumerate(raws, len(names) + 1):
-            data, kind = small(raw)
+            data, kind = small(raw, pixel=look == 3)
             f = f"{id}-{i}-{hashlib.sha1(data).hexdigest()[:8]}.{kind}"
             write(os.path.join(a.out, "drafts", f), data)
             names.append(f)
-            if sketch:
-                drafts.setdefault("sketch", {})[f] = sketch
+            if look:
+                drafts.setdefault("look", {})[f] = look
+            if sketch:   # the layout as it was for this painting, so a later sketch cannot move its places
+                lay = open(os.path.join(PLATES, sketch + ".json"), "rb").read()
+                name = f"layout-{hashlib.sha1(lay).hexdigest()[:8]}.json"
+                write(os.path.join(a.out, "drafts", name), lay)
+                drafts.setdefault("sketch", {})[f] = name
         drafts[id] = list(names)
         write(path, json.dumps(drafts, indent=1).encode())
         page(a)
@@ -275,6 +311,13 @@ def liked(a, drafts):
     return out
 
 
+def cmd_looks(a):
+    """The island from the newest sketch, once in each of the three styles."""
+    for n in LOOKS:
+        print(f"Style {n}:")
+        cmd_draft(argparse.Namespace(out=a.out, places=["island"], n=1, model=a.model, sketch="bay", like=None, look=n))
+
+
 def cmd_keep(a):
     drafts = load(os.path.join(a.out, "drafts", "drafts.json"))
     path = os.path.join(a.out, "index.json")
@@ -290,8 +333,8 @@ def cmd_keep(a):
         idx["scenes"][id] = f
         if id == "island":   # a painting of a new sketch brings where everything stands on it
             sk = drafts.get("sketch", {}).get(f)
-            if sk:
-                idx["layout"] = json.load(open(os.path.join(PLATES, sk + ".json")))
+            if sk:   # paintings of the first harbour sketch (before layouts were stored with them) use plates/bay-1.json
+                idx["layout"] = json.load(open(os.path.join(a.out, "drafts", sk) if sk.endswith(".json") else os.path.join(PLATES, sk + "-1.json")))
             else:
                 idx.pop("layout", None)
         print(f"{id}: {f}")
@@ -320,12 +363,15 @@ def main():
     d.add_argument("--model", default=None)
     d.add_argument("--sketch", default=None, help="island only: paint a new sketch instead, e.g. bay")
     d.add_argument("--like", nargs="+", metavar="PLACE=N", help="paint in the style of these drafts, e.g. island=1 market=2")
+    d.add_argument("--look", type=int, choices=sorted(LOOKS), default=None, help="paint in style 1, 2 or 3 (see LOOKS)")
+    lk = sub.add_parser("looks")
+    lk.add_argument("--model", default=None)
     k = sub.add_parser("keep")
     k.add_argument("picks", nargs="+", help="place=N, e.g. island=2 hall=1")
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop}[a.cmd](a)
+    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks}[a.cmd](a)
 
 
 if __name__ == "__main__":

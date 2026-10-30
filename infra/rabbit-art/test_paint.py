@@ -27,8 +27,8 @@ def fake(url, data, headers, timeout=240):
     if "generativelanguage" in url:
         body = json.loads(data)
         if "same artist" in body["contents"][0]["parts"][0]["text"]:
-            assert len(body["contents"][0]["parts"]) == 4 and "high hill" in body["contents"][0]["parts"][0]["text"]
-        assert body["generationConfig"]["imageConfig"]["aspectRatio"] == "16:9" and "Keep the composition" in body["contents"][0]["parts"][0]["text"]
+            assert len(body["contents"][0]["parts"]) == 4 and ("high hill" in body["contents"][0]["parts"][0]["text"] or "rough sketch" in body["contents"][0]["parts"][0]["text"])
+        assert body["generationConfig"]["imageConfig"]["aspectRatio"] == "16:9" and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"])
         return {"candidates": [{"content": {"parts": [{"inlineData": {"mimeType": "image/png", "data": base64.b64encode(PIC).decode()}}]}}]}
     if "openai" in url:
         assert b'name="input_fidelity"' in data and b'filename="plate.jpg"' in data
@@ -59,8 +59,14 @@ for prov in ("gemini", "openai"):
         assert set(lay["places"]) == set(paint.PLACES[1:]) and lay["fx"] and lay["windows"] and lay["walk"]
         for id, p in lay["places"].items():
             bx, by, bw, bh = p["box"]; assert bx <= p["x"] <= bx + bw and by <= p["y"] <= by + bh + 20, id
+        dj = os.path.join(out, "drafts", "drafts.json"); dd = json.load(open(dj)); dd["sketch"][dd["island"][0]] = "bay"; json.dump(dd, open(dj, "w"))
+        paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=1"]))   # an early painting: the first layout
+        assert json.load(open(os.path.join(out, "index.json")))["layout"]["places"]["hall"]["x"] == 1090
         paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=2"]))
         assert "layout" not in json.load(open(os.path.join(out, "index.json")))
+        paint.cmd_looks(types.SimpleNamespace(out=out, model=None))
+        dd = json.load(open(os.path.join(out, "drafts", "drafts.json")))
+        assert set(dd["look"].values()) == {1, 2, 3} and "style 3" in open(os.path.join(out, "drafts", "index.html")).read()
         paint.cmd_drop(types.SimpleNamespace(out=out, places=["bar"]))
         assert list(json.load(open(os.path.join(out, "index.json")))["scenes"]) == ["island"]
 print("ok", len(calls), "calls")
