@@ -1745,5 +1745,10 @@
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "In numbers, On the testnet: a new ring and list show where our transactions started. Agorzilla, Déjà the café cat, and for Tau HUD the page that led to the wallet: Start here, the rules wall, the HUD, the Tau card and so on. Pages count from today; only a page name is kept next to a transaction. Déjà's meals now count for Agorzilla too."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-30",
+  "html": "In numbers on a phone: the One day table under On the testnet stays inside its panel instead of spilling sideways; the headings take less spacing and the site names may break."
  }
 ]
