@@ -376,6 +376,7 @@ html.i18n-zh .ga-tx { text-align: left; }
 @media (max-width: 1599px) { .agz { display: none; } }
 @media (prefers-reduced-motion: reduce) { .agz .bod { animation: none; } }
 .chip { font: 400 11px var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 4px 12px; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); background: rgba(255,255,255,.03); white-space: nowrap; }
+a.chip { text-decoration: none; cursor: pointer; } a.chip:hover { border-color: rgba(255,255,255,.4); color: var(--text); }
 .chip b { color: var(--cyan-hi); font-weight: 600; font-family: var(--mono); letter-spacing: 0; text-transform: none; margin-left: 6px; font-variant-numeric: tabular-nums; }
 .chip.v b { margin-left: 0; }
 /* consensus chip: full name on wide screens, short form where the row is tight */
@@ -384,7 +385,7 @@ html.i18n-zh .ga-tx { text-align: left; }
 .chip.live b { color: var(--ok); }
 .chip.warn b { color: var(--amber); }
 .chip.behind b { color: var(--behind); }
-.rail .chips .chip { cursor: help; } .rail .chips button.chip { cursor: pointer; }
+.rail .chips .chip { cursor: help; } .rail .chips a.chip { cursor: pointer; } .rail .chips button.chip { cursor: pointer; }
 .rail .chips .chip:hover { border-color: rgba(255,255,255,.45); color: var(--text); }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); margin-right: 6px; animation: blink 1.6s infinite; }
 .dot.sim { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
@@ -987,7 +988,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     <div class="chips">
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
-      <div class="chip" id="chipOnline" data-full="People looking at Tau HUD right now. Counted by the community read relay at node.tauhud.com, which every open HUD talks to; no cookies, no analytics, nobody is identified; a random token in your browser makes sure you count once, even with several tabs or pages open. “—” means the relay has not answered yet."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</div>
+      <a class="chip" id="chipOnline" href="meta/?view=tauhud" data-full="People looking at Tau HUD right now, counted by our relay at node.tauhud.com: one person counts once, however many tabs are open.&#10;No cookies and nothing stored in your browser; the relay tells people apart by address and browser, hashed with a daily salt and kept in memory only. Click for Tau HUD in numbers."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</a>
       <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b></button>
       <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b></div>
       <div class="chip v" id="chipHeight"><b id="chipH">#0</b></div>
@@ -1373,6 +1374,7 @@ function tickSubs() {
    by the alpha node (IDNI #81, up to an hour) is a known quirk, not an alarm. Red only when something is really stuck or offline. */
 const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
 /* a validator's own page: its profile on the accounts page (what it sealed, how much traffic, its votes); the language travels along */
+{ const c = $("chipOnline"), l = new URLSearchParams(location.search).get("lang"); if (c && l) c.href = "meta/?view=tauhud&lang=" + encodeURIComponent(l); }   // the online chip opens Tau HUD in numbers on its Tau HUD tab, in the same language
 const valProfile = v => { const l = new URLSearchParams(location.search).get("lang"); return `account/?a=${encodeURIComponent(String(v).toLowerCase().replace(/^0x/, ""))}&view=validator${l ? "&lang=" + encodeURIComponent(l) : ""}`; };
 const liveChain = () => S.mode === "live" && !S.simfeed, offline = () => liveChain() && LIVE.status !== "Connected";
 const SEALED = { h: -1, n: -1, ids: new Set() };
@@ -1983,7 +1985,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=27.8", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (await fetch("assets/updates.json?v=28.1", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
