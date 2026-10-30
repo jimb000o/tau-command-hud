@@ -52,6 +52,10 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .intro { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
 .lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; }
 .sub { margin: 4px 0 0; color: var(--dim); max-width: 76ch; }
+/* simulation: said plainly where the eye lands, so made-up nodes are never read as the real network */
+.sub.simnote { color: #fff; border-left: 2px solid var(--behind, #ffb13b); padding: 2px 0 2px 10px; }
+.sub.simnote a { color: var(--behind, #ffb13b); white-space: nowrap; }
+.simtag { font: 600 11px var(--display, sans-serif); letter-spacing: .14em; color: var(--behind, #ffb13b); border: 1px solid rgba(255,177,59,.45); border-radius: 3px; padding: 1px 6px; margin-left: 8px; vertical-align: 1px; }
 .kpis { display: flex; flex-wrap: wrap; gap: 8px; }
 .kpi { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--dim); font-size: 12px; white-space: nowrap; background: rgba(16,16,18,.86); }
 .kpi b { color: #fff; font: 600 13px var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
@@ -651,7 +655,12 @@ document.addEventListener("mouseleave", () => { tip.hidden = true; });
 if (SAMPLE) $("sourceLine").textContent = "Sample data: made-up nodes to preview the page. Remove ?sample from the address for the real list.";
 // in the simulation the panel opens in place; on the live page the link switches to the simulation first
 $("trySim").addEventListener("click", e => { if (SIM && window.TauSimNode) { e.preventDefault(); TauSimNode.open(); } });
-if (SIM) { $("sourceLine").textContent = "Simulation: made-up nodes on the simulated chain, the same on every page. No real nodes. Switch to Live node in the header for the real list."; TauSim.mark(); }
+if (SIM) {
+  const sl = $("sourceLine"); sl.classList.add("simnote");
+  sl.replaceChildren("Simulation: made-up nodes on the simulated chain, the same on every page. No real nodes. ", el("a", { href: "?mode=live", text: "Show the real list →" }));
+  document.querySelector(".board h2").append(el("span", { class: "simtag", text: "Simulated" }));
+  TauSim.mark();
+}
 updateCmd();
 fit();
 render();

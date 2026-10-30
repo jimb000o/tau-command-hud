@@ -164,4 +164,7 @@ TauI18n.add({ strings: {
   "Click for its details and badge.": "クリックで詳細とバッジを表示。",
   "None of them has been seen in the last 30 minutes, so the chain core and \"nodes online\" leave them out.": "どれも直近 30 分間見えていないため、チェーンコアと「オンラインのノード」には含まれません。",
   "offline · no kit": "オフライン · キットなし",
+  "Simulation: made-up nodes on the simulated chain, the same on every page. No real nodes.": "シミュレーション：シミュレーションのチェーン上の架空のノードで、どのページでも同じです。本物のノードではありません。",
+  "Show the real list →": "本物の一覧を見る →",
+  "Simulated": "シミュレーション",
 } });
