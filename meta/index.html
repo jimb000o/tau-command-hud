@@ -307,6 +307,8 @@ function netData() {
 }
 const NET = () => site === "net";
 const netAll = k => { const d = (txs && txs.days[k]) || {}; return Object.values(d).reduce((a, v) => a + (v[0] || 0), 0); };
+/* user transactions: everything but IDNI's genesis accounts, which make most of the testnet's traffic while testing */
+const netUsers = k => netAll(k) - (((txs && txs.days[k]) || {}).idni || [0])[0];
 
 /* every calendar day of the range, zero where nothing was counted; not before counting began */
 function rangeDays() {
@@ -532,15 +534,15 @@ function drawNetGrowth(box, days, all) {
 
 const fact = (v, label, tipText) => `<div${tipText ? ` data-tip="${esc(T(tipText))}"` : ""}><b>${v}</b><span>${esc(T(label))}</span></div>`;
 function drawNetDay() {
-  const k = sel, d = data.days[k] || [0, 0, 0, 0, 0], src = (txs.days || {})[k] || {}, all = netAll(k);
+  const k = sel, d = data.days[k] || [0, 0, 0, 0, 0], src = (txs.days || {})[k] || {}, all = netAll(k), users = netUsers(k);
   $("dTitle").textContent = dayLabel(k, true) + (k === data.today ? " · " + T("still counting") : "");
   $("dayHint").textContent = T("click a day in the chart");
   $("dFacts").innerHTML = fact(fmt(d[0]), "wallets through our sites", "Different wallets that sent at least one transaction through Agorzilla or a Tau HUD page that day. A wallet is a key, not a person.") +
     fact(fmt(d[1]), "transactions") +
     fact(fmt(d[2]), "new wallets", "Wallets acting through our sites for the first time (in the blocks the relay keeps).") +
     fact(fmt(d[3]), "came back", "Wallets that had already acted through our sites on an earlier day.");
-  const row = (name, g) => { const v = src[g] || [0, 0]; return `<tr><td>${esc(T(name))}</td><td class="n">${fmt(v[1])}</td><td class="n">${fmt(v[0])}</td><td class="n">${share(v[0], all)}</td></tr>`; };
-  $("dPages").innerHTML = `<tr><th>${esc(T("Site"))}</th><th class="n">${esc(T("wallets"))}</th><th class="n">${esc(T("transactions"))}</th><th class="n" data-tip="${esc(T("Share of all transactions on the testnet that day."))}">${esc(T("share"))}</th></tr>` +
+  const row = (name, g) => { const v = src[g] || [0, 0]; return `<tr><td>${esc(T(name))}</td><td class="n">${fmt(v[1])}</td><td class="n">${fmt(v[0])}</td><td class="n" data-tip="${esc(`${T("Counting everything, IDNI's genesis accounts included")}: ${share(v[0], all)}`)}">${share(v[0], users)}</td></tr>`; };
+  $("dPages").innerHTML = `<tr><th>${esc(T("Site"))}</th><th class="n">${esc(T("wallets"))}</th><th class="n">${esc(T("transactions"))}</th><th class="n" data-tip="${esc(T("Share of the day's user transactions: everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Point at a number for its share of everything."))}">${esc(T("share"))}</th></tr>` +
     row("Agorzilla", "agorzilla") + row("Tau HUD", "tauhud") +
     `<tr><td>${esc(T("test AGRS moved"))}</td><td class="n"></td><td class="n">${fmt(d[4] || 0)}</td><td class="n"></td></tr>`;
 }
@@ -582,12 +584,12 @@ function drawNetWho() {
 }
 
 function netKpis() {
-  const d = data.days[data.today] || [0, 0, 0, 0], tot = (txs.totals && txs.totals.ours) || {}, all = netAll(data.today);
+  const d = data.days[data.today] || [0, 0, 0, 0], tot = (txs.totals && txs.totals.ours) || {}, all = netAll(data.today), users = netUsers(data.today);
   const set = (box, val, label, tipText) => { $(box).hidden = false; $(box).querySelector("b").textContent = val; $(box).lastChild.textContent = T(label); $(box).dataset.tip = tipText; };
   set("kTodayBox", fmt(d[0]), "wallets through our sites today", "Different wallets that sent a transaction through Agorzilla or a Tau HUD page today (UTC day).");
   set("kWeekBox", fmt(tot["7"] || 0), "wallets, last 7 days", "Different wallets that acted through our sites in the last 7 days.");
   set("kAllBox", fmt(tot.all || 0), "wallets reached so far", "Every wallet that ever acted through our sites, in the blocks the relay keeps.");
-  set("kBestBox", share(d[1], all), "of today's testnet transactions", "Share of all transactions on the testnet today that came through our two sites.");
+  set("kBestBox", share(d[1], users), "of today's user transactions", `${T("Share of today's user transactions that came through our two sites. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests.")}\n${T("Counting everything, IDNI's genesis accounts included")}: ${share(d[1], all)}`);
   $("kWeekBox").classList.remove("up");
 }
 
@@ -655,10 +657,14 @@ function drawTx() {
   for (const k of keys) { const d = txs.days[k]; if (!d) continue; n++; for (const g in tot) { tot[g][0] += (d[g] || [0, 0])[0]; tot[g][1] += (d[g] || [0, 0])[1]; } }
   const all = Object.values(tot).reduce((a, v) => a + v[0], 0);
   const wallets = g => n ? Math.round(tot[g][1] / n) : 0;
-  const head = `<span data-tip="${esc(T("Transactions in the testnet's blocks, sorted by where they came from. Counted by the Tau HUD relay from the blocks it keeps; one person can hold several wallets."))}">${esc(T("Testnet transactions"))}</span>`;
+  const head = `<span data-tip="${esc(T("Transactions by users in the testnet's blocks, sorted by where they came from: everything except IDNI's 11 genesis accounts, shown below. Counted by the Tau HUD relay from the blocks it keeps; one person can hold several wallets."))}">${esc(T("User transactions"))}</span>`;
   if (!all) { el.innerHTML = `<div class="sp">${head}<div class="note">${esc(T("No transactions in this range yet."))}</div></div>`; return; }
-  el.innerHTML = `<div class="sp">${head}<em class="cnt"> · ${fmt(all)}</em><div class="split tx">${TX_GROUPS.map(([g], i) => `<i style="width:${(100 * tot[g][0] / all).toFixed(1)}%;background:${TX_COLORS[i]}"></i>`).join("")}</div>` +
-    `<div class="splitkey">${TX_GROUPS.map(([g, name, what], i) => `<span data-tip="${esc(`${T(what)}\n${fmt(tot[g][0])} ${T("transactions")} · ${fmt(wallets(g))} ${T(n === 1 ? "wallets" : "wallets a day on average")}`)}"><i class="k" style="background:${TX_COLORS[i]}"></i>${esc(T(name))} <b>${share(tot[g][0], all)}</b></span>`).join("")}</div>` + `</div>`;
+  const users = all - tot.idni[0], U = TX_GROUPS.filter(([g]) => g !== "idni"), col = g => TX_COLORS[TX_GROUPS.findIndex(x => x[0] === g)];
+  const tipOf = (g, what) => `${T(what)}\n${fmt(tot[g][0])} ${T("transactions")} · ${fmt(wallets(g))} ${T(n === 1 ? "wallets" : "wallets a day on average")}\n${T("of everything, IDNI's genesis accounts included")}: ${share(tot[g][0], all)}`;
+  const ours = tot.agorzilla[0] + tot.tauhud[0], idni = TX_GROUPS.find(([g]) => g === "idni");
+  el.innerHTML = `<div class="sp">${head}<em class="cnt"> · ${fmt(users)}</em><div class="split tx">${U.map(([g]) => `<i style="width:${users ? (100 * tot[g][0] / users).toFixed(1) : 0}%;background:${col(g)}"></i>`).join("")}</div>` +
+    `<div class="splitkey">${U.map(([g, name, what]) => `<span data-tip="${esc(tipOf(g, what))}"><i class="k" style="background:${col(g)}"></i>${esc(T(name))} <b>${share(tot[g][0], users)}</b></span>`).join("")}</div>` +
+    `<div class="note" data-tip="${esc(tipOf("idni", idni[2]))}">${esc(T("Plus IDNI's genesis accounts"))} <b>${fmt(tot.idni[0])}</b> · ${esc(T("all testnet transactions"))} <b>${fmt(all)}</b>, ${esc(T("our two sites"))} <b>${share(ours, all)}</b></div></div>`;
 }
 
 function kpis() {
