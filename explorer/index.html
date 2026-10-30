@@ -461,7 +461,7 @@ function onMessage(ev) {
   const d = msg.data || {}, cmd = msg.command;
   if (cmd === "getblockrange") {
     if (msg.status !== "ok") {
-      if ((msg.error || {}).code === "NOT_READY") setTimeout(() => loadFrom(C.nextFrom), 3000); else { C.legacy = true; send("getblocks 50"); }
+      if (["NOT_READY", "RATE_LIMITED"].includes((msg.error || {}).code)) setTimeout(() => loadFrom(C.nextFrom), 3000); else { C.legacy = true; send("getblocks 50"); }
       return;
     }
     (d.blocks || []).forEach(b => store(b, false));

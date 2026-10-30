@@ -38,10 +38,19 @@ html.coreonly .tb-pill, html.coreonly .tb-box { display: none; }
 /* the panel form inside a page's #tbHost (the HUD on wide screens): part of the layout, no shadow, no close button */
 .tb-box.tb-inline, html.wide .tb-box.tb-inline { position: relative; right: auto; bottom: auto; z-index: auto; zoom: 1; width: auto; height: auto; flex: 1 1 auto; min-width: 0; min-height: 0;
   background: rgba(255,255,255,.02); border: 1px solid var(--line, rgba(255,255,255,.09)); border-radius: 6px; box-shadow: none; }
-.tb-inline .tb-head { padding: 8px 12px 0; min-height: 20px; }
+/* dense like a classic troll box: one line per message, "name: text", the text wraps under itself; as many lines as the panel has room for */
+.tb-inline .tb-head { padding: 6px 10px 4px; min-height: 0; }
 .tb-inline .tb-x[hidden] { display: none; }
-.tb-inline .tb-rules { margin: 4px 12px 6px; }
-.tb-inline .tb-list { padding: 6px 12px; }
+.tb-inline .tb-list { padding: 4px 10px; border-top: 1px solid var(--line, rgba(255,255,255,.09)); line-height: 1.32; }
+.tb-inline .tb-m { padding: 1px 20px 1px 0; }
+.tb-inline .tb-t { display: none; }                      /* the time is on hover (title) */
+.tb-inline .tb-nm { margin-right: 4px; }
+.tb-inline .tb-nm::after { content: ":"; color: var(--dim, #7f7f8a); }
+.tb-inline .tb-rp { top: 0; width: 18px; height: 18px; font-size: 11px; }
+.tb-inline .tb-form { padding: 6px 8px 0; }
+.tb-inline .tb-in, .tb-inline .tb-send { height: 32px; }
+.tb-inline .tb-who, .tb-inline .tb-rules { order: 9; margin: 0; padding: 4px 10px 0; font-size: 11px; line-height: 1.35; }
+.tb-inline .tb-rules { order: 10; padding: 0 10px 6px; }
 /* phones: above the bottom tab bar, the panel as a sheet; 44 px taps */
 @media (max-width: 720px) {
   .tb-pill { right: 12px; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); min-height: 44px; }
