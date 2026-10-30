@@ -23,19 +23,20 @@
   const txt = id => { const e = document.getElementById(id); return e ? e.textContent.trim() : ""; };
   const num = s => /^[\d.,]+$/.test(s) && s !== "0" ? s : "";
   const sim = () => document.body.dataset.mode !== "live";
-  /* the Waiting readout is already translated in zh and ja, so the ghost count is read in each language */
+  /* the ghost count on the ghost headline: the Waiting readout is already translated in zh and ja, so it is read in each language */
+  const ghosts = () => { const t = txt("rMs"), m = /(\d+) ghosts?\b/.exec(t) || /(\d+) 笔幽灵/.exec(t) || /幽霊 (\d+)/.exec(t); return m ? m[1] : ""; };
+  /* each item may carry a tip: the short hover text with the context behind it (at most two lines) */
   const FACTS = [
-    () => { const h = num(txt("rH")); return h && { text: `Chain at block #${h}`, href: "explorer/" }; },
-    () => { const n = txt("rM"); return /^\d+$/.test(n) && { text: n === "1" ? "1 tx waiting for the next block" : `${n} txs waiting for the next block`, href: "explorer/" }; },
-    () => { const t = txt("rMs"), m = /(\d+) ghosts?\b/.exec(t) || /(\d+) 笔幽灵/.exec(t) || /幽霊 (\d+)/.exec(t); return m && { text: m[1] === "1" ? "1 ghost tx in the waiting list right now" : `${m[1]} ghost txs in the waiting list right now`, href: "https://github.com/IDNI/tau-testnet/issues/81", mark: "ghost" }; },
-    () => { const n = txt("rR"); return /^\d+$/.test(n) && n !== "0" && { text: n === "1" ? "1 personal money rule in force" : `${n} personal money rules in force`, href: "rules/" }; },
-    () => { const e = document.querySelector("#tnOnline .n, #chipOnline b"), n = e ? e.textContent.trim() : ""; return /^\d+$/.test(n) && +n > 1 && { text: `${n} people on Tau HUD right now`, href: "" }; },
+    () => { const h = num(txt("rH")); return h && { text: `Chain at block #${h}`, href: "explorer/", tip: "The newest sealed block. Every block is checked against the rules in force before the chain takes it." }; },
+    () => { const n = txt("rM"); return /^\d+$/.test(n) && { text: n === "1" ? "1 tx waiting for the next block" : `${n} txs waiting for the next block`, href: "explorer/", tip: "Transactions that passed the rule check at the door and wait for the next block to seal them." }; },
+    () => { const n = txt("rR"); return /^\d+$/.test(n) && n !== "0" && { text: n === "1" ? "1 personal money rule in force" : `${n} personal money rules in force`, href: "rules/", tip: "Rules accounts gave themselves, like a spending limit. Every node checks them on each payment." }; },
+    () => { const e = document.querySelector("#tnOnline .n, #chipOnline b"), n = e ? e.textContent.trim() : ""; return /^\d+$/.test(n) && +n > 1 && { text: `${n} people on Tau HUD right now`, href: "", tip: "Visitors who have Tau HUD open at this moment." }; },
   ];
   let factAt = 0;
   const fact = () => {
     for (let i = 0; i < FACTS.length; i++) {
       const f = FACTS[factAt++ % FACTS.length](); if (!f) continue;
-      return { kind: "live", sim: sim(), text: f.text, href: f.href, mark: f.mark };
+      return { kind: "live", sim: sim(), text: f.text, href: f.href, tip: f.tip };
     }
     return null;
   };
@@ -45,6 +46,15 @@
   let NEWS = [], newsAt = 0;
   const GLOW = "rabbit/";   // the one headline that pulses green, like the live light: the island election game
   const path = h => String(h || "").replace(/^\//, "").replace(/[?#].*$/, "");
+  /* a feature's hover: the first sentence of its log entry after the "Name:" opening, in the reader's language, two lines at most */
+  const gist = html => {
+    const t = tr(String(html || "")).replace(/<[^>]+>/g, "").replace(/^[^:：]{2,40}[:：]\s*/, "");
+    const parts = t.match(/.+?(?:[.!?](?=\s|$)|[。！？]|$)/g) || [t];
+    let g = ""; for (const x of parts) { if (g && g.length >= 60) break; g += x; }   // a very short first sentence takes the next one along
+    g = g.trim();
+    if (g.length > 140) g = g.slice(0, 138).replace(/[\s,，、][^\s,，、]*$/, "") + "…";
+    return g.charAt(0).toUpperCase() + g.slice(1);
+  };
   /* the first read shares the page's one download of the log (nav.js TauLog); the 15-minute refresh fetches it anew */
   const loadNews = first => (first && window.TauLog ? Promise.resolve(TauLog()) : fetch("assets/updates.json", { cache: "no-cache" }).then(r => r.json())).then(list => {
     const have = new Set((CFG.headlines || []).map(h => path(h.href)));
@@ -53,7 +63,7 @@
     const glow = majors.filter(e => path(e.major.link) === GLOW).pop();   // the game stays on the line, first, after newer features
     NEWS = (glow ? [glow, ...pick.filter(e => e !== glow).slice(0, 3)] : pick)
       .map(e => ({ kind: "news", text: String(e.major.title), href: path(e.major.link) === "" ? "" : String(e.major.link).replace(/^\//, ""),
-        fresh: path(e.major.link) === GLOW }));
+        fresh: path(e.major.link) === GLOW, tip: gist(e.html), tipRaw: true }));
   }).catch(() => {});
 
   /* ---------- when the Daily Consensus comes out, in the reader's own time: German time in English, China time in
@@ -74,10 +84,11 @@
     } catch (e) { return null; }
     if (wd < 0) return null;
     const since = (wd * 1440 + mins - g.day * 1440 - g.hour * 60 + 10080) % 10080;   // minutes since the last edition
-    if (since < 1440 - g.hour * 60) return { kind: "paper", text: w.out, href: "gazette/", raw: true, out: true };   // from the drop to the end of that day
+    const tip = "Our weekly paper about the testnet. Each language gets its edition on Monday at 09:00 in its own time.";
+    if (since < 1440 - g.hour * 60) return { kind: "paper", text: w.out, href: "gazette/", raw: true, out: true, tip };   // from the drop to the end of that day
     let off = (g.day - wd + 7) % 7; if (off === 0 && mins >= g.hour * 60) off = 7;
     const d = off === 0 ? w.today : off === 1 ? w.tomorrow : w.days[g.day];
-    return { kind: "note", text: w.next.replace("{d}", d).replace("{t}", String(g.hour).padStart(2, "0") + ":00"), href: "gazette/", raw: true };
+    return { kind: "note", text: w.next.replace("{d}", d).replace("{t}", String(g.hour).padStart(2, "0") + ":00"), href: "gazette/", raw: true, tip };
   };
 
   /* ---------- the rotation: facts carry the line, the rest is mixed in ---------- */
@@ -92,9 +103,11 @@
       if (k === "live") it = fact();
       else if (k === "news") it = NEWS.length ? NEWS[newsAt++ % NEWS.length] : null;
       else if (k === "gazette") { it = gazette(); if (it && it.out) it = null; }
-      else if (k === "head") { const n = from((CFG.headlines || []).filter(h => (!h.until || Date.now() < Date.parse(h.until)) && (!h.mode || (h.mode === "live") !== sim())), headAt++); it = n && { kind: "note", text: n.text, href: n.href, mark: n.mark }; }
-      else if (k === "pick") { const p = from(CFG.picks, pickAt++); it = p && { kind: "x", text: p.text, href: p.href, quote: true }; }
-      else if (k === "invite") { const v = from(CFG.invites, inviteAt++); it = v && { kind: v.kind === "tg" ? "tg" : "x", text: v.text, href: v.href }; }
+      else if (k === "head") { const n = from((CFG.headlines || []).filter(h => (!h.until || Date.now() < Date.parse(h.until)) && (!h.mode || (h.mode === "live") !== sim())), headAt++);
+        it = n && { kind: "note", text: n.text, href: n.href, mark: n.mark, tip: n.tip };
+        if (it && n.mark === "ghost") { const g = ghosts(); if (g) { it.text = g === "1" ? "1 ghost in the waiting room" : `${g} ghosts in the waiting room`; if (!translated(it.text)) it.text = n.text; } } }
+      else if (k === "pick") { const p = from(CFG.picks, pickAt++); it = p && { kind: "x", text: p.text, href: p.href, quote: true, tip: p.tip }; }
+      else if (k === "invite") { const v = from(CFG.invites, inviteAt++); it = v && { kind: v.kind === "tg" ? "tg" : "x", text: v.text, href: v.href, tip: v.tip }; }
       if (it && it.text && (it.raw || translated(it.text))) return it;
     }
     return { kind: "note", text: "Rules on Tau change only by agreement", href: "start/" };
@@ -108,6 +121,7 @@
     if (it.mark === "ghost") mark.classList.add("m-ghost");   // the chain core's ghost: an amber dot in a small block frame
     else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" || it.fresh ? "" : it.kind === "news" ? "+" : it.kind === "paper" ? "✦" : "›";
     if (it.fresh) a.classList.add("fresh");
+    if (it.tip) a.dataset.full = it.tipRaw ? it.tip : tr(it.tip);   // the HUD's own hover shows it; the line pauses meanwhile
     a.append(mark);
     if (it.sim) { const s = document.createElement("em"); s.textContent = tr("Simulation"); a.append(s); }
     let text = it.raw ? it.text : tr(it.text); if (it.quote) text = (lang === "en" ? "“" : "「") + text + (lang === "en" ? "”" : "」");
