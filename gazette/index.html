@@ -496,6 +496,7 @@ html.i18n-zh .cs-line, html.i18n-ja .cs-line { font-family: "Noto Serif SC", "No
       <button id="bEd" class="opt" title="Switch between the full broadsheet and the pocket edition with one story per page">Pocket edition</button>
       <button id="bSnd" title="Sound of the paper">Sound on</button>
       <button id="bAmb" class="opt" title="The café around the paper and Market Street outside: off, quiet or lively">Café: off</button>
+      <button id="bFull" class="opt" aria-label="Full screen" title="Full screen (F)">⛶</button>
     </div>
   </main>
 
@@ -510,7 +511,7 @@ const EN = {
   ui: { amb0: "Café: off", amb1: "Café: quiet", amb2: "Café: lively", hitCup: "Stir the coffee", hitSugar: "Sugar", hitPapers: "Yesterday's papers", notes: {
     cup: (h, a) => h != null ? `The steam spells τ. Block #${h.toLocaleString("en-US")} is the newest on the testnet${a != null ? `, sealed ${a} s ago` : ""}; another comes about every 8 seconds.` : "The steam spells τ. On the testnet a new block comes about every 8 seconds.",
     sugar: () => "Cube by cube, a chain. Every block is checked against the rules in force before it joins.",
-    papers: h => `Extra! On Tau the rules change by agreement: proposed, voted on, checked by logic before they apply. No fork needed.${h != null ? ` As of block #${h.toLocaleString("en-US")}.` : ""}` }, rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLang: "Language", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", chal: "Rule challenge of the week", chalGo: "Answer it in your wallet; good answers at tauhud.com/challenge. No prizes.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", faith: "From the composing room: this paper is set by learning machines, which guess well and now and then guess wrong. Tau is built the other way: a logic machine that checks every rule before it applies. Read us in good faith; for proof, consult the chain.", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
+    papers: h => `Extra! On Tau the rules change by agreement: proposed, voted on, checked by logic before they apply. No fork needed.${h != null ? ` As of block #${h.toLocaleString("en-US")}.` : ""}` }, rOut: "Show the site menu", rIn: "Read on the whole screen", rFull: "Full screen", rLeave: "Back to the site", fullHint: "The paper on the whole screen · <b>Esc</b> or <b>✕</b> brings the site back", rLang: "Language", rLarge: "Large type, one story at a time", rWhole: "The whole page", hintZoom: "<b>Tap</b> to turn · <b>double-tap</b> or pinch to read closer", week: "This week", weekNo: n => `Weekly edition · No. ${n}`, weekEar: "The week of", weather: "Weather on the chain", weekAlt: "Halftone photograph of the Tau HUD screen", weekCap: "<b>The week at the core.</b> The Tau HUD follows every block of the testnet as it is sealed. Every point on the orbit is a node; the ring closes when the validators agree.", weekOf: "The week of", figures: "The Week in Figures", founding: "The Founding Story", foundingP: "Twelve years of Tau, from a forum post in 2014 to a chain whose users change its rules by vote. Turn the page.", chal: "Rule challenge of the week", chalGo: "Answer it in your wallet; good answers at tauhud.com/challenge. No prizes.", weekNote: "Read from the public testnet and the simulation by Tau HUD, an unofficial community project. Testnet AGRS are for practice and have no value. A new edition every Monday; the full Notice to Readers is on the back page.", free: "Free of charge", freeP: "Printed by Tau HUD, an unofficial community instrument.", coverLine: "Twelve years of Tau and the chain that changes its own rules, in ten pages of news, letters, obituaries and puzzles.", cont: "continued", stop: "Stop press", faith: "From the composing room: this paper is set by learning machines, which guess well and now and then guess wrong. Tau is built the other way: a logic machine that checks every rule before it applies. Read us in good faith; for proof, consult the chain.", front: "Front page", pageN: n => `Page ${n}`, pagesN: (a, b) => `Pages ${a}–${b}`, of: "of", tocN: n => `p. ${n}`, back: "‹ Back", turn: "Turn ›", contents: "Contents", pocket: "Pocket edition", broad: "Broadsheet", sOn: "Sound on", sOff: "Sound off", hint: "<b>Click or tap the page</b> to turn it · arrow keys work too", hintTouch: "<b>Tap the page</b> to turn it · swipe works too", wireWait: "the wire to the node is being connected", wireOff: "the wire to the node is silent just now; the full story waits at tauhud.com", wire: (h, age) => `At the hour of printing the testnet stood at block <span class="live">#${h}</span>${age != null ? `, the last one sealed ${age} seconds before this line was set` : ""}. Follow it live at tauhud.com.` },
   date: d => d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }),
   toc: ["Front page: users rewrite the chain’s law", "The long road from Zennet", "The hard fork, explained", "Four quiet years and one great equation", "A language that speaks of itself", "Dispatches from the builders' yard", "The year the users took the wheel", "How a law is made · Letters", "Today on the testnet · Classifieds", "Amusements · Clip and keep"],
   pages: [
@@ -909,8 +910,8 @@ const EN = {
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const desk = $("desk"), stage = $("stage"), scaler = $("scaler"), book = $("book");
   const touch = matchMedia("(pointer: coarse)").matches;
-  /* on a phone the paper takes the whole screen (reading mode); the ✕ brings the site bar and the tab bar back */
-  const phone = touch && matchMedia("(max-width: 700px), (max-height: 520px)").matches;
+  /* on a phone or a tablet the paper takes the whole screen (reading mode); the ✕ brings the site bar and the tab bar back */
+  const phone = touch && matchMedia("(max-width: 1400px), (max-height: 1050px)").matches;
   if (phone) document.documentElement.classList.toggle("reading", store.get("gazette-reading") !== "off");
   const today = ED.date(new Date());
   let HEIGHT = null, AGE = null, WIRE = UI.wireWait;
@@ -1055,7 +1056,9 @@ const EN = {
     const minBody = 0.68;   // broadsheet only while its body type stays readable; the fit step sets it a little larger on most pages
     /* a phone in reading mode shows the whole page like a real newspaper (double-tap or pinch to read closer) when it is at least
        this large; smaller screens and the large-type choice get the pocket edition */
-    const wholeOnPhone = phone && document.documentElement.classList.contains("reading") && sSingleB >= 0.36;
+    /* turned on its side, a phone or tablet opens the paper like a book instead: two pages of the pocket edition side by side */
+    const land = phone && aw > ah;
+    const wholeOnPhone = phone && !land && document.documentElement.classList.contains("reading") && sSingleB >= 0.36;
     let ed = forced || (wholeOnPhone ? "broad" : sSpread >= minBody ? "broad" : (sSingleB >= minBody && aw < ah * 1.2 ? "broad" : "pocket"));
     let spread, w, h, s;
     if (ed === "broad") {
@@ -1063,9 +1066,9 @@ const EN = {
       s = spread ? sSpread : sSingleB;
     } else {
       /* pocket pages are printed at true size: as tall as the desk, about as wide as a book page */
-      s = 1; spread = aw - sideRoom >= 2 * 400 && aw > ah;
+      s = 1; spread = aw - sideRoom >= 2 * (land ? 280 : 400) && aw > ah;
       h = Math.max(220, ah);
-      w = spread ? Math.min(Math.round(h * 0.78), Math.floor((aw - sideRoom) / 2)) : Math.min(aw, aw > h ? Math.max(Math.round(h * 0.8), 600) : 600);
+      w = spread ? Math.min(Math.round(h * (land ? 0.95 : 0.78)), Math.floor((aw - sideRoom) / 2)) : Math.min(aw, aw > h ? Math.max(Math.round(h * 0.8), 600) : 600);
     }
     return { ed, spread, w, h, s };
   }
@@ -1100,7 +1103,7 @@ const EN = {
     let p = 0;
     if (fromPage != null) { const k = PAGES.findIndex(x => x.from === fromPage); p = k < 0 ? 0 : (m.spread ? Math.ceil(k / 2) : k); }
     $("bEd").textContent = m.ed === "broad" ? UI.pocket : UI.broad;
-    const narrow = desk.clientWidth < 560 || side;
+    const narrow = desk.clientWidth < 900 || side;
     $("bPrev").textContent = narrow ? "‹" : UI.back; $("bNext").textContent = narrow ? "›" : UI.turn; $("bToc").textContent = narrow ? "☰" : UI.contents;
     $("bToc").setAttribute("aria-label", UI.contents); sndLabel();
     zreset(false);
@@ -1128,8 +1131,12 @@ const EN = {
     if (!pg.clientHeight) { const l = pg.closest(".leaf"); if (l) delete l.dataset.fit; return; }
     const base = MODE.ed === "broad" ? 15 : 15; pg.style.setProperty("--fs", base + "px");
     let lo = MODE.ed === "broad" ? 0.7 : 0.62, hi = MODE.ed === "broad" ? 1.28 : 1;
-    const ok = k => { pg.style.setProperty("--k", k); const g = pg.querySelector(".grid"); return pg.scrollHeight <= pg.clientHeight + 1 && (!g || g.scrollHeight <= g.clientHeight + 1); };
+    /* the last line also keeps clear of the bottom margin (in a flex page the overflow can hide inside the padding) */
+    const foot = () => { const l = pg.lastElementChild; return !l || l.offsetTop + l.offsetHeight <= pg.clientHeight - parseFloat(getComputedStyle(pg).paddingBottom) / 2 + 1; };
+    const ok = k => { pg.style.setProperty("--k", k); const g = pg.querySelector(".grid"); return pg.scrollHeight <= pg.clientHeight + 1 && (!g || g.scrollHeight <= g.clientHeight + 1) && foot(); };
     if (ok(hi)) return fitTitle(pg);
+    /* a phone on its side gives a pocket page little height: rather a smaller type than a page cut off at the foot */
+    if (!ok(lo)) lo = 0.4;
     for (let i = 0; i < 9; i++) { const mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid; }
     pg.style.setProperty("--k", lo);
     fitTitle(pg);
@@ -1274,20 +1281,32 @@ const EN = {
   /* ----- the small buttons at the top left on a phone: site menu or whole screen, page or large type, full screen ----- */
   const canFull = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
   function rbar() {
-    const on = phone, reading = document.documentElement.classList.contains("reading");
+    const reading = document.documentElement.classList.contains("reading"), on = phone || reading;
+    $("bFull").hidden = phone; $("bEd").hidden = phone;   /* on a phone or tablet the round buttons at the top carry both */ $("bFull").setAttribute("aria-label", UI.rFull); $("bFull").title = UI.rFull + " (F)";
     $("rbar").classList.toggle("on", on);
     if (!on) return;
-    $("rMode").textContent = reading ? "✕" : "⤢"; $("rMode").setAttribute("aria-label", reading ? UI.rOut : UI.rIn); $("rMode").title = $("rMode").getAttribute("aria-label");
+    $("rMode").textContent = reading ? "✕" : "⤢"; $("rMode").setAttribute("aria-label", phone ? (reading ? UI.rOut : UI.rIn) : UI.rLeave); $("rMode").title = $("rMode").getAttribute("aria-label");
     $("rEd").textContent = MODE.ed === "broad" ? "Aa" : "▦"; $("rEd").setAttribute("aria-label", MODE.ed === "broad" ? UI.rLarge : UI.rWhole); $("rEd").title = $("rEd").getAttribute("aria-label");
-    $("rFull").hidden = !canFull || !reading; $("rFull").setAttribute("aria-label", UI.rFull); $("rFull").title = UI.rFull;
+    $("rEd").hidden = !phone; $("rFull").hidden = !canFull || !reading || !phone;   /* on a computer the bar at the bottom has both */ $("rFull").setAttribute("aria-label", UI.rFull); $("rFull").title = UI.rFull;
   }
   const curFrom = () => PAGES[pageAt(pos)] ? PAGES[Math.min(pageAt(pos), PAGES.length - 1)].from : 0;
-  $("rMode").onclick = e => {
-    e.stopPropagation(); const cur = curFrom(), reading = !document.documentElement.classList.contains("reading");
-    document.documentElement.classList.toggle("reading", reading); store.set("gazette-reading", reading ? "on" : "off");
+  const setReading = reading => {
+    const cur = curFrom();
+    document.documentElement.classList.toggle("reading", reading); if (phone) store.set("gazette-reading", reading ? "on" : "off");
     if (!reading && document.fullscreenElement) document.exitFullscreen().catch(() => {});
     requestAnimationFrame(() => build(cur));
   };
+  $("rMode").onclick = e => { e.stopPropagation(); setReading(!document.documentElement.classList.contains("reading")); };
+  /* on a computer: the paper alone on the whole screen; where the browser cannot go full screen, the site bars still step aside.
+     Leaving full screen (Esc) brings the site back as well */
+  const full = () => {
+    if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); if (!phone) setReading(false); return; }
+    if (!phone && !document.documentElement.classList.contains("reading")) {
+      setReading(true); hint.innerHTML = UI.fullHint; hint.classList.remove("off"); clearTimeout(hint.t); hint.t = setTimeout(hintOff, 3500);
+    }
+    if (canFull) document.documentElement.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
+  };
+  $("bFull").onclick = e => { e.stopPropagation(); full(); };
   $("rEd").onclick = e => { e.stopPropagation(); const cur = curFrom(); store.set("gazette-edition", MODE.ed === "broad" ? "pocket" : "broad"); build(cur); };
   /* language on a phone while reading: the site bar is hidden, so the reading bar carries the switch; the page reloads on the same #page */
   { const I = window.TauI18n, box = $("rLangs"), b = $("rLang");
@@ -1300,12 +1319,11 @@ const EN = {
       });
       b.onclick = e => { e.stopPropagation(); box.hidden = !box.hidden; b.setAttribute("aria-expanded", String(!box.hidden)); };
     } }
-  $("rFull").onclick = e => {
-    e.stopPropagation();
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    else document.documentElement.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
-  };
-  document.addEventListener("fullscreenchange", () => { const cur = curFrom(); setTimeout(() => build(cur), 120); });
+  $("rFull").onclick = e => { e.stopPropagation(); full(); };
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement && !phone && document.documentElement.classList.contains("reading")) return setReading(false);
+    const cur = curFrom(); setTimeout(() => build(cur), 120);
+  });
   $("bNext").onclick = $("sNext").onclick = e => { e.stopPropagation(); next(); };
   $("bPrev").onclick = $("sPrev").onclick = e => { e.stopPropagation(); prev(); };
   addEventListener("keydown", e => {
@@ -1314,6 +1332,8 @@ const EN = {
     if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); next(); }
     else if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); prev(); }
     else if (e.key === "Home") go(0); else if (e.key === "End") go(1e9);
+    else if ((e.key === "f" || e.key === "F") && !e.ctrlKey && !e.metaKey && !e.altKey) full();
+    else if (e.key === "Escape" && !phone && !document.fullscreenElement && document.documentElement.classList.contains("reading")) setReading(false);
   });
 
   /* ----- hint ----- */
@@ -1323,7 +1343,7 @@ const EN = {
 
   /* ----- the sound of a page: filtered noise, a sweep down and a soft landing ----- */
   let AC = null, SND = store.get("gazette-sound") !== "off";
-  const sndLabel = () => { const narrow = desk.clientWidth < 560 || getComputedStyle($("ctl")).flexDirection === "column"; $("bSnd").textContent = narrow ? (SND ? "♪" : "♪̸") : SND ? UI.sOn : UI.sOff; $("bSnd").setAttribute("aria-label", SND ? UI.sOn : UI.sOff); };
+  const sndLabel = () => { const narrow = desk.clientWidth < 900 || getComputedStyle($("ctl")).flexDirection === "column"; $("bSnd").textContent = narrow ? (SND ? "♪" : "♪̸") : SND ? UI.sOn : UI.sOff; $("bSnd").setAttribute("aria-label", SND ? UI.sOn : UI.sOff); };
   /* one sound switch for the reader: turning sound on also opens the café (quietly), turning it off closes it */
   const setSnd = (on, tell) => { SND = on; store.set("gazette-sound", SND ? "on" : "off"); sndLabel(); if (tell) window.dispatchEvent(new CustomEvent("gazette-sound", { detail: SND })); };
   $("bSnd").onclick = e => { e.stopPropagation(); setSnd(!SND, true); };
@@ -1390,6 +1410,7 @@ const EN = {
   let rt, lastSize = [innerWidth, innerHeight];
   addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => {
     if (phone && innerWidth === lastSize[0] && Math.abs(innerHeight - lastSize[1]) < 140) return;
+    /* turning the phone: wait until the browser has settled on its new size, then lay the paper out again on the same story */
     lastSize = [innerWidth, innerHeight]; build(curFrom());
   }, 200); });
 })();
