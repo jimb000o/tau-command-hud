@@ -12,6 +12,7 @@ One key in infra/.env (never in the repository), whichever you have:
   infra/rabbit-art/paint.sh draft hall bar       three new ones for some places (again if none is right)
   infra/rabbit-art/paint.sh keep island=2 hall=1 ...   puts those on the island; the game shows them at once
   infra/rabbit-art/paint.sh draft island --like island=1 market=2 bar=2   three more, painted like those drafts
+  infra/rabbit-art/paint.sh ideas --from island=14   three new, bigger islands grown from that one
   infra/rabbit-art/paint.sh looks                the island in each of the three styles, to choose one
   infra/rabbit-art/paint.sh draft hall --look 2  paint in one of those styles
   infra/rabbit-art/paint.sh draft island --sketch bay --like ...   the new harbour island (sketch.py); keeping one of
@@ -81,6 +82,33 @@ SKETCH = {
            "island, nothing copied. The input is a rough sketch: keep where every building, the lagoon, the harbour, "
            "the pier, the peak and the lighthouse stand and how big they are, but paint it all far richer, with many "
            "more small details of island life.",
+}
+# new island ideas grown from a painting the owner liked (paint.sh ideas --from island=14): the same style and the
+# same front, but a bigger island with secluded, mysterious places that are not all connected
+GROW = ("Paint a new, larger version of the island in the first picture, in exactly its style, line and colours. Keep "
+        "its harbour front (the wooden stilt houses, the pier, the red flamboyant tree with the market, the lighthouse on "
+        "its rock, the radio shack with its mast, the round beach bar, the two embassies on their hill) but make the "
+        "island much larger and wilder, so that the harbour is only one part of it. Add these places, each hidden or "
+        "far from the others, reached only by a narrow jungle path, a rope bridge, a cave or a canoe, so that the "
+        "island feels mysterious and full of wonder: a grotto behind a second, hidden waterfall, glowing softly from "
+        "inside; three hills with large drums under small palm roofs, one on each summit; a funny, ramshackle "
+        "coconut mint, a crooked factory of planks and tin with pipes, a conveyor belt and a chimney that puffs out "
+        "coins; the crumbling ruin of an old colonial fort on a sea cliff, overgrown, with a gigantic rusty key "
+        "hanging over its gate; a smugglers' cove with a wreck and caves under the cliffs; and, in a green valley of "
+        "their own, the village of the island's first people: round houses of wood and palm thatch, dug-out canoes on "
+        "a river, terraced gardens on the slopes, a circle of carved standing stones where their council meets, "
+        "painted with dignity and care, a living village, nothing exotic or stereotyped. No people, no text. ")
+IDEAS = {
+    "valley": "Layout: the harbour town stays in front; the peak rises behind it, and over a high pass, half hidden by "
+              "the ridge and clouds, a second, wild valley opens on the far side with the first people's village, the "
+              "drum hills and the hidden grotto. The fort ruin and the smugglers' cove sit on the far cliffs.",
+    "isles": "Layout: an archipelago. The main island with the harbour in the middle, and around it several smaller "
+             "islands, each with its own secret: the first people's island with its village and stone circle, a rocky "
+             "islet with the fort ruin, a crescent island with the smugglers' cove, a tiny island with the coconut "
+             "mint, linked only by a sandbank, a rope bridge or the sea.",
+    "mist": "Layout: one big island; the harbour in front is bright and sunny, while most of the inner island lies "
+            "under drifting mist and jungle: the drum hills, the grotto, the fort ruin and the first people's valley "
+            "only peek out of the mist here and there, waiting to be discovered.",
 }
 # three ways to paint the whole game (paint.sh looks paints the island once in each, to choose from)
 LOOK_BASE = ("Turn this drawing into a finished background for a 2D adventure game, painted the way the classic ones were: "
@@ -260,7 +288,8 @@ def page(a):
         rows.append(f"<h2>{id}</h2><div class=row>")
         for i, f in enumerate(drafts[id], 1):
             look = drafts.get("look", {}).get(f)
-            tag = f" &middot; style {look}" if look else ""
+            idea = drafts.get("idea", {}).get(f)
+            tag = (f" &middot; style {look}" if look else "") + (f" &middot; idea {idea}" if idea else "")
             rows.append(f"<figure><a href='{f}'><img src='{f}' loading=lazy></a><figcaption><code>{id}={i}</code>{tag}</figcaption></figure>")
         rows.append("</div>")
     keep = " ".join(f"{id}=1" for id in PLACES if id in drafts)
@@ -354,6 +383,33 @@ def style_refs(look):
     return out
 
 
+def cmd_ideas(a):
+    """Three new island ideas grown from a liked painting (--from island=N), in style 2, each with its own layout."""
+    drafts = load(os.path.join(a.out, "drafts", "drafts.json"))
+    src = liked(argparse.Namespace(out=a.out, like=[a.src]), drafts)[0]
+    p = provider()
+    model = a.model or ("gemini-2.5-flash-image" if p == "gemini" else "gpt-image-1")
+    base = open(src, "rb").read()
+    path = os.path.join(a.out, "drafts", "drafts.json")
+    for name, how in IDEAS.items():
+        print(f"Idea {name}:", flush=True)
+        raws = (paint_gemini if p == "gemini" else paint_openai)(base, LOOK_BASE + LOOKS[2] + " " + GROW + how, a.n, model, style_refs(2))
+        drafts = load(path)
+        names = drafts.get("island", [])
+        for raw in raws:
+            data, kind = small(raw)
+            f = f"island-{len(names) + 1}-{hashlib.sha1(data).hexdigest()[:8]}.{kind}"
+            write(os.path.join(a.out, "drafts", f), data)
+            names.append(f)
+            drafts.setdefault("look", {})[f] = 2
+            drafts.setdefault("idea", {})[f] = name
+        drafts["island"] = names
+        write(path, json.dumps(drafts, indent=1).encode())
+        page(a)
+        print(f"  island: {len(names)} paintings")
+    print("Look: https://node.tauhud.com/rico/art/drafts/")
+
+
 def cmd_looks(a):
     """The island from the newest sketch, once in each of the three styles."""
     for n in LOOKS:
@@ -410,6 +466,10 @@ def main():
     d.add_argument("--like", nargs="+", metavar="PLACE=N", help="paint in the style of these drafts, e.g. island=1 market=2")
     d.add_argument("--ink", action="store_true", help="draw it in ink first, then paint over the drawing (twice the cost)")
     d.add_argument("--look", type=int, choices=sorted(LOOKS), default=None, help="paint in style 1, 2 or 3 (see LOOKS)")
+    ia = sub.add_parser("ideas")
+    ia.add_argument("--from", dest="src", required=True, help="the painting to grow from, e.g. island=14")
+    ia.add_argument("--n", type=int, default=1)
+    ia.add_argument("--model", default=None)
     lk = sub.add_parser("looks")
     lk.add_argument("--model", default=None)
     k = sub.add_parser("keep")
@@ -418,7 +478,7 @@ def main():
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks}[a.cmd](a)
+    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas}[a.cmd](a)
 
 
 if __name__ == "__main__":

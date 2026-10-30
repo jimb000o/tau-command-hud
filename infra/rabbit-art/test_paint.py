@@ -76,6 +76,10 @@ for prov in ("gemini", "openai"):
         paint.cmd_looks(types.SimpleNamespace(out=out, model=None))
         dd = json.load(open(os.path.join(out, "drafts", "drafts.json")))
         assert set(dd["look"].values()) == {1, 2, 3} and "style 3" in open(os.path.join(out, "drafts", "index.html")).read()
+        before = len(json.load(open(os.path.join(out, "drafts", "drafts.json")))["island"])
+        paint.cmd_ideas(types.SimpleNamespace(out=out, src="island=1", n=1, model=None))
+        dd = json.load(open(os.path.join(out, "drafts", "drafts.json")))
+        assert len(dd["island"]) >= before + 3 and set(dd["idea"].values()) == set(paint.IDEAS) and "idea mist" in open(os.path.join(out, "drafts", "index.html")).read()
         paint.cmd_drop(types.SimpleNamespace(out=out, places=["bar"]))
         assert list(json.load(open(os.path.join(out, "index.json")))["scenes"]) == ["island"]
 print("ok", len(calls), "calls")
