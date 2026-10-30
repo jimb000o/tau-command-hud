@@ -566,6 +566,8 @@ TauI18n.add({ strings: {
   "Settings: view, node, guided tour, about": "設定：表示、ノード、ガイドツアー、概要",
   "Settings: view, node address, background rain": "設定：表示、ノードのアドレス、背景の雨",
   "Games on the live testnet": "本物のテストネットで動くゲーム",
+  "Déjà, the café cat": "カフェの猫 Déjà",
+  "Agorzilla's café cat: she eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change": "Agorzilla のカフェの猫：1 日のうちに 3 つのウォレットがそれぞれテスト AGRS を 1 枚送ると食事をし、ルールが変わるたびに駆け抜けます",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 送信者自身のルールが拒否しました（o5 = 0 · ${TauI18n.t(r)}）`]] });
