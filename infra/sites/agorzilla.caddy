@@ -23,7 +23,9 @@ agorzilla.com, www.agorzilla.com {
 		header Access-Control-Allow-Origin *
 		file_server
 	}
-	@public path / /index.html /assets/* /chain/*
+	# Déjà, the café cat: her own page at /cat/
+	redir /cat /cat/ 308
+	@public path / /index.html /assets/* /chain/* /cat/ /cat/index.html
 	handle @public {
 		header /chain/* Cache-Control no-cache
 		header /chain/latest.json Access-Control-Allow-Origin *
