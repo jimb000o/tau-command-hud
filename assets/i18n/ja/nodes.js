@@ -22,6 +22,8 @@ TauI18n.add({ strings: {
   "bootnode": "ブートノード",
   "Chain": "チェーン",
   "Click for its badge.": "クリックでそのバッジ。",
+  "Click for its details and badge.": "クリックで詳細とバッジを表示。",
+  "{x1} · id {x2} since {x3} · kit {x4} · tau-testnet {x5} Click for its details and badge.": "{x1} · ID {x2} · {x3} から · キット {x4} · tau-testnet {x5} クリックで詳細とバッジを表示。",
   "Community Nodes": "コミュニティノード",
   "Community nodes": "コミュニティノード",
   "Community nodes that reported in the last 15 minutes.": "直近 15 分に報告したコミュニティノード。",
