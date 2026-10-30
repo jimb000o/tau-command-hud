@@ -1500,5 +1500,17 @@
   "on": "2026-10-30",
   "html": "Troll box: a much stricter filter and a live moderator. Sexual content, slurs, insults, threats, scams and spam are refused, also when written as p0rn or p o r n or with look-alike letters. Breaking the rules earns strikes: a warning, then 10 minutes muted, then an hour, then out until 00:00 UTC, and the messages of someone who is out disappear for everyone at once. You always see why and for how long."
  },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper: look up from the paper and walk through the café. A new button Look up lays The Daily Consensus down on the table; click the left or right edge to walk from your window table to the counter, the wire corner, the back room and the door. Four regulars talk in the paper's period voice, each in their own murmured voice made in your browser: Mae explains the house rules the regulars vote on, Elias reads the chain off the ticker tape with the live block height, the Professor shows why a contradiction is caught before the vote, and Sully the newsboy says it is all happening now on a testnet open to anybody. Each one stamps your café ticket; with four stamps you step out onto Market Street and an Extra! lands at your feet. Sound follows Café: off, quiet or lively; phones get a lighter version.",
+  "major": {
+   "id": "gazette-cafe-walk",
+   "title": "New: walk through the 1920s café",
+   "text": "Look up from The Daily Consensus and walk the café: a waitress, a wire clerk, a professor and a newsboy explain how Tau's rules change by agreement. Collect four stamps, then step out onto Market Street. Drawn and voiced in your browser.",
+   "link": "/gazette/",
+   "image": "/assets/shots/gazette-cafe-walk.png"
+  }
+ },
   {"tag": "Nodes", "on": "2026-10-30", "html": "Nodes: click any row on the leaderboard for that node’s card: peer ID, when it was first and last seen, how far it is from our height, and for IDNI a link to the validator."}
 ]

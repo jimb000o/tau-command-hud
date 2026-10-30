@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
-<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script>`);</script>
+<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=1"><\/script>`);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>The Daily Consensus</title>
@@ -271,6 +271,108 @@ html.i18n-ja .pg p { text-align: justify; }
 html.i18n-ja .pg p.dc::first-letter { initial-letter: normal; float: none; font: inherit; padding: 0; margin: 0; }
 html.i18n-ja .pg p.dc { text-indent: 1em; }
 html.i18n-ja .title { font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP", "Noto Serif SC", serif; font-weight: 900; letter-spacing: .1em; }
+/* the café to walk through (cafe.js): the paper is laid down, the room opens around the reader */
+.cafe-cv { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; transition: opacity .8s; z-index: 1; }
+.desk.cafe-on .cafe-cv { opacity: 1; pointer-events: auto; }
+.desk.cafe-on .stage { animation: cafePaperDown .9s cubic-bezier(.5,0,.75,0) forwards; pointer-events: none; }
+.desk:not(.cafe-on) .stage { animation: cafePaperUp .7s ease-out; }
+@keyframes cafePaperDown { to { translate: 0 70vh; rotate: 4deg; opacity: 0; } }
+@keyframes cafePaperUp { from { translate: 0 40vh; opacity: 0; } }
+.desk.cafe-on .ctl, .desk.cafe-on .side, .desk.cafe-on .hint, .desk.cafe-on .toc, .desk.cafe-on .rbar { opacity: 0; pointer-events: none; transition: opacity .4s; }
+.desk.cafe-on.cafe-away .scene-hit, .desk.cafe-ending .scene-hit, .desk.cafe-on .scene-note { display: none; }
+.desk.cafe-on .scene-hit { z-index: 2; }
+.cafe-in-btn { position: relative; }
+.cafe-in-btn::after { content: ""; position: absolute; inset: 0; border-radius: 999px; box-shadow: 0 0 0 0 rgba(226,201,152,.5); animation: cafeCall 2.6s ease-out 3s 3; pointer-events: none; }
+@keyframes cafeCall { 0% { box-shadow: 0 0 0 0 rgba(226,201,152,.45); } 100% { box-shadow: 0 0 0 12px rgba(226,201,152,0); } }
+.cafe-ui { position: absolute; inset: 0; z-index: 40; pointer-events: none; font: 15px/1.45 var(--body); color: #efe5cf; }
+.cafe-ui[hidden] { display: none; }
+.cafe-ui button { pointer-events: auto; font: inherit; color: inherit; cursor: pointer; }
+.cafe-top { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 14px; transition: opacity .8s; }
+.cafe-top.gone { opacity: 0; pointer-events: none; }
+.cafe-top.gone * { pointer-events: none !important; }
+.cafe-back, .cafe-snd { font: 600 11px var(--display) !important; letter-spacing: .1em; text-transform: uppercase; background: rgba(9,9,10,.72); border: 1px solid var(--hair); border-radius: 999px; min-height: 36px; padding: 0 14px; backdrop-filter: blur(6px); white-space: nowrap; }
+.cafe-back:hover, .cafe-snd:hover { background: rgba(255,255,255,.12); }
+.cafe-snd.hush { color: var(--dim) !important; }
+.cafe-place { flex: 1; text-align: center; font: 400 15px/1.2 var(--deco); letter-spacing: .14em; text-transform: uppercase; color: rgba(240,222,180,.9); text-shadow: 0 1px 8px #000; opacity: 0; padding-top: 8px; }
+.cafe-place.on { animation: cafePlace 4s ease forwards; }
+@keyframes cafePlace { 0% { opacity: 0; letter-spacing: .3em; } 15% { opacity: 1; letter-spacing: .14em; } 75% { opacity: 1; } 100% { opacity: .45; } }
+.cafe-place::before, .cafe-place::after { content: "❧"; margin: 0 .6em; opacity: .6; }
+.cafe-right { display: flex; gap: 10px; align-items: flex-start; }
+.cafe-ticket { pointer-events: auto; position: relative; background: linear-gradient(180deg, #efe3c4, #dccb9f); color: #2a1f12; border-radius: 3px; padding: 6px 10px 7px; box-shadow: 0 6px 18px rgba(0,0,0,.55); transform: rotate(2deg); min-width: 128px;
+  -webkit-mask: radial-gradient(circle 5px at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 5px at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat; }
+.cafe-ticket.thud { animation: cafeThud .5s ease; }
+@keyframes cafeThud { 30% { transform: rotate(-3deg) scale(1.16); } 100% { transform: rotate(2deg) scale(1); } }
+.ct-t { display: block; font: 400 10px/1 var(--deco); letter-spacing: .18em; text-transform: uppercase; text-align: center; border-bottom: 1px dashed rgba(42,31,18,.45); padding-bottom: 4px; margin-bottom: 5px; }
+.ct-s { display: flex; gap: 6px; justify-content: center; }
+.ct-s i { width: 24px; height: 24px; border-radius: 50%; border: 1px dashed rgba(42,31,18,.35); display: grid; place-items: center; font: 400 12px/1 var(--deco); font-style: normal; }
+.ct-s i.on { border: 2px double rgba(60,28,14,.85); color: rgba(60,28,14,.9); transform: rotate(var(--r)); animation: cafeStamp .45s cubic-bezier(.3,1.6,.5,1); background: radial-gradient(circle, rgba(60,28,14,.08), transparent 70%); }
+@keyframes cafeStamp { from { transform: rotate(var(--r)) scale(2.2); opacity: 0; } }
+.cafe-edge { position: absolute; top: 14%; bottom: 24%; width: clamp(56px, 8vw, 140px); border: 0; background: transparent; display: flex; align-items: center; gap: 8px; padding: 0 10px; opacity: .6; transition: opacity .3s, background .3s; }
+.cafe-edge.l { left: 0; justify-content: flex-start; cursor: w-resize; }
+.cafe-edge.r { right: 0; justify-content: flex-end; cursor: e-resize; }
+.cafe-edge:hover, .cafe-edge:focus-visible { opacity: 1; outline: none; }
+.cafe-edge.l:hover, .cafe-edge.l:focus-visible { background: linear-gradient(90deg, rgba(0,0,0,.45), transparent); }
+.cafe-edge.r:hover, .cafe-edge.r:focus-visible { background: linear-gradient(270deg, rgba(0,0,0,.45), transparent); }
+.ce-ch { font: 300 46px/1 var(--head); color: rgba(240,222,180,.85); text-shadow: 0 2px 10px #000; }
+.ce-n { font: italic 13px/1.2 var(--body); color: rgba(240,222,180,.9); text-shadow: 0 1px 6px #000; max-width: 0; overflow: hidden; white-space: nowrap; transition: max-width .4s; }
+.cafe-edge:hover .ce-n, .cafe-edge:focus-visible .ce-n { max-width: 220px; }
+.cafe-ending .cafe-edge { display: none; }
+.cafe-hint { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); background: rgba(9,9,10,.82); border: 1px solid var(--hair); border-radius: 999px; padding: 7px 16px; font: 500 12px var(--display); color: #ddd; letter-spacing: .05em; white-space: nowrap; opacity: 0; transition: opacity .6s; }
+.cafe-hint.on { opacity: 1; }
+.cafe-note { position: absolute; left: 50%; top: 72px; transform: translateX(-50%); max-width: min(300px, 80%); padding: 8px 12px; font: italic 14px/1.4 var(--body); color: rgba(240,226,198,.96); background: rgba(22,16,10,.86); border: 1px solid rgba(226,201,152,.32); border-radius: 3px; opacity: 0; transition: opacity .4s; }
+.cafe-note.free { transform: none; width: 300px; }
+.cafe-note.on { opacity: 1; }
+/* the words: a picture-show title card, black, double-ruled, the speaker's name in deco capitals */
+.cafe-say { pointer-events: auto; position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(760px, calc(100% - 28px)); background: rgba(8,7,6,.94); border: 3px double rgba(226,201,152,.55); outline: 1px solid rgba(226,201,152,.15); outline-offset: 4px; padding: 14px 22px 16px; cursor: pointer; box-shadow: 0 20px 60px rgba(0,0,0,.7); animation: cafeSay .35s ease; }
+.cafe-say[hidden] { display: none; }
+@keyframes cafeSay { from { opacity: 0; transform: translate(-50%, 10px); } }
+.cs-who { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.cs-who b { font: 400 15px/1 var(--deco); letter-spacing: .14em; text-transform: uppercase; color: rgba(240,215,160,.95); }
+.cs-who i { font: italic 13px/1 var(--body); color: rgba(226,201,152,.6); }
+.cs-line { margin: 0; font: 400 19px/1.45 var(--body); color: #f2e9d4; min-height: 2.9em; text-align: left; }
+html.i18n-zh .cs-line, html.i18n-ja .cs-line { font-family: "Noto Serif SC", "Noto Serif JP", "Yu Mincho", serif; font-size: 17px; }
+.cs-more { position: absolute; right: 16px; bottom: 8px; color: rgba(240,215,160,.8); animation: cafeMore 1.1s infinite; }
+.cafe-say.typing .cs-more, .cafe-say.ask .cs-more { display: none; }
+@keyframes cafeMore { 50% { transform: translateY(3px); opacity: .4; } }
+.cs-ch { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+.cs-ch button { text-align: left; background: none; border: 0; padding: 6px 4px 6px 22px; font: italic 17px/1.3 var(--body) !important; color: rgba(240,222,180,.95) !important; position: relative; border-radius: 2px; min-height: 36px; }
+.cs-ch button::before { content: "◆"; position: absolute; left: 4px; top: 9px; font-size: 10px; font-style: normal; opacity: .7; }
+.cs-ch button:hover, .cs-ch button:focus-visible { background: rgba(226,201,152,.1); outline: none; color: #fff !important; }
+.cs-ch button.dim { color: rgba(240,222,180,.5) !important; }
+/* the ending: title cards over Market Street, then the reader's own Extra! */
+.cafe-end { position: absolute; inset: 0; pointer-events: none; display: grid; place-items: center; }
+.cafe-end[hidden] { display: none; }
+.ce-card { position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%); width: min(720px, calc(100% - 40px)); margin: 0; text-align: center; font: italic 400 24px/1.45 var(--body); color: #f6eedb; text-shadow: 0 2px 14px #000, 0 0 2px #000; opacity: 0; }
+.ce-card.on { animation: cafeCard 3.6s ease forwards; }
+@keyframes cafeCard { 0% { opacity: 0; filter: blur(4px); } 18% { opacity: 1; filter: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+.ce-paper { pointer-events: auto; position: relative; width: min(540px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto; background: var(--paper) linear-gradient(180deg, #f2e9d4, #e3d5b5); color: var(--ink); padding: 22px 28px 18px; box-shadow: 0 30px 90px rgba(0,0,0,.8), inset 0 0 40px rgba(110,80,30,.2); text-align: center; animation: cafeSpin 1.7s cubic-bezier(.2,.7,.3,1) both; }
+.ce-paper.quiet { animation: cafeSay .8s ease both; }
+@keyframes cafeSpin { 0% { transform: scale(.04) rotate(-1080deg); opacity: 0; } 15% { opacity: 1; } 85% { transform: scale(1.04) rotate(-2deg); } 100% { transform: scale(1) rotate(-1.5deg); } }
+.cp-mast { font: 400 34px/1 var(--black); border-bottom: 3px double var(--ink); padding-bottom: 6px; }
+.cp-date { font: 700 10px/1 var(--body); letter-spacing: .16em; text-transform: uppercase; padding: 5px 0; border-bottom: 1px solid var(--ink); }
+.cp-extra { font: 400 44px/1 var(--deco); letter-spacing: .06em; text-transform: uppercase; margin: 12px 0 4px; }
+.cp-head { font: 900 30px/1.02 var(--head); text-transform: uppercase; margin: 0 0 10px; }
+.cp-deck { font: italic 16px/1.35 var(--head); margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(27,24,19,.5); }
+.cp-block { font: 400 14px/1.4 var(--body); margin: 0 0 6px; }
+.cp-fine { font: 400 11px/1.3 var(--body); opacity: .7; margin: 0 0 12px; }
+.cp-go { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.cp-go button, .cp-go a { font: 600 11px var(--display) !important; letter-spacing: .08em; text-transform: uppercase; color: var(--ink) !important; background: transparent; border: 1px solid var(--ink); border-radius: 999px; min-height: 40px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; }
+.cp-go button:first-child { background: var(--ink); color: var(--paper) !important; }
+.cp-go button:hover, .cp-go a:hover { background: rgba(27,24,19,.12); }
+.cp-go button:first-child:hover { background: #000; }
+@media (max-width: 700px), (max-height: 520px) {
+  .cafe-top { padding: max(8px, env(safe-area-inset-top, 0px)) 8px 8px; gap: 6px; }
+  .cafe-place { position: absolute; left: 0; right: 0; top: 64px; font-size: 12px; letter-spacing: .08em; pointer-events: none; } .cafe-place::before, .cafe-place::after { display: none; }
+  .cafe-back, .cafe-snd { min-height: 44px; padding: 0 12px; }
+  .cafe-ticket { min-width: 0; padding: 5px 7px; } .ct-t { display: none; } .ct-s { gap: 4px; } .ct-s i { width: 20px; height: 20px; font-size: 11px; }
+  .cafe-right { flex-direction: column-reverse; align-items: flex-end; gap: 6px; }
+  .cafe-edge { width: 48px; top: 30%; bottom: 36%; opacity: .8; } .ce-n { display: none; } .ce-ch { font-size: 40px; }
+  .cafe-hint { white-space: normal; width: calc(100% - 32px); text-align: center; border-radius: 12px; bottom: 14px; }
+  .cafe-say { bottom: max(8px, env(safe-area-inset-bottom, 0px)); padding: 10px 14px 12px; width: calc(100% - 16px); }
+  .cs-line { font-size: 16px; min-height: 2.6em; } .cs-ch button { font-size: 15px !important; min-height: 44px; }
+  .ce-card { font-size: 18px; bottom: 16%; }
+  .cp-mast { font-size: 26px; } .cp-extra { font-size: 32px; } .cp-head { font-size: 22px; } .cp-deck { font-size: 14px; } .ce-paper { padding: 16px 16px 14px; }
+}
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -1183,6 +1285,7 @@ const EN = {
   }, 200); });
 })();
 </script>
-<script src="scene.js?v=6"></script>
+<script src="scene.js?v=7"></script>
+<script src="cafe.js?v=1"></script>
 </body>
 </html>
