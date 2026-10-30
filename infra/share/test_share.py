@@ -37,6 +37,7 @@ import share  # noqa: E402
 
 VAL = "80ad4a20" + "1" * 84 + "536b8"[:4]
 A, B2, C3 = "a1f3" + "2" * 88 + "9c20", "7be0" + "3" * 88 + "41d2", "c4a8" + "4" * 88 + "0e17"
+D = "d5e9" + "5" * 88 + "77ab"   # the card's wallet: one own rule, an offer, a vote, two payments to Agorzilla
 PID = "30" + "ab" * 31
 T0 = 1793130000
 
@@ -53,6 +54,11 @@ CHAINS["a"][322] = blk(322, [
     {"sender_pubkey": B2, "operations": {"1": [[B2, C3, "12"]]}},
     {"sender_pubkey": VAL, "tx_type": "consensus_rule_vote", "update_id": PID, "approve": True},
 ])
+CHAINS["a"][323] = blk(323, [{"sender_pubkey": D, "operations": {"0": "o5[t] = 2"}}])
+CHAINS["a"][324] = blk(324, [{"sender_pubkey": D, "operations": {"1": [[D, share.BOWL, "5"], [D, share.BOXES[1], "1"]]}}])
+CHAINS["a"][325] = blk(325, [{"sender_pubkey": D, "operations": {"1": [[D, share.BOWL, "1"]]}}])   # within the hour: not a new meal
+CHAINS["a"][326] = blk(326, [{"sender_pubkey": D, "tx_type": "rule_offer"}, {"sender_pubkey": D, "tx_type": "consensus_rule_vote", "approve": True}])
+share.AGZ_BORN = T0
 CHAINS["b"] = [blk(n, [], "ff") for n in range(40)]
 CUR = {"chain": "a"}
 
@@ -126,7 +132,8 @@ def main():
     out = os.environ.get("OUT")
     for name, path in [("hud", "/og/hud.png"), ("block", "/og/block/322.png"), ("block0", "/og/block/0.png"),
                        ("proposal", f"/og/proposal/{PID[:16]}.png"), ("active", "/og/proposal/99cdcdcd.png"),
-                       ("address", f"/og/address/{A}.png"), ("validator", f"/og/address/{VAL}.png"), ("missing", "/og/block/99999.png")]:
+                       ("address", f"/og/address/{A}.png"), ("validator", f"/og/address/{VAL}.png"),
+                       ("card", f"/og/card/{D}.png?c=3"), ("card-new", f"/og/card/{C3}.png"), ("missing", "/og/block/99999.png")]:
         code, ctype, body = get(path)
         assert code == 200 and ctype == "image/png", (path, code, ctype)
         assert Image.open(io.BytesIO(body)).size == (1200, 630), path
@@ -137,6 +144,13 @@ def main():
     a = share.address_numbers(A)
     assert (a["sent"], a["received"], a["balance"], a["last_h"]) == (2, 0, 1250, 322), a
     assert share.address_numbers(B2)["received"] == 1 and share.address_numbers(VAL)["sealed"] == 329
+    c = share.card_numbers(D)
+    assert (c["rules"], c["own"], c["offered"], c["votes"], c["rule_votes"], c["agz_votes"], c["meals"], c["first_h"]) == (2, 1, 1, 2, 1, 1, 1, 323), c
+    code, ctype, body = get(f"/og/card/{D}.json")
+    assert code == 200 and json.loads(body)["meals"] == 1
+    card = get(f"/s/card/{D}?c=3")[2].decode()
+    assert f"https://tauhud.com/card/?a={D}&amp;c=3" in card and "This wallet wrote 2 rules, cast 2 votes and fed Agorzilla once." in card, card
+    assert f"/og/card/{D}.png?c=3" in card
     n = share.block_numbers(322)
     assert [t["amt"] for t in n["txs"]] == [50, 12, None] and n["txs"][2]["tag"] == "yes" and n["validator"]
 
@@ -151,7 +165,7 @@ def main():
     assert "3 transactions" in get("/s/block/322")[2].decode()
     assert f"https://tauhud.com/explorer/?a={A}" in get(f"/s/address/{A}")[2].decode()
     assert "live at block #329" in get("/s/")[2].decode()
-    for bad in ["/og/block/abc.png", "/og/address/1234.png", "/s/proposal/xyz", "/og/", "/og/nothing.png", "/s/block/1234567890", "/etc/passwd"]:
+    for bad in ["/og/block/abc.png", "/og/address/1234.png", "/s/proposal/xyz", "/og/", "/og/nothing.png", "/s/block/1234567890", "/etc/passwd", "/og/card/123.png", "/og/card/123.json"]:
         assert get(bad)[0] == 404, bad
 
     CUR["chain"] = "b"   # the testnet restarted: a shorter chain with other hashes

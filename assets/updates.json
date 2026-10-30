@@ -1619,5 +1619,17 @@
    "link": "/start/",
    "image": "/assets/shots/start.png"
   }
+ },
+ {
+  "tag": "My Tau card",
+  "on": "2026-10-30",
+  "html": "My Tau card: one picture of what your test wallet did on the testnet, its three check words as its name, rules written, votes on rule changes and for Agorzilla, Agorzilla meals and the café stamps from your walk. Post it on X, copy the link (its preview shows your card on X, Telegram and WhatsApp) or save the picture; a list shows what is still open on your card and where to do it. Test AGRS only: nothing on the card is priced or promised. Open it from the wallet or under Playground.",
+  "major": {
+   "id": "card",
+   "title": "New: My Tau card",
+   "text": "Your test wallet on one picture: rules written, votes, Agorzilla meals and café stamps, ready to post. Test AGRS only, nothing priced or promised.",
+   "link": "/card/",
+   "image": "/assets/shots/card.png"
+  }
  }
 ]

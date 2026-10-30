@@ -6,6 +6,7 @@ and proposals.json) and returns PNG bytes. Nothing here talks to the network.
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import os
 import time
@@ -408,4 +409,90 @@ def address(c: dict) -> bytes:
         if r.get("amt") is not None:
             sign = "+" if r["dir"] == "in" else "−"
             text(d, 1140, y, f"{sign}{fmt_a(r['amt'])} AGRS", font(SORA, 16, 600), OK if r["dir"] == "in" else TEXT, right=True)
+    return png(img)
+
+
+# ---------------- My Tau card ----------------
+# The wallet's three check words (wallet/index.html: sha256 of the address text, bytes 8 to 10): a name people can say.
+WORDS = (
+    'acorn amber anchor apple arrow atlas badge baker bamboo banjo barley basil beacon beaver berry bison blade '
+    'blossom bonnet bottle bramble breeze brick bridge bronze brook bucket bugle cabin cactus camel candle canoe '
+    'canyon carbon carrot castle cedar cello chalk cherry chess cider cinder circus clover cobalt comet copper '
+    'coral cotton cougar crane crater cricket crystal cupola dahlia daisy delta denim desert dingo dolphin dragon '
+    'drum eagle easel ember emerald engine falcon feather fennel fern fiddle flint forest fossil fox galaxy '
+    'garden garnet gecko geyser ginger glacier goblet granite grape gravel guitar hammer harbor harp hazel heron '
+    'hickory honey hornet husky iceberg igloo indigo iris island ivory jackal jade jaguar jasmine jelly jigsaw '
+    'jungle kayak kernel kettle kiwi koala ladder lagoon lantern laurel lemon lilac lily linen lizard lobster '
+    'locket lotus magnet mango maple marble meadow melon meteor mint mitten mosaic moss muffin nectar needle '
+    'nickel nutmeg oak oasis olive onyx orbit orchid otter oyster paddle panda papaya parrot pebble pecan pelican '
+    'pepper piano pine planet plum pollen poppy prism puffin pumpkin quartz quill rabbit radish raven reef ribbon '
+    'river robin rocket rose ruby saddle saffron salmon sapphire satin shell sierra silver sparrow spruce squid '
+    'statue stone summit sunset swan tango teapot thistle thunder tiger timber toucan tractor trumpet tulip '
+    'tundra turtle umbrella valley velvet violet volcano walnut walrus willow window winter wizard yarrow yogurt '
+    'zebra zenith zinc basket beetle bobcat cocoa cobra dune elm glove gopher jasper lark mammoth marsh opal '
+    'osprey parsley quail rhubarb sable sequoia stork tapir topaz trout vanilla wombat yak nomad '
+).split()
+
+
+def words(a: str) -> str:
+    h = hashlib.sha256(a.encode()).digest()
+    return " · ".join(WORDS[x] for x in h[8:11])
+
+
+def card_line(c: dict) -> str:
+    parts = []
+    if c.get("rules"):
+        parts.append(f"wrote {plural(c['rules'], 'rule')}")
+    if c.get("votes"):
+        parts.append(f"cast {plural(c['votes'], 'vote')}")
+    if c.get("meals"):
+        parts.append("fed Agorzilla " + ("once" if c['meals'] == 1 else f"{c['meals']} times"))
+    if not parts:
+        return "Just arrived on Tau Testnet Alpha."
+    return "This wallet " + ", ".join(parts[:-1]) + (" and " if len(parts) > 1 else "") + parts[-1] + "."
+
+
+def stamp(d, x: float, y: float, r: float, on: bool, letter: str):
+    if on:
+        d.ellipse(B(x - r, y - r, x + r, y + r), outline=OK, width=sc(2.5))
+        d.ellipse(B(x - r + 5, y - r + 5, x + r - 5, y + r - 5), outline=(30, 120, 70), width=S)
+        f = font(SORA, 20, 700)
+        text(d, x - tlen(d, letter, f) / 2, y - 13, letter, f, OK)
+    else:
+        for i in range(0, 360, 30):   # a dashed ring: the empty place on the ticket
+            d.arc(B(x - r, y - r, x + r, y + r), i, i + 16, fill=HAIR, width=S)
+
+
+def my_card(c: dict, stamps: int = 0) -> bytes:
+    """c: share.card_numbers() (addr, rules, own, offered, proposed, votes, rule_votes, agz_votes, meals, first_ts); stamps 0..4."""
+    a = c["addr"]
+    img, d = frame("MY TAU CARD", "/card/")
+    h = hashlib.sha256(a.encode()).digest()
+    for i, x in enumerate(h[:8]):   # the address print, as in the wallet: bars from the address's hash
+        bh, g = 18 + (x % 10) * 5, int(255 * (.45 + (x >> 4) / 30))
+        d.rounded_rectangle(B(40 + i * 13, 196 - bh, 48 + i * 13, 196), radius=sc(2), fill=(g, g, g))
+    name = words(a)
+    text(d, 160, 124, name, fit(d, name, SORA, 46, 700, 1000), WHITE)
+    since = (" · on the testnet since " + time.strftime("%d %b %Y", time.gmtime(c["first_ts"])).lstrip("0")) if c.get("first_ts") else " · new on the testnet"
+    text(d, 162, 186, short(a) + since, font(MONO, 16), DIM)
+
+    y0, y1, gap = 232, 392, 20
+    w = (W - 80 - 3 * gap) / 4
+    xs = [40 + i * (w + gap) for i in range(4)]
+    rn = [f"{c[k]} {k}" for k in ("own", "offered", "proposed") if c.get(k)]
+    stat(d, (xs[0], y0, xs[0] + w, y1), "Rules written", fmt_n(c.get("rules") or 0), None, " · ".join(rn) or "own rules, offers, changes")
+    stat(d, (xs[1], y0, xs[1] + w, y1), "Votes cast", fmt_n(c.get("votes") or 0), None,
+         f"{c.get('rule_votes') or 0} on rules · {c.get('agz_votes') or 0} for Agorzilla")
+    stat(d, (xs[2], y0, xs[2] + w, y1), "Agorzilla meals", fmt_n(c.get("meals") or 0), None, "one counts per hour")
+    panel(d, (xs[3], y0, xs[3] + w, y1), "Café stamps")
+    step = (w - 40 - 56) / 3
+    for i, k in enumerate("ACLT"):   # Agreement, Chain, Logic, Testnet: the café ticket
+        stamp(d, xs[3] + 48 + i * step, y0 + 74, 26, i < stamps, k)
+    text(d, xs[3] + 20, y0 + 120, f"{stamps} of 4 · the café walk", font(MONO, 13), DIM)
+
+    panel(d, (40, 412, W - 40, 552))
+    line = card_line(c)
+    text(d, 64, 436, line, fit(d, line, SORA, 26, 600, W - 130), WHITE)
+    text(d, 64, 482, "Helping test the rules of Tau Testnet Alpha, where rules change by agreement.", font(MONO, 15), TEXT)
+    text(d, 64, 510, "Test AGRS have no value. Nothing on this card is priced or promised.", font(MONO, 14), DIM)
     return png(img)
