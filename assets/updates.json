@@ -1397,5 +1397,10 @@
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "Tau HUD in numbers: the testnet transactions split now shows IDNI's genesis accounts on their own (the 11 accounts the testnet started with, which make most of the traffic), next to Agorzilla, Tau HUD and other wallets."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-30",
+  "html": "Tau HUD in numbers now opens on “On the testnet”: how many wallets act on the testnet through Agorzilla or a Tau HUD page each day, how many are new and how many come back, their share of all transactions, and what Agorzilla's meals, votes and wishes add up to. Counted from the public blocks; a wallet is a key, not a person. The visitor numbers of both sites are one click away."
  }
 ]

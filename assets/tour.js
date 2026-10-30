@@ -65,12 +65,13 @@
       { s: "#join", t: "Run a node", x: "Three steps and about an hour and a half on a small server. No server yet? Try a simulated node in your browser first." },
       { s: ".panel.gets", t: "What you get", x: "Your name on the board, a live badge, a chain you checked yourself and a head start for a validator seat." },
     ] },
-    meta: { name: "In numbers", intro: "How many people look at Tau through this site: per day, over time and on which pages. Counted without cookies.", steps: [
-      { s: ".intro .kpis", t: "The short version", x: "Visitors today, the daily average of the last week with its trend, all visits added up and the best day so far." },
-      { s: "#pDaily", t: "Visitors per day", x: "The green line is the number of visitors each day, the faint bars below are the pages they opened. Pick 7 days up to All for the whole history; hover for the numbers, click a day for its pages." },
-      { s: "#dayPanel", t: "One day up close", x: "Visitors, pages opened and how many stayed 30 seconds, plus the pages people opened that day." },
-      { s: "#pGrowth", t: "Growth", x: "Every day's visitors added up since counting began, so you see the climb at a glance." },
-      { s: "#pPages", t: "What people open", x: "The most visited pages in the chosen range. Click one to go there." },
+    meta: { name: "In numbers", intro: "How much our two sites move the testnet, and how many people visit them. Counted without cookies; a wallet is a key, not a person.", steps: [
+      { s: ".intro .sites", t: "Three views", x: "On the testnet shows what our sites move on Tau Testnet Alpha. Tau HUD and Agorzilla show each site's visitors." },
+      { s: ".intro .kpis", t: "The short version", x: "The four numbers that matter most for the view you picked." },
+      { s: "#pDaily", t: "Day by day", x: "Wallets acting through our sites each day, or visitors in the visitor views. Pick 24H up to All, line or bars; hover for the numbers, click a day for details." },
+      { s: "#dayPanel", t: "One day up close", x: "Everything about the day you clicked: wallets, new and returning ones and each site's part, or visitors and their pages." },
+      { s: "#pGrowth", t: "The climb", x: "Wallets reached, or visits, added up over time." },
+      { s: "#pPages", t: "Agorzilla and pages", x: "On the testnet: what Agorzilla's meals and votes add up to. In the visitor views: the most visited pages." },
     ] },
     status: { name: "Status", intro: "Is our node up and in sync, how healthy is the testnet, and what happened in the last 30 days.", steps: [
       { s: "#lead", t: "The answer first", x: "One line says whether our node is up and in sync with the testnet. Everything below backs it up." },
