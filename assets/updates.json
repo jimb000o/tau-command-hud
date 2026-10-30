@@ -1486,6 +1486,16 @@
   "html": "Accounts, Explorer and Time travel: while a page is still reading the chain, a thin amber bar runs along the top and a small label at the bottom says how far it got (“1,300 of 3,116 blocks”). The numbers stay dimmed until every block is in, the rich list no longer re-sorts while blocks arrive, and when it is done the label turns green for a moment."
  },
  {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper: a softer page turn. The sheet lifts, sweeps through the air and settles with a low pat, each turn a little different. The streetcars outside no longer pop up behind the paper: they come out of the haze at the end of the street and leave past the edge of the window right beside you."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The HUD shows when it is still reading the chain, like Accounts, Explorer and Time travel: on opening the live chain a thin amber bar runs along the top and a small label says it is reading, the numbers stay dimmed until the newest blocks are in, then the bar turns green and says so."
+ },
+ {
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "Troll box: a much stricter filter and a live moderator. Sexual content, slurs, insults, threats, scams and spam are refused, also when written as p0rn or p o r n or with look-alike letters. Breaking the rules earns strikes: a warning, then 10 minutes muted, then an hour, then out until 00:00 UTC, and the messages of someone who is out disappear for everyone at once. You always see why and for how long."
