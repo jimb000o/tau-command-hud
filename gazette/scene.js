@@ -573,5 +573,7 @@
     label(); window.addEventListener("gazette-labels", label); }
   layout();
   /* for the café walk (cafe.js): the drawn layers, the street on its own, and the sound */
-  window.GAZETTE_SCENE = { layers: [BG, LIVE, TRAM, ROOM, STEAM, FX], street, tone, rnd, still, amb: AMB, amb_btn: btn };
+  window.GAZETTE_SCENE = { layers: [BG, LIVE, TRAM, ROOM, STEAM, FX], street, tone, rnd, still, amb: AMB, amb_btn: btn,
+    /* the things on the table, for the café's closer look: where they are, and their answer without the note */
+    hits: () => HITS, touch: k => { TOUCH[k] = performance.now(); AMB.play(k); loop(); } };
 })();
