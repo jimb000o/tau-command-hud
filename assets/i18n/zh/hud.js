@@ -2131,4 +2131,5 @@ TauI18n.add({ strings: {
   "1 personal money rule in force": "1 条个人资金规则生效中",
   "{n} people on Tau HUD right now": "此刻有 {n} 人在 Tau HUD 上",
   "News line: real headlines instead of long update texts. Short lines on what is new on the testnet and on Tau HUD, the titles of new features, live chain numbers, and when the next Daily Consensus comes out: in German time in English, Beijing time in Chinese, Japan time in Japanese.": "快讯：用真正的标题代替冗长的更新说明。简短报道测试网和 Tau HUD 上的新动态、新功能的标题、实时链上数据，以及下一期《共识日报》的出刊时间：中文显示北京时间。",
+  "News line: the gap between items is now about two letters wide.": "快讯：各条之间的间距现在约为两个字符宽。",
 } });

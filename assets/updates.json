@@ -1754,6 +1754,11 @@
  {
   "tag": "HUD",
   "on": "2026-10-30",
+  "html": "News line: the gap between items is now about two letters wide."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
   "html": "News line: real headlines instead of long update texts. Short lines on what is new on the testnet and on Tau HUD, the titles of new features, live chain numbers, and when the next Daily Consensus comes out: in German time in English, Beijing time in Chinese, Japan time in Japanese."
  }
 ]
