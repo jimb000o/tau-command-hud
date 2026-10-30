@@ -18,8 +18,8 @@
   const CAFE_EN = {
     call: "From the counter, Mae: “Fresh pot on, hon, if you're looking up.”", loading: "One moment…", loadingSub: "The café is being set for you", enter: "Look up", enterTip: "Look up from the paper: walk through the café and meet the regulars",
     back: "The paper", backTip: "Back to the paper",
-    cat: { deja: "Déjà vu: the cat went by twice, the very same way. In here that means a rule just changed.",
-      lines: ["The café cat. Nobody owns her. Everybody agreed to feed her, and that is a rule too.", "Prrr. She sits on whatever proposal you are reading. That is her vote.",
+    cat: { bowl: "Her bowl is real: feed her at agorzilla.com/cat ›", deja: "Déjà vu: the cat went by twice, the very same way. In here that means a rule just changed.",
+      lines: ["Déjà, the café cat. Nobody owns her. Everybody agreed to feed her, and that is a rule too: she eats on a day when three wallets feed her.", "Prrr. She sits on whatever proposal you are reading. That is her vote.",
         "Mrrp. She doesn't follow the chain. She follows the warm spot by the coffee urn.", "Mae says the cat was here before the house rules. She has never voted, and somehow she always gets her way."] },
     hint: "Walk with the edges of the room or ← →, and click someone to talk",
     hintTouch: "Swipe or tap the edges to walk, and tap someone to talk",
@@ -678,6 +678,9 @@
         o.type = "sawtooth"; o.frequency.setValueAtTime(520 * r, t); o.frequency.linearRampToValueAtTime((short ? 860 : 780) * r, t + d * 0.3); o.frequency.linearRampToValueAtTime((short ? 700 : 470) * r, t + d);
         f1.type = f2.type = "bandpass"; f1.frequency.setValueAtTime(900, t); f1.frequency.linearRampToValueAtTime(1400, t + d * 0.4); f1.frequency.linearRampToValueAtTime(800, t + d); f2.frequency.value = 2600; f1.Q.value = 4; f2.Q.value = 6; m.gain.value = 1;
         o.connect(f1); o.connect(f2); f1.connect(m); f2.connect(m); m.connect(env(A, out, t, 0.05, d, 0.05)); o.start(t); o.stop(t + d + 0.1); },
+      /* a picture losing its hold: a few dry ticks and a short hum */
+      glitch() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.01; for (let k = 0; k < 5; k++) hit(A, out, t + k * (0.03 + Math.random() * 0.04), 3000 + Math.random() * 4000, 3, 0.012, 0.035);
+        ping(A, out, t, 120, 0.18, 0.02, "square"); },
       purr() { const C = c(); if (!C) return; const { A, out } = C, t = A.currentTime + 0.02, s = A.createBufferSource(), lp = A.createBiquadFilter(), g = A.createGain(), lfo = A.createOscillator(), dep = A.createGain();
         s.buffer = noise(A); s.loop = true; lp.type = "lowpass"; lp.frequency.value = 320; lfo.frequency.value = 26; dep.gain.value = 0.05; lfo.connect(dep); dep.connect(g.gain);
         g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.06, t + 0.3); g.gain.setValueAtTime(0.06, t + 1.6); g.gain.linearRampToValueAtTime(0, t + 2.1);
@@ -879,9 +882,9 @@
      twice, the very same way. Spots are fractions of the room: [x, y of the paws, sitting height]. ----- */
   const CAT_AT = { window: { wait: [0.47, 0.79, 0.17], exit: [0.925, 0.79, 0.17] }, counter: { wait: [0.11, 0.7, 0.13], exit: [0.92, 0.7, 0.13] },
     wire: { wait: [0.07, 0.95, 0.14], exit: [0.925, 0.95, 0.14] }, back: { wait: [0.07, 0.95, 0.14], exit: [0.925, 0.95, 0.14] }, door: { wait: [0.9, 0.95, 0.14], exit: [0.44, 0.77, 0.09] } };
-  const CAT = { room: "window", spot: "wait", x: 0.47, y: 0.79, s: 0.17, walk: null, face: 1, look: 0, mew: 0, n: 0, box: null };
+  const CAT = { room: "window", spot: "wait", x: 0.47, y: 0.79, s: 0.17, walk: null, face: 1, look: 0, mew: 0, n: -1, box: null };
   const catOpen = r => r === "door" ? ST.stamps.size === 4 : r === "window" || ST.stamps.has(HOST[r]);
-  function catPut(room, spot) { const a = CAT_AT[room][spot]; Object.assign(CAT, { room, spot, x: a[0], y: a[1], s: a[2], walk: null, face: room === "door" ? -1 : 1, look: 1 }); }
+  function catPut(room, spot) { const a = CAT_AT[room][spot]; Object.assign(CAT, { room, spot, x: a[0], y: a[1], s: a[2], walk: null, gl: null, hide: false, face: room === "door" ? -1 : 1, look: 1 }); }
   function catGo(spot, ms, then) { const a = CAT_AT[CAT.room][spot], d = Math.hypot(a[0] - CAT.x, (a[1] - CAT.y) * 0.6);
     CAT.walk = { x0: CAT.x, y0: CAT.y, s0: CAT.s, a, t0: performance.now(), d: ms || Math.max(1100, d * 5600), then }; CAT.spot = spot; CAT.face = a[0] >= CAT.x ? 1 : -1; }
   /* after a stamp (or at the start), the cat gets up and goes to the way on */
@@ -893,8 +896,40 @@
       x = w.x0 + (w.a[0] - w.x0) * k; y = w.y0 + (w.a[1] - w.y0) * k; s = w.s0 + (w.a[2] - w.s0) * k;
       if (u >= 1) { Object.assign(CAT, { x: w.a[0], y: w.a[1], s: w.a[2], walk: null, look: 1 }); const f = w.then; w.then = null; f && f(); } }
     /* on a narrow screen the cat is smaller and never steps past the edge */
-    const S = s * H * Math.min(1, W / H), X = Math.max(S * 0.5, Math.min(W - S * 0.5, x * W)) + dx, Y = y * H, f = CAT.face;
-    g.save(); g.translate(X, Y);
+    const S = s * H * Math.min(1, W / H), X = Math.max(S * 0.5, Math.min(W - S * 0.5, x * W)) + dx, Y = y * H;
+    const gl = CAT.gl, gu = gl ? Math.min(1, (now - gl.t0) / gl.d) : 0;
+    if (gl && gu >= 1) { CAT.gl = null; CAT.hide = gl.dir === "out"; const f = gl.then; gl.then = null; f && f(); }
+    if (CAT.hide && !CAT.gl) { if (dx === 0) CAT.box = null; return; }
+    if (CAT.gl) catGlitchDraw(X, Y, S, now, t, CAT.gl.dir === "in" ? gu : 1 - gu); else { g.save(); g.translate(X, Y); catBody(g, S, now, t); g.restore(); }
+    if (dx === 0) CAT.box = CAT.gl ? null : { x: X - S * 0.45, y: Y - S * 1.05, w: S * 0.9, h: S * 1.1 };
+  }
+  /* when the chain carries a rule, she breaks up into slipping bands of picture and comes back together:
+     drawn once into a small canvas, then laid down strip by strip, each strip pushed sideways, with a pale and a dark
+     double half a step apart; v = how much of her is there (0 gone, 1 whole) */
+  const CATC = document.createElement("canvas"), cc = CATC.getContext("2d"), CATP = document.createElement("canvas"), pc = CATP.getContext("2d");
+  function catGlitchDraw(X, Y, S, now, t, v) {
+    const bw = Math.ceil(S * 1.8), bh = Math.ceil(S * 1.35), k = K; if (CATC.width !== Math.ceil(bw * k) || CATC.height !== Math.ceil(bh * k)) { CATC.width = Math.ceil(bw * k); CATC.height = Math.ceil(bh * k); }
+    cc.setTransform(1, 0, 0, 1, 0, 0); cc.clearRect(0, 0, CATC.width, CATC.height); cc.setTransform(k, 0, 0, k, bw / 2 * k, bh * 0.93 * k); catBody(cc, S, now, t);
+    if (CATP.width !== CATC.width || CATP.height !== CATC.height) { CATP.width = CATC.width; CATP.height = CATC.height; }
+    pc.globalCompositeOperation = "copy"; pc.drawImage(CATC, 0, 0); pc.globalCompositeOperation = "source-in"; pc.fillStyle = "rgb(236,214,170)"; pc.fillRect(0, 0, CATP.width, CATP.height);
+    const amp = Math.pow(1 - v, 0.7) * (0.7 + 0.3 * Math.random()), x0 = X - bw / 2, y0 = Y - bh * 0.93;
+    if (Math.random() < 0.22 * (1 - v)) return;   /* a dropped frame now and then */
+    g.save();
+    /* bands of uneven height, each slipping its own way; the further gone, the more bands are missing */
+    for (let sy = 0; sy < bh;) { const sh = Math.max(2, bh * (0.03 + Math.random() * 0.12)), drop = Math.random() > 0.2 + 0.8 * v;
+      const off = (Math.random() - 0.5) * S * 1.1 * amp * (Math.random() < 0.25 ? 2 : 1);
+      if (!drop) { g.globalAlpha = Math.min(1, 0.45 + v * 0.7); g.drawImage(CATC, 0, sy * k, CATC.width, Math.min(sh, bh - sy) * k, x0 + off, y0 + sy, bw, Math.min(sh, bh - sy)); }
+      else if (Math.random() < 0.5) { g.globalAlpha = 0.5 * amp; g.drawImage(CATP, 0, sy * k, CATP.width, Math.min(sh, bh - sy) * k, x0 + off * 1.4, y0 + sy, bw, Math.min(sh, bh - sy)); }
+      sy += sh; }
+    /* a pale double half a step ahead of her and a dark one behind */
+    g.globalAlpha = 0.32 * amp; g.drawImage(CATP, x0 + S * 0.09 * amp, y0 - S * 0.01, bw, bh);
+    g.globalAlpha = 0.45 * amp; g.drawImage(CATC, x0 - S * 0.08 * amp, y0 + S * 0.01, bw, bh);
+    /* thin lines across her, like a picture that lost its hold */
+    g.globalAlpha = 0.35 * amp; g.fillStyle = "rgb(255,236,200)"; for (let i = 0; i < 5; i++) g.fillRect(x0 - S * 0.4 * Math.random(), y0 + Math.random() * bh, bw + S * 0.5, Math.random() < 0.3 ? 2 : 1);
+    g.restore();
+  }
+  function catBody(g, S, now, t) {
+    const f = CAT.face;
     /* the shadow under it */
     g.fillStyle = "rgba(0,0,0,.38)"; g.beginPath(); g.ellipse(0, 0, S * (CAT.walk ? 0.42 : 0.3), S * 0.04, 0, 0, 7); g.fill();
     g.scale(S * f, S);
@@ -940,14 +975,21 @@
     g.globalCompositeOperation = "screen"; g.strokeStyle = rim; g.lineWidth = lw * 1.4;
     g.beginPath(); if (CAT.walk) { g.moveTo(-0.32, -0.58); g.bezierCurveTo(-0.15, -0.63, 0.12, -0.56, 0.3, -0.63); } else { g.moveTo(-0.27, -0.3); g.bezierCurveTo(-0.24, -0.55, -0.12, -0.64, -0.04, -0.66); } g.stroke();
     g.beginPath(); g.ellipse(hx, hy, 0.15, 0.13, 0, Math.PI * 1.1, Math.PI * 1.75); g.stroke();
-    g.restore();
-    if (dx === 0) CAT.box = { x: X - S * 0.45, y: Y - S * 1.05, w: S * 0.9, h: S * 1.1 };
+    g.globalCompositeOperation = "source-over";
   }
   /* the rule is carried and the cat walks by. Then it walks by again, the very same way. */
-  function catDeja() { if (CAT.room !== "counter") return; const go = () => { catPut("counter", "wait"); CAT.face = 1; catGo("exit", 2300); };
-    setTimeout(() => { if (!ST.on || ST.area !== "counter") return; go(); CAT.walk.then = () => setTimeout(() => { if (!ST.on || ST.area !== "counter") return; go();
-      CAT.walk.then = () => flash(TX.cat.deja); }, 260); }, 700); }
-  function catClick() { const L = TX.cat.lines; CAT.n = (CAT.n + 1) % L.length; if (CAT.n % 2) AUDIO.purr(); else catMew(true); CAT.mew = performance.now(); flash(L[CAT.n], CAT.box); }
+  /* she breaks up and comes back (with reduced motion she just is there, or isn't) */
+  function catGlitch(dir, d, then) { if (RM) { CAT.hide = dir === "out"; then && then(); return; } CAT.gl = { dir, t0: performance.now(), d, then }; AUDIO.glitch(); }
+  /* the rule is carried and the cat crosses the counter: she flickers in, walks, breaks up at the far end, and then
+     the very same walk again. The second time she stays, sitting at the way on. */
+  function catDeja() { if (CAT.room !== "counter") return; const here = () => ST.on && ST.area === "counter" && CAT.room === "counter";
+    const pass = last => { catPut("counter", "wait"); CAT.face = 1; CAT.hide = false; catGo("exit", 2300); catGlitch("in", 480);
+      if (last) { CAT.walk.then = () => here() && flash(TX.cat.deja); return; }
+      setTimeout(() => here() && catGlitch("out", 460, () => { CAT.walk = null; setTimeout(() => here() && pass(true), 320); }), 2300 - 460); };
+    setTimeout(() => { if (here()) catGlitch("out", 420, () => setTimeout(() => here() && pass(false), 250)); }, 700); }
+  function catClick() { const L = TX.cat.lines; CAT.n = (CAT.n + 1) % L.length; if (CAT.n % 2) AUDIO.purr(); else catMew(true); CAT.mew = performance.now(); flash(L[CAT.n], CAT.box);
+    /* the first line is the one about her food, and that rule is real: her bowl is on the testnet */
+    if (CAT.n === 0) { const a = document.createElement("a"); a.href = "https://agorzilla.com/cat/"; a.target = "_blank"; a.rel = "noopener"; a.textContent = TX.cat.bowl; note.appendChild(a); clearTimeout(flashT); flashT = setTimeout(() => note.classList.remove("on"), 9000); } }
   function arrived() { ST.arriveAt = performance.now(); if (ST.area === "wire") AUDIO.ticker(); keep(); prep([nb(1), nb(-1)]); }
 
   /* ----- talking ----- */
@@ -1204,7 +1246,7 @@
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
 
   /* other languages come in their own small file */
-  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=8`; s.onload = labels; document.head.appendChild(s); }
+  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=10`; s.onload = labels; document.head.appendChild(s); }
   labels();
   /* ?walk (the shared link) opens the café straight away */
   if (/[?&]walk\b/.test(location.search)) setTimeout(() => enter(), 600);

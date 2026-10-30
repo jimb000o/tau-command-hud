@@ -83,54 +83,51 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .look input.bad { border-color: #e5484d; }
 .none { color: var(--text); }
 .none b { color: #fff; font-family: var(--display); font-weight: 600; }
-/* a puppet cut from the one picture: legs, trunk and head are the same image under different masks, so he can turn his head, blink and shift his weight; the rock is cut away, the header line is his ground */
-.agz .sh { position: absolute; left: 14%; right: 6%; top: 86.5%; height: 7%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.85), rgba(0,0,0,0)); }   /* a soft ground shadow: he stands, he does not float */
-.agz .dir, .agz .pup, .agz .bod, .agz .hd, .agz .lg, .agz .pup img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.agz .dir, .agz .pup { transform-origin: 54% 90%; }
-/* legs: fur down to the rock's edge plus the whole paws, so the paws stand in front of the header line; each leg is its own slice so he can step */
-.agz .lg { -webkit-mask-image: linear-gradient(transparent 63%, #000 69%, #000 85.4%, transparent 86.4%), radial-gradient(12.5% 3.4% at 51.5% 87.4%, #000 72%, transparent 100%), radial-gradient(14% 3.4% at 80% 87.4%, #000 72%, transparent 100%), radial-gradient(9% 1.9% at 23% 85.4%, #000 60%, transparent 100%);
-  mask-image: linear-gradient(transparent 63%, #000 69%, #000 85.4%, transparent 86.4%), radial-gradient(12.5% 3.4% at 51.5% 87.4%, #000 72%, transparent 100%), radial-gradient(14% 3.4% at 80% 87.4%, #000 72%, transparent 100%), radial-gradient(9% 1.9% at 23% 85.4%, #000 60%, transparent 100%); }
-.agz .lg.b img { -webkit-mask-image: linear-gradient(90deg, #000 32%, transparent 36%); mask-image: linear-gradient(90deg, #000 32%, transparent 36%); }
-.agz .lg.l img { -webkit-mask-image: linear-gradient(90deg, transparent 32%, #000 36%, #000 63%, transparent 67%); mask-image: linear-gradient(90deg, transparent 32%, #000 36%, #000 63%, transparent 67%); }
-.agz .lg.r img { -webkit-mask-image: linear-gradient(90deg, transparent 63%, #000 67%); mask-image: linear-gradient(90deg, transparent 63%, #000 67%); }
-.agz .lg.l, .agz .lg.r { transform-origin: 60% 66%; }
-.agz .bod { transform-origin: 54% 82%; animation: agzBreathe var(--agz-br, 4.2s) ease-in-out infinite; }
-.agz .trunk { -webkit-mask-image: linear-gradient(#000 72%, transparent 77%); mask-image: linear-gradient(#000 72%, transparent 77%); }   /* the picture with its head area filled with fur, so a turning head never shows a second one */
-.agz .hd { transform-origin: 56% 48%; will-change: transform; }   /* the head layer is everything above the neck, ears included, feathered at the neck (assets/rig/agz-head.webp) */
-/* eyes: each eye's inside slides within a fixed eye shape (the eyes lead, the head follows); skin lids with a lash line slide down to blink */
-@property --blink { syntax: "<number>"; inherits: true; initial-value: 0; }
+/* Agorzilla, the puppet from agorzilla.com (card/agz.js): feet stay put, the trunk and the face are soft meshes, the head turns on the trunk.
+   He faces left, toward the card; his feet stand on the card's bottom line. */
+.agz { position: relative; display: block; line-height: 0; height: 100%; aspect-ratio: 760 / 1140; margin-bottom: calc(var(--ah) * -.105); border: 0; padding: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.agz:focus-visible { outline: 1px dashed var(--hair); outline-offset: 6px; }
+.agz, .agz * { -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
+.agz .dir { position: absolute; inset: 0; transform: scaleX(-1); transition: filter 2s ease; }
+.agz img, .agz canvas.mesh { display: block; width: 100%; height: auto; pointer-events: none; }
+.agz .mover, .agz .legs, .agz .body, .agz .puppet, .agz .head, .agz .gaze, .agz .eye { display: block; }
+.agz .mover { position: relative; transform-origin: 50% 88%; }
+.agz .legs, .agz .body { position: absolute; left: 0; top: 0; width: 100%; }
+.agz .legs { -webkit-mask-image: linear-gradient(transparent 76%, #000 80%); mask-image: linear-gradient(transparent 76%, #000 80%); }
+.agz .trunk { -webkit-mask-image: linear-gradient(#000 80%, transparent 84%); mask-image: linear-gradient(#000 80%, transparent 84%); }
+.agz .puppet { position: relative; filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .55)); }
+.agz .head { position: absolute; inset: 0; transform-origin: 56% 48%; translate: var(--nx, 0px) var(--ny, 0px); }
+.agz .gaze { position: absolute; inset: 0; transform-origin: 56% 48%; transform: rotate(var(--ht, 0deg)) translate(var(--hx, 0%), var(--hy, 0%)); transition: transform var(--hd, .9s) cubic-bezier(.45, 0, .2, 1); }
+.agz:not(.meshed) .puppet { translate: 0 var(--ny, 0px); }
+.agz:not(.meshed) .head { translate: none; }
 @property --lid { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --blink { syntax: "<number>"; inherits: true; initial-value: 0; }
 @property --squint { syntax: "<number>"; inherits: true; initial-value: 0; }
-.agz { --lid: 0; --squint: 0; --ex: 0%; --ey: 0%; transition: opacity .2s, filter .2s, --lid .45s ease, --squint .35s ease; }
-.agz.squint { --squint: 1; --lid: .3; }
-.agz.drowsy { --lid: .55; transition: opacity .2s, filter .2s, --lid 1.2s ease, --squint .35s ease; }
-.agz .eye, .agz .lid { position: absolute; -webkit-mask-image: radial-gradient(31.5% 31.5% at 50% 50%, #000 86%, transparent 98%); mask-image: radial-gradient(31.5% 31.5% at 50% 50%, #000 86%, transparent 98%); overflow: hidden; }
-.agz .lid { pointer-events: none; }
-.agz .eye.l, .agz .lid.l { left: 41.97%; top: 25.88%; width: 21.18%; height: 14.39%; }
-.agz .eye.r, .agz .lid.r { left: 68.03%; top: 21.49%; width: 18.82%; height: 13.77%; }
-.agz .eye img { display: block; width: 100%; height: 100%; transform: translate(var(--ex), var(--ey)); transition: transform .12s cubic-bezier(.3, 0, .2, 1); }
-/* lids in the skin tone around each eye (assets/rig/agz-lid-*.webp), curved, with a dark lash edge and a soft shadow on the eye below it */
-.agz .lid { -webkit-mask-image: radial-gradient(32% 32% at 50% 50%, #000 86%, transparent 99%); mask-image: radial-gradient(32% 32% at 50% 50%, #000 86%, transparent 99%); }   /* inside the dark rim, so a closed eye keeps its outline */
-.agz .lid b, .agz .lid s { position: absolute; left: -4%; right: -4%; background-size: 100% 100%; }
-.agz .lid b { top: 0; height: 84%; border-radius: 0 0 50% 50% / 0 0 30% 30%; box-shadow: inset 0 -1.6px .9px -.4px rgba(26, 10, 15, 1), 0 1px 1.4px rgba(0, 0, 0, .45); z-index: 1; transform: translateY(calc(-78% + 70% * max(var(--lid), var(--blink)))); }   /* closed, upper and lower lid meet low in the eye: the lash line curves like a smile */
-.agz .lid s { bottom: 0; height: 50%; border-radius: 50% 50% 0 0 / 40% 40% 0 0; box-shadow: inset 0 .7px .5px -.3px rgba(36, 18, 24, .7), 0 -.5px 1px rgba(0, 0, 0, .25); transform: translateY(calc(63% - max(var(--squint) * 30%, max(var(--lid), var(--blink)) * 33%))); }
-.agz .lid.l b { background-image: url("../assets/rig/agz-lid-l-up.webp"); } .agz .lid.l s { background-image: url("../assets/rig/agz-lid-l-lo.webp"); }
-.agz .lid.r b { background-image: url("../assets/rig/agz-lid-r-up.webp"); } .agz .lid.r s { background-image: url("../assets/rig/agz-lid-r-lo.webp"); }
-/* brows: the arch of skin and fur above each eye as its own piece; they lift when something catches his eye and draw in when he worries */
 @property --bu { syntax: "<number>"; inherits: true; initial-value: 0; }
 @property --bf { syntax: "<number>"; inherits: true; initial-value: 0; }
-.agz { --bu: 0; --bf: 0; }
-.agz .brow { position: absolute; transform-origin: 50% 100%; transition: transform .22s cubic-bezier(.3, 0, .2, 1); }
-.agz .brow.l { left: 40%; top: 19.12%; width: 25.13%; height: 13.07%; transform: translateY(calc(var(--bu) * -11%)) rotate(calc(var(--bf) * 7deg)); }
-.agz .brow.r { left: 66.18%; top: 15%; width: 22.5%; height: 12.46%; transform: translateY(calc(var(--bu) * -11%)) rotate(calc(var(--bf) * -7deg)); }
-.agz.squint { --bf: .6; --bu: -.25; } .agz.perk { --bu: 1; } .agz.worry { --bf: -.7; --bu: .35; }
-/* the mouth opens dark with a pink tongue inside (yawn, cheer); the tongue itself comes out of the mouth for a peek or a lick */
-.agz .mouth { position: absolute; left: 69.4%; top: 39.6%; width: 10.5%; height: 3.8%; transform: translate(-50%, -50%) scale(1, 0); transform-origin: 50% 25%; overflow: hidden; border-radius: 45% 45% 50% 50% / 35% 35% 65% 65%; background: radial-gradient(70% 60% at 50% 30%, #1a0608, #3a1114 70%, #4d1c20); box-shadow: 0 0 0 .4px rgba(70, 40, 46, .9); }
-.agz .mouth u { position: absolute; left: 16%; right: 16%; bottom: -14%; height: 58%; border-radius: 50% 50% 45% 45%; background: radial-gradient(60% 60% at 50% 30%, #ea96a0, #b9596a 78%); }
-.agz .tgw { position: absolute; left: 69.6%; top: 39.1%; width: 12%; height: 5.2%; transform: translateX(-50%); overflow: hidden; pointer-events: none; }   /* below the upper lip: what is above it is inside the mouth */
-.agz .slit { position: absolute; left: 26%; width: 48%; top: -30%; height: 60%; border-radius: 50%; background: radial-gradient(closest-side, #1a0608 55%, rgba(26, 6, 8, 0)); transform: scaleY(0); }
-.agz .tg { position: absolute; left: 28%; top: 0; width: 44%; height: 100%; overflow: visible; transform: translateY(-105%); transform-origin: 50% 0; filter: drop-shadow(0 .5px .4px rgba(40, 10, 16, .55)); }
-@keyframes agzBreathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.01, 1.024); } }
+.agz { --lid: 0; --squint: 0; --bu: 0; --bf: 0; transition: --lid 1.2s ease, --squint .35s ease, --bu .9s ease, --bf 1.1s ease; }
+.agz.squint { --squint: 1; }
+.agz .eye, .agz .lid { position: absolute; -webkit-mask-image: radial-gradient(31.5% 31.5% at 50% 50%, #000 86%, transparent 98%); mask-image: radial-gradient(31.5% 31.5% at 50% 50%, #000 86%, transparent 98%); }
+.agz .eye.l, .agz .lid.l { left: 41.97%; top: 25.88%; width: 21.18%; height: 14.39%; }
+.agz .eye.r, .agz .lid.r { left: 68.03%; top: 21.49%; width: 18.82%; height: 13.77%; }
+/* at rest the eyes sit 5% left and 3% lower, as on agorzilla.com; --ex/--ey are small glances from there, never far enough to show the socket */
+.agz .eye img { width: 100%; height: 100%; transform: translate(calc(var(--ex, 0%) - 5%), calc(var(--ey, 0%) + 3%)); transition: transform .5s cubic-bezier(.3, 0, .2, 1); }
+.agz .lid { -webkit-mask-image: radial-gradient(32% 32% at 50% 50%, #000 86%, transparent 99%); mask-image: radial-gradient(32% 32% at 50% 50%, #000 86%, transparent 99%); overflow: hidden; }
+.agz .lid b, .agz .lid s { position: absolute; left: -4%; right: -4%; background-size: 100% 100%; }
+.agz .lid b { top: 0; height: 84%; border-radius: 0 0 50% 50% / 0 0 30% 30%; z-index: 1; box-shadow: inset 0 -4px 2px -1px rgba(26, 10, 15, 1), 0 3px 4px rgba(0, 0, 0, .45); transform: translateY(calc(-78% + 70% * max(var(--lid), var(--blink)))); }
+.agz .lid s { bottom: 0; height: 50%; border-radius: 50% 50% 0 0 / 40% 40% 0 0; box-shadow: inset 0 2px 1.5px -1px rgba(36, 18, 24, .7), 0 -1px 3px rgba(0, 0, 0, .25); transform: translateY(calc(63% - max(var(--squint) * 30%, max(var(--lid), var(--blink)) * 33%))); }
+.agz .lid.l b { background-image: url("../assets/rig/hi/lid-l-up.webp"); } .agz .lid.l s { background-image: url("../assets/rig/hi/lid-l-lo.webp"); }
+.agz .lid.r b { background-image: url("../assets/rig/hi/lid-r-up.webp"); } .agz .lid.r s { background-image: url("../assets/rig/hi/lid-r-lo.webp"); }
+.agz img.brow { position: absolute; height: auto; transform-origin: 50% 100%; }
+.agz img.brow.l { left: 40%; top: 19.12%; width: 25.13%; transform: translateY(calc(var(--bu) * -11%)) rotate(calc(var(--bf) * 7deg)); }
+.agz img.brow.r { left: 66.18%; top: 15%; width: 22.5%; transform: translateY(calc(var(--bu) * -11%)) rotate(calc(var(--bf) * -7deg)); }
+/* the light around him follows his mood: grey and dim when the card is empty, warm when it is full */
+.agz[data-m="0"] .dir { filter: saturate(.6) brightness(.8); } .agz[data-m="1"] .dir { filter: saturate(.8) brightness(.9); }
+.agz[data-m="4"] .dir { filter: saturate(1.1) brightness(1.05) drop-shadow(0 0 22px rgba(255, 214, 150, .16)); }
+/* a tear: clear, catching the light, it runs down the cheek from the inner corner of the eye */
+.agz .tear { position: absolute; left: 55.2%; top: 38.4%; width: 2.6%; height: 2.3%; border-radius: 50% 50% 50% 50% / 62% 62% 40% 40%; opacity: 0; pointer-events: none;
+  background: radial-gradient(40% 35% at 38% 32%, rgba(255,255,255,.95), rgba(200,225,255,.5) 45%, rgba(150,190,230,.25) 75%, rgba(120,160,210,.1)); box-shadow: 0 0 1px rgba(255,255,255,.4); }
+.agz .tear.r { left: 70.5%; top: 34.2%; }
 /* the card lies in a pool of light, lifted off the grid */
 .stage { display: flex; align-items: flex-end; gap: 16px; --bw: clamp(210px, 14vw, 320px); }
 .cardbox { position: relative; flex: none; width: min(calc(100% - var(--bw) - 16px), calc((100vh - 250px) * 1200 / 630)); min-width: min(100%, 560px); }
@@ -139,38 +136,13 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .buddy { flex: 1 1 var(--bw); min-width: var(--bw); margin: 0; container-type: inline-size; display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; }
 .pal { position: relative; width: 100%; display: flex; justify-content: center; align-items: flex-end; height: var(--ah); --ah: min(max(calc(var(--bw) * 1.45), 60cqw), calc((100vh - 250px) * .62), 560px); }
 .pal::before { content: ""; position: absolute; left: 50%; bottom: -6%; width: 170%; height: 70%; transform: translateX(-50%); pointer-events: none; background: radial-gradient(50% 45% at 50% 70%, rgba(255,240,220,.07), transparent 70%); }
-.agz { position: relative; display: block; line-height: 0; height: 100%; width: calc(var(--ah) * .665); border: 0; padding: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.agz:focus-visible { outline: 1px dashed var(--hair); outline-offset: 6px; }
-.agz .dir { transform: scaleX(-1); }   /* he faces left, toward the card */
-.agz .pup { transition: transform 1.4s ease; }
-.agz .hd { transition: transform 1.2s cubic-bezier(.3, 0, .2, 1); transform: rotate(var(--hr, 0deg)) translate(var(--hx, 0%), var(--hy, 0%)) scale(1, var(--hs, 1)); }
-.agz .bod { animation-duration: var(--agz-br, 4.2s); }
-/* moods, from a crying empty card to a full one */
-.agz.m0 { --lid: .14; --bf: -1.8; --bu: 1; --hr: 4deg; --hy: 9%; --hs: .94; --agz-br: 6.4s; }
-.agz.m1 { --lid: .1; --bf: -1.1; --bu: .6; --hr: 2deg; --hy: 3.5%; --hs: .98; --agz-br: 5.6s; }
-.agz.m2 { --lid: .12; --hr: 1deg; --hy: .6%; --agz-br: 4.6s; }
-.agz.m3 { --bu: .5; --hr: 2deg; --hy: -.8%; --agz-br: 3.8s; }
-.agz.m4 { --squint: 1; --lid: .3; --bu: .2; --bf: .3; --hr: 4deg; --hy: -1.6%; --agz-br: 3.2s; }
-.agz.m0 .pup, .agz.m1 .pup { transform: scale(1.01, .975); }   /* shoulders down */
-/* the light around him follows his mood: grey and dim when the card is empty, warm when it is full */
-.agz .dir { transition: filter 1.6s ease; }
-.agz .brow.l { transform: translateY(calc(var(--bu) * -11%)) rotate(calc(var(--bf) * 12deg)); } .agz .brow.r { transform: translateY(calc(var(--bu) * -11%)) rotate(calc(var(--bf) * -12deg)); }
-.agz.m0 .dir { filter: saturate(.55) brightness(.78); } .agz.m1 .dir { filter: saturate(.75) brightness(.88); }
-.agz.m4 .dir { filter: saturate(1.12) brightness(1.06) drop-shadow(0 0 18px rgba(255,214,150,.18)); }
-.agz.m4 .mouth { transform: translate(-50%, -50%) scale(.9, .7); transition: transform .6s ease; }
-.agz .mouth { transition: transform .6s ease; }
-/* a tear: clear, catching the light, it runs down the cheek from the inner corner of the eye */
-.agz .tear { position: absolute; left: 55.2%; top: 38.2%; width: 3.2%; height: 2.8%; border-radius: 50% 50% 50% 50% / 62% 62% 40% 40%; opacity: 0; pointer-events: none;
-  background: radial-gradient(40% 35% at 38% 32%, rgba(255,255,255,.95), rgba(200,225,255,.5) 45%, rgba(150,190,230,.25) 75%, rgba(120,160,210,.1)); box-shadow: 0 0 1px rgba(255,255,255,.4); }
-.agz .tear.r { left: 70.5%; top: 34%; }
-.agz.m0 .tear.w { opacity: .85; transform: scale(.8); transition: opacity 2s; }
 .pal .sh2 { position: absolute; bottom: -2%; left: 50%; width: calc(var(--ah) * .5); height: 5%; transform: translateX(-46%); border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.9), transparent); }
 /* at his feet: this week's Daily Consensus, folded, with the café ticket tucked in. The four regulars of its café stamp the ticket. */
-.paper { position: absolute; left: 50%; bottom: 1%; z-index: 1; width: calc(var(--ah) * .46); transform: translateX(-112%); text-decoration: none; color: #2a1f12; display: block; }
+.paper { position: absolute; left: 50%; bottom: 1%; z-index: 1; width: calc(var(--ah) * .46); transform: translateX(-138%); text-decoration: none; color: #2a1f12; display: block; }
 .paper .np { display: block; aspect-ratio: 1.55; background: linear-gradient(180deg, transparent 47%, rgba(60,40,20,.28) 50%, rgba(255,255,255,.12) 52%, transparent 56%), linear-gradient(170deg, #efe5cf, #d9cba8 60%, #c6b48b); border-radius: 2px; transform: perspective(500px) rotateX(58deg) rotateZ(10deg); transform-origin: 50% 100%; box-shadow: 0 18px 22px -10px rgba(0,0,0,.9); padding: 6% 8%; overflow: hidden; }
 .paper .np b { display: block; font: 400 clamp(11px, calc(var(--ah) * .052), 22px)/1 "UnifrakturMaguntia", "Old English Text MT", serif; text-align: center; color: #1b1813; border-bottom: 3px double #1b1813; padding-bottom: 5%; white-space: nowrap; }
 .paper .np i { display: block; height: 52%; margin-top: 7%; background: repeating-linear-gradient(#0000 0 6px, rgba(27,24,19,.35) 6px 7px), linear-gradient(90deg, #0000 48%, rgba(27,24,19,.3) 48% 50%, #0000 50%); background-size: 100% 100%; }
-.tk { position: absolute; left: 22%; top: 2%; display: block; transform: rotate(-7deg); background: linear-gradient(180deg, #efe3c4, #dccb9f); border-radius: 3px; padding: 5px 9px 6px; box-shadow: 0 8px 16px rgba(0,0,0,.6); transition: transform .3s;
+.tk { position: absolute; left: 30%; top: 26%; display: block; transform: rotate(-7deg); background: linear-gradient(180deg, #efe3c4, #dccb9f); border-radius: 3px; padding: 5px 9px 6px; box-shadow: 0 8px 16px rgba(0,0,0,.6); transition: transform .3s;
   -webkit-mask: radial-gradient(circle 4px at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 4px at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat; }
 .tk em { display: block; font: 400 9px/1 "Limelight", "Playfair Display", serif; font-style: normal; letter-spacing: .16em; text-transform: uppercase; text-align: center; border-bottom: 1px dashed rgba(42,31,18,.45); padding-bottom: 3px; margin-bottom: 4px; white-space: nowrap; }
 .tk span { display: flex; gap: 4px; justify-content: center; }
@@ -181,7 +153,6 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .say { margin: 6px 0 0; min-height: 3em; max-width: 30em; text-align: center; color: var(--text); font-size: 12.5px; line-height: 1.5; }
 .say a { color: var(--ok); text-decoration: none; border-bottom: 1px solid rgba(57,255,138,.35); white-space: nowrap; }
 .say a:hover { border-color: var(--ok); }
-@media (prefers-reduced-motion: reduce) { .agz .bod { animation: none; } .agz .hd, .agz .pup { transition: none; } }
 [hidden] { display: none !important; }
 @media (max-width: 1100px) {
   .main { grid-template-columns: minmax(0, 1fr); }
@@ -222,7 +193,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <div class="pal">
           <i class="sh2"></i>
           <a class="paper" id="paper" href="/gazette/walk/"><span class="np" aria-hidden="true"><b>The Daily Consensus</b><i></i></span><span class="tk" id="tk"><em>Café ticket</em><span id="tkS"></span></span></a>
-          <button class="agz m2" id="agz" type="button" aria-label="Agorzilla"><span class="dir"><span class="pup"><span class="lg b"><img src="../assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="lg l"><img src="../assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="lg r"><img src="../assets/rig/agz-body.webp" alt="" draggable="false"></span><span class="bod"><img class="trunk" src="../assets/rig/agz-body.webp" alt="" draggable="false"><span class="hd"><img src="../assets/rig/agz-head.webp" alt="" draggable="false"><span class="eye l"><img src="../assets/rig/agz-eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="../assets/rig/agz-eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><img class="brow l" src="../assets/rig/agz-brow-l.webp" alt="" draggable="false"><img class="brow r" src="../assets/rig/agz-brow-r.webp" alt="" draggable="false"><i class="mouth"><u></u></i><i class="tear"></i><i class="tear r"></i><i class="tear w"></i></span></span></span></span></button>
+          <button class="agz" id="agz" type="button" aria-label="Agorzilla"><span class="dir"><span class="mover"><span class="legs"><img src="../assets/rig/hi/feet.webp" alt="" width="760" height="1140" draggable="false"></span><span class="body"><span class="puppet"><img class="trunk" src="../assets/rig/hi/body.webp" alt="" width="760" height="1140" draggable="false"><span class="head"><span class="gaze"><img class="face" src="../assets/rig/hi/head.webp" alt="" width="760" height="1140" draggable="false"><span class="eye l"><img src="../assets/rig/hi/eye-l.webp" alt="" draggable="false"></span><span class="eye r"><img src="../assets/rig/hi/eye-r.webp" alt="" draggable="false"></span><i class="lid l"><b></b><s></s></i><i class="lid r"><b></b><s></s></i><img class="brow l" src="../assets/rig/hi/brow-l.webp" alt="" draggable="false"><img class="brow r" src="../assets/rig/hi/brow-r.webp" alt="" draggable="false"><i class="tear"></i><i class="tear r"></i></span></span></span></span></span></span></button>
         </div>
         <figcaption class="say" id="say" aria-live="polite"></figcaption>
       </figure>
@@ -254,6 +225,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
     </div>
   </main>
 </div>
+<script src="agz.js"></script>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -381,48 +353,8 @@ function fillList(c) {
   }));
 }
 
-/* ---------- Agorzilla beside the card: alive while idle (breathing, blinking, glancing at the card and at you), and his mood is the card's ---------- */
-const PAL = (() => {
-  const a = $("agz"), hd = a.querySelector(".hd"), pup = a.querySelector(".pup"), mouth = a.querySelector(".mouth"), tears = [...a.querySelectorAll(".tear")];
-  const RM = matchMedia("(prefers-reduced-motion: reduce)"), rnd = (lo, hi) => lo + Math.random() * (hi - lo), wait = ms => new Promise(r => setTimeout(r, ms));
-  const P = { m: 2, busy: false, near: 0, look: 0 };
-  const ok = () => !document.hidden && a.offsetParent;
-  /* he faces left (mirrored), so a look to the screen's left is a look ahead for him */
-  const eyes = (x, y) => { a.style.setProperty("--ex", -x + "%"); a.style.setProperty("--ey", y + ([14, 8][P.m] || 0) + "%"); };   // a sad look stays low
-  const blink = () => a.animate([{ "--blink": 0 }, { "--blink": 1, offset: .35 }, { "--blink": 1, offset: .45 }, { "--blink": 0 }], { duration: P.m < 2 ? 420 : 260 }).finished.catch(() => {});
-  const hop = h => pup.animate([{ transform: "none" }, { transform: "scale(1.05, .93)", offset: .18 }, { transform: `translateY(-${h}%) scale(.97, 1.05)`, offset: .45, easing: "ease-in" }, { transform: "scale(1.04, .95)", offset: .74 }, { transform: "none" }], { duration: 820 }).finished.catch(() => {});
-  /* a tear wells up in the corner of an eye, runs down the cheek and is gone */
-  const cry = () => { const t = tears[Math.random() < .6 ? 2 : 1]; return t.animate([{ opacity: 0, transform: "scale(.4)" }, { opacity: .9, transform: "scale(1)", offset: .18 }, { opacity: .9, transform: "translate(-5%, 90%) scale(1, 1.15)", offset: .4 }, { opacity: .75, transform: "translate(-15%, 280%) scale(.9, 1.25)", offset: .85 }, { opacity: 0, transform: "translate(-20%, 340%) scale(.6)" }], { duration: 3600, easing: "ease-in" }).finished.catch(() => {}); };
-  const sigh = () => pup.animate([{ transform: "scale(1.01, .975)" }, { transform: "scale(1.02, 1.01) translateY(-.6%)", offset: .4 }, { transform: "scale(1.015, .96)", offset: .75 }, { transform: "scale(1.01, .975)" }], { duration: 2600, easing: "ease-in-out" }).finished.catch(() => {});
-  const grin = ms => mouth.animate([{ transform: "translate(-50%, -50%) scale(.9, .7)" }, { transform: "translate(-50%, -50%) scale(1.1, 1.2)", offset: .3 }, { transform: "translate(-50%, -50%) scale(1.1, 1.2)", offset: .75 }, { transform: "translate(-50%, -50%) scale(.9, .7)" }], { duration: ms }).finished.catch(() => {});
-  const glanceCard = async () => { eyes(-9, 1); await wait(rnd(1200, 2200)); eyes(0, 0); };
-  async function idle() {
-    if (P.busy || RM.matches || !ok()) return; P.busy = true;
-    try {
-      const m = P.m, r = Math.random();
-      if (m === 0) { if (r < .65) await cry(); else if (r < .8) await sigh(); else await glanceCard(); }
-      else if (m === 1) { if (r < .25) await cry(); else if (r < .6) await sigh(); else await glanceCard(); }
-      else if (m === 2) await glanceCard();
-      else if (m === 3) { if (r < .35) { a.classList.add("perk"); await hop(5); a.classList.remove("perk"); } else await glanceCard(); }
-      else { if (r < .45) { grin(1800); await hop(9); await hop(6); } else if (r < .7) await grin(1400); else await glanceCard(); }
-    } finally { P.busy = false; }
-  }
-  (function loop() { setTimeout(() => { idle(); loop(); }, rnd(4500, 9000) * (P.m < 2 ? 1.2 : 1)); })();
-  (function blinkLoop() { setTimeout(async () => { if (ok() && !RM.matches) { await blink(); if (Math.random() < .2) { await wait(120); await blink(); } } blinkLoop(); }, rnd(2600, 6400)); })();
-  /* his eyes follow the pointer when it comes close; he stays where he is */
-  addEventListener("pointermove", e => {
-    if (RM.matches || !ok()) return;
-    const r = hd.getBoundingClientRect(), cx = r.left + r.width * .5, cy = r.top + r.height * .32, dx = e.clientX - cx, dy = e.clientY - cy, d = Math.hypot(dx, dy);
-    if (d > 520) { if (P.look) { P.look = 0; eyes(0, 0); } return; }
-    P.look = 1; eyes(Math.max(-9, Math.min(9, dx / 30)), Math.max(-6, Math.min(6, dy / 40)));
-  }, { passive: true });
-  /* a tap: he answers in his mood, with a hop when he is happy and a sniff when he is not */
-  a.addEventListener("click", async () => { if (P.busy || RM.matches) return; P.busy = true; try { if (P.m >= 3) { grin(1500); await hop(10); } else if (P.m >= 2) { a.classList.add("perk"); await hop(4); a.classList.remove("perk"); } else { await sigh(); if (P.m === 0) await cry(); } } finally { P.busy = false; } });
-  return {
-    set(m) { m = Math.max(0, Math.min(4, m)); if (m === P.m) return; const up = m > P.m; a.classList.remove("m" + P.m); a.classList.add("m" + m); P.m = m; eyes(0, 0); if (up && m >= 3 && !RM.matches) setTimeout(() => hop(m === 4 ? 9 : 5), 500); },
-    get m() { return P.m; },
-  };
-})();
+/* ---------- Agorzilla beside the card (card/agz.js): his mood is the card's ---------- */
+const PAL = window.CardAgz || { set() {} };
 
 /* how much is on the card: one step for each kind of thing done, the café counted by its stamps */
 const moodOf = c => { const n = !c ? 0 : (c.rules > 0) + (c.votes > 0) + (c.meals > 0) + STAMPS / 4; return n ? Math.max(1, Math.round(n)) : 0; };
