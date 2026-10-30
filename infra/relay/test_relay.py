@@ -22,7 +22,7 @@ with open(EVENTS, "w") as f:
 CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
 BOARD = os.path.join(os.path.dirname(EVENTS), "community.json")
 PEERS = os.path.join(os.path.dirname(EVENTS), "peers.json")
-os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", ROADMAP_PATH=EVENTS + ".roadmap", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 sys.path.insert(0, os.path.dirname(__file__))

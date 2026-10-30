@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Road to Mainnet</title>
+<meta name="description" content="What we found on the Tau Testnet Alpha that we think should be fixed before mainnet, each with proof and a path to a fix. Our view, not IDNI's plan. Comment on any item.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Road to mainnet, our view">
+<meta property="og:description" content="Problems we found on the Tau testnet that we think should be fixed before mainnet, each with proof and a path to a fix. We may be wrong: tell us.">
+<meta property="og:image" content="https://tauhud.com/assets/og/roadmap.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tauhud.com/roadmap/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/roadmap.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.hdr-right { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.off { color: #fff; border-color: rgba(255,255,255,.4); } .state.off i { background: var(--bad); }
+.top { display: grid; gap: 10px 24px; grid-template-columns: 1fr; align-items: end; }
+@media (min-width: 900px) { .top { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 30em; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 76ch; }
+.sub b { color: #fff; font-weight: 600; }
+/* IDNI's own words, from their monthly videos */
+.said { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.said li { border-left: 2px solid var(--hair); padding: 3px 10px; background: rgba(255,255,255,.025); }
+.said q { color: #fff; quotes: "“" "”"; }
+.said a { color: var(--dim); font-size: 12px; display: block; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 12px var(--display); letter-spacing: .1em; text-transform: uppercase; text-decoration: none; color: #fff; background: transparent; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 14px; cursor: pointer; white-space: nowrap; min-height: 34px; }
+.btn:hover { background: #fff; color: #000; border-color: #fff; }
+.btn.primary { background: var(--ok); color: #000; border-color: var(--ok); }
+.btn.primary:hover { background: #fff; border-color: #fff; }
+.btn.on { border-color: var(--ok); color: var(--ok); }
+.btn.on:hover { background: transparent; color: var(--ok); }
+.btn:disabled { opacity: .5; cursor: default; }
+.main { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); } .p-cm { grid-column: 1 / -1; } }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.badge { display: inline-block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.b-open { color: #fff; } .b-fixed, .b-partly { color: var(--ok); } .b-partly { border-style: dashed; } .b-review { color: var(--behind); } .b-idni, .b-unknown { color: var(--dim); }
+
+/* the list of items, grouped */
+.grp { margin: 10px 0 4px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.grp:first-child { margin-top: 0; }
+.grp small { letter-spacing: 0; text-transform: none; font: 11px var(--mono); }
+.items { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.items button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: baseline; gap: 4px 10px; width: 100%; cursor: pointer; padding: 7px 12px; border-left: 2px solid var(--hair); background: rgba(255,255,255,.025); border-radius: 0 6px 6px 0; min-height: 44px; }
+.items button:hover, .items button:focus-visible { background: rgba(255,255,255,.07); }
+.items li.sel button { background: rgba(255,255,255,.09); border-left-color: #fff; }
+.items .n { color: var(--dim); font: 600 12px var(--display); }
+.items b { color: #fff; font: 600 13px/1.35 var(--display); overflow-wrap: anywhere; }
+.items .c { color: var(--dim); font-size: 12px; white-space: nowrap; }
+.items .m { grid-column: 2 / -1; color: var(--dim); font-size: 12px; }
+.items .c { font-variant-numeric: tabular-nums; }
+
+/* one item in full */
+.det h3 { margin: 12px 0 3px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.det h3:first-of-type { margin-top: 6px; }
+.det .title { margin: 0; font: 600 18px/1.3 var(--display); color: #fff; }
+.det .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; color: var(--dim); font-size: 12px; margin-top: 4px; }
+.det p { margin: 0; max-width: 76ch; }
+.det ul, .det ol { margin: 0; padding-left: 24px; display: grid; gap: 3px; max-width: 76ch; }
+.det .proof a { color: #fff; }
+.det .proof span { color: var(--dim); }
+.det .fit { border-left: 2px solid var(--ok); padding: 4px 10px; background: rgba(57,255,138,.04); }
+.det .fit a { color: var(--dim); }
+.det .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+/* comments */
+.cm h3 { margin: 0 0 3px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.tabs button { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; cursor: pointer; min-height: 32px; }
+.tabs button[aria-pressed="true"] { color: #fff; border-color: #fff; }
+.clist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.clist li { padding: 6px 10px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); position: relative; }
+.clist .h { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 12px; color: var(--dim); }
+.clist .h b { font-weight: 600; }
+.clist .tx { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); padding-right: 64px; }
+.clist .tx a { color: #fff; }
+.clist .x { position: absolute; top: 4px; right: 6px; display: flex; gap: 2px; }
+.clist .x button { background: none; border: 0; color: var(--dim); cursor: pointer; font: 13px var(--mono); padding: 4px 6px; min-width: 28px; min-height: 28px; }
+.clist .x button:hover { color: #fff; }
+.clist li.gone { opacity: .4; }
+.empty { color: var(--dim); font-size: 13px; padding: 6px 2px; }
+form.say { display: grid; gap: 6px; margin-top: 10px; }
+form.say textarea { width: 100%; min-height: 64px; resize: vertical; background: #0c0c0d; color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 13px/1.5 var(--mono); }
+form.say textarea:focus { outline: 1px solid #fff; }
+form.say .row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; }
+form.say .who { color: var(--dim); font-size: 12px; }
+form.say .who b { color: var(--me, #fff); font-weight: 600; }
+.cnote { color: var(--dim); font-size: 12px; margin: 6px 0 0; min-height: 1.5em; }
+.rules { color: var(--dim); font-size: 12px; margin: 4px 0 0; max-width: 76ch; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+footer p { margin: 0; max-width: 120ch; }
+[hidden] { display: none !important; }
+
+/* one screen on laptops and up (landscape), laid out for 1600×820 and scaled, like the other pages */
+html.fit body { overflow: hidden; height: 100vh; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { max-width: none; zoom: var(--z); height: var(--fitH); display: flex; flex-direction: column; gap: 10px; padding: 6px 0 8px; }
+html.fit .wrap > * { flex: none; }
+html.fit .main { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, .95fr) minmax(0, 1.3fr) minmax(0, 1fr); }
+html.fit .p-cm { grid-column: auto; }
+html.fit .p-cm .clist { flex: 1 1 0; min-height: 0; overflow: auto; }
+html.fit .top { grid-template-columns: 1fr; gap: 8px; }
+html.fit .said { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+html.fit .sub { max-width: none; }
+html.fit .det h3 { margin-top: 8px; }
+html.fit .lead { max-width: none; }
+html.fit .det { font-size: 12.5px; line-height: 1.45; }
+html.fit .det .title { font-size: 17px; }
+html.fit .det ul, html.fit .det ol { gap: 1px; }
+html.fit .det .acts { margin-top: 8px; }
+html.fit .det .acts .btn { padding: 5px 12px; min-height: 0; }
+.clist { align-content: start; }
+html.fit .panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px 14px; }
+html.fit .panel > * { flex: none; }
+html.fit .panel > .scroll { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 4px; }
+html.fit .lead { font-size: 22px; margin: 0; }
+html.fit .sub { font-size: 12px; }
+html.fit header { padding: 4px 0 6px; }
+html.fit .said li { padding: 2px 10px; font-size: 12px; }
+html.fit .items button { min-height: 0; padding: 5px 12px; }
+html.fit .items .m { display: none; }
+html.fit .grp small { display: none; }
+html.fit .grp { margin: 6px 0 3px; }
+html.fit .items button { padding: 4px 12px; }
+html.fit .items { gap: 3px; }
+html.fit .items b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 700px) {
+  .items button { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .items .c { grid-column: 2; grid-row: 2; }
+  .items .badge { grid-column: 3; grid-row: 1; }
+  .items .m { grid-row: 3; }
+  .clist .tx { padding-right: 0; padding-top: 18px; }
+  .det .title { font-size: 16px; }
+}
+p.sub, .sub, .rules, .det p, .said li { max-width: 76ch; }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Road to mainnet</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state"><i></i><span id="stateText">Asking GitHub</span></span>
+    </div>
+  </header>
+  <nav class="tnav" data-page="roadmap" aria-label="Pages and tools"></nav>
+
+  <div class="top">
+    <div>
+      <p class="lead">What we think still stands between the testnet and mainnet.</p>
+      <p class="sub"><b>Our view, not IDNI’s plan, and we may be wrong.</b> Running a node for tauhud.com, we hit these problems on the Tau Testnet Alpha. Each one comes with its proof and a path to a fix that fits how IDNI works: small changes with a test, measured before a limit moves. There are no dates here; only IDNI can set those. Tell us what we got wrong below each item.</p>
+    </div>
+    <ul class="said" id="said"></ul>
+  </div>
+
+  <main class="main">
+    <section class="panel p-list">
+      <h2>The list <small>status live from GitHub · pick one</small></h2>
+      <div class="scroll" id="list"></div>
+    </section>
+    <section class="panel p-det">
+      <div class="scroll det" id="det" aria-live="polite"></div>
+    </section>
+    <section class="panel p-cm cm" id="cm" aria-label="Comments"></section>
+  </main>
+
+  <footer>
+    <p>Status from the public GitHub API, refreshed every 10 minutes. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box. <a href="/findings/">Findings</a> · <a href="/status/">Status</a> · <a href="/devpulse/">Build pulse</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRoadmap%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const IDNI = "https://github.com/IDNI/tau-testnet", OURS = "https://github.com/jimb000o/tau-command-hud", TT = "IDNI/tau-testnet";
+const SAMPLE = new URLSearchParams(location.search).has("sample");
+const CACHE_KEY = "tauhud-roadmap-v1", CACHE_MS = 10 * 60 * 1000;
+const yt = id => `https://www.youtube.com/watch?v=${id}`;
+const TALK = {
+  aug: { id: "S6ggPxF1o5g", t: "What is left before Tau Mainnet · Aug 2026 Q&A" },
+  augDev: { id: "1LHKdLY-4Ac", t: "Change Consensus without Redeploying Nodes · Aug 2026 Dev" },
+  sep: { id: "Qfpfaj-Q75I", t: "When will Tau Be Demo-Ready · Sept 2026 Q&A" },
+  oct: { id: "1bhpCoBY4zI", t: "Q&A: AI Agents, Agoras Fees & Testnet Rules · Oct 2026" },
+  octDev: { id: "ZlvC1YcJDew", t: "Dev: Co-Signed Transfers & Faster Rules · Oct 2026" },
+};
+const talk = k => `<a href="${yt(TALK[k].id)}" target="_blank" rel="noopener" translate="no">${TALK[k].t} ↗</a>`;   // video titles stay as published
+
+// What IDNI said in public about the way to mainnet; shown on top so our list is read against theirs.
+const SAID = [
+  ["Basically, it's only tables and optimizations and making it easier to use, and then the Tau language is ready for mainnet.", "aug", "Ohad Asor"],
+  ["Right now, we are in the testing phase. We are currently fixing some bugs.", "oct", "IDNI, answering a request for a roadmap"],
+  ["Testnet is open for everyone to test and post their findings.", "oct", "Andrei"],
+];
+
+/* The items. refs: IDNI issues or pull requests whose live state sets the badge (all closed or merged = fixed).
+   idni: "partly" when IDNI fixed part of it and the issue is still open. Proof links point at what anyone can check. */
+const ITEMS = [
+  { id: "rule-places", must: true, refs: [85], title: "Only two personal rules for the whole network",
+    brief: "Two accounts can hold a wallet rule at a time; the product is a wallet where everyone writes their own.",
+    problem: "The testnet allows two accounts at a time to hold a personal rule (a spending limit, a co-signer, an allow list). Two genesis accounts hold both places, so nobody else can try one on the live chain.",
+    why: "IDNI’s own product focus is a wallet where people write rules for their own money. On a mainnet that needs a rule per user, not two for everyone.",
+    proof: [
+      [`${IDNI}/blob/main/consensus/approvals.py`, "MAX_TIER_AUTHORS = 2", "in consensus/approvals.py"],
+      [`${IDNI}/blob/main/tests/test_approval_slots_native.py`, "IDNI’s measurement", "two authors build in time, four take about 110 s against a 60 s limit"],
+      ["/wallet/", "The Tau HUD wallet", "shows both places taken"],
+      [`${IDNI}/issues/85`, "IDNI issue #85", "our request to free one place for testers"],
+    ],
+    path: [
+      "Measure again with the faster Tau engine: one common rule went from 68 s to 2.4 s to load in October.",
+      "Rebuild only what changed: when one account changes its rule, the others need not be built again.",
+      "Raise the limit one step at a time, each step with the same measured test that set it to two.",
+    ],
+    fit: "IDNI set the limit from a measurement, “not from taste”. The path keeps that method and only asks for the next measurement.",
+    talks: ["sep", "octDev"] },
+  { id: "validators", must: true, refs: [80, 83], title: "One validator makes every block",
+    brief: "Every block on the testnet comes from one IDNI key; nobody outside has produced one yet.",
+    problem: "Every block on the public testnet is sealed by one IDNI validator. Votes from any account count, but block production has never been shared with an outside node.",
+    why: "A mainnet cannot rest on one key. What happens when a validator is offline, or two disagree, has to be seen on a public chain first.",
+    proof: [
+      ["/account/", "Validator profile on Tau HUD", "what it sealed and when"],
+      ["/status/", "Status page", "pauses of the one block producer show up as stalls"],
+      [`${IDNI}/issues/80`, "IDNI issue #80", "our request to add the Tau HUD node as a validator"],
+    ],
+    path: [
+      "Admit two or three outside validators on the testnet; ours is ready and waits with mining off.",
+      "Switch one off on purpose and show that blocks keep coming.",
+      "Run the stake-based eligibility IDNI built in August on the live chain once.",
+    ],
+    fit: "IDNI already tests with three validator agents of its own and built the switch to stake. The path moves both onto the public chain.",
+    talks: ["augDev", "oct"] },
+  { id: "sync", must: true, refs: [78], idni: "partly", title: "Two sync bugs stop fresh nodes",
+    brief: "Header sync reads one 64 KB frame and stops after 2,000 headers; our node patches both.",
+    problem: "A new node fetching the chain reads only one 64 KB frame of a reply and never asks past the first 2,000 headers. IDNI fixed the wrong genesis from the same report within a day; the two sync bugs are still in IDNI’s code.",
+    why: "Every new operator, exchange or explorer starts with a sync. On a long chain these bugs stop them for good.",
+    proof: [
+      [`${IDNI}/issues/78`, "IDNI issue #78", "the report, genesis part fixed in 539d1e2"],
+      [`${OURS}/tree/main/infra/node/patches`, "Our node patches", "read-until-eof and sync-paginate"],
+    ],
+    path: [
+      "Send each patch to IDNI as its own small pull request with a test that fails before and passes after.",
+      "Add a test that syncs more than 2,000 blocks from a second node.",
+    ],
+    fit: "IDNI credits merged pull requests and issues that name the cause. In October it merged four from one community member.",
+    talks: ["octDev"] },
+  { id: "reconnect", must: true, refs: [86], title: "A node that loses every peer stays alone",
+    brief: "After the 29 October outage, nodes stayed at 0 peers until restarted by hand.",
+    problem: "On 29 October IDNI’s bootnode refused new peers for about three hours. Nodes that lost it never dialed it again and kept an old chain until someone restarted them.",
+    why: "On a mainnet any node will lose its peers now and then. It has to find the network again by itself.",
+    proof: [
+      ["/status/", "Status page", "the outage of 29 October"],
+      [`${IDNI}/pull/86`, "Our pull request #86", "re-dial the bootstrap peers every minute while alone, with four tests"],
+    ],
+    path: [
+      "IDNI fixed the cause the same day: the overflow after 1,024 failed dials, and a node with a dead network now exits so it restarts.",
+      "Merge #86 or an IDNI version of it for the other half: coming back after such an outage.",
+      "Add one test with two nodes where the bootnode goes away and returns.",
+    ],
+    fit: "IDNI hardens the network through real multi-node testing; this adds one more case to it.",
+    talks: ["augDev", "octDev"] },
+  { id: "mempool", must: true, refs: [81], title: "Sealed transactions stay “pending”",
+    brief: "Transactions already in a block stay in the mempool for up to an hour.",
+    problem: "A fully synced node keeps transactions as pending after the very same transactions are sealed in a block, until they expire after 60 minutes. gettxstatus answers “queued” for them.",
+    why: "Wallets and explorers would tell people a confirmed payment is still waiting, and a payment could look like it went through twice.",
+    proof: [
+      [`${IDNI}/issues/81`, "IDNI issue #81", "the report with the RPC replies"],
+      ["/findings/", "Findings page", "our bot notices it on the live chain"],
+    ],
+    path: [
+      "When a block is applied, drop its transactions from the mempool; put them back if a reorg removes the block.",
+      "One test: send, seal, and gettxstatus says sealed.",
+    ],
+    fit: "In October IDNI separated trial runs from the official chain state and removed a whole class of state bugs. This sits right next to that work.",
+    talks: ["octDev"] },
+  { id: "upgrades", must: true, refs: [82], title: "Restarts from block 0 come unannounced",
+    brief: "The testnet has restarted on the same genesis without notice; a mainnet cannot start over.",
+    problem: "The testnet has started over from block 0 on the same genesis, without a notice and without anything a node can check. Nodes that missed it kept a dead chain.",
+    why: "A mainnet cannot start over. The way to upgrade a running chain without a restart is best practised on the testnet first.",
+    proof: [
+      ["/stats/", "Stats page", "chain restarts our relay noticed"],
+      [`${IDNI}/issues/82`, "IDNI issue #82", "the join profile gaps, restarts included"],
+    ],
+    path: [
+      "Announce each restart and give it a number nodes exchange when they connect, so a node knows it is on an old chain.",
+      "Practise one upgrade on the testnet that keeps the chain: new node version, same blocks.",
+    ],
+    fit: "Tau changes its own rules by vote without new node versions. An upgrade that keeps the chain is the same idea for the node software.",
+    talks: ["augDev"] },
+  { id: "join", must: false, refs: [82, 79], idni: "partly", title: "Joining as a new operator hits walls",
+    brief: "Missing settings in the join profile and a build that needs more memory than a small server has.",
+    problem: "A node on default settings stops at the first vote from a non-validator, advertises the address 0.0.0.0 to its peers, and the build from a clean checkout needs more than 4 GB of memory.",
+    why: "Many independent nodes are what make a mainnet. Each wall here loses some of the people who would run one.",
+    proof: [
+      [`${IDNI}/issues/82`, "IDNI issue #82", "join profile gaps"],
+      [`${IDNI}/issues/79`, "IDNI issue #79", "build failures; three of four fixed by IDNI"],
+      ["/kit/", "Our node operator kit", "a node in one command, with the workarounds"],
+    ],
+    path: [
+      "Put open admission and the public address into the join profile and the example settings.",
+      "Pick the number of build jobs from the free memory, or publish a ready-built image.",
+    ],
+    fit: "IDNI already fixed most of the build report. The rest is configuration and documentation, the smallest kind of change.",
+    talks: ["octDev"] },
+  { id: "governance", must: false, refs: [83, 84], title: "Rule changes are rarely seen on the live chain",
+    brief: "Three proposals so far, two changing nothing, each 3 to 4 days to apply; no live consensus switch yet.",
+    problem: "The live chain has seen three rule proposals, two of them changing nothing, each taking 3 to 4 days to apply. The consensus switch IDNI showed in its demos has not run on the public chain.",
+    why: "Changing the rules by agreement is what makes Tau different. A mainnet should go live after the public has watched it work many times.",
+    proof: [
+      ["/proposals/", "Proposals page", "every rule change from proposal to law"],
+      [`${IDNI}/issues/83`, "IDNI issue #83", "ideas to make governance visible"],
+      [`${IDNI}/issues/84`, "IDNI issue #84", "request for a live consensus switch"],
+    ],
+    path: [
+      "A small practice change on the testnet every week, with a shorter activation time.",
+      "One consensus switch on the live chain, announced a day ahead so people can watch.",
+    ],
+    fit: "IDNI wants to show outcomes that appeal to people at once. A rule changing live, watched by visitors, is one.",
+    talks: ["sep", "augDev"] },
+  { id: "tests-off", must: false, refs: [88], title: "Two time-rule tests are switched off",
+    brief: "Two tests of time-based rules are skipped in IDNI’s checks; on real Tau they pass.",
+    problem: "Two tests of time-based rules (a temporary spending limit, and a co-signer vault that opens after a date) are switched off in IDNI’s checks. On real Tau they pass.",
+    why: "Time-based rules are what the wallet offers. A test that is switched off cannot catch a change that breaks them.",
+    proof: [[`${IDNI}/pull/88`, "Our pull request #88", "switches both back on, with a skip when real Tau is missing"]],
+    path: ["Merge #88, or run the two tests in the build that has real Tau."],
+    fit: "A pull request with the change and the proof, the form IDNI asks for.",
+    talks: ["octDev"] },
+  { id: "language", must: false, refs: [], title: "IDNI’s own list: tables, speed, ease of use",
+    brief: "What IDNI says is left for the Tau language itself; we only follow it.",
+    problem: "Asked what is left before mainnet, Ohad Asor named tables, optimisations and making the language easier to use. In October the team said the next big step is merging the development branch into the main branch before the next release.",
+    why: "This is IDNI’s list, not a finding of ours. We put it here so ours is read next to it.",
+    proof: [
+      [yt(TALK.aug.id), "Aug 2026 Q&A", "the answer on what is left"],
+      [yt(TALK.octDev.id), "Oct 2026 Dev update", "the development branch and the next release"],
+      ["/devpulse/", "Build pulse", "how the code moves, live"],
+    ],
+    path: [
+      "Ours to offer: run each new release in our node image and publish load and check times for the rules people use.",
+    ],
+    fit: "Timings from a node outside IDNI help decide which optimisation matters most.",
+    talks: ["aug", "octDev"] },
+];
+ITEMS.forEach((it, i) => { it.no = i + 1; });
+
+/* ---------------- one screen on wide displays ---------------- */
+function fit() {
+  const w = innerWidth, h = innerHeight;
+  const on = w >= 1500 && h >= 800 && w / h >= 1.3;   // three panels need room; smaller screens scroll the page
+  const z = on ? Math.max(1, Math.min(2, w / 1600, h / 820)) : 1;
+  const root = document.documentElement;
+  root.classList.toggle("fit", on);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+}
+addEventListener("resize", fit); fit();
+
+/* ---------------- GitHub ---------------- */
+function cached() {
+  try { const c = JSON.parse(localStorage.getItem(CACHE_KEY)); if (c && Date.now() - c.at < CACHE_MS) return c.issues; } catch {}
+  return null;
+}
+function keep(issues) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), issues })); } catch {} }
+async function fetchIssues() {
+  const nums = [...new Set(ITEMS.flatMap(it => it.refs))];
+  if (SAMPLE) return Object.fromEntries(nums.map(n => [n, { state: "open", pr: n === 86 || n === 88 }]));
+  const hit = cached(); if (hit) return hit;
+  const out = {};
+  await Promise.all(nums.map(async n => {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${TT}/issues/${n}`, { headers: { Accept: "application/vnd.github+json" } });
+      if (!r.ok) return;
+      const j = await r.json();
+      out[n] = { state: j.state, reason: j.state_reason, pr: !!j.pull_request, merged: j.pull_request ? !!j.pull_request.merged_at : false };
+    } catch {}
+  }));
+  if (Object.keys(out).length === nums.length) keep(out);
+  return out;
+}
+let ISSUES = {};
+function status(it) {
+  if (!it.refs.length) return ["idni", "IDNI’s list"];
+  const got = it.refs.map(n => ISSUES[n]).filter(Boolean);
+  if (!got.length) return it.idni === "partly" ? ["partly", "Partly fixed"] : ["unknown", "Status unknown"];
+  const done = got.every(i => i.state === "closed" && (!i.pr || i.merged) && i.reason !== "not_planned");
+  if (done && got.length === it.refs.length) return ["fixed", "Fixed"];
+  if (it.idni === "partly" || got.some(i => i.state === "closed" && (!i.pr || i.merged))) return ["partly", "Partly fixed"];
+  if (got.some(i => i.pr && i.state === "open")) return ["review", "Fix in review"];
+  return ["open", "Open"];
+}
+
+/* ---------------- comments: the relay socket, same name and moderation as the troll box ---------------- */
+const RELAY = window.TAU_CHAT_RELAY || "node.tauhud.com", SOCKET = /^wss?:\/\//.test(RELAY) ? RELAY : `wss://${RELAY}`;
+const COLOURS = ["#8fa3d9", "#b39ddb", "#d9a3c4", "#d9c49a", "#8fc7d9", "#a7a0d9", "#c4a3d9", "#c8c8d0"];
+const ME = keep => (window.TauSim && TauSim.me ? TauSim.me(keep) : { token: "0".repeat(32), a: 0, b: 0, c: 7, name: "A visitor" });
+const nameOf = c => (window.TauSim && TauSim.nameOf ? TauSim.nameOf(c.a, c.b) : c.name);
+const MINE_KEY = "tauhud-roadmap-mine", AGREED_KEY = "tauhud-roadmap-agreed";
+const load = k => { try { return new Set(JSON.parse(localStorage.getItem(k) || "[]")); } catch { return new Set(); } };
+const save = (k, s) => { try { localStorage.setItem(k, JSON.stringify([...s])); } catch {} };
+const mine = load(MINE_KEY), agreed = load(AGREED_KEY);
+let COUNTS = { comments: {}, agree: {} }, THREAD = null, ws = null, wait = 3000, retry = null, online = false, enabled = true, part = "all";
+const sample = () => {
+  const now = Date.now() / 1000;
+  return { "rule-places": [
+    { id: 1, part: "problem", ts: now - 7200, a: 3, b: 5, c: 2, text: "Agreed. Two places is fine for a demo, but nobody can build a wallet product on it." },
+    { id: 2, part: "path", ts: now - 3600, a: 9, b: 1, c: 4, text: "Could each account's rule be checked on its own instead of one big combined spec? See https://github.com/IDNI/tau-testnet/issues/85" },
+  ] };
+};
+function connect() {
+  if (ws || SAMPLE) return;
+  try { ws = new WebSocket(SOCKET); } catch (e) { ws = null; online = false; renderComments(); return; }
+  const me = ws;
+  me.onopen = () => { wait = 3000; me.send("hello version=1"); me.send("roadmap join"); if (SEL) me.send(`roadmap get ${SEL.id}`); };
+  me.onmessage = ev => {
+    let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
+    if (!m || m.command !== "roadmap") return;
+    if (m.status !== "ok") { note((m.error && m.error.message) || "Not sent."); $("send") && ($("send").disabled = false); return; }
+    const d = m.data || {};
+    if (d.comments && !d.item) { COUNTS = d; enabled = d.enabled !== false; online = true; renderList(); renderComments(); }
+    if (d.item && SEL && d.item === SEL.id) { THREAD = d.comments; COUNTS.agree[d.item] = d.agree; online = true; renderComments(); }
+    for (const c of d.new || []) arrive(c);
+    if (d.sent) { mine.add(d.sent.id); save(MINE_KEY, mine); arrive(d.sent); const ta = $("say"); if (ta) ta.value = ""; $("send").disabled = false; note("Thanks, it is posted. You can delete it with ✕ from this browser."); }
+    for (const id of d.hide || []) drop(id);
+    if (d.deleted) drop(d.deleted);
+    if (d.agree && !d.agreed) { Object.assign(COUNTS.agree, d.agree); renderList(); agreeBtn(); }
+    if (d.agreed) { COUNTS.agree[d.agreed] = d.agree; agreed.add(d.agreed); save(AGREED_KEY, agreed); renderList(); agreeBtn(); }
+  };
+  me.onclose = me.onerror = () => {
+    if (me._dead) return; me._dead = true;
+    if (ws === me) ws = null;
+    online = false; renderComments();
+    if (!document.hidden) { retry = setTimeout(connect, wait); wait = Math.min(60000, wait * 2); }
+  };
+}
+function arrive(c) {
+  COUNTS.comments[c.item] = (COUNTS.comments[c.item] || 0) + (THREAD && THREAD.some(x => x.id === c.id) ? 0 : 1);
+  if (SEL && c.item === SEL.id && THREAD && !THREAD.some(x => x.id === c.id)) THREAD.push(c);
+  renderList(); renderComments();
+}
+function drop(id) {
+  if (!THREAD) return;
+  const c = THREAD.find(x => x.id === Number(id));
+  if (!c) return;
+  THREAD = THREAD.filter(x => x !== c);
+  COUNTS.comments[c.item] = Math.max(0, (COUNTS.comments[c.item] || 1) - 1);
+  renderList(); renderComments();
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !ws) connect(); });
+
+/* ---------------- render ---------------- */
+let SEL = null;
+const PARTS = { problem: "On the problem", path: "On the path", "-": "General" };
+const nC = it => (COUNTS.comments || {})[it.id] || 0, nA = it => (COUNTS.agree || {})[it.id] || 0;
+function renderSaid() {
+  $("said").innerHTML = SAID.map(([q, k, who]) => `<li><q>${esc(q)}</q><a href="${yt(TALK[k].id)}" target="_blank" rel="noopener"><span>${esc(who)}</span> · <span translate="no">${esc(TALK[k].t)} ↗</span></a></li>`).join("");
+}
+function renderList() {
+  const row = it => {
+    const [cls, label] = status(it);
+    return `<li class="${SEL === it ? "sel" : ""}"><button type="button" data-id="${it.id}" title="${esc(it.brief)}">
+      <span class="n">${it.no}</span><b>${esc(it.title)}</b><span class="c" title="${nC(it)} comments · ${nA(it)} see it too">✎ ${nC(it)} · ✓ ${nA(it)}</span><span class="badge b-${cls}">${label}</span>
+      <span class="m">${esc(it.brief)}</span></button></li>`;
+  };
+  $("list").innerHTML = `<p class="grp">Must be fixed <small>before a mainnet can run safely</small></p><ul class="items">${ITEMS.filter(i => i.must).map(row).join("")}</ul>
+    <p class="grp">Should be fixed <small>makes a mainnet easier to join and to trust</small></p><ul class="items">${ITEMS.filter(i => !i.must).map(row).join("")}</ul>`;
+}
+$("list").addEventListener("click", e => {
+  const b = e.target.closest("button[data-id]"); if (!b) return;
+  pick(ITEMS.find(i => i.id === b.dataset.id), true);
+});
+function pick(it, user) {
+  if (!it) return;
+  SEL = it; THREAD = SAMPLE ? (sample()[it.id] || []) : null; part = "all";
+  try { history.replaceState(history.state, "", `#${it.id}`); } catch {}
+  renderList(); renderDetail();
+  if (ws && ws.readyState === 1) ws.send(`roadmap get ${it.id}`);
+  if (user && !document.documentElement.classList.contains("fit")) $("det").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function renderDetail() {
+  const it = SEL, [cls, label] = status(it);
+  const refs = it.refs.map(n => `<a href="${IDNI}/${n === 86 || n === 88 ? "pull" : "issues"}/${n}" target="_blank" rel="noopener">#${n}</a>`).join(" ");
+  $("det").innerHTML = `
+    <p class="title">${it.no}. ${esc(it.title)}</p>
+    <div class="meta"><span class="badge b-${cls}">${label}</span><span>${it.must ? "Must be fixed" : "Should be fixed"}</span>${refs ? `<span>At IDNI: ${refs}</span>` : ""}</div>
+    <h3>The problem</h3><p>${esc(it.problem)}</p>
+    <h3>Why it matters for mainnet</h3><p>${esc(it.why)}</p>
+    <h3>Proof</h3><ul class="proof">${it.proof.map(([h, t, d]) => `<li><a href="${h}"${/^https?:/.test(h) ? ' target="_blank" rel="noopener"' : ""}>${esc(t)}</a> <span>${esc(d)}</span></li>`).join("")}</ul>
+    <h3>A path to a fix</h3><ol>${it.path.map(p => `<li>${esc(p)}</li>`).join("")}</ol>
+    <h3>How it fits IDNI’s way</h3><div class="fit"><p>${esc(it.fit)}</p>${it.talks.map(k => `<p>${talk(k)}</p>`).join("")}</div>
+    <div class="acts"><button class="btn" type="button" id="agree"></button><button class="btn" type="button" id="share">Copy the link</button></div>
+`;
+  $("cm").innerHTML = `      <h3>What do you think?</h3>
+      <p class="rules">Wrong, missing, or a better path? Say it here. Be kind and specific. No prices or trading; links only to GitHub, tauhud.com or YouTube. Three reports hide a comment.</p>
+      <div class="tabs" id="tabs"></div>
+      <p class="empty" id="cempty" hidden></p>
+      <ol class="clist" id="clist"></ol>
+      <form class="say" id="form">
+        <textarea id="say" maxlength="600" placeholder="Your view on this item…" aria-label="Your comment"></textarea>
+        <div class="row"><span class="who" id="who"></span><span><select id="part" aria-label="About" class="btn"><option value="-">General</option><option value="problem">On the problem</option><option value="path">On the path</option></select> <button class="btn primary" id="send" type="submit">Post</button></span></div>
+        <p class="cnote" id="cnote"></p>
+      </form>
+`;
+  $("det").scrollTop = 0;
+  agreeBtn(); renderComments(); showWho();
+  $("share").onclick = () => { const u = location.href; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => { $("share").textContent = "Link copied"; }, () => { prompt("Copy the link", u); }); };
+  $("agree").onclick = () => {
+    if (agreed.has(it.id) || !ws || ws.readyState !== 1) return;
+    ws.send(`roadmap agree ${it.id} ${ME(true).token}`);
+  };
+  $("form").onsubmit = e => {
+    e.preventDefault();
+    const text = $("say").value.trim();
+    if (!text) return;
+    if (!ws || ws.readyState !== 1) { note("Comments can’t reach the relay right now."); return; }
+    const m = ME(true); showWho();
+    $("send").disabled = true;
+    ws.send(`roadmap say ${m.token} ${m.a} ${m.b} ${m.c} ${it.id} ${$("part").value} ${encodeURIComponent(text)}`);
+    setTimeout(() => { if ($("send")) $("send").disabled = false; }, 5000);
+  };
+}
+function agreeBtn() {
+  const b = $("agree"); if (!b || !SEL) return;
+  const on = agreed.has(SEL.id);
+  b.className = "btn" + (on ? " on" : "");
+  b.textContent = on ? `You see it too · ${nA(SEL)}` : `I see this too · ${nA(SEL)}`;
+  b.disabled = !on && !online && !SAMPLE;
+}
+function showWho() { const w = $("who"); if (!w) return; const m = ME(false); w.innerHTML = `You write as <b translate="no">${esc(nameOf(m))}</b>`; w.style.setProperty("--me", COLOURS[m.c] || COLOURS[7]); }
+function note(s) { const n = $("cnote"); if (n) n.textContent = s || ""; }
+const linkify = s => esc(s).replace(/https?:\/\/(?:www\.)?(?:github\.com|tauhud\.com|node\.tauhud\.com|agorzilla\.com|youtube\.com|youtu\.be)(?:\/[^\s<>"']*)?/gi, u => `<a href="${u}" target="_blank" rel="noopener nofollow ugc">${u}</a>`);
+const when = ts => { const s = Date.now() / 1000 - ts; return s < 3600 ? `${Math.max(1, Math.round(s / 60))} min ago` : s < 172800 ? `${Math.round(s / 3600)} h ago` : new Date(ts * 1000).toISOString().slice(0, 10); };
+function renderComments() {
+  if (!SEL || !$("clist")) return;
+  const all = THREAD || [];
+  const n = k => all.filter(c => k === "all" || c.part === k).length;
+  $("tabs").innerHTML = [["all", "All"], ["problem", "On the problem"], ["path", "On the path"]].map(([k, t]) => `<button type="button" data-k="${k}" aria-pressed="${part === k}">${t} · ${n(k)}</button>`).join("");
+  $("tabs").onclick = e => { const b = e.target.closest("button[data-k]"); if (b) { part = b.dataset.k; renderComments(); } };
+  const shown = all.filter(c => part === "all" || c.part === part);
+  $("clist").innerHTML = shown.map(c => `<li data-id="${c.id}"><div class="h"><b translate="no" style="color:${COLOURS[c.c] || COLOURS[7]}">${esc(nameOf(c))}</b><span>${PARTS[c.part] || ""}</span><span>${when(c.ts)}</span></div>
+    <p class="tx" translate="no">${linkify(c.text)}</p><span class="x">${mine.has(c.id) ? `<button type="button" data-del="${c.id}" title="Delete your comment" aria-label="Delete your comment">✕</button>` : `<button type="button" data-rep="${c.id}" title="Report" aria-label="Report">⚑</button>`}</span></li>`).join("");
+  const e = $("cempty");
+  e.hidden = shown.length > 0;
+  e.textContent = THREAD === null ? (online ? "Loading comments…" : "Comments can’t reach the relay right now; reading the list works.") : all.length ? "Nothing in this part yet." : "No comments yet. Be the first to say what you think.";
+  $("form").hidden = !enabled;
+  if (!enabled) e.textContent = "Comments are closed right now; reading still works.", e.hidden = false;
+}
+document.addEventListener("click", e => {
+  const d = e.target.closest("[data-del]"), r = e.target.closest("[data-rep]");
+  if (!(d || r) || !ws || ws.readyState !== 1) return;
+  const id = (d || r).dataset[d ? "del" : "rep"];
+  ws.send(`roadmap ${d ? "delete" : "report"} ${id} ${ME(false).token}`);
+  if (r) { r.closest("li").classList.add("gone"); r.disabled = true; r.title = "Reported"; }
+});
+
+async function tick() {
+  ISSUES = await fetchIssues();
+  const got = Object.keys(ISSUES).length;
+  $("state").className = "state " + (got ? "live" : "off");
+  $("stateText").textContent = got ? (SAMPLE ? "Sample data" : "Live from GitHub") : "GitHub unreachable";
+  renderList();
+  const b = SEL && $("det").querySelector(".meta .badge");   // only the badge: a comment being typed stays
+  if (b) { const [cls, label] = status(SEL); b.className = `badge b-${cls}`; b.textContent = label; }
+}
+if (SAMPLE) { COUNTS = { comments: { "rule-places": 2, validators: 1 }, agree: { "rule-places": 14, validators: 9, sync: 3 } }; online = true; }
+renderSaid();
+pick(ITEMS.find(i => i.id === location.hash.slice(1)) || ITEMS[0]);
+tick();
+setInterval(tick, CACHE_MS);
+connect();
+</script>
+</body>
+</html>

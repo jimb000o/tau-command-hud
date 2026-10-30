@@ -59,6 +59,7 @@ services:
       CHAT_AI_KEY: ${CHAT_AI_KEY:-}   # Anthropic API key for the troll box's AI moderator (relay/chatai.py); empty: off
       CHAT_AI_MODEL: ${CHAT_AI_MODEL:-claude-haiku-5-5}
       CHAT_AI_DAILY: ${CHAT_AI_DAILY:-3000}   # at most this many AI checks per UTC day
+      ROADMAP_ENABLED: ${ROADMAP_ENABLED:-1}   # comments on tauhud.com/roadmap/ (relay/roadmap.py, moderated with the troll box); 0 closes them, reading stays
     volumes:
       # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH),
       # availability history for /uptime (UPTIME_PATH)

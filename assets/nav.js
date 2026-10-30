@@ -26,6 +26,7 @@
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
     devpulse:   { t: "Build pulse", d: "How Tau's code is moving: newest commits, which parts change, the version our node runs", i: "⌥", h: "devpulse/" },
     findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
+    roadmap:    { t: "Road to mainnet", d: "What we think must be fixed before mainnet, with proof and a path; our view, open for comments", i: "⇢", h: "roadmap/" },
     status:     { t: "Status", d: "Uptime, outages, sync gaps and restarts of the community node", i: "◍", h: "status/" },
     meta:       { t: "Tau HUD in numbers", d: "How many people use this site: visitors per day, growth and the most visited pages", i: "∑", h: "meta/" },
     developers: { t: "Developers", d: "Widgets, badges and a free JSON API for your own site", i: "{}", h: "developers/" },
@@ -48,9 +49,9 @@
     { k: "explore", t: "Explore", items: ["explorer", "proposals", "account", "nodes", "stats", "history", "devpulse"], tab: "≋" },
     { k: "learn", t: "Learn", items: ["tour", "story", "gazette", "chronicle", "tau"], tab: "▸" },
     { k: "play", t: "Playground", items: ["playground", "seat", "missions", "whatif", "vote", "wallet", "agorzilla"], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, items: ["about", "share", "status", "findings", "meta", "developers", "press", "legal"], tab: "i" },
+    { k: "about", t: "About", util: true, items: ["about", "share", "status", "findings", "roadmap", "meta", "developers", "press", "legal"], tab: "i" },
   ];
-  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", status: "about", meta: "about", legal: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", whatif: "play" };
+  const SECTION_OF = { hud: "hud", explorer: "explore", stats: "explore", devpulse: "explore", nodes: "explore", history: "explore", account: "explore", proposals: "explore", story: "learn", gazette: "learn", chronicle: "learn", findings: "about", roadmap: "about", status: "about", meta: "about", legal: "about", developers: "about", press: "about", playground: "play", missions: "play", vote: "play", wallet: "play", whatif: "play" };
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken? Opens the feedback form right here. Ideas with the most agreement get built first.",
@@ -212,7 +213,7 @@
     catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
     const vers = siteVersions(list); SITE_VER = vers.filter(Boolean).pop() || SITE_VER;
     const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
-    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Wallet: "wallet/", Findings: "findings/", Status: "status/", Stats: "stats/", "Build pulse": "devpulse/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "playground/#tour" };
+    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Wallet: "wallet/", Findings: "findings/", Roadmap: "roadmap/", Status: "status/", Stats: "stats/", "Build pulse": "devpulse/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "playground/#tour" };
     let day = null, html = "";
     for (const e of order) {
       const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);

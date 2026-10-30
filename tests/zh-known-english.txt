@@ -11,6 +11,8 @@ sees {n} nodes on the network. {n} nodes
 → PoS?
 
 # Stay English on purpose: names, code, file names, web addresses, file formats, protocol lines.
+Ohad Asor
+Andrei
 CAFÉ
 COFFEE · 5¢
 MARKET STREET RAILWAY

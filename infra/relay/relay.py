@@ -36,6 +36,7 @@ from websockets.http11 import Request, Response
 
 from chat import Chat, parse_say
 from chatai import ChatAI
+from roadmap import Roadmap, parse_say as parse_road_say
 from simpredict import SimPredict
 from simprops import SimProps
 from simvotes import SimVotes, name_of
@@ -354,6 +355,9 @@ class Relay:
         self.chatai = ChatAI()   # optional second look by Claude (chatai.py); off without CHAT_AI_KEY
         self.chat_checks: set[asyncio.Task] = set()
         self.chat.on_hide = lambda mid: broadcast(self.chat_subs, envelope_ok("chat", {"hide": [mid]}))
+        self.roadmap = Roadmap(self.chat)   # comments on the road-to-mainnet page, same moderation (roadmap.py)
+        self.road_subs: set[ServerConnection] = set()
+        self.roadmap.on_hide = lambda cid: broadcast(self.road_subs, envelope_ok("roadmap", {"hide": [cid]}))
         self.clients: set[ServerConnection] = set()
         self.per_ip: dict[str, int] = {}
         # connection -> (address, user agent): one person's tabs, pages and reconnects count
@@ -1115,6 +1119,9 @@ class Relay:
         if cmd == "chat":
             return self.chat_command(args, ws)
 
+        if cmd == "roadmap":
+            return self.roadmap_command(args, ws)
+
         if cmd == "report":
             return self.report(args, ip)
 
@@ -1597,6 +1604,54 @@ class Relay:
             return envelope_ok("chat", {"reported": int(args[1]), "hidden": r.get("hidden", False)}) if r.get("ok") else envelope_error("chat", r["message"], "BAD")
         return envelope_error("chat", "Usage: chat join | leave | say <token> <a> <b> <c> <text> | report <id> <token>", "INVALID_PARAMS")
 
+    def roadmap_command(self, args: list[str], ws: ServerConnection | None) -> str:
+        """Comments on the road-to-mainnet page: join / leave / get / say / report / delete / agree (roadmap.py has the rules)."""
+        sub = args[0].lower() if args else ""
+        ip, ua = (self.viewers.get(ws) or ("?", ""))[:2] if ws is not None else ("?", "")
+        person = self.visits.person(ip, ua)
+        road = self.roadmap
+        if sub == "join":
+            if ws is not None:
+                self.road_subs.add(ws)
+            return envelope_ok("roadmap", road.counts())
+        if sub == "leave":
+            self.road_subs.discard(ws)
+            return envelope_ok("roadmap", {"left": True})
+        if sub == "get" and len(args) == 2:
+            return envelope_ok("roadmap", road.thread(args[1]))
+        if sub == "say":
+            parsed = parse_road_say(args[1:])
+            r = road.say(person, *parsed) if parsed else {"error": "bad", "message": "Usage: roadmap say <token> <a> <b> <c> <item> <part> <text>"}
+            if r.get("ok"):
+                c = r["comment"]
+                broadcast(self.road_subs - {ws} if ws is not None else self.road_subs, envelope_ok("roadmap", {"new": [c]}))
+                if self.chatai.on:
+                    task = asyncio.create_task(self.road_ai_check(c["id"], c["text"]))
+                    self.chat_checks.add(task)
+                    task.add_done_callback(self.chat_checks.discard)
+                return envelope_ok("roadmap", {"sent": c})
+            return envelope_error("roadmap", r["message"], r["error"].upper())
+        if sub in ("report", "delete") and len(args) == 3 and args[1].isdigit():
+            cid = int(args[1])
+            if sub == "delete":
+                return envelope_ok("roadmap", {"deleted": cid}) if road.delete(cid, args[2]) else envelope_error("roadmap", "Only the browser that wrote it can delete it.", "BAD")
+            r = road.report(person, cid, args[2])
+            return envelope_ok("roadmap", {"reported": cid, "hidden": r.get("hidden", False)}) if r.get("ok") else envelope_error("roadmap", r["message"], "BAD")
+        if sub == "agree" and len(args) == 3:
+            r = road.add_agree(person, args[1], args[2])
+            if r.get("ok"):
+                if r.get("counted"):
+                    broadcast(self.road_subs - {ws} if ws is not None else self.road_subs, envelope_ok("roadmap", {"agree": {args[1]: r["agree"]}}))
+                return envelope_ok("roadmap", {"agreed": args[1], "agree": r["agree"], "counted": r["counted"]})
+            return envelope_error("roadmap", r["message"], "BAD")
+        return envelope_error("roadmap", "Usage: roadmap join | leave | get <item> | say <token> <a> <b> <c> <item> <part> <text> | report <id> <token> | delete <id> <token> | agree <item> <token>", "INVALID_PARAMS")
+
+    async def road_ai_check(self, cid: int, text: str):
+        """The same live moderator reads each road-to-mainnet comment once more."""
+        why = await self.chatai.verdict(text, self.roadmap.context(cid))
+        if why and self.roadmap.flag(cid):
+            log.info("roadmap: the AI moderator removed comment %s (%s)", cid, why)
+
     async def chat_ai_check(self, mid: int, text: str):
         """The live moderator's second look: a message Claude flags disappears for everyone (chat.flag pushes the hide)."""
         why = await self.chatai.verdict(text, self.chat.before(mid))
@@ -1670,7 +1725,7 @@ class Relay:
                                ("Cache-Control", "no-store"), ("Referrer-Policy", "no-referrer"),
                                ("X-Robots-Tag", "noindex")])
             return Response(code.value, code.phrase, headers, seen[2])
-        said = self.chat.route(path, query) if path.startswith("/chat") else None
+        said = self.chat.route(path, query) if path.startswith("/chat") else self.roadmap.route(path, query) if path.startswith("/roadmap") else None
         if said is not None:
             code = HTTPStatus(said[0])
             headers = Headers([("Content-Type", said[1]), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store"),
@@ -1810,6 +1865,7 @@ class Relay:
         finally:
             self.clients.discard(ws)
             self.chat_subs.discard(ws)
+            self.road_subs.discard(ws)
             self.viewers.pop(ws, None)
             self.per_ip[ip] -= 1
             if self.per_ip[ip] <= 0:
