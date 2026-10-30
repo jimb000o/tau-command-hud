@@ -1,4 +1,6 @@
-/* The island: a small tropical island drawn in the visitor's browser (no photographs, no image files).
+/* The island: a small tropical island drawn in the visitor's browser. When the server has painted pictures of the
+   island and its rooms (infra/rabbit-art, listed in node.tauhud.com/rico/art/index.json), they take the place of the
+   drawn ones; the sea, smoke, fire, light, people and the hour still come from here, on top of them.
    The world is 1600 × 900 units, always shown whole: the sea and the sky run on to the edges of any screen,
    the island and every place on it stay inside the visible frame. The sun moves with the game's hour,
    the sea moves, palms sway, flags fly, people walk, and the lighthouse that keeps the Book sweeps
@@ -838,8 +840,56 @@
     const q = Math.min(1.5, Math.max(0.6, Math.max(S.W / RW, S.H / RH) * S.K));
     let c = roomCache[id]; if (c && Math.abs(c.q - q) < 0.05) return c;
     c = document.createElement("canvas"); c.width = Math.round(RW * q); c.height = Math.round(RH * q); c.q = q;
-    const g = c.getContext("2d"); g.scale(q, q); ROOMS[id](g, rnd(id.length * 131));
+    const g = c.getContext("2d"); g.scale(q, q);
+    if (painted(id)) cover(g, ART.img[id], RW, RH); else ROOMS[id](g, rnd(id.length * 131));
     return (roomCache[id] = c);
+  }
+
+  /* ---------- the painted pictures, when the server has them ---------- */
+  const ART = { base: "https://node.tauhud.com/rico/art/", img: {} };
+  try {
+    fetch(ART.base + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j => {
+      Object.entries((j && j.scenes) || {}).forEach(([id, f]) => {
+        const im = new Image(); im.crossOrigin = "anonymous"; im.decoding = "async";
+        im.onload = () => { ART.img[id] = im; if (id === "island") { S.base = null; if (S.c) size(); } else delete roomCache[id]; };
+        im.src = ART.base + f;
+      });
+    }, () => {});
+  } catch (e) {}
+  const painted = id => !!ART.img[id] && !/[?&]art=drawn/.test(location.search);
+  /* a picture drawn to cover the box, cropped in the middle (the painted ones are not always exactly 16:9) */
+  function cover(g, im, w, h) {
+    const k = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
+    g.drawImage(im, (w - iw) / 2, (h - ih) / 2, iw, ih);
+  }
+  /* life in a painted room: dust in a warm shaft of light by day, a lamp that breathes at night */
+  function roomLife(g, t, day) {
+    g.globalCompositeOperation = "lighter";
+    if (day > 0.2) {
+      g.fillStyle = `rgba(255,232,180,${0.07 * day})`; g.beginPath(); g.moveTo(380, 0); g.lineTo(700, 0); g.lineTo(1100, 900); g.lineTo(640, 900); g.closePath(); g.fill();
+      for (let i = 0; i < 40; i++) {
+        const k = (i * 0.618) % 1, y = (k * 900 + t * 0.008 * (0.5 + (i % 5) * 0.2)) % 900, x = 420 + y * 0.48 + Math.sin(t * 0.0006 + i * 2.3) * 60 + ((i * 37) % 120);
+        g.fillStyle = `rgba(255,240,200,${day * (0.18 + 0.2 * Math.sin(t * 0.002 + i))})`; g.beginPath(); g.arc(x, y, 1.6 + (i % 3) * 0.7, 0, Math.PI * 2); g.fill();
+      }
+    } else {
+      const fl = 0.85 + 0.1 * Math.sin(t * 0.004) + 0.05 * Math.sin(t * 0.017), lg = g.createRadialGradient(800, 260, 0, 800, 260, 900);
+      lg.addColorStop(0, `rgba(255,180,90,${0.2 * fl * (1 - day)})`); lg.addColorStop(1, "rgba(255,180,90,0)"); g.fillStyle = lg; g.fillRect(0, 0, RW, RH);
+    }
+    g.globalCompositeOperation = "source-over";
+  }
+  /* the bare picture of a place, without people, at noon: what the server's painter repaints (infra/rabbit-art) */
+  function plate(id) {
+    const c = document.createElement("canvas"); c.width = 1600; c.height = 900; const g = c.getContext("2d"), sky = skyAt(1);
+    if (id === "island") {
+      for (let i = 0; i < 7; i++) { const f0 = Math.pow(i / 7, 0.7), f1 = Math.pow((i + 1) / 7, 0.7); g.fillStyle = rgb(mix(sky.top, sky.bot, i / 6)); g.fillRect(0, HZ * f0, WW, HZ * (f1 - f0) + 1); }
+      for (let i = 0; i < 4; i++) { const f0 = Math.pow(i / 4, 1.6), f1 = Math.pow((i + 1) / 4, 1.6); g.fillStyle = rgb(mix(sky.sea, sky.seaB, i / 3)); g.fillRect(0, lerp(HZ, WH, f0), WW, lerp(HZ, WH, f1) - lerp(HZ, WH, f0) + 1); }
+      paintIsland(g);
+      PALMS.forEach(([x, y], i) => palm(g, x, y, 0, i)); flag(g, 470, 470, 0, "#3b5f8a", "#fff", "wind"); flag(g, 606, 425, 900, "#c0533f", "#fff", "wave"); boat(g, 1110, 770, 0);
+    } else {
+      const r = document.createElement("canvas"); r.width = RW; r.height = RH; ROOMS[id](r.getContext("2d"), rnd(id.length * 131));   // its windows are cut out
+      const h = S.hour; S.hour = 1; roomBackdrop(g, sky, 0); S.hour = h; g.drawImage(r, 0, 0); ROOMFX[id](g, 0, 1);
+    }
+    return c;
   }
 
   /* ---------- the stage ---------- */
@@ -852,7 +902,8 @@
     const fit = Math.min(S.W / WW, S.H / WH), q = Math.min(fit * S.K * 1.6, 4096 / WW);
     if (!S.base || Math.abs(S.base.q - q) > 0.05) {
       const b = document.createElement("canvas"); b.width = Math.round(WW * q); b.height = Math.round(WH * q); b.q = q;
-      const g = b.getContext("2d"); g.scale(q, q); paintIsland(g); S.base = b;
+      const g = b.getContext("2d"); g.scale(q, q); S.base = b;
+      if (painted("island")) { cover(g, ART.img.island, WW, WH); b.painted = true; } else paintIsland(g);
     }
     if (S.focusId) focus(S.focusId, S.focusSide); else { S.camT = home(); if (!S.sized) { S.cam = { ...S.camT }; S.sized = true; } }
     S.world = S.world || document.createElement("canvas"); S.world.width = S.c.width; S.world.height = S.c.height; S.wg = S.world.getContext("2d");
@@ -929,13 +980,13 @@
     const surf = 0.5 + 0.5 * Math.sin(t * 0.0015);
     w.strokeStyle = `rgba(255,255,255,${0.25 + surf * 0.35})`; w.lineWidth = 3; shape(w, 1.015 + surf * 0.012, 2); w.stroke();
     w.strokeStyle = `rgba(255,255,255,${0.12 * (1 - surf)})`; w.lineWidth = 2; shape(w, 1.05 + surf * 0.02, 4); w.stroke();
+    const pi = !!S.base.painted;   // the painted island has its own palms, flags and boat
     w.drawImage(S.base, 0, 0, WW, WH);
     islandFx(w, t, sky.light);
     if (S.glow) { const p = PLACES[S.glow]; const [x, y, bw, bh] = p.box; w.fillStyle = "rgba(255,255,230,.18)"; w.beginPath(); w.ellipse(x + bw / 2, y + bh * 0.85, bw * 0.62, bh * 0.32, 0, 0, Math.PI * 2); w.fill(); }
-    flag(w, 470, 470, t, "#3b5f8a", "#fff", "wind"); flag(w, 606, 425, t + 900, "#c0533f", "#fff", "wave");
-    boat(w, 1110, 770, t);
+    if (!pi) { flag(w, 470, 470, t, "#3b5f8a", "#fff", "wind"); flag(w, 606, 425, t + 900, "#c0533f", "#fff", "wave"); boat(w, 1110, 770, t); }
     /* palms and people in depth order */
-    const items = PALMS.map(([x, y], i) => [y, () => palm(w, x, y, t, i)]);
+    const items = pi ? [] : PALMS.map(([x, y], i) => [y, () => palm(w, x, y, t, i)]);
     FOLK.forEach((f, i) => {
       if (!S.still) { f.k += f.v * dt * f.dir; if (f.k > 1 || f.k < 0) { f.dir *= -1; f.k = Math.max(0, Math.min(1, f.k)); } }
       let [x, y] = alongPath(f.path, f.k);
@@ -956,7 +1007,7 @@
     view(g);
     if (sky.light > 0.05) {
       g.globalCompositeOperation = "lighter";
-      WINDOWS.forEach(([x, y, ww, wh], i) => { const fl = 0.85 + 0.15 * Math.sin(t * 0.003 + i * 2.1); g.fillStyle = `rgba(255,190,90,${sky.light * 0.75 * fl})`; g.fillRect(x, y, ww, wh); g.fillStyle = `rgba(255,170,70,${sky.light * 0.08})`; g.beginPath(); g.arc(x + ww / 2, y + wh / 2, 8, 0, Math.PI * 2); g.fill(); });
+      WINDOWS.forEach(([x, y, ww, wh], i) => { const fl = 0.85 + 0.15 * Math.sin(t * 0.003 + i * 2.1); g.fillStyle = `rgba(255,190,90,${sky.light * (pi ? 0.3 : 0.75) * fl})`; if (pi) { g.beginPath(); g.arc(x + ww / 2, y + wh / 2, Math.max(ww, wh) * 0.7, 0, Math.PI * 2); g.fill(); } else g.fillRect(x, y, ww, wh); g.fillStyle = `rgba(255,170,70,${sky.light * 0.08})`; g.beginPath(); g.arc(x + ww / 2, y + wh / 2, 8, 0, Math.PI * 2); g.fill(); });
       islandGlow(g, t, sky.light);
       const a = t * 0.0006, bx = 300, by = 445;
       gr = g.createRadialGradient(bx, by, 0, bx, by, 520); gr.addColorStop(0, `rgba(57,255,138,${0.42 * sky.light})`); gr.addColorStop(1, "rgba(57,255,138,0)");
@@ -974,9 +1025,9 @@
       let ox = (W - RW * sc) / 2 - (phone ? 0 : S.focusSide * W * 0.16), oy = (H - RH * sc) / 2 - (phone ? H * 0.16 : 0);
       ox = Math.min(0, Math.max(W - RW * sc, ox)); oy = Math.min(0, Math.max(H - RH * sc, oy));
       w.setTransform(1, 0, 0, 1, 0, 0); w.clearRect(0, 0, W, H); w.setTransform(sc, 0, 0, sc, ox, oy);
-      roomBackdrop(w, sky, t); w.drawImage(roomImage(S.room), 0, 0, RW, RH);
       const day = Math.max(0, 1 - sky.light);
-      w.save(); ROOMFX[S.room](w, t, day); w.restore();
+      if (painted(S.room)) { w.drawImage(roomImage(S.room), 0, 0, RW, RH); w.save(); roomLife(w, t, day); w.restore(); }
+      else { roomBackdrop(w, sky, t); w.drawImage(roomImage(S.room), 0, 0, RW, RH); w.save(); ROOMFX[S.room](w, t, day); w.restore(); }
       if (S.hostFn) {
         if (!S.hostC) { S.hostC = document.createElement("canvas"); S.hostC.width = S.hostC.height = 600; }
         const hg = S.hostC.getContext("2d"); S.hostFn(hg, t);
@@ -1041,5 +1092,6 @@
     /* the rabbit hops to a place and waits beside it (null: it wanders) */
     rabbit(id) { RB.goal = id; if (id && PLACES[id]) { const p = PLACES[id]; RB.tx = p.x + (id === "book" ? 46 : 0) + (p.x > 800 ? -40 : 40); RB.ty = p.y + 16; } },
     get hour() { return S.hour; },
+    plate, art: ART,
   };
 })();
