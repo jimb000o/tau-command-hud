@@ -121,7 +121,7 @@
     const el = build(next()); track.append(el); measure(el);
     const prev = items[items.length - 1];
     /* one fixed gap after the item before; the first items start inside the line and decode where they stand */
-    el._x = dir < 0 ? (prev ? prev._x + prev._w + GAP : W * .3) : (prev ? prev._x - el._w - GAP : W * .7 - el._w);
+    el._x = dir < 0 ? (prev ? prev._x + prev._w + GAP : 14) : (prev ? prev._x - el._w - GAP : W - 14 - el._w);
     if (dir < 0 ? el._x < W : el._x + el._w > 0) el._born = performance.now();
     items.push(el);
   };
