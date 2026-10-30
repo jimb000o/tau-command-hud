@@ -546,6 +546,12 @@ TauI18n.add({ strings: {
   "asking our node…": "ノードに問い合わせ中…",
   "Up to date": "最新",
   "every block read": "すべてのブロックを読み込みました",
+  "about {n} s left": "残り約 {n} 秒",
+  "about {n} min left": "残り約 {n} 分",
+  "almost there": "もうすぐです",
+  "Every number on this page counts up as the blocks arrive.": "ブロックが届くにつれて、このページの数字はすべて増えていきます。",
+  "This page fills in once every block is read.": "すべてのブロックを読み終えると、このページが表示されます。",
+  "{n}%": "{n}%",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 送信者自身のルールが拒否しました（o5 = 0 · ${TauI18n.t(r)}）`]] });
