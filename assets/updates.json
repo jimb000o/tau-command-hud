@@ -1767,6 +1767,11 @@
   "html": "Privacy notice: section 8 now also covers the testnet wallet. For each transaction our server passes on, it keeps only the hash, the site and the name of the page that led to the wallet, never your address or browser."
  },
  {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper café: Déjà, the café cat, now always stays fully on the screen. On very wide and very short screens, and while the view leans in toward a regular, she keeps inside the frame, and where the words of a talk would cover her she sits up on their frame."
+ },
+ {
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "In numbers on a phone: the One day table under On the testnet stays inside its panel instead of spilling sideways; the headings take less spacing and the site names may break."
