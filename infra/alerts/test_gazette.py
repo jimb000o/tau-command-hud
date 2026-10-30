@@ -156,9 +156,9 @@ check(gazette.cafe(week(), [], [], 1, e2["banner"], e2["teaser"])["mae"]["greet"
 check(len(json.dumps(c, ensure_ascii=False).encode()) < 9000, "the café block stays small (a few KB a week)")
 q = gazette.cafe(week(restarts=1, dropped=2), [], [], 3, e2["banner"], e2["teaser"])
 check("fresh start" in json.dumps(q) and "dropped at the deadline" in json.dumps(q), "a fresh chain and dropped proposals are told")
-old = json.load(open(os.path.join(g, "latest.json"))); old.pop("cafe")
+old = json.load(open(os.path.join(g, "latest.json"))); old.pop("cafe"); old.pop("cafe_v", None)
 json.dump(old, open(os.path.join(g, "latest.json"), "w"))
-w.state["gazette"].pop("cafe", None)
+w.state["gazette"].pop("cafe_v", None)
 asyncio.run(w.maybe_gazette(NOW + 120))
 back = json.load(open(os.path.join(g, "latest.json")))
 check(back.get("cafe", {}).get("mae") and back["no"] == old["no"] and json.load(open(os.path.join(g, old["date"] + ".json"))).get("cafe"), "an edition printed before the café talk gets it once, number and date unchanged")
@@ -213,6 +213,35 @@ check(lt["date"] == "2026-11-02" and lt["drops"]["zh"] == MON + 3600 and lt.get(
 check(json.load(open(os.path.join(g, "editions.json")))[0]["drops"]["en"] == MON + 8 * 3600, "the archive lists the drops too")
 asyncio.run(w3.maybe_print(MON + 1200))
 check(w3.state["printing"]["slot"] == MON and json.load(open(os.path.join(g, "editions.json")))[0]["no"] == lt["no"], "printed once per week")
+
+# ---- the café talk tells the week's real thing, and a chess round in Tau ----
+tp = [{"title": "Same rules as now (no real change)", "proposer": f"a{i % 4}", "proposed_ts": END - 3600 * (i + 1), "status": "active"} for i in range(43)]
+c3 = gazette.cafe(week(), tp, [], 4, e2["banner"], e2["teaser"])
+check("43 rule changes" in c3["mae"]["a"][0]["en"] and "four wallets" in c3["mae"]["a"][0]["en"] and "tautology" in json.dumps(c3["prof"]), "test changes are told as tests, with the wallets, and the Professor explains a tautology")
+check("Wallets, mind, not people" in json.dumps(c3["elias"]) and "from 23 wallets" in json.dumps(c3["elias"]), "Elias counts wallets, not people")
+ch = {"opponent": "Claude Opus 5.5", "start": END - 12 * 3600, "games": 10, "played": 10, "engine": 9, "model": 1, "done": True}
+c4 = gazette.cafe(week(), [], [], 4, e2["banner"], e2["teaser"], ch)
+check("chess engine written in Tau played ten games against Claude Opus 5.5. It won nine, lost one." in c4["prof"]["greet"]["en"] and "not something on the testnet chain" in json.dumps(c4["prof"]), "a finished chess round: result, and never 'on the chain'")
+c5 = gazette.cafe(week(), [], [], 4, e2["banner"], e2["teaser"], ch | {"played": 6, "engine": 5, "done": False})
+check("Six done so far: 5 to 1" in c5["prof"]["greet"]["en"], "a round still being played")
+check(gazette.cafe(week(), [], [], 4, e2["banner"], e2["teaser"], ch | {"start": END - 30 * 86400})["prof"]["greet"]["en"] in json.dumps(gazette.CHESS), "an old round is not talked about")
+check(all(x["zh"] and x["ja"] for c in (c3, c4, c5) for v in c.values() for x in [v["greet"], v["q"], *v["a"]]), "every café line in three languages")
+check(len(json.dumps(c4, ensure_ascii=False).encode()) < 9000 and len(json.dumps(c3, ensure_ascii=False).encode()) < 9000, "the café block stays small")
+
+# ---- the chess round's result, read from the public records ----
+idx_md = "| Game | White |\n|---|---|\n" + "".join(f"| [P{i:02d}](P{i:02d}.md) | x | y | {'1-0' if i < 10 else '1/2-1/2'} |\n" for i in range(1, 11)) + "\nScore: engine 9.5 : 0.5 model\n"
+check(gazette.chess_score(idx_md) == {"played": 10, "engine": 9, "model": 0, "draws": 1} and gazette.chess_score("| [P01](P01.md) | x |") is None, "a round's score from its index, with draws; none before the footer is out")
+R = gazette.CHESS_ROUNDS[0]
+check(gazette.chess_round(R["start"] + 12 * 3600)["opponent"] == "Claude Opus 5.5" and not gazette.chess_round(R["start"] + 30 * 86400), "the round of the week is found by its date")
+cr = gazette.chess_round(R["start"] + 12 * 3600)
+c6 = gazette.cafe(week(end=R["start"] + 12 * 3600), [], [], 4, e2["banner"], e2["teaser"], cr)
+check("The result is not in yet; it will be on chess.taumorrow.com" in c6["prof"]["greet"]["en"] and "On Sunday" in c6["prof"]["greet"]["en"] and "nine of ten" in json.dumps(c6["prof"]), "before the records are out: the round, where the result will be, and last time's score")
+calls = []
+w.chess_result, w.gazette_cafe = (lambda date: {"date": date, "played": 10, "engine": 8, "model": 1, "draws": 1}), (lambda: calls.append(1))
+w.state.pop("chess", None); w.state["gazette"].pop("chess_tried", None)
+w.maybe_chess(R["start"] + 11 * 3600)
+w.maybe_chess(R["start"] + 13 * 3600)
+check(w.state["chess"]["engine"] == 8 and calls == [1] and gazette.chess_round(R["start"] + 12 * 3600, w.state["chess"])["done"], "the result is read once, and the café is told again")
 
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
 sys.exit(1 if failed else 0)

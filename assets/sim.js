@@ -42,7 +42,7 @@
     store.set(KEY, urlMode);
     try { const u = new URL(location.href); u.searchParams.delete("mode"); history.replaceState(null, "", u.pathname + u.search + u.hash); } catch (e) {}
   }
-  const CORE = q.get("view") === "core";   // the core-only view for other sites (?view=core) always shows the live chain
+  const CORE = q.get("view") === "core" && q.get("follow") !== "1";   // the core-only view for other sites (?view=core) always shows the live chain; in the Explorer (&follow=1) it follows the page
   const ON = store.get(KEY) === "sim" && !q.has("sample") && !CORE;
 
   /* ---------- deterministic randomness ---------- */

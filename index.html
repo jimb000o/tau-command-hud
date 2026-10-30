@@ -1084,10 +1084,10 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <h2 id="thesisTxt" data-decode>On other chains, code is law. On Tau, the agreement is law: users write the rules in logic, every rule is checked before it can apply, and nothing changes without the validators’ consent. There is no admin key.</h2>
     </div>
     <div class="principles">
-      <div class="pr"><b>Checked before it applies</b><span>A proposed rule is compiled on its own first. If it does not hold, it never enters the chain.</span><em>see it: Rule changes · “compiled in isolation ✓”</em><div class="prov" data-full="Documented in tau-testnet: a consensus_rule_update gets an isolated staging compile against the current consensus rules before it is admitted. We have not yet watched a rule change on the testnet ourselves."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py#L709" target="_blank" rel="noopener">admission.py:709 ↗</a></div></div>
+      <div class="pr"><b>Checked before it applies</b><span>A proposed rule is compiled on its own first. If it does not hold, it never enters the chain.</span><em>see it: Rule changes · “compiled in isolation ✓”</em><div class="prov" data-full="Seen on the testnet: 43 rule changes have been proposed and voted on so far (our count of 30 October, 4,036 blocks). Each one was compiled on its own against the current consensus rules before it was admitted (tau-testnet admission.py). All 43 were test changes that leave the behaviour the same; a proposal refused by this check we have not seen there yet."><span><i class="seen"></i>seen on the testnet</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py#L709" target="_blank" rel="noopener">admission.py:709 ↗</a></div></div>
       <div class="pr"><b>No admin key</b><span>Nobody can change the rules alone. A change needs the validators’ agreement and takes effect at a later block.</span><em>see it: Validators · “agreement needed”</em><div class="prov" data-full="Read from the community node (getgovernance): the active validator set, the vote_quorum policy and the approval threshold, all bound into the state hash. Threshold = ⌈2N/3⌉ for supermajority."><span><i class="seen"></i>seen on the testnet</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py#L496" target="_blank" rel="noopener">governance.py:496 ↗</a></div></div>
-      <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. A stolen key still obeys your limits.</span><em>see it: Transactions · red “✕ refused”</em><div class="prov" data-full="Documented in tau-testnet: stream o5 is the sender’s own policy, 0 = block, enforced at admission (sendtx.py:1310) and again when the block is applied. Refusals here are simulated; we have not yet seen one on the testnet."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/engine.py#L1880" target="_blank" rel="noopener">engine.py:1880 ↗</a></div></div>
-      <div class="pr"><b>Money with terms</b><span>A transfer can be returnable until a release point, locked until a time, or co-signed above an amount.</span><em>see it: Personal money rules</em><div class="prov" data-full="Documented in tau-testnet: retractable_transfer parks funds in escrow until a release height or time; whitelists use i4, time-locks i5, limits i1. Not yet observed on the testnet by us."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md#L573" target="_blank" rel="noopener">README §Retractable ↗</a></div></div>
+      <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. A stolen key still obeys your limits.</span><em>see it: Transactions · red “✕ refused”</em><div class="prov" data-full="Documented in tau-testnet: stream o5 is the sender’s own policy, 0 = block, enforced at admission (sendtx.py:1310) and again when the block is applied. Live, the refusals here come from the community node; in Simulation they are made up. A payment refused by its sender’s own rule we have not seen on the testnet yet."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/engine.py#L1880" target="_blank" rel="noopener">engine.py:1880 ↗</a></div></div>
+      <div class="pr"><b>Money with terms</b><span>A transfer can be returnable until a release point, locked until a time, or co-signed above an amount.</span><em>see it: Personal money rules</em><div class="prov" data-full="Documented in tau-testnet: retractable_transfer parks funds in escrow until a release height or time; whitelists use i4, time-locks i5, limits i1. Personal rules are in force on the testnet (22 rule changes by 2 accounts, our count of 30 October), but a returnable, time-locked or co-signed payment we have not seen there yet."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md#L573" target="_blank" rel="noopener">README §Retractable ↗</a></div></div>
     </div>
     <div class="tick" id="tick" translate="no" aria-label="News line: live facts, updates and pointers"><span class="tk-lab"><i></i><b>News</b></span><div class="tk-view"><div class="tk-track"></div></div></div>
   </section>
@@ -1805,6 +1805,7 @@ async function pollOnline() {
   finally { clearTimeout(t); PRESENCE.at = Date.now(); }
 }
 const CORE_ONLY = document.documentElement.classList.contains("coreonly"), CORE_QUIET = CORE_ONLY && document.documentElement.classList.contains("corequiet");
+const CORE_FOLLOW = CORE_ONLY && new URLSearchParams(location.search).get("follow") === "1";
 /* in a frame: the block height under the core, and the parent page hears when the core is ready and when each block lands */
 if (CORE_ONLY) { let told = 0; setInterval(() => {
   const f = $("coreFoot"), t = !S.height ? "connecting…" : `block #${fmt(S.height)}` + (isSim() ? " · simulation" : ""); if (f.textContent !== t) f.textContent = t;
@@ -2181,6 +2182,7 @@ addEventListener("DOMContentLoaded", () => { pollOnline(); PRESENCE.timer = setI
 const PSOCK = { ws: null, wait: 5000, timer: null, url: "wss://node.tauhud.com" };
 function viewerId() {
   try {
+    try { if (window.parent !== window && window.parent.__tauViewer) return window.parent.__tauViewer; } catch (e) {}   // the Chain core in a frame on one of our pages (Explorer): one visitor, counted once
     if (!window.__tauViewer) window.__tauViewer = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
     try { localStorage.removeItem("tauhud-viewer"); } catch {}   // the id older versions kept in the browser
     return window.__tauViewer;
@@ -3335,6 +3337,47 @@ function paintPlates() {
   }
   PLATES.length = 0;
 }
+/* ===== EXPLORER FOCUS (explorer/index.html frames the core with ?view=core&follow=1) =====
+   The Explorer tells the core what is open there; the core marks it: a waiting transaction on its orbit, an account's own rule,
+   a validator, or a block. A sealed transaction replays its last step once: from the waiting orbit into the core. */
+const FOCUS = { keys: new Set(), label: "", block: null, sealed: null, at: 0, pts: [] };
+if (CORE_ONLY) addEventListener("message", e => {
+  if (e.origin !== location.origin || !e.data || e.data.type !== "tauhud-focus") return;
+  const d = e.data, keys = new Set((d.keys || []).map(k => String(k).toLowerCase()));
+  const same = [...keys].join() === [...FOCUS.keys].join() && d.block === FOCUS.block && d.sealed === FOCUS.sealed;
+  Object.assign(FOCUS, { keys, label: String(d.label || "").slice(0, 40), block: Number.isFinite(d.block) ? d.block : null, sealed: Number.isFinite(d.sealed) ? d.sealed : null });
+  if (!same) FOCUS.at = performance.now();
+});
+function focusAt(key, x, y, r) { if (FOCUS.keys.size && key && FOCUS.keys.has(String(key).toLowerCase())) FOCUS.pts.push({ x, y, r }); }
+function paintFocus(C, t) {
+  const pts = FOCUS.pts.splice(0), age = (performance.now() - FOCUS.at) / 1000, G = "57,255,138";
+  if (!FOCUS.keys.size && FOCUS.block == null) return;
+  const intro = Math.min(1, age / .6), ease = 1 - (1 - intro) * (1 - intro);
+  cx.save(); cx.lineCap = "round";
+  pts.slice(0, 6).forEach(p => {   // a reticle closes in on each marked dot: four corner brackets, turning slowly
+    const R = p.r + 10 + (1 - ease) * 40, br = .6 + .4 * Math.sin(t * 2.4);
+    cx.save(); cx.translate(p.x, p.y); cx.rotate(t * .5);
+    cx.strokeStyle = `rgba(${G},${(.55 + .4 * br) * ease})`; cx.lineWidth = 3; cx.shadowColor = `rgb(${G})`; cx.shadowBlur = 12;
+    for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; cx.beginPath(); cx.arc(0, 0, R, a - .32, a + .32); cx.stroke(); }
+    cx.restore();
+  });
+  if (pts.length && FOCUS.label && FOCUS.block == null) { const p = pts[0]; plate(FOCUS.label, p.x, p.y + (p.y > 0 ? p.r + 52 : -p.r - 30), "600 26px Sora, sans-serif", `rgba(${G},.95)`, ease); }
+  // a sealed transaction: once, a green dot leaves the waiting orbit and falls into the core, which takes it in
+  if (FOCUS.sealed != null && !reduced && age < 2.4) {
+    const k = Math.min(1, age / 1.6), a = -Math.PI * .75 + k * 2.2, r = C * .44 * (1 - k * k) + C * .06 * k * k;
+    cx.fillStyle = `rgba(${G},${1 - Math.max(0, age - 1.6) / .8})`; cx.shadowColor = `rgb(${G})`; cx.shadowBlur = 18;
+    cx.beginPath(); cx.arc(Math.cos(a) * r, Math.sin(a) * r, 7, 0, Math.PI * 2); cx.fill();
+  }
+  // a block: a green ring contracts onto the core, then stays as a thin halo while the block is open
+  if (FOCUS.block != null) {
+    const k = Math.min(1, age / 1.2), r = C * (.34 + (1 - k) * .5);
+    cx.shadowColor = `rgb(${G})`; cx.shadowBlur = 14; cx.lineWidth = 2 + 3 * (1 - k);
+    cx.strokeStyle = `rgba(${G},${.35 + .35 * (1 - k) + .15 * Math.sin(t * 2)})`; cx.beginPath(); cx.arc(0, 0, r, 0, Math.PI * 2); cx.stroke();
+    if (FOCUS.label) plate(FOCUS.label, 0, C * .38 + 40, "600 26px Sora, sans-serif", `rgba(${G},.95)`, ease);
+  }
+  cx.restore();
+}
+/* ===== END EXPLORER FOCUS ===== */
 /* the y where a horizontal label of the given width fits just inside a ring of radius r (the ring dips lowest at the label’s ends) */
 function belowRing(r, text, font) { cx.font = font; const hw = cx.measureText(text).width / 2 + 12; return -Math.sqrt(Math.max(0, r * r - hw * hw)) + 30; }
 function draw(tm) {
@@ -3475,6 +3518,7 @@ function draw(tm) {
     const idni = S.mode === "live" && !S.simfeed && V === 1;   // the live testnet has one validator: IDNI's bootnode
     const yours = v === myNodeKey();   // the visitor's own simulated node, seated by its stake under proof of stake
     plate((idni ? "IDNI" : yours ? "You" : "V" + (i + 1)) + (TECH() ? " " + v.slice(0, 6) : ""), x, y + (y > 0 ? 50 : -34), "500 22px JetBrains Mono, monospace", `rgba(${cyan},.85)`);
+    focusAt(v, x, y, 34);
     hit(x, y, 40, () => health("validators") + (yours ? vt("Your node, sealing by stake: under proof of stake the six largest stakes take turns, and yours is one of them.\nClick to open your node.\n", `Your simulated node ${short(v)}: one of the ${TauSim.node.seats} largest stakes (o7 eligibility by stake).\nClick to open your node.\n`) : "") + vt(`Validator ${i + 1} of ${V}\n`, `V${i + 1} ${short(v)} · key ${v.slice(0, 16)}…\n`) + explainValidator(v, i) + (idni ? vt("\nRun by IDNI, the team behind Tau: its bootnode is the only validator right now.", "\nOperator: IDNI (bootnode; PoA validator_set mode, the only validator).") : "") + (on ? "\nGreen line to the core: its block being sealed." : "") + vt("", "\nIts signature is checked on every block it seals (i10); no signature, no block (o6).") + (yours ? "" : "\nClick to open its profile."), yours ? null : () => valProfile(v), yours ? () => TauSimNode.open() : null);
     if (on && S.pulse > 0) { cx.strokeStyle = `rgba(57,255,138,${S.pulse})`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
@@ -3511,6 +3555,7 @@ function draw(tm) {
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
     const st = ruleState(p), col = st.hot ? (st.refused ? "229,72,77" : "57,255,138") : "170,170,178";
+    focusAt(RA[i], x, y, 22);
     hit(x, y, 24, () => verdict("ok", st.hot ? (st.refused ? "Normal: it just refused a transfer." : "Normal: it just let a transfer pass.") : "Normal: in force; nothing checked in the last few seconds.") + vt(`${policyMeaning(p)}`, `${policyMeaning(p)}\nAccount ${short(RA[i])}, a branch of the composite o5 program.`));
     dotShadow(x, y, 9, C);
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
@@ -3525,7 +3570,7 @@ function draw(tm) {
   cx.save(); cx.setLineDash([2, 10]); cx.beginPath(); cx.lineWidth = mlv === "ok" ? 1.2 : 2; cx.strokeStyle = mcol; cx.arc(0, 0, C * .44, 0, Math.PI * 2); cx.stroke(); cx.restore();
   S.mempool.forEach((tx, i) => {
     const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
-    const sl = liveChain() && sealedAt(tx.id) != null; dotShadow(Math.cos(a) * r, Math.sin(a) * r, 6, C);
+    const sl = liveChain() && sealedAt(tx.id) != null; focusAt(tx.id, Math.cos(a) * r, Math.sin(a) * r, 16); dotShadow(Math.cos(a) * r, Math.sin(a) * r, 6, C);
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
     if (sl) {   // sealed but still listed: an amber dot in a small block frame
       const x = Math.cos(a) * r, y = Math.sin(a) * r;
@@ -3573,6 +3618,7 @@ function draw(tm) {
   if (isSim()) plate("SIMULATION · NO REAL CHAIN DATA", 0, C * .64 + 10, "600 30px Sora, sans-serif", "rgba(236,236,240,.42)");
   stallMark(C, t, hit);
   paintBounces(C, hit);
+  paintFocus(C, t);
   paintHover();
   paintPlates();
   cx.restore();
@@ -3997,7 +4043,7 @@ simShow();
 function autoLive() {
   const showingSim = S.mode === "sim" || (S.simfeed && !SIMFEED());   // the opening picture, not a chosen simulation
   if (!showingSim || !PRESENCE.up || LIVE.autoFailedAt && performance.now() - LIVE.autoFailedAt < 60000) return;
-  const pref = CORE_ONLY ? "live" : store.get("tau-mode");   // the core-only view always shows the live chain
+  const pref = CORE_ONLY ? (CORE_FOLLOW && store.get("tau-mode") === "sim" ? "sim" : "live") : store.get("tau-mode");   // the core-only view shows the live chain; in the Explorer (&follow=1) the same mode as the page around it
   if (pref !== "live" && !(LIVE_DEFAULT || PRESENCE.liveDefault)) return;
   if (pref === "sim" || (pref !== "live" && $("wsurl").value.trim() !== RELAY)) return;
   LIVE.auto = true; LIVE.gotData = false; simStop(); liveStop(); S.simfeed = false; liveConnect();
