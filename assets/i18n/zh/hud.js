@@ -2010,5 +2010,6 @@ TauI18n.add({ strings: {
   "Accounts: the validator profile reads the whole chain faster and, while it reads, says how far it got (“1,900 of 3,116 blocks”) instead of showing numbers that look final.": "账户：验证者档案读取整条链更快了，读取期间会显示进度（“3,116 个区块中的 1,900 个”），而不是显示看起来已经是最终结果的数字。",
   "≥ {n} blocks · ~{m} s": "≥ {n} 个区块 · 约 {m} 秒",
   "Japanese, second round: the Monday front page of The Daily Consensus is now written in Japanese too, and every older entry in this Updates log reads in Japanese.": "日文第二轮：《共识日报》每周一的头版现在也有日文版，本更新日志里的所有旧条目也都可以用日文阅读。",
-  "Privacy notice: the troll box is now in the short summary too, and section 7 spells out that there is no account or cookie, what the operator sees, and how to get a message of yours removed sooner than the 24 hours.": "隐私说明：闲聊箱现在也写进了简要说明，第 7 节写明没有账户、没有 Cookie、运营者能看到什么，以及如何让你自己的消息在 24 小时之前就被移除。"
+  "Privacy notice: the troll box is now in the short summary too, and section 7 spells out that there is no account or cookie, what the operator sees, and how to get a message of yours removed sooner than the 24 hours.": "隐私说明：闲聊箱现在也写进了简要说明，第 7 节写明没有账户、没有 Cookie、运营者能看到什么，以及如何让你自己的消息在 24 小时之前就被移除。",
+  "The troll box has its own place on the HUD now: on wide screens it sits right under the block strip, next to the block detail, always open, with the newest messages at the bottom and the field to write in below them. On smaller screens and phones it stays the Troll box pill at the bottom right.": "闲聊箱现在在 HUD 上有了自己的位置：在宽屏上，它就在区块条下方、区块详情旁边，始终打开，最新消息在底部，下面是输入框。在较小的屏幕和手机上，它仍然是右下角的“闲聊箱”按钮。",
 } });
