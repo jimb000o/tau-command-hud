@@ -90,7 +90,7 @@
   }
 
   /* ---------- motion ---------- */
-  const SPEED = 46, ZONE = 150, GAP = 44;   // px per second; how far in from the edge a letter is still a glyph; space between items
+  const SPEED = 46, ZONE = 150, GAP = 18;   // px per second; how far in from the edge a letter is still a glyph; space between items
   let items = [], last = 0, paused = false, W = 0, dir = -1, tick = 0;
   const add = () => {
     const el = build(next()); track.append(el); measure(el);

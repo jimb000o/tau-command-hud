@@ -2110,4 +2110,5 @@ TauI18n.add({ strings: {
   "Donations are voluntary ›": "寄付は任意です ›",
   "News line: items now follow each other at a short fixed gap and the letters keep their normal spacing on wide screens (the scaled-up HUD at 3440 spread both apart). On load the first items decode where they stand.": "ニュースの行：項目どうしが短い一定の間隔で続き、ワイド画面でも文字の間隔が普通になりました（3440 幅で拡大された HUD が両方を広げていました）。読み込み時、最初の項目はその場でデコードされます。",
   "In numbers: smoother, finer charts. 7D now shows every hour and 30D every six hours instead of one point a day, drawn as a soft curve that never rises above or dips below a real count. The dots on every point are gone: only the newest value keeps one, and pointing at the line still shows each hour.": "数字で見る：グラフがより細かく、なめらかになりました。7 日表示は 1 日 1 点ではなく 1 時間ごと、30 日表示は 6 時間ごとに表示。やわらかな曲線ですが、実際の数より上にも下にもはみ出しません。すべての点の丸は外し、最新の値だけに残しました。線にカーソルを当てれば各時間の数字も見られます。",
+  "News line: the gap between items is now about two letters wide.": "ニュースの行：項目の間隔が約 2 文字分になりました。",
 } });
