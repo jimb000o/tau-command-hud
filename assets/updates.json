@@ -1929,5 +1929,10 @@
   "tag": "Menu",
   "on": "2026-10-30",
   "html": "Playground menu: Déjà, the café cat, joins White Rabbit Key and Agorzilla under “Games on the live testnet”. She eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-10-30",
+  "html": "In numbers: a new Nodes view shows how many nodes were on Tau Testnet Alpha before Tau HUD went live and since, hour by hour, with the launch marked. The relay now counts the nodes every hour; the days before, back to our node's first day, are estimated from when each node was first and last seen and say so. Side by side: nodes at once on average, the most at once and community nodes, before and since; and who runs the nodes online now."
  }
 ]
