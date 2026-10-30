@@ -15,7 +15,7 @@
       "Chat with everyone on Tau HUD": "和 Tau HUD 上的所有人聊天", "Close": "关闭",
       "Be kind. No prices, trading or links. Messages vanish after 24 hours; three reports hide one.": "友善一点。不谈价格、交易，不发链接。消息 24 小时后消失；三次举报即隐藏。",
       "Say something…": "说点什么…", "Send": "发送", "Report": "举报", "Reported": "已举报",
-      "You are {x}": "你是 {x}", "connecting…": "连接中…", "No messages in the last 24 hours. Say hello.": "过去 24 小时没有消息。打个招呼吧。",
+      "You are {x} until 00:00 UTC": "今天你是 {x}，00:00 UTC 换新名字", "connecting…": "连接中…", "No messages in the last 24 hours. Say hello.": "过去 24 小时没有消息。打个招呼吧。",
       "The chat can’t reach the relay right now.": "聊天暂时连不上中继。", "The chat is closed right now.": "聊天暂时关闭。",
       "No links or handles here.": "这里不能发链接或账号。", "No price, trading or giveaway talk: testnet AGRS has no value.": "不谈价格、交易或赠送：测试网 AGRS 没有价值。",
       "That word is not welcome here.": "这里不欢迎这个词。", "At most 200 characters.": "最多 200 个字符。", "Nothing to send.": "没有可发送的内容。",
@@ -40,7 +40,7 @@
       "Chat with everyone on Tau HUD": "Tau HUD のみんなとチャット", "Close": "閉じる",
       "Be kind. No prices, trading or links. Messages vanish after 24 hours; three reports hide one.": "やさしく。価格・取引・リンクの話はなし。メッセージは 24 時間で消え、3 件の報告で非表示になります。",
       "Say something…": "なにか書く…", "Send": "送信", "Report": "報告", "Reported": "報告済み",
-      "You are {x}": "あなたは {x}", "connecting…": "接続中…", "No messages in the last 24 hours. Say hello.": "この 24 時間のメッセージはありません。あいさつをどうぞ。",
+      "You are {x} until 00:00 UTC": "今日のあなたは {x}（00:00 UTC に新しい名前）", "connecting…": "接続中…", "No messages in the last 24 hours. Say hello.": "この 24 時間のメッセージはありません。あいさつをどうぞ。",
       "The chat can’t reach the relay right now.": "チャットは今リレーに接続できません。", "The chat is closed right now.": "チャットは今閉まっています。",
       "No links or handles here.": "リンクやアカウント名は書けません。", "No price, trading or giveaway talk: testnet AGRS has no value.": "価格・取引・配布の話はなし：テストネットの AGRS に価値はありません。",
       "That word is not welcome here.": "その言葉はここでは歓迎されません。", "At most 200 characters.": "200 文字まで。", "Nothing to send.": "送る内容がありません。",
@@ -78,6 +78,20 @@
       return { ...m, name: "A visitor", colour: "#c8c8d0" };
     };
   })();
+  /* a new name every day at 00:00 UTC: worked out here from the browser's random token and the date, never stored;
+     reports, strikes and bans do not follow the name, so a new one clears nothing */
+  const DAY = () => Math.floor(Date.now() / 864e5);
+  const pick = (token, day) => {
+    let h = 2166136261;
+    for (const ch of `${token}:${day}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+    h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0; h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0; h = (h ^ (h >>> 16)) >>> 0;
+    return { a: h % 24, b: Math.floor(h / 24) % 24, c: Math.floor(h / 576) % 8 };
+  };
+  const today = m => {
+    const d = DAY(), n = pick(m.token, d), y = pick(m.token, d - 1);
+    if (n.a === y.a && n.b === y.b) n.b = (n.b + 1) % 24;   // never yesterday's name again
+    return { ...m, ...n };
+  };
   const COLOURS = ["#8fa3d9", "#b39ddb", "#d9a3c4", "#d9c49a", "#8fc7d9", "#a7a0d9", "#c4a3d9", "#c8c8d0"];
   const nameOf = m => (window.TauSim && TauSim.nameOf ? TauSim.nameOf(m.a, m.b) : m.name);
 
@@ -116,7 +130,8 @@
     if (stick) list.scrollTop = list.scrollHeight;
   }
   function hide(id) { const li = list.querySelector(`[data-id="${Number(id)}"]`); if (li) li.remove(); }
-  function showWho() { const m = ME(false); who.textContent = t("You are {x}", nameOf(m)); who.style.setProperty("--me", COLOURS[m.c] || COLOURS[7]); }
+  function showWho() { const m = today(ME(false)); who.textContent = t("You are {x} until 00:00 UTC", nameOf(m)); who.style.setProperty("--me", COLOURS[m.c] || COLOURS[7]); }
+  setInterval(() => { if (who.isConnected) showWho(); }, 60000);   // the new name shows up just after midnight UTC
 
   function connect() {
     if (ws) return;
@@ -163,7 +178,7 @@
     e.preventDefault();
     const text = input.value.replace(/\s+/g, " ").trim();
     if (!text || !ws || ws.readyState !== 1) return;
-    const m = ME(true);   // the name is kept in this browser from the first message on
+    const m = today(ME(true));   // the token is kept in this browser from the first message on, the name is today's
     showWho();
     send.disabled = true;
     ws.send(`chat say ${m.token} ${m.a} ${m.b} ${m.c} ${encodeURIComponent(text)}`);
