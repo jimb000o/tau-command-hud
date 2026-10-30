@@ -1750,5 +1750,10 @@
   "tag": "Donations",
   "on": "2026-10-30",
   "html": "Donations: the monthly costs now include the AI assistant the site is built and run with (Claude Max plan, $200 a month), each cost in the currency of its bill. Running costs: about €6 + $200 a month, not counting time."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper café: Déjà, the café cat, now always stays fully on the screen. On very wide and very short screens, and while the view leans in toward a regular, she keeps inside the frame, and where the words of a talk would cover her she sits up on their frame."
  }
 ]
