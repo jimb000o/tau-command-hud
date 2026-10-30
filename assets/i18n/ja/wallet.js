@@ -459,6 +459,7 @@ TauI18n.add({ strings: {
   "You know the trick now; the payment stays on the chain.": "これで手口がわかりましたね。その支払いはチェーンに残ります。",
   "+ Put someone in your address book first": "+ まず誰かをアドレス帳に入れる",
   "Filled in from a payment link.": "支払いリンクから入力されました。",
+  "Back to the HUD": "HUD に戻る",
   "Before you sign, ask the person for their three check words:": "署名する前に、相手に 3 つの確認用の単語を聞いてください：",
   "Then you pay names, not hex.": "そうすれば、16 進数ではなく名前に支払えます。",
   "Ask to be paid": "支払いを依頼",
