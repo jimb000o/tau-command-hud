@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
-<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=2"><\/script>`);</script>
+<script>if (window.TauI18n && TauI18n.lang !== "en") document.write(`<link rel="stylesheet" href="../assets/fonts/notoserifsc.css"><script src="${TauI18n.lang}.js"><\/script><script src="cafe-${TauI18n.lang}.js?v=4"><\/script>`);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>The Daily Consensus</title>
@@ -330,7 +330,32 @@ html.i18n-ja .title { font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho Pro
 .ce-n { font: italic 13px/1.2 var(--body); color: rgba(240,222,180,.9); text-shadow: 0 1px 6px #000; max-width: 0; overflow: hidden; white-space: nowrap; transition: max-width .4s; }
 .cafe-edge:hover .ce-n, .cafe-edge:focus-visible .ce-n { max-width: 220px; }
 .cafe-ending .cafe-edge { display: none; }
-.cafe-hint { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); background: rgba(9,9,10,.82); border: 1px solid var(--hair); border-radius: 999px; padding: 7px 16px; font: 500 12px var(--display); color: #ddd; letter-spacing: .05em; white-space: nowrap; opacity: 0; transition: opacity .6s; }
+/* the hint is a caption in the paper's own type, low on the screen, gone with the first step */
+.cafe-hint { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); font: italic 17px/1.3 var(--body); color: rgba(245,232,205,.92); text-shadow: 0 1px 10px #000, 0 0 3px #000; letter-spacing: .02em; white-space: nowrap; opacity: 0; transition: opacity 1.2s; pointer-events: none; }
+.cafe-call { position: absolute; right: clamp(70px, 9vw, 150px); top: 50%; transform: translateY(-50%); max-width: 300px; margin: 0; text-align: right; font: italic 16px/1.4 var(--body); color: rgba(245,232,205,.95); text-shadow: 0 1px 10px #000, 0 0 3px #000; opacity: 0; transition: opacity 1s; pointer-events: none; }
+.cafe-call.on { opacity: 1; }
+.cafe-edge[hidden] { display: none; }
+.cafe-edge.shut { opacity: .28; cursor: not-allowed; }
+.cafe-edge.shut:hover { opacity: .45; background: none !important; }
+.ct-slot { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 50px; }
+.ct-slot small { font: 600 11px/1 var(--body); letter-spacing: .02em; color: rgba(42,31,18,.45); white-space: nowrap; }
+.ct-slot.on small { color: rgba(60,28,14,.95); }
+.cafe-ticket.offer { cursor: pointer; animation: cafeOffer 1.4s ease-in-out infinite; outline: none; }
+@keyframes cafeOffer { 50% { transform: rotate(-2deg) scale(1.1); box-shadow: 0 0 0 3px rgba(255,220,160,.6), 0 6px 24px rgba(255,210,140,.45); } }
+.cs-ch button.pick { font: 400 16px/1.3 'Special Elite', 'Courier New', monospace !important; padding: 8px 14px !important; margin: 3px 0; text-align: left; }
+.cs-ch button.pick::before { display: none; }
+.cs-ch button.pick.slip { background: linear-gradient(180deg, #efe3c4, #dccb9f) !important; color: #2a1f12 !important; border-radius: 1px; box-shadow: 0 2px 8px rgba(0,0,0,.5); transform: rotate(-.4deg); }
+.cs-ch button.pick.slip:nth-child(2) { transform: rotate(.5deg); }
+.cs-ch button.pick.slip:hover, .cs-ch button.pick.slip:focus-visible { background: linear-gradient(180deg, #fff3d4, #e8d7ab) !important; color: #000 !important; }
+.cs-ch button.pick.chalk { background: #1a1917 !important; color: rgba(235,232,222,.92) !important; border: 1px solid rgba(226,201,152,.3); }
+.cs-ch button.pick.chalk:hover, .cs-ch button.pick.chalk:focus-visible { border-color: rgba(240,215,160,.8); }
+.cs-ch button.pick.no { opacity: .35; text-decoration: line-through; }
+@media (max-width: 700px), (max-height: 520px) { .ct-slot { min-width: 0; } .ct-slot small { display: none; } }
+.cafe-edge.call { opacity: 1; background: linear-gradient(270deg, rgba(255,220,160,.12), transparent); }
+.cafe-edge.call .ce-ch { animation: cafeBeckon 1.8s ease-in-out infinite; color: rgba(255,232,190,1); text-shadow: 0 0 14px rgba(255,210,140,.8), 0 2px 10px #000; }
+.cafe-edge.call .ce-n { max-width: 220px; }
+@keyframes cafeBeckon { 50% { transform: translateX(7px); } }
+@media (prefers-reduced-motion: reduce) { .cafe-edge.call .ce-ch { animation: none; } }
 .cafe-hint.on { opacity: 1; }
 .cafe-note { position: absolute; left: 50%; top: 72px; transform: translateX(-50%); max-width: min(300px, 80%); padding: 8px 12px; font: italic 14px/1.4 var(--body); color: rgba(240,226,198,.96); background: rgba(22,16,10,.86); border: 1px solid rgba(226,201,152,.32); border-radius: 3px; opacity: 0; transition: opacity .4s; }
 .cafe-note.free { transform: none; width: 300px; }
@@ -353,10 +378,11 @@ html.i18n-zh .cs-line, html.i18n-ja .cs-line { font-family: "Noto Serif SC", "No
 .cs-ch button:hover, .cs-ch button:focus-visible { background: rgba(226,201,152,.1); outline: none; color: #fff !important; }
 .cs-ch button.dim { color: rgba(240,222,180,.5) !important; }
 /* the ending: title cards over Market Street, then the reader's own Extra! */
-.cafe-end { position: absolute; inset: 0; pointer-events: none; display: grid; place-items: center; }
+.cafe-end { position: absolute; inset: 0; pointer-events: auto; cursor: pointer; display: grid; place-items: center; }
+.cafe-end:has(.ce-paper:not([hidden])) { cursor: default; }
 .cafe-end[hidden] { display: none; }
-.ce-card { position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%); width: min(720px, calc(100% - 40px)); margin: 0; text-align: center; font: italic 400 24px/1.45 var(--body); color: #f6eedb; text-shadow: 0 2px 14px #000, 0 0 2px #000; opacity: 0; }
-.ce-card.on { animation: cafeCard 3.6s ease forwards; }
+.ce-card { position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%); width: min(720px, calc(100% - 40px)); margin: 0; text-align: center; font: italic 400 24px/1.45 var(--body); color: #f6eedb; text-shadow: 0 2px 14px #000, 0 0 2px #000; opacity: 0; filter: blur(3px); transition: opacity .9s ease, filter .9s ease; }
+.ce-card.on { opacity: 1; filter: none; }
 @keyframes cafeCard { 0% { opacity: 0; filter: blur(4px); } 18% { opacity: 1; filter: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
 .ce-paper { pointer-events: auto; position: relative; width: min(540px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto; background: var(--paper) linear-gradient(180deg, #f2e9d4, #e3d5b5); color: var(--ink); padding: 22px 28px 18px; box-shadow: 0 30px 90px rgba(0,0,0,.8), inset 0 0 40px rgba(110,80,30,.2); text-align: center; animation: cafeSpin 1.7s cubic-bezier(.2,.7,.3,1) both; }
 .ce-paper.quiet { animation: cafeSay .8s ease both; }
@@ -373,6 +399,12 @@ html.i18n-zh .cs-line, html.i18n-ja .cs-line { font-family: "Noto Serif SC", "No
 .cp-go button:first-child { background: var(--ink); color: var(--paper) !important; }
 .cp-go button:hover, .cp-go a:hover { background: rgba(27,24,19,.12); }
 .cp-go button:first-child:hover { background: #000; }
+.cp-share { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; align-items: center; }
+.cp-share button, .cp-share a { font: italic 14px/1.3 var(--body) !important; color: var(--ink) !important; background: none; border: 0; padding: 6px 2px; min-height: 36px; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; cursor: pointer; }
+.cp-share button[data-e=share]::before { content: "☞ "; text-decoration: none; display: inline-block; }
+.cp-row { display: inline-flex; gap: 14px; }
+.cp-row[hidden] { display: none; }
+.cs-ch button:focus-visible { outline: 1px solid rgba(240,215,160,.85); outline-offset: 2px; }
 @media (max-width: 700px), (max-height: 520px) {
   .cafe-top { padding: max(8px, env(safe-area-inset-top, 0px)) 8px 8px; gap: 6px; }
   .cafe-place { position: absolute; left: 0; right: 0; top: 64px; font-size: 12px; letter-spacing: .08em; pointer-events: none; } .cafe-place::before, .cafe-place::after { display: none; }
@@ -380,7 +412,7 @@ html.i18n-zh .cs-line, html.i18n-ja .cs-line { font-family: "Noto Serif SC", "No
   .cafe-ticket { min-width: 0; padding: 5px 7px; } .ct-t { display: none; } .ct-s { gap: 4px; } .ct-s i { width: 20px; height: 20px; font-size: 11px; }
   .cafe-right { flex-direction: column-reverse; align-items: flex-end; gap: 6px; }
   .cafe-edge { width: 48px; top: 30%; bottom: 36%; opacity: .8; } .ce-n { display: none; } .ce-ch { font-size: 40px; }
-  .cafe-hint { white-space: normal; width: calc(100% - 32px); text-align: center; border-radius: 12px; bottom: 14px; }
+  .cafe-hint { white-space: normal; width: calc(100% - 32px); text-align: center; bottom: 14px; font-size: 15px; } .cafe-call { right: 56px; max-width: 60%; font-size: 14px; }
   .cafe-say { bottom: max(8px, env(safe-area-inset-bottom, 0px)); padding: 10px 14px 12px; width: calc(100% - 16px); }
   .cs-line { font-size: 16px; min-height: 2.6em; } .cs-ch button { font-size: 15px !important; min-height: 44px; }
   .ce-card { font-size: 18px; bottom: 16%; }
@@ -1298,7 +1330,7 @@ const EN = {
   }, 200); });
 })();
 </script>
-<script src="scene.js?v=8"></script>
-<script src="cafe.js?v=2"></script>
+<script src="scene.js?v=9"></script>
+<script src="cafe.js?v=4"></script>
 </body>
 </html>
