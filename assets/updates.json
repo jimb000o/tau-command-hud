@@ -1939,5 +1939,10 @@
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "In numbers, Nodes view: “Setting up a node” shows how far people get with the node kit, from copying the install command on the Nodes page through the install steps (Docker, the long build, the node starting) to the first report, catching up with the chain and still running, and where setups stop with an error. The install script sends its steps only when a node name is set, with a random install id and no address; the Nodes page and the privacy policy say so."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "Chain core: when an account’s own rule refuses a transfer, the red energy now runs out from the core and stops at a shield around the account, which flashes where it is hit while sparks glance off. The account stays lit: the refused money never reached it."
  }
 ]
