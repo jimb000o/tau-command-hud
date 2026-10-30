@@ -1,0 +1,7 @@
+/* Agorzilla's voted pendant light and fur (assets/agz-look.js). The layer sits on the trunk in the picture's own 760×1140 frame. */
+.agz-pl { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 760 / 1140; pointer-events: none; display: none; background: var(--agz-pend);
+  -webkit-mask: url(rig/agz-pendant.webp) 0 0 / 100% 100% no-repeat; mask: url(rig/agz-pendant.webp) 0 0 / 100% 100% no-repeat;
+  mix-blend-mode: color; transition: background-color 1.2s ease; }
+.agz-pl::after { content: ""; position: absolute; inset: 0; background: inherit; -webkit-mask: inherit; mask: inherit; mix-blend-mode: soft-light; opacity: .55; }
+[data-agz-look][data-agz-pendant] .agz-pl { display: block; }
+[data-agz-look] .agz-fur { filter: var(--agz-fur, none); transition: filter 1.2s ease; }

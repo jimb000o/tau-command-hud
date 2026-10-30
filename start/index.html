@@ -125,6 +125,7 @@ ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; gr
 .chainrow em { position: absolute; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); font: 11px var(--mono); color: var(--dim); font-style: normal; white-space: nowrap; }
 .done .chainrow em { color: var(--ok); }
 .creature { height: min(150px, 100%); max-width: 70%; object-fit: contain; filter: drop-shadow(0 10px 22px rgba(0,0,0,.7)) grayscale(.3); transition: filter .6s, transform .6s; }
+.agzpic { position: relative; display: block; aspect-ratio: 760 / 1140; } .agzpic img { display: block; width: 100%; height: 100%; }
 .done .creature { filter: drop-shadow(0 10px 22px rgba(57,255,138,.25)); transform: translateY(-4px); }
 /* the end: what you did, and where to go next */
 .finale { display: grid; gap: 10px 24px; align-items: center; background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
@@ -169,6 +170,8 @@ html.fit .step { overflow: hidden; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/agz-look.js" data-poll></script>
+<link rel="stylesheet" href="../assets/agz-look.css">
 </head>
 <body>
 <div class="wrap">
@@ -215,7 +218,7 @@ html.fit .step { overflow: hidden; }
     <li class="step" id="s4">
       <div class="top"><span class="num" aria-hidden="true"></span><h2>Feed Agorzilla</h2><span class="when">5 test AGRS</span></div>
       <p>One creature the whole testnet feeds. Each meal is a payment, and every evening the wallets that fed it <b>vote on how it changes</b>.</p>
-      <div class="vis" aria-hidden="true"><img class="creature" src="../assets/agorzilla.webp" alt=""></div>
+      <div class="vis" aria-hidden="true"><span class="creature agzpic" data-agz-look><img class="agz-fur" src="../assets/agorzilla.webp" alt=""><i class="agz-pl"></i></span></div>
       <div class="acts"><a class="b go" id="go4" href="/wallet/?from=start">Feed it from my wallet</a><a class="b" href="https://agorzilla.com" target="_blank" rel="noopener">Meet it first ↗</a></div>
       <div class="say" id="say4"><span>Agorzilla lives on the real testnet.</span></div>
     </li>
