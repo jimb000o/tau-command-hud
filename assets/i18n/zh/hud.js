@@ -2156,4 +2156,5 @@ TauI18n.add({ strings: {
   "1 ghost tx in the waiting list right now": "此刻等待列表里有 1 笔幽灵交易",
   "{n} txs waiting for the next block": "{n} 笔交易等待下一个区块",
   "1 tx waiting for the next block": "1 笔交易等待下一个区块",
+  "News line: the ghost lines wear the same mark as the ghosts in the chain core, an amber dot in a small block frame.": "快讯：幽灵相关的条目带上与链核心里幽灵交易相同的标记：一个小区块框里的琥珀色圆点。",
 } });

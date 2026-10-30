@@ -1817,5 +1817,10 @@
   "tag": "HUD",
   "on": "2026-10-30",
   "html": "News line: the ghosts get their headline. Ghost transactions are already sealed in a block but the node still lists them as waiting (a known bug, IDNI #81); the line says how many are haunting the waiting list right now. Transactions are now written “txs” on the line."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: the ghost lines wear the same mark as the ghosts in the chain core, an amber dot in a small block frame."
  }
 ]

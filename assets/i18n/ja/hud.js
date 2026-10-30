@@ -2152,4 +2152,5 @@ TauI18n.add({ strings: {
   "1 ghost tx in the waiting list right now": "今、待機リストに幽霊取引が 1 件",
   "{n} txs waiting for the next block": "{n} 件の取引が次のブロックを待っています",
   "1 tx waiting for the next block": "1 件の取引が次のブロックを待っています",
+  "News line: the ghost lines wear the same mark as the ghosts in the chain core, an amber dot in a small block frame.": "ニュースの行：幽霊の項目に、チェーンコアの幽霊取引と同じ印が付きました。小さなブロック枠の中の琥珀色の点です。",
 } });
