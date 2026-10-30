@@ -1518,5 +1518,14 @@
   "on": "2026-10-30",
   "html": "Newspaper: the café walk opens faster and says so. ☕ Look up now glows green with a breathing light on the paper's bar; when you press it, the paper goes down at once and a small card (“One moment… the café is being set for you”) with a progress bar shows while the rooms are drawn. Rooms are drawn ahead while you stand still, so walking to the next one no longer pauses on big screens."
  },
-  {"tag": "Nodes", "on": "2026-10-30", "html": "Nodes: click any row on the leaderboard for that node’s card: peer ID, when it was first and last seen, how far it is from our height, and for IDNI a link to the validator."}
+ {
+  "tag": "Nodes",
+  "on": "2026-10-30",
+  "html": "Nodes: click any row on the leaderboard for that node’s card: peer ID, when it was first and last seen, how far it is from our height, and for IDNI a link to the validator."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper: the streetcar coming toward you on the left now rolls all the way out past the edge of the window, its last car-length included, instead of vanishing while its tail was still in view."
+ }
 ]
