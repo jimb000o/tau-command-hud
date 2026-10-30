@@ -1571,6 +1571,7 @@
    "id": "roadmap",
    "title": "New: the road to mainnet, as we see it",
    "text": "Ten things we found on the Tau testnet that we think should be fixed before mainnet, each with proof and a path to a fix. Our view, not IDNI's plan, and we may be wrong: comment on any item.",
+   "skip": "posted by hand with a video on 2026-10-30",
    "link": "/roadmap/",
    "image": "/assets/shots/roadmap.png"
   }
