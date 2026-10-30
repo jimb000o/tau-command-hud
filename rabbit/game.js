@@ -414,6 +414,7 @@
   function vote(by, id, votes, after) {
     SND.set({ tense: true });
     openCard("hall", box => {
+      box.classList.add("locked");
       box.append(el("h3", { text: T("The council votes") }), el("p", { class: "cv-line", text: T(LAWS[id].t) }), el("p", { class: "cv-note", text: F("Proposed by {x}. Two of three make it law.", { x: nm(by) }) }));
       const row = el("div", { class: "cv-votes" });
       const vs = Object.keys(votes);
@@ -435,6 +436,7 @@
         const ok = settle(by, id, votes);
         if (by !== G.me) { for (const v in votes) if (v === G.me) G.trust[by] = Math.max(0, Math.min(100, G.trust[by] + (votes[v] ? 15 : -10))); if (pact(G.me, by) && !votes[G.me]) breakPact(G.me, by); }
         SND.set({ tense: false }); save(); hud();
+        box.classList.remove("locked");
         acts.replaceChildren(el("p", { class: "cv-result " + (ok ? "ok" : "bad"), text: ok ? T("It is law.") : T("Voted down.") }));
         if (ok && by === G.me && G.onchain) acts.append(chainBtn("council", T("Sign it into the testnet too"), F("Law passed on the island: {x}", { x: T(LAWS[id].t) })));
         acts.append(btn(T("Continue"), () => { if (after) after(); else if (G.move >= MOVES) { closeCard(); endDay(); } else closeCard(); }, { go: true }));
@@ -459,8 +461,8 @@
 
   /* ---------- day and night ---------- */
   function endDay() {
-    if (G.over) return;
-    G.move = MOVES; hud();
+    if (!G || G.over || G.move < MOVES || G.counting) return;   // once per night, however many ways lead here
+    hud();
     night();
     if (G.day >= DAYS) { save(); return election(); }
     G.day++; G.move = 0;
@@ -493,20 +495,24 @@
 
   /* ---------- election night ---------- */
   function election() {
-    G.move = MOVES; hud(); SC.setHour(2.6); SC.gather(1);
+    G.counting = true; G.move = MOVES; hud(); SC.setHour(2.6); SC.gather(1);
     SND.set({ tense: true });
     const R = seeded(G.seed + 99), ballots = PEOPLE.map(p => {
       const sc = Object.keys(CANDS).map(c => [c, G.sup[c][p.id] + R() * 4]); sc.sort((a, b) => b[1] - a[1]); return [p, sc[0][0]];
     });
+    /* the eleventh ballot belongs to the visitors: it goes to whoever leads the island ballot on the real testnet */
+    const vp = visitorsPick(); if (vp) ballots.push([{ name: T("The visitors, by their votes on the testnet") }, vp]);
     const count = {}; Object.keys(CANDS).forEach(c => (count[c] = 0));
     openCard("market", box => {
-      box.append(el("h3", { text: T("Election night") }), el("p", { class: "cv-note", text: T("Ten ballots, counted on the square by Old Sam.") }));
+      box.classList.add("locked");
+      box.append(el("h3", { text: T("Election night") }), el("p", { class: "cv-note", text: T(vp ? "Ten ballots from the islanders and one from the visitors of the testnet, counted on the square by Old Sam." : "Ten ballots, counted on the square by Old Sam.") }));
       const row = el("div", { class: "cv-votes four" });
       Object.keys(CANDS).forEach(c => row.append(el("figure", { id: "el-" + c }, portrait(c, 56), el("figcaption", { translate: "no", text: nm(c) }), el("b", { class: "th", text: "0" }))));
       const tape = el("p", { class: "cv-tape", "aria-live": "polite" });
       box.append(row, tape);
       let i = 0;
       const next = () => {
+        if (!box.isConnected) return;
         if (i >= ballots.length) return done();
         const [p, c] = ballots[i++]; count[c]++;
         $("el-" + c).querySelector(".th").textContent = String(count[c]); $("el-" + c).classList.add("bump"); setTimeout(() => $("el-" + c) && $("el-" + c).classList.remove("bump"), 300);
@@ -530,7 +536,7 @@
     const [title, text] = won && !o.lies ? [T("Governor of the island"), T("You won on what was true. Everything you did is in the Book, and none of it needs explaining.")]
       : won ? [T("Governor, with a footnote"), T("You won, and the Book shows every rumour you paid for. Nobody can tear out a page, so your term starts with questions.")]
       : [T("Back to the hammock"), F("{x} is governor. Read the Book to see how; every move is there, yours too.", { x: nm(o.win) })];
-    SC.gather(0);
+    SC.gather(0); SC.focus(null);
     openCard(null, box => {
       box.classList.add("end");
       box.append(el("div", { class: "cv-who" }, portrait(o.win, 92, 1), el("div", null, el("small", { text: T("Governor of the island") }), el("b", { translate: "no", text: nm(o.win) }))));
@@ -542,6 +548,7 @@
       const acts = el("div", { class: "cv-acts" });
       acts.append(el("p", { class: "cv-h", text: T("Cast a real vote on the testnet: who should govern the island? 1 test AGRS, no value; every visitor’s vote is counted.") }));
       Object.keys(CANDS).forEach(c => acts.append(chainBtn(c, F("Vote {x}", { x: nm(c) }), F("Key ballot: {x}", { x: nm(c) }))));
+      acts.append(ballotEl());
       acts.append(btn(T("Play again"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true }), btn(T("Read the Book"), () => openCard("book", PLACE.book)));
       box.append(acts);
     });
@@ -566,15 +573,43 @@
       el("iframe", { src: url, title: T("Your test wallet") }),
       el("div", { class: "df", text: T("Tau Testnet Alpha. Test AGRS only, they have no value. Nothing is sent until you sign.") }));
     document.body.append(d);
-    drawer = { d, t: setInterval(() => { const x = lastTx(); if (x && x !== before) { G.sent[to + ":" + G.day] = true; save(); d.classList.add("ok"); d.append(el("div", { class: "doneflash" }, el("i", { text: "✓" }), el("span", { text: T("Signed and sent. It lands in the next block.") }))); SND.sfx("yes"); setTimeout(closeWallet, 1800); } }, 700) };
+    drawer = { d, t: setInterval(() => { const x = lastTx(); if (x && x !== before) { G.sent[to + ":" + G.day] = true; save(); setTimeout(readBallot, 75000); d.classList.add("ok"); d.append(el("div", { class: "doneflash" }, el("i", { text: "✓" }), el("span", { text: T("Signed and sent. It lands in the next block.") }))); SND.sfx("yes"); setTimeout(closeWallet, 1800); } }, 700) };
   }
   function lastTx() { try { const k = JSON.parse(store.get(WKEY) || "null"); if (!k || !k.pk) return null; const log = JSON.parse(store.get(`tauhud-wallet-log-live-${k.pk}`) || "[]"); return log[0] ? log[0].hash || String(log[0].at) : null; } catch (e) { return null; } }
   function closeWallet() { if (!drawer) return; clearInterval(drawer.t); drawer.d.remove(); drawer = null; if (UI.card && G && G.over) { const o = UI.card; closeCard(true); ending(); } }
 
+  /* ---------- the island ballot on the real testnet: what each ballot box holds, read through the relay ---------- */
+  const BAL = { n: {}, state: "wait" };
+  function readBallot() {
+    let ws; try { ws = new WebSocket("wss://node.tauhud.com"); } catch (e) { BAL.state = "off"; return; }
+    const todo = Object.keys(CANDS), stop = setTimeout(() => { try { ws.close(); } catch (e) {} if (BAL.state === "wait") { BAL.state = "off"; ballotLine(); } }, 15000);
+    const ask = () => { const c = todo[0]; if (c && ws.readyState === 1) ws.send("getbalance " + ADDR[c]); };
+    ws.onopen = () => { ws.send("hello version=1"); setTimeout(ask, 200); };
+    ws.onmessage = ev => {
+      let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
+      if (m.command !== "getbalance") return;
+      const d = m.data || {}, c = Object.keys(CANDS).find(k => ADDR[k] === String(d.address || "").toLowerCase());
+      if (m.status === "ok" && c) { BAL.n[c] = Math.floor(Number(d.balance) || 0); todo.splice(todo.indexOf(c), 1); }
+      if (!todo.length) { BAL.state = "ok"; clearTimeout(stop); try { ws.close(); } catch (e) {} ballotLine(); return; }
+      setTimeout(ask, m.status === "ok" ? 300 : 1500);
+    };
+    ws.onerror = () => { BAL.state = "off"; ballotLine(); };
+  }
+  /* the visitors' choice: the candidate whose box holds the most, if one leads */
+  const visitorsPick = () => { if (BAL.state !== "ok") return null; const s = Object.keys(CANDS).sort((a, b) => (BAL.n[b] || 0) - (BAL.n[a] || 0)); return (BAL.n[s[0]] || 0) > (BAL.n[s[1]] || 0) ? s[0] : null; };
+  function ballotLine() {
+    document.querySelectorAll(".cv-ballot").forEach(p => {
+      if (BAL.state === "wait") { p.textContent = T("Reading the island ballot on the testnet…"); return; }
+      if (BAL.state === "off") { p.textContent = T("The testnet is out of reach just now; the island ballot shows here once it answers."); return; }
+      p.replaceChildren(el("b", { text: T("Island ballot on the testnet so far:") }), " ", Object.keys(CANDS).map(c => nm(c) + " " + (BAL.n[c] || 0)).join(" · "));
+    });
+  }
+  const ballotEl = () => { const p = el("p", { class: "cv-ballot", "aria-live": "polite" }); setTimeout(ballotLine, 0); return p; };
+
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { hud(); if (G.over) return ending(); if (G.move >= MOVES) return endDay(); return; }
+    if (G) { hud(); if (G.over) return ending(); if (G.counting) { G.counting = false; return election(); } if (G.move >= MOVES) return endDay(); return; }
     SC.setHour(0, true); hud();
     openCard(null, box => {
       box.classList.add("intro");
@@ -585,6 +620,7 @@
       box.append(el("p", { class: "cv-h", text: T("Play as") }), pick);
       const chk = el("input", { type: "checkbox", id: "cvChain" }); chk.checked = store.get("tauhud-rabbit-chain") === "on";
       chk.addEventListener("change", () => store.set("tauhud-rabbit-chain", chk.checked ? "on" : "off"));
+      box.append(ballotEl());
       box.append(el("label", { class: "cv-chain", for: "cvChain" }, chk, el("span", { text: T("Also sign my laws and my final vote on Tau Testnet Alpha (1 test AGRS each, from my test wallet in this browser)") })));
     });
   }
@@ -599,7 +635,8 @@
       el("ul", { class: "cv-help" }, el("li", { text: T("Council Hall: propose a law. Two of the other three candidates must vote yes. A law that contradicts one in force is refused first.") }),
         el("li", { text: T("Market square: talk about a topic. People who care about it move toward you.") }), el("li", { text: T("Radio Coco: pay for a line on air. True lines are safe. Lies come back when people read the Book.") }),
         el("li", { text: T("Embassies: coins now, for a promise to propose their law. Forget it and they tell everyone.") }), el("li", { text: T("Bar La Ola: pacts. Partners vote for each other’s laws.") }),
-        el("li", { text: T("The lighthouse: the Book. Free to read, and nobody can change it.") }))));
+        el("li", { text: T("The lighthouse: the Book. Free to read, and nobody can change it.") }),
+        el("li", { text: T("Election night: the visitors of the site cast an eleventh ballot, for whoever leads the island ballot on the real testnet.") }))));
   }
   let toastT = 0;
   function toast(s) { const t = $("cvToast"); t.textContent = s; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600); }
@@ -620,7 +657,7 @@
     cv.addEventListener("click", e => {
       wake();
       if (!G) return;
-      if (UI.card) { if (!UI.card.classList.contains("intro") && !UI.card.classList.contains("paper") && !UI.card.classList.contains("end") && !UI.card.querySelector(".cv-votes")) closeCard(); return; }
+      if (UI.card) { if (!UI.card.classList.contains("intro") && !UI.card.classList.contains("paper") && !UI.card.classList.contains("end") && !UI.card.classList.contains("locked")) closeCard(); return; }
       const id = SC.hit(...where(e)); tip.hidden = true;
       if (id === "rabbit") { if (G.over || G.move >= MOVES) return; const [to, line] = hint(); toast(line); SND.sfx("tap"); setTimeout(() => openCard(to, PLACE[to]), 700); return; }
       if (id && PLACE[id]) openCard(id, PLACE[id]);
@@ -628,7 +665,9 @@
     /* places by keyboard: the list under the scene, one button each */
     const keys = $("cvPlaces");
     Object.keys(PLACE).forEach(id => keys.append(el("button", { type: "button", onclick: () => { wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("span", { text: T(SC.places[id].name) }))));
-    addEventListener("keydown", e => { if (e.key === "Escape" && UI.card && !UI.card.classList.contains("intro")) closeCard(); });
+    addEventListener("keydown", e => { if (e.key === "Escape" && UI.card && !UI.card.classList.contains("intro") && !UI.card.classList.contains("locked")) closeCard(); });
+    /* the day's last move is spent and nothing is open any more: the night comes, however the last card was left */
+    setInterval(() => { if (G && !G.over && G.move >= MOVES && !UI.card && !drawer) { if (G.counting) { G.counting = false; election(); } else endDay(); } }, 1200);
     $("cvHelp").onclick = () => { wake(); help(); };
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     const sb = $("cvSound");
@@ -648,6 +687,7 @@
     else if (q.get("rabbit") && G && PLACE[q.get("rabbit")]) openCard(q.get("rabbit"), PLACE[q.get("rabbit")]);
     else if (q.get("rabbit") === "paper" && G) morning(3);
   }
+  setTimeout(readBallot, 1200);
   window.COVE_GAME = { get state() { return G; }, begin, endDay };
   wire();
 })();
