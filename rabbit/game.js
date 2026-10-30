@@ -672,9 +672,14 @@
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     const sb = $("cvSound");
     const showSound = () => { sb.textContent = SND.on ? "♪ " + T("Sound on") : SND.wanted ? "♪ " + T("Tap for sound") : "♪ " + T("Sound off"); sb.setAttribute("aria-pressed", SND.on ? "true" : "false"); };
-    sb.onclick = e => { e.stopPropagation(); if (!SND.on && SND.wanted) SND.start(); else SND.toggle(); showSound(); };
-    const wake = () => { if (!SND.on && SND.wanted) { SND.start(); showSound(); } };
-    addEventListener("pointerdown", wake, { once: true }); addEventListener("keydown", wake, { once: true });
+    let woke = 0;   // the press that just started the music must not also switch it off
+    sb.onclick = e => { e.stopPropagation(); if (Date.now() - woke < 800) return showSound(); if (!SND.on && SND.wanted) SND.start(); else SND.toggle(); showSound(); };
+    /* the music starts as the page opens; where the browser holds it back, it starts on the first click, tap or key anywhere */
+    const GESTURES = ["pointerdown", "touchstart", "keydown", "click"];
+    const wake = () => { if (!SND.on && SND.wanted) { SND.start(); woke = Date.now(); } showSound(); if (SND.on || !SND.wanted) GESTURES.forEach(n => removeEventListener(n, wake, true)); };
+    GESTURES.forEach(n => addEventListener(n, wake, true));
+    SND.onchange = showSound;
+    if (SND.wanted) SND.start();
     showSound();
     const fs = $("cvFull");
     if (document.fullscreenEnabled) fs.onclick = () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else $("cvStage").requestFullscreen({ navigationUI: "hide" }).catch(() => {}); };

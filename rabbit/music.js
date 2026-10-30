@@ -144,11 +144,18 @@
   }
   function start() {
     if (!S.want) return false;
-    try { if (!S.ctx) build(); S.ctx.resume(); S.on = true; apply(); return true; } catch (e) { return false; }
+    try {
+      if (!S.ctx) { build(); S.ctx.onstatechange = () => S.cb && S.cb(); }
+      S.on = true; apply();
+      if (S.ctx.state !== "running") S.ctx.resume().then(() => S.cb && S.cb(), () => {});
+      return S.ctx.state === "running";
+    } catch (e) { return false; }
   }
   window.COVE_SOUND = {
     start, sfx,
-    get on() { return S.on; }, get wanted() { return S.want; },
+    /* on: the music is really playing (a browser lets it start only after the first click, tap or key) */
+    get on() { return S.on && !!S.ctx && S.ctx.state === "running"; }, get wanted() { return S.want; },
+    set onchange(f) { S.cb = f; },
     set(o) { Object.assign(want, o); apply(); },
     toggle() {
       S.want = !S.want; try { localStorage.setItem("tauhud-rabbit-sound", S.want ? "on" : "off"); } catch (e) {}
