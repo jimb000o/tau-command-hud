@@ -1840,6 +1840,19 @@
   "on": "2026-10-30",
   "html": "News line: the ghost lines wear the same mark as the ghosts in the chain core, an amber dot in a small block frame."
  },
-  {"tag": "Alerts", "on": "2026-10-30", "html": "Alerts: the Monday 09:00 post on Telegram and X now announces the new Daily Consensus first: its number, its headline and how it opens, with a link to read it on Telegram. The week in numbers follows in the same post, so it is one Monday post, not two."},
-  {"tag": "Alerts", "on": "2026-10-30", "html": "Alerts: posts can now be planned ahead in one calendar file, and the bot sends each at its time on Telegram and X. November is planned: the Taumorrow chess round on Sunday 1 November, a page worth a look every Wednesday, and the rule challenge's last days every Friday."}
+ {
+  "tag": "Alerts",
+  "on": "2026-10-30",
+  "html": "Alerts: the Monday 09:00 post on Telegram and X now announces the new Daily Consensus first: its number, its headline and how it opens, with a link to read it on Telegram. The week in numbers follows in the same post, so it is one Monday post, not two."
+ },
+ {
+  "tag": "Alerts",
+  "on": "2026-10-30",
+  "html": "Alerts: posts can now be planned ahead in one calendar file, and the bot sends each at its time on Telegram and X. November is planned: the Taumorrow chess round on Sunday 1 November, a page worth a look every Wednesday, and the rule challenge's last days every Friday."
+ },
+ {
+  "tag": "Gazette",
+  "on": "2026-10-30",
+  "html": "Daily Consensus café: when Sully gives the last stamp, he holds your full ticket up to the light and it turns gold, with a few words from him and a purr from Déjà. The golden ticket stays in the corner, and your Tau card shows it too."
+ }
 ]
