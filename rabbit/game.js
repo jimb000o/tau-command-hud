@@ -222,7 +222,9 @@
   const leader = () => Object.keys(CANDS).sort((a, b) => total(b) - total(a))[0];
   const bump = (c, who, d) => { PEOPLE.forEach(p => { if (!who || who(p)) G.sup[c][p.id] = Math.max(0, Math.min(100, G.sup[c][p.id] + d)); }); };
   /* the Book: every move signed with the name of whoever made it */
-  const write = (who, text, kind) => G.book.push({ day: G.day, hour: Math.min(2, G.move), who, text, kind });
+  /* every line in the Book is also a transaction on Tau Testnet Alpha: the visitor's own (signed in their test wallet,
+     once they tick the box) and the rivals' (sent by the island bot on the relay, from the rivals' campaign wallets) */
+  const write = (who, text, kind) => { const b = { day: G.day, hour: Math.min(2, G.move), who, text, kind }; G.book.push(b); onChain(b); return b; };
 
   /* ---------- the moves ---------- */
   /* propose a law: the Book checks it against the laws in force first, then the other three vote */
@@ -432,7 +434,7 @@
     },
     book(box) {
       G.said.book = G.book.length; save();
-      const rows = G.book.slice().reverse().map(b => el("li", { class: "k-" + b.kind }, el("small", { text: F("Day {n}", { n: b.day }) + " · " + T(HOURS[b.hour] || "Night") }), el("span", null, el("b", { translate: "no", text: nm(b.who) }), " ", el("span", { text: b.text }))));
+      const rows = G.book.slice().reverse().map(b => el("li", { class: "k-" + b.kind }, el("small", { text: F("Day {n}", { n: b.day }) + " · " + T(HOURS[b.hour] || "Night") }), el("span", null, el("b", { translate: "no", text: nm(b.who) }), " ", el("span", { text: b.text }), b.tx && !/^\d+$/.test(b.tx) ? el("a", { class: "cv-tx", href: "/explorer/?tx=" + b.tx, target: "_blank", rel: "noopener", title: T("This line on Tau Testnet Alpha"), text: " ⛓" }) : b.tx || b.bot ? el("span", { class: "cv-tx", title: T("This line went to Tau Testnet Alpha as a transaction"), text: " ⛓" }) : null)));
       scene(box, "sam", T("The Book in the lighthouse"), T(G.book.length ? "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing." : "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."), null,
         el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]));
     },
@@ -494,11 +496,11 @@
       const mark = (v, y) => { const f = $("vt-" + v); if (!f) return; f.classList.add(y ? "yes" : "no"); f.querySelector(".th").textContent = y ? "✓" : "✕"; SND.sfx(y ? "yes" : "no"); const c = f.querySelector("canvas"); if (c && c._f) c._f.mood = y ? 1 : -1; };
       const finish = () => {
         const ok = settle(by, id, votes);
+        for (const v in votes) if (votes[v] != null) onChain({ who: v, kind: "vote", text: F("voted {x} on “{y}”", { x: T(votes[v] ? "yes" : "no"), y: T(LAWS[id].t) }) });
         if (by !== G.me) { for (const v in votes) if (v === G.me) G.trust[by] = Math.max(0, Math.min(100, G.trust[by] + (votes[v] ? 15 : -10))); if (pact(G.me, by) && !votes[G.me]) breakPact(G.me, by); }
         SND.set({ tense: false }); save(); hud();
         box.classList.remove("locked");
         acts.replaceChildren(el("p", { class: "cv-result " + (ok ? "ok" : "bad"), text: ok ? T("It is law.") : T("Voted down.") }));
-        if (ok && by === G.me && G.onchain) acts.append(chainBtn("council", T("Sign it into the testnet too"), F("Law passed on the island: {x}", { x: T(LAWS[id].t) })));
         acts.append(btn(T("Continue"), () => { if (after) after(); else if (G.move >= MOVES) { closeCard(); endDay(); } else closeCard(); }, { go: true }));
         if (by === G.me) { G.move++; save(); hud(); }
       };
@@ -701,7 +703,73 @@
   const BOOKNAME = { council: "Key council", marisol: "Key ballot · Marisol", tobias: "Key ballot · Tobias", baako: "Key ballot · Baako", hana: "Key ballot · Hana" };
   function chainBtn(to, label, what) {
     const sent = G && G.sent[to + ":" + G.day];
-    return btn(sent ? T("Sent to the testnet ✓") : label, () => openWallet(to, what), { off: !!sent, sub: T("1 test AGRS from your test wallet, signed by you") });
+    const go = e => {
+      if (!G.onchain) return openWallet(to, what);
+      const b = e.currentTarget; b.disabled = true;
+      mySend(ADDR[to], what, h => { if (h) { G.sent[to + ":" + G.day] = true; save(); b.querySelector("span").textContent = T("Sent to the testnet ✓"); setTimeout(readBallot, 75000); } else b.disabled = false; });
+    };
+    return btn(sent ? T("Sent to the testnet ✓") : label, go, { off: !!sent, sub: T("1 test AGRS from your test wallet, signed by you") });
+  }
+  /* ---------- the Book on the chain ---------- */
+  const CHAIN = { ws: null, wait: new Map(), q: [], busy: false, next: 0, fee: null, made: false };
+  function relay() {
+    return new Promise(res => {
+      if (CHAIN.ws && CHAIN.ws.readyState === 1) return res(CHAIN.ws);
+      let ws; try { ws = new WebSocket("wss://node.tauhud.com"); } catch (e) { return res(null); }
+      ws.onopen = () => { ws.send("hello version=1"); CHAIN.ws = ws; setTimeout(() => res(ws), 150); };
+      ws.onmessage = ev => { let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; } const q = CHAIN.wait.get(m.command); if (q && q.length) q.shift()(m); };
+      ws.onerror = ws.onclose = () => { if (CHAIN.ws === ws) CHAIN.ws = null; res(null); };
+    });
+  }
+  async function ask(cmd, ms = 12000) {
+    const ws = await relay(); if (!ws) return null;
+    return new Promise(res => {
+      const c = cmd.split(" ")[0]; if (!CHAIN.wait.has(c)) CHAIN.wait.set(c, []); const q = CHAIN.wait.get(c); q.push(res);
+      try { ws.send(cmd); } catch (e) { res(null); }
+      setTimeout(() => { const i = q.indexOf(res); if (i >= 0) { q.splice(i, 1); res(null); } }, ms);
+    });
+  }
+  /* a move made: the visitor's own goes from their wallet when they said so, a rival's to the island bot */
+  function onChain(b) {
+    if (!G || !CANDS[b.who]) return;
+    if (b.who !== G.me) { ask("islandmove " + b.who + " " + b.kind, 8000).then(m => { if (m && m.status === "ok" && m.data && m.data.queued) { b.bot = true; save(); } }); return; }
+    if (G.onchain) mySend(ADDR.council, nm(b.who) + " " + b.text, h => { if (h) { b.tx = h; save(); } });
+  }
+  /* the visitor's test wallet in this browser (the same key /wallet/ uses); made here if there is none yet */
+  function myKey() {
+    const B = window.TauBLS; if (!B) return null;
+    try { const k = JSON.parse(store.get(WKEY) || "null"); if (k && /^[0-9a-f]{64}$/.test(k.sk)) return { sk: B.hexToBytes(k.sk), pk: k.pk || B.bytesToHex(B.pubOf(B.hexToBytes(k.sk))) }; } catch (e) {}
+    const skHex = B.bytesToHex(B.keygen()), pk = B.bytesToHex(B.pubOf(B.hexToBytes(skHex)));
+    store.set(WKEY, JSON.stringify({ sk: skHex, pk })); CHAIN.made = true;
+    toast(T("A test wallet was made for you in this browser. You find it at tauhud.com/wallet/."));
+    return { sk: B.hexToBytes(skHex), pk };
+  }
+  /* Python's json.dumps(sort_keys=True, separators=(",", ":")), what the node signs over */
+  const canon = o => Array.isArray(o) ? "[" + o.map(canon).join(",") + "]" : o === null || typeof o !== "object" ? JSON.stringify(o).replace(/[\u007f-\uffff]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")) : "{" + Object.keys(o).sort().map(k => JSON.stringify(k) + ":" + canon(o[k])).join(",") + "}";
+  function mySend(to, label, done) { CHAIN.q.push({ to, label, done }); pump(); }
+  async function pump() {
+    if (CHAIN.busy || !CHAIN.q.length) return;
+    CHAIN.busy = true;
+    const { to, label, done } = CHAIN.q.shift();
+    let hash = null;
+    try {
+      const k = myKey(); if (!k) throw 0;
+      if (CHAIN.fee == null) { const g = await ask("getgovernance"); const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((g && g.data && g.data.consensus_rules) || ""); CHAIN.fee = m ? parseInt(m[1], 16) : 10; }
+      const st = await ask("getsequence " + k.pk); if (!st || st.status !== "ok") throw 0;
+      const seq = Math.max(st.data.sequence_number || 0, CHAIN.next), tip = st.data.tip_height || 0;
+      const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 600, expire_at_height: tip + 1000, fee_limit: String(CHAIN.fee * 5), operations: { "1": [[k.pk, to, "1"]] } };
+      const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
+      tx.signature = window.TauBLS.bytesToHex(window.TauBLS.sign(new TextEncoder().encode(canon(d)), k.sk));
+      await ask("via rabbit");
+      const r = await ask("sendtx " + JSON.stringify(tx));
+      if (r && r.status === "ok" && !(r.data && r.data.ok === false)) {
+        hash = (r.data && r.data.tx_hash) || String(Date.now()); CHAIN.next = seq + 1;
+        try { const lk = "tauhud-wallet-log-live-" + k.pk, logs = JSON.parse(store.get(lk) || "[]"); logs.unshift({ hash, kind: "pay", label: T("White Rabbit Key") + ": " + label, at: Date.now(), status: "queued", seq, paid: true }); store.set(lk, JSON.stringify(logs.slice(0, 40))); } catch (e) {}
+        toast(T("Signed into the testnet: 1 test AGRS from your wallet."));
+      } else { CHAIN.next = 0; toast(T("The testnet did not take this move just now; the game goes on.")); }
+    } catch (e) { if (G && G.onchain) toast(T("The testnet is out of reach just now; the game goes on.")); }
+    CHAIN.busy = false; done && done(hash);
+    if (CHAIN.q.length) setTimeout(pump, 400);
   }
   let drawer = null;
   function openWallet(to, what) {
@@ -763,7 +831,7 @@
       const chk = el("input", { type: "checkbox", id: "cvChain" }); chk.checked = store.get("tauhud-rabbit-chain") === "on";
       chk.addEventListener("change", () => store.set("tauhud-rabbit-chain", chk.checked ? "on" : "off"));
       box.append(ballotEl());
-      box.append(el("label", { class: "cv-chain", for: "cvChain" }, chk, el("span", { text: T("Also sign my laws and my final vote on Tau Testnet Alpha (1 test AGRS each, from my test wallet in this browser)") })));
+      box.append(el("label", { class: "cv-chain", for: "cvChain" }, chk, el("span", { text: T("Sign my moves into Tau Testnet Alpha as I make them: 1 test AGRS each from my test wallet in this browser (made for me if I have none). The rivals’ moves go there anyway, from their own campaign wallets.") })));
     });
   }
   function begin(c) {
@@ -778,7 +846,8 @@
         el("li", { text: T("Market square: talk about a topic. People who care about it move toward you.") }), el("li", { text: T("Radio Coco: pay for a line on air. True lines are safe. Lies come back when people read the Book.") }),
         el("li", { text: T("Embassies: coins now, for a promise to propose their law. Forget it and they tell everyone.") }), el("li", { text: T("Bar La Ola: pacts. Partners vote for each other’s laws.") }),
         el("li", { text: T("The lighthouse: the Book. Free to read, and nobody can change it.") }),
-        el("li", { text: T("Election night: the visitors of the site cast an eleventh ballot, for whoever leads the island ballot on the real testnet.") }))));
+        el("li", { text: T("Election night: the visitors of the site cast an eleventh ballot, for whoever leads the island ballot on the real testnet.") }),
+        el("li", { text: T("On the chain: every line in the Book is also a transaction on Tau Testnet Alpha, 1 test AGRS to the island council. The rivals send theirs from their own campaign wallets; yours go from your test wallet if you ticked the box. A ⛓ in the Book marks them.") }))));
   }
   let toastT = 0;
   function toast(s) { const t = $("cvToast"); t.textContent = s; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600); }
