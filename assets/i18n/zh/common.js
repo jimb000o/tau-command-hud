@@ -551,6 +551,12 @@ TauI18n.add({ strings: {
   "asking our node…": "正在询问我们的节点…",
   "Up to date": "已是最新",
   "every block read": "所有区块已读取",
+  "about {n} s left": "大约还剩 {n} 秒",
+  "about {n} min left": "大约还剩 {n} 分钟",
+  "almost there": "马上就好",
+  "Every number on this page counts up as the blocks arrive.": "区块陆续到达时，本页的每个数字都会随之增长。",
+  "This page fills in once every block is read.": "读完全部区块后，本页内容就会出现。",
+  "{n}%": "{n}%",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 发送方自己的规则说不 (o5 = 0 · ${TauI18n.t(r)})`]] });
