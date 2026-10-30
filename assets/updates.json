@@ -1397,5 +1397,10 @@
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "Tau HUD in numbers: the testnet transactions split now shows IDNI's genesis accounts on their own (the 11 accounts the testnet started with, which make most of the traffic), next to Agorzilla, Tau HUD and other wallets."
+ },
+ {
+  "tag": "Accounts",
+  "on": "2026-10-30",
+  "html": "Accounts: the validator profile no longer stops at 1,400 blocks. The page now paces its requests to stay inside our relay’s limit and asks again for any part of the chain that did not arrive."
  }
 ]
