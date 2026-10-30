@@ -7,13 +7,15 @@ Every transaction in the blocks the relay holds is put in one of three groups:
              wherever it was signed.
   tauhud     it was sent through this relay's wallet door from a Tau HUD page (wallet, playground, vote, …), or by the
              relay itself (the end of a turn on a rule place).
-  other      everything else: IDNI's tools, scripts, other wallets.
+  idni       sent by one of the accounts the testnet started with (tau-testnet networks/tau-testnet-v2/genesis.json,
+             accounts_state), which IDNI set up; on this testnet they make most of the traffic.
+  other      everything else: other wallets, scripts and tools.
 
 The relay remembers the hashes it sent, with the site the page came from, in SENT_PATH (only hashes and a site name;
 no address, no browser). The counts per UTC day are [transactions, wallets] for each group: wallets are distinct
 sender keys, not people.
 
-GET /api/v1/sources   {"days": {"YYYY-MM-DD": {"agorzilla": [txs, wallets], "tauhud": [...], "other": [...]}},
+GET /api/v1/sources   {"days": {"YYYY-MM-DD": {"agorzilla": [txs, wallets], "tauhud": [...], "idni": [...], "other": [...]}},
                        "since": <first block time>, "sent_since": <first remembered send>}
 """
 from __future__ import annotations
@@ -25,7 +27,7 @@ import time
 
 log = logging.getLogger("relay.txsources")
 
-GROUPS = ("agorzilla", "tauhud", "other")
+GROUPS = ("agorzilla", "tauhud", "idni", "other")
 SENT_MAX = 50000
 # Agorzilla's addresses (agorilla repo assets/core.js: BOWL, BOXES, ASKS)
 AGORZILLA = frozenset({
@@ -41,6 +43,22 @@ AGORZILLA = frozenset({
 })
 
 
+# the genesis accounts of tau-testnet-v2 (genesis.json accounts_state), set up by IDNI
+GENESIS = frozenset({
+    "f427fbf4cb8cc5ebcfc50add98ba574b94c03b1e32626e2e50cf60ba5e0a6d0c42d3ed702c2e0eeef7fae29bc4f3d2f9",
+    "838d089401687e4ba5fe844f1241b2f6cf63cf73a7f8fb6aa0e45b3c6b85454f4e7ca19960b71d847655486495b64cb4",
+    "93da919aed3b83e517190b8362528b35cbd51beb754289c5d99db12a306ac7f4980fbb96108a9cb812a46aede0c5f9ca",
+    "8a39b9d9498535492290c52b44959b5a6e9177dc85ae6a1d97f54462f03c15a38052a85c7ace5cd81858e343a3b789d0",
+    "b1337fcdf8d713a53518f0d6289c70bec2a09a7d6ec84548aac208988391cd66a9b627d03c07d922cd6ad15ebecf3ad7",
+    "b3566dd294833030380d74b39fdb0bf214e9c64906b175f8822c3d4386602b1a9340231e553f9c299d6d8a82b9d441da",
+    "af1d997703d7c0a86a5988762bb9ac2642890b5f0599f9821372684487d580a5f211ec160c038c073cda604c3c646487",
+    "9689f5f8ffe6b73bb549e4058e54a3fc6a96ef2e784c415adeffd83d9488c9b435f075b59a778308f86226074f8b09b0",
+    "916b92be0561ee21d042d033cabdf58d1c2f9ed110b2e173ab9cdd2a585442bec6232ffe0d97b779976a1dfd6a9d38fc",
+    "b9e4b8fbe06a12f4702617f71ef031206426c4205ca0bc3436d2e0cb047fd18473ad125ceefc7ef18b851a19af2f370b",
+    "8df32da800ad4b0657e333774889e6b08f768ab055ffb964d5935bbc8460aa8f91fa60a6a042f64ec144c7ec18ae02a3",
+})
+
+
 def group(tx: dict, tx_hash: str, sent: dict) -> str:
     ops = tx.get("operations") if isinstance(tx.get("operations"), dict) else {}
     for op in ops.get("1") or []:
@@ -49,6 +67,8 @@ def group(tx: dict, tx_hash: str, sent: dict) -> str:
     site = sent.get(tx_hash)
     if site is not None:
         return site or "tauhud"
+    if str(tx.get("sender_pubkey") or "").lower() in GENESIS:
+        return "idni"
     return "other"
 
 

@@ -21,6 +21,7 @@ def check(cond, label):
 
 BOWL = "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108"
 A, B, C = "aa" * 48, "bb" * 48, "cc" * 48
+G = "8a39b9d9498535492290c52b44959b5a6e9177dc85ae6a1d97f54462f03c15a38052a85c7ace5cd81858e343a3b789d0"
 
 
 def tx(sender, to):
@@ -41,13 +42,14 @@ blocks = [
      "transactions": [tx(A, BOWL), tx(B, C), tx(C, A)]},
     {"header": {"timestamp": day1 + 120}, "tx_ids": ["h4"], "transactions": [tx(A, BOWL.upper())]},
     {"header": {"timestamp": day2 + 60}, "tx_ids": ["h5", "h6"], "transactions": [tx(B, C), tx(A, B)]},
+    {"header": {"timestamp": day2 + 90}, "tx_ids": ["h8", "h9"], "transactions": [tx(G, B), tx(G, C)]},
     {"header": {}, "tx_ids": ["h7"], "transactions": [tx(A, B)]},
 ]
 out = s.by_day(blocks)
-check(out["days"]["2026-10-28"] == {"agorzilla": [2, 1], "tauhud": [1, 1], "other": [1, 1]},
+check(out["days"]["2026-10-28"] == {"agorzilla": [2, 1], "tauhud": [1, 1], "idni": [0, 0], "other": [1, 1]},
       "a meal is Agorzilla's, a relay send Tau HUD's, the rest other; wallets counted once a day")
-check(out["days"]["2026-10-29"] == {"agorzilla": [1, 1], "tauhud": [0, 0], "other": [1, 1]},
-      "a send from agorzilla.com through the relay counts for Agorzilla")
+check(out["days"]["2026-10-29"] == {"agorzilla": [1, 1], "tauhud": [0, 0], "idni": [2, 1], "other": [1, 1]},
+      "a send from agorzilla.com through the relay counts for Agorzilla, a genesis account for IDNI")
 check(out["since"] == day1 + 60 and len(out["days"]) == 2, "blocks without a time are left out")
 for i in range(txsources.SENT_MAX + 5):
     s.sent[f"x{i}"] = ""

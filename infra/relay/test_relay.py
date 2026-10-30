@@ -561,7 +561,7 @@ async def main():
         # public API: the summary and its badges over HTTP, open to any origin
         ctype, text = await get("/api/v1/sources")
         src = json.loads(text)
-        check(ctype == "application/json" and isinstance(src["days"], dict) and all(set(d) == {"agorzilla", "tauhud", "other"} for d in src["days"].values()),
+        check(ctype == "application/json" and isinstance(src["days"], dict) and all(set(d) == {"agorzilla", "tauhud", "idni", "other"} for d in src["days"].values()),
               "/api/v1/sources: transactions per day by source")
         ctype, text = await get("/api/v1/summary")
         api = json.loads(text)
