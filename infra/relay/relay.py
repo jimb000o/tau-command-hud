@@ -73,7 +73,7 @@ MAX_CLIENTS = _env_int("MAX_CLIENTS", 500)
 # Every open tauhud.com page holds two sockets (its own and the shared header's), the HUD
 # three, and a closed tab lingers for up to 30 s; so one person with a few tabs needs well
 # over 8. 32 still stops a single address from eating the relay.
-MAX_PER_IP = _env_int("MAX_PER_IP", 32)
+MAX_PER_IP = _env_int("MAX_PER_IP", 96)   # sockets per address: every open page holds 2 to 4 (header, page, presence, chat); 32 was hit by one person with many tabs
 CLIENT_BURST = _env_float("CLIENT_BURST", 20)
 CLIENT_REFILL = _env_float("CLIENT_REFILL_PER_SEC", 2)
 # Reads answered from the relay's own memory (the cached commands, getblocks,
