@@ -1692,6 +1692,11 @@
   "html": "Network rule changes: a check now tells real changes from test changes. On the testnet all 43 rule changes so far rewrite the rule for valid blocks with an extra maths fact that is always true (for example a × b = b × a), so the network decides exactly as before. The HUD feed, the Explorer and Proposals now mark these “test change · no effect”, checked on 400 random inputs, and Proposals counts how many changed behaviour."
  },
  {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "Faster first screen on the HUD: the files it waits for now download at the same time instead of one after another, so on a slow phone connection the first picture appears about a second sooner (2.4 s → 1.5 s in our test with a throttled phone). The update log is downloaded once per page instead of twice."
+ },
+ {
   "tag": "Newspaper",
   "on": "2026-10-30",
   "html": "Newspaper café: the café cat now has a name, Déjà. When Mae's pie vote is chalked in and the rule is carried, she breaks up into slipping bands of picture, comes back together, walks across the counter, breaks up again at the far end, and then takes the very same walk once more."
