@@ -386,6 +386,7 @@ class Relay:
         self.chain_file_ok = True
         self.state = self._load_state()         # restarts, dropped txs, last chain seen
         self.sources = TxSources()              # which transactions came through this relay, for /api/v1/sources
+        self.sources.bots = {pk: c for c, pk in self.island.pk.items()}   # White Rabbit Key's rival moves
         self.sources_text, self.sources_at = None, 0.0
         self.uptime = self._load_uptime()       # hourly availability buckets and outages
         self.uptime_text: str | None = None
