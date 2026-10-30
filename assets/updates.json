@@ -1580,5 +1580,10 @@
   "tag": "In numbers",
   "on": "2026-10-30",
   "html": "In numbers now shows our sites' share of user transactions: everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Their transactions and our share of all transactions stay on the page, one line below."
+ },
+ {
+  "tag": "Accounts",
+  "on": "2026-10-30",
+  "html": "Reading the chain is now hard to miss and fun to watch. While a page reads the chain from our node, a band across the top shows how many blocks are in, the share, roughly how long is left, and what the page does meanwhile, over a thick amber bar; it turns green and slides away when every block is read. On Accounts the profile builds itself up as the blocks arrive: the numbers count up in amber and turn white once complete, the time line fills from the left with a reading head, and the list grows. Accounts also reads the chain about four times faster than before."
  }
 ]
