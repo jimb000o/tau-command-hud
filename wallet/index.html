@@ -1146,7 +1146,7 @@ document.querySelectorAll("#ruleTabs button").forEach(b => b.addEventListener("c
   $("rMine").hidden = RTAB !== "mine"; $("rShare").hidden = RTAB !== "share"; $("rPakt").hidden = RTAB !== "pakt";
   renderRule(); renderShare(); renderPakt();
 }));
-/* deep links: /wallet/#rules-share opens that tab (#rules-mine, #rules-pakt too); ?from=hud adds a way back to the HUD */
+/* deep links: /wallet/#rules-share opens that tab (#rules-mine, #rules-pakt too); ?from=hud (or ?from=start) adds a way back to the HUD (or to Start here) */
 function takeRulesHash() {
   const m = /^#rules-(mine|share|pakt)$/.exec(location.hash);
   if (!m) return;
@@ -1157,10 +1157,11 @@ function takeRulesHash() {
 window.addEventListener("hashchange", takeRulesHash);
 (() => {
   const q = new URLSearchParams(location.search);
-  if (q.get("from") !== "hud") return;
+  const from = q.get("from");
+  if (from !== "hud" && from !== "start") return;
   const lang = q.get("lang");
-  $("backHud").href = "/" + (lang ? "?lang=" + encodeURIComponent(lang) : "");
-  $("backHud").textContent = "‹ " + T("Back to the HUD");
+  $("backHud").href = (from === "start" ? "/start/" : "/") + (lang ? "?lang=" + encodeURIComponent(lang) : "");
+  $("backHud").textContent = "‹ " + T(from === "start" ? "Back to Start here" : "Back to the HUD");
   $("backHud").hidden = false;
 })();
 const ONLY = new Set();   // the names picked for "only to"
