@@ -702,6 +702,37 @@ STREET = [t("My ma read it twice. She says she still don't get the blockchain pa
             "角のお巡りまで足を止めて見出しを読んでた。それから怒鳴るなって言って、それから一部くれって。")]
 
 
+# Taumorrow chess rounds (chess.taumorrow.com, an independent community project: a chess engine written in Tau, not on the testnet
+# chain). The result is read from the public records (alerts.py chess_result) once they are out; until then the café says it is not in.
+CHESS_ROUNDS = [{"date": "2026-11-01", "opponent": "Claude Opus 5.5", "start": datetime(2026, 11, 1, 12, tzinfo=timezone.utc).timestamp(), "games": 10,
+                 "last": t("Last time, against Claude Sonnet 5.5, the engine won nine of ten, every one by checkmate.",
+                           "上一次对 Claude Sonnet 5.5，引擎十盘赢了九盘，盘盘都是将死。",
+                           "前回、Claude Sonnet 5.5 との対戦では、エンジンが十局中九局を勝った。どれもチェックメイトだった。")}]
+CHESS_RECORDS = "https://github.com/taumorrow/taumorrow-chess-records"
+
+
+def chess_score(index_md: str) -> dict | None:
+    """{played, engine, model, draws} from a round's index.md in the records (one table row per game, footer "Score: engine 9 : 1 model")."""
+    rows = [ln for ln in index_md.splitlines() if re.match(r"\|\s*\[P\d+\]", ln)]
+    m = re.search(r"Score:\s*engine\s*([\d.½]+)\s*:\s*([\d.½]+)\s*model", index_md)
+    if not rows or not m:
+        return None
+    draws = sum(1 for ln in rows if re.search(r"\|\s*(1/2-1/2|½-½)\s*\|", ln))
+    num = lambda x: float(x.replace("½", ".5"))  # noqa: E731
+    return {"played": len(rows), "engine": round(num(m.group(1)) - draws / 2), "model": round(num(m.group(2)) - draws / 2), "draws": draws}
+
+
+def chess_round(end: float, found: dict | None = None) -> dict | None:
+    """The round to talk about in the week ending at end (or the coming week), with the result in found merged in."""
+    c = next((x for x in CHESS_ROUNDS if end - 7 * 86400 <= x["start"] < end + 7 * 86400), None)
+    if not c:
+        return None
+    c = dict(c)
+    if found and found.get("date") == c["date"]:
+        c.update({k: found[k] for k in ("played", "engine", "model", "draws") if k in found})
+        c["done"] = int(c.get("played") or 0) >= c["games"]
+    return c
+
 CAFE_V = 2   # raise when the talk is written differently: the edition already out is rewritten once
 
 
@@ -716,12 +747,16 @@ def chess_talk(c: dict | None, end: float) -> list[dict] | None:
         return None
     e, m, d, played = int(c.get("engine") or 0), int(c.get("model") or 0), int(c.get("draws") or 0), int(c.get("played") or 0)
     dr = t(f", drew {word(d)['en']}" if d else "", f"，和{word(d)['zh']}盘" if d else "", f"、引き分け {d}" if d else "")
+    day = _d(start)
+    wd = (day.strftime("%A"), "一二三四五六日"[day.weekday()], "月火水木金土日"[day.weekday()])
     if start >= end:
-        day = _d(start)
-        wd = (day.strftime("%A"), "一二三四五六日"[day.weekday()], "月火水木金土日"[day.weekday()])
         head = t(f"On {wd[0]} a chess engine written in Tau sits down for {word(g)['en']} games against {opp}. I have already cleared my table.",
                  f"星期{wd[1]}，一个用 Tau 写的国际象棋引擎要和 {opp} 下{word(g)['zh']}盘。我已经把桌子收拾好了。",
                  f"{wd[2]}曜日、Tau で書かれたチェスエンジンが {opp} と {g} 局指す。私はもう自分の卓を片づけておいた。")
+    elif not c.get("played"):
+        head = t(f"On {wd[0]} a chess engine written in Tau sat down for {word(g)['en']} games against {opp}. The result is not in yet; it will be on chess.taumorrow.com.",
+                 f"星期{wd[1]}，一个用 Tau 写的国际象棋引擎坐下来和 {opp} 下{word(g)['zh']}盘。结果还没出来，会公布在 chess.taumorrow.com。",
+                 f"{wd[2]}曜日、Tau で書かれたチェスエンジンが {opp} と {g} 局の対戦に臨んだ。結果はまだ出ていない。chess.taumorrow.com に載るそうだ。")
     elif c.get("done") or played >= g:
         head = t(f"Did you hear? A chess engine written in Tau played {word(g)['en']} games against {opp}. It won {word(e)['en']}, lost {word(m)['en']}{dr['en']}. I have lost more than that to myself this week.",
                  f"听说了吗？一个用 Tau 写的国际象棋引擎和 {opp} 下了{word(g)['zh']}盘。赢{word(e)['zh']}盘，输{word(m)['zh']}盘{dr['zh']}。这周我输给自己的都比这多。",
@@ -730,7 +765,7 @@ def chess_talk(c: dict | None, end: float) -> list[dict] | None:
         head = t(f"A chess engine written in Tau is playing {word(g)['en']} games against {opp}. {word(played, True)['en']} done so far: {e} to {m}{dr['en']}. I have put my own board aside to watch.",
                  f"一个用 Tau 写的国际象棋引擎正在和 {opp} 下{word(g)['zh']}盘。目前下完{word(played)['zh']}盘：{e} 比 {m}{dr['zh']}。我把自己的棋盘放到一边看着。",
                  f"Tau で書かれたチェスエンジンが {opp} と {g} 局を指している。ここまで {played} 局で {e} 対 {m}{dr['ja']}。私は自分の盤をわきに置いて見ている。")
-    return [head,
+    return [head] + ([c["last"]] if c.get("last") and not played else []) + [
             t("Mind you, it is an independent community project, not something on the testnet chain. What I like: it is built on Tau, the same language the testnet writes its rules in.",
               "注意，这是一个独立的社区项目，不是测试网链上的东西。我喜欢的是：它建立在 Tau 之上，测试网的规则也是用这门语言写的。",
               "いいかね、これは独立したコミュニティのプロジェクトで、テストネットのチェーンの上のものではない。私が気に入っているのは、テストネットがルールを書くのと同じ Tau という言語の上に作られていることだ。"),
@@ -872,7 +907,7 @@ def cafe(r: dict, props: list[dict], days: list[dict], no: int, banner: dict, de
                 LESSONS[n % len(LESSONS)]]
     greet_prof = CHESS[n % len(CHESS)]
     if (c := chess_talk(chess, r["end"])):
-        greet_prof, prof = c[0], c[1:] + prof
+        greet_prof, prof = c[0], (c[1:] if len(prof) < 2 else c[1:-1]) + prof   # at most four lines: the replay line goes in a busy week
     if not c:
         prof.append(t("Meanwhile, in the simulation, a contradicting proposal knocks every hour, and every hour the check sends it home before anyone votes. It never learns. I admire that, a little.",
                   "与此同时，在模拟里，每小时都有一项自相矛盾的提议来敲门，而每小时检查都会在任何人投票之前把它打发回家。它从不长记性。我有点佩服它。",

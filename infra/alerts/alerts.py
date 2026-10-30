@@ -2027,12 +2027,9 @@ class Watcher:
         date = datetime.fromtimestamp(printed_at, timezone.utc).strftime("%Y-%m-%d")
         same = next((x for x in index if x.get("date") == date), None)
         no = same["no"] if same else max((x.get("no", 0) for x in index), default=0) + 1
-        try:   # a Taumorrow chess round, as the chess fetcher writes it (see gazette.chess_talk)
-            with open(os.path.join(PUBLIC_DIR, "recap", "chess.json")) as f:
-                chess = json.load(f)
-        except (OSError, ValueError):
-            chess = None
-        e = gazette.edition(r, props, days, no, printed_at, chess if isinstance(chess, dict) else None)
+        chess = self.chess(r["end"])
+        e = gazette.edition(r, props, days, no, printed_at, chess)
+        e["chess"] = chess and {k: chess.get(k) for k in ("date", "played")}
         e["drops"] = self.drops(printed_at)
         prev = next((x for x in index if x.get("date") != date), None)
         if prev:   # what each language's readers still see until their own drop
@@ -2071,6 +2068,11 @@ class Watcher:
             except Exception as exc:  # retried in ten minutes
                 log.warning("gazette: first edition failed (%r)", exc)
             self.save_state()
+        if RECAP_ON:
+            try:
+                await asyncio.to_thread(self.maybe_chess, now)
+            except Exception as exc:
+                log.warning("gazette: chess check failed (%r)", exc)
         if RECAP_ON and st.get("cafe_v") != gazette.CAFE_V:   # once per new way of writing the talk
             st["cafe_v"] = gazette.CAFE_V
             try:
@@ -2152,15 +2154,54 @@ class Watcher:
         os.makedirs(d, exist_ok=True)
         write_atomic(os.path.join(d, "challenge.json"), json.dumps(out, ensure_ascii=False, separators=(",", ":")))
 
+    def chess(self, end: float) -> dict | None:
+        """The Taumorrow chess round of the week ending at end (gazette.CHESS_ROUNDS), with the result as last read from the records."""
+        return gazette.chess_round(end, self.state.get("chess"))
+
+    def chess_result(self, date: str) -> dict | None:
+        """{date, played, engine, model, draws} of the round on date, read from the public records (a folder named …-<date>), or None."""
+        api = "https://api.github.com/repos/taumorrow/taumorrow-chess-records/contents/"
+        req = urllib.request.Request(api, headers={"User-Agent": "tauhud-alerts", "Accept": "application/vnd.github+json"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            dirs = [x["name"] for x in json.load(r) if x.get("type") == "dir" and x.get("name", "").endswith(date)]
+        if not dirs:
+            return None
+        raw = f"https://raw.githubusercontent.com/taumorrow/taumorrow-chess-records/HEAD/{urllib.parse.quote(dirs[0])}/index.md"
+        with urllib.request.urlopen(urllib.request.Request(raw, headers={"User-Agent": "tauhud-alerts"}), timeout=20) as r:
+            score = gazette.chess_score(r.read().decode("utf-8", "replace"))
+        return score and {"date": date} | score
+
+    def maybe_chess(self, now: float):
+        """Every half hour from a round's start until three days after: look for its result; when it changes, the café is told again."""
+        st = self.state.setdefault("gazette", {})
+        c = next((x for x in gazette.CHESS_ROUNDS if x["start"] <= now < x["start"] + 3 * 86400), None)
+        if not c or now - st.get("chess_tried", 0) < 1800 or (self.state.get("chess") or {}).get("date") == c["date"] and \
+                int(self.state["chess"].get("played") or 0) >= c["games"]:
+            return
+        st["chess_tried"] = now
+        try:
+            got = self.chess_result(c["date"])
+        except Exception as exc:  # tried again in half an hour
+            log.info("gazette: chess records not read (%r)", exc)
+            return
+        if got and got != self.state.get("chess"):
+            self.state["chess"] = got
+            log.info("gazette: chess round %s: %s", c["date"], got)
+            self.gazette_cafe()
+        self.save_state()
+
     def gazette_cafe(self):
-        """Once per CAFE_V: give the edition already out the café talk as it is written now."""
+        """Give the edition already out the café talk as it is written now: once per CAFE_V, and again when a chess result comes in."""
         d = os.path.join(PUBLIC_DIR, "recap", "gazette")
         try:
             with open(os.path.join(d, "latest.json")) as f:
                 e = json.load(f)
         except (OSError, ValueError):
             return
-        if e.get("cafe_v") == gazette.CAFE_V or not e.get("end"):
+        if not e.get("end"):
+            return
+        c = self.chess(e["end"])
+        if e.get("cafe_v") == gazette.CAFE_V and (e.get("chess") or None) == (c and {k: c.get(k) for k in ("date", "played")}):
             return
         try:
             with open(os.path.join(PUBLIC_DIR, "proposals.json")) as f:
@@ -2170,13 +2211,10 @@ class Watcher:
         r = self.recap_numbers(e["end"])
         days = [x for k, x in sorted((self.state.get("simdays") or {}).items())
                 if r["start"] <= datetime.strptime(k, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() + 43200 < r["end"]]
-        try:
-            with open(os.path.join(PUBLIC_DIR, "recap", "chess.json")) as f:
-                chess = json.load(f)
-        except (OSError, ValueError):
-            chess = None
-        e["cafe"] = gazette.cafe(r, props, days, e.get("no") or 1, e["banner"], e.get("teaser") or e["lead"]["deck"], chess if isinstance(chess, dict) else None)
+        chess = self.chess(r["end"])
+        e["cafe"] = gazette.cafe(r, props, days, e.get("no") or 1, e["banner"], e.get("teaser") or e["lead"]["deck"], chess)
         e["cafe_v"] = gazette.CAFE_V
+        e["chess"] = chess and {k: chess.get(k) for k in ("date", "played")}
         text = json.dumps(e, ensure_ascii=False, separators=(",", ":"))
         write_atomic(os.path.join(d, e["date"] + ".json"), text)
         write_atomic(os.path.join(d, "latest.json"), text)

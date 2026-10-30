@@ -228,5 +228,20 @@ check(gazette.cafe(week(), [], [], 4, e2["banner"], e2["teaser"], ch | {"start":
 check(all(x["zh"] and x["ja"] for c in (c3, c4, c5) for v in c.values() for x in [v["greet"], v["q"], *v["a"]]), "every café line in three languages")
 check(len(json.dumps(c4, ensure_ascii=False).encode()) < 9000 and len(json.dumps(c3, ensure_ascii=False).encode()) < 9000, "the café block stays small")
 
+# ---- the chess round's result, read from the public records ----
+idx_md = "| Game | White |\n|---|---|\n" + "".join(f"| [P{i:02d}](P{i:02d}.md) | x | y | {'1-0' if i < 10 else '1/2-1/2'} |\n" for i in range(1, 11)) + "\nScore: engine 9.5 : 0.5 model\n"
+check(gazette.chess_score(idx_md) == {"played": 10, "engine": 9, "model": 0, "draws": 1} and gazette.chess_score("| [P01](P01.md) | x |") is None, "a round's score from its index, with draws; none before the footer is out")
+R = gazette.CHESS_ROUNDS[0]
+check(gazette.chess_round(R["start"] + 12 * 3600)["opponent"] == "Claude Opus 5.5" and not gazette.chess_round(R["start"] + 30 * 86400), "the round of the week is found by its date")
+cr = gazette.chess_round(R["start"] + 12 * 3600)
+c6 = gazette.cafe(week(end=R["start"] + 12 * 3600), [], [], 4, e2["banner"], e2["teaser"], cr)
+check("The result is not in yet; it will be on chess.taumorrow.com" in c6["prof"]["greet"]["en"] and "On Sunday" in c6["prof"]["greet"]["en"] and "nine of ten" in json.dumps(c6["prof"]), "before the records are out: the round, where the result will be, and last time's score")
+calls = []
+w.chess_result, w.gazette_cafe = (lambda date: {"date": date, "played": 10, "engine": 8, "model": 1, "draws": 1}), (lambda: calls.append(1))
+w.state.pop("chess", None); w.state["gazette"].pop("chess_tried", None)
+w.maybe_chess(R["start"] + 11 * 3600)
+w.maybe_chess(R["start"] + 13 * 3600)
+check(w.state["chess"]["engine"] == 8 and calls == [1] and gazette.chess_round(R["start"] + 12 * 3600, w.state["chess"])["done"], "the result is read once, and the café is told again")
+
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
 sys.exit(1 if failed else 0)
