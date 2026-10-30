@@ -1797,5 +1797,10 @@
    "link": "/explorer/",
    "image": "/assets/shots/explorer-core.png"
   }
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "The HUD news line announces a community event until Sunday night: on Sunday 1 November at 12:00 UTC, Taumorrow Chess, an independent chess engine written in the Tau language, plays ten games against Claude Opus 5.5 (chess.taumorrow.com). Headlines in the news line can now carry an end time and then leave by themselves."
  }
 ]

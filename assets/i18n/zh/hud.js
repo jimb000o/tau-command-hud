@@ -2118,6 +2118,8 @@ TauI18n.add({ strings: {
   "Donations: the monthly costs now include the AI assistant the site is built and run with (Claude Max plan, $200 a month), each cost in the currency of its bill. Running costs: about €6 + $200 a month, not counting time.": "捐赠：每月花费现在包括搭建和运行本站所用的 AI 助手（Claude Max 套餐，每月 200 美元），每项费用按其账单币种列出。运行费用：每月约 6 欧元 + 200 美元，不含时间。",
   "Rule challenge: a new task for your wallet every Monday": "规则挑战：每周一给你的钱包一个新任务",
   "Most network rule changes so far are tests that change nothing": "目前大多数网络规则变更都是不改变任何行为的测试",
+  "Sun 12:00 UTC: Tau chess engine vs Claude Opus 5.5": "周日 12:00 UTC：Tau 国际象棋引擎对阵 Claude Opus 5.5",
+  "The HUD news line announces a community event until Sunday night: on Sunday 1 November at 12:00 UTC, Taumorrow Chess, an independent chess engine written in the Tau language, plays ten games against Claude Opus 5.5 (chess.taumorrow.com). Headlines in the news line can now carry an end time and then leave by themselves.": "HUD 新闻条在周日晚之前预告一场社区活动：11 月 1 日周日 12:00 UTC，Taumorrow Chess（一个用 Tau 语言编写的独立国际象棋引擎）将与 Claude Opus 5.5 下十盘棋（chess.taumorrow.com）。新闻条中的标题现在可以设定结束时间，到时自动消失。",
   "Rules wall: every personal rule on the testnet": "规则墙：测试网上的每一条个人规则",
   "My Tau card: your rules, votes and stamps on one card": "我的 Tau 卡：你的规则、投票和印章都在一张卡上",
   "Road to mainnet: what must be fixed first, as we see it": "通往主网之路：我们认为必须先修好的问题",

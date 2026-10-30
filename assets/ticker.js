@@ -84,7 +84,7 @@
       if (k === "live") it = fact();
       else if (k === "news") it = NEWS.length ? NEWS[newsAt++ % NEWS.length] : null;
       else if (k === "gazette") it = gazette();
-      else if (k === "head") { const n = from(CFG.headlines || [], headAt++); it = n && { kind: "note", text: n.text, href: n.href }; }
+      else if (k === "head") { const n = from((CFG.headlines || []).filter(h => !h.until || Date.now() < Date.parse(h.until)), headAt++); it = n && { kind: "note", text: n.text, href: n.href }; }
       else if (k === "pick") { const p = from(CFG.picks, pickAt++); it = p && { kind: "x", text: p.text, href: p.href, quote: true }; }
       else if (k === "invite") { const v = from(CFG.invites, inviteAt++); it = v && { kind: v.kind === "tg" ? "tg" : "x", text: v.text, href: v.href }; }
       if (it && it.text && (it.raw || translated(it.text))) return it;
