@@ -690,8 +690,8 @@ function onMessage(ev) {
   const d = msg.data || {};
   if (msg.command === "getblockrange") {
     if (msg.status !== "ok") {
-      // NOT_READY: the relay is still fetching the chain from its node; anything else: an older relay without ranges
-      if ((msg.error || {}).code === "NOT_READY") setTimeout(() => loadFrom(C.nextFrom), 3000); else legacy();
+      // NOT_READY: the relay is still fetching the chain from its node; RATE_LIMITED: this page asked too fast; anything else: an older relay without ranges
+      if (["NOT_READY", "RATE_LIMITED"].includes((msg.error || {}).code)) setTimeout(() => loadFrom(C.nextFrom), 3000); else legacy();
       return;
     }
     (d.blocks || []).forEach(store);
