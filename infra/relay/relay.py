@@ -1347,6 +1347,8 @@ class Relay:
                            "seen_24h": within(86400), "seen_30d": len(rows)},
                 "bootnode": BOOTNODE_ID, "since": self.peer_book["since"],
                 "steady_seconds": PEER_STEADY, "online_seconds": PEER_ONLINE,
+                # the validator keys, so a page can link a node card on to the validator profile
+                "validators": list((self.governance() or {}).get("active_validators") or []),
                 "keep_days": PEERS_KEEP_DAYS, "generated_at": round(now),
             }, separators=(",", ":"))
         return self.peers_text
