@@ -1547,5 +1547,15 @@
   "tag": "Accounts",
   "on": "2026-10-30",
   "html": "Accounts: the validator profile now shows what a validator actually did, and when. Its main column lists every block it made with the transactions inside (time, block, kind, amount, from → to), newest first; runs of empty blocks fold into one line and long stops are called out. A strip above it puts its blocks and the transactions in them on one time line, with a lane per kind; a click there jumps to that moment in the list, and a filter narrows it to transfers, rules or governance. Four numbers on top: blocks made, transactions sealed, last block, online. Pauses and hours now sit together under “When it ran”, on the same time axis, and empty parts say why they are empty (a validator like IDNI signs nothing itself; it seals what others send)."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper: the regulars of the café now talk about the week. Each Monday edition brings one new line from each of them and a “What's new this week?” question: Mae on the votes of the real chain (and Friday's pie), Elias on the blocks that came down the wire, the Professor on what the logic caught, Sully on the front page. The running jokes turn from week to week, and an old edition opened from the archive brings back its own café talk."
+ },
+ {
+  "tag": "Newspaper",
+  "on": "2026-10-30",
+  "html": "Newspaper: in the café you can now take a closer look at things. Click the house rules, the ticker, the four city clocks, the Professor's slate, this morning's papers or anything else in a room (or pick it with Tab and press Enter) and it opens beside you: the ticker slips carry the live block numbers, the clocks run on their cities' real time, the papers show this week's front page. Each comes with one more small detail. The ticker in the wire corner no longer prints “NaN” for the block before. And clicking Mae's board to chalk in the vote works again: it glows when you point at it and takes the chalk while her words are still on screen."
  }
 ]

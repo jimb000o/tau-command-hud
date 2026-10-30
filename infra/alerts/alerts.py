@@ -2036,6 +2036,37 @@ class Watcher:
             except Exception as exc:  # retried in ten minutes
                 log.warning("gazette: first edition failed (%r)", exc)
             self.save_state()
+        if RECAP_ON and not st.get("cafe"):
+            st["cafe"] = now
+            try:
+                await asyncio.to_thread(self.gazette_cafe)
+            except Exception as exc:  # the café keeps its fixed talk until Monday
+                log.warning("gazette: café talk for the edition out failed (%r)", exc)
+            self.save_state()
+
+    def gazette_cafe(self):
+        """Once: give the edition already out (printed before the café had a talk of the week) its café block."""
+        d = os.path.join(PUBLIC_DIR, "recap", "gazette")
+        try:
+            with open(os.path.join(d, "latest.json")) as f:
+                e = json.load(f)
+        except (OSError, ValueError):
+            return
+        if e.get("cafe") or not e.get("end"):
+            return
+        try:
+            with open(os.path.join(PUBLIC_DIR, "proposals.json")) as f:
+                props = json.load(f).get("proposals") or []
+        except (OSError, ValueError):
+            props = []
+        r = self.recap_numbers(e["end"])
+        days = [x for k, x in sorted((self.state.get("simdays") or {}).items())
+                if r["start"] <= datetime.strptime(k, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() + 43200 < r["end"]]
+        e["cafe"] = gazette.cafe(r, props, days, e.get("no") or 1, e["banner"], e.get("teaser") or e["lead"]["deck"])
+        text = json.dumps(e, ensure_ascii=False, separators=(",", ":"))
+        write_atomic(os.path.join(d, e["date"] + ".json"), text)
+        write_atomic(os.path.join(d, "latest.json"), text)
+        log.info("gazette: café talk added to edition No. %s", e.get("no"))
 
     async def maybe_recap(self):
         if not RECAP_ON:
