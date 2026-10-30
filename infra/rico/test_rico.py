@@ -94,6 +94,8 @@ with tempfile.TemporaryDirectory() as out:
     n = len(calls)
     make.cmd_make(types.SimpleNamespace(out=out, voice=None))
     assert len(calls) == n, "made a clip twice"
+    make.cmd_make(types.SimpleNamespace(out=out, voice=None, again=["lola"]))
+    assert len(calls) == n + sum(1 for w, t in ls if w == "lola"), "lola's clips not made anew"
     make.cmd_library(types.SimpleNamespace(out=out, who="rico", search=None))
     assert "rico=L3" in open(os.path.join(out, "samples", "library.html")).read()
     make.cmd_keep(types.SimpleNamespace(out=out, picks=["rico=L2"]))

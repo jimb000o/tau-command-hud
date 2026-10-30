@@ -15,6 +15,7 @@ The key is read from ELEVENLABS_API_KEY in infra/.env (never in the repository).
   python3 infra/rico/make.py library rico           twelve ready voices from the ElevenLabs Voice Library that fit Rico
   python3 infra/rico/make.py keep rico=L3           keeps library voice 3 (L) instead of a design
   python3 infra/rico/make.py make                   makes whatever clips are missing, for everyone with a voice
+  python3 infra/rico/make.py make --again rico      makes Rico's clips anew
   python3 infra/rico/make.py make --voice rico=Name gives someone a voice already in the account, then makes the clips
   python3 infra/rico/make.py voices                 the voices in the account
   python3 infra/rico/make.py samples [name ...]     one sample per account voice -> https://node.tauhud.com/rico/samples/
@@ -410,6 +411,8 @@ def cmd_make(a):
         idx["voices"][w] = {"id": v["voice_id"], "name": v["name"]}
     idx_path = os.path.join(a.out, "index.json")
     ls = lines()
+    for w in getattr(a, "again", None) or []:   # someone's clips made anew, e.g. after the way they speak changed
+        idx["clips"] = [k for k in idx["clips"] if k not in {key(x, t) for x, t in ls if x == w}]
     have = lambda w, t: key(w, t) in idx["clips"] and os.path.exists(os.path.join(a.out, key(w, t) + ".mp3"))
     todo = [(w, t) for w, t in ls if w in idx["voices"] and not have(w, t)]
     silent = sorted({w for w, t in ls if w not in idx["voices"]})
@@ -450,6 +453,7 @@ def main():
     k.add_argument("picks", nargs="+", help="who=N (a design) or who=LN (a library voice), e.g. rico=L2 lola=1")
     m = sub.add_parser("make")
     m.add_argument("--model", default=MODEL, help="eleven_v3, or eleven_multilingual_v2 if v3 is not there")
+    m.add_argument("--again", nargs="+", default=[], help="make these islanders' clips anew, e.g. --again rico")
     m.add_argument("--voice", action="append", help="who=voice name in the account (a bare name is Rico's)")
     a = p.parse_args()
     {"voices": cmd_voices, "samples": cmd_samples, "lines": cmd_lines, "make": cmd_make, "design": cmd_design, "keep": cmd_keep, "library": cmd_library, "say": cmd_say}[a.cmd](a)
