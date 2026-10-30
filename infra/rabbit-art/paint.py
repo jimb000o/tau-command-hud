@@ -12,6 +12,8 @@ One key in infra/.env (never in the repository), whichever you have:
   infra/rabbit-art/paint.sh draft hall bar       three new ones for some places (again if none is right)
   infra/rabbit-art/paint.sh keep island=2 hall=1 ...   puts those on the island; the game shows them at once
   infra/rabbit-art/paint.sh draft island --like island=1 market=2 bar=2   three more, painted like those drafts
+  infra/rabbit-art/paint.sh draft island --sketch bay --like ...   the new harbour island (sketch.py); keeping one of
+      these moves the places, streets and lights in the game to match it
   infra/rabbit-art/paint.sh drop hall            back to the drawn picture for that place
 paint.sh runs this file with the server's python3; with Pillow (apt-get install -y python3-pil) the pictures are small WebP files.
 """
@@ -51,6 +53,24 @@ DETAIL = {
               "the window sills, fishing nets, birds over the sea, sunlit leaves with bright highlights and deep shadows "
               "under the trees, foam on the reef, clear water showing the sand below. Rich in small things to discover, "
               "but calm and readable at a glance.",
+}
+# new sketches of the island (sketch.py writes plates/<name>.jpg and plates/<name>.json, where everything stands)
+SKETCH = {
+    "bay": "A Caribbean harbour island seen from the sea at a high angle, around noon: a sheltered turquoise bay in "
+           "front that opens to the open sea, with sailing boats and fishing boats at anchor and a wooden pier running "
+           "out into it; round the back of the bay a stone quay with a row of tall, brightly painted gabled harbour "
+           "houses with shutters and balconies, and a market square with striped stalls under a huge flaming red "
+           "flamboyant tree; behind the town two steep green volcanic peaks covered in rainforest with a waterfall "
+           "and a stream running down to the bay; up on a terrace a white colonial council house with green shutters, "
+           "a veranda, a clock tower and broad steps; on the hillside to the left a cool blue Georgian embassy with a "
+           "veranda and a warm terracotta embassy villa with arches; on a green knoll to the right a little yellow "
+           "wooden radio station with a tall mast; a stone rum distillery with a chimney on the east slope; a beach "
+           "bar with a thatched roof on the right beach; on a rocky point on the left a red and white lighthouse "
+           "with a keeper's cottage; little pastel clapboard houses with tin roofs up the slopes, palm trees along "
+           "the beaches, huts on stilts in the shallows, a coral reef with surf round the island. Very Caribbean, "
+           "warm and alive, a place you want to walk around in. The input is a rough sketch: keep where every building, the bay, the pier, "
+           "the peaks and the lighthouse stand and how big they are, but paint it all far richer, with many more small "
+           "details of island life.",
 }
 SCENE = {
     "island": "A small tropical island seen from above at an angle, in the open sea under a clear blue sky: a white "
@@ -216,18 +236,23 @@ def cmd_draft(a):
     model = a.model or ("gemini-2.5-flash-image" if p == "gemini" else "gpt-image-1")
     path = os.path.join(a.out, "drafts", "drafts.json")
     drafts = load(path)
+    sketch = getattr(a, "sketch", None)
+    if sketch and (who != ["island"] or sketch not in SKETCH):
+        sys.exit(f"A sketch is for the island only: draft island --sketch {' | '.join(SKETCH)}")
     refs = [open(f, "rb").read() for f in liked(a, drafts)]
     print(f"{len(who)} places, {a.n} paintings each, with {model}" + (f", painted like {len(refs)} chosen pictures." if refs else "."))
     for id in who:
-        plate = open(os.path.join(PLATES, id + ".jpg"), "rb").read()
-        prompt = STYLE + " The picture: " + SCENE[id] + (" " + DETAIL[id] if id in DETAIL else "") + (" " + LIKE if refs else "")
+        plate = open(os.path.join(PLATES, (sketch or id) + ".jpg"), "rb").read()
+        prompt = STYLE + " The picture: " + (SKETCH[sketch] if sketch else SCENE[id]) + (" " + DETAIL[id] if id in DETAIL else "") + (" " + LIKE if refs else "")
         raws = (paint_gemini if p == "gemini" else paint_openai)(plate, prompt, a.n, model, refs)
-        names = drafts.get(id, []) if refs else []   # paintings made "like" others join the earlier ones, so those stay pickable
+        names = drafts.get(id, []) if refs or sketch else []   # these join the earlier ones, so those stay pickable
         for i, raw in enumerate(raws, len(names) + 1):
             data, kind = small(raw)
             f = f"{id}-{i}-{hashlib.sha1(data).hexdigest()[:8]}.{kind}"
             write(os.path.join(a.out, "drafts", f), data)
             names.append(f)
+            if sketch:
+                drafts.setdefault("sketch", {})[f] = sketch
         drafts[id] = list(names)
         write(path, json.dumps(drafts, indent=1).encode())
         page(a)
@@ -263,6 +288,12 @@ def cmd_keep(a):
             sys.exit(f"No painting {pick!r}. Run: infra/rabbit-art/paint.sh draft {id if id in SCENE else 'all'}")
         shutil.copyfile(os.path.join(a.out, "drafts", f), os.path.join(a.out, f))
         idx["scenes"][id] = f
+        if id == "island":   # a painting of a new sketch brings where everything stands on it
+            sk = drafts.get("sketch", {}).get(f)
+            if sk:
+                idx["layout"] = json.load(open(os.path.join(PLATES, sk + ".json")))
+            else:
+                idx.pop("layout", None)
         print(f"{id}: {f}")
     write(path, json.dumps(idx, indent=1).encode())
     print("Done. The island shows them now: https://tauhud.com/rabbit/ (reload)")
@@ -273,6 +304,8 @@ def cmd_drop(a):
     idx = load(path)
     for id in a.places:
         idx.get("scenes", {}).pop(id, None)
+        if id == "island":
+            idx.pop("layout", None)
     write(path, json.dumps(idx, indent=1).encode())
     print("Back to the drawn pictures for: " + ", ".join(a.places))
 
@@ -285,6 +318,7 @@ def main():
     d.add_argument("places", nargs="+", help="all, or some of: " + " ".join(PLACES))
     d.add_argument("--n", type=int, default=3)
     d.add_argument("--model", default=None)
+    d.add_argument("--sketch", default=None, help="island only: paint a new sketch instead, e.g. bay")
     d.add_argument("--like", nargs="+", metavar="PLACE=N", help="paint in the style of these drafts, e.g. island=1 market=2")
     k = sub.add_parser("keep")
     k.add_argument("picks", nargs="+", help="place=N, e.g. island=2 hall=1")

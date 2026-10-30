@@ -52,6 +52,15 @@ for prov in ("gemini", "openai"):
         assert more["island"][:3] == drafts["island"] and len(more["island"]) == 6 and "island=6" in open(os.path.join(out, "drafts", "index.html")).read()
         idx = json.load(open(os.path.join(out, "index.json")))
         assert idx["scenes"]["island"] == drafts["island"][1] and os.path.exists(os.path.join(out, idx["scenes"]["bar"]))
+        paint.cmd_draft(types.SimpleNamespace(out=out, places=["island"], n=3, model=None, sketch="bay", like=["island=1", "bar"]))
+        paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=9"]))
+        idx = json.load(open(os.path.join(out, "index.json")))
+        lay = idx["layout"]
+        assert set(lay["places"]) == set(paint.PLACES[1:]) and lay["fx"] and lay["windows"] and lay["walk"]
+        for id, p in lay["places"].items():
+            bx, by, bw, bh = p["box"]; assert bx <= p["x"] <= bx + bw and by <= p["y"] <= by + bh + 20, id
+        paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=2"]))
+        assert "layout" not in json.load(open(os.path.join(out, "index.json")))
         paint.cmd_drop(types.SimpleNamespace(out=out, places=["bar"]))
         assert list(json.load(open(os.path.join(out, "index.json")))["scenes"]) == ["island"]
 print("ok", len(calls), "calls")
