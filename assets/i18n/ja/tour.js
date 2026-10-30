@@ -241,4 +241,16 @@ TauI18n.add({ strings: {
   "Wallets reached, or visits, added up over time.": "届いたウォレット、または訪問を時間とともに累計したもの。",
   "Agorzilla and pages": "Agorzilla とページ",
   "On the testnet: what Agorzilla's meals and votes add up to. In the visitor views: the most visited pages.": "テストネット上では Agorzilla の食事と投票の合計。訪問者の表示では、よく見られるページ。",
+  "your Tau card": "あなたの Tau カード",
+  "One picture of what your test wallet did on Tau Testnet Alpha, with Agorzilla reading it beside you.": "あなたのテストウォレットが Tau Testnet Alpha でしたことを 1 枚の画像に。隣で Agorzilla が一緒に読んでいます。",
+  "Your card": "あなたのカード",
+  "Read straight from the testnet: rules written, votes cast, Agorzilla meals and café stamps. A tile lights up once something is in it. Nothing on it is priced or promised.": "テストネットから直接読み取ります：書いたルール、投じた票、Agorzilla の食事、カフェのスタンプ。中身が入ったマスは光ります。カードのものには値段も約束もありません。",
+  "Agorzilla reads it with you": "Agorzilla も一緒に読みます",
+  "His mood is your card. An empty card makes him cry; every rule, vote, meal and stamp cheers him up, and a full card makes him beam. Tap him.": "彼の気分はあなたのカードそのもの。空のカードだと泣いてしまい、ルール、票、食事、スタンプのたびに元気になり、カードがいっぱいになると満面の笑みに。タップしてみてください。",
+  "Stamps from the café": "カフェのスタンプ",
+  "This week's Daily Consensus lies at his feet, your café ticket on top. In the paper's café four regulars each stamp the ticket. Click it to walk in.": "足もとには今週の Daily Consensus、その上にあなたのカフェの券。新聞のカフェで、4 人の常連がそれぞれ券にスタンプを押してくれます。クリックすると入れます。",
+  "Fill your card": "カードを埋めよう",
+  "What is still open, each with the page where you do it.": "まだ残っていること。それぞれ、できるページへのリンク付きです。",
+  "Pass it on": "シェアする",
+  "Post it on X or copy the link: the link shows this card as its preview on X, Telegram and WhatsApp.": "X に投稿するか、リンクをコピー：このリンクは X、Telegram、WhatsApp でこのカードをプレビューに表示します。"
 } });
