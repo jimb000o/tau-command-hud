@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>White Rabbit Key</title>
+<meta name="description" content="A small island election game: four candidates, five days, laws, pacts, radio rumours and a Book in the lighthouse that nobody can edit. Your laws and your vote can go to Tau Testnet Alpha as real test transactions.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="White Rabbit Key · Tau HUD">
+<meta property="og:description" content="An island election in five days. Every move is written into a Book nobody can edit; a law that contradicts one in force is refused before anyone votes.">
+<meta property="og:image" content="https://tauhud.com/assets/shots/rabbit.png">
+<meta property="og:image:width" content="1600">
+<meta property="og:image:height" content="900">
+<meta property="og:url" content="https://tauhud.com/rabbit/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/shots/rabbit.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* The site around the game keeps the HUD tokens; the island itself is its own warm, tropical world. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --amber: #ffb13b; --bad: #ff4d6d;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --glass: rgba(10,14,18,.82);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono); overflow: hidden; }
+a { color: #fff; }
+.wrap { height: 100%; display: flex; flex-direction: column; gap: 8px; padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px)); }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 2px 0; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 28px; height: 28px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 16px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+
+/* the stage: the island fills it, the game's panels float over it */
+.stage { position: relative; flex: 1 1 auto; min-height: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #0b2a3a; isolation: isolate; }
+.stage:fullscreen { border-radius: 0; border: 0; }
+#cvScene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: manipulation; }
+.bar { position: absolute; z-index: 3; left: 12px; right: 12px; top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; pointer-events: none; }
+.bar > * { pointer-events: auto; }
+.chip { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 4px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--hair); color: var(--text); font: 600 12.5px var(--display); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.chip.me { padding-left: 4px; }
+.chip.me .face { border-radius: 50%; background: rgba(255,255,255,.08); }
+#cvMoves { display: inline-flex; gap: 5px; }
+#cvMoves i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--hair); }
+#cvMoves i.on { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 8px rgba(57,255,138,.6); }
+.bar .sp { flex: 1; }
+button.chip { cursor: pointer; }
+button.chip:hover { border-color: #fff; }
+.news { position: absolute; z-index: 3; left: 12px; right: 12px; bottom: 10px; display: flex; gap: 10px; align-items: center; min-height: 34px; padding: 6px 14px; border-radius: 10px; background: var(--glass); border: 1px solid var(--hair); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.news b { font: 700 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--ok); white-space: nowrap; }
+.news span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#cvTip { position: absolute; z-index: 4; pointer-events: none; padding: 5px 10px; border-radius: 6px; background: #050506; border: 1px solid var(--hair); font: 600 12.5px var(--display); color: #fff; white-space: nowrap; }
+#cvToast { position: absolute; z-index: 6; left: 50%; top: 58px; transform: translate(-50%, -8px); opacity: 0; transition: .3s; padding: 8px 16px; border-radius: 999px; background: #050506; border: 1px solid var(--ok); color: #fff; font: 600 13px var(--display); pointer-events: none; max-width: calc(100% - 32px); text-align: center; }
+#cvToast.on { opacity: 1; transform: translate(-50%, 0); }
+.places { position: absolute; z-index: 2; left: 12px; bottom: 54px; display: flex; flex-wrap: wrap; gap: 6px; opacity: 0; pointer-events: none; }
+.places:focus-within { opacity: 1; pointer-events: auto; }
+.places button { min-height: 34px; padding: 4px 10px; border-radius: 8px; background: var(--glass); color: #fff; border: 1px solid var(--hair); font: 600 12px var(--display); cursor: pointer; }
+
+/* a card: someone speaks, you choose */
+.cv-card { position: absolute; z-index: 5; right: 16px; top: 56px; bottom: 56px; width: min(470px, 42%); display: flex; flex-direction: column; gap: 10px; padding: 18px 18px 16px; border-radius: 14px; background: var(--glass); border: 1px solid var(--hair); box-shadow: 0 30px 80px -30px rgba(0,0,0,.9); overflow: auto; overscroll-behavior: contain; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); animation: pop .3s cubic-bezier(.2,.8,.2,1); scrollbar-width: thin; }
+.cv-card.left { right: auto; left: 16px; }
+.cv-card.intro, .cv-card.paper, .cv-card.end { left: 50%; right: auto; transform: translateX(-50%); width: min(760px, calc(100% - 32px)); animation: popc .35s cubic-bezier(.2,.8,.2,1); }
+.cv-card.intro, .cv-card.end, .cv-card.paper { top: 50%; bottom: auto; transform: translate(-50%, -50%); max-height: calc(100% - 112px); }
+.cv-card.paper { width: min(560px, calc(100% - 32px)); animation: none; }
+.stage.pre .bar .chip:not(button) { visibility: hidden; }
+@keyframes pop { from { opacity: 0; transform: translateY(10px); } }
+@keyframes popc { from { opacity: 0; } }
+.cv-x { position: absolute; right: 10px; top: 10px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--hair); background: none; color: var(--text); cursor: pointer; font-size: 14px; }
+.cv-x:hover { border-color: #fff; }
+.cv-card.intro .cv-x, .cv-card.paper .cv-x { display: none; }
+.cv-who { display: flex; gap: 12px; align-items: center; padding-right: 40px; }
+.cv-who .face { flex: none; border-radius: 12px; background: radial-gradient(circle at 50% 35%, rgba(255,214,160,.18), rgba(255,255,255,.03)); border: 1px solid var(--line); }
+.cv-who b { display: block; font: 700 17px var(--display); color: #fff; }
+.cv-who small { color: var(--dim); }
+.cv-card h2 { margin: 0; font: 700 clamp(26px, 3vw, 40px)/1.1 var(--display); color: #fff; }
+.cv-card h3 { margin: 0; font: 700 18px var(--display); color: #fff; }
+.cv-card h4 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.kick { margin: 0; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--ok); }
+.cv-line { margin: 0; font: 400 15px/1.55 var(--display); color: var(--text); }
+.cv-note { margin: 0; color: var(--dim); }
+.cv-h { margin: 4px 0 0; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.cv-acts { display: flex; flex-direction: column; gap: 6px; }
+.cv-b { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-height: 44px; padding: 8px 12px; text-align: left; border-radius: 9px; border: 1px solid var(--hair); background: rgba(255,255,255,.03); color: #fff; font: 600 13.5px var(--display); cursor: pointer; }
+.cv-b small { font: 400 11.5px var(--mono); color: var(--dim); }
+.cv-b:hover:not([disabled]), .cv-b:focus-visible { border-color: #fff; background: rgba(255,255,255,.07); outline: none; }
+.cv-b.go { border-color: rgba(57,255,138,.6); }
+.cv-b.go:hover:not([disabled]) { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok) inset; }
+.cv-b.warn small { color: var(--amber); }
+.cv-b[disabled] { opacity: .45; cursor: default; }
+.cv-laws ul, .cv-folk, .cv-book, .cv-help, .cv-lesson ul, .cv-paper ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.cv-laws li small, .dim { color: var(--dim); }
+.cv-folk li { display: grid; grid-template-columns: 74px minmax(0, 1fr) 90px; gap: 8px; align-items: center; }
+.cv-folk .nm { font: 600 13px var(--display); color: #fff; }
+.cv-folk small { color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-folk .bar { position: relative; height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); }
+.cv-folk .bar::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: var(--v); border-radius: 3px; background: #fff; }
+.cv-folk .bar.lead::after { background: var(--ok); }
+.cv-book li { display: grid; gap: 1px; padding: 6px 8px; border-left: 2px solid var(--hair); background: rgba(255,255,255,.02); }
+.cv-book li small { color: var(--dim); font-size: 11px; }
+.cv-book b { color: #fff; }
+.cv-book .k-lie, .cv-book .k-broke { border-left-color: var(--amber); }
+.cv-book .k-law { border-left-color: var(--ok); }
+.cv-help li, .cv-lesson li { padding-left: 16px; position: relative; color: var(--text); }
+.cv-help li::before, .cv-lesson li::before { content: "·"; position: absolute; left: 4px; color: var(--ok); font-weight: 700; }
+.cv-lesson { border: 1px solid rgba(57,255,138,.35); border-radius: 10px; padding: 12px 14px; }
+.cv-votes { display: flex; gap: 14px; justify-content: center; padding: 6px 0; }
+.cv-votes figure { margin: 0; display: grid; justify-items: center; gap: 4px; transition: transform .2s; }
+.cv-votes figure.bump { transform: scale(1.08); }
+.cv-votes .face { border-radius: 50%; border: 2px solid var(--hair); }
+.cv-votes .yes .face { border-color: var(--ok); }
+.cv-votes .no .face { border-color: var(--bad); }
+.cv-votes figcaption { font: 600 12px var(--display); }
+.cv-votes .th { font: 700 22px var(--display); color: #fff; min-height: 28px; }
+.cv-votes .yes .th { color: var(--ok); }
+.cv-votes .no .th { color: var(--bad); }
+.cv-tape { margin: 0; min-height: 22px; text-align: center; font: 600 14px var(--display); color: #fff; }
+.cv-result { margin: 0; font: 700 18px var(--display); }
+.cv-result.ok { color: var(--ok); }
+.cv-result.bad { color: var(--bad); }
+.cv-pick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.cv-cand { display: grid; justify-items: center; gap: 4px; padding: 12px 8px; border-radius: 12px; border: 1px solid var(--hair); background: rgba(255,255,255,.03); color: var(--text); cursor: pointer; text-align: center; font: 12px var(--mono); }
+.cv-cand:hover, .cv-cand:focus-visible { border-color: var(--ok); background: rgba(57,255,138,.06); outline: none; }
+.cv-cand .face { border-radius: 50%; background: radial-gradient(circle at 50% 35%, rgba(255,214,160,.2), rgba(255,255,255,.03)); }
+.cv-cand b { font: 700 15px var(--display); color: #fff; }
+.cv-cand small { color: var(--dim); line-height: 1.35; }
+.cv-cand em { font-style: normal; color: var(--text); font-size: 11.5px; line-height: 1.4; }
+.cv-chain { display: flex; gap: 10px; align-items: flex-start; color: var(--dim); cursor: pointer; }
+.cv-chain input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--ok); flex: none; }
+/* the morning paper */
+.cv-paper { background: #f3ead6; color: #1c1a16; border-radius: 6px; padding: 18px 20px; font: 15px/1.5 Georgia, "Times New Roman", serif; box-shadow: 0 1px 0 rgba(0,0,0,.2); }
+.cv-paper .mast { margin: 0; text-align: center; font: 700 28px/1 Georgia, serif; letter-spacing: .04em; border-bottom: 3px double #1c1a16; padding-bottom: 8px; }
+.cv-paper .date { margin: 6px 0 10px; text-align: center; font: 12px var(--mono); color: #5a5246; }
+.cv-paper li { padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,.12); font-weight: 600; }
+.cv-paper .joke { margin: 10px 0 0; font-style: italic; color: #4a4236; }
+.cv-card.paper { gap: 12px; background: rgba(10,14,18,.6); }
+/* the wallet, opened beside the game */
+.cv-drawer { position: fixed; z-index: 60; right: 16px; top: 16px; bottom: 16px; width: min(520px, calc(100% - 32px)); display: flex; flex-direction: column; background: #0c0c0e; border: 1px solid rgba(57,255,138,.55); border-radius: 12px; overflow: hidden; box-shadow: 0 30px 80px -20px rgba(0,0,0,.9); }
+.cv-drawer .dh { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.cv-drawer .dh b { font: 600 14px var(--display); color: #fff; }
+.cv-drawer .dh button { margin-left: auto; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--hair); background: none; color: var(--text); cursor: pointer; }
+.cv-drawer iframe { flex: 1; border: 0; width: 100%; background: transparent; }
+.cv-drawer .df { padding: 8px 14px; border-top: 1px solid var(--line); color: var(--dim); font-size: 11.5px; }
+.cv-drawer.ok { border-color: var(--ok); }
+.cv-drawer .doneflash { position: absolute; inset: 60px 0 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; background: rgba(12,12,14,.94); color: var(--ok); font: 600 17px var(--display); }
+.cv-drawer .doneflash i { width: 54px; height: 54px; border-radius: 50%; background: var(--ok); color: #000; font: 700 28px/54px var(--display); text-align: center; font-style: normal; }
+footer { color: var(--dim); font-size: 11.5px; }
+footer p { margin: 0; }
+footer a { color: var(--dim); }
+[hidden] { display: none !important; }
+/* phones: the island on top, the card as a sheet from the bottom */
+@media (max-width: 759px) {
+  .wrap { padding-left: 8px; padding-right: 8px; gap: 6px; }
+  footer { display: none; }
+  .stage { border-radius: 10px; }
+  .bar { left: 8px; right: 8px; top: 8px; gap: 6px; }
+  .chip { min-height: 32px; padding: 3px 10px; font-size: 12px; }
+  .bar .opt { display: none; }
+  .news { left: 8px; right: 8px; bottom: 8px; padding: 6px 10px; }
+  .news b { display: none; }
+  #cvToast { top: auto; bottom: 52px; }
+  .stage.carded #cvToast { top: 96px; bottom: auto; }
+  .cv-card, .cv-card.left, .cv-card.intro, .cv-card.end { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 72%; transform: none; border-radius: 16px 16px 0 0; padding: 16px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .cv-card.intro, .cv-card.end { max-height: 92%; }
+  .cv-card.paper { left: 8px; right: 8px; width: auto; transform: translateY(-50%); }
+  .cv-pick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cv-cand em { display: none; }
+  .cv-folk li { grid-template-columns: 64px minmax(0, 1fr) 60px; }
+  .cv-line { font-size: 14px; }
+  .cv-drawer { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: 86%; border-radius: 14px 14px 0 0; }
+}
+@media (prefers-reduced-motion: reduce) { .cv-card { animation: none; } }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>White Rabbit Key</span></a>
+  </header>
+  <nav class="tnav" data-page="rabbit" aria-label="Pages and tools"></nav>
+  <main class="stage" id="cvStage">
+    <canvas id="cvScene" role="img" aria-label="A small tropical island with a council hall, a market square, a radio station, two embassies, a beach bar, a pier and a lighthouse"></canvas>
+    <div class="bar">
+      <span class="chip me" id="cvMe"></span>
+      <span class="chip" id="cvDay">Day 1 of 5</span>
+      <span class="chip"><span id="cvHour">Morning</span><span id="cvMoves"></span></span>
+      <span class="chip" id="cvCoins">30 coins</span>
+      <span class="sp"></span>
+      <button class="chip" id="cvBookBtn" type="button">The Book</button>
+      <button class="chip opt" id="cvHelp" type="button">How it works</button>
+      <button class="chip" id="cvSound" type="button" aria-pressed="false">♪ Tap for sound</button>
+      <button class="chip opt" id="cvFull" type="button" aria-label="Full screen">⛶</button>
+      <button class="chip opt" id="cvReset" type="button">New game</button>
+    </div>
+    <div class="places" id="cvPlaces" aria-label="Places on the island"></div>
+    <div class="news"><b>The Key Crier</b><span id="cvNews">Five days to the election.</span></div>
+    <div id="cvTip" hidden></div>
+    <div id="cvToast" role="status" aria-live="polite"></div>
+  </main>
+  <footer><p>A game, drawn and played in your browser. Laws and votes you choose to sign go to Tau Testnet Alpha with test AGRS, which have no value. The candidates, the island and the embassies are made up.</p></footer>
+</div>
+<script src="scene.js"></script>
+<script src="music.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
