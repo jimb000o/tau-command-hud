@@ -1730,5 +1730,10 @@
   "tag": "Donations",
   "on": "2026-10-30",
   "html": "Donations have their own page, tauhud.com/donate: the address with its QR code and a button that opens a wallet app, what the site costs each month (time first, unpaid), and every donation received with its transaction on Etherscan. Each donation also shows what it was worth when it came in: euros and dollars in English, yuan in Chinese, yen in Japanese. Voluntary, nothing in return. The Donations cards link to it, and so do the last step of the tour, the My Tau card and the Daily Consensus."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "News line: items now follow each other at a short fixed gap and the letters keep their normal spacing on wide screens (the scaled-up HUD at 3440 spread both apart). On load the first items decode where they stand."
  }
 ]

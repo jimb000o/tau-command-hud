@@ -2108,4 +2108,5 @@ TauI18n.add({ strings: {
   "What it costs, and every donation on chain ›": "かかる費用と、チェーン上のすべての寄付 ›",
   "Tau HUD is free, built in spare time.": "Tau HUD は無料で、空き時間に作っています。",
   "Donations are voluntary ›": "寄付は任意です ›",
+  "News line: items now follow each other at a short fixed gap and the letters keep their normal spacing on wide screens (the scaled-up HUD at 3440 spread both apart). On load the first items decode where they stand.": "ニュースの行：項目どうしが短い一定の間隔で続き、ワイド画面でも文字の間隔が普通になりました（3440 幅で拡大された HUD が両方を広げていました）。読み込み時、最初の項目はその場でデコードされます。",
 } });
