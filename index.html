@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- the files the first screen waits for, fetched at once instead of one after another -->
+<link rel="preload" href="assets/i18n.js" as="script"><link rel="preload" href="assets/chainload.js" as="script"><link rel="preload" href="assets/sim.js" as="script"><link rel="preload" href="assets/simvote.js" as="script"><link rel="preload" href="assets/simnode.js" as="script">
+<link rel="preload" href="assets/nav.css" as="style"><link rel="preload" href="assets/chat.css" as="style"><link rel="preload" href="assets/fonts/sora-jetbrainsmono-unifrakturmaguntia-playfairdisplay-oldstandardtt-notoserifsc.css" as="style">
 <script>{ const q = new URLSearchParams(location.search), c = document.documentElement.classList; if (q.get("view") === "core") { c.add("coreonly"); if (q.get("bg") === "none") c.add("bgnone"); if (q.get("quiet") === "1") c.add("corequiet"); } }</script>
 <script src="assets/i18n.js"></script>
 <script src="assets/chainload.js"></script>
@@ -2082,7 +2085,7 @@ function siteVersions(list) {
 const SITE = { ver: null };
 async function loadLog() {
   const ul = document.querySelector(".changes"); let list;
-  try { list = await (await fetch("assets/updates.json?v=30.4", { cache: "no-cache" })).json(); if (!Array.isArray(list)) throw new Error("not a list"); }
+  try { list = await (window.TauLog ? TauLog() : (await fetch("assets/updates.json", { cache: "no-cache" })).json()); if (!Array.isArray(list)) throw new Error("not a list"); }
   catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);

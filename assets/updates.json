@@ -1694,6 +1694,11 @@
  {
   "tag": "HUD",
   "on": "2026-10-30",
+  "html": "Faster first screen on the HUD: the files it waits for now download at the same time instead of one after another, so on a slow phone connection the first picture appears about a second sooner (2.4 s → 1.5 s in our test with a throttled phone). The update log is downloaded once per page instead of twice."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-30",
   "html": "On a phone, the HUD now turns with you. Held on its side, the header folds into three short rows and the panels sit two by two, with the tab bar below. A new ⛶ button at the top right shows the HUD alone on the whole screen; ✕ brings the site back. Where the phone allows it the browser goes full screen too, on an iPhone the site bars step aside."
  }
 ]
