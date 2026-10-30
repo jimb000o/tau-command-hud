@@ -1,5 +1,6 @@
 """Unit test of the site-update posts (no network): majors from the update log get a post each, inside the posting
-hours, capped and spaced; smaller changes wait for one digest; the first run is history; nothing is posted twice.
+fixed times, several waiting go together in one post; smaller changes wait for one digest in a slot with no major; the
+first run is history; nothing is posted twice; nothing at night.
 
 Run: python test_site_alerts.py   (needs websockets==15.0.1)
 """
@@ -12,8 +13,7 @@ from datetime import datetime, timezone
 
 TMP = tempfile.mkdtemp()
 os.environ.update(STATE_PATH=os.path.join(TMP, "alerts.json"), PUBLIC_DIR=TMP, TELEGRAM_BOT_TOKEN="", SITE_URL="https://tauhud.com")
-# the schedule this test walks through (the defaults are wider: 06-23 UTC, three a day, two hours apart, digests at 12 and 18)
-os.environ.update(SITE_POST_HOURS="8-20", SITE_MAJOR_DAILY_CAP="2", SITE_MAJOR_GAP_SECONDS="10800", SITE_DIGEST_HOURS="17", SITE_CATCHUP_AT="99")
+os.environ.update(SITE_SLOTS="8,12,16", SITE_SLOT_HOURS="4", X_API_KEY="")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alerts  # noqa: E402
 
@@ -96,36 +96,41 @@ check([x["key"] for x in st["majors"]] == ["major:gazette", "major:missions"], "
 check(st["pending"] == [], "first run: smaller changes are history")
 check(tg.sent == [], "nothing posted at night")
 
-# posting hours, cap and gap
+# fixed times: 08:00, 12:00 and 16:00 UTC; a slot is used once and is over four hours after its time
+run(w, at("2026-10-29", "07:59"))
+check(tg.sent == [], "nothing before the first slot")
 run(w, at("2026-10-29", "08:00"))
-check(len(tg.sent) == 1 and "The Daily Consensus" in tg.sent[0][0], "08:00 UTC: the first major, oldest first")
-run(w, at("2026-10-29", "09:00"))
-check(len(tg.sent) == 1, "the next one waits for the gap")
-run(w, at("2026-10-29", "11:00"))
-check(len(tg.sent) == 2 and "Missions" in tg.sent[1][0], "three hours later: the second")
+check(len(tg.sent) == 1 and "2 new pages and features on Tau HUD since 2026-10-28" in tg.sent[0][0]
+      and "The Daily Consensus" in tg.sent[0][0] and "Missions" in tg.sent[0][0], "08:00 UTC: both waiting majors in one post")
+check(st["majors"] == [], "the queue is empty")
 log2 = log + [major("2026-10-29", "Vote", "New page: vote.", "vote", title="Vote"),
               small("2026-10-29", "v17.48", "Chain core: one."), small("2026-10-29", "Stats", "Stats: two.")]
-run(w, at("2026-10-29", "14:30"), log2)
-check(len(tg.sent) == 2, "daily cap of two")
-check(len(st["pending"]) == 2, "new smaller changes wait for the digest")
-run(w, at("2026-10-29", "17:05"))
+run(w, at("2026-10-29", "09:00"), log2)
+check(len(tg.sent) == 1, "the 08:00 slot is used: the next major waits")
+run(w, at("2026-10-29", "12:05"))
+check(len(tg.sent) == 2 and "Vote" in tg.sent[1][0] and "TAU HUD · new on the site" in tg.sent[1][0], "12:00: one major, its own post")
+check(len(st["pending"]) == 2, "smaller changes wait for the digest")
+run(w, at("2026-10-29", "16:05"))
 check(len(tg.sent) == 2, "two smaller changes are not enough for a digest")
 log3 = log2 + [small("2026-10-29", "Press", "Press: three.")]
 run(w, at("2026-10-29", "20:30"), log3)
-check(len(tg.sent) == 2, "nothing after the posting hours")
-run(w, at("2026-10-30", "08:00"))
-check(len(tg.sent) == 3 and "Vote" in tg.sent[2][0], "next day: the capped major")
-run(w, at("2026-10-30", "17:00"))
-check(len(tg.sent) == 4 and "3 smaller changes" in tg.sent[3][0] and "<b>Press</b>: Three." in tg.sent[3][0], "17:00 UTC: one digest of the three")
-run(w, at("2026-10-30", "18:00"), log3)
-check(len(tg.sent) == 4 and st["pending"] == [] and st["majors"] == [], "never twice")
+check(len(tg.sent) == 2, "the 16:00 slot is over by 20:00: nothing at night")
+run(w, at("2026-10-30", "03:00"))
+check(len(tg.sent) == 2, "still nothing at night")
+run(w, at("2026-10-30", "08:01"))
+check(len(tg.sent) == 3 and "3 smaller changes" in tg.sent[2][0] and "<b>Press</b>: Three." in tg.sent[2][0], "08:00: one digest of the three")
+run(w, at("2026-10-30", "12:00"), log3)
+check(len(tg.sent) == 3 and st["pending"] == [] and st["majors"] == [], "never twice")
+log3b = log3 + [major("2026-10-30", "Late", "New page: late.", "late", title="Late")]
+run(w, at("2026-10-30", "13:30"), log3b)
+check(len(tg.sent) == 4 and "Late" in tg.sent[3][0], "a slot no one used yet: a new major goes out as soon as it is seen")
 
 # a single small change is posted after a week of waiting
-log4 = log3 + [small("2026-10-30", "Stats", "Stats: lonely.")]
-run(w, at("2026-10-30", "19:00"), log4)
-run(w, at("2026-11-06", "17:00"))
+log4 = log3b + [small("2026-10-30", "Stats", "Stats: lonely.")]
+run(w, at("2026-10-30", "14:00"), log4)
+run(w, at("2026-11-06", "08:00"))
 check(len(tg.sent) == 4, "one change waits")
-run(w, at("2026-11-07", "17:00"))
+run(w, at("2026-11-06", "16:00"))
 check(len(tg.sent) == 5 and "1 smaller change " in tg.sent[4][0], "after a week it goes out alone")
 
 # a failed post pauses and is retried
@@ -135,7 +140,7 @@ w2.state.pop("site", None)
 run(w2, at("2026-10-28", "12:00"), log)
 check(tg2.sent == [] and w2.state["site"]["pause_until"] == at("2026-10-28", "12:02"), "429: paused")
 run(w2, at("2026-10-28", "12:03"))
-check(len(tg2.sent) == 1 and len(w2.state["site"]["majors"]) == 1, "retried after the pause, the queue moves on")
+check(len(tg2.sent) == 1 and w2.state["site"]["majors"] == [], "retried after the pause, the queue moves on")
 
 # no Telegram: queued, not lost
 w3 = alerts.Watcher([])
@@ -151,14 +156,14 @@ check([m["key"] for m in w5.state["site"]["majors"]] == ["major:gazette", "major
 marked = [dict(e, major=dict(e["major"], skip="posted by hand")) if e.get("major", {}).get("id") == "gazette" else e for e in log]
 run(w5, at("2026-10-28", "23:00"), marked)
 run(w5, at("2026-10-29", "08:00"))
-check(len(tg5.sent) == 1 and "Missions" in tg5.sent[0][0], "the skipped major leaves the queue, the next one goes out")
+check(len(tg5.sent) == 1 and "Missions" in tg5.sent[0][0] and "Daily Consensus" not in tg5.sent[0][0],
+      "the skipped major leaves the queue, the next one goes out")
 w6 = alerts.Watcher([])
 w6.state.pop("site", None)
 run(w6, at("2026-10-28", "22:00"), marked)
 check([m["key"] for m in w6.state["site"]["majors"]] == ["major:missions"], "a major marked skip is never queued")
 
-# a backlog of majors: one catch-up post at the start of the posting hours, then the daily rhythm
-alerts.SITE_CATCHUP_AT = 4
+# a backlog of majors: one post at the next slot with all of them, never a day's quota used up
 tg9 = Fake()
 w9 = alerts.Watcher([tg9])
 w9.state.pop("site", None)
@@ -166,14 +171,52 @@ many = [major("2026-10-28", "X", f"New page {i}.", f"m{i}", title=f"New: page {i
 run(w9, at("2026-10-28", "22:00"), many)
 check(tg9.sent == [] and len(w9.state["site"]["majors"]) == 5, "queued at night")
 run(w9, at("2026-10-29", "08:00"))
-check(len(tg9.sent) == 1 and "5 new pages and features on Tau HUD since 2026-10-28" in tg9.sent[0][0], "one catch-up post with all five")
+check(len(tg9.sent) == 1 and "5 new pages and features on Tau HUD since 2026-10-28" in tg9.sent[0][0], "one post with all five")
 check('<a href="https://tauhud.com/p0/">Page 0</a>' in tg9.sent[0][0] and w9.state["site"]["majors"] == [], "a line and a link each, the queue is empty")
-run(w9, at("2026-10-29", "08:00"), many + [major("2026-10-29", "Y", "New page 9.", "m9", title="New: nine")])
-run(w9, at("2026-10-29", "14:00"))
-check(len(tg9.sent) == 1, "the day's quota is used by the catch-up post")
-run(w9, at("2026-10-30", "08:00"))
-check(len(tg9.sent) == 2 and "nine" in tg9.sent[1][0] and "TAU HUD · new on the site" in tg9.sent[1][0], "next day single posts again")
-alerts.SITE_CATCHUP_AT = 99
+run(w9, at("2026-10-29", "08:30"), many + [major("2026-10-29", "Y", "New page 9.", "m9", title="New: nine")])
+run(w9, at("2026-10-29", "12:00"))
+check(len(tg9.sent) == 2 and "nine" in tg9.sent[1][0] and "TAU HUD · new on the site" in tg9.sent[1][0], "the same day's next slot: the next one")
+
+# X gets the same: one post per slot, the bundle as one post, the digest only with room to spare
+class FakeX(alerts.Outlet):
+    name = "x"
+
+    def __init__(self):
+        self.sent = []
+
+    def enabled(self):
+        return True
+
+    def send_text(self, text, media_id=None):
+        self.sent.append(text)
+        return True, None, ""
+
+
+tgx, xx = Fake(), FakeX()
+wx = alerts.Watcher([tgx, xx])
+wx.state.pop("site", None)
+wx.state.pop("x", None)
+alerts.X_PICTURES = False
+run(wx, at("2026-10-28", "22:00"), log)
+run(wx, at("2026-10-29", "08:00"))
+check(len(xx.sent) == 1 and xx.sent[0].startswith("2 new pages and features on Tau HUD") and "• The Daily Consensus" in xx.sent[0]
+      and "http" not in xx.sent[0], "X: the two together, by name, no link")
+skipx = log + [major("2026-10-29", "A", "New: a.", "a", title="New: Alpha", x=False), major("2026-10-29", "B", "New: b.", "b", title="New: Beta")]
+run(wx, at("2026-10-29", "09:00"), skipx)
+run(wx, at("2026-10-29", "12:00"))
+check(len(tgx.sent) == 2 and "Alpha" in tgx.sent[1][0] and len(xx.sent) == 2 and "Alpha" not in xx.sent[1]
+      and xx.sent[1].startswith("New on Tau HUD: Beta"), "X: a major marked \"x\": false stays off X, the other gets its own post")
+wx.state["site"]["pending"] = [{"key": str(i), "at": at("2026-10-29", "09:00"), "area": "HUD", "line": f"Change {i}.", "on": "2026-10-29"}
+                               for i in range(3)]
+wx.state["x"]["today"] = alerts.X_DAILY_CAP - alerts.X_RESERVE
+run(wx, at("2026-10-29", "16:00"))
+check(len(tgx.sent) == 3 and len(xx.sent) == 2, "X: the digest leaves the day's last posts for the real chain")
+wx.state["site"]["pending"] = wx.state["site"]["pending"] or [{"key": "z" + str(i), "at": at("2026-10-30", "07:00"), "area": "Stats",
+                                                               "line": "Calmer.", "on": "2026-10-30"} for i in range(3)]
+wx.state["x"]["today"] = 0
+run(wx, at("2026-10-30", "08:00"))
+check(len(xx.sent) == 3 and xx.sent[2].startswith("🛠 3 smaller changes to Tau HUD") and xx.sent[2].endswith("#TauNet $AGRS"),
+      "X: the digest, a line each, with room")
 
 # a round-up: one post with a line and a link per change; the majors it covers and the digest so far are not posted
 class FakePic(Fake):
@@ -215,22 +258,6 @@ run(w7, at("2026-10-29", "09:00"), [])
 run(w7, at("2026-10-29", "09:30"), [dict(small("2026-10-26", "Relay", "Relay: an old change."), backfill=True),
                                     dict(major("2026-10-29", "Node", "New: old.", "old-major", title="Old"), backfill=True)])
 check(w7.state["site"]["pending"] == [] and w7.state["site"]["majors"] == [], "backfilled entries are never posted")
-
-# two digest slots a day
-os.environ["SITE_DIGEST_HOURS"] = "12,18"
-import importlib  # noqa: E402
-alerts2 = importlib.reload(alerts)
-alerts2.Watcher.fetch_updates = lambda self: None
-tg8 = Fake()
-w8 = alerts2.Watcher([tg8])
-w8.state["site"] = {"seen": {}, "majors": [], "primed": True, "pending": [{"key": str(i), "at": at("2026-10-29", "09:00"), "area": "HUD", "line": "x.", "on": "2026-10-29"} for i in range(3)]}
-asyncio.run(w8.maybe_site(at("2026-10-29", "11:59")))
-asyncio.run(w8.maybe_site(at("2026-10-29", "12:01")))
-check(len(tg8.sent) == 1, "the 12:00 UTC digest")
-w8.state["site"]["pending"] = [{"key": str(i), "at": at("2026-10-29", "13:00"), "area": "HUD", "line": "y.", "on": "2026-10-29"} for i in range(3)]
-asyncio.run(w8.maybe_site(at("2026-10-29", "17:00")))
-asyncio.run(w8.maybe_site(at("2026-10-29", "18:05")))
-check(len(tg8.sent) == 2, "and the 18:00 UTC digest the same day")
 
 # the real log parses and its majors are complete
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "assets", "updates.json")) as f:
