@@ -1583,6 +1583,11 @@
  },
  {"tag": "Nodes", "on": "2026-10-30", "html": "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out."},
  {
+  "tag": "Accounts",
+  "on": "2026-10-30",
+  "html": "Reading the chain is now hard to miss and fun to watch. While a page reads the chain from our node, a band across the top shows how many blocks are in, the share, roughly how long is left, and what the page does meanwhile, over a thick amber bar; it turns green and slides away when every block is read. On Accounts the profile builds itself up as the blocks arrive: the numbers count up in amber and turn white once complete, the time line fills from the left with a reading head, and the list grows. Accounts also reads the chain about four times faster than before."
+ },
+ {
   "tag": "Telegram",
   "on": "2026-10-30",
   "html": "Telegram alerts: our bot can now tell you personally when something happens on the testnet. Tap “Telegram alerts” on an account page, in the wallet or on a rule change that is still open, press Start in Telegram, and @tauhud_alerts_bot writes to you when that account sends or receives test AGRS, when its own rule lands in a block, on rule offers and co-sign requests, when it votes, and on every vote on a rule change it proposed. Follow a rule change and you hear about each vote and how it ends. Opt-in only: the bot keeps your chat id and what you follow, nothing else, /following lists it and /stop deletes it all (privacy notice, section 10).",
