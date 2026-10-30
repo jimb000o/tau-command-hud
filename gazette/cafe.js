@@ -924,8 +924,10 @@
   function chalkIn() { ST.task = null; TALLY.at = performance.now() - 1800; [0, 900, 1800, 2700, 3600, 5400].forEach(ms => setTimeout(() => ST.area === "counter" && AUDIO.chalk(), ms)); note.classList.remove("on"); setTimeout(done, 6400); }
   $(".cafe-ticket").addEventListener("click", e => { if (ST.task !== "ticket") return; e.stopPropagation(); AUDIO.rustle(); done(); });
   $(".cafe-ticket").addEventListener("keydown", e => { if (ST.task === "ticket" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); AUDIO.rustle(); done(); } });
+  /* every stamp ever earned in this browser, for the reader's Tau card (/card/); the walk itself starts fresh each time */
+  function keep(who) { try { const k = "tauhud-cafe-stamps", had = JSON.parse(localStorage.getItem(k) || "[]"); if (!had.includes(who)) localStorage.setItem(k, JSON.stringify([...had, who])); } catch (e) {} }
   function stamp(who) {
-    ST.stamps.add(who); ticket(); AUDIO.stamp(); const tk = $(".cafe-ticket"); tk.classList.remove("thud"); void tk.offsetWidth; tk.classList.add("thud");
+    ST.stamps.add(who); keep(who); ticket(); AUDIO.stamp(); const tk = $(".cafe-ticket"); tk.classList.remove("thud"); void tk.offsetWidth; tk.classList.add("thud");
     let msg = fmt(TX.stamped, { name: TX.people[who].name, what: TX.stampFor[who] }); if (ST.stamps.size === 4) msg += " " + TX.full; flash(msg);
   }
   function closeTalk() { if (!ST.talk) return; if (ST.task === "ticket") $(".cafe-ticket").classList.remove("offer"); if (ST.task !== "chalk") ST.task = null; clearInterval(TYPE && TYPE.id); TYPE = null; ST.talk = null; ST.mouthT = 0; ST.zoomT = 1; say.hidden = true; }

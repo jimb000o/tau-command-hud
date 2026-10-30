@@ -1581,5 +1581,17 @@
   "on": "2026-10-30",
   "html": "In numbers now shows our sites' share of user transactions: everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Their transactions and our share of all transactions stay on the page, one line below."
  },
- {"tag": "Nodes", "on": "2026-10-30", "html": "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out."}
+ {"tag": "Nodes", "on": "2026-10-30", "html": "Nodes: the \"Other peers\" row turns grey and says offline when none of those peers was seen in the last 30 minutes, with one line on why the chain core and \"nodes online\" leave them out."},
+ {
+  "tag": "My Tau card",
+  "on": "2026-10-30",
+  "html": "My Tau card: one picture of what your test wallet did on the testnet, its three check words as its name, rules written, votes on rule changes and for Agorzilla, Agorzilla meals and the café stamps from your walk. Post it on X, copy the link (its preview shows your card on X, Telegram and WhatsApp) or save the picture; a list shows what is still open on your card and where to do it. Test AGRS only: nothing on the card is priced or promised. Open it from the wallet or under Playground.",
+  "major": {
+   "id": "card",
+   "title": "New: My Tau card",
+   "text": "Your test wallet on one picture: rules written, votes, Agorzilla meals and café stamps, ready to post. Test AGRS only, nothing priced or promised.",
+   "link": "/card/",
+   "image": "/assets/shots/card.png"
+  }
+ }
 ]
