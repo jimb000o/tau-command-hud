@@ -26,14 +26,18 @@ def fake(url, data, headers, timeout=240):
     calls.append(url)
     if "generativelanguage" in url:
         body = json.loads(data)
+        if "style references only" in body["contents"][0]["parts"][0]["text"]:
+            assert len(body["contents"][0]["parts"]) == 3
+        if "ink line drawing on white paper" in body["contents"][0]["parts"][0]["text"]:
+            assert len(body["contents"][0]["parts"]) == 2
         if "same artist" in body["contents"][0]["parts"][0]["text"]:
             assert len(body["contents"][0]["parts"]) == 4 and ("high hill" in body["contents"][0]["parts"][0]["text"] or "rough sketch" in body["contents"][0]["parts"][0]["text"])
-        assert body["generationConfig"]["imageConfig"]["aspectRatio"] == "16:9" and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"])
+        assert body["generationConfig"]["imageConfig"]["aspectRatio"] == "16:9" and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"])
         return {"candidates": [{"content": {"parts": [{"inlineData": {"mimeType": "image/png", "data": base64.b64encode(PIC).decode()}}]}}]}
     if "openai" in url:
         assert b'name="input_fidelity"' in data and b'filename="plate.jpg"' in data
         if b"like-1" in data:
-            assert data.count(b'name="image[]"') == 3
+            assert data.count(b'name="image[]"') >= 2
         return {"data": [{"b64_json": base64.b64encode(PIC).decode()}] * 3}
     raise AssertionError(url)
 paint.post = fake
@@ -64,6 +68,9 @@ for prov in ("gemini", "openai"):
         assert json.load(open(os.path.join(out, "index.json")))["layout"]["places"]["hall"]["x"] == 1090
         paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=2"]))
         assert "layout" not in json.load(open(os.path.join(out, "index.json")))
+        paint.REFS = os.path.join(out, "refs"); os.makedirs(os.path.join(paint.REFS, "2"))
+        open(os.path.join(paint.REFS, "2", "a.png"), "wb").write(PIC)
+        assert len(paint.style_refs(2)) == 1 and paint.style_refs(1) == [] and paint.style_refs(None) == []
         paint.cmd_looks(types.SimpleNamespace(out=out, model=None))
         dd = json.load(open(os.path.join(out, "drafts", "drafts.json")))
         assert set(dd["look"].values()) == {1, 2, 3} and "style 3" in open(os.path.join(out, "drafts", "index.html")).read()

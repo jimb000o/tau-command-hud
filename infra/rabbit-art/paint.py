@@ -36,6 +36,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 PLATES = os.path.join(HERE, "plates")
 OUT = "/opt/sites/rico/art"
+# style references for each look, kept on the server only (never in the repository, never published): /opt/rabbit-refs/1, 2, 3
+REFS = "/opt/rabbit-refs"
 PLACES = ["island", "hall", "market", "radio", "north", "south", "bar", "book", "pier"]
 
 STYLE = ("Repaint this picture as a lush, hand-painted background for a classic 2D point-and-click adventure game from "
@@ -80,8 +82,18 @@ SKETCH = {
            "more small details of island life.",
 }
 # three ways to paint the whole game (paint.sh looks paints the island once in each, to choose from)
-LOOK_BASE = ("Turn this rough sketch into a finished background for a 2D adventure game. No people, no text, no letters, "
-             "no numbers, no logos, no signatures, no frame, no user interface. Style: ")
+LOOK_BASE = ("Turn this drawing into a finished background for a 2D adventure game, painted the way the classic ones were: "
+             "a confident ink line drawing first, colour painted over it. One clear colour key for the whole picture, "
+             "warm light against cool shadows, values grouped into a few big masses, the strongest contrast and the "
+             "brightest light where the places are, distance fading into haze, foreground leaves framing the view and "
+             "leading the eye inwards. No people, no text, no letters, no numbers, no logos, no signatures, no frame, "
+             "no user interface. Style: ")
+# the first pass of a look: the sketch turned into the kind of line drawing the old background painters started from
+INK = ("Redraw this rough sketch as a confident black ink line drawing on white paper, a background layout drawing for an "
+       "animated film or an adventure game: lively hand-drawn lines that swell and taper, organic and slightly "
+       "exaggerated shapes, lots of small details (planks, thatch, leaves, ropes, crates, laundry, rocks), no colour, no "
+       "shading except a little hatching, no text. Keep where every building, the water, the peak and the lighthouse "
+       "stand and how big they are. ")
 LOOKS = {
     1: "a lush hand-painted background from a late-1990s point-and-click adventure: gouache and watercolour on paper "
        "with fine, confident dark ink outlines, soft painted colour gradients, near-realistic proportions, a huge "
@@ -97,6 +109,9 @@ LOOKS = {
        "shapes, bold tropical colours (bright turquoise sea, vivid greens, red and yellow accents), jungle leaves "
        "framing the foreground, cheerful comic-book humour.",
 }
+STYLE_REFS = ("The pictures after the sketch are style references only: match how they are painted (line, colour, light, "
+              "brushwork or pixels, level of detail, humour), but never copy their places, buildings, characters, objects "
+              "or composition; everything in the picture comes from the sketch and the description.")
 SCENE = {
     "island": "A small tropical island seen from above at an angle, in the open sea under a clear blue sky: a white "
               "domed council hall with columns in the middle, a round market square with a fountain and striped stalls, "
@@ -269,13 +284,21 @@ def cmd_draft(a):
     if sketch and (who != ["island"] or sketch not in SKETCH):
         sys.exit(f"A sketch is for the island only: draft island --sketch {' | '.join(SKETCH)}")
     refs = [open(f, "rb").read() for f in liked(a, drafts)]
+    look = getattr(a, "look", None)
+    styled = style_refs(look)
+    if styled:
+        print(f"Style {look}: {len(styled)} reference pictures from {os.path.join(REFS, str(look))}")
     print(f"{len(who)} places, {a.n} paintings each, with {model}" + (f", painted like {len(refs)} chosen pictures." if refs else "."))
     for id in who:
         plate = open(os.path.join(PLATES, (sketch or id) + ".jpg"), "rb").read()
-        look = getattr(a, "look", None)
         what = SKETCH[sketch] if sketch else SCENE[id] + (" " + DETAIL[id] if id in DETAIL else "")
-        prompt = (LOOK_BASE + LOOKS[look] + " The picture: " + what if look else STYLE + " The picture: " + what) + (" " + LIKE if refs else "")
-        raws = (paint_gemini if p == "gemini" else paint_openai)(plate, prompt, a.n, model, refs)
+        prompt = (LOOK_BASE + LOOKS[look] + " The picture: " + what if look else STYLE + " The picture: " + what) + (" " + LIKE if refs else "") + (" " + STYLE_REFS if styled else "")
+        if getattr(a, "ink", False):   # two passes: line drawing, then paint over it
+            print("    ink drawing first ...", flush=True)
+            line = (paint_gemini if p == "gemini" else paint_openai)(plate, INK + "The picture: " + what, 1, model, [])[0]
+            write(os.path.join(a.out, "drafts", f"{id}-ink-{hashlib.sha1(line).hexdigest()[:8]}.png"), line)
+            plate = line
+        raws = (paint_gemini if p == "gemini" else paint_openai)(plate, prompt, a.n, model, refs + styled)
         names = drafts.get(id, []) if refs or sketch or look else []   # these join the earlier ones, so those stay pickable
         for i, raw in enumerate(raws, len(names) + 1):
             data, kind = small(raw, pixel=look == 3)
@@ -311,11 +334,30 @@ def liked(a, drafts):
     return out
 
 
+def style_refs(look):
+    """Up to three pictures from REFS/<look>/ (png, jpg, webp), sent along to show how that style is painted."""
+    d = os.path.join(REFS, str(look)) if look else None
+    if not d or not os.path.isdir(d):
+        return []
+    fs = sorted(f for f in os.listdir(d) if f.lower().endswith((".png", ".jpg", ".jpeg", ".webp")))[:3]
+    out = []
+    for f in fs:
+        raw = open(os.path.join(d, f), "rb").read()
+        try:   # the painter wants png, jpeg or webp of a sensible size
+            from PIL import Image
+            im = Image.open(io.BytesIO(raw)).convert("RGB"); im.thumbnail((1280, 1280))
+            buf = io.BytesIO(); im.save(buf, "JPEG", quality=88); raw = buf.getvalue()
+        except ImportError:
+            pass
+        out.append(raw)
+    return out
+
+
 def cmd_looks(a):
     """The island from the newest sketch, once in each of the three styles."""
     for n in LOOKS:
         print(f"Style {n}:")
-        cmd_draft(argparse.Namespace(out=a.out, places=["island"], n=1, model=a.model, sketch="bay", like=None, look=n))
+        cmd_draft(argparse.Namespace(out=a.out, places=["island"], n=1, model=a.model, sketch="bay", like=None, look=n, ink=True))
 
 
 def cmd_keep(a):
@@ -363,6 +405,7 @@ def main():
     d.add_argument("--model", default=None)
     d.add_argument("--sketch", default=None, help="island only: paint a new sketch instead, e.g. bay")
     d.add_argument("--like", nargs="+", metavar="PLACE=N", help="paint in the style of these drafts, e.g. island=1 market=2")
+    d.add_argument("--ink", action="store_true", help="draw it in ink first, then paint over the drawing (twice the cost)")
     d.add_argument("--look", type=int, choices=sorted(LOOKS), default=None, help="paint in style 1, 2 or 3 (see LOOKS)")
     lk = sub.add_parser("looks")
     lk.add_argument("--model", default=None)
