@@ -1675,5 +1675,10 @@
   "tag": "Newspaper",
   "on": "2026-10-30",
   "html": "Newspaper café: a black café cat now sits on the windowsill when you look up, then pads to the way on and waits there, looking back over its shoulder, in every room. If you hesitate it meows softly; click it for a purr and a word. When Mae's pie vote is chalked in, it walks by twice, the very same way. The café sounds now start quietly with “Look up” whenever the page sound is on. Also fixed: the café no longer drops an empty stamp into your Tau card."
+ },
+ {
+  "tag": "My Tau card",
+  "on": "2026-10-30",
+  "html": "My Tau card: Agorzilla now stands beside your card and reads it with you. His mood is the card: an empty one makes him cry, every rule, vote, meal and café stamp cheers him up, and a full card makes him beam. At his feet lies this week's Daily Consensus with your café ticket on top, stamped by the regulars you met; click it to walk into the café. Tiles with something in them light up, and the page has its own guided tour."
  }
 ]

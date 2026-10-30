@@ -72,4 +72,16 @@ TauI18n.add({ strings: {
   "My Tau card:": "我的 Tau 卡片：",
   "A Tau card:": "一张 Tau 卡片：",
   "Test AGRS only, nothing priced.": "只有测试 AGRS，不标价。",
+  "Agorzilla is reading the card with you.": "Agorzilla 正和你一起看这张卡片。",
+  "An empty card. Agorzilla was so hoping for one rule.": "一张空卡片。Agorzilla 好希望能看到一条规则。",
+  "He's cheering up a little. There's still room on the card.": "他开心了一点。卡片上还有空位。",
+  "Half a card. He's started to enjoy this.": "填了一半。他开始喜欢这件事了。",
+  "Nearly full. Agorzilla is properly pleased.": "快满了。Agorzilla 真的很高兴。",
+  "A full card. Agorzilla couldn't be happier.": "满满一张卡片。Agorzilla 高兴得不得了。",
+  "No wallet, no card. Agorzilla is waiting for you.": "没有钱包，就没有卡片。Agorzilla 在等你。",
+  "Café ticket": "咖啡馆票",
+  "The Daily Consensus": "共识日报",
+  "Your café ticket is full: all four regulars of the Daily Consensus café stamped it.": "你的咖啡馆票已经盖满：《共识日报》咖啡馆的四位常客都盖过章了。",
+  "The café of the Daily Consensus: four regulars, and each stamps your ticket. Walk in.": "《共识日报》的咖啡馆：四位常客，每人都会给你的票盖一个章。进去看看吧。",
+  "Agorzilla": "Agorzilla"
 } });
