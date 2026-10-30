@@ -1697,6 +1697,11 @@
   "html": "Faster first screen on the HUD: the files it waits for now download at the same time instead of one after another, so on a slow phone connection the first picture appears about a second sooner (2.4 s → 1.5 s in our test with a throttled phone). The update log is downloaded once per page instead of twice."
  },
  {
+  "tag": "My Tau card",
+  "on": "2026-10-30",
+  "html": "My Tau card: Agorzilla beside your card now has the soft face from agorzilla.com, so the painted mouth itself moves. With an empty card the corners of his mouth sink, his brows rise in worry, his shoulders slump, he sighs slowly and now and then a sob and a tear come. As the card fills, he straightens up, smiles, chuckles and bounces. His eyes stay calm and only glance at the card and at you."
+ },
+ {
   "tag": "Newspaper",
   "on": "2026-10-30",
   "html": "Newspaper café: the café cat now has a name, Déjà. When Mae's pie vote is chalked in and the rule is carried, she breaks up into slipping bands of picture, comes back together, walks across the counter, breaks up again at the far end, and then takes the very same walk once more."
