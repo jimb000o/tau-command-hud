@@ -75,4 +75,5 @@ TauI18n.add({ strings: {
   "AI assistant": "AI 助手",
   "Claude Max plan (20x), the AI tool the site is built and run with": "Claude Max 套餐（20x），搭建和运行本站所用的 AI 工具",
   "Amounts as billed, rounded, each in the currency of its bill. Domains and the X account are added here once their bills are in.": "金额按账单取整，各按账单币种列出。域名和 X 账号在账单到来后再加进来。",
+  "Claude Max plan (20x), the AI tool the site is built and run with. Its weekly limit for the most advanced models has at times been used up in about half a week.": "Claude Max 套餐（20x），搭建和运行本站所用的 AI 工具。最先进模型的每周用量上限，有时大约半周就用完了。",
 } });
