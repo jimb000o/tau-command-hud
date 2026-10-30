@@ -97,7 +97,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
 .panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
-.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.panel h2 small, .panel h3 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
 .panel h3 { margin: 10px 0 4px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #fff; }
 .panel h3:first-of-type { margin-top: 2px; }
 .empty { color: var(--dim); font-size: 13px; margin: 4px 0; }
@@ -244,9 +244,6 @@ td .approx { color: var(--dim); }
 /* validator profile: the same account, seen as a block maker */
 .ident .seg { margin: 0; }
 .vcols .chart svg { overflow: hidden; }
-.chart .bar { fill: rgba(255,255,255,.13); }
-.chart .bar.me { fill: #fff; }
-.chart .bar.on { fill: var(--ok); }
 .chart .dot { fill: rgba(255,255,255,.7); }
 .chart .dot.long { fill: none; stroke: var(--ok); stroke-width: 1.6; }
 .chart .med { stroke: rgba(255,255,255,.4); stroke-dasharray: 3 4; }
@@ -266,6 +263,39 @@ td .approx { color: var(--dim); }
 #vTable td.me { box-shadow: inset 2px 0 0 var(--ok); }
 html.fit .vcols .col > .panel { flex: 0 1 auto; }
 html.fit .vcols .col > .panel.grow { flex: 1 1 0; min-height: 150px; }
+/* what it sealed: the list is the main column; on a screen it scrolls inside, under the strip and the filter */
+@media (min-width: 1100px) { .cols.vcols { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 1fr); } }
+@media (max-width: 1099px) { .col.seal { order: -1; } }
+.chart.strip { margin: 4px 0 6px; }
+.chart .hair { stroke: rgba(255,255,255,.4); stroke-width: 1; }
+.chart .tx { fill: #fff; }
+.chart .tx.rule { fill: rgba(255,255,255,.62); }
+.chart .tx.gov { fill: var(--ok); }
+.chart .hit.go { cursor: pointer; }
+ul.sealed { gap: 2px; }
+ul.sealed li.blk { display: grid; gap: 1px; }
+ul.list.sealed li > button:not(.btn) { grid-template-columns: 7.6em 5em 12.5em minmax(0, 1fr) auto; font-size: 12.5px; padding: 4px 8px; }
+ul.sealed li > button.rule { border-left-color: rgba(255,255,255,.55); }
+ul.sealed li > button.transfer { border-left-color: #fff; }
+ul.sealed li > button.gov { border-left-color: var(--ok); }
+ul.sealed .w, ul.sealed .b { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+ul.sealed .k { color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+ul.sealed li.run, ul.sealed li.pause { display: grid; grid-template-columns: 7.6em 8.4em minmax(0, 1fr); gap: 2px 10px; padding: 3px 8px 3px 10px; font: 12px/1.45 var(--mono); color: var(--dim); }
+ul.sealed li.run .d em { font-style: normal; opacity: .7; }
+ul.sealed li.pause { grid-template-columns: 7.6em minmax(0, 1fr); color: var(--text); border-top: 1px dashed var(--hair); border-bottom: 1px dashed var(--hair); margin: 3px 0; }
+ul.sealed li.flash { animation: sealflash 1.6s ease-out; }
+@keyframes sealflash { 0%, 30% { background: rgba(57,255,138,.16); } 100% { background: transparent; } }
+.vcols .panel h3, .vcols .panel h3:first-of-type { margin-top: 12px; }
+html.fit .vcols .seal > .panel { display: flex; flex-direction: column; overflow: hidden; }
+html.fit .vcols .seal > .panel > * { flex: none; }
+html.fit .vcols .seal .sealed { flex: 1 1 0; min-height: 0; overflow: auto; align-content: start; padding-right: 4px; }
+@media (max-width: 700px) {
+  ul.list.sealed li > button:not(.btn) { grid-template-columns: auto auto minmax(0, 1fr) auto; }
+  ul.sealed li > button .d { order: 5; grid-column: 1 / -1; }
+  ul.sealed li.run, ul.sealed li.pause { grid-template-columns: auto minmax(0, 1fr); }
+  ul.sealed li.run .b { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { ul.sealed li.flash { animation: none; } }
 [hidden] { display: none !important; }
 /* phone: nothing smaller than 11 px, buttons big enough for a thumb */
 @media (max-width: 700px) {
@@ -391,40 +421,43 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
         </div>
       </div>
       <div class="cols vcols" id="vcols" hidden>
+        <div class="col seal">
+          <section class="panel grow">
+            <h2>What it sealed <small>its blocks and the transactions inside, newest first</small></h2>
+            <p class="headline" id="vSealHead"></p>
+            <div class="chart strip" id="vStrip"></div>
+            <div class="filters" role="group" aria-label="Show">
+              <button type="button" data-vf="all" aria-pressed="true">All</button>
+              <button type="button" data-vf="transfer" aria-pressed="false">Transfers</button>
+              <button type="button" data-vf="rule" aria-pressed="false">Rules</button>
+              <button type="button" data-vf="gov" aria-pressed="false">Governance</button>
+            </div>
+            <ul class="list sealed" id="vSealed"></ul>
+          </section>
+        </div>
         <div class="col">
           <section class="panel grow">
-            <h2>Blocks it made <small id="vBlkSub"></small></h2>
-            <p class="headline" id="vBlkHead"></p>
-            <div class="chart" id="vBlkChart"></div>
-            <p class="note" id="vBlkNote"></p>
-          </section>
-          <section class="panel">
-            <h2>Hours with a block from it <small>last 7 days, your time</small></h2>
+            <h2>When it ran <small>pauses between its blocks, and its hours</small></h2>
+            <p class="headline" id="vRunHead"></p>
+            <div class="chart" id="vGapChart"></div>
+            <p class="note" id="vGapNote"></p>
+            <h3>Hours with a block from it <small>last 7 days, your time</small></h3>
             <div class="hours" id="vHours"></div>
             <p class="note" id="vHoursNote"></p>
           </section>
         </div>
         <div class="col">
-          <section class="panel grow">
-            <h2>Pauses <small>time between two of its blocks</small></h2>
-            <p class="headline" id="vGapHead"></p>
-            <div class="chart" id="vGapChart"></div>
-            <p class="note" id="vGapNote"></p>
-          </section>
           <section class="panel">
             <h2>All validators <small>who made the blocks</small></h2>
             <div class="dist" id="vDist" aria-hidden="true"></div>
             <table id="vTable"><thead><tr><th>Validator</th><th class="n">Blocks</th><th class="sh">Share</th><th class="n">Last block</th></tr></thead><tbody id="vBody"></tbody></table>
-          </section>
-        </div>
-        <div class="col">
-          <section class="panel">
-            <h2>What it sent <small>its transactions, by kind</small></h2>
-            <div id="vKinds"></div>
-            <p class="note" id="vMoney"></p>
+            <p class="note" id="vSetNote"></p>
           </section>
           <section class="panel grow">
-            <h2>Rule changes <small>what it proposed and how it voted</small></h2>
+            <h2>Signed by itself <small>its own transactions and votes</small></h2>
+            <div id="vKinds"></div>
+            <p class="note" id="vMoney"></p>
+            <h3>Rule changes</h3>
             <ul class="list" id="vGov"></ul>
           </section>
         </div>
@@ -511,7 +544,7 @@ function nameOf(a) { return NAMES[a] || (a === S.addr ? "this account" : short(a
 /* ------------------------------ state ------------------------------ */
 // C: chain as read from the relay. S: the open account and the node's answers about it.
 const C = { ws: null, blocks: [], head: -1, gov: null, loading: false, nextFrom: 0, retry: 5000, dropped: [], legacy: false, ready: false };
-const S = { addr: null, lookups: {}, filter: "all", more: 20, sort: { k: "bal", d: -1 }, pick: null, view: null };
+const S = { addr: null, lookups: {}, filter: "all", more: 20, sort: { k: "bal", d: -1 }, pick: null, view: null, vf: "all", vmore: 120 };
 let M = null;               // derived view of the open account
 const offerIds = new Map(); // tx object -> offer id (hex)
 
@@ -1112,53 +1145,49 @@ function renderValidator() {
   if (C.loading && !SAMPLE) {
     const of = C.want != null ? fmtN(C.want + 1) : "…";
     $("tiles").innerHTML = tile("Reading the chain", `${fmtN(C.loadedN || 0)} of ${of}`, "blocks read so far; the profile fills in when all are here", "Our node sends the chain a hundred blocks at a time.\nA validator’s numbers need every block.", "blocks");
-    for (const id of ["vBlkHead", "vGapHead"]) $(id).innerHTML = `Reading the chain… <span>${fmtN(C.loadedN || 0)} of ${of} blocks</span>`;
-    for (const id of ["vBlkSub", "vBlkNote", "vGapNote", "vHoursNote", "vMoney"]) $(id).textContent = "";
-    for (const id of ["vBlkChart", "vGapChart", "vHours", "vDist", "vKinds"]) $(id).replaceChildren();
+    for (const id of ["vSealHead", "vRunHead"]) $(id).innerHTML = `Reading the chain… <span>${fmtN(C.loadedN || 0)} of ${of} blocks</span>`;
+    for (const id of ["vGapNote", "vHoursNote", "vMoney", "vSetNote"]) $(id).textContent = "";
+    for (const id of ["vStrip", "vGapChart", "vHours", "vDist", "vKinds"]) $(id).replaceChildren();
+    $("vSealed").innerHTML = `<li class="empty">Reading the chain…</li>`;
     $("vBody").innerHTML = `<tr><td colspan="4" class="empty">Reading the chain…</td></tr>`;
     $("vGov").innerHTML = `<li class="empty">Reading the chain…</li>`;
     return;
   }
   const a = S.addr, V = validatorView(a), st = S.lookups.getaccountstate, gb = S.lookups.getbalance;
   const last = V.mine[V.mine.length - 1], first = V.mine[0];
-  const N = V.set.length, fair = N ? 1 / N : null;
+  const N = V.set.length;
   const chainBal = st ? num(st.chain_balance) : gb ? num(gb.balance) : null;
   const fees = chainBal != null ? M.replayBal - chainBal : null;
   const govEv = M.ev.filter(e => e.h != null && (e.kind === "consensus_rule_update" || e.kind === "consensus_rule_vote"));
   const yes = govEv.filter(e => e.kind === "consensus_rule_vote" && e.cat === "gov").length, no = govEv.filter(e => e.kind === "consensus_rule_vote" && e.cat !== "gov").length;
   const props = govEv.filter(e => e.kind === "consensus_rule_update").length;
   const up = V.ofH ? V.upH / V.ofH : null;
+  const all = sealedEntries(V, "all"), list = S.vf === "all" ? all : sealedEntries(V, S.vf);
+  const txN = all.reduce((s, e) => s + (e.txs ? e.txs.length : 0), 0), txBlocks = all.filter(e => e.txs).length;
+  VSE = { list, all };
+
+  // four numbers; the rest sits in the panels below
   $("tiles").innerHTML = [
-    tile("Blocks made", fmtN(V.mine.length), first ? `since block #${fmtN(first.h)}` : "none yet", "Blocks this validator proposed and sealed,\nfrom genesis to now."),
-    tile("Share of blocks", pct(V.share), N > 1 ? `fair share ${pct(fair)} of ${fmtN(N)}` : N === 1 && V.inSet ? "the only validator" : `${plural(V.all.length, "block")} in all`, "Its blocks out of all blocks so far.\nWith several validators, each would make about the same share."),
+    tile("Blocks made", fmtN(V.mine.length), N === 1 && V.inSet ? "every block: the only validator" : `${pct(V.share)} of all blocks`, "Blocks this validator proposed and sealed,\nfrom genesis to now."),
+    tile("Transactions sealed", fmtN(txN), V.mine.length ? `in ${fmtN(txBlocks)} of its ${plural(V.mine.length, "block")}` : "none yet", "Transactions other accounts sent that went into a block it made.\nA validator does not send them; it puts them on the chain."),
     tile("Last block", last ? (last.ts ? ago(last.ts) : `#${fmtN(last.h)}`) : "—", last ? `block #${fmtN(last.h)}` : "has not made one", "When it last sealed a block."),
-    tile("Typical pause", fmtDur(V.med), V.longest ? `longest ${fmtDur(V.longest.s)}` : "needs two blocks", "The usual time between two of its blocks (the median).\nThe longest pause shows when it, or the chain, stood still."),
-    tile("Hours up", up != null ? pct(up) : "—", V.ofH ? `${fmtN(V.upH)} of ${fmtN(V.ofH)} hours, last 7 days` : "no blocks in 7 days", "Hours of the last 7 days in which it made at least one block.\nA rough sign of how often it was running."),
-    tile("Transactions", fmtN(M.sentN), `${plural(M.inN, "transfer")} received`, "Transactions it signed that made it into a block,\nand the transfers other accounts sent it."),
-    tile("Fees paid", fees != null && fees > 0 ? fmtA(fees) : fees != null ? "0" : "—", fees == null ? "asking our node…" : fees >= 0 ? "node balance below the transfers" : `node shows ${fmtA(-fees)} more than the transfers`, "What its balance at our node is below the sum of its transfers:\nthe fees it paid. Test AGRS, no value.", "AGRS"),
-    tile("Votes", fmtN(yes + no), props ? `${fmtN(yes)} yes · ${fmtN(no)} no · ${plural(props, "proposal")}` : `${fmtN(yes)} yes · ${fmtN(no)} no`, "Its votes on changes to the network’s rules,\nand the changes it proposed itself."),
+    tile("Online", up != null ? pct(up) : "—", V.ofH ? `${fmtN(V.upH)} of ${fmtN(V.ofH)} hours, last 7 days` : "no blocks in 7 days", "Hours of the last 7 days in which it made at least one block.\nA rough sign of how often it was running."),
   ].join("");
 
-  // blocks over time: its blocks against all blocks, in even time buckets
-  const tsAll = V.all.filter(b => b.ts), t0 = tsAll.length ? tsAll[0].ts : 0, t1 = tsAll.length ? tsAll[tsAll.length - 1].ts : 0;
-  const step = [600, 1800, 3600, 3 * 3600, 6 * 3600, 12 * 3600, 86400, 7 * 86400].find(s => (t1 - t0) / s <= 72) || 7 * 86400;
-  const buckets = [];
-  if (tsAll.length) {
-    const b0 = Math.floor(t0 / step) * step;
-    for (let t = b0; t <= t1; t += step) buckets.push({ t, me: 0, all: 0 });
-    for (const b of tsAll) { const r = buckets[Math.floor((b.ts - b0) / step)]; if (r) { r.all++; if (b.p === a) r.me++; } }
-  }
-  $("vBlkSub").textContent = buckets.length ? `per ${fmtDur(step)}, white: its blocks` : "";
-  $("vBlkHead").innerHTML = V.mine.length ? `${fmtN(V.mine.length)} of ${fmtN(V.all.length)} blocks <span>${pct(V.share)} of the chain, from #${fmtN(first.h)} to #${fmtN(last.h)}</span>`
-    : `No blocks from it yet <span>${V.inSet ? "it is in the validator set and may make the next one" : "it is not in the validator set"}</span>`;
-  $("vBlkNote").textContent = N === 1 && V.inSet ? "It is the only validator right now, so it makes every block. A second validator would share the work."
-    : N > 1 ? `${plural(N, "validator")} share the blocks; a grey bar is blocks the others made.` : "";
+  // one time axis for the strip and the pauses: from the first block on the chain to the newest
+  const tsAll = V.all.filter(b => b.ts), ax = { t0: tsAll.length ? tsAll[0].ts : 0, t1: tsAll.length ? Math.max(tsAll[0].ts + 1, tsAll[tsAll.length - 1].ts) : 1 };
 
-  // pauses between its own blocks
-  $("vGapHead").innerHTML = V.gaps.length ? `Usually ${fmtDur(V.med)} <span>between two of its blocks</span>` : `Not enough blocks <span>a pause needs two of its blocks</span>`;
+  // what it sealed: blocks with transactions, empty stretches folded, long stops called out
+  const emptyN = V.mine.length - txBlocks;
+  $("vSealHead").innerHTML = !V.mine.length ? `No blocks from it yet <span>${V.inSet ? "it is in the validator set and may make the next one" : "it is not in the validator set"}</span>`
+    : txN ? `${plural(txN, "transaction")} in ${fmtN(txBlocks)} of its blocks <span>${fmtN(emptyN)} empty: a block every ${fmtDur(V.med)}, sent or not</span>`
+    : `Only empty blocks so far <span>nobody sent a transaction while it made blocks; empty blocks still move the chain on</span>`;
+  renderSealed();
+
+  // when it ran: pauses on the shared axis, then the last seven days hour by hour
+  $("vRunHead").innerHTML = up != null ? `Online in ${pct(up)} of the last ${plural(V.ofH, "hour")} <span>usually ${fmtDur(V.med)} between two of its blocks</span>`
+    : V.gaps.length ? `No blocks in the last 7 days <span>usually ${fmtDur(V.med)} between two of its blocks before that</span>` : `Not enough blocks <span>a pause needs two of its blocks</span>`;
   $("vGapNote").textContent = V.longest ? `Longest pause: ${fmtDur(V.longest.s)}, before block #${fmtN(V.longest.h)} (${fmtWhen(V.longest.ts)}).` : "";
-
-  // the last seven days, hour by hour
   const days = [];
   for (let d = 6; d >= 0; d--) { const dayStart = new Date((V.nowH - d * 86400) * 1000); dayStart.setHours(0, 0, 0, 0); days.push(dayStart.getTime() / 1000); }
   const hx = [`<span></span>`, ...Array.from({ length: 24 }, (_, i) => `<span class="hx">${i % 6 ? "" : pad(i)}</span>`)];
@@ -1180,24 +1209,78 @@ function renderValidator() {
   $("vBody").innerHTML = rowsV.length ? rowsV.map(r => `<tr class="click" data-acc="${r.a}"><td class="${r.a === a ? "me" : ""}">${accLink(r.a)}${r.inSet ? "" : `<span class="tag">left the set</span>`}</td><td class="n">${fmtN(r.n)}</td>
     <td class="sh"><div class="shbar"><i style="width:${(r.n / maxN * 100).toFixed(2)}%"></i><span>${pct(r.share)}</span></div></td><td class="n">${r.last && r.last.ts ? ago(r.last.ts) : "—"}</td></tr>`).join("")
     : `<tr><td colspan="4" class="empty">${C.ready || SAMPLE ? "No validator data yet." : C.off ? "Our node is offline right now." : "Reading the chain…"}</td></tr>`;
+  $("vSetNote").textContent = N === 1 && V.inSet ? "It is the only validator right now, so it makes every block. A second validator would share the work."
+    : N > 1 ? `${plural(N, "validator")} share the blocks; each would make about ${pct(1 / N)}.` : "";
 
-  // what it sent, by kind, and its money
+  // what it signed itself: most validators sign nothing, and the page says why instead of showing a zero
   const kinds = new Map();
   for (const x of eachTx()) if (low(x.t.sender_pubkey) === a) { const k = txKind(x.t); kinds.set(k, (kinds.get(k) || 0) + 1); }
   const kl = [...kinds.entries()].sort((x, y) => y[1] - x[1]), kmax = Math.max(1, ...kl.map(k => k[1]));
   $("vKinds").innerHTML = kl.length ? `<div class="kinds">${kl.map(([k, n]) => `<span class="k">${esc(TX_NAMES[k] || k)}</span><span class="b"><i style="width:${(n / kmax * 100).toFixed(1)}%"></i></span><span class="n">${fmtN(n)}</span>`).join("")}</div>`
-    : `<p class="empty">It has not sent a transaction yet. Making blocks needs none.</p>`;
-  $("vMoney").innerHTML = `Received <b>${fmtA(M.inSum)} AGRS</b> in ${plural(M.inN, "transfer")}, sent <b>${fmtA(M.outSum)} AGRS</b> in ${plural(M.outN, "transfer")}.`;
-  $("vGov").innerHTML = govEv.length ? govEv.slice(0, 30).map(rowHtml).join("") : `<li class="empty">It has not proposed or voted on a rule change yet.</li>`;
+    : txN ? `<p class="empty">It signs nothing itself. It puts on the chain what other accounts send: ${plural(txN, "transaction")} so far, listed under What it sealed.</p>`
+    : `<p class="empty">It has not signed a transaction yet. A validator needs none to make blocks.</p>`;
+  $("vMoney").innerHTML = `Received <b>${fmtA(M.inSum)} AGRS</b> in ${plural(M.inN, "transfer")}, sent <b>${fmtA(M.outSum)} AGRS</b> in ${plural(M.outN, "transfer")}.` + (fees != null && fees > 0 ? ` <span>Fees paid: <b>${fmtA(fees)} AGRS</b>.</span>` : "");
+  $("vGov").innerHTML = govEv.length ? `<li class="empty">${esc(`${fmtN(yes)} yes · ${fmtN(no)} no · ${plural(props, "proposal")}`)}</li>` + govEv.slice(0, 30).map(rowHtml).join("")
+    : `<li class="empty">No proposals or votes from it yet. A change to the network’s rules would show here, with how it voted.</li>`;
   // the charts last: they take the height the filled panels leave them
-  drawBuckets($("vBlkChart"), buckets, step);
-  drawGaps($("vGapChart"), V.gaps, V.med, V.longest);
+  drawStrip($("vStrip"), V, ax);
+  drawGaps($("vGapChart"), V.gaps, V.med, V.longest, ax);
+}
+// the four groups the filter offers
+const vCat = k => k === "consensus_rule_update" || k === "consensus_rule_vote" ? "gov" : k === "rule_deploy" || k.startsWith("rule_offer") ? "rule" : "transfer";
+let VSE = { list: [], all: [] };
+function sealedTx(x) {
+  const t = x.t, k = txKind(t), tr = transfersOf(t).filter(r => low(r[0]) !== low(r[1]));
+  let to = null, amt = null;
+  if (tr.length) { amt = tr.reduce((v, r) => v + num(r[2]), 0); const tos = [...new Set(tr.map(r => low(r[1])))]; to = tos.length === 1 ? accLink(tos[0]) : `<span>${plural(tos.length, "account")}</span>`; }
+  else if (t.recipient_pubkey) { to = accLink(low(t.recipient_pubkey)); if (t.amount != null) amt = num(t.amount); }
+  const vote = k === "consensus_rule_vote" || k === "transfer_vote" ? ` · ${t.approve ? "yes" : "no"}` : "";
+  return { x, k, cat: vCat(k), who: `${accLink(low(t.sender_pubkey))}${to ? ` → ${to}` : ""}${vote}`, amt };
+}
+// newest first: a block with transactions is one entry, a stretch of empty blocks another, a long stop a third
+function sealedEntries(V, f) {
+  const out = [], brk = Math.max(600, (V.med || 60) * 10);
+  let run = null;
+  const flush = () => { if (run) { out.push(run); run = null; } };
+  for (let i = V.mine.length - 1; i >= 0; i--) {
+    const b = V.mine[i], nx = V.mine[i + 1], blk = C.blocks[b.h] || {};
+    if (nx && nx.ts && b.ts && nx.ts - b.ts > brk) { flush(); out.push({ pause: nx.ts - b.ts, h: nx.h, ts: b.ts }); }
+    const txs = (blk.transactions || []).map((t, j) => t && typeof t === "object" ? sealedTx({ h: b.h, ts: b.ts, i: j, t, txId: (blk.tx_ids || [])[j] || null, b: blk }) : null).filter(r => r && (f === "all" || r.cat === f));
+    if (txs.length) { flush(); out.push({ h: b.h, ts: b.ts, txs }); }
+    else if (run) { run.lo = b.h; run.ts0 = b.ts; run.n++; }
+    else run = { empty: true, hi: b.h, lo: b.h, ts1: b.ts, ts0: b.ts, n: 1 };
+  }
+  flush();
+  return out;
+}
+function sealedHtml(e, i) {
+  if (e.pause) return `<li class="pause" data-se="${i}"><span class="w">${esc(fmtWhen(e.ts))}</span><span class="d">${esc(`It stopped for ${fmtDur(e.pause)}, then went on with block #${fmtN(e.h)}`)}</span></li>`;
+  if (e.empty) return `<li class="run" data-se="${i}"><span class="w">${esc(fmtWhen(e.ts1))}</span><span class="b">${e.n === 1 ? `#${fmtN(e.hi)}` : `#${fmtN(e.lo)}–${fmtN(e.hi)}`}</span><span class="d">${esc(S.vf === "all" ? plural(e.n, "empty block") : e.n === 1 ? "1 block, none of this kind" : `${fmtN(e.n)} blocks, none of this kind`)}${e.n > 1 ? ` <em>${esc(`from ${fmtWhen(e.ts0)}`)}</em>` : ""}</span></li>`;
+  return `<li class="blk" data-se="${i}">${e.txs.map((r, j) => `<button type="button" class="${r.cat}" data-sx="${r.x.h}:${r.x.i}"><span class="w">${j ? "" : esc(fmtWhen(e.ts))}</span><span class="b">${j ? "" : `#${fmtN(e.h)}`}</span><span class="k">${esc(TX_NAMES[r.k] || r.k)}</span><span class="d">${r.who}</span><span class="amt">${r.amt != null ? fmtA(r.amt) : ""}</span></button>`).join("")}</li>`;
+}
+function renderSealed() {
+  // the desktop panel scrolls inside; on a phone a long list would push the rest far down, so it shows a quarter at a time
+  const L = VSE.list, cap = document.documentElement.classList.contains("fit") ? S.vmore : S.vmore / 4;
+  $("vSealed").innerHTML = !L.length ? `<li class="empty">${C.ready || SAMPLE ? "No blocks from it yet." : C.off ? "Our node is offline right now." : "Reading the chain…"}</li>`
+    : L.slice(0, cap).map(sealedHtml).join("") + (L.length > cap ? `<li><button type="button" class="btn ghost" id="vMoreBtn" style="justify-self:start">Show older</button></li>` : "");
+  document.querySelectorAll("[data-vf]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.vf === S.vf)));
+}
+// a click on the strip: the entry that holds block h, rendered if it was further down, then brought into view
+function sealedJump(h) {
+  const L = VSE.list, i = L.findIndex(e => e.txs ? e.h <= h : e.empty ? e.lo <= h : false);
+  if (i < 0) return;
+  const fitted = document.documentElement.classList.contains("fit");
+  if (i >= (fitted ? S.vmore : S.vmore / 4)) { S.vmore = (i + 40) * (fitted ? 1 : 4); renderSealed(); }
+  const el = $("vSealed").querySelector(`[data-se="${i}"]`); if (!el) return;
+  el.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
 }
 // fit: a chart takes the height its panel leaves
 function chartH(host, lo, hi, fallback) {
   if (!document.documentElement.classList.contains("fit")) return fallback;
   const panel = host.closest(".panel");
-  const other = [...panel.children].filter(c => c !== host).reduce((s, c) => s + c.offsetHeight, 0) + 26 + 20;
+  // the other children with their margins: a panel with a heading in the middle (When it ran) has more of them
+  const other = [...panel.children].filter(c => c !== host).reduce((s, c) => { const cs = getComputedStyle(c); return s + c.offsetHeight + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom); }, 0) + 26 + 8;
   return Math.round(Math.max(lo, Math.min(hi, panel.clientHeight - other)));
 }
 function svgOf(host, W, H) {
@@ -1207,48 +1290,64 @@ function svgOf(host, W, H) {
   host.append(svg);
   return { svg, mk };
 }
-const bucketLabel = (t, step) => step >= 86400 ? fmtDay(t) : `${fmtDay(t)} ${fmtTime(t)}`;
-function drawBuckets(host, buckets, step) {
-  const W = Math.max(280, host.clientWidth || 400), H = chartH(host, 110, 420, 150);
+// the shared time line: a hair for each of its blocks, a dot for each transaction in them, one lane per kind
+const axTicks = (ax, W) => W < 520 ? [ax.t0, ax.t1] : [ax.t0, (ax.t0 + ax.t1) / 2, ax.t1];
+function drawStrip(host, V, ax) {
+  const W = Math.max(280, host.clientWidth || 400), H = 92;
   const { svg, mk } = svgOf(host, W, H);
-  if (!buckets.length) { const t = mk("text", { x: W / 2, y: H / 2, "text-anchor": "middle" }); t.textContent = C.ready || SAMPLE ? "No blocks yet" : "Reading the chain…"; return; }
-  const m = { l: 40, r: 6, t: 8, b: 20 }, hi = Math.max(1, ...buckets.map(b => b.all));
-  const bw = (W - m.l - m.r) / buckets.length, Y = v => m.t + (1 - v / hi) * (H - m.t - m.b);
+  if (!V.mine.length) { const t = mk("text", { x: W / 2, y: H / 2, "text-anchor": "middle" }); t.textContent = C.ready || SAMPLE ? "No blocks from it yet" : "Reading the chain…"; return; }
+  const lanes = [["blk", "Its blocks"], ["transfer", "Transfers"], ["rule", "Rules"], ["gov", "Governance"]];
+  const m = { l: 84, r: 8, t: 2, b: 18 }, lh = (H - m.t - m.b) / lanes.length;
+  const X = t => m.l + (t - ax.t0) / (ax.t1 - ax.t0) * (W - m.l - m.r), LY = k => m.t + lanes.findIndex(l => l[0] === k) * lh + lh / 2;
   const g = mk("g", { class: "grid" });
-  for (const v of [0, Math.round(hi / 2), hi]) { const y = Y(v); mk("line", { x1: m.l, x2: W - m.r, y1: y, y2: y }, g); const t = mk("text", { x: m.l - 6, y: y + 3.5, "text-anchor": "end" }); t.textContent = fmtN(v); }
-  buckets.forEach((b, i) => {
-    const x = m.l + i * bw + bw * 0.12, w = Math.max(1, bw * 0.76);
-    if (b.all > b.me) mk("rect", { class: "bar", x, y: Y(b.all), width: w, height: Y(b.me) - Y(b.all) });
-    if (b.me) mk("rect", { class: "bar me", x, y: Y(b.me), width: w, height: Y(0) - Y(b.me) });
-  });
-  for (const i of [0, Math.floor(buckets.length / 2), buckets.length - 1]) { const t = mk("text", { x: m.l + (i + 0.5) * bw, y: H - 5, "text-anchor": i === 0 ? "start" : i === buckets.length - 1 ? "end" : "middle" }); t.textContent = bucketLabel(buckets[i].t, step); }
-  const hl = mk("rect", { class: "bar on", x: 0, y: 0, width: 0, height: 0, visibility: "hidden" });
-  const hit = mk("rect", { class: "hit", x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b });
+  for (const [k, label] of lanes) { const y = LY(k); mk("line", { x1: m.l, x2: W - m.r, y1: y, y2: y }, g); const t = mk("text", { x: m.l - 8, y: y + 3.5, "text-anchor": "end" }); t.textContent = label; }
+  // blocks: one hair per pixel column that has any, so three thousand blocks stay one light path
+  const cols = new Set();
+  for (const b of V.mine) if (b.ts) cols.add(Math.round(X(b.ts)));
+  const y0 = LY("blk") - lh * 0.36, y1 = LY("blk") + lh * 0.36;
+  mk("path", { class: "hair", d: [...cols].map(px => `M${px} ${y0.toFixed(1)}V${y1.toFixed(1)}`).join("") });
+  // transactions: per lane and pixel column, a dot that grows with how many
+  const dots = new Map();
+  for (const e of VSE.all) if (e.txs && e.ts) for (const r of e.txs) { const key = `${r.cat}|${Math.round(X(e.ts) / 3) * 3}`; dots.set(key, (dots.get(key) || 0) + 1); }
+  for (const [key, n] of dots) { const [k, px] = key.split("|"); mk("circle", { class: `tx ${k}`, cx: px, cy: LY(k), r: Math.min(5, 1.8 + Math.sqrt(n) * 0.7).toFixed(1) }); }
+  for (const t of axTicks(ax, W)) { const e = mk("text", { x: X(t), y: H - 4, "text-anchor": t === ax.t0 ? "start" : t === ax.t1 ? "end" : "middle" }); e.textContent = `${fmtDay(t)} ${fmtTime(t)}`; }
+  const xh = mk("line", { class: "xh", y1: m.t, y2: H - m.b, visibility: "hidden" });
+  const hit = mk("rect", { class: "hit go", x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b });
+  // nearest of its blocks to the pointer, preferring one with transactions within a few pixels
+  const near = ev => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) / r.width * W, t = ax.t0 + (px - m.l) / (W - m.l - m.r) * (ax.t1 - ax.t0);
+    let lo = 0, hi = V.mine.length - 1; while (lo < hi) { const k = (lo + hi) >> 1; if ((V.mine[k].ts || 0) < t) lo = k + 1; else hi = k; }
+    let b = V.mine[lo]; if (lo && Math.abs((V.mine[lo - 1].ts || 0) - t) < Math.abs((b.ts || 0) - t)) b = V.mine[lo - 1];
+    const slack = 4 / (W - m.l - m.r) * (ax.t1 - ax.t0);
+    const busy = VSE.all.filter(e => e.txs && Math.abs(e.ts - t) <= slack).sort((p, q) => Math.abs(p.ts - t) - Math.abs(q.ts - t))[0];
+    return busy ? { h: busy.h, ts: busy.ts, n: busy.txs.length } : { h: b.h, ts: b.ts, n: ((C.blocks[b.h] || {}).transactions || []).length };
+  };
   hit.addEventListener("pointermove", ev => {
-    const r = svg.getBoundingClientRect(), i = Math.max(0, Math.min(buckets.length - 1, Math.floor(((ev.clientX - r.left) / r.width * W - m.l) / bw))), b = buckets[i];
-    hl.setAttribute("x", m.l + i * bw + bw * 0.12); hl.setAttribute("width", Math.max(1, bw * 0.76)); hl.setAttribute("y", Y(b.me)); hl.setAttribute("height", Y(0) - Y(b.me)); hl.setAttribute("visibility", b.me ? "visible" : "hidden");
-    showTip(ev, `<div class="tv">${esc(`${fmtN(b.me)} of ${plural(b.all, "block")} by it`)}</div><div class="tm">${esc(`${bucketLabel(b.t, step)} – ${fmtTime(b.t + step)}`)}</div>`);
+    const p = near(ev);
+    xh.setAttribute("x1", X(p.ts)); xh.setAttribute("x2", X(p.ts)); xh.setAttribute("visibility", "visible");
+    showTip(ev, `<div class="tv">${esc(`Block #${fmtN(p.h)}`)} · ${esc(p.n ? plural(p.n, "transaction") : "empty")}</div><div class="tm">${esc(fmtWhen(p.ts))} · ${esc("click to find it in the list")}</div>`);
   });
-  hit.addEventListener("pointerleave", () => { hl.setAttribute("visibility", "hidden"); hideTip(); });
+  hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); hideTip(); });
+  hit.addEventListener("click", ev => sealedJump(near(ev).h));
 }
-function drawGaps(host, gaps, med, longest) {
-  const W = Math.max(280, host.clientWidth || 400), H = chartH(host, 110, 420, 150);
+function drawGaps(host, gaps, med, longest, ax) {
+  const W = Math.max(280, host.clientWidth || 400), H = chartH(host, 90, 320, 140);
   const { svg, mk } = svgOf(host, W, H);
   if (!gaps.length) { const t = mk("text", { x: W / 2, y: H / 2, "text-anchor": "middle" }); t.textContent = C.ready || SAMPLE ? "Needs two of its blocks" : "Reading the chain…"; return; }
   // a log scale: the usual few seconds and a rare hour-long stop on one chart
   const m = { l: 52, r: 8, t: 8, b: 20 }, lo = Math.max(1, Math.min(...gaps.map(g => g.s))) * 0.8, hi = Math.max(lo * 4, ...gaps.map(g => g.s)) * 1.25;
-  const t0 = gaps[0].ts, t1 = Math.max(t0 + 1, gaps[gaps.length - 1].ts);
+  const t0 = ax.t0, t1 = ax.t1;   // the same axis as the strip under What it sealed
   const X = t => m.l + (t - t0) / (t1 - t0) * (W - m.l - m.r), Y = s => m.t + (1 - Math.log(Math.max(s, lo) / lo) / Math.log(hi / lo)) * (H - m.t - m.b);
   const g = mk("g", { class: "grid" });
   const nice = [1, 2, 5, 10, 20, 30, 60, 120, 300, 600, 1800, 3600, 3 * 3600, 6 * 3600, 12 * 3600, 86400, 7 * 86400].filter(v => v >= lo && v <= hi);
-  const ticks = nice.length <= 4 ? nice : [0, 1, 2, 3].map(k => nice[Math.round(k * (nice.length - 1) / 3)]);
+  const ticks = (nice.length <= 4 ? nice : [0, 1, 2, 3].map(k => nice[Math.round(k * (nice.length - 1) / 3)])).filter((v, i, l) => !i || Y(l[i - 1]) - Y(v) >= 14);
   for (const s of ticks) { const y = Y(s); mk("line", { x1: m.l, x2: W - m.r, y1: y, y2: y }, g); const t = mk("text", { x: m.l - 6, y: y + 3.5, "text-anchor": "end" }); t.textContent = fmtDur(s); }
   if (med) mk("line", { class: "med", x1: m.l, x2: W - m.r, y1: Y(med), y2: Y(med) });
   // many blocks: every unusual pause, and an even sample of the usual ones
   const keep = gaps.length > 1500 ? gaps.filter((p, i) => p.s > (med || 0) * 2 || i % Math.ceil(gaps.length / 1200) === 0) : gaps;
   for (const p of keep) mk("circle", { class: "dot", cx: X(p.ts), cy: Y(p.s), r: 1.7 });
   if (longest) mk("circle", { class: "dot long", cx: X(longest.ts), cy: Y(longest.s), r: 5 });
-  for (const t of [t0, (t0 + t1) / 2, t1]) { const e = mk("text", { x: X(t), y: H - 5, "text-anchor": t === t0 ? "start" : t === t1 ? "end" : "middle" }); e.textContent = `${fmtDay(t)} ${fmtTime(t)}`; }
+  for (const t of axTicks(ax, W)) { const e = mk("text", { x: X(t), y: H - 5, "text-anchor": t === t0 ? "start" : t === t1 ? "end" : "middle" }); e.textContent = `${fmtDay(t)} ${fmtTime(t)}`; }
   const xh = mk("line", { class: "xh", y1: m.t, y2: H - m.b, visibility: "hidden" });
   const hit = mk("rect", { class: "hit", x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b });
   hit.addEventListener("pointermove", ev => {
@@ -1309,7 +1408,7 @@ document.addEventListener("focusout", hideTip);
 function open(addr, push, view) {
   addr = addr ? low(addr) : null;
   if (addr === S.addr) { rebuild(); return; }
-  S.addr = addr; S.lookups = {}; S.filter = "all"; S.more = 20; M = null; S.view = view || null;
+  S.addr = addr; S.lookups = {}; S.filter = "all"; S.more = 20; S.vf = "all"; S.vmore = 120; M = null; S.view = view || null;
   if (push) history.pushState({ a: addr }, "", addr ? accUrl(addr) + (S.view ? `&view=${S.view}` : "") : `/account/${SAMPLE ? "?sample" : ""}`);
   document.title = (SIM ? "Simulation · " : "") + (addr ? `Tau Account ${short(addr)}` : "Tau Account View");
   $("q").value = addr || ""; $("qMsg").hidden = true; $("q").classList.remove("bad");
@@ -1342,6 +1441,15 @@ document.addEventListener("click", e => {
   }
   const a = e.target.closest("a[data-acc], tr[data-acc]");
   if (a && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); $("mDetail").hidden = true; open(a.dataset.acc, true); window.scrollTo(0, 0); return; }
+  const sx = e.target.closest("[data-sx]");
+  if (sx && !e.target.closest("a")) {
+    const [h, i] = sx.dataset.sx.split(":").map(Number), blk = C.blocks[h], t = blk && (blk.transactions || [])[i];
+    if (t) { const r = sealedTx({ h, ts: num((blk.header || {}).timestamp) || null, i, t, txId: (blk.tx_ids || [])[i] || null, b: blk }); const ops = t.operations || {}, rule = typeof ops["0"] === "string" ? ops["0"] : typeof t.rule_text === "string" ? t.rule_text : null; openEvent({ x: r.x, text: r.who, amt: r.amt, rule }); }
+    return;
+  }
+  const vf = e.target.closest("[data-vf]");
+  if (vf) { S.vf = vf.dataset.vf; S.vmore = 120; renderValidator(); $("vSealed").scrollTop = 0; return; }
+  if (e.target.id === "vMoreBtn") { S.vmore += 120; renderSealed(); return; }
   const b = e.target.closest("[data-ev]");
   if (b && !e.target.closest("a") && M) { const ev = M.ev[Number(b.dataset.ev)]; if (ev) openEvent(ev); return; }
   const vb = e.target.closest("[data-view]");
