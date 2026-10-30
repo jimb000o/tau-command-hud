@@ -54,9 +54,9 @@
      Chinese, Japan time in Japanese (ticker.json "gazette" per language; the server writes the edition every Monday) ---------- */
   const GZ = { en: { tz: "Europe/Berlin", day: 1, hour: 9 }, zh: { tz: "Asia/Shanghai", day: 1, hour: 9 }, ja: { tz: "Asia/Tokyo", day: 1, hour: 9 } };
   const GZT = {
-    en: { next: "Next Daily Consensus: {d} {t} German time", out: "New Daily Consensus out today", today: "today", tomorrow: "tomorrow", days: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
-    zh: { next: "下一期《共识日报》：{d} {t}（北京时间）", out: "新一期《共识日报》今天出刊", today: "今天", tomorrow: "明天", days: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"] },
-    ja: { next: "次のコンセンサス日報：{d} {t}（日本時間）", out: "今週のコンセンサス日報、本日発行", today: "今日", tomorrow: "明日", days: ["日曜", "月曜", "火曜", "水曜", "木曜", "金曜", "土曜"] },
+    en: { next: "Next Daily Consensus: {d} {t} German time", out: "Fresh off the press: this week’s Daily Consensus is on the café tables", today: "today", tomorrow: "tomorrow", days: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
+    zh: { next: "下一期《共识日报》：{d} {t}（北京时间）", out: "油墨未干：本周《共识日报》已摆上咖啡馆的桌子", today: "今天", tomorrow: "明天", days: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"] },
+    ja: { next: "次のコンセンサス日報：{d} {t}（日本時間）", out: "刷り上がったばかり：今週のコンセンサス日報がカフェのテーブルに", today: "今日", tomorrow: "明日", days: ["日曜", "月曜", "火曜", "水曜", "木曜", "金曜", "土曜"] },
   };
   const gazette = () => {
     const g = { ...GZ[lang], ...((CFG.gazette || {})[lang] || {}) }, w = GZT[lang] || GZT.en;
@@ -68,7 +68,7 @@
     } catch (e) { return null; }
     if (wd < 0) return null;
     const since = (wd * 1440 + mins - g.day * 1440 - g.hour * 60 + 10080) % 10080;   // minutes since the last edition
-    if (since < 1440) return { kind: "note", text: w.out, href: "gazette/", raw: true };
+    if (since < 1440 - g.hour * 60) return { kind: "paper", text: w.out, href: "gazette/", raw: true, out: true };   // from the drop to the end of that day
     let off = (g.day - wd + 7) % 7; if (off === 0 && mins >= g.hour * 60) off = 7;
     const d = off === 0 ? w.today : off === 1 ? w.tomorrow : w.days[g.day];
     return { kind: "note", text: w.next.replace("{d}", d).replace("{t}", String(g.hour).padStart(2, "0") + ":00"), href: "gazette/", raw: true };
@@ -79,11 +79,13 @@
   let slot = 0, headAt = 0, pickAt = 0, inviteAt = 0;
   const from = (list, at) => list.length ? list[at % list.length] : null;
   const next = () => {
+    /* on the day a new edition comes out, it opens the line and every round after */
+    if (slot % SLOTS.length === 0) { const g = gazette(); if (g && g.out) { slot++; return g; } }
     for (let tries = 0; tries < SLOTS.length * 2; tries++) {
       const k = SLOTS[slot++ % SLOTS.length]; let it = null;
       if (k === "live") it = fact();
       else if (k === "news") it = NEWS.length ? NEWS[newsAt++ % NEWS.length] : null;
-      else if (k === "gazette") it = gazette();
+      else if (k === "gazette") { it = gazette(); if (it && it.out) it = null; }
       else if (k === "head") { const n = from((CFG.headlines || []).filter(h => !h.until || Date.now() < Date.parse(h.until)), headAt++); it = n && { kind: "note", text: n.text, href: n.href }; }
       else if (k === "pick") { const p = from(CFG.picks, pickAt++); it = p && { kind: "x", text: p.text, href: p.href, quote: true }; }
       else if (k === "invite") { const v = from(CFG.invites, inviteAt++); it = v && { kind: v.kind === "tg" ? "tg" : "x", text: v.text, href: v.href }; }
@@ -97,7 +99,7 @@
     const a = document.createElement(it.href ? "a" : "span"); a.className = "tk-it k-" + it.kind;
     if (it.href) { a.href = it.href; if (/^https?:/.test(it.href)) { a.target = "_blank"; a.rel = "noopener"; } }
     const mark = document.createElement("i"); mark.className = "tk-mk";
-    if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" ? "" : it.kind === "news" ? "+" : "›";
+    if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" ? "" : it.kind === "news" ? "+" : it.kind === "paper" ? "✦" : "›";
     a.append(mark);
     if (it.sim) { const s = document.createElement("em"); s.textContent = tr("Simulation"); a.append(s); }
     let text = it.raw ? it.text : tr(it.text); if (it.quote) text = (lang === "en" ? "“" : "「") + text + (lang === "en" ? "”" : "」");
