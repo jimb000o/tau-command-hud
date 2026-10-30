@@ -344,6 +344,9 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
   $3.60) posts at most, the rest stays on Telegram. The simulation and the smaller changes leave the
   day's last `X_RESERVE` (2) posts for the real chain. An X failure never holds up Telegram; it is
   logged and that X post is left out.
+- Posts planned ahead live in `assets/posts-plan.json` (the month's calendar: a spotlight on a page on Wednesdays,
+  the rule challenge's last days on Fridays, dated events): each is sent once at its `at` time (UTC) on Telegram and
+  X, or within 3 hours after it, never later. `--plan-preview` prints the ones still to come; `POSTS_PLAN=false` stops them.
 - `docker compose run --rm alerts python alerts.py --x-preview` prints what X would get now,
   with X's own character count; `--x-test` posts one test post on X only.
 

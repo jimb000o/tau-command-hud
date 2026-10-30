@@ -63,6 +63,7 @@ ten minutes, because the relay starts those over at midnight UTC.
   python alerts.py --sim-preview    print today's two simulation posts (the consensus switches), post nothing
   python alerts.py --today-preview  print the "Testnet today" summary as it stands now, post nothing
   python alerts.py --site-preview   print the site-update posts waiting in assets/updates.json, post nothing
+  python alerts.py --plan-preview   print the planned posts still to come (assets/posts-plan.json), post nothing
   python alerts.py --findings-preview  print what the finding detectors see now and every kind of finding post, post nothing
 """
 from __future__ import annotations
@@ -176,6 +177,12 @@ SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smalle
 SITE_DIGEST_MAX_WAIT = float(os.environ.get("SITE_DIGEST_MAX_WAIT_DAYS", 7)) * 86400  # …but not longer than this
 SITE_DIGEST_LINES = 8
 SITE_LOG_LINK = f"{SITE}/#updates"
+# Posts planned ahead (the month's calendar): assets/posts-plan.json on the site, each sent once at its time on Telegram
+# and X, or within PLAN_WINDOW_HOURS after it (a later restart); after that it is over, never posted late.
+PLAN_ON = os.environ.get("POSTS_PLAN", "true").lower() in ("1", "true", "yes")
+PLAN_URL = os.environ.get("POSTS_PLAN_URL", f"{SITE}/assets/posts-plan.json")
+PLAN_WINDOW = float(os.environ.get("PLAN_WINDOW_HOURS", 3)) * 3600
+PLAN_FOOT = "✨ From Tau HUD"
 # "Testnet today": one evening summary of the real chain's last 24 hours, only on a day with something to report.
 # Practice votes (the rules in force proposed again) appear here instead of in posts of their own.
 TODAY_ON = os.environ.get("TESTNET_TODAY", "true").lower() in ("1", "true", "yes")
@@ -1834,6 +1841,56 @@ class Watcher:
         st["slot"] = slot
         self.save_state()
 
+    # ---------- posts planned ahead (assets/posts-plan.json) ----------
+    def fetch_plan(self) -> list | None:
+        try:
+            req = urllib.request.Request(PLAN_URL, headers={"Cache-Control": "no-cache", "User-Agent": "tauhud-alerts"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                data = json.load(r)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            log.warning("plan: cannot read %s (%r)", PLAN_URL, exc)
+            return None
+        return [p for p in data.get("posts", []) if isinstance(p, dict)] if isinstance(data, dict) else None
+
+    async def maybe_plan(self, now: float | None = None, posts: list | None = None):
+        """Each planned post once, at its time: Telegram (with its picture and button), then X (one try, within the caps)."""
+        if not PLAN_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("plan", {"posted": {}, "posts": []})
+        if now - st.get("checked", 0) >= SITE_EVERY or posts is not None:
+            st["checked"] = now
+            posts = posts if posts is not None else await asyncio.to_thread(self.fetch_plan)
+            if posts is not None:
+                st["posts"] = posts
+            self.save_state()
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        if not tg or st.get("pause_until", 0) > now:
+            return
+        for p in st["posts"]:
+            try:
+                at = datetime.fromisoformat(str(p["at"]).replace("Z", "+00:00")).timestamp()
+            except (KeyError, ValueError):
+                continue
+            if p.get("id") in st["posted"] or not (at <= now < at + PLAN_WINDOW) or not p.get("tg"):
+                continue
+            pic = site_link(p["image"]) if p.get("image") else None
+            buttons = {"inline_keyboard": [[{"text": p.get("button") or "Open it", "url": site_link(p["link"])}]]} if p.get("link") else None
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, p["tg"], buttons, pic) if pic else \
+                    await asyncio.to_thread(o.send_text, p["tg"], buttons)
+                if not ok:
+                    st["pause_until"] = now + (retry or 300)
+                    log.warning("plan: %s failed (%s); trying again later", p["id"], err)
+                    self.save_state()
+                    return
+            st["posted"][p["id"]] = round(now)
+            log.info("plan: posted %s", p["id"])
+            self.save_state()
+            if p.get("x"):
+                await self.post_x(x_post(p["x"], foot=p.get("foot") or PLAN_FOOT), "plan " + p["id"], now, pic)
+            return  # one planned post per check
+
     # ---------- changes to Tau HUD itself ----------
     def fetch_updates(self) -> list | None:
         try:
@@ -2321,6 +2378,7 @@ class Watcher:
                         await self.maybe_newnodes()
                         await self.maybe_sim()
                         await self.maybe_site()
+                        await self.maybe_plan()
                         await self.maybe_today()
                         await self.maybe_visitors()
                         await asyncio.sleep(POLL_SECONDS)
@@ -2331,6 +2389,7 @@ class Watcher:
                 await self.maybe_health()  # a relay that stays away is news too
                 await self.maybe_sim()     # needs no relay
                 await self.maybe_site()    # neither does this
+                await self.maybe_plan()
                 await asyncio.sleep(10)
 
 
@@ -2455,6 +2514,21 @@ def site_preview() -> int:
     return 0
 
 
+def plan_preview() -> int:
+    """The planned posts still to come, as Telegram and X would get them."""
+    posts = Watcher([]).fetch_plan()
+    if posts is None:
+        print(f"cannot read {PLAN_URL}")
+        return 1
+    now = time.time()
+    for p in sorted(posts, key=lambda p: str(p.get("at"))):
+        if datetime.fromisoformat(str(p["at"]).replace("Z", "+00:00")).timestamp() + PLAN_WINDOW < now:
+            continue
+        x = x_post(p["x"], foot=p.get("foot") or PLAN_FOOT) if p.get("x") else None
+        print(f"[{p['at']} · {p['id']}]\n{p['tg']}\n" + (f"--- X ({x_len(x)}/280):\n{x}\n" if x else "--- not on X\n") + "-" * 60)
+    return 0
+
+
 async def findings_preview() -> int:
     """What the detectors see right now, then the posts of 29 Oct 2026 (bootnode gone 12:01-15:20 UTC) replayed, then one
     example of every other finding; posts nothing."""
@@ -2576,6 +2650,8 @@ if __name__ == "__main__":
         sys.exit(sim_preview())
     if "--today-preview" in sys.argv:
         sys.exit(asyncio.run(today_preview()))
+    if "--plan-preview" in sys.argv:
+        sys.exit(plan_preview())
     if "--site-preview" in sys.argv:
         sys.exit(site_preview())
     if "--findings-preview" in sys.argv:
