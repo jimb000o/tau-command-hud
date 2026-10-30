@@ -144,6 +144,17 @@ html.fit .row2 { gap: 12px; min-height: 0; }
 .who .sp .note { color: var(--dim); font-size: 12px; margin-top: 2px; }
 .who .sp .cnt { color: var(--text); font: 600 11px var(--display); letter-spacing: .14em; font-style: normal; }
 .who .sp .note b { color: var(--text); font-weight: 600; }
+/* where our transactions started: a ring by site and a short ranked list by page */
+.starts { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 4px 14px; align-items: start; margin-top: 6px; }
+.starts svg { width: 76px; height: 76px; display: block; }
+.starts svg text { fill: #fff; font: 600 15px var(--display); }
+.starts ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; min-width: 0; align-content: center; min-height: 76px; }
+.starts li { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; gap: 6px; align-items: center; font-size: 12px; color: var(--text); }
+@media (max-width: 600px) { .starts ol { grid-template-columns: minmax(0, 1fr); } }
+.starts li i { width: 8px; height: 8px; border-radius: 2px; }
+.starts li .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.starts li .n em { color: var(--dim); font-style: normal; }
+.starts li .c { text-align: right; font-variant-numeric: tabular-nums; color: #fff; font-weight: 600; }
 .splitkey i.k { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
 .who .sp > span { color: var(--dim); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-family: var(--display); font-weight: 600; }
 .tablewrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
@@ -159,6 +170,7 @@ html.fit #tip { zoom: var(--z); }
 html.fit .wrap > .main { flex: 1 1 0; min-height: 0; gap: 12px; grid-template-columns: minmax(0, 1fr) 440px; }
 html.fit .col { min-height: 0; gap: 12px; grid-template-rows: minmax(0, 1.55fr) minmax(210px, 1fr); }
 html.fit .col.side { grid-template-rows: auto minmax(0, 1fr); }
+html.fit.netv .col:not(.side) { grid-template-rows: minmax(0, 1.2fr) minmax(210px, 1fr); }   /* room for where our transactions started */
 html.fit .panel { min-height: 0; }
 html.fit .chart { min-height: 0; }
 html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 1fr) 420px 420px; }
@@ -214,6 +226,7 @@ html.fit.wide .col.side { display: contents; }
           <h2><span id="whoTitle">Where it comes from</span> <span class="aside" id="wRange"></span></h2>
           <div id="splits"></div>
           <div id="txsplit"></div>
+          <div id="starts"></div>
           <div id="cross"></div>
         </section>
       </div>
@@ -633,13 +646,52 @@ function drawAgorzilla() {
   $("pagesBox").innerHTML = h;
 }
 
+/* where our two sites' transactions started (relay "starts"): Agorzilla's feeding, votes and wishes, Déjà the café cat,
+   and for Tau HUD the page that led to the wallet. A ring by site, a ranked list by source; kinds in each row's hover */
+const START_FAM = { agorzilla: ["Agorzilla", "var(--ok)"], deja: ["Déjà", "rgba(57,255,138,.45)"], tauhud: ["Tau HUD", "#fff"] };
+const KIND_NAMES = { meal: "meals", vote: "meals with a vote", wish: "meals with a wish", send: "test AGRS sent", rule: "own rules", vote_net: "network votes", shared: "shared rules", other: "other" };
+const VIA_NAMES = { "": "before 30 Oct", relay: "rule-place turns", direct: "opened directly", wallet: "opened directly", elsewhere: "other sites", agorzilla: "from agorzilla.com", hud: "HUD", start: "Start here", rules: "Rules wall", card: "Tau card", challenge: "Weekly challenge", donate: "Donate" };
+function drawStarts() {
+  const el = $("starts"), st = txs && txs.starts;
+  if (!st) { el.innerHTML = ""; return false; }
+  const keys = range === 1 ? [data.today] : rangeDays().map(([k]) => k), rows = {};
+  for (const k of keys) for (const [src, kinds] of Object.entries(st[k] || {})) {
+    const r = rows[src] || (rows[src] = { src, n: 0, kinds: {} });
+    for (const [kind, c] of Object.entries(kinds)) { r.n += c; r.kinds[kind] = (r.kinds[kind] || 0) + c; }
+  }
+  const list = Object.values(rows).filter(r => r.n).sort((a, b) => b.n - a.n), total = list.reduce((a, r) => a + r.n, 0);
+  const head = `<span data-tip="${esc(T("Where our two sites' transactions started: Agorzilla's feeding, votes and wishes, Déjà the café cat, and for Tau HUD the page that led to the wallet. Pages are kept from 30 October 2026; only a page name is kept next to the transaction, nothing about you."))}">${esc(T("Where our transactions started"))}</span>`;
+  if (!total) { el.innerHTML = `<div class="sp">${head}<div class="note">${esc(T("No transactions in this range yet."))}</div></div>`; return true; }
+  const fam = r => r.src.split(":")[0], name = r => { const f = fam(r); if (f !== "tauhud") return T(START_FAM[f][0]); const v = r.src.slice(7); return T(VIA_NAMES[v] || pageName(v)); };
+  const kindName = (r, k) => T(KIND_NAMES[fam(r) === "tauhud" && k === "vote" ? "vote_net" : k] || k);
+  // the ring: one arc per site, a 2px gap between them
+  const byFam = {}; for (const r of list) byFam[fam(r)] = (byFam[fam(r)] || 0) + r.n;
+  const R = 36, C = 2 * Math.PI * R, fams = Object.keys(START_FAM).filter(f => byFam[f]);
+  let off = 0, ring = "";
+  for (const f of fams) {
+    const len = C * byFam[f] / total, gap = fams.length > 1 ? Math.min(2, len / 2) : 0;
+    ring += `<circle cx="42" cy="42" r="${R}" fill="none" stroke="${START_FAM[f][1]}" stroke-width="9" stroke-dasharray="${(len - gap).toFixed(2)} ${(C - len + gap).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 42 42)"><title>${esc(T(START_FAM[f][0]))}: ${fmt(byFam[f])} (${pct(byFam[f], total)})</title></circle>`;
+    off += len;
+  }
+  const svg = `<svg viewBox="0 0 84 84" role="img" aria-label="${esc(fams.map(f => `${T(START_FAM[f][0])} ${pct(byFam[f], total)}`).join(", "))}"><circle cx="42" cy="42" r="${R}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="9"/>${ring}<text x="42" y="47" text-anchor="middle">${fmt(total)}</text><title>${esc(fmt(total) + " " + T("transactions"))}</title></svg>`;
+  // the list, two columns: the seven biggest sources, the rest in one entry (named in its hover); Tau HUD's by page
+  const top = list.length > 8 ? list.slice(0, 7) : list, rest = list.slice(top.length);
+  const row = (label, sub, n, color, tip) => `<li data-tip="${esc(tip)}"><i style="background:${color}"></i><span class="n">${sub ? `<em>${esc(sub)} ·</em> ` : ""}${esc(label)}</span><span class="c">${fmt(n)}</span></li>`;
+  const tipOf = r => `${fam(r) === "tauhud" ? T("Tau HUD") + " · " + T("wallet opened from") + " " : fam(r) === "deja" ? T("Déjà, the café cat on agorzilla.com") + " · " : ""}${name(r)}: ${fmt(r.n)} ${T("transactions")} (${pct(r.n, total)})\n` + Object.entries(r.kinds).sort((a, b) => b[1] - a[1]).map(([k, c]) => `${fmt(c)} ${kindName(r, k)}`).join(" · ");
+  let items = top.map(r => row(name(r), "", r.n, START_FAM[fam(r)][1], tipOf(r))).join("");
+  if (rest.length) { const n = rest.reduce((a, r) => a + r.n, 0); items += row(T("other pages"), "", n, "rgba(255,255,255,.3)", rest.map(r => `${name(r)} ${fmt(r.n)}`).join(" · ")); }
+  el.innerHTML = `<div class="sp">${head}<div class="starts">${svg}<ol>${items}</ol></div></div>`;
+  return true;
+}
+
 function drawNetWho() {
   $("splits").innerHTML = "";
+  const started = drawStarts();   // when it shows, the wallet counts below stay in the tiles at the top
   const tot = (txs && txs.totals && txs.totals.ours) || {}, days = range === 1 ? [[data.today, data.days[data.today] || [0, 0, 0, 0]]] : rangeDays();
   let w = 0, back = 0; for (const [, d] of days) { w += d[0] || 0; back += d[3] || 0; }
-  $("cross").innerHTML = `<div class="sp"><span data-tip="${esc(T("Different wallets that acted through Agorzilla or a Tau HUD page. A wallet is a key, not a person; one person can hold several."))}">${esc(T("Wallets through our sites"))}</span>` +
-    `<div class="splitkey"><span>${esc(T("last 7 days"))} <b>${fmt(tot["7"] || 0)}</b></span><span>${esc(T("last 30 days"))} <b>${fmt(tot["30"] || 0)}</b></span><span>${esc(T("all"))} <b>${fmt(tot.all || 0)}</b></span></div></div>` +
-    `<div class="sp"><span data-tip="${esc(T("Of the wallets active through our sites on a day in this range, the share that had already acted on an earlier day."))}">${esc(T("Came back"))}</span><em class="cnt"> · ${w ? pct(back, w) : "–"}</em></div>`;
+  $("cross").innerHTML = (started ? "" : `<div class="sp"><span data-tip="${esc(T("Different wallets that acted through Agorzilla or a Tau HUD page. A wallet is a key, not a person; one person can hold several."))}">${esc(T("Wallets through our sites"))}</span>` +
+    `<div class="splitkey"><span>${esc(T("last 7 days"))} <b>${fmt(tot["7"] || 0)}</b></span><span>${esc(T("last 30 days"))} <b>${fmt(tot["30"] || 0)}</b></span><span>${esc(T("all"))} <b>${fmt(tot.all || 0)}</b></span></div></div>`) +
+    (started ? "" : `<div class="sp"><span data-tip="${esc(T("Of the wallets active through our sites on a day in this range, the share that had already acted on an earlier day."))}">${esc(T("Came back"))}</span><em class="cnt"> · ${w ? pct(back, w) : "–"}</em></div>`);
   drawTx();
 }
 
@@ -693,6 +745,7 @@ function drawPages() {
   $("pRange").textContent = $("wRange").textContent = range === 1 ? T("today") : range ? T(range === 365 ? "last year" : `last ${range} days`) : T(net ? "all blocks held" : "since counting began");
   $("pages").hidden = net; $("pagesBox").hidden = !net;
   if (net) { drawAgorzilla(); drawNetWho(); return; }
+  $("starts").innerHTML = "";
   const days = rangeDays(), u = {}, lang = {}, scr = {}, time = {};
   let vis = 0;
   for (const [, d] of days) { vis += d[0]; for (const [p, v] of Object.entries(d[3] || {})) u[p] = (u[p] || 0) + v; for (const [p, v] of Object.entries(d[4] || {})) lang[p] = (lang[p] || 0) + v; for (const [p, v] of Object.entries(d[5] || {})) scr[p] = (scr[p] || 0) + v; addSteps(time, d[6]); }
@@ -749,6 +802,7 @@ function kpis() {
 
 function render() {
   document.querySelectorAll(".sites button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.site === site)));
+  document.documentElement.classList.toggle("netv", NET());
   $("leadLine").textContent = T(SITES[site]);
   if (!SAMPLE) $("sourceLine").textContent = T(SUBS[site]);
   document.querySelectorAll(".range button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.r === range)));
@@ -766,6 +820,7 @@ async function load() {
     txs.since = Math.floor(Date.now() / 1000) - 140 * 86400;
     txs.hours = Object.fromEntries(ks.slice(-31).map((k, i) => [k, Array.from({ length: 24 }, (_, h) => k === raw.today && h > new Date().getUTCHours() ? 0 : (h * 7 + i * 5) % 9)]));
     txs.agorzilla = Object.fromEntries(ks.slice(-20).map((k, i) => [k, { meals: 30 + i * 2, snacks: 6 + i % 4, votes: 12 + i % 7, asks: 3 + i % 3, agrs: 160 + i * 11, wallets: 9 + i % 5, new: 2 + i % 3, hours: Array.from({ length: 24 }, (_, h) => (h > 16 && h < 21 ? 4 : 1)) }]));
+    txs.starts = Object.fromEntries(ks.slice(-20).map((k, i) => [k, { agorzilla: { meal: 20 + i, vote: 6 + i % 5, wish: 2 + i % 3 }, deja: { meal: 3 + i % 4 }, "tauhud:start": { send: 3 + i % 3, rule: 1 }, "tauhud:rules": { rule: 2 + i % 2 }, "tauhud:card": { send: i % 3 }, "tauhud:hud": { send: 1 + i % 2, vote: i % 2 }, "tauhud:direct": { send: 1 }, "tauhud:relay": { rule: i % 2 }, ...(i < 15 ? { "tauhud:": { send: 2 } } : {}) }]));
     agzLatest = { stage_name: "Baby", rounds: [{ category: "Aura", winner: "Emerald" }], open: { category: "Pendant light" } };
     pickSite(); render(); return; }
   try {

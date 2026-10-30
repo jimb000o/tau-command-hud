@@ -11,8 +11,9 @@ Every transaction in the blocks the relay holds is put in one of four groups:
              accounts_state), which IDNI set up; on this testnet they make most of the traffic.
   other      everything else: other wallets, scripts and tools.
 
-The relay remembers the hashes it sent, with the site the page came from, in SENT_PATH (only hashes and a site name;
-no address, no browser). Wallets are distinct sender keys, not people.
+The relay remembers the hashes it sent, with the site the page came from and, for Tau HUD, the page that led the
+visitor to the wallet (the wallet says it with "via <page>" before a send), in SENT_PATH: only hashes, a site name and a
+page name; no address, no browser. Wallets are distinct sender keys, not people.
 
 GET /api/v1/sources
   days       {"YYYY-MM-DD": {group: [txs, wallets, new wallets, returning wallets, test AGRS moved]}}; new = first
@@ -21,6 +22,10 @@ GET /api/v1/sources
   totals     {group or "ours": {"7": n, "30": n, "all": n}} distinct wallets over the last 7 / 30 days / all held
   hours      {"YYYY-MM-DD": [24 counts]} our two sites' transactions per UTC hour, the last 31 days with any
   agorzilla  {"YYYY-MM-DD": {"meals", "snacks", "votes", "asks", "agrs", "wallets", "new", "hours"}}
+  starts     {"YYYY-MM-DD": {source: {kind: txs}}} where our two sites' transactions started: "agorzilla" (kinds meal,
+             vote, wish, other), "deja" (Déjà the café cat, kind meal) and "tauhud:<page>" (the page that led to the
+             wallet: start, rules, card, hud …; "" before the relay kept pages, "relay" for the end of a rule-place
+             turn; kinds send, rule, vote, shared, other)
   since, sent_since   first block time held, first remembered send
 
 The "agorzilla" part follows Agorzilla's own reading (agorilla assets/core.js): a meal pays the bowl at least 1 AGRS,
@@ -51,7 +56,10 @@ AGORZILLA = frozenset({
     "b6bdcade83f317c5a3e0402466a4f6c93a1b9018a3dd61026143c8284741fad2deeffda9a7fd3db587e86f4f44de3418",
     "992d87e93030634c581fc3e6c574af0da06c70798d49f82135d8231147b79c071e277616d84fb6175dbeae2264377071",
     "b09ad0b1742efd5a4a4e7fa93a52b9f5954466ca2f694db9dfda4d593d9c15a73dfdd9055ad286e8f11f76b0f69395cf",
+    "8dbae75034a8cdc776e462f004dd686c8d0a32dbedd400483a026a01db4ce1f78b9d6450d2c832d8116d47a315fd8973",   # Déjà's bowl
 })
+DEJA = "8dbae75034a8cdc776e462f004dd686c8d0a32dbedd400483a026a01db4ce1f78b9d6450d2c832d8116d47a315fd8973"   # agorilla assets/cat.js
+VIA_MAX = 24
 
 
 BOWL = "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108"
@@ -123,10 +131,25 @@ def group(tx: dict, tx_hash: str, sent: dict) -> str:
             return "agorzilla"
     site = sent.get(tx_hash)
     if site is not None:
-        return site or "tauhud"
+        return site.split("|")[0] or "tauhud"
     if str(tx.get("sender_pubkey") or "").lower() in GENESIS:
         return "idni"
     return "other"
+
+
+def start(tx: dict, tx_hash: str, g: str, sent: dict) -> tuple[str, str]:
+    """(source, kind) of one of our two sites' transactions, for "where they started"."""
+    ops = tx.get("operations") if isinstance(tx.get("operations"), dict) else {}
+    if g == "agorzilla":
+        if any(isinstance(op, (list, tuple)) and len(op) >= 2 and str(op[1]).lower() == DEJA for op in ops.get("1") or []):
+            return "deja", "meal"
+        m = meal(tx)
+        return "agorzilla", ("vote" if m[1] else "wish" if m[2] else "meal") if m else "other"
+    via = (sent.get(tx_hash) or "").partition("|")[2]
+    t = str(tx.get("tx_type") or "")
+    kind = ("rule" if ops.get("0") else "send" if ops.get("1") else "other") if t in ("user_tx", "") else \
+        "vote" if t.startswith("consensus_rule") else "shared" if t.startswith("rule_offer") else "other"
+    return "tauhud:" + via, kind
 
 
 class TxSources:
@@ -145,11 +168,11 @@ class TxSources:
         except (OSError, ValueError) as exc:
             log.warning("cannot read %s: %r; starting afresh", self.path, exc)
 
-    def note(self, tx_hash, site: str = ""):
-        """A transaction the relay passed to the node and the node took."""
+    def note(self, tx_hash, site: str = "", via: str = ""):
+        """A transaction the relay passed to the node and the node took; via = the Tau HUD page that led to the wallet."""
         if not isinstance(tx_hash, str) or not tx_hash or len(tx_hash) > 128:
             return
-        self.sent[tx_hash.lower()] = site
+        self.sent[tx_hash.lower()] = site + ("|" + via[:VIA_MAX] if via else "")
         while len(self.sent) > SENT_MAX:
             del self.sent[next(iter(self.sent))]
         tmp = self.path + ".tmp"
@@ -168,6 +191,7 @@ class TxSources:
         ours: dict[str, list] = {}
         hours: dict[str, list] = {}
         agz: dict[str, dict] = {}
+        starts: dict[str, dict] = {}
         seen_day: set = set()                  # (day, group, wallet)
         first_day: dict[tuple, str] = {}       # (group, wallet) -> first day seen
         ever: dict[str, dict] = {}             # group or "ours" -> wallet -> last day seen
@@ -207,6 +231,9 @@ class TxSources:
                         ever.setdefault(k, {})[s] = day
                 if g in OURS:
                     hours.setdefault(day, [0] * 24)[ts % 86400 // 3600] += 1
+                    src, kind = start(tx, h, g, self.sent)
+                    kinds = starts.setdefault(day, {}).setdefault(src, {})
+                    kinds[kind] = kinds.get(kind, 0) + 1
                 m = meal(tx) if g == "agorzilla" else None
                 if m:
                     a = agz.setdefault(day, {"meals": 0, "snacks": 0, "votes": 0, "asks": 0, "agrs": 0, "wallets": 0,
@@ -237,4 +264,4 @@ class TxSources:
         recent = sorted(hours)[-31:]
         return {"days": dict(sorted(days.items())), "ours": dict(sorted(ours.items())), "totals": totals,
                 "hours": {d: hours[d] for d in recent}, "agorzilla": dict(sorted(agz.items())),
-                "since": first, "sent_since": round(self.since)}
+                "starts": dict(sorted(starts.items())), "since": first, "sent_since": round(self.since)}
