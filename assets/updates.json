@@ -1785,5 +1785,10 @@
   "tag": "Donations",
   "on": "2026-10-30",
   "html": "About window and Updates panel: the Donations part now shows the running costs in one line (about €6 + $200 a month, not counting time), from the same list as the Donations page, and each donation's value when it came in: euros in English, yuan in Chinese, yen in Japanese."
+ },
+ {
+  "tag": "Gazette",
+  "on": "2026-10-30",
+  "html": "Daily Consensus café: the four regulars now tell what really happened in the week, why it matters to you, and a small lesson about exactly that. Network test changes are called tests, wallets are not counted as people, and the Professor talks about a chess engine written in Tau when a round falls in the week."
  }
 ]

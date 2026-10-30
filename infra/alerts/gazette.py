@@ -560,10 +560,10 @@ def riddle(r: dict, props: list[dict]) -> dict | None:
         return None
     n, N = word(keep), word(keep, True)
     return {"h": t("The Riddle of the Unchanging Ballots", "不变投票之谜", "変わらない投票の謎"), "body": [
-        t(f"{N['en']} times this week the users of Testnet Alpha went to the ballot box, and {n['en']} times the question was the same: "
-          "shall the rules stay as they are? Each time the answer was yes. The votes were counted, the blocks were sealed, and not one rule had moved.",
-          f"本周，Testnet Alpha 的用户{n['zh']}次走向投票箱，问题{n['zh']}次都一样：规则是否维持原样？每一次的回答都是赞成。票点清了，区块封存了，没有一条规则挪动过。",
-          f"今週、テストネット Alpha の利用者は {n['ja']} 回投票箱へ向かい、{n['ja']} 回とも問いは同じだった。ルールをこのままにしておくか。答えは毎回、賛成だった。票は数えられ、ブロックは生成され、ルールは一つも動かなかった。"),
+        t(f"{N['en']} times this week a rule change went through the ballot box of Testnet Alpha, and {n['en']} times its new text "
+          "decided exactly like the rules in force. The votes were counted, the blocks were sealed, and not one rule had moved.",
+          f"本周，Testnet Alpha 的投票箱{n['zh']}次通过了规则变更，{n['zh']}次新文本的判定都和现行规则一模一样。票点清了，区块封存了，没有一条规则挪动过。",
+          f"今週、テストネット Alpha の投票箱を {n['ja']} 回ルール変更が通り、{n['ja']} 回とも新しい文面は現行のルールとまったく同じ判定をした。票は数えられ、ブロックは生成され、ルールは一つも動かなかった。"),
         t("A paper could call that a dull week. Our correspondent calls it something else. Before a chain changes a rule that matters, someone must show that "
           "the machinery of changing one works at all: that a proposal can be written, admitted by the logic that checks it, carried by vote and sealed at the "
           f"block named in advance. {N['en']} times that machinery was wound and run, and {n['en']} times it ran true.",
@@ -702,117 +702,212 @@ STREET = [t("My ma read it twice. She says she still don't get the blockchain pa
             "角のお巡りまで足を止めて見出しを読んでた。それから怒鳴るなって言って、それから一部くれって。")]
 
 
-def cafe(r: dict, props: list[dict], days: list[dict], no: int, banner: dict, deck: dict) -> dict:
-    """What the four regulars of the café walk talk about this week: {who: {greet, q, a: [...]}}, every line in three languages."""
+CAFE_V = 2   # raise when the talk is written differently: the edition already out is rewritten once
+
+
+def chess_talk(c: dict | None, end: float) -> list[dict] | None:
+    """The Professor's lines on a Taumorrow chess round: a chess engine written in Tau (an independent community project, not on the
+    testnet chain) against a language model. c: {opponent, start, games, played, engine, model, draws, done, url}; None when no round
+    falls in this week or the coming one."""
+    if not c or not c.get("opponent") or not c.get("start") or not c.get("games"):
+        return None
+    start, opp, g = float(c["start"]), str(c["opponent"]), int(c["games"])
+    if not (end - 7 * 86400 <= start < end + 7 * 86400):
+        return None
+    e, m, d, played = int(c.get("engine") or 0), int(c.get("model") or 0), int(c.get("draws") or 0), int(c.get("played") or 0)
+    dr = t(f", drew {word(d)['en']}" if d else "", f"，和{word(d)['zh']}盘" if d else "", f"、引き分け {d}" if d else "")
+    if start >= end:
+        day = _d(start)
+        wd = (day.strftime("%A"), "一二三四五六日"[day.weekday()], "月火水木金土日"[day.weekday()])
+        head = t(f"On {wd[0]} a chess engine written in Tau sits down for {word(g)['en']} games against {opp}. I have already cleared my table.",
+                 f"星期{wd[1]}，一个用 Tau 写的国际象棋引擎要和 {opp} 下{word(g)['zh']}盘。我已经把桌子收拾好了。",
+                 f"{wd[2]}曜日、Tau で書かれたチェスエンジンが {opp} と {g} 局指す。私はもう自分の卓を片づけておいた。")
+    elif c.get("done") or played >= g:
+        head = t(f"Did you hear? A chess engine written in Tau played {word(g)['en']} games against {opp}. It won {word(e)['en']}, lost {word(m)['en']}{dr['en']}. I have lost more than that to myself this week.",
+                 f"听说了吗？一个用 Tau 写的国际象棋引擎和 {opp} 下了{word(g)['zh']}盘。赢{word(e)['zh']}盘，输{word(m)['zh']}盘{dr['zh']}。这周我输给自己的都比这多。",
+                 f"聞いたかね？Tau で書かれたチェスエンジンが {opp} と {g} 局指した。{e} 勝 {m} 敗{dr['ja']}。今週、私が自分に負けた数のほうが多い。")
+    else:
+        head = t(f"A chess engine written in Tau is playing {word(g)['en']} games against {opp}. {word(played, True)['en']} done so far: {e} to {m}{dr['en']}. I have put my own board aside to watch.",
+                 f"一个用 Tau 写的国际象棋引擎正在和 {opp} 下{word(g)['zh']}盘。目前下完{word(played)['zh']}盘：{e} 比 {m}{dr['zh']}。我把自己的棋盘放到一边看着。",
+                 f"Tau で書かれたチェスエンジンが {opp} と {g} 局を指している。ここまで {played} 局で {e} 対 {m}{dr['ja']}。私は自分の盤をわきに置いて見ている。")
+    return [head,
+            t("Mind you, it is an independent community project, not something on the testnet chain. What I like: it is built on Tau, the same language the testnet writes its rules in.",
+              "注意，这是一个独立的社区项目，不是测试网链上的东西。我喜欢的是：它建立在 Tau 之上，测试网的规则也是用这门语言写的。",
+              "いいかね、これは独立したコミュニティのプロジェクトで、テストネットのチェーンの上のものではない。私が気に入っているのは、テストネットがルールを書くのと同じ Tau という言語の上に作られていることだ。"),
+            t("Its earlier games are all published move by move, so anyone can replay them and check. That is the only kind of chess I respect: the kind you do not have to take on trust.",
+              "而且它以前的每一盘都一步一步公开了，谁都可以重放、核对。我只尊重这样的棋：不必凭信任去接受的那种。",
+              "しかもこれまでの対局はすべて一手ずつ公開されていて、誰でも並べ直して確かめられる。私が敬意を払うのはそういうチェスだけだ。信用で受け取らなくていいチェスだ。")]
+
+
+def cafe(r: dict, props: list[dict], days: list[dict], no: int, banner: dict, deck: dict, chess: dict | None = None) -> dict:
+    """What the four regulars of the café walk talk about this week: {who: {greet, q, a: [...]}}, every line in three languages.
+    Each answer tells one real thing of the week, why it matters to the reader, and a small lesson about exactly that thing;
+    the humour comes from the regular's own corner of the café. Facts only from r and props: nothing here is made up."""
     n = max(0, int(no or 0))
+    v = n % 2   # two wordings of most lines, so the same kind of week does not sound the same twice in a row
     waiting = [p for p in props if p.get("status") == "agreed" and (p.get("activate_at") or 0) > (r.get("head") or 0)]
     week_props = [p for p in props if r["start"] <= (p.get("proposed_ts") or 0) < r["end"]]
-    keep = sum(1 for p in week_props if not phrase(p.get("title")))
+    tests = [p for p in week_props if not phrase(p.get("title"))]
+    testers = len({p.get("proposer") for p in tests if p.get("proposer")})
     ph_active, ph_wait = _pick(r.get("active_titles") or []), _pick([p.get("title") for p in _sorted(waiting)])
     sim_votes = sum(int(d.get("votes") or 0) for d in days)
     pie = PIES[n % len(PIES)]
+    k_t = len(tests)
 
-    # Mae: the rules, and how they change
+    # Mae: the rules, and how they change. Her pie vote is the café's own little ballot, and the Professor always loses it.
     if r.get("active") and ph_active:
+        greet_mae = t(f"Oh, and Friday's pie this week is {pie['en']}. The Professor voted lemon and lost. He says the count was fair, though. That's the whole point, isn't it?",
+                      f"对了，这周五的馅饼是{pie['zh']}的。教授投了柠檬，输了。不过他说计票很公道。重点不就在这儿吗？",
+                      f"そうそう、今週の金曜のパイは{pie['ja']}よ。教授はレモンに入れて負けたの。でも数え方は公正だったって。肝心なのはそこでしょ？")
         mae = [t(f"Big week, love. {cap(ph_active['en'])} took effect on Testnet Alpha, at the very block they named beforehand.",
                  f"大日子啊，亲爱的。{ph_active['zh']}在 Testnet Alpha 上生效了，就在事先说好的那个区块。",
                  f"大きな週だったわよ。{ph_active['ja']}がテストネット Alpha で施行されたの。前もって決めた、まさにそのブロックで。"),
-               t("Nobody closed the shop and nobody reinstalled a thing. The rule simply changed, because enough hands went up.",
-                 "谁也没关店，谁也没重装什么。规则就这么变了，因为举手的人够多。",
-                 "誰も店を閉めなかったし、何も入れ直さなかった。手を挙げた人が足りたから、ルールがただ変わったのよ。")]
-    elif ph_wait:
-        mae = [t(f"They agreed on {ph_wait['en']}. It is not in force yet: it switches on at a block they named in advance.",
-                 f"他们就{ph_wait['zh']}达成了一致。它还没生效：要到事先约定的那个区块才启用。",
-                 f"{ph_wait['ja']}で合意したの。まだ効いてはいない。前もって決めたブロックで切り替わるのよ。"),
-               t("Same as my pies: the new one starts on Friday, not the minute you vote. Everybody knows when, so nobody gets a surprise in their coffee.",
-                 "就像我的馅饼：新口味从周五开始，而不是你一投完票就开始。大家都知道是什么时候，所以谁的咖啡里都不会冒出意外。",
-                 "うちのパイと同じ。新しいのは金曜から、投票した瞬間からじゃない。いつか皆が知ってるから、コーヒーに驚きが入ることはないの。")]
-    elif keep:
-        mae = [t(f"Mostly they voted to keep the rules as they are{'' if keep == 1 else ', ' + word(keep)['en'] + ' times'}. Sounds dull, doesn't it?",
-                 f"大多是投票维持现行规则{'' if keep == 1 else '，一共' + word(keep)['zh'] + '次'}。听着挺无聊，是吧？",
-                 f"ほとんどはルールをこのままにする投票だったわ{'' if keep == 1 else '、' + word(keep)['ja'] + ' 回も'}。退屈に聞こえるでしょ？"),
-               t("It isn't. Each time, you learn the voting itself works. You try the lock before you need the door.",
-                 "并不无聊。每一次，你都知道了投票本身是管用的。要用门之前，先试试锁。",
-                 "そうでもないの。そのたびに、投票そのものが動くと分かる。扉が要る前に、鍵を試しておくのよ。")]
-    elif r.get("proposed"):
-        mae = [t(f"{word(r['proposed'], True)['en']} new proposal{'s' if r['proposed'] != 1 else ''} went up on the board this week. The regulars are still chewing.",
-                 f"这周板子上贴出了{word(r['proposed'])['zh']}项新提议。常客们还在琢磨。",
-                 f"今週は新しい提案が {word(r['proposed'])['ja']} 件、板に上がったわ。常連さんたちはまだ噛みしめてるところ。"),
-               t("Nobody rushes a vote in my café. A rule you will live with deserves a second cup.",
-                 "在我的咖啡馆里，谁也不催着投票。一条你要跟它过日子的规则，值得再来一杯。",
-                 "うちの店では誰も投票を急かさない。一緒に暮らすルールには、もう一杯の価値があるの。")]
+               t("Nobody closed the shop and nobody reinstalled a thing. Enough of them said yes, and from that block on the rule was simply different.",
+                 "谁也没关店，谁也没重装什么。说“同意”的人够多，从那个区块起，规则就这么不一样了。",
+                 "誰も店を閉めなかったし、何も入れ直さなかった。賛成が足りて、そのブロックからルールがただ変わったの。"),
+               t("Here's the bit people miss: it didn't change when they voted. It changed when they said it would. So nobody finds a surprise in their coffee.",
+                 "大家常漏掉的一点是：规则不是在投票那一刻变的，而是在他们说好的那一刻变的。所以谁的咖啡里都不会冒出意外。",
+                 "見落としがちなのはここ。投票した瞬間に変わったんじゃない。変わると言っておいた時に変わったの。だから誰のコーヒーにも驚きは入らない。")]
     else:
-        mae = [t("Quiet week on the board, love. Not one new proposal.", "这周板子上很安静，亲爱的。一项新提议都没有。",
-                 "今週の板は静かだったわ。新しい提案はひとつもなし。"),
-               t("Quiet is fine. A good café isn't the one with the most rules. It's the one where you could change them if you wanted.",
-                 "安静也挺好。好咖啡馆不是规矩最多的那家，而是你想改规矩时就能改的那家。",
-                 "静かでいいの。いい喫茶店はルールがいちばん多い店じゃない。変えたいときに変えられる店よ。")]
+        greet_mae = [t(f"Oh, and Friday's pie this week is {pie['en']}. The Professor voted lemon again, lost again, and asked for a recount. I gave him a second slice instead.",
+                       f"对了，这周五的馅饼是{pie['zh']}的。教授又投了柠檬，又输了，还要求重新计票。我干脆多给了他一块。",
+                       f"そうそう、今週の金曜のパイは{pie['ja']}よ。教授はまたレモンに入れて、また負けて、数え直しを求めたの。代わりにもう一切れあげたわ。"),
+                     t(f"Oh, and Friday's pie this week is {pie['en']}. Seven votes to one. Guess who the one was. He wants lemon written into the rules.",
+                       f"对了，这周五的馅饼是{pie['zh']}的。七票对一票。猜猜那一票是谁投的。他想把柠檬写进规则里。",
+                       f"そうそう、今週の金曜のパイは{pie['ja']}よ。七対一。その一票が誰かは分かるでしょ。レモンをルールに書き込みたいんですって。")][v]
+        if ph_wait:
+            mae = [t(f"They agreed on {ph_wait['en']}. It is not in force yet: it switches on at a block they named in advance.",
+                     f"他们就{ph_wait['zh']}达成了一致。它还没生效：要到事先约定的那个区块才启用。",
+                     f"{ph_wait['ja']}で合意したの。まだ効いてはいない。前もって決めたブロックで切り替わるのよ。"),
+                   t("Same as my menu: you vote on Monday, the new pie comes on Friday. Everybody knows when, so the baker isn't the only one who's ready.",
+                     "就像我的菜单：周一投票，新馅饼周五才上。大家都知道是什么时候，所以准备好的不只是烤馅饼的人。",
+                     "うちのメニューと同じ。月曜に投票して、新しいパイは金曜から。いつか皆が知ってるから、準備ができてるのはパン屋だけじゃないの。")]
+        elif k_t:
+            who = (t("all from one wallet", "全都来自同一个钱包", "全部ひとつのウォレットから") if testers == 1 else
+                   t(f"from {word(testers)['en']} wallets", f"来自{word(testers)['zh']}个钱包", f"{word(testers)['ja']} つのウォレットから")) if testers else t("", "", "")
+            mae = [t(f"{word(k_t, True)['en']} rule change{'s' if k_t != 1 else ''} went through this week{', ' + who['en'] if who['en'] else ''}, and not one of them changed a thing. On purpose.",
+                     f"这周通过了{word(k_t)['zh']}项规则变更{'，' + who['zh'] if who['zh'] else ''}，可没有一项真的改变了什么。是故意的。",
+                     f"今週は {word(k_t)['ja']} 件のルール変更が通ったの{'、' + who['ja'] if who['ja'] else ''}。でもどれも何ひとつ変えていない。わざとよ。"),
+                   [t("They're testing the voting machine, not the rules. Like me ringing the till with nothing in it, just to hear the bell.",
+                      "他们测试的是投票机器，不是规则。就像我在空着的收银机上按一下，只为了听听那声铃响。",
+                      "試しているのは投票の仕組みで、ルールじゃない。空っぽのレジを鳴らして、ベルの音だけ確かめるようなものね。"),
+                    t("It's a fire drill. Everybody files out, counts heads, files back in, and the kitchen is exactly as it was.",
+                      "这是消防演习。大家排队出去，点名，再排队回来，厨房还是原来的样子。",
+                      "避難訓練よ。みんな列になって出て、人数を数えて、また戻る。厨房は元のまま。")][v],
+                   t("You'll know a real one when it comes: it says what changes, and from which block. That's the first thing to read on any proposal.",
+                     "真正的变更来了你会认得：它会写明改什么、从哪个区块开始。看任何提议，先看这两样。",
+                     "本物が来たら分かるわ。何が変わるのか、どのブロックからか、ちゃんと書いてある。どの提案も、まずそこを読むのよ。")]
+        elif r.get("proposed"):
+            mae = [t(f"{word(r['proposed'], True)['en']} new proposal{'s' if r['proposed'] != 1 else ''} went up on the board this week. The regulars are still chewing.",
+                     f"这周板子上贴出了{word(r['proposed'])['zh']}项新提议。常客们还在琢磨。",
+                     f"今週は新しい提案が {word(r['proposed'])['ja']} 件、板に上がったわ。常連さんたちはまだ噛みしめてるところ。"),
+                   t("Nobody rushes a vote in my café. A rule you will live with deserves a second cup.",
+                     "在我的咖啡馆里，谁也不催着投票。一条你要跟它过日子的规则，值得再来一杯。",
+                     "うちの店では誰も投票を急かさない。一緒に暮らすルールには、もう一杯の価値があるの。")]
+        else:
+            mae = [t("Not one proposal this week, love. The board was so empty I wrote the specials on it.",
+                     "这周一项提议都没有，亲爱的。板子空得我都把今日特价写上去了。",
+                     "今週は提案がひとつもなかったわ。板があんまり空いてたから、日替わりメニューを書いちゃった。"),
+                   t("Quiet is fine. A good café isn't the one with the most rules. It's the one where you could change them if you wanted to.",
+                     "安静也挺好。好咖啡馆不是规矩最多的那家，而是你想改规矩时就能改的那家。",
+                     "静かでいいの。いい喫茶店はルールがいちばん多い店じゃない。変えたいときに変えられる店よ。")]
     if sim_votes:
-        mae.append(t(f"Mind you, the visitors on the HUD cast {fmt_n(sim_votes)} practice votes in the simulation. Practice, like rehearsing a toast.",
-                     f"对了，HUD 上的访客在模拟里投了 {fmt_n(sim_votes)} 张练习票。只是练习，就像排练祝酒词。",
-                     f"それにね、HUD の訪問者たちはシミュレーションで {fmt_n(sim_votes)} 票の練習投票をしたの。練習よ、乾杯の挨拶のリハーサルみたいなもの。"))
+        mae.append(t(f"Mind you, the visitors on the HUD cast {fmt_n(sim_votes)} practice votes in the simulation. Practice, like rehearsing a toast: nobody's actually married yet.",
+                     f"对了，HUD 上的访客在模拟里投了 {fmt_n(sim_votes)} 张练习票。只是练习，就像排练祝酒词：还没有谁真的结婚。",
+                     f"それにね、HUD の訪問者たちはシミュレーションで {fmt_n(sim_votes)} 票の練習投票をしたの。練習よ、乾杯の挨拶のリハーサル。まだ誰も結婚してないわ。"))
 
-    # Elias: the wire, the blocks
+    # Elias: the wire, the blocks, the stations that keep a copy
     blocks = r["blocks"] + r.get("old_blocks", 0)
     if r.get("restarts"):
         elias = [t("We had a fresh start this week: the testnet began a new chain from block one.",
                    "这周我们重新开始了：测试网从第一个区块起了一条新链。", "今週は出直しがあった。テストネットがブロック一から新しいチェーンを始めたんだ。"),
-                 t("On a test line that happens. You do not learn how a bridge holds by never putting weight on it.",
-                   "在试验线路上，这种事会发生。你不往桥上压东西，就永远不知道它撑不撑得住。",
-                   "試験線ではそういうこともある。橋に重みをかけずに、どれだけ持つかは分からない。")]
+                 t("On a test line that happens. Better it snaps here, where it's practice, than later, where it counts.",
+                   "在试验线路上，这种事会发生。在这儿断，总比以后在要紧的时候断好。",
+                   "試験線ではそういうこともある。切れるならここで、練習のうちに。本番で切れるよりずっといい。")]
     else:
-        elias = [t(f"Steady as a clock: about one block every {pace(r.get('pace'))['en']}.", f"稳得像钟一样：大约每 {pace(r.get('pace'))['zh']}一个区块。",
-                   f"時計のように正確さ。だいたい {pace(r.get('pace'))['ja']}ごとにブロックがひとつ。")]
-        elias.append(t(f"{fmt_n(r['txs'])} transactions rode along in them.", f"里面一共搭载了 {fmt_n(r['txs'])} 笔交易。",
-                       f"そこに {fmt_n(r['txs'])} 件の取引が乗っていた。") if r.get("txs") else
-                     t("Mostly empty, rolling along like a streetcar at night: nobody on board, still on time.",
-                       "大多是空的，像夜里的电车一样往前开：车上没人，照样准点。", "ほとんど空っぽで、夜の路面電車みたいに走ってる。誰も乗ってないのに、時間どおりだ。"))
+        elias = [t(f"Steady as a clock: about one block every {pace(r.get('pace'))['en']}. Nobody winds it. The stations just keep agreeing on what comes next.",
+                   f"稳得像钟一样：大约每 {pace(r.get('pace'))['zh']}一个区块。没人给它上发条，各个站只是一直对下一块达成一致。",
+                   f"時計のように正確さ。だいたい {pace(r.get('pace'))['ja']}ごとにブロックがひとつ。誰もねじを巻かない。局どうしが次は何かで合意し続けてるだけだ。")]
     if r.get("new_nodes"):
         k = r["new_nodes"]
-        elias.append(t(f"And {word(k)['en']} new station{'s' if k != 1 else ''} joined the line. Another copy of the tape, and every copy makes a forgery harder.",
-                       f"还有{word(k)['zh']}个新站接入了线路。又多一份纸带，每多一份，造假就更难一分。",
-                       f"それに新しい局が {word(k)['ja']} つ線に加わった。紙テープの写しがまた増えた。写しが増えるほど、偽造は難しくなる。"))
+        elias.append(t(f"And {word(k)['en']} new station{'s' if k != 1 else ''} joined the line. Every station keeps its own copy of the tape.",
+                       f"还有{word(k)['zh']}个新站接入了线路。每个站都保存着自己的一份纸带。",
+                       f"それに新しい局が {word(k)['ja']} つ線に加わった。どの局も紙テープの写しを自分で持っている。"))
+        elias.append(t("Why that matters to you: to fake a block, you'd have to fool every copy at once. Each new one makes that harder.",
+                       "这对你意味着什么：想伪造一个区块，就得同时骗过每一份副本。每多一份，就更难一分。",
+                       "あなたにとっての意味はこうだ。ブロックを偽るには、すべての写しを一度にだまさなきゃならない。写しが増えるほど難しくなる。"))
+    elif r.get("txs"):
+        elias.append(t(f"{fmt_n(r['txs'])} transactions rode along, from {fmt_n(r.get('accounts') or 0)} wallets.",
+                       f"一共搭载了 {fmt_n(r['txs'])} 笔交易，来自 {fmt_n(r.get('accounts') or 0)} 个钱包。",
+                       f"{fmt_n(r.get('accounts') or 0)} のウォレットから、{fmt_n(r['txs'])} 件の取引が乗ってきた。") if r.get("accounts") else
+                     t(f"{fmt_n(r['txs'])} transactions rode along in them.", f"里面一共搭载了 {fmt_n(r['txs'])} 笔交易。", f"そこに {fmt_n(r['txs'])} 件の取引が乗っていた。"))
+        elias.append(t("Wallets, mind, not people. One person can hold ten wallets. I only count what comes down the wire.",
+                       "注意，是钱包，不是人。一个人可以有十个钱包。我只数线上过来的东西。",
+                       "いいかい、ウォレットであって人じゃない。一人で十個持つこともできる。私は線を通ってきたものだけを数える。"))
+    else:
+        elias.append(t("Mostly empty, rolling along like a streetcar at night: nobody on board, still on time.",
+                       "大多是空的，像夜里的电车一样往前开：车上没人，照样准点。", "ほとんど空っぽで、夜の路面電車みたいに走ってる。誰も乗ってないのに、時間どおりだ。"))
     elias.append(ASIDES[n % len(ASIDES)])
 
-    # the Professor: logic
+    # the Professor: logic. When the week gives him something to think about, his lesson is about that.
     if r.get("dropped"):
         k = r["dropped"]
         prof = [t(f"{word(k, True)['en']} proposal{'s' if k != 1 else ''} ran out of time and {'were' if k != 1 else 'was'} dropped at the deadline. Not refused: simply not enough hands.",
                   f"有{word(k)['zh']}项提议到了期限没能通过，就此作罢。不是被拒绝，只是举手的人不够。",
                   f"{word(k)['ja']} 件の提案が期限切れで取り下げられた。拒まれたのではない。手が足りなかっただけだ。"),
-                t("A proposal nobody wants dies politely. I find that rather civilised.", "没人想要的提议，会体面地退场。我觉得这相当文明。",
-                  "誰も望まない提案は、礼儀正しく消えていく。なかなか文明的だと思うね。")]
+                t("Notice: nobody had to vote against it. Silence was enough. So no rule slips in while everyone is asleep.",
+                  "注意：根本不需要有人投反对票。沉默就够了。所以没有哪条规则能趁大家睡着时溜进来。",
+                  "いいかね、誰も反対票を入れる必要はなかった。沈黙で足りたのだ。だから皆が眠っている間にルールが忍び込むことはない。")]
+    elif k_t:
+        prof = [t(f"Those {word(k_t)['en']} changes Mae told you about? Each one, in effect, says: the rules are the rules. Perfectly true, and perfectly empty.",
+                  f"梅跟你说的那{word(k_t)['zh']}项变更？每一项实际上都在说：规则就是规则。完全正确，也完全空洞。",
+                  f"メイが話した {word(k_t)['ja']} 件の変更かね？どれも要するに「ルールはルールだ」と言っている。完璧に正しく、完璧に空っぽだ。"),
+                t("Logicians call that a tautology: a sentence that is always true because it says nothing. Splendid for testing the machine. Useless for running a café.",
+                  "逻辑学家管这叫重言式：一句因为什么都没说而永远为真的话。拿来测试机器再好不过，拿来经营咖啡馆毫无用处。",
+                  "論理学者はこれをトートロジーと呼ぶ。何も言っていないから常に真である文だ。仕組みの試験には見事、喫茶店の切り盛りには役立たずだ。")]
     else:
         prof = [t("On the real chain nobody tried anything foolish this week. A pity for me, good for everyone else.",
                   "这周在真正的链上，没人试图干什么蠢事。对我来说可惜，对别人来说是好事。",
-                  "今週、本物のチェーンでは誰も馬鹿な真似をしなかった。私には残念、皆には幸いだ。")]
-    prof.append(t("In the simulation a contradicting proposal knocks at the door every hour, and every hour the check sends it home before anyone votes.",
-                  "在模拟里，每小时都有一项自相矛盾的提议来敲门，而每小时检查都会在任何人投票之前把它打发回家。",
-                  "シミュレーションでは毎時、矛盾した提案が戸を叩く。そして毎時、誰かが投票する前に検査がそれを家に帰す。"))
-    prof.append(LESSONS[n % len(LESSONS)])
+                  "今週、本物のチェーンでは誰も馬鹿な真似をしなかった。私には残念、皆には幸いだ。"),
+                LESSONS[n % len(LESSONS)]]
+    greet_prof = CHESS[n % len(CHESS)]
+    if (c := chess_talk(chess, r["end"])):
+        greet_prof, prof = c[0], c[1:] + prof
+    if not c:
+        prof.append(t("Meanwhile, in the simulation, a contradicting proposal knocks every hour, and every hour the check sends it home before anyone votes. It never learns. I admire that, a little.",
+                  "与此同时，在模拟里，每小时都有一项自相矛盾的提议来敲门，而每小时检查都会在任何人投票之前把它打发回家。它从不长记性。我有点佩服它。",
+                  "一方シミュレーションでは、毎時、矛盾した提案が戸を叩き、毎時、誰かが投票する前に検査がそれを家に帰す。懲りない奴だ。少し感心している。"))
 
-    # Sully: the headline
+    # Sully: the headline, and what the street made of it
     head = {k: banner[k].rstrip(".!") for k in ("en", "zh", "ja")}
-    sully = [deck, STREET[n % len(STREET)]]
+    if r.get("active") and ph_active:
+        street = t("A fella asked me who changed the rule. I says, everybody who voted, mister. He looked at me like I'd sold him the wrong paper.",
+                   "有个家伙问我是谁改的规则。我说，先生，是每个投了票的人。他看我的眼神，好像我卖错了报纸给他。",
+                   "ある旦那に、誰がルールを変えたのかって聞かれた。投票した皆さんですよ、旦那って言ったら、違う新聞をつかまされたみたいな顔をしてた。")
+    elif r.get("new_nodes"):
+        street = t("I shout 'new station on the line!' and nobody knows what it means. Then I say 'one more witness'. That they get.",
+                   "我喊“线路上来了新站！”，没人懂是什么意思。然后我说“又多了一个证人”，这下他们懂了。",
+                   "「線に新しい局が来たよ！」って叫んでも誰も分からない。「証人がもう一人増えた」って言うと、それは分かってくれる。")
+    else:
+        street = STREET[n % len(STREET)]
+    sully = [deck, street]
 
     q = t("What's new this week?", "这周有什么新鲜事？", "今週は何か新しいことは？")
     return {
-        "mae": {"greet": t(f"Oh, and Friday's pie this week is {pie['en']}. The regulars voted. The Professor voted for lemon again, and lost again.",
-                           f"对了，这周五的馅饼是{pie['zh']}的。常客们投的票。教授又投了柠檬，又输了。",
-                           f"そうそう、今週の金曜のパイは{pie['ja']}よ。常連さんの投票で決まったの。教授はまたレモンに入れて、また負けたわ。"),
+        "mae": {"greet": greet_mae,
                 "q": t("What did they vote on this week, out on the real chain?", "这周，真正的链上大家投了什么票？", "今週、本物のチェーンでは何に投票したの？"),
                 "a": mae},
         "elias": {"greet": t(f"{fmt_n(blocks)} blocks came down the wire this week. My fingers know every one of them.",
                              f"这周有 {fmt_n(blocks)} 个区块从线上过来。我的手指认得每一个。",
                              f"今週は {fmt_n(blocks)} のブロックが線を通ってきた。指が一つ残らず覚えてる。"),
                   "q": t("Anything odd on the wire this week?", "这周线上有什么怪事吗？", "今週、線に何か変わったことは？"), "a": elias},
-        "prof": {"greet": CHESS[n % len(CHESS)], "q": t("Did the logic catch anything this week?", "这周逻辑抓到什么了吗？", "今週、論理は何か捕まえましたか？"), "a": prof},
+        "prof": {"greet": greet_prof, "q": t("Did the logic catch anything this week?", "这周逻辑抓到什么了吗？", "今週、論理は何か捕まえましたか？"), "a": prof},
         "sully": {"greet": t(f"This week's front page: {head['en']}. Hot off the press!", f"本周头版：{head['zh']}。刚印出来的！", f"今週の一面は「{head['ja']}」。刷りたてだよ！"),
                   "q": q, "a": sully},
     }
 
 
-def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: float) -> dict:
+def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: float, chess: dict | None = None) -> dict:
     """One weekly edition. r: recap.build(); props: proposals.json "proposals"; days: sim_day() of the week."""
     waiting = [p for p in props if p.get("status") == "agreed" and (p.get("activate_at") or 0) > (r.get("head") or 0)]
     ranked = news(r, waiting, days, props)
@@ -835,7 +930,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
         "weather": weather(r), "caption": caption(r),
         "figures": figures(r),
         "stories": [coming_up(props, r.get("head"), r["pace"]), rehearsal(days, r, not any(x["kind"] == "simswitch" and x["score"] > 0 for x in ranked))] + ([m] if (m := riddle(r, props)) else []),
-        "cafe": cafe(r, props, days, no, banner, deck),
+        "cafe": cafe(r, props, days, no, banner, deck, chess), "cafe_v": CAFE_V,
         "url": "https://tauhud.com/gazette/",
         # flat copies for the HUD's notice of the paper (index.html)
         "number": no, "headline": banner["en"], "headline_zh": banner["zh"], "headline_ja": banner["ja"],

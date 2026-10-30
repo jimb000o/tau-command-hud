@@ -2027,7 +2027,12 @@ class Watcher:
         date = datetime.fromtimestamp(printed_at, timezone.utc).strftime("%Y-%m-%d")
         same = next((x for x in index if x.get("date") == date), None)
         no = same["no"] if same else max((x.get("no", 0) for x in index), default=0) + 1
-        e = gazette.edition(r, props, days, no, printed_at)
+        try:   # a Taumorrow chess round, as the chess fetcher writes it (see gazette.chess_talk)
+            with open(os.path.join(PUBLIC_DIR, "recap", "chess.json")) as f:
+                chess = json.load(f)
+        except (OSError, ValueError):
+            chess = None
+        e = gazette.edition(r, props, days, no, printed_at, chess if isinstance(chess, dict) else None)
         e["drops"] = self.drops(printed_at)
         prev = next((x for x in index if x.get("date") != date), None)
         if prev:   # what each language's readers still see until their own drop
@@ -2066,8 +2071,8 @@ class Watcher:
             except Exception as exc:  # retried in ten minutes
                 log.warning("gazette: first edition failed (%r)", exc)
             self.save_state()
-        if RECAP_ON and not st.get("cafe"):
-            st["cafe"] = now
+        if RECAP_ON and st.get("cafe_v") != gazette.CAFE_V:   # once per new way of writing the talk
+            st["cafe_v"] = gazette.CAFE_V
             try:
                 await asyncio.to_thread(self.gazette_cafe)
             except Exception as exc:  # the café keeps its fixed talk until Monday
@@ -2148,14 +2153,14 @@ class Watcher:
         write_atomic(os.path.join(d, "challenge.json"), json.dumps(out, ensure_ascii=False, separators=(",", ":")))
 
     def gazette_cafe(self):
-        """Once: give the edition already out (printed before the café had a talk of the week) its café block."""
+        """Once per CAFE_V: give the edition already out the café talk as it is written now."""
         d = os.path.join(PUBLIC_DIR, "recap", "gazette")
         try:
             with open(os.path.join(d, "latest.json")) as f:
                 e = json.load(f)
         except (OSError, ValueError):
             return
-        if e.get("cafe") or not e.get("end"):
+        if e.get("cafe_v") == gazette.CAFE_V or not e.get("end"):
             return
         try:
             with open(os.path.join(PUBLIC_DIR, "proposals.json")) as f:
@@ -2165,7 +2170,13 @@ class Watcher:
         r = self.recap_numbers(e["end"])
         days = [x for k, x in sorted((self.state.get("simdays") or {}).items())
                 if r["start"] <= datetime.strptime(k, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() + 43200 < r["end"]]
-        e["cafe"] = gazette.cafe(r, props, days, e.get("no") or 1, e["banner"], e.get("teaser") or e["lead"]["deck"])
+        try:
+            with open(os.path.join(PUBLIC_DIR, "recap", "chess.json")) as f:
+                chess = json.load(f)
+        except (OSError, ValueError):
+            chess = None
+        e["cafe"] = gazette.cafe(r, props, days, e.get("no") or 1, e["banner"], e.get("teaser") or e["lead"]["deck"], chess if isinstance(chess, dict) else None)
+        e["cafe_v"] = gazette.CAFE_V
         text = json.dumps(e, ensure_ascii=False, separators=(",", ":"))
         write_atomic(os.path.join(d, e["date"] + ".json"), text)
         write_atomic(os.path.join(d, "latest.json"), text)
