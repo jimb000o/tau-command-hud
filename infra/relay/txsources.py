@@ -26,6 +26,12 @@ GET /api/v1/sources
              vote, wish, other), "deja" (Déjà the café cat, kind meal) and "tauhud:<page>" (the page that led to the
              wallet: start, rules, card, hud …; "" before the relay kept pages, "relay" for the end of a rule-place
              turn; kinds send, rule, vote, shared, other)
+  rabbit     {"YYYY-MM-DD": {"moves", "rivals", "lines", "votes", "agrs", "wallets", "new", "cands", "by", "hours"}}
+             White Rabbit Key (tauhud.com/rabbit/) on the testnet: every transaction that pays the island council or one
+             of the four ballot boxes (rabbit/game.js ADDR). rivals = the rival candidates' moves, sent by the island bot
+             from its campaign wallets (island.py, `bots`); lines = the visitors' own Book lines to the council; votes =
+             visitors' ballots, cands = ballots per candidate, by = rival moves per candidate; wallets / new = visitor
+             wallets that day and the ones playing on the chain for the first time; hours = moves per UTC hour
   since, sent_since   first block time held, first remembered send
 
 The "agorzilla" part follows Agorzilla's own reading (agorilla assets/core.js): a meal pays the bowl at least 1 AGRS,
@@ -69,6 +75,14 @@ BOXES = frozenset({
     "afbdeb43eb62d4a95f2f679686488a14a033cbddb45dec0ac7181d40a668f4af3c8b1c9df05b3b2bc33e664a2a8dd98b",
 })
 MEAL_COOLDOWN = 3600
+# White Rabbit Key's addresses (rabbit/game.js ADDR): the island council and the four candidates' ballot boxes
+RABBIT_COUNCIL = "96179f47d33ab65d9922c5652d7686f9e6be9d36ef4b9e9e04bdaac25b6e30d01928182c16da7aaa6dc954cccb88b62b"
+RABBIT_BOXES = {
+    "b44a202e884682b8677daf5f2685b5775f3c9ea9443a89651013bc455bc66061f2cf8d092897893bad3311e598f2cb11": "marisol",
+    "96bf03fb7c34b84f916d928cf82bd332cd9558ab3c55e9a717381fe5c8cc6d4ec1e694e39855a680ea8f29351d6a2aea": "tobias",
+    "981bfa68b487e86991cbd70d3c1c8ed4b151715031580976f0942610958a16e29d71c15ea4accdb3750db225f35c3f50": "baako",
+    "adf1b27a6cfe88b1c73f12ed38eaaef535f892ee2f2b695030427ecaef7d4e43deb89f7849f2f5550cc5eec711652174": "hana",
+}
 
 
 def moved(tx: dict) -> int:
@@ -124,6 +138,21 @@ GENESIS = frozenset({
 })
 
 
+def rabbit(tx: dict, bots: dict) -> tuple[str, str] | None:
+    """("rival" | "line" | "vote", candidate) for a White Rabbit Key transaction, else None."""
+    ops = tx.get("operations") if isinstance(tx.get("operations"), dict) else {}
+    sender = str(tx.get("sender_pubkey") or "").lower()
+    for op in ops.get("1") or []:
+        if not isinstance(op, (list, tuple)) or len(op) < 2:
+            continue
+        to = str(op[1]).lower()
+        if to == RABBIT_COUNCIL:
+            return ("rival", bots[sender]) if sender in bots else ("line", "")
+        if to in RABBIT_BOXES:
+            return "vote", RABBIT_BOXES[to]
+    return None
+
+
 def group(tx: dict, tx_hash: str, sent: dict) -> str:
     ops = tx.get("operations") if isinstance(tx.get("operations"), dict) else {}
     for op in ops.get("1") or []:
@@ -157,6 +186,7 @@ class TxSources:
         self.path = path if path is not None else os.environ.get("SENT_PATH", "/data/sent.json")
         self.sent: dict[str, str] = {}   # tx hash -> "" (Tau HUD) or the other site's name, oldest first
         self.since = time.time()
+        self.bots: dict[str, str] = {}   # the island bot's campaign wallets: pubkey -> candidate (island.py)
         try:
             with open(self.path) as f:
                 st = json.load(f)
@@ -192,6 +222,10 @@ class TxSources:
         hours: dict[str, list] = {}
         agz: dict[str, dict] = {}
         starts: dict[str, dict] = {}
+        isle: dict[str, dict] = {}
+        played: set = set()                    # visitor wallets that made a White Rabbit Key move
+        isle_last: dict[str, str] = {}         # visitor wallet -> last day it played
+        bots = {k.lower(): v for k, v in self.bots.items()}
         seen_day: set = set()                  # (day, group, wallet)
         first_day: dict[tuple, str] = {}       # (group, wallet) -> first day seen
         ever: dict[str, dict] = {}             # group or "ours" -> wallet -> last day seen
@@ -234,6 +268,28 @@ class TxSources:
                     src, kind = start(tx, h, g, self.sent)
                     kinds = starts.setdefault(day, {}).setdefault(src, {})
                     kinds[kind] = kinds.get(kind, 0) + 1
+                rb = rabbit(tx, bots)
+                if rb:
+                    r = isle.setdefault(day, {"moves": 0, "rivals": 0, "lines": 0, "votes": 0, "agrs": 0, "wallets": 0,
+                                              "new": 0, "cands": {}, "by": {}, "hours": [0] * 24})
+                    r["moves"] += 1
+                    r["agrs"] += amount
+                    r["hours"][ts % 86400 // 3600] += 1
+                    if rb[0] == "rival":
+                        r["rivals"] += 1
+                        r["by"][rb[1]] = r["by"].get(rb[1], 0) + 1
+                    else:
+                        r["lines" if rb[0] == "line" else "votes"] += 1
+                        if rb[0] == "vote":
+                            r["cands"][rb[1]] = r["cands"].get(rb[1], 0) + 1
+                        if s and (day, "rabbit", s) not in seen_day:
+                            seen_day.add((day, "rabbit", s))
+                            r["wallets"] += 1
+                            if s not in played:
+                                played.add(s)
+                                r["new"] += 1
+                        if s:
+                            isle_last[s] = day
                 m = meal(tx) if g == "agorzilla" else None
                 if m:
                     a = agz.setdefault(day, {"meals": 0, "snacks": 0, "votes": 0, "asks": 0, "agrs": 0, "wallets": 0,
@@ -261,7 +317,12 @@ class TxSources:
                     since = time.strftime("%Y-%m-%d", time.gmtime(last - (n - 1) * 86400))
                     totals[k][str(n)] = sum(1 for d in wallets.values() if d >= since)
                 totals[k]["all"] = len(wallets)
+            if isle_last:
+                totals["rabbit"] = {str(n): sum(1 for d in isle_last.values()
+                                               if d >= time.strftime("%Y-%m-%d", time.gmtime(last - (n - 1) * 86400)))
+                                    for n in (7, 30)}
+                totals["rabbit"]["all"] = len(isle_last)
         recent = sorted(hours)[-31:]
         return {"days": dict(sorted(days.items())), "ours": dict(sorted(ours.items())), "totals": totals,
                 "hours": {d: hours[d] for d in recent}, "agorzilla": dict(sorted(agz.items())),
-                "starts": dict(sorted(starts.items())), "since": first, "sent_since": round(self.since)}
+                "starts": dict(sorted(starts.items())), "rabbit": dict(sorted(isle.items())), "since": first, "sent_since": round(self.since)}

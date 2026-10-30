@@ -75,6 +75,20 @@ out = s.by_day([{"header": {"timestamp": day2 + 60}, "tx_ids": ["v1", "v2", "v3"
 check(out["starts"]["2026-10-29"] == {"tauhud:start": {"rule": 1}, "tauhud:relay": {"vote": 1}, "deja": {"meal": 1}},
       "a rule sent from the wallet opened from /start/, the relay's own send, a meal for Déjà")
 check(out["days"]["2026-10-29"]["tauhud"][0] == 2 and out["days"]["2026-10-29"]["agorzilla"][0] == 1, "the page does not change the site")
+# White Rabbit Key: the rivals' moves from the island bot, a visitor's Book line and ballots
+CO, MAR, HAN = txsources.RABBIT_COUNCIL, "b44a202e884682b8677daf5f2685b5775f3c9ea9443a89651013bc455bc66061f2cf8d092897893bad3311e598f2cb11", \
+    "adf1b27a6cfe88b1c73f12ed38eaaef535f892ee2f2b695030427ecaef7d4e43deb89f7849f2f5550cc5eec711652174"
+BOT = "dd" * 48
+s.bots = {BOT.upper(): "tobias"}
+out = s.by_day([{"header": {"timestamp": day1 + 3600}, "tx_ids": ["r1", "r2", "r3"], "transactions": [tx(BOT, CO), tx(BOT, CO), tx(A, CO)]},
+                {"header": {"timestamp": day2 + 7200}, "tx_ids": ["r4", "r5", "r6"], "transactions": [tx(A, MAR), tx(B, HAN), tx(B, BOWL)]}])
+r1, r2 = out["rabbit"]["2026-10-28"], out["rabbit"]["2026-10-29"]
+check(r1["moves"] == 3 and r1["rivals"] == 2 and r1["by"] == {"tobias": 2} and r1["lines"] == 1 and r1["wallets"] == 1 and r1["new"] == 1 and r1["hours"][1] == 3,
+      "White Rabbit Key: the bot's moves are the rivals', a visitor's line to the council is theirs; the bot is no visitor wallet")
+check(r2["votes"] == 2 and r2["cands"] == {"marisol": 1, "hana": 1} and r2["wallets"] == 2 and r2["new"] == 1 and r2["agrs"] == 10,
+      "ballots per candidate; a wallet that played before is not new; a meal for Agorzilla is not a move")
+check(out["totals"]["rabbit"] == {"7": 2, "30": 2, "all": 2}, "visitor wallets on the island over 7 / 30 days / all")
+s.bots = {}
 for i in range(txsources.SENT_MAX + 5):
     s.sent[f"x{i}"] = ""
 s.note("last")

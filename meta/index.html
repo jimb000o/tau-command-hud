@@ -69,7 +69,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .chart .colb.open { fill-opacity: .22; stroke: var(--ok); stroke-opacity: .6; stroke-dasharray: 3 3; }
 .chart .colb.sel { fill-opacity: .95; }
 .chart .colb.on { fill-opacity: .85; }
-.sites { display: inline-flex; gap: 4px; margin-top: 10px; }
+.sites { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
 .range button, .sites button { font: 600 11px var(--display); letter-spacing: .12em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 12px; min-height: 28px; cursor: pointer; }
 .range button:hover, .sites button:hover { color: #fff; border-color: var(--hair); }
 .range button[aria-pressed="true"], .sites button[aria-pressed="true"] { color: #000; background: #fff; border-color: #fff; }
@@ -197,7 +197,7 @@ html.fit.wide .col.side { display: contents; }
   <div class="intro">
     <div>
       <p class="lead"><span id="leadLine">How many people look at Tau through this site.</span></p>
-      <span class="sites" role="group" aria-label="View"><button type="button" data-site="net" data-tip="What our two sites move on Tau Testnet Alpha: wallets that acted through them, their transactions and test AGRS.\nRead from the testnet's public blocks.">On the testnet</button><button type="button" data-site="" data-tip="Visitors of tauhud.com">Tau HUD</button><button type="button" data-site="agorzilla" data-tip="Visitors of Agorzilla, our second site: one creature everyone feeds and shapes on Tau Testnet Alpha.\nCounted the same way, kept apart from Tau HUD's numbers.">Agorzilla</button></span>
+      <span class="sites" role="group" aria-label="View"><button type="button" data-site="net" data-tip="What our two sites move on Tau Testnet Alpha: wallets that acted through them, their transactions and test AGRS.\nRead from the testnet's public blocks.">On the testnet</button><button type="button" data-site="" data-tip="Visitors of tauhud.com">Tau HUD</button><button type="button" data-site="agorzilla" data-tip="Visitors of Agorzilla, our second site: one creature everyone feeds and shapes on Tau Testnet Alpha.\nCounted the same way, kept apart from Tau HUD's numbers.">Agorzilla</button><button type="button" data-site="rabbit" data-tip="White Rabbit Key, our island election game: the rivals' moves, the players' own Book lines and their ballots.\nRead from the testnet's public blocks.">White Rabbit Key</button></span>
       <p class="sub" id="sourceLine">Visitors per day, growth since counting began and the pages people open most. Counted without cookies and without storing anything in your browser; only daily totals are kept.</p>
     </div>
     <div class="kpis" aria-label="Key numbers">
@@ -265,19 +265,21 @@ const DAY = 86400000;
 const HOUR = 3600000;
 let raw = null, data = null, range = 30, sel = null, failed = false, kind = "line";
 // Agorzilla (agorzilla.com) is counted the same way but apart; the relay lists it under "sites"
-const SITES = { net: "How much our two sites move the testnet.", "": "How many people look at Tau through this site.", agorzilla: "How many people visit Agorzilla, our second site." };
+const SITES = { net: "How much our two sites move the testnet.", "": "How many people look at Tau through this site.", agorzilla: "How many people visit Agorzilla, our second site.", rabbit: "What White Rabbit Key, our island game, writes on the testnet." };
 const SUBS = { net: "Wallets that acted on Tau Testnet Alpha through Agorzilla or a Tau HUD page, what they sent and how many come back. Read from the testnet's public blocks; a wallet is a key, not a person.", "": "Visitors per day, growth since counting began and the pages people open most. Counted without cookies and without storing anything in your browser; only daily totals are kept." };
 SUBS.agorzilla = SUBS[""];
+SUBS.rabbit = "Every move in the island's Book that went to Tau Testnet Alpha as a test transaction: the rivals' moves sent by the island bot, the players' own lines and their ballots for a governor. Read from the testnet's public blocks; a wallet is a key, not a person.";
 let agzLatest = null;   // agorzilla.com/chain/latest.json: the creature's own summary
 let txs = null;   // relay /api/v1/sources
-// deep links: ?view=testnet | tauhud | agorzilla (the older ?site= still works)
-const VIEWS = { testnet: "net", tauhud: "", agorzilla: "agorzilla" }, VIEW_OF = { net: "testnet", "": "tauhud", agorzilla: "agorzilla" };
+// deep links: ?view=testnet | tauhud | agorzilla | rabbit (the older ?site= still works)
+const VIEWS = { testnet: "net", tauhud: "", agorzilla: "agorzilla", rabbit: "rabbit" }, VIEW_OF = { net: "testnet", "": "tauhud", agorzilla: "agorzilla", rabbit: "rabbit" };
 const Q0 = new URLSearchParams(location.search);
 const SITE_ASKED = Q0.has("view") ? VIEWS[Q0.get("view")] : Q0.get("site");
 let site = SITE_ASKED ?? "net";
 if (!(site in SITES)) site = "net";
 const pickSite = () => {
   if (site === "net") { data = netData(); return; }
+  if (site === "rabbit") { data = rabbitData(); return; }
   if (!raw) return;
   const o = site && raw.sites && raw.sites[site];
   data = !site ? raw : { ...raw, days: (o && o.days) || {}, hours: (o && o.hours) || {} };
@@ -285,7 +287,7 @@ const pickSite = () => {
 try { const r = localStorage.getItem("tauhud-meta-range"); if (r != null && [0, 1, 7, 30, 90, 365].includes(+r)) range = +r; } catch (e) {}
 
 /* page keys from the counter: "hud", "explorer", "story/zh" … */
-const NAMES = { hud: "HUD", explorer: "Explorer", stats: "Stats", history: "Time travel", account: "Accounts", nodes: "Nodes", proposals: "Proposals", story: "Tau in 60 seconds", gazette: "The Daily Consensus", chronicle: "Chronicle", findings: "Findings", status: "Status", developers: "Developers", press: "Press kit", playground: "Playground", whatif: "What if", vote: "Vote for real", missions: "Missions", meta: "In numbers", agorzilla: "Agorzilla" };
+const NAMES = { hud: "HUD", explorer: "Explorer", stats: "Stats", history: "Time travel", account: "Accounts", nodes: "Nodes", proposals: "Proposals", story: "Tau in 60 seconds", gazette: "The Daily Consensus", chronicle: "Chronicle", findings: "Findings", status: "Status", developers: "Developers", press: "Press kit", playground: "Playground", whatif: "What if", vote: "Vote for real", missions: "Missions", meta: "In numbers", agorzilla: "Agorzilla", rabbit: "White Rabbit Key" };
 const pageName = p => { const [a, b] = p.split("/"); return T(NAMES[a] || "/" + a + "/") + (b ? ` (${b})` : ""); };
 const pageHref = p => p.split("/")[0] === "agorzilla" ? "https://agorzilla.com/" : "/" + (p === "hud" ? "" : p + "/");
 const dayKey = t => new Date(t).toISOString().slice(0, 10);
@@ -326,6 +328,23 @@ function netData() {
   return { today, now, days, hours, hourFirst: txs.since ? txs.since * 1000 : undefined };
 }
 const NET = () => site === "net";
+/* "White Rabbit Key": the island game's moves on the testnet (relay "rabbit"), in the same shape: days[k] = [moves,
+   visitors of /rabbit/, visitor wallets, new wallets, test AGRS]; hours[k] = [moves per hour] for the last 31 days */
+const RB = () => site === "rabbit";
+const CAND_NAMES = { marisol: "Marisol", tobias: "Tobias", baako: "Baako", hana: "Hana" };
+function rabbitData() {
+  if (!txs || !txs.rabbit) return null;
+  const today = (raw && raw.today) || dayKey(Date.now()), now = (raw && raw.now) || Math.floor(Date.now() / 1000);
+  const z = txs.rabbit, first = Object.keys(z).sort()[0], days = {}, hours = {};
+  if (!first) return { today, now, days: { [today]: [0, 0, 0, 0, 0] }, hours: {} };
+  const seen = k => ((((raw && raw.days) || {})[k] || [])[3] || {}).rabbit || 0;
+  for (let t = Date.parse(first + "T00:00:00Z"), end = Date.parse(today + "T00:00:00Z"); t <= end; t += DAY) {
+    const k = dayKey(t), a = z[k] || {};
+    days[k] = [a.moves || 0, seen(k), a.wallets || 0, a.new || 0, a.agrs || 0];
+    if (t > end - 31 * DAY) hours[k] = [a.hours || Array(24).fill(0), Array(24).fill(0)];
+  }
+  return { today, now, days, hours, hourFirst: Date.parse(first + "T00:00:00Z") };
+}
 const netAll = k => { const d = (txs && txs.days[k]) || {}; return Object.values(d).reduce((a, v) => a + (v[0] || 0), 0); };
 /* user transactions: everything but IDNI's genesis accounts, which make most of the testnet's traffic while testing */
 const netUsers = k => netAll(k) - (((txs && txs.days[k]) || {}).idni || [0])[0];
@@ -499,6 +518,7 @@ function lineChart(box, pts, opts) {
 function drawDaily() {
   const box = $("cDaily"), days = data ? rangeDays() : [];
   const net = NET();
+  if (RB()) return drawRabbitDaily(box, days);
   if (!days.length) { if (net) $("dailyTitle").textContent = T("Wallets acting through our sites per day"); box.innerHTML = `<p class="empty">${esc(T(net ? "The testnet numbers appear here once the relay has read the blocks." : failed ? "The counter could not be reached. It will try again in a minute." : "Counting began on 28 October 2026. The first numbers appear here as soon as people open a page."))}</p>`; return; }
   const hr = hourly(), six = hr && domain().step > HOUR;
   $("dailyTitle").textContent = T(net ? (six ? "Transactions through our sites per 6 hours" : hr ? "Transactions through our sites per hour" : "Wallets acting through our sites per day") : six ? "Visitors per 6 hours" : hr ? "Visitors per hour" : "Visitors per day");
@@ -534,8 +554,35 @@ function drawDaily() {
   });
 }
 
+/* White Rabbit Key: moves per day (or hour), the visitors of the game as faint bars */
+function drawRabbitDaily(box, days) {
+  if (!days.length) { $("dailyTitle").textContent = T("Island moves per day"); $("lgMain").lastChild.textContent = T("moves per day (click a day for details)"); $("lgVol").hidden = $("lgAvg").hidden = true; box.innerHTML = `<p class="empty">${esc(T("The island's numbers appear here once the relay has read the blocks."))}</p>`; return; }
+  const hr = hourly(), six = hr && domain().step > HOUR, z = txs.rabbit || {};
+  $("dailyTitle").textContent = T(six ? "Island moves per 6 hours" : hr ? "Island moves per hour" : "Island moves per day");
+  $("lgMain").lastChild.textContent = T(six ? "moves per 6 hours (click for that day)" : hr ? "moves per hour (click for that day)" : "moves per day (click a day for details)");
+  $("lgOpen").lastChild.textContent = T(six ? "these 6 hours, still counting" : hr ? "this hour, still counting" : "today, still counting");
+  $("lgVol").lastChild.textContent = T("visitors of the game");
+  $("lgVol").hidden = kind === "bar" || hr;
+  $("lgAvg").hidden = true;
+  if (hr) {
+    lineChart(box, rangeHours(), {
+      label: T("Island moves per hour"), lo0: true, bars: kind === "bar",
+      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${hourLabel(p.t)}–${hourLabel(p.t + p.step)} UTC${p.open ? " · " + esc(T("still counting")) : ""}</div><b>${fmt(p.v || 0)}</b> ${esc(T("moves"))}`,
+      onPick: p => { sel = p.k; render(); },
+    });
+    return;
+  }
+  const pts = days.map(([k, d]) => ({ k, t: Date.parse(k + "T00:00:00Z"), v: d[0], vol: d[1], open: k === data.today }));
+  lineChart(box, pts, {
+    label: T("Island moves per day"), lo0: true, bars: kind === "bar",
+    tip: p => { const a = z[p.k] || {}; return `<div class="d">${esc(dayLabel(p.k, true))}${p.open ? " · " + esc(T("still counting")) : ""}</div><b>${fmt(p.v)}</b> ${esc(T("moves"))} (${fmt(a.rivals || 0)} ${esc(T("rivals"))}, ${fmt(a.lines || 0)} ${esc(T("players' lines"))}, ${fmt(a.votes || 0)} ${esc(T("ballots"))})<br><b>${fmt(p.vol)}</b> ${esc(T("visitors of the game"))}`; },
+    onPick: p => { sel = p.k; render(); },
+  });
+}
+
 function drawGrowth() {
   const box = $("cGrowth"), days = rangeDays(), all = Object.keys(data.days).sort(), net = NET();
+  if (RB()) return drawRabbitGrowth(box, days, all);
   $("growthTitle").textContent = T(net ? (hourly() ? "Transactions added up" : "Wallets reached") : "Growth");
   if (net) return drawNetGrowth(box, days, all);
   if (!days.length || !days.some(d => d[1][0])) { box.innerHTML = `<p class="empty">${esc(T("The climb starts with the first visitors."))}</p>`; $("growthNote").textContent = ""; return; }
@@ -607,6 +654,33 @@ function drawNetGrowth(box, days, all) {
     onPick: p => { sel = p.k; render(); },
   });
   $("growthNote").textContent = `+${fmt(run - before)} ${T("new wallets in this range")} · ${fmt(run)} ${T("in total")}`;
+}
+
+/* the island's moves added up: from the first move on 30 October, so every range shows the same climb */
+function drawRabbitGrowth(box, days, all) {
+  $("growthTitle").textContent = T("Moves added up");
+  if (!days.length || !all.some(k => data.days[k][0])) { box.innerHTML = `<p class="empty">${esc(T("The climb starts with the island's first move on the testnet."))}</p>`; $("growthNote").textContent = ""; return; }
+  let before = 0;
+  const from = hourly() ? dayKey(domain().start) : days[0][0];
+  for (const k of all) if (k < from) before += data.days[k][0];
+  let run = before;
+  if (hourly()) {
+    if (range === 1) run = before = 0;
+    const pts = rangeHours().map(p => { run += p.v || 0; return { ...p, add: p.v || 0, v: run }; });
+    lineChart(box, pts, {
+      label: T("Moves added up"), lo0: range === 1 || before === 0 || kind === "bar", bars: kind === "bar",
+      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + p.step)} UTC</div><b>${fmt(p.v)}</b> ${esc(T(range === 1 ? "moves in the last 24 hours" : "moves in total"))}${p.step === HOUR ? `<br>+${fmt(p.add)} ${esc(T("that hour"))}` : ""}`,
+      onPick: p => { sel = p.k; render(); },
+    });
+  } else {
+    const pts = days.map(([k, d]) => { run += d[0]; return { k, t: Date.parse(k + "T00:00:00Z"), v: run, add: d[0], open: k === data.today }; });
+    lineChart(box, pts, {
+      label: T("Moves added up"), lo0: !range || before === 0 || kind === "bar", bars: kind === "bar",
+      tip: p => `<div class="d">${esc(dayLabel(p.k, true))}</div><b>${fmt(p.v)}</b> ${esc(T("moves in total"))}<br>+${fmt(p.add)} ${esc(T("that day"))}`,
+      onPick: p => { sel = p.k; render(); },
+    });
+  }
+  $("growthNote").textContent = range === 1 ? `+${fmt(run)} ${T("moves in the last 24 hours")}` : `+${fmt(run - before)} ${T("moves in this range")} · ${fmt(run)} ${T("in total")}`;
 }
 
 const fact = (v, label, tipText) => `<div${tipText ? ` data-tip="${esc(T(tipText))}"` : ""}><b>${v}</b><span>${esc(T(label))}</span></div>`;
@@ -732,8 +806,23 @@ function split(title, obj, names) {
     `<div class="splitkey">${ent.slice(0, 4).map(([k, v]) => `<span>${esc(T(names[k] || k))} <b>${pct(v, tot)}</b></span>`).join("")}</div></div>`;
 }
 
+/* one day on the island: the moves by kind, then each candidate's ballots and rival moves */
+function drawRabbitDay() {
+  const k = sel, a = (txs.rabbit || {})[k] || {};
+  $("dTitle").textContent = dayLabel(k, true) + (k === data.today ? " · " + T("still counting") : "");
+  $("dayHint").textContent = T("click a day in the chart");
+  $("dFacts").innerHTML = fact(fmt(a.moves || 0), "moves", "Every White Rabbit Key transaction that day: rivals' moves, players' lines and ballots, 1 test AGRS each.") +
+    fact(fmt(a.rivals || 0), "rival moves", "Moves of the rival candidates, sent by the island bot from their campaign wallets to the island council.") +
+    fact(fmt(a.lines || 0), "players' lines", "Players' own Book lines, signed in their own test wallet and sent to the island council.") +
+    fact(fmt(a.votes || 0), "ballots", "Real votes for a governor: 1 test AGRS from a player's wallet into a candidate's ballot box.");
+  const cands = a.cands || {}, by = a.by || {};
+  $("dPages").innerHTML = `<tr><th>${esc(T("Candidate"))}</th><th class="n" data-tip="${esc(T("Ballots the players put in this candidate's box that day."))}">${esc(T("ballots"))}</th><th class="n" data-tip="${esc(T("Moves the island bot made for this candidate as a rival that day."))}">${esc(T("rival moves"))}</th></tr>` +
+    Object.entries(CAND_NAMES).map(([c, n]) => `<tr><td translate="no">${esc(n)}</td><td class="n">${fmt(cands[c] || 0)}</td><td class="n">${fmt(by[c] || 0)}</td></tr>`).join("");
+}
+
 function drawDay() {
   if (NET()) return drawNetDay();
+  if (RB()) return drawRabbitDay();
   const k = sel, d = (data.days[k] || [0, 0, 0, {}]);
   $("dTitle").textContent = dayLabel(k, true) + (k === data.today ? " · " + T("still counting") : "");
   $("dFacts").innerHTML = fact(fmt(d[0]), "visitors") + fact(fmt(d[1]), "pages opened") + fact(d[0] ? (d[1] / d[0]).toFixed(1) : "–", "pages per visitor") +
@@ -742,8 +831,53 @@ function drawDay() {
   rows($("dPages"), list, d[0], false, d[6]);
 }
 
+/* White Rabbit Key in the range: tiles for its moves, and who made them / who got the ballots */
+function rabbitTotals() {
+  const keys = range === 1 ? [data.today] : rangeDays().map(([k]) => k), z = txs.rabbit || {};
+  const t = { moves: 0, rivals: 0, lines: 0, votes: 0, agrs: 0, wallets: 0, new: 0, cands: {}, by: {}, hours: Array(24).fill(0), seen: 0, n: 0 };
+  for (const k of keys) {
+    t.seen += (data.days[k] || [])[1] || 0;
+    const a = z[k]; if (!a) continue; t.n++;
+    for (const f of ["moves", "rivals", "lines", "votes", "agrs", "wallets", "new"]) t[f] += a[f] || 0;
+    for (const f of ["cands", "by"]) for (const [c, v] of Object.entries(a[f] || {})) t[f][c] = (t[f][c] || 0) + v;
+    (a.hours || []).forEach((c, i) => { t.hours[i] += c; });
+  }
+  return t;
+}
+function drawRabbitPages() {
+  const t = rabbitTotals(), tot = txs.totals && txs.totals.rabbit, peak = t.moves ? t.hours.indexOf(Math.max(...t.hours)) : -1;
+  const reach = tot && (range === 7 || range === 30) ? tot[String(range)] : tot && !range ? tot.all : null;
+  const c = (v, label, tipText) => `<div${tipText ? ` data-tip="${esc(T(tipText))}"` : ""}><b>${v}</b><span>${esc(T(label))}</span></div>`;
+  $("pagesBox").innerHTML = `<div class="agz">` + c(fmt(t.moves), "moves", "Every White Rabbit Key transaction in this range: rivals' moves, players' lines and ballots, 1 test AGRS each.") +
+    c(fmt(t.rivals), "rival moves", "Moves of the rival candidates, sent by the island bot from their campaign wallets to the island council.") +
+    c(fmt(t.lines), "players' lines", "Players' own Book lines, signed in their own test wallet and sent to the island council.") +
+    c(fmt(t.votes), "ballots", "Real votes for a governor: 1 test AGRS from a player's wallet into a candidate's ballot box.") +
+    c(fmt(t.agrs), "AGRS moved", "Test AGRS the island's moves sent. Test AGRS have no value.") +
+    (reach != null ? c(fmt(reach), "player wallets", "Different wallets that made a move or cast a ballot in this range. The island bot's four wallets are not counted. A wallet is a key, not a person.") : c(fmt(t.n ? Math.round(t.wallets / t.n) : 0), t.n > 1 ? "player wallets a day" : "player wallets", "Different wallets that made a move or cast a ballot, on average per day. The island bot's four wallets are not counted. A wallet is a key, not a person.")) +
+    c(fmt(t.new), "first moves", "Wallets that played on the testnet for the first time.") +
+    c(peak < 0 ? "–" : `${String(peak).padStart(2, "0")}:00`, "busiest hour", "The UTC hour with the most moves in this range.") + `</div>`;
+  const bar = (title, tipText, ent, names) => {
+    const sum = ent.reduce((a, e) => a + e[1], 0);
+    return `<div class="sp"><span data-tip="${esc(T(tipText))}">${esc(T(title))}</span><em class="cnt"> · ${fmt(sum)}</em>` + (sum
+      ? `<div class="split tx">${ent.map(([k, v], i) => `<i style="width:${(100 * v / sum).toFixed(1)}%;background:${TX_COLORS[i]}"></i>`).join("")}</div><div class="splitkey">${ent.map(([k, v], i) => `<span><i class="k" style="background:${TX_COLORS[i]}"></i><span${names === CAND_NAMES ? ' translate="no"' : ""}>${esc(T(names[k] || k))}</span> <b>${pct(v, sum)}</b></span>`).join("")}</div>`
+      : `<div class="note">${esc(T("No moves in this range yet."))}</div>`) + `</div>`;
+  };
+  $("splits").innerHTML = bar("Who made the moves", "The island's moves on the testnet: the rivals' (sent by the island bot), the players' own Book lines and their ballots.", [["rivals", t.rivals], ["lines", t.lines], ["votes", t.votes]], { rivals: "rivals", lines: "players' lines", votes: "ballots" });
+  $("txsplit").innerHTML = bar("Ballots by candidate", "Who the players voted for on the testnet in this range. On the island, the eleventh ballot goes to whoever leads here.", Object.keys(CAND_NAMES).map(k => [k, t.cands[k] || 0]).sort((a, b) => b[1] - a[1]), CAND_NAMES);
+  $("starts").innerHTML = "";
+  $("cross").innerHTML = tot ? `<div class="sp"><span data-tip="${esc(T("Different wallets that made a move or cast a ballot in White Rabbit Key. A wallet is a key, not a person."))}">${esc(T("Player wallets"))}</span>` +
+    `<div class="splitkey"><span>${esc(T("last 7 days"))} <b>${fmt(tot["7"] || 0)}</b></span><span>${esc(T("last 30 days"))} <b>${fmt(tot["30"] || 0)}</b></span><span>${esc(T("all"))} <b>${fmt(tot.all || 0)}</b></span></div></div>` : "";
+}
+
 function drawPages() {
   const net = NET();
+  if (RB()) {
+    $("pagesTitle").textContent = T("The island in numbers");
+    $("whoTitle").textContent = T("Who plays");
+    $("pRange").textContent = $("wRange").textContent = range === 1 ? T("today") : range ? T(range === 365 ? "last year" : `last ${range} days`) : T("all blocks held");
+    $("pages").hidden = true; $("pagesBox").hidden = false;
+    return drawRabbitPages();
+  }
   $("pagesTitle").textContent = T(net ? "Agorzilla on the testnet" : "Most visited pages");
   $("whoTitle").textContent = T(net ? "Share of the testnet" : "Where it comes from");
   $("pRange").textContent = $("wRange").textContent = range === 1 ? T("today") : range ? T(range === 365 ? "last year" : `last ${range} days`) : T(net ? "all blocks held" : "since counting began");
@@ -784,8 +918,20 @@ function drawTx() {
     `<div class="note" data-tip="${esc(tipOf("idni", idni[2]))}">${esc(T("Plus IDNI's genesis accounts"))} <b>${fmt(tot.idni[0])}</b> · ${esc(T("all testnet transactions"))} <b>${fmt(all)}</b>, ${esc(T("our two sites"))} <b>${share(ours, all)}</b></div></div>`;
 }
 
+function rabbitKpis() {
+  const z = txs.rabbit || {}, a = z[data.today] || {}, d = data.days[data.today] || [0, 0], tot = (txs.totals && txs.totals.rabbit) || {};
+  const votes = Object.values(z).reduce((s, x) => s + (x.votes || 0), 0);
+  const set = (box, val, label, tipText) => { $(box).hidden = false; $(box).querySelector("b").textContent = val; $(box).lastChild.textContent = T(label); $(box).dataset.tip = tipText; };
+  set("kTodayBox", fmt(a.moves || 0), "island moves today", "White Rabbit Key transactions on the testnet today (UTC day): rivals' moves, players' lines and ballots.");
+  set("kWeekBox", fmt(d[1]), "visitors of the game today", "Different people who opened White Rabbit Key today (UTC day).");
+  set("kAllBox", fmt(votes), "ballots cast so far", "Every real vote for a governor so far: 1 test AGRS into a candidate's ballot box.");
+  set("kBestBox", fmt(tot.all || 0), "player wallets so far", "Every wallet that made a move or cast a ballot in White Rabbit Key, in the blocks the relay keeps. A wallet is a key, not a person.");
+  $("kWeekBox").classList.remove("up");
+}
+
 function kpis() {
   if (NET()) return netKpis();
+  if (RB()) return rabbitKpis();
   const lab = (box, label, tipText) => { $(box).lastChild.textContent = T(label); $(box).dataset.tip = tipText; };
   lab("kTodayBox", "visitors today", "Different people on this site today so far (UTC day).\nThe same person on two pages counts once.");
   lab("kWeekBox", "a day, last 7 days", "Average visitors per day over the last 7 full days,\ncompared with the 7 days before.");
@@ -807,11 +953,12 @@ function kpis() {
 function render() {
   document.querySelectorAll(".sites button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.site === site)));
   document.documentElement.classList.toggle("netv", NET());
+  document.documentElement.classList.toggle("rbv", RB());
   $("leadLine").textContent = T(SITES[site]);
   if (!SAMPLE) $("sourceLine").textContent = T(SUBS[site]);
   document.querySelectorAll(".range button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.r === range)));
   document.querySelectorAll(".kind button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === kind)));
-  if (!data) { if (failed || NET()) drawDaily(); return; }
+  if (!data) { if (failed || NET() || RB()) drawDaily(); return; }
   if (!sel || !rangeDays().some(([k]) => k === sel)) sel = data.today;
   kpis(); drawDaily(); drawGrowth(); drawDay(); drawPages();
 }
@@ -825,6 +972,9 @@ async function load() {
     txs.hours = Object.fromEntries(ks.slice(-31).map((k, i) => [k, Array.from({ length: 24 }, (_, h) => k === raw.today && h > new Date().getUTCHours() ? 0 : (h * 7 + i * 5) % 9)]));
     txs.agorzilla = Object.fromEntries(ks.slice(-20).map((k, i) => [k, { meals: 30 + i * 2, snacks: 6 + i % 4, votes: 12 + i % 7, asks: 3 + i % 3, agrs: 160 + i * 11, wallets: 9 + i % 5, new: 2 + i % 3, hours: Array.from({ length: 24 }, (_, h) => (h > 16 && h < 21 ? 4 : 1)) }]));
     txs.starts = Object.fromEntries(ks.slice(-20).map((k, i) => [k, { agorzilla: { meal: 20 + i, vote: 6 + i % 5, wish: 2 + i % 3 }, deja: { meal: 3 + i % 4 }, "tauhud:start": { send: 3 + i % 3, rule: 1 }, "tauhud:rules": { rule: 2 + i % 2 }, "tauhud:card": { send: i % 3 }, "tauhud:hud": { send: 1 + i % 2, vote: i % 2 }, "tauhud:direct": { send: 1 }, "tauhud:relay": { rule: i % 2 }, ...(i < 15 ? { "tauhud:": { send: 2 } } : {}) }]));
+    txs.rabbit = Object.fromEntries(ks.slice(-6).map((k, i) => [k, { moves: 40 + i * 9, rivals: 28 + i * 6, lines: 6 + i, votes: 6 + i * 2, agrs: 40 + i * 9, wallets: 4 + i, new: 2 + i % 2, cands: { marisol: 2 + i, tobias: 1, baako: 2 + i % 2, hana: 1 + i }, by: { marisol: 7 + i, tobias: 9 + i, baako: 6 + i, hana: 6 + i * 2 }, hours: Array.from({ length: 24 }, (_, h) => k === raw.today && h > new Date().getUTCHours() ? 0 : (h > 16 && h < 22 ? 4 : 1) + (h * 3 + i) % 3) }]));
+    txs.totals.rabbit = { 7: 21, 30: 21, all: 21 };
+    for (const k of ks.slice(-8)) raw.days[k][3].rabbit = Math.round(raw.days[k][0] * .15);
     agzLatest = { stage_name: "Baby", rounds: [{ category: "Aura", winner: "Emerald" }], open: { category: "Pendant light" } };
     pickSite(); render(); return; }
   try {
