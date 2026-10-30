@@ -56,6 +56,8 @@ for prov in ("gemini", "openai"):
         assert more["island"][:3] == drafts["island"] and len(more["island"]) == 6 and "island=6" in open(os.path.join(out, "drafts", "index.html")).read()
         idx = json.load(open(os.path.join(out, "index.json")))
         assert idx["scenes"]["island"] == drafts["island"][1] and os.path.exists(os.path.join(out, idx["scenes"]["bar"]))
+        paint.cmd_keep(types.SimpleNamespace(out=out, picks=["bar=last"]))   # the newest draft of a place
+        assert json.load(open(os.path.join(out, "index.json")))["scenes"]["bar"] == more["bar"][-1]
         paint.cmd_draft(types.SimpleNamespace(out=out, places=["island"], n=3, model=None, sketch="bay", like=["island=1", "bar"]))
         paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=9"]))
         idx = json.load(open(os.path.join(out, "index.json")))

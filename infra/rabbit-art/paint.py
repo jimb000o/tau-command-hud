@@ -425,7 +425,7 @@ def cmd_keep(a):
     for pick in a.picks:
         id, _, n = pick.partition("=")
         try:
-            f = drafts[id][int(n) - 1]
+            f = drafts[id][-1 if n == "last" else int(n) - 1]   # last: the newest draft of that place
         except (KeyError, ValueError, IndexError):
             sys.exit(f"No painting {pick!r}. Run: infra/rabbit-art/paint.sh draft {id if id in SCENE else 'all'}")
         shutil.copyfile(os.path.join(a.out, "drafts", f), os.path.join(a.out, f))
@@ -473,7 +473,7 @@ def main():
     lk = sub.add_parser("looks")
     lk.add_argument("--model", default=None)
     k = sub.add_parser("keep")
-    k.add_argument("picks", nargs="+", help="place=N, e.g. island=2 hall=1")
+    k.add_argument("picks", nargs="+", help="place=N or place=last, e.g. island=2 hall=1 bar=last")
     k.add_argument("--layout", default=None, help="island only: where everything stands on that painting, plates/<name>.json")
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
