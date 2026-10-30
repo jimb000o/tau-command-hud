@@ -1924,5 +1924,10 @@
   "tag": "Menu",
   "on": "2026-10-30",
   "html": "Playground menu: the games column is now called “Games on the live testnet”, and White Rabbit Key and Agorzilla carry the pulsing green live dot. Both run on the real testnet: your White Rabbit Key vote can go on chain, and Agorzilla is fed by real transactions."
+ },
+ {
+  "tag": "Menu",
+  "on": "2026-10-30",
+  "html": "Playground menu: Déjà, the café cat, joins White Rabbit Key and Agorzilla under “Games on the live testnet”. She eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change."
  }
 ]

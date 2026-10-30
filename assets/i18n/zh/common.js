@@ -571,6 +571,8 @@ TauI18n.add({ strings: {
   "Settings: view, node, guided tour, about": "设置：视图、节点、导览、关于",
   "Settings: view, node address, background rain": "设置：视图、节点地址、背景代码雨",
   "Games on the live testnet": "在真实测试网上的游戏",
+  "Déjà, the café cat": "咖啡馆的猫 Déjà",
+  "Agorzilla's café cat: she eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change": "Agorzilla 的咖啡馆猫：一天内有三个钱包各给她 1 个测试 AGRS 她才吃饭，每次规则变更她都会跑过去",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 发送方自己的规则说不 (o5 = 0 · ${TauI18n.t(r)})`]] });
