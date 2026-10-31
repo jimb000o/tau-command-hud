@@ -174,6 +174,17 @@
     j34: "Rico tried to bribe a Tau rule. It looked at the envelope, checked it against the rules in force, and refused it. Incorruptible. Also a bit rude.",
     j35: "What's the testnet's favourite song? Don't stop me now. Unless it's a contradiction. Then stop me.",
     j36: "Rico's horoscope for validators: Today you will sign something. Tomorrow too. The stars are very consistent. Like the rules.",
+    /* the ghosts in Halloween week, and after it, when Rico wants his island un-haunted */
+    hw1: "Happy Halloween from Radio Coco! And right on time, transactions already sealed in a block are still haunting the waiting list. Even the node is in costume.",
+    hw2: "Ghosts on the waiting list tonight, folks. Sealed in a block, and still walking around. Perfect timing. Rico approves the decoration.",
+    hw3: "Halloween special! The ghost transactions are out. Already in a block, still listed as waiting. Don't be scared, kids. They only say boo to block explorers.",
+    hw4: "Spooky season on the testnet. The ghosts are listed, the pumpkins are carved, and Old Sam has written both into the Book.",
+    po1: "Excuse me. Halloween is over. Why are there still ghosts on the waiting list? Sealed in a block and still listed. Somebody please tell them the party has ended.",
+    po2: "Halloween is over and the island is still haunted. Ghost transactions all over the waiting list. Rico would like to speak to the manager of the mempool.",
+    po3: "Dear builders, Halloween is over. The ghosts are still on the waiting list. The bug is reported, the island is patient, but Rico is running out of garlic.",
+    po4: "Rico has put up a sign at the harbour: no ghosts after October. The ghost transactions cannot read. They are still listed as waiting.",
+    po5: "Petition from the island: un-haunt the waiting list. Sealed transactions should rest in their blocks. Signed: Rico, Old Sam, and one very tired gull.",
+    po6: "Still haunted. Rico called an exorcist. The exorcist said: that's not a ghost, that's a known bug, issue eighty-one. Send a developer, not a priest.",
     /* the island legend: Agorzilla, glimpsed now and then in the jungle */
     agz1: "Sighting report from the jungle! Somebody saw Agorzilla behind the drums last night. The photo is very blurry. Rico thinks it's a palm tree. Rico is not sure.",
     agz2: "The bananas at the market went missing again. Nobody saw anything. Big footprints by the drums, though. Draw your own conclusions.",
@@ -233,6 +244,7 @@
     corner: Array.from({ length: 8 }, (_, i) => "tc" + (i + 1)), segue: Array.from({ length: 8 }, (_, i) => "s" + (i + 1)),
     flash: Array.from({ length: 6 }, (_, i) => "flash" + (i + 1)), tag: Array.from({ length: 6 }, (_, i) => "tag" + (i + 1)),
     valIn: ["valIn"], valOut: ["valOut"], feeUp: ["feeUp"], feeDown: ["feeDown"], rev: ["rev"], whale: ["whale1", "whale2"],
+    ghostHalloween: ["hw1", "hw2", "hw3", "hw4"], ghostAfter: ["po1", "po2", "po3", "po4", "po5", "po6"],
     legend: ["agz1", "agz2", "agz3", "agz4", "agz5", "agz6"],
     morning: ["am1", "am2"], afternoon: ["pm1", "pm2"], evening: ["ev1", "ev2"], night: ["nt1", "nt2"],
   };
