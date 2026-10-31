@@ -157,7 +157,7 @@ TauI18n.add({ strings: {
   "Old Sam": "サムじいさん",
   "North Wind Embassy": "北風大使館",
   "South Current Embassy": "南潮大使館",
-  "Fisher, runs the net shed": "漁師、網小屋を切り盛り",
+  "Runs the Parasol Café, still mends nets": "パラソル・カフェの店主、今も網を繕う",
   "Harbour master, loves a ceremony": "港長、式典が大好き",
   "Coconut farmer, friend of every embassy": "ココナッツ農家、どの大使館とも友達",
   "Schoolteacher, writes everything down": "教師、何でも書き留める",
