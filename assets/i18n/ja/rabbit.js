@@ -285,6 +285,7 @@ TauI18n.add({ strings: {
   "Runs the Reef Proof dive centre": "Reef Proof ダイブセンターを営む",
   "Surveyor, measures for the embassies": "測量士、大使館のために測る",
   "Foreman of the Coconut Works": "ココナッツ工場の現場監督",
+  "Keeps the drums and the circle": "太鼓と輪を守る",
   "Builds canoes": "カヌーを造る",
   "A canoe is a promise kept by thirty planks. If one of them lies, the sea tells everyone. Same as your Book, really, only wetter.": "カヌーは三十枚の板が守る約束だ。一枚でも嘘をつけば、海がみんなに知らせる。君たちの帳簿と同じさ、ちょっと濡れてるだけで。",
   "A new law is checked against the laws in force; two that cannot both hold are refused.": "新しい法律は施行中の法律と照らし合わされる。両立しない二つは拒否される。",

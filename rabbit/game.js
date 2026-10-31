@@ -52,6 +52,7 @@
     pim: { name: "Pim", role: "Surveyor, measures for the embassies", skin: "#f3d6c0", hair: "#c9a46a", style: "side", acc: "straw", accC: "#d9b45a", shirt: "#f4f1ea" },
     noor: { name: "Noor", role: "Foreman of the Coconut Works", skin: "#a8693f", hair: "#1d1410", style: "curls", acc: "glasses", accC: "#333", shirt: "#e9b44c" },
     kiko: { name: "Kiko", role: "Builds canoes", skin: "#8d5524", hair: "#111", style: "short", acc: "none", shirt: "#e85d4a" },
+    tano: { name: "Tano", role: "Keeps the drums and the circle", skin: "#4a2c1a", hair: "#9a9a9a", style: "short", acc: "beard", accC: "#bdbdbd", shirt: "#c9772e" },
   };
   /* the ten who vote; each cares about two things (Sam also cares a great deal about what is true) */
   const PEOPLE = [
@@ -563,7 +564,7 @@
     },
     drums(box) {
       const lies = G.lies.filter(l => l.lie && !l.out);
-      scene(box, "kiko", T(SC.places.drums.name), T("Before Radio Coco, the news went from hill to hill on these drums. They have one rule: they only carry what the stone confirms. That is why nobody ever bribed a drummer."), G.drummed ? null : [
+      scene(box, "tano", T(SC.places.drums.name), T("Before Radio Coco, the news went from hill to hill on these drums. They have one rule: they only carry what the stone confirms. That is why nobody ever bribed a drummer."), G.drummed ? null : [
         btn(T("Drum the truth across the island"), () => {
           G.drummed = true; lies.forEach(l => { l.out = true; bump(l.by, null, -8); news(F("The Book shows who paid for “{x}”: {y}", { x: l.claim, y: nm(l.by) })); });
           write(G.me, F("drummed the truth from the three hills: {n} rumours answered", { n: lies.length }), "fact"); SND.sfx("yes"); toast(lies.length ? T("Every rumour still on air has been answered from the hills.") : T("No rumours to answer. The drums play anyway; it is a fine evening.")); spend(); if (UI.card) openCard("drums", PLACE.drums);
@@ -571,7 +572,7 @@
       ]);
     },
     circle(box) {
-      scene(box, "ama", T(SC.places.circle.name), T("Here a decision stands when nobody in the circle can show that it contradicts what we already agreed. Not when the loudest agrees. Your chain does the same with its rules, I am told."), G.circled ? null : [
+      scene(box, "tano", T(SC.places.circle.name), T("Here a decision stands when nobody in the circle can show that it contradicts what we already agreed. Not when the loudest agrees. Your chain does the same with its rules, I am told."), G.circled ? null : [
         btn(T("Sit in the circle"), () => { G.circled = true; others(G.me).forEach(c => { G.trust[c] = Math.min(100, G.trust[c] + 12); }); save(); toast(T("You listened more than you spoke. The other candidates trust you a little more.")); if (UI.card) openCard("circle", PLACE.circle); }),
       ]);
     },

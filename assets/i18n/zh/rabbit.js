@@ -285,6 +285,7 @@ TauI18n.add({ strings: {
   "Runs the Reef Proof dive centre": "经营 Reef Proof 潜水中心",
   "Surveyor, measures for the embassies": "测量员，替大使馆丈量",
   "Foreman of the Coconut Works": "椰子工坊的工头",
+  "Keeps the drums and the circle": "掌管鼓和议事圈",
   "Builds canoes": "造独木舟",
   "A canoe is a promise kept by thirty planks. If one of them lies, the sea tells everyone. Same as your Book, really, only wetter.": "一条独木舟是三十块木板守住的承诺。只要有一块说谎，大海就会告诉所有人。其实和你们的账本一样，只是更湿。",
   "A new law is checked against the laws in force; two that cannot both hold are refused.": "新法律会先和现行法律核对；不能同时成立的两条会被拒绝。",
