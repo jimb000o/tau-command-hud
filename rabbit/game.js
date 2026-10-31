@@ -45,6 +45,13 @@
     salado: { name: "Ambassador Salado", role: "South Current Embassy", skin: "#c68642", hair: "#3a2a1a", style: "side", acc: "mustache", accC: "#3a2a1a", shirt: "#c0533f" },
     lola: { name: "Lola", role: "Runs Bar La Ola", skin: "#8d5524", hair: "#5a1a1a", style: "curls", acc: "flower", accC: "#ff6f91", shirt: "#fff6e6" },
     sam: { name: "Old Sam", role: "Keeper of the lighthouse and the Book", skin: "#c9a27a", hair: "#eee", style: "bald", acc: "beard", accC: "#eee", shirt: "#2a2a30" },
+    /* the people of the island's other quarters (a painted island with a layout that has them, infra/rabbit-art) */
+    ama: { name: "Ama", role: "Elder of the first people", skin: "#5a3620", hair: "#dcdcdc", style: "bun", acc: "glasses", accC: "#333", shirt: "#2f6440" },
+    wren: { name: "Captain Wren", role: "Marine archaeologist, retired", skin: "#e0b08a", hair: "#b0502a", style: "bob", acc: "cap", accC: "#1f3550", shirt: "#3aa6a0" },
+    kai: { name: "Kai", role: "Runs the Reef Proof dive centre", skin: "#c68642", hair: "#111", style: "short", acc: "glasses", accC: "#333", shirt: "#4fd1c5" },
+    pim: { name: "Pim", role: "Surveyor, measures for the embassies", skin: "#f3d6c0", hair: "#c9a46a", style: "side", acc: "straw", accC: "#d9b45a", shirt: "#f4f1ea" },
+    noor: { name: "Noor", role: "Foreman of the Coconut Works", skin: "#a8693f", hair: "#1d1410", style: "curls", acc: "glasses", accC: "#333", shirt: "#e9b44c" },
+    kiko: { name: "Kiko", role: "Builds canoes", skin: "#8d5524", hair: "#111", style: "short", acc: "none", shirt: "#e85d4a" },
   };
   /* the ten who vote; each cares about two things (Sam also cares a great deal about what is true) */
   const PEOPLE = [
@@ -343,6 +350,7 @@
   function hud() {
     $("cvStage").classList.toggle("pre", !G);
     if (!G) return;
+    locks();
     $("cvDay").textContent = F("Day {n} of {m}", { n: G.day, m: DAYS });
     $("cvHour").textContent = T(G.move >= MOVES ? "Night" : HOURS[G.move]);
     $("cvMoves").replaceChildren(...Array.from({ length: MOVES }, (_, i) => el("i", { class: i < MOVES - G.move ? "on" : "" })));
@@ -358,6 +366,8 @@
   /* where the white rabbit would go next, and what it would say */
   function hint() {
     if (G.day === 1 && G.move === 0) return ["market", T("Follow me. On the square you hear what people care about.")];
+    const opened = unlocks().find(id => !(G.seen || {})[id]);   // a quarter that has just opened
+    if (opened) return [opened, F("Something has opened: {x}. This way.", { x: T(SC.places[opened].name) })];
     if (G.book.length > (G.said.book || 0) && G.book.some(b => b.who !== G.me && b.day >= G.day - 1)) return ["book", T("Something new is in the Book. Worth a look; reading costs nothing.")];
     if (!G.laws.some(l => l.by === G.me)) return ["hall", T("You have no law of your own yet. The hall is this way.")];
     if (G.coins[G.me] < RUMOUR && !G.deals.some(d => d.by === G.me)) return ["north", T("Short of coins? The embassies pay, for a promise.")];
@@ -366,6 +376,7 @@
   }
   function openCard(place, build) {
     closeCard(true);
+    if (G && place) { G.seen = G.seen || {}; if (!G.seen[place]) { G.seen[place] = 1; save(); } setTimeout(locks, 0); }
     const side = innerWidth < 760 ? 0 : (SC.places[place] && SC.places[place].x > 820 ? -1 : 1);
     if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "bar" ? 1 : 0.6 }); } SC.glow(place);
     const box = el("section", { class: "cv-card" + (side < 0 ? " left" : ""), role: "dialog", "aria-modal": "false" });
@@ -416,7 +427,7 @@
         const c = conflict(id), s = lawScore(id, CANDS[G.me].cares);
         return btn(T(LAWS[id].t), () => doPropose(id), { off: !movesLeft(), sub: c ? F("contradicts “{x}”", { x: T(LAWS[c.id].t) }) : effects(id), warn: !!c });
       });
-      scene(box, "hana" === G.me ? "sam" : "hana", T("Council Hall"), T(G.me === "hana" ? "Sam keeps the minutes today. Pick a law; the other three candidates vote, two yes and it is law." : "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."), [el("p", { class: "cv-h", text: T("Propose a law (one move)") }), ...acts], list);
+      scene(box, "hana" === G.me ? "sam" : "hana", T(SC.places.hall.name), T(G.me === "hana" ? "Sam keeps the minutes today. Pick a law; the other three candidates vote, two yes and it is law." : "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."), [el("p", { class: "cv-h", text: T("Propose a law (one move)") }), ...acts], list);
     },
     market(box) {
       const rows = PEOPLE.map(p => {
@@ -424,7 +435,7 @@
         return el("li", null, el("span", { class: "nm", translate: "no", text: p.name }), el("small", { text: p.cares.map(c => T(TOPICS[c])).join(" · ") }), el("i", { class: "bar" + (best === G.me ? " lead" : ""), style: `--v:${mine}%`, title: F("leans to {x}", { x: nm(best) }) }));
       });
       const acts = Object.keys(TOPICS).map(t => btn(F("Talk about {x}", { x: T(TOPICS[t]) }), () => { campaign(G.me, t); SND.sfx("yes"); SC.gather(1); setTimeout(() => SC.gather(0), 2600); toast(F("People who care about {x} listened.", { x: T(TOPICS[t]) })); spend(); if (UI.card) openCard("market", PLACE.market); }, { off: !movesLeft() }));
-      scene(box, "lola", T("Market square"), T("Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts], el("ul", { class: "cv-folk" }, rows));
+      scene(box, "lola", T(SC.places.market.name), T("Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts], el("ul", { class: "cv-folk" }, rows));
     },
     radio(box) {
       SND.set({ radio: true });
@@ -459,7 +470,107 @@
         btn(T("Read how it works"), () => help()),
       ]);
     },
+    /* ---- the other quarters of the painted island ---- */
+    school(box) {
+      const who = G.me === "hana" ? "sam" : "hana", top = Object.keys(TOPICS).sort((a, b) => PEOPLE.filter(p => p.cares.includes(b)).length - PEOPLE.filter(p => p.cares.includes(a)).length)[0];
+      scene(box, who, T(SC.places.school.name), T("Today’s lesson: a promise written where everyone can read it is worth more than one shouted on the radio. The children check the Book before they believe a rumour. Their parents are working on it."), [
+        btn(T("Sit in on the lesson"), () => lesson()),
+        btn(T("Ask the class what their families care about"), () => { campaign(G.me, top, 0.7); toast(F("Most families here care about {x}. The children will tell them you asked.", { x: T(TOPICS[top]) })); spend(); if (UI.card) openCard("school", PLACE.school); }, { off: !movesLeft(), sub: T("one move") }),
+      ]);
+    },
+    dive(box) {
+      const harbour = inForce("harbour");
+      scene(box, "kai", T(SC.places.dive.name), T("We dive with Tau sensors. Every reading is signed the moment it is taken, so nobody can say the reef is fine when it is not. Or the other way round. Wetsuits are in the back, sizes small, medium and optimistic."), [
+        btn(T("Dive the reef with Kai"), () => { write(G.me, T(harbour ? "dove with Reef Proof: the signed readings show the reef suffering since the deep harbour" : "dove with Reef Proof: the signed readings show a healthy reef, right where the cruise harbour would go"), "fact"); campaign(G.me, "fish", 0.8); toast(T("The readings are in the Book, signed. People who fish took note.")); spend(); if (UI.card) openCard("dive", PLACE.dive); }, { off: !movesLeft(), sub: T("one move") }),
+      ]);
+    },
+    works(box) {
+      scene(box, "noor", T(SC.places.works.name), T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
+        btn(T("Work a shift (10 coins)"), () => { G.coins[G.me] += 10; write(G.me, T("worked a shift at the Coconut Works: 10 coins, honestly earned"), "talk"); SND.sfx("coin"); toast(T("Ten coins, and you smell of coconut for the rest of the day.")); spend(); if (UI.card) openCard("works", PLACE.works); }, { off: !movesLeft(), sub: T("one move") }),
+      ]);
+    },
+    camp(box) {
+      const took = G.deals.filter(d => d.by !== G.me);
+      scene(box, "pim", T(SC.places.camp.name), T("We are only measuring. For whom? The embassies. For what? Something deep. We measure, others decide. That is the arrangement, and it pays by the metre."), [
+        btn(T("Look at the plans on the table"), () => {
+          const line = took.length ? F("saw the surveyors’ plans, paid for by the embassies, with notes from {x}", { x: [...new Set(took.map(d => nm(d.by)))].join(", ") }) : T("saw the surveyors’ plans: nobody has signed for them yet");
+          write(G.me, line, "fact"); toast(took.length ? T("The plans show who has been talking to the embassies. It is in the Book now.") : T("Nobody has signed yet. The surveyors look disappointed.")); spend(); if (UI.card) openCard("camp", PLACE.camp);
+        }, { off: !movesLeft(), sub: T("one move") }),
+      ]);
+    },
+    ship(box) {
+      G.seen = G.seen || {};
+      const ready = G.day >= 2;
+      scene(box, "wren", T(SC.places.ship.name), T(G.chart ? "The chart is yours now. Mind the waterfall: it is not as solid as it looks." : "Not a pirate, dear. Marine archaeologist, retired. Everything the sea gives back ends up here, labelled: odd socks, a piano key, and a chart nobody can read."), G.chart ? null : [
+        btn(T("Ask about the chart"), () => { if (ready) { G.chart = true; save(); toast(T("Wren gives you the chart. It shows a door behind the waterfall.")); } else toast(T("“Come back tomorrow, I am still drying it.”")); if (UI.card) openCard("ship", PLACE.ship); }),
+      ]);
+    },
+    ama(box) {
+      scene(box, "ama", T(SC.places.ama.name), T("My grandmother’s grandmother kept the island’s agreements on a stone, long before anyone wrote a Book. People think a record everyone can read is something new. It is the oldest thing we have."), [
+        btn(T("Ask about the stone"), () => toast(T(G.day >= 2 ? "“Go to the Tide Stone. It is low tide, it will let you read.”" : "“Tomorrow, at low tide. The stone does not hurry, and neither should you.”"))),
+      ]);
+    },
+    canoe(box) {
+      scene(box, "kiko", T(SC.places.canoe.name), T("A canoe is a promise kept by thirty planks. If one of them lies, the sea tells everyone. Same as your Book, really, only wetter."), [
+        btn(T("Watch him work"), () => { toast(T("Plank by plank. Nobody hurries a canoe.")); closeCard(); }),
+      ]);
+    },
+    stone(box) {
+      scene(box, "ama", T(SC.places.stone.name), T("Each mark is an agreement. Nobody ever chiselled one away, because everyone would see the scar. Your Book in the lighthouse is this stone, made of paper."), [
+        btn(T("Read the oldest mark"), () => toast(T("“No new rule may contradict an older one, unless the older one is undone first.” The Book checks every law the same way."))),
+      ]);
+    },
+    drums(box) {
+      const lies = G.lies.filter(l => l.lie && !l.out);
+      scene(box, "kiko", T(SC.places.drums.name), T("Before Radio Coco, the news went from hill to hill on these drums. They have one rule: they only carry what the stone confirms. That is why nobody ever bribed a drummer."), G.drummed ? null : [
+        btn(T("Drum the truth across the island"), () => {
+          G.drummed = true; lies.forEach(l => { l.out = true; bump(l.by, null, -8); news(F("The Book shows who paid for “{x}”: {y}", { x: l.claim, y: nm(l.by) })); });
+          write(G.me, F("drummed the truth from the three hills: {n} rumours answered", { n: lies.length }), "fact"); SND.sfx("yes"); toast(lies.length ? T("Every rumour still on air has been answered from the hills.") : T("No rumours to answer. The drums play anyway; it is a fine evening.")); spend(); if (UI.card) openCard("drums", PLACE.drums);
+        }, { off: !movesLeft(), sub: T("once in the game, one move") }),
+      ]);
+    },
+    circle(box) {
+      scene(box, "ama", T(SC.places.circle.name), T("Here a decision stands when nobody in the circle can show that it contradicts what we already agreed. Not when the loudest agrees. Your chain does the same with its rules, I am told."), G.circled ? null : [
+        btn(T("Sit in the circle"), () => { G.circled = true; others(G.me).forEach(c => { G.trust[c] = Math.min(100, G.trust[c] + 12); }); save(); toast(T("You listened more than you spoke. The other candidates trust you a little more.")); if (UI.card) openCard("circle", PLACE.circle); }),
+      ]);
+    },
+    grotto(box) {
+      scene(box, "ama", T(SC.places.grotto.name), T("So you found it. The key on the old fort opens nothing; it never did. The real key was always this: everyone keeps a copy of what was agreed, so nobody can change it alone."), G.key ? null : [
+        btn(T("Take a copy of the Book"), () => { G.key = true; write(G.me, T("found the cave behind the waterfall and took a copy of the Book"), "fact"); bump(G.me, p => p.reads, 6); save(); SND.sfx("yes"); toast(T("You hold the White Rabbit Key.")); if (UI.card) openCard("grotto", PLACE.grotto); }),
+      ]);
+    },
   };
+  /* the quarters that open with time: some only after a visit, none before their day; until then they cannot be clicked */
+  const LOCKS = {
+    stone: () => G.day >= 2 && (G.seen || {}).ama,
+    drums: () => G.day >= 3 && (G.seen || {}).stone,
+    circle: () => G.day >= 4 && (G.seen || {}).drums,
+    grotto: () => G.day >= 4 && G.chart && (G.seen || {}).circle,
+  };
+  const unlocks = () => Object.keys(LOCKS).filter(id => SC.places[id] && LOCKS[id]());
+  function locks() {
+    if (!G) return;
+    const shut = Object.keys(LOCKS).filter(id => !LOCKS[id]());
+    SC.lock(shut);
+    const was = G.opened || [], now = unlocks().filter(id => !was.includes(id));
+    if (now.length) { G.opened = was.concat(now); save(); setTimeout(() => toast(F("Something has opened: {x}", { x: now.map(id => T(SC.places[id].name)).join(", ") })), 1200); }
+    placeKeys();
+  }
+  /* places by keyboard: the list under the scene, one button each, for the places this island has and are open */
+  function placeKeys() {
+    const keys = $("cvPlaces"); if (!keys) return;
+    const ids = Object.keys(PLACE).filter(id => SC.places[id] && !SC.locked(id)), sig = ids.join();
+    if (keys.dataset.sig === sig) return; keys.dataset.sig = sig; keys.textContent = "";
+    ids.forEach(id => keys.append(el("button", { type: "button", onclick: () => { wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("span", { text: T(SC.places[id].name) }))));
+  }
+  function lesson() {
+    const b = $("cvStage").querySelector(".cv-card"); if (!b) return;
+    if (b.querySelector(".cv-lesson")) return;
+    b.append(el("div", { class: "cv-lesson" }, el("h4", { text: T("On the blackboard") }), el("ul", null,
+      el("li", { text: T("The Book is a ledger: every move, with the name of whoever made it, in order.") }),
+      el("li", { text: T("A new law is checked against the laws in force; two that cannot both hold are refused.") }),
+      el("li", { text: T("Tau Testnet Alpha works the same way with its rules. The test coins have no value: it is a classroom too.") }))));
+  }
   function effects(id) {
     const fx = LAWS[id].fx, parts = Object.keys(fx).map(k => (fx[k] > 0 ? "+" : "−") + " " + T(TOPICS[k]));
     return LAWS[id].open ? T("everyone reads the Book more often") : parts.join("  ");
@@ -903,8 +1014,7 @@
       if (id && PLACE[id]) openCard(id, PLACE[id]);
     });
     /* places by keyboard: the list under the scene, one button each */
-    const keys = $("cvPlaces");
-    Object.keys(PLACE).forEach(id => keys.append(el("button", { type: "button", onclick: () => { wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("span", { text: T(SC.places[id].name) }))));
+    placeKeys();
     addEventListener("keydown", e => { if (e.key === "Escape" && UI.card && !UI.card.classList.contains("intro") && !UI.card.classList.contains("locked")) closeCard(); });
     /* the day's last move is spent and nothing is open any more: the night comes, however the last card was left */
     setInterval(() => { if (G && !G.over && G.move >= MOVES && !UI.card && !drawer) { if (G.counting) { G.counting = false; election(); } else endDay(); } }, 1200);

@@ -40,7 +40,15 @@ PLATES = os.path.join(HERE, "plates")
 OUT = "/opt/sites/rico/art"
 # style references for each look, kept on the server only (never in the repository, never published): /opt/rabbit-refs/1, 2, 3
 REFS = "/opt/rabbit-refs"
-PLACES = ["island", "hall", "market", "radio", "north", "south", "bar", "book", "pier"]
+PLACES = ["island", "hall", "market", "radio", "north", "south", "bar", "book", "pier",
+          "school", "dive", "works", "camp", "ship", "ama", "canoe", "stone", "drums", "circle", "grotto"]
+# places whose drawn picture no longer fits what they are now (the Council Tree, the Kettle, the radio on its cliff,
+# the embassies in the fort and the villa, the bar on the pier): painted from the island like the new ones
+RETHOUGHT = {"hall", "market", "radio", "north", "south", "bar"}
+# the places that have no drawn picture to repaint (plates/<id>.jpg): they are painted from the island itself
+FROM_ISLAND = ("The first picture is the whole island of this game. Paint, in exactly its style, ink line, colours and light, "
+               "a close view of one place on it, as a background for the scene where the player stands there, wide "
+               "(16:9), with room in the middle and on one side for a person to stand. No people, no text. The place: ")
 
 STYLE = ("Repaint this picture as a lush, hand-painted background for a classic 2D point-and-click adventure game from "
          "the late 1990s: gouache and ink on paper, confident dark outlines, rich surface texture, wear and weathering, "
@@ -176,29 +184,57 @@ SCENE = {
               "beach bar with a thatched roof on the right, a red brick coconut works with a chimney, a rebels' camp "
               "with tents and a lookout, a volcano with a waterfall and a stream, palm trees, jungle, banana plants, "
               "cottages, huts on stilts, a wooden pier with a sailing boat, turquoise shallows, a reef and surf.",
-    "hall": "Inside the island's council hall: tall arched windows onto the sea, white columns, a chequered floor, a low "
-            "curved dais with three chairs, a lectern with a small bell, sunbeams falling in, old paintings and a few "
-            "potted palms, worn wood and plaster.",
-    "market": "The island's market square: three stalls with striped awnings full of fruit, crates and baskets, bunting "
-              "overhead, green hills and the sea behind, sandy ground with footprints, sacks, a barrow, flowers.",
-    "radio": "Inside a small island radio station: a teal wall with a checkered pattern, a shelf of records, a microphone "
-             "on an arm, a mixing desk with faders and a turntable, a window onto the sea, posters, cables, a "
-             "spinning fan, a coffee mug, a lamp with warm light, clutter of a DJ who loves his job.",
-    "north": "Inside the North Wind Embassy: cool blue striped wallpaper, heavy blue curtains at a big window onto the "
-             "sea, a long polished desk with a green banker's lamp, papers and a globe, a framed map, a blue flag on "
-             "a pole, a stiff, expensive, slightly cold room.",
-    "south": "Inside the South Current Embassy: warm terracotta walls, arched windows, a large aquarium with orange fish, "
-             "a ceiling fan, a low table with a small cake, wicker chairs, a tiled floor, potted agaves, a warm and "
-             "flattering room.",
-    "bar": "Inside a beach bar on the island: a wooden wall with long shelves of colourful bottles, a plain green sign "
-           "without letters, a counter with stools, cocktails with little umbrellas, a ceiling fan, a string of warm "
-           "light bulbs, an open side onto the beach and the sea, driftwood, shells, a cosy and lively place.",
+    "hall": "The Council Tree: a huge red flamboyant tree in full bloom on the town's rise, its roots like benches, a ring of "
+            "old wooden benches and stools in its shade, a slate board with chalked laws hung on the trunk, a small bell on "
+            "a branch, red petals on the ground, the harbour and the sea glittering below, dignified and warm.",
+    "market": "Inside The Kettle, a small coffee shed with a grass roof: a battered tin kettle on a fire, mismatched cups, a "
+              "long table where everybody talks, a noticeboard covered in notes, sacks of coffee beans, a window onto the "
+              "harbour, cosy, noisy and friendly.",
+    "radio": "Inside Radio Coco, a small radio shack on a cliff top: a microphone on an arm, a mixing desk, a turntable, "
+             "shelves of records, a window showing the waterfall and the sea far below, cables, a fan, a coffee mug, "
+             "warm lamp light, the clutter of a host who loves the job.",
+    "north": "Inside the North Wind Embassy, set up in the old colonial fortress: rough ancient stone walls with a modern "
+             "glass desk, a big screen, cool blue flags, a giant rusty key visible through an arched window, a slightly "
+             "absurd mix of old fort and sleek office, stiff and expensive.",
+    "south": "The South Current Embassy, a sunny terracotta villa on the jungle slope: a terrace with a turquoise pool, "
+             "parasols and loungers, a wellness corner with smoothies, a laptop on a rattan table, potted palms, the "
+             "jungle and the sea behind, warm, flattering and a little too comfortable.",
+    "bar": "Inside Bar La Ola, a wooden bar on stilts at the pier: long shelves of colourful bottles, a counter with stools, "
+           "a ceiling fan, a string of warm light bulbs, an open side onto the water and the boats, driftwood and shells, "
+           "a ledger and a pencil on the counter, cosy and lively.",
     "book": "Inside the lighthouse: rough stone walls, a stone stair winding up, a small arched window, a lamp hanging "
             "from above throwing a cone of green-tinted light onto a big open book on a wooden lectern, ropes, a "
             "brass telescope, sea charts, an old keeper's chair, quiet and solemn.",
     "pier": "A wooden pier running out into the sea, seen from its start on the beach: planks, rope railings on posts, "
             "a lamp post with a square lantern, a small sailing boat on the water, bright sky with clouds, gulls far "
             "away, sand in the foreground, barrels and coiled ropes.",
+    "school": "Inside the island's school, a blue wooden house on stilts: a blackboard with chalk drawings of blocks and "
+              "arrows, small desks, exercise books, a globe, children's paintings of the island on the walls, open "
+              "shutters onto the red tree and the sea, cheerful and a little chaotic.",
+    "dive": "Inside the Reef Proof dive centre, a stilt house over the water: wetsuits and fins on hooks, tanks, a trapdoor "
+            "straight into the turquoise water, and odd futuristic diving gear: glowing sensor buoys, a sleek underwater "
+            "drone, a screen showing reef readings as a chain of small linked blocks, all hand-made and a bit improvised.",
+    "works": "Inside the Coconut Works, a funny ramshackle factory: a crooked machine made of bicycles and a church organ, "
+             "conveyor belts of coconuts, pipes that go nowhere, bottles of oil, coils of rope, bars of soap, a water wheel "
+             "turning outside, smoke, cheerful chaos.",
+    "camp": "The surveyors' camp in a clearing: a few white canvas tents, tripods and measuring poles, a folding table with "
+            "big plans and maps held down by stones, crates with embassy stamps, a campfire, the jungle all around.",
+    "ship": "The deck and cabin of an old wooden ship at anchor, now a museum of things the sea gave back: shelves of "
+            "labelled finds (odd shoes, bottles, a piano key, ship's bells), glass cases, an old chart pinned to a table, "
+            "brass instruments, portholes onto the cove, warm and curious.",
+    "ama": "Inside Ama's house in the first people's village: a round house of wood and palm thatch, woven mats, carved "
+           "posts, baskets, a hearth, family photographs next to carved wooden figures, a window onto the stone circle "
+           "and the hills, calm and dignified, a living home, nothing exotic or stereotyped.",
+    "canoe": "The canoe house by the river: a long open shed of wood and thatch, a dug-out canoe being carved, tools on the "
+             "wall, wood shavings, paddles, the river glittering outside.",
+    "stone": "The Tide Stone: a tall ancient standing stone on a green hill top above the sea, covered in carved marks in "
+             "rows, a few stones around it, wind in the grass, a sweeping view over the island, solemn and mysterious.",
+    "drums": "On the summit of a green hill: a small round open hut with a palm-thatch roof sheltering a large carved "
+             "drum, two more hills with huts in the distance, the island far below, clouds close by, quiet and awe-filling.",
+    "circle": "The Consensus Circle: a wide spiral circle of carved stones in the village green, the round houses around it, "
+              "a few benches, the river and the hills behind, evening light, dignified and peaceful.",
+    "grotto": "Behind the waterfall: a hidden cave, the curtain of falling water glowing turquoise in front, wet rocks, a "
+              "soft light from inside, a stone ledge with an old book and a small keyhole carved in the rock, magical and quiet.",
 }
 
 
@@ -348,9 +384,17 @@ def cmd_draft(a):
         print(f"Style {look}: {len(styled)} reference pictures from {os.path.join(REFS, str(look))}")
     print(f"{len(who)} places, {a.n} paintings each, with {model}" + (f", painted like {len(refs)} chosen pictures." if refs else "."))
     for id in who:
-        plate = open(os.path.join(PLATES, (sketch or id) + ".jpg"), "rb").read()
+        drawn = os.path.join(PLATES, (sketch or id) + ".jpg")
         what = SKETCH[sketch] if sketch else SCENE[id] + (" " + DETAIL[id] if id in DETAIL else "")
-        prompt = (LOOK_BASE + LOOKS[look] + " The picture: " + what if look else STYLE + " The picture: " + what) + (" " + LIKE if refs else "") + (" " + STYLE_REFS if styled else "")
+        kept = load(os.path.join(a.out, "index.json")).get("scenes", {}).get("island")
+        if os.path.exists(drawn) and (sketch or id not in RETHOUGHT or not kept):
+            plate = open(drawn, "rb").read()
+            prompt = (LOOK_BASE + LOOKS[look] + " The picture: " + what if look else STYLE + " The picture: " + what) + (" " + LIKE if refs else "") + (" " + STYLE_REFS if styled else "")
+        else:   # a place with no drawn picture: painted from the island as it is now
+            if not kept:
+                sys.exit(f"{id} has no drawn picture; keep an island first (paint.sh keep island=N).")
+            plate = open(os.path.join(a.out, kept), "rb").read()
+            prompt = FROM_ISLAND + what + (" " + LIKE if refs else "") + (" " + STYLE_REFS if styled else "")
         if getattr(a, "ink", False):   # two passes: line drawing, then paint over it
             print("    ink drawing first ...", flush=True)
             line = (paint_gemini if p == "gemini" else paint_openai)(plate, INK + "The picture: " + what, 1, model, [])[0]
@@ -550,6 +594,46 @@ def cmd_folk(a):
     print("Look: https://node.tauhud.com/rico/art/drafts/  then: infra/rabbit-art/paint.sh keep folk=last")
 
 
+REWORK = ("Repaint this exact island in exactly its style, ink line, colours, light and composition, keeping everything "
+          "where it is, with only these changes: "
+          "1) On the cliff top just left of the big waterfall, add Radio Coco: a small wooden radio shack with a tall "
+          "wooden mast with a red light on top, a winding path up to it, and give that cliff area more varied landscape: "
+          "rocks, a small meadow, flowering bushes, a lookout. "
+          "2) The small wooden hut with the radio mast in the middle of the island loses its mast and becomes the "
+          "Coconut Works: a funny, crooked little factory of planks and tin with pipes, a chimney puffing white smoke "
+          "and a conveyor of coconuts. "
+          "3) On the jungle slope below the mountains, between the middle of the island and the waterfall, add the South "
+          "Current Embassy: a sunny terracotta villa with a turquoise pool, parasols and a flag, clearly visible. "
+          "4) Inside the walls of the old fortress on the right cliff, add a neat modern embassy building with glass "
+          "windows and a pale blue flag, so the North Wind Embassy has moved into the old fort; keep the giant rusty key. "
+          "5) Keep the old ship at anchor, the red flamboyant tree, the blue house, the stilt houses, the pier, the "
+          "lighthouse, the tents, the village with its round houses, the stone circle, the three hills with their huts "
+          "and the ancient tower on the left hill exactly as they are. No people, no text. ")
+
+
+def cmd_rework(a):
+    """The kept island (or --from island=N) repainted with the changes in REWORK, everything else where it was."""
+    drafts = load(os.path.join(a.out, "drafts", "drafts.json"))
+    src = liked(argparse.Namespace(out=a.out, like=[a.src] if a.src else ["island"]), drafts)[0]
+    p = provider()
+    model = a.model or ("gemini-2.5-flash-image" if p == "gemini" else "gpt-image-1")
+    raws = (paint_gemini if p == "gemini" else paint_openai)(open(src, "rb").read(), REWORK, a.n, model)
+    path = os.path.join(a.out, "drafts", "drafts.json")
+    drafts = load(path)
+    names = drafts.get("island", [])
+    for raw in raws:
+        data, kind = small(raw)
+        f = f"island-{len(names) + 1}-{hashlib.sha1(data).hexdigest()[:8]}.{kind}"
+        write(os.path.join(a.out, "drafts", f), data)
+        names.append(f)
+        drafts.setdefault("idea", {})[f] = "rework"
+        print(f"  island={len(names)}")
+    drafts["island"] = names
+    write(path, json.dumps(drafts, indent=1).encode())
+    page(a)
+    print("Look: https://node.tauhud.com/rico/art/drafts/")
+
+
 def cmd_looks(a):
     """The island from the newest sketch, once in each of the three styles."""
     for n in LOOKS:
@@ -616,6 +700,10 @@ def main():
     k = sub.add_parser("keep")
     k.add_argument("picks", nargs="+", help="place=N or place=last, e.g. island=2 hall=1 bar=last")
     k.add_argument("--layout", default=None, help="island only: where everything stands on that painting, plates/<name>.json")
+    rw = sub.add_parser("rework")
+    rw.add_argument("--from", dest="src", default=None, help="the painting to rework, e.g. island=18 (default: the kept island)")
+    rw.add_argument("--n", type=int, default=2)
+    rw.add_argument("--model", default=None)
     fo = sub.add_parser("folk")
     fo.add_argument("--like", nargs="+", default=["island"], metavar="PLACE=N", help="the painting whose style they take")
     fo.add_argument("--n", type=int, default=1)
@@ -624,7 +712,7 @@ def main():
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk}[a.cmd](a)
+    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework}[a.cmd](a)
 
 
 if __name__ == "__main__":
