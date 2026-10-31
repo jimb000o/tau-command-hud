@@ -714,7 +714,7 @@
   const SAID = (() => { try { const a = JSON.parse(store.get("rabbit-dj-said") || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } })();
   const unsaid = keys => { const k = keys.filter(x => !SAID.includes(x)); return k.length ? k : [keys.slice().sort((a, b) => SAID.indexOf(a) - SAID.indexOf(b))[0]]; };
   const pickLine = keys => { const k = unsaid(keys); return k[Math.floor(Math.random() * k.length)]; };
-  const markSaid = k => { const i = SAID.indexOf(k); if (i >= 0) SAID.splice(i, 1); SAID.push(k); SAID.splice(0, Math.max(0, SAID.length - 60)); store.set("rabbit-dj-said", JSON.stringify(SAID)); };
+  const markSaid = k => { const i = SAID.indexOf(k); if (i >= 0) SAID.splice(i, 1); SAID.push(k); SAID.splice(0, Math.max(0, SAID.length - 120)); store.set("rabbit-dj-said", JSON.stringify(SAID)); };
   const one = (set, ...more) => { const k = pickLine(RICO.SETS[set]); return { k, parts: [V(k), ...more] }; };
   /* what Rico can say about the game as it stands, and a few lines from the island's habits */
   function djLines() {
@@ -739,11 +739,12 @@
      the waiting list. From them come the chain weather and the news: what kind of transactions the new blocks hold,
      ghosts (live only: sealed transactions the node still lists as waiting, IDNI #81, counted by the relay), and in
      the simulation the refusals, a consensus switch voted on or in force, and the restart at midnight UTC. */
-  const RADAR = { snap: null, busy: false, seen: 0, mode: null, ghosts: 0, flagged: {}, news: [] };
-  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "refusedLaw", "ghost", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused"];
+  const RADAR = { snap: null, busy: false, seen: 0, mode: null, rules: null, ghosts: 0, flagged: {}, news: [] };
+  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "ghost", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused"];
   const KIND = { rule_deploy: "rule", approval_request: "cosign", transfer_vote: "cosvote", retractable_transfer: "lock", retract_transfer: "back", rule_offer: "offer", rule_offer_accept: "offerYes", consensus_rule_vote: "lawVote" };
   const txKind = tx => { const t = tx.tx_type || "user_tx"; return t === "user_tx" && tx.operations && tx.operations["0"] ? "rule_deploy" : t; };
   function heard(set, h) {
+    if (!set) return;
     if (RADAR.news.some(n => n.set === set)) return;
     RADAR.news.push({ set, h, at: performance.now() });
     RADAR.news.sort((a, b) => RANK.indexOf(a.set) - RANK.indexOf(b.set)); RADAR.news.length = Math.min(RADAR.news.length, 6);
@@ -790,7 +791,8 @@
       const n = b.header.block_number, txs = b.transactions || [];
       if (txs.length >= 10) heard("burst", n);
       for (const tx of txs) {
-        const k = txKind(tx);
+        const k = txKind(tx), paid = k === "user_tx" ? ((tx.operations || {})["1"] || []).reduce((a, x) => a + (Number(x && x[2]) || 0), 0) : Number(tx.amount) || 0;
+        if (paid >= 100000) heard("whale", n);
         if (KIND[k]) heard(KIND[k], n);
         else if (k === "consensus_rule_update") heard(s.sim ? "lawSim" : "law", n);
       }
@@ -798,7 +800,11 @@
     }
     if (!s.sim) return;
     /* the simulation's big moments: a consensus switch put to the vote, and the moment it comes into force */
-    const mode = TauSim.chain.rulesAt(s.h).elig;
+    /* a validator in or out, the base fee up or down, or another rule revision in force */
+    const ru = TauSim.chain.rulesAt(s.h), was = RADAR.rules;
+    if (was && ru.rev > was.rev) heard(ru.validators.length > was.n ? "valIn" : ru.validators.length < was.n ? "valOut" : ru.fee > was.fee ? "feeUp" : ru.fee < was.fee ? "feeDown" : ru.elig !== was.elig ? null : "rev", s.h);
+    RADAR.rules = { rev: ru.rev, n: ru.validators.length, fee: ru.fee, elig: ru.elig };
+    const mode = ru.elig;
     if (RADAR.mode && mode !== RADAR.mode) heard(mode === "stake" ? "nowStake" : "nowFixed", s.h);
     RADAR.mode = mode;
     const now = Date.now() / 1000;
@@ -809,7 +815,7 @@
       if (u.kind === "restart" && u.at_ts - now < 600 && now < u.at_ts) { RADAR.flagged[id] = 1; heard("midnight", null); }
     }
     if (RADAR.news.some(n => /^to/.test(n.set))) RADAR.news = RADAR.news.filter(n => n.set !== "lawSim");   // the switch is that rule change
-    if (first) RADAR.news = RADAR.news.filter(n => !/^(now|restart)/.test(n.set));   // nothing switched while we were not listening
+    if (first) RADAR.news = RADAR.news.filter(n => !/^(now|restart|val|fee|rev)/.test(n.set));   // nothing switched while we were not listening
   }
   /* the chain weather: the newest blocks turned into a forecast, the numbers shown beside it */
   function weather(s) {
@@ -826,18 +832,28 @@
   /* what comes next on air: first a hello, then news from the chain when there is some (every other line at most),
      the weather every fourth line, and in between the game and the island, never the same line twice in a row */
   const ROT = { n: 0, newsLast: false };
+  /* chain news as a host tells it: big moments with a sting before and a word after, small ones now and then */
+  function story(n) {
+    const big = /^(now|to|restart|midnight|val|fee|rev|whale)/.test(n.set), l = one(n.set, ...(n.h != null ? [Q("(block {y})", { y: String(n.h) })] : []));
+    const bit = set => { const k = pickLine(RICO.SETS[set]); markSaid(k); return V(k); };
+    if (big || Math.random() < 0.4) l.parts.unshift(bit("flash"));
+    if (big || Math.random() < 0.3) l.parts.push(bit("tag"));
+    return l;
+  }
   function nextLine() {
     ROT.n++;
-    if (ROT.n === 1) return one("open");
+    if (ROT.n === 1) { const hr = new Date().getHours(); return one(Math.random() < 0.5 ? "open" : hr >= 5 && hr < 11 ? "morning" : hr < 17 && hr >= 11 ? "afternoon" : hr >= 17 && hr < 22 ? "evening" : "night"); }
     const big = RADAR.news.some(n => /^(now|to|restart|midnight)/.test(n.set));
     if (ROT.n % 4 === 3 && !big && RADAR.snap && performance.now() - RADAR.snap.at < 180000) { ROT.newsLast = false; return { k: null, parts: weather(RADAR.snap) }; }
     RADAR.news = RADAR.news.filter(n => performance.now() - n.at < 600000);
     /* the big moments always go on air; small news only while Rico has not just used up all its lines */
     const recent = SAID.slice(-20), i = RADAR.news.findIndex(n => /^(now|to|restart|midnight)/.test(n.set) || RICO.SETS[n.set].some(k => !recent.includes(k)));
-    if (i >= 0 && (!ROT.newsLast || big)) { ROT.newsLast = true; const n = RADAR.news.splice(i, 1)[0]; return one(n.set, ...(n.h != null ? [Q("(block {y})", { y: String(n.h) })] : [])); }
+    if (i >= 0 && (!ROT.newsLast || big)) { ROT.newsLast = true; return story(RADAR.news.splice(i, 1)[0]); }
     ROT.newsLast = false;
-    if (Math.random() < 0.5) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
-    return one("general");
+    /* in between: the game, a joke now and then, the phone-in, Tau corner, a word between songs, the island's habits */
+    const r = Math.random();
+    if (r < 0.35) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
+    return one(r < 0.6 ? "joke" : r < 0.7 ? "call" : r < 0.77 ? "corner" : r < 0.84 ? "segue" : "general");
   }
   readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
   setInterval(() => {
