@@ -111,6 +111,101 @@
     nowFixed: "It's done: the simulation is back on the fixed validator list. Not one cannon fired. Boring for radio, beautiful for a chain.",
     midnight: "The simulated chain starts over in a few minutes, back at block one. Finish your drinks.",
     restart: "The chain has started over at block one. Same sea, fresh logbook.",
+    /* chain news told as a story: an opening sting before it, a word from the host after it */
+    flash1: "Breaking news from the harbour!",
+    flash2: "Hold the music. Something just happened on the chain.",
+    flash3: "Rico interrupts this programme for a bulletin from the blocks.",
+    flash4: "News flash! Rico has his reading glasses on. This is serious.",
+    flash5: "The telegraph in the studio just rang. It never rings.",
+    flash6: "Stop the dancing, folks. The chain has news.",
+    tag1: "That's the chain, folks. Nobody asked it. It just happened.",
+    tag2: "Rico never makes up the chain news. Only the rumours. Back to the music.",
+    tag3: "Radio Coco: first with the news, always with the block number.",
+    tag4: "Old Sam is already writing it down.",
+    tag5: "And now, the weather. Just kidding. Back to the calypso.",
+    tag6: "More on this as it happens. Which, on a chain, is every few seconds.",
+    valIn: "A new validator has been admitted on the simulated chain. Welcome aboard. The others voted you in, so be nice and bring snacks.",
+    valOut: "A validator has left the simulated chain. Voted out, or retired to a quieter island. The rest sign on, a little busier.",
+    feeUp: "The base fee just went up on the simulated chain. The validators voted, the rules changed, and Rico's tip jar is jealous.",
+    feeDown: "The base fee just went down on the simulated chain. Cheaper transactions for everyone. Rico has lowered his prices too, out of solidarity. Not really.",
+    rev: "The rules of the simulated chain have a new revision in force. Not a riot, not a coup. A vote, a block height, and a number going up by one.",
+    whale1: "A big transfer just went through! Somebody moved a pile of test coins in one go. Worthless, of course. But very impressively worthless.",
+    whale2: "Whale sighting off the north beach! A huge transfer just crossed the chain. The gulls are following it, hoping for scraps.",
+    /* jokes, now and then */
+    j1: "Why did the transaction break up with the mempool? It needed some space. Preferably in a block.",
+    j2: "How many validators does it take to change a light bulb? As many as the quorum says. And somebody has to propose the bulb first.",
+    j3: "Rico's doctor told him to take it easy. Rico said: I can't, doc. There's no finality on this testnet. Nothing is ever really over.",
+    j4: "Knock knock. Who's there? Reorg. Reorg who? Never mind, we've rewritten that part.",
+    j5: "What do you call a wallet with a personal rule and no money? Principled.",
+    j6: "A Tau rule walks into a bar. The bartender says: we don't serve contradictions here. The rule says: good, neither do I.",
+    j7: "Why don't validators play poker on this island? Every hand is signed, and everybody can read the Book.",
+    j8: "What did the retractable transfer say to the receiver? Don't get attached. I'm on a timer.",
+    j9: "Rico's ex wanted a co-signer for every decision. Turns out that's a feature now.",
+    j10: "Why was the empty block so relaxed? Nothing to carry, nothing to prove. Just a timestamp and a good attitude.",
+    j11: "The base fee lives in a line called o nine. Rico asked it for a discount. It said: change the rules first. Very politely.",
+    j12: "What's a validator's favourite dance? The quorum-ba.",
+    j13: "Why won't the gull join the network? It doesn't want to deal with peers. It has enough of those on the pier.",
+    j14: "How does a node say goodbye? See you at the next block. Probably. Give or take a reorg.",
+    j15: "Rico once wrote a love letter in Tau logic. It was always true. She still said no. Logic isn't everything.",
+    j16: "Testnet coins have no value. Rico checked. Neither do Rico's jokes. And yet, here we both are.",
+    j17: "What do you call a transaction that waits forever? A regular at Bar La Ola.",
+    j18: "Why did the ghost transaction come to the party? It was already sealed. It just wanted to be listed.",
+    j19: "Rico's computer wanted to run a node. The manual said: on Windows, use Docker or WSL. The computer said: I don't speak whale.",
+    j20: "Rico built the node image. The manual said the Tau engine compiles once, slowly. Rico has now aged once, slowly.",
+    j21: "The validator set is like Rico's old band. You can only join if the others vote you in, and the drummer always says no.",
+    j22: "A private key, a seed phrase and a password walk into a bar. Nobody remembers who invited them.",
+    j23: "What's the difference between a rumour and a block? A block can be checked. Rico sells rumours.",
+    j24: "Rico asked Old Sam for a loan. Sam said: fine, I'll write it in the Book. Rico said: never mind.",
+    j25: "The black cat applied to become a validator. The council asked for its key. The cat knocked it off the table.",
+    j26: "Rico wrote his New Year's resolution as a personal rule. Now the chain refuses his midnight mangoes. Worst idea ever. Best idea ever.",
+    j27: "How do you comfort a refused transaction? Tell it: it's not you, it's the rules. And the rules were here first.",
+    j28: "Agorzilla, the big green fellow who eats transactions, called the studio. He asked for a snack. Rico sent him one test coin. He burped politely.",
+    j29: "There is no mining on Tau. Rico's uncle came with a pickaxe anyway. Three days of digging on the beach. Two crabs and a sandal.",
+    j30: "If a rule changes and all the validators agree, does it make a sound? Yes. A tiny revision number goes up by one.",
+    j31: "What's a cryptographer's favourite fruit? The BLS-berry. Twelve, three, eighty-one varieties.",
+    j32: "Our weatherman quit. He said forecasting the chain was too easy: it's either blocks, or fog.",
+    j33: "Why did the block go to therapy? Everybody kept checking its header and nobody asked how it was doing.",
+    j34: "Rico tried to bribe a Tau rule. It looked at the envelope, checked it against the rules in force, and refused it. Incorruptible. Also a bit rude.",
+    j35: "What's the testnet's favourite song? Don't stop me now. Unless it's a contradiction. Then stop me.",
+    j36: "Rico's horoscope for validators: Today you will sign something. Tomorrow too. The stars are very consistent. Like the rules.",
+    /* the phone-in */
+    c1: "We have a caller on line two. Go ahead. She says her transaction is pending. Madam, so is Rico's career. Next caller!",
+    c2: "Line one: a fisherman asks if the testnet is safe for his savings. Sir, the coins are worth nothing. Keep your savings in the fish.",
+    c3: "A caller from the north beach wants to know if validators ever sleep. They sign in their sleep, my friend. That's commitment.",
+    c4: "A listener writes: Rico, why are blocks numbered? So we know which one came after the last one, my friend. That's the whole secret.",
+    c5: "Caller asks: Rico, what's a consensus rule? A rule everybody has to follow and nobody can change alone. Like Lola's closing time.",
+    c6: "A text from a listener: my wallet put a rule on itself and now it won't let me spend. That's not a bug, my friend. That's character.",
+    c7: "On the line: a tourist asking where he can buy test coins. You can't, sir. They're free, and worth exactly that. Welcome to the island.",
+    c8: "Line three is a gull. Rico can't understand a word, but the Book says it called. Go ahead, gull. Thank you, gull.",
+    c9: "Somebody keeps calling to ask if this is live. Yes. Everything on this station is live. Except the coins. The coins are pretend.",
+    c10: "A caller asks if Rico can make the next block come faster. Rico can play faster music. The block doesn't care. Respect.",
+    /* Tau corner: what makes this chain different, in one breath */
+    tc1: "Tau corner, short and sweet: on this chain the rules are written in Tau logic, and every new rule is checked against the old ones. Contradictions don't get a seat.",
+    tc2: "Tau corner: which blocks count and who may make them is decided by rules on the chain itself. And those rules change only by a vote of the validators.",
+    tc3: "Tau corner: the fees on this chain come out of the rules too. Change the rule, change the fee. No back room, just a vote.",
+    tc4: "Tau corner: a wallet can write a rule for itself, like: never more than this much at once. Every node then refuses the transfers that break it.",
+    tc5: "Tau corner: this is an alpha. No real money, no finality, and now and then a reorg. That's not a scandal. That's what a test is for.",
+    tc6: "Tau corner: a retractable transfer waits in escrow until a block height or a time. Until then the sender can take it back. After that, it pays out on its own.",
+    tc7: "Tau corner: a co-signed transfer parks on the chain and goes through by itself the moment the sender's own rule is satisfied. No chasing, no reminders.",
+    tc8: "Tau corner: anybody can run a node and watch the chain. You don't need permission to read. Just a computer, some patience, and Docker.",
+    /* between songs */
+    s1: "That was the news. Now something for the heart, and something for the hips.",
+    s2: "Stay with us. After the break: more rumours, more blocks, and a song nobody remembers, so it never gets old.",
+    s3: "You're on Radio Coco. Don't touch that dial. There is no dial. But don't touch it anyway.",
+    s4: "Short break while Rico drinks some water. The chain keeps going. It doesn't need water. Show-off.",
+    s5: "Next up: a calypso for every validator who signed today. And one for the ones who overslept.",
+    s6: "This one goes out to every transaction still waiting on the pier. Your block is coming.",
+    s7: "Time check: it's always now on Radio Coco. The block height tells you the rest.",
+    s8: "If you just tuned in: four candidates, one island, one Book, and Rico. In that order of reliability.",
+    /* hello by the listener's own hour */
+    am1: "Good morning, island! The coffee is hot, the blocks are fresh, and the gulls are already complaining.",
+    am2: "Morning, early birds. The validators have been up all night. Rico has been up for five minutes. Let's go.",
+    pm1: "Good afternoon from Radio Coco. The sun is high, the fees are low, and the rumours are warming up.",
+    pm2: "Afternoon, island. Siesta time for people, block time for the chain.",
+    ev1: "Good evening, island. The lighthouse is on, Bar La Ola is full, and the Book is still writing.",
+    ev2: "Evening on Radio Coco. Pour yourself something cold. The chain is busy, Rico is not.",
+    nt1: "Late night on Radio Coco. Just you, me, the waves, and a validator somewhere signing in the dark.",
+    nt2: "Still awake? So is the chain. It never sleeps. Rico will, in about four songs.",
   };
   /* which lines can stand in for each other: Rico picks one he has not said lately (game.js remembers what he said) */
   const SETS = {
@@ -121,6 +216,11 @@
     offer: ["offer"], offerYes: ["offerYes"], law: ["law1", "law2"], lawSim: ["lawSim"], lawVote: ["lawVote"],
     refusedLaw: ["refusedLaw"], refusedOwn: ["refusedOwn"], refused: ["refused"], burst: ["burst1", "burst2"], ghost: ["ghost1", "ghost2", "ghost3"],
     toStake: ["toStake"], toFixed: ["toFixed"], nowStake: ["nowStake"], nowFixed: ["nowFixed"], midnight: ["midnight"], restart: ["restart"],
+    joke: Array.from({ length: 36 }, (_, i) => "j" + (i + 1)), call: Array.from({ length: 10 }, (_, i) => "c" + (i + 1)),
+    corner: Array.from({ length: 8 }, (_, i) => "tc" + (i + 1)), segue: Array.from({ length: 8 }, (_, i) => "s" + (i + 1)),
+    flash: Array.from({ length: 6 }, (_, i) => "flash" + (i + 1)), tag: Array.from({ length: 6 }, (_, i) => "tag" + (i + 1)),
+    valIn: ["valIn"], valOut: ["valOut"], feeUp: ["feeUp"], feeDown: ["feeDown"], rev: ["rev"], whale: ["whale1", "whale2"],
+    morning: ["am1", "am2"], afternoon: ["pm1", "pm2"], evening: ["ev1", "ev2"], night: ["nt1", "nt2"],
   };
   /* what the islanders say in the places (the same English as in game.js, which the tests check) */
   const LAWT = { harbour: "A deep harbour for cruise ships", road: "A road round the island" };
@@ -182,8 +282,8 @@
     return SND.speak(bufs.map(b => b.slice(0)));
   }
   /* lines that make sense away from the game (the radio in the site header, assets/radio.js): the hellos and Rico's
-     testnet humour, without the ones about the election. Each is a parts list, shown translated where the page has it. */
+     testnet humour, jokes, the phone-in and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
   const tr = s => (window.TauI18n ? TauI18n.t(s) : s);
-  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14")].map(k => [{ t: tr(L[k]), v: L[k] }]);
+  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner].map(k => [{ t: tr(L[k]), v: L[k] }]);
   window.RICO = { L, SETS, CAST, NAMES, all, speak, fill, key, hud };
 })();
