@@ -114,6 +114,8 @@ for prov in ("gemini", "openai"):
             paint.cmd_hires(types.SimpleNamespace(out=out, places=["island"], no_sharp=False, wide=False, model="gemini-3-pro-image-preview"))
             assert "much higher resolution" in prompts[-1] and '"imageSize": "4K"' in bodies[-1]
             assert Image.open(os.path.join(out, json.load(open(os.path.join(out, "index.json")))["scenes"]["island"])).size == (1600, 900)   # sharp only; the stand-in paints small
+            paint.cmd_draft(types.SimpleNamespace(out=out, places=["works"], n=1, model=None, wide=True))   # a wide room
+            assert '"aspectRatio": "21:9"' in bodies[-1] and "21:9" in prompts[-1] and "keep it exactly so" in prompts[-1]
             paint.cmd_panorama(types.SimpleNamespace(out=out, src=None, n=1, model="gemini-3-pro-image-preview"))
             assert '"aspectRatio": "21:9"' in bodies[-1] and "No leaves" in prompts[-1] and "panorama" in json.load(open(os.path.join(out, "drafts", "drafts.json")))["idea"].values()
             paint.cmd_keep(types.SimpleNamespace(out=out, picks=["bar=1"])); assert "bar" not in json.load(open(os.path.join(out, "index.json")))["orig"]

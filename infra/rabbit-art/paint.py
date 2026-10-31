@@ -47,8 +47,11 @@ PLACES = ["island", "hall", "market", "radio", "north", "south", "bar", "book", 
 RETHOUGHT = {"hall", "market", "radio", "north", "south", "bar"}
 # the places that have no drawn picture to repaint (plates/<id>.jpg): they are painted from the island itself
 FROM_ISLAND = ("The first picture is the whole island of this game. Paint, in exactly its style, ink line, colours and light, "
-               "a close view of one place on it, as a background for the scene where the player stands there, wide "
-               "(16:9), with room in the middle and on one side for a person to stand. No people, no text. The place: ")
+               "a close view of one place on it, as a background for the scene where the player stands there, wide, "
+               "with room in the middle and on one side for a person to stand. Look closely at how this place looks on "
+               "the island and keep it exactly so: the same building, materials, colours, roof, windows and surroundings, "
+               "now seen from inside or close up. Spacious and calm, the middle and the front kept open and uncluttered. "
+               "No people, no text. The place: ")
 
 STYLE = ("Repaint this picture as a lush, hand-painted background for a classic 2D point-and-click adventure game from "
          "the late 1990s: gouache and ink on paper, confident dark outlines, rich surface texture, wear and weathering, "
@@ -190,7 +193,8 @@ SCENE = {
     "market": "The Parasol Café: a small open-air café on a wooden terrace by a little turquoise pool, red and white "
               "parasols, mismatched chairs, a battered tin kettle, a long table where everybody talks, a noticeboard "
               "covered in notes, the harbour and the red tree below, cosy, noisy and friendly.",
-    "radio": "Inside Radio Coco, a small radio shack on a cliff top: a microphone on an arm, a mixing desk, a turntable, "
+    "radio": "Inside Radio Coco, the small wooden radio hut on stilts beside the lattice radio mast on the cliff top: "
+             "plank walls, floor and roof beams, the painted Radio Coco sign seen backwards through the open front, a microphone on an arm, a mixing desk, a turntable, "
              "shelves of records, a window showing the waterfall and the sea far below, cables, a fan, a coffee mug, "
              "warm lamp light, the clutter of a host who loves the job.",
     "north": "Inside the North Wind Embassy, an imperial hall in the restored fortress: polished pale marble, tall columns, "
@@ -215,9 +219,10 @@ SCENE = {
     "dive": "Inside the Reef Proof dive centre, a stilt house over the water: wetsuits and fins on hooks, tanks, a trapdoor "
             "straight into the turquoise water, and odd futuristic diving gear: glowing sensor buoys, a sleek underwater "
             "drone, a screen showing reef readings as a chain of small linked blocks, all hand-made and a bit improvised.",
-    "works": "Inside the Coconut Works, a funny ramshackle factory: a crooked machine made of bicycles and a church organ, "
-             "conveyor belts of coconuts, pipes that go nowhere, bottles of oil, coils of rope, bars of soap, a water wheel "
-             "turning outside, smoke, cheerful chaos.",
+    "works": "Inside the Coconut Works, a roomy wooden factory hall with a tall brick chimney: at the back a crooked machine "
+             "made of bicycles and a church organ, one conveyor belt of coconuts, a few pipes, shelves of oil bottles, "
+             "rope and soap at the sides, the water wheel turning outside a big window; a wide open plank floor in front, "
+             "light through the roof, cheerful but not crowded.",
     "camp": "The surveyors' camp in a clearing: a few white canvas tents, tripods and measuring poles, a folding table with "
             "big plans and maps held down by stones, crates with embassy stamps, a campfire, the jungle all around.",
     "ship": "The deck and cabin of an old wooden ship at anchor, now a museum of things the sea gave back: shelves of "
@@ -331,6 +336,20 @@ def small(raw, pixel=False, width=1600):
     return buf.getvalue(), "webp"
 
 
+WIDE_ROOM = (" Compose it as one wide panorama for a very wide cinema screen (21:9): the place spreads across the whole width, "
+             "nothing important at the far left and right edges, no frame.")
+
+
+def keep_wide(raw, width=3360):
+    """A wide painting as it came (no 16:9 crop), at most `width` pixels wide, as WebP."""
+    from PIL import Image
+    im = Image.open(io.BytesIO(raw)).convert("RGB")
+    if im.width > width:
+        im = im.resize((width, round(width * im.height / im.width)), Image.LANCZOS)
+    buf = io.BytesIO(); im.save(buf, "WEBP", quality=84, method=5)
+    return buf.getvalue(), "webp"
+
+
 def write(path, data):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path + ".tmp", "wb") as f:
@@ -402,10 +421,14 @@ def cmd_draft(a):
             line = (paint_gemini if p == "gemini" else paint_openai)(plate, INK + "The picture: " + what, 1, model, [])[0]
             write(os.path.join(a.out, "drafts", f"{id}-ink-{hashlib.sha1(line).hexdigest()[:8]}.png"), line)
             plate = line
-        raws = (paint_gemini if p == "gemini" else paint_openai)(plate, prompt, a.n, model, refs + styled)
+        wide = getattr(a, "wide", False) and id != "island"
+        if wide and p != "gemini":
+            sys.exit("Wide rooms need GEMINI_API_KEY.")
+        raws = (paint_gemini(plate, prompt + WIDE_ROOM, a.n, a.model or "gemini-3-pro-image-preview", refs + styled, size="2K", aspect="21:9")
+                if wide else (paint_gemini if p == "gemini" else paint_openai)(plate, prompt, a.n, model, refs + styled))
         names = drafts.get(id, []) if refs or sketch or look else []   # these join the earlier ones, so those stay pickable
         for i, raw in enumerate(raws, len(names) + 1):
-            data, kind = small(raw, pixel=look == 3)
+            data, kind = keep_wide(raw) if wide else small(raw, pixel=look == 3)
             f = f"{id}-{i}-{hashlib.sha1(data).hexdigest()[:8]}.{kind}"
             write(os.path.join(a.out, "drafts", f), data)
             names.append(f)
@@ -755,7 +778,7 @@ PANORAMA = ("Repaint the island in this picture as one wide panoramic painting, 
             "on the right cliff the North Wind Embassy with the big key: no ruin, but an intact, imposing imperial seat, "
             "a restored fortress turned palace of power, clean pale stone, tall walls, a grand gate and stair, a domed hall, "
             "rows of tall windows, banners and a big flag in the north wind, polished cannons as decoration, everything "
-            "spotless, cold and expensive, looking down on the island; the villa on the jungle slope, the mountains behind. "
+            "spotless, cold and expensive, looking down on the island; the terracotta villa of the South Current Embassy on the jungle slope with its terrace, turquoise pool and parasols; the villa on the jungle slope, the mountains behind. "
             "The island sits in the middle with open sea, reefs and a few small rocky islets around it, so that it can be "
             "seen whole on a wide screen; calm sea at the very top corners and the bottom edge. No leaves, palms or "
             "branches in the foreground and nothing framing the picture: the view is clear from edge to edge. No text.")
@@ -845,6 +868,7 @@ def main():
     d.add_argument("--sketch", default=None, help="island only: paint a new sketch instead, e.g. bay")
     d.add_argument("--like", nargs="+", metavar="PLACE=N", help="paint in the style of these drafts, e.g. island=1 market=2")
     d.add_argument("--ink", action="store_true", help="draw it in ink first, then paint over the drawing (twice the cost)")
+    d.add_argument("--wide", action="store_true", help="rooms: one wide 21:9 picture at 2K (Gemini 3), not cropped to 16:9")
     d.add_argument("--look", type=int, choices=sorted(LOOKS), default=None, help="paint in style 1, 2 or 3 (see LOOKS)")
     ia = sub.add_parser("ideas")
     ia.add_argument("--from", dest="src", required=True, help="the painting to grow from, e.g. island=14")
