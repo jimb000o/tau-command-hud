@@ -299,8 +299,12 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
         if not png and r.get("winner") and r.get("t") and now - r["t"] < SHOTS_WAIT:
             break                      # its photographs are being made; next pass
         msg = text(r, latest)
+        fails = state.get("fails") if state.get("fails_n") == r["n"] else 0
+        if png and fails >= 2:
+            png = None                 # the picture did not go through twice: the text alone, so the evening is never stuck
         if TOKEN or send is not post:
             if not (send(msg, png) if png else send(msg)):
+                state["fails_n"], state["fails"] = r["n"], (fails or 0) + 1
                 break                  # try again next pass
         state["last"] = r["n"]
         sent.append(msg)

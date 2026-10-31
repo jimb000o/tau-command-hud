@@ -358,11 +358,14 @@ in as that account, as `AGORZILLA_X_API_KEY`, `AGORZILLA_X_API_SECRET`,
 `docker compose up -d --build agorzilla` and
 `docker compose run --rm agorzilla python agorzilla.py --x-test` (one test post on X only).
 
-**Agorzilla's summary**: service `agorzilla-latest` runs the agorilla repo's
-`tools/archive.cjs --latest` every 10 minutes from the site checkout in `/opt/sites/agorilla`
-and writes `/opt/sites/agorilla-live/chain/latest.json`. `sites/agorzilla.caddy` (copied to
-`/opt/sites/`) serves that file first and the checkout's copy otherwise, so the summary no longer
-waits for GitHub's schedule; the archive and its hashes stay with the repo's own Action.
+**Agorzilla's archive and summary**: service `agorzilla-latest` runs the agorilla repo's
+`tools/archive.cjs --live` every 10 minutes from the site checkout in `/opt/sites/agorilla`
+and writes `archive.json`, `archive.js` and `latest.json` to `/opt/sites/agorilla-live/chain/`.
+`sites/agorzilla.caddy` (copied to `/opt/sites/`) serves those first and the checkout's copies
+otherwise, so neither the page nor the evening post waits for GitHub's schedule, and a testnet
+restart between two skipped GitHub runs loses no meals. The repo's own Action still commits the
+public copy. A checkout from before `--live` makes only `latest.json` (`--latest`); each run is
+cut off after 5 minutes. Log: `docker compose logs --tail 20 agorzilla-latest`.
 
 **Agorzilla's evening pictures**: service `agorzilla-shots` (`agorzilla-shots/shots.mjs`, a
 headless Chromium) opens `agorzilla.com/?shot=<evening>` after each evening and photographs the
