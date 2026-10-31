@@ -193,9 +193,10 @@ SCENE = {
     "radio": "Inside Radio Coco, a small radio shack on a cliff top: a microphone on an arm, a mixing desk, a turntable, "
              "shelves of records, a window showing the waterfall and the sea far below, cables, a fan, a coffee mug, "
              "warm lamp light, the clutter of a host who loves the job.",
-    "north": "Inside the North Wind Embassy, set up in the old colonial fortress: rough ancient stone walls with a modern "
-             "glass desk, a big screen, cool blue flags, a giant rusty key visible through an arched window, a slightly "
-             "absurd mix of old fort and sleek office, stiff and expensive.",
+    "north": "Inside the North Wind Embassy, an imperial hall in the restored fortress: polished pale marble, tall columns, "
+             "a long red carpet to a huge desk on a raised dais, a giant map of the island with pins in it, cool blue banners, "
+             "gilded frames, a chandelier, the giant key visible through a tall arched window, cold, grand, spotless and "
+             "far too expensive for an island this size.",
     "south": "The South Current Embassy, a sunny terracotta villa on the jungle slope: a terrace with a turquoise pool, "
              "parasols and loungers, a wellness corner with smoothies, a laptop on a rattan table, potted palms, the "
              "jungle and the sea behind, warm, flattering and a little too comfortable.",
@@ -751,7 +752,10 @@ PANORAMA = ("Repaint the island in this picture as one wide panoramic painting, 
             "hills with the round huts and the stone circle on the left, the radio mast on its cliff, the coconut works with "
             "its chimney, the café terrace with the little pool and parasols, the red council tree, the stilt houses and the "
             "pier, the lighthouse on its rock at the front, the old ship in the bay, the waterfall with the cave behind it, "
-            "the old fort on the right with the big key on its cliff, the villa on the jungle slope, the mountains behind. "
+            "on the right cliff the North Wind Embassy with the big key: no ruin, but an intact, imposing imperial seat, "
+            "a restored fortress turned palace of power, clean pale stone, tall walls, a grand gate and stair, a domed hall, "
+            "rows of tall windows, banners and a big flag in the north wind, polished cannons as decoration, everything "
+            "spotless, cold and expensive, looking down on the island; the villa on the jungle slope, the mountains behind. "
             "The island sits in the middle with open sea, reefs and a few small rocky islets around it, so that it can be "
             "seen whole on a wide screen; calm sea at the very top corners and the bottom edge. No leaves, palms or "
             "branches in the foreground and nothing framing the picture: the view is clear from edge to edge. No text.")
