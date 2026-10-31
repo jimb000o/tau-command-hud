@@ -1984,5 +1984,10 @@
   "tag": "Menu",
   "on": "2026-10-31",
   "html": "Language: a first visit now always opens in English, whatever language the browser is set to. 中文 and 日本語 are one click away in the header, a choice made there is remembered, and links with ?lang=zh or ?lang=ja still open in that language."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-31",
+  "html": "White Rabbit Key: Radio Coco knows the calendar. In Halloween week the ghost transactions on the waiting list suit the season; from November Rico complains that the island is still haunted and petitions to have it un-haunted."
  }
 ]
