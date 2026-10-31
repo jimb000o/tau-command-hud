@@ -1964,5 +1964,10 @@
   "tag": "White Rabbit Key",
   "on": "2026-10-31",
   "html": "White Rabbit Key: Radio Coco sounds like a real host. Thirty-six jokes, a phone-in, a short Tau corner, words between songs and a hello for the listener's own time of day. News from the chain now comes as a little story with a sting before and a word from Rico after, and he also reports a validator joining or leaving, the base fee going up or down, a new rule revision in the simulation, and big transfers."
+ },
+ {
+  "tag": "Menu",
+  "on": "2026-10-31",
+  "html": "Header: on wide screens the three languages are shown side by side again, 中文 · EN · 日本語, with English in the middle; narrower screens keep the small language menu."
  }
 ]
