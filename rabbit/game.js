@@ -904,7 +904,7 @@
     const r = Math.random();
     if (r < 0.35) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
     const set = r < 0.58 ? "joke" : r < 0.67 ? "call" : r < 0.73 ? "corner" : r < 0.79 ? "segue" : r < 0.86 ? "legend" : "general";
-    if (set === "call" && Math.random() < 0.7) return phoneIn();
+    if (set === "call" && Math.random() < 0.75) return phoneIn();   // otherwise a letter from a listener, read out by Rico
     return one(set);
   }
   readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
