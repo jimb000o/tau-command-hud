@@ -420,7 +420,7 @@
     /* the conversation always sits in the same place: a plate at the bottom middle, the person standing above it */
     const side = 0;
     if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "bar" ? 1 : 0.6 }); } SC.glow(place);
-    const box = el("section", { class: "cv-card talk", role: "dialog", "aria-modal": "false" });
+    const box = el("section", { class: "cv-card talk", "data-place": place || "", role: "dialog", "aria-modal": "false" });
     const close = el("button", { type: "button", class: "cv-x", "aria-label": T("Back to the island"), onclick: () => closeCard(), text: "✕" });
     box.append(close);
     build(box);
