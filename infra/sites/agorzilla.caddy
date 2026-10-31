@@ -3,9 +3,9 @@
 agorzilla.com, www.agorzilla.com {
 	encode gzip
 	root * /srv/sites/agorilla
-	# the summary made every 10 minutes by the agorzilla-latest service; the checkout's copy if it is missing
+	# the archive and summary made every 10 minutes by the agorzilla-latest service; the checkout's copies if missing
 	@live {
-		path /chain/latest.json
+		path /chain/latest.json /chain/archive.json /chain/archive.js
 		file {
 			root /srv/sites/agorilla-live
 		}

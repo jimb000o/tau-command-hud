@@ -78,6 +78,14 @@ class Evening(unittest.TestCase):
         A.step(latest, s, send=lambda m, png=None: out.append(m) or True, send_x=lambda m, st, png=None: True, now=1000 + A.SHOTS_WAIT + 1, picture=lambda r: None)
         self.assertEqual((len(out), s["last"]), (1, 0))   # too late: the text alone
 
+    def test_picture_that_fails_twice_goes_as_text(self):
+        latest = dict(LATEST, rounds=[dict(LATEST["rounds"][0], t=1000)])
+        s, tries = {"last": -1}, []
+        send = lambda m, png=None: tries.append(png) or png is None   # Telegram refuses the photo
+        for _ in range(3):
+            A.step(latest, s, send=send, send_x=lambda m, st, png=None: True, now=1100, picture=lambda r: b"PNG")
+        self.assertEqual((tries, s["last"]), ([b"PNG", b"PNG", None], 0))
+
     def test_picture_goes_to_telegram_and_x(self):
         latest = dict(LATEST, rounds=[dict(LATEST["rounds"][0], t=1000)])
         s, tg, xs = {"last": -1}, [], []

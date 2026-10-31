@@ -207,14 +207,17 @@ services:
     restart: unless-stopped
     logging: *logging
 
-  # Agorzilla's summary (agorzilla.com/chain/latest.json, read by Tau HUD's header and the
-  # evening post): the agorilla repo's tools/archive.cjs --latest, every 10 minutes, from the
-  # site's own checkout. GitHub's 30-minute schedule often skips runs, so the summary is made
-  # here; the archive and its hashes stay with the repo's Action. Caddy (sites/agorzilla.caddy)
-  # serves this file first and falls back to the checkout's copy.
+  # Agorzilla's archive and summary (agorzilla.com/chain/archive.json, archive.js, latest.json;
+  # latest.json is read by Tau HUD's header and the evening post): the agorilla repo's
+  # tools/archive.cjs --live, every 10 minutes, from the site's own checkout. GitHub's 30-minute
+  # schedule often skips runs, and a testnet restart between two of them would lose meals, so a
+  # complete archive is kept here; the repo's Action keeps the public copy. Caddy
+  # (sites/agorzilla.caddy) serves these files first and falls back to the checkout's copies.
+  # A checkout from before --live existed makes only latest.json (--latest). Each run is cut off
+  # after 5 minutes, so a hanging connection never stops the loop.
   agorzilla-latest:
     image: node:22-alpine
-    command: ["sh", "-c", "while true; do node /repo/tools/archive.cjs --latest || true; sleep 600; done"]
+    command: ["sh", "-c", "while true; do if grep -q -- '--live' /repo/tools/archive.cjs; then timeout 300 node /repo/tools/archive.cjs --live; else timeout 300 node /repo/tools/archive.cjs --latest; fi || echo 'archive run failed, next in 10 min'; sleep 600; done"]
     environment:
       AGORILLA_NODE: ws://relay:8080
       AGORILLA_OUT: /out/chain
