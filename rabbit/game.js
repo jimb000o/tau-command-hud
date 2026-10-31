@@ -102,7 +102,17 @@
     salado: { w: 27, h: 27, jaw: 0.8, nose: "round", bg: "#d9653f" }, lola: { w: 22, h: 26, jaw: 0.35, nose: "button", bg: "#2c8c88" },
     sam: { w: 24, h: 28, jaw: 0.6, nose: "long", bg: "#5c9a4c" },
   };
+  /* a painted portrait (infra/rabbit-art paint.py busts) in place of the drawn face: it breathes, and nods while talking */
+  const bustOf = id => !/[?&]art=drawn/.test(location.search) && SC.art && SC.art.img["bust-" + id];
+  function paintedFace(g, B, id, t, talk, bare) {
+    const W = g.canvas.width, br = 1 + 0.008 * Math.sin(t * 0.0021), nod = talk ? Math.sin(t * 0.022) * W * 0.006 : 0;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, W); g.imageSmoothingQuality = "high";
+    if (bare) { const w = W * br; g.drawImage(B, (W - w) / 2, W - w + nod, w, w); return; }
+    g.save(); g.beginPath(); g.arc(W / 2, W / 2, W / 2 - 1, 0, Math.PI * 2); g.fillStyle = (HEADS[id] || {}).bg || "#2c8c88"; g.fill(); g.clip();
+    const w = W * 1.55 * br; g.drawImage(B, (W - w) / 2, -W * 0.12 + nod, w, w); g.restore();   // the head and shoulders, close
+  }
   function face(g, id, t, talk, mood = 0, bare = false) {
+    const B = bustOf(id); if (B) return paintedFace(g, B, id, t, talk, bare);
     const L = looks(id), H0 = HEADS[id] || { w: 22, h: 27, jaw: 0.5, nose: "straight", bg: "#2c8c88" }, W = g.canvas.width, s = W / 120;
     g.setTransform(s, 0, 0, s, 0, 0); g.clearRect(0, 0, 120, 120);
     g.lineJoin = "round"; g.lineCap = "round";

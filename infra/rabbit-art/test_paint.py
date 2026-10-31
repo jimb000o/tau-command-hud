@@ -35,8 +35,13 @@ def fake(url, data, headers, timeout=240):
             assert len(body["contents"][0]["parts"]) == 2
         if "same artist" in body["contents"][0]["parts"][0]["text"]:
             assert len(body["contents"][0]["parts"]) == 4 and ("high hill" in body["contents"][0]["parts"][0]["text"] or "rough sketch" in body["contents"][0]["parts"][0]["text"])
-        assert body["generationConfig"]["imageConfig"]["aspectRatio"] in ("16:9", "21:9") and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"] or "close view of one place" in body["contents"][0]["parts"][0]["text"] or "Repaint this exact island" in body["contents"][0]["parts"][0]["text"] or "much higher resolution" in body["contents"][0]["parts"][0]["text"] or "empty grey" in body["contents"][0]["parts"][0]["text"] or "wide panoramic" in body["contents"][0]["parts"][0]["text"])
-        return {"candidates": [{"content": {"parts": [{"inlineData": {"mimeType": "image/png", "data": base64.b64encode(PIC).decode()}}]}}]}
+        assert body["generationConfig"]["imageConfig"]["aspectRatio"] in ("16:9", "21:9", "1:1") and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"] or "close view of one place" in body["contents"][0]["parts"][0]["text"] or "Repaint this exact island" in body["contents"][0]["parts"][0]["text"] or "much higher resolution" in body["contents"][0]["parts"][0]["text"] or "empty grey" in body["contents"][0]["parts"][0]["text"] or "wide panoramic" in body["contents"][0]["parts"][0]["text"] or "head-and-shoulders" in body["contents"][0]["parts"][0]["text"])
+        pic = PIC
+        if Image and "head-and-shoulders" in body["contents"][0]["parts"][0]["text"]:   # a bust on magenta
+            from PIL import ImageDraw
+            im = Image.new("RGB", (1024, 1024), (255, 0, 255)); ImageDraw.Draw(im).ellipse((300, 200, 724, 1100), fill=(160, 110, 80))
+            b = io.BytesIO(); im.save(b, "PNG"); pic = b.getvalue()
+        return {"candidates": [{"content": {"parts": [{"inlineData": {"mimeType": "image/png", "data": base64.b64encode(pic).decode()}}]}}]}
     if "openai" in url:
         assert b'name="input_fidelity"' in data and b'filename="plate.jpg"' in data
         if b"like-1" in data:
@@ -116,11 +121,15 @@ for prov in ("gemini", "openai"):
             assert Image.open(os.path.join(out, json.load(open(os.path.join(out, "index.json")))["scenes"]["island"])).size == (1600, 900)   # sharp only; the stand-in paints small
             paint.cmd_draft(types.SimpleNamespace(out=out, places=["works"], n=1, model=None, wide=True))   # a wide room
             assert '"aspectRatio": "21:9"' in bodies[-1] and "21:9" in prompts[-1] and "keep it exactly so" in prompts[-1]
+            paint.cmd_busts(types.SimpleNamespace(out=out, who=["rico"], model="gemini-2.5-flash-image"))
+            b = json.load(open(os.path.join(out, "index.json")))["scenes"]["bust-rico"]
+            assert '"aspectRatio": "1:1"' in bodies[-1] and "never a caricature" in prompts[-1] and Image.open(os.path.join(out, b)).size == (600, 600)
+            assert set(paint.BUSTS) >= {"marisol", "tobias", "baako", "hana", "rico", "lola", "sam", "frost", "salado"}
             paint.cmd_panorama(types.SimpleNamespace(out=out, src=None, n=1, model="gemini-3-pro-image-preview"))
             assert '"aspectRatio": "21:9"' in bodies[-1] and "No leaves" in prompts[-1] and "panorama" in json.load(open(os.path.join(out, "drafts", "drafts.json")))["idea"].values()
             paint.cmd_keep(types.SimpleNamespace(out=out, picks=["bar=1"])); assert "bar" not in json.load(open(os.path.join(out, "index.json")))["orig"]
         paint.cmd_drop(types.SimpleNamespace(out=out, places=["bar"]))
-        assert list(json.load(open(os.path.join(out, "index.json")))["scenes"]) == ["island"]
+        assert [k for k in json.load(open(os.path.join(out, "index.json")))["scenes"] if not k.startswith("bust-")] == ["island"]
 if Image:   # a sheet of eight figures on magenta comes out as a strip of eight cut-out cells, feet down
     from PIL import ImageDraw
     sheet = Image.new("RGB", (1600, 900), (255, 0, 255)); d = ImageDraw.Draw(sheet)

@@ -50,7 +50,9 @@ FROM_ISLAND = ("The first picture is the whole island of this game. Paint, in ex
                "a close view of one place on it, as a background for the scene where the player stands there, wide, "
                "with room in the middle and on one side for a person to stand. Look closely at how this place looks on "
                "the island and keep it exactly so: the same building, materials, colours, roof, windows and surroundings, "
-               "now seen from inside or close up. Spacious and calm, the middle and the front kept open and uncluttered. "
+               "now seen from inside or close up. Through windows and openings show what one really sees from this very spot on "
+               "the island, at eye level, not from above: the neighbouring places, the sea, the hills and mountains, in the "
+               "directions where they lie on the island. Spacious and calm, the middle and the front kept open and uncluttered. "
                "No people, no text. The place: ")
 
 STYLE = ("Repaint this picture as a lush, hand-painted background for a classic 2D point-and-click adventure game from "
@@ -594,6 +596,85 @@ def figures(raw, cols=4):
     return cells
 
 
+# the people you talk to, as the game shows them (rabbit/game.js CANDS and FOLK): looks only, no caricature
+BUSTS = {
+    "marisol": "Marisol, a fisherwoman in her thirties who runs the net shed: warm brown skin, black hair in a bun, a red scarf, a teal shirt, weathered hands, a direct friendly look",
+    "tobias": "Tobias, the harbour master in his sixties who loves a ceremony: fair skin, grey hair parted at the side, a navy captain's cap, a crisp white shirt with brass buttons, a self-important smile",
+    "baako": "Baako, a coconut farmer in his forties: deep brown skin, short black hair, a straw hat, a mustard yellow shirt, a broad easy smile",
+    "hana": "Hana, the schoolteacher in her thirties: light skin, a black bob, round glasses, a blue blouse, a pencil behind her ear, calm and attentive",
+    "rico": "Rico, the host of Radio Coco in his thirties: brown skin, short black curly hair, big headphones round his neck, a pink shirt with a palm print, a wide grin",
+    "lola": "Lola, who runs Bar La Ola, around thirty: brown skin, dark red curls, a cream blouse, a bar towel over her shoulder, a teasing smile",
+    "sam": "Old Sam, the lighthouse keeper in his seventies: tanned weathered skin, bald with a full white beard, a dark knitted jumper, kind tired eyes",
+    "frost": "Ambassador Frost of the North Wind Embassy, in his fifties: pale skin, neat white hair, a cool blue tailored suit with a pin, a thin polite smile that is not warm",
+    "salado": "Ambassador Salado of the South Current Embassy, in his fifties: lightly sunburnt skin, dark brown hair combed back, an open linen shirt in coral, sunglasses pushed up, a smooth salesman's smile",
+    "ama": "Ama, an elder of the first people in her seventies: dark brown skin, grey hair in a bun, small glasses, a green woven shawl, a wise patient look",
+    "wren": "Captain Wren, a retired marine archaeologist in her sixties: fair freckled skin, copper hair in a short bob, a navy cap, a teal shirt with rolled sleeves, amused eyes",
+    "kai": "Kai, who runs the Reef Proof dive centre, late twenties: brown skin, short black hair, diving goggles pushed up on his forehead, a turquoise wetsuit top, cheerful",
+    "pim": "Pim, a surveyor working for the embassies, in his forties: pale skin, sandy hair, a straw hat, a white shirt with a pencil and a tape measure, nervous careful look",
+    "noor": "Noor, foreman of the Coconut Works, in her forties: warm brown skin, black curls, round glasses, a yellow work shirt, a smudge of soot, a dry knowing look",
+    "kiko": "Kiko, a young canoe builder in his twenties: brown skin, short black hair, a red shirt with sawdust on it, a calm small smile",
+}
+BUST = ("Paint one character for this game as a head-and-shoulders portrait, in exactly the style of the picture: its ink "
+        "line, painted colours, texture and warm light, as if painted by the same hand for the same adventure game. {who}. "
+        "Facing us, turned very slightly, the bust from the top of the head down to the middle of the chest, the chest cut off "
+        "by the bottom edge of the picture, nothing else in the picture, on a plain flat magenta (#ff00ff) background with no "
+        "shadow and no frame. A real, warm, likeable person, never a caricature. No text.")
+
+
+def keyed(raw, size=600):
+    """A portrait on a flat background as a square RGBA picture, the background keyed out, the bust standing on the bottom edge."""
+    from PIL import Image
+    im = Image.open(io.BytesIO(raw)).convert("RGB")
+    im = im.resize((800, int(800 * im.height / im.width)), Image.LANCZOS)
+    W, H = im.size
+    px = im.load()
+    edge = sorted([px[x, 2] for x in range(0, W, 7)] + [px[2, y] for y in range(0, H, 7)] + [px[W - 3, y] for y in range(0, H, 7)])
+    bg = edge[len(edge) // 2]
+    out = Image.new("RGBA", (W, H)); o = out.load()
+    for y in range(H):
+        for x in range(W):
+            r, g, b = px[x, y]
+            d = abs(r - bg[0]) + abs(g - bg[1]) + abs(b - bg[2])
+            a = 0 if d < 90 else 255 if d > 170 else (d - 90) * 255 // 80
+            if 0 < a < 255:
+                g = max(g, (r + b) // 2 - 40)
+            o[x, y] = (r, g, b, a)
+    bb = out.getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
+    if not bb:
+        sys.exit("No portrait found on the picture; paint it again.")
+    fig = out.crop((bb[0], bb[1], bb[2], H))   # down to the bottom edge, where the chest is cut off
+    k = min((size - 8) / fig.width, (size - 8) / fig.height)
+    fig = fig.resize((max(1, int(fig.width * k)), max(1, int(fig.height * k))), Image.LANCZOS)
+    cell = Image.new("RGBA", (size, size)); cell.paste(fig, ((size - fig.width) // 2, size - fig.height), fig)
+    buf = io.BytesIO(); cell.save(buf, "WEBP", quality=88, method=5)
+    return buf.getvalue()
+
+
+def cmd_busts(a):
+    """Painted portraits of the people you talk to, in the style of the kept island; each is kept at once (bust-<who>)
+    and the game shows it instead of the drawn face. Run it again for one person to paint them anew."""
+    who = list(BUSTS) if "all" in a.who else a.who
+    for w in who:
+        if w not in BUSTS:
+            sys.exit(f"No one called {w!r}. They are: {', '.join(BUSTS)}")
+    if provider() != "gemini":
+        sys.exit("Portraits need GEMINI_API_KEY.")
+    path = os.path.join(a.out, "index.json")
+    idx = load(path)
+    kept = idx.get("scenes", {}).get("island")
+    if not kept:
+        sys.exit("Keep an island first: paint.sh keep island=N")
+    plate = open(os.path.join(a.out, idx.get("orig", {}).get("island", kept)), "rb").read()
+    for w in who:
+        print(f"{w}:", flush=True)
+        data = keyed(paint_gemini(plate, BUST.format(who=BUSTS[w]), 1, a.model, aspect="1:1")[0])
+        f = f"bust-{w}-{hashlib.sha1(data).hexdigest()[:8]}.webp"
+        write(os.path.join(a.out, f), data)
+        idx = load(path); idx.setdefault("scenes", {})["bust-" + w] = f
+        write(path, json.dumps(idx, indent=1).encode())
+    print("Done. Live: https://tauhud.com/rabbit/ (Ctrl+F5)")
+
+
 def cmd_folk(a):
     """The people who walk about the island, painted in the style of the island as it is now (or --like island=N)."""
     drafts = load(os.path.join(a.out, "drafts", "drafts.json"))
@@ -773,7 +854,7 @@ def cmd_narrow(a):
 PANORAMA = ("Repaint the island in this picture as one wide panoramic painting, composed for a very wide cinema screen, in "
             "exactly its style, ink line, colours and light. The same island with every place in the same arrangement: the "
             "hills with the round huts and the stone circle on the left, the radio mast on its cliff, the coconut works with "
-            "its chimney, the café terrace with the little pool and parasols, the red council tree, the stilt houses and the "
+            "its chimney and a water wheel on the stream beside it, the café terrace with the little pool and parasols, the red council tree, the stilt houses and the "
             "pier, the lighthouse on its rock at the front, the old ship in the bay, the waterfall with the cave behind it, "
             "on the right cliff the North Wind Embassy with the big key: no ruin, but an intact, imposing imperial seat, "
             "a restored fortress turned palace of power, clean pale stone, tall walls, a grand gate and stair, a domed hall, "
@@ -885,6 +966,9 @@ def main():
     hr.add_argument("--no-sharp", action="store_true", help="keep the resolution")
     hr.add_argument("--wide", action="store_true", help="also paint on past the left and right edges (shows a seam)")
     sub.add_parser("narrow")
+    bu = sub.add_parser("busts")
+    bu.add_argument("who", nargs="*", default=["all"], help="all (default), or some of: " + " ".join(BUSTS))
+    bu.add_argument("--model", default="gemini-2.5-flash-image")
     pa = sub.add_parser("panorama")
     pa.add_argument("--from", dest="src", default=None, help="the painting, e.g. island=21 (default: the kept island)")
     pa.add_argument("--n", type=int, default=3)
@@ -906,7 +990,7 @@ def main():
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "narrow": cmd_narrow}[a.cmd](a)
+    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "narrow": cmd_narrow, "busts": cmd_busts}[a.cmd](a)
 
 
 if __name__ == "__main__":
