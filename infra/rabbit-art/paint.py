@@ -649,9 +649,20 @@ def cutout(im):
         if wp[xy] != SENT and dist(px[xy]) < 120:
             ImageDraw.floodfill(work, xy, SENT, thresh=110)
     mask = Image.new("L", (W, H), 255); m = mask.load()
+    pocket = Image.new("L", (W, H), 0); q = pocket.load()
     for y in range(H):
         for x in range(W):
             if wp[x, y] == SENT:
+                m[x, y] = 0
+            elif dist(px[x, y]) < 75:
+                q[x, y] = 255
+    # the background also shows through gaps the fill cannot reach (between an arm and the body): take those too, but
+    # only patches of some size, not a pink speck in a shirt
+    pocket = pocket.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.MaxFilter(7))
+    q = pocket.load()
+    for y in range(H):
+        for x in range(W):
+            if q[x, y] and dist(px[x, y]) < 110:
                 m[x, y] = 0
     mask = mask.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.8))   # a soft edge, no fringe
     m = mask.load()
@@ -664,6 +675,28 @@ def cutout(im):
                 g = max(g, (r + b) // 2 - 40)
             o[x, y] = (r, g, b, a)
     return out
+
+
+def unpocket(im, bg=(255, 0, 255)):
+    """A cut-out picture with the background colour left in gaps inside the figure: those gaps made clear."""
+    from PIL import Image, ImageFilter
+    W, H = im.size
+    px = im.load()
+    dist = lambda c: abs(c[0] - bg[0]) + abs(c[1] - bg[1]) + abs(c[2] - bg[2])
+    pocket = Image.new("L", (W, H), 0); q = pocket.load()
+    for y in range(H):
+        for x in range(W):
+            if px[x, y][3] and dist(px[x, y]) < 75:
+                q[x, y] = 255
+    pocket = pocket.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.MaxFilter(7))
+    q = pocket.load()
+    n = 0
+    for y in range(H):
+        for x in range(W):
+            r, g, b, a = px[x, y]
+            if a and q[x, y] and dist((r, g, b)) < 110:
+                px[x, y] = (r, max(g, (r + b) // 2 - 40), b, 0); n += 1
+    return n
 
 
 def webp(im):
@@ -731,6 +764,19 @@ def cmd_busts(a):
             sys.exit(f"No one called {w!r}. They are: {', '.join(BUSTS)}")
     path = os.path.join(a.out, "index.json")
     idx = load(path)
+    if getattr(a, "rekey", False):   # the kept portraits, gaps of background inside them cut out, nothing painted
+        from PIL import Image
+        sc = idx.get("scenes", {})
+        for id in [k for k in sc if k.startswith("bust-") and k.split("-")[1] in who]:
+            im = Image.open(os.path.join(a.out, sc[id])).convert("RGBA")
+            n = unpocket(im)
+            if n:
+                data = webp(im); name = f"{id}-{hashlib.sha1(data).hexdigest()[:8]}.webp"
+                write(os.path.join(a.out, name), data); sc[id] = name
+            print(f"{id}: {n} pixels cut out")
+        write(path, json.dumps(idx, indent=1).encode())
+        print("Done. Live: https://tauhud.com/rabbit/ (Ctrl+F5)")
+        return
     given = {}
     if getattr(a, "src", None):
         import zipfile
@@ -1147,6 +1193,7 @@ def main():
     bu.add_argument("--model", default="gemini-2.5-flash-image")
     bu.add_argument("--from", dest="src", default=None, help="a folder or .zip of pictures painted elsewhere (bust-<name>.png, -talk.png, -blink.png)")
     bu.add_argument("--still", action="store_true", help="no talking and blinking frames")
+    bu.add_argument("--rekey", action="store_true", help="paint nothing: cut gaps of background out of the kept portraits")
     to = sub.add_parser("touch")
     to.add_argument("what", nargs="*", help="what to change (default: the places outside as they are inside)")
     to.add_argument("--from", dest="src", default=None, help="the painting, e.g. island=22 (default: the kept island)")

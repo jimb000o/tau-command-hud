@@ -22,6 +22,7 @@
 <meta name="twitter:site" content="@TauHUDcom">
 <meta name="twitter:image" content="https://tauhud.com/assets/shots/rabbit.png">
 <link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<link rel="stylesheet" href="../assets/fonts/island.css">
 <style>
 /* The site around the game keeps the HUD tokens; the island itself is its own warm, tropical world. */
 :root {
@@ -90,6 +91,29 @@ button.chip:hover { border-color: #fff; }
 .cv-card.talk .cv-b { border-color: rgba(232,206,150,.28); background: rgba(232,206,150,.04); }
 .cv-card.talk .cv-b:hover:not([disabled]), .cv-card.talk .cv-b:focus-visible { border-color: #f3dfb4; background: rgba(232,206,150,.1); }
 .cv-card.talk .cv-b.go { border-color: rgba(57,255,138,.6); }
+/* each place speaks in its own voice: type, colours and edge of the plate follow the place and its host */
+.cv-card.talk { --pb: rgba(232,206,150,.55); --pbtn: rgba(232,206,150,.28); --tf: var(--display); --bf: var(--display); }
+.cv-card.talk h3, .cv-card.talk .cv-who b { font-family: var(--tf); letter-spacing: var(--tls, 0); }
+.cv-card.talk h3 { font-size: var(--tsz, 20px); font-weight: var(--tw, 700); }
+.cv-card.talk .cv-line { font-family: var(--bf); font-size: var(--bsz, 15px); }
+.cv-card.talk { border-color: var(--pb); outline-color: var(--pb); }
+.cv-card.talk .cv-b { border-color: var(--pbtn); }
+.cv-card.talk[data-place=radio], .cv-card.talk[data-place=bar], .cv-card.talk[data-place=canoe], .cv-card.talk[data-place=pier] { --tf: "Lilita One", var(--display); --tw: 400; --tsz: 24px; --tls: .02em; border: 3px solid var(--pb); outline: 2px dashed rgba(255,255,255,.12); outline-offset: -8px; border-radius: 16px; background: linear-gradient(180deg, rgba(40,24,12,.55), rgba(20,12,6,.75)), repeating-linear-gradient(0deg, #5a3a22 0 26px, #4a2f1b 26px 28px); }
+.cv-card.talk[data-place=radio] { --pb: #f2b33d; --pbtn: rgba(242,179,61,.45); }
+.cv-card.talk[data-place=bar] { --pb: #3fc1b0; --pbtn: rgba(63,193,176,.45); }
+.cv-card.talk[data-place=canoe] { --pb: #e2674f; --pbtn: rgba(226,103,79,.45); }
+.cv-card.talk[data-place=pier] { --pb: #8fd3f0; --pbtn: rgba(143,211,240,.45); background: linear-gradient(180deg, rgba(12,30,44,.6), rgba(6,16,26,.8)), repeating-linear-gradient(90deg, #4f5b5e 0 40px, #434d50 40px 42px); }
+.cv-card.talk[data-place=north] { --tf: "Cinzel", serif; --tw: 600; --tsz: 22px; --tls: .08em; --pb: #c9d6e2; --pbtn: rgba(201,214,226,.35); border: 1px solid var(--pb); outline: 1px solid rgba(201,214,226,.35); outline-offset: 5px; border-radius: 2px; background: linear-gradient(160deg, rgba(44,60,78,.96), rgba(16,24,34,.96)); }
+.cv-card.talk[data-place=south] { --tf: "Fraunces", serif; --tw: 600; --tsz: 24px; --pb: #f0b48a; --pbtn: rgba(240,180,138,.4); border: 2px solid var(--pb); outline: none; border-radius: 22px; background: linear-gradient(160deg, rgba(118,52,30,.95), rgba(58,24,14,.95)); }
+.cv-card.talk[data-place=market] { --tf: "Fraunces", serif; --tw: 600; --tsz: 24px; --pb: #fbf3df; --pbtn: rgba(251,243,223,.35); border-width: 1px; border-style: solid; outline: none; border-radius: 10px; padding-top: 26px; background: repeating-linear-gradient(90deg, #e2674f 0 28px, #fbf3df 28px 56px) top / 100% 12px no-repeat, rgba(30,20,13,.95); }
+.cv-card.talk[data-place=hall] { --tf: "Fraunces", serif; --tw: 600; --tsz: 24px; --pb: #d8452f; --pbtn: rgba(216,69,47,.45); border: 2px solid var(--pb); outline: 1px solid rgba(134,184,90,.4); outline-offset: 4px; border-radius: 12px; background: linear-gradient(170deg, rgba(48,30,18,.96), rgba(22,30,18,.96)); }
+.cv-card.talk[data-place=book], .cv-card.talk[data-place=ship], .cv-card.talk[data-place=ama], .cv-card.talk[data-place=stone], .cv-card.talk[data-place=drums], .cv-card.talk[data-place=circle], .cv-card.talk[data-place=grotto] { --tf: "IM Fell English", Georgia, serif; --tw: 400; --tsz: 25px; --bf: "IM Fell English", Georgia, serif; --bsz: 17px; --pb: #c9a86a; --pbtn: rgba(201,168,106,.4); border: 2px solid var(--pb); outline: 1px solid rgba(201,168,106,.3); outline-offset: 4px; border-radius: 4px; background: radial-gradient(ellipse at 50% 0%, rgba(201,168,106,.12), transparent 70%), rgba(34,26,16,.95); }
+.cv-card.talk[data-place=ship] { --pb: #d9b45a; background: radial-gradient(ellipse at 50% 0%, rgba(217,180,90,.1), transparent 70%), rgba(14,26,40,.95); }
+.cv-card.talk[data-place=grotto] { --pb: #6fd6c8; --pbtn: rgba(111,214,200,.35); background: radial-gradient(ellipse at 50% 100%, rgba(111,214,200,.14), transparent 70%), rgba(6,24,28,.95); }
+.cv-card.talk[data-place=school], .cv-card.talk[data-place=camp] { --tf: "Patrick Hand", cursive; --tw: 400; --tsz: 26px; --bf: "Patrick Hand", cursive; --bsz: 19px; --pb: #8b5e34; --pbtn: rgba(244,240,226,.35); border: 9px solid var(--pb); outline: none; border-radius: 6px; background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.05), transparent 60%), #1f3a2c; }
+.cv-card.talk[data-place=camp] { --pb: #7a6a44; background: repeating-linear-gradient(45deg, rgba(255,255,255,.03) 0 3px, transparent 3px 6px), #3a3322; }
+.cv-card.talk[data-place=works] { --tf: "Alfa Slab One", serif; --tw: 400; --tsz: 23px; --tls: .02em; --pb: #c8742d; --pbtn: rgba(200,116,45,.45); border: 3px solid var(--pb); outline: none; border-radius: 4px; background: radial-gradient(circle at 10px 10px, #c8742d 2px, transparent 3px) 0 0 / calc(100% - 14px) calc(100% - 14px) no-repeat, radial-gradient(circle at calc(100% - 10px) 10px, #c8742d 2px, transparent 3px), linear-gradient(170deg, rgba(52,44,40,.97), rgba(26,22,20,.97)); }
+.cv-card.talk[data-place=dive] { --tf: "Sora", var(--display); --tw: 700; --tls: .04em; --pb: #39d0c0; --pbtn: rgba(57,208,192,.4); border: 1px solid var(--pb); outline: 1px solid rgba(57,208,192,.25); outline-offset: 4px; border-radius: 14px; background: linear-gradient(170deg, rgba(4,44,52,.95), rgba(2,20,26,.95)); }
 .cv-card.intro, .cv-card.paper, .cv-card.end { left: 50%; right: auto; transform: translateX(-50%); width: min(760px, calc(100% - 32px)); animation: popc .35s cubic-bezier(.2,.8,.2,1); }
 .cv-card.intro, .cv-card.end, .cv-card.paper { top: 50%; bottom: auto; transform: translate(-50%, -50%); max-height: calc(100% - 112px); }
 .cv-card.paper { width: min(560px, calc(100% - 32px)); animation: none; }

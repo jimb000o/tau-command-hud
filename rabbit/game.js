@@ -30,7 +30,7 @@
   /* ---------- who lives on the island ---------- */
   const TOPICS = { fish: "fishing", school: "the school", music: "music", quiet: "quiet nights", visitors: "visitors", roads: "roads" };
   const CANDS = {
-    marisol: { name: "Marisol", role: "Fisher, runs the net shed", skin: "#a8693f", hair: "#1d1410", style: "bun", acc: "scarf", accC: "#e8574a", shirt: "#2fb0a8", cares: ["fish", "roads"], way: "people",
+    marisol: { name: "Marisol", role: "Runs the Parasol Café, still mends nets", skin: "#a8693f", hair: "#1d1410", style: "bun", acc: "scarf", accC: "#e8574a", shirt: "#2fb0a8", cares: ["fish", "roads"], way: "people",
       pitch: "Talks to everyone, forgets no one." },
     tobias: { name: "Tobias", role: "Harbour master, loves a ceremony", skin: "#e0b08a", hair: "#9a9aa0", style: "side", acc: "cap", accC: "#1f3550", shirt: "#f4f1ea", cares: ["visitors", "music"], way: "rumours",
       pitch: "Has a microphone and a theory about everyone." },
@@ -420,7 +420,7 @@
     /* the conversation always sits in the same place: a plate at the bottom middle, the person standing above it */
     const side = 0;
     if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "bar" ? 1 : 0.6 }); } SC.glow(place);
-    const box = el("section", { class: "cv-card talk", role: "dialog", "aria-modal": "false" });
+    const box = el("section", { class: "cv-card talk", "data-place": place || "", role: "dialog", "aria-modal": "false" });
     const close = el("button", { type: "button", class: "cv-x", "aria-label": T("Back to the island"), onclick: () => closeCard(), text: "✕" });
     box.append(close);
     build(box);
@@ -1104,7 +1104,7 @@
       box.append(el("p", { class: "kick", text: T("An island election in five days") }), el("h2", { text: T("White Rabbit Key") }),
         el("p", { class: "cv-line", text: T("Four candidates want to govern the island. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") }));
       const pick = el("div", { class: "cv-pick" });
-      Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", onclick: () => begin(c) }, portrait(c, innerWidth < 760 ? 52 : 74), el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) }))));
+      Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", onclick: () => begin(c) }, portrait(c, innerWidth < 760 ? 56 : 96), el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) }))));
       box.append(el("p", { class: "cv-h", text: T("Play as") }), pick);
       const chk = el("input", { type: "checkbox", id: "cvChain" }); chk.checked = store.get("tauhud-rabbit-chain") === "on";
       chk.addEventListener("change", () => store.set("tauhud-rabbit-chain", chk.checked ? "on" : "off"));
