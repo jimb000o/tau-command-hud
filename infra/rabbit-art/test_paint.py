@@ -9,10 +9,11 @@ import types
 import paint
 
 assert set(paint.SCENE) == set(paint.PLACES)
-for id in paint.PLACES:
+DRAWN = paint.PLACES[:9]   # the others have no drawn picture and are painted from the island itself
+for id in DRAWN:
     assert os.path.exists(os.path.join(paint.PLATES, id + ".jpg")), f"no plate for {id}: run node infra/rabbit-art/plates.mjs"
 game = open(os.path.join(paint.REPO, "rabbit", "scene.js"), encoding="utf-8").read()
-for id in paint.PLACES[1:]:
+for id in DRAWN[1:]:
     assert f"    {id}: " in game or f"    {id}:" in game, id
 assert "Caribbean Disaster" not in open(paint.__file__).read()
 
@@ -22,8 +23,10 @@ try:
 except ImportError:
     Image, PIC = None, b"\x89PNG fake"
 calls = []
+prompts = []
 def fake(url, data, headers, timeout=240):
     calls.append(url)
+    prompts.append(json.loads(data)["contents"][0]["parts"][0]["text"] if "generativelanguage" in url else data.decode("latin-1"))
     if "generativelanguage" in url:
         body = json.loads(data)
         if "style references only" in body["contents"][0]["parts"][0]["text"]:
@@ -32,7 +35,7 @@ def fake(url, data, headers, timeout=240):
             assert len(body["contents"][0]["parts"]) == 2
         if "same artist" in body["contents"][0]["parts"][0]["text"]:
             assert len(body["contents"][0]["parts"]) == 4 and ("high hill" in body["contents"][0]["parts"][0]["text"] or "rough sketch" in body["contents"][0]["parts"][0]["text"])
-        assert body["generationConfig"]["imageConfig"]["aspectRatio"] == "16:9" and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"])
+        assert body["generationConfig"]["imageConfig"]["aspectRatio"] == "16:9" and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"] or "close view of one place" in body["contents"][0]["parts"][0]["text"] or "Repaint this exact island" in body["contents"][0]["parts"][0]["text"])
         return {"candidates": [{"content": {"parts": [{"inlineData": {"mimeType": "image/png", "data": base64.b64encode(PIC).decode()}}]}}]}
     if "openai" in url:
         assert b'name="input_fidelity"' in data and b'filename="plate.jpg"' in data
@@ -62,7 +65,7 @@ for prov in ("gemini", "openai"):
         paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=9"]))
         idx = json.load(open(os.path.join(out, "index.json")))
         lay = idx["layout"]
-        assert set(lay["places"]) == set(paint.PLACES[1:]) and lay["fx"] and lay["windows"] and lay["walk"]
+        assert set(DRAWN[1:]) <= set(lay["places"]) <= set(paint.PLACES[1:]) and lay["fx"] and lay["windows"] and lay["walk"]
         for id, p in lay["places"].items():
             bx, by, bw, bh = p["box"]; assert bx <= p["x"] <= bx + bw and by <= p["y"] <= by + bh + 20, id
         dj = os.path.join(out, "drafts", "drafts.json"); dd = json.load(open(dj)); dd["sketch"][dd["island"][0]] = "bay"; json.dump(dd, open(dj, "w"))
@@ -82,6 +85,13 @@ for prov in ("gemini", "openai"):
         paint.cmd_ideas(types.SimpleNamespace(out=out, src="island=1", n=1, model=None))
         dd = json.load(open(os.path.join(out, "drafts", "drafts.json")))
         assert len(dd["island"]) >= before + 3 and set(dd["idea"].values()) == set(paint.IDEAS) and "idea mist" in open(os.path.join(out, "drafts", "index.html")).read()
+        paint.cmd_ideas(types.SimpleNamespace(out=out, src="island=1", n=1, model=None, idea="districts"))
+        dd = json.load(open(os.path.join(out, "drafts", "drafts.json")))
+        assert "districts" in dd["idea"].values() and "coconut works" in prompts[-1]
+        paint.cmd_draft(types.SimpleNamespace(out=out, places=["school"], n=1, model=None))   # from the kept island
+        assert "close view of one place" in prompts[-1] and json.load(open(os.path.join(out, "drafts", "drafts.json")))["school"]
+        paint.cmd_rework(types.SimpleNamespace(out=out, src=None, n=1, model=None))
+        assert "Radio Coco" in prompts[-1] and "rework" in json.load(open(os.path.join(out, "drafts", "drafts.json")))["idea"].values()
         paint.cmd_drop(types.SimpleNamespace(out=out, places=["bar"]))
         assert list(json.load(open(os.path.join(out, "index.json")))["scenes"]) == ["island"]
 if Image:   # a sheet of eight figures on magenta comes out as a strip of eight cut-out cells, feet down
@@ -91,6 +101,12 @@ if Image:   # a sheet of eight figures on magenta comes out as a strip of eight 
         cx, cy = 200 + (k % 4) * 400, 225 + (k // 4) * 450
         d.ellipse((cx - 40, cy - 160, cx + 40, cy + 160), fill=(30 + k * 20, 90, 60), outline=(20, 20, 20), width=6)
     buf = io.BytesIO(); sheet.save(buf, "PNG")
+    cast = Image.new("RGB", (1600, 900), (255, 0, 255)); d = ImageDraw.Draw(cast)
+    for k in range(10):
+        cx, cy = 160 + (k % 5) * 320, 225 + (k // 5) * 450
+        d.ellipse((cx - 40, cy - 160, cx + 40, cy + 160), fill=(90, 30 + k * 20, 60), outline=(20, 20, 20), width=6)
+    cbuf = io.BytesIO(); cast.save(cbuf, "PNG")
+    assert paint.cut(buf.getvalue(), cbuf.getvalue())[1] == 18   # eight townspeople and the ten of the cast
     data, n = paint.cut(buf.getvalue())
     strip = Image.open(io.BytesIO(data))
     assert n == 8 and strip.size == (80 * 8, 120) and strip.mode == "RGBA"
@@ -98,10 +114,11 @@ if Image:   # a sheet of eight figures on magenta comes out as a strip of eight 
     with tempfile.TemporaryDirectory() as out:
         os.makedirs(os.path.join(out, "drafts")); open(os.path.join(out, "drafts", "island-1.webp"), "wb").write(PIC)
         json.dump({"island": ["island-1.webp"]}, open(os.path.join(out, "drafts", "drafts.json"), "w"))
-        paint.paint_gemini = lambda *a, **k: [buf.getvalue()]
+        paint.paint_gemini = lambda plate, prompt, *a, **k: [(cbuf if "ten small" in prompt else buf).getvalue()]
         os.environ["GEMINI_API_KEY"] = "test"; os.environ.pop("OPENAI_API_KEY", None)
         paint.cmd_folk(types.SimpleNamespace(out=out, like=["island=1"], n=1, model=None))
         paint.cmd_keep(types.SimpleNamespace(out=out, picks=["folk=last"]))
         f = json.load(open(os.path.join(out, "index.json")))["scenes"]["folk"]
+        assert Image.open(os.path.join(out, f)).size == (80 * 18, 120)
         assert f.startswith("folk-1-") and os.path.exists(os.path.join(out, f)) and "folk=1" in open(os.path.join(out, "drafts", "index.html")).read()
 print("ok", len(calls), "calls")

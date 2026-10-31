@@ -879,7 +879,7 @@
   /* a painted island drawn from a new sketch (infra/rabbit-art/sketch.py) brings its layout: where the places stand,
      the streets people walk, the windows that light up, smoke, torches and water, the lamp and the mast */
   function useLayout(L) {
-    for (const id in PLACES) if (L.places && L.places[id]) Object.assign(PLACES[id], L.places[id]);
+    for (const id in L.places || {}) PLACES[id] = Object.assign(PLACES[id] || {}, L.places[id]);   // new quarters come with the layout
     if (L.walk) { WALK.splice(0, WALK.length, ...L.walk); FOLK.forEach((f, i) => { f.path = WALK[i % WALK.length]; }); }
     if (L.fx) FX.splice(0, FX.length, ...L.fx);
     if (L.windows) WINDOWS.splice(0, WINDOWS.length, ...L.windows);
@@ -941,7 +941,7 @@
 
   /* ---------- the stage ---------- */
   const S = { c: null, g: null, W: 0, H: 0, K: 1, base: null, world: null, wg: null, hour: 0, hourT: 0, cam: { x: 800, y: 450, z: 1 }, camT: { x: 800, y: 450, z: 1 },
-    hover: null, glow: null, gather: 0, room: null, roomA: 0, roomT: 0, cat: null, still: false, onFrame: null, last: 0 };
+    hover: null, glow: null, locked: new Set(), gather: 0, room: null, roomA: 0, roomT: 0, cat: null, still: false, onFrame: null, last: 0 };
   function size() {
     const r = S.c.getBoundingClientRect(); S.K = Math.min(2, devicePixelRatio || 1);
     S.W = Math.max(1, r.width); S.H = Math.max(1, r.height);
@@ -1107,7 +1107,7 @@
     if (S.roomA > 0.3) return null;   // inside a place the island is out of reach
     const [x, y] = toWorld(px, py);
     if (Math.abs(x - RB.x) < 16 && y < RB.y + 6 && y > RB.y - 30) return "rabbit";
-    for (const id in PLACES) { const [bx, by, bw, bh] = PLACES[id].box; if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) return id; }
+    for (const id in PLACES) { if (S.locked.has(id)) continue; const [bx, by, bw, bh] = PLACES[id].box; if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) return id; }
     return null;
   }
   /* lean in on a place, keeping the space for the card on the far side; null goes back to the whole cove */
@@ -1121,7 +1121,8 @@
   }
   function focus(id, side = 0) {
     if (!id) { S.camT = home(); S.focusId = null; S.roomT = 0; return; }
-    if (ROOMS[id]) { if (S.room !== id) { if (S.roomA > 0.5) S.roomA = 0.35; S.room = id; } S.roomT = 1; S.roomAt = toScreen(PLACES[id].x, PLACES[id].y - 40); }
+    if (ROOMS[id] || painted(id)) { if (S.room !== id) { if (S.roomA > 0.5) S.roomA = 0.35; S.room = id; } S.roomT = 1; S.roomAt = toScreen(PLACES[id].x, PLACES[id].y - 40); }
+    else S.roomT = 0;   // a quarter without a painted picture yet: the card opens over the island
     S.focusId = id; S.focusSide = side;
     const p = PLACES[id], phone = S.W < 760, z = Math.max(home().z * 1.25, phone ? 1.5 : 1.7), s = fitScale() * z;
     const shift = side * (S.W * 0.22) / s;   // the card takes about the right (or left) half
@@ -1139,6 +1140,7 @@
     setHour(h, now) { S.hourT = h; if (now) S.hour = h; },
     glow(id) { S.glow = id; },
     host(fn) { S.hostFn = fn; },
+    lock(ids) { S.locked = new Set(ids); }, locked: id => S.locked.has(id),   // quarters not open yet cannot be clicked
     hostAt(bottom) { S.hostBottom = bottom; },
     gather(v) { S.gather = v; },
     cat(twice) { S.cat = { t0: performance.now(), d: 9000, x0: SPOT.cat[0], y0: SPOT.cat[1], x1: SPOT.cat[2], y1: SPOT.cat[3], twice: !!twice }; },
