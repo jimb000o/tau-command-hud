@@ -80,6 +80,19 @@ button.chip:hover { border-color: #fff; }
 #cvToast.on { opacity: 1; transform: translate(-50%, 0); }
 .places { position: absolute; z-index: 2; left: 12px; bottom: 54px; display: flex; flex-wrap: wrap; gap: 6px; opacity: 0; pointer-events: none; }
 .places:focus-within { opacity: 1; pointer-events: auto; }
+/* the places as a list: by keyboard, or opened with ☰ (every place one tap away on any screen) */
+.places.on { opacity: 1; pointer-events: auto; z-index: 4; left: 12px; right: 12px; bottom: 62px; max-height: calc(100% - 120px); overflow: auto; padding: 8px; border-radius: 12px; background: rgba(8,10,12,.78); border: 1px solid var(--hair); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.places.on button { min-height: 44px; text-align: left; }
+#cvGo[aria-expanded=true] { border-color: var(--ok); }
+.places .more { display: none; }
+/* full screen: the island and its bar only, on every device (the browser's full screen where it has one, the page alone on an iPhone) */
+html.rk-full, html.rk-full body { background: #000; }
+html.rk-full .wrap { padding: 0; gap: 0; height: 100vh; height: 100dvh; }
+html.rk-full .wrap > header, html.rk-full .tnav, html.rk-full .tabbar, html.rk-full .tnav-spacer, html.rk-full .tb-pill, html.rk-full .fb-fab, html.rk-full footer { display: none !important; }
+html.rk-full .stage { border-radius: 0; border: 0; }
+html.rk-full .bar { top: max(8px, env(safe-area-inset-top, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); }
+html.rk-full .news { bottom: max(8px, env(safe-area-inset-bottom, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); }
+html.rk-full #cvFull { border-color: var(--ok); }
 .places button { min-height: 34px; padding: 4px 10px; border-radius: 8px; background: var(--glass); color: #fff; border: 1px solid var(--hair); font: 600 12px var(--display); cursor: pointer; }
 
 /* a card: someone speaks, you choose */
@@ -132,7 +145,7 @@ button.chip:hover { border-color: #fff; }
 .cv-who { display: flex; gap: 12px; align-items: center; padding-right: 40px; }
 .cv-who .face { flex: none; border-radius: 12px; background: radial-gradient(circle at 50% 35%, rgba(255,214,160,.18), rgba(255,255,255,.03)); border: 1px solid var(--line); }
 .cv-who b { display: block; font: 700 17px var(--display); color: #fff; }
-.cv-who small { color: var(--dim); }
+.cv-who small { color: var(--dim); font-size: 11.5px; }
 .cv-card h2 { margin: 0; font: 700 clamp(26px, 3vw, 40px)/1.1 var(--display); color: #fff; }
 .cv-card h3 { margin: 0; font: 700 18px var(--display); color: #fff; }
 .cv-card h4 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
@@ -150,6 +163,7 @@ button.chip:hover { border-color: #fff; }
 .cv-b[disabled] { opacity: .45; cursor: default; }
 .cv-laws ul, .cv-folk, .cv-book, .cv-help, .cv-lesson ul, .cv-paper ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
 .cv-laws li small, .dim { color: var(--dim); }
+.cv-laws li small, .cv-folk small { font-size: 11.5px; }
 .cv-folk li { display: grid; grid-template-columns: 74px minmax(0, 1fr) 90px; gap: 8px; align-items: center; }
 .cv-folk .nm { font: 600 13px var(--display); color: #fff; }
 .cv-folk small { color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -183,7 +197,7 @@ button.chip:hover { border-color: #fff; }
 .cv-cand:hover, .cv-cand:focus-visible { border-color: var(--ok); background: rgba(57,255,138,.06); outline: none; }
 .cv-cand .face { border-radius: 50%; background: radial-gradient(circle at 50% 35%, rgba(255,214,160,.2), rgba(255,255,255,.03)); }
 .cv-cand b { font: 700 15px var(--display); color: #fff; }
-.cv-cand small { color: var(--dim); line-height: 1.35; }
+.cv-cand small { color: var(--dim); line-height: 1.35; font-size: 11.5px; }
 .cv-cand em { font-style: normal; color: var(--text); font-size: 11.5px; line-height: 1.4; }
 .cv-ballot { margin: 0; color: var(--dim); font-size: 12px; }
 .cv-ballot b { color: var(--text); font-weight: 600; }
@@ -218,8 +232,14 @@ footer a { color: var(--dim); }
   .bar { left: 8px; right: 8px; top: 8px; gap: 6px; }
   .chip { min-height: 32px; padding: 3px 10px; font-size: 12px; }
   .bar .opt { display: none; }
+  .bar .chip { min-height: 40px; }
+  .cv-x { width: 44px; height: 44px; right: 6px; top: 6px; }
+  #cvGo .lb, #cvSound .lb { display: none; }
+  .places .more { display: block; color: var(--dim); }
+  .places.on { left: 8px; right: 8px; bottom: 60px; max-height: calc(100% - 172px); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #cvGo, #cvFull, #cvSound { min-width: 44px; justify-content: center; padding: 3px 8px; }
   .news { left: 8px; right: 8px; bottom: 8px; padding: 6px 10px; }
-  .news b { display: none; }
+  .news b, .news.radio b { display: none; }
   .news.radio #cvNews { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 12px; }
   #cvToast { top: auto; bottom: 52px; }
   .stage.carded #cvToast { top: 96px; bottom: auto; }
@@ -231,6 +251,39 @@ footer a { color: var(--dim); }
   .cv-folk li { grid-template-columns: 64px minmax(0, 1fr) 60px; }
   .cv-line { font-size: 14px; }
   .cv-drawer { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: 86%; border-radius: 14px 14px 0 0; }
+}
+/* phones: the tab bar of the site sits over the bottom of the page; the island ends above it */
+@media (max-width: 700px) { html:not(.rk-full) .wrap { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); } }
+/* a phone held sideways has no height to spare: the island takes the whole screen, as in full screen, with a ⌂ back to
+   the site; the plate stands on the right, the one you talk to on the left */
+.bar .home { display: none; text-decoration: none; }
+html.rk-full .bar .home { display: inline-flex; }
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  html, body { background: #000; }
+  .wrap { padding: 0; gap: 0; height: 100vh; height: 100dvh; }
+  .wrap > header, .tnav, .tabbar, .tnav-spacer, .tb-pill, .fb-fab, footer { display: none !important; }
+  .stage { border-radius: 0; border: 0; }
+  .bar { top: max(6px, env(safe-area-inset-top, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); gap: 6px; flex-wrap: nowrap; }
+  .bar .opt, #cvGo .lb, #cvSound .lb { display: none; }
+  .bar .home { display: inline-flex; }
+  .chip { min-height: 40px; padding: 3px 10px; font-size: 12px; white-space: nowrap; }
+  #cvGo, #cvFull, #cvSound, .bar .home { min-width: 44px; justify-content: center; padding: 3px 8px; }
+  .cv-x { width: 44px; height: 44px; right: 6px; top: 6px; }
+  .news { left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); bottom: max(6px, env(safe-area-inset-bottom, 0px)); padding: 4px 10px 4px 6px; }
+  .news.radio { min-height: 40px; }
+  .news b { display: none; }
+  .news.radio #cvNews { -webkit-line-clamp: 1; font-size: 12px; }
+  .cv-card.talk, .cv-card { left: auto; right: max(8px, env(safe-area-inset-right, 0px)); top: 54px; bottom: 54px; width: min(460px, 54%); max-height: none; transform: none; padding: 12px 14px; gap: 8px; border-radius: 12px; }
+  .cv-card.talk .cv-acts { grid-template-columns: 1fr; }
+  .cv-card.intro, .cv-card.end, .cv-card.paper { left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); top: 8px; bottom: 8px; width: auto; transform: none; }
+  .cv-card h2 { font-size: 24px; }
+  .cv-card.talk h3 { font-size: 18px; }
+  .cv-card.talk .cv-line { font-size: 14px; }
+  .cv-pick { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cv-cand em { display: none; }
+  #cvToast { top: auto; bottom: 54px; }
+  .places.on { bottom: 54px; top: 54px; max-height: none; }
+  .places .more { display: block; color: var(--dim); }
 }
 @media (prefers-reduced-motion: reduce) { .cv-card { animation: none; } }
 </style>
@@ -246,6 +299,7 @@ footer a { color: var(--dim); }
   <main class="stage" id="cvStage">
     <canvas id="cvScene" role="img" aria-label="A small tropical island with a council hall, a market square, a radio station, two embassies, a beach bar, a pier and a lighthouse"></canvas>
     <div class="bar">
+      <a class="chip home" href="/" aria-label="Tau HUD" title="Tau HUD">⌂</a>
       <span class="chip me" id="cvMe"></span>
       <span class="chip" id="cvDay">Day 1 of 5</span>
       <span class="chip"><span id="cvHour">Morning</span><span id="cvMoves"></span></span>
@@ -254,7 +308,8 @@ footer a { color: var(--dim); }
       <button class="chip" id="cvBookBtn" type="button">The Book</button>
       <button class="chip opt" id="cvHelp" type="button">How it works</button>
       <button class="chip" id="cvSound" type="button" aria-pressed="false">♪ Tap for sound</button>
-      <button class="chip opt" id="cvFull" type="button" aria-label="Full screen">⛶</button>
+      <button class="chip" id="cvGo" type="button" aria-expanded="false" aria-controls="cvPlaces"><span aria-hidden="true">☰</span><span class="lb">Places</span></button>
+      <button class="chip" id="cvFull" type="button" aria-label="Full screen" title="Full screen">⛶</button>
       <button class="chip opt" id="cvReset" type="button">New game</button>
     </div>
     <div class="places" id="cvPlaces" aria-label="Places on the island"></div>

@@ -305,7 +305,9 @@
     for (const v in votes) { if (v !== G.me && votes[v] != null) { if (pact(v, by) && !votes[v]) breakPact(v, by); } }
     if (yes >= 2) {
       G.laws.push({ id, by, day: G.day });
-      PEOPLE.forEach(p => { const d = lawScore(id, p.cares); G.sup[by][p.id] = Math.max(0, Math.min(100, G.sup[by][p.id] + d * 5 + (L.open ? 2 : 0))); for (const v in votes) if (votes[v]) G.sup[v][p.id] = Math.max(0, Math.min(100, G.sup[v][p.id] + d)); });
+      /* a law an embassy paid for wins its proposer less goodwill: the envelope is in the Book next to it */
+      const paid = G.deals.some(d => d.by === by && d.law === id), k = paid ? 3 : 5;
+      PEOPLE.forEach(p => { const d = lawScore(id, p.cares); G.sup[by][p.id] = Math.max(0, Math.min(100, G.sup[by][p.id] + Math.min(9, d * (d > 0 ? k : 5)) + (L.open ? 2 : 0)));   /* one law wins a person over only so far */ for (const v in votes) if (votes[v]) G.sup[v][p.id] = Math.max(0, Math.min(100, G.sup[v][p.id] + d)); });
       write(by, F("passed “{x}”, {n} of 3 in favour", { x: T(L.t), n: yes }), "law");
       return true;
     }
@@ -359,7 +361,7 @@
     for (const c of others(G.me)) {
       const w = CANDS[c].way, lead = leader() === c ? others(c).sort((a, b) => total(b) - total(a))[0] : leader();
       if (w === "rumours" && G.coins[c] >= RUMOUR && R() < 0.8) {
-        const lie = R() < 0.65, about = lead === c ? others(c)[0] : lead;
+        const lie = R() < (factAbout(lead === c ? others(c)[0] : lead) ? 0.4 : 0.65), about = lead === c ? others(c)[0] : lead;
         const claim = lie ? LIES[about] : factAbout(about) || LIES[about];
         rumour(c, about, claim, lie && claim === LIES[about] || !factAbout(about));
         news(F("Radio Coco tonight: “{x}”", { x: claim }));
@@ -374,6 +376,7 @@
       }
       if (R() < 0.35 && w !== "rumours") { const p = others(c).filter(x => x !== G.me && !pact(c, x))[0]; if (p && R() < 0.5) makePact(c, p, false); }
       campaign(c, CANDS[c].cares[0], 0.4);
+      if (w === "rumours") campaign(c, CANDS[c].cares[1], 0.5);   // the man with the microphone also just talks
     }
     /* promises due: whoever took embassy money and never proposed the law is found out on the last morning */
     if (G.day === DAYS) G.deals.forEach(d => { if (!d.kept && !d.told) { d.told = true; bump(d.by, null, -8); write(d.emb === "north" ? "frost" : "salado", F("says {x} took the money and never proposed “{y}”", { x: nm(d.by), y: T(LAWS[d.law].t) }), "broke"); news(F("{x}: “{y} took our money and forgot us.”", { x: T(EMB[d.emb].name), y: nm(d.by) })); } });
@@ -387,7 +390,8 @@
   }
 
   /* ---------- the screen ---------- */
-  const UI = { card: null, cardFace: null, hover: null };
+  const UI = { card: null, cardFace: null, hover: null, air: false, airUntil: 0 };
+  let wake = () => {};   // the first tap starts the music (set in wire())
   function hud() {
     $("cvStage").classList.toggle("pre", !G);
     if (!G) return;
@@ -434,7 +438,7 @@
   }
   function closeCard(keep) {
     if (UI.card) { UI.card.remove(); UI.card = null; } $("cvStage").classList.remove("carded"); SC.host(null);
-    if (!keep) { SC.focus(null); SC.glow(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); SND.hush(); }
+    if (!keep) { SC.focus(null); SC.glow(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); if (performance.now() > UI.airUntil) { SND.hush(); if (RICO.stop) RICO.stop(); } }   // a line on air is heard to its end
   }
   /* a card: who speaks, what they say (aloud, in their own voice, when the server has the clip), what you can do;
      the buttons are never read out. A line is text, or a list of parts as RICO.speak takes them. */
@@ -442,14 +446,15 @@
     let parts = !line ? null : typeof line === "string" ? [{ t: line, v: EN(line) }] : line;
     if (parts && box._visit) parts = greet(box._visit, who, parts);
     if (parts) line = join(parts);
-    const f = portrait(who, innerWidth < 760 ? 64 : 92, 0);
+    const f = portrait(who, innerHeight < 520 ? 44 : innerWidth < 760 ? 64 : 92, 0);
     SC.host((g, t) => face(g, who, t, t < f._f.talk, f._f.mood, true), !!bustOf(who));   // the one you talk to stands in the room, life-size
     box.append(el("div", { class: "cv-who" }, f, el("div", null, el("b", { translate: "no", text: nm(who) }), el("small", { text: T((CANDS[who] || FOLK[who] || {}).role || "") }))));
     if (title) box.append(el("h3", { text: title }));
     box._who = who; box._f = f;
     if (line) {
       box.append(box._line = el("p", { class: "cv-line", text: line })); say(f, Math.min(4200, 600 + line.length * 38));
-      RICO.speak(parts, who).then(secs => { if (secs && UI.card === box) { say(f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
+      const air = UI.air;
+      RICO.speak(parts, who, { air }).then(secs => { if (secs && air) UI.airUntil = performance.now() + secs * 1000; if (secs && UI.card === box) { say(f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
     }
     if (extra) box.append(extra);
     if (acts) box.append(el("div", { class: "cv-acts" }, acts));
@@ -599,12 +604,12 @@
       G.seen = G.seen || {};
       const ready = G.day >= 2;
       scene(box, "wren", T(SC.places.ship.name), T(G.chart ? "The chart is yours now. Mind the waterfall: it is not as solid as it looks." : "Not a pirate, dear. Marine archaeologist, retired. Everything the sea gives back ends up here, labelled: odd socks, a piano key, and a chart nobody can read."), G.chart ? null : [
-        btn(T("Ask about the chart"), () => { if (ready) { G.chart = true; save(); toast(T("Wren gives you the chart. It shows a door behind the waterfall.")); } else toast(T("“Come back tomorrow, I am still drying it.”")); if (UI.card) openCard("ship", PLACE.ship); }),
+        btn(T("Ask about the chart"), () => { if (ready) { G.chart = true; save(); toast(T("Wren gives you the chart. It shows a door behind the waterfall.")); } else { toast(T("“Come back tomorrow, I am still drying it.”")); closeCard(); return; } if (UI.card) openCard("ship", PLACE.ship); }),
       ]);
     },
     ama(box) {
       scene(box, "ama", T(SC.places.ama.name), T("My grandmother’s grandmother kept the island’s agreements on a stone, long before anyone wrote a Book. People think a record everyone can read is something new. It is the oldest thing we have."), [
-        btn(T("Ask about the stone"), () => toast(T(G.day >= 2 ? "“Go to the Tide Stone. It is low tide, it will let you read.”" : "“Tomorrow, at low tide. The stone does not hurry, and neither should you.”"))),
+        btn(T("Ask about the stone"), () => { toast(T(G.day >= 2 ? "“Go to the Tide Stone. It is low tide, it will let you read.”" : "“Tomorrow, at low tide. The stone does not hurry, and neither should you.”")); closeCard(); }),
       ]);
     },
     canoe(box) {
@@ -614,7 +619,7 @@
     },
     stone(box) {
       scene(box, "ama", T(SC.places.stone.name), T("Each mark is an agreement. Nobody ever chiselled one away, because everyone would see the scar. Your Book in the lighthouse is this stone, made of paper."), [
-        btn(T("Read the oldest mark"), () => toast(T("“No new rule may contradict an older one, unless the older one is undone first.” The Book checks every law the same way."))),
+        btn(T("Read the oldest mark"), () => { toast(T("“No new rule may contradict an older one, unless the older one is undone first.” The Book checks every law the same way.")); closeCard(); }),
       ]);
     },
     drums(box) {
@@ -659,6 +664,9 @@
     const ids = Object.keys(PLACE).filter(id => SC.places[id] && !SC.locked(id)), sig = ids.join();
     if (keys.dataset.sig === sig) return; keys.dataset.sig = sig; keys.textContent = "";
     ids.forEach(id => keys.append(el("button", { type: "button", onclick: () => { wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("span", { text: T(SC.places[id].name) }))));
+    /* what the bar leaves out on a small screen */
+    keys.append(el("button", { type: "button", class: "more", onclick: () => { wake(); help(); } }, el("span", { text: T("How it works") })),
+      el("button", { type: "button", class: "more", onclick: () => { wake(); $("cvReset").click(); } }, el("span", { text: T("New game") })));
   }
   function lesson() {
     const b = $("cvStage").querySelector(".cv-card"); if (!b) return;
@@ -736,7 +744,10 @@
     /* Rico calls it out on air, loud and happy, then tells you what you bought */
     const aired = [S("This just in on Radio Coco, ninety-seven point three!"), { t: "“" + T(claim) + "”", v: EN(claim) + "!" },
       S(lie ? "Done, it’s out there. Half the island is talking. The other half will read the Book tomorrow, and the Book says you paid me." : "Done. And this one’s true, so let them check. The Book backs you up.")];
+    /* what you paid for goes out whole: closing the card or the night coming does not cut Rico off */
+    UI.air = true; UI.airUntil = performance.now() + 60000;   // until the clip's length is known
     openCard("radio", box => scene(box, "rico", T("On air"), aired, [btn(T("Continue"), () => closeCard())]));
+    UI.air = false;
     spend();
   }
   function doPact(c, gift) {
@@ -1160,7 +1171,7 @@
       box.append(el("p", { class: "kick", text: T("An island election in five days") }), el("h2", { text: T("White Rabbit Key") }),
         el("p", { class: "cv-line", text: T("Four candidates want to govern the island. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") }));
       const pick = el("div", { class: "cv-pick" });
-      Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", onclick: () => begin(c) }, portrait(c, innerWidth < 760 ? 56 : 96), el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) }))));
+      Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", onclick: () => begin(c) }, portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96), el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) }))));
       box.append(el("p", { class: "cv-h", text: T("Play as") }), pick);
       const chk = el("input", { type: "checkbox", id: "cvChain" }); chk.checked = store.get("tauhud-rabbit-chain") === "on";
       chk.addEventListener("change", () => store.set("tauhud-rabbit-chain", chk.checked ? "on" : "off"));
@@ -1168,11 +1179,16 @@
       box.append(el("label", { class: "cv-chain", for: "cvChain" }, chk, el("span", { text: T("Sign my moves into Tau Testnet Alpha as I make them: 1 test AGRS each from my test wallet in this browser (made for me if I have none). The rivals’ moves go there anyway, from their own campaign wallets.") })));
     });
   }
+  function dragHint() {
+    if (!matchMedia("(pointer: coarse) and (orientation: portrait)").matches || store.get("rabbit-drag-hint")) return;
+    setTimeout(() => { if (G && !UI.card && SC.canPan()) { store.set("rabbit-drag-hint", "1"); toast(T("Drag the island to look around, or turn your phone sideways. ☰ lists every place.")); } }, 3500);
+  }
   function begin(c) {
     G = fresh(c); save();
     news(T("The Key Crier: five days to the election. Everything anyone does is written in the Book."));
     closeCard(); hud();
     toast(T("Tap a place on the island to begin."));
+    dragHint();
   }
   function help() {
     openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, five days, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
@@ -1184,8 +1200,18 @@
         el("li", { text: T("On the chain: every line in the Book is also a transaction on Tau Testnet Alpha, 1 test AGRS to the island council. The rivals send theirs from their own campaign wallets; yours go from your test wallet if you ticked the box. A ⛓ in the Book marks them.") }),
         el("li", { text: T("Inspired by \"Caribbean Disaster\" (1995). An independent homage, not affiliated with or endorsed by its creators. All art, characters, story and music are original.") }))));
   }
+  /* ?voice=check: one tap plays Rico's first line and the plate shows each step, for a phone that stays silent */
+  function voiceCheck() {
+    openCard(null, box => {
+      box.classList.add("intro");
+      const list = el("ul", { class: "cv-help" }, el("li", { text: "Tap the button. Rico should say his first line." }));
+      box.append(el("h3", { text: "Voice check" }), list, el("div", { class: "cv-acts" },
+        btn("Play Rico", async () => { wake(); SND.start(); const r = await RICO.check(); list.replaceChildren(...r.map(t => el("li", { text: t }))); }, { go: true }),
+        btn("Back to the island", () => { closeCard(); start(); })));
+    });
+  }
   let toastT = 0;
-  function toast(s) { const t = $("cvToast"); t.textContent = s; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600); }
+  function toast(s) { const t = $("cvToast"); t.textContent = s; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), Math.max(2600, s.length * 55)); }
 
   /* ---------- the cat and the legend ---------- */
   /* Déjà cannot be fed by one person: she eats only on days when at least three wallets agree (agorzilla.com/cat/) */
@@ -1226,22 +1252,52 @@
     addEventListener("keydown", e => { if (e.key === "Escape" && UI.card && !UI.card.classList.contains("intro") && !UI.card.classList.contains("locked")) closeCard(); });
     /* the day's last move is spent and nothing is open any more: the night comes, however the last card was left */
     setInterval(() => { if (G && !G.over && G.move >= MOVES && !UI.card && !drawer) { if (G.counting) { G.counting = false; election(); } else endDay(); } }, 1200);
+    /* after the election the result stays: a card closed over it (the Book read from the result, ✕, Escape) brings it back,
+       so nobody is left on a finished island without "Play again" */
+    setInterval(() => { if (G && G.over && !UI.card && !drawer && !$("cvPlaces").classList.contains("on")) ending(); }, 1500);
     $("cvHelp").onclick = () => { wake(); help(); };
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     const sb = $("cvSound");
-    const showSound = () => { sb.textContent = SND.on ? "♪ " + T("Sound on") : SND.wanted ? "♪ " + T("Tap for sound") : "♪ " + T("Sound off"); sb.setAttribute("aria-pressed", SND.on ? "true" : "false"); };
+    const showSound = () => { const l = SND.on ? T("Sound on") : SND.wanted ? T("Tap for sound") : T("Sound off"); sb.replaceChildren("♪", el("span", { class: "lb", text: " " + l })); sb.setAttribute("aria-label", l); sb.classList.toggle("off", !SND.wanted); sb.setAttribute("aria-pressed", SND.on ? "true" : "false"); };
     let woke = 0;   // the press that just started the music must not also switch it off
     sb.onclick = e => { e.stopPropagation(); if (Date.now() - woke < 800) return showSound(); if (!SND.on && SND.wanted) SND.start(); else SND.toggle(); showSound(); };
     /* the music starts as the page opens; where the browser holds it back, it starts on the first click, tap or key anywhere */
     const GESTURES = ["pointerdown", "touchstart", "keydown", "click"];
-    const wake = () => { if (!SND.on && SND.wanted) { SND.start(); woke = Date.now(); } showSound(); if (SND.on || !SND.wanted) GESTURES.forEach(n => removeEventListener(n, wake, true)); };
+    wake = () => { if (!SND.on && SND.wanted) { SND.start(); woke = Date.now(); } showSound(); if (SND.on || !SND.wanted) GESTURES.forEach(n => removeEventListener(n, wake, true)); };
     GESTURES.forEach(n => addEventListener(n, wake, true));
     SND.onchange = showSound;
     if (SND.wanted) SND.start();
     showSound();
-    const fs = $("cvFull");
-    if (document.fullscreenEnabled) fs.onclick = () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else $("cvStage").requestFullscreen({ navigationUI: "hide" }).catch(() => {}); };
-    else fs.hidden = true;
+    /* full screen in one tap, on every device: the whole page goes full screen (so the wallet drawer stays visible) and
+       only the island and its bar are left; a phone turns to landscape where it can. An iPhone has no full screen for a
+       page: there the header and the tab bar go away all the same, and a hint says how to get the rest. */
+    const fs = $("cvFull"), root = document.documentElement;
+    const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+    const canFs = !!(root.requestFullscreen || root.webkitRequestFullscreen) && (document.fullscreenEnabled !== false || document.webkitFullscreenEnabled);
+    const full = on => {
+      root.classList.toggle("rk-full", on); fs.setAttribute("aria-pressed", on ? "true" : "false"); fs.title = T(on ? "Leave full screen" : "Full screen");
+      setTimeout(() => window.dispatchEvent(new Event("resize")), 60);
+    };
+    fs.onclick = e => {
+      e.stopPropagation(); wake();
+      if (root.classList.contains("rk-full")) { full(false); if (fsEl()) (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+      full(true);
+      if (!canFs) { if (!store.get("rabbit-ios-full")) { store.set("rabbit-ios-full", "1"); toast(T("Full screen on an iPhone: Share, then Add to Home Screen, and start the game from there.")); } return; }
+      try {
+        const p = (root.requestFullscreen || root.webkitRequestFullscreen).call(root, { navigationUI: "hide" });
+        const turn = () => { if (matchMedia("(pointer: coarse)").matches && screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(() => {}); };
+        if (p && p.then) p.then(turn, () => {}); else turn();
+      } catch (err) {}
+    };
+    ["fullscreenchange", "webkitfullscreenchange"].forEach(n => document.addEventListener(n, () => { if (!fsEl() && canFs) full(false); }));
+    if (navigator.standalone || matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches) full(true);   // started from the home screen
+    /* ☰: every place as a button (the island is small on a phone, and some quarters sit at its edges) */
+    const go = $("cvGo"), list = $("cvPlaces");
+    const showList = on => { list.classList.toggle("on", on); go.setAttribute("aria-expanded", on ? "true" : "false"); };
+    go.onclick = e => { e.stopPropagation(); wake(); if (UI.card && !UI.card.classList.contains("intro")) closeCard(); showList(!list.classList.contains("on")); };
+    list.addEventListener("click", () => showList(false));
+    /* a phone held upright sees part of the island: say once that it can be dragged, or turned */
+    dragHint();
     $("cvReset").onclick = () => { if (confirm(T("Start a new election? This game will be lost."))) { store.del(KEY); G = null; closeCard(); start(); } };
     /* debug: ?rabbit=<place> opens a place, &day= and &move= set the day */
     const q = new URLSearchParams(location.search);
@@ -1249,6 +1305,7 @@
     if (q.get("rabbit") === "end" && G) { G.over = { win: G.me, count: {}, lies: 0 }; ending(); }
     else if (q.get("rabbit") && G && PLACE[q.get("rabbit")]) openCard(q.get("rabbit"), PLACE[q.get("rabbit")]);
     else if (q.get("rabbit") === "paper" && G) morning(3);
+    if (q.get("voice") === "check") voiceCheck();
   }
   setTimeout(readBallot, 1200);
   window.COVE_GAME = { get state() { return G; }, begin, endDay, face, open: p => openCard(p, PLACE[p]) };

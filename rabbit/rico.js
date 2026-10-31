@@ -323,20 +323,67 @@
   const cache = new Map();
   const clip = k => { if (!cache.has(k)) cache.set(k, fetch(BASE + k + ".mp3").then(r => (r.ok ? r.arrayBuffer() : null), () => null)); return cache.get(k); };
   /* speak a line in someone's voice: all its spoken parts, in order, or nothing at all when one clip is missing */
-  async function speak(parts, who = "rico") {
+  const why = { last: "" };
+  async function speak(parts, who = "rico", o = {}) {
     const SND = window.COVE_SOUND;
-    if (!SND || !SND.on || !SND.speak || !window.crypto || !crypto.subtle) return false;
+    if (!SND || !SND.on || !SND.speak) { why.last = "sound not on (" + (SND ? SND.state : "no player") + ")"; return false; }
+    if (!window.crypto || !crypto.subtle) { why.last = "no crypto.subtle"; return false; }
     await ready;
     const said = parts.filter(p => p.v), keys = await Promise.all(said.map(p => key(p.who || who, p.v)));
-    if (!keys.length || !keys.every(k => have.has(k))) return false;
+    if (!keys.length) { why.last = "nothing to say aloud"; return false; }
+    if (!have.size) { why.last = "clip list not loaded"; return false; }
+    if (!keys.every(k => have.has(k))) { why.last = "clip missing: " + keys.filter(k => !have.has(k)).join(","); return false; }
     const bufs = await Promise.all(keys.map(clip));
-    if (bufs.some(b => !b)) return false;
-    return SND.speak(bufs.map((b, i) => (said[i].who && said[i].who !== who ? { b: b.slice(0), tel: true } : b.slice(0))));   // a caller sounds like a telephone
+    if (bufs.some(b => !b)) { why.last = "clip download failed"; return false; }
+    const secs = await SND.speak(bufs.map((b, i) => (said[i].who && said[i].who !== who ? { b: b.slice(0), tel: true } : b.slice(0))), o);   // a caller sounds like a telephone
+    if (secs) { why.last = "ok"; return secs; }
+    /* the sound card would not decode the clip (some phone browsers): the same clips through a plain audio element */
+    why.last = "web audio: " + (SND.why || "off") + ", trying the audio element";
+    return element(keys);
+  }
+  /* one audio element, unlocked by the visitor's first tap, plays the clips in a row */
+  let EL = null;
+  const SILENT = (() => {   // a tenth of a second of silence, as a WAV file
+    const n = 800, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer), w = (o, t) => [...t].forEach((c, i) => (b[o + i] = c.charCodeAt(0)));
+    w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+    return "data:audio/wav;base64," + btoa(String.fromCharCode(...b));
+  })();
+  const unlock = () => {
+    if (EL) return;
+    try { EL = new Audio(); EL.preload = "auto"; EL.src = SILENT; EL.play().then(() => EL.pause(), () => {}); } catch (e) { EL = null; }
+    ["pointerdown", "touchend", "keydown"].forEach(n => removeEventListener(n, unlock, true));
+  };
+  ["pointerdown", "touchend", "keydown"].forEach(n => addEventListener(n, unlock, true));
+  function element(keys) {
+    if (!EL) { why.last += "; audio element not unlocked yet"; return false; }
+    return new Promise(res => {
+      let i = 0, total = 0, started = false;
+      const next = () => {
+        if (i >= keys.length) return;
+        EL.src = BASE + keys[i++] + ".mp3";
+        EL.onloadedmetadata = () => { if (!started) { started = true; total = keys.length * (EL.duration || 3); res(total); why.last = "ok (audio element)"; } };
+        EL.onended = next; EL.onerror = () => { why.last = "audio element could not play the clip"; if (!started) res(false); };
+        EL.play().catch(() => { why.last = "audio element refused to play"; if (!started) res(false); });
+      };
+      next();
+    });
+  }
+  /* the voice check (?voice=check): what the phone does with Rico's first line, step by step */
+  async function check() {
+    const out = [], SND = window.COVE_SOUND;
+    out.push("sound: " + (SND ? SND.state + (SND.on ? ", on" : ", not on") : "no player"));
+    out.push("crypto.subtle: " + !!(window.crypto && crypto.subtle));
+    await ready; out.push("clip list: " + (have ? have.size : 0) + " clips");
+    const k = await key("rico", L.op1); out.push("first line " + k + ": " + (have && have.has(k) ? "listed" : "NOT listed"));
+    const b = await clip(k); out.push("download: " + (b ? b.byteLength + " bytes" : "failed"));
+    const secs = await speak([{ t: L.op1, v: L.op1 }], "rico"); out.push("speak: " + (secs ? Math.round(secs) + " s" : "no") + " · " + why.last);
+    return out;
   }
   /* lines that make sense away from the game (the radio in the site header, assets/radio.js): the hellos and Rico's
      testnet humour, jokes, the listeners' letters, the phone-in (the caller in their own voice) and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
   const tr = s => (window.TauI18n ? TauI18n.t(s) : s);
   const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend].map(k => [{ t: tr(L[k]), v: L[k] }])
     .concat(CALLS.map(([who, q, a], i) => { const r = L[SETS.ring[i % SETS.ring.length]]; return [{ t: tr(r), v: r }, { t: tr(q), v: q, who }, { t: tr(a), v: a }]; }));
-  window.RICO = { L, SETS, CAST, CALLS, NAMES, all, speak, fill, key, hud };
+  window.RICO = { L, SETS, CAST, CALLS, NAMES, all, speak, fill, key, hud, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
 })();

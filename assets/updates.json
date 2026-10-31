@@ -2010,5 +2010,10 @@
   "tag": "White Rabbit Key",
   "on": "2026-10-31",
   "html": "White Rabbit Key: the islanders no longer repeat themselves. Come back and they say something new, depending on the day, the laws in force, your pacts, envelopes and rumours. Ask them questions for free, no move spent, and dig deeper: about the council, the Book, each other and Agorzilla. In English, Chinese and Japanese; their voices follow as the lines are recorded."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-31",
+  "html": "White Rabbit Key plays well on phones. Held sideways, the island takes the whole screen and the plate stands beside it; held upright, the island can be dragged, and ☰ lists every place. One tap on ⛶ plays full screen on any device. Small places are easier to tap, no text is smaller than 11 px, and the result of the election no longer disappears after reading the Book. A line you pay for on Radio Coco is now heard to its end, whatever you tap next. Paid-for laws win less goodwill, and the voices have a second way to play on phones (check at /rabbit/?voice=check). Tested with 100 simulated players."
  }
 ]
