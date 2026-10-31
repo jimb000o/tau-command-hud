@@ -1959,5 +1959,10 @@
   "tag": "White Rabbit Key",
   "on": "2026-10-31",
   "html": "White Rabbit Key: Radio Coco has far more to say and rarely repeats itself, even after a reload. Rico now reads the newest blocks every minute and a half and reacts on air to what he finds: a personal rule, a co-signed transfer, a transfer that can still be pulled back (and when it is), rule offers, network rule changes and votes, ghost transactions on the live testnet, and in the simulation the refusals, the consensus switch to proof of stake and back, and the restart at midnight."
+ },
+ {
+  "tag": "Menu",
+  "on": "2026-10-31",
+  "html": "Header: on wide screens the three languages are shown side by side again, 中文 · EN · 日本語, with English in the middle; narrower screens keep the small language menu."
  }
 ]

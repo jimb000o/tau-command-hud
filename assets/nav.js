@@ -725,7 +725,14 @@
         a.addEventListener("click", e => { e.preventDefault(); closeAll(); if (I.lang !== code) I.set(code); }); lm.append(a);
       });
       lb.addEventListener("click", () => toggle(lb, lm));
-      lw.append(lb, lm); right.append(lw);
+      lw.append(lb, lm);
+      /* wide screens show all three at once, English in the middle: 中文 · EN · 日本語; narrower screens keep the small menu */
+      const seg = el("div", "seg tn-langs"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Language · 语言 · 言語"); seg.setAttribute("translate", "no");
+      [LANGS[1], LANGS[0], LANGS[2]].forEach(([code, label, , tag, t]) => {
+        const b = el("button", "", label); b.type = "button"; b.lang = tag; b.setAttribute("aria-pressed", String(I.lang === code)); tip(b, t);
+        b.addEventListener("click", () => { if (I.lang !== code) I.set(code); }); seg.append(b);
+      });
+      right.append(seg, lw);
     }
     if (slots.gear) {   // settings, including the Simple/Technical view where a page has one
       const gw = el("div", "tnav-gearwrap"), gb = el("button", "tnav-gear", "⚙"), pop = el("div", "tnav-pop");
