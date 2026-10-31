@@ -575,6 +575,7 @@
 
   /* ---------- Radio Coco: Rico at the microphone, now and then, about what is going on ---------- */
   const DJ = { said: null, text: "", face: null, next: performance.now() + 9000, last: -1 };
+  if ($("cvDJ")) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }   // Rico is at the microphone from the start, not only once he first speaks
   function onAir(line, urgent) {
     const box = $("cvRadio"); if (!box) return;
     if (!DJ.face) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }
