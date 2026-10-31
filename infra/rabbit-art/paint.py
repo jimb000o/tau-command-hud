@@ -196,15 +196,17 @@ SCENE = {
     "market": "The Parasol Café: a small open-air café on a wooden terrace by a little turquoise pool, red and white "
               "parasols, mismatched chairs, a battered tin kettle, a long table where everybody talks, a noticeboard "
               "covered in notes, the harbour and the red tree below, cosy, noisy and friendly.",
-    "radio": "Inside Radio Coco, the small wooden radio hut on stilts beside the lattice radio mast on the cliff top: "
-             "plank walls, floor and roof beams, the painted Radio Coco sign seen backwards through the open front, a microphone on an arm, a mixing desk, a turntable, "
+    "radio": "Inside Radio Coco, the small wooden radio hut on stilts beside the lattice radio mast on the cliff top, "
+             "wooden all through, no concrete, no metal studio: rough plank walls, plank floor, a thatched roof on beams, the painted Radio Coco sign seen backwards through the open front, a microphone on an arm, a mixing desk, a turntable, "
              "shelves of records, a window showing the waterfall and the sea far below, cables, a fan, a coffee mug, "
              "warm lamp light, the clutter of a host who loves the job.",
     "north": "Inside the North Wind Embassy, an imperial hall in the restored fortress: polished pale marble, tall columns, "
              "a long red carpet to a huge desk on a raised dais, a giant map of the island with pins in it, cool blue banners, "
-             "gilded frames, a chandelier, the giant key visible through a tall arched window, cold, grand, spotless and "
+             "gilded frames, a chandelier, the giant key visible through a tall arched window, the same intact palace of pale "
+             "stone that the island shows on its cliff, no ruin, no moss, cold, grand, spotless and "
              "far too expensive for an island this size.",
-    "south": "The South Current Embassy, a sunny terracotta villa on the jungle slope: a terrace with a turquoise pool, "
+    "south": "The South Current Embassy, a sunny terracotta villa on the jungle slope, as on the island: a cool salon "
+             "opening onto the terrace with the turquoise pool (the same pool the island shows beside the villa), "
              "parasols and loungers, a wellness corner with smoothies, a laptop on a rattan table, potted palms, the "
              "jungle and the sea behind, warm, flattering and a little too comfortable.",
     "bar": "Inside Bar La Ola, a wooden bar on stilts at the pier: long shelves of colourful bottles, a counter with stools, "
@@ -224,7 +226,8 @@ SCENE = {
             "drone, a screen showing reef readings as a chain of small linked blocks, all hand-made and a bit improvised.",
     "works": "Inside the Coconut Works, a roomy wooden factory hall with a tall brick chimney: at the back a crooked machine "
              "made of bicycles and a church organ, one conveyor belt of coconuts, a few pipes, shelves of oil bottles, "
-             "rope and soap at the sides, the water wheel turning outside a big window; a wide open plank floor in front, "
+             "rope and soap at the sides, through a big window the small pond by the stream with the big wooden water wheel "
+             "turning in it, exactly as the island shows it beside the works; a wide open plank floor in front, "
              "light through the roof, cheerful but not crowded.",
     "camp": "The surveyors' camp in a clearing: a few white canvas tents, tripods and measuring poles, a folding table with "
             "big plans and maps held down by stones, crates with embassy stamps, a campfire, the jungle all around.",
@@ -1017,6 +1020,24 @@ PANORAMA = ("Repaint the island in this picture as one wide panoramic painting, 
             "branches in the foreground and nothing framing the picture: the view is clear from edge to edge. No text.")
 
 
+TOUCH = ("Repaint exactly this island picture, identical in every way (the same composition, every place where it is, "
+         "the style, ink line, colours and light, the sea and the sky), changing only these details so that each place "
+         "looks from outside the way it does inside: {what} No leaves or palms in the foreground. No text.")
+TOUCH_PLACES = ("beside the Coconut Works with its brick chimney, a small round pond fed by the stream with a big wooden "
+                "water wheel turning in it; at the terracotta villa of the South Current Embassy on the jungle slope, a "
+                "clearly visible terrace with a bright turquoise swimming pool, parasols and loungers; Radio Coco a small "
+                "wooden hut of planks on stilts at the foot of the radio mast; the North Wind Embassy an intact imperial "
+                "palace of clean pale stone with a dome, banners and the big key, no ruin.")
+
+
+def cmd_touch(a):
+    """Island drafts that keep the picture and change a few details (default: the places outside as they are inside:
+    pond and water wheel at the Coconut Works, the villa's pool, the wooden radio hut, the imperial North Wind)."""
+    a.prompt = TOUCH.format(what=" ".join(a.what) if a.what else TOUCH_PLACES)
+    a.idea = "touched"
+    cmd_panorama(a)
+
+
 def cmd_panorama(a):
     """New island drafts in one wide piece (21:9, painted at 4K), from the kept island or --from island=N: the same
     places, more sea around them, no leaves framing the view. Pick one, then its click areas are set by hand."""
@@ -1026,7 +1047,7 @@ def cmd_panorama(a):
         sys.exit("A panorama needs GEMINI_API_KEY.")
     from PIL import Image
     path = os.path.join(a.out, "drafts", "drafts.json")
-    for raw in paint_gemini(open(src, "rb").read(), PANORAMA, a.n, a.model, size="4K", aspect="21:9"):
+    for raw in paint_gemini(open(src, "rb").read(), getattr(a, "prompt", PANORAMA), a.n, a.model, size="4K", aspect="21:9"):
         im = Image.open(io.BytesIO(raw)).convert("RGB")
         if im.width > 5040:
             im = im.resize((5040, round(5040 * im.height / im.width)), Image.LANCZOS)
@@ -1037,7 +1058,7 @@ def cmd_panorama(a):
         write(os.path.join(a.out, "drafts", f), data)
         names.append(f)
         drafts["island"] = names
-        drafts.setdefault("idea", {})[f] = "panorama"
+        drafts.setdefault("idea", {})[f] = getattr(a, "idea", "panorama")
         write(path, json.dumps(drafts, indent=1).encode())
         print(f"  island={len(names)}: {im.width} x {im.height}")
     page(a)
@@ -1126,6 +1147,11 @@ def main():
     bu.add_argument("--model", default="gemini-2.5-flash-image")
     bu.add_argument("--from", dest="src", default=None, help="a folder or .zip of pictures painted elsewhere (bust-<name>.png, -talk.png, -blink.png)")
     bu.add_argument("--still", action="store_true", help="no talking and blinking frames")
+    to = sub.add_parser("touch")
+    to.add_argument("what", nargs="*", help="what to change (default: the places outside as they are inside)")
+    to.add_argument("--from", dest="src", default=None, help="the painting, e.g. island=22 (default: the kept island)")
+    to.add_argument("--n", type=int, default=2)
+    to.add_argument("--model", default="gemini-3-pro-image-preview")
     pa = sub.add_parser("panorama")
     pa.add_argument("--from", dest="src", default=None, help="the painting, e.g. island=21 (default: the kept island)")
     pa.add_argument("--n", type=int, default=3)
@@ -1147,7 +1173,7 @@ def main():
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures}[a.cmd](a)
+    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures}[a.cmd](a)
 
 
 if __name__ == "__main__":

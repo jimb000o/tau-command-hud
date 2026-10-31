@@ -35,7 +35,7 @@ def fake(url, data, headers, timeout=240):
             assert len(body["contents"][0]["parts"]) == 2
         if "same artist" in body["contents"][0]["parts"][0]["text"]:
             assert len(body["contents"][0]["parts"]) == 4 and ("high hill" in body["contents"][0]["parts"][0]["text"] or "rough sketch" in body["contents"][0]["parts"][0]["text"])
-        assert body["generationConfig"]["imageConfig"]["aspectRatio"] in ("16:9", "21:9", "1:1", "9:16", "3:4") and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"] or "close view of one place" in body["contents"][0]["parts"][0]["text"] or "Repaint this exact island" in body["contents"][0]["parts"][0]["text"] or "much higher resolution" in body["contents"][0]["parts"][0]["text"] or "empty grey" in body["contents"][0]["parts"][0]["text"] or "wide panoramic" in body["contents"][0]["parts"][0]["text"] or "magenta" in body["contents"][0]["parts"][0]["text"] or "Repaint exactly this picture" in body["contents"][0]["parts"][0]["text"])
+        assert body["generationConfig"]["imageConfig"]["aspectRatio"] in ("16:9", "21:9", "1:1", "9:16", "3:4") and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"] or "close view of one place" in body["contents"][0]["parts"][0]["text"] or "Repaint this exact island" in body["contents"][0]["parts"][0]["text"] or "much higher resolution" in body["contents"][0]["parts"][0]["text"] or "empty grey" in body["contents"][0]["parts"][0]["text"] or "wide panoramic" in body["contents"][0]["parts"][0]["text"] or "magenta" in body["contents"][0]["parts"][0]["text"] or "Repaint exactly this" in body["contents"][0]["parts"][0]["text"])
         pic = PIC
         if Image and "magenta" in body["contents"][0]["parts"][0]["text"]:   # a bust or a creature on magenta
             from PIL import ImageDraw
@@ -146,6 +146,8 @@ for prov in ("gemini", "openai"):
             assert {"deja", "agorzilla", "fronds"} <= set(sc) and '"aspectRatio": "9:16"' in bodies[-1] and Image.open(os.path.join(out, sc["deja"])).mode == "RGBA"
             paint.cmd_panorama(types.SimpleNamespace(out=out, src=None, n=1, model="gemini-3-pro-image-preview"))
             assert '"aspectRatio": "21:9"' in bodies[-1] and "No leaves" in prompts[-1] and "panorama" in json.load(open(os.path.join(out, "drafts", "drafts.json")))["idea"].values()
+            paint.cmd_touch(types.SimpleNamespace(out=out, src=None, n=1, model="gemini-3-pro-image-preview", what=[]))
+            assert "water wheel" in prompts[-1] and "touched" in json.load(open(os.path.join(out, "drafts", "drafts.json")))["idea"].values()
             paint.cmd_keep(types.SimpleNamespace(out=out, picks=["bar=1"])); assert "bar" not in json.load(open(os.path.join(out, "index.json")))["orig"]
         paint.cmd_drop(types.SimpleNamespace(out=out, places=["bar"]))
         assert [k for k in json.load(open(os.path.join(out, "index.json")))["scenes"] if not k.startswith("bust-") and k not in paint.CREATURES] == ["island"]
