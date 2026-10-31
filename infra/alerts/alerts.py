@@ -32,6 +32,10 @@ Nothing is posted for what the watcher finds on its very first run, and
 nothing whose block is older than POST_MAX_AGE_SECONDS, so a fresh volume or
 a long outage never floods the channel with old news.
 
+It also posts firsts (firsts.py): the first returnable, co-signed or time-locked
+payment the real chain carries, once each, so the HUD's "Money with terms" card
+lights up and the channels hear of it the day it happens.
+
 It also announces changes to Tau HUD itself, read from the site's own update
 log (assets/updates.json), at the fixed SITE_SLOTS times (UTC): an entry
 with a "major" field gets a post of its own, and when several are waiting
@@ -92,6 +96,7 @@ from websockets.asyncio.client import connect
 
 import explain
 import findings
+import firsts
 import gazette
 import recap
 
@@ -1486,6 +1491,7 @@ class Watcher:
             self.add_item(ev, by_id.get(ev["id"]), now.get("head", 0), pace, chain)
         if not self.state["primed"] and self.blocks:
             self.state["primed"] = True
+        self.note_firsts(chain)
         self.write_public(props, now, pace, chain)
         self.save_state()
 
@@ -1509,6 +1515,7 @@ class Watcher:
                           for p in reversed(props)],
             "events": [{k: it.get(k) for k in ("key", "kind", "h", "ts", "seen", "id", "headline", "body", "link", "chain")}
                        for it in [i for i in self.state["items"] if not i.get("folded")][:FEED_ITEMS]],
+            "firsts": firsts.public(self.state.get("firsts") or {}),
             "channels": {"telegram": "https://t.me/" + TELEGRAM_CHAT.lstrip("@") if TELEGRAM_CHAT.startswith("@") else None,
                          "x": os.environ.get("X_PROFILE_URL") or None, "feed": FEED_URL},
         }
@@ -1720,6 +1727,58 @@ class Watcher:
                 if await self.post_x(x_post(m["x"]), "finding " + m["what"], now):
                     st["x_today"] += 1
             self.save_state()
+
+    # ---------- firsts: a kind of transaction the testnet never carried before ----------
+    def note_firsts(self, chain: str):
+        """Record the firsts in the blocks held (firsts.scan); new ones wait in pending for maybe_firsts. Silent on the
+        first run, when what the chain holds is history."""
+        if not firsts.FIRSTS_ON or not self.blocks:
+            return
+        st = self.state.setdefault("firsts", firsts.fresh_state())
+        fresh = firsts.scan(st, self.blocks, chain)
+        if not st["primed"]:
+            st["primed"] = True
+            return
+        now = time.time()
+        for f in fresh:
+            log.info("first on the chain: %s in block %s", f["key"], f["h"])
+            st["pending"].append({**f, "found": now})
+
+    async def maybe_firsts(self, now: float | None = None):
+        """One post for the firsts that arrived together: Telegram, then the X copy."""
+        if not firsts.FIRSTS_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.get("firsts")
+        if not st or not st.get("pending") or st.get("pause_until", 0) > now:
+            return
+        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        due = firsts.take(st, now, POST_MAX_AGE)
+        if not due:
+            self.save_state()
+            return
+        text = firsts.telegram_text(due, REAL_LINE)
+        for o in tg:
+            ok, retry, err = await asyncio.to_thread(o.send_text, text)
+            if not ok:
+                st["pending"] = due + st["pending"]
+                st["tries"] = st.get("tries", 0) + 1
+                if st["tries"] >= MAX_TRIES:
+                    st["pending"], st["tries"] = [], 0
+                    log.warning("firsts post failed %s times (%s); given up", MAX_TRIES, err)
+                else:
+                    st["pause_until"] = now + (retry or 60 * st["tries"])
+                    log.warning("firsts post failed (%s); trying again later", err)
+                self.save_state()
+                return
+        st["tries"] = 0
+        what = "firsts " + ", ".join(f["key"] for f in due)
+        if tg:
+            log.info("posted %s", what)
+        else:
+            log.info("%s not posted to telegram (off)", what)
+        await self.post_x(x_post(firsts.x_lines(due)), what, now, f"{SHARE_HTTP}/og/hud.png")
+        self.save_state()
 
     # ---------- new nodes on the network ----------
     def relay_json(self, path: str) -> dict | None:
@@ -2374,6 +2433,7 @@ class Watcher:
                         await self.maybe_gazette()
                         await self.maybe_challenge()
                         await self.maybe_findings()
+                        await self.maybe_firsts()
                         await self.maybe_health()
                         await self.maybe_newnodes()
                         await self.maybe_sim()

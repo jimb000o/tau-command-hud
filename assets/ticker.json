@@ -67,9 +67,9 @@
       "tip": "A creature that grows with the testnet: wallets feed it, and every evening visitors vote on how it grows."
     },
     {
-      "text": "A stolen key still obeys your limits: rules bind the account",
+      "text": "Your limits hold in every wallet: rules bind the account",
       "href": "playground/",
-      "tip": "A rule binds the account, not the key: a limit holds even when someone else signs with your key. Try rules in the Playground."
+      "tip": "A rule binds the account, not the app: every node checks each payment against it, whichever wallet signed it. Try rules in the Playground."
     }
   ],
   "picks": [],

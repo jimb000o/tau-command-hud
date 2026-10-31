@@ -424,6 +424,20 @@ answer) and when it recovers (score 70 or more), each only after the new state h
 the factors that lose the most points. The state on the first run is not posted.
 `HEALTH_ALERTS=false` turns it off.
 
+**Firsts** (`alerts/firsts.py`): the first time the real chain carries a returnable
+payment, a payment taken back, a personal rule that reads the block time, a co-signer
+rule, a payment waiting for its co-signer or a co-signer's approval, the bot posts it once
+on Telegram and X (firsts that land within 10 minutes of each other share one post; the
+first run is silent). The kinds go into `proposals.json` as `firsts`, and the HUD's
+"Money with terms" card switches to "seen on the testnet" with a link to the first one.
+`FIRSTS=false` turns it off.
+
+To show them ourselves, `node/tools/money_demo.py` sends them between three test wallets
+of our own (about 25 minutes, keys kept in the node volume at `/data/money-demo.json`):
+`cd /opt/tau-command-hud/infra && docker compose exec -T tau-node python - < node/tools/money_demo.py`.
+Steps 3 to 5 need one of the testnet's two personal-rule places; the script frees it again
+at the end.
+
 **Findings** (`alerts/findings.py`): once a minute the watcher also looks for unusual
 things on the real chain and posts each incident once when it starts and once when it
 is over: our node without the IDNI bootnode or any peer (10 min), no new block while
