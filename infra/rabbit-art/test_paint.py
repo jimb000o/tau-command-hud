@@ -130,6 +130,7 @@ for prov in ("gemini", "openai"):
             src = os.path.join(out, "codex"); os.makedirs(src)   # pictures painted elsewhere
             for f in ("bust-kai", "bust-kai-talk"):
                 im = Image.new("RGB", (600, 900), (255, 0, 255)); ImageDraw.Draw(im).ellipse((150, 200, 450, 1000), fill=(235, 90, 215))
+                ImageDraw.Draw(im).rectangle((200, 700, 240, 760), fill=(250, 5, 250))   # a gap between arm and body
                 if f.endswith("talk"):
                     ImageDraw.Draw(im).rectangle((280, 300, 320, 320), fill=(40, 10, 10))
                 im.save(os.path.join(src, f + ".png"))
@@ -139,7 +140,14 @@ for prov in ("gemini", "openai"):
             assert len(calls) == n1 and {"bust-kai", "bust-kai-talk"} <= set(idx["scenes"]) and "bust-kai-blink" not in idx["scenes"]
             k = Image.open(os.path.join(out, idx["scenes"]["bust-kai"]))
             assert k.getpixel((400, 500))[3] == 255 and k.getpixel((10, 10))[3] == 0   # a pink face stays solid, the background goes
+            assert k.getpixel((309, 607))[3] == 0   # the gap between arm and body is cut out too
             x, y, w, h = idx["boxes"]["bust-kai-talk"]; assert w < 0.3 and h < 0.3
+            old = Image.open(os.path.join(out, idx["scenes"]["bust-kai"])).convert("RGBA"); old.paste((255, 0, 255, 255), (300, 500, 340, 560))
+            old.save(os.path.join(out, idx["scenes"]["bust-kai"]), "WEBP", lossless=True)   # a portrait kept before the gaps were cut
+            n2 = len(calls)
+            paint.cmd_busts(types.SimpleNamespace(out=out, who=["all"], model="m", src=None, still=False, rekey=True))
+            idx = json.load(open(os.path.join(out, "index.json")))
+            assert len(calls) == n2 and Image.open(os.path.join(out, idx["scenes"]["bust-kai"])).getpixel((320, 530))[3] == 0
             assert set(paint.BUSTS) >= {"marisol", "tobias", "baako", "hana", "rico", "lola", "sam", "frost", "salado"}
             paint.cmd_creatures(types.SimpleNamespace(out=out, what=["all"], model="gemini-2.5-flash-image"))
             sc = json.load(open(os.path.join(out, "index.json")))["scenes"]
