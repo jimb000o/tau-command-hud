@@ -859,7 +859,8 @@ PANORAMA = ("Repaint the island in this picture as one wide panoramic painting, 
             "on the right cliff the North Wind Embassy with the big key: no ruin, but an intact, imposing imperial seat, "
             "a restored fortress turned palace of power, clean pale stone, tall walls, a grand gate and stair, a domed hall, "
             "rows of tall windows, banners and a big flag in the north wind, polished cannons as decoration, everything "
-            "spotless, cold and expensive, looking down on the island; the terracotta villa of the South Current Embassy on the jungle slope with its terrace, turquoise pool and parasols; the villa on the jungle slope, the mountains behind. "
+            "spotless, cold and expensive, looking down on the island; the terracotta villa of the South Current Embassy on "
+            "the jungle slope with its terrace, turquoise pool and parasols; the mountains behind. "
             "The island sits in the middle with open sea, reefs and a few small rocky islets around it, so that it can be "
             "seen whole on a wide screen; calm sea at the very top corners and the bottom edge. No leaves, palms or "
             "branches in the foreground and nothing framing the picture: the view is clear from edge to edge. No text.")
