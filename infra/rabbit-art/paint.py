@@ -621,7 +621,7 @@ BUST = ("Paint one character for this game as a head-and-shoulders portrait, in 
         "shadow and no frame. A real, warm, likeable person, never a caricature. No text.")
 
 
-def keyed(raw, size=600):
+def keyed(raw, size=600, bottom=True):
     """A portrait on a flat background as a square RGBA picture, the background keyed out, the bust standing on the bottom edge."""
     from PIL import Image
     im = Image.open(io.BytesIO(raw)).convert("RGB")
@@ -642,6 +642,12 @@ def keyed(raw, size=600):
     bb = out.getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
     if not bb:
         sys.exit("No portrait found on the picture; paint it again.")
+    if not bottom:   # a creature or leaves: just what was painted, as large as it comes, up to `size` on its long side
+        fig = out.crop(bb)
+        k = min(1, size / max(fig.size))
+        fig = fig.resize((max(1, int(fig.width * k)), max(1, int(fig.height * k))), Image.LANCZOS)
+        buf = io.BytesIO(); fig.save(buf, "WEBP", quality=88, method=5)
+        return buf.getvalue()
     fig = out.crop((bb[0], bb[1], bb[2], H))   # down to the bottom edge, where the chest is cut off
     k = min((size - 8) / fig.width, (size - 8) / fig.height)
     fig = fig.resize((max(1, int(fig.width * k)), max(1, int(fig.height * k))), Image.LANCZOS)
@@ -671,6 +677,52 @@ def cmd_busts(a):
         f = f"bust-{w}-{hashlib.sha1(data).hexdigest()[:8]}.webp"
         write(os.path.join(a.out, f), data)
         idx = load(path); idx.setdefault("scenes", {})["bust-" + w] = f
+        write(path, json.dumps(idx, indent=1).encode())
+    print("Done. Live: https://tauhud.com/rabbit/ (Ctrl+F5)")
+
+
+CREATURES = {
+    "deja": ("1:1", 500, "Paint Déjà, the island's black cat, for this game, in exactly the style of the first picture: its ink line, "
+             "painted colours and warm light. A small sleek black cat with bright green eyes, sitting upright, the tail curled "
+             "round her paws, looking at us calmly as if she has seen us before. The whole cat and nothing else, on a plain flat "
+             "magenta (#ff00ff) background, no ground, no shadow, no text."),
+    "agorzilla": ("1:1", 520, "Paint, in exactly the style of the first picture (its ink line, painted colours and light), a glimpse "
+                  "of the island's legend in the jungle: the young furry dark-brown ape-like creature from the second picture, "
+                  "with big round eyes and a collar of small green lights with a round golden medallion, half hidden behind a "
+                  "few big jungle leaves, peeking out shyly: only the head, one shoulder and one hand on a leaf can be seen. "
+                  "The leaves and the creature only, on a plain flat magenta (#ff00ff) background, no ground, no shadow, no text."),
+    "fronds": ("9:16", 1800, "Paint the nearest foreground of this game's island, in exactly the style of the first picture (its ink "
+               "line, painted colours and light): one tall cluster of big tropical leaves growing in from the left edge of the "
+               "picture, from the bottom to the top, banana leaves, a palm frond and one curled fern, slightly darker than the "
+               "island as the nearest things are, the leaves touching the left edge, open on the right. The leaves only, on a "
+               "plain flat magenta (#ff00ff) background, no ground, no sky, no text."),
+}
+ZILLA_REF = "/opt/sites/agorilla/assets/agorilla.webp"   # how the creature looks (the agorzilla.com checkout on the server)
+
+
+def cmd_creatures(a):
+    """Déjà the cat, the glimpse of Agorzilla in the jungle and the leaves in front, painted like the kept island and
+    kept at once (scenes deja, agorzilla, fronds); the game shows them as they arrive. Name some to paint them again."""
+    what = list(CREATURES) if "all" in a.what else a.what
+    for w in what:
+        if w not in CREATURES:
+            sys.exit(f"No {w!r}. There are: {', '.join(CREATURES)}")
+    if provider() != "gemini":
+        sys.exit("Creatures need GEMINI_API_KEY.")
+    path = os.path.join(a.out, "index.json")
+    idx = load(path)
+    kept = idx.get("scenes", {}).get("island")
+    if not kept:
+        sys.exit("Keep an island first: paint.sh keep island=N")
+    plate = open(os.path.join(a.out, idx.get("orig", {}).get("island", kept)), "rb").read()
+    for w in what:
+        aspect, size, prompt = CREATURES[w]
+        refs = [open(ZILLA_REF, "rb").read()] if w == "agorzilla" and os.path.exists(ZILLA_REF) else []
+        print(f"{w}:", flush=True)
+        data = keyed(paint_gemini(plate, prompt, 1, a.model, refs, aspect=aspect)[0], size, bottom=False)
+        f = f"{w}-{hashlib.sha1(data).hexdigest()[:8]}.webp"
+        write(os.path.join(a.out, f), data)
+        idx = load(path); idx.setdefault("scenes", {})[w] = f
         write(path, json.dumps(idx, indent=1).encode())
     print("Done. Live: https://tauhud.com/rabbit/ (Ctrl+F5)")
 
@@ -967,6 +1019,9 @@ def main():
     hr.add_argument("--no-sharp", action="store_true", help="keep the resolution")
     hr.add_argument("--wide", action="store_true", help="also paint on past the left and right edges (shows a seam)")
     sub.add_parser("narrow")
+    cr = sub.add_parser("creatures")
+    cr.add_argument("what", nargs="*", default=["all"], help="all (default), or some of: " + " ".join(CREATURES))
+    cr.add_argument("--model", default="gemini-2.5-flash-image")
     bu = sub.add_parser("busts")
     bu.add_argument("who", nargs="*", default=["all"], help="all (default), or some of: " + " ".join(BUSTS))
     bu.add_argument("--model", default="gemini-2.5-flash-image")
@@ -991,7 +1046,7 @@ def main():
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "narrow": cmd_narrow, "busts": cmd_busts}[a.cmd](a)
+    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures}[a.cmd](a)
 
 
 if __name__ == "__main__":

@@ -507,4 +507,11 @@ TauI18n.add({ strings: {
   "Captain Wren found something old on the seabed again, and says the sea keeps a better record than any of us. Old Sam says: almost.": "雷恩船长又在海底发现了老东西，说大海的记录比我们谁都好。老 Sam 说：差一点。",
   "Pim the surveyor measured the square for the embassies today. Rico asked what they are planning. Pim said: I only measure. Very diplomatic.": "测量员皮姆今天替大使馆量了广场。Rico 问他们打算干什么。皮姆说：我只负责量。非常外交辞令。",
   "Elder Ama reminds the candidates: the island remembered things long before the Book did. Listen first, then promise.": "长老阿玛提醒候选人：早在有账本之前，这座岛就记得很多事。先倾听，再承诺。",
+  /* the cat and the legend of the jungle */
+  "Something moves in the jungle": "丛林里有东西在动",
+  "Déjà, the café cat": "Déjà，咖啡馆的猫",
+  "Déjà, the café cat, looks at you as if she has seen you before. Nobody can feed her alone: she eats only on days when at least three wallets agree.": "咖啡馆的猫 Déjà 看着你，好像以前见过你。谁也不能一个人喂她：只有在至少三个钱包达成一致的那天，她才吃东西。",
+  "A shape in the jungle": "丛林里的身影",
+  "You saw him too? The old ones call him Agorzilla. He lives deep in the jungle and grows only in the ways the island votes for. Nobody has a clear photo, everybody has a theory, and the bananas keep disappearing.": "你也看见他了？老人们叫他 Agorzilla。他住在丛林深处，只会按照全岛投票的方式成长。谁也没有一张清楚的照片，人人都有自己的说法，而香蕉总是不见。",
+  "Follow the footprints": "跟着脚印走",
 } });
