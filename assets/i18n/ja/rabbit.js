@@ -507,4 +507,11 @@ TauI18n.add({ strings: {
   "Captain Wren found something old on the seabed again, and says the sea keeps a better record than any of us. Old Sam says: almost.": "レン船長がまた海底で古いものを見つけた。海は誰よりもよく記録を残すそうだ。サムじいさん「惜しい」。",
   "Pim the surveyor measured the square for the embassies today. Rico asked what they are planning. Pim said: I only measure. Very diplomatic.": "測量士のピムが今日、大使館のために広場を測った。リコが何の計画か聞くと、ピム「測るだけです」。じつに外交的。",
   "Elder Ama reminds the candidates: the island remembered things long before the Book did. Listen first, then promise.": "長老アマから候補者へのひとこと：帳簿ができるずっと前から、島は物事を覚えていた。まず耳を傾け、それから約束を。",
+  /* the cat and the legend of the jungle */
+  "Something moves in the jungle": "ジャングルで何かが動いた",
+  "Déjà, the café cat": "カフェの猫、Déjà",
+  "Déjà, the café cat, looks at you as if she has seen you before. Nobody can feed her alone: she eats only on days when at least three wallets agree.": "カフェの猫Déjàが、前にも会ったような目であなたを見る。ひとりでは餌をあげられない。少なくとも三つのウォレットが同じ日に合意したときだけ、彼女は食べる。",
+  "A shape in the jungle": "ジャングルの影",
+  "You saw him too? The old ones call him Agorzilla. He lives deep in the jungle and grows only in the ways the island votes for. Nobody has a clear photo, everybody has a theory, and the bananas keep disappearing.": "あなたも見たの？ 年寄りたちは彼をAgorzillaと呼ぶ。ジャングルの奥に住んでいて、島が投票で決めたとおりにしか育たない。はっきりした写真は誰も持っていないのに、説は誰もが持っている。そしてバナナはいつも消えていく。",
+  "Follow the footprints": "足あとをたどる",
 } });
