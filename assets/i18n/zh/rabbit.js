@@ -345,4 +345,5 @@ TauI18n.add({ strings: {
   "Not a pirate, dear. Marine archaeologist, retired. Everything the sea gives back ends up here, labelled: odd socks, a piano key, and a chart nobody can read.": "不是海盗，亲爱的。退休的海洋考古学家。大海还回来的一切都到了这里，贴好标签：单只袜子、一个琴键，还有一张没人看得懂的海图。",
   "“Go to the Tide Stone. It is low tide, it will let you read.”": "“去潮汐石吧。现在是退潮，它会让你读。”",
   "“Tomorrow, at low tide. The stone does not hurry, and neither should you.”": "“明天，退潮的时候。石头不着急，你也别急。”",
+  "The Parasol Café": "阳伞咖啡座",
 } });

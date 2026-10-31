@@ -187,9 +187,9 @@ SCENE = {
     "hall": "The Council Tree: a huge red flamboyant tree in full bloom on the town's rise, its roots like benches, a ring of "
             "old wooden benches and stools in its shade, a slate board with chalked laws hung on the trunk, a small bell on "
             "a branch, red petals on the ground, the harbour and the sea glittering below, dignified and warm.",
-    "market": "Inside The Kettle, a small coffee shed with a grass roof: a battered tin kettle on a fire, mismatched cups, a "
-              "long table where everybody talks, a noticeboard covered in notes, sacks of coffee beans, a window onto the "
-              "harbour, cosy, noisy and friendly.",
+    "market": "The Parasol Café: a small open-air café on a wooden terrace by a little turquoise pool, red and white "
+              "parasols, mismatched chairs, a battered tin kettle, a long table where everybody talks, a noticeboard "
+              "covered in notes, the harbour and the red tree below, cosy, noisy and friendly.",
     "radio": "Inside Radio Coco, a small radio shack on a cliff top: a microphone on an arm, a mixing desk, a turntable, "
              "shelves of records, a window showing the waterfall and the sea far below, cables, a fan, a coffee mug, "
              "warm lamp light, the clutter of a host who loves the job.",
@@ -279,13 +279,13 @@ def mime(raw):
     return "image/png" if raw[:4] == b"\x89PNG" else "image/jpeg" if raw[:2] == b"\xff\xd8" else "image/webp"
 
 
-def paint_gemini(plate, prompt, n, model, refs=()):
+def paint_gemini(plate, prompt, n, model, refs=(), size=None):
     out = []
     pics = [{"inline_data": {"mime_type": mime(r), "data": base64.b64encode(r).decode()}} for r in (plate, *refs)]
     for i in range(n):   # one picture per call
         print(f"    painting {i + 1} of {n} ...", flush=True)
         body = {"contents": [{"parts": [{"text": prompt}, *pics]}],
-                "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": "16:9"}}}
+                "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": "16:9", **({"imageSize": size} if size else {})}}}
         r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                  json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": api_key("GEMINI_API_KEY")})
         parts = ((r.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
@@ -310,8 +310,8 @@ def paint_openai(plate, prompt, n, model, refs=()):
     return [base64.b64decode(d["b64_json"]) for d in r.get("data", [])]
 
 
-def small(raw, pixel=False):
-    """A 1600 x 900 WebP (cropped to 16:9) when Pillow is there, else the picture as it came."""
+def small(raw, pixel=False, width=1600):
+    """A 1600 x 900 WebP (or wider, for a sharp copy) cropped to 16:9 when Pillow is there, else the picture as it came."""
     try:
         from PIL import Image
     except ImportError:
@@ -325,7 +325,8 @@ def small(raw, pixel=False):
         c = int(w * 9 / 16); im = im.crop((0, (h - c) // 2, w, (h - c) // 2 + c))
     if pixel:   # real pixels: 400 x 225 in 48 colours, blown up four times without smoothing
         im = im.resize((400, 225), Image.LANCZOS).quantize(48, dither=Image.Dither.NONE).convert("RGB").resize((1600, 900), Image.NEAREST)
-    buf = io.BytesIO(); im.resize((1600, 900), Image.LANCZOS).save(buf, "WEBP", quality=80 if not pixel else 90, method=5)
+    w = min(width, max(1600, im.width))
+    buf = io.BytesIO(); im.resize((w, w * 9 // 16), Image.LANCZOS).save(buf, "WEBP", quality=80 if not pixel and w == 1600 else 88, method=5)
     return buf.getvalue(), "webp"
 
 
@@ -634,6 +635,37 @@ def cmd_rework(a):
     print("Look: https://node.tauhud.com/rico/art/drafts/")
 
 
+SHARP = ("Reproduce this exact picture at a much higher resolution: the same composition, every building, path, rock, "
+         "tree, boat and object in exactly the same place and size, the same colours, ink lines and light. Only add the fine "
+         "detail and crisp edges a large print would show. Change nothing else, add nothing, remove nothing, no text.")
+
+
+def cmd_sharp(a):
+    """A sharp, large copy (4K) of the kept island, or of --from island=N, by a model that paints at that size; the layout
+    stays valid because everything stays where it was. It joins the island drafts as a new number."""
+    drafts = load(os.path.join(a.out, "drafts", "drafts.json"))
+    src = liked(argparse.Namespace(out=a.out, like=[a.src] if a.src else ["island"]), drafts)[0]
+    if provider() != "gemini":
+        sys.exit("A sharp copy needs GEMINI_API_KEY (the model paints at 4K).")
+    raw = paint_gemini(open(src, "rb").read(), SHARP, 1, a.model, size=a.size)[0]
+    data, kind = small(raw, width=3840)
+    path = os.path.join(a.out, "drafts", "drafts.json")
+    drafts = load(path)
+    names = drafts.get("island", [])
+    f = f"island-{len(names) + 1}-{hashlib.sha1(data).hexdigest()[:8]}.{kind}"
+    write(os.path.join(a.out, "drafts", f), data)
+    names.append(f)
+    drafts["island"] = names
+    drafts.setdefault("idea", {})[f] = "sharp " + a.size
+    write(path, json.dumps(drafts, indent=1).encode())
+    page(a)
+    try:
+        from PIL import Image
+        print(f"  island={len(names)}: {Image.open(io.BytesIO(data)).size[0]} pixels wide")
+    except ImportError:
+        print(f"  island={len(names)}")
+
+
 def cmd_looks(a):
     """The island from the newest sketch, once in each of the three styles."""
     for n in LOOKS:
@@ -700,6 +732,10 @@ def main():
     k = sub.add_parser("keep")
     k.add_argument("picks", nargs="+", help="place=N or place=last, e.g. island=2 hall=1 bar=last")
     k.add_argument("--layout", default=None, help="island only: where everything stands on that painting, plates/<name>.json")
+    sh = sub.add_parser("sharp")
+    sh.add_argument("--from", dest="src", default=None, help="the painting, e.g. island=21 (default: the kept island)")
+    sh.add_argument("--size", default="4K", choices=["2K", "4K"])
+    sh.add_argument("--model", default="gemini-3-pro-image-preview")
     rw = sub.add_parser("rework")
     rw.add_argument("--from", dest="src", default=None, help="the painting to rework, e.g. island=18 (default: the kept island)")
     rw.add_argument("--n", type=int, default=2)
@@ -712,7 +748,7 @@ def main():
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework}[a.cmd](a)
+    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp}[a.cmd](a)
 
 
 if __name__ == "__main__":

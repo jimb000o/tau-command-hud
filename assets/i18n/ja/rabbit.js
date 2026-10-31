@@ -345,4 +345,5 @@ TauI18n.add({ strings: {
   "Not a pirate, dear. Marine archaeologist, retired. Everything the sea gives back ends up here, labelled: odd socks, a piano key, and a chart nobody can read.": "海賊じゃないわよ。引退した海洋考古学者。海が返してくれるものは全部ここに来て、ラベルを貼られる。片方だけの靴下、ピアノの鍵盤、そして誰にも読めない海図。",
   "“Go to the Tide Stone. It is low tide, it will let you read.”": "「潮の石へお行き。今は引き潮、読ませてくれるよ。」",
   "“Tomorrow, at low tide. The stone does not hurry, and neither should you.”": "「明日、引き潮のときに。石は急がない、あなたも急がないで。」",
+  "The Parasol Café": "パラソル・カフェ",
 } });
