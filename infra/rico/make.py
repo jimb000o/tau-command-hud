@@ -67,6 +67,19 @@ CAST = {
                                   "politely menacing, every word weighed, clear."),
     "salado": ("Ambassador Salado", "A charming southern diplomat in his fifties, velvet voice, warm Latin accent, flattering "
                                     "and smooth, a hint of a smile that is not quite friendly, clear."),
+    # the people of the island's other quarters
+    "ama": ("Ama", "An elder woman in her seventies who keeps her people's oldest customs, low unhurried voice, warm and wise, "
+                   "a quiet humour, every word chosen with care, clear and easy to understand."),
+    "wren": ("Captain Wren", "A retired marine archaeologist in her sixties who lives on an old ship, crisp brisk voice of a "
+                             "captain, amused and a little eccentric, calls people dear, clear and easy to understand."),
+    "kai": ("Kai", "A cheerful diving instructor in his late twenties, relaxed bright voice, delighted by the reef and by "
+                   "gadgets, quick jokes, clear and easy to understand."),
+    "pim": ("Pim", "A nervous, very precise land surveyor in his forties, thin careful voice, polite and evasive, thinks in "
+                   "metres, clear and easy to understand."),
+    "noor": ("Noor", "A no-nonsense factory foreman in her forties, strong practical voice, dry wit, proud of a very odd "
+                     "machine, clear and easy to understand."),
+    "kiko": ("Kiko", "A calm young canoe builder in his twenties, soft easy voice, few words, gentle humour, clear and easy "
+                     "to understand."),
 }
 DESIGN = CAST["rico"][1]
 TALK = (" Talks naturally and casually, straight to the person in front of them, like a real conversation, "
@@ -75,7 +88,8 @@ TALK = (" Talks naturally and casually, straight to the person in front of them,
 # how each one says their lines to you (v3 audio tags); Rico on air has his own
 TAG = {"rico": "[friendly, leaning in]", "lola": "[warm, teasing]", "sam": "[slowly, kindly]", "marisol": "[friendly, direct]",
        "tobias": "[pompous]", "baako": "[warmly, with a chuckle]", "hana": "[calm, patient]", "frost": "[coolly]",
-       "salado": "[smooth, charming]"}
+       "salado": "[smooth, charming]", "ama": "[slowly, warmly]", "wren": "[brisk, amused]", "kai": "[cheerful]",
+       "pim": "[nervously, precise]", "noor": "[dry, matter-of-fact]", "kiko": "[softly, calm]"}
 ON_AIR = "[excited radio DJ]"   # the callouts that end in "!"
 RADIO = "[radio DJ, playful]"     # his other lines on the radio strip
 LAWS = {"A deep harbour for cruise ships": "a deep harbour for cruise ships", "A road round the island": "a road round the island"}

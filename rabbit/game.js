@@ -435,7 +435,7 @@
         return el("li", null, el("span", { class: "nm", translate: "no", text: p.name }), el("small", { text: p.cares.map(c => T(TOPICS[c])).join(" · ") }), el("i", { class: "bar" + (best === G.me ? " lead" : ""), style: `--v:${mine}%`, title: F("leans to {x}", { x: nm(best) }) }));
       });
       const acts = Object.keys(TOPICS).map(t => btn(F("Talk about {x}", { x: T(TOPICS[t]) }), () => { campaign(G.me, t); SND.sfx("yes"); SC.gather(1); setTimeout(() => SC.gather(0), 2600); toast(F("People who care about {x} listened.", { x: T(TOPICS[t]) })); spend(); if (UI.card) openCard("market", PLACE.market); }, { off: !movesLeft() }));
-      scene(box, "lola", T(SC.places.market.name), T("Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts], el("ul", { class: "cv-folk" }, rows));
+      scene(box, G.me === "marisol" ? "lola" : "marisol", T(SC.places.market.name), T("Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts], el("ul", { class: "cv-folk" }, rows));
     },
     radio(box) {
       SND.set({ radio: true });
@@ -465,7 +465,7 @@
         el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]));
     },
     pier(box) {
-      scene(box, "sam", T("The pier"), T("Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."), [
+      scene(box, G.me === "tobias" ? "sam" : "tobias", T("The pier"), T("Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."), [
         btn(T("Watch the sea"), () => { SC.cat(Math.random() < 0.5); setTimeout(() => SND.sfx("meow"), 1200); closeCard(); }),
         btn(T("Read how it works"), () => help()),
       ]);
@@ -485,7 +485,7 @@
       ]);
     },
     works(box) {
-      scene(box, "noor", T(SC.places.works.name), T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
+      scene(box, G.me === "baako" ? "noor" : "baako", T(SC.places.works.name), T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
         btn(T("Work a shift (10 coins)"), () => { G.coins[G.me] += 10; write(G.me, T("worked a shift at the Coconut Works: 10 coins, honestly earned"), "talk"); SND.sfx("coin"); toast(T("Ten coins, and you smell of coconut for the rest of the day.")); spend(); if (UI.card) openCard("works", PLACE.works); }, { off: !movesLeft(), sub: T("one move") }),
       ]);
     },
