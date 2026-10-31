@@ -36,6 +36,8 @@
   try { S.want = localStorage.getItem("tauhud-rabbit-sound") !== "off"; } catch (e) {}
 
   function build() {
+    /* iPhones: play even with the ring switch on silent, like any game (Safari 16.4+) */
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
     const c = S.ctx = new (window.AudioContext || window.webkitAudioContext)();
     S.master = c.createGain(); S.master.gain.value = 0.8; S.master.connect(c.destination);
     /* a small room of reverb, made from decaying noise */
@@ -221,19 +223,24 @@
   }
   /* a voice (rico.js): the clips one after the other, after the jingle, through a small-radio colour; the music
      steps back while someone talks. Resolves with how many seconds they will talk. */
-  async function speak(bufs) {
+  async function speak(bufs, o = {}) {
     if (!S.ctx || !S.on) return false;
     const c = S.ctx, list = [];
     // a clip is an ArrayBuffer, or { b, tel } for a caller heard through the telephone
-    for (const b of bufs) { try { list.push({ buf: await c.decodeAudioData(b.b || b), tel: !!b.tel }); } catch (e) { return false; } }
+    /* the callback form as well: older WebKit (iPhones before iOS 14.1) never resolves the promise form */
+    const decode = b => new Promise((ok, no) => { try { const p = c.decodeAudioData(b, ok, no); if (p && p.then) p.then(ok, no); } catch (e) { no(e); } });
+    for (const b of bufs) { try { list.push({ buf: await decode(b.b || b), tel: !!b.tel }); } catch (e) { S.why = "decode"; return false; } }
+    if (c.state !== "running") { try { await c.resume(); } catch (e) {} }
     if (!S.voice) {
       const hp = c.createBiquadFilter(), pk = c.createBiquadFilter(), g = c.createGain(), comp = c.createDynamicsCompressor();
       hp.type = "highpass"; hp.frequency.value = 160; pk.type = "peaking"; pk.frequency.value = 2600; pk.Q.value = 0.8; pk.gain.value = 3;
       comp.threshold.value = -20; comp.ratio.value = 3; g.gain.value = 1.1;
       hp.connect(pk); pk.connect(comp); comp.connect(g); g.connect(S.master); S.voice = hp;
     }
-    if (S.talking) S.talking.forEach(n => { try { n.stop(); } catch (e) {} });
-    let at = c.currentTime + 0.55; S.talking = [];
+    /* a line on air (a rumour you paid for) is heard to its end: whoever speaks next waits for it */
+    const onAir = c.currentTime < (S.airEnd || 0);
+    if (S.talking && !onAir) S.talking.forEach(n => { try { n.stop(); } catch (e) {} });
+    let at = onAir ? S.airEnd + 0.4 : c.currentTime + 0.55; S.talking = [];
     if (!S.tel && list.some(x => x.tel)) {
       const lo = c.createBiquadFilter(), hi = c.createBiquadFilter(), drive = c.createWaveShaper(), curve = new Float32Array(256);
       for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(2.2 * x); }
@@ -241,6 +248,7 @@
       hi.connect(lo); lo.connect(drive); drive.connect(S.voice); S.tel = hi;
     }
     for (const { buf, tel } of list) { const n = c.createBufferSource(); n.buffer = buf; n.connect(tel ? S.tel : S.voice); n.start(at); S.talking.push(n); at += buf.duration + (tel ? 0.45 : 0.18); }
+    if (o.air) S.airEnd = at;
     S.duck = true; apply();
     const mine = S.talking;
     const secs = at - c.currentTime;
@@ -249,6 +257,7 @@
   }
   /* whoever is talking stops (a card closed) */
   function hush() {
+    if (S.ctx && S.ctx.currentTime < (S.airEnd || 0)) return;   // a line on air finishes
     if (S.talking) S.talking.forEach(n => { try { n.stop(); } catch (e) {} });
     S.talking = null; if (S.duck) { S.duck = false; apply(); }
   }
@@ -256,6 +265,7 @@
     start, sfx, speak, hush,
     /* on: the music is really playing (a browser lets it start only after the first click, tap or key) */
     get on() { return S.on && !!S.ctx && S.ctx.state === "running"; }, get wanted() { return S.want; },
+    get state() { return S.ctx ? S.ctx.state : "none"; }, get why() { return S.why || ""; },
     set onchange(f) { S.cb = f; },
     set(o) { Object.assign(want, o); apply(); },
     toggle() {

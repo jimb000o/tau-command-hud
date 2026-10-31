@@ -767,4 +767,8 @@ TauI18n.add({ strings: {
   "Me? A road to drive on, and a very long line in your Book saying who paid for it. My government likes to be remembered. Your Book is happy to help.": "私かい？走れる道路と、だれがその費用を払ったかを書いた、あなたがたの帳簿のとても長い一行さ。うちの政府は覚えていてもらうのが好きでね。あなたがたの帳簿は喜んで手を貸してくれる。",
   "Do you and Ambassador Frost talk?": "フロスト大使とは話をするの？",
   "Every Thursday. We play cards. He cheats, I let him, and we both write it down. Diplomacy is mostly agreeing on who keeps the score.": "毎週木曜に。カードをするんだ。彼はいかさまをして、私はそれを許して、二人ともそれを書き留める。外交とは、おおむね、だれが点をつけるかを決めることだよ。",
+  "Places": "場所",
+  "Leave full screen": "全画面を終了",
+  "Full screen on an iPhone: Share, then Add to Home Screen, and start the game from there.": "iPhone で全画面にするには：共有 →「ホーム画面に追加」を選び、そこからゲームを開いてください。",
+  "Drag the island to look around, or turn your phone sideways. ☰ lists every place.": "島をドラッグして見回すか、スマホを横向きにしてください。☰ ですべての場所を一覧できます。",
 } });

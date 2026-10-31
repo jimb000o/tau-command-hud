@@ -970,7 +970,7 @@
 
   /* ---------- the stage ---------- */
   const S = { c: null, g: null, W: 0, H: 0, K: 1, base: null, world: null, wg: null, hour: 0, hourT: 0, cam: { x: 800, y: 450, z: 1 }, camT: { x: 800, y: 450, z: 1 },
-    hover: null, glow: null, locked: new Set(), gather: 0, room: null, roomA: 0, roomT: 0, cat: null, still: false, onFrame: null, last: 0 };
+    hover: null, glow: null, locked: new Set(), pan: { x: 0, y: 0 }, gather: 0, room: null, roomA: 0, roomT: 0, cat: null, still: false, onFrame: null, last: 0 };
   function size() {
     const r = S.c.getBoundingClientRect(); S.K = Math.min(2, devicePixelRatio || 1);
     S.W = Math.max(1, r.width); S.H = Math.max(1, r.height);
@@ -1162,17 +1162,31 @@
     if (RARE.zilla && inBox(RARE.zilla.box, x, y)) return "agorzilla";
     if (Math.abs(x - RB.x) < 16 && y < RB.y + 6 && y > RB.y - 30) return "rabbit";
     for (const id in PLACES) { if (S.locked.has(id)) continue; const [bx, by, bw, bh] = PLACES[id].box; if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) return id; }
-    return null;
+    /* a finger is wider than a small place on a phone: the nearest place within 22 px of the tap counts too */
+    const tol = 22 / (fitScale() * S.cam.z); let best = null, bd = tol;
+    for (const id in PLACES) {
+      if (S.locked.has(id)) continue; const [bx, by, bw, bh] = PLACES[id].box;
+      const d = Math.hypot(Math.max(bx - x, 0, x - bx - bw), Math.max(by - y, 0, y - by - bh)); if (d < bd) { bd = d; best = id; }
+    }
+    return best;
   }
   /* lean in on a place, keeping the space for the card on the far side; null goes back to the whole cove */
   /* the whole island, as large as the screen allows: on a tall phone the island fills the width, the sky gives way */
-  function home() {
+  const home = () => pan(homeBase());
+  function homeBase() {
     /* a painted island framed as a whole picture is always seen whole; beside it on a wide screen the painting's own
        blurred sea carries on, and the painted leaves in front (paint.py creatures: fronds) cover the seam at the sides */
     if (ART.whole && S.W >= 760) return { x: 800, y: 450, z: 1 };
-    const f = fitScale(), z = Math.max(1, Math.min(S.W / (1220 * f), S.H / (690 * f)));
-    return { x: 800, y: z > 1.05 ? Math.max(450, 900 - S.H / (f * z) / 2 - 10) : 450, z };
+    const f = fitScale(), z = Math.max(1, Math.min(S.W / ((S.W < 760 && S.H > S.W ? 940 : 1220) * f), S.H / (690 * f)));   // a phone held upright comes closer; a drag shows the rest
+    return ({ x: 800, y: z > 1.05 ? Math.max(450, 900 - S.H / (f * z) / 2 - 10) : 450, z });
   }
+  /* on a screen that shows only part of the island (a phone held upright), a drag moves the view; it stops at the edges */
+  function pan(c) {
+    const s = fitScale() * c.z, hw = S.W / s / 2, hh = S.H / s / 2, e = painted("island") ? ART.wide || 0 : 0;
+    const cl = (v, lo, hi) => (lo > hi ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, v)));
+    return { x: cl(c.x + S.pan.x, hw - e, WW + e - hw), y: cl(c.y + S.pan.y, hh, WH - hh), z: c.z };
+  }
+  const canPan = () => { const c = homeBase(), s = fitScale() * c.z; return S.W / s < WW - 4 || S.H / s < WH - 4; };
   function focus(id, side = 0) {
     if (!id) { S.camT = home(); S.focusId = null; S.roomT = 0; S.roomCat = null; S.left = true; return; }
     if (ROOMS[id] || painted(id)) {
@@ -1196,6 +1210,21 @@
     S.c = canvas; S.g = canvas.getContext("2d");
     S.still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     size(); addEventListener("resize", size);
+    /* drag to look around (only where the island does not fit whole and nothing is open); a drag is not a tap */
+    let drag = null, dragged = 0;
+    canvas.addEventListener("pointerdown", e => { if (!S.focusId && S.roomA < 0.3) drag = { x: e.clientX, y: e.clientY, px: S.pan.x, py: S.pan.y, moved: false }; });
+    addEventListener("pointermove", e => {
+      if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) < 10) return; if (!canPan()) return;
+      drag.moved = true; const s = fitScale() * S.camT.z;
+      S.pan = { x: drag.px - dx / s, y: drag.py - dy / s };
+      const b = homeBase(), c = pan(b); S.pan = { x: c.x - b.x, y: c.y - b.y };   // held at the edges
+      S.camT = c; S.cam.x = c.x; S.cam.y = c.y;
+    });
+    addEventListener("pointerup", () => { if (drag && drag.moved) dragged = performance.now(); drag = null; });
+    addEventListener("pointercancel", () => { drag = null; });
+    canvas.addEventListener("click", e => { if (performance.now() - dragged < 350) { e.stopImmediatePropagation(); e.preventDefault(); } });
+    canvas.style.touchAction = "none";
     canvas.addEventListener("pointermove", e => {   // the leaves in front lean away from the pointer, a little
       const r = canvas.getBoundingClientRect(); S.peek = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
     });
@@ -1203,7 +1232,7 @@
     requestAnimationFrame(frame);
   }
   window.COVE_SCENE = {
-    mount, hit, focus, places: PLACES, toScreen,
+    mount, hit, focus, places: PLACES, toScreen, canPan: () => canPan(),
     setHour(h, now) { S.hourT = h; if (now) S.hour = h; },
     glow(id) { S.glow = id; },
     host(fn, tall) { S.hostFn = fn; S.hostTall = !!tall; },

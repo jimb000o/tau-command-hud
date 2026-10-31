@@ -767,4 +767,8 @@ TauI18n.add({ strings: {
   "Me? A road to drive on, and a very long line in your Book saying who paid for it. My government likes to be remembered. Your Book is happy to help.": "我？一条可以开车的路，还有你们账本里很长的一行，写着是谁付的钱。我的政府喜欢被人记住。你们的账本很乐意帮忙。",
   "Do you and Ambassador Frost talk?": "你和 Frost 大使会聊天吗？",
   "Every Thursday. We play cards. He cheats, I let him, and we both write it down. Diplomacy is mostly agreeing on who keeps the score.": "每周四。我们打牌。他作弊，我让着他，我们俩都把它记下来。外交大体上就是商定由谁来记分。",
+  "Places": "地点",
+  "Leave full screen": "退出全屏",
+  "Full screen on an iPhone: Share, then Add to Home Screen, and start the game from there.": "在 iPhone 上全屏：点“分享”，再点“添加到主屏幕”，然后从那里打开游戏。",
+  "Drag the island to look around, or turn your phone sideways. ☰ lists every place.": "拖动小岛四处看看，或把手机横过来。☰ 列出所有地点。",
 } });
