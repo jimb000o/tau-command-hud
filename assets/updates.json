@@ -2020,5 +2020,10 @@
   "tag": "White Rabbit Key",
   "on": "2026-10-31",
   "html": "White Rabbit Key plays well on phones. Held sideways, the island takes the whole screen and the plate stands beside it; held upright, the island can be dragged, and ☰ lists every place. One tap on ⛶ plays full screen on any device. Small places are easier to tap, no text is smaller than 11 px, and the result of the election no longer disappears after reading the Book. A line you pay for on Radio Coco is now heard to its end, whatever you tap next. Paid-for laws win less goodwill, and the voices have a second way to play on phones (check at /rabbit/?voice=check). Tested with 100 simulated players."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-31",
+  "html": "White Rabbit Key on the testnet: every move now pays the place where it happens. A line bought on Radio Coco sends 25 test AGRS to the station, a talk on the square pays the market, a shift at the Coconut Works the works, an embassy’s paper the embassy; laws, pacts and votes still go to the council. The rivals pay the same way, and In numbers counts every place."
  }
 ]
