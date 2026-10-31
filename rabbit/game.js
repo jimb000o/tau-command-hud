@@ -753,8 +753,8 @@
   const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused"];
   const KIND = { rule_deploy: "rule", approval_request: "cosign", transfer_vote: "cosvote", retractable_transfer: "lock", retract_transfer: "back", rule_offer: "offer", rule_offer_accept: "offerYes", consensus_rule_vote: "lawVote" };
   const txKind = tx => { const t = tx.tx_type || "user_tx"; return t === "user_tx" && tx.operations && tx.operations["0"] ? "rule_deploy" : t; };
-  /* the ghosts by the visitor's calendar: fitting in Halloween week, a nuisance in November, ordinary news otherwise */
-  const ghostSeason = () => { const d = new Date(), m = d.getMonth(), day = d.getDate(); return m === 9 && day >= 24 ? "ghostHalloween" : m === 10 ? "ghostAfter" : "ghost"; };
+  /* the ghosts by the visitor's calendar: fitting in Halloween week, a nuisance in the first week of November, ordinary news otherwise */
+  const ghostSeason = () => { const d = new Date(), m = d.getMonth(), day = d.getDate(); return m === 9 && day >= 24 ? "ghostHalloween" : m === 10 && day <= 7 ? "ghostAfter" : "ghost"; };
   function heard(set, h) {
     if (!set) return;
     if (RADAR.news.some(n => n.set === set)) return;
@@ -790,8 +790,8 @@
     ws.onerror = () => { clearTimeout(stop); finish(); };
     if (!sim) fetch("https://node.tauhud.com/health-score", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
       const f = j && (j.factors || []).find(x => x && x.key === "mempool"), n = f && f.value ? +f.value.sealed || 0 : 0;
-      // the ghosts make news when they appear, and again every twenty minutes while they stay
-      if (n > 0 && (!RADAR.ghosts || performance.now() - RADAR.ghostAt > 1200000)) { RADAR.ghostAt = performance.now(); heard(ghostSeason(), null); }
+      // the ghosts make news when they appear; around Halloween, again every twenty minutes while they stay
+      if (n > 0 && (!RADAR.ghosts || (ghostSeason() !== "ghost" && performance.now() - RADAR.ghostAt > 1200000))) { RADAR.ghostAt = performance.now(); heard(ghostSeason(), null); }
       RADAR.ghosts = n;
     }, () => {});
   }
