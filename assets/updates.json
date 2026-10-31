@@ -1969,5 +1969,10 @@
   "tag": "Menu",
   "on": "2026-10-31",
   "html": "Header: on wide screens the three languages are shown side by side again, 中文 · EN · 日本語, with English in the middle; narrower screens keep the small language menu."
+ },
+ {
+  "tag": "Donations",
+  "on": "2026-10-31",
+  "html": "Donations: the cost list now also shows single purchases with their date, starting with €20 of image credits for the drawings on the site (31 Oct). They are listed apart and not added to the monthly running costs."
  }
 ]

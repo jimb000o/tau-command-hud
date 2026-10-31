@@ -1,5 +1,5 @@
 {
- "about": "Monthly running costs as billed, each in the currency of its bill; amount null = bill not in yet, not shown. Time is never priced. Read by /donate/, the About window and the Updates panel.",
+ "about": "Running costs as billed, each in the currency of its bill; amount null = bill not in yet, not shown. items: monthly. oneoff: single purchases with their date (YYYY-MM-DD), newest first. Time is never priced. Read by /donate/, the About window and the Updates panel.",
  "items": [
   {
    "t": "Server",
@@ -14,6 +14,12 @@
    "cur": "USD"
   },
   {
+   "t": "Voices",
+   "d": "ElevenLabs Starter plan, for the voices of the Daily Consensus café; to be cancelled once the voices are made",
+   "amount": null,
+   "cur": "USD"
+  },
+  {
    "t": "Domains",
    "d": "tauhud.com and agorzilla.com",
    "amount": null,
@@ -24,6 +30,22 @@
    "d": "the bot that posts rule changes on X",
    "amount": null,
    "cur": "USD"
+  }
+ ],
+ "oneoff": [
+  {
+   "t": "Image credits",
+   "d": "Google AI Studio credits for the drawings on the site",
+   "amount": 20,
+   "cur": "EUR",
+   "on": "2026-10-31"
+  },
+  {
+   "t": "Image credits",
+   "d": "Google AI Studio credits for the drawings on the site, used up",
+   "amount": null,
+   "cur": "EUR",
+   "on": ""
   }
  ]
 }
