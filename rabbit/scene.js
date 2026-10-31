@@ -539,12 +539,23 @@
     return p[p.length - 1];
   };
   function person(g, x, y, t, f, i) {
+    if (painted("folk")) return sprite(g, x, y, t, f, i);
     const step = Math.sin(t * 0.012 + i) * 1.6;
     g.fillStyle = "rgba(34,48,58,.25)"; g.beginPath(); g.ellipse(x + 2, y + 1, 5.5, 1.8, 0, 0, Math.PI * 2); g.fill();
     g.strokeStyle = INK; g.lineWidth = 2; g.lineCap = "round"; g.beginPath(); g.moveTo(x - 1.5, y - 7); g.lineTo(x - 1.5 + step, y); g.moveTo(x + 1.5, y - 7); g.lineTo(x + 1.5 - step, y); g.stroke();
     g.fillStyle = f.shirt; g.beginPath(); g.moveTo(x - 4.5, y - 6); g.lineTo(x - 3.5, y - 16); g.lineTo(x + 3.5, y - 16); g.lineTo(x + 4.5, y - 6); g.closePath(); g.fill(); g.lineWidth = 1.1; g.stroke();
     g.fillStyle = f.skin; g.beginPath(); g.arc(x, y - 19.5, 3.4, 0, Math.PI * 2); g.fill(); g.stroke();
     if (i % 3 === 0) { g.fillStyle = P.mustard; g.beginPath(); g.ellipse(x, y - 22, 5.5, 1.6, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.beginPath(); g.arc(x, y - 22.5, 2.6, Math.PI, 0); g.fill(); g.stroke(); }
+  }
+  /* a painted islander from the strip: cut out like a paper puppet, rocking on its feet and bobbing as it walks,
+     turned the way it goes, with a soft shadow under it */
+  function sprite(g, x, y, t, f, i) {
+    const im = ART.img.folk, CW = 80, CH = 120, n = Math.max(1, Math.floor(im.naturalWidth / CW)), h = 30, w = h * CW / CH;
+    const a = alongPath(f.path, Math.min(1, f.k + 0.01)), b = alongPath(f.path, Math.max(0, f.k - 0.01)), face = (a[0] - b[0]) * f.dir < 0 ? -1 : 1;
+    const ph = t * 0.011 + i * 1.7, go = S.still || S.gather > 0.5 ? 0 : 1, bob = Math.abs(Math.sin(ph)) * 1.4 * go, rock = Math.sin(ph) * 0.06 * go;
+    g.fillStyle = "rgba(20,34,40,.28)"; g.beginPath(); g.ellipse(x, y + 0.5, w * 0.32, 2.2, 0, 0, Math.PI * 2); g.fill();
+    g.save(); g.translate(x, y - bob); g.rotate(rock); g.scale(face, 1);
+    g.drawImage(im, (i % n) * CW, 0, CW, CH, -w / 2, -h, w, h); g.restore();
   }
   function boat(g, x, y, t) {
     const b = Math.sin(t * 0.0018) * 2, r = Math.sin(t * 0.0013) * 0.04;
@@ -855,6 +866,7 @@
         const im = new Image(); im.crossOrigin = "anonymous"; im.decoding = "async";
         im.onload = () => {
           ART.img[id] = im;
+          if (id === "folk") return;   // the people, painted: a strip of figures (infra/rabbit-art paint.py folk)
           if (id !== "island") { delete roomCache[id]; return; }
           if (j.layout && painted("island")) useLayout(j.layout);
           S.base = null; if (S.c) size();
@@ -875,6 +887,22 @@
     if (L.rabbit) { RB.x = RB.tx = L.rabbit[0]; RB.y = RB.ty = L.rabbit[1]; }
     ART.layout = true; ART.whole = L.view === "whole";
     if (S.focusId) focus(S.focusId, S.focusSide);
+  }
+  /* a wide screen shows more than the painting: beside it, the same painting, wide, out of focus and a shade darker,
+     so its sea and sky carry on to the edges without a seam or a strip of drawn sky (as a cinema does with a narrow film) */
+  function sides(g, wl, wt, wr, wb) {
+    const im = ART.img.island;
+    if (!S.blur || S.blur.im !== im) {
+      const c = document.createElement("canvas"); c.width = 96; c.height = 54; const cg = c.getContext("2d");
+      cg.filter = "blur(3px)"; cg.drawImage(im, -6, -4, 108, 62); cg.filter = "none";
+      cg.fillStyle = "rgba(10,24,34,.38)"; cg.fillRect(0, 0, 96, 54); c.im = im; S.blur = c;
+    }
+    const w = wr - wl, h = Math.max(wb - wt, w * 9 / 16);
+    g.save(); g.imageSmoothingQuality = "high"; g.drawImage(S.blur, wl, (wt + wb) / 2 - h / 2, w, h); g.restore();
+    [[0, -1], [WW, 1]].forEach(([x, d]) => {   // the painting's edge melts into it
+      const gr = g.createLinearGradient(x, 0, x + d * 90, 0); gr.addColorStop(0, "rgba(10,24,34,.35)"); gr.addColorStop(1, "rgba(10,24,34,0)");
+      g.fillStyle = gr; g.fillRect(Math.min(x, x + d * 90), wt, 90, wb - wt);
+    });
   }
   /* a picture drawn to cover the box, cropped in the middle (the painted ones are not always exactly 16:9) */
   function cover(g, im, w, h) {
@@ -958,11 +986,13 @@
     for (let i = 0; i < 4; i++) { const f0 = Math.pow(i / 4, 1.6), f1 = Math.pow((i + 1) / 4, 1.6); g.fillStyle = rgb(mix(sky.sea, sky.seaB, i / 3)); g.fillRect(0, lerp(hzY, H, f0), W, lerp(hzY, H, f1) - lerp(hzY, H, f0) + 1); }
     view(g);
     const [wl] = toWorld(0, 0), [wr, wb] = toWorld(S.W, S.H), [, wt] = toWorld(0, 0);
+    const sk = !(S.base && S.base.painted);   // a painted island brings its own sky: no drawn sun, moon, clouds or gulls over it
+    if (!sk && (wl < 0 || wr > WW)) sides(g, wl, wt, wr, wb);
     /* stars as small printed crosses, the sun as a disc in rings with slow rays, the moon as a crescent */
     const nt = Math.max(0, 1 - Math.abs((S.hour % 4) - 3) * 1.4);
-    if (nt > 0) { const R = rnd(9); for (let i = 0; i < 140; i++) { const x = wl + R() * (wr - wl), y = wt + R() * (HZ - wt - 10), r = 0.8 + R() * 1.8, al = nt * (0.35 + R() * 0.65) * (0.7 + 0.3 * Math.sin(t * 0.002 + i)); g.fillStyle = `rgba(251,243,223,${al})`; g.fillRect(x - r, y - 0.5, r * 2, 1); g.fillRect(x - 0.5, y - r, 1, r * 2); } }
+    if (sk && nt > 0) { const R = rnd(9); for (let i = 0; i < 140; i++) { const x = wl + R() * (wr - wl), y = wt + R() * (HZ - wt - 10), r = 0.8 + R() * 1.8, al = nt * (0.35 + R() * 0.65) * (0.7 + 0.3 * Math.sin(t * 0.002 + i)); g.fillStyle = `rgba(251,243,223,${al})`; g.fillRect(x - r, y - 0.5, r * 2, 1); g.fillRect(x - 0.5, y - r, 1, r * 2); } }
     const hh = S.hour % 4, sunX = lerp(300, 1350, Math.min(1, hh / 2.4)), sunY = HZ - Math.sin(Math.min(1, hh / 2.4) * Math.PI * 0.95 + 0.08) * 170 + (hh > 2 ? (hh - 2) * 90 : 0);
-    if (hh < 2.75) {
+    if (sk && hh < 2.75) {
       g.save(); g.beginPath(); g.rect(wl - 10, wt - 10, wr - wl + 20, HZ - wt + 10); g.clip();
       g.save(); g.translate(sunX, sunY); g.rotate(t * 0.00004);
       g.fillStyle = rgb(sky.sun, 0.16); for (let k = 0; k < 16; k++) { g.rotate(Math.PI / 8); g.beginPath(); g.moveTo(0, 0); g.lineTo(-24, -420); g.lineTo(24, -420); g.closePath(); g.fill(); }
@@ -972,12 +1002,12 @@
       g.strokeStyle = "rgba(34,48,58,.25)"; g.lineWidth = 1.2; g.stroke();
       g.restore();
     }
-    if (nt > 0.2) {
+    if (sk && nt > 0.2) {
       g.fillStyle = `rgba(251,243,223,${nt * 0.12})`; g.beginPath(); g.arc(1220, 120, 44, 0, Math.PI * 2); g.fill();
       g.fillStyle = `rgba(251,243,223,${nt})`; g.beginPath(); g.arc(1220, 120, 18, 0, Math.PI * 2); g.arc(1229, 114, 15, 0, Math.PI * 2, true); g.fill();
     }
     /* clouds drift by */
-    for (let i = 0; i < 6; i++) { const span = (wr - wl) + 600, x = wl - 300 + ((t * 0.006 * (1 + i * 0.2) + i * 380) % span), y = 80 + (i * 53) % 140; cloud(g, x, y, 0.7 + (i % 3) * 0.3, (0.55 - nt * 0.47) * (1 - i * 0.05)); }
+    if (sk) for (let i = 0; i < 6; i++) { const span = (wr - wl) + 600, x = wl - 300 + ((t * 0.006 * (1 + i * 0.2) + i * 380) % span), y = 80 + (i * 53) % 140; cloud(g, x, y, 0.7 + (i % 3) * 0.3, (0.55 - nt * 0.47) * (1 - i * 0.05)); }
     /* the sea moves: rows of little scalloped waves that grow toward the viewer, and a broken path of light */
     g.lineCap = "round"; g.lineJoin = "round";
     const foam = `rgba(251,243,223,${0.34 * (1 - nt * 0.55)})`, under = `rgba(16,40,60,${0.2 * (1 - nt * 0.3)})`;
@@ -992,7 +1022,7 @@
       }
     }
     const gx = hh < 2.75 ? sunX : 1220;
-    for (let i = 0; i < 26; i++) { const y = HZ + 6 + i * i * 0.5, w0 = 6 + i * 2, f = Math.sin(t * 0.003 + i * 1.7); if (f < 0.15) continue; g.fillStyle = rgb(hh < 2.75 ? sky.sun : [251, 243, 223], f * 0.55 * (1 - i / 26)); g.fillRect(gx - w0 / 2 + Math.sin(i * 3.1 + t * 0.001) * w0 * 0.6, y, w0, 2); }
+    if (sk) for (let i = 0; i < 26; i++) { const y = HZ + 6 + i * i * 0.5, w0 = 6 + i * 2, f = Math.sin(t * 0.003 + i * 1.7); if (f < 0.15) continue; g.fillStyle = rgb(hh < 2.75 ? sky.sun : [251, 243, 223], f * 0.55 * (1 - i / 26)); g.fillRect(gx - w0 / 2 + Math.sin(i * 3.1 + t * 0.001) * w0 * 0.6, y, w0, 2); }
     /* the island and everything on it, drawn on one layer so the light of the hour tints it in one go */
     const w = S.wg; w.setTransform(1, 0, 0, 1, 0, 0); w.clearRect(0, 0, W, H); view(w);
     /* surf: a pale ring that comes and goes around the coast */
@@ -1036,7 +1066,7 @@
     g.fillStyle = `rgba(57,255,138,${0.65 + 0.35 * Math.sin(t * 0.004)})`; g.beginPath(); g.arc(SPOT.beam[0], SPOT.beam[1], 4.5, 0, Math.PI * 2); g.fill();
     if (Math.floor(t / 700) % 2) { g.fillStyle = "#ff4a3a"; g.beginPath(); g.arc(SPOT.blink[0], SPOT.blink[1], 3, 0, Math.PI * 2); g.fill(); }
     /* gulls */
-    for (let i = 0; i < 4; i++) { const x = wl + ((t * 0.02 * (1 + i * 0.15) + i * 420) % ((wr - wl) + 200)) - 100, y = 170 + i * 26 + Math.sin(t * 0.0009 + i) * 18; gull(g, x, y, t, i); }
+    if (sk) for (let i = 0; i < 4; i++) { const x = wl + ((t * 0.02 * (1 + i * 0.15) + i * 420) % ((wr - wl) + 200)) - 100, y = 170 + i * 26 + Math.sin(t * 0.0009 + i) * 18; gull(g, x, y, t, i); }
     /* inside a place: the room opens from the place in a widening circle and fills the view */
     S.roomA += (S.roomT - S.roomA) * Math.min(1, k * 1.15); if (Math.abs(S.roomT - S.roomA) < 0.004) S.roomA = S.roomT;
     if (S.room && S.roomA > 0.004) {
@@ -1050,8 +1080,10 @@
       if (S.hostFn) {
         if (!S.hostC) { S.hostC = document.createElement("canvas"); S.hostC.width = S.hostC.height = 600; }
         const hg = S.hostC.getContext("2d"); S.hostFn(hg, t);
-        /* life-size in the frame: the head in the upper middle, the shoulders cut by the bottom edge */
-        const hb = phone ? (S.hostBottom || S.H * 0.47) * S.K : H, hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : Math.min(H * 0.66, W * 0.36), hx = phone ? W / 2 : W * (S.focusSide > 0 ? 0.3 : 0.7), hy = hb - hs * (phone ? 0.8 : 0.9) + (1 - e) * hs * 0.25;
+        /* a medium shot: in the middle of the room the card leaves free, eyes about a third down, standing on the radio
+           bar instead of behind it, so the room around them (window, desk, map) still tells where we are */
+        const cw = Math.min(470, S.W * 0.42) * S.K + 32 * S.K, fx = S.focusSide > 0 ? (W - cw) / 2 : S.focusSide < 0 ? cw + (W - cw) / 2 : W / 2;
+        const hb = phone ? (S.hostBottom || S.H * 0.47) * S.K : H - 60 * S.K, hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : Math.min(H * 0.56, (W - cw) * 0.5), hx = phone ? W / 2 : fx, hy = hb - hs * (phone ? 0.8 : 0.86) + (1 - e) * hs * 0.25;
         w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, hx - hs / 2, hy, hs, hs);
       }
       w.setTransform(1, 0, 0, 1, 0, 0);
@@ -1081,7 +1113,9 @@
   /* lean in on a place, keeping the space for the card on the far side; null goes back to the whole cove */
   /* the whole island, as large as the screen allows: on a tall phone the island fills the width, the sky gives way */
   function home() {
-    if (ART.whole && S.W >= 760) return { x: 800, y: 450, z: 1 };   // a painted island framed as a whole picture is shown whole
+    /* a painted island framed as a whole picture is shown whole; on a very wide screen it leans in a little, giving up
+       at most a seventh of its height (sea at the top and bottom) to fill more of the width */
+    if (ART.whole && S.W >= 760) return { x: 800, y: 450, z: Math.max(1, Math.min(S.W / (WW * fitScale()), 1.16)) };
     const f = fitScale(), z = Math.max(1, Math.min(S.W / (1220 * f), S.H / (690 * f)));
     return { x: 800, y: z > 1.05 ? Math.max(450, 900 - S.H / (f * z) / 2 - 10) : 450, z };
   }

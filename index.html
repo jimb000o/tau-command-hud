@@ -3296,6 +3296,37 @@ function paintBounces(C, hit) {
     cx.restore();
   }
 }
+/* an account's own rule refused a transfer: the red energy runs out from the core along its line and stops at a shield around the
+   account, short of the dot. The shield flashes where it is hit, the flash spreading round it, a few sparks glance off sideways, and
+   the line fades with the rule's hot seconds. The account itself stays lit and untouched: the refused money never reached it */
+const SH_IN = 520, SH_R = 25;
+function ruleShield(x, y, a, st, C) {
+  const e = (1 - st.k) * RULE_HOT_S * 1000, f = e - SH_IN, d = Math.hypot(x, y) || 1, ux = x / d, uy = y / d, stop = d - SH_R;
+  const reach = reduced || f >= 0 ? stop : stop * Math.min(1, e / SH_IN) ** 1.6, al = f < 0 ? 1 : st.k;
+  cx.save(); cx.lineCap = "round"; cx.shadowColor = `rgb(${REF})`;
+  const g = cx.createLinearGradient(0, 0, ux * reach, uy * reach);   // brightest at the front, where it pushes against the shield
+  g.addColorStop(0, `rgba(${REF},${.15 * al})`); g.addColorStop(1, `rgba(${REF},${.85 * al})`);
+  cx.strokeStyle = g; cx.lineWidth = 2.5; cx.shadowBlur = 8 * al; cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(ux * reach, uy * reach); cx.stroke();
+  const ix = ux * stop, iy = uy * stop, back = a + Math.PI;   // the shield faces the core, where the energy comes from
+  if (f < 0 && !reduced) { cx.fillStyle = `rgb(${REF})`; cx.shadowBlur = 14; cx.beginPath(); cx.arc(ux * reach, uy * reach, 5, 0, Math.PI * 2); cx.fill(); }
+  const sa = f < 0 ? .5 : .5 + .5 * st.k, dg = cx.createRadialGradient(x, y, SH_R * .55, x, y, SH_R);   // the shield itself, a lit dome round the account
+  dg.addColorStop(0, "rgba(236,236,240,0)"); dg.addColorStop(1, `rgba(236,236,240,${.13 * sa})`);
+  cx.shadowBlur = 0; cx.fillStyle = dg; cx.beginPath(); cx.arc(x, y, SH_R, 0, Math.PI * 2); cx.fill();
+  cx.lineWidth = 1.4; cx.strokeStyle = `rgba(236,236,240,${.35 * sa})`; cx.stroke();
+  if (f >= 0) {
+    const k = Math.min(1, f / 1400), span = .5 + k * 1.2;   // the flash where it was hit, spreading round the shield
+    cx.strokeStyle = `rgba(${REF},${(1 - k) * .8})`; cx.shadowBlur = 14 * (1 - k); cx.lineWidth = 2 + 5 * (1 - k);
+    cx.beginPath(); cx.arc(x, y, SH_R, back - span, back + span); cx.stroke();
+    cx.strokeStyle = `rgba(${REF},${.75 * st.k})`; cx.shadowBlur = 8 * st.k; cx.lineWidth = 3;   // and where the red keeps pressing, the shield holds it back
+    cx.beginPath(); cx.arc(x, y, SH_R, back - .42, back + .42); cx.stroke();
+    if (f < 600) { const q = f / 600; cx.lineWidth = 2; cx.shadowBlur = 0; cx.strokeStyle = `rgba(${REF},${.7 * (1 - q)})`; cx.beginPath(); cx.arc(ix, iy, 4 + 16 * q, 0, Math.PI * 2); cx.stroke(); }   // the knock
+    if (!reduced && f < 900) {   // sparks glance off to both sides, never towards the account
+      const q = f / 900, s = 6 + 30 * (1 - (1 - q) * (1 - q)); cx.shadowBlur = 6; cx.fillStyle = `rgba(${REF},${1 - q})`;
+      for (const [o, m] of [[1.9, 1], [-1.9, 1], [2.5, .7], [-2.5, .7]]) { const sa = a + o; cx.beginPath(); cx.arc(ix + Math.cos(sa) * s * m, iy + Math.sin(sa) * s * m, 2.2, 0, Math.PI * 2); cx.fill(); }
+    }
+  }
+  cx.restore();
+}
 function paintHover() {
   if (!CORE_MOUSE) return; const h = coreHitAt(CORE_MOUSE.x, CORE_MOUSE.y); if (!h) return;
   const c = hoverCol(h);
@@ -3555,14 +3586,15 @@ function draw(tm) {
   const RA = [...S.clauses.keys()];
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
-    const st = ruleState(p), col = st.hot ? (st.refused ? "229,72,77" : "57,255,138") : "170,170,178";
+    const st = ruleState(p), held = st.hot && st.refused, col = st.hot ? (held ? "222,222,230" : "57,255,138") : "170,170,178";   // a refusal leaves the account untouched: it stays lit, its shield takes the red
     focusAt(RA[i], x, y, 22);
-    hit(x, y, 24, () => verdict("ok", st.hot ? (st.refused ? "Normal: it just refused a transfer." : "Normal: it just let a transfer pass.") : "Normal: in force; nothing checked in the last few seconds.") + vt(`${policyMeaning(p)}`, `${policyMeaning(p)}\nAccount ${short(RA[i])}, a branch of the composite o5 program.`));
+    hit(x, y, 24, () => verdict("ok", st.hot ? (st.refused ? "Normal: its rule just refused a transfer; the shield held." : "Normal: it just let a transfer pass.") : "Normal: in force; nothing checked in the last few seconds.") + vt(`${policyMeaning(p)}`, `${policyMeaning(p)}\nAccount ${short(RA[i])}, a branch of the composite o5 program.`));
     dotShadow(x, y, 9, C);
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
     cx.shadowBlur = 0; cx.beginPath(); cx.arc(x, y, 12, 0, Math.PI * 2); cx.strokeStyle = `rgba(${col},.45)`; cx.lineWidth = 1.5; cx.stroke();
-    cx.shadowBlur = 0; cx.strokeStyle = `rgba(${col},${st.hot ? .25 + st.k * .65 : .18})`; cx.lineWidth = st.hot ? 2.5 : 1.5; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke();
+    if (held) ruleShield(x, y, a, st, C);
+    else { cx.shadowBlur = 0; cx.strokeStyle = `rgba(${col},${st.hot ? .25 + st.k * .65 : .18})`; cx.lineWidth = st.hot ? 2.5 : 1.5; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
 
   // mempool orbit: a faint guide circle shows where the waiting transactions travel, so the ring can be found even when it is empty

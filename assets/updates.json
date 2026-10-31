@@ -1942,6 +1942,11 @@
  },
  {
   "tag": "HUD",
+  "on": "2026-10-30",
+  "html": "Chain core: when an account’s own rule refuses a transfer, the red energy now runs out from the core and stops at a shield around the account, which flashes where it is hit while sparks glance off. The account stays lit: the refused money never reached it."
+ },
+ {
+  "tag": "HUD",
   "on": "2026-10-31",
   "html": "Principles: “Enforced against the key holder” now says what a personal rule really does: every node checks each payment from the account against it, whichever wallet signs. It no longer claims a stolen key has to obey it, because whoever holds the key can also replace the rule. “Money with terms” lights up by itself the first time the testnet carries a returnable, co-signed or time-locked payment, and the bot posts each such first on Telegram and X."
  }
