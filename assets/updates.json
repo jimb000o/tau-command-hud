@@ -1999,5 +1999,10 @@
   "tag": "White Rabbit Key",
   "on": "2026-10-31",
   "html": "White Rabbit Key: on Radio Coco, when Rico announces a caller, the caller now really speaks. Rico no longer talks for callers who never come on the line; listeners' letters are read out as letters. The radio in the site header plays the phone-ins too."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-31",
+  "html": "White Rabbit Key has its own licence: the code stays MIT, while the story, characters, art, music and voices are under CC BY-NC-ND 4.0. Screenshots, videos, streams and non-commercial fan art are always welcome. The game also credits its inspiration, \"Caribbean Disaster\" (1995), as an independent homage. Details in “How it works” → “Licence and credits”."
  }
 ]

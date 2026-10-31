@@ -548,4 +548,6 @@ TauI18n.add({ strings: {
   "Nobody will touch your bread, Auntie Mae. As Rico understands it, Tau is about rules a machine can read and check, not robots in the kitchen. Your rolls are safe.": "誰もおばさんのパンには触らないよ、メイおばさん。リコの理解では、Tau は機械が読んで確かめられるルールの話で、台所のロボットの話じゃない。ロールパンは安泰だ。",
   "Auntie Mae again. Rico, is there somewhere I can read the code for this testnet?": "またメイおばさんよ。リコ、このテストネットのコードはどこかで読めるの？",
   "There is, Auntie. The testnet code is public on GitHub. Rico read some of it. Then Rico needed a nap.": "あるよ、おばさん。テストネットのコードは GitHub で公開されている。リコも少し読んだ。それから昼寝が必要になった。",
+  "Licence and credits": "ライセンスとクレジット",
+  "Inspired by \"Caribbean Disaster\" (1995). An independent homage, not affiliated with or endorsed by its creators. All art, characters, story and music are original.": "「Caribbean Disaster」（1995）に着想を得ています。独立したオマージュ作品で、原作の制作者とは関係がなく、承認も受けていません。アート、キャラクター、物語、音楽はすべてオリジナルです。",
 } });

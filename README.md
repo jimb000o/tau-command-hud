@@ -49,3 +49,5 @@ One static file, `index.html`, no build step. GitHub Pages serves it from the `m
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
+White Rabbit Key (`rabbit/`) is the exception: its code is MIT, but its story, characters, art, music and voices are under CC BY-NC-ND 4.0, see [rabbit/LICENSE.md](rabbit/LICENSE.md). Inspired by "Caribbean Disaster" (1995). An independent homage, not affiliated with or endorsed by its creators.
