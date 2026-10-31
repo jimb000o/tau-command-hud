@@ -604,6 +604,7 @@ TauI18n.add({ strings: {
   "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Chronicle, What is Tau?": "はじめの一歩：ここから始める、このページのツアー、ガイドツアー、60 秒でわかる Tau。読む・観る：コンセンサス日報、クロニクル、Tau とは？",
   "Radio Coco": "Radio Coco",
   "Tap for Radio Coco": "タップで Radio Coco",
+  "Radio Coco plays in another tab. Play it here": "Radio Coco は別のタブで再生中。ここで再生する",
   "Radio Coco: on. Turn the sound off": "Radio Coco：オン。音を消す",
   "Radio Coco: off. Turn the sound on": "Radio Coco：オフ。音を出す",
   "Radio Coco 97.3 from the White Rabbit Key: calypso, and Rico on the chain. Stays on across pages.": "White Rabbit Key の Radio Coco 97.3：カリプソと、チェーンを語る Rico。ページを移ってもそのまま。",

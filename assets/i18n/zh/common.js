@@ -609,6 +609,7 @@ TauI18n.add({ strings: {
   "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Chronicle, What is Tau?": "第一步：从这里开始、本页导览、导览、60 秒了解 Tau。阅读与观看：共识日报、编年史、Tau 是什么？",
   "Radio Coco": "Radio Coco",
   "Tap for Radio Coco": "点击收听 Radio Coco",
+  "Radio Coco plays in another tab. Play it here": "Radio Coco 正在另一个标签页播放。在这里播放",
   "Radio Coco: on. Turn the sound off": "Radio Coco：已开。关闭声音",
   "Radio Coco: off. Turn the sound on": "Radio Coco：已关。打开声音",
   "Radio Coco 97.3 from the White Rabbit Key: calypso, and Rico on the chain. Stays on across pages.": "Radio Coco 97.3，来自白兔礁：卡利普索音乐，Rico 聊链上动态。换页也一直开着。",

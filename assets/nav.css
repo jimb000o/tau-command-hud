@@ -300,3 +300,4 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
   .tn-onair { left: 12px; right: 12px; max-width: none; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); flex-wrap: wrap; }
   .tn-onair button { min-width: 44px; min-height: 44px; margin: -12px -8px -12px auto; }
 }
+.tnav .pill.tn-radiob.away { color: #d6d6dc; border-color: rgba(57,255,138,.35); border-style: dashed; }   /* on, playing in another tab */
