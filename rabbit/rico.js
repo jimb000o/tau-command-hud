@@ -326,7 +326,7 @@
       else if (k === "day") for (let n = 1; n <= DAYS; n++) out.push(fill(s, { n, m: DAYS }));
       else out.push(s);
     }
-    return [...out.map(t => ["rico", t]), ...CAST, ...CALLS.flatMap(([w, q, a]) => [[w, q], ["rico", a]])];
+    return [...out.map(t => ["rico", t]), ...CAST, ...CALLS.flatMap(([w, q, a]) => [[w, q], ["rico", a]]), ...(window.RABBIT_TALK_LINES ? window.RABBIT_TALK_LINES() : [])];   // talk.js: coming back, asking more
   }
 
   /* the clips the server has made so far */

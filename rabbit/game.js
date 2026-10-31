@@ -422,9 +422,11 @@
     const side = 0;
     if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "bar" ? 1 : 0.6 }); } SC.glow(place);
     const box = el("section", { class: "cv-card talk", "data-place": place || "", role: "dialog", "aria-modal": "false" });
+    box._visit = place && build === PLACE[place] ? place : null;   // a visit to a place, not the card after a move
     const close = el("button", { type: "button", class: "cv-x", "aria-label": T("Back to the island"), onclick: () => closeCard(), text: "✕" });
     box.append(close);
     build(box);
+    if (box._visit && box._who) asks(box, box._who);
     $("cvStage").append(box); UI.card = box; $("cvStage").classList.add("carded");
     SC.hostAt(innerWidth < 760 ? box.offsetTop : null);   // on a phone the one you talk to stands above the sheet
     SND.sfx("open");
@@ -437,21 +439,74 @@
   /* a card: who speaks, what they say (aloud, in their own voice, when the server has the clip), what you can do;
      the buttons are never read out. A line is text, or a list of parts as RICO.speak takes them. */
   function scene(box, who, title, line, acts, extra) {
-    const parts = !line ? null : typeof line === "string" ? [{ t: line, v: EN(line) }] : line;
+    let parts = !line ? null : typeof line === "string" ? [{ t: line, v: EN(line) }] : line;
+    if (parts && box._visit) parts = greet(box._visit, who, parts);
     if (parts) line = join(parts);
     const f = portrait(who, innerWidth < 760 ? 64 : 92, 0);
     SC.host((g, t) => face(g, who, t, t < f._f.talk, f._f.mood, true), !!bustOf(who));   // the one you talk to stands in the room, life-size
     box.append(el("div", { class: "cv-who" }, f, el("div", null, el("b", { translate: "no", text: nm(who) }), el("small", { text: T((CANDS[who] || FOLK[who] || {}).role || "") }))));
     if (title) box.append(el("h3", { text: title }));
+    box._who = who; box._f = f;
     if (line) {
-      box.append(el("p", { class: "cv-line", text: line })); say(f, Math.min(4200, 600 + line.length * 38));
+      box.append(box._line = el("p", { class: "cv-line", text: line })); say(f, Math.min(4200, 600 + line.length * 38));
       RICO.speak(parts, who).then(secs => { if (secs && UI.card === box) { say(f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
     }
     if (extra) box.append(extra);
     if (acts) box.append(el("div", { class: "cv-acts" }, acts));
     return f;
   }
-  const btn = (text, on, o = {}) => el("button", { type: "button", class: "cv-b" + (o.go ? " go" : "") + (o.warn ? " warn" : ""), disabled: o.off || null, title: o.tip || null, onclick: e => { SND.sfx("tap"); on(e); } }, el("span", { text }), o.sub ? el("small", { text: o.sub }) : null);
+  /* ---------- talking: what someone says when you come back, and what they answer when you ask (talk.js) ----------
+     Asking is free: no move, nothing in the Book. What you have heard is kept with the game, so they do not repeat themselves. */
+  const TALK = window.RABBIT_TALK || {};
+  function facts() {
+    const mine = G.book.filter(b => b.who === G.me), did = G.did || {}, f = {
+      "": true, early: G.day <= 2, mid: G.day >= 3 && G.day < DAYS, last: G.day >= DAYS,
+      myLaw: G.laws.some(l => l.by === G.me), noLaw: G.day >= 2 && !G.laws.some(l => l.by === G.me),
+      pact: G.pacts.some(p => !p.broken && (p.a === G.me || p.b === G.me)), broke: mine.some(b => b.kind === "broke"),
+      deal: G.deals.some(d => d.by === G.me), lied: G.lies.some(l => l.by === G.me && l.lie), caught: G.lies.some(l => l.by === G.me && l.lie && l.out),
+      truth: G.lies.some(l => l.by === G.me && !l.lie), smeared: G.lies.some(l => l.about === G.me && l.lie),
+      lead: G.day >= 2 && leader() === G.me, poor: G.coins[G.me] < RUMOUR, chart: !!G.chart, key: !!G.key, drummed: !!G.drummed, circled: !!G.circled,
+      dove: !!did.dive, worked: !!did.works, plans: !!did.camp };
+    for (const id in LAWS) f[id] = inForce(id);
+    return f;
+  }
+  /* of a list of [when, line]: the first that holds and has not been heard yet, else they take turns */
+  function pick(who, list) {
+    const f = facts(), ok = list.filter(([w]) => f[w]); if (!ok.length) return null;
+    G.heard = G.heard || {};
+    const fresh = ok.find(([, s]) => !G.heard[who + "|" + s]);
+    const s = fresh ? fresh[1] : ok[(G.heard["#" + who] = (G.heard["#" + who] || 0) + 1) % ok.length][1];
+    G.heard[who + "|" + s] = 1; save();
+    return s;
+  }
+  function greet(place, who, parts) {
+    G.heard = G.heard || {};
+    const k = "@" + place + "|" + who, t = TALK[who];
+    if (!G.heard[k] || !t || !t.back) { G.heard[k] = 1; save(); return parts; }
+    const s = pick(who, t.back);
+    return s ? [S(s), ...parts.filter(p => !p.v)] : parts;   // what is only shown (coins and such) stays
+  }
+  function asks(box, who) {
+    const t = TALK[who]; if (!t || !t.ask) return;
+    const wrap = el("div", { class: "cv-ask" }), asked = new Set();
+    const draw = () => {
+      const qs = [];
+      t.ask.forEach((a, i) => { if (!asked.has(i)) qs.push([a, i]); else if (a.more && !asked.has(i + "+")) qs.push([a.more, i + "+"]); });
+      wrap.replaceChildren(...(qs.length ? [el("p", { class: "cv-h", text: T("Ask (free, no move)") }), ...qs.map(([a, k]) => btn(T(a.q), () => { asked.add(k); answer(box, who, a); draw(); }, { ask: true }))] : []));
+    };
+    draw(); if (box._line) box._line.after(wrap); else box.append(wrap);   // right under what they said, above the moves
+  }
+  function answer(box, who, a) {
+    const s = pick(who, a.a); if (!s || !box._line) return;
+    let you = box.querySelector(".cv-you");
+    if (!you) { you = el("p", { class: "cv-you" }); box._line.before(you); }
+    you.textContent = "“" + T(a.q) + "”";
+    const parts = [S(s)], line = join(parts);
+    box._line.textContent = line; say(box._f, Math.min(5200, 600 + line.length * 38));
+    RICO.speak(parts, who).then(secs => { if (secs && UI.card === box) { say(box._f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
+  }
+  const btn = (text, on, o = {}) => el("button", { type: "button", class: "cv-b" + (o.go ? " go" : "") + (o.warn ? " warn" : "") + (o.ask ? " ask" : ""), disabled: o.off || null, title: o.tip || null, onclick: e => { SND.sfx("tap"); on(e); } }, el("span", { text }), o.sub ? el("small", { text: o.sub }) : null);
+  const did = k => { G.did = G.did || {}; G.did[k] = 1; };
   const movesLeft = () => G.move < MOVES && !G.over;
   /* a move is spent: the sun goes on, and after the evening the night comes */
   function spend() {
@@ -523,12 +578,12 @@
     dive(box) {
       const harbour = inForce("harbour");
       scene(box, "kai", T(SC.places.dive.name), T("We dive with Tau sensors. Every reading is signed the moment it is taken, so nobody can say the reef is fine when it is not. Or the other way round. Wetsuits are in the back, sizes small, medium and optimistic."), [
-        btn(T("Dive the reef with Kai"), () => { write(G.me, T(harbour ? "dove with Reef Proof: the signed readings show the reef suffering since the deep harbour" : "dove with Reef Proof: the signed readings show a healthy reef, right where the cruise harbour would go"), "fact"); campaign(G.me, "fish", 0.8); toast(T("The readings are in the Book, signed. People who fish took note.")); spend(); if (UI.card) openCard("dive", PLACE.dive); }, { off: !movesLeft(), sub: T("one move") }),
+        btn(T("Dive the reef with Kai"), () => { did("dive"); write(G.me, T(harbour ? "dove with Reef Proof: the signed readings show the reef suffering since the deep harbour" : "dove with Reef Proof: the signed readings show a healthy reef, right where the cruise harbour would go"), "fact"); campaign(G.me, "fish", 0.8); toast(T("The readings are in the Book, signed. People who fish took note.")); spend(); if (UI.card) openCard("dive", PLACE.dive); }, { off: !movesLeft(), sub: T("one move") }),
       ]);
     },
     works(box) {
       scene(box, G.me === "baako" ? "noor" : "baako", T(SC.places.works.name), T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
-        btn(T("Work a shift (10 coins)"), () => { G.coins[G.me] += 10; write(G.me, T("worked a shift at the Coconut Works: 10 coins, honestly earned"), "talk"); SND.sfx("coin"); toast(T("Ten coins, and you smell of coconut for the rest of the day.")); spend(); if (UI.card) openCard("works", PLACE.works); }, { off: !movesLeft(), sub: T("one move") }),
+        btn(T("Work a shift (10 coins)"), () => { did("works"); G.coins[G.me] += 10; write(G.me, T("worked a shift at the Coconut Works: 10 coins, honestly earned"), "talk"); SND.sfx("coin"); toast(T("Ten coins, and you smell of coconut for the rest of the day.")); spend(); if (UI.card) openCard("works", PLACE.works); }, { off: !movesLeft(), sub: T("one move") }),
       ]);
     },
     camp(box) {
@@ -536,7 +591,7 @@
       scene(box, "pim", T(SC.places.camp.name), T("We are only measuring. For whom? The embassies. For what? Something deep. We measure, others decide. That is the arrangement, and it pays by the metre."), [
         btn(T("Look at the plans on the table"), () => {
           const line = took.length ? F("saw the surveyors’ plans, paid for by the embassies, with notes from {x}", { x: [...new Set(took.map(d => nm(d.by)))].join(", ") }) : T("saw the surveyors’ plans: nobody has signed for them yet");
-          write(G.me, line, "fact"); toast(took.length ? T("The plans show who has been talking to the embassies. It is in the Book now.") : T("Nobody has signed yet. The surveyors look disappointed.")); spend(); if (UI.card) openCard("camp", PLACE.camp);
+          did("camp"); write(G.me, line, "fact"); toast(took.length ? T("The plans show who has been talking to the embassies. It is in the Book now.") : T("Nobody has signed yet. The surveyors look disappointed.")); spend(); if (UI.card) openCard("camp", PLACE.camp);
         }, { off: !movesLeft(), sub: T("one move") }),
       ]);
     },

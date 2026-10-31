@@ -14,7 +14,8 @@ The key is read from ELEVENLABS_API_KEY in infra/.env (never in the repository).
   python3 infra/rico/make.py keep rico=2 lola=1     keeps those designs as their voices and makes every clip with them
   python3 infra/rico/make.py library rico           twelve ready voices from the ElevenLabs Voice Library that fit Rico
   python3 infra/rico/make.py keep rico=L3           keeps library voice 3 (L) instead of a design
-  python3 infra/rico/make.py make                   makes whatever clips are missing, for everyone with a voice
+  python3 infra/rico/make.py make                   makes whatever clips are missing, for everyone with a voice;
+                                                    with too few credits left it makes what fits and the rest next month
                                                     (the Radio Coco callers get their ready voices on their own)
   python3 infra/rico/make.py make --voice rico=Name gives someone a voice already in the account, then makes the clips
   python3 infra/rico/make.py voices                 the voices in the account
@@ -211,7 +212,7 @@ def api_key():
     return k
 
 
-def call(path, body=None, accept="application/json", missing_ok=False, retry_400=False):
+def call(path, body=None, accept="application/json", missing_ok=False, retry_400=False, soft=False):
     req = urllib.request.Request(API + path, data=json.dumps(body).encode() if body is not None else None,
                                  headers={"xi-api-key": api_key(), "Content-Type": "application/json", "Accept": accept})
     for attempt in range(4):
@@ -220,8 +221,11 @@ def call(path, body=None, accept="application/json", missing_ok=False, retry_400
                 return r.read()
         except urllib.error.HTTPError as e:
             msg = e.read().decode("utf-8", "replace")[:300]
-            if (missing_ok and e.code in (404, 405)) or (retry_400 and e.code in (400, 422)):
+            if soft or (missing_ok and e.code in (404, 405)) or (retry_400 and e.code in (400, 422)):
                 return None
+            if "quota" in msg.lower():
+                sys.exit("ElevenLabs: this month's credits are used up. Every clip made so far is kept; "
+                         "run the same command again once the credits renew and it goes on where it stopped.")
             if e.code == 429 and attempt < 3:
                 time.sleep(5 * (attempt + 1))
                 continue
@@ -231,6 +235,17 @@ def call(path, body=None, accept="application/json", missing_ok=False, retry_400
                 time.sleep(3)
                 continue
             sys.exit(f"ElevenLabs could not be reached: {e}")
+
+
+def credits():
+    """(credits left this month, the day they renew) or None when the key may not read the subscription."""
+    try:
+        sub = json.loads(call("/user/subscription", soft=True) or b"null")
+        left = sub["character_limit"] - sub["character_count"]
+        renew = time.strftime("%d %b", time.gmtime(sub["next_character_count_reset_unix"])) if sub.get("next_character_count_reset_unix") else "?"
+        return left, renew
+    except (TypeError, KeyError, ValueError):
+        return None
 
 
 def voices():
@@ -476,8 +491,21 @@ def cmd_make(a):
     have = lambda w, t: key(w, t) in idx["clips"] and os.path.exists(os.path.join(a.out, key(w, t) + ".mp3")) and fresh(w, t)
     todo = [(w, t) for w, t in ls if w in idx["voices"] and not have(w, t)]
     silent = sorted({w for w, t in ls if w not in idx["voices"]})
-    print(f"{len(todo)} of {len(ls)} lines to make, {sum(len(t) for w, t in todo)} characters."
+    cost = sum(len(said(w, t, model)) for w, t in todo)   # ElevenLabs bills each character sent, one credit each
+    print(f"{len(todo)} of {len(ls)} lines to make, {cost} characters (about {cost} credits)."
           + (f" No voice yet for: {', '.join(silent)}." if silent else ""))
+    cr = credits() if todo else None
+    if cr:
+        left, renew = cr
+        print(f"{left} credits left this month, renewing {renew}.")
+        if cost > left:   # make what fits, in order; the rest waits for the next month
+            fit, n = [], 0
+            for w, t in todo:
+                if n + len(said(w, t, model)) > left:
+                    break
+                fit.append((w, t)); n += len(said(w, t, model))
+            print(f"Making the first {len(fit)} now; {len(todo) - len(fit)} lines wait. Run the same command again after {renew}.")
+            todo = fit
     for i, (w, t) in enumerate(todo, 1):
         k = key(w, t)
         loud = w == "rico" and t not in SAY and t.endswith("!")   # the callouts; his other radio lines stay natural

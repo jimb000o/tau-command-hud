@@ -91,6 +91,12 @@ button.chip:hover { border-color: #fff; }
 .cv-card.talk .cv-b { border-color: rgba(232,206,150,.28); background: rgba(232,206,150,.04); }
 .cv-card.talk .cv-b:hover:not([disabled]), .cv-card.talk .cv-b:focus-visible { border-color: #f3dfb4; background: rgba(232,206,150,.1); }
 .cv-card.talk .cv-b.go { border-color: rgba(57,255,138,.6); }
+/* asking more: free questions in a row of small buttons, your question shown above the answer */
+.cv-ask { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cv-ask .cv-h { flex: 1 0 100%; }
+.cv-ask .cv-b { min-height: 36px; padding: 6px 11px; font-weight: 500; font-style: italic; }
+@media (pointer: coarse) { .cv-ask .cv-b { min-height: 44px; } }
+.cv-you { margin: 0; color: var(--dim); font-style: italic; font-size: 13px; }
 /* each place speaks in its own voice: type, colours and edge of the plate follow the place and its host */
 .cv-card.talk { --pb: rgba(232,206,150,.55); --pbtn: rgba(232,206,150,.28); --tf: var(--display); --bf: var(--display); }
 .cv-card.talk h3, .cv-card.talk .cv-who b { font-family: var(--tf); letter-spacing: var(--tls, 0); }
@@ -261,6 +267,7 @@ footer a { color: var(--dim); }
 <script src="../wallet/vendor/tau-bls.min.js"></script>
 <script src="scene.js"></script>
 <script src="music.js"></script>
+<script src="talk.js"></script>
 <script src="rico.js"></script>
 <script src="game.js"></script>
 </body>
