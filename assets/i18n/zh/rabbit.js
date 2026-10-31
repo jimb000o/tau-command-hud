@@ -220,7 +220,6 @@ TauI18n.add({ strings: {
   "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing.": "岛上的每一步都写在这里，附上做事人的名字。谁都撕不掉一页，连我也不行。读它不花钱。",
   "Not today. Show me how you vote first.": "今天不行。先让我看看你怎么投票。",
   "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first.": "选一项法律。另外三位候选人投票；两票赞成即成为法律。账本会先拿它对照生效中的法律。",
-  "Sam keeps the minutes today. Pick a law; the other three candidates vote, two yes and it is law.": "今天由 Sam 做记录。选一项法律；另外三位候选人投票，两票赞成即成为法律。",
   "Radio Coco 97.3": "椰子电台 97.3",
   "No laws yet on this island. Rico's only rule: the request line is open, the coconut stand is not.": "岛上还没有法律。Rico 唯一的规矩：点歌热线开着，椰子摊没开。",
   "{x} has written more laws than anyone. The island has asked for a nap.": "{x} 写的法律比谁都多。全岛申请午睡。",

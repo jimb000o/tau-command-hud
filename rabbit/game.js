@@ -102,14 +102,44 @@
     salado: { w: 27, h: 27, jaw: 0.8, nose: "round", bg: "#d9653f" }, lola: { w: 22, h: 26, jaw: 0.35, nose: "button", bg: "#2c8c88" },
     sam: { w: 24, h: 28, jaw: 0.6, nose: "long", bg: "#5c9a4c" },
   };
-  /* a painted portrait (infra/rabbit-art paint.py busts) in place of the drawn face: it breathes, and nods while talking */
+  /* a painted portrait (infra/rabbit-art paint.py busts) in place of the drawn face: it breathes, blinks, and its mouth
+     moves while it talks (the -talk and -blink frames, laid over the still picture where they differ) */
   const bustOf = id => !/[?&]art=drawn/.test(location.search) && SC.art && SC.art.img["bust-" + id];
+  const MOUTH = {};
+  function frame(id, t, talk) {
+    const img = SC.art.img, k = "bust-" + id;
+    if (talk && img[k + "-talk"]) {   // open and shut in syllables of uneven length
+      const m = MOUTH[id] || (MOUTH[id] = { at: 0, open: false });
+      if (t >= m.at) { m.open = !m.open; m.at = t + (m.open ? 90 + Math.random() * 110 : 60 + Math.random() * 90); }
+      if (m.open) return k + "-talk";
+    }
+    if (img[k + "-blink"] && (t + id.length * 997) % 4200 < 130) return k + "-blink";
+    return null;
+  }
   function paintedFace(g, B, id, t, talk, bare) {
-    const W = g.canvas.width, br = 1 + 0.008 * Math.sin(t * 0.0021), nod = talk ? Math.sin(t * 0.022) * W * 0.006 : 0;
+    const W = g.canvas.width, br = 1 + 0.006 * Math.sin(t * 0.0021);
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, W); g.imageSmoothingQuality = "high";
-    if (bare) { const w = W * br; g.drawImage(B, (W - w) / 2, W - w + nod, w, w); return; }
+    const f = frame(id, t, talk), F = f && SC.art.img[f], box = f && (SC.art.box || {})[f];
+    const draw = (x, y, w) => {
+      g.drawImage(B, x, y, w, w);
+      if (!F) return;
+      if (!box) { g.drawImage(F, x, y, w, w); return; }   // a frame that differs all over: shown whole
+      const [bx, by, bw, bh] = box, sw = F.naturalWidth;
+      g.drawImage(F, bx * sw, by * sw, bw * sw, bh * sw, x + bx * w, y + by * w, bw * w, bh * w);
+    };
+    if (bare) { const w = W * br; draw((W - w) / 2, W - w, w); return; }
     g.save(); g.beginPath(); g.arc(W / 2, W / 2, W / 2 - 1, 0, Math.PI * 2); g.fillStyle = (HEADS[id] || {}).bg || "#2c8c88"; g.fill(); g.clip();
-    const w = W * 1.55 * br; g.drawImage(B, (W - w) / 2, -W * 0.12 + nod, w, w); g.restore();   // the head and shoulders, close
+    const h = B._h || (B._h = headZoom(B)), w = W * h.z * br;
+    draw((W - w) / 2, W * h.y, w); g.restore();   // the head and shoulders, close
+  }
+  /* how close the round portrait comes: a bust as before, a half figure (narrower than its square) closer, from its hair down */
+  function headZoom(B) {
+    try {
+      const n = 64, c = document.createElement("canvas"); c.width = c.height = n; const x = c.getContext("2d"); x.drawImage(B, 0, 0, n, n);
+      const d = x.getImageData(0, 0, n, n).data; let top = n, l = n, r = 0;
+      for (let i = 0; i < n * n; i++) if (d[i * 4 + 3] > 128) { const px = i % n; top = Math.min(top, Math.floor(i / n)); l = Math.min(l, px); r = Math.max(r, px); }
+      return (r - l) / n < 0.85 ? { z: 2.3, y: 0.04 - (top / n) * 2.3 } : { z: 1.55, y: -0.12 };
+    } catch (e) { return { z: 1.55, y: -0.12 }; }
   }
   function face(g, id, t, talk, mood = 0, bare = false) {
     const B = bustOf(id); if (B) return paintedFace(g, B, id, t, talk, bare);
@@ -387,9 +417,10 @@
   function openCard(place, build) {
     closeCard(true);
     if (G && place) { G.seen = G.seen || {}; if (!G.seen[place]) { G.seen[place] = 1; save(); } setTimeout(locks, 0); }
-    const side = innerWidth < 760 ? 0 : (SC.places[place] && SC.places[place].x > 820 ? -1 : 1);
+    /* the conversation always sits in the same place: a plate at the bottom middle, the person standing above it */
+    const side = 0;
     if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "bar" ? 1 : 0.6 }); } SC.glow(place);
-    const box = el("section", { class: "cv-card" + (side < 0 ? " left" : ""), role: "dialog", "aria-modal": "false" });
+    const box = el("section", { class: "cv-card talk", role: "dialog", "aria-modal": "false" });
     const close = el("button", { type: "button", class: "cv-x", "aria-label": T("Back to the island"), onclick: () => closeCard(), text: "✕" });
     box.append(close);
     build(box);
@@ -408,7 +439,7 @@
     const parts = !line ? null : typeof line === "string" ? [{ t: line, v: EN(line) }] : line;
     if (parts) line = join(parts);
     const f = portrait(who, innerWidth < 760 ? 64 : 92, 0);
-    SC.host((g, t) => face(g, who, t, t < f._f.talk, f._f.mood, true));   // the one you talk to stands in the room, life-size
+    SC.host((g, t) => face(g, who, t, t < f._f.talk, f._f.mood, true), !!bustOf(who));   // the one you talk to stands in the room, life-size
     box.append(el("div", { class: "cv-who" }, f, el("div", null, el("b", { translate: "no", text: nm(who) }), el("small", { text: T((CANDS[who] || FOLK[who] || {}).role || "") }))));
     if (title) box.append(el("h3", { text: title }));
     if (line) {
@@ -437,7 +468,7 @@
         const c = conflict(id), s = lawScore(id, CANDS[G.me].cares);
         return btn(T(LAWS[id].t), () => doPropose(id), { off: !movesLeft(), sub: c ? F("contradicts “{x}”", { x: T(LAWS[c.id].t) }) : effects(id), warn: !!c });
       });
-      scene(box, "hana" === G.me ? "sam" : "hana", T(SC.places.hall.name), T(G.me === "hana" ? "Sam keeps the minutes today. Pick a law; the other three candidates vote, two yes and it is law." : "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."), [el("p", { class: "cv-h", text: T("Propose a law (one move)") }), ...acts], list);
+      scene(box, "ama", T(SC.places.hall.name), T("Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."), [el("p", { class: "cv-h", text: T("Propose a law (one move)") }), ...acts], list);
     },
     market(box) {
       const rows = PEOPLE.map(p => {
