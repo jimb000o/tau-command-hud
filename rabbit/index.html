@@ -245,6 +245,11 @@ footer a { color: var(--dim); }
   .stage.carded #cvToast { top: 96px; bottom: auto; }
   .cv-card, .cv-card.left, .cv-card.talk, .cv-card.intro, .cv-card.end { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 72%; transform: none; border-radius: 16px 16px 0 0; padding: 16px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
   .cv-card.intro, .cv-card.end { max-height: 92%; }
+  .cv-card.talk:not(.locked):not(.intro):not(.end):not(.paper) { max-height: 50%; }   /* the one you talk to stays in view above the sheet */
+  .stage:has(.cv-card.talk:not(.locked):not(.intro):not(.end):not(.paper)) .bar { visibility: hidden; }   /* while you talk, the room and the person, not the chips */
+  .stage:has(.cv-card.talk:not(.locked):not(.intro):not(.end):not(.paper)) #cvToast { top: auto; bottom: 12px; z-index: 7; }
+  .cv-card.talk:not(.locked):not(.intro):not(.end) .cv-who .face { display: none; }
+  .cv-card.talk .cv-who { padding-right: 48px; }
   .cv-card.paper { left: 8px; right: 8px; width: auto; transform: translateY(-50%); }
   .cv-pick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cv-cand em { display: none; }
@@ -275,6 +280,7 @@ html.rk-full .bar .home { display: inline-flex; }
   .news.radio #cvNews { -webkit-line-clamp: 1; font-size: 12px; }
   .cv-card.talk, .cv-card { left: auto; right: max(8px, env(safe-area-inset-right, 0px)); top: 54px; bottom: 54px; width: min(460px, 54%); max-height: none; transform: none; padding: 12px 14px; gap: 8px; border-radius: 12px; }
   .cv-card.talk .cv-acts { grid-template-columns: 1fr; }
+  .cv-card.talk:not(.locked):not(.intro):not(.end) .cv-who .face { display: none; }
   .cv-card.intro, .cv-card.end, .cv-card.paper { left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); top: 8px; bottom: 8px; width: auto; transform: none; }
   .cv-card h2 { font-size: 24px; }
   .cv-card.talk h3 { font-size: 18px; }
