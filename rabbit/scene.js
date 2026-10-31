@@ -1133,9 +1133,12 @@
         /* on a wide screen a painted person stands large in the room, the body running on behind the radio strip at the
            bottom of the screen, so they are there and not cut off; a drawn face stands clear above the strip */
         const tall = !phone && S.hostTall, hb = phone ? (S.hostBottom || S.H * 0.47) * S.K : tall ? H + 6 * S.K : H - 74 * S.K,
-          hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : tall ? Math.min(H * 0.9, W * 0.62) : Math.min(H * 0.5, (W - cw) * 0.5),
-          hx = phone ? W / 2 : fx, hy = hb - hs * (phone ? 0.8 : 0.99) + (1 - e) * hs * 0.25;
-        w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, hx - hs / 2, hy, hs, hs);
+          hs = phone ? Math.max(W * 0.34, Math.min(W * 0.9, (hb - 6 * S.K) / 0.74)) : tall ? Math.min(H * 0.9, W * 0.62) : Math.min(H * 0.5, (W - cw) * 0.5),
+          hx = phone ? W / 2 : fx, hy = hb - hs * (phone ? 0.74 : 0.99) + (1 - e) * hs * 0.25;
+        let [X, Y, Z] = [hx, hy, hs];
+        /* a phone held sideways: the plate stands on the right, the one you talk to in the free room on its left, large */
+        if (!phone && S.hostLeft) { const fw = S.hostLeft * S.K; Z = Math.min(fw * 0.95, H * (S.hostTall ? 1.05 : 0.8)); X = fw / 2; Y = (S.hostTall ? H + 6 * S.K : H - 52 * S.K) - Z * 0.99; }
+        w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, X - Z / 2, Y, Z, Z);
       }
       w.setTransform(1, 0, 0, 1, 0, 0);
       if (sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3] * 0.75); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
@@ -1237,7 +1240,7 @@
     glow(id) { S.glow = id; },
     host(fn, tall) { S.hostFn = fn; S.hostTall = !!tall; },
     lock(ids) { S.locked = new Set(ids); }, locked: id => S.locked.has(id),   // quarters not open yet cannot be clicked
-    hostAt(bottom) { S.hostBottom = bottom; },
+    hostAt(bottom, left) { S.hostBottom = bottom; S.hostLeft = left || null; },
     gather(v) { S.gather = v; },
     cat(twice) { S.cat = { t0: performance.now(), d: 9000, x0: SPOT.cat[0], y0: SPOT.cat[1], x1: SPOT.cat[2], y1: SPOT.cat[3], twice: !!twice }; },
     onFrame(f) { S.onFrame = f; },

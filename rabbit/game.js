@@ -432,7 +432,8 @@
     build(box);
     if (box._visit && box._who) asks(box, box._who);
     $("cvStage").append(box); UI.card = box; $("cvStage").classList.add("carded");
-    SC.hostAt(innerWidth < 760 ? box.offsetTop : null);   // on a phone the one you talk to stands above the sheet
+    /* on a phone the one you talk to stands above the sheet; held sideways, beside the plate */
+    SC.hostAt(innerWidth < 760 ? box.offsetTop : null, innerWidth >= 760 && innerHeight < 520 ? box.offsetLeft : null);
     SND.sfx("open");
     setTimeout(() => { const b = box.querySelector(".cv-acts button:not([disabled])"); if (b && !matchMedia("(pointer: coarse)").matches) b.focus({ preventScroll: true }); }, 50);
   }
