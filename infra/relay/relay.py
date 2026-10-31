@@ -1201,9 +1201,9 @@ class Relay:
             return text
 
         if cmd == "islandmove":   # White Rabbit Key: a rival's move in a visitor's game, sent by the island bot (island.py)
-            if len(args) != 2:
-                return envelope_error(cmd, "Usage: islandmove <candidate> <kind>", "INVALID_PARAMS")
-            ok, data = self.island.accept(args[0].lower(), args[1].lower(), ip)
+            if len(args) not in (2, 3):
+                return envelope_error(cmd, "Usage: islandmove <candidate> <kind> [place]", "INVALID_PARAMS")
+            ok, data = self.island.accept(args[0].lower(), args[1].lower(), ip, args[2].lower() if len(args) == 3 else "hall")
             return envelope_ok(cmd, data) if ok else envelope_error(cmd, data, "FORBIDDEN" if "off" in data else "INVALID_PARAMS")
 
         if cmd == "leasetx":
