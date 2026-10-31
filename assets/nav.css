@@ -294,9 +294,10 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 .tn-onair b { flex: none; font: 600 11px var(--tn-mono, monospace); letter-spacing: .12em; text-transform: uppercase; color: var(--tn-ok, #39ff8a); }
 .tn-onair button { flex: none; margin-left: auto; background: none; border: 0; color: #8a8a94; font: 18px/1 sans-serif; cursor: pointer; min-width: 28px; min-height: 28px; }
 .tn-onair button:hover { color: #fff; }
-@media (max-width: 1599px) { .tnav .pill.tn-radiob .lbl { display: none; } .tnav .pill.tn-radiob { padding-left: 10px; padding-right: 10px; } }   /* the icon alone; the hover says what it is */
+@media (max-width: 1365px) { .tnav .pill.tn-radiob .lbl { display: none; } .tnav .pill.tn-radiob { padding-left: 10px; padding-right: 10px; } }   /* the icon alone; the hover says what it is */
 @media (max-width: 700px), (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
   .tnav .pill.tn-radiob { padding: 0; width: 44px; justify-content: center; }
   .tn-onair { left: 12px; right: 12px; max-width: none; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); flex-wrap: wrap; }
   .tn-onair button { min-width: 44px; min-height: 44px; margin: -12px -8px -12px auto; }
 }
+.tnav .pill.tn-radiob.away { color: #d6d6dc; border-color: rgba(57,255,138,.35); border-style: dashed; }   /* on, playing in another tab */

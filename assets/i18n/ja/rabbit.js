@@ -411,4 +411,5 @@ TauI18n.add({ strings: {
   "It's done: the simulation is back on the fixed validator list. Not one cannon fired. Boring for radio, beautiful for a chain.": "決まった：シミュレーションは固定バリデーターリストに戻った。大砲は一発も鳴らず。ラジオには退屈、チェーンには美しい。",
   "The simulated chain starts over in a few minutes, back at block one. Finish your drinks.": "シミュレーションのチェーンはあと数分で最初から、ブロック 1 に戻る。飲み物を飲み干して。",
   "The chain has started over at block one. Same sea, fresh logbook.": "チェーンがブロック 1 からやり直した。同じ海、まっさらな航海日誌。",
+  "The Parasol Café": "パラソル・カフェ",
 } });

@@ -411,4 +411,5 @@ TauI18n.add({ strings: {
   "It's done: the simulation is back on the fixed validator list. Not one cannon fired. Boring for radio, beautiful for a chain.": "成了：模拟链回到了固定验证者名单。一炮未发。对电台来说很无聊，对一条链来说很美。",
   "The simulated chain starts over in a few minutes, back at block one. Finish your drinks.": "模拟链几分钟后从头开始，回到第一个区块。把饮料喝完吧。",
   "The chain has started over at block one. Same sea, fresh logbook.": "链从第一个区块重新开始了。同一片海，崭新的航海日志。",
+  "The Parasol Café": "阳伞咖啡座",
 } });
