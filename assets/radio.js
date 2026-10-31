@@ -26,7 +26,11 @@
   /* one tab plays at a time: the playing tab writes its id and the time every two seconds; another tab with the radio
      on stays quiet while that is fresh, and a press on its button takes the radio over (the first tab then goes quiet) */
   /* the id belongs to the browser tab, not the page: moving to another page of the site keeps the claim */
-  const LOCK = "tauhud-radio-tab", ID = (() => { const k = "tauhud-radio-id"; try { let v = sessionStorage.getItem(k); if (!v) { v = Math.random().toString(36).slice(2); sessionStorage.setItem(k, v); } return v; } catch (e) { return Math.random().toString(36).slice(2); } })();
+  /* a tab opened from this one starts with a copy of its sessionStorage: when the id it finds is already claimed by a
+     live page (the page it came from left and freed it otherwise), it is somebody else's and this tab takes its own */
+  const LOCK = "tauhud-radio-tab", ID = (() => { const k = "tauhud-radio-id"; try { let v = sessionStorage.getItem(k);
+    if (v) { const l = JSON.parse(localStorage.getItem(LOCK) || "null"); if (l && l.id === v && Date.now() - l.t < 8000) v = null; }
+    if (!v) { v = Math.random().toString(36).slice(2); sessionStorage.setItem(k, v); } return v; } catch (e) { return Math.random().toString(36).slice(2); } })();
   /* the jingle and the station call once per visit, not on every page: a page change is the same programme going on */
   const HELLO = "tauhud-radio-hello", greeted = () => { try { return Date.now() - (+sessionStorage.getItem(HELLO) || 0) < 20 * 60000; } catch (e) { return false; } };
   const holder = () => { try { const v = JSON.parse(store.get(LOCK) || "null"); return v && Date.now() - v.t < 8000 ? v.id : null; } catch (e) { return null; } };
@@ -57,7 +61,9 @@
     if (!window.RICO) need.push(script(ROOT + "rabbit/rico.js"));
     return (R.loading = Promise.all(need).then(() => !!(window.COVE_SOUND && window.RICO)));
   }
-  async function play() {
+  /* by itself the radio never starts while another tab plays; a press on this tab's button (force) takes it over */
+  async function play(force) {
+    if (!force && elsewhere()) { show(); return false; }
     if (!(await load())) return false;
     const S = window.COVE_SOUND;
     if (!S.wanted) S.toggle(); else S.start();
@@ -180,10 +186,11 @@
       setAll(S.wanted); show(); return;
     }
     if (wanted() && R.timer) { setAll(false); stop(); return; }   // playing here: off everywhere
-    setAll(true); play();
+    setAll(true); play(true);
   }
-  /* a radio left on: it plays on at once when the browser allows it (it usually does once the visitor has clicked on
-     the site), otherwise it comes back with the first click or key on this page */
+  /* the radio was playing in this tab on the page before: it plays on at once when the browser allows it (it usually
+     does once the visitor has clicked on the site), otherwise it comes back with the first click or key on this page.
+     Any other tab only shows that the radio is on; there it starts from its own button, never from a click elsewhere */
   function resume() {
     show();
     play().then(on => { if (!on) setTimeout(() => { if (window.COVE_SOUND && COVE_SOUND.on && !R.timer && wanted() && !elsewhere()) play(); }, 600); });
@@ -201,14 +208,16 @@
     if (R.mode === "gazette") window.addEventListener("gazette-sound", e => { setAll(!!e.detail); show(); });
     if (R.mode === "rabbit") setInterval(show, 1000);   // the game has its own sound button; follow it
     if (R.mode === "radio") {
-      if (wanted() && !elsewhere()) resume();
+      const WAS = "tauhud-radio-was"; let was = false;
+      try { was = sessionStorage.getItem(WAS) === "1"; sessionStorage.removeItem(WAS); } catch (e) {}
+      if (wanted() && was && !elsewhere()) resume();
       /* the other tabs: switched off there, it stops here; taken over there, this one goes quiet */
       addEventListener("storage", e => {
         if (e.key === KEY && e.newValue === "off") stop();
         if (e.key === LOCK) { if (R.timer && elsewhere()) quiet(); else show(); }
         if (e.key === KEY && e.newValue === "on" && !R.timer) show();
       });
-      addEventListener("pagehide", free);
+      addEventListener("pagehide", () => { try { if (R.timer) sessionStorage.setItem(WAS, "1"); } catch (e) {} free(); });
       setInterval(() => { if (!R.timer) show(); }, 4000);   // a tab that closed without saying so: its claim runs out after eight seconds
     }
     show();

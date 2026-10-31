@@ -165,7 +165,7 @@
     j25: "The black cat applied to become a validator. The council asked for its key. The cat knocked it off the table.",
     j26: "Rico wrote his New Year's resolution as a personal rule. Now the chain refuses his midnight mangoes. Worst idea ever. Best idea ever.",
     j27: "How do you comfort a refused transaction? Tell it: it's not you, it's the rules. And the rules were here first.",
-    j28: "Agorzilla, the big green fellow who eats transactions, called the studio. He asked for a snack. Rico sent him one test coin. He burped politely.",
+    j28: "Rico left one banana on the studio windowsill last night. This morning, only the peel, folded neatly. Agorzilla has manners.",
     j29: "There is no mining on Tau. Rico's uncle came with a pickaxe anyway. Three days of digging on the beach. Two crabs and a sandal.",
     j30: "If a rule changes and all the validators agree, does it make a sound? Yes. A tiny revision number goes up by one.",
     j31: "What's a cryptographer's favourite fruit? The BLS-berry. Twelve, three, eighty-one varieties.",
@@ -174,6 +174,13 @@
     j34: "Rico tried to bribe a Tau rule. It looked at the envelope, checked it against the rules in force, and refused it. Incorruptible. Also a bit rude.",
     j35: "What's the testnet's favourite song? Don't stop me now. Unless it's a contradiction. Then stop me.",
     j36: "Rico's horoscope for validators: Today you will sign something. Tomorrow too. The stars are very consistent. Like the rules.",
+    /* the island legend: Agorzilla, glimpsed now and then in the jungle */
+    agz1: "Sighting report from the jungle! Somebody saw Agorzilla behind the drums last night. The photo is very blurry. Rico thinks it's a palm tree. Rico is not sure.",
+    agz2: "The bananas at the market went missing again. Nobody saw anything. Big footprints by the drums, though. Draw your own conclusions.",
+    agz3: "Kiko says the old ones call him Agorzilla, and that he grows only the way the island votes. So, candidates: careful what you vote for.",
+    agz4: "A caller swears Agorzilla waved at her from the treeline. Rico asked for proof. She sent a photo of a very surprised banana.",
+    agz5: "The footprints by the drums are back. Bigger this time. Either Agorzilla has grown, or somebody bought new boots.",
+    agz6: "Nobody has a clear photo of Agorzilla. Everybody has a theory. Rico's theory: he listens to this station. Hello, big fellow. The bananas are on the house.",
     /* the phone-in */
     c1: "We have a caller on line two. Go ahead. She says her transaction is pending. Madam, so is Rico's career. Next caller!",
     c2: "Line one: a fisherman asks if the testnet is safe for his savings. Sir, the coins are worth nothing. Keep your savings in the fish.",
@@ -226,6 +233,7 @@
     corner: Array.from({ length: 8 }, (_, i) => "tc" + (i + 1)), segue: Array.from({ length: 8 }, (_, i) => "s" + (i + 1)),
     flash: Array.from({ length: 6 }, (_, i) => "flash" + (i + 1)), tag: Array.from({ length: 6 }, (_, i) => "tag" + (i + 1)),
     valIn: ["valIn"], valOut: ["valOut"], feeUp: ["feeUp"], feeDown: ["feeDown"], rev: ["rev"], whale: ["whale1", "whale2"],
+    legend: ["agz1", "agz2", "agz3", "agz4", "agz5", "agz6"],
     morning: ["am1", "am2"], afternoon: ["pm1", "pm2"], evening: ["ev1", "ev2"], night: ["nt1", "nt2"],
   };
   /* what the islanders say in the places (the same English as in game.js, which the tests check) */
@@ -290,6 +298,6 @@
   /* lines that make sense away from the game (the radio in the site header, assets/radio.js): the hellos and Rico's
      testnet humour, jokes, the phone-in and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
   const tr = s => (window.TauI18n ? TauI18n.t(s) : s);
-  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner].map(k => [{ t: tr(L[k]), v: L[k] }]);
+  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend].map(k => [{ t: tr(L[k]), v: L[k] }]);
   window.RICO = { L, SETS, CAST, NAMES, all, speak, fill, key, hud };
 })();
