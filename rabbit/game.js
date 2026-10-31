@@ -435,7 +435,7 @@
         return el("li", null, el("span", { class: "nm", translate: "no", text: p.name }), el("small", { text: p.cares.map(c => T(TOPICS[c])).join(" · ") }), el("i", { class: "bar" + (best === G.me ? " lead" : ""), style: `--v:${mine}%`, title: F("leans to {x}", { x: nm(best) }) }));
       });
       const acts = Object.keys(TOPICS).map(t => btn(F("Talk about {x}", { x: T(TOPICS[t]) }), () => { campaign(G.me, t); SND.sfx("yes"); SC.gather(1); setTimeout(() => SC.gather(0), 2600); toast(F("People who care about {x} listened.", { x: T(TOPICS[t]) })); spend(); if (UI.card) openCard("market", PLACE.market); }, { off: !movesLeft() }));
-      scene(box, "lola", T(SC.places.market.name), T("Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts], el("ul", { class: "cv-folk" }, rows));
+      scene(box, G.me === "marisol" ? "lola" : "marisol", T(SC.places.market.name), T("Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts], el("ul", { class: "cv-folk" }, rows));
     },
     radio(box) {
       SND.set({ radio: true });
@@ -465,7 +465,7 @@
         el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]));
     },
     pier(box) {
-      scene(box, "sam", T("The pier"), T("Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."), [
+      scene(box, G.me === "tobias" ? "sam" : "tobias", T("The pier"), T("Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."), [
         btn(T("Watch the sea"), () => { SC.cat(Math.random() < 0.5); setTimeout(() => SND.sfx("meow"), 1200); closeCard(); }),
         btn(T("Read how it works"), () => help()),
       ]);
@@ -485,7 +485,7 @@
       ]);
     },
     works(box) {
-      scene(box, "noor", T(SC.places.works.name), T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
+      scene(box, G.me === "baako" ? "noor" : "baako", T(SC.places.works.name), T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
         btn(T("Work a shift (10 coins)"), () => { G.coins[G.me] += 10; write(G.me, T("worked a shift at the Coconut Works: 10 coins, honestly earned"), "talk"); SND.sfx("coin"); toast(T("Ten coins, and you smell of coconut for the rest of the day.")); spend(); if (UI.card) openCard("works", PLACE.works); }, { off: !movesLeft(), sub: T("one move") }),
       ]);
     },
@@ -709,54 +709,61 @@
       DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 30000);
     }, () => {});
   }
-  /* what Rico can say: lines that come from the game as it stands, and a few from the island's habits */
+  /* Rico does not repeat himself: the lines he said lately are remembered in this browser, across visits, and he picks
+     from the ones he has not said. A set is a group of lines that can stand in for each other (rico.js SETS). */
+  const SAID = (() => { try { const a = JSON.parse(store.get("rabbit-dj-said") || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } })();
+  const unsaid = keys => { const k = keys.filter(x => !SAID.includes(x)); return k.length ? k : [keys.slice().sort((a, b) => SAID.indexOf(a) - SAID.indexOf(b))[0]]; };
+  const pickLine = keys => { const k = unsaid(keys); return k[Math.floor(Math.random() * k.length)]; };
+  const markSaid = k => { const i = SAID.indexOf(k); if (i >= 0) SAID.splice(i, 1); SAID.push(k); SAID.splice(0, Math.max(0, SAID.length - 60)); store.set("rabbit-dj-said", JSON.stringify(SAID)); };
+  const one = (set, ...more) => { const k = pickLine(RICO.SETS[set]); return { k, parts: [V(k), ...more] }; };
+  /* what Rico can say about the game as it stands, and a few lines from the island's habits */
   function djLines() {
     if (!G) return [];
     const L = [], laws = G.laws, by = {}; laws.forEach(l => (by[l.by] = (by[l.by] || 0) + 1));
     const top = Object.keys(by).sort((a, b) => by[b] - by[a])[0], liesOut = G.lies.filter(l => l.out).length;
-    if (!laws.length) L.push([V("noLaws")]);
-    if (top && by[top] >= 2) L.push([V("topLaws", { x: nm(top) })]);
-    if (G.pacts.some(p => !p.broken)) { const p = G.pacts.filter(p => !p.broken).slice(-1)[0]; L.push([V("pact", { x: nm(p.a), y: nm(p.b) })]); }
-    if (G.pacts.some(p => p.broken)) L.push([V("broken")]);
-    if (G.deals.length) L.push([V("envelope")]);
-    if (G.lies.length) L.push([V("rumours"), Q("({n} on air, {m} shown up)", { n: G.lies.length, m: liesOut })]);
-    if (inForce("quiet")) L.push([V("quiet")]);
-    if (inForce("reef")) L.push([V("reef")]);
-    if (inForce("harbour")) L.push([V("harbour")]);
-    if (inForce("night")) L.push([V("night")]);
-    if (inForce("concerts")) L.push([V("concerts")]);
-    if (inForce("copy")) L.push([V("copy")]);
-    if (G.move >= MOVES) L.push([V("night5")]);
-    L.push([V("day", { n: G.day, m: DAYS })]);
-    L.push([V("fact")]);
-    L.push([V("dedicate")]);
-    L.push([V("song")]);
-    L.push([V("warm")]);
-    L.push([V("sam")]);
-    L.push([Q("{x}, you have {n} coins.", { x: nm(G.me), n: G.coins[G.me] }), V("tips")]);
+    const add = (k, v, ...more) => L.push({ k, parts: [V(k, v), ...more] });
+    if (!laws.length) add("noLaws");
+    if (top && by[top] >= 2) add("topLaws", { x: nm(top) });
+    if (G.pacts.some(p => !p.broken)) { const p = G.pacts.filter(p => !p.broken).slice(-1)[0]; add("pact", { x: nm(p.a), y: nm(p.b) }); }
+    if (G.pacts.some(p => p.broken)) add("broken");
+    if (G.deals.length) add("envelope");
+    if (G.lies.length) add("rumours", null, Q("({n} on air, {m} shown up)", { n: G.lies.length, m: liesOut }));
+    ["quiet", "reef", "harbour", "night", "concerts", "copy"].forEach(k => inForce(k) && add(k));
+    if (G.move >= MOVES) add("night5");
+    add("day", { n: G.day, m: DAYS });
+    ["fact", "dedicate", "song", "warm", "sam"].forEach(k => add(k));
+    L.push({ k: "tips", parts: [Q("{x}, you have {n} coins.", { x: nm(G.me), n: G.coins[G.me] }), V("tips")] });
     return L;
   }
-  /* the chain weather: Rico reads the real testnet (or the simulation, in simulation mode) and turns it into a forecast */
-  const WX = { at: 0, line: null, n: 0 };
-  function chainWeather(done) {
-    if (performance.now() - WX.at < 90000 && WX.line) return done(WX.line);
-    let ws; try { ws = window.TauSim && TauSim.on ? TauSim.socket() : new WebSocket("wss://node.tauhud.com"); } catch (e) { return done(null); }
+  /* Rico reads the real testnet (or the simulation, in simulation mode) every minute and a half: the newest blocks and
+     the waiting list. From them come the chain weather and the news: what kind of transactions the new blocks hold,
+     ghosts (live only: sealed transactions the node still lists as waiting, IDNI #81, counted by the relay), and in
+     the simulation the refusals, a consensus switch voted on or in force, and the restart at midnight UTC. */
+  const RADAR = { snap: null, busy: false, seen: 0, mode: null, ghosts: 0, flagged: {}, news: [] };
+  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "refusedLaw", "ghost", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused"];
+  const KIND = { rule_deploy: "rule", approval_request: "cosign", transfer_vote: "cosvote", retractable_transfer: "lock", retract_transfer: "back", rule_offer: "offer", rule_offer_accept: "offerYes", consensus_rule_vote: "lawVote" };
+  const txKind = tx => { const t = tx.tx_type || "user_tx"; return t === "user_tx" && tx.operations && tx.operations["0"] ? "rule_deploy" : t; };
+  function heard(set, h) {
+    if (RADAR.news.some(n => n.set === set)) return;
+    RADAR.news.push({ set, h, at: performance.now() });
+    RADAR.news.sort((a, b) => RANK.indexOf(a.set) - RANK.indexOf(b.set)); RADAR.news.length = Math.min(RADAR.news.length, 6);
+  }
+  function readChain(done) {
+    if (RADAR.busy) return done && done(RADAR.snap);
+    const sim = !!(window.TauSim && TauSim.on);
+    let ws; try { ws = sim ? TauSim.socket() : new WebSocket("wss://node.tauhud.com"); } catch (e) { return done && done(null); }
+    RADAR.busy = true;
     const blocks = new Map(); let pool = null, fin = false;
     const finish = () => {
-      if (fin) return; fin = true; try { ws.close(); } catch (e) {}
+      if (fin) return; fin = true; RADAR.busy = false; try { ws.close(); } catch (e) {}
       const bs = [...blocks.values()].sort((a, b) => a.header.block_number - b.header.block_number).slice(-12);
-      if (!bs.length) return done(null);
-      const sim = window.TauSim && TauSim.on, last = bs[bs.length - 1], h = last.header.block_number;
-      const ts = Number(last.header.timestamp) || 0, age = ts ? Math.max(0, Date.now() / 1000 - (ts > 1e12 ? ts / 1000 : ts)) / 60 : 0;
-      const txs = bs.reduce((n, b) => n + (b.transactions || []).length, 0), rules = bs.filter(b => (b.transactions || []).some(tx => tx.operations && tx.operations["0"])).map(b => b.header.block_number);
+      if (!bs.length) return done && done(null);
+      const last = bs[bs.length - 1], h = last.header.block_number, ts = Number(last.header.timestamp) || 0;
+      const age = ts ? Math.max(0, Date.now() / 1000 - (ts > 1e12 ? ts / 1000 : ts)) / 60 : 0;
       const wait = Array.isArray(pool) ? pool.length : pool && Array.isArray(pool.transactions) ? pool.transactions.length : pool && Array.isArray(pool.mempool) ? pool.mempool.length : 0;
-      const now = [V(sim ? "wxSim" : "wxChain")], at = String(h);
-      if (age > 10) now.push(V("fog"), Q("(last block {y}, {n} minutes ago)", { y: at, n: Math.round(age) }));
-      else if (!txs) now.push(V("calm"), Q("({n} empty blocks, up to block {y})", { n: bs.length, y: at }));
-      else now.push(V(txs <= bs.length / 2 ? "breeze" : "choppy"), Q("({n} txs in the last {m} blocks, up to block {y})", { n: txs, m: bs.length, y: at }));
-      if (rules.length) now.push(V("rule"), Q("(block {y})", { y: String(rules[rules.length - 1]) }));
-      now.push(...(wait ? [V("showers"), Q("({n} waiting)", { n: wait })] : [V("clear")]));
-      WX.at = performance.now(); WX.line = now; done(now);
+      RADAR.snap = { bs, h, age, wait, sim, at: performance.now() };
+      notice(RADAR.snap);
+      done && done(RADAR.snap);
     };
     const stop = setTimeout(finish, 7000);
     ws.onopen = () => { ws.send("hello version=1"); setTimeout(() => { try { ws.send("getmempool"); ws.send("getblocks"); } catch (e) {} }, 200); };
@@ -768,13 +775,76 @@
       if (pool !== null && blocks.size) { clearTimeout(stop); setTimeout(finish, 300); }
     };
     ws.onerror = () => { clearTimeout(stop); finish(); };
+    if (!sim) fetch("https://node.tauhud.com/health-score", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
+      const f = j && (j.factors || []).find(x => x && x.key === "mempool"), n = f && f.value ? +f.value.sealed || 0 : 0;
+      if (n > 0 && !RADAR.ghosts) heard("ghost", null);
+      RADAR.ghosts = n;
+    }, () => {});
   }
+  function notice(s) {
+    const first = !RADAR.seen;
+    if (RADAR.seen && s.h < RADAR.seen - 5) { heard("restart", null); RADAR.seen = 0; }
+    const nb = s.bs.filter(b => b.header.block_number > RADAR.seen);
+    RADAR.seen = Math.max(RADAR.seen, s.h);
+    for (const b of nb) {
+      const n = b.header.block_number, txs = b.transactions || [];
+      if (txs.length >= 10) heard("burst", n);
+      for (const tx of txs) {
+        const k = txKind(tx);
+        if (KIND[k]) heard(KIND[k], n);
+        else if (k === "consensus_rule_update") heard(s.sim ? "lawSim" : "law", n);
+      }
+      if (s.sim) for (const d of TauSim.chain.dropped(n) || []) heard(d.type === "consensus_rule_update" ? "refusedLaw" : /o5|own rule|its rule/i.test(d.why || "") ? "refusedOwn" : "refused", n);
+    }
+    if (!s.sim) return;
+    /* the simulation's big moments: a consensus switch put to the vote, and the moment it comes into force */
+    const mode = TauSim.chain.rulesAt(s.h).elig;
+    if (RADAR.mode && mode !== RADAR.mode) heard(mode === "stake" ? "nowStake" : "nowFixed", s.h);
+    RADAR.mode = mode;
+    const now = Date.now() / 1000;
+    for (const u of TauSim.upcoming() || []) {
+      const id = u.kind + ":" + u.at_ts;
+      if (RADAR.flagged[id]) continue;
+      if ((u.kind === "stake" || u.kind === "fixed") && u.proposed_ts != null && u.proposed_ts <= now && now < u.at_ts) { RADAR.flagged[id] = 1; heard(u.kind === "stake" ? "toStake" : "toFixed", u.proposed_at); }
+      if (u.kind === "restart" && u.at_ts - now < 600 && now < u.at_ts) { RADAR.flagged[id] = 1; heard("midnight", null); }
+    }
+    if (RADAR.news.some(n => /^to/.test(n.set))) RADAR.news = RADAR.news.filter(n => n.set !== "lawSim");   // the switch is that rule change
+    if (first) RADAR.news = RADAR.news.filter(n => !/^(now|restart)/.test(n.set));   // nothing switched while we were not listening
+  }
+  /* the chain weather: the newest blocks turned into a forecast, the numbers shown beside it */
+  function weather(s) {
+    const at = String(s.h), txs = s.bs.reduce((n, b) => n + (b.transactions || []).length, 0);
+    const w = [V(s.sim ? "wxSim" : "wxChain")], band = set => { const k = pickLine(RICO.SETS[set]); markSaid(k); w.push(V(k)); };
+    if (s.age > 10) { band("fog"); w.push(Q("(last block {y}, {n} minutes ago)", { y: at, n: Math.round(s.age) })); }
+    else if (!txs) { band("calm"); w.push(Q("({n} empty blocks, up to block {y})", { n: s.bs.length, y: at })); }
+    else { band(txs <= s.bs.length / 2 ? "breeze" : "choppy"); w.push(Q("({n} transactions in the last {m} blocks, up to block {y})", { n: txs, m: s.bs.length, y: at })); }
+    const rules = s.bs.filter(b => (b.transactions || []).some(tx => txKind(tx) === "rule_deploy")).map(b => b.header.block_number);
+    if (rules.length) w.push(V("rule"), Q("(block {y})", { y: String(rules[rules.length - 1]) }));
+    band(s.wait ? "showers" : "clear"); if (s.wait) w.push(Q("({n} waiting)", { n: s.wait }));
+    return w;
+  }
+  /* what comes next on air: first a hello, then news from the chain when there is some (every other line at most),
+     the weather every fourth line, and in between the game and the island, never the same line twice in a row */
+  const ROT = { n: 0, newsLast: false };
+  function nextLine() {
+    ROT.n++;
+    if (ROT.n === 1) return one("open");
+    const big = RADAR.news.some(n => /^(now|to|restart|midnight)/.test(n.set));
+    if (ROT.n % 4 === 3 && !big && RADAR.snap && performance.now() - RADAR.snap.at < 180000) { ROT.newsLast = false; return { k: null, parts: weather(RADAR.snap) }; }
+    RADAR.news = RADAR.news.filter(n => performance.now() - n.at < 600000);
+    /* the big moments always go on air; small news only while Rico has not just used up all its lines */
+    const recent = SAID.slice(-20), i = RADAR.news.findIndex(n => /^(now|to|restart|midnight)/.test(n.set) || RICO.SETS[n.set].some(k => !recent.includes(k)));
+    if (i >= 0 && (!ROT.newsLast || big)) { ROT.newsLast = true; const n = RADAR.news.splice(i, 1)[0]; return one(n.set, ...(n.h != null ? [Q("(block {y})", { y: String(n.h) })] : [])); }
+    ROT.newsLast = false;
+    if (Math.random() < 0.5) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
+    return one("general");
+  }
+  readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
   setInterval(() => {
     if (!G || G.over || G.counting || document.hidden || performance.now() < DJ.next) return;
-    if (++WX.n % 3 === 1) { DJ.next = performance.now() + 60000; chainWeather(line => { if (line) onAir(line); else DJ.next = 0; }); return; }
-    const L = djLines(); if (!L.length) return;
-    let k = Math.floor(Math.random() * L.length); if (k === DJ.last && L.length > 1) k = (k + 1) % L.length; DJ.last = k;
-    onAir(L[k]);
+    const l = nextLine(); if (!l) return;
+    if (l.k) markSaid(l.k);
+    onAir(l.parts);
   }, 2000);
 
   /* ---------- election night ---------- */

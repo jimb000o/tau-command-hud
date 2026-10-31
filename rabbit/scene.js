@@ -849,12 +849,14 @@
     for (let r = 0; r < 12; r++) { const y = RHZ + 10 + r * r * 3.4, sc = 4 + r * 1.4, gap = 90 + r * 20, dr = Math.sin(t * 0.0009 + r) * gap * 0.25; for (let x = -gap + ((r * 53) % gap) + (r % 2) * gap / 2 + dr; x < RW + gap; x += gap) { g.beginPath(); g.arc(x, y, sc, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); } }
   }
   const roomCache = {};
+  /* how wide a room is drawn: a wide painting (paint.py hires) keeps its own width, the middle 1600 stay where they were */
+  const roomW = id => { const im = painted(id) && ART.img[id]; return im && im.naturalWidth / im.naturalHeight > 1.9 ? Math.round(RH * im.naturalWidth / im.naturalHeight) : RW; };
   function roomImage(id) {
-    const q = Math.min(1.5, Math.max(0.6, Math.max(S.W / RW, S.H / RH) * S.K));
+    const rw = roomW(id), q = Math.min(2.6, 8192 / rw, Math.max(0.6, Math.max(S.W / rw, S.H / RH) * S.K));
     let c = roomCache[id]; if (c && Math.abs(c.q - q) < 0.05) return c;
-    c = document.createElement("canvas"); c.width = Math.round(RW * q); c.height = Math.round(RH * q); c.q = q;
-    const g = c.getContext("2d"); g.scale(q, q);
-    if (painted(id)) cover(g, ART.img[id], RW, RH); else ROOMS[id](g, rnd(id.length * 131));
+    c = document.createElement("canvas"); c.width = Math.round(rw * q); c.height = Math.round(RH * q); c.q = q;
+    const g = c.getContext("2d"); g.scale(q, q); g.imageSmoothingQuality = "high";
+    if (painted(id)) cover(g, ART.img[id], rw, RH); else ROOMS[id](g, rnd(id.length * 131));
     return (roomCache[id] = c);
   }
 
@@ -868,6 +870,8 @@
           ART.img[id] = im;
           if (id === "folk") return;   // the people, painted: a strip of figures (infra/rabbit-art paint.py folk)
           if (id !== "island") { delete roomCache[id]; return; }
+          const ar = im.naturalWidth / im.naturalHeight;   // a wide painting (paint.py hires) carries on past the world's sides
+          ART.wide = ar > 1.9 ? Math.round((WH * ar - WW) / 2) : 0;
           if (j.layout && painted("island")) useLayout(j.layout);
           S.base = null; if (S.c) size();
         };
@@ -897,9 +901,9 @@
       cg.filter = "blur(3px)"; cg.drawImage(im, -6, -4, 108, 62); cg.filter = "none";
       cg.fillStyle = "rgba(10,24,34,.38)"; cg.fillRect(0, 0, 96, 54); c.im = im; S.blur = c;
     }
-    const w = wr - wl, h = Math.max(wb - wt, w * 9 / 16);
+    const w = wr - wl, h = Math.max(wb - wt, w * 9 / 16), e = ART.wide || 0;
     g.save(); g.imageSmoothingQuality = "high"; g.drawImage(S.blur, wl, (wt + wb) / 2 - h / 2, w, h); g.restore();
-    [[0, -1], [WW, 1]].forEach(([x, d]) => {   // the painting's edge melts into it
+    [[-e, -1], [WW + e, 1]].forEach(([x, d]) => {   // the painting's edge melts into it
       const gr = g.createLinearGradient(x, 0, x + d * 90, 0); gr.addColorStop(0, "rgba(10,24,34,.35)"); gr.addColorStop(1, "rgba(10,24,34,0)");
       g.fillStyle = gr; g.fillRect(Math.min(x, x + d * 90), wt, 90, wb - wt);
     });
@@ -946,11 +950,12 @@
     const r = S.c.getBoundingClientRect(); S.K = Math.min(2, devicePixelRatio || 1);
     S.W = Math.max(1, r.width); S.H = Math.max(1, r.height);
     S.c.width = Math.round(S.W * S.K); S.c.height = Math.round(S.H * S.K);
-    const fit = Math.min(S.W / WW, S.H / WH), q = Math.min(fit * S.K * 1.6, 4096 / WW);
-    if (!S.base || Math.abs(S.base.q - q) > 0.05) {
-      const b = document.createElement("canvas"); b.width = Math.round(WW * q); b.height = Math.round(WH * q); b.q = q;
-      const g = b.getContext("2d"); g.scale(q, q); S.base = b;
-      if (painted("island")) { cover(g, ART.img.island, WW, WH); b.painted = true; } else paintIsland(g);
+    const e = painted("island") ? ART.wide || 0 : 0, BW = WW + 2 * e;   // a wide painting reaches past the world's sides
+    const fit = Math.min(S.W / WW, S.H / WH), q = Math.min(fit * S.K * 1.6, 8192 / BW, 4096 / WH);
+    if (!S.base || Math.abs(S.base.q - q) > 0.05 || S.base.e !== e) {
+      const b = document.createElement("canvas"); b.width = Math.round(BW * q); b.height = Math.round(WH * q); b.q = q; b.e = e;
+      const g = b.getContext("2d"); g.scale(q, q); g.translate(e, 0); S.base = b;
+      if (painted("island")) { g.imageSmoothingQuality = "high"; e ? g.drawImage(ART.img.island, -e, 0, BW, WH) : cover(g, ART.img.island, WW, WH); b.painted = true; } else paintIsland(g);
     }
     if (S.focusId) focus(S.focusId, S.focusSide); else { S.camT = home(); if (!S.sized) { S.cam = { ...S.camT }; S.sized = true; } }
     S.world = S.world || document.createElement("canvas"); S.world.width = S.c.width; S.world.height = S.c.height; S.wg = S.world.getContext("2d");
@@ -987,7 +992,7 @@
     view(g);
     const [wl] = toWorld(0, 0), [wr, wb] = toWorld(S.W, S.H), [, wt] = toWorld(0, 0);
     const sk = !(S.base && S.base.painted);   // a painted island brings its own sky: no drawn sun, moon, clouds or gulls over it
-    if (!sk && (wl < 0 || wr > WW)) sides(g, wl, wt, wr, wb);
+    if (!sk && (wl < -(ART.wide || 0) || wr > WW + (ART.wide || 0))) sides(g, wl, wt, wr, wb);
     /* stars as small printed crosses, the sun as a disc in rings with slow rays, the moon as a crescent */
     const nt = Math.max(0, 1 - Math.abs((S.hour % 4) - 3) * 1.4);
     if (sk && nt > 0) { const R = rnd(9); for (let i = 0; i < 140; i++) { const x = wl + R() * (wr - wl), y = wt + R() * (HZ - wt - 10), r = 0.8 + R() * 1.8, al = nt * (0.35 + R() * 0.65) * (0.7 + 0.3 * Math.sin(t * 0.002 + i)); g.fillStyle = `rgba(251,243,223,${al})`; g.fillRect(x - r, y - 0.5, r * 2, 1); g.fillRect(x - 0.5, y - r, 1, r * 2); } }
@@ -1030,19 +1035,20 @@
     w.strokeStyle = `rgba(255,255,255,${0.25 + surf * 0.35})`; w.lineWidth = 3; shape(w, 1.015 + surf * 0.012, 2); w.stroke();
     w.strokeStyle = `rgba(255,255,255,${0.12 * (1 - surf)})`; w.lineWidth = 2; shape(w, 1.05 + surf * 0.02, 4); w.stroke();
     const pi = !!S.base.painted;   // the painted island has its own palms, flags and boat
-    w.drawImage(S.base, 0, 0, WW, WH);
+    w.drawImage(S.base, -S.base.e, 0, WW + 2 * S.base.e, WH);
     islandFx(w, t, sky.light);
     if (S.glow) { const p = PLACES[S.glow]; const [x, y, bw, bh] = p.box; w.fillStyle = "rgba(255,255,230,.18)"; w.beginPath(); w.ellipse(x + bw / 2, y + bh * 0.85, bw * 0.62, bh * 0.32, 0, 0, Math.PI * 2); w.fill(); }
     if (!pi) { flag(w, 470, 470, t, "#3b5f8a", "#fff", "wind"); flag(w, 606, 425, t + 900, "#c0533f", "#fff", "wave"); boat(w, 1110, 770, t); }
     /* palms and people in depth order */
     const items = pi ? [] : PALMS.map(([x, y], i) => [y, () => palm(w, x, y, t, i)]);
-    FOLK.forEach((f, i) => {
+    if (!pi) FOLK.forEach((f, i) => {   // on the painted island nobody walks for now: only the white rabbit
       if (!S.still) { f.k += f.v * dt * f.dir; if (f.k > 1 || f.k < 0) { f.dir *= -1; f.k = Math.max(0, Math.min(1, f.k)); } }
       let [x, y] = alongPath(f.path, f.k);
       if (S.gather > 0) { const a = i / FOLK.length * Math.PI * 2, gx2 = SPOT.gather[0] + Math.cos(a) * 70, gy2 = SPOT.gather[1] + Math.sin(a) * 18; x = lerp(x, gx2, S.gather); y = lerp(y, gy2, S.gather); }
       items.push([y, () => person(w, x, y, t, f, i)]);
     });
     rabbitStep(S.still ? 999 : dt, t); items.push([RB.y, () => rabbit(w, t)]);
+    if (S.cat && pi) S.cat = null;
     if (S.cat) {
       const c = S.cat, f = (t - c.t0) / c.d; if (f > 1) S.cat = c.twice ? { ...c, t0: t, twice: false } : null;
       else items.push([700, () => cat(w, lerp(c.x0, c.x1, f), lerp(c.y0, c.y1, f), t, c.x1 > c.x0 ? 1 : -1)]);
@@ -1070,12 +1076,12 @@
     /* inside a place: the room opens from the place in a widening circle and fills the view */
     S.roomA += (S.roomT - S.roomA) * Math.min(1, k * 1.15); if (Math.abs(S.roomT - S.roomA) < 0.004) S.roomA = S.roomT;
     if (S.room && S.roomA > 0.004) {
-      const a = S.roomA, e = a * a * (3 - 2 * a), phone = S.W < 760, zz = 1.06 + (1 - e) * 0.18, sc = Math.max(W / RW, H / RH) * zz;
-      let ox = (W - RW * sc) / 2 - (phone ? 0 : S.focusSide * W * 0.16), oy = (H - RH * sc) / 2 - (phone ? H * 0.16 : 0);
-      ox = Math.min(0, Math.max(W - RW * sc, ox)); oy = Math.min(0, Math.max(H - RH * sc, oy));
+      const rw = roomW(S.room), a = S.roomA, e = a * a * (3 - 2 * a), phone = S.W < 760, zz = 1.06 + (1 - e) * 0.18, sc = Math.max(W / rw, H / RH) * zz;
+      let ox = (W - rw * sc) / 2 - (phone ? 0 : S.focusSide * W * 0.16), oy = (H - RH * sc) / 2 - (phone ? H * 0.16 : 0);
+      ox = Math.min(0, Math.max(W - rw * sc, ox)) + (rw - RW) / 2 * sc; oy = Math.min(0, Math.max(H - RH * sc, oy));
       w.setTransform(1, 0, 0, 1, 0, 0); w.clearRect(0, 0, W, H); w.setTransform(sc, 0, 0, sc, ox, oy);
       const day = Math.max(0, 1 - sky.light);
-      if (painted(S.room)) { w.drawImage(roomImage(S.room), 0, 0, RW, RH); w.save(); roomLife(w, t, day); w.restore(); }
+      if (painted(S.room)) { w.drawImage(roomImage(S.room), (RW - rw) / 2, 0, rw, RH); w.save(); roomLife(w, t, day); w.restore(); }
       else { roomBackdrop(w, sky, t); w.drawImage(roomImage(S.room), 0, 0, RW, RH); w.save(); ROOMFX[S.room](w, t, day); w.restore(); }
       if (S.hostFn) {
         if (!S.hostC) { S.hostC = document.createElement("canvas"); S.hostC.width = S.hostC.height = 600; }
@@ -1113,9 +1119,13 @@
   /* lean in on a place, keeping the space for the card on the far side; null goes back to the whole cove */
   /* the whole island, as large as the screen allows: on a tall phone the island fills the width, the sky gives way */
   function home() {
-    /* a painted island framed as a whole picture is shown whole; on a very wide screen it leans in a little, giving up
-       at most a seventh of its height (sea at the top and bottom) to fill more of the width */
-    if (ART.whole && S.W >= 760) return { x: 800, y: 450, z: Math.max(1, Math.min(S.W / (WW * fitScale()), 1.16)) };
+    /* a painted island framed as a whole picture fills the screen from edge to edge: a wide painting (paint.py wide)
+       carries its sea and coast past the sides; without one, a wide screen leans in until the painting covers the width,
+       and the pointer looks up and down over what that crops away */
+    if (ART.whole && S.W >= 760) {
+      const z = Math.max(1, S.W / ((WW + 2 * (ART.wide || 0)) * fitScale())), spare = (WH - WH / z) / 2;
+      return { x: 800, y: 450 + (S.peek || 0) * spare, z };
+    }
     const f = fitScale(), z = Math.max(1, Math.min(S.W / (1220 * f), S.H / (690 * f)));
     return { x: 800, y: z > 1.05 ? Math.max(450, 900 - S.H / (f * z) / 2 - 10) : 450, z };
   }
@@ -1132,6 +1142,10 @@
     S.c = canvas; S.g = canvas.getContext("2d");
     S.still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     size(); addEventListener("resize", size);
+    canvas.addEventListener("pointermove", e => {   // a cropped whole view follows the pointer up and down
+      const r = canvas.getBoundingClientRect(); S.peek = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2.4));
+      if (!S.focusId) S.camT = home();
+    });
     if (window.ResizeObserver) new ResizeObserver(size).observe(canvas);
     requestAnimationFrame(frame);
   }

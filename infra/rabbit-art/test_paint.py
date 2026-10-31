@@ -23,9 +23,9 @@ try:
 except ImportError:
     Image, PIC = None, b"\x89PNG fake"
 calls = []
-prompts = []
+prompts, bodies = [], []
 def fake(url, data, headers, timeout=240):
-    calls.append(url)
+    calls.append(url); bodies.append(data.decode("latin-1"))
     prompts.append(json.loads(data)["contents"][0]["parts"][0]["text"] if "generativelanguage" in url else data.decode("latin-1"))
     if "generativelanguage" in url:
         body = json.loads(data)
@@ -35,7 +35,7 @@ def fake(url, data, headers, timeout=240):
             assert len(body["contents"][0]["parts"]) == 2
         if "same artist" in body["contents"][0]["parts"][0]["text"]:
             assert len(body["contents"][0]["parts"]) == 4 and ("high hill" in body["contents"][0]["parts"][0]["text"] or "rough sketch" in body["contents"][0]["parts"][0]["text"])
-        assert body["generationConfig"]["imageConfig"]["aspectRatio"] == "16:9" and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"] or "close view of one place" in body["contents"][0]["parts"][0]["text"] or "Repaint this exact island" in body["contents"][0]["parts"][0]["text"])
+        assert body["generationConfig"]["imageConfig"]["aspectRatio"] == "16:9" and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"] or "close view of one place" in body["contents"][0]["parts"][0]["text"] or "Repaint this exact island" in body["contents"][0]["parts"][0]["text"] or "much higher resolution" in body["contents"][0]["parts"][0]["text"] or "empty grey" in body["contents"][0]["parts"][0]["text"])
         return {"candidates": [{"content": {"parts": [{"inlineData": {"mimeType": "image/png", "data": base64.b64encode(PIC).decode()}}]}}]}
     if "openai" in url:
         assert b'name="input_fidelity"' in data and b'filename="plate.jpg"' in data
@@ -92,6 +92,26 @@ for prov in ("gemini", "openai"):
         assert "close view of one place" in prompts[-1] and json.load(open(os.path.join(out, "drafts", "drafts.json")))["school"]
         paint.cmd_rework(types.SimpleNamespace(out=out, src=None, n=1, model=None))
         assert "Radio Coco" in prompts[-1] and "rework" in json.load(open(os.path.join(out, "drafts", "drafts.json")))["idea"].values()
+        if prov == "gemini":   # a sharp copy: asked at 4K, kept wide
+            paint.cmd_sharp(types.SimpleNamespace(out=out, src=None, size="4K", model="gemini-3-pro-image-preview"))
+            dd = json.load(open(os.path.join(out, "drafts", "drafts.json")))
+            assert "sharp 4K" in dd["idea"].values() and "much higher resolution" in prompts[-1] and '"imageSize": "4K"' in bodies[-1]
+        if prov == "gemini" and Image:   # high resolution and wide: the middle is the kept picture itself, the sides painted
+            paint.cmd_keep(types.SimpleNamespace(out=out, picks=["island=2", "bar=1"], layout="island-21"))
+            kept = Image.open(os.path.join(out, json.load(open(os.path.join(out, "index.json")))["scenes"]["island"])).convert("RGB")
+            n0 = len(calls)
+            for _ in range(2):   # twice: the second starts again from the kept picture
+                paint.cmd_hires(types.SimpleNamespace(out=out, places=["all"], no_sharp=True, model="gemini-3-pro-image-preview"))
+            assert len(calls) - n0 == 8 and "Leave the left half" in prompts[-1] and '"imageSize": "2K"' in bodies[-1]
+            idx = json.load(open(os.path.join(out, "index.json")))
+            wide = Image.open(os.path.join(out, idx["scenes"]["island"])).convert("RGB")
+            assert wide.size == (kept.size[0] * 2, kept.size[1]) and idx["orig"]["island"] != idx["scenes"]["island"]
+            assert Image.open(os.path.join(out, idx["scenes"]["bar"])).size == (1600 * 3 // 2, 900)
+            assert max(abs(p - q) for p, q in zip(wide.getpixel((kept.size[0], 450)), kept.getpixel((kept.size[0] // 2, 450)))) < 12
+            paint.cmd_hires(types.SimpleNamespace(out=out, places=["island"], no_sharp=False, model="gemini-3-pro-image-preview"))
+            assert "much higher resolution" in prompts[-3] and '"imageSize": "4K"' in bodies[-1]
+            assert Image.open(os.path.join(out, json.load(open(os.path.join(out, "index.json")))["scenes"]["island"])).size == (3200, 900)   # the stand-in paints small
+            paint.cmd_keep(types.SimpleNamespace(out=out, picks=["bar=1"])); assert "bar" not in json.load(open(os.path.join(out, "index.json")))["orig"]
         paint.cmd_drop(types.SimpleNamespace(out=out, places=["bar"]))
         assert list(json.load(open(os.path.join(out, "index.json")))["scenes"]) == ["island"]
 if Image:   # a sheet of eight figures on magenta comes out as a strip of eight cut-out cells, feet down
