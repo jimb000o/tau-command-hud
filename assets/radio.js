@@ -20,21 +20,28 @@
     rabbit: "The island's sound and Radio Coco. The same switch as on every other page.",
   };
 
-  const R = { page: "hud", btn: null, cap: null, mode: "radio", loading: null, waiting: false, timer: 0, next: 0, n: 0, last: -1 };
+  const R = { page: "hud", btn: null, cap: null, mode: "radio", loading: null, timer: 0, next: 0, n: 0, last: -1 };
   const wanted = () => store.get(KEY) === "on";
   const setAll = on => KEYS.forEach(k => store.set(k, on ? "on" : "off"));
+  /* one tab plays at a time: the playing tab writes its id and the time every two seconds; another tab with the radio
+     on stays quiet while that is fresh, and a press on its button takes the radio over (the first tab then goes quiet) */
+  const LOCK = "tauhud-radio-tab", ID = Math.random().toString(36).slice(2);
+  const holder = () => { try { const v = JSON.parse(store.get(LOCK) || "null"); return v && Date.now() - v.t < 8000 ? v.id : null; } catch (e) { return null; } };
+  const elsewhere = () => { const h = holder(); return !!h && h !== ID; };
+  const beat = () => store.set(LOCK, JSON.stringify({ id: ID, t: Date.now() }));
+  const free = () => { if (holder() === ID) try { localStorage.removeItem(LOCK); } catch (e) {} };
 
   /* ---------- the button ---------- */
   function show() {
     const b = R.btn; if (!b) return;
-    let on, wait = false;
+    let on, wait = false; const away = R.mode === "radio" && !R.timer && elsewhere();
     if (R.mode === "gazette") on = store.get("gazette-sound") !== "off";
     else if (R.mode === "rabbit") { const S = window.COVE_SOUND; on = !!(S && S.wanted); wait = on && !(S && S.on); }
-    else { on = wanted(); wait = on && R.waiting; }
-    b.classList.toggle("on", on); b.classList.toggle("wake", wait);
+    else { on = wanted(); wait = on && !R.timer && !away; }   // on, but not playing here and not in another tab: the next click starts it
+    b.classList.toggle("on", on); b.classList.toggle("wake", wait); b.classList.toggle("away", on && away);
     b.setAttribute("aria-pressed", on ? "true" : "false");
-    b.querySelector(".lbl").textContent = T(wait ? "Tap for radio" : on ? "Radio on" : "Radio");
-    b.setAttribute("aria-label", T(on ? "Radio Coco: on. Turn the sound off" : "Radio Coco: off. Turn the sound on"));
+    b.querySelector(".lbl").textContent = T("Radio Coco");
+    b.setAttribute("aria-label", T(wait ? "Tap for Radio Coco" : on && away ? "Radio Coco plays in another tab. Play it here" : on ? "Radio Coco: on. Turn the sound off" : "Radio Coco: off. Turn the sound on"));
   }
 
   /* ---------- the island's radio, loaded only when somebody wants it ---------- */
@@ -52,9 +59,9 @@
     const S = window.COVE_SOUND;
     if (!S.wanted) S.toggle(); else S.start();
     S.set({ place: "radio", radio: false, amb: 0.35 });   // the station's arrangement, the sea faint behind it
-    R.waiting = !S.on;
     if (S.on) {
-      if (!R.timer) { R.timer = setInterval(tick, 2000); R.next = performance.now() + 2500; R.n = 0; }
+      beat();
+      if (!R.timer) { R.timer = setInterval(() => { if (elsewhere()) quiet(); else { beat(); tick(); } }, 2000); R.next = performance.now() + 2500; R.n = 0; }
       if (!R.hello) { R.hello = true; S.sfx("jingle"); setTimeout(() => air(hello()), 900); }
     }
     show(); return S.on;
@@ -62,7 +69,13 @@
   function stop() {
     const S = window.COVE_SOUND;
     if (S && S.wanted) S.toggle();
-    clearInterval(R.timer); R.timer = 0; R.hello = false; R.waiting = false; caption(null); show();
+    clearInterval(R.timer); R.timer = 0; R.hello = false; free(); caption(null); show();
+  }
+  /* another tab plays now: this one goes silent and keeps the radio switched on */
+  function quiet() {
+    const S = window.COVE_SOUND;
+    if (S && S.wanted) { S.toggle(); store.set("tauhud-rabbit-sound", "on"); }
+    clearInterval(R.timer); R.timer = 0; R.hello = false; caption(null); show();
   }
 
   /* ---------- what Rico says ---------- */
@@ -162,26 +175,36 @@
       if (R.btn.classList.contains("wake") || (!S.on && S.wanted)) S.start(); else S.toggle();
       setAll(S.wanted); show(); return;
     }
-    if (wanted() && !R.waiting) { setAll(false); stop(); return; }
-    setAll(true); R.waiting = false; play();
+    if (wanted() && R.timer) { setAll(false); stop(); return; }   // playing here: off everywhere
+    setAll(true); play();
   }
   /* a radio left on: it comes back with the first click or key on this page */
   function resume() {
-    R.waiting = true; show();
-    const go = () => { removeEventListener("pointerdown", go, true); removeEventListener("keydown", go, true); if (wanted()) play(); };
+    show();
+    const go = () => { removeEventListener("pointerdown", go, true); removeEventListener("keydown", go, true); if (wanted() && !elsewhere()) play(); else show(); };
     addEventListener("pointerdown", go, true); addEventListener("keydown", go, true);
   }
 
   function mount(host, page, tip) {
     R.page = page; R.mode = page === "gazette" ? "gazette" : page === "rabbit" ? "rabbit" : "radio";
     const b = R.btn = document.createElement("button");
-    b.type = "button"; b.className = "pill tn-radiob"; b.innerHTML = `${ICON}<span class="lbl">Radio</span>`;
+    b.type = "button"; b.className = "pill tn-radiob"; b.innerHTML = `${ICON}<span class="lbl">Radio Coco</span>`;
     if (tip) tip(b, TIP[R.mode]);
     b.addEventListener("click", click);
     host.append(b);
     if (R.mode === "gazette") window.addEventListener("gazette-sound", e => { setAll(!!e.detail); show(); });
     if (R.mode === "rabbit") setInterval(show, 1000);   // the game has its own sound button; follow it
-    if (R.mode === "radio" && wanted()) resume();
+    if (R.mode === "radio") {
+      if (wanted() && !elsewhere()) resume();
+      /* the other tabs: switched off there, it stops here; taken over there, this one goes quiet */
+      addEventListener("storage", e => {
+        if (e.key === KEY && e.newValue === "off") stop();
+        if (e.key === LOCK) { if (R.timer && elsewhere()) quiet(); else show(); }
+        if (e.key === KEY && e.newValue === "on" && !R.timer) show();
+      });
+      addEventListener("pagehide", free);
+      setInterval(() => { if (!R.timer) show(); }, 4000);   // a tab that closed without saying so: its claim runs out after eight seconds
+    }
     show();
   }
   window.TauRadio = { mount };
