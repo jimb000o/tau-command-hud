@@ -1979,5 +1979,10 @@
   "tag": "White Rabbit Key",
   "on": "2026-10-31",
   "html": "White Rabbit Key: Radio Coco now carries the island legend. Blurry sightings of Agorzilla behind the drums, missing bananas, footprints that keep getting bigger, and callers who swear they saw him wave."
+ },
+ {
+  "tag": "Menu",
+  "on": "2026-10-31",
+  "html": "Language: a first visit now always opens in English, whatever language the browser is set to. 中文 and 日本語 are one click away in the header, a choice made there is remembered, and links with ?lang=zh or ?lang=ja still open in that language."
  }
 ]

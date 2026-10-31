@@ -513,4 +513,11 @@ TauI18n.add({ strings: {
   "A caller swears Agorzilla waved at her from the treeline. Rico asked for proof. She sent a photo of a very surprised banana.": "一位听众发誓说 Agorzilla 在树林边朝她挥手。Rico 要证据。她发来一张非常吃惊的香蕉的照片。",
   "The footprints by the drums are back. Bigger this time. Either Agorzilla has grown, or somebody bought new boots.": "鼓旁边的脚印又出现了。这次更大。要么 Agorzilla 长大了，要么有人买了新靴子。",
   "Nobody has a clear photo of Agorzilla. Everybody has a theory. Rico's theory: he listens to this station. Hello, big fellow. The bananas are on the house.": "谁也没有 Agorzilla 的清楚照片。人人都有一套说法。Rico 的说法：他在听这个电台。你好呀，大家伙。香蕉我请。",
+  /* the cat and the legend of the jungle */
+  "Something moves in the jungle": "丛林里有东西在动",
+  "Déjà, the café cat": "Déjà，咖啡馆的猫",
+  "Déjà, the café cat, looks at you as if she has seen you before. Nobody can feed her alone: she eats only on days when at least three wallets agree.": "咖啡馆的猫 Déjà 看着你，好像以前见过你。谁也不能一个人喂她：只有在至少三个钱包达成一致的那天，她才吃东西。",
+  "A shape in the jungle": "丛林里的身影",
+  "You saw him too? The old ones call him Agorzilla. He lives deep in the jungle and grows only in the ways the island votes for. Nobody has a clear photo, everybody has a theory, and the bananas keep disappearing.": "你也看见他了？老人们叫他 Agorzilla。他住在丛林深处，只会按照全岛投票的方式成长。谁也没有一张清楚的照片，人人都有自己的说法，而香蕉总是不见。",
+  "Follow the footprints": "跟着脚印走",
 } });

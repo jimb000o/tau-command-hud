@@ -1,6 +1,6 @@
 /* Tau HUD languages. English is the source text in the pages; a translation is a dictionary keyed by that English text
    (assets/i18n/<lang>/common.js for the shared header, plus one file per page). This file runs first in <head>:
-   it picks the language (?lang=zh or ?lang=ja, then the saved choice, then the browser language), loads the dictionaries,
+   it picks the language (?lang=zh or ?lang=ja, then the saved choice, else English), loads the dictionaries,
    and translates every text node and hover text as the page builds and updates it. A string without a translation
    stays English, so a page never breaks when its English changes. ?i18n=missing lists untranslated strings in the console.
    Japanese keeps the English colours. Chinese also flips the signal colours to the Chinese convention: red is the positive accent, green means offline or down. */
@@ -12,7 +12,7 @@
   const norm = l => (!l ? null : /^zh/i.test(l) ? "zh" : /^ja/i.test(l) ? "ja" : /^en/i.test(l) ? "en" : null);
   let lang = norm(q.get("lang"));
   if (lang) store.set(KEY, lang);
-  else lang = norm(store.get(KEY)) || ((navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]).map(norm).find(Boolean)) || "en";
+  else lang = norm(store.get(KEY)) || "en";   // a first visit is always English, whatever the browser language; 中文 and 日本語 are one click away in the header
   /* the address bar keeps ?lang=zh (or ja), so a link copied from the Chinese site opens in Chinese */
   if (lang !== "en" && q.get("lang") !== lang) try { const u = new URL(location.href); u.searchParams.set("lang", lang); history.replaceState(history.state, "", u.href); } catch (e) {}
   const me = document.currentScript, ROOT = me && me.src ? new URL("..", me.src) : new URL("/", location.href);
