@@ -22,7 +22,7 @@ assert ("salado", "35 coins, today. All we ask is that you propose “A road rou
 assert ("tobias", "After what you did? Buy yourself a lemonade.") in ls
 assert not any("{" in t or "${" in t for t in texts), "a placeholder left in a spoken line"
 assert not any(re.search(r"\d{3,}", t) for t in texts), "a block height or big number in a spoken line"
-assert {w for w, t in ls} == set(make.CAST), "someone speaks without a voice description, or the other way round"
+assert {w for w, t in ls} == set(make.CAST) | set(make.CALLERS), "someone speaks without a voice description, or the other way round"
 assert make.key("rico", "Chain weather.") == hashlib.sha1("rico|Chain weather.".encode()).hexdigest()[:16]
 print(f"{len(ls)} lines, {sum(len(t) for w, t in ls)} characters")
 
@@ -43,7 +43,7 @@ game = open(os.path.join(make.REPO, "rabbit", "game.js"), encoding="utf-8").read
 keys = set(re.findall(r'^\s*(\w+): "', re.search(r"const L = \{(.*?)\n  \};", src, re.S).group(1), re.M))
 for k in re.findall(r'\bV\("(\w+)"', game):
     assert k in keys, f"game.js speaks {k}, which rico.js does not have"
-for k in re.findall(r'V\(sim \? "(\w+)" : "(\w+)"\)', game)[0]:
+for k in re.findall(r'V\((?:s\.)?sim \? "(\w+)" : "(\w+)"\)', game)[0]:
     assert k in keys, k
 said = lambda who, t: (who, t) in ls
 for m in re.finditer(r'scene\(box, "(\w+)", T\("[^"]*"\), T\("([^"]+)"\)', game):
@@ -79,7 +79,12 @@ def fake(path, body=None, accept="application/json", missing_ok=False, **kw):
         return json.dumps({"voices": [{"public_owner_id": "o", "voice_id": f"v-lib{i}", "name": f"Lib {i}", "preview_url": "https://x/p.mp3"} for i in range(3)]}).encode()
     if path.startswith("/text-to-speech/v-"):
         return b"clip"
+    if path == "/voices":
+        return json.dumps({"voices": [{"voice_id": "v-" + n.lower(), "name": n} for n in {**make.CALLERS, **make.READY}.values()]}).encode()
+    if path == "/user/subscription":
+        return json.dumps({"character_limit": 40000, "character_count": 40000 - LEFT[0], "next_character_count_reset_unix": 1764460800}).encode()
     raise AssertionError(path)
+LEFT = [10 ** 9]
 make.call = fake
 with tempfile.TemporaryDirectory() as out:
     json.dump({"voice": "v-old", "name": "Rico", "clips": ["abc"]}, open(os.path.join(out, "index.json"), "w"))   # the first index
@@ -90,10 +95,16 @@ with tempfile.TemporaryDirectory() as out:
     make.cmd_keep(types.SimpleNamespace(out=out, picks=["rico=2", "lola=1"]))
     idx = json.load(open(os.path.join(out, "index.json")))
     assert idx["voices"]["rico"]["id"] == "v-ricog1" and idx["voices"]["lola"]["id"] == "v-lolag0"
-    assert len(idx["clips"]) == sum(1 for w, t in ls if w in ("rico", "lola")) and "abc" not in idx["clips"]
+    assert len(idx["clips"]) == sum(1 for w, t in ls if w in ("rico", "lola", *make.CALLERS, *make.READY)) and "abc" not in idx["clips"]
     n = len(calls)
     make.cmd_make(types.SimpleNamespace(out=out, voice=None))
-    assert len(calls) == n, "made a clip twice"
+    assert len([c for c in calls[n:] if c.startswith("/text-to-speech/")]) == 0, "made a clip twice"
+    # with few credits left, only what fits is made; the next run goes on from there
+    said_sam = [make.said(w, t) for w, t in ls if w == "sam"]
+    LEFT[0] = len(said_sam[0]) + len(said_sam[1]) + 1
+    k = len(calls); make.cmd_make(types.SimpleNamespace(out=out, voice=["sam=Laura"]))
+    assert len([c for c in calls[k:] if c.startswith("/text-to-speech/")]) == 2, "made more than the credits allow"
+    LEFT[0] = 10 ** 9
     make.cmd_library(types.SimpleNamespace(out=out, who="rico", search=None))
     assert "rico=L3" in open(os.path.join(out, "samples", "library.html")).read()
     make.cmd_keep(types.SimpleNamespace(out=out, picks=["rico=L2"]))
