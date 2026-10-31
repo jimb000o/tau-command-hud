@@ -1089,7 +1089,8 @@
         /* a medium shot: in the middle of the room the card leaves free, eyes about a third down, standing on the radio
            bar instead of behind it, so the room around them (window, desk, map) still tells where we are */
         const cw = Math.min(470, S.W * 0.42) * S.K + 32 * S.K, fx = S.focusSide > 0 ? (W - cw) / 2 : S.focusSide < 0 ? cw + (W - cw) / 2 : W / 2;
-        const hb = phone ? (S.hostBottom || S.H * 0.47) * S.K : H - 60 * S.K, hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : Math.min(H * 0.56, (W - cw) * 0.5), hx = phone ? W / 2 : fx, hy = hb - hs * (phone ? 0.8 : 0.86) + (1 - e) * hs * 0.25;
+        /* on a wide screen the whole bust stands clear above the radio strip, shoulders and all */
+        const hb = phone ? (S.hostBottom || S.H * 0.47) * S.K : H - 74 * S.K, hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : Math.min(H * 0.5, (W - cw) * 0.5), hx = phone ? W / 2 : fx, hy = hb - hs * (phone ? 0.8 : 0.99) + (1 - e) * hs * 0.25;
         w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, hx - hs / 2, hy, hs, hs);
       }
       w.setTransform(1, 0, 0, 1, 0, 0);
