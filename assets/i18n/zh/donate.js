@@ -76,4 +76,11 @@ TauI18n.add({ strings: {
   "Claude Max plan (20x), the AI tool the site is built and run with": "Claude Max 套餐（20x），搭建和运行本站所用的 AI 工具",
   "Amounts as billed, rounded, each in the currency of its bill. Domains and the X account are added here once their bills are in.": "金额按账单取整，各按账单币种列出。域名和 X 账号在账单到来后再加进来。",
   "Claude Max plan (20x), the AI tool the site is built and run with. Its weekly limit for the most advanced models has at times been used up in about half a week.": "Claude Max 套餐（20x），搭建和运行本站所用的 AI 工具。最先进模型的每周用量上限，有时大约半周就用完了。",
+  "Amounts as billed, rounded, each in the currency of its bill. Further items are added here once their bills are in.": "金额按账单取整，各按账单币种列出。其他项目在账单到来后再加进来。",
+  "Single purchases": "单次购买",
+  "recent": "最近",
+  "Image credits": "图像额度",
+  "Google AI Studio credits for the drawings on the site": "用于本站插图的 Google AI Studio 额度",
+  "Voices": "配音",
+  "ElevenLabs Starter plan, for the voices of the Daily Consensus café; to be cancelled once the voices are made": "ElevenLabs 入门套餐，用于《共识日报》咖啡馆的配音；配音做完后就取消",
 } });
