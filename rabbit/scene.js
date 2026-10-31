@@ -1133,7 +1133,7 @@
         /* on a wide screen a painted person stands large in the room, the body running on behind the radio strip at the
            bottom of the screen, so they are there and not cut off; a drawn face stands clear above the strip */
         const tall = !phone && S.hostTall, hb = phone ? (S.hostBottom || S.H * 0.47) * S.K : tall ? H + 6 * S.K : H - 74 * S.K,
-          hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : tall ? Math.min(H * 0.9, (W - cw) * 0.95) : Math.min(H * 0.5, (W - cw) * 0.5),
+          hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : tall ? Math.min(H * 0.9, W * 0.62) : Math.min(H * 0.5, (W - cw) * 0.5),
           hx = phone ? W / 2 : fx, hy = hb - hs * (phone ? 0.8 : 0.99) + (1 - e) * hs * 0.25;
         w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, hx - hs / 2, hy, hs, hs);
       }

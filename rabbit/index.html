@@ -84,6 +84,12 @@ button.chip:hover { border-color: #fff; }
 /* a card: someone speaks, you choose */
 .cv-card { position: absolute; z-index: 5; right: 16px; top: 56px; bottom: auto; max-height: calc(100% - 118px); width: min(470px, 42%); display: flex; flex-direction: column; gap: 10px; padding: 18px 18px 16px; border-radius: 14px; background: var(--glass); border: 1px solid var(--hair); box-shadow: 0 30px 80px -30px rgba(0,0,0,.9); overflow: auto; overscroll-behavior: contain; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); animation: pop .3s cubic-bezier(.2,.8,.2,1); scrollbar-width: thin; }
 .cv-card.left { right: auto; left: 16px; }
+/* a conversation: one plate at the bottom middle, above the radio strip, the person standing large behind it */
+.cv-card.talk { left: 50%; right: auto; top: auto; bottom: 58px; transform: translateX(-50%); width: min(860px, calc(100% - 32px)); max-height: min(46%, calc(100% - 118px)); border-radius: 6px; background: rgba(20,14,9,.9); border: 3px double rgba(232,206,150,.55); outline: 1px solid rgba(232,206,150,.14); outline-offset: 4px; animation: popc .35s cubic-bezier(.2,.8,.2,1); }
+.cv-card.talk .cv-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.cv-card.talk .cv-b { border-color: rgba(232,206,150,.28); background: rgba(232,206,150,.04); }
+.cv-card.talk .cv-b:hover:not([disabled]), .cv-card.talk .cv-b:focus-visible { border-color: #f3dfb4; background: rgba(232,206,150,.1); }
+.cv-card.talk .cv-b.go { border-color: rgba(57,255,138,.6); }
 .cv-card.intro, .cv-card.paper, .cv-card.end { left: 50%; right: auto; transform: translateX(-50%); width: min(760px, calc(100% - 32px)); animation: popc .35s cubic-bezier(.2,.8,.2,1); }
 .cv-card.intro, .cv-card.end, .cv-card.paper { top: 50%; bottom: auto; transform: translate(-50%, -50%); max-height: calc(100% - 112px); }
 .cv-card.paper { width: min(560px, calc(100% - 32px)); animation: none; }
@@ -187,7 +193,7 @@ footer a { color: var(--dim); }
   .news.radio #cvNews { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 12px; }
   #cvToast { top: auto; bottom: 52px; }
   .stage.carded #cvToast { top: 96px; bottom: auto; }
-  .cv-card, .cv-card.left, .cv-card.intro, .cv-card.end { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 72%; transform: none; border-radius: 16px 16px 0 0; padding: 16px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .cv-card, .cv-card.left, .cv-card.talk, .cv-card.intro, .cv-card.end { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 72%; transform: none; border-radius: 16px 16px 0 0; padding: 16px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
   .cv-card.intro, .cv-card.end { max-height: 92%; }
   .cv-card.paper { left: 8px; right: 8px; width: auto; transform: translateY(-50%); }
   .cv-pick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
