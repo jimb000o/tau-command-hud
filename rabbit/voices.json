@@ -173,11 +173,11 @@
  },
  {
   "who": "rico",
-  "text": "A light breeze, a few txs in the last blocks."
+  "text": "A light breeze: a few transactions in the last blocks."
  },
  {
   "who": "rico",
-  "text": "Choppy seas, plenty of txs rolling in. Hold on to your hats."
+  "text": "Choppy seas, plenty of transactions rolling in. Hold on to your hats."
  },
  {
   "who": "rico",
@@ -185,11 +185,275 @@
  },
  {
   "who": "rico",
-  "text": "Forecast: showers, txs are waiting for the next block."
+  "text": "Forecast: showers. Transactions are waiting for the next block."
  },
  {
   "who": "rico",
   "text": "Forecast: clear skies, unless somebody sends something."
+ },
+ {
+  "who": "rico",
+  "text": "Fog over the chain. No new block in a while. Rico is lighting the lamp and making tea."
+ },
+ {
+  "who": "rico",
+  "text": "Flat sea, empty blocks. The chain is ready, the island is asleep."
+ },
+ {
+  "who": "rico",
+  "text": "Gentle traffic on the chain: a few transactions bobbing along like fishing boats."
+ },
+ {
+  "who": "rico",
+  "text": "Busy waters! Transactions stacked up like crates on the pier."
+ },
+ {
+  "who": "rico",
+  "text": "Some transactions are still waiting on the pier for the next block. Bring an umbrella."
+ },
+ {
+  "who": "rico",
+  "text": "Nothing waiting on the pier. Every transaction has found its block."
+ },
+ {
+  "who": "rico",
+  "text": "Radio Coco, ninety-seven point three, back on the air. Rico has had his coffee, the Book has had its ink."
+ },
+ {
+  "who": "rico",
+  "text": "You are listening to Radio Coco, the only station broadcasting from a testnet. If something breaks, that is the point."
+ },
+ {
+  "who": "rico",
+  "text": "Hello island! Fresh blocks, fresh rumours, same old Rico. Stay tuned."
+ },
+ {
+  "who": "rico",
+  "text": "Radio Coco, live from the studio by the harbour. Tonight: politics, gossip and the latest from the chain."
+ },
+ {
+  "who": "rico",
+  "text": "Good to have you, listener. Turn it up, the gulls can't hear."
+ },
+ {
+  "who": "rico",
+  "text": "Reminder: on a testnet the money is pretend and the coconuts are real. Please don't mix them up at the market."
+ },
+ {
+  "who": "rico",
+  "text": "A caller asks how many people use the testnet. Rico can only count wallets. One person with three wallets is a party of one."
+ },
+ {
+  "who": "rico",
+  "text": "Nobody mines anything on this chain. No pickaxes, no noise. Blocks are sealed by agreement, the quiet island way."
+ },
+ {
+  "who": "rico",
+  "text": "A transaction walks into a block. The block says: you again? The transaction says: no, that was my ghost."
+ },
+ {
+  "who": "rico",
+  "text": "If your transaction is late, don't panic. Blocks come in like ferries: more or less on time, and never the same one twice."
+ },
+ {
+  "who": "rico",
+  "text": "Studio tip: write your own rules before somebody writes them for you. On this chain a wallet can put a rule on itself, and the chain holds it to it."
+ },
+ {
+  "who": "rico",
+  "text": "The Book in the lighthouse and the blocks on the testnet are cousins. Neither forgets, and neither forgives a typo."
+ },
+ {
+  "who": "rico",
+  "text": "Testnet means you can make mistakes for free. Rico has been testing his whole life."
+ },
+ {
+  "who": "rico",
+  "text": "Lost and found: one private key. Just kidding. Nobody can find that for you. Keep it the way your grandmother keeps her recipes."
+ },
+ {
+  "who": "rico",
+  "text": "Most requested song this week: Waiting for the Next Block. Runner-up: Fee Me Tender."
+ },
+ {
+  "who": "rico",
+  "text": "Rico asked the chain who will win the election. The chain said: I only write down what already happened. Smart chain."
+ },
+ {
+  "who": "rico",
+  "text": "A law on this island and a rule on Tau have one thing in common: if it contradicts the one in force, it doesn't get in. Not even with an envelope."
+ },
+ {
+  "who": "rico",
+  "text": "The gulls sit on the lighthouse all day. They don't vote, they don't sign, they just watch. Perfect observers. Terrible validators: no keys."
+ },
+ {
+  "who": "rico",
+  "text": "Message to the candidates: everything you do is written down. Message to the listeners: get popcorn."
+ },
+ {
+  "who": "rico",
+  "text": "Rico put a rule on himself: no more than three mangoes a day. The mangoes are lobbying hard."
+ },
+ {
+  "who": "rico",
+  "text": "Late-night question: if a block is sealed and nobody is watching, is it still final? Yes. Rico checked. Call in anyway."
+ },
+ {
+  "who": "rico",
+  "text": "Test coins are worth nothing, and that is the beauty of it. You can't lose your shirt here, only your patience."
+ },
+ {
+  "who": "rico",
+  "text": "No ads on Radio Coco. The embassies keep offering. Rico keeps the envelopes closed. Mostly."
+ },
+ {
+  "who": "rico",
+  "text": "Old Sam reminds you: the Book is free to read. It is the only free thing on this island. Enjoy it."
+ },
+ {
+  "who": "rico",
+  "text": "Wallets, not people: that is how the chain sees the world. Rico finds that very restful."
+ },
+ {
+  "who": "rico",
+  "text": "This is the hour when the validators sign and the islanders sleep. Rico does neither."
+ },
+ {
+  "who": "rico",
+  "text": "Every block that comes in is like a match result: final, posted, and somebody at the bar still argues about it."
+ },
+ {
+  "who": "rico",
+  "text": "Some people collect stamps. The testnet collects signatures. Rico collects excuses."
+ },
+ {
+  "who": "rico",
+  "text": "Breaking: the black cat crossed the square twice again. The Book has both crossings. The cat has no comment."
+ },
+ {
+  "who": "rico",
+  "text": "News from the chain: a wallet just wrote itself a personal rule. Most people make New Year's resolutions. On this chain, they are enforced."
+ },
+ {
+  "who": "rico",
+  "text": "A wallet tied its own hands today, on purpose. Rico tried that with chocolate once. The chain is stricter than Rico."
+ },
+ {
+  "who": "rico",
+  "text": "New personal rule on the testnet. The wallet said: from now on, not like that. And the chain said: noted."
+ },
+ {
+  "who": "rico",
+  "text": "Another personal rule on the chain. So far most of them came from just two wallets. Two people, or one person with a lot of coffee: the chain only sees wallets."
+ },
+ {
+  "who": "rico",
+  "text": "A co-signed transfer is on the water. The money waits on the pier until the co-signers say yes. Romance, testnet style."
+ },
+ {
+  "who": "rico",
+  "text": "Somebody sent money that needs a second signature. Trust, but sign twice."
+ },
+ {
+  "who": "rico",
+  "text": "A co-signer has spoken. Somewhere on the testnet a transfer is either sailing or staying home."
+ },
+ {
+  "who": "rico",
+  "text": "Someone sent money on a string: until its release, at a block or a time, the sender can still pull it back. Rico calls that a boomerang with a timer."
+ },
+ {
+  "who": "rico",
+  "text": "A retractable transfer went out. The receiver may look, but not touch. Not yet."
+ },
+ {
+  "who": "rico",
+  "text": "And the boomerang came back! A sender pulled a transfer back before its release. The receiver is now staring at the sea."
+ },
+ {
+  "who": "rico",
+  "text": "Pulled back! A transfer went home before it was released. On this island we call that changing your mind in public."
+ },
+ {
+  "who": "rico",
+  "text": "A rule offer is on the table. Nothing binds until the other side says yes. Like a marriage, with fewer cakes."
+ },
+ {
+  "who": "rico",
+  "text": "Rule offer accepted! Two wallets agreed on a rule. Lola says that is more than most couples manage."
+ },
+ {
+  "who": "rico",
+  "text": "The validators put a network rule change on the table. If it is like the last few dozen, it proves once again that a times b is b times a. Rico checked on his fingers. Still true."
+ },
+ {
+  "who": "rico",
+  "text": "Another network rule change out there. The ones Rico has read so far changed nothing at all: rehearsals, not revolutions."
+ },
+ {
+  "who": "rico",
+  "text": "On the simulated chain the validators have a new rule change on the table. Rico will tell you if the sea changes colour."
+ },
+ {
+  "who": "rico",
+  "text": "Validator votes are coming in. On this chain the rules change only when enough validators agree. On this island, when Lola runs out of lemonade."
+ },
+ {
+  "who": "rico",
+  "text": "Somebody proposed a network rule that contradicts the rules in force. Turned away at the door, before anyone voted. Just like the Book does with our laws."
+ },
+ {
+  "who": "rico",
+  "text": "A wallet just tried to break its own rule. The chain said no, the way a lighthouse says no to a rock."
+ },
+ {
+  "who": "rico",
+  "text": "The chain turned a transaction away at the door. The numbers didn't add up. No drama, no appeal, next please."
+ },
+ {
+  "who": "rico",
+  "text": "A wave of transactions just hit the beach! Somebody out there is either testing very hard or very happy."
+ },
+ {
+  "who": "rico",
+  "text": "Rush hour on the chain! Full blocks, a busy pier, and Rico is impressed."
+ },
+ {
+  "who": "rico",
+  "text": "Ghost report from the harbour: transactions already sealed in a block, but still listed as waiting. The node hasn't noticed they left. Old Sam calls them guests who never go home."
+ },
+ {
+  "who": "rico",
+  "text": "Spooky! The waiting list still shows transactions that are already in a block. Ghosts. Harmless, says the Book. Rico sleeps with the light on anyway."
+ },
+ {
+  "who": "rico",
+  "text": "The ghosts are back on the waiting list. A known bug, reported to the builders. Rico has put out a lemonade for them."
+ },
+ {
+  "who": "rico",
+  "text": "Big news on the simulated chain: the validators are voting to switch consensus to proof of stake. Whoever holds the most would seal the blocks. Rico is counting his coconuts."
+ },
+ {
+  "who": "rico",
+  "text": "Simulation flash: a vote to go back to the fixed validator list. The stakers would hand back their seats and the old guard returns. Like after every island revolution, only with fewer hats."
+ },
+ {
+  "who": "rico",
+  "text": "It's done! The simulated chain now runs on proof of stake. No tanks, no coup, just votes and a block height. Rico is almost disappointed."
+ },
+ {
+  "who": "rico",
+  "text": "It's done: the simulation is back on the fixed validator list. Not one cannon fired. Boring for radio, beautiful for a chain."
+ },
+ {
+  "who": "rico",
+  "text": "The simulated chain starts over in a few minutes, back at block one. Finish your drinks."
+ },
+ {
+  "who": "rico",
+  "text": "The chain has started over at block one. Same sea, fresh logbook."
  },
  {
   "who": "hana",

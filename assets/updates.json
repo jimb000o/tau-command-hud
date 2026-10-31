@@ -1954,5 +1954,10 @@
   "tag": "HUD",
   "on": "2026-10-31",
   "html": "Radio Coco in the header: one switch at the top of every page turns on the island’s radio from the White Rabbit Key, with its calypso and Rico reading the chain weather and telling testnet stories while you browse; a small line at the bottom shows what he says. In the newspaper the same switch is the café’s sound, on the island it is the game’s sound, and the choice follows you from page to page. Sound starts on your first click."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-10-31",
+  "html": "White Rabbit Key: Radio Coco has far more to say and rarely repeats itself, even after a reload. Rico now reads the newest blocks every minute and a half and reacts on air to what he finds: a personal rule, a co-signed transfer, a transfer that can still be pulled back (and when it is), rule offers, network rule changes and votes, ghost transactions on the live testnet, and in the simulation the refusals, the consensus switch to proof of stake and back, and the restart at midnight."
  }
 ]
