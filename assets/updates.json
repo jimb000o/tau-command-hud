@@ -1949,5 +1949,10 @@
   "tag": "HUD",
   "on": "2026-10-31",
   "html": "Principles: “Enforced against the key holder” now says what a personal rule really does: every node checks each payment from the account against it, whichever wallet signs. It no longer claims a stolen key has to obey it, because whoever holds the key can also replace the rule. “Money with terms” lights up by itself the first time the testnet carries a returnable, co-signed or time-locked payment, and the bot posts each such first on Telegram and X."
+ },
+ {
+  "tag": "HUD",
+  "on": "2026-10-31",
+  "html": "Radio Coco in the header: one switch at the top of every page turns on the island’s radio from the White Rabbit Key, with its calypso and Rico reading the chain weather and telling testnet stories while you browse; a small line at the bottom shows what he says. In the newspaper the same switch is the café’s sound, on the island it is the game’s sound, and the choice follows you from page to page. Sound starts on your first click."
  }
 ]

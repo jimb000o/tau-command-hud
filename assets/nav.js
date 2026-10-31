@@ -710,6 +710,9 @@
     /* at most five utilities on the line: Search, Follow, Feedback & updates, language, settings; the tour starts from Learn */
     right.append(tg, fbkWrap);
     if (!isHud) loadTour();
+    /* Radio Coco: one sound switch for the site (assets/radio.js); on the newspaper and the island it is their own sound */
+    const rw = el("span", "tn-radio"); right.append(rw);
+    const rs = el("script"); rs.src = ROOT + "assets/radio.js"; rs.onload = () => window.TauRadio && TauRadio.mount(rw, page, tip); document.head.append(rs);
     const I = window.TauI18n;
     if (I) {   // language: one small menu showing the language you read in; each language is written in its own script; the choice is remembered
       const LANGS = [["en", "EN", "English", "en", "Read this site in English · 切换到英文"], ["zh", "中文", "中文", "zh-CN", "阅读中文版 · Read this site in Chinese"], ["ja", "日本語", "日本語", "ja", "日本語で読む · Read this site in Japanese"]];

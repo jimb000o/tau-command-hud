@@ -280,3 +280,23 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 /* games that run on the live testnet: the pulsing green dot the site uses for live things, before the name */
 .mi b .tn-live { display: inline-block; width: 7px; height: 7px; margin: 0 8px 1px 0; vertical-align: middle; border-radius: 50%; background: var(--tn-ok); box-shadow: 0 0 7px var(--tn-ok); animation: tnblink 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .mi b .tn-live { animation: none; } }
+
+/* Radio Coco (assets/radio.js): a switch, monochrome; green only while it plays; a soft glow while it waits for the first click */
+.tnav .tn-radio { display: inline-flex; }
+.tnav .pill.tn-radiob svg { width: 14px; height: 14px; fill: currentColor; flex: none; }
+.tnav .pill.tn-radiob:hover, .tnav .pill.tn-radiob:focus-visible { color: #fff; border-color: #fff; }
+.tnav .pill.tn-radiob.on { color: var(--tn-ok); border-color: rgba(57,255,138,.6); }
+.tnav .pill.tn-radiob.wake { animation: tnRadioWake 1.8s ease-in-out infinite; }
+@keyframes tnRadioWake { 50% { box-shadow: 0 0 0 3px rgba(57,255,138,.25); } }
+@media (prefers-reduced-motion: reduce) { .tnav .pill.tn-radiob.wake { animation: none; box-shadow: 0 0 0 2px rgba(57,255,138,.3); } }
+.tn-onair { position: fixed; left: 16px; bottom: 16px; z-index: 55; max-width: min(560px, calc(100vw - 32px)); box-sizing: border-box; display: flex; gap: 10px; align-items: baseline; padding: 10px 12px 10px 14px; background: rgba(12,12,14,.94); border: 1px solid rgba(255,255,255,.18); border-left: 2px solid var(--tn-ok, #39ff8a); border-radius: 10px; font: 13px/1.45 var(--tn-font, sans-serif); color: #d6d6dc; }
+.tn-onair[hidden] { display: none; }
+.tn-onair b { flex: none; font: 600 11px var(--tn-mono, monospace); letter-spacing: .12em; text-transform: uppercase; color: var(--tn-ok, #39ff8a); }
+.tn-onair button { flex: none; margin-left: auto; background: none; border: 0; color: #8a8a94; font: 18px/1 sans-serif; cursor: pointer; min-width: 28px; min-height: 28px; }
+.tn-onair button:hover { color: #fff; }
+@media (max-width: 1599px) { .tnav .pill.tn-radiob .lbl { display: none; } .tnav .pill.tn-radiob { padding-left: 10px; padding-right: 10px; } }   /* the icon alone; the hover says what it is */
+@media (max-width: 700px), (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  .tnav .pill.tn-radiob { padding: 0; width: 44px; justify-content: center; }
+  .tn-onair { left: 12px; right: 12px; max-width: none; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); flex-wrap: wrap; }
+  .tn-onair button { min-width: 44px; min-height: 44px; margin: -12px -8px -12px auto; }
+}

@@ -607,4 +607,13 @@ TauI18n.add({ strings: {
   "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules": "当前生效的每条规则：手续费、同意门槛、验证者、已通过的变更、个人规则",
   "The chain now: chain state, Explorer, Proposals, Accounts, Rules wall, Stats, Time travel. Road to mainnet: Nodes, Status, Findings, Build pulse.": "链的现状：链状态、区块浏览器、提案、账户、规则墙、统计、时光回溯。通往主网之路：节点、运行状态、问题报告、开发脉搏。",
   "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Chronicle, What is Tau?": "第一步：从这里开始、本页导览、导览、60 秒了解 Tau。阅读与观看：共识日报、编年史、Tau 是什么？",
+  "Radio": "电台",
+  "Radio on": "电台开",
+  "Tap for radio": "点击收听",
+  "Radio Coco: on. Turn the sound off": "Radio Coco：已开。关闭声音",
+  "Radio Coco: off. Turn the sound on": "Radio Coco：已关。打开声音",
+  "Radio Coco 97.3 from the White Rabbit Key: calypso, and Rico on the chain. Stays on across pages.": "Radio Coco 97.3，来自白兔礁：卡利普索音乐，Rico 聊链上动态。换页也一直开着。",
+  "The café's sound: street, room, gramophone. The same switch as Radio Coco elsewhere.": "咖啡馆的声音：街道、店内、留声机。与别处的 Radio Coco 是同一个开关。",
+  "The island's sound and Radio Coco. The same switch as on every other page.": "岛上的声音和 Radio Coco。与其他每个页面上的是同一个开关。",
+  "Close": "关闭",
 } });
