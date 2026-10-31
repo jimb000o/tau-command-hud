@@ -193,9 +193,10 @@ SCENE = {
     "radio": "Inside Radio Coco, a small radio shack on a cliff top: a microphone on an arm, a mixing desk, a turntable, "
              "shelves of records, a window showing the waterfall and the sea far below, cables, a fan, a coffee mug, "
              "warm lamp light, the clutter of a host who loves the job.",
-    "north": "Inside the North Wind Embassy, set up in the old colonial fortress: rough ancient stone walls with a modern "
-             "glass desk, a big screen, cool blue flags, a giant rusty key visible through an arched window, a slightly "
-             "absurd mix of old fort and sleek office, stiff and expensive.",
+    "north": "Inside the North Wind Embassy, an imperial hall in the restored fortress: polished pale marble, tall columns, "
+             "a long red carpet to a huge desk on a raised dais, a giant map of the island with pins in it, cool blue banners, "
+             "gilded frames, a chandelier, the giant key visible through a tall arched window, cold, grand, spotless and "
+             "far too expensive for an island this size.",
     "south": "The South Current Embassy, a sunny terracotta villa on the jungle slope: a terrace with a turquoise pool, "
              "parasols and loungers, a wellness corner with smoothies, a laptop on a rattan table, potted palms, the "
              "jungle and the sea behind, warm, flattering and a little too comfortable.",
@@ -279,13 +280,13 @@ def mime(raw):
     return "image/png" if raw[:4] == b"\x89PNG" else "image/jpeg" if raw[:2] == b"\xff\xd8" else "image/webp"
 
 
-def paint_gemini(plate, prompt, n, model, refs=(), size=None):
+def paint_gemini(plate, prompt, n, model, refs=(), size=None, aspect="16:9"):
     out = []
     pics = [{"inline_data": {"mime_type": mime(r), "data": base64.b64encode(r).decode()}} for r in (plate, *refs)]
     for i in range(n):   # one picture per call
         print(f"    painting {i + 1} of {n} ...", flush=True)
         body = {"contents": [{"parts": [{"text": prompt}, *pics]}],
-                "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": "16:9", **({"imageSize": size} if size else {})}}}
+                "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": aspect, **({"imageSize": size} if size else {})}}}
         r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                  json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": api_key("GEMINI_API_KEY")})
         parts = ((r.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
@@ -695,18 +696,21 @@ def cmd_hires(a):
         size = "4K" if id == "island" else "2K"
         print(f"{id}: {src}", flush=True)
         im = Image.open(os.path.join(a.out, src)).convert("RGB")
+        if im.width / im.height > 1.9:   # a panorama is painted large and wide already
+            print("  already wide, left as it is"); continue
         if not a.no_sharp:
             data, _ = small(paint_gemini(png(im), SHARP, 1, a.model, size=size)[0], width=3840 if id == "island" else 2560)
             im = Image.open(io.BytesIO(data)).convert("RGB")
-        W, H = im.size; e = W // 2 if id == "island" else W // 4; f = max(8, W // 40)   # f: the seam blends over f pixels
-        side = {}
-        for done, blank in (("right", "left"), ("left", "right")):
+        W, H = im.size; e = (W // 2 if id == "island" else W // 4) if getattr(a, "wide", False) else 0; f = max(8, W // 40)
+        side = {}   # f: the seam blends over f pixels
+        for done, blank in ((("right", "left"), ("left", "right")) if e else ()):
             h = W // 2; c = Image.new("RGB", (W, H), (128, 128, 128))
             c.paste(im.crop((0, 0, h, H)) if blank == "left" else im.crop((W - h, 0, W, H)), (W - h, 0) if blank == "left" else (0, 0))
             r = Image.open(io.BytesIO(paint_gemini(png(c), WIDE.format(done=done, blank=blank), 1, a.model, size=size)[0])).convert("RGB").resize((W, H), Image.LANCZOS)
             side[blank] = r.crop((h - e, 0, h + f, H)) if blank == "left" else r.crop((h - f, 0, h + e, H))
         out = Image.new("RGB", (W + 2 * e, H))
-        out.paste(side["left"], (0, 0)); out.paste(side["right"], (W + e - f, 0))
+        if e:
+            out.paste(side["left"], (0, 0)); out.paste(side["right"], (W + e - f, 0))
         mask = Image.new("L", (W, H), 255); d = ImageDraw.Draw(mask)
         for i in range(f):
             v = int(255 * (i + 0.5) / f); d.line([(i, 0), (i, H)], fill=v); d.line([(W - 1 - i, 0), (W - 1 - i, H)], fill=v)
@@ -718,6 +722,70 @@ def cmd_hires(a):
         write(path, json.dumps(idx, indent=1).encode())   # after each picture, so a stop half way keeps what is done
         print(f"  {name}: {out.size[0]} x {out.size[1]} pixels", flush=True)
     print("Done. Live: https://tauhud.com/rabbit/ (Ctrl+F5)")
+
+
+def cmd_narrow(a):
+    """Undo the painted sides: every kept wide copy (hires --wide) is cut back to its sharp 16:9 middle, nothing is painted."""
+    from PIL import Image
+    path = os.path.join(a.out, "index.json")
+    idx = load(path)
+    sc, orig = idx.get("scenes", {}), idx.get("orig", {})
+    for id, f in list(sc.items()):
+        if id not in orig or f == orig[id]:
+            continue
+        im = Image.open(os.path.join(a.out, f)).convert("RGB")
+        w = round(im.height * 16 / 9)
+        if im.width <= w + 4:
+            continue
+        x = (im.width - w) // 2
+        buf = io.BytesIO(); im.crop((x, 0, x + w, im.height)).save(buf, "WEBP", quality=84, method=5); data = buf.getvalue()
+        name = f"{id}-hd-{hashlib.sha1(data).hexdigest()[:8]}.webp"
+        write(os.path.join(a.out, name), data)
+        sc[id] = name
+        print(f"{id}: {name}, {w} x {im.height}")
+    write(path, json.dumps(idx, indent=1).encode())
+    print("Done. Live: https://tauhud.com/rabbit/ (Ctrl+F5)")
+
+
+PANORAMA = ("Repaint the island in this picture as one wide panoramic painting, composed for a very wide cinema screen, in "
+            "exactly its style, ink line, colours and light. The same island with every place in the same arrangement: the "
+            "hills with the round huts and the stone circle on the left, the radio mast on its cliff, the coconut works with "
+            "its chimney, the café terrace with the little pool and parasols, the red council tree, the stilt houses and the "
+            "pier, the lighthouse on its rock at the front, the old ship in the bay, the waterfall with the cave behind it, "
+            "on the right cliff the North Wind Embassy with the big key: no ruin, but an intact, imposing imperial seat, "
+            "a restored fortress turned palace of power, clean pale stone, tall walls, a grand gate and stair, a domed hall, "
+            "rows of tall windows, banners and a big flag in the north wind, polished cannons as decoration, everything "
+            "spotless, cold and expensive, looking down on the island; the villa on the jungle slope, the mountains behind. "
+            "The island sits in the middle with open sea, reefs and a few small rocky islets around it, so that it can be "
+            "seen whole on a wide screen; calm sea at the very top corners and the bottom edge. No leaves, palms or "
+            "branches in the foreground and nothing framing the picture: the view is clear from edge to edge. No text.")
+
+
+def cmd_panorama(a):
+    """New island drafts in one wide piece (21:9, painted at 4K), from the kept island or --from island=N: the same
+    places, more sea around them, no leaves framing the view. Pick one, then its click areas are set by hand."""
+    drafts = load(os.path.join(a.out, "drafts", "drafts.json"))
+    src = liked(argparse.Namespace(out=a.out, like=[a.src] if a.src else ["island"]), drafts)[0]
+    if provider() != "gemini":
+        sys.exit("A panorama needs GEMINI_API_KEY.")
+    from PIL import Image
+    path = os.path.join(a.out, "drafts", "drafts.json")
+    for raw in paint_gemini(open(src, "rb").read(), PANORAMA, a.n, a.model, size="4K", aspect="21:9"):
+        im = Image.open(io.BytesIO(raw)).convert("RGB")
+        if im.width > 5040:
+            im = im.resize((5040, round(5040 * im.height / im.width)), Image.LANCZOS)
+        buf = io.BytesIO(); im.save(buf, "WEBP", quality=84, method=5); data = buf.getvalue()
+        drafts = load(path)
+        names = drafts.get("island", [])
+        f = f"island-{len(names) + 1}-{hashlib.sha1(data).hexdigest()[:8]}.webp"
+        write(os.path.join(a.out, "drafts", f), data)
+        names.append(f)
+        drafts["island"] = names
+        drafts.setdefault("idea", {})[f] = "panorama"
+        write(path, json.dumps(drafts, indent=1).encode())
+        print(f"  island={len(names)}: {im.width} x {im.height}")
+    page(a)
+    print("Look: https://node.tauhud.com/rico/art/drafts/")
 
 
 def cmd_looks(a):
@@ -790,7 +858,13 @@ def main():
     k.add_argument("--layout", default=None, help="island only: where everything stands on that painting, plates/<name>.json")
     hr = sub.add_parser("hires")
     hr.add_argument("places", nargs="*", default=["all"], help="all (default), or some of: " + " ".join(PLACES))
-    hr.add_argument("--no-sharp", action="store_true", help="only widen, keep the resolution")
+    hr.add_argument("--no-sharp", action="store_true", help="keep the resolution")
+    hr.add_argument("--wide", action="store_true", help="also paint on past the left and right edges (shows a seam)")
+    sub.add_parser("narrow")
+    pa = sub.add_parser("panorama")
+    pa.add_argument("--from", dest="src", default=None, help="the painting, e.g. island=21 (default: the kept island)")
+    pa.add_argument("--n", type=int, default=3)
+    pa.add_argument("--model", default="gemini-3-pro-image-preview")
     hr.add_argument("--model", default="gemini-3-pro-image-preview")
     sh = sub.add_parser("sharp")
     sh.add_argument("--from", dest="src", default=None, help="the painting, e.g. island=21 (default: the kept island)")
@@ -808,7 +882,7 @@ def main():
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires}[a.cmd](a)
+    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "narrow": cmd_narrow}[a.cmd](a)
 
 
 if __name__ == "__main__":
