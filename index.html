@@ -1087,8 +1087,8 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     <div class="principles">
       <div class="pr"><b>Checked before it applies</b><span>A proposed rule is compiled on its own first. If it does not hold, it never enters the chain.</span><em>see it: Rule changes · “compiled in isolation ✓”</em><div class="prov" data-full="Seen on the testnet: 43 rule changes have been proposed and voted on so far (our count of 30 October, 4,036 blocks). Each one was compiled on its own against the current consensus rules before it was admitted (tau-testnet admission.py). All 43 were test changes that leave the behaviour the same; a proposal refused by this check we have not seen there yet."><span><i class="seen"></i>seen on the testnet</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py#L709" target="_blank" rel="noopener">admission.py:709 ↗</a></div></div>
       <div class="pr"><b>No admin key</b><span>Nobody can change the rules alone. A change needs the validators’ agreement and takes effect at a later block.</span><em>see it: Validators · “agreement needed”</em><div class="prov" data-full="Read from the community node (getgovernance): the active validator set, the vote_quorum policy and the approval threshold, all bound into the state hash. Threshold = ⌈2N/3⌉ for supermajority."><span><i class="seen"></i>seen on the testnet</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py#L496" target="_blank" rel="noopener">governance.py:496 ↗</a></div></div>
-      <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. A stolen key still obeys your limits.</span><em>see it: Transactions · red “✕ refused”</em><div class="prov" data-full="Documented in tau-testnet: stream o5 is the sender’s own policy, 0 = block, enforced at admission (sendtx.py:1310) and again when the block is applied. Live, the refusals here come from the community node; in Simulation they are made up. A payment refused by its sender’s own rule we have not seen on the testnet yet."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/engine.py#L1880" target="_blank" rel="noopener">engine.py:1880 ↗</a></div></div>
-      <div class="pr"><b>Money with terms</b><span>A transfer can be returnable until a release point, locked until a time, or co-signed above an amount.</span><em>see it: Personal money rules</em><div class="prov" data-full="Documented in tau-testnet: retractable_transfer parks funds in escrow until a release height or time; whitelists use i4, time-locks i5, limits i1. Personal rules are in force on the testnet (22 rule changes by 2 accounts, our count of 30 October), but a returnable, time-locked or co-signed payment we have not seen there yet."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md#L573" target="_blank" rel="noopener">README §Retractable ↗</a></div></div>
+      <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. Every node checks each payment you sign against it, from any wallet.</span><em>see it: Transactions · red “✕ refused”</em><div class="prov" data-full="Documented in tau-testnet: stream o5 is the sender’s own policy, 0 = block, enforced at admission (sendtx.py:1310) and again when the block is applied. Live, the refusals here come from the community node; in Simulation they are made up. A payment refused by its sender’s own rule we have not seen on the testnet yet. One limit: whoever holds the key can also replace the rule (tau-testnet docs/approvals.md), so a rule does not protect a stolen key; it stops a mistaken or pressured payment."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/engine.py#L1880" target="_blank" rel="noopener">engine.py:1880 ↗</a></div></div>
+      <div class="pr" id="prMoney"><b>Money with terms</b><span>A transfer can be returnable until a release point, locked until a time, or co-signed above an amount.</span><em>see it: Personal money rules</em><div class="prov" data-full="Documented in tau-testnet: retractable_transfer parks funds in escrow until a release height or time; whitelists use i4, time-locks i5, limits i1. Personal rules are in force on the testnet (22 rule changes by 2 accounts, our count of 30 October), but a returnable, time-locked or co-signed payment we have not seen there yet."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md#L573" target="_blank" rel="noopener">README §Retractable ↗</a></div></div>
     </div>
     <div class="tick" id="tick" translate="no" aria-label="News line: live facts, updates and pointers"><span class="tk-lab"><i></i><b>News</b></span><div class="tk-view"><div class="tk-track"></div></div></div>
   </section>
@@ -2265,7 +2265,7 @@ function explainTx(t) {
       return `${pol} Above the threshold, so the transfer parks on the chain as an approval request. It executes by itself the moment ${short(t.parked ? t.parked.approver : "")} signs; unsigned, it expires after ${t.parked ? t.parked.window : "a few"} blocks and the money stays. ${st}`;
     case "user_tx": case "retractable_transfer":
       return (t.rejected ? `${pol} The rule said no, so the node refused it, whoever holds the key.` : `${pol} Checked and passed before admission.`) + (t.type === "retractable_transfer" ? " Can be pulled back until released." : "") + `\n${st}`;
-    case "rule_deploy": return `${policyMeaning(t.policy)} Binds the account from now on, even with a stolen key.\n${st}`;
+    case "rule_deploy": return `${policyMeaning(t.policy)} Binds the account from now on, whichever wallet signs.\n${st}`;
     case "rule_offer": return `${policyMeaning(t.policy)} Takes effect only if the recipient accepts after the conflict report.\n${st}`;
     case "rule_offer_accept": return `${t.offer ? policyMeaning(t.offer.policy) : ""} Now binds the recipient; the composite o5 rule is rebuilt.\n${st}`;
     case "rule_offer_reject": return `${t.reason ? t.reason + ". " : ""}Declined after the conflict report. Nothing changes.\n${st}`;
@@ -3966,7 +3966,7 @@ const TOUR = [
   [".a-val", "Validators must agree, explicitly", "A change needs a quorum of votes, and the threshold is itself part of the chain state, so nobody can lower it quietly. No vote, no change."],
   [".a-core", "The core shows agreement forming", "Validators sit on the outer ring, accounts with their own rules on the inner one, and waiting transactions orbit the block being sealed in the middle. The ring between them fills as votes for an open proposal arrive."],
   [".a-chain", "Agreed changes activate at a later block", "A scheduled change takes effect at its activation height, never earlier, on every node at once. A bright card marks a block where new rules took effect. Click any block to see the rules that were in force then."],
-  [".a-pol", "Your own money gets the same treatment", "Every account can write its own Tau rule: a spending limit, a whitelist, a time lock, a co-signature. It binds the account, not the key, so even a stolen key has to obey it. Refused transfers show up with a ✕."],
+  [".a-pol", "Your own money gets the same treatment", "Every account can write its own Tau rule: a spending limit, a whitelist, a time lock, a co-signature. It binds the account, not the app, so every payment is checked against it, whichever wallet signs. Refused transfers show up with a ✕."],
   ["#btnPlayground", "Try it yourself", "In the playground you write a transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. That is the whole idea of Tau, in your hands."],
 ];
 let tourI = -1, tourOffered = false;
@@ -4148,10 +4148,21 @@ async function pollNext() {
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
   try {
     const r = await fetch(relayBase() + "/proposals.json", { cache: "no-store", signal: ctl.signal }); if (!r.ok) throw new Error(r.status);
-    const j = await r.json(); NEXT.chain = j.chain || null;
+    const j = await r.json(); NEXT.chain = j.chain || null; lightFirsts(j.firsts);
     NEXT.rows = (Array.isArray(j.proposals) ? j.proposals : []).filter(p => p && p.status === "agreed" && Number(p.activate_at) > 0).map(p => ({ title: String(p.title || "Rule change"), why: p.explain && p.explain.why ? String(p.explain.why) : "", activate_at: Number(p.activate_at) }));
   } catch {}   // keep the last answer; a missing file leaves the chip as it was
   clearTimeout(t); await nextDict(); renderNext();
+}
+/* "Money with terms" lights up by itself once the chain carried one (alerts/firsts.py writes "firsts" into proposals.json) */
+function lightFirsts(f) {
+  const el = $("prMoney"), first = ["returnable", "cosign_request", "time_lock"].map(k => f && f[k]).filter(x => x && x.h).sort((a, b) => a.h - b.h)[0];
+  if (!el || !first || el.dataset.lit) return;
+  const prov = el.querySelector(".prov"), dot = prov && prov.querySelector("i"), a = prov && prov.querySelector("a");
+  if (!prov || !dot || !a) return;
+  el.dataset.lit = "1"; dot.className = "seen"; dot.nextSibling.textContent = "seen on the testnet";
+  prov.dataset.full = "Seen on the testnet: payments with terms have now happened on the real chain, and the link opens the first one. Our bot posted each kind the first time it landed in a block. Documented in tau-testnet: retractable_transfer parks funds in escrow until a release height or time; co-signed payments wait for the co-signer; a personal rule can read the block time (i5).";
+  a.href = first.tx ? "explorer/?tx=" + encodeURIComponent(first.tx) : "explorer/?b=" + encodeURIComponent(first.h);
+  a.removeAttribute("target"); a.textContent = "block #" + fmt(first.h) + " ↗";
 }
 pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); setInterval(() => { if (!document.hidden) renderNext(); }, 15000);
 /* =====================================================================
