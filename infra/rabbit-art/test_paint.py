@@ -129,7 +129,7 @@ for prov in ("gemini", "openai"):
             from PIL import ImageDraw
             src = os.path.join(out, "codex"); os.makedirs(src)   # pictures painted elsewhere
             for f in ("bust-kai", "bust-kai-talk"):
-                im = Image.new("RGB", (600, 900), (255, 0, 255)); ImageDraw.Draw(im).ellipse((150, 200, 450, 1000), fill=(235, 90, 215))
+                im = Image.new("RGB", (600, 900), (255, 0, 255)); ImageDraw.Draw(im).ellipse((150, 200, 450, 1000), fill=(230, 118, 200))
                 ImageDraw.Draw(im).rectangle((200, 700, 240, 760), fill=(250, 5, 250))   # a gap between arm and body
                 if f.endswith("talk"):
                     ImageDraw.Draw(im).rectangle((280, 300, 320, 320), fill=(40, 10, 10))
