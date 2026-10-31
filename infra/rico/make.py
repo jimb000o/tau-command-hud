@@ -81,8 +81,12 @@ CAST = {
                      "machine, clear and easy to understand."),
     "kiko": ("Kiko", "A calm young canoe builder in his twenties, soft easy voice, few words, gentle humour, clear and easy "
                      "to understand."),
+    "tano": ("Tano", "A calm drummer in his fifties who keeps the island's talking drums and its decision circle, deep resonant "
+                     "unhurried voice, warm, few words, a quiet smile you can hear, clear and easy to understand."),
 }
 # the listeners who phone Radio Coco (RICO.CALLS): ready voices from the account, given to them by "make" on its own
+# islanders who speak with a ready voice from the account (all ten designed-voice places are taken)
+READY = {"tano": "Brian"}
 CALLERS = {"zia": "Sarah", "ozzie": "Charlie", "bert": "George", "dom": "Callum", "nell": "Laura", "mae": "Matilda"}
 DESIGN = CAST["rico"][1]
 TALK = (" Talks naturally and casually, straight to the person in front of them, like a real conversation, "
@@ -92,7 +96,7 @@ TALK = (" Talks naturally and casually, straight to the person in front of them,
 TAG = {"rico": "[friendly, leaning in]", "lola": "[warm, teasing]", "sam": "[slowly, kindly]", "marisol": "[friendly, direct]",
        "tobias": "[pompous]", "baako": "[warmly, with a chuckle]", "hana": "[calm, patient]", "frost": "[coolly]",
        "salado": "[smooth, charming]", "ama": "[slowly, warmly]", "wren": "[brisk, amused]", "kai": "[cheerful]",
-       "pim": "[nervously, precise]", "noor": "[dry, matter-of-fact]", "kiko": "[softly, calm]"}
+       "pim": "[nervously, precise]", "noor": "[dry, matter-of-fact]", "kiko": "[softly, calm]", "tano": "[calmly, warmly]"}
 ON_AIR = "[excited radio DJ]"   # the callouts that end in "!"
 RADIO = "[radio DJ, playful]"     # his other lines on the radio strip
 LAWS = {"A deep harbour for cruise ships": "a deep harbour for cruise ships", "A road round the island": "a road round the island"}
@@ -453,15 +457,15 @@ def cmd_make(a):
         if idx["voices"].get(w, {}).get("id") != v["voice_id"]:
             idx["clips"] = [k for k in idx["clips"] if k not in {key(w, t) for x, t in lines() if x == w}]
         idx["voices"][w] = {"id": v["voice_id"], "name": v["name"]}
-    callers = [w for w in CALLERS if w not in idx["voices"]]
+    callers = [w for w in {**CALLERS, **READY} if w not in idx["voices"]]
     if callers:   # a caller without a voice gets their ready voice from the account
         vs = voices()
         for w in callers:
-            v = find_voice(CALLERS[w], vs, soft=True)
+            v = find_voice({**CALLERS, **READY}[w], vs, soft=True)
             if v:
                 idx["voices"][w] = {"id": v["voice_id"], "name": v["name"]}
             else:
-                print(f"No voice called {CALLERS[w]!r} in the account for the caller {w}; give one with: make --voice {w}=Name")
+                print(f"No voice called {({**CALLERS, **READY})[w]!r} in the account for {w}; give one with: make --voice {w}=Name")
     idx_path = os.path.join(a.out, "index.json")
     ls = lines()
     model = getattr(a, "model", None) or MODEL
