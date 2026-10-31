@@ -15,6 +15,7 @@ The key is read from ELEVENLABS_API_KEY in infra/.env (never in the repository).
   python3 infra/rico/make.py library rico           twelve ready voices from the ElevenLabs Voice Library that fit Rico
   python3 infra/rico/make.py keep rico=L3           keeps library voice 3 (L) instead of a design
   python3 infra/rico/make.py make                   makes whatever clips are missing, for everyone with a voice
+                                                    (the Radio Coco callers get their ready voices on their own)
   python3 infra/rico/make.py make --voice rico=Name gives someone a voice already in the account, then makes the clips
   python3 infra/rico/make.py voices                 the voices in the account
   python3 infra/rico/make.py samples [name ...]     one sample per account voice -> https://node.tauhud.com/rico/samples/
@@ -81,6 +82,8 @@ CAST = {
     "kiko": ("Kiko", "A calm young canoe builder in his twenties, soft easy voice, few words, gentle humour, clear and easy "
                      "to understand."),
 }
+# the listeners who phone Radio Coco (RICO.CALLS): ready voices from the account, given to them by "make" on its own
+CALLERS = {"zia": "Sarah", "ozzie": "Charlie", "bert": "George", "dom": "Callum", "nell": "Laura", "mae": "Matilda"}
 DESIGN = CAST["rico"][1]
 TALK = (" Talks naturally and casually, straight to the person in front of them, like a real conversation, "
         "never reading aloud or narrating.")
@@ -230,11 +233,13 @@ def voices():
     return json.loads(call("/voices"))["voices"]
 
 
-def find_voice(name):
-    vs = voices()
+def find_voice(name, vs=None, soft=False):
+    vs = vs or voices()
     for v in vs:
         if name in (v["voice_id"], v["name"]) or v["name"].lower().startswith(name.lower()):
             return v
+    if soft:
+        return None
     sys.exit(f"No voice called {name!r}. The account has: " + ", ".join(v["name"] for v in vs))
 
 
@@ -448,6 +453,15 @@ def cmd_make(a):
         if idx["voices"].get(w, {}).get("id") != v["voice_id"]:
             idx["clips"] = [k for k in idx["clips"] if k not in {key(w, t) for x, t in lines() if x == w}]
         idx["voices"][w] = {"id": v["voice_id"], "name": v["name"]}
+    callers = [w for w in CALLERS if w not in idx["voices"]]
+    if callers:   # a caller without a voice gets their ready voice from the account
+        vs = voices()
+        for w in callers:
+            v = find_voice(CALLERS[w], vs, soft=True)
+            if v:
+                idx["voices"][w] = {"id": v["voice_id"], "name": v["name"]}
+            else:
+                print(f"No voice called {CALLERS[w]!r} in the account for the caller {w}; give one with: make --voice {w}=Name")
     idx_path = os.path.join(a.out, "index.json")
     ls = lines()
     model = getattr(a, "model", None) or MODEL
