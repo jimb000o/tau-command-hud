@@ -110,6 +110,34 @@ IDEAS = {
             "under drifting mist and jungle: the drum hills, the grotto, the fort ruin and the first people's valley "
             "only peek out of the mist here and there, waiting to be discovered.",
 }
+# the whole game on one large island (paint.sh ideas --from island=18 --idea districts): every place has its own
+# quarter, joined only where it makes sense, so each has room, a reason to be where it is and a way to get there
+WHOLE = ("Paint a much larger version of the island in the first picture, in exactly its style, ink line and colours, "
+         "seen from the same high angle, filling the whole picture, so that every place of the game has its own quarter "
+         "with room around it, joined to the others only where it makes sense: a beach road along the harbour, a river, "
+         "a rope bridge, a jungle path, a causeway. Keep from the picture: the fortress on the sea cliff with the giant "
+         "rusty key, the waterfall and its cave, the red flamboyant tree, the lighthouse on its rock, the radio hut with "
+         "its tall wooden mast, the stilt houses and the pier, the old ship at anchor, the round thatched houses on the "
+         "hills and the stone circle. The quarters: "
+         "1) The harbour town in front, the busiest part: the pier with fishing boats, the harbour master's office with "
+         "a flagpole, a net shed with nets drying on poles, a beach bar on stilts over the water, and the market under "
+         "the red flamboyant tree with awnings and stalls. "
+         "2) The council hall on a small rise above the town: a dignified wooden building with a wide veranda and steps, "
+         "the town square in front of it. "
+         "3) The school: a cheerful wooden schoolhouse with a bell and a small playing field, near the town but quieter. "
+         "4) Radio Coco: the radio hut with its tall mast on a hill of its own, a winding path up. "
+         "5) The lighthouse on its rocky islet, reached by a narrow causeway that floods at high tide. "
+         "6) The coconut plantation on the gentle slopes: neat rows of coconut palms, drying racks, a farmhouse. "
+         "7) The coconut works: a funny, ramshackle factory of planks and tin with crooked pipes, a conveyor belt, a "
+         "water wheel on the river and a chimney puffing white smoke. "
+         "8) The North Wind Embassy: the fortress on its own cliff, apart, across a rope bridge. "
+         "9) The South Current Embassy: the old ship at anchor in its own cove, with a gangway and a jetty. "
+         "10) The first people's valley, apart behind the river: their round houses of wood and palm thatch, terraced "
+         "gardens, dug-out canoes on the river, the circle of carved standing stones where their council meets, painted "
+         "with dignity and care, a living village, nothing exotic or stereotyped. "
+         "11) A surveyors' camp of outsiders in a clearing: a few white tents, tripods and measuring poles, crates. "
+         "12) Wild places for wonder: the waterfall and its cave, a hidden lagoon, the mountains behind. "
+         "Every building clearly readable and separate, with clear paths in front of it. No people, no text, no labels. ")
 # three ways to paint the whole game (paint.sh looks paints the island once in each, to choose from)
 LOOK_BASE = ("Turn this drawing into a finished background for a 2D adventure game, painted the way the classic ones were: "
              "a confident ink line drawing first, colour painted over it. One clear colour key for the whole picture, "
@@ -391,9 +419,11 @@ def cmd_ideas(a):
     model = a.model or ("gemini-2.5-flash-image" if p == "gemini" else "gpt-image-1")
     base = open(src, "rb").read()
     path = os.path.join(a.out, "drafts", "drafts.json")
-    for name, how in IDEAS.items():
+    ideas = {"districts": WHOLE} if getattr(a, "idea", None) == "districts" else IDEAS
+    for name, how in ideas.items():
         print(f"Idea {name}:", flush=True)
-        raws = (paint_gemini if p == "gemini" else paint_openai)(base, LOOK_BASE + LOOKS[2] + " " + GROW + how, a.n, model, style_refs(2))
+        prompt = LOOK_BASE + LOOKS[2] + " " + (how if name == "districts" else GROW + how)
+        raws = (paint_gemini if p == "gemini" else paint_openai)(base, prompt, a.n, model, style_refs(2))
         drafts = load(path)
         names = drafts.get("island", [])
         for raw in raws:
@@ -422,9 +452,44 @@ FOLK = ("Paint a sheet of eight small full-body townspeople for this game, in ex
         "no exaggerated features: ordinary, likeable neighbours, drawn with the same care as the island.")
 
 
-def cut(raw):
-    """The sheet of figures as a strip of cells with transparent backgrounds: the background colour is read off the
+CAST = ("Paint a sheet of ten small full-body characters for this game, in exactly the style of the picture: its ink "
+        "line, its colours, its light. Two rows of four, evenly spaced, each figure whole and standing well apart from the "
+        "others, all the same size, seen from the side in mid-stride, walking to the right, on a plain flat magenta "
+        "background (#FF00FF) with no ground, no shadows, no scenery and no text, in two rows of five. People of a small island town of today, of "
+        "mixed ancestry, drawn with care and humour, no caricature, no costumes: "
+        "Marisol, a wiry fisher woman in her forties with a teal shirt, a red scarf and a coil of rope; "
+        "Tobias, a pale, grey-haired harbour master in a white shirt and navy cap, holding a pair of ceremonial scissors; "
+        "Baako, a dark-skinned coconut farmer in his forties in a mustard shirt and straw hat, reading glasses on his nose, "
+        "a contract and a red pen in his hand; "
+        "Hana, a young schoolteacher with a black bob, glasses and a blue cardigan, a stack of exercise books under her arm; "
+        "Rico, a radio host in his thirties with short locs, big headphones round his neck and a pink shirt, a microphone in hand; "
+        "Lola, who runs the beach bar, with curly dark red hair, a cream apron, a pencil behind her ear and a ledger; "
+        "Old Sam, the bald, white-bearded lighthouse keeper in a dark knitted sweater, carrying a huge old book; "
+        "Ambassador Frost, a tall, thin diplomat in a pale blue suit with a lanyard and a tablet; "
+        "Ambassador Salado, a sunburnt, round investor in a creased linen suit, sandals and a panama hat, with a laptop bag; "
+        "Ama, an elder of the first people's council, a grey-haired woman in her seventies in a cardigan and a skirt with "
+        "a woven pattern of her people, walking upright with a carved staff, dignified and kind.")
+
+
+def cut(raw, more=None):
+    """The sheet of townspeople (4 x 2) and, after them, the sheet of the cast (5 x 2) as a strip of cells with transparent backgrounds: the background colour is read off the
     border and keyed out (soft at the edge), each figure is cropped from its part of the 4 x 2 grid and set feet down."""
+    from PIL import Image
+    cells = []
+    for r, cols in ((raw, 4), (more, 5)):
+        if r:
+            cells += figures(r, cols)
+    if not cells:
+        sys.exit("No figures found on the sheet; paint it again.")
+    cw, ch = FOLK_SIZE
+    strip = Image.new("RGBA", (cw * len(cells), ch))
+    for i, c in enumerate(cells):
+        strip.paste(c, (i * cw, 0))
+    buf = io.BytesIO(); strip.save(buf, "WEBP", quality=90, method=5)
+    return buf.getvalue(), len(cells)
+
+
+def figures(raw, cols=4):
     from PIL import Image
     im = Image.open(io.BytesIO(raw)).convert("RGB")
     im = im.resize((1200, int(1200 * im.height / im.width)), Image.LANCZOS)
@@ -445,8 +510,8 @@ def cut(raw):
     cw, ch = FOLK_SIZE
     cells = []
     for row in range(2):
-        for col in range(4):
-            box = (col * W // 4, row * H // 2, (col + 1) * W // 4, (row + 1) * H // 2)
+        for col in range(cols):
+            box = (col * W // cols, row * H // 2, (col + 1) * W // cols, (row + 1) * H // 2)
             part = out.crop(box)
             bb = part.getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
             if not bb or (bb[3] - bb[1]) < H // 10:
@@ -457,13 +522,7 @@ def cut(raw):
             cell = Image.new("RGBA", (cw, ch))
             cell.paste(fig, ((cw - fig.width) // 2, ch - fig.height - 1), fig)
             cells.append(cell)
-    if not cells:
-        sys.exit("No figures found on the sheet; paint it again.")
-    strip = Image.new("RGBA", (cw * len(cells), ch))
-    for i, c in enumerate(cells):
-        strip.paste(c, (i * cw, 0))
-    buf = io.BytesIO(); strip.save(buf, "WEBP", quality=90, method=5)
-    return buf.getvalue(), len(cells)
+    return cells
 
 
 def cmd_folk(a):
@@ -472,12 +531,15 @@ def cmd_folk(a):
     src = liked(argparse.Namespace(out=a.out, like=a.like), drafts)[0]
     p = provider()
     model = a.model or ("gemini-2.5-flash-image" if p == "gemini" else "gpt-image-1")
-    raws = (paint_gemini if p == "gemini" else paint_openai)(open(src, "rb").read(), FOLK, a.n, model)
+    paint = paint_gemini if p == "gemini" else paint_openai
+    plate = open(src, "rb").read()
+    raws = paint(plate, FOLK, a.n, model)
+    cast = paint(plate, CAST, a.n, model) if getattr(a, "cast", True) else []
     path = os.path.join(a.out, "drafts", "drafts.json")
     drafts = load(path)
     names = drafts.get("folk", [])
-    for raw in raws:
-        data, n = cut(raw)
+    for i, raw in enumerate(raws):
+        data, n = cut(raw, cast[i] if i < len(cast) else None)
         f = f"folk-{len(names) + 1}-{hashlib.sha1(data).hexdigest()[:8]}.webp"
         write(os.path.join(a.out, "drafts", f), data)
         names.append(f)
@@ -547,6 +609,7 @@ def main():
     ia = sub.add_parser("ideas")
     ia.add_argument("--from", dest="src", required=True, help="the painting to grow from, e.g. island=14")
     ia.add_argument("--n", type=int, default=1)
+    ia.add_argument("--idea", default=None, choices=["districts"], help="districts: every place of the game in its own quarter (WHOLE)")
     ia.add_argument("--model", default=None)
     lk = sub.add_parser("looks")
     lk.add_argument("--model", default=None)
@@ -556,6 +619,7 @@ def main():
     fo = sub.add_parser("folk")
     fo.add_argument("--like", nargs="+", default=["island"], metavar="PLACE=N", help="the painting whose style they take")
     fo.add_argument("--n", type=int, default=1)
+    fo.add_argument("--no-cast", dest="cast", action="store_false", help="only the townspeople, not the named cast")
     fo.add_argument("--model", default=None)
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")

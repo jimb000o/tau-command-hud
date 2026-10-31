@@ -22,8 +22,10 @@ try:
 except ImportError:
     Image, PIC = None, b"\x89PNG fake"
 calls = []
+prompts = []
 def fake(url, data, headers, timeout=240):
     calls.append(url)
+    prompts.append(json.loads(data)["contents"][0]["parts"][0]["text"] if "generativelanguage" in url else data.decode("latin-1"))
     if "generativelanguage" in url:
         body = json.loads(data)
         if "style references only" in body["contents"][0]["parts"][0]["text"]:
@@ -82,6 +84,9 @@ for prov in ("gemini", "openai"):
         paint.cmd_ideas(types.SimpleNamespace(out=out, src="island=1", n=1, model=None))
         dd = json.load(open(os.path.join(out, "drafts", "drafts.json")))
         assert len(dd["island"]) >= before + 3 and set(dd["idea"].values()) == set(paint.IDEAS) and "idea mist" in open(os.path.join(out, "drafts", "index.html")).read()
+        paint.cmd_ideas(types.SimpleNamespace(out=out, src="island=1", n=1, model=None, idea="districts"))
+        dd = json.load(open(os.path.join(out, "drafts", "drafts.json")))
+        assert "districts" in dd["idea"].values() and "coconut works" in prompts[-1]
         paint.cmd_drop(types.SimpleNamespace(out=out, places=["bar"]))
         assert list(json.load(open(os.path.join(out, "index.json")))["scenes"]) == ["island"]
 if Image:   # a sheet of eight figures on magenta comes out as a strip of eight cut-out cells, feet down
@@ -91,6 +96,12 @@ if Image:   # a sheet of eight figures on magenta comes out as a strip of eight 
         cx, cy = 200 + (k % 4) * 400, 225 + (k // 4) * 450
         d.ellipse((cx - 40, cy - 160, cx + 40, cy + 160), fill=(30 + k * 20, 90, 60), outline=(20, 20, 20), width=6)
     buf = io.BytesIO(); sheet.save(buf, "PNG")
+    cast = Image.new("RGB", (1600, 900), (255, 0, 255)); d = ImageDraw.Draw(cast)
+    for k in range(10):
+        cx, cy = 160 + (k % 5) * 320, 225 + (k // 5) * 450
+        d.ellipse((cx - 40, cy - 160, cx + 40, cy + 160), fill=(90, 30 + k * 20, 60), outline=(20, 20, 20), width=6)
+    cbuf = io.BytesIO(); cast.save(cbuf, "PNG")
+    assert paint.cut(buf.getvalue(), cbuf.getvalue())[1] == 18   # eight townspeople and the ten of the cast
     data, n = paint.cut(buf.getvalue())
     strip = Image.open(io.BytesIO(data))
     assert n == 8 and strip.size == (80 * 8, 120) and strip.mode == "RGBA"
@@ -98,10 +109,11 @@ if Image:   # a sheet of eight figures on magenta comes out as a strip of eight 
     with tempfile.TemporaryDirectory() as out:
         os.makedirs(os.path.join(out, "drafts")); open(os.path.join(out, "drafts", "island-1.webp"), "wb").write(PIC)
         json.dump({"island": ["island-1.webp"]}, open(os.path.join(out, "drafts", "drafts.json"), "w"))
-        paint.paint_gemini = lambda *a, **k: [buf.getvalue()]
+        paint.paint_gemini = lambda plate, prompt, *a, **k: [(cbuf if "ten small" in prompt else buf).getvalue()]
         os.environ["GEMINI_API_KEY"] = "test"; os.environ.pop("OPENAI_API_KEY", None)
         paint.cmd_folk(types.SimpleNamespace(out=out, like=["island=1"], n=1, model=None))
         paint.cmd_keep(types.SimpleNamespace(out=out, picks=["folk=last"]))
         f = json.load(open(os.path.join(out, "index.json")))["scenes"]["folk"]
+        assert Image.open(os.path.join(out, f)).size == (80 * 18, 120)
         assert f.startswith("folk-1-") and os.path.exists(os.path.join(out, f)) and "folk=1" in open(os.path.join(out, "drafts", "index.html")).read()
 print("ok", len(calls), "calls")
