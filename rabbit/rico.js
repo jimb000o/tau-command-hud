@@ -371,7 +371,7 @@
     try { EL = new Audio(); EL.preload = "auto"; EL.src = SILENT; EL.play().then(() => EL.pause(), () => {}); } catch (e) { EL = null; }
     ["pointerdown", "touchend", "keydown"].forEach(n => removeEventListener(n, unlock, true));
   };
-  ["pointerdown", "touchend", "keydown"].forEach(n => addEventListener(n, unlock, true));
+  if (typeof addEventListener === "function") ["pointerdown", "touchend", "keydown"].forEach(n => addEventListener(n, unlock, true));
   function element(keys) {
     if (!EL) { why.last += "; audio element not unlocked yet"; return false; }
     return new Promise(res => {
