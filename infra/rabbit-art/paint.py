@@ -282,7 +282,7 @@ def load(path):
 def page(a):
     drafts = load(os.path.join(a.out, "drafts", "drafts.json"))
     rows = []
-    for id in PLACES:
+    for id in PLACES + ["folk"]:
         if id not in drafts:
             continue
         rows.append(f"<h2>{id}</h2><div class=row>")
@@ -410,6 +410,84 @@ def cmd_ideas(a):
     print("Look: https://node.tauhud.com/rico/art/drafts/")
 
 
+FOLK_SIZE = (80, 120)   # one figure per cell of the strip the game reads, feet at the bottom middle
+FOLK = ("Paint a sheet of eight small full-body townspeople for this game, in exactly the style of the picture: its ink "
+        "line, its colours, its light. Two rows of four, evenly spaced, each figure whole and standing well apart from the "
+        "others, all the same size, seen from the side in mid-stride, walking to the right, on a plain flat magenta "
+        "background (#FF00FF) with no ground, no shadows, no scenery and no text. They live in a small island town of today "
+        "and are of mixed ancestry: varied ages, bodies and skin tones, in everyday clothes of now. A fisher woman with a "
+        "rolled net over her shoulder; an old man with a walking stick and a newspaper; a farmer carrying a basket of "
+        "coconuts; a teacher with a stack of exercise books; a girl with a kite; a carpenter with a plank; a musician with "
+        "a small guitar on his back; a woman in a sun hat with a clipboard. No costumes, no grass skirts, no caricature, "
+        "no exaggerated features: ordinary, likeable neighbours, drawn with the same care as the island.")
+
+
+def cut(raw):
+    """The sheet of figures as a strip of cells with transparent backgrounds: the background colour is read off the
+    border and keyed out (soft at the edge), each figure is cropped from its part of the 4 x 2 grid and set feet down."""
+    from PIL import Image
+    im = Image.open(io.BytesIO(raw)).convert("RGB")
+    im = im.resize((1200, int(1200 * im.height / im.width)), Image.LANCZOS)
+    W, H = im.size
+    px = im.load()
+    edge = sorted([px[x, 2] for x in range(0, W, 7)] + [px[x, H - 3] for x in range(0, W, 7)] + [px[2, y] for y in range(0, H, 7)])
+    bg = edge[len(edge) // 2]
+    out = Image.new("RGBA", (W, H))
+    o = out.load()
+    for y in range(H):
+        for x in range(W):
+            r, g, b = px[x, y]
+            d = abs(r - bg[0]) + abs(g - bg[1]) + abs(b - bg[2])
+            a = 0 if d < 90 else 255 if d > 170 else (d - 90) * 255 // 80
+            if 0 < a < 255:   # the fringe: take the background's tint out of it
+                g = max(g, (r + b) // 2 - 40)
+            o[x, y] = (r, g, b, a)
+    cw, ch = FOLK_SIZE
+    cells = []
+    for row in range(2):
+        for col in range(4):
+            box = (col * W // 4, row * H // 2, (col + 1) * W // 4, (row + 1) * H // 2)
+            part = out.crop(box)
+            bb = part.getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
+            if not bb or (bb[3] - bb[1]) < H // 10:
+                continue
+            fig = part.crop(bb)
+            k = min((cw - 4) / fig.width, (ch - 4) / fig.height)
+            fig = fig.resize((max(1, int(fig.width * k)), max(1, int(fig.height * k))), Image.LANCZOS)
+            cell = Image.new("RGBA", (cw, ch))
+            cell.paste(fig, ((cw - fig.width) // 2, ch - fig.height - 1), fig)
+            cells.append(cell)
+    if not cells:
+        sys.exit("No figures found on the sheet; paint it again.")
+    strip = Image.new("RGBA", (cw * len(cells), ch))
+    for i, c in enumerate(cells):
+        strip.paste(c, (i * cw, 0))
+    buf = io.BytesIO(); strip.save(buf, "WEBP", quality=90, method=5)
+    return buf.getvalue(), len(cells)
+
+
+def cmd_folk(a):
+    """The people who walk about the island, painted in the style of the island as it is now (or --like island=N)."""
+    drafts = load(os.path.join(a.out, "drafts", "drafts.json"))
+    src = liked(argparse.Namespace(out=a.out, like=a.like), drafts)[0]
+    p = provider()
+    model = a.model or ("gemini-2.5-flash-image" if p == "gemini" else "gpt-image-1")
+    raws = (paint_gemini if p == "gemini" else paint_openai)(open(src, "rb").read(), FOLK, a.n, model)
+    path = os.path.join(a.out, "drafts", "drafts.json")
+    drafts = load(path)
+    names = drafts.get("folk", [])
+    for raw in raws:
+        data, n = cut(raw)
+        f = f"folk-{len(names) + 1}-{hashlib.sha1(data).hexdigest()[:8]}.webp"
+        write(os.path.join(a.out, "drafts", f), data)
+        names.append(f)
+        print(f"  folk={len(names)}: {n} figures")
+    drafts["folk"] = names
+    write(path, json.dumps(drafts, indent=1).encode())
+    page(a)
+    print("Look: https://node.tauhud.com/rico/art/drafts/  then: infra/rabbit-art/paint.sh keep folk=last")
+
+
 def cmd_looks(a):
     """The island from the newest sketch, once in each of the three styles."""
     for n in LOOKS:
@@ -475,10 +553,14 @@ def main():
     k = sub.add_parser("keep")
     k.add_argument("picks", nargs="+", help="place=N or place=last, e.g. island=2 hall=1 bar=last")
     k.add_argument("--layout", default=None, help="island only: where everything stands on that painting, plates/<name>.json")
+    fo = sub.add_parser("folk")
+    fo.add_argument("--like", nargs="+", default=["island"], metavar="PLACE=N", help="the painting whose style they take")
+    fo.add_argument("--n", type=int, default=1)
+    fo.add_argument("--model", default=None)
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas}[a.cmd](a)
+    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk}[a.cmd](a)
 
 
 if __name__ == "__main__":
