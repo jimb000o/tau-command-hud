@@ -598,10 +598,34 @@
     g.restore();
   }
 
+  /* the painted creatures (paint.py creatures): Déjà, the café cat, who turns up now and then, sometimes in a room;
+     and the legend of the jungle, Agorzilla, seen for a few seconds every few minutes, half hidden in the leaves */
+  const FORCE = /[?&]rare=1/.test(location.search);
+  const RARE = { zilla: null, next: performance.now() + (FORCE ? 3000 : 60000 + Math.random() * 60000) };
+  function creature(g, im, x, y, h, a = 1) {   // standing on (x, y), h world units tall
+    const w = h * im.naturalWidth / im.naturalHeight; g.save(); g.globalAlpha *= a; g.drawImage(im, x - w / 2, y - h, w, h); g.restore();
+    return [x - w / 2, y - h, w, h];
+  }
+  /* the leaves in front: one painted cluster, at the left edge and mirrored at the right, as tall as the screen and wide
+     enough to cover the side beside the island on a wide screen; they sway in the breeze and lean from the pointer */
+  function fronds(g, t, a) {
+    const im = ART.img.fronds, W = S.c.width, H = S.c.height;
+    const e = ART.wide || 0, margin = Math.max(0, toScreen(-e, 0)[0] * S.K);
+    let w = Math.max(margin + W * 0.07, W * 0.13), h = w * im.naturalHeight / im.naturalWidth;
+    if (h < H * 1.04) { h = H * 1.04; w = h * im.naturalWidth / im.naturalHeight; }
+    g.save(); g.globalAlpha = a; g.imageSmoothingQuality = "high";
+    [[1, 0], [-1, W]].forEach(([d, x0], i) => {
+      const sw = (S.still ? 0 : Math.sin(t * 0.0006 + i * 2.1) * 0.012) - d * (S.peek || 0) * 0.01;
+      g.setTransform(d, 0, 0, 1, x0, 0); g.translate(0, H); g.rotate(sw); g.drawImage(im, -w * 0.04, -h, w, h);
+    });
+    g.restore(); g.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
   /* the white rabbit: hops from place to place, sits up and twitches its ears; it shows newcomers where to go */
   const RB = { x: 860, y: 690, tx: 860, ty: 690, hop: 0, dir: 1, next: 0 };
   /* the lighthouse lamp, the radio mast's light, where people gather and where the cat walks: a new layout moves them */
-  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712] };
+  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712],
+    jungle: [[760, 235], [985, 205], [455, 440], [1180, 560], [330, 285]] };   // where the legend may look out of the leaves
   function rabbitStep(dt, t) {
     const d = Math.hypot(RB.tx - RB.x, RB.ty - RB.y);
     if (d > 2) { RB.hop += dt * 0.012; const v = Math.min(d, dt * 0.11); RB.x += (RB.tx - RB.x) / d * v; RB.y += (RB.ty - RB.y) / d * v; RB.dir = RB.tx > RB.x ? 1 : -1; }
@@ -1048,10 +1072,21 @@
       items.push([y, () => person(w, x, y, t, f, i)]);
     });
     rabbitStep(S.still ? 999 : dt, t); items.push([RB.y, () => rabbit(w, t)]);
-    if (S.cat && pi) S.cat = null;
+    if (S.cat && pi && !painted("deja")) S.cat = null;
     if (S.cat) {
       const c = S.cat, f = (t - c.t0) / c.d; if (f > 1) S.cat = c.twice ? { ...c, t0: t, twice: false } : null;
+      else if (pi) items.push([700, () => creature(w, ART.img.deja, lerp(c.x0, c.x1, f), lerp(c.y0, c.y1, f) + Math.abs(Math.sin(t * 0.012)) * -1.5, 22)]);
       else items.push([700, () => cat(w, lerp(c.x0, c.x1, f), lerp(c.y0, c.y1, f), t, c.x1 > c.x0 ? 1 : -1)]);
+    }
+    if (pi && painted("agorzilla") && !S.focusId && S.roomA < 0.05 && !RARE.zilla && t > RARE.next) {
+      const J = SPOT.jungle, [x, y] = J[Math.floor(Math.random() * J.length)];
+      RARE.zilla = { t0: t, d: FORCE ? 30000 : 7500, x, y };
+      RARE.next = t + (FORCE ? 40000 : 150000 + Math.random() * 210000);   // every few minutes, never on cue
+    }
+    if (RARE.zilla) {
+      const z = RARE.zilla, f = (t - z.t0) / z.d;
+      if (f > 1) RARE.zilla = null;
+      else { const a = Math.min(1, f * 6, (1 - f) * 6); items.push([z.y, () => { z.box = creature(w, ART.img.agorzilla, z.x, z.y + (1 - a) * 8, 48, a); }]); }
     }
     items.sort((a, b) => a[0] - b[0]).forEach(([, d]) => d());
     /* the light of the hour */
@@ -1083,6 +1118,11 @@
       const day = Math.max(0, 1 - sky.light);
       if (painted(S.room)) { w.drawImage(roomImage(S.room), (RW - rw) / 2, 0, rw, RH); w.save(); roomLife(w, t, day); w.restore(); }
       else { roomBackdrop(w, sky, t); w.drawImage(roomImage(S.room), 0, 0, RW, RH); w.save(); ROOMFX[S.room](w, t, day); w.restore(); }
+      if (S.roomCat) {   // Déjà, now and then, somewhere in the room: far at the back, or close by at the side
+        const c = S.roomCat, a = Math.min(1, Math.max(0, (t - c.t0) / 900));
+        const b = creature(w, ART.img.deja, c.x, c.y, c.h, a * e);
+        S.roomCat.screen = [(b[0] * sc + ox) / S.K, (b[1] * sc + oy) / S.K, b[2] * sc / S.K, b[3] * sc / S.K];
+      }
       if (S.hostFn) {
         if (!S.hostC) { S.hostC = document.createElement("canvas"); S.hostC.width = S.hostC.height = 600; }
         const hg = S.hostC.getContext("2d"); S.hostFn(hg, t);
@@ -1104,6 +1144,7 @@
     g.setTransform(1, 0, 0, 1, 0, 0);
     if (!S.grain) S.grain = g.createPattern(grainTile(), "repeat");
     g.fillStyle = S.grain; g.fillRect(0, 0, W, H);
+    if (painted("fronds") && S.roomA < 0.99) fronds(g, t, 1 - S.roomA);
     if (!S.vig || S.vig.w !== W || S.vig.h !== H) { const v = g.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.45, W / 2, H * 0.55, Math.hypot(W, H) * 0.62); v.addColorStop(0, "rgba(34,48,58,0)"); v.addColorStop(1, "rgba(34,48,58,.28)"); S.vig = { g: v, w: W, h: H }; }
     g.fillStyle = S.vig.g; g.fillRect(0, 0, W, H);
     if (S.onFrame) S.onFrame(t);
@@ -1111,8 +1152,10 @@
   }
 
   function hit(px, py) {
-    if (S.roomA > 0.3) return null;   // inside a place the island is out of reach
+    const inBox = (b, x, y) => b && x >= b[0] && x <= b[0] + b[2] && y >= b[1] && y <= b[1] + b[3];
+    if (S.roomA > 0.3) return S.roomCat && inBox(S.roomCat.screen, px, py) ? "deja" : null;   // inside a place the island is out of reach
     const [x, y] = toWorld(px, py);
+    if (RARE.zilla && inBox(RARE.zilla.box, x, y)) return "agorzilla";
     if (Math.abs(x - RB.x) < 16 && y < RB.y + 6 && y > RB.y - 30) return "rabbit";
     for (const id in PLACES) { if (S.locked.has(id)) continue; const [bx, by, bw, bh] = PLACES[id].box; if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) return id; }
     return null;
@@ -1120,19 +1163,25 @@
   /* lean in on a place, keeping the space for the card on the far side; null goes back to the whole cove */
   /* the whole island, as large as the screen allows: on a tall phone the island fills the width, the sky gives way */
   function home() {
-    /* a painted island framed as a whole picture fills the screen from edge to edge: a wide painting (paint.py wide)
-       carries its sea and coast past the sides; without one, a wide screen leans in until the painting covers the width,
-       and the pointer looks up and down over what that crops away */
-    if (ART.whole && S.W >= 760) {
-      const z = Math.max(1, S.W / ((WW + 2 * (ART.wide || 0)) * fitScale())), spare = (WH - WH / z) / 2;
-      return { x: 800, y: 450 + (S.peek || 0) * spare, z };
-    }
+    /* a painted island framed as a whole picture is always seen whole; beside it on a wide screen the painting's own
+       blurred sea carries on, and the painted leaves in front (paint.py creatures: fronds) cover the seam at the sides */
+    if (ART.whole && S.W >= 760) return { x: 800, y: 450, z: 1 };
     const f = fitScale(), z = Math.max(1, Math.min(S.W / (1220 * f), S.H / (690 * f)));
     return { x: 800, y: z > 1.05 ? Math.max(450, 900 - S.H / (f * z) / 2 - 10) : 450, z };
   }
   function focus(id, side = 0) {
-    if (!id) { S.camT = home(); S.focusId = null; S.roomT = 0; return; }
-    if (ROOMS[id] || painted(id)) { if (S.room !== id) { if (S.roomA > 0.5) S.roomA = 0.35; S.room = id; } S.roomT = 1; S.roomAt = toScreen(PLACES[id].x, PLACES[id].y - 40); }
+    if (!id) { S.camT = home(); S.focusId = null; S.roomT = 0; S.roomCat = null; S.left = true; return; }
+    if (ROOMS[id] || painted(id)) {
+      if (S.room !== id || S.left) {
+        if (S.room !== id && S.roomA > 0.5) S.roomA = 0.35;
+        S.room = id; S.left = false;
+        const near = Math.random() < 0.3;   // one visit in six or so, she is there too
+        S.roomCat = painted(id) && painted("deja") && (FORCE || Math.random() < 0.17) ? (near
+          ? { x: Math.random() < 0.5 ? 170 : 1430, y: 905, h: 250, t0: performance.now() }
+          : { x: 320 + Math.random() * 960, y: 600 + Math.random() * 40, h: 70, t0: performance.now() }) : null;
+      }
+      S.roomT = 1; S.roomAt = toScreen(PLACES[id].x, PLACES[id].y - 40);
+    }
     else S.roomT = 0;   // a quarter without a painted picture yet: the card opens over the island
     S.focusId = id; S.focusSide = side;
     const p = PLACES[id], phone = S.W < 760, z = Math.max(home().z * 1.25, phone ? 1.5 : 1.7), s = fitScale() * z;
@@ -1143,9 +1192,8 @@
     S.c = canvas; S.g = canvas.getContext("2d");
     S.still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     size(); addEventListener("resize", size);
-    canvas.addEventListener("pointermove", e => {   // a cropped whole view follows the pointer up and down
-      const r = canvas.getBoundingClientRect(); S.peek = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2.4));
-      if (!S.focusId) S.camT = home();
+    canvas.addEventListener("pointermove", e => {   // the leaves in front lean away from the pointer, a little
+      const r = canvas.getBoundingClientRect(); S.peek = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
     });
     if (window.ResizeObserver) new ResizeObserver(size).observe(canvas);
     requestAnimationFrame(frame);
