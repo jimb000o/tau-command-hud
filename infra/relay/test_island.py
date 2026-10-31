@@ -5,6 +5,7 @@ Run: python test_island.py
 import asyncio
 import hashlib
 import json
+import re
 import os
 import stat
 import sys
@@ -53,6 +54,17 @@ check(json.loads(pre) == {"sender_pubkey": I.pk["hana"], "sequence_number": 7, "
       "1 test AGRS to the council, fee five times the base fee, signed fields as the node reads them")
 check(G2Basic.Verify(bytes.fromhex(tx["sender_pubkey"]), hashlib.sha256(pre).digest(), bytes.fromhex(tx["signature"])), "the BLS signature verifies")
 check(island.base_fee({"consensus_rules": "o9[t]:bv[24] = { #x0c }"}) == 12 and island.base_fee({}) == 10, "base fee from the rules in force")
+
+tx = I.build("baako", 1, 10, 10, "radio")
+check(tx["operations"]["1"][0][1:] == [island.PLACES["radio"], str(island.RADIO_LINE)], "a radio line pays the station 25")
+check(I.build("baako", 1, 10, 10, "north")["operations"]["1"][0][1:] == [island.PLACES["north"], "1"], "an embassy's money: 1 to the embassy")
+check(I.accept("baako", "talk", "7.7.7.7", "moon")[0] is False, "only the island's places")
+game = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "rabbit", "game.js"), encoding="utf-8").read()
+till = dict(re.findall(r'^    (\w+): "([0-9a-f]{96})"', game[game.index("const TILL = {"):game.index("const TILL_AT")], re.M))
+check(till == {k: v for k, v in island.PLACES.items() if k != "hall"} and island.PLACES["hall"] == island.COUNCIL, "the same tills as the game")
+import txsources  # noqa: E402
+check(set(till.values()) == txsources.RABBIT_TILLS, "In numbers counts the same tills")
+check(txsources.rabbit({"sender_pubkey": "ab", "operations": {"1": [["ab", island.PLACES["radio"], "25"]]}}, {}) == ("line", ""), "a move paid to a till is a Book line")
 
 sent = []
 

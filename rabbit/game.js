@@ -91,6 +91,31 @@
     baako: "981bfa68b487e86991cbd70d3c1c8ed4b151715031580976f0942610958a16e29d71c15ea4accdb3750db225f35c3f50",
     hana: "adf1b27a6cfe88b1c73f12ed38eaaef535f892ee2f2b695030427ecaef7d4e43deb89f7849f2f5550cc5eec711652174",
   };
+  /* each place has its own till on the chain (made like the ballot boxes: no key behind them), so a move pays the place it
+     happens at: a line bought on Radio Coco pays the station, a talk on the square the market, an embassy's paper the
+     embassy; the Council Hall is the council's chest (infra/relay/island.py PLACES holds the same list) */
+  const TILL = {
+    market: "89798ff443b446b8392097e50bb61f383f24ed60f45b4f592e6b9d5356056e90698e7114f17692bdd2539bce24d73ac2",
+    radio: "b6ef83b962c9e8be7345050bc34de31bc8996cfc3782947db4509f48750b53640b19d7211c591bc2e4e16d2b148bf945",
+    north: "b3909c612e07036be9504e3be10eef3b1483e0c1c7be4d05950ccb373f06292f186709c7344e5aa7b83501ce7f1d48af",
+    south: "a752d4269c95abd44c6ec855ce3513f6ce8b3a8c94f58621ee1596ceb728a69aa329a541a9f75a188fdfff92ad6c045d",
+    bar: "87208cfd4313f66ec1baa2021ff0fdd5667285be5396a4a83480efc18d80ba3c2e41504d2bcd2b01a8d37a6cab54cd05",
+    book: "98e2aa832d79c1689b6b3190d45e0c2319838c0f58293e6a837d606548f2c1e797b20550e0c5230a7cebbc13f74e849f",
+    pier: "8ed60ef9cc93ec996d7eeac725539e720f86b701bdb7ac646434d177690e48869dbfdedc759c930dc88f1e3cd315c58b",
+    school: "98e8a33fa10f0dca59bb6fe8c9d14fb2e9b6be5cbeb95d862fc4eb9ad2d5957617f8b998757f9947065cd76c05a82578",
+    dive: "899220e0128f24e1666fdaf53809c16854bc37cfcac3aa9a887e7e0205fff14de93c5b1272e1c5204ad4c1f1ee7c11de",
+    works: "816cdcda9accef093332ca8356f87fb1a40aa612d999b55d8cc7229865508ad09bd1214ba6f4b16a6dc8b64d03fa852d",
+    camp: "81a080eed60d737f73623b80d3b1dcad85d37b5a5a4d5b0ba60c3c2379b995d470c8c2d3db2f92b803b7feb215091d16",
+    ship: "83546df43205836667fc104c6a56549b2b0c0cd5fd0bc188ad55e96ce656c8220991325fdd49ef8a5549bb7ca9d1cb3e",
+    ama: "8ffb79523db95c885e3267633767246dda76cc9378804b02328835ba45667d7012be8b79f32e497d1822d1df96726d3d",
+    canoe: "96e0c6d33c1848fa6a2355ababc5f66a7a8121c81a05f923c3e60d645f0110fe28a81db5176f750adec25b26b8746bf9",
+    stone: "897178ec1333edd5d3cb27f5746976e6cb8fd0d07360a8dcdfccd1f0a90d15f5a2f8b24616acb5ebfa360b86bc025175",
+    drums: "82a45ff8fd1bbba834c5c9f89e8ebb712935f83aa2709cdda051deebec517483e73fc6eeb997ebbaf2dc582a2eea56dc",
+    circle: "a974149276f73fa2021068c89521bc68e8877cbfdb7d75b348951269bc3ab6c0677997f31bdbb1d28c95dc3aacacd34e",
+    grotto: "9266b7dbca59d06c60517e815e32169aaba70056101d394c6ab851a99925f18e23da324cf0c73ab5fe27c951c8bb024e"
+  };
+  const TILL_AT = { talk: "market", lie: "radio", fact: "book" };   // a rival's move, when it says nothing more
+  const tillOf = at => TILL[at] || ADDR.council;
 
   const looks = id => CANDS[id] || FOLK[id] || { skin: "#c68642", hair: "#222", style: "short", shirt: "#ddd" };
   /* ---------- portraits: painted like the island, in flat inks with a hand-drawn line ----------
@@ -281,7 +306,10 @@
   /* the Book: every move signed with the name of whoever made it */
   /* every line in the Book is also a transaction on Tau Testnet Alpha: the visitor's own (signed in their test wallet,
      once they tick the box) and the rivals' (sent by the island bot on the relay, from the rivals' campaign wallets) */
-  const write = (who, text, kind) => { const b = { day: G.day, hour: Math.min(2, G.move), who, text, kind }; G.book.push(b); onChain(b); return b; };
+  const write = (who, text, kind, at, pay) => {
+    at = (who === G.me && UI.at) || at || TILL_AT[kind] || "hall";   // the visitor pays where they stand
+    const b = { day: G.day, hour: Math.min(2, G.move), who, text, kind, at, pay: pay || 1 }; G.book.push(b); onChain(b); return b;
+  };
 
   /* ---------- the moves ---------- */
   /* propose a law: the Book checks it against the laws in force first, then the other three vote */
@@ -317,7 +345,7 @@
   function campaign(by, topic, k = 1) {
     const backed = G.laws.some(l => l.by === by && (LAWS[l.id].fx[topic] || 0) > 0);
     bump(by, p => p.cares.includes(topic), Math.round((backed ? 9 : 6) * k));
-    write(by, F("spoke on the market square about {x}", { x: T(TOPICS[topic]) }), "talk");
+    write(by, F("spoke on the market square about {x}", { x: T(TOPICS[topic]) }), "talk", "market");
   }
   function rumour(by, about, claim, lie) {
     G.coins[by] -= RUMOUR;
@@ -325,12 +353,12 @@
     if (!lie) bump(by, p => p.reads, 3);
     G.lies.push({ by, about, claim, lie, day: G.day, seen: [] });
     G.trust[about] = by === G.me ? Math.max(0, G.trust[about] - 30) : G.trust[about];
-    write(by, F("paid Radio Coco {n} coins to say: “{x}”", { n: RUMOUR, x: claim }), lie ? "lie" : "fact");
+    write(by, F("paid Radio Coco {n} coins to say: “{x}”", { n: RUMOUR, x: claim }), lie ? "lie" : "fact", "radio", RUMOUR);
   }
   function deal(by, emb) {
     const E = EMB[emb]; G.coins[by] += E.coins;
     G.deals.push({ by, emb, law: E.wants, day: G.day, kept: false });
-    write(by, F("took {n} coins from the {x} and promised to propose “{y}”", { n: E.coins, x: T(E.name), y: T(LAWS[E.wants].t) }), "deal");
+    write(by, F("took {n} coins from the {x} and promised to propose “{y}”", { n: E.coins, x: T(E.name), y: T(LAWS[E.wants].t) }), "deal", emb);
   }
   function makePact(a, b, gift) {
     if (gift) { G.coins[a] -= GIFT; G.coins[b] += GIFT; }
@@ -421,6 +449,7 @@
   }
   function openCard(place, build) {
     closeCard(true);
+    UI.at = place || null;
     if (G && place) { G.seen = G.seen || {}; if (!G.seen[place]) { G.seen[place] = 1; save(); } setTimeout(locks, 0); }
     /* the conversation always sits in the same place: a plate at the bottom middle, the person standing above it */
     const side = 0;
@@ -438,7 +467,7 @@
     setTimeout(() => { const b = box.querySelector(".cv-acts button:not([disabled])"); if (b && !matchMedia("(pointer: coarse)").matches) b.focus({ preventScroll: true }); }, 50);
   }
   function closeCard(keep) {
-    if (UI.card) { UI.card.remove(); UI.card = null; } $("cvStage").classList.remove("carded"); SC.host(null);
+    if (UI.card) { UI.card.remove(); UI.card = null; } UI.at = null; $("cvStage").classList.remove("carded"); SC.host(null);
     if (!keep) { SC.focus(null); SC.glow(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); if (performance.now() > UI.airUntil) { SND.hush(); if (RICO.stop) RICO.stop(); } }   // a line on air is heard to its end
   }
   /* a card: who speaks, what they say (aloud, in their own voice, when the server has the clip), what you can do;
@@ -1083,8 +1112,8 @@
   /* a move made: the visitor's own goes from their wallet when they said so, a rival's to the island bot */
   function onChain(b) {
     if (!G || !CANDS[b.who]) return;
-    if (b.who !== G.me) { ask("islandmove " + b.who + " " + b.kind, 8000).then(m => { if (m && m.status === "ok" && m.data && m.data.queued) { b.bot = true; save(); } }); return; }
-    if (G.onchain) mySend(ADDR.council, nm(b.who) + " " + b.text, h => { if (h) { b.tx = h; save(); } });
+    if (b.who !== G.me) { ask("islandmove " + b.who + " " + b.kind + " " + (TILL[b.at] ? b.at : "hall"), 8000).then(m => { if (m && m.status === "ok" && m.data && m.data.queued) { b.bot = true; save(); } }); return; }
+    if (G.onchain) mySend(tillOf(b.at), nm(b.who) + " " + b.text, h => { if (h) { b.tx = h; save(); } }, b.pay, b.at);
   }
   /* the visitor's test wallet in this browser (the same key /wallet/ uses); made here if there is none yet */
   function myKey() {
@@ -1097,18 +1126,18 @@
   }
   /* Python's json.dumps(sort_keys=True, separators=(",", ":")), what the node signs over */
   const canon = o => Array.isArray(o) ? "[" + o.map(canon).join(",") + "]" : o === null || typeof o !== "object" ? JSON.stringify(o).replace(/[\u007f-\uffff]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")) : "{" + Object.keys(o).sort().map(k => JSON.stringify(k) + ":" + canon(o[k])).join(",") + "}";
-  function mySend(to, label, done) { CHAIN.q.push({ to, label, done }); pump(); }
+  function mySend(to, label, done, pay, at) { CHAIN.q.push({ to, label, done, pay: pay || 1, at }); pump(); }
   async function pump() {
     if (CHAIN.busy || !CHAIN.q.length) return;
     CHAIN.busy = true;
-    const { to, label, done } = CHAIN.q.shift();
+    const { to, label, done, pay, at } = CHAIN.q.shift();
     let hash = null;
     try {
       const k = myKey(); if (!k) throw 0;
       if (CHAIN.fee == null) { const g = await ask("getgovernance"); const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((g && g.data && g.data.consensus_rules) || ""); CHAIN.fee = m ? parseInt(m[1], 16) : 10; }
       const st = await ask("getsequence " + k.pk); if (!st || st.status !== "ok") throw 0;
       const seq = Math.max(st.data.sequence_number || 0, CHAIN.next), tip = st.data.tip_height || 0;
-      const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 600, expire_at_height: tip + 1000, fee_limit: String(CHAIN.fee * 5), operations: { "1": [[k.pk, to, "1"]] } };
+      const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 600, expire_at_height: tip + 1000, fee_limit: String(CHAIN.fee * 5), operations: { "1": [[k.pk, to, String(pay)]] } };
       const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
       tx.signature = window.TauBLS.bytesToHex(window.TauBLS.sign(new TextEncoder().encode(canon(d)), k.sk));
       await ask("via rabbit");
@@ -1116,15 +1145,19 @@
       if (r && r.status === "ok" && !(r.data && r.data.ok === false)) {
         hash = (r.data && r.data.tx_hash) || String(Date.now()); CHAIN.next = seq + 1;
         try { const lk = "tauhud-wallet-log-live-" + k.pk, logs = JSON.parse(store.get(lk) || "[]"); logs.unshift({ hash, kind: "pay", label: T("White Rabbit Key") + ": " + label, at: Date.now(), status: "queued", seq, paid: true }); store.set(lk, JSON.stringify(logs.slice(0, 40))); } catch (e) {}
-        toast(T("Signed into the testnet: 1 test AGRS from your wallet."));
+        if (TILL[at]) remember(to, "Key till · " + ((SC.places[at] || {}).name || at));   // a readable name in the wallet's address book
+        toast(F("Signed into the testnet: {n} test AGRS from your wallet.", { n: pay }));
       } else { CHAIN.next = 0; toast(T("The testnet did not take this move just now; the game goes on.")); }
     } catch (e) { if (G && G.onchain) toast(T("The testnet is out of reach just now; the game goes on.")); }
     CHAIN.busy = false; done && done(hash);
     if (CHAIN.q.length) setTimeout(pump, 400);
   }
   let drawer = null;
+  function remember(addr, name) {
+    try { const b = JSON.parse(store.get(BOOK_LIVE) || "[]"); if (Array.isArray(b) && !b.some(c => c && c.addr === addr)) { b.push({ name, addr }); store.set(BOOK_LIVE, JSON.stringify(b)); } } catch (e) {}
+  }
   function openWallet(to, what) {
-    try { const b = JSON.parse(store.get(BOOK_LIVE) || "[]"); if (Array.isArray(b) && !b.some(c => c && c.addr === ADDR[to])) { b.push({ name: BOOKNAME[to], addr: ADDR[to] }); store.set(BOOK_LIVE, JSON.stringify(b)); } } catch (e) {}
+    remember(ADDR[to], BOOKNAME[to]);
     closeWallet();
     const lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "";
     const url = "/wallet/?focus=feed&from=rabbit&mode=live&to=" + ADDR[to] + "&amount=1" + lang;
@@ -1182,7 +1215,7 @@
       const chk = el("input", { type: "checkbox", id: "cvChain" }); chk.checked = store.get("tauhud-rabbit-chain") === "on";
       chk.addEventListener("change", () => store.set("tauhud-rabbit-chain", chk.checked ? "on" : "off"));
       box.append(ballotEl());
-      box.append(el("label", { class: "cv-chain", for: "cvChain" }, chk, el("span", { text: T("Sign my moves into Tau Testnet Alpha as I make them: 1 test AGRS each from my test wallet in this browser (made for me if I have none). The rivals’ moves go there anyway, from their own campaign wallets.") })));
+      box.append(el("label", { class: "cv-chain", for: "cvChain" }, chk, el("span", { text: T("Sign my moves into Tau Testnet Alpha as I make them, paid to the place where I make them: 1 test AGRS each, a line on Radio Coco 25, from my test wallet in this browser (made for me if I have none). The rivals’ moves go there anyway, from their own campaign wallets.") })));
     });
   }
   function dragHint() {
