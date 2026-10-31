@@ -666,6 +666,60 @@ def cmd_sharp(a):
         print(f"  island={len(names)}")
 
 
+WIDE = ("The {done} half of this picture is a finished painting. The {blank} half is empty grey: paint it, carrying the "
+        "scene on outward without a seam, in exactly the same style, ink line, colours and light: the same sea, sky, far "
+        "mountains and clouds; where land or jungle touches the edge, its coast, rocks, reef and leaves go on a little and "
+        "end in open water. Add only quiet things: a few small rocky islets, reefs, sandbanks, a far sail, seabirds. No "
+        "buildings, no people, no text. Leave the {done} half exactly as it is.")
+
+
+def cmd_hires(a):
+    """Every kept picture (or the places named) in high resolution and wide: first repainted sharp and large with the
+    same composition (the island at 4K, the rooms at 2K, so the page stays light enough), then carried on past its left
+    and right edges, so a wide screen shows the painting from edge to edge. The island grows by half its width on each
+    side, a room by a quarter. The middle stays the sharp copy of the kept picture: it is laid back over the painted
+    sides, blended over a narrow seam, so the layout's click areas still fit. Run it again after keeping a new picture."""
+    from PIL import Image, ImageDraw
+    path = os.path.join(a.out, "index.json")
+    idx = load(path)
+    sc, orig = idx.get("scenes", {}), idx.setdefault("orig", {})
+    ids = [i for i in (sc if "all" in a.places else a.places) if i in SCENE]
+    if not ids:
+        sys.exit("Nothing kept to sharpen yet. Run: infra/rabbit-art/paint.sh keep island=N")
+    if provider() != "gemini":
+        sys.exit("High resolution needs GEMINI_API_KEY.")
+    def png(x):
+        b = io.BytesIO(); x.save(b, "PNG"); return b.getvalue()
+    for id in ids:
+        src = orig.get(id, sc[id])   # always from the picture that was kept, never from an earlier wide copy
+        size = "4K" if id == "island" else "2K"
+        print(f"{id}: {src}", flush=True)
+        im = Image.open(os.path.join(a.out, src)).convert("RGB")
+        if not a.no_sharp:
+            data, _ = small(paint_gemini(png(im), SHARP, 1, a.model, size=size)[0], width=3840 if id == "island" else 2560)
+            im = Image.open(io.BytesIO(data)).convert("RGB")
+        W, H = im.size; e = W // 2 if id == "island" else W // 4; f = max(8, W // 40)   # f: the seam blends over f pixels
+        side = {}
+        for done, blank in (("right", "left"), ("left", "right")):
+            h = W // 2; c = Image.new("RGB", (W, H), (128, 128, 128))
+            c.paste(im.crop((0, 0, h, H)) if blank == "left" else im.crop((W - h, 0, W, H)), (W - h, 0) if blank == "left" else (0, 0))
+            r = Image.open(io.BytesIO(paint_gemini(png(c), WIDE.format(done=done, blank=blank), 1, a.model, size=size)[0])).convert("RGB").resize((W, H), Image.LANCZOS)
+            side[blank] = r.crop((h - e, 0, h + f, H)) if blank == "left" else r.crop((h - f, 0, h + e, H))
+        out = Image.new("RGB", (W + 2 * e, H))
+        out.paste(side["left"], (0, 0)); out.paste(side["right"], (W + e - f, 0))
+        mask = Image.new("L", (W, H), 255); d = ImageDraw.Draw(mask)
+        for i in range(f):
+            v = int(255 * (i + 0.5) / f); d.line([(i, 0), (i, H)], fill=v); d.line([(W - 1 - i, 0), (W - 1 - i, H)], fill=v)
+        out.paste(im, (e, 0), mask)
+        buf = io.BytesIO(); out.save(buf, "WEBP", quality=84, method=5); data = buf.getvalue()
+        name = f"{id}-hd-{hashlib.sha1(data).hexdigest()[:8]}.webp"
+        write(os.path.join(a.out, name), data)
+        orig[id] = src; sc[id] = name
+        write(path, json.dumps(idx, indent=1).encode())   # after each picture, so a stop half way keeps what is done
+        print(f"  {name}: {out.size[0]} x {out.size[1]} pixels", flush=True)
+    print("Done. Live: https://tauhud.com/rabbit/ (Ctrl+F5)")
+
+
 def cmd_looks(a):
     """The island from the newest sketch, once in each of the three styles."""
     for n in LOOKS:
@@ -686,6 +740,7 @@ def cmd_keep(a):
             sys.exit(f"No painting {pick!r}. Run: infra/rabbit-art/paint.sh draft {id if id in SCENE else 'all'}")
         shutil.copyfile(os.path.join(a.out, "drafts", f), os.path.join(a.out, f))
         idx["scenes"][id] = f
+        idx.get("orig", {}).pop(id, None)   # a new pick: its sharp wide copy is made again by hires
         if id == "island":   # a painting of a new sketch brings where everything stands on it
             sk = drafts.get("sketch", {}).get(f)
             if getattr(a, "layout", None):   # a layout drawn by hand over this very painting (plates/<name>.json)
@@ -706,6 +761,7 @@ def cmd_drop(a):
         idx.get("scenes", {}).pop(id, None)
         if id == "island":
             idx.pop("layout", None)
+        idx.get("orig", {}).pop(id, None)
     write(path, json.dumps(idx, indent=1).encode())
     print("Back to the drawn pictures for: " + ", ".join(a.places))
 
@@ -732,6 +788,10 @@ def main():
     k = sub.add_parser("keep")
     k.add_argument("picks", nargs="+", help="place=N or place=last, e.g. island=2 hall=1 bar=last")
     k.add_argument("--layout", default=None, help="island only: where everything stands on that painting, plates/<name>.json")
+    hr = sub.add_parser("hires")
+    hr.add_argument("places", nargs="*", default=["all"], help="all (default), or some of: " + " ".join(PLACES))
+    hr.add_argument("--no-sharp", action="store_true", help="only widen, keep the resolution")
+    hr.add_argument("--model", default="gemini-3-pro-image-preview")
     sh = sub.add_parser("sharp")
     sh.add_argument("--from", dest="src", default=None, help="the painting, e.g. island=21 (default: the kept island)")
     sh.add_argument("--size", default="4K", choices=["2K", "4K"])
@@ -748,7 +808,7 @@ def main():
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp}[a.cmd](a)
+    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires}[a.cmd](a)
 
 
 if __name__ == "__main__":
