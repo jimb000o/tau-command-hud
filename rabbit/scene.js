@@ -888,6 +888,7 @@
   const ART = { base: "https://node.tauhud.com/rico/art/", img: {} };
   try {
     fetch(ART.base + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j => {
+      ART.box = (j && j.boxes) || {};   // where a talking or blinking frame differs from the still picture
       Object.entries((j && j.scenes) || {}).forEach(([id, f]) => {
         const im = new Image(); im.crossOrigin = "anonymous"; im.decoding = "async";
         im.onload = () => {
@@ -1124,13 +1125,16 @@
         S.roomCat.screen = [(b[0] * sc + ox) / S.K, (b[1] * sc + oy) / S.K, b[2] * sc / S.K, b[3] * sc / S.K];
       }
       if (S.hostFn) {
-        if (!S.hostC) { S.hostC = document.createElement("canvas"); S.hostC.width = S.hostC.height = 600; }
+        if (!S.hostC) { S.hostC = document.createElement("canvas"); S.hostC.width = S.hostC.height = 800; }
         const hg = S.hostC.getContext("2d"); S.hostFn(hg, t);
         /* a medium shot: in the middle of the room the card leaves free, eyes about a third down, standing on the radio
            bar instead of behind it, so the room around them (window, desk, map) still tells where we are */
         const cw = Math.min(470, S.W * 0.42) * S.K + 32 * S.K, fx = S.focusSide > 0 ? (W - cw) / 2 : S.focusSide < 0 ? cw + (W - cw) / 2 : W / 2;
-        /* on a wide screen the whole bust stands clear above the radio strip, shoulders and all */
-        const hb = phone ? (S.hostBottom || S.H * 0.47) * S.K : H - 74 * S.K, hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : Math.min(H * 0.5, (W - cw) * 0.5), hx = phone ? W / 2 : fx, hy = hb - hs * (phone ? 0.8 : 0.99) + (1 - e) * hs * 0.25;
+        /* on a wide screen a painted person stands large in the room, the body running on behind the radio strip at the
+           bottom of the screen, so they are there and not cut off; a drawn face stands clear above the strip */
+        const tall = !phone && S.hostTall, hb = phone ? (S.hostBottom || S.H * 0.47) * S.K : tall ? H + 6 * S.K : H - 74 * S.K,
+          hs = phone ? Math.max(W * 0.34, Math.min(W * 0.8, (hb - 96 * S.K) / 0.78)) : tall ? Math.min(H * 0.9, (W - cw) * 0.95) : Math.min(H * 0.5, (W - cw) * 0.5),
+          hx = phone ? W / 2 : fx, hy = hb - hs * (phone ? 0.8 : 0.99) + (1 - e) * hs * 0.25;
         w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, hx - hs / 2, hy, hs, hs);
       }
       w.setTransform(1, 0, 0, 1, 0, 0);
@@ -1202,7 +1206,7 @@
     mount, hit, focus, places: PLACES, toScreen,
     setHour(h, now) { S.hourT = h; if (now) S.hour = h; },
     glow(id) { S.glow = id; },
-    host(fn) { S.hostFn = fn; },
+    host(fn, tall) { S.hostFn = fn; S.hostTall = !!tall; },
     lock(ids) { S.locked = new Set(ids); }, locked: id => S.locked.has(id),   // quarters not open yet cannot be clicked
     hostAt(bottom) { S.hostBottom = bottom; },
     gather(v) { S.gather = v; },

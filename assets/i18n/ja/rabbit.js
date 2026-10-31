@@ -220,7 +220,6 @@ TauI18n.add({ strings: {
   "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing.": "島での一手一手が、した人の名前とともにここに書かれています。ページは誰にも破れません、私にもね。読むのはタダです。",
   "Not today. Show me how you vote first.": "今日はやめておく。まず君の投票ぶりを見せてくれ。",
   "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first.": "法案を選んでください。ほかの 3 人の候補が投票し、2 人が賛成すれば法律です。帳簿はまず施行中の法律と照合します。",
-  "Sam keeps the minutes today. Pick a law; the other three candidates vote, two yes and it is law.": "今日の記録係はサム。法案を選んでください。ほかの 3 人の候補が投票し、2 人が賛成すれば法律です。",
   "Radio Coco 97.3": "ラジオ・ココ 97.3",
   "No laws yet on this island. Rico's only rule: the request line is open, the coconut stand is not.": "この島にはまだ法律がない。リコの決まりはひとつ：リクエストの電話は開いてる、ココナッツの屋台は閉まってる。",
   "{x} has written more laws than anyone. The island has asked for a nap.": "{x} が誰よりも多く法律を書いた。島は昼寝を申請中。",

@@ -28,6 +28,7 @@ import html
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import time
@@ -601,7 +602,7 @@ BUSTS = {
     "marisol": 'Marisol: runs the Parasol Café on the terrace. Thirties, sturdy. Warm brown skin, black hair in a messy bun stuck through with a pencil, a red scarf, sun-crinkled eyes. Teal shirt with rolled sleeves, a striped apron, a coffee pot in one hand. Direct, friendly grin. Ex-fisherwoman: talks straight, pours strong coffee, still mends nets between orders.',
     "tobias": "Tobias: harbour master at the pier. Sixties, round and proud. Fair, pink-cheeked skin, grey hair parted with a ruler, bushy grey sideburns. Navy captain's cap with gold braid (too big for him), a crisp white uniform shirt with polished brass buttons and a whistle on a chain, a clipboard. Chest puffed out, self-important smile. Loves a ceremony, a rule and a ribbon to cut.",
     "baako": 'Baako: coconut farmer at the Coconut Works. Forties, big and strong. Deep brown skin, short black hair, a short beard, laugh lines. Frayed straw hat pushed back, mustard-yellow work shirt, a coconut in one big hand, a machete-free tool belt with twine. Broad easy smile. Relaxed, generous, measures time in harvests.',
-    "hana": 'Hana: the schoolteacher. Thirties, slim. Light skin, a sharp black bob, big round glasses, a pencil behind her ear, a chalk smudge on her cheek. Blue blouse with a white collar, a stack of exercise books. Calm, attentive, one eyebrow ready for a question. Patient, precise, can silence a room by lowering her glasses.',
+    "hana": 'Hana: the schoolteacher. Thirties, slim. Golden-tan skin, a sharp black bob, big round glasses, a pencil behind her ear, a chalk smudge on her cheek. Blue blouse with a white collar, a stack of exercise books. Calm, attentive, one eyebrow ready for a question. Patient, precise, can silence a room by lowering her glasses.',
     "rico": 'Rico: host of Radio Coco, the island station. Mid thirties, lanky and always moving. Warm brown skin, a huge round afro, a gap-toothed laugh, eyebrows up like he just heard the best news. Big padded studio headphones round his neck with one cable dangling, a microphone held up like a trophy. Loud coral-pink shirt with a white palm-leaf print, unbuttoned at the collar, a shell necklace. Mid-sentence, mouth open, eyes sparkling. The most extroverted person on the island: talks to everyone as if they were live on air.',
     "lola": 'Lola: runs Bar La Ola on the beach. About thirty, strong shoulders. Brown skin, big dark-red curls held back with a bright yellow hibiscus flower, gold hoop earrings, a beauty mark. Cream off-shoulder blouse, a striped bar towel over one shoulder, a cocktail shaker in hand. One eyebrow raised, a teasing half-smile. Knows every secret on the island and tells none of them for free.',
     "sam": "Old Sam: Old Sam, the lighthouse keeper. Seventies, broad and slow. Deep-tanned, wrinkled skin, bald head, a full bushy white beard, kind sleepy eyes under heavy brows. Dark navy knitted fisherman's jumper with a darned elbow, a brass pocket telescope on a cord, an old pipe (unlit) in the corner of his mouth. Gentle, tired smile. Says little, has seen every storm, keeps the light on for everyone.",
@@ -614,70 +615,167 @@ BUSTS = {
     "noor": 'Noor: foreman of the Coconut Works. Forties, compact and capable. Warm brown skin, black curls tied up in a red bandana, round goggles pushed up on her forehead, a smudge of soot on her nose. Yellow work shirt with rolled sleeves, a wrench over her shoulder. Dry knowing half-smile. Fixes anything, believes nothing until she has tested it.',
     "kiko": "Kiko: young canoe builder at the canoe house. Twenties, lean. Brown skin, short black hair, a carpenter's pencil behind his ear, wood shavings in his hair. Red shirt dusted with sawdust, a carved wooden paddle over his shoulder. Calm small smile, quiet eyes. Shy, patient, and the only one who swears he has seen the creature in the jungle.",
 }
-BUST = ("Paint one character for this game as a head-and-shoulders portrait, in exactly the style of the picture: its ink "
-        "line, painted colours, texture and warm light, as if painted by the same hand for the same adventure game. {who}. "
-        "Facing us, turned very slightly, the bust from the top of the head down to the middle of the chest, the chest cut off "
-        "by the bottom edge of the picture, nothing else in the picture, on a plain flat magenta (#ff00ff) background with no "
-        "shadow and no frame. Characterful and funny like a classic adventure game cast, with real emotion, but never a "
-        "caricature of anyone's ethnicity, body or age. No text.")
+BUST = ("Paint one character for this game, in exactly the style of the picture: its ink line, painted colours, texture "
+        "and warm light, as if painted by the same hand for the same adventure game. {who}. A half figure: from the top of "
+        "the head, with a little space above the hair or hat, down to the hips; both arms and hands in the picture, holding "
+        "their things; facing us, turned very slightly, standing upright in the middle. The body runs on out of the bottom "
+        "edge, which cuts straight across the hips: no rounded or faded bottom, no oval, no vignette. Nothing else in the "
+        "picture, on a plain flat magenta (#ff00ff) background with no shadow, no floor and no frame; no magenta in the "
+        "person's own colours. Mouth closed in a natural expression. Characterful and funny like a classic adventure game "
+        "cast, with real emotion, but never a caricature of anyone's ethnicity, body or age. No text.")
+# the frames that make them talk and blink: the same picture changed in one place only, so it can be swapped in
+FRAMES = {"talk": "Repaint exactly this picture, identical in every way (pose, size, position, colours, background), with only "
+                  "the mouth open, in the middle of saying a word. No text.",
+          "blink": "Repaint exactly this picture, identical in every way (pose, size, position, colours, background), with only "
+                   "the eyes closed, in a blink. No text."}
 
 
-def keyed(raw, size=600, bottom=True):
-    """A portrait on a flat background as a square RGBA picture, the background keyed out, the bust standing on the bottom edge."""
-    from PIL import Image
-    im = Image.open(io.BytesIO(raw)).convert("RGB")
-    im = im.resize((800, int(800 * im.height / im.width)), Image.LANCZOS)
+def cutout(im):
+    """An RGBA copy of a picture painted on a flat background, the background taken away: only what reaches the top and
+    the sides, filled from the edges, so a face or a shirt in a colour near the background stays solid."""
+    from PIL import Image, ImageDraw, ImageFilter
     W, H = im.size
     px = im.load()
     edge = sorted([px[x, 2] for x in range(0, W, 7)] + [px[2, y] for y in range(0, H, 7)] + [px[W - 3, y] for y in range(0, H, 7)])
     bg = edge[len(edge) // 2]
+    dist = lambda c: abs(c[0] - bg[0]) + abs(c[1] - bg[1]) + abs(c[2] - bg[2])
+    work, SENT = im.copy(), (1, 254, 3)
+    wp = work.load()
+    seeds = [(x, 0) for x in range(0, W, 5)] + [(0, y) for y in range(0, H, 5)] + [(W - 1, y) for y in range(0, H, 5)]
+    for xy in seeds:
+        if wp[xy] != SENT and dist(px[xy]) < 120:
+            ImageDraw.floodfill(work, xy, SENT, thresh=110)
+    mask = Image.new("L", (W, H), 255); m = mask.load()
+    for y in range(H):
+        for x in range(W):
+            if wp[x, y] == SENT:
+                m[x, y] = 0
+    mask = mask.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.8))   # a soft edge, no fringe
+    m = mask.load()
     out = Image.new("RGBA", (W, H)); o = out.load()
     for y in range(H):
         for x in range(W):
             r, g, b = px[x, y]
-            d = abs(r - bg[0]) + abs(g - bg[1]) + abs(b - bg[2])
-            a = 0 if d < 90 else 255 if d > 170 else (d - 90) * 255 // 80
-            if 0 < a < 255:
+            a = m[x, y]
+            if a < 255 and dist((r, g, b)) < 170:   # the rim still tinted by the background: take the tint out
                 g = max(g, (r + b) // 2 - 40)
             o[x, y] = (r, g, b, a)
-    bb = out.getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
-    if not bb:
-        sys.exit("No portrait found on the picture; paint it again.")
-    if not bottom:   # a creature or leaves: just what was painted, as large as it comes, up to `size` on its long side
-        fig = out.crop(bb)
-        k = min(1, size / max(fig.size))
-        fig = fig.resize((max(1, int(fig.width * k)), max(1, int(fig.height * k))), Image.LANCZOS)
-        buf = io.BytesIO(); fig.save(buf, "WEBP", quality=88, method=5)
-        return buf.getvalue()
-    fig = out.crop((bb[0], bb[1], bb[2], H))   # down to the bottom edge, where the chest is cut off
-    k = min((size - 8) / fig.width, (size - 8) / fig.height)
-    fig = fig.resize((max(1, int(fig.width * k)), max(1, int(fig.height * k))), Image.LANCZOS)
-    cell = Image.new("RGBA", (size, size)); cell.paste(fig, ((size - fig.width) // 2, size - fig.height), fig)
-    buf = io.BytesIO(); cell.save(buf, "WEBP", quality=88, method=5)
+    return out
+
+
+def webp(im):
+    buf = io.BytesIO(); im.save(buf, "WEBP", quality=88, method=5)
     return buf.getvalue()
 
 
+def keyed(raw, size=600, bottom=True):
+    """A portrait on a flat background as a square RGBA picture, the background keyed out, the bust standing on the bottom edge."""
+    return keyed_set([raw], size, bottom)[0][0]
+
+
+def keyed_set(raws, size=600, bottom=True):
+    """Like keyed, for a picture and its frames (talking, blinking): all cut the same way, so they lie exactly on top of
+    each other. Returns the pictures and, for each frame after the first, the box where it differs from the first
+    ([x, y, w, h] as parts of the square), or None when it differs all over."""
+    from PIL import Image, ImageChops
+    ims = []
+    for raw in raws:
+        im = Image.open(io.BytesIO(raw)).convert("RGB")
+        if ims and im.size != ims[0].size:
+            im = im.resize(ims[0].size, Image.LANCZOS)
+        elif not ims:
+            im = im.resize((800, int(800 * im.height / im.width)), Image.LANCZOS)
+        ims.append(im)
+    outs = [cutout(im) for im in ims]
+    bb = outs[0].getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
+    if not bb:
+        sys.exit("No portrait found on the picture; paint it again.")
+    W, H = outs[0].size
+    if not bottom:   # a creature or leaves: just what was painted, as large as it comes, up to `size` on its long side
+        fig = outs[0].crop(bb)
+        k = min(1, size / max(fig.size))
+        return [webp(fig.resize((max(1, int(fig.width * k)), max(1, int(fig.height * k))), Image.LANCZOS))], []
+    box = (bb[0], bb[1], bb[2], H)   # down to the bottom edge, where the body is cut off
+    k = min((size - 8) / (box[2] - box[0]), (size - 8) / (box[3] - box[1]))
+    cells = []
+    for out in outs:
+        fig = out.crop(box)
+        fig = fig.resize((max(1, int(fig.width * k)), max(1, int(fig.height * k))), Image.LANCZOS)
+        cell = Image.new("RGBA", (size, size)); cell.paste(fig, ((size - fig.width) // 2, size - fig.height), fig)
+        cells.append(cell)
+    boxes = []
+    for cell in cells[1:]:
+        d = ImageChops.difference(cells[0].convert("RGB"), cell.convert("RGB")).convert("L").point(lambda v: 255 if v > 60 else 0)
+        db = d.getbbox()
+        if db and (db[2] - db[0]) * (db[3] - db[1]) < 0.12 * size * size:
+            pad = size * 0.02
+            boxes.append([round(max(0, db[0] - pad) / size, 4), round(max(0, db[1] - pad) / size, 4),
+                          round(min(size, db[2] - db[0] + 2 * pad) / size, 4), round(min(size, db[3] - db[1] + 2 * pad) / size, 4)])
+        else:
+            boxes.append(None)
+    return [webp(c) for c in cells], boxes
+
+
+
 def cmd_busts(a):
-    """Painted portraits of the people you talk to, in the style of the kept island; each is kept at once (bust-<who>)
-    and the game shows it instead of the drawn face. Run it again for one person to paint them anew."""
+    """Painted half figures of the people you talk to, in the style of the kept island, each with a talking and a blinking
+    frame; each is kept at once (bust-<who>, bust-<who>-talk, bust-<who>-blink) and the game shows them instead of the
+    drawn face. Run it again for one person to paint them anew. --from DIR (or a .zip) takes pictures painted elsewhere
+    instead, named bust-<who>.png with bust-<who>-talk.png and bust-<who>-blink.png beside it."""
     who = list(BUSTS) if "all" in a.who else a.who
     for w in who:
         if w not in BUSTS:
             sys.exit(f"No one called {w!r}. They are: {', '.join(BUSTS)}")
-    if provider() != "gemini":
-        sys.exit("Portraits need GEMINI_API_KEY.")
     path = os.path.join(a.out, "index.json")
     idx = load(path)
-    kept = idx.get("scenes", {}).get("island")
-    if not kept:
-        sys.exit("Keep an island first: paint.sh keep island=N")
-    plate = open(os.path.join(a.out, idx.get("orig", {}).get("island", kept)), "rb").read()
+    given = {}
+    if getattr(a, "src", None):
+        import zipfile
+        files = {}
+        if zipfile.is_zipfile(a.src):
+            with zipfile.ZipFile(a.src) as z:
+                for n in z.namelist():
+                    files[os.path.basename(n)] = z.read(n)
+        else:
+            for root, _, fs in os.walk(a.src):
+                for n in fs:
+                    files[n] = open(os.path.join(root, n), "rb").read()
+        for n, data in files.items():
+            m = re.match(r"bust-([a-z]+)(?:-(talk|blink))?\.(png|webp|jpe?g)$", n.lower())
+            if m and m.group(1) in BUSTS:
+                given.setdefault(m.group(1), {})[m.group(2) or ""] = data
+        who = [w for w in who if "" in given.get(w, {})]
+        if not who:
+            sys.exit(f"No bust-<name>.png in {a.src}. Names: {', '.join(BUSTS)}")
+    else:
+        if provider() != "gemini":
+            sys.exit("Portraits need GEMINI_API_KEY.")
+        kept = idx.get("scenes", {}).get("island")
+        if not kept:
+            sys.exit("Keep an island first: paint.sh keep island=N")
+        plate = open(os.path.join(a.out, idx.get("orig", {}).get("island", kept)), "rb").read()
     for w in who:
         print(f"{w}:", flush=True)
-        data = keyed(paint_gemini(plate, BUST.format(who=BUSTS[w]), 1, a.model, aspect="1:1")[0])
-        f = f"bust-{w}-{hashlib.sha1(data).hexdigest()[:8]}.webp"
-        write(os.path.join(a.out, f), data)
-        idx = load(path); idx.setdefault("scenes", {})["bust-" + w] = f
+        if w in given:
+            raws = given[w]
+        else:
+            base = paint_gemini(plate, BUST.format(who=BUSTS[w]), 1, a.model, aspect="3:4")[0]
+            raws = {"": base}
+            if not a.still:
+                for f, prompt in FRAMES.items():
+                    raws[f] = paint_gemini(base, prompt, 1, a.model, aspect="3:4")[0]
+        names = [""] + [f for f in FRAMES if f in raws]
+        pics, boxes = keyed_set([raws[f] for f in names], 800)
+        idx = load(path); sc = idx.setdefault("scenes", {}); bx = idx.setdefault("boxes", {})
+        for f in FRAMES:   # frames of an older picture would not fit the new one
+            sc.pop(f"bust-{w}-{f}", None); bx.pop(f"bust-{w}-{f}", None)
+        for f, data, box in zip(names, pics, [None] + boxes):
+            id = f"bust-{w}" + (f"-{f}" if f else "")
+            name = f"{id}-{hashlib.sha1(data).hexdigest()[:8]}.webp"
+            write(os.path.join(a.out, name), data)
+            sc[id] = name
+            if box:
+                bx[id] = box
         write(path, json.dumps(idx, indent=1).encode())
     print("Done. Live: https://tauhud.com/rabbit/ (Ctrl+F5)")
 
@@ -1026,6 +1124,8 @@ def main():
     bu = sub.add_parser("busts")
     bu.add_argument("who", nargs="*", default=["all"], help="all (default), or some of: " + " ".join(BUSTS))
     bu.add_argument("--model", default="gemini-2.5-flash-image")
+    bu.add_argument("--from", dest="src", default=None, help="a folder or .zip of pictures painted elsewhere (bust-<name>.png, -talk.png, -blink.png)")
+    bu.add_argument("--still", action="store_true", help="no talking and blinking frames")
     pa = sub.add_parser("panorama")
     pa.add_argument("--from", dest="src", default=None, help="the painting, e.g. island=21 (default: the kept island)")
     pa.add_argument("--n", type=int, default=3)
