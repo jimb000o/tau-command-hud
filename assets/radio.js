@@ -33,8 +33,8 @@
     else { on = wanted(); wait = on && R.waiting; }
     b.classList.toggle("on", on); b.classList.toggle("wake", wait);
     b.setAttribute("aria-pressed", on ? "true" : "false");
-    b.querySelector(".lbl").textContent = T(wait ? "Tap for radio" : on ? "Radio on" : "Radio");
-    b.setAttribute("aria-label", T(on ? "Radio Coco: on. Turn the sound off" : "Radio Coco: off. Turn the sound on"));
+    b.querySelector(".lbl").textContent = T("Radio Coco");
+    b.setAttribute("aria-label", T(wait ? "Tap for Radio Coco" : on ? "Radio Coco: on. Turn the sound off" : "Radio Coco: off. Turn the sound on"));
   }
 
   /* ---------- the island's radio, loaded only when somebody wants it ---------- */
@@ -175,7 +175,7 @@
   function mount(host, page, tip) {
     R.page = page; R.mode = page === "gazette" ? "gazette" : page === "rabbit" ? "rabbit" : "radio";
     const b = R.btn = document.createElement("button");
-    b.type = "button"; b.className = "pill tn-radiob"; b.innerHTML = `${ICON}<span class="lbl">Radio</span>`;
+    b.type = "button"; b.className = "pill tn-radiob"; b.innerHTML = `${ICON}<span class="lbl">Radio Coco</span>`;
     if (tip) tip(b, TIP[R.mode]);
     b.addEventListener("click", click);
     host.append(b);
