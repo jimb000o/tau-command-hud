@@ -79,6 +79,12 @@
     g22: "Every block that comes in is like a match result: final, posted, and somebody at the bar still argues about it.",
     g23: "Some people collect stamps. The testnet collects signatures. Rico collects excuses.",
     g24: "Breaking: the black cat crossed the square twice again. The Book has both crossings. The cat has no comment.",
+    g25: "Kai from the Reef Proof dive centre says the reef is fine today. Kai checked. Twice. Underwater. That is what we call a proof.",
+    g26: "Noor at the Coconut Works reports: every coconut counted, every count signed. Rico asked for one. Noor asked for a signature.",
+    g27: "Kiko is building another canoe and says a good hull is like a good rule: no holes, no contradictions, and you test it before you trust it.",
+    g28: "Captain Wren found something old on the seabed again, and says the sea keeps a better record than any of us. Old Sam says: almost.",
+    g29: "Pim the surveyor measured the square for the embassies today. Rico asked what they are planning. Pim said: I only measure. Very diplomatic.",
+    g30: "Elder Ama reminds the candidates: the island remembered things long before the Book did. Listen first, then promise.",
     /* news from the chain: what Rico just saw in the newest blocks (game.js readChain) */
     rule1: "News from the chain: a wallet just wrote itself a personal rule. Most people make New Year's resolutions. On this chain, they are enforced.",
     rule2: "A wallet tied its own hands today, on purpose. Rico tried that with chocolate once. The chain is stricter than Rico.",
@@ -210,7 +216,7 @@
   /* which lines can stand in for each other: Rico picks one he has not said lately (game.js remembers what he said) */
   const SETS = {
     open: ["op1", "op2", "op3", "op4", "op5"],
-    general: Array.from({ length: 24 }, (_, i) => "g" + (i + 1)),
+    general: Array.from({ length: 30 }, (_, i) => "g" + (i + 1)),
     fog: ["fog", "fog2"], calm: ["calm", "calm2"], breeze: ["breeze", "breeze2"], choppy: ["choppy", "choppy2"], showers: ["showers", "showers2"], clear: ["clear", "clear2"],
     rule: ["rule1", "rule2", "rule3", "rule4"], cosign: ["cosign1", "cosign2"], cosvote: ["cosvote"], lock: ["lock1", "lock2"], back: ["back1", "back2"],
     offer: ["offer"], offerYes: ["offerYes"], law: ["law1", "law2"], lawSim: ["lawSim"], lawVote: ["lawVote"],

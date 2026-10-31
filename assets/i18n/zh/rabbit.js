@@ -501,4 +501,10 @@ TauI18n.add({ strings: {
   "The rules of the simulated chain have a new revision in force. Not a riot, not a coup. A vote, a block height, and a number going up by one.": "模拟链的规则有新修订生效了。不是暴乱，不是政变。只是一次投票、一个区块高度，和一个加了一的数字。",
   "A big transfer just went through! Somebody moved a pile of test coins in one go. Worthless, of course. But very impressively worthless.": "一笔大额转账刚刚完成！有人一口气挪了一大堆测试币。当然一文不值。但一文不值得非常壮观。",
   "Whale sighting off the north beach! A huge transfer just crossed the chain. The gulls are following it, hoping for scraps.": "北海滩外发现鲸鱼！一笔巨额转账刚刚穿过链。海鸥跟在后面，盼着捡点剩的。",
+  "Kai from the Reef Proof dive centre says the reef is fine today. Kai checked. Twice. Underwater. That is what we call a proof.": "Reef Proof 潜水中心的凯说，今天珊瑚礁一切正常。凯检查过了。两次。在水下。这就叫证明。",
+  "Noor at the Coconut Works reports: every coconut counted, every count signed. Rico asked for one. Noor asked for a signature.": "椰子工坊的努尔报告：每个椰子都数过，每次清点都签了名。Rico 想要一个。努尔要他先签名。",
+  "Kiko is building another canoe and says a good hull is like a good rule: no holes, no contradictions, and you test it before you trust it.": "基科又在造一条独木舟，说好船身就像好规则：没有漏洞，没有矛盾，信任之前先测试。",
+  "Captain Wren found something old on the seabed again, and says the sea keeps a better record than any of us. Old Sam says: almost.": "雷恩船长又在海底发现了老东西，说大海的记录比我们谁都好。老 Sam 说：差一点。",
+  "Pim the surveyor measured the square for the embassies today. Rico asked what they are planning. Pim said: I only measure. Very diplomatic.": "测量员皮姆今天替大使馆量了广场。Rico 问他们打算干什么。皮姆说：我只负责量。非常外交辞令。",
+  "Elder Ama reminds the candidates: the island remembered things long before the Book did. Listen first, then promise.": "长老阿玛提醒候选人：早在有账本之前，这座岛就记得很多事。先倾听，再承诺。",
 } });

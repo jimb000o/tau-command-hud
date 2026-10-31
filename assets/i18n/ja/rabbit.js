@@ -501,4 +501,10 @@ TauI18n.add({ strings: {
   "The rules of the simulated chain have a new revision in force. Not a riot, not a coup. A vote, a block height, and a number going up by one.": "シミュレーションのチェーンのルールに新しいリビジョンが施行された。暴動でもクーデターでもない。投票と、ブロック高と、ひとつ増えた数字。",
   "A big transfer just went through! Somebody moved a pile of test coins in one go. Worthless, of course. But very impressively worthless.": "大口の送金が通った！誰かがテスト用コインの山を一度に動かした。もちろん無価値。でも、とても見事な無価値。",
   "Whale sighting off the north beach! A huge transfer just crossed the chain. The gulls are following it, hoping for scraps.": "北の浜の沖にクジラ出現！巨大な送金がチェーンを横切った。カモメがおこぼれ目当てについていく。",
+  "Kai from the Reef Proof dive centre says the reef is fine today. Kai checked. Twice. Underwater. That is what we call a proof.": "Reef Proof ダイブセンターのカイいわく、今日のリーフは異常なし。カイが確かめた。二回。水中で。これぞ証明。",
+  "Noor at the Coconut Works reports: every coconut counted, every count signed. Rico asked for one. Noor asked for a signature.": "ココナッツ工場のヌールから報告：ココナッツは全部数えた、数えるたびに署名した。リコがひとつくれと言ったら、ヌールは署名を求めた。",
+  "Kiko is building another canoe and says a good hull is like a good rule: no holes, no contradictions, and you test it before you trust it.": "キコはまたカヌーを造っていて、いい船体はいいルールと同じだと言う。穴なし、矛盾なし、信じる前にテストする。",
+  "Captain Wren found something old on the seabed again, and says the sea keeps a better record than any of us. Old Sam says: almost.": "レン船長がまた海底で古いものを見つけた。海は誰よりもよく記録を残すそうだ。サムじいさん「惜しい」。",
+  "Pim the surveyor measured the square for the embassies today. Rico asked what they are planning. Pim said: I only measure. Very diplomatic.": "測量士のピムが今日、大使館のために広場を測った。リコが何の計画か聞くと、ピム「測るだけです」。じつに外交的。",
+  "Elder Ama reminds the candidates: the island remembered things long before the Book did. Listen first, then promise.": "長老アマから候補者へのひとこと：帳簿ができるずっと前から、島は物事を覚えていた。まず耳を傾け、それから約束を。",
 } });
