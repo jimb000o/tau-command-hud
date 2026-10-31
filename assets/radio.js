@@ -25,7 +25,10 @@
   const setAll = on => KEYS.forEach(k => store.set(k, on ? "on" : "off"));
   /* one tab plays at a time: the playing tab writes its id and the time every two seconds; another tab with the radio
      on stays quiet while that is fresh, and a press on its button takes the radio over (the first tab then goes quiet) */
-  const LOCK = "tauhud-radio-tab", ID = Math.random().toString(36).slice(2);
+  /* the id belongs to the browser tab, not the page: moving to another page of the site keeps the claim */
+  const LOCK = "tauhud-radio-tab", ID = (() => { const k = "tauhud-radio-id"; try { let v = sessionStorage.getItem(k); if (!v) { v = Math.random().toString(36).slice(2); sessionStorage.setItem(k, v); } return v; } catch (e) { return Math.random().toString(36).slice(2); } })();
+  /* the jingle and the station call once per visit, not on every page: a page change is the same programme going on */
+  const HELLO = "tauhud-radio-hello", greeted = () => { try { return Date.now() - (+sessionStorage.getItem(HELLO) || 0) < 20 * 60000; } catch (e) { return false; } };
   const holder = () => { try { const v = JSON.parse(store.get(LOCK) || "null"); return v && Date.now() - v.t < 8000 ? v.id : null; } catch (e) { return null; } };
   const elsewhere = () => { const h = holder(); return !!h && h !== ID; };
   const beat = () => store.set(LOCK, JSON.stringify({ id: ID, t: Date.now() }));
@@ -61,8 +64,9 @@
     S.set({ place: "radio", radio: false, amb: 0.35 });   // the station's arrangement, the sea faint behind it
     if (S.on) {
       beat();
-      if (!R.timer) { R.timer = setInterval(() => { if (elsewhere()) quiet(); else { beat(); tick(); } }, 2000); R.next = performance.now() + 2500; R.n = 0; }
-      if (!R.hello) { R.hello = true; S.sfx("jingle"); setTimeout(() => air(hello()), 900); }
+      const fresh = !greeted();
+      if (!R.timer) { R.timer = setInterval(() => { if (elsewhere()) quiet(); else { beat(); tick(); } }, 2000); R.next = performance.now() + (fresh ? 2500 : 15000 + Math.random() * 15000); R.n = 0; }
+      if (!R.hello) { R.hello = true; if (fresh) { try { sessionStorage.setItem(HELLO, String(Date.now())); } catch (e) {} S.sfx("jingle"); setTimeout(() => air(hello()), 900); } }
     }
     show(); return S.on;
   }
@@ -178,10 +182,12 @@
     if (wanted() && R.timer) { setAll(false); stop(); return; }   // playing here: off everywhere
     setAll(true); play();
   }
-  /* a radio left on: it comes back with the first click or key on this page */
+  /* a radio left on: it plays on at once when the browser allows it (it usually does once the visitor has clicked on
+     the site), otherwise it comes back with the first click or key on this page */
   function resume() {
     show();
-    const go = () => { removeEventListener("pointerdown", go, true); removeEventListener("keydown", go, true); if (wanted() && !elsewhere()) play(); else show(); };
+    play().then(on => { if (!on) setTimeout(() => { if (window.COVE_SOUND && COVE_SOUND.on && !R.timer && wanted() && !elsewhere()) play(); }, 600); });
+    const go = () => { removeEventListener("pointerdown", go, true); removeEventListener("keydown", go, true); if (R.timer) return; if (wanted() && !elsewhere()) play(); else show(); };
     addEventListener("pointerdown", go, true); addEventListener("keydown", go, true);
   }
 
