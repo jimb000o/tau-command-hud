@@ -224,7 +224,8 @@
   async function speak(bufs) {
     if (!S.ctx || !S.on) return false;
     const c = S.ctx, list = [];
-    for (const b of bufs) { try { list.push(await c.decodeAudioData(b)); } catch (e) { return false; } }
+    // a clip is an ArrayBuffer, or { b, tel } for a caller heard through the telephone
+    for (const b of bufs) { try { list.push({ buf: await c.decodeAudioData(b.b || b), tel: !!b.tel }); } catch (e) { return false; } }
     if (!S.voice) {
       const hp = c.createBiquadFilter(), pk = c.createBiquadFilter(), g = c.createGain(), comp = c.createDynamicsCompressor();
       hp.type = "highpass"; hp.frequency.value = 160; pk.type = "peaking"; pk.frequency.value = 2600; pk.Q.value = 0.8; pk.gain.value = 3;
@@ -233,7 +234,13 @@
     }
     if (S.talking) S.talking.forEach(n => { try { n.stop(); } catch (e) {} });
     let at = c.currentTime + 0.55; S.talking = [];
-    for (const buf of list) { const n = c.createBufferSource(); n.buffer = buf; n.connect(S.voice); n.start(at); S.talking.push(n); at += buf.duration + 0.18; }
+    if (!S.tel && list.some(x => x.tel)) {
+      const lo = c.createBiquadFilter(), hi = c.createBiquadFilter(), drive = c.createWaveShaper(), curve = new Float32Array(256);
+      for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(2.2 * x); }
+      hi.type = "highpass"; hi.frequency.value = 320; lo.type = "lowpass"; lo.frequency.value = 3200; drive.curve = curve;
+      hi.connect(lo); lo.connect(drive); drive.connect(S.voice); S.tel = hi;
+    }
+    for (const { buf, tel } of list) { const n = c.createBufferSource(); n.buffer = buf; n.connect(tel ? S.tel : S.voice); n.start(at); S.talking.push(n); at += buf.duration + (tel ? 0.45 : 0.18); }
     S.duck = true; apply();
     const mine = S.talking;
     const secs = at - c.currentTime;

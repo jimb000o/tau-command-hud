@@ -845,6 +845,12 @@
   /* what comes next on air: first a hello, then news from the chain when there is some (every other line at most),
      the weather every fourth line, and in between the game and the island, never the same line twice in a row */
   const ROT = { n: 0, newsLast: false };
+  /* a listener phones in: Rico picks up, the caller asks in their own voice (through the telephone), Rico answers */
+  function phoneIn() {
+    const keys = RICO.CALLS.map((c, i) => "call:" + i), k = pickLine(keys), [who, q, a] = RICO.CALLS[keys.indexOf(k)];
+    const ring = pickLine(RICO.SETS.ring); markSaid(ring);
+    return { k, parts: [V(ring), { t: T(q), v: q, who }, { t: T(a), v: a }] };
+  }
   /* chain news as a host tells it: big moments with a sting before and a word after, small ones now and then */
   function story(n) {
     const big = /^(now|to|restart|midnight|val|fee|rev|whale)/.test(n.set), l = one(n.set, ...(n.h != null ? [Q("(block {y})", { y: String(n.h) })] : []));
@@ -866,7 +872,9 @@
     /* in between: the game, a joke now and then, the phone-in, Tau corner, a word between songs, the jungle legend, the island's habits */
     const r = Math.random();
     if (r < 0.35) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
-    return one(r < 0.58 ? "joke" : r < 0.67 ? "call" : r < 0.73 ? "corner" : r < 0.79 ? "segue" : r < 0.86 ? "legend" : "general");
+    const set = r < 0.58 ? "joke" : r < 0.67 ? "call" : r < 0.73 ? "corner" : r < 0.79 ? "segue" : r < 0.86 ? "legend" : "general";
+    if (set === "call" && Math.random() < 0.7) return phoneIn();
+    return one(set);
   }
   readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
   setInterval(() => {

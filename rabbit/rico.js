@@ -4,7 +4,8 @@
    the key is the first 16 hex of sha1("<who>|<English text>"). Numbers and block heights are never spoken, only
    shown, so a fixed set covers everything. A line whose clip is missing is simply shown as text, as before.
    rabbit/voices.json is the list the server reads (node tests/voices.mjs --write makes it; the tests check it).
-   window.RICO = { L, SETS, CAST, all(), speak(parts, who), hud() }: a line is a list of parts { t: shown text, v: spoken English or null }. */
+   window.RICO = { L, SETS, CAST, CALLS, all(), speak(parts, who), hud() }: a line is a list of parts { t: shown text, v: spoken English or null,
+   who: whose voice, when not the speaker's }. */
 (() => {
   "use strict";
   const BASE = "https://node.tauhud.com/rico/";
@@ -185,6 +186,10 @@
     po4: "Rico has put up a sign at the harbour: no ghosts after October. The ghost transactions cannot read. They are still listed as waiting.",
     po5: "Petition from the island: un-haunt the waiting list. Sealed transactions should rest in their blocks. Signed: Rico, Old Sam, and one very tired gull.",
     po6: "Still haunted. Rico called an exorcist. The exorcist said: that's not a ghost, that's a known bug, issue eighty-one. Send a developer, not a priest.",
+    /* a caller on the line: Rico picks up */
+    ring1: "Ring ring! You're on Radio Coco. Go ahead.",
+    ring2: "We have a caller on the line. Go ahead, you're on the air.",
+    ring3: "Line two is blinking. Hello, you're on Radio Coco.",
     /* the island legend: Agorzilla, glimpsed now and then in the jungle */
     agz1: "Sighting report from the jungle! Somebody saw Agorzilla behind the drums last night. The photo is very blurry. Rico thinks it's a palm tree. Rico is not sure.",
     agz2: "The bananas at the market went missing again. Nobody saw anything. Big footprints by the drums, though. Draw your own conclusions.",
@@ -245,9 +250,38 @@
     flash: Array.from({ length: 6 }, (_, i) => "flash" + (i + 1)), tag: Array.from({ length: 6 }, (_, i) => "tag" + (i + 1)),
     valIn: ["valIn"], valOut: ["valOut"], feeUp: ["feeUp"], feeDown: ["feeDown"], rev: ["rev"], whale: ["whale1", "whale2"],
     ghostHalloween: ["hw1", "hw2", "hw3", "hw4"], ghostAfter: ["po1", "po2", "po3", "po4", "po5", "po6"],
+    ring: ["ring1", "ring2", "ring3"],
     legend: ["agz1", "agz2", "agz3", "agz4", "agz5", "agz6"],
     morning: ["am1", "am2"], afternoon: ["pm1", "pm2"], evening: ["ev1", "ev2"], night: ["nt1", "nt2"],
   };
+  /* callers who phone the studio, each in their own voice (make.py make --voice who=Name), with a question in the
+     vein of the testnet's public Q&As, and Rico's answer. A call is the caller's line, then Rico's. */
+  const CALLS = [
+    ["zia", "Hi Rico, it's Zia from Miss Hana's class! Do I have to learn Boolean algebra to write rules on Tau?",
+      "Good question, Zia. Rico can tell you what he sees: the rules on the testnet are written in logic today. A little logic goes a long way, like a little salt in a soup. Miss Hana will be thrilled you asked."],
+    ["zia", "Rico, it's Zia again. If a rule says always, does it really have to hold forever?",
+      "In Tau logic, always means at every step in time, yes. That's why people think hard before they write it. Rico once promised always, and meant until Thursday."],
+    ["ozzie", "G'day Rico! Ozzie here, on holiday. Where do I buy some of those test coins? I want a big bag.",
+      "You can't buy them, mate. They're free, and worth exactly that. Rico doesn't do prices. Rico does songs. Here's one for your holiday."],
+    ["ozzie", "Ozzie again! Rico, when's the mainnet? I've got a flight on Friday.",
+      "Rico doesn't know, mate, and anyone who gives you a date on the radio is selling something. Enjoy the testnet. It's free, and the view is great."],
+    ["bert", "Rico, it's old Bertie from the pier. In my day every ship had a captain. Who's the captain of this blockchain?",
+      "Nobody, Bertie. On this chain the rules steer, and the rules only change when enough validators agree. Think of a ship where the crew votes on the map."],
+    ["bert", "Bertie again. Can the validators vote to change the rules for changing the rules?",
+      "They can, Bertie, if enough of them agree. A rule that changes its own amendment rule. Makes your head spin like a capstan."],
+    ["dom", "Rico, it's Dom, from the hammock. I have a theory. What if somebody sneaks in a rule that contradicts the old ones?",
+      "Then the chain refuses it at the door, Dom, before anyone votes. Your theory has been tested. It lost."],
+    ["dom", "Dom again. Rico, is it true all of this is just one guy with a lot of wallets?",
+      "The chain only sees wallets, Dom. One guy or a whole village, it treats them all the same. Equality, island style."],
+    ["nell", "Rico, Nell here, from the fish stall. The testnet said no to my transfer. My own rule, it said! Who wrote that rule?",
+      "You did, Nell. Personal rules, darling: the chain holds you to your own word, even on the days you'd rather it didn't."],
+    ["nell", "Nell again. How do I know my transfer really happened?",
+      "Look it up in a block, Nell. Every block has a number, and anyone can check what's inside. Just like the Book in the lighthouse, only with more zeros."],
+    ["mae", "Rico dear, it's Auntie Mae from the bakery. Everybody's talking about AI. Will Tau be a robot that bakes my bread?",
+      "Nobody will touch your bread, Auntie Mae. As Rico understands it, Tau is about rules a machine can read and check, not robots in the kitchen. Your rolls are safe."],
+    ["mae", "Auntie Mae again. Rico, is there somewhere I can read the code for this testnet?",
+      "There is, Auntie. The testnet code is public on GitHub. Rico read some of it. Then Rico needed a nap."],
+  ];
   /* what the islanders say in the places (the same English as in game.js, which the tests check) */
   const LAWT = { harbour: "A deep harbour for cruise ships", road: "A road round the island" };
   const EMBV = { frost: ["harbour", 40], salado: ["road", 35] };
@@ -283,7 +317,7 @@
       else if (k === "day") for (let n = 1; n <= DAYS; n++) out.push(fill(s, { n, m: DAYS }));
       else out.push(s);
     }
-    return [...out.map(t => ["rico", t]), ...CAST];
+    return [...out.map(t => ["rico", t]), ...CAST, ...CALLS.flatMap(([w, q, a]) => [[w, q], ["rico", a]])];
   }
 
   /* the clips the server has made so far */
@@ -301,15 +335,15 @@
     const SND = window.COVE_SOUND;
     if (!SND || !SND.on || !SND.speak || !window.crypto || !crypto.subtle) return false;
     await ready;
-    const keys = await Promise.all(parts.filter(p => p.v).map(p => key(who, p.v)));
+    const said = parts.filter(p => p.v), keys = await Promise.all(said.map(p => key(p.who || who, p.v)));
     if (!keys.length || !keys.every(k => have.has(k))) return false;
     const bufs = await Promise.all(keys.map(clip));
     if (bufs.some(b => !b)) return false;
-    return SND.speak(bufs.map(b => b.slice(0)));
+    return SND.speak(bufs.map((b, i) => (said[i].who && said[i].who !== who ? { b: b.slice(0), tel: true } : b.slice(0))));   // a caller sounds like a telephone
   }
   /* lines that make sense away from the game (the radio in the site header, assets/radio.js): the hellos and Rico's
      testnet humour, jokes, the phone-in and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
   const tr = s => (window.TauI18n ? TauI18n.t(s) : s);
   const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend].map(k => [{ t: tr(L[k]), v: L[k] }]);
-  window.RICO = { L, SETS, CAST, NAMES, all, speak, fill, key, hud };
+  window.RICO = { L, SETS, CAST, CALLS, NAMES, all, speak, fill, key, hud };
 })();
