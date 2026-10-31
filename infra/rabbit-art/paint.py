@@ -633,6 +633,12 @@ FRAMES = {"talk": "Repaint exactly this picture, identical in every way (pose, s
                    "the eyes closed, in a blink. No text."}
 
 
+def magentaish(c):
+    """The key colour, also in shade (a painter may shade the flat background): strong red and blue, almost no green."""
+    r, g, b = c[0], c[1], c[2]
+    return r > 110 and b > 60 and g < 0.5 * min(r, b) and r > 0.6 * b and b > 0.3 * r
+
+
 def cutout(im):
     """An RGBA copy of a picture painted on a flat background, the background taken away: only what reaches the top and
     the sides, filled from the edges, so a face or a shirt in a colour near the background stays solid."""
@@ -654,7 +660,7 @@ def cutout(im):
         for x in range(W):
             if wp[x, y] == SENT:
                 m[x, y] = 0
-            elif dist(px[x, y]) < 75:
+            elif dist(px[x, y]) < 75 or magentaish(px[x, y]):
                 q[x, y] = 255
     # the background also shows through gaps the fill cannot reach (between an arm and the body): take those too, but
     # only patches of some size, not a pink speck in a shirt
@@ -662,7 +668,7 @@ def cutout(im):
     q = pocket.load()
     for y in range(H):
         for x in range(W):
-            if q[x, y] and dist(px[x, y]) < 110:
+            if q[x, y] and (dist(px[x, y]) < 110 or magentaish(px[x, y])):
                 m[x, y] = 0
     mask = mask.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.8))   # a soft edge, no fringe
     m = mask.load()
@@ -671,7 +677,7 @@ def cutout(im):
         for x in range(W):
             r, g, b = px[x, y]
             a = m[x, y]
-            if a < 255 and dist((r, g, b)) < 170:   # the rim still tinted by the background: take the tint out
+            if a < 255 and (dist((r, g, b)) < 170 or magentaish((r, g, b))):   # the rim still tinted by the background: take the tint out
                 g = max(g, (r + b) // 2 - 40)
             o[x, y] = (r, g, b, a)
     return out
@@ -686,7 +692,7 @@ def unpocket(im, bg=(255, 0, 255)):
     pocket = Image.new("L", (W, H), 0); q = pocket.load()
     for y in range(H):
         for x in range(W):
-            if px[x, y][3] and dist(px[x, y]) < 75:
+            if px[x, y][3] and (dist(px[x, y]) < 75 or magentaish(px[x, y])):
                 q[x, y] = 255
     pocket = pocket.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.MaxFilter(7))
     q = pocket.load()
@@ -694,7 +700,7 @@ def unpocket(im, bg=(255, 0, 255)):
     for y in range(H):
         for x in range(W):
             r, g, b, a = px[x, y]
-            if a and q[x, y] and dist((r, g, b)) < 110:
+            if a and q[x, y] and (dist((r, g, b)) < 110 or magentaish((r, g, b))):
                 px[x, y] = (r, max(g, (r + b) // 2 - 40), b, 0); n += 1
     return n
 
@@ -716,13 +722,15 @@ def keyed_set(raws, size=600, bottom=True):
     from PIL import Image, ImageChops
     ims = []
     for raw in raws:
-        im = Image.open(io.BytesIO(raw)).convert("RGB")
+        im = Image.open(io.BytesIO(raw))
+        im = im.convert("RGBA") if "A" in im.getbands() else im.convert("RGB")
         if ims and im.size != ims[0].size:
             im = im.resize(ims[0].size, Image.LANCZOS)
         elif not ims:
             im = im.resize((800, int(800 * im.height / im.width)), Image.LANCZOS)
         ims.append(im)
-    outs = [cutout(im) for im in ims]
+    # a picture that comes already cut out (transparent around the figure) keeps its own cut
+    outs = [im if im.mode == "RGBA" and im.getchannel("A").getextrema()[0] < 16 else cutout(im.convert("RGB")) for im in ims]
     bb = outs[0].getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
     if not bb:
         sys.exit("No portrait found on the picture; paint it again.")
