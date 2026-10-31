@@ -76,4 +76,11 @@ TauI18n.add({ strings: {
   "Claude Max plan (20x), the AI tool the site is built and run with": "Claude Max プラン（20x）、サイトを作り動かすのに使う AI ツール",
   "Amounts as billed, rounded, each in the currency of its bill. Domains and the X account are added here once their bills are in.": "金額は請求額を丸めたもので、それぞれ請求の通貨です。ドメインと X アカウントは請求が届き次第ここに加えます。",
   "Claude Max plan (20x), the AI tool the site is built and run with. Its weekly limit for the most advanced models has at times been used up in about half a week.": "Claude Max プラン（20x）、サイトを作り動かすのに使う AI ツール。最上位モデルの週ごとの利用上限を、半週ほどで使い切ったこともあります。",
+  "Amounts as billed, rounded, each in the currency of its bill. Further items are added here once their bills are in.": "金額は請求額を丸めたもので、それぞれ請求の通貨です。ほかの項目は請求が届き次第ここに加えます。",
+  "Single purchases": "単発の購入",
+  "recent": "最近",
+  "Image credits": "画像クレジット",
+  "Google AI Studio credits for the drawings on the site": "サイトの絵に使う Google AI Studio のクレジット",
+  "Voices": "声",
+  "ElevenLabs Starter plan, for the voices of the Daily Consensus café; to be cancelled once the voices are made": "ElevenLabs Starter プラン、Daily Consensus カフェの声のため。声ができたら解約します",
 } });

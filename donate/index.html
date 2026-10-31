@@ -73,6 +73,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .not { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .not li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 6px; }
 .not li::before { content: "—"; color: var(--dim); }
+.sub2 { margin: 18px 0 10px !important; }
 .rows { list-style: none; margin: 0; padding: 0; display: grid; }
 .rows li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--line); }
 .rows li:first-child { border-top: 0; padding-top: 0; }
@@ -148,7 +149,11 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <h2 id="hCost">What it costs <span class="n">per month</span></h2>
         <ul class="rows" id="costs"></ul>
         <div class="sum"><span>Running costs, not counting time</span><b id="costSum"></b></div>
-        <p class="fine" id="costNote">Amounts as billed, rounded, each in the currency of its bill. Domains and the X account are added here once their bills are in.</p>
+        <p class="fine" id="costNote">Amounts as billed, rounded, each in the currency of its bill. Further items are added here once their bills are in.</p>
+        <div id="oneoff" hidden>
+          <h2 class="sub2">Single purchases <span class="n">recent</span></h2>
+          <ul class="rows" id="oneoffRows"></ul>
+        </div>
         <p class="fine">Work on the site is counted rather than claimed: <span id="effort">changes pushed to the public repository, counted live from GitHub</span>. <a href="/#updates">Update log ›</a></p>
       </section>
     </div>
@@ -174,8 +179,8 @@ const ADDR = "0x23fB76A33A8d70f5c51aB558b85e4b93040003eb", AGRS = "0x738865301a9
 const nf = new Intl.NumberFormat("en-US");
 const cost = (n, c) => new Intl.NumberFormat(c === "USD" ? "en-US" : L === "en" ? "en-GB" : L, { style: "currency", currency: c, maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
 (async () => {
-  let COSTS = [];
-  try { COSTS = (await (await fetch("../assets/costs.json", { cache: "no-cache" })).json()).items || []; } catch (e) {}
+  let COSTS = [], ONE = [];
+  try { const j = await (await fetch("../assets/costs.json", { cache: "no-cache" })).json(); COSTS = j.items || []; ONE = j.oneoff || []; } catch (e) {}
   const ul = $("costs"), known = COSTS.filter(c => typeof c.amount === "number");
   const li = (t, d, v, cls) => { const e = document.createElement("li"); e.innerHTML = `<b></b><span class="v"></span><small></small>`; e.querySelector("b").textContent = T(t); e.querySelector("small").textContent = T(d); const s = e.querySelector(".v"); s.textContent = v; if (cls) s.classList.add(cls); return e; };
   ul.append(li("Time", "Building and running the site, in spare time. Not paid and not counted in hours.", T("unpaid"), "time"));
@@ -183,6 +188,10 @@ const cost = (n, c) => new Intl.NumberFormat(c === "USD" ? "en-US" : L === "en" 
   const sums = {}; known.forEach(c => { sums[c.cur] = (sums[c.cur] || 0) + c.amount; });   // bills in different currencies are added up per currency, never converted
   $("costSum").textContent = G("about {v} a month", { v: Object.entries(sums).map(([c, n]) => cost(n, c)).join(" + ") });
   $("costNote").hidden = known.length === COSTS.length;
+  /* single purchases (image credits and the like), newest first, each with its date; not part of the monthly sum */
+  const once = ONE.filter(c => typeof c.amount === "number" && /^\d{4}-\d{2}-\d{2}$/.test(c.on || "")).sort((a, b) => b.on.localeCompare(a.on));
+  once.forEach(c => { const e = li(c.t, c.d, cost(c.amount, c.cur)); e.querySelector("small").textContent = new Date(c.on + "T12:00:00Z").toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", year: "numeric" }) + " · " + T(c.d); $("oneoffRows").append(e); });
+  $("oneoff").hidden = !once.length;
 })();
 /* copy + wallet links (EIP-681: an Ethereum wallet app opens with the address filled in; AGRS as a token transfer) */
 $("wEth").href = `ethereum:${ADDR}@1`;
