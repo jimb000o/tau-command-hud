@@ -198,16 +198,8 @@
     agz5: "The footprints by the drums are back. Bigger this time. Either Agorzilla has grown, or somebody bought new boots.",
     agz6: "Nobody has a clear photo of Agorzilla. Everybody has a theory. Rico's theory: he listens to this station. Hello, big fellow. The bananas are on the house.",
     /* the phone-in */
-    c1: "We have a caller on line two. Go ahead. She says her transaction is pending. Madam, so is Rico's career. Next caller!",
-    c2: "Line one: a fisherman asks if the testnet is safe for his savings. Sir, the coins are worth nothing. Keep your savings in the fish.",
-    c3: "A caller from the north beach wants to know if validators ever sleep. They sign in their sleep, my friend. That's commitment.",
     c4: "A listener writes: Rico, why are blocks numbered? So we know which one came after the last one, my friend. That's the whole secret.",
-    c5: "Caller asks: Rico, what's a consensus rule? A rule everybody has to follow and nobody can change alone. Like Lola's closing time.",
     c6: "A text from a listener: my wallet put a rule on itself and now it won't let me spend. That's not a bug, my friend. That's character.",
-    c7: "On the line: a tourist asking where he can buy test coins. You can't, sir. They're free, and worth exactly that. Welcome to the island.",
-    c8: "Line three is a gull. Rico can't understand a word, but the Book says it called. Go ahead, gull. Thank you, gull.",
-    c9: "Somebody keeps calling to ask if this is live. Yes. Everything on this station is live. Except the coins. The coins are pretend.",
-    c10: "A caller asks if Rico can make the next block come faster. Rico can play faster music. The block doesn't care. Respect.",
     /* Tau corner: what makes this chain different, in one breath */
     tc1: "Tau corner, short and sweet: on this chain the rules are written in Tau logic, and every new rule is checked against the old ones. Contradictions don't get a seat.",
     tc2: "Tau corner: which blocks count and who may make them is decided by rules on the chain itself. And those rules change only by a vote of the validators.",
@@ -245,7 +237,7 @@
     offer: ["offer"], offerYes: ["offerYes"], law: ["law1", "law2"], lawSim: ["lawSim"], lawVote: ["lawVote"],
     refusedLaw: ["refusedLaw"], refusedOwn: ["refusedOwn"], refused: ["refused"], burst: ["burst1", "burst2"], ghost: ["ghost1", "ghost2", "ghost3"],
     toStake: ["toStake"], toFixed: ["toFixed"], nowStake: ["nowStake"], nowFixed: ["nowFixed"], midnight: ["midnight"], restart: ["restart"],
-    joke: Array.from({ length: 36 }, (_, i) => "j" + (i + 1)), call: Array.from({ length: 10 }, (_, i) => "c" + (i + 1)),
+    joke: Array.from({ length: 36 }, (_, i) => "j" + (i + 1)), call: ["c4", "c6"],
     corner: Array.from({ length: 8 }, (_, i) => "tc" + (i + 1)), segue: Array.from({ length: 8 }, (_, i) => "s" + (i + 1)),
     flash: Array.from({ length: 6 }, (_, i) => "flash" + (i + 1)), tag: Array.from({ length: 6 }, (_, i) => "tag" + (i + 1)),
     valIn: ["valIn"], valOut: ["valOut"], feeUp: ["feeUp"], feeDown: ["feeDown"], rev: ["rev"], whale: ["whale1", "whale2"],
@@ -342,8 +334,9 @@
     return SND.speak(bufs.map((b, i) => (said[i].who && said[i].who !== who ? { b: b.slice(0), tel: true } : b.slice(0))));   // a caller sounds like a telephone
   }
   /* lines that make sense away from the game (the radio in the site header, assets/radio.js): the hellos and Rico's
-     testnet humour, jokes, the phone-in and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
+     testnet humour, jokes, the listeners' letters, the phone-in (the caller in their own voice) and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
   const tr = s => (window.TauI18n ? TauI18n.t(s) : s);
-  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend].map(k => [{ t: tr(L[k]), v: L[k] }]);
+  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend].map(k => [{ t: tr(L[k]), v: L[k] }])
+    .concat(CALLS.map(([who, q, a], i) => { const r = L[SETS.ring[i % SETS.ring.length]]; return [{ t: tr(r), v: r }, { t: tr(q), v: q, who }, { t: tr(a), v: a }]; }));
   window.RICO = { L, SETS, CAST, CALLS, NAMES, all, speak, fill, key, hud };
 })();
