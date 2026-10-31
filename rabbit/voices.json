@@ -741,6 +741,18 @@
  },
  {
   "who": "rico",
+  "text": "Ring ring! You're on Radio Coco. Go ahead."
+ },
+ {
+  "who": "rico",
+  "text": "We have a caller on the line. Go ahead, you're on the air."
+ },
+ {
+  "who": "rico",
+  "text": "Line two is blinking. Hello, you're on Radio Coco."
+ },
+ {
+  "who": "rico",
   "text": "Sighting report from the jungle! Somebody saw Agorzilla behind the drums last night. The photo is very blurry. Rico thinks it's a palm tree. Rico is not sure."
  },
  {
@@ -1126,6 +1138,102 @@
  {
   "who": "rico",
   "text": "Hana broke a pact!"
+ },
+ {
+  "who": "zia",
+  "text": "Hi Rico, it's Zia from Miss Hana's class! Do I have to learn Boolean algebra to write rules on Tau?"
+ },
+ {
+  "who": "rico",
+  "text": "Good question, Zia. Rico can tell you what he sees: the rules on the testnet are written in logic today. A little logic goes a long way, like a little salt in a soup. Miss Hana will be thrilled you asked."
+ },
+ {
+  "who": "zia",
+  "text": "Rico, it's Zia again. If a rule says always, does it really have to hold forever?"
+ },
+ {
+  "who": "rico",
+  "text": "In Tau logic, always means at every step in time, yes. That's why people think hard before they write it. Rico once promised always, and meant until Thursday."
+ },
+ {
+  "who": "ozzie",
+  "text": "G'day Rico! Ozzie here, on holiday. Where do I buy some of those test coins? I want a big bag."
+ },
+ {
+  "who": "rico",
+  "text": "You can't buy them, mate. They're free, and worth exactly that. Rico doesn't do prices. Rico does songs. Here's one for your holiday."
+ },
+ {
+  "who": "ozzie",
+  "text": "Ozzie again! Rico, when's the mainnet? I've got a flight on Friday."
+ },
+ {
+  "who": "rico",
+  "text": "Rico doesn't know, mate, and anyone who gives you a date on the radio is selling something. Enjoy the testnet. It's free, and the view is great."
+ },
+ {
+  "who": "bert",
+  "text": "Rico, it's old Bertie from the pier. In my day every ship had a captain. Who's the captain of this blockchain?"
+ },
+ {
+  "who": "rico",
+  "text": "Nobody, Bertie. On this chain the rules steer, and the rules only change when enough validators agree. Think of a ship where the crew votes on the map."
+ },
+ {
+  "who": "bert",
+  "text": "Bertie again. Can the validators vote to change the rules for changing the rules?"
+ },
+ {
+  "who": "rico",
+  "text": "They can, Bertie, if enough of them agree. A rule that changes its own amendment rule. Makes your head spin like a capstan."
+ },
+ {
+  "who": "dom",
+  "text": "Rico, it's Dom, from the hammock. I have a theory. What if somebody sneaks in a rule that contradicts the old ones?"
+ },
+ {
+  "who": "rico",
+  "text": "Then the chain refuses it at the door, Dom, before anyone votes. Your theory has been tested. It lost."
+ },
+ {
+  "who": "dom",
+  "text": "Dom again. Rico, is it true all of this is just one guy with a lot of wallets?"
+ },
+ {
+  "who": "rico",
+  "text": "The chain only sees wallets, Dom. One guy or a whole village, it treats them all the same. Equality, island style."
+ },
+ {
+  "who": "nell",
+  "text": "Rico, Nell here, from the fish stall. The testnet said no to my transfer. My own rule, it said! Who wrote that rule?"
+ },
+ {
+  "who": "rico",
+  "text": "You did, Nell. Personal rules, darling: the chain holds you to your own word, even on the days you'd rather it didn't."
+ },
+ {
+  "who": "nell",
+  "text": "Nell again. How do I know my transfer really happened?"
+ },
+ {
+  "who": "rico",
+  "text": "Look it up in a block, Nell. Every block has a number, and anyone can check what's inside. Just like the Book in the lighthouse, only with more zeros."
+ },
+ {
+  "who": "mae",
+  "text": "Rico dear, it's Auntie Mae from the bakery. Everybody's talking about AI. Will Tau be a robot that bakes my bread?"
+ },
+ {
+  "who": "rico",
+  "text": "Nobody will touch your bread, Auntie Mae. As Rico understands it, Tau is about rules a machine can read and check, not robots in the kitchen. Your rolls are safe."
+ },
+ {
+  "who": "mae",
+  "text": "Auntie Mae again. Rico, is there somewhere I can read the code for this testnet?"
+ },
+ {
+  "who": "rico",
+  "text": "There is, Auntie. The testnet code is public on GitHub. Rico read some of it. Then Rico needed a nap."
  },
  {
   "who": "marisol",
