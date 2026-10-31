@@ -105,6 +105,7 @@
     if (Array.isArray(L) && L.length) return L.filter(p => Array.isArray(p) && p.length);
     return ["fact", "song", "warm", "sam", "tips", "dedicate", "copy"].map(k => [V(k)]).filter(p => p[0]);
   }
+  const ago = (y, m) => m < 120 ? Q("(last block {y}, {n} minutes ago)", { y, n: Math.round(m) }) : m < 2880 ? Q("(last block {y}, {n} hours ago)", { y, n: Math.round(m / 60) }) : Q("(last block {y}, {n} days ago)", { y, n: Math.round(m / 1440) });
   /* the chain weather, read the way the game reads it: the last blocks and the waiting transactions */
   const WX = { at: 0, line: null };
   function weather(done) {
@@ -122,12 +123,12 @@
       const rules = bs.filter(b => (b.transactions || []).some(tx => tx.operations && tx.operations["0"])).map(b => b.header.block_number);
       const wait = Array.isArray(mem) ? mem.length : mem && Array.isArray(mem.transactions) ? mem.transactions.length : mem && Array.isArray(mem.mempool) ? mem.mempool.length : 0;
       const out = [V(sim ? "wxSim" : "wxChain")];
-      if (age > 10) out.push(V("fog"), Q("(last block {y}, {n} minutes ago)", { y, n: Math.round(age) }));
+      if (age > 10) out.push(V(age >= 720 ? "fogDay" : age >= 180 ? "fogLong" : age >= 60 ? "fogHour" : "fog"), ago(y, age));
       else if (!txs) out.push(V("calm"), Q("({n} empty blocks, up to block {y})", { n: bs.length, y }));
       else out.push(V(txs <= bs.length / 2 ? "breeze" : "choppy"), Q("({n} txs in the last {m} blocks, up to block {y})", { n: txs, m: bs.length, y }));
       if (rules.length) out.push(V("rule"), Q("(block {y})", { y: String(rules[rules.length - 1]) }));
       out.push(...(wait ? [V("showers"), Q("({n} waiting)", { n: wait })] : [V("clear")]));
-      WX.at = performance.now(); WX.line = out.filter(Boolean); done(WX.line);
+      WX.at = performance.now(); WX.age = sim ? 0 : age; WX.y = y; WX.line = out.filter(Boolean); done(WX.line);
     };
     const t = setTimeout(finish, 7000);
     ws.onopen = () => { ws.send("hello version=1"); setTimeout(() => { try { ws.send("getmempool"); ws.send("getblocks"); } catch (e) {} }, 200); };
@@ -145,6 +146,8 @@
     if (!S || !S.on || document.hidden || performance.now() < R.next) return;
     R.next = performance.now() + 60000;   // held until this line is over
     if (++R.n % 3 === 1) return weather(line => (line ? air(line) : (R.next = 0)));
+    /* the chain has stood still for an hour or more: now and then Rico says so between the songs */
+    if (WX.age >= 60 && performance.now() - WX.at < 300000 && RICO.SETS && RICO.SETS.stall && Math.random() < 0.3) return air([V("stall"), ago(WX.y, WX.age + (performance.now() - WX.at) / 60000)].filter(Boolean));
     const L = pool(); if (!L.length) return;
     let k = Math.floor(Math.random() * L.length); if (k === R.last && L.length > 1) k = (k + 1) % L.length; R.last = k;
     air(L[k]);

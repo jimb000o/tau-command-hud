@@ -917,11 +917,13 @@
     if (RADAR.news.some(n => /^to/.test(n.set))) RADAR.news = RADAR.news.filter(n => n.set !== "lawSim");   // the switch is that rule change
     if (first) RADAR.news = RADAR.news.filter(n => !/^(now|restart|val|fee|rev)/.test(n.set));   // nothing switched while we were not listening
   }
+  /* how long ago the last block came: in minutes, then hours, then days */
+  const ago = (y, m) => m < 120 ? Q("(last block {y}, {n} minutes ago)", { y, n: Math.round(m) }) : m < 2880 ? Q("(last block {y}, {n} hours ago)", { y, n: Math.round(m / 60) }) : Q("(last block {y}, {n} days ago)", { y, n: Math.round(m / 1440) });
   /* the chain weather: the newest blocks turned into a forecast, the numbers shown beside it */
   function weather(s) {
     const at = String(s.h), txs = s.bs.reduce((n, b) => n + (b.transactions || []).length, 0);
     const w = [V(s.sim ? "wxSim" : "wxChain")], band = set => { const k = pickLine(RICO.SETS[set]); markSaid(k); w.push(V(k)); };
-    if (s.age > 10) { band("fog"); w.push(Q("(last block {y}, {n} minutes ago)", { y: at, n: Math.round(s.age) })); }
+    if (s.age > 10) { band(s.age >= 720 ? "fogDay" : s.age >= 180 ? "fogLong" : s.age >= 60 ? "fogHour" : "fog"); w.push(ago(at, s.age)); }
     else if (!txs) { band("calm"); w.push(Q("({n} empty blocks, up to block {y})", { n: s.bs.length, y: at })); }
     else { band(txs <= s.bs.length / 2 ? "breeze" : "choppy"); w.push(Q("({n} transactions in the last {m} blocks, up to block {y})", { n: txs, m: s.bs.length, y: at })); }
     const rules = s.bs.filter(b => (b.transactions || []).some(tx => txKind(tx) === "rule_deploy")).map(b => b.header.block_number);
@@ -957,6 +959,9 @@
     if (i >= 0 && (!ROT.newsLast || big)) { ROT.newsLast = true; return story(RADAR.news.splice(i, 1)[0]); }
     ROT.newsLast = false;
     /* in between: the game, a joke now and then, the phone-in, Tau corner, a word between songs, the jungle legend, the island's habits */
+    /* the chain has stood still for an hour or more: Rico talks about it now and then, not only in the weather */
+    const st = RADAR.snap;
+    if (st && !st.sim && st.age >= 60 && performance.now() - st.at < 180000 && Math.random() < 0.3) return one("stall", ago(String(st.h), st.age));
     const r = Math.random();
     if (r < 0.35) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
     const set = r < 0.58 ? "joke" : r < 0.67 ? "call" : r < 0.73 ? "corner" : r < 0.79 ? "segue" : r < 0.86 ? "legend" : "general";
