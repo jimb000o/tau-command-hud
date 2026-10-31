@@ -860,10 +860,10 @@
     const recent = SAID.slice(-20), i = RADAR.news.findIndex(n => /^(now|to|restart|midnight)/.test(n.set) || RICO.SETS[n.set].some(k => !recent.includes(k)));
     if (i >= 0 && (!ROT.newsLast || big)) { ROT.newsLast = true; return story(RADAR.news.splice(i, 1)[0]); }
     ROT.newsLast = false;
-    /* in between: the game, a joke now and then, the phone-in, Tau corner, a word between songs, the island's habits */
+    /* in between: the game, a joke now and then, the phone-in, Tau corner, a word between songs, the jungle legend, the island's habits */
     const r = Math.random();
     if (r < 0.35) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
-    return one(r < 0.6 ? "joke" : r < 0.7 ? "call" : r < 0.77 ? "corner" : r < 0.84 ? "segue" : "general");
+    return one(r < 0.58 ? "joke" : r < 0.67 ? "call" : r < 0.73 ? "corner" : r < 0.79 ? "segue" : r < 0.86 ? "legend" : "general");
   }
   readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
   setInterval(() => {
