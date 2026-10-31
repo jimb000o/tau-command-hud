@@ -1974,5 +1974,10 @@
   "tag": "Donations",
   "on": "2026-10-31",
   "html": "Donations: the cost list now also shows single purchases with their date, starting with €20 of image credits for the drawings on the site (31 Oct). They are listed apart and not added to the monthly running costs."
+ },
+ {
+  "tag": "Menu",
+  "on": "2026-10-31",
+  "html": "Language: a first visit now always opens in English, whatever language the browser is set to. 中文 and 日本語 are one click away in the header, a choice made there is remembered, and links with ?lang=zh or ?lang=ja still open in that language."
  }
 ]
