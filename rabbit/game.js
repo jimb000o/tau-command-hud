@@ -306,9 +306,11 @@
   /* the Book: every move signed with the name of whoever made it */
   /* every line in the Book is also a transaction on Tau Testnet Alpha: the visitor's own (signed in their test wallet,
      once they tick the box) and the rivals' (sent by the island bot on the relay, from the rivals' campaign wallets) */
-  const write = (who, text, kind, at, pay) => {
+  const write = (who, text, kind, at, pay, x) => {
     at = (who === G.me && UI.at) || at || TILL_AT[kind] || "hall";   // the visitor pays where they stand
-    const b = { day: G.day, hour: Math.min(2, G.move), who, text, kind, at, pay: pay || 1 }; G.book.push(b); onChain(b); return b;
+    const b = { day: G.day, hour: Math.min(2, G.move), who, text, kind, at, pay: pay || 1 }; G.book.push(b); onChain(b);
+    if (who === G.me) isleMove(kind, x, at);   // the shared island counts the visitor's own moves, never the rivals'
+    return b;
   };
 
   /* ---------- the moves ---------- */
@@ -316,7 +318,7 @@
   function propose(by, id) {
     const L = LAWS[id], c = conflict(id);
     G.deals.forEach(d => { if (d.by === by && d.law === id) d.kept = true; });
-    if (c) { write(by, F("proposed “{x}”: refused, it contradicts “{y}”, in force since day {n}", { x: T(L.t), y: T(LAWS[c.id].t), n: c.day }), "refused"); return { refused: c }; }
+    if (c) { write(by, F("proposed “{x}”: refused, it contradicts “{y}”, in force since day {n}", { x: T(L.t), y: T(LAWS[c.id].t), n: c.day }), "refused", null, 1, id); return { refused: c }; }
     const votes = {};
     others(by).forEach(v => { votes[v] = v === G.me ? null : aiVote(v, by, id); });
     return { votes };
@@ -336,16 +338,16 @@
       /* a law an embassy paid for wins its proposer less goodwill: the envelope is in the Book next to it */
       const paid = G.deals.some(d => d.by === by && d.law === id), k = paid ? 3 : 5;
       PEOPLE.forEach(p => { const d = lawScore(id, p.cares); G.sup[by][p.id] = Math.max(0, Math.min(100, G.sup[by][p.id] + Math.min(9, d * (d > 0 ? k : 5)) + (L.open ? 2 : 0)));   /* one law wins a person over only so far */ for (const v in votes) if (votes[v]) G.sup[v][p.id] = Math.max(0, Math.min(100, G.sup[v][p.id] + d)); });
-      write(by, F("passed “{x}”, {n} of 3 in favour", { x: T(L.t), n: yes }), "law");
+      write(by, F("passed “{x}”, {n} of 3 in favour", { x: T(L.t), n: yes }), "law", null, 1, id);
       return true;
     }
-    write(by, F("proposed “{x}”: voted down, {n} of 3 in favour", { x: T(L.t), n: yes }), "down");
+    write(by, F("proposed “{x}”: voted down, {n} of 3 in favour", { x: T(L.t), n: yes }), "down", null, 1, id);
     return false;
   }
   function campaign(by, topic, k = 1) {
     const backed = G.laws.some(l => l.by === by && (LAWS[l.id].fx[topic] || 0) > 0);
     bump(by, p => p.cares.includes(topic), Math.round((backed ? 9 : 6) * k));
-    write(by, F("spoke on the market square about {x}", { x: T(TOPICS[topic]) }), "talk", "market");
+    write(by, F("spoke on the market square about {x}", { x: T(TOPICS[topic]) }), "talk", "market", 1, topic);
   }
   function rumour(by, about, claim, lie) {
     G.coins[by] -= RUMOUR;
@@ -353,22 +355,22 @@
     if (!lie) bump(by, p => p.reads, 3);
     G.lies.push({ by, about, claim, lie, day: G.day, seen: [] });
     G.trust[about] = by === G.me ? Math.max(0, G.trust[about] - 30) : G.trust[about];
-    write(by, F("paid Radio Coco {n} coins to say: “{x}”", { n: RUMOUR, x: claim }), lie ? "lie" : "fact", "radio", RUMOUR);
+    write(by, F("paid Radio Coco {n} coins to say: “{x}”", { n: RUMOUR, x: claim }), lie ? "lie" : "fact", "radio", RUMOUR, about);
   }
   function deal(by, emb) {
     const E = EMB[emb]; G.coins[by] += E.coins;
     G.deals.push({ by, emb, law: E.wants, day: G.day, kept: false });
-    write(by, F("took {n} coins from the {x} and promised to propose “{y}”", { n: E.coins, x: T(E.name), y: T(LAWS[E.wants].t) }), "deal", emb);
+    write(by, F("took {n} coins from the {x} and promised to propose “{y}”", { n: E.coins, x: T(E.name), y: T(LAWS[E.wants].t) }), "deal", emb, 1, emb);
   }
   function makePact(a, b, gift) {
     if (gift) { G.coins[a] -= GIFT; G.coins[b] += GIFT; }
     G.pacts.push({ a, b, day: G.day });
-    write(a, F("made a pact with {x}: each votes for the other’s laws", { x: nm(b) }) + (gift ? " " + F("({n} coins changed hands)", { n: GIFT }) : ""), "pact");
+    write(a, F("made a pact with {x}: each votes for the other’s laws", { x: nm(b) }) + (gift ? " " + F("({n} coins changed hands)", { n: GIFT }) : ""), "pact", null, 1, b);
   }
   function breakPact(a, b) {
     const p = G.pacts.find(p => !p.broken && ((p.a === a && p.b === b) || (p.a === b && p.b === a))); if (!p) return;
     p.broken = true; bump(a, null, -5); if (b === G.me || a === G.me) G.trust[a === G.me ? b : a] = 10;
-    write(a, F("broke the pact with {x}", { x: nm(b) }), "broke");
+    write(a, F("broke the pact with {x}", { x: nm(b) }), "broke", null, 1, b);
   }
   /* the rumours fade, the Book does not: each morning some people read it (Sam always, more with a copy on the square) */
   function readers() {
@@ -593,7 +595,7 @@
     book(box) {
       G.said.book = G.book.length; save();
       const rows = G.book.slice().reverse().map(b => el("li", { class: "k-" + b.kind }, el("small", { text: F("Day {n}", { n: b.day }) + " · " + T(HOURS[b.hour] || "Night") }), el("span", null, el("b", { translate: "no", text: nm(b.who) }), " ", el("span", { text: b.text }), b.tx && !/^\d+$/.test(b.tx) ? el("a", { class: "cv-tx", href: "/explorer/?tx=" + b.tx, target: "_blank", rel: "noopener", title: T("This line on Tau Testnet Alpha"), text: " ⛓" }) : b.tx || b.bot ? el("span", { class: "cv-tx", title: T("This line went to Tau Testnet Alpha as a transaction"), text: " ⛓" }) : null)));
-      scene(box, "sam", T("The Book in the lighthouse"), T(G.book.length ? "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing." : "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."), null,
+      scene(box, "sam", T("The Book in the lighthouse"), T(G.book.length ? "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing." : "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."), [btn(T("The island today"), () => openIsle(), { sub: T("every campaign played today, added up") })],
         el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]));
     },
     pier(box) {
@@ -800,6 +802,7 @@
   }
   function morning(n) {
     hud();
+    isleMorning();
     const today = G.news.filter(x => x.day >= G.day - 1).slice(-4);
     const R = seeded(G.seed + G.day), joke = T(JOKES[Math.floor(R() * JOKES.length)]);
     const box = el("div", { class: "cv-paper" },
@@ -871,6 +874,7 @@
     add("day", { n: G.day, m: DAYS });
     ["fact", "dedicate", "song", "warm", "sam"].forEach(k => add(k));
     L.push({ k: "tips", parts: [Q("{x}, you have {n} coins.", { x: nm(G.me), n: G.coins[G.me] }), V("tips")] });
+    isleLines().forEach(l => L.push(l));
     return L;
   }
   /* Rico reads the real testnet (or the simulation, in simulation mode) every minute and a half: the newest blocks and
@@ -1048,6 +1052,7 @@
         let win = top[0];
         if (top.length > 1) { win = top[Math.floor(R() * top.length)]; tape.textContent = F("A tie. The black cat walks past the ballot box of {x}, twice. Sam says that settles it.", { x: nm(win) }); SC.cat(true); SND.sfx("glitch"); setTimeout(() => SND.sfx("meow"), 900); }
         G.over = { win, count, lies: G.lies.filter(l => l.by === G.me && l.lie).length };
+        isleTell("end", gidOf(), G.me, win);
         write("sam", F("counted the ballots: {x} is governor of the island", { x: nm(win) }), "law");
         save(); SND.set({ tense: false }); SND.sfx("cheer");
         setTimeout(ending, top.length > 1 ? 4200 : 1600);
@@ -1072,7 +1077,7 @@
       const acts = el("div", { class: "cv-acts" });
       acts.append(el("p", { class: "cv-h", text: T("Cast a real vote on the testnet: who should govern the island? 1 test AGRS, no value; every visitor’s vote is counted.") }));
       Object.keys(CANDS).forEach(c => acts.append(chainBtn(c, F("Vote {x}", { x: nm(c) }), F("Key ballot: {x}", { x: nm(c) }))));
-      acts.append(ballotEl());
+      acts.append(ballotEl(), isleVerdict());
       acts.append(btn(T("Play again"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true }), btn(T("Read the Book"), () => openCard("book", PLACE.book)));
       box.append(acts);
     });
@@ -1096,8 +1101,12 @@
     return new Promise(res => {
       if (CHAIN.ws && CHAIN.ws.readyState === 1) return res(CHAIN.ws);
       let ws; try { ws = new WebSocket("wss://node.tauhud.com"); } catch (e) { return res(null); }
-      ws.onopen = () => { ws.send("hello version=1"); CHAIN.ws = ws; setTimeout(() => res(ws), 150); };
-      ws.onmessage = ev => { let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; } const q = CHAIN.wait.get(m.command); if (q && q.length) q.shift()(m); };
+      ws.onopen = () => { ws.send("hello version=1"); if (ISLE.want) ws.send("isle join"); CHAIN.ws = ws; setTimeout(() => res(ws), 150); };
+      ws.onmessage = ev => {
+        let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
+        if (m.command === "isle") { if (m.status === "ok" && m.data && m.data.day) onIsle(m.data); return; }   // the shared island: pushes and acks, never an answer someone waits for
+        const q = CHAIN.wait.get(m.command); if (q && q.length) q.shift()(m);
+      };
       ws.onerror = ws.onclose = () => { if (CHAIN.ws === ws) CHAIN.ws = null; res(null); };
     });
   }
@@ -1200,6 +1209,123 @@
   }
   const ballotEl = () => { const p = el("p", { class: "cv-ballot", "aria-live": "polite" }); setTimeout(ballotLine, 0); return p; };
 
+  /* ---------- the shared island: every campaign played today, added up by the relay (infra/relay/isle.py) ----------
+     Everyone plays their own five days against the three rivals, and nobody ever waits for anybody. The visitor's own
+     moves are told to the relay as a few words (which kind of move, which law or topic, where; no names, no text), and
+     every page gets the same small summary back, pushed when it changes: how many campaigns today, which laws passed
+     most, who won most, the latest moves. One player or thousands, the message is the same size. When few people play,
+     the islanders make moves of their own on the relay; they are counted apart and always shown as the islanders'.
+     If the relay is out of reach, all of this simply stays hidden and the game is the same as alone. */
+  const ISLE = { s: null, want: false, at: 0 };
+  const ISLE_KINDS = ["law", "down", "refused", "talk", "lie", "fact", "deal", "pact", "broke"];
+  const gidOf = () => { if (!G.gid) { G.gid = (Math.random().toString(36).slice(2) + Date.now().toString(36)).slice(0, 12); save(); } return G.gid; };
+  function isleTell(...words) { relay().then(ws => { if (ws) try { ws.send("isle " + words.join(" ")); } catch (e) {} }); }
+  function isleMove(kind, x, at) {
+    if (!G || !ISLE_KINDS.includes(kind)) return;
+    isleTell("move", gidOf(), G.me, kind, x && /^[a-z]{2,12}$/.test(x) ? x : "-", TILL[at] || at === "hall" ? at : "hall");
+  }
+  function isleJoin() { ISLE.want = true; relay().then(ws => { if (ws) try { ws.send("isle join"); } catch (e) {} }); }
+  function onIsle(s) {
+    ISLE.s = s; ISLE.at = Date.now();
+    isleChip();
+    document.querySelectorAll(".cv-isle-intro").forEach(p => p.replaceWith(isleIntro()));
+  }
+  const isleTop = (o, n = 1) => Object.keys(o || {}).sort((a, b) => o[b] - o[a]).slice(0, n);
+  /* the laws passed today on the whole island: the players' campaigns and the islanders' own, together */
+  function isleLaws() {
+    const s = ISLE.s, all = {}; if (!s) return all;
+    [s.players.laws, s.islanders.laws].forEach(o => { for (const k in o || {}) if (LAWS[k]) all[k] = (all[k] || 0) + o[k]; });
+    return all;
+  }
+  const isleWho = e => e.h ? nm(e.c) : F("A player as {x}", { x: nm(e.c) });
+  function isleText(e) {
+    const law = LAWS[e.x] ? T(LAWS[e.x].t) : null;
+    switch (e.k) {
+      case "law": return law ? F("passed “{x}”", { x: law }) : T("changed a law");
+      case "down": return law ? F("proposed “{x}”: voted down", { x: law }) : T("was turned down");
+      case "refused": return law ? F("proposed “{x}”: refused, it contradicts a law in force", { x: law }) : T("proposed a law that was refused");
+      case "talk": return TOPICS[e.x] ? F("spoke on the market square about {x}", { x: T(TOPICS[e.x]) }) : T("did an honest day’s work");
+      case "lie": return CANDS[e.x] ? F("paid Radio Coco for a rumour about {x}", { x: nm(e.x) }) : T("paid Radio Coco for a rumour");
+      case "fact": return CANDS[e.x] ? F("paid Radio Coco to tell the truth about {x}", { x: nm(e.x) }) : T("put a fact in the Book");
+      case "deal": return EMB[e.x] ? F("took the {x}’s money", { x: T(EMB[e.x].name) }) : T("took an embassy’s money");
+      case "pact": return CANDS[e.x] ? F("made a pact with {x}", { x: nm(e.x) }) : T("made a pact");
+      case "broke": return T("broke a pact");
+      default: return "";
+    }
+  }
+  const isleLine = e => e.k === "won" ? F("{x} won a campaign played as {y}", { x: nm(e.c), y: nm(e.x) }) : isleWho(e) + " " + isleText(e);
+  const isleAgo = t => { const m = Math.max(0, Math.round((Date.now() / 1000 - t) / 60)); return m < 1 ? T("just now") : m < 120 ? F("{n} min ago", { n: m }) : F("{n} h ago", { n: Math.round(m / 60) }); };
+  function isleChip() {
+    const b = $("cvIsle"); if (!b) return;
+    const s = ISLE.s; b.hidden = !s; if (!s) return;
+    const n = s.players.campaigns, here = s.here || 0;
+    const t = here > 1 ? F("{n} on the island now", { n: here }) : n ? F("{n} campaigns today", { n }) : T("The island today");
+    b.replaceChildren(el("i", { class: "dot" + (s.lastHour ? " on" : "") }), el("span", { text: t }));
+    b.title = T("Every campaign played today on this island, added up");
+  }
+  /* on the start card: who else is on the island today */
+  function isleIntro() {
+    const s = ISLE.s, p = el("p", { class: "cv-isle-intro cv-note" }); if (!s) return p;
+    const n = s.players.campaigns, here = s.here || 0;
+    p.append(el("b", { text: T("The island today:") }), " ", n
+      ? F("{n} campaigns so far, {m} finished.", { n, m: s.players.finished }) + (here > 1 ? " " + F("{n} people on the island right now.", { n: here }) : "")
+      : T("no visitor has campaigned yet today. The islanders are at it already; yours would be the first campaign."));
+    return p;
+  }
+  /* each morning the paper says what the whole island talks about, and people who care about it lean a little toward
+     whoever has that law in force in this game: the same nudge whether one campaign or a thousand were played */
+  function isleMorning() {
+    if (!ISLE.s || !G || (G.mood || 0) >= G.day) return;
+    G.mood = G.day;
+    const top = isleTop(isleLaws())[0]; if (!top) return;
+    const holder = (G.laws.find(l => l.id === top) || {}).by, good = Object.keys(LAWS[top].fx).filter(k => LAWS[top].fx[k] > 0);
+    if (holder && good.length) bump(holder, p => p.cares.some(c => good.includes(c)), 2);
+    news(F("All over the island, people talk about “{x}” today.", { x: T(LAWS[top].t) }) + (holder ? " " + F("Here it is {y}’s law.", { y: nm(holder) }) : ""));
+  }
+  /* Rico's lines about the whole island (shown, not spoken: they change all day) */
+  function isleLines() {
+    const s = ISLE.s, L = []; if (!s || Date.now() - ISLE.at > 600000) return L;
+    const p = s.players, laws = isleLaws(), top = isleTop(laws)[0];
+    if (p.campaigns > 1) L.push({ k: "isle:n", parts: [Q("Around the island today: {n} campaigns, {m} of them finished.", { n: p.campaigns, m: p.finished })] });
+    if (top && laws[top] > 1) L.push({ k: "isle:law", parts: [Q("Across the island, “{x}” has passed {n} times today.", { x: T(LAWS[top].t), n: laws[top] })] });
+    const w = isleTop(p.wins)[0]; if (w && p.finished > 2) L.push({ k: "isle:win", parts: [Q("Election results from the whole island: {x} has won {n} of {m} today.", { x: nm(w), n: p.wins[w], m: p.finished })] });
+    const e = (s.recent || []).find(x => x.k !== "won"); if (e) L.push({ k: "isle:" + e.t, parts: [Q(e.h ? "Island news: {x}." : "Fresh from the square: {x}.", { x: isleLine(e) })] });
+    return L;
+  }
+  /* after the election: how this campaign compares with the island's */
+  function isleVerdict() {
+    const s = ISLE.s, p = el("p", { class: "cv-note" }); if (!s || !s.players.finished) return p;
+    const w = isleTop(s.players.wins)[0];
+    p.textContent = F("Across the island today, {x} won {n} of {m} finished campaigns.", { x: nm(w), n: s.players.wins[w], m: s.players.finished });
+    return p;
+  }
+  /* the card: the island's day, everyone's campaigns added up */
+  function openIsle() {
+    const s = ISLE.s, back = G && UI.card && UI.card._visit === "book";
+    openCard(null, box => {
+      box._isle = true; box.classList.add("isle-card");
+      if (!s) { scene(box, "sam", T("The island today"), T("The island’s numbers are out of reach just now. Your campaign goes on as before."), [btn(T("Back to the island"), () => closeCard(), { go: true })]); return; }
+      const p = s.players, isl = s.islanders, laws = isleLaws();
+      scene(box, "sam", T("The island today"), p.campaigns
+        ? F("{n} campaigns on this island today, {m} finished. Everyone plays their own five days; here they all add up.", { n: p.campaigns, m: p.finished })
+        : T("No visitor has campaigned yet today. The islanders keep their own politics going until someone does."), [btn(T("Back to the island"), () => closeCard(), { go: true })]);
+      const extra = el("div", { class: "cv-isle" });
+      if (p.campaigns) {
+        const row = el("div", { class: "cv-votes four" });
+        Object.keys(CANDS).forEach(c => row.append(el("figure", null, portrait(c, 36), el("figcaption", { translate: "no", text: nm(c) }), el("small", { text: F("played {n} · won {m}", { n: p.as[c] || 0, m: p.wins[c] || 0 }) }))));
+        extra.append(row);
+      }
+      const tl = isleTop(laws, 3), two = el("div", { class: "two" }), col = () => { const c = el("div"); two.append(c); return c; };
+      extra.append(two);
+      if (tl.length) col().append(el("h4", { text: T("Laws passed today") }), el("ul", { class: "cv-book" }, tl.map(k => el("li", { class: "k-law" }, el("span", { text: T(LAWS[k].t) }), el("small", { text: [p.laws[k] ? F("in {n} players’ campaigns", { n: p.laws[k] }) : "", isl.laws[k] ? F("{n} by the islanders", { n: isl.laws[k] }) : ""].filter(Boolean).join(" · ") })))));
+      const rec = (s.recent || []).slice(0, 4);
+      if (rec.length) col().append(el("h4", { text: T("Just now on the island") }), el("ol", { class: "cv-book" }, rec.map(e => el("li", { class: "k-" + e.k }, el("small", { text: isleAgo(e.t) + (e.h ? " · " + T("the islanders") : "") }), el("span", { text: isleLine(e) })))));
+      extra.append(el("p", { class: "cv-note small", text: T("Counted by the relay from what each game tells it, not read from the chain. The islanders fill the quiet hours.") }));
+      if (back) extra.append(el("div", { class: "cv-acts" }, btn(T("Back to the Book"), () => openCard("book", PLACE.book))));
+      box.querySelector(".cv-acts").before(extra);
+    });
+  }
+
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
@@ -1214,7 +1340,7 @@
       box.append(el("p", { class: "cv-h", text: T("Play as") }), pick);
       const chk = el("input", { type: "checkbox", id: "cvChain" }); chk.checked = store.get("tauhud-rabbit-chain") === "on";
       chk.addEventListener("change", () => store.set("tauhud-rabbit-chain", chk.checked ? "on" : "off"));
-      box.append(ballotEl());
+      box.append(ballotEl(), isleIntro());
       box.append(el("label", { class: "cv-chain", for: "cvChain" }, chk, el("span", { text: T("Sign my moves into Tau Testnet Alpha as I make them, paid to the place where I make them: 1 test AGRS each, a line on Radio Coco 25, from my test wallet in this browser (made for me if I have none). The rivals’ moves go there anyway, from their own campaign wallets.") })));
     });
   }
@@ -1296,6 +1422,8 @@
     setInterval(() => { if (G && G.over && !UI.card && !drawer && !$("cvPlaces").classList.contains("on")) ending(); }, 1500);
     $("cvHelp").onclick = () => { wake(); help(); };
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
+    $("cvIsle").onclick = () => { wake(); openIsle(); };
+    isleJoin();
     const sb = $("cvSound");
     const showSound = () => { const l = SND.on ? T("Sound on") : SND.wanted ? T("Tap for sound") : T("Sound off"); sb.replaceChildren("♪", el("span", { class: "lb", text: " " + l })); sb.setAttribute("aria-label", l); sb.classList.toggle("off", !SND.wanted); sb.setAttribute("aria-pressed", SND.on ? "true" : "false"); };
     let woke = 0;   // the press that just started the music must not also switch it off

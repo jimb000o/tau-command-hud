@@ -57,6 +57,17 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 .chip.me .face { border-radius: 50%; background: rgba(255,255,255,.08); }
 #cvMoves { display: inline-flex; gap: 5px; }
 #cvMoves i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--hair); }
+.chip.isle .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--hair); }
+.chip.isle .dot.on { background: var(--ok); box-shadow: 0 0 8px rgba(57,255,138,.6); }
+.cv-isle { display: grid; gap: 8px; }
+.cv-isle h4 { margin: 4px 0 0; font-size: 12.5px; color: var(--dim); }
+.cv-isle .cv-votes figure small { color: var(--dim); font-size: 11px; }
+.cv-note.small { font-size: 11px; }
+.cv-card.talk.isle-card { max-height: calc(100% - 118px); }
+.cv-isle .two { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; }
+.cv-isle .two:empty { display: none; }
+.cv-isle .cv-book li { padding: 4px 8px; }
+@media (max-width: 759px), (max-height: 520px) { .cv-isle .two { grid-template-columns: 1fr; } }
 #cvMoves i.on { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 8px rgba(57,255,138,.6); }
 .bar .sp { flex: 1; }
 button.chip { cursor: pointer; }
@@ -312,6 +323,7 @@ html.rk-full .bar .home { display: inline-flex; }
       <span class="chip" id="cvCoins">30 coins</span>
       <span class="sp"></span>
       <button class="chip" id="cvBookBtn" type="button">The Book</button>
+      <button class="chip opt isle" id="cvIsle" type="button" hidden>The island today</button>
       <button class="chip opt" id="cvHelp" type="button">How it works</button>
       <button class="chip" id="cvSound" type="button" aria-pressed="false">♪ Tap for sound</button>
       <button class="chip" id="cvGo" type="button" aria-expanded="false" aria-controls="cvPlaces"><span aria-hidden="true">☰</span><span class="lb">Places</span></button>

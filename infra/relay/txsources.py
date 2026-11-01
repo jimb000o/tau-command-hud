@@ -159,6 +159,20 @@ GENESIS = frozenset({
 })
 
 
+RABBIT_RADIO = "b6ef83b962c9e8be7345050bc34de31bc8996cfc3782947db4509f48750b53640b19d7211c591bc2e4e16d2b148bf945"
+
+
+def rival_moves(tx: dict) -> int:
+    """How many rival moves one island-bot transaction stands for: it sends n moves as n test AGRS (a radio line 25 each)."""
+    for op in (tx.get("operations") or {}).get("1") or []:
+        try:
+            amount = int(op[2])
+        except (TypeError, ValueError, IndexError):
+            continue
+        return max(1, amount // 25 if str(op[1]).lower() == RABBIT_RADIO else amount)
+    return 1
+
+
 def rabbit(tx: dict, bots: dict) -> tuple[str, str] | None:
     """("rival" | "line" | "vote", candidate) for a White Rabbit Key transaction, else None."""
     ops = tx.get("operations") if isinstance(tx.get("operations"), dict) else {}
@@ -293,12 +307,13 @@ class TxSources:
                 if rb:
                     r = isle.setdefault(day, {"moves": 0, "rivals": 0, "lines": 0, "votes": 0, "agrs": 0, "wallets": 0,
                                               "new": 0, "cands": {}, "by": {}, "hours": [0] * 24})
-                    r["moves"] += 1
+                    n = rival_moves(tx) if rb[0] == "rival" else 1   # one bot transaction can carry many games' moves
+                    r["moves"] += n
                     r["agrs"] += amount
-                    r["hours"][ts % 86400 // 3600] += 1
+                    r["hours"][ts % 86400 // 3600] += n
                     if rb[0] == "rival":
-                        r["rivals"] += 1
-                        r["by"][rb[1]] = r["by"].get(rb[1], 0) + 1
+                        r["rivals"] += n
+                        r["by"][rb[1]] = r["by"].get(rb[1], 0) + n
                     else:
                         r["lines" if rb[0] == "line" else "votes"] += 1
                         if rb[0] == "vote":

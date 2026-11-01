@@ -43,6 +43,7 @@ from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from slotlease import SlotLease
 from island import Island
+from isle import Isle
 from txsources import TxSources
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
@@ -355,6 +356,7 @@ class Relay:
         self.simwallet = SimWallet()   # the testnet wallet's transactions in simulation mode (simwallet.py)
         self.lease = SlotLease(places=RULE_PLACES)   # fair turns on the personal-rule places (slotlease.py)
         self.island = Island()   # White Rabbit Key: the rival candidates' moves as test transactions (island.py)
+        self.isle = Isle()       # White Rabbit Key: every campaign played today, added up and pushed to every page (isle.py)
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
@@ -1200,6 +1202,9 @@ class Relay:
             self.lookup_cache[key] = (time.monotonic(), text)
             return text
 
+        if cmd == "isle":   # White Rabbit Key's shared island day (isle.py)
+            return self.isle_command(args, ip, ws)
+
         if cmd == "islandmove":   # White Rabbit Key: a rival's move in a visitor's game, sent by the island bot (island.py)
             if len(args) not in (2, 3):
                 return envelope_error(cmd, "Usage: islandmove <candidate> <kind> [place]", "INVALID_PARAMS")
@@ -1221,7 +1226,7 @@ class Relay:
                                      self.via.get(ws, "") if ws else "")
 
         return envelope_error(cmd, "Not allowed here. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
-                              "gettaustate, presence, report, via, islandmove, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
+                              "gettaustate, presence, report, via, islandmove, isle, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
                               + " (a transaction signed in your browser)", "FORBIDDEN")
 
     async def wallet(self, cmd: str, raw: str, ip: str, site: str = "", via: str = "") -> str:
@@ -1688,6 +1693,25 @@ class Relay:
     def presence_envelope(self) -> str:
         return envelope_ok("presence", {"online": self.online(), "sites": self.online_sites(), "pushed": True})
 
+    def isle_command(self, args: list[str], ip: str, ws: ServerConnection | None) -> str:
+        """The shared island: join / leave / move / end (isle.py has the rules)."""
+        sub = args[0].lower() if args else ""
+        if sub == "join":
+            if ws is not None:
+                self.isle.subs.add(ws)
+            return envelope_ok("isle", self.isle.snapshot())
+        if sub == "leave":
+            self.isle.subs.discard(ws)
+            return envelope_ok("isle", {"left": True})
+        a = [x.lower() for x in args[1:]]
+        if sub == "move" and len(a) == 5:
+            ok, data = self.isle.move(ip, *a)
+        elif sub == "end" and len(a) == 3:
+            ok, data = self.isle.end(ip, *a)
+        else:
+            ok, data = False, "Usage: isle join | leave | move <game> <as> <kind> <what> <place> | end <game> <as> <winner>"
+        return envelope_ok("isle", data) if ok else envelope_error("isle", data, "INVALID_PARAMS")
+
     def chat_command(self, args: list[str], ws: ServerConnection | None) -> str:
         """The troll box over the socket: join / leave / say / report (chat.py has the rules)."""
         sub = args[0].lower() if args else ""
@@ -1859,7 +1883,7 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
-        isl = self.island.route(path)
+        isl = self.island.route(path) if path == "/island" else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())
@@ -1999,6 +2023,7 @@ class Relay:
             self.clients.discard(ws)
             self.chat_subs.discard(ws)
             self.road_subs.discard(ws)
+            self.isle.subs.discard(ws)
             self.viewers.pop(ws, None)
             self.via.pop(ws, None)
             self.per_ip[ip] -= 1
@@ -2010,6 +2035,7 @@ class Relay:
         tasks = [
             asyncio.create_task(self.upstream.run()),
             asyncio.create_task(self.island.run(self.upstream.request, self.governance)),
+            asyncio.create_task(self.isle.run(lambda snap: broadcast(self.isle.subs, envelope_ok("isle", snap)))),
             asyncio.create_task(self.poll_loop(BLOCK_POLL, self.poll_blocks)),
             asyncio.create_task(self.poll_loop(MEMPOOL_POLL, lambda: self.poll_cached("getmempool", True))),
             asyncio.create_task(self.poll_loop(GOV_POLL, lambda: self.poll_cached("getgovernance", True))),
