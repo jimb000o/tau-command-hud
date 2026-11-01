@@ -162,7 +162,9 @@ tauhud.com's node:
 
 Two settings must match the network and are set for you: the genesis from
 `networks/tau-testnet-v2/genesis.json`, and `TAU_GOVERNANCE_OPEN_ADMISSION=true` (votes
-from non-validators count; with `false` a node stops verifying at the first such vote).
+from non-validators count; with `false` a node stops verifying at the first such vote)). IDNI closed open governance on 2026-11-01, so new votes
+from non-validators are refused; the node keeps `true` so it still verifies older blocks,
+and the relay reports the network's current setting (`TAU_NETWORK_OPEN_GOVERNANCE`, default `false`).
 
 ## Troubleshooting
 

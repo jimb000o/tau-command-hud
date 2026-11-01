@@ -23,6 +23,8 @@ services:
       TAU_MINING_ENABLED: ${TAU_VALIDATOR:-false}
       # Consensus-relevant, must match the network (see ../infra/docker-compose.yml):
       # with "false" the node stops verifying at the first non-validator vote.
+      # Stays "true" after IDNI closed open governance on 2026-11-01: a read
+      # node then still verifies every block, old and new.
       TAU_GOVERNANCE_OPEN_ADMISSION: "true"
       TAU_LOG_LEVEL: INFO
     command: ["/usr/local/bin/tau-node-start"]
@@ -62,7 +64,7 @@ services:
       UPSTREAM_URL: ws://tau-node:65433
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
       TRUST_PROXY: "1"
-      TAU_GOVERNANCE_OPEN_ADMISSION: "true"
+      TAU_GOVERNANCE_OPEN_ADMISSION: ${TAU_NETWORK_OPEN_GOVERNANCE:-false}  # what the network admits now (IDNI closed it 2026-11-01)
     volumes:
       - relay_data:/data
     depends_on: [tau-node]
