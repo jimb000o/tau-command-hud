@@ -30,7 +30,12 @@ services:
       # The public network records them (block #10 of the 2026-10-27 chain
       # carries a vote from a non-validator key and its state hash includes it);
       # with the default "false" our node computes a different state hash and
-      # stops verifying at that block. Must match the network, like the genesis.
+      # stops verifying at that block. On 2026-11-01 IDNI switched open
+      # governance off on their validator (votes from non-validators are no
+      # longer admitted). Our read node stays "true": it never admits votes
+      # itself, accepts every block the validator now seals, and still verifies
+      # older blocks that carry non-validator votes. What visitors are told
+      # comes from TAU_NETWORK_OPEN_GOVERNANCE below (relay, alerts).
       TAU_GOVERNANCE_OPEN_ADMISSION: "true"
       TAU_LOG_LEVEL: INFO
     # node/start.sh copies the genesis in and wipes chain data from another genesis.
@@ -51,7 +56,7 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       TRUST_PROXY: "1"
       MAX_PER_IP: ${MAX_PER_IP:-96}   # sockets per address; every open page holds 2 to 4 (2026-10-30: 32 was hit by one visitor with many tabs)
-      TAU_GOVERNANCE_OPEN_ADMISSION: "true"  # keep equal to the node setting above
+      TAU_GOVERNANCE_OPEN_ADMISSION: ${TAU_NETWORK_OPEN_GOVERNANCE:-false}  # what the network admits now (pages, vote counting); see the node comment above
       VISITS_KEY: ${VISITS_KEY:-}   # key of the visitor numbers report; empty: made once in /data/visits.key
       SLOTLEASE_ENABLED: ${SLOTLEASE_ENABLED:-1}   # fair turns on the rule places (relay/slotlease.py); 0 switches them off
       CHAT_ENABLED: ${CHAT_ENABLED:-1}   # the troll box on the HUD (relay/chat.py); 0 closes the room
@@ -110,7 +115,7 @@ services:
     build: ./alerts
     environment:
       RELAY_URL: ws://relay:8080
-      TAU_GOVERNANCE_OPEN_ADMISSION: "true"  # keep equal to the node setting above
+      TAU_GOVERNANCE_OPEN_ADMISSION: ${TAU_NETWORK_OPEN_GOVERNANCE:-false}  # what the network admits now (pages, vote counting); see the node comment above
       FEED_URL: https://${RELAY_DOMAIN}/feed.xml
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
