@@ -351,4 +351,7 @@ TauI18n.add({ strings: {
   "Where setups stop": "安装在哪里停下",
   "No setup has stopped with an error yet.": "还没有安装出错停止。",
   "The nodes online now, by who runs them. A node counts in an hour when our node had contact with it then and has known it for 10 minutes, so test nodes that come and go for a minute stay out. Only peer counts are kept, no addresses.": "当前在线的节点，按运行者划分。某个节点在某小时内被计入，条件是我们的节点在那一小时与它有过接触，并且已认识它 10 分钟，所以只出现一分钟的测试节点不计入。只保存节点数量，不保存地址。",
+  "Book lines": "账本记录",
+  "White Rabbit Key, our island game on tauhud.com: the players' lines and ballots, and the rivals' moves and wages the island bot sends. Its wallets count only the players'.": "白兔礁，我们在 tauhud.com 上的海岛游戏：玩家的记录和选票，以及海岛机器人发出的对手行动和工资。钱包只计玩家的。",
+  "our sites": "我们的网站",
 } });

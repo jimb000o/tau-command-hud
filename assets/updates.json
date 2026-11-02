@@ -2050,5 +2050,10 @@
   "tag": "White Rabbit Key",
   "on": "2026-11-02",
   "html": "White Rabbit Key: the four candidates have new parts. Tobias, the harbour master, is now the one who takes embassy money, and he welcomes every envelope with a ceremony. Marisol’s café is where the rumours sit down for a coffee before they go on air. Baako founded the coconut co-op and counts every coconut and every promise. Hana’s pupils hear every rumour first and check it against the Book before lunch."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-11-02",
+  "html": "In numbers: White Rabbit Key now has its own part in “Share of the testnet”, next to Agorzilla and Tau HUD. It counts the players’ lines and ballots and the rivals’ moves and wages the island bot sends, which were listed under “others” until now; the bot’s wallets are never counted as players. The day table and “Where our transactions started” show the game on its own line too."
  }
 ]
