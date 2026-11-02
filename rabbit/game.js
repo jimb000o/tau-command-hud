@@ -981,7 +981,8 @@
      from the ones he has not said. A set is a group of lines that can stand in for each other (rico.js SETS). */
   const SAID = (() => { try { const a = JSON.parse(store.get("rabbit-dj-said") || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } })();
   const unsaid = keys => { const k = keys.filter(x => !SAID.includes(x)); return k.length ? k : [keys.slice().sort((a, b) => SAID.indexOf(a) - SAID.indexOf(b))[0]]; };
-  const pickLine = keys => { const k = unsaid(keys); return k[Math.floor(Math.random() * k.length)]; };
+  /* with the sound on, Rico picks among the lines that already have his voice (new lines wait for theirs, shown as text only otherwise) */
+  const pickLine = keys => { const v = SND.on && RICO.voiced ? keys.filter(x => RICO.voiced(x) !== false) : keys, k = unsaid(v.length ? v : keys); return k[Math.floor(Math.random() * k.length)]; };
   const markSaid = k => { const i = SAID.indexOf(k); if (i >= 0) SAID.splice(i, 1); SAID.push(k); SAID.splice(0, Math.max(0, SAID.length - 120)); store.set("rabbit-dj-said", JSON.stringify(SAID)); };
   const one = (set, ...more) => { const k = pickLine(RICO.SETS[set]); return { k, parts: [V(k), ...more] }; };
   /* what Rico can say about the game as it stands, and a few lines from the island's habits */
@@ -1128,7 +1129,9 @@
   /* a call is a little conversation: the caller, Rico, the caller again, a goodbye, and Rico signs off (rico.js CALLS) */
   function phoneIn() {
     const ok = c => !c.when || (c.when === "solo" ? RADAR.solo : c.when === "fresh" ? RADAR.fresh : false);
-    const keys = RICO.CALLS.map((c, i) => ok(c) ? "call:" + i : null).filter(Boolean), k = pickLine(keys), c = RICO.CALLS[+k.slice(5)];
+    const keys = RICO.CALLS.map((c, i) => ok(c) ? "call:" + i : null).filter(Boolean);
+    if (SND.on && RICO.voiced && !keys.some(x => RICO.voiced(x) !== false)) return null;   // no call has its voices yet: something Rico can say aloud instead
+    const k = pickLine(keys), c = RICO.CALLS[+k.slice(5)];
     const ring = pickLine(RICO.SETS.ring), bye = pickLine(RICO.SETS.bye); markSaid(ring); if (!c.cut) markSaid(bye);
     return { k, parts: RICO.call(c, ring, bye), call: true };
   }
@@ -1153,7 +1156,7 @@
     if (i >= 0 && (!ROT.newsLast || big)) { ROT.newsLast = true; return story(RADAR.news.splice(i, 1)[0]); }
     ROT.newsLast = false;
     /* a new song on the radio: Rico says what it is */
-    if (DJ.songNew && RICO.L["sn_" + DJ.songNew]) { const k = "sn_" + DJ.songNew; DJ.songNew = null; return { k, parts: [V(k)] }; }
+    if (DJ.songNew && RICO.L["sn_" + DJ.songNew] && !(SND.on && RICO.voiced && RICO.voiced("sn_" + DJ.songNew) === false)) { const k = "sn_" + DJ.songNew; DJ.songNew = null; return { k, parts: [V(k)] }; }
     /* in between: the game, a joke now and then, the phone-in, Tau corner, a word between songs, the jungle legend, the island's habits */
     /* the chain has stood still for an hour or more: Rico talks about it now and then, not only in the weather */
     const st = RADAR.snap;
@@ -1163,7 +1166,7 @@
     /* the phone-in is the busiest part of the show: about one line in three, never two calls in a row */
     const set = r < 0.42 ? "joke" : r < 0.74 ? (ROT.callLast ? "net" : "call") : r < 0.78 ? "corner" : r < 0.82 ? "segue" : r < 0.87 ? "legend" : r < 0.91 ? "mainland" : r < 0.95 ? "net" : "general";
     ROT.callLast = false;
-    if (set === "call" && Math.random() < 0.88) { ROT.callLast = true; return phoneIn(); }   // otherwise a letter from a listener, read out by Rico
+    if (set === "call" && Math.random() < 0.88) { const p = phoneIn(); if (p) { ROT.callLast = true; return p; } return one("joke"); }   // otherwise a letter from a listener, read out by Rico
     return one(set);
   }
   readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
