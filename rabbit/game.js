@@ -434,7 +434,7 @@
     $("cvCoins").textContent = F("{n} coins", { n: G.coins[G.me] });
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
     const last = G.news[G.news.length - 1];
-    if (last && last !== DJ.said) { DJ.said = last; onAir([V("book"), Q(last.s)], 1); }
+    if (last && last !== DJ.said) { DJ.said = last; if (DJ.opened) onAir([V("book"), Q(last.s)], 1); else { DJ.after = [V("book"), Q(last.s)]; $("cvNews").textContent = last.s; } }   // before the show opens, the news waits for Rico's opener
     else if (!DJ.text) $("cvNews").textContent = last ? last.s : T("The Key Crier: five days to the election. Everything anyone does is written in the Book.");
     SC.setHour(G.over ? 2.4 : G.move >= MOVES ? 3 : G.move * 0.9);
     SC.rabbit(G.over || G.move >= MOVES ? null : hint()[0]);
@@ -836,25 +836,40 @@
   ];
 
   /* ---------- Radio Coco: Rico at the microphone, now and then, about what is going on ---------- */
-  const DJ = { said: null, text: "", face: null, next: performance.now() + 9000, last: -1 };
+  const DJ = { said: null, text: "", face: null, next: performance.now() + 2500, last: -1 };
   if ($("cvDJ")) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }   // Rico is at the microphone from the start, not only once he first speaks
-  function onAir(line, urgent) {
+  /* a phone call on the strip: one turn at a time, with who is speaking, each for its share of the time they talk */
+  const TURN = { timers: [] };
+  function turns(parts, secs) {
+    TURN.timers.forEach(clearTimeout); TURN.timers = [];
+    const said = parts.filter(p => p.v), total = said.reduce((n, p) => n + p.v.length, 0) || 1, out = $("cvNews");
+    let at = 0;
+    said.forEach(p => {
+      const name = p.who ? p.who[0].toUpperCase() + p.who.slice(1) : "Rico";
+      TURN.timers.push(setTimeout(() => { if (out) out.textContent = name + ": " + p.t; }, at * 1000));
+      at += (secs ? secs * p.v.length / total : Math.max(2.5, p.t.length * 0.06));
+    });
+    return at;
+  }
+  function onAir(line, urgent, call) {
     const box = $("cvRadio"); if (!box) return;
     if (!DJ.face) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }
     const parts = typeof line === "string" ? [{ t: line, v: null }] : line;
     line = join(parts);
     DJ.text = line; box.classList.add("live");
     const out = $("cvNews"); out.textContent = ""; let i = 0;
-    clearInterval(DJ.type); DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); } }, 28);
+    clearInterval(DJ.type); TURN.timers.forEach(clearTimeout); TURN.timers = [];
+    if (call) { const t = turns(parts, 0); clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), t * 1000 + 800); DJ.next = performance.now() + t * 1000 + 30000; }
+    else DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); } }, 28);
     say(DJ.face, Math.min(6000, 700 + line.length * 45));
     if (!urgent) SND.sfx("jingle");
-    clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), Math.min(9000, 2500 + line.length * 60));
-    DJ.next = performance.now() + 38000 + Math.random() * 30000;
+    if (!call) { clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), Math.min(9000, 2500 + line.length * 60)); DJ.next = performance.now() + 38000 + Math.random() * 30000; }
     /* his voice, when the clips are there: the mouth and the on-air light follow it */
     const said = DJ.text;
     if (UI.card) return;   // someone in the open card is talking to you; the strip only shows it
     RICO.speak(parts).then(secs => {
       if (!secs || DJ.text !== said) return;
+      if (call) turns(parts, secs);
       say(DJ.face, secs * 1000);
       clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), secs * 1000 + 800);
       DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 30000);
@@ -892,7 +907,7 @@
      ghosts (live only: sealed transactions the node still lists as waiting, IDNI #81, counted by the relay), and in
      the simulation the refusals, a consensus switch voted on or in force, and the restart at midnight UTC. */
   const RADAR = { snap: null, busy: false, seen: 0, mode: null, rules: null, ghosts: 0, ghostAt: 0, flagged: {}, news: [] };
-  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused"];
+  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused", "duet", "record", "solo", "postman", "fresh"];
   const KIND = { rule_deploy: "rule", approval_request: "cosign", transfer_vote: "cosvote", retractable_transfer: "lock", retract_transfer: "back", rule_offer: "offer", rule_offer_accept: "offerYes", consensus_rule_vote: "lawVote" };
   const txKind = tx => { const t = tx.tx_type || "user_tx"; return t === "user_tx" && tx.operations && tx.operations["0"] ? "rule_deploy" : t; };
   /* the ghosts by the visitor's calendar: fitting in Halloween week, a nuisance in the first week of November, ordinary news otherwise */
@@ -953,7 +968,7 @@
       }
       if (s.sim) for (const d of TauSim.chain.dropped(n) || []) heard(d.type === "consensus_rule_update" ? "refusedLaw" : /o5|own rule|its rule/i.test(d.why || "") ? "refusedOwn" : "refused", n);
     }
-    if (!s.sim) return;
+    if (!s.sim) { chainLife(s); return; }
     /* the simulation's big moments: a consensus switch put to the vote, and the moment it comes into force */
     /* a validator in or out, the base fee up or down, or another rule revision in force */
     const ru = TauSim.chain.rulesAt(s.h), was = RADAR.rules;
@@ -971,6 +986,24 @@
     }
     if (RADAR.news.some(n => /^to/.test(n.set))) RADAR.news = RADAR.news.filter(n => n.set !== "lawSim");   // the switch is that rule change
     if (first) RADAR.news = RADAR.news.filter(n => !/^(now|restart|val|fee|rev)/.test(n.set));   // nothing switched while we were not listening
+  }
+  /* what the real chain shows about itself, as island news: one hand sealing every recent block (and sending nothing
+     of its own), a second hand joining in, the chain started over and not yet past its old height (block 5028, where
+     the old chain stood still on 1 November 2026), and the moment it passes it. Each at most every 20 minutes. */
+  const OLD_TOP = 5028;
+  function chainLife(s) {
+    const props = new Set(s.bs.map(b => b.header.proposer_pubkey).filter(Boolean)), now = performance.now();
+    const once = (set, h) => { RADAR.netAt = RADAR.netAt || {}; if (now - (RADAR.netAt[set] || -1e9) < 1200000) return; RADAR.netAt[set] = now; heard(set, h); };
+    const was = RADAR.props || 0; RADAR.props = props.size;
+    RADAR.solo = props.size === 1 && s.bs.length >= 6;
+    if (props.size >= 2 && was === 1) once("duet", s.h);
+    else if (RADAR.solo && Math.random() < 0.5) {
+      const p = [...props][0], sent = s.bs.some(b => (b.transactions || []).some(tx => tx.sender_pubkey === p)), any = s.bs.some(b => (b.transactions || []).length);
+      once(any && !sent && Math.random() < 0.4 ? "postman" : "solo", s.h);
+    }
+    RADAR.fresh = s.h < OLD_TOP;
+    if (RADAR.fresh && Math.random() < 0.3) once("fresh", s.h);
+    if (s.h >= OLD_TOP && s.h < OLD_TOP + 400 && !RADAR.recorded) { RADAR.recorded = 1; heard("record", s.h); }
   }
   /* how long ago the last block came: in minutes, then hours, then days */
   const ago = (y, m) => m < 120 ? Q("(last block {y}, {n} minutes ago)", { y, n: Math.round(m) }) : m < 2880 ? Q("(last block {y}, {n} hours ago)", { y, n: Math.round(m / 60) }) : Q("(last block {y}, {n} days ago)", { y, n: Math.round(m / 1440) });
@@ -990,10 +1023,12 @@
      the weather every fourth line, and in between the game and the island, never the same line twice in a row */
   const ROT = { n: 0, newsLast: false };
   /* a listener phones in: Rico picks up, the caller asks in their own voice (through the telephone), Rico answers */
+  /* a call is a little conversation: the caller, Rico, the caller again, a goodbye, and Rico signs off (rico.js CALLS) */
   function phoneIn() {
-    const keys = RICO.CALLS.map((c, i) => "call:" + i), k = pickLine(keys), [who, q, a] = RICO.CALLS[keys.indexOf(k)];
-    const ring = pickLine(RICO.SETS.ring); markSaid(ring);
-    return { k, parts: [V(ring), { t: T(q), v: q, who }, { t: T(a), v: a }] };
+    const ok = c => !c.when || (c.when === "solo" ? RADAR.solo : c.when === "fresh" ? RADAR.fresh : false);
+    const keys = RICO.CALLS.map((c, i) => ok(c) ? "call:" + i : null).filter(Boolean), k = pickLine(keys), c = RICO.CALLS[+k.slice(5)];
+    const ring = pickLine(RICO.SETS.ring), bye = pickLine(RICO.SETS.bye); markSaid(ring); if (!c.cut) markSaid(bye);
+    return { k, parts: RICO.call(c, ring, bye), call: true };
   }
   /* chain news as a host tells it: big moments with a sting before and a word after, small ones now and then */
   function story(n) {
@@ -1005,7 +1040,9 @@
   }
   function nextLine() {
     ROT.n++;
-    if (ROT.n === 1) { const hr = new Date().getHours(); return one(Math.random() < 0.5 ? "open" : hr >= 5 && hr < 11 ? "morning" : hr < 17 && hr >= 11 ? "afternoon" : hr >= 17 && hr < 22 ? "evening" : "night"); }
+    /* the show opens with a shout, after the drum roll and the station horn */
+    if (ROT.n === 1) { const k = RICO.wake(); return { k, parts: [V(k)], wake: true }; }
+    if (ROT.n === 2) { const hr = new Date().getHours(); return one(Math.random() < 0.5 ? "open" : hr >= 5 && hr < 11 ? "morning" : hr < 17 && hr >= 11 ? "afternoon" : hr >= 17 && hr < 22 ? "evening" : "night"); }
     const big = RADAR.news.some(n => /^(now|to|restart|midnight)/.test(n.set));
     if (ROT.n % 4 === 3 && !big && RADAR.snap && performance.now() - RADAR.snap.at < 180000) { ROT.newsLast = false; return { k: null, parts: weather(RADAR.snap) }; }
     RADAR.news = RADAR.news.filter(n => performance.now() - n.at < 600000);
@@ -1013,23 +1050,34 @@
     const recent = SAID.slice(-20), i = RADAR.news.findIndex(n => /^(now|to|restart|midnight)/.test(n.set) || RICO.SETS[n.set].some(k => !recent.includes(k)));
     if (i >= 0 && (!ROT.newsLast || big)) { ROT.newsLast = true; return story(RADAR.news.splice(i, 1)[0]); }
     ROT.newsLast = false;
+    /* a new song on the radio: Rico says what it is */
+    if (DJ.songNew && RICO.L["sn_" + DJ.songNew]) { const k = "sn_" + DJ.songNew; DJ.songNew = null; return { k, parts: [V(k)] }; }
     /* in between: the game, a joke now and then, the phone-in, Tau corner, a word between songs, the jungle legend, the island's habits */
     /* the chain has stood still for an hour or more: Rico talks about it now and then, not only in the weather */
     const st = RADAR.snap;
     if (st && !st.sim && st.age >= 60 && performance.now() - st.at < 180000 && Math.random() < 0.3) return one("stall", ago(String(st.h), st.age));
     const r = Math.random();
-    if (r < 0.35) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
-    const set = r < 0.58 ? "joke" : r < 0.67 ? "call" : r < 0.73 ? "corner" : r < 0.79 ? "segue" : r < 0.86 ? "legend" : "general";
-    if (set === "call" && Math.random() < 0.75) return phoneIn();   // otherwise a letter from a listener, read out by Rico
+    if (r < 0.26) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
+    /* the phone-in is the busiest part of the show: about one line in three, never two calls in a row */
+    const set = r < 0.42 ? "joke" : r < 0.74 ? (ROT.callLast ? "net" : "call") : r < 0.78 ? "corner" : r < 0.82 ? "segue" : r < 0.87 ? "legend" : r < 0.91 ? "mainland" : r < 0.95 ? "net" : "general";
+    ROT.callLast = false;
+    if (set === "call" && Math.random() < 0.88) { ROT.callLast = true; return phoneIn(); }   // otherwise a letter from a listener, read out by Rico
     return one(set);
   }
   readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
   setInterval(() => {
     if (!G || G.over || G.counting || document.hidden || performance.now() < DJ.next) return;
+    /* the show waits for the sound to come on (the first tap), so the opener is heard, not just read; after a while it goes on in text */
+    if (ROT.n === 0 && !SND.on && performance.now() < 90000) return;
+    if (DJ.opened && DJ.after) { const a = DJ.after; DJ.after = null; onAir(a, 1); return; }
     const l = nextLine(); if (!l) return;
     if (l.k) markSaid(l.k);
-    onAir(l.parts);
+    DJ.opened = true;
+    if (l.wake && SND.on) { SND.sfx("wake"); DJ.next = performance.now() + 60000; setTimeout(() => onAir(l.parts, true), 2000); return; }
+    onAir(l.parts, false, l.call);
   }, 2000);
+  /* the radio plays its songs one after the other (music.js PLAYLIST): when a new one starts, Rico announces it next */
+  setInterval(() => { const so = SND.song; if (!so || !so.id || UI.card) return; if (DJ.song && so.id !== DJ.song) DJ.songNew = so.id; DJ.song = so.id; }, 3000);
 
   /* ---------- election night ---------- */
   function election() {
