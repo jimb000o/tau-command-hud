@@ -17,4 +17,6 @@ echo "waiting 20 s…"
 sleep 20
 curl -s https://node.tauhud.com/status | head -c 200; echo
 curl -s https://node.tauhud.com/isle | head -c 200; echo
+# voice lines that have no clip yet (spends credits only on new lines)
+[ -f rico/make.py ] && python3 rico/make.py make || true
 echo "done. next time just type: up"
