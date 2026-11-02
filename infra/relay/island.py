@@ -22,7 +22,10 @@ count of moves can still be read from the blocks (txsources.py divides the amoun
 Money also flows back to the visitor, for real: the Coconut Works pays a shift's wage and the two embassies pay
 the money they offer, from purses (PURSES) whose keys are kept here like the campaign wallets. The page asks
 `islandpay <works|north|south> <wallet>` after the move, and the purse sends that amount to the visitor's test
-wallet. At most PAY_PER_WALLET payouts per wallet a day, and they count towards ISLAND_DAILY.
+wallet. A payout is only queued for an address that signed a transaction through this relay in the last
+PAY_AFTER_MOVE seconds (the move the money is for), at most PAY_PER_WALLET a day per wallet (counted once the
+purse has really sent), at most PAY_PER_IP a day per address, and payouts never take more than PAY_SHARE of
+ISLAND_DAILY, so the rivals' moves keep their share of the day.
 
 Limits, so a page that is left open or a script cannot flood the testnet: a few moves per address per
 minute, a queue of at most QUEUE_MAX different moves, at most ISLAND_DAILY transactions per UTC day, one every
@@ -73,6 +76,9 @@ QUEUE_MAX = 60
 # the purses that pay the visitor (rabbit/game.js: a shift's wage, EMB coins)
 PURSES = {"works": 10, "north": 40, "south": 35}
 PAY_PER_WALLET = 12
+PAY_PER_IP = 36           # payouts per address a day (a household, a classroom)
+PAY_AFTER_MOVE = 600      # seconds: a payout needs a transaction from the same address this recently
+PAY_SHARE = 0.6           # at most this share of the day's transactions may be payouts
 WALLET_RE = re.compile(r"^[0-9a-f]{96}$")
 BATCH_MAX = 200          # moves one transaction may stand for
 SPACING = 2.5            # seconds between two transactions
@@ -125,7 +131,10 @@ class Island:
         self.psk: dict[str, int] = {}
         self.ppk: dict[str, str] = {}   # the purses: place -> pubkey
         self.pays: dict = {}            # (purse, wallet) -> how many payouts wait
-        self.paid: dict[str, int] = {}  # wallet -> payouts today
+        self.paid: dict[str, int] = {}  # wallet -> payouts sent today
+        self.paid_ip: dict[str, int] = {}   # address -> payouts asked for today
+        self.seen: dict[str, float] = {}    # address -> when it last sent a transaction through the relay
+        self.today_pay = 0              # payouts sent today
         if self.enabled:
             try:
                 self.load()
@@ -171,15 +180,27 @@ class Island:
         b = self.ips.setdefault(ip, Bucket(IP_BURST, IP_REFILL, now))
         if not b.take(now):
             return True, {"queued": False, "why": "busy"}
-        if self.paid.get(wallet, 0) >= PAY_PER_WALLET:
+        if now - self.seen.get(ip, 0) > PAY_AFTER_MOVE:   # the money is for a move, and a move is a transaction
+            return True, {"queued": False, "why": "no move"}
+        waiting = sum(n for (p, w), n in self.pays.items() if w == wallet)
+        if self.paid.get(wallet, 0) + waiting >= PAY_PER_WALLET or self.paid_ip.get(ip, 0) >= PAY_PER_IP:
             return True, {"queued": False, "why": "enough today"}
-        if self.today + len(self.queue) + len(self.pays) >= self.daily or len(self.pays) >= QUEUE_MAX:
+        if self.today + len(self.queue) + len(self.pays) >= self.daily or len(self.pays) >= QUEUE_MAX \
+                or self.today_pay + len(self.pays) >= self.daily * PAY_SHARE:
             return True, {"queued": False, "why": "daily"}
         if len(self.paid) > 20000:
             self.paid.clear()
-        self.paid[wallet] = self.paid.get(wallet, 0) + 1
+        if len(self.paid_ip) > 20000:
+            self.paid_ip.clear()
+        self.paid_ip[ip] = self.paid_ip.get(ip, 0) + 1
         self.pays[(purse, wallet)] = self.pays.get((purse, wallet), 0) + 1
         return True, {"queued": True, "amount": PURSES[purse], "from": self.ppk[purse]}
+
+    def saw_tx(self, ip: str):
+        """The relay passed a signed transaction from this address to the node (relay.py sendtx)."""
+        if len(self.seen) > 20000:
+            self.seen.clear()
+        self.seen[ip] = self.clock()
 
     def build_pay(self, purse: str, wallet: str, seq: int, tip: int, fee: int, n: int = 1) -> dict:
         """One signed transfer from a purse to the visitor's wallet: the wage or the embassy's money, n times."""
@@ -203,6 +224,8 @@ class Island:
         if bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False:
             self.next_seq["purse-" + purse] = seq + 1
             self.today += 1
+            self.today_pay += 1
+            self.paid[wallet] = self.paid.get(wallet, 0) + n
             self.recent.appendleft({"by": purse, "kind": "pay", "to": wallet, "amount": PURSES[purse] * n, "hash": (res.get("data") or {}).get("tx_hash"), "at": int(self.clock())})
         else:
             self.next_seq.pop("purse-" + purse, None)
@@ -236,8 +259,9 @@ class Island:
     def roll(self, now: float):
         d = int(now // 86400)
         if d != self.day:
-            self.day, self.today = d, 0
+            self.day, self.today, self.today_pay = d, 0, 0
             self.paid.clear()
+            self.paid_ip.clear()
 
     def build(self, who: str, seq: int, tip: int, fee: int, at: str = "hall", n: int = 1) -> dict:
         """One signed transfer from the candidate's campaign wallet to the place's till for n moves: n test AGRS, a radio line 25 each."""

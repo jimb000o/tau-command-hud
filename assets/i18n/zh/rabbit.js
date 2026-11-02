@@ -277,7 +277,7 @@ TauI18n.add({ strings: {
   "This line on Tau Testnet Alpha": "这一行在 Tau Testnet Alpha 上",
   "This line went to Tau Testnet Alpha as a transaction": "这一行已作为一笔交易发到 Tau Testnet Alpha",
   "Sign my moves into Tau Testnet Alpha as I make them, paid to the place where I make them: 1 test AGRS each, a line on Radio Coco 25, from my test wallet in this browser (made for me if I have none). The rivals’ moves go there anyway, from their own campaign wallets.": "我每走一步就签名上 Tau Testnet Alpha，付给我所在的地方：每步 1 个测试 AGRS，在 Radio Coco 买一句 25 个，从这个浏览器里的测试钱包发出（没有钱包就自动建一个）。对手们的每一步无论如何都会上链，来自他们自己的竞选钱包。",
-  "On the chain: every line in the Book is also a transaction on Tau Testnet Alpha, 1 test AGRS to the island council. The rivals send theirs from their own campaign wallets; yours go from your test wallet if you ticked the box. A ⛓ in the Book marks them.": "上链：账本里的每一行同时也是 Tau Testnet Alpha 上的一笔交易，向小岛议会发 1 个测试 AGRS。对手们从自己的竞选钱包发送；你的在你勾选后从你的测试钱包发出。账本里的 ⛓ 标出它们。",
+  "The rivals send theirs from their own campaign wallets, yours from the test wallet this browser made for you. A ⛓ in the Book marks them.": "上链：账本里的每一行同时也是 Tau Testnet Alpha 上的一笔交易，向小岛议会发 1 个测试 AGRS。对手们从自己的竞选钱包发送，你的从这个浏览器为你生成的测试钱包发出。账本里的 ⛓ 标出它们。",
   /* the other quarters of the painted island */
   "The Council Tree": "议事树",
   "The Kettle": "水壶咖啡棚",
@@ -298,7 +298,7 @@ TauI18n.add({ strings: {
   "Surveyor, measures for the embassies": "测量员，替大使馆丈量",
   "Foreman of the Coconut Works": "椰子工坊的工头",
   "Keeps the drums and the circle": "掌管鼓和议事圈",
-  "{x} pays you {n} test AGRS on the testnet.": "{x} 在测试网上付给你 {n} 个测试 AGRS。",
+  "{x} is sending you {n} test AGRS on the testnet.": "{x} 正在测试网上给你发送 {n} 个测试 AGRS。",
   "Every move is real: it is signed into Tau Testnet Alpha from a test wallet made for you in this browser, and paid to the place where you make it (1 test AGRS, a line on Radio Coco 25). Wages and embassy money come back into that wallet. The rivals’ moves go there too. Test AGRS have no value.": "每一步都是真的：它从这个浏览器里为你建好的测试钱包签名上 Tau Testnet Alpha，并付给你所在的地方（1 个测试 AGRS，在 Radio Coco 买一句 25 个）。工钱和使馆的钱会回到这个钱包。对手们的每一步也都上链。测试 AGRS 没有价值。",
   "South Current Embassy, wellness investor": "南流大使馆，养生投资人",
   "The Book is the oldest custom of the island’s first people: for three hundred years every agreement was copied by hand into many books, so nobody alone could change one. The testnet is only its newest copy.": "这本书是岛上最早居民最古老的习俗：三百年来，每一项约定都被手抄进许多本书里，所以没有人能独自改动其中一本。测试网只是它最新的一份抄本。",

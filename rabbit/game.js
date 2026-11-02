@@ -304,8 +304,7 @@
   const leader = () => Object.keys(CANDS).sort((a, b) => total(b) - total(a))[0];
   const bump = (c, who, d) => { PEOPLE.forEach(p => { if (!who || who(p)) G.sup[c][p.id] = Math.max(0, Math.min(100, G.sup[c][p.id] + d)); }); };
   /* the Book: every move signed with the name of whoever made it */
-  /* every line in the Book is also a transaction on Tau Testnet Alpha: the visitor's own (signed in their test wallet,
-     once they tick the box) and the rivals' (sent by the island bot on the relay, from the rivals' campaign wallets) */
+  /* every line in the Book is also a transaction on Tau Testnet Alpha: the visitor's own (signed in their test wallet) and the rivals' (sent by the island bot on the relay, from the rivals' campaign wallets) */
   const write = (who, text, kind, at, pay, x) => {
     at = (who === G.me && UI.at) || at || TILL_AT[kind] || "hall";   // the visitor pays where they stand
     const b = { day: G.day, hour: Math.min(2, G.move), who, text, kind, at, pay: pay || 1 }; G.book.push(b); onChain(b);
@@ -1350,7 +1349,7 @@
     return btn(sent ? T("Sent to the testnet ✓") : label, go, { off: !!sent, sub: T("1 test AGRS from your test wallet, signed by you") });
   }
   /* ---------- the Book on the chain ---------- */
-  const CHAIN = { ws: null, wait: new Map(), q: [], busy: false, next: 0, fee: null, made: false };
+  const CHAIN = { ws: null, wait: new Map(), q: [], payq: [], busy: false, next: 0, fee: null, made: false };
   function relay() {
     return new Promise(res => {
       if (CHAIN.ws && CHAIN.ws.readyState === 1) return res(CHAIN.ws);
@@ -1380,14 +1379,19 @@
   }
   /* money that comes to the visitor (a shift's wage, an embassy's money) is real too: the island's purses on the relay
      pay it into their test wallet (infra/relay/island.py PURSES), when they sign their moves on the testnet */
+  /* the wage or the embassy's money: asked for once the move's own transaction is through (the relay pays only after a move) */
   function payMe(purse, from) {
     if (!G || !G.onchain) return;
-    const k = myKey(); if (!k) return;
-    ask("islandpay " + purse + " " + k.pk, 8000).then(m => {
+    CHAIN.payq.push({ purse, from });
+    if (!CHAIN.busy && !CHAIN.q.length) flushPay();
+  }
+  function flushPay() {
+    const k = myKey(); if (!k) { CHAIN.payq.length = 0; return; }
+    CHAIN.payq.splice(0).forEach(({ purse, from }) => ask("islandpay " + purse + " " + k.pk, 8000).then(m => {
       if (!(m && m.status === "ok" && m.data && m.data.queued)) return;
       if (m.data.from) remember(m.data.from, "Key purse · " + from);
-      toast(F("{x} pays you {n} test AGRS on the testnet.", { x: from, n: m.data.amount }));
-    }, () => {});
+      toast(F("{x} is sending you {n} test AGRS on the testnet.", { x: from, n: m.data.amount }));
+    }, () => {}));
   }
   /* the visitor's test wallet in this browser (the same key /wallet/ uses); made here if there is none yet */
   function myKey() {
@@ -1421,7 +1425,8 @@
         try { const lk = "tauhud-wallet-log-live-" + k.pk, logs = JSON.parse(store.get(lk) || "[]"); logs.unshift({ hash, kind: "pay", label: T("White Rabbit Key") + ": " + label, at: Date.now(), status: "queued", seq, paid: true }); store.set(lk, JSON.stringify(logs.slice(0, 40))); } catch (e) {}
         if (TILL[at]) remember(to, "Key till · " + ((SC.places[at] || {}).name || at));   // a readable name in the wallet's address book
         toast(F("Signed into the testnet: {n} test AGRS from your wallet.", { n: pay }));
-      } else { CHAIN.next = 0; toast(T("The testnet did not take this move just now; the game goes on.")); }
+        if (CHAIN.payq.length) flushPay();
+      } else { CHAIN.payq.length = 0; CHAIN.next = 0; toast(T("The testnet did not take this move just now; the game goes on.")); }
     } catch (e) { if (G && G.onchain) toast(T("The testnet is out of reach just now; the game goes on.")); }
     CHAIN.busy = false; done && done(hash);
     if (CHAIN.q.length) setTimeout(pump, 400);
@@ -1626,7 +1631,7 @@
         el("li", { text: T("Embassies: coins now, for a promise to propose their law. Forget it and they tell everyone.") }), el("li", { text: T("Bar La Ola: pacts. Partners vote for each other’s laws.") }),
         el("li", { text: T("The lighthouse: the Book. Free to read, and nobody can change it.") }),
         el("li", { text: T("Election night: the visitors of the site cast an eleventh ballot, for whoever leads the island ballot on the real testnet.") }),
-        el("li", { text: T("On the chain: every line in the Book is also a transaction on Tau Testnet Alpha, 1 test AGRS to the island council. The rivals send theirs from their own campaign wallets; yours go from your test wallet if you ticked the box. A ⛓ in the Book marks them.") }),
+        el("li", { text: T("On the chain: every line in the Book is also a transaction on Tau Testnet Alpha, 1 test AGRS to the island council. The rivals send theirs from their own campaign wallets, yours from the test wallet this browser made for you. A ⛓ in the Book marks them.") }),
         el("li", { text: T("Inspired by \"Caribbean Disaster\" (1995). An independent homage, not affiliated with or endorsed by its creators. All art, characters, story and music are original.") }))));
   }
   /* ?voice=check: one tap plays Rico's first line and the plate shows each step, for a phone that stays silent */

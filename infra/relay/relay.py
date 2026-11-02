@@ -1253,6 +1253,7 @@ class Relay:
             return envelope_error(cmd, "Node is not reachable right now.", "UPSTREAM_DOWN")
         if cmd == "sendtx" and msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False:
             self.sources.note((msg.get("data") or {}).get("tx_hash"), site, via)   # for "where the transactions come from"
+            self.island.saw_tx(ip)   # White Rabbit Key may pay this address for the move
         return json.dumps(msg, separators=(",", ":"))
 
     async def lease_deposit(self, raw: str, ip: str) -> str:
