@@ -1369,7 +1369,15 @@
  },
  {
   "who": "marisol",
-  "text": "I trust what’s written down. Tobias has a theory about everyone, Baako has a handshake for everyone, Hana has a footnote for everyone. I have coffee."
+  "text": "I trust what’s written down. Tobias has a speech for every envelope, Baako has a ledger for every coconut, Hana has a footnote for everyone. I have coffee, and coffee hears things."
+ },
+ {
+  "who": "marisol",
+  "text": "Rumours don’t start anywhere. They wander in, sit down and order a coffee. I only help them find the radio. A café has to live on something."
+ },
+ {
+  "who": "marisol",
+  "text": "Then Hana’s class has found out by lunch. Those children check everything. My gossip has never been so honest. Business is worse. The coffee is better."
  },
  {
   "who": "lola",
@@ -1532,6 +1540,14 @@
   "text": "Slander! Well, yes. Kai is secretly a fish. Pim measures his own shadow at night. And Agorzilla is a council member in a very good costume. I have no proof. Proof is for the Book. I do theories."
  },
  {
+  "who": "tobias",
+  "text": "Take? I receive. With a brass band, a ribbon and a short speech. What they paid me for goes in the Book, like every promise on this island. You may read it. Bring a chair."
+ },
+ {
+  "who": "tobias",
+  "text": "It buys a ceremony. The law still needs the council’s yes, and the council cannot be bought with a ribbon. I tried. Hana sent the ribbon back with corrections."
+ },
+ {
   "who": "hana",
   "text": "The school boat runs every morning now. Attendance is up, and so is seasickness. I write down both."
  },
@@ -1570,6 +1586,10 @@
  {
   "who": "hana",
   "text": "Half the class says he is real, the other half says he is Kiko in a coat. They held a debate. Both sides quoted the same blurry photo. Everyone got a B."
+ },
+ {
+  "who": "hana",
+  "text": "Before anyone. A rumour reaches the playground before it reaches the radio. The children bring them to class like shells from the beach, and we hold each one up to the Book. Most of them are empty."
  },
  {
   "who": "kai",
@@ -1621,7 +1641,7 @@
  },
  {
   "who": "baako",
-  "text": "A fine morning! The coconuts are ripe, the embassies are friendly, and nobody has asked me a hard question yet."
+  "text": "A fine morning! The coconuts are ripe, the co-op’s books balance, and nobody has asked me a hard question yet."
  },
  {
   "who": "baako",
@@ -1629,11 +1649,11 @@
  },
  {
   "who": "baako",
-  "text": "Everybody asks. Yes, I talk to them, I shake their hands, I drink their tea. What I promise is in the Book, like everyone’s. You can count my envelopes. I’d rather you counted my coconuts."
+  "text": "One farmer alone sells at the embassies’ price. Forty farmers together set their own. Every coconut goes into the co-op’s book, and anyone may count them. People do. Loudly."
  },
  {
   "who": "baako",
-  "text": "It buys a meeting. They pay me to propose a law, and the other three still have to say yes. Money can knock on the door. It can’t open it."
+  "text": "They offered me one. I asked for a receipt. They have not offered again. Try the pier: Tobias gives every envelope a welcome speech."
  },
  {
   "who": "baako",

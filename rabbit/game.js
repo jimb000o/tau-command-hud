@@ -30,12 +30,12 @@
   /* ---------- who lives on the island ---------- */
   const TOPICS = { fish: "fishing", school: "the school", music: "music", quiet: "quiet nights", visitors: "visitors", roads: "roads" };
   const CANDS = {
-    marisol: { name: "Marisol", role: "Runs the Parasol Café, still mends nets", skin: "#a8693f", hair: "#1d1410", style: "bun", acc: "scarf", accC: "#e8574a", shirt: "#2fb0a8", cares: ["fish", "roads"], way: "people",
-      pitch: "Talks to everyone, forgets no one." },
-    tobias: { name: "Tobias", role: "Harbour master, loves a ceremony", skin: "#e0b08a", hair: "#9a9aa0", style: "side", acc: "cap", accC: "#1f3550", shirt: "#f4f1ea", cares: ["visitors", "music"], way: "rumours",
-      pitch: "Has a microphone and a theory about everyone." },
-    baako: { name: "Baako", role: "Coconut farmer, friend of every embassy", skin: "#5a3620", hair: "#111", style: "short", acc: "straw", accC: "#d9b45a", shirt: "#f2b134", cares: ["visitors", "roads"], way: "money",
-      pitch: "Shakes every hand, especially the ones holding envelopes." },
+    marisol: { name: "Marisol", role: "Runs the Parasol Café, hears everything first", skin: "#a8693f", hair: "#1d1410", style: "bun", acc: "scarf", accC: "#e8574a", shirt: "#2fb0a8", cares: ["fish", "roads"], way: "rumours",
+      pitch: "Talks to everyone, and about everyone." },
+    tobias: { name: "Tobias", role: "Harbour master, friend of every embassy", skin: "#e0b08a", hair: "#9a9aa0", style: "side", acc: "cap", accC: "#1f3550", shirt: "#f4f1ea", cares: ["visitors", "music"], way: "money",
+      pitch: "Gives every ambassador a ceremony, and every envelope a warm welcome." },
+    baako: { name: "Baako", role: "Founder of the coconut co-op, counts everything", skin: "#5a3620", hair: "#111", style: "short", acc: "straw", accC: "#d9b45a", shirt: "#f2b134", cares: ["visitors", "roads"], way: "people",
+      pitch: "Knows the price of every coconut and every promise." },
     hana: { name: "Hana", role: "Schoolteacher, writes everything down", skin: "#f0cfa8", hair: "#222", style: "bob", acc: "glasses", accC: "#333", shirt: "#6f8cff", cares: ["school", "quiet"], way: "laws",
       pitch: "Believes a good law beats a good speech." },
   };
@@ -290,7 +290,7 @@
     const R = seeded(Date.now() & 0xffffff), sup = {};
     for (const c in CANDS) { sup[c] = {}; PEOPLE.forEach(p => { sup[c][p.id] = 42 + Math.round(R() * 14) + (CANDS[c].cares.some(x => p.cares.includes(x)) ? 6 : 0); }); }
     const trust = {}; for (const c in CANDS) trust[c] = 45;
-    return { v: 1, me, day: 1, move: 0, coins: { marisol: 30, tobias: 40, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {} };
+    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {} };
   }
   const save = () => { if (G) store.set(KEY, JSON.stringify(G)); };
   function load() { try { const g = JSON.parse(store.get(KEY) || "null"); if (g && g.v === 1 && CANDS[g.me]) return g; } catch (e) {} return null; }
@@ -326,7 +326,7 @@
   function aiVote(v, by, id) {
     if (pact(v, by)) return true;
     const s = lawScore(id, CANDS[v].cares), R = seeded(G.seed + G.day * 31 + id.length * 7 + v.length);
-    if (LAWS[id].open) return v !== "tobias" || R() < 0.3;   // more people reading the Book suits everyone except the man with the microphone
+    if (LAWS[id].open) return v !== "marisol" || R() < 0.3;   // more people reading the Book suits everyone except the café that lives on gossip
     if (s > 0) return true; if (s < 0) return false;
     return leader() !== by && R() < 0.55;
   }
@@ -407,7 +407,7 @@
       }
       if (R() < 0.35 && w !== "rumours") { const p = others(c).filter(x => x !== G.me && !pact(c, x))[0]; if (p && R() < 0.5) makePact(c, p, false); }
       campaign(c, CANDS[c].cares[0], 0.4);
-      if (w === "rumours") campaign(c, CANDS[c].cares[1], 0.5);   // the man with the microphone also just talks
+      if (w === "rumours") campaign(c, CANDS[c].cares[1], 0.5);   // the café owner also just talks
     }
     /* promises due: whoever took embassy money and never proposed the law is found out on the last morning */
     if (G.day === DAYS) G.deals.forEach(d => { if (!d.kept && !d.told) { d.told = true; bump(d.by, null, -8); write(d.emb === "north" ? "frost" : "salado", F("says {x} took the money and never proposed “{y}”", { x: nm(d.by), y: T(LAWS[d.law].t) }), "broke"); news(F("{x}: “{y} took our money and forgot us.”", { x: T(EMB[d.emb].name), y: nm(d.by) })); } });
