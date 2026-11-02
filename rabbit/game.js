@@ -1959,15 +1959,16 @@
     if (holder && holder !== ISLE_BY && good.length) bump(holder, p => p.cares.some(c => good.includes(c)), 2);
     news(F("All over the island, people talk about “{x}” today.", { x: T(LAWS[top].t) }) + (holder ? " " + (holder === ISLE_BY ? T("Here it is the island’s own law this week.") : F("Here it is {y}’s law.", { y: nm(holder) })) : ""));
   }
-  /* Rico's lines about the whole island (shown, not spoken: they change all day) */
+  /* Rico's lines about the whole island: the numbers change all day, so they are shown exactly and spoken as a band
+     or a name (rico.js isN, isLaw, isWin, isGov, isNews1/2), the rest in brackets beside */
   function isleLines() {
     const s = ISLE.s, L = []; if (!s || Date.now() - ISLE.at > 600000) return L;
     const p = s.players, laws = isleLaws(), top = isleTop(laws)[0];
-    if (p.campaigns > 1) L.push({ k: "isle:n", parts: [Q("Around the island today: {n} campaigns, {m} of them finished.", { n: p.campaigns, m: p.finished })] });
-    if (top && laws[top] > 1) L.push({ k: "isle:law", parts: [Q("Across the island, “{x}” has passed {n} times today.", { x: T(LAWS[top].t), n: laws[top] })] });
-    const w = isleTop(p.wins)[0]; if (w && p.finished > 2) L.push({ k: "isle:win", parts: [Q("Election results from the whole island: {x} has won {n} of {m} today.", { x: nm(w), n: p.wins[w], m: p.finished })] });
-    const last = isleLast(); if (last) L.push({ k: "isle:gov", parts: [Q("{x} governs the island this week, with {n} of last week’s {m} campaigns won. Next governor’s count {y}, Monday 00:00 German time.", { x: nm(last.governor), n: last.wins[last.governor] || 0, m: last.finished, y: countIn() || T("next week") })] });
-    const e = (s.recent || []).find(x => x.k !== "won"); if (e) L.push({ k: "isle:" + e.t, parts: [Q(e.h ? "Island news: {x}." : "Fresh from the square: {x}.", { x: isleLine(e) })] });
+    if (p.campaigns > 1) L.push({ k: "isle:n", parts: [{ t: F(RICO.L.isN, { n: p.campaigns }), v: RICO.fill(RICO.L.isN, { n: band(p.campaigns) }) }, Q("({n} of them finished)", { n: p.finished })] });
+    if (top && laws[top] > 1) L.push({ k: "isle:law", parts: [V("isLaw"), Q("(“{x}”, {n} times)", { x: T(LAWS[top].t), n: laws[top] })] });
+    const w = isleTop(p.wins)[0]; if (w && p.finished > 2) L.push({ k: "isle:win", parts: [V("isWin", { x: nm(w) }), Q("({n} of {m})", { n: p.wins[w], m: p.finished })] });
+    const last = isleLast(); if (last) L.push({ k: "isle:gov", parts: [V("isGov", { x: nm(last.governor) }), Q("({n} of last week’s {m} campaigns won; next governor’s count {y}, Monday 00:00 German time)", { n: last.wins[last.governor] || 0, m: last.finished, y: countIn() || T("next week") })] });
+    const e = (s.recent || []).find(x => x.k !== "won"); if (e) L.push({ k: "isle:" + e.t, parts: [V(e.h ? "isNews1" : "isNews2"), Q("{x}.", { x: isleLine(e) })] });
     return L;
   }
   /* after the election: how this campaign compares with the island's */
@@ -2115,11 +2116,12 @@
     SND.sfx("meow"); toast(T("You agreed. Déjà looked at you as if she had expected it."));
     if (UI.card) deja();
   }
-  /* Rico's line about her (shown, not spoken: the count changes all day) */
+  /* Rico's line about her: her count as a word (one, two), so the line has its clip; more than three shown beside */
   function dejaLines() {
     const s = DJ_S.s, L = []; if (!s || Date.now() - DJ_S.at > 1800000) return L;
-    if (s.fed) L.push({ k: "deja:fed", parts: [Q("Déjà has eaten today: {n} wallets agreed. Marisol says she acted surprised.", { n: s.agreed })] });
-    else L.push({ k: "deja:" + s.agreed, parts: [Q(s.agreed ? "Déjà, the café cat: {n} of three wallets agreed today. One test AGRS says yes; find her." : "Nobody has agreed to feed Déjà yet today. Three wallets, one test AGRS each; find her, she is around.", { n: s.agreed })] });
+    if (s.fed) L.push({ k: "deja:fed", parts: [V("dejaFed"), ...(s.agreed > 3 ? [Q("({n} wallets)", { n: s.agreed })] : [])] });
+    else if (s.agreed >= 1 && s.agreed <= 2) L.push({ k: "deja:" + s.agreed, parts: [{ t: F(RICO.L.dejaN, { n: s.agreed }), v: RICO.fill(RICO.L.dejaN, { n: ["one", "two"][s.agreed - 1] }) }] });
+    else L.push({ k: "deja:0", parts: [V("dejaNone")] });
     return L;
   }
   function legend() {
