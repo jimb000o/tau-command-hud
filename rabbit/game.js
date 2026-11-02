@@ -1254,16 +1254,133 @@
      the simulation the refusals, a consensus switch voted on or in force, and the restart at midnight UTC. */
   const RADAR = { snap: null, busy: false, seen: 0, mode: null, rules: null, ghosts: 0, ghostAt: 0, flagged: {}, news: [] };
   const DJ_S = { s: null, at: 0 };   // Déjà's day as the relay last told it (GET /deja)
-  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "deja", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused", "duet", "record", "solo", "postman", "fresh"];
+  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "deja", "place", "rival", "cafe", "founders", "unknown", "first", "mixed", "relay", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused", "duet", "record", "solo", "postman", "fresh"];
   const KIND = { rule_deploy: "rule", approval_request: "cosign", transfer_vote: "cosvote", retractable_transfer: "lock", retract_transfer: "back", rule_offer: "offer", rule_offer_accept: "offerYes", consensus_rule_vote: "lawVote" };
   const txKind = tx => { const t = tx.tx_type || "user_tx"; return t === "user_tx" && tx.operations && tx.operations["0"] ? "rule_deploy" : t; };
   /* the ghosts by the visitor's calendar: fitting in Halloween week, a nuisance in the first week of November, ordinary news otherwise */
   const ghostSeason = () => { const d = new Date(), m = d.getMonth(), day = d.getDate(); return m === 9 && day >= 24 ? "ghostHalloween" : m === 10 && day <= 7 ? "ghostAfter" : "ghost"; };
-  function heard(set, h) {
+  /* x, for a wave: keys (the lines of the set that fit), v (the numbers shown), s (the bands spoken), more (parts shown after) */
+  function heard(set, h, x) {
     if (!set) return;
     if (RADAR.news.some(n => n.set === set)) return;
-    RADAR.news.push({ set, h, at: performance.now() });
+    RADAR.news.push({ set, h, at: performance.now(), ...(x || {}) });
     RADAR.news.sort((a, b) => RANK.indexOf(a.set) - RANK.indexOf(b.set)); RADAR.news.length = Math.min(RADAR.news.length, 6);
+  }
+  /* ---------- where a wave comes from, as far as the blocks show it ----------
+     A transaction names a sender, a receiver and an amount, nothing else. Rico knows the island's own addresses (the jars,
+     the council's chest, the four ballot boxes, Déjà's bowl), Agorzilla's bowl and boxes across the bay, the rivals'
+     campaign wallets (the island bot's, relay GET /island) and the eleven wallets the lagoon started with (IDNI's genesis
+     accounts, infra/relay/txsources.py GENESIS). Every other sender is a wallet he has never seen. A source makes news
+     when it carries more than its share of a block: three times the lagoon's average per block over the last six hours
+     (relay GET /load, the strain page), at least one more than usual; while the average is nought, as it mostly is, the
+     first transaction after a quiet hour is the news. One call per source an hour; a mixed wave with no leader gets its
+     own line; the rivals and the pier bell are counted over the reading (up to two minutes), not the block. The relay's
+     own refusals (our door, not the chain's) come from the same page. Live chain only: the simulation's addresses mean
+     nothing. The lines are rico.js SETS founders, place, rival, cafe, unknown, relay, first and mixed. */
+  const GENESIS = new Set(["f427fbf4cb8cc5ebcfc50add98ba574b94c03b1e32626e2e50cf60ba5e0a6d0c42d3ed702c2e0eeef7fae29bc4f3d2f9", "838d089401687e4ba5fe844f1241b2f6cf63cf73a7f8fb6aa0e45b3c6b85454f4e7ca19960b71d847655486495b64cb4",
+    "93da919aed3b83e517190b8362528b35cbd51beb754289c5d99db12a306ac7f4980fbb96108a9cb812a46aede0c5f9ca", "8a39b9d9498535492290c52b44959b5a6e9177dc85ae6a1d97f54462f03c15a38052a85c7ace5cd81858e343a3b789d0",
+    "b1337fcdf8d713a53518f0d6289c70bec2a09a7d6ec84548aac208988391cd66a9b627d03c07d922cd6ad15ebecf3ad7", "b3566dd294833030380d74b39fdb0bf214e9c64906b175f8822c3d4386602b1a9340231e553f9c299d6d8a82b9d441da",
+    "af1d997703d7c0a86a5988762bb9ac2642890b5f0599f9821372684487d580a5f211ec160c038c073cda604c3c646487", "9689f5f8ffe6b73bb549e4058e54a3fc6a96ef2e784c415adeffd83d9488c9b435f075b59a778308f86226074f8b09b0",
+    "916b92be0561ee21d042d033cabdf58d1c2f9ed110b2e173ab9cdd2a585442bec6232ffe0d97b779976a1dfd6a9d38fc", "b9e4b8fbe06a12f4702617f71ef031206426c4205ca0bc3436d2e0cb047fd18473ad125ceefc7ef18b851a19af2f370b",
+    "8df32da800ad4b0657e333774889e6b08f768ab055ffb964d5935bbc8460aa8f91fa60a6a042f64ec144c7ec18ae02a3"]);
+  const AGZ = {   // agorzilla.com (agorilla assets/core.js): the bowl, the three ballot boxes, the five question boxes
+    bowl: "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108",
+    boxes: new Set(["931c4e3b949dd5a77c226e2409f617aa9603f15075f20902c849855f24fb5439113afa3869fc415a3786fe5f30321392", "92cfce4449523a48ab02f88d5acfa85b74860c87eaf501c48320c99a8a142191ba022199c3b20474ff19f7b72f4563a4", "afbdeb43eb62d4a95f2f679686488a14a033cbddb45dec0ac7181d40a668f4af3c8b1c9df05b3b2bc33e664a2a8dd98b"]),
+    asks: new Set(["ad628e861687c726aa780c4af1d4e10df4e16c169772686ada8ed81e430ec7bd70214bb732d9b7a75fb4d968136cec86", "940bad7f401e65b0ddfd2b891251cdb3f027dc96bbe4d64b5ea5547900338107186cc23d500c1888598ccc4343f6df2e", "b6bdcade83f317c5a3e0402466a4f6c93a1b9018a3dd61026143c8284741fad2deeffda9a7fd3db587e86f4f44de3418", "992d87e93030634c581fc3e6c574af0da06c70798d49f82135d8231147b79c071e277616d84fb6175dbeae2264377071", "b09ad0b1742efd5a4a4e7fa93a52b9f5954466ca2f694db9dfda4d593d9c15a73dfdd9055ad286e8f11f76b0f69395cf"]),
+  };
+  const BALLOT = new Set([ADDR.marisol, ADDR.tobias, ADDR.baako, ADDR.hana]);
+  const SRC = { bots: {}, avg: 0, title: "", at: {}, pairs: {}, hour: -1, known: null, gerald: null, fed: null, lastTx: null };
+  const lc = x => String(x || "").toLowerCase();
+  const jarName = pk => pk === ADDR.council ? "council" : Object.keys(TILL).find(k => TILL[k] === pk) || null;
+  const placeName = at => at === "council" ? "the council hall" : at === "ballot" ? "the ballot boxes" : (SC.places[at] || {}).name || at;   // English: the line around it is translated whole
+  const share = () => SRC.avg < 0.25 ? 1 : Math.ceil(Math.max(3 * SRC.avg, SRC.avg + 1));   // a source's share of a block before Rico calls it
+  const band = n => RICO.BANDS.count[n < 4 ? 0 : n < 10 ? 1 : n < 20 ? 2 : n < 100 ? 3 : 4];
+  const coinBand = a => RICO.BANDS.coins[a < 1000 ? 0 : a < 10000 ? 1 : a < 100000 ? 2 : 3];
+  /* a wave's numbers: shown exactly, spoken as the band (rico.js BANDS), the block ({where}) as "block 1234" and "the latest block" */
+  const wave = (n, h, spoken) => ({ v: { n, where: "block " + h }, s: { n: spoken || band(n), ...RICO.BLOCK } });   // English: the line is translated whole, the block with it
+  /* one call per source an hour */
+  const call = (src, set, h, x) => { const now = performance.now(); if (now - (SRC.at[src] || -1e9) < 3600000) return false; SRC.at[src] = now; heard(set, h, x); return true; };
+  function sources(nb, s) {
+    if (s.sim || !nb.length || !window.RICO || !RICO.BANDS) return;
+    const T0 = share(), hour = Math.floor(Date.now() / 3600000), nowS = Date.now() / 1000;
+    if (hour !== SRC.hour) { SRC.hour = hour; SRC.pairs = {}; }
+    const rival = {}, pier = { n: 0, h: null }, b0 = berlin(), bell = b0.h === 20 && b0.m < 5, RV = { marisol: "rv1", tobias: "rv2", baako: "rv3", hana: "rv4" };
+    const stamp = b => { const t = Number(b.header.timestamp) || 0; return t > 1e12 ? t / 1000 : t; };
+    /* the wallets Rico has seen: on the first reading, the senders in the blocks from before the page opened */
+    if (!SRC.known) SRC.known = new Set(s.bs.filter(b => !stamp(b) || nowS - stamp(b) > 900).flatMap(b => (b.transactions || []).map(tx => lc(tx.sender_pubkey)).filter(Boolean)));
+    const fire = (c, h) => {
+      if (c.coins) return call(c.src, c.set, null, { keys: c.keys, ...wave(c.n, h, coinBand(c.n)) });
+      if (c.set === "founders") {
+        const keys = c.triple ? ["fw1"] : c.topN >= 2 ? ["fw4"].concat(SRC.gerald === c.top && SAID.includes("fw4") ? ["fw5"] : []) : ["fw2", "fw3"].concat(SAID.includes("fw4") ? ["fw6"] : []);
+        if (c.topN >= 2) SRC.gerald = c.top;
+        return call(c.src, c.set, h, { keys, ...wave(Math.max(c.topN, 2), h) });
+      }
+      if (c.n < 2) {   // one transaction after a quiet hour (one such call an hour, whatever the source)
+        if (SRC.lastTx == null || c.ts - SRC.lastTx < 3600) return false;
+        return call("first", "first", null, { keys: c.set === "place" ? ["fs1", "fs2", "fs3"] : ["fs2", "fs3"], more: [c.at ? Q("({x}, block {y})", { x: placeName(c.at), y: String(h) }) : Q("(block {y})", { y: String(h) })] });
+      }
+      return call(c.src, c.set, h, { keys: c.keys, ...wave(c.n, h), more: c.at && c.keys[0] === "pl7" ? [Q("({x})", { x: placeName(c.at) })] : [] });
+    };
+    for (const b of nb) {
+      const h = b.header.block_number, txs = b.transactions || [], ts = stamp(b);
+      const place = {}, founders = {}, agz = { bowl: 0, box: 0 }, fresh = new Set(), big = [], newBig = [], senders = new Set();
+      let triple = false;
+      for (const tx of txs) {
+        if (txKind(tx) !== "user_tx") continue;
+        const from = lc(tx.sender_pubkey); if (from) senders.add(from);
+        for (const op of (tx.operations || {})["1"] || []) {
+          if (!op) continue;
+          const to = lc(op[1]), amt = Number(op[2]) || 0, bot = SRC.bots[from], jar = jarName(to);
+          if (bot) rival[bot] = (rival[bot] || 0) + 1;
+          else if (jar) place[jar] = (place[jar] || 0) + 1;
+          else if (BALLOT.has(to)) place.ballot = (place.ballot || 0) + 1;
+          else if (to === DEJA.bowl) continue;   // her meals are their own news (notice)
+          else if (to === AGZ.bowl) agz.bowl++;
+          else if (AGZ.boxes.has(to)) agz.box++;
+          else if (AGZ.asks.has(to)) continue;
+          else if (GENESIS.has(from)) { founders[from] = (founders[from] || 0) + 1; const k = from + "|" + to + "|" + amt; SRC.pairs[k] = (SRC.pairs[k] || 0) + 1; if (SRC.pairs[k] === 3) triple = true; }
+          else { const seen = SRC.known.has(from); if (!seen) fresh.add(from); if (!seen && amt >= 1000) newBig.push(amt); else if (amt >= 10000) big.push(amt); }
+        }
+      }
+      pier.n += place.pier || 0; pier.h = h;
+      if (SRC.known) senders.forEach(k => SRC.known.add(k));
+      const old = !ts || nowS - ts > 900;   // blocks from before the page opened are weather, not news
+      if (!old) {
+        const cands = [];
+        for (const p in place) if (place[p] >= T0) cands.push({ n: place[p], src: "place:" + p, set: "place", at: p, keys: { pier: ["pl1"], market: ["pl3"], council: ["pl4"], radio: ["pl5"], ballot: ["pl6"] }[p] || ["pl7"] });
+        const fk = Object.keys(founders), fTop = fk.sort((a, b) => founders[b] - founders[a])[0], fSum = fk.reduce((a, k) => a + founders[k], 0);
+        if (fSum >= T0) cands.push({ n: fSum, src: "founders", set: "founders", top: fTop, topN: founders[fTop] || 0, triple });
+        if (agz.bowl >= T0) cands.push({ n: agz.bowl, src: "cafe", set: "cafe", keys: ["cz1"] });
+        if (agz.box >= T0) cands.push({ n: agz.box, src: "cafe", set: "cafe", keys: ["cz2"] });
+        if (fresh.size >= Math.max(2, T0)) cands.push({ n: fresh.size, src: "unknown", set: "unknown", keys: ["un2"] });
+        if (newBig.length) cands.push({ n: Math.max(...newBig), src: "unknown", set: "unknown", keys: ["un1", "un4"], coins: true });
+        else if (big.length) cands.push({ n: Math.max(...big), src: "unknown", set: "unknown", keys: ["un3"], coins: true });
+        cands.sort((a, b) => b.n - a.n);
+        const lead = cands[0];
+        if (lead) fire({ ...lead, ts }, h);
+        else if (senders.size >= 3 && txs.length >= Math.max(3, T0)) call("mixed", "mixed", h, { keys: ["dk3"], ...wave(senders.size, h) });
+      }
+      if (txs.length) SRC.lastTx = ts || SRC.lastTx;
+    }
+    const top = nb[nb.length - 1].header.block_number, fresh = !(!stamp(nb[nb.length - 1]) || nowS - stamp(nb[nb.length - 1]) > 900);
+    if (fresh) for (const who in rival) if (rival[who] >= Math.max(2, T0) && RV[who]) call("rival:" + who, "rival", top, { keys: [RV[who]], ...wave(rival[who], top) });
+    if (fresh && bell && pier.n >= 2) call("bell", "place", null, { keys: ["pl2"], ...wave(pier.n, pier.h) });
+  }
+  /* what the relay knows that the blocks do not: the rivals' wallets, the lagoon's average per block and the refusals of
+     the last hour, and the title of the builders' latest change (node.tauhud.com/devpulse.json), read every ten minutes */
+  function srcFetch() {
+    if (window.TauSim && TauSim.on) return;
+    const get = u => fetch("https://node.tauhud.com/" + u, { cache: "no-store" }).then(r => (r.ok ? r.json() : null));
+    get("island").then(j => { if (j && j.wallets) { SRC.bots = {}; Object.keys(j.wallets).forEach(k => { SRC.bots[lc(j.wallets[k])] = k; }); } }, () => {});
+    get("load").then(j => {
+      if (!j || !Array.isArray(j.sealed)) return;
+      const sum = a => (a || []).reduce((x, y) => x + (Number(y) || 0), 0), blocks = sum(j.blocks);
+      SRC.avg = blocks ? sum(j.sealed) / blocks : 0;
+      const r = j.refused || [], m = Math.max(Number(r[r.length - 1]) || 0, Number(r[r.length - 2]) || 0), hr = Number((j.now || {}).refused_hour) || 0;
+      if (m >= 3) call("relay", "relay", null, { keys: ["rf1"], v: { n: m }, s: { n: band(m) } });
+      else if (hr >= 10) call("relay", "relay", null, { keys: ["rf2"], v: { n: hr }, s: { n: band(hr) } });
+    }, () => {});
+    get("devpulse.json").then(j => { const t = String((((j || {}).repos || [])[0] || {}).head && j.repos[0].head.title || "").trim(); SRC.title = t.length >= 8 && t.length <= 70 && !/\n/.test(t) ? t : ""; }, () => {});
   }
   function readChain(done) {
     if (RADAR.busy) return done && done(RADAR.snap);
@@ -1306,7 +1423,7 @@
     RADAR.seen = Math.max(RADAR.seen, s.h);
     for (const b of nb) {
       const n = b.header.block_number, txs = b.transactions || [];
-      if (txs.length >= 10) heard("burst", n);
+      if (txs.length >= Math.max(10, 3 * share())) heard("burst", n);
       if (txs.some(tx => (((tx.operations || {})["1"]) || []).some(op => op && String(op[1]).toLowerCase() === DEJA.bowl && Number(op[2]) >= 1))) heard("deja", n);
       for (const tx of txs) {
         const k = txKind(tx), paid = k === "user_tx" ? ((tx.operations || {})["1"] || []).reduce((a, x) => a + (Number(x && x[2]) || 0), 0) : Number(tx.amount) || 0;
@@ -1316,6 +1433,7 @@
       }
       if (s.sim) for (const d of TauSim.chain.dropped(n) || []) heard(d.type === "consensus_rule_update" ? "refusedLaw" : /o5|own rule|its rule/i.test(d.why || "") ? "refusedOwn" : "refused", n);
     }
+    sources(nb, s);
     if (!s.sim) { chainLife(s); return; }
     /* the simulation's big moments: a consensus switch put to the vote, and the moment it comes into force */
     /* a validator in or out, the base fee up or down, or another rule revision in force */
@@ -1382,7 +1500,9 @@
   }
   /* chain news as a host tells it: big moments with a sting before and a word after, small ones now and then */
   function story(n) {
-    const big = /^(now|to|restart|midnight|val|fee|rev|whale)/.test(n.set), l = one(n.set, ...(n.h != null ? [Q("(block {y})", { y: String(n.h) })] : []));
+    const big = /^(now|to|restart|midnight|val|fee|rev|whale)/.test(n.set), k = pickLine(n.keys || RICO.SETS[n.set]), line = RICO.L[k];
+    const main = n.v ? { t: F(line, n.v), v: RICO.fill(line, n.s || n.v) } : V(k);   // a wave: the numbers shown, the bands spoken
+    const l = { k, parts: [main, ...(n.more || []), ...(n.h != null && !line.includes("{where}") ? [Q("(block {y})", { y: String(n.h) })] : [])] };
     const bit = set => { const k = pickLine(RICO.SETS[set]); markSaid(k); return V(k); };
     if (big || Math.random() < 0.4) l.parts.unshift(bit("flash"));
     if (big || Math.random() < 0.3) l.parts.push(bit("tag"));
@@ -1397,7 +1517,7 @@
     if (ROT.n % 4 === 3 && !big && RADAR.snap && performance.now() - RADAR.snap.at < 180000) { ROT.newsLast = false; return { k: null, parts: weather(RADAR.snap) }; }
     RADAR.news = RADAR.news.filter(n => performance.now() - n.at < 600000);
     /* the big moments always go on air; small news only while Rico has not just used up all its lines */
-    const recent = SAID.slice(-20), i = RADAR.news.findIndex(n => /^(now|to|restart|midnight)/.test(n.set) || RICO.SETS[n.set].some(k => !recent.includes(k)));
+    const recent = SAID.slice(-20), i = RADAR.news.findIndex(n => /^(now|to|restart|midnight)/.test(n.set) || (n.keys || RICO.SETS[n.set]).some(k => !recent.includes(k)));
     if (i >= 0 && (!ROT.newsLast || big)) { ROT.newsLast = true; return story(RADAR.news.splice(i, 1)[0]); }
     ROT.newsLast = false;
     /* a new song on the radio: Rico says what it is */
@@ -1409,13 +1529,17 @@
     const r = Math.random();
     if (r < 0.26) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
     /* the phone-in is the busiest part of the show: about one line in three, never two calls in a row */
-    const set = r < 0.42 ? "joke" : r < 0.74 ? (ROT.callLast ? "net" : "call") : r < 0.78 ? "corner" : r < 0.82 ? "segue" : r < 0.87 ? "legend" : r < 0.91 ? "mainland" : r < 0.95 ? "net" : "general";
+    const set = r < 0.42 ? "joke" : r < 0.72 ? (ROT.callLast ? "net" : "call") : r < 0.76 ? "corner" : r < 0.81 ? (Math.random() < 0.25 ? "dunno" : "lagoon") : r < 0.85 ? "segue" : r < 0.89 ? "legend" : r < 0.93 ? "mainland" : r < 0.96 ? "net" : "general";
     ROT.callLast = false;
+    /* a thank-you to the builders now and then reads the title of their latest change, shown between two spoken halves */
+    if (set === "lagoon" && SRC.title && Math.random() < 0.3 && !SAID.slice(-40).includes("bld4a")) return { k: "bld4a", parts: [V("bld4a"), Q("“{x}”", { x: SRC.title }), V("bld4b")] };
     if (set === "call" && Math.random() < 0.88) { const p = phoneIn(); if (p) { ROT.callLast = true; return p; } return one("joke"); }   // otherwise a letter from a listener, read out by Rico
     return one(set);
   }
   readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
   dejaFetch(); setInterval(() => { if (!document.hidden) dejaFetch(); }, 600000);
+  srcFetch(); setInterval(() => { if (!document.hidden) srcFetch(); }, 600000);
+  if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine };   // the headless check (tests)
   setInterval(() => {
     if (!G || G.over || G.counting || document.hidden || performance.now() < DJ.next) return;
     /* the show waits for the sound to come on (the first tap), so the opener is heard, not just read; after a while it goes on in text */
@@ -1688,7 +1812,7 @@
       if (r && r.status === "ok" && !(r.data && r.data.ok === false)) {
         hash = (r.data && r.data.tx_hash) || String(Date.now()); CHAIN.next = seq + 1;
         try { const lk = "tauhud-wallet-log-live-" + k.pk, logs = JSON.parse(store.get(lk) || "[]"); logs.unshift({ hash, kind: "pay", label: T("White Rabbit Key") + ": " + label, at: Date.now(), status: "queued", seq, paid: true }); store.set(lk, JSON.stringify(logs.slice(0, 40))); } catch (e) {}
-        if (TILL[at]) remember(to, "Key till · " + ((SC.places[at] || {}).name || at));   // a readable name in the wallet's address book
+        if (TILL[at]) remember(to, "Key jar · " + ((SC.places[at] || {}).name || at));   // a readable name in the wallet's address book
         toast(F("Signed into the testnet: {n} test AGRS from your wallet.", { n: pay }));
         if (CHAIN.payq.length) flushPay();
       } else { CHAIN.payq.length = 0; CHAIN.next = 0; toast(T("The testnet did not take this move just now; the game goes on.")); }
@@ -1959,7 +2083,7 @@
   function dejaFetch(done) {
     if (window.TauSim && TauSim.on) return done && done(null);
     if (DJ_S.s && Date.now() - DJ_S.at < 60000) return done && done(DJ_S.s);
-    fetch("https://node.tauhud.com/deja", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => { if (j && typeof j.agreed === "number") { DJ_S.s = j; DJ_S.at = Date.now(); } done && done(DJ_S.s); }, () => done && done(DJ_S.s));
+    fetch("https://node.tauhud.com/deja", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => { if (j && typeof j.agreed === "number") { if (j.fed && SRC.fed === false) call("dejaFed", "deja", null, { keys: ["deja3"] }); SRC.fed = !!j.fed; DJ_S.s = j; DJ_S.at = Date.now(); } done && done(DJ_S.s); }, () => done && done(DJ_S.s));
   }
   /* her count as a line of the card: what the relay saw today, or a pointer to her page */
   function dejaStatus(s) {
