@@ -36,7 +36,9 @@ curl -fsSL https://raw.githubusercontent.com/jimb000o/tau-command-hud/main/infra
 Then add a DNS A record `node.tauhud.com → <server IP>`. Check with
 `curl https://node.tauhud.com/status`.
 
-Update later: `cd /opt/tau-command-hud && git pull && cd infra && docker compose up -d --build`.
+Update later: `up` (infra/up.sh: pull, rebuild what changed, recreate Caddy, speak new voice lines, and print one block
+with the node, the island's week, the last two days of posts and the voices to paste into the chat). `up island` also paints
+a new island with every room to match (infra/island.sh auto).
 
 Open ports: 22, 80, 443 and 4001 (P2P). Docker-published ports bypass ufw, so only
 publish what is meant to be public.
@@ -344,6 +346,23 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
   $3.60) posts at most, the rest stays on Telegram. The simulation and the smaller changes leave the
   day's last `X_RESERVE` (2) posts for the real chain. An X failure never holds up Telegram; it is
   logged and that X post is left out.
+- "Testnet today" (`TESTNET_TODAY_HOUR`, 19 UTC) goes out every evening since 2 November 2026, a quiet day included:
+  with blocks and no transactions it says so (Telegram only); without a block in 24 hours it says since when the
+  chain stands still, and that one goes to X too. A restart and a stall of 20 minutes get their own posts anyway.
+- An X copy never waits for Telegram: when the Telegram send fails (a token gone bad, the bot no longer admin in the
+  channel) or the channel is off, the X copy goes out alone, once, and the Telegram post follows when the channel is
+  back, without a second X post. The same holds for Agorzilla's evenings (`agorzilla.py`). Before 2 November 2026
+  one failing Telegram send held every X post back, and both accounts went quiet together.
+- A closer look at one page a day lives in `assets/deepdives.json` (in order, each id once, ever; add new pages at
+  the end): Telegram at `DEEPDIVE_HOUR` (13 UTC = 14:00 German winter time) with the page's picture and a button,
+  every `DEEPDIVE_X_EVERY`-th (2nd) one also on X as a spare post. `--deepdives-preview` prints the ones still to
+  come; `DEEPDIVES=false` stops them. The file is read from the site, so a new entry needs no server step.
+- The Key Crier (White Rabbit Key): the relay's `/isle` summary is read every `ISLAND_POLL_SECONDS` (600) and the
+  last reading of a UTC day is that day; at `ISLAND_HOUR` (7 UTC = 08:00 German winter time) Telegram gets the day
+  before (campaigns, elections and who won, the players' moves by kind, the law of the day, the islanders' own
+  moves) with the standing explanation of the campaign cycle, whose length is read from `rabbit/game.js`
+  (`ISLAND_DAYS`, 5, when unreachable). X gets it only for a day real players moved and at most every
+  `ISLAND_X_EVERY_DAYS` (2) days, as a spare post. `--island-preview` prints today's so far; `ISLAND_CRIER=false` stops it.
 - Posts planned ahead live in `assets/posts-plan.json` (the month's calendar: a spotlight on a page on Wednesdays,
   the rule challenge's last days on Fridays, dated events): each is sent once at its `at` time (UTC) on Telegram and
   X, or within 3 hours after it, never later. `--plan-preview` prints the ones still to come; `POSTS_PLAN=false` stops them.

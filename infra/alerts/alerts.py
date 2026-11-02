@@ -68,6 +68,8 @@ ten minutes, because the relay starts those over at midnight UTC.
   python alerts.py --today-preview  print the "Testnet today" summary as it stands now, post nothing
   python alerts.py --site-preview   print the site-update posts waiting in assets/updates.json, post nothing
   python alerts.py --plan-preview   print the planned posts still to come (assets/posts-plan.json), post nothing
+  python alerts.py --deepdives-preview  print the closer looks still to come (assets/deepdives.json), post nothing
+  python alerts.py --island-preview  print the Key Crier's report of the island's day so far (relay /isle), post nothing
   python alerts.py --findings-preview  print what the finding detectors see now and every kind of finding post, post nothing
 """
 from __future__ import annotations
@@ -192,6 +194,25 @@ PLAN_FOOT = "✨ From Tau HUD"
 # Practice votes (the rules in force proposed again) appear here instead of in posts of their own.
 TODAY_ON = os.environ.get("TESTNET_TODAY", "true").lower() in ("1", "true", "yes")
 TODAY_HOUR = int(os.environ.get("TESTNET_TODAY_HOUR", 19))   # UTC
+# A closer look at one page of Tau HUD a day (assets/deepdives.json on the site, in its order, each once): Telegram at
+# DEEPDIVE_HOUR UTC, the X copy for every DEEPDIVE_X_EVERY-th one, so the series stays well inside the X caps.
+DEEPDIVE_ON = os.environ.get("DEEPDIVES", "true").lower() in ("1", "true", "yes")
+DEEPDIVE_URL = os.environ.get("DEEPDIVES_URL", f"{SITE}/assets/deepdives.json")
+DEEPDIVE_HOUR = int(os.environ.get("DEEPDIVE_HOUR", 13))     # UTC (14:00 German winter time)
+DEEPDIVE_X_EVERY = max(1, int(os.environ.get("DEEPDIVE_X_EVERY", 2)))
+DEEPDIVE_LINE = "🔎 TAU HUD · a closer look"
+DEEPDIVE_FOOT = "🔎 A closer look at Tau HUD"
+# The Key Crier: White Rabbit Key's shared island (relay /isle) summed up every morning for the day before, at
+# ISLAND_HOUR UTC; the X copy at most every ISLAND_X_EVERY_DAYS days, and only for a day real players moved.
+ISLAND_ON = os.environ.get("ISLAND_CRIER", "true").lower() in ("1", "true", "yes")
+ISLAND_HOUR = int(os.environ.get("ISLAND_HOUR", 7))         # UTC (08:00 German winter time: the morning paper)
+ISLAND_EVERY = float(os.environ.get("ISLAND_POLL_SECONDS", 600))
+ISLAND_X_EVERY_DAYS = max(1, int(os.environ.get("ISLAND_X_EVERY_DAYS", 2)))
+ISLAND_DAYS = int(os.environ.get("ISLAND_DAYS", 5))         # a campaign's length; rabbit/game.js DAYS is read when reachable
+ISLAND_GAME_JS = f"{SITE}/rabbit/game.js"
+ISLAND_LINK = f"{SITE}/rabbit/"
+ISLAND_LINE = "🐇 WHITE RABBIT KEY · the Key Crier"
+ISLAND_FOOT = "🐇 White Rabbit Key, a game on Tau HUD"
 # Visitors may propose a rule change to the simulation from the Playground and vote on it (relay/simprops.py, relay/simvotes.py).
 # The channel hears only about the ones visitors voted in, with at least VISITOR_MIN_VOTES votes, at most VISITOR_DAILY_CAP a day.
 VISITOR_MIN_VOTES = int(os.environ.get("SIM_VISITOR_MIN_VOTES", 3))
@@ -859,11 +880,15 @@ def practice_meaning(n: int, proposers: list[str]) -> str:
     return f"from {plural(k, 'account')}, probably people trying the Vote page"
 
 
-def today_numbers(stats: dict | None, items: list[dict], props: list[dict], online: int | None, end: float) -> dict:
-    """The real chain's last 24 hours up to `end`: blocks, pace, transactions, practice votes, rule events, what comes next."""
+def today_numbers(stats: dict | None, items: list[dict], props: list[dict], online: int | None, end: float,
+                  last_block: float | None = None) -> dict:
+    """The real chain's last 24 hours up to `end`: blocks, pace, transactions, practice votes, rule events, what comes next.
+    `last_block`: when the newest block known was sealed, for a day without one (the stats' newest block otherwise)."""
     start = end - 86400
     f = {k: i for i, k in enumerate((stats or {}).get("fields") or [])}
-    rows = [r for r in (stats or {}).get("blocks") or [] if "timestamp" in f and r[f["timestamp"]] and start <= r[f["timestamp"]] < end]
+    allrows = [r for r in (stats or {}).get("blocks") or [] if "timestamp" in f and r[f["timestamp"]]]
+    rows = [r for r in allrows if start <= r[f["timestamp"]] < end]
+    newest = max([r[f["timestamp"]] for r in allrows] + [last_block or 0]) or None
     ts = sorted(r[f["timestamp"]] for r in rows)
     gaps = sorted(b - a for a, b in zip(ts, ts[1:]) if b > a)
     senders = {x for r in rows for x in r[f["senders"]]} if "senders" in f else set()
@@ -879,12 +904,33 @@ def today_numbers(stats: dict | None, items: list[dict], props: list[dict], onli
               and (p.get("explain") or {}).get("severity") != "none"]
     return {"end": end, "blocks": len(rows), "pace": pace, "txs": sum(r[f["txs"]] for r in rows) if "txs" in f else 0,
             "senders": len(senders), "practice": len(practice), "practice_why": practice_meaning(len(practice), proposers),
-            "events": events, "online": online,
+            "events": events, "online": online, "last_block": newest if newest and newest < end else None,
             "coming": sorted(coming, key=lambda c: c["at"])[:2]}
 
 
 def today_worth_posting(r: dict) -> bool:
+    """A day with something to tell beyond the block count. Since 2 November 2026 a quiet day gets its post on Telegram
+    all the same (people asked where the evening post was); see today_worth_x for X."""
     return bool(r["txs"] or r["practice"] or r["events"])
+
+
+def today_worth_x(r: dict) -> bool:
+    """X gets the day when something happened, or when nothing did at all: a day without a block is news."""
+    return today_worth_posting(r) or not r["blocks"]
+
+
+def quiet_lines(r: dict) -> list[str]:
+    """What a quiet day says instead of transactions: no block at all (since when), or blocks and nothing in them."""
+    if r["blocks"]:
+        return ["• no transactions: a quiet day, only empty blocks"]
+    out = ["• no block in 24 hours: the testnet stood still"]
+    if r.get("last_block"):
+        ago = r["end"] - r["last_block"]
+        when = datetime.fromtimestamp(r["last_block"], timezone.utc).strftime("%-d %B, %H:%M UTC")
+        out.append(f"• the last block was sealed on {when}, {plural(int(ago // 3600), 'hour')} ago" if ago >= 7200
+                   else f"• the last block was sealed at {when[-9:]}")
+    out.append("• Tau HUD keeps watching; the restart or the first new block gets a post of its own")
+    return out
 
 
 def today_text(r: dict) -> str:
@@ -892,9 +938,12 @@ def today_text(r: dict) -> str:
     day = datetime.fromtimestamp(r["end"], timezone.utc)
     out = [REAL_LINE, f"📋 <b>Testnet today, {day.day} {day.strftime('%B')}</b>", ""]
     pace = f", one every {round(r['pace'])} seconds" if r["pace"] else ""
-    out.append(f"• {plural(r['blocks'], 'block')}{pace}")
+    if r["blocks"]:
+        out.append(f"• {plural(r['blocks'], 'block')}{pace}")
     if r["txs"]:
         out.append(f"• {plural(r['txs'], 'transaction')} from {plural(r['senders'], 'account')}")
+    elif not r["practice"]:
+        out += [e(x) for x in quiet_lines(r)]
     for h in r["events"]:
         out.append(f"• {e(h)}")
     if r["practice"]:
@@ -911,9 +960,11 @@ def today_text(r: dict) -> str:
 def today_x(r: dict) -> str:
     day = datetime.fromtimestamp(r["end"], timezone.utc)
     pace = f", one every {round(r['pace'])} seconds" if r["pace"] else ""
-    out = [f"📋 Testnet today, {day.day} {day.strftime('%B')}", f"• {plural(r['blocks'], 'block')}{pace}"]
+    out = [f"📋 Testnet today, {day.day} {day.strftime('%B')}"] + ([f"• {plural(r['blocks'], 'block')}{pace}"] if r["blocks"] else [])
     if r["txs"]:
         out.append(f"• {plural(r['txs'], 'transaction')} from {plural(r['senders'], 'account')}")
+    elif not r["practice"]:
+        out += quiet_lines(r)[:2]
     out += [f"• {h}" for h in r["events"]]
     if r["practice"]:
         out.append(f"• {plural(r['practice'], 'practice vote')}, the rules stay as they are")
@@ -1110,6 +1161,118 @@ def visitor_text(v: dict) -> str:
            "", f"<i>{e(SIM_NOTICE)}</i>",
            "", f"<a href=\"{e(SIM_LINK)}\">Watch it in the simulation</a>"]
     return "\n".join(out)
+
+
+# ---------------- a closer look at one page a day (assets/deepdives.json) ----------------
+def deepdive_text(p: dict) -> str:
+    e = html.escape
+    out = [DEEPDIVE_LINE, f"<b>{e(p.get('title', ''))}</b>", ""]
+    out += [e(x) for x in str(p.get("text", "")).split("\n") if x.strip()] or [""]
+    if p.get("try"):
+        out += ["", f"<b>Try it:</b> {e(p['try'])}"]
+    return "\n".join(out)
+
+
+def deepdive_buttons(p: dict) -> dict:
+    return {"inline_keyboard": [[{"text": p.get("button") or f"Open {p.get('title', 'it')}", "url": site_link(p.get("link"))}]]}
+
+
+def deepdive_x(p: dict) -> str:
+    return x_post(list(p.get("x") or [p.get("title", ""), p.get("text", "")]), foot=DEEPDIVE_FOOT)
+
+
+# ---------------- the Key Crier: the shared island's day (relay /isle) ----------------
+# Names as rabbit/game.js gives them (CANDS and LAWS there; the relay keeps the keys only)
+ISLAND_CANDS = {"marisol": "Marisol", "tobias": "Tobias", "baako": "Baako", "hana": "Hana"}
+ISLAND_LAWS = {"night": "Night market every Friday", "quiet": "Quiet after ten in the evening",
+               "reef": "Protect the reef: no big ships in the bay", "harbour": "A deep harbour for cruise ships",
+               "boat": "A school boat every morning", "lunch": "Fresh fish for the school lunch",
+               "concerts": "Beach concerts on Sundays", "road": "A road round the island",
+               "copy": "A copy of the Book on the square", "tax": "A coconut tax for repairs"}
+ISLAND_KINDS = {"talk": ("speech on the square", "speeches on the square"), "law": ("law passed", "laws passed"),
+                "down": ("law voted down", "laws voted down"), "refused": ("law the Book refused", "laws the Book refused"),
+                "lie": ("rumour on Radio Coco", "rumours on Radio Coco"), "fact": ("truth told on Radio Coco", "truths told on Radio Coco"),
+                "deal": ("embassy envelope", "embassy envelopes"), "pact": ("pact at the bar", "pacts at the bar"),
+                "broke": ("pact broken", "pacts broken")}
+ISLAND_NUMBER_WORDS = {3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten", 14: "fourteen"}
+
+
+def ordinal(n: int) -> str:
+    return "every one" if n == 1 else f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
+def island_days_from(js: str | None) -> int | None:
+    """The campaign's length as rabbit/game.js declares it (`const DAYS = 5`), None when not found."""
+    m = re.search(r"\bDAYS\s*=\s*(\d+)", js or "")
+    return int(m.group(1)) if m and 1 <= int(m.group(1)) <= 60 else None
+
+
+def island_tally(d: dict | None, names: dict) -> list[tuple[str, int]]:
+    out = sorted(((names.get(k, k), int(v)) for k, v in (d or {}).items() if v), key=lambda x: (-x[1], x[0]))
+    return out
+
+
+def island_kinds_line(kinds: dict | None, top: int = 3) -> str:
+    parts = [f"{n} {ISLAND_KINDS[k][0] if n == 1 else ISLAND_KINDS[k][1]}" for k, n in
+             sorted(((k, int(v)) for k, v in (kinds or {}).items() if v and k in ISLAND_KINDS), key=lambda x: (-x[1], x[0]))[:top]]
+    return ", ".join(parts)
+
+
+def island_report(day: str, snap: dict, days: int) -> dict:
+    """The lines of the Key Crier's report of one island day: `players` (that day's visitors) and `islanders`."""
+    p, isl = snap.get("players") or {}, snap.get("islanders") or {}
+    wins, laws, played = island_tally(p.get("wins"), ISLAND_CANDS), island_tally(p.get("laws"), ISLAND_LAWS), island_tally(p.get("as"), ISLAND_CANDS)
+    lines = []
+    if p.get("campaigns"):
+        line = f"{plural(p['campaigns'], 'campaign')} played"
+        if p.get("finished"):
+            line += f", {p['finished']} of them to the election" if p["finished"] < p["campaigns"] else ", every one to the election"
+            if wins:
+                line += ": " + ", ".join(f"{n} won {c}" for n, c in wins)
+        lines.append(line)
+    if p.get("moves"):
+        lines.append(f"{plural(p['moves'], 'move')} by the players" + (f": {island_kinds_line(p.get('kinds'))}" if p.get("kinds") else ""))
+    if laws:
+        t, n = laws[0]
+        lines.append(f"the law of the day: {t}" + (f", passed {plural(n, 'time')}" if n > 1 else ""))
+    if played and len(played) > 1 and p.get("campaigns", 0) > 1:
+        lines.append(f"most ran as {played[0][0]} ({plural(played[0][1], 'campaign')})")
+    if isl.get("moves"):
+        ilaws = island_tally(isl.get("laws"), ISLAND_LAWS)
+        lines.append(("the islanders kept their own politics going: " if not p.get("moves") else "the islanders made ")
+                     + f"{plural(isl['moves'], 'move')} of their own" + (f", {plural(sum(n for _, n in ilaws), 'law')} passed" if ilaws else ""))
+    d = datetime.strptime(day, "%Y-%m-%d")
+    return {"day": day, "date": f"{d.day} {d.strftime('%B')}", "lines": lines, "players": bool(p.get("moves")),
+            "days": days, "wins": wins, "campaigns": p.get("campaigns", 0), "finished": p.get("finished", 0),
+            "moves": p.get("moves", 0), "law": laws[0][0] if laws else None}
+
+
+def island_text(r: dict) -> str:
+    e = html.escape
+    n = ISLAND_NUMBER_WORDS.get(r["days"], str(r["days"]))
+    out = [ISLAND_LINE, f"<b>{'Yesterday on the island' if r['players'] else 'A quiet day on the island'}, {r['date']}</b>", ""]
+    out += [f"• {e(x)}" for x in r["lines"]]
+    if not r["players"]:
+        out.append("• no visitor made a move; the island waits for you")
+    out += ["", f"<i>A campaign on the island lasts {n} days: speeches on the square, laws in the hall, pacts at the bar, "
+                "embassy money and rumours on Radio Coco, then the election. Everyone plays their own campaign and nobody "
+                "waits for anybody; the island adds up what everyone did that day. Every move is one real transaction on "
+                "Tau Testnet Alpha, with test AGRS that have no value.</i>"]
+    return "\n".join(out)
+
+
+def island_buttons() -> dict:
+    return {"inline_keyboard": [[{"text": "🐇 Play today's island", "url": ISLAND_LINK}]]}
+
+
+def island_x(r: dict) -> str:
+    head = f"🐇 The Key Crier: yesterday on the island, {r['date']}"
+    body = f"{plural(r['campaigns'], 'campaign')}"
+    if r["finished"]:
+        body += f", {plural(r['finished'], 'election')}" + (": " + ", ".join(f"{n} {c}" for n, c in r["wins"][:3]) if r["wins"] else "")
+    body += f". {plural(r['moves'], 'move')}, each a real transaction on Tau Testnet Alpha."
+    lines = [head, body] + ([f"Law of the day: {r['law']}."] if r["law"] else [])
+    return x_post(lines, foot=ISLAND_FOOT)
 
 
 # ---------------- outlets ----------------
@@ -1577,6 +1740,14 @@ class Watcher:
     def x_on(self):
         return next((o for o in self.outlets if o.name == "x" and o.enabled()), None)
 
+    def tg_on(self) -> list:
+        return [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+
+    def x_alone(self, st: dict, now: float) -> bool:
+        """True when the X copy must not wait for Telegram: the channel is off, or its last send failed and it is
+        pausing. Before 2 November 2026 one failing Telegram send held every X post back, and the account went quiet."""
+        return not self.tg_on() or st.get("pause_until", 0) > now
+
     def x_room(self, now: float | None = None, spare: bool = False) -> bool:
         """True while today's and this month's X posts are under X_DAILY_CAP and X_MONTHLY_CAP; `spare` posts (the
         simulation, the smaller site changes) leave the day's last X_RESERVE for the real chain's news."""
@@ -1704,29 +1875,40 @@ class Watcher:
             for m in findings.observe(st, snap, now):
                 log.info("finding: %s", m["what"])
             self.save_state()
-        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
-        while st.get("outbox") and st.get("pause_until", 0) <= now:
+        tg = self.tg_on()
+        while st.get("outbox"):
             m = st["outbox"][0]
-            if not tg or now - m["at"] > findings.OUTBOX_MAX_AGE or m["tries"] >= MAX_TRIES:
-                log.info("finding %s not posted (%s)", m["what"], "telegram off" if not tg else "too old or failed too often")
+            if now - m["at"] > findings.OUTBOX_MAX_AGE or m["tries"] >= MAX_TRIES:
+                log.info("finding %s not posted (%s)", m["what"], "too old or failed too often")
                 st["outbox"].pop(0)
                 continue
-            for o in tg:
-                ok, retry, err = await asyncio.to_thread(o.send_text, m["tg"])
-                if not ok:
-                    m["tries"] += 1
-                    st["pause_until"] = now + (retry or 60)
-                    log.warning("finding post failed (%s); trying again later", err)
-                    self.save_state()
-                    return
-            st["outbox"].pop(0)
-            day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
-            if st.get("x_day") != day:
-                st["x_day"], st["x_today"] = day, 0
-            if m.get("x") and st["x_today"] < findings.X_DAILY:
-                if await self.post_x(x_post(m["x"]), "finding " + m["what"], now):
-                    st["x_today"] += 1
+            if tg and not m.get("tg_done") and st.get("pause_until", 0) <= now:
+                for o in tg:
+                    ok, retry, err = await asyncio.to_thread(o.send_text, m["tg"])
+                    if not ok:
+                        m["tries"] += 1
+                        st["pause_until"] = now + (retry or 60)
+                        log.warning("finding post failed (%s); trying again later", err)
+                        break
+                else:
+                    m["tg_done"] = True
+            # the X copy once Telegram has it, or alone while Telegram is off or failing; once either way
+            if m.get("x") and not m.get("x_done") and (m.get("tg_done") or self.x_alone(st, now)):
+                m["x_done"] = True
+                day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
+                if st.get("x_day") != day:
+                    st["x_day"], st["x_today"] = day, 0
+                if st["x_today"] < findings.X_DAILY:
+                    if await self.post_x(x_post(m["x"]), "finding " + m["what"], now):
+                        st["x_today"] += 1
+            if m.get("tg_done") or not tg:
+                if not tg:
+                    log.info("finding %s not posted to telegram (off)", m["what"])
+                st["outbox"].pop(0)
+                self.save_state()
+                continue
             self.save_state()
+            return  # Telegram failed just now: this finding waits, the ones behind it too
 
     # ---------- firsts: a kind of transaction the testnet never carried before ----------
     def note_firsts(self, chain: str):
@@ -1758,6 +1940,8 @@ class Watcher:
             self.save_state()
             return
         text = firsts.telegram_text(due, REAL_LINE)
+        what = "firsts " + ", ".join(f["key"] for f in due)
+        x_keys = sorted(f["key"] for f in due)
         for o in tg:
             ok, retry, err = await asyncio.to_thread(o.send_text, text)
             if not ok:
@@ -1769,15 +1953,19 @@ class Watcher:
                 else:
                     st["pause_until"] = now + (retry or 60 * st["tries"])
                     log.warning("firsts post failed (%s); trying again later", err)
+                if st.get("x_keys") != x_keys:   # X does not wait for a failing Telegram; once for these firsts
+                    st["x_keys"] = x_keys
+                    await self.post_x(x_post(firsts.x_lines(due)), what, now, f"{SHARE_HTTP}/og/hud.png")
                 self.save_state()
                 return
         st["tries"] = 0
-        what = "firsts " + ", ".join(f["key"] for f in due)
         if tg:
             log.info("posted %s", what)
         else:
             log.info("%s not posted to telegram (off)", what)
-        await self.post_x(x_post(firsts.x_lines(due)), what, now, f"{SHARE_HTTP}/og/hud.png")
+        if st.get("x_keys") != x_keys:
+            st["x_keys"] = x_keys
+            await self.post_x(x_post(firsts.x_lines(due)), what, now, f"{SHARE_HTTP}/og/hud.png")
         self.save_state()
 
     # ---------- new nodes on the network ----------
@@ -1816,19 +2004,24 @@ class Watcher:
         tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
         for n in fresh:
             posted = st.get("day") == day and st.get("posted", 0) or 0
-            if posted < NEWNODE_DAILY_CAP and tg:
+            if posted < NEWNODE_DAILY_CAP:
                 text = newnode_text(n, nodes_online(peers, board))
                 for o in tg:
                     ok, _, err = await asyncio.to_thread(o.send_text, text)
                     if not ok:
                         log.warning("new node post failed (%s); trying again next check", err)
+                        if n["key"] not in st.setdefault("x_done", []):   # X does not wait for a failing Telegram
+                            st["x_done"] = (st["x_done"] + [n["key"]])[-60:]
+                            await self.post_x(newnode_x(n, nodes_online(peers, board)), "new node " + n["key"], now, f"{SHARE_HTTP}/og/hud.png")
                         self.save_state()
                         return
                 st["day"], st["posted"] = day, posted + 1
-                log.info("newnodes: posted %s", n["key"])
-                await self.post_x(newnode_x(n, nodes_online(peers, board)), "new node " + n["key"], now, f"{SHARE_HTTP}/og/hud.png")
+                log.info("newnodes: posted %s%s", n["key"], "" if tg else " (telegram off: X only)")
+                if n["key"] not in st.setdefault("x_done", []):
+                    st["x_done"] = (st["x_done"] + [n["key"]])[-60:]
+                    await self.post_x(newnode_x(n, nodes_online(peers, board)), "new node " + n["key"], now, f"{SHARE_HTTP}/og/hud.png")
             else:
-                log.info("newnodes: %s recorded without a post (%s)", n["key"], "daily cap" if tg else "telegram off")
+                log.info("newnodes: %s recorded without a post (daily cap)", n["key"])
             known[n["key"]] = round(now)
         if len(known) > 5000:  # oldest first out; a key that comes back that late is not new news anyway
             for k in sorted(known, key=known.get)[:len(known) - 5000]:
@@ -1843,29 +2036,36 @@ class Watcher:
             return
         now = now if now is not None else time.time()
         st = self.state.setdefault("sim", {"posted": {}})
-        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
-        if not tg or st.get("pause_until", 0) > now:
-            return
+        st.setdefault("x_posted", {})
+        tg = self.tg_on()
         changed = False
         for ev in sim_switches(now):
-            if not (ev["proposed"] <= now < ev["in_force"]) or ev["key"] in st["posted"]:
+            if not (ev["proposed"] <= now < ev["in_force"]):
                 continue
-            text, buttons = sim_text(ev, await asyncio.to_thread(forecasts_for, ev)), sim_buttons()
-            for o in tg:
-                ok, retry, err = await asyncio.to_thread(o.send_text, text, buttons)
-                if not ok:
-                    st["pause_until"] = now + (retry or 60)
-                    log.warning("simulation post failed (%s); trying again in a minute", err)
-                    self.save_state()
-                    return
-            st["posted"][ev["key"]] = round(now)
-            changed = True
-            log.info("simulation: posted %s", ev["key"])
-            if X_SIM:
-                await self.post_x(sim_x(ev), "simulation " + ev["key"], now, spare=True)
-        for k in [k for k, t in st["posted"].items() if now - t > 7 * 86400]:
-            del st["posted"][k]
-            changed = True
+            key = ev["key"]
+            if tg and key not in st["posted"] and st.get("pause_until", 0) <= now:
+                text, buttons = sim_text(ev, await asyncio.to_thread(forecasts_for, ev)), sim_buttons()
+                sent = True
+                for o in tg:
+                    ok, retry, err = await asyncio.to_thread(o.send_text, text, buttons)
+                    if not ok:
+                        st["pause_until"] = now + (retry or 60)
+                        log.warning("simulation post failed (%s); trying again in a minute", err)
+                        sent = changed = False
+                        break
+                if sent:
+                    st["posted"][key] = round(now)
+                    changed = True
+                    log.info("simulation: posted %s", key)
+            # the X copy with the Telegram post, or on its own while Telegram is off or failing; once either way
+            if X_SIM and key not in st["x_posted"] and (key in st["posted"] or self.x_alone(st, now)):
+                st["x_posted"][key] = round(now)
+                changed = True
+                await self.post_x(sim_x(ev), "simulation " + key, now, spare=True)
+        for d in (st["posted"], st["x_posted"]):
+            for k in [k for k, t in d.items() if now - t > 7 * 86400]:
+                del d[k]
+                changed = True
         if changed:
             self.save_state()
 
@@ -1877,28 +2077,174 @@ class Watcher:
         now = now if now is not None else time.time()
         st = self.state.setdefault("today", {})
         slot = datetime.fromtimestamp(now, timezone.utc).replace(hour=TODAY_HOUR, minute=0, second=0, microsecond=0).timestamp()
-        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
-        if not tg or now < slot or now > slot + 3 * 3600 or st.get("slot", 0) >= slot or st.get("pause_until", 0) > now:
+        if now < slot or now > slot + 3 * 3600:
+            return
+        tg = self.tg_on()
+        tg_due = bool(tg) and st.get("slot", 0) < slot and st.get("pause_until", 0) <= now
+        x_due = st.get("x_slot", 0) < slot and (st.get("slot", 0) >= slot or self.x_alone(st, now))
+        if not tg_due and not x_due:
             return
         stats = await asyncio.to_thread(self.relay_json, "/stats")
         peers, board = await asyncio.to_thread(self.relay_json, "/peers"), await asyncio.to_thread(self.relay_json, "/community/board")
         online = nodes_online(peers, board) if peers is not None or board is not None else None
-        r = today_numbers(stats, self.state["items"], getattr(self, "props", []), online, slot)
-        if today_worth_posting(r):
+        r = today_numbers(stats, self.state["items"], getattr(self, "props", []), online, slot, self.last_block_time())
+        if tg_due:
             for o in tg:
                 ok, retry, err = await asyncio.to_thread(o.send_text, today_text(r), today_buttons())
                 if not ok:
                     st["pause_until"] = now + (retry or 300)
                     log.warning("testnet today failed (%s); trying again later", err)
-                    self.save_state()
-                    return
-            log.info("testnet today posted")
-            st["slot"] = slot  # recorded before X: a failed X copy must not repeat the Telegram post
-            await self.post_x(today_x(r), "testnet today", now, f"{SHARE_HTTP}/og/hud.png")
-        else:
-            log.info("testnet today: a quiet day, no post")
-        st["slot"] = slot
+                    break
+            else:
+                log.info("testnet today posted%s", "" if today_worth_posting(r) else " (a quiet day)")
+                st["slot"] = slot  # recorded before X: a failed X copy must not repeat the Telegram post
+        # the X copy once the Telegram post is out, or on its own while Telegram is off or failing; a quiet day with
+        # blocks is Telegram's alone, a day without a block is news for X too
+        if st.get("x_slot", 0) < slot and (st.get("slot", 0) >= slot or self.x_alone(st, now)):
+            st["x_slot"] = slot
+            if today_worth_x(r):
+                await self.post_x(today_x(r), "testnet today", now, f"{SHARE_HTTP}/og/hud.png")
+            else:
+                log.info("testnet today: quiet day, Telegram only")
         self.save_state()
+
+    def last_block_time(self) -> float | None:
+        """When the newest block this service holds was sealed (None before the first sync)."""
+        if not self.blocks:
+            return None
+        return ts_of(self.blocks[max(self.blocks)])
+
+
+    # ---------- a closer look at one page a day (assets/deepdives.json) ----------
+    def fetch_deepdives(self) -> list | None:
+        try:
+            req = urllib.request.Request(DEEPDIVE_URL, headers={"Cache-Control": "no-cache", "User-Agent": "tauhud-alerts"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                data = json.load(r)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            log.warning("deepdives: cannot read %s (%r)", DEEPDIVE_URL, exc)
+            return None
+        return [p for p in data.get("posts", []) if isinstance(p, dict) and p.get("id")] if isinstance(data, dict) else None
+
+    async def maybe_deepdive(self, now: float | None = None, posts: list | None = None):
+        """One closer look a day, the file's next one not yet posted, at DEEPDIVE_HOUR UTC (or within 3 h after it):
+        Telegram with the page's picture and a button, X for every DEEPDIVE_X_EVERY-th one; X never waits for Telegram."""
+        if not DEEPDIVE_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("deepdives", {"posted": {}, "x_posted": {}, "posts": [], "n": 0})
+        if now - st.get("checked", 0) >= SITE_EVERY or posts is not None:
+            st["checked"] = now
+            posts = posts if posts is not None else await asyncio.to_thread(self.fetch_deepdives)
+            if posts is not None:
+                st["posts"] = posts
+            self.save_state()
+        slot = datetime.fromtimestamp(now, timezone.utc).replace(hour=DEEPDIVE_HOUR, minute=0, second=0, microsecond=0).timestamp()
+        if now < slot or now > slot + 3 * 3600 or st.get("slot", 0) >= slot:
+            return
+        tg = self.tg_on()
+        # the day's post: the one started this slot (Telegram or X went first), else the file's next unposted one
+        p = next((q for q in st["posts"] if q["id"] == st.get("current") and st.get("current_slot") == slot), None) \
+            or next((q for q in st["posts"] if q["id"] not in st["posted"] and q["id"] not in st["x_posted"]), None)
+        if not p:
+            return
+        pid = p["id"]
+        pic = site_link(p["image"]) if p.get("image") else None
+        if tg and pid not in st["posted"] and st.get("pause_until", 0) <= now:
+            text, buttons = deepdive_text(p), deepdive_buttons(p)
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, text, buttons, pic) if pic else \
+                    await asyncio.to_thread(o.send_text, text, buttons)
+                if not ok:
+                    st["pause_until"] = now + (retry or 300)
+                    log.warning("deepdive %s failed (%s); trying again later", pid, err)
+                    break
+            else:
+                st["posted"][pid] = round(now)
+                st["current"], st["current_slot"] = pid, slot
+                if pid not in st["x_posted"]:
+                    st["n"] = st.get("n", 0) + 1
+                log.info("deepdive: posted %s (%d so far)", pid, st["n"])
+            self.save_state()
+        if pid not in st["x_posted"] and (pid in st["posted"] or self.x_alone(st, now)):
+            if pid not in st["posted"]:
+                st["n"] = st.get("n", 0) + 1
+                st["current"], st["current_slot"] = pid, slot
+            st["x_posted"][pid] = round(now)
+            self.save_state()
+            if (st["n"] - 1) % DEEPDIVE_X_EVERY == 0:
+                await self.post_x(deepdive_x(p), "deepdive " + pid, now, pic, spare=True)
+            else:
+                log.info("deepdive %s: Telegram only (X gets every %s one)", pid, ordinal(DEEPDIVE_X_EVERY))
+        if pid in st["posted"] and pid in st["x_posted"]:
+            st["slot"] = slot
+        self.save_state()
+
+    # ---------- the Key Crier: White Rabbit Key's shared island, the day before (relay /isle) ----------
+    async def maybe_island(self, now: float | None = None, snap: dict | None = None):
+        """Keep the island's day as the relay sums it up (the last reading before midnight UTC is the day), and every
+        morning at ISLAND_HOUR UTC report the day before: Telegram when anyone moved, the X copy only for a day real
+        players moved and at most every ISLAND_X_EVERY_DAYS days; X never waits for Telegram."""
+        if not ISLAND_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("island", {"days": {}, "posted": {}, "x_posted": {}})
+        if snap is not None or now - st.get("checked", 0) >= ISLAND_EVERY:
+            st["checked"] = now
+            snap = snap if snap is not None else await asyncio.to_thread(self.relay_json, "/isle")
+            if isinstance(snap, dict) and snap.get("day"):
+                st["days"][snap["day"]] = {"players": snap.get("players") or {}, "islanders": snap.get("islanders") or {}}
+                for d in sorted(st["days"])[:-3]:
+                    del st["days"][d]
+            if now - st.get("length_at", 0) >= 86400:
+                st["length_at"] = now
+                st["length"] = await asyncio.to_thread(self.island_days) or st.get("length") or ISLAND_DAYS
+            self.save_state()
+        slot = datetime.fromtimestamp(now, timezone.utc).replace(hour=ISLAND_HOUR, minute=0, second=0, microsecond=0).timestamp()
+        if now < slot or now > slot + 3 * 3600:
+            return
+        day = datetime.fromtimestamp(slot - 86400, timezone.utc).strftime("%Y-%m-%d")   # the day before, UTC like the relay
+        d = st["days"].get(day)
+        if not d or day in st["posted"] and day in st["x_posted"]:
+            return
+        r = island_report(day, d, st.get("length") or ISLAND_DAYS)
+        if not r["lines"]:
+            st["posted"][day] = st["x_posted"][day] = 0   # nobody and nothing: no report
+            self.save_state()
+            return
+        tg = self.tg_on()
+        if tg and day not in st["posted"] and st.get("pause_until", 0) <= now:
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, island_text(r), island_buttons())
+                if not ok:
+                    st["pause_until"] = now + (retry or 300)
+                    log.warning("island report failed (%s); trying again later", err)
+                    break
+            else:
+                st["posted"][day] = round(now)
+                log.info("island: posted the Key Crier for %s", day)
+            self.save_state()
+        if day not in st["x_posted"] and (day in st["posted"] or self.x_alone(st, now)):
+            last_x = max([t for t in st["x_posted"].values() if t], default=0)
+            st["x_posted"][day] = round(now)
+            self.save_state()
+            if r["players"] and (not last_x or (now - last_x) >= (ISLAND_X_EVERY_DAYS - 0.5) * 86400):
+                await self.post_x(island_x(r), "island " + day, now, f"{SITE}/assets/shots/rabbit.png", spare=True)
+            else:
+                st["x_posted"][day] = 0   # Telegram only: nobody played, or X had the island lately
+                log.info("island %s: Telegram only", day)
+        for k in ("posted", "x_posted"):
+            for old in sorted(st[k])[:-14]:
+                del st[k][old]
+        self.save_state()
+
+    def island_days(self) -> int | None:
+        try:
+            req = urllib.request.Request(ISLAND_GAME_JS, headers={"User-Agent": "tauhud-alerts"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                return island_days_from(r.read(400_000).decode("utf-8", "replace"))
+        except (urllib.error.URLError, OSError, ValueError):
+            return None
 
     # ---------- posts planned ahead (assets/posts-plan.json) ----------
     def fetch_plan(self) -> list | None:
@@ -1923,32 +2269,40 @@ class Watcher:
             if posts is not None:
                 st["posts"] = posts
             self.save_state()
-        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
-        if not tg or st.get("pause_until", 0) > now:
-            return
+        tg = self.tg_on()
+        st.setdefault("x_posted", {})
         for p in st["posts"]:
             try:
                 at = datetime.fromisoformat(str(p["at"]).replace("Z", "+00:00")).timestamp()
             except (KeyError, ValueError):
                 continue
-            if p.get("id") in st["posted"] or not (at <= now < at + PLAN_WINDOW) or not p.get("tg"):
+            pid = p.get("id")
+            if not pid or not (at <= now < at + PLAN_WINDOW):
                 continue
             pic = site_link(p["image"]) if p.get("image") else None
-            buttons = {"inline_keyboard": [[{"text": p.get("button") or "Open it", "url": site_link(p["link"])}]]} if p.get("link") else None
-            for o in tg:
-                ok, retry, err = await asyncio.to_thread(o.send_text, p["tg"], buttons, pic) if pic else \
-                    await asyncio.to_thread(o.send_text, p["tg"], buttons)
-                if not ok:
-                    st["pause_until"] = now + (retry or 300)
-                    log.warning("plan: %s failed (%s); trying again later", p["id"], err)
-                    self.save_state()
-                    return
-            st["posted"][p["id"]] = round(now)
-            log.info("plan: posted %s", p["id"])
-            self.save_state()
-            if p.get("x"):
-                await self.post_x(x_post(p["x"], foot=p.get("foot") or PLAN_FOOT), "plan " + p["id"], now, pic)
-            return  # one planned post per check
+            did = False
+            if tg and p.get("tg") and pid not in st["posted"] and st.get("pause_until", 0) <= now:
+                buttons = {"inline_keyboard": [[{"text": p.get("button") or "Open it", "url": site_link(p["link"])}]]} if p.get("link") else None
+                for o in tg:
+                    ok, retry, err = await asyncio.to_thread(o.send_text, p["tg"], buttons, pic) if pic else \
+                        await asyncio.to_thread(o.send_text, p["tg"], buttons)
+                    if not ok:
+                        st["pause_until"] = now + (retry or 300)
+                        log.warning("plan: %s failed (%s); trying again later", pid, err)
+                        break
+                else:
+                    st["posted"][pid] = round(now)
+                    did = True
+                    log.info("plan: posted %s", pid)
+                self.save_state()
+            # the X copy with the Telegram post, or alone while Telegram is off or failing (or the post has no Telegram text)
+            if p.get("x") and pid not in st["x_posted"] and (pid in st["posted"] or not p.get("tg") or self.x_alone(st, now)):
+                st["x_posted"][pid] = round(now)
+                did = True
+                self.save_state()
+                await self.post_x(x_post(p["x"], foot=p.get("foot") or PLAN_FOOT), "plan " + pid, now, pic)
+            if did:
+                return  # one planned post per check
 
     # ---------- changes to Tau HUD itself ----------
     def fetch_updates(self) -> list | None:
@@ -2010,39 +2364,52 @@ class Watcher:
             if entries is not None:
                 self.take_updates(entries, now)
             self.save_state()
-        tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        tg = self.tg_on()
         slot = site_slot(now)
-        if not tg or st.get("pause_until", 0) > now or slot is None or st.get("slot", 0) >= slot or now - slot >= SITE_SLOT_HOURS * 3600:
+        if slot is None or now - slot >= SITE_SLOT_HOURS * 3600:
+            return
+        st.setdefault("x_done", [])   # majors X already has, so a Telegram retry never repeats them there
+        tg_due = bool(tg) and st.get("pause_until", 0) <= now and st.get("slot", 0) < slot
+        # Telegram off or failing: X takes this slot on its own (the Telegram post follows when the channel is back)
+        x_alone = self.x_alone(st, now) and st.get("x_slot", 0) < slot
+        if not tg_due and not x_alone:
             return
         if st["majors"]:
             # one post per slot: a single new page or feature on its own, several together, so none waits for another day
             batch = list(st["majors"])
-            if len(batch) == 1:
+            shown = 1 if len(batch) == 1 else catchup_text(batch).count("\n• ")
+            if tg_due:
                 m = batch[0]
-                if not await self.site_send(tg, major_text(m), major_buttons(m), now, m.get("image")):
+                sent = await self.site_send(tg, major_text(m), major_buttons(m), now, m.get("image")) if shown == 1 else \
+                    await self.site_send(tg, catchup_text(batch), digest_buttons(), now)
+                if not sent:
                     return
-                shown, text_x, for_x = 1, major_x(m), [m] if m.get("x", True) else []
-            else:
-                text = catchup_text(batch)
-                shown = text.count("\n• ")
-                if not await self.site_send(tg, text, digest_buttons(), now):
-                    return
-                for_x = [m for m in batch[:shown] if m.get("x", True)]  # "x": false in the log: announced on X by hand
-                text_x = major_x(for_x[0]) if len(for_x) == 1 else catchup_x(for_x)
-            del st["majors"][:shown]
-            st["slot"], st["last_major"] = slot, round(now)
-            log.info("site updates: posted %s", ", ".join(m["key"] for m in batch[:shown]))
+                del st["majors"][:shown]
+                st["slot"], st["last_major"] = slot, round(now)
+                log.info("site updates: posted %s", ", ".join(m["key"] for m in batch[:shown]))
+            for_x = [m for m in batch[:shown] if m.get("x", True) and m["key"] not in st["x_done"]]  # "x": false: X by hand
+            st["x_slot"] = slot
             self.save_state()
             if for_x:
+                text_x = major_x(for_x[0]) if len(for_x) == 1 else catchup_x(for_x)
+                st["x_done"] = (st["x_done"] + [m["key"] for m in for_x])[-60:]
+                self.save_state()
                 pic = next((m["image"] for m in for_x if m.get("image")), None) or await asyncio.to_thread(major_picture, for_x[0])
                 await self.post_x(text_x, "site " + ", ".join(m["key"] for m in for_x), now, pic)
             self.save_state()
             return
         if st["pending"] and (len(st["pending"]) >= SITE_DIGEST_MIN or now - st["pending"][0]["at"] >= SITE_DIGEST_MAX_WAIT):
             items = list(st["pending"])
-            if await self.site_send(tg, digest_text(items), digest_buttons(), now):
+            keys = sorted(i.get("key", "") for i in items)
+            if tg_due:
+                if not await self.site_send(tg, digest_text(items), digest_buttons(), now):
+                    return
                 log.info("site updates: digest of %d posted", len(items))
                 st["pending"], st["slot"], st["last_digest"] = [], slot, round(now)
+            st["x_slot"] = slot
+            self.save_state()
+            if st.get("x_digest") != keys:   # the same digest, sent alone to X earlier while Telegram failed, not again
+                st["x_digest"] = keys
                 self.save_state()
                 await self.post_x(digest_x(items), "site digest", now, spare=True)
             self.save_state()
@@ -2439,6 +2806,8 @@ class Watcher:
                         await self.maybe_sim()
                         await self.maybe_site()
                         await self.maybe_plan()
+                        await self.maybe_deepdive()
+                        await self.maybe_island()
                         await self.maybe_today()
                         await self.maybe_visitors()
                         await asyncio.sleep(POLL_SECONDS)
@@ -2450,6 +2819,7 @@ class Watcher:
                 await self.maybe_sim()     # needs no relay
                 await self.maybe_site()    # neither does this
                 await self.maybe_plan()
+                await self.maybe_deepdive()  # the site's pages are there whether the chain runs or not
                 await asyncio.sleep(10)
 
 
@@ -2571,6 +2941,32 @@ def site_preview() -> int:
             print("-" * 60)
     small = [digest_item(e) for e in entries if not isinstance(e.get("major"), dict)][-5:]
     print(digest_text(small) if small else "No smaller changes in the log.")
+    return 0
+
+
+def deepdives_preview() -> int:
+    """The closer looks still to come, in order, as Telegram and X would get them."""
+    posts = Watcher([]).fetch_deepdives()
+    if posts is None:
+        print(f"cannot read {DEEPDIVE_URL}")
+        return 1
+    st = Watcher([]).state.get("deepdives") or {}
+    for i, p in enumerate(q for q in posts if q["id"] not in (st.get("posted") or {})):
+        x = deepdive_x(p)
+        on_x = (st.get("n", 0) + i) % DEEPDIVE_X_EVERY == 0
+        print(f"[{p['id']}]\n{deepdive_text(p)}\n" + (f"--- X ({x_len(x)}/280):\n{x}\n" if on_x else "--- Telegram only\n") + "-" * 60)
+    return 0
+
+
+def island_preview() -> int:
+    """The Key Crier's report of the island's day so far, as Telegram and X would get it."""
+    snap = Watcher([]).relay_json("/isle")
+    if not isinstance(snap, dict) or not snap.get("day"):
+        print(f"cannot read {RELAY_HTTP}/isle")
+        return 1
+    r = island_report(snap["day"], snap, Watcher([]).island_days() or ISLAND_DAYS)
+    x = island_x(r)
+    print(island_text(r) + f"\n--- X ({x_len(x)}/280){'' if r['players'] else ', not sent: no player moved'}:\n{x}")
     return 0
 
 
@@ -2712,6 +3108,10 @@ if __name__ == "__main__":
         sys.exit(asyncio.run(today_preview()))
     if "--plan-preview" in sys.argv:
         sys.exit(plan_preview())
+    if "--deepdives-preview" in sys.argv:
+        sys.exit(deepdives_preview())
+    if "--island-preview" in sys.argv:
+        sys.exit(island_preview())
     if "--site-preview" in sys.argv:
         sys.exit(site_preview())
     if "--findings-preview" in sys.argv:
