@@ -1,4 +1,4 @@
-/* White Rabbit Key: a small island politics game. Four candidates, five days, one election.
+/* White Rabbit Key: a small island politics game. Four candidates, one island week, one election on Sunday.
    Each day you have three moves (morning, noon, evening): propose a law at the Council Hall, talk to people on the
    market square, buy a rumour on Radio Coco, take an embassy's money for a promise, make a pact at Bar La Ola.
    Every move, yours and your rivals', is written into the Book in the lighthouse, and anyone on the island can read it.
@@ -81,8 +81,26 @@
     north: { who: "frost", name: "North Wind Embassy", wants: "harbour", coins: 40 },
     south: { who: "salado", name: "South Current Embassy", wants: "road", coins: 35 },
   };
-  const DAYS = 5, MOVES = 3, RUMOUR = 25, GIFT = 20;
-  const HOURS = ["Morning", "Noon", "Evening"];
+  const DAYS = 7, MOVES = 3, RUMOUR = 25, GIFT = 20;   // a campaign is one island week, Monday to Sunday; the election is Sunday night
+  /* the island's calendar is the real one: an island day is a real day (Europe/Berlin), three moves each, and the week's
+     days not yet played are played in one go. ?today=N pretends it is weekday N (1 Monday … 7 Sunday); ?clock=free lifts
+     the lock, so the whole week can be played at once (the sim, and anyone who wants to) */
+  const QS = new URLSearchParams(location.search), FREE = QS.get("clock") === "free";
+  const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  function berlin() {
+    try {
+      const P = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "short", hour: "numeric", minute: "numeric", hour12: false, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()), g = t => (P.find(x => x.type === t) || {}).value;
+      const dow = DOW.indexOf(g("weekday")) + 1; if (!dow) throw 0;
+      return { dow, h: +g("hour") % 24, m: +g("minute"), y: +g("year"), mo: +g("month"), d: +g("day") };
+    } catch (e) { const d = new Date(); return { dow: (d.getDay() + 6) % 7 + 1, h: d.getHours(), m: d.getMinutes(), y: d.getFullYear(), mo: d.getMonth() + 1, d: d.getDate() }; }
+  }
+  const todayIdx = () => { const f = +QS.get("today"); return f >= 1 && f <= 7 ? f : FREE ? DAYS : berlin().dow; };
+  const weekId = () => { const b = berlin(), mon = new Date(Date.UTC(b.y, b.mo - 1, b.d) - (b.dow - 1) * 86400000); return mon.toISOString().slice(0, 10); };
+  /* until the next island day, and until the governor's count (Monday 00:00), as "in 2 d 9 h" */
+  const untilMidnight = () => { const b = berlin(); return 86400 - (b.h * 3600 + b.m * 60); };
+  const spanText = sec => { const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600); return d ? Fd("in {n} d {m} h", { n: d, m: h }) : h ? Fd("in {n} h", { n: h }) : T("within the hour"); };
+  const HOURS = ["Morning", "Noon", "Evening"], WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const dayName = d => T(WEEKDAYS[Math.min(DAYS, Math.max(1, d)) - 1]);
   /* real test transactions: four ballot boxes and the council's chest, addresses with no owner behind them */
   const ADDR = {
     council: "96179f47d33ab65d9922c5652d7686f9e6be9d36ef4b9e9e04bdaac25b6e30d01928182c16da7aaa6dc954cccb88b62b",
@@ -290,7 +308,7 @@
     const R = seeded(Date.now() & 0xffffff), sup = {};
     for (const c in CANDS) { sup[c] = {}; PEOPLE.forEach(p => { sup[c][p.id] = 42 + Math.round(R() * 14) + (CANDS[c].cares.some(x => p.cares.includes(x)) ? 6 : 0); }); }
     const trust = {}; for (const c in CANDS) trust[c] = 45;
-    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {}, amb: null, declined: [] };
+    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {}, amb: null, declined: [], week: weekId(), waiting: false };
   }
   const save = () => { if (G) store.set(KEY, JSON.stringify(G)); };
   function load() { try { const g = JSON.parse(store.get(KEY) || "null"); if (g && g.v === 1 && CANDS[g.me]) return g; } catch (e) {} return null; }
@@ -428,7 +446,7 @@
     $("cvStage").classList.toggle("pre", !G);
     if (!G) return;
     locks();
-    $("cvDay").textContent = F("Day {n} of {m}", { n: G.day, m: DAYS });
+    $("cvDay").textContent = dayName(G.day); $("cvDay").title = F("Day {n} of {m}", { n: G.day, m: DAYS }) + " · " + (G.day < todayIdx() ? Fd("catching up: it is {x} already", { x: dayName(todayIdx()) }) : T("today, on the island as in the world"));
     $("cvHour").textContent = T(G.move >= MOVES ? "Night" : HOURS[G.move]);
     $("cvMoves").replaceChildren(...Array.from({ length: MOVES }, (_, i) => el("i", { class: i < MOVES - G.move ? "on" : "" })));
     $("cvMoves").setAttribute("aria-label", F("{n} moves left today", { n: Math.max(0, MOVES - G.move) }));
@@ -437,7 +455,7 @@
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
     const last = G.news[G.news.length - 1];
     if (last && last !== DJ.said) { DJ.said = last; if (DJ.opened) onAir([V("book"), Q(last.s)], 1); else { DJ.after = [V("book"), Q(last.s)]; $("cvNews").textContent = last.s; } }   // before the show opens, the news waits for Rico's opener
-    else if (!DJ.text) $("cvNews").textContent = last ? last.s : T("The Key Crier: five days to the election. Everything anyone does is written in the Book.");
+    else if (!DJ.text) $("cvNews").textContent = last ? last.s : T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book.");
     SC.setHour(G.over ? 2.4 : G.move >= MOVES ? 3 : G.move * 0.9);
     SC.rabbit(G.over || G.move >= MOVES ? null : hint()[0]);
   }
@@ -913,10 +931,34 @@
     hud();
     night();
     if (G.day >= DAYS) { save(); return election(); }
-    G.day++; G.move = 0;
-    const n = readers(); save();
-    morning(n);
+    if (!FREE && G.day >= todayIdx()) { G.waiting = true; save(); return nightCard(); }
+    nextDay();
   }
+  function nextDay() { G.waiting = false; G.day++; G.move = 0; const n = readers(); save(); morning(n); }
+  /* the day is done and so is the real one: the next island day comes after midnight, German time */
+  function nightCard() {
+    openCard(null, box => {
+      box.classList.add("paper");
+      box.append(el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: dayName(G.day) + " · " + T("Night") }),
+        el("p", { class: "lead", text: Fd("{x} is done on the island. The next day begins with the real one, after midnight German time ({y}). Your campaign waits here; the rivals sleep too.", { x: dayName(G.day), y: spanText(untilMidnight()) }) }),
+        el("ul", null, el("li", { text: T("Until then: read the Book, talk to people, look at The island today. None of it costs a move.") }),
+          el("li", { text: G.day >= DAYS - 1 ? T("Tomorrow is Sunday: three last moves, then the islanders vote.") : Fd("Governor’s count {x}, Monday 00:00 German time.", { x: countIn() }) })),
+        el("div", { class: "cv-acts" }, btn(T("Good night"), () => closeCard(), { go: true })));
+    });
+  }
+  /* on a new real day the waiting campaign goes on; a campaign whose week has passed was decided without you */
+  function resume() {
+    if (!G || G.over) return;
+    if (!FREE && G.week && G.week !== weekId()) return decideLate();
+    if (G.waiting) { if (FREE || todayIdx() > G.day) nextDay(); else nightCard(); }
+  }
+  function decideLate() {
+    const t = tally();
+    G.over = { win: t.win, count: t.count, lies: G.lies.filter(l => l.by === G.me && l.lie).length, late: true };
+    write("sam", F("counted the ballots: {x} is governor of the island", { x: nm(t.win) }), "law");
+    save(); ending();
+  }
+  setInterval(() => { if (G && G.waiting && !UI.card && !document.hidden && todayIdx() > G.day) resume(); }, 60000);
   function morning(n) {
     hud();
     isleMorning();
@@ -924,7 +966,7 @@
     const today = G.news.filter(x => x.day >= G.day - 1 && !(E && x.s === T(E.lead))).slice(-4);
     const R = seeded(G.seed + G.day), joke = T(JOKES[Math.floor(R() * JOKES.length)]);
     const box = el("div", { class: "cv-paper" },
-      el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: F("Day {n} of {m}", { n: G.day, m: DAYS }) + " · " + F("{n} people read the Book last night", { n }) }),
+      el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: dayName(G.day) + " · " + F("Day {n} of {m}", { n: G.day, m: DAYS }) + " · " + F("{n} people read the Book last night", { n }) }),
       E ? el("p", { class: "lead", text: T(E.lead) }) : false,
       el("ul", null, today.length ? today.map(x => el("li", { text: x.s })) : [el("li", { text: T("A quiet night. The fish report no news.") })]),
       el("p", { class: "joke", text: joke }));
@@ -974,9 +1016,9 @@
   const EVENT_NAMES = { boiler: "burst boiler", storm: "storm", coup: "night at the council tree", catch: "record catch", roof: "fallen school roof" };
   /* which ones happen this campaign: one on day 2, 3 or 4, sometimes a second on another day; fixed by the campaign's seed */
   function planEvents(seed) {
-    const R = seeded(seed + 777), ids = Object.keys(EVENTS).sort(() => R() - 0.5), days = [2, 3, 4].sort(() => R() - 0.5);
+    const R = seeded(seed + 777), ids = Object.keys(EVENTS).sort(() => R() - 0.5), days = [2, 3, 4, 5, 6].sort(() => R() - 0.5);
     const out = [{ id: ids[0], day: days[0] }];
-    if (R() < 0.4) out.push({ id: ids[1], day: days[1] });
+    if (R() < 0.6) out.push({ id: ids[1], day: days[1] });
     return out.sort((a, b) => a.day - b.day);
   }
   const events = () => G.events || (G.events = planEvents(G.seed));
@@ -1071,7 +1113,7 @@
   const ambGoal = () => Fd(AMB[G.amb.id].goal, { x: nm(G.amb.x) });
   /* after the morning paper on day 2 and 3: the first offer that fits what the Book has seen, each one made only once */
   function offerAmbition() {
-    if (!G || G.over || G.amb || G.day < 2 || G.day > 3) return;
+    if (!G || G.over || G.amb || G.day < 2 || G.day > 4) return;
     const f = facts(), id = ["fortune", "reform", "clean", "kingmaker"].find(k => AMB[k].who !== G.me && !(G.declined || []).includes(k) && AMB[k].fits(f));
     if (!id) return;
     const A = AMB[id], x = A.pick ? A.pick() : null;
@@ -1337,15 +1379,22 @@
   setInterval(() => { const so = SND.song; if (!so || !so.id || UI.card) return; if (DJ.song && so.id !== DJ.song) DJ.songNew = so.id; DJ.song = so.id; }, 3000);
 
   /* ---------- election night ---------- */
-  function election() {
-    G.counting = true; G.move = MOVES; hud(); SC.setHour(2.6); SC.gather(1);
-    SND.set({ tense: true });
+  function tally() {
     const R = seeded(G.seed + 99), ballots = PEOPLE.map(p => {
       const sc = Object.keys(CANDS).map(c => [c, G.sup[c][p.id] + R() * 4]); sc.sort((a, b) => b[1] - a[1]); return [p, sc[0][0]];
     });
     /* the eleventh ballot belongs to the visitors: it goes to whoever leads the island ballot on the real testnet */
     const vp = visitorsPick(); if (vp) ballots.push([{ name: T("The visitors, by their votes on the testnet") }, vp]);
-    const count = {}; Object.keys(CANDS).forEach(c => (count[c] = 0));
+    const count = {}; Object.keys(CANDS).forEach(c => (count[c] = 0)); ballots.forEach(([, c]) => count[c]++);
+    const max = Math.max(...Object.values(count)), top = Object.keys(count).filter(c => count[c] === max);
+    const win = top.length > 1 ? top[Math.floor(R() * top.length)] : top[0];
+    Object.keys(CANDS).forEach(c => (count[c] = 0));   // the night counts them again, one by one
+    return { R, ballots, vp, count, win, tie: top.length > 1 };
+  }
+  function election() {
+    G.counting = true; G.move = MOVES; hud(); SC.setHour(2.6); SC.gather(1);
+    SND.set({ tense: true });
+    const t0 = tally(), { R, ballots, vp, count } = t0;
     openCard("market", box => {
       box.classList.add("locked");
       box.append(el("h3", { text: T("Election night") }), el("p", { class: "cv-note", text: T(vp ? "Ten ballots from the islanders and one from the visitors of the testnet, counted on the square by Old Sam." : "Ten ballots, counted on the square by Old Sam.") }));
@@ -1365,7 +1414,7 @@
       const done = () => {
         const max = Math.max(...Object.values(count)), top = Object.keys(count).filter(c => count[c] === max);
         let win = top[0];
-        if (top.length > 1) { win = top[Math.floor(R() * top.length)]; tape.textContent = F("A tie. The black cat walks past the ballot box of {x}, twice. Sam says that settles it.", { x: nm(win) }); SC.cat(true); SND.sfx("glitch"); setTimeout(() => SND.sfx("meow"), 900); }
+        if (top.length > 1) { win = top.includes(t0.win) ? t0.win : top[Math.floor(R() * top.length)]; tape.textContent = F("A tie. The black cat walks past the ballot box of {x}, twice. Sam says that settles it.", { x: nm(win) }); SC.cat(true); SND.sfx("glitch"); setTimeout(() => SND.sfx("meow"), 900); }
         G.over = { win, count, lies: G.lies.filter(l => l.by === G.me && l.lie).length };
         isleTell("end", gidOf(), G.me, win, G.laws.map(l => l.id).join(",") || "-");
         write("sam", F("counted the ballots: {x} is governor of the island", { x: nm(win) }), "law");
@@ -1476,6 +1525,7 @@
   function ending() {
     if (!G.over.read) return edition();
     const o = G.over, me = G.me, won = o.win === me;
+    if (o.late && !o.lateSaid) { o.lateSaid = true; save(); setTimeout(() => toast(T("The week ended before your campaign did: the islanders voted on Sunday without you. This one is not counted for the island.")), 1200); }
     const [title, text] = won && !o.lies ? [T("Governor of the island"), T("You won on what was true. Everything you did is in the Book, and none of it needs explaining.")]
       : won ? [T("Governor, with a footnote"), T("You won, and the Book shows every rumour you paid for. Nobody can tear out a page, so your term starts with questions.")]
       : [T("Back to the hammock"), F("{x} is governor. Read the Book to see how; every move is there, yours too.", { x: nm(o.win) })];
@@ -1493,7 +1543,8 @@
       Object.keys(CANDS).forEach(c => acts.append(chainBtn(c, F("Vote {x}", { x: nm(c) }), F("Key ballot: {x}", { x: nm(c) }))));
       acts.append(ballotEl(), isleVerdict());
       bank(); acts.append(el("p", { class: "cv-note", text: Fd("Your savings: {n} coins. They carry over to your next campaign and buy things the island keeps: a roof for the school, a lamp for the lighthouse, a stone in Tano’s circle.", { n: savings().coins }) }));
-      acts.append(btn(T("Play again"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true }), btn(T("Read the Book"), () => openCard("book", PLACE.book)), btn(T("The special edition"), () => { G.over.read = false; closeCard(true); ending(); }));
+      const again = FREE || !G.week || G.week !== weekId();
+      acts.append(btn(again ? T("Play again") : T("Next campaign on Monday"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true, off: !again, sub: again ? null : Fd("the week is played; a new one begins {x}", { x: countIn() }) }), btn(T("Read the Book"), () => openCard("book", PLACE.book)), btn(T("The special edition"), () => { G.over.read = false; closeCard(true); ending(); }));
       box.append(acts);
     });
   }
@@ -1642,7 +1693,7 @@
   const ballotEl = () => { const p = el("p", { class: "cv-ballot", "aria-live": "polite" }); setTimeout(ballotLine, 0); return p; };
 
   /* ---------- the shared island: every campaign played today, added up by the relay (infra/relay/isle.py) ----------
-     Everyone plays their own five days against the three rivals, and nobody ever waits for anybody. The visitor's own
+     Everyone plays their own island week against the three rivals, and nobody ever waits for anybody. The visitor's own
      moves are told to the relay as a few words (which kind of move, which law or topic, where; no names, no text), and
      every page gets the same small summary back, pushed when it changes: how many campaigns today, which laws passed
      most, who won most, the latest moves. One player or thousands, the message is the same size. When few people play,
@@ -1674,7 +1725,9 @@
      starts with them in force (holder: the island), until someone repeals them in the hall */
   const isleLast = () => (ISLE.s && ISLE.s.last && CANDS[ISLE.s.last.governor]) ? ISLE.s.last : null;
   const isleWeek = () => (ISLE.s && ISLE.s.week) || null;
-  const weekLeft = () => { const w = isleWeek(); if (!w || !w.to) return 0; return Math.max(1, Math.ceil((Date.parse(w.to + "T23:59:59+01:00") - Date.now()) / 86400000)); };
+  /* the governor's count is Monday 00:00 on the island's clock (Europe/Berlin), whatever the relay says; shown as a countdown */
+  const countIn = () => spanText((7 - berlin().dow) * 86400 + untilMidnight());
+  const countLine = () => Fd("Governor’s count {x}, Monday 00:00 German time", { x: countIn() || T("every week") });
   function isleRule() {
     const last = isleLast(); if (!G || G.ruled || G.day !== 1 || G.move || G.over || !last) return;
     G.ruled = last.id;
@@ -1737,7 +1790,7 @@
     if (p.campaigns > 1) L.push({ k: "isle:n", parts: [Q("Around the island today: {n} campaigns, {m} of them finished.", { n: p.campaigns, m: p.finished })] });
     if (top && laws[top] > 1) L.push({ k: "isle:law", parts: [Q("Across the island, “{x}” has passed {n} times today.", { x: T(LAWS[top].t), n: laws[top] })] });
     const w = isleTop(p.wins)[0]; if (w && p.finished > 2) L.push({ k: "isle:win", parts: [Q("Election results from the whole island: {x} has won {n} of {m} today.", { x: nm(w), n: p.wins[w], m: p.finished })] });
-    const last = isleLast(); if (last) L.push({ k: "isle:gov", parts: [Q("{x} governs the island this week, with {n} of last week’s {m} campaigns won. The next count is Sunday night.", { x: nm(last.governor), n: last.wins[last.governor] || 0, m: last.finished })] });
+    const last = isleLast(); if (last) L.push({ k: "isle:gov", parts: [Q("{x} governs the island this week, with {n} of last week’s {m} campaigns won. Next governor’s count {y}, Monday 00:00 German time.", { x: nm(last.governor), n: last.wins[last.governor] || 0, m: last.finished, y: countIn() || T("next week") })] });
     const e = (s.recent || []).find(x => x.k !== "won"); if (e) L.push({ k: "isle:" + e.t, parts: [Q(e.h ? "Island news: {x}." : "Fresh from the square: {x}.", { x: isleLine(e) })] });
     return L;
   }
@@ -1747,7 +1800,7 @@
     const w = isleTop(s.players.wins)[0];
     p.textContent = F("Across the island today, {x} won {n} of {m} finished campaigns.", { x: nm(w), n: s.players.wins[w], m: s.players.finished });
     const wk = isleWeek(), lw = wk && isleTop(wk.wins)[0];
-    if (lw) p.append(" ", Fd("This week so far: {x} leads with {n} of {m}. Whoever leads on Sunday night governs the island next week.", { x: nm(lw), n: wk.wins[lw], m: wk.finished }));
+    if (lw) p.append(" ", Fd("This result is one ballot for {x} in the island’s week. So far {y} leads with {n} of {m}; whoever leads at the governor’s count ({z}, Monday 00:00 German time) governs the island next week.", { x: nm(w), y: nm(lw), n: wk.wins[lw], m: wk.finished, z: countIn() || T("every week") }));
     return p;
   }
   /* the card: the island's day, everyone's campaigns added up */
@@ -1758,7 +1811,7 @@
       if (!s) { scene(box, "sam", T("The island today"), T("The island’s numbers are out of reach just now. Your campaign goes on as before."), [btn(T("Back to the island"), () => closeCard(), { go: true })]); return; }
       const p = s.players, isl = s.islanders, laws = isleLaws();
       scene(box, "sam", T("The island today"), p.campaigns
-        ? F("{n} campaigns on this island today, {m} finished. Everyone plays their own five days; here they all add up.", { n: p.campaigns, m: p.finished })
+        ? F("{n} campaigns on this island today, {m} finished. Everyone plays their own island week; here they all add up.", { n: p.campaigns, m: p.finished })
         : T("No visitor has campaigned yet today. The islanders keep their own politics going until someone does."), [btn(T("Back to the island"), () => closeCard(), { go: true })]);
       const extra = el("div", { class: "cv-isle" });
       if (p.campaigns) {
@@ -1774,8 +1827,8 @@
         const li = [];
         li.push(el("li", { class: last ? "k-law" : "dim" }, el("span", { text: last ? Fd("Governor: {x}, won {n} of {m} campaigns last week", { x: nm(last.governor), n: last.wins[last.governor] || 0, m: last.finished }) : T("No governor yet: the first week’s count is still running.") })));
         if (last && last.laws.length) li.push(el("li", { class: "k-law" }, el("span", { text: Fd("Laws of the week: {x}", { x: last.laws.map(id => T(LAWS[id].t)).join(", ") }) }), el("small", { text: T("in force at the start of every campaign this week") })));
-        li.push(el("li", null, el("span", { text: wl ? Fd("This week: {x} leads with {n} of {m} finished campaigns", { x: nm(wl), n: wk.wins[wl], m: wk.finished }) : T("This week: no campaign finished yet") }), el("small", { text: F("{n} days to Sunday night, when the island counts", { n: weekLeft() }) })));
-        col().append(el("h4", { text: T("The week") }), el("ul", { class: "cv-book" }, li));
+        li.push(el("li", null, el("span", { text: wl ? Fd("This week: {x} leads with {n} of {m} finished campaigns", { x: nm(wl), n: wk.wins[wl], m: wk.finished }) : T("This week: no campaign finished yet") }), el("small", { text: countLine() })));
+        col().append(el("h4", { text: T("The governor’s count") }), el("ul", { class: "cv-book" }, li));
       }
       const built = s.built || {}, bl = Object.keys(BUILDS).filter(k => built[k]);
       if (bl.length) col().append(el("h4", { text: T("Built by the players") }), el("ul", { class: "cv-book" }, bl.map(k => el("li", { class: "k-gift" }, el("span", { text: Fd({ roof: "{n} roofs for the school", lamp: "{n} lamps for the lighthouse", stone: "{n} stones in Tano’s circle" }[k], { n: built[k] }) })))));
@@ -1790,16 +1843,19 @@
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { G.onchain = true; hud(); if (G.over) return ending(); if (G.counting) { G.counting = false; return election(); } if (G.move >= MOVES) return endDay(); return; }
+    if (G) { G.onchain = true; hud(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
     SC.setHour(0, true); hud();
     openCard(null, box => {
       box.classList.add("intro");
-      box.append(el("p", { class: "kick", text: T("An island election in five days") }), el("h2", { text: T("White Rabbit Key") }),
+      box.append(el("p", { class: "kick", text: T("An island election on Sunday") }), el("h2", { text: T("White Rabbit Key") }),
         el("p", { class: "cv-line", text: T("Four candidates want to govern the island. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") }));
       const pick = el("div", { class: "cv-pick" });
       Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", onclick: () => begin(c) }, portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96), el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) }))));
       box.append(el("p", { class: "cv-h", text: T("Play as") }), pick);
-      box.append(ballotEl(), isleIntro());
+      const td = todayIdx();
+      box.append(el("p", { class: "cv-note" }, el("b", { text: T("Your campaign:") }), " ", T("this week, Monday to Sunday. An island day is a real day: three moves, a few minutes. Sunday evening the islanders vote."), " ",
+        td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: play Monday to {x} now, then a day a day.", { x: dayName(td) }),
+        el("br"), el("b", { text: T("The island:") }), " ", Fd("every campaign won is a ballot for its candidate; governor’s count {x}, Monday 00:00 German time.", { x: countIn() })), ballotEl(), isleIntro());
       /* every move is a real test transaction, always: said plainly here instead of a box to tick */
       box.append(el("p", { class: "cv-chain" }, el("span", { text: T("Every move is real: it is signed into Tau Testnet Alpha from a test wallet made for you in this browser, and paid to the place where you make it (1 test AGRS, a line on Radio Coco 25). Wages and embassy money come back into that wallet. The rivals’ moves go there too. Test AGRS have no value.") }), " ", el("a", { href: "/wallet/", text: T("Your test wallet") })));
     });
@@ -1810,14 +1866,14 @@
   }
   function begin(c) {
     G = fresh(c); save();
-    news(T("The Key Crier: five days to the election. Everything anyone does is written in the Book."));
+    news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."));
     isleRule();
     closeCard(); hud();
     toast(T("Tap a place on the island to begin."));
     dragHint();
   }
   function help() {
-    openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, five days, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
+    openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
       el("ul", { class: "cv-help" }, el("li", { text: T("Council Hall: propose a law. Two of the other three candidates must vote yes. A law that contradicts one in force is refused first.") }),
         el("li", { text: T("Market square: talk about a topic. People who care about it move toward you.") }), el("li", { text: T("Radio Coco: pay for a line on air. True lines are safe. Lies come back when people read the Book.") }),
         el("li", { text: T("Embassies: coins now, for a promise to propose their law. Forget it and they tell everyone.") }), el("li", { text: T("Bar La Ola: pacts. Partners vote for each other’s laws.") }),
@@ -1826,7 +1882,8 @@
         el("li", { text: T("On day two or three someone who has read the Book makes you an offer: a goal of your own beside the election, with its own ending in the special edition.") }),
         el("li", { text: T("Some mornings something happens to the island. The Key Crier leads with it, you get one choice, and that topic is the talk of the week: speeches about it count more and laws for it pass more easily.") }),
         el("li", { text: T("Election night: the visitors of the site cast an eleventh ballot, for whoever leads the island ballot on the real testnet.") }),
-        el("li", { text: T("The island counts every Sunday night, German time: whoever won the most campaigns that week governs the island the week after, and the laws most often in force at the end of those campaigns are the island’s laws, in force when every new campaign starts. Repeal them in the hall if you must.") }),
+        el("li", { text: T("One clock, the real one (German time). An island day is a real day with three moves; a campaign is this week, Monday to Sunday, and the islanders vote on Sunday evening. Days of the week you have not played yet are played in one go, so a Wednesday start means Monday to Wednesday now and then a day a day. Monday 00:00 the island counts every campaign of the week: the governor’s count.") }),
+        el("li", { text: T("The governor’s count: every campaign won is one ballot for its candidate. Whoever has the most governs the island the week after, and the laws most often in force at the end of those campaigns are the island’s laws, in force when every new campaign starts. Repeal them in the hall if you must.") }),
         el("li", { text: T("On the chain: every line in the Book is also a transaction on Tau Testnet Alpha, 1 test AGRS to the island council. The rivals send theirs from their own campaign wallets, yours from the test wallet this browser made for you. A ⛓ in the Book marks them.") }),
         el("li", { text: T("Inspired by \"Caribbean Disaster\" (1995). An independent homage, not affiliated with or endorsed by its creators. All art, characters, story and music are original.") }))));
   }
