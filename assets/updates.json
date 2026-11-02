@@ -2060,5 +2060,10 @@
   "tag": "In numbers",
   "on": "2026-11-02",
   "html": "In numbers: White Rabbit Key now has its own part in “Share of the testnet”, next to Agorzilla and Tau HUD. It counts the players’ lines and ballots and the rivals’ moves and wages the island bot sends, which were listed under “others” until now; the bot’s wallets are never counted as players. The day table and “Where our transactions started” show the game on its own line too."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-11-02",
+  "html": "White Rabbit Key: the island keeps the time of Germany now. Its light changes with the hour, a little every minute: first light about six, morning sun, a bright noon, a golden afternoon, a short red dusk after six and night from about half past eight, with lit windows, the lighthouse beam, stars and a moon. Inside the places the light follows the hour too."
  }
 ]
