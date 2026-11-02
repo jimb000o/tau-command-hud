@@ -51,7 +51,7 @@
     fl1: "Hours without a block now. The chain is having a siesta, and nobody on this island argues with a siesta.",
     fl2: "Several hours of fog over the chain. Old Sam says he has seen worse. Then he admits he hasn't.",
     fl3: "Still no new block, hours now. Somebody on the pier is writing a song about the last one. It's a ballad.",
-    fl4: "Hours of silence on the chain. Remember, folks, this is a testnet. Testing your patience counts too.",
+    fl4: "Hours of silence on the chain. Remember, folks, this is the lagoon: quiet water, nothing lost. Testing your patience counts too.",
     fd1: "No new block for most of a day. Rico has started talking to the last one. It's a very good listener.",
     fd2: "A whole day of fog, folks. The last page of the Book is getting famous. Tourists take pictures of it.",
     fd3: "A day or more without a block. If anybody sees the next one, tell it Radio Coco says hello, and please come home.",
@@ -68,19 +68,19 @@
     clear2: "Nothing waiting on the pier. Every transaction has found its block.",
     /* the first line after the page opens */
     op1: "Radio Coco, ninety-seven point three, back on the air. Rico has had his coffee, the Book has had its ink.",
-    op2: "You are listening to Radio Coco, the only station broadcasting from a testnet. If something breaks, that is the point.",
+    op2: "You are listening to Radio Coco, the only station broadcasting from the lagoon, Tau Testnet Alpha for the newcomers. If something breaks, that is the point.",
     op3: "Hello island! Fresh blocks, fresh rumours, same old Rico. Stay tuned.",
     op4: "Radio Coco, live from the studio by the harbour. Tonight: politics, gossip and the latest from the chain.",
     op5: "Good to have you, listener. Turn it up, the gulls can't hear.",
     /* between the news: the island and the testnet as Rico sees them */
-    g1: "Reminder: on a testnet the money is pretend and the coconuts are real. Please don't mix them up at the market.",
-    g2: "A caller asks how many people use the testnet. Rico can only count wallets. One person with three wallets is a party of one.",
+    g1: "Reminder: on the lagoon the money is pretend and the coconuts are real. Please don't mix them up at the market.",
+    g2: "A caller asks how many people use the lagoon. Rico can only count wallets. One person with three wallets is a party of one.",
     g3: "Nobody mines anything on this chain. No pickaxes, no noise. Blocks are sealed by agreement, the quiet island way.",
     g4: "A transaction walks into a block. The block says: you again? The transaction says: no, that was my ghost.",
     g5: "If your transaction is late, don't panic. Blocks come in like ferries: more or less on time, and never the same one twice.",
     g6: "Studio tip: write your own rules before somebody writes them for you. On this chain a wallet can put a rule on itself, and the chain holds it to it.",
-    g7: "The Book in the lighthouse and the blocks on the testnet are cousins. Neither forgets, and neither forgives a typo.",
-    g8: "Testnet means you can make mistakes for free. Rico has been testing his whole life.",
+    g7: "The Book in the lighthouse and the blocks on the lagoon are cousins. Neither forgets, and neither forgives a typo.",
+    g8: "The lagoon means you can make mistakes for free. Rico has been testing his whole life.",
     g9: "Lost and found: one private key. Just kidding. Nobody can find that for you. Keep it the way your grandmother keeps her recipes.",
     g10: "Most requested song this week: Waiting for the Next Block. Runner-up: Fee Me Tender.",
     g11: "Rico asked the chain who will win the election. The chain said: I only write down what already happened. Smart chain.",
@@ -95,7 +95,7 @@
     g20: "Wallets, not people: that is how the chain sees the world. Rico finds that very restful.",
     g21: "This is the hour when the validators sign and the islanders sleep. Rico does neither.",
     g22: "Every block that comes in is like a match result: final, posted, and somebody at the bar still argues about it.",
-    g23: "Some people collect stamps. The testnet collects signatures. Rico collects excuses.",
+    g23: "Some people collect stamps. The lagoon collects signatures. Rico collects excuses.",
     g24: "Breaking: the black cat crossed the square twice again. The Book has both crossings. The cat has no comment.",
     g25: "Kai from the Reef Proof dive centre says the reef is fine today. Kai checked. Twice. Underwater. That is what we call a proof.",
     g26: "Noor at the Coconut Works reports: every coconut counted, every count signed. Rico asked for one. Noor asked for a signature.",
@@ -106,11 +106,11 @@
     /* news from the chain: what Rico just saw in the newest blocks (game.js readChain) */
     rule1: "News from the chain: a wallet just wrote itself a personal rule. Most people make New Year's resolutions. On this chain, they are enforced.",
     rule2: "A wallet tied its own hands today, on purpose. Rico tried that with chocolate once. The chain is stricter than Rico.",
-    rule3: "New personal rule on the testnet. The wallet said: from now on, not like that. And the chain said: noted.",
+    rule3: "New personal rule on the lagoon. The wallet said: from now on, not like that. And the chain said: noted.",
     rule4: "Another personal rule on the chain. So far most of them came from just two wallets. Two people, or one person with a lot of coffee: the chain only sees wallets.",
-    cosign1: "A co-signed transfer is on the water. The money waits on the pier until the co-signers say yes. Romance, testnet style.",
+    cosign1: "A co-signed transfer is on the water. The money waits on the pier until the co-signers say yes. Romance, lagoon style.",
     cosign2: "Somebody sent money that needs a second signature. Trust, but sign twice.",
-    cosvote: "A co-signer has spoken. Somewhere on the testnet a transfer is either sailing or staying home.",
+    cosvote: "A co-signer has spoken. Somewhere on the lagoon a transfer is either sailing or staying home.",
     lock1: "Someone sent money on a string: until its release, at a block or a time, the sender can still pull it back. Rico calls that a boomerang with a timer.",
     lock2: "A retractable transfer went out. The receiver may look, but not touch. Not yet.",
     back1: "And the boomerang came back! A sender pulled a transfer back before its release. The receiver is now staring at the sea.",
@@ -128,6 +128,46 @@
     burst2: "Rush hour on the chain! Full blocks, a busy pier, and Rico is impressed.",
     deja1: "A wallet just agreed to feed Déjà: one test AGRS in the café cat's bowl, sealed in a block. She needs three a day, and Rico has never found out who the other two are.",
     deja2: "Somebody paid into Déjà's bowl. Marisol says the cat pretends not to notice. Rico has seen her notice.",
+    deja3: "Three wallets agreed to feed Déjà tonight. She looked at her bowl as if she had expected a fourth.",
+    /* where a wave came from, as far as the blocks show it (game.js sources()); {n} is shown as the number and spoken as a
+       band of BANDS, {where} as "block 1234" and spoken as "the latest block" */
+    /* the eleven wallets the lagoon started with (IDNI's genesis accounts): the same hands, the same habits, a running gag */
+    fw1: "In {where} the same wallet paid the same wallet the same amount, for the third time this hour. Old Sam says in his day they called that a marriage.",
+    fw2: "The wallets that were here before the island woke up are moving lagoon coins between themselves again. Like Lola's cousins at the bar: they only ever buy each other a drink.",
+    fw3: "Rico asked the Book who sends all these transactions. The Book said: the ones who built the harbour. Rico asked why. The Book does not do why.",
+    fw4: "Rico has started calling the busiest founder wallet Gerald. Gerald sent {n} transactions in one block. Rico asked Gerald for a song request. Gerald only sends coins.",
+    fw5: "Gerald again. Same hour, same amount, same silence. Rico respects a routine. Rico has never kept one.",
+    fw6: "Correction from yesterday: Rico said the founders' wallet is called Gerald. The Book says wallets have no names. Rico is sticking with Gerald.",
+    /* a place on the island has a rush: moves paid into its jar, ballots into the boxes */
+    pl1: "Rush hour at the pier: {n} moves paid into the pier's jar in one block. Tobias says that is the fastest anyone has come to the pier without a ferry being announced.",
+    pl2: "The pier bell rang, and {n} wallets answered inside two minutes. Every one of them a lagoon transaction, sealed in {where}. Tobias counted twice. He always counts twice.",
+    pl3: "Busy square today: {n} speeches paid into the market jar in one block. Marisol says you can tell an election is near when people start paying to be listened to.",
+    pl4: "The council hall took {n} laws in one block. Ama says the chairs are still warm. The Book says they were all checked against each other first. Both are right.",
+    pl5: "Radio Coco's own jar just took {n} paid lines in a block. Rico will play every one of them. Rico would like to point out that he did not write them.",
+    pl6: "The ballot boxes are filling: {n} ballots sealed in {where}. The lagoon does not count people, only wallets, so Rico will not say how many voters that is. Neither will the Book.",
+    pl7: "{n} moves landed in one jar in a single block, somewhere on the island. Rico heard coins, not names. Lola heard it from the bar, and Lola hears everything.",
+    /* the rivals' campaign wallets (the island bot's, relay GET /island) */
+    rv1: "Marisol's campaign office just sent {n} moves in one go. Either a very good day or a very large pot of coffee.",
+    rv2: "Tobias's people moved {n} times in one block. Harbour master's privilege: his office is right next to the water.",
+    rv3: "Baako's co-op sent {n} moves in one go, stacked and labelled. Baako counts everything, so Rico will not bother counting again.",
+    rv4: "Hana's campaign moved {n} times in one block, between two lessons. Her pupils probably did the paperwork.",
+    /* the other side of the bay: Agorzilla's bowl and ballot boxes */
+    cz1: "Hungry evening at the café: {n} bowls filled in one block. Across the bay something in the jungle grows by what people vote for. Kiko has a theory. Kiko has several.",
+    cz2: "{n} wallets just voted on how the thing in the jungle grows. Rico has seen the photos. Rico has seen clearer photos of fog.",
+    /* wallets Rico has never seen, and big amounts */
+    un1: "A wallet Rico has never heard of just moved {n} lagoon coins. Pim offered to survey it. Pim offers to survey everything.",
+    un2: "{n} wallets Rico has never seen before, in one block. Wallets, not people. The Book wrote them down anyway. The Book writes everybody down.",
+    un3: "Big transfer on the lagoon, {n} coins in {where}. Test coins, worth nothing, which is exactly what makes it interesting: somebody is practising.",
+    un4: "A new wallet, a big amount, no name. On the mainland that would be a scandal. On the lagoon it is Tuesday.",
+    /* the relay said no: our door (tauhud.com/load/ refused per minute), not the lagoon's rule */
+    rf1: "The pier bouncer turned {n} transactions away this minute. Not the lagoon's rule, Rico's own door: too many at once from the same place. Come back in a minute, the door is small.",
+    rf2: "{n} transactions refused at the relay in the last hour. The chain never saw them. Lola says the bar has the same policy on Fridays.",
+    /* the first transaction after a quiet hour: the news while the water is still */
+    fs1: "First lagoon coin in an hour, and it went to the island. One move, one jar, one block. Rico heard it land from here.",
+    fs2: "An hour of nothing, then one transaction crosses the water. On the mainland that is a rounding error. On the lagoon it is the news.",
+    fs3: "One transaction after a quiet hour. Old Sam looked up from the Book. That is how quiet it was.",
+    /* a mixed wave: many wallets at once, nobody leading */
+    dk3: "Why did {n} wallets move at the same minute? Rico has three theories, Old Sam has one, and the Book has none. The Book only says that they did.",
     ghost1: "Ghost report from the harbour: transactions already sealed in a block, but still listed as waiting. The node hasn't noticed they left. Old Sam calls them guests who never go home.",
     ghost2: "Spooky! The waiting list still shows transactions that are already in a block. Ghosts. Harmless, says the Book. Rico sleeps with the light on anyway.",
     ghost3: "The ghosts are back on the waiting list. A known bug, reported to the builders. Rico has put out a lemonade for them.",
@@ -160,7 +200,7 @@
     /* jokes, now and then */
     j1: "Why did the transaction break up with the mempool? It needed some space. Preferably in a block.",
     j2: "How many validators does it take to change a light bulb? As many as the quorum says. And somebody has to propose the bulb first.",
-    j3: "Rico's doctor told him to take it easy. Rico said: I can't, doc. There's no finality on this testnet. Nothing is ever really over.",
+    j3: "Rico's doctor told him to take it easy. Rico said: I can't, doc. There's no finality on this lagoon. Nothing is ever really over.",
     j4: "Knock knock. Who's there? Reorg. Reorg who? Never mind, we've rewritten that part.",
     j5: "What do you call a wallet with a personal rule and no money? Principled.",
     j6: "A Tau rule walks into a bar. The bartender says: we don't serve contradictions here. The rule says: good, neither do I.",
@@ -173,7 +213,7 @@
     j13: "Why won't the gull join the network? It doesn't want to deal with peers. It has enough of those on the pier.",
     j14: "How does a node say goodbye? See you at the next block. Probably. Give or take a reorg.",
     j15: "Rico once wrote a love letter in Tau logic. It was always true. She still said no. Logic isn't everything.",
-    j16: "Testnet coins have no value. Rico checked. Neither do Rico's jokes. And yet, here we both are.",
+    j16: "Lagoon coins have no value. Rico checked. Neither do Rico's jokes. And yet, here we both are.",
     j17: "What do you call a transaction that waits forever? A regular at Bar La Ola.",
     j18: "Why did the ghost transaction come to the party? It was already sealed. It just wanted to be listed.",
     j19: "Rico's computer wanted to run a node. The manual said: on Windows, use Docker or WSL. The computer said: I don't speak whale.",
@@ -192,13 +232,13 @@
     j32: "Our weatherman quit. He said forecasting the chain was too easy: it's either blocks, or fog.",
     j33: "Why did the block go to therapy? Everybody kept checking its header and nobody asked how it was doing.",
     j34: "Rico tried to bribe a Tau rule. It looked at the envelope, checked it against the rules in force, and refused it. Incorruptible. Also a bit rude.",
-    j35: "What's the testnet's favourite song? Don't stop me now. Unless it's a contradiction. Then stop me.",
+    j35: "What's the lagoon's favourite song? Don't stop me now. Unless it's a contradiction. Then stop me.",
     j36: "Rico's horoscope for validators: Today you will sign something. Tomorrow too. The stars are very consistent. Like the rules.",
     /* the ghosts in Halloween week, and after it, when Rico wants his island un-haunted */
     hw1: "Happy Halloween from Radio Coco! And right on time, transactions already sealed in a block are still haunting the waiting list. Even the node is in costume.",
     hw2: "Ghosts on the waiting list tonight, folks. Sealed in a block, and still walking around. Perfect timing. Rico approves the decoration.",
     hw3: "Halloween special! The ghost transactions are out. Already in a block, still listed as waiting. Don't be scared, kids. They only say boo to block explorers.",
-    hw4: "Spooky season on the testnet. The ghosts are listed, the pumpkins are carved, and Old Sam has written both into the Book.",
+    hw4: "Spooky season on the lagoon. The ghosts are listed, the pumpkins are carved, and Old Sam has written both into the Book.",
     po1: "Excuse me. Halloween is over. Why are there still ghosts on the waiting list? Sealed in a block and still listed. Somebody please tell them the party has ended.",
     po2: "Halloween is over and the island is still haunted. Ghost transactions all over the waiting list. Rico would like to speak to the manager of the mempool.",
     po3: "Dear builders, Halloween is over. The ghosts are still on the waiting list. The bug is reported, the island is patient, but Rico is running out of garlic.",
@@ -252,7 +292,7 @@
     wakePm: "Heeeeey, White Rabbit Keeeey! Radio Coco, ninety-seven point threeee! Out of the hammock, the island needs you!",
     wakeEv: "Goood eeevening, island! This is Radio Coco, ninety-seven point threeee, and the night is young! Rico is not, but the night is!",
     wakeNt: "Still uuuup, White Rabbit Keeeey? So is Radio Coco, ninety-seven point threeee! The chain never sleeps, and tonight neither does Rico!",
-    wake1: "Coco, coco, coco... RADIO COCOOOO! Ninety-seven point three, the loudest little station on any testnet!",
+    wake1: "Coco, coco, coco... RADIO COCOOOO! Ninety-seven point three, the loudest little station on any lagoon!",
     wake2: "Ladies, gentlemen and wallets of all sizes! Welcome to the island! This is Rico, this is Radio Coco, and this is your wake-up caaaall!",
     /* the songs Radio Coco plays (music.js SONGS), announced while they play */
     sn_coco: "On Radio Coco now: Coco Calypso, the island's own tune. If you can't hum it yet, you will by Thursday.",
@@ -279,24 +319,24 @@
     solo5: "One keeper sealing every page of the chain. Old Sam knows the feeling. He says: get a deputy, and a hammock.",
     solo6: "Rico checked who sealed the latest blocks. It took a second. Same name every time. Lovely handwriting, though.",
     solo7: "The chain is a one-man band today: drums, bass and every single block. Rico respects that. Rico is also a one-man band, and look how that turned out.",
-    solo8: "Fun fact: right now one validator seals every block on the testnet. For a dress rehearsal, fine. For opening night, you want the whole cast.",
+    solo8: "Fun fact: right now one validator seals every block on the lagoon. For a dress rehearsal, fine. For opening night, you want the whole cast.",
     postman1: "The one sealing every block hasn't sent a single transaction lately. Like a postman who delivers everything and never writes home.",
     postman2: "Every block, the same sealer, and not one transaction of their own. Pure service. Rico would at least send himself a postcard.",
     duet1: "Hold on, island: more than one hand is sealing blocks now! The choir has a second voice. Rico is tearing up a little.",
     duet2: "The chain's solo just became a duet! Two sealers, one Book. Rico is calling it a band.",
     /* the chain started over from block zero on the first of November, after a rule voted in by one voice stopped it */
     fresh1: "The chain is brand new this week. It started over from block zero, and all the old blocks are gone from the live chain. Like footprints at high tide.",
-    fresh2: "The story so far: somebody's proposal got voted in by a single voice, took effect, and the chain stopped right there. So the testnet started over at block zero. Rico calls that a test that worked.",
+    fresh2: "The story so far: somebody's proposal got voted in by a single voice, took effect, and the chain stopped right there. So the lagoon started over at block zero. Rico calls that a test that worked.",
     fresh3: "New house rule on the chain: only the ones who seal the blocks get to vote on the rules now. Everybody else, the suggestion box is closed for renovation.",
     fresh4: "Fresh chain, fresh start. Rico lost all his favourite old blocks. He'd be sadder, but most of them were empty.",
-    fresh5: "Remember: a testnet that never breaks has never been tested. This one has been tested. Thoroughly. Last weekend.",
+    fresh5: "Remember: a lagoon that never breaks has never been tested. This one has been tested. Thoroughly. At the start of November.",
     record1: "The chain just passed block five thousand and twenty-eight, the page where the old chain stood still. New personal best! Somebody give it a medal.",
     record2: "Past block five thousand and twenty-eight and still going. The old chain never got this far. Rico is proud like a parent at sports day.",
     /* the testnet as anyone can see it, any day */
-    net1: "Testnet tip: if something breaks, congratulations, you are now a tester. Write it down, tell the developers, take a bow.",
+    net1: "Lagoon tip: if something breaks, congratulations, you are now a tester. Write it down, tell the developers, take a bow.",
     net2: "Somewhere out there a brand-new node is reading the whole chain from block zero. Rico salutes you, little node. Drink water.",
     net3: "The chain has no opening hours. It works nights, weekends and holidays, and it has never once asked for a raise.",
-    net4: "On this testnet every rule has to agree with every other rule. Rico tried that with his relatives once. It took three Christmases.",
+    net4: "On this lagoon every rule has to agree with every other rule. Rico tried that with his relatives once. It took three Christmases.",
     net5: "Reminder: the coins on this chain are for testing. If somebody sells you some, Rico has a lighthouse to sell you too.",
     net6: "A block just came in empty. Rico doesn't judge. Some mornings Rico comes in empty too.",
     /* the mainland: somewhere over the sea, a ferry that is always coming soon (never a date) */
@@ -306,6 +346,23 @@
     ml4: "Packing tip for the mainland: bring your Book. Nobody over there will believe what you did here without it.",
     ml5: "Kiko is building a canoe big enough to reach the mainland. He says it's done when it's done. The only honest timetable on this island.",
     ml6: "Rico will not give you a date for the mainland ferry. Anybody who does is selling tickets.",
+    /* between the songs: a thank-you to whoever builds the lagoon (no names), and the idea behind it as Rico sees it, in
+       island words and only what its makers say in public; bld4a/bld4b frame the title of their latest change
+       (node.tauhud.com/devpulse.json), shown between them and not spoken */
+    bld1: "A thought for whoever seals the blocks at night while Rico sleeps. The lagoon does not say thank you. Rico does.",
+    bld2: "Somebody wrote the rules of this lagoon so that a rule can check another rule. Rico cannot even check his own shopping list.",
+    bld3: "The people building the harbour across the water started this lagoon over from block zero at the start of November, on purpose, and the whole lagoon followed. Rico has restarted a show once. Nobody followed.",
+    bld4a: "To the builders across the water: Rico reads your latest change on air. Today it says:",
+    bld4b: "Rico understood four words of that.",
+    idea1: "The idea behind this lagoon, as far as Rico can see it: you write down the rule you want to live by, and then the water holds you to it. Not your neighbour, not a judge. The water.",
+    idea2: "On the mainland a rule is a promise. On the lagoon a rule is a wall. Rico has walked into it twice.",
+    idea3: "The Book in the lighthouse and the blocks on the lagoon are cousins: nobody can tear out a page, and nobody can forgive a typo.",
+    idea4: "One day, they say, people will agree on rules the way the islanders agree on laws in the hall: say it in a language the water understands, and it holds. Rico does not fully understand that language yet. Rico is learning two words a week.",
+    idea5: "Nobody mines anything here. No pickaxes, no noise, no coins falling from the sky. Blocks are sealed by agreement. The quiet island way.",
+    idea6: "What Rico likes about the lagoon: you can make every mistake for free, and the Book still remembers it. That is how Rico learned the radio.",
+    /* Rico does not know everything: who is behind a wallet, or why */
+    dk1: "A listener asks who is behind the biggest wallet on the lagoon. Rico does not know. The Book does not know. The wallet knows, and the wallet is not calling in.",
+    dk2: "Rico guessed yesterday that the wave at the pier was the ferry. There is no ferry. Rico has been told. Repeatedly.",
   };
   /* which lines can stand in for each other: Rico picks one he has not said lately (game.js remembers what he said) */
   const SETS = {
@@ -314,7 +371,9 @@
     fog: ["fog", "fog2"], fogHour: ["fh1", "fh2", "fh3"], fogLong: ["fl1", "fl2", "fl3", "fl4"], fogDay: ["fd1", "fd2", "fd3"], stall: ["st1", "st2", "st3", "st4", "st5", "st6"], calm: ["calm", "calm2"], breeze: ["breeze", "breeze2"], choppy: ["choppy", "choppy2"], showers: ["showers", "showers2"], clear: ["clear", "clear2"],
     rule: ["rule1", "rule2", "rule3", "rule4"], cosign: ["cosign1", "cosign2"], cosvote: ["cosvote"], lock: ["lock1", "lock2"], back: ["back1", "back2"],
     offer: ["offer"], offerYes: ["offerYes"], law: ["law1", "law2"], lawSim: ["lawSim"], lawVote: ["lawVote"],
-    refusedLaw: ["refusedLaw"], refusedOwn: ["refusedOwn"], refused: ["refused"], burst: ["burst1", "burst2"], deja: ["deja1", "deja2"], ghost: ["ghost1", "ghost2", "ghost3"],
+    refusedLaw: ["refusedLaw"], refusedOwn: ["refusedOwn"], refused: ["refused"], burst: ["burst1", "burst2"], deja: ["deja1", "deja2", "deja3"],
+    founders: ["fw1", "fw2", "fw3", "fw4", "fw5", "fw6"], place: ["pl1", "pl2", "pl3", "pl4", "pl5", "pl6", "pl7"], rival: ["rv1", "rv2", "rv3", "rv4"], cafe: ["cz1", "cz2"],
+    unknown: ["un1", "un2", "un3", "un4"], relay: ["rf1", "rf2"], first: ["fs1", "fs2", "fs3"], mixed: ["dk3"], ghost: ["ghost1", "ghost2", "ghost3"],
     toStake: ["toStake"], toFixed: ["toFixed"], nowStake: ["nowStake"], nowFixed: ["nowFixed"], midnight: ["midnight"], restart: ["restart"],
     joke: Array.from({ length: 36 }, (_, i) => "j" + (i + 1)), call: ["c4", "c6"],
     corner: Array.from({ length: 8 }, (_, i) => "tc" + (i + 1)), segue: Array.from({ length: 8 }, (_, i) => "s" + (i + 1)),
@@ -330,7 +389,16 @@
     solo: Array.from({ length: 8 }, (_, i) => "solo" + (i + 1)), postman: ["postman1", "postman2"], duet: ["duet1", "duet2"],
     fresh: Array.from({ length: 5 }, (_, i) => "fresh" + (i + 1)), record: ["record1", "record2"],
     net: Array.from({ length: 6 }, (_, i) => "net" + (i + 1)), mainland: Array.from({ length: 6 }, (_, i) => "ml" + (i + 1)),
+    lagoon: ["bld1", "bld2", "bld3", "idea1", "idea2", "idea3", "idea4", "idea5", "idea6"], dunno: ["dk1", "dk2"],
   };
+  /* the numbers in a wave line are shown exactly and spoken as a band, so every line has its clips: {n} a count of
+     transactions or wallets (BANDS.count) or an amount of lagoon coins (BANDS.coins); a count line never says "one" (a
+     single transaction gets a line without a number). Each band is one clip, made like any other line. {where} is the
+     block, shown as "block 1234" (a name that starts with b, n, m, a, c, h, g or e would be read as a number or a hash by
+     assets/i18n.js). */
+  const BANDS = { count: ["a couple of", "a handful of", "a dozen", "dozens of", "a hundred and more"], coins: ["a few hundred", "thousands of", "tens of thousands of", "a hundred thousand and more"] };
+  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", un1: "coins", un3: "coins" };
+  const BLOCK = { where: "the latest block" };   // how the block is spoken
   /* callers who phone the studio, each in their own voice through the telephone: listeners (ready voices, make.py
      CALLERS) and the islanders themselves. A call is a little conversation: who, then what is said in turn, the
      caller first, then Rico, and so on; after the caller's goodbye Rico signs off with a line from SETS.bye, unless
@@ -338,7 +406,7 @@
      (solo: one hand sealing every block; fresh: the chain started over and has not yet passed its old height). */
   const CALLS = [
     { who: "zia", say: ["Hi Rico, it's Zia from Miss Hana's class! Do I have to learn Boolean algebra to write rules on Tau?",
-      "Good question, Zia. Rico can tell you what he sees: the rules on the testnet are written in logic today. A little logic goes a long way, like a little salt in a soup. Miss Hana will be thrilled you asked.",
+      "Good question, Zia. Rico can tell you what he sees: the rules on the lagoon are written in logic today. A little logic goes a long way, like a little salt in a soup. Miss Hana will be thrilled you asked.",
       "So if I learn it, can I write a rule that says no homework on Fridays?",
       "For your own wallet, Zia, sure. Getting Miss Hana to sign it, that's the hard part.",
       "Worth a try! Bye Rico!"] },
@@ -353,9 +421,9 @@
       "Take ten, mate. The faucet doesn't judge.",
       "Legend. Cheers, Rico!"] },
     { who: "ozzie", say: ["Ozzie again! Rico, when's the mainnet? I've got a flight on Friday.",
-      "Rico doesn't know, mate, and anyone who gives you a date on the radio is selling something. Enjoy the testnet. It's free, and the view is great.",
+      "Rico doesn't know, mate, and anyone who gives you a date on the radio is selling something. Enjoy the lagoon. It's free, and the view is great.",
       "Fair enough. Can I at least get a T-shirt?",
-      "Rico has one. It says: I survived the testnet. It's still being printed.",
+      "Rico has one. It says: I survived the lagoon. It's still being printed.",
       "Ha! Cheers mate, see ya!"] },
     { who: "bert", say: ["Rico, it's old Bertie from the pier. In my day every ship had a captain. Who's the captain of this blockchain?",
       "Nobody, Bertie. On this chain the rules steer, and the rules only change when enough validators agree. Think of a ship where the crew votes on the map.",
@@ -393,7 +461,7 @@
       "That's how Rico understands it, Auntie. You write down what you mean, and it checks that it all fits together.",
       "Well, I mean my rolls. Bye now, dear."] },
     { who: "mae", say: ["Auntie Mae again. Rico, is there somewhere I can read the code for this testnet?",
-      "There is, Auntie. The testnet code is public on GitHub. Rico read some of it. Then Rico needed a nap.",
+      "There is, Auntie. The code behind the lagoon is public on GitHub. Rico read some of it. Then Rico needed a nap.",
       "A nap? Was it that boring?",
       "Not boring, Auntie. Just very honest. Every line says exactly what it does.",
       "Like my recipes. Bye now, dear."] },
@@ -500,19 +568,19 @@
     { who: "zia", cut: 1, say: ["Rico, can you say hi to my mum? She's",
       "We lost her! Zia's mum, if you're listening: hi from Zia. And from Rico."] },
     { who: "pearl", when: "solo", say: ["Rico, Pearl here, I'm new on the island. Who stamps all the blocks? I keep seeing the same signature.",
-      "Right now one hand seals every block, Pearl. On a testnet that's the warm-up act.",
+      "Right now one hand seals every block, Pearl. On the lagoon that's the warm-up act.",
       "Isn't that a bit lonely?",
       "Very. Rico plays them a song every night. This one's for you, whoever you are.",
       "That's sweet. Thank you, Rico. Bye now!"] },
     { who: "rudy", when: "fresh", say: ["Rico, Rudy here. All my old transactions are gone! Everything from last week!",
-      "Rudy, the testnet started over from block zero. Everybody's old blocks went with it.",
+      "Rudy, the lagoon started over from block zero. Everybody's old blocks went with it.",
       "So I'm poor again?",
       "You were never rich, Rudy. Test coins. You're exactly as rich as before: pretend.",
       "Huh. That's weirdly comforting. Thanks, Rico."] },
     { who: "tess", when: "fresh", say: ["Rico, it's Tess. I read that somebody voted a rule in all by themselves, and the whole chain stopped. Is that true?",
       "One vote, one rule, and the chain stood still right where it took effect. So it started over, and now only the block sealers vote on the rules.",
       "So the suggestion box is closed?",
-      "Closed for renovation, Tess. That's what testnets are for: you find the loose plank before the party.",
+      "Closed for renovation, Tess. That's what the lagoon is for: you find the loose plank before the party.",
       "Ha. Okay, love the show, bye!"] },
   ];
   /* what the islanders say in the places (the same English as in game.js, which the tests check) */
@@ -550,6 +618,8 @@
       if (k === "topLaws") NAMES.forEach(x => out.push(fill(s, { x })));
       else if (k === "pact") NAMES.forEach(x => NAMES.forEach(y => x !== y && out.push(fill(s, { x, y }))));
       else if (k === "day") for (let n = 1; n <= DAYS; n++) out.push(fill(s, { n, m: DAYS }));
+      else if (NUMERIC[k]) BANDS[NUMERIC[k]].forEach(n => out.push(fill(s, { n, ...BLOCK })));
+      else if (s.includes("{")) out.push(fill(s, BLOCK));
       else out.push(s);
     }
     return [...out.map(t => ["rico", t]), ...CAST, ...CALLS.flatMap(c => c.say.map((t, i) => [i % 2 ? "rico" : c.who, t])), ...(window.RABBIT_TALK_LINES ? window.RABBIT_TALK_LINES() : [])];   // talk.js: coming back, asking more
@@ -639,9 +709,9 @@
     return out;
   }
   /* lines that make sense away from the game (the radio in the site header, assets/radio.js): the hellos and Rico's
-     testnet humour, jokes, the listeners' letters, the phone-in (the caller in their own voice) and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
+     lagoon humour, jokes, the listeners' letters, the phone-in (the caller in their own voice) and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
   const tr = s => (window.TauI18n ? TauI18n.t(s) : s);
-  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend, ...SETS.net, ...SETS.mainland].map(k => [{ t: tr(L[k]), v: L[k] }])
+  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend, ...SETS.net, ...SETS.mainland, ...SETS.lagoon, ...SETS.dunno].map(k => [{ t: tr(L[k]), v: L[k] }])
     .concat(CALLS.filter(c => !c.game && !c.when).map((c, i) => call(c, SETS.ring[i % SETS.ring.length], SETS.bye[i % SETS.bye.length])));
   /* a call as parts: the phone rings, the conversation, Rico's goodbye (keys from SETS.ring and SETS.bye) */
   function call(c, ring, bye) {
@@ -656,5 +726,5 @@
     const list = from.length ? from : SETS[set];
     return list[Math.floor(Math.random() * list.length)];
   }
-  window.RICO = { L, SETS, CAST, CALLS, NAMES, all, speak, fill, key, hud, call, wake, voiced, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
+  window.RICO = { L, SETS, CAST, CALLS, NAMES, BANDS, NUMERIC, BLOCK, all, speak, fill, key, hud, call, wake, voiced, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
 })();

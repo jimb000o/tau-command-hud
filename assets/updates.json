@@ -2127,5 +2127,16 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-02",
     "html": "White Rabbit Key: you can now agree to feed Déjà, the café cat, when you meet her. Nobody owns her and nobody feeds her alone: she eats on a day only when three wallets agree, one test AGRS each (agorzilla.com/cat/). Click her wherever she sits and say yes: one real transaction from your test wallet to her bowl, once a day, no move, no coins. Her card shows how many wallets agreed today and when her day closes (19:00 German time); Rico mentions her count and hears every meal that lands in a block."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-02",
+    "html": "White Rabbit Key: Radio Coco now calls the testnet the lagoon. Rico says the real name, Tau Testnet Alpha, once a show; the rest of the time it is the lagoon, test AGRS are lagoon coins and the mainland is mainnet. When a wave of transactions lands, Rico now says where it came from, as far as the blocks show it: a jar on the island, the ballot boxes, a rival's campaign office, the café across the bay, the eleven wallets the testnet started with (the busiest one he calls Gerald), or a wallet he has never seen; the relay's own refusals count as Rico's door, not the chain's rule. The bar rises with the traffic: three times the average per block of the last six hours, and while the water is still, the first transaction in an hour is the news. One call per source an hour, no line twice while others wait. Between the songs he thanks the builders, without names, and reads the title of their latest change. The numbers are shown exactly and spoken in bands; the voices follow with the next clip run.",
+    "major": {
+      "id": "rico-lagoon",
+      "title": "Radio Coco calls the testnet the lagoon",
+      "text": "Rico now says where a wave of transactions came from, as far as the blocks show it, thanks the builders between the songs, and calls Tau Testnet Alpha the lagoon.",
+      "link": "/rabbit/"
+    }
   }
 ]
