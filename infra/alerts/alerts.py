@@ -59,6 +59,8 @@ ten minutes, because the relay starts those over at midnight UTC.
 
   python alerts.py                  run the watcher
   python alerts.py --test           send one test post to each configured channel
+  python alerts.py --check          check the channel keys without posting: Telegram token and the bot's right to post,
+                                    the X keys of Tau HUD and of Agorzilla; exit 1 when a channel cannot post
   python alerts.py --preview        print how the newest rule changes would be posted, post nothing
   python alerts.py --recap-preview  draw this week's recap and save it, post nothing
   python alerts.py --recap-now      draw the recap and post it to each configured channel
@@ -1315,6 +1317,21 @@ def island_x(r: dict) -> str:
 
 
 # ---------------- outlets ----------------
+# Every send records itself here, so the service can say when a channel last worked and why it last failed
+# (posting.json for the site and `up`, a warning in the log after SILENCE_HOURS without a post). Found 2 November 2026:
+# the channel can go quiet for days without one failure in the log when nothing is due, or when the keys are gone.
+SENT: dict[str, dict] = {"telegram": {}, "x": {}}
+SILENCE_HOURS = float(os.environ.get("SILENCE_HOURS", 26))
+
+
+def note_send(name: str, ok: bool, err: str):
+    d = SENT.setdefault(name, {})
+    if ok:
+        d["last_ok"] = round(time.time())
+    else:
+        d["last_error"], d["last_error_at"] = err, round(time.time())
+
+
 class Outlet:
     name = ""
 
@@ -1377,21 +1394,49 @@ class Telegram(Outlet):
         return self.call("sendPhoto", body, ctype)
 
     def call(self, method: str, body: bytes, ctype: str) -> tuple[bool, float | None, str]:
+        res = self.call_raw(method, body, ctype)
+        note_send(self.name, res[0], res[2])
+        return res[:3]
+
+    def call_raw(self, method: str, body: bytes | None, ctype: str = "application/json") -> tuple[bool, float | None, str, dict]:
+        """One Bot API call: (ok, retry_after, error text, the reply)."""
         req = urllib.request.Request(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/{method}", data=body,
-                                     headers={"Content-Type": ctype})
+                                     headers={"Content-Type": ctype} if body else {})
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
-                ok = json.load(r).get("ok", False)
-                return ok, None, "" if ok else "not ok"
+                reply = json.load(r)
+                ok = reply.get("ok", False)
+                return ok, None, "" if ok else "not ok", reply
         except urllib.error.HTTPError as e:  # never log the URL: it holds the token
             try:
                 info = json.load(e)
             except ValueError:
                 info = {}
             retry = (info.get("parameters") or {}).get("retry_after")
-            return False, float(retry) if retry else None, f"HTTP {e.code}: {info.get('description', '')}"
+            return False, float(retry) if retry else None, f"HTTP {e.code}: {info.get('description', '')}", info
         except (urllib.error.URLError, OSError) as e:
-            return False, None, type(e).__name__
+            return False, None, type(e).__name__, {}
+
+    def check(self) -> tuple[bool, str]:
+        """Can this bot post in the channel? Asks Telegram, posts nothing: the token (getMe), then the bot's standing in
+        the channel (getChatMember), which must be administrator with the right to post."""
+        if not self.enabled():
+            return False, "off: TELEGRAM_BOT_TOKEN is not set in infra/.env"
+        ok, _, err, me = self.call_raw("getMe", None)
+        if not ok:
+            hint = "; the token is wrong or revoked: make a new one with @BotFather and put it in infra/.env as TELEGRAM_BOT_TOKEN" \
+                if err.startswith("HTTP 401") or err.startswith("HTTP 404") else ""
+            return False, f"token refused ({err}){hint}"
+        bot = me.get("result") or {}
+        body = json.dumps({"chat_id": TELEGRAM_CHAT, "user_id": bot.get("id")}).encode()
+        ok, _, err, m = self.call_raw("getChatMember", body)
+        if not ok:
+            return False, f"@{bot.get('username')} cannot see {TELEGRAM_CHAT} ({err}); add the bot to the channel as an administrator"
+        r = m.get("result") or {}
+        if r.get("status") == "creator" or (r.get("status") == "administrator" and r.get("can_post_messages", True)):
+            return True, f"@{bot.get('username')} is an administrator of {TELEGRAM_CHAT} and may post"
+        return False, f"@{bot.get('username')} is '{r.get('status')}' in {TELEGRAM_CHAT}, not an administrator who may post: " \
+            "in the channel's Administrators, add the bot with Post messages"
 
     def send(self, item):
         return self.send_text(telegram_text(item))
@@ -1414,13 +1459,13 @@ class X(Outlet):
     def enabled(self) -> bool:
         return all(self.keys.values())
 
-    def auth_header(self, url: str | None = None) -> str:
+    def auth_header(self, url: str | None = None, method: str = "POST") -> str:
         oauth = {"oauth_consumer_key": self.keys["X_API_KEY"], "oauth_nonce": secrets.token_hex(16),
                  "oauth_signature_method": "HMAC-SHA1", "oauth_timestamp": str(int(time.time())),
                  "oauth_token": self.keys["X_ACCESS_TOKEN"], "oauth_version": "1.0"}
         # a JSON or multipart body is not part of the signature base
         params = "&".join(f"{_pct(k)}={_pct(v)}" for k, v in sorted(oauth.items()))
-        base = "&".join(["POST", _pct(url or self.URL), _pct(params)])
+        base = "&".join([method, _pct(url or self.URL), _pct(params)])
         key = f"{_pct(self.keys['X_API_SECRET'])}&{_pct(self.keys['X_ACCESS_SECRET'])}"
         oauth["oauth_signature"] = base64.b64encode(hmac.new(key.encode(), base.encode(), hashlib.sha1).digest()).decode()
         return "OAuth " + ", ".join(f'{_pct(k)}="{_pct(v)}"' for k, v in sorted(oauth.items()))
@@ -1457,7 +1502,25 @@ class X(Outlet):
             log.info("x: picture %s not uploaded, posting the text alone", picture)
         return self.send_text(text, media_id)
 
-    def call(self, req, want_reply=False):
+    ME = "https://api.x.com/2/users/me"
+
+    def check(self) -> tuple[bool, str]:
+        """Do these keys open the account? GET /2/users/me, which posts nothing and is free."""
+        if not self.enabled():
+            return False, "off: X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN and X_ACCESS_SECRET are not all set in infra/.env"
+        req = urllib.request.Request(self.ME, headers={"Authorization": self.auth_header(self.ME, "GET")})
+        ok, _, err, reply = self.call(req, want_reply=True, record=False)
+        if ok:
+            return True, f"keys open @{(reply.get('data') or {}).get('username', '?')}"
+        return False, f"keys refused ({err})" + X_HINTS.get(err.split(":")[0], "").replace("\n   ", "; ")
+
+    def call(self, req, want_reply=False, record=True):
+        res = self.call_once(req, want_reply)
+        if record:
+            note_send(self.name, res[0], res[2])
+        return res
+
+    def call_once(self, req, want_reply=False):
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
                 ok = 200 <= r.status < 300
@@ -2147,6 +2210,48 @@ class Watcher:
                 log.info("testnet today: quiet day, Telegram only")
         self.save_state()
 
+    # ---------- can the channels be posted to at all? ----------
+    async def check_outlets(self):
+        """Ask each channel, without posting, whether this service may post there; the answer goes to the log (a warning
+        when not) and to posting.json next to proposals.json, where the site and `up` can read it."""
+        for o in self.outlets:
+            if not hasattr(o, "check"):
+                continue
+            ok, why = await asyncio.to_thread(o.check)
+            SENT.setdefault(o.name, {})["check"] = {"ok": ok, "why": why, "at": round(time.time())}
+            (log.info if ok else log.warning)("%s: %s%s", o.name, "ok, " if ok else "CANNOT POST: ", why)
+        self.write_posting()
+
+    def watch_silence(self, now: float | None = None):
+        """Once an hour: a channel that is on and has not taken a post for SILENCE_HOURS gets a warning in the log and in
+        posting.json, so a quiet channel is noticed before someone asks."""
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("silence", {})
+        if now - st.get("checked", 0) < 3600:
+            return
+        st["checked"] = now
+        for o in self.outlets:
+            if not o.enabled():
+                continue
+            d = SENT.setdefault(o.name, {})
+            last = d.get("last_ok") or st.get("since", now)
+            if now - last >= SILENCE_HOURS * 3600:
+                d["silent_hours"] = round((now - last) / 3600)
+                log.warning("%s: SILENT for %s hours (last error: %s)", o.name, d["silent_hours"], d.get("last_error") or "none logged")
+            else:
+                d.pop("silent_hours", None)
+        st.setdefault("since", now)
+        self.write_posting()
+        self.save_state()
+
+    def write_posting(self):
+        try:
+            os.makedirs(PUBLIC_DIR, exist_ok=True)
+            write_atomic(os.path.join(PUBLIC_DIR, "posting.json"),
+                         json.dumps({"at": round(time.time()), "channels": SENT}, indent=1))
+        except OSError as exc:
+            log.warning("cannot write posting.json: %r", exc)
+
     def last_block_time(self) -> float | None:
         """When the newest block this service holds was sealed (None before the first sync)."""
         if not self.blocks:
@@ -2834,7 +2939,9 @@ class Watcher:
                     self.ws = ws
                     log.info("connected to %s; telegram %s, x %s", RELAY_URL,
                              "on" if Telegram().enabled() else "off", "on" if X().enabled() else "off")
+                    await self.check_outlets()
                     while True:
+                        self.watch_silence()
                         if await self.sync() or self.dirty_public or not self.state["primed"]:
                             self.process()
                         await self.deliver()
@@ -2864,6 +2971,18 @@ class Watcher:
                 await self.maybe_plan()
                 await self.maybe_deepdive()  # the site's pages are there whether the chain runs or not
                 await asyncio.sleep(10)
+
+
+def check_channels() -> int:
+    """Each channel asked whether this service may post there, nothing posted: Telegram's token and the bot's right to
+    post in the channel, Tau HUD's X keys, Agorzilla's X keys. Exit 1 when a channel that should post cannot."""
+    code = 0
+    agor = {k: os.environ.get("AGORZILLA_" + k, "").strip() for k in X_KEYS}
+    for name, o in (("telegram", Telegram()), ("x @TauHUDcom", X()), ("x @Agorzilla", X(agor))):
+        ok, why = o.check()
+        print(f"{name}: {'ok' if ok else 'CANNOT POST'}, {why}")
+        code |= 0 if ok else 1
+    return code
 
 
 def send_test() -> int:
@@ -3135,6 +3254,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if "--test" in sys.argv:
         sys.exit(send_test())
+    if "--check" in sys.argv:
+        sys.exit(check_channels())
     if "--x-test" in sys.argv:
         sys.exit(x_test())
     if "--x-preview" in sys.argv:

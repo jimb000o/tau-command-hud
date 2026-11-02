@@ -40,9 +40,12 @@ if s:
           f"{w.get('finished', 0)} finished, wins {w.get('wins') or {}}")
     print(f"         last week: governor {l.get('governor') or 'none yet'}, laws {l.get('laws') or []}")
 PY
-# the channel and X: what the posting services did in the last two days (a failed send names its cause)
-echo "posts, last 48 h:" | tee -a "$NOTE"
-docker compose logs --since 48h alerts agorzilla 2>/dev/null | grep -iE 'posted|failed|cap|off \(|lost' | tail -12 | tee -a "$NOTE"
+# the channels: may the service post at all? (asks Telegram and X, posts nothing; a refused key or a bot without the
+# right to post is named here, so the channel can never go quiet unnoticed), then what the running containers logged
+echo "channels:" | tee -a "$NOTE"
+docker compose run --rm --no-deps -T alerts python alerts.py --check 2>/dev/null | sed 's/^/         /' | tee -a "$NOTE"
+echo "posts logged by the running containers (a rebuild starts the log afresh):" | tee -a "$NOTE"
+docker compose logs --since 48h alerts agorzilla 2>/dev/null | grep -iE 'posted|failed|cannot post|silent|cap|lost' | tail -12 | sed 's/^/         /' | tee -a "$NOTE"
 # Radio Coco and the islanders: speak any new voice lines (only lines without a clip cost credits; none new, nothing spent)
 V=$(mktemp)
 python3 rico/make.py make 2>&1 | tee "$V" || true
