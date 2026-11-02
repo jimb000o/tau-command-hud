@@ -1118,7 +1118,101 @@
       setTimeout(next, 900);
     });
   }
+  /* ---------- after the count: a special edition of the Key Crier about the campaign, then the result ---------- */
+  const AFTER = {
+    night: "The Friday night market now sells more fried plantain than the mainland eats in a year.",
+    quiet: "After ten the island is so quiet that the gulls have started to whisper.",
+    reef: "The parrotfish came back, and brought their cousins.",
+    harbour: "The cruise ships came. The fish moved two bays further on and send postcards.",
+    boat: "The school boat has never once been late. The children have tried.",
+    lunch: "Fresh fish for lunch every day. The cat outside the school window has enrolled.",
+    concerts: "The Sunday concerts got so good that Radio Coco plays them again on Mondays.",
+    road: "The road round the island is finished. The coconuts have seen the other side and want to stay.",
+    copy: "The copy of the Book on the square is the most read thing on the island, after the menu at Lola’s.",
+    tax: "The coconut tax mended every roof. Nobody likes it. Every roof is dry.",
+  };
+  const OATH = {
+    marisol: "Marisol was sworn in under the council tree, between two orders of coffee.",
+    tobias: "Tobias was sworn in under the council tree and gave the speech himself. All of it. The ships waited.",
+    baako: "Baako was sworn in under the council tree and counted the guests. All of them, twice.",
+    hana: "Hana was sworn in under the council tree and corrected the oath while she took it.",
+  };
+  /* a template whose fillings are already translated: the template is looked up first, then filled (F would hand the dictionary a mostly translated line, which it leaves alone) */
+  const Fd = (s, v) => T(s).replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));
+  function campaignFacts() {
+    const o = G.over, me = G.me, mine = G.book.filter(b => b.who === me), out = [];
+    const myLaws = G.laws.filter(l => l.by === me).map(l => "“" + T(LAWS[l.id].t) + "”");
+    out.push(myLaws.length ? Fd("Your laws in force: {x}", { x: myLaws.join(T(", ")) }) : T("None of your laws made it into force."));
+    const total = Object.values(o.count || {}).reduce((a, b) => a + b, 0);
+    if (total) out.push(F("Ballots for you: {n} of {m}", { n: (o.count || {})[me] || 0, m: total }));
+    const pacts = G.pacts.filter(p => p.a === me || p.b === me), broken = pacts.filter(p => p.broken).length;
+    if (pacts.length) out.push(F("Pacts: {n} kept, {m} broken", { n: pacts.length - broken, m: broken }));
+    const lies = G.lies.filter(l => l.by === me && l.lie), truths = G.lies.filter(l => l.by === me && !l.lie).length;
+    if (lies.length) out.push(F("Rumours you paid for: {n}, shown up by the Book: {m}", { n: lies.length, m: lies.filter(l => l.out).length }));
+    if (truths) out.push(F("Truths you paid Radio Coco to tell: {n}", { n: truths }));
+    G.deals.filter(d => d.by === me).forEach(d => out.push(F(d.kept ? "Took {n} coins from the {x} and kept the promise" : "Took {n} coins from the {x} and never kept the promise", { n: EMB[d.emb].coins, x: EMB[d.emb].name })));
+    const signed = mine.filter(b => b.tx).length;
+    if (signed) out.push(F("{n} of your moves signed into Tau Testnet Alpha", { n: signed }));
+    return out;
+  }
+  function islandSays() {
+    const o = G.over, me = G.me, won = o.win === me, out = [];
+    const broke = G.pacts.some(p => p.broken && (p.a === me || p.b === me)), unkept = G.deals.some(d => d.by === me && !d.kept);
+    const mark = !o.lies && !broke && !unkept ? "Full marks. I checked." : o.lies + (broke ? 1 : 0) + (unkept ? 1 : 0) > 1 ? "See me after class." : "B minus. See the footnotes.";
+    if (me !== "hana") out.push(["hana", T(mark)]);
+    if (me !== "marisol") out.push(["marisol", T(won ? "I heard it first. Obviously." : "I heard it first. I always do.")]);
+    out.push(["sam", T("It is all in the Book. It always was.")]);
+    return out;
+  }
+  function edition() {
+    const o = G.over, me = G.me, won = o.win === me;
+    SC.gather(0); SC.focus(null);
+    const head = won && !o.lies ? F("{x} sworn in under the council tree", { x: nm(me) }) : won ? F("{x} sworn in, and the Book has questions", { x: nm(me) }) : F("{x} governs; {y} goes back to the hammock", { x: nm(o.win), y: nm(me) });
+    const facts = campaignFacts(), later = G.laws.filter(l => AFTER[l.id]).slice(-2).map(l => T(AFTER[l.id]));
+    if (!later.length) later.push(T("No new law passed. The island did what it always does, only with more meetings."));
+    later.push(T("And the ferry to the mainland? Still coming soon."));
+    const face = portrait(o.win, 64, 1);
+    const box = el("div", { class: "cv-paper cv-edition" },
+      el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: T("Special edition · the day after the election") }),
+      el("div", { class: "lead" }, face, el("div", null, el("h3", { class: "head", text: head }), el("p", { text: T(OATH[o.win]) + " " + T("Ama tied the shell necklace. Rico played the anthem twice, once on purpose.") }))),
+      el("div", { class: "cols" },
+        el("div", null, el("h4", { text: T("Your campaign, as the Book has it") }), el("ul", null, facts.slice(0, 5).map(x => el("li", { text: x })))),
+        el("div", null, el("h4", { text: T("Five years later") }), el("ul", { class: "later" }, later.map(x => el("li", { text: x }))),
+          el("div", { class: "says" }, islandSays().map(([who, q]) => el("p", null, el("b", { translate: "no", text: nm(who) + ": " }), "“" + q + "”"))))));
+    openCard(null, b => {
+      b.classList.add("paper", "edition"); b.append(box); setTimeout(() => { b.scrollTop = 0; }, 80);
+      b.append(el("div", { class: "cv-acts" },
+        btn(T("Share this front page"), () => shareEdition(head, facts, face)),
+        btn(T("Continue"), () => { G.over.read = true; save(); closeCard(true); ending(); }, { go: true })));
+    });
+  }
+  /* the front page as a picture to share: drawn fresh, the governor's face taken from the page */
+  function editionCard(head, facts, face) {
+    const c = document.createElement("canvas"); c.width = 1200; c.height = 630; const g = c.getContext("2d");
+    g.fillStyle = "#f3ead6"; g.fillRect(0, 0, 1200, 630);
+    g.fillStyle = "#1c1a16"; g.textAlign = "center"; g.font = "700 64px Georgia, serif"; g.fillText(T("The Key Crier"), 600, 86);
+    g.fillRect(60, 108, 1080, 3); g.fillRect(60, 116, 1080, 1.5);
+    g.font = "20px ui-monospace, monospace"; g.fillStyle = "#5a5246"; g.fillText(T("Special edition · the day after the election"), 600, 148);
+    try { g.drawImage(face, 70, 180, 200, 200); } catch (e) {}
+    const wrap = (text, x, y, w, lh, max) => { const words = text.split(/(\s+)/), lines = []; let cur = ""; for (const wd of words) { const t = cur + wd; if (g.measureText(t).width > w && cur.trim()) { lines.push(cur.trim()); cur = wd.trimStart(); } else cur = t; } if (cur.trim()) lines.push(cur.trim()); lines.slice(0, max).forEach((l, i) => g.fillText(l, x, y + i * lh)); return y + Math.min(max, lines.length) * lh; };
+    g.textAlign = "left"; g.fillStyle = "#1c1a16"; g.font = "700 44px Georgia, serif";
+    let y = wrap(head, 300, 222, 840, 52, 3) + 14;
+    g.font = "26px Georgia, serif"; g.fillStyle = "#2a261f";
+    for (const f of facts.slice(0, 4)) { y = wrap("· " + f, 300, y, 840, 34, 2) + 4; if (y > 560) break; }
+    g.font = "22px ui-monospace, monospace"; g.fillStyle = "#5a5246"; g.textAlign = "center"; g.fillText("White Rabbit Key · tauhud.com/rabbit", 600, 600);
+    return c;
+  }
+  async function shareEdition(head, facts, face) {
+    const c = editionCard(head, facts, face), url = "https://tauhud.com/rabbit/";
+    const blob = await new Promise(r => c.toBlob(r, "image/png")); if (!blob) return;
+    const file = typeof File === "function" ? new File([blob], "white-rabbit-key.png", { type: "image/png" }) : null;
+    try { if (file && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: head + " · White Rabbit Key " + url }); return; } }
+    catch (e) { if (e && e.name === "AbortError") return; }
+    const a = el("a", { href: URL.createObjectURL(blob), download: "white-rabbit-key.png" }); document.body.append(a); a.click(); a.remove();
+    toast(T("The front page is saved as a picture."));
+  }
   function ending() {
+    if (!G.over.read) return edition();
     const o = G.over, me = G.me, won = o.win === me;
     const [title, text] = won && !o.lies ? [T("Governor of the island"), T("You won on what was true. Everything you did is in the Book, and none of it needs explaining.")]
       : won ? [T("Governor, with a footnote"), T("You won, and the Book shows every rumour you paid for. Nobody can tear out a page, so your term starts with questions.")]
@@ -1136,7 +1230,7 @@
       acts.append(el("p", { class: "cv-h", text: T("Cast a real vote on the testnet: who should govern the island? 1 test AGRS, no value; every visitor’s vote is counted.") }));
       Object.keys(CANDS).forEach(c => acts.append(chainBtn(c, F("Vote {x}", { x: nm(c) }), F("Key ballot: {x}", { x: nm(c) }))));
       acts.append(ballotEl(), isleVerdict());
-      acts.append(btn(T("Play again"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true }), btn(T("Read the Book"), () => openCard("book", PLACE.book)));
+      acts.append(btn(T("Play again"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true }), btn(T("Read the Book"), () => openCard("book", PLACE.book)), btn(T("The special edition"), () => { G.over.read = false; closeCard(true); ending(); }));
       box.append(acts);
     });
   }
@@ -1545,6 +1639,6 @@
     if (q.get("voice") === "check") voiceCheck();
   }
   setTimeout(readBallot, 1200);
-  window.COVE_GAME = { get state() { return G; }, begin, endDay, face, open: p => openCard(p, PLACE[p]) };
+  window.COVE_GAME = { get state() { return G; }, begin, endDay, face, ending, open: p => openCard(p, PLACE[p]) };
   wire();
 })();
