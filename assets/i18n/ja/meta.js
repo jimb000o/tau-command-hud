@@ -372,4 +372,7 @@ TauI18n.add({ strings: {
   "Where setups stop": "セットアップが止まる場所",
   "No setup has stopped with an error yet.": "エラーで止まったセットアップはまだありません。",
   "The nodes online now, by who runs them. A node counts in an hour when our node had contact with it then and has known it for 10 minutes, so test nodes that come and go for a minute stay out. Only peer counts are kept, no addresses.": "現在オンラインのノードを運営者ごとに。あるノードがその時間に数えられるのは、私たちのノードがその時間に接触し、10 分以上知っている場合です。1 分だけ現れるテストノードは数えません。保存するのはノード数だけで、アドレスは保存しません。",
+  "Book lines": "帳簿の記録",
+  "White Rabbit Key, our island game on tauhud.com: the players' lines and ballots, and the rivals' moves and wages the island bot sends. Its wallets count only the players'.": "tauhud.com の島のゲーム「ホワイトラビット・キー」：プレイヤーの記録と投票、そして島ボットが送るライバルの手と賃金。ウォレット数はプレイヤーのものだけです。",
+  "our sites": "私たちのサイト",
 } });

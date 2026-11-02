@@ -2055,5 +2055,10 @@
   "tag": "White Rabbit Key",
   "on": "2026-11-02",
   "html": "White Rabbit Key: Radio Coco opens the show with a drum roll, the station horn and a shout for the hour of the day. The phone-in is about a third of the show now, and a call is a real conversation with a goodbye; the islanders phone in too. Rico jokes about what the chain itself shows, like one hand sealing every block or the restart from block zero. Eight new songs, all written for the island: the radio plays six in turn and says what is on, and every place has its own soundtrack."
+ },
+ {
+  "tag": "In numbers",
+  "on": "2026-11-02",
+  "html": "In numbers: White Rabbit Key now has its own part in “Share of the testnet”, next to Agorzilla and Tau HUD. It counts the players’ lines and ballots and the rivals’ moves and wages the island bot sends, which were listed under “others” until now; the bot’s wallets are never counted as players. The day table and “Where our transactions started” show the game on its own line too."
  }
 ]

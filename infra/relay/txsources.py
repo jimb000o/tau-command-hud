@@ -1,12 +1,16 @@
 """Where the testnet's transactions come from: Agorzilla, Tau HUD, or somewhere else (tauhud.com/meta/).
 
-Every transaction in the blocks the relay holds is put in one of four groups:
+Every transaction in the blocks the relay holds is put in one of five groups:
 
   agorzilla  it pays one of Agorzilla's addresses (the bowl, a ballot box or a question box). These addresses have no
              key (hash_to_curve, see the agorilla repo's tools/addresses.mjs), so only a meal or a vote sends there,
              wherever it was signed.
   tauhud     it was sent through this relay's wallet door from a Tau HUD page (wallet, playground, vote, …), or by the
              relay itself (the end of a turn on a rule place).
+  rabbit     White Rabbit Key, the island game on tauhud.com/rabbit/: it pays the island council, a place's till or a
+             ballot box (a player's line or ballot, a rival's move from the island bot), or it is a wage or embassy money
+             one of the island's purses pays a player. The bot's and the purses' wallets are ours, not visitors': their
+             transactions count in this group's transactions only, never in wallets, "ours", "hours" or "starts".
   idni       sent by one of the accounts the testnet started with (tau-testnet networks/tau-testnet-v2/genesis.json,
              accounts_state), which IDNI set up; on this testnet they make most of the traffic.
   other      everything else: other wallets, scripts and tools.
@@ -18,14 +22,15 @@ page name; no address, no browser. Wallets are distinct sender keys, not people.
 GET /api/v1/sources
   days       {"YYYY-MM-DD": {group: [txs, wallets, new wallets, returning wallets, test AGRS moved]}}; new = first
              seen in that group in the blocks the relay holds, returning = also seen there on an earlier day
-  ours       {"YYYY-MM-DD": [...]} the same for Agorzilla and Tau HUD together (a wallet on both counts once)
+  ours       {"YYYY-MM-DD": [...]} the same for our sites together, Agorzilla, Tau HUD and the players' own White Rabbit
+             Key moves (a wallet on several counts once)
   totals     {group or "ours": {"7": n, "30": n, "all": n}} distinct wallets over the last 7 / 30 days / all held
   hours      {"YYYY-MM-DD": [24 counts]} our two sites' transactions per UTC hour, the last 31 days with any
   agorzilla  {"YYYY-MM-DD": {"meals", "snacks", "votes", "asks", "agrs", "wallets", "new", "hours"}}
   starts     {"YYYY-MM-DD": {source: {kind: txs}}} where our two sites' transactions started: "agorzilla" (kinds meal,
              vote, wish, other), "deja" (Déjà the café cat, kind meal) and "tauhud:<page>" (the page that led to the
              wallet: start, rules, card, hud …; "" before the relay kept pages, "relay" for the end of a rule-place
-             turn; kinds send, rule, vote, shared, other)
+             turn; kinds send, rule, vote, shared, other) and "rabbit" (a player's White Rabbit Key line or ballot)
   rabbit     {"YYYY-MM-DD": {"moves", "rivals", "lines", "votes", "agrs", "wallets", "new", "cands", "by", "hours"}}
              White Rabbit Key (tauhud.com/rabbit/) on the testnet: every transaction that pays the island council or one
              of the four ballot boxes (rabbit/game.js ADDR). rivals = the rival candidates' moves, sent by the island bot
@@ -49,8 +54,8 @@ import time
 
 log = logging.getLogger("relay.txsources")
 
-GROUPS = ("agorzilla", "tauhud", "idni", "other")
-OURS = ("agorzilla", "tauhud")   # the two sites we run
+GROUPS = ("agorzilla", "tauhud", "rabbit", "idni", "other")
+OURS = ("agorzilla", "tauhud", "rabbit")   # our two sites, with White Rabbit Key on tauhud.com counted apart
 SENT_MAX = 50000
 # Agorzilla's addresses (agorilla repo assets/core.js: BOWL, BOXES, ASKS)
 AGORZILLA = frozenset({
@@ -202,9 +207,11 @@ def group(tx: dict, tx_hash: str, sent: dict) -> str:
     return "other"
 
 
-def start(tx: dict, tx_hash: str, g: str, sent: dict) -> tuple[str, str]:
+def start(tx: dict, tx_hash: str, g: str, sent: dict, rb: tuple | None = None) -> tuple[str, str]:
     """(source, kind) of one of our two sites' transactions, for "where they started"."""
     ops = tx.get("operations") if isinstance(tx.get("operations"), dict) else {}
+    if g == "rabbit":
+        return "rabbit", rb[0] if rb else "other"
     if g == "agorzilla":
         if any(isinstance(op, (list, tuple)) and len(op) >= 2 and str(op[1]).lower() == DEJA for op in ops.get("1") or []):
             return "deja", "meal"
@@ -284,14 +291,18 @@ class TxSources:
                 h = str(ids[i] if i < len(ids) else tx.get("tx_hash") or "").lower()
                 g = group(tx, h, self.sent)
                 s = str(tx.get("sender_pubkey") or "").lower()
+                rb = rabbit(tx, bots)
+                server = s in bots or s in self.purses   # the island bot's and purses' wallets: ours, not a visitor's
+                if g != "agorzilla" and (rb or s in self.purses):
+                    g = "rabbit"
                 amount = moved(tx)
                 row = days.setdefault(day, {k: [0, 0, 0, 0, 0] for k in GROUPS})
-                keys = [g] + (["ours"] if g in OURS else [])
+                keys = [g] + (["ours"] if g in OURS and not server else [])
                 for k in keys:
                     r = row[k] if k != "ours" else ours.setdefault(day, [0, 0, 0, 0, 0])
                     r[0] += 1
                     r[4] += amount
-                    if s and (day, k, s) not in seen_day:
+                    if s and not server and (day, k, s) not in seen_day:
                         seen_day.add((day, k, s))
                         r[1] += 1
                         if (k, s) not in first_day:
@@ -300,12 +311,11 @@ class TxSources:
                         else:
                             r[3] += 1   # acted on an earlier day too
                         ever.setdefault(k, {})[s] = day
-                if g in OURS:
+                if g in OURS and not server:
                     hours.setdefault(day, [0] * 24)[ts % 86400 // 3600] += 1
-                    src, kind = start(tx, h, g, self.sent)
+                    src, kind = start(tx, h, g, self.sent, rb)
                     kinds = starts.setdefault(day, {}).setdefault(src, {})
                     kinds[kind] = kinds.get(kind, 0) + 1
-                rb = rabbit(tx, bots)
                 if s in self.purses:   # a wage or an embassy's money paid to a visitor: not a move, counted apart
                     r = isle.setdefault(day, {"moves": 0, "rivals": 0, "lines": 0, "votes": 0, "agrs": 0, "wallets": 0,
                                               "new": 0, "cands": {}, "by": {}, "hours": [0] * 24})
@@ -326,8 +336,8 @@ class TxSources:
                         r["lines" if rb[0] == "line" else "votes"] += 1
                         if rb[0] == "vote":
                             r["cands"][rb[1]] = r["cands"].get(rb[1], 0) + 1
-                        if s and (day, "rabbit", s) not in seen_day:
-                            seen_day.add((day, "rabbit", s))
+                        if s and (day, "isle", s) not in seen_day:
+                            seen_day.add((day, "isle", s))
                             r["wallets"] += 1
                             if s not in played:
                                 played.add(s)
