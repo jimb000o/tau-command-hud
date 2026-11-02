@@ -45,7 +45,7 @@ from slotlease import SlotLease
 from island import Island
 from isle import Isle
 from load import Load
-from txsources import TxSources
+from txsources import TxSources, deja as deja_day
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
 from visits import OWN_HOSTS, SITES, Visits
@@ -1911,6 +1911,12 @@ class Relay:
             body = json.dumps(self.load.snapshot([(self._ts(b), len(b.get("transactions") or [])) for b in self.ordered_blocks()],
                                                  len(self.mempool_seen)), separators=(",", ":")).encode() if ready else b'{"error":"relay is still syncing with the node"}'
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "public, max-age=5")])
+            code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
+            return Response(code.value, code.phrase, headers, body)
+        if path == "/deja":   # the café cat's day (txsources.deja), read by White Rabbit Key when a player meets her
+            ready = "getblocks" in self.updated
+            body = json.dumps(deja_day(self.ordered_blocks(), time.time()), separators=(",", ":")).encode() if ready else b'{"error":"relay is still syncing with the node"}'
+            headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "public, max-age=30")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
         if path == "/stats":

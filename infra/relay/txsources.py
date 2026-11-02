@@ -71,6 +71,42 @@ AGORZILLA = frozenset({
     "8dbae75034a8cdc776e462f004dd686c8d0a32dbedd400483a026a01db4ce1f78b9d6450d2c832d8116d47a315fd8973",   # Déjà's bowl
 })
 DEJA = "8dbae75034a8cdc776e462f004dd686c8d0a32dbedd400483a026a01db4ce1f78b9d6450d2c832d8116d47a315fd8973"   # agorilla assets/cat.js
+DEJA_BORN = 1793383200   # her first day began 2026-10-30 18:00 UTC; a day runs 18:00 to 18:00 UTC (agorilla assets/cat.js)
+DEJA_AGREE = 3           # wallets it takes in a day for her to eat, at least 1 test AGRS each
+
+
+def deja(blocks: list[dict], now: float) -> dict:
+    """Déjà's day as the blocks held show it (GET /deja, for White Rabbit Key's café cat card): the wallets that agreed
+    to feed her today, whether that is enough, when the day closes. `partial` when the relay holds no block from the
+    start of her day, so the count may be short."""
+    day = int((now - DEJA_BORN) // 86400)
+    start = DEJA_BORN + day * 86400
+    wallets: set[str] = set()
+    first = None
+    for b in blocks:
+        try:
+            ts = int((b.get("header") or {}).get("timestamp"))
+        except (TypeError, ValueError):
+            continue
+        first = ts if first is None else min(first, ts)
+        if not start <= ts < start + 86400:
+            continue
+        for tx in b.get("transactions") or []:
+            if not isinstance(tx, dict):
+                continue
+            sender = str(tx.get("sender_pubkey") or "").lower()
+            ops = tx.get("operations") if isinstance(tx.get("operations"), dict) else {}
+            fed = 0
+            for op in ops.get("1") or []:
+                if isinstance(op, (list, tuple)) and len(op) >= 3 and str(op[0]).lower() == sender and str(op[1]).lower() == DEJA:
+                    try:
+                        fed += max(0, int(op[2]))
+                    except (TypeError, ValueError):
+                        pass
+            if fed >= 1 and sender:
+                wallets.add(sender)
+    return {"day": day, "agreed": len(wallets), "needed": DEJA_AGREE, "fed": len(wallets) >= DEJA_AGREE,
+            "closes_at": start + 86400, "partial": first is None or first > start}
 VIA_MAX = 24
 
 
