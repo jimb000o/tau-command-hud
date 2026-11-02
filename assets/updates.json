@@ -2060,5 +2060,10 @@
   "tag": "In numbers",
   "on": "2026-11-02",
   "html": "In numbers: White Rabbit Key now has its own part in “Share of the testnet”, next to Agorzilla and Tau HUD. It counts the players’ lines and ballots and the rivals’ moves and wages the island bot sends, which were listed under “others” until now; the bot’s wallets are never counted as players. The day table and “Where our transactions started” show the game on its own line too."
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-11-02",
+  "html": "White Rabbit Key has a proper ending now. The day after the election the Key Crier prints a special edition: who was sworn in under the council tree and how, your campaign as the Book has it (your laws, ballots, pacts kept and broken, rumours shown up, embassy money, moves signed on the testnet), what the island looks like five years later because of the laws that passed, and what Hana, Marisol and Old Sam say about it. The front page can be shared as a picture."
  }
 ]
