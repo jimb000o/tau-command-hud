@@ -15,8 +15,13 @@ WebSocket commands (relay.py hands them over; replies and pushes have command "i
   isle join                                   the day so far, and a push on this socket whenever it changes
   isle leave                                  no more pushes
   isle move <game> <as> <kind> <what> <place> one of the visitor's own moves in their campaign <game>
-  isle end <game> <as> <winner>               the campaign's election result
+  isle end <game> <as> <winner> [laws]        the campaign's election result, and the laws in force at its end (a,b,c)
 GET /isle                                     the day so far as JSON
+
+The week (Monday to Sunday, Europe/Berlin, the island's clock): the candidate who won the most finished campaigns
+in a week governs the island the week after, and the laws most often in force at the end of those campaigns are in
+force on the island that week: the game starts every new campaign with them (`last`), and the islanders too.
+The running week is `week`; both are kept in ISLE_PATH with the day.
 
 Limits, so a page left open or a script cannot inflate the island: a few moves per address per minute, at most
 GAMES_PER_IP campaigns and MOVES_PER_IP moves per address per day; a campaign counts once, its result once.
@@ -25,6 +30,8 @@ The day is kept in ISLE_PATH (the relay's data volume) so a restart does not emp
 from __future__ import annotations
 
 import asyncio
+import calendar
+import datetime as dt
 import json
 import logging
 import os
@@ -55,11 +62,13 @@ LAWS = {   # rabbit/game.js LAWS: what a law does for each topic, and which laws
     "tax": ({"roads": 2, "visitors": -1}, ()),
 }
 EMB = {"north": "harbour", "south": "road"}   # what each embassy pays for
-KINDS = ("law", "down", "refused", "talk", "lie", "fact", "deal", "pact", "broke")
+KINDS = ("law", "down", "refused", "talk", "lie", "fact", "deal", "pact", "broke", "gift")
+BUILDS = ("roof", "lamp", "stone")   # what a visitor's savings can buy for the island; the island keeps the count
 PLACES = ("hall", "market", "radio", "north", "south", "bar", "book", "pier", "school", "dive", "works", "camp", "ship",
           "ama", "canoe", "stone", "drums", "circle", "grotto")
-WHAT = set(LAWS) | set(TOPICS) | set(CANDS) | set(EMB) | {"-"}
+WHAT = set(LAWS) | set(TOPICS) | set(CANDS) | set(EMB) | set(BUILDS) | {"-"}
 GAME = re.compile(r"^[a-z0-9]{6,16}$")
+LAWLIST = re.compile(r"^[a-z,-]{1,120}$")
 
 PUSH = 10                 # seconds between two pushes, at most
 HOUSE_EVERY = 180         # the islanders make a move of their own this often while few people play
@@ -77,6 +86,44 @@ def score(law: str, cares) -> int:
 
 def day_of(t: float) -> str:
     return time.strftime("%Y-%m-%d", time.gmtime(t))
+
+
+def berlin(t: float) -> dt.date:
+    """The island's calendar day (Europe/Berlin) at the moment t, with or without the system's zone files."""
+    try:
+        from zoneinfo import ZoneInfo
+        return dt.datetime.fromtimestamp(t, ZoneInfo("Europe/Berlin")).date()
+    except Exception:   # no tzdata: central European time, summer time from the last Sunday of March to the last of October, 01:00 UTC
+        y = time.gmtime(t).tm_year
+        last_sun = lambda m: max(d for d in range(25, 32) if calendar.weekday(y, m, d) == 6)   # noqa: E731
+        on, off = calendar.timegm((y, 3, last_sun(3), 1, 0, 0)), calendar.timegm((y, 10, last_sun(10), 1, 0, 0))
+        return (dt.datetime.fromtimestamp(t, dt.timezone.utc) + dt.timedelta(hours=2 if on <= t < off else 1)).date()
+
+
+def week_of(t: float) -> dict:
+    """A blank week: its id, Monday and Sunday, and empty counts."""
+    d = berlin(t)
+    mon = d - dt.timedelta(days=d.weekday())
+    y, w, _ = d.isocalendar()
+    return {"id": f"{y}-W{w:02d}", "from": mon.isoformat(), "to": (mon + dt.timedelta(days=6)).isoformat(),
+            "campaigns": 0, "finished": 0, "wins": {}, "laws": {}}
+
+
+def verdict(week: dict) -> dict | None:
+    """What a finished week decides: the governor (most wins) and the laws of the week (the most often in force at the
+    end of finished campaigns, at most three, none contradicting a stronger one). None when nobody finished a campaign."""
+    if not week.get("finished"):
+        return None
+    wins = week["wins"]
+    governor = max(sorted(wins), key=lambda c: wins[c])
+    laws: list[str] = []
+    for law in sorted(week["laws"], key=lambda l: (-week["laws"][l], l)):
+        if law in LAWS and not any(law in LAWS[l][1] or l in LAWS[law][1] for l in laws):
+            laws.append(law)
+        if len(laws) == 3:
+            break
+    return {"id": week["id"], "from": week["from"], "to": week["to"], "campaigns": week["campaigns"], "finished": week["finished"],
+            "wins": wins, "governor": governor, "laws": laws}
 
 
 class Bucket:
@@ -102,6 +149,8 @@ class Isle:
         self.clock = clock
         self.house_on = house
         self.subs = set()
+        self.week = week_of(clock())
+        self.last: dict | None = None
         self.reset(day_of(clock()))
         self.load()
         self.pushed = -1
@@ -111,7 +160,8 @@ class Isle:
     def reset(self, day: str):
         self.day = day
         self.players = blank()
-        self.islanders = {"moves": 0, "laws": {}, "kinds": {}, "inforce": []}
+        self.islanders = {"moves": 0, "laws": {}, "kinds": {}, "inforce": list(self.last["laws"]) if self.last else []}
+        self.built: dict[str, int] = {}   # what the players bought for the island, all time, never reset
         self.recent: deque = deque(maxlen=RECENT)
         self.games: dict[str, list] = {}    # campaign -> [as, ended]
         self.ips: dict[str, list] = {}      # address -> [bucket, campaigns, moves]
@@ -121,6 +171,12 @@ class Isle:
 
     def roll(self, now: float):
         d = day_of(now)
+        if week_of(now)["id"] != self.week["id"]:
+            self.last = verdict(self.week) or self.last   # a week nobody finished changes nothing
+            self.week = week_of(now)
+            self.dirty = True
+            if d == self.day:
+                self.islanders["inforce"] = list(self.last["laws"]) if self.last else []
         if d != self.day:
             self.reset(d)
             self.v += 1
@@ -131,7 +187,20 @@ class Isle:
                 s = json.load(f)
         except (OSError, ValueError):
             return
-        if not isinstance(s, dict) or s.get("day") != self.day:
+        if not isinstance(s, dict):
+            return
+        self.built = {k: int(v) for k, v in s.get("built", {}).items() if k in BUILDS}
+        w = s.get("week")
+        if isinstance(w, dict) and w.get("id") and all(k in w for k in week_of(0)):
+            self.week = w
+        if isinstance(s.get("last"), dict) and s["last"].get("governor") in CANDS:
+            self.last = s["last"]
+        if week_of(self.clock())["id"] != self.week["id"]:
+            self.last = verdict(self.week) or self.last
+            self.week = week_of(self.clock())
+            self.dirty = True
+        self.islanders["inforce"] = list(self.last["laws"]) if self.last else []
+        if s.get("day") != self.day:
             return
         self.players.update({k: s["players"][k] for k in blank() if k in s.get("players", {})})
         for k in ("moves", "laws", "kinds", "inforce"):
@@ -146,7 +215,8 @@ class Isle:
         try:
             tmp = self.path + ".tmp"
             with open(tmp, "w") as f:
-                json.dump({"day": self.day, "players": self.players, "islanders": self.islanders, "recent": list(self.recent)}, f)
+                json.dump({"day": self.day, "players": self.players, "islanders": self.islanders, "recent": list(self.recent), "built": self.built,
+                           "week": self.week, "last": self.last}, f)
             os.replace(tmp, self.path)
         except OSError as exc:
             log.warning("cannot write %s: %r; the island's day lives in memory only", self.path, exc)
@@ -181,6 +251,7 @@ class Isle:
                 self.games[game] = g
             self.players["campaigns"] += 1
             self.players["as"][who] = self.players["as"].get(who, 0) + 1
+            self.week["campaigns"] += 1
         return g
 
     def move(self, ip: str, game: str, who: str, kind: str, what: str, place: str) -> tuple[bool, dict | str]:
@@ -197,13 +268,16 @@ class Isle:
         p["kinds"][kind] = p["kinds"].get(kind, 0) + 1
         if kind == "law" and what in LAWS:
             p["laws"][what] = p["laws"].get(what, 0) + 1
+        if kind == "gift" and what in BUILDS:
+            self.built[what] = self.built.get(what, 0) + 1
+            self.dirty = True
         self.times.append(now)
         self.changed({"t": int(now), "k": kind, "c": who, "x": what, "at": place, "h": 0})
         return True, {"counted": True}
 
-    def end(self, ip: str, game: str, who: str, winner: str) -> tuple[bool, dict | str]:
-        if not GAME.match(game) or who not in CANDS or winner not in CANDS:
-            return False, "Usage: isle end <game> <as> <winner>"
+    def end(self, ip: str, game: str, who: str, winner: str, laws: str = "-") -> tuple[bool, dict | str]:
+        if not GAME.match(game) or who not in CANDS or winner not in CANDS or not LAWLIST.match(laws):
+            return False, "Usage: isle end <game> <as> <winner> [law,law,...]"
         now = self.clock()
         self.roll(now)
         why = self.limit(ip, now, game)
@@ -216,6 +290,12 @@ class Isle:
         p = self.players
         p["finished"] += 1
         p["wins"][winner] = p["wins"].get(winner, 0) + 1
+        w = self.week
+        w["finished"] += 1
+        w["wins"][winner] = w["wins"].get(winner, 0) + 1
+        for law in dict.fromkeys(laws.split(",")):
+            if law in LAWS:
+                w["laws"][law] = w["laws"].get(law, 0) + 1
         self.changed({"t": int(now), "k": "won", "c": winner, "x": who, "at": "hall", "h": 0})
         return True, {"counted": True}
 
@@ -280,8 +360,8 @@ class Isle:
         self.roll(now)
         self.busy(now)
         isl = {k: v for k, v in self.islanders.items() if k != "inforce"}
-        return {"day": self.day, "v": self.v, "players": self.players, "islanders": isl, "recent": list(self.recent),
-                "lastHour": sum(1 for t in self.times if t >= now - 3600), "here": len(self.subs), "push": PUSH}
+        return {"day": self.day, "v": self.v, "players": self.players, "islanders": isl, "recent": list(self.recent), "built": self.built,
+                "week": self.week, "last": self.last, "lastHour": sum(1 for t in self.times if t >= now - 3600), "here": len(self.subs), "push": PUSH}
 
     def route(self, path: str) -> dict | None:
         return self.snapshot() if path == "/isle" else None

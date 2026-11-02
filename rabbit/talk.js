@@ -4,7 +4,7 @@
    not heard yet wins, then they take turns. ask: questions you can put to them for free (no move, nothing in the Book);
    "more" is the deeper question that opens once the first one is answered. "when" is one of the facts game.js knows
    ("" always, early, mid, last, myLaw, noLaw, pact, broke, deal, lied, caught, truth, smeared, lead, poor, chart, key,
-   drummed, circled, dove, worked, plans, and every law id in force: night quiet reef harbour boat lunch concerts road copy tax).
+   drummed, circled, dove, worked, plans, rich, amb, ambFortune, ambReform, ambKingmaker, ambClean, roof, lamp, stoneSet, and every law id in force: night quiet reef harbour boat lunch concerts road copy tax).
    Every line is spoken in that islander's voice (infra/rico/make.py, through rico.js all() and rabbit/voices.json),
    so a line never holds a number, a name of the player or anything else that changes. */
 (() => {
@@ -30,6 +30,7 @@
     },
     marisol: {
       back: [
+        ["ambKingmaker", "Your candidate is still at the bottom. A pact, a few laws, a word on the square. Do you want the story or not?"],
         ["last", "Last day. My feet hurt, my voice is gone, and I still owe three people a coffee. Go on, the square is listening."],
         ["reef", "The reef law passed. The fishermen bought me a coffee for once. I didn’t know they could."],
         ["harbour", "A cruise harbour, then. My nets will catch fewer fish and more flip-flops."],
@@ -81,6 +82,8 @@
     },
     sam: {
       back: [
+        ["lamp", "Your lamp. I read by it now. Half the island reads by it, and the Book has never had so many visitors at night."],
+        ["ambClean", "Still clean, as far as I can read. The last days are when most people slip."],
         ["caught", "The Book showed up a rumour this morning. I didn’t do anything. I never do. I just turn the pages, and the pages do the rest."],
         ["copy", "There’s a copy of the Book on the square now. Half my visitors are gone. I have never been happier."],
         ["last", "Last day. People come in to read who have never read before. Elections are good for reading."],
@@ -97,6 +100,7 @@
     },
     tobias: {
       back: [
+        ["ambFortune", "How is the jar? The hill does not get cheaper, and the election does not wait."],
         ["harbour", "The deep harbour is law! I have already written the opening speech. It runs to forty minutes. The ships will have to wait."],
         ["reef", "No big ships in the bay. Very well. I shall welcome the small ones with twice the ceremony."],
         ["concerts", "Beach concerts on Sundays! At last the island has a stage worthy of my announcements."],
@@ -115,6 +119,8 @@
     },
     hana: {
       back: [
+        ["roof", "The roof you paid for still holds. When it rains the children look up and say your name, which is more than most governors get."],
+        ["ambReform", "The blackboard still has room. Laws, not speeches."],
         ["boat", "The school boat runs every morning now. Attendance is up, and so is seasickness. I write down both."],
         ["lunch", "Fresh fish for lunch. The children are delighted. The cat outside the window is more delighted."],
         ["smeared", "The children heard a rumour on Radio Coco. They checked the Book before break. It was a short break."],
@@ -214,6 +220,7 @@
     },
     tano: {
       back: [
+        ["stoneSet", "Your stone sits in the circle. It does not vote. It listens, like you did. That is why it stays."],
         ["drummed", "The drums carried your truth across the hills. The hills don’t usually agree on anything. That evening they did."],
         ["circled", "You sat in the circle and listened. Rare, for a candidate. The others noticed. So did I."],
         ["", "You came back. The drums like that. Most people only come up here when there is bad news."],

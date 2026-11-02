@@ -115,5 +115,52 @@ check(size < 3000, f"the pushed summary stays small at 5,000 players ({size} byt
 check(took < 5, f"counting 80,000 messages takes {took:.2f} s")
 check(S.house() is None, "with thousands playing, the islanders stay out of the way")
 
+B = isle.Isle(path=os.path.join(tempfile.mkdtemp(), "isle.json"), clock=lambda: T[0]) if "tempfile" in dir() else None
+if B is not None:
+    B.move("1.1.1.1", "gamebuild", "hana", "gift", "roof", "school"); B.move("1.1.1.1", "gamebuild", "hana", "gift", "roof", "school"); B.move("1.1.1.1", "gamebuild", "hana", "gift", "lamp", "book")
+    check(B.snapshot()["built"] == {"roof": 2, "lamp": 1}, "what the players buy for the island is counted")
+    check(B.move("1.1.1.1", "gamebuild", "hana", "gift", "-", "bar")[1]["counted"] and B.snapshot()["built"] == {"roof": 2, "lamp": 1}, "a treat is a gift too, but builds nothing")
+    B.save(); B2 = isle.Isle(path=B.path, clock=lambda: T[0] + 200000)
+    check(B2.snapshot()["built"] == {"roof": 2, "lamp": 1} and B2.snapshot()["players"]["moves"] == 0, "the island keeps what was built past midnight")
+
+# ---------- the week: a governor and the laws of the week, Monday to Sunday on the island's clock ----------
+T[0] = 1_793_491_200.0 + 36000   # Sunday 2026-11-01 10:00 UTC, the last day of week 44
+W = isle.Isle(path=os.path.join(tempfile.mkdtemp(), "isle.json"), clock=clock, house=False)
+check(W.snapshot()["week"]["id"] == "2026-W44" and W.snapshot()["week"]["from"] == "2026-10-26" and W.snapshot()["last"] is None, "a week runs Monday to Sunday; no governor before a week is over")
+W.end("2.2.2.2", "gameweek01", "hana", "hana", "boat,copy")
+W.end("2.2.2.2", "gameweek02", "baako", "hana", "boat,copy,night")
+W.end("2.2.2.2", "gameweek03", "tobias", "tobias", "night,boat,quiet")
+check(W.end("2.2.2.2", "gameweek04", "tobias", "tobias", "x;y")[0] is False, "the laws at the end: only ids, commas")
+w = W.snapshot()["week"]
+check(w["finished"] == 3 and w["wins"] == {"hana": 2, "tobias": 1} and w["laws"] == {"boat": 3, "copy": 2, "night": 2, "quiet": 1}, "the week counts finished campaigns, wins and the laws in force at the end")
+T[0] = 1_793_491_200.0 + 86400 - 1800   # 23:30 UTC Sunday = 00:30 Monday in Berlin: week 45 begins while the UTC day goes on
+s = W.snapshot()
+check(s["week"]["id"] == "2026-W45" and s["week"]["finished"] == 0 and s["day"] == "2026-11-01", "at Monday 00:00 on the island's clock a new week starts, before the UTC day ends")
+check(s["last"]["governor"] == "hana" and s["last"]["laws"] == ["boat", "copy", "night"] and s["last"]["finished"] == 3, "last week decides: Hana governs, the three laws most often in force, none contradicting a stronger one (quiet lost to night)")
+check(W.islanders["inforce"] == ["boat", "copy", "night"], "the islanders start the week with the island's laws")
+W.dirty = True; W.save()
+W2 = isle.Isle(path=W.path, clock=clock)
+check(W2.snapshot()["last"]["governor"] == "hana" and W2.snapshot()["week"]["id"] == "2026-W45", "a restart keeps the governor and the running week")
+T[0] += 7 * 86400
+check(W2.snapshot()["week"]["id"] == "2026-W46" and W2.snapshot()["last"]["governor"] == "hana", "a week nobody finished changes nothing: the governor stays")
+check(isle.verdict(isle.week_of(T[0])) is None, "no verdict without a finished campaign")
+# the island's clock without the system's zone files
+real = isle.berlin
+for t in (1_774_745_000.0, 1_793_491_200.0 + 82800, 1_761_440_000.0):   # a day in March 2026 after the change, Sunday 23:00 UTC, late October before the change
+    import datetime as dt
+    try:
+        from zoneinfo import ZoneInfo
+        want = dt.datetime.fromtimestamp(t, ZoneInfo("Europe/Berlin")).date()
+    except Exception:
+        want = None
+    import builtins
+    imp = builtins.__import__
+    builtins.__import__ = lambda n, *a, **k: (_ for _ in ()).throw(ImportError(n)) if n == "zoneinfo" else imp(n, *a, **k)
+    try:
+        got = isle.berlin(t)
+    finally:
+        builtins.__import__ = imp
+    check(want is None or got == want, f"the island's day without zone files: {got} for {t}")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

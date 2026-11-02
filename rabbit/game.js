@@ -290,12 +290,14 @@
     const R = seeded(Date.now() & 0xffffff), sup = {};
     for (const c in CANDS) { sup[c] = {}; PEOPLE.forEach(p => { sup[c][p.id] = 42 + Math.round(R() * 14) + (CANDS[c].cares.some(x => p.cares.includes(x)) ? 6 : 0); }); }
     const trust = {}; for (const c in CANDS) trust[c] = 45;
-    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {} };
+    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {}, amb: null, declined: [] };
   }
   const save = () => { if (G) store.set(KEY, JSON.stringify(G)); };
   function load() { try { const g = JSON.parse(store.get(KEY) || "null"); if (g && g.v === 1 && CANDS[g.me]) return g; } catch (e) {} return null; }
   const others = c => Object.keys(CANDS).filter(x => x !== c);
   const nm = c => (CANDS[c] || FOLK[c] || {}).name || c;
+  const ISLE_BY = "isle";   // the holder of a law the island brought into the campaign (the laws of the week)
+  const holder = c => c === ISLE_BY ? T("the island") : nm(c);
   const inForce = id => G.laws.some(l => l.id === id);
   const conflict = id => G.laws.find(l => LAWS[id].no.includes(l.id) || LAWS[l.id].no.includes(id));
   const lawScore = (id, cares) => cares.reduce((s, c) => s + (LAWS[id].fx[c] || 0), 0) + (hot() && (LAWS[id].fx[hot()] || 0) > 0 ? 1 : 0);   // the talk of the island (EVENTS) helps a law for it
@@ -317,7 +319,7 @@
   function propose(by, id) {
     const L = LAWS[id], c = conflict(id);
     G.deals.forEach(d => { if (d.by === by && d.law === id) d.kept = true; });
-    if (c) { write(by, F("proposed “{x}”: refused, it contradicts “{y}”, in force since day {n}", { x: T(L.t), y: T(LAWS[c.id].t), n: c.day }), "refused", null, 1, id); return { refused: c }; }
+    if (c) { write(by, c.by === ISLE_BY ? F("proposed “{x}”: refused, it contradicts “{y}”, the island’s law this week", { x: T(L.t), y: T(LAWS[c.id].t) }) : F("proposed “{x}”: refused, it contradicts “{y}”, in force since day {n}", { x: T(L.t), y: T(LAWS[c.id].t), n: c.day }), "refused", null, 1, id); return { refused: c }; }
     const votes = {};
     others(by).forEach(v => { votes[v] = v === G.me ? null : aiVote(v, by, id); });
     return { votes };
@@ -374,7 +376,7 @@
   }
   /* the rumours fade, the Book does not: each morning some people read it (Sam always, more with a copy on the square) */
   function readers() {
-    const R = seeded(G.seed + G.day * 977), p = inForce("copy") ? 0.6 : 0.2, out = [];
+    const R = seeded(G.seed + G.day * 977), p = (inForce("copy") ? 0.6 : 0.2) + (G.lamp ? 0.2 : 0), out = [];
     PEOPLE.forEach(x => { if (x.reads || R() < p) out.push(x.id); });
     G.lies.forEach(l => {
       if (!l.lie) return;
@@ -430,7 +432,8 @@
     $("cvHour").textContent = T(G.move >= MOVES ? "Night" : HOURS[G.move]);
     $("cvMoves").replaceChildren(...Array.from({ length: MOVES }, (_, i) => el("i", { class: i < MOVES - G.move ? "on" : "" })));
     $("cvMoves").setAttribute("aria-label", F("{n} moves left today", { n: Math.max(0, MOVES - G.move) }));
-    $("cvCoins").textContent = F("{n} coins", { n: G.coins[G.me] });
+    $("cvCoins").textContent = F("{n} coins", { n: G.coins[G.me] }); $("cvCoins").title = Fd("{n} coins saved from earlier campaigns", { n: savings().coins });
+    if ($("cvAmb")) { $("cvAmb").hidden = !G.amb; if (G.amb) { $("cvAmb").textContent = T(AMB[G.amb.id].name); $("cvAmb").title = ambGoal(); } }
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
     const last = G.news[G.news.length - 1];
     if (last && last !== DJ.said) { DJ.said = last; if (DJ.opened) onAir([V("book"), Q(last.s)], 1); else { DJ.after = [V("book"), Q(last.s)]; $("cvNews").textContent = last.s; } }   // before the show opens, the news waits for Rico's opener
@@ -613,7 +616,8 @@
       deal: G.deals.some(d => d.by === G.me), lied: G.lies.some(l => l.by === G.me && l.lie), caught: G.lies.some(l => l.by === G.me && l.lie && l.out),
       truth: G.lies.some(l => l.by === G.me && !l.lie), smeared: G.lies.some(l => l.about === G.me && l.lie),
       lead: G.day >= 2 && leader() === G.me, poor: G.coins[G.me] < RUMOUR, chart: !!G.chart, key: !!G.key, drummed: !!G.drummed, circled: !!G.circled,
-      dove: !!did.dive, worked: !!did.works, plans: !!did.camp };
+      dove: !!did.dive, worked: !!did.works, plans: !!did.camp, rich: G.coins[G.me] >= 60, amb: !!G.amb, roof: !!(G.built && G.built.roof), lamp: !!(G.built && G.built.lamp), stoneSet: !!(G.built && G.built.stone) };
+    if (G.amb) f["amb" + G.amb.id[0].toUpperCase() + G.amb.id.slice(1)] = true;
     for (const id in LAWS) f[id] = inForce(id);
     return f;
   }
@@ -678,11 +682,11 @@
   /* ---------- the places ---------- */
   const PLACE = {
     hall(box) {
-      const lines = G.laws.length ? G.laws.map(l => el("li", null, el("b", { text: T(LAWS[l.id].t) }), " ", el("small", { text: F("by {x}, day {n}", { x: nm(l.by), n: l.day }) }))) : [el("li", { class: "dim", text: T("No laws yet. The island runs on habit.") })];
+      const lines = G.laws.length ? G.laws.map(l => el("li", null, el("b", { text: T(LAWS[l.id].t) }), " ", el("small", { text: l.by === ISLE_BY ? T("the island’s law this week, from last week’s campaigns") : F("by {x}, day {n}", { x: nm(l.by), n: l.day }) }))) : [el("li", { class: "dim", text: T("No laws yet. The island runs on habit.") })];
       const list = el("div", { class: "cv-laws" }, el("h4", { text: T("In force") }), el("ul", null, lines));
       const acts = Object.keys(LAWS).filter(id => !inForce(id)).map(id => {
         const c = conflict(id), s = lawScore(id, CANDS[G.me].cares);
-        return btn(T(LAWS[id].t), () => doPropose(id), { off: !movesLeft(), sub: c ? F("contradicts “{x}”", { x: T(LAWS[c.id].t) }) : effects(id), warn: !!c });
+        return btn(T(LAWS[id].t), () => doPropose(id), { off: !movesLeft(), sub: c ? Fd("contradicts “{x}”", { x: T(LAWS[c.id].t) }) : effects(id), warn: !!c });
       });
       scene(box, "ama", T(SC.places.hall.name), T("Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."), [el("p", { class: "cv-h", text: T("Propose a law (one move)") }), ...acts], list);
     },
@@ -720,7 +724,7 @@
     book(box) {
       G.said.book = G.book.length; save();
       const rows = G.book.slice().reverse().map(b => el("li", { class: "k-" + b.kind }, el("small", { text: F("Day {n}", { n: b.day }) + " · " + T(HOURS[b.hour] || "Night") }), el("span", null, el("b", { translate: "no", text: nm(b.who) }), " ", el("span", { text: b.text }), b.tx && !/^\d+$/.test(b.tx) ? el("a", { class: "cv-tx", href: "/explorer/?tx=" + b.tx, target: "_blank", rel: "noopener", title: T("This line on Tau Testnet Alpha"), text: " ⛓" }) : b.tx || b.bot ? el("span", { class: "cv-tx", title: T("This line went to Tau Testnet Alpha as a transaction"), text: " ⛓" }) : null)));
-      scene(box, "sam", T("The Book in the lighthouse"), T(G.book.length ? "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing." : "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."), [btn(T("The island today"), () => openIsle(), { sub: T("every campaign played today, added up") })],
+      scene(box, "sam", T("The Book in the lighthouse"), T(G.book.length ? "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing." : "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."), [btn(T("The island today"), () => openIsle(), { sub: T("every campaign played today, added up") }), buildBtn("lamp")],
         el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]),
         el("p", { class: "cv-old", text: T("The Book is the oldest custom of the island’s first people: for three hundred years every agreement was copied by hand into many books, so nobody alone could change one. The testnet is only its newest copy.") }));
     },
@@ -737,6 +741,7 @@
         btn(T("Sit in on the lesson"), () => lesson()),
         btn(T("Ask the class what their families care about"), () => { campaign(G.me, top, 0.7); toast(F("Most families here care about {x}. The children will tell them you asked.", { x: T(TOPICS[top]) })); spend(); if (UI.card) openCard("school", PLACE.school); }, { off: !movesLeft(), sub: T("one move") }),
         treatBtn("books", T("Buy exercise books for the class"), 6, "school", T("bought exercise books for Hana’s class: 6 coins"), () => bump(G.me, p => p.cares.includes("school"), 4), T("The children carry the new books home. Families who care about the school noticed.")),
+        buildBtn("roof"),
       ]);
     },
     dive(box) {
@@ -791,8 +796,9 @@
       ]);
     },
     circle(box) {
-      scene(box, "tano", T(SC.places.circle.name), T("Here a decision stands when nobody in the circle can show that it contradicts what we already agreed. Not when the loudest agrees. Your chain does the same with its rules, I am told."), G.circled ? null : [
-        btn(T("Sit in the circle"), () => { G.circled = true; others(G.me).forEach(c => { G.trust[c] = Math.min(100, G.trust[c] + 12); }); save(); toast(T("You listened more than you spoke. The other candidates trust you a little more.")); if (UI.card) openCard("circle", PLACE.circle); }),
+      scene(box, "tano", T(SC.places.circle.name), T("Here a decision stands when nobody in the circle can show that it contradicts what we already agreed. Not when the loudest agrees. Your chain does the same with its rules, I am told."), [
+        ...(G.circled ? [] : [btn(T("Sit in the circle"), () => { G.circled = true; others(G.me).forEach(c => { G.trust[c] = Math.min(100, G.trust[c] + 12); }); save(); toast(T("You listened more than you spoke. The other candidates trust you a little more.")); if (UI.card) openCard("circle", PLACE.circle); })]),
+        buildBtn("stone"),
       ]);
     },
     grotto(box) {
@@ -940,18 +946,19 @@
       el("p", { class: "joke", text: joke }));
     openCard(null, b => {
       b.classList.add("paper"); b.append(box); const pend = G.pending.splice(0);
-      const start = btn(pend.length ? (pend.length === 1 ? T("To the council: one law to vote on") : F("To the council: {n} laws to vote on", { n: pend.length })) : T("Start the day"), () => { if (pend.length) councilQueue(pend); else closeCard(); if (E) setTimeout(() => onAir([S(E.rico)], true), 600); }, { go: true });
+      const after = () => { if (E) setTimeout(() => onAir([S(E.rico)], true), 600); offerAmbition(); };
+      const start = btn(pend.length ? (pend.length === 1 ? T("To the council: one law to vote on") : F("To the council: {n} laws to vote on", { n: pend.length })) : T("Start the day"), () => { if (pend.length) councilQueue(pend, after); else { closeCard(); after(); } }, { go: true });
       const acts = el("div", { class: "cv-acts" }, start); b.append(acts);
       if (ev) eventMorning(ev, b, acts, start);
     });
     save();
   }
   /* the rivals' laws come to the council in the morning; you vote on each */
-  function councilQueue(list) {
-    if (!list.length) { closeCard(); return; }
+  function councilQueue(list, then) {
+    if (!list.length) { closeCard(); then && then(); return; }
     const p = list.shift(), r = propose(p.by, p.id);
-    if (r.refused) { news(F("{x}’s law “{y}” was refused: it contradicts a law in force", { x: nm(p.by), y: T(LAWS[p.id].t) })); return councilQueue(list); }
-    vote(p.by, p.id, r.votes, () => councilQueue(list));
+    if (r.refused) { news(F("{x}’s law “{y}” was refused: it contradicts a law in force", { x: nm(p.by), y: T(LAWS[p.id].t) })); return councilQueue(list, then); }
+    vote(p.by, p.id, r.votes, () => councilQueue(list, then));
   }
   const JOKES = [
     "Weather: sunny, with a chance of promises.", "Lost: one coconut, answers to nothing.", "The gulls have formed a party. Their programme: more fish.",
@@ -1037,6 +1044,95 @@
     toast(T("The whole island rings back at once. The evening tide gives you one more move today."));
   }
 
+  /* ---------- savings and what they buy: the coins left at the end of a campaign are kept in this browser, and at three
+     places they pay for something the island keeps: a roof for the school, a lamp for the lighthouse, a stone in Tano's
+     circle. Each is a real transaction of that many test AGRS to the place's till, and the relay counts it for everyone
+     (The island today). Bought once per campaign; the count is the island's, for good. ---------- */
+  const SAVE_KEY = "tauhud-rabbit-savings";
+  const savings = () => { try { const v = JSON.parse(store.get(SAVE_KEY) || "null"); if (v && typeof v.coins === "number") return v; } catch (e) {} return { coins: 0, built: {}, campaigns: 0 }; };
+  const saveSavings = v => store.set(SAVE_KEY, JSON.stringify(v));
+  const BUILDS = {
+    roof: { at: "school", n: 60, t: "Pay for a new roof for the school", line: "paid for a new school roof: 60 coins from the savings", done: "The new roof is on by evening. Families who care about the school will remember who paid.", fx: () => bump(G.me, p => p.cares.includes("school"), 6) },
+    lamp: { at: "book", n: 80, t: "Pay for a new lamp for the lighthouse", line: "paid for a new lighthouse lamp: 80 coins from the savings", done: "The new lamp lights the whole bay. More people find their way to the Book at night.", fx: () => { G.lamp = true; } },
+    stone: { at: "circle", n: 50, t: "Pay for a stone in Tano’s circle", line: "paid for a stone in Tano’s circle: 50 coins from the savings", done: "Tano sets the stone before sunset. Whoever sits on it is listened to a little longer.", fx: () => others(G.me).forEach(c => { G.trust[c] = Math.min(100, G.trust[c] + 10); }) },
+  };
+  function buildBtn(k) {
+    const B = BUILDS[k], v = savings(), done = !!(G.built && G.built[k]);
+    return btn(T(B.t), () => {
+      const v = savings(); if (v.coins < B.n || (G.built && G.built[k])) return;
+      v.coins -= B.n; v.built[k] = (v.built[k] || 0) + 1; saveSavings(v);
+      G.built = G.built || {}; G.built[k] = G.day; B.fx();
+      write(G.me, T(B.line), "gift", B.at, B.n, k);
+      SND.sfx("coin"); save(); hud(); toast(T(B.done));
+      if (UI.card) openCard(B.at, PLACE[B.at]);
+    }, { off: done || v.coins < B.n, sub: done ? T("Done this campaign") : v.coins >= B.n ? Fd("{n} coins from your savings ({m} saved), no move, the island keeps it", { n: B.n, m: v.coins }) : Fd("{n} coins from your savings; you have {m}. The coins left at the end of a campaign are saved.", { n: B.n, m: v.coins }) });
+  }
+  /* the coins left when the campaign is over go to the savings, once */
+  function bank() {
+    if (!G || !G.over || G.banked) return;
+    const v = savings(); v.coins += Math.max(0, G.coins[G.me]); v.campaigns++; saveSavings(v); G.banked = true; save();
+  }
+
+  /* ---------- ambitions: on day 2 or 3 someone has read what the Book says about you and makes you an offer ----------
+     a goal of your own beside the election, with its own ending in the special edition: reached, missed, or betrayed */
+  const AMB = {
+    fortune: { who: "tobias", at: "pier", name: "The house on the hill", fits: f => f.deal || f.worked || f.rich,
+      goal: "Have 150 coins on election day, and the house on the hill is yours, whoever wins.",
+      offer: "I read the Book. You like an envelope, and you count. Good. There is a house on the hill nobody has bought since the old governor left. A hundred and fifty coins by election day and it is yours, whoever wins. Governors change. Houses stay.",
+      yes: "Then not one coin to Rico. Every shift, every envelope, into the jar. I will keep the key dry.",
+      no: "Suit yourself. The hill will still be there. So will I.",
+      won: "A hundred and fifty, counted twice. The key is yours. Governors change, houses stay.",
+      lost: "Not enough in the jar. The house stays empty, like most promises on this island.",
+      check: () => G.coins[G.me] >= 150 },
+    reform: { who: "hana", at: "school", name: "The blackboard list", fits: f => f.myLaw || f.boat || f.lunch || f.copy,
+      goal: "Have three laws of your own in force by election day.",
+      offer: "I keep a list on the blackboard of laws this island needs and never gets. You passed one. Pass two more of your own and the children will learn your name for the right reasons, governor or not.",
+      yes: "Good. Three laws. Not promises, laws. I erase one line for every one that passes.",
+      no: "Then I leave the list for the next candidate. It is a patient list.",
+      won: "Three of yours in force. I erased the list and wrote your name instead. The children asked who you were. I told them.",
+      lost: "The blackboard is as full as on day one. The children drew a crab on it. It is a good crab.",
+      check: () => G.laws.filter(l => l.by === G.me).length >= 3 },
+    kingmaker: { who: "marisol", at: "market", name: "The kingmaker", fits: f => f.pact || f.truth || !f.lead, pick: () => others(G.me).sort((a, b) => total(a) - total(b))[0],
+      goal: "Make {x} governor: a pact with {x}, and {x} wins the election.",
+      offer: "Everyone wants to win. Boring. Nobody on this island has ever made someone else governor on purpose. The one at the bottom of every count: get them the chair, and I will tell everyone who really did it. That is the only kind of power that lasts.",
+      yes: "A pact with them, your vote for their laws, your speeches where it helps them, and your mouth shut. I do the talking later.",
+      no: "Pity. It would have been the best story this café ever had.",
+      won: "They sit in the chair and have no idea why. I know. Now everyone knows. Coffee is on the house.",
+      lost: "Your candidate lost, and the story is just a rumour now. I will still tell it. Badly.",
+      betrayed: "You broke the pact with your own candidate. Even for this café, that is a strange story.",
+      check: () => pact(G.me, G.amb.x) && G.over.win === G.amb.x, broke: () => G.pacts.some(p => p.broken && p.a === G.me && p.b === G.amb.x) },
+    clean: { who: "sam", at: "book", name: "Clean hands", fits: f => !f.lied && !f.deal && !f.broke,
+      goal: "Win the election with no rumour paid for, no embassy envelope and no pact broken.",
+      offer: "Two days, and not one line in the Book I would be ashamed to read aloud. Rare. Win it like that, no rumours, no envelopes, no pact broken, and I will write the count so that it is read for fifty years.",
+      yes: "Then it is simple. Say only what is true, promise only what you will do, and let them shout.",
+      no: "As you like. The Book takes every kind of governor. It only reads differently.",
+      won: "Governor, and not one line to explain. I wrote the count slowly. It will be read.",
+      lost: "Clean to the end, and the island chose someone else. The Book is kinder to you than the ballot was.",
+      betrayed: "You slipped. One rumour, one envelope, one pact. The Book does not shout about it. It does not need to.",
+      check: () => G.over.win === G.me && !dirty(), broke: () => dirty() },
+  };
+  const dirty = () => G.lies.some(l => l.by === G.me && l.lie) || G.deals.some(d => d.by === G.me) || G.pacts.some(p => p.broken && p.a === G.me);
+  const ambGoal = () => Fd(AMB[G.amb.id].goal, { x: nm(G.amb.x) });
+  /* after the morning paper on day 2 and 3: the first offer that fits what the Book has seen, each one made only once */
+  function offerAmbition() {
+    if (!G || G.over || G.amb || G.day < 2 || G.day > 3) return;
+    const f = facts(), id = ["fortune", "reform", "clean", "kingmaker"].find(k => AMB[k].who !== G.me && !(G.declined || []).includes(k) && AMB[k].fits(f));
+    if (!id) return;
+    const A = AMB[id], x = A.pick ? A.pick() : null;
+    openCard(A.at, box => scene(box, A.who, T("An offer"), [S(A.offer)], [
+      btn(T("Yes, I want that"), () => { G.amb = { id, x, day: G.day }; G.declined = (G.declined || []).filter(k => k !== id); write(G.me, Fd("took {x}’s offer: {y}", { x: nm(A.who), y: T(A.name) }), "talk", A.at); save(); hud(); openCard(A.at, b => scene(b, A.who, T(A.name), [S(A.yes)], [btn(T("Continue"), () => closeCard(), { go: true })], el("p", { class: "cv-note", text: ambGoal() }))); }, { go: true }),
+      btn(T("No, thank you"), () => { (G.declined = G.declined || []).push(id); save(); openCard(A.at, b => scene(b, A.who, T("No offer"), [S(A.no)], [btn(T("Continue"), () => closeCard(), { go: true })])); }),
+    ], el("p", { class: "cv-note", text: Fd(A.goal, { x: nm(x) }) })));
+  }
+  /* how it ended: reached, betrayed or missed, and the house on the hill is really bought */
+  function ambOutcome() {
+    if (!G.amb) return null;
+    const A = AMB[G.amb.id];
+    const how = A.check() ? "won" : A.broke && A.broke() && A.betrayed ? "betrayed" : "lost";
+    if (how === "won" && G.amb.id === "fortune" && !G.amb.paid) { G.amb.paid = true; G.coins[G.me] -= 150; write(G.me, T("bought the house on the hill: 150 coins to the island"), "deal", "hall", 150); save(); hud(); }
+    return { A, how, line: T(A[how]) };
+  }
+
   /* ---------- Radio Coco: Rico at the microphone, now and then, about what is going on ---------- */
   const DJ = { said: null, text: "", face: null, next: performance.now() + 2500, last: -1 };
   if ($("cvDJ")) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }   // Rico is at the microphone from the start, not only once he first speaks
@@ -1088,7 +1184,7 @@
   /* what Rico can say about the game as it stands, and a few lines from the island's habits */
   function djLines() {
     if (!G) return [];
-    const L = [], laws = G.laws, by = {}; laws.forEach(l => (by[l.by] = (by[l.by] || 0) + 1));
+    const L = [], laws = G.laws, by = {}; laws.forEach(l => { if (l.by !== ISLE_BY) by[l.by] = (by[l.by] || 0) + 1; });
     const top = Object.keys(by).sort((a, b) => by[b] - by[a])[0], liesOut = G.lies.filter(l => l.out).length;
     const add = (k, v, ...more) => L.push({ k, parts: [V(k, v), ...more] });
     if (!laws.length) add("noLaws");
@@ -1315,7 +1411,7 @@
         let win = top[0];
         if (top.length > 1) { win = top[Math.floor(R() * top.length)]; tape.textContent = F("A tie. The black cat walks past the ballot box of {x}, twice. Sam says that settles it.", { x: nm(win) }); SC.cat(true); SND.sfx("glitch"); setTimeout(() => SND.sfx("meow"), 900); }
         G.over = { win, count, lies: G.lies.filter(l => l.by === G.me && l.lie).length };
-        isleTell("end", gidOf(), G.me, win);
+        isleTell("end", gidOf(), G.me, win, G.laws.map(l => l.id).join(",") || "-");
         write("sam", F("counted the ballots: {x} is governor of the island", { x: nm(win) }), "law");
         save(); SND.set({ tense: false }); SND.sfx("cheer");
         setTimeout(ending, top.length > 1 ? 4200 : 1600);
@@ -1343,7 +1439,9 @@
     hana: "Hana was sworn in under the council tree and corrected the oath while she took it.",
   };
   /* a template whose fillings are already translated: the template is looked up first, then filled (F would hand the dictionary a mostly translated line, which it leaves alone) */
-  const Fd = (s, v) => T(s).replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));
+  /* translate the template, then fill it: names stay as they are (F translates a filled line, which fails on a name).
+     Numbers go in before translating, because the dictionary's templates expect a number where {n} stands */
+  const Fd = (s, v) => { const num = {}, txt = {}; for (const k in v) (typeof v[k] === "number" ? num : txt)[k] = v[k]; return T(s.replace(/\{(\w+)\}/g, (m, k) => (k in num ? num[k] : m))).replace(/\{(\w+)\}/g, (m, k) => (k in txt ? txt[k] : m)); };
   function campaignFacts() {
     const o = G.over, me = G.me, mine = G.book.filter(b => b.who === me), out = [];
     const myLaws = G.laws.filter(l => l.by === me).map(l => "“" + T(LAWS[l.id].t) + "”");
@@ -1358,6 +1456,7 @@
     G.deals.filter(d => d.by === me).forEach(d => out.push(F(d.kept ? "Took {n} coins from the {x} and kept the promise" : "Took {n} coins from the {x} and never kept the promise", { n: EMB[d.emb].coins, x: EMB[d.emb].name })));
     const signed = mine.filter(b => b.tx).length;
     if (signed) out.push(F("{n} of your moves signed into Tau Testnet Alpha", { n: signed }));
+    if (G.amb) { const A = AMB[G.amb.id], ok = A.check(); out.push(Fd(ok ? "Your ambition, {x}: reached" : "Your ambition, {x}: missed", { x: T(A.name) })); }
     events().filter(e => e.done).forEach(e => out.push(Fd("The week of the {x}: you {y}", { x: T(EVENT_NAMES[e.id]), y: mine.some(b => b.text === T(EVENTS[e.id].act.line)) ? T("helped") : T("looked the other way") })));
     return out;
   }
@@ -1377,12 +1476,13 @@
     const facts = campaignFacts(), later = G.laws.filter(l => AFTER[l.id]).slice(-2).map(l => T(AFTER[l.id]));
     if (!later.length) later.push(T("No new law passed. The island did what it always does, only with more meetings."));
     later.push(T("And the ferry to the mainland? Still coming soon."));
-    const face = portrait(o.win, 64, 1);
+    const face = portrait(o.win, 64, 1), amb = ambOutcome(); bank();
     const box = el("div", { class: "cv-paper cv-edition" },
       el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: T("Special edition · the day after the election") }),
       el("div", { class: "lead" }, face, el("div", null, el("h3", { class: "head", text: head }), el("p", { text: T(OATH[o.win]) + " " + T("Ama tied the shell necklace. Rico played the anthem twice, once on purpose.") }))),
       el("div", { class: "cols" },
-        el("div", null, el("h4", { text: T("Your campaign, as the Book has it") }), el("ul", null, facts.slice(0, 5).map(x => el("li", { text: x })))),
+        el("div", null, el("h4", { text: T("Your campaign, as the Book has it") }), el("ul", null, facts.slice(0, 5).map(x => el("li", { text: x }))),
+          amb ? el("div", { class: "says amb " + amb.how }, el("h4", { text: T(amb.A.name) + ": " + T(amb.how === "won" ? "reached" : amb.how === "betrayed" ? "betrayed" : "missed") }), el("p", null, el("b", { translate: "no", text: nm(amb.A.who) + ": " }), "“" + amb.line + "”")) : null),
         el("div", null, el("h4", { text: T("Five years later") }), el("ul", { class: "later" }, later.map(x => el("li", { text: x }))),
           el("div", { class: "says" }, islandSays().map(([who, q]) => el("p", null, el("b", { translate: "no", text: nm(who) + ": " }), "“" + q + "”"))))));
     openCard(null, b => {
@@ -1436,6 +1536,7 @@
       acts.append(el("p", { class: "cv-h", text: T("Cast a real vote on the testnet: who should govern the island? 1 test AGRS, no value; every visitor’s vote is counted.") }));
       Object.keys(CANDS).forEach(c => acts.append(chainBtn(c, F("Vote {x}", { x: nm(c) }), F("Key ballot: {x}", { x: nm(c) }))));
       acts.append(ballotEl(), isleVerdict());
+      bank(); acts.append(el("p", { class: "cv-note", text: Fd("Your savings: {n} coins. They carry over to your next campaign and buy things the island keeps: a roof for the school, a lamp for the lighthouse, a stone in Tano’s circle.", { n: savings().coins }) }));
       acts.append(btn(T("Play again"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true }), btn(T("Read the Book"), () => openCard("book", PLACE.book)), btn(T("The special edition"), () => { G.over.read = false; closeCard(true); ending(); }));
       box.append(acts);
     });
@@ -1592,7 +1693,7 @@
      the islanders make moves of their own on the relay; they are counted apart and always shown as the islanders'.
      If the relay is out of reach, all of this simply stays hidden and the game is the same as alone. */
   const ISLE = { s: null, want: false, at: 0 };
-  const ISLE_KINDS = ["law", "down", "refused", "talk", "lie", "fact", "deal", "pact", "broke"];
+  const ISLE_KINDS = ["law", "down", "refused", "talk", "lie", "fact", "deal", "pact", "broke", "gift"];
   const gidOf = () => { if (!G.gid) { G.gid = (Math.random().toString(36).slice(2) + Date.now().toString(36)).slice(0, 12); save(); } return G.gid; };
   function isleTell(...words) { relay().then(ws => { if (ws) try { ws.send("isle " + words.join(" ")); } catch (e) {} }); }
   function isleMove(kind, x, at) {
@@ -1602,7 +1703,7 @@
   function isleJoin() { ISLE.want = true; relay().then(ws => { if (ws) try { ws.send("isle join"); } catch (e) {} }); }
   function onIsle(s) {
     ISLE.s = s; ISLE.at = Date.now();
-    isleChip();
+    isleRule(); isleChip();
     document.querySelectorAll(".cv-isle-intro").forEach(p => p.replaceWith(isleIntro()));
   }
   const isleTop = (o, n = 1) => Object.keys(o || {}).sort((a, b) => o[b] - o[a]).slice(0, n);
@@ -1611,6 +1712,21 @@
     const s = ISLE.s, all = {}; if (!s) return all;
     [s.players.laws, s.islanders.laws].forEach(o => { for (const k in o || {}) if (LAWS[k]) all[k] = (all[k] || 0) + o[k]; });
     return all;
+  }
+  /* the week: Monday to Sunday on the island's clock, the candidate who won the most campaigns governs the week after,
+     and the laws most often in force at the end of those campaigns are the island's laws that week: every new campaign
+     starts with them in force (holder: the island), until someone repeals them in the hall */
+  const isleLast = () => (ISLE.s && ISLE.s.last && CANDS[ISLE.s.last.governor]) ? ISLE.s.last : null;
+  const isleWeek = () => (ISLE.s && ISLE.s.week) || null;
+  const weekLeft = () => { const w = isleWeek(); if (!w || !w.to) return 0; return Math.max(1, Math.ceil((Date.parse(w.to + "T23:59:59+01:00") - Date.now()) / 86400000)); };
+  function isleRule() {
+    const last = isleLast(); if (!G || G.ruled || G.day !== 1 || G.move || G.over || !last) return;
+    G.ruled = last.id;
+    const laws = (last.laws || []).filter(id => LAWS[id] && !inForce(id) && !conflict(id));
+    laws.forEach(id => G.laws.push({ id, by: ISLE_BY, day: 0 }));
+    news(Fd("Governor of the island this week: {x}, who won {n} of {m} campaigns last week.", { x: nm(last.governor), n: last.wins[last.governor] || 0, m: last.finished }));
+    if (laws.length) news(Fd("In force since last week, by the whole island: {x}. Repeal in the hall if you must.", { x: laws.map(id => "“" + T(LAWS[id].t) + "”").join(", ") }));
+    save(); if (UI.card && UI.card._visit === "hall") openCard("hall", PLACE.hall);
   }
   const isleWho = e => e.h ? nm(e.c) : F("A player as {x}", { x: nm(e.c) });
   function isleText(e) {
@@ -1645,6 +1761,7 @@
     p.append(el("b", { text: T("The island today:") }), " ", n
       ? F("{n} campaigns so far, {m} finished.", { n, m: s.players.finished }) + (here > 1 ? " " + F("{n} people on the island right now.", { n: here }) : "")
       : T("no visitor has campaigned yet today. The islanders are at it already; yours would be the first campaign."));
+    const last = isleLast(); if (last) p.append(" ", Fd("{x} governs the island this week.", { x: nm(last.governor) }));
     return p;
   }
   /* each morning the paper says what the whole island talks about, and people who care about it lean a little toward
@@ -1654,8 +1771,8 @@
     G.mood = G.day;
     const top = isleTop(isleLaws())[0]; if (!top) return;
     const holder = (G.laws.find(l => l.id === top) || {}).by, good = Object.keys(LAWS[top].fx).filter(k => LAWS[top].fx[k] > 0);
-    if (holder && good.length) bump(holder, p => p.cares.some(c => good.includes(c)), 2);
-    news(F("All over the island, people talk about “{x}” today.", { x: T(LAWS[top].t) }) + (holder ? " " + F("Here it is {y}’s law.", { y: nm(holder) }) : ""));
+    if (holder && holder !== ISLE_BY && good.length) bump(holder, p => p.cares.some(c => good.includes(c)), 2);
+    news(F("All over the island, people talk about “{x}” today.", { x: T(LAWS[top].t) }) + (holder ? " " + (holder === ISLE_BY ? T("Here it is the island’s own law this week.") : F("Here it is {y}’s law.", { y: nm(holder) })) : ""));
   }
   /* Rico's lines about the whole island (shown, not spoken: they change all day) */
   function isleLines() {
@@ -1664,6 +1781,7 @@
     if (p.campaigns > 1) L.push({ k: "isle:n", parts: [Q("Around the island today: {n} campaigns, {m} of them finished.", { n: p.campaigns, m: p.finished })] });
     if (top && laws[top] > 1) L.push({ k: "isle:law", parts: [Q("Across the island, “{x}” has passed {n} times today.", { x: T(LAWS[top].t), n: laws[top] })] });
     const w = isleTop(p.wins)[0]; if (w && p.finished > 2) L.push({ k: "isle:win", parts: [Q("Election results from the whole island: {x} has won {n} of {m} today.", { x: nm(w), n: p.wins[w], m: p.finished })] });
+    const last = isleLast(); if (last) L.push({ k: "isle:gov", parts: [Q("{x} governs the island this week, with {n} of last week’s {m} campaigns won. The next count is Sunday night.", { x: nm(last.governor), n: last.wins[last.governor] || 0, m: last.finished })] });
     const e = (s.recent || []).find(x => x.k !== "won"); if (e) L.push({ k: "isle:" + e.t, parts: [Q(e.h ? "Island news: {x}." : "Fresh from the square: {x}.", { x: isleLine(e) })] });
     return L;
   }
@@ -1672,6 +1790,8 @@
     const s = ISLE.s, p = el("p", { class: "cv-note" }); if (!s || !s.players.finished) return p;
     const w = isleTop(s.players.wins)[0];
     p.textContent = F("Across the island today, {x} won {n} of {m} finished campaigns.", { x: nm(w), n: s.players.wins[w], m: s.players.finished });
+    const wk = isleWeek(), lw = wk && isleTop(wk.wins)[0];
+    if (lw) p.append(" ", Fd("This week so far: {x} leads with {n} of {m}. Whoever leads on Sunday night governs the island next week.", { x: nm(lw), n: wk.wins[lw], m: wk.finished }));
     return p;
   }
   /* the card: the island's day, everyone's campaigns added up */
@@ -1693,6 +1813,16 @@
       const tl = isleTop(laws, 3), two = el("div", { class: "two" }), col = () => { const c = el("div"); two.append(c); return c; };
       extra.append(two);
       if (tl.length) col().append(el("h4", { text: T("Laws passed today") }), el("ul", { class: "cv-book" }, tl.map(k => el("li", { class: "k-law" }, el("span", { text: T(LAWS[k].t) }), el("small", { text: [p.laws[k] ? F("in {n} players’ campaigns", { n: p.laws[k] }) : "", isl.laws[k] ? F("{n} by the islanders", { n: isl.laws[k] }) : ""].filter(Boolean).join(" · ") })))));
+      const wk = isleWeek(), last = isleLast(), wl = wk && isleTop(wk.wins)[0];
+      if (wk) {
+        const li = [];
+        li.push(el("li", { class: last ? "k-law" : "dim" }, el("span", { text: last ? Fd("Governor: {x}, won {n} of {m} campaigns last week", { x: nm(last.governor), n: last.wins[last.governor] || 0, m: last.finished }) : T("No governor yet: the first week’s count is still running.") })));
+        if (last && last.laws.length) li.push(el("li", { class: "k-law" }, el("span", { text: Fd("Laws of the week: {x}", { x: last.laws.map(id => T(LAWS[id].t)).join(", ") }) }), el("small", { text: T("in force at the start of every campaign this week") })));
+        li.push(el("li", null, el("span", { text: wl ? Fd("This week: {x} leads with {n} of {m} finished campaigns", { x: nm(wl), n: wk.wins[wl], m: wk.finished }) : T("This week: no campaign finished yet") }), el("small", { text: F("{n} days to Sunday night, when the island counts", { n: weekLeft() }) })));
+        col().append(el("h4", { text: T("The week") }), el("ul", { class: "cv-book" }, li));
+      }
+      const built = s.built || {}, bl = Object.keys(BUILDS).filter(k => built[k]);
+      if (bl.length) col().append(el("h4", { text: T("Built by the players") }), el("ul", { class: "cv-book" }, bl.map(k => el("li", { class: "k-gift" }, el("span", { text: Fd({ roof: "{n} roofs for the school", lamp: "{n} lamps for the lighthouse", stone: "{n} stones in Tano’s circle" }[k], { n: built[k] }) })))));
       const rec = (s.recent || []).slice(0, 4);
       if (rec.length) col().append(el("h4", { text: T("Just now on the island") }), el("ol", { class: "cv-book" }, rec.map(e => el("li", { class: "k-" + e.k }, el("small", { text: isleAgo(e.t) + (e.h ? " · " + T("the islanders") : "") }), el("span", { text: isleLine(e) })))));
       extra.append(el("p", { class: "cv-note small", text: T("Counted by the relay from what each game tells it, not read from the chain. The islanders fill the quiet hours.") }));
@@ -1725,6 +1855,7 @@
   function begin(c) {
     G = fresh(c); save();
     news(T("The Key Crier: five days to the election. Everything anyone does is written in the Book."));
+    isleRule();
     closeCard(); hud();
     toast(T("Tap a place on the island to begin."));
     dragHint();
@@ -1735,8 +1866,11 @@
         el("li", { text: T("Market square: talk about a topic. People who care about it move toward you.") }), el("li", { text: T("Radio Coco: pay for a line on air. True lines are safe. Lies come back when people read the Book.") }),
         el("li", { text: T("Embassies: coins now, for a promise to propose their law. Forget it and they tell everyone.") }), el("li", { text: T("Bar La Ola: pacts. Partners vote for each other’s laws.") }),
         el("li", { text: T("The lighthouse: the Book. Free to read, and nobody can change it.") }),
+        el("li", { text: T("The coins you have left when a campaign ends are saved in this browser. At the school, the lighthouse and the stone circle they pay for things the island keeps, and everyone sees the count in The island today.") }),
+        el("li", { text: T("On day two or three someone who has read the Book makes you an offer: a goal of your own beside the election, with its own ending in the special edition.") }),
         el("li", { text: T("Some mornings something happens to the island. The Key Crier leads with it, you get one choice, and that topic is the talk of the week: speeches about it count more and laws for it pass more easily.") }),
         el("li", { text: T("Election night: the visitors of the site cast an eleventh ballot, for whoever leads the island ballot on the real testnet.") }),
+        el("li", { text: T("The island counts every Sunday night, German time: whoever won the most campaigns that week governs the island the week after, and the laws most often in force at the end of those campaigns are the island’s laws, in force when every new campaign starts. Repeal them in the hall if you must.") }),
         el("li", { text: T("On the chain: every line in the Book is also a transaction on Tau Testnet Alpha, 1 test AGRS to the island council. The rivals send theirs from their own campaign wallets, yours from the test wallet this browser made for you. A ⛓ in the Book marks them.") }),
         el("li", { text: T("Inspired by \"Caribbean Disaster\" (1995). An independent homage, not affiliated with or endorsed by its creators. All art, characters, story and music are original.") }))));
   }
