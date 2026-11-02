@@ -4,7 +4,7 @@
    the key is the first 16 hex of sha1("<who>|<English text>"). Numbers and block heights are never spoken, only
    shown, so a fixed set covers everything. A line whose clip is missing is simply shown as text, as before.
    rabbit/voices.json is the list the server reads (node tests/voices.mjs --write makes it; the tests check it).
-   window.RICO = { L, SETS, CAST, CALLS, all(), speak(parts, who), hud() }: a line is a list of parts { t: shown text, v: spoken English or null,
+   window.RICO = { L, SETS, CAST, CALLS, all(), speak(parts, who), hud(), call(c, ring, bye), wake() }: a line is a list of parts { t: shown text, v: spoken English or null,
    who: whose voice, when not the speaker's }. */
 (() => {
   "use strict";
@@ -244,6 +244,59 @@
     ev2: "Evening on Radio Coco. Pour yourself something cold. The chain is busy, Rico is not.",
     nt1: "Late night on Radio Coco. Just you, me, the waves, and a validator somewhere signing in the dark.",
     nt2: "Still awake? So is the chain. It never sleeps. Rico will, in about four songs.",
+    /* the show opens: the first thing Rico says when the game starts and the radio comes on, shouted for joy
+       (make.py speaks the lines in SETS.wake as a euphoric shout, after a drum roll and the station horn) */
+    wakeAm: "Wakey wakey, White Rabbit Keeeey! Radio Coco, ninety-seven point threeee! The sun is up, the blocks are fresh, and Rico is LOUD!",
+    wakePm: "Heeeeey, White Rabbit Keeeey! Radio Coco, ninety-seven point threeee! Out of the hammock, the island needs you!",
+    wakeEv: "Goood eeevening, island! This is Radio Coco, ninety-seven point threeee, and the night is young! Rico is not, but the night is!",
+    wakeNt: "Still uuuup, White Rabbit Keeeey? So is Radio Coco, ninety-seven point threeee! The chain never sleeps, and tonight neither does Rico!",
+    wake1: "Coco, coco, coco... RADIO COCOOOO! Ninety-seven point three, the loudest little station on any testnet!",
+    wake2: "Ladies, gentlemen and wallets of all sizes! Welcome to the island! This is Rico, this is Radio Coco, and this is your wake-up caaaall!",
+    /* the songs Radio Coco plays (music.js SONGS), announced while they play */
+    sn_coco: "On Radio Coco now: Coco Calypso, the island's own tune. If you can't hum it yet, you will by Thursday.",
+    sn_mango: "Here's Mango Run! Fast, sticky and sweet. Do not dance near the fruit stall.",
+    sn_lowtide: "Low Tide, on Radio Coco. Lean back and let the bass do the walking.",
+    sn_tinroof: "Tin Roof Shuffle, straight from the Coconut Works. Some say that's the organ. Some say it's three bicycles.",
+    sn_hammock: "Hammock Hours. Rico recommends one cold drink and zero decisions.",
+    sn_moon: "Moon Over the Pier. Grab someone you like, or a coconut that listens.",
+    /* when the caller has said goodbye */
+    bye1: "Thanks for calling! The lines are open, island. Keep them warm.",
+    bye2: "And that's the phone-in on Radio Coco. Rico loves a caller who hangs up on time.",
+    bye3: "Thank you, caller! Next one, ring away.",
+    bye4: "Bye bye! Back to the music.",
+    bye5: "Take care! On Radio Coco every caller is a VIP: a Very Island Person.",
+    bye6: "Thanks for the call! Rico's phone is always on. The battery isn't, but the phone is.",
+    bye7: "Goodbye and good tides! Here's a song.",
+    bye8: "What a call. Rico has goosebumps. Or it's the air conditioning. Either way, more music!",
+    /* what the chain itself shows, told as island news (game.js reads it from the newest blocks):
+       one hand sealing every block lately, that hand sending nothing itself, a second hand joining in */
+    solo1: "Election results from the chain: one candidate, one vote, and the winner takes every block today. Landslide.",
+    solo2: "Every block lately was sealed by the same hand. Rico admires the dedication. Rico also wonders who covers the lunch break.",
+    solo3: "The chain's choir is one voice right now. A beautiful solo. Somebody please join in on the chorus.",
+    solo4: "News from the block-sealing committee: they met today. Attendance: one. Motion carried unanimously.",
+    solo5: "One keeper sealing every page of the chain. Old Sam knows the feeling. He says: get a deputy, and a hammock.",
+    solo6: "Rico checked who sealed the latest blocks. It took a second. Same name every time. Lovely handwriting, though.",
+    solo7: "The chain is a one-man band today: drums, bass and every single block. Rico respects that. Rico is also a one-man band, and look how that turned out.",
+    solo8: "Fun fact: right now one validator seals every block on the testnet. For a dress rehearsal, fine. For opening night, you want the whole cast.",
+    postman1: "The one sealing every block hasn't sent a single transaction lately. Like a postman who delivers everything and never writes home.",
+    postman2: "Every block, the same sealer, and not one transaction of their own. Pure service. Rico would at least send himself a postcard.",
+    duet1: "Hold on, island: more than one hand is sealing blocks now! The choir has a second voice. Rico is tearing up a little.",
+    duet2: "The chain's solo just became a duet! Two sealers, one Book. Rico is calling it a band.",
+    /* the chain started over from block zero on the first of November, after a rule voted in by one voice stopped it */
+    fresh1: "The chain is brand new this week. It started over from block zero, and all the old blocks are gone from the live chain. Like footprints at high tide.",
+    fresh2: "The story so far: somebody's proposal got voted in by a single voice, took effect, and the chain stopped right there. So the testnet started over at block zero. Rico calls that a test that worked.",
+    fresh3: "New house rule on the chain: only the ones who seal the blocks get to vote on the rules now. Everybody else, the suggestion box is closed for renovation.",
+    fresh4: "Fresh chain, fresh start. Rico lost all his favourite old blocks. He'd be sadder, but most of them were empty.",
+    fresh5: "Remember: a testnet that never breaks has never been tested. This one has been tested. Thoroughly. Last weekend.",
+    record1: "The chain just passed block five thousand and twenty-eight, the page where the old chain stood still. New personal best! Somebody give it a medal.",
+    record2: "Past block five thousand and twenty-eight and still going. The old chain never got this far. Rico is proud like a parent at sports day.",
+    /* the testnet as anyone can see it, any day */
+    net1: "Testnet tip: if something breaks, congratulations, you are now a tester. Write it down, tell the developers, take a bow.",
+    net2: "Somewhere out there a brand-new node is reading the whole chain from block zero. Rico salutes you, little node. Drink water.",
+    net3: "The chain has no opening hours. It works nights, weekends and holidays, and it has never once asked for a raise.",
+    net4: "On this testnet every rule has to agree with every other rule. Rico tried that with his relatives once. It took three Christmases.",
+    net5: "Reminder: the coins on this chain are for testing. If somebody sells you some, Rico has a lighthouse to sell you too.",
+    net6: "A block just came in empty. Rico doesn't judge. Some mornings Rico comes in empty too.",
   };
   /* which lines can stand in for each other: Rico picks one he has not said lately (game.js remembers what he said) */
   const SETS = {
@@ -262,34 +315,185 @@
     ring: ["ring1", "ring2", "ring3"],
     legend: ["agz1", "agz2", "agz3", "agz4", "agz5", "agz6"],
     morning: ["am1", "am2"], afternoon: ["pm1", "pm2"], evening: ["ev1", "ev2"], night: ["nt1", "nt2"],
+    wake: ["wake1", "wake2"], wakeAm: ["wakeAm"], wakePm: ["wakePm"], wakeEv: ["wakeEv"], wakeNt: ["wakeNt"],
+    songs: ["sn_coco", "sn_mango", "sn_lowtide", "sn_tinroof", "sn_hammock", "sn_moon"],
+    bye: Array.from({ length: 8 }, (_, i) => "bye" + (i + 1)),
+    solo: Array.from({ length: 8 }, (_, i) => "solo" + (i + 1)), postman: ["postman1", "postman2"], duet: ["duet1", "duet2"],
+    fresh: Array.from({ length: 5 }, (_, i) => "fresh" + (i + 1)), record: ["record1", "record2"],
+    net: Array.from({ length: 6 }, (_, i) => "net" + (i + 1)),
   };
-  /* callers who phone the studio, each in their own voice (make.py make --voice who=Name), with a question in the
-     vein of the testnet's public Q&As, and Rico's answer. A call is the caller's line, then Rico's. */
+  /* callers who phone the studio, each in their own voice through the telephone: listeners (ready voices, make.py
+     CALLERS) and the islanders themselves. A call is a little conversation: who, then what is said in turn, the
+     caller first, then Rico, and so on; after the caller's goodbye Rico signs off with a line from SETS.bye, unless
+     the line dropped (cut). game: about the election, only in the game; when: only while the chain shows it
+     (solo: one hand sealing every block; fresh: the chain started over and has not yet passed its old height). */
   const CALLS = [
-    ["zia", "Hi Rico, it's Zia from Miss Hana's class! Do I have to learn Boolean algebra to write rules on Tau?",
-      "Good question, Zia. Rico can tell you what he sees: the rules on the testnet are written in logic today. A little logic goes a long way, like a little salt in a soup. Miss Hana will be thrilled you asked."],
-    ["zia", "Rico, it's Zia again. If a rule says always, does it really have to hold forever?",
-      "In Tau logic, always means at every step in time, yes. That's why people think hard before they write it. Rico once promised always, and meant until Thursday."],
-    ["ozzie", "G'day Rico! Ozzie here, on holiday. Where do I buy some of those test coins? I want a big bag.",
-      "You can't buy them, mate. They're free, and worth exactly that. Rico doesn't do prices. Rico does songs. Here's one for your holiday."],
-    ["ozzie", "Ozzie again! Rico, when's the mainnet? I've got a flight on Friday.",
-      "Rico doesn't know, mate, and anyone who gives you a date on the radio is selling something. Enjoy the testnet. It's free, and the view is great."],
-    ["bert", "Rico, it's old Bertie from the pier. In my day every ship had a captain. Who's the captain of this blockchain?",
-      "Nobody, Bertie. On this chain the rules steer, and the rules only change when enough validators agree. Think of a ship where the crew votes on the map."],
-    ["bert", "Bertie again. Can the validators vote to change the rules for changing the rules?",
-      "They can, Bertie, if enough of them agree. A rule that changes its own amendment rule. Makes your head spin like a capstan."],
-    ["dom", "Rico, it's Dom, from the hammock. I have a theory. What if somebody sneaks in a rule that contradicts the old ones?",
-      "Then the chain refuses it at the door, Dom, before anyone votes. Your theory has been tested. It lost."],
-    ["dom", "Dom again. Rico, is it true all of this is just one guy with a lot of wallets?",
-      "The chain only sees wallets, Dom. One guy or a whole village, it treats them all the same. Equality, island style."],
-    ["nell", "Rico, Nell here, from the fish stall. The testnet said no to my transfer. My own rule, it said! Who wrote that rule?",
-      "You did, Nell. Personal rules, darling: the chain holds you to your own word, even on the days you'd rather it didn't."],
-    ["nell", "Nell again. How do I know my transfer really happened?",
-      "Look it up in a block, Nell. Every block has a number, and anyone can check what's inside. Just like the Book in the lighthouse, only with more zeros."],
-    ["mae", "Rico dear, it's Auntie Mae from the bakery. Everybody's talking about AI. Will Tau be a robot that bakes my bread?",
-      "Nobody will touch your bread, Auntie Mae. As Rico understands it, Tau is about rules a machine can read and check, not robots in the kitchen. Your rolls are safe."],
-    ["mae", "Auntie Mae again. Rico, is there somewhere I can read the code for this testnet?",
-      "There is, Auntie. The testnet code is public on GitHub. Rico read some of it. Then Rico needed a nap."],
+    { who: "zia", say: ["Hi Rico, it's Zia from Miss Hana's class! Do I have to learn Boolean algebra to write rules on Tau?",
+      "Good question, Zia. Rico can tell you what he sees: the rules on the testnet are written in logic today. A little logic goes a long way, like a little salt in a soup. Miss Hana will be thrilled you asked.",
+      "So if I learn it, can I write a rule that says no homework on Fridays?",
+      "For your own wallet, Zia, sure. Getting Miss Hana to sign it, that's the hard part.",
+      "Worth a try! Bye Rico!"] },
+    { who: "zia", say: ["Rico, it's Zia again. If a rule says always, does it really have to hold forever?",
+      "In Tau logic, always means at every step in time, yes. That's why people think hard before they write it. Rico once promised always, and meant until Thursday.",
+      "Until Thursday? What happened on Thursday?",
+      "Lola's lemonade happened, Zia. Some promises melt.",
+      "Ha! Bye Rico!"] },
+    { who: "ozzie", say: ["G'day Rico! Ozzie here, on holiday. Where do I buy some of those test coins? I want a big bag.",
+      "You can't buy them, mate. They're free, and worth exactly that. Rico doesn't do prices. Rico does songs. Here's one for your holiday.",
+      "Free? Then I'll take two bags!",
+      "Take ten, mate. The faucet doesn't judge.",
+      "Legend. Cheers, Rico!"] },
+    { who: "ozzie", say: ["Ozzie again! Rico, when's the mainnet? I've got a flight on Friday.",
+      "Rico doesn't know, mate, and anyone who gives you a date on the radio is selling something. Enjoy the testnet. It's free, and the view is great.",
+      "Fair enough. Can I at least get a T-shirt?",
+      "Rico has one. It says: I survived the testnet. It's still being printed.",
+      "Ha! Cheers mate, see ya!"] },
+    { who: "bert", say: ["Rico, it's old Bertie from the pier. In my day every ship had a captain. Who's the captain of this blockchain?",
+      "Nobody, Bertie. On this chain the rules steer, and the rules only change when enough validators agree. Think of a ship where the crew votes on the map.",
+      "A crew that votes on the map? We'd still be in port.",
+      "Some days the chain is, Bertie. That's the fog in Rico's weather report.",
+      "Aye, I've seen that fog. Mind how you go, Rico."] },
+    { who: "bert", say: ["Bertie again. Can the validators vote to change the rules for changing the rules?",
+      "They can, Bertie, if enough of them agree. A rule that changes its own amendment rule. Makes your head spin like a capstan.",
+      "And what stops them changing it every Tuesday?",
+      "Only that enough of them have to agree. Getting sailors to agree on a Tuesday is harder than it sounds.",
+      "That it is. Fair winds, lad."] },
+    { who: "dom", say: ["Rico, it's Dom, from the hammock. I have a theory. What if somebody sneaks in a rule that contradicts the old ones?",
+      "Then the chain refuses it at the door, Dom, before anyone votes. Your theory has been tested. It lost.",
+      "Okay, but what if it only contradicts them a little?",
+      "There's no a little in logic, Dom. It holds or it doesn't. Like a hammock.",
+      "Deep. I'm going back to the hammock. Later, Rico."] },
+    { who: "dom", say: ["Dom again. Rico, is it true all of this is just one guy with a lot of wallets?",
+      "The chain only sees wallets, Dom. One guy or a whole village, it treats them all the same. Equality, island style.",
+      "So I could be a whole village if I make enough wallets?",
+      "On the chain, yes. At Lola's bar you still pay for one lemonade at a time.",
+      "Worth knowing. Later, Rico."] },
+    { who: "nell", say: ["Rico, Nell here, from the fish stall. The testnet said no to my transfer. My own rule, it said! Who wrote that rule?",
+      "You did, Nell. Personal rules, darling: the chain holds you to your own word, even on the days you'd rather it didn't.",
+      "Can I take my word back?",
+      "Only the way your own rule allows, Nell. That's the charm of it, and the curse.",
+      "Then I'm writing smaller promises. Bye, love."] },
+    { who: "nell", say: ["Nell again. How do I know my transfer really happened?",
+      "Look it up in a block, Nell. Every block has a number, and anyone can check what's inside. Just like the Book in the lighthouse, only with more zeros.",
+      "And anybody can look at mine?",
+      "Anybody, Nell. That's the deal. Rico only snoops for rumours, and even those end up in the Book.",
+      "Good to know. Ta-ta, Rico."] },
+    { who: "mae", say: ["Rico dear, it's Auntie Mae from the bakery. Everybody's talking about AI. Will Tau be a robot that bakes my bread?",
+      "Nobody will touch your bread, Auntie Mae. As Rico understands it, Tau is about rules a machine can read and check, not robots in the kitchen. Your rolls are safe.",
+      "So the machine just checks the rules?",
+      "That's how Rico understands it, Auntie. You write down what you mean, and it checks that it all fits together.",
+      "Well, I mean my rolls. Bye now, dear."] },
+    { who: "mae", say: ["Auntie Mae again. Rico, is there somewhere I can read the code for this testnet?",
+      "There is, Auntie. The testnet code is public on GitHub. Rico read some of it. Then Rico needed a nap.",
+      "A nap? Was it that boring?",
+      "Not boring, Auntie. Just very honest. Every line says exactly what it does.",
+      "Like my recipes. Bye now, dear."] },
+    /* the islanders phone in too */
+    { who: "lola", say: ["Rico, it's Lola. A man at the bar says Radio Coco only ever plays one song.",
+      "Tell him we have six now, Lola. Six! Rico has been composing at night.",
+      "He says they all sound happy.",
+      "It's an island, Lola. Sad songs get a sunburn.",
+      "Ha! Come by later, your lemonade's getting warm. Bye, honey."] },
+    { who: "sam", say: ["Rico, it's Sam at the lighthouse. Just checking the radio works. It's been very quiet up here.",
+      "It works, Sam! You're on the air right now.",
+      "Am I? Well. Hello, island. Read the Book. That's all.",
+      "Short and true, Sam. Your trademark.",
+      "Goodnight, Rico. Keep the lamp on."] },
+    { who: "tobias", game: 1, say: ["Rico! Tobias here, harbour master and humble candidate. I wish to dedicate a song to myself.",
+      "To yourself, Tobias?",
+      "Who else has worked so hard for me?",
+      "Fair point. Here's one for Tobias, from Tobias.",
+      "Splendid! Louder, if you please. Farewell!"] },
+    { who: "marisol", game: 1, say: ["Rico, it's Marisol. The fish want to know who's voting for the reef.",
+      "The fish can read the Book like everybody else, Marisol.",
+      "They can't read, Rico. They're fish.",
+      "Then they'll have to trust the ones who can. Isn't that politics?",
+      "Hmph. Gotta go, the nets won't mend themselves. Bye!"] },
+    { who: "baako", say: ["Rico, Baako from the Coconut Works! The organ is playing by itself again.",
+      "By itself, Baako?",
+      "Well, Noor sat on it. But it sounded good! Can you put it on the radio?",
+      "If it happens again, Rico will record it. Number one on the island charts.",
+      "Ha ha! I'll tell her. Bye bye!"] },
+    { who: "noor", say: ["Rico, it's Noor. Baako says the organ thing was me.",
+      "Was it, Noor?",
+      "It was a chair. I sat on a chair. The chair was on the organ.",
+      "Island, that's how great music starts.",
+      "It's how great backaches start. Bye."] },
+    { who: "hana", say: ["Rico, Hana from the school. The children want to know why blocks have numbers but no names.",
+      "Because a number never lies about its age, Hana.",
+      "That's not an answer. That's a fridge magnet.",
+      "Rico's whole career is fridge magnets.",
+      "I'll give you a C. Goodbye, Rico."] },
+    { who: "frost", game: 1, say: ["Good evening. This is the North Wind Embassy. We would like to request a song.",
+      "Ambassador Frost! What would you like to hear?",
+      "Something about surveyors. Something deep.",
+      "Rico doesn't take requests that come in envelopes, Ambassador.",
+      "Who said anything about envelopes? Goodnight."] },
+    { who: "salado", game: 1, say: ["Rico, my friend! Salado, South Current. We love your station. We love it so much.",
+      "Thank you, Ambassador. Is there a but?",
+      "No but. Only a road. Around the island. Play something about a road.",
+      "Rico plays songs, Ambassador, not roads.",
+      "Everyone plays something, my friend. Ciao!"] },
+    { who: "ama", say: ["Rico, this is Ama. The tide is low tonight.",
+      "Thank you, Ama. Is that news?",
+      "Everything that comes back on time is news, Rico. Your blocks could learn from the tide.",
+      "Rico will pass that on to the chain.",
+      "Pass it on gently. Good night, child."] },
+    { who: "kai", say: ["Rico, Kai from Reef Proof! Our sensors just signed their thousandth reading!",
+      "Congratulations, Kai! What did it say?",
+      "Water. Wet. Signed and timestamped.",
+      "Breaking news, island: the sea is wet, and now it's on record.",
+      "Ha! Come diving sometime, Rico! Bye!"] },
+    { who: "pim", say: ["Rico, it's Pim, the surveyor. Could you play something exactly four minutes and twelve seconds long?",
+      "Why exactly that long, Pim?",
+      "It's how long the walk is from the camp to the... to nowhere in particular.",
+      "Pim, are you measuring the radio?",
+      "No! Yes. Only a little. Goodbye."] },
+    { who: "kiko", say: ["Rico, Kiko at the canoes. I saw him again. In the jungle.",
+      "Agorzilla?",
+      "He took a banana and left a footprint. A big one.",
+      "Kiko, did you take a picture?",
+      "I took the banana back. Priorities. Bye, Rico."] },
+    { who: "wren", say: ["Rico dear, Captain Wren. The sea gave something odd back today.",
+      "What was it, Captain?",
+      "A sock. Labelled: transaction, still waiting.",
+      "Ghost transactions are washing up on the beach now?",
+      "Everything washes up eventually, dear. Toodle-oo."] },
+    { who: "tano", say: ["Rico, it's Tano up on the hill. My drums just carried your last joke to all three hills.",
+      "And? How did it land?",
+      "The far hill sent back one word.",
+      "Laughter?",
+      "Why. Goodbye, Rico."] },
+    /* new listeners, and calls that go wrong */
+    { who: "gus", say: ["Hello? Is this the bakery?",
+      "This is Radio Coco, sir. You're on the air.",
+      "Oh. Well, while I have you. Two loaves, please.",
+      "Rico will pass it on to Auntie Mae.",
+      "Much obliged. And play something slow. Cheerio."] },
+    { who: "gus", say: ["Rico, it's Gus. I've been on hold since the old chain.",
+      "Gus, the old chain is gone. You're the longest-waiting transaction on this island.",
+      "Do I get a prize?",
+      "You get a song, Gus. Here it comes.",
+      "I'll take it. Cheerio."] },
+    { who: "vik", cut: 1, say: ["Rico, quick question about the ghost transac",
+      "And he's gone. The phone line runs past Baako's goats. They chew on it."] },
+    { who: "zia", cut: 1, say: ["Rico, can you say hi to my mum? She's",
+      "We lost her! Zia's mum, if you're listening: hi from Zia. And from Rico."] },
+    { who: "pearl", when: "solo", say: ["Rico, Pearl here, I'm new on the island. Who stamps all the blocks? I keep seeing the same signature.",
+      "Right now one hand seals every block, Pearl. On a testnet that's the warm-up act.",
+      "Isn't that a bit lonely?",
+      "Very. Rico plays them a song every night. This one's for you, whoever you are.",
+      "That's sweet. Thank you, Rico. Bye now!"] },
+    { who: "rudy", when: "fresh", say: ["Rico, Rudy here. All my old transactions are gone! Everything from last week!",
+      "Rudy, the testnet started over from block zero. Everybody's old blocks went with it.",
+      "So I'm poor again?",
+      "You were never rich, Rudy. Test coins. You're exactly as rich as before: pretend.",
+      "Huh. That's weirdly comforting. Thanks, Rico."] },
+    { who: "tess", when: "fresh", say: ["Rico, it's Tess. I read that somebody voted a rule in all by themselves, and the whole chain stopped. Is that true?",
+      "One vote, one rule, and the chain stood still right where it took effect. So it started over, and now only the block sealers vote on the rules.",
+      "So the suggestion box is closed?",
+      "Closed for renovation, Tess. That's what testnets are for: you find the loose plank before the party.",
+      "Ha. Okay, love the show, bye!"] },
   ];
   /* what the islanders say in the places (the same English as in game.js, which the tests check) */
   const LAWT = { harbour: "A deep harbour for cruise ships", road: "A road round the island" };
@@ -326,7 +530,7 @@
       else if (k === "day") for (let n = 1; n <= DAYS; n++) out.push(fill(s, { n, m: DAYS }));
       else out.push(s);
     }
-    return [...out.map(t => ["rico", t]), ...CAST, ...CALLS.flatMap(([w, q, a]) => [[w, q], ["rico", a]]), ...(window.RABBIT_TALK_LINES ? window.RABBIT_TALK_LINES() : [])];   // talk.js: coming back, asking more
+    return [...out.map(t => ["rico", t]), ...CAST, ...CALLS.flatMap(c => c.say.map((t, i) => [i % 2 ? "rico" : c.who, t])), ...(window.RABBIT_TALK_LINES ? window.RABBIT_TALK_LINES() : [])];   // talk.js: coming back, asking more
   }
 
   /* the clips the server has made so far */
@@ -400,7 +604,17 @@
   /* lines that make sense away from the game (the radio in the site header, assets/radio.js): the hellos and Rico's
      testnet humour, jokes, the listeners' letters, the phone-in (the caller in their own voice) and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
   const tr = s => (window.TauI18n ? TauI18n.t(s) : s);
-  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend].map(k => [{ t: tr(L[k]), v: L[k] }])
-    .concat(CALLS.map(([who, q, a], i) => { const r = L[SETS.ring[i % SETS.ring.length]]; return [{ t: tr(r), v: r }, { t: tr(q), v: q, who }, { t: tr(a), v: a }]; }));
-  window.RICO = { L, SETS, CAST, CALLS, NAMES, all, speak, fill, key, hud, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
+  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend, ...SETS.net].map(k => [{ t: tr(L[k]), v: L[k] }])
+    .concat(CALLS.filter(c => !c.game && !c.when).map((c, i) => call(c, SETS.ring[i % SETS.ring.length], SETS.bye[i % SETS.bye.length])));
+  /* a call as parts: the phone rings, the conversation, Rico's goodbye (keys from SETS.ring and SETS.bye) */
+  function call(c, ring, bye) {
+    const p = (who, s) => (who === "rico" ? { t: tr(s), v: s } : { t: tr(s), v: s, who });
+    return [p("rico", L[ring]), ...c.say.map((s, i) => p(i % 2 ? "rico" : c.who, s)), ...(c.cut ? [] : [p("rico", L[bye])])];
+  }
+  /* the show's opener for the hour of the day (or one of the ones for any hour) */
+  function wake(hr = new Date().getHours()) {
+    const set = Math.random() < 0.35 ? "wake" : hr >= 5 && hr < 11 ? "wakeAm" : hr >= 11 && hr < 17 ? "wakePm" : hr >= 17 && hr < 22 ? "wakeEv" : "wakeNt";
+    return SETS[set][Math.floor(Math.random() * SETS[set].length)];
+  }
+  window.RICO = { L, SETS, CAST, CALLS, NAMES, all, speak, fill, key, hud, call, wake, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
 })();
