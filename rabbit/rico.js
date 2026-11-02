@@ -559,6 +559,21 @@
     const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(who + "|" + s));
     return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
   }
+  /* which radio lines have their clips already (Rico's L keys, and the calls whose every line is spoken): game.js
+     prefers those, so the radio keeps talking while new lines still wait for their voices */
+  const VOICED = { l: null, c: null };
+  ready.then(async () => {
+    if (!have || !have.size || !window.crypto || !crypto.subtle) return;
+    const l = new Set(), c = new Set();
+    for (const [k, t] of Object.entries(L)) if (!t.includes("{") && have.has(await key("rico", t))) l.add(k);
+    for (let i = 0; i < CALLS.length; i++) {
+      const x = CALLS[i], ks = await Promise.all(x.say.map((t, j) => key(j % 2 ? "rico" : x.who, t)));
+      if (ks.every(k => have.has(k))) c.add(i);
+    }
+    VOICED.l = l; VOICED.c = c;
+  }, () => {});
+  /* true or false once known; null while the clip list is still loading (or a line with a name in it) */
+  const voiced = k => { if (!VOICED.l) return null; if (/^call:/.test(k)) return VOICED.c.has(+k.slice(5)); return L[k] == null || L[k].includes("{") ? null : VOICED.l.has(k); };
   const cache = new Map();
   const clip = k => { if (!cache.has(k)) cache.set(k, fetch(BASE + k + ".mp3").then(r => (r.ok ? r.arrayBuffer() : null), () => null)); return cache.get(k); };
   /* speak a line in someone's voice: all its spoken parts, in order, or nothing at all when one clip is missing */
@@ -632,7 +647,10 @@
   /* the show's opener for the hour of the day (or one of the ones for any hour) */
   function wake(hr = new Date().getHours()) {
     const set = Math.random() < 0.35 ? "wake" : hr >= 5 && hr < 11 ? "wakeAm" : hr >= 11 && hr < 17 ? "wakePm" : hr >= 17 && hr < 22 ? "wakeEv" : "wakeNt";
-    return SETS[set][Math.floor(Math.random() * SETS[set].length)];
+    const ok = SETS[set].filter(k => voiced(k) !== false), any = ["wakeAm", "wakePm", "wakeEv", "wakeNt", "wake"].flatMap(x => SETS[x]).filter(k => voiced(k) !== false);
+    const from = ok.length ? ok : any.length ? any : VOICED.l ? SETS.open.filter(k => voiced(k)) : [];   // no opener voiced yet: an ordinary hello that is
+    const list = from.length ? from : SETS[set];
+    return list[Math.floor(Math.random() * list.length)];
   }
-  window.RICO = { L, SETS, CAST, CALLS, NAMES, all, speak, fill, key, hud, call, wake, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
+  window.RICO = { L, SETS, CAST, CALLS, NAMES, all, speak, fill, key, hud, call, wake, voiced, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
 })();
