@@ -947,7 +947,7 @@
 
   /* ---------- day and night ---------- */
   function endDay() {
-    if (!G || G.over || G.move < MOVES || G.counting) return;   // once per night, however many ways lead here
+    if (!G || G.over || G.move < MOVES || G.counting || G.waiting) return;   // once per night, however many ways lead here; a campaign already waiting for tomorrow has had its card
     hud();
     night();
     if (G.day >= DAYS) { save(); return election(); }
@@ -2157,7 +2157,7 @@
     placeKeys();
     addEventListener("keydown", e => { if (e.key === "Escape" && UI.card && !UI.card.classList.contains("intro") && !UI.card.classList.contains("locked")) closeCard(); });
     /* the day's last move is spent and nothing is open any more: the night comes, however the last card was left */
-    setInterval(() => { if (G && !G.over && G.move >= MOVES && !UI.card && !drawer) { if (G.counting) { G.counting = false; election(); } else endDay(); } }, 1200);
+    setInterval(() => { if (G && !G.over && !G.waiting && G.move >= MOVES && !UI.card && !drawer) { if (G.counting) { G.counting = false; election(); } else endDay(); } }, 1200);
     /* after the election the result stays: a card closed over it (the Book read from the result, ✕, Escape) brings it back,
        so nobody is left on a finished island without "Play again" */
     setInterval(() => { if (G && G.over && !UI.card && !drawer && !$("cvPlaces").classList.contains("on")) ending(); }, 1500);
