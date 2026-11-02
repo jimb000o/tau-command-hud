@@ -1,5 +1,5 @@
 /* White Rabbit Key, played by many visitors at once: each one opens /rabbit/ in a headless browser on a phone, a
-   tablet or a desktop screen, picks a candidate and plays all five days by TAPPING what a visitor would tap (a place
+   tablet or a desktop screen, picks a candidate and plays the whole island week by TAPPING what a visitor would tap (a place
    on the painted island, a button on a plate), with a play style of their own. Nothing leaves the machine: the
    painted island 22 and its layout come from this folder (infra/rabbit-art/plates), the relay is a mock that takes
    every transaction, and the clock is fake, so a whole game runs in seconds.
@@ -138,7 +138,7 @@ async function play(n) {
   const run = ms => page.waitForTimeout(ms / SPEED);
   const t0 = Date.now();
   try {
-    await page.goto(`${BASE}rabbit/?lang=${lang}`, { waitUntil: "load" });
+    await page.goto(`${BASE}rabbit/?lang=${lang}&clock=free`, { waitUntil: "load" });
     await run(3000);
     /* the start screen: pick the candidate (every move goes on the chain, nothing to tick) */
     const intro = page.locator(".cv-card.intro");

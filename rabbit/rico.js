@@ -10,7 +10,7 @@
   "use strict";
   const BASE = "https://node.tauhud.com/rico/";
   const NAMES = ["Marisol", "Tobias", "Baako", "Hana"];   // the four candidates (game.js CANDS)
-  const DAYS = 5;
+  const DAYS = 7;
   const L = {
     noLaws: "No laws yet on this island. Rico's only rule: the request line is open, the coconut stand is not.",
     topLaws: "{x} has written more laws than anyone. The island has asked for a nap.",
@@ -525,7 +525,7 @@
     ["sam", "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing."],
     ["sam", "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."],
     ["sam", "Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."],
-    ["sam", "Three moves a day, five days, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."],
+    ["sam", "Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."],
     ["sam", "Two laws that cannot both hold would leave the island not knowing what is allowed, so the Book will not take it. Repeal the old one first, or pick another law."],
     ["rico", "Done, it’s out there. Half the island is talking. The other half will read the Book tomorrow, and the Book says you paid me."],
     ["rico", "Done. And this one’s true, so let them check. The Book backs you up."],
