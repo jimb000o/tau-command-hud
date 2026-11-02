@@ -1774,6 +1774,10 @@
   "text": "The island’s numbers are out of reach just now. Your campaign goes on as before."
  },
  {
+  "who": "sam",
+  "text": "The players here are test wallets, not people. A move counts for a wallet when that wallet signed it into the testnet from the same connection. Each week counts a wallet’s first finished campaign; the result is what its game reports."
+ },
+ {
   "who": "marisol",
   "text": "Nobody owns her, and nobody feeds her alone: she eats on a day only when three wallets agree, one test AGRS each. Say yes and you are one of the three. The other two? Whoever passes through."
  },

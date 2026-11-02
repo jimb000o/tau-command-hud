@@ -71,13 +71,14 @@ const PLACES = new Set(["hall", "market", "radio", "north", "south", "bar", "boo
 const ISLE = { players: { campaigns: 0, finished: 0, moves: 0, as: {}, wins: {}, laws: {}, kinds: {} }, islanders: { moves: 0, laws: {}, kinds: {} }, recent: [], week: {}, games: {}, subs: new Set(), bad: [], v: 0, pushes: 0, seen: 0 };
 /* last week's verdict (isle.py `last`): every campaign starts with the island's laws in force, Hana governs */
 const LAST = { id: "2026-W44", from: "2026-10-26", to: "2026-11-01", campaigns: 9, finished: 7, wins: { hana: 4, baako: 3 }, governor: "hana", laws: ["boat", "copy"] };
-const isleSnap = () => ({ day: "2026-11-01", v: ISLE.v, players: ISLE.players, islanders: ISLE.islanders, recent: ISLE.recent.slice(0, 12), lastHour: ISLE.players.moves, here: ISLE.subs.size, push: 10,
+const isleSnap = () => ({ day: "2026-11-01", v: ISLE.v, players: ISLE.players, islanders: ISLE.islanders, recent: ISLE.recent.slice(0, 12), board: { best: [], busy: [], ever: [], wallets: 0, finished: 0, everWallets: 0, week: "2026-W45", prev: null }, lastHour: ISLE.players.moves, here: ISLE.subs.size, push: 10,
   week: { id: "2026-W45", from: "2026-11-02", to: "2026-11-08", campaigns: ISLE.players.campaigns, finished: ISLE.players.finished, wins: ISLE.players.wins, laws: ISLE.week }, last: LAST });
 const inc = (o, k) => (o[k] = (o[k] || 0) + 1);
 function isleTake(s, ws, out) {
   const P = ISLE.players, a = s.split(" ");
   if (a[1] === "join") { ISLE.subs.add(ws); return isleSnap(); }
-  let m = new RegExp(`^isle move ([a-z0-9]{6,16}) (${CANDS}) (${KINDS}) ([a-z]{2,12}|-) ([a-z]+)$`).exec(s);
+  if (/^isle board(?: [0-9a-f]{96})?$/.test(s)) { out.board = (out.board || 0) + 1; return { board: { best: [], busy: [], ever: [], wallets: 0, finished: 0, everWallets: 0, week: "2026-W45", prev: null, me: null } }; }
+  let m = new RegExp(`^isle move ([a-z0-9]{6,16}) (${CANDS}) (${KINDS}) ([a-z]{2,12}|-) ([a-z]+)(?: ([0-9a-f]{96}|-))?$`).exec(s);
   if (m && PLACES.has(m[5])) {
     const [, g, who, kind, what] = m;
     if (!ISLE.games[g]) { ISLE.games[g] = { who, ended: false }; P.campaigns++; inc(P.as, who); }
@@ -85,7 +86,7 @@ function isleTake(s, ws, out) {
     ISLE.recent.unshift({ t: Math.floor(Date.now() / 1000), k: kind, c: who, x: what, at: m[5], h: 0 }); ISLE.recent.length = Math.min(12, ISLE.recent.length);
     out.isle++; ISLE.v++; return { counted: true };
   }
-  m = new RegExp(`^isle end ([a-z0-9]{6,16}) (${CANDS}) (${CANDS})(?: ([a-z,-]{1,120}))?$`).exec(s);
+  m = new RegExp(`^isle end ([a-z0-9]{6,16}) (${CANDS}) (${CANDS})(?: ([a-z,-]{1,120}))?(?: ([0-9a-f]{96}|-) (10|[0-9]) (fortune|reform|kingmaker|clean|-))?$`).exec(s);
   if (m) { for (const l of (m[4] || "-").split(",")) if (l !== "-") ISLE.week[l] = (ISLE.week[l] || 0) + 1; const g = ISLE.games[m[1]] || (ISLE.games[m[1]] = { who: m[2], ended: false }); if (g.ended) { ISLE.bad.push("twice: " + s); return { counted: false }; } g.ended = true; P.finished++; inc(P.wins, m[3]); out.isleEnd++; ISLE.v++; return { counted: true }; }
   ISLE.bad.push(s.slice(0, 120)); return null;
 }
