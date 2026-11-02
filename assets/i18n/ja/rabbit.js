@@ -277,7 +277,7 @@ TauI18n.add({ strings: {
   "This line on Tau Testnet Alpha": "Tau Testnet Alpha 上のこの一行",
   "This line went to Tau Testnet Alpha as a transaction": "この一行はトランザクションとして Tau Testnet Alpha に送られました",
   "Sign my moves into Tau Testnet Alpha as I make them, paid to the place where I make them: 1 test AGRS each, a line on Radio Coco 25, from my test wallet in this browser (made for me if I have none). The rivals’ moves go there anyway, from their own campaign wallets.": "一手ごとに Tau Testnet Alpha へ署名し、その場所に支払う：毎回 1 テスト AGRS、Radio Coco の一言は 25、このブラウザのテストウォレットから（なければ作られます）。ライバルの手は彼ら自身の選挙ウォレットからいずれにせよ送られます。",
-  "On the chain: every line in the Book is also a transaction on Tau Testnet Alpha, 1 test AGRS to the island council. The rivals send theirs from their own campaign wallets; yours go from your test wallet if you ticked the box. A ⛓ in the Book marks them.": "チェーン上で：帳簿の一行一行は、Tau Testnet Alpha 上のトランザクションでもあります。島の議会へ 1 テスト AGRS。ライバルは自分の選挙用ウォレットから、あなたの分はチェックを入れればあなたのテストウォレットから送られます。帳簿の ⛓ が目印です。",
+  "The rivals send theirs from their own campaign wallets, yours from the test wallet this browser made for you. A ⛓ in the Book marks them.": "チェーン上で：帳簿の一行一行は、Tau Testnet Alpha 上のトランザクションでもあります。島の議会へ 1 テスト AGRS。ライバルは自分の選挙用ウォレットから、あなたはこのブラウザで作られたテスト用ウォレットから送ります。帳簿の ⛓ がそれを示します。",
   /* the other quarters of the painted island */
   "The Council Tree": "評議の木",
   "The Kettle": "やかん小屋",
@@ -298,7 +298,7 @@ TauI18n.add({ strings: {
   "Surveyor, measures for the embassies": "測量士、大使館のために測る",
   "Foreman of the Coconut Works": "ココナッツ工場の現場監督",
   "Keeps the drums and the circle": "太鼓と輪を守る",
-  "{x} pays you {n} test AGRS on the testnet.": "{x} がテストネットであなたに {n} テスト AGRS を支払います。",
+  "{x} is sending you {n} test AGRS on the testnet.": "{x} がテストネットであなたに {n} テスト AGRS を送っています。",
   "Every move is real: it is signed into Tau Testnet Alpha from a test wallet made for you in this browser, and paid to the place where you make it (1 test AGRS, a line on Radio Coco 25). Wages and embassy money come back into that wallet. The rivals’ moves go there too. Test AGRS have no value.": "一手一手が本物です：このブラウザであなたのために作られたテストウォレットから Tau Testnet Alpha に署名され、その手を打った場所に支払われます（1 テスト AGRS、Radio Coco の一言は 25）。賃金と大使館のお金はそのウォレットに戻ってきます。ライバルの手もチェーンに載ります。テスト AGRS に価値はありません。",
   "South Current Embassy, wellness investor": "南潮大使館、ウェルネス投資家",
   "The Book is the oldest custom of the island’s first people: for three hundred years every agreement was copied by hand into many books, so nobody alone could change one. The testnet is only its newest copy.": "この書は島の最初の人々の最も古い習わしです。三百年のあいだ、すべての約束は手で何冊もの本に写され、誰も一人では一冊も変えられませんでした。テストネットはその一番新しい写しにすぎません。",

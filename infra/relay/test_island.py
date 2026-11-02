@@ -82,13 +82,24 @@ check(txsources.rabbit({"sender_pubkey": "ab", "operations": {"1": [["ab", islan
 P = island.Island(path=os.path.join(tempfile.mkdtemp(), "k"), daily=50, clock=clock, enabled=True)
 me = "ab" * 48
 check(set(P.ppk) == set(island.PURSES) and not set(P.ppk.values()) & set(P.pk.values()), "the purses have their own keys")
+check(P.accept_pay("works", me, "3.3.3.3")[1]["why"] == "no move", "no payout without a transaction from the same address first")
+for ip in ["3.3.3.3", "5.5.5.5", "6.6.6.6"] + [f"4.4.{i}.1" for i in range(island.PAY_PER_WALLET)]:
+    P.saw_tx(ip)
 ok, d = P.accept_pay("works", me.upper(), "3.3.3.3")
-check(ok and d["queued"] and d["amount"] == 10 and d["from"] == P.ppk["works"], "a shift's wage is queued for the visitor")
+check(ok and d["queued"] and d["amount"] == 10 and d["from"] == P.ppk["works"], "a shift's wage is queued for the visitor after a move")
 check(P.accept_pay("bank", me, "3.3.3.3")[0] is False and P.accept_pay("works", "xyz", "3.3.3.3")[0] is False, "only the purses, only a wallet")
 check(P.accept_pay("works", P.pk["hana"], "3.3.3.3")[0] is False, "never to the bot's own wallets")
 for i in range(island.PAY_PER_WALLET - 1):
     P.accept_pay("north", me, f"4.4.{i}.1")
-check(P.accept_pay("south", me, "5.5.5.5")[1]["why"] == "enough today", "a few payouts per wallet a day")
+check(P.accept_pay("south", me, "5.5.5.5")[1]["why"] == "enough today", "a few payouts per wallet a day, waiting ones included")
+check(P.paid.get(me, 0) == 0, "a payout counts for the wallet only once the purse has sent it")
+other = "cd" * 48
+P.paid_ip["6.6.6.6"] = island.PAY_PER_IP
+check(P.accept_pay("works", other, "6.6.6.6")[1]["why"] == "enough today", "and a cap per address a day")
+Q = island.Island(path=os.path.join(tempfile.mkdtemp(), "k"), daily=10, clock=clock, enabled=True)
+Q.saw_tx("8.8.8.8")
+Q.today_pay = 6
+check(Q.accept_pay("works", me, "8.8.8.8")[1]["why"] == "daily", "payouts stop at their share of the day, the rivals' moves keep theirs")
 tx = P.build_pay("north", me, 3, 10, 10, 2)
 check(tx["operations"]["1"][0] == [P.ppk["north"], me, "80"], "two waiting embassy payments ride together")
 check(G2Basic.Verify(bytes.fromhex(tx["sender_pubkey"]), hashlib.sha256(island.signing_bytes(tx)).digest(), bytes.fromhex(tx["signature"])), "signed by the purse")

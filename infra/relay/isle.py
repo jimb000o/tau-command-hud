@@ -36,9 +36,9 @@ from collections import deque
 log = logging.getLogger("isle")
 
 CANDS = {   # rabbit/game.js CANDS: what each cares about and how they campaign
-    "marisol": (("fish", "roads"), "people"),
-    "tobias": (("visitors", "music"), "rumours"),
-    "baako": (("visitors", "roads"), "money"),
+    "marisol": (("fish", "roads"), "rumours"),
+    "tobias": (("visitors", "music"), "money"),
+    "baako": (("visitors", "roads"), "people"),
     "hana": (("school", "quiet"), "laws"),
 }
 TOPICS = ("fish", "school", "music", "quiet", "visitors", "roads")
