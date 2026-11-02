@@ -541,7 +541,7 @@ CAST = ("Paint a sheet of ten small full-body characters for this game, in exact
         "Lola, who runs the beach bar, with curly dark red hair, a cream apron, a pencil behind her ear and a ledger; "
         "Old Sam, the bald, white-bearded lighthouse keeper in a dark knitted sweater, carrying a huge old book; "
         "Ambassador Frost, a tall, thin diplomat in a pale blue suit with a lanyard and a tablet; "
-        "Ambassador Salado, a sunburnt, round investor in a creased linen suit, sandals and a panama hat, with a laptop bag; "
+        "Ambassador Salado, a sun-kissed, round wellness investor in an open coral linen shirt and gold chain, sunglasses pushed up on his head, a cocktail with an umbrella in one hand and a laptop bag; "
         "Ama, an elder of the first people's council, a grey-haired woman in her seventies in a cardigan and a skirt with "
         "a woven pattern of her people, walking upright with a carved staff, dignified and kind.")
 
