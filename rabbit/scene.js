@@ -39,18 +39,44 @@
     pier:   { x: 1010, y: 735, box: [950, 690, 170, 80], name: "The pier" },
   };
 
-  /* times of day: 0 morning, 1 noon, 2 evening, 3 night (the game moves between them) */
+  /* times of day: 0 morning, 1 noon, 2 evening, 3 night, and round again (3.5 is first light).
+     mul is the light a painted picture is multiplied with: white at noon, warm at the ends of the day, deep blue at night */
   const SKY = [
-    { top: [92, 160, 220], bot: [255, 214, 170], sea: [38, 140, 170], seaB: [20, 92, 130], sun: [255, 236, 190], tint: [255, 214, 170, 0.06], light: 0 },
-    { top: [40, 130, 220], bot: [160, 214, 245], sea: [24, 150, 190], seaB: [10, 90, 140], sun: [255, 250, 230], tint: [255, 255, 255, 0], light: 0 },
-    { top: [70, 60, 140], bot: [255, 140, 90], sea: [60, 80, 130], seaB: [28, 40, 80], sun: [255, 170, 90], tint: [255, 110, 60, 0.2], light: 0.6 },
-    { top: [6, 10, 32], bot: [26, 40, 84], sea: [10, 24, 50], seaB: [4, 10, 26], sun: [220, 230, 255], tint: [16, 26, 70, 0.55], light: 1 },
+    { top: [92, 160, 220], bot: [255, 214, 170], sea: [38, 140, 170], seaB: [20, 92, 130], sun: [255, 236, 190], tint: [255, 214, 170, 0.06], light: 0, mul: [255, 232, 206] },
+    { top: [40, 130, 220], bot: [160, 214, 245], sea: [24, 150, 190], seaB: [10, 90, 140], sun: [255, 250, 230], tint: [255, 255, 255, 0], light: 0, mul: [255, 255, 255] },
+    { top: [70, 60, 140], bot: [255, 140, 90], sea: [60, 80, 130], seaB: [28, 40, 80], sun: [255, 170, 90], tint: [255, 110, 60, 0.2], light: 0.6, mul: [246, 160, 128] },
+    { top: [6, 10, 32], bot: [26, 40, 84], sea: [10, 24, 50], seaB: [4, 10, 26], sun: [220, 230, 255], tint: [16, 26, 70, 0.55], light: 1, mul: [58, 76, 140] },
   ];
   const skyAt = h => {
+    h = ((h % 4) + 4) % 4;
     const i = Math.floor(h) % 4, j = (i + 1) % 4, f = h - Math.floor(h), a = SKY[i], b = SKY[j];
     return { top: mix(a.top, b.top, f), bot: mix(a.bot, b.bot, f), sea: mix(a.sea, b.sea, f), seaB: mix(a.seaB, b.seaB, f), sun: mix(a.sun, b.sun, f),
-      tint: [...mix(a.tint.slice(0, 3), b.tint.slice(0, 3), f), lerp(a.tint[3], b.tint[3], f)], light: lerp(a.light, b.light, f) };
+      tint: [...mix(a.tint.slice(0, 3), b.tint.slice(0, 3), f), lerp(a.tint[3], b.tint[3], f)], light: lerp(a.light, b.light, f), mul: mix(a.mul, b.mul, f) };
   };
+  /* the island keeps the clock of Germany (Europe/Berlin), with the sun of a tropical island: first light about six,
+     morning sun at seven, noon, a long golden afternoon, a short red dusk after six and night from about half past eight.
+     The light changes all the time, a little every minute. ?hour=21:30 holds a time, ?light=fast runs a day in two minutes,
+     ?light=game lets the game's own hour (moves of the day) set the light as before. */
+  const CLOCK = [[0, 3], [5 * 60 + 15, 3], [6 * 60 + 15, 3.55], [7 * 60 + 15, 4], [9 * 60 + 30, 4.55], [12 * 60, 5], [15 * 60 + 30, 5.3],
+    [17 * 60 + 45, 6], [19 * 60, 6.55], [20 * 60 + 15, 7], [24 * 60, 7]];
+  const LIGHT = (() => {
+    const q = location.search, m = q.match(/[?&]hour=(\d{1,2})(?::(\d{2}))?/);
+    return { game: /[?&]light=game/.test(q), fast: /[?&]light=fast/.test(q), fixed: m ? (+m[1] % 24) * 60 + (+(m[2] || 0)) : null, t0: Date.now() };
+  })();
+  let berlinFmt = null;
+  function berlinMinutes() {
+    if (LIGHT.fixed != null) return LIGHT.fixed;
+    if (LIGHT.fast) return (((Date.now() - LIGHT.t0) / 120000) * 1440 + 6 * 60) % 1440;   // from six in the morning, round the clock
+    try {
+      berlinFmt = berlinFmt || new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hourCycle: "h23", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const p = {}; berlinFmt.formatToParts(new Date()).forEach(x => { p[x.type] = +x.value; });
+      return ((p.hour % 24) * 60 + p.minute + p.second / 60) % 1440;
+    } catch (e) { const d = new Date(); return (d.getUTCHours() * 60 + d.getUTCMinutes() + 60) % 1440; }   // no time zones: winter time
+  }
+  function clockHour(min) {
+    for (let i = 1; i < CLOCK.length; i++) if (min <= CLOCK[i][0]) { const [m0, h0] = CLOCK[i - 1], [m1, h1] = CLOCK[i]; return lerp(h0, h1, (min - m0) / (m1 - m0)) % 4; }
+    return 3;
+  }
 
   /* ---------- the island, painted once per size, like a screen-printed travel poster:
      a few flat inks on warm paper, dark ink lines drawn by hand, dots and hatching for shade ---------- */
@@ -972,7 +998,7 @@
   }
 
   /* ---------- the stage ---------- */
-  const S = { c: null, g: null, W: 0, H: 0, K: 1, base: null, world: null, wg: null, hour: 0, hourT: 0, cam: { x: 800, y: 450, z: 1 }, camT: { x: 800, y: 450, z: 1 },
+  const S = { c: null, g: null, W: 0, H: 0, K: 1, base: null, world: null, wg: null, hour: 0, hourT: 0, clockAt: -1e9, cam: { x: 800, y: 450, z: 1 }, camT: { x: 800, y: 450, z: 1 },
     hover: null, glow: null, locked: new Set(), pan: { x: 0, y: 0 }, gather: 0, room: null, roomA: 0, roomT: 0, cat: null, still: false, onFrame: null, last: 0 };
   function size() {
     const r = S.c.getBoundingClientRect(); S.K = Math.min(2, devicePixelRatio || 1);
@@ -1003,10 +1029,71 @@
     g.strokeStyle = "rgba(34,48,58,.025)"; for (let i = 0; i < 18; i++) { g.beginPath(); const y = R() * 160; g.moveTo(0, y); g.lineTo(160, y + (R() - 0.5) * 6); g.stroke(); }
     return c;
   }
+  /* the light over a painted island: the whole picture (and the blurred sea and sky beside it) multiplied with the light
+     of the hour, a blue haze at night, stars and a moon where the painting shows open sky, a warm glow on the horizon
+     at sunrise (east, on the left) and sunset (west, on the right) */
+  function skyMask() {
+    const im = ART.img.island; if (S.mask && S.mask.im === im) return S.mask;
+    S.mask = { im, d: null };
+    try {
+      const mw = 240, mh = Math.round(mw * im.naturalHeight / im.naturalWidth), c = document.createElement("canvas"); c.width = mw; c.height = mh;
+      const cg = c.getContext("2d"); cg.drawImage(im, 0, 0, mw, mh);
+      const px = cg.getImageData(0, 0, mw, mh).data, d = new Uint8Array(mw * mh), hz = Math.floor(mh * HZ / WH) - 1;
+      for (let x = 0; x < mw; x++) for (let y = 0; y < hz; y++) {   // open sky runs down from the top of each column until something stands in it
+        const i = (y * mw + x) * 4, r = px[i], gg = px[i + 1], b = px[i + 2], sky = (b >= r - 8 && b > 110) || (r > 205 && gg > 205 && b > 195);
+        if (!sky) break; d[y * mw + x] = 1;
+      }
+      Object.assign(S.mask, { d, mw, mh, e: ART.wide || 0 });
+    } catch (e) {}   // a picture from another server without leave to read it: stars only high up
+    return S.mask;
+  }
+  function openSky(x, y) {
+    const M = skyMask(), e = (M && M.e) || 0;
+    if (x < -e || x > WW + e) return y < HZ * 0.55;   // beside the painting
+    if (!M || !M.d) return y < HZ * 0.3;
+    const mx = Math.floor((x + e) / (WW + 2 * e) * M.mw), my = Math.floor(y / WH * M.mh);
+    return mx >= 0 && mx < M.mw && my >= 0 && my < M.mh && M.d[my * M.mw + mx] === 1;
+  }
+  function paintedLight(g, W, H, sky, t, nt, wl, wt, wr) {
+    const m = sky.mul;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    if (m[0] + m[1] + m[2] < 762) { g.globalCompositeOperation = "multiply"; g.fillStyle = rgb(m); g.fillRect(0, 0, W, H); }
+    g.globalCompositeOperation = "source-over";
+    if (nt > 0.01) { g.fillStyle = `rgba(12,20,52,${0.16 * nt})`; g.fillRect(0, 0, W, H); }
+    view(g);
+    if (nt > 0.05) {
+      if (!S.stars || S.stars.im !== ART.img.island) {
+        const R = rnd(9), e = ART.wide || 0, list = [];
+        for (let i = 0; i < 420 && list.length < 170; i++) { const x = -e - 200 + R() * (WW + 2 * e + 400), y = R() * (HZ - 14), r = 0.8 + R() * 1.8, ph = R() * 6.3; if (openSky(x, y)) list.push([x, y, r, ph]); }
+        const moon = [[1220, 110], [1320, 90], [1120, 80], [420, 90], [800, 60]].find(([x, y]) => [[0, 0], [-26, 0], [26, 0], [0, -26], [0, 26]].every(([a, b]) => openSky(x + a, y + b)));
+        S.stars = { im: ART.img.island, list, moon };
+      }
+      S.stars.list.forEach(([x, y, r, ph], i) => { if (x < wl - 10 || x > wr + 10 || y < wt - 10) return; const al = nt * (0.35 + (i % 5) * 0.13) * (0.7 + 0.3 * Math.sin(t * 0.002 + ph)); g.fillStyle = `rgba(251,243,223,${al})`; g.fillRect(x - r, y - 0.5, r * 2, 1); g.fillRect(x - 0.5, y - r, 1, r * 2); });
+      const mo = S.stars.moon;
+      if (mo && nt > 0.2) {
+        const [mx, my] = mo, gr = g.createRadialGradient(mx, my, 0, mx, my, 70); gr.addColorStop(0, `rgba(251,243,223,${0.2 * nt})`); gr.addColorStop(1, "rgba(251,243,223,0)");
+        g.fillStyle = gr; g.beginPath(); g.arc(mx, my, 70, 0, Math.PI * 2); g.fill();
+        g.save(); g.beginPath(); g.arc(mx, my, 18, 0, Math.PI * 2); g.arc(mx + 9, my - 6, 15, 0, Math.PI * 2, true); g.fillStyle = `rgba(251,243,223,${nt})`; g.fill(); g.restore();
+      }
+    }
+    /* sunrise and sunset: a soft warm light along the horizon on the side of the sun */
+    const hh = ((S.hour % 4) + 4) % 4, rise = Math.max(0, 1 - Math.abs(hh - 3.75) / 0.5) + Math.max(0, 1 - Math.abs(hh + 0.25) / 0.5) * (hh < 0.5 ? 1 : 0),
+      set = Math.max(0, 1 - Math.abs(hh - 2.25) / 0.7);
+    [[rise, wl + (wr - wl) * 0.18, [255, 168, 120]], [set, wl + (wr - wl) * 0.8, [255, 128, 70]]].forEach(([a, x, c]) => {
+      if (a < 0.02) return; const rr = (wr - wl) * 0.55, gr = g.createRadialGradient(x, HZ, 0, x, HZ, rr);
+      gr.addColorStop(0, rgb(c, 0.34 * a)); gr.addColorStop(0.5, rgb(c, 0.1 * a)); gr.addColorStop(1, rgb(c, 0));
+      g.globalCompositeOperation = "screen"; g.fillStyle = gr; g.fillRect(x - rr, HZ - rr, rr * 2, rr * 2); g.globalCompositeOperation = "source-over";
+    });
+  }
   function frame(t) {
     const dt = Math.min(64, t - (S.last || t)); S.last = t;
     const k = 1 - Math.pow(0.0025, dt / 1000);
+    if (!LIGHT.game && t - S.clockAt > (LIGHT.fast ? 60 : 1000)) {   // the clock, once a second: the nearest way round, never back through the day
+      S.clockAt = t; const h = clockHour(berlinMinutes());
+      if (!S.clockOn) { S.clockOn = true; S.hour = S.hourT = h; } else S.hourT = h + 4 * Math.round((S.hour - h) / 4);
+    }
     S.hour += (S.hourT - S.hour) * Math.min(1, k * 0.9);
+    if (S.hour > 8 || S.hour < 0) { const d = S.hour > 8 ? -4 : 4; S.hour += d; S.hourT += d; }
     for (const p of ["x", "y", "z"]) S.cam[p] += (S.camT[p] - S.cam[p]) * Math.min(1, k * 1.3);
     const g = S.g, W = S.c.width, H = S.c.height, sky = skyAt(S.hour);
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -1095,8 +1182,9 @@
     items.sort((a, b) => a[0] - b[0]).forEach(([, d]) => d());
     /* the light of the hour */
     w.setTransform(1, 0, 0, 1, 0, 0);
-    if (sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3]); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
+    if (!pi && sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3]); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
     g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(S.world, 0, 0);
+    if (pi) paintedLight(g, W, H, sky, t, nt, wl, wt, wr);
     /* evening and night: windows glow, the radio mast blinks, the lighthouse sweeps its green beam */
     view(g);
     if (sky.light > 0.05) {
@@ -1144,7 +1232,8 @@
         w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, X - Z / 2, Y, Z, Z);
       }
       w.setTransform(1, 0, 0, 1, 0, 0);
-      if (sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3] * 0.75); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
+      if (painted(S.room)) { const m = mix([255, 255, 255], sky.mul, 0.7); if (m[0] + m[1] + m[2] < 762) { w.globalCompositeOperation = "multiply"; w.fillStyle = rgb(m); w.fillRect(0, 0, W, H); } w.globalCompositeOperation = "source-over"; }
+      else if (sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3] * 0.75); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
       if (sky.light > 0.05) { w.globalCompositeOperation = "lighter"; const lg = w.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.max(W, H) * 0.6); lg.addColorStop(0, `rgba(255,190,110,${0.22 * sky.light})`); lg.addColorStop(1, "rgba(255,190,110,0)"); w.fillStyle = lg; w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
       const [px, py] = S.roomAt || [S.W / 2, S.H / 2], cx = px * S.K, cy = py * S.K, rr = e * Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) * 1.02;
       g.setTransform(1, 0, 0, 1, 0, 0); g.save(); g.beginPath(); g.arc(cx, cy, Math.max(1, rr), 0, Math.PI * 2); g.clip(); g.drawImage(S.world, 0, 0); g.restore();
@@ -1239,7 +1328,8 @@
   }
   window.COVE_SCENE = {
     mount, hit, focus, places: PLACES, toScreen, canPan: () => canPan(),
-    setHour(h, now) { S.hourT = h; if (now) S.hour = h; },
+    setHour(h, now) { if (!LIGHT.game) return; S.hourT = h; if (now) S.hour = h; },   // the light follows the clock in Germany (see CLOCK)
+    clock: () => { const m = Math.floor(berlinMinutes()); return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); },
     glow(id) { S.glow = id; },
     host(fn, tall) { S.hostFn = fn; S.hostTall = !!tall; },
     lock(ids) { S.locked = new Set(ids); }, locked: id => S.locked.has(id),   // quarters not open yet cannot be clicked
