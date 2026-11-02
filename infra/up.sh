@@ -17,8 +17,6 @@ echo "waiting 20 s…"
 sleep 20
 curl -s https://node.tauhud.com/status | head -c 200; echo
 curl -s https://node.tauhud.com/isle | head -c 200; echo
-# the channel and X: what the posting services did in the last two days (a failed send names its cause)
-echo "posts, last 48 h:"; docker compose logs --since 48h alerts agorzilla 2>/dev/null | grep -iE 'posted|failed|cap|off \(|lost' | tail -12
 # voice lines that have no clip yet (spends credits only on new lines)
 # Radio Coco and the islanders: speak any new voice lines (only lines without a clip cost credits; none new, nothing spent)
 python3 rico/make.py make || echo "voices: skipped (see the message above); run again later with: up"
