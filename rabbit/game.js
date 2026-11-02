@@ -298,7 +298,7 @@
   const nm = c => (CANDS[c] || FOLK[c] || {}).name || c;
   const inForce = id => G.laws.some(l => l.id === id);
   const conflict = id => G.laws.find(l => LAWS[id].no.includes(l.id) || LAWS[l.id].no.includes(id));
-  const lawScore = (id, cares) => cares.reduce((s, c) => s + (LAWS[id].fx[c] || 0), 0);
+  const lawScore = (id, cares) => cares.reduce((s, c) => s + (LAWS[id].fx[c] || 0), 0) + (hot() && (LAWS[id].fx[hot()] || 0) > 0 ? 1 : 0);   // the talk of the island (EVENTS) helps a law for it
   const pact = (a, b) => G.pacts.some(p => !p.broken && ((p.a === a && p.b === b) || (p.a === b && p.b === a)));
   const total = c => PEOPLE.reduce((s, p) => s + G.sup[c][p.id], 0);
   const leader = () => Object.keys(CANDS).sort((a, b) => total(b) - total(a))[0];
@@ -345,7 +345,7 @@
   }
   function campaign(by, topic, k = 1) {
     const backed = G.laws.some(l => l.by === by && (LAWS[l.id].fx[topic] || 0) > 0);
-    bump(by, p => p.cares.includes(topic), Math.round((backed ? 9 : 6) * k));
+    bump(by, p => p.cares.includes(topic), Math.round((backed ? 9 : 6) * k * (hot() === topic ? 1.5 : 1)));
     write(by, F("spoke on the market square about {x}", { x: T(TOPICS[topic]) }), "talk", "market", 1, topic);
   }
   function rumour(by, about, claim, lie) {
@@ -678,7 +678,7 @@
         const mine = G.sup[G.me][p.id], best = Object.keys(CANDS).sort((a, b) => G.sup[b][p.id] - G.sup[a][p.id])[0];
         return el("li", null, el("span", { class: "nm", translate: "no", text: p.name }), el("small", { text: p.cares.map(c => T(TOPICS[c])).join(" · ") }), el("i", { class: "bar" + (best === G.me ? " lead" : ""), style: `--v:${mine}%`, title: F("leans to {x}", { x: nm(best) }) }));
       });
-      const acts = Object.keys(TOPICS).map(t => btn(F("Talk about {x}", { x: T(TOPICS[t]) }), () => { campaign(G.me, t); SND.sfx("yes"); SC.gather(1); setTimeout(() => SC.gather(0), 2600); toast(F("People who care about {x} listened.", { x: T(TOPICS[t]) })); spend(); if (UI.card) openCard("market", PLACE.market); }, { off: !movesLeft() }));
+      const acts = Object.keys(TOPICS).map(t => btn(F("Talk about {x}", { x: T(TOPICS[t]) }) + (hot() === t ? " ★" : ""), () => { campaign(G.me, t); SND.sfx("yes"); SC.gather(1); setTimeout(() => SC.gather(0), 2600); toast(F("People who care about {x} listened.", { x: T(TOPICS[t]) })); spend(); if (UI.card) openCard("market", PLACE.market); }, { off: !movesLeft() }));
       scene(box, G.me === "marisol" ? "lola" : "marisol", T(SC.places.market.name), T("Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts], el("ul", { class: "cv-folk" }, rows));
     },
     radio(box) {
@@ -914,13 +914,20 @@
   function morning(n) {
     hud();
     isleMorning();
-    const today = G.news.filter(x => x.day >= G.day - 1).slice(-4);
+    const ev = events().find(e => e.day === G.day), E = ev && EVENTS[ev.id];
+    const today = G.news.filter(x => x.day >= G.day - 1 && !(E && x.s === T(E.lead))).slice(-4);
     const R = seeded(G.seed + G.day), joke = T(JOKES[Math.floor(R() * JOKES.length)]);
     const box = el("div", { class: "cv-paper" },
       el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: F("Day {n} of {m}", { n: G.day, m: DAYS }) + " · " + F("{n} people read the Book last night", { n }) }),
+      E ? el("p", { class: "lead", text: T(E.lead) }) : false,
       el("ul", null, today.length ? today.map(x => el("li", { text: x.s })) : [el("li", { text: T("A quiet night. The fish report no news.") })]),
       el("p", { class: "joke", text: joke }));
-    openCard(null, b => { b.classList.add("paper"); b.append(box); const pend = G.pending.splice(0); b.append(el("div", { class: "cv-acts" }, btn(pend.length ? (pend.length === 1 ? T("To the council: one law to vote on") : F("To the council: {n} laws to vote on", { n: pend.length })) : T("Start the day"), () => { if (pend.length) councilQueue(pend); else closeCard(); }, { go: true }))); });
+    openCard(null, b => {
+      b.classList.add("paper"); b.append(box); const pend = G.pending.splice(0);
+      const start = btn(pend.length ? (pend.length === 1 ? T("To the council: one law to vote on") : F("To the council: {n} laws to vote on", { n: pend.length })) : T("Start the day"), () => { if (pend.length) councilQueue(pend); else closeCard(); if (E) setTimeout(() => onAir([S(E.rico)], true), 600); }, { go: true });
+      const acts = el("div", { class: "cv-acts" }, start); b.append(acts);
+      if (ev) eventMorning(ev, b, acts, start);
+    });
     save();
   }
   /* the rivals' laws come to the council in the morning; you vote on each */
@@ -935,6 +942,56 @@
     "Rico says he only plays hits. The Book says he plays whatever is paid for.", "Old Sam reminds readers that the Book is open every day and has never once been wrong about who did what.",
     "Classified: honest candidate wanted. Must not mind being written down.", "The black cat was seen crossing the square. Twice. Sam says it is nothing.",
   ];
+
+  /* ---------- sudden events: once or twice a campaign something happens to the island, and the week is not the same ----------
+     the Key Crier leads with it, the player gets one choice on the morning paper (real coins, a real transaction to the place's
+     till), the topic becomes the talk of the island for the rest of the week: speeches about it count more, laws for it pass
+     more easily, and the rivals pick their laws by it too */
+  const EVENTS = {
+    boiler: { hot: "roads", lead: "The Coconut Works boiler burst at dawn. Nobody hurt, coconut everywhere, and the road to the Works is a river of oil.",
+      rico: "Rico here, and I can smell it from the studio. The Coconut Works boiler went off like a drum solo. Noor says the road is the problem now, so expect everybody to care about roads today.",
+      act: { t: "Send 15 coins to the repair fund", n: 15, at: "works", line: "sent 15 coins to the Coconut Works repair fund", d: 5 } },
+    storm: { hot: "visitors", lead: "A storm closed the pier overnight. No ferry today, no visitors, and three stranded travellers sleep on the bar’s floor.",
+      rico: "Morning, island. The pier is closed, the ferry is not coming, and three visitors are stranded on Lola’s floor. Whoever looks after visitors today will be remembered.",
+      act: { t: "Open your kitchen for the stranded (10 coins)", n: 10, at: "bar", line: "fed the stranded visitors at the bar: 10 coins", d: 4 } },
+    coup: { hot: "quiet", lead: "In the night Salado’s investors tried to buy the council tree. Ama sat on its roots until sunrise and the paper was never signed.",
+      rico: "Big news, and it is not good. Someone tried to buy the council tree in the dark. Ama sat on it. The island wants quiet nights again, and everyone who took embassy money is being looked at.",
+      act: { t: "Sign Ama’s letter: the tree is not for sale", n: 0, at: "hall", line: "signed Ama’s letter: the council tree is not for sale", d: 3 }, hit: true },
+    catch: { hot: "fish", lead: "A record catch. The bay is full of fish and so is every doorstep, and Old Sam says the reef has not looked like this in forty years.",
+      rico: "Fish! Fish everywhere! The bay is silver, Sam is crying, and today the whole island cares about one thing. Whoever talks fish, wins ears.",
+      act: { t: "Throw a fish fry on the square (10 coins)", n: 10, at: "market", line: "threw a fish fry on the square: 10 coins", d: 4 } },
+    roof: { hot: "school", lead: "The school roof gave way in the night rain. Lessons under the council tree until further notice; Hana has borrowed every parasol on the island.",
+      rico: "Rain in the night, and the school roof is on the floor. Lessons under the tree. Parents are listening today, so whatever you say about the school, say it well.",
+      act: { t: "Pay for tarpaulins for the school (10 coins)", n: 10, at: "school", line: "paid 10 coins for tarpaulins for the school", d: 4 } },
+  };
+  const EVENT_NAMES = { boiler: "burst boiler", storm: "storm", coup: "night at the council tree", catch: "record catch", roof: "fallen school roof" };
+  /* which ones happen this campaign: one on day 2, 3 or 4, sometimes a second on another day; fixed by the campaign's seed */
+  function planEvents(seed) {
+    const R = seeded(seed + 777), ids = Object.keys(EVENTS).sort(() => R() - 0.5), days = [2, 3, 4].sort(() => R() - 0.5);
+    const out = [{ id: ids[0], day: days[0] }];
+    if (R() < 0.4) out.push({ id: ids[1], day: days[1] });
+    return out.sort((a, b) => a.day - b.day);
+  }
+  const events = () => G.events || (G.events = planEvents(G.seed));
+  /* the talk of the island: the latest event's topic, from its morning to the election */
+  const hot = () => { if (!G) return null; const e = events().filter(e => e.day <= G.day).pop(); return e ? EVENTS[e.id].hot : null; };
+  function eventMorning(ev, box, acts, start) {
+    const E = EVENTS[ev.id];
+    if (!ev.done) {
+      ev.done = true;
+      news(T(E.lead));
+      if (E.hit) G.deals.forEach(d => { if (!d.seen) { d.seen = true; bump(d.by, null, -6); } });
+      save();
+    }
+    const act = btn(T(E.act.t), () => {
+      if (E.act.n) G.coins[G.me] -= E.act.n;
+      bump(G.me, p => p.cares.includes(E.hot), E.act.d);
+      write(G.me, T(E.act.line), "talk", E.act.at, Math.max(1, E.act.n), E.hot);
+      SND.sfx(E.act.n ? "coin" : "yes"); save(); hud();
+      acts.replaceChildren(el("p", { class: "cv-result ok", text: Fd("Done. People who care about {x} noticed.", { x: T(TOPICS[E.hot]) }) }), start);
+    }, { off: G.coins[G.me] < E.act.n, sub: E.act.n ? F("{n} coins, written in the Book", { n: E.act.n }) : T("free, written in the Book") });
+    acts.prepend(act);
+  }
 
   /* ---------- Radio Coco: Rico at the microphone, now and then, about what is going on ---------- */
   const DJ = { said: null, text: "", face: null, next: performance.now() + 2500, last: -1 };
@@ -1257,6 +1314,7 @@
     G.deals.filter(d => d.by === me).forEach(d => out.push(F(d.kept ? "Took {n} coins from the {x} and kept the promise" : "Took {n} coins from the {x} and never kept the promise", { n: EMB[d.emb].coins, x: EMB[d.emb].name })));
     const signed = mine.filter(b => b.tx).length;
     if (signed) out.push(F("{n} of your moves signed into Tau Testnet Alpha", { n: signed }));
+    events().filter(e => e.done).forEach(e => out.push(Fd("The week of the {x}: you {y}", { x: T(EVENT_NAMES[e.id]), y: mine.some(b => b.text === T(EVENTS[e.id].act.line)) ? T("helped") : T("looked the other way") })));
     return out;
   }
   function islandSays() {
@@ -1633,6 +1691,7 @@
         el("li", { text: T("Market square: talk about a topic. People who care about it move toward you.") }), el("li", { text: T("Radio Coco: pay for a line on air. True lines are safe. Lies come back when people read the Book.") }),
         el("li", { text: T("Embassies: coins now, for a promise to propose their law. Forget it and they tell everyone.") }), el("li", { text: T("Bar La Ola: pacts. Partners vote for each other’s laws.") }),
         el("li", { text: T("The lighthouse: the Book. Free to read, and nobody can change it.") }),
+        el("li", { text: T("Some mornings something happens to the island. The Key Crier leads with it, you get one choice, and that topic is the talk of the week: speeches about it count more and laws for it pass more easily.") }),
         el("li", { text: T("Election night: the visitors of the site cast an eleventh ballot, for whoever leads the island ballot on the real testnet.") }),
         el("li", { text: T("On the chain: every line in the Book is also a transaction on Tau Testnet Alpha, 1 test AGRS to the island council. The rivals send theirs from their own campaign wallets, yours from the test wallet this browser made for you. A ⛓ in the Book marks them.") }),
         el("li", { text: T("Inspired by \"Caribbean Disaster\" (1995). An independent homage, not affiliated with or endorsed by its creators. All art, characters, story and music are original.") }))));
