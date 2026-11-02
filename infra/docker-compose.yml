@@ -141,6 +141,13 @@ services:
       # "Testnet today": the real chain's day in one evening post; practice votes are counted there, not posted one by one
       TESTNET_TODAY: ${TESTNET_TODAY:-true}
       TESTNET_TODAY_HOUR: ${TESTNET_TODAY_HOUR:-19}
+      # a closer look at one page a day (assets/deepdives.json, read from the site) and the Key Crier's island morning (relay /isle)
+      DEEPDIVES: ${DEEPDIVES:-true}
+      DEEPDIVE_HOUR: ${DEEPDIVE_HOUR:-13}
+      DEEPDIVE_X_EVERY: ${DEEPDIVE_X_EVERY:-2}
+      ISLAND_CRIER: ${ISLAND_CRIER:-true}
+      ISLAND_HOUR: ${ISLAND_HOUR:-7}
+      ISLAND_X_EVERY_DAYS: ${ISLAND_X_EVERY_DAYS:-2}
     volumes:
       - alerts_state:/state     # what was seen and posted, so nothing is posted twice
       - alerts_public:/public   # proposals.json, feed.xml and recap/, served by Caddy
