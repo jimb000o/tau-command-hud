@@ -349,6 +349,12 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
 - "Testnet today" (`TESTNET_TODAY_HOUR`, 19 UTC) goes out every evening since 2 November 2026, a quiet day included:
   with blocks and no transactions it says so (Telegram only); without a block in 24 hours it says since when the
   chain stands still, and that one goes to X too. A restart and a stall of 20 minutes get their own posts anyway.
+- `docker compose run --rm --no-deps alerts python alerts.py --check` asks each channel, without posting, whether the
+  service may post there: Telegram's token and the bot's standing in the channel (it must be an administrator with
+  Post messages), Tau HUD's X keys and Agorzilla's (`GET /2/users/me`). The service runs the same check when it
+  starts, `up` prints it after every deploy, and the answers, the last good send and the last error of each channel
+  are in `posting.json` next to `proposals.json`. A channel that is on and takes no post for `SILENCE_HOURS` (26)
+  gets a warning in the log and in `posting.json`, so a quiet channel is noticed before someone asks.
 - An X copy never waits for Telegram: when the Telegram send fails (a token gone bad, the bot no longer admin in the
   channel) or the channel is off, the X copy goes out alone, once, and the Telegram post follows when the channel is
   back, without a second X post. The same holds for Agorzilla's evenings (`agorzilla.py`). Before 2 November 2026
