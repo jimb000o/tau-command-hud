@@ -1714,10 +1714,10 @@ class Relay:
         a = [x.lower() for x in args[1:]]
         if sub == "move" and len(a) == 5:
             ok, data = self.isle.move(ip, *a)
-        elif sub == "end" and len(a) == 3:
+        elif sub == "end" and len(a) in (3, 4):
             ok, data = self.isle.end(ip, *a)
         else:
-            ok, data = False, "Usage: isle join | leave | move <game> <as> <kind> <what> <place> | end <game> <as> <winner>"
+            ok, data = False, "Usage: isle join | leave | move <game> <as> <kind> <what> <place> | end <game> <as> <winner> [laws]"
         return envelope_ok("isle", data) if ok else envelope_error("isle", data, "INVALID_PARAMS")
 
     def chat_command(self, args: list[str], ws: ServerConnection | None) -> str:

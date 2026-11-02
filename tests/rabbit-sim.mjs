@@ -68,8 +68,11 @@ const pickW = (R, w) => { const t = Object.values(w).reduce((a, b) => a + b, 0);
    once and see each other's moves; it checks every message the way the relay does and pushes the day every second */
 const KINDS = "law|down|refused|talk|lie|fact|deal|pact|broke|gift", CANDS = "marisol|tobias|baako|hana";
 const PLACES = new Set(["hall", "market", "radio", "north", "south", "bar", "book", "pier", "school", "dive", "works", "camp", "ship", "ama", "canoe", "stone", "drums", "circle", "grotto"]);
-const ISLE = { players: { campaigns: 0, finished: 0, moves: 0, as: {}, wins: {}, laws: {}, kinds: {} }, islanders: { moves: 0, laws: {}, kinds: {} }, recent: [], games: {}, subs: new Set(), bad: [], v: 0, pushes: 0, seen: 0 };
-const isleSnap = () => ({ day: "2026-11-01", v: ISLE.v, players: ISLE.players, islanders: ISLE.islanders, recent: ISLE.recent.slice(0, 12), lastHour: ISLE.players.moves, here: ISLE.subs.size, push: 10 });
+const ISLE = { players: { campaigns: 0, finished: 0, moves: 0, as: {}, wins: {}, laws: {}, kinds: {} }, islanders: { moves: 0, laws: {}, kinds: {} }, recent: [], week: {}, games: {}, subs: new Set(), bad: [], v: 0, pushes: 0, seen: 0 };
+/* last week's verdict (isle.py `last`): every campaign starts with the island's laws in force, Hana governs */
+const LAST = { id: "2026-W44", from: "2026-10-26", to: "2026-11-01", campaigns: 9, finished: 7, wins: { hana: 4, baako: 3 }, governor: "hana", laws: ["boat", "copy"] };
+const isleSnap = () => ({ day: "2026-11-01", v: ISLE.v, players: ISLE.players, islanders: ISLE.islanders, recent: ISLE.recent.slice(0, 12), lastHour: ISLE.players.moves, here: ISLE.subs.size, push: 10,
+  week: { id: "2026-W45", from: "2026-11-02", to: "2026-11-08", campaigns: ISLE.players.campaigns, finished: ISLE.players.finished, wins: ISLE.players.wins, laws: ISLE.week }, last: LAST });
 const inc = (o, k) => (o[k] = (o[k] || 0) + 1);
 function isleTake(s, ws, out) {
   const P = ISLE.players, a = s.split(" ");
@@ -82,8 +85,8 @@ function isleTake(s, ws, out) {
     ISLE.recent.unshift({ t: Math.floor(Date.now() / 1000), k: kind, c: who, x: what, at: m[5], h: 0 }); ISLE.recent.length = Math.min(12, ISLE.recent.length);
     out.isle++; ISLE.v++; return { counted: true };
   }
-  m = new RegExp(`^isle end ([a-z0-9]{6,16}) (${CANDS}) (${CANDS})$`).exec(s);
-  if (m) { const g = ISLE.games[m[1]] || (ISLE.games[m[1]] = { who: m[2], ended: false }); if (g.ended) { ISLE.bad.push("twice: " + s); return { counted: false }; } g.ended = true; P.finished++; inc(P.wins, m[3]); out.isleEnd++; ISLE.v++; return { counted: true }; }
+  m = new RegExp(`^isle end ([a-z0-9]{6,16}) (${CANDS}) (${CANDS})(?: ([a-z,-]{1,120}))?$`).exec(s);
+  if (m) { for (const l of (m[4] || "-").split(",")) if (l !== "-") ISLE.week[l] = (ISLE.week[l] || 0) + 1; const g = ISLE.games[m[1]] || (ISLE.games[m[1]] = { who: m[2], ended: false }); if (g.ended) { ISLE.bad.push("twice: " + s); return { counted: false }; } g.ended = true; P.finished++; inc(P.wins, m[3]); out.isleEnd++; ISLE.v++; return { counted: true }; }
   ISLE.bad.push(s.slice(0, 120)); return null;
 }
 setInterval(() => { const msg = JSON.stringify({ status: "ok", command: "isle", data: isleSnap() }); for (const ws of ISLE.subs) { try { ws.send(msg); ISLE.pushes++; } catch (e) { ISLE.subs.delete(ws); } } }, 1000).unref();
