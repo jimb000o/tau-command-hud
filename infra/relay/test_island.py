@@ -79,6 +79,21 @@ import txsources  # noqa: E402
 check(set(till.values()) == txsources.RABBIT_TILLS, "In numbers counts the same tills")
 check(txsources.rabbit({"sender_pubkey": "ab", "operations": {"1": [["ab", island.PLACES["radio"], "25"]]}}, {}) == ("line", ""), "a move paid to a till is a Book line")
 
+P = island.Island(path=os.path.join(tempfile.mkdtemp(), "k"), daily=50, clock=clock, enabled=True)
+me = "ab" * 48
+check(set(P.ppk) == set(island.PURSES) and not set(P.ppk.values()) & set(P.pk.values()), "the purses have their own keys")
+ok, d = P.accept_pay("works", me.upper(), "3.3.3.3")
+check(ok and d["queued"] and d["amount"] == 10 and d["from"] == P.ppk["works"], "a shift's wage is queued for the visitor")
+check(P.accept_pay("bank", me, "3.3.3.3")[0] is False and P.accept_pay("works", "xyz", "3.3.3.3")[0] is False, "only the purses, only a wallet")
+check(P.accept_pay("works", P.pk["hana"], "3.3.3.3")[0] is False, "never to the bot's own wallets")
+for i in range(island.PAY_PER_WALLET - 1):
+    P.accept_pay("north", me, f"4.4.{i}.1")
+check(P.accept_pay("south", me, "5.5.5.5")[1]["why"] == "enough today", "a few payouts per wallet a day")
+tx = P.build_pay("north", me, 3, 10, 10, 2)
+check(tx["operations"]["1"][0] == [P.ppk["north"], me, "80"], "two waiting embassy payments ride together")
+check(G2Basic.Verify(bytes.fromhex(tx["sender_pubkey"]), hashlib.sha256(island.signing_bytes(tx)).digest(), bytes.fromhex(tx["signature"])), "signed by the purse")
+check(P.route("/island")["purses"] == P.ppk, "GET /island shows the purses")
+
 sent = []
 
 

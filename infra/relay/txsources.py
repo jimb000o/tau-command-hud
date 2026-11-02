@@ -32,6 +32,7 @@ GET /api/v1/sources
              from its campaign wallets (island.py, `bots`); lines = the visitors' own Book lines to the council; votes =
              visitors' ballots, cands = ballots per candidate, by = rival moves per candidate; wallets / new = visitor
              wallets that day and the ones playing on the chain for the first time; hours = moves per UTC hour
+             paid / paid_agrs (only on days with any) = wages and embassy money the island's purses paid to visitors
   since, sent_since   first block time held, first remembered send
 
 The "agorzilla" part follows Agorzilla's own reading (agorilla assets/core.js): a meal pays the bowl at least 1 AGRS,
@@ -222,6 +223,7 @@ class TxSources:
         self.sent: dict[str, str] = {}   # tx hash -> "" (Tau HUD) or the other site's name, oldest first
         self.since = time.time()
         self.bots: dict[str, str] = {}   # the island bot's campaign wallets: pubkey -> candidate (island.py)
+        self.purses: dict[str, str] = {}   # its purses that pay the visitors: pubkey -> place (island.py)
         try:
             with open(self.path) as f:
                 st = json.load(f)
@@ -304,6 +306,12 @@ class TxSources:
                     kinds = starts.setdefault(day, {}).setdefault(src, {})
                     kinds[kind] = kinds.get(kind, 0) + 1
                 rb = rabbit(tx, bots)
+                if s in self.purses:   # a wage or an embassy's money paid to a visitor: not a move, counted apart
+                    r = isle.setdefault(day, {"moves": 0, "rivals": 0, "lines": 0, "votes": 0, "agrs": 0, "wallets": 0,
+                                              "new": 0, "cands": {}, "by": {}, "hours": [0] * 24})
+                    r["paid"] = r.get("paid", 0) + 1
+                    r["paid_agrs"] = r.get("paid_agrs", 0) + amount
+                    rb = None
                 if rb:
                     r = isle.setdefault(day, {"moves": 0, "rivals": 0, "lines": 0, "votes": 0, "agrs": 0, "wallets": 0,
                                               "new": 0, "cands": {}, "by": {}, "hours": [0] * 24})
