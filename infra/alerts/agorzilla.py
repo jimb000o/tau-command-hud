@@ -292,8 +292,9 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
         old = [r["n"] for r in rounds if not r.get("t") or now - r["t"] > 6 * 3600]
         state["last"] = old[-1] if old else rounds[0]["n"] - 1
     sent = []
+    state.setdefault("x_last", state["last"])   # X keeps its own place: a failing Telegram does not hold it back
     for r in rounds:
-        if r["n"] <= state["last"]:
+        if r["n"] <= state["last"] and r["n"] <= state["x_last"]:
             continue
         png = picture(r)
         if not png and r.get("winner") and r.get("t") and now - r["t"] < SHOTS_WAIT:
@@ -302,16 +303,22 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
         fails = state.get("fails") if state.get("fails_n") == r["n"] else 0
         if png and fails >= 2:
             png = None                 # the picture did not go through twice: the text alone, so the evening is never stuck
-        if TOKEN or send is not post:
-            if not (send(msg, png) if png else send(msg)):
+        tg_failed = False
+        if r["n"] > state["last"]:
+            if (TOKEN or send is not post) and not (send(msg, png) if png else send(msg)):
                 state["fails_n"], state["fails"] = r["n"], (fails or 0) + 1
-                break                  # try again next pass
-        state["last"] = r["n"]
-        sent.append(msg)
-        if png:
-            send_x(x_text(r, latest), state, png=png)
-        else:
-            send_x(x_text(r, latest), state)
+                tg_failed = True       # try again next pass; the X copy below goes all the same
+            else:
+                state["last"] = r["n"]
+                sent.append(msg)
+        if r["n"] > state["x_last"]:
+            state["x_last"] = r["n"]
+            if png:
+                send_x(x_text(r, latest), state, png=png)
+            else:
+                send_x(x_text(r, latest), state)
+        if tg_failed:
+            break
     return sent
 
 

@@ -124,7 +124,37 @@ w3.state.pop("today", None)
 w3.state["items"], w3.props = [], []
 w3.relay_json = lambda path: {"fields": STATS["fields"], "blocks": STATS["blocks"][:5]} if path == "/stats" else None
 asyncio.run(w3.maybe_today(at("2026-10-28", "19:05")))
-check(tg3.sent == [] and w3.state["today"]["slot"] == T, "a quiet day is marked done without a post")
+check(len(tg3.sent) == 1 and "quiet day, only empty blocks" in tg3.sent[0][0] and w3.state["today"]["slot"] == T,
+      "a quiet day still gets its Telegram post, saying it was quiet")
+check(not alerts.today_worth_x(quiet), "a quiet day with blocks is not for X")
+still = alerts.today_numbers({"fields": STATS["fields"], "blocks": []}, [], [], 2, T, T - 30 * 3600)
+check(alerts.today_worth_x(still) and "stood still" in alerts.today_text(still) and "30 hours ago" in alerts.today_text(still),
+      "a day without a block says so, with the last block's time, and goes to X")
+check("no block in 24 hours" in alerts.today_x(still), "the X copy of a day without a block")
+
+# X does not wait for a failing Telegram: the X copy goes alone, and the Telegram retry does not repeat it on X
+class Failing(Fake):
+    def send_text(self, text, buttons=None):
+        self.sent.append((text, buttons))
+        return False, None, "HTTP 401: Unauthorized"
+
+
+class FakeX(Fake):
+    name = "x"
+
+
+w4 = alerts.Watcher([tg4 := Failing(), x4 := FakeX()])
+w4.state.pop("today", None)
+w4.state.pop("x", None)
+w4.state["items"], w4.props = items, PROPS
+w4.relay_json = lambda path: STATS if path == "/stats" else None
+asyncio.run(w4.maybe_today(at("2026-10-28", "19:01")))
+check(len(tg4.sent) == 1 and len(x4.sent) == 1 and "Testnet today" in x4.sent[0][0], "Telegram fails: X goes alone")
+asyncio.run(w4.maybe_today(at("2026-10-28", "19:02")))
+check(len(tg4.sent) == 1 and len(x4.sent) == 1, "while Telegram pauses nothing repeats")
+tg4.send_text = lambda text, buttons=None: (tg4.sent.append((text, buttons)), (True, None, ""))[1]
+asyncio.run(w4.maybe_today(at("2026-10-28", "19:07")))
+check(len(tg4.sent) == 2 and len(x4.sent) == 1, "Telegram back: its post goes out, X not again")
 
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)
