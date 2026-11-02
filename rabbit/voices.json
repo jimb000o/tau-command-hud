@@ -2275,6 +2275,10 @@
  },
  {
   "who": "sam",
+  "text": "Your lamp. I read by it now. Half the island reads by it, and the Book has never had so many visitors at night."
+ },
+ {
+  "who": "sam",
   "text": "Still clean, as far as I can read. The last days are when most people slip."
  },
  {
@@ -2368,6 +2372,10 @@
  {
   "who": "tobias",
   "text": "It buys a ceremony. The law still needs the council’s yes, and the council cannot be bought with a ribbon. I tried. Hana sent the ribbon back with corrections."
+ },
+ {
+  "who": "hana",
+  "text": "The roof you paid for still holds. When it rains the children look up and say your name, which is more than most governors get."
  },
  {
   "who": "hana",
@@ -2600,6 +2608,10 @@
  {
   "who": "kiko",
   "text": "Whoever cares about fish and music. I tell everyone the same, so nobody has to guess."
+ },
+ {
+  "who": "tano",
+  "text": "Your stone sits in the circle. It does not vote. It listens, like you did. That is why it stays."
  },
  {
   "who": "tano",
