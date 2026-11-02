@@ -56,7 +56,7 @@ commit("README.md", "start", NOW - 200 * DAY)
 pin = commit("consensus/engine.py", "consensus work", NOW - 40 * DAY)
 run("tag", "v0.1", ts=NOW - 40 * DAY)
 commit("tests/unit/test_a.py", "add a test", NOW - 10 * DAY)
-commit("src/core/x.cpp", "core change", NOW - 2 * DAY)
+commit("src/core/x.cpp", "core change", NOW - 3600)   # today: in this week whatever the weekday
 with open(os.environ["DEVPULSE_PINS_FILE"], "w") as f:
     f.write(f"ARG TAU_TESTNET_REF={pin}\nARG TAU_LANG_REF=c3ea334cd1e6612930ea9f404933211858f0009f\n")
 

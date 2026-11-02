@@ -1199,6 +1199,10 @@
  },
  {
   "who": "sam",
+  "text": "The island’s numbers are out of reach just now. Your campaign goes on as before."
+ },
+ {
+  "who": "sam",
   "text": "Two laws that cannot both hold would leave the island not knowing what is allowed, so the Book will not take it. Repeal the old one first, or pick another law."
  },
  {
