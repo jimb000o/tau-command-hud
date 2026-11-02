@@ -704,7 +704,7 @@ STREET = [t("My ma read it twice. She says she still don't get the blockchain pa
 
 # Taumorrow chess rounds (chess.taumorrow.com, an independent community project: a chess engine written in Tau, not on the testnet
 # chain). The result is read from the public records (alerts.py chess_result) once they are out; until then the café says it is not in.
-CHESS_ROUNDS = [{"date": "2026-11-01", "opponent": "Claude Opus 5.5", "start": datetime(2026, 11, 1, 12, tzinfo=timezone.utc).timestamp(), "games": 10,
+CHESS_ROUNDS = [{"date": "2026-11-01", "opponent": "Claude Opus 5.5", "start": datetime(2026, 11, 1, 12, tzinfo=timezone.utc).timestamp(), "games": 20,
                  "last": t("Last time, against Claude Sonnet 5.5, the engine won nine of ten, every one by checkmate.",
                            "上一次对 Claude Sonnet 5.5，引擎十盘赢了九盘，盘盘都是将死。",
                            "前回、Claude Sonnet 5.5 との対戦では、エンジンが十局中九局を勝った。どれもチェックメイトだった。")}]
@@ -733,7 +733,7 @@ def chess_round(end: float, found: dict | None = None) -> dict | None:
         c["done"] = int(c.get("played") or 0) >= c["games"]
     return c
 
-CAFE_V = 4   # raise when the talk is written differently: the edition already out is rewritten once
+CAFE_V = 5   # raise when the talk is written differently: the edition already out is rewritten once
 
 
 def chess_talk(c: dict | None, end: float) -> list[dict] | None:

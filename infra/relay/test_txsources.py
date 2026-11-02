@@ -83,8 +83,8 @@ s.bots = {BOT.upper(): "tobias"}
 out = s.by_day([{"header": {"timestamp": day1 + 3600}, "tx_ids": ["r1", "r2", "r3"], "transactions": [tx(BOT, CO), tx(BOT, CO), tx(A, CO)]},
                 {"header": {"timestamp": day2 + 7200}, "tx_ids": ["r4", "r5", "r6"], "transactions": [tx(A, MAR), tx(B, HAN), tx(B, BOWL)]}])
 r1, r2 = out["rabbit"]["2026-10-28"], out["rabbit"]["2026-10-29"]
-check(r1["moves"] == 3 and r1["rivals"] == 2 and r1["by"] == {"tobias": 2} and r1["lines"] == 1 and r1["wallets"] == 1 and r1["new"] == 1 and r1["hours"][1] == 3,
-      "White Rabbit Key: the bot's moves are the rivals', a visitor's line to the council is theirs; the bot is no visitor wallet")
+check(r1["moves"] == 11 and r1["rivals"] == 10 and r1["by"] == {"tobias": 10} and r1["lines"] == 1 and r1["wallets"] == 1 and r1["new"] == 1 and r1["hours"][1] == 11,
+      "White Rabbit Key: the bot's moves are the rivals' (5 test AGRS = 5 games' moves in one transaction), a visitor's line to the council is theirs; the bot is no visitor wallet")
 check(r2["votes"] == 2 and r2["cands"] == {"marisol": 1, "hana": 1} and r2["wallets"] == 2 and r2["new"] == 1 and r2["agrs"] == 10,
       "ballots per candidate; a wallet that played before is not new; a meal for Agorzilla is not a move")
 check(out["totals"]["rabbit"] == {"7": 2, "30": 2, "all": 2}, "visitor wallets on the island over 7 / 30 days / all")
