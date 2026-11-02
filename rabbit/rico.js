@@ -297,6 +297,13 @@
     net4: "On this testnet every rule has to agree with every other rule. Rico tried that with his relatives once. It took three Christmases.",
     net5: "Reminder: the coins on this chain are for testing. If somebody sells you some, Rico has a lighthouse to sell you too.",
     net6: "A block just came in empty. Rico doesn't judge. Some mornings Rico comes in empty too.",
+    /* the mainland: somewhere over the sea, a ferry that is always coming soon (never a date) */
+    ml1: "Ferry news: the big ferry to the mainland is coming soon. Rico has been saying that since he got this job. The timetable just says: when it's ready.",
+    ml2: "A listener asks what's on the mainland. Rico has never been. People say the rules there work like ours, only for many more islands.",
+    ml3: "Old Sam says the mainland is real. He has seen its lights on clear nights. Lola says that's the lighthouse, reflecting in his glasses.",
+    ml4: "Packing tip for the mainland: bring your Book. Nobody over there will believe what you did here without it.",
+    ml5: "Kiko is building a canoe big enough to reach the mainland. He says it's done when it's done. The only honest timetable on this island.",
+    ml6: "Rico will not give you a date for the mainland ferry. Anybody who does is selling tickets.",
   };
   /* which lines can stand in for each other: Rico picks one he has not said lately (game.js remembers what he said) */
   const SETS = {
@@ -320,7 +327,7 @@
     bye: Array.from({ length: 8 }, (_, i) => "bye" + (i + 1)),
     solo: Array.from({ length: 8 }, (_, i) => "solo" + (i + 1)), postman: ["postman1", "postman2"], duet: ["duet1", "duet2"],
     fresh: Array.from({ length: 5 }, (_, i) => "fresh" + (i + 1)), record: ["record1", "record2"],
-    net: Array.from({ length: 6 }, (_, i) => "net" + (i + 1)),
+    net: Array.from({ length: 6 }, (_, i) => "net" + (i + 1)), mainland: Array.from({ length: 6 }, (_, i) => "ml" + (i + 1)),
   };
   /* callers who phone the studio, each in their own voice through the telephone: listeners (ready voices, make.py
      CALLERS) and the islanders themselves. A call is a little conversation: who, then what is said in turn, the
@@ -464,6 +471,17 @@
       "The far hill sent back one word.",
       "Laughter?",
       "Why. Goodbye, Rico."] },
+    /* the mainland ferry, which is always coming soon */
+    { who: "gus", say: ["Rico, Gus again. When does the ferry to the mainland leave?",
+      "When it's ready, Gus. Same answer as yesterday.",
+      "And tomorrow?",
+      "Tomorrow too. Consistency, Gus. It's our brand.",
+      "I'll pack slowly, then. Cheerio."] },
+    { who: "tobias", say: ["Rico! Tobias. I have already ordered a hat for the day the mainland ferry arrives.",
+      "Has anyone told you when it arrives, Tobias?",
+      "No. That is why I ordered a very patient hat.",
+      "Island, the harbour master is ready. The ferry, we'll see.",
+      "Splendid. Farewell!"] },
     /* new listeners, and calls that go wrong */
     { who: "gus", say: ["Hello? Is this the bakery?",
       "This is Radio Coco, sir. You're on the air.",
@@ -604,7 +622,7 @@
   /* lines that make sense away from the game (the radio in the site header, assets/radio.js): the hellos and Rico's
      testnet humour, jokes, the listeners' letters, the phone-in (the caller in their own voice) and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
   const tr = s => (window.TauI18n ? TauI18n.t(s) : s);
-  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend, ...SETS.net].map(k => [{ t: tr(L[k]), v: L[k] }])
+  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend, ...SETS.net, ...SETS.mainland].map(k => [{ t: tr(L[k]), v: L[k] }])
     .concat(CALLS.filter(c => !c.game && !c.when).map((c, i) => call(c, SETS.ring[i % SETS.ring.length], SETS.bye[i % SETS.bye.length])));
   /* a call as parts: the phone rings, the conversation, Rico's goodbye (keys from SETS.ring and SETS.bye) */
   function call(c, ring, bye) {

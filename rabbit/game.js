@@ -1057,7 +1057,7 @@
     const r = Math.random();
     if (r < 0.26) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
     /* the phone-in is the busiest part of the show: about one line in three, never two calls in a row */
-    const set = r < 0.42 ? "joke" : r < 0.74 ? (ROT.callLast ? "net" : "call") : r < 0.78 ? "corner" : r < 0.82 ? "segue" : r < 0.87 ? "legend" : r < 0.94 ? "net" : "general";
+    const set = r < 0.42 ? "joke" : r < 0.74 ? (ROT.callLast ? "net" : "call") : r < 0.78 ? "corner" : r < 0.82 ? "segue" : r < 0.87 ? "legend" : r < 0.91 ? "mainland" : r < 0.95 ? "net" : "general";
     ROT.callLast = false;
     if (set === "call" && Math.random() < 0.88) { ROT.callLast = true; return phoneIn(); }   // otherwise a letter from a listener, read out by Rico
     return one(set);

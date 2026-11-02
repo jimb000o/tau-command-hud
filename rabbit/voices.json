@@ -1130,6 +1130,30 @@
   "text": "A block just came in empty. Rico doesn't judge. Some mornings Rico comes in empty too."
  },
  {
+  "who": "rico",
+  "text": "Ferry news: the big ferry to the mainland is coming soon. Rico has been saying that since he got this job. The timetable just says: when it's ready."
+ },
+ {
+  "who": "rico",
+  "text": "A listener asks what's on the mainland. Rico has never been. People say the rules there work like ours, only for many more islands."
+ },
+ {
+  "who": "rico",
+  "text": "Old Sam says the mainland is real. He has seen its lights on clear nights. Lola says that's the lighthouse, reflecting in his glasses."
+ },
+ {
+  "who": "rico",
+  "text": "Packing tip for the mainland: bring your Book. Nobody over there will believe what you did here without it."
+ },
+ {
+  "who": "rico",
+  "text": "Kiko is building a canoe big enough to reach the mainland. He says it's done when it's done. The only honest timetable on this island."
+ },
+ {
+  "who": "rico",
+  "text": "Rico will not give you a date for the mainland ferry. Anybody who does is selling tickets."
+ },
+ {
   "who": "hana",
   "text": "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."
  },
@@ -1896,6 +1920,46 @@
  {
   "who": "tano",
   "text": "Why. Goodbye, Rico."
+ },
+ {
+  "who": "gus",
+  "text": "Rico, Gus again. When does the ferry to the mainland leave?"
+ },
+ {
+  "who": "rico",
+  "text": "When it's ready, Gus. Same answer as yesterday."
+ },
+ {
+  "who": "gus",
+  "text": "And tomorrow?"
+ },
+ {
+  "who": "rico",
+  "text": "Tomorrow too. Consistency, Gus. It's our brand."
+ },
+ {
+  "who": "gus",
+  "text": "I'll pack slowly, then. Cheerio."
+ },
+ {
+  "who": "tobias",
+  "text": "Rico! Tobias. I have already ordered a hat for the day the mainland ferry arrives."
+ },
+ {
+  "who": "rico",
+  "text": "Has anyone told you when it arrives, Tobias?"
+ },
+ {
+  "who": "tobias",
+  "text": "No. That is why I ordered a very patient hat."
+ },
+ {
+  "who": "rico",
+  "text": "Island, the harbour master is ready. The ferry, we'll see."
+ },
+ {
+  "who": "tobias",
+  "text": "Splendid. Farewell!"
  },
  {
   "who": "gus",
