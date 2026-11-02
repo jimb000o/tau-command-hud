@@ -174,17 +174,20 @@ async function play(n) {
         const cls = await page.evaluate(() => { const c = document.querySelector(".cv-card"); return c ? c.className : ""; });
         if (/end/.test(cls)) break;
         await measure(page, out, /paper/.test(cls) ? "morning paper" : /locked/.test(cls) ? "vote" : (await card.getAttribute("data-place", { timeout: 1000 }).catch(() => "")) || "plate");
-        const acts = card.locator(".cv-acts button.cv-b:not([disabled])");
-        const k = await acts.count();
+        /* a long plate has pages: the moves sit behind the green tab, a long list behind ‹ › */
+        const doTab = card.locator(".cv-tabs button.do[aria-selected=false]");
+        if (await doTab.count() && R() < 0.85) { await tap(page, out, doTab, "tab: what you can do"); await run(400); }
+        const acts = card.locator(".cv-acts button.cv-b:not([disabled]):visible");
+        const k = (await acts.allInnerTexts()).length;
         const wander = style === "wanderer" && R() < 0.25 && !/paper|locked/.test(cls);
         const idle = same >= 2 && await card.locator(".cv-x").isVisible().catch(() => false);   // tapped, and nothing changed: a visitor would leave
         if (k && !wander && !idle) {
-          const labels = await acts.allInnerTexts();
-          let i = Math.floor(R() * k);
+          const labels = await acts.allInnerTexts(); if (!labels.length) { await run(600); continue; }
+          let i = Math.floor(R() * labels.length);
           /* the vote: the lawmaker votes yes on what helps, everyone else at random */
           const pref = labels.findIndex(t => /Continue|继续|続け|Start the day|To the council|开始|議会|Yes/.test(t));
           if (/paper|locked/.test(cls) && pref >= 0 && R() < 0.8) i = pref;
-          if (/Read how|Licence|Follow the footprints|许可|ライセンス/.test(labels[i])) i = (i + 1) % k;   // would open a new tab
+          if (/Read how|Licence|Follow the footprints|许可|ライセンス/.test(labels[i])) i = (i + 1) % labels.length;   // would open a new tab
           await tap(page, out, acts.nth(i), labels[i].split("\n")[0]);
         } else if (await card.locator(".cv-x").isVisible().catch(() => false)) {
           await tap(page, out, card.locator(".cv-x"), "close");
@@ -246,6 +249,7 @@ async function tap(page, out, loc, what) {
 }
 /* the open plate on a phone: smallest text, and whether it needs scrolling to reach its buttons */
 async function measure(page, out, where) {
+  await page.waitForTimeout(120);   // a plate fits itself to the screen on the next frame after its content changes
   const m = await page.evaluate(() => {
     const c = document.querySelector(".cv-card"); if (!c) return null;
     let min = 99, minT = "";

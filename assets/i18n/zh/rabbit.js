@@ -572,6 +572,11 @@ TauI18n.add({ strings: {
   "Inspired by \"Caribbean Disaster\" (1995). An independent homage, not affiliated with or endorsed by its creators. All art, characters, story and music are original.": "灵感来自《Caribbean Disaster》（1995）。这是一部独立的致敬作品，与原作者无关，也未获其认可。所有美术、角色、故事和音乐均为原创。",
   /* talking: coming back, asking more (rabbit/talk.js) */
   "Ask (free, no move)": "随便问问（免费，不花行动）",
+  "Talk": "对话",
+  "More": "更多",
+  "What you can do": "可以做什么",
+  "Previous page": "上一页",
+  "Next page": "下一页",
   "The last day. Suddenly everyone is very polite to me. It happens every election, like the rains.": "最后一天了。突然每个人都对我特别客气。每次选举都这样，像雨季一样准时。",
   "You broke a pact. I am not angry. The Book is not angry either. It simply remembers, which is worse.": "你背弃了一个盟约。我不生气。账本也不生气。它只是记得，这更糟。",
   "The deep harbour is law now. Laws arrive quickly. What they do to the reef comes on the slow boat.": "深水港现在是法律了。法律来得很快。它对珊瑚礁的影响，坐的是慢船。",

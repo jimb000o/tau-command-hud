@@ -572,6 +572,11 @@ TauI18n.add({ strings: {
   "Inspired by \"Caribbean Disaster\" (1995). An independent homage, not affiliated with or endorsed by its creators. All art, characters, story and music are original.": "「Caribbean Disaster」（1995）に着想を得ています。独立したオマージュ作品で、原作の制作者とは関係がなく、承認も受けていません。アート、キャラクター、物語、音楽はすべてオリジナルです。",
   /* talking: coming back, asking more (rabbit/talk.js) */
   "Ask (free, no move)": "聞いてみる（無料、行動は使わない）",
+  "Talk": "会話",
+  "More": "もっと",
+  "What you can do": "できること",
+  "Previous page": "前のページ",
+  "Next page": "次のページ",
   "The last day. Suddenly everyone is very polite to me. It happens every election, like the rains.": "最後の日ですね。急にみんな私にとても丁寧になる。選挙のたびにそう、雨季のように決まって。",
   "You broke a pact. I am not angry. The Book is not angry either. It simply remembers, which is worse.": "あなたは協定を破った。私は怒っていない。帳簿も怒っていない。ただ覚えているだけ。そのほうがよほどこたえる。",
   "The deep harbour is law now. Laws arrive quickly. What they do to the reef comes on the slow boat.": "深い港はもう法律です。法律はすぐにやって来る。それがサンゴ礁に何をするかは、遅い船でやって来る。",
