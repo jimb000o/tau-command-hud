@@ -21,6 +21,8 @@ TauI18n.add({ strings: {
   "block #{n} · {x} ago": "ブロック #{n} · {x}前",
   "Block number, transaction hash or address: opens the Explorer with the result. Ctrl+K or ⌘K focuses this field.": "ブロック番号、トランザクションハッシュ、またはアドレス：結果をエクスプローラーで開きます。Ctrl+K または ⌘K でこの欄に移動します。",
   "Block pace, transactions, validators and rule changes over the whole chain": "チェーン全体のブロックペース、トランザクション、バリデーター、ルール変更",
+  "Testnet load": "テストネットの負荷",
+  "How hard the testnet is working right now: sealed, waiting, time to a block": "いまテストネットがどれだけ働いているか：封入済み、待機中、ブロックまでの時間",
   "Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Opens the full notice.": "IDNI や Tau チームではなく、Tau コミュニティのメンバーが作っています。正確さは保証しません。クリックで注意事項の全文を開きます。",
   "Chain state": "チェーンの状態",
   "Checking the community node…": "コミュニティノードを確認中…",

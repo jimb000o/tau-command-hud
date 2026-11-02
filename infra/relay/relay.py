@@ -44,6 +44,7 @@ from simwallet import SimWallet
 from slotlease import SlotLease
 from island import Island
 from isle import Isle
+from load import Load
 from txsources import TxSources
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
@@ -357,6 +358,8 @@ class Relay:
         self.lease = SlotLease(places=RULE_PLACES)   # fair turns on the personal-rule places (slotlease.py)
         self.island = Island()   # White Rabbit Key: the rival candidates' moves as test transactions (island.py)
         self.isle = Isle()       # White Rabbit Key: every campaign played today, added up and pushed to every page (isle.py)
+        self.load = Load()       # how hard the testnet works, minute by minute: GET /load (load.py)
+        self.island.on_tx = lambda: self.load.sent("bot")
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
@@ -1011,12 +1014,14 @@ class Relay:
             if h not in current:
                 self.left_mempool[h] = {**info, "left": round(now)}
         self.mempool_seen = current
+        self.load.pool(len(current), now)
         if not self.left_mempool:
             return
         sealed = {i for b in self.blocks.values() for i in (b.get("tx_ids") or [])}
         changed = False
         for h, info in list(self.left_mempool.items()):
             if h in sealed:
+                self.load.sealed_after(info["left"] - info.get("seen", info["left"]), now)
                 del self.left_mempool[h]
             elif now - info["left"] >= DROP_GRACE_SECONDS:
                 del self.left_mempool[h]
@@ -1245,12 +1250,18 @@ class Relay:
             self.tx_per_ip.clear()
         mine = self.tx_per_ip.setdefault(ip, TokenBucket(TX_IP_BURST, TX_IP_REFILL))
         if not mine.take():
+            if cmd == "sendtx":
+                self.load.sent("refused")
             return envelope_error(cmd, "Too many transactions from here; wait a minute.", "RATE_LIMITED")
         if not self.tx_bucket.take():
+            if cmd == "sendtx":
+                self.load.sent("refused")
             return envelope_error(cmd, "Relay is busy; retry shortly.", "BUSY")
         msg = await self.upstream.request(f"{cmd} {tx}")
         if msg is None:
             return envelope_error(cmd, "Node is not reachable right now.", "UPSTREAM_DOWN")
+        if cmd == "sendtx":
+            self.load.sent("sent" if msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False else "refused")
         if cmd == "sendtx" and msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False:
             self.sources.note((msg.get("data") or {}).get("tx_hash"), site, via)   # for "where the transactions come from"
             self.island.saw_tx(ip)   # White Rabbit Key may pay this address for the move
@@ -1895,6 +1906,13 @@ class Relay:
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())
+        if path == "/load":
+            ready = "getblocks" in self.updated
+            body = json.dumps(self.load.snapshot([(self._ts(b), len(b.get("transactions") or [])) for b in self.ordered_blocks()],
+                                                 len(self.mempool_seen)), separators=(",", ":")).encode() if ready else b'{"error":"relay is still syncing with the node"}'
+            headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "public, max-age=5")])
+            code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
+            return Response(code.value, code.phrase, headers, body)
         if path == "/stats":
             ready = "getblocks" in self.updated
             body = self.stats_json().encode() if ready else b'{"error":"relay is still syncing with the node"}'

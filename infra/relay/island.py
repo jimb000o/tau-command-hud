@@ -13,11 +13,13 @@ ISLAND_KEYS_PATH (inside the relay's data volume, mode 0600) and never leave the
 the ballot boxes the visitors vote into (rabbit/game.js ADDR), so the bot never changes the visitors'
 count. A wallet whose balance on the chain is 0 pays from the testnet's faucet, so they need no funding.
 
-Many games at once cost the testnet no more than one: moves of the same kind by the same candidate at the
-same place that wait in the queue together are sent as ONE transaction whose amount carries how many moves it
-stands for (n moves pay n test AGRS, n radio lines 25 x n; at most BATCH_MAX moves in one transaction, the rest
-follow in the next). So the chain's traffic stays about flat whether one person plays or thousands, and the
-count of moves can still be read from the blocks (txsources.py divides the amount back).
+Every rival move is its own transaction while the bot keeps up, so the chain's traffic grows with the number of
+people playing (the game doubles as a small, honest load on the testnet). When more moves come in than one every
+SPACING seconds (more than 24 a minute), or once half of the day's budget is used, moves of the same kind by the
+same candidate at the same place that wait in the queue together are sent as ONE transaction whose amount carries
+how many moves it stands for (n moves pay n test AGRS, n radio lines 25 x n; at most BATCH_MAX moves in one
+transaction, the rest follow in the next). So no move is lost in a rush, the chain never sees more than 24 bot
+transactions a minute, and the count of moves can still be read from the blocks (txsources.py divides the amount back).
 
 Money also flows back to the visitor, for real: the Coconut Works pays a shift's wage and the two embassies pay
 the money they offer, from purses (PURSES) whose keys are kept here like the campaign wallets. The page asks
@@ -81,7 +83,8 @@ PAY_AFTER_MOVE = 600      # seconds: a payout needs a transaction from the same 
 PAY_SHARE = 0.6           # at most this share of the day's transactions may be payouts
 WALLET_RE = re.compile(r"^[0-9a-f]{96}$")
 BATCH_MAX = 200          # moves one transaction may stand for
-SPACING = 2.5            # seconds between two transactions
+SPACING = 2.5            # seconds between two transactions: at most 24 a minute
+BACKLOG = float(os.environ.get("ISLAND_BACKLOG_SECONDS", "60"))   # one move per transaction while the queue clears this fast
 IP_BURST, IP_REFILL = 12, 1 / 5   # per address: 12 at once, then one every 5 s
 FEE_RE = re.compile(r"o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)")
 
@@ -117,7 +120,7 @@ class Bucket:
 class Island:
     def __init__(self, path: str | None = None, daily: int | None = None, clock=time.time, enabled: bool | None = None):
         self.path = path or os.environ.get("ISLAND_KEYS_PATH", "/data/island.keys")
-        self.daily = int(daily if daily is not None else os.environ.get("ISLAND_DAILY", "1500"))
+        self.daily = int(daily if daily is not None else os.environ.get("ISLAND_DAILY", "10000"))
         self.enabled = (os.environ.get("ISLAND_ENABLED", "1") != "0") if enabled is None else enabled
         self.clock = clock
         self.sk: dict[str, int] = {}
@@ -135,6 +138,7 @@ class Island:
         self.paid_ip: dict[str, int] = {}   # address -> payouts asked for today
         self.seen: dict[str, float] = {}    # address -> when it last sent a transaction through the relay
         self.today_pay = 0              # payouts sent today
+        self.on_tx = None               # called for every transaction the node took (relay.py: the testnet load page)
         if self.enabled:
             try:
                 self.load()
@@ -224,6 +228,7 @@ class Island:
         if bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False:
             self.next_seq["purse-" + purse] = seq + 1
             self.today += 1
+            self.on_tx and self.on_tx()
             self.today_pay += 1
             self.paid[wallet] = self.paid.get(wallet, 0) + n
             self.recent.appendleft({"by": purse, "kind": "pay", "to": wallet, "amount": PURSES[purse] * n, "hash": (res.get("data") or {}).get("tx_hash"), "at": int(self.clock())})
@@ -294,14 +299,24 @@ class Island:
                 continue
             (who, kind, at), n = next(iter(self.queue.items()))
             del self.queue[(who, kind, at)]
-            if n > BATCH_MAX:   # the rest go in the next transaction
-                self.queue[(who, kind, at)] = n - BATCH_MAX
-                n = BATCH_MAX
+            take = self.batch(n)
+            if n > take:   # the rest wait at the back of the queue for the next transaction
+                self.queue[(who, kind, at)] = n - take
+                n = take
             try:
                 await self.send(who, kind, ask, gov, at, n)
             except Exception as exc:   # one bad answer must not stop the bot
                 log.warning("island move %s %s failed: %r", who, kind, exc)
             await asyncio.sleep(self.pace())
+
+    def batch(self, n: int) -> int:
+        """How many of n waiting moves the next transaction carries: one, so every move is its own transaction on the
+        chain, while the bot keeps up (all waiting moves go out within BACKLOG seconds, and less than half the day's
+        budget is used); otherwise as many as wait, up to BATCH_MAX, so a rush or a thin budget never drops a move."""
+        waiting = sum(self.queue.values()) + n
+        if self.today < self.daily / 2 and waiting * SPACING <= BACKLOG:
+            return 1
+        return min(n, BATCH_MAX)
 
     def pace(self) -> float:
         """Seconds to the next transaction: SPACING while the day's budget is plentiful; once half of it is used,
@@ -326,6 +341,7 @@ class Island:
         if ok:
             self.next_seq[who] = seq + 1
             self.today += 1
+            self.on_tx and self.on_tx()
             self.recent.appendleft({"by": who, "kind": kind, "place": at, "moves": n, "hash": (res.get("data") or {}).get("tx_hash"), "at": int(self.clock())})
         else:
             self.next_seq.pop(who, None)   # read the sequence from the node again next time

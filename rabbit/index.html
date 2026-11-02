@@ -57,6 +57,10 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 .chip.me .face { border-radius: 50%; background: rgba(255,255,255,.08); }
 #cvMoves { display: inline-flex; gap: 5px; }
 #cvMoves i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--hair); }
+.chip.bell { cursor: pointer; }
+.chip.bell:disabled { cursor: default; color: var(--dim); }
+.chip.bell.go { color: #09090a; background: var(--ok); border-color: var(--ok); box-shadow: 0 0 14px rgba(57,255,138,.55); animation: bell 1s ease-in-out infinite; }
+@keyframes bell { 50% { box-shadow: 0 0 2px rgba(57,255,138,.2); } }
 .chip.isle .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--hair); }
 .chip.isle .dot.on { background: var(--ok); box-shadow: 0 0 8px rgba(57,255,138,.6); }
 .cv-isle { display: grid; gap: 8px; }
@@ -397,6 +401,7 @@ html.rk-full .bar .home { display: inline-flex; }
       <span class="sp"></span>
       <button class="chip" id="cvBookBtn" type="button">The Book</button>
       <button class="chip opt isle" id="cvIsle" type="button" hidden>The island today</button>
+      <button class="chip bell" id="cvBell" type="button" hidden title="At eight o’clock German time Tobias rings the pier bell. Ring back within two minutes: a real transaction, and one more move today.">🔔 The evening bell at eight</button>
       <button class="chip opt" id="cvHelp" type="button">How it works</button>
       <button class="chip" id="cvSound" type="button" aria-pressed="false">♪ Tap for sound</button>
       <button class="chip" id="cvGo" type="button" aria-expanded="false" aria-controls="cvPlaces"><span aria-hidden="true">☰</span><span class="lb">Places</span></button>

@@ -17,6 +17,7 @@
     state:      { t: "Chain state", d: "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules", i: "≡", h: "#chain-state", act: "state" },
     explorer:   { t: "Explorer", d: "Find any block, transaction or address", i: "⌕", h: "explorer/", view: true },
     stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/", view: true },
+    load:       { t: "Testnet load", d: "How hard the testnet is working right now: sealed, waiting, time to a block", i: "∿", h: "load/" },
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
     account:    { t: "Accounts", d: "Balance, own rules, offers and refusals of any address", i: "@", h: "account/", view: true },
     nodes:      { t: "Nodes", d: "Community nodes that follow the chain, with badges for uptime and sync", i: "◎", h: "nodes/" },
@@ -54,7 +55,7 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     /* grouped by what a visitor came to do (29 Oct); inside each menu small labelled groups (30 Oct), so no menu is one long list */
-    { k: "explore", t: "Explore", groups: [["The chain now", ["state", "explorer", "proposals", "account", "rules", "stats", "history"]], ["Road to mainnet", ["nodes", "status", "findings", "roadmap", "devpulse"]]], tab: "≋" },
+    { k: "explore", t: "Explore", groups: [["The chain now", ["state", "explorer", "proposals", "account", "rules", "stats", "load", "history"]], ["Road to mainnet", ["nodes", "status", "findings", "roadmap", "devpulse"]]], tab: "≋" },
     { k: "learn", t: "Learn", groups: [["First steps", ["start", "tour", "story"]], ["Read and watch", ["gazette", "chronicle", "tau"]]], tab: "▸" },
     { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "seat", "whatif"]], ["On the real testnet", ["wallet", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "agorzilla", "deja"]]], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
@@ -229,7 +230,7 @@
     catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
     const vers = siteVersions(list); SITE_VER = vers.filter(Boolean).pop() || SITE_VER;
     const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
-    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Wallet: "wallet/", Findings: "findings/", Roadmap: "roadmap/", Status: "status/", Stats: "stats/", "Build pulse": "devpulse/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "playground/#tour", Donations: "donate/" };
+    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Wallet: "wallet/", Findings: "findings/", Roadmap: "roadmap/", Status: "status/", Stats: "stats/", "Testnet load": "load/", "Build pulse": "devpulse/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "playground/#tour", Donations: "donate/" };
     let day = null, html = "";
     for (const e of order) {
       const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
