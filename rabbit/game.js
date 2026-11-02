@@ -133,6 +133,10 @@
     grotto: "9266b7dbca59d06c60517e815e32169aaba70056101d394c6ab851a99925f18e23da324cf0c73ab5fe27c951c8bb024e"
   };
   const TILL_AT = { talk: "market", lie: "radio", fact: "book" };   // a rival's move, when it says nothing more
+  /* Déjà, the café cat (agorzilla.com/cat/): her bowl has no key behind it; she eats on a day only when three wallets
+     pay it at least 1 test AGRS, and her day runs 18:00 to 18:00 UTC (agorilla assets/cat.js). Agreeing from here is one
+     real transaction from the player's test wallet: no move, no coins. The relay counts her day (GET /deja). */
+  const DEJA = { bowl: "8dbae75034a8cdc776e462f004dd686c8d0a32dbedd400483a026a01db4ce1f78b9d6450d2c832d8116d47a315fd8973", born: 1793383200, need: 3 };
   const tillOf = at => TILL[at] || ADDR.council;
 
   const looks = id => CANDS[id] || FOLK[id] || { skin: "#c68642", hair: "#222", style: "short", shirt: "#ddd" };
@@ -1241,6 +1245,7 @@
     ["fact", "dedicate", "song", "warm", "sam"].forEach(k => add(k));
     L.push({ k: "tips", parts: [Q("{x}, you have {n} coins.", { x: nm(G.me), n: G.coins[G.me] }), V("tips")] });
     isleLines().forEach(l => L.push(l));
+    dejaLines().forEach(l => L.push(l));
     return L;
   }
   /* Rico reads the real testnet (or the simulation, in simulation mode) every minute and a half: the newest blocks and
@@ -1248,7 +1253,8 @@
      ghosts (live only: sealed transactions the node still lists as waiting, IDNI #81, counted by the relay), and in
      the simulation the refusals, a consensus switch voted on or in force, and the restart at midnight UTC. */
   const RADAR = { snap: null, busy: false, seen: 0, mode: null, rules: null, ghosts: 0, ghostAt: 0, flagged: {}, news: [] };
-  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused", "duet", "record", "solo", "postman", "fresh"];
+  const DJ_S = { s: null, at: 0 };   // Déjà's day as the relay last told it (GET /deja)
+  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "deja", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused", "duet", "record", "solo", "postman", "fresh"];
   const KIND = { rule_deploy: "rule", approval_request: "cosign", transfer_vote: "cosvote", retractable_transfer: "lock", retract_transfer: "back", rule_offer: "offer", rule_offer_accept: "offerYes", consensus_rule_vote: "lawVote" };
   const txKind = tx => { const t = tx.tx_type || "user_tx"; return t === "user_tx" && tx.operations && tx.operations["0"] ? "rule_deploy" : t; };
   /* the ghosts by the visitor's calendar: fitting in Halloween week, a nuisance in the first week of November, ordinary news otherwise */
@@ -1301,6 +1307,7 @@
     for (const b of nb) {
       const n = b.header.block_number, txs = b.transactions || [];
       if (txs.length >= 10) heard("burst", n);
+      if (txs.some(tx => (((tx.operations || {})["1"]) || []).some(op => op && String(op[1]).toLowerCase() === DEJA.bowl && Number(op[2]) >= 1))) heard("deja", n);
       for (const tx of txs) {
         const k = txKind(tx), paid = k === "user_tx" ? ((tx.operations || {})["1"] || []).reduce((a, x) => a + (Number(x && x[2]) || 0), 0) : Number(tx.amount) || 0;
         if (paid >= 100000) heard("whale", n);
@@ -1408,6 +1415,7 @@
     return one(set);
   }
   readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
+  dejaFetch(); setInterval(() => { if (!document.hidden) dejaFetch(); }, 600000);
   setInterval(() => {
     if (!G || G.over || G.counting || document.hidden || performance.now() < DJ.next) return;
     /* the show waits for the sound to come on (the first tap), so the opener is heard, not just read; after a while it goes on in text */
@@ -1946,7 +1954,50 @@
 
   /* ---------- the cat and the legend ---------- */
   /* Déjà cannot be fed by one person: she eats only on days when at least three wallets agree (agorzilla.com/cat/) */
-  function deja() { SND.sfx("meow"); toast(T("Déjà, the café cat, looks at you as if she has seen you before. Nobody can feed her alone: she eats only on days when at least three wallets agree.")); }
+  const dejaDay = () => Math.floor((Date.now() / 1000 - DEJA.born) / 86400);
+  const fedDeja = () => !!G && G.deja === dejaDay();
+  function dejaFetch(done) {
+    if (window.TauSim && TauSim.on) return done && done(null);
+    if (DJ_S.s && Date.now() - DJ_S.at < 60000) return done && done(DJ_S.s);
+    fetch("https://node.tauhud.com/deja", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => { if (j && typeof j.agreed === "number") { DJ_S.s = j; DJ_S.at = Date.now(); } done && done(DJ_S.s); }, () => done && done(DJ_S.s));
+  }
+  /* her count as a line of the card: what the relay saw today, or a pointer to her page */
+  function dejaStatus(s) {
+    if (!s) return T("Her count for today is on her page.");
+    const n = s.agreed + (s.partial && !s.fed ? "+" : "");
+    const left = Math.max(0, s.closes_at - Date.now() / 1000);
+    return (s.fed ? Fd("She has eaten today: {n} wallets agreed.", { n }) : s.agreed ? Fd("Today: {n} of 3 wallets agreed.", { n }) : T("Nobody has agreed yet today."))
+      + " " + Fd("Her day closes {x}, 19:00 German time.", { x: spanText(left) });
+  }
+  function deja() {
+    SND.sfx("meow");
+    openCard(null, box => {
+      const status = el("p", { class: "cv-note", text: dejaStatus(DJ_S.s) });
+      scene(box, "marisol", T("Déjà, the café cat"), T("Nobody owns her, and nobody feeds her alone: she eats on a day only when three wallets agree, one test AGRS each. Say yes and you are one of the three. The other two? Whoever passes through."), [
+        status,
+        btn(T("Agree to feed her · 1 test AGRS"), agreeDeja, { off: fedDeja() || !G.onchain, sub: fedDeja() ? T("You agreed today") : G.onchain ? T("once a day, no move, no coins: one real transaction from your wallet") : T("needs the testnet") }),
+        btn(T("Her page: agorzilla.com/cat/"), () => window.open("https://agorzilla.com/cat/", "_blank", "noopener")),
+        btn(T("Back to the island"), () => closeCard(), { go: true }),
+      ]);
+      dejaFetch(s => { status.textContent = dejaStatus(s); });
+    });
+  }
+  function agreeDeja() {
+    if (fedDeja() || !G.onchain) return;
+    G.deja = dejaDay();
+    const b = { day: G.day, hour: Math.min(2, G.move), who: G.me, text: T("agreed to feed Déjà, the café cat"), kind: "gift", at: "market", pay: 1 };
+    G.book.push(b); save();
+    mySend(DEJA.bowl, T("agreed to feed Déjà"), h => { if (h) { b.tx = h; save(); DJ_S.at = 0; } }, 1, null);
+    SND.sfx("meow"); toast(T("You agreed. Déjà looked at you as if she had expected it."));
+    if (UI.card) deja();
+  }
+  /* Rico's line about her (shown, not spoken: the count changes all day) */
+  function dejaLines() {
+    const s = DJ_S.s, L = []; if (!s || Date.now() - DJ_S.at > 1800000) return L;
+    if (s.fed) L.push({ k: "deja:fed", parts: [Q("Déjà has eaten today: {n} wallets agreed. Marisol says she acted surprised.", { n: s.agreed })] });
+    else L.push({ k: "deja:" + s.agreed, parts: [Q(s.agreed ? "Déjà, the café cat: {n} of three wallets agreed today. One test AGRS says yes; find her." : "Nobody has agreed to feed Déjà yet today. Three wallets, one test AGRS each; find her, she is around.", { n: s.agreed })] });
+    return L;
+  }
   function legend() {
     SND.sfx("tap");
     openCard("canoe", box => scene(box, "kiko", T("A shape in the jungle"), T("You saw him too? The old ones call him Agorzilla. He lives deep in the jungle and grows only in the ways the island votes for. Nobody has a clear photo, everybody has a theory, and the bananas keep disappearing."), [

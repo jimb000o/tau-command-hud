@@ -104,5 +104,26 @@ for i in range(txsources.SENT_MAX + 5):
     s.sent[f"x{i}"] = ""
 s.note("last")
 check(len(s.sent) == txsources.SENT_MAX and "last" in s.sent and "h2" not in s.sent, "the oldest hashes go first")
+# Déjà's day (GET /deja): distinct wallets that paid her bowl at least 1 since 18:00 UTC, three make an agreement
+D = txsources.DEJA
+
+
+def blk(ts, *txs):
+    return {"header": {"timestamp": ts, "block_number": ts}, "transactions": list(txs)}
+
+
+def feed(sender, n="1"):
+    return {"sender_pubkey": sender, "operations": {"1": [[sender, D, n]]}}
+
+
+start = txsources.DEJA_BORN + 3 * 86400
+blocks = [blk(start - 10, feed(A)), blk(start + 100, feed(A)), blk(start + 200, feed(A), feed(B, "0")), blk(start + 300, tx(C, BOWL))]
+d = txsources.deja(blocks, start + 400)
+check(d["day"] == 3 and d["agreed"] == 1 and not d["fed"] and d["needed"] == 3 and d["closes_at"] == start + 86400 and not d["partial"],
+      "one wallet agreed today: yesterday's meal, a 0 payment and the Agorzilla bowl do not count")
+d = txsources.deja(blocks + [blk(start + 500, feed(B), feed(C, "2"))], start + 600)
+check(d["agreed"] == 3 and d["fed"], "the third wallet makes it an agreement")
+check(txsources.deja([blk(start + 100, feed(A))], start + 400)["partial"] and txsources.deja([], start)["partial"], "no block from the start of her day: the count may be short")
+
 print("\n" + ("all ok" if not failed else f"{failed} failed"))
 sys.exit(1 if failed else 0)
