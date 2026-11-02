@@ -607,12 +607,15 @@
     return [x - w / 2, y - h, w, h];
   }
   /* the leaves in front: one painted cluster, at the left edge and mirrored at the right, as tall as the screen and wide
-     enough to cover the side beside the island on a wide screen; they sway in the breeze and lean from the pointer */
+     enough to cover the side beside the island on a wide screen; they sway in the breeze and lean from the pointer.
+     On a screen held upright, as tall as the screen would make them wider than the screen itself and hide the island:
+     there they are a small tuft in each bottom corner, a hint of jungle in front, no more */
   function fronds(g, t, a) {
-    const im = ART.img.fronds, W = S.c.width, H = S.c.height;
+    const im = ART.img.fronds, W = S.c.width, H = S.c.height, r = im.naturalHeight / im.naturalWidth;
     const e = ART.wide || 0, margin = Math.max(0, toScreen(-e, 0)[0] * S.K);
-    let w = Math.max(margin + W * 0.07, W * 0.13), h = w * im.naturalHeight / im.naturalWidth;
-    if (h < H * 1.04) { h = H * 1.04; w = h * im.naturalWidth / im.naturalHeight; }
+    let w = Math.max(margin + W * 0.07, W * 0.13), h = w * r;
+    if (H > W) { w = Math.min(W * 0.36, H * 0.24 / r); h = w * r; }
+    else if (h < H * 1.04) { h = H * 1.04; w = h / r; }
     g.save(); g.globalAlpha = a; g.imageSmoothingQuality = "high";
     [[1, 0], [-1, W]].forEach(([d, x0], i) => {
       const sw = (S.still ? 0 : Math.sin(t * 0.0006 + i * 2.1) * 0.012) - d * (S.peek || 0) * 0.01;
