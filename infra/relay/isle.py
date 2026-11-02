@@ -55,10 +55,11 @@ LAWS = {   # rabbit/game.js LAWS: what a law does for each topic, and which laws
     "tax": ({"roads": 2, "visitors": -1}, ()),
 }
 EMB = {"north": "harbour", "south": "road"}   # what each embassy pays for
-KINDS = ("law", "down", "refused", "talk", "lie", "fact", "deal", "pact", "broke")
+KINDS = ("law", "down", "refused", "talk", "lie", "fact", "deal", "pact", "broke", "gift")
+BUILDS = ("roof", "lamp", "stone")   # what a visitor's savings can buy for the island; the island keeps the count
 PLACES = ("hall", "market", "radio", "north", "south", "bar", "book", "pier", "school", "dive", "works", "camp", "ship",
           "ama", "canoe", "stone", "drums", "circle", "grotto")
-WHAT = set(LAWS) | set(TOPICS) | set(CANDS) | set(EMB) | {"-"}
+WHAT = set(LAWS) | set(TOPICS) | set(CANDS) | set(EMB) | set(BUILDS) | {"-"}
 GAME = re.compile(r"^[a-z0-9]{6,16}$")
 
 PUSH = 10                 # seconds between two pushes, at most
@@ -112,6 +113,7 @@ class Isle:
         self.day = day
         self.players = blank()
         self.islanders = {"moves": 0, "laws": {}, "kinds": {}, "inforce": []}
+        self.built: dict[str, int] = {}   # what the players bought for the island, all time, never reset
         self.recent: deque = deque(maxlen=RECENT)
         self.games: dict[str, list] = {}    # campaign -> [as, ended]
         self.ips: dict[str, list] = {}      # address -> [bucket, campaigns, moves]
@@ -131,7 +133,10 @@ class Isle:
                 s = json.load(f)
         except (OSError, ValueError):
             return
-        if not isinstance(s, dict) or s.get("day") != self.day:
+        if not isinstance(s, dict):
+            return
+        self.built = {k: int(v) for k, v in s.get("built", {}).items() if k in BUILDS}
+        if s.get("day") != self.day:
             return
         self.players.update({k: s["players"][k] for k in blank() if k in s.get("players", {})})
         for k in ("moves", "laws", "kinds", "inforce"):
@@ -146,7 +151,7 @@ class Isle:
         try:
             tmp = self.path + ".tmp"
             with open(tmp, "w") as f:
-                json.dump({"day": self.day, "players": self.players, "islanders": self.islanders, "recent": list(self.recent)}, f)
+                json.dump({"day": self.day, "players": self.players, "islanders": self.islanders, "recent": list(self.recent), "built": self.built}, f)
             os.replace(tmp, self.path)
         except OSError as exc:
             log.warning("cannot write %s: %r; the island's day lives in memory only", self.path, exc)
@@ -197,6 +202,9 @@ class Isle:
         p["kinds"][kind] = p["kinds"].get(kind, 0) + 1
         if kind == "law" and what in LAWS:
             p["laws"][what] = p["laws"].get(what, 0) + 1
+        if kind == "gift" and what in BUILDS:
+            self.built[what] = self.built.get(what, 0) + 1
+            self.dirty = True
         self.times.append(now)
         self.changed({"t": int(now), "k": kind, "c": who, "x": what, "at": place, "h": 0})
         return True, {"counted": True}
@@ -280,7 +288,7 @@ class Isle:
         self.roll(now)
         self.busy(now)
         isl = {k: v for k, v in self.islanders.items() if k != "inforce"}
-        return {"day": self.day, "v": self.v, "players": self.players, "islanders": isl, "recent": list(self.recent),
+        return {"day": self.day, "v": self.v, "players": self.players, "islanders": isl, "recent": list(self.recent), "built": self.built,
                 "lastHour": sum(1 for t in self.times if t >= now - 3600), "here": len(self.subs), "push": PUSH}
 
     def route(self, path: str) -> dict | None:

@@ -115,5 +115,13 @@ check(size < 3000, f"the pushed summary stays small at 5,000 players ({size} byt
 check(took < 5, f"counting 80,000 messages takes {took:.2f} s")
 check(S.house() is None, "with thousands playing, the islanders stay out of the way")
 
+B = isle.Isle(path=os.path.join(tempfile.mkdtemp(), "isle.json"), clock=lambda: T[0]) if "tempfile" in dir() else None
+if B is not None:
+    B.move("1.1.1.1", "gamebuild", "hana", "gift", "roof", "school"); B.move("1.1.1.1", "gamebuild", "hana", "gift", "roof", "school"); B.move("1.1.1.1", "gamebuild", "hana", "gift", "lamp", "book")
+    check(B.snapshot()["built"] == {"roof": 2, "lamp": 1}, "what the players buy for the island is counted")
+    check(B.move("1.1.1.1", "gamebuild", "hana", "gift", "-", "bar")[1]["counted"] and B.snapshot()["built"] == {"roof": 2, "lamp": 1}, "a treat is a gift too, but builds nothing")
+    B.save(); B2 = isle.Isle(path=B.path, clock=lambda: T[0] + 200000)
+    check(B2.snapshot()["built"] == {"roof": 2, "lamp": 1} and B2.snapshot()["players"]["moves"] == 0, "the island keeps what was built past midnight")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)
