@@ -46,6 +46,18 @@ echo "channels:" | tee -a "$NOTE"
 docker compose run --rm --no-deps -T alerts python alerts.py --check 2>/dev/null | sed 's/^/         /' | tee -a "$NOTE"
 echo "posts logged by the running containers (a rebuild starts the log afresh):" | tee -a "$NOTE"
 docker compose logs --since 48h alerts agorzilla 2>/dev/null | grep -iE 'posted|failed|cannot post|silent|cap|lost' | tail -12 | sed 's/^/         /' | tee -a "$NOTE"
+# White Rabbit Key's island: the places' names and click areas as the repo has them (plates/island-22.json), so a renamed
+# or moved place goes live with the merge; only when the live island was laid out from that very file
+python3 - <<'PY' | tee -a "$NOTE"
+import json
+try:
+    path = "/opt/sites/rico/art/index.json"; idx = json.load(open(path)); lay = json.load(open("rabbit-art/plates/island-22.json"))
+    old = idx.get("layout") or {}
+    if set((old.get("places") or {})) == set(lay["places"]) and old != lay:
+        idx["layout"] = lay; json.dump(idx, open(path, "w"), indent=1); print("island:  places updated from the repo (names, click areas)")
+except Exception as e:
+    print(f"island:  places not checked ({e})")
+PY
 # Radio Coco and the islanders: speak any new voice lines (only lines without a clip cost credits; none new, nothing spent)
 V=$(mktemp)
 python3 rico/make.py make 2>&1 | tee "$V" || true

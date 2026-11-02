@@ -1324,4 +1324,5 @@ TauI18n.add({ strings: {
   "({n} wallets)": "（{n} のウォレット）",
   "Déjà, the café cat: {n} of three wallets agreed today. One test AGRS says yes; find her.": "カフェの猫 Déjà：今日は三つのウォレットのうち {n} が同意。1 テスト AGRS が「はい」の合図。彼女を探して。",
   "Nobody has agreed to feed Déjà yet today. Three wallets, one test AGRS each; find her, she is around.": "今日はまだ誰も Déjà の餌やりに同意していません。三つのウォレット、それぞれ 1 テスト AGRS。彼女はそのへんにいます。",
+  "The Market Square (Parasol Café)": "市場の広場（パラソル・カフェ）",
 } });
