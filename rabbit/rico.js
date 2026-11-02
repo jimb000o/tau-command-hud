@@ -166,6 +166,16 @@
     fs1: "First lagoon coin in an hour, and it went to the island. One move, one jar, one block. Rico heard it land from here.",
     fs2: "An hour of nothing, then one transaction crosses the water. On the mainland that is a rounding error. On the lagoon it is the news.",
     fs3: "One transaction after a quiet hour. Old Sam looked up from the Book. That is how quiet it was.",
+    /* the whole island and Déjà's day (game.js isleLines, dejaLines): spoken in bands and names, the exact numbers shown beside */
+    isN: "Around the island today: {n} campaigns are running.",
+    isLaw: "Across the island one law keeps passing today, and it is in every speech by now.",
+    isWin: "Election results from the whole island: {x} has won the most campaigns today.",
+    isGov: "{x} governs the island this week.",
+    isNews1: "Island news:",
+    isNews2: "Fresh from the square:",
+    dejaFed: "Déjà has eaten today. Three wallets agreed, and Marisol says she acted surprised.",
+    dejaN: "Déjà, the café cat: {n} of three wallets agreed today. One test AGRS says yes; find her.",
+    dejaNone: "Nobody has agreed to feed Déjà yet today. Three wallets, one test AGRS each; find her, she is around.",
     /* a mixed wave: many wallets at once, nobody leading */
     dk3: "Why did {n} wallets move at the same minute? Rico has three theories, Old Sam has one, and the Book has none. The Book only says that they did.",
     ghost1: "Ghost report from the harbour: transactions already sealed in a block, but still listed as waiting. The node hasn't noticed they left. Old Sam calls them guests who never go home.",
@@ -397,7 +407,8 @@
      block, shown as "block 1234" (a name that starts with b, n, m, a, c, h, g or e would be read as a number or a hash by
      assets/i18n.js). */
   const BANDS = { count: ["a couple of", "a handful of", "a dozen", "dozens of", "a hundred and more"], coins: ["a few hundred", "thousands of", "tens of thousands of", "a hundred thousand and more"] };
-  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", un1: "coins", un3: "coins" };
+  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", isN: "count", un1: "coins", un3: "coins" };
+  const VARIANTS = { dejaN: [{ n: "one" }, { n: "two" }], isWin: NAMES.map(x => ({ x })), isGov: NAMES.map(x => ({ x })) };   // the other fills a line takes, one clip each
   const BLOCK = { where: "the latest block" };   // how the block is spoken
   /* callers who phone the studio, each in their own voice through the telephone: listeners (ready voices, make.py
      CALLERS) and the islanders themselves. A call is a little conversation: who, then what is said in turn, the
@@ -619,6 +630,7 @@
       else if (k === "pact") NAMES.forEach(x => NAMES.forEach(y => x !== y && out.push(fill(s, { x, y }))));
       else if (k === "day") for (let n = 1; n <= DAYS; n++) out.push(fill(s, { n, m: DAYS }));
       else if (NUMERIC[k]) BANDS[NUMERIC[k]].forEach(n => out.push(fill(s, { n, ...BLOCK })));
+      else if (VARIANTS[k]) VARIANTS[k].forEach(v => out.push(fill(s, v)));
       else if (s.includes("{")) out.push(fill(s, BLOCK));
       else out.push(s);
     }
