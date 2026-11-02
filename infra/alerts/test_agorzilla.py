@@ -68,6 +68,15 @@ class Evening(unittest.TestCase):
         A.step(LATEST, s, send=lambda m: False, send_x=lambda m, st: True)
         self.assertEqual(s["last"], -1)
 
+    def test_x_does_not_wait_for_a_failing_telegram(self):
+        s, xs, tg = {"last": -1}, [], []
+        A.step(LATEST, s, send=lambda m: False, send_x=lambda m, st: xs.append(m) or True)
+        self.assertEqual((s["last"], len(xs)), (-1, 1))          # Telegram failed, the X copy of the first evening went out
+        A.step(LATEST, s, send=lambda m: False, send_x=lambda m, st: xs.append(m) or True)
+        self.assertEqual(len(xs), 1)                              # not again while Telegram keeps failing
+        A.step(LATEST, s, send=lambda m: tg.append(m) or True, send_x=lambda m, st: xs.append(m) or True)
+        self.assertEqual((s["last"], len(tg), len(xs)), (LATEST["rounds"][-1]["n"], len(LATEST["rounds"]), len(LATEST["rounds"])))
+
 
     def test_evening_waits_for_its_picture_then_goes_alone(self):
         r0 = dict(LATEST["rounds"][0], t=1000)

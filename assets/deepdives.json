@@ -1,0 +1,275 @@
+{
+  "about": "A closer look at one page of Tau HUD a day, in this order, each once. The alerts service (infra/alerts/alerts.py, maybe_deepdive) reads this file from the site every 10 minutes and posts the next one not yet posted at 13:00 UTC on Telegram; every second one also goes to X. Add new pages at the end; an id is posted once, ever. Texts are plain (no HTML; the bot escapes them); x = the lines of the X post, trimmed to 280 by the bot, which adds the footer and #TauNet $AGRS. Nothing here is affiliated with IDNI; test AGRS have no value.",
+  "posts": [
+    {
+      "id": "start",
+      "title": "Start here: Tau in four steps",
+      "text": "Most people's first question is what you can actually do on the Tau testnet. The Start page answers it in four steps, each in your browser, nothing to install: make a test wallet, give your account a rule the chain itself checks, watch a block seal it, and feed Agorzilla with it.\nEvery step ends with the real transaction on the explorer, so you see what you did instead of reading that you did it. Test AGRS have no value; the point is the rule, not the money.",
+      "try": "ten minutes, phone or laptop. The wallet is made for you on the first page.",
+      "x": ["🔎 A closer look: Start here, Tau in four steps", "Make a test wallet, give your account a rule the chain itself checks, watch a block seal it, feed Agorzilla. All in the browser, nothing to install, test AGRS have no value."],
+      "link": "/start/",
+      "button": "🚀 Start here",
+      "image": "/assets/shots/start.png"
+    },
+    {
+      "id": "rabbit",
+      "title": "White Rabbit Key: an island election on the testnet",
+      "text": "Four candidates, five days, laws, pacts, embassy envelopes and rumours on Radio Coco, and a Book in the lighthouse that nobody can edit. White Rabbit Key is a small hand-painted election game, and the twist is that every move you make is one real transaction on Tau Testnet Alpha: a speech, a law, a pact.\nSince the island became one shared place, everyone plays their own campaign and the island adds up what everyone did that day. The Key Crier reports it here every morning.",
+      "try": "play one campaign; sound on, it has its own radio station.",
+      "x": ["🔎 A closer look: White Rabbit Key", "An island election game where every move is a real transaction on Tau Testnet Alpha: speeches, laws, pacts, rumours on Radio Coco, and a Book nobody can edit. Four candidates, five days."],
+      "link": "/rabbit/",
+      "button": "🐇 Play White Rabbit Key",
+      "image": "/assets/shots/rabbit.png"
+    },
+    {
+      "id": "wallet",
+      "title": "The testnet wallet: an account with its own rules",
+      "text": "A Tau wallet is not a key and a balance; it is an account with rules. The Tau HUD wallet runs in your browser and shows what that means: send, send with a way back, ask a friend to co-sign, vote on the chain's rules, and agree on shared rules with others in a Pakt.\nIt is non-custodial and testnet only. The rules are written in the Tau language and checked by the chain, not by the wallet: a transaction the rule refuses never gets into a block.",
+      "try": "give your account one rule and then try to break it.",
+      "x": ["🔎 A closer look: the testnet wallet", "On Tau a wallet is an account with rules: send with a way back, co-sign with a friend, vote on the chain's rules, agree shared rules in a Pakt. The chain checks the rules, not the wallet. Testnet only."],
+      "link": "/wallet/",
+      "button": "👛 Open the wallet",
+      "image": "/assets/og/wallet.png"
+    },
+    {
+      "id": "rules",
+      "title": "The rules wall: every personal rule on the testnet",
+      "text": "Every rule that an account gave itself on Tau Testnet Alpha, read straight from the blocks. The rules wall is the best place to see what people actually write when a chain lets them: spending limits, waiting times, rules that need a second signature.\nIf you agree with one, you can take it for your own account with one click. That is a real transaction, and the wall counts how many accounts adopted each rule.",
+      "try": "read the newest rules, adopt one.",
+      "x": ["🔎 A closer look: the rules wall", "Every personal rule that accounts gave themselves on Tau Testnet Alpha, read from the blocks. Agree with one? Take it for your own account: a real transaction, counted on the wall."],
+      "link": "/rules/",
+      "button": "📜 Rules wall",
+      "image": "/assets/shots/rules.png"
+    },
+    {
+      "id": "explorer",
+      "title": "The explorer: what happened to a transaction",
+      "text": "A block explorer usually tells you that a transaction is in a block. The Tau HUD explorer tells you what happened on the way: its path from the queue to the block, which rules checked it, and whether a transaction that looks like it is waiting is really waiting or already sealed.\nThat last part matters on this testnet: sealed transactions can still be listed as pending by the node, a finding we reported to IDNI. The explorer tells the two apart.",
+      "try": "paste any transaction, block or address.",
+      "x": ["🔎 A closer look: the explorer", "Not only that a transaction is in a block, but what happened on the way: its path from the queue to the block, which rules checked it, and whether a waiting transaction is really waiting."],
+      "link": "/explorer/",
+      "button": "🔍 Open the explorer",
+      "image": "/assets/og/explorer.png"
+    },
+    {
+      "id": "account",
+      "title": "The account view: a balance and the rules around it",
+      "text": "Look up any account on Tau Testnet Alpha and you get more than a balance over time: the rules it set for its own money, the rules others offered it, and what it refused.\nIt is the page that shows the difference between Tau and a plain ledger. Two accounts with the same balance can have very different lives, because one of them promised something and the chain holds it to that.",
+      "try": "look up your own test account after the Start page.",
+      "x": ["🔎 A closer look: the account view", "Any account on Tau Testnet Alpha: its balance over time, the rules it set for its own money, the rules others offered it, and what it refused."],
+      "link": "/account/",
+      "button": "👤 Account view",
+      "image": "/assets/og/account.png"
+    },
+    {
+      "id": "proposals",
+      "title": "The proposal tracker: how the chain changes its own rules",
+      "text": "On Tau the rules of the chain are changed by the chain's users, not by a hard fork: a rule change is proposed, the validators agree, and at a set block it is in force. The proposal tracker lists every one on Tau Testnet Alpha: proposed, agreed, in force or dropped, with what each would change in plain words.\nThis channel is its feed: every real rule change is posted here when it is proposed, agreed and in force.",
+      "try": "read the newest proposal and what it changes.",
+      "x": ["🔎 A closer look: the proposal tracker", "Every rule change on Tau Testnet Alpha: proposed, agreed, in force or dropped, each with what it changes in plain words. The chain's rules change by agreement, never by decree."],
+      "link": "/proposals/",
+      "button": "🗳️ Proposal tracker",
+      "image": "/assets/og/proposals.png"
+    },
+    {
+      "id": "vote",
+      "title": "Vote on Tau: a ready command for every open proposal",
+      "text": "You can vote on Tau Testnet Alpha's rules yourself, with your own node and your own key. The Vote page gives you a ready vote command for every open proposal and a ready proposal of your own, and lets you practise every step on the simulation first.\nAt the moment the network admits votes from validators only; the page says so and shows what would count. The practice votes you see in Testnet today come from here.",
+      "try": "practise one vote on the simulation, then read what the real one needs.",
+      "x": ["🔎 A closer look: Vote on Tau", "How to vote on Tau Testnet Alpha's rules yourself: your own node, your key, a ready vote command for every open proposal. Practise every step on the simulation first."],
+      "link": "/vote/",
+      "button": "🗳️ Vote on Tau",
+      "image": "/assets/og/vote.png"
+    },
+    {
+      "id": "playground",
+      "title": "The rule playground: write a rule, let the chain check it",
+      "text": "Write your own Tau rule and put it through the same checks the Tau Testnet Alpha applies, before it costs you a transaction. The playground shows what the checker says in plain words, line by line.\nThen take a simulated validator seat and vote a rule change in: the simulation runs the real consensus steps at a pace you can watch, and other visitors can vote on your proposal too.",
+      "try": "write a rule that limits spending to 50 test AGRS a day.",
+      "x": ["🔎 A closer look: the rule playground", "Write your own Tau rule and put it through the same checks Tau Testnet Alpha applies, before it costs a transaction. Then take a simulated validator seat and vote a rule change in."],
+      "link": "/playground/",
+      "button": "🧪 Open the playground",
+      "image": "/assets/og/playground.png"
+    },
+    {
+      "id": "missions",
+      "title": "Missions: six short exercises on a practice chain",
+      "text": "Six missions on a practice chain in your browser: vote a rule in, get one refused, let one fail at two thirds, lower the bar, survive a validator outage, switch to proof of stake. Each takes a few minutes and ends where to see the same thing on the real Tau testnet.\nIt is the quickest way to understand why a rule change on Tau is not a vote but an agreement, and what happens when the agreement is not there.",
+      "try": "mission 3: watch a change fail at two thirds.",
+      "x": ["🔎 A closer look: Missions", "Six short missions on a practice chain in your browser: vote a rule in, get one refused, let one fail at two thirds, lower the bar, survive a validator outage, switch to proof of stake."],
+      "link": "/missions/",
+      "button": "🎯 Start a mission",
+      "image": "/assets/og/missions.png"
+    },
+    {
+      "id": "whatif",
+      "title": "What if: move the chain's dials and watch",
+      "text": "Move the block time, the number of validators and the votes a rule change needs, and watch a simulated chain react: short splits, missed blocks, slow or stuck agreement.\nIt is a toy, but an honest one: the same thresholds the testnet uses, so you see why a bar of two thirds behaves differently from a majority, and why one validator going quiet can stop everything.",
+      "try": "set three validators and a bar of two thirds, then take one validator away.",
+      "x": ["🔎 A closer look: What if", "Move block time, the number of validators and the votes a rule change needs, and watch a simulated chain react: short splits, missed blocks, slow or stuck agreement."],
+      "link": "/whatif/",
+      "button": "🎛 Try What if",
+      "image": "/assets/og/whatif.png"
+    },
+    {
+      "id": "history",
+      "title": "Chain time travel: every block, every rule in force",
+      "text": "Scrub through every block of Tau Testnet Alpha and see which rules were in force at that moment, who voted, and when each agreed change took effect.\nIt turns the proposal tracker into a timeline: you can stand on any block and read the chain's rulebook as it was then, which is the thing a chain that changes its own rules needs most.",
+      "try": "drag to the block where the first rule change took effect.",
+      "x": ["🔎 A closer look: chain time travel", "Scrub through every block of Tau Testnet Alpha and see which rules were in force, who voted, and when each agreed change took effect."],
+      "link": "/history/",
+      "button": "⏳ Time travel",
+      "image": "/assets/og/history.png"
+    },
+    {
+      "id": "story",
+      "title": "Tau in 60 seconds",
+      "text": "How Tau changes its own rules without a hard fork, in six steps: propose, check, agree, law. A one-minute animation built from the Tau HUD simulation, for the friend who asked what you are doing on this testnet.\nIt is also in the press kit as a video file, free to use.",
+      "try": "watch it once, then send it to someone.",
+      "x": ["🔎 A closer look: Tau in 60 seconds", "How Tau changes its own rules without a hard fork, in six steps: propose, check, agree, law. One minute, built from the Tau HUD simulation."],
+      "link": "/story/",
+      "button": "▶ Watch",
+      "image": "/assets/og/story.png"
+    },
+    {
+      "id": "stats",
+      "title": "Testnet stats: how the chain is doing",
+      "text": "Block times, transactions, active accounts, dropped transactions and chain restarts, read from our own node and not from anyone's press release.\nThe restarts and drops are the interesting part. A testnet is where things break, and this page keeps the record of when they did, which is also where our findings and the road to mainnet start.",
+      "try": "compare today's block time with last week's.",
+      "x": ["🔎 A closer look: testnet stats", "Block times, transactions, active accounts, dropped transactions and chain restarts on Tau Testnet Alpha, read from our own node."],
+      "link": "/stats/",
+      "button": "📊 Testnet stats",
+      "image": "/assets/og/stats.png"
+    },
+    {
+      "id": "status",
+      "title": "Status: one health score for the testnet",
+      "text": "Is the Tau testnet healthy right now? One score from 0 to 100, built from the node's sync, the pace of blocks, peers, restarts and the relay that serves this site, with the last 30 days underneath.\nWhen the score falls, this channel says so; when it is back, the channel says that too. The page shows the why behind the number.",
+      "try": "open it when a block seems late.",
+      "x": ["🔎 A closer look: Status", "Is the Tau testnet healthy? One score from 0 to 100 from sync, block pace, peers and restarts, with the last 30 days underneath. This account says when it falls and when it is back."],
+      "link": "/status/",
+      "button": "🟢 Status",
+      "image": "/assets/og/status.png"
+    },
+    {
+      "id": "findings",
+      "title": "Findings: the bugs we found while running a node",
+      "text": "Running a node for tauhud.com turns up things: sealed transactions still listed as pending, a node that stays behind the network, a peer list that forgets its bootnode. The findings page lists each one with how to reproduce it, its status at IDNI, and how to report your own.\nThe bot in this channel watches for the same patterns live and posts when one starts and when it is over.",
+      "try": "read the open ones; the next could be yours.",
+      "x": ["🔎 A closer look: Findings", "The bugs we found in Tau Testnet Alpha while running a node for tauhud.com, how to reproduce each, their status at IDNI, and how to report your own."],
+      "link": "/findings/",
+      "button": "🐛 Findings",
+      "image": "/assets/og/findings.png"
+    },
+    {
+      "id": "roadmap",
+      "title": "Road to mainnet: what we think should be fixed first",
+      "text": "What we found on Tau Testnet Alpha that we think should be fixed before mainnet, each item with its proof and a path to a fix. It is our view from running a node, not IDNI's plan, and it says so.\nYou can comment on any item. Disagreement is welcome; a testnet is for finding out.",
+      "try": "read the first three items.",
+      "x": ["🔎 A closer look: Road to mainnet", "What we found on Tau Testnet Alpha that we think should be fixed before mainnet, each with proof and a path to a fix. Our view from running a node, not IDNI's plan."],
+      "link": "/roadmap/",
+      "button": "🛣 Road to mainnet",
+      "image": "/assets/og/roadmap.png"
+    },
+    {
+      "id": "nodes",
+      "title": "Community nodes: run one, get a badge",
+      "text": "People who run a Tau testnet node with the Tau HUD kit: how long each has been running, how steadily, and whether it agrees with our chain. A node that sees a different chain is the first sign of a split, and this page would show it.\nThe kit is one command; the badge is for your README or forum signature and updates itself.",
+      "try": "run a node for a week; the page keeps the record.",
+      "x": ["🔎 A closer look: community nodes", "People who run a Tau testnet node with the Tau HUD kit: how long each has been running, how steadily, and whether it agrees with our chain. Run one, get a badge."],
+      "link": "/nodes/",
+      "button": "🖧 Community nodes",
+      "image": "/assets/og/nodes.png"
+    },
+    {
+      "id": "developers",
+      "title": "Developers: the live testnet on your own site",
+      "text": "A widget for an iframe, live badges for READMEs and forums, and a free JSON API with no key: block height, status, the open proposals, validators. Everything this site shows, you can show too.\nThe API is the same one Tau HUD's own pages use, served from our relay; the docs page has a working example for each call.",
+      "try": "put the height badge in a README.",
+      "x": ["🔎 A closer look: Developers", "The live Tau testnet on your own site: a widget for an iframe, live badges for READMEs and forums, and a free JSON API with no key."],
+      "link": "/developers/",
+      "button": "🧰 Developers",
+      "image": "/assets/og/developers.png"
+    },
+    {
+      "id": "gazette",
+      "title": "The Daily Consensus: a 1920s newspaper about Tau",
+      "text": "A newspaper in the style of the 1920s about Tau and Testnet Alpha: twelve years of the project, the chain that changes its own rules, letters, obituaries, puzzles. Turn the pages with a click or a tap.\nA new edition comes out every Monday morning and is announced here with the week's numbers. The puzzles have answers on the last page; the obituaries are for rules that were voted out.",
+      "try": "read the letters page of the latest edition.",
+      "x": ["🔎 A closer look: The Daily Consensus", "A newspaper in the style of the 1920s about Tau and Testnet Alpha: twelve years of the project, letters, obituaries for rules voted out, puzzles. A new edition every Monday."],
+      "link": "/gazette/",
+      "button": "📰 Read the Daily Consensus",
+      "image": "/gazette/img/og-2.png"
+    },
+    {
+      "id": "challenge",
+      "title": "Rule challenge of the week",
+      "text": "Every Monday the Daily Consensus sets a small task: write a rule that does something. Answer it with a real rule in your test wallet; good answers are shown on the page, with the account that wrote them.\nNo prizes, nothing priced. It is the testnet's crossword.",
+      "try": "this week's task is on the page.",
+      "x": ["🔎 A closer look: the rule challenge", "Every Monday a small task: write a rule that does something. Answer it with a real rule in your test wallet; good answers are shown. No prizes, it is the testnet's crossword."],
+      "link": "/challenge/",
+      "button": "✍️ This week's challenge",
+      "image": "/assets/og/challenge.png"
+    },
+    {
+      "id": "chronicle",
+      "title": "The Tau chronicle: from Zennet to a running testnet",
+      "text": "How Tau got from Zennet in 2014 to a running testnet whose rules its users change, summarised from the project's own videos and posts, with the dates and the detours.\nIt is the page for anyone who wonders why this took twelve years, and what changed in the meantime.",
+      "try": "read the years 2017 to 2020.",
+      "x": ["🔎 A closer look: the Tau chronicle", "How Tau got from Zennet in 2014 to a running testnet whose rules its users change, summarised from the project's own videos and posts, with the dates and the detours."],
+      "link": "/chronicle/",
+      "button": "📖 The chronicle",
+      "image": "/assets/og/chronicle.png"
+    },
+    {
+      "id": "devpulse",
+      "title": "Build pulse: how Tau's code is moving",
+      "text": "The newest commits in IDNI's public repositories, which parts of the code change, the weekly rhythm, the tags, and which version our testnet node runs. Unofficial, read from GitHub, updated through the day.\nIf you want to know whether a fix for a finding has landed, this is where it shows first.",
+      "try": "see what changed this week.",
+      "x": ["🔎 A closer look: Build pulse", "How Tau's code is moving: the newest commits in IDNI's public repositories, which parts change, the weekly rhythm, and which version our testnet node runs. Unofficial."],
+      "link": "/devpulse/",
+      "button": "🫀 Build pulse",
+      "image": "/assets/og/devpulse.png"
+    },
+    {
+      "id": "card",
+      "title": "My Tau card: one picture of what your test wallet did",
+      "text": "One picture of what your test wallet did on Tau Testnet Alpha: rules written, votes, Agorzilla meals and café stamps. Post it or keep it.\nTest AGRS only, nothing priced or promised; the card is a record, not a score.",
+      "try": "make yours after a week on the testnet.",
+      "x": ["🔎 A closer look: My Tau card", "One picture of what your test wallet did on Tau Testnet Alpha: rules written, votes, Agorzilla meals and café stamps. A record, not a score."],
+      "link": "/card/",
+      "button": "🪪 My Tau card",
+      "image": "/assets/og/card.png"
+    },
+    {
+      "id": "meta",
+      "title": "Tau HUD in numbers: who uses this site",
+      "text": "How many people use Tau HUD: visitors per day, growth since the start, the most visited pages, and White Rabbit Key as its own part of the testnet's activity. Counted without cookies, on our own relay.\nWe publish it because a site about a chain that shows everything should show itself too.",
+      "try": "see which page was busiest yesterday.",
+      "x": ["🔎 A closer look: Tau HUD in numbers", "How many people use Tau HUD: visitors per day, growth since the start, the most visited pages, counted without cookies. A site about a chain that shows everything should show itself too."],
+      "link": "/meta/",
+      "button": "🔢 In numbers",
+      "image": "/assets/og/meta.png"
+    },
+    {
+      "id": "press",
+      "title": "The press kit: facts, logo, video, free to use",
+      "text": "The one-paragraph description of Tau HUD, the facts, the Tau in 60 seconds video, logo files, screenshots and embeds, free to use. Unofficial: Tau HUD is not affiliated with IDNI and says so on every page.\nIf you write about Tau and need a picture of the chain changing its rules, it is here.",
+      "try": "download the screenshot pack.",
+      "x": ["🔎 A closer look: the press kit", "The one-paragraph description of Tau HUD, the facts, the Tau in 60 seconds video, logo files, screenshots and embeds, free to use. Not affiliated with IDNI."],
+      "link": "/press/",
+      "button": "📎 Press kit",
+      "image": "/assets/og/press.png"
+    },
+    {
+      "id": "donate",
+      "title": "What Tau HUD costs, and who paid",
+      "text": "Tau HUD is free and built in spare time. The donate page shows what it costs each month (the server, the voices, the pictures), every donation received with its transaction on Ethereum, and the address.\nVoluntary, nothing in return, and every donation is thanked for in this channel.",
+      "try": "read the monthly costs.",
+      "x": ["🔎 A closer look: what Tau HUD costs", "Tau HUD is free and built in spare time. What it costs each month, every donation received with its transaction, and the address. Voluntary, nothing in return."],
+      "link": "/donate/",
+      "button": "🙏 Donate",
+      "image": "/assets/og/donate.png"
+    }
+  ]
+}
