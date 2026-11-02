@@ -547,6 +547,9 @@ html.coreonly #coreFoot { display: block; position: fixed; left: 0; right: 0; bo
 .tx.rej { border-left-color: var(--refused); }
 .tx.sealed { border-left-color: rgba(57,255,138,.45); }
 .tx .sl { font-weight: 500; color: var(--ok); }
+.tx .age { white-space: nowrap; }
+.tx .top > span { white-space: nowrap; }
+.tx .age.ge::before { content: "≥ "; }
 .tx.sealed.listed { border-left-color: #ffb13b; box-shadow: inset 0 0 0 1px rgba(255,177,59,.45); }
 .tx.sealed.listed .sl { color: #ffb13b; }
 .tx.gov { border-left-color: var(--amber); }
@@ -1469,9 +1472,11 @@ function askTxStatus() {
   if (!t) return;
   const k = TXST.busy = t.id.toLowerCase(); liveSend("gettxstatus " + t.id); setTimeout(() => { if (TXST.busy === k) { TXST.busy = ""; askTxStatus(); } }, 6000);
 }
-function markSealed(id, h) {   // a card in Transactions and the waiting dot learn that the block already holds it
+function markSealed(id, h, ts) {   // a card in Transactions and the waiting dot learn that the block already holds it
   const el = $("tx_" + id.slice(0, 16)) || feedHold.find(d => d.id === "tx_" + id.slice(0, 16)), m = S.mempool.find(x => x.id.toLowerCase() === id.toLowerCase());
   if (m && Number.isFinite(h)) m.block = h;
+  if (ts == null && Number.isFinite(h)) ts = (S.byHeight.get(h) || {}).ts;
+  if (el && Number.isFinite(h) && Number.isFinite(ts)) setAge(el, ts, "sealed", h);
   if (!el || el.classList.contains("sealed") || !Number.isFinite(h)) return;
   el.classList.add("sealed"); if (m) el.classList.add("listed"); const sp = el.querySelector(".top > span"); if (sp) sp.insertAdjacentHTML("afterbegin", `<b class="sl">ghost ✓ #${h}</b> · `);
 }
@@ -2347,7 +2352,9 @@ function txCard(t) {
     ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
     : (t.note || `sender ${acct(t.sender)}`);
   const txid = S.mode === "live" && t.id && !t.rejected ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id);
-  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="txid">${txid} · </span>fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
+  if (t.at == null) { t.at = Date.now() / 1000; if (!t.ageKind) t.ageKind = S.mode === "live" ? "seen" : "sim"; }
+  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="age"></span> · <span class="txid">${txid} · </span>fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
+  setAge(d, t.at, t.ageKind || (t.block != null ? "sealed" : "seen"), t.block);
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   if (t.rejected) { bounce(t); S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
@@ -2355,6 +2362,29 @@ function txCard(t) {
   feed.prepend(d);
   while (feed.children.length > 40) feed.lastChild.remove();
 }
+/* how long ago, on every card: a sealed transaction counts from its block's timestamp (the proposer's clock); a waiting one has no time
+   from the node, so it counts from when this page first saw it, with "≥" when it was already listed as the page opened; a refused one
+   from when it left the relay's queue; a simulated one from when the simulation made it */
+const AGE_TIP = {
+  sealed: h => `Sealed in block #${h} at {T}, by the block’s own timestamp.`,
+  seen: () => "Waiting for a block. The node gives no time for waiting transactions; this counts from when this page first saw it.",
+  open: () => "Waiting for a block since before this page opened; the node gives no time, so it waited at least this long.",
+  left: () => "Left the relay’s queue at {T} without entering a block.",
+  sim: () => "Simulated: counts from when the simulation made it.",
+};
+function setAge(card, at, kind, h) {
+  const a = card && card.querySelector(".age"); if (!a || !Number.isFinite(at)) return;
+  a.dataset.at = at; a.classList.toggle("ge", kind === "open");
+  a.title = (AGE_TIP[kind] || AGE_TIP.seen)(h).replace("{T}", new Date(at * 1000).toLocaleTimeString("en-GB"));
+  a.textContent = fmtAgo(Math.max(0, Date.now() / 1000 - at));
+}
+function tickAges() {
+  if (document.hidden) return;
+  const now = Date.now() / 1000;
+  document.querySelectorAll("#feed .age[data-at]").forEach(a => { const v = fmtAgo(Math.max(0, now - a.dataset.at)); if (a.textContent !== v) a.textContent = v; });
+  feedHold.forEach(d => { const a = d.querySelector(".age[data-at]"); if (a) a.textContent = fmtAgo(Math.max(0, now - a.dataset.at)); });
+}
+setInterval(tickAges, 1000);
 function markMined(ids) { ids.forEach(id => { const k = "tx_" + id.slice(0, 16); const el = $(k) || feedHold.find(d => d.id === k); if (el) el.classList.add("mined"); }); }
 
 /* ---------- chain ribbon ---------- */
@@ -3000,7 +3030,7 @@ function liveMessage(ev) {
       const h = raw.header || {}, ids = raw.tx_ids || [];
       const txs = (raw.transactions || []).map((t, i) => normTx(t, ids[i]));
       const b = { n: h.block_number ?? 0, hash: raw.block_hash, state: h.state_hash, proposer: h.proposer_pubkey || "", ts: h.timestamp, txs };
-      txs.forEach(t => { t.block = b.n; });
+      txs.forEach(t => { t.block = b.n; if (Number.isFinite(b.ts)) { t.at = b.ts; t.ageKind = "sealed"; } });
       if (b.proposer && !/^0+$/.test(b.proposer) && !S.validators.includes(b.proposer)) S.validators.push(b.proposer);
       let ruleWork = false;
       txs.forEach(t => {   // what a block says about personal rules and rule sharing (README · Rule sharing): read before the card is drawn
@@ -3023,7 +3053,7 @@ function liveMessage(ev) {
         // first seen in the mempool, where the node lists only hash and type: now the block says what the rule work was
         const el = $("tx_" + t.id.slice(0, 16)) || feedHold.find(d => d.id === "tx_" + t.id.slice(0, 16));
         if (el && t.note && !t.transfers.length) { el.querySelector(".mid").textContent = t.note; el.dataset.ex = exKey(() => explainTx(t)); el.dataset.detail = dtKey(() => detailTx(t)); }
-        if (el) markSealed(t.id, b.n);
+        if (el) markSealed(t.id, b.n, b.ts);
       });
       txs.forEach(t => {
         if (t.type === "approval_request" && !S.approvals.some(a => a.id === t.id)) { t.note = `${short(t.sender)} → ${short(t.to)} ${fmt(t.amount)} AGRS · waits for ${t.approvers.map(short).join(", ") || "an approver"} · until #${t.expireAt}`; S.approvals.push({ id: t.id, from: t.sender, to: t.to, amount: t.amount, approver: t.approvers[0] || "", approvers: t.approvers, since: b.n, expireAt: t.expireAt, status: "open" }); }
@@ -3034,8 +3064,8 @@ function liveMessage(ev) {
     });
   } else if (msg.command === "getblockrange" && SCAN.want != null && d.from === SCAN.want) {
     SCAN.lo = SCAN.want; SCAN.want = null; SCAN.at = Date.now();
-    const where = new Map(); (d.blocks || []).forEach(raw => { const n = (raw.header || {}).block_number; (raw.tx_ids || []).forEach(i => { const k = String(i).toLowerCase(); SCAN.ids.add(k); where.set(k, n); }); });
-    S.mempool.forEach(t => { const h = where.get(t.id.toLowerCase()); if (h != null) { TXST.st.set(t.id.toLowerCase(), { h }); markSealed(t.id, h); } });
+    const where = new Map(), when = new Map(); (d.blocks || []).forEach(raw => { const n = (raw.header || {}).block_number; when.set(n, (raw.header || {}).timestamp); (raw.tx_ids || []).forEach(i => { const k = String(i).toLowerCase(); SCAN.ids.add(k); where.set(k, n); }); });
+    S.mempool.forEach(t => { const h = where.get(t.id.toLowerCase()); if (h != null) { TXST.st.set(t.id.toLowerCase(), { h }); markSealed(t.id, h, when.get(h)); } });
     readouts(); setTimeout(scanBack, 200); return;
   } else if (msg.command === "getblockrange") {
     if (RIB.probe && d.from === 1) { RIB.probe = false; const h = ((d.blocks || [])[0] || {}).header || {}; if (h.timestamp) S.chainStart = h.timestamp; tickSubs(); return; }
@@ -3048,7 +3078,8 @@ function liveMessage(ev) {
     ribbonPrepend(got); if (got.length) ribbonMaybeLoad();
   } else if (msg.command === "getmempool") {
     S.mempool = (d.transactions || []).map(t => normTx({ ...t, sender_pubkey: t.sender }, t.tx_hash));
-    S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } const h = sealedAt(t.id); if (h != null) { t.block = typeof h === "number" ? h : t.block; if (typeof h === "number") markSealed(t.id, h); } });
+    const opening = !LIVE.memOnce; LIVE.memOnce = true;
+    S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { t.at = Date.now() / 1000; t.ageKind = opening ? "open" : "seen"; LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } const h = sealedAt(t.id); if (h != null) { t.block = typeof h === "number" ? h : t.block; if (typeof h === "number") markSealed(t.id, h); } });
     if (TXST.st.size > 400) { const keep = new Set(S.mempool.map(t => t.id.toLowerCase())); TXST.st.forEach((v, k) => { if (!keep.has(k)) TXST.st.delete(k); }); }
     const listedIds = new Set(S.mempool.map(t => "tx_" + t.id.slice(0, 16)));
     document.querySelectorAll("#feed .tx.sealed").forEach(el => { const on = listedIds.has(el.id); if (el.classList.contains("listed") !== on) { el.classList.toggle("listed", on); el.title = on ? "Ghost transaction: already in a block, still listed by the node (known bug, IDNI #81)" : ""; } });
@@ -3113,6 +3144,7 @@ async function pollDropped() {
 function refusedTx(x) {
   const type = x.type || "user_tx";
   const t = { id: x.tx_hash, type, sender: x.sender || "", kind: /consensus_rule/.test(type) ? "gov" : "", fee: null, transfers: [], dropped: true, seen: x.seen, left: x.left,
+    at: Number.isFinite(x.left) ? x.left : undefined, ageKind: Number.isFinite(x.left) ? "left" : undefined,
     rejected: x.reason || "refused at the door · left the queue without entering a block",
     refLabel: /consensus_rule/.test(type) ? "✕ rule change refused" : /rule/.test(type) ? "✕ rule refused" : "✕ transfer refused" };
   t.note = `${t.sender ? short(t.sender) + " · " : ""}${t.rejected}`;
@@ -3125,7 +3157,7 @@ function refusedTx(x) {
 function liveClear() {
   Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0, approvals: [], reorgs: [], eligMode: "", modeHistory: [] });
   TXST.st.clear(); TXST.busy = ""; RMEM.at = 0; RMEM.M = 0; SCAN.ids.clear(); SCAN.lo = null; SCAN.want = null;
-  S.clauses = new Map(); S.byHeight = new Map(); S.memSeen = new Map(); S.chainStart = null; S.rulesLastBlock = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); DROP.seen.clear(); DROP.cards.clear(); DROP.first = true;
+  S.clauses = new Map(); S.byHeight = new Map(); S.memSeen = new Map(); S.chainStart = null; S.rulesLastBlock = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); DROP.seen.clear(); DROP.cards.clear(); DROP.first = true; LIVE.memOnce = false;
   $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
   RIB.back = false; RIB.target = null; RIB.loading = false; ribbonHold.length = 0;
 }

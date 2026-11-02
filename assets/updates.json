@@ -2138,5 +2138,10 @@
       "text": "Rico now says where a wave of transactions came from, as far as the blocks show it, thanks the builders between the songs, and calls Tau Testnet Alpha the lagoon.",
       "link": "/rabbit/"
     }
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-02",
+    "html": "Transactions: every card now says how long ago it happened, counting live. A sealed transaction counts from its block’s timestamp; a waiting one from when the page first saw it, since the node gives no time for waiting transactions (“≥” when it was already waiting as the page opened); a refused one from when it left the relay’s queue. Hover the time for the exact clock time."
   }
 ]
