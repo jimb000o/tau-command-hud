@@ -36,7 +36,9 @@ curl -fsSL https://raw.githubusercontent.com/jimb000o/tau-command-hud/main/infra
 Then add a DNS A record `node.tauhud.com → <server IP>`. Check with
 `curl https://node.tauhud.com/status`.
 
-Update later: `cd /opt/tau-command-hud && git pull && cd infra && docker compose up -d --build`.
+Update later: `up` (infra/up.sh: pull, rebuild what changed, recreate Caddy, speak new voice lines, and print one block
+with the node, the island's week, the last two days of posts and the voices to paste into the chat). `up island` also paints
+a new island with every room to match (infra/island.sh auto).
 
 Open ports: 22, 80, 443 and 4001 (P2P). Docker-published ports bypass ufw, so only
 publish what is meant to be public.
