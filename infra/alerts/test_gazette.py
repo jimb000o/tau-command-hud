@@ -237,11 +237,11 @@ cr = gazette.chess_round(R["start"] + 12 * 3600)
 c6 = gazette.cafe(week(end=R["start"] + 12 * 3600), [], [], 4, e2["banner"], e2["teaser"], cr)
 check("The result is not in yet; it will be on chess.taumorrow.com" in c6["prof"]["greet"]["en"] and "On Sunday" in c6["prof"]["greet"]["en"] and "nine of ten" in json.dumps(c6["prof"]), "before the records are out: the round, where the result will be, and last time's score")
 calls = []
-w.chess_result, w.gazette_cafe = (lambda date: {"date": date, "played": 10, "engine": 8, "model": 1, "draws": 1}), (lambda: calls.append(1))
+w.chess_result, w.gazette_cafe = (lambda date: {"date": date, "played": 20, "engine": 17, "model": 2, "draws": 1}), (lambda: calls.append(1))
 w.state.pop("chess", None); w.state["gazette"].pop("chess_tried", None)
 w.maybe_chess(R["start"] + 11 * 3600)
 w.maybe_chess(R["start"] + 13 * 3600)
-check(w.state["chess"]["engine"] == 8 and calls == [1] and gazette.chess_round(R["start"] + 12 * 3600, w.state["chess"])["done"], "the result is read once, and the café is told again")
+check(w.state["chess"]["engine"] == 17 and calls == [1] and gazette.chess_round(R["start"] + 12 * 3600, w.state["chess"])["done"], "the result is read once, and the café is told again")
 
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
 sys.exit(1 if failed else 0)

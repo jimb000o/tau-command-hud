@@ -64,6 +64,30 @@ const LANGS = ["en", "en", "en", "en", "en", "en", "zh", "ja"];
 const rnd = s => () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
 const pickW = (R, w) => { const t = Object.values(w).reduce((a, b) => a + b, 0); let r = R() * t; for (const k in w) { r -= w[k]; if (r <= 0) return k; } return Object.keys(w)[0]; };
 
+/* the shared island (infra/relay/isle.py): ONE for every simulated player, so they all campaign on the same island at
+   once and see each other's moves; it checks every message the way the relay does and pushes the day every second */
+const KINDS = "law|down|refused|talk|lie|fact|deal|pact|broke", CANDS = "marisol|tobias|baako|hana";
+const PLACES = new Set(["hall", "market", "radio", "north", "south", "bar", "book", "pier", "school", "dive", "works", "camp", "ship", "ama", "canoe", "stone", "drums", "circle", "grotto"]);
+const ISLE = { players: { campaigns: 0, finished: 0, moves: 0, as: {}, wins: {}, laws: {}, kinds: {} }, islanders: { moves: 0, laws: {}, kinds: {} }, recent: [], games: {}, subs: new Set(), bad: [], v: 0, pushes: 0, seen: 0 };
+const isleSnap = () => ({ day: "2026-11-01", v: ISLE.v, players: ISLE.players, islanders: ISLE.islanders, recent: ISLE.recent.slice(0, 12), lastHour: ISLE.players.moves, here: ISLE.subs.size, push: 10 });
+const inc = (o, k) => (o[k] = (o[k] || 0) + 1);
+function isleTake(s, ws, out) {
+  const P = ISLE.players, a = s.split(" ");
+  if (a[1] === "join") { ISLE.subs.add(ws); return isleSnap(); }
+  let m = new RegExp(`^isle move ([a-z0-9]{6,16}) (${CANDS}) (${KINDS}) ([a-z]{2,12}|-) ([a-z]+)$`).exec(s);
+  if (m && PLACES.has(m[5])) {
+    const [, g, who, kind, what] = m;
+    if (!ISLE.games[g]) { ISLE.games[g] = { who, ended: false }; P.campaigns++; inc(P.as, who); }
+    P.moves++; inc(P.kinds, kind); if (kind === "law" && what !== "-") inc(P.laws, what);
+    ISLE.recent.unshift({ t: Math.floor(Date.now() / 1000), k: kind, c: who, x: what, at: m[5], h: 0 }); ISLE.recent.length = Math.min(12, ISLE.recent.length);
+    out.isle++; ISLE.v++; return { counted: true };
+  }
+  m = new RegExp(`^isle end ([a-z0-9]{6,16}) (${CANDS}) (${CANDS})$`).exec(s);
+  if (m) { const g = ISLE.games[m[1]] || (ISLE.games[m[1]] = { who: m[2], ended: false }); if (g.ended) { ISLE.bad.push("twice: " + s); return { counted: false }; } g.ended = true; P.finished++; inc(P.wins, m[3]); out.isleEnd++; ISLE.v++; return { counted: true }; }
+  ISLE.bad.push(s.slice(0, 120)); return null;
+}
+setInterval(() => { const msg = JSON.stringify({ status: "ok", command: "isle", data: isleSnap() }); for (const ws of ISLE.subs) { try { ws.send(msg); ISLE.pushes++; } catch (e) { ISLE.subs.delete(ws); } } }, 1000).unref();
+
 const browser = await chromium.launch();
 const results = [];
 
@@ -72,7 +96,7 @@ async function play(n) {
   const scr = SCREENS.flatMap(s => Array(s.weight).fill(s))[(n * 37) % 100];   // every screen as often as its weight says
   const style = Object.keys(STYLES)[n % Object.keys(STYLES).length], S = STYLES[style];
   const lang = LANGS[Math.floor(R() * LANGS.length)], chain = R() < 0.4, cand = ["marisol", "tobias", "baako", "hana"][Math.floor(R() * 4)];
-  const out = { n, screen: scr.name, style, lang, chain, cand, errors: [], stuck: null, unreachable: new Set(), covered: [], small: new Set(), scroll: new Set(), tiny: new Set(), visits: {}, steps: 0, sent: 0, own: 0, over: null };
+  const out = { n, screen: scr.name, style, lang, chain, cand, errors: [], stuck: null, unreachable: new Set(), covered: [], small: new Set(), scroll: new Set(), tiny: new Set(), visits: {}, steps: 0, sent: 0, own: 0, over: null, isle: 0, isleEnd: 0, isleSeen: 0 };
   const ctx = await browser.newContext({ viewport: { width: scr.w, height: scr.h }, hasTouch: scr.touch, isMobile: scr.touch && scr.w < 900, deviceScaleFactor: 1, locale: lang === "zh" ? "zh-CN" : lang === "ja" ? "ja-JP" : "en-US", timezoneId: "UTC" });
   await ctx.route(u => !u.href.startsWith(BASE), r => {
     const u = r.request().url();
@@ -92,7 +116,9 @@ async function play(n) {
       else if (c === "getmempool") ok([]);
       else if (c === "getblocks") ok({ blocks: [] });
       else if (c === "via") ok({});
+      else if (c === "isle") { const d = isleTake(s, ws, out); d ? ok(d) : ws.send(JSON.stringify({ status: "error", command: c, error: { code: "INVALID_PARAMS" } })); }
     });
+    ws.onClose(() => ISLE.subs.delete(ws));
   });
   const page = await ctx.newPage();
   /* the game runs faster than life: every timer and the page's clock go SPEED times as fast */
@@ -199,6 +225,8 @@ async function play(n) {
     const G = await page.evaluate(() => { const G = window.COVE_GAME.state; return G && { over: G.over, day: G.day, coins: G.coins, laws: G.laws, key: !!G.key, chart: !!G.chart, seen: G.seen || {}, onchain: G.onchain, book: G.book, deals: G.deals, pacts: G.pacts, lies: G.lies.length }; });
     out.over = G && G.over; out.game = G;
     out.own = G ? G.book.filter(b => b.who === G.me || b.who === cand).length : 0;
+    out.ownIsle = G ? G.book.filter(b => b.who === cand && KINDS.split("|").includes(b.kind)).length : 0;
+    out.isleSeen = await page.evaluate(() => { const b = document.getElementById("cvIsle"); return b && !b.hidden ? b.innerText : ""; });
     if (G && !G.over && !out.stuck) out.stuck = { at: `day ${G.day}, game did not end in 400 steps` };
   } catch (e) { out.errors.push("harness: " + e.message.split("\n")[0]); }
   out.ms = Date.now() - t0;
@@ -266,8 +294,14 @@ L.push(`Explorers: Ama's house seen ${quest.filter(r => r.game.seen.ama).length}
 const ch = done.filter(r => r.chain), noCh = done.filter(r => !r.chain);
 L.push(`Chain box ticked: ${ch.length} players, ${ch.reduce((a, r) => a + r.sent, 0)} test transactions for ${ch.reduce((a, r) => a + r.own, 0)} own lines in the Book · box not ticked: ${noCh.reduce((a, r) => a + r.sent, 0)} transactions (must be 0)`, "");
 L.push(`Average game: ${(done.reduce((a, r) => a + r.steps, 0) / Math.max(1, done.length)).toFixed(0)} taps, ${(results.reduce((a, r) => a + r.ms, 0) / results.length / 1000).toFixed(1)} s simulated`, "");
+L.push("### The shared island", "");
+const miss = done.filter(r => r.isle !== r.ownIsle);
+L.push(`Campaigns: **${ISLE.players.campaigns}** · finished: **${ISLE.players.finished}** · moves counted: **${ISLE.players.moves}** · pushes sent: ${ISLE.pushes}`, "");
+L.push(`Messages the relay would refuse: **${ISLE.bad.length}**${ISLE.bad.length ? " (" + [...new Set(ISLE.bad)].slice(0, 5).join(" · ") + ")" : ""} · games whose island moves differ from their own Book lines: **${miss.length}**${miss.length ? " (" + miss.slice(0, 5).map(r => `#${r.n} ${r.isle}/${r.ownIsle}`).join(", ") + ")" : ""} · results told: ${done.filter(r => r.isleEnd === 1).length}/${done.length}`, "");
+L.push(`Island laws today: ${Object.entries(ISLE.players.laws).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", ") || "—"} · island winners: ${Object.entries(ISLE.players.wins).map(([k, v]) => `${k} ${v}`).join(", ") || "—"}`, "");
+L.push(`What the last players saw in the header: ${[...new Set(results.slice(-5).map(r => r.isleSeen || "(hidden)"))].join(" · ")}`, "");
 await mkdir(OUT, { recursive: true });
 await writeFile(join(OUT, "rabbit-sim.md"), L.join("\n"));
 await writeFile(join(OUT, "rabbit-sim.json"), JSON.stringify(results, (k, v) => (v instanceof Set ? [...v] : v), 1));
 console.log("\n" + L.join("\n"));
-process.exit(err.length || stuck.length || done.length < PLAYERS ? 1 : 0);
+process.exit(err.length || stuck.length || done.length < PLAYERS || ISLE.bad.length || miss.length ? 1 : 0);
