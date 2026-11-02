@@ -42,7 +42,9 @@
         { q: "What do people here really want?", a: [["", "Fish on the table, a road that doesn’t eat their tyres, and quiet when the baby sleeps. Nobody gets all three at once. That’s politics."]],
           more: { q: "So how do you win them over?", a: [["", "You listen first. Then you write down what you promised, where they can read it. People forgive a slow law. They don’t forgive a promise that changes."]] } },
         { q: "Why run, with a café to look after?", a: [["", "I heard the same complaints over coffee for ten years. At some point you either put up a complaints box or stand for council. The box was more expensive."]] },
-        { q: "Do you trust the other candidates?", a: [["pact", "I trust the ones who shook hands at Lola’s. Not because they’re nice. Because the Book saw the handshake."], ["", "I trust what’s written down. Tobias has a theory about everyone, Baako has a handshake for everyone, Hana has a footnote for everyone. I have coffee."]] },
+        { q: "Do you trust the other candidates?", a: [["pact", "I trust the ones who shook hands at Lola’s. Not because they’re nice. Because the Book saw the handshake."], ["", "I trust what’s written down. Tobias has a speech for every envelope, Baako has a ledger for every coconut, Hana has a footnote for everyone. I have coffee, and coffee hears things."]] },
+        { q: "Do the rumours really start at your café?", a: [["", "Rumours don’t start anywhere. They wander in, sit down and order a coffee. I only help them find the radio. A café has to live on something."]],
+          more: { q: "And when they aren’t true?", a: [["", "Then Hana’s class has found out by lunch. Those children check everything. My gossip has never been so honest. Business is worse. The coffee is better."]] } },
       ],
     },
     lola: {
@@ -107,6 +109,8 @@
           more: { q: "And if someone lies about their boat?", a: [["", "Then the next harbour’s list says otherwise, and the two lists have a little chat. Lies hate company. Put two honest records side by side, and the fibber has nowhere to anchor."]] } },
         { q: "Why do you want visitors so much?", a: [["", "Visitors clap. The island stopped clapping for me years ago. Also they pay for the music, and music is the only thing on this island louder than me."]] },
         { q: "Is it true you have a theory about everyone?", a: [["", "Slander! Well, yes. Kai is secretly a fish. Pim measures his own shadow at night. And Agorzilla is a council member in a very good costume. I have no proof. Proof is for the Book. I do theories."]] },
+        { q: "Do you take money from the embassies?", a: [["", "Take? I receive. With a brass band, a ribbon and a short speech. What they paid me for goes in the Book, like every promise on this island. You may read it. Bring a chair."]],
+          more: { q: "Doesn’t the money buy your vote?", a: [["", "It buys a ceremony. The law still needs the council’s yes, and the council cannot be bought with a ribbon. I tried. Hana sent the ribbon back with corrections."]] } },
       ],
     },
     hana: {
@@ -123,6 +127,7 @@
           more: { q: "Isn’t that a little cold?", a: [["", "No. Trust is warm. Checking only keeps it from being spent on the wrong people. The children still believe in each other. They only check the grown-ups."]] } },
         { q: "Why run for council?", a: [["", "Because a good law is a lesson that keeps teaching after the teacher goes home. A speech stops when the speaker sits down."]] },
         { q: "What do the children say about Agorzilla?", a: [["", "Half the class says he is real, the other half says he is Kiko in a coat. They held a debate. Both sides quoted the same blurry photo. Everyone got a B."]] },
+        { q: "Do the children hear the rumours too?", a: [["", "Before anyone. A rumour reaches the playground before it reaches the radio. The children bring them to class like shells from the beach, and we hold each one up to the Book. Most of them are empty."]] },
       ],
     },
     kai: {
@@ -145,12 +150,12 @@
         ["deal", "Ah, you met the ambassadors! Lovely people. Generous. Just remember: the envelope is quiet, the Book is not."],
         ["road", "A road round the island! My coconuts will travel in style. Some of them have never seen the other side."],
         ["worked", "You worked a shift! You smell exactly right. Like someone who earned something."],
-        ["early", "A fine morning! The coconuts are ripe, the embassies are friendly, and nobody has asked me a hard question yet."],
+        ["early", "A fine morning! The coconuts are ripe, the co-op’s books balance, and nobody has asked me a hard question yet."],
         ["", "Welcome back, friend! Mind the organ. Did I say that already? I say it to everyone. Twice to Tobias."],
       ],
       ask: [
-        { q: "Do you take money from the embassies?", a: [["", "Everybody asks. Yes, I talk to them, I shake their hands, I drink their tea. What I promise is in the Book, like everyone’s. You can count my envelopes. I’d rather you counted my coconuts."]],
-          more: { q: "Doesn’t the money buy your vote?", a: [["", "It buys a meeting. They pay me to propose a law, and the other three still have to say yes. Money can knock on the door. It can’t open it."]] } },
+        { q: "Why a co-op?", a: [["", "One farmer alone sells at the embassies’ price. Forty farmers together set their own. Every coconut goes into the co-op’s book, and anyone may count them. People do. Loudly."]],
+          more: { q: "And the embassy envelopes?", a: [["", "They offered me one. I asked for a receipt. They have not offered again. Try the pier: Tobias gives every envelope a welcome speech."]] } },
         { q: "How does the machine really work?", a: [["", "Three bicycles turn the press, the organ pumps the air, and Noor tells everyone to pedal faster. Nobody understands the organ. It was here before the factory."]] },
         { q: "Is Agorzilla stealing your coconuts?", a: [["", "Never a coconut. Only bananas. A creature with standards. I leave one banana by the gate on Fridays now. Good relations with the neighbours."]] },
       ],

@@ -391,6 +391,7 @@ class Relay:
         self.state = self._load_state()         # restarts, dropped txs, last chain seen
         self.sources = TxSources()              # which transactions came through this relay, for /api/v1/sources
         self.sources.bots = {pk: c for c, pk in self.island.pk.items()}   # White Rabbit Key's rival moves
+        self.sources.purses = {pk: p for p, pk in self.island.ppk.items()}   # and the money it pays the visitors
         self.sources_text, self.sources_at = None, 0.0
         self.uptime = self._load_uptime()       # hourly availability buckets and outages
         self.uptime_text: str | None = None
@@ -1211,6 +1212,12 @@ class Relay:
             ok, data = self.island.accept(args[0].lower(), args[1].lower(), ip, args[2].lower() if len(args) == 3 else "hall")
             return envelope_ok(cmd, data) if ok else envelope_error(cmd, data, "FORBIDDEN" if "off" in data else "INVALID_PARAMS")
 
+        if cmd == "islandpay":   # White Rabbit Key: a wage or an embassy's money, paid to the visitor's test wallet
+            if len(args) != 2:
+                return envelope_error(cmd, "Usage: islandpay <works|north|south> <wallet>", "INVALID_PARAMS")
+            ok, data = self.island.accept_pay(args[0].lower(), args[1], ip)
+            return envelope_ok(cmd, data) if ok else envelope_error(cmd, data, "FORBIDDEN" if "off" in data else "INVALID_PARAMS")
+
         if cmd == "leasetx":
             return await self.lease_deposit(message[len(parts[0]):].strip(), ip)
 
@@ -1226,7 +1233,7 @@ class Relay:
                                      self.via.get(ws, "") if ws else "")
 
         return envelope_error(cmd, "Not allowed here. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
-                              "gettaustate, presence, report, via, islandmove, isle, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
+                              "gettaustate, presence, report, via, islandmove, islandpay, isle, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
                               + " (a transaction signed in your browser)", "FORBIDDEN")
 
     async def wallet(self, cmd: str, raw: str, ip: str, site: str = "", via: str = "") -> str:
