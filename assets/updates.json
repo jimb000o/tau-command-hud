@@ -2085,5 +2085,22 @@
   "tag": "White Rabbit Key",
   "on": "2026-11-02",
   "html": "White Rabbit Key: sudden events. Once or twice a campaign, on a random morning, something happens to the island and the Key Crier leads with it: the Coconut Works boiler bursts, a storm closes the pier, Salado’s investors try to buy the council tree in the night, a record catch, the school roof gives way. You get one choice on the morning paper (a repair fund, a kitchen for the stranded, Ama’s letter, a fish fry, tarpaulins), paid in coins and written in the Book as a real transaction to the place’s till. The event’s topic is the talk of the island for the rest of the week: speeches about it count half as much again, laws for it pass more easily, the rivals pick their laws by it, the market marks it with a star, and the special edition remembers whether you helped. Rico has a word on each; the clips follow with the next voice run."
+ },
+ {
+  "tag": "Testnet load",
+  "on": "2026-11-02",
+  "html": "New page: Testnet load. How hard Tau Testnet Alpha is working, minute by minute for the last six hours: transactions sealed per minute, how many wait, how long a transaction waits for its block, gaps between blocks, and how many tauhud and White Rabbit Key’s island bot sent or had refused. A word on top says calm, busy, strained or stalled, and the records since counting began sit underneath. Counted by our relay from our own node; the page says plainly where our own limits sit.",
+  "major": {
+   "id": "load",
+   "title": "New: Testnet load",
+   "text": "How hard the Tau testnet is working, minute by minute: sealed, waiting, time to a block, and what our island game sends. Calm, busy, strained or stalled at a glance.",
+   "link": "/load/",
+   "image": "/assets/shots/load.png"
+  }
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-11-02",
+  "html": "White Rabbit Key: the evening bell. At eight o’clock German time Tobias rings the pier bell, and for two minutes everyone playing can ring back: a real transaction at the same moment as everyone else’s, and one more move that day. New small treats that cost coins but no move, once a day each: a tip for Lola, who puts in a good word with the other candidates; a round of coconut coffee for the whole square; exercise books for Hana’s class. And the rivals’ moves now go to the testnet one transaction each while the island bot keeps up (at most 24 a minute, 10,000 a day); only in a rush do the same moves ride together again."
  }
 ]

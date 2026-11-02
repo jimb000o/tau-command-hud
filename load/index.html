@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Testnet load</title>
+<meta name="description" content="How hard Tau Testnet Alpha is working, minute by minute: transactions sealed, transactions waiting, how long one waits for its block, and what tauhud.com and White Rabbit Key send. Unofficial.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Testnet load">
+<meta property="og:description" content="How hard the testnet is working, minute by minute: sealed, waiting, time to a block.">
+<meta property="og:image" content="https://tauhud.com/assets/og/load.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tauhud.com/load/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/load.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber for strain, red for a stall. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 12px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.snap { color: var(--behind); border-color: rgba(255,177,59,.4); } .state.snap i { background: var(--behind); }
+.top { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); align-items: end; }
+@media (min-width: 900px) { .top { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); } }
+.lead { margin: 4px 0 0; font: 500 clamp(20px, 2.6vw, 26px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 76ch; }
+.verdict { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; background: rgba(16,16,18,.86); display: grid; gap: 2px; }
+.verdict b { font: 700 22px var(--display); letter-spacing: .04em; color: #fff; display: flex; align-items: center; gap: 10px; }
+.verdict b i { width: 11px; height: 11px; border-radius: 50%; background: var(--dim); }
+.verdict.calm b i, .verdict.busy b i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.verdict.busy b { color: var(--ok); }
+.verdict.strained { border-color: rgba(255,177,59,.45); } .verdict.strained b { color: var(--behind); } .verdict.strained b i { background: var(--behind); }
+.verdict.stalled { border-color: rgba(255,77,109,.45); } .verdict.stalled b { color: var(--bad); } .verdict.stalled b i { background: var(--bad); }
+.verdict span { color: var(--dim); font-size: 12px; }
+.tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-width: 0; }
+.tile h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .v { font: 600 22px/1.2 var(--display); color: #fff; font-variant-numeric: tabular-nums; margin-top: 2px; white-space: nowrap; }
+.tile .v.warn { color: var(--behind); }
+.tile p { margin: 0; color: var(--dim); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-width: 0; }
+.panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.charts { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .charts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+svg.ch { display: block; width: 100%; height: clamp(120px, 24vh, 230px); max-height: 46vw; touch-action: none; }
+svg.ch text { font: 11px var(--mono); fill: var(--dim); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--dim); font-size: 12px; margin-top: 4px; }
+.legend i { display: inline-block; width: 12px; height: 3px; vertical-align: middle; margin-right: 6px; }
+.panel { position: relative; }
+.read { position: absolute; right: 14px; top: 8px; max-width: 70%; background: rgba(16,16,18,.95); color: #fff; font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recw { display: grid; gap: 8px 24px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) { .recw { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } .recw .note { margin: 0; } }
+.rec { display: grid; gap: 2px 18px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.rec div { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); padding: 3px 0; }
+.rec span { color: var(--dim); }
+.rec b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+.note { color: var(--dim); font-size: 12px; margin: 6px 0 0; max-width: 110ch; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+footer a { color: var(--dim); }
+footer p { margin: 0; }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
+#tip .tv { font: 600 15px var(--display); color: #fff; }
+@media (max-width: 700px) {
+  .tile .v { font-size: 19px; }
+  .tile h3, .tile p, .legend, .note, footer, .read, .rec { font-size: 11px; }
+  footer a { display: inline-block; min-height: 44px; line-height: 44px; }
+}
+@media (min-width: 900px) and (max-height: 720px) { svg.ch { height: 104px !important; } .note { font-size: 11px; line-height: 1.4; } .tile { padding: 6px 12px; } }
+@media (min-width: 900px) and (max-height: 860px) { .sub { display: none; } svg.ch { height: clamp(96px, 17vh, 180px); } .wrap { gap: 9px; } }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Testnet load</span></a>
+    <span class="state" id="state" data-tip="Where these numbers come from.\nCounted by our relay from our node: blocks, the waiting room and what tauhud sends."><i></i><span id="stateText">Reading the relay</span></span>
+  </header>
+  <nav class="tnav" data-page="load" aria-label="Pages and tools"></nav>
+  <div class="top">
+    <div>
+      <p class="lead">How hard the testnet is working.</p>
+      <p class="sub">Every move in White Rabbit Key is a real test transfer, so the more people play, the more the testnet has to carry. This page shows what it carries, minute by minute, for the last six hours: what gets sealed, what waits, and how long a transaction waits for its block.</p>
+    </div>
+    <div class="verdict" id="verdict" data-tip="Load right now.\nFrom the last ten minutes: waiting times, gaps between blocks and refused sends."><b><i></i><span id="vWord">…</span></b><span id="vWhy">Reading the relay</span></div>
+  </div>
+  <div class="tiles" id="tiles"></div>
+  <div class="charts">
+    <section class="panel">
+      <h2>Transactions per minute <small>last six hours</small></h2>
+      <svg class="ch" id="c1" aria-label="Transactions sealed per minute"></svg>
+      <div class="read" id="r1"></div>
+      <div class="legend"><span><i style="background:rgba(255,255,255,.75)"></i>sealed in blocks</span><span><i style="background:var(--ok)"></i>sent through tauhud</span><span><i style="background:var(--behind)"></i>refused before the node</span></div>
+    </section>
+    <section class="panel">
+      <h2>Waiting room <small>last six hours</small></h2>
+      <svg class="ch" id="c2" aria-label="Transactions waiting and time to a block"></svg>
+      <div class="read" id="r2"></div>
+      <div class="legend"><span><i style="background:rgba(255,255,255,.75)"></i>waiting (left)</span><span><i style="background:var(--ok)"></i>longest wait, seconds (right)</span><span><i style="background:var(--behind)"></i>over a minute</span></div>
+    </section>
+  </div>
+  <section class="panel">
+    <h2>Records <small id="since">since the relay began counting</small></h2>
+    <div class="recw"><div class="rec" id="rec"></div>
+    <p class="note">One validator, run by IDNI, seals every block; it builds one when ten transactions wait or thirty seconds have passed. Our relay lets visitors send at most 60 transactions a minute in all and the island bot at most 24, so a busy minute here says as much about our limits as about the testnet’s. A transaction sealed but still listed (a ghost, IDNI issue #81) counts as waiting until it leaves the list.</p></div>
+  </section>
+  <footer>
+    <p>Unofficial, not affiliated with IDNI. Counted by the read-only relay at node.tauhud.com from our own testnet node. <a href="https://node.tauhud.com/load" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="/stats/">Stats</a> · <a href="/rabbit/">White Rabbit Key</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BTestnet%20load%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const URL_LOAD = "https://node.tauhud.com/load";
+const PARAMS = new URLSearchParams(location.search);
+const SAMPLE = PARAMS.has("sample") || !!(window.TauSim && TauSim.on);   // the simulation and ?sample show made-up numbers, marked as such
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, o) => T(s).replace(/\{(\w+)\}/g, (_, k) => o[k]);
+const N = n => n == null ? "–" : Number(n).toLocaleString("en-US");
+const SVGNS = "http://www.w3.org/2000/svg";
+const svg = (tag, a) => { const e = document.createElementNS(SVGNS, tag); for (const k in a) e.setAttribute(k, a[k]); return e; };
+const hhmm = t => { const d = new Date(t * 1000); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+const secs = s => s == null ? "–" : s < 90 ? s + " s" : Math.round(s / 60) + " min";
+
+/* ---------- tooltip: a value line and at most two lines ---------- */
+const tip = $("tip");
+function showTip(ev, lines) {
+  tip.replaceChildren(...lines.map(([c, t]) => { const d = document.createElement("div"); if (c) d.className = c; d.textContent = t; return d; }));
+  tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + r.width > innerWidth - 12) x = ev.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 12) y = ev.clientY - r.height - 14;
+  tip.style.left = Math.max(12, x) + "px"; tip.style.top = Math.max(12, y) + "px";
+}
+const tipOf = d => d.dataset.tip.split(/\\n|\n/).map((l, i, a) => [a.length > 1 && i === 0 ? "tv" : "", T(l)]);
+document.addEventListener("pointerover", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d) showTip(e, tipOf(d)); });
+document.addEventListener("pointerout", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d && !d.contains(e.relatedTarget)) tip.hidden = true; });
+
+/* ---------- made-up numbers for the simulation and ?sample ---------- */
+function sample() {
+  const M = 360, now = Math.floor(Date.now() / 1000), start = Math.floor(now / 60) * 60 - (M - 1) * 60;
+  let seed = 7; const R = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const sealed = [], sent = [], bot = [], refused = [], pool = [], wmax = [], wavg = [], blocks = [], gap = [];
+  for (let i = 0; i < M; i++) {
+    const rush = i > 250 && i < 290 ? 3 + (i - 250) / 4 : 1;
+    const b = Math.round(2 + R() * 3), s = Math.round((4 + R() * 8) * rush), w = Math.round(3 + R() * 12 * rush);
+    sealed.push(s); sent.push(Math.round(s * .3)); bot.push(Math.min(24, Math.round(s * .4))); refused.push(rush > 8 && R() < .3 ? 2 : 0);
+    pool.push(Math.round(s * (rush > 6 ? 2.2 : .6))); wmax.push(w); wavg.push(Math.round(w / 2)); blocks.push(b); gap.push(Math.round(60 / b));
+  }
+  const hr = a => a.slice(-60).reduce((x, y) => x + y, 0);
+  return { generated_at: now, start, minutes: M, sealed, blocks, gap, pool, sent, bot, refused, wait_avg: wavg, wait_max: wmax,
+    now: { waiting: pool[M - 1], last_block_age: 9, sealed_hour: hr(sealed), blocks_hour: hr(blocks), sent_hour: hr(sent), bot_hour: hr(bot), refused_hour: hr(refused), wait_hour: 6, busiest_minute_hour: Math.max(...sealed.slice(-60)) },
+    records: { pool: 140, per_min: 96, per_block: 41, wait: 118, since: now - 86400 * 2 }, thresholds: { wait: 60, gap: 90 }, state: "busy", sample: true };
+}
+
+/* ---------- drawing ---------- */
+function chart(el, read, D, series, fmtRead) {
+  const W = el.clientWidth || 600, H = el.clientHeight || 180, L = 38, B = 18, top = 6;
+  el.setAttribute("viewBox", `0 0 ${W} ${H}`); el.replaceChildren();
+  const M = D.minutes, x = i => L + (W - L - 4) * i / (M - 1);
+  const max = Math.max(4, ...series.filter(s => !s.right).flatMap(s => s.v.map(v => v || 0)));
+  const rmax = Math.max(10, ...series.filter(s => s.right).flatMap(s => s.v.map(v => v || 0)));
+  const y = (v, r) => top + (H - top - B) * (1 - (v || 0) / (r ? rmax : max));
+  for (const f of [0, .5, 1]) {
+    const yy = top + (H - top - B) * (1 - f);
+    el.append(svg("line", { x1: L, x2: W - 4, y1: yy, y2: yy, stroke: "rgba(255,255,255,.08)" }));
+    const t = svg("text", { x: L - 6, y: yy + 4, "text-anchor": "end" }); t.textContent = N(Math.round(max * f)); el.append(t);
+  }
+  if (series.some(s => s.right)) for (const f of [0, .5, 1]) { const t = svg("text", { x: W - 2, y: top + (H - top - B) * (1 - f) + (f === 1 ? 10 : -3), "text-anchor": "end", fill: "#39ff8a" }); t.textContent = Math.round(rmax * f) + " s"; if (f) el.append(t); }
+  const step = W < 520 ? 120 : 60, first = ((60 - Math.floor(D.start / 60) % 60) % 60);   // labels on the full hours
+  for (let i = first; i < M - 15; i += step) { const t = svg("text", { x: x(i), y: H - 4, "text-anchor": "middle" }); t.textContent = hhmm(D.start + i * 60); el.append(t); }
+  for (const s of series) {
+    if (s.bars) {
+      const w = Math.max(1, (W - L - 4) / M - .4);
+      s.v.forEach((v, i) => { if (v) el.append(svg("rect", { x: x(i) - w / 2, y: y(v, s.right), width: w, height: H - B - y(v, s.right), fill: s.col })); });
+    } else if (s.dots) {
+      s.v.forEach((v, i) => { if (v) el.append(svg("circle", { cx: x(i), cy: y(v, s.right), r: 2.2, fill: s.dotCol ? s.dotCol(v) : s.col })); });
+    } else {
+      const d = s.v.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v, s.right).toFixed(1)).join(" ");
+      el.append(svg("path", { d, fill: "none", stroke: s.col, "stroke-width": 1.4 }));
+    }
+  }
+  const cur = svg("line", { y1: top, y2: H - B, stroke: "rgba(255,255,255,.35)", visibility: "hidden" }); el.append(cur);
+  const at = e => { const r = el.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W; return Math.max(0, Math.min(M - 1, Math.round((px - L) / ((W - L - 4) / (M - 1))))); };
+  el.onpointermove = e => { const i = at(e); cur.setAttribute("x1", x(i)); cur.setAttribute("x2", x(i)); cur.setAttribute("visibility", "visible"); read.textContent = hhmm(D.start + i * 60) + " · " + fmtRead(i); };
+  el.onpointerleave = () => { cur.setAttribute("visibility", "hidden"); read.textContent = ""; };
+}
+
+const WORD = { calm: "Calm", busy: "Busy", strained: "Strained", stalled: "Stalled" };
+const WHY = {
+  calm: "Blocks come on time and nothing waits long.",
+  busy: "A hundred or more transactions sealed in the last ten minutes; blocks keep up.",
+  strained: "In the last ten minutes a transaction waited over a minute, blocks fell behind or sends were refused.",
+  stalled: "Transactions wait and no block for ten minutes.",
+};
+function render(D) {
+  const n = D.now, st = D.state || "calm";
+  $("verdict").className = "verdict " + st;
+  $("vWord").textContent = T(WORD[st]);
+  $("vWhy").textContent = D.sample ? T("Made-up numbers: a preview, not the testnet.") : T(WHY[st]);
+  const tiles = [
+    ["Sealed, last hour", N(n.sealed_hour), F("in {n} blocks", { n: N(n.blocks_hour) }), "Transactions sealed in the last hour.\nCounted from the blocks our node holds."],
+    ["Busiest minute", N(n.busiest_minute_hour), T("sealed, in the last hour"), "Most transactions sealed in one minute of the last hour."],
+    ["Waiting now", N(n.waiting), T("in the waiting room"), "Transactions our node lists as waiting.\nGhosts (sealed, still listed) count too."],
+    ["Wait for a block", secs(n.wait_hour), T("average, last hour"), "From first seen waiting to sealed in a block.\nMeasured every few seconds."],
+    ["Last block", n.last_block_age == null ? "–" : secs(n.last_block_age), T("ago"), "Seconds since the newest block."],
+    ["Through tauhud", N(n.sent_hour + n.bot_hour), F("{n} by visitors, {m} by the island bot", { n: N(n.sent_hour), m: N(n.bot_hour) }), "Transactions tauhud sent in the last hour.\nVisitors sign their own; the bot sends the rivals' moves."],
+    ["Refused", N(n.refused_hour), T("sends in the last hour"), "Sends refused by our relay's limits or by the node."],
+  ];
+  $("tiles").replaceChildren(...tiles.map(([h, v, p, t]) => {
+    const d = document.createElement("div"); d.className = "tile"; d.dataset.tip = t;
+    d.innerHTML = `<h3></h3><div class="v"></div><p></p>`;
+    d.children[0].textContent = T(h); d.children[1].textContent = v; d.children[2].textContent = p;
+    if ((h === "Wait for a block" && n.wait_hour > D.thresholds.wait) || (h === "Refused" && n.refused_hour > 0)) d.children[1].classList.add("warn");
+    return d;
+  }));
+  const tau = D.sent.map((v, i) => v + D.bot[i]);
+  chart($("c1"), $("r1"), D, [{ v: D.sealed, bars: true, col: "rgba(255,255,255,.55)" }, { v: tau, col: "#39ff8a" }, { v: D.refused, dots: true, col: "#ffb13b" }],
+    i => F("{n} sealed in {b} blocks · {m} sent through tauhud · {r} refused", { n: N(D.sealed[i]), b: N(D.blocks[i]), m: N(tau[i]), r: N(D.refused[i]) }));
+  chart($("c2"), $("r2"), D, [{ v: D.pool, bars: true, col: "rgba(255,255,255,.55)" }, { v: D.wait_max, dots: true, right: true, col: "#39ff8a", dotCol: v => v > D.thresholds.wait ? "#ffb13b" : "#39ff8a" }],
+    i => F("{n} waiting · longest wait {w}", { n: N(D.pool[i]), w: secs(D.wait_max[i]) }));
+  const r = D.records;
+  const rec = [["Most waiting at once", N(r.pool)], ["Most sealed in a minute", N(r.per_min)], ["Most in one block", N(r.per_block)], ["Longest wait for a block", secs(r.wait)]];
+  $("rec").replaceChildren(...rec.map(([a, b]) => { const d = document.createElement("div"); d.innerHTML = "<span></span><b></b>"; d.children[0].textContent = T(a); d.children[1].textContent = b; return d; }));
+  $("since").textContent = F("since {x}", { x: new Date(r.since * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) });
+}
+
+let LAST = null;
+async function tick() {
+  const st = $("state");
+  if (SAMPLE) { LAST = sample(); st.className = "state snap"; $("stateText").textContent = T("Sample numbers"); render(LAST); return; }
+  try {
+    const r = await fetch(URL_LOAD, { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    LAST = await r.json();
+    if (!LAST || !Array.isArray(LAST.sealed)) throw new Error("empty");
+    st.className = "state live"; $("stateText").textContent = T("Live from our node");
+    render(LAST);
+  } catch (e) {
+    st.className = "state snap"; $("stateText").textContent = T("Relay unreachable");
+    if (!LAST) { $("vWord").textContent = "–"; $("vWhy").textContent = T("Our relay does not answer right now; the page tries again every 30 seconds."); }
+  }
+}
+tick();
+if (!SAMPLE) setInterval(tick, 30000);
+addEventListener("resize", () => { if (LAST) render(LAST); });
+</script>
+</body>
+</html>
