@@ -30,19 +30,19 @@
   /* ---------- who lives on the island ---------- */
   const TOPICS = { fish: "fishing", school: "the school", music: "music", quiet: "quiet nights", visitors: "visitors", roads: "roads" };
   const CANDS = {
-    marisol: { name: "Marisol", role: "Runs the Parasol Café, still mends nets", skin: "#a8693f", hair: "#1d1410", style: "bun", acc: "scarf", accC: "#e8574a", shirt: "#2fb0a8", cares: ["fish", "roads"], way: "people",
-      pitch: "Talks to everyone, forgets no one." },
-    tobias: { name: "Tobias", role: "Harbour master, loves a ceremony", skin: "#e0b08a", hair: "#9a9aa0", style: "side", acc: "cap", accC: "#1f3550", shirt: "#f4f1ea", cares: ["visitors", "music"], way: "rumours",
-      pitch: "Has a microphone and a theory about everyone." },
-    baako: { name: "Baako", role: "Coconut farmer, friend of every embassy", skin: "#5a3620", hair: "#111", style: "short", acc: "straw", accC: "#d9b45a", shirt: "#f2b134", cares: ["visitors", "roads"], way: "money",
-      pitch: "Shakes every hand, especially the ones holding envelopes." },
+    marisol: { name: "Marisol", role: "Runs the Parasol Café, hears everything first", skin: "#a8693f", hair: "#1d1410", style: "bun", acc: "scarf", accC: "#e8574a", shirt: "#2fb0a8", cares: ["fish", "roads"], way: "rumours",
+      pitch: "Talks to everyone, and about everyone." },
+    tobias: { name: "Tobias", role: "Harbour master, friend of every embassy", skin: "#e0b08a", hair: "#9a9aa0", style: "side", acc: "cap", accC: "#1f3550", shirt: "#f4f1ea", cares: ["visitors", "music"], way: "money",
+      pitch: "Gives every ambassador a ceremony, and every envelope a warm welcome." },
+    baako: { name: "Baako", role: "Founder of the coconut co-op, counts everything", skin: "#5a3620", hair: "#111", style: "short", acc: "straw", accC: "#d9b45a", shirt: "#f2b134", cares: ["visitors", "roads"], way: "people",
+      pitch: "Knows the price of every coconut and every promise." },
     hana: { name: "Hana", role: "Schoolteacher, writes everything down", skin: "#f0cfa8", hair: "#222", style: "bob", acc: "glasses", accC: "#333", shirt: "#6f8cff", cares: ["school", "quiet"], way: "laws",
       pitch: "Believes a good law beats a good speech." },
   };
   const FOLK = {
     rico: { name: "Rico", role: "DJ on Radio Coco", skin: "#7a4a2a", hair: "#111", style: "afro", acc: "phones", accC: "#e8574a", shirt: "#e86fa0" },
     frost: { name: "Ambassador Frost", role: "North Wind Embassy", skin: "#f3d6c0", hair: "#e0e0e0", style: "side", acc: "monocle", accC: "#d9b44a", shirt: "#3b5f8a" },
-    salado: { name: "Ambassador Salado", role: "South Current Embassy", skin: "#c68642", hair: "#3a2a1a", style: "side", acc: "mustache", accC: "#3a2a1a", shirt: "#c0533f" },
+    salado: { name: "Ambassador Salado", role: "South Current Embassy, wellness investor", skin: "#c68642", hair: "#3a2a1a", style: "side", acc: "mustache", accC: "#3a2a1a", shirt: "#c0533f" },
     lola: { name: "Lola", role: "Runs Bar La Ola", skin: "#8d5524", hair: "#5a1a1a", style: "curls", acc: "flower", accC: "#ff6f91", shirt: "#fff6e6" },
     sam: { name: "Old Sam", role: "Keeper of the lighthouse and the Book", skin: "#c9a27a", hair: "#eee", style: "bald", acc: "beard", accC: "#eee", shirt: "#2a2a30" },
     /* the people of the island's other quarters (a painted island with a layout that has them, infra/rabbit-art) */
@@ -290,7 +290,7 @@
     const R = seeded(Date.now() & 0xffffff), sup = {};
     for (const c in CANDS) { sup[c] = {}; PEOPLE.forEach(p => { sup[c][p.id] = 42 + Math.round(R() * 14) + (CANDS[c].cares.some(x => p.cares.includes(x)) ? 6 : 0); }); }
     const trust = {}; for (const c in CANDS) trust[c] = 45;
-    return { v: 1, me, day: 1, move: 0, coins: { marisol: 30, tobias: 40, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: store.get("tauhud-rabbit-chain") === "on", sent: {}, over: null, said: {} };
+    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {} };
   }
   const save = () => { if (G) store.set(KEY, JSON.stringify(G)); };
   function load() { try { const g = JSON.parse(store.get(KEY) || "null"); if (g && g.v === 1 && CANDS[g.me]) return g; } catch (e) {} return null; }
@@ -326,7 +326,7 @@
   function aiVote(v, by, id) {
     if (pact(v, by)) return true;
     const s = lawScore(id, CANDS[v].cares), R = seeded(G.seed + G.day * 31 + id.length * 7 + v.length);
-    if (LAWS[id].open) return v !== "tobias" || R() < 0.3;   // more people reading the Book suits everyone except the man with the microphone
+    if (LAWS[id].open) return v !== "marisol" || R() < 0.3;   // more people reading the Book suits everyone except the café that lives on gossip
     if (s > 0) return true; if (s < 0) return false;
     return leader() !== by && R() < 0.55;
   }
@@ -407,7 +407,7 @@
       }
       if (R() < 0.35 && w !== "rumours") { const p = others(c).filter(x => x !== G.me && !pact(c, x))[0]; if (p && R() < 0.5) makePact(c, p, false); }
       campaign(c, CANDS[c].cares[0], 0.4);
-      if (w === "rumours") campaign(c, CANDS[c].cares[1], 0.5);   // the man with the microphone also just talks
+      if (w === "rumours") campaign(c, CANDS[c].cares[1], 0.5);   // the café owner also just talks
     }
     /* promises due: whoever took embassy money and never proposed the law is found out on the last morning */
     if (G.day === DAYS) G.deals.forEach(d => { if (!d.kept && !d.told) { d.told = true; bump(d.by, null, -8); write(d.emb === "north" ? "frost" : "salado", F("says {x} took the money and never proposed “{y}”", { x: nm(d.by), y: T(LAWS[d.law].t) }), "broke"); news(F("{x}: “{y} took our money and forgot us.”", { x: T(EMB[d.emb].name), y: nm(d.by) })); } });
@@ -434,7 +434,7 @@
     $("cvCoins").textContent = F("{n} coins", { n: G.coins[G.me] });
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
     const last = G.news[G.news.length - 1];
-    if (last && last !== DJ.said) { DJ.said = last; onAir([V("book"), Q(last.s)], 1); }
+    if (last && last !== DJ.said) { DJ.said = last; if (DJ.opened) onAir([V("book"), Q(last.s)], 1); else { DJ.after = [V("book"), Q(last.s)]; $("cvNews").textContent = last.s; } }   // before the show opens, the news waits for Rico's opener
     else if (!DJ.text) $("cvNews").textContent = last ? last.s : T("The Key Crier: five days to the election. Everything anyone does is written in the Book.");
     SC.setHour(G.over ? 2.4 : G.move >= MOVES ? 3 : G.move * 0.9);
     SC.rabbit(G.over || G.move >= MOVES ? null : hint()[0]);
@@ -707,7 +707,8 @@
       G.said.book = G.book.length; save();
       const rows = G.book.slice().reverse().map(b => el("li", { class: "k-" + b.kind }, el("small", { text: F("Day {n}", { n: b.day }) + " · " + T(HOURS[b.hour] || "Night") }), el("span", null, el("b", { translate: "no", text: nm(b.who) }), " ", el("span", { text: b.text }), b.tx && !/^\d+$/.test(b.tx) ? el("a", { class: "cv-tx", href: "/explorer/?tx=" + b.tx, target: "_blank", rel: "noopener", title: T("This line on Tau Testnet Alpha"), text: " ⛓" }) : b.tx || b.bot ? el("span", { class: "cv-tx", title: T("This line went to Tau Testnet Alpha as a transaction"), text: " ⛓" }) : null)));
       scene(box, "sam", T("The Book in the lighthouse"), T(G.book.length ? "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing." : "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."), [btn(T("The island today"), () => openIsle(), { sub: T("every campaign played today, added up") })],
-        el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]));
+        el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]),
+        el("p", { class: "cv-old", text: T("The Book is the oldest custom of the island’s first people: for three hundred years every agreement was copied by hand into many books, so nobody alone could change one. The testnet is only its newest copy.") }));
     },
     pier(box) {
       scene(box, G.me === "tobias" ? "sam" : "tobias", T("The pier"), T("Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."), [
@@ -937,25 +938,40 @@
   ];
 
   /* ---------- Radio Coco: Rico at the microphone, now and then, about what is going on ---------- */
-  const DJ = { said: null, text: "", face: null, next: performance.now() + 9000, last: -1 };
+  const DJ = { said: null, text: "", face: null, next: performance.now() + 2500, last: -1 };
   if ($("cvDJ")) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }   // Rico is at the microphone from the start, not only once he first speaks
-  function onAir(line, urgent) {
+  /* a phone call on the strip: one turn at a time, with who is speaking, each for its share of the time they talk */
+  const TURN = { timers: [] };
+  function turns(parts, secs) {
+    TURN.timers.forEach(clearTimeout); TURN.timers = [];
+    const said = parts.filter(p => p.v), total = said.reduce((n, p) => n + p.v.length, 0) || 1, out = $("cvNews");
+    let at = 0;
+    said.forEach(p => {
+      const name = p.who ? p.who[0].toUpperCase() + p.who.slice(1) : "Rico";
+      TURN.timers.push(setTimeout(() => { if (out) out.textContent = name + ": " + p.t; }, at * 1000));
+      at += (secs ? secs * p.v.length / total : Math.max(2.5, p.t.length * 0.06));
+    });
+    return at;
+  }
+  function onAir(line, urgent, call) {
     const box = $("cvRadio"); if (!box) return;
     if (!DJ.face) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }
     const parts = typeof line === "string" ? [{ t: line, v: null }] : line;
     line = join(parts);
     DJ.text = line; box.classList.add("live");
     const out = $("cvNews"); out.textContent = ""; let i = 0;
-    clearInterval(DJ.type); DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); } }, 28);
+    clearInterval(DJ.type); TURN.timers.forEach(clearTimeout); TURN.timers = [];
+    if (call) { const t = turns(parts, 0); clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), t * 1000 + 800); DJ.next = performance.now() + t * 1000 + 30000; }
+    else DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); } }, 28);
     say(DJ.face, Math.min(6000, 700 + line.length * 45));
     if (!urgent) SND.sfx("jingle");
-    clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), Math.min(9000, 2500 + line.length * 60));
-    DJ.next = performance.now() + 38000 + Math.random() * 30000;
+    if (!call) { clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), Math.min(9000, 2500 + line.length * 60)); DJ.next = performance.now() + 38000 + Math.random() * 30000; }
     /* his voice, when the clips are there: the mouth and the on-air light follow it */
     const said = DJ.text;
     if (UI.card) return;   // someone in the open card is talking to you; the strip only shows it
     RICO.speak(parts).then(secs => {
       if (!secs || DJ.text !== said) return;
+      if (call) turns(parts, secs);
       say(DJ.face, secs * 1000);
       clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), secs * 1000 + 800);
       DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 30000);
@@ -993,7 +1009,7 @@
      ghosts (live only: sealed transactions the node still lists as waiting, IDNI #81, counted by the relay), and in
      the simulation the refusals, a consensus switch voted on or in force, and the restart at midnight UTC. */
   const RADAR = { snap: null, busy: false, seen: 0, mode: null, rules: null, ghosts: 0, ghostAt: 0, flagged: {}, news: [] };
-  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused"];
+  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused", "duet", "record", "solo", "postman", "fresh"];
   const KIND = { rule_deploy: "rule", approval_request: "cosign", transfer_vote: "cosvote", retractable_transfer: "lock", retract_transfer: "back", rule_offer: "offer", rule_offer_accept: "offerYes", consensus_rule_vote: "lawVote" };
   const txKind = tx => { const t = tx.tx_type || "user_tx"; return t === "user_tx" && tx.operations && tx.operations["0"] ? "rule_deploy" : t; };
   /* the ghosts by the visitor's calendar: fitting in Halloween week, a nuisance in the first week of November, ordinary news otherwise */
@@ -1054,7 +1070,7 @@
       }
       if (s.sim) for (const d of TauSim.chain.dropped(n) || []) heard(d.type === "consensus_rule_update" ? "refusedLaw" : /o5|own rule|its rule/i.test(d.why || "") ? "refusedOwn" : "refused", n);
     }
-    if (!s.sim) return;
+    if (!s.sim) { chainLife(s); return; }
     /* the simulation's big moments: a consensus switch put to the vote, and the moment it comes into force */
     /* a validator in or out, the base fee up or down, or another rule revision in force */
     const ru = TauSim.chain.rulesAt(s.h), was = RADAR.rules;
@@ -1072,6 +1088,24 @@
     }
     if (RADAR.news.some(n => /^to/.test(n.set))) RADAR.news = RADAR.news.filter(n => n.set !== "lawSim");   // the switch is that rule change
     if (first) RADAR.news = RADAR.news.filter(n => !/^(now|restart|val|fee|rev)/.test(n.set));   // nothing switched while we were not listening
+  }
+  /* what the real chain shows about itself, as island news: one hand sealing every recent block (and sending nothing
+     of its own), a second hand joining in, the chain started over and not yet past its old height (block 5028, where
+     the old chain stood still on 1 November 2026), and the moment it passes it. Each at most every 20 minutes. */
+  const OLD_TOP = 5028;
+  function chainLife(s) {
+    const props = new Set(s.bs.map(b => b.header.proposer_pubkey).filter(Boolean)), now = performance.now();
+    const once = (set, h) => { RADAR.netAt = RADAR.netAt || {}; if (now - (RADAR.netAt[set] || -1e9) < 1200000) return; RADAR.netAt[set] = now; heard(set, h); };
+    const was = RADAR.props || 0; RADAR.props = props.size;
+    RADAR.solo = props.size === 1 && s.bs.length >= 6;
+    if (props.size >= 2 && was === 1) once("duet", s.h);
+    else if (RADAR.solo && Math.random() < 0.5) {
+      const p = [...props][0], sent = s.bs.some(b => (b.transactions || []).some(tx => tx.sender_pubkey === p)), any = s.bs.some(b => (b.transactions || []).length);
+      once(any && !sent && Math.random() < 0.4 ? "postman" : "solo", s.h);
+    }
+    RADAR.fresh = s.h < OLD_TOP;
+    if (RADAR.fresh && Math.random() < 0.3) once("fresh", s.h);
+    if (s.h >= OLD_TOP && s.h < OLD_TOP + 400 && !RADAR.recorded) { RADAR.recorded = 1; heard("record", s.h); }
   }
   /* how long ago the last block came: in minutes, then hours, then days */
   const ago = (y, m) => m < 120 ? Q("(last block {y}, {n} minutes ago)", { y, n: Math.round(m) }) : m < 2880 ? Q("(last block {y}, {n} hours ago)", { y, n: Math.round(m / 60) }) : Q("(last block {y}, {n} days ago)", { y, n: Math.round(m / 1440) });
@@ -1091,10 +1125,12 @@
      the weather every fourth line, and in between the game and the island, never the same line twice in a row */
   const ROT = { n: 0, newsLast: false };
   /* a listener phones in: Rico picks up, the caller asks in their own voice (through the telephone), Rico answers */
+  /* a call is a little conversation: the caller, Rico, the caller again, a goodbye, and Rico signs off (rico.js CALLS) */
   function phoneIn() {
-    const keys = RICO.CALLS.map((c, i) => "call:" + i), k = pickLine(keys), [who, q, a] = RICO.CALLS[keys.indexOf(k)];
-    const ring = pickLine(RICO.SETS.ring); markSaid(ring);
-    return { k, parts: [V(ring), { t: T(q), v: q, who }, { t: T(a), v: a }] };
+    const ok = c => !c.when || (c.when === "solo" ? RADAR.solo : c.when === "fresh" ? RADAR.fresh : false);
+    const keys = RICO.CALLS.map((c, i) => ok(c) ? "call:" + i : null).filter(Boolean), k = pickLine(keys), c = RICO.CALLS[+k.slice(5)];
+    const ring = pickLine(RICO.SETS.ring), bye = pickLine(RICO.SETS.bye); markSaid(ring); if (!c.cut) markSaid(bye);
+    return { k, parts: RICO.call(c, ring, bye), call: true };
   }
   /* chain news as a host tells it: big moments with a sting before and a word after, small ones now and then */
   function story(n) {
@@ -1106,7 +1142,9 @@
   }
   function nextLine() {
     ROT.n++;
-    if (ROT.n === 1) { const hr = new Date().getHours(); return one(Math.random() < 0.5 ? "open" : hr >= 5 && hr < 11 ? "morning" : hr < 17 && hr >= 11 ? "afternoon" : hr >= 17 && hr < 22 ? "evening" : "night"); }
+    /* the show opens with a shout, after the drum roll and the station horn */
+    if (ROT.n === 1) { const k = RICO.wake(); return { k, parts: [V(k)], wake: true }; }
+    if (ROT.n === 2) { const hr = new Date().getHours(); return one(Math.random() < 0.5 ? "open" : hr >= 5 && hr < 11 ? "morning" : hr < 17 && hr >= 11 ? "afternoon" : hr >= 17 && hr < 22 ? "evening" : "night"); }
     const big = RADAR.news.some(n => /^(now|to|restart|midnight)/.test(n.set));
     if (ROT.n % 4 === 3 && !big && RADAR.snap && performance.now() - RADAR.snap.at < 180000) { ROT.newsLast = false; return { k: null, parts: weather(RADAR.snap) }; }
     RADAR.news = RADAR.news.filter(n => performance.now() - n.at < 600000);
@@ -1114,23 +1152,34 @@
     const recent = SAID.slice(-20), i = RADAR.news.findIndex(n => /^(now|to|restart|midnight)/.test(n.set) || RICO.SETS[n.set].some(k => !recent.includes(k)));
     if (i >= 0 && (!ROT.newsLast || big)) { ROT.newsLast = true; return story(RADAR.news.splice(i, 1)[0]); }
     ROT.newsLast = false;
+    /* a new song on the radio: Rico says what it is */
+    if (DJ.songNew && RICO.L["sn_" + DJ.songNew]) { const k = "sn_" + DJ.songNew; DJ.songNew = null; return { k, parts: [V(k)] }; }
     /* in between: the game, a joke now and then, the phone-in, Tau corner, a word between songs, the jungle legend, the island's habits */
     /* the chain has stood still for an hour or more: Rico talks about it now and then, not only in the weather */
     const st = RADAR.snap;
     if (st && !st.sim && st.age >= 60 && performance.now() - st.at < 180000 && Math.random() < 0.3) return one("stall", ago(String(st.h), st.age));
     const r = Math.random();
-    if (r < 0.35) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
-    const set = r < 0.58 ? "joke" : r < 0.67 ? "call" : r < 0.73 ? "corner" : r < 0.79 ? "segue" : r < 0.86 ? "legend" : "general";
-    if (set === "call" && Math.random() < 0.75) return phoneIn();   // otherwise a letter from a listener, read out by Rico
+    if (r < 0.26) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
+    /* the phone-in is the busiest part of the show: about one line in three, never two calls in a row */
+    const set = r < 0.42 ? "joke" : r < 0.74 ? (ROT.callLast ? "net" : "call") : r < 0.78 ? "corner" : r < 0.82 ? "segue" : r < 0.87 ? "legend" : r < 0.91 ? "mainland" : r < 0.95 ? "net" : "general";
+    ROT.callLast = false;
+    if (set === "call" && Math.random() < 0.88) { ROT.callLast = true; return phoneIn(); }   // otherwise a letter from a listener, read out by Rico
     return one(set);
   }
   readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
   setInterval(() => {
     if (!G || G.over || G.counting || document.hidden || performance.now() < DJ.next) return;
+    /* the show waits for the sound to come on (the first tap), so the opener is heard, not just read; after a while it goes on in text */
+    if (ROT.n === 0 && !SND.on && performance.now() < 90000) return;
+    if (DJ.opened && DJ.after) { const a = DJ.after; DJ.after = null; onAir(a, 1); return; }
     const l = nextLine(); if (!l) return;
     if (l.k) markSaid(l.k);
-    onAir(l.parts);
+    DJ.opened = true;
+    if (l.wake && SND.on) { SND.sfx("wake"); DJ.next = performance.now() + 60000; setTimeout(() => onAir(l.parts, true), 2000); return; }
+    onAir(l.parts, false, l.call);
   }, 2000);
+  /* the radio plays its songs one after the other (music.js PLAYLIST): when a new one starts, Rico announces it next */
+  setInterval(() => { const so = SND.song; if (!so || !so.id || UI.card) return; if (DJ.song && so.id !== DJ.song) DJ.songNew = so.id; DJ.song = so.id; }, 3000);
 
   /* ---------- election night ---------- */
   function election() {
@@ -1171,7 +1220,101 @@
       setTimeout(next, 900);
     });
   }
+  /* ---------- after the count: a special edition of the Key Crier about the campaign, then the result ---------- */
+  const AFTER = {
+    night: "The Friday night market now sells more fried plantain than the mainland eats in a year.",
+    quiet: "After ten the island is so quiet that the gulls have started to whisper.",
+    reef: "The parrotfish came back, and brought their cousins.",
+    harbour: "The cruise ships came. The fish moved two bays further on and send postcards.",
+    boat: "The school boat has never once been late. The children have tried.",
+    lunch: "Fresh fish for lunch every day. The cat outside the school window has enrolled.",
+    concerts: "The Sunday concerts got so good that Radio Coco plays them again on Mondays.",
+    road: "The road round the island is finished. The coconuts have seen the other side and want to stay.",
+    copy: "The copy of the Book on the square is the most read thing on the island, after the menu at Lola’s.",
+    tax: "The coconut tax mended every roof. Nobody likes it. Every roof is dry.",
+  };
+  const OATH = {
+    marisol: "Marisol was sworn in under the council tree, between two orders of coffee.",
+    tobias: "Tobias was sworn in under the council tree and gave the speech himself. All of it. The ships waited.",
+    baako: "Baako was sworn in under the council tree and counted the guests. All of them, twice.",
+    hana: "Hana was sworn in under the council tree and corrected the oath while she took it.",
+  };
+  /* a template whose fillings are already translated: the template is looked up first, then filled (F would hand the dictionary a mostly translated line, which it leaves alone) */
+  const Fd = (s, v) => T(s).replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));
+  function campaignFacts() {
+    const o = G.over, me = G.me, mine = G.book.filter(b => b.who === me), out = [];
+    const myLaws = G.laws.filter(l => l.by === me).map(l => "“" + T(LAWS[l.id].t) + "”");
+    out.push(myLaws.length ? Fd("Your laws in force: {x}", { x: myLaws.join(T(", ")) }) : T("None of your laws made it into force."));
+    const total = Object.values(o.count || {}).reduce((a, b) => a + b, 0);
+    if (total) out.push(F("Ballots for you: {n} of {m}", { n: (o.count || {})[me] || 0, m: total }));
+    const pacts = G.pacts.filter(p => p.a === me || p.b === me), broken = pacts.filter(p => p.broken).length;
+    if (pacts.length) out.push(F("Pacts: {n} kept, {m} broken", { n: pacts.length - broken, m: broken }));
+    const lies = G.lies.filter(l => l.by === me && l.lie), truths = G.lies.filter(l => l.by === me && !l.lie).length;
+    if (lies.length) out.push(F("Rumours you paid for: {n}, shown up by the Book: {m}", { n: lies.length, m: lies.filter(l => l.out).length }));
+    if (truths) out.push(F("Truths you paid Radio Coco to tell: {n}", { n: truths }));
+    G.deals.filter(d => d.by === me).forEach(d => out.push(F(d.kept ? "Took {n} coins from the {x} and kept the promise" : "Took {n} coins from the {x} and never kept the promise", { n: EMB[d.emb].coins, x: EMB[d.emb].name })));
+    const signed = mine.filter(b => b.tx).length;
+    if (signed) out.push(F("{n} of your moves signed into Tau Testnet Alpha", { n: signed }));
+    return out;
+  }
+  function islandSays() {
+    const o = G.over, me = G.me, won = o.win === me, out = [];
+    const broke = G.pacts.some(p => p.broken && (p.a === me || p.b === me)), unkept = G.deals.some(d => d.by === me && !d.kept);
+    const mark = !o.lies && !broke && !unkept ? "Full marks. I checked." : o.lies + (broke ? 1 : 0) + (unkept ? 1 : 0) > 1 ? "See me after class." : "B minus. See the footnotes.";
+    if (me !== "hana") out.push(["hana", T(mark)]);
+    if (me !== "marisol") out.push(["marisol", T(won ? "I heard it first. Obviously." : "I heard it first. I always do.")]);
+    out.push(["sam", T("It is all in the Book. It always was.")]);
+    return out;
+  }
+  function edition() {
+    const o = G.over, me = G.me, won = o.win === me;
+    SC.gather(0); SC.focus(null);
+    const head = won && !o.lies ? F("{x} sworn in under the council tree", { x: nm(me) }) : won ? F("{x} sworn in, and the Book has questions", { x: nm(me) }) : F("{x} governs; {y} goes back to the hammock", { x: nm(o.win), y: nm(me) });
+    const facts = campaignFacts(), later = G.laws.filter(l => AFTER[l.id]).slice(-2).map(l => T(AFTER[l.id]));
+    if (!later.length) later.push(T("No new law passed. The island did what it always does, only with more meetings."));
+    later.push(T("And the ferry to the mainland? Still coming soon."));
+    const face = portrait(o.win, 64, 1);
+    const box = el("div", { class: "cv-paper cv-edition" },
+      el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: T("Special edition · the day after the election") }),
+      el("div", { class: "lead" }, face, el("div", null, el("h3", { class: "head", text: head }), el("p", { text: T(OATH[o.win]) + " " + T("Ama tied the shell necklace. Rico played the anthem twice, once on purpose.") }))),
+      el("div", { class: "cols" },
+        el("div", null, el("h4", { text: T("Your campaign, as the Book has it") }), el("ul", null, facts.slice(0, 5).map(x => el("li", { text: x })))),
+        el("div", null, el("h4", { text: T("Five years later") }), el("ul", { class: "later" }, later.map(x => el("li", { text: x }))),
+          el("div", { class: "says" }, islandSays().map(([who, q]) => el("p", null, el("b", { translate: "no", text: nm(who) + ": " }), "“" + q + "”"))))));
+    openCard(null, b => {
+      b.classList.add("paper", "edition"); b.append(box); setTimeout(() => { b.scrollTop = 0; }, 80);
+      b.append(el("div", { class: "cv-acts" },
+        btn(T("Share this front page"), () => shareEdition(head, facts, face)),
+        btn(T("Continue"), () => { G.over.read = true; save(); closeCard(true); ending(); }, { go: true })));
+    });
+  }
+  /* the front page as a picture to share: drawn fresh, the governor's face taken from the page */
+  function editionCard(head, facts, face) {
+    const c = document.createElement("canvas"); c.width = 1200; c.height = 630; const g = c.getContext("2d");
+    g.fillStyle = "#f3ead6"; g.fillRect(0, 0, 1200, 630);
+    g.fillStyle = "#1c1a16"; g.textAlign = "center"; g.font = "700 64px Georgia, serif"; g.fillText(T("The Key Crier"), 600, 86);
+    g.fillRect(60, 108, 1080, 3); g.fillRect(60, 116, 1080, 1.5);
+    g.font = "20px ui-monospace, monospace"; g.fillStyle = "#5a5246"; g.fillText(T("Special edition · the day after the election"), 600, 148);
+    try { g.drawImage(face, 70, 180, 200, 200); } catch (e) {}
+    const wrap = (text, x, y, w, lh, max) => { const words = text.split(/(\s+)/), lines = []; let cur = ""; for (const wd of words) { const t = cur + wd; if (g.measureText(t).width > w && cur.trim()) { lines.push(cur.trim()); cur = wd.trimStart(); } else cur = t; } if (cur.trim()) lines.push(cur.trim()); lines.slice(0, max).forEach((l, i) => g.fillText(l, x, y + i * lh)); return y + Math.min(max, lines.length) * lh; };
+    g.textAlign = "left"; g.fillStyle = "#1c1a16"; g.font = "700 44px Georgia, serif";
+    let y = wrap(head, 300, 222, 840, 52, 3) + 14;
+    g.font = "26px Georgia, serif"; g.fillStyle = "#2a261f";
+    for (const f of facts.slice(0, 4)) { y = wrap("· " + f, 300, y, 840, 34, 2) + 4; if (y > 560) break; }
+    g.font = "22px ui-monospace, monospace"; g.fillStyle = "#5a5246"; g.textAlign = "center"; g.fillText("White Rabbit Key · tauhud.com/rabbit", 600, 600);
+    return c;
+  }
+  async function shareEdition(head, facts, face) {
+    const c = editionCard(head, facts, face), url = "https://tauhud.com/rabbit/";
+    const blob = await new Promise(r => c.toBlob(r, "image/png")); if (!blob) return;
+    const file = typeof File === "function" ? new File([blob], "white-rabbit-key.png", { type: "image/png" }) : null;
+    try { if (file && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: head + " · White Rabbit Key " + url }); return; } }
+    catch (e) { if (e && e.name === "AbortError") return; }
+    const a = el("a", { href: URL.createObjectURL(blob), download: "white-rabbit-key.png" }); document.body.append(a); a.click(); a.remove();
+    toast(T("The front page is saved as a picture."));
+  }
   function ending() {
+    if (!G.over.read) return edition();
     const o = G.over, me = G.me, won = o.win === me;
     const [title, text] = won && !o.lies ? [T("Governor of the island"), T("You won on what was true. Everything you did is in the Book, and none of it needs explaining.")]
       : won ? [T("Governor, with a footnote"), T("You won, and the Book shows every rumour you paid for. Nobody can tear out a page, so your term starts with questions.")]
@@ -1189,7 +1332,7 @@
       acts.append(el("p", { class: "cv-h", text: T("Cast a real vote on the testnet: who should govern the island? 1 test AGRS, no value; every visitor’s vote is counted.") }));
       Object.keys(CANDS).forEach(c => acts.append(chainBtn(c, F("Vote {x}", { x: nm(c) }), F("Key ballot: {x}", { x: nm(c) }))));
       acts.append(ballotEl(), isleVerdict());
-      acts.append(btn(T("Play again"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true }), btn(T("Read the Book"), () => openCard("book", PLACE.book)));
+      acts.append(btn(T("Play again"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true }), btn(T("Read the Book"), () => openCard("book", PLACE.book)), btn(T("The special edition"), () => { G.over.read = false; closeCard(true); ending(); }));
       box.append(acts);
     });
   }
@@ -1451,7 +1594,7 @@
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { hud(); if (G.over) return ending(); if (G.counting) { G.counting = false; return election(); } if (G.move >= MOVES) return endDay(); return; }
+    if (G) { G.onchain = true; hud(); if (G.over) return ending(); if (G.counting) { G.counting = false; return election(); } if (G.move >= MOVES) return endDay(); return; }
     SC.setHour(0, true); hud();
     openCard(null, box => {
       box.classList.add("intro");
@@ -1460,10 +1603,9 @@
       const pick = el("div", { class: "cv-pick" });
       Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", onclick: () => begin(c) }, portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96), el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) }))));
       box.append(el("p", { class: "cv-h", text: T("Play as") }), pick);
-      const chk = el("input", { type: "checkbox", id: "cvChain" }); chk.checked = store.get("tauhud-rabbit-chain") === "on";
-      chk.addEventListener("change", () => store.set("tauhud-rabbit-chain", chk.checked ? "on" : "off"));
       box.append(ballotEl(), isleIntro());
-      box.append(el("label", { class: "cv-chain", for: "cvChain" }, chk, el("span", { text: T("Sign my moves into Tau Testnet Alpha as I make them, paid to the place where I make them: 1 test AGRS each, a line on Radio Coco 25, from my test wallet in this browser (made for me if I have none). The rivals’ moves go there anyway, from their own campaign wallets.") })));
+      /* every move is a real test transaction, always: said plainly here instead of a box to tick */
+      box.append(el("p", { class: "cv-chain" }, el("span", { text: T("Every move is real: it is signed into Tau Testnet Alpha from a test wallet made for you in this browser, and paid to the place where you make it (1 test AGRS, a line on Radio Coco 25). Wages and embassy money come back into that wallet. The rivals’ moves go there too. Test AGRS have no value.") }), " ", el("a", { href: "/wallet/", text: T("Your test wallet") })));
     });
   }
   function dragHint() {
@@ -1599,6 +1741,6 @@
     if (q.get("voice") === "check") voiceCheck();
   }
   setTimeout(readBallot, 1200);
-  window.COVE_GAME = { get state() { return G; }, begin, endDay, face, open: p => openCard(p, PLACE[p]) };
+  window.COVE_GAME = { get state() { return G; }, begin, endDay, face, ending, open: p => openCard(p, PLACE[p]) };
   wire();
 })();

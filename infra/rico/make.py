@@ -88,7 +88,8 @@ CAST = {
 # the listeners who phone Radio Coco (RICO.CALLS): ready voices from the account, given to them by "make" on its own
 # islanders who speak with a ready voice from the account (all ten designed-voice places are taken)
 READY = {"tano": "Brian"}
-CALLERS = {"zia": "Sarah", "ozzie": "Charlie", "bert": "George", "dom": "Callum", "nell": "Laura", "mae": "Matilda"}
+CALLERS = {"zia": "Sarah", "ozzie": "Charlie", "bert": "George", "dom": "Callum", "nell": "Laura", "mae": "Matilda",
+           "gus": "Bill", "vik": "Daniel", "pearl": "Lily", "rudy": "Eric", "tess": "Jessica"}
 DESIGN = CAST["rico"][1]
 TALK = (" Talks naturally and casually, straight to the person in front of them, like a real conversation, "
         "never reading aloud or narrating.")
@@ -99,6 +100,7 @@ TAG = {"rico": "[friendly, leaning in]", "lola": "[warm, teasing]", "sam": "[slo
        "salado": "[smooth, charming]", "ama": "[slowly, warmly]", "wren": "[brisk, amused]", "kai": "[cheerful]",
        "pim": "[nervously, precise]", "noor": "[dry, matter-of-fact]", "kiko": "[softly, calm]", "tano": "[calmly, warmly]"}
 ON_AIR = "[excited radio DJ]"   # the callouts that end in "!"
+HYPE = "[shouting with joy, euphoric radio DJ opening the morning show, stretching the long words]"   # the show's opener (voices.json "how": "hype")
 RADIO = "[radio DJ, playful]"     # his other lines on the radio strip
 LAWS = {"A deep harbour for cruise ships": "a deep harbour for cruise ships", "A road round the island": "a road round the island"}
 COINS = {"40": "Forty", "35": "Thirty-five"}
@@ -174,7 +176,23 @@ def said(who, text, model=MODEL):
     if not model.startswith("eleven_v3"):
         return out
     air = who == "rico" and text not in SAY
+    if air and text in hype():
+        return f"{HYPE} {out}"
     return f"{(ON_AIR if text.endswith('!') else RADIO) if air else TAG.get(who, '')} {out}".strip()
+
+
+_HYPE = None
+
+
+def hype():
+    """The lines spoken as a shout of joy (the show's opener), marked "how": "hype" in voices.json."""
+    global _HYPE
+    if _HYPE is None:
+        try:
+            _HYPE = {r["text"] for r in json.load(open(VOICES_JSON, encoding="utf-8")) if r.get("how") == "hype"}
+        except (OSError, ValueError):
+            _HYPE = set()
+    return _HYPE
 
 
 def lines(path=None):
@@ -508,7 +526,7 @@ def cmd_make(a):
             todo = fit
     for i, (w, t) in enumerate(todo, 1):
         k = key(w, t)
-        loud = w == "rico" and t not in SAY and t.endswith("!")   # the callouts; his other radio lines stay natural
+        loud = w == "rico" and t not in SAY and (t.endswith("!") or t in hype())   # the callouts and the opener; his other radio lines stay natural
         write(os.path.join(a.out, k + ".mp3"), speak(idx["voices"][w]["id"], said(w, t, model), LOUD if loud else SETTINGS, model))
         if k not in idx["clips"]:
             idx["clips"].append(k)

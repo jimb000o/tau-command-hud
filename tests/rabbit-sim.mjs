@@ -9,7 +9,7 @@
    - places a visitor cannot reach on a screen (off the picture, covered, or a tap target under 44 px)
    - buttons covered or out of reach, text under 11 px, plates that need scrolling on a phone
    - balance: who wins by candidate and by play style, coins, laws, the White Rabbit Key found or not
-   - the chain box: one test transaction per own move, never one without the box ticked
+   - the chain: every own move is a test transaction (there is no box to untick)
 
    Run: node tests/rabbit-sim.mjs            100 players
         PLAYERS=20 node tests/rabbit-sim.mjs
@@ -95,7 +95,7 @@ async function play(n) {
   const R = rnd(1000 + n * 7919);
   const scr = SCREENS.flatMap(s => Array(s.weight).fill(s))[(n * 37) % 100];   // every screen as often as its weight says
   const style = Object.keys(STYLES)[n % Object.keys(STYLES).length], S = STYLES[style];
-  const lang = LANGS[Math.floor(R() * LANGS.length)], chain = R() < 0.4, cand = ["marisol", "tobias", "baako", "hana"][Math.floor(R() * 4)];
+  const lang = LANGS[Math.floor(R() * LANGS.length)], chain = true, cand = ["marisol", "tobias", "baako", "hana"][Math.floor(R() * 4)];
   const out = { n, screen: scr.name, style, lang, chain, cand, errors: [], stuck: null, unreachable: new Set(), covered: [], small: new Set(), scroll: new Set(), tiny: new Set(), visits: {}, steps: 0, sent: 0, own: 0, over: null, isle: 0, isleEnd: 0, isleSeen: 0 };
   const ctx = await browser.newContext({ viewport: { width: scr.w, height: scr.h }, hasTouch: scr.touch, isMobile: scr.touch && scr.w < 900, deviceScaleFactor: 1, locale: lang === "zh" ? "zh-CN" : lang === "ja" ? "ja-JP" : "en-US", timezoneId: "UTC" });
   await ctx.route(u => !u.href.startsWith(BASE), r => {
@@ -110,6 +110,7 @@ async function play(n) {
       const s = String(m), c = s.split(" ")[0], ok = data => ws.send(JSON.stringify({ status: "ok", command: c, data }));
       if (c === "getbalance") ok({ address: s.split(" ")[1], balance: 3 });
       else if (c === "islandmove") ok({ queued: true });
+      else if (c === "islandpay") { const [, p, w] = s.split(" "); if (/^(works|north|south)$/.test(p) && /^[0-9a-f]{96}$/.test(w)) { out.paid = (out.paid || 0) + 1; ok({ queued: true, amount: 10, from: "cd".repeat(48) }); } else { out.badPay = (out.badPay || 0) + 1; ws.send(JSON.stringify({ status: "error", command: c, error: { code: "INVALID_PARAMS" } })); } }
       else if (c === "getgovernance") ok({ consensus_rules: "" });
       else if (c === "getsequence") ok({ sequence_number: 0, tip_height: 100 });
       else if (c === "sendtx") { out.sent++; ok({ tx_hash: "ab".repeat(32) }); }
@@ -136,11 +137,10 @@ async function play(n) {
   try {
     await page.goto(`${BASE}rabbit/?lang=${lang}`, { waitUntil: "load" });
     await run(3000);
-    /* the start screen: tick the box (or not), pick the candidate */
+    /* the start screen: pick the candidate (every move goes on the chain, nothing to tick) */
     const intro = page.locator(".cv-card.intro");
     await intro.waitFor({ timeout: 5000 * SPEED });
     await measure(page, out, "start screen");
-    if (chain) await tap(page, out, page.locator("#cvChain"), "chain box");
     await tap(page, out, page.locator(".cv-cand").nth(["marisol", "tobias", "baako", "hana"].indexOf(cand)), "candidate");
     await run(1500);
     /* where every place stands on this screen: on the picture, uncovered, big enough to tap */
@@ -295,8 +295,7 @@ const lawsPassed = count(done.flatMap(r => r.game.laws), l => l.id);
 L.push(`Laws passed (all games): ${Object.entries(lawsPassed).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", ")}`, "");
 const quest = done.filter(r => r.style === "explorer");
 L.push(`Explorers: Ama's house seen ${quest.filter(r => r.game.seen.ama).length}/${quest.length}, chart ${quest.filter(r => r.game.chart).length}, Tide Stone ${quest.filter(r => r.game.seen.stone).length}, drums ${quest.filter(r => r.game.seen.drums).length}, circle ${quest.filter(r => r.game.seen.circle).length}, key ${quest.filter(r => r.game.key).length}`, "");
-const ch = done.filter(r => r.chain), noCh = done.filter(r => !r.chain);
-L.push(`Chain box ticked: ${ch.length} players, ${ch.reduce((a, r) => a + r.sent, 0)} test transactions for ${ch.reduce((a, r) => a + r.own, 0)} own lines in the Book · box not ticked: ${noCh.reduce((a, r) => a + r.sent, 0)} transactions (must be 0)`, "");
+L.push(`On the chain: ${done.length} players, ${done.reduce((a, r) => a + r.sent, 0)} test transactions for ${done.reduce((a, r) => a + r.own, 0)} own lines in the Book · wages and embassy money paid back: ${done.reduce((a, r) => a + (r.paid || 0), 0)} (malformed asks: ${done.reduce((a, r) => a + (r.badPay || 0), 0)}, must be 0)`, "");
 L.push(`Average game: ${(done.reduce((a, r) => a + r.steps, 0) / Math.max(1, done.length)).toFixed(0)} taps, ${(results.reduce((a, r) => a + r.ms, 0) / results.length / 1000).toFixed(1)} s simulated`, "");
 L.push("### The shared island", "");
 const miss = done.filter(r => r.isle !== r.ownIsle);

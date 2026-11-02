@@ -31,8 +31,121 @@
   const CH = { F: [[53, 57, 60], 41, 48], Bb: [[58, 62, 65], 46, 53], C7: [[55, 58, 60, 64], 48, 43], Dm: [[57, 62, 65], 50, 45], Gm: [[55, 58, 62], 43, 50] };
   const HARM = ["F", "Bb", "C7", "F", "F", "Dm", ["Gm", "C7"], "F", "Bb", "F", "C7", "F", "Dm", "Gm", "C7", "F"];
   const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+  /* ---------- the island's songbook: all original, written for this game ----------
+     Each song: bpm, 16 bars of tune ([sixteenth, midi note, length]), the harmony bar by bar and its chords
+     ([chord notes, bass root, bass fifth]). Radio Coco plays them in turn; every place has its own (PLACES below). */
+  const C_ = { C: [[55, 60, 64], 48, 43], F: [[53, 57, 60], 41, 48], G7: [[55, 59, 62, 65], 43, 50], Am: [[57, 60, 64], 45, 52], Dm: [[57, 62, 65], 50, 45] };
+  const SONGS = {
+    coco: { name: "Coco Calypso", bpm: 104, tune: TUNE, harm: HARM, ch: CH, air: { k: 1, drums: "full", bass: 1, mar: 1, lead: "pan" } },
+    /* a lazy reggae for low tide, G minor */
+    lowtide: { name: "Low Tide", bpm: 74, air: { drums: "onedrop", bass: 1.2, lead: "organ" }, ch: { Gm: [[55, 58, 62], 43, 50], Cm: [[55, 60, 63], 48, 43], D7: [[54, 57, 60], 50, 45], Eb: [[55, 58, 63], 51, 46], F: [[53, 57, 60], 41, 48], Bb: [[53, 58, 62], 46, 53] },
+      harm: ["Gm", "Gm", "Cm", "Cm", "Gm", "Eb", "D7", "D7", "Eb", "F", "Bb", "Gm", "Cm", "D7", "Gm", "Gm"],
+      tune: [
+        [[2, 74, 2], [4, 74, 1], [6, 72, 2], [8, 70, 4], [14, 67, 2]], [[0, 70, 3], [4, 69, 2], [6, 67, 6]],
+        [[2, 72, 2], [4, 72, 1], [6, 75, 2], [8, 74, 2], [10, 72, 2], [12, 70, 4]], [[0, 67, 8], [12, 72, 2], [14, 74, 2]],
+        [[0, 74, 3], [3, 77, 3], [6, 74, 2], [8, 70, 4], [12, 67, 4]], [[2, 70, 2], [4, 75, 2], [6, 74, 2], [8, 70, 2], [10, 67, 6]],
+        [[0, 66, 2], [2, 69, 2], [4, 72, 2], [6, 74, 4], [12, 72, 2], [14, 69, 2]], [[0, 66, 4], [4, 69, 2], [6, 74, 10]],
+        [[0, 79, 3], [3, 77, 3], [6, 75, 2], [8, 74, 4], [12, 75, 4]], [[0, 77, 3], [3, 74, 3], [6, 72, 2], [8, 69, 8]],
+        [[2, 74, 2], [4, 77, 2], [6, 74, 2], [8, 70, 2], [10, 74, 2], [12, 77, 4]], [[0, 79, 6], [8, 74, 4], [12, 70, 4]],
+        [[0, 75, 2], [2, 72, 2], [4, 75, 2], [6, 79, 4], [12, 77, 2], [14, 75, 2]], [[0, 74, 4], [4, 72, 2], [6, 69, 2], [8, 66, 8]],
+        [[2, 67, 2], [4, 70, 2], [6, 74, 4], [12, 72, 2], [14, 70, 2]], [[0, 67, 12]],
+      ] },
+    /* a soca for the market, fast and bright, C major */
+    mango: { name: "Mango Run", bpm: 126, air: { drums: "soca", bass: 1, mar: 1, lead: "pan", agogo: 1 }, ch: C_,
+      harm: ["C", "C", "F", "G7", "C", "Am", "Dm", "G7", "F", "F", "C", "Am", "Dm", "G7", "C", "C"],
+      tune: [
+        [[0, 72, 1], [2, 72, 1], [3, 76, 2], [6, 79, 2], [8, 76, 1], [10, 76, 1], [11, 72, 2], [14, 74, 2]], [[0, 76, 3], [3, 72, 3], [6, 67, 2], [8, 72, 8]],
+        [[0, 77, 1], [2, 77, 1], [3, 81, 2], [6, 84, 2], [8, 81, 1], [10, 81, 1], [11, 77, 2], [14, 79, 2]], [[0, 79, 3], [3, 77, 3], [6, 74, 2], [8, 71, 4], [12, 74, 4]],
+        [[0, 72, 1], [2, 72, 1], [3, 76, 2], [6, 79, 2], [8, 84, 2], [10, 83, 2], [12, 79, 4]], [[0, 81, 3], [3, 79, 3], [6, 76, 2], [8, 72, 4], [12, 76, 4]],
+        [[0, 77, 2], [2, 74, 2], [4, 77, 2], [6, 81, 2], [8, 79, 2], [10, 77, 2], [12, 74, 2], [14, 71, 2]], [[0, 74, 4], [4, 79, 4], [8, 77, 2], [10, 74, 2], [12, 71, 4]],
+        [[0, 81, 6], [6, 79, 2], [8, 77, 4], [12, 72, 4]], [[0, 74, 2], [2, 77, 2], [4, 81, 2], [6, 84, 6], [12, 81, 4]],
+        [[0, 79, 6], [6, 76, 2], [8, 72, 4], [12, 76, 4]], [[0, 76, 2], [2, 79, 2], [4, 84, 2], [6, 81, 6], [12, 76, 4]],
+        [[0, 77, 3], [3, 81, 3], [6, 77, 2], [8, 74, 4], [12, 77, 4]], [[0, 79, 3], [3, 77, 3], [6, 74, 2], [8, 71, 2], [10, 74, 2], [12, 77, 4]],
+        [[0, 76, 1], [2, 76, 1], [3, 79, 2], [6, 84, 2], [8, 79, 2], [10, 76, 2], [12, 74, 4]], [[0, 72, 4], [6, 72, 1], [7, 72, 9]],
+      ] },
+    /* a slow bossa for a hammock and a cold drink, D major sevenths */
+    hammock: { name: "Hammock Hours", bpm: 84, air: { drums: "bossa", bass: 0.9, lead: "pan", strum: 1, soft: 1 }, ch: { Dmaj7: [[54, 57, 61], 50, 45], Bm7: [[54, 57, 62], 47, 42], Em7: [[55, 59, 62], 52, 47], A7: [[55, 61, 64], 45, 52], Gmaj7: [[54, 59, 62], 43, 50], "F#m7": [[52, 57, 61], 42, 49] },
+      harm: ["Dmaj7", "Dmaj7", "Bm7", "Bm7", "Em7", "A7", "Dmaj7", "A7", "Gmaj7", "Gmaj7", "F#m7", "Bm7", "Em7", "A7", "Dmaj7", "Dmaj7"],
+      tune: [
+        [[0, 78, 6], [6, 76, 2], [8, 73, 4], [12, 71, 4]], [[0, 73, 8], [10, 74, 2], [12, 76, 4]],
+        [[0, 74, 6], [6, 73, 2], [8, 71, 4], [12, 69, 4]], [[0, 71, 10], [12, 73, 2], [14, 74, 2]],
+        [[0, 76, 6], [6, 74, 2], [8, 71, 4], [12, 67, 4]], [[0, 69, 4], [4, 73, 4], [8, 76, 4], [12, 79, 4]],
+        [[0, 78, 10], [12, 76, 2], [14, 73, 2]], [[0, 69, 12]],
+        [[0, 74, 4], [4, 78, 4], [8, 83, 6], [14, 81, 2]], [[0, 79, 8], [8, 78, 4], [12, 74, 4]],
+        [[0, 73, 4], [4, 76, 4], [8, 81, 6], [14, 79, 2]], [[0, 78, 8], [8, 74, 4], [12, 71, 4]],
+        [[0, 79, 4], [4, 78, 2], [6, 76, 2], [8, 74, 4], [12, 71, 4]], [[0, 73, 4], [4, 76, 4], [8, 79, 4], [12, 76, 4]],
+        [[0, 74, 4], [4, 73, 2], [6, 74, 2], [8, 78, 8]], [[0, 74, 12]],
+      ] },
+    /* an old-time mento from a tin-roofed shed, G major */
+    tinroof: { name: "Tin Roof Shuffle", bpm: 112, air: { drums: "mento", bass: 1, lead: "pluck" }, ch: { G: [[55, 59, 62], 43, 50], C: [[55, 60, 64], 48, 43], D7: [[54, 57, 60], 50, 45], Em: [[55, 59, 64], 52, 47] },
+      harm: ["G", "G", "C", "G", "D7", "D7", "G", "G", "C", "C", "G", "Em", "C", "D7", "G", "G"],
+      tune: [
+        [[0, 71, 2], [2, 74, 2], [4, 79, 2], [6, 78, 1], [7, 79, 3], [10, 74, 2], [12, 71, 4]], [[0, 72, 2], [2, 71, 2], [4, 69, 2], [6, 67, 2], [8, 71, 8]],
+        [[0, 76, 2], [2, 79, 2], [4, 84, 2], [6, 83, 1], [7, 84, 3], [10, 79, 2], [12, 76, 4]], [[0, 74, 3], [3, 71, 3], [6, 67, 2], [8, 74, 8]],
+        [[0, 72, 2], [2, 74, 2], [4, 78, 2], [6, 81, 2], [8, 78, 2], [10, 74, 2], [12, 72, 4]], [[0, 74, 2], [2, 72, 2], [4, 69, 2], [6, 66, 2], [8, 69, 4], [12, 72, 4]],
+        [[0, 71, 3], [3, 74, 3], [6, 79, 2], [8, 74, 2], [10, 71, 2], [12, 67, 4]], [[0, 67, 4], [4, 71, 2], [6, 74, 2], [8, 79, 8]],
+        [[2, 76, 2], [4, 76, 2], [6, 79, 4], [12, 76, 2], [14, 72, 2]], [[0, 72, 6], [8, 76, 2], [10, 79, 2], [12, 84, 4]],
+        [[2, 74, 2], [4, 74, 2], [6, 79, 4], [12, 74, 2], [14, 71, 2]], [[0, 71, 6], [8, 76, 2], [10, 79, 2], [12, 83, 4]],
+        [[0, 84, 3], [3, 79, 3], [6, 76, 2], [8, 72, 4], [12, 76, 4]], [[0, 78, 3], [3, 74, 3], [6, 72, 2], [8, 69, 4], [12, 66, 4]],
+        [[0, 67, 2], [2, 71, 2], [4, 74, 2], [6, 79, 2], [8, 78, 2], [10, 74, 2], [12, 71, 2], [14, 74, 2]], [[0, 79, 4], [6, 67, 2], [8, 67, 8]],
+      ] },
+    /* a bolero for the moon over the water, A minor */
+    moon: { name: "Moon Over the Pier", bpm: 68, air: { drums: "soft", bass: 0.7, lead: "flute", arp: 1, pad: 0.5 }, ch: { Am: [[57, 60, 64], 45, 52], Dm: [[57, 62, 65], 50, 45], E7: [[56, 59, 62], 40, 47], F: [[53, 57, 60], 41, 48], G: [[55, 59, 62], 43, 50], C: [[55, 60, 64], 48, 43] },
+      harm: ["Am", "Am", "Dm", "Dm", "E7", "E7", "Am", "Am", "F", "G", "C", "Am", "Dm", "E7", "Am", "Am"],
+      tune: [
+        [[0, 76, 6], [6, 74, 2], [8, 72, 4], [12, 71, 4]], [[0, 69, 12], [12, 71, 2], [14, 72, 2]],
+        [[0, 74, 6], [6, 72, 2], [8, 74, 4], [12, 77, 4]], [[0, 76, 8], [8, 74, 4], [12, 72, 4]],
+        [[0, 71, 6], [6, 72, 2], [8, 74, 4], [12, 76, 4]], [[0, 74, 6], [6, 72, 2], [8, 71, 4], [12, 68, 4]],
+        [[0, 69, 4], [4, 72, 4], [8, 76, 4], [12, 81, 4]], [[0, 76, 12]],
+        [[0, 77, 6], [6, 76, 2], [8, 77, 4], [12, 81, 4]], [[0, 79, 6], [6, 77, 2], [8, 74, 4], [12, 71, 4]],
+        [[0, 72, 6], [6, 74, 2], [8, 76, 4], [12, 79, 4]], [[0, 76, 8], [8, 72, 4], [12, 69, 4]],
+        [[0, 74, 6], [6, 77, 2], [8, 81, 4], [12, 77, 4]], [[0, 76, 6], [6, 74, 2], [8, 71, 4], [12, 68, 4]],
+        [[0, 69, 6], [6, 71, 2], [8, 72, 4], [12, 71, 4]], [[0, 69, 12]],
+      ] },
+    /* a skipping tune for the schoolyard, C major */
+    school: { name: "Chalk and Sand", bpm: 120, ch: C_,
+      harm: ["C", "F", "C", "G7", "C", "F", "G7", "C", "Am", "F", "C", "G7", "Am", "F", "G7", "C"],
+      tune: [
+        [[0, 72, 2], [2, 74, 2], [4, 76, 2], [6, 72, 2], [8, 79, 4], [12, 79, 4]], [[0, 81, 2], [2, 81, 2], [4, 81, 2], [6, 81, 2], [8, 77, 8]],
+        [[0, 76, 2], [2, 76, 2], [4, 76, 2], [6, 74, 2], [8, 72, 4], [12, 76, 4]], [[0, 74, 2], [2, 76, 2], [4, 74, 2], [6, 71, 2], [8, 67, 8]],
+        [[0, 72, 2], [2, 74, 2], [4, 76, 2], [6, 72, 2], [8, 79, 4], [12, 79, 4]], [[0, 81, 2], [2, 79, 2], [4, 77, 2], [6, 76, 2], [8, 74, 4], [12, 81, 4]],
+        [[0, 79, 2], [2, 77, 2], [4, 74, 2], [6, 71, 2], [8, 74, 4], [12, 71, 4]], [[0, 72, 4], [4, 79, 2], [6, 76, 2], [8, 72, 8]],
+        [[0, 76, 3], [3, 76, 1], [4, 72, 2], [6, 76, 2], [8, 81, 4], [12, 79, 4]], [[0, 77, 3], [3, 77, 1], [4, 72, 2], [6, 77, 2], [8, 81, 4], [12, 77, 4]],
+        [[0, 76, 3], [3, 76, 1], [4, 79, 2], [6, 84, 2], [8, 79, 4], [12, 76, 4]], [[0, 74, 3], [3, 74, 1], [4, 71, 2], [6, 74, 2], [8, 79, 8]],
+        [[0, 81, 2], [2, 84, 2], [4, 81, 2], [6, 76, 2], [8, 72, 4], [12, 76, 4]], [[0, 77, 2], [2, 81, 2], [4, 77, 2], [6, 72, 2], [8, 69, 4], [12, 72, 4]],
+        [[0, 74, 2], [2, 77, 2], [4, 79, 2], [6, 83, 2], [8, 79, 2], [10, 77, 2], [12, 74, 4]], [[0, 72, 4], [4, 67, 2], [6, 72, 2], [8, 72, 8]],
+      ] },
+    /* a chant for the hill drums, E minor, call and answer */
+    hills: { name: "Three Hills", bpm: 98, ch: { Em: [[55, 59, 64], 40, 47], D: [[54, 57, 62], 38, 45], C: [[55, 60, 64], 36, 43] },
+      harm: ["Em", "Em", "D", "Em", "Em", "Em", "C", "D", "Em", "D", "Em", "D", "C", "D", "Em", "Em"],
+      tune: [
+        [[0, 76, 2], [2, 76, 2], [4, 79, 2], [6, 76, 2], [8, 74, 4], [12, 71, 4]], [[0, 71, 2], [3, 74, 2], [6, 76, 2], [8, 76, 8]],
+        [[0, 74, 2], [2, 74, 2], [4, 78, 2], [6, 74, 2], [8, 71, 4], [12, 69, 4]], [[0, 71, 6], [8, 64, 8]],
+        [[0, 64, 2], [2, 67, 2], [4, 69, 2], [6, 71, 2], [8, 74, 2], [10, 71, 2], [12, 69, 4]], [[0, 67, 2], [3, 64, 2], [6, 67, 2], [8, 71, 8]],
+        [[0, 72, 4], [4, 71, 4], [8, 67, 4], [12, 64, 4]], [[0, 66, 4], [4, 69, 4], [8, 74, 8]],
+        [[0, 83, 2], [2, 83, 2], [4, 81, 4]], [[8, 78, 2], [10, 78, 2], [12, 74, 4]],
+        [[0, 83, 2], [2, 83, 2], [4, 86, 4]], [[8, 81, 2], [10, 78, 2], [12, 74, 4]],
+        [[0, 79, 4], [4, 76, 4], [8, 72, 4], [12, 76, 4]], [[0, 78, 4], [4, 74, 4], [8, 69, 4], [12, 74, 4]],
+        [[0, 76, 2], [2, 79, 2], [4, 76, 2], [6, 74, 2], [8, 71, 4], [12, 74, 4]], [[0, 76, 12]],
+      ] },
+    /* something deep is being measured: bells and a ticking ostinato, D minor */
+    survey: { name: "Something Deep", bpm: 92, ch: { Dm: [[57, 62, 65], 38, 45], Bb: [[53, 58, 62], 46, 41], Gm: [[55, 58, 62], 43, 50], A7: [[55, 61, 64], 45, 40] },
+      harm: ["Dm", "Dm", "Bb", "A7", "Dm", "Dm", "Gm", "A7", "Bb", "Bb", "Gm", "Gm", "Dm", "Bb", "A7", "Dm"],
+      tune: [
+        [[0, 74, 4], [6, 77, 2], [8, 76, 6]], [[0, 74, 2], [2, 69, 10]],
+        [[0, 70, 4], [6, 74, 2], [8, 77, 6]], [[0, 76, 4], [4, 73, 8]],
+        [[0, 74, 4], [6, 81, 2], [8, 79, 6]], [[0, 77, 2], [2, 76, 2], [4, 74, 8]],
+        [[0, 70, 4], [4, 74, 4], [8, 79, 6]], [[0, 76, 4], [4, 73, 4], [8, 69, 8]],
+        [[0, 77, 6], [6, 74, 2], [8, 70, 8]], [[0, 72, 2], [2, 74, 2], [4, 77, 4], [8, 82, 8]],
+        [[0, 79, 6], [6, 77, 2], [8, 74, 8]], [[0, 70, 4], [4, 74, 4], [8, 79, 8]],
+        [[0, 81, 6], [6, 77, 2], [8, 74, 8]], [[0, 77, 4], [4, 74, 4], [8, 70, 8]],
+        [[0, 73, 4], [4, 76, 4], [8, 79, 4], [12, 76, 4]], [[0, 74, 12]],
+      ] },
+  };
+  /* what Radio Coco plays, one after the other (two times round each), on the island and in the site header */
+  const PLAYLIST = ["coco", "mango", "lowtide", "tinroof", "hammock", "moon"];
 
-  const S = { place: "island", placeT: "island", ctx: null, on: false, want: true, master: null, music: null, amb: null, rev: null, radio: null, mvol: 1, tense: false, bar: 0, step: 0, next: 0, timer: 0, noise: null, sea: null };
+  const S = { place: "island", placeT: "island", song: "coco", pl: 0, ctx: null, on: false, want: true, master: null, music: null, amb: null, rev: null, radio: null, mvol: 1, tense: false, bar: 0, step: 0, next: 0, timer: 0, noise: null, sea: null };
   try { S.want = localStorage.getItem("tauhud-rabbit-sound") !== "off"; } catch (e) {}
 
   function build() {
@@ -90,6 +203,9 @@
     if (type === "agogo" || type === "agogoLo") { [1, 2.7].forEach((r, i) => { const o = c.createOscillator(); o.frequency.value = (type === "agogo" ? 880 : 660) * r; const gg = c.createGain(); env(gg, t, 0.002, (i ? 0.02 : 0.06) * v, 0.18); o.connect(gg); gg.connect(g); o.start(t); o.stop(t + 0.3); }); g.gain.value = 1; }
     if (type === "timp") { const o = c.createOscillator(); o.frequency.setValueAtTime(98, t); o.frequency.exponentialRampToValueAtTime(87, t + 0.4); env(g, t, 0.005, 0.3 * v, 0.7); o.connect(g); o.start(t); o.stop(t + 0.9); }
     if (type === "snare") { const n = c.createBufferSource(), f = c.createBiquadFilter(); n.buffer = S.noise; f.type = "bandpass"; f.frequency.value = 2200; f.Q.value = 0.8; env(g, t, 0.002, 0.08 * v, 0.12); n.connect(f); f.connect(g); n.start(t, Math.random()); n.stop(t + 0.2); }
+    if (type === "clap") { [0, 0.012, 0.024].forEach(d => { const n = c.createBufferSource(), f = c.createBiquadFilter(), gg = c.createGain(); n.buffer = S.noise; f.type = "bandpass"; f.frequency.value = 1500; f.Q.value = 1.2; env(gg, t + d, 0.002, 0.05 * v, 0.06); n.connect(f); f.connect(gg); gg.connect(g); n.start(t + d, Math.random()); n.stop(t + d + 0.1); }); }
+    if (type === "clank") { [1, 2.41, 3.77].forEach((r, i) => { const o = c.createOscillator(), gg = c.createGain(); o.type = "square"; o.frequency.value = 380 * r; env(gg, t, 0.001, (i ? 0.012 : 0.025) * v, 0.12); o.connect(gg); gg.connect(g); o.start(t); o.stop(t + 0.2); }); }
+    if (type === "knock") { const o = c.createOscillator(); o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(300, t + 0.04); env(g, t, 0.001, 0.12 * v, 0.07); o.connect(g); o.start(t); o.stop(t + 0.12); }
     if (type === "kick") { const o = c.createOscillator(); o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.12); env(g, t, 0.004, 0.35 * v, 0.2); o.connect(g); o.start(t); o.stop(t + 0.3); }
   }
   function gull() {
@@ -101,21 +217,40 @@
   }
   /* ---------- the band ---------- */
   const CLAVE = [[0, 6, 12], [4, 8]];   // two bars, three then two
-  /* every place on the island has its own arrangement of the same tune:
-     k tempo, drums (full, soft, bossa or none), bass, marimba, the tune's voice, and something only that place has */
+  /* every place on the island has its own soundtrack: a song from the songbook (s) in that place's arrangement:
+     k tempo against the song's own, drums, bass, marimba, the tune's voice, and something only that place has.
+     Without a song (s) the place plays Radio Coco's playlist. */
   const STYLES = {
-    island: { k: 1, drums: "full", bass: 1, mar: 1, lead: "pan" },
-    hall:   { k: 0.78, drums: "march", bass: 0.8, mar: 0, lead: "brass", pad: 1 },                // the council: a small brass anthem over an organ
-    radio:  { k: 1.14, drums: "full", bass: 1.1, mar: 1, lead: "pan", hat: 1 },                    // on air: faster, with a hi-hat, through the speaker
-    north:  { k: 0.84, drums: "none", bass: 0.5, mar: 0, lead: "bell", arp: 1, pad: 0.6 },         // the North Wind: cool bells and a slow harp
-    south:  { k: 0.9, drums: "bossa", bass: 0.9, mar: 1, lead: "pan", soft: 1 },                   // the South Current: an easy bossa
-    bar:    { k: 1.06, drums: "full", bass: 1.1, mar: 0, lead: "pan", strum: 1, conga: 1 },        // La Ola: the whole band and a guitar
-    book:   { k: 0.6, drums: "none", bass: 0, mar: 0, lead: "bell", pad: 0.8, sparse: 1 },        // the lighthouse: almost silence, a few bells
-    market: { k: 1.1, drums: "full", bass: 1, mar: 1, lead: "pan", agogo: 1, conga: 1 },           // the square: busy, a cowbell
-    pier:   { k: 0.74, drums: "soft", bass: 0.6, mar: 0, lead: "flute", arp: 1 },                  // the pier: a slow flute over the water
+    island: { k: 1, drums: "full", bass: 1, mar: 1, lead: "pan" },                                    // the island: Radio Coco, one song after the other
+    radio:  { k: 1.06, drums: "full", bass: 1.1, mar: 1, lead: "pan", hat: 1 },                       // on air: a touch faster, with a hi-hat, through the speaker
+    hall:   { s: "coco", k: 0.78, drums: "march", bass: 0.8, mar: 0, lead: "brass", pad: 1 },          // the council: a small brass anthem over an organ
+    north:  { s: "survey", k: 0.9, drums: "none", bass: 0.5, mar: 0, lead: "bell", arp: 1, pad: 0.6 }, // the North Wind: cool bells over what is being measured
+    south:  { s: "coco", k: 0.9, drums: "bossa", bass: 0.9, mar: 1, lead: "pan", soft: 1 },            // the South Current: an easy bossa
+    bar:    { s: "hammock", k: 1.08, drums: "bossa", bass: 1, mar: 0, lead: "pan", strum: 1, conga: 1 },// La Ola: a cold drink, a guitar, the whole bar humming
+    book:   { s: "moon", k: 0.85, drums: "none", bass: 0, mar: 0, lead: "bell", pad: 0.8, sparse: 1 }, // the lighthouse: almost silence, a few bells
+    market: { s: "mango", k: 1, drums: "soca", bass: 1, mar: 1, lead: "pan", agogo: 1 },                // the square: a soca, a cowbell, everybody shouting prices
+    pier:   { s: "moon", k: 1, drums: "soft", bass: 0.6, mar: 0, lead: "flute", arp: 1 },               // the pier: a slow flute over the water
+    school: { s: "school", k: 1, drums: "soft", bass: 0.7, mar: 0, lead: "mar", clap: 1 },              // the school: a skipping tune on the xylophone, children clapping
+    dive:   { s: "lowtide", k: 1, drums: "onedrop", bass: 1.2, mar: 0, lead: "organ", bubble: 1 },     // the dive centre: reggae from under the water, bubbles
+    works:  { s: "tinroof", k: 1, drums: "mento", bass: 1, mar: 0, lead: "organ", clank: 1 },           // the Coconut Works: three bicycles and a church organ
+    camp:   { s: "survey", k: 1, drums: "tick", bass: 0.8, mar: 0, lead: "mar", arp: 1 },               // the surveyors: a ticking instrument, metre by metre
+    ship:   { s: "lowtide", k: 0.92, drums: "soft", bass: 0.8, mar: 0, lead: "flute", pad: 0.5, creak: 1 }, // Wren's ship: an old sea song, the hull creaking
+    ama:    { s: "hills", k: 0.8, drums: "none", bass: 0.4, mar: 0, lead: "flute", pad: 0.6 },          // Ama's house: the old chant, slow, on a flute
+    canoe:  { s: "tinroof", k: 0.82, drums: "soft", bass: 0.6, mar: 0, lead: "pluck", knock: 1 },       // Kiko's canoe: a guitar and a mallet on wood
+    stone:  { s: "hills", k: 0.7, drums: "none", bass: 0, mar: 0, lead: "bell", pad: 0.7, sparse: 1 },  // the Tide Stone: the chant in bells, the sea behind
+    drums:  { s: "hills", k: 1, drums: "hand", bass: 0.9, mar: 0, lead: "flute", conga: 1 },             // the hill drums: the drums carry the song
+    circle: { s: "hills", k: 0.9, drums: "soft", bass: 0.6, mar: 0, lead: "pan", pad: 0.8, soft: 1 },    // the stone circle: quiet, everyone listening
+    grotto: { s: "survey", k: 0.6, drums: "none", bass: 0.3, mar: 0, lead: "bell", pad: 0.9, sparse: 1, drip: 1 }, // the cave: bells and dripping water
   };
+  /* the arrangement playing now: the place's own, or on the radio the song's own (a touch brighter at the station) */
+  function styleNow() {
+    const y = STYLES[S.place] || STYLES.island, a = !y.s && (SONGS[S.song] || {}).air;
+    return a ? Object.assign({ k: 1 }, a, S.place === "radio" ? { hat: a.drums === "full" ? 1 : 0, k: (a.k || 1) * 1.04 } : {}) : y;
+  }
+  const songOf = pl => (STYLES[pl] && STYLES[pl].s) || PLAYLIST[S.pl % PLAYLIST.length];
+  const stepOf = y => 60 / (SONGS[S.song] || SONGS.coco).bpm / 4 / (y.k || 1);
   function play(bar, st, t) {
-    const y = STYLES[S.place] || STYLES.island, b = bar % 16, h = HARM[b], ch = CH[Array.isArray(h) ? (st < 8 ? h[0] : h[1]) : h], dt = STEP / y.k;
+    const y = S.y || styleNow(), so = SONGS[S.song] || SONGS.coco, b = bar % 16, h = so.harm[b], ch = so.ch[Array.isArray(h) ? (st < 8 ? h[0] : h[1]) : h], dt = stepOf(y);
     /* drums */
     if (y.drums === "full") {
       hit(t, "shaker", st % 2 ? 0.6 : (st % 4 === 2 ? 1.2 : 0.8));
@@ -125,12 +260,30 @@
       if (CLAVE[bar % 2].includes(st)) hit(t, "clave");
     }
     if (y.drums === "soft" && st % 4 === 2) hit(t, "shaker", 0.7);
-    if (y.drums === "bossa") { if (st === 0 || st === 8) hit(t, "kick", 0.55); if ([0, 3, 6, 10, 13].includes(st) && bar % 2 === 0 || [2, 6, 10].includes(st) && bar % 2) hit(t, "rim", 0.8); if (st % 2 === 0) hit(t, "shaker", 0.5); }
+    if (y.drums === "bossa") { if (st === 0 || st === 8) hit(t, "kick", 0.55); if ([0, 3, 6, 10, 13].includes(st) && bar % 2 === 0 || [2, 6, 10].includes(st) && bar % 2) hit(t, "rim", 0.8); if (st % 2 === 0) hit(t, "shaker", 0.5); if (y.conga && (st === 6 || st === 14)) hit(t, "conga", 0.5); }
     if (y.drums === "march") { if (st === 0) hit(t, "timp", 1); if (st === 8) hit(t, "timp", 0.7); if (st === 12 || st === 14) hit(t, "snare", st === 12 ? 0.6 : 0.4); }
+    /* reggae: the kick and the rim together on the third beat, nothing on the one */
+    if (y.drums === "onedrop") { if (st === 8) { hit(t, "kick", 0.9); hit(t, "rim", 1); } if (st % 2 === 0) hit(t, "hat", st % 4 === 2 ? 0.9 : 0.5); if (st === 14 && bar % 4 === 3) hit(t, "snare", 0.5); }
+    /* soca: four on the floor, a snare on two and four, the hi-hat between */
+    if (y.drums === "soca") { if (st % 4 === 0) hit(t, "kick", 0.85); if (st === 4 || st === 12) hit(t, "snare", 0.6); if (st % 4 === 2) hit(t, "hat", 1); if (st === 3 || st === 11) hit(t, "congaHi", 0.6); if (st === 7 || st === 15) hit(t, "conga", 0.7); }
+    /* mento: a shaker on every sixteenth and a rumba box (the bass) on the beat */
+    if (y.drums === "mento") { hit(t, "shaker", st % 4 === 0 ? 1.1 : 0.55); if (st === 4 || st === 12) hit(t, "rim", 0.6); if (st === 6 || st === 14) hit(t, "conga", 0.6); }
+    /* the hill drums: three drums talking across each other, three against four */
+    if (y.drums === "hand") { if ([0, 6, 12].includes(st)) hit(t, "conga", 1); if ([3, 9, 15].includes(st)) hit(t, "congaHi", 0.8); if (st % 4 === 0) hit(t, "timp", st ? 0.35 : 0.6); if (st % 2) hit(t, "shaker", 0.4); if (bar % 4 === 3 && st >= 12) hit(t, "congaHi", 0.9); }
+    /* the surveyors: a clockwork tick and a low clave */
+    if (y.drums === "tick") { if (st % 2 === 0) hit(t, "rim", st % 8 ? 0.35 : 0.8); if (st === 0) hit(t, "kick", 0.5); if (CLAVE[bar % 2].includes(st)) hit(t, "clave", 0.6); }
     if (y.hat && st % 2 === 0) hit(t, "hat", st % 4 ? 0.6 : 1);
     if (y.agogo && [0, 3, 6, 8, 10].includes(st)) hit(t, st === 3 || st === 10 ? "agogoLo" : "agogo", 0.8);
-    /* bass: root and fifth, the calypso bounce (only the roots where the place is quiet) */
-    const BASS = y.drums === "full" ? { 0: [1, 3], 3: [1, 1], 6: [2, 2], 8: [1, 3], 11: [1, 1], 14: [2, 2] } : { 0: [1, 6], 8: [2, 6] };
+    if (y.clap && (st === 4 || st === 12)) hit(t, "clap", 0.8);
+    if (y.clank && (st === 6 || (st === 13 && bar % 2))) hit(t, "clank", 0.7);
+    if (y.knock && (st === 0 || st === 10)) hit(t, "knock", st ? 0.6 : 0.9);
+    if (y.bubble && st === 0 && bar % 2 === 0) bubbles(t);
+    if (y.creak && st === 0 && bar % 4 === 1) creak(t);
+    if (y.drip && st === 4 && bar % 3 === 0) drip(t + Math.random() * dt * 6);
+    /* bass: the calypso bounce, the reggae drop, the mento box, or only the roots where the place is quiet */
+    const BASS = y.drums === "full" || y.drums === "soca" ? { 0: [1, 3], 3: [1, 1], 6: [2, 2], 8: [1, 3], 11: [1, 1], 14: [2, 2] }
+      : y.drums === "onedrop" ? { 0: [1, 4], 6: [1, 2], 8: [2, 3], 11: [1, 1], 12: [2, 3] }
+      : y.drums === "mento" || y.drums === "hand" ? { 0: [1, 2], 4: [2, 2], 8: [1, 2], 12: [2, 2] } : { 0: [1, 6], 8: [2, 6] };
     if (y.bass && BASS[st]) bass(t, ch[BASS[st][0]], BASS[st][1], y.bass);
     if (S.tense) return;   // a tense moment: drums and bass only
     if (y.pad && st === 0) pad(t, ch[0], dt * 16, y.pad);
@@ -138,15 +291,45 @@
     if (y.mar && st % 4 === 2) ch[0].forEach((m, i) => marimba(t + i * 0.008, m + 12, y.soft ? 0.035 : 0.05));
     if (y.arp && st % 2 === 0) { const n = ch[0][(st / 2) % ch[0].length]; marimba(t, n + (st >= 8 ? 24 : 12), 0.045); }
     if (y.strum && (st === 2 || st === 6 || st === 10 || st === 14)) strum(t, ch[0]);
+    if (y.drums === "onedrop" && (st === 4 || st === 12)) strum(t, ch[0].map(m => m + 12), 0.5);   // the skank on the off beat
+    if (y.drums === "mento" && st % 4 === 2) ch[0].forEach((m, i) => pluck(t + i * 0.01, m + 12, 0.03));   // the banjo
     /* the tune, on the voice of the place; the second time round lower, with a harmony a third under */
-    for (const [s, m, d] of TUNE[b]) if (s === st) {
+    for (const [s, m, d] of so.tune[b]) if (s === st) {
       if (y.sparse && d < 3) continue;
       const lap = Math.floor(bar / 16) % 2, mm = lap ? m - 12 : m;
       if (y.lead === "pan") { pan(t, mm, d * dt, y.soft ? 0.14 : 0.2); if (lap) pan(t + 0.01, m - 15 - (m % 12 === 9 ? 1 : 0), d * dt, 0.08); }
       if (y.lead === "bell") bell(t, m + 12, d * dt);
       if (y.lead === "brass") brass(t, m - 12, d * dt);
       if (y.lead === "flute") flute(t, m, d * dt);
+      if (y.lead === "organ") organ(t, lap ? m - 12 : m, d * dt);
+      if (y.lead === "pluck") pluck(t, m, 0.09);
+      if (y.lead === "mar") { marimba(t, m + 12, 0.11); if (d >= 4) marimba(t + dt * 2, m + 12, 0.06); }
     }
+  }
+  function organ(t, m, dur) {   // a church organ that wandered into a coconut factory: three drawbars and a wobble
+    const c = S.ctx, g = c.createGain(), vib = c.createOscillator(), vg = c.createGain(); vib.frequency.value = 6; vg.gain.value = 3;
+    vib.connect(vg);
+    [[1, 0.05], [2, 0.03], [3, 0.015]].forEach(([r, a]) => { const o = c.createOscillator(); o.frequency.value = hz(m) * r; vg.connect(o.frequency); const og = c.createGain(); og.gain.value = a; o.connect(og); og.connect(g); o.start(t); o.stop(t + dur + 0.2); });
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 0.02); g.gain.setValueAtTime(1, t + Math.max(0.03, dur - 0.04)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.12);
+    g.connect(S.music); vib.start(t); vib.stop(t + dur + 0.2);
+  }
+  function pluck(t, m, v) {   // a plucked string: a bright saw that closes fast
+    const c = S.ctx, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+    o.type = "sawtooth"; o.frequency.value = hz(m); f.type = "lowpass"; f.frequency.setValueAtTime(3200, t); f.frequency.exponentialRampToValueAtTime(500, t + 0.25);
+    env(g, t, 0.002, v, 0.45); o.connect(f); f.connect(g); g.connect(S.music); o.start(t); o.stop(t + 0.6);
+  }
+  function bubbles(t) {   // air from a diver, rising
+    const c = S.ctx;
+    for (let i = 0; i < 5; i++) { const o = c.createOscillator(), g = c.createGain(), at = t + i * 0.09 + Math.random() * 0.05, f0 = 500 + Math.random() * 500; o.frequency.setValueAtTime(f0, at); o.frequency.exponentialRampToValueAtTime(f0 * 2.2, at + 0.06); env(g, at, 0.003, 0.025, 0.06); o.connect(g); g.connect(S.amb); o.start(at); o.stop(at + 0.1); }
+  }
+  function creak(t) {   // an old hull settling
+    const c = S.ctx, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+    o.type = "sawtooth"; o.frequency.setValueAtTime(70, t); o.frequency.linearRampToValueAtTime(95, t + 0.6); f.type = "bandpass"; f.frequency.value = 600; f.Q.value = 8;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.2); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7); o.connect(f); f.connect(g); g.connect(S.amb); o.start(t); o.stop(t + 0.8);
+  }
+  function drip(t) {   // a drop in a cave
+    const c = S.ctx, o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(1400 + Math.random() * 600, t); o.frequency.exponentialRampToValueAtTime(500, t + 0.08);
+    env(g, t, 0.002, 0.06, 0.12); o.connect(g); g.connect(S.rev); g.connect(S.amb); o.start(t); o.stop(t + 0.2);
   }
   function pad(t, notes, dur, v) {   // a soft organ: two detuned sines per note, slow in and out
     const c = S.ctx;
@@ -170,17 +353,23 @@
     o.connect(g); g.connect(S.music); o.start(t); vib.start(t); o.stop(t + dur + 0.3); vib.stop(t + dur + 0.3);
     const n = c.createBufferSource(), nf = c.createBiquadFilter(), ng = c.createGain(); n.buffer = S.noise; nf.type = "bandpass"; nf.frequency.value = hz(m) * 2; nf.Q.value = 2; env(ng, t, 0.02, 0.012, 0.12); n.connect(nf); nf.connect(ng); ng.connect(S.music); n.start(t, Math.random()); n.stop(t + 0.2);
   }
-  function strum(t, notes) {   // a nylon guitar, strummed down
+  function strum(t, notes, k = 1) {   // a nylon guitar, strummed down
     const c = S.ctx;
-    [...notes, notes[0] + 12].forEach((m, i) => { const o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain(); o.type = "sawtooth"; o.frequency.value = hz(m); f.type = "lowpass"; f.frequency.value = 1400; env(g, t + i * 0.012, 0.003, 0.028, 0.3); o.connect(f); f.connect(g); g.connect(S.music); o.start(t + i * 0.012); o.stop(t + i * 0.012 + 0.45); });
+    [...notes, notes[0] + 12].forEach((m, i) => { const o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain(); o.type = "sawtooth"; o.frequency.value = hz(m); f.type = "lowpass"; f.frequency.value = 1400; env(g, t + i * 0.012, 0.003, 0.028 * k, 0.3 * k); o.connect(f); f.connect(g); g.connect(S.music); o.start(t + i * 0.012); o.stop(t + i * 0.012 + 0.45); });
   }
   function tick() {
     if (!S.ctx || !S.on) return;
     while (S.next < S.ctx.currentTime + 0.12) {
-      const t = S.next + (S.step % 2 ? STEP / (STYLES[S.place] || STYLES.island).k * SWING : 0);
+      const y = S.y || (S.y = styleNow()), d = stepOf(y), t = S.next + (S.step % 2 ? d * SWING : 0);
       play(S.bar, S.step, t);
-      const y = STYLES[S.place] || STYLES.island;
-      S.next += STEP / y.k; S.step++; if (S.step === 16) { S.step = 0; S.bar++; if (S.placeT !== S.place) { S.place = S.placeT; S.bar -= S.bar % 4; } }
+      S.next += d; S.step++;
+      if (S.step === 16) {
+        S.step = 0; S.bar++;
+        /* a new place: its own song from the top; on the radio, the next song after two times round */
+        if (S.placeT !== S.place) { S.place = S.placeT; const so = songOf(S.place); if (so !== S.song) { S.song = so; S.bar = 0; } else S.bar -= S.bar % 4; }
+        else if (!(STYLES[S.place] || {}).s && S.bar >= 32) { S.pl++; S.song = songOf(S.place); S.bar = 0; }
+        S.y = styleNow();
+      }
     }
   }
   /* ---------- small sounds for the game ---------- */
@@ -197,6 +386,16 @@
     if (name === "cheer") { for (let i = 0; i < 4; i++) { const n = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); n.buffer = S.noise; f.type = "bandpass"; f.frequency.value = 900 + i * 500; f.Q.value = 1.4; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 0.3 + i * 0.1); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.4); n.connect(f); f.connect(g); g.connect(S.master); n.start(t, i * 0.3); n.stop(t + 2.6); } [0, 0.15, 0.3].forEach((a, i) => pan(t + a, [77, 81, 84][i], 0.5, 0.18)); }
     if (name === "glitch") { for (let i = 0; i < 6; i++) tone(200 + Math.random() * 1800, i * 0.035, 0.03, 0.05, "square"); }
     if (name === "jingle") { [[0, 77], [0.11, 81], [0.22, 84], [0.4, 89]].forEach(([a, m], i) => pan(t + a, m, i === 3 ? 0.5 : 0.12, 0.1)); }
+    /* the morning show starts: a snare roll that grows, a run up the steel pan, three blasts of the station horn, a crash,
+       and the band comes in from the top of the next song */
+    if (name === "wake") {
+      for (let i = 0; i < 18; i++) { const at = i * 0.055, n = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); n.buffer = S.noise; f.type = "bandpass"; f.frequency.value = 2400; f.Q.value = 0.9; env(g, t + at, 0.002, 0.02 + i * 0.006, 0.06); n.connect(f); f.connect(g); g.connect(S.master); n.start(t + at, Math.random()); n.stop(t + at + 0.1); }
+      [65, 69, 72, 77, 81, 84, 89].forEach((m, i) => pan(t + 0.3 + i * 0.07, m, 0.1, 0.12));
+      [1.05, 1.3, 1.55].forEach((at, i) => { [0, 7, -5].forEach(dn => { const o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain(); o.type = "sawtooth"; o.frequency.setValueAtTime(hz(i === 2 ? 70 : 69), t + at); o.frequency.linearRampToValueAtTime(hz(i === 2 ? 70 : 69) * 0.94, t + at + (i === 2 ? 0.5 : 0.2)); o.detune.value = dn; f.type = "lowpass"; f.frequency.value = 2600; g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(0.045, t + at + 0.02); g.gain.setValueAtTime(0.04, t + at + (i === 2 ? 0.45 : 0.16)); g.gain.exponentialRampToValueAtTime(0.0001, t + at + (i === 2 ? 0.6 : 0.22)); o.connect(f); f.connect(g); g.connect(S.master); o.start(t + at); o.stop(t + at + 0.7); }); });
+      { const n = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); n.buffer = S.noise; f.type = "highpass"; f.frequency.value = 3000; env(g, t + 2.15, 0.003, 0.12, 1.4); n.connect(f); f.connect(g); g.connect(S.master); g.connect(S.rev); n.start(t + 2.15); n.stop(t + 3.7); }
+      hit(t + 2.15, "kick", 1.2); hit(t + 2.15, "timp", 1);
+      S.next = Math.max(S.next, t + 2.15); S.bar = 0; S.step = 0;
+    }
     if (name === "meow") { const o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter(); o.type = "sawtooth"; f.type = "bandpass"; f.frequency.value = 1100; f.Q.value = 3; o.frequency.setValueAtTime(520, t); o.frequency.linearRampToValueAtTime(780, t + 0.18); o.frequency.linearRampToValueAtTime(420, t + 0.5); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55); o.connect(f); f.connect(g); g.connect(S.master); o.start(t); o.stop(t + 0.6); }
   }
   /* ---------- the mix ---------- */
@@ -265,7 +464,9 @@
     start, sfx, speak, hush,
     /* on: the music is really playing (a browser lets it start only after the first click, tap or key) */
     get on() { return S.on && !!S.ctx && S.ctx.state === "running"; }, get wanted() { return S.want; },
-    get state() { return S.ctx ? S.ctx.state : "none"; }, get why() { return S.why || ""; },
+    get state() { return S.ctx ? S.ctx.state : "none"; },
+    /* the song playing now (its name for the radio strip), and the songbook */
+    get song() { return { id: S.song, name: (SONGS[S.song] || {}).name || "" }; }, songs: Object.keys(SONGS), get why() { return S.why || ""; },
     set onchange(f) { S.cb = f; },
     set(o) { Object.assign(want, o); apply(); },
     toggle() {

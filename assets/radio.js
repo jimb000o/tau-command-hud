@@ -72,7 +72,7 @@
       beat();
       const fresh = !greeted();
       if (!R.timer) { R.timer = setInterval(() => { if (elsewhere()) quiet(); else { beat(); tick(); } }, 2000); R.next = performance.now() + (fresh ? 2500 : 15000 + Math.random() * 15000); R.n = 0; }
-      if (!R.hello) { R.hello = true; if (fresh) { try { sessionStorage.setItem(HELLO, String(Date.now())); } catch (e) {} S.sfx("jingle"); setTimeout(() => air(hello()), 900); } }
+      if (!R.hello) { R.hello = true; if (fresh) { try { sessionStorage.setItem(HELLO, String(Date.now())); } catch (e) {} if (RICO.wake && RICO.SETS && RICO.SETS.wake) { S.sfx("wake"); const w = V(RICO.wake()); setTimeout(() => air(w ? [w] : hello()), 2000); } else { S.sfx("jingle"); setTimeout(() => air(hello()), 900); } } }
     }
     show(); return S.on;
   }
@@ -157,8 +157,13 @@
     const S = window.COVE_SOUND; if (!S || !S.on) return;
     const text = parts.map(p => p.t).join(CJK ? "" : " ");
     caption(text);
+    /* a phone call goes up one turn at a time, with who is speaking */
+    const call = parts.some(p => p && p.who), said = parts.filter(p => p && p.v);
+    const turns = secs => { (R.turnT || []).forEach(clearTimeout); R.turnT = []; const total = said.reduce((n, p) => n + p.v.length, 0) || 1; let at = 0; said.forEach(p => { const who = p.who ? p.who[0].toUpperCase() + p.who.slice(1) : "Rico"; R.turnT.push(setTimeout(() => caption(who + ": " + p.t), at * 1000)); at += secs ? secs * p.v.length / total : Math.max(2.5, p.t.length * 0.06); }); return at; };
+    if (call) turns(0);
     let secs = false; try { secs = await RICO.speak(parts, "rico"); } catch (e) {}
-    const hold = (secs || Math.min(14, 4 + text.length / 18)) + 2;
+    if (call && secs) turns(secs);
+    const hold = (secs || (call ? said.reduce((n, p) => n + Math.max(2.5, p.t.length * 0.06), 0) : Math.min(14, 4 + text.length / 18))) + 2;
     clearTimeout(R.capT); R.capT = setTimeout(() => caption(null), hold * 1000);
     R.next = performance.now() + hold * 1000 + 35000 + Math.random() * 35000;
   }

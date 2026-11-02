@@ -944,6 +944,216 @@
   "text": "Still awake? So is the chain. It never sleeps. Rico will, in about four songs."
  },
  {
+  "who": "rico",
+  "text": "Wakey wakey, White Rabbit Keeeey! Radio Coco, ninety-seven point threeee! The sun is up, the blocks are fresh, and Rico is LOUD!",
+  "how": "hype"
+ },
+ {
+  "who": "rico",
+  "text": "Heeeeey, White Rabbit Keeeey! Radio Coco, ninety-seven point threeee! Out of the hammock, the island needs you!",
+  "how": "hype"
+ },
+ {
+  "who": "rico",
+  "text": "Goood eeevening, island! This is Radio Coco, ninety-seven point threeee, and the night is young! Rico is not, but the night is!",
+  "how": "hype"
+ },
+ {
+  "who": "rico",
+  "text": "Still uuuup, White Rabbit Keeeey? So is Radio Coco, ninety-seven point threeee! The chain never sleeps, and tonight neither does Rico!",
+  "how": "hype"
+ },
+ {
+  "who": "rico",
+  "text": "Coco, coco, coco... RADIO COCOOOO! Ninety-seven point three, the loudest little station on any testnet!",
+  "how": "hype"
+ },
+ {
+  "who": "rico",
+  "text": "Ladies, gentlemen and wallets of all sizes! Welcome to the island! This is Rico, this is Radio Coco, and this is your wake-up caaaall!",
+  "how": "hype"
+ },
+ {
+  "who": "rico",
+  "text": "On Radio Coco now: Coco Calypso, the island's own tune. If you can't hum it yet, you will by Thursday."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Mango Run! Fast, sticky and sweet. Do not dance near the fruit stall."
+ },
+ {
+  "who": "rico",
+  "text": "Low Tide, on Radio Coco. Lean back and let the bass do the walking."
+ },
+ {
+  "who": "rico",
+  "text": "Tin Roof Shuffle, straight from the Coconut Works. Some say that's the organ. Some say it's three bicycles."
+ },
+ {
+  "who": "rico",
+  "text": "Hammock Hours. Rico recommends one cold drink and zero decisions."
+ },
+ {
+  "who": "rico",
+  "text": "Moon Over the Pier. Grab someone you like, or a coconut that listens."
+ },
+ {
+  "who": "rico",
+  "text": "Thanks for calling! The lines are open, island. Keep them warm."
+ },
+ {
+  "who": "rico",
+  "text": "And that's the phone-in on Radio Coco. Rico loves a caller who hangs up on time."
+ },
+ {
+  "who": "rico",
+  "text": "Thank you, caller! Next one, ring away."
+ },
+ {
+  "who": "rico",
+  "text": "Bye bye! Back to the music."
+ },
+ {
+  "who": "rico",
+  "text": "Take care! On Radio Coco every caller is a VIP: a Very Island Person."
+ },
+ {
+  "who": "rico",
+  "text": "Thanks for the call! Rico's phone is always on. The battery isn't, but the phone is."
+ },
+ {
+  "who": "rico",
+  "text": "Goodbye and good tides! Here's a song."
+ },
+ {
+  "who": "rico",
+  "text": "What a call. Rico has goosebumps. Or it's the air conditioning. Either way, more music!"
+ },
+ {
+  "who": "rico",
+  "text": "Election results from the chain: one candidate, one vote, and the winner takes every block today. Landslide."
+ },
+ {
+  "who": "rico",
+  "text": "Every block lately was sealed by the same hand. Rico admires the dedication. Rico also wonders who covers the lunch break."
+ },
+ {
+  "who": "rico",
+  "text": "The chain's choir is one voice right now. A beautiful solo. Somebody please join in on the chorus."
+ },
+ {
+  "who": "rico",
+  "text": "News from the block-sealing committee: they met today. Attendance: one. Motion carried unanimously."
+ },
+ {
+  "who": "rico",
+  "text": "One keeper sealing every page of the chain. Old Sam knows the feeling. He says: get a deputy, and a hammock."
+ },
+ {
+  "who": "rico",
+  "text": "Rico checked who sealed the latest blocks. It took a second. Same name every time. Lovely handwriting, though."
+ },
+ {
+  "who": "rico",
+  "text": "The chain is a one-man band today: drums, bass and every single block. Rico respects that. Rico is also a one-man band, and look how that turned out."
+ },
+ {
+  "who": "rico",
+  "text": "Fun fact: right now one validator seals every block on the testnet. For a dress rehearsal, fine. For opening night, you want the whole cast."
+ },
+ {
+  "who": "rico",
+  "text": "The one sealing every block hasn't sent a single transaction lately. Like a postman who delivers everything and never writes home."
+ },
+ {
+  "who": "rico",
+  "text": "Every block, the same sealer, and not one transaction of their own. Pure service. Rico would at least send himself a postcard."
+ },
+ {
+  "who": "rico",
+  "text": "Hold on, island: more than one hand is sealing blocks now! The choir has a second voice. Rico is tearing up a little."
+ },
+ {
+  "who": "rico",
+  "text": "The chain's solo just became a duet! Two sealers, one Book. Rico is calling it a band."
+ },
+ {
+  "who": "rico",
+  "text": "The chain is brand new this week. It started over from block zero, and all the old blocks are gone from the live chain. Like footprints at high tide."
+ },
+ {
+  "who": "rico",
+  "text": "The story so far: somebody's proposal got voted in by a single voice, took effect, and the chain stopped right there. So the testnet started over at block zero. Rico calls that a test that worked."
+ },
+ {
+  "who": "rico",
+  "text": "New house rule on the chain: only the ones who seal the blocks get to vote on the rules now. Everybody else, the suggestion box is closed for renovation."
+ },
+ {
+  "who": "rico",
+  "text": "Fresh chain, fresh start. Rico lost all his favourite old blocks. He'd be sadder, but most of them were empty."
+ },
+ {
+  "who": "rico",
+  "text": "Remember: a testnet that never breaks has never been tested. This one has been tested. Thoroughly. Last weekend."
+ },
+ {
+  "who": "rico",
+  "text": "The chain just passed block five thousand and twenty-eight, the page where the old chain stood still. New personal best! Somebody give it a medal."
+ },
+ {
+  "who": "rico",
+  "text": "Past block five thousand and twenty-eight and still going. The old chain never got this far. Rico is proud like a parent at sports day."
+ },
+ {
+  "who": "rico",
+  "text": "Testnet tip: if something breaks, congratulations, you are now a tester. Write it down, tell the developers, take a bow."
+ },
+ {
+  "who": "rico",
+  "text": "Somewhere out there a brand-new node is reading the whole chain from block zero. Rico salutes you, little node. Drink water."
+ },
+ {
+  "who": "rico",
+  "text": "The chain has no opening hours. It works nights, weekends and holidays, and it has never once asked for a raise."
+ },
+ {
+  "who": "rico",
+  "text": "On this testnet every rule has to agree with every other rule. Rico tried that with his relatives once. It took three Christmases."
+ },
+ {
+  "who": "rico",
+  "text": "Reminder: the coins on this chain are for testing. If somebody sells you some, Rico has a lighthouse to sell you too."
+ },
+ {
+  "who": "rico",
+  "text": "A block just came in empty. Rico doesn't judge. Some mornings Rico comes in empty too."
+ },
+ {
+  "who": "rico",
+  "text": "Ferry news: the big ferry to the mainland is coming soon. Rico has been saying that since he got this job. The timetable just says: when it's ready."
+ },
+ {
+  "who": "rico",
+  "text": "A listener asks what's on the mainland. Rico has never been. People say the rules there work like ours, only for many more islands."
+ },
+ {
+  "who": "rico",
+  "text": "Old Sam says the mainland is real. He has seen its lights on clear nights. Lola says that's the lighthouse, reflecting in his glasses."
+ },
+ {
+  "who": "rico",
+  "text": "Packing tip for the mainland: bring your Book. Nobody over there will believe what you did here without it."
+ },
+ {
+  "who": "rico",
+  "text": "Kiko is building a canoe big enough to reach the mainland. He says it's done when it's done. The only honest timetable on this island."
+ },
+ {
+  "who": "rico",
+  "text": "Rico will not give you a date for the mainland ferry. Anybody who does is selling tickets."
+ },
+ {
   "who": "hana",
   "text": "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."
  },
@@ -1181,11 +1391,35 @@
  },
  {
   "who": "zia",
+  "text": "So if I learn it, can I write a rule that says no homework on Fridays?"
+ },
+ {
+  "who": "rico",
+  "text": "For your own wallet, Zia, sure. Getting Miss Hana to sign it, that's the hard part."
+ },
+ {
+  "who": "zia",
+  "text": "Worth a try! Bye Rico!"
+ },
+ {
+  "who": "zia",
   "text": "Rico, it's Zia again. If a rule says always, does it really have to hold forever?"
  },
  {
   "who": "rico",
   "text": "In Tau logic, always means at every step in time, yes. That's why people think hard before they write it. Rico once promised always, and meant until Thursday."
+ },
+ {
+  "who": "zia",
+  "text": "Until Thursday? What happened on Thursday?"
+ },
+ {
+  "who": "rico",
+  "text": "Lola's lemonade happened, Zia. Some promises melt."
+ },
+ {
+  "who": "zia",
+  "text": "Ha! Bye Rico!"
  },
  {
   "who": "ozzie",
@@ -1197,11 +1431,35 @@
  },
  {
   "who": "ozzie",
+  "text": "Free? Then I'll take two bags!"
+ },
+ {
+  "who": "rico",
+  "text": "Take ten, mate. The faucet doesn't judge."
+ },
+ {
+  "who": "ozzie",
+  "text": "Legend. Cheers, Rico!"
+ },
+ {
+  "who": "ozzie",
   "text": "Ozzie again! Rico, when's the mainnet? I've got a flight on Friday."
  },
  {
   "who": "rico",
   "text": "Rico doesn't know, mate, and anyone who gives you a date on the radio is selling something. Enjoy the testnet. It's free, and the view is great."
+ },
+ {
+  "who": "ozzie",
+  "text": "Fair enough. Can I at least get a T-shirt?"
+ },
+ {
+  "who": "rico",
+  "text": "Rico has one. It says: I survived the testnet. It's still being printed."
+ },
+ {
+  "who": "ozzie",
+  "text": "Ha! Cheers mate, see ya!"
  },
  {
   "who": "bert",
@@ -1213,11 +1471,35 @@
  },
  {
   "who": "bert",
+  "text": "A crew that votes on the map? We'd still be in port."
+ },
+ {
+  "who": "rico",
+  "text": "Some days the chain is, Bertie. That's the fog in Rico's weather report."
+ },
+ {
+  "who": "bert",
+  "text": "Aye, I've seen that fog. Mind how you go, Rico."
+ },
+ {
+  "who": "bert",
   "text": "Bertie again. Can the validators vote to change the rules for changing the rules?"
  },
  {
   "who": "rico",
   "text": "They can, Bertie, if enough of them agree. A rule that changes its own amendment rule. Makes your head spin like a capstan."
+ },
+ {
+  "who": "bert",
+  "text": "And what stops them changing it every Tuesday?"
+ },
+ {
+  "who": "rico",
+  "text": "Only that enough of them have to agree. Getting sailors to agree on a Tuesday is harder than it sounds."
+ },
+ {
+  "who": "bert",
+  "text": "That it is. Fair winds, lad."
  },
  {
   "who": "dom",
@@ -1229,11 +1511,35 @@
  },
  {
   "who": "dom",
+  "text": "Okay, but what if it only contradicts them a little?"
+ },
+ {
+  "who": "rico",
+  "text": "There's no a little in logic, Dom. It holds or it doesn't. Like a hammock."
+ },
+ {
+  "who": "dom",
+  "text": "Deep. I'm going back to the hammock. Later, Rico."
+ },
+ {
+  "who": "dom",
   "text": "Dom again. Rico, is it true all of this is just one guy with a lot of wallets?"
  },
  {
   "who": "rico",
   "text": "The chain only sees wallets, Dom. One guy or a whole village, it treats them all the same. Equality, island style."
+ },
+ {
+  "who": "dom",
+  "text": "So I could be a whole village if I make enough wallets?"
+ },
+ {
+  "who": "rico",
+  "text": "On the chain, yes. At Lola's bar you still pay for one lemonade at a time."
+ },
+ {
+  "who": "dom",
+  "text": "Worth knowing. Later, Rico."
  },
  {
   "who": "nell",
@@ -1245,11 +1551,35 @@
  },
  {
   "who": "nell",
+  "text": "Can I take my word back?"
+ },
+ {
+  "who": "rico",
+  "text": "Only the way your own rule allows, Nell. That's the charm of it, and the curse."
+ },
+ {
+  "who": "nell",
+  "text": "Then I'm writing smaller promises. Bye, love."
+ },
+ {
+  "who": "nell",
   "text": "Nell again. How do I know my transfer really happened?"
  },
  {
   "who": "rico",
   "text": "Look it up in a block, Nell. Every block has a number, and anyone can check what's inside. Just like the Book in the lighthouse, only with more zeros."
+ },
+ {
+  "who": "nell",
+  "text": "And anybody can look at mine?"
+ },
+ {
+  "who": "rico",
+  "text": "Anybody, Nell. That's the deal. Rico only snoops for rumours, and even those end up in the Book."
+ },
+ {
+  "who": "nell",
+  "text": "Good to know. Ta-ta, Rico."
  },
  {
   "who": "mae",
@@ -1261,11 +1591,491 @@
  },
  {
   "who": "mae",
+  "text": "So the machine just checks the rules?"
+ },
+ {
+  "who": "rico",
+  "text": "That's how Rico understands it, Auntie. You write down what you mean, and it checks that it all fits together."
+ },
+ {
+  "who": "mae",
+  "text": "Well, I mean my rolls. Bye now, dear."
+ },
+ {
+  "who": "mae",
   "text": "Auntie Mae again. Rico, is there somewhere I can read the code for this testnet?"
  },
  {
   "who": "rico",
   "text": "There is, Auntie. The testnet code is public on GitHub. Rico read some of it. Then Rico needed a nap."
+ },
+ {
+  "who": "mae",
+  "text": "A nap? Was it that boring?"
+ },
+ {
+  "who": "rico",
+  "text": "Not boring, Auntie. Just very honest. Every line says exactly what it does."
+ },
+ {
+  "who": "mae",
+  "text": "Like my recipes. Bye now, dear."
+ },
+ {
+  "who": "lola",
+  "text": "Rico, it's Lola. A man at the bar says Radio Coco only ever plays one song."
+ },
+ {
+  "who": "rico",
+  "text": "Tell him we have six now, Lola. Six! Rico has been composing at night."
+ },
+ {
+  "who": "lola",
+  "text": "He says they all sound happy."
+ },
+ {
+  "who": "rico",
+  "text": "It's an island, Lola. Sad songs get a sunburn."
+ },
+ {
+  "who": "lola",
+  "text": "Ha! Come by later, your lemonade's getting warm. Bye, honey."
+ },
+ {
+  "who": "sam",
+  "text": "Rico, it's Sam at the lighthouse. Just checking the radio works. It's been very quiet up here."
+ },
+ {
+  "who": "rico",
+  "text": "It works, Sam! You're on the air right now."
+ },
+ {
+  "who": "sam",
+  "text": "Am I? Well. Hello, island. Read the Book. That's all."
+ },
+ {
+  "who": "rico",
+  "text": "Short and true, Sam. Your trademark."
+ },
+ {
+  "who": "sam",
+  "text": "Goodnight, Rico. Keep the lamp on."
+ },
+ {
+  "who": "tobias",
+  "text": "Rico! Tobias here, harbour master and humble candidate. I wish to dedicate a song to myself."
+ },
+ {
+  "who": "rico",
+  "text": "To yourself, Tobias?"
+ },
+ {
+  "who": "tobias",
+  "text": "Who else has worked so hard for me?"
+ },
+ {
+  "who": "rico",
+  "text": "Fair point. Here's one for Tobias, from Tobias."
+ },
+ {
+  "who": "tobias",
+  "text": "Splendid! Louder, if you please. Farewell!"
+ },
+ {
+  "who": "marisol",
+  "text": "Rico, it's Marisol. The fish want to know who's voting for the reef."
+ },
+ {
+  "who": "rico",
+  "text": "The fish can read the Book like everybody else, Marisol."
+ },
+ {
+  "who": "marisol",
+  "text": "They can't read, Rico. They're fish."
+ },
+ {
+  "who": "rico",
+  "text": "Then they'll have to trust the ones who can. Isn't that politics?"
+ },
+ {
+  "who": "marisol",
+  "text": "Hmph. Gotta go, the nets won't mend themselves. Bye!"
+ },
+ {
+  "who": "baako",
+  "text": "Rico, Baako from the Coconut Works! The organ is playing by itself again."
+ },
+ {
+  "who": "rico",
+  "text": "By itself, Baako?"
+ },
+ {
+  "who": "baako",
+  "text": "Well, Noor sat on it. But it sounded good! Can you put it on the radio?"
+ },
+ {
+  "who": "rico",
+  "text": "If it happens again, Rico will record it. Number one on the island charts."
+ },
+ {
+  "who": "baako",
+  "text": "Ha ha! I'll tell her. Bye bye!"
+ },
+ {
+  "who": "noor",
+  "text": "Rico, it's Noor. Baako says the organ thing was me."
+ },
+ {
+  "who": "rico",
+  "text": "Was it, Noor?"
+ },
+ {
+  "who": "noor",
+  "text": "It was a chair. I sat on a chair. The chair was on the organ."
+ },
+ {
+  "who": "rico",
+  "text": "Island, that's how great music starts."
+ },
+ {
+  "who": "noor",
+  "text": "It's how great backaches start. Bye."
+ },
+ {
+  "who": "hana",
+  "text": "Rico, Hana from the school. The children want to know why blocks have numbers but no names."
+ },
+ {
+  "who": "rico",
+  "text": "Because a number never lies about its age, Hana."
+ },
+ {
+  "who": "hana",
+  "text": "That's not an answer. That's a fridge magnet."
+ },
+ {
+  "who": "rico",
+  "text": "Rico's whole career is fridge magnets."
+ },
+ {
+  "who": "hana",
+  "text": "I'll give you a C. Goodbye, Rico."
+ },
+ {
+  "who": "frost",
+  "text": "Good evening. This is the North Wind Embassy. We would like to request a song."
+ },
+ {
+  "who": "rico",
+  "text": "Ambassador Frost! What would you like to hear?"
+ },
+ {
+  "who": "frost",
+  "text": "Something about surveyors. Something deep."
+ },
+ {
+  "who": "rico",
+  "text": "Rico doesn't take requests that come in envelopes, Ambassador."
+ },
+ {
+  "who": "frost",
+  "text": "Who said anything about envelopes? Goodnight."
+ },
+ {
+  "who": "salado",
+  "text": "Rico, my friend! Salado, South Current. We love your station. We love it so much."
+ },
+ {
+  "who": "rico",
+  "text": "Thank you, Ambassador. Is there a but?"
+ },
+ {
+  "who": "salado",
+  "text": "No but. Only a road. Around the island. Play something about a road."
+ },
+ {
+  "who": "rico",
+  "text": "Rico plays songs, Ambassador, not roads."
+ },
+ {
+  "who": "salado",
+  "text": "Everyone plays something, my friend. Ciao!"
+ },
+ {
+  "who": "ama",
+  "text": "Rico, this is Ama. The tide is low tonight."
+ },
+ {
+  "who": "rico",
+  "text": "Thank you, Ama. Is that news?"
+ },
+ {
+  "who": "ama",
+  "text": "Everything that comes back on time is news, Rico. Your blocks could learn from the tide."
+ },
+ {
+  "who": "rico",
+  "text": "Rico will pass that on to the chain."
+ },
+ {
+  "who": "ama",
+  "text": "Pass it on gently. Good night, child."
+ },
+ {
+  "who": "kai",
+  "text": "Rico, Kai from Reef Proof! Our sensors just signed their thousandth reading!"
+ },
+ {
+  "who": "rico",
+  "text": "Congratulations, Kai! What did it say?"
+ },
+ {
+  "who": "kai",
+  "text": "Water. Wet. Signed and timestamped."
+ },
+ {
+  "who": "rico",
+  "text": "Breaking news, island: the sea is wet, and now it's on record."
+ },
+ {
+  "who": "kai",
+  "text": "Ha! Come diving sometime, Rico! Bye!"
+ },
+ {
+  "who": "pim",
+  "text": "Rico, it's Pim, the surveyor. Could you play something exactly four minutes and twelve seconds long?"
+ },
+ {
+  "who": "rico",
+  "text": "Why exactly that long, Pim?"
+ },
+ {
+  "who": "pim",
+  "text": "It's how long the walk is from the camp to the... to nowhere in particular."
+ },
+ {
+  "who": "rico",
+  "text": "Pim, are you measuring the radio?"
+ },
+ {
+  "who": "pim",
+  "text": "No! Yes. Only a little. Goodbye."
+ },
+ {
+  "who": "kiko",
+  "text": "Rico, Kiko at the canoes. I saw him again. In the jungle."
+ },
+ {
+  "who": "rico",
+  "text": "Agorzilla?"
+ },
+ {
+  "who": "kiko",
+  "text": "He took a banana and left a footprint. A big one."
+ },
+ {
+  "who": "rico",
+  "text": "Kiko, did you take a picture?"
+ },
+ {
+  "who": "kiko",
+  "text": "I took the banana back. Priorities. Bye, Rico."
+ },
+ {
+  "who": "wren",
+  "text": "Rico dear, Captain Wren. The sea gave something odd back today."
+ },
+ {
+  "who": "rico",
+  "text": "What was it, Captain?"
+ },
+ {
+  "who": "wren",
+  "text": "A sock. Labelled: transaction, still waiting."
+ },
+ {
+  "who": "rico",
+  "text": "Ghost transactions are washing up on the beach now?"
+ },
+ {
+  "who": "wren",
+  "text": "Everything washes up eventually, dear. Toodle-oo."
+ },
+ {
+  "who": "tano",
+  "text": "Rico, it's Tano up on the hill. My drums just carried your last joke to all three hills."
+ },
+ {
+  "who": "rico",
+  "text": "And? How did it land?"
+ },
+ {
+  "who": "tano",
+  "text": "The far hill sent back one word."
+ },
+ {
+  "who": "rico",
+  "text": "Laughter?"
+ },
+ {
+  "who": "tano",
+  "text": "Why. Goodbye, Rico."
+ },
+ {
+  "who": "gus",
+  "text": "Rico, Gus again. When does the ferry to the mainland leave?"
+ },
+ {
+  "who": "rico",
+  "text": "When it's ready, Gus. Same answer as yesterday."
+ },
+ {
+  "who": "gus",
+  "text": "And tomorrow?"
+ },
+ {
+  "who": "rico",
+  "text": "Tomorrow too. Consistency, Gus. It's our brand."
+ },
+ {
+  "who": "gus",
+  "text": "I'll pack slowly, then. Cheerio."
+ },
+ {
+  "who": "tobias",
+  "text": "Rico! Tobias. I have already ordered a hat for the day the mainland ferry arrives."
+ },
+ {
+  "who": "rico",
+  "text": "Has anyone told you when it arrives, Tobias?"
+ },
+ {
+  "who": "tobias",
+  "text": "No. That is why I ordered a very patient hat."
+ },
+ {
+  "who": "rico",
+  "text": "Island, the harbour master is ready. The ferry, we'll see."
+ },
+ {
+  "who": "tobias",
+  "text": "Splendid. Farewell!"
+ },
+ {
+  "who": "gus",
+  "text": "Hello? Is this the bakery?"
+ },
+ {
+  "who": "rico",
+  "text": "This is Radio Coco, sir. You're on the air."
+ },
+ {
+  "who": "gus",
+  "text": "Oh. Well, while I have you. Two loaves, please."
+ },
+ {
+  "who": "rico",
+  "text": "Rico will pass it on to Auntie Mae."
+ },
+ {
+  "who": "gus",
+  "text": "Much obliged. And play something slow. Cheerio."
+ },
+ {
+  "who": "gus",
+  "text": "Rico, it's Gus. I've been on hold since the old chain."
+ },
+ {
+  "who": "rico",
+  "text": "Gus, the old chain is gone. You're the longest-waiting transaction on this island."
+ },
+ {
+  "who": "gus",
+  "text": "Do I get a prize?"
+ },
+ {
+  "who": "rico",
+  "text": "You get a song, Gus. Here it comes."
+ },
+ {
+  "who": "gus",
+  "text": "I'll take it. Cheerio."
+ },
+ {
+  "who": "vik",
+  "text": "Rico, quick question about the ghost transac"
+ },
+ {
+  "who": "rico",
+  "text": "And he's gone. The phone line runs past Baako's goats. They chew on it."
+ },
+ {
+  "who": "zia",
+  "text": "Rico, can you say hi to my mum? She's"
+ },
+ {
+  "who": "rico",
+  "text": "We lost her! Zia's mum, if you're listening: hi from Zia. And from Rico."
+ },
+ {
+  "who": "pearl",
+  "text": "Rico, Pearl here, I'm new on the island. Who stamps all the blocks? I keep seeing the same signature."
+ },
+ {
+  "who": "rico",
+  "text": "Right now one hand seals every block, Pearl. On a testnet that's the warm-up act."
+ },
+ {
+  "who": "pearl",
+  "text": "Isn't that a bit lonely?"
+ },
+ {
+  "who": "rico",
+  "text": "Very. Rico plays them a song every night. This one's for you, whoever you are."
+ },
+ {
+  "who": "pearl",
+  "text": "That's sweet. Thank you, Rico. Bye now!"
+ },
+ {
+  "who": "rudy",
+  "text": "Rico, Rudy here. All my old transactions are gone! Everything from last week!"
+ },
+ {
+  "who": "rico",
+  "text": "Rudy, the testnet started over from block zero. Everybody's old blocks went with it."
+ },
+ {
+  "who": "rudy",
+  "text": "So I'm poor again?"
+ },
+ {
+  "who": "rico",
+  "text": "You were never rich, Rudy. Test coins. You're exactly as rich as before: pretend."
+ },
+ {
+  "who": "rudy",
+  "text": "Huh. That's weirdly comforting. Thanks, Rico."
+ },
+ {
+  "who": "tess",
+  "text": "Rico, it's Tess. I read that somebody voted a rule in all by themselves, and the whole chain stopped. Is that true?"
+ },
+ {
+  "who": "rico",
+  "text": "One vote, one rule, and the chain stood still right where it took effect. So it started over, and now only the block sealers vote on the rules."
+ },
+ {
+  "who": "tess",
+  "text": "So the suggestion box is closed?"
+ },
+ {
+  "who": "rico",
+  "text": "Closed for renovation, Tess. That's what testnets are for: you find the loose plank before the party."
+ },
+ {
+  "who": "tess",
+  "text": "Ha. Okay, love the show, bye!"
  },
  {
   "who": "ama",
@@ -1369,7 +2179,15 @@
  },
  {
   "who": "marisol",
-  "text": "I trust what’s written down. Tobias has a theory about everyone, Baako has a handshake for everyone, Hana has a footnote for everyone. I have coffee."
+  "text": "I trust what’s written down. Tobias has a speech for every envelope, Baako has a ledger for every coconut, Hana has a footnote for everyone. I have coffee, and coffee hears things."
+ },
+ {
+  "who": "marisol",
+  "text": "Rumours don’t start anywhere. They wander in, sit down and order a coffee. I only help them find the radio. A café has to live on something."
+ },
+ {
+  "who": "marisol",
+  "text": "Then Hana’s class has found out by lunch. Those children check everything. My gossip has never been so honest. Business is worse. The coffee is better."
  },
  {
   "who": "lola",
@@ -1532,6 +2350,14 @@
   "text": "Slander! Well, yes. Kai is secretly a fish. Pim measures his own shadow at night. And Agorzilla is a council member in a very good costume. I have no proof. Proof is for the Book. I do theories."
  },
  {
+  "who": "tobias",
+  "text": "Take? I receive. With a brass band, a ribbon and a short speech. What they paid me for goes in the Book, like every promise on this island. You may read it. Bring a chair."
+ },
+ {
+  "who": "tobias",
+  "text": "It buys a ceremony. The law still needs the council’s yes, and the council cannot be bought with a ribbon. I tried. Hana sent the ribbon back with corrections."
+ },
+ {
   "who": "hana",
   "text": "The school boat runs every morning now. Attendance is up, and so is seasickness. I write down both."
  },
@@ -1570,6 +2396,10 @@
  {
   "who": "hana",
   "text": "Half the class says he is real, the other half says he is Kiko in a coat. They held a debate. Both sides quoted the same blurry photo. Everyone got a B."
+ },
+ {
+  "who": "hana",
+  "text": "Before anyone. A rumour reaches the playground before it reaches the radio. The children bring them to class like shells from the beach, and we hold each one up to the Book. Most of them are empty."
  },
  {
   "who": "kai",
@@ -1621,7 +2451,7 @@
  },
  {
   "who": "baako",
-  "text": "A fine morning! The coconuts are ripe, the embassies are friendly, and nobody has asked me a hard question yet."
+  "text": "A fine morning! The coconuts are ripe, the co-op’s books balance, and nobody has asked me a hard question yet."
  },
  {
   "who": "baako",
@@ -1629,11 +2459,11 @@
  },
  {
   "who": "baako",
-  "text": "Everybody asks. Yes, I talk to them, I shake their hands, I drink their tea. What I promise is in the Book, like everyone’s. You can count my envelopes. I’d rather you counted my coconuts."
+  "text": "One farmer alone sells at the embassies’ price. Forty farmers together set their own. Every coconut goes into the co-op’s book, and anyone may count them. People do. Loudly."
  },
  {
   "who": "baako",
-  "text": "It buys a meeting. They pay me to propose a law, and the other three still have to say yes. Money can knock on the door. It can’t open it."
+  "text": "They offered me one. I asked for a receipt. They have not offered again. Try the pier: Tobias gives every envelope a welcome speech."
  },
  {
   "who": "baako",
