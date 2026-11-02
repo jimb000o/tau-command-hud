@@ -463,11 +463,19 @@
     build(box);
     if (box._visit && box._who) asks(box, box._who);
     $("cvStage").append(box); UI.card = box; $("cvStage").classList.add("carded");
-    /* on a phone the one you talk to stands above the sheet; held sideways, beside the plate */
-    SC.hostAt(innerWidth < 760 ? box.offsetTop : null, innerWidth >= 760 && innerHeight < 520 ? box.offsetLeft : null);
+    placeHost();
     SND.sfx("open");
     setTimeout(() => { const b = box.querySelector(".cv-acts button:not([disabled])"); if (b && !matchMedia("(pointer: coarse)").matches) b.focus({ preventScroll: true }); }, 50);
   }
+  /* on a phone the one you talk to stands above the sheet; held sideways, beside the plate. Measured again whenever
+     the phone turns or the window changes size, so a card opened upright and read sideways never hides them */
+  function placeHost() {
+    const box = UI.card; if (!box) return;
+    SC.hostAt(innerWidth < 760 ? box.offsetTop : null, innerWidth >= 760 && innerHeight < 520 ? box.offsetLeft : null);
+  }
+  const replaceHost = () => { placeHost(); requestAnimationFrame(placeHost); setTimeout(placeHost, 250); };   // some phones report the new size a moment late
+  addEventListener("resize", replaceHost); addEventListener("orientationchange", replaceHost);
+  if (window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener("change", replaceHost);
   function closeCard(keep) {
     if (UI.card) { UI.card.remove(); UI.card = null; } UI.at = null; $("cvStage").classList.remove("carded"); SC.host(null);
     if (!keep) { SC.focus(null); SC.glow(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); if (performance.now() > UI.airUntil) { SND.hush(); if (RICO.stop) RICO.stop(); } }   // a line on air is heard to its end
@@ -1462,7 +1470,9 @@
     const go = $("cvGo"), list = $("cvPlaces");
     const showList = on => { list.classList.toggle("on", on); go.setAttribute("aria-expanded", on ? "true" : "false"); };
     go.onclick = e => { e.stopPropagation(); wake(); if (UI.card && !UI.card.classList.contains("intro")) closeCard(); showList(!list.classList.contains("on")); };
-    list.addEventListener("click", () => showList(false));
+    /* a tapped place lets go of its button: a focused button keeps the list showing (for the keyboard), and on a phone
+       turned sideways it stood over the room behind the plate */
+    list.addEventListener("click", e => { showList(false); if (e.detail && list.contains(document.activeElement)) document.activeElement.blur(); });
     /* a phone held upright sees part of the island: say once that it can be dragged, or turned */
     dragHint();
     $("cvReset").onclick = () => { if (confirm(T("Start a new election? This game will be lost."))) { store.del(KEY); G = null; closeCard(); start(); } };
