@@ -19,6 +19,11 @@ stands for (n moves pay n test AGRS, n radio lines 25 x n; at most BATCH_MAX mov
 follow in the next). So the chain's traffic stays about flat whether one person plays or thousands, and the
 count of moves can still be read from the blocks (txsources.py divides the amount back).
 
+Money also flows back to the visitor, for real: the Coconut Works pays a shift's wage and the two embassies pay
+the money they offer, from purses (PURSES) whose keys are kept here like the campaign wallets. The page asks
+`islandpay <works|north|south> <wallet>` after the move, and the purse sends that amount to the visitor's test
+wallet. At most PAY_PER_WALLET payouts per wallet a day, and they count towards ISLAND_DAILY.
+
 Limits, so a page that is left open or a script cannot flood the testnet: a few moves per address per
 minute, a queue of at most QUEUE_MAX different moves, at most ISLAND_DAILY transactions per UTC day, one every
 SPACING seconds. Moves over a limit are not sent, and the answer says so. GET /island shows the wallets, the
@@ -65,6 +70,10 @@ RADIO_LINE = 25          # a line bought on Radio Coco costs what it costs in th
 CANDIDATES = ("marisol", "tobias", "baako", "hana")
 KINDS = ("law", "down", "refused", "talk", "lie", "fact", "deal", "pact", "broke", "vote")
 QUEUE_MAX = 60
+# the purses that pay the visitor (rabbit/game.js: a shift's wage, EMB coins)
+PURSES = {"works": 10, "north": 40, "south": 35}
+PAY_PER_WALLET = 12
+WALLET_RE = re.compile(r"^[0-9a-f]{96}$")
 BATCH_MAX = 200          # moves one transaction may stand for
 SPACING = 2.5            # seconds between two transactions
 IP_BURST, IP_REFILL = 12, 1 / 5   # per address: 12 at once, then one every 5 s
@@ -113,6 +122,10 @@ class Island:
         self.today = 0
         self.recent: deque = deque(maxlen=30)
         self.next_seq: dict[str, int] = {}
+        self.psk: dict[str, int] = {}
+        self.ppk: dict[str, str] = {}   # the purses: place -> pubkey
+        self.pays: dict = {}            # (purse, wallet) -> how many payouts wait
+        self.paid: dict[str, int] = {}  # wallet -> payouts today
         if self.enabled:
             try:
                 self.load()
@@ -127,8 +140,9 @@ class Island:
         if os.path.exists(self.path):
             with open(self.path) as f:
                 keys = json.load(f)
-        if any(c not in keys for c in CANDIDATES):
-            for c in CANDIDATES:
+        names = list(CANDIDATES) + ["purse-" + p for p in PURSES]
+        if any(c not in keys for c in names):
+            for c in names:
                 if c not in keys:
                     sk = G2Basic.KeyGen(secrets.token_bytes(32))
                     sk = sk if isinstance(sk, int) else int.from_bytes(bytes(sk), "big")
@@ -141,6 +155,59 @@ class Island:
         for c in CANDIDATES:
             self.sk[c] = int(keys[c], 16)
             self.pk[c] = G2Basic.SkToPk(self.sk[c]).hex()
+        for p in PURSES:
+            self.psk[p] = int(keys["purse-" + p], 16)
+            self.ppk[p] = G2Basic.SkToPk(self.psk[p]).hex()
+
+    # ---------- money for the visitor ----------
+    def accept_pay(self, purse: str, wallet: str, ip: str) -> tuple[bool, dict | str]:
+        if not self.enabled:
+            return False, "The island bot is switched off on this relay."
+        wallet = wallet.lower()
+        if purse not in PURSES or not WALLET_RE.match(wallet) or wallet in self.pk.values() or wallet in self.ppk.values():
+            return False, "Usage: islandpay <" + "|".join(PURSES) + "> <your wallet>"
+        now = self.clock()
+        self.roll(now)
+        b = self.ips.setdefault(ip, Bucket(IP_BURST, IP_REFILL, now))
+        if not b.take(now):
+            return True, {"queued": False, "why": "busy"}
+        if self.paid.get(wallet, 0) >= PAY_PER_WALLET:
+            return True, {"queued": False, "why": "enough today"}
+        if self.today + len(self.queue) + len(self.pays) >= self.daily or len(self.pays) >= QUEUE_MAX:
+            return True, {"queued": False, "why": "daily"}
+        if len(self.paid) > 20000:
+            self.paid.clear()
+        self.paid[wallet] = self.paid.get(wallet, 0) + 1
+        self.pays[(purse, wallet)] = self.pays.get((purse, wallet), 0) + 1
+        return True, {"queued": True, "amount": PURSES[purse], "from": self.ppk[purse]}
+
+    def build_pay(self, purse: str, wallet: str, seq: int, tip: int, fee: int, n: int = 1) -> dict:
+        """One signed transfer from a purse to the visitor's wallet: the wage or the embassy's money, n times."""
+        from py_ecc.bls import G2Basic
+        pk = self.ppk[purse]
+        tx = {"tx_type": "user_tx", "sender_pubkey": pk, "sequence_number": seq,
+              "expiration_time": int(self.clock()) + 600, "expire_at_height": tip + 1000,
+              "fee_limit": str(fee * 5), "operations": {"1": [[pk, wallet, str(PURSES[purse] * max(1, n))]]}}
+        tx["signature"] = G2Basic.Sign(self.psk[purse], hashlib.sha256(signing_bytes(tx)).digest()).hex()
+        return tx
+
+    async def send_pay(self, purse: str, wallet: str, ask, gov, n: int = 1) -> dict | None:
+        pk = self.ppk[purse]
+        st = await ask(f"getsequence {pk}")
+        if not st or st.get("status") != "ok":
+            return None
+        d = st.get("data") or {}
+        seq = max(int(d.get("sequence_number") or 0), self.next_seq.get("purse-" + purse, 0))
+        tx = await asyncio.to_thread(self.build_pay, purse, wallet, seq, int(d.get("tip_height") or 0), base_fee(gov()), n)
+        res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
+        if bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False:
+            self.next_seq["purse-" + purse] = seq + 1
+            self.today += 1
+            self.recent.appendleft({"by": purse, "kind": "pay", "to": wallet, "amount": PURSES[purse] * n, "hash": (res.get("data") or {}).get("tx_hash"), "at": int(self.clock())})
+        else:
+            self.next_seq.pop("purse-" + purse, None)
+            log.info("island pay %s refused: %.160s", purse, json.dumps((res or {}).get("error") or res))
+        return res
 
     # ---------- a move asked for by a page ----------
     def accept(self, who: str, kind: str, ip: str, at: str = "hall") -> tuple[bool, dict | str]:
@@ -170,6 +237,7 @@ class Island:
         d = int(now // 86400)
         if d != self.day:
             self.day, self.today = d, 0
+            self.paid.clear()
 
     def build(self, who: str, seq: int, tip: int, fee: int, at: str = "hall", n: int = 1) -> dict:
         """One signed transfer from the candidate's campaign wallet to the place's till for n moves: n test AGRS, a radio line 25 each."""
@@ -188,6 +256,15 @@ class Island:
         if not self.enabled:
             return
         while True:
+            if self.pays:   # money for a visitor waits for nobody's moves
+                (purse, wallet), n = next(iter(self.pays.items()))
+                del self.pays[(purse, wallet)]
+                try:
+                    await self.send_pay(purse, wallet, ask, gov, n)
+                except Exception as exc:
+                    log.warning("island pay %s failed: %r", purse, exc)
+                await asyncio.sleep(SPACING)
+                continue
             if not self.queue:
                 await asyncio.sleep(1)
                 continue
@@ -236,5 +313,5 @@ class Island:
         if path != "/island":
             return None
         self.roll(self.clock())
-        return {"enabled": self.enabled, "council": COUNCIL, "places": PLACES, "wallets": self.pk, "today": self.today, "daily": self.daily,
+        return {"enabled": self.enabled, "council": COUNCIL, "places": PLACES, "wallets": self.pk, "purses": self.ppk, "today": self.today, "daily": self.daily,
                 "queued": len(self.queue), "recent": list(self.recent)}

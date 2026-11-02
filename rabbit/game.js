@@ -361,6 +361,7 @@
     const E = EMB[emb]; G.coins[by] += E.coins;
     G.deals.push({ by, emb, law: E.wants, day: G.day, kept: false });
     write(by, F("took {n} coins from the {x} and promised to propose “{y}”", { n: E.coins, x: T(E.name), y: T(LAWS[E.wants].t) }), "deal", emb, 1, emb);
+    if (by === G.me) payMe(emb, T(E.name));
   }
   function makePact(a, b, gift) {
     if (gift) { G.coins[a] -= GIFT; G.coins[b] += GIFT; }
@@ -628,7 +629,7 @@
     },
     works(box) {
       scene(box, G.me === "baako" ? "noor" : "baako", T(SC.places.works.name), T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
-        btn(T("Work a shift (10 coins)"), () => { did("works"); G.coins[G.me] += 10; write(G.me, T("worked a shift at the Coconut Works: 10 coins, honestly earned"), "talk"); SND.sfx("coin"); toast(T("Ten coins, and you smell of coconut for the rest of the day.")); spend(); if (UI.card) openCard("works", PLACE.works); }, { off: !movesLeft(), sub: T("one move") }),
+        btn(T("Work a shift (10 coins)"), () => { did("works"); G.coins[G.me] += 10; write(G.me, T("worked a shift at the Coconut Works: 10 coins, honestly earned"), "talk"); payMe("works", T("The Coconut Works")); SND.sfx("coin"); toast(T("Ten coins, and you smell of coconut for the rest of the day.")); spend(); if (UI.card) openCard("works", PLACE.works); }, { off: !movesLeft(), sub: T("one move") }),
       ]);
     },
     camp(box) {
@@ -1131,6 +1132,17 @@
     if (!G || !CANDS[b.who]) return;
     if (b.who !== G.me) { ask("islandmove " + b.who + " " + b.kind + " " + (TILL[b.at] ? b.at : "hall"), 8000).then(m => { if (m && m.status === "ok" && m.data && m.data.queued) { b.bot = true; save(); } }); return; }
     if (G.onchain) mySend(tillOf(b.at), nm(b.who) + " " + b.text, h => { if (h) { b.tx = h; save(); } }, b.pay, b.at);
+  }
+  /* money that comes to the visitor (a shift's wage, an embassy's money) is real too: the island's purses on the relay
+     pay it into their test wallet (infra/relay/island.py PURSES), when they sign their moves on the testnet */
+  function payMe(purse, from) {
+    if (!G || !G.onchain) return;
+    const k = myKey(); if (!k) return;
+    ask("islandpay " + purse + " " + k.pk, 8000).then(m => {
+      if (!(m && m.status === "ok" && m.data && m.data.queued)) return;
+      if (m.data.from) remember(m.data.from, "Key purse · " + from);
+      toast(F("{x} pays you {n} test AGRS on the testnet.", { x: from, n: m.data.amount }));
+    }, () => {});
   }
   /* the visitor's test wallet in this browser (the same key /wallet/ uses); made here if there is none yet */
   function myKey() {
