@@ -13,9 +13,15 @@ ISLAND_KEYS_PATH (inside the relay's data volume, mode 0600) and never leave the
 the ballot boxes the visitors vote into (rabbit/game.js ADDR), so the bot never changes the visitors'
 count. A wallet whose balance on the chain is 0 pays from the testnet's faucet, so they need no funding.
 
+Many games at once cost the testnet no more than one: moves of the same kind by the same candidate at the
+same place that wait in the queue together are sent as ONE transaction whose amount carries how many moves it
+stands for (n moves pay n test AGRS, n radio lines 25 x n; at most BATCH_MAX moves in one transaction, the rest
+follow in the next). So the chain's traffic stays about flat whether one person plays or thousands, and the
+count of moves can still be read from the blocks (txsources.py divides the amount back).
+
 Limits, so a page that is left open or a script cannot flood the testnet: a few moves per address per
-minute, a queue of at most QUEUE_MAX, at most ISLAND_DAILY transactions per UTC day, one every SPACING
-seconds. Moves over a limit are not sent, and the answer says so. GET /island shows the wallets, the
+minute, a queue of at most QUEUE_MAX different moves, at most ISLAND_DAILY transactions per UTC day, one every
+SPACING seconds. Moves over a limit are not sent, and the answer says so. GET /island shows the wallets, the
 day's count and the last transactions, so anyone can follow them on the chain.
 """
 from __future__ import annotations
@@ -59,6 +65,7 @@ RADIO_LINE = 25          # a line bought on Radio Coco costs what it costs in th
 CANDIDATES = ("marisol", "tobias", "baako", "hana")
 KINDS = ("law", "down", "refused", "talk", "lie", "fact", "deal", "pact", "broke", "vote")
 QUEUE_MAX = 60
+BATCH_MAX = 200          # moves one transaction may stand for
 SPACING = 2.5            # seconds between two transactions
 IP_BURST, IP_REFILL = 12, 1 / 5   # per address: 12 at once, then one every 5 s
 FEE_RE = re.compile(r"o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)")
@@ -100,7 +107,7 @@ class Island:
         self.clock = clock
         self.sk: dict[str, int] = {}
         self.pk: dict[str, str] = {}
-        self.queue: deque = deque()
+        self.queue: dict = {}   # (who, kind, place) -> how many moves wait, oldest first
         self.ips: dict[str, Bucket] = {}
         self.day = int(clock() // 86400)
         self.today = 0
@@ -148,11 +155,15 @@ class Island:
         b = self.ips.setdefault(ip, Bucket(IP_BURST, IP_REFILL, now))
         if not b.take(now):
             return True, {"queued": False, "why": "busy", "wallet": self.pk[who]}
+        key = (who, kind, at)
+        if key in self.queue:   # rides along with the same move already waiting: one transaction for both
+            self.queue[key] += 1
+            return True, {"queued": True, "with": self.queue[key] - 1, "wallet": self.pk[who]}
         if self.today + len(self.queue) >= self.daily:
             return True, {"queued": False, "why": "daily", "wallet": self.pk[who]}
         if len(self.queue) >= QUEUE_MAX:
             return True, {"queued": False, "why": "full", "wallet": self.pk[who]}
-        self.queue.append((who, kind, now, at))
+        self.queue[key] = 1
         return True, {"queued": True, "ahead": len(self.queue) - 1, "wallet": self.pk[who]}
 
     def roll(self, now: float):
@@ -160,11 +171,11 @@ class Island:
         if d != self.day:
             self.day, self.today = d, 0
 
-    def build(self, who: str, seq: int, tip: int, fee: int, at: str = "hall") -> dict:
-        """One signed transfer from the candidate's campaign wallet to the place's till: 1 test AGRS, a radio line 25."""
+    def build(self, who: str, seq: int, tip: int, fee: int, at: str = "hall", n: int = 1) -> dict:
+        """One signed transfer from the candidate's campaign wallet to the place's till for n moves: n test AGRS, a radio line 25 each."""
         from py_ecc.bls import G2Basic
         pk = self.pk[who]
-        amount = RADIO_LINE if at == "radio" else 1
+        amount = (RADIO_LINE if at == "radio" else 1) * max(1, min(n, BATCH_MAX))
         tx = {"tx_type": "user_tx", "sender_pubkey": pk, "sequence_number": seq,
               "expiration_time": int(self.clock()) + 600, "expire_at_height": tip + 1000,
               "fee_limit": str(fee * 5), "operations": {"1": [[pk, PLACES.get(at, COUNCIL), str(amount)]]}}
@@ -180,14 +191,27 @@ class Island:
             if not self.queue:
                 await asyncio.sleep(1)
                 continue
-            who, kind, _, at = self.queue.popleft()
+            (who, kind, at), n = next(iter(self.queue.items()))
+            del self.queue[(who, kind, at)]
+            if n > BATCH_MAX:   # the rest go in the next transaction
+                self.queue[(who, kind, at)] = n - BATCH_MAX
+                n = BATCH_MAX
             try:
-                await self.send(who, kind, ask, gov, at)
+                await self.send(who, kind, ask, gov, at, n)
             except Exception as exc:   # one bad answer must not stop the bot
                 log.warning("island move %s %s failed: %r", who, kind, exc)
-            await asyncio.sleep(SPACING)
+            await asyncio.sleep(self.pace())
 
-    async def send(self, who: str, kind: str, ask, gov, at: str = "hall") -> dict | None:
+    def pace(self) -> float:
+        """Seconds to the next transaction: SPACING while the day's budget is plentiful; once half of it is used,
+        the rest is spread over the hours left, and the waiting moves simply ride together in bigger transactions."""
+        now = self.clock()
+        self.roll(now)
+        if self.today < self.daily / 2:
+            return SPACING
+        return max(SPACING, (86400 - now % 86400) / max(1, self.daily - self.today))
+
+    async def send(self, who: str, kind: str, ask, gov, at: str = "hall", n: int = 1) -> dict | None:
         pk = self.pk[who]
         st = await ask(f"getsequence {pk}")
         if not st or st.get("status") != "ok":
@@ -195,13 +219,13 @@ class Island:
         d = st.get("data") or {}
         seq = max(int(d.get("sequence_number") or 0), self.next_seq.get(who, 0))
         tip = int(d.get("tip_height") or 0)
-        tx = await asyncio.to_thread(self.build, who, seq, tip, base_fee(gov()), at)
+        tx = await asyncio.to_thread(self.build, who, seq, tip, base_fee(gov()), at, n)
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
         ok = bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
         if ok:
             self.next_seq[who] = seq + 1
             self.today += 1
-            self.recent.appendleft({"by": who, "kind": kind, "place": at, "hash": (res.get("data") or {}).get("tx_hash"), "at": int(self.clock())})
+            self.recent.appendleft({"by": who, "kind": kind, "place": at, "moves": n, "hash": (res.get("data") or {}).get("tx_hash"), "at": int(self.clock())})
         else:
             self.next_seq.pop(who, None)   # read the sequence from the node again next time
             log.info("island move %s %s refused: %.160s", who, kind, json.dumps((res or {}).get("error") or res))

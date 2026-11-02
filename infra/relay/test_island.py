@@ -42,9 +42,13 @@ for _ in range(15):
     I.accept("baako", "talk", "5.6.7.8")
 ok, d = I.accept("baako", "talk", "5.6.7.8")
 check(ok and not d["queued"] and d["why"] == "busy", "one address cannot flood the queue")
-for i in range(10):
-    I.accept("marisol", "pact", f"9.9.9.{i}")
-ok, d = I.accept("marisol", "pact", "10.0.0.1")
+ok, d = I.accept("baako", "talk", "5.6.7.9")
+check(ok and d["queued"] and d.get("with") == 12 and len(I.queue) == 2, "the same move from many games waits as one transaction")
+for i, k in enumerate(["pact", "deal", "lie", "fact", "broke", "down", "refused", "vote", "talk"]):
+    I.accept("marisol", k, f"9.9.9.{i}")
+for i, at in enumerate(["market", "radio", "north", "south", "bar", "book", "pier", "school", "dive"]):
+    I.accept("hana", "law", f"9.9.8.{i}", at)
+ok, d = I.accept("marisol", "law", "10.0.0.1")
 check(not d["queued"] and d["why"] == "daily", "at most ISLAND_DAILY a day")
 
 tx = I.build("hana", 7, 1000, 10)
@@ -59,6 +63,15 @@ tx = I.build("baako", 1, 10, 10, "radio")
 check(tx["operations"]["1"][0][1:] == [island.PLACES["radio"], str(island.RADIO_LINE)], "a radio line pays the station 25")
 check(I.build("baako", 1, 10, 10, "north")["operations"]["1"][0][1:] == [island.PLACES["north"], "1"], "an embassy's money: 1 to the embassy")
 check(I.accept("baako", "talk", "7.7.7.7", "moon")[0] is False, "only the island's places")
+tx = I.build("baako", 1, 10, 10, "radio", 4)
+check(tx["operations"]["1"][0][2] == "100", "four radio lines from four games: one transaction of 4 x 25")
+check(I.build("hana", 1, 10, 10, "hall", 999)["operations"]["1"][0][2] == str(island.BATCH_MAX), "one transaction stands for at most BATCH_MAX moves")
+import txsources as _tx  # noqa: E402
+check(_tx.rival_moves(tx) == 4 and _tx.rival_moves(I.build("hana", 1, 10, 10, "market", 7)) == 7, "In numbers reads the moves back from the amount")
+P = island.Island(path=path, daily=1000, clock=clock, enabled=True)
+check(P.pace() == island.SPACING, "plenty of the day's budget left: one transaction every SPACING seconds")
+P.today = 900
+check(P.pace() > island.SPACING, "past half the budget: the rest is spread over the hours left")
 game = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "rabbit", "game.js"), encoding="utf-8").read()
 till = dict(re.findall(r'^    (\w+): "([0-9a-f]{96})"', game[game.index("const TILL = {"):game.index("const TILL_AT")], re.M))
 check(till == {k: v for k, v in island.PLACES.items() if k != "hall"} and island.PLACES["hall"] == island.COUNCIL, "the same tills as the game")
