@@ -16,7 +16,7 @@ ls = make.lines()
 assert len(ls) == len(set(ls)), "a line twice"
 texts = {t for w, t in ls}
 assert ("rico", "Pact news: Hana and Baako shook hands at La Ola. Lola counted the fingers afterwards.") in ls
-assert ("rico", "Day 3 of 5. If you still don't know who to vote for, neither do the gulls.") in ls
+assert ("rico", "Day 3 of 7. If you still don't know who to vote for, neither do the gulls.") in ls
 assert ("rico", "Baako took 40 coins from the North Wind Embassy!") in ls
 assert ("salado", "35 coins, today. All we ask is that you propose “A road round the island” before the election. A small thing between friends.") in ls
 assert ("tobias", "After what you did? Buy yourself a lemonade.") in ls
