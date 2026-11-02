@@ -1,7 +1,7 @@
 /* The island's sound: an original calypso for steel pan, marimba, bass and hand drums, played live in the
    visitor's browser (no recordings), plus the sea, gulls and small sounds for the game. On by default;
    browsers only allow sound after a first tap, so the page shows "♪ Tap for sound" until then.
-   window.COVE_SOUND = { start, on, set({ music, radio, tense, place }), sfx(name), speak(clips), hush(), toggle() }
+   window.COVE_SOUND = { start, on, set({ music, radio, tense, place }), sfx(name), speak(clips), hush(), toggle(remember) }
    Each place on the island plays the tune in its own arrangement (STYLES). */
 (() => {
   const BPM = 104, STEP = 60 / BPM / 4, SWING = 0.16;   // sixteenth notes, the off sixteenths a little late
@@ -146,7 +146,11 @@
   const PLAYLIST = ["coco", "mango", "lowtide", "tinroof", "hammock", "moon"];
 
   const S = { place: "island", placeT: "island", song: "coco", pl: 0, ctx: null, on: false, want: true, master: null, music: null, amb: null, rev: null, radio: null, mvol: 1, tense: false, bar: 0, step: 0, next: 0, timer: 0, noise: null, sea: null };
-  try { S.want = localStorage.getItem("tauhud-rabbit-sound") !== "off"; } catch (e) {}
+  /* the island's sound is on when the game opens (the site's own rule: sound on by default); a player who turns it off is
+     remembered for this tab only (sessionStorage), so a new visit starts with the sound again. The site's radio switch
+     (assets/radio.js) does not reach in here: an island with the sound off is not what a visitor came for. */
+  const MEM = "tauhud-rabbit-sound";
+  try { S.want = sessionStorage.getItem(MEM) !== "off"; } catch (e) {}
 
   function build() {
     /* iPhones: play even with the ring switch on silent, like any game (Safari 16.4+) */
@@ -469,8 +473,9 @@
     get song() { return { id: S.song, name: (SONGS[S.song] || {}).name || "" }; }, songs: Object.keys(SONGS), get why() { return S.why || ""; },
     set onchange(f) { S.cb = f; },
     set(o) { Object.assign(want, o); apply(); },
-    toggle() {
-      S.want = !S.want; try { localStorage.setItem("tauhud-rabbit-sound", S.want ? "on" : "off"); } catch (e) {}
+    /* remember: the choice is kept for this tab (the game's own buttons); the site's radio passes false, its switch is its own */
+    toggle(remember = true) {
+      S.want = !S.want; if (remember) try { sessionStorage.setItem(MEM, S.want ? "on" : "off"); } catch (e) {}
       if (S.want) start(); else { S.on = false; if (S.talking) S.talking.forEach(n => { try { n.stop(); } catch (e) {} }); S.talking = null; S.duck = false; apply(); }
       return S.want;
     },
