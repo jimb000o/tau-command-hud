@@ -66,6 +66,14 @@ check(I.accept("baako", "talk", "7.7.7.7", "moon")[0] is False, "only the island
 tx = I.build("baako", 1, 10, 10, "radio", 4)
 check(tx["operations"]["1"][0][2] == "100", "four radio lines from four games: one transaction of 4 x 25")
 check(I.build("hana", 1, 10, 10, "hall", 999)["operations"]["1"][0][2] == str(island.BATCH_MAX), "one transaction stands for at most BATCH_MAX moves")
+B = island.Island(path=os.path.join(tempfile.mkdtemp(), "k"), daily=1000, clock=clock, enabled=True)
+B.queue = {("hana", "talk", "market"): 3}
+check(B.batch(3) == 1, "while the bot keeps up, every rival move is its own transaction")
+B.queue = {("hana", "talk", "market"): 60}
+check(B.batch(60) == 60, "a rush (more than the bot clears in BACKLOG seconds) rides together again")
+B.queue, B.today = {("hana", "talk", "market"): 3}, 500
+check(B.batch(3) == 3, "past half the day's budget the waiting moves ride together")
+check(B.batch(999) == island.BATCH_MAX, "never more than BATCH_MAX in one")
 import txsources as _tx  # noqa: E402
 check(_tx.rival_moves(tx) == 4 and _tx.rival_moves(I.build("hana", 1, 10, 10, "market", 7)) == 7, "In numbers reads the moves back from the amount")
 P = island.Island(path=path, daily=1000, clock=clock, enabled=True)

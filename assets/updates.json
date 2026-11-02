@@ -2102,6 +2102,23 @@
   "html": "White Rabbit Key: the island elects a governor every week. The island counts every Sunday night, German time: the candidate who won the most campaigns that week governs the island the week after, named on the start card, in the morning paper, by Rico and in The island today. The laws most often in force at the end of that week’s finished campaigns become the island’s laws: every new campaign starts with them in force, the hall lists them as the island’s, a law that contradicts one is refused as always, and the council can repeal them. The islanders keep them too. Each campaign now reports its laws in force with its result; the relay keeps the week and last week’s verdict. No governor until the first full week is counted."
  },
  {
+  "tag": "Testnet load",
+  "on": "2026-11-02",
+  "html": "New page: Testnet load. How hard Tau Testnet Alpha is working, minute by minute for the last six hours: transactions sealed per minute, how many wait, how long a transaction waits for its block, gaps between blocks, and how many tauhud and White Rabbit Key’s island bot sent or had refused. A word on top says calm, busy, strained or stalled, and the records since counting began sit underneath. Counted by our relay from our own node; the page says plainly where our own limits sit.",
+  "major": {
+   "id": "load",
+   "title": "New: Testnet load",
+   "text": "How hard the Tau testnet is working, minute by minute: sealed, waiting, time to a block, and what our island game sends. Calm, busy, strained or stalled at a glance.",
+   "link": "/load/",
+   "image": "/assets/shots/load.png"
+  }
+ },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-11-02",
+  "html": "White Rabbit Key: the evening bell. At eight o’clock German time Tobias rings the pier bell, and for two minutes everyone playing can ring back: a real transaction at the same moment as everyone else’s, and one more move that day. New small treats that cost coins but no move, once a day each: a tip for Lola, who puts in a good word with the other candidates; a round of coconut coffee for the whole square; exercise books for Hana’s class. And the rivals’ moves now go to the testnet one transaction each while the island bot keeps up (at most 24 a minute, 10,000 a day); only in a rush do the same moves ride together again."
+ },
+ {
   "tag": "White Rabbit Key",
   "on": "2026-11-02",
   "html": "White Rabbit Key: an island day is now a real day. A campaign is this week, Monday to Sunday, German time: three moves a day, Sunday evening the islanders vote, and every campaign won is a ballot for its candidate in the governor’s count, Monday 00:00. Start on a Wednesday and you play Monday to Wednesday in one go, then a day a day; after the third move the Key Crier says good night and tells you when the next day begins. The day chip shows the weekday. A campaign left unfinished when the week ends is decided without you and not counted. Sudden events can come any day from Tuesday to Saturday, an ambition is offered Tuesday to Thursday. The start card and the help say it in two lines: your campaign and the island’s count, with a countdown. One of Sam’s spoken lines changes with it."

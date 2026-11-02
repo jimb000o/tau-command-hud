@@ -677,11 +677,24 @@
   const btn = (text, on, o = {}) => el("button", { type: "button", class: "cv-b" + (o.go ? " go" : "") + (o.warn ? " warn" : "") + (o.ask ? " ask" : ""), disabled: o.off || null, title: o.tip || null, onclick: e => { SND.sfx("tap"); on(e); } }, el("span", { text }), o.sub ? el("small", { text: o.sub }) : null);
   const did = k => { G.did = G.did || {}; G.did[k] = 1; };
   const movesLeft = () => G.move < MOVES && !G.over;
+  /* a move is used up, unless the evening bell kept one for the visitor (BELL) */
+  const useMove = () => { if (G.spare) G.spare--; else G.move++; };
   /* a move is spent: the sun goes on, and after the evening the night comes */
   function spend() {
-    G.move++; save(); hud();
+    useMove(); save(); hud();
     if (G.move >= MOVES) setTimeout(() => { closeCard(); endDay(); }, 900);
   }
+  /* small treats that cost coins, not a move, and do something real: a tip for Lola, a round of coffee on the square,
+     exercise books for Hana's class. Once a day each; paid as a real transaction to the place's till, like every line in the Book */
+  const treated = k => !!(G.treats && G.treats[k] === G.day);
+  function treat(k, n, at, line, fx, msg) {
+    if (treated(k) || G.coins[G.me] < n) return;
+    G.coins[G.me] -= n; G.treats = G.treats || {}; G.treats[k] = G.day;
+    fx(); write(G.me, line, "gift", at, n);
+    SND.sfx("coin"); save(); hud(); toast(msg);
+    if (UI.card) openCard(at, PLACE[at]);
+  }
+  const treatBtn = (k, label, n, at, line, fx, msg) => btn(label, () => treat(k, n, at, line, fx, msg), { off: treated(k) || G.coins[G.me] < n, sub: treated(k) ? T("Done for today") : F("{n} coins, no move, written in the Book", { n }) });
   const noMoves = box => box.append(el("p", { class: "cv-note", text: T("That was your last move today. The night comes.") }));
 
   /* ---------- the places ---------- */
@@ -701,7 +714,8 @@
         return el("li", null, el("span", { class: "nm", translate: "no", text: p.name }), el("small", { text: p.cares.map(c => T(TOPICS[c])).join(" · ") }), el("i", { class: "bar" + (best === G.me ? " lead" : ""), style: `--v:${mine}%`, title: F("leans to {x}", { x: nm(best) }) }));
       });
       const acts = Object.keys(TOPICS).map(t => btn(F("Talk about {x}", { x: T(TOPICS[t]) }) + (hot() === t ? " ★" : ""), () => { campaign(G.me, t); SND.sfx("yes"); SC.gather(1); setTimeout(() => SC.gather(0), 2600); toast(F("People who care about {x} listened.", { x: T(TOPICS[t]) })); spend(); if (UI.card) openCard("market", PLACE.market); }, { off: !movesLeft() }));
-      scene(box, G.me === "marisol" ? "lola" : "marisol", T(SC.places.market.name), T("Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts], el("ul", { class: "cv-folk" }, rows));
+      const round = treatBtn("coffee", T("Buy the square a round of coconut coffee"), 8, "market", T("bought the whole square a round of coconut coffee: 8 coins"), () => bump(G.me, null, 2), T("Everyone on the square raises a cup to you. A little warmer towards you, all of them."));
+      scene(box, G.me === "marisol" ? "lola" : "marisol", T(SC.places.market.name), T("Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts, round], el("ul", { class: "cv-folk" }, rows));
     },
     radio(box) {
       SND.set({ radio: true });
@@ -722,7 +736,8 @@
         return btn(F("Offer {x} a pact", { x: nm(c) }), () => doPact(c, false), { off: !movesLeft(), sub: t >= 50 ? T("Likes you") : t >= 30 ? T("Not sure about you") : T("Does not trust you") });
       });
       const gifts = others(G.me).filter(c => !pact(G.me, c)).map(c => btn(F("Offer {x} a pact and {n} coins", { x: nm(c), n: GIFT }), () => doPact(c, true), { off: !movesLeft() || G.coins[G.me] < GIFT }));
-      scene(box, "lola", T("Bar La Ola"), T("A pact means you vote for each other’s laws. Break one and the whole island knows by breakfast. Lemonade’s on the house."), [el("p", { class: "cv-h", text: T("Make a pact (one move)") }), ...acts, ...gifts]);
+      const tipLola = treatBtn("lola", T("Tip Lola; she puts in a good word for you"), 5, "bar", T("tipped Lola 5 coins at Bar La Ola"), () => others(G.me).forEach(c => { G.trust[c] = Math.min(100, G.trust[c] + 8); }), T("Lola leans over to the other candidates’ table. They trust you a little more."));
+      scene(box, "lola", T("Bar La Ola"), T("A pact means you vote for each other’s laws. Break one and the whole island knows by breakfast. Lemonade’s on the house."), [el("p", { class: "cv-h", text: T("Make a pact (one move)") }), ...acts, ...gifts, tipLola]);
     },
     book(box) {
       G.said.book = G.book.length; save();
@@ -743,6 +758,7 @@
       scene(box, who, T(SC.places.school.name), T("Today’s lesson: a promise written where everyone can read it is worth more than one shouted on the radio. The children check the Book before they believe a rumour. Their parents are working on it."), [
         btn(T("Sit in on the lesson"), () => lesson()),
         btn(T("Ask the class what their families care about"), () => { campaign(G.me, top, 0.7); toast(F("Most families here care about {x}. The children will tell them you asked.", { x: T(TOPICS[top]) })); spend(); if (UI.card) openCard("school", PLACE.school); }, { off: !movesLeft(), sub: T("one move") }),
+        treatBtn("books", T("Buy exercise books for the class"), 6, "school", T("bought exercise books for Hana’s class: 6 coins"), () => bump(G.me, p => p.cares.includes("school"), 4), T("The children carry the new books home. Families who care about the school noticed.")),
         buildBtn("roof"),
       ]);
     },
@@ -900,7 +916,7 @@
         box.classList.remove("locked");
         acts.replaceChildren(el("p", { class: "cv-result " + (ok ? "ok" : "bad"), text: ok ? T("It is law.") : T("Voted down.") }));
         acts.append(btn(T("Continue"), () => { if (after) after(); else if (G.move >= MOVES) { closeCard(); endDay(); } else closeCard(); }, { go: true }));
-        if (by === G.me) { G.move++; save(); hud(); }
+        if (by === G.me) { useMove(); save(); hud(); }
       };
       setTimeout(next, 600);
     });
@@ -1040,6 +1056,34 @@
       acts.replaceChildren(el("p", { class: "cv-result ok", text: Fd("Done. People who care about {x} noticed.", { x: T(TOPICS[E.hot]) }) }), start);
     }, { off: G.coins[G.me] < E.act.n, sub: E.act.n ? F("{n} coins, written in the Book", { n: E.act.n }) : T("free, written in the Book") });
     acts.prepend(act);
+  }
+
+  /* ---------- the evening bell: at eight o'clock German time Tobias rings the pier bell, and for two minutes everyone who is
+     playing can ring back. Answering is a real transaction to the pier's till, at the same moment as everyone else's, so the
+     island's busiest minute is a real burst on the testnet (tauhud.com/load/ shows it). It keeps one more move for today. ---------- */
+  const BELL = { at: 20 * 60, open: 2, soon: 5 };
+  let berlinDay = null;
+  const today = () => { try { berlinDay = berlinDay || new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }); return berlinDay.format(new Date()); } catch (e) { return new Date().toISOString().slice(0, 10); } };
+  function bellState() {
+    if (!G || G.over || G.bell === today()) return null;
+    const [h, m] = String(SC.clock ? SC.clock() : "").split(":").map(Number);
+    if (!(h >= 0)) return null;
+    const d = h * 60 + m - BELL.at;
+    return d >= 0 && d < BELL.open ? "open" : d >= -BELL.soon && d < 0 ? "soon" : null;
+  }
+  function bellChip() {
+    const b = $("cvBell"); if (!b) return;
+    const s = bellState();
+    b.hidden = !s; b.classList.toggle("go", s === "open"); b.disabled = s !== "open";
+    b.textContent = s === "open" ? T("🔔 Answer the evening bell") : T("🔔 The evening bell at eight");
+  }
+  function answerBell() {
+    if (bellState() !== "open") return bellChip();
+    G.bell = today();
+    if (G.move > 0) G.move--; else G.spare = (G.spare || 0) + 1;
+    write(G.me, T("rang back when Tobias rang the evening bell on the pier"), "gift", "pier", 1);
+    SND.sfx("yes"); save(); hud(); bellChip();
+    toast(T("The whole island rings back at once. The evening tide gives you one more move today."));
   }
 
   /* ---------- savings and what they buy: the coins left at the end of a campaign are kept in this browser, and at three
@@ -1945,6 +1989,7 @@
     $("cvHelp").onclick = () => { wake(); help(); };
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     $("cvIsle").onclick = () => { wake(); openIsle(); };
+    if ($("cvBell")) { $("cvBell").onclick = () => { wake(); answerBell(); }; bellChip(); setInterval(bellChip, 5000); }
     isleJoin();
     const sb = $("cvSound");
     const showSound = () => { const l = SND.on ? T("Sound on") : SND.wanted ? T("Tap for sound") : T("Sound off"); sb.replaceChildren("♪", el("span", { class: "lb", text: " " + l })); sb.setAttribute("aria-label", l); sb.classList.toggle("off", !SND.wanted); sb.setAttribute("aria-pressed", SND.on ? "true" : "false"); };
