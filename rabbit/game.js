@@ -463,17 +463,119 @@
     build(box);
     if (box._visit && box._who) asks(box, box._who);
     $("cvStage").append(box); UI.card = box; $("cvStage").classList.add("carded");
-    placeHost();
+    placeHost(); watchFit(box);
     SND.sfx("open");
     setTimeout(() => { const b = box.querySelector(".cv-acts button:not([disabled])"); if (b && !matchMedia("(pointer: coarse)").matches) b.focus({ preventScroll: true }); }, 50);
   }
-  /* on a phone the one you talk to stands above the sheet; held sideways, beside the plate. Measured again whenever
-     the phone turns or the window changes size, so a card opened upright and read sideways never hides them */
+  /* on a phone the one you talk to stands above the sheet; held sideways, beside the plate. On a laptop or desktop
+     the stage is a wide strip under the site's header: a plate in the middle would cover the person from the chin
+     down, so the plate stands on the right, as tall as the stage, and the person in the free room on its left.
+     Measured again whenever the phone turns or the window changes size, so a card never hides them */
+  const LAND = matchMedia("(orientation: landscape) and (max-height: 520px) and (pointer: coarse)");
   function placeHost() {
-    const box = UI.card; if (!box) return;
-    SC.hostAt(innerWidth < 760 ? box.offsetTop : null, innerWidth >= 760 && innerHeight < 520 ? box.offsetLeft : null);
+    const st = $("cvStage"), box = UI.card, bar = st.querySelector(".bar");
+    const w = st.clientWidth, h = st.clientHeight, side = !LAND.matches && innerWidth >= 760 && (w / h >= 1.5 || h < 720);
+    st.classList.toggle("side", side);
+    if (side && bar) st.style.setProperty("--below-bar", bar.offsetTop + bar.offsetHeight + 10 + "px");
+    if (!box) return;
+    SC.hostAt(innerWidth < 760 ? box.offsetTop : null, innerWidth >= 760 && (innerHeight < 520 || side) ? box.offsetLeft : null);
   }
-  const replaceHost = () => { placeHost(); requestAnimationFrame(placeHost); setTimeout(placeHost, 250); };   // some phones report the new size a moment late
+  /* the plate never scrolls. What does not fit is tightened first; then the plate turns into pages with tabs on top
+     (what is said, the list, what you can do), and a list longer than its page gets ‹ › to leaf through it.
+     Fitted again when the window changes size and when the plate's content changes (an answer, a new step). */
+  const FIT = { busy: false };
+  function fitCard(box) {
+    if (!box || !box.isConnected || FIT.busy) return;
+    FIT.busy = true;
+    try {
+      box.classList.remove("tight", "tight2", "tight3", "paged", "tall"); box.style.removeProperty("--fz");
+      if (innerWidth >= 760) box._tall = false;
+      if (box._tall) box.classList.add("tall");
+      box.querySelectorAll(".cv-tabs, .cv-pager").forEach(e => e.remove());
+      box.querySelectorAll(".pg-off").forEach(e => e.classList.remove("pg-off"));
+      const over = () => box.scrollHeight > box.clientHeight + 3;
+      /* last resort: everything on the plate a little smaller, never under 11 px on a phone */
+      const minFont = () => Math.min(16, ...[...box.querySelectorAll("p, span, b, small, em, button, li, h3, h4, label")].filter(e => e.offsetParent && e.textContent.trim()).map(e => parseFloat(getComputedStyle(e).fontSize) || 16));
+      const shrink = () => { if (!over()) return; const lo = matchMedia("(pointer: coarse)").matches ? Math.max(0.8, 11 / minFont()) : 0.78; for (let z = 0.96; over() && z >= lo - 0.001; z -= 0.03) box.style.setProperty("--fz", z.toFixed(2)); };
+      if (!over()) return;
+      box.classList.add("tight"); if (!over()) return;
+      /* the start, the morning paper and the ending are one page each: the choice must stay in sight */
+      const special = box.matches(".intro, .end, .paper");
+      if (special) { box.classList.add("tight2"); shrink(); if (over()) box.classList.add("tight3"); if (!over() || box.matches(".intro")) return; box.style.removeProperty("--fz"); }
+      else { box.classList.add("tight2"); if (!over()) return; }
+      const kids = [...box.children].filter(e => !e.matches(".cv-x, .cv-who, h2, h3"));
+      const G3 = { talk: [], info: [], acts: [] };
+      kids.forEach(e => (e.matches(".cv-acts, .cv-votes") ? G3.acts : e.matches(".cv-line, .cv-ask, .cv-you, .cv-note") ? G3.talk : G3.info).push(e));   // a vote: the faces stay with the buttons
+      const show = list => kids.forEach(e => e.classList.toggle("pg-off", !list.includes(e)));
+      /* what is said and the list together, if they fit beside the tab bar; otherwise each on its own page */
+      let tabs = [["talk", T("Talk"), G3.talk], ["info", (G3.info.map(e => e.querySelector("h4")).find(Boolean) || {}).textContent || T("More"), G3.info], ["acts", T("What you can do"), G3.acts]].filter(t => t[2].length);
+      if (tabs.length > 1 && !special) {
+        box.classList.add("paged");
+        const bar = el("div", { class: "cv-tabs", role: "tablist" });
+        kids[0].before(bar);
+        const tryTabs = list => { bar.replaceChildren(...list.map(t => el("button", { type: "button", role: "tab", text: t[1] }))); };
+        const talkInfo = tabs.find(t => t[0] === "talk") && tabs.find(t => t[0] === "info");
+        if (talkInfo) { tryTabs(tabs); show([...G3.talk, ...G3.info]); if (!over()) tabs = [["talk", T("Talk"), [...G3.talk, ...G3.info]], ...tabs.filter(t => t[0] === "acts")]; }
+        if (tabs.length > 1) {
+          const cur = tabs.find(t => t[0] === box._tab) || tabs[0];
+          bar.replaceChildren(...tabs.map(t => el("button", { type: "button", role: "tab", class: t[0] === "acts" ? "do" : null, "aria-selected": t === cur ? "true" : "false", text: t[1],
+            onclick: e => { e.stopPropagation(); box._tab = t[0]; box._page = 0; fitCard(box); } })));
+          show(cur[2]);
+        } else { bar.remove(); box.classList.remove("paged"); show(kids); }
+      }
+      if (!over()) return;
+      /* still too long: leaf through the longest list of the page shown */
+      const shown = kids.filter(e => !e.classList.contains("pg-off"));
+      const lists = shown.flatMap(e => [e, ...e.querySelectorAll("ul, .cv-acts, .cv-ask")]).filter(e => e.matches("ul, .cv-acts, .cv-ask"));
+      const L = lists.sort((a, b) => b.children.length - a.children.length)[0];
+      const items = L ? [...L.children].filter(e => !e.matches(".cv-h, h4")) : [];
+      if (items.length < 2) { shrink(); if (over() && innerWidth < 760 && !box._tall) box._tall = "again"; return; }
+      const pager = el("div", { class: "cv-pager" }), tabBar = box.querySelector(".cv-tabs");
+      if (tabBar) tabBar.append(pager); else L.after(pager);   // beside the tabs when there are tabs: no extra row
+      const prev = el("button", { type: "button", "aria-label": T("Previous page"), text: "‹" }), next = el("button", { type: "button", "aria-label": T("Next page"), text: "›" }), lab = el("span");
+      pager.append(prev, lab, next);
+      const pages = []; let i = 0;
+      while (i < items.length) {
+        items.forEach(e => e.classList.add("pg-off"));
+        let j = i; items[j].classList.remove("pg-off"); j++;
+        while (j < items.length) { items[j].classList.remove("pg-off"); if (over()) { items[j].classList.add("pg-off"); break; } j++; }
+        pages.push([i, j]); i = j;
+      }
+      const n = Math.min(box._page || 0, pages.length - 1), [a, b] = pages[n];
+      items.forEach((e, k) => e.classList.toggle("pg-off", k < a || k >= b));
+      if (pages.length < 2) { pager.remove(); shrink(); if (over() && innerWidth < 760 && !box._tall) box._tall = "again"; return; }
+      lab.textContent = `${n + 1} / ${pages.length}`;
+      prev.disabled = n === 0; next.disabled = n === pages.length - 1;
+      prev.onclick = e => { e.stopPropagation(); box._page = n - 1; fitCard(box); };
+      next.onclick = e => { e.stopPropagation(); box._page = n + 1; fitCard(box); };
+      shrink();
+      if (over() && innerWidth < 760 && !box._tall) box._tall = "again";   // an upright phone: the plate may grow over the room
+    } finally {
+      placeHost();   // the plate may have grown or shrunk: the person stands above or beside it again
+      FIT.busy = false;
+      if (box._fitObs) box._fitObs.takeRecords();   // our own changes are not a change of content
+    }
+    if (box._tall === "again") { box._tall = true; fitCard(box); }
+  }
+  function watchFit(box) {
+    fitCard(box);
+    if (!window.MutationObserver) return;
+    let queued = false;
+    box._fitObs = new MutationObserver(() => { if (FIT.busy || queued) return; queued = true; requestAnimationFrame(() => { queued = false; fitCard(box); }); });
+    box._fitObs.observe(box, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "hidden", "style"] });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitCard(box));
+    [300, 1200].forEach(ms => setTimeout(() => fitCard(box), ms));   // a plate's fonts and pictures can arrive late
+    /* and a watch: whatever made the plate longer (a vote coming in, a late font), it is fitted again */
+    let sig = "";
+    const tick = setInterval(() => {
+      if (!box.isConnected) return clearInterval(tick);
+      const now = box.innerText.length + ":" + box.clientHeight + ":" + box.clientWidth;
+      if (now !== sig && box.scrollHeight > box.clientHeight + 3) fitCard(box);
+      sig = box.innerText.length + ":" + box.clientHeight + ":" + box.clientWidth;
+    }, 400);
+  }
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", () => fitCard(UI.card));
+  const replaceHost = () => { placeHost(); fitCard(UI.card); requestAnimationFrame(() => { placeHost(); fitCard(UI.card); }); setTimeout(() => { placeHost(); fitCard(UI.card); }, 250); };   // some phones report the new size a moment late
   addEventListener("resize", replaceHost); addEventListener("orientationchange", replaceHost);
   if (window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener("change", replaceHost);
   function closeCard(keep) {

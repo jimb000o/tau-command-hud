@@ -111,6 +111,58 @@ html.rk-full #cvFull { border-color: var(--ok); }
 .cv-card.left { right: auto; left: 16px; }
 /* a conversation: one plate at the bottom middle, above the radio strip, the person standing large behind it */
 .cv-card.talk { left: 50%; right: auto; top: auto; bottom: 58px; transform: translateX(-50%); width: min(860px, calc(100% - 32px)); max-height: min(46%, calc(100% - 118px)); border-radius: 6px; background: rgba(20,14,9,.9); border: 3px double rgba(232,206,150,.55); outline: 1px solid rgba(232,206,150,.14); outline-offset: 4px; animation: popc .35s cubic-bezier(.2,.8,.2,1); }
+/* a laptop or desktop: the stage is wide and low, so the plate stands on the right, full height, and the one you talk
+   to stands large in the room on its left (game.js placeHost sets .side) */
+.stage.side .cv-card.talk:not(.intro):not(.end):not(.paper) { left: auto; right: 16px; top: var(--below-bar, 64px); bottom: 62px; width: min(500px, 42%); max-height: none; transform: none; }
+.stage.side .cv-card.talk:not(.intro):not(.end):not(.paper) .cv-acts { grid-template-columns: 1fr; }
+.stage.side .cv-card.talk:not(.locked):not(.intro):not(.end):not(.paper) .cv-who .face { display: none; }
+/* the plate never scrolls (game.js fitCard): tighter first, then pages with tabs, then ‹ › through a long list */
+.cv-card .pg-off { display: none !important; }
+.cv-card.tight { gap: 7px; padding-top: 12px; padding-bottom: 10px; }
+.cv-card.tight .cv-line { line-height: 1.42; }
+.cv-card.tight .cv-folk { gap: 3px; }
+@media (pointer: fine) { .cv-card.tight .cv-b { min-height: 34px; padding: 5px 10px; } .cv-card.tight .cv-ask .cv-b { min-height: 30px; padding: 4px 10px; } }
+.cv-card > :not(.cv-x) { zoom: var(--fz, 1); }
+.cv-card.tight2 .cv-pick { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.cv-card.tight2 .cv-cand { padding: 8px 4px; }
+.cv-card.tight2 .cv-cand .face { width: 52px !important; height: 52px !important; }
+.cv-card.tight2 .cv-cand em { display: none; }
+.cv-card.tight2 .cv-cand b { font-size: 13px; }
+.cv-card.tight2 h2 { font-size: 24px; }
+/* a very small screen: the welcome text keeps its first lines ("How it works" has them all) */
+.cv-card.tight2 .cv-paper { padding: 12px 14px; font-size: 14px; line-height: 1.4; }
+.cv-card.tight2 .cv-paper .mast { font-size: 22px; padding-bottom: 6px; }
+.cv-card.tight2 .cv-paper li { padding: 4px 0; }
+.cv-card.tight3 .kick, .cv-card.tight3 .cv-paper .joke { display: none; }
+.cv-card.tight3 h2 { font-size: 20px; }
+.cv-card.tight3 > .cv-line { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.stage .cv-card.intro.tight2, .stage .cv-card.end.tight2 { max-height: calc(100% - 16px); }
+@media (max-width: 759px), (orientation: landscape) and (max-height: 520px) and (pointer: coarse) { .cv-card.tight2 .cv-line { font-size: 13px; line-height: 1.4; } .cv-card.tight2 .cv-chain, .cv-card.tight2 .cv-note { font-size: 11px; line-height: 1.4; } .cv-card.tight2 .kick { margin: 0; } .cv-card.tight2 .cv-cand small { display: none; } .cv-card.tight2 h2 { font-size: 20px; } .cv-card.tight2 .cv-cand .face { width: 44px !important; height: 44px !important; } }
+.cv-card.talk.tight2 .cv-who small { display: none; }
+.cv-card.talk.tight2 .cv-who { padding-right: 52px; }
+.cv-card.talk.tight2 h3 { font-size: calc(var(--tsz, 20px) * .82); }
+@media (max-width: 759px) {
+  .cv-card.talk.tight2:not(.locked):not(.intro):not(.end):not(.paper) { max-height: 66%; }
+  .cv-card.talk.tall:not(.locked):not(.intro):not(.end):not(.paper) { max-height: calc(100% - 56px); }
+  .cv-card.talk.tall h3 { display: none; }
+}
+@media (max-width: 759px), (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  .stage .cv-card.talk.tight2 { --bsz: 14px; --tsz: 17px; }
+  .stage .cv-card.talk.tight2 .cv-line { font-size: var(--bsz); line-height: 1.38; }
+}
+/* a phone held sideways has the least height: the place's name gives way (the room shows where you are) */
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) { .cv-card.talk.tight2:not(.intro):not(.end):not(.paper) h3, .cv-card.talk.tight2 .cv-ask .cv-h { display: none; } }
+.cv-tabs .cv-pager { flex: none; gap: 4px; }
+.cv-tabs .cv-pager span { min-width: 30px; text-align: center; }
+.cv-tabs { display: flex; gap: 6px; flex: none; }
+.cv-tabs button { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--pbtn, var(--hair)); background: transparent; color: var(--dim); font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-tabs button.do { color: #fff; border-color: rgba(57,255,138,.6); }
+.cv-tabs button[aria-selected=true] { color: #fff; background: rgba(255,255,255,.08); border-color: var(--pb, #fff); }
+.cv-pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: none; }
+.cv-pager button { min-width: 44px; min-height: 36px; border-radius: 8px; border: 1px solid var(--pbtn, var(--hair)); background: transparent; color: #fff; font: 600 18px/1 var(--display); cursor: pointer; }
+.cv-pager button[disabled] { opacity: .3; cursor: default; }
+.cv-pager span { color: var(--dim); font: 600 12px var(--display); }
+@media (pointer: coarse) { .cv-tabs button, .cv-pager button { min-height: 44px; } }
 .cv-card.talk .cv-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
 .cv-card.talk .cv-b { border-color: rgba(232,206,150,.28); background: rgba(232,206,150,.04); }
 .cv-card.talk .cv-b:hover:not([disabled]), .cv-card.talk .cv-b:focus-visible { border-color: #f3dfb4; background: rgba(232,206,150,.1); }
