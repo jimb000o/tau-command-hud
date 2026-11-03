@@ -404,11 +404,11 @@
     G.lies.forEach(l => {
       if (!l.lie) return;
       out.forEach(id => { if (l.seen.includes(id)) return; l.seen.push(id); G.sup[l.by][id] = Math.max(0, G.sup[l.by][id] - 14); G.sup[l.about][id] = Math.min(100, G.sup[l.about][id] + 6); });
-      if (l.seen.length >= 4 && !l.out) { l.out = true; bump(l.by, null, -6); news(F("The Book shows who paid for “{x}”: {y}", { x: l.claim, y: nm(l.by) })); }
+      if (l.seen.length >= 4 && !l.out) { l.out = true; bump(l.by, null, -6); news(F("The Book shows who paid for “{x}”: {y}", { x: l.claim, y: nm(l.by) }), RICO.L.bkExposed); }
     });
     return out.length;
   }
-  const news = s => G.news.push({ day: G.day, s });
+  const news = (s, v) => G.news.push(v ? { day: G.day, s, v } : { day: G.day, s });   // v: what Rico says aloud about it (a fixed line with a clip)
 
   /* ---------- the rivals, at night ---------- */
   function night() {
@@ -419,7 +419,7 @@
         const lie = R() < (factAbout(lead === c ? others(c)[0] : lead) ? 0.4 : 0.65), about = lead === c ? others(c)[0] : lead;
         const claim = lie ? LIES[about] : factAbout(about) || LIES[about];
         rumour(c, about, claim, lie && claim === LIES[about] || !factAbout(about));
-        news(F("Radio Coco tonight: “{x}”", { x: claim }));
+        news(F("Radio Coco tonight: “{x}”", { x: claim }), RICO.L.bkRumour);
       } else if (w === "money" && !G.deals.some(d => d.by === c) && R() < 0.9) {
         const e = R() < 0.5 ? "north" : "south"; deal(c, e);
       } else if ((w === "money" || w === "laws") && R() < 0.85) {
@@ -459,7 +459,7 @@
     if ($("cvAmb")) { $("cvAmb").hidden = !G.amb; if (G.amb) { $("cvAmb").textContent = T(AMB[G.amb.id].name); $("cvAmb").title = ambGoal(); } }
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
     const last = G.news[G.news.length - 1];
-    if (last && last !== DJ.said) { DJ.said = last; if (DJ.opened) onAir([V("book"), Q(last.s)], 1); else { DJ.after = [V("book"), Q(last.s)]; $("cvNews").textContent = last.s; } }   // before the show opens, the news waits for Rico's opener
+    if (last && last !== DJ.said) { DJ.said = last; const np = [V("book"), last.v ? { t: last.s, v: last.v } : Q(last.s)]; if (DJ.opened) onAir(np, 1); else { DJ.after = np; $("cvNews").textContent = last.s; } }   // before the show opens, the news waits for Rico's opener
     else if (!DJ.text) $("cvNews").textContent = last ? last.s : T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book.");
     SC.setHour(G.over ? 2.4 : G.move >= MOVES ? 3 : G.move * 0.9);
     SC.rabbit(G.over || G.move >= MOVES ? null : hint()[0]);
@@ -813,7 +813,7 @@
       const lies = G.lies.filter(l => l.lie && !l.out);
       scene(box, "tano", T(SC.places.drums.name), T("Before Radio Coco, the news went from hill to hill on these drums. They have one rule: they only carry what the stone confirms. That is why nobody ever bribed a drummer."), G.drummed ? null : [
         btn(T("Drum the truth across the island"), () => {
-          G.drummed = true; lies.forEach(l => { l.out = true; bump(l.by, null, -8); news(F("The Book shows who paid for “{x}”: {y}", { x: l.claim, y: nm(l.by) })); });
+          G.drummed = true; lies.forEach(l => { l.out = true; bump(l.by, null, -8); news(F("The Book shows who paid for “{x}”: {y}", { x: l.claim, y: nm(l.by) }), RICO.L.bkExposed); });
           write(G.me, F("drummed the truth from the three hills: {n} rumours answered", { n: lies.length }), "fact"); SND.sfx("yes"); toast(lies.length ? T("Every rumour still on air has been answered from the hills.") : T("No rumours to answer. The drums play anyway; it is a fine evening.")); spend(); if (UI.card) openCard("drums", PLACE.drums);
         }, { off: !movesLeft(), sub: T("once in the game, one move") }),
       ]);
@@ -928,7 +928,7 @@
   }
   function doRumour(c, claim, lie) {
     rumour(G.me, c, claim, lie); SND.sfx("coin");
-    news(F("Radio Coco: “{x}”", { x: claim }));
+    news(F("Radio Coco: “{x}”", { x: claim }), RICO.L.bkRumour);
     /* Rico calls it out on air, loud and happy, then tells you what you bought */
     const aired = [S("This just in on Radio Coco, ninety-seven point three!"), { t: "“" + T(claim) + "”", v: EN(claim) + "!" },
       S(lie ? "Done, it’s out there. Half the island is talking. The other half will read the Book tomorrow, and the Book says you paid me." : "Done. And this one’s true, so let them check. The Book backs you up.")];
@@ -1004,7 +1004,7 @@
   function councilQueue(list, then) {
     if (!list.length) { closeCard(); then && then(); return; }
     const p = list.shift(), r = propose(p.by, p.id);
-    if (r.refused) { news(F("{x}’s law “{y}” was refused: it contradicts a law in force", { x: nm(p.by), y: T(LAWS[p.id].t) })); return councilQueue(list, then); }
+    if (r.refused) { news(F("{x}’s law “{y}” was refused: it contradicts a law in force", { x: nm(p.by), y: T(LAWS[p.id].t) }), RICO.L.bkRefused); return councilQueue(list, then); }
     vote(p.by, p.id, r.votes, () => councilQueue(list, then));
   }
   const JOKES = [
@@ -1049,7 +1049,7 @@
     const E = EVENTS[ev.id];
     if (!ev.done) {
       ev.done = true;
-      news(T(E.lead));
+      news(T(E.lead), E.lead);
       if (E.hit) G.deals.forEach(d => { if (!d.seen) { d.seen = true; bump(d.by, null, -6); } });
       save();
     }
@@ -1211,9 +1211,13 @@
     if (!call) { clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), Math.min(9000, 2500 + line.length * 60)); DJ.next = performance.now() + 38000 + Math.random() * 30000; }
     /* his voice, when the clips are there: the mouth and the on-air light follow it */
     const said = DJ.text;
-    if (UI.card) return;   // someone in the open card is talking to you; the strip only shows it
+    /* in a place the strip only shows it, so nobody talks over the one in front of you; at Radio Coco itself Rico
+       says it on air whenever he is not talking to you, and you see him say it */
+    const atRico = () => UI.card && UI.at === "radio" && UI.card._who === "rico" ? UI.card : null;
+    if (UI.card && !(atRico() && !SND.talking)) return;
     RICO.speak(parts).then(secs => {
       if (!secs || DJ.text !== said) return;
+      const here = atRico(); if (here && here._f) say(here._f, secs * 1000);
       if (call) turns(parts, secs);
       say(DJ.face, secs * 1000);
       clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), secs * 1000 + 800);
@@ -1914,8 +1918,8 @@
     G.ruled = last.id;
     const laws = (last.laws || []).filter(id => LAWS[id] && !inForce(id) && !conflict(id));
     laws.forEach(id => G.laws.push({ id, by: ISLE_BY, day: 0 }));
-    news(Fd("Governor of the island this week: {x}, who won {n} of {m} campaigns last week.", { x: nm(last.governor), n: last.wins[last.governor] || 0, m: last.finished }));
-    if (laws.length) news(Fd("In force since last week, by the whole island: {x}. Repeal in the hall if you must.", { x: laws.map(id => "“" + T(LAWS[id].t) + "”").join(", ") }));
+    news(Fd("Governor of the island this week: {x}, who won {n} of {m} campaigns last week.", { x: nm(last.governor), n: last.wins[last.governor] || 0, m: last.finished }), RICO.L.bkGovernor);
+    if (laws.length) news(Fd("In force since last week, by the whole island: {x}. Repeal in the hall if you must.", { x: laws.map(id => "“" + T(LAWS[id].t) + "”").join(", ") }), RICO.L.bkCarry);
     save(); if (UI.card && UI.card._visit === "hall") openCard("hall", PLACE.hall);
   }
   const isleWho = e => e.h ? nm(e.c) : F("A player as {x}", { x: nm(e.c) });
@@ -1962,7 +1966,7 @@
     const top = isleTop(isleLaws())[0]; if (!top) return;
     const holder = (G.laws.find(l => l.id === top) || {}).by, good = Object.keys(LAWS[top].fx).filter(k => LAWS[top].fx[k] > 0);
     if (holder && holder !== ISLE_BY && good.length) bump(holder, p => p.cares.some(c => good.includes(c)), 2);
-    news(F("All over the island, people talk about “{x}” today.", { x: T(LAWS[top].t) }) + (holder ? " " + (holder === ISLE_BY ? T("Here it is the island’s own law this week.") : F("Here it is {y}’s law.", { y: nm(holder) })) : ""));
+    news(F("All over the island, people talk about “{x}” today.", { x: T(LAWS[top].t) }) + (holder ? " " + (holder === ISLE_BY ? T("Here it is the island’s own law this week.") : F("Here it is {y}’s law.", { y: nm(holder) })) : ""), RICO.L.bkTalk);
   }
   /* Rico's lines about the whole island: the numbers change all day, so they are shown exactly and spoken as a band
      or a name (rico.js isN, isLaw, isWin, isGov, isNews1/2), the rest in brackets beside */
@@ -2096,7 +2100,7 @@
   }
   function begin(c) {
     G = fresh(c); save();
-    news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."));
+    news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."), RICO.L.bkWeek);
     isleRule();
     closeCard(); hud();
     toast(T("Tap a place on the island to begin."));

@@ -1350,4 +1350,10 @@ TauI18n.add({ strings: {
   "Roads, my friend, are how guests arrive. Minibuses, yoga mats, my cousin’s smoothie truck. The island will love it. Eventually. We can wait. We are very good at waiting, and at lunch.": "道というのはね、友よ、お客が来る道筋だ。ミニバス、ヨガマット、いとこのスムージー車。島は気に入るさ。いずれね。待てるよ。待つのと昼食は得意なんだ。",
   "Me? A full resort, and a very long line in your Book saying who paid for the road. My investors like to be remembered. Your Book is happy to help.": "私かい？満室のリゾートと、君たちの本に残る長い一行さ。道の金を誰が出したか、というね。うちの投資家は覚えられたがる。君たちの本は喜んで手伝ってくれる。",
   "Every Thursday. We play cards by the pool. He cheats, I let him, and we both write it down. Business is mostly agreeing on who keeps the score.": "毎週木曜。プールサイドでカードをやる。彼はいかさまをし、私は見逃し、二人とも書き留める。商売とはだいたい、誰が点をつけるかで合意することさ。",
+  "The Book has spoken: a rumour has been traced back to whoever paid for it. Ouch.": "帳簿が語った：あるうわさが、金を払った人までたどられた。いてて。",
+  "Tonight on Radio Coco, a fresh rumour. Rico only plays them, folks. The Book does the checking.": "今夜の Radio Coco に新しいうわさ。リコは流すだけだよ、みんな。確かめるのは帳簿。",
+  "A law was refused at the door: it contradicts one already in force. The Book does not do contradictions.": "ある法律が入口で断られた：すでに有効な法律と矛盾している。帳簿は矛盾を受け付けない。",
+  "The island has a governor this week! Whoever won the most campaigns last week. Congratulations, and good luck.": "今週の島には総督がいる！先週いちばん多く選挙に勝った人だ。おめでとう、そして幸運を。",
+  "Some laws from last week are still in force, by the whole island. If you don't like them, the hall is open.": "先週の法律のいくつかは、島全体の決定でまだ有効。気に入らなければ、議事堂は開いてるよ。",
+  "All over the island, people are talking about one law today. Rico's phone hasn't stopped ringing.": "今日は島じゅうがひとつの法律の話でもちきり。リコの電話は鳴りっぱなし。",
 } });
