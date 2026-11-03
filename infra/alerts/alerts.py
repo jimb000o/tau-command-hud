@@ -154,13 +154,15 @@ HEALTH_DOWN_BELOW = float(os.environ.get("HEALTH_DOWN_BELOW", 50))   # also "dow
 HEALTH_UP_AT = float(os.environ.get("HEALTH_UP_AT", 70))             # recovered at or above this
 HEALTH_CONFIRM = float(os.environ.get("HEALTH_CONFIRM_SECONDS", 600))
 HEALTH_EVERY = float(os.environ.get("HEALTH_POLL_SECONDS", 60))
-# New nodes on the network (relay /peers and /community/board): one post per node,
-# only after it stayed NEWNODE_HOLD seconds, never for one first seen more than a
-# day ago, at most NEWNODE_DAILY_CAP posts a day (the rest are recorded, not posted).
+# New nodes on the network (relay /peers and /community/board): one post per check, listing every node that has
+# stayed NEWNODE_HOLD seconds (several at once, e.g. after a rebuild, share one post), never for one first seen more
+# than a day ago, at most NEWNODE_DAILY_CAP posts a day (the rest are recorded, not posted). A post waits up to
+# NEWNODE_GROUP seconds while another new node is about to qualify, so nodes that arrive together are posted together.
 NEWNODE_ON = os.environ.get("NEWNODE_ALERTS", "true").lower() in ("1", "true", "yes")
 NEWNODE_HOLD = float(os.environ.get("NEWNODE_HOLD_SECONDS", 1800))
 NEWNODE_DAILY_CAP = int(os.environ.get("NEWNODE_DAILY_CAP", 3))
 NEWNODE_EVERY = float(os.environ.get("NEWNODE_POLL_SECONDS", 300))
+NEWNODE_GROUP = float(os.environ.get("NEWNODE_GROUP_SECONDS", 600))
 # Simulation mode on the site runs a made-up chain in the visitor's browser (assets/sim.js), the same for everyone because it is
 # generated from the clock, with a fixed day programme. Only its two consensus switches are announced here, each when its proposal
 # appears, 10 minutes before it is in force; the channel reports the real testnet, so these posts are rare and marked as simulated.
@@ -711,17 +713,18 @@ def health_text(kind: str, h: dict | None, since: float | None = None, now: floa
     return "\n".join(lines + ["", link])
 
 
-def new_nodes(peers: dict | None, board: dict | None, known: dict, now: float) -> list[dict]:
-    """Nodes worth one post: a kit node that has reported for NEWNODE_HOLD, or a
+def new_nodes(peers: dict | None, board: dict | None, known: dict, now: float, soon: float = 0) -> list[dict]:
+    """Nodes worth a post: a kit node that has reported for NEWNODE_HOLD, or a
     peer (not the bootnode, not a kit node) our node has known that long and
-    still sees. Each comes back once: `known` holds every key ever handled."""
-    out = []
+    still sees. Each comes back once: `known` holds every key ever handled.
+    With `soon`, the nodes that will qualify within that many seconds instead."""
+    out, hold = [], NEWNODE_HOLD - soon
     for n in (board or {}).get("nodes") or []:
         key = "kit:" + str(n.get("id"))
         if key in known or not n.get("online"):
             continue
         first, last = n.get("first_seen") or now, n.get("last_seen") or 0
-        if last - first >= NEWNODE_HOLD and now - first < 86400 + NEWNODE_HOLD:
+        if last - first >= hold and now - first < 86400 + NEWNODE_HOLD:
             out.append({"key": key, "kind": "kit", "name": str(n.get("name") or "node"), "for": last - first,
                         "height": n.get("height")})
     kit_peers = {p["id"] for p in (peers or {}).get("peers") or [] if p.get("community")}
@@ -730,7 +733,7 @@ def new_nodes(peers: dict | None, board: dict | None, known: dict, now: float) -
         if key in known or p.get("label") or p["id"] in kit_peers:
             continue
         first, last = p.get("first_seen") or now, p.get("last_seen") or 0
-        if now - last < 600 and last - first >= NEWNODE_HOLD and now - first < 86400 + NEWNODE_HOLD:
+        if now - last < 600 and last - first >= hold and now - first < 86400 + NEWNODE_HOLD:
             out.append({"key": key, "kind": "peer", "id": str(p["id"]), "for": last - first, "head": p.get("head")})
     return out
 
@@ -743,9 +746,24 @@ def nodes_online(peers: dict | None, board: dict | None) -> int:
     return 1 + sum(1 for p in ps if p.get("online")) + len(kit)
 
 
-def newnode_text(n: dict, online: int) -> str:
+def newnode_text(ns: dict | list[dict], online: int) -> str:
+    """One Telegram post for one new node or for several that qualified together."""
+    ns = [ns] if isinstance(ns, dict) else ns
     e = html.escape
     link = f"<a href=\"{SITE}/nodes/\">All nodes on Tau HUD</a>"
+    if len(ns) > 1:
+        lines = [REAL_LINE, f"🆕 <b>{len(ns)} new nodes joined the Tau testnet</b>"]
+        for n in ns:
+            if n["kind"] == "kit":
+                lines.append(f"• Community node {e(n['name'])} (Tau HUD kit), checking blocks for {fmt_dur(n['for'])}"
+                             + (f", at block #{fmt_n(n['height'])}" if n.get("height") else "") + ".")
+            else:
+                lines.append(f"• Peer {e(n['id'][:8])}…{e(n['id'][-4:])}, seen for {fmt_dur(n['for'])}"
+                             + (f", at block #{fmt_n(n['head'])}" if n.get("head") else "") + ".")
+        if any(n["kind"] == "peer" for n in ns):
+            lines.append("Peers without a name do not run our kit.")
+        return "\n".join(lines + [f"Nodes online now: {online}.", "", link])
+    n = ns[0]
     if n["kind"] == "kit":
         head = f"🆕 <b>New community node: {e(n['name'])}</b>"
         body = (f"Someone started a Tau testnet node with the Tau HUD kit. It has checked every block for "
@@ -757,7 +775,16 @@ def newnode_text(n: dict, online: int) -> str:
     return "\n".join([REAL_LINE, head, body, f"Nodes online now: {online}.", "", link])
 
 
-def newnode_x(n: dict, online: int) -> str:
+def newnode_x(ns: dict | list[dict], online: int) -> str:
+    ns = [ns] if isinstance(ns, dict) else ns
+    if len(ns) > 1:
+        kits = [n["name"] for n in ns if n["kind"] == "kit"]
+        peers = len(ns) - len(kits)
+        parts = ([f"community node{'s' if len(kits) > 1 else ''} {', '.join(kits)} (Tau HUD kit)"] if kits else []) + \
+                ([f"{peers} peer{'s' if peers > 1 else ''} our node sees"] if peers else [])
+        body = f"{' and '.join(parts)[:1].upper()}{' and '.join(parts)[1:]}, each for at least {fmt_dur(min(n['for'] for n in ns))}."
+        return x_post([f"🆕 {len(ns)} new nodes joined the Tau testnet", f"{body} Nodes online now: {online}."], f"{SITE}/nodes/")
+    n = ns[0]
     if n["kind"] == "kit":
         head = f"🆕 New community node: {n['name']}"
         body = f"Someone started a Tau testnet node with the Tau HUD kit and it has checked every block for {fmt_dur(n['for'])}."
@@ -2083,7 +2110,7 @@ class Watcher:
             return None
 
     async def maybe_newnodes(self, now: float | None = None):
-        """One Telegram post per genuinely new node (see new_nodes); nodes
+        """One Telegram post per check for the genuinely new nodes (see new_nodes); nodes
         already there when this first runs are history, not news."""
         if not NEWNODE_ON:
             return
@@ -2105,28 +2132,42 @@ class Watcher:
             st["primed"] = True
             self.save_state()
             return
+        if not fresh:
+            st.pop("waiting", None)
+            self.save_state()
+            return
+        # nodes that arrive together are posted together: wait (at most NEWNODE_GROUP) while another one is about to qualify
+        keys = {n["key"] for n in fresh}
+        if NEWNODE_GROUP > 0 and any(n["key"] not in keys for n in new_nodes(peers, board, known, now, NEWNODE_GROUP)):
+            st.setdefault("waiting", now)
+            if now - st["waiting"] < NEWNODE_GROUP:
+                self.save_state()
+                return
+        st.pop("waiting", None)
         day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
         tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+        online = nodes_online(peers, board)
+        posted = st.get("day") == day and st.get("posted", 0) or 0
+        what = "new node " + " ".join(n["key"] for n in fresh)
+        if posted < NEWNODE_DAILY_CAP:
+            text = newnode_text(fresh, online)
+            for o in tg:
+                ok, _, err = await asyncio.to_thread(o.send_text, text)
+                if not ok:
+                    log.warning("new node post failed (%s); trying again next check", err)
+                    if fresh[0]["key"] not in st.setdefault("x_done", []):   # X does not wait for a failing Telegram
+                        st["x_done"] = (st["x_done"] + [n["key"] for n in fresh])[-60:]
+                        await self.post_x(newnode_x(fresh, online), what, now, f"{SHARE_HTTP}/og/hud.png")
+                    self.save_state()
+                    return
+            st["day"], st["posted"] = day, posted + 1
+            log.info("newnodes: posted %s%s", " ".join(keys), "" if tg else " (telegram off: X only)")
+            if fresh[0]["key"] not in st.setdefault("x_done", []):
+                st["x_done"] = (st["x_done"] + [n["key"] for n in fresh])[-60:]
+                await self.post_x(newnode_x(fresh, online), what, now, f"{SHARE_HTTP}/og/hud.png")
+        else:
+            log.info("newnodes: %s recorded without a post (daily cap)", " ".join(keys))
         for n in fresh:
-            posted = st.get("day") == day and st.get("posted", 0) or 0
-            if posted < NEWNODE_DAILY_CAP:
-                text = newnode_text(n, nodes_online(peers, board))
-                for o in tg:
-                    ok, _, err = await asyncio.to_thread(o.send_text, text)
-                    if not ok:
-                        log.warning("new node post failed (%s); trying again next check", err)
-                        if n["key"] not in st.setdefault("x_done", []):   # X does not wait for a failing Telegram
-                            st["x_done"] = (st["x_done"] + [n["key"]])[-60:]
-                            await self.post_x(newnode_x(n, nodes_online(peers, board)), "new node " + n["key"], now, f"{SHARE_HTTP}/og/hud.png")
-                        self.save_state()
-                        return
-                st["day"], st["posted"] = day, posted + 1
-                log.info("newnodes: posted %s%s", n["key"], "" if tg else " (telegram off: X only)")
-                if n["key"] not in st.setdefault("x_done", []):
-                    st["x_done"] = (st["x_done"] + [n["key"]])[-60:]
-                    await self.post_x(newnode_x(n, nodes_online(peers, board)), "new node " + n["key"], now, f"{SHARE_HTTP}/og/hud.png")
-            else:
-                log.info("newnodes: %s recorded without a post (daily cap)", n["key"])
             known[n["key"]] = round(now)
         if len(known) > 5000:  # oldest first out; a key that comes back that late is not new news anyway
             for k in sorted(known, key=known.get)[:len(known) - 5000]:
