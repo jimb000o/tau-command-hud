@@ -1922,12 +1922,20 @@
   "text": "40 coins, today. All we ask is that you propose “A deep harbour for cruise ships” before the election. A small thing between friends."
  },
  {
-  "who": "salado",
-  "text": "We are counting on you for “A road round the island”. Our guests are already booked, and they ask questions."
+  "who": "frost",
+  "text": "“A deep harbour for cruise ships” is law already, so we have nothing to ask of you today. An unusual feeling. We do not care for it."
  },
  {
   "who": "salado",
-  "text": "35 coins, today, no paperwork. Propose “A road round the island” before the election, and the resort opens its gates to the whole island. Synergy, my friend."
+  "text": "My investors call me every morning at six and ask the same thing: has our candidate proposed “A road round the island” yet? Please. Give me something to tell them."
+ },
+ {
+  "who": "salado",
+  "text": "Sit, sit, the lounger is free. So, straight to business: 35 coins, today, and you propose “A road round the island” before the election. Right now my guests drag their suitcases uphill from the pier, and last week a yoga teacher cried."
+ },
+ {
+  "who": "salado",
+  "text": "No business today, my friend: “A road round the island” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free."
  },
  {
   "who": "rico",
@@ -2443,23 +2451,23 @@
  },
  {
   "who": "salado",
-  "text": "Rico, my friend! Salado, South Current Wellness. We love your station. We play it in the sauna."
+  "text": "Rico! It's Salado, up at the resort. I have guests by the pool and they want something to relax to."
  },
  {
   "who": "rico",
-  "text": "Thank you, Salado. Is there a but?"
+  "text": "Rico can do relaxing, Salado. Anything in particular?"
  },
  {
   "who": "salado",
-  "text": "No but. Only a road. Around the island, to my gate. Play something about a road."
+  "text": "Maybe a song with a road in it? Not about a road. Just a road, somewhere in the second verse."
  },
  {
   "who": "rico",
-  "text": "Rico plays songs, Salado, not roads."
+  "text": "Twenty-five coins and Rico plays anything. But the Book writes down who paid for it, and the whole island reads the Book."
  },
  {
   "who": "salado",
-  "text": "Everyone plays something, my friend. Synergy! Ciao!"
+  "text": "Ah. No, no. Forget the road, just play something slow. Ciao, Rico!"
  },
  {
   "who": "ama",
@@ -3319,15 +3327,79 @@
  },
  {
   "who": "salado",
-  "text": "Roads, my friend, are how guests arrive. Minibuses, yoga mats, my cousin’s smoothie truck. The island will love it. Eventually. We can wait. We are very good at waiting, and at lunch."
+  "text": "You did it, the road is law! I called my investors and for once they had nothing to say. Nothing! I think that means they’re happy. Come, have a smoothie, it’s on the house."
  },
  {
   "who": "salado",
-  "text": "Me? A full resort, and a very long line in your Book saying who paid for the road. My investors like to be remembered. Your Book is happy to help."
+  "text": "So the road passed. Wonderful. Only somebody else proposed it, and in the Book your name is next to my coins, not next to the road. My investors noticed before I did. About the road I’m happy. About you I’m still thinking."
  },
  {
   "who": "salado",
-  "text": "Every Thursday. We play cards by the pool. He cheats, I let him, and we both write it down. Business is mostly agreeing on who keeps the score."
+  "text": "The road is law. I keep saying it out loud, just to hear it. My guests will arrive like normal people now, in a minibus with the air conditioning on. Nobody has to cry."
+ },
+ {
+  "who": "salado",
+  "text": "Last day, and I still don’t see “A road round the island” in the Book. You have my coins. If it isn’t there tonight, I have to tell the island before the vote. I hate that part. I really do."
+ },
+ {
+  "who": "salado",
+  "text": "Last day, and we never did business, you and me. I respect that. I don’t like it, but I respect it. If you change your mind before the vote, the coins are right here, and the road still needs somebody."
+ },
+ {
+  "who": "salado",
+  "text": "You proposed it, I saw it in the Book. The council said no. Fine, that’s the council. You kept your word, and in my business that happens so rarely I don’t know what to do with my hands."
+ },
+ {
+  "who": "salado",
+  "text": "I hear Frost paid you. That’s okay, he pays more, I know. But he wants a harbour full of cruise ships, and I only want a little road. A road is very quiet, compared to a cruise ship. Think about it."
+ },
+ {
+  "who": "salado",
+  "text": "Running low, hm? Everybody is by now, campaigns are expensive. You know what I’m going to say, so I won’t say it. I’ll just sit here, next to the coins."
+ },
+ {
+  "who": "salado",
+  "text": "Ah, my partner! Your name is next to my coins in the Book, so we’re practically family now. The council tree is just down the hill. Propose “A road round the island” whenever you like. Before the election, ideally."
+ },
+ {
+  "who": "salado",
+  "text": "Did you go to the council tree yet? No? That’s fine. It’s fine. I’ll tell my investors you’re thinking about it. They love that. They love it when people think."
+ },
+ {
+  "who": "salado",
+  "text": "Ah, you came back! It’s the loungers, everybody comes back for the loungers. Same offer as before: the coins today, and you propose “A road round the island” before the election."
+ },
+ {
+  "who": "salado",
+  "text": "About the council tree. That was my investors, not me, I swear on my moustache. I told them you can’t buy a tree on this island. They didn’t listen. Now they’ve met Ama, and they’re very quiet."
+ },
+ {
+  "who": "salado",
+  "text": "Needed. Past tense! The road is law now, so now I need guests, which is a much nicer problem. You should see my booking calendar. Actually, don’t. Give it a week."
+ },
+ {
+  "who": "salado",
+  "text": "Right now there are two ways up to the resort: the jungle path, or my nephew’s wheelbarrow. The guests write about the wheelbarrow in their reviews. Every single one. With a road, the minibus stops at my gate."
+ },
+ {
+  "who": "salado",
+  "text": "I know, I know. Hana already came up here with a list. But my guests want quiet too, that’s what they pay me for. They just want to arrive at the quiet in a minibus."
+ },
+ {
+  "who": "salado",
+  "text": "Very well! Eleven rooms, and on a good night almost four of them are full. The pool is beautiful, you should see it with people in it. I saw it once. It was a Tuesday."
+ },
+ {
+  "who": "salado",
+  "text": "Because I make beautiful slides, and I say “synergy” a lot. They’ve never been here. If they came up the jungle path and saw the empty loungers… So, between us, please don’t invite them."
+ },
+ {
+  "who": "salado",
+  "text": "Me? I sell relaxing, I don’t do it. Every morning I join the guests for yoga, and every morning my phone rings in the middle of the tree pose. It’s always the investors. I have never once finished a tree."
+ },
+ {
+  "who": "salado",
+  "text": "Something big drinks from my pool at night. In the morning the water is lower and there’s a banana peel on a lounger, folded. Now I leave a towel out for him. Folded too. We have an understanding."
  },
  {
   "who": "marisol",

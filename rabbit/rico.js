@@ -533,11 +533,11 @@
       "Something about surveyors. Something deep.",
       "Rico doesn't take requests that come in envelopes, Ambassador.",
       "Who said anything about envelopes? Goodnight."] },
-    { who: "salado", game: 1, say: ["Rico, my friend! Salado, South Current Wellness. We love your station. We play it in the sauna.",
-      "Thank you, Salado. Is there a but?",
-      "No but. Only a road. Around the island, to my gate. Play something about a road.",
-      "Rico plays songs, Salado, not roads.",
-      "Everyone plays something, my friend. Synergy! Ciao!"] },
+    { who: "salado", game: 1, say: ["Rico! It's Salado, up at the resort. I have guests by the pool and they want something to relax to.",
+      "Rico can do relaxing, Salado. Anything in particular?",
+      "Maybe a song with a road in it? Not about a road. Just a road, somewhere in the second verse.",
+      "Twenty-five coins and Rico plays anything. But the Book writes down who paid for it, and the whole island reads the Book.",
+      "Ah. No, no. Forget the road, just play something slow. Ciao, Rico!"] },
     { who: "ama", say: ["Rico, this is Ama. The tide is low tonight.",
       "Thank you, Ama. Is that news?",
       "Everything that comes back on time is news, Rico. Your blocks could learn from the tide.",
@@ -612,9 +612,10 @@
   ];
   /* what the islanders say in the places (the same English as in game.js, which the tests check) */
   const LAWT = { harbour: "A deep harbour for cruise ships", road: "A road round the island" };
-  const EMBV = { frost: ["harbour", 40], salado: ["road", 35,   // the resort's own words (game.js EMB.south), the North Wind keeps the diplomat's
-    "{n} coins, today, no paperwork. Propose “{x}” before the election, and the resort opens its gates to the whole island. Synergy, my friend.",
-    "We are counting on you for “{x}”. Our guests are already booked, and they ask questions."] };
+  const EMBV = { frost: ["harbour", 40], salado: ["road", 35,   // the resort's own words, word for word as game.js EMB.south (test_rico.py checks), the North Wind keeps the diplomat's
+    "Sit, sit, the lounger is free. So, straight to business: {n} coins, today, and you propose “{x}” before the election. Right now my guests drag their suitcases uphill from the pier, and last week a yoga teacher cried.",
+    "My investors call me every morning at six and ask the same thing: has our candidate proposed “{x}” yet? Please. Give me something to tell them.",
+    "No business today, my friend: “{x}” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free."] };
   const CAST = [
     ["hana", "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."],
     ["sam", "Sam keeps the minutes today. Pick a law; the other three candidates vote, two yes and it is law."],
@@ -633,8 +634,9 @@
     ["rico", "Done. And this one’s true, so let them check. The Book backs you up."],
     ["rico", "This just in on Radio Coco, ninety-seven point three!"],
     ...NAMES.map(n => n.toLowerCase()).flatMap(c => [[c, "Fine. I vote for yours, you vote for mine. Lola is our witness, and the Book is our memory."], [c, "After what you did? Buy yourself a lemonade."], [c, "Not today. Show me how you vote first."]]),
-    ...Object.entries(EMBV).flatMap(([who, [law, n, offer, remind]]) => { const f = t => t.replace("{n}", n).replace("{x}", LAWT[law]);
-      return [[who, f(remind || "We are counting on you for “{x}”. We would hate to remind the island in public.")], [who, f(offer || "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.")]]; }),
+    ...Object.entries(EMBV).flatMap(([who, [law, n, offer, remind, done]]) => { const f = t => t.replace("{n}", n).replace("{x}", LAWT[law]);
+      return [[who, f(remind || "We are counting on you for “{x}”. We would hate to remind the island in public.")], [who, f(offer || "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.")],
+        [who, f(done || "“{x}” is law already, so we have nothing to ask of you today. An unusual feeling. We do not care for it.")]]; }),   // done: what they pay for is law already
   ];
   /* what Rico can put on air: the four rumours that are not true, and the true things the Book has seen */
   const LIES = ["Marisol fishes inside the reef at night", "Tobias wants to sell the lighthouse", "Baako’s coconuts are imported", "Hana wants school on Sundays"];
