@@ -469,6 +469,7 @@
   function islandFx(g, t, light) {
     for (const f of FX) {
       if (f.k === "smoke") {
+        if (spr(g, (f.s || 1) >= 1 ? "smoke-chimney" : "smoke-wisp", f.x, f.y + 3, t, 1, 0, ((f.s || 1) >= 1 ? 80 : 40) * (f.s || 1))) continue;   // the painted strip, once it is there
         for (let i = 0; i < 7; i++) {
           const p = ((t * 0.00012 * (1 + f.s * 0.1) + i / 7) % 1), r = (3 + p * 14) * f.s, x = f.x + Math.sin(p * 5 + i) * 6 * f.s + p * 26 * f.s, y = f.y - p * 70 * f.s;
           g.fillStyle = f.c; g.globalAlpha = (1 - p) * 0.55; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
@@ -544,6 +545,198 @@
         g.fillStyle = [`rgba(255,120,90,${light})`, `rgba(255,210,90,${light})`, `rgba(90,255,220,${light})`][f.c]; g.beginPath(); g.arc(f.x, f.y, 2.4 + Math.sin(t * 0.004 + f.x) * 0.4, 0, Math.PI * 2); g.fill();
       }
     }
+  }
+
+  /* ---------- the island at night: every place its own light ----------
+     The layout's "lights" (world units). Each one lights the painting around it in its own colour: the night is not one
+     flat blue laid over the picture but a light map (lightMap), the blue of the hour everywhere and around each lamp the
+     lamp's own colour, so the painting keeps its colours where a lamp shines on it. The lamps themselves are drawn bright
+     on top (nightLamps): from the painted strips in rabbit/fx (fx.json) when they are there, drawn until then.
+       glow {x,y,r,c,a,f,sy}  light only; c a colour of LC or [r,g,b]; f "fire" flickers, "breathe" swells, "steady"
+       torch {x,y,s}          a bamboo torch standing on x,y         fire {x,y,s}   a fire on the ground or in a bowl
+       lamp {x,y,c,r}         a small lamp or a lit doorway           candle {x,y}   a candle in a jar on a table
+       lantern {x,y,c,s}      a paper lantern hanging from x,y, swaying: c "red" | "stripes" | "warm"
+       string {pts,c,sag}     bulbs hung between the points: c "warm" | "pink" | "multi"
+       win {x,y,w,h,c,arch}   a lit window, x,y its middle            pool {poly}    water lit from below
+       flood {x,y,w,h,c}      a floodlight on a wall, washing it upwards from x,y
+       motes {x,y,r,n,c}      motes of light drifting                 buoy {x,y,c}   a blinking light on a buoy
+       sparks {x,y}           sparks flying from a chimney
+     "w": n mirrors a light in the water n units under it; "p" names the place the light belongs to. */
+  const LIGHTS = [];
+  const LC = { fire: [255, 160, 76], warm: [255, 206, 140], cream: [255, 236, 204], pink: [255, 146, 198], teal: [92, 236, 214], cyan: [110, 212, 255], red: [255, 92, 72], moon: [192, 214, 255], gold: [255, 212, 116], green: [57, 255, 138] };
+  const LANTERN = { red: [255, 104, 76], stripes: [255, 190, 160], warm: [255, 200, 120] };
+  const BULBS = { warm: [[255, 214, 150]], pink: [[255, 150, 200], [255, 200, 226]], multi: [[255, 96, 80], [255, 210, 90], [90, 236, 214], [255, 150, 200]] };
+  const lc = c => (Array.isArray(c) ? c : LC[c] || LC.warm);
+  const flick = (t, x, y) => 0.84 + 0.09 * Math.sin(t * 0.019 + x) + 0.07 * Math.sin(t * 0.043 + y * 1.7);
+  const blinkOn = (L, t) => (t + L.x * 37) % 2400 < 1100;
+  const lampsOn = sky => Math.max(0, (sky.light - 0.45) / 0.55);   // the lamps come on from about five in the afternoon, fully lit by night
+  function bulbs(L) {   // where the bulbs of a string hang: every few units, each span sagging in the middle
+    if (L._b) return L._b;
+    const out = [], P = L.pts;
+    for (let i = 0; i + 1 < P.length; i++) {
+      const [x0, y0] = P[i], [x1, y1] = P[i + 1], d = Math.hypot(x1 - x0, y1 - y0), n = Math.max(2, Math.round(d / (L.gap || 6))), sag = L.sag != null ? L.sag : d * 0.07;
+      for (let k = i ? 1 : 0; k <= n; k++) { const u = k / n; out.push([x0 + (x1 - x0) * u, y0 + (y1 - y0) * u + Math.sin(u * Math.PI) * sag]); }
+    }
+    return (L._b = out);
+  }
+  const lightOf = L => (L.k === "torch" || L.k === "fire" || L.k === "sparks" ? LC.fire : L.k === "lantern" ? LANTERN[L.c] || LANTERN.warm : L.k === "string" ? (BULBS[L.c] || BULBS.warm)[0] : L.k === "candle" || L.k === "win" ? lc(L.c || "gold") : L.k === "pool" ? LC.teal : lc(L.c || (L.k === "flood" ? "moon" : L.k === "buoy" ? "cyan" : L.k === "motes" ? "teal" : "warm")));
+  /* the painted strips of rabbit/fx, as they come (fx.json: file, w, h, frames, fps, anchor, blend); world heights here */
+  const SPR = {}, SPRH = { "smoke-chimney": 80, "smoke-wisp": 40, "torch-bamboo": 24, "torch-bamboo-b": 24, campfire: 16, "lantern-paper-red": 8, "lantern-paper-stripes": 8, "lamp-oil": 7, "bulb-warm": 2.6, "bulb-pink": 2.6, "candle-jar": 3.6, sparks: 34, "buoy-blink": 5, "glow-motes": 22 };
+  try {
+    fetch("fx/fx.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j => {
+      for (const id in j || {}) { const d = j[id]; if (!d || !d.file || !d.frames) continue; const im = new Image(); im.onload = () => { SPR[id] = Object.assign({}, d, { im }); }; im.src = "fx/" + d.file; }
+    }).catch(() => {});
+  } catch (e) {}
+  function spr(g, id, x, y, t, a = 1, ph = 0, h = SPRH[id]) {   // a painted strip, its anchor on x,y and h units high; false while it is not there
+    const d = SPR[id]; if (!d || !h) return false;
+    const k = h / d.h, f = Math.floor((t / 1000) * (d.fps || 8) + ph) % d.frames, [ax, ay] = d.anchor || [d.w / 2, d.h];
+    g.save(); g.globalAlpha = a; if (d.blend === "add") g.globalCompositeOperation = "lighter";
+    g.drawImage(d.im, f * d.w, 0, d.w, d.h, x - ax * k, y - ay * k, d.w * k, d.h * k); g.restore();
+    return true;
+  }
+  /* the light map: the light of the hour everywhere, and the lamps' own light around them (at a quarter of the
+     screen's pixels: light is soft). The painted island is multiplied with it. */
+  function lightMap(W, H, m, n, t) {
+    const q = 4, c = S.lm || (S.lm = document.createElement("canvas")), w = Math.ceil(W / q), h = Math.ceil(H / q);
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    const g = c.getContext("2d"); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.fillStyle = rgb(m); g.fillRect(0, 0, w, h);
+    const s = fitScale() * S.cam.z * S.K / q; g.setTransform(s, 0, 0, s, W / q / 2 - S.cam.x * s, H / q / 2 - S.cam.y * s);
+    const pool = (x, y, r, col, a, sy = 1) => {
+      if (a < 0.01) return; a = Math.min(1, a);
+      g.save(); g.translate(x, y); if (sy !== 1) g.scale(1, sy);
+      const gr = g.createRadialGradient(0, 0, 0, 0, 0, r); gr.addColorStop(0, rgb(col, a)); gr.addColorStop(0.4, rgb(col, a * 0.62)); gr.addColorStop(1, rgb(col, 0));
+      g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); g.restore();
+    };
+    WINDOWS.forEach(([x, y, ww, wh]) => pool(x + ww / 2, y + wh / 2, 15, LC.warm, 0.55 * n));
+    for (const f of FX) if (f.k === "fire" || f.k === "torch" || f.k === "crater") pool(f.x, f.y - 4, f.k === "fire" ? 44 : f.k === "crater" ? 54 : 28, LC.fire, 0.85 * n * flick(t, f.x, f.y));
+    for (const L of LIGHTS) {
+      const s = (L.s || 1) * (L.k === "lantern" ? 1.35 : 1), col = lightOf(L), fl = L.f === "steady" ? 1 : L.f === "breathe" ? 0.82 + 0.18 * Math.sin(t * 0.0011 + (L.x || 0)) : flick(t, L.x || 0, L.y || 0);
+      if (L.k === "glow") pool(L.x, L.y, L.r || 30, col, (L.a || 0.8) * n * fl, L.sy || 1);
+      else if (L.k === "torch") pool(L.x, L.y - 15 * s, 30 * s, col, 0.85 * n * fl);
+      else if (L.k === "fire") pool(L.x, L.y - 4 * s, 46 * s, col, 0.9 * n * fl);
+      else if (L.k === "lamp") pool(L.x, L.y, L.r || 18, col, (L.a || 0.75) * n * fl);
+      else if (L.k === "candle") pool(L.x, L.y - 2, 9, col, 0.55 * n * fl);
+      else if (L.k === "win") pool(L.x, L.y, Math.max(L.w, L.h) * 0.75, col, (L.a || 0.55) * n, Math.min(1.6, L.h / L.w * 0.5));
+      else if (L.k === "lantern") pool(L.x, L.y + 6 * s, 20 * s, col, 0.75 * n * fl);
+      else if (L.k === "string") { const B = bulbs(L), cs = BULBS[L.c] || BULBS.warm; B.forEach(([x, y], i) => pool(x, y + 3, 10, cs[i % cs.length], 0.5 * n)); }
+      else if (L.k === "pool") {
+        g.fillStyle = rgb(col, 0.8 * n); g.beginPath(); L.poly.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill();
+        const xs = L.poly.map(p => p[0]), ys = L.poly.map(p => p[1]), cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+        pool(cx, cy, (Math.max(...xs) - Math.min(...xs)) * 0.75, col, 0.45 * n * (0.9 + 0.1 * Math.sin(t * 0.002)), 0.6);
+      }
+      else if (L.k === "flood") pool(L.x, L.y - L.h * 0.45, L.w * 0.62, col, (L.a || 0.7) * n, L.h / (L.w * 1.24));
+      else if (L.k === "motes") pool(L.x, L.y, (L.r || 30) * 1.3, col, (L.a || 0.35) * n * fl);
+      else if (L.k === "buoy") { if (blinkOn(L, t)) pool(L.x, L.y, 14, col, 0.6 * n); }
+      else if (L.k === "sparks") pool(L.x, L.y, 16, col, 0.45 * n * fl);
+    }
+    pool(SPOT.beam[0], SPOT.beam[1], 26, LC.green, 0.7 * n);   // the lighthouse lamp and the radio mast's light
+    if (Math.floor(t / 700) % 2) pool(SPOT.blink[0], SPOT.blink[1], 14, LC.red, 0.6 * n);
+    return c;
+  }
+  /* ---- the lamps themselves, bright over the night ---- */
+  function halo(g, x, y, r, col, a) {
+    if (a < 0.01) return; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, rgb(col, Math.min(1, a))); gr.addColorStop(1, rgb(col, 0));
+    g.globalCompositeOperation = "lighter"; g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.globalCompositeOperation = "source-over";
+  }
+  function flame(g, x, y, h, w, t, ph, a) {   // a flame standing on x,y: three tongues, red outside, white-gold inside
+    g.globalAlpha = a;
+    for (let i = 0; i < 3; i++) {
+      const hh = h * (1 - i * 0.24) * (0.84 + 0.16 * Math.sin(t * 0.021 + ph + i * 2.1)), ww = w * (1 - i * 0.3), tip = Math.sin(t * 0.013 + ph + i) * w * 0.45;
+      g.fillStyle = ["#ef5f3a", "#ffb23a", "#fff1b8"][i]; g.beginPath(); g.moveTo(x - ww, y); g.quadraticCurveTo(x - ww * 0.75, y - hh * 0.55, x + tip, y - hh); g.quadraticCurveTo(x + ww * 0.75, y - hh * 0.55, x + ww, y); g.closePath(); g.fill();
+    }
+    g.globalAlpha = 1;
+  }
+  const dot = (g, x, y, r, col) => { g.fillStyle = col; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); };
+  function nightLamps(g, t, n) {
+    const on = Math.min(1, n * 1.6);
+    LIGHTS.forEach((L, i) => {
+      const s = (L.s || 1) * (L.k === "lantern" ? 1.35 : 1), col = lightOf(L), x = L.x, y = L.y;
+      if (L.k === "torch") {
+        if (!spr(g, i % 2 ? "torch-bamboo-b" : "torch-bamboo", x, y, t, on, i * 3.7, 24 * s)) {
+          g.globalAlpha = on; g.strokeStyle = "#3a2a1e"; g.lineWidth = 1.3 * s; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 0.4 * s, y - 14 * s); g.stroke();
+          g.fillStyle = "#5a4028"; g.beginPath(); g.moveTo(x - 1.9 * s, y - 16.5 * s); g.lineTo(x + 2.3 * s, y - 16.5 * s); g.lineTo(x + 1.3 * s, y - 13.5 * s); g.lineTo(x - 0.9 * s, y - 13.5 * s); g.closePath(); g.fill(); g.globalAlpha = 1;
+          flame(g, x + 0.2 * s, y - 16 * s, 7 * s, 1.9 * s, t, i * 1.3, on);
+        }
+        halo(g, x, y - 19 * s, 11 * s, col, 0.5 * on * flick(t, x, y));
+      } else if (L.k === "fire") {
+        if (!spr(g, "campfire", x, y, t, on, i * 2.1, 16 * s)) {
+          g.fillStyle = `rgba(255,120,50,${0.6 * on})`; g.beginPath(); g.ellipse(x, y, 5 * s, 1.6 * s, 0, 0, Math.PI * 2); g.fill();
+          flame(g, x - 2.2 * s, y, 6.5 * s, 2.2 * s, t, i + 0.7, on); flame(g, x + 2.4 * s, y, 5.5 * s, 2 * s, t, i + 2.9, on); flame(g, x, y, 9 * s, 2.8 * s, t, i, on);
+          for (let j = 0; j < 4; j++) { const p = (t * 0.0008 + j / 4 + i * 0.13) % 1; dot(g, x + Math.sin(j * 2.7 + p * 5) * 3 * s, y - 6 * s - p * 16 * s, 0.6 * s, `rgba(255,210,120,${(1 - p) * on})`); }
+        }
+        halo(g, x, y - 5 * s, 22 * s, col, 0.45 * on * flick(t, x, y));
+      } else if (L.k === "lamp") {
+        if (!(L.oil && spr(g, "lamp-oil", x, y - 3, t, on, i * 1.9))) dot(g, x, y, 1.3 * s, rgb(mix(col, [255, 255, 255], 0.6), on));
+        halo(g, x, y, 7 * s, col, 0.7 * on * (L.f === "steady" ? 1 : flick(t, x, y)));
+      } else if (L.k === "candle") {
+        if (!spr(g, "candle-jar", x, y, t, on, i * 2.3)) dot(g, x, y - 1.2, 0.7, rgb([255, 236, 170], on));
+        halo(g, x, y - 1.5, 4.5, col, 0.6 * on * flick(t, x, y));
+      } else if (L.k === "lantern") {
+        const sway = Math.sin(t * 0.0016 + x * 0.7) * 0.14, bx = x + Math.sin(sway) * 5 * s, by = y + Math.cos(sway) * 5 * s;
+        if (!spr(g, L.c === "stripes" ? "lantern-paper-stripes" : "lantern-paper-red", x, y, t, on, i * 1.1, 8 * s)) {
+          g.save(); g.translate(x, y); g.rotate(-sway); g.globalAlpha = on;
+          g.strokeStyle = "rgba(34,48,58,.9)"; g.lineWidth = 0.5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 2 * s); g.stroke();
+          const gr = g.createRadialGradient(0, 5 * s, 0, 0, 5 * s, 3.2 * s); gr.addColorStop(0, rgb(mix(col, [255, 250, 220], 0.7))); gr.addColorStop(1, rgb(L.c === "stripes" ? [235, 70, 60] : col));
+          g.fillStyle = gr; g.beginPath(); g.ellipse(0, 5 * s, 2.6 * s, 3.1 * s, 0, 0, Math.PI * 2); g.fill();
+          if (L.c === "stripes") { g.save(); g.clip(); g.fillStyle = "rgba(255,248,236,.85)"; [-1.5, 0.3].forEach(u => g.fillRect(u * s, 1.8 * s, 0.9 * s, 6.5 * s)); g.restore(); }
+          g.fillStyle = "#3a2a1e"; g.fillRect(-1.2 * s, 1.7 * s, 2.4 * s, 0.7 * s); g.fillRect(-1.2 * s, 7.7 * s, 2.4 * s, 0.7 * s);
+          g.restore(); g.globalAlpha = 1;
+        }
+        halo(g, bx, by, 9 * s, col, 0.5 * on * flick(t, x, y));
+      } else if (L.k === "string") {
+        const B = bulbs(L), cs = BULBS[L.c] || BULBS.warm;
+        g.globalAlpha = on; g.strokeStyle = "rgba(34,48,58,.8)"; g.lineWidth = 0.45; g.beginPath(); B.forEach(([bx, by], k) => (k ? g.lineTo(bx, by) : g.moveTo(bx, by))); g.stroke(); g.globalAlpha = 1;
+        B.forEach(([bx, by], k) => {
+          const c = cs[k % cs.length], tw = 0.72 + 0.28 * Math.sin(t * 0.0042 + k * 1.9 + i);
+          if (!spr(g, L.c === "pink" ? "bulb-pink" : "bulb-warm", bx, by + 1, t, on, k * 0.7)) dot(g, bx, by + 1, 0.95, rgb(mix(c, [255, 255, 255], 0.45), on));
+          halo(g, bx, by + 1, 4.2, c, 0.6 * on * tw);
+        });
+      } else if (L.k === "pool") {
+        const xs = L.poly.map(p => p[0]), ys = L.poly.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+        g.save(); g.beginPath(); L.poly.forEach(([px, py], k) => (k ? g.lineTo(px, py) : g.moveTo(px, py))); g.closePath(); g.clip();
+        g.globalCompositeOperation = "lighter"; g.fillStyle = rgb(col, 0.2 * on); g.fillRect(x0, y0, x1 - x0, y1 - y0);
+        if (!spr(g, "pool-caustics", (x0 + x1) / 2, (y0 + y1) / 2, t, on * 0.8, 0, y1 - y0)) {   // light nets that ripple across the water
+          g.lineWidth = 0.6;
+          for (let k = 0; k < 2; k++) for (let r = y0 - 6; r < y1 + 6; r += 4.5) {
+            g.strokeStyle = `rgba(220,255,250,${(0.16 + 0.1 * Math.sin(t * 0.002 + r)) * on})`; g.beginPath();
+            for (let px = x0; px <= x1; px += 3) { const py = r + (k ? (px - x0) * 0.25 : -(px - x0) * 0.25) % 9 + Math.sin(px * 0.21 + t * (k ? 0.0019 : -0.0023) + r * 0.7) * 1.6; px === x0 ? g.moveTo(px, py) : g.lineTo(px, py); }
+            g.stroke();
+          }
+        }
+        g.restore(); g.globalCompositeOperation = "source-over";
+      } else if (L.k === "win") {
+        const w = L.w, h = L.h, x0 = x - w / 2, y0 = y - h / 2, gr = g.createLinearGradient(0, y0, 0, y0 + h);
+        gr.addColorStop(0, rgb(col, 0.32 * on)); gr.addColorStop(1, rgb(col, 0.6 * on));
+        g.globalCompositeOperation = "lighter"; g.fillStyle = gr; g.beginPath();
+        if (L.arch) { g.moveTo(x0, y0 + h); g.lineTo(x0, y0 + w / 2); g.arc(x, y0 + w / 2, w / 2, Math.PI, 0); g.lineTo(x0 + w, y0 + h); g.closePath(); } else g.rect(x0, y0, w, h);
+        g.fill(); g.globalCompositeOperation = "source-over";
+      } else if (L.k === "flood") {   // a wash of light up the wall, brightest at the lamp, soft at the edges
+        g.save(); g.translate(x, y); g.scale(1, L.h / L.w);
+        const gr = g.createRadialGradient(0, -L.w * 0.2, 0, 0, -L.w * 0.2, L.w * 0.8); gr.addColorStop(0, rgb(col, 0.16 * on)); gr.addColorStop(0.5, rgb(col, 0.06 * on)); gr.addColorStop(1, rgb(col, 0));
+        g.globalCompositeOperation = "lighter"; g.fillStyle = gr; g.beginPath(); g.arc(0, -L.w * 0.2, L.w * 0.8, 0, Math.PI * 2); g.fill(); g.restore(); g.globalCompositeOperation = "source-over";
+        dot(g, x, y, 1.1, rgb(mix(col, [255, 255, 255], 0.7), on)); halo(g, x, y, 6, col, 0.6 * on);
+      } else if (L.k === "motes") {
+        if (!spr(g, "glow-motes", x, y, t, on, i * 2, (L.r || 30) * 1.1)) {
+          for (let j = 0; j < (L.n || 9); j++) {
+            const r = L.r || 30, mx = x + Math.sin(t * 0.00037 * (1 + (j % 3) * 0.35) + j * 2.4) * r, my = y + Math.cos(t * 0.00029 * (1 + (j % 2) * 0.5) + j * 1.7) * r * 0.42 - (j % 4) * 2;
+            const tw = 0.5 + 0.5 * Math.sin(t * 0.0031 + j * 1.3); halo(g, mx, my, 3.4, col, 0.7 * on * tw); dot(g, mx, my, 0.55, rgb([235, 255, 250], on * tw));
+          }
+        }
+      } else if (L.k === "buoy") {
+        if (blinkOn(L, t) && !spr(g, "buoy-blink", x, y, t, on, i)) { dot(g, x, y, 1.2, rgb(mix(col, [255, 255, 255], 0.6), on)); halo(g, x, y, 6, col, 0.8 * on); }
+      } else if (L.k === "sparks") {
+        if (!spr(g, "sparks", x, y, t, on, i)) for (let j = 0; j < 9; j++) {
+          const p = (t * 0.00055 + j / 9) % 1, sx = x + Math.sin(j * 3.1 + p * 4) * 4 * p + p * 9, sy = y - p * 32;
+          dot(g, sx, sy, 0.7, `rgba(255,${170 + Math.round(60 * (1 - p))},90,${(1 - p) * on})`); halo(g, sx, sy, 2.6, LC.fire, 0.4 * (1 - p) * on);
+        }
+      }
+      if (L.w && (L.k !== "buoy" || blinkOn(L, t))) {   // the light in the water under it: short strokes that shimmer
+        const wy = (L.k === "lantern" ? y + 6 * s : y) + (+L.w || 4);
+        g.globalCompositeOperation = "lighter";
+        for (let k = 0; k < 5; k++) { const ww = (6 - k) * 1.3 * (0.55 + 0.45 * Math.sin(t * 0.004 + k * 1.7 + x)); g.fillStyle = rgb(col, 0.32 * (1 - k / 5) * on); g.fillRect(x - ww / 2 + Math.sin(t * 0.002 + k) * 0.8, wy + k * 2.6, ww, 0.9); }
+        g.globalCompositeOperation = "source-over";
+      }
+    });
   }
 
   /* ---------- the moving parts ---------- */
@@ -1072,6 +1265,7 @@
     if (L.walk) { WALK.splice(0, WALK.length, ...L.walk); FOLK.forEach((f, i) => { f.path = WALK[i % WALK.length]; }); }
     if (L.fx) FX.splice(0, FX.length, ...L.fx);
     if (L.windows) WINDOWS.splice(0, WINDOWS.length, ...L.windows);
+    if (L.lights) LIGHTS.splice(0, LIGHTS.length, ...L.lights);
     for (const k in SPOT) if (L[k]) SPOT[k] = L[k];
     if (L.rabbit) { RB.x = RB.tx = L.rabbit[0]; RB.y = RB.ty = L.rabbit[1]; }
     if (L.horizon) ART.hz = L.horizon;   // where the painting's far sea meets the sky (world units from the top)
@@ -1266,7 +1460,10 @@
   function paintedLight(g, W, H, sky, t, nt, wl, wt, wr) {
     const m = sky.mul;
     g.setTransform(1, 0, 0, 1, 0, 0);
-    if (m[0] + m[1] + m[2] < 762) { g.globalCompositeOperation = "multiply"; g.fillStyle = rgb(m); g.fillRect(0, 0, W, H); }
+    if (m[0] + m[1] + m[2] < 762) {   // the light of the hour; after dusk with the lamps of the island in it (lightMap)
+      g.globalCompositeOperation = "multiply";
+      if (lampsOn(sky) > 0) g.drawImage(lightMap(W, H, m, lampsOn(sky), t), 0, 0, W, H); else { g.fillStyle = rgb(m); g.fillRect(0, 0, W, H); }
+    }
     g.globalCompositeOperation = "source-over";
     if (nt > 0.01) { g.fillStyle = `rgba(12,20,52,${0.16 * nt})`; g.fillRect(0, 0, W, H); }
     paintedSky(g, sky, t, nt, wl, wt, wr);
@@ -1399,6 +1596,7 @@
       gr = g.createRadialGradient(bx, by, 0, bx, by, 520); gr.addColorStop(0, `rgba(57,255,138,${0.42 * sky.light})`); gr.addColorStop(1, "rgba(57,255,138,0)");
       g.fillStyle = gr; g.beginPath(); g.moveTo(bx, by); g.arc(bx, by, 520, a - 0.08, a + 0.08); g.closePath(); g.fill();
       g.globalCompositeOperation = "source-over";
+      if (lampsOn(sky) > 0) nightLamps(g, t, lampsOn(sky));
     }
     g.fillStyle = `rgba(57,255,138,${0.65 + 0.35 * Math.sin(t * 0.004)})`; g.beginPath(); g.arc(SPOT.beam[0], SPOT.beam[1], 4.5, 0, Math.PI * 2); g.fill();
     if (Math.floor(t / 700) % 2) { g.fillStyle = "#ff4a3a"; g.beginPath(); g.arc(SPOT.blink[0], SPOT.blink[1], 3, 0, Math.PI * 2); g.fill(); }
