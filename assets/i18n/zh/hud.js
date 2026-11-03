@@ -718,6 +718,7 @@ TauI18n.add({ strings: {
   "open proposal{x1} · {x2}": "个待决提案 · {x2}",
   "Open the playground ›": "打开试验场 ›",
   "Open this block in the explorer": "在区块浏览器中打开此区块",
+  "Open this address in the explorer": "在区块浏览器中打开此地址",
   "Open this transaction in the explorer": "在浏览器中打开这笔交易",
   "Other chains": "其他链",
   "other head than ours": "链头与我们不同",
@@ -2284,4 +2285,6 @@ TauI18n.add({ strings: {
   "Chain core: a waiting transaction whose origin we know gets a ring and, while few are waiting, a small label: IDNI genesis (dashed), White Rabbit Key, Agorzilla or Déjà (solid), our island bot (dotted), simulated cruise passengers (amber). Hovering a dot says where it comes from. Known means read off the chain or our own server wallets; any other wallet stays unnamed.": "Chain core：我们知道来源的等待中交易会带一个圆环，等待的不多时还有一个小标签：IDNI 创世账户（虚线）、White Rabbit Key、Agorzilla 或 Déjà（实线）、我们的岛屿机器人（点线）、模拟的邮轮乘客（琥珀色）。悬停在点上会显示它来自哪里。“知道”是指从链上读出或属于我们自己的服务器钱包；其他钱包一律不命名。",
   "White Rabbit Key: the island has a real night sky. The painting is seen from high above and shows sea right up to its top edge, so the island now gets a horizon of its own: above the line the sky of the hour, below it the sea, with a thin light edge between them. At night the stars and the moon stay in the open sky and never sit on a mountain, a tower or an islet, and the moon is drawn clean.": "White Rabbit Key：小岛有了真正的夜空。这幅画是从高处俯瞰的，海面一直延伸到画的上边缘，所以现在小岛有了自己的地平线：线以上是当时的天空，线以下是大海，中间有一道细细的亮边。夜里，星星和月亮只出现在开阔的天空中，不会落在山、塔或小岛上，月亮也画得干净利落。",
   "Chain core: the island bot’s and the cruise ships’ waiting transactions are marked as soon as they appear, read straight from the island’s and the ships’ public wallet lists. Before, they stayed unmarked until our relay had seen them in a block.": "Chain core：岛屿机器人和邮轮的等待中交易一出现就会被标记，直接读取岛屿和邮轮公开的钱包列表。之前要等我们的中继在区块中见过它们才会标记。",
+  "Transaction details: the hash, the sender, the receiver and the block number are links now. Each opens the explorer in a new tab, on that transaction, address or block. On the live chain only; simulated transactions have nothing to look up.": "交易详情：哈希、发送方、接收方和区块号现在都是链接，各自在新标签页中打开浏览器，显示这笔交易、这个地址或这个区块。仅限实时链；模拟交易在那里查不到。",
+  "Transactions: the list is sorted by time, newest at the top, whatever the kind. Before, a refused transaction from yesterday could sit above one sealed a few minutes ago.": "交易：列表按时间排序，最新的在最上面，不分类型。以前，昨天被拒绝的交易可能排在几分钟前刚封装的交易上面。",
 } });

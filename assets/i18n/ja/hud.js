@@ -653,6 +653,7 @@ TauI18n.add({ strings: {
   "open proposal{x1} · {x2}": "未決の提案 · {x2}",
   "Open the playground ›": "プレイグラウンドを開く ›",
   "Open this block in the explorer": "このブロックをエクスプローラーで開く",
+  "Open this address in the explorer": "このアドレスをエクスプローラーで開く",
   "Open this transaction in the explorer": "このトランザクションをエクスプローラーで開く",
   "Other chains": "他のチェーン",
   "other head than ours": "私たちとは別のヘッド",
@@ -2278,4 +2279,6 @@ TauI18n.add({ strings: {
   "Chain core: a waiting transaction whose origin we know gets a ring and, while few are waiting, a small label: IDNI genesis (dashed), White Rabbit Key, Agorzilla or Déjà (solid), our island bot (dotted), simulated cruise passengers (amber). Hovering a dot says where it comes from. Known means read off the chain or our own server wallets; any other wallet stays unnamed.": "Chain core：送信元が分かっている待機中の取引にはリングが付き、待機が少ないときは小さなラベルも付きます：IDNI ジェネシス（破線）、White Rabbit Key、Agorzilla、Déjà（実線）、島のボット（点線）、シミュレーションのクルーズ船乗客（琥珀色）。点にカーソルを合わせると送信元が表示されます。「分かっている」とはチェーンから読み取れるか、私たち自身のサーバーウォレットであることです。ほかのウォレットは名前を付けません。",
   "White Rabbit Key: the island has a real night sky. The painting is seen from high above and shows sea right up to its top edge, so the island now gets a horizon of its own: above the line the sky of the hour, below it the sea, with a thin light edge between them. At night the stars and the moon stay in the open sky and never sit on a mountain, a tower or an islet, and the moon is drawn clean.": "White Rabbit Key：島に本物の夜空ができました。この絵は高い所から見下ろしたもので、海が絵の上端まで続いているため、島に独自の水平線を加えました。線の上はその時刻の空、下は海で、その間に細く明るい縁があります。夜には星と月は開けた空にだけ現れ、山や塔や小島の上には決して重なりません。月もきれいに描かれます。",
   "Chain core: the island bot’s and the cruise ships’ waiting transactions are marked as soon as they appear, read straight from the island’s and the ships’ public wallet lists. Before, they stayed unmarked until our relay had seen them in a block.": "Chain core：島のボットとクルーズ船の待機中の取引は、島と船の公開ウォレット一覧から直接読み取り、現れた時点で印が付きます。以前は、リレーがブロック内で一度見るまで印が付きませんでした。",
+  "Transaction details: the hash, the sender, the receiver and the block number are links now. Each opens the explorer in a new tab, on that transaction, address or block. On the live chain only; simulated transactions have nothing to look up.": "トランザクション詳細：ハッシュ、送信者、受信者、ブロック番号がリンクになりました。それぞれ新しいタブでエクスプローラーを開き、そのトランザクション、アドレス、ブロックを表示します。ライブチェーンのみ。シミュレーションのトランザクションはそこで調べられません。",
+  "Transactions: the list is sorted by time, newest at the top, whatever the kind. Before, a refused transaction from yesterday could sit above one sealed a few minutes ago.": "トランザクション：種類に関係なく時刻順に並び、最新が一番上になりました。以前は、昨日拒否されたトランザクションが数分前に封印されたものより上に来ることがありました。",
 } });
