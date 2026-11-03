@@ -583,7 +583,8 @@ def cmd_make(a):
     have = lambda w, t: key(w, t) in idx["clips"] and os.path.exists(os.path.join(a.out, key(w, t) + ".mp3")) and fresh(w, t)
     todo = [(w, t) for w, t in ls if w in idx["voices"] and not have(w, t)]
     silent = sorted({w for w, t in ls if w not in idx["voices"]})
-    cost = sum(len(said(w, t, model)) for w, t in todo)   # ElevenLabs bills each character sent, one credit each
+    picked = {v: k for k, v in load(os.path.join(a.out, "samples", "openers.json"), {}).items()}   # openers picked on the listening page
+    cost = sum(len(said(w, t, model)) for w, t in todo if not (w == "rico" and t in picked))   # ElevenLabs bills each character sent, one credit each
     print(f"{len(todo)} of {len(ls)} lines to make, {cost} characters (about {cost} credits)."
           + (f" No voice yet for: {', '.join(silent)}." if silent else ""))
     cr = credits() if todo else None
@@ -600,6 +601,15 @@ def cmd_make(a):
             todo = fit
     for i, (w, t) in enumerate(todo, 1):
         k = key(w, t)
+        src = os.path.join(a.out, "samples", f"opener-{picked[t]}.mp3") if w == "rico" and t in picked and t in hype() else None
+        if src and os.path.exists(src) and model == MODEL:   # spoken exactly the same way already: the sample is the clip, no credits
+            write(os.path.join(a.out, k + ".mp3"), open(src, "rb").read())
+            if k not in idx["clips"]:
+                idx["clips"].append(k)
+            done[k] = hashlib.sha1(said(w, t, model).encode()).hexdigest()[:12]
+            write(idx_path, json.dumps(idx, indent=1).encode())
+            print(f"  {i}/{len(todo)} {w}: {t[:64]} (from the openers page)")
+            continue
         loud = w == "rico" and t not in SAY and (t.endswith("!") or t in hype())   # the callouts and the opener; his other radio lines stay natural
         write(os.path.join(a.out, k + ".mp3"), speak(idx["voices"][w]["id"], said(w, t, model), LOUD if loud else SETTINGS, model))
         if k not in idx["clips"]:

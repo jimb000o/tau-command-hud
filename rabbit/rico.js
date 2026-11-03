@@ -299,10 +299,18 @@
     /* the show opens: the first thing Rico says when the game starts and the radio comes on, shouted for joy
        (make.py speaks the lines in SETS.wake as a euphoric shout, after a drum roll and the station horn) */
     wakeAm: "Wakey wakey, White Rabbit Keeeey! Radio Coco, ninety-seven point threeee! The sun is up, the blocks are fresh, and Rico is LOUD!",
-    wakePm: "Heeeeey, White Rabbit Keeeey! Radio Coco, ninety-seven point threeee! Out of the hammock, the island needs you!",
-    wakeEv: "Goood eeevening, island! This is Radio Coco, ninety-seven point threeee, and the night is young! Rico is not, but the night is!",
-    wakeNt: "Still uuuup, White Rabbit Keeeey? So is Radio Coco, ninety-seven point threeee! The chain never sleeps, and tonight neither does Rico!",
+    wakeAm2: "Gooood morning, island! Radio Coco, ninety-seven point threeee! Coffee in one hand, keys in the other, let's GO!",
+    wakeAm3: "Morning, morning, MORNING! The roosters lost, Rico won! Radio Coco, ninety-seven point three, waking up the whole lagoon!",
+    wakePm2: "Heeeey, good afternoon, island! Radio Coco, ninety-seven point threeee! Lunch is done, the hammock is calling, and Rico says: not yet!",
+    wakePm3: "Afternoon, my people! It's hot, it's bright, it's Radio Coco, ninety-seven point three, and Rico has the fan on full!",
+    wakeEv: "Goood eeevening, island! This is Radio Coco, ninety-seven point threeee, and the night is young!",
+    wakeEv2: "Eeeevening, everybody! Shoes off, sand in, volume UP! This is Rico on Radio Coco, ninety-seven point three, and the lagoon is glowing tonight!",
+    wakeEv3: "Ohhh, there you are! Good evening, island! Radio Coco, ninety-seven point threeee! Grab something cold, the evening shift starts NOW!",
+    wakeNt2: "Psst... night owls! Radio Coco, ninety-seven point three. Keep it low, keep it warm. The island's asleep, the blocks aren't.",
+    wakeNt3: "Midnight on the island, and you're still here! I love you for that. Radio Coco, ninety-seven point threeee!",
     wake1: "Coco, coco, coco... RADIO COCOOOO! Ninety-seven point three, the loudest little station on any lagoon!",
+    wake3: "Turn it up, turn it UP! This is Radio Coco, ninety-seven point three, and Rico missed you!",
+    wake4: "Coco, coco, coco... RADIO COCOOOO! Ninety-seven point three! Hello, island, it's good to hear you!",
     wake2: "Ladies, gentlemen and wallets of all sizes! Welcome to the island! This is Rico, this is Radio Coco, and this is your wake-up caaaall!",
     /* the songs Radio Coco plays (music.js SONGS), announced while they play */
     sn_coco: "On Radio Coco now: Coco Calypso, the island's own tune. If you can't hum it yet, you will by Thursday.",
@@ -401,7 +409,7 @@
     ring: ["ring1", "ring2", "ring3"],
     legend: ["agz1", "agz2", "agz3", "agz4", "agz5", "agz6"],
     morning: ["am1", "am2"], afternoon: ["pm1", "pm2"], evening: ["ev1", "ev2"], night: ["nt1", "nt2"],
-    wake: ["wake1", "wake2"], wakeAm: ["wakeAm"], wakePm: ["wakePm"], wakeEv: ["wakeEv"], wakeNt: ["wakeNt"],
+    wake: ["wake1", "wake2", "wake3", "wake4"], wakeAm: ["wakeAm", "wakeAm2", "wakeAm3"], wakePm: ["wakePm2", "wakePm3"], wakeEv: ["wakeEv", "wakeEv2", "wakeEv3"], wakeNt: ["wakeNt2", "wakeNt3"],   // picked by ear, 3 Nov
     songs: ["sn_coco", "sn_mango", "sn_lowtide", "sn_tinroof", "sn_hammock", "sn_moon"],
     bye: Array.from({ length: 8 }, (_, i) => "bye" + (i + 1)),
     solo: Array.from({ length: 8 }, (_, i) => "solo" + (i + 1)), postman: ["postman1", "postman2"], duet: ["duet1", "duet2"],
