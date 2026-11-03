@@ -432,6 +432,10 @@ class Relay:
         self.summary_data: dict | None = None
         self.summary_at = 0.0
         self.rules_text: str | None = None      # /rules, refreshed by poll_rules
+        # last: the cruise ships' passenger wallets are made in the background; tagged as simulated once known
+        self.cruise.on_ready = self.tag_passengers
+        if self.cruise.ready:
+            self.tag_passengers()
 
     # ---------- polling ----------
     async def poll_loop(self, every: float, fn):
@@ -1075,6 +1079,14 @@ class Relay:
         return {"height": self._height(head) if head else None, "block_hash": head.get("block_hash") if head else None,
                 "block_time": ts, "block_age": round(time.time() - ts) if ts else None, "waiting": len(waiting),
                 "oldest_waiting": {"tx_hash": old[0], **{k: old[1].get(k) for k in ("type", "sender", "seen")}} if old else None}
+
+    def tag_passengers(self):
+        """The wallet tags of /stats (a wallets object with retag(), where the relay has one): the cruise ships'
+        passengers are simulated, so they are counted apart from real wallets, from before the first one sends."""
+        w = getattr(self, "wallets", None)
+        if w is not None and hasattr(w, "retag"):
+            w.cruise = {pk.lower() for pk in self.cruise.who}
+            w.retag()
 
     def island_spend(self):
         self.island.today += 1   # a passenger's transaction comes out of the island's day budget (ISLAND_DAILY)

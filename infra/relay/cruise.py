@@ -260,6 +260,7 @@ class Cruise:
         self.budget = budget or (lambda: True)          # relay: room left in the island's day budget
         self.spend = spend or (lambda: None)            # relay: one transaction taken from it
         self.on_tx = None                               # relay: the testnet load page counts it (ok) or a refusal
+        self.on_ready = None                            # relay: the passengers' wallets are known (before any of them sends)
         self.ready = False
         self.sk: dict[str, int] = {}
         self.pk: dict[str, str] = {}                    # "<ship>-<n>" -> public key
@@ -292,6 +293,12 @@ class Cruise:
         except Exception as exc:   # the relay keeps working without ships
             log.warning("cruise ships off: %r", exc)
             self.enabled = False
+            return
+        if self.on_ready:
+            try:
+                self.on_ready()
+            except Exception as exc:
+                log.warning("cruise: on_ready failed: %r", exc)
 
     def load_keys(self):
         from py_ecc.bls import G2Basic
