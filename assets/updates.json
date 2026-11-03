@@ -2138,5 +2138,15 @@
       "text": "Rico now says where a wave of transactions came from, as far as the blocks show it, thanks the builders between the songs, and calls Tau Testnet Alpha the lagoon.",
       "link": "/rabbit/"
     }
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-02",
+    "html": "Transactions: every card now says how long ago it happened, counting live. A sealed transaction counts from its block’s timestamp; a waiting one from when the page first saw it, since the node gives no time for waiting transactions (“≥” when it was already waiting as the page opened); a refused one from when it left the relay’s queue. Hover the time for the exact clock time."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-03",
+    "html": "White Rabbit Key: the players’ board. Open it from The island today or after your election: the best results of the week (elected or not, votes out of ten, ambition reached), the most active wallets of the week (moves signed, laws passed) and the elections won of all time. The players are test wallets, shown in short form, never names; a move counts for a wallet only when that wallet signed it into the testnet from the same connection, and each week counts a wallet’s first finished campaign. Your own wallet is marked, with its places. The board starts empty every Monday at the governor’s count; last week’s best stays readable."
   }
 ]

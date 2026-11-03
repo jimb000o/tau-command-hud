@@ -937,6 +937,86 @@
  },
  {
   "who": "rico",
+  "text": "Around the island today: a couple of campaigns are running."
+ },
+ {
+  "who": "rico",
+  "text": "Around the island today: a handful of campaigns are running."
+ },
+ {
+  "who": "rico",
+  "text": "Around the island today: a dozen campaigns are running."
+ },
+ {
+  "who": "rico",
+  "text": "Around the island today: dozens of campaigns are running."
+ },
+ {
+  "who": "rico",
+  "text": "Around the island today: a hundred and more campaigns are running."
+ },
+ {
+  "who": "rico",
+  "text": "Across the island one law keeps passing today, and it is in every speech by now."
+ },
+ {
+  "who": "rico",
+  "text": "Election results from the whole island: Marisol has won the most campaigns today."
+ },
+ {
+  "who": "rico",
+  "text": "Election results from the whole island: Tobias has won the most campaigns today."
+ },
+ {
+  "who": "rico",
+  "text": "Election results from the whole island: Baako has won the most campaigns today."
+ },
+ {
+  "who": "rico",
+  "text": "Election results from the whole island: Hana has won the most campaigns today."
+ },
+ {
+  "who": "rico",
+  "text": "Marisol governs the island this week."
+ },
+ {
+  "who": "rico",
+  "text": "Tobias governs the island this week."
+ },
+ {
+  "who": "rico",
+  "text": "Baako governs the island this week."
+ },
+ {
+  "who": "rico",
+  "text": "Hana governs the island this week."
+ },
+ {
+  "who": "rico",
+  "text": "Island news:"
+ },
+ {
+  "who": "rico",
+  "text": "Fresh from the square:"
+ },
+ {
+  "who": "rico",
+  "text": "Déjà has eaten today. Three wallets agreed, and Marisol says she acted surprised."
+ },
+ {
+  "who": "rico",
+  "text": "Déjà, the café cat: one of three wallets agreed today. One test AGRS says yes; find her."
+ },
+ {
+  "who": "rico",
+  "text": "Déjà, the café cat: two of three wallets agreed today. One test AGRS says yes; find her."
+ },
+ {
+  "who": "rico",
+  "text": "Nobody has agreed to feed Déjà yet today. Three wallets, one test AGRS each; find her, she is around."
+ },
+ {
+  "who": "rico",
   "text": "Why did a couple of wallets move at the same minute? Rico has three theories, Old Sam has one, and the Book has none. The Book only says that they did."
  },
  {
@@ -1694,6 +1774,10 @@
   "text": "The island’s numbers are out of reach just now. Your campaign goes on as before."
  },
  {
+  "who": "sam",
+  "text": "The players here are test wallets, not people. A move counts for a wallet when that wallet signed it into the testnet from the same connection. Each week counts a wallet’s first finished campaign; the result is what its game reports."
+ },
+ {
   "who": "marisol",
   "text": "Nobody owns her, and nobody feeds her alone: she eats on a day only when three wallets agree, one test AGRS each. Say yes and you are one of the three. The other two? Whoever passes through."
  },
@@ -1799,7 +1883,7 @@
  },
  {
   "who": "rico",
-  "text": "Marisol took 35 coins from the South Current Embassy!"
+  "text": "Marisol took 35 coins from the South Current Wellness Resort!"
  },
  {
   "who": "rico",
@@ -1823,7 +1907,7 @@
  },
  {
   "who": "rico",
-  "text": "Tobias took 35 coins from the South Current Embassy!"
+  "text": "Tobias took 35 coins from the South Current Wellness Resort!"
  },
  {
   "who": "rico",
@@ -1847,7 +1931,7 @@
  },
  {
   "who": "rico",
-  "text": "Baako took 35 coins from the South Current Embassy!"
+  "text": "Baako took 35 coins from the South Current Wellness Resort!"
  },
  {
   "who": "rico",
@@ -1871,7 +1955,7 @@
  },
  {
   "who": "rico",
-  "text": "Hana took 35 coins from the South Current Embassy!"
+  "text": "Hana took 35 coins from the South Current Wellness Resort!"
  },
  {
   "who": "rico",
@@ -2291,23 +2375,23 @@
  },
  {
   "who": "salado",
-  "text": "Rico, my friend! Salado, South Current. We love your station. We love it so much."
+  "text": "Rico, my friend! Salado, South Current Wellness. We love your station. We play it in the sauna."
  },
  {
   "who": "rico",
-  "text": "Thank you, Ambassador. Is there a but?"
+  "text": "Thank you, Salado. Is there a but?"
  },
  {
   "who": "salado",
-  "text": "No but. Only a road. Around the island. Play something about a road."
+  "text": "No but. Only a road. Around the island, to my gate. Play something about a road."
  },
  {
   "who": "rico",
-  "text": "Rico plays songs, Ambassador, not roads."
+  "text": "Rico plays songs, Salado, not roads."
  },
  {
   "who": "salado",
-  "text": "Everyone plays something, my friend. Ciao!"
+  "text": "Everyone plays something, my friend. Synergy! Ciao!"
  },
  {
   "who": "ama",
@@ -3167,15 +3251,15 @@
  },
  {
   "who": "salado",
-  "text": "Roads, my friend, are how good things arrive. Trucks, tourists, my cousin’s ice cream. The island will love it. Eventually. We can wait. We are very good at waiting, and at lunch."
+  "text": "Roads, my friend, are how guests arrive. Minibuses, yoga mats, my cousin’s smoothie truck. The island will love it. Eventually. We can wait. We are very good at waiting, and at lunch."
  },
  {
   "who": "salado",
-  "text": "Me? A road to drive on, and a very long line in your Book saying who paid for it. My government likes to be remembered. Your Book is happy to help."
+  "text": "Me? A full resort, and a very long line in your Book saying who paid for the road. My investors like to be remembered. Your Book is happy to help."
  },
  {
   "who": "salado",
-  "text": "Every Thursday. We play cards. He cheats, I let him, and we both write it down. Diplomacy is mostly agreeing on who keeps the score."
+  "text": "Every Thursday. We play cards by the pool. He cheats, I let him, and we both write it down. Business is mostly agreeing on who keeps the score."
  },
  {
   "who": "marisol",

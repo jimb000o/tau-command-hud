@@ -166,6 +166,16 @@
     fs1: "First lagoon coin in an hour, and it went to the island. One move, one jar, one block. Rico heard it land from here.",
     fs2: "An hour of nothing, then one transaction crosses the water. On the mainland that is a rounding error. On the lagoon it is the news.",
     fs3: "One transaction after a quiet hour. Old Sam looked up from the Book. That is how quiet it was.",
+    /* the whole island and Déjà's day (game.js isleLines, dejaLines): spoken in bands and names, the exact numbers shown beside */
+    isN: "Around the island today: {n} campaigns are running.",
+    isLaw: "Across the island one law keeps passing today, and it is in every speech by now.",
+    isWin: "Election results from the whole island: {x} has won the most campaigns today.",
+    isGov: "{x} governs the island this week.",
+    isNews1: "Island news:",
+    isNews2: "Fresh from the square:",
+    dejaFed: "Déjà has eaten today. Three wallets agreed, and Marisol says she acted surprised.",
+    dejaN: "Déjà, the café cat: {n} of three wallets agreed today. One test AGRS says yes; find her.",
+    dejaNone: "Nobody has agreed to feed Déjà yet today. Three wallets, one test AGRS each; find her, she is around.",
     /* a mixed wave: many wallets at once, nobody leading */
     dk3: "Why did {n} wallets move at the same minute? Rico has three theories, Old Sam has one, and the Book has none. The Book only says that they did.",
     ghost1: "Ghost report from the harbour: transactions already sealed in a block, but still listed as waiting. The node hasn't noticed they left. Old Sam calls them guests who never go home.",
@@ -397,7 +407,8 @@
      block, shown as "block 1234" (a name that starts with b, n, m, a, c, h, g or e would be read as a number or a hash by
      assets/i18n.js). */
   const BANDS = { count: ["a couple of", "a handful of", "a dozen", "dozens of", "a hundred and more"], coins: ["a few hundred", "thousands of", "tens of thousands of", "a hundred thousand and more"] };
-  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", un1: "coins", un3: "coins" };
+  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", isN: "count", un1: "coins", un3: "coins" };
+  const VARIANTS = { dejaN: [{ n: "one" }, { n: "two" }], isWin: NAMES.map(x => ({ x })), isGov: NAMES.map(x => ({ x })) };   // the other fills a line takes, one clip each
   const BLOCK = { where: "the latest block" };   // how the block is spoken
   /* callers who phone the studio, each in their own voice through the telephone: listeners (ready voices, make.py
      CALLERS) and the islanders themselves. A call is a little conversation: who, then what is said in turn, the
@@ -506,11 +517,11 @@
       "Something about surveyors. Something deep.",
       "Rico doesn't take requests that come in envelopes, Ambassador.",
       "Who said anything about envelopes? Goodnight."] },
-    { who: "salado", game: 1, say: ["Rico, my friend! Salado, South Current. We love your station. We love it so much.",
-      "Thank you, Ambassador. Is there a but?",
-      "No but. Only a road. Around the island. Play something about a road.",
-      "Rico plays songs, Ambassador, not roads.",
-      "Everyone plays something, my friend. Ciao!"] },
+    { who: "salado", game: 1, say: ["Rico, my friend! Salado, South Current Wellness. We love your station. We play it in the sauna.",
+      "Thank you, Salado. Is there a but?",
+      "No but. Only a road. Around the island, to my gate. Play something about a road.",
+      "Rico plays songs, Salado, not roads.",
+      "Everyone plays something, my friend. Synergy! Ciao!"] },
     { who: "ama", say: ["Rico, this is Ama. The tide is low tonight.",
       "Thank you, Ama. Is that news?",
       "Everything that comes back on time is news, Rico. Your blocks could learn from the tide.",
@@ -597,6 +608,7 @@
     ["sam", "Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."],
     ["sam", "Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."],
     ["sam", "The island’s numbers are out of reach just now. Your campaign goes on as before."],
+    ["sam", "The players here are test wallets, not people. A move counts for a wallet when that wallet signed it into the testnet from the same connection. Each week counts a wallet’s first finished campaign; the result is what its game reports."],
     ["marisol", "Nobody owns her, and nobody feeds her alone: she eats on a day only when three wallets agree, one test AGRS each. Say yes and you are one of the three. The other two? Whoever passes through."],
     ["sam", "Two laws that cannot both hold would leave the island not knowing what is allowed, so the Book will not take it. Repeal the old one first, or pick another law."],
     ["rico", "Done, it’s out there. Half the island is talking. The other half will read the Book tomorrow, and the Book says you paid me."],
@@ -607,7 +619,7 @@
   ];
   /* what Rico can put on air: the four rumours that are not true, and the true things the Book has seen */
   const LIES = ["Marisol fishes inside the reef at night", "Tobias wants to sell the lighthouse", "Baako’s coconuts are imported", "Hana wants school on Sundays"];
-  const EMBN = { "North Wind Embassy": 40, "South Current Embassy": 35 };
+  const EMBN = { "North Wind Embassy": 40, "South Current Wellness Resort": 35 };
   const CLAIMS = [...LIES, ...NAMES.flatMap(x => [...Object.entries(EMBN).map(([y, n]) => `${x} took ${n} coins from the ${y}`), ...NAMES.filter(y => y !== x).map(y => `${x} paid for the rumour about ${y}`), `${x} broke a pact`])];
   CLAIMS.forEach(c => CAST.push(["rico", c + "!"]));
   const fill = (s, v) => s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));
@@ -619,6 +631,7 @@
       else if (k === "pact") NAMES.forEach(x => NAMES.forEach(y => x !== y && out.push(fill(s, { x, y }))));
       else if (k === "day") for (let n = 1; n <= DAYS; n++) out.push(fill(s, { n, m: DAYS }));
       else if (NUMERIC[k]) BANDS[NUMERIC[k]].forEach(n => out.push(fill(s, { n, ...BLOCK })));
+      else if (VARIANTS[k]) VARIANTS[k].forEach(v => out.push(fill(s, v)));
       else if (s.includes("{")) out.push(fill(s, BLOCK));
       else out.push(s);
     }

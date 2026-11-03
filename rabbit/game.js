@@ -42,7 +42,7 @@
   const FOLK = {
     rico: { name: "Rico", role: "DJ on Radio Coco", skin: "#7a4a2a", hair: "#111", style: "afro", acc: "phones", accC: "#e8574a", shirt: "#e86fa0" },
     frost: { name: "Ambassador Frost", role: "North Wind Embassy", skin: "#f3d6c0", hair: "#e0e0e0", style: "side", acc: "monocle", accC: "#d9b44a", shirt: "#3b5f8a" },
-    salado: { name: "Ambassador Salado", role: "South Current Embassy, wellness investor", skin: "#c68642", hair: "#3a2a1a", style: "side", acc: "mustache", accC: "#3a2a1a", shirt: "#c0533f" },
+    salado: { name: "Salado", role: "South Current Wellness Resort, investor", skin: "#c68642", hair: "#3a2a1a", style: "side", acc: "mustache", accC: "#3a2a1a", shirt: "#c0533f" },
     lola: { name: "Lola", role: "Runs Bar La Ola", skin: "#8d5524", hair: "#5a1a1a", style: "curls", acc: "flower", accC: "#ff6f91", shirt: "#fff6e6" },
     sam: { name: "Old Sam", role: "Keeper of the lighthouse and the Book", skin: "#c9a27a", hair: "#eee", style: "bald", acc: "beard", accC: "#eee", shirt: "#2a2a30" },
     /* the people of the island's other quarters (a painted island with a layout that has them, infra/rabbit-art) */
@@ -79,7 +79,8 @@
   const LIES = { marisol: "Marisol fishes inside the reef at night", tobias: "Tobias wants to sell the lighthouse", baako: "Baako’s coconuts are imported", hana: "Hana wants school on Sundays" };
   const EMB = {
     north: { who: "frost", name: "North Wind Embassy", wants: "harbour", coins: 40 },
-    south: { who: "salado", name: "South Current Embassy", wants: "road", coins: 35 },
+    south: { who: "salado", name: "South Current Wellness Resort", wants: "road", coins: 35,
+      offer: "{n} coins, today, no paperwork. Propose “{x}” before the election, and the resort opens its gates to the whole island. Synergy, my friend.", remind: "We are counting on you for “{x}”. Our guests are already booked, and they ask questions." },   // his own words; the North Wind keeps the diplomat's
   };
   const DAYS = 7, MOVES = 3, RUMOUR = 25, GIFT = 20;   // a campaign is one island week, Monday to Sunday; the election is Sunday night
   /* the island's calendar is the real one: an island day is a real day (Europe/Berlin), three moves each, and the week's
@@ -869,7 +870,7 @@
   }
   function embassy(box, e) {
     const E = EMB[e], took = G.deals.find(d => d.by === G.me && d.emb === e);
-    const line = took ? F("We are counting on you for “{x}”. We would hate to remind the island in public.", { x: LAWS[E.wants].t }) : F("{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.", { n: E.coins, x: LAWS[E.wants].t });
+    const line = took ? F(E.remind || "We are counting on you for “{x}”. We would hate to remind the island in public.", { x: LAWS[E.wants].t }) : F(E.offer || "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.", { n: E.coins, x: LAWS[E.wants].t });
     scene(box, E.who, T(E.name), line, took ? [btn(T("Leave"), () => closeCard())] : [
       btn(F("Take the {n} coins and promise", { n: E.coins }), () => { deal(G.me, e); SND.sfx("coin"); toast(T("The promise is in the Book now.")); spend(); if (UI.card) openCard(e, PLACE[e]); }, { off: !movesLeft(), sub: F("people who care about {x} will not like it", { x: Object.keys(LAWS[E.wants].fx).filter(k => LAWS[E.wants].fx[k] < 0).map(k => T(TOPICS[k])).join(", ") }) }),
       btn(T("Politely decline"), () => closeCard()),
@@ -947,7 +948,7 @@
 
   /* ---------- day and night ---------- */
   function endDay() {
-    if (!G || G.over || G.move < MOVES || G.counting) return;   // once per night, however many ways lead here
+    if (!G || G.over || G.move < MOVES || G.counting || G.waiting) return;   // once per night, however many ways lead here; a campaign already waiting for tomorrow has had its card
     hud();
     night();
     if (G.day >= DAYS) { save(); return election(); }
@@ -1592,7 +1593,8 @@
         let win = top[0];
         if (top.length > 1) { win = top.includes(t0.win) ? t0.win : top[Math.floor(R() * top.length)]; tape.textContent = F("A tie. The black cat walks past the ballot box of {x}, twice. Sam says that settles it.", { x: nm(win) }); SC.cat(true); SND.sfx("glitch"); setTimeout(() => SND.sfx("meow"), 900); }
         G.over = { win, count, lies: G.lies.filter(l => l.by === G.me && l.lie).length };
-        isleTell("end", gidOf(), G.me, win, G.laws.map(l => l.id).join(",") || "-");
+        let goal = "-"; try { if (G.amb && AMB[G.amb.id].check()) goal = G.amb.id; } catch (e) {}
+        isleTell("end", gidOf(), G.me, win, G.laws.map(l => l.id).join(",") || "-", myPk() || "-", String(count[G.me] || 0), goal);
         write("sam", F("counted the ballots: {x} is governor of the island", { x: nm(win) }), "law");
         save(); SND.set({ tense: false }); SND.sfx("cheer");
         setTimeout(ending, top.length > 1 ? 4200 : 1600);
@@ -1720,7 +1722,7 @@
       acts.append(ballotEl(), isleVerdict());
       bank(); acts.append(el("p", { class: "cv-note", text: Fd("Your savings: {n} coins. They carry over to your next campaign and buy things the island keeps: a roof for the school, a lamp for the lighthouse, a stone in Tano’s circle.", { n: savings().coins }) }));
       const again = FREE || !G.week || G.week !== weekId();
-      acts.append(btn(again ? T("Play again") : T("Next campaign on Monday"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true, off: !again, sub: again ? null : Fd("the week is played; a new one begins {x}", { x: countIn() }) }), btn(T("Read the Book"), () => openCard("book", PLACE.book)), btn(T("The special edition"), () => { G.over.read = false; closeCard(true); ending(); }));
+      acts.append(btn(again ? T("Play again") : T("Next campaign on Monday"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true, off: !again, sub: again ? null : Fd("the week is played; a new one begins {x}", { x: countIn() }) }), btn(T("Read the Book"), () => openCard("book", PLACE.book)), btn(T("The players’ board"), () => openBoard()), btn(T("The special edition"), () => { G.over.read = false; closeCard(true); ending(); }));
       box.append(acts);
     });
   }
@@ -1746,7 +1748,7 @@
       ws.onopen = () => { ws.send("hello version=1"); if (ISLE.want) ws.send("isle join"); CHAIN.ws = ws; setTimeout(() => res(ws), 150); };
       ws.onmessage = ev => {
         let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
-        if (m.command === "isle") { if (m.status === "ok" && m.data && m.data.day) onIsle(m.data); return; }   // the shared island: pushes and acks, never an answer someone waits for
+        if (m.command === "isle") { if (m.status === "ok" && m.data && m.data.day) onIsle(m.data); else if (m.status === "ok" && m.data && m.data.board && typeof m.data.board === "object") onBoard(m.data.board); return; }   // the shared island: pushes and acks, never an answer someone waits for
         const q = CHAIN.wait.get(m.command); if (q && q.length) q.shift()(m);
       };
       ws.onerror = ws.onclose = () => { if (CHAIN.ws === ws) CHAIN.ws = null; res(null); };
@@ -1881,13 +1883,16 @@
   function isleTell(...words) { relay().then(ws => { if (ws) try { ws.send("isle " + words.join(" ")); } catch (e) {} }); }
   function isleMove(kind, x, at) {
     if (!G || !ISLE_KINDS.includes(kind)) return;
-    isleTell("move", gidOf(), G.me, kind, x && /^[a-z]{2,12}$/.test(x) ? x : "-", TILL[at] || at === "hall" ? at : "hall");
+    isleTell("move", gidOf(), G.me, kind, x && /^[a-z]{2,12}$/.test(x) ? x : "-", TILL[at] || at === "hall" ? at : "hall", myPk() || "-");
   }
+  /* the visitor's test wallet address, if this browser has one (never made here: the first signed move makes it) */
+  const myPk = () => { try { const k = JSON.parse(store.get(WKEY) || "null"); return k && /^[0-9a-f]{96}$/.test(k.pk || "") ? k.pk : null; } catch (e) { return null; } };
   function isleJoin() { ISLE.want = true; relay().then(ws => { if (ws) try { ws.send("isle join"); } catch (e) {} }); }
   function onIsle(s) {
     ISLE.s = s; ISLE.at = Date.now();
     isleRule(); isleChip();
     document.querySelectorAll(".cv-isle-intro").forEach(p => p.replaceWith(isleIntro()));
+    const bd = UI.card && UI.card._board && UI.card.querySelector(".cv-board"); if (bd && s.board) { bd.replaceWith(boardBody(s.board)); fitCard(UI.card); }
   }
   const isleTop = (o, n = 1) => Object.keys(o || {}).sort((a, b) => o[b] - o[a]).slice(0, n);
   /* the laws passed today on the whole island: the players' campaigns and the islanders' own, together */
@@ -1959,15 +1964,16 @@
     if (holder && holder !== ISLE_BY && good.length) bump(holder, p => p.cares.some(c => good.includes(c)), 2);
     news(F("All over the island, people talk about “{x}” today.", { x: T(LAWS[top].t) }) + (holder ? " " + (holder === ISLE_BY ? T("Here it is the island’s own law this week.") : F("Here it is {y}’s law.", { y: nm(holder) })) : ""));
   }
-  /* Rico's lines about the whole island (shown, not spoken: they change all day) */
+  /* Rico's lines about the whole island: the numbers change all day, so they are shown exactly and spoken as a band
+     or a name (rico.js isN, isLaw, isWin, isGov, isNews1/2), the rest in brackets beside */
   function isleLines() {
     const s = ISLE.s, L = []; if (!s || Date.now() - ISLE.at > 600000) return L;
     const p = s.players, laws = isleLaws(), top = isleTop(laws)[0];
-    if (p.campaigns > 1) L.push({ k: "isle:n", parts: [Q("Around the island today: {n} campaigns, {m} of them finished.", { n: p.campaigns, m: p.finished })] });
-    if (top && laws[top] > 1) L.push({ k: "isle:law", parts: [Q("Across the island, “{x}” has passed {n} times today.", { x: T(LAWS[top].t), n: laws[top] })] });
-    const w = isleTop(p.wins)[0]; if (w && p.finished > 2) L.push({ k: "isle:win", parts: [Q("Election results from the whole island: {x} has won {n} of {m} today.", { x: nm(w), n: p.wins[w], m: p.finished })] });
-    const last = isleLast(); if (last) L.push({ k: "isle:gov", parts: [Q("{x} governs the island this week, with {n} of last week’s {m} campaigns won. Next governor’s count {y}, Monday 00:00 German time.", { x: nm(last.governor), n: last.wins[last.governor] || 0, m: last.finished, y: countIn() || T("next week") })] });
-    const e = (s.recent || []).find(x => x.k !== "won"); if (e) L.push({ k: "isle:" + e.t, parts: [Q(e.h ? "Island news: {x}." : "Fresh from the square: {x}.", { x: isleLine(e) })] });
+    if (p.campaigns > 1) L.push({ k: "isle:n", parts: [{ t: F(RICO.L.isN, { n: p.campaigns }), v: RICO.fill(RICO.L.isN, { n: band(p.campaigns) }) }, Q("({n} of them finished)", { n: p.finished })] });
+    if (top && laws[top] > 1) L.push({ k: "isle:law", parts: [V("isLaw"), Q("(“{x}”, {n} times)", { x: T(LAWS[top].t), n: laws[top] })] });
+    const w = isleTop(p.wins)[0]; if (w && p.finished > 2) L.push({ k: "isle:win", parts: [V("isWin", { x: nm(w) }), Q("({n} of {m})", { n: p.wins[w], m: p.finished })] });
+    const last = isleLast(); if (last) L.push({ k: "isle:gov", parts: [V("isGov", { x: nm(last.governor) }), Q("({n} of last week’s {m} campaigns won; next governor’s count {y}, Monday 00:00 German time)", { n: last.wins[last.governor] || 0, m: last.finished, y: countIn() || T("next week") })] });
+    const e = (s.recent || []).find(x => x.k !== "won"); if (e) L.push({ k: "isle:" + e.t, parts: [V(e.h ? "isNews1" : "isNews2"), Q("{x}.", { x: isleLine(e) })] });
     return L;
   }
   /* after the election: how this campaign compares with the island's */
@@ -1988,7 +1994,7 @@
       const p = s.players, isl = s.islanders, laws = isleLaws();
       scene(box, "sam", T("The island today"), p.campaigns
         ? F("{n} campaigns on this island today, {m} finished. Everyone plays their own island week; here they all add up.", { n: p.campaigns, m: p.finished })
-        : T("No visitor has campaigned yet today. The islanders keep their own politics going until someone does."), [btn(T("Back to the island"), () => closeCard(), { go: true })]);
+        : T("No visitor has campaigned yet today. The islanders keep their own politics going until someone does."), [btn(T("The players’ board"), () => openBoard(), { sub: T("test wallets ranked, this week and all time") }), btn(T("Back to the island"), () => closeCard(), { go: true })]);
       const extra = el("div", { class: "cv-isle" });
       if (p.campaigns) {
         const row = el("div", { class: "cv-votes four" });
@@ -2014,6 +2020,54 @@
       if (back) extra.append(el("div", { class: "cv-acts" }, btn(T("Back to the Book"), () => openCard("book", PLACE.book))));
       box.querySelector(".cv-acts").before(extra);
     });
+  }
+
+  /* ---------- the players' board: test wallets ranked by the relay (infra/relay/isle.py), never people or names ----------
+     A wallet is on it once it has signed a move into the testnet from the same connection the game reports from, so
+     nobody can put numbers on someone else's wallet. Each week counts a wallet's first finished campaign; all time adds
+     the weeks up. The short pushed summary shows at once; `isle board <wallet>` brings where this browser's wallet stands. */
+  const BOARD = { me: null, at: 0, view: null };
+  const shortPk = pk => pk.slice(0, 6) + "…" + pk.slice(-4);
+  function onBoard(b) { BOARD.me = b.me || null; BOARD.at = Date.now(); if (ISLE.s) ISLE.s.board = Object.assign({}, ISLE.s.board, { best: b.best.slice(0, 5), busy: b.busy.slice(0, 5), ever: b.ever.slice(0, 5), prev: b.prev }); const old = UI.card && UI.card._board && UI.card.querySelector(".cv-board"); if (old && ISLE.s) { old.replaceWith(boardBody(ISLE.s.board)); fitCard(UI.card); } }
+  function boardRows(rows, mine, text, empty) {
+    if (!rows || !rows.length) return el("p", { class: "cv-note small", text: empty });
+    return el("ul", { class: "cv-book cv-rank" }, rows.map(r => el("li", { class: r.id === mine ? "me" : null },
+      el("span", null, el("b", { text: "#" + r.n + " " }), el("span", { class: "pk", translate: "no", text: r.id }), r.id === mine ? el("em", { text: " · " + T("you") }) : null), el("small", { text: text(r) }))));
+  }
+  function openBoard() {
+    const b = ISLE.s && ISLE.s.board, pk = myPk();
+    if (pk && Date.now() - BOARD.at > 15000) isleTell("board", pk);
+    openCard(null, box => {
+      box._board = true; box.classList.add("isle-card");
+      const back = [btn(T("The island today"), () => openIsle()), btn(T("Back to the island"), () => closeCard(), { go: true })];
+      if (!b) { scene(box, "sam", T("The players’ board"), T("The island’s numbers are out of reach just now. Your campaign goes on as before."), back); return; }
+      scene(box, "sam", T("The players’ board"), T("The players here are test wallets, not people. A move counts for a wallet when that wallet signed it into the testnet from the same connection. Each week counts a wallet’s first finished campaign; the result is what its game reports."), back);
+      box.querySelector(".cv-acts").before(boardBody(b));
+    });
+  }
+  function boardBody(b) {
+    const pk = myPk(), mine = pk ? shortPk(pk) : null, me = BOARD.me;
+    const result = r => [F(r.won ? "as {x} · elected · {n} of 10 votes" : "as {x} · not elected · {n} of 10 votes", { x: nm(r.as), n: r.votes }), r.goal && AMB[r.goal] ? Fd("ambition reached: {x}", { x: T(AMB[r.goal].name) }) : ""].filter(Boolean).join(" · ");
+    const LISTS = {
+      best: [T("Best results this week"), () => boardRows(b.best, mine, result, T("No campaign finished yet this week."))],
+      busy: [T("Most active this week"), () => boardRows(b.busy, mine, r => F("{n} moves · {m} laws passed", { n: r.moves, m: r.laws }) + (r.as ? " · " + F("as {x}", { x: nm(r.as) }) : ""), T("No move signed yet this week."))],
+      ever: [T("All time"), () => boardRows(b.ever, mine, r => F("elected {n} of {m} times", { n: r.won, m: r.played }) + (r.goals ? " · " + F("ambitions reached: {n}", { n: r.goals }) : ""), T("Nobody yet."))],
+    };
+    if (!LISTS[BOARD.view]) BOARD.view = b.best && b.best.length ? "best" : "busy";
+    /* one list at a time: the plate is narrow and never scrolls */
+    const extra = el("div", { class: "cv-isle cv-board" }), seg = el("div", { class: "cv-seg", role: "group" });
+    Object.keys(LISTS).forEach(k => seg.append(el("button", { type: "button", "aria-pressed": k === BOARD.view ? "true" : "false", text: LISTS[k][0],
+      onclick: e => { e.stopPropagation(); BOARD.view = k; SND.sfx("tap"); extra.replaceWith(boardBody(b)); if (UI.card) fitCard(UI.card); } })));
+    extra.append(el("div", { class: "cv-seg-row" }, el("h4", { text: T("Ranking") }), seg), LISTS[BOARD.view][1]());
+    const you = !pk ? T("No test wallet in this browser yet; your first signed move makes one.")
+      : !me || (!me.busy && !me.best && !me.ever) ? F("Your test wallet {h} is not on the board yet: it joins with your next move signed into the testnet.", { h: mine })
+      : me.best ? F("Your test wallet {h}: place {n} for results, place {m} for moves this week.", { h: mine, n: me.best, m: me.busy || 0 })
+      : me.busy ? F("Your test wallet {h}: place {n} for moves this week; your result joins when your campaign ends.", { h: mine, n: me.busy })
+      : F("Your test wallet {h}: place {n} all time.", { h: mine, n: me.ever });
+    extra.append(el("p", { class: "cv-note cv-me" }, el("b", { text: you })));
+    const prev = b.prev && b.prev.best && b.prev.best[0];
+    if (prev) extra.append(el("p", { class: "cv-note small", text: F("Last week’s best: {h}, as {x}, {n} of 10 votes", { h: prev.id, x: nm(prev.as), n: prev.votes }) }));
+    return extra;
   }
 
   /* ---------- the start: pick your candidate ---------- */
@@ -2115,11 +2169,12 @@
     SND.sfx("meow"); toast(T("You agreed. Déjà looked at you as if she had expected it."));
     if (UI.card) deja();
   }
-  /* Rico's line about her (shown, not spoken: the count changes all day) */
+  /* Rico's line about her: her count as a word (one, two), so the line has its clip; more than three shown beside */
   function dejaLines() {
     const s = DJ_S.s, L = []; if (!s || Date.now() - DJ_S.at > 1800000) return L;
-    if (s.fed) L.push({ k: "deja:fed", parts: [Q("Déjà has eaten today: {n} wallets agreed. Marisol says she acted surprised.", { n: s.agreed })] });
-    else L.push({ k: "deja:" + s.agreed, parts: [Q(s.agreed ? "Déjà, the café cat: {n} of three wallets agreed today. One test AGRS says yes; find her." : "Nobody has agreed to feed Déjà yet today. Three wallets, one test AGRS each; find her, she is around.", { n: s.agreed })] });
+    if (s.fed) L.push({ k: "deja:fed", parts: [V("dejaFed"), ...(s.agreed > 3 ? [Q("({n} wallets)", { n: s.agreed })] : [])] });
+    else if (s.agreed >= 1 && s.agreed <= 2) L.push({ k: "deja:" + s.agreed, parts: [{ t: F(RICO.L.dejaN, { n: s.agreed }), v: RICO.fill(RICO.L.dejaN, { n: ["one", "two"][s.agreed - 1] }) }] });
+    else L.push({ k: "deja:0", parts: [V("dejaNone")] });
     return L;
   }
   function legend() {
@@ -2157,7 +2212,7 @@
     placeKeys();
     addEventListener("keydown", e => { if (e.key === "Escape" && UI.card && !UI.card.classList.contains("intro") && !UI.card.classList.contains("locked")) closeCard(); });
     /* the day's last move is spent and nothing is open any more: the night comes, however the last card was left */
-    setInterval(() => { if (G && !G.over && G.move >= MOVES && !UI.card && !drawer) { if (G.counting) { G.counting = false; election(); } else endDay(); } }, 1200);
+    setInterval(() => { if (G && !G.over && !G.waiting && G.move >= MOVES && !UI.card && !drawer) { if (G.counting) { G.counting = false; election(); } else endDay(); } }, 1200);
     /* after the election the result stays: a card closed over it (the Book read from the result, ✕, Escape) brings it back,
        so nobody is left on a finished island without "Play again" */
     setInterval(() => { if (G && G.over && !UI.card && !drawer && !$("cvPlaces").classList.contains("on")) ending(); }, 1500);

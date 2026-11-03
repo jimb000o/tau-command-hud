@@ -1,15 +1,16 @@
 /* Radio Coco in the header: one sound switch for the whole site. On the HUD and the other pages it plays the island's
    radio from the White Rabbit Key: the same calypso (rabbit/music.js), Rico's voice and lines (rabbit/rico.js, clips made
    on the server) and his reading of the chain weather. Where a page has a sound of its own, the switch is that sound:
-   the newspaper and its café (gazette-sound), the island game (tauhud-rabbit-sound). Turning it on or off sets all three,
-   so the choice follows the visitor from page to page. Browsers allow sound only after a click, so on a new page a
-   radio that was on waits for the first click or key anywhere, and the button glows until then.
+   the newspaper and its café (gazette-sound), the island game (its own sound button). Turning it on or off sets the radio
+   and the café, so the choice follows the visitor from page to page; the island always opens with its sound on (rabbit/music.js)
+   and, once it plays, takes the radio over: a tab still playing the station goes quiet. Browsers allow sound only after
+   a click, so on a new page a radio that was on waits for the first click or key anywhere, and the button glows until then.
    window.TauRadio = { mount(host, page, tip) } (called by nav.js). */
 (() => {
   "use strict";
   if (window.TauRadio) return;
   const me = document.currentScript, ROOT = me && me.src ? new URL("..", me.src).href : location.origin + "/";
-  const KEY = "tauhud-radio", KEYS = [KEY, "gazette-sound", "tauhud-rabbit-sound"];
+  const KEY = "tauhud-radio", KEYS = [KEY, "gazette-sound"];
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const I = window.TauI18n, T = s => (I ? I.t(s) : s), F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
   const CJK = I && /^(zh|ja)$/.test(I.lang);
@@ -66,7 +67,7 @@
     if (!force && elsewhere()) { show(); return false; }
     if (!(await load())) return false;
     const S = window.COVE_SOUND;
-    if (!S.wanted) S.toggle(); else S.start();
+    if (!S.wanted) S.toggle(false); else S.start();
     S.set({ place: "radio", radio: false, amb: 0.35 });   // the station's arrangement, the sea faint behind it
     if (S.on) {
       beat();
@@ -78,13 +79,13 @@
   }
   function stop() {
     const S = window.COVE_SOUND;
-    if (S && S.wanted) S.toggle();
+    if (S && S.wanted) S.toggle(false);
     clearInterval(R.timer); R.timer = 0; R.hello = false; free(); caption(null); show();
   }
   /* another tab plays now: this one goes silent and keeps the radio switched on */
   function quiet() {
     const S = window.COVE_SOUND;
-    if (S && S.wanted) { S.toggle(); store.set("tauhud-rabbit-sound", "on"); }
+    if (S && S.wanted) S.toggle(false);
     clearInterval(R.timer); R.timer = 0; R.hello = false; caption(null); show();
   }
 
@@ -214,7 +215,10 @@
     b.addEventListener("click", click);
     host.append(b);
     if (R.mode === "gazette") window.addEventListener("gazette-sound", e => { setAll(!!e.detail); show(); });
-    if (R.mode === "rabbit") setInterval(show, 1000);   // the game has its own sound button; follow it
+    if (R.mode === "rabbit") {   // the game has its own sound button; follow it, and while its sound plays, hold the radio's claim so the station goes quiet in every other tab
+      setInterval(() => { const S = window.COVE_SOUND; if (S && S.on) beat(); else free(); show(); }, 1000);
+      addEventListener("pagehide", free);
+    }
     if (R.mode === "radio") {
       const WAS = "tauhud-radio-was"; let was = false;
       try { was = sessionStorage.getItem(WAS) === "1"; sessionStorage.removeItem(WAS); } catch (e) {}

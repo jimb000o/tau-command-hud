@@ -1265,6 +1265,10 @@ class Relay:
         if cmd == "sendtx" and msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False:
             self.sources.note((msg.get("data") or {}).get("tx_hash"), site, via)   # for "where the transactions come from"
             self.island.saw_tx(ip)   # White Rabbit Key may pay this address for the move
+            try:   # and the players' board may count this wallet's moves from this address (isle.py)
+                self.isle.saw(ip, json.loads(tx).get("sender_pubkey", ""))
+            except ValueError:
+                pass
         return json.dumps(msg, separators=(",", ":"))
 
     async def lease_deposit(self, raw: str, ip: str) -> str:
@@ -1723,12 +1727,15 @@ class Relay:
             self.isle.subs.discard(ws)
             return envelope_ok("isle", {"left": True})
         a = [x.lower() for x in args[1:]]
-        if sub == "move" and len(a) == 5:
+        if sub == "board":
+            return envelope_ok("isle", self.isle.standing(a[0] if a else "-"))
+        if sub == "move" and len(a) in (5, 6):
             ok, data = self.isle.move(ip, *a)
-        elif sub == "end" and len(a) in (3, 4):
+        elif sub == "end" and 3 <= len(a) <= 7:
             ok, data = self.isle.end(ip, *a)
         else:
-            ok, data = False, "Usage: isle join | leave | move <game> <as> <kind> <what> <place> | end <game> <as> <winner> [laws]"
+            ok, data = False, ("Usage: isle join | leave | board [wallet] | move <game> <as> <kind> <what> <place> [wallet]"
+                               " | end <game> <as> <winner> [laws] [wallet] [votes] [goal]")
         return envelope_ok("isle", data) if ok else envelope_error("isle", data, "INVALID_PARAMS")
 
     def chat_command(self, args: list[str], ws: ServerConnection | None) -> str:
