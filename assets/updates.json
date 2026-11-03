@@ -2148,5 +2148,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-03",
     "html": "White Rabbit Key: the players’ board. Open it from The island today or after your election: the best results of the week (elected or not, votes out of ten, ambition reached), the most active wallets of the week (moves signed, laws passed) and the elections won of all time. The players are test wallets, shown in short form, never names; a move counts for a wallet only when that wallet signed it into the testnet from the same connection, and each week counts a wallet’s first finished campaign. Your own wallet is marked, with its places. The board starts empty every Monday at the governor’s count; last week’s best stays readable."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-03",
+    "html": "News line: the result of the Taumorrow Chess round is in. The chess engine written in the Tau language won 13, drew 5 and lost 2 of its twenty games against Claude Opus 5.5 on 1 November (chess.taumorrow.com). The line stays until Friday."
   }
 ]
