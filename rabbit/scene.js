@@ -622,6 +622,103 @@
     g.fillStyle = P.mustard; g.beginPath(); g.moveTo(-2, -48); g.quadraticCurveTo(-18, -30, -20, -8); g.lineTo(-2, -8); g.closePath(); g.fill(); g.stroke();
     g.restore();
   }
+  /* a cruise ship at anchor off the island (relay cruise.py): drawn here until the art pipeline paints one. It comes in
+     from the east before it lands, its tenders ferry the simulated passengers to the pier and back, a guide's pennant
+     stands at each place where a group is, and a ring rises from a place whenever one of their transactions is sealed */
+  const SHIP = { s: null, pings: [] };
+  const SHIPS = {
+    liner: { L: 186, hull: P.navy, band: P.cream, funnel: P.coral, decks: [0.8, 0.64, 0.44], tall: 9 },
+    expedition: { L: 128, hull: "#2f5468", band: "#e9ecea", funnel: P.teal, decks: [0.58, 0.42], tall: 9, crane: true },
+  };
+  const ease = f => f * f * (3 - 2 * f);
+  function shipPos(now) {
+    const v = SHIP.s, [ax, ay] = SPOT.anchor;
+    if (!v) return null;
+    if (v.phase === "approach") { const f = Math.max(0, Math.min(1, 1 - (v.t0 - now) / 1800)); return [ax + 430 * (1 - ease(f)), ay, Math.min(1, f * 5)]; }
+    if (v.phase === "gone") { const f = Math.max(0, Math.min(1, (now - v.end) / 240)); return f >= 1 ? null : [ax + 430 * ease(f), ay, 1 - Math.max(0, f - 0.8) * 5]; }
+    return [ax, ay, 1];
+  }
+  function cruiseShip(g, x, y, t, kind, light, a) {
+    const D = SHIPS[kind] || SHIPS.liner, L = D.L, bob = Math.sin(t * 0.0012) * 1.2, hh = 15;
+    g.save(); g.globalAlpha = a; g.translate(x, y + bob); g.lineJoin = "round"; g.strokeStyle = INK; g.lineWidth = 1.5;
+    g.fillStyle = "rgba(10,30,45,.28)"; g.beginPath(); g.ellipse(4, 4, L * 0.56, 7, 0, 0, Math.PI * 2); g.fill();   // its shadow on the water
+    /* the hull: a long low body, the bow raised to the right */
+    g.fillStyle = D.hull; g.beginPath(); g.moveTo(-L / 2, -hh); g.lineTo(L / 2 - 6, -hh); g.quadraticCurveTo(L / 2 + 8, -hh - 3, L / 2 + 10, -hh - 6);
+    g.lineTo(L / 2 - 4, 0); g.lineTo(-L / 2 + 8, 0); g.quadraticCurveTo(-L / 2 - 2, -2, -L / 2, -hh); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = D.band; g.fillRect(-L / 2 + 2, -hh + 1, L - 10, 5);
+    g.fillStyle = P.coral; g.fillRect(-L / 2 + 7, -3, L - 14, 2.2);
+    /* the decks, stepping up and back; their windows light up after dusk */
+    let top = -hh;
+    D.decks.forEach((w, i) => {
+      const dw = L * w, x0 = -L / 2 + (D.crane ? L * 0.34 : L * 0.12) + (L * D.decks[0] - dw) * (D.crane ? 0.1 : 0.55), h = D.tall - i;
+      g.fillStyle = D.band; g.beginPath(); g.rect(x0, top - h, dw, h); g.fill(); g.stroke();
+      const n = Math.floor(dw / 6);
+      for (let k = 0; k < n; k++) {
+        const lit = light > 0.05 && ((k * 7 + i * 3) % 5) !== 0;
+        g.fillStyle = lit ? `rgba(255,200,110,${0.55 + 0.45 * light})` : "rgba(34,48,58,.55)";
+        g.fillRect(x0 + 2 + k * 6, top - h + 2.4, 3, 2.6);
+      }
+      if (i === 0) for (let k = 0; k < 5; k++) { g.fillStyle = P.mustard; g.beginPath(); g.ellipse(x0 + dw * (0.16 + k * 0.17), top - 1.2, 4.2, 1.6, 0, 0, Math.PI * 2); g.fill(); }   // the lifeboats
+      top -= h;
+    });
+    /* the funnel, with smoke drifting off it, and the mast at the bow */
+    const fx = D.crane ? -L / 2 + L * 0.5 : -L * 0.04;
+    g.fillStyle = D.funnel; g.beginPath(); g.moveTo(fx - 7, top); g.lineTo(fx - 5, top - 17); g.lineTo(fx + 8, top - 17); g.lineTo(fx + 8, top); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = INK; g.fillRect(fx - 5, top - 17, 13, 3);
+    for (let k = 0; k < 4; k++) { const f = ((t * 0.00012 + k / 4) % 1); g.fillStyle = `rgba(236,236,240,${0.32 * (1 - f)})`; g.beginPath(); g.arc(fx + 2 - f * 46, top - 22 - f * 20, 4 + f * 9, 0, Math.PI * 2); g.fill(); }
+    g.lineWidth = 1.2; g.beginPath(); g.moveTo(L / 2 - 26, -hh); g.lineTo(L / 2 - 26, -hh - 30); g.stroke();
+    g.fillStyle = D.funnel; g.beginPath(); g.moveTo(L / 2 - 26, -hh - 30); g.lineTo(L / 2 - 14, -hh - 27 + Math.sin(t * 0.006) * 1.2); g.lineTo(L / 2 - 26, -hh - 24); g.closePath(); g.fill();
+    if (D.crane) { g.strokeStyle = P.mustard; g.lineWidth = 2.2; g.beginPath(); g.moveTo(-L / 2 + 18, -hh); g.lineTo(-L / 2 + 18, -hh - 22); g.lineTo(-L / 2 + 40, -hh - 14); g.stroke(); }
+    if (light > 0.05) { g.fillStyle = `rgba(255,90,70,${light})`; g.beginPath(); g.arc(L / 2 - 26, -hh - 31, 1.8, 0, Math.PI * 2); g.fill(); }
+    g.restore();
+  }
+  /* a tender: a small white boat with an orange canopy and a short wake */
+  function tender(g, x, y, t, dir) {
+    g.save(); g.translate(x, y + Math.sin(t * 0.004 + x) * 0.8); g.scale(dir, 1); g.strokeStyle = INK; g.lineWidth = 1.1;
+    g.strokeStyle = "rgba(255,255,255,.55)"; g.beginPath(); g.moveTo(-9, 2); g.lineTo(-26, 4); g.moveTo(-9, 0); g.lineTo(-22, -2); g.stroke();
+    g.strokeStyle = INK; g.fillStyle = P.cream; g.beginPath(); g.moveTo(-9, -3); g.lineTo(9, -3); g.lineTo(7, 2); g.lineTo(-8, 2); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = P.coral; g.fillRect(-6, -7, 9, 4);
+    g.restore();
+  }
+  /* where the tenders are: two shuttles while passengers land or board, one slower one while they are ashore */
+  function tenders(now, x0, y0) {
+    const v = SHIP.s, pier = PLACES.pier || {}, [px, py] = pier.c ? [pier.c[0] + 30, pier.c[1] + 40] : [(pier.x || 1010) + 50, (pier.y || 735) + 38];
+    if (!v || !["landing", "ashore", "boarding"].includes(v.phase)) return [];
+    const busy = v.phase !== "ashore", out = [];
+    for (let i = 0; i < (busy ? 2 : 1); i++) {
+      const per = busy ? 100 : 240, f = ((now + i * per / 2) % per) / per;   // there 40 %, wait at the pier, back 40 %, wait at the ship
+      let k = f < 0.4 ? f / 0.4 : f < 0.5 ? 1 : f < 0.9 ? 1 - (f - 0.5) / 0.4 : 0;
+      k = ease(k);
+      out.push([lerp(x0 - 70, px, k), lerp(y0 + 6, py, k) + Math.sin(k * Math.PI) * 10, f < 0.5 ? -1 : 1]);
+    }
+    return out;
+  }
+  /* a guide's pennant where a group of passengers is */
+  function pennant(g, x, y, t, col) {
+    const w = Math.sin(t * 0.005 + x) * 1.5;
+    g.strokeStyle = INK; g.lineWidth = 1.3; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 24); g.stroke();
+    g.fillStyle = col; g.beginPath(); g.moveTo(x, y - 24); g.lineTo(x + 12, y - 21 + w); g.lineTo(x, y - 17); g.closePath(); g.fill(); g.stroke();
+  }
+  const placePt = id => { const p = PLACES[id]; return !p ? null : p.c ? [p.c[0], p.c[1]] : [p.x, p.y - 18]; };
+  function shipItems(items, g, t, sky) {
+    const now = Date.now() / 1000, pos = shipPos(now), v = SHIP.s;
+    if (!pos) return;
+    const [x, y, a] = pos, kind = v.style === "expedition" ? "expedition" : "liner";
+    items.push([y, () => cruiseShip(g, x, y, t, kind, sky.light, a)]);
+    tenders(now, x, y).forEach(([tx, ty, d]) => items.push([ty, () => tender(g, tx, ty, t, d)]));
+    if (["landing", "ashore"].includes(v.phase)) for (const id in v.at || {}) {
+      const pt = placePt(id); if (!pt || !(v.at[id] > 0) || id === "pier" && v.phase === "landing") continue;
+      items.push([pt[1] + 2, () => pennant(g, pt[0] + 16, pt[1] + 4, t, SHIPS[kind].funnel)]);
+    }
+  }
+  function shipPings(g, t) {
+    SHIP.pings = SHIP.pings.filter(p => t - p.t0 < 1800);
+    for (const p of SHIP.pings) {
+      const pt = placePt(p.id); if (!pt) continue;
+      const f = Math.max(0, (t - p.t0) / 1800), r = 7 + 30 * ease(f);
+      g.strokeStyle = `rgba(255,255,240,${0.9 * (1 - f)})`; g.lineWidth = 2.2; g.beginPath(); g.ellipse(pt[0], pt[1], r, r * 0.42, 0, 0, Math.PI * 2); g.stroke();
+    }
+  }
   /* clouds: flat cut-paper shapes with a shaded underside and an ink edge */
   function cloud(g, x, y, s, a) {
     const B = [[0, 0, 26], [24, -10, 22], [48, -2, 24], [-20, 6, 18], [68, 6, 16]];
@@ -680,7 +777,7 @@
   /* the white rabbit: hops from place to place, sits up and twitches its ears; it shows newcomers where to go */
   const RB = { x: 860, y: 690, tx: 860, ty: 690, hop: 0, dir: 1, next: 0 };
   /* the lighthouse lamp, the radio mast's light, where people gather and where the cat walks: a new layout moves them */
-  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712],
+  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712], anchor: [1395, 828],
     jungle: [[760, 235], [985, 205], [455, 440], [1180, 560], [330, 285]] };   // where the legend may look out of the leaves
   function rabbitStep(dt, t) {
     const d = Math.hypot(RB.tx - RB.x, RB.ty - RB.y);
@@ -1226,7 +1323,9 @@
       if (f > 1) RARE.zilla = null;
       else { const a = Math.min(1, f * 6, (1 - f) * 6); items.push([z.y, () => { z.box = creature(w, ART.img.agorzilla, z.x, z.y + (1 - a) * 8, 48, a); }]); }
     }
+    if (SHIP.s) shipItems(items, w, t, sky);
     items.sort((a, b) => a[0] - b[0]).forEach(([, d]) => d());
+    if (SHIP.pings.length) shipPings(w, t);
     /* the light of the hour */
     w.setTransform(1, 0, 0, 1, 0, 0);
     if (!pi && sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3]); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
@@ -1389,6 +1488,10 @@
     gather(v) { S.gather = v; },
     cat(twice) { S.cat = { t0: performance.now(), d: 9000, x0: SPOT.cat[0], y0: SPOT.cat[1], x1: SPOT.cat[2], y1: SPOT.cat[3], twice: !!twice }; },
     onFrame(f) { S.onFrame = f; },
+    /* the cruise ship in port or coming in (relay cruise.py: {name, style, phase, t0, end, at}), null when there is none;
+       ping(place): one of its passengers' transactions was sealed there */
+    ship(v) { SHIP.s = v || null; },
+    ping(id) { if (PLACES[id] && SHIP.pings.length < 40) SHIP.pings.push({ id, t0: performance.now() + Math.random() * 400 }); },
     /* the rabbit hops to a place and waits beside it (null: it wanders) */
     rabbit(id) { RB.goal = id; if (id && PLACES[id]) { const p = PLACES[id]; RB.tx = p.x + (id === "book" ? 46 : 0) + (p.x > 800 ? -40 : 40); RB.ty = p.y + 16; } },
     get hour() { return S.hour; },
