@@ -618,6 +618,10 @@
     "No business today, my friend: “{x}” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free."] };
   const CAST = [
     ["hana", "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."],
+    ["sam", "So it is true, Marisol: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You hear everything first at your café. This week the island hears about you. Every move you make goes into this Book."],   // the first scene of a campaign: game.js WELCOME.marisol
+    ["sam", "So it is true, Tobias: the harbour master wants to be governor. Your name is on the list, in my own hand. Four candidates, one chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. The embassies know you already. The island will know you by what goes into this Book."],   // the first scene of a campaign: game.js WELCOME.tobias
+    ["sam", "So it is true, Baako: your name is on the list, in my own hand. You count everything, so count this: four candidates, one governor’s chair under the council tree, ten islanders who vote on Sunday night. Every move you make goes into this Book, and I count too."],   // the first scene of a campaign: game.js WELCOME.baako
+    ["sam", "So it is true, Hana: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You write everything down, so you know how this works. Laws are made in the Council Hall. Everything else is written here."],   // the first scene of a campaign: game.js WELCOME.hana
     ["sam", "Sam keeps the minutes today. Pick a law; the other three candidates vote, two yes and it is law."],
     ["lola", "Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."],
     ["rico", "Twenty-five coins and I play anything, baby. I don’t check, I just spin. But the Book writes down who paid me, every time."],
@@ -699,9 +703,15 @@
     if (!keys.length) { why.last = "nothing to say aloud"; return false; }
     if (!have.size) { why.last = "clip list not loaded"; return false; }
     if (!keys.every(k => have.has(k))) { why.last = "clip missing: " + keys.filter(k => !have.has(k)).join(","); return false; }
-    const bufs = await Promise.all(keys.map(clip));
-    if (bufs.some(b => !b)) { why.last = "clip download failed"; return false; }
-    const secs = await SND.speak(bufs.map((b, i) => (said[i].who && said[i].who !== who ? { b: b.slice(0), tel: true } : b.slice(0))), o);   // a caller sounds like a telephone
+    /* while the clips are fetched and decoded the mouth stays shut, then it follows the voice (COVE_SOUND.lip) */
+    if (SND.expect) SND.expect(who, true);
+    let secs;
+    try {
+      const bufs = await Promise.all(keys.map(clip));
+      if (bufs.some(b => !b)) { why.last = "clip download failed"; return false; }
+      if (o.still && !o.still()) { why.last = "gone before the clip came"; return false; }   // the card was closed or replaced while the clips loaded
+      secs = await SND.speak(bufs.map((b, i) => (said[i].who && said[i].who !== who ? { b: b.slice(0), tel: true, who: said[i].who } : b.slice(0))), Object.assign({ who }, o));   // a caller sounds like a telephone
+    } finally { if (SND.expect) SND.expect(who, false); }
     if (secs) { why.last = "ok"; return secs; }
     /* the sound card would not decode the clip (some phone browsers): the same clips through a plain audio element */
     why.last = "web audio: " + (SND.why || "off") + ", trying the audio element";

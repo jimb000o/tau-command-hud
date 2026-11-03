@@ -144,7 +144,7 @@
   }
   function tick() {
     const S = window.COVE_SOUND;
-    if (!S || !S.on || document.hidden || performance.now() < R.next) return;
+    if (!S || !S.on || performance.now() < R.next) return;   // with the sound on he talks in a background tab too
     R.next = performance.now() + 60000;   // held until this line is over
     if (++R.n % 3 === 1) return weather(line => (line ? air(line) : (R.next = 0)));
     /* the chain has stood still for an hour or more: now and then Rico says so between the songs */
