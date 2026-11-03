@@ -35,11 +35,12 @@ def fake(url, data, headers, timeout=240):
             assert len(body["contents"][0]["parts"]) == 2
         if "same artist" in body["contents"][0]["parts"][0]["text"]:
             assert len(body["contents"][0]["parts"]) == 4 and ("high hill" in body["contents"][0]["parts"][0]["text"] or "rough sketch" in body["contents"][0]["parts"][0]["text"])
-        assert body["generationConfig"]["imageConfig"]["aspectRatio"] in ("16:9", "21:9", "1:1", "9:16", "3:4") and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"] or "close view of one place" in body["contents"][0]["parts"][0]["text"] or "Repaint this exact island" in body["contents"][0]["parts"][0]["text"] or "much higher resolution" in body["contents"][0]["parts"][0]["text"] or "empty grey" in body["contents"][0]["parts"][0]["text"] or "wide panoramic" in body["contents"][0]["parts"][0]["text"] or "magenta" in body["contents"][0]["parts"][0]["text"] or "Repaint exactly this" in body["contents"][0]["parts"][0]["text"])
+        assert body["generationConfig"]["imageConfig"]["aspectRatio"] in ("16:9", "21:9", "1:1", "9:16", "3:4") and ("Keep the composition" in body["contents"][0]["parts"][0]["text"] or "Style: " in body["contents"][0]["parts"][0]["text"] or "ink line drawing" in body["contents"][0]["parts"][0]["text"] or "close view of one place" in body["contents"][0]["parts"][0]["text"] or "Repaint this exact island" in body["contents"][0]["parts"][0]["text"] or "much higher resolution" in body["contents"][0]["parts"][0]["text"] or "empty grey" in body["contents"][0]["parts"][0]["text"] or "wide panoramic" in body["contents"][0]["parts"][0]["text"] or "magenta" in body["contents"][0]["parts"][0]["text"] or "(#00ff00)" in body["contents"][0]["parts"][0]["text"] or "Repaint exactly this" in body["contents"][0]["parts"][0]["text"])
         pic = PIC
-        if Image and "magenta" in body["contents"][0]["parts"][0]["text"]:   # a bust or a creature on magenta
+        text = body["contents"][0]["parts"][0]["text"]
+        if Image and ("magenta" in text or "(#00ff00)" in text):   # a bust or a creature on magenta, or on green
             from PIL import ImageDraw
-            im = Image.new("RGB", (1024, 1024), (255, 0, 255)); ImageDraw.Draw(im).ellipse((300, 200, 724, 1100), fill=(160, 110, 80))
+            im = Image.new("RGB", (1024, 1024), (0, 255, 0) if "(#00ff00)" in text else (255, 0, 255)); ImageDraw.Draw(im).ellipse((300, 200, 724, 1100), fill=(160, 110, 80))
             b = io.BytesIO(); im.save(b, "PNG"); pic = b.getvalue()
         return {"candidates": [{"content": {"parts": [{"inlineData": {"mimeType": "image/png", "data": base64.b64encode(pic).decode()}}]}}]}
     if "openai" in url:
@@ -126,6 +127,17 @@ for prov in ("gemini", "openai"):
             assert '"aspectRatio": "3:4"' in bodies[-3] and "never a caricature" in prompts[-3] and "half figure" in prompts[-3]
             assert "mouth open" in prompts[-2] and "eyes closed" in prompts[-1] and Image.open(os.path.join(out, sc["bust-rico"])).size == (800, 800)
             assert {"bust-rico-talk", "bust-rico-blink"} <= set(sc)
+            assert "plain flat green (#00ff00)" in prompts[-3] and "no green in the person" in prompts[-3]   # a pink shirt: painted on green
+            assert all(os.path.exists(os.path.join(out, "raw", f"bust-rico{f}.png")) for f in ("", "-talk", "-blink"))   # kept as they came
+            n0 = len(calls)
+            paint.cmd_busts(types.SimpleNamespace(out=out, who=["rico"], model="m", src=None, still=False, recut=True))
+            sc2 = json.load(open(os.path.join(out, "index.json")))["scenes"]
+            assert len(calls) == n0 and sc2["bust-rico"] == sc["bust-rico"] and {"bust-rico-talk", "bust-rico-blink"} <= set(sc2)   # cut again, nothing painted
+            try:
+                paint.cmd_busts(types.SimpleNamespace(out=out, who=["kai"], model="m", src=None, still=False, recut=True)); raise AssertionError("cut with nothing kept")
+            except SystemExit:
+                pass
+            assert "plain flat magenta (#ff00ff)" in paint.BUST.format(who="x", key=paint.key_for("hana"), hex=paint.KEYS[paint.key_for("hana")][0]) and paint.key_for("salado") == "green"
             from PIL import ImageDraw
             src = os.path.join(out, "codex"); os.makedirs(src)   # pictures painted elsewhere
             for f in ("bust-kai", "bust-kai-talk"):
@@ -142,12 +154,17 @@ for prov in ("gemini", "openai"):
             assert k.getpixel((400, 500))[3] == 255 and k.getpixel((10, 10))[3] == 0   # a pink face stays solid, the background goes
             assert k.getpixel((309, 607))[3] == 0   # the gap between arm and body is cut out too
             x, y, w, h = idx["boxes"]["bust-kai-talk"]; assert w < 0.3 and h < 0.3
+            raw = os.listdir(os.path.join(out, "raw"))
+            assert {"bust-kai.png", "bust-kai-talk.png"} <= set(raw) and not [f for f in raw if f.startswith("bust-kai-blink")]   # pictures from elsewhere are kept too
             old = Image.open(os.path.join(out, idx["scenes"]["bust-kai"])).convert("RGBA"); old.paste((255, 0, 255, 255), (300, 500, 340, 560))
             old.save(os.path.join(out, idx["scenes"]["bust-kai"]), "WEBP", lossless=True)   # a portrait kept before the gaps were cut
             n2 = len(calls)
             paint.cmd_busts(types.SimpleNamespace(out=out, who=["all"], model="m", src=None, still=False, rekey=True))
             idx = json.load(open(os.path.join(out, "index.json")))
             assert len(calls) == n2 and Image.open(os.path.join(out, idx["scenes"]["bust-kai"])).getpixel((320, 530))[3] == 0
+            paint.cmd_busts(types.SimpleNamespace(out=out, who=["kai"], model="m", src=None, still=False, recut=True))
+            idx = json.load(open(os.path.join(out, "index.json")))   # cut again from the picture as it came: the face whole again
+            assert len(calls) == n2 and Image.open(os.path.join(out, idx["scenes"]["bust-kai"])).getpixel((320, 530))[3] == 255 and "bust-kai-talk" in idx["scenes"]
             assert set(paint.BUSTS) >= {"marisol", "tobias", "baako", "hana", "rico", "lola", "sam", "frost", "salado"}
             paint.cmd_creatures(types.SimpleNamespace(out=out, what=["all"], model="gemini-2.5-flash-image"))
             sc = json.load(open(os.path.join(out, "index.json")))["scenes"]
@@ -159,6 +176,21 @@ for prov in ("gemini", "openai"):
             paint.cmd_keep(types.SimpleNamespace(out=out, picks=["bar=1"])); assert "bar" not in json.load(open(os.path.join(out, "index.json")))["orig"]
         paint.cmd_drop(types.SimpleNamespace(out=out, places=["bar"]))
         assert [k for k in json.load(open(os.path.join(out, "index.json")))["scenes"] if not k.startswith("bust-") and k not in paint.CREATURES] == ["island"]
+if Image:   # a pink shirt with light highlights (more blue than green) stays whole on a softened magenta, a pinker one and on green; the gap goes
+    from PIL import ImageDraw
+    for bg in ((255, 0, 255), (236, 128, 204), (238, 150, 200), (0, 255, 0), (96, 206, 104)):
+        im = Image.new("RGB", (400, 520), bg); d = ImageDraw.Draw(im)
+        d.polygon([(80, 520), (95, 280), (150, 235), (250, 235), (305, 280), (320, 520)], fill=(214, 112, 104), outline=(40, 25, 30))
+        d.ellipse((120, 300, 220, 330), fill=(240, 168, 181)); d.ellipse((220, 330, 290, 380), fill=(238, 172, 186))
+        d.polygon([(55, 260), (95, 260), (100, 450), (60, 450)], fill=(196, 140, 108), outline=(40, 25, 30)); d.rectangle((97, 350, 108, 430), fill=bg)
+        d.ellipse((150, 85, 250, 215), fill=(205, 145, 112), outline=(40, 25, 30)); d.ellipse((305, 235, 330, 260), fill=(150, 200, 60))
+        d.ellipse((330, 120, 380, 170), fill=(240, 240, 236)); im = im.resize((800, 1040), Image.BILINEAR).resize((400, 520), Image.LANCZOS)   # a white cup, edges soft as painted
+        cut = paint.cutout(im)
+        assert cut.getpixel((170, 315))[3] == 255 and cut.getpixel((255, 355))[3] == 255, f"a pink highlight cut out on {bg}"
+        assert cut.getpixel((250, 450))[3] == 255 and cut.getpixel((200, 150))[3] == 255 and cut.getpixel((102, 390))[3] == 0 and cut.getpixel((10, 10))[3] == 0, bg
+        assert bg[1] < 200 or cut.getpixel((317, 247))[3] == 255, "a lime on green cut out"
+        rim = [cut.getpixel((x, y)) for y in range(0, 520, 2) for x in range(0, 400, 2)]
+        assert bg[1] < 200 or not [p for p in rim if 0 < p[3] < 255 and p[1] > (p[0] + p[2]) // 2 + 12], "a green rim left on green"
 if Image:   # a sheet of eight figures on magenta comes out as a strip of eight cut-out cells, feet down
     from PIL import ImageDraw
     sheet = Image.new("RGB", (1600, 900), (255, 0, 255)); d = ImageDraw.Draw(sheet)
