@@ -1452,9 +1452,11 @@ class X(Outlet):
     name = "x"
     URL = "https://api.x.com/2/tweets"
 
-    def __init__(self, keys: dict | None = None):
-        """keys: the four values under the names X_API_KEY … X_ACCESS_SECRET; default the @TauHUDcom ones from .env."""
+    def __init__(self, keys: dict | None = None, prefix: str = ""):
+        """keys: the four values under the names X_API_KEY … X_ACCESS_SECRET; default the @TauHUDcom ones from .env.
+        prefix: what the names carry in .env for this account ("AGORZILLA_"), for the check's answer."""
         self.keys = keys if keys is not None else X_KEYS
+        self.prefix = prefix
 
     def enabled(self) -> bool:
         return all(self.keys.values())
@@ -1507,7 +1509,8 @@ class X(Outlet):
     def check(self) -> tuple[bool, str]:
         """Do these keys open the account? GET /2/users/me, which posts nothing and is free."""
         if not self.enabled():
-            return False, "off: X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN and X_ACCESS_SECRET are not all set in infra/.env"
+            p = self.prefix
+            return False, f"off: {p}X_API_KEY, {p}X_API_SECRET, {p}X_ACCESS_TOKEN and {p}X_ACCESS_SECRET are not all set in infra/.env"
         req = urllib.request.Request(self.ME, headers={"Authorization": self.auth_header(self.ME, "GET")})
         ok, _, err, reply = self.call(req, want_reply=True, record=False)
         if ok:
@@ -2978,7 +2981,7 @@ def check_channels() -> int:
     post in the channel, Tau HUD's X keys, Agorzilla's X keys. Exit 1 when a channel that should post cannot."""
     code = 0
     agor = {k: os.environ.get("AGORZILLA_" + k, "").strip() for k in X_KEYS}
-    for name, o in (("telegram", Telegram()), ("x @TauHUDcom", X()), ("x @Agorzilla", X(agor))):
+    for name, o in (("telegram", Telegram()), ("x @TauHUDcom", X()), ("x @Agorzilla", X(agor, "AGORZILLA_"))):
         ok, why = o.check()
         print(f"{name}: {'ok' if ok else 'CANNOT POST'}, {why}")
         code |= 0 if ok else 1

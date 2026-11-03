@@ -66,7 +66,9 @@ check(calls[-1][0] == "GET" and calls[-1][1] == alerts.X.ME and 'oauth_signature
 check(not alerts.SENT["x"].get("last_error"), "the check is not counted as a failed post")
 alerts.X.call_once = lambda self, req, want_reply=False: (True, None, "", {"data": {"username": "TauHUDcom"}}) if want_reply else (True, None, "")
 check(x.check() == (True, "keys open @TauHUDcom"), "good keys name the account")
-check(not alerts.X({"X_API_KEY": "", "X_API_SECRET": "", "X_ACCESS_TOKEN": "", "X_ACCESS_SECRET": ""}).check()[0], "off without keys")
+empty = {"X_API_KEY": "", "X_API_SECRET": "", "X_ACCESS_TOKEN": "", "X_ACCESS_SECRET": ""}
+check(not alerts.X(empty).check()[0], "off without keys")
+check("AGORZILLA_X_API_KEY, AGORZILLA_X_API_SECRET" in alerts.X(empty, "AGORZILLA_").check()[1], "Agorzilla's missing keys are named with their prefix")
 
 # sends record themselves; the silence watch warns after SILENCE_HOURS and posting.json tells
 alerts.note_send("telegram", False, "HTTP 401: Unauthorized")
