@@ -1105,10 +1105,28 @@ TOUCH_PLACES = ("beside the Coconut Works with its brick chimney, a small round 
                 "palace of clean pale stone with a dome, banners and the big key, no ruin.")
 
 
+# named changes for touch, so the server line stays short: paint.sh touch canoe-camp
+TOUCH_SETS = {
+    "canoe-camp": (
+        "on the southern beach below the village, where the two dug-out canoes lie on the sand, a canoe house: a long "
+        "open shed of weathered wood on posts with a palm-thatch roof, open towards the water, clearly visible, standing "
+        "right behind the two canoes where the small rock cave is now, with a paddle or two leaning on it; the small rock "
+        "cave itself moves further west along the same beach, to where the sand meets the rocky slope near the left edge "
+        "of the island; the surveyors' camp moves south, from beside the Parasol Café down to a small clearing among the "
+        "bushes just above the beach between the old ship and the lighthouse: three clearly visible white canvas tents, "
+        "a folding table with rolled plans, measuring poles on tripods and a small campfire; where the tents stood beside "
+        "the café, two more red-and-white parasols over small café tables, so the Parasol Café reads as a café. Everything "
+        "else stays exactly where and how it is, above all the lighthouse, the old ship, the waterfall, the palace, the "
+        "resort, the school, the bar, the pier and every other building, path and stretch of coast."),
+}
+
+
 def cmd_touch(a):
     """Island drafts that keep the picture and change a few details (default: the places outside as they are inside:
-    pond and water wheel at the Coconut Works, the villa's pool, the wooden radio hut, the imperial North Wind)."""
-    a.prompt = TOUCH.format(what=" ".join(a.what) if a.what else TOUCH_PLACES)
+    pond and water wheel at the Coconut Works, the villa's pool, the wooden radio hut, the imperial North Wind).
+    A single word from TOUCH_SETS stands for that set of changes."""
+    what = " ".join(a.what) if a.what else ""
+    a.prompt = TOUCH.format(what=TOUCH_SETS.get(what, what) or TOUCH_PLACES)
     a.idea = "touched"
     cmd_panorama(a)
 
