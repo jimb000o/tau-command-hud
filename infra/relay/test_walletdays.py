@@ -83,6 +83,10 @@ w2.save(D0 + 4 * DAY, force=True)
 with open(path) as f:
     check(min(json.load(f)["days"]) == "2026-11-01", "days older than KEEP_DAYS are dropped")
 
+k = w2.known()
+check(k.get(PLAYER) == "rabbit" and k.get(PAX) == "cruise" and HUD not in k and STRANGER not in k,
+      "public tags: players and passengers yes, Tau HUD wallet and others never")
+
 check(walletdays.WalletDays(os.path.join(tempfile.mkdtemp(), "none.json")).history(D0)["days"] == {}, "no file: empty history")
 
 sys.exit(1 if failed else 0)

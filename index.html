@@ -9,6 +9,7 @@
 <script src="assets/i18n.js"></script>
 <script src="assets/chainload.js"></script>
 <script src="assets/sim.js"></script>
+<script src="assets/origins.js"></script>
 <script src="assets/simvote.js"></script>
 <script src="assets/simnode.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -3239,6 +3240,12 @@ let burst = 0, sparks = [], t0 = performance.now();
 const RULE_HOT_S = 5;
 const ruleState = p => { const age = (performance.now() - (p.lastCheck || 0)) / 1000; return age < RULE_HOT_S ? { hot: true, k: 1 - age / RULE_HOT_S, refused: !!p.lastRefused } : { hot: false, k: 0, refused: false }; };
 const CORE_HITS = [], CORE_RINGS = [];
+/* known origins of waiting transactions (assets/origins.js): ring colour and dash per kind; IDNI dashed grey, our own server wallets dotted,
+   simulated cruise passengers amber (simulated), the apps' players solid white */
+const ORIGIN_RING = { idni: ["rgba(170,170,178,.85)", [3, 3]], bot: ["rgba(170,170,178,.85)", [1, 3]], cruise: ["rgba(255,177,59,.9)", [3, 3]],
+  rabbit: ["rgba(255,255,255,.9)", []], agorzilla: ["rgba(255,255,255,.9)", []], deja: ["rgba(255,255,255,.9)", []] };
+function originOf(tx) { if (!window.TauOrigin) return null; if (!tx._og || performance.now() - tx._og.at > 5000) tx._og = { at: performance.now(), o: TauOrigin.of(tx.sender, tx.transfers) }; return tx._og.o; }
+const originLine = og => og ? `\nComes from ${og.name}: ${og.what}.` : "";
 /* CORE_MOUSE: where the pointer rests over the core, in canvas units; the frame loop re-runs the hit test there so the hovered element lights up even while it orbits */
 let CORE_MOUSE = null;
 function coreHitAt(x, y) {
@@ -3646,8 +3653,12 @@ function draw(tm) {
       cx.shadowBlur = 0; cx.beginPath(); cx.strokeStyle = "rgba(255,177,59,.75)"; cx.lineWidth = 1.5; cx.roundRect(x - 8.5, y - 8.5, 17, 17, 3); cx.stroke();
     }
     else { cx.shadowColor = cx.fillStyle; cx.shadowBlur = 14; cx.arc(Math.cos(a) * r, Math.sin(a) * r, 6, 0, Math.PI * 2); cx.fill(); }
-    if (sl) { hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const h = sealedAt(tx.id); return vt(`Ghost transaction: already in ${typeof h === "number" ? `block #${fmt(h)}` : "a block"}, still listed by the node (known bug, see Findings).`, `Mempool: ${short(tx.id)} · ${tx.type} · already in ${typeof h === "number" ? "#" + fmt(h) : "a block"}, still listed by getmempool (IDNI #81).`); }); return; }
-    hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`); });
+    const og = originOf(tx);   // a known origin (assets/origins.js): a thin ring around the dot, its kind in the hover text
+    if (og) { const st = ORIGIN_RING[og.tag] || ORIGIN_RING.rabbit; cx.save(); cx.shadowBlur = 0; cx.setLineDash(st[1]); cx.lineWidth = 1.6; cx.strokeStyle = st[0];
+      cx.beginPath(); cx.arc(Math.cos(a) * r, Math.sin(a) * r, sl ? 13 : 11, 0, Math.PI * 2); cx.stroke(); cx.restore();
+      if (M <= 8) { const y = Math.sin(a) * r; plate(TauOrigin.label(og.tag), Math.cos(a) * r, y + (y > 0 ? 36 : -20), "500 15px JetBrains Mono, monospace", st[0]); } }   // a few waiting: each says where it comes from
+    if (sl) { hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const h = sealedAt(tx.id); return vt(`Ghost transaction: already in ${typeof h === "number" ? `block #${fmt(h)}` : "a block"}, still listed by the node (known bug, see Findings).`, `Mempool: ${short(tx.id)} · ${tx.type} · already in ${typeof h === "number" ? "#" + fmt(h) : "a block"}, still listed by getmempool (IDNI #81).`) + originLine(og); }); return; }
+    hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`) + originLine(og); });
   });
   cx.shadowBlur = 0;
   ring(C * .44, 30, () => {   // the waiting room: every dot on this orbit is a transaction the node admitted but no block has sealed yet

@@ -2188,5 +2188,10 @@
     "tag": "Testnet stats",
     "on": "2026-11-03",
     "html": "Testnet stats: new chart “Active wallets”. It counts the wallets that sent at least one transaction in the last 90 days (or 30, 7, 1), day by day, and keeps counting across testnet restarts: our relay writes down each day’s wallets as it sees the blocks. IDNI’s genesis accounts are a dashed line of their own. The others are sorted by what we know of them: White Rabbit Key players, Agorzilla and Déjà feeders, Tau HUD wallet, our own island bot, the cruise ships’ simulated passengers (once they sail) and everybody else. Wallets are keys, not people."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-03",
+    "html": "Chain core: a waiting transaction whose origin we know gets a ring and, while few are waiting, a small label: IDNI genesis (dashed), White Rabbit Key, Agorzilla or Déjà (solid), our island bot (dotted), simulated cruise passengers (amber). Hovering a dot says where it comes from. Known means read off the chain or our own server wallets; any other wallet stays unnamed."
   }
 ]

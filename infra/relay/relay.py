@@ -2032,6 +2032,14 @@ class Relay:
                                ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers,
                             json.dumps(self.summary(), separators=(",", ":")).encode())
+        if path == "/wallets/tags":   # which known app or owner each wallet belongs to, for the chain core (walletdays.py)
+            if getattr(self, "wtags_text", None) is None or time.monotonic() - self.wtags_at >= 60:
+                self.wtags_text = json.dumps({"tags": self.wallets.known()}, separators=(",", ":"))
+                self.wtags_at = time.monotonic()
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.wtags_text.encode())
         if path == "/wallets/active":   # wallets active over 1 / 7 / 30 / 90 days, across chain restarts (walletdays.py)
             if self.wallets_text is None or time.monotonic() - self.wallets_at >= 60:
                 self.wallets.save()
