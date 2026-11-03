@@ -245,8 +245,17 @@ SCENE = {
              "drum, two more hills with huts in the distance, the island far below, clouds close by, quiet and awe-filling.",
     "circle": "The Consensus Circle: a wide spiral circle of carved stones in the village green, the round houses around it, "
               "a few benches, the river and the hills behind, evening light, dignified and peaceful.",
-    "grotto": "Behind the waterfall: a hidden cave, the curtain of falling water glowing turquoise in front, wet rocks, a "
-              "soft light from inside, a stone ledge with an old book and a small keyhole carved in the rock, magical and quiet.",
+    "grotto": "Behind the waterfall: a hidden cave in the cliff, right behind the tall waterfall of this island, the one that "
+              "falls between the terracotta wellness resort with its pool on the cliff to one side and the white Northwind "
+              "palace on its high stone cliff to the other, into a turquoise pool with a rope bridge of planks across it. "
+              "The player stands inside the cave at the height of the pool and looks out towards the sea through the cave "
+              "mouth: the curtain of falling water hangs across the mouth, glowing turquoise in the daylight, thin enough "
+              "in places to see through. Through it, as it really lies from this spot: the pool just below, the rope bridge "
+              "crossing in front of it, beyond it the lagoon with the dive centre on its stilts and the wooden pier with a "
+              "sailing boat, the open sea and the reefs far out. Seen from inside and facing the sea, the palace's grey "
+              "stone cliff rises on the left and the resort's cliff and the big red tree are on the right. Inside: wet dark "
+              "rocks, ferns, spray, soft light reflected from the water dancing on the walls, a stone ledge with an old book "
+              "and a small keyhole carved in the rock, magical and quiet.",
 }
 
 

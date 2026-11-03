@@ -4,6 +4,7 @@
 # First time:  cd /opt/tau-command-hud && git pull && sh infra/up.sh
 # After that:  up            everything above
 #              up island     the same, then a new painted island with every room to match (a few minutes, see island.sh)
+#              up room grotto  the same, then that room (or several) painted anew to match the island as it is (2 min each)
 set -e
 cd "$(dirname "$(readlink -f "$0")")"
 ln -sf "$(pwd)/up.sh" /usr/local/bin/up 2>/dev/null && chmod +x up.sh 2>/dev/null || true
@@ -62,8 +63,15 @@ PY
 V=$(mktemp)
 python3 rico/make.py make 2>&1 | tee "$V" || true
 { echo "voices:"; grep -E 'lines to make|credits left|wait\. Run|^Done:|No voice|GEMINI|ELEVEN|Error|error' "$V" | tail -4 | sed 's/^/         /'; } | tee -a "$NOTE"
+# one room painted anew to match the island as it is, only when asked for: up room grotto (or several: up room grotto canoe)
+if [ "${1:-}" = "room" ] && [ -n "${2:-}" ]; then
+  shift
+  ROOMS="$*"; KEEP=""; for r in $ROOMS; do KEEP="$KEEP $r=last"; done
+  { sh rabbit-art/paint.sh draft $ROOMS --wide --n 1 --look 2 && sh rabbit-art/paint.sh keep $KEEP; } 2>&1 | tee "$V" || true
+  { echo "room art:"; if grep -qE 'Traceback|Error|error|No place' "$V"; then grep -E 'Traceback|Error|error|No place' "$V" | tail -3 | sed 's/^/         /'; else echo "         $ROOMS painted anew and live (Ctrl+F5)"; fi; } | tee -a "$NOTE"
+fi
 # a new painted island, only when asked for: up island
-if [ "$1" = "island" ]; then
+if [ "${1:-}" = "island" ]; then
   sh island.sh auto 2>&1 | tee "$V"
   { echo "island art:"; grep -E '^Island|to switch' "$V" | sed 's/^/         /'; } | tee -a "$NOTE"
 fi
@@ -72,4 +80,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$V"
-echo "done. next time just type: up   (or: up island)"
+echo "done. next time just type: up   (or: up island, up room <place>)"
