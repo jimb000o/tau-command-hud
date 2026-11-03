@@ -969,8 +969,9 @@
 
   /* the white rabbit: hops from place to place, sits up and twitches its ears; it shows newcomers where to go */
   const RB = { x: 860, y: 690, tx: 860, ty: 690, hop: 0, dir: 1, next: 0 };
-  /* the lighthouse lamp, the radio mast's light, where people gather and where the cat walks: a new layout moves them */
-  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712], anchor: [1395, 828],
+  /* the lighthouse lamp, the radio mast's light, where people gather, where the cat walks and where a cruise ship anchors:
+     a new layout moves them. The anchor sits high enough that the hull stays clear of the radio bar on a small laptop (1280×720) */
+  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712], anchor: [1395, 780],
     jungle: [[760, 235], [985, 205], [455, 440], [1180, 560], [330, 285]] };   // where the legend may look out of the leaves
   function rabbitStep(dt, t) {
     const d = Math.hypot(RB.tx - RB.x, RB.ty - RB.y);
