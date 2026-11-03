@@ -6,6 +6,7 @@
 #              up island     the same, then a new painted island with every room to match (a few minutes, see island.sh)
 #              up room grotto  the same, then that room (or several) painted anew to match the island as it is (2 min each)
 #              up touch canoe-camp  the same, then two versions of the island with those changes, to look at (not live)
+#              up touch beach 28    the same, from island 28 of the drafts instead of the live island
 #              up keep 27 canoe camp  the same, then island 27 live and those rooms painted anew to match it
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
 #                            up bust --recut salado  cuts the kept painting out again, paints nothing
@@ -102,10 +103,12 @@ if [ "${1:-}" = "room" ] && [ -n "${2:-}" ]; then
   { sh rabbit-art/paint.sh draft $ROOMS --wide --n 1 --look 2 && sh rabbit-art/paint.sh keep $KEEP; } 2>&1 | tee "$V" || true
   { echo "room art:"; if grep -qE 'Traceback|Error|error|No place' "$V"; then grep -E 'Traceback|Error|error|No place' "$V" | tail -3 | sed 's/^/         /'; else echo "         $ROOMS painted anew and live (Ctrl+F5)"; fi; } | tee -a "$NOTE"
 fi
-# small changes to the island as it is, painted twice to choose from: up touch canoe-camp (names in paint.py TOUCH_SETS);
+# small changes to the island as it is (or to draft island N: up touch beach 28), painted twice to choose from
+# (names in paint.py TOUCH_SETS);
 # nothing goes live; then: up keep <number> <rooms to paint anew>, e.g. up keep 27 canoe camp
 if [ "${1:-}" = "touch" ] && [ -n "${2:-}" ]; then
-  sh rabbit-art/paint.sh touch "$2" --n 2 2>&1 | tee "$V" || true
+  FROM=""; [ -n "${3:-}" ] && FROM="--from island=$3"   # up touch beach 28: from island 28 instead of the live one
+  sh rabbit-art/paint.sh touch "$2" $FROM --n 2 2>&1 | tee "$V" || true
   NEW=$(sed -n 's/^ *island=\([0-9][0-9]*\):.*/\1/p' "$V" | tr '\n' ' ')
   { echo "island art:"; if [ -n "$NEW" ]; then echo "         new islands (not live yet): $NEW  look: https://node.tauhud.com/rico/art/drafts/"; else grep -E 'Traceback|Error|error' "$V" | tail -3 | sed 's/^/         /'; fi; } | tee -a "$NOTE"
 fi

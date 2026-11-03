@@ -1206,6 +1206,27 @@ TOUCH_SETS = {
         "the café, two more red-and-white parasols over small café tables, so the Parasol Café reads as a café. Everything "
         "else stays exactly where and how it is, above all the lighthouse, the old ship, the waterfall, the palace, the "
         "resort, the school, the bar, the pier and every other building, path and stretch of coast."),
+    # from island 28 (paint.sh touch beach --from island=28): places spread out for depth, the front beach freed
+    "beach": (
+        "the red-and-white lighthouse moves away from the front of the bay: it now stands at the back left of the picture "
+        "on the small rocky islet in the sea behind the hill with the old standing stone, where a grey rock rises from the "
+        "water today; there it stands on a green-topped knoll of rock above the waves, with a few stone steps up to its "
+        "door and its lamp facing the open sea. Its old rocky islet in the front disappears completely; open turquoise "
+        "water and reef take its place. The surveyors' camp moves from the front beach up into the mountains, onto a small "
+        "green ledge on the slope to the right of the smoking chimney, above the terracotta resort and below the big rocky "
+        "peak: three white canvas tents, tripods and measuring poles, a little flag and a thin path winding up to it, "
+        "natural and half hidden among rocks and trees. The rock arch beside the canoe house is no dark cave any more but "
+        "an open natural arch of rock you can walk through, with sunlit grass and the path seen through it, as bright as "
+        "the grass around the stone circle. In the steep cliff at the far left edge of the island, at the waterline below "
+        "the village hill, a real sea cave: a dark mouth in the rock with waves running into it. On the front beach that "
+        "the camp and the lighthouse leave, two separate places, clearly apart from each other: on the left, near the old "
+        "ship, the Market Square, a small open square of packed sand and flat stones with a handful of wooden market "
+        "stalls under colourful awnings, crates of coconuts, fruit and fish, baskets and a few people trading; on the "
+        "right, near the school, the Parasol Café, a small wooden beach café with a striped awning over its counter, "
+        "round tables under red-and-white parasols on a wooden deck by the sand and a few hanging lanterns. Everything "
+        "else stays exactly where and how it is, above all the canoe house, the old ship, the school, the bar, the pier, "
+        "the waterfall, the palace, the resort, the radio mast, the Coconut Works, the red tree and every other building, "
+        "path and stretch of coast."),
 }
 
 
@@ -1214,7 +1235,10 @@ def cmd_touch(a):
     pond and water wheel at the Coconut Works, the villa's pool, the wooden radio hut, the imperial North Wind).
     A single word from TOUCH_SETS stands for that set of changes."""
     what = " ".join(a.what) if a.what else ""
-    a.prompt = TOUCH.format(what=TOUCH_SETS.get(what, what) or TOUCH_PLACES)
+    if what in TOUCH_SETS:   # a named set says itself what changes and why
+        a.prompt = TOUCH.replace(" so that each place looks from outside the way it does inside", "").format(what=TOUCH_SETS[what])
+    else:
+        a.prompt = TOUCH.format(what=what or TOUCH_PLACES)
     a.idea = "touched"
     cmd_panorama(a)
 
