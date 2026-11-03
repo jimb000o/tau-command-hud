@@ -650,9 +650,11 @@
   }
 
   /* the clips the server has made so far */
-  let have = null;
-  const ready = fetch(BASE + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null))
-    .then(j => { have = new Set((j && j.clips) || []); }, () => { have = new Set(); });
+  let have = null, tried = 0;
+  /* the list is asked for again when it came back empty (the server was restarting, e.g. during an update), at most twice a minute */
+  const list = () => (tried = Date.now(), fetch(BASE + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null))
+    .then(j => { have = new Set((j && j.clips) || []); }, () => { have = new Set(); }).then(learn));
+  let ready = null;
   async function key(who, s) {
     const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(who + "|" + s));
     return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
@@ -660,7 +662,7 @@
   /* which radio lines have their clips already (Rico's L keys, and the calls whose every line is spoken): game.js
      prefers those, so the radio keeps talking while new lines still wait for their voices */
   const VOICED = { l: null, c: null };
-  ready.then(async () => {
+  async function learn() {
     if (!have || !have.size || !window.crypto || !crypto.subtle) return;
     const l = new Set(), c = new Set();
     for (const [k, t] of Object.entries(L)) if (!t.includes("{") && have.has(await key("rico", t))) l.add(k);
@@ -669,7 +671,9 @@
       if (ks.every(k => have.has(k))) c.add(i);
     }
     VOICED.l = l; VOICED.c = c;
-  }, () => {});
+  }
+  ready = list();
+  const again = () => { if (have && !have.size && Date.now() - tried > 30000) ready = list(); return ready; };
   /* true or false once known; null while the clip list is still loading (or a line with a name in it) */
   const voiced = k => { if (!VOICED.l) return null; if (/^call:/.test(k)) return VOICED.c.has(+k.slice(5)); return L[k] == null || L[k].includes("{") ? null : VOICED.l.has(k); };
   const cache = new Map();
@@ -680,7 +684,7 @@
     const SND = window.COVE_SOUND;
     if (!SND || !SND.on || !SND.speak) { why.last = "sound not on (" + (SND ? SND.state : "no player") + ")"; return false; }
     if (!window.crypto || !crypto.subtle) { why.last = "no crypto.subtle"; return false; }
-    await ready;
+    await again();
     const said = parts.filter(p => p.v), keys = await Promise.all(said.map(p => key(p.who || who, p.v)));
     if (!keys.length) { why.last = "nothing to say aloud"; return false; }
     if (!have.size) { why.last = "clip list not loaded"; return false; }
