@@ -95,17 +95,27 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .timeline svg { display: block; width: 100%; height: auto; overflow: visible; }
 .timeline text { font: 11px var(--mono); fill: var(--dim); }
 .tablewrap.open { max-height: none; }
-/* one screen: block time beside restarts on top, four panels below */
-html.fit .main { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: minmax(0, .76fr) minmax(0, .48fr) minmax(0, 1fr); gap: 10px; align-items: stretch; min-height: 0; }
-html.fit .p-blocks { grid-column: 1 / 4; grid-row: 1 / 3; }
+/* one screen: block time, transactions and restarts over nodes on top; active wallets (two columns), types and dropped below */
+html.fit .main { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: minmax(0, .72fr) minmax(0, .46fr) minmax(0, 1.1fr); gap: 10px; align-items: stretch; min-height: 0; }
+html.fit .p-blocks { grid-column: 1 / 3; grid-row: 1 / 3; }
+html.fit .p-tx { grid-column: 3; grid-row: 1 / 3; }
 html.fit .p-rs { grid-column: 4; grid-row: 1; }
 html.fit .p-nodes { grid-column: 4; grid-row: 2; }
+html.fit .p-acc { grid-column: 1 / 3; grid-row: 3; }
+html.fit .p-types { grid-column: 3; grid-row: 3; }
+html.fit .p-drop { grid-column: 4; grid-row: 3; }
 /* ultrawide (21:9 and wider): restarts and community nodes side by side next to the block-time chart */
 html.fit.wide .main { grid-template-columns: repeat(20, minmax(0, 1fr)); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr); }
 html.fit.wide .main > .panel { grid-column: span 5; grid-row: auto; }
 html.fit.wide .main > .p-blocks { grid-column: 1 / 13; grid-row: 1; }
 html.fit.wide .main > .p-rs { grid-column: 13 / 17; grid-row: 1; }
 html.fit.wide .main > .p-nodes { grid-column: 17 / 21; grid-row: 1; }
+/* ultrawide: transactions beside block time on top; active wallets, types and dropped share the row below */
+html.fit.wide .main > .p-blocks { grid-column: 1 / 9; }
+html.fit.wide .main > .p-tx { grid-column: 9 / 13; grid-row: 1; }
+html.fit.wide .main > .p-acc { grid-column: 1 / 9; }
+html.fit.wide .main > .p-types { grid-column: 9 / 15; }
+html.fit.wide .main > .p-drop { grid-column: 15 / 21; }
 html.fit .panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px 14px; }
 html.fit .panel > * { flex: none; }
 html.fit .chart { flex: 1 1 0; min-height: 60px; overflow: hidden; }
@@ -114,6 +124,7 @@ html.fit .tablewrap, html.fit .ev { flex: 1 1 0; min-height: 0; overflow: auto; 
 html.fit .panel.tbl-on .chart, html.fit .panel.tbl-on .legend { display: none; }
 html.fit .headline { margin-bottom: 4px; font-size: 13px; }
 html.fit .legend { margin-bottom: 2px; }
+html.fit #lAcc { font-size: 11px; gap: 2px 10px; }
 html.fit .note { font-size: 12px; }
 html.fit .ev { font-size: 12px; gap: 3px; align-content: start; }
 html.fit .ev li { padding: 3px 8px; }
@@ -124,7 +135,7 @@ html.fit .tiles { gap: 8px; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 html.fit .tile { padding: 8px 12px; }
 html.fit .tile .v { font-size: 24px; margin-top: 2px; }
 html.fit .tile p { margin-top: 2px; }
-html.fit .tile .scope, html.fit:not(.wide) #hNodes span, html.fit .p-rs .legend, html.fit .p-rs h2 small, html.fit .p-drop h2 small, html.fit #hRestarts span, html.fit .p-drop:not(.none) .note { display: none; }
+html.fit .tile .scope, html.fit #hAcc span, html.fit:not(.wide) #hNodes span, html.fit .p-rs .legend, html.fit .p-rs h2 small, html.fit .p-drop h2 small, html.fit #hRestarts span, html.fit .p-drop:not(.none) .note { display: none; }
 html.fit .p-drop.none .tablewrap { display: none; }
 html.fit .p-drop.none .note:not(.short) { display: none; }
 .p-drop .note.short { display: none; }
@@ -136,6 +147,14 @@ html.fit footer p { margin: 0; }
 .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
 .panel h2 .tbl { margin-left: auto; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
 .panel h2 .tbl:hover, .panel h2 .tbl[aria-pressed="true"] { color: #fff; border-color: #fff; }
+.win { display: inline-flex; gap: 4px; margin-left: auto; }
+.win + .tbl { margin-left: 0 !important; }
+.win button { font: 600 11px var(--display); letter-spacing: .06em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+.win button:hover { color: #fff; border-color: var(--hair); }
+.win button[aria-pressed="true"] { color: #000; background: #fff; border-color: #fff; }
+.legend i.idni { height: 0; width: 14px; border-top: 2px dashed #8a8a94; border-radius: 0; background: none; }
+.chart .rs line { stroke: rgba(255,255,255,.35); stroke-dasharray: 2 3; }
+.chart .rs text { font-size: 10px; }
 .headline { margin: 0 0 8px; font: 500 14px/1.4 var(--display); color: #fff; }
 .headline span { color: var(--dim); font: 12px var(--mono); }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 6px; font-size: 12px; color: var(--text); }
@@ -193,7 +212,7 @@ footer a { color: var(--dim); }
 /* phone: nothing smaller than 11 px, buttons big enough for a thumb */
 @media (max-width: 700px) {
   .filters .lbl, .tile h3, .tile .scope, .panel h2 .tbl, th { font-size: 11px; }
-  .filters button, .panel h2 .tbl { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+  .filters button, .panel h2 .tbl, .win button { min-height: 44px; padding-top: 0; padding-bottom: 0; }
 }
 /* running text stays readable: about 70 characters a line, whatever the screen width */
 p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
@@ -256,9 +275,9 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     </section>
 
     <section class="panel p-acc">
-      <h2>Active accounts <small>accounts that sent a transaction</small><button class="tbl" type="button" data-table="tAcc" aria-pressed="false">Table</button></h2>
+      <h2 data-tip="A wallet is active when it sent at least one transaction in the window.\nKept day by day across chain restarts. IDNI’s genesis accounts are the dashed line, not in the stack.">Active wallets <small>sent a transaction in the window</small><span class="win" role="group" aria-label="Window"><button type="button" data-win="1" aria-pressed="false">1 d</button><button type="button" data-win="7" aria-pressed="false">7 d</button><button type="button" data-win="30" aria-pressed="false">30 d</button><button type="button" data-win="90" aria-pressed="true">90 d</button></span><button class="tbl" type="button" data-table="tAcc" aria-pressed="false">Table</button></h2>
       <p class="headline" id="hAcc"></p>
-      <div class="legend"><span><i style="background:#ebebee"></i>sending accounts per period</span></div>
+      <div class="legend" id="lAcc"></div>
       <div class="chart" id="cAcc"></div>
       <div class="tablewrap" id="tAcc" hidden></div>
     </section>
@@ -555,8 +574,8 @@ function yAxis(f, sc, unit) {
 }
 function xTimeAxis(f, t0, t1) {
   const span = Math.max(1, t1 - t0), px = f.w - f.L - f.R, n = Math.max(2, Math.floor(px / 90));
-  const steps = [300, 600, 900, 1800, 3600, 7200, 10800, 21600, 43200, 86400, 172800, 604800];
-  const step = span > 2 * 86400 ? (steps.find(s => s >= 86400 && span / s <= n) || 604800) : (steps.find(s => span / s <= n) || 604800);
+  const steps = [300, 600, 900, 1800, 3600, 7200, 10800, 21600, 43200, 86400, 172800, 604800, 1209600, 2419200];
+  const step = span > 2 * 86400 ? (steps.find(s => s >= 86400 && span / s <= n) || 2419200) : (steps.find(s => span / s <= n) || 2419200);
   // day ticks fall on local midnight
   const off = step >= 86400 ? new Date(t0 * 1000).getTimezoneOffset() * 60 : 0;
   for (let t = Math.ceil((t0 - off) / step) * step + off; t <= t1; t += step) {
@@ -753,6 +772,128 @@ function table(host, head, rows) {
   t.append(tb); host.replaceChildren(t);
 }
 
+/* ------------------------------ active wallets ------------------------------ */
+/* GET /wallets/active (relay walletdays.py): per UTC day, the wallets that sent a transaction in the 1 / 7 / 30 / 90 days
+   up to it, by tag. The relay writes each day down as it sees blocks, so a chain restart does not reset the count.
+   Until it answers (older relay, simulation) the page counts the current chain's senders itself: IDNI or other. */
+const WALLETS_URL = `https://${RELAY}/wallets/active`;
+const GENESIS = new Set(["f427fbf4cb8cc5ebcfc50add98ba574b94c03b1e32626e2e50cf60ba5e0a6d0c42d3ed702c2e0eeef7fae29bc4f3d2f9", "838d089401687e4ba5fe844f1241b2f6cf63cf73a7f8fb6aa0e45b3c6b85454f4e7ca19960b71d847655486495b64cb4", "93da919aed3b83e517190b8362528b35cbd51beb754289c5d99db12a306ac7f4980fbb96108a9cb812a46aede0c5f9ca", "8a39b9d9498535492290c52b44959b5a6e9177dc85ae6a1d97f54462f03c15a38052a85c7ace5cd81858e343a3b789d0", "b1337fcdf8d713a53518f0d6289c70bec2a09a7d6ec84548aac208988391cd66a9b627d03c07d922cd6ad15ebecf3ad7", "b3566dd294833030380d74b39fdb0bf214e9c64906b175f8822c3d4386602b1a9340231e553f9c299d6d8a82b9d441da", "af1d997703d7c0a86a5988762bb9ac2642890b5f0599f9821372684487d580a5f211ec160c038c073cda604c3c646487", "9689f5f8ffe6b73bb549e4058e54a3fc6a96ef2e784c415adeffd83d9488c9b435f075b59a778308f86226074f8b09b0", "916b92be0561ee21d042d033cabdf58d1c2f9ed110b2e173ab9cdd2a585442bec6232ffe0d97b779976a1dfd6a9d38fc", "b9e4b8fbe06a12f4702617f71ef031206426c4205ca0bc3436d2e0cb047fd18473ad125ceefc7ef18b851a19af2f370b", "8df32da800ad4b0657e333774889e6b08f768ab055ffb964d5935bbc8460aa8f91fa60a6a042f64ec144c7ec18ae02a3"]);   // tau-testnet-v2 genesis.json accounts_state (as txsources.GENESIS)
+// stacked bottom to top; IDNI's genesis accounts are drawn apart, as a dashed line
+const WTAGS = {
+  other: ["other wallets", "#55555e", "every other wallet: other people, scripts and tools"],
+  tauhud: ["Tau HUD wallet", "#7d7d87", "sent from a Tau HUD page through our wallet"],
+  agorzilla: ["Agorzilla and Déjà", "#acacb6", "fed Agorzilla or Déjà the café cat"],
+  rabbit: ["White Rabbit Key players", "#ebebee", "played White Rabbit Key on the chain"],
+  bot: ["island bot (ours)", "#34343b", "our own server wallets: the island bot’s rivals and the island’s purses"],
+  cruise: ["cruise passengers (simulated)", "#ffb347", "simulated passengers of White Rabbit Key’s cruise ships, sent by our server"],
+};
+const STACK = Object.keys(WTAGS);
+let WAL = null, WIN = 90;
+const dayTs = k => Date.parse(k + "T00:00:00Z") / 1000;
+const dayKey = ts => new Date(ts * 1000).toISOString().slice(0, 10);
+
+async function loadWallets() {
+  if (SAMPLE) { WAL = sampleWallets(); render(); return; }
+  try {
+    const r = await get(WALLETS_URL, "/wallets/active");
+    const j = r.ok ? await r.json() : null;
+    WAL = j && j.days && Array.isArray(j.tags) ? j : null;
+  } catch (e) { WAL = null; }
+  render();
+}
+// the current chain only, from /stats: IDNI's genesis accounts or other
+function walletsFromChain() {
+  const tags = ["idni", ...STACK], per = new Map(), wins = [1, 7, 30, 90];
+  const idni = i => { const a = String(D.accounts[i] || "").toLowerCase(); return SIM ? TauSim.isNative(a) : GENESIS.has(a); };
+  D.rows.forEach(r => { if (r.n > 0 && r.ts) { const k = dayKey(r.ts); if (!per.has(k)) per.set(k, new Set()); r.senders.forEach(x => per.get(k).add(x)); } });
+  if (!per.size) return null;
+  const keys = [...per.keys()].sort(), t0 = dayTs(keys[0]), t1 = Math.max(dayTs(keys[keys.length - 1]), dayTs(dayKey(Date.now() / 1000)));
+  const days = {}, newer = {}, seen = new Set();
+  for (let t = t0, i = 0; t <= t1; t += 86400, i++) {
+    const k = dayKey(t), row = {};
+    for (const w of wins) {
+      const u = new Set();
+      for (let b = 0; b < w; b++) (per.get(dayKey(t - b * 86400)) || []).forEach(x => u.add(x));
+      const c = tags.map(() => 0); u.forEach(x => c[idni(x) ? 0 : tags.indexOf("other")]++); row[w] = c;
+    }
+    days[k] = row;
+    const c = tags.map(() => 0); (per.get(k) || []).forEach(x => { if (!seen.has(x)) { seen.add(x); c[idni(x) ? 0 : tags.indexOf("other")]++; } });
+    if (c.some(Boolean)) newer[k] = c;
+  }
+  return { tags, windows: wins, days, new: newer, since: keys[0], chainOnly: true };
+}
+function sampleWallets() {
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const tags = ["idni", ...STACK], days = {}, newer = {}, today = dayTs(dayKey(Date.now() / 1000)), n = 46;
+  for (let i = 0; i < n; i++) {
+    const k = dayKey(today - (n - 1 - i) * 86400), g = i / n, row = {};
+    for (const w of [1, 7, 30, 90]) {
+      const f = Math.min(1, (Math.min(w, i + 1) + 2) / 9) * (w === 1 ? .35 : 1);
+      row[w] = [Math.min(11, 3 + Math.round(w > 1 ? 8 : 4 * rnd())), Math.round((6 + 30 * g) * f + rnd() * 3), Math.round(8 * g * f), Math.round(14 * g * g * f), Math.round(22 * g * f),
+        i > 30 ? 4 : 0, i > 40 ? Math.round(40 * Math.min(1, w / 7)) : 0];
+    }
+    days[k] = row;
+    newer[k] = tags.map((_, j) => j && rnd() < .5 ? Math.round(rnd() * 3) : 0);
+  }
+  return { tags, windows: [1, 7, 30, 90], days, new: newer, since: dayKey(today - (n - 1) * 86400) };
+}
+function restartTimes() {
+  return [...(D.restarts || []).map(r => r.new_block1_ts || r.detected_at), ...(D.mode === "sample" || SIM ? [] : KNOWN_RESTARTS.map(k => k.at))].filter(Boolean);
+}
+function walletPanel() {
+  const W = WAL || walletsFromChain(), host = $("cAcc"), head = $("hAcc"), legend = $("lAcc");
+  document.querySelectorAll("[data-win]").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.win) === WIN)));
+  if (!W || !Object.keys(W.days).length) {
+    head.textContent = "No wallet has sent a transaction yet."; legend.replaceChildren(); host.replaceChildren(el("div", "empty", "Waiting for the first transaction.")); $("tAcc").replaceChildren(); return;
+  }
+  const keys = Object.keys(W.days).sort(), ti = t => W.tags.indexOf(t), wk = String(W.windows.includes(WIN) ? WIN : 90);
+  const val = (k, t) => { const c = W.days[k][wk] || []; return ti(t) < 0 ? 0 : c[ti(t)] || 0; };
+  const pts = keys.map(k => { let y = 0; const st = {}; STACK.forEach(t => { st[t] = [y, y += val(k, t)]; }); return { k, t: dayTs(k), st, tot: y, idni: val(k, "idni") }; });
+  const present = STACK.filter(t => pts.some(p => p.st[t][1] > p.st[t][0]));
+  const lastP = pts[pts.length - 1], ours = val(lastP.k, "bot") + val(lastP.k, "cruise");
+  // headline + legend
+  const winTxt = WIN === 1 ? "today" : `in the last ${WIN} days`;
+  head.replaceChildren(document.createTextNode(`${fmtN(lastP.tot)} wallets active ${winTxt}, plus ${fmtN(lastP.idni)} of IDNI’s genesis accounts. `),
+    (() => { const sp = el("span"); if (ours) sp.append(document.createTextNode(`${fmtN(ours)} of them are our own server wallets. `));
+      sp.append(document.createTextNode(W.chainOnly ? "Current chain only, until our relay keeps wallets across restarts." :
+        WIN > 1 && dayTs(lastP.k) - dayTs(W.since) < (WIN - 1) * 86400 ? `Counted since ${fmtDay(dayTs(W.since))}, so the window is still filling.` : `Counted since ${fmtDay(dayTs(W.since))}; restarts do not reset it.`)); return sp; })());
+  head.dataset.tip = head.textContent;   // the one-screen layout hides the second sentence
+  legend.replaceChildren(...present.map(t => { const s = el("span"); s.dataset.tip = WTAGS[t][2]; const i = el("i"); i.style.background = WTAGS[t][1]; if (t === "bot") i.style.outline = "1px solid #8a8a94"; s.append(i, document.createTextNode(WTAGS[t][0])); return s; }),
+    (() => { const s = el("span"); s.dataset.tip = "the accounts the testnet started with, set up by IDNI"; s.append(el("i", "idni"), document.createTextNode("IDNI genesis accounts")); return s; })());
+  // chart
+  const f = frame(host, 210), px = f.w - f.L - f.R, py = f.h - f.T - f.B;
+  const sc = niceScale(Math.max(...pts.map(p => Math.max(p.tot, p.idni)))), t0 = pts[0].t, t1 = Math.max(lastP.t, t0 + 86400);
+  const X = t => f.L + (t - t0) / (t1 - t0) * px, Y = v => f.h - f.B - v / sc.max * py;
+  yAxis(f, sc, "");
+  xTimeAxis(f, t0, t1);
+  const one = pts.length === 1, line = (get) => pts.map((p, i) => `${i ? "L" : "M"}${X(p.t).toFixed(1)},${Y(get(p)).toFixed(1)}`).join("") + (one ? `L${X(t1).toFixed(1)},${Y(get(pts[0])).toFixed(1)}` : "");
+  present.forEach(t => {
+    const top = pts.map(p => [X(p.t), Y(p.st[t][1])]), bot = pts.map(p => [X(p.t), Y(p.st[t][0])]).reverse();
+    if (one) { top.push([X(t1), top[0][1]]); bot.unshift([X(t1), bot[bot.length - 1][1]]); }
+    svgEl("path", { d: "M" + [...top, ...bot].map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join("L") + "Z", fill: WTAGS[t][1], "fill-opacity": t === "rabbit" ? .8 : .9,
+      ...(t === "bot" ? { stroke: "#8a8a94", "stroke-width": .6 } : {}) }, f.svg);
+  });
+  svgEl("path", { d: line(p => p.tot), fill: "none", stroke: "var(--ok)", "stroke-width": 1.6 }, f.svg);
+  svgEl("path", { d: line(p => p.idni), fill: "none", stroke: "#8a8a94", "stroke-width": 1.4, "stroke-dasharray": "4 3" }, f.svg);
+  const rs = svgEl("g", { class: "rs" }, f.svg);
+  restartTimes().filter(t => t >= t0 && t <= t1 + 86400).forEach(t => {
+    const x = Math.min(X(t), f.w - f.R), left = x > f.w - f.R - 50; svgEl("line", { x1: x, x2: x, y1: f.T, y2: f.h - f.B }, rs);
+    const l = svgEl("text", { x: left ? x - 3 : x + 3, y: f.T + 8, "text-anchor": left ? "end" : "start" }, rs); l.textContent = "restart";
+  });
+  const xh = svgEl("line", { class: "xh", y1: f.T, y2: f.h - f.B, visibility: "hidden" }, f.svg), slot = px / Math.max(1, pts.length - 1);
+  pts.forEach((p, i) => {
+    const x = X(p.t), r = svgEl("rect", { class: "hit", x: one ? f.L : x - slot / 2, y: f.T, width: one ? px : slot, height: py }, f.svg);
+    const show = ev => { xh.setAttribute("x1", x); xh.setAttribute("x2", x); xh.setAttribute("visibility", "visible");
+      const nw = (W.new || {})[p.k] || [], nNew = STACK.reduce((a, t) => a + (nw[ti(t)] || 0), 0);
+      showTip(ev, tipLines([["tv", `${fmtN(p.tot)} active wallets`], ...[...present].reverse().filter(t => val(p.k, t)).map(t => ["", `${fmtN(val(p.k, t))} ${WTAGS[t][0]}`]),
+        ["", `${fmtN(p.idni)} IDNI genesis accounts`], ...(nNew ? [["", `${fmtN(nNew)} new that day`]] : []), ["tm", WIN === 1 ? fmtDay(p.t) : `${WIN} days up to ${fmtDay(p.t)}`]])); };
+    r.addEventListener("pointermove", show);
+    r.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); hideTip(); });
+  });
+  table($("tAcc"), [["Day"], ["Active", 1], ["IDNI", 1], ["New", 1]], [...pts].reverse().map(p => { const nw = (W.new || {})[p.k] || [];
+    return [fmtDay(p.t), fmtN(p.tot), fmtN(p.idni), fmtN(STACK.reduce((a, t) => a + (nw[ti(t)] || 0), 0))]; }));
+}
+
 /* ------------------------------ render ------------------------------ */
 function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = text; s.dataset.tip = tipText; }
 
@@ -798,10 +939,7 @@ function render() {
   table($("tTx"), [["Period"], ["Transfers", 1], ["Rule work", 1], ["Governance", 1], ["Blocks", 1]], [...bk.list].reverse().map(b => [bucketLabel(b, bk.size), fmtN(b.transfer), fmtN(b.rule), fmtN(b.gov), fmtN(b.blocks)]));
 
   const active = new Set(); rows.forEach(r => r.senders.forEach(s => active.add(s)));
-  barChart($("cAcc"), bk, [["acc", "Accounts", "", "#ebebee"]], b => b.senders.size, b => tipLines([["tv", `${fmtN(b.senders.size)} account${b.senders.size === 1 ? "" : "s"}`], ["", "sent at least one transaction"], ["tm", bucketLabel(b, bk.size)]]));
-  $("hAcc").replaceChildren(document.createTextNode(active.size ? `${fmtN(active.size)} different accounts sent transactions in this range. ` : "No account sent a transaction in this range. "),
-    el("span", "", `Bars: ${per}.`));
-  table($("tAcc"), [["Period"], ["Sending accounts", 1]], [...bk.list].reverse().map(b => [bucketLabel(b, bk.size), fmtN(b.senders.size)]));
+  walletPanel();
 
   // restarts
   const rs = restartChart(all), list = $("restartList"); list.replaceChildren();
@@ -925,9 +1063,10 @@ document.querySelectorAll("[data-table]").forEach(b => b.addEventListener("click
   if (!on) render();
 }));
 let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(render, 120); }).observe(document.querySelector(".wrap"));
-load().then(loadNodes);
+load().then(() => { loadNodes(); loadWallets(); });
+document.querySelectorAll("[data-win]").forEach(b => b.addEventListener("click", () => { WIN = Number(b.dataset.win); render(); }));
 if (SIM) TauSim.mark();
-if (!SAMPLE) { setInterval(load, 30000); setInterval(loadNodes, 30000); }  // also upgrades from the 50-block window once /stats answers
+if (!SAMPLE) { setInterval(load, 30000); setInterval(loadNodes, 30000); setInterval(loadWallets, 300000); }  // also upgrades from the 50-block window once /stats answers
 setInterval(() => { if (D && document.visibilityState === "visible" && tip.hidden) render(); }, 15000);
 </script>
 </body>
