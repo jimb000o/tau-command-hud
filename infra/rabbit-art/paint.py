@@ -640,6 +640,13 @@ def magentaish(c):
     return r > 110 and b > 60 and g < 0.5 * min(r, b) and r > 0.6 * b and b > 0.3 * r
 
 
+def warm(c):
+    """A colour with more green than blue: skin, coral, orange, a salmon shirt. The key colour and every shade or tint of
+    it has at least as much blue as green (so has white or grey), so a warm pixel is never background, however close to
+    the background it measures."""
+    return c[1] > c[2]
+
+
 def cutout(im):
     """An RGBA copy of a picture painted on a flat background, the background taken away: only what reaches the top and
     the sides, filled from the edges, so a face or a shirt in a colour near the background stays solid."""
@@ -649,11 +656,15 @@ def cutout(im):
     edge = sorted([px[x, 2] for x in range(0, W, 7)] + [px[2, y] for y in range(0, H, 7)] + [px[W - 3, y] for y in range(0, H, 7)])
     bg = edge[len(edge) // 2]
     dist = lambda c: abs(c[0] - bg[0]) + abs(c[1] - bg[1]) + abs(c[2] - bg[2])
-    work, SENT = im.copy(), (1, 254, 3)
+    work, SENT, WALL = im.copy(), (1, 254, 3), (0, 255, 0)
     wp = work.load()
+    for y in range(H):   # warm colours are walls to the fill, so it cannot run through a coral shirt near a pink background
+        for x in range(W):
+            if warm(px[x, y]):
+                wp[x, y] = WALL
     seeds = [(x, 0) for x in range(0, W, 5)] + [(0, y) for y in range(0, H, 5)] + [(W - 1, y) for y in range(0, H, 5)]
     for xy in seeds:
-        if wp[xy] != SENT and dist(px[xy]) < 120:
+        if wp[xy] != SENT and dist(px[xy]) < 120 and not warm(px[xy]):
             ImageDraw.floodfill(work, xy, SENT, thresh=110)
     mask = Image.new("L", (W, H), 255); m = mask.load()
     pocket = Image.new("L", (W, H), 0); q = pocket.load()
@@ -661,7 +672,7 @@ def cutout(im):
         for x in range(W):
             if wp[x, y] == SENT:
                 m[x, y] = 0
-            elif dist(px[x, y]) < 75 or magentaish(px[x, y]):
+            elif not warm(px[x, y]) and (dist(px[x, y]) < 75 or magentaish(px[x, y])):
                 q[x, y] = 255
     # the background also shows through gaps the fill cannot reach (between an arm and the body): take those too, but
     # only patches of some size, not a pink speck in a shirt
@@ -669,7 +680,7 @@ def cutout(im):
     q = pocket.load()
     for y in range(H):
         for x in range(W):
-            if q[x, y] and (dist(px[x, y]) < 110 or magentaish(px[x, y])):
+            if q[x, y] and not warm(px[x, y]) and (dist(px[x, y]) < 110 or magentaish(px[x, y])):
                 m[x, y] = 0
     mask = mask.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.8))   # a soft edge, no fringe
     m = mask.load()
@@ -693,7 +704,7 @@ def unpocket(im, bg=(255, 0, 255)):
     pocket = Image.new("L", (W, H), 0); q = pocket.load()
     for y in range(H):
         for x in range(W):
-            if px[x, y][3] and (dist(px[x, y]) < 75 or magentaish(px[x, y])):
+            if px[x, y][3] and not warm(px[x, y]) and (dist(px[x, y]) < 75 or magentaish(px[x, y])):
                 q[x, y] = 255
     pocket = pocket.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.MaxFilter(7))
     q = pocket.load()
@@ -701,7 +712,7 @@ def unpocket(im, bg=(255, 0, 255)):
     for y in range(H):
         for x in range(W):
             r, g, b, a = px[x, y]
-            if a and q[x, y] and (dist((r, g, b)) < 110 or magentaish((r, g, b))):
+            if a and q[x, y] and not warm((r, g, b)) and (dist((r, g, b)) < 110 or magentaish((r, g, b))):
                 px[x, y] = (r, max(g, (r + b) // 2 - 40), b, 0); n += 1
     return n
 
