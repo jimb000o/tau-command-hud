@@ -147,6 +147,9 @@ async function play(n) {
     await measure(page, out, "start screen");
     await tap(page, out, page.locator(".cv-cand").nth(["marisol", "tobias", "baako", "hana"].indexOf(cand)), "candidate");
     await run(1500);
+    /* Old Sam writes the name into the Book: who you are, what you stand for */
+    const welcome = page.locator(".cv-card.welcome");
+    if (await welcome.count()) { await measure(page, out, "welcome"); await tap(page, out, welcome.locator(".cv-acts button.cv-b").first(), "walk onto the island"); await run(1200); }
     /* where every place stands on this screen: on the picture, uncovered, big enough to tap */
     const geo = await page.evaluate(() => {
       const SC = window.COVE_SCENE, cv = document.getElementById("cvScene"), r = cv.getBoundingClientRect(), o = {};
