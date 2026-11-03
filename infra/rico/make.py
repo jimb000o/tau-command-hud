@@ -67,8 +67,8 @@ CAST = {
                      "warm underneath, neutral accent, very easy to understand."),
     "frost": ("Ambassador Frost", "A cool, polished northern diplomat in his fifties, smooth measured voice, crisp consonants, "
                                   "politely menacing, every word weighed, clear."),
-    "salado": ("Ambassador Salado", "A charming southern diplomat in his fifties, velvet voice, warm Latin accent, flattering "
-                                    "and smooth, a hint of a smile that is not quite friendly, clear."),
+    "salado": ("Salado", "A sun-kissed wellness investor in his fifties, relaxed velvet voice, warm Latin accent, flattering "
+                         "and smooth, always selling something, a smile you can hear, says my friend, clear."),
     # the people of the island's other quarters
     "ama": ("Ama", "An elder woman in her seventies who keeps her people's oldest customs, low unhurried voice, warm and wise, "
                    "a quiet humour, every word chosen with care, clear and easy to understand."),
@@ -426,6 +426,18 @@ def cmd_library(a):
     print(f"Keep one with: python3 infra/rico/make.py keep {w}=L1   (or L2, L3 ...)")
 
 
+def drop_voice(vid):
+    """Removes a voice from the account (a design kept earlier), so its slot can take the new one."""
+    req = urllib.request.Request(API + f"/voices/{vid}", headers={"xi-api-key": api_key()}, method="DELETE")
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            r.read()
+        return True
+    except (urllib.error.HTTPError, urllib.error.URLError) as e:
+        print(f"  (could not drop the earlier voice {vid}: {e})")
+        return False
+
+
 def cmd_keep(a):
     """Keep design N for each islander as their voice in the account, then make every clip with them."""
     designs = load(os.path.join(a.out, "design.json"), {})
@@ -450,6 +462,9 @@ def cmd_keep(a):
         except (KeyError, ValueError, IndexError):
             sys.exit(f"No design {pick!r}. Run: python3 infra/rico/make.py design {w if w in CAST else 'all'}")
         name = CAST[w][0] if w in CAST else w
+        old = idx["voices"].get(w) or {}   # a design kept earlier holds one of the account's ten slots: freed first
+        if old.get("name", "").endswith("(White Rabbit Key)") and drop_voice(old["id"]):
+            print(f"Dropped {name}'s earlier voice {old['name']!r} ({old['id']}): the slot is free again.")
         body = {"voice_name": f"{name} (White Rabbit Key)", "voice_description": d["description"][:500], "generated_voice_id": gid}
         r = call("/text-to-voice", body, missing_ok=True)
         if r is None:

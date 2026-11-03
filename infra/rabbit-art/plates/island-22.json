@@ -3,7 +3,7 @@
  "market": {"x": 705, "y": 565, "box": [650, 520, 125, 85], "name": "The Market Square (Parasol Café)"},
  "radio": {"x": 530, "y": 300, "box": [460, 130, 150, 200], "name": "Radio Coco"},
  "north": {"x": 1340, "y": 380, "box": [1140, 90, 400, 400], "name": "North Wind Embassy"},
- "south": {"x": 860, "y": 320, "box": [790, 245, 150, 110], "name": "South Current Embassy"},
+ "south": {"x": 860, "y": 320, "box": [790, 245, 150, 110], "name": "South Current Wellness Resort"},
  "bar": {"x": 940, "y": 630, "box": [895, 580, 95, 90], "name": "Bar La Ola"},
  "book": {"x": 654, "y": 700, "box": [625, 605, 60, 140], "name": "The Lighthouse"},
  "pier": {"x": 1030, "y": 680, "box": [990, 650, 100, 55], "name": "The pier"},

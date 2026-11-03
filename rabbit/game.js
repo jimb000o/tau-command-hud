@@ -42,7 +42,7 @@
   const FOLK = {
     rico: { name: "Rico", role: "DJ on Radio Coco", skin: "#7a4a2a", hair: "#111", style: "afro", acc: "phones", accC: "#e8574a", shirt: "#e86fa0" },
     frost: { name: "Ambassador Frost", role: "North Wind Embassy", skin: "#f3d6c0", hair: "#e0e0e0", style: "side", acc: "monocle", accC: "#d9b44a", shirt: "#3b5f8a" },
-    salado: { name: "Ambassador Salado", role: "South Current Embassy, wellness investor", skin: "#c68642", hair: "#3a2a1a", style: "side", acc: "mustache", accC: "#3a2a1a", shirt: "#c0533f" },
+    salado: { name: "Salado", role: "South Current Wellness Resort, investor", skin: "#c68642", hair: "#3a2a1a", style: "side", acc: "mustache", accC: "#3a2a1a", shirt: "#c0533f" },
     lola: { name: "Lola", role: "Runs Bar La Ola", skin: "#8d5524", hair: "#5a1a1a", style: "curls", acc: "flower", accC: "#ff6f91", shirt: "#fff6e6" },
     sam: { name: "Old Sam", role: "Keeper of the lighthouse and the Book", skin: "#c9a27a", hair: "#eee", style: "bald", acc: "beard", accC: "#eee", shirt: "#2a2a30" },
     /* the people of the island's other quarters (a painted island with a layout that has them, infra/rabbit-art) */
@@ -79,7 +79,8 @@
   const LIES = { marisol: "Marisol fishes inside the reef at night", tobias: "Tobias wants to sell the lighthouse", baako: "Baako’s coconuts are imported", hana: "Hana wants school on Sundays" };
   const EMB = {
     north: { who: "frost", name: "North Wind Embassy", wants: "harbour", coins: 40 },
-    south: { who: "salado", name: "South Current Embassy", wants: "road", coins: 35 },
+    south: { who: "salado", name: "South Current Wellness Resort", wants: "road", coins: 35,
+      offer: "{n} coins, today, no paperwork. Propose “{x}” before the election, and the resort opens its gates to the whole island. Synergy, my friend.", remind: "We are counting on you for “{x}”. Our guests are already booked, and they ask questions." },   // his own words; the North Wind keeps the diplomat's
   };
   const DAYS = 7, MOVES = 3, RUMOUR = 25, GIFT = 20;   // a campaign is one island week, Monday to Sunday; the election is Sunday night
   /* the island's calendar is the real one: an island day is a real day (Europe/Berlin), three moves each, and the week's
@@ -869,7 +870,7 @@
   }
   function embassy(box, e) {
     const E = EMB[e], took = G.deals.find(d => d.by === G.me && d.emb === e);
-    const line = took ? F("We are counting on you for “{x}”. We would hate to remind the island in public.", { x: LAWS[E.wants].t }) : F("{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.", { n: E.coins, x: LAWS[E.wants].t });
+    const line = took ? F(E.remind || "We are counting on you for “{x}”. We would hate to remind the island in public.", { x: LAWS[E.wants].t }) : F(E.offer || "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.", { n: E.coins, x: LAWS[E.wants].t });
     scene(box, E.who, T(E.name), line, took ? [btn(T("Leave"), () => closeCard())] : [
       btn(F("Take the {n} coins and promise", { n: E.coins }), () => { deal(G.me, e); SND.sfx("coin"); toast(T("The promise is in the Book now.")); spend(); if (UI.card) openCard(e, PLACE[e]); }, { off: !movesLeft(), sub: F("people who care about {x} will not like it", { x: Object.keys(LAWS[E.wants].fx).filter(k => LAWS[E.wants].fx[k] < 0).map(k => T(TOPICS[k])).join(", ") }) }),
       btn(T("Politely decline"), () => closeCard()),
