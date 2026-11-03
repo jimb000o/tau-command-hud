@@ -162,5 +162,49 @@ for t in (1_774_745_000.0, 1_793_491_200.0 + 82800, 1_761_440_000.0):   # a day 
         builtins.__import__ = imp
     check(want is None or got == want, f"the island's day without zone files: {got} for {t}")
 
+# ---------- the players' board: test wallets, counted only once they signed from that address ----------
+T[0] = 1_793_491_200.0 + 36000 + 14 * 86400   # a Sunday two weeks on, 10:00 UTC
+B = isle.Isle(path=os.path.join(tempfile.mkdtemp(), "isle.json"), clock=clock, house=False)
+wa, wb, wc = "a" * 92 + "0001", "b" * 92 + "0002", "c" * 92 + "0003"
+ok, d = B.move("9.9.9.1", "boardg01", "hana", "law", "boat", "hall", wa)
+check(ok and d["counted"] and d["listed"] is False and B.snapshot()["board"]["busy"] == [], "a wallet that never signed from here is not on the board, the move still counts for the island")
+B.saw("9.9.9.1", wa)
+ok, d = B.move("9.9.9.1", "boardg01", "hana", "talk", "school", "market", wa)
+s = B.snapshot()["board"]
+check(d["listed"] is True and s["busy"][0]["moves"] == 2 and s["busy"][0]["laws"] == 1 and s["busy"][0]["as"] == "hana", "once it signed, the campaign's earlier moves join it on the board")
+check(s["busy"][0]["id"] == "aaaaaa…0001" and "a" * 20 not in json.dumps(s), "the board shows the short form only")
+check(B.move("9.9.9.2", "boardg02", "tobias", "talk", "music", "market", wa)[1]["listed"] is False, "someone else's wallet from another address does not count")
+B.saw("9.9.9.1", wb)
+check(B.move("9.9.9.1", "boardg01", "hana", "talk", "school", "market", wb)[1]["listed"] is False, "a campaign stays with the first wallet it was seen with")
+check(B.move("9.9.9.1", "boardg01", "hana", "talk", "school", "market", "x" * 96)[0] is False, "a wallet is 96 hex characters or -")
+B.saw("9.9.9.3", wc)
+for i in range(5):
+    B.move("9.9.9.3", "boardg03", "baako", "talk", "roads", "market", wc)
+ok, d = B.end("9.9.9.3", "boardg03", "baako", "marisol", "boat", wc, "3", "-")
+ok, d = B.end("9.9.9.1", "boardg01", "hana", "hana", "boat,lunch", wa, "7", "reform")
+s = B.snapshot()["board"]
+check([r["id"][:6] for r in s["best"]] == ["aaaaaa", "cccccc"] and s["best"][0]["won"] == 1 and s["best"][0]["votes"] == 7 and s["best"][0]["goal"] == "reform",
+      "best results: an election won first, then votes")
+check([r["id"][:6] for r in s["busy"]] == ["cccccc", "aaaaaa"] and s["busy"][0]["moves"] == 5, "most active: most moves first")
+check(s["ever"][0]["won"] == 1 and s["ever"][0]["played"] == 1 and s["ever"][0]["goals"] == 1 and s["everWallets"] == 2, "all time: elections won, campaigns, ambitions")
+B.saw("9.9.9.1", wa)
+B.end("9.9.9.1", "boardg09", "hana", "tobias", "-", wa, "2", "-")
+check(B.snapshot()["board"]["best"][0]["votes"] == 7 and B.board["all"][wa]["played"] == 1, "the week keeps a wallet's first finished campaign; a replay neither improves nor counts twice")
+check(B.end("9.9.9.1", "boardg10", "hana", "hana", "-", wa, "11", "-")[0] is False and B.end("9.9.9.1", "boardg10", "hana", "hana", "-", wa, "5", "boss")[0] is False, "votes 0-10, a known ambition or -")
+st = B.standing(wc)["board"]
+check(st["me"]["best"] == 2 and st["me"]["busy"] == 1 and st["me"]["ever"] == 2 and st["me"]["id"] == "cccccc…0003", "a wallet can ask where it stands")
+check(B.standing("-")["board"]["me"] is None and B.route("/isle/board")["board"]["best"][0]["n"] == 1, "GET /isle/board, without a wallet")
+T[0] += isle.SEEN_FOR + 60
+check(B.move("9.9.9.3", "boardg03", "baako", "talk", "roads", "market", wc)[1]["listed"] is False, "a signature from here counts SEEN_FOR seconds, then the wallet must sign again")
+B.dirty = True; B.save()
+B2 = isle.Isle(path=B.path, clock=clock, house=False)
+check(B2.snapshot()["board"]["best"][0]["votes"] == 7, "a restart keeps the board")
+T[0] += 86400   # Monday: the governor's count, a new week on the board
+s = B2.snapshot()["board"]
+check(s["best"] == [] and s["busy"] == [] and s["prev"]["best"][0]["id"][:6] == "aaaaaa" and s["ever"][0]["won"] == 1, "a new week starts an empty board; last week's best and all time stay")
+B2.saw("9.9.9.1", wa)
+B2.end("9.9.9.1", "boardg11", "hana", "hana", "-", wa, "6", "-")
+check(B2.board["all"][wa]["won"] == 2 and B2.snapshot()["board"]["best"][0]["votes"] == 6, "a new week, a new campaign counts")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

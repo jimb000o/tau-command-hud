@@ -72,6 +72,14 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 .cv-isle .two:empty { display: none; }
 .cv-isle .cv-book li { padding: 4px 8px; }
 @media (max-width: 759px), (max-height: 520px) { .cv-isle .two { grid-template-columns: 1fr; } }
+.cv-seg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.cv-seg-row h4 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); margin: 0; }   /* names the tab only */
+.cv-seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.cv-seg button { font: 11px var(--mono); color: var(--dim); background: none; border: 1px solid var(--hair); border-radius: 999px; padding: 3px 9px; min-height: 26px; cursor: pointer; }
+.cv-seg button[aria-pressed="true"] { color: var(--text); border-color: var(--ok); }
+@media (pointer: coarse) { .cv-seg button { min-height: 44px; padding: 0 12px; } }
+.cv-rank li em { font-style: normal; color: var(--ok); }
+.cv-rank li.me { border-left-color: var(--ok); }
 #cvMoves i.on { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 8px rgba(57,255,138,.6); }
 .bar .sp { flex: 1; }
 button.chip { cursor: pointer; }
