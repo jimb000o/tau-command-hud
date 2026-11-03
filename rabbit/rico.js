@@ -703,9 +703,14 @@
     if (!keys.length) { why.last = "nothing to say aloud"; return false; }
     if (!have.size) { why.last = "clip list not loaded"; return false; }
     if (!keys.every(k => have.has(k))) { why.last = "clip missing: " + keys.filter(k => !have.has(k)).join(","); return false; }
-    const bufs = await Promise.all(keys.map(clip));
-    if (bufs.some(b => !b)) { why.last = "clip download failed"; return false; }
-    const secs = await SND.speak(bufs.map((b, i) => (said[i].who && said[i].who !== who ? { b: b.slice(0), tel: true } : b.slice(0))), o);   // a caller sounds like a telephone
+    /* while the clips are fetched and decoded the mouth stays shut, then it follows the voice (COVE_SOUND.lip) */
+    if (SND.expect) SND.expect(who, true);
+    let secs;
+    try {
+      const bufs = await Promise.all(keys.map(clip));
+      if (bufs.some(b => !b)) { why.last = "clip download failed"; return false; }
+      secs = await SND.speak(bufs.map((b, i) => (said[i].who && said[i].who !== who ? { b: b.slice(0), tel: true, who: said[i].who } : b.slice(0))), Object.assign({ who }, o));   // a caller sounds like a telephone
+    } finally { if (SND.expect) SND.expect(who, false); }
     if (secs) { why.last = "ok"; return secs; }
     /* the sound card would not decode the clip (some phone browsers): the same clips through a plain audio element */
     why.last = "web audio: " + (SND.why || "off") + ", trying the audio element";
