@@ -1652,12 +1652,15 @@
     if (set === "call" && Math.random() < 0.88) { const p = phoneIn(); if (p) { ROT.callLast = true; return p; } return one("joke"); }   // otherwise a letter from a listener, read out by Rico
     return one(set);
   }
-  readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
-  dejaFetch(); setInterval(() => { if (!document.hidden) dejaFetch(); }, 600000);
-  srcFetch(); setInterval(() => { if (!document.hidden) srcFetch(); }, 600000);
+  /* a tab in the background stays quiet, unless the sound is on: then Radio Coco goes on, like a radio left on in the
+     next room, and Rico keeps reading the chain so what he says is still news (a tab playing sound is not slowed down) */
+  const away = () => document.hidden && !SND.on;
+  readChain(); setInterval(() => { if (!away()) readChain(); }, 90000);
+  dejaFetch(); setInterval(() => { if (!away()) dejaFetch(); }, 600000);
+  srcFetch(); setInterval(() => { if (!away()) srcFetch(); }, 600000);
   if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine };   // the headless check (tests)
   setInterval(() => {
-    if (!G || G.over || G.counting || document.hidden || performance.now() < DJ.next) return;
+    if (!G || G.over || G.counting || away() || performance.now() < DJ.next) return;
     /* the show waits for the sound to come on (the first tap), so the opener is heard, not just read; after a while it goes on in text */
     if (ROT.n === 0 && !SND.on && performance.now() < 90000) return;
     if (DJ.opened && DJ.after) { const a = DJ.after; DJ.after = null; onAir(a, 1); return; }
@@ -2350,7 +2353,7 @@
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     $("cvIsle").onclick = () => { wake(); openIsle(); };
     if ($("cvBell")) { $("cvBell").onclick = () => { wake(); answerBell(); }; bellChip(); setInterval(bellChip, 5000); }
-    if ($("cvShip")) { $("cvShip").onclick = () => { wake(); shipCard(); }; shipFetch(); setInterval(() => { if (!document.hidden) shipFetch(); }, 60000); }
+    if ($("cvShip")) { $("cvShip").onclick = () => { wake(); shipCard(); }; shipFetch(); setInterval(() => { if (!document.hidden || SND.on) shipFetch(); }, 60000); }
     isleJoin();
     const sb = $("cvSound");
     const showSound = () => { const l = SND.on ? T("Sound on") : SND.wanted ? T("Tap for sound") : T("Sound off"); sb.replaceChildren("♪", el("span", { class: "lb", text: " " + l })); sb.setAttribute("aria-label", l); sb.classList.toggle("off", !SND.wanted); sb.setAttribute("aria-pressed", SND.on ? "true" : "false"); };
