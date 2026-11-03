@@ -1074,6 +1074,7 @@
     if (L.windows) WINDOWS.splice(0, WINDOWS.length, ...L.windows);
     for (const k in SPOT) if (L[k]) SPOT[k] = L[k];
     if (L.rabbit) { RB.x = RB.tx = L.rabbit[0]; RB.y = RB.ty = L.rabbit[1]; }
+    if (L.horizon) ART.hz = L.horizon;   // where the painting's far sea meets the sky (world units from the top)
     ART.layout = true; ART.whole = L.view === "whole";
     if (S.focusId) focus(S.focusId, S.focusSide);
   }
@@ -1166,30 +1167,101 @@
     g.strokeStyle = "rgba(34,48,58,.025)"; for (let i = 0; i < 18; i++) { g.beginPath(); const y = R() * 160; g.moveTo(0, y); g.lineTo(160, y + (R() - 0.5) * 6); g.stroke(); }
     return c;
   }
-  /* the light over a painted island: the whole picture (and the blurred sea and sky beside it) multiplied with the light
-     of the hour, a blue haze at night, stars and a moon where the painting shows open sky, a warm glow on the horizon
-     at sunrise (east, on the left) and sunset (west, on the right) */
-  function skyMask() {
-    const im = ART.img.island; if (S.mask && S.mask.im === im) return S.mask;
-    S.mask = { im, d: null };
-    try {
-      const mw = 240, mh = Math.round(mw * im.naturalHeight / im.naturalWidth), c = document.createElement("canvas"); c.width = mw; c.height = mh;
-      const cg = c.getContext("2d"); cg.drawImage(im, 0, 0, mw, mh);
-      const px = cg.getImageData(0, 0, mw, mh).data, d = new Uint8Array(mw * mh), hz = Math.floor(mh * HZ / WH) - 1;
-      for (let x = 0; x < mw; x++) for (let y = 0; y < hz; y++) {   // open sky runs down from the top of each column until something stands in it
-        const i = (y * mw + x) * 4, r = px[i], gg = px[i + 1], b = px[i + 2], sky = (b >= r - 8 && b > 110) || (r > 205 && gg > 205 && b > 195);
-        if (!sky) break; d[y * mw + x] = 1;
-      }
-      Object.assign(S.mask, { d, mw, mh, e: ART.wide || 0 });
-    } catch (e) {}   // a picture from another server without leave to read it: stars only high up
-    return S.mask;
+  /* the light over a painted island: the whole picture (and the blurred sea beside it) multiplied with the light of the
+     hour, a blue haze at night, and a sky of its own. The painting is seen from high up and shows only sea up to its top
+     edge, so the scene gives it a horizon (ART.hz, the layout's "horizon", world units from the top): above that line,
+     wherever the painting shows open sea, the sky of the hour takes over, with stars and a moon at night; the mountains,
+     towers and islets that rise above the line stand in front of it, and nothing is ever drawn on them. Just under the
+     line the far sea is a shade darker at night and hazier by day, so sea and sky never run into one another. A warm
+     glow on the horizon at sunrise (east, on the left) and sunset (west, on the right). */
+  const SEAPX = (r, g, b) => g - r > 38 && b > 135 && b >= g - 6;   // open sea in the painting: clearly blue-green, never the grey-blue rock
+  function paintRect() {   // where the island painting lies in the world (as size() draws it)
+    const im = ART.img.island, e = ART.wide || 0;
+    if (e) return [-e, 0, WW + 2 * e, WH];
+    const k = Math.max(WW / im.naturalWidth, WH / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
+    return [(WW - iw) / 2, (WH - ih) / 2, iw, ih];
   }
-  function openSky(x, y) {
-    const M = skyMask(), e = (M && M.e) || 0;
-    if (x < -e || x > WW + e) return y < HZ * 0.55;   // beside the painting
-    if (!M || !M.d) return y < HZ * 0.3;
-    const mx = Math.floor((x + e) / (WW + 2 * e) * M.mw), my = Math.floor(y / WH * M.mh);
-    return mx >= 0 && mx < M.mw && my >= 0 && my < M.mh && M.d[my * M.mw + mx] === 1;
+  /* the land of the painting in the band above and just under the horizon, as a soft-edged picture: opaque where land is */
+  function landMask() {
+    const im = ART.img.island, hz = ART.hz || 110;
+    if (S.land && S.land.im === im && S.land.hz === hz) return S.land;
+    S.land = { im, hz, c: null };
+    try {
+      const [rx, ry, rw, rh] = paintRect(), band = Math.min(WH, hz + 48);
+      const PX = rw / Math.min(im.naturalWidth, 5200);   // the painting's own pixels, so the thin outlines hold the flood below
+      const mw = Math.round(rw / PX), mh = Math.round((band - ry) / PX), src = document.createElement("canvas"); src.width = mw; src.height = mh;
+      const sg = src.getContext("2d"); sg.drawImage(im, 0, 0, im.naturalWidth, im.naturalHeight * (band - ry) / rh, 0, 0, mw, mh);
+      const px = sg.getImageData(0, 0, mw, mh).data, sea = new Uint8Array(mw * mh), land = new Uint8Array(mw * mh).fill(1), st = [];
+      for (let i = 0; i < mw * mh; i++) sea[i] = SEAPX(px[i * 4], px[i * 4 + 1], px[i * 4 + 2]) ? 1 : 0;
+      /* open sea is what joins the edges of the band: a blue flag or a blue window inside its outline stays painted */
+      const seed = i => { if (sea[i] && land[i]) { land[i] = 0; st.push(i); } };
+      for (let x = 0; x < mw; x++) { seed(x); seed((mh - 1) * mw + x); }
+      for (let y = 0; y < mh; y++) { seed(y * mw); seed(y * mw + mw - 1); }
+      while (st.length) { const i = st.pop(), x = i % mw; if (x > 0) seed(i - 1); if (x < mw - 1) seed(i + 1); if (i >= mw) seed(i - mw); if (i < (mh - 1) * mw) seed(i + mw); }
+      const out = sg.createImageData(mw, mh);
+      for (let i = 0; i < mw * mh; i++) out.data[i * 4 + 3] = land[i] ? 255 : 0;
+      sg.putImageData(out, 0, 0);
+      const c = document.createElement("canvas"); c.width = mw; c.height = mh; const cg = c.getContext("2d");
+      cg.filter = "blur(1px)"; cg.drawImage(src, 0, 0); cg.filter = "none"; cg.drawImage(src, 0, 0);   // soft at the edge, solid inside
+      Object.assign(S.land, { c, rx, ry, rw, rh: band - ry, land, mw, mh, PX });
+    } catch (e) {}   // a picture from another server without leave to read it: no sky over the painting, as before
+    return S.land;
+  }
+  const isLand = (M, x, y, d = 4) => {   // land at a world point, or within d units of it: no star sits on an outline
+    for (let dy = -d; dy <= d; dy += d) for (let dx = -d; dx <= d; dx += d) {
+      const mx = Math.floor((x + dx - M.rx) / M.PX), my = Math.floor((y + dy - M.ry) / M.PX);
+      if (mx < 0 || mx >= M.mw || my < 0) continue; if (my >= M.mh || M.land[my * M.mw + mx]) return true;
+    }
+    return false;
+  };
+  /* the moon: a lit disc with the dark part in the colour of the sky behind it (a faint earthshine), clean at every size */
+  function moon(g, x, y, r, a, skyC) {
+    const gr = g.createRadialGradient(x, y, r * 0.8, x, y, r * 4); gr.addColorStop(0, `rgba(251,243,223,${0.22 * a})`); gr.addColorStop(1, "rgba(251,243,223,0)");
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r * 4, 0, Math.PI * 2); g.fill();
+    g.save(); g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.clip();
+    g.fillStyle = `rgba(251,243,223,${a})`; g.fillRect(x - r, y - r, r * 2, r * 2);
+    g.fillStyle = `rgba(226,214,186,${0.5 * a})`; [[-0.35, 0.25, 0.22], [-0.05, -0.4, 0.14], [-0.5, -0.15, 0.1]].forEach(([u, v, s]) => { g.beginPath(); g.arc(x + u * r, y + v * r, s * r, 0, Math.PI * 2); g.fill(); });
+    g.fillStyle = rgb(mix(skyC, [251, 243, 223], 0.1), a); g.beginPath(); g.arc(x + r * 0.55, y - r * 0.3, r * 0.92, 0, Math.PI * 2); g.fill();
+    g.restore();
+  }
+  function paintedSky(g, sky, t, nt, wl, wt, wr) {
+    const M = landMask(); if (!M || !M.c) return;
+    const hz = ART.hz || 110, top = Math.min(wt, 0) - 20, bot = hz + 46;
+    view(g); const s = fitScale() * S.cam.z * S.K, Hs = Math.ceil((bot - S.cam.y) * s + S.c.height / 2);
+    if (Hs <= 0) return;
+    const L = S.skyL || (S.skyL = document.createElement("canvas"));
+    if (L.width !== S.c.width || L.height !== Math.min(S.c.height, Hs)) { L.width = S.c.width; L.height = Math.min(S.c.height, Hs); }
+    const lg = L.getContext("2d"); lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, L.width, L.height); lg.globalCompositeOperation = "source-over"; view(lg);
+    /* the sky of the hour, lighter towards the horizon: at night a pale band of haze sits on the line */
+    const glow = mix(sky.bot, [92, 108, 150], 0.45 * nt), x0 = wl - 20, w = wr - wl + 40;
+    let gr = lg.createLinearGradient(0, top, 0, hz); gr.addColorStop(0, rgb(sky.top)); gr.addColorStop(0.72, rgb(mix(sky.top, sky.bot, 0.75))); gr.addColorStop(1, rgb(glow));
+    lg.fillStyle = gr; lg.fillRect(x0, top, w, hz - top);
+    /* stars, thinner near the horizon, never on land */
+    if (nt > 0.05) {
+      if (!S.stars || S.stars.M !== M || S.stars.hz !== hz) {
+        const R = rnd(9), list = [], e = ART.wide || 0;
+        for (let i = 0; i < 900 && list.length < 230; i++) { const x = -e - 900 + R() * (WW + 2 * e + 1800), y = -400 + R() * (hz - 8 + 400), r = 0.7 + R() * 1.7, ph = R() * 6.3; if (!isLand(M, x, y)) list.push([x, y, r, ph]); }
+        const cand = [[110, 50], [150, 44], [60, 52], [1500, 52], [1440, 44], [1660, 50], [-60, 50]];   // left first: the buttons sit top right
+        S.stars = { M, hz, list, moon: cand.find(([x, y]) => [[0, 0], [-34, 0], [34, 0], [0, -34], [0, 34], [-24, 24], [24, 24]].every(([a, b]) => !isLand(M, x + a, y + b) && y + b < hz - 6)) };
+      }
+      S.stars.list.forEach(([x, y, r, ph], i) => {
+        if (x < wl - 10 || x > wr + 10 || y < wt - 10) return;
+        const al = nt * (0.35 + (i % 5) * 0.13) * (0.7 + 0.3 * Math.sin(t * 0.002 + ph)) * Math.min(1, (hz - y) / 40);
+        lg.fillStyle = `rgba(251,243,223,${al})`; lg.fillRect(x - r, y - 0.5, r * 2, 1); lg.fillRect(x - 0.5, y - r, 1, r * 2);
+      });
+      const mo = S.stars.moon;
+      if (mo && nt > 0.2) moon(lg, mo[0], mo[1], 13, Math.min(1, (nt - 0.2) * 2), mix(sky.top, sky.bot, Math.max(0, (mo[1] - top) / (hz - top))));
+    }
+    /* the line itself: a thin light edge, and under it the far sea a shade darker at night, hazier by day */
+    lg.fillStyle = rgb(mix([235, 242, 250], [150, 170, 215], nt), 0.55 - 0.15 * nt); lg.fillRect(x0, hz - 0.6, w, 1.2);
+    gr = lg.createLinearGradient(0, hz, 0, bot);
+    const under = mix([226, 238, 248], [3, 8, 24], nt), ua = lerp(0.3, 0.5, nt);
+    gr.addColorStop(0, rgb(under, ua)); gr.addColorStop(1, rgb(under, 0));
+    lg.fillStyle = gr; lg.fillRect(x0, hz, w, bot - hz);
+    /* what stands above the line stays in front of it */
+    lg.globalCompositeOperation = "destination-out"; lg.imageSmoothingQuality = "high";
+    lg.drawImage(M.c, M.rx, M.ry, M.rw, M.rh); lg.globalCompositeOperation = "source-over";
+    g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(L, 0, 0); view(g);
   }
   function paintedLight(g, W, H, sky, t, nt, wl, wt, wr) {
     const m = sky.mul;
@@ -1197,22 +1269,9 @@
     if (m[0] + m[1] + m[2] < 762) { g.globalCompositeOperation = "multiply"; g.fillStyle = rgb(m); g.fillRect(0, 0, W, H); }
     g.globalCompositeOperation = "source-over";
     if (nt > 0.01) { g.fillStyle = `rgba(12,20,52,${0.16 * nt})`; g.fillRect(0, 0, W, H); }
+    paintedSky(g, sky, t, nt, wl, wt, wr);
     view(g);
-    if (nt > 0.05) {
-      if (!S.stars || S.stars.im !== ART.img.island) {
-        const R = rnd(9), e = ART.wide || 0, list = [];
-        for (let i = 0; i < 420 && list.length < 170; i++) { const x = -e - 200 + R() * (WW + 2 * e + 400), y = R() * (HZ - 14), r = 0.8 + R() * 1.8, ph = R() * 6.3; if (openSky(x, y)) list.push([x, y, r, ph]); }
-        const moon = [[1220, 110], [1320, 90], [1120, 80], [420, 90], [800, 60]].find(([x, y]) => [[0, 0], [-26, 0], [26, 0], [0, -26], [0, 26]].every(([a, b]) => openSky(x + a, y + b)));
-        S.stars = { im: ART.img.island, list, moon };
-      }
-      S.stars.list.forEach(([x, y, r, ph], i) => { if (x < wl - 10 || x > wr + 10 || y < wt - 10) return; const al = nt * (0.35 + (i % 5) * 0.13) * (0.7 + 0.3 * Math.sin(t * 0.002 + ph)); g.fillStyle = `rgba(251,243,223,${al})`; g.fillRect(x - r, y - 0.5, r * 2, 1); g.fillRect(x - 0.5, y - r, 1, r * 2); });
-      const mo = S.stars.moon;
-      if (mo && nt > 0.2) {
-        const [mx, my] = mo, gr = g.createRadialGradient(mx, my, 0, mx, my, 70); gr.addColorStop(0, `rgba(251,243,223,${0.2 * nt})`); gr.addColorStop(1, "rgba(251,243,223,0)");
-        g.fillStyle = gr; g.beginPath(); g.arc(mx, my, 70, 0, Math.PI * 2); g.fill();
-        g.save(); g.beginPath(); g.arc(mx, my, 18, 0, Math.PI * 2); g.arc(mx + 9, my - 6, 15, 0, Math.PI * 2, true); g.fillStyle = `rgba(251,243,223,${nt})`; g.fill(); g.restore();
-      }
-    }
+    const HZ = ART.hz || 110;   // the glow sits on the painted horizon
     /* sunrise and sunset: a soft warm light along the horizon on the side of the sun */
     const hh = ((S.hour % 4) + 4) % 4, rise = Math.max(0, 1 - Math.abs(hh - 3.75) / 0.5) + Math.max(0, 1 - Math.abs(hh + 0.25) / 0.5) * (hh < 0.5 ? 1 : 0),
       set = Math.max(0, 1 - Math.abs(hh - 2.25) / 0.7);
@@ -1260,8 +1319,7 @@
       g.restore();
     }
     if (sk && nt > 0.2) {
-      g.fillStyle = `rgba(251,243,223,${nt * 0.12})`; g.beginPath(); g.arc(1220, 120, 44, 0, Math.PI * 2); g.fill();
-      g.fillStyle = `rgba(251,243,223,${nt})`; g.beginPath(); g.arc(1220, 120, 18, 0, Math.PI * 2); g.arc(1229, 114, 15, 0, Math.PI * 2, true); g.fill();
+      moon(g, 1220, 120, 18, nt, mix(sky.top, sky.bot, 0.5));
     }
     /* clouds drift by */
     if (sk) for (let i = 0; i < 6; i++) { const span = (wr - wl) + 600, x = wl - 300 + ((t * 0.006 * (1 + i * 0.2) + i * 380) % span), y = 80 + (i * 53) % 140; cloud(g, x, y, 0.7 + (i % 3) * 0.3, (0.55 - nt * 0.47) * (1 - i * 0.05)); }

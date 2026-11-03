@@ -2198,5 +2198,10 @@
     "tag": "HUD",
     "on": "2026-11-03",
     "html": "Chain core: a waiting transaction whose origin we know gets a ring and, while few are waiting, a small label: IDNI genesis (dashed), White Rabbit Key, Agorzilla or Déjà (solid), our island bot (dotted), simulated cruise passengers (amber). Hovering a dot says where it comes from. Known means read off the chain or our own server wallets; any other wallet stays unnamed."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-03",
+    "html": "White Rabbit Key: the island has a real night sky. The painting is seen from high above and shows sea right up to its top edge, so the island now gets a horizon of its own: above the line the sky of the hour, below it the sea, with a thin light edge between them. At night the stars and the moon stay in the open sky and never sit on a mountain, a tower or an islet, and the moon is drawn clean."
   }
 ]

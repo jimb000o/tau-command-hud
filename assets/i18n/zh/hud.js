@@ -2282,4 +2282,5 @@ TauI18n.add({ strings: {
   "IDNI": "IDNI",
   "Déjà": "Déjà",
   "Chain core: a waiting transaction whose origin we know gets a ring and, while few are waiting, a small label: IDNI genesis (dashed), White Rabbit Key, Agorzilla or Déjà (solid), our island bot (dotted), simulated cruise passengers (amber). Hovering a dot says where it comes from. Known means read off the chain or our own server wallets; any other wallet stays unnamed.": "Chain core：我们知道来源的等待中交易会带一个圆环，等待的不多时还有一个小标签：IDNI 创世账户（虚线）、White Rabbit Key、Agorzilla 或 Déjà（实线）、我们的岛屿机器人（点线）、模拟的邮轮乘客（琥珀色）。悬停在点上会显示它来自哪里。“知道”是指从链上读出或属于我们自己的服务器钱包；其他钱包一律不命名。",
+  "White Rabbit Key: the island has a real night sky. The painting is seen from high above and shows sea right up to its top edge, so the island now gets a horizon of its own: above the line the sky of the hour, below it the sea, with a thin light edge between them. At night the stars and the moon stay in the open sky and never sit on a mountain, a tower or an islet, and the moon is drawn clean.": "White Rabbit Key：小岛有了真正的夜空。这幅画是从高处俯瞰的，海面一直延伸到画的上边缘，所以现在小岛有了自己的地平线：线以上是当时的天空，线以下是大海，中间有一道细细的亮边。夜里，星星和月亮只出现在开阔的天空中，不会落在山、塔或小岛上，月亮也画得干净利落。",
 } });
