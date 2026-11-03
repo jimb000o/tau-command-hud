@@ -483,6 +483,8 @@
     return ["market", T("The square again: people forget what they are not reminded of.")];
   }
   function openCard(place, build) {
+    /* a new card interrupts whoever is talking on the old one (a line on air still finishes): the next one may have no clip of their own */
+    if (performance.now() > UI.airUntil) { SND.hush(); if (RICO.stop) RICO.stop(); }
     closeCard(true);
     UI.at = place || null;
     if (G && place) { G.seen = G.seen || {}; if (!G.seen[place]) { G.seen[place] = 1; save(); } setTimeout(locks, 0); }
@@ -640,7 +642,7 @@
   const readMs = s => Math.min(8000, 1500 + s.length * 40);
   function talks(box, parts, who, o) {
     box._talkEnd = performance.now() + readMs(join(parts));
-    const w = box._talkWait = RICO.speak(parts, who, o).then(secs => { if (secs) box._talkEnd = performance.now() + secs * 1000; return secs; }, () => false);
+    const w = box._talkWait = RICO.speak(parts, who, Object.assign({ still: () => UI.card === box || (o && o.air) }, o)).then(secs => { if (secs) box._talkEnd = performance.now() + secs * 1000; return secs; }, () => false);
     w.then(() => { if (box._talkWait === w) box._talkWait = null; });
     return w;
   }
