@@ -1,6 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
-  "(tau-testnet pinned to commit b1ebfa4)": "（tau-testnet はコミット b1ebfa4 に固定）",
+  "(tau-testnet pinned to commit 64ceb40)": "（tau-testnet はコミット 64ceb40 に固定）",
   ", holding {n} transaction.": "、トランザクション {n} 件を含みます。",
   ", holding {n} transactions.": "、トランザクション {n} 件を含みます。",
   ", which checks every block itself, served by a read-only relay. Amounts in AGRS.": "。すべてのブロックを自分で検証するノードで、読み取り専用のリレーを通じて提供しています。金額は AGRS です。",

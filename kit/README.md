@@ -151,14 +151,15 @@ tauhud.com's node:
 
 | Patch | Why |
 |---|---|
-| `read-until-eof` | Sync read one 64 KiB frame of each reply, so any bigger header or block batch failed to parse. |
-| `sync-paginate` | Sync fetched one batch of 2,000 headers and stopped; it now pages until caught up. |
 | `sync-diagnostics` | Logs peer heads, header ranges and why a block was rejected, so a stuck sync says why. |
 | `network-tip` | Reports the highest tip heard from peers, for "catching up n / tip". |
 | `peer-addrs` | The bootnode announces `/ip4/0.0.0.0/tcp/4001`; dialing that made the node dial itself after a restart. |
 | `chain-reset` | The testnet gets restarted on the same genesis without notice (twice on 2026-10-27); the node detects that, wipes and resyncs. |
 | `validator-gate` | Never propose while the key is not in the active validator set. |
 | `bootstrap-redial` | Bootstrap peers were dialed at start only; a node that lost its last peer stayed peerless until a restart (2026-10-29, three hours). Now it dials them again every minute while it has no peer. |
+
+Two earlier patches, reading a whole sync reply and paging header sync until caught up, are
+in IDNI's code since tau-testnet e6c8f92 (IDNI issue #78) and were dropped.
 
 Two settings must match the network and are set for you: the genesis from
 `networks/tau-testnet-v2/genesis.json`, and `TAU_GOVERNANCE_OPEN_ADMISSION=true` (votes

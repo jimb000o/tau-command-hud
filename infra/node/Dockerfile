@@ -10,7 +10,7 @@
 # x86_64 and arm64 (tau-lang ships linux-arm64 recipes; Spot is built from
 # source there).
 
-ARG TAU_TESTNET_REF=b1ebfa479dafe8f64ad741f1f101f2319db5eae4
+ARG TAU_TESTNET_REF=64ceb4046253b6f02b25ff79da22fd55b1bfee41
 
 # Base images pinned by digest: a re-published tag (python:3.14-trixie was
 # rebuilt on Docker Hub 2026-10-27 02:13Z) invalidates the whole tau-builder
@@ -83,8 +83,6 @@ RUN git clone --filter=blob:none https://github.com/IDNI/tau-testnet.git /src &&
 # Local fixes to the pinned sources; each script explains itself and fails the
 # build if the source no longer matches.
 COPY patches/ /patches/
-RUN python3 -I /patches/read-until-eof.py /src
-RUN python3 -I /patches/sync-paginate.py /src
 RUN python3 -I /patches/sync-diagnostics.py /src
 RUN python3 -I /patches/network-tip.py /src
 RUN python3 -I /patches/peer-addrs.py /src

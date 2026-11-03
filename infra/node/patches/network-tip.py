@@ -8,7 +8,7 @@ highest peer tip seen in network/service.py and reports it as `network_tip`
 so a dashboard can show "catching up: n / tip" during the initial sync.
 
 Usage: python3 -I network-tip.py <tau-testnet checkout>
-Apply AFTER read-until-eof.py (it anchors on its import line).
+Apply first: chain-reset.py and peer-book.py anchor on its lines.
 """
 import pathlib
 import sys
@@ -25,13 +25,13 @@ def replace_once(old: str, new: str, what: str) -> None:
 
 
 replace_once(
-    "import functools\nimport logging\n",
-    "import functools\nimport logging\nimport time\n",
+    "\nimport logging\n",
+    "\nimport logging\nimport time\n",
     "service.py time import",
 )
 replace_once(
-    "from .libp2p_compat import read_stream_to_eof  # noqa: E402\n",
-    "from .libp2p_compat import read_stream_to_eof  # noqa: E402\n"
+    "\napply_quic_cleanup_shim()\napply_auto_connector_backoff_shim()\n",
+    "\napply_quic_cleanup_shim()\napply_auto_connector_backoff_shim()\n"
     "\n"
     "# Highest peer tip this node has heard of (handshake head, header-sync reply,\n"
     "# block announce). Read by commands/getgovernance.py as `network_tip`.\n"
@@ -50,7 +50,7 @@ replace_once(
     "\n"
     "def best_known_tip() -> Dict[str, Any]:\n"
     "    return dict(_network_tip)\n",
-    "service.py import",
+    "service.py module shims",
 )
 replace_once(
     "                                remote_n = int(remote_head_number)\n",
