@@ -4,6 +4,9 @@
 # First time:  cd /opt/tau-command-hud && git pull && sh infra/up.sh
 # After that:  up            everything above
 #              up island     the same, then a new painted island with every room to match (a few minutes, see island.sh)
+#              up room grotto  the same, then that room (or several) painted anew to match the island as it is (2 min each)
+#              up touch canoe-camp  the same, then two versions of the island with those changes, to look at (not live)
+#              up keep 27 canoe camp  the same, then island 27 live and those rooms painted anew to match it
 set -e
 cd "$(dirname "$(readlink -f "$0")")"
 ln -sf "$(pwd)/up.sh" /usr/local/bin/up 2>/dev/null && chmod +x up.sh 2>/dev/null || true
@@ -54,7 +57,7 @@ try:
     path = "/opt/sites/rico/art/index.json"; idx = json.load(open(path)); lay = json.load(open("rabbit-art/plates/island-22.json"))
     old = idx.get("layout") or {}
     if set((old.get("places") or {})) == set(lay["places"]) and old != lay:
-        idx["layout"] = lay; json.dump(idx, open(path, "w"), indent=1); print("island:  places updated from the repo (names, click areas)")
+        idx["layout"] = lay; json.dump(idx, open(path, "w"), indent=1); print("island:  places updated from the repo (names, click areas, outlines)")
 except Exception as e:
     print(f"island:  places not checked ({e})")
 PY
@@ -62,8 +65,29 @@ PY
 V=$(mktemp)
 python3 rico/make.py make 2>&1 | tee "$V" || true
 { echo "voices:"; grep -E 'lines to make|credits left|wait\. Run|^Done:|No voice|GEMINI|ELEVEN|Error|error' "$V" | tail -4 | sed 's/^/         /'; } | tee -a "$NOTE"
+# one room painted anew to match the island as it is, only when asked for: up room grotto (or several: up room grotto canoe)
+if [ "${1:-}" = "room" ] && [ -n "${2:-}" ]; then
+  shift
+  ROOMS="$*"; KEEP=""; for r in $ROOMS; do KEEP="$KEEP $r=last"; done
+  { sh rabbit-art/paint.sh draft $ROOMS --wide --n 1 --look 2 && sh rabbit-art/paint.sh keep $KEEP; } 2>&1 | tee "$V" || true
+  { echo "room art:"; if grep -qE 'Traceback|Error|error|No place' "$V"; then grep -E 'Traceback|Error|error|No place' "$V" | tail -3 | sed 's/^/         /'; else echo "         $ROOMS painted anew and live (Ctrl+F5)"; fi; } | tee -a "$NOTE"
+fi
+# small changes to the island as it is, painted twice to choose from: up touch canoe-camp (names in paint.py TOUCH_SETS);
+# nothing goes live; then: up keep <number> <rooms to paint anew>, e.g. up keep 27 canoe camp
+if [ "${1:-}" = "touch" ] && [ -n "${2:-}" ]; then
+  sh rabbit-art/paint.sh touch "$2" --n 2 2>&1 | tee "$V" || true
+  NEW=$(sed -n 's/^ *island=\([0-9][0-9]*\):.*/\1/p' "$V" | tr '\n' ' ')
+  { echo "island art:"; if [ -n "$NEW" ]; then echo "         new islands (not live yet): $NEW  look: https://node.tauhud.com/rico/art/drafts/"; else grep -E 'Traceback|Error|error' "$V" | tail -3 | sed 's/^/         /'; fi; } | tee -a "$NOTE"
+fi
+if [ "${1:-}" = "keep" ] && [ -n "${2:-}" ]; then
+  N="$2"; shift 2
+  case "$N" in *[!0-9]*) echo "Usage: up keep <island number> [rooms]"; exit 1;; esac
+  ROOMS="$*"; KEEP=""; for r in $ROOMS; do KEEP="$KEEP $r=last"; done
+  { sh rabbit-art/paint.sh keep island="$N" --layout island-22 && if [ -n "$ROOMS" ]; then sh rabbit-art/paint.sh draft $ROOMS --wide --n 1 --look 2 && sh rabbit-art/paint.sh keep $KEEP; fi; } 2>&1 | tee "$V" || true
+  { echo "island art:"; if grep -qE 'Traceback|Error|error|No painting' "$V"; then grep -E 'Traceback|Error|error|No painting' "$V" | tail -3 | sed 's/^/         /'; else echo "         Island $N live${ROOMS:+, rooms painted anew: $ROOMS} (Ctrl+F5)"; fi; } | tee -a "$NOTE"
+fi
 # a new painted island, only when asked for: up island
-if [ "$1" = "island" ]; then
+if [ "${1:-}" = "island" ]; then
   sh island.sh auto 2>&1 | tee "$V"
   { echo "island art:"; grep -E '^Island|to switch' "$V" | sed 's/^/         /'; } | tee -a "$NOTE"
 fi
@@ -72,4 +96,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$V"
-echo "done. next time just type: up   (or: up island)"
+echo "done. next time just type: up   (or: up island, up room <place>, up touch <change>, up keep <number> <rooms>)"
