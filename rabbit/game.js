@@ -157,11 +157,16 @@
      moves while it talks (the -talk and -blink frames, laid over the still picture where they differ) */
   const bustOf = id => !/[?&]art=drawn/.test(location.search) && SC.art && SC.art.img["bust-" + id];
   const MOUTH = {};
+  /* how open the mouth is while they talk: from their voice as it is heard (shut in its pauses), or, with no clip
+     playing (sound off, a line not voiced yet), null and the face makes its own syllables */
+  const lip = (id, talk) => (talk && SND && SND.lip ? SND.lip(id) : null);
   function frame(id, t, talk) {
     const img = SC.art.img, k = "bust-" + id;
-    if (talk && img[k + "-talk"]) {   // open and shut in syllables of uneven length
-      const m = MOUTH[id] || (MOUTH[id] = { at: 0, open: false });
-      if (t >= m.at) { m.open = !m.open; m.at = t + (m.open ? 90 + Math.random() * 110 : 60 + Math.random() * 90); }
+    if (talk && img[k + "-talk"]) {
+      const m = MOUTH[id] || (MOUTH[id] = { at: 0, open: false }), v = lip(id, talk);
+      if (v != null) {   // open on the loud part of a syllable, shut in the gaps; held a few frames so it does not flicker
+        if (t >= m.at && (m.open ? v < 0.22 : v > 0.38)) { m.open = !m.open; m.at = t + (m.open ? 70 : 50); }
+      } else if (t >= m.at) { m.open = !m.open; m.at = t + (m.open ? 90 + Math.random() * 110 : 60 + Math.random() * 90); }   // syllables of uneven length
       if (m.open) return k + "-talk";
     }
     if (img[k + "-blink"] && (t + id.length * 997) % 4200 < 130) return k + "-blink";
@@ -262,7 +267,7 @@
     else { g.moveTo(cx + 1, ny - 3); g.lineTo(cx + 3, ny + 8); g.lineTo(cx - 2, ny + 9); }
     g.stroke();
     /* the mouth: an ink line when quiet, open and moving while the line is said */
-    const my = cy + hh * 0.62, open = talk ? Math.abs(Math.sin(t * 0.025)) * 3.6 + Math.abs(Math.sin(t * 0.011)) * 2 : 0, mw = 7 + (id === "baako" || id === "rico" ? 2 : 0);
+    const my = cy + hh * 0.62, v = lip(id, talk), open = !talk ? 0 : v != null ? v * 5.6 : Math.abs(Math.sin(t * 0.025)) * 3.6 + Math.abs(Math.sin(t * 0.011)) * 2, mw = 7 + (id === "baako" || id === "rico" ? 2 : 0);
     if (open > 0.6) { g.fillStyle = "#5a1f22"; g.beginPath(); g.moveTo(cx - mw, my); g.quadraticCurveTo(cx, my - 1.5, cx + mw, my); g.quadraticCurveTo(cx, my + open * 2, cx - mw, my); g.fill(); ink(1.8); g.fillStyle = "#e2674f"; g.beginPath(); g.ellipse(cx, my + open * 0.9, mw * 0.45, open * 0.45, 0, 0, Math.PI); g.fill(); }
     else { g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(cx - mw, my - mood); g.quadraticCurveTo(cx, my + 3.4 + mood * 3, cx + mw, my - mood); g.stroke(); g.lineWidth = 1.2; g.beginPath(); g.moveTo(cx + mw + 1, my - 2 - mood); g.lineTo(cx + mw - 1, my + 1); g.stroke(); }
     accessories(g, id, L, cx, cy, hw, hh, t, ink);
@@ -478,6 +483,8 @@
     return ["market", T("The square again: people forget what they are not reminded of.")];
   }
   function openCard(place, build) {
+    /* a new card interrupts whoever is talking on the old one (a line on air still finishes): the next one may have no clip of their own */
+    if (performance.now() > UI.airUntil) { SND.hush(); if (RICO.stop) RICO.stop(); }
     closeCard(true);
     UI.at = place || null;
     if (G && place) { G.seen = G.seen || {}; if (!G.seen[place]) { G.seen[place] = 1; save(); } setTimeout(locks, 0); }
@@ -635,7 +642,7 @@
   const readMs = s => Math.min(8000, 1500 + s.length * 40);
   function talks(box, parts, who, o) {
     box._talkEnd = performance.now() + readMs(join(parts));
-    const w = box._talkWait = RICO.speak(parts, who, o).then(secs => { if (secs) box._talkEnd = performance.now() + secs * 1000; return secs; }, () => false);
+    const w = box._talkWait = RICO.speak(parts, who, Object.assign({ still: () => UI.card === box || (o && o.air) }, o)).then(secs => { if (secs) box._talkEnd = performance.now() + secs * 1000; return secs; }, () => false);
     w.then(() => { if (box._talkWait === w) box._talkWait = null; });
     return w;
   }
@@ -1645,12 +1652,15 @@
     if (set === "call" && Math.random() < 0.88) { const p = phoneIn(); if (p) { ROT.callLast = true; return p; } return one("joke"); }   // otherwise a letter from a listener, read out by Rico
     return one(set);
   }
-  readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
-  dejaFetch(); setInterval(() => { if (!document.hidden) dejaFetch(); }, 600000);
-  srcFetch(); setInterval(() => { if (!document.hidden) srcFetch(); }, 600000);
+  /* a tab in the background stays quiet, unless the sound is on: then Radio Coco goes on, like a radio left on in the
+     next room, and Rico keeps reading the chain so what he says is still news (a tab playing sound is not slowed down) */
+  const away = () => document.hidden && !SND.on;
+  readChain(); setInterval(() => { if (!away()) readChain(); }, 90000);
+  dejaFetch(); setInterval(() => { if (!away()) dejaFetch(); }, 600000);
+  srcFetch(); setInterval(() => { if (!away()) srcFetch(); }, 600000);
   if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine };   // the headless check (tests)
   setInterval(() => {
-    if (!G || G.over || G.counting || document.hidden || performance.now() < DJ.next) return;
+    if (!G || G.over || G.counting || away() || performance.now() < DJ.next) return;
     /* the show waits for the sound to come on (the first tap), so the opener is heard, not just read; after a while it goes on in text */
     if (ROT.n === 0 && !SND.on && performance.now() < 90000) return;
     if (DJ.opened && DJ.after) { const a = DJ.after; DJ.after = null; onAir(a, 1); return; }
@@ -2343,7 +2353,7 @@
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     $("cvIsle").onclick = () => { wake(); openIsle(); };
     if ($("cvBell")) { $("cvBell").onclick = () => { wake(); answerBell(); }; bellChip(); setInterval(bellChip, 5000); }
-    if ($("cvShip")) { $("cvShip").onclick = () => { wake(); shipCard(); }; shipFetch(); setInterval(() => { if (!document.hidden) shipFetch(); }, 60000); }
+    if ($("cvShip")) { $("cvShip").onclick = () => { wake(); shipCard(); }; shipFetch(); setInterval(() => { if (!document.hidden || SND.on) shipFetch(); }, 60000); }
     isleJoin();
     const sb = $("cvSound");
     const showSound = () => { const l = SND.on ? T("Sound on") : SND.wanted ? T("Tap for sound") : T("Sound off"); sb.replaceChildren("♪", el("span", { class: "lb", text: " " + l })); sb.setAttribute("aria-label", l); sb.classList.toggle("off", !SND.wanted); sb.setAttribute("aria-pressed", SND.on ? "true" : "false"); };
