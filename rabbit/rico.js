@@ -709,6 +709,7 @@
     try {
       const bufs = await Promise.all(keys.map(clip));
       if (bufs.some(b => !b)) { why.last = "clip download failed"; return false; }
+      if (o.still && !o.still()) { why.last = "gone before the clip came"; return false; }   // the card was closed or replaced while the clips loaded
       secs = await SND.speak(bufs.map((b, i) => (said[i].who && said[i].who !== who ? { b: b.slice(0), tel: true, who: said[i].who } : b.slice(0))), Object.assign({ who }, o));   // a caller sounds like a telephone
     } finally { if (SND.expect) SND.expect(who, false); }
     if (secs) { why.last = "ok"; return secs; }
