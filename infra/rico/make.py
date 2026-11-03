@@ -21,6 +21,8 @@ The key is read from ELEVENLABS_API_KEY in infra/.env (never in the repository).
   python3 infra/rico/make.py voices                 the voices in the account
   python3 infra/rico/make.py samples [name ...]     one sample per account voice -> https://node.tauhud.com/rico/samples/
   python3 infra/rico/make.py say                    the lines exactly as they are sent to be spoken
+  python3 infra/rico/make.py openers                Rico's show openers to choose from (infra/rico/openers.json), next to
+                                                    the ones on air -> https://node.tauhud.com/rico/samples/openers.html
   python3 infra/rico/make.py lines                  the lines, who says them and how many characters, no key needed
 design and keep need a key with Voice Generation: Access and Voices: Write.
 """
@@ -495,6 +497,30 @@ def cmd_say(a):
         print(f"{w:<8}", said(w, t))
 
 
+def cmd_openers(a):
+    """New openers to compare, spoken exactly as an opener on air (the shout), each beside the one now on air."""
+    idx, f = index(a.out), load(os.path.join(HERE, "openers.json"), {})
+    vid = idx["voices"].get("rico", {}).get("id")
+    if not vid:
+        sys.exit("Rico has no voice yet.")
+    todo = f.get("try", [])
+    print(f"{len(todo)} openers, about {sum(len(HYPE) + len(spoken(x['text'])) for x in todo)} credits.")
+    rows, groups = [], {"E": "Evening", "M": "Morning", "P": "Afternoon", "N": "Night", "A": "Any time"}
+    for g, name in groups.items():
+        rows.append(f"<h2>{name}</h2>")
+        for t in [f.get("now", {}).get(g)] if f.get("now", {}).get(g) else []:
+            rows.append(f"<li><b>now on air</b><br><small>{html.escape(t)}</small><br><audio controls preload=none src='../{key('rico', t)}.mp3'></audio></li>")
+        for x in todo:
+            if x["id"][0] != g:
+                continue
+            fn = f"opener-{x['id']}.mp3"
+            write(os.path.join(a.out, "samples", fn), speak(vid, f"{HYPE} {spoken(x['text'])}", LOUD, MODEL))
+            print("  made", x["id"])
+            rows.append(f"<li><b>{x['id']}</b><br><small>{html.escape(x['text'])}</small><br><audio controls preload=none src='{fn}'></audio></li>")
+    write(os.path.join(a.out, "samples", "openers.html"), page(rows, "Radio Coco: pick the openers", "Write the numbers you like, e.g. E3 M1 P1 N1 A1."))
+    print("Listen: https://node.tauhud.com/rico/samples/openers.html")
+
+
 def cmd_make(a):
     idx = index(a.out)
     for pick in a.voice or []:
@@ -562,6 +588,7 @@ def main():
     s.add_argument("names", nargs="*")
     s.add_argument("--max", type=int, default=12)
     sub.add_parser("lines")
+    sub.add_parser("openers")
     sub.add_parser("say")
     d = sub.add_parser("design")
     d.add_argument("who", nargs="*", default=["all"], help="all, or the islanders to design, e.g. lola sam")
@@ -576,7 +603,7 @@ def main():
     m.add_argument("--model", default=MODEL, help="eleven_v3, or eleven_multilingual_v2 if v3 is not there")
     m.add_argument("--voice", action="append", help="who=voice name in the account (a bare name is Rico's)")
     a = p.parse_args()
-    {"voices": cmd_voices, "samples": cmd_samples, "lines": cmd_lines, "make": cmd_make, "design": cmd_design, "keep": cmd_keep, "library": cmd_library, "say": cmd_say}[a.cmd](a)
+    {"voices": cmd_voices, "samples": cmd_samples, "lines": cmd_lines, "make": cmd_make, "design": cmd_design, "keep": cmd_keep, "library": cmd_library, "say": cmd_say, "openers": cmd_openers}[a.cmd](a)
 
 
 if __name__ == "__main__":
