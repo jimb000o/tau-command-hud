@@ -50,7 +50,7 @@
     wren: { name: "Captain Wren", role: "Marine archaeologist, retired", skin: "#e0b08a", hair: "#b0502a", style: "bob", acc: "cap", accC: "#1f3550", shirt: "#3aa6a0" },
     kai: { name: "Kai", role: "Runs the Reef Proof dive centre", skin: "#c68642", hair: "#111", style: "short", acc: "glasses", accC: "#333", shirt: "#4fd1c5" },
     pim: { name: "Pim", role: "Surveyor, measures for the embassies", skin: "#f3d6c0", hair: "#c9a46a", style: "side", acc: "straw", accC: "#d9b45a", shirt: "#f4f1ea" },
-    noor: { name: "Noor", role: "Foreman of the Coconut Works, runs it while Baako campaigns", skin: "#a8693f", hair: "#1d1410", style: "curls", acc: "glasses", accC: "#333", shirt: "#e9b44c" },
+    noor: { name: "Noor", role: "Runs the Coconut Works; Baako’s co-op brings the coconuts", skin: "#a8693f", hair: "#1d1410", style: "curls", acc: "glasses", accC: "#333", shirt: "#e9b44c" },
     kiko: { name: "Kiko", role: "Builds canoes", skin: "#8d5524", hair: "#111", style: "short", acc: "none", shirt: "#e85d4a" },
     tano: { name: "Tano", role: "Keeps the drums and the circle", skin: "#4a2c1a", hair: "#9a9a9a", style: "short", acc: "beard", accC: "#bdbdbd", shirt: "#c9772e" },
   };
@@ -804,8 +804,8 @@
       ]);
     },
     works(box) {
-      /* Noor runs the Works for Baako; she is the one you meet when you are Baako yourself, and she talks to her boss */
-      scene(box, G.me === "baako" ? "noor" : "baako", T(SC.places.works.name), G.me === "baako" ? T("Boss. You’re on the ballot, and the bicycles still need pedalling. Coconuts in, everything out: oil, rope, soap, charcoal. I keep it running, you keep it honest. And nobody touches the organ, candidate or not.") : T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
+      /* Noor runs the Coconut Works and Baako's co-op supplies it; she is the one you meet when you are Baako yourself, and she is the boss here */
+      scene(box, G.me === "baako" ? "noor" : "baako", T(SC.places.works.name), G.me === "baako" ? T("Baako. Candidate or not, your co-op’s coconuts still come through my gate, and my press still starts at six. Coconuts in, everything out: oil, rope, soap, charcoal. You want a shift, you pedal. And nobody touches the organ. Not even someone on the ballot.") : T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
         btn(T("Work a shift (10 coins)"), () => { did("works"); G.coins[G.me] += 10; write(G.me, T("worked a shift at the Coconut Works: 10 coins, honestly earned"), "talk"); payMe("works", T("The Coconut Works")); SND.sfx("coin"); toast(T("Ten coins, and you smell of coconut for the rest of the day.")); spend(); if (UI.card) openCard("works", PLACE.works); }, { off: !movesLeft(), sub: T("one move") }),
       ]);
     },
