@@ -349,6 +349,14 @@
     net4: "On this lagoon every rule has to agree with every other rule. Rico tried that with his relatives once. It took three Christmases.",
     net5: "Reminder: the coins on this chain are for testing. If somebody sells you some, Rico has a lighthouse to sell you too.",
     net6: "A block just came in empty. Rico doesn't judge. Some mornings Rico comes in empty too.",
+    /* the Book's news on air: what Rico says while the strip shows the details (names and laws are only shown) */
+    bkExposed: "The Book has spoken: a rumour has been traced back to whoever paid for it. Ouch.",
+    bkRumour: "Tonight on Radio Coco, a fresh rumour. Rico only plays them, folks. The Book does the checking.",
+    bkRefused: "A law was refused at the door: it contradicts one already in force. The Book does not do contradictions.",
+    bkGovernor: "The island has a governor this week! Whoever won the most campaigns last week. Congratulations, and good luck.",
+    bkCarry: "Some laws from last week are still in force, by the whole island. If you don't like them, the hall is open.",
+    bkTalk: "All over the island, people are talking about one law today. Rico's phone hasn't stopped ringing.",
+    bkWeek: "The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book.",
     /* the mainland: somewhere over the sea, a ferry that is always coming soon (never a date) */
     ml1: "Ferry news: the big ferry to the mainland is coming soon. Rico has been saying that since he got this job. The timetable just says: when it's ready.",
     ml2: "A listener asks what's on the mainland. Rico has never been. People say the rules there work like ours, only for many more islands.",

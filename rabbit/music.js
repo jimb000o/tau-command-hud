@@ -467,7 +467,7 @@
   window.COVE_SOUND = {
     start, sfx, speak, hush,
     /* on: the music is really playing (a browser lets it start only after the first click, tap or key) */
-    get on() { return S.on && !!S.ctx && S.ctx.state === "running"; }, get wanted() { return S.want; },
+    get on() { return S.on && !!S.ctx && S.ctx.state === "running"; }, get talking() { return !!S.talking; }, get wanted() { return S.want; },
     get state() { return S.ctx ? S.ctx.state : "none"; },
     /* the song playing now (its name for the radio strip), and the songbook */
     get song() { return { id: S.song, name: (SONGS[S.song] || {}).name || "" }; }, songs: Object.keys(SONGS), get why() { return S.why || ""; },

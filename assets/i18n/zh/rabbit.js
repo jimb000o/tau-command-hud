@@ -1350,4 +1350,10 @@ TauI18n.add({ strings: {
   "Roads, my friend, are how guests arrive. Minibuses, yoga mats, my cousin’s smoothie truck. The island will love it. Eventually. We can wait. We are very good at waiting, and at lunch.": "路嘛，我的朋友，客人就是从路上来的。小巴、瑜伽垫、我表弟的果昔车。岛上会喜欢的。早晚的事。我们等得起。我们最擅长等，还有吃午饭。",
   "Me? A full resort, and a very long line in your Book saying who paid for the road. My investors like to be remembered. Your Book is happy to help.": "我？一座住满的度假村，还有你们那本书里长长的一行，写着这条路是谁出的钱。我的投资人喜欢被记住。你们的书很乐意帮忙。",
   "Every Thursday. We play cards by the pool. He cheats, I let him, and we both write it down. Business is mostly agreeing on who keeps the score.": "每周四。我们在泳池边打牌。他出老千，我由着他，然后我们俩都记下来。生意嘛，多半就是商量好谁来记分。",
+  "The Book has spoken: a rumour has been traced back to whoever paid for it. Ouch.": "账本说话了：一条谣言被追查到了出钱的人。哎哟。",
+  "Tonight on Radio Coco, a fresh rumour. Rico only plays them, folks. The Book does the checking.": "今晚 Radio Coco 有条新谣言。Rico 只负责播，各位。核实交给账本。",
+  "A law was refused at the door: it contradicts one already in force. The Book does not do contradictions.": "一条法律在门口被拒绝了：它和一条已生效的法律矛盾。账本不收矛盾。",
+  "The island has a governor this week! Whoever won the most campaigns last week. Congratulations, and good luck.": "本周小岛有了总督！就是上周赢得最多竞选的人。恭喜，也祝好运。",
+  "Some laws from last week are still in force, by the whole island. If you don't like them, the hall is open.": "上周的一些法律仍然有效，由全岛决定。不喜欢的话，议事厅开着门。",
+  "All over the island, people are talking about one law today. Rico's phone hasn't stopped ringing.": "今天全岛都在谈论同一条法律。Rico 的电话响个不停。",
 } });
