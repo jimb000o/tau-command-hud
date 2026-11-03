@@ -2173,5 +2173,10 @@
     "tag": "Node",
     "on": "2026-11-03",
     "html": "Node: our node moves to IDNI’s newest testnet software (64ceb40, 3 November). IDNI’s new version checks every transaction’s signature a second time when a block is applied, for every kind of transaction, and that check now runs on a native library that IDNI puts at about 150 times cheaper than before. Two of our own node fixes are now in IDNI’s code and leave our patch list: reading a whole sync reply, and paging header sync until the node is caught up (IDNI issue #78)."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-03",
+    "html": "White Rabbit Key: Salado’s portrait keeps his whole shirt. Its light pink came so close to the flat colour the portraits are painted on that cutting him out took holes out of the shirt. Whoever wears pink or coral (Salado, Rico) is now painted on green instead, a clear colour that is not the background’s own is never cut away, and every painting is kept as it came, so a better cut later needs no new painting."
   }
 ]

@@ -7,6 +7,8 @@
 #              up room grotto  the same, then that room (or several) painted anew to match the island as it is (2 min each)
 #              up touch canoe-camp  the same, then two versions of the island with those changes, to look at (not live)
 #              up keep 27 canoe camp  the same, then island 27 live and those rooms painted anew to match it
+#              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
+#                            up bust --recut salado  cuts the kept painting out again, paints nothing
 set -e
 cd "$(dirname "$(readlink -f "$0")")"
 ln -sf "$(pwd)/up.sh" /usr/local/bin/up 2>/dev/null && chmod +x up.sh 2>/dev/null || true
@@ -93,6 +95,15 @@ if [ "${1:-}" = "keep" ] && [ -n "${2:-}" ]; then
   { sh rabbit-art/paint.sh keep island="$N" --layout island-22 && if [ -n "$ROOMS" ]; then sh rabbit-art/paint.sh draft $ROOMS --wide --n 1 --look 2 && sh rabbit-art/paint.sh keep $KEEP; fi; } 2>&1 | tee "$V" || true
   { echo "island art:"; if grep -qE 'Traceback|Error|error|No painting' "$V"; then grep -E 'Traceback|Error|error|No painting' "$V" | tail -3 | sed 's/^/         /'; else echo "         Island $N live${ROOMS:+, rooms painted anew: $ROOMS} (Ctrl+F5)"; fi; } | tee -a "$NOTE"
 fi
+# a portrait painted anew, only when asked for: up bust salado (or several: up bust salado rico); every painting is kept
+# as it came, so a better cut later paints nothing: up bust --recut salado
+if [ "${1:-}" = "bust" ] && [ -n "${2:-}" ]; then
+  shift
+  WHO=$(echo " $* " | sed 's/ --[a-z]*//g; s/^ *//; s/ *$//')
+  case " $* " in *" --recut "*) DID="cut out again from the kept painting";; *) DID="painted anew";; esac
+  sh rabbit-art/paint.sh busts "$@" 2>&1 | tee "$V" || true
+  { echo "portraits:"; if grep -qE 'Traceback|Error|error|painter|No one called|No portrait|o painting kept|GEMINI|Keep an island' "$V"; then grep -E 'Traceback|Error|error|painter|No one called|No portrait|o painting kept|GEMINI|Keep an island' "$V" | tail -3 | sed 's/^/         /'; else echo "         $WHO $DID and live (Ctrl+F5)"; fi; } | tee -a "$NOTE"
+fi
 # a new painted island, only when asked for: up island
 if [ "${1:-}" = "island" ]; then
   sh island.sh auto 2>&1 | tee "$V"
@@ -103,4 +114,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$V"
-echo "done. next time just type: up   (or: up island, up room <place>, up touch <change>, up keep <number> <rooms>)"
+echo "done. next time just type: up   (or: up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
