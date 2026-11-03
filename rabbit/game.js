@@ -80,7 +80,9 @@
   const EMB = {
     north: { who: "frost", name: "North Wind Embassy", wants: "harbour", coins: 40 },
     south: { who: "salado", name: "South Current Wellness Resort", wants: "road", coins: 35,
-      offer: "{n} coins, today, no paperwork. Propose “{x}” before the election, and the resort opens its gates to the whole island. Synergy, my friend.", remind: "We are counting on you for “{x}”. Our guests are already booked, and they ask questions." },   // his own words; the North Wind keeps the diplomat's
+      offer: "Sit, sit, the lounger is free. So, straight to business: {n} coins, today, and you propose “{x}” before the election. Right now my guests drag their suitcases uphill from the pier, and last week a yoga teacher cried.",
+      remind: "My investors call me every morning at six and ask the same thing: has our candidate proposed “{x}” yet? Please. Give me something to tell them.",
+      done: "No business today, my friend: “{x}” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free." },   // his own words (and talk.js, when you come back); the North Wind keeps the diplomat's
   };
   const DAYS = 7, MOVES = 3, RUMOUR = 25, GIFT = 20;   // a campaign is one island week, Monday to Sunday; the election is Sunday night
   /* the island's calendar is the real one: an island day is a real day (Europe/Berlin), three moves each, and the week's
@@ -642,11 +644,17 @@
       dove: !!did.dive, worked: !!did.works, plans: !!did.camp, rich: G.coins[G.me] >= 60, amb: !!G.amb, roof: !!(G.built && G.built.roof), lamp: !!(G.built && G.built.lamp), stoneSet: !!(G.built && G.built.stone) };
     if (G.amb) f["amb" + G.amb.id[0].toUpperCase() + G.amb.id.slice(1)] = true;
     for (const id in LAWS) f[id] = inForce(id);
+    /* your dealings with each embassy: southOffer (not taken), southDeal (taken), southOwed (taken, the law not proposed yet), southKept (proposed); north the same */
+    for (const e in EMB) { const d = G.deals.find(d => d.by === G.me && d.emb === e); f[e + "Offer"] = !d; f[e + "Deal"] = !!d; f[e + "Owed"] = !!d && !d.kept; f[e + "Kept"] = !!d && d.kept; }
+    /* what has happened to the island this campaign: eventBoiler, eventStorm, eventCoup, eventCatch, eventRoof */
+    events().forEach(e => { if (e.day <= G.day) f["event" + e.id[0].toUpperCase() + e.id.slice(1)] = true; });
     return f;
   }
-  /* of a list of [when, line]: the first that holds and has not been heard yet, else they take turns */
+  /* of a list of [when, line]: the first that holds and has not been heard yet, else they take turns.
+     A "when" of "a+b" holds when both hold, "!a" when a does not */
+  const holds = (f, w) => w.split("+").every(k => k[0] === "!" ? !f[k.slice(1)] : f[k]);
   function pick(who, list) {
-    const f = facts(), ok = list.filter(([w]) => f[w]); if (!ok.length) return null;
+    const f = facts(), ok = list.filter(([w]) => holds(f, w)); if (!ok.length) return null;
     G.heard = G.heard || {};
     const fresh = ok.find(([, s]) => !G.heard[who + "|" + s]);
     const s = fresh ? fresh[1] : ok[(G.heard["#" + who] = (G.heard["#" + who] || 0) + 1) % ok.length][1];
@@ -870,6 +878,8 @@
   }
   function embassy(box, e) {
     const E = EMB[e], took = G.deals.find(d => d.by === G.me && d.emb === e);
+    /* what they pay for is law already (last week's island law, or passed this week): there is nothing left to promise, so no coins */
+    if (!took && inForce(E.wants)) return scene(box, E.who, T(E.name), F(E.done || "“{x}” is law already, so we have nothing to ask of you today. An unusual feeling. We do not care for it.", { x: LAWS[E.wants].t }), [btn(T("Leave"), () => closeCard())]);
     const line = took ? F(E.remind || "We are counting on you for “{x}”. We would hate to remind the island in public.", { x: LAWS[E.wants].t }) : F(E.offer || "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.", { n: E.coins, x: LAWS[E.wants].t });
     scene(box, E.who, T(E.name), line, took ? [btn(T("Leave"), () => closeCard())] : [
       btn(F("Take the {n} coins and promise", { n: E.coins }), () => { deal(G.me, e); SND.sfx("coin"); toast(T("The promise is in the Book now.")); spend(); if (UI.card) openCard(e, PLACE[e]); }, { off: !movesLeft(), sub: F("people who care about {x} will not like it", { x: Object.keys(LAWS[E.wants].fx).filter(k => LAWS[E.wants].fx[k] < 0).map(k => T(TOPICS[k])).join(", ") }) }),

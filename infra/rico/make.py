@@ -136,6 +136,92 @@ SAY = {
         "Fine. I vote for yours, you vote for mine. Lola's our witness, and the Book is our memory.",
     "After what you did? Buy yourself a lemonade.": "After what you did? Ha. Buy yourself a lemonade.",
     "Not today. Show me how you vote first.": "Not today. Show me how you vote first, then we'll talk.",
+    # the North Wind Embassy when the harbour is law already (game.js embassy()): nothing to buy
+    "“A deep harbour for cruise ships” is law already, so we have nothing to ask of you today. An unusual feeling. We do not care for it.":
+        "A deep harbour for cruise ships is law already. So we have nothing to ask of you today. An unusual feeling. We do not care for it.",
+    # Salado at the South Current Wellness Resort (game.js EMB.south, talk.js): a salesman who talks, pauses and sighs
+    "Sit, sit, the lounger is free. So, straight to business: 35 coins, today, and you propose “A road round the island” before the election. Right now my guests drag their suitcases uphill from the pier, and last week a yoga teacher cried.":
+        "Sit, sit, the lounger is free. So, straight to business. Thirty-five coins, today, and you propose a road round the island before the election. Because right now? My guests drag their suitcases uphill from the pier. And last week, a yoga teacher cried.",
+    "My investors call me every morning at six and ask the same thing: has our candidate proposed “A road round the island” yet? Please. Give me something to tell them.":
+        "My investors call me every morning. At six! And they always ask the same thing: has our candidate proposed a road round the island yet? [sighs] Please. Give me something to tell them.",
+    "No business today, my friend: “A road round the island” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free.":
+        "No business today, my friend. A road round the island is law already, and there's nothing left for me to buy. [laughs] My investors will think I'm on holiday. Sit anyway. The loungers are free.",
+    "You did it, the road is law! I called my investors and for once they had nothing to say. Nothing! I think that means they’re happy. Come, have a smoothie, it’s on the house.":
+        "You did it, the road is law! I called my investors, and for once they had nothing to say. Nothing! [laughs] I think that means they're happy. Come, come, have a smoothie, it's on the house.",
+    "So the road passed. Wonderful. Only somebody else proposed it, and in the Book your name is next to my coins, not next to the road. My investors noticed before I did. About the road I’m happy. About you I’m still thinking.":
+        "So. The road passed. Wonderful. Only, somebody else proposed it. And in the Book, your name is next to my coins, not next to the road. My investors noticed before I did. About the road, I'm happy. About you... I'm still thinking.",
+    "The road is law. I keep saying it out loud, just to hear it. My guests will arrive like normal people now, in a minibus with the air conditioning on. Nobody has to cry.":
+        "The road is law. I keep saying it out loud, just to hear it. [laughs softly] My guests will arrive like normal people now, in a minibus, with the air conditioning on. Nobody has to cry.",
+    "Last day, and I still don’t see “A road round the island” in the Book. You have my coins. If it isn’t there tonight, I have to tell the island before the vote. I hate that part. I really do.":
+        "Last day. And I still don't see a road round the island in the Book. You have my coins. If it isn't there tonight, I have to tell the island, before the vote. [sighs] I hate that part. I really do.",
+    "Last day, and we never did business, you and me. I respect that. I don’t like it, but I respect it. If you change your mind before the vote, the coins are right here, and the road still needs somebody.":
+        "Last day, and we never did business, you and me. I respect that. I don't like it, but I respect it. If you change your mind before the vote, the coins are right here. And the road still needs somebody.",
+    "You proposed it, I saw it in the Book. The council said no. Fine, that’s the council. You kept your word, and in my business that happens so rarely I don’t know what to do with my hands.":
+        "You proposed it! I saw it in the Book. The council said no. Okay, fine, that's the council. But you kept your word. And in my business that happens so rarely, I don't know what to do with my hands.",
+    "I hear Frost paid you. That’s okay, he pays more, I know. But he wants a harbour full of cruise ships, and I only want a little road. A road is very quiet, compared to a cruise ship. Think about it.":
+        "I hear Frost paid you. That's okay. He pays more, I know, I know. But he wants a harbour full of cruise ships, and I only want a little road. A road is very quiet, compared to a cruise ship. Think about it.",
+    "Running low, hm? Everybody is by now, campaigns are expensive. You know what I’m going to say, so I won’t say it. I’ll just sit here, next to the coins.":
+        "Running low, hm? Everybody is, by now. Campaigns are expensive. You know what I'm going to say, so I won't say it. I'll just sit here. Next to the coins.",
+    "Ah, my partner! Your name is next to my coins in the Book, so we’re practically family now. The council tree is just down the hill. Propose “A road round the island” whenever you like. Before the election, ideally.":
+        "Ah, my partner! Your name is next to my coins in the Book, so we're practically family now. The council tree is just down the hill. Propose a road round the island whenever you like. Before the election, ideally.",
+    "Did you go to the council tree yet? No? That’s fine. It’s fine. I’ll tell my investors you’re thinking about it. They love that. They love it when people think.":
+        "Did you go to the council tree yet? No? That's fine. It's fine! I'll tell my investors you're thinking about it. They love that. They love it when people think.",
+    "Ah, you came back! It’s the loungers, everybody comes back for the loungers. Same offer as before: the coins today, and you propose “A road round the island” before the election.":
+        "Ah, you came back! It's the loungers. Everybody comes back for the loungers. Same offer as before: the coins today, and you propose a road round the island before the election.",
+    "About the council tree. That was my investors, not me, I swear on my moustache. I told them you can’t buy a tree on this island. They didn’t listen. Now they’ve met Ama, and they’re very quiet.":
+        "Okay. About the council tree. That was my investors, not me. I swear on my moustache. I told them, you can't buy a tree on this island. They didn't listen. Now they've met Ama, and they're very quiet.",
+    "Needed. Past tense! The road is law now, so now I need guests, which is a much nicer problem. You should see my booking calendar. Actually, don’t. Give it a week.":
+        "Needed. Past tense! The road is law now, so now I need guests, which is a much nicer problem. You should see my booking calendar. Actually... no, don't. Give it a week.",
+    "Right now there are two ways up to the resort: the jungle path, or my nephew’s wheelbarrow. The guests write about the wheelbarrow in their reviews. Every single one. With a road, the minibus stops at my gate.":
+        "Right now there are two ways up to the resort. The jungle path, or my nephew's wheelbarrow. The guests write about the wheelbarrow in their reviews. Every single one. With a road, the minibus stops right at my gate.",
+    "I know, I know. Hana already came up here with a list. But my guests want quiet too, that’s what they pay me for. They just want to arrive at the quiet in a minibus.":
+        "I know, I know. Hana already came up here with a list. But my guests want quiet too, that's what they pay me for! They just want to arrive at the quiet... in a minibus.",
+    "Very well! Eleven rooms, and on a good night almost four of them are full. The pool is beautiful, you should see it with people in it. I saw it once. It was a Tuesday.":
+        "Very well! Eleven rooms, and on a good night, almost four of them are full. The pool is beautiful. You should see it with people in it. I saw it once. It was a Tuesday.",
+    "Because I make beautiful slides, and I say “synergy” a lot. They’ve never been here. If they came up the jungle path and saw the empty loungers… So, between us, please don’t invite them.":
+        "Because I make beautiful slides. And I say synergy a lot. They've never been here. If they came up the jungle path and saw the empty loungers... So. Between us. Please don't invite them.",
+    "Me? I sell relaxing, I don’t do it. Every morning I join the guests for yoga, and every morning my phone rings in the middle of the tree pose. It’s always the investors. I have never once finished a tree.":
+        "Me? I sell relaxing, I don't do it. Every morning I join the guests for yoga, and every morning my phone rings in the middle of the tree pose. It's always the investors. [sighs] I have never once finished a tree.",
+    "Something big drinks from my pool at night. In the morning the water is lower and there’s a banana peel on a lounger, folded. Now I leave a towel out for him. Folded too. We have an understanding.":
+        "Something big drinks from my pool at night. In the morning the water is lower, and there's a banana peel on a lounger. Folded. So now I leave a towel out for him. Folded too. We have an understanding.",
+}
+# how some lines are said, instead of the speaker's usual way (TAG): the mood of that moment (v3 tags; other models get none)
+MOOD = {
+    "Sit, sit, the lounger is free. So, straight to business: 35 coins, today, and you propose “A road round the island” before the election. Right now my guests drag their suitcases uphill from the pier, and last week a yoga teacher cried.":
+        "[warm, smooth, enjoying his own pitch]",
+    "My investors call me every morning at six and ask the same thing: has our candidate proposed “A road round the island” yet? Please. Give me something to tell them.":
+        "[tired, pleading, still charming]",
+    "No business today, my friend: “A road round the island” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free.":
+        "[relaxed, amused at himself]",
+    "“A deep harbour for cruise ships” is law already, so we have nothing to ask of you today. An unusual feeling. We do not care for it.": "[coolly, faintly put out]",
+    "You did it, the road is law! I called my investors and for once they had nothing to say. Nothing! I think that means they’re happy. Come, have a smoothie, it’s on the house.": "[overjoyed]",
+    "So the road passed. Wonderful. Only somebody else proposed it, and in the Book your name is next to my coins, not next to the road. My investors noticed before I did. About the road I’m happy. About you I’m still thinking.":
+        "[cool, a little hurt, still polite]",
+    "The road is law. I keep saying it out loud, just to hear it. My guests will arrive like normal people now, in a minibus with the air conditioning on. Nobody has to cry.": "[delighted, savouring every word]",
+    "Last day, and I still don’t see “A road round the island” in the Book. You have my coins. If it isn’t there tonight, I have to tell the island before the vote. I hate that part. I really do.":
+        "[serious, quietly disappointed]",
+    "Last day, and we never did business, you and me. I respect that. I don’t like it, but I respect it. If you change your mind before the vote, the coins are right here, and the road still needs somebody.":
+        "[gracious, a little wistful]",
+    "You proposed it, I saw it in the Book. The council said no. Fine, that’s the council. You kept your word, and in my business that happens so rarely I don’t know what to do with my hands.": "[touched, warm]",
+    "I hear Frost paid you. That’s okay, he pays more, I know. But he wants a harbour full of cruise ships, and I only want a little road. A road is very quiet, compared to a cruise ship. Think about it.":
+        "[smooth, persuasive, a little jealous]",
+    "Running low, hm? Everybody is by now, campaigns are expensive. You know what I’m going to say, so I won’t say it. I’ll just sit here, next to the coins.": "[knowing, playful]",
+    "Ah, my partner! Your name is next to my coins in the Book, so we’re practically family now. The council tree is just down the hill. Propose “A road round the island” whenever you like. Before the election, ideally.": "[beaming]",
+    "Did you go to the council tree yet? No? That’s fine. It’s fine. I’ll tell my investors you’re thinking about it. They love that. They love it when people think.": "[forced cheerfulness, nervous]",
+    "About the council tree. That was my investors, not me, I swear on my moustache. I told them you can’t buy a tree on this island. They didn’t listen. Now they’ve met Ama, and they’re very quiet.":
+        "[embarrassed, lowering his voice]",
+    "Needed. Past tense! The road is law now, so now I need guests, which is a much nicer problem. You should see my booking calendar. Actually, don’t. Give it a week.": "[cheerful, then sheepish]",
+    "Right now there are two ways up to the resort: the jungle path, or my nephew’s wheelbarrow. The guests write about the wheelbarrow in their reviews. Every single one. With a road, the minibus stops at my gate.":
+        "[exasperated, amused]",
+    "I know, I know. Hana already came up here with a list. But my guests want quiet too, that’s what they pay me for. They just want to arrive at the quiet in a minibus.": "[defensive, charming]",
+    "Very well! Eleven rooms, and on a good night almost four of them are full. The pool is beautiful, you should see it with people in it. I saw it once. It was a Tuesday.": "[proud, then wistful]",
+    "Because I make beautiful slides, and I say “synergy” a lot. They’ve never been here. If they came up the jungle path and saw the empty loungers… So, between us, please don’t invite them.":
+        "[conspiratorial, half whispering]",
+    "Me? I sell relaxing, I don’t do it. Every morning I join the guests for yoga, and every morning my phone rings in the middle of the tree pose. It’s always the investors. I have never once finished a tree.": "[rueful, amused]",
+    "Something big drinks from my pool at night. In the morning the water is lower and there’s a banana peel on a lounger, folded. Now I leave a towel out for him. Folded too. We have an understanding.": "[hushed, amused]",
+    "Rico! It's Salado, up at the resort. I have guests by the pool and they want something to relax to.": "[on the phone, cheerful]",
+    "Maybe a song with a road in it? Not about a road. Just a road, somewhere in the second verse.": "[on the phone, sly]",
+    "Ah. No, no. Forget the road, just play something slow. Ciao, Rico!": "[on the phone, backing off quickly]",
 }
 
 
@@ -175,12 +261,12 @@ def said(who, text, model=MODEL):
     else:
         out = SAY.get(text, text)
     out = spoken(out)
-    if not model.startswith("eleven_v3"):
-        return out
+    if not model.startswith("eleven_v3"):   # only v3 takes [tags]; any other model would read a [sighs] out
+        return re.sub(r"\s+", " ", re.sub(r"\[[^\]]*\]", "", out)).strip()
     air = who == "rico" and text not in SAY
     if air and text in hype():
         return f"{HYPE} {out}"
-    return f"{(ON_AIR if text.endswith('!') else RADIO) if air else TAG.get(who, '')} {out}".strip()
+    return f"{(ON_AIR if text.endswith('!') else RADIO) if air else MOOD.get(text, TAG.get(who, ''))} {out}".strip()
 
 
 _HYPE = None

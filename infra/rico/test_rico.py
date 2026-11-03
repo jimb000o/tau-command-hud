@@ -18,7 +18,8 @@ texts = {t for w, t in ls}
 assert ("rico", "Pact news: Hana and Baako shook hands at La Ola. Lola counted the fingers afterwards.") in ls
 assert ("rico", "Day 3 of 7. If you still don't know who to vote for, neither do the gulls.") in ls
 assert ("rico", "Baako took 40 coins from the North Wind Embassy!") in ls
-assert ("salado", "35 coins, today. All we ask is that you propose “A road round the island” before the election. A small thing between friends.") in ls
+assert ("frost", "40 coins, today. All we ask is that you propose “A deep harbour for cruise ships” before the election. A small thing between friends.") in ls
+assert ("salado", "Sit, sit, the lounger is free. So, straight to business: 35 coins, today, and you propose “A road round the island” before the election. Right now my guests drag their suitcases uphill from the pier, and last week a yoga teacher cried.") in ls
 assert ("tobias", "After what you did? Buy yourself a lemonade.") in ls
 assert not any("{" in t or "${" in t for t in texts), "a placeholder left in a spoken line"
 assert not any(re.search(r"\d{3,}", t) for t in texts), "a block height or big number in a spoken line"
@@ -29,12 +30,21 @@ print(f"{len(ls)} lines, {sum(len(t) for w, t in ls)} characters")
 # spoken to you in the places, on air on the radio; every loosened line is still a line of the game
 for t in make.SAY:
     assert t in texts, f"make.py SAY has a line the game does not: {t[:60]}"
+for t, tag in make.MOOD.items():
+    assert t in texts, f"make.py MOOD has a line the game does not: {t[:60]}"
+    assert re.fullmatch(r"\[[^\[\]]+\]", tag), f"a mood is one [tag]: {tag}"
+assert make.said("salado", "Running low, hm? Everybody is by now, campaigns are expensive. You know what I’m going to say, so I won’t say it. I’ll just sit here, next to the coins.") == \
+    "[knowing, playful] Running low, hm? Everybody is, by now. Campaigns are expensive. You know what I'm going to say, so I won't say it. I'll just sit here. Next to the coins."
+assert make.said("salado", "You did it, the road is law! I called my investors and for once they had nothing to say. Nothing! I think that means they’re happy. Come, have a smoothie, it’s on the house.", "x") == \
+    "You did it, the road is law! I called my investors, and for once they had nothing to say. Nothing! I think that means they're happy. Come, come, have a smoothie, it's on the house."
 assert make.said("lola", "Not today. Show me how you vote first.") == "[warm, teasing] Not today. Show me how you vote first, then we'll talk."
 assert make.said("rico", "Hana broke a pact!").startswith(make.ON_AIR)
 assert make.said("rico", "Rico accepts tips, song requests and alibis.").startswith(make.RADIO)
 assert make.said("rico", "Done. And this one’s true, so let them check. The Book backs you up.").startswith(make.TAG["rico"])
-assert make.said("salado", "35 coins, today. All we ask is that you propose “A road round the island” before the election. A small thing between friends.", "x") == \
-    "Thirty-five coins. Today. All we ask is that you propose a road round the island before the election. A small thing, between friends."
+assert make.said("frost", "40 coins, today. All we ask is that you propose “A deep harbour for cruise ships” before the election. A small thing between friends.", "x") == \
+    "Forty coins. Today. All we ask is that you propose a deep harbour for cruise ships before the election. A small thing, between friends."
+assert make.said("frost", "“A deep harbour for cruise ships” is law already, so we have nothing to ask of you today. An unusual feeling. We do not care for it.") == \
+    "[coolly, faintly put out] A deep harbour for cruise ships is law already. So we have nothing to ask of you today. An unusual feeling. We do not care for it."
 assert not any(make.said(w, t, "eleven_multilingual_v2").startswith("[") for w, t in ls), "tags would be read out by v2"
 
 # every line the game asks for exists, said by whoever the game shows
@@ -54,10 +64,23 @@ for t in re.findall(r'T\(G\.trust\[c\] < 20 \? "([^"]+)" : "([^"]+)"\)', game)[0
     assert all(said(c, t) for c in ("marisol", "tobias", "baako", "hana")), t
 for t in re.findall(r'"([^"]+)"', re.search(r"const LIES = \{([^}]*)\}", game).group(1)):
     assert said("rico", t + "!"), f"Rico cannot call out the rumour {t!r}"
+# each embassy's offer and reminder, in its own words when game.js gives them (else the diplomat's), word for word with a clip
 emb = re.search(r"const EMB = \{(.*?)\n  \};", game, re.S).group(1)
-for who, name, coins in re.findall(r'who: "(\w+)", name: "([^"]+)", wants: "\w+", coins: (\d+)', emb):
+lawt = dict(re.findall(r'^\s*(\w+): +\{ t: "([^"]+)"', re.search(r"const LAWS = \{(.*?)\n  \};", game, re.S).group(1), re.M))
+own = {"offer": "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.",
+       "remind": "We are counting on you for “{x}”. We would hate to remind the island in public.",
+       "done": "“{x}” is law already, so we have nothing to ask of you today. An unusual feeling. We do not care for it."}
+for k, default in own.items():
+    assert default in game, f"game.js embassy() no longer has the {k} line test_rico.py knows: {default[:60]}"
+places = [p for p in re.split(r"\n    (?=\w+: \{ who:)", emb) if "who:" in p]
+assert len(places) == 2, places
+for p in places:
+    who, name, law, coins = re.search(r'who: "(\w+)", name: "([^"]+)", wants: "(\w+)", coins: (\d+)', p).groups()
     assert said("rico", f"Marisol took {coins} coins from the {name}!"), name
-    assert any(w == who and t.startswith(f"{coins} coins, today.") for w, t in ls), who
+    for k, default in own.items():
+        m = re.search(k + r': "([^"]+)"', p)
+        t = (m.group(1) if m else default).replace("{n}", coins).replace("{x}", lawt[law])
+        assert said(who, t), f"{who}'s {k} has no clip, rico.js EMBV differs from game.js EMB: {t[:70]}"
 
 # voices.json is what rico.js all() builds in the browser
 node = shutil.which("node")

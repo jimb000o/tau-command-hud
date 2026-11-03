@@ -4,7 +4,9 @@
    not heard yet wins, then they take turns. ask: questions you can put to them for free (no move, nothing in the Book);
    "more" is the deeper question that opens once the first one is answered. "when" is one of the facts game.js knows
    ("" always, early, mid, last, myLaw, noLaw, pact, broke, deal, lied, caught, truth, smeared, lead, poor, chart, key,
-   drummed, circled, dove, worked, plans, rich, amb, ambFortune, ambReform, ambKingmaker, ambClean, roof, lamp, stoneSet, and every law id in force: night quiet reef harbour boat lunch concerts road copy tax).
+   drummed, circled, dove, worked, plans, rich, amb, ambFortune, ambReform, ambKingmaker, ambClean, roof, lamp, stoneSet, and every law id in force: night quiet reef harbour boat lunch concerts road copy tax;
+   your dealings with an embassy: southOffer southDeal southOwed southKept, northOffer northDeal northOwed northKept; what has happened to the island: eventBoiler eventStorm eventCoup eventCatch eventRoof).
+   "a+b" holds when both hold, "!a" when a does not, so "last+southOwed+!road" is the last day, the resort's money taken and no road yet.
    Every line is spoken in that islander's voice (infra/rico/make.py, through rico.js all() and rabbit/voices.json),
    so a line never holds a number, a name of the player or anything else that changes. */
 (() => {
@@ -240,11 +242,31 @@
         { q: "Why not simply build it?", a: [["", "Because there is nobody here who can sign it for us. No chief, no master key, only a council and a Book. Honestly, it is exhausting. Elsewhere one handshake is enough."]] },
       ],
     },
+    /* the resort's offer is game.js EMB.south; coming back, he talks about where your deal with him stands */
     salado: {
+      back: [
+        ["road+southKept", "You did it, the road is law! I called my investors and for once they had nothing to say. Nothing! I think that means they’re happy. Come, have a smoothie, it’s on the house."],
+        ["road+southOwed", "So the road passed. Wonderful. Only somebody else proposed it, and in the Book your name is next to my coins, not next to the road. My investors noticed before I did. About the road I’m happy. About you I’m still thinking."],
+        ["road", "The road is law. I keep saying it out loud, just to hear it. My guests will arrive like normal people now, in a minibus with the air conditioning on. Nobody has to cry."],
+        ["last+southOwed+!road", "Last day, and I still don’t see “A road round the island” in the Book. You have my coins. If it isn’t there tonight, I have to tell the island before the vote. I hate that part. I really do."],
+        ["last+southOffer+!road", "Last day, and we never did business, you and me. I respect that. I don’t like it, but I respect it. If you change your mind before the vote, the coins are right here, and the road still needs somebody."],
+        ["southKept+!road", "You proposed it, I saw it in the Book. The council said no. Fine, that’s the council. You kept your word, and in my business that happens so rarely I don’t know what to do with my hands."],
+        ["northDeal+southOffer+!road", "I hear Frost paid you. That’s okay, he pays more, I know. But he wants a harbour full of cruise ships, and I only want a little road. A road is very quiet, compared to a cruise ship. Think about it."],
+        ["poor+southOffer+!road", "Running low, hm? Everybody is by now, campaigns are expensive. You know what I’m going to say, so I won’t say it. I’ll just sit here, next to the coins."],
+        ["southOwed+!road", "Ah, my partner! Your name is next to my coins in the Book, so we’re practically family now. The council tree is just down the hill. Propose “A road round the island” whenever you like. Before the election, ideally."],
+        ["southOwed+!road", "Did you go to the council tree yet? No? That’s fine. It’s fine. I’ll tell my investors you’re thinking about it. They love that. They love it when people think."],
+        ["southOwed+!road", "My investors call me every morning at six and ask the same thing: has our candidate proposed “A road round the island” yet? Please. Give me something to tell them."],   // his reminder (game.js EMB.south), so it is heard too
+        ["southOffer+!road", "Ah, you came back! It’s the loungers, everybody comes back for the loungers. Same offer as before: the coins today, and you propose “A road round the island” before the election."],
+        ["eventCoup", "About the council tree. That was my investors, not me, I swear on my moustache. I told them you can’t buy a tree on this island. They didn’t listen. Now they’ve met Ama, and they’re very quiet."],
+      ],
       ask: [
-        { q: "Why do you want a road so badly?", a: [["", "Roads, my friend, are how guests arrive. Minibuses, yoga mats, my cousin’s smoothie truck. The island will love it. Eventually. We can wait. We are very good at waiting, and at lunch."]],
-          more: { q: "What do you get out of it?", a: [["", "Me? A full resort, and a very long line in your Book saying who paid for the road. My investors like to be remembered. Your Book is happy to help."]] } },
-        { q: "Do you and Ambassador Frost talk?", a: [["", "Every Thursday. We play cards by the pool. He cheats, I let him, and we both write it down. Business is mostly agreeing on who keeps the score."]] },
+        { q: "Why do you need a road so badly?", a: [["road", "Needed. Past tense! The road is law now, so now I need guests, which is a much nicer problem. You should see my booking calendar. Actually, don’t. Give it a week."],
+            ["!road", "Right now there are two ways up to the resort: the jungle path, or my nephew’s wheelbarrow. The guests write about the wheelbarrow in their reviews. Every single one. With a road, the minibus stops at my gate."]],
+          more: { q: "And the people who want quiet nights?", a: [["", "I know, I know. Hana already came up here with a list. But my guests want quiet too, that’s what they pay me for. They just want to arrive at the quiet in a minibus."]] } },
+        { q: "Is the resort doing well?", a: [["", "Very well! Eleven rooms, and on a good night almost four of them are full. The pool is beautiful, you should see it with people in it. I saw it once. It was a Tuesday."]],
+          more: { q: "Then why do your investors keep paying?", a: [["", "Because I make beautiful slides, and I say “synergy” a lot. They’ve never been here. If they came up the jungle path and saw the empty loungers… So, between us, please don’t invite them."]] } },
+        { q: "Do you ever get to relax?", a: [["", "Me? I sell relaxing, I don’t do it. Every morning I join the guests for yoga, and every morning my phone rings in the middle of the tree pose. It’s always the investors. I have never once finished a tree."]] },
+        { q: "Have you ever seen Agorzilla?", a: [["", "Something big drinks from my pool at night. In the morning the water is lower and there’s a banana peel on a lounger, folded. Now I leave a towel out for him. Folded too. We have an understanding."]] },
       ],
     },
   };
