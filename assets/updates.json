@@ -2190,6 +2190,11 @@
     "html": "Testnet stats: new chart “Active wallets”. It counts the wallets that sent at least one transaction in the last 90 days (or 30, 7, 1), day by day, and keeps counting across testnet restarts: our relay writes down each day’s wallets as it sees the blocks. IDNI’s genesis accounts are a dashed line of their own. The others are sorted by what we know of them: White Rabbit Key players, Agorzilla and Déjà feeders, Tau HUD wallet, our own island bot, the cruise ships’ simulated passengers (once they sail) and everybody else. Wallets are keys, not people."
   },
   {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-03",
+    "html": "White Rabbit Key: cruise ships call at the island. MS Dry Run comes on Wednesdays at 16:00 German time with 40 passengers, Queen Mempool on Saturdays at 14:00 with 120. The passengers are simulated, and every page that shows them says so; what they do ashore is real: test transactions to the tills of the places they visit, at most 12 a minute and only when the island bot has nothing to send. MS Dry Run’s passengers book dives with the right to withdraw (the money waits in escrow until its time, and a few take it back); Queen Mempool’s tables pay one bill to several places at once. A ship lands only on a calm or busy testnet, goes at half pace while it strains, and leaves at once if it stalls or the node refuses its transactions; a kind of transaction a ship has not used before goes out at most five times on its first visit. Every passenger transaction is in a public logbook for 14 days, and a stall while a ship is in port gets an incident report: what was sent, the newest block, the transaction that waited longest. Testnet load shows the ship, its visit and its passengers’ own line."
+  },
+  {
     "tag": "HUD",
     "on": "2026-11-03",
     "html": "Chain core: a waiting transaction whose origin we know gets a ring and, while few are waiting, a small label: IDNI genesis (dashed), White Rabbit Key, Agorzilla or Déjà (solid), our island bot (dotted), simulated cruise passengers (amber). Hovering a dot says where it comes from. Known means read off the chain or our own server wallets; any other wallet stays unnamed."

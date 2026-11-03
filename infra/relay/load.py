@@ -31,7 +31,7 @@ class Load:
     def __init__(self, path: str | None = None, clock=time.time):
         self.path = path or os.environ.get("LOAD_PATH", "/data/load.json")
         self.clock = clock
-        self.mins: dict[int, dict] = {}   # minute -> {"pool": most waiting, "sent", "bot", "refused", "wait": [sum, n, max]}
+        self.mins: dict[int, dict] = {}   # minute -> {"pool": most waiting, "sent", "bot", "cruise", "refused", "wait": [sum, n, max]}
         self.top = {"pool": 0, "per_min": 0, "per_block": 0, "wait": 0, "since": round(clock())}
         self.saved_at = 0.0
         self._cache = (0.0, None)
@@ -42,7 +42,7 @@ class Load:
         m = _minute(now)
         row = self.mins.get(m)
         if row is None:
-            row = self.mins[m] = {"pool": 0, "sent": 0, "bot": 0, "refused": 0, "wait": [0, 0, 0]}
+            row = self.mins[m] = {"pool": 0, "sent": 0, "bot": 0, "cruise": 0, "refused": 0, "wait": [0, 0, 0]}
             for k in [k for k in self.mins if k <= m - WINDOW]:
                 del self.mins[k]
         return row
@@ -65,10 +65,12 @@ class Load:
         self.top["wait"] = max(self.top["wait"], s)
 
     def sent(self, by: str = "sent", now: float | None = None):
-        """by: "sent" (a visitor's browser through tauhud), "bot" (the island bot) or "refused"."""
+        """by: "sent" (a visitor's browser through tauhud), "bot" (the island bot), "cruise" (a cruise ship's simulated
+        passengers) or "refused"."""
         now = self.clock() if now is None else now
         row = self._m(now)
-        row[by if by in ("sent", "bot", "refused") else "sent"] += 1
+        k = by if by in ("sent", "bot", "cruise", "refused") else "sent"
+        row[k] = row.get(k, 0) + 1
 
     # ---------- GET /load ----------
     def snapshot(self, blocks: list, waiting: int = 0, now: float | None = None) -> dict:
@@ -106,13 +108,14 @@ class Load:
         out = {
             "generated_at": round(now), "start": start * 60, "minutes": WINDOW,
             "sealed": sealed, "blocks": nblocks, "gap": gaps,
-            "pool": col("pool"), "sent": col("sent"), "bot": col("bot"), "refused": col("refused"),
+            "pool": col("pool"), "sent": col("sent"), "bot": col("bot"), "cruise": col("cruise"), "refused": col("refused"),
             "wait_avg": [round(w[0] / w[1]) if w[1] else None for w in waits], "wait_max": [w[2] if w[1] else None for w in waits],
             "now": {
                 "waiting": int(waiting),
                 "last_block_age": round(now - last[0]) if last[0] else None,
                 "sealed_hour": sum(sealed[hour]), "blocks_hour": sum(nblocks[hour]),
-                "sent_hour": sum(col("sent")[hour]), "bot_hour": sum(col("bot")[hour]), "refused_hour": sum(col("refused")[hour]),
+                "sent_hour": sum(col("sent")[hour]), "bot_hour": sum(col("bot")[hour]), "cruise_hour": sum(col("cruise")[hour]),
+                "refused_hour": sum(col("refused")[hour]),
                 "wait_hour": round(w_sum / w_n) if w_n else None,
                 "busiest_minute_hour": max(sealed[hour]) if sealed else 0,
             },

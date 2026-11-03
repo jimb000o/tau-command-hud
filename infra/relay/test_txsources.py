@@ -125,5 +125,19 @@ d = txsources.deja(blocks + [blk(start + 500, feed(B), feed(C, "2"))], start + 6
 check(d["agreed"] == 3 and d["fed"], "the third wallet makes it an agreement")
 check(txsources.deja([blk(start + 100, feed(A))], start + 400)["partial"] and txsources.deja([], start)["partial"], "no block from the start of her day: the count may be short")
 
+# a cruise ship's simulated passengers (cruise.py): in the island's transactions, never players, wallets or moves
+import island  # noqa: E402
+pas = "c" * 96
+sp = txsources.TxSources(os.path.join(tempfile.mkdtemp(), "sent.json"))
+sp.passengers = lambda: {pas: "queen"}
+bb = {"header": {"timestamp": 1793804400}, "tx_ids": ["p1", "p2", "p3"], "transactions": [
+    {"tx_type": "user_tx", "sender_pubkey": pas, "operations": {"1": [[pas, island.PLACES["bar"], "15"], [pas, island.PLACES["radio"], "25"]]}},
+    {"tx_type": "retractable_transfer", "sender_pubkey": pas, "recipient_pubkey": island.PLACES["south"], "amount": 40},
+    {"tx_type": "user_tx", "sender_pubkey": "d" * 96, "operations": {"1": [["d" * 96, island.PLACES["bar"], "5"]]}}]}
+po = sp.by_day([bb])
+pr = po["rabbit"]["2026-11-04"]
+check(po["days"]["2026-11-04"]["rabbit"][:2] == [3, 1] and pr["cruise"] == 2 and pr["lines"] == 1 and pr["wallets"] == 1 and po["ours"]["2026-11-04"][:2] == [1, 1],
+      "a cruise passenger's bill and booking count as the island's transactions, never as a player, a wallet or a move")
+
 print("\n" + ("all ok" if not failed else f"{failed} failed"))
 sys.exit(1 if failed else 0)
