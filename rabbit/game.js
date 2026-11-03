@@ -2185,11 +2185,11 @@
     SC.setHour(0, true); hud();
     openCard(null, box => {
       box.classList.add("intro");
-      box.append(el("p", { class: "kick", text: T("An island election on Sunday") }), el("h2", { text: T("White Rabbit Key") }),
-        el("p", { class: "cv-line", text: T("Four candidates want to govern the island. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") }));
+      box.append(el("p", { class: "kick", text: T("Sunday night the island elects a governor") }), el("h2", { text: T("White Rabbit Key") }),
+        el("p", { class: "cv-line", text: T("Four islanders stand for governor, and you are one of them. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") }));
       const pick = el("div", { class: "cv-pick" });
       Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", onclick: () => begin(c) }, portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96), el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) }))));
-      box.append(el("p", { class: "cv-h", text: T("Play as") }), pick);
+      box.append(el("p", { class: "cv-h", text: T("Which candidate are you?") }), pick);
       const td = todayIdx();
       box.append(el("p", { class: "cv-note" }, el("b", { text: T("Your campaign:") }), " ", T("this week, Monday to Sunday. An island day is a real day: three moves, a few minutes. Sunday evening the islanders vote."), " ",
         td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: play Monday to {x} now, then a day a day.", { x: dayName(td) }),
@@ -2207,8 +2207,23 @@
     news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."), RICO.L.bkWeek);
     isleRule();
     closeCard(); hud();
-    toast(T("Tap a place on the island to begin."));
-    dragHint();
+    welcome();
+  }
+  /* the first scene of a campaign: Old Sam writes your name into the Book, and says what you stand for and when the island votes */
+  const WELCOME = {
+    marisol: "So it is true, Marisol: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You hear everything first at your café. This week the island hears about you. Every move you make goes into this Book.",
+    tobias: "So it is true, Tobias: the harbour master wants to be governor. Your name is on the list, in my own hand. Four candidates, one chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. The embassies know you already. The island will know you by what goes into this Book.",
+    baako: "So it is true, Baako: your name is on the list, in my own hand. You count everything, so count this: four candidates, one governor’s chair under the council tree, ten islanders who vote on Sunday night. Every move you make goes into this Book, and I count too.",
+    hana: "So it is true, Hana: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You write everything down, so you know how this works. Laws are made in the Council Hall. Everything else is written here.",
+  };
+  function welcome() {
+    const go = () => { closeCard(); toast(T("Tap a place on the island to begin.")); dragHint(); };
+    openCard("book", box => {
+      box.classList.add("welcome");
+      scene(box, "sam", T("Your name in the Book"), T(WELCOME[G.me]), [btn(T("Walk onto the island"), go, { go: true })],
+        el("p", { class: "cv-note" }, el("b", { text: T("You:") }), " ", F("{x}, candidate for governor. Ten islanders vote on Sunday night; win more of them than the other three.", { x: nm(G.me) })));
+      box.querySelector(".cv-x").onclick = go;
+    });
   }
   function help() {
     openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
