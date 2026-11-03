@@ -2213,5 +2213,10 @@
     "tag": "HUD",
     "on": "2026-11-03",
     "html": "Transaction details: the hash, the sender, the receiver and the block number are links now. Each opens the explorer in a new tab, on that transaction, address or block. On the live chain only; simulated transactions have nothing to look up."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-03",
+    "html": "Transactions: the list is sorted by time, newest at the top, whatever the kind. Before, a refused transaction from yesterday could sit above one sealed a few minutes ago."
   }
 ]
