@@ -2,6 +2,7 @@
 
   docker compose run --rm -v /opt/tau-command-hud:/repo:ro alerts python /repo/infra/alerts/post_image.py \
       /repo/assets/share/<file>.jpg /repo/assets/share/<file>.json [--x-image <file>.jpg] [--dry] [--only telegram|x]
+  ... post_image.py <picture> --probe   (uploads the picture to X three ways and prints X's answers; posts nothing)
 
 The JSON holds {"telegram": "<HTML caption>", "x": "<post text, no links>"}. Telegram takes the picture in one
 sendPhoto (a tall one is fine, the chat shows it whole); X gets the picture named with --x-image when there is one
@@ -43,10 +44,44 @@ def x_photo(path: str, text: str) -> str:
     return "posted https://x.com/TauHUDcom/status/" + str((out.get("data") or {}).get("id"))
 
 
+def probe(path: str) -> int:
+    """Upload the picture to X three ways and print what X says about each media id; posts nothing. Used on 3 November
+    2026, when a text-only post went through but the same text with a picture answered HTTP 403."""
+    import post_video
+    data = open(path, "rb").read()
+    mtype = "image/png" if path.lower().endswith(".png") else "image/jpeg"
+    up = "https://api.x.com/2/media/upload"
+    x = alerts.X()
+    print(f"picture {path}: {len(data)} bytes, {mtype}")
+    try:
+        init = post_video.call("POST", up + "/initialize", json.dumps({"media_type": mtype, "total_bytes": len(data), "media_category": "tweet_image"}).encode(), "application/json")
+        mid = str((init.get("data") or {}).get("id") or "")
+        body, ctype = alerts.multipart({"segment_index": "0"}, {"media": (os.path.basename(path), data, "application/octet-stream")})
+        post_video.call("POST", f"{up}/{mid}/append", body, ctype)
+        fin = post_video.call("POST", f"{up}/{mid}/finalize")
+        print("chunked:", mid, "finalize:", json.dumps(fin)[:300])
+        print("  status:", json.dumps(post_video.call("GET", up, query={"command": "STATUS", "media_id": mid}))[:300])
+    except Exception as e:  # noqa: BLE001
+        print("chunked failed:", e)
+    try:
+        body, ctype = alerts.multipart({"media_category": "tweet_image", "media_type": mtype}, {"media": (os.path.basename(path), data, mtype)})
+        print("simple v2 (with media_type):", json.dumps(post_video.call("POST", up, body, ctype))[:300])
+    except Exception as e:  # noqa: BLE001
+        print("simple v2 failed:", e)
+    try:
+        mid, _, err = x.upload(data, os.path.basename(path))
+        print("service upload():", mid or err)
+    except Exception as e:  # noqa: BLE001
+        print("service upload() failed:", e)
+    return 0
+
+
 def main() -> int:
     argv = sys.argv[1:]
     only = argv[argv.index("--only") + 1] if "--only" in argv else None
     x_image = argv[argv.index("--x-image") + 1] if "--x-image" in argv else None
+    if "--probe" in argv:
+        return probe([a for a in argv if not a.startswith("--")][0])
     args = [a for i, a in enumerate(argv) if not a.startswith("--") and (i == 0 or argv[i - 1] not in ("--only", "--x-image"))]
     image, texts = args[0], json.load(open(args[1]))
     print(f"image {image}: {os.path.getsize(image) / 2**20:.1f} MB" + (f", x: {x_image}" if x_image else ""))
