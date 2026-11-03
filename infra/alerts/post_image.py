@@ -8,7 +8,7 @@ The JSON holds {"telegram": "<HTML caption>", "x": "<post text, no links>"}. Tel
 sendPhoto (a tall one is fine, the chat shows it whole); X gets the picture named with --x-image when there is one
 (a 16:9 copy, so the timeline does not crop it), else the same file.
 """
-import json, os, sys
+import json, os, re, sys
 
 sys.path.insert(0, "/app")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -40,8 +40,30 @@ def x_photo(path: str, text: str) -> str:
                                        {"media": (os.path.basename(path), data[i:i + post_video.CHUNK], "application/octet-stream")})
         post_video.call("POST", f"{up}/{mid}/append", body, ctype)
     post_video.call("POST", f"{up}/{mid}/finalize")
-    out = post_video.call("POST", "https://api.x.com/2/tweets", json.dumps({"text": text, "media": {"media_ids": [mid]}}).encode(), "application/json")
+    out = None
+    for i, t in enumerate(x_variants(text)):
+        try:
+            out = post_video.call("POST", "https://api.x.com/2/tweets", json.dumps({"text": t, "media": {"media_ids": [mid]}}).encode(), "application/json")
+            break
+        except RuntimeError as e:
+            if "HTTP 403" not in str(e) or i == len(x_variants(text)) - 1:
+                raise
+            print(f"x: 403 for the text as written, trying variant {i + 1}:\n{x_variants(text)[i + 1]}\n---")
     return "posted https://x.com/TauHUDcom/status/" + str((out.get("data") or {}).get("id"))
+
+
+def x_variants(text: str) -> list[str]:
+    """The text as written, then without the link (the profile carries tauhud.com, the service's own posts never put a link
+    in the text), then also without the cashtag: on 3 November 2026 X answered HTTP 403 to the text with a picture while
+    uploads and text-only posts went through, so the words are the remaining suspect. Each variant is shorter than the one before."""
+    out = [text]
+    no_link = re.sub(r"\s*(?:\b(?:on|at)\s+|:\s*)?(?:https?://\S+|\b[a-z0-9.-]+\.(?:com|org|io|net)\b(?:/\S*)?)", "", text, flags=re.I)
+    if no_link != text:
+        out.append(no_link)
+    no_tag = re.sub(r"\s*\$[A-Z]{2,6}\b", "", out[-1])
+    if no_tag != out[-1]:
+        out.append(no_tag)
+    return out
 
 
 def probe(path: str) -> int:
