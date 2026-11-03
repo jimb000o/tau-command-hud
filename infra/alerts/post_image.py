@@ -10,6 +10,7 @@ sendPhoto (a tall one is fine, the chat shows it whole); X gets the picture name
 import json, os, sys
 
 sys.path.insert(0, "/app")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alerts  # noqa: E402  (the keys, OAuth signing and the multipart helper of the running service)
 
 
@@ -22,14 +23,24 @@ def telegram_photo(path: str, caption: str) -> None:
 
 
 def x_photo(path: str, text: str) -> str:
-    x = alerts.X()
-    media_id, _, err = x.upload(open(path, "rb").read(), os.path.basename(path))
-    if not media_id:
-        raise RuntimeError(f"x: {err}")
-    ok, _, err = x.send_text(text, media_id)
-    if not ok:
-        raise RuntimeError(f"x: {err}")
-    return "posted"
+    """The chunked upload that post_video.py uses (initialize, append, finalize): the one-shot picture upload of the
+    running service answered HTTP 403 for a hand-posted picture on 3 November 2026, the chunked one is known to work."""
+    import post_video
+    data = open(path, "rb").read()
+    mtype = "image/png" if path.lower().endswith(".png") else "image/jpeg"
+    up = "https://api.x.com/2/media/upload"
+    init = post_video.call("POST", up + "/initialize", json.dumps({"media_type": mtype, "total_bytes": len(data),
+                                                                   "media_category": "tweet_image"}).encode(), "application/json")
+    mid = str((init.get("data") or {}).get("id") or "")
+    if not mid:
+        raise RuntimeError(f"x: no media id in {init}")
+    for i in range(0, len(data), post_video.CHUNK):
+        body, ctype = alerts.multipart({"segment_index": str(i // post_video.CHUNK)},
+                                       {"media": (os.path.basename(path), data[i:i + post_video.CHUNK], "application/octet-stream")})
+        post_video.call("POST", f"{up}/{mid}/append", body, ctype)
+    post_video.call("POST", f"{up}/{mid}/finalize")
+    out = post_video.call("POST", "https://api.x.com/2/tweets", json.dumps({"text": text, "media": {"media_ids": [mid]}}).encode(), "application/json")
+    return "posted https://x.com/TauHUDcom/status/" + str((out.get("data") or {}).get("id"))
 
 
 def main() -> int:
