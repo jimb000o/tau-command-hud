@@ -604,7 +604,9 @@
   ];
   /* what the islanders say in the places (the same English as in game.js, which the tests check) */
   const LAWT = { harbour: "A deep harbour for cruise ships", road: "A road round the island" };
-  const EMBV = { frost: ["harbour", 40], salado: ["road", 35] };
+  const EMBV = { frost: ["harbour", 40], salado: ["road", 35,   // the resort's own words (game.js EMB.south), the North Wind keeps the diplomat's
+    "{n} coins, today, no paperwork. Propose “{x}” before the election, and the resort opens its gates to the whole island. Synergy, my friend.",
+    "We are counting on you for “{x}”. Our guests are already booked, and they ask questions."] };
   const CAST = [
     ["hana", "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."],
     ["sam", "Sam keeps the minutes today. Pick a law; the other three candidates vote, two yes and it is law."],
@@ -623,7 +625,8 @@
     ["rico", "Done. And this one’s true, so let them check. The Book backs you up."],
     ["rico", "This just in on Radio Coco, ninety-seven point three!"],
     ...NAMES.map(n => n.toLowerCase()).flatMap(c => [[c, "Fine. I vote for yours, you vote for mine. Lola is our witness, and the Book is our memory."], [c, "After what you did? Buy yourself a lemonade."], [c, "Not today. Show me how you vote first."]]),
-    ...Object.entries(EMBV).flatMap(([who, [law, n]]) => [[who, `We are counting on you for “${LAWT[law]}”. We would hate to remind the island in public.`], [who, `${n} coins, today. All we ask is that you propose “${LAWT[law]}” before the election. A small thing between friends.`]]),
+    ...Object.entries(EMBV).flatMap(([who, [law, n, offer, remind]]) => { const f = t => t.replace("{n}", n).replace("{x}", LAWT[law]);
+      return [[who, f(remind || "We are counting on you for “{x}”. We would hate to remind the island in public.")], [who, f(offer || "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.")]]; }),
   ];
   /* what Rico can put on air: the four rumours that are not true, and the true things the Book has seen */
   const LIES = ["Marisol fishes inside the reef at night", "Tobias wants to sell the lighthouse", "Baako’s coconuts are imported", "Hana wants school on Sundays"];
