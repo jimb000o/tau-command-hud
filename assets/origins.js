@@ -4,6 +4,7 @@
      - the sender is one of our own server wallets (White Rabbit Key's island bot and purses, simulated cruise passengers), or
      - the transaction pays an address of an app we know (Agorzilla, Déjà the café cat, White Rabbit Key's council, tills, ballot boxes), or
      - the sender did one of those before (relay GET /wallets/tags, walletdays.py; built from the public blocks only).
+   Our own server wallets also come straight from GET /island (wallets, purses) and GET /cruise (wallets).
    A waiting transaction (getmempool) carries no recipient, so there only the sender counts.
    Anything else is "not known": a key is not a person, and an unknown sender stays unknown.
    Address lists: infra/relay/txsources.py (GENESIS, AGORZILLA, DEJA, RABBIT_*). Keep them the same there and here.
@@ -68,12 +69,17 @@
   };
   const sim = () => !!(window.TauSim && TauSim.on);
   let known = new Map();
+  const get = async path => { try { const r = await fetch("https://node.tauhud.com" + path, { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
   const load = async () => {
     if (sim()) return;
-    try {
-      const r = await fetch("https://node.tauhud.com/wallets/tags", { cache: "no-store" });
-      if (r.ok) { const j = await r.json(); known = new Map(Object.entries((j && j.tags) || {}).filter(([, v]) => TAGS[v])); }
-    } catch (e) {}
+    // the relay's record of wallets seen before, plus our own server wallets straight from their lists, so the island bot
+    // and the cruise passengers are named even before their first transaction reached a block (or before the relay knows /wallets/tags)
+    const [tags, isle, ship] = await Promise.all([get("/wallets/tags"), get("/island"), get("/cruise")]);
+    const m = new Map(Object.entries((tags && tags.tags) || {}).filter(([, v]) => TAGS[v]));
+    const add = (keys, tag) => keys.forEach(k => { if (typeof k === "string" && k) m.set(k.toLowerCase(), tag); });
+    if (isle) { add(Object.values(isle.wallets || {}), "bot"); add(Object.values(isle.purses || {}), "bot"); }
+    if (ship && ship.wallets) add(Object.values(ship.wallets).flat(), "cruise");
+    if (m.size || tags) known = m;
   };
   const first = load();
   setInterval(load, 300000);

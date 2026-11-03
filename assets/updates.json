@@ -2203,5 +2203,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-03",
     "html": "White Rabbit Key: the island has a real night sky. The painting is seen from high above and shows sea right up to its top edge, so the island now gets a horizon of its own: above the line the sky of the hour, below it the sea, with a thin light edge between them. At night the stars and the moon stay in the open sky and never sit on a mountain, a tower or an islet, and the moon is drawn clean."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-03",
+    "html": "Chain core: the island bot’s and the cruise ships’ waiting transactions are marked as soon as they appear, read straight from the island’s and the ships’ public wallet lists. Before, they stayed unmarked until our relay had seen them in a block."
   }
 ]
