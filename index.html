@@ -1864,8 +1864,11 @@ function agzTip() {
     : meals ? verdict("ok", `Live: fed ${meals} time${meals === 1 ? "" : "s"} by ${wal || 1} wallet${(wal || 1) === 1 ? "" : "s"} today.`)
     : verdict("ok", "Live: not fed yet today.");
   const o = d.open || {}, left = num(o.closes_at) != null ? num(o.closes_at) - now : null;
-  const vote = o.category && left != null && left > 0 ? (left < 5400 ? ` Tonight's vote: ${o.category}, closes in ${Math.max(1, Math.round(left / 60))} min.` : ` Tonight's vote: ${o.category}, closes in ${Math.round(left / 3600)} h.`) : "";
-  const line = stage ? `Stage: ${stage}.${vote}` : vote.trim() || "A creature on the live testnet, fed with real transactions.";
+  const when = left != null && left < 5400 ? `${Math.max(1, Math.round(left / 60))} min` : `${Math.round((left || 0) / 3600)} h`;
+  // a rule evening (agorzilla.com rules v4): the feeders vote on a rule of the game; its question says more than its short label
+  const rule = o.kind === "rule" && o.question && left != null && left > 0 ? `Rule vote tonight, closes in ${when}: ${o.question}` : "";
+  const vote = o.category && left != null && left > 0 ? ` Tonight's vote: ${o.category}, closes in ${when}.` : "";
+  const line = rule || (stage ? `Stage: ${stage}.${vote}` : vote.trim() || "A creature on the live testnet, fed with real transactions.");
   return v + "Agorzilla\n" + line + "\n" + upd;
 }
 addEventListener("DOMContentLoaded", () => { pollAgz(); setInterval(() => { if (!document.hidden) pollAgz(); }, 300000); });
