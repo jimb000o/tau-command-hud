@@ -245,8 +245,17 @@ SCENE = {
              "drum, two more hills with huts in the distance, the island far below, clouds close by, quiet and awe-filling.",
     "circle": "The Consensus Circle: a wide spiral circle of carved stones in the village green, the round houses around it, "
               "a few benches, the river and the hills behind, evening light, dignified and peaceful.",
-    "grotto": "Behind the waterfall: a hidden cave, the curtain of falling water glowing turquoise in front, wet rocks, a "
-              "soft light from inside, a stone ledge with an old book and a small keyhole carved in the rock, magical and quiet.",
+    "grotto": "Behind the waterfall: a hidden cave in the cliff, right behind the tall waterfall of this island, the one that "
+              "falls between the terracotta wellness resort with its pool on the cliff to one side and the white Northwind "
+              "palace on its high stone cliff to the other, into a turquoise pool with a rope bridge of planks across it. "
+              "The player stands inside the cave at the height of the pool and looks out towards the sea through the cave "
+              "mouth: the curtain of falling water hangs across the mouth, glowing turquoise in the daylight, thin enough "
+              "in places to see through. Through it, as it really lies from this spot: the pool just below, the rope bridge "
+              "crossing in front of it, beyond it the lagoon with the dive centre on its stilts and the wooden pier with a "
+              "sailing boat, the open sea and the reefs far out. Seen from inside and facing the sea, the palace's grey "
+              "stone cliff rises on the left and the resort's cliff and the big red tree are on the right. Inside: wet dark "
+              "rocks, ferns, spray, soft light reflected from the water dancing on the walls, a stone ledge with an old book "
+              "and a small keyhole carved in the rock, magical and quiet.",
 }
 
 
@@ -1096,10 +1105,28 @@ TOUCH_PLACES = ("beside the Coconut Works with its brick chimney, a small round 
                 "palace of clean pale stone with a dome, banners and the big key, no ruin.")
 
 
+# named changes for touch, so the server line stays short: paint.sh touch canoe-camp
+TOUCH_SETS = {
+    "canoe-camp": (
+        "on the southern beach below the village, where the two dug-out canoes lie on the sand, a canoe house: a long "
+        "open shed of weathered wood on posts with a palm-thatch roof, open towards the water, clearly visible, standing "
+        "right behind the two canoes where the small rock cave is now, with a paddle or two leaning on it; the small rock "
+        "cave itself moves further west along the same beach, to where the sand meets the rocky slope near the left edge "
+        "of the island; the surveyors' camp moves south, from beside the Parasol Café down to a small clearing among the "
+        "bushes just above the beach between the old ship and the lighthouse: three clearly visible white canvas tents, "
+        "a folding table with rolled plans, measuring poles on tripods and a small campfire; where the tents stood beside "
+        "the café, two more red-and-white parasols over small café tables, so the Parasol Café reads as a café. Everything "
+        "else stays exactly where and how it is, above all the lighthouse, the old ship, the waterfall, the palace, the "
+        "resort, the school, the bar, the pier and every other building, path and stretch of coast."),
+}
+
+
 def cmd_touch(a):
     """Island drafts that keep the picture and change a few details (default: the places outside as they are inside:
-    pond and water wheel at the Coconut Works, the villa's pool, the wooden radio hut, the imperial North Wind)."""
-    a.prompt = TOUCH.format(what=" ".join(a.what) if a.what else TOUCH_PLACES)
+    pond and water wheel at the Coconut Works, the villa's pool, the wooden radio hut, the imperial North Wind).
+    A single word from TOUCH_SETS stands for that set of changes."""
+    what = " ".join(a.what) if a.what else ""
+    a.prompt = TOUCH.format(what=TOUCH_SETS.get(what, what) or TOUCH_PLACES)
     a.idea = "touched"
     cmd_panorama(a)
 

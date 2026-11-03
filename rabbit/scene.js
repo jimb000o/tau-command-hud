@@ -482,10 +482,37 @@
           g.fillStyle = ["#e2674f", "#f2b134", "#fff2b0"][i]; g.beginPath(); g.moveTo(f.x - w, f.y); g.quadraticCurveTo(f.x - w * 0.6, f.y - h * 0.6, f.x + Math.sin(t * 0.013 + i) * 1.5, f.y - h + i * 2 * s); g.quadraticCurveTo(f.x + w * 0.6, f.y - h * 0.6, f.x + w, f.y); g.closePath(); g.fill();
         }
       } else if (f.k === "falls") {
-        g.save(); g.beginPath(); g.moveTo(f.x, f.y); g.lineTo(f.x + f.w, f.y - 2); g.lineTo(f.x + f.w + 8, f.y + f.h); g.lineTo(f.x + 8, f.y + f.h + 2); g.closePath(); g.clip();
-        g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = 1.2;
-        for (let i = 0; i < 6; i++) { const x = f.x + 2 + i * 3.2, o = (t * 0.06 + i * 17) % 30; for (let y = f.y - 30 + o; y < f.y + f.h; y += 30) { g.beginPath(); g.moveTo(x + (y - f.y) * 0.09, y); g.lineTo(x + (y + 12 - f.y) * 0.09, y + 12); g.stroke(); } }
+        /* the fall as the painting has it: from its top edge (x, w) to its bottom edge (x1, w1), straight down and widening;
+           strands of water of uneven width and brightness fall at their own pace and sway a little, the sheet brightens in
+           waves, mist rises from the foot, rings spread in the pool. A layout without x1/w1 gets the old slant. */
+        const x1 = f.x1 != null ? f.x1 : f.x + 8, w1 = f.w1 || f.w, yb = f.y + f.h;
+        g.save(); g.beginPath(); g.moveTo(f.x, f.y); g.lineTo(f.x + f.w, f.y - 2); g.lineTo(x1 + w1, yb + 4); g.lineTo(x1, yb + 6); g.closePath(); g.clip();
+        const N = Math.max(6, Math.round(f.w / 3.5));
+        for (let i = 0; i < N; i++) {
+          const u = (i + 0.5) / N, sway = Math.sin(t * 0.0021 + i * 1.7) * 0.9, speed = 0.05 + (i % 3) * 0.012, gap = 22 + (i % 4) * 7;
+          const xt = f.x + u * f.w + sway, xb = x1 + u * w1 + sway, bright = 0.35 + 0.4 * (0.5 + 0.5 * Math.sin(t * 0.0033 + i * 2.3));
+          g.strokeStyle = `rgba(255,255,255,${bright})`; g.lineWidth = 0.8 + (i % 3) * 0.7;
+          const o = (t * speed + i * 13) % gap;
+          for (let y = f.y - gap + o; y < yb; y += gap) {
+            const k0 = (y - f.y) / f.h, k1 = (y + gap * 0.55 - f.y) / f.h;
+            g.beginPath(); g.moveTo(xt + (xb - xt) * k0, y); g.lineTo(xt + (xb - xt) * k1, y + gap * 0.55); g.stroke();
+          }
+        }
+        for (let i = 0; i < 3; i++) {   // the sheet itself, lighter in slow waves running down
+          const k = ((t * 0.00025 + i / 3) % 1), y = f.y + k * f.h; const gr = g.createLinearGradient(0, y - 18, 0, y + 18);
+          gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.5, "rgba(255,255,255,.16)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+          g.fillStyle = gr; g.fillRect(Math.min(f.x, x1) - 4, y - 18, Math.max(f.w, w1) + 8, 36);
+        }
         g.restore();
+        for (let i = 0; i < 5; i++) {   // mist at the foot: soft puffs rising and fading
+          const k = ((t * 0.0004 + i / 5) % 1), x = x1 + w1 * (0.15 + 0.7 * ((i * 0.37) % 1)) + Math.sin(t * 0.001 + i) * 3, y = yb + 2 - k * 26, r = 6 + k * 14;
+          const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(255,255,255,${0.28 * (1 - k)})`); gr.addColorStop(1, "rgba(255,255,255,0)");
+          g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+        }
+        for (let i = 0; i < 3; i++) {   // rings in the pool
+          const k = ((t * 0.0007 + i / 3) % 1); g.strokeStyle = `rgba(255,255,255,${0.5 * (1 - k)})`; g.lineWidth = 1;
+          g.beginPath(); g.ellipse(x1 + w1 / 2, yb + 10, w1 * (0.3 + 0.5 * k), 4 + 10 * k, 0, 0, Math.PI * 2); g.stroke();
+        }
       } else if (f.k === "splash") {
         for (let i = 0; i < 3; i++) { const p = (t * 0.001 + i / 3) % 1; g.strokeStyle = `rgba(255,255,255,${0.7 * (1 - p)})`; g.lineWidth = 1; g.beginPath(); g.ellipse(f.x + 4, f.y + 3, 6 + p * 12, 2 + p * 4, 0, 0, Math.PI * 2); g.stroke(); }
       } else if (f.k === "stream") {
@@ -1165,7 +1192,14 @@
     const pi = !!S.base.painted;   // the painted island has its own palms, flags and boat
     w.drawImage(S.base, -S.base.e, 0, WW + 2 * S.base.e, WH);
     islandFx(w, t, sky.light);
-    if (S.glow) { const p = PLACES[S.glow]; const [x, y, bw, bh] = p.box; w.fillStyle = "rgba(255,255,230,.18)"; w.beginPath(); w.ellipse(x + bw / 2, y + bh * 0.85, bw * 0.62, bh * 0.32, 0, 0, Math.PI * 2); w.fill(); }
+    if (S.glow) {
+      const p = PLACES[S.glow];
+      if (p.poly) {   // the place's own outline (layout "poly"): a soft light along it and a faint fill inside
+        w.save(); w.beginPath(); p.poly.forEach(([x, y], i) => (i ? w.lineTo(x, y) : w.moveTo(x, y))); w.closePath();
+        w.fillStyle = "rgba(255,255,230,.14)"; w.fill();
+        w.shadowColor = "rgba(255,255,220,.9)"; w.shadowBlur = 8; w.strokeStyle = "rgba(255,255,235,.85)"; w.lineWidth = 1.6; w.lineJoin = "round"; w.stroke(); w.restore();
+      } else { const [x, y, bw, bh] = p.box; w.fillStyle = "rgba(255,255,230,.18)"; w.beginPath(); w.ellipse(x + bw / 2, y + bh * 0.85, bw * 0.62, bh * 0.32, 0, 0, Math.PI * 2); w.fill(); }
+    }
     if (!pi) { flag(w, 470, 470, t, "#3b5f8a", "#fff", "wind"); flag(w, 606, 425, t + 900, "#c0533f", "#fff", "wave"); boat(w, 1110, 770, t); }
     /* palms and people in depth order */
     const items = pi ? [] : PALMS.map(([x, y], i) => [y, () => palm(w, x, y, t, i)]);
@@ -1263,13 +1297,18 @@
     requestAnimationFrame(frame);
   }
 
+  const inPoly = (P, x, y) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
   function hit(px, py) {
     const inBox = (b, x, y) => b && x >= b[0] && x <= b[0] + b[2] && y >= b[1] && y <= b[1] + b[3];
     if (S.roomA > 0.3) return S.roomCat && inBox(S.roomCat.screen, px, py) ? "deja" : null;   // inside a place the island is out of reach
     const [x, y] = toWorld(px, py);
     if (RARE.zilla && inBox(RARE.zilla.box, x, y)) return "agorzilla";
     if (Math.abs(x - RB.x) < 16 && y < RB.y + 6 && y > RB.y - 30) return "rabbit";
-    for (const id in PLACES) { if (S.locked.has(id)) continue; const [bx, by, bw, bh] = PLACES[id].box; if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) return id; }
+    for (const id in PLACES) {
+      if (S.locked.has(id)) continue;
+      const p = PLACES[id];
+      if (p.poly ? inPoly(p.poly, x, y) : inBox(p.box, x, y)) return id;
+    }
     /* a finger is wider than a small place on a phone: the nearest place within 22 px of the tap counts too */
     const tol = 22 / (fitScale() * S.cam.z); let best = null, bd = tol;
     for (const id in PLACES) {
@@ -1306,7 +1345,7 @@
           ? { x: Math.random() < 0.5 ? 170 : 1430, y: 905, h: 250, t0: performance.now() }
           : { x: 320 + Math.random() * 960, y: 600 + Math.random() * 40, h: 70, t0: performance.now() }) : null;
       }
-      S.roomT = 1; S.roomAt = toScreen(PLACES[id].x, PLACES[id].y - 40);
+      S.roomT = 1; S.roomAt = toScreen(...(PLACES[id].c || [PLACES[id].x, PLACES[id].y - 40]));
     }
     else S.roomT = 0;   // a quarter without a painted picture yet: the card opens over the island
     S.focusId = id; S.focusSide = side;
