@@ -499,7 +499,7 @@ def cmd_say(a):
 
 def cmd_openers(a):
     """New openers to compare, spoken exactly as an opener on air (the shout), each beside the one now on air, on a page
-    where each time of day gets a pick and a note, and one button copies the feedback as text. A clip already made is
+    where each time of day gets its picks (several rotate on air) and a note, and one button copies the feedback as text. A clip already made is
     kept (running it again only rebuilds the page and speaks new or changed lines; --again speaks them all anew)."""
     idx, f = index(a.out), load(os.path.join(HERE, "openers.json"), {})
     vid = idx["voices"].get("rico", {}).get("id")
@@ -521,13 +521,13 @@ def cmd_openers(a):
         now = f.get("now", {}).get(g)
         out.append(f"<section data-g='{g}'><h2>{e(name)}</h2>")
         if now:
-            out.append(f"<label class=row><input type=radio name={g} value=keep><span><b>keep</b> now on air<small>{e(now)}</small>"
+            out.append(f"<label class=row><input type=checkbox name={g} value=keep><span><b>keep</b> now on air<small>{e(now)}</small>"
                        f"<audio controls preload=none src='../{key('rico', now)}.mp3'></audio></span></label>")
         for x in todo:
             if x["id"][0] == g:
-                out.append(f"<label class=row><input type=radio name={g} value={x['id']}><span><b>{x['id']}</b><small>{e(x['text'])}</small>"
+                out.append(f"<label class=row><input type=checkbox name={g} value={x['id']}><span><b>{x['id']}</b><small>{e(x['text'])}</small>"
                            f"<audio controls preload=none src='opener-{x['id']}.mp3'></audio></span></label>")
-        out.append(f"<label class=row><input type=radio name={g} value=none><span><b>none of these</b> write me new ones</span></label>"
+        out.append(f"<label class=row><input type=checkbox name={g} value=none><span><b>none of these</b> write me new ones</span></label>"
                    f"<textarea name={g}-note rows=2 placeholder='What to change (optional): e.g. less shouting, shorter, more like M2 but warmer'></textarea></section>")
     body = "".join(out)
     doc = ("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Radio Coco openers</title>"
@@ -539,15 +539,15 @@ def cmd_openers(a):
            "button{background:var(--g);color:#000;border:0;border-radius:8px;padding:12px 18px;font:600 16px system-ui;min-height:44px;cursor:pointer}"
            "#out{white-space:pre-wrap;background:#121212;border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:10px;color:var(--fg)}"
            ".bar{position:sticky;bottom:0;background:var(--bg);padding:12px 0;border-top:1px solid var(--line);margin-top:24px}</style>"
-           "<h1>Radio Coco: pick the openers</h1><p>Each opener plays after the drum roll and the station horn in the game. Listen, pick one per time of day, "
+           "<h1>Radio Coco: pick the openers</h1><p>Each opener plays after the drum roll and the station horn in the game. Listen, tick every one you like per time of day (several rotate on air), "
            "add a note where something is off, then copy and paste the text into the chat.</p>"
            f"<form id=f>{body}<h2>Anything else</h2><textarea name=all-note rows=3 placeholder='General feedback (optional)'></textarea></form>"
            "<div class=bar><button id=copy type=button>Copy my feedback</button><div id=out hidden></div></div>"
            "<script>const f=document.getElementById('f'),o=document.getElementById('out');"
-           "try{const s=JSON.parse(localStorage.getItem('openers')||'{}');for(const[k,v]of Object.entries(s)){const el=f.elements[k];if(!el)continue;if(el instanceof RadioNodeList)el.value=v;else el.value=v;}}catch(e){}"
-           "f.addEventListener('input',()=>{const s={};for(const el of f.elements){if(el.type==='radio'){if(el.checked)s[el.name]=el.value}else if(el.name)s[el.name]=el.value}try{localStorage.setItem('openers',JSON.stringify(s))}catch(e){}});"
+           "try{const s=JSON.parse(localStorage.getItem('openers2')||'{}');for(const el of f.elements){if(el.type==='checkbox')el.checked=(s[el.name]||[]).includes(el.value);else if(el.name&&s[el.name])el.value=s[el.name]}}catch(e){}"
+           "f.addEventListener('input',()=>{const s={};for(const el of f.elements){if(el.type==='checkbox'){if(el.checked)(s[el.name]=s[el.name]||[]).push(el.value)}else if(el.name)s[el.name]=el.value}try{localStorage.setItem('openers2',JSON.stringify(s))}catch(e){}});"
            "document.getElementById('copy').onclick=async()=>{const L=['Radio Coco openers:'];for(const sec of f.querySelectorAll('section')){const g=sec.dataset.g,h=sec.querySelector('h2').textContent.split(',')[0],"
-           "v=(f.querySelector('input[name='+g+']:checked')||{}).value||'no pick',n=f.elements[g+'-note'].value.trim();L.push(h+': '+v+(n?' ('+n+')':''))}"
+           "v=[...f.querySelectorAll('input[name='+g+']:checked')].map(x=>x.value).join(' + ')||'no pick',n=f.elements[g+'-note'].value.trim();L.push(h+': '+v+(n?' ('+n+')':''))}"
            "const a=f.elements['all-note'].value.trim();if(a)L.push('Other: '+a);const t=L.join('\\n');o.hidden=false;o.textContent=t;"
            "try{await navigator.clipboard.writeText(t);document.getElementById('copy').textContent='Copied, paste it in the chat'}catch(e){document.getElementById('copy').textContent='Select the text below and copy it'}};</script>")
     write(os.path.join(a.out, "samples", "openers.html"), doc.encode())
