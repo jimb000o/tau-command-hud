@@ -914,11 +914,17 @@
   }
 
   /* ---------- the painted pictures, when the server has them ---------- */
-  const ART = { base: "https://node.tauhud.com/rico/art/", img: {} };
+  /* while the painted island is on its way, only sea and sky show (ART.pending): the drawn island of the first days is
+     a fallback for when the server has no painting, not a picture to flash before the real one */
+  const ART = { base: "https://node.tauhud.com/rico/art/", img: {}, pending: true };
+  const settle = () => { if (!ART.pending) return; ART.pending = false; S.base = null; if (S.c) size(); };
+  setTimeout(settle, 8000);   // a slow or silent server: the drawn island after all
   try {
     fetch(ART.base + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j => {
       ART.box = (j && j.boxes) || {};   // where a talking or blinking frame differs from the still picture
-      Object.entries((j && j.scenes) || {}).forEach(([id, f]) => {
+      const scenes = (j && j.scenes) || {};
+      if (!scenes.island) settle();
+      Object.entries(scenes).forEach(([id, f]) => {
         const im = new Image(); im.crossOrigin = "anonymous"; im.decoding = "async";
         im.onload = () => {
           ART.img[id] = im;
@@ -927,12 +933,13 @@
           const ar = im.naturalWidth / im.naturalHeight;   // a wide painting (paint.py hires) carries on past the world's sides
           ART.wide = ar > 1.9 ? Math.round((WH * ar - WW) / 2) : 0;
           if (j.layout && painted("island")) useLayout(j.layout);
-          S.base = null; if (S.c) size();
+          ART.pending = false; S.base = null; if (S.c) size();
         };
+        if (id === "island") im.onerror = settle;
         im.src = ART.base + f;
       });
-    }, () => {});
-  } catch (e) {}
+    }, settle).catch(settle);
+  } catch (e) { settle(); }
   const painted = id => !!ART.img[id] && !/[?&]art=drawn/.test(location.search);
   /* a painted island drawn from a new sketch (infra/rabbit-art/sketch.py) brings its layout: where the places stand,
      the streets people walk, the windows that light up, smoke, torches and water, the lamp and the mast */
@@ -983,11 +990,15 @@
     g.globalCompositeOperation = "source-over";
   }
   /* the bare picture of a place, without people, at noon: what the server's painter repaints (infra/rabbit-art) */
+  /* sky and sea in flat bands, the whole world wide, nothing on them */
+  function backdrop(g, sky) {
+    for (let i = 0; i < 7; i++) { const f0 = Math.pow(i / 7, 0.7), f1 = Math.pow((i + 1) / 7, 0.7); g.fillStyle = rgb(mix(sky.top, sky.bot, i / 6)); g.fillRect(-WW, HZ * f0, 3 * WW, HZ * (f1 - f0) + 1); }
+    for (let i = 0; i < 4; i++) { const f0 = Math.pow(i / 4, 1.6), f1 = Math.pow((i + 1) / 4, 1.6); g.fillStyle = rgb(mix(sky.sea, sky.seaB, i / 3)); g.fillRect(-WW, lerp(HZ, WH, f0), 3 * WW, lerp(HZ, WH, f1) - lerp(HZ, WH, f0) + 1); }
+  }
   function plate(id) {
     const c = document.createElement("canvas"); c.width = 1600; c.height = 900; const g = c.getContext("2d"), sky = skyAt(1);
     if (id === "island") {
-      for (let i = 0; i < 7; i++) { const f0 = Math.pow(i / 7, 0.7), f1 = Math.pow((i + 1) / 7, 0.7); g.fillStyle = rgb(mix(sky.top, sky.bot, i / 6)); g.fillRect(0, HZ * f0, WW, HZ * (f1 - f0) + 1); }
-      for (let i = 0; i < 4; i++) { const f0 = Math.pow(i / 4, 1.6), f1 = Math.pow((i + 1) / 4, 1.6); g.fillStyle = rgb(mix(sky.sea, sky.seaB, i / 3)); g.fillRect(0, lerp(HZ, WH, f0), WW, lerp(HZ, WH, f1) - lerp(HZ, WH, f0) + 1); }
+      backdrop(g, sky);
       paintIsland(g);
       PALMS.forEach(([x, y], i) => palm(g, x, y, 0, i)); flag(g, 470, 470, 0, "#3b5f8a", "#fff", "wind"); flag(g, 606, 425, 900, "#c0533f", "#fff", "wave"); boat(g, 1110, 770, 0);
     } else {
@@ -1006,10 +1017,12 @@
     S.c.width = Math.round(S.W * S.K); S.c.height = Math.round(S.H * S.K);
     const e = painted("island") ? ART.wide || 0 : 0, BW = WW + 2 * e;   // a wide painting reaches past the world's sides
     const fit = Math.min(S.W / WW, S.H / WH), q = Math.min(fit * S.K * 1.6, 8192 / BW, 4096 / WH);
-    if (!S.base || Math.abs(S.base.q - q) > 0.05 || S.base.e !== e) {
-      const b = document.createElement("canvas"); b.width = Math.round(BW * q); b.height = Math.round(WH * q); b.q = q; b.e = e;
+    if (!S.base || Math.abs(S.base.q - q) > 0.05 || S.base.e !== e || S.base.pending !== ART.pending) {
+      const b = document.createElement("canvas"); b.width = Math.round(BW * q); b.height = Math.round(WH * q); b.q = q; b.e = e; b.pending = ART.pending;
       const g = b.getContext("2d"); g.scale(q, q); g.translate(e, 0); S.base = b;
-      if (painted("island")) { g.imageSmoothingQuality = "high"; e ? g.drawImage(ART.img.island, -e, 0, BW, WH) : cover(g, ART.img.island, WW, WH); b.painted = true; } else paintIsland(g);
+      if (painted("island")) { g.imageSmoothingQuality = "high"; e ? g.drawImage(ART.img.island, -e, 0, BW, WH) : cover(g, ART.img.island, WW, WH); b.painted = true; }
+      else if (ART.pending) backdrop(g, skyAt(S.hour));   // sea and sky only, until the painting is here
+      else paintIsland(g);
     }
     if (S.focusId) focus(S.focusId, S.focusSide); else { S.camT = home(); if (!S.sized) { S.cam = { ...S.camT }; S.sized = true; } }
     S.world = S.world || document.createElement("canvas"); S.world.width = S.c.width; S.world.height = S.c.height; S.wg = S.world.getContext("2d");
