@@ -16,7 +16,14 @@ if [ "$1" != "--pulled" ]; then
 fi
 shift
 cp sites/agorzilla.caddy /opt/sites/ 2>/dev/null || true
+# The pinned tau-testnet commit follows the repo, not the server's old .env (as in setup.sh); a new pin
+# rebuilds and restarts the node (a few minutes, tau-lang itself stays cached).
+REF=$(grep '^TAU_TESTNET_REF=' .env.example | cut -d= -f2)
+[ -n "$REF" ] && [ -f .env ] && sed -i "s/^TAU_TESTNET_REF=.*/TAU_TESTNET_REF=${REF}/" .env
 docker compose up -d --build
+# Node images of older pins are several GB each and are never used again (the disk filled up on 2026-10-27).
+[ -n "$REF" ] && docker images tau-testnet-standalone --format '{{.Repository}}:{{.Tag}}' | grep -v ":${REF}\$" \
+  | xargs -r docker rmi >/dev/null 2>&1 || true
 docker compose up -d --force-recreate caddy
 echo "waiting 20 s…"
 sleep 20

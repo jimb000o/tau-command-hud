@@ -2168,5 +2168,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-03",
     "html": "White Rabbit Key: Salado at the South Current Wellness Resort has his own words now, in his own voice. He makes his offer once; when you come back he talks about where your deal with him stands: the coins still waiting, the road not proposed yet, a promise kept, the road passed (with or without your name next to it), the last day, and the night his investors tried to buy the council tree. Four new questions to ask him, free, and a new call to Radio Coco. Each line has its own mood; the clips follow with the next voice run. And no embassy pays any more for a law that is in force already (last week’s island law, say): that was a promise nobody could keep, and it was still called out before the vote."
+  },
+  {
+    "tag": "Node",
+    "on": "2026-11-03",
+    "html": "Node: our node moves to IDNI’s newest testnet software (64ceb40, 3 November). IDNI’s new version checks every transaction’s signature a second time when a block is applied, for every kind of transaction, and that check now runs on a native library that IDNI puts at about 150 times cheaper than before. Two of our own node fixes are now in IDNI’s code and leave our patch list: reading a whole sync reply, and paging header sync until the node is caught up (IDNI issue #78)."
   }
 ]

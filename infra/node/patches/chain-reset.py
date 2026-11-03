@@ -101,6 +101,6 @@ replace_once(
     "    def _self_advertised_addrs(self) -> List[str]:\n",
     "bootstrap helper",
 )
-replace_once("import functools\nimport logging\n", "import functools\nimport logging\nimport os\n", "os import")
+replace_once("\nimport logging\n", "\nimport logging\nimport os\n", "os import")
 service.write_text(src)
 print("chain-reset patch applied")

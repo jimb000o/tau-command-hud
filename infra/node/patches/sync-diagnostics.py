@@ -13,7 +13,7 @@ from one block that keeps failing verification. This adds:
   block number, hash and reason for every rejected block (capped per batch).
 
 Usage: python3 -I sync-diagnostics.py <tau-testnet checkout>
-Apply AFTER sync-paginate.py.
+Header paging and whole-reply reads are upstream since tau-testnet e6c8f92 (IDNI #78).
 """
 import pathlib
 import sys
