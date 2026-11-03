@@ -29,6 +29,10 @@ PAY_AFTER_MOVE seconds (the move the money is for), at most PAY_PER_WALLET a day
 purse has really sent), at most PAY_PER_IP a day per address, and payouts never take more than PAY_SHARE of
 ISLAND_DAILY, so the rivals' moves keep their share of the day.
 
+When nothing of the game waits, the slot goes to a cruise ship's simulated passengers, if one is in port (cruise.py,
+`idle`): they never take a slot from a move or a payout, and the bot's and the ship's transactions together stay at
+one every SPACING seconds.
+
 Limits, so a page that is left open or a script cannot flood the testnet: a few moves per address per
 minute, a queue of at most QUEUE_MAX different moves, at most ISLAND_DAILY transactions per UTC day, one every
 SPACING seconds. Moves over a limit are not sent, and the answer says so. GET /island shows the wallets, the
@@ -139,6 +143,7 @@ class Island:
         self.seen: dict[str, float] = {}    # address -> when it last sent a transaction through the relay
         self.today_pay = 0              # payouts sent today
         self.on_tx = None               # called for every transaction the node took (relay.py: the testnet load page)
+        self.idle = None                # async (ask, gov) -> bool, asked when nothing waits: the cruise ships (cruise.py) send then
         if self.enabled:
             try:
                 self.load()
@@ -294,8 +299,14 @@ class Island:
                     log.warning("island pay %s failed: %r", purse, exc)
                 await asyncio.sleep(SPACING)
                 continue
-            if not self.queue:
-                await asyncio.sleep(1)
+            if not self.queue:   # nothing of the game waits: a cruise ship's passengers may use the slot (cruise.py)
+                sent = False
+                if self.idle:
+                    try:
+                        sent = await self.idle(ask, gov)
+                    except Exception as exc:
+                        log.warning("cruise step failed: %r", exc)
+                await asyncio.sleep(SPACING if sent else 1)
                 continue
             (who, kind, at), n = next(iter(self.queue.items()))
             del self.queue[(who, kind, at)]

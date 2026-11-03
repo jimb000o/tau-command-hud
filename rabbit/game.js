@@ -1304,7 +1304,7 @@
     asks: new Set(["ad628e861687c726aa780c4af1d4e10df4e16c169772686ada8ed81e430ec7bd70214bb732d9b7a75fb4d968136cec86", "940bad7f401e65b0ddfd2b891251cdb3f027dc96bbe4d64b5ea5547900338107186cc23d500c1888598ccc4343f6df2e", "b6bdcade83f317c5a3e0402466a4f6c93a1b9018a3dd61026143c8284741fad2deeffda9a7fd3db587e86f4f44de3418", "992d87e93030634c581fc3e6c574af0da06c70798d49f82135d8231147b79c071e277616d84fb6175dbeae2264377071", "b09ad0b1742efd5a4a4e7fa93a52b9f5954466ca2f694db9dfda4d593d9c15a73dfdd9055ad286e8f11f76b0f69395cf"]),
   };
   const BALLOT = new Set([ADDR.marisol, ADDR.tobias, ADDR.baako, ADDR.hana]);
-  const SRC = { bots: {}, avg: 0, title: "", at: {}, pairs: {}, hour: -1, known: null, gerald: null, fed: null, lastTx: null };
+  const SRC = { bots: {}, ship: new Set(), avg: 0, title: "", at: {}, pairs: {}, hour: -1, known: null, gerald: null, fed: null, lastTx: null };
   const lc = x => String(x || "").toLowerCase();
   const jarName = pk => pk === ADDR.council ? "council" : Object.keys(TILL).find(k => TILL[k] === pk) || null;
   const placeName = at => at === "council" ? "the council hall" : at === "ballot" ? "the ballot boxes" : (SC.places[at] || {}).name || at;   // English: the line around it is translated whole
@@ -1342,7 +1342,8 @@
       let triple = false;
       for (const tx of txs) {
         if (txKind(tx) !== "user_tx") continue;
-        const from = lc(tx.sender_pubkey); if (from) senders.add(from);
+        const from = lc(tx.sender_pubkey); if (SRC.ship.has(from)) continue;   // a cruise ship's simulated passengers are nobody's wave
+        if (from) senders.add(from);
         for (const op of (tx.operations || {})["1"] || []) {
           if (!op) continue;
           const to = lc(op[1]), amt = Number(op[2]) || 0, bot = SRC.bots[from], jar = jarName(to);
@@ -1397,6 +1398,83 @@
     }, () => {});
     get("devpulse.json").then(j => { const t = String((((j || {}).repos || [])[0] || {}).head && j.repos[0].head.title || "").trim(); SRC.title = t.length >= 8 && t.length <= 70 && !/\n/.test(t) ? t : ""; }, () => {});
   }
+  /* ---------- cruise ships (relay cruise.py): MS Dry Run on Wednesdays at four, Queen Mempool on Saturdays at two, German time.
+     The passengers are simulated, and the chip and the card say so; what they do ashore is real: every stop is a test
+     transaction to the place's till, at most twelve a minute, sent by our relay when the island bot has nothing to send,
+     half as many while the testnet strains, and the ship leaves at once if it stalls or the node refuses its passengers'
+     transactions (the card says which). The island shows the ship, its tenders, a guide's pennant where a
+     group is, and a ring at a place whenever one of their transactions is sealed in a block.
+     ?ship=dryrun or ?ship=queen shows a made-up visit, marked as a preview; it sends nothing. ---------- */
+  const SHIPV = { v: null, next: null };
+  const SHIPAT = { works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };   // places only a painted island's layout brings
+  const berlinHM = s => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(s * 1000)); } catch (e) { return new Date(s * 1000).toISOString().slice(11, 16); } };
+  function shipPreview(k) {
+    const now = Math.floor(Date.now() / 1000), q = k === "queen";
+    return { name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition", phase: "ashore", t0: now - 1800, end: now + 3600, passengers: q ? 120 : 40,
+      ashore: q ? 96 : 34, at: q ? { south: 30, bar: 26, radio: 12, market: 18, works: 6, pier: 4 } : { book: 8, ship: 9, school: 6, dive: 8, pier: 3 },
+      sent: { pay: q ? 214 : 96, bill: q ? 5 : 0, book: q ? 21 : 5, cancel: q ? 2 : 1 }, refused: 0, kinds: q ? ["pay", "bill", "book"] : ["pay", "book"], preview: true };
+  }
+  function shipFetch() {
+    const k = new URLSearchParams(location.search).get("ship");
+    if (k === "dryrun" || k === "queen") { SHIPV.v = shipPreview(k); return shipShow(); }
+    if (window.TauSim && TauSim.on) return;
+    fetch("https://node.tauhud.com/cruise", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
+      if (!j) return;
+      SRC.ship = new Set([].concat(...Object.values(j.wallets || {})).map(lc));
+      SHIPV.v = j.now || null; SHIPV.next = j.next || null;
+      shipShow();
+    }, () => {});
+  }
+  function shipShow() {
+    if (SC.ship) SC.ship(SHIPV.v);
+    const b = $("cvShip"); if (!b) return;
+    const v = SHIPV.v, ph = v && v.phase;
+    b.hidden = !v || (ph === "gone" && Date.now() / 1000 - v.end > 300);
+    if (b.hidden) return;
+    b.textContent = (ph === "approach" ? F("🛳 {x} at {t}", { x: v.name, t: berlinHM(v.t0) })
+      : ph === "waiting" ? F("🛳 {x} waits offshore", { x: v.name })
+      : ph === "gone" ? F("🛳 {x} has left", { x: v.name })
+      : F("🛳 {x}: {n} ashore", { x: v.name, n: v.ashore || 0 })) + (v.preview ? " · " + T("preview") : "");
+  }
+  /* a ring at the place each passenger transaction in a new block paid (a booking: the place it is for) */
+  function shipSeen(nb) {
+    if (!SRC.ship.size || !SC.ping) return;
+    for (const b of nb) for (const tx of b.transactions || []) {
+      if (!SRC.ship.has(lc(tx.sender_pubkey))) continue;
+      const k = txKind(tx), tos = k === "user_tx" ? (((tx.operations || {})["1"]) || []).map(op => lc(op && op[1])) : k === "retractable_transfer" ? [lc(tx.recipient_pubkey)] : [];
+      tos.forEach(to => { const j = jarName(to); if (j && j !== "council") SC.ping(j); });
+    }
+  }
+  function shipCard() {
+    const v = SHIPV.v; if (!v) return;
+    openCard("pier", box => {
+      const S = v.sent || {}, n = Object.values(S).reduce((a, b) => a + (Number(b) || 0), 0), K = v.kinds || ["pay"];
+      const book = K.includes("book") || S.book > 0, bill = K.includes("bill") || S.bill > 0, c = { p: S.pay || 0, g: S.bill || 0, b: S.book || 0, c: S.cancel || 0 };
+      const where = Object.entries(v.at || {}).filter(([, k]) => k > 0).sort((a, b) => b[1] - a[1])
+        .map(([id, k]) => T((SC.places[id] || {}).name || SHIPAT[id] || id) + " " + k).join(" · ");
+      const now = v.phase === "approach" ? F("Lands at {t}, German time, with {n} simulated passengers.", { t: berlinHM(v.t0), n: v.passengers })
+        : v.phase === "waiting" ? T("Waiting off the island: it lands only while the testnet is calm.")
+        : v.phase === "gone" ? T(v.why === "no landing" ? "It sailed on without landing: the testnet was not calm."
+          : v.why === "refused" ? "It left early: the node refused its passengers’ transactions, and the ship took them back at once."
+          : "It left early: the testnet stalled, and the ship took its passengers back at once.")
+        : F("{a} of {n} passengers ashore, in port until {t}.", { a: v.ashore || 0, n: v.passengers, t: berlinHM(v.end) });
+      box.append(el("h3", { text: v.name + (v.preview ? " · " + T("preview") : "") }),
+        el("p", { text: T(v.style === "expedition" ? "A small expedition ship with curious passengers: the lighthouse, Captain Wren’s Old Ship, the school, a dive on the reef." : "A big luxury liner: the spa at the South Current resort, Bar La Ola, song requests on Radio Coco, souvenirs.") }),
+        el("ul", { class: "cv-help" },
+          el("li", { text: T("Nobody on board is a real person: our relay makes the passengers up. What they do here is real: every stop is a test transaction on Tau Testnet Alpha to the till of the place.") }),
+          book ? el("li", { text: T("Some book a dive or a treatment with the right to withdraw: the money waits in escrow until its time, then the chain pays the place by itself. A few change their minds and take it back.") }) : null,
+          bill ? el("li", { text: T("At Bar La Ola a table pays one bill: a single transaction that pays the bar, Radio Coco and the Coconut Works at once.") }) : null,
+          el("li", { text: T("At most twelve transactions a minute, only when the island bot has nothing to send; half as many while the testnet strains, and the ship leaves at once if it stalls. Its logbook keeps every one.") }),
+          el("li", { text: now }),
+          n || v.phase !== "approach" ? el("li", { text: F(book && bill ? "So far: {p} payments, {g} group bills, {b} bookings, {c} withdrawn." : book ? "So far: {p} payments, {b} bookings, {c} withdrawn."
+            : bill ? "So far: {p} payments, {g} group bills." : "So far: {p} payments.", c) }) : null,
+          where ? el("li", { text: where }) : null),
+        el("div", { class: "cv-acts" },
+          btn(T("The logbook"), () => window.open("https://node.tauhud.com/cruise/log", "_blank", "noopener")),
+          btn(T("Testnet load"), () => window.open("/load/", "_blank", "noopener")),
+          btn(T("Back to the island"), () => closeCard(), { go: true })));
+    });
+  }
   function readChain(done) {
     if (RADAR.busy) return done && done(RADAR.snap);
     const sim = !!(window.TauSim && TauSim.on);
@@ -1449,6 +1527,7 @@
       if (s.sim) for (const d of TauSim.chain.dropped(n) || []) heard(d.type === "consensus_rule_update" ? "refusedLaw" : /o5|own rule|its rule/i.test(d.why || "") ? "refusedOwn" : "refused", n);
     }
     sources(nb, s);
+    shipSeen(nb);
     if (!s.sim) { chainLife(s); return; }
     /* the simulation's big moments: a consensus switch put to the vote, and the moment it comes into force */
     /* a validator in or out, the base fee up or down, or another rule revision in force */
@@ -2234,6 +2313,7 @@
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     $("cvIsle").onclick = () => { wake(); openIsle(); };
     if ($("cvBell")) { $("cvBell").onclick = () => { wake(); answerBell(); }; bellChip(); setInterval(bellChip, 5000); }
+    if ($("cvShip")) { $("cvShip").onclick = () => { wake(); shipCard(); }; shipFetch(); setInterval(() => { if (!document.hidden) shipFetch(); }, 60000); }
     isleJoin();
     const sb = $("cvSound");
     const showSound = () => { const l = SND.on ? T("Sound on") : SND.wanted ? T("Tap for sound") : T("Sound off"); sb.replaceChildren("♪", el("span", { class: "lb", text: " " + l })); sb.setAttribute("aria-label", l); sb.classList.toggle("off", !SND.wanted); sb.setAttribute("aria-pressed", SND.on ? "true" : "false"); };

@@ -9,8 +9,9 @@ Every transaction in the blocks the relay holds is put in one of five groups:
              relay itself (the end of a turn on a rule place).
   rabbit     White Rabbit Key, the island game on tauhud.com/rabbit/: it pays the island council, a place's till or a
              ballot box (a player's line or ballot, a rival's move from the island bot), or it is a wage or embassy money
-             one of the island's purses pays a player. The bot's and the purses' wallets are ours, not visitors': their
-             transactions count in this group's transactions only, never in wallets, "ours", "hours" or "starts".
+             one of the island's purses pays a player, or a cruise ship's simulated passenger pays a place (cruise.py).
+             The bot's, the purses' and the passengers' wallets are ours, not visitors': their transactions count in
+             this group's transactions only, never in wallets, "ours", "hours" or "starts".
   idni       sent by one of the accounts the testnet started with (tau-testnet networks/tau-testnet-v2/genesis.json,
              accounts_state), which IDNI set up; on this testnet they make most of the traffic.
   other      everything else: other wallets, scripts and tools.
@@ -38,6 +39,7 @@ GET /api/v1/sources
              visitors' ballots, cands = ballots per candidate, by = rival moves per candidate; wallets / new = visitor
              wallets that day and the ones playing on the chain for the first time; hours = moves per UTC hour
              paid / paid_agrs (only on days with any) = wages and embassy money the island's purses paid to visitors
+             cruise / cruise_agrs (only on days with any) = transactions of a cruise ship's simulated passengers, never moves
   since, sent_since   first block time held, first remembered send
 
 The "agorzilla" part follows Agorzilla's own reading (agorilla assets/core.js): a meal pays the bowl at least 1 AGRS,
@@ -267,6 +269,7 @@ class TxSources:
         self.since = time.time()
         self.bots: dict[str, str] = {}   # the island bot's campaign wallets: pubkey -> candidate (island.py)
         self.purses: dict[str, str] = {}   # its purses that pay the visitors: pubkey -> place (island.py)
+        self.passengers = lambda: {}       # the cruise ships' simulated passengers: pubkey -> ship (cruise.py)
         try:
             with open(self.path) as f:
                 st = json.load(f)
@@ -306,6 +309,7 @@ class TxSources:
         played: set = set()                    # visitor wallets that made a White Rabbit Key move
         isle_last: dict[str, str] = {}         # visitor wallet -> last day it played
         bots = {k.lower(): v for k, v in self.bots.items()}
+        ship = {k.lower(): v for k, v in (self.passengers() or {}).items()}
         seen_day: set = set()                  # (day, group, wallet)
         first_day: dict[tuple, str] = {}       # (group, wallet) -> first day seen
         ever: dict[str, dict] = {}             # group or "ours" -> wallet -> last day seen
@@ -328,8 +332,8 @@ class TxSources:
                 g = group(tx, h, self.sent)
                 s = str(tx.get("sender_pubkey") or "").lower()
                 rb = rabbit(tx, bots)
-                server = s in bots or s in self.purses   # the island bot's and purses' wallets: ours, not a visitor's
-                if g != "agorzilla" and (rb or s in self.purses):
+                server = s in bots or s in self.purses or s in ship   # the island bot's, purses' and passengers' wallets: ours
+                if g != "agorzilla" and (rb or s in self.purses or s in ship):
                     g = "rabbit"
                 amount = moved(tx)
                 row = days.setdefault(day, {k: [0, 0, 0, 0, 0] for k in GROUPS})
@@ -352,6 +356,12 @@ class TxSources:
                     src, kind = start(tx, h, g, self.sent, rb)
                     kinds = starts.setdefault(day, {}).setdefault(src, {})
                     kinds[kind] = kinds.get(kind, 0) + 1
+                if s in ship:   # a simulated cruise passenger: not a player and not a move, counted apart
+                    r = isle.setdefault(day, {"moves": 0, "rivals": 0, "lines": 0, "votes": 0, "agrs": 0, "wallets": 0,
+                                              "new": 0, "cands": {}, "by": {}, "hours": [0] * 24})
+                    r["cruise"] = r.get("cruise", 0) + 1
+                    r["cruise_agrs"] = r.get("cruise_agrs", 0) + amount
+                    rb = None
                 if s in self.purses:   # a wage or an embassy's money paid to a visitor: not a move, counted apart
                     r = isle.setdefault(day, {"moves": 0, "rivals": 0, "lines": 0, "votes": 0, "agrs": 0, "wallets": 0,
                                               "new": 0, "cands": {}, "by": {}, "hours": [0] * 24})

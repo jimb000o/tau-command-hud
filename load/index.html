@@ -54,6 +54,8 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 @media (min-width: 900px) { .top { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); } }
 .lead { margin: 4px 0 0; font: 500 clamp(20px, 2.6vw, 26px)/1.25 var(--display); color: #fff; }
 .sub { margin: 4px 0 0; color: var(--dim); max-width: 76ch; }
+.ship { margin: 6px 0 0; color: var(--text); font-size: 12px; max-width: 100%; }
+.ship a { color: var(--dim); margin-left: 6px; }
 .verdict { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; background: rgba(16,16,18,.86); display: grid; gap: 2px; }
 .verdict b { font: 700 22px var(--display); letter-spacing: .04em; color: #fff; display: flex; align-items: center; gap: 10px; }
 .verdict b i { width: 11px; height: 11px; border-radius: 50%; background: var(--dim); }
@@ -73,7 +75,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
 .charts { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 900px) { .charts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-svg.ch { display: block; width: 100%; height: clamp(120px, 24vh, 230px); max-height: 46vw; touch-action: none; }
+svg.ch { display: block; width: 100%; height: calc(clamp(120px, 24vh, 230px) - var(--ship, 0px)); max-height: 46vw; touch-action: none; }
 svg.ch text { font: 11px var(--mono); fill: var(--dim); }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--dim); font-size: 12px; margin-top: 4px; }
 .legend i { display: inline-block; width: 12px; height: 3px; vertical-align: middle; margin-right: 6px; }
@@ -92,12 +94,14 @@ footer p { margin: 0; }
 #tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
 #tip .tv { font: 600 15px var(--display); color: #fff; }
 @media (max-width: 700px) {
+  .ship { font-size: 11px; }
+  .ship a { display: block; width: max-content; margin-left: 0; min-height: 44px; line-height: 44px; }
   .tile .v { font-size: 19px; }
   .tile h3, .tile p, .legend, .note, footer, .read, .rec { font-size: 11px; }
   footer a { display: inline-block; min-height: 44px; line-height: 44px; }
 }
-@media (min-width: 900px) and (max-height: 720px) { svg.ch { height: 104px !important; } .note { font-size: 11px; line-height: 1.4; } .tile { padding: 6px 12px; } }
-@media (min-width: 900px) and (max-height: 860px) { .sub { display: none; } svg.ch { height: clamp(96px, 17vh, 180px); } .wrap { gap: 9px; } }
+@media (min-width: 900px) and (max-height: 720px) { svg.ch { height: calc(104px - var(--ship, 0px)) !important; } .note { font-size: 11px; line-height: 1.4; } .tile { padding: 6px 12px; } }
+@media (min-width: 900px) and (max-height: 860px) { .sub { display: none; } svg.ch { height: calc(clamp(96px, 17vh, 180px) - var(--ship, 0px)); } .wrap { gap: 9px; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -113,6 +117,7 @@ footer p { margin: 0; }
     <div>
       <p class="lead">How hard the testnet is working.</p>
       <p class="sub">Every move in White Rabbit Key is a real test transfer, so the more people play, the more the testnet has to carry. This page shows what it carries, minute by minute, for the last six hours: what gets sealed, what waits, and how long a transaction waits for its block.</p>
+      <p class="ship" id="ship" hidden data-tip="A cruise ship at White Rabbit Key.\nIts passengers are simulated, their transactions real: at most 12 a minute, half as many while the testnet strains, none once it stalls."><span id="shipText"></span><a id="shipLog" href="https://node.tauhud.com/cruise/log" target="_blank" rel="noopener">Logbook</a></p>
     </div>
     <div class="verdict" id="verdict" data-tip="Load right now.\nFrom the last ten minutes: waiting times, gaps between blocks and refused sends."><b><i></i><span id="vWord">…</span></b><span id="vWhy">Reading the relay</span></div>
   </div>
@@ -122,7 +127,7 @@ footer p { margin: 0; }
       <h2>Transactions per minute <small>last six hours</small></h2>
       <svg class="ch" id="c1" aria-label="Transactions sealed per minute"></svg>
       <div class="read" id="r1"></div>
-      <div class="legend"><span><i style="background:rgba(255,255,255,.75)"></i>sealed in blocks</span><span><i style="background:var(--ok)"></i>sent through tauhud</span><span><i style="background:var(--behind)"></i>refused before the node</span></div>
+      <div class="legend"><span><i style="background:rgba(255,255,255,.75)"></i>sealed in blocks</span><span><i style="background:var(--ok)"></i>sent through tauhud</span><span id="lgShip" hidden><i style="background:repeating-linear-gradient(90deg,#fff 0 3px,transparent 3px 6px)"></i>simulated cruise passengers</span><span><i style="background:var(--behind)"></i>refused before the node</span></div>
     </section>
     <section class="panel">
       <h2>Waiting room <small>last six hours</small></h2>
@@ -174,21 +179,24 @@ document.addEventListener("pointerout", e => { const d = e.target.closest && e.t
 function sample() {
   const M = 360, now = Math.floor(Date.now() / 1000), start = Math.floor(now / 60) * 60 - (M - 1) * 60;
   let seed = 7; const R = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const sealed = [], sent = [], bot = [], refused = [], pool = [], wmax = [], wavg = [], blocks = [], gap = [];
+  const sealed = [], sent = [], bot = [], cruise = [], refused = [], pool = [], wmax = [], wavg = [], blocks = [], gap = [];
   for (let i = 0; i < M; i++) {
     const rush = i > 250 && i < 290 ? 3 + (i - 250) / 4 : 1;
     const b = Math.round(2 + R() * 3), s = Math.round((4 + R() * 8) * rush), w = Math.round(3 + R() * 12 * rush);
-    sealed.push(s); sent.push(Math.round(s * .3)); bot.push(Math.min(24, Math.round(s * .4))); refused.push(rush > 8 && R() < .3 ? 2 : 0);
+    const ship = i > 300 && i < 352 ? Math.round(4 + R() * 7) : 0;
+    sealed.push(s + ship); sent.push(Math.round(s * .3)); bot.push(Math.min(24, Math.round(s * .4))); cruise.push(ship); refused.push(rush > 8 && R() < .3 ? 2 : 0);
     pool.push(Math.round(s * (rush > 6 ? 2.2 : .6))); wmax.push(w); wavg.push(Math.round(w / 2)); blocks.push(b); gap.push(Math.round(60 / b));
   }
   const hr = a => a.slice(-60).reduce((x, y) => x + y, 0);
-  return { generated_at: now, start, minutes: M, sealed, blocks, gap, pool, sent, bot, refused, wait_avg: wavg, wait_max: wmax,
-    now: { waiting: pool[M - 1], last_block_age: 9, sealed_hour: hr(sealed), blocks_hour: hr(blocks), sent_hour: hr(sent), bot_hour: hr(bot), refused_hour: hr(refused), wait_hour: 6, busiest_minute_hour: Math.max(...sealed.slice(-60)) },
+  const t0 = start + 300 * 60;
+  return { generated_at: now, start, minutes: M, sealed, blocks, gap, pool, sent, bot, cruise, refused, wait_avg: wavg, wait_max: wmax,
+    now: { waiting: pool[M - 1], last_block_age: 9, sealed_hour: hr(sealed), blocks_hour: hr(blocks), sent_hour: hr(sent), bot_hour: hr(bot), cruise_hour: hr(cruise), refused_hour: hr(refused), wait_hour: 6, busiest_minute_hour: Math.max(...sealed.slice(-60)) },
+    ship: { simulated: true, now: { name: "Queen Mempool", phase: "ashore", t0, end: t0 + 5400, passengers: 120, ashore: 87, sent: { pay: hr(cruise) - 9, bill: 4, book: 5, cancel: 0 } }, bands: [[t0, now, "Queen Mempool"]] },
     records: { pool: 140, per_min: 96, per_block: 41, wait: 118, since: now - 86400 * 2 }, thresholds: { wait: 60, gap: 90 }, state: "busy", sample: true };
 }
 
 /* ---------- drawing ---------- */
-function chart(el, read, D, series, fmtRead) {
+function chart(el, read, D, series, fmtRead, bands) {
   const W = el.clientWidth || 600, H = el.clientHeight || 180, L = 38, B = 18, top = 6;
   el.setAttribute("viewBox", `0 0 ${W} ${H}`); el.replaceChildren();
   const M = D.minutes, x = i => L + (W - L - 4) * i / (M - 1);
@@ -201,6 +209,15 @@ function chart(el, read, D, series, fmtRead) {
     const t = svg("text", { x: L - 6, y: yy + 4, "text-anchor": "end" }); t.textContent = N(Math.round(max * f)); el.append(t);
   }
   if (series.some(s => s.right)) for (const f of [0, .5, 1]) { const t = svg("text", { x: W - 2, y: top + (H - top - B) * (1 - f) + (f === 1 ? 10 : -3), "text-anchor": "end", fill: "#39ff8a" }); t.textContent = Math.round(rmax * f) + " s"; if (f) el.append(t); }
+  /* a cruise ship's visit: a pale band over its minutes, named at the top */
+  for (const [a, b, name] of bands || []) {
+    const i0 = Math.max(0, (a - D.start) / 60), i1 = Math.min(M - 1, (b - D.start) / 60);
+    if (i1 <= 0 || i0 >= M - 1 || i1 <= i0) continue;
+    el.append(svg("rect", { x: x(i0), y: top, width: Math.max(1, x(i1) - x(i0)), height: H - top - B, fill: "rgba(255,255,255,.06)" }));
+    if (x(i1) - x(i0) < 22) continue;
+    const t = svg("text", { x: x(i0) + 4, y: top + 11, fill: "rgba(255,255,255,.6)" }); t.textContent = "🛳 " + name; el.append(t);
+    if (t.getComputedTextLength && t.getComputedTextLength() > x(i1) - x(i0) - 8) t.textContent = "🛳";
+  }
   const step = W < 520 ? 120 : 60, first = ((60 - Math.floor(D.start / 60) % 60) % 60);   // labels on the full hours
   for (let i = first; i < M - 15; i += step) { const t = svg("text", { x: x(i), y: H - 4, "text-anchor": "middle" }); t.textContent = hhmm(D.start + i * 60); el.append(t); }
   for (const s of series) {
@@ -211,7 +228,7 @@ function chart(el, read, D, series, fmtRead) {
       s.v.forEach((v, i) => { if (v) el.append(svg("circle", { cx: x(i), cy: y(v, s.right), r: 2.2, fill: s.dotCol ? s.dotCol(v) : s.col })); });
     } else {
       const d = s.v.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v, s.right).toFixed(1)).join(" ");
-      el.append(svg("path", { d, fill: "none", stroke: s.col, "stroke-width": 1.4 }));
+      el.append(svg("path", { d, fill: "none", stroke: s.col, "stroke-width": 1.4, ...(s.dash ? { "stroke-dasharray": s.dash } : {}) }));
     }
   }
   const cur = svg("line", { y1: top, y2: H - B, stroke: "rgba(255,255,255,.35)", visibility: "hidden" }); el.append(cur);
@@ -238,7 +255,8 @@ function render(D) {
     ["Waiting now", N(n.waiting), T("in the waiting room"), "Transactions our node lists as waiting.\nGhosts (sealed, still listed) are left out."],
     ["Wait for a block", secs(n.wait_hour), T("average, last hour"), "From first seen waiting to found in a block.\nMeasured every few seconds."],
     ["Last block", n.last_block_age == null ? "–" : secs(n.last_block_age), T("ago"), "Seconds since the newest block."],
-    ["Through tauhud", N(n.sent_hour + n.bot_hour), F("{n} by visitors, {m} by the island bot", { n: N(n.sent_hour), m: N(n.bot_hour) }), "Transactions tauhud sent in the last hour.\nVisitors sign their own; the bot sends the rivals' moves."],
+    n.cruise_hour ? ["Through tauhud", N(n.sent_hour + n.bot_hour + n.cruise_hour), F("{n} by visitors, {m} by the bot, {c} by the ship", { n: N(n.sent_hour), m: N(n.bot_hour), c: N(n.cruise_hour) }), T("Transactions tauhud sent in the last hour.") + "\n" + F("{n} by visitors, {m} by the island bot, {c} by a cruise ship’s simulated passengers.", { n: N(n.sent_hour), m: N(n.bot_hour), c: N(n.cruise_hour) })]
+      : ["Through tauhud", N(n.sent_hour + n.bot_hour), F("{n} by visitors, {m} by the island bot", { n: N(n.sent_hour), m: N(n.bot_hour) }), "Transactions tauhud sent in the last hour.\nVisitors sign their own; the bot sends the rivals' moves."],
     ["Refused", N(n.refused_hour), T("sends in the last hour"), "Sends refused by our relay's limits or by the node."],
   ];
   $("tiles").replaceChildren(...tiles.map(([h, v, p, t]) => {
@@ -248,15 +266,45 @@ function render(D) {
     if ((h === "Wait for a block" && n.wait_hour > D.thresholds.wait) || (h === "Refused" && n.refused_hour > 0)) d.children[1].classList.add("warn");
     return d;
   }));
-  const tau = D.sent.map((v, i) => v + D.bot[i]);
-  chart($("c1"), $("r1"), D, [{ v: D.sealed, bars: true, col: "rgba(255,255,255,.55)" }, { v: tau, col: "#39ff8a" }, { v: D.refused, dots: true, col: "#ffb13b" }],
-    i => F("{n} sealed in {b} blocks · {m} sent through tauhud · {r} refused", { n: N(D.sealed[i]), b: N(D.blocks[i]), m: N(tau[i]), r: N(D.refused[i]) }));
+  const tau = D.sent.map((v, i) => v + D.bot[i]), ship = D.cruise || D.sent.map(() => 0), sh = D.ship || {};
+  $("lgShip").hidden = !ship.some(v => v);
+  shipLine(sh);
+  roomForShip();
+  const c1 = [{ v: D.sealed, bars: true, col: "rgba(255,255,255,.55)" }, { v: tau, col: "#39ff8a" }, { v: D.refused, dots: true, col: "#ffb13b" }];
+  if (ship.some(v => v)) c1.splice(2, 0, { v: ship, col: "rgba(255,255,255,.95)", dash: "3 3" });
+  chart($("c1"), $("r1"), D, c1,
+    i => F("{n} sealed in {b} blocks · {m} sent through tauhud · {r} refused", { n: N(D.sealed[i]), b: N(D.blocks[i]), m: N(tau[i]), r: N(D.refused[i]) })
+      + (ship[i] ? " · " + F("{c} by cruise passengers", { c: N(ship[i]) }) : ""), sh.bands);
   chart($("c2"), $("r2"), D, [{ v: D.pool, bars: true, col: "rgba(255,255,255,.55)" }, { v: D.wait_max, dots: true, right: true, col: "#39ff8a", dotCol: v => v > D.thresholds.wait ? "#ffb13b" : "#39ff8a" }],
     i => F("{n} waiting · longest wait {w}", { n: N(D.pool[i]), w: secs(D.wait_max[i]) }));
   const r = D.records;
   const rec = [["Most waiting at once", N(r.pool)], ["Most sealed in a minute", N(r.per_min)], ["Most in one block", N(r.per_block)], ["Longest wait for a block", secs(r.wait)]];
   $("rec").replaceChildren(...rec.map(([a, b]) => { const d = document.createElement("div"); d.innerHTML = "<span></span><b></b>"; d.children[0].textContent = T(a); d.children[1].textContent = b; return d; }));
   $("since").textContent = F("since {x}", { x: new Date(r.since * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) });
+}
+
+/* the cruise ship: in port, coming in, or the next one (relay cruise.py, sent along with /load) */
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+function shipLine(sh) {
+  const el = $("ship"), v = sh.now, nx = sh.next, sent = v && v.sent ? Object.values(v.sent).reduce((a, b) => a + b, 0) : 0;
+  let t = "";
+  if (v && v.phase === "approach") t = F("🛳 {x} is coming in: lands at {t} with {n} simulated passengers.", { x: v.name, t: hhmm(v.t0), n: N(v.passengers) });
+  else if (v && v.phase === "waiting") t = F("🛳 {x} waits off the island: it lands only on a calm testnet.", { x: v.name });
+  else if (v && v.phase === "gone" && v.why === "no landing") t = F("🛳 {x} sailed on without landing: the testnet was not calm.", { x: v.name });
+  else if (v && v.phase === "gone" && v.why === "refused") t = F("🛳 {x} left early: the node refused its passengers’ transactions. The logbook has each answer.", { x: v.name });
+  else if (v && v.phase === "gone") t = F("🛳 {x} left early: the testnet stalled. The logbook has every transaction it sent.", { x: v.name });
+  else if (v) t = F("🛳 {x} in port until {t}: {a} of {n} simulated passengers ashore, {m} transactions.", { x: v.name, t: hhmm(v.end), a: N(v.ashore), n: N(v.passengers), m: N(sent) });
+  else if (nx) { const d = new Date(nx.t0 * 1000); t = F("🛳 Next cruise ship: {x}, {d} at {t}.", { x: nx.name, d: T(DAYS[(d.getDay() + 6) % 7]), t: hhmm(nx.t0) }); }
+  el.hidden = !t;
+  $("shipText").textContent = t;
+}
+/* the ship line must not push the page past the screen: the charts give up the height it takes (before they are drawn) */
+function roomForShip() {
+  const root = document.documentElement, el = $("ship"), z = parseFloat(root.style.getPropertyValue("--z")) || 1;
+  root.style.setProperty("--ship", "0px");
+  if (innerWidth < 900 || el.hidden) return;
+  const over = root.scrollHeight - innerHeight;
+  if (over > 0) root.style.setProperty("--ship", Math.round(Math.min(over, el.getBoundingClientRect().height + 8 * z) / z) + "px");
 }
 
 let LAST = null, FITTED = false;
@@ -279,10 +327,12 @@ tick();
 if (!SAMPLE) setInterval(tick, 30000);
 /* wide screens (an ultrawide 3440 × 1305, a TV): the page grows with the screen instead of standing in a narrow column */
 function fit() {
-  const root = document.documentElement; root.style.setProperty("--z", "1");
-  if (innerWidth <= 1700) return;
-  const w = document.querySelector(".wrap"), r = w.getBoundingClientRect(), h = r.height + 44;   // the page's own height at its normal size: it grows only as far as the screen has room
-  root.style.setProperty("--z", Math.max(1, Math.min((innerWidth - 40) / 1280, (innerHeight - r.top) / h)).toFixed(3));
+  const root = document.documentElement, z0 = root.style.getPropertyValue("--z"); root.style.setProperty("--z", "1");
+  if (innerWidth > 1700) {
+    const w = document.querySelector(".wrap"), r = w.getBoundingClientRect(), h = r.height + 44;   // the page's own height at its normal size: it grows only as far as the screen has room
+    root.style.setProperty("--z", Math.max(1, Math.min((innerWidth - 40) / 1280, (innerHeight - r.top) / h)).toFixed(3));
+  }
+  if (LAST && root.style.getPropertyValue("--z") !== z0) render(LAST);   // drawn again at the new size (a ship line may wrap differently)
 }
 fit();
 addEventListener("resize", () => { fit(); if (LAST) render(LAST); });
