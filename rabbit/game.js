@@ -157,11 +157,16 @@
      moves while it talks (the -talk and -blink frames, laid over the still picture where they differ) */
   const bustOf = id => !/[?&]art=drawn/.test(location.search) && SC.art && SC.art.img["bust-" + id];
   const MOUTH = {};
+  /* how open the mouth is while they talk: from their voice as it is heard (shut in its pauses), or, with no clip
+     playing (sound off, a line not voiced yet), null and the face makes its own syllables */
+  const lip = (id, talk) => (talk && SND && SND.lip ? SND.lip(id) : null);
   function frame(id, t, talk) {
     const img = SC.art.img, k = "bust-" + id;
-    if (talk && img[k + "-talk"]) {   // open and shut in syllables of uneven length
-      const m = MOUTH[id] || (MOUTH[id] = { at: 0, open: false });
-      if (t >= m.at) { m.open = !m.open; m.at = t + (m.open ? 90 + Math.random() * 110 : 60 + Math.random() * 90); }
+    if (talk && img[k + "-talk"]) {
+      const m = MOUTH[id] || (MOUTH[id] = { at: 0, open: false }), v = lip(id, talk);
+      if (v != null) {   // open on the loud part of a syllable, shut in the gaps; held a few frames so it does not flicker
+        if (t >= m.at && (m.open ? v < 0.22 : v > 0.38)) { m.open = !m.open; m.at = t + (m.open ? 70 : 50); }
+      } else if (t >= m.at) { m.open = !m.open; m.at = t + (m.open ? 90 + Math.random() * 110 : 60 + Math.random() * 90); }   // syllables of uneven length
       if (m.open) return k + "-talk";
     }
     if (img[k + "-blink"] && (t + id.length * 997) % 4200 < 130) return k + "-blink";
@@ -262,7 +267,7 @@
     else { g.moveTo(cx + 1, ny - 3); g.lineTo(cx + 3, ny + 8); g.lineTo(cx - 2, ny + 9); }
     g.stroke();
     /* the mouth: an ink line when quiet, open and moving while the line is said */
-    const my = cy + hh * 0.62, open = talk ? Math.abs(Math.sin(t * 0.025)) * 3.6 + Math.abs(Math.sin(t * 0.011)) * 2 : 0, mw = 7 + (id === "baako" || id === "rico" ? 2 : 0);
+    const my = cy + hh * 0.62, v = lip(id, talk), open = !talk ? 0 : v != null ? v * 5.6 : Math.abs(Math.sin(t * 0.025)) * 3.6 + Math.abs(Math.sin(t * 0.011)) * 2, mw = 7 + (id === "baako" || id === "rico" ? 2 : 0);
     if (open > 0.6) { g.fillStyle = "#5a1f22"; g.beginPath(); g.moveTo(cx - mw, my); g.quadraticCurveTo(cx, my - 1.5, cx + mw, my); g.quadraticCurveTo(cx, my + open * 2, cx - mw, my); g.fill(); ink(1.8); g.fillStyle = "#e2674f"; g.beginPath(); g.ellipse(cx, my + open * 0.9, mw * 0.45, open * 0.45, 0, 0, Math.PI); g.fill(); }
     else { g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(cx - mw, my - mood); g.quadraticCurveTo(cx, my + 3.4 + mood * 3, cx + mw, my - mood); g.stroke(); g.lineWidth = 1.2; g.beginPath(); g.moveTo(cx + mw + 1, my - 2 - mood); g.lineTo(cx + mw - 1, my + 1); g.stroke(); }
     accessories(g, id, L, cx, cy, hw, hh, t, ink);
