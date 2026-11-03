@@ -7,10 +7,10 @@
   },
   "headlines": [
     {
-      "text": "Sun 12:00 UTC: Tau chess engine vs Claude Opus 5.5",
+      "text": "Tau chess engine vs Claude Opus 5.5: 13 won, 5 drawn, 2 lost",
       "href": "https://chess.taumorrow.com/",
-      "until": "2026-11-02T00:00:00Z",
-      "tip": "A chess engine written in the Tau language plays ten live games against Claude Opus 5.5. An independent community project."
+      "until": "2026-11-07T00:00:00Z",
+      "tip": "Twenty games on 1 November, ten at effort medium and ten at high, counted for the engine. An independent community project."
     },
     {
       "text": "Rule challenge: a new task for your wallet every Monday",
