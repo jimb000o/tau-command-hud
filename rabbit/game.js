@@ -624,11 +624,26 @@
     if (line) {
       box.append(box._line = el("p", { class: "cv-line", text: line })); say(f, Math.min(4200, 600 + line.length * 38));
       const air = UI.air;
-      RICO.speak(parts, who, { air }).then(secs => { if (secs && air) UI.airUntil = performance.now() + secs * 1000; if (secs && UI.card === box) { say(f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
+      talks(box, parts, who, { air }).then(secs => { if (secs && air) UI.airUntil = performance.now() + secs * 1000; if (secs && UI.card === box) { say(f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
     }
     if (extra) box.append(extra);
     if (acts) box.append(el("div", { class: "cv-acts" }, acts));
     return f;
+  }
+  /* how long the one in front of you is still talking: to the end of their clip when it plays, else for as long as
+     it takes to read the line. Whatever closes a card by itself (the night after the last move) waits for it */
+  const readMs = s => Math.min(8000, 1500 + s.length * 40);
+  function talks(box, parts, who, o) {
+    box._talkEnd = performance.now() + readMs(join(parts));
+    const w = box._talkWait = RICO.speak(parts, who, o).then(secs => { if (secs) box._talkEnd = performance.now() + secs * 1000; return secs; }, () => false);
+    w.then(() => { if (box._talkWait === w) box._talkWait = null; });
+    return w;
+  }
+  function whenQuiet(fn, t0 = performance.now()) {
+    const b = UI.card, now = performance.now();
+    if (b && b._talkWait && now - t0 < 6000) return setTimeout(() => whenQuiet(fn, t0), 250);   // the clip is still on its way
+    if (b && b._talkEnd > now) return setTimeout(() => whenQuiet(fn, t0), b._talkEnd - now + 500);   // a question asked meanwhile is waited for too
+    fn();
   }
   /* ---------- talking: what someone says when you come back, and what they answer when you ask (talk.js) ----------
      Asking is free: no move, nothing in the Book. What you have heard is kept with the game, so they do not repeat themselves. */
@@ -685,7 +700,7 @@
     you.textContent = "“" + T(a.q) + "”";
     const parts = [S(s)], line = join(parts);
     box._line.textContent = line; say(box._f, Math.min(5200, 600 + line.length * 38));
-    RICO.speak(parts, who).then(secs => { if (secs && UI.card === box) { say(box._f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
+    talks(box, parts, who).then(secs => { if (secs && UI.card === box) { say(box._f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
   }
   const btn = (text, on, o = {}) => el("button", { type: "button", class: "cv-b" + (o.go ? " go" : "") + (o.warn ? " warn" : "") + (o.ask ? " ask" : ""), disabled: o.off || null, title: o.tip || null, onclick: e => { SND.sfx("tap"); on(e); } }, el("span", { text }), o.sub ? el("small", { text: o.sub }) : null);
   const did = k => { G.did = G.did || {}; G.did[k] = 1; };
@@ -695,7 +710,7 @@
   /* a move is spent: the sun goes on, and after the evening the night comes */
   function spend() {
     useMove(); save(); hud();
-    if (G.move >= MOVES) setTimeout(() => { closeCard(); endDay(); }, 900);
+    if (G.move >= MOVES) setTimeout(() => whenQuiet(() => { closeCard(); endDay(); }), 900);   // what they answer is heard to its end before the night
   }
   /* small treats that cost coins, not a move, and do something real: a tip for Lola, a round of coffee on the square,
      exercise books for Hana's class. Once a day each; paid as a real transaction to the place's till, like every line in the Book */
