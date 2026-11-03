@@ -1,0 +1,71 @@
+{
+ "now": {
+  "E": "Goood eeevening, island! This is Radio Coco, ninety-seven point threeee, and the night is young! Rico is not, but the night is!",
+  "M": "Wakey wakey, White Rabbit Keeeey! Radio Coco, ninety-seven point threeee! The sun is up, the blocks are fresh, and Rico is LOUD!",
+  "P": "Heeeeey, White Rabbit Keeeey! Radio Coco, ninety-seven point threeee! Out of the hammock, the island needs you!",
+  "N": "Still uuuup, White Rabbit Keeeey? So is Radio Coco, ninety-seven point threeee! The chain never sleeps, and tonight neither does Rico!",
+  "A": "Coco, coco, coco... RADIO COCOOOO! Ninety-seven point three, the loudest little station on any lagoon!"
+ },
+ "try": [
+  {
+   "id": "E1",
+   "text": "Gooood eeevening, island! Radio Coco, ninety-seven point threeee! The sun just clocked out, the blocks did not, and neither did I. Stay with me!"
+  },
+  {
+   "id": "E2",
+   "text": "Eeeevening, everybody! Shoes off, sand in, volume UP! This is Rico on Radio Coco, ninety-seven point three, and the lagoon is glowing tonight!"
+  },
+  {
+   "id": "E3",
+   "text": "Ohhh, there you are! Good evening, island! Radio Coco, ninety-seven point threeee! Grab something cold, the evening shift starts NOW!"
+  },
+  {
+   "id": "M1",
+   "text": "Gooood morning, island! Radio Coco, ninety-seven point threeee! Coffee in one hand, keys in the other, let's GO!"
+  },
+  {
+   "id": "M2",
+   "text": "Rise and shine, White Rabbit Keeeey! Rico's here, the sun's here, and a fresh block is on its way. Radio Coco, ninety-seven point three!"
+  },
+  {
+   "id": "M3",
+   "text": "Morning, morning, MORNING! The roosters lost, Rico won! Radio Coco, ninety-seven point three, waking up the whole lagoon!"
+  },
+  {
+   "id": "P1",
+   "text": "Heeeey, good afternoon, island! Radio Coco, ninety-seven point threeee! Lunch is done, the hammock is calling, and Rico says: not yet!"
+  },
+  {
+   "id": "P2",
+   "text": "Afternoon, my people! It's hot, it's bright, it's Radio Coco, ninety-seven point three, and Rico has the fan on full!"
+  },
+  {
+   "id": "P3",
+   "text": "Hello hello, sunny side of the day! Radio Coco, ninety-seven point threeee! Somebody poke the island, it's dozing off!"
+  },
+  {
+   "id": "N1",
+   "text": "Still uuup? Me too! Radio Coco, ninety-seven point threeee, the night shift. Just us, the crabs, and one very busy validator."
+  },
+  {
+   "id": "N2",
+   "text": "Psst... night owls! Radio Coco, ninety-seven point three. Keep it low, keep it warm. The island's asleep, the blocks aren't."
+  },
+  {
+   "id": "N3",
+   "text": "Midnight on the island, and you're still here! I love you for that. Radio Coco, ninety-seven point threeee!"
+  },
+  {
+   "id": "A1",
+   "text": "Turn it up, turn it UP! This is Radio Coco, ninety-seven point three, and Rico missed you!"
+  },
+  {
+   "id": "A2",
+   "text": "Is this thing on? It IS! Radio Coco, ninety-seven point threeee, live from the lagoon, and Rico is in a GOOD mood!"
+  },
+  {
+   "id": "A3",
+   "text": "Coco, coco, coco... RADIO COCOOOO! Ninety-seven point three! Hello, island, it's good to hear you!"
+  }
+ ]
+}
