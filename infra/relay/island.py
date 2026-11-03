@@ -70,6 +70,7 @@ PLACES = {
     "drums": "82a45ff8fd1bbba834c5c9f89e8ebb712935f83aa2709cdda051deebec517483e73fc6eeb997ebbaf2dc582a2eea56dc",
     "circle": "a974149276f73fa2021068c89521bc68e8877cbfdb7d75b348951269bc3ab6c0677997f31bdbb1d28c95dc3aacacd34e",
     "grotto": "9266b7dbca59d06c60517e815e32169aaba70056101d394c6ab851a99925f18e23da324cf0c73ab5fe27c951c8bb024e",
+    "cafe": "8beb2ce1c29053e23ed0df5df1b47cceb4082b13f507707cc0c015494bd1a23e121f66b46c76fc39d2c8d681e80a0709",
 }
 RADIO_LINE = 25          # a line bought on Radio Coco costs what it costs in the game (rabbit/game.js RUMOUR)
 CANDIDATES = ("marisol", "tobias", "baako", "hana")

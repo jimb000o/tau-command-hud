@@ -92,6 +92,13 @@ if [ "${1:-}" = "keep" ] && [ -n "${2:-}" ]; then
   N="$2"; shift 2
   case "$N" in *[!0-9]*) echo "Usage: up keep <island number> [rooms]"; exit 1;; esac
   ROOMS="$*"; KEEP=""; for r in $ROOMS; do KEEP="$KEEP $r=last"; done
+  # a new island can bring a new place: let GitHub Pages serve the merged game first (at most 15 minutes), so nobody
+  # meets the new layout with the old game
+  W=0; while [ "$W" -lt 45 ]; do
+    [ "$(curl -s "https://tauhud.com/rabbit/game.js?up=$(date +%s)" | sha256sum | cut -c1-64)" = "$(sha256sum ../rabbit/game.js | cut -c1-64)" ] && break
+    [ "$W" -eq 0 ] && echo "waiting for tauhud.com to serve the merged game (GitHub Pages, up to 15 minutes) ..."
+    W=$((W + 1)); sleep 20
+  done
   { sh rabbit-art/paint.sh keep island="$N" --layout island-22 && if [ -n "$ROOMS" ]; then sh rabbit-art/paint.sh draft $ROOMS --wide --n 1 --look 2 && sh rabbit-art/paint.sh keep $KEEP; fi; } 2>&1 | tee "$V" || true
   { echo "island art:"; if grep -qE 'Traceback|Error|error|No painting' "$V"; then grep -E 'Traceback|Error|error|No painting' "$V" | tail -3 | sed 's/^/         /'; else echo "         Island $N live${ROOMS:+, rooms painted anew: $ROOMS} (Ctrl+F5)"; fi; } | tee -a "$NOTE"
 fi

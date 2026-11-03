@@ -10,7 +10,7 @@ set -e
 cd "$(dirname "$0")/.."
 git pull -q
 P=infra/rabbit-art/paint.sh
-ROOMS="hall market radio north south bar book pier school dive works camp ship ama canoe stone drums circle grotto"
+ROOMS="hall market radio north south bar book pier school dive works camp ship ama canoe stone drums circle grotto cafe"
 OTHER=""
 if [ -z "${1:-}" ] || [ "$1" = "auto" ]; then
   NEW=$($P touch --from island=22 --n 2 | tee /dev/stderr | sed -n 's/^ *island=\([0-9][0-9]*\):.*/\1/p')

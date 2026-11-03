@@ -133,8 +133,14 @@
     stone: "897178ec1333edd5d3cb27f5746976e6cb8fd0d07360a8dcdfccd1f0a90d15f5a2f8b24616acb5ebfa360b86bc025175",
     drums: "82a45ff8fd1bbba834c5c9f89e8ebb712935f83aa2709cdda051deebec517483e73fc6eeb997ebbaf2dc582a2eea56dc",
     circle: "a974149276f73fa2021068c89521bc68e8877cbfdb7d75b348951269bc3ab6c0677997f31bdbb1d28c95dc3aacacd34e",
-    grotto: "9266b7dbca59d06c60517e815e32169aaba70056101d394c6ab851a99925f18e23da324cf0c73ab5fe27c951c8bb024e"
+    grotto: "9266b7dbca59d06c60517e815e32169aaba70056101d394c6ab851a99925f18e23da324cf0c73ab5fe27c951c8bb024e",
+    /* the Parasol Café, its own place since the beach was laid out anew: hash_to_curve of "white-rabbit-key/v1/till/cafe"
+       (DST WHITE_RABBIT_KEY_NUMS_V1, the method of the agorilla repo's tools/addresses.mjs), so nobody holds a key to it */
+    cafe: "8beb2ce1c29053e23ed0df5df1b47cceb4082b13f507707cc0c015494bd1a23e121f66b46c76fc39d2c8d681e80a0709"
   };
+  /* the café is its own place only on an island laid out with it (plates/island-22.json "cafe"); before that it is the
+     market square, as it always was */
+  const CAFE = () => (SC.places.cafe ? "cafe" : "market");
   const TILL_AT = { talk: "market", lie: "radio", fact: "book" };   // a rival's move, when it says nothing more
   /* Déjà, the café cat (agorzilla.com/cat/): her bowl has no key behind it; she eats on a day only when three wallets
      pay it at least 1 test AGRS, and her day runs 18:00 to 18:00 UTC (agorilla assets/cat.js). Agreeing from here is one
@@ -483,7 +489,7 @@
     if (G && place) { G.seen = G.seen || {}; if (!G.seen[place]) { G.seen[place] = 1; save(); } setTimeout(locks, 0); }
     /* the conversation always sits in the same place: a plate at the bottom middle, the person standing above it */
     const side = 0;
-    if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "bar" ? 1 : 0.6 }); } SC.glow(place);
+    if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "cafe" || place === "bar" ? 1 : 0.6 }); } SC.glow(place);
     const box = el("section", { class: "cv-card talk", "data-place": place || "", role: "dialog", "aria-modal": "false" });
     box._visit = place && build === PLACE[place] ? place : null;   // a visit to a place, not the card after a move
     const close = el("button", { type: "button", class: "cv-x", "aria-label": T("Back to the island"), onclick: () => closeCard(), text: "✕" });
@@ -727,8 +733,17 @@
         return el("li", null, el("span", { class: "nm", translate: "no", text: p.name }), el("small", { text: p.cares.map(c => T(TOPICS[c])).join(" · ") }), el("i", { class: "bar" + (best === G.me ? " lead" : ""), style: `--v:${mine}%`, title: F("leans to {x}", { x: nm(best) }) }));
       });
       const acts = Object.keys(TOPICS).map(t => btn(F("Talk about {x}", { x: T(TOPICS[t]) }) + (hot() === t ? " ★" : ""), () => { campaign(G.me, t); SND.sfx("yes"); SC.gather(1); setTimeout(() => SC.gather(0), 2600); toast(F("People who care about {x} listened.", { x: T(TOPICS[t]) })); spend(); if (UI.card) openCard("market", PLACE.market); }, { off: !movesLeft() }));
+      if (SC.places.cafe) return scene(box, "sam", T(SC.places.market.name), T("The square belongs to everyone, and on Sunday night I count the ballots right here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts], el("ul", { class: "cv-folk" }, rows));
       const round = treatBtn("coffee", T("Buy the square a round of coconut coffee"), 8, "market", T("bought the whole square a round of coconut coffee: 8 coins"), () => bump(G.me, null, 2), T("Everyone on the square raises a cup to you. A little warmer towards you, all of them."));
       scene(box, G.me === "marisol" ? "lola" : "marisol", T(SC.places.market.name), T("Everyone passes through here. Talk about what people care about; it counts double if you already passed a law for it."), [el("p", { class: "cv-h", text: T("Speak to the square (one move)") }), ...acts, round], el("ul", { class: "cv-folk" }, rows));
+    },
+    /* the Parasol Café: Marisol's (Lola helps out when you are Marisol); what the island talks about today, the round of
+       coffee, and Déjà, the café cat */
+    cafe(box) {
+      const h = hot();
+      const heard = el("p", { class: "cv-note", text: h ? F("Overheard at the tables today: {x}.", { x: T(TOPICS[h]) }) : T("Overheard at the tables today: nothing new, which is news too.") });
+      const round = treatBtn("coffee", T("Buy the café a round of coconut coffee"), 8, "cafe", T("bought the whole café a round of coconut coffee: 8 coins"), () => bump(G.me, null, 2), T("The whole café raises a cup to you. A little warmer towards you, all of them."));
+      scene(box, G.me === "marisol" ? "lola" : "marisol", T(SC.places.cafe.name), T("Sit down, coffee first. Everything this island says is said here first, usually before it is true."), [heard, round, btn(T("Ask about Déjà, the café cat"), () => deja())]);
     },
     radio(box) {
       SND.set({ radio: true });
@@ -1149,7 +1164,7 @@
       won: "Three of yours in force. I erased the list and wrote your name instead. The children asked who you were. I told them.",
       lost: "The blackboard is as full as on day one. The children drew a crab on it. It is a good crab.",
       check: () => G.laws.filter(l => l.by === G.me).length >= 3 },
-    kingmaker: { who: "marisol", at: "market", name: "The kingmaker", fits: f => f.pact || f.truth || !f.lead, pick: () => others(G.me).sort((a, b) => total(a) - total(b))[0],
+    kingmaker: { who: "marisol", get at() { return CAFE(); }, name: "The kingmaker", fits: f => f.pact || f.truth || !f.lead, pick: () => others(G.me).sort((a, b) => total(a) - total(b))[0],
       goal: "Make {x} governor: a pact with {x}, and {x} wins the election.",
       offer: "Everyone wants to win. Boring. Nobody on this island has ever made someone else governor on purpose. The one at the bottom of every count: get them the chair, and I will tell everyone who really did it. That is the only kind of power that lasts.",
       yes: "A pact with them, your vote for their laws, your speeches where it helps them, and your mouth shut. I do the talking later.",
@@ -2177,7 +2192,7 @@
   function agreeDeja() {
     if (fedDeja() || !G.onchain) return;
     G.deja = dejaDay();
-    const b = { day: G.day, hour: Math.min(2, G.move), who: G.me, text: T("agreed to feed Déjà, the café cat"), kind: "gift", at: "market", pay: 1 };
+    const b = { day: G.day, hour: Math.min(2, G.move), who: G.me, text: T("agreed to feed Déjà, the café cat"), kind: "gift", at: CAFE(), pay: 1 };
     G.book.push(b); save();
     mySend(DEJA.bowl, T("agreed to feed Déjà"), h => { if (h) { b.tx = h; save(); DJ_S.at = 0; } }, 1, null);
     SND.sfx("meow"); toast(T("You agreed. Déjà looked at you as if she had expected it."));

@@ -43,10 +43,10 @@ OUT = "/opt/sites/rico/art"
 # style references for each look, kept on the server only (never in the repository, never published): /opt/rabbit-refs/1, 2, 3
 REFS = "/opt/rabbit-refs"
 PLACES = ["island", "hall", "market", "radio", "north", "south", "bar", "book", "pier",
-          "school", "dive", "works", "camp", "ship", "ama", "canoe", "stone", "drums", "circle", "grotto"]
+          "school", "dive", "works", "camp", "ship", "ama", "canoe", "stone", "drums", "circle", "grotto", "cafe"]
 # places whose drawn picture no longer fits what they are now (the Council Tree, the Kettle, the radio on its cliff,
 # the embassies in the fort and the villa, the bar on the pier): painted from the island like the new ones
-RETHOUGHT = {"hall", "market", "radio", "north", "south", "bar"}
+RETHOUGHT = {"hall", "market", "radio", "north", "south", "bar", "book"}
 # the places that have no drawn picture to repaint (plates/<id>.jpg): they are painted from the island itself
 FROM_ISLAND = ("The first picture is the whole island of this game. Paint, in exactly its style, ink line, colours and light, "
                "a close view of one place on it, as a background for the scene where the player stands there, wide, "
@@ -194,9 +194,14 @@ SCENE = {
     "hall": "The Council Tree: a huge red flamboyant tree in full bloom on the town's rise, its roots like benches, a ring of "
             "old wooden benches and stools in its shade, a slate board with chalked laws hung on the trunk, a small bell on "
             "a branch, red petals on the ground, the harbour and the sea glittering below, dignified and warm.",
-    "market": "The Parasol Café: a small open-air café on a wooden terrace by a little turquoise pool, red and white "
-              "parasols, mismatched chairs, a battered tin kettle, a long table where everybody talks, a noticeboard "
-              "covered in notes, the harbour and the red tree below, cosy, noisy and friendly.",
+    "market": "The Market Square on the front beach: a small open square of packed sand and flat stones between the old "
+              "ship and the Parasol Café, a handful of wooden market stalls under colourful awnings, crates of coconuts, "
+              "fruit and fish, baskets, a fish fry smoking on a grill, a chalked price board, the old ship's masts and "
+              "the turquoise bay behind, busy, loud and friendly.",
+    "cafe": "The Parasol Café on the front beach: a small wooden beach café with a striped awning over its counter, round "
+            "tables under red and white parasols on a wooden deck by the sand, mismatched chairs, a battered tin kettle, "
+            "a long table where everybody talks, a noticeboard covered in notes, hanging lanterns, a bowl for the cat by "
+            "the counter, the school's blue house on stilts beside it and the bay in front, cosy, noisy and friendly.",
     "radio": "Inside Radio Coco, the small wooden radio hut on stilts beside the lattice radio mast on the cliff top, "
              "wooden all through, no concrete, no metal studio: rough plank walls, plank floor, a thatched roof on beams, the painted Radio Coco sign seen backwards through the open front, a microphone on an arm, a mixing desk, a turntable, "
              "shelves of records, a window showing the waterfall and the sea far below, cables, a fan, a coffee mug, "
@@ -213,9 +218,10 @@ SCENE = {
     "bar": "Inside Bar La Ola, a wooden bar on stilts at the pier: long shelves of colourful bottles, a counter with stools, "
            "a ceiling fan, a string of warm light bulbs, an open side onto the water and the boats, driftwood and shells, "
            "a ledger and a pencil on the counter, cosy and lively.",
-    "book": "Inside the lighthouse: rough stone walls, a stone stair winding up, a small arched window, a lamp hanging "
-            "from above throwing a cone of green-tinted light onto a big open book on a wooden lectern, ropes, a "
-            "brass telescope, sea charts, an old keeper's chair, quiet and solemn.",
+    "book": "Inside the lighthouse on its rocky islet at the back of the island: rough stone walls, a stone stair winding "
+            "up, a small arched window onto the open sea and, across the water, the village hills and the old standing "
+            "stone, a lamp hanging from above throwing a cone of green-tinted light onto a big open book on a wooden "
+            "lectern, ropes, a brass telescope, sea charts, an old keeper's chair, quiet and solemn.",
     "pier": "A wooden pier running out into the sea, seen from its start on the beach: planks, rope railings on posts, "
             "a lamp post with a square lantern, a small sailing boat on the water, bright sky with clouds, gulls far "
             "away, sand in the foreground, barrels and coiled ropes.",
@@ -230,8 +236,10 @@ SCENE = {
              "rope and soap at the sides, through a big window the small pond by the stream with the big wooden water wheel "
              "turning in it, exactly as the island shows it beside the works; a wide open plank floor in front, "
              "light through the roof, cheerful but not crowded.",
-    "camp": "The surveyors' camp in a clearing: a few white canvas tents, tripods and measuring poles, a folding table with "
-            "big plans and maps held down by stones, crates with embassy stamps, a campfire, the jungle all around.",
+    "camp": "The surveyors' camp on a small green ledge high on the mountain slope: a few white canvas tents, tripods and "
+            "measuring poles, a folding table with big plans and maps held down by stones, crates with embassy stamps, "
+            "a small campfire, the rocky peak above and, far below, the island: the resort's pool, the waterfall, the "
+            "palace and the sea.",
     "ship": "The deck and cabin of an old wooden ship at anchor, now a museum of things the sea gave back: shelves of "
             "labelled finds (odd shoes, bottles, a piano key, ship's bells), glass cases, an old chart pinned to a table, "
             "brass instruments, portholes onto the cove, warm and curious.",

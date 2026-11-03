@@ -1387,4 +1387,13 @@ TauI18n.add({ strings: {
   "The island has a governor this week! Whoever won the most campaigns last week. Congratulations, and good luck.": "本周小岛有了总督！就是上周赢得最多竞选的人。恭喜，也祝好运。",
   "Some laws from last week are still in force, by the whole island. If you don't like them, the hall is open.": "上周的一些法律仍然有效，由全岛决定。不喜欢的话，议事厅开着门。",
   "All over the island, people are talking about one law today. Rico's phone hasn't stopped ringing.": "今天全岛都在谈论同一条法律。Rico 的电话响个不停。",
+  "The Market Square": "集市广场",
+  "The square belongs to everyone, and on Sunday night I count the ballots right here. Talk about what people care about; it counts double if you already passed a law for it.": "广场属于每一个人，星期天晚上我就在这里数选票。谈谈人们关心的事；如果你已经为它通过了一条法律，效果加倍。",
+  "Sit down, coffee first. Everything this island says is said here first, usually before it is true.": "坐下，先喝咖啡。这座岛上说的每一句话，都是先在这里说出来的，通常在它成真之前。",
+  "Overheard at the tables today: {x}.": "今天桌边听到的话题：{x}。",
+  "Overheard at the tables today: nothing new, which is news too.": "今天桌边没听到什么新鲜事，这本身也是新闻。",
+  "Buy the café a round of coconut coffee": "请咖啡馆里所有人喝一轮椰子咖啡",
+  "bought the whole café a round of coconut coffee: 8 coins": "请整个咖啡馆喝了一轮椰子咖啡：8 枚硬币",
+  "The whole café raises a cup to you. A little warmer towards you, all of them.": "整个咖啡馆都向你举杯。所有人都对你更亲近了一点。",
+  "Ask about Déjà, the café cat": "问问咖啡馆的猫 Déjà"
 } });

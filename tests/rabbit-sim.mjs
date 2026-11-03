@@ -67,7 +67,7 @@ const pickW = (R, w) => { const t = Object.values(w).reduce((a, b) => a + b, 0);
 /* the shared island (infra/relay/isle.py): ONE for every simulated player, so they all campaign on the same island at
    once and see each other's moves; it checks every message the way the relay does and pushes the day every second */
 const KINDS = "law|down|refused|talk|lie|fact|deal|pact|broke|gift", CANDS = "marisol|tobias|baako|hana";
-const PLACES = new Set(["hall", "market", "radio", "north", "south", "bar", "book", "pier", "school", "dive", "works", "camp", "ship", "ama", "canoe", "stone", "drums", "circle", "grotto"]);
+const PLACES = new Set(["hall", "market", "radio", "north", "south", "bar", "book", "pier", "school", "dive", "works", "camp", "ship", "ama", "canoe", "stone", "drums", "circle", "grotto", "cafe"]);
 const ISLE = { players: { campaigns: 0, finished: 0, moves: 0, as: {}, wins: {}, laws: {}, kinds: {} }, islanders: { moves: 0, laws: {}, kinds: {} }, recent: [], week: {}, games: {}, subs: new Set(), bad: [], v: 0, pushes: 0, seen: 0 };
 /* last week's verdict (isle.py `last`): every campaign starts with the island's laws in force, Hana governs */
 const LAST = { id: "2026-W44", from: "2026-10-26", to: "2026-11-01", campaigns: 9, finished: 7, wins: { hana: 4, baako: 3 }, governor: "hana", laws: ["boat", "copy"] };

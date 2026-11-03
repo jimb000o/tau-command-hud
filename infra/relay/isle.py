@@ -77,7 +77,7 @@ EMB = {"north": "harbour", "south": "road"}   # what each embassy pays for
 KINDS = ("law", "down", "refused", "talk", "lie", "fact", "deal", "pact", "broke", "gift")
 BUILDS = ("roof", "lamp", "stone")   # what a visitor's savings can buy for the island; the island keeps the count
 PLACES = ("hall", "market", "radio", "north", "south", "bar", "book", "pier", "school", "dive", "works", "camp", "ship",
-          "ama", "canoe", "stone", "drums", "circle", "grotto")
+          "ama", "canoe", "stone", "drums", "circle", "grotto", "cafe")
 WHAT = set(LAWS) | set(TOPICS) | set(CANDS) | set(EMB) | set(BUILDS) | {"-"}
 GAME = re.compile(r"^[a-z0-9]{6,16}$")
 LAWLIST = re.compile(r"^[a-z,-]{1,120}$")
