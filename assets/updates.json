@@ -2208,5 +2208,10 @@
     "tag": "HUD",
     "on": "2026-11-03",
     "html": "Chain core: the island bot’s and the cruise ships’ waiting transactions are marked as soon as they appear, read straight from the island’s and the ships’ public wallet lists. Before, they stayed unmarked until our relay had seen them in a block."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-03",
+    "html": "Transaction details: the hash, the sender, the receiver and the block number are links now. Each opens the explorer in a new tab, on that transaction, address or block. On the live chain only; simulated transactions have nothing to look up."
   }
 ]

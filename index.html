@@ -3843,10 +3843,13 @@ function detailTx(t) {
   const label = TYPE_LABEL[t.type] || t.type, transfer = /user_tx|retractable/.test(t.type);
   const where = t.rejected ? "Refused at admission, never entered a block." : t.block != null ? `Sealed in block #${t.block}.` : "Admitted to the mempool, waiting for the next block.";
   const p = t.policy, pol = transfer ? (p ? `${p.name}: ${p.label}` : "none (every transfer allowed)") : "—", ownRule = !!(t.rejected && p && /o5/.test(t.rejected));
-  const kv = { Hash: esc(t.id), Type: esc(label), Sender: esc(t.sender || (t.transfers && t.transfers[0] && t.transfers[0][0]) || "—") };
-  if (t.transfers && t.transfers.length) { kv.To = t.transfers.map(x => esc(x[1])).join("<br>"); kv.Amount = t.transfers.map(x => fmt(x[2]) + " AGRS").join(", "); }
-  if (t.to && !t.transfers) kv.To = esc(t.to);
-  kv.Fee = (t.fee ?? "—") + (t.fee != null ? " AGRS" : ""); kv.Status = t.rejected ? "refused" : t.block != null ? `in block #${t.block}` : "in mempool";
+  /* live chain: hash, addresses and block open the explorer in a new tab (simulated data has nothing to look up there) */
+  const ex = (q, v, text, tip) => S.mode === "live" && v != null && v !== "" ? `<a class="acct" href="explorer/?${q}=${encodeURIComponent(v)}" target="_blank" rel="noopener" title="${tip}">${text}</a>` : text;
+  const addr = h => h && /^[0-9a-f]{96}$/i.test(h) ? ex("a", h.toLowerCase(), esc(h), "Open this address in the explorer") : esc(h || "—");
+  const kv = { Hash: t.id ? ex("tx", t.id, esc(t.id), "Open this transaction in the explorer") : "—", Type: esc(label), Sender: addr(t.sender || (t.transfers && t.transfers[0] && t.transfers[0][0])) };
+  if (t.transfers && t.transfers.length) { kv.To = t.transfers.map(x => addr(x[1])).join("<br>"); kv.Amount = t.transfers.map(x => fmt(x[2]) + " AGRS").join(", "); }
+  if (t.to && !t.transfers) kv.To = addr(t.to);
+  kv.Fee = (t.fee ?? "—") + (t.fee != null ? " AGRS" : ""); kv.Status = t.rejected ? "refused" : t.block != null ? ex("b", t.block, `in block #${t.block}`, "Open this block in the explorer") : "in mempool";
   if (transfer) kv["Sender’s own rule"] = esc(pol);
   let rule = "";
   if (transfer) {
