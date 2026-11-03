@@ -33,7 +33,8 @@ NOTE=$(mktemp)
 # the node and the relay, then White Rabbit Key's island: the day, the running week and what last week decided
 curl -s https://node.tauhud.com/status > "$NOTE.status" || true
 curl -s https://node.tauhud.com/isle > "$NOTE.isle" || true
-python3 - "$NOTE.status" "$NOTE.isle" <<'PY' | tee -a "$NOTE"
+curl -s https://node.tauhud.com/cruise > "$NOTE.cruise" || true
+python3 - "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" <<'PY' | tee -a "$NOTE"
 import json, sys
 def read(path, what):
     try:
@@ -51,6 +52,26 @@ if s:
     print(f"island:  day {s.get('day')}, {len(s.get('players') or [])} players, week {w.get('id')}: {w.get('campaigns', 0)} campaigns, "
           f"{w.get('finished', 0)} finished, wins {w.get('wins') or {}}")
     print(f"         last week: governor {l.get('governor') or 'none yet'}, laws {l.get('laws') or []}")
+# the cruise ships (relay/cruise.py): in port or the next call, the passengers' wallets, the kinds already used cleanly
+s = read(sys.argv[3], "ships:   ")
+if s:
+    import datetime as dt
+    try:
+        from zoneinfo import ZoneInfo
+        tz, zn = ZoneInfo("Europe/Berlin"), "German time"
+    except Exception:
+        tz, zn = dt.timezone.utc, "UTC"
+    at = lambda t: dt.datetime.fromtimestamp(t, tz).strftime("%a %d.%m. %H:%M")
+    v, n = s.get("now") or {}, s.get("next") or {}
+    wallets = sum(len(x) for x in (s.get("wallets") or {}).values())
+    seats = sum(x.get("passengers", 0) for x in (s.get("ships") or {}).values())
+    tried = [k for k, x in (s.get("tried") or {}).items() if x] or ["none yet"]
+    if not s.get("enabled"):
+        print("ships:   switched off (CRUISE_ENABLED=0 in .env)")
+    else:
+        here = f"{v.get('name')} {v.get('phase')}, {v.get('ashore', 0)} ashore; " if v else ""
+        print(f"ships:   {here}next {n.get('name')} {at(n['t0'])} {zn}" if n else f"ships:   {here}no call ahead")
+        print(f"         {wallets} of {seats} passenger wallets made, kinds tried: {', '.join(tried)}, logbook https://node.tauhud.com/cruise/log")
 PY
 # the channels: may the service post at all? (asks Telegram and X, posts nothing; a refused key or a bot without the
 # right to post is named here, so the channel can never go quiet unnoticed), then what the running containers logged

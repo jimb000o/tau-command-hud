@@ -2178,5 +2178,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-03",
     "html": "White Rabbit Key: Salado’s portrait keeps his whole shirt. Its light pink came so close to the flat colour the portraits are painted on that cutting him out took holes out of the shirt. Whoever wears pink or coral (Salado, Rico) is now painted on green instead, a clear colour that is not the background’s own is never cut away, and every painting is kept as it came, so a better cut later needs no new painting."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-03",
+    "html": "White Rabbit Key: cruise ships call at the island. MS Dry Run comes on Wednesdays at 16:00 German time with 40 passengers, Queen Mempool on Saturdays at 14:00 with 120. The passengers are simulated, and every page that shows them says so; what they do ashore is real: test transactions to the tills of the places they visit, at most 12 a minute and only when the island bot has nothing to send. MS Dry Run’s passengers book dives with the right to withdraw (the money waits in escrow until its time, and a few take it back); Queen Mempool’s tables pay one bill to several places at once. A ship lands only on a calm or busy testnet, goes at half pace while it strains, and leaves at once if it stalls or the node refuses its transactions; a kind of transaction a ship has not used before goes out at most five times on its first visit. Every passenger transaction is in a public logbook for 14 days, and a stall while a ship is in port gets an incident report: what was sent, the newest block, the transaction that waited longest. Testnet load shows the ship, its visit and its passengers’ own line."
   }
 ]

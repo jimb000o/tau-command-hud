@@ -744,7 +744,7 @@ class Cruise:
                           "skipped": v["skipped"], "planned": len(v["acts"]), "trial": v["trial"], "note": v["note"], "why": self.why(v),
                           "kinds": ["pay"] + list((v.get("allowed") or []) if v["landed"] else self.kinds_for(v["ship"])[1]),
                           "brake": "stopped" if v["left"] and v["note"].startswith("left") else "half" if self._verdict[1] == "strained" and v["landed"] else "none"}
-        n = self.next_call(now)
+        n = self.next_call(now) if self.enabled else None   # switched off (CRUISE_ENABLED=0): no ship is announced
         if n:
             out["next"] = {"ship": n[1], "name": SHIPS[n[1]]["name"], "t0": n[0]}
         out["bands"] = [[s["t0"], s["end"], s["name"]] for s in self.visits if s.get("landed") and s["end"] > now - 6 * 3600]

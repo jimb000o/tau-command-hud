@@ -148,6 +148,10 @@ T[0] = WED - 20 * 60
 b = C.brief(T[0])
 check(b["now"]["phase"] == "approach" and b["now"]["name"] == "MS Dry Run" and b["simulated"] is True, "twenty minutes before: MS Dry Run is seen coming, marked simulated")
 check(b["now"]["kinds"] == ["pay", "book"] and b["now"]["why"] == "", "and what its passengers will do: pay, and book (its first trial)")
+OFF = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s0"), "log_path": os.path.join(d, "l0"), "incidents_path": os.path.join(d, "i0")},
+                    clock=clock, enabled=False, verdict=lambda: "calm", background=False)
+check(not OFF.brief(T[0]).get("now") and not OFF.brief(T[0]).get("next") and OFF.brief(T[0])["enabled"] is False,
+      "switched off (CRUISE_ENABLED=0): no ship and none announced")
 run(WED)
 check(not sent, "nothing is sent before the ship lands")
 STATE[0] = "calm"
