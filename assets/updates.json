@@ -2153,5 +2153,10 @@
     "tag": "HUD",
     "on": "2026-11-03",
     "html": "News line: the result of the Taumorrow Chess round is in. The chess engine written in the Tau language won 13, drew 5 and lost 2 of its twenty games against Claude Opus 5.5 on 1 November (chess.taumorrow.com). The line stays until Friday."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-03",
+    "html": "White Rabbit Key: the island map follows the painting. Hovering a place lights its exact outline, and only that outline answers a click. The circle that opens a place now opens on the place itself, for example at Ama’s house or at Radio Coco’s door. The waterfall falls straight down its painted course, in strands at their own pace, with mist at its foot and rings in the pool. The Market Square sits where the Parasol Café’s umbrella stands."
   }
 ]

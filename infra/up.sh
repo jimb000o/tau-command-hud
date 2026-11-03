@@ -54,7 +54,7 @@ try:
     path = "/opt/sites/rico/art/index.json"; idx = json.load(open(path)); lay = json.load(open("rabbit-art/plates/island-22.json"))
     old = idx.get("layout") or {}
     if set((old.get("places") or {})) == set(lay["places"]) and old != lay:
-        idx["layout"] = lay; json.dump(idx, open(path, "w"), indent=1); print("island:  places updated from the repo (names, click areas)")
+        idx["layout"] = lay; json.dump(idx, open(path, "w"), indent=1); print("island:  places updated from the repo (names, click areas, outlines)")
 except Exception as e:
     print(f"island:  places not checked ({e})")
 PY
