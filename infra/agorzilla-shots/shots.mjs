@@ -5,7 +5,8 @@
    (alerts/agorzilla.py) puts the two side by side; agorzilla.com serves them under /evenings/.
    It reads chain/latest.json every SHOTS_SECONDS (default 2 min) and pictures every evening listed there that it has not
    pictured yet, so a fresh start also fills in the last seven. When the page itself changes (its ?v= version), every
-   evening it has pictured is pictured again, so the album always shows how the page draws it now. Nothing is posted from here.
+   evening it has pictured is pictured again, so the album always shows how the page draws it now. A rule evening (latest.json
+   "kind": "rule", the feeders voted on a rule of the game) does not change the look and is not pictured. Nothing is posted from here.
 
    node shots.mjs            the loop
    node shots.mjs --once 3   picture evening 3 now (also when it has a picture already) and stop */
@@ -73,7 +74,8 @@ async function remember(n, files) {
 
 async function pass(force) {
   const l = await latest(), v = await look(), had = new Map((await pictured()).map(x => [x.n, x]));
-  const todo = force != null ? [force] : [...new Set([...had.keys(), ...(l.rounds || []).map(r => r.n)])].sort((a, b) => b - a);   // newest first
+  const rule = new Set((l.rounds || []).filter(r => r.kind === "rule").map(r => r.n));   // the look stays the same on a rule evening
+  const todo = force != null ? [force] : [...new Set([...had.keys(), ...(l.rounds || []).map(r => r.n)])].filter(n => !rule.has(n)).sort((a, b) => b - a);   // newest first
   for (const n of todo) {
     const old = had.get(n);
     if (force == null && await exists(join(OUT, `evening-${n}-after.jpg`)) && (!v || (old && old.look === v))) continue;
