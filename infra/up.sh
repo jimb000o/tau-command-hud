@@ -6,6 +6,7 @@
 #              up island     the same, then a new painted island with every room to match (a few minutes, see island.sh)
 #              up room grotto  the same, then that room (or several) painted anew to match the island as it is (2 min each)
 #              up touch canoe-camp  the same, then two versions of the island with those changes, to look at (not live)
+#              up touch beach 28    the same, from island 28 of the drafts instead of the live island
 #              up keep 27 canoe camp  the same, then island 27 live and those rooms painted anew to match it
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
 #                            up bust --recut salado  cuts the kept painting out again, paints nothing
@@ -33,7 +34,8 @@ NOTE=$(mktemp)
 # the node and the relay, then White Rabbit Key's island: the day, the running week and what last week decided
 curl -s https://node.tauhud.com/status > "$NOTE.status" || true
 curl -s https://node.tauhud.com/isle > "$NOTE.isle" || true
-python3 - "$NOTE.status" "$NOTE.isle" <<'PY' | tee -a "$NOTE"
+curl -s https://node.tauhud.com/cruise > "$NOTE.cruise" || true
+python3 - "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" <<'PY' | tee -a "$NOTE"
 import json, sys
 def read(path, what):
     try:
@@ -51,6 +53,26 @@ if s:
     print(f"island:  day {s.get('day')}, {len(s.get('players') or [])} players, week {w.get('id')}: {w.get('campaigns', 0)} campaigns, "
           f"{w.get('finished', 0)} finished, wins {w.get('wins') or {}}")
     print(f"         last week: governor {l.get('governor') or 'none yet'}, laws {l.get('laws') or []}")
+# the cruise ships (relay/cruise.py): in port or the next call, the passengers' wallets, the kinds already used cleanly
+s = read(sys.argv[3], "ships:   ")
+if s:
+    import datetime as dt
+    try:
+        from zoneinfo import ZoneInfo
+        tz, zn = ZoneInfo("Europe/Berlin"), "German time"
+    except Exception:
+        tz, zn = dt.timezone.utc, "UTC"
+    at = lambda t: dt.datetime.fromtimestamp(t, tz).strftime("%a %d.%m. %H:%M")
+    v, n = s.get("now") or {}, s.get("next") or {}
+    wallets = sum(len(x) for x in (s.get("wallets") or {}).values())
+    seats = sum(x.get("passengers", 0) for x in (s.get("ships") or {}).values())
+    tried = [k for k, x in (s.get("tried") or {}).items() if x] or ["none yet"]
+    if not s.get("enabled"):
+        print("ships:   switched off (CRUISE_ENABLED=0 in .env)")
+    else:
+        here = f"{v.get('name')} {v.get('phase')}, {v.get('ashore', 0)} ashore; " if v else ""
+        print(f"ships:   {here}next {n.get('name')} {at(n['t0'])} {zn}" if n else f"ships:   {here}no call ahead")
+        print(f"         {wallets} of {seats} passenger wallets made, kinds tried: {', '.join(tried)}, logbook https://node.tauhud.com/cruise/log")
 PY
 # the channels: may the service post at all? (asks Telegram and X, posts nothing; a refused key or a bot without the
 # right to post is named here, so the channel can never go quiet unnoticed), then what the running containers logged
@@ -81,10 +103,12 @@ if [ "${1:-}" = "room" ] && [ -n "${2:-}" ]; then
   { sh rabbit-art/paint.sh draft $ROOMS --wide --n 1 --look 2 && sh rabbit-art/paint.sh keep $KEEP; } 2>&1 | tee "$V" || true
   { echo "room art:"; if grep -qE 'Traceback|Error|error|No place' "$V"; then grep -E 'Traceback|Error|error|No place' "$V" | tail -3 | sed 's/^/         /'; else echo "         $ROOMS painted anew and live (Ctrl+F5)"; fi; } | tee -a "$NOTE"
 fi
-# small changes to the island as it is, painted twice to choose from: up touch canoe-camp (names in paint.py TOUCH_SETS);
+# small changes to the island as it is (or to draft island N: up touch beach 28), painted twice to choose from
+# (names in paint.py TOUCH_SETS);
 # nothing goes live; then: up keep <number> <rooms to paint anew>, e.g. up keep 27 canoe camp
 if [ "${1:-}" = "touch" ] && [ -n "${2:-}" ]; then
-  sh rabbit-art/paint.sh touch "$2" --n 2 2>&1 | tee "$V" || true
+  FROM=""; [ -n "${3:-}" ] && FROM="--from island=$3"   # up touch beach 28: from island 28 instead of the live one
+  sh rabbit-art/paint.sh touch "$2" $FROM --n 2 2>&1 | tee "$V" || true
   NEW=$(sed -n 's/^ *island=\([0-9][0-9]*\):.*/\1/p' "$V" | tr '\n' ' ')
   { echo "island art:"; if [ -n "$NEW" ]; then echo "         new islands (not live yet): $NEW  look: https://node.tauhud.com/rico/art/drafts/"; else grep -E 'Traceback|Error|error' "$V" | tail -3 | sed 's/^/         /'; fi; } | tee -a "$NOTE"
 fi

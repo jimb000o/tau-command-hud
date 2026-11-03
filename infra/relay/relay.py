@@ -42,10 +42,12 @@ from simprops import SimProps
 from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from slotlease import SlotLease
+from cruise import Cruise
 from island import Island
 from isle import Isle
 from load import Load
 from txsources import TxSources, deja as deja_day
+from walletdays import WalletDays
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
 from visits import OWN_HOSTS, SITES, Visits
@@ -360,6 +362,11 @@ class Relay:
         self.isle = Isle()       # White Rabbit Key: every campaign played today, added up and pushed to every page (isle.py)
         self.load = Load()       # how hard the testnet works, minute by minute: GET /load (load.py)
         self.island.on_tx = lambda: self.load.sent("bot")
+        # White Rabbit Key: cruise ships whose simulated passengers send real test transactions in the bot's free slots (cruise.py)
+        self.cruise = Cruise(verdict=self.load_word, chain=self.chain_view, spend=self.island_spend,
+                             budget=lambda: self.island.today + len(self.island.queue) < self.island.daily // 2)
+        self.cruise.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
+        self.island.idle = self.cruise.step
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
@@ -395,6 +402,7 @@ class Relay:
         self.sources = TxSources()              # which transactions came through this relay, for /api/v1/sources
         self.sources.bots = {pk: c for c, pk in self.island.pk.items()}   # White Rabbit Key's rival moves
         self.sources.purses = {pk: p for p, pk in self.island.ppk.items()}   # and the money it pays the visitors
+        self.sources.passengers = lambda: self.cruise.who   # and the cruise ships' simulated passengers
         self.sources_text, self.sources_at = None, 0.0
         self.uptime = self._load_uptime()       # hourly availability buckets and outages
         self.uptime_text: str | None = None
@@ -403,6 +411,14 @@ class Relay:
         self.health_text: str | None = None
         self.health_at = 0.0
         self._load_chain()
+        # active wallets per day, kept across chain restarts, for /wallets/active (walletdays.py); a cruise ship
+        # module adds its passengers' keys to self.wallets.cruise
+        self.wallets = WalletDays()
+        self.wallets.bots = {k.lower() for k in (*self.sources.bots, *self.sources.purses)}
+        self.wallets.retag()
+        self.wallets.add_blocks(self.ordered_blocks(), self.sources.sent)
+        self.wallets.save(force=True)
+        self.wallets_text, self.wallets_at = None, 0.0
         self.mempool_seen: dict[str, dict] = {}  # tx_hash -> summary, while in the mempool
         self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
         self.stats_text: str | None = None
@@ -425,6 +441,10 @@ class Relay:
         self.summary_data: dict | None = None
         self.summary_at = 0.0
         self.rules_text: str | None = None      # /rules, refreshed by poll_rules
+        # last: the cruise ships' passenger wallets are made in the background; tagged as simulated once known
+        self.cruise.on_ready = self.tag_passengers
+        if self.cruise.ready:
+            self.tag_passengers()
 
     # ---------- polling ----------
     async def poll_loop(self, every: float, fn):
@@ -513,6 +533,8 @@ class Relay:
             rewrite = True
         self._save_chain(None if rewrite else fresh)
         self.note_chain()
+        if self.wallets.add_blocks(fresh, self.sources.sent):   # before a restart can drop them: days only grow
+            self.wallets.save()
         self.stats_text = self.community_text = self.board_text = None
         if len(fresh) > 5:
             log.info("new blocks: %s..%s (%s)", self._height(fresh[0]), self._height(fresh[-1]), len(fresh))
@@ -1047,6 +1069,38 @@ class Relay:
             self._sealed_key = key
             self._sealed = {i for b in self.blocks.values() for i in (b.get("tx_ids") or [])}
         return self._sealed
+
+    def load_snapshot(self) -> dict:
+        """GET /load's numbers (load.py caches them for five seconds)."""
+        return self.load.snapshot([(self._ts(b), len(b.get("transactions") or [])) for b in self.ordered_blocks()],
+                                  getattr(self, "mempool_waiting", len(self.mempool_seen)))
+
+    def load_word(self) -> str | None:
+        """calm / busy / strained / stalled for the cruise ships' brake; None while the relay is still syncing."""
+        return self.load_snapshot().get("state") if "getblocks" in self.updated else None
+
+    def chain_view(self) -> dict:
+        """For a cruise ship's incident report: the newest block the relay holds and the transaction waiting longest."""
+        blocks = self.ordered_blocks()
+        head = blocks[-1] if blocks else {}
+        sealed = self.sealed_ids()
+        waiting = [(h, i) for h, i in self.mempool_seen.items() if h not in sealed]
+        old = min(waiting, key=lambda x: x[1].get("seen") or 0) if waiting else None
+        ts = self._ts(head) if head else None
+        return {"height": self._height(head) if head else None, "block_hash": head.get("block_hash") if head else None,
+                "block_time": ts, "block_age": round(time.time() - ts) if ts else None, "waiting": len(waiting),
+                "oldest_waiting": {"tx_hash": old[0], **{k: old[1].get(k) for k in ("type", "sender", "seen")}} if old else None}
+
+    def tag_passengers(self):
+        """The wallet tags of /stats (a wallets object with retag(), where the relay has one): the cruise ships'
+        passengers are simulated, so they are counted apart from real wallets, from before the first one sends."""
+        w = getattr(self, "wallets", None)
+        if w is not None and hasattr(w, "retag"):
+            w.cruise = {pk.lower() for pk in self.cruise.who}
+            w.retag()
+
+    def island_spend(self):
+        self.island.today += 1   # a passenger's transaction comes out of the island's day budget (ISLAND_DAILY)
 
     @staticmethod
     def _ts(b: dict) -> int | None:
@@ -1925,14 +1979,13 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
-        isl = self.island.route(path) if path == "/island" else self.isle.route(path)
+        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query) if path.startswith("/cruise") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())
         if path == "/load":
             ready = "getblocks" in self.updated
-            body = json.dumps(self.load.snapshot([(self._ts(b), len(b.get("transactions") or [])) for b in self.ordered_blocks()],
-                                                 getattr(self, "mempool_waiting", len(self.mempool_seen))), separators=(",", ":")).encode() if ready else b'{"error":"relay is still syncing with the node"}'
+            body = json.dumps({**self.load_snapshot(), "ship": self.cruise.brief()}, separators=(",", ":")).encode() if ready else b'{"error":"relay is still syncing with the node"}'
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "public, max-age=5")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
@@ -2021,6 +2074,15 @@ class Relay:
                                ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers,
                             json.dumps(self.summary(), separators=(",", ":")).encode())
+        if path == "/wallets/active":   # wallets active over 1 / 7 / 30 / 90 days, across chain restarts (walletdays.py)
+            if self.wallets_text is None or time.monotonic() - self.wallets_at >= 60:
+                self.wallets.save()
+                self.wallets_text = json.dumps(self.wallets.history(), separators=(",", ":"))
+                self.wallets_at = time.monotonic()
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.wallets_text.encode())
         if path == "/api/v1/sources":
             if self.sources_text is None or time.monotonic() - self.sources_at >= 60:
                 self.sources_text = json.dumps(self.sources.by_day(self.ordered_blocks()), separators=(",", ":"))
