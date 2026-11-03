@@ -2173,5 +2173,10 @@
     "tag": "Node",
     "on": "2026-11-03",
     "html": "Node: our node moves to IDNI’s newest testnet software (64ceb40, 3 November). IDNI’s new version checks every transaction’s signature a second time when a block is applied, for every kind of transaction, and that check now runs on a native library that IDNI puts at about 150 times cheaper than before. Two of our own node fixes are now in IDNI’s code and leave our patch list: reading a whole sync reply, and paging header sync until the node is caught up (IDNI issue #78)."
+  },
+  {
+    "tag": "Findings",
+    "on": "2026-11-03",
+    "html": "Findings and Roadmap: IDNI fixed both sync bugs from our report #78 on 29 October, and our node runs that fix since today. Both pages now say so, and Findings counts 5 patches running in our node instead of 7."
   }
 ]
