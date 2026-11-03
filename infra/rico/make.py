@@ -498,27 +498,60 @@ def cmd_say(a):
 
 
 def cmd_openers(a):
-    """New openers to compare, spoken exactly as an opener on air (the shout), each beside the one now on air."""
+    """New openers to compare, spoken exactly as an opener on air (the shout), each beside the one now on air, on a page
+    where each time of day gets a pick and a note, and one button copies the feedback as text. A clip already made is
+    kept (running it again only rebuilds the page and speaks new or changed lines; --again speaks them all anew)."""
     idx, f = index(a.out), load(os.path.join(HERE, "openers.json"), {})
     vid = idx["voices"].get("rico", {}).get("id")
     if not vid:
         sys.exit("Rico has no voice yet.")
-    todo = f.get("try", [])
-    print(f"{len(todo)} openers, about {sum(len(HYPE) + len(spoken(x['text'])) for x in todo)} credits.")
-    rows, groups = [], {"E": "Evening", "M": "Morning", "P": "Afternoon", "N": "Night", "A": "Any time"}
+    todo, made = f.get("try", []), load(os.path.join(a.out, "samples", "openers.json"), {})
+    fresh = lambda x: not getattr(a, "again", False) and made.get(x["id"], x["text"]) == x["text"] and os.path.exists(os.path.join(a.out, "samples", f"opener-{x['id']}.mp3"))
+    new = [x for x in todo if not fresh(x)]
+    print(f"{len(todo)} openers, {len(new)} to speak, about {sum(len(HYPE) + len(spoken(x['text'])) for x in new)} credits.")
+    for x in new:
+        write(os.path.join(a.out, "samples", f"opener-{x['id']}.mp3"), speak(vid, f"{HYPE} {spoken(x['text'])}", LOUD, MODEL))
+        made[x["id"]] = x["text"]
+        write(os.path.join(a.out, "samples", "openers.json"), json.dumps(made, indent=1).encode())
+        print("  made", x["id"])
+    e = html.escape
+    groups = {"E": "Evening, 17 to 22", "M": "Morning, 5 to 11", "P": "Afternoon, 11 to 17", "N": "Night, 22 to 5", "A": "Any time, about one opener in three"}
+    out = []
     for g, name in groups.items():
-        rows.append(f"<h2>{name}</h2>")
-        for t in [f.get("now", {}).get(g)] if f.get("now", {}).get(g) else []:
-            rows.append(f"<li><b>now on air</b><br><small>{html.escape(t)}</small><br><audio controls preload=none src='../{key('rico', t)}.mp3'></audio></li>")
+        now = f.get("now", {}).get(g)
+        out.append(f"<section data-g='{g}'><h2>{e(name)}</h2>")
+        if now:
+            out.append(f"<label class=row><input type=radio name={g} value=keep><span><b>keep</b> now on air<small>{e(now)}</small>"
+                       f"<audio controls preload=none src='../{key('rico', now)}.mp3'></audio></span></label>")
         for x in todo:
-            if x["id"][0] != g:
-                continue
-            fn = f"opener-{x['id']}.mp3"
-            write(os.path.join(a.out, "samples", fn), speak(vid, f"{HYPE} {spoken(x['text'])}", LOUD, MODEL))
-            print("  made", x["id"])
-            rows.append(f"<li><b>{x['id']}</b><br><small>{html.escape(x['text'])}</small><br><audio controls preload=none src='{fn}'></audio></li>")
-    write(os.path.join(a.out, "samples", "openers.html"), page(rows, "Radio Coco: pick the openers", "Write the numbers you like, e.g. E3 M1 P1 N1 A1."))
-    print("Listen: https://node.tauhud.com/rico/samples/openers.html")
+            if x["id"][0] == g:
+                out.append(f"<label class=row><input type=radio name={g} value={x['id']}><span><b>{x['id']}</b><small>{e(x['text'])}</small>"
+                           f"<audio controls preload=none src='opener-{x['id']}.mp3'></audio></span></label>")
+        out.append(f"<label class=row><input type=radio name={g} value=none><span><b>none of these</b> write me new ones</span></label>"
+                   f"<textarea name={g}-note rows=2 placeholder='What to change (optional): e.g. less shouting, shorter, more like M2 but warmer'></textarea></section>")
+    body = "".join(out)
+    doc = ("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Radio Coco openers</title>"
+           "<style>:root{--bg:#0b0b0b;--fg:#e8e8e8;--dim:#9a9a9a;--line:#2a2a2a;--g:#6fdc8c}body{font:16px/1.4 system-ui;background:var(--bg);color:var(--fg);max-width:680px;margin:0 auto;padding:16px}"
+           "h1{font-size:22px;margin:.4em 0}h2{font-size:17px;margin:1.6em 0 .4em;border-top:1px solid var(--line);padding-top:1em}p{color:var(--dim)}"
+           ".row{display:flex;gap:10px;align-items:flex-start;padding:10px 6px;border-radius:8px;cursor:pointer;min-height:44px}.row:hover{background:#151515}"
+           ".row input{accent-color:var(--g);width:20px;height:20px;margin-top:2px;flex:none}.row span{flex:1;min-width:0}.row small{display:block;color:var(--dim);margin:2px 0 6px}"
+           "audio{width:100%;height:36px}textarea{width:100%;box-sizing:border-box;background:#121212;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit}"
+           "button{background:var(--g);color:#000;border:0;border-radius:8px;padding:12px 18px;font:600 16px system-ui;min-height:44px;cursor:pointer}"
+           "#out{white-space:pre-wrap;background:#121212;border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:10px;color:var(--fg)}"
+           ".bar{position:sticky;bottom:0;background:var(--bg);padding:12px 0;border-top:1px solid var(--line);margin-top:24px}</style>"
+           "<h1>Radio Coco: pick the openers</h1><p>Each opener plays after the drum roll and the station horn in the game. Listen, pick one per time of day, "
+           "add a note where something is off, then copy and paste the text into the chat.</p>"
+           f"<form id=f>{body}<h2>Anything else</h2><textarea name=all-note rows=3 placeholder='General feedback (optional)'></textarea></form>"
+           "<div class=bar><button id=copy type=button>Copy my feedback</button><div id=out hidden></div></div>"
+           "<script>const f=document.getElementById('f'),o=document.getElementById('out');"
+           "try{const s=JSON.parse(localStorage.getItem('openers')||'{}');for(const[k,v]of Object.entries(s)){const el=f.elements[k];if(!el)continue;if(el instanceof RadioNodeList)el.value=v;else el.value=v;}}catch(e){}"
+           "f.addEventListener('input',()=>{const s={};for(const el of f.elements){if(el.type==='radio'){if(el.checked)s[el.name]=el.value}else if(el.name)s[el.name]=el.value}try{localStorage.setItem('openers',JSON.stringify(s))}catch(e){}});"
+           "document.getElementById('copy').onclick=async()=>{const L=['Radio Coco openers:'];for(const sec of f.querySelectorAll('section')){const g=sec.dataset.g,h=sec.querySelector('h2').textContent.split(',')[0],"
+           "v=(f.querySelector('input[name='+g+']:checked')||{}).value||'no pick',n=f.elements[g+'-note'].value.trim();L.push(h+': '+v+(n?' ('+n+')':''))}"
+           "const a=f.elements['all-note'].value.trim();if(a)L.push('Other: '+a);const t=L.join('\\n');o.hidden=false;o.textContent=t;"
+           "try{await navigator.clipboard.writeText(t);document.getElementById('copy').textContent='Copied, paste it in the chat'}catch(e){document.getElementById('copy').textContent='Select the text below and copy it'}};</script>")
+    write(os.path.join(a.out, "samples", "openers.html"), doc.encode())
+    print("Listen and pick: https://node.tauhud.com/rico/samples/openers.html")
 
 
 def cmd_make(a):
@@ -588,7 +621,8 @@ def main():
     s.add_argument("names", nargs="*")
     s.add_argument("--max", type=int, default=12)
     sub.add_parser("lines")
-    sub.add_parser("openers")
+    op = sub.add_parser("openers")
+    op.add_argument("--again", action="store_true", help="speak every opener anew, not only the new or changed ones")
     sub.add_parser("say")
     d = sub.add_parser("design")
     d.add_argument("who", nargs="*", default=["all"], help="all, or the islanders to design, e.g. lola sam")
