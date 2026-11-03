@@ -705,6 +705,11 @@ STREET = [t("My ma read it twice. She says she still don't get the blockchain pa
 # Taumorrow chess rounds (chess.taumorrow.com, an independent community project: a chess engine written in Tau, not on the testnet
 # chain). The result is read from the public records (alerts.py chess_result) once they are out; until then the café says it is not in.
 CHESS_ROUNDS = [{"date": "2026-11-01", "opponent": "Claude Opus 5.5", "start": datetime(2026, 11, 1, 12, tzinfo=timezone.utc).timestamp(), "games": 20,
+                 # the final page on chess.taumorrow.com (games P11-P30), 3 Nov; the records repo has no folder for this round yet
+                 "result": {"date": "2026-11-01", "played": 20, "engine": 13, "model": 2, "draws": 5},
+                 "tail": t("The last game went to Opus, by checkmate. Whether that was a parting shot or good manners, the records do not say.",
+                           "最后一盘归了 Opus，将死。这是临别一击还是礼貌，记录里没写。",
+                           "最終局は Opus がチェックメイトで取った。置き土産か礼儀か、記録には書いていない。"),
                  "last": t("Last time, against Claude Sonnet 5.5, the engine won nine of ten, every one by checkmate.",
                            "上一次对 Claude Sonnet 5.5，引擎十盘赢了九盘，盘盘都是将死。",
                            "前回、Claude Sonnet 5.5 との対戦では、エンジンが十局中九局を勝った。どれもチェックメイトだった。")}]
@@ -728,12 +733,14 @@ def chess_round(end: float, found: dict | None = None) -> dict | None:
     if not c:
         return None
     c = dict(c)
+    if not (found and found.get("date") == c["date"]):
+        found = c.get("result")
     if found and found.get("date") == c["date"]:
         c.update({k: found[k] for k in ("played", "engine", "model", "draws") if k in found})
         c["done"] = int(c.get("played") or 0) >= c["games"]
     return c
 
-CAFE_V = 5   # raise when the talk is written differently: the edition already out is rewritten once
+CAFE_V = 6   # raise when the talk is written differently: the edition already out is rewritten once
 
 
 def chess_talk(c: dict | None, end: float) -> list[dict] | None:
@@ -765,7 +772,8 @@ def chess_talk(c: dict | None, end: float) -> list[dict] | None:
         head = t(f"A chess engine written in Tau is playing {word(g)['en']} games against {opp}. {word(played, True)['en']} done so far: {e} to {m}{dr['en']}. I have put my own board aside to watch.",
                  f"一个用 Tau 写的国际象棋引擎正在和 {opp} 下{word(g)['zh']}盘。目前下完{word(played)['zh']}盘：{e} 比 {m}{dr['zh']}。我把自己的棋盘放到一边看着。",
                  f"Tau で書かれたチェスエンジンが {opp} と {g} 局を指している。ここまで {played} 局で {e} 対 {m}{dr['ja']}。私は自分の盤をわきに置いて見ている。")
-    return [head] + ([c["last"]] if c.get("last") and not played else []) + [
+    return [head] + ([c["last"]] if c.get("last") and not played else []) + \
+        ([c["tail"]] if c.get("tail") and played >= g else []) + [
             t("The mastermind is Logix, the mind behind Taumorrow: an independent project, not something on the testnet chain. What I like: it is built on Tau, the same language the testnet writes its rules in. My hat is off to Logix.",
               "幕后主谋是 Logix，Taumorrow 背后的那个头脑：一个独立项目，不是测试网链上的东西。我喜欢的是：它建立在 Tau 之上，测试网的规则也是用这门语言写的。我向 Logix 脱帽致敬。",
               "黒幕は Logix、Taumorrow の頭脳だ。独立したプロジェクトで、テストネットのチェーンの上のものではない。私が気に入っているのは、テストネットがルールを書くのと同じ Tau という言語の上に作られていることだ。Logix には脱帽だよ。"),

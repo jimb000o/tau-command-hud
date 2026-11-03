@@ -233,7 +233,7 @@ idx_md = "| Game | White |\n|---|---|\n" + "".join(f"| [P{i:02d}](P{i:02d}.md) |
 check(gazette.chess_score(idx_md) == {"played": 10, "engine": 9, "model": 0, "draws": 1} and gazette.chess_score("| [P01](P01.md) | x |") is None, "a round's score from its index, with draws; none before the footer is out")
 R = gazette.CHESS_ROUNDS[0]
 check(gazette.chess_round(R["start"] + 12 * 3600)["opponent"] == "Claude Opus 5.5" and not gazette.chess_round(R["start"] + 30 * 86400), "the round of the week is found by its date")
-cr = gazette.chess_round(R["start"] + 12 * 3600)
+cr = {k: v for k, v in R.items() if k not in ("result", "tail")}
 c6 = gazette.cafe(week(end=R["start"] + 12 * 3600), [], [], 4, e2["banner"], e2["teaser"], cr)
 check("The result is not in yet; it will be on chess.taumorrow.com" in c6["prof"]["greet"]["en"] and "On Sunday" in c6["prof"]["greet"]["en"] and "nine of ten" in json.dumps(c6["prof"]), "before the records are out: the round, where the result will be, and last time's score")
 calls = []
@@ -241,6 +241,8 @@ w.chess_result, w.gazette_cafe = (lambda date: {"date": date, "played": 20, "eng
 w.state.pop("chess", None); w.state["gazette"].pop("chess_tried", None)
 w.maybe_chess(R["start"] + 11 * 3600)
 w.maybe_chess(R["start"] + 13 * 3600)
+cf = gazette.cafe(week(end=R["start"] + 12 * 3600), [], [], 4, e2["banner"], e2["teaser"], gazette.chess_round(R["start"] + 12 * 3600))
+check("played twenty games against Claude Opus 5.5. It won thirteen, lost two, drew five." in cf["prof"]["greet"]["en"] and "The last game went to Opus" in json.dumps(cf["prof"]), "the final page's result is known without the records")
 check(w.state["chess"]["engine"] == 17 and calls == [1] and gazette.chess_round(R["start"] + 12 * 3600, w.state["chess"])["done"], "the result is read once, and the café is told again")
 
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
