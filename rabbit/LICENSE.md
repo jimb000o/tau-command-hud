@@ -13,7 +13,7 @@ The creative content of the game is licensed under [Creative Commons Attribution
 - the story, dialogue, radio lines, call-ins, laws and all other game text, in every language (`rabbit/*.js`, `rabbit/cast.json`, `assets/i18n/*/rabbit.js`)
 - the characters: their names, looks, personalities and voices (`rabbit/cast.json`, `rabbit/voices.json`)
 - the island, its places and the creatures that live there
-- all artwork, including the paintings and busts served from node.tauhud.com/rico/art/ and `assets/rabbit-key.webp`
+- all artwork, including the paintings and busts served from node.tauhud.com/rico/art/, `rabbit/art/` and `assets/rabbit-key.webp`
 - the music and the voice recordings served from node.tauhud.com/rico/
 
 In short: you may share this content unchanged, for non-commercial purposes, with credit to "White Rabbit Key, tauhud.com". You may not sell it, use it commercially, or publish changed versions.
