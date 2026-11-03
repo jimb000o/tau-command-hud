@@ -47,6 +47,7 @@ from island import Island
 from isle import Isle
 from load import Load
 from txsources import TxSources, deja as deja_day
+from walletdays import WalletDays
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
 from visits import OWN_HOSTS, SITES, Visits
@@ -410,6 +411,14 @@ class Relay:
         self.health_text: str | None = None
         self.health_at = 0.0
         self._load_chain()
+        # active wallets per day, kept across chain restarts, for /wallets/active (walletdays.py); a cruise ship
+        # module adds its passengers' keys to self.wallets.cruise
+        self.wallets = WalletDays()
+        self.wallets.bots = {k.lower() for k in (*self.sources.bots, *self.sources.purses)}
+        self.wallets.retag()
+        self.wallets.add_blocks(self.ordered_blocks(), self.sources.sent)
+        self.wallets.save(force=True)
+        self.wallets_text, self.wallets_at = None, 0.0
         self.mempool_seen: dict[str, dict] = {}  # tx_hash -> summary, while in the mempool
         self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
         self.stats_text: str | None = None
@@ -524,6 +533,8 @@ class Relay:
             rewrite = True
         self._save_chain(None if rewrite else fresh)
         self.note_chain()
+        if self.wallets.add_blocks(fresh, self.sources.sent):   # before a restart can drop them: days only grow
+            self.wallets.save()
         self.stats_text = self.community_text = self.board_text = None
         if len(fresh) > 5:
             log.info("new blocks: %s..%s (%s)", self._height(fresh[0]), self._height(fresh[-1]), len(fresh))
@@ -2063,6 +2074,15 @@ class Relay:
                                ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers,
                             json.dumps(self.summary(), separators=(",", ":")).encode())
+        if path == "/wallets/active":   # wallets active over 1 / 7 / 30 / 90 days, across chain restarts (walletdays.py)
+            if self.wallets_text is None or time.monotonic() - self.wallets_at >= 60:
+                self.wallets.save()
+                self.wallets_text = json.dumps(self.wallets.history(), separators=(",", ":"))
+                self.wallets_at = time.monotonic()
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.wallets_text.encode())
         if path == "/api/v1/sources":
             if self.sources_text is None or time.monotonic() - self.sources_at >= 60:
                 self.sources_text = json.dumps(self.sources.by_day(self.ordered_blocks()), separators=(",", ":"))

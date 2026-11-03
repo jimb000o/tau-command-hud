@@ -22,6 +22,7 @@ TauI18n.add({ strings: {
   "Block number, transaction hash or address: opens the Explorer with the result. Ctrl+K or ⌘K focuses this field.": "区块号、交易哈希或地址：在区块浏览器中打开结果。Ctrl+K 或 ⌘K 聚焦此输入框。",
   "Block pace, transactions, validators and rule changes over the whole chain": "整条链上的出块节奏、交易、验证者和规则变更",
   "Testnet load": "测试网负载",
+  "Testnet stats": "测试网统计",
   "How hard the testnet is working right now: sealed, waiting, time to a block": "测试网此刻有多忙：已封装、等待中、进入区块所需时间",
   "Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Opens the full notice.": "由 Tau 社区成员制作，并非 IDNI 或 Tau 团队出品。不保证准确。打开完整声明。",
   "Chain state": "链状态",
