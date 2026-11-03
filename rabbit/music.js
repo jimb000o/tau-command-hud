@@ -430,10 +430,10 @@
   async function speak(bufs, o = {}) {
     if (!S.ctx || !S.on) return false;
     const c = S.ctx, list = [];
-    // a clip is an ArrayBuffer, or { b, tel } for a caller heard through the telephone
+    // a clip is an ArrayBuffer, or { b, tel, who } for a caller heard through the telephone
     /* the callback form as well: older WebKit (iPhones before iOS 14.1) never resolves the promise form */
     const decode = b => new Promise((ok, no) => { try { const p = c.decodeAudioData(b, ok, no); if (p && p.then) p.then(ok, no); } catch (e) { no(e); } });
-    for (const b of bufs) { try { list.push({ buf: await decode(b.b || b), tel: !!b.tel }); } catch (e) { S.why = "decode"; return false; } }
+    for (const b of bufs) { try { list.push({ buf: await decode(b.b || b), tel: !!b.tel, who: b.who }); } catch (e) { S.why = "decode"; return false; } }
     if (c.state !== "running") { try { await c.resume(); } catch (e) {} }
     if (!S.voice) {
       const hp = c.createBiquadFilter(), pk = c.createBiquadFilter(), g = c.createGain(), comp = c.createDynamicsCompressor();
@@ -451,7 +451,17 @@
       hi.type = "highpass"; hi.frequency.value = 320; lo.type = "lowpass"; lo.frequency.value = 3200; drive.curve = curve;
       hi.connect(lo); lo.connect(drive); drive.connect(S.voice); S.tel = hi;
     }
-    for (const { buf, tel } of list) { const n = c.createBufferSource(); n.buffer = buf; n.connect(tel ? S.tel : S.voice); n.start(at); S.talking.push(n); at += buf.duration + (tel ? 0.45 : 0.18); }
+    /* each clip goes through a meter on its way out, so a face can open its mouth when the voice is loud and shut it in
+       the pauses (lip()); a clip remembers whose voice it is and when it plays */
+    if (!S.meter) S.meter = { voice: meter(c, S.voice), tel: null, clips: [], peak: {} };
+    if (list.some(x => x.tel) && !S.meter.tel) S.meter.tel = meter(c, S.tel);
+    const said = [];
+    for (const { buf, tel, who } of list) {
+      const n = c.createBufferSource(); n.buffer = buf; n.connect(tel ? S.meter.tel.node : S.meter.voice.node); n.start(at); S.talking.push(n);
+      said.push({ who: tel ? who || "" : o.who || "", bus: tel ? "tel" : "voice", a: at, b: at + buf.duration });
+      at += buf.duration + (tel ? 0.45 : 0.18);
+    }
+    S.meter.clips = onAir ? S.meter.clips.filter(k => k.b > c.currentTime).concat(said) : said;   // the ones stopped above are gone
     if (o.air) S.airEnd = at;
     S.duck = true; apply();
     const mine = S.talking;
@@ -459,14 +469,48 @@
     setTimeout(() => { if (S.talking === mine) { S.duck = false; S.talking = null; apply(); } }, secs * 1000);
     return secs;
   }
+  /* a meter: an analyser in front of a bus */
+  function meter(c, bus) {
+    const a = c.createAnalyser(); a.fftSize = 1024; a.smoothingTimeConstant = 0; a.connect(bus);
+    return { node: a, data: new Uint8Array(a.fftSize), at: -1, rms: 0 };
+  }
+  function loud(m, now) {   // how loud the bus is right now (once per frame)
+    if (m.at === now) return m.rms;
+    m.node.getByteTimeDomainData(m.data); let e = 0;
+    for (let i = 0; i < m.data.length; i++) { const v = (m.data[i] - 128) / 128; e += v * v; }
+    m.at = now; return (m.rms = Math.sqrt(e / m.data.length));
+  }
+  /* how far someone's mouth is open, 0 (shut) to 1, from their own voice as it is heard: null when no clip of theirs
+     is playing or waiting, so the face falls back to its drawn talking; 0 between clips, before the first, and in
+     every pause inside a clip */
+  const LIP = {};
+  function lip(id) {
+    const M = S.meter, c = S.ctx;
+    if (!c || !id) return null;
+    const now = c.currentTime - (c.outputLatency || c.baseLatency || 0);   // what the ear hears now, not what was just sent
+    const mine = M ? M.clips.filter(k => k.who === id && k.b > now - 0.05) : [];
+    if (!mine.length) return S.expect && S.expect.has(id) ? 0 : null;   // a clip on its way: shut until it plays
+    const k = mine.find(k => k.a <= now && now < k.b), L = LIP[id] || (LIP[id] = { v: 0, t: 0 });
+    let want = 0;
+    if (k && M[k.bus]) {
+      const r = loud(M[k.bus], c.currentTime), p = M.peak[id] = Math.max(0.04, r, (M.peak[id] || 0.12) * 0.997);   // each voice against its own loudest
+      want = Math.max(0, Math.min(1, (r / p - 0.1) / 0.6));
+    }
+    const dt = Math.min(0.1, Math.max(0, c.currentTime - L.t)); L.t = c.currentTime;
+    L.v += (want - L.v) * Math.min(1, dt * (want > L.v ? 40 : 22));   // opens fast, shuts a little slower
+    return L.v;
+  }
+  /* a line in someone's voice is being fetched: their mouth stays shut until it plays */
+  function expect(id, on) { S.expect = S.expect || new Set(); if (on) S.expect.add(id); else S.expect.delete(id); }
   /* whoever is talking stops (a card closed) */
   function hush() {
     if (S.ctx && S.ctx.currentTime < (S.airEnd || 0)) return;   // a line on air finishes
+    if (S.meter) S.meter.clips = [];
     if (S.talking) S.talking.forEach(n => { try { n.stop(); } catch (e) {} });
     S.talking = null; if (S.duck) { S.duck = false; apply(); }
   }
   window.COVE_SOUND = {
-    start, sfx, speak, hush,
+    start, sfx, speak, hush, lip, expect,
     /* on: the music is really playing (a browser lets it start only after the first click, tap or key) */
     get on() { return S.on && !!S.ctx && S.ctx.state === "running"; }, get talking() { return !!S.talking; }, get wanted() { return S.want; },
     get state() { return S.ctx ? S.ctx.state : "none"; },
@@ -477,7 +521,7 @@
     /* remember: the choice is kept for this tab (the game's own buttons); the site's radio passes false, its switch is its own */
     toggle(remember = true) {
       S.want = !S.want; if (remember) try { sessionStorage.setItem(MEM, S.want ? "on" : "off"); } catch (e) {}
-      if (S.want) start(); else { S.on = false; if (S.talking) S.talking.forEach(n => { try { n.stop(); } catch (e) {} }); S.talking = null; S.duck = false; apply(); }
+      if (S.want) start(); else { S.on = false; if (S.talking) S.talking.forEach(n => { try { n.stop(); } catch (e) {} }); S.talking = null; if (S.meter) S.meter.clips = []; S.duck = false; apply(); }
       return S.want;
     },
   };

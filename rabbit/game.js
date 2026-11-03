@@ -163,11 +163,16 @@
      moves while it talks (the -talk and -blink frames, laid over the still picture where they differ) */
   const bustOf = id => !/[?&]art=drawn/.test(location.search) && SC.art && SC.art.img["bust-" + id];
   const MOUTH = {};
+  /* how open the mouth is while they talk: from their voice as it is heard (shut in its pauses), or, with no clip
+     playing (sound off, a line not voiced yet), null and the face makes its own syllables */
+  const lip = (id, talk) => (talk && SND && SND.lip ? SND.lip(id) : null);
   function frame(id, t, talk) {
     const img = SC.art.img, k = "bust-" + id;
-    if (talk && img[k + "-talk"]) {   // open and shut in syllables of uneven length
-      const m = MOUTH[id] || (MOUTH[id] = { at: 0, open: false });
-      if (t >= m.at) { m.open = !m.open; m.at = t + (m.open ? 90 + Math.random() * 110 : 60 + Math.random() * 90); }
+    if (talk && img[k + "-talk"]) {
+      const m = MOUTH[id] || (MOUTH[id] = { at: 0, open: false }), v = lip(id, talk);
+      if (v != null) {   // open on the loud part of a syllable, shut in the gaps; held a few frames so it does not flicker
+        if (t >= m.at && (m.open ? v < 0.22 : v > 0.38)) { m.open = !m.open; m.at = t + (m.open ? 70 : 50); }
+      } else if (t >= m.at) { m.open = !m.open; m.at = t + (m.open ? 90 + Math.random() * 110 : 60 + Math.random() * 90); }   // syllables of uneven length
       if (m.open) return k + "-talk";
     }
     if (img[k + "-blink"] && (t + id.length * 997) % 4200 < 130) return k + "-blink";
@@ -268,7 +273,7 @@
     else { g.moveTo(cx + 1, ny - 3); g.lineTo(cx + 3, ny + 8); g.lineTo(cx - 2, ny + 9); }
     g.stroke();
     /* the mouth: an ink line when quiet, open and moving while the line is said */
-    const my = cy + hh * 0.62, open = talk ? Math.abs(Math.sin(t * 0.025)) * 3.6 + Math.abs(Math.sin(t * 0.011)) * 2 : 0, mw = 7 + (id === "baako" || id === "rico" ? 2 : 0);
+    const my = cy + hh * 0.62, v = lip(id, talk), open = !talk ? 0 : v != null ? v * 5.6 : Math.abs(Math.sin(t * 0.025)) * 3.6 + Math.abs(Math.sin(t * 0.011)) * 2, mw = 7 + (id === "baako" || id === "rico" ? 2 : 0);
     if (open > 0.6) { g.fillStyle = "#5a1f22"; g.beginPath(); g.moveTo(cx - mw, my); g.quadraticCurveTo(cx, my - 1.5, cx + mw, my); g.quadraticCurveTo(cx, my + open * 2, cx - mw, my); g.fill(); ink(1.8); g.fillStyle = "#e2674f"; g.beginPath(); g.ellipse(cx, my + open * 0.9, mw * 0.45, open * 0.45, 0, 0, Math.PI); g.fill(); }
     else { g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(cx - mw, my - mood); g.quadraticCurveTo(cx, my + 3.4 + mood * 3, cx + mw, my - mood); g.stroke(); g.lineWidth = 1.2; g.beginPath(); g.moveTo(cx + mw + 1, my - 2 - mood); g.lineTo(cx + mw - 1, my + 1); g.stroke(); }
     accessories(g, id, L, cx, cy, hw, hh, t, ink);
@@ -484,6 +489,8 @@
     return ["market", T("The square again: people forget what they are not reminded of.")];
   }
   function openCard(place, build) {
+    /* a new card interrupts whoever is talking on the old one (a line on air still finishes): the next one may have no clip of their own */
+    if (performance.now() > UI.airUntil) { SND.hush(); if (RICO.stop) RICO.stop(); }
     closeCard(true);
     UI.at = place || null;
     if (G && place) { G.seen = G.seen || {}; if (!G.seen[place]) { G.seen[place] = 1; save(); } setTimeout(locks, 0); }
@@ -630,11 +637,26 @@
     if (line) {
       box.append(box._line = el("p", { class: "cv-line", text: line })); say(f, Math.min(4200, 600 + line.length * 38));
       const air = UI.air;
-      RICO.speak(parts, who, { air }).then(secs => { if (secs && air) UI.airUntil = performance.now() + secs * 1000; if (secs && UI.card === box) { say(f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
+      talks(box, parts, who, { air }).then(secs => { if (secs && air) UI.airUntil = performance.now() + secs * 1000; if (secs && UI.card === box) { say(f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
     }
     if (extra) box.append(extra);
     if (acts) box.append(el("div", { class: "cv-acts" }, acts));
     return f;
+  }
+  /* how long the one in front of you is still talking: to the end of their clip when it plays, else for as long as
+     it takes to read the line. Whatever closes a card by itself (the night after the last move) waits for it */
+  const readMs = s => Math.min(8000, 1500 + s.length * 40);
+  function talks(box, parts, who, o) {
+    box._talkEnd = performance.now() + readMs(join(parts));
+    const w = box._talkWait = RICO.speak(parts, who, Object.assign({ still: () => UI.card === box || (o && o.air) }, o)).then(secs => { if (secs) box._talkEnd = performance.now() + secs * 1000; return secs; }, () => false);
+    w.then(() => { if (box._talkWait === w) box._talkWait = null; });
+    return w;
+  }
+  function whenQuiet(fn, t0 = performance.now()) {
+    const b = UI.card, now = performance.now();
+    if (b && b._talkWait && now - t0 < 6000) return setTimeout(() => whenQuiet(fn, t0), 250);   // the clip is still on its way
+    if (b && b._talkEnd > now) return setTimeout(() => whenQuiet(fn, t0), b._talkEnd - now + 500);   // a question asked meanwhile is waited for too
+    fn();
   }
   /* ---------- talking: what someone says when you come back, and what they answer when you ask (talk.js) ----------
      Asking is free: no move, nothing in the Book. What you have heard is kept with the game, so they do not repeat themselves. */
@@ -691,7 +713,7 @@
     you.textContent = "“" + T(a.q) + "”";
     const parts = [S(s)], line = join(parts);
     box._line.textContent = line; say(box._f, Math.min(5200, 600 + line.length * 38));
-    RICO.speak(parts, who).then(secs => { if (secs && UI.card === box) { say(box._f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
+    talks(box, parts, who).then(secs => { if (secs && UI.card === box) { say(box._f, secs * 1000); DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 20000); } }, () => {});
   }
   const btn = (text, on, o = {}) => el("button", { type: "button", class: "cv-b" + (o.go ? " go" : "") + (o.warn ? " warn" : "") + (o.ask ? " ask" : ""), disabled: o.off || null, title: o.tip || null, onclick: e => { SND.sfx("tap"); on(e); } }, el("span", { text }), o.sub ? el("small", { text: o.sub }) : null);
   const did = k => { G.did = G.did || {}; G.did[k] = 1; };
@@ -701,7 +723,7 @@
   /* a move is spent: the sun goes on, and after the evening the night comes */
   function spend() {
     useMove(); save(); hud();
-    if (G.move >= MOVES) setTimeout(() => { closeCard(); endDay(); }, 900);
+    if (G.move >= MOVES) setTimeout(() => whenQuiet(() => { closeCard(); endDay(); }), 900);   // what they answer is heard to its end before the night
   }
   /* small treats that cost coins, not a move, and do something real: a tip for Lola, a round of coffee on the square,
      exercise books for Hana's class. Once a day each; paid as a real transaction to the place's till, like every line in the Book */
@@ -1645,12 +1667,15 @@
     if (set === "call" && Math.random() < 0.88) { const p = phoneIn(); if (p) { ROT.callLast = true; return p; } return one("joke"); }   // otherwise a letter from a listener, read out by Rico
     return one(set);
   }
-  readChain(); setInterval(() => { if (!document.hidden) readChain(); }, 90000);
-  dejaFetch(); setInterval(() => { if (!document.hidden) dejaFetch(); }, 600000);
-  srcFetch(); setInterval(() => { if (!document.hidden) srcFetch(); }, 600000);
+  /* a tab in the background stays quiet, unless the sound is on: then Radio Coco goes on, like a radio left on in the
+     next room, and Rico keeps reading the chain so what he says is still news (a tab playing sound is not slowed down) */
+  const away = () => document.hidden && !SND.on;
+  readChain(); setInterval(() => { if (!away()) readChain(); }, 90000);
+  dejaFetch(); setInterval(() => { if (!away()) dejaFetch(); }, 600000);
+  srcFetch(); setInterval(() => { if (!away()) srcFetch(); }, 600000);
   if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine };   // the headless check (tests)
   setInterval(() => {
-    if (!G || G.over || G.counting || document.hidden || performance.now() < DJ.next) return;
+    if (!G || G.over || G.counting || away() || performance.now() < DJ.next) return;
     /* the show waits for the sound to come on (the first tap), so the opener is heard, not just read; after a while it goes on in text */
     if (ROT.n === 0 && !SND.on && performance.now() < 90000) return;
     if (DJ.opened && DJ.after) { const a = DJ.after; DJ.after = null; onAir(a, 1); return; }
@@ -2185,11 +2210,11 @@
     SC.setHour(0, true); hud();
     openCard(null, box => {
       box.classList.add("intro");
-      box.append(el("p", { class: "kick", text: T("An island election on Sunday") }), el("h2", { text: T("White Rabbit Key") }),
-        el("p", { class: "cv-line", text: T("Four candidates want to govern the island. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") }));
+      box.append(el("p", { class: "kick", text: T("Sunday night the island elects a governor") }), el("h2", { text: T("White Rabbit Key") }),
+        el("p", { class: "cv-line", text: T("Four islanders stand for governor, and you are one of them. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") }));
       const pick = el("div", { class: "cv-pick" });
       Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", onclick: () => begin(c) }, portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96), el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) }))));
-      box.append(el("p", { class: "cv-h", text: T("Play as") }), pick);
+      box.append(el("p", { class: "cv-h", text: T("Which candidate are you?") }), pick);
       const td = todayIdx();
       box.append(el("p", { class: "cv-note" }, el("b", { text: T("Your campaign:") }), " ", T("this week, Monday to Sunday. An island day is a real day: three moves, a few minutes. Sunday evening the islanders vote."), " ",
         td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: play Monday to {x} now, then a day a day.", { x: dayName(td) }),
@@ -2207,8 +2232,23 @@
     news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."), RICO.L.bkWeek);
     isleRule();
     closeCard(); hud();
-    toast(T("Tap a place on the island to begin."));
-    dragHint();
+    welcome();
+  }
+  /* the first scene of a campaign: Old Sam writes your name into the Book, and says what you stand for and when the island votes */
+  const WELCOME = {
+    marisol: "So it is true, Marisol: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You hear everything first at your café. This week the island hears about you. Every move you make goes into this Book.",
+    tobias: "So it is true, Tobias: the harbour master wants to be governor. Your name is on the list, in my own hand. Four candidates, one chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. The embassies know you already. The island will know you by what goes into this Book.",
+    baako: "So it is true, Baako: your name is on the list, in my own hand. You count everything, so count this: four candidates, one governor’s chair under the council tree, ten islanders who vote on Sunday night. Every move you make goes into this Book, and I count too.",
+    hana: "So it is true, Hana: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You write everything down, so you know how this works. Laws are made in the Council Hall. Everything else is written here.",
+  };
+  function welcome() {
+    const go = () => { closeCard(); toast(T("Tap a place on the island to begin.")); dragHint(); };
+    openCard("book", box => {
+      box.classList.add("welcome");
+      scene(box, "sam", T("Your name in the Book"), T(WELCOME[G.me]), [btn(T("Walk onto the island"), go, { go: true })],
+        el("p", { class: "cv-note" }, el("b", { text: T("You:") }), " ", F("{x}, candidate for governor. Ten islanders vote on Sunday night; win more of them than the other three.", { x: nm(G.me) })));
+      box.querySelector(".cv-x").onclick = go;
+    });
   }
   function help() {
     openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
@@ -2328,7 +2368,7 @@
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     $("cvIsle").onclick = () => { wake(); openIsle(); };
     if ($("cvBell")) { $("cvBell").onclick = () => { wake(); answerBell(); }; bellChip(); setInterval(bellChip, 5000); }
-    if ($("cvShip")) { $("cvShip").onclick = () => { wake(); shipCard(); }; shipFetch(); setInterval(() => { if (!document.hidden) shipFetch(); }, 60000); }
+    if ($("cvShip")) { $("cvShip").onclick = () => { wake(); shipCard(); }; shipFetch(); setInterval(() => { if (!document.hidden || SND.on) shipFetch(); }, 60000); }
     isleJoin();
     const sb = $("cvSound");
     const showSound = () => { const l = SND.on ? T("Sound on") : SND.wanted ? T("Tap for sound") : T("Sound off"); sb.replaceChildren("♪", el("span", { class: "lb", text: " " + l })); sb.setAttribute("aria-label", l); sb.classList.toggle("off", !SND.wanted); sb.setAttribute("aria-pressed", SND.on ? "true" : "false"); };

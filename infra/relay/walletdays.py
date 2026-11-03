@@ -26,6 +26,11 @@ GET /wallets/active
   new        {"YYYY-MM-DD": [n per tag]} wallets active for the first time that day (since recording began)
   totals     [n per tag] different wallets ever recorded
   since      first recorded day: a window reaching back before it only counts what was recorded
+
+GET /wallets/tags
+  tags       {pubkey: tag} for the wallets whose tag comes from the public blocks or from our own server wallets:
+             idni, bot, cruise, rabbit, agorzilla (tauhud.com's chain core marks their transactions, assets/origins.js).
+             "tauhud" stays out: it comes from the relay's own note of what it sent, which is only ever shown as totals.
 Only counts leave the relay. The file keeps sender keys per day; they are public in the blocks anyway.
 """
 from __future__ import annotations
@@ -42,6 +47,7 @@ log = logging.getLogger("relay.walletdays")
 
 TAGS = ("idni", "bot", "cruise", "rabbit", "agorzilla", "tauhud", "other")
 RANK = {t: i for i, t in enumerate(TAGS)}
+PUBLIC = ("idni", "bot", "cruise", "rabbit", "agorzilla")   # tags anyone could read off the blocks, or our own wallets
 WINDOWS = (1, 7, 30, 90)
 KEEP_DAYS = 400
 SAVE_SECONDS = 60
@@ -141,6 +147,10 @@ class WalletDays:
             if k is not None and RANK[t] < RANK[self.tag[k]]:
                 self.tag[k] = t
                 self.dirty = True
+
+    def known(self) -> dict:
+        """{pubkey: tag} for the public tags (PUBLIC), for GET /wallets/tags."""
+        return {k: t for k, t in zip(self.keys, self.tag) if t in PUBLIC}
 
     def save(self, now: float | None = None, force: bool = False):
         now = time.time() if now is None else now
