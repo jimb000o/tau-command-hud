@@ -168,13 +168,23 @@
         { q: "Is Agorzilla stealing your coconuts?", a: [["", "Never a coconut. Only bananas. A creature with standards. I leave one banana by the gate on Fridays now. Good relations with the neighbours."]] },
       ],
     },
+    /* Noor only meets you when you play Baako: she runs his Works while he campaigns, and she talks to her boss */
     noor: {
       back: [
-        ["last", "Last day of the campaign, and the boss is out shaking hands. Somebody has to keep the bicycles turning."],
-        ["", "Back again? Good. Shifts are short, the pay is honest, and the organ is still off limits."],
+        ["deal", "You took an embassy envelope, boss. Forty farmers will ask where it went, and the co-op’s book has a line waiting for the answer."],
+        ["lied", "Rico played something you paid for, boss. The coconuts don’t read the Book. The farmers do."],
+        ["worked", "A candidate on bicycle three. The farmers liked that. I liked that you kept pedalling when nobody was looking."],
+        ["road", "The road is law. Good. Now the trucks come, and the trucks will want a foreman who says no to them. That’s me."],
+        ["last", "Last day of the campaign. Win or lose, the press starts at six tomorrow. I’ll keep your bicycle warm."],
+        ["early", "Morning, boss. The night shift made rope. Mostly rope. Some of it was supposed to be soap."],
+        ["", "Back again? Shifts are short, the pay is honest, and the organ is still off limits. Even for the founder."],
+        ["", "You count the coconuts, I count the hours you’re away. Between us, nothing on this island goes uncounted."],
       ],
       ask: [
-        { q: "What’s it like working for a candidate?", a: [["", "Same as working for a farmer, only with more visitors. He promises, I deliver. The coconuts don’t vote, so they’re the calmest people here."]] },
+        { q: "How is the Works doing without me?", a: [["", "Better than you’d like and worse than I’d say. The press runs, the farmers get paid, and the bicycles miss your legs."]],
+          more: { q: "Should I stop campaigning?", a: [["", "No. Somebody who knows what a coconut costs should sit in that chair. Just don’t promise the farmers anything I can’t press."]] } },
+        { q: "Will you vote for me?", a: [["", "I don’t vote, boss. I’m not one of the ten. But if I did, I’d want to see your laws first. Speeches don’t make soap."]] },
+        { q: "Why do you call me boss?", a: [["", "Because you started this with three bicycles and a debt, and I started with a wrench. I’ll call you governor when the island does."]] },
         { q: "Why is the organ off limits?", a: [["", "Last time someone touched it, the machine played a waltz for three days and made nothing but soap. Very nice soap. Nobody needed that much soap."]] },
       ],
     },
