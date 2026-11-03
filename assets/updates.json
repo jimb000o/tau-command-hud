@@ -2178,5 +2178,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-03",
     "html": "White Rabbit Key: Salado’s portrait keeps his whole shirt. Its light pink came so close to the flat colour the portraits are painted on that cutting him out took holes out of the shirt. Whoever wears pink or coral (Salado, Rico) is now painted on green instead, a clear colour that is not the background’s own is never cut away, and every painting is kept as it came, so a better cut later needs no new painting."
+  },
+  {
+    "tag": "Findings",
+    "on": "2026-11-03",
+    "html": "Findings and Roadmap: IDNI fixed both sync bugs from our report #78 on 29 October, and our node runs that fix since today. Both pages now say so, and Findings counts 5 patches running in our node instead of 7."
   }
 ]

@@ -343,15 +343,16 @@ const FINDINGS = [
   },
   {
     n: 78, title: "Cannot join tau-testnet-v2: published genesis does not match the network, plus two sync bugs",
-    brief: "Wrong genesis in the repo, plus two sync bugs.", idniBrief: "shipped the right genesis in 539d1e2; sync bugs remain.",
-    idni: "partly", idniText: "IDNI fixed the main problem within a day: commit 539d1e2 (“fix(#78)”) ships the genesis the network runs, so fresh nodes can join again. The two sync bugs are still in IDNI’s code; our node patches them.",
+    brief: "Wrong genesis in the repo, plus two sync bugs.", idniBrief: "fixed the genesis in 539d1e2 and both sync bugs in e6c8f92.",
+    idni: "partly", idniText: "IDNI fixed the main problem within a day: commit 539d1e2 (“fix(#78)”) ships the genesis the network runs, so fresh nodes can join again. On 29 October IDNI also fixed both sync bugs (e6c8f92): a node now reads a whole sync reply and keeps paging headers until it is caught up. The issue is still open.",
     found: "The genesis.json in the repo was not the one the network ran, so a new node rejected block 0 and never synced. Header sync read only one 64 KB frame, and it never fetched past the first 2,000 headers.",
     impact: "Nobody outside IDNI could join the testnet with a fresh node.",
-    ours: `IDNI published the right genesis in commit 539d1e2; our node is pinned to it (${pr(13)}). The two sync bugs are patched in our node (read-until-eof, sync-paginate).`,
+    ours: `Our node patched both sync bugs until IDNI’s fix landed. Since 3 November it runs IDNI’s code with the fix and without our two patches (${pr(426)}).`,
   },
 ];
-// Node patches running today: read-until-eof, sync-paginate, open admission, peer-addrs, chain-reset, orphan sync loop, genesis pin.
-const PATCHES = 7;
+// Node patches running today: open admission, peer-addrs, chain-reset, orphan sync loop, genesis pin.
+// read-until-eof and sync-paginate are upstream since tau-testnet e6c8f92 (IDNI #78) and left with PR #426.
+const PATCHES = 5;
 // Worked around on our side, no IDNI issue of their own.
 const FIXES = [
   ["Sync loop on orphan blocks", `Blocks that did not connect were fetched again and again. ${pr(10)}`],
