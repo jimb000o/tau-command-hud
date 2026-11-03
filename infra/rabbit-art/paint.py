@@ -205,7 +205,7 @@ SCENE = {
              "gilded frames, a chandelier, the giant key visible through a tall arched window, the same intact palace of pale "
              "stone that the island shows on its cliff, no ruin, no moss, cold, grand, spotless and "
              "far too expensive for an island this size.",
-    "south": "The South Current Embassy, a sunny terracotta villa on the jungle slope, as on the island: a cool salon "
+    "south": "The South Current Wellness Resort, a sunny terracotta villa on the jungle slope, as on the island: a cool salon "
              "opening onto the terrace with the turquoise pool (the same pool the island shows beside the villa), "
              "parasols and loungers, a wellness corner with smoothies, a laptop on a rattan table, potted palms, the "
              "jungle and the sea behind, warm, flattering and a little too comfortable.",
@@ -541,7 +541,7 @@ CAST = ("Paint a sheet of ten small full-body characters for this game, in exact
         "Lola, who runs the beach bar, with curly dark red hair, a cream apron, a pencil behind her ear and a ledger; "
         "Old Sam, the bald, white-bearded lighthouse keeper in a dark knitted sweater, carrying a huge old book; "
         "Ambassador Frost, a tall, thin diplomat in a pale blue suit with a lanyard and a tablet; "
-        "Ambassador Salado, a sun-kissed, round wellness investor in an open coral linen shirt and gold chain, sunglasses pushed up on his head, a cocktail with an umbrella in one hand and a laptop bag; "
+        "Salado, a sun-kissed, round wellness investor in an open coral linen shirt and gold chain, sunglasses pushed up on his head, a cocktail with an umbrella in one hand and a laptop bag; "
         "Ama, an elder of the first people's council, a grey-haired woman in her seventies in a cardigan and a skirt with "
         "a woven pattern of her people, walking upright with a carved staff, dignified and kind.")
 
@@ -610,7 +610,7 @@ BUSTS = {
     "lola": 'Lola: runs Bar La Ola on the beach. About thirty, strong shoulders. Brown skin, big dark-red curls held back with a bright yellow hibiscus flower, gold hoop earrings, a beauty mark. Cream off-shoulder blouse, a striped bar towel over one shoulder, a cocktail shaker in hand. One eyebrow raised, a teasing half-smile. Knows every secret on the island and tells none of them for free.',
     "sam": "Old Sam: Old Sam, the lighthouse keeper. Seventies, broad and slow. Deep-tanned, wrinkled skin, bald head, a full bushy white beard, kind sleepy eyes under heavy brows. Dark navy knitted fisherman's jumper with a darned elbow, a brass pocket telescope on a cord, an old pipe (unlit) in the corner of his mouth. Gentle, tired smile. Says little, has seen every storm, keeps the light on for everyone.",
     "frost": 'Ambassador Frost: Ambassador Frost of the North Wind Embassy. Fifties, tall and stiff. Pale skin, neat silver-white hair combed flat, a thin pencil moustache, a polished monocle in one eye. Ice-blue tailored suit with a high collar, a silver snowflake pin, white gloves. Thin polite smile that never reaches the eyes. Cold, correct, generous only with paperwork.',
-    "salado": "Ambassador Salado: Ambassador Salado of the South Current Embassy, a sun-kissed wellness investor who says \"synergy\". Fifties, tanned and comfortable. Lightly sunburnt skin, dark hair slicked back, a big glossy curled moustache he is clearly proud of, gold tooth. Open coral linen shirt, gold chain, sunglasses pushed up on his head, a cocktail with an umbrella. Smooth salesman's smile, one finger raised as if making a deal. Warm, charming and selling something every minute.",
+    "salado": "Salado: Salado, the investor behind the South Current Wellness Resort, sun-kissed and saying \"synergy\". Fifties, tanned and comfortable. Lightly sunburnt skin, dark hair slicked back, a big glossy curled moustache he is clearly proud of, gold tooth. Open coral linen shirt, gold chain, sunglasses pushed up on his head, a cocktail with an umbrella. Smooth salesman's smile, one finger raised as if making a deal. Warm, charming and selling something every minute.",
     "ama": 'Ama: elder of the first people, keeper of the Book. Seventies, small and upright. Dark brown skin, grey hair in a bun with a carved wooden pin, small round glasses on a bead cord. Green woven shawl with a fine pattern, a worn leather-bound book held to her chest. Wise patient look with a hint of mischief. Remembers how everything began and lets others find it out themselves.',
     "wren": 'Captain Wren: Captain Wren, retired marine archaeologist, lives on her old ship. Sixties, wiry. Fair freckled weather-beaten skin, copper hair in a short bob, laugh lines. Faded navy cap, teal shirt with rolled sleeves, a compass and a magnifying glass on cords, a tiny parrot feather tucked in her cap. Amused eyes, crooked grin. Has found three wrecks and lost two hats; tells stories that may be true.',
     "kai": 'Kai: runs Reef Proof, the dive centre. Late twenties, athletic. Brown skin, short black hair still wet, sun-bleached tips. Diving mask pushed up on his forehead, turquoise wetsuit top half unzipped, a shark-tooth necklace, a waterproof watch. Big cheerful grin, thumbs-up energy. Optimist, explains everything with fish.',
@@ -1068,7 +1068,7 @@ PANORAMA = ("Repaint the island in this picture as one wide panoramic painting, 
             "on the right cliff the North Wind Embassy with the big key: no ruin, but an intact, imposing imperial seat, "
             "a restored fortress turned palace of power, clean pale stone, tall walls, a grand gate and stair, a domed hall, "
             "rows of tall windows, banners and a big flag in the north wind, polished cannons as decoration, everything "
-            "spotless, cold and expensive, looking down on the island; the terracotta villa of the South Current Embassy on "
+            "spotless, cold and expensive, looking down on the island; the terracotta villa of the South Current Wellness Resort on "
             "the jungle slope with its terrace, turquoise pool and parasols; the mountains behind. "
             "The island sits in the middle with open sea, reefs and a few small rocky islets around it, so that it can be "
             "seen whole on a wide screen; calm sea at the very top corners and the bottom edge. No leaves, palms or "
@@ -1079,7 +1079,7 @@ TOUCH = ("Repaint exactly this island picture, identical in every way (the same 
          "the style, ink line, colours and light, the sea and the sky), changing only these details so that each place "
          "looks from outside the way it does inside: {what} No leaves or palms in the foreground. No text.")
 TOUCH_PLACES = ("beside the Coconut Works with its brick chimney, a small round pond fed by the stream with a big wooden "
-                "water wheel turning in it; at the terracotta villa of the South Current Embassy on the jungle slope, a "
+                "water wheel turning in it; at the terracotta villa of the South Current Wellness Resort on the jungle slope, a "
                 "clearly visible terrace with a bright turquoise swimming pool, parasols and loungers; Radio Coco a small "
                 "wooden hut of planks on stilts at the foot of the radio mast; the North Wind Embassy an intact imperial "
                 "palace of clean pale stone with a dome, banners and the big key, no ruin.")

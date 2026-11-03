@@ -33,7 +33,7 @@
     market: { x: 790, y: 640, box: [690, 585, 200, 85], name: "Market square" },
     radio:  { x: 1080, y: 455, box: [1025, 300, 120, 170], name: "Radio Coco" },
     north:  { x: 520, y: 470, box: [460, 400, 120, 90], name: "North Wind Embassy" },
-    south:  { x: 650, y: 425, box: [600, 360, 110, 85], name: "South Current Embassy" },
+    south:  { x: 650, y: 425, box: [600, 360, 110, 85], name: "South Current Wellness Resort" },
     bar:    { x: 1215, y: 640, box: [1140, 575, 160, 95], name: "Bar La Ola" },
     book:   { x: 300, y: 600, box: [255, 395, 95, 225], name: "The Lighthouse" },
     pier:   { x: 1010, y: 735, box: [950, 690, 170, 80], name: "The pier" },

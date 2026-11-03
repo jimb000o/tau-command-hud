@@ -517,11 +517,11 @@
       "Something about surveyors. Something deep.",
       "Rico doesn't take requests that come in envelopes, Ambassador.",
       "Who said anything about envelopes? Goodnight."] },
-    { who: "salado", game: 1, say: ["Rico, my friend! Salado, South Current. We love your station. We love it so much.",
-      "Thank you, Ambassador. Is there a but?",
-      "No but. Only a road. Around the island. Play something about a road.",
-      "Rico plays songs, Ambassador, not roads.",
-      "Everyone plays something, my friend. Ciao!"] },
+    { who: "salado", game: 1, say: ["Rico, my friend! Salado, South Current Wellness. We love your station. We play it in the sauna.",
+      "Thank you, Salado. Is there a but?",
+      "No but. Only a road. Around the island, to my gate. Play something about a road.",
+      "Rico plays songs, Salado, not roads.",
+      "Everyone plays something, my friend. Synergy! Ciao!"] },
     { who: "ama", say: ["Rico, this is Ama. The tide is low tonight.",
       "Thank you, Ama. Is that news?",
       "Everything that comes back on time is news, Rico. Your blocks could learn from the tide.",
@@ -618,7 +618,7 @@
   ];
   /* what Rico can put on air: the four rumours that are not true, and the true things the Book has seen */
   const LIES = ["Marisol fishes inside the reef at night", "Tobias wants to sell the lighthouse", "Baako’s coconuts are imported", "Hana wants school on Sundays"];
-  const EMBN = { "North Wind Embassy": 40, "South Current Embassy": 35 };
+  const EMBN = { "North Wind Embassy": 40, "South Current Wellness Resort": 35 };
   const CLAIMS = [...LIES, ...NAMES.flatMap(x => [...Object.entries(EMBN).map(([y, n]) => `${x} took ${n} coins from the ${y}`), ...NAMES.filter(y => y !== x).map(y => `${x} paid for the rumour about ${y}`), `${x} broke a pact`])];
   CLAIMS.forEach(c => CAST.push(["rico", c + "!"]));
   const fill = (s, v) => s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));

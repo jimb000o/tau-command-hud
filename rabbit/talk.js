@@ -242,9 +242,9 @@
     },
     salado: {
       ask: [
-        { q: "Why do you want a road so badly?", a: [["", "Roads, my friend, are how good things arrive. Trucks, tourists, my cousin’s ice cream. The island will love it. Eventually. We can wait. We are very good at waiting, and at lunch."]],
-          more: { q: "What do you get out of it?", a: [["", "Me? A road to drive on, and a very long line in your Book saying who paid for it. My government likes to be remembered. Your Book is happy to help."]] } },
-        { q: "Do you and Ambassador Frost talk?", a: [["", "Every Thursday. We play cards. He cheats, I let him, and we both write it down. Diplomacy is mostly agreeing on who keeps the score."]] },
+        { q: "Why do you want a road so badly?", a: [["", "Roads, my friend, are how guests arrive. Minibuses, yoga mats, my cousin’s smoothie truck. The island will love it. Eventually. We can wait. We are very good at waiting, and at lunch."]],
+          more: { q: "What do you get out of it?", a: [["", "Me? A full resort, and a very long line in your Book saying who paid for the road. My investors like to be remembered. Your Book is happy to help."]] } },
+        { q: "Do you and Ambassador Frost talk?", a: [["", "Every Thursday. We play cards by the pool. He cheats, I let him, and we both write it down. Business is mostly agreeing on who keeps the score."]] },
       ],
     },
   };
