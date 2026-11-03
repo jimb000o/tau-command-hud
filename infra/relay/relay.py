@@ -1014,14 +1014,22 @@ class Relay:
             if h not in current:
                 self.left_mempool[h] = {**info, "left": round(now)}
         self.mempool_seen = current
-        self.load.pool(len(current), now)
+        sealed = self.sealed_ids()
+        # the wait for a block ends when a block holds the transaction, not when the node stops listing it: a sealed
+        # transaction can stay in getmempool for up to an hour (a ghost, IDNI #81), and counting that would be wrong
+        for h, info in current.items():
+            if h in sealed and "sealed" not in info:
+                info["sealed"] = round(now)
+                self.load.sealed_after(now - info.get("seen", now), now)
+        self.mempool_waiting = sum(1 for h in current if h not in sealed)
+        self.load.pool(self.mempool_waiting, now)
         if not self.left_mempool:
             return
-        sealed = {i for b in self.blocks.values() for i in (b.get("tx_ids") or [])}
         changed = False
         for h, info in list(self.left_mempool.items()):
             if h in sealed:
-                self.load.sealed_after(info["left"] - info.get("seen", info["left"]), now)
+                if "sealed" not in info:
+                    self.load.sealed_after(info["left"] - info.get("seen", info["left"]), now)
                 del self.left_mempool[h]
             elif now - info["left"] >= DROP_GRACE_SECONDS:
                 del self.left_mempool[h]
@@ -1031,6 +1039,14 @@ class Relay:
             self.state["dropped"] = self.state["dropped"][-EVENTS_MAX:]
             self.stats_text = None
             self._save_state()
+
+    def sealed_ids(self) -> set:
+        """Every transaction id in the chain the relay holds, rebuilt only when the blocks change."""
+        key = (len(self.blocks), self.height())
+        if getattr(self, "_sealed_key", None) != key:
+            self._sealed_key = key
+            self._sealed = {i for b in self.blocks.values() for i in (b.get("tx_ids") or [])}
+        return self._sealed
 
     @staticmethod
     def _ts(b: dict) -> int | None:
@@ -1916,7 +1932,7 @@ class Relay:
         if path == "/load":
             ready = "getblocks" in self.updated
             body = json.dumps(self.load.snapshot([(self._ts(b), len(b.get("transactions") or [])) for b in self.ordered_blocks()],
-                                                 len(self.mempool_seen)), separators=(",", ":")).encode() if ready else b'{"error":"relay is still syncing with the node"}'
+                                                 getattr(self, "mempool_waiting", len(self.mempool_seen))), separators=(",", ":")).encode() if ready else b'{"error":"relay is still syncing with the node"}'
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "public, max-age=5")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)

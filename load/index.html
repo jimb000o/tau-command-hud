@@ -39,7 +39,7 @@ body {
   background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
 }
 a { color: #fff; }
-.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 12px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 12px; zoom: var(--z, 1); }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
 .mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -134,7 +134,7 @@ footer p { margin: 0; }
   <section class="panel">
     <h2>Records <small id="since">since the relay began counting</small></h2>
     <div class="recw"><div class="rec" id="rec"></div>
-    <p class="note">One validator, run by IDNI, seals every block; it builds one when ten transactions wait or thirty seconds have passed. Our relay lets visitors send at most 60 transactions a minute in all and the island bot at most 24, so a busy minute here says as much about our limits as about the testnet’s. A transaction sealed but still listed (a ghost, IDNI issue #81) counts as waiting until it leaves the list.</p></div>
+    <p class="note">One validator, run by IDNI, seals every block; it builds one when ten transactions wait or thirty seconds have passed. Our relay lets visitors send at most 60 transactions a minute in all and the island bot at most 24, so a busy minute here says as much about our limits as about the testnet’s. A transaction already sealed but still listed by the node (a ghost, IDNI issue #81) is not counted as waiting.</p></div>
   </section>
   <footer>
     <p>Unofficial, not affiliated with IDNI. Counted by the read-only relay at node.tauhud.com from our own testnet node. <a href="https://node.tauhud.com/load" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="/stats/">Stats</a> · <a href="/rabbit/">White Rabbit Key</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BTestnet%20load%5D%20" target="_blank" rel="noopener">Feedback</a></p>
@@ -235,8 +235,8 @@ function render(D) {
   const tiles = [
     ["Sealed, last hour", N(n.sealed_hour), F("in {n} blocks", { n: N(n.blocks_hour) }), "Transactions sealed in the last hour.\nCounted from the blocks our node holds."],
     ["Busiest minute", N(n.busiest_minute_hour), T("sealed, in the last hour"), "Most transactions sealed in one minute of the last hour."],
-    ["Waiting now", N(n.waiting), T("in the waiting room"), "Transactions our node lists as waiting.\nGhosts (sealed, still listed) count too."],
-    ["Wait for a block", secs(n.wait_hour), T("average, last hour"), "From first seen waiting to sealed in a block.\nMeasured every few seconds."],
+    ["Waiting now", N(n.waiting), T("in the waiting room"), "Transactions our node lists as waiting.\nGhosts (sealed, still listed) are left out."],
+    ["Wait for a block", secs(n.wait_hour), T("average, last hour"), "From first seen waiting to found in a block.\nMeasured every few seconds."],
     ["Last block", n.last_block_age == null ? "–" : secs(n.last_block_age), T("ago"), "Seconds since the newest block."],
     ["Through tauhud", N(n.sent_hour + n.bot_hour), F("{n} by visitors, {m} by the island bot", { n: N(n.sent_hour), m: N(n.bot_hour) }), "Transactions tauhud sent in the last hour.\nVisitors sign their own; the bot sends the rivals' moves."],
     ["Refused", N(n.refused_hour), T("sends in the last hour"), "Sends refused by our relay's limits or by the node."],
@@ -259,17 +259,17 @@ function render(D) {
   $("since").textContent = F("since {x}", { x: new Date(r.since * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) });
 }
 
-let LAST = null;
+let LAST = null, FITTED = false;
 async function tick() {
   const st = $("state");
-  if (SAMPLE) { LAST = sample(); st.className = "state snap"; $("stateText").textContent = T("Sample numbers"); render(LAST); return; }
+  if (SAMPLE) { LAST = sample(); st.className = "state snap"; $("stateText").textContent = T("Sample numbers"); render(LAST); fit(); return; }
   try {
     const r = await fetch(URL_LOAD, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
     LAST = await r.json();
     if (!LAST || !Array.isArray(LAST.sealed)) throw new Error("empty");
     st.className = "state live"; $("stateText").textContent = T("Live from our node");
-    render(LAST);
+    render(LAST); if (!FITTED) { FITTED = true; fit(); }
   } catch (e) {
     st.className = "state snap"; $("stateText").textContent = T("Relay unreachable");
     if (!LAST) { $("vWord").textContent = "–"; $("vWhy").textContent = T("Our relay does not answer right now; the page tries again every 30 seconds."); }
@@ -277,7 +277,18 @@ async function tick() {
 }
 tick();
 if (!SAMPLE) setInterval(tick, 30000);
-addEventListener("resize", () => { if (LAST) render(LAST); });
+/* wide screens (an ultrawide 3440 × 1305, a TV): the page grows with the screen instead of standing in a narrow column */
+function fit() {
+  const root = document.documentElement; root.style.setProperty("--z", "1");
+  if (innerWidth <= 1700) return;
+  const w = document.querySelector(".wrap"), r = w.getBoundingClientRect(), h = r.height + 44;   // the page's own height at its normal size: it grows only as far as the screen has room
+  root.style.setProperty("--z", Math.max(1, Math.min((innerWidth - 40) / 1280, (innerHeight - r.top) / h)).toFixed(3));
+}
+fit();
+addEventListener("resize", () => { fit(); if (LAST) render(LAST); });
+document.fonts && document.fonts.ready.then(fit);
+/* the charts are drawn for the width they really have, also when the layout settles after the first draw */
+if (window.ResizeObserver) { let w = 0; new ResizeObserver(es => { const n = Math.round(es[0].contentRect.width); if (n !== w) { w = n; if (LAST) render(LAST); } }).observe($("c1")); }
 </script>
 </body>
 </html>

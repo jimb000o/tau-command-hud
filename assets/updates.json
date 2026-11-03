@@ -2158,5 +2158,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-03",
     "html": "White Rabbit Key: the island map follows the painting. Hovering a place lights its exact outline, and only that outline answers a click. The circle that opens a place now opens on the place itself, for example at Ama’s house or at Radio Coco’s door. The waterfall falls straight down its painted course, in strands at their own pace, with mist at its foot and rings in the pool. The Market Square sits where the Parasol Café’s umbrella stands."
+  },
+  {
+    "tag": "Testnet load",
+    "on": "2026-11-03",
+    "html": "Testnet load counts ghosts right now: a transaction already sealed in a block but still listed by the node (IDNI issue #81) no longer counts as waiting, and the wait for a block ends when a block holds the transaction, not when the node stops listing it. The first day’s waiting numbers and records counted ghosts and were reset."
   }
 ]

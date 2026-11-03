@@ -2,8 +2,9 @@
 
 The relay already sees everything this needs. From the blocks (read at request time): transactions sealed per
 minute and the gaps between blocks. From the mempool poll (relay.py track_mempool, every few seconds): how many
-transactions wait, and for every transaction that left the mempool into a block, how long it waited (seen ->
-left, so accurate to one poll). From the relay's own sending: transactions visitors' browsers sent through
+transactions really wait, and for every transaction a block holds, how long it waited (first seen listed -> first
+poll that finds it in a block, so accurate to one poll). Ghosts, transactions already sealed but still listed by the
+node (IDNI #81), are neither waiting nor still waiting for a block. From the relay's own sending: transactions visitors' browsers sent through
 tauhud (sendtx), White Rabbit Key's island bot sent (island.py), and sends tauhud or the node refused.
 
 Kept per UTC minute for WINDOW minutes, plus the records since tracking began; both survive a relay restart in
@@ -15,6 +16,7 @@ import json
 import os
 import time
 
+VERSION = 2               # 2: waiting and the wait for a block leave out ghosts (sealed, still listed)
 WINDOW = 360              # minutes kept and shown: six hours
 SAVE_SECONDS = 60
 STRAIN_WAIT = 60          # seconds: a transaction waiting longer than this for its block is a sign of strain
@@ -143,6 +145,10 @@ class Load:
                 d = json.load(f)
             self.mins = {int(k): v for k, v in (d.get("mins") or {}).items()}
             self.top.update(d.get("top") or {})
+            if d.get("v") != VERSION:   # the first version counted ghosts (sealed, still listed) as waiting: drop those numbers
+                for row in self.mins.values():
+                    row["pool"], row["wait"] = 0, [0, 0, 0]
+                self.top["pool"] = self.top["wait"] = 0
         except (OSError, ValueError, TypeError, AttributeError):
             pass
 
@@ -153,7 +159,7 @@ class Load:
         try:
             tmp = self.path + ".tmp"
             with open(tmp, "w") as f:
-                json.dump({"mins": self.mins, "top": self.top}, f, separators=(",", ":"))
+                json.dump({"v": VERSION, "mins": self.mins, "top": self.top}, f, separators=(",", ":"))
             os.replace(tmp, self.path)
         except OSError:
             pass
