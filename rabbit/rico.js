@@ -64,6 +64,17 @@
     calm2: "Flat sea, empty blocks. The chain is ready, the island is asleep.",
     breeze2: "Gentle traffic on the chain: a few transactions bobbing along like fishing boats.",
     choppy2: "Busy waters! Transactions stacked up like crates on the pier.",
+    /* the weather when Rico knows every sender in the last blocks (relay /api/v1/sources/recent): who, not just how many */
+    wxHouse1: "Traffic on the water, but it's house traffic: IDNI's own wallets, the ones the testnet started with, moving coins among themselves. For everybody else, calm seas.",
+    wxHouse2: "Those boats out there all fly the same flag: the testnet's founding wallets, doing their rounds. A busy harbour, and not one visitor.",
+    wxIsle1: "All those transactions? That's us. White Rabbit Key: your moves and the rival campaigns. Today the island is the weather.",
+    wxIsle2: "Plenty of boats, and every one of them left from our own pier: White Rabbit Key's campaigns. The open testnet is having a quiet one.",
+    wxShip1: "Busy seas, but it's the cruise ship: simulated passengers, real transactions, paced so the lagoon keeps breathing. Nobody else is out there.",
+    wxJungle1: "The waves come from the jungle side today: meals and votes for Agorzilla, and dinner for Déjà. Lots of splashing, all of it friendly.",
+    wxHud1: "The transactions out there came through Tau HUD's own wallet: visitors trying the testnet from our pages. Small boats, first time out. Wave if you see them.",
+    wxHud2: "Traffic from our own harbour: people sending from the Tau HUD wallet. Every one of those is somebody trying the chain for real.",
+    wxHome1: "Plenty of transactions, but Rico knows every boat out there: the island, the jungle, the founders, our own wallet. Home traffic. No strangers on the water.",
+    wxHome2: "Looks busy, but it's family: our own apps and the founding wallets. A stranger's boat would stand out today.",
     showers2: "Some transactions are still waiting on the pier for the next block. Bring an umbrella.",
     clear2: "Nothing waiting on the pier. Every transaction has found its block.",
     /* the first line after the page opens */
@@ -624,6 +635,7 @@
   const SETS = {
     open: ["op1", "op2", "op3", "op4", "op5"],
     general: Array.from({ length: 30 }, (_, i) => "g" + (i + 1)),
+    wxHouse: ["wxHouse1", "wxHouse2"], wxIsle: ["wxIsle1", "wxIsle2"], wxShip: ["wxShip1"], wxJungle: ["wxJungle1"], wxHud: ["wxHud1", "wxHud2"], wxHome: ["wxHome1", "wxHome2"],
     fog: ["fog", "fog2"], fogHour: ["fh1", "fh2", "fh3"], fogLong: ["fl1", "fl2", "fl3", "fl4"], fogDay: ["fd1", "fd2", "fd3"], stall: ["st1", "st2", "st3", "st4", "st5", "st6"], calm: ["calm", "calm2"], breeze: ["breeze", "breeze2"], choppy: ["choppy", "choppy2"], showers: ["showers", "showers2"], clear: ["clear", "clear2"],
     rule: ["rule1", "rule2", "rule3", "rule4"], cosign: ["cosign1", "cosign2"], cosvote: ["cosvote"], lock: ["lock1", "lock2"], back: ["back1", "back2"],
     offer: ["offer"], offerYes: ["offerYes"], law: ["law1", "law2"], lawSim: ["lawSim"], lawVote: ["lawVote"],
@@ -1326,6 +1338,26 @@
     try { localStorage.setItem(BRK_SAID, JSON.stringify(said.filter(x => x !== k).concat(k).slice(-80))); } catch (e) {}
     return k;
   }
+  /* the chain weather by sender: n = the relay's counts for the last blocks (/api/v1/sources/recent). Only when every
+     transaction there comes from a sender we know: then the set that says who (one source with 80 % or more, else
+     "home traffic") and, for Tau HUD's wallet, the page most of them came from. Any unknown sender: null, the usual weather. */
+  function wxSource(n) {
+    if (!n || typeof n !== "object") return null;
+    const g = { wxHouse: 0, wxIsle: 0, wxShip: 0, wxJungle: 0, wxHud: 0 }, via = {};
+    let tot = 0;
+    for (const [k, c0] of Object.entries(n)) {
+      const c = Number(c0) || 0; if (c <= 0) continue; tot += c;
+      if (k === "other") return null;
+      const set = k === "idni" ? "wxHouse" : k === "rabbit" || k === "bot" ? "wxIsle" : k === "cruise" ? "wxShip" : k === "agorzilla" || k === "deja" ? "wxJungle" : k.startsWith("tauhud") ? "wxHud" : null;
+      if (!set) return null;
+      g[set] += c;
+      if (set === "wxHud") { const p = k.split(":")[1] || "hud"; via[p] = (via[p] || 0) + c; }
+    }
+    if (!tot) return null;
+    const [top, c] = Object.entries(g).sort((a, b) => b[1] - a[1])[0];
+    const page = Object.entries(via).sort((a, b) => b[1] - a[1])[0];
+    return { set: c / tot >= 0.8 ? top : "wxHome", page: top === "wxHud" && c / tot >= 0.8 && page ? page[0] : null, n: tot };
+  }
   function brk(from, to, o = {}) {
     const pick = o.pick || pickOwn, hr = o.hr != null ? o.hr : new Date().getHours(), line = k => ({ t: tr(L[k]), v: L[k] });
     if (night(hr)) {
@@ -1340,5 +1372,5 @@
     const set = Math.random() < 0.25 ? "sbAny" : hr >= 5 && hr < 11 ? "sbAm" : hr >= 11 && hr < 17 ? "sbPm" : hr >= 17 && hr < 22 ? "sbEv" : "sbNt", k = pick(SETS[set]);
     return { k, parts: [line(k), ...(L["nx_" + to] ? [line("nx_" + to)] : [])] };
   }
-  window.RICO = { L, SETS, CAST, CALLS, NIGHT, brk, night, NAMES, BANDS, NUMERIC, BLOCK, all, speak, fill, key, hud, call, wake, voiced, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
+  window.RICO = { L, SETS, CAST, CALLS, NIGHT, brk, night, wxSource, NAMES, BANDS, NUMERIC, BLOCK, all, speak, fill, key, hud, call, wake, voiced, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
 })();

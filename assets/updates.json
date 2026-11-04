@@ -2298,5 +2298,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "The troll box is on the island now, as the Coconut Wire: on wide screens it sits on the dark water at the lower left of White Rabbit Key, always open, with the newest messages at the bottom. It is the same room as the troll box on the HUD, with your same name and the same rules. It steps aside while you talk to someone, and smaller screens and phones keep the island to themselves."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "Radio Coco: Rico's chain weather now says who is sending. When every transaction in the last blocks comes from a sender we know (IDNI's founding wallets, White Rabbit Key, the cruise ship, Agorzilla and Déjà, or the Tau HUD wallet with the page it was sent from), he names it instead of calling the testnet busy."
   }
 ]
