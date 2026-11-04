@@ -354,4 +354,15 @@ TauI18n.add({ strings: {
   "Book lines": "账本记录",
   "White Rabbit Key, our island game on tauhud.com: the players' lines and ballots, and the rivals' moves and wages the island bot sends. Its wallets count only the players'.": "白兔礁，我们在 tauhud.com 上的海岛游戏：玩家的记录和选票，以及海岛机器人发出的对手行动和工资。钱包只计玩家的。",
   "our sites": "我们的网站",
+  // White Rabbit Key: Who plays, hover texts
+  "Moves of the three rival candidates, sent by our island bot.\nOur own server wallets, not players.": "三位对手候选人的行动，由我们的岛屿机器人发送。\n是我们自己的服务器钱包，不是玩家。",
+  "Book lines players signed in their own test wallet:\n1 test AGRS to the island council or a place's till.": "玩家用自己的测试钱包签名的账本记录：\n付 1 个测试 AGRS 给岛屿议会或某个地方的钱柜。",
+  "Votes for a governor: 1 test AGRS from a player's wallet\ninto a candidate's ballot box.": "选总督的投票：从玩家钱包付 1 个测试 AGRS\n投进候选人的票箱。",
+  "Ballots for Marisol, who cares about fish and roads.": "投给 Marisol 的票：关心鱼和道路。",
+  "Ballots for Tobias, who cares about visitors and music.": "投给 Tobias 的票：关心游客和音乐。",
+  "Ballots for Baako, who cares about visitors and roads.": "投给 Baako 的票：关心游客和道路。",
+  "Ballots for Hana, who cares about the school and quiet.": "投给 Hana 的票：关心学校和安静。",
+  "Different wallets that made a move or cast a ballot in the last 7 days.": "最近 7 天内走过一步或投过票的不同钱包。",
+  "Different wallets that made a move or cast a ballot in the last 30 days.": "最近 30 天内走过一步或投过票的不同钱包。",
+  "Every player wallet in the blocks our relay keeps.\nThe island bot's wallets are not counted.": "我们的中继保存的区块中所有玩家钱包。\n不计岛屿机器人的钱包。",
 } });

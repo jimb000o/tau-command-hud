@@ -375,4 +375,15 @@ TauI18n.add({ strings: {
   "Book lines": "帳簿の記録",
   "White Rabbit Key, our island game on tauhud.com: the players' lines and ballots, and the rivals' moves and wages the island bot sends. Its wallets count only the players'.": "tauhud.com の島のゲーム「ホワイトラビット・キー」：プレイヤーの記録と投票、そして島ボットが送るライバルの手と賃金。ウォレット数はプレイヤーのものだけです。",
   "our sites": "私たちのサイト",
+  // White Rabbit Key: Who plays, hover texts
+  "Moves of the three rival candidates, sent by our island bot.\nOur own server wallets, not players.": "3 人のライバル候補の手。私たちの島ボットが送ります。\nプレイヤーではなく、私たち自身のサーバーウォレットです。",
+  "Book lines players signed in their own test wallet:\n1 test AGRS to the island council or a place's till.": "プレイヤーが自分のテストウォレットで署名した帳簿の一行：\n島の議会か各場所のレジへ 1 テスト AGRS。",
+  "Votes for a governor: 1 test AGRS from a player's wallet\ninto a candidate's ballot box.": "知事への投票：プレイヤーのウォレットから 1 テスト AGRS を\n候補者の投票箱へ。",
+  "Ballots for Marisol, who cares about fish and roads.": "Marisol への票。魚と道路を大切にしています。",
+  "Ballots for Tobias, who cares about visitors and music.": "Tobias への票。観光客と音楽を大切にしています。",
+  "Ballots for Baako, who cares about visitors and roads.": "Baako への票。観光客と道路を大切にしています。",
+  "Ballots for Hana, who cares about the school and quiet.": "Hana への票。学校と静けさを大切にしています。",
+  "Different wallets that made a move or cast a ballot in the last 7 days.": "直近 7 日間に一手を打つか投票した異なるウォレット。",
+  "Different wallets that made a move or cast a ballot in the last 30 days.": "直近 30 日間に一手を打つか投票した異なるウォレット。",
+  "Every player wallet in the blocks our relay keeps.\nThe island bot's wallets are not counted.": "私たちのリレーが保持するブロック内のすべてのプレイヤーウォレット。\n島ボットのウォレットは数えません。",
 } });
