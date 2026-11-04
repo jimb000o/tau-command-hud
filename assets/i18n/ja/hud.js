@@ -1,5 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "White Rabbit Key: the cruise ships are painted now, like the island. They come in bow first, turn round at anchor and leave with a wake.": "ホワイトラビットキー：クルーズ船も島と同じ手描きの姿になりました。船首を前にして入港し、停泊地で向きを変え、航跡を残して出港します。",
   "# active consensus spec · revision {x1}": "# 有効なコンセンサス仕様 · リビジョン {x1}",
   "# composite o5 · one guarded branch per account": "# 合成 o5 · アカウントごとに 1 つのガード付き分岐",
   "# everyone else: allow": "# それ以外の全員：許可",

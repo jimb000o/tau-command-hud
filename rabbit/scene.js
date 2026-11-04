@@ -823,6 +823,99 @@
     liner: { L: 186, hull: P.navy, band: P.cream, funnel: P.coral, decks: [0.8, 0.64, 0.44], tall: 9 },
     expedition: { L: 128, hull: "#2f5468", band: "#e9ecea", funnel: P.teal, decks: [0.58, 0.42], tall: 9, crane: true },
   };
+  /* Painted boats share a single waterline transform, including the dusk pass. A missing
+     asset leaves the original drawing below in charge until that particular image loads. */
+  const BOATS = {};
+  fetch("/rabbit/art/ships/ships.json").then(r => r.ok ? r.json() : {}).then(manifest => {
+    for (const kind of ["liner", "expedition", "tender", "wake"]) {
+      const m = manifest[kind];
+      if (!m || typeof m.src !== "string" || !/^[a-z]+\.webp$/.test(m.src)) continue;
+      const point = p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite);
+      if (kind === "wake" ? !point(m.tip) : !point(m.stern) || !point(m.bow) || !(m.length > 0)) continue;
+      if (kind !== "wake" && Math.hypot(m.bow[0] - m.stern[0], m.bow[1] - m.stern[1]) < 1) continue;
+      const im = new Image(); im.decoding = "async";
+      im.onload = () => { BOATS[kind] = { ...m, im }; };
+      im.src = "/rabbit/art/ships/" + m.src;
+    }
+  }).catch(() => {});
+  const boatArt = kind => S.base?.painted && !/[?&]art=drawn(?:&|$)/.test(location.search) && BOATS[kind];
+  const unit = f => Math.max(0, Math.min(1, f));
+  function boatPose(x, y, t, a = 1) {
+    const v = SHIP.s, now = Date.now() / 1000, underway = v.phase === "approach" || v.phase === "gone";
+    const turn = v.phase === "gone" ? 1 : v.phase === "approach" ? 0 : ease(unit(1 - (v.end - now) / 90));
+    const heading = -Math.cos(turn * Math.PI);
+    // At the bow-on moment blend the two narrow views, rather than jumping their sign.
+    const right = ease(unit((heading + 0.12) / 0.24));
+    const progress = v.phase === "approach" ? unit(1 - (v.t0 - now) / 1800) : unit((now - v.end) / 240);
+    const speed = underway ? 4 * progress * (1 - progress) : 0;
+    return { x: x + (underway ? 0 : Math.sin(t * 0.00016) * 1.5),
+      y: y + Math.sin(t * 0.0012) * 1.2, roll: Math.sin(t * 0.0007) * Math.PI / 300,
+      squash: Math.max(0.25, Math.abs(heading)), right, a, speed };
+  }
+  function boatTransform(g, m, p, draw) {
+    const dx = m.bow[0] - m.stern[0], dy = m.bow[1] - m.stern[1], scale = m.length / Math.hypot(dx, dy);
+    const cx = (m.bow[0] + m.stern[0]) / 2, cy = (m.bow[1] + m.stern[1]) / 2;
+    for (const [dir, weight] of [[-1, 1 - p.right], [1, p.right]]) {
+      if (weight <= 0) continue;
+      g.save(); g.globalAlpha *= p.a * weight; g.translate(p.x, p.y); g.rotate(p.roll);
+      g.scale(dir * p.squash, 1);
+      draw(scale, () => { g.scale(scale, scale); g.rotate(-Math.atan2(dy, dx)); g.translate(-cx, -cy); });
+      g.restore();
+    }
+  }
+  function boatWake(g, length, amount, t) {
+    const wake = BOATS.wake;
+    if (!wake || amount <= 0) return;
+    const scale = length * 0.78 / wake.im.naturalWidth;
+    g.save(); g.globalAlpha *= amount * (0.85 + 0.15 * Math.sin(t * 0.002));
+    g.translate(-length / 2, 0); g.scale(scale, scale);
+    g.drawImage(wake.im, -wake.tip[0], -wake.tip[1]); g.restore();
+  }
+  function paintedBoat(g, x, y, t, kind, a) {
+    const m = boatArt(kind); if (!m) return false;
+    const p = boatPose(x, y, t, a);
+    g.save(); g.globalAlpha *= a; g.fillStyle = "rgba(10,30,45,.22)";
+    g.beginPath(); g.ellipse(p.x + 4, p.y + 4, m.length * 0.56 * p.squash, 7, p.roll, 0, Math.PI * 2); g.fill(); g.restore();
+    boatTransform(g, m, p, (scale, pixels) => {
+      boatWake(g, m.length, p.speed * 0.7, t);
+      // The narrow waterline foam is already painted into the hull; a faint pulse keeps it alive at anchor.
+      if (p.speed < 0.1) {
+        g.strokeStyle = `rgba(235,255,255,${0.07 + 0.035 * Math.sin(t * 0.0009)})`; g.lineWidth = 1.1;
+        g.beginPath(); g.ellipse(0, 1, m.length * 0.48, 2, 0, 0, Math.PI * 2); g.stroke();
+      }
+      pixels(); g.drawImage(m.im, 0, 0);
+      if (m.funnel) {
+        const [fx, fy] = m.funnel;
+        for (let k = 0; k < 4; k++) {
+          const f = (t * 0.00012 + k / 4) % 1;
+          g.fillStyle = `rgba(236,236,240,${0.32 * (1 - f)})`; g.beginPath();
+          g.arc(fx - f * 46 / scale, fy - f * 20 / scale, (4 + f * 9) / scale, 0, Math.PI * 2); g.fill();
+        }
+      }
+    });
+    return true;
+  }
+  function paintedTender(g, x, y, t, dir) {
+    const m = boatArt("tender"); if (!m) return false;
+    const p = { x, y: y + Math.sin(t * 0.004 + x) * 0.8, roll: Math.sin(t * 0.002 + x) * 0.01, squash: 1, right: dir > 0 ? 1 : 0, a: 1 };
+    boatTransform(g, m, p, (scale, pixels) => { boatWake(g, m.length, 0.45, t); pixels(); g.drawImage(m.im, 0, 0); });
+    return true;
+  }
+  function shipWindows(g, t, light) {
+    const pos = shipPos(Date.now() / 1000); if (!pos) return;
+    const m = boatArt(SHIP.s.style === "expedition" ? "expedition" : "liner");
+    if (!m || !m.windows) return;
+    boatTransform(g, m, boatPose(pos[0], pos[1], t, pos[2]), (scale, pixels) => {
+      pixels();
+      for (const [x0, x1, y] of m.windows) {
+        for (let x = x0; x <= x1; x += 5 / scale) {
+          g.fillStyle = `rgba(255,190,90,${light * 0.65})`; g.fillRect(x, y - 0.7 / scale, 1.7 / scale, 1.4 / scale);
+          g.fillStyle = `rgba(255,170,70,${light * 0.045})`; g.beginPath(); g.arc(x, y, 3 / scale, 0, Math.PI * 2); g.fill();
+        }
+      }
+    });
+  }
+
   const ease = f => f * f * (3 - 2 * f);
   function shipPos(now) {
     const v = SHIP.s, [ax, ay] = SPOT.anchor;
@@ -832,6 +925,7 @@
     return [ax, ay, 1];
   }
   function cruiseShip(g, x, y, t, kind, light, a) {
+    if (paintedBoat(g, x, y, t, kind, a)) return;
     const D = SHIPS[kind] || SHIPS.liner, L = D.L, bob = Math.sin(t * 0.0012) * 1.2, hh = 15;
     g.save(); g.globalAlpha = a; g.translate(x, y + bob); g.lineJoin = "round"; g.strokeStyle = INK; g.lineWidth = 1.5;
     g.fillStyle = "rgba(10,30,45,.28)"; g.beginPath(); g.ellipse(4, 4, L * 0.56, 7, 0, 0, Math.PI * 2); g.fill();   // its shadow on the water
@@ -867,6 +961,7 @@
   }
   /* a tender: a small white boat with an orange canopy and a short wake */
   function tender(g, x, y, t, dir) {
+    if (paintedTender(g, x, y, t, dir)) return;
     g.save(); g.translate(x, y + Math.sin(t * 0.004 + x) * 0.8); g.scale(dir, 1); g.strokeStyle = INK; g.lineWidth = 1.1;
     g.strokeStyle = "rgba(255,255,255,.55)"; g.beginPath(); g.moveTo(-9, 2); g.lineTo(-26, 4); g.moveTo(-9, 0); g.lineTo(-22, -2); g.stroke();
     g.strokeStyle = INK; g.fillStyle = P.cream; g.beginPath(); g.moveTo(-9, -3); g.lineTo(9, -3); g.lineTo(7, 2); g.lineTo(-8, 2); g.closePath(); g.fill(); g.stroke();
@@ -1592,6 +1687,7 @@
     if (sky.light > 0.05) {
       g.globalCompositeOperation = "lighter";
       WINDOWS.forEach(([x, y, ww, wh], i) => { const fl = 0.85 + 0.15 * Math.sin(t * 0.003 + i * 2.1); g.fillStyle = `rgba(255,190,90,${sky.light * (pi ? 0.3 : 0.75) * fl})`; if (pi) { g.beginPath(); g.arc(x + ww / 2, y + wh / 2, Math.max(ww, wh) * 0.7, 0, Math.PI * 2); g.fill(); } else g.fillRect(x, y, ww, wh); g.fillStyle = `rgba(255,170,70,${sky.light * 0.08})`; g.beginPath(); g.arc(x + ww / 2, y + wh / 2, 8, 0, Math.PI * 2); g.fill(); });
+      shipWindows(g, t, sky.light);
       islandGlow(g, t, sky.light);
       const a = t * 0.0006, [bx, by] = SPOT.beam;
       gr = g.createRadialGradient(bx, by, 0, bx, by, 520); gr.addColorStop(0, `rgba(57,255,138,${0.42 * sky.light})`); gr.addColorStop(1, "rgba(57,255,138,0)");
