@@ -2313,5 +2313,10 @@
     "tag": "HUD",
     "on": "2026-11-04",
     "html": "What if: the preset is now called “Like real testnet today”, because it copies the testnet’s rules (one validator, a block about every minute), not its blocks. Beside the sandbox chain the real testnet’s current block now shows, so block #85 in the sandbox is not mistaken for a chain restart."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "In numbers, Share of the testnet: the panel now leads with our sites’ share of the user transactions, the testnet’s traffic without IDNI’s 11 genesis accounts, which make most of it while IDNI tests. Below it, smaller and with its own bar, the same with everything counted, IDNI’s genesis testing included. Counted in transactions and wallets, not people."
   }
 ]

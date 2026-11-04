@@ -387,4 +387,9 @@ TauI18n.add({ strings: {
   "Different wallets that made a move or cast a ballot in the last 30 days.": "直近 30 日間に一手を打つか投票した異なるウォレット。",
   "Every player wallet in the blocks our relay keeps.\nThe island bot's wallets are not counted.": "私たちのリレーが保持するブロック内のすべてのプレイヤーウォレット。\n島ボットのウォレットは数えません。",
   "People with White Rabbit Key open right now, counted live by the relay: one browser counts once, a tab left in the background for five minutes stops counting. Nobody is identified.": "いま White Rabbit Key を開いている人。中継がリアルタイムで数えます。1 つのブラウザは 1 人、5 分間バックグラウンドにあるタブは数えません。個人は特定しません。",
+  "Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages and White Rabbit Key. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Counted in transactions and wallets, not people.": "この期間のユーザーのトランザクションのうち、私たちのサイト（Agorzilla、Tau HUD の各ページ、White Rabbit Key）から来た割合。ユーザーのトランザクションとは、IDNI の 11 のジェネシスアカウントを除くテストネットの全トランザクションです。IDNI のテスト中は、トラフィックの大半がこれらのアカウントから来ます。数えているのはトランザクションとウォレットで、人ではありません。",
+  "of user transactions via our sites": "のユーザーのトランザクションが私たちのサイトから",
+  "not counting IDNI's genesis testing": "IDNI ジェネシスのテストを除く",
+  "With IDNI's genesis testing: our sites {p} of all {n}": "IDNI ジェネシスのテストを含めると：全 {n} 件のうち私たちのサイトは {p}",
+  "through our sites": "私たちのサイトから",
 } });
