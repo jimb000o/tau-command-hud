@@ -2293,5 +2293,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "A live counter of who is playing right now. The chip on the island shows how many people have the game open (on phones just the number), the Play menu shows it beside the game’s name, and In numbers shows it among the key numbers of the White Rabbit Key view. Counted by our relay: one browser counts once, a tab left in the background for five minutes stops counting, nobody is identified."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "Radio Coco: Rico's chain weather now says who is sending. When every transaction in the last blocks comes from a sender we know (IDNI's founding wallets, White Rabbit Key, the cruise ship, Agorzilla and Déjà, or the Tau HUD wallet with the page it was sent from), he names it instead of calling the testnet busy."
   }
 ]
