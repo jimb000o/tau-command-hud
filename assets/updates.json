@@ -2303,5 +2303,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "Radio Coco: Rico's chain weather now says who is sending. When every transaction in the last blocks comes from a sender we know (IDNI's founding wallets, White Rabbit Key, the cruise ship, Agorzilla and Déjà, or the Tau HUD wallet with the page it was sent from), he names it instead of calling the testnet busy."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "Live node light: after the node or the relay was offline, the light turns green again by itself as soon as the node answers, without reloading the page. Red now means only that the node or the relay does not answer; a chain that stalls or catches up shows amber."
   }
 ]
