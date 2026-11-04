@@ -5,7 +5,9 @@
    are refused there, three reports hide a message. Include with <link rel="stylesheet" href="assets/chat.css"> and
    <script src="assets/chat.js" defer></script>; window.TAU_CHAT_RELAY overrides the relay (a host, or a ws:// address for tests).
    A page with a visible <div id="tbHost"> (the HUD on wide screens) gets the room as a panel inside it instead of the pill:
-   always open, connected while the tab is visible. When the host is hidden (a smaller screen) it is the pill again. */
+   always open, connected while the tab is visible. When the host is hidden (a smaller screen) it is the pill again.
+   A host with data-pill="no" (White Rabbit Key) keeps the room inside it and never shows the pill: hidden host, no socket.
+   A host's data-room picks the room's name for that page from ROOMS below; it is the same room everywhere. */
 (() => {
   "use strict";
   const RELAY = window.TAU_CHAT_RELAY || "node.tauhud.com", SOCKET = /^wss?:\/\//.test(RELAY) ? RELAY : `wss://${RELAY}`;
@@ -35,6 +37,7 @@
       "You are out of the chat until 00:00 UTC.": "你被移出聊天，直到 UTC 00:00。",
       "This is a warning; the next strike mutes you for 10 minutes.": "这是一次警告；再犯一次将禁言 10 分钟。",
       "You are muted for {n} minutes.": "你被禁言 {n} 分钟。",
+      "The same room as the Tau HUD troll box": "与 Tau HUD 闲聊箱是同一个聊天室",
     },
     ja: {
       "Chat with everyone on Tau HUD": "Tau HUD のみんなとチャット", "Close": "閉じる",
@@ -60,10 +63,16 @@
       "You are out of the chat until 00:00 UTC.": "UTC 00:00 までチャットから外されています。",
       "This is a warning; the next strike mutes you for 10 minutes.": "これは警告です。次の違反で 10 分間ミュートされます。",
       "You are muted for {n} minutes.": "{n} 分間ミュートされました。",
+      "The same room as the Tau HUD troll box": "Tau HUD のトロールボックスと同じ部屋です",
     },
   };
-  /* the room's name, one place per language */
-  const ROOM = { en: "Troll box", zh: "闲聊箱", ja: "トロールボックス" }[L] || "Troll box";
+  /* the room's name, one place per language; a page's host may call the same room by its own name (data-room) */
+  const ROOMS = {
+    hud: { en: "Troll box", zh: "闲聊箱", ja: "トロールボックス" },
+    isle: { en: "The Coconut Wire", zh: "椰林传声", ja: "ヤシの木通信" },   // White Rabbit Key: the island's gossip line
+  };
+  const HOST = () => document.getElementById("tbHost");
+  const ROOM = (() => { const h = HOST(), r = ROOMS[(h && h.dataset.room) || "hud"] || ROOMS.hud; return r[L] || r.en; })();
   const D = DICT[L] || {};
   const t = (s, x) => (D[s] || s).replace("{x}", x == null ? "" : x);
   /* a relay answer is one or two fixed sentences, a number in them as {n} */
@@ -101,6 +110,7 @@
   pill.append(el("span", "tb-dot"), el("span", "tb-pl", ROOM));
   const box = el("section", "tb-box"); box.hidden = true; box.setAttribute("aria-label", ROOM);
   const head = el("div", "tb-head"); head.append(el("span", "tb-tl", ROOM));
+  if (ROOM !== (ROOMS.hud[L] || ROOMS.hud.en)) head.title = t("The same room as the Tau HUD troll box");
   const x = el("button", "tb-x", "×"); x.type = "button"; x.title = x.ariaLabel = t("Close"); head.append(x);
   const rules = el("p", "tb-rules", t("Be kind. No prices, trading or links. Messages vanish after 24 hours; three reports hide one."));
   const list = el("ol", "tb-list"); list.setAttribute("translate", "no"); list.setAttribute("aria-live", "polite");
@@ -184,11 +194,17 @@
     ws.send(`chat say ${m.token} ${m.a} ${m.b} ${m.c} ${encodeURIComponent(text)}`);
     setTimeout(() => { send.disabled = false; }, 4000);
   };
-  document.addEventListener("visibilitychange", () => { if (document.hidden) { if (inline) disconnect(); } else if (!box.hidden && !ws) connect(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) { if (inline) disconnect(); } else if (!box.hidden && !ws && (!ONLY || HOST().offsetWidth > 0)) connect(); });
 
   /* the panel form: inside #tbHost while that is shown, back to the pill when it is not */
+  const ONLY = (() => { const h = HOST(); return !!(h && h.dataset.pill === "no"); })();
   function place() {
-    const h = document.getElementById("tbHost"), show = !!(h && h.offsetWidth > 0);
+    const h = HOST(), show = !!(h && h.offsetWidth > 0);
+    if (ONLY) {   // inside the host for good: connected while it is shown and the tab is visible
+      if (!inline) { inline = true; h.append(box); box.classList.add("tb-inline"); box.hidden = false; pill.hidden = true; x.hidden = true; }
+      if (show) { showWho(); if (!document.hidden) connect(); } else disconnect();
+      return;
+    }
     if (show && !inline) {
       const wasOpen = !box.hidden; if (wasOpen) open(false);
       inline = true; h.append(box); box.classList.add("tb-inline"); box.hidden = false; pill.hidden = true; x.hidden = true;
@@ -197,7 +213,11 @@
       inline = false; disconnect(); box.classList.remove("tb-inline"); x.hidden = false; document.body.append(box); box.hidden = true; pill.hidden = false;
     }
   }
-  const mount = () => { document.body.append(pill, box); place(); addEventListener("resize", place); };
+  const mount = () => {
+    if (!ONLY) document.body.append(pill, box);
+    place(); addEventListener("resize", place);
+    if (ONLY && window.ResizeObserver) new ResizeObserver(place).observe(HOST());   // shown or hidden by the page's own CSS
+  };
   if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount);
   window.TauChat = { open: () => open(true), close: () => open(false) };
 })();

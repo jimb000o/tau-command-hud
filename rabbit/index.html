@@ -396,6 +396,36 @@ html.rk-full .bar .home { display: inline-flex; }
 @media (prefers-reduced-motion: reduce) { .cv-card { animation: none; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
+<link rel="stylesheet" href="../assets/chat.css">
+<script src="../assets/chat.js" defer></script>
+<style>
+/* The Coconut Wire: the site's troll box (assets/chat.js, the same room as on the HUD), out on the dark water at the
+   lower left, only on screens wide and tall enough that it leaves the island free (from 1600 × 800). Sea glass rather than a widget: a faint mint edge, the island's
+   hand for its name. It steps aside while a conversation, a left card or the places list is up. */
+.wire { display: none; }
+@media (min-width: 1600px) and (min-height: 800px) {
+  .wire { display: flex; position: absolute; z-index: 3; left: 12px; bottom: 62px; width: clamp(270px, 19vw, 340px); height: min(38%, 340px);
+    transition: opacity .35s, visibility .35s; }
+  .stage:has(.cv-card.talk:not(.intro):not(.end):not(.paper)) .wire, .stage:has(.cv-card.left) .wire,
+  .stage:has(.places.on) .wire, .stage:has(.places:focus-within) .wire { opacity: 0; visibility: hidden; }
+}
+.wire .tb-box.tb-inline { flex: 1 1 auto; height: 100%; border-radius: 12px; border: 1px solid rgba(185,255,214,.16);
+  background: linear-gradient(180deg, rgba(6,16,22,.5), rgba(6,14,20,.72)); backdrop-filter: blur(6px) saturate(.9); -webkit-backdrop-filter: blur(6px) saturate(.9);
+  box-shadow: inset 0 1px 0 rgba(185,255,214,.12), 0 18px 40px -24px rgba(0,0,0,.9); color: #dfe9e4; }
+.wire .tb-inline .tb-head { padding: 8px 12px 4px; }
+.wire .tb-tl { display: inline-flex; align-items: center; gap: 8px; font: 400 18px/1 "Patrick Hand", var(--display); letter-spacing: .02em; text-transform: none; color: #e8f3ec; }
+.wire .tb-tl::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #b9ffd6; box-shadow: 0 0 8px rgba(185,255,214,.6); animation: playing 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .wire .tb-tl::before { animation: none; } }
+.wire .tb-inline .tb-list { flex: 1 1 auto; min-height: 0; border-top: 1px solid rgba(185,255,214,.1); scrollbar-width: thin; scrollbar-color: rgba(185,255,214,.25) transparent;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14px); mask-image: linear-gradient(180deg, transparent 0, #000 14px); }
+.wire .tb-inline .tb-note, .wire .tb-inline .tb-form { border-top-color: rgba(185,255,214,.1); }
+.wire .tb-in { background: rgba(0,0,0,.28); border-color: rgba(185,255,214,.18); }
+.wire .tb-in:focus { border-color: rgba(185,255,214,.6); }
+.wire .tb-send { background: none; color: #b9ffd6; border: 1px solid rgba(185,255,214,.45); }
+.wire .tb-send:hover:not(:disabled) { background: rgba(185,255,214,.12); }
+.wire .tb-inline .tb-who, .wire .tb-inline .tb-rules, .wire .tb-inline .tb-note { color: rgba(223,233,228,.55); }
+html.rk-full .wire { left: max(8px, env(safe-area-inset-left, 0px)); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 52px); }
+</style>
 <script src="../assets/nav.js" defer></script>
 </head>
 <body>
@@ -426,6 +456,7 @@ html.rk-full .bar .home { display: inline-flex; }
     </div>
     <div class="places" id="cvPlaces" aria-label="Places on the island"></div>
     <div class="news radio" id="cvRadio"><i id="cvDJ"></i><b><span class="onair"></span>Radio Coco 97.3</b><span id="cvNews">A week to the election.</span></div>
+    <aside class="wire" id="tbHost" data-room="isle" data-pill="no"></aside>
     <div id="cvTip" hidden></div>
     <div id="cvToast" role="status" aria-live="polite"></div>
   </main>
