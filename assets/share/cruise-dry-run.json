@@ -1,5 +1,6 @@
 {
  "ship": "expedition",
+ "ship_scale": 3,
  "card": [
   "MS Dry Run · today 16:00",
   "German time · 40 passengers · 90 minutes ashore",

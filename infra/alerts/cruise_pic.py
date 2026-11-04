@@ -5,7 +5,8 @@ ship of rabbit/art/ships, placed where the game anchors it:
 
 The ship sits at the layout's anchor exactly as rabbit/scene.js draws it at anchor (bow to the west, mirrored, the same
 waterline transform), the view is a close crop of the island around it, and a card with the json's "card" lines
-(title, line, line, accent line) sits in the upper left. "ship" in the json picks the painting (expedition or liner)."""
+(title, line, line, accent line) sits in the upper left. "ship_scale" draws the ship that many times larger than the
+game does (3 = 200% larger), still at the anchor. "ship" in the json picks the painting (expedition or liner)."""
 import json, math, os, sys
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
@@ -46,12 +47,12 @@ def world_bounds(im):
     return -e, WW + e
 
 
-def place_ship(pic, ship, m, anchor, x0, y0, z):
+def place_ship(pic, ship, m, anchor, x0, y0, z, big=1.0):
     """scene.js boatTransform at anchor: translate to the anchor, mirror (bow west), scale to m.length world units along
     the stern-bow line, turn that line level, centre on its middle."""
     (sx, sy), (bx, by) = m["stern"], m["bow"]
     dx, dy = bx - sx, by - sy
-    s = m["length"] / math.hypot(dx, dy)
+    s = big * m["length"] / math.hypot(dx, dy)
     cx, cy = (sx + bx) / 2, (sy + by) / 2
     phi = -math.atan2(dy, dx)
     c, n = math.cos(phi), math.sin(phi)
@@ -64,9 +65,9 @@ def place_ship(pic, ship, m, anchor, x0, y0, z):
     ia, ib, id_, ie = e / det, -b / det, -d / det, a / det
     coeffs = (ia, ib, -(ia * tx + ib * ty) + cx, id_, ie, -(id_ * tx + ie * ty) + cy)
     shadow = Image.new("RGBA", (W, H)); sd = ImageDraw.Draw(shadow)
-    L = m["length"] * z
-    ax, ay = tx + 4 * z, ty + 4 * z
-    sd.ellipse([ax - L * 0.56, ay - 7 * z, ax + L * 0.56, ay + 7 * z], fill=(10, 30, 45, 56))
+    L = m["length"] * z * big
+    ax, ay = tx + 4 * z * big, ty + 4 * z * big
+    sd.ellipse([ax - L * 0.56, ay - 7 * z * big, ax + L * 0.56, ay + 7 * z * big], fill=(10, 30, 45, 56))
     pic = Image.alpha_composite(pic, shadow.filter(ImageFilter.GaussianBlur(3 * z)))
     layer = ship.transform((W, H), Image.AFFINE, coeffs, resample=Image.BICUBIC)
     return Image.alpha_composite(pic, layer)
@@ -104,10 +105,17 @@ def main(art, ships, texts, out):
     anchor = tuple((idx.get("layout") or {}).get("anchor") or ANCHOR)
     lo, hi = world_bounds(im)
     vw, vh = W / ZOOM, H / ZOOM
-    x0 = min(max(anchor[0] - 0.68 * vw, lo), hi - vw)
+    big = float(t.get("ship_scale", 1))   # the ship larger than the game draws it, so it reads on a phone
+    x0 = min(max(anchor[0] - (0.68 if big <= 1 else 0.6) * vw, lo), hi - vw)
     y0 = min(max(anchor[1] - 0.72 * vh, 0), WH - vh)
     pic = island_view(im, x0, y0, ZOOM).convert("RGBA")
-    pic = place_ship(pic, ship, m, anchor, x0, y0, ZOOM)
+    at = anchor
+    if big > 1:   # a larger ship stays whole in the frame and lies a little further out at sea, off the beach
+        L = m["length"] * ZOOM * big
+        px = min(ZOOM * (anchor[0] - x0), W - L / 2 - 30)
+        py = max(ZOOM * (anchor[1] - y0), H - 100)
+        at = (x0 + px / ZOOM, y0 + py / ZOOM)
+    pic = place_ship(pic, ship, m, at, x0, y0, ZOOM, big)
     if t.get("card"):
         pic = card(pic, t["card"])
     pic.convert("RGB").save(out, quality=90)
