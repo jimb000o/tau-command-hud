@@ -91,4 +91,46 @@ for (const [width, height] of [[1568, 735], [1248, 525]]) {
   assert.equal(pos[0], 1395);
 }
 ctx.S.base.painted = false; assert.equal(api.shipPos(now)[1], 780);
+
+/* The islanders' talk about the ships (talk.js RABBIT_SHIP_WHEN): a week in November 2026, German winter time (UTC+1).
+   MS Dry Run on Wednesday the 4th at four, Queen Mempool on Saturday the 7th at two. */
+const talk = { window: {} };
+vm.runInNewContext(await readFile(root + "rabbit/talk.js", "utf8"), talk);
+const W = talk.window.RABBIT_SHIP_WHEN, utc = (d, h, m = 0) => Date.UTC(2026, 10, d, h, m) / 1000;
+const dry = { ship: "dryrun", t0: utc(4, 15) }, queen = { ship: "queen", t0: utc(7, 13) }, dry2 = { ship: "dryrun", t0: utc(11, 15) };
+const was = (ship, end, note = "") => ({ ship, end, landed: !note.startsWith("no landing"), note });
+const lastQueen = was("queen", Date.UTC(2026, 9, 31, 14, 30) / 1000);   // last week's Queen: Saturday 31 October, 15:30
+const week = [
+  ["Sunday noon: Wednesday's ship in three days", utc(1, 11), { next: dry, last: lastQueen }, "shipSoon dryrun"],
+  ["Monday: in two days", utc(2, 8), { next: dry, last: lastQueen }, "shipSoon dryrun"],
+  ["Tuesday 23:30: tomorrow", utc(3, 22, 30), { next: dry }, "shipTomorrow dryrun"],
+  ["Wednesday 00:30 (still Tuesday in UTC): today", utc(3, 23, 30), { next: dry }, "shipToday dryrun"],
+  ["Wednesday 15:40, in sight", utc(4, 14, 40), { now: { ...dry, phase: "approach" }, next: dry }, "shipToday dryrun"],
+  ["Wednesday 16:05, waiting offshore", utc(4, 15, 5), { now: { ...dry, phase: "waiting" }, next: queen }, "shipToday dryrun"],
+  ["Wednesday 16:30, ashore", utc(4, 15, 30), { now: { ...dry, phase: "ashore" }, next: queen }, "shipHere dryrun"],
+  ["Wednesday 16:20, sailed on without landing", utc(4, 15, 20), { now: { ...dry, phase: "gone", why: "no landing" }, next: queen }, "shipCut dryrun"],
+  ["Wednesday evening, gone on time", utc(4, 17), { next: queen, last: was("dryrun", utc(4, 16, 30)) }, "shipGone dryrun"],
+  ["Wednesday evening, left early", utc(4, 17), { next: queen, last: was("dryrun", utc(4, 15, 50), "left early: the testnet stalled") }, "shipCut dryrun"],
+  ["Wednesday evening, never landed", utc(4, 17), { next: queen, last: was("dryrun", utc(4, 15, 30), "no landing: the testnet was stalled") }, "shipCut dryrun"],
+  ["Wednesday evening, the relay was down when she left", utc(4, 18), { next: queen, last: was("dryrun", utc(4, 16, 30), " (the relay was down at its end)") }, "shipGone dryrun"],
+  ["Thursday: the Queen in two days", utc(5, 9), { next: queen, last: was("dryrun", utc(4, 16, 30)) }, "shipSoon queen"],
+  ["Friday night: tomorrow", utc(6, 19), { next: queen }, "shipTomorrow queen"],
+  ["Saturday morning: today", utc(7, 8), { next: queen }, "shipToday queen"],
+  ["Saturday 14:30, ashore", utc(7, 13, 30), { now: { ...queen, phase: "ashore" }, next: dry2 }, "shipHere queen"],
+  ["Saturday 23:59, gone", utc(7, 22, 59), { next: dry2, last: was("queen", utc(7, 14, 30)) }, "shipGone queen"],
+  ["Sunday 00:30: the Queen was yesterday, Wednesday's ship in three days", utc(7, 23, 30), { next: dry2, last: was("queen", utc(7, 14, 30)) }, "shipSoon dryrun"],
+  ["Saturday evening before the relay closed the visit: Wednesday is four days off", utc(7, 15), { next: dry2 }, ""],
+  ["ships switched off", utc(6, 12), { now: null, next: null, last: null }, ""],
+];
+for (const [what, now, c, want] of week) {
+  const f = W(c, now), on = Object.keys(f).filter(k => f[k]).sort().join(" ");
+  const [w, ship] = want.split(" "), exp = want ? ["ship", ship, w, ...(/Soon|Tomorrow|Today/.test(w) ? ["shipNear"] : []), ...(/Gone|Cut/.test(w) ? ["shipAfter"] : [])].sort().join(" ") : "";
+  assert.equal(on, exp, what);
+}
+/* Rico's lines on air about the ships, as game.js shipAir() names them */
+const rico = { addEventListener() {}, removeEventListener() {}, fetch: () => Promise.reject(new Error("offline")), btoa };
+rico.window = rico; vm.runInNewContext(await readFile(root + "rabbit/talk.js", "utf8") + "\n" + await readFile(root + "rabbit/rico.js", "utf8"), rico);
+const shipLines = Object.keys(rico.RICO.L).filter(k => /^s[qd]_|^s_cut$/.test(k));
+assert.deepEqual(shipLines.sort(), ["s_cut", ...["sd_", "sq_"].flatMap(p => ["soon", "tomorrow", "today", "here", "gone"].map(w => p + w))].sort(), "Rico's ship lines");
 console.log("Ship assets, fallback selection, heading, turn continuity, waterline transforms and overview clearance passed.");
+console.log("Ship talk: a week of windows in German time, and Rico's ship lines, passed.");
