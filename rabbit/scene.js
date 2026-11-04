@@ -1786,8 +1786,15 @@
   }
 
   const inPoly = (P, x, y) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+  const inBox = (b, x, y) => b && x >= b[0] && x <= b[0] + b[2] && y >= b[1] && y <= b[1] + b[3];
+  /* a quarter that is there but not open yet (S.locked): the game shows only a "?" over it, nothing to click */
+  function lockedAt(px, py) {
+    if (S.roomA > 0.3 || (ART.pending && !(S.base && S.base.painted))) return null;
+    const [x, y] = toWorld(px, py);
+    for (const id of S.locked) { const p = PLACES[id]; if (p && (p.poly ? inPoly(p.poly, x, y) : inBox(p.box, x, y))) return id; }
+    return null;
+  }
   function hit(px, py) {
-    const inBox = (b, x, y) => b && x >= b[0] && x <= b[0] + b[2] && y >= b[1] && y <= b[1] + b[3];
     if (S.roomA > 0.3) return S.roomCat && inBox(S.roomCat.screen, px, py) ? "deja" : null;   // inside a place the island is out of reach
     if (ART.pending && !(S.base && S.base.painted)) return null;   // the painting is on its way: nothing to point at on the bare sea yet
     const [x, y] = toWorld(px, py);
@@ -1872,7 +1879,7 @@
     setHour(h, now) { if (!LIGHT.game) return; S.hourT = h; if (now) S.hour = h; },   // the light follows the clock in Germany (see CLOCK)
     clock: () => { const m = Math.floor(berlinMinutes()); return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); },
     host(fn, tall) { S.hostFn = fn; S.hostTall = !!tall; },
-    lock(ids) { S.locked = new Set(ids); }, locked: id => S.locked.has(id),   // quarters not open yet cannot be clicked
+    lock(ids) { S.locked = new Set(ids); }, locked: id => S.locked.has(id), lockedAt,   // quarters not open yet cannot be clicked, only show a "?"
     hostAt(bottom, left) { S.hostBottom = bottom; S.hostLeft = left || null; },
     gather(v) { S.gather = v; },
     cat(twice) { S.cat = { t0: performance.now(), d: 9000, x0: SPOT.cat[0], y0: SPOT.cat[1], x1: SPOT.cat[2], y1: SPOT.cat[3], twice: !!twice }; },

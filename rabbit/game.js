@@ -2596,17 +2596,24 @@
     cv.addEventListener("pointermove", e => {
       if (UI.card) { tip.hidden = true; cv.style.cursor = SC.hit(...where(e)) === "deja" ? "pointer" : "default"; return; }
       const id = SC.hit(...where(e)); cv.style.cursor = id ? "pointer" : "default";   // only the name and the hand: the painting itself never lights up under the mouse
-      if (!id) { tip.hidden = true; return; }
-      tip.hidden = false; tip.textContent = id === "rabbit" ? T("The white rabbit: follow it") : id === "agorzilla" ? T("Something moves in the jungle") : id === "deja" ? T("Déjà, the café cat") : T(SC.places[id].name);
-      const r = $("cvStage").getBoundingClientRect(); tip.style.left = Math.min(r.width - 180, e.clientX - r.left + 14) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
+      UI.q = false;
+      if (!id) { if (SC.lockedAt(...where(e))) tipAt(e, "?"); else tip.hidden = true; return; }   // a quarter not open yet: only a "?"
+      tipAt(e, id === "rabbit" ? T("The white rabbit: follow it") : id === "agorzilla" ? T("Something moves in the jungle") : id === "deja" ? T("Déjà, the café cat") : T(SC.places[id].name));
     });
+    function tipAt(e, text) {   // the label next to the pointer
+      tip.hidden = false; tip.textContent = text;
+      const r = $("cvStage").getBoundingClientRect(); tip.style.left = Math.min(r.width - 180, e.clientX - r.left + 14) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
+    }
     cv.addEventListener("pointerleave", () => { tip.hidden = true; });
+    cv.addEventListener("pointerdown", e => { UI.touch = e.pointerType !== "mouse"; });
     cv.addEventListener("click", e => {
       wake();
       if (!G) return;
       if (SC.hit(...where(e)) === "deja") { deja(); return; }   // she may sit in a room while its card is open
       if (UI.card) { if (!UI.card.classList.contains("intro") && !UI.card.classList.contains("paper") && !UI.card.classList.contains("end") && !UI.card.classList.contains("locked")) closeCard(); return; }
       const id = SC.hit(...where(e)); tip.hidden = true;
+      /* a tap on a quarter not open yet (a phone has no hover): the "?" for a moment */
+      if (!id && SC.lockedAt(...where(e))) { tipAt(e, "?"); if (UI.touch) { UI.q = true; clearTimeout(UI.qt); UI.qt = setTimeout(() => { if (UI.q) tip.hidden = true; }, 1400); } return; }
       if (id === "rabbit") { if (G.over || G.move >= MOVES) return; const [to, line] = hint(); toast(line); SND.sfx("tap"); setTimeout(() => openCard(to, PLACE[to]), 700); return; }
       if (id === "agorzilla") { legend(); return; }
       if (id && PLACE[id]) openCard(id, PLACE[id]);
