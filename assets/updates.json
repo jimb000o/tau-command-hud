@@ -2263,5 +2263,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "White Rabbit Key: the islanders talk about the cruise ships now, from three days before a ship comes until the evening it leaves, and each of them sees the ships their own way. Rico announces the ships on Radio Coco, and islanders phone in about them."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "News line: when IDNI lands a fix or a change on the testnet’s code, it comes onto the news line by itself for a week, with a link to the commit. The hover says whether our node already runs it. Changes to docs, tests and build scripts only stay off the line."
   }
 ]

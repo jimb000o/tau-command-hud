@@ -1,5 +1,5 @@
 /* The HUD's news line under the four principles: short headlines about what is new on the testnet and on Tau HUD,
-   live facts read off this page, the headlines of new features from the Updates log, hand-picked posts of ours and
+   live facts read off this page, what IDNI just landed in the testnet's code, the headlines of new features from the Updates log, hand-picked posts of ours and
    now and then Telegram and X. Hand-picked content lives in assets/ticker.json (headlines; picks: our X posts worth
    reposting; invites). Each item decodes out of falling glyphs where it enters the line, then reads as plain text.
    Hover or focus pauses it; with reduced motion the items change in place instead of moving. */
@@ -66,6 +66,32 @@
         fresh: path(e.major.link) === GLOW, tip: gist(e.html), tipRaw: true }));
   }).catch(() => {});
 
+  /* ---------- IDNI's own work: what landed on tau-testnet main in the last week, one line each, from the build pulse
+     (infra/alerts/devpulse.py reads the public git history every 30 minutes; docs-, test- and CI-only changes never
+     come). The line is the commit's own title; ticker.json "idni" can give one a plainer title and hover ({text, tip},
+     zh/ja in hud.js) or leave it out ({skip: true}), keyed by the first 7 letters of the commit. In Chinese and
+     Japanese only lines with such a translated title run. The hover says whether our node runs it yet. ---------- */
+  const IDNI_URL = "https://node.tauhud.com/devpulse.json";
+  const IDT = {
+    en: { fix: "IDNI fixed: ", change: "IDNI testnet: ", on: "On IDNI’s tau-testnet main since {d}.", runs: "Our node already runs it.", not: "Our node does not run it yet; we update after a test build." },
+    zh: { fix: "IDNI 修复：", change: "IDNI 测试网更新：", on: "{d}起已合入 IDNI 的 tau-testnet 主分支。", runs: "我们的节点已在运行它。", not: "我们的节点还没有运行它；测试构建通过后再更新。" },
+    ja: { fix: "IDNI 修正：", change: "IDNI テストネット更新：", on: "{d}から IDNI の tau-testnet main に入っています。", runs: "私たちのノードはすでに動かしています。", not: "私たちのノードはまだ動かしていません。テストビルドの後に更新します。" },
+  };
+  let IDNI = [], idniAt = 0;
+  const loadIdni = () => fetch(IDNI_URL, { cache: "no-cache" }).then(r => r.json()).then(j => {
+    const w = IDT[lang] || IDT.en, over = CFG.idni || {}, week = Date.now() - 7 * 864e5;
+    let day = t => new Date(t * 1000).toISOString().slice(0, 10);
+    try { const f = new Intl.DateTimeFormat(lang === "en" ? "en-GB" : lang, { day: "numeric", month: "short" }); day = t => f.format(new Date(t * 1000)); } catch (e) {}
+    IDNI = (Array.isArray(j && j.news) ? j.news : []).filter(n => n && n.sha && n.text && n.ts * 1000 > week).map(n => {
+      const o = over[String(n.sha).slice(0, 7)] || {};
+      if (o.skip) return null;
+      const title = o.text && translated(o.text) ? tr(o.text) : lang === "en" ? String(n.text) : "";
+      if (!title) return null;
+      const tip = (o.tip && translated(o.tip) ? tr(o.tip) : w.on.replace("{d}", day(n.ts))) + (lang === "en" ? " " : "") + (n.runs ? w.runs : w.not);
+      return { kind: "idni", text: (n.kind === "fix" ? w.fix : w.change) + title, href: String(n.url || ""), raw: true, tip, tipRaw: true };
+    }).filter(Boolean).slice(0, 3);
+  }).catch(() => {});
+
   /* ---------- when the Daily Consensus comes out, in the reader's own time: German time in English, China time in
      Chinese, Japan time in Japanese (ticker.json "gazette" per language; the server writes the edition every Monday) ---------- */
   const GZ = { en: { tz: "Europe/Berlin", day: 1, hour: 9 }, zh: { tz: "Asia/Shanghai", day: 1, hour: 9 }, ja: { tz: "Asia/Tokyo", day: 1, hour: 9 } };
@@ -92,7 +118,7 @@
   };
 
   /* ---------- the rotation: facts carry the line, the rest is mixed in ---------- */
-  const SLOTS = ["head", "live", "gazette", "news", "live", "head", "pick", "live", "head", "invite"];
+  const SLOTS = ["head", "live", "gazette", "news", "live", "idni", "head", "pick", "live", "head", "invite"];
   let slot = 0, headAt = 0, pickAt = 0, inviteAt = 0;
   const from = (list, at) => list.length ? list[at % list.length] : null;
   const next = () => {
@@ -102,6 +128,7 @@
       const k = SLOTS[slot++ % SLOTS.length]; let it = null;
       if (k === "live") it = fact();
       else if (k === "news") it = NEWS.length ? NEWS[newsAt++ % NEWS.length] : null;
+      else if (k === "idni") it = IDNI.length ? IDNI[idniAt++ % IDNI.length] : null;
       else if (k === "gazette") { it = gazette(); if (it && it.out) it = null; }
       else if (k === "head") { const n = from((CFG.headlines || []).filter(h => (!h.until || Date.now() < Date.parse(h.until)) && (!h.mode || (h.mode === "live") !== sim())), headAt++);
         it = n && { kind: "note", text: n.text, href: n.href, mark: n.mark, tip: n.tip };
@@ -119,7 +146,7 @@
     if (it.href) { a.href = it.href; if (/^https?:/.test(it.href)) { a.target = "_blank"; a.rel = "noopener"; } }
     const mark = document.createElement("i"); mark.className = "tk-mk";
     if (it.mark === "ghost") mark.classList.add("m-ghost");   // the chain core's ghost: an amber dot in a small block frame
-    else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" || it.fresh ? "" : it.kind === "news" ? "+" : it.kind === "paper" ? "✦" : "›";
+    else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" || it.fresh ? "" : it.kind === "news" || it.kind === "idni" ? "+" : it.kind === "paper" ? "✦" : "›";
     if (it.fresh) a.classList.add("fresh");
     if (it.tip) a.dataset.full = it.tipRaw ? it.tip : tr(it.tip);   // the HUD's own hover shows it; the line pauses meanwhile
     a.append(mark);
@@ -190,7 +217,7 @@
     .observe(document.body, { attributes: true, attributeFilter: ["data-mode"] });
 
   Promise.all([
-    fetch("assets/ticker.json", { cache: "no-cache" }).then(r => r.json()).then(j => { if (j && typeof j === "object") CFG = { ...CFG, ...j }; }).catch(() => {}).then(() => loadNews(true)),
+    fetch("assets/ticker.json", { cache: "no-cache" }).then(r => r.json()).then(j => { if (j && typeof j === "object") CFG = { ...CFG, ...j }; }).catch(() => {}).then(() => Promise.all([loadNews(true), loadIdni()])),
     /* letters are measured once, so wait for the page's monospace font: measured in a fallback font they keep its wider spacing */
     Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), new Promise(r => setTimeout(r, 4000))]),
   ]).then(() => {
@@ -198,6 +225,6 @@
     W = view.clientWidth;
     /* the facts need the page's first readings; give the chain a moment */
     setTimeout(() => { if (reduced) still(); else requestAnimationFrame(frame); }, 1200);
-    setInterval(() => loadNews(false), 15 * 60 * 1000);
+    setInterval(() => { loadNews(false); loadIdni(); }, 15 * 60 * 1000);
   });
 })();

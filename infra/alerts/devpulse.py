@@ -9,6 +9,11 @@ by Caddy at https://node.tauhud.com/devpulse.json:
   - which code areas moved in the last 4 and 12 weeks
   - tags, and how far each repo's main is ahead of the commit our node runs
   - chain restarts our relay saw, so the page can lay commits beside them
+  - news: what landed on tau-testnet main in the last two weeks (one line per merge or direct commit, docs-, test-
+    and CI-only changes left out), for the news line on tauhud.com; each says whether our node runs it yet
+  - sync: whether our node keeps up with IDNI: how far tau-testnet main is ahead of our pin, whether IDNI's own
+    build still uses our tau-lang commit, and whether each of our node patches still applies to the newest main
+    (checked once per new upstream commit on a shallow checkout; `up` prints it)
   - open issues and pull requests, from the public GitHub search API (no token;
     a few requests an hour, far below its limit; left out when it refuses)
 
@@ -26,6 +31,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.parse
 import urllib.request
@@ -47,6 +53,13 @@ DAYS = 90
 UA = {"User-Agent": "tauhud-devpulse/1 (+https://tauhud.com)", "Accept": "application/vnd.github+json"}
 # areas below these folders are counted one level deeper (src/boolean_algebras rather than src)
 DEEP = {"src", "tests", "bindings", "scripts", "networks"}
+NEWS_DAYS = int(os.environ.get("DEVPULSE_NEWS_DAYS", 14))
+NEWS_MAX = 6
+PATCHES_DIR = os.environ.get("DEVPULSE_PATCHES", "/pins/patches")   # infra/node/patches, applied in the Dockerfile's order
+REMOTE = os.environ.get("DEVPULSE_REMOTE", "https://github.com/{repo}.git")
+# commit kinds that never make news: housekeeping around the code, not the code the testnet runs
+QUIET_KINDS = {"docs", "doc", "test", "tests", "ci", "chore", "style"}
+QUIET_FILE = re.compile(r"(^|/)(docs?|tests?)/|^\.github/|\.md$|^LICENSE|^NOTICE")
 
 
 def git(repo_dir: str, *args: str) -> str:
@@ -58,7 +71,7 @@ def sync(repo: str) -> str:
     path = os.path.join(CLONES, repo.replace("/", "__") + ".git")
     if not os.path.isdir(path):
         os.makedirs(CLONES, exist_ok=True)
-        subprocess.run(["git", "clone", "--quiet", "--bare", "--filter=blob:none", f"https://github.com/{repo}.git", path],
+        subprocess.run(["git", "clone", "--quiet", "--bare", "--filter=blob:none", REMOTE.format(repo=repo), path],
                        check=True, capture_output=True, text=True, timeout=900)
     else:
         git(path, "fetch", "--quiet", "--prune", "--tags", "origin", "+refs/heads/*:refs/heads/*")
@@ -217,18 +230,175 @@ def restarts() -> list[dict]:
         return []
 
 
+# ---------- news and sync: what landed on tau-testnet main, and whether our node keeps up ----------
+TESTNET = "IDNI/tau-testnet"
+
+
+def headline(subject: str) -> dict | None:
+    """A commit title as one plain news line: 'merge: fix(#78) header sync into main' -> fix, 'Header sync', [78].
+    None for housekeeping (docs, tests, CI, merging main into a branch)."""
+    t = re.sub(r"^merge:\s*", "", subject.strip(), flags=re.I)
+    if re.match(r"(merge (branch|remote)|main into\b|revert \"merge)", t, re.I):
+        return None
+    m = re.match(r"([A-Za-z]+)(?:\(([^)]*)\)!?:?|!?:)\s*(.+)", t)   # "fix(net): …", "feat: …", IDNI's "fix(#78) …"
+    kind, scope, rest = (m.group(1).lower(), m.group(2) or "", m.group(3)) if m else ("", "", t)
+    if kind in QUIET_KINDS:
+        return None
+    issues = sorted({int(x) for x in re.findall(r"#(\d+)", scope + " " + rest)})
+    rest = re.sub(r"\s*\(#\d+\)\s*$", "", rest)            # a squash merge's "(#93)"
+    rest = re.sub(r"\s+into (main|master)$", "", rest).strip().rstrip(".")
+    if len(rest) < 4:
+        return None
+    fix = kind == "fix" or bool(re.match(r"fix(es|ed)?\b", rest, re.I))
+    if not m and fix:   # "Fix crash on start": the line already says "fixed"
+        rest = re.sub(r"^fix(es|ed)?:?\s+", "", rest, flags=re.I) or rest
+    if len(rest) > 90:
+        rest = rest[:88].rsplit(" ", 1)[0] + "…"
+    return {"kind": "fix" if fix else "change", "text": rest[0].upper() + rest[1:], "issues": issues}
+
+
+def is_ancestor(path: str, sha: str, of: str) -> bool:
+    return subprocess.run(["git", "-C", path, "merge-base", "--is-ancestor", sha, of], capture_output=True).returncode == 0
+
+
+def changed_files(path: str, sha: str) -> list[str]:
+    """Files a commit changed against its first parent (trees only, no file contents needed)."""
+    try:
+        return [f for f in git(path, "diff", "--name-only", "--no-renames", sha + "^1", sha).splitlines() if f.strip()]
+    except subprocess.CalledProcessError:
+        return []
+
+
+def news(repo: str, path: str, branch: str, now: int, pin: str | None) -> list[dict]:
+    """One item per merge (or direct commit) on main in the last NEWS_DAYS days, newest first."""
+    out = git(path, "log", "--first-parent", branch, f"--since=@{now - NEWS_DAYS * 86400}",
+              "--format=%H%x1f%ct%x1f%s%x1f%b%x1e")
+    items = []
+    for chunk in out.split("\x1e"):
+        if not chunk.strip():
+            continue
+        sha, ct, subject, body = (chunk.strip("\n").split("\x1f") + ["", "", "", ""])[:4]
+        if re.match(r"merge pull request #\d+", subject, re.I):   # GitHub's own merge title: the PR title is the next line
+            subject = next((x for x in body.splitlines() if x.strip()), subject)
+        h = headline(subject)
+        if not h:
+            continue
+        files = changed_files(path, sha)
+        if files and all(QUIET_FILE.search(f) for f in files):
+            continue
+        items.append({"sha": sha, "ts": int(ct), **h, "url": f"https://github.com/{repo}/commit/{sha}",
+                      "runs": bool(pin) and is_ancestor(path, sha, pin)})
+        if len(items) >= NEWS_MAX:
+            break
+    return items
+
+
+def lang_pin(path: str, branch: str) -> str | None:
+    """The tau-lang commit IDNI's own standalone image is built from, on tau-testnet main."""
+    try:
+        m = re.search(r"ARG\s+TAU_LANG_REF=([0-9a-f]{7,40})", git(path, "show", f"{branch}:Dockerfile.standalone"))
+        return m.group(1) if m else None
+    except subprocess.CalledProcessError:
+        return None
+
+
+def patch_order() -> list[str]:
+    try:
+        with open(PINS_FILE, encoding="utf-8") as f:
+            return re.findall(r"python3 -I /patches/([\w.-]+\.py) /src", f.read())
+    except OSError:
+        return []
+
+
+_patched: dict = {}
+
+
+def check_patches(repo: str, branch: str, head: str) -> dict | None:
+    """Apply our node patches, in the Dockerfile's order, to a fresh shallow checkout of upstream main, once per
+    new upstream commit (or changed patch). A patch fails when the source no longer matches what it expects; the
+    ones after it are not tried, since they build on it."""
+    order = patch_order()
+    if not order or not os.path.isdir(PATCHES_DIR):
+        return None
+    stamp = head
+    for name in order:
+        try:
+            stamp += ":%d" % os.stat(os.path.join(PATCHES_DIR, name)).st_mtime_ns
+        except OSError:
+            stamp += ":missing"
+    if _patched.get("stamp") == stamp:
+        return _patched["result"]
+    os.makedirs(CLONES, exist_ok=True)
+    results, checked = [], head
+    with tempfile.TemporaryDirectory(dir=CLONES, prefix="patch-") as tmp:
+        src = os.path.join(tmp, "src")
+        subprocess.run(["git", "clone", "--quiet", "--depth", "1", "--branch", branch, REMOTE.format(repo=repo), src],
+                       check=True, capture_output=True, text=True, timeout=900)
+        checked = git(src, "rev-parse", "HEAD").strip()
+        failed = False
+        for name in order:
+            if failed:
+                results.append({"name": name, "ok": None, "error": "not tried after the failure above"})
+                continue
+            p = subprocess.run([sys.executable, "-I", os.path.join(PATCHES_DIR, name), src],
+                               capture_output=True, text=True, timeout=300)
+            err = next((x.strip() for x in reversed(p.stderr.splitlines()) if x.strip()), "") if p.returncode else ""
+            results.append({"name": name, "ok": p.returncode == 0, "error": err[:240]})
+            failed = p.returncode != 0
+    result = {"sha": checked, "ok": all(r["ok"] for r in results), "results": results}
+    _patched.update(stamp=stamp, result=result)
+    return result
+
+
+def sync_state(repo: str, path: str, branch: str, pins_: dict) -> dict:
+    pin = pins_.get(TESTNET)
+    head = git(path, "rev-parse", branch).strip()
+    out = {"pin": pin, "head": head, "ahead": None, "behind": []}
+    try:
+        full = git(path, "rev-parse", "--verify", "--quiet", pin + "^{commit}").strip() if pin else ""
+    except subprocess.CalledProcessError:
+        full = ""
+    if full:
+        out["pin"] = full
+        out["ahead"] = int(git(path, "rev-list", "--count", f"{full}..{branch}").strip())
+        for line in git(path, "log", "--first-parent", f"{full}..{branch}", "-8", "--format=%H%x1f%ct%x1f%s").splitlines():
+            sha, ct, subject = (line.split("\x1f") + ["", "", ""])[:3]
+            h = headline(subject)
+            out["behind"].append({"sha": sha, "ts": int(ct or 0), "text": h["text"] if h else subject})
+    ours, idni = pins_.get("IDNI/tau-lang"), lang_pin(path, branch)
+    lang = {"ours": ours, "idni": idni,
+            "same": bool(ours and idni) and (ours.startswith(idni) or idni.startswith(ours))}
+    try:
+        patches = check_patches(repo, branch, head)
+    except Exception as e:  # noqa: BLE001 - a failed checkout is reported, never fatal
+        log.warning("patch check: %s", e)
+        patches = None
+    ok = out["ahead"] == 0 and lang["same"] and (patches is None or patches["ok"])
+    return {"testnet": out, "tau_lang": lang, "patches": patches, "ok": ok}
+
+
 def build(now: int | None = None, trackers: dict | None = None) -> dict:
     now = int(now or time.time())
     pin = pins()
-    repos = []
+    repos, paths = [], {}
     for repo in REPOS:
         try:
-            repos.append(repo_pulse(repo, sync(repo), now, pin.get(repo)))
+            paths[repo] = sync(repo)
+            repos.append(repo_pulse(repo, paths[repo], now, pin.get(repo)))
         except Exception as e:  # noqa: BLE001 - one repo failing must not hide the other
             log.warning("%s: %s", repo, e)
     for r in repos:
         r["tracker"] = (trackers or {}).get(r["repo"], {})
-    return {"v": 1, "generated_at": now, "source": "git", "repos": repos, "restarts": restarts()}
+    data = {"v": 1, "generated_at": now, "source": "git", "repos": repos, "restarts": restarts()}
+    tn = next((r for r in repos if r["repo"] == TESTNET), None)
+    if tn:
+        try:
+            full = (tn.get("runs") or {}).get("sha")
+            data["news"] = news(TESTNET, paths[TESTNET], tn["branch"], now, full if full and len(full) == 40 else None)
+            data["sync"] = sync_state(TESTNET, paths[TESTNET], tn["branch"], pin)
+        except Exception as e:  # noqa: BLE001
+            log.warning("news/sync: %s", e)
+    return data
 
 
 def write_atomic(path: str, text: str):
@@ -257,7 +427,9 @@ def main():
             data = build(int(started), trackers)
             if data["repos"]:
                 write_atomic(PUBLIC_PATH, json.dumps(data, separators=(",", ":")))
-                log.info("devpulse.json: %s", ", ".join(f"{r['repo']} {r['head']['sha'][:7]}" for r in data["repos"]))
+                sy = data.get("sync") or {}
+                log.info("devpulse.json: %s; sync %s", ", ".join(f"{r['repo']} {r['head']['sha'][:7]}" for r in data["repos"]),
+                         "ok" if sy.get("ok") else json.dumps(sy)[:300])
         except Exception as e:  # noqa: BLE001
             log.warning("pass failed: %s", e)
         time.sleep(max(60.0, EVERY - (time.time() - started)))

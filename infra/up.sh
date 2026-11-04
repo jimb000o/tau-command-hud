@@ -35,7 +35,8 @@ NOTE=$(mktemp)
 curl -s https://node.tauhud.com/status > "$NOTE.status" || true
 curl -s https://node.tauhud.com/isle > "$NOTE.isle" || true
 curl -s https://node.tauhud.com/cruise > "$NOTE.cruise" || true
-python3 - "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" <<'PY' | tee -a "$NOTE"
+curl -s https://node.tauhud.com/devpulse.json > "$NOTE.pulse" || true
+python3 - "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" <<'PY' | tee -a "$NOTE"
 import json, sys
 def read(path, what):
     try:
@@ -73,6 +74,29 @@ if s:
         here = f"{v.get('name')} {v.get('phase')}, {v.get('ashore', 0)} ashore; " if v else ""
         print(f"ships:   {here}next {n.get('name')} {at(n['t0'])} {zn}" if n else f"ships:   {here}no call ahead")
         print(f"         {wallets} of {seats} passenger wallets made, kinds tried: {', '.join(tried)}, logbook https://node.tauhud.com/cruise/log")
+# in sync with IDNI (alerts/devpulse.py, every 30 min): is our node on the newest tau-testnet main, does IDNI's build
+# use our tau-lang commit, do our node patches still apply to the newest main
+s = read(sys.argv[4], "idni:    ")
+if s is not None:
+    y = s.get("sync") or {}
+    t, l, p = y.get("testnet") or {}, y.get("tau_lang") or {}, y.get("patches")
+    short = lambda x: (x or "?")[:7]
+    if not y:
+        print("idni:    no sync check yet (devpulse is just starting; the next up shows it)")
+    elif t.get("ahead") == 0:
+        print(f"idni:    our node runs the newest tau-testnet main ({short(t.get('pin'))})")
+    else:
+        print(f"idni:    tau-testnet main is {t.get('ahead')} commits ahead of our node ({short(t.get('pin'))} -> {short(t.get('head'))}):")
+        for b in (t.get("behind") or [])[:5]:
+            print(f"         {short(b.get('sha'))} {b.get('text')}")
+    if y and not l.get("same"):
+        print(f"         tau-lang: IDNI's build uses {short(l.get('idni'))}, ours {short(l.get('ours'))}")
+    if p:
+        bad = [r for r in p.get("results") or [] if r.get("ok") is False]
+        if bad:
+            print(f"         patches on main {short(p.get('sha'))}: {bad[0]['name']} no longer applies ({bad[0].get('error') or 'see devpulse log'}); a pin bump needs it reworked")
+        elif t.get("ahead"):
+            print(f"         all {len(p.get('results') or [])} node patches apply to main {short(p.get('sha'))}: a pin bump can be built (then test it)")
 PY
 # the channels: may the service post at all? (asks Telegram and X, posts nothing; a refused key or a bot without the
 # right to post is named here, so the channel can never go quiet unnoticed), then what the running containers logged
@@ -140,5 +164,5 @@ echo
 echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
-rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$V"
+rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
 echo "done. next time just type: up   (or: up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
