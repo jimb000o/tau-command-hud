@@ -762,6 +762,8 @@ small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .clause i.k-approval { background: #fff; }
 .clause i.k-heightlock { background: #c4c4cc; }
 .clause span:last-child { color: var(--dim); }
+.clause span:nth-of-type(1) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clause .gen { font: 500 11px var(--mono); font-style: normal; color: var(--dim); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; white-space: nowrap; }   /* one of IDNI's genesis accounts (assets/origins.js) */
 .appr { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line); display: grid; gap: 4px; }
 .ap { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; cursor: help; }
 .ap i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--amber); }
@@ -2315,8 +2317,9 @@ function explainOffer(o) {
   const st = { offered: `Waiting for ${short(o.to)}; expires at #${o.expire}.`, accepted: `Now binds ${short(o.to)}’s account.`, rejected: "Declined; nothing changed.", expired: "Expired unanswered." }[o.status] || o.status;
   return `${policyMeaning(o.policy)}\n${o.collides ? "Accepting replaces the recipient’s current rule. " : ""}${st}`;
 }
+const isGenesis = a => { const o = window.TauOrigin && TauOrigin.of(a); return !!o && o.tag === "idni"; };   // assets/origins.js, the same list the account page uses
 function explainClause(acc, p) {
-  return `${policyMeaning(p)}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
+  return `${isGenesis(acc) ? "IDNI genesis account, one of the 11 the testnet started with. " : ""}${policyMeaning(p)}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
 }
 function explainBlock(b) {
   if (!b.n) return "Genesis: the starting state, spec revision 1, no transactions.";
@@ -2551,7 +2554,7 @@ function renderClauses() {
     return `<div class="ap ${a.status}" data-full="${esc(TIP[a.status] || "")}"><i></i><span>${acct(a.from)} → ${acct(a.to)} <b>${fmt(a.amount)} AGRS</b></span><span>${LBL[a.status] || a.status}</span></div>`;
   }).join("")}</div>` : "";
   $("clauses").innerHTML = (entries.length ? entries.slice(0, 8).map(([acc, p]) =>
-    `<div class="clause${p.lastRefused && ruleState(p).hot ? " refused" : ""}" data-ex="${exKey(() => explainClause(acc, p) + (p.lastRefused && ruleState(p).hot ? "\nJust refused a transfer from this account." : ""))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}</span><span>${p.name}</span></div>`).join("")
+    `<div class="clause${p.lastRefused && ruleState(p).hot ? " refused" : ""}" data-ex="${exKey(() => explainClause(acc, p) + (p.lastRefused && ruleState(p).hot ? "\nJust refused a transfer from this account." : ""))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}${isGenesis(acc) ? ` <em class="gen">genesis</em>` : ""}</span><span>${p.name}</span></div>`).join("")
     : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`) + appr;
   // The node composes all accepted clauses into ONE rule per stream (README · Rule sharing)
   const branches = entries.slice(0, 3).map(([acc, p]) => `(i12[t]:bv[384] = { #x${acc.slice(0, 8)}… }:bv[384]) ? ( ${esc(p.body)} )`);
