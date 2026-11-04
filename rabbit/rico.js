@@ -1064,9 +1064,9 @@
   const BREAK = { "coco>mango": "A", "mango>lowtide": "B", "lowtide>tinroof": "C", "tinroof>hammock": "D", "hammock>moon": "E", "moon>coco": "F" };
   const NIGHT_AT = 23;
   const QS = typeof location !== "undefined" && location.search ? new URLSearchParams(location.search) : null;
-  /* one-off extra hours (UTC), e.g. Kilian's first listen on 4 Nov 01:30-02:30 German time; the openers and closers that
+  /* one-off extra hours (UTC), e.g. Kilian's first listen on 4 Nov 01:45-02:45 German time; the openers and closers that
      name eleven o'clock or midnight are skipped then */
-  const EXTRA = [[Date.UTC(2026, 10, 4, 0, 30), Date.UTC(2026, 10, 4, 1, 30)]];
+  const EXTRA = [[Date.UTC(2026, 10, 4, 0, 45), Date.UTC(2026, 10, 4, 1, 45)]];
   const extra = () => EXTRA.some(([a, b]) => Date.now() >= a && Date.now() < b);
   const night = (hr = new Date().getHours()) => (QS && QS.get("nightline") === "1") || hr === NIGHT_AT || extra();
   const NL = { open: false };
