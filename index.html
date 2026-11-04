@@ -1774,7 +1774,9 @@ function setRelay(up) {
   const synced = PRESENCE.synced !== false;
   const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
   const sc = PRESENCE.score != null ? ` health ${PRESENCE.score} of 100` : "", why = healthWhy(), sv = stalled ? stallVerdict(sc) : null;
-  $("liveDot").className = "dot " + (up ? (sv && sv[0] === "bad" ? "off" : synced && !catching && !degraded && !sv ? "" : "behind") : "off");
+  // red means one thing: our node or the relay does not answer. A stalled or catching-up chain with our node answering is amber,
+  // so the light turns back from red the moment the node answers again, whatever the relay's score still remembers of the outage
+  $("liveDot").className = "dot " + (up ? (synced && !catching && !degraded && !sv ? "" : "behind") : "off");
   LIVE_TIP = (sv ? verdict(sv[0], sv[1]) : !up ? verdict("bad", PRESENCE.stale ? "Problem: no answer from the relay for over a minute." : PRESENCE.health === "down" ? `Problem: the testnet is down,${sc || " says its health score"}.` : "Problem: the community node is offline, the relay is not answering.")
     : degraded ? verdict("watch", `Watch: testnet${sc || " health"}, degraded.`) : !synced ? verdict("busy", "In progress: online, not synced with the real chain yet.")
     : catching ? verdict("busy", `In progress: catching up, verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.`) : verdict("ok", sc ? `Normal: testnet${sc}.` : "Normal: online and following the real testnet chain."))
@@ -1797,6 +1799,10 @@ async function pollOnline() {
     PRESENCE.stale = false; PRESENCE.okAt = Date.now();
     PRESENCE.health = j.health && typeof j.health.state === "string" ? j.health.state : null; PRESENCE.healthLabel = j.health && j.health.label ? String(j.health.label) : "";
     PRESENCE.score = j.health && Number.isFinite(+j.health.score) ? Math.round(+j.health.score) : null;
+    const answering = !!j.upstream_connected && Number(j.height) > 0;
+    // back from an outage: forget "our node does not answer" from the last breakdown and ask for a fresh one now, not up to a minute later
+    if (answering && !PRESENCE.answering) { HSC.lost = HSC.lost.filter(x => x.k !== "node"); HSC.at = 0; }
+    PRESENCE.answering = answering;
     if (PRESENCE.health && PRESENCE.health !== "healthy") pollHealthWhy(); else HSC.lost = [];
     const n = Number(j.online ?? j.clients ?? j.presence);   // online = people (one per viewer token); clients = sockets
     setOnline(Number.isFinite(n) ? n : null);
@@ -1806,9 +1812,9 @@ async function pollOnline() {
     if (Array.isArray(j.restarts)) PRESENCE.restarts = j.restarts.map(r => ({ detected_at: Number(r.detected_at) || null, old_tip: r.old_tip ?? (r.old && r.old.tip) ?? null }));
     PRESENCE.tip = Number(j.tip_height ?? j.network_height) || null; PRESENCE.canon = Number.isFinite(Number(j.canonical_height)) ? Number(j.canonical_height) : null;
     PRESENCE.synced = j.live_default === true || (j.live_default === undefined && j.canonical_height === undefined) ? true : Number(j.canonical_height) > 0;
-    setRelay(!!j.upstream_connected && Number(j.height) > 0);
+    setRelay(answering);
     if (PRESENCE.up) { autoLive(); if (S.mode === "live" && Date.now() - NET.at > 55000) pollNodes(); }
-  } catch { setOnline(null); setRelay(false); }
+  } catch { PRESENCE.answering = false; setOnline(null); setRelay(false); }
   finally { clearTimeout(t); PRESENCE.at = Date.now(); }
 }
 const CORE_ONLY = document.documentElement.classList.contains("coreonly"), CORE_QUIET = CORE_ONLY && document.documentElement.classList.contains("corequiet");
@@ -3183,6 +3189,7 @@ function liveConnect() {
   ws.onopen = () => {
     LIVE.everConnected = true; LIVE.retryWait = 5000;
     setMode("live", "Connected");
+    if (!S.simfeed) pollOnline();   // reconnected: the light asks the relay at once instead of keeping the outage's red until the next round
     ws.send(helloLine());
     if (!S.simfeed && window.TauChainLoad) TauChainLoad.progress(0, 12);   // the shared "reading the chain" bar until the first blocks are in
     liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool"); RIB.probe = true; liveSend("getblockrange 1 1");
