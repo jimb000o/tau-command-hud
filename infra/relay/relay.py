@@ -2103,6 +2103,14 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.wallets_text.encode())
+        if path == "/api/v1/sources/recent":   # who sent the last 12 blocks' transactions, totals only (Rico's chain weather)
+            if getattr(self, "recent_text", None) is None or time.monotonic() - self.recent_at >= 20:
+                self.recent_text = json.dumps(self.sources.recent(self.ordered_blocks()), separators=(",", ":"))
+                self.recent_at = time.monotonic()
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=20")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.recent_text.encode())
         if path == "/api/v1/sources":
             if self.sources_text is None or time.monotonic() - self.sources_at >= 60:
                 self.sources_text = json.dumps(self.sources.by_day(self.ordered_blocks()), separators=(",", ":"))

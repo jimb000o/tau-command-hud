@@ -116,6 +116,8 @@
     const sim = !!(window.TauSim && TauSim.on);
     let ws; try { ws = sim ? TauSim.socket() : new WebSocket("wss://node.tauhud.com"); } catch (e) { return done(null); }
     const blocks = new Map(); let mem = null, fin = false;
+    let rec = null;   // who sent the last blocks' transactions (relay, totals only)
+    if (!sim) fetch("https://node.tauhud.com/api/v1/sources/recent", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => { rec = j; }, () => {});
     const finish = () => {
       if (fin) return; fin = true; try { ws.close(); } catch (e) {}
       const bs = [...blocks.values()].sort((a, b) => a.header.block_number - b.header.block_number).slice(-12);
@@ -128,7 +130,12 @@
       const out = [V(sim ? "wxSim" : "wxChain")];
       if (age > 10) out.push(V(age >= 720 ? "fogDay" : age >= 180 ? "fogLong" : age >= 60 ? "fogHour" : "fog"), ago(y, age));
       else if (!txs) out.push(V("calm"), Q("({n} empty blocks, up to block {y})", { n: bs.length, y }));
-      else out.push(V(txs <= bs.length / 2 ? "breeze" : "choppy"), Q("({n} txs in the last {m} blocks, up to block {y})", { n: txs, m: bs.length, y }));
+      else {
+        /* every sender known (relay /api/v1/sources/recent): who it is, not just "busy" */
+        const who = rec && rec.n && rec.to != null && Math.abs(rec.to - last.header.block_number) <= 3 && RICO.wxSource ? RICO.wxSource(rec.n) : null;
+        out.push(V(who ? who.set : txs <= bs.length / 2 ? "breeze" : "choppy"), Q("({n} txs in the last {m} blocks, up to block {y})", { n: txs, m: bs.length, y }));
+        if (who && who.page) out.push(who.page === "hud" ? Q("(sent from tauhud.com)") : /^(direct|elsewhere)$/.test(who.page) ? Q("(sent from the Tau HUD wallet)") : Q("(sent from tauhud.com/{x}/)", { x: who.page }));
+      }
       if (rules.length) out.push(V("rule"), Q("(block {y})", { y: String(rules[rules.length - 1]) }));
       out.push(...(wait ? [V("showers"), Q("({n} waiting)", { n: wait })] : [V("clear")]));
       WX.at = performance.now(); WX.age = sim ? 0 : age; WX.y = y; WX.line = out.filter(Boolean); done(WX.line);

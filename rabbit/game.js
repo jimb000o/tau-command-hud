@@ -1813,7 +1813,12 @@
     const w = [V(s.sim ? "wxSim" : "wxChain")], band = set => { const k = pickLine(RICO.SETS[set]); markSaid(k); w.push(V(k)); };
     if (s.age > 10) { band(s.age >= 720 ? "fogDay" : s.age >= 180 ? "fogLong" : s.age >= 60 ? "fogHour" : "fog"); w.push(ago(at, s.age)); }
     else if (!txs) { band("calm"); w.push(Q("({n} empty blocks, up to block {y})", { n: s.bs.length, y: at })); }
-    else { band(txs <= s.bs.length / 2 ? "breeze" : "choppy"); w.push(Q("({n} transactions in the last {m} blocks, up to block {y})", { n: txs, m: s.bs.length, y: at })); }
+    else {
+      /* every sender known (relay /api/v1/sources/recent, for about the same blocks): who it is, not just "busy" */
+      const r = SRC.recent, who = r && r.to != null && Math.abs(r.to - s.h) <= 3 && RICO.wxSource ? RICO.wxSource(r.n) : null;
+      band(who ? who.set : txs <= s.bs.length / 2 ? "breeze" : "choppy"); w.push(Q("({n} transactions in the last {m} blocks, up to block {y})", { n: txs, m: s.bs.length, y: at }));
+      if (who && who.page) w.push(who.page === "hud" ? Q("(sent from tauhud.com)") : /^(direct|elsewhere)$/.test(who.page) ? Q("(sent from the Tau HUD wallet)") : Q("(sent from tauhud.com/{x}/)", { x: who.page }));
+    }
     const rules = s.bs.filter(b => (b.transactions || []).some(tx => txKind(tx) === "rule_deploy")).map(b => b.header.block_number);
     if (rules.length) w.push(V("rule"), Q("(block {y})", { y: String(rules[rules.length - 1]) }));
     band(s.wait ? "showers" : "clear"); if (s.wait) w.push(Q("({n} waiting)", { n: s.wait }));
@@ -1883,6 +1888,9 @@
   readChain(); setInterval(() => { if (!away()) readChain(); }, 90000);
   dejaFetch(); setInterval(() => { if (!away()) dejaFetch(); }, 600000);
   srcFetch(); setInterval(() => { if (!away()) srcFetch(); }, 600000);
+  /* who sent the last blocks' transactions (totals only), for the chain weather */
+  const recentFetch = () => { if (window.TauSim && TauSim.on) return; fetch("https://node.tauhud.com/api/v1/sources/recent", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => { if (j && j.n) SRC.recent = j; }, () => {}); };
+  recentFetch(); setInterval(() => { if (!away()) recentFetch(); }, 60000);
   if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine, markSaid, shipStage, shipOdds, shipLine, shipPick, SHIPLIVE, SHIPV, ROT };   // the headless check (tests)
   setInterval(() => {
     if (!G || G.over || G.counting || away() || performance.now() < DJ.next || SND.gap) return;

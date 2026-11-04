@@ -298,6 +298,55 @@ class TxSources:
                 log.warning("cannot write %s: %r; sent hashes live in memory only", self.path, exc)
                 self._warned = True
 
+    def recent(self, blocks: list[dict], n: int = 12) -> dict:
+        """Who sent the transactions in the last n blocks (oldest first in, the newest n counted), for Rico's chain weather:
+        totals per source only, like "starts" in by_day. idni = the accounts the testnet started with, or the wallet that
+        sealed one of these blocks; bot = the island bot and its purses; cruise = the simulated passengers; rabbit = players'
+        moves; agorzilla / deja = meals and votes on agorzilla.com; tauhud:<page> = sent through this relay's wallet door from
+        that Tau HUD page; other = anything else (a key is not a person, an unknown sender stays unknown)."""
+        bs = [b for b in blocks if isinstance(b, dict)][-n:]
+        bots = {k.lower() for k in (*self.bots, *self.purses)}
+        ship = {k.lower() for k in (self.passengers() or {})}
+        props = {str((b.get("header") or {}).get("proposer_pubkey") or "").lower() for b in bs} - {""}
+        out: dict[str, int] = {}
+        for b in bs:
+            ids = b.get("tx_ids") or []
+            for i, tx in enumerate(b.get("transactions") or []):
+                if not isinstance(tx, dict):
+                    continue
+                h = str(ids[i] if i < len(ids) else tx.get("tx_hash") or "").lower()
+                s = str(tx.get("sender_pubkey") or "").lower()
+                ops = tx.get("operations") if isinstance(tx.get("operations"), dict) else {}
+                to = {str(op[1]).lower() for op in ops.get("1") or [] if isinstance(op, (list, tuple)) and len(op) >= 2}
+                if s in GENESIS or s in props:
+                    k = "idni"
+                elif s in bots:
+                    k = "bot"
+                elif s in ship:
+                    k = "cruise"
+                elif DEJA in to:
+                    k = "deja"
+                elif to & AGORZILLA:
+                    k = "agorzilla"
+                elif rabbit(tx, {}):
+                    k = "rabbit"
+                elif h in self.sent:
+                    site, _, via = self.sent[h].partition("|")
+                    k = site if site in ("agorzilla", "rabbit") else "tauhud:" + (via or "hud")
+                else:
+                    k = "other"
+                out[k] = out.get(k, 0) + 1
+        hs = [self._h(b) for b in bs]
+        hs = [x for x in hs if x is not None]
+        return {"from": min(hs) if hs else None, "to": max(hs) if hs else None, "blocks": len(bs), "n": out}
+
+    @staticmethod
+    def _h(b: dict):
+        try:
+            return int((b.get("header") or {}).get("block_number"))
+        except (TypeError, ValueError):
+            return None
+
     def by_day(self, blocks: list[dict]) -> dict:
         """Counts per UTC day from the blocks (oldest first) the relay holds."""
         days: dict[str, dict] = {}
