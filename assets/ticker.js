@@ -73,9 +73,9 @@
      any of its commits. The hover says whether our node runs it yet. ---------- */
   const IDNI_URL = "https://node.tauhud.com/devpulse.json";
   const IDT = {
-    en: { pre: "IDNI: ", runs: "Our node already runs it.", not: "Our node does not run it yet; we update after a test build." },
-    zh: { pre: "IDNI：", runs: "我们的节点已在运行它。", not: "我们的节点还没有运行它；测试构建通过后再更新。" },
-    ja: { pre: "IDNI：", runs: "私たちのノードはすでに動かしています。", not: "私たちのノードはまだ動かしていません。テストビルドの後に更新します。" },
+    en: { pre: "Testnet: ", runs: "Merged by IDNI; our node already runs it.", not: "Merged by IDNI; our node does not run it yet, we update after a test build." },
+    zh: { pre: "测试网：", runs: "由 IDNI 合入；我们的节点已在运行它。", not: "由 IDNI 合入；我们的节点还没有运行它，测试构建通过后再更新。" },
+    ja: { pre: "テストネット：", runs: "IDNI がマージ。私たちのノードはすでに動かしています。", not: "IDNI がマージ。私たちのノードはまだ動かしていません。テストビルドの後に更新します。" },
   };
   let IDNI = [], idniAt = 0;
   const loadIdni = () => fetch(IDNI_URL, { cache: "no-cache" }).then(r => r.json()).then(j => {
