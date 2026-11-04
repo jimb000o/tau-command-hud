@@ -1462,14 +1462,15 @@
   const SHIPAT = { works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };   // places only a painted island's layout brings
   const berlinHM = s => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(s * 1000)); } catch (e) { return new Date(s * 1000).toISOString().slice(11, 16); } };
   function shipPreview(k) {
-    const now = Math.floor(Date.now() / 1000), q = k === "queen";
-    return { name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition", phase: "ashore", t0: now - 1800, end: now + 3600, passengers: q ? 120 : 40,
+    const now = Math.floor(Date.now() / 1000), q = k === "queen", phase = new URLSearchParams(location.search).get("phase");
+    return { name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition", phase: phase === "approach" || phase === "gone" ? phase : phase === "turn" ? "boarding" : "ashore",
+      t0: phase === "approach" ? now + 90 : now - 1800, end: phase === "gone" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: q ? 120 : 40,
       ashore: q ? 96 : 34, at: q ? { south: 30, bar: 26, radio: 12, market: 18, works: 6, pier: 4 } : { book: 8, ship: 9, school: 6, dive: 8, pier: 3 },
       sent: { pay: q ? 214 : 96, bill: q ? 5 : 0, book: q ? 21 : 5, cancel: q ? 2 : 1 }, refused: 0, kinds: q ? ["pay", "bill", "book"] : ["pay", "book"], preview: true };
   }
   function shipFetch() {
     const k = new URLSearchParams(location.search).get("ship");
-    if (k === "dryrun" || k === "queen") { SHIPV.v = shipPreview(k); return shipShow(); }
+    if (k === "dryrun" || k === "queen") { if (!SHIPV.v?.preview) SHIPV.v = shipPreview(k); return shipShow(); }
     if (window.TauSim && TauSim.on) return;
     fetch("https://node.tauhud.com/cruise", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
       if (!j) return;

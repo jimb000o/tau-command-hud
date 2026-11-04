@@ -346,8 +346,17 @@ def call(path, body=None, accept="application/json", missing_ok=False, retry_400
             if soft or (missing_ok and e.code in (404, 405)) or (retry_400 and e.code in (400, 422)):
                 return None
             if "quota" in msg.lower():
+                # an API key can carry its own credit limit, below the account's: then the month still has credits
+                key_limit = "api key" in msg.lower() or "api_key" in msg.lower()
+                left = None if key_limit else credits()
+                if key_limit or (left and left[0] > 2000):
+                    sys.exit("ElevenLabs refused: the API key in infra/.env has its own credit limit and has used it up, "
+                             "although the account still has credits. Raise or remove that key's limit at "
+                             "https://elevenlabs.io/app/settings/api-keys (edit the key, Credit quota), then run the same command again.\n"
+                             f"ElevenLabs said {e.code}: {msg}")
                 sys.exit("ElevenLabs: this month's credits are used up. Every clip made so far is kept; "
-                         "run the same command again once the credits renew and it goes on where it stopped.")
+                         "run the same command again once the credits renew and it goes on where it stopped.\n"
+                         f"ElevenLabs said {e.code}: {msg}")
             if e.code == 429 and attempt < 3:
                 time.sleep(5 * (attempt + 1))
                 continue
