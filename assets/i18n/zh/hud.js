@@ -1,5 +1,8 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "IDNI genesis account, one of the 11 the testnet started with.": "IDNI 创世账户，测试网启动时就有的 11 个账户之一。",
+  "genesis": "创世",
+  "Personal money rules: an account that is one of IDNI's genesis accounts (the 11 the testnet started with) now carries a small “genesis” tag, and its hover says so. Every other account stays unnamed.": "个人资金规则：属于 IDNI 创世账户（测试网启动时就有的 11 个账户）的账户现在带有一个小小的“创世”标签，悬停时也会说明。其他账户一律不命名。",
   "Live node light: after the node or the relay was offline, the light turns green again by itself as soon as the node answers, without reloading the page. Red now means only that the node or the relay does not answer; a chain that stalls or catches up shows amber.": "实时节点指示灯：节点或中继离线后，只要节点重新应答，指示灯就会自动变回绿色，无需重新加载页面。红色现在只表示节点或中继没有应答；链停滞或正在追赶时显示琥珀色。",
   "What if: the preset is now called “Like real testnet today”, because it copies the testnet’s rules (one validator, a block about every minute), not its blocks. Beside the sandbox chain the real testnet’s current block now shows, so block #85 in the sandbox is not mistaken for a chain restart.": "“如果……会怎样”：预设现在叫“像今天的真实测试网”，因为它照搬的是测试网的规则（一个验证者，大约每分钟一个区块），而不是它的区块。沙盒链旁边现在显示真实测试网当前的区块，这样沙盒里的区块 #85 就不会被误认为链重新启动了。",
   "White Rabbit Key: Hana’s and Lola’s portraits have proper hands now. Hana holds her exercise books against her side with one hand flat on top, and her pencil sits behind her ear instead of seeming to run on into her cheek. Lola holds her cocktail shaker in one hand and rests the other arm across her waist.": "白兔岛：Hana 和 Lola 的画像终于有了像样的手。Hana 把练习本抱在身侧，一只手平放在最上面那本上，铅笔也稳稳夹在耳后，不再像是一直戳进脸颊里。Lola 一只手握着调酒壶，另一只手臂搭在腰间。",
