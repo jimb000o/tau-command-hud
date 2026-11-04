@@ -2243,5 +2243,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "Radio Coco: when Rico names a block (“up to block 4639”), the words are a link now and open that block in the explorer in a new tab. In the caption at the bottom of every page and on the island’s radio strip."
+  },
+  {
+    "tag": "Testnet stats",
+    "on": "2026-11-04",
+    "html": "Testnet stats: the “Active wallets” chart has a new chip, “Players”. It shows how many wallets have played White Rabbit Key on the chain so far, day by day, each counted from its first move, with the new players of each day as bars. Picking a candidate and every move are transactions, so the chain itself is the record; our island bot and the cruise ships’ simulated passengers do not count. Like the active wallets, it keeps counting across testnet restarts. Wallets, not people."
   }
 ]
