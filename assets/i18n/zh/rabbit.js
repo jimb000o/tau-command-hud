@@ -1032,8 +1032,6 @@ TauI18n.add({ strings: {
   "I'll take it. Cheerio.": "我收下了。回见。",
   "Rico, quick question about the ghost transac": "Rico，问个关于幽灵交——",
   "And he's gone. The phone line runs past Baako's goats. They chew on it.": "他断线了。电话线经过 Baako 的山羊那边。它们会啃。",
-  "Rico, can you say hi to my mum? She's": "Rico，你能跟我妈妈打个招呼吗？她——",
-  "We lost her! Zia's mum, if you're listening: hi from Zia. And from Rico.": "断线了！Zia 的妈妈，如果你在听：Zia 向你问好。Rico 也是。",
   "Rico, Pearl here, I'm new on the island. Who stamps all the blocks? I keep seeing the same signature.": "Rico，我是 Pearl，刚来岛上。是谁在给所有区块盖章？我老看到同一个签名。",
   "Right now one hand seals every block, Pearl. On the lagoon that's the warm-up act.": "现在每个区块都由同一只手封印，Pearl。在潟湖上，这是暖场节目。",
   "Isn't that a bit lonely?": "那不会有点孤单吗？",
