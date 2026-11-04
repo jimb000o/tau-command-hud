@@ -381,9 +381,56 @@ def load(path):
 
 
 def page(a):
+    """The drafts page (node.tauhud.com/rico/art/drafts/): the island first, its newest versions large and two of them
+    in one frame to compare (move across it: A on the left of the line, B on the right), then every place's drafts."""
     drafts = load(os.path.join(a.out, "drafts", "drafts.json"))
+    live = load(os.path.join(a.out, "index.json")).get("scenes", {})
     rows = []
-    for id in PLACES + ["folk"]:
+    isl = drafts.get("island", [])
+    if isl:
+        num = {f: i for i, f in enumerate(isl, 1)}
+
+        def label(f):
+            bits = [f"island={num[f]}"]
+            look, idea, src = drafts.get("look", {}).get(f), drafts.get("idea", {}).get(f), drafts.get("src", {}).get(f)
+            if look:
+                bits.append(f"style {look}")
+            if idea:
+                bits.append(f"idea {idea}")
+            if src in num:
+                bits.append(f"from island={num[src]}")
+            if live.get("island") == f:
+                bits.append("live now")
+            return " · ".join(bits)
+        items = [{"n": num[f], "f": f, "t": label(f)} for f in isl]
+        b = isl[-1]
+        a0 = drafts.get("src", {}).get(b)
+        a0 = a0 if a0 in num and a0 != b else (live.get("island") if live.get("island") in num and live.get("island") != b else (isl[-2] if len(isl) > 1 else b))
+        if len(isl) > 1:
+            rows.append(
+                "<section><h2>Island: two versions in one frame</h2><p class=hint>Move the mouse or a finger across the picture: "
+                "left of the line is A, right of it B. A click holds the line; another lets it follow again.</p>"
+                "<div class=pick>A <select id=A></select> B <select id=B></select> <button id=sw>A &#8644; B</button></div>"
+                "<div class=frame id=F><img id=IA alt=''><img id=IB alt=''><i id=L></i><b id=TA></b><b id=TB></b></div></section>"
+                "<script>const I=" + json.dumps(items) + f",A0={num[a0]},B0={num[b]},$=i=>document.getElementById(i);"
+                "for(const s of['A','B'])I.slice().reverse().forEach(x=>$(s).add(new Option(x.t,x.n)));$('A').value=A0;$('B').value=B0;"
+                "const at=n=>I.find(x=>x.n==n);function show(){const a=at($('A').value),b=at($('B').value);$('IA').src=a.f;$('IB').src=b.f;"
+                "$('TA').textContent='A: '+a.t;$('TB').textContent='B: '+b.t;}"
+                "let held=false;function cut(x){const r=$('F').getBoundingClientRect(),p=Math.max(0,Math.min(100,(x-r.left)/r.width*100));"
+                "$('IB').style.clipPath='inset(0 0 0 '+p+'%)';$('L').style.left=p+'%';}"
+                "$('F').addEventListener('pointermove',e=>{if(!held)cut(e.clientX);});$('F').addEventListener('click',e=>{held=!held;cut(e.clientX);});"
+                "$('A').onchange=$('B').onchange=show;$('sw').onclick=()=>{const v=$('A').value;$('A').value=$('B').value;$('B').value=v;show();};"
+                "show();cut($('F').getBoundingClientRect().left+$('F').getBoundingClientRect().width/2);</script>")
+        rows.append("<h2>Island: the newest, large</h2><div class=big>")
+        for f in list(reversed(isl))[:4]:
+            rows.append(f"<figure><a href='{f}'><img src='{f}' loading=lazy></a><figcaption><code>{label(f)}</code></figcaption></figure>")
+        rows.append("</div>")
+        if len(isl) > 4:
+            rows.append("<h2>Island: all versions</h2><div class=row>")
+            for f in reversed(isl[:-4]):
+                rows.append(f"<figure><a href='{f}'><img src='{f}' loading=lazy></a><figcaption><code>{label(f)}</code></figcaption></figure>")
+            rows.append("</div>")
+    for id in PLACES[1:] + ["folk"]:
         if id not in drafts:
             continue
         rows.append(f"<h2>{id}</h2><div class=row>")
@@ -396,9 +443,14 @@ def page(a):
     keep = " ".join(f"{id}=1" for id in PLACES if id in drafts)
     write(os.path.join(a.out, "drafts", "index.html"), (
         "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>White Rabbit Key: paintings</title>"
-        "<style>body{font:16px system-ui;background:#111;color:#eee;margin:2em auto;max-width:1400px;padding:0 16px}"
-        ".row{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}img{width:100%;border-radius:6px}"
-        "code{color:#7f7}figure{margin:0}</style><h1>White Rabbit Key: pick a painting for each place</h1>"
+        "<style>body{font:16px system-ui;background:#111;color:#eee;margin:2em auto;max-width:2200px;padding:0 16px}"
+        ".row{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}"
+        ".big{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,760px),1fr));gap:16px}img{width:100%;border-radius:6px;display:block}"
+        "code{color:#7f7}figure{margin:0}figcaption{margin:6px 0 10px}.hint{color:#aaa}.pick{margin:8px 0 12px}select,button{font:inherit;margin:0 10px 0 4px}"
+        ".frame{position:relative;cursor:ew-resize;touch-action:pan-y;user-select:none}.frame img{border-radius:6px}"
+        "#IB{position:absolute;inset:0;height:100%;object-fit:cover}#L{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#7f7;pointer-events:none}"
+        "#TA,#TB{position:absolute;top:8px;padding:2px 8px;background:#000a;border-radius:4px;font-weight:500}#TA{left:8px}#TB{right:8px}</style>"
+        "<h1>White Rabbit Key: the paintings</h1>"
         f"<p>Then on the server: <code>infra/rabbit-art/paint.sh keep {keep}</code> (with the numbers you like)</p>{''.join(rows)}").encode())
 
 
@@ -1239,7 +1291,7 @@ def cmd_touch(a):
         a.prompt = TOUCH.replace(" so that each place looks from outside the way it does inside", "").format(what=TOUCH_SETS[what])
     else:
         a.prompt = TOUCH.format(what=what or TOUCH_PLACES)
-    a.idea = "touched"
+    a.idea = f"touched: {what}" if what in TOUCH_SETS else "touched"
     cmd_panorama(a)
 
 
@@ -1264,6 +1316,7 @@ def cmd_panorama(a):
         names.append(f)
         drafts["island"] = names
         drafts.setdefault("idea", {})[f] = getattr(a, "idea", "panorama")
+        drafts.setdefault("src", {})[f] = os.path.basename(src)   # the painting it grew from
         write(path, json.dumps(drafts, indent=1).encode())
         print(f"  island={len(names)}: {im.width} x {im.height}")
     page(a)
@@ -1377,10 +1430,11 @@ def main():
     fo.add_argument("--n", type=int, default=1)
     fo.add_argument("--no-cast", dest="cast", action="store_false", help="only the townspeople, not the named cast")
     fo.add_argument("--model", default=None)
+    sub.add_parser("page")
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures}[a.cmd](a)
+    {"page": page, "draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures}[a.cmd](a)
 
 
 if __name__ == "__main__":
