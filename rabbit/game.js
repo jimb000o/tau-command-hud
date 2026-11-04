@@ -1717,7 +1717,7 @@
     const r = Math.random();
     if (r < 0.26) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
     /* the phone-in is the busiest part of the show: about one line in three, never two calls in a row */
-    const set = r < 0.42 ? "joke" : r < 0.72 ? (ROT.callLast ? "net" : "call") : r < 0.76 ? "corner" : r < 0.81 ? (Math.random() < 0.25 ? "dunno" : "lagoon") : r < 0.85 ? "segue" : r < 0.89 ? "legend" : r < 0.93 ? "mainland" : r < 0.96 ? "net" : "general";
+    const set = r < 0.35 ? "joke" : r < 0.42 ? "salado" : r < 0.72 ? (ROT.callLast ? "net" : "call") : r < 0.76 ? "corner" : r < 0.81 ? (Math.random() < 0.25 ? "dunno" : "lagoon") : r < 0.85 ? "segue" : r < 0.89 ? "legend" : r < 0.93 ? "mainland" : r < 0.96 ? "net" : "general";
     ROT.callLast = false;
     /* a thank-you to the builders now and then reads the title of their latest change, shown between two spoken halves */
     if (set === "lagoon" && SRC.title && Math.random() < 0.3 && !SAID.slice(-40).includes("bld4a")) return { k: "bld4a", parts: [V("bld4a"), Q("“{x}”", { x: SRC.title }), V("bld4b")] };

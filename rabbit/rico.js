@@ -282,6 +282,19 @@
     /* the phone-in */
     c4: "A listener writes: Rico, why are blocks numbered? So we know which one came after the last one, my friend. That's the whole secret.",
     c6: "A text from a listener: my wallet put a rule on itself and now it won't let me spend. That's not a bug, my friend. That's character.",
+    /* the wellness investor: Rico teasing Salado now and then (never his looks, only his business) */
+    sal1: "Traffic report from Radio Coco. There is no traffic. There is no road. Salado would like you to know he is working on both.",
+    sal2: "Salado says his resort is the place to switch off. Then his phone rings at six every morning. Investors. Folks, that's not switching off, that's a second job with cucumbers.",
+    sal3: "Up at the South Current, the loungers are free. The coins are not: thirty-five of them, for any candidate who proposes a road. Rico doesn't judge. Rico just reads the Book.",
+    sal4: "Salado asked Rico to call the jungle path to his resort scenic. Rico walked it. It is scenic the way a wet sock is scenic.",
+    sal5: "Wellness tip of the hour: breathe in, breathe out, and never let a man on a sun lounger finish the word opportunity.",
+    sal6: "Salado's guests carry their suitcases uphill from the pier. He calls it the cardio package. It's included. You can't opt out.",
+    sal7: "Rico asked Salado what relaxes him. He said: a road. Folks, this man dreams in asphalt.",
+    sal8: "News from the resort: the yoga teacher has stopped crying. Now she just stares at the hill. Calmly. Salado calls that progress.",
+    sal9: "Salado told Rico his investors are very patient people. He checked his phone four times during that sentence.",
+    sal10: "Salado says a road round the island would bring growth. Rico looked at a map. The island is round. The road ends where it starts, right at the resort. Rico suspects that's the plan.",
+    sal11: "Rico's wellness corner: drink water, sleep eight hours, and if somebody offers you thirty-five coins on a sun lounger, read the Book before you say yes.",
+    sal12: "Salado likes the testnet. The coins move fast, nobody needs a bank. The part he likes less: every payment is in a block, with the wallet that sent it.",
     /* Tau corner: what makes this chain different, in one breath */
     tc1: "Tau corner, short and sweet: on this chain the rules are written in Tau logic, and every new rule is checked against the old ones. Contradictions don't get a seat.",
     tc2: "Tau corner: which blocks count and who may make them is decided by rules on the chain itself. And those rules change only by a vote of the validators.",
@@ -506,6 +519,7 @@
     unknown: ["un1", "un2", "un3", "un4"], relay: ["rf1", "rf2"], first: ["fs1", "fs2", "fs3"], mixed: ["dk3"], ghost: ["ghost1", "ghost2", "ghost3"],
     toStake: ["toStake"], toFixed: ["toFixed"], nowStake: ["nowStake"], nowFixed: ["nowFixed"], midnight: ["midnight"], restart: ["restart"],
     joke: Array.from({ length: 36 }, (_, i) => "j" + (i + 1)), call: ["c4", "c6"],
+    salado: Array.from({ length: 12 }, (_, i) => "sal" + (i + 1)),
     corner: Array.from({ length: 8 }, (_, i) => "tc" + (i + 1)), segue: Array.from({ length: 8 }, (_, i) => "s" + (i + 1)),
     flash: Array.from({ length: 6 }, (_, i) => "flash" + (i + 1)), tag: Array.from({ length: 6 }, (_, i) => "tag" + (i + 1)),
     valIn: ["valIn"], valOut: ["valOut"], feeUp: ["feeUp"], feeDown: ["feeDown"], rev: ["rev"], whale: ["whale1", "whale2"],
@@ -738,6 +752,16 @@
       "So the suggestion box is closed?",
       "Closed for renovation, Tess. That's what the lagoon is for: you find the loose plank before the party.",
       "Ha. Okay, love the show, bye!"] },
+    { who: "salado", say: ["Rico, Salado here. A small complaint. You keep making jokes about my resort.",
+      "Rico only reads out what happens, Salado. You make it very easy.",
+      "I could buy a line on your station! Twenty-five coins, a nice jingle about the spa?",
+      "You could. And the Book would write down that the resort paid for it, right next to the jingle.",
+      "Then make it a quiet jingle. Ciao, Rico!"] },
+    { who: "lola", say: ["Rico, it's Lola. Salado was at the bar again. He ordered cucumber water and asked if my bar is scalable.",
+      "And is it, Lola?",
+      "It's four stools and a fridge, Rico. Then he asked who the fridge reports to.",
+      "Rico hopes you told him the fridge reports to nobody. Some things on this island are still free.",
+      "I gave him the bill. That one he understood. Bye, Rico!"] },
   ];
   /* the Night Line's callers (L.nlo*): somebody with a problem on the lagoon, Rico listens and helps; always
      technically right (the testnet as it runs), the humour only around it. Same shape as CALLS: caller first, then Rico,
@@ -1075,7 +1099,7 @@
   /* lines that make sense away from the game (the radio in the site header, assets/radio.js): the hellos and Rico's
      lagoon humour, jokes, the listeners' letters, the phone-in (the caller in their own voice) and Tau corner, without the ones about the election. Each is a parts list, shown translated where the page has it. */
   const tr = s => (window.TauI18n ? TauI18n.t(s) : s);
-  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.legend, ...SETS.net, ...SETS.mainland, ...SETS.lagoon, ...SETS.dunno].map(k => [{ t: tr(L[k]), v: L[k] }])
+  const hud = () => [...SETS.open, ...SETS.general.filter(k => k !== "g11" && k !== "g14"), ...SETS.joke.filter(k => !["j24", "j25"].includes(k)), ...SETS.call, ...SETS.corner, ...SETS.salado, ...SETS.legend, ...SETS.net, ...SETS.mainland, ...SETS.lagoon, ...SETS.dunno].map(k => [{ t: tr(L[k]), v: L[k] }])
     .concat(CALLS.filter(c => !c.game && !c.when).map((c, i) => call(c, SETS.ring[i % SETS.ring.length], SETS.bye[i % SETS.bye.length])));
   /* a call as parts: the phone rings, the conversation, Rico's goodbye (keys from SETS.ring and SETS.bye) */
   function call(c, ring, bye) {
@@ -1122,6 +1146,7 @@
     if (NL.open) { NL.open = false; if (!NL.extra) { const k = pick(SETS.nlClose); return { k, parts: [line(k)] }; } }
     const x = BREAK[from + ">" + to], pair = x ? Object.keys(L).filter(k => k.startsWith("sb" + x)) : [];
     if (pair.length && Math.random() < 0.65) { const k = pick(pair); return { k, parts: [line(k)] }; }
+    if (Math.random() < 0.12) { const k = pick(SETS.salado); return { k, parts: [line(k), ...(L["nx_" + to] ? [line("nx_" + to)] : [])] }; }   // the wellness investor, now and then
     const set = Math.random() < 0.25 ? "sbAny" : hr >= 5 && hr < 11 ? "sbAm" : hr >= 11 && hr < 17 ? "sbPm" : hr >= 17 && hr < 22 ? "sbEv" : "sbNt", k = pick(SETS[set]);
     return { k, parts: [line(k), ...(L["nx_" + to] ? [line("nx_" + to)] : [])] };
   }
