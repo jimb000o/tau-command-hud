@@ -284,4 +284,16 @@ TauI18n.add({ strings: {
   "every wallet that has played up to that day": "截至当天玩过的所有钱包",
   "new that day": "当天新增",
   "wallets whose first move was that day": "当天走出第一步的钱包",
+  // growth of active wallets per app
+  "{x} vs a week ago.": "比一周前 {x}。",
+  "{x} vs the day before.": "比前一天 {x}。",
+  "{n} now, {m} the day before.": "现在 {n} 个，前一天 {m} 个。",
+  "{n} now, {m} a week ago.": "现在 {n} 个，一周前 {m} 个。",
+  "{x} vs the day before": "比前一天 {x}",
+  "Wallets": "钱包",
+  "± 1 day": "± 1 天",
+  "± 7 days": "± 7 天",
+  "all wallets": "所有钱包",
+  "our apps together": "我们的应用合计",
+  "new": "新增",
 } });

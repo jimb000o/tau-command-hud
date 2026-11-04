@@ -2255,6 +2255,11 @@
     "html": "White Rabbit Key: the places keep the island’s time of day. Step inside in the evening and the light there is the evening’s; after dark it is night inside too: the views out turn dark blue, and a lamp lights the one you talk to and the room around them."
   },
   {
+    "tag": "Testnet stats",
+    "on": "2026-11-04",
+    "html": "Testnet stats: the “Active wallets” chart now shows growth. The headline says how much the number of active wallets changed against a week before, each app in the legend carries its own change, and hovering a day shows every app’s change against the day before. The table starts with all wallets, our apps together (White Rabbit Key, Agorzilla and Déjà, Tau HUD wallet), each app and IDNI’s genesis accounts: today, the change in one day and in seven days."
+  },
+  {
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "White Rabbit Key: the islanders talk about the cruise ships now, from three days before a ship comes until the evening it leaves, and each of them sees the ships their own way. Rico announces the ships on Radio Coco, and islanders phone in about them."

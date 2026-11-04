@@ -283,4 +283,16 @@ TauI18n.add({ strings: {
   "every wallet that has played up to that day": "その日までにプレイしたすべてのウォレット",
   "new that day": "その日の新規",
   "wallets whose first move was that day": "その日に最初の一手を打ったウォレット",
+  // growth of active wallets per app
+  "{x} vs a week ago.": "1 週間前比 {x}。",
+  "{x} vs the day before.": "前日比 {x}。",
+  "{n} now, {m} the day before.": "現在 {n}、前日 {m}。",
+  "{n} now, {m} a week ago.": "現在 {n}、1 週間前 {m}。",
+  "{x} vs the day before": "前日比 {x}",
+  "Wallets": "ウォレット",
+  "± 1 day": "± 1 日",
+  "± 7 days": "± 7 日",
+  "all wallets": "すべてのウォレット",
+  "our apps together": "私たちのアプリ合計",
+  "new": "新規",
 } });
