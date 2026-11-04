@@ -206,5 +206,31 @@ B2.saw("9.9.9.1", wa)
 B2.end("9.9.9.1", "boardg11", "hana", "hana", "-", wa, "6", "-")
 check(B2.board["all"][wa]["won"] == 2 and B2.snapshot()["board"]["best"][0]["votes"] == 6, "a new week, a new campaign counts")
 
+# ---------- the pick signed into the testnet: on the board from the start, and a favourite candidate ----------
+P = isle.Isle(path=os.path.join(tempfile.mkdtemp(), "isle.json"), clock=clock, house=False)
+wd, we = "d" * 92 + "0004", "e" * 92 + "0005"
+check(P.start("7.7.7.1", "pickg01", "hana", wd)[1]["listed"] is False, "a pick counts only once the wallet signed from this address")
+P.saw("7.7.7.1", wd)
+ok, d = P.start("7.7.7.1", "pickg02", "hana", wd)
+s = P.snapshot()["board"]
+check(ok and d["listed"] is True and s["busy"][0]["id"] == "dddddd…0004" and s["busy"][0]["moves"] == 0 and s["busy"][0]["as"] == "hana" and s["wallets"] == 1,
+      "a signed pick puts the wallet on the board before its first move")
+check(P.start("7.7.7.1", "pickg02", "hana", wd)[1]["why"] == "once" and P.start("7.7.7.1", "pickg02", "tobias", wd)[1]["why"] == "once", "a campaign is picked once")
+check(P.start("7.7.7.1", "pickg03", "hana", "-")[0] is False and P.start("7.7.7.1", "pickg03", "rico", wd)[0] is False, "a pick needs a wallet and a candidate")
+P.move("7.7.7.1", "pickg02", "hana", "talk", "school", "market", wd)
+check(P.snapshot()["board"]["busy"][0]["moves"] == 1, "the first move joins the same line at once")
+P.saw("7.7.7.2", we)
+P.start("7.7.7.2", "pickg04", "tobias", we)
+check(P.snapshot()["board"]["wallets"] == 2 and [r["id"][:6] for r in P.snapshot()["board"]["busy"]] == ["dddddd", "eeeeee"], "every signed pick is a wallet on the board")
+P.start("7.7.7.1", "pickg05", "marisol", wd)
+P.start("7.7.7.1", "pickg06", "hana", wd)
+P.start("7.7.7.1", "pickg07", "baako", wd)
+P.start("7.7.7.1", "pickg08", "baako", wd)
+c = P.route("/isle/wallet/" + wd)
+check(c["picks"] == {"hana": 2, "marisol": 1, "baako": 2} and c["fav"] == "baako" and c["id"] == "dddddd…0004", "the favourite is the candidate picked most; a tie goes to the last pick")
+check(P.route("/isle/wallet/" + "f" * 96)["fav"] is None and "error" in P.route("/isle/wallet/xyz"), "GET /isle/wallet/<wallet>: none yet, or not a wallet")
+P.dirty = True; P.save()
+check(isle.Isle(path=P.path, clock=clock, house=False).route("/isle/wallet/" + wd)["fav"] == "baako", "a restart keeps the picks")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

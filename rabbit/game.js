@@ -50,7 +50,7 @@
     wren: { name: "Captain Wren", role: "Marine archaeologist, retired", skin: "#e0b08a", hair: "#b0502a", style: "bob", acc: "cap", accC: "#1f3550", shirt: "#3aa6a0" },
     kai: { name: "Kai", role: "Runs the Reef Proof dive centre", skin: "#c68642", hair: "#111", style: "short", acc: "glasses", accC: "#333", shirt: "#4fd1c5" },
     pim: { name: "Pim", role: "Surveyor, measures for the embassies", skin: "#f3d6c0", hair: "#c9a46a", style: "side", acc: "straw", accC: "#d9b45a", shirt: "#f4f1ea" },
-    noor: { name: "Noor", role: "Foreman of the Coconut Works", skin: "#a8693f", hair: "#1d1410", style: "curls", acc: "glasses", accC: "#333", shirt: "#e9b44c" },
+    noor: { name: "Noor", role: "Runs the Coconut Works; Baako’s co-op brings the coconuts", skin: "#a8693f", hair: "#1d1410", style: "curls", acc: "glasses", accC: "#333", shirt: "#e9b44c" },
     kiko: { name: "Kiko", role: "Builds canoes", skin: "#8d5524", hair: "#111", style: "short", acc: "none", shirt: "#e85d4a" },
     tano: { name: "Tano", role: "Keeps the drums and the circle", skin: "#4a2c1a", hair: "#9a9a9a", style: "short", acc: "beard", accC: "#bdbdbd", shirt: "#c9772e" },
   };
@@ -819,7 +819,8 @@
       ]);
     },
     works(box) {
-      scene(box, G.me === "baako" ? "noor" : "baako", T(SC.places.works.name), T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
+      /* Noor runs the Coconut Works and Baako's co-op supplies it; she is the one you meet when you are Baako yourself, and she is the boss here */
+      scene(box, G.me === "baako" ? "noor" : "baako", T(SC.places.works.name), G.me === "baako" ? T("Baako. Candidate or not, your co-op’s coconuts still come through my gate, and my press still starts at six. Coconuts in, everything out: oil, rope, soap, charcoal. You want a shift, you pedal. And nobody touches the organ. Not even someone on the ballot.") : T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
         btn(T("Work a shift (10 coins)"), () => { did("works"); G.coins[G.me] += 10; write(G.me, T("worked a shift at the Coconut Works: 10 coins, honestly earned"), "talk"); payMe("works", T("The Coconut Works")); SND.sfx("coin"); toast(T("Ten coins, and you smell of coconut for the rest of the day.")); spend(); if (UI.card) openCard("works", PLACE.works); }, { off: !movesLeft(), sub: T("one move") }),
       ]);
     },
@@ -1238,13 +1239,24 @@
     let at = 0;
     said.forEach(p => {
       const name = p.who ? p.who[0].toUpperCase() + p.who.slice(1) : "Rico";
-      TURN.timers.push(setTimeout(() => { if (out) out.textContent = name + ": " + p.t; }, at * 1000));
+      TURN.timers.push(setTimeout(() => { if (out) linkBlocks(out, name + ": " + p.t); }, at * 1000));
       at += (secs ? secs * p.v.length / total : Math.max(2.5, p.t.length * 0.06));
     });
     return at;
   }
+  /* "block 4639" in what Rico says opens that block in the explorer, in a new tab */
+  function linkBlocks(el, text) {
+    el.textContent = ""; const re = /(\bblock\s+|区块\s*|ブロック\s*)(\d+(?:,\d{3})*)/gi; let last = 0, m;
+    while ((m = re.exec(text))) {
+      el.append(text.slice(last, m.index));
+      const a = document.createElement("a"); a.className = "blk"; a.href = "../explorer/?b=" + m[2].replace(/,/g, ""); a.target = "_blank"; a.rel = "noopener";
+      a.title = T("Open this block in the explorer"); a.textContent = m[0]; a.addEventListener("click", e => e.stopPropagation()); el.append(a); last = re.lastIndex;
+    }
+    el.append(text.slice(last));
+  }
+  /* resolves with the seconds he talks (false when only shown) */
   function onAir(line, urgent, call) {
-    const box = $("cvRadio"); if (!box) return;
+    const box = $("cvRadio"); if (!box) return Promise.resolve(false);
     if (!DJ.face) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }
     const parts = typeof line === "string" ? [{ t: line, v: null }] : line;
     line = join(parts);
@@ -1252,7 +1264,7 @@
     const out = $("cvNews"); out.textContent = ""; let i = 0;
     clearInterval(DJ.type); TURN.timers.forEach(clearTimeout); TURN.timers = [];
     if (call) { const t = turns(parts, 0); clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), t * 1000 + 800); DJ.next = performance.now() + t * 1000 + 30000; }
-    else DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); } }, 28);
+    else DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); linkBlocks(out, line); } }, 28);
     say(DJ.face, Math.min(6000, 700 + line.length * 45));
     if (!urgent) SND.sfx("jingle");
     if (!call) { clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), Math.min(9000, 2500 + line.length * 60)); DJ.next = performance.now() + 38000 + Math.random() * 30000; }
@@ -1261,15 +1273,16 @@
     /* in a place the strip only shows it, so nobody talks over the one in front of you; at Radio Coco itself Rico
        says it on air whenever he is not talking to you, and you see him say it */
     const atRico = () => UI.card && UI.at === "radio" && UI.card._who === "rico" ? UI.card : null;
-    if (UI.card && !(atRico() && !SND.talking)) return;
-    RICO.speak(parts).then(secs => {
-      if (!secs || DJ.text !== said) return;
+    if (UI.card && !(atRico() && !SND.talking)) return Promise.resolve(false);
+    return RICO.speak(parts).then(secs => {
+      if (!secs || DJ.text !== said) return secs;
       const here = atRico(); if (here && here._f) say(here._f, secs * 1000);
       if (call) turns(parts, secs);
       say(DJ.face, secs * 1000);
       clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), secs * 1000 + 800);
       DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 30000);
-    }, () => {});
+      return secs;
+    }, () => false);
   }
   /* Rico does not repeat himself: the lines he said lately are remembered in this browser, across visits, and he picks
      from the ones he has not said. A set is a group of lines that can stand in for each other (rico.js SETS). */
@@ -1306,7 +1319,7 @@
      the simulation the refusals, a consensus switch voted on or in force, and the restart at midnight UTC. */
   const RADAR = { snap: null, busy: false, seen: 0, mode: null, rules: null, ghosts: 0, ghostAt: 0, flagged: {}, news: [] };
   const DJ_S = { s: null, at: 0 };   // Déjà's day as the relay last told it (GET /deja)
-  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "deja", "place", "rival", "cafe", "founders", "unknown", "first", "mixed", "relay", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused", "duet", "record", "solo", "postman", "fresh"];
+  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "nodeMany", "nodeNew", "nodeGoneMany", "nodeGone", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "deja", "place", "rival", "cafe", "founders", "unknown", "first", "mixed", "relay", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused", "duet", "record", "solo", "postman", "fresh"];
   const KIND = { rule_deploy: "rule", approval_request: "cosign", transfer_vote: "cosvote", retractable_transfer: "lock", retract_transfer: "back", rule_offer: "offer", rule_offer_accept: "offerYes", consensus_rule_vote: "lawVote" };
   const txKind = tx => { const t = tx.tx_type || "user_tx"; return t === "user_tx" && tx.operations && tx.operations["0"] ? "rule_deploy" : t; };
   /* the ghosts by the visitor's calendar: fitting in Halloween week, a nuisance in the first week of November, ordinary news otherwise */
@@ -1421,9 +1434,37 @@
   }
   /* what the relay knows that the blocks do not: the rivals' wallets, the lagoon's average per block and the refusals of
      the last hour, and the title of the builders' latest change (node.tauhud.com/devpulse.json), read every ten minutes */
+  /* nodes joining and leaving (the relay's /peers: only nodes our node has known for ten minutes, so a test that comes
+     and goes in a minute stays out). This browser remembers the nodes it has seen, so a node that joined while you were
+     away is still news when you come back the same day; the very first look only learns them. Several at once are one
+     line; a community node's name is shown beside it. */
+  const NODES = { seen: null, online: null, KEY: "rabbit-nodes-seen" };
+  function nodesRead(j) {
+    if (!j || !Array.isArray(j.peers)) return;
+    const now = Date.now() / 1000, steady = j.peers.filter(p => p && p.id && p.steady), online = new Set(steady.filter(p => p.online).map(p => p.id));
+    if (!NODES.seen) { try { const o = JSON.parse(store.get(NODES.KEY) || "null"); NODES.seen = o && typeof o === "object" ? o : null; } catch (e) { NODES.seen = null; } }
+    const first = !NODES.seen; NODES.seen = NODES.seen || {};
+    const fresh = steady.filter(p => p.online && !NODES.seen[p.id] && now - (Number(p.first_seen) || 0) < 43200);
+    steady.forEach(p => { NODES.seen[p.id] = Math.round(now); });
+    for (const id in NODES.seen) if (now - NODES.seen[id] > 30 * 86400) delete NODES.seen[id];
+    store.set(NODES.KEY, JSON.stringify(NODES.seen));
+    const count = Q("({n} nodes online now)", { n: online.size + 1 });   // and ours
+    if (!first && fresh.length) {
+      const names = fresh.map(p => p.community && p.community.name).filter(Boolean).slice(0, 3), more = [...names.map(x => Q("“{x}”", { x: String(x).slice(0, 40) })), count];
+      if (fresh.length === 1) call("nodeNew", "nodeNew", null, { more });
+      else call("nodeNew", "nodeMany", null, { v: { n: fresh.length }, s: { n: band(fresh.length) }, more });
+    }
+    if (NODES.online) {
+      const gone = [...NODES.online].filter(id => !online.has(id) && id !== j.bootnode);
+      if (gone.length === 1) call("nodeGone", "nodeGone", null, { more: [count] });
+      else if (gone.length > 1) call("nodeGone", "nodeGoneMany", null, { v: { n: gone.length }, s: { n: band(gone.length) }, more: [count] });
+    }
+    NODES.online = online;
+  }
   function srcFetch() {
     if (window.TauSim && TauSim.on) return;
     const get = u => fetch("https://node.tauhud.com/" + u, { cache: "no-store" }).then(r => (r.ok ? r.json() : null));
+    get("peers").then(nodesRead, () => {});
     get("island").then(j => { if (j && j.wallets) { SRC.bots = {}; Object.keys(j.wallets).forEach(k => { SRC.bots[lc(j.wallets[k])] = k; }); } }, () => {});
     get("load").then(j => {
       if (!j || !Array.isArray(j.sealed)) return;
@@ -1446,14 +1487,15 @@
   const SHIPAT = { works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };   // places only a painted island's layout brings
   const berlinHM = s => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(s * 1000)); } catch (e) { return new Date(s * 1000).toISOString().slice(11, 16); } };
   function shipPreview(k) {
-    const now = Math.floor(Date.now() / 1000), q = k === "queen";
-    return { name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition", phase: "ashore", t0: now - 1800, end: now + 3600, passengers: q ? 120 : 40,
+    const now = Math.floor(Date.now() / 1000), q = k === "queen", phase = new URLSearchParams(location.search).get("phase");
+    return { name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition", phase: phase === "approach" || phase === "gone" ? phase : phase === "turn" ? "boarding" : "ashore",
+      t0: phase === "approach" ? now + 90 : now - 1800, end: phase === "gone" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: q ? 120 : 40,
       ashore: q ? 96 : 34, at: q ? { south: 30, bar: 26, radio: 12, market: 18, works: 6, pier: 4 } : { book: 8, ship: 9, school: 6, dive: 8, pier: 3 },
       sent: { pay: q ? 214 : 96, bill: q ? 5 : 0, book: q ? 21 : 5, cancel: q ? 2 : 1 }, refused: 0, kinds: q ? ["pay", "bill", "book"] : ["pay", "book"], preview: true };
   }
   function shipFetch() {
     const k = new URLSearchParams(location.search).get("ship");
-    if (k === "dryrun" || k === "queen") { SHIPV.v = shipPreview(k); return shipShow(); }
+    if (k === "dryrun" || k === "queen") { if (!SHIPV.v?.preview) SHIPV.v = shipPreview(k); return shipShow(); }
     if (window.TauSim && TauSim.on) return;
     fetch("https://node.tauhud.com/cruise", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
       if (!j) return;
@@ -1675,7 +1717,9 @@
   srcFetch(); setInterval(() => { if (!away()) srcFetch(); }, 600000);
   if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine };   // the headless check (tests)
   setInterval(() => {
-    if (!G || G.over || G.counting || away() || performance.now() < DJ.next) return;
+    if (!G || G.over || G.counting || away() || performance.now() < DJ.next || SND.gap) return;
+    /* the Night Line's hour belongs to the callers between the songs (the show's opener still comes first) */
+    if (ROT.n > 0 && RICO.night && RICO.night()) return;
     /* the show waits for the sound to come on (the first tap), so the opener is heard, not just read; after a while it goes on in text */
     if (ROT.n === 0 && !SND.on && performance.now() < 90000) return;
     if (DJ.opened && DJ.after) { const a = DJ.after; DJ.after = null; onAir(a, 1); return; }
@@ -1685,6 +1729,16 @@
     if (l.wake && SND.on) { SND.sfx("wake"); DJ.next = performance.now() + 60000; setTimeout(() => onAir(l.parts, true), 2000); return; }
     onAir(l.parts, false, l.call);
   }, 2000);
+  /* between two songs the band stops and Rico says a word that fits (rico.js brk): the song that ended and the one
+     coming, or the hour; in the Night Line's hour a listener with a problem. He names the next song, so it is not
+     announced again once it plays. */
+  if (RICO.brk) SND.onbreak = ({ from, to }) => {
+    if (!G || G.over || G.counting) return 0;
+    const b = RICO.brk(from, to, { pick: pickLine }); if (!b) return 0;
+    markSaid(b.k); (b.also || []).forEach(markSaid);
+    DJ.song = to; DJ.songNew = null; DJ.opened = true;
+    return onAir(b.parts, true, b.call).then(secs => { if (secs) DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 25000); return secs; });
+  };
   /* the radio plays its songs one after the other (music.js PLAYLIST): when a new one starts, Rico announces it next */
   setInterval(() => { const so = SND.song; if (!so || !so.id || UI.card) return; if (DJ.song && so.id !== DJ.song) DJ.songNew = so.id; DJ.song = so.id; }, 3000);
 
@@ -2206,7 +2260,7 @@
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { G.onchain = true; hud(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
+    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
     SC.setHour(0, true); hud();
     openCard(null, box => {
       box.classList.add("intro");
@@ -2229,10 +2283,26 @@
   }
   function begin(c) {
     G = fresh(c); save();
+    signUp();
     news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."), RICO.L.bkWeek);
     isleRule();
     closeCard(); hud();
     welcome();
+  }
+  /* the pick is the campaign's first transaction, with no click of its own: as Old Sam writes the name into the Book, the
+     visitor's test wallet (made here if there is none yet) signs 1 test AGRS to the Book's till. Once it is through, the
+     relay puts that wallet on the players' board and counts which candidate it picked (isle start; its favourite shows
+     on the wallet's Tau card). A campaign from before this was signed once, the next time the page opens. */
+  function signUp() {
+    if (!G || !G.onchain || G.picked || G.over || (!FREE && G.week && G.week !== weekId())) return;
+    const me = G.me;
+    G.picked = "…";
+    mySend(TILL.book, F("{x}, name written into the Book", { x: nm(me) }), h => {
+      if (!G || G.me !== me) return;
+      if (!h) { G.picked = null; return; }
+      G.picked = h; save();
+      const pk = myPk(); if (pk) isleTell("start", gidOf(), me, pk);
+    }, 1, "book");
   }
   /* the first scene of a campaign: Old Sam writes your name into the Book, and says what you stand for and when the island votes */
   const WELCOME = {
@@ -2246,7 +2316,8 @@
     openCard("book", box => {
       box.classList.add("welcome");
       scene(box, "sam", T("Your name in the Book"), T(WELCOME[G.me]), [btn(T("Walk onto the island"), go, { go: true })],
-        el("p", { class: "cv-note" }, el("b", { text: T("You:") }), " ", F("{x}, candidate for governor. Ten islanders vote on Sunday night; win more of them than the other three.", { x: nm(G.me) })));
+        el("p", { class: "cv-note" }, el("b", { text: T("You:") }), " ", F("{x}, candidate for governor. Ten islanders vote on Sunday night; win more of them than the other three.", { x: nm(G.me) })),
+        el("p", { class: "cv-note small" }, el("b", { text: T("On the testnet:") }), " ", T("Sam’s entry is your first transaction, signed by your test wallet in this browser: 1 test AGRS to the Book. It puts your wallet on the players’ board.")));
       box.querySelector(".cv-x").onclick = go;
     });
   }

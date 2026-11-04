@@ -2223,5 +2223,25 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-03",
     "html": "White Rabbit Key: the island lights up at night, every place in its own colours. From about five in the afternoon the lamps come on: coloured bulbs, red lanterns and bamboo torches at Bar La Ola, a turquoise pool and pink bulbs at the wellness resort, gold windows and pale light on the walls of the North Wind Embassy, lanterns in the Council Tree, striped lanterns and candles on the Market Square, the furnace of the Coconut Works and sparks from its chimney, turquoise light behind the waterfall and over the Consensus Circle, lit doorways in the village, lamps on the pier and the old ship, blinking buoys at the dive centre. Where a lamp shines, the painting keeps its own colours."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "White Rabbit Key: picking your candidate is now your first transaction. As Old Sam writes your name into the Book, your test wallet signs 1 test AGRS to the Book, with no extra click. That puts your wallet on the players’ board from the start, not only after a move. Your Tau card shows the candidate you picked most often as your favourite."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "White Rabbit Key: the cruise ships are painted now, like the island. They come in bow first, turn round at anchor and leave with a wake."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "Radio Coco: Rico talks between the songs. When a song ends, the band stops, Rico says a word about the song that just ended and the one coming up, or about the time of day, and then the next song starts. Every night from 23:00 your time comes the Night Line: for one hour, listeners call Rico between the songs with their problems on the lagoon (a lost key, a stuck transfer, a fee limit that is too low, a stranger selling test coins), and he helps. Rico also reports when new nodes join the network and when nodes go quiet; several at once count as one piece of news."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "Radio Coco: when Rico names a block (“up to block 4639”), the words are a link now and open that block in the explorer in a new tab. In the caption at the bottom of every page and on the island’s radio strip."
   }
 ]

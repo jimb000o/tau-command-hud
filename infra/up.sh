@@ -92,6 +92,9 @@ try:
 except Exception as e:
     print(f"island:  places not checked ({e})")
 PY
+# the drafts page (https://node.tauhud.com/rico/art/drafts/) as paint.py writes it now: the newest island versions
+# large, two of them in one frame to compare
+sh rabbit-art/paint.sh page >/dev/null 2>&1 || true
 # Radio Coco and the islanders: speak any new voice lines (only lines without a clip cost credits; none new, nothing spent)
 V=$(mktemp)
 python3 rico/make.py make 2>&1 | tee "$V" || true

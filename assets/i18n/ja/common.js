@@ -614,6 +614,7 @@ TauI18n.add({ strings: {
   "The chain now: chain state, Explorer, Proposals, Accounts, Rules wall, Stats, Time travel. Road to mainnet: Nodes, Status, Findings, Build pulse.": "いまのチェーン：チェーンの状態、エクスプローラー、提案、アカウント、ルールの壁、統計、タイムトラベル。メインネットへの道：ノード、ステータス、発見事項、開発の鼓動。",
   "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Chronicle, What is Tau?": "はじめの一歩：ここから始める、このページのツアー、ガイドツアー、60 秒でわかる Tau。読む・観る：コンセンサス日報、クロニクル、Tau とは？",
   "Radio Coco": "Radio Coco",
+  "Open this block in the explorer": "このブロックをエクスプローラーで開く",
   "Tap for Radio Coco": "タップで Radio Coco",
   "Radio Coco plays in another tab. Play it here": "Radio Coco は別のタブで再生中。ここで再生する",
   "Radio Coco: on. Turn the sound off": "Radio Coco：オン。音を消す",

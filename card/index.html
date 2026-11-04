@@ -304,7 +304,16 @@ function draw(c, hash, stamps = STAMPS, full = c) {
   const name = [hash[8], hash[9], hash[10]].map(x => WORDS[x]).join(" · ");
   g.font = fit(name, 46, 700, SORA, 1000); g.fillStyle = C.white; g.textAlign = "left"; g.fillText(name, 160, 126);
   const since = c.first_ts ? FX("on the testnet since {d}", { d: new Date(c.first_ts * 1000).toLocaleDateString(window.TauI18n && TauI18n.lang !== "en" ? TauI18n.lang : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) }) : T("new on the testnet");
-  txt(short(A) + " · " + since, 162, 186, `400 16px ${MONO}`, C.dim);
+  const sw = txt(short(A) + " · " + since, 162, 186, `400 16px ${MONO}`, C.dim);
+  /* White Rabbit Key: the candidate this wallet picked most often, each pick signed into the testnet (relay isle.py) */
+  if (FAV) {
+    const who = FAV.fav[0].toUpperCase() + FAV.fav.slice(1), lbl = T("Favourite on White Rabbit Key") + "  ";
+    g.font = `600 18px ${SORA}`; const nw = g.measureText(who).width; g.font = `400 14px ${MONO}`; const lw = g.measureText(lbl).width;
+    if (162 + sw + 40 + lw + nw < W - 40) {
+      txt(who, W - 40, 184, `600 18px ${SORA}`, C.ok, true);
+      txt(lbl, W - 40 - nw, 188, `400 14px ${MONO}`, C.dim, true);
+    }
+  }
   /* four tiles */
   const y0 = 232, y1 = 392, gap = 20, w = (W - 80 - 3 * gap) / 4, xs = [0, 1, 2, 3].map(i => 40 + i * (w + gap));
   /* a tile with something in it is lit: a green edge along its top and a bright number; an empty one stays quiet */
@@ -396,12 +405,16 @@ ticket();
 if (A) $("say").textContent = T("Agorzilla is reading the card with you."); else mood(null);
 
 /* ---------- loading ---------- */
-let NUMS = null;
+let NUMS = null, FAV = null;
+const FAVS = ["marisol", "tobias", "baako", "hana"];
 async function load() {
   if (!A) { $("pNone").hidden = false; $("pShare").hidden = true; $("pFill").hidden = true; $("stage").classList.remove("reading"); draw({}, null); paintEmpty(); return; }
   if (!OWN) { $("lead").textContent = T("A wallet's card from Tau Testnet Alpha."); if (!mine) $("pNone").hidden = false; }
   const hash = await sha(A);
   draw({}, hash, 0, null); setX();
+  /* the favourite candidate comes from the relay's island (one small read; a card without it is the same card) */
+  const fav = fetch(`${NODE}/isle/wallet/${A}`, { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { if (j && FAVS.includes(j.fav)) FAV = j; }, () => {});
+  await Promise.race([fav, new Promise(r => setTimeout(r, 1500))]);
   try {
     const r = await fetch(`${NODE}/og/card/${A}.json`, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);

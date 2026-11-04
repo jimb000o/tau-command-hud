@@ -364,6 +364,8 @@
   }
   function tick() {
     if (!S.ctx || !S.on) return;
+    /* a break between two songs: the band is silent until gap() lets the next song in */
+    if (S.gap) { if (S.placeT === S.place) { S.next = S.ctx.currentTime + 0.12; return; } S.gap = null; S.pl++; S.song = songOf(S.place); S.bar = 0; S.step = 15; }
     while (S.next < S.ctx.currentTime + 0.12) {
       const y = S.y || (S.y = styleNow()), d = stepOf(y), t = S.next + (S.step % 2 ? d * SWING : 0);
       play(S.bar, S.step, t);
@@ -372,10 +374,41 @@
         S.step = 0; S.bar++;
         /* a new place: its own song from the top; on the radio, the next song after two times round */
         if (S.placeT !== S.place) { S.place = S.placeT; const so = songOf(S.place); if (so !== S.song) { S.song = so; S.bar = 0; } else S.bar -= S.bar % 4; }
-        else if (!(STYLES[S.place] || {}).s && S.bar >= 32) { S.pl++; S.song = songOf(S.place); S.bar = 0; }
+        else if (!(STYLES[S.place] || {}).s && S.bar >= 32) { S.y = styleNow(); gap(); return; }
         S.y = styleNow();
       }
     }
+  }
+  /* ---------- between two songs on the radio ----------
+     the band stops after the song's last bar: its home chord rings out over the sea, whoever runs the show (S.brk, set
+     with onbreak: game.js on the island, assets/radio.js elsewhere) says a word, and the next song starts from the top.
+     The word waits for a line Rico is still saying; with nobody to say anything there is a short pause. The handler
+     returns (or resolves with) the seconds it talks; the break never lasts longer than two and a half minutes. */
+  function gap() {
+    const from = S.song, to = PLAYLIST[(S.pl + 1) % PLAYLIST.length], g = S.gap = { from, to, at: S.ctx.currentTime };
+    ringOut(S.next, SONGS[from] || SONGS.coco);
+    const go = () => { if (S.gap !== g) return; S.gap = null; S.pl++; S.song = songOf(S.place); S.bar = 0; S.step = 0; if (S.ctx) S.next = S.ctx.currentTime + 0.2; S.y = styleNow(); };
+    const later = secs => setTimeout(go, Math.max(1.4, (+secs || 0) + 0.7) * 1000);
+    setTimeout(go, 150000);
+    let waited = 0;
+    const ask = () => {
+      if (S.gap !== g) return;
+      if (S.talking && waited < 20) { waited += 0.4; return setTimeout(ask, 400); }   // Rico finishes his sentence first
+      if (!S.brk || !S.on) return later(0);
+      let r; try { r = S.brk({ from, to, name: (SONGS[to] || {}).name || "" }); } catch (e) { r = 0; }
+      Promise.resolve(r).then(later, () => later(0));
+    };
+    setTimeout(ask, 900);   // after the last chord has spoken
+  }
+  function ringOut(t, so) {   // the song's last chord, held and fading, a touch of reverb
+    const c = S.ctx, h = so.harm[so.harm.length - 1], ch = so.ch[Array.isArray(h) ? h[h.length - 1] : h];
+    if (!c || !ch) return;
+    t = Math.max(t, c.currentTime);
+    [...ch[0], ch[1]].forEach((m, i) => {
+      const o = c.createOscillator(), g = c.createGain(); o.type = i === ch[0].length ? "triangle" : "sine"; o.frequency.value = hz(m);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(i === ch[0].length ? 0.09 : 0.035, t + 0.04); g.gain.exponentialRampToValueAtTime(0.0001, t + 3.2);
+      o.connect(g); g.connect(S.music); o.start(t); o.stop(t + 3.3);
+    });
   }
   /* ---------- small sounds for the game ---------- */
   function sfx(name) {
@@ -517,6 +550,8 @@
     /* the song playing now (its name for the radio strip), and the songbook */
     get song() { return { id: S.song, name: (SONGS[S.song] || {}).name || "" }; }, songs: Object.keys(SONGS), get why() { return S.why || ""; },
     set onchange(f) { S.cb = f; },
+    /* between two songs on the radio: f({ from, to, name }) says something and returns the seconds it talks */
+    set onbreak(f) { S.brk = f; }, get gap() { return S.gap ? { from: S.gap.from, to: S.gap.to } : null; },
     set(o) { Object.assign(want, o); apply(); },
     /* remember: the choice is kept for this tab (the game's own buttons); the site's radio passes false, its switch is its own */
     toggle(remember = true) {

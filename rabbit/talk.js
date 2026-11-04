@@ -168,13 +168,23 @@
         { q: "Is Agorzilla stealing your coconuts?", a: [["", "Never a coconut. Only bananas. A creature with standards. I leave one banana by the gate on Fridays now. Good relations with the neighbours."]] },
       ],
     },
+    /* Noor only meets you when you play Baako: she runs the Coconut Works, his co-op brings her the coconuts, and here she is the boss */
     noor: {
       back: [
-        ["last", "Last day of the campaign, and the boss is out shaking hands. Somebody has to keep the bicycles turning."],
-        ["", "Back again? Good. Shifts are short, the pay is honest, and the organ is still off limits."],
+        ["deal", "An embassy envelope, Baako? The co-op’s farmers will ask where it went. I only make soap, and even I asked."],
+        ["lied", "Rico played something you paid for. My workers heard it on the night shift. Then they read the Book on the day shift."],
+        ["worked", "A candidate on bicycle three. Not bad. Your legs are better than your speeches. Don’t tell anyone I said that."],
+        ["road", "The road is law. Good. Trucks are coming, and trucks need someone who tells them where to park. That’s me, not the governor."],
+        ["last", "Last day. Win or lose, my press starts at six tomorrow, and your coconuts had better be at the gate."],
+        ["early", "Morning, candidate. The night shift made rope. Mostly rope. Some of it was supposed to be soap. My fault. I’ll fix it."],
+        ["", "Back again? Shifts are short, the pay is honest, and the organ is still off limits. Even for candidates."],
+        ["", "You count coconuts, Baako. I count the hours they sit at my gate. Between us, nothing on this island goes uncounted."],
       ],
       ask: [
-        { q: "What’s it like working for a candidate?", a: [["", "Same as working for a farmer, only with more visitors. He promises, I deliver. The coconuts don’t vote, so they’re the calmest people here."]] },
+        { q: "Who really runs the Works?", a: [["", "I do. You bring the coconuts, I turn them into things people pay for. The co-op owns the farms. The machine owns me."]],
+          more: { q: "Then why does everyone think it’s me?", a: [["", "Because you talk to everyone and I talk to the organ. Fine by me. Fewer visitors."]] } },
+        { q: "Will you vote for me?", a: [["", "I don’t vote, Baako. I’m not one of the ten. But if I did, I’d want to see your laws first. Speeches don’t make soap."]] },
+        { q: "Would you work for me if I win?", a: [["", "I’d keep doing what I do, and you’d keep bringing coconuts. A governor isn’t a foreman. Don’t mix them up."]] },
         { q: "Why is the organ off limits?", a: [["", "Last time someone touched it, the machine played a waltz for three days and made nothing but soap. Very nice soap. Nobody needed that much soap."]] },
       ],
     },

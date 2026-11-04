@@ -1,6 +1,7 @@
 """Unit test of the new-node alerts (no network): nodes already there at the
 first run are not news, a node must stay NEWNODE_HOLD_SECONDS, each node is
-posted once, peers that come and go are never posted, a daily cap holds.
+posted once, peers that come and go are never posted, nodes that qualify
+together share one post (waiting a little for one about to qualify), a daily cap holds.
 
 Run: python test_newnode_alerts.py   (needs websockets==15.0.1)
 """
@@ -11,7 +12,7 @@ import tempfile
 
 TMP = tempfile.mkdtemp()
 os.environ.update(STATE_PATH=os.path.join(TMP, "alerts.json"), PUBLIC_DIR=TMP, NEWNODE_HOLD_SECONDS="1800",
-                  NEWNODE_POLL_SECONDS="60", NEWNODE_DAILY_CAP="2", TELEGRAM_BOT_TOKEN="")
+                  NEWNODE_POLL_SECONDS="60", NEWNODE_DAILY_CAP="3", TELEGRAM_BOT_TOKEN="")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alerts  # noqa: E402
 
@@ -88,15 +89,34 @@ async def main():
     check(len(tg.sent) == 2 and "New community node: berlin-arm" in tg.sent[1], "kit node posted by name")
     check(sum("joined" in t for t in tg.sent) == 1, "its peer ID is not posted as a second node")
 
-    # daily cap: the third new node that day is recorded, not posted
-    world["peers"].append(peer("12D3KooWThird" + "e" * 30, T0 + 7000, T0 + 9300))
-    await at(T0 + 9300)
-    check(len(tg.sent) == 2 and "peer:12D3KooWThird" + "e" * 30 in w.state["newnodes"]["known"], "daily cap holds")
+    # three peers back after a rebuild, one a few minutes later than the others: one post lists all three
+    trio = ["12D3KooWTrio" + c * 30 for c in "xyz"]
+    for i, pid in enumerate(trio):
+        world["peers"].append(peer(pid, T0 + 9400 + (240 if i == 2 else 0), T0 + 9400))
+    for t in (T0 + 11200, T0 + 11300):
+        for p in world["peers"]:
+            if p["id"] in trio:
+                p["last_seen"] = t
+        await at(t)
+    check(len(tg.sent) == 2, "waits while another new node is about to qualify")
+    for p in world["peers"]:
+        if p["id"] in trio:
+            p["last_seen"] = T0 + 11700
+    await at(T0 + 11700)
+    check(len(tg.sent) == 3 and "3 new nodes joined" in tg.sent[2] and all(pid[-4:] in tg.sent[2] for pid in trio),
+          "three nodes together: one post listing all three")
+    x = alerts.newnode_x([{"kind": "peer", "id": pid, "for": 1900} for pid in trio], 6)
+    check(x.startswith("🆕 3 new nodes joined") and len(x) <= 280, "the X post groups them too")
+
+    # daily cap: the fourth post that day is recorded, not posted
+    world["peers"].append(peer("12D3KooWThird" + "e" * 30, T0 + 7000, T0 + 11800))
+    await at(T0 + 11800)
+    check(len(tg.sent) == 3 and "peer:12D3KooWThird" + "e" * 30 in w.state["newnodes"]["known"], "daily cap holds")
 
     # a node first seen days ago that comes back is not new
     world["peers"].append(peer("12D3KooWBack" + "f" * 30, T0 - 5 * 86400, T0 + 200000))
     await at(T0 + 200000)
-    check(len(tg.sent) == 2, "an old node coming back is not news")
+    check(len(tg.sent) == 3, "an old node coming back is not news")
     sys.exit(1 if failed else 0)
 
 

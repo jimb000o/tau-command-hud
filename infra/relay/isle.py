@@ -14,6 +14,8 @@ counted apart from the players' moves (`islanders`) and the game labels them as 
 WebSocket commands (relay.py hands them over; replies and pushes have command "isle"):
   isle join                                   the day so far, and a push on this socket whenever it changes
   isle leave                                  no more pushes
+  isle start <game> <as> <wallet>              the visitor picked <as>; their test wallet signed it into the testnet
+                                              (1 test AGRS to the Book), so the wallet is on the board from the start
   isle move <game> <as> <kind> <what> <place> one of the visitor's own moves in their campaign <game>
   isle end <game> <as> <winner> [laws] [wallet] [votes] [goal]
                                               the campaign's election result, the laws in force at its end (a,b,c), and
@@ -22,12 +24,15 @@ WebSocket commands (relay.py hands them over; replies and pushes have command "i
   isle board [wallet]                         the players' board, longer, with this wallet's own places
 GET /isle                                     the day so far as JSON
 GET /isle/board                               the players' board
+GET /isle/wallet/<wallet>                     one wallet's White Rabbit Key: candidates picked, its favourite (the Tau card)
 
 The players' board: the players are test wallets, never people or names. A move or a result counts for a wallet only
 when that wallet signed a transaction through this relay from the same address in the last SEEN_FOR seconds (every
 move in the game is one), so nobody can put their numbers on someone else's wallet. For each wallet the week keeps
 its first finished campaign (one campaign per week and browser is the game's rule; a replay does not improve it) and
-every move it made; all time keeps elections won, campaigns finished, ambitions reached and moves. The week starts
+every move it made; all time keeps elections won, campaigns finished, ambitions reached, moves and which candidate it
+picked how often (its favourite). A campaign's first step is the pick itself, signed into the testnet, so a wallet is
+on the board as soon as it starts, before its first move. The week starts
 empty with the governor's count, Monday 00:00 German time; last week's best results stay readable as `prev`.
 
 The week (Monday to Sunday, Europe/Berlin, the island's clock): the candidate who won the most finished campaigns
@@ -169,6 +174,14 @@ def row(pk: str, r: dict, n: int) -> dict:
     return dict(r, id=short(pk), n=n)
 
 
+def favourite(a: dict) -> str | None:
+    """The candidate a wallet picked most often; on a tie, the one it picked last."""
+    picks = a.get("picks") or {}
+    if not picks:
+        return None
+    return max(sorted(picks), key=lambda c: (picks[c], c == a.get("last")))
+
+
 def blank() -> dict:
     return {"campaigns": 0, "finished": 0, "moves": 0, "as": {}, "wins": {}, "laws": {}, "kinds": {}}
 
@@ -286,7 +299,7 @@ class Isle:
     def campaign(self, game: str, who: str) -> list:
         g = self.games.get(game)
         if g is None:
-            g = [who, False, None, 0, 0]
+            g = [who, False, None, 0, 0, False]   # as, ended, wallet, moves and laws not yet on the board, pick signed
             if len(self.games) < KEEP_GAMES:
                 self.games[game] = g
             self.players["campaigns"] += 1
@@ -348,6 +361,43 @@ class Isle:
                 w["laws"][law] = w["laws"].get(law, 0) + 1
         self.changed({"t": int(now), "k": "won", "c": winner, "x": who, "at": "hall", "h": 0})
         return True, {"counted": True, "listed": mine}
+
+    def start(self, ip: str, game: str, who: str, wallet: str) -> tuple[bool, dict | str]:
+        """The visitor picked a candidate and signed it into the testnet: the campaign belongs to that wallet from now."""
+        if not GAME.match(game) or who not in CANDS or not WALLET.match(wallet):
+            return False, "Usage: isle start <game> <" + "|".join(CANDS) + "> <wallet>"
+        now = self.clock()
+        self.roll(now)
+        why = self.limit(ip, now, game)
+        if why:
+            return True, {"counted": False, "why": why}
+        g = self.campaign(game, who)
+        if len(g) < 6 or g[5] or g[0] != who:
+            return True, {"counted": False, "why": "once"}
+        if not self.credit(ip, g, wallet, now):
+            return True, {"counted": False, "listed": False}
+        g[5] = True
+        w, a = self.rec(wallet, now)
+        if w is not None:
+            w["as"] = w["as"] or who
+            w["started"] = w.get("started", 0) + 1
+        if a is not None:
+            picks = a.setdefault("picks", {})
+            picks[who] = picks.get(who, 0) + 1
+            a["last"] = who
+            a["t"] = int(now)
+        self.changed()
+        return True, {"counted": True, "listed": True}
+
+    def wallet(self, pk: str) -> dict | None:
+        """One wallet's White Rabbit Key, for its Tau card: which candidate it picked how often, and its favourite."""
+        if not WALLET.match(pk or ""):
+            return None
+        a = self.board["all"].get(pk) or {}
+        w = self.board["w"].get(pk) or {}
+        picks = dict(a.get("picks") or {})
+        return {"id": short(pk), "fav": favourite(a), "picks": picks, "played": a.get("played", 0), "won": a.get("won", 0),
+                "moves": a.get("moves", 0), "week": {"as": w.get("as") or None, "moves": w.get("moves", 0), "done": w.get("done", 0)}}
 
     # ---------- the players' board: test wallets, never names ----------
     def saw(self, ip: str, wallet: str):
@@ -421,7 +471,7 @@ class Isle:
             w, a = self.board["w"], self.board["all"]
             self._order = ((self.v, self.board["week"]), (
                 ranked({k: r for k, r in w.items() if r["done"]}, lambda r: (-r["won"], -r["votes"], -bool(r["goal"]), r["t"])),
-                ranked({k: r for k, r in w.items() if r["moves"]}, lambda r: (-r["moves"], r["t"])),
+                ranked({k: r for k, r in w.items() if r["moves"] or r.get("started")}, lambda r: (-r["moves"], r["t"])),
                 ranked({k: r for k, r in a.items() if r["played"]}, lambda r: (-r["won"], -r["goals"], -r["played"], r["t"]))))
         best, busy, ever = self._order[1]
         w, a = self.board["w"], self.board["all"]
@@ -519,6 +569,8 @@ class Isle:
     def route(self, path: str) -> dict | None:
         if path == "/isle/board":
             return self.standing()
+        if path.startswith("/isle/wallet/"):
+            return self.wallet(path[len("/isle/wallet/"):].lower()) or {"error": "not a wallet"}
         return self.snapshot() if path == "/isle" else None
 
     async def run(self, push):

@@ -104,6 +104,8 @@ TAG = {"rico": "[friendly, leaning in]", "lola": "[warm, teasing]", "sam": "[slo
 ON_AIR = "[excited radio DJ]"   # the callouts that end in "!"
 HYPE = "[shouting with joy, euphoric radio DJ opening the morning show, stretching the long words]"   # the show's opener (voices.json "how": "hype")
 RADIO = "[radio DJ, playful]"     # his other lines on the radio strip
+NIGHT = "[calm late-night radio host]"   # the Night Line (voices.json "how": "night"), Rico
+NIGHT_CALLER = "[quietly, late at night]"      # and whoever calls him then
 LAWS = {"A deep harbour for cruise ships": "a deep harbour for cruise ships", "A road round the island": "a road round the island"}
 COINS = {"40": "Forty", "35": "Thirty-five"}
 # the lines as they are said, to you, in a place: the same words as on screen, only loosened up for speaking
@@ -263,6 +265,8 @@ def said(who, text, model=MODEL):
     out = spoken(out)
     if not model.startswith("eleven_v3"):   # only v3 takes [tags]; any other model would read a [sighs] out
         return re.sub(r"\s+", " ", re.sub(r"\[[^\]]*\]", "", out)).strip()
+    if (who, text) in night():
+        return f"{NIGHT if who == 'rico' else NIGHT_CALLER} {out}"
     air = who == "rico" and text not in SAY
     if air and text in hype():
         return f"{HYPE} {out}"
@@ -270,6 +274,18 @@ def said(who, text, model=MODEL):
 
 
 _HYPE = None
+_NIGHT = None
+
+
+def night():
+    """The Night Line's lines, Rico's and his callers', marked "how": "night" in voices.json: (who, text)."""
+    global _NIGHT
+    if _NIGHT is None:
+        try:
+            _NIGHT = {(r["who"], r["text"]) for r in json.load(open(VOICES_JSON, encoding="utf-8")) if r.get("how") == "night"}
+        except (OSError, ValueError):
+            _NIGHT = set()
+    return _NIGHT
 
 
 def hype():
@@ -330,8 +346,17 @@ def call(path, body=None, accept="application/json", missing_ok=False, retry_400
             if soft or (missing_ok and e.code in (404, 405)) or (retry_400 and e.code in (400, 422)):
                 return None
             if "quota" in msg.lower():
+                # an API key can carry its own credit limit, below the account's: then the month still has credits
+                key_limit = "api key" in msg.lower() or "api_key" in msg.lower()
+                left = None if key_limit else credits()
+                if key_limit or (left and left[0] > 2000):
+                    sys.exit("ElevenLabs refused: the API key in infra/.env has its own credit limit and has used it up, "
+                             "although the account still has credits. Raise or remove that key's limit at "
+                             "https://elevenlabs.io/app/settings/api-keys (edit the key, Credit quota), then run the same command again.\n"
+                             f"ElevenLabs said {e.code}: {msg}")
                 sys.exit("ElevenLabs: this month's credits are used up. Every clip made so far is kept; "
-                         "run the same command again once the credits renew and it goes on where it stopped.")
+                         "run the same command again once the credits renew and it goes on where it stopped.\n"
+                         f"ElevenLabs said {e.code}: {msg}")
             if e.code == 429 and attempt < 3:
                 time.sleep(5 * (attempt + 1))
                 continue
@@ -696,7 +721,7 @@ def cmd_make(a):
             write(idx_path, json.dumps(idx, indent=1).encode())
             print(f"  {i}/{len(todo)} {w}: {t[:64]} (from the openers page)")
             continue
-        loud = w == "rico" and t not in SAY and (t.endswith("!") or t in hype())   # the callouts and the opener; his other radio lines stay natural
+        loud = w == "rico" and t not in SAY and (w, t) not in night() and (t.endswith("!") or t in hype())   # the callouts and the opener; his other radio lines stay natural
         write(os.path.join(a.out, k + ".mp3"), speak(idx["voices"][w]["id"], said(w, t, model), LOUD if loud else SETTINGS, model))
         if k not in idx["clips"]:
             idx["clips"].append(k)

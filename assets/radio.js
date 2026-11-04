@@ -69,6 +69,8 @@
     const S = window.COVE_SOUND;
     if (!S.wanted) S.toggle(false); else S.start();
     S.set({ place: "radio", radio: false, amb: 0.35 });   // the station's arrangement, the sea faint behind it
+    /* between two songs the band stops and Rico says a word that fits (rico.js brk), or takes a Night Line call */
+    if (window.RICO.brk) S.onbreak = ({ from, to }) => { if (!R.timer) return 0; const b = RICO.brk(from, to); return b ? air(b.parts) : 0; };
     if (S.on) {
       beat();
       const fresh = !greeted();
@@ -144,7 +146,8 @@
   }
   function tick() {
     const S = window.COVE_SOUND;
-    if (!S || !S.on || performance.now() < R.next) return;   // with the sound on he talks in a background tab too
+    if (!S || !S.on || performance.now() < R.next || S.gap) return;   // with the sound on he talks in a background tab too
+    if (R.hello && RICO.night && RICO.night()) return;   // the Night Line's hour: only the callers, between the songs
     R.next = performance.now() + 60000;   // held until this line is over
     if (++R.n % 3 === 1) return weather(line => (line ? air(line) : (R.next = 0)));
     /* the chain has stood still for an hour or more: now and then Rico says so between the songs */
@@ -154,8 +157,8 @@
     air(L[k]);
   }
   /* on air: the line under the header while Rico says it; then music for a while */
-  async function air(parts) {
-    const S = window.COVE_SOUND; if (!S || !S.on) return;
+  async function air(parts) {   // resolves with the seconds he talks (false when only shown)
+    const S = window.COVE_SOUND; if (!S || !S.on) return false;
     const text = parts.map(p => p.t).join(CJK ? "" : " ");
     caption(text);
     /* a phone call goes up one turn at a time, with who is speaking */
@@ -167,6 +170,17 @@
     const hold = (secs || (call ? said.reduce((n, p) => n + Math.max(2.5, p.t.length * 0.06), 0) : Math.min(14, 4 + text.length / 18))) + 2;
     clearTimeout(R.capT); R.capT = setTimeout(() => caption(null), hold * 1000);
     R.next = performance.now() + hold * 1000 + 35000 + Math.random() * 35000;
+    return secs;
+  }
+  /* "block 4639" in what Rico says opens that block in the explorer, in a new tab */
+  function linkBlocks(el, text) {
+    el.textContent = ""; const re = /(\bblock\s+|区块\s*|ブロック\s*)(\d+(?:,\d{3})*)/gi; let last = 0, m;
+    while ((m = re.exec(text))) {
+      el.append(text.slice(last, m.index));
+      const a = document.createElement("a"); a.className = "blk"; a.href = ROOT + "explorer/?b=" + m[2].replace(/,/g, ""); a.target = "_blank"; a.rel = "noopener";
+      a.title = T("Open this block in the explorer"); a.textContent = m[0]; a.addEventListener("click", e => e.stopPropagation()); el.append(a); last = re.lastIndex;
+    }
+    el.append(text.slice(last));
   }
   function caption(text) {
     if (!R.cap) {
@@ -176,7 +190,7 @@
       document.body.append(R.cap);
     }
     if (!text) { R.cap.hidden = true; return; }
-    R.cap.querySelector("span").textContent = text; R.cap.hidden = false;
+    linkBlocks(R.cap.querySelector("span"), text); R.cap.hidden = false;
   }
 
   /* ---------- clicks ---------- */
