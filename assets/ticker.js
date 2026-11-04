@@ -115,19 +115,39 @@
     return { kind: "note", text: w.next.replace("{d}", d).replace("{t}", String(g.hour).padStart(2, "0") + ":00"), href: "gazette/", raw: true, tip };
   };
 
+  /* ---------- Rico's Night Line on Radio Coco: every night from 23:00 to midnight by the listener's own clock (rabbit/rico.js
+     NIGHT_AT), on the island and in the header radio of every page. Before it the line says when; in its hour it says it is
+     on air and opens every round ---------- */
+  const NLT = {
+    en: { next: "Rico's Night Line on Radio Coco: tonight at 23:00 your time", on: "On air now: Rico's Night Line on Radio Coco, until midnight",
+      tip: "Every night 23:00 to midnight by your clock: islanders phone Rico with their lagoon problems between the songs. Switch on the radio in the header." },
+    zh: { next: "Rico 的深夜热线，Radio Coco：今晚 23:00（你的当地时间）", on: "正在直播：Rico 的深夜热线，Radio Coco，直到午夜",
+      tip: "每晚按你的时间 23:00 到午夜：歌与歌之间，岛民打电话给 Rico 说潟湖上的难题。打开页头的收音机即可收听。" },
+    ja: { next: "リコのナイトライン、Radio Coco：今夜 23:00（あなたの時間）", on: "オンエア中：リコのナイトライン、Radio Coco、真夜中まで",
+      tip: "毎晩あなたの時計で 23:00 から真夜中まで：曲の合間に島の人たちがラグーンの悩みでリコに電話します。ヘッダーのラジオをオンに。" },
+  };
+  const NIGHT_AT = 23;
+  const nightLine = () => {
+    const w = NLT[lang] || NLT.en, on = new Date().getHours() === NIGHT_AT;
+    return { kind: on ? "radio" : "note", text: on ? w.on : w.next, href: "rabbit/", raw: true, on, tip: w.tip, tipRaw: true };
+  };
+
   /* ---------- the rotation: facts carry the line, the rest is mixed in ---------- */
-  const SLOTS = ["head", "live", "gazette", "news", "live", "idni", "head", "pick", "live", "head", "invite"];
+  const SLOTS = ["head", "live", "gazette", "news", "live", "idni", "head", "night", "pick", "live", "head", "invite"];
   let slot = 0, headAt = 0, pickAt = 0, inviteAt = 0;
   const from = (list, at) => list.length ? list[at % list.length] : null;
   const next = () => {
     /* on the day a new edition comes out, it opens the line and every round after */
     if (slot % SLOTS.length === 0) { const g = gazette(); if (g && g.out) { slot++; return g; } }
+    /* in the Night Line's hour, so does the show */
+    if (slot % SLOTS.length === 1 && nightLine().on) { slot++; return nightLine(); }
     for (let tries = 0; tries < SLOTS.length * 2; tries++) {
       const k = SLOTS[slot++ % SLOTS.length]; let it = null;
       if (k === "live") it = fact();
       else if (k === "news") it = NEWS.length ? NEWS[newsAt++ % NEWS.length] : null;
       else if (k === "idni") it = IDNI.length ? IDNI[idniAt++ % IDNI.length] : null;
       else if (k === "gazette") { it = gazette(); if (it && it.out) it = null; }
+      else if (k === "night") { it = nightLine(); if (it.on) it = null; }
       else if (k === "head") { const n = from((CFG.headlines || []).filter(h => (!h.until || Date.now() < Date.parse(h.until)) && (!h.mode || (h.mode === "live") !== sim())), headAt++);
         it = n && { kind: "note", text: n.text, href: n.href, mark: n.mark, tip: n.tip };
         if (it && n.mark === "ghost") { const g = ghosts(); if (g) { it.text = g === "1" ? "1 ghost in the waiting room" : `${g} ghosts in the waiting room`; if (!translated(it.text)) it.text = n.text; } } }
@@ -144,7 +164,7 @@
     if (it.href) { a.href = it.href; if (/^https?:/.test(it.href)) { a.target = "_blank"; a.rel = "noopener"; } }
     const mark = document.createElement("i"); mark.className = "tk-mk";
     if (it.mark === "ghost") mark.classList.add("m-ghost");   // the chain core's ghost: an amber dot in a small block frame
-    else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" || it.fresh ? "" : it.kind === "news" || it.kind === "idni" ? "+" : it.kind === "paper" ? "✦" : "›";
+    else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" || it.fresh ? "" : it.kind === "news" || it.kind === "idni" ? "+" : it.kind === "paper" ? "✦" : it.kind === "radio" ? "♪" : "›";
     if (it.fresh) a.classList.add("fresh");
     if (it.tip) a.dataset.full = it.tipRaw ? it.tip : tr(it.tip);   // the HUD's own hover shows it; the line pauses meanwhile
     a.append(mark);
