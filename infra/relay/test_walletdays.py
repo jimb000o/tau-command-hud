@@ -87,6 +87,18 @@ k = w2.known()
 check(k.get(PLAYER) == "rabbit" and k.get(PAX) == "cruise" and HUD not in k and STRANGER not in k,
       "public tags: players and passengers yes, Tau HUD wallet and others never")
 
+# White Rabbit Key players over time: rabbit wallets from their first move on the island, cumulative
+PL2 = "a7" * 48
+w3 = walletdays.WalletDays(os.path.join(tempfile.mkdtemp(), "p.json"))
+w3.bots = {BOT}
+w3.add_blocks([block(D0 + 10, tx(PL2, "55" * 48), tx(BOT, RABBIT_COUNCIL)),          # PL2 active, but not playing yet
+               block(D0 + 2 * DAY, tx(PLAYER, RABBIT_COUNCIL), tx(PL2, RABBIT_COUNCIL), tx(IDNI, RABBIT_COUNCIL))])
+w3.save(D0 + 2 * DAY, force=True)
+pl = walletdays.WalletDays(w3.path).history(D0 + 3 * DAY)["players"]
+check(pl["since"] == "2026-11-03" and pl["days"] == {"2026-11-03": [2, 2], "2026-11-04": [2, 0]},
+      "players: counted from their first move, never the bot or IDNI, kept in the file, today included")
+check(w.history(D0)["players"]["days"].get("2026-11-01") == [1, 1], "the first player of chain 1 counts on its day")
+
 check(walletdays.WalletDays(os.path.join(tempfile.mkdtemp(), "none.json")).history(D0)["days"] == {}, "no file: empty history")
 
 sys.exit(1 if failed else 0)

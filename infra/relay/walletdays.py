@@ -26,6 +26,9 @@ GET /wallets/active
   new        {"YYYY-MM-DD": [n per tag]} wallets active for the first time that day (since recording began)
   totals     [n per tag] different wallets ever recorded
   since      first recorded day: a window reaching back before it only counts what was recorded
+  players    White Rabbit Key players over time (tauhud.com/stats/, "Players"): wallets tagged rabbit, each counted from
+             the first day it paid the island council, a till or a ballot box (a campaign's first step since the pick is
+             signed). {"since": day, "days": {"YYYY-MM-DD": [players so far, new that day]}}; empty days included
 
 GET /wallets/tags
   tags       {pubkey: tag} for the wallets whose tag comes from the public blocks or from our own server wallets:
@@ -68,6 +71,7 @@ class WalletDays:
         self.index: dict[str, int] = {}
         self.tag: list[str] = []           # tag per key
         self.days: dict[str, set[int]] = {}
+        self.play: dict[int, str] = {}     # key -> first day it made a White Rabbit Key transaction
         self.bots: set[str] = set()        # filled by the relay: the island bot's and purses' keys
         self.cruise: set[str] = set()      # filled by the relay once cruise ships run: their passengers' keys
         self.dirty = False
@@ -83,6 +87,7 @@ class WalletDays:
             n = len(self.keys)
             self.days = {str(d): {int(i) for i in v if isinstance(i, int) and 0 <= i < n}
                          for d, v in (st.get("days") or {}).items()}
+            self.play = {int(i): str(d) for i, d in (st.get("play") or {}).items() if str(i).isdigit() and int(i) < n}
         except FileNotFoundError:
             pass
         except (OSError, ValueError, TypeError, AttributeError) as exc:
@@ -131,6 +136,9 @@ class WalletDays:
                 elif RANK[t] < RANK[self.tag[k]]:
                     self.tag[k] = t
                     changed = True
+                if rabbit(tx, {}) and (k not in self.play or day < self.play[k]):
+                    self.play[k] = day
+                    changed = True
                 got = self.days.setdefault(day, set())
                 if k not in got:
                     got.add(k)
@@ -164,7 +172,8 @@ class WalletDays:
         try:
             with open(tmp, "w") as f:
                 json.dump({"keys": self.keys, "tag": self.tag,
-                           "days": {d: sorted(v) for d, v in sorted(self.days.items())}}, f, separators=(",", ":"))
+                           "days": {d: sorted(v) for d, v in sorted(self.days.items())},
+                           "play": {str(k): d for k, d in self.play.items()}}, f, separators=(",", ":"))
             os.replace(tmp, self.path)
             self.dirty = False
         except OSError as exc:
@@ -173,7 +182,8 @@ class WalletDays:
     def history(self, now: float | None = None) -> dict:
         now = time.time() if now is None else now
         if not self.days:
-            return {"tags": list(TAGS), "windows": list(WINDOWS), "days": {}, "new": {}, "totals": [0] * len(TAGS), "since": None}
+            return {"tags": list(TAGS), "windows": list(WINDOWS), "days": {}, "new": {}, "totals": [0] * len(TAGS), "since": None,
+                    "players": {"since": None, "days": {}}}
         first, last = min(self.days), max(max(self.days), day_of(now))
         o0, o1 = ordinal(first), ordinal(last)
         n, nt = o1 - o0 + 1, len(TAGS)
@@ -212,4 +222,24 @@ class WalletDays:
             days[d] = row
         return {"tags": list(TAGS), "windows": list(WINDOWS), "days": days,
                 "new": {datetime.date.fromordinal(o0 + i).isoformat(): new[i] for i in range(n) if any(new[i])},
-                "totals": totals, "since": first}
+                "totals": totals, "since": first, "players": self.players(active, o0, n)}
+
+    def players(self, active: dict, o0: int, n: int) -> dict:
+        """White Rabbit Key players so far, per day: rabbit-tagged wallets from their first move on the island. A wallet
+        written down before first days were kept (older file) counts from its first active day; a player from before the
+        first recorded day counts on that day, so the total never shrinks."""
+        new = [0] * n
+        for k, t in enumerate(self.tag):   # every player ever, also one whose days are past KEEP_DAYS
+            if t != "rabbit":
+                continue
+            d = self.play.get(k)
+            off = ordinal(d) - o0 if d else (active[k][0] if k in active else 0)
+            new[min(max(off, 0), n - 1)] += 1
+        firsts = [i for i in range(n) if new[i]]
+        if not firsts:
+            return {"since": None, "days": {}}
+        days, run = {}, 0
+        for i in range(firsts[0], n):
+            run += new[i]
+            days[datetime.date.fromordinal(o0 + i).isoformat()] = [run, new[i]]
+        return {"since": datetime.date.fromordinal(o0 + firsts[0]).isoformat(), "days": days}

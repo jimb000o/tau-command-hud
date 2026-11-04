@@ -676,7 +676,8 @@
     for (const e in EMB) { const d = G.deals.find(d => d.by === G.me && d.emb === e); f[e + "Offer"] = !d; f[e + "Deal"] = !!d; f[e + "Owed"] = !!d && !d.kept; f[e + "Kept"] = !!d && d.kept; }
     /* what has happened to the island this campaign: eventBoiler, eventStorm, eventCoup, eventCatch, eventRoof */
     events().forEach(e => { if (e.day <= G.day) f["event" + e.id[0].toUpperCase() + e.id.slice(1)] = true; });
-    return f;
+    /* a cruise ship near: which one, and whether it comes in a few days, tomorrow, today, is here or has left (shipFacts) */
+    return Object.assign(f, shipFacts());
   }
   /* of a list of [when, line]: the first that holds and has not been heard yet, else they take turns.
      A "when" of "a+b" holds when both hold, "!a" when a does not */
@@ -700,8 +701,11 @@
     const t = TALK[who]; if (!t || !t.ask) return;
     const wrap = el("div", { class: "cv-ask" }), asked = new Set();
     const draw = () => {
-      const qs = [];
-      t.ask.forEach((a, i) => { if (!asked.has(i)) qs.push([a, i]); else if (a.more && !asked.has(i + "+")) qs.push([a.more, i + "+"]); });
+      const qs = [], f = facts();
+      t.ask.forEach((a, i) => {
+        if (a.when && !holds(f, a.when)) return;   // a question of the moment (a cruise ship near) only while it holds
+        if (!asked.has(i)) qs.push([a, i]); else if (a.more && !asked.has(i + "+")) qs.push([a.more, i + "+"]);
+      });
       wrap.replaceChildren(...(qs.length ? [el("p", { class: "cv-h", text: T("Ask (free, no move)") }), ...qs.map(([a, k]) => btn(T(a.q), () => { asked.add(k); answer(box, who, a); draw(); }, { ask: true }))] : []));
     };
     draw(); if (box._line) box._line.after(wrap); else box.append(wrap);   // right under what they said, above the moves
@@ -1311,6 +1315,9 @@
     L.push({ k: "tips", parts: [Q("{x}, you have {n} coins.", { x: nm(G.me), n: G.coins[G.me] }), V("tips")] });
     isleLines().forEach(l => L.push(l));
     dejaLines().forEach(l => L.push(l));
+    const sh = shipAir(), fresh = sh.filter(l => !SAID.includes(l.k));   // a cruise ship near: news before the rest, until said
+    if (fresh.length && Math.random() < 0.5) return fresh;
+    sh.forEach(l => L.push(l));
     return L;
   }
   /* Rico reads the real testnet (or the simulation, in simulation mode) every minute and a half: the newest blocks and
@@ -1483,13 +1490,17 @@
      transactions (the card says which). The island shows the ship, its tenders, a guide's pennant where a
      group is, and a ring at a place whenever one of their transactions is sealed in a block.
      ?ship=dryrun or ?ship=queen shows a made-up visit, marked as a preview; it sends nothing. ---------- */
-  const SHIPV = { v: null, next: null };
+  const SHIPV = { v: null, next: null, last: null };
   const SHIPAT = { works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };   // places only a painted island's layout brings
   const berlinHM = s => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(s * 1000)); } catch (e) { return new Date(s * 1000).toISOString().slice(11, 16); } };
+  /* &phase=soon, tomorrow or today: no ship on the sea yet, only the islanders and Rico talking about it (shipFacts);
+     &phase=cut: it sailed on without landing */
   function shipPreview(k) {
     const now = Math.floor(Date.now() / 1000), q = k === "queen", phase = new URLSearchParams(location.search).get("phase");
-    return { name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition", phase: phase === "approach" || phase === "gone" ? phase : phase === "turn" ? "boarding" : "ashore",
-      t0: phase === "approach" ? now + 90 : now - 1800, end: phase === "gone" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: q ? 120 : 40,
+    if (phase === "soon" || phase === "tomorrow" || phase === "today") return null;
+    return { ship: k, name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition", phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : "ashore",
+      why: phase === "cut" ? "no landing" : "",
+      t0: phase === "approach" ? now + 90 : now - 1800, end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: q ? 120 : 40,
       ashore: q ? 96 : 34, at: q ? { south: 30, bar: 26, radio: 12, market: 18, works: 6, pier: 4 } : { book: 8, ship: 9, school: 6, dive: 8, pier: 3 },
       sent: { pay: q ? 214 : 96, bill: q ? 5 : 0, book: q ? 21 : 5, cancel: q ? 2 : 1 }, refused: 0, kinds: q ? ["pay", "bill", "book"] : ["pay", "book"], preview: true };
   }
@@ -1500,9 +1511,25 @@
     fetch("https://node.tauhud.com/cruise", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
       if (!j) return;
       SRC.ship = new Set([].concat(...Object.values(j.wallets || {})).map(lc));
-      SHIPV.v = j.now || null; SHIPV.next = j.next || null;
+      SHIPV.v = j.now || null; SHIPV.next = j.next || null; SHIPV.last = j.last || null;
       shipShow();
     }, () => {});
+  }
+  /* the ships' week as the islanders and Rico talk about it (talk.js RABBIT_SHIP_WHEN): from the relay's timetable, or
+     from the preview (?ship=queen or dryrun, &phase=soon, tomorrow, today, approach, turn, gone or cut; none: ashore) */
+  const SHIP_SAY = { soon: "shipSoon", tomorrow: "shipTomorrow", today: "shipToday", approach: "shipToday", turn: "shipHere", gone: "shipGone", cut: "shipCut" };
+  function shipFacts() {
+    const W = window.RABBIT_SHIP_WHEN, k = QS.get("ship"); if (!W) return {};
+    if (k === "dryrun" || k === "queen") return W.mark(k, SHIP_SAY[QS.get("phase")] || "shipHere");
+    return W({ now: SHIPV.v, next: SHIPV.next, last: SHIPV.last }, Date.now() / 1000);
+  }
+  /* Rico on the ships (rico.js sq_* for the Queen, sd_* for MS Dry Run, s_cut for one that did not stay): one line for
+     where the week stands; djLines puts it on air before the rest of the game talk until he has said it */
+  function shipAir() {
+    const f = shipFacts(); if (!f.ship) return [];
+    const w = f.shipCut ? null : ["Soon", "Tomorrow", "Today", "Here", "Gone"].find(x => f["ship" + x]);
+    const k = w ? (f.queen ? "sq_" : "sd_") + w.toLowerCase() : "s_cut";
+    return RICO.L[k] ? [{ k, parts: [V(k)] }] : [];
   }
   function shipShow() {
     if (SC.ship) SC.ship(SHIPV.v);
@@ -1664,10 +1691,13 @@
   /* a listener phones in: Rico picks up, the caller asks in their own voice (through the telephone), Rico answers */
   /* a call is a little conversation: the caller, Rico, the caller again, a goodbye, and Rico signs off (rico.js CALLS) */
   function phoneIn() {
-    const ok = c => !c.when || (c.when === "solo" ? RADAR.solo : c.when === "fresh" ? RADAR.fresh : false);
+    /* when: solo or fresh (the chain), or the cruise ships' week like talk.js ("shipTomorrow+queen") */
+    const sf = shipFacts(), ok = c => !c.when || (c.when === "solo" ? RADAR.solo : c.when === "fresh" ? RADAR.fresh : holds(sf, c.when));
     const keys = RICO.CALLS.map((c, i) => ok(c) ? "call:" + i : null).filter(Boolean);
     if (SND.on && RICO.voiced && !keys.some(x => RICO.voiced(x) !== false)) return null;   // no call has its voices yet: something Rico can say aloud instead
-    const k = pickLine(keys), c = RICO.CALLS[+k.slice(5)];
+    /* an islander calling about the ship near goes first, once (with the sound on: once its voices are there) */
+    const ship = keys.filter(x => /ship/.test(RICO.CALLS[+x.slice(5)].when || "") && !SAID.includes(x) && !(SND.on && RICO.voiced && RICO.voiced(x) === false));
+    const k = ship.length ? ship[Math.floor(Math.random() * ship.length)] : pickLine(keys), c = RICO.CALLS[+k.slice(5)];
     const ring = pickLine(RICO.SETS.ring), bye = pickLine(RICO.SETS.bye); markSaid(ring); if (!c.cut) markSaid(bye);
     return { k, parts: RICO.call(c, ring, bye), call: true };
   }

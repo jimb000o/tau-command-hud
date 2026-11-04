@@ -1331,32 +1331,38 @@
   }
 
   /* ---------- the painted pictures, when the server has them ---------- */
-  /* while the painted island is on its way, only sea and sky show (ART.pending): the drawn island of the first days is
-     a fallback for when the server has no painting, not a picture to flash before the real one */
+  /* while the painted island is on its way, only the sky and the sea of the hour show (ART.pending; frame: wait): the
+     drawn island of the first days, with its palms, people, flags and boat, is a fallback for when the server has no
+     painting, not a picture to flash before the real one */
   const ART = { base: "https://node.tauhud.com/rico/art/", img: {}, pending: true };
   const settle = () => { if (!ART.pending) return; ART.pending = false; S.base = null; if (S.c) size(); };
-  setTimeout(settle, 8000);   // a slow or silent server: the drawn island after all
-  try {
-    fetch(ART.base + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j => {
-      ART.box = (j && j.boxes) || {};   // where a talking or blinking frame differs from the still picture
-      const scenes = (j && j.scenes) || {};
-      if (!scenes.island) settle();
-      Object.entries(scenes).forEach(([id, f]) => {
-        const im = new Image(); im.crossOrigin = "anonymous"; im.decoding = "async";
-        im.onload = () => {
-          ART.img[id] = im;
-          if (id === "folk") return;   // the people, painted: a strip of figures (infra/rabbit-art paint.py folk)
-          if (id !== "island") { delete roomCache[id]; return; }
-          const ar = im.naturalWidth / im.naturalHeight;   // a wide painting (paint.py hires) carries on past the world's sides
-          ART.wide = ar > 1.9 ? Math.round((WH * ar - WW) / 2) : 0;
-          if (j.layout && painted("island")) useLayout(j.layout);
-          ART.pending = false; S.base = null; if (S.c) size();
-        };
-        if (id === "island") im.onerror = settle;
-        im.src = ART.base + f;
-      });
-    }, settle).catch(settle);
-  } catch (e) { settle(); }
+  let late = setTimeout(settle, 12000);   // a silent server: the drawn island after all
+  /* the list of the paintings; a server that is restarting just then (up) is asked again, three times, before the drawn
+     island shows */
+  const ask = n => fetch(ART.base + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : Promise.reject(r.status))).then(j => {
+    ART.box = (j && j.boxes) || {};   // where a talking or blinking frame differs from the still picture
+    const scenes = (j && j.scenes) || {};
+    if (!scenes.island) settle();
+    else { clearTimeout(late); late = setTimeout(settle, 30000); }   // the painting is listed: a large picture on a slow line takes its time
+    Object.entries(scenes).forEach(([id, f]) => {
+      const im = new Image(); im.crossOrigin = "anonymous"; im.decoding = "async";
+      im.onload = () => {
+        ART.img[id] = im;
+        if (id === "folk") return;   // the people, painted: a strip of figures (infra/rabbit-art paint.py folk)
+        if (id !== "island") { delete roomCache[id]; return; }
+        const ar = im.naturalWidth / im.naturalHeight;   // a wide painting (paint.py hires) carries on past the world's sides
+        ART.wide = ar > 1.9 ? Math.round((WH * ar - WW) / 2) : 0;
+        if (j.layout && painted("island")) useLayout(j.layout);
+        const bare = ART.pending;   // only the bare sky and sea were there: the view starts where it belongs, the painting fades in
+        ART.pending = false; S.base = null; if (bare) S.sized = false;
+        if (S.c) size();
+        ART.fade = bare;   // over the drawn island (a very slow line) it simply takes its place
+      };
+      if (id === "island") im.onerror = settle;
+      im.src = ART.base + f;
+    });
+  }, () => (n < 3 ? setTimeout(() => ask(n + 1), 1000 * 2 ** n) : settle())).catch(settle);
+  try { ask(0); } catch (e) { settle(); }
   const painted = id => !!ART.img[id] && !/[?&]art=drawn/.test(location.search);
   /* a painted island drawn from a new sketch (infra/rabbit-art/sketch.py) brings its layout: where the places stand,
      the streets people walk, the windows that light up, smoke, torches and water, the lamp and the mast */
@@ -1393,20 +1399,40 @@
     const k = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
     g.drawImage(im, (w - iw) / 2, (h - ih) / 2, iw, ih);
   }
-  /* life in a painted room: dust in a warm shaft of light by day, a lamp that breathes at night */
+  /* life in a painted room: dust in a warm shaft of light by day (after dark the place's lamps light it: roomLight) */
   function roomLife(g, t, day) {
+    if (day <= 0.2) return;
     g.globalCompositeOperation = "lighter";
-    if (day > 0.2) {
-      g.fillStyle = `rgba(255,232,180,${0.07 * day})`; g.beginPath(); g.moveTo(380, 0); g.lineTo(700, 0); g.lineTo(1100, 900); g.lineTo(640, 900); g.closePath(); g.fill();
-      for (let i = 0; i < 40; i++) {
-        const k = (i * 0.618) % 1, y = (k * 900 + t * 0.008 * (0.5 + (i % 5) * 0.2)) % 900, x = 420 + y * 0.48 + Math.sin(t * 0.0006 + i * 2.3) * 60 + ((i * 37) % 120);
-        g.fillStyle = `rgba(255,240,200,${day * (0.18 + 0.2 * Math.sin(t * 0.002 + i))})`; g.beginPath(); g.arc(x, y, 1.6 + (i % 3) * 0.7, 0, Math.PI * 2); g.fill();
-      }
-    } else {
-      const fl = 0.85 + 0.1 * Math.sin(t * 0.004) + 0.05 * Math.sin(t * 0.017), lg = g.createRadialGradient(800, 260, 0, 800, 260, 900);
-      lg.addColorStop(0, `rgba(255,180,90,${0.2 * fl * (1 - day)})`); lg.addColorStop(1, "rgba(255,180,90,0)"); g.fillStyle = lg; g.fillRect(0, 0, RW, RH);
+    g.fillStyle = `rgba(255,232,180,${0.07 * day})`; g.beginPath(); g.moveTo(380, 0); g.lineTo(700, 0); g.lineTo(1100, 900); g.lineTo(640, 900); g.closePath(); g.fill();
+    for (let i = 0; i < 40; i++) {
+      const k = (i * 0.618) % 1, y = (k * 900 + t * 0.008 * (0.5 + (i % 5) * 0.2)) % 900, x = 420 + y * 0.48 + Math.sin(t * 0.0006 + i * 2.3) * 60 + ((i * 37) % 120);
+      g.fillStyle = `rgba(255,240,200,${day * (0.18 + 0.2 * Math.sin(t * 0.002 + i))})`; g.beginPath(); g.arc(x, y, 1.6 + (i % 3) * 0.7, 0, Math.PI * 2); g.fill();
     }
     g.globalCompositeOperation = "source-over";
+  }
+  /* the light of the hour in a painted place, as on the island: the picture, and whoever stands in it, multiplied with
+     the light of the hour (white at noon, warm at the ends of the day, deep blue at night), with the same blue haze after
+     dark. From dusk the place's lamps are lit: a warm pool round the one you talk to and the room about them, while the
+     corners and the views out stay in the night. The pool is soft, so it is drawn at a quarter of the pixels. */
+  const ROOMLAMP = [255, 200, 146];
+  function roomLight(g, W, H, sky, nt) {
+    const m = sky.mul, n = lampsOn(sky);
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    if (m[0] + m[1] + m[2] < 762) {
+      g.globalCompositeOperation = "multiply";
+      if (n > 0) {
+        const q = 4, c = S.rlm || (S.rlm = document.createElement("canvas")), w = Math.ceil(W / q), h = Math.ceil(H / q);
+        if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+        const lg = c.getContext("2d"); lg.fillStyle = rgb(m); lg.fillRect(0, 0, w, h);
+        const [X, Y, Z] = S.hostAt || [W / 2, H * 0.3, Math.min(W, H) * 0.7], x = X / q, y = Math.min(H * 0.62, Y + Z * 0.36) / q, r = Math.min(W, H) * 0.62 / q;
+        const gr = lg.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, rgb(mix(m, ROOMLAMP, 0.82 * n))); gr.addColorStop(0.35, rgb(mix(m, ROOMLAMP, 0.55 * n))); gr.addColorStop(0.75, rgb(mix(m, ROOMLAMP, 0.14 * n))); gr.addColorStop(1, rgb(m));
+        lg.fillStyle = gr; lg.fillRect(0, 0, w, h);
+        g.drawImage(c, 0, 0, W, H);
+      } else { g.fillStyle = rgb(m); g.fillRect(0, 0, W, H); }
+    }
+    g.globalCompositeOperation = "source-over";
+    if (nt > 0.01) { g.fillStyle = `rgba(12,20,52,${0.16 * nt})`; g.fillRect(0, 0, W, H); }
   }
   /* the bare picture of a place, without people, at noon: what the server's painter repaints (infra/rabbit-art) */
   /* sky and sea in flat bands, the whole world wide, nothing on them */
@@ -1593,14 +1619,17 @@
     /* sky, from the top of the screen to the horizon: printed in flat bands, as a poster would be */
     view(g); const hzY = (HZ - S.cam.y) * fitScale() * S.cam.z * S.K + H / 2;
     g.setTransform(1, 0, 0, 1, 0, 0);
-    const NB = 7, top = Math.min(0, hzY - H);
-    for (let i = 0; i < NB; i++) { const f0 = Math.pow(i / NB, 0.7), f1 = Math.pow((i + 1) / NB, 0.7); g.fillStyle = rgb(mix(sky.top, sky.bot, i / (NB - 1))); g.fillRect(0, lerp(top, hzY, f0), W, lerp(top, hzY, f1) - lerp(top, hzY, f0) + 1); }
-    /* the sea, from the horizon down, in four bands */
-    for (let i = 0; i < 4; i++) { const f0 = Math.pow(i / 4, 1.6), f1 = Math.pow((i + 1) / 4, 1.6); g.fillStyle = rgb(mix(sky.sea, sky.seaB, i / 3)); g.fillRect(0, lerp(hzY, H, f0), W, lerp(hzY, H, f1) - lerp(hzY, H, f0) + 1); }
+    const NB = 7, top = Math.min(0, hzY - H), bands = () => {
+      for (let i = 0; i < NB; i++) { const f0 = Math.pow(i / NB, 0.7), f1 = Math.pow((i + 1) / NB, 0.7); g.fillStyle = rgb(mix(sky.top, sky.bot, i / (NB - 1))); g.fillRect(0, lerp(top, hzY, f0), W, lerp(top, hzY, f1) - lerp(top, hzY, f0) + 1); }
+      /* the sea, from the horizon down, in four bands */
+      for (let i = 0; i < 4; i++) { const f0 = Math.pow(i / 4, 1.6), f1 = Math.pow((i + 1) / 4, 1.6); g.fillStyle = rgb(mix(sky.sea, sky.seaB, i / 3)); g.fillRect(0, lerp(hzY, H, f0), W, lerp(hzY, H, f1) - lerp(hzY, H, f0) + 1); }
+    };
+    bands();
     view(g);
     const [wl] = toWorld(0, 0), [wr, wb] = toWorld(S.W, S.H), [, wt] = toWorld(0, 0);
-    const sk = !(S.base && S.base.painted);   // a painted island brings its own sky: no drawn sun, moon, clouds or gulls over it
-    if (!sk && (wl < -(ART.wide || 0) || wr > WW + (ART.wide || 0))) sides(g, wl, wt, wr, wb);
+    const pb = !!(S.base && S.base.painted), wait = !pb && ART.pending;   // wait: the painting is on its way, the bare sky and sea show
+    const sk = !pb && !wait;   // a painted island brings its own sky: no drawn sun, moon, clouds or gulls over it
+    if (pb && (wl < -(ART.wide || 0) || wr > WW + (ART.wide || 0))) sides(g, wl, wt, wr, wb);
     /* stars as small printed crosses, the sun as a disc in rings with slow rays, the moon as a crescent */
     const nt = Math.max(0, 1 - Math.abs((S.hour % 4) - 3) * 1.4);
     if (sk && nt > 0) { const R = rnd(9); for (let i = 0; i < 140; i++) { const x = wl + R() * (wr - wl), y = wt + R() * (HZ - wt - 10), r = 0.8 + R() * 1.8, al = nt * (0.35 + R() * 0.65) * (0.7 + 0.3 * Math.sin(t * 0.002 + i)); g.fillStyle = `rgba(251,243,223,${al})`; g.fillRect(x - r, y - 0.5, r * 2, 1); g.fillRect(x - 0.5, y - r, 1, r * 2); } }
@@ -1623,7 +1652,7 @@
     /* the sea moves: rows of little scalloped waves that grow toward the viewer, and a broken path of light */
     g.lineCap = "round"; g.lineJoin = "round";
     const foam = `rgba(251,243,223,${0.34 * (1 - nt * 0.55)})`, under = `rgba(16,40,60,${0.2 * (1 - nt * 0.3)})`;
-    for (let r = 0; r < 30; r++) {
+    if (!wait) for (let r = 0; r < 30; r++) {
       const y = HZ + 8 + r * r * 0.7, sc = 2.6 + r * 0.42, gap = 70 + r * 9; if (y > wb + 20) break;
       g.lineWidth = 0.8 + r * 0.05;
       const drift = Math.sin(t * 0.0009 + r * 0.8) * gap * 0.25;
@@ -1637,14 +1666,16 @@
     if (sk) for (let i = 0; i < 26; i++) { const y = HZ + 6 + i * i * 0.5, w0 = 6 + i * 2, f = Math.sin(t * 0.003 + i * 1.7); if (f < 0.15) continue; g.fillStyle = rgb(hh < 2.75 ? sky.sun : [251, 243, 223], f * 0.55 * (1 - i / 26)); g.fillRect(gx - w0 / 2 + Math.sin(i * 3.1 + t * 0.001) * w0 * 0.6, y, w0, 2); }
     /* the island and everything on it, drawn on one layer so the light of the hour tints it in one go */
     const w = S.wg; w.setTransform(1, 0, 0, 1, 0, 0); w.clearRect(0, 0, W, H); view(w);
-    /* surf: a pale ring that comes and goes around the coast */
-    const surf = 0.5 + 0.5 * Math.sin(t * 0.0015);
-    w.strokeStyle = `rgba(255,255,255,${0.25 + surf * 0.35})`; w.lineWidth = 3; shape(w, 1.015 + surf * 0.012, 2); w.stroke();
-    w.strokeStyle = `rgba(255,255,255,${0.12 * (1 - surf)})`; w.lineWidth = 2; shape(w, 1.05 + surf * 0.02, 4); w.stroke();
     const pi = !!S.base.painted;   // the painted island has its own palms, flags and boat
-    w.drawImage(S.base, -S.base.e, 0, WW + 2 * S.base.e, WH);
-    islandFx(w, t, sky.light);
-    if (S.glow) {
+    if (!wait) {
+      /* surf: a pale ring that comes and goes around the coast */
+      const surf = 0.5 + 0.5 * Math.sin(t * 0.0015);
+      w.strokeStyle = `rgba(255,255,255,${0.25 + surf * 0.35})`; w.lineWidth = 3; shape(w, 1.015 + surf * 0.012, 2); w.stroke();
+      w.strokeStyle = `rgba(255,255,255,${0.12 * (1 - surf)})`; w.lineWidth = 2; shape(w, 1.05 + surf * 0.02, 4); w.stroke();
+      w.drawImage(S.base, -S.base.e, 0, WW + 2 * S.base.e, WH);
+      islandFx(w, t, sky.light);
+    }
+    if (S.glow && !wait) {
       const p = PLACES[S.glow];
       if (p.poly) {   // the place's own outline (layout "poly"): a soft light along it and a faint fill inside
         w.save(); w.beginPath(); p.poly.forEach(([x, y], i) => (i ? w.lineTo(x, y) : w.moveTo(x, y))); w.closePath();
@@ -1652,17 +1683,17 @@
         w.shadowColor = "rgba(255,255,220,.9)"; w.shadowBlur = 8; w.strokeStyle = "rgba(255,255,235,.85)"; w.lineWidth = 1.6; w.lineJoin = "round"; w.stroke(); w.restore();
       } else { const [x, y, bw, bh] = p.box; w.fillStyle = "rgba(255,255,230,.18)"; w.beginPath(); w.ellipse(x + bw / 2, y + bh * 0.85, bw * 0.62, bh * 0.32, 0, 0, Math.PI * 2); w.fill(); }
     }
-    if (!pi) { flag(w, 470, 470, t, "#3b5f8a", "#fff", "wind"); flag(w, 606, 425, t + 900, "#c0533f", "#fff", "wave"); boat(w, 1110, 770, t); }
+    if (!pi && !wait) { flag(w, 470, 470, t, "#3b5f8a", "#fff", "wind"); flag(w, 606, 425, t + 900, "#c0533f", "#fff", "wave"); boat(w, 1110, 770, t); }
     /* palms and people in depth order */
-    const items = pi ? [] : PALMS.map(([x, y], i) => [y, () => palm(w, x, y, t, i)]);
-    if (!pi) FOLK.forEach((f, i) => {   // on the painted island nobody walks for now: only the white rabbit
+    const items = pi || wait ? [] : PALMS.map(([x, y], i) => [y, () => palm(w, x, y, t, i)]);
+    if (!pi && !wait) FOLK.forEach((f, i) => {   // on the painted island nobody walks for now: only the white rabbit
       if (!S.still) { f.k += f.v * dt * f.dir; if (f.k > 1 || f.k < 0) { f.dir *= -1; f.k = Math.max(0, Math.min(1, f.k)); } }
       let [x, y] = alongPath(f.path, f.k);
       if (S.gather > 0) { const a = i / FOLK.length * Math.PI * 2, gx2 = SPOT.gather[0] + Math.cos(a) * 70, gy2 = SPOT.gather[1] + Math.sin(a) * 18; x = lerp(x, gx2, S.gather); y = lerp(y, gy2, S.gather); }
       items.push([y, () => person(w, x, y, t, f, i)]);
     });
-    rabbitStep(S.still ? 999 : dt, t); items.push([RB.y, () => rabbit(w, t)]);
-    if (S.cat && pi && !painted("deja")) S.cat = null;
+    if (!wait) { rabbitStep(S.still ? 999 : dt, t); items.push([RB.y, () => rabbit(w, t)]); }
+    if (S.cat && (wait || (pi && !painted("deja")))) S.cat = null;
     if (S.cat) {
       const c = S.cat, f = (t - c.t0) / c.d; if (f > 1) S.cat = c.twice ? { ...c, t0: t, twice: false } : null;
       else if (pi) items.push([700, () => creature(w, ART.img.deja, lerp(c.x0, c.x1, f), lerp(c.y0, c.y1, f) + Math.abs(Math.sin(t * 0.012)) * -1.5, 22)]);
@@ -1678,9 +1709,9 @@
       if (f > 1) RARE.zilla = null;
       else { const a = Math.min(1, f * 6, (1 - f) * 6); items.push([z.y, () => { z.box = creature(w, ART.img.agorzilla, z.x, z.y + (1 - a) * 8, 48, a); }]); }
     }
-    if (SHIP.s) shipItems(items, w, t, sky);
+    if (SHIP.s && !wait) shipItems(items, w, t, sky);
     items.sort((a, b) => a[0] - b[0]).forEach(([, d]) => d());
-    if (SHIP.pings.length) shipPings(w, t);
+    if (SHIP.pings.length && !wait) shipPings(w, t);
     /* the light of the hour */
     w.setTransform(1, 0, 0, 1, 0, 0);
     if (!pi && sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3]); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
@@ -1688,7 +1719,7 @@
     if (pi) paintedLight(g, W, H, sky, t, nt, wl, wt, wr);
     /* evening and night: windows glow, the radio mast blinks, the lighthouse sweeps its green beam */
     view(g);
-    if (sky.light > 0.05) {
+    if (sky.light > 0.05 && !wait) {
       g.globalCompositeOperation = "lighter";
       WINDOWS.forEach(([x, y, ww, wh], i) => { const fl = 0.85 + 0.15 * Math.sin(t * 0.003 + i * 2.1); g.fillStyle = `rgba(255,190,90,${sky.light * (pi ? 0.3 : 0.75) * fl})`; if (pi) { g.beginPath(); g.arc(x + ww / 2, y + wh / 2, Math.max(ww, wh) * 0.7, 0, Math.PI * 2); g.fill(); } else g.fillRect(x, y, ww, wh); g.fillStyle = `rgba(255,170,70,${sky.light * 0.08})`; g.beginPath(); g.arc(x + ww / 2, y + wh / 2, 8, 0, Math.PI * 2); g.fill(); });
       shipWindows(g, t, sky.light);
@@ -1699,10 +1730,18 @@
       g.globalCompositeOperation = "source-over";
       if (lampsOn(sky) > 0) nightLamps(g, t, lampsOn(sky));
     }
-    g.fillStyle = `rgba(57,255,138,${0.65 + 0.35 * Math.sin(t * 0.004)})`; g.beginPath(); g.arc(SPOT.beam[0], SPOT.beam[1], 4.5, 0, Math.PI * 2); g.fill();
-    if (Math.floor(t / 700) % 2) { g.fillStyle = "#ff4a3a"; g.beginPath(); g.arc(SPOT.blink[0], SPOT.blink[1], 3, 0, Math.PI * 2); g.fill(); }
+    if (!wait) {   // the lighthouse lamp and the red light on the radio mast
+      g.fillStyle = `rgba(57,255,138,${0.65 + 0.35 * Math.sin(t * 0.004)})`; g.beginPath(); g.arc(SPOT.beam[0], SPOT.beam[1], 4.5, 0, Math.PI * 2); g.fill();
+      if (Math.floor(t / 700) % 2) { g.fillStyle = "#ff4a3a"; g.beginPath(); g.arc(SPOT.blink[0], SPOT.blink[1], 3, 0, Math.PI * 2); g.fill(); }
+    }
     /* gulls */
     if (sk) for (let i = 0; i < 4; i++) { const x = wl + ((t * 0.02 * (1 + i * 0.15) + i * 420) % ((wr - wl) + 200)) - 100, y = 170 + i * 26 + Math.sin(t * 0.0009 + i) * 18; gull(g, x, y, t, i); }
+    /* the painting has just come: for half a second it rises out of the bare sky and sea it was waiting on (counted from
+       the end of its first frame, which takes longest) */
+    if (pb && ART.fade) {
+      const now = performance.now(), f = ART.fade === true ? 0 : (now - ART.fade) / 500; if (ART.fade === true) ART.fade = now;
+      if (f >= 1) ART.fade = 0; else { g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1 - f; bands(); g.globalAlpha = 1; }
+    }
     /* inside a place: the room opens from the place in a widening circle and fills the view */
     S.roomA += (S.roomT - S.roomA) * Math.min(1, k * 1.15); if (Math.abs(S.roomT - S.roomA) < 0.004) S.roomA = S.roomT;
     if (S.room && S.roomA > 0.004) {
@@ -1718,6 +1757,7 @@
         const b = creature(w, ART.img.deja, c.x, c.y, c.h, a * e);
         S.roomCat.screen = [(b[0] * sc + ox) / S.K, (b[1] * sc + oy) / S.K, b[2] * sc / S.K, b[3] * sc / S.K];
       }
+      S.hostAt = null;
       if (S.hostFn) {
         if (!S.hostC) { S.hostC = document.createElement("canvas"); S.hostC.width = S.hostC.height = 800; }
         const hg = S.hostC.getContext("2d"); S.hostFn(hg, t);
@@ -1732,12 +1772,12 @@
         let [X, Y, Z] = [hx, hy, hs];
         /* a phone held sideways: the plate stands on the right, the one you talk to in the free room on its left, large */
         if (!phone && S.hostLeft) { const fw = S.hostLeft * S.K; Z = Math.min(fw * 0.95, H * (S.hostTall ? 1.05 : 0.8)); X = fw / 2; Y = (S.hostTall ? H + 6 * S.K : H - 52 * S.K) - Z * 0.99; }
-        w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, X - Z / 2, Y, Z, Z);
+        w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, X - Z / 2, Y, Z, Z); S.hostAt = [X, Y, Z];
       }
       w.setTransform(1, 0, 0, 1, 0, 0);
-      if (painted(S.room)) { const m = mix([255, 255, 255], sky.mul, 0.7); if (m[0] + m[1] + m[2] < 762) { w.globalCompositeOperation = "multiply"; w.fillStyle = rgb(m); w.fillRect(0, 0, W, H); } w.globalCompositeOperation = "source-over"; }
+      if (painted(S.room)) roomLight(w, W, H, sky, nt);
       else if (sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3] * 0.75); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
-      if (sky.light > 0.05) { w.globalCompositeOperation = "lighter"; const lg = w.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.max(W, H) * 0.6); lg.addColorStop(0, `rgba(255,190,110,${0.22 * sky.light})`); lg.addColorStop(1, "rgba(255,190,110,0)"); w.fillStyle = lg; w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
+      if (sky.light > 0.05 && !painted(S.room)) { w.globalCompositeOperation = "lighter"; const lg = w.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.max(W, H) * 0.6); lg.addColorStop(0, `rgba(255,190,110,${0.22 * sky.light})`); lg.addColorStop(1, "rgba(255,190,110,0)"); w.fillStyle = lg; w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
       const [px, py] = S.roomAt || [S.W / 2, S.H / 2], cx = px * S.K, cy = py * S.K, rr = e * Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) * 1.02;
       g.setTransform(1, 0, 0, 1, 0, 0); g.save(); g.beginPath(); g.arc(cx, cy, Math.max(1, rr), 0, Math.PI * 2); g.clip(); g.drawImage(S.world, 0, 0); g.restore();
       if (a < 0.999) { g.strokeStyle = INK; g.lineWidth = 6 * S.K; g.beginPath(); g.arc(cx, cy, Math.max(1, rr), 0, Math.PI * 2); g.stroke(); g.strokeStyle = P.cream; g.lineWidth = 2.5 * S.K; g.stroke(); }
@@ -1757,6 +1797,7 @@
   function hit(px, py) {
     const inBox = (b, x, y) => b && x >= b[0] && x <= b[0] + b[2] && y >= b[1] && y <= b[1] + b[3];
     if (S.roomA > 0.3) return S.roomCat && inBox(S.roomCat.screen, px, py) ? "deja" : null;   // inside a place the island is out of reach
+    if (ART.pending && !(S.base && S.base.painted)) return null;   // the painting is on its way: nothing to point at on the bare sea yet
     const [x, y] = toWorld(px, py);
     if (RARE.zilla && inBox(RARE.zilla.box, x, y)) return "agorzilla";
     if (Math.abs(x - RB.x) < 16 && y < RB.y + 6 && y > RB.y - 30) return "rabbit";

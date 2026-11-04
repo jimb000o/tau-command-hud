@@ -1017,6 +1017,50 @@
  },
  {
   "who": "rico",
+  "text": "Saturday at two, the Queen Mempool drops anchor off the island. A hundred and twenty passengers, all made up by our relay, all paying in real test coins. Tobias has started his speech. Pray for the gulls."
+ },
+ {
+  "who": "rico",
+  "text": "Tomorrow at two, the Queen Mempool! Song requests welcome, one transaction each. Rico is warming up his voice, and Lola is hiding the good lemons."
+ },
+ {
+  "who": "rico",
+  "text": "Today's the day: the Queen Mempool lands at two, if the lagoon is calm. If it isn't, she waits a little and sails on. A ship that waits for good weather. Smarter than Rico on a Friday."
+ },
+ {
+  "who": "rico",
+  "text": "The Queen is in! Passengers on the square, at Lola's, up at the spa. Twelve transactions a minute at most, so the lagoon keeps breathing. Rico is taking requests."
+ },
+ {
+  "who": "rico",
+  "text": "The Queen has sailed. Every coin her passengers spent is in the blocks, and the logbook is public. Count them yourself. Hana's class already did."
+ },
+ {
+  "who": "rico",
+  "text": "Wednesday at four, MS Dry Run. Forty curious passengers, invented by our relay, paying in real test coins. Small ship, big questions. Hana has warned the school."
+ },
+ {
+  "who": "rico",
+  "text": "Tomorrow at four, MS Dry Run. Her passengers book their dives with the right to change their minds, and the coins wait in escrow until the hour. A dry run for the chain. Hence the name."
+ },
+ {
+  "who": "rico",
+  "text": "MS Dry Run lands at four today, if the lagoon is calm. If not, she waits a little and sails on. No drama. The logbook writes down why."
+ },
+ {
+  "who": "rico",
+  "text": "MS Dry Run is ashore. Notebooks at the lighthouse, the school and the Old Ship. Captain Wren is labelling the passengers faster than they can write."
+ },
+ {
+  "who": "rico",
+  "text": "MS Dry Run has left. The dives they booked pay out by themselves at their hour. No captain needed. Rico finds that very romantic."
+ },
+ {
+  "who": "rico",
+  "text": "The cruise ship didn't stay today, folks. She lands only when the lagoon is calm, and she leaves the moment something goes wrong. The logbook says what happened. Rico reads it so you don't have to. But you can."
+ },
+ {
+  "who": "rico",
   "text": "Why did a couple of wallets move at the same minute? Rico has three theories, Old Sam has one, and the Book has none. The Book only says that they did."
  },
  {
@@ -3148,6 +3192,86 @@
   "text": "We lost her! Zia's mum, if you're listening: hi from Zia. And from Rico."
  },
  {
+  "who": "tobias",
+  "text": "Rico! Tobias, from the pier. Could you announce my welcome speech? Tomorrow, two o'clock sharp, the moment the Queen ties up."
+ },
+ {
+  "who": "rico",
+  "text": "She doesn't tie up, Tobias. She anchors outside the reef, and the boats bring her passengers in. You'll be speaking to a boat."
+ },
+ {
+  "who": "tobias",
+  "text": "A boat is an audience! A small, wet audience."
+ },
+ {
+  "who": "rico",
+  "text": "Then Rico will play you on, Harbour Master. Keep it under forty minutes."
+ },
+ {
+  "who": "tobias",
+  "text": "Thirty-nine! Goodbye, Rico!"
+ },
+ {
+  "who": "salado",
+  "text": "Rico, it's Salado, up at the resort. Tell the passengers the spa is open. And that the jungle path is, ah, scenic."
+ },
+ {
+  "who": "rico",
+  "text": "Scenic, he says. Folks, it's a jungle path. And if you book a treatment, your coins wait in escrow until your hour. Change your mind before then, and they come back to you."
+ },
+ {
+  "who": "salado",
+  "text": "Rico! Don't tell them they can change their minds!"
+ },
+ {
+  "who": "rico",
+  "text": "Rico tells the truth, Salado. It's the only thing on this station that isn't a song."
+ },
+ {
+  "who": "salado",
+  "text": "Fine. Fine! At least the cucumbers are fresh. Ciao, Rico!"
+ },
+ {
+  "who": "hana",
+  "text": "Rico, it's Hana. The children want to know: are the passengers on the Wednesday ship real?"
+ },
+ {
+  "who": "rico",
+  "text": "Honest answer, Miss Hana: no. Our relay makes them up. But every coin they pay is a real transaction on the lagoon, and anyone can check it in the blocks."
+ },
+ {
+  "who": "hana",
+  "text": "Good. Then we will check. All of them."
+ },
+ {
+  "who": "rico",
+  "text": "All forty, Miss Hana? That's a lot of homework."
+ },
+ {
+  "who": "hana",
+  "text": "It's a lot of passengers. Thank you, Rico."
+ },
+ {
+  "who": "ama",
+  "text": "Rico, it's Ama. Please tell today's visitors that the council tree is not on the tour."
+ },
+ {
+  "who": "rico",
+  "text": "You heard her, folks. Anyone may come and listen at the council. Just not forty at once, with cameras."
+ },
+ {
+  "who": "ama",
+  "text": "One at a time, and quietly. Like everybody else."
+ },
+ {
+  "who": "rico",
+  "text": "Like everybody else. Even Tobias?"
+ },
+ {
+  "who": "ama",
+  "text": "Especially Tobias. Goodbye, Rico."
+ },
+ {
   "who": "pearl",
   "text": "Rico, Pearl here, I'm new on the island. Who stamps all the blocks? I keep seeing the same signature."
  },
@@ -4094,6 +4218,14 @@
  },
  {
   "who": "ama",
+  "text": "A ship is on its way, I hear. Visitors are welcome under this tree. Groups are a different animal. A visitor sits down. A group takes pictures of people sitting down."
+ },
+ {
+  "who": "ama",
+  "text": "The ship is in. The tree is not on the tour, and the tour is not on the tree. We agreed that in council. It may be the only thing we agreed on all year."
+ },
+ {
+  "who": "ama",
   "text": "The last day. Suddenly everyone is very polite to me. It happens every election, like the rains."
  },
  {
@@ -4122,6 +4254,14 @@
  },
  {
   "who": "ama",
+  "text": "Anyone may come and listen, and that holds for a passenger too. But forty people at once do not listen. They look. A council that is looked at starts to perform. We prefer to argue."
+ },
+ {
+  "who": "ama",
+  "text": "No. This island has always had visitors. Some came to trade, some to stay, some to tell us how to live. The ship stays ninety minutes. That is the most polite kind."
+ },
+ {
+  "who": "ama",
   "text": "Because a roof can be locked and a tree cannot. Anyone may come and listen. Most come for the shade and stay for the arguments."
  },
  {
@@ -4147,6 +4287,26 @@
  {
   "who": "ama",
   "text": "My grandmother said he grows the way the island votes. So when people ask me what he looks like, I tell them: look at what you voted for."
+ },
+ {
+  "who": "marisol",
+  "text": "The Queen Mempool is coming. A hundred and twenty coffees, a hundred and twenty new rumours. I’ve ordered more cups. The rumours bring their own."
+ },
+ {
+  "who": "marisol",
+  "text": "The expedition ship is coming. Forty people who want to know where the coffee grows. I’ve put a little sign on every cup: Baako’s hill. Baako is unbearable already."
+ },
+ {
+  "who": "marisol",
+  "text": "Look at my square! Hats everywhere. They all ask the same three things: is the water clean, is the fish fresh, is the cat for sale. Yes, yes, and Déjà is not for sale."
+ },
+ {
+  "who": "marisol",
+  "text": "The expedition people order one coffee each and then ask forty questions. I answer, they write it down. By tonight I’ll be a source in somebody’s travel diary."
+ },
+ {
+  "who": "marisol",
+  "text": "The ship has gone. The square smells of sun cream, and my till is happy. Now, where were we? Ah, yes. Politics."
  },
  {
   "who": "marisol",
@@ -4182,6 +4342,14 @@
  },
  {
   "who": "marisol",
+  "text": "For my till, yes. For my nets, ask me after the harbour vote. Two ships a week anchor outside the reef. A harbour full of them would fish in my bay."
+ },
+ {
+  "who": "marisol",
+  "text": "I’m for whatever keeps the fish and the coffee drinkers. If you find a law that does both, tell me first. I’ll make it my rumour of the week."
+ },
+ {
+  "who": "marisol",
   "text": "Fish on the table, a road that doesn’t eat their tyres, and quiet when the baby sleeps. Nobody gets all three at once. That’s politics."
  },
  {
@@ -4210,6 +4378,22 @@
  },
  {
   "who": "lola",
+  "text": "The Queen is on her way. A hundred and twenty thirsty people and one bartender. I’ve hidden the good lemons. Pacts first, passengers second."
+ },
+ {
+  "who": "lola",
+  "text": "A table of eight, one bill. One transaction, and it pays my bar, Rico’s song and the Works’ coconut snacks at once. Nobody argues about who had the extra lemonade. I love these people."
+ },
+ {
+  "who": "lola",
+  "text": "The expedition people order one lemonade and ask where the lemons grow, who witnesses the pacts and why there’s a Book. I told them: the Book, because I forget."
+ },
+ {
+  "who": "lola",
+  "text": "They’ve gone. The glasses are washed, the bills are in the Book, and somebody left a hat. Captain Wren has labelled it already."
+ },
+ {
+  "who": "lola",
   "text": "Well, look who’s back. The one who broke a pact. Lemonade’s still free. My smile costs extra today."
  },
  {
@@ -4234,6 +4418,14 @@
  },
  {
   "who": "lola",
+  "text": "Sooner or later, every one of them. The bar is where people go when they don’t know anybody. On this island, that’s the bar’s whole job."
+ },
+ {
+  "who": "lola",
+  "text": "Not yet. They only stay ninety minutes. A good pact takes longer than that. So does a good lemonade."
+ },
+ {
+  "who": "lola",
   "text": "Because the council is where you argue and the bar is where you make up. And I’m a good witness. I don’t take sides, I take orders."
  },
  {
@@ -4247,6 +4439,22 @@
  {
   "who": "lola",
   "text": "Something took every banana from the crate out back and closed the lid again. Honestly? Best-behaved customer I ever had."
+ },
+ {
+  "who": "rico",
+  "text": "The Queen Mempool is coming, baby! Named after the chain’s waiting room, where transactions wait for a block. Rico hopes she doesn’t wait as long."
+ },
+ {
+  "who": "rico",
+  "text": "Song requests from the Queen, baby! Each one a real transaction on the lagoon. Our relay makes the passengers up, but the coins are signed. Best crowd Rico ever had that doesn’t exist."
+ },
+ {
+  "who": "rico",
+  "text": "The Wednesday ship never visits the studio, baby. Forty people, and not one song request. They want the lighthouse. Rico will survive. Barely."
+ },
+ {
+  "who": "rico",
+  "text": "The ship didn’t stay, baby. It lands only when the lagoon is calm, and it leaves the moment something goes wrong. The logbook says what. Rico read it. Twice."
  },
  {
   "who": "rico",
@@ -4274,6 +4482,14 @@
  },
  {
   "who": "rico",
+  "text": "Honest answer, baby: no. Our relay makes them up, and the ship’s card says so. But every coin they pay is a real test transaction in a real block, and anyone can check it."
+ },
+ {
+  "who": "rico",
+  "text": "To see how the lagoon copes with a crowd. Twelve a minute at most, half when it strains, and the ship leaves the moment the chain stumbles. A dry run before the real party. That’s why the Wednesday ship is called what it’s called."
+ },
+ {
+  "who": "rico",
   "text": "Rico plays, the Book checks. That’s the deal on this island. Rico could lie all day, but every coin has a name on it, and the name goes in the Book."
  },
  {
@@ -4287,6 +4503,22 @@
  {
   "who": "rico",
   "text": "Off the record? One night Rico left the window open and came back to the turntable spinning a slow song. Nobody in the studio. One banana peel, folded. Rico respects a fellow music lover."
+ },
+ {
+  "who": "sam",
+  "text": "A ship tomorrow. Every coin the passengers pay will go in the Book, like everyone else’s. The Book doesn’t care who sailed in. Only who signed."
+ },
+ {
+  "who": "sam",
+  "text": "Forty strangers climbed my stairs today. They read the Book with their noses very close. One asked if she could add a line. I said: only with a coin, like everyone. She paid two."
+ },
+ {
+  "who": "sam",
+  "text": "The Queen’s passengers come up for the view, not for the Book. A few read it anyway. One of them laughed at my poem. Fair."
+ },
+ {
+  "who": "sam",
+  "text": "The ship has gone, and the Book is thicker by a ship. Somebody asked me if those passengers were real. I said: the coins are. The Book only ever knew coins."
  },
  {
   "who": "sam",
@@ -4322,6 +4554,14 @@
  },
  {
   "who": "sam",
+  "text": "Every coin they pay, with the hour and the wallet, like yours. The passengers are invented, Rico says. But each one has a wallet, and every coin is signed. The Book believes the signature. About the hats it keeps an open mind."
+ },
+ {
+  "who": "sam",
+  "text": "Out there they count wallets, not people. One person can hold many wallets, and one relay can hold a hundred and sixty. The Book never claimed to know who stands behind a signature. Only that it was signed."
+ },
+ {
+  "who": "sam",
   "text": "Once. A very bad poem, written by me, when I was young. It’s still in there. Everyone has read it. That is the price of a record nobody can edit."
  },
  {
@@ -4335,6 +4575,42 @@
  {
   "who": "sam",
   "text": "In a way. Out there every block points back to the one before, so nobody can slip a page into the middle. And out there they count wallets, not people. One person can hold many wallets. The Book only knows names."
+ },
+ {
+  "who": "tobias",
+  "text": "The Queen Mempool, on Saturday! A hundred and twenty passengers. I have started on the welcome speech. So far it welcomes them for eleven minutes, and they have not yet left the boat."
+ },
+ {
+  "who": "tobias",
+  "text": "Tomorrow at two, the Queen! I have polished the bell, the medal and the pier. The pier objected. It is a very old pier."
+ },
+ {
+  "who": "tobias",
+  "text": "She comes today! I have been on this pier since dawn, in full uniform. The gulls think I am a statue. Let them. Statues get flowers."
+ },
+ {
+  "who": "tobias",
+  "text": "Look at them coming up the steps! I gave the speech. The first boat heard all of it. The second heard the end. The third pretended to."
+ },
+ {
+  "who": "tobias",
+  "text": "She has sailed, and they waved! Well, some waved. Some were taking pictures of Lola. I am counting it as waving."
+ },
+ {
+  "who": "tobias",
+  "text": "MS Dry Run, on Wednesday. Forty passengers, all of them with notebooks. I am preparing a shorter speech. Short for me, you understand."
+ },
+ {
+  "who": "tobias",
+  "text": "The expedition ship comes tomorrow. Curious people. Curious people ask questions after a speech. I must prepare answers. This is new for me."
+ },
+ {
+  "who": "tobias",
+  "text": "The expedition people asked me what a harbour master does. I told them. All of it. They took notes! Nobody has ever taken notes."
+ },
+ {
+  "who": "tobias",
+  "text": "She left before her time. Something on the lagoon was not right, Rico says, and the logbook says exactly what. My speech will keep. Speeches keep very well."
  },
  {
   "who": "tobias",
@@ -4366,6 +4642,14 @@
  },
  {
   "who": "tobias",
+  "text": "Looking forward? I have rehearsed all week. Visitors clap, my friend. Islanders nod. A man needs both."
+ },
+ {
+  "who": "tobias",
+  "text": "Then I bow anyway. A bow is never wasted. The gulls have seen hundreds."
+ },
+ {
+  "who": "tobias",
   "text": "I write down every boat that comes and goes, with the hour. Rather like Sam with his Book, only with more salt and more dignity."
  },
  {
@@ -4387,6 +4671,22 @@
  {
   "who": "tobias",
   "text": "It buys a ceremony. The law still needs the council’s yes, and the council cannot be bought with a ribbon. I tried. Hana sent the ribbon back with corrections."
+ },
+ {
+  "who": "hana",
+  "text": "The expedition ship always visits the school. The children are preparing questions for the passengers. Hard ones. I have seen the list."
+ },
+ {
+  "who": "hana",
+  "text": "Forty passengers in my back row. The children asked them: who said it, and where is it written? Two of them had to go and look it up. A very good afternoon."
+ },
+ {
+  "who": "hana",
+  "text": "They have gone. Before the break the children counted the ship’s transactions in the blocks. Every one matched the logbook. Then they counted again, to be sure. Then it was break."
+ },
+ {
+  "who": "hana",
+  "text": "The Queen’s passengers don’t come up to the school. So the children went down to the pier to count them, with a list. Everyone says a hundred and twenty. They want to check."
  },
  {
   "who": "hana",
@@ -4422,6 +4722,14 @@
  },
  {
   "who": "hana",
+  "text": "Curious visitors are a gift. Crowds are weather. The Wednesday ship brings questions, the Saturday ship brings hats. I like both, but only one fits in a classroom."
+ },
+ {
+  "who": "hana",
+  "text": "No. I would write down what they cost the reef and what they bring the island, side by side, where everyone can read it. Then the island decides. That is the whole lesson, really."
+ },
+ {
+  "who": "hana",
   "text": "Reading, sums, and checking. I teach them two questions for anything they hear: who said it, and where is it written. It makes them terrible at believing adverts."
  },
  {
@@ -4439,6 +4747,22 @@
  {
   "who": "hana",
   "text": "Before anyone. A rumour reaches the playground before it reaches the radio. The children bring them to class like shells from the beach, and we hold each one up to the Book. Most of them are empty."
+ },
+ {
+  "who": "kai",
+  "text": "The expedition ship is coming! Divers who read the briefing. The reef will love them. The turtle is already doing her hair."
+ },
+ {
+  "who": "kai",
+  "text": "Divers everywhere, three sensors each, every reading signed. Some booked their dive and can still change their minds: the coins wait until the hour, then the chain pays us by itself."
+ },
+ {
+  "who": "kai",
+  "text": "They’ve gone. The sensors signed the water before they came and after they left. Same water. That’s the best review a reef can get."
+ },
+ {
+  "who": "kai",
+  "text": "The big one anchors outside the reef. Good. Her anchor alone weighs more than my boat. A few of her people come diving. Most come for a photo of the people diving."
  },
  {
   "who": "kai",
@@ -4462,6 +4786,10 @@
  },
  {
   "who": "kai",
+  "text": "Two ships a week, anchored outside, are fine. The sensors say so, and they sign it. A harbour full of them, dredged deep? Ask the parrotfish. Better, ask the sensors. They’re more precise."
+ },
+ {
+  "who": "kai",
   "text": "Because the reef can’t talk and people can. Without a signature anyone can say the water is clean. With one, the sensor said it, right then, and nobody can change that later."
  },
  {
@@ -4475,6 +4803,22 @@
  {
   "who": "kai",
   "text": "A piano key, once. Captain Wren labelled it. And big footprints on the shallow shelf at low tide. Something heavy walks there. I’m not saying who. I’m saying it isn’t a crab."
+ },
+ {
+  "who": "baako",
+  "text": "The Queen is coming! The co-op has picked extra coconuts. One price on the board, the same for islanders and passengers. Noor wanted a passenger price. I said no. She said fine. She did not say it nicely."
+ },
+ {
+  "who": "baako",
+  "text": "Coconut snacks on the bar bills! One transaction, and a share comes straight to the Works. The co-op’s book adds it up by itself. I love a sum that does itself."
+ },
+ {
+  "who": "baako",
+  "text": "The expedition people asked how the press works. I showed them the bicycles, the organ and Noor. They were most afraid of Noor."
+ },
+ {
+  "who": "baako",
+  "text": "The ship has sailed, the jar is heavier, and every coin in it has a name. The co-op counted it twice, out loud. The goats left."
  },
  {
   "who": "baako",
@@ -4498,6 +4842,10 @@
  },
  {
   "who": "baako",
+  "text": "They buy coconuts, so yes. But I tell every farmer: a ship comes twice a week, a neighbour comes every day. Price your coconuts for the neighbour."
+ },
+ {
+  "who": "baako",
   "text": "One farmer alone sells at the embassies’ price. Forty farmers together set their own. Every coconut goes into the co-op’s book, and anyone may count them. People do. Loudly."
  },
  {
@@ -4511,6 +4859,14 @@
  {
   "who": "baako",
   "text": "Never a coconut. Only bananas. A creature with standards. I leave one banana by the gate on Fridays now. Good relations with the neighbours."
+ },
+ {
+  "who": "noor",
+  "text": "The Queen is coming, Baako. Double shift. Soap shaped like little ships. Don’t ask. It sells."
+ },
+ {
+  "who": "noor",
+  "text": "Passengers at my gate, Baako. They want to see the organ. Nobody sees the organ. They can see the soap."
  },
  {
   "who": "noor",
@@ -4546,6 +4902,10 @@
  },
  {
   "who": "noor",
+  "text": "Ninety minutes of business and a week of sweeping sand out of the press. Ask me in a month. I count hours, Baako, not hats."
+ },
+ {
+  "who": "noor",
   "text": "I do. You bring the coconuts, I turn them into things people pay for. The co-op owns the farms. The machine owns me."
  },
  {
@@ -4566,6 +4926,14 @@
  },
  {
   "who": "pim",
+  "text": "The Queen is coming. The North Wind asked me to measure how deep she sits in the water. I did. Then they asked me to measure the bay again. It is still the same size."
+ },
+ {
+  "who": "pim",
+  "text": "I measured the Queen from the cliff. Two hundred metres and a bit. The embassy wants to know what the bit would cost to dredge. I said: ask the council. They sighed."
+ },
+ {
+  "who": "pim",
   "text": "Ah. You have signed with an embassy. That is not my business. I only measure. Although it was quite a thick envelope."
  },
  {
@@ -4579,6 +4947,10 @@
  {
   "who": "pim",
   "text": "Oh. Hello again. Please don’t step on the string. That string is the coast, officially."
+ },
+ {
+  "who": "pim",
+  "text": "Because they anchor outside. The North Wind says a deep harbour would bring them to the pier. I only measure. Whether the island wants them at the pier is not a measurement. It is a vote."
  },
  {
   "who": "pim",
@@ -4598,6 +4970,18 @@
  },
  {
   "who": "wren",
+  "text": "The expedition ship is coming, dear. They always visit my Old Ship. I’ve labelled the gangway, the rail and the bucket. The bucket was nervous."
+ },
+ {
+  "who": "wren",
+  "text": "Item four hundred and thirteen, dear: forty passengers, one sun hat each, all the same hat. Item four hundred and fourteen: a question about pirates. There were no pirates. There was paperwork."
+ },
+ {
+  "who": "wren",
+  "text": "They’ve gone, dear, and one of them left me a postcard. Of my own ship. I’ve labelled it."
+ },
+ {
+  "who": "wren",
   "text": "So you found what was behind the waterfall. I knew it, dear. The sea gives things back to the patient ones."
  },
  {
@@ -4611,6 +4995,10 @@
  {
   "who": "wren",
   "text": "Come aboard, dear, and mind the third step. It’s labelled, but nobody reads labels."
+ },
+ {
+  "who": "wren",
+  "text": "The small one, very much, dear. Its passengers read the labels. The big one stays out at sea, which suits a liner. Nobody wants a liner reading their labels."
  },
  {
   "who": "wren",
@@ -4630,6 +5018,14 @@
  },
  {
   "who": "kiko",
+  "text": "Big ship out there. Big waves. I built the sides higher this morning. The passengers took pictures of my canoe. Nobody asked if it floats."
+ },
+ {
+  "who": "kiko",
+  "text": "Ship’s gone. The waves stay a while. Like gossip."
+ },
+ {
+  "who": "kiko",
   "text": "The harbour law passed. Big ships, big waves. I’m building the sides higher."
  },
  {
@@ -4646,6 +5042,10 @@
  },
  {
   "who": "kiko",
+  "text": "A big canoe that somebody else paddles. I like the ones I paddle myself."
+ },
+ {
+  "who": "kiko",
   "text": "You put three people in it. If they argue and it still floats, it’s ready."
  },
  {
@@ -4659,6 +5059,14 @@
  {
   "who": "kiko",
   "text": "Whoever cares about fish and music. I tell everyone the same, so nobody has to guess."
+ },
+ {
+  "who": "tano",
+  "text": "A ship tomorrow. The drums won’t play for it. They play for the island. The passengers may listen from the path, like anyone."
+ },
+ {
+  "who": "tano",
+  "text": "Hear the ship’s horn? The drums don’t answer horns. When it has gone, we’ll play. Not for them. For the quiet after."
  },
  {
   "who": "tano",
@@ -4682,6 +5090,10 @@
  },
  {
   "who": "tano",
+  "text": "The drums carry what the circle agreed. A tour wants a show. If we played a show, the hills would hear the lie in the rhythm. The hills don’t forgive that."
+ },
+ {
+  "who": "tano",
   "text": "Oh, they tried. But every message goes out from three hills, and all three must match what the stone says. You’d have to bribe three drummers and a stone. The stone is very hard to talk to."
  },
  {
@@ -4695,6 +5107,14 @@
  {
   "who": "tano",
   "text": "He likes the low drum. Some mornings the skin is warm, as if someone sat close all night, listening. He never plays. He only listens. A better audience than most."
+ },
+ {
+  "who": "frost",
+  "text": "Twice a week a ship anchors outside the reef, like a guest left on the doorstep. With a deep harbour she would tie up at the pier. We are not telling you how to vote. We are merely pointing at a very large ship."
+ },
+ {
+  "who": "frost",
+  "text": "The reef has many admirers on this island. We admire it too. From a respectful depth."
  },
  {
   "who": "frost",
@@ -4730,6 +5150,30 @@
  },
  {
   "who": "salado",
+  "text": "Tomorrow at two! I folded a hundred and twenty towels. Then I counted the loungers: eleven. Then I counted the towels again. Optimism is a lot of laundry."
+ },
+ {
+  "who": "salado",
+  "text": "The Queen is coming! Her passengers book my spa, and the coins wait in escrow until the hour. If they change their minds, the coins go back. My investors hate that part. I love it. It means they trust me."
+ },
+ {
+  "who": "salado",
+  "text": "They’re here! The loungers are full! I sent a photo to my investors. They asked if it’s edited. It isn’t. Well. The light is."
+ },
+ {
+  "who": "salado",
+  "text": "They’ve gone. The treatments were paid at their hour, by the chain, all by itself. A few cancelled in time and got their coins back. My investors ask why we let people change their minds. I said: so they come back."
+ },
+ {
+  "who": "salado",
+  "text": "The Wednesday ship doesn’t come up to the spa. Expedition people. They want a reef, not a cucumber on their eyes. I respect it. I don’t understand it, but I respect it."
+ },
+ {
+  "who": "salado",
+  "text": "She didn’t stay. Something on the lagoon wasn’t right, and the captain doesn’t argue with the lagoon. My cucumbers are sliced. Would you like a cucumber?"
+ },
+ {
+  "who": "salado",
   "text": "You proposed it, I saw it in the Book. The council said no. Fine, that’s the council. You kept your word, and in my business that happens so rarely I don’t know what to do with my hands."
  },
  {
@@ -4755,6 +5199,14 @@
  {
   "who": "salado",
   "text": "About the council tree. That was my investors, not me, I swear on my moustache. I told them you can’t buy a tree on this island. They didn’t listen. Now they’ve met Ama, and they’re very quiet."
+ },
+ {
+  "who": "salado",
+  "text": "One ship a week, treatments booked, coins in escrow until the hour. That’s not mass tourism, that’s a reservation. I love a reservation."
+ },
+ {
+  "who": "salado",
+  "text": "No, no. Frost wants a harbour full of ships. I want one ship, and a road up to the spa. Very different. Mine is quieter. And it has towels."
  },
  {
   "who": "salado",

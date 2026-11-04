@@ -176,6 +176,19 @@
     dejaFed: "Déjà has eaten today. Three wallets agreed, and Marisol says she acted surprised.",
     dejaN: "Déjà, the café cat: {n} of three wallets agreed today. One test AGRS says yes; find her.",
     dejaNone: "Nobody has agreed to feed Déjà yet today. Three wallets, one test AGRS each; find her, she is around.",
+    /* the cruise ships (game.js shipAir): Queen Mempool (sq_) and MS Dry Run (sd_) in two or three days, tomorrow, today,
+       ashore and gone; s_cut for one that did not stay. The passengers are made up, their test coins are real */
+    sq_soon: "Saturday at two, the Queen Mempool drops anchor off the island. A hundred and twenty passengers, all made up by our relay, all paying in real test coins. Tobias has started his speech. Pray for the gulls.",
+    sq_tomorrow: "Tomorrow at two, the Queen Mempool! Song requests welcome, one transaction each. Rico is warming up his voice, and Lola is hiding the good lemons.",
+    sq_today: "Today's the day: the Queen Mempool lands at two, if the lagoon is calm. If it isn't, she waits a little and sails on. A ship that waits for good weather. Smarter than Rico on a Friday.",
+    sq_here: "The Queen is in! Passengers on the square, at Lola's, up at the spa. Twelve transactions a minute at most, so the lagoon keeps breathing. Rico is taking requests.",
+    sq_gone: "The Queen has sailed. Every coin her passengers spent is in the blocks, and the logbook is public. Count them yourself. Hana's class already did.",
+    sd_soon: "Wednesday at four, MS Dry Run. Forty curious passengers, invented by our relay, paying in real test coins. Small ship, big questions. Hana has warned the school.",
+    sd_tomorrow: "Tomorrow at four, MS Dry Run. Her passengers book their dives with the right to change their minds, and the coins wait in escrow until the hour. A dry run for the chain. Hence the name.",
+    sd_today: "MS Dry Run lands at four today, if the lagoon is calm. If not, she waits a little and sails on. No drama. The logbook writes down why.",
+    sd_here: "MS Dry Run is ashore. Notebooks at the lighthouse, the school and the Old Ship. Captain Wren is labelling the passengers faster than they can write.",
+    sd_gone: "MS Dry Run has left. The dives they booked pay out by themselves at their hour. No captain needed. Rico finds that very romantic.",
+    s_cut: "The cruise ship didn't stay today, folks. She lands only when the lagoon is calm, and she leaves the moment something goes wrong. The logbook says what happened. Rico reads it so you don't have to. But you can.",
     /* a mixed wave: many wallets at once, nobody leading */
     dk3: "Why did {n} wallets move at the same minute? Rico has three theories, Old Sam has one, and the Book has none. The Book only says that they did.",
     ghost1: "Ghost report from the harbour: transactions already sealed in a block, but still listed as waiting. The node hasn't noticed they left. Old Sam calls them guests who never go home.",
@@ -689,6 +702,27 @@
       "And he's gone. The phone line runs past Baako's goats. They chew on it."] },
     { who: "zia", cut: 1, say: ["Rico, can you say hi to my mum? She's",
       "We lost her! Zia's mum, if you're listening: hi from Zia. And from Rico."] },
+    /* islanders call about the cruise ships while one is near (when: the facts of talk.js, game.js shipFacts) */
+    { who: "tobias", when: "shipTomorrow+queen", say: ["Rico! Tobias, from the pier. Could you announce my welcome speech? Tomorrow, two o'clock sharp, the moment the Queen ties up.",
+      "She doesn't tie up, Tobias. She anchors outside the reef, and the boats bring her passengers in. You'll be speaking to a boat.",
+      "A boat is an audience! A small, wet audience.",
+      "Then Rico will play you on, Harbour Master. Keep it under forty minutes.",
+      "Thirty-nine! Goodbye, Rico!"] },
+    { who: "salado", when: "shipHere+queen", say: ["Rico, it's Salado, up at the resort. Tell the passengers the spa is open. And that the jungle path is, ah, scenic.",
+      "Scenic, he says. Folks, it's a jungle path. And if you book a treatment, your coins wait in escrow until your hour. Change your mind before then, and they come back to you.",
+      "Rico! Don't tell them they can change their minds!",
+      "Rico tells the truth, Salado. It's the only thing on this station that isn't a song.",
+      "Fine. Fine! At least the cucumbers are fresh. Ciao, Rico!"] },
+    { who: "hana", when: "shipNear+dryrun", say: ["Rico, it's Hana. The children want to know: are the passengers on the Wednesday ship real?",
+      "Honest answer, Miss Hana: no. Our relay makes them up. But every coin they pay is a real transaction on the lagoon, and anyone can check it in the blocks.",
+      "Good. Then we will check. All of them.",
+      "All forty, Miss Hana? That's a lot of homework.",
+      "It's a lot of passengers. Thank you, Rico."] },
+    { who: "ama", when: "shipToday", say: ["Rico, it's Ama. Please tell today's visitors that the council tree is not on the tour.",
+      "You heard her, folks. Anyone may come and listen at the council. Just not forty at once, with cameras.",
+      "One at a time, and quietly. Like everybody else.",
+      "Like everybody else. Even Tobias?",
+      "Especially Tobias. Goodbye, Rico."] },
     { who: "pearl", when: "solo", say: ["Rico, Pearl here, I'm new on the island. Who stamps all the blocks? I keep seeing the same signature.",
       "Right now one hand seals every block, Pearl. On the lagoon that's the warm-up act.",
       "Isn't that a bit lonely?",
@@ -1064,7 +1098,11 @@
   const BREAK = { "coco>mango": "A", "mango>lowtide": "B", "lowtide>tinroof": "C", "tinroof>hammock": "D", "hammock>moon": "E", "moon>coco": "F" };
   const NIGHT_AT = 23;
   const QS = typeof location !== "undefined" && location.search ? new URLSearchParams(location.search) : null;
-  const night = (hr = new Date().getHours()) => (QS && QS.get("nightline") === "1") || hr === NIGHT_AT;
+  /* one-off extra hours (UTC), e.g. Kilian's first listen on 4 Nov 01:45-02:45 German time; the openers and closers that
+     name eleven o'clock or midnight are skipped then */
+  const EXTRA = [[Date.UTC(2026, 10, 4, 0, 45), Date.UTC(2026, 10, 4, 1, 45)]];
+  const extra = () => EXTRA.some(([a, b]) => Date.now() >= a && Date.now() < b);
+  const night = (hr = new Date().getHours()) => (QS && QS.get("nightline") === "1") || hr === NIGHT_AT || extra();
   const NL = { open: false };
   const BRK_SAID = "rabbit-radio-breaks";
   const brkSaid = () => { try { const a = JSON.parse(localStorage.getItem(BRK_SAID) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
@@ -1077,11 +1115,11 @@
   function brk(from, to, o = {}) {
     const pick = o.pick || pickOwn, hr = o.hr != null ? o.hr : new Date().getHours(), line = k => ({ t: tr(L[k]), v: L[k] });
     if (night(hr)) {
-      if (!NL.open) { NL.open = true; const k = pick(SETS.nlOpen); return { k, parts: [line(k)] }; }
+      if (!NL.open) { NL.open = true; NL.extra = extra() && hr !== NIGHT_AT; const k = pick(NL.extra ? ["nlo2"] : SETS.nlOpen); return { k, parts: [line(k)] }; }
       const k = pick(NIGHT.map((c, i) => "night:" + i)), ring = pick(SETS.nlRing), bye = pick(SETS.nlBye);
       return { k, also: [ring, bye], parts: call(NIGHT[+k.slice(6)], ring, bye), call: true };
     }
-    if (NL.open) { NL.open = false; const k = pick(SETS.nlClose); return { k, parts: [line(k)] }; }
+    if (NL.open) { NL.open = false; if (!NL.extra) { const k = pick(SETS.nlClose); return { k, parts: [line(k)] }; } }
     const x = BREAK[from + ">" + to], pair = x ? Object.keys(L).filter(k => k.startsWith("sb" + x)) : [];
     if (pair.length && Math.random() < 0.65) { const k = pick(pair); return { k, parts: [line(k)] }; }
     const set = Math.random() < 0.25 ? "sbAny" : hr >= 5 && hr < 11 ? "sbAm" : hr >= 11 && hr < 17 ? "sbPm" : hr >= 17 && hr < 22 ? "sbEv" : "sbNt", k = pick(SETS[set]);
