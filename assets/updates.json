@@ -2308,5 +2308,10 @@
     "tag": "HUD",
     "on": "2026-11-04",
     "html": "Live node light: after the node or the relay was offline, the light turns green again by itself as soon as the node answers, without reloading the page. Red now means only that the node or the relay does not answer; a chain that stalls or catches up shows amber."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "Personal money rules: an account that is one of IDNI's genesis accounts (the 11 the testnet started with) now carries a small “genesis” tag, and its hover says so. Every other account stays unnamed."
   }
 ]
