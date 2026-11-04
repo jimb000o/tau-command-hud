@@ -19,6 +19,22 @@ if [ "$1" != "--pulled" ]; then
   exec sh "$(pwd)/up.sh" --pulled "$@"
 fi
 shift
+# a picture post by hand, nothing rebuilt: up post cruise-dry-run  makes the picture from the live painting and shows the
+# texts (look: https://node.tauhud.com/rico/art/drafts/<name>.jpg), up post cruise-dry-run send  posts it to Telegram and X
+if [ "${1:-}" = "post" ] && [ -n "${2:-}" ]; then
+  J="assets/share/$2.json"; [ -f "../$J" ] || { echo "no ../$J"; exit 1; }
+  mkdir -p /opt/sites/rico/art/drafts
+  docker compose run --rm -v /opt/tau-command-hud:/repo:ro -v /opt/sites/rico/art:/art:ro -v /tmp:/out alerts \
+    python /repo/infra/alerts/cruise_pic.py /art /repo/rabbit/art/ships "/repo/$J" "/out/$2.jpg"
+  cp "/tmp/$2.jpg" /opt/sites/rico/art/drafts/
+  if [ "${3:-}" = "send" ]; then
+    docker compose run --rm -v /opt/tau-command-hud:/repo:ro -v /tmp:/out alerts python /repo/infra/alerts/post_image.py "/out/$2.jpg" "/repo/$J"
+  else
+    docker compose run --rm -v /opt/tau-command-hud:/repo:ro -v /tmp:/out alerts python /repo/infra/alerts/post_image.py "/out/$2.jpg" "/repo/$J" --dry
+    echo "look: https://node.tauhud.com/rico/art/drafts/$2.jpg   then post it: up post $2 send"
+  fi
+  exit 0
+fi
 cp sites/agorzilla.caddy /opt/sites/ 2>/dev/null || true
 # The pinned tau-testnet commit follows the repo, not the server's old .env (as in setup.sh); a new pin
 # rebuilds and restarts the node (a few minutes, tau-lang itself stays cached).
