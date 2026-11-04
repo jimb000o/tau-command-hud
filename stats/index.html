@@ -144,6 +144,8 @@ html.fit footer { padding-top: 6px; font-size: 11px; }
 html.fit footer p { margin: 0; }
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
 .panel h2 { margin: 0 0 4px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 .ttl { font: inherit; }
+html.fit .p-acc.players h2 small { display: none; }   /* the longer title keeps the chips on one line */
 .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
 .panel h2 .tbl { margin-left: auto; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
 .panel h2 .tbl:hover, .panel h2 .tbl[aria-pressed="true"] { color: #fff; border-color: #fff; }
@@ -275,7 +277,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     </section>
 
     <section class="panel p-acc">
-      <h2 data-tip="A wallet is active when it sent at least one transaction in the window.\nKept day by day across chain restarts. IDNI’s genesis accounts are the dashed line, not in the stack.">Active wallets <small>sent a transaction in the window</small><span class="win" role="group" aria-label="Window"><button type="button" data-win="1" aria-pressed="false">1 d</button><button type="button" data-win="7" aria-pressed="false">7 d</button><button type="button" data-win="30" aria-pressed="false">30 d</button><button type="button" data-win="90" aria-pressed="true">90 d</button></span><button class="tbl" type="button" data-table="tAcc" aria-pressed="false">Table</button></h2>
+      <h2 id="accH" data-tip="A wallet is active when it sent at least one transaction in the window.\nKept day by day across chain restarts. IDNI’s genesis accounts are the dashed line, not in the stack."><b class="ttl" id="accT">Active wallets</b> <small id="accS">sent a transaction in the window</small><span class="win" role="group" aria-label="Window"><button type="button" data-win="1" aria-pressed="false">1 d</button><button type="button" data-win="7" aria-pressed="false">7 d</button><button type="button" data-win="30" aria-pressed="false">30 d</button><button type="button" data-win="90" aria-pressed="true">90 d</button><button type="button" data-win="0" aria-pressed="false" data-tip="White Rabbit Key players so far: every wallet that played the game on the chain, from its first move">Players</button></span><button class="tbl" type="button" data-table="tAcc" aria-pressed="false">Table</button></h2>
       <p class="headline" id="hAcc"></p>
       <div class="legend" id="lAcc"></div>
       <div class="chart" id="cAcc"></div>
@@ -835,14 +837,23 @@ function sampleWallets() {
     days[k] = row;
     newer[k] = tags.map((_, j) => j && rnd() < .5 ? Math.round(rnd() * 3) : 0);
   }
-  return { tags, windows: [1, 7, 30, 90], days, new: newer, since: dayKey(today - (n - 1) * 86400) };
+  const pl = {}; let run = 0;
+  Object.keys(days).slice(12).forEach((k, i) => { const nw = Math.round(rnd() * (2 + i / 6)); run += nw; pl[k] = [run, nw]; });
+  return { tags, windows: [1, 7, 30, 90], days, new: newer, since: dayKey(today - (n - 1) * 86400), players: { since: Object.keys(pl)[0], days: pl } };
 }
 function restartTimes() {
   return [...(D.restarts || []).map(r => r.new_block1_ts || r.detected_at), ...(D.mode === "sample" || SIM ? [] : KNOWN_RESTARTS.map(k => k.at))].filter(Boolean);
 }
+const ACC_TIP = "A wallet is active when it sent at least one transaction in the window.\nKept day by day across chain restarts. IDNI’s genesis accounts are the dashed line, not in the stack.";
+const PLAY_TIP = "Every wallet that played White Rabbit Key on the chain: picking a candidate and every move are transactions.\nCounted from its first move, kept across chain restarts. Our island bot and the cruise passengers are not players.";
 function walletPanel() {
   const W = WAL || walletsFromChain(), host = $("cAcc"), head = $("hAcc"), legend = $("lAcc");
   document.querySelectorAll("[data-win]").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.win) === WIN)));
+  $("accT").textContent = WIN ? "Active wallets" : "White Rabbit Key players";
+  $("accS").textContent = WIN ? "sent a transaction in the window" : "wallets that played on the chain, so far";
+  $("accH").dataset.tip = WIN ? ACC_TIP : PLAY_TIP;
+  $("accH").parentNode.classList.toggle("players", !WIN);
+  if (!WIN) return playerPanel(W);
   if (!W || !Object.keys(W.days).length) {
     head.textContent = "No wallet has sent a transaction yet."; legend.replaceChildren(); host.replaceChildren(el("div", "empty", "Waiting for the first transaction.")); $("tAcc").replaceChildren(); return;
   }
@@ -892,6 +903,55 @@ function walletPanel() {
   });
   table($("tAcc"), [["Day"], ["Active", 1], ["IDNI", 1], ["New", 1]], [...pts].reverse().map(p => { const nw = (W.new || {})[p.k] || [];
     return [fmtDay(p.t), fmtN(p.tot), fmtN(p.idni), fmtN(STACK.reduce((a, t) => a + (nw[ti(t)] || 0), 0))]; }));
+}
+
+/* White Rabbit Key players so far (the "Players" chip): /wallets/active `players`, every rabbit-tagged wallet counted
+   from its first move. A relay from before it sends only `new`: then a player counts from its first day as a sender. */
+function playerDays(W) {
+  if (!W || W.chainOnly) return null;
+  if (W.players && W.players.days) return W.players.days;
+  const i = W.tags.indexOf("rabbit"), out = {}; let run = 0, on = false;
+  if (i < 0) return null;
+  Object.keys(W.days).sort().forEach(k => { const nw = ((W.new || {})[k] || [])[i] || 0; run += nw; if (nw) on = true; if (on) out[k] = [run, nw]; });
+  return out;
+}
+function playerPanel(W) {
+  const host = $("cAcc"), head = $("hAcc"), legend = $("lAcc"), P = playerDays(W);
+  const keys = P ? Object.keys(P).sort() : [];
+  if (!keys.length) {
+    head.textContent = W && W.chainOnly ? "Counted by our relay; it does not answer yet." : "No wallet has played White Rabbit Key on the chain yet.";
+    head.dataset.tip = head.textContent; legend.replaceChildren(); host.replaceChildren(el("div", "empty", "Waiting for the first player.")); $("tAcc").replaceChildren(); return;
+  }
+  const pts = keys.map(k => ({ k, t: dayTs(k), tot: P[k][0], nw: P[k][1] })), lastP = pts[pts.length - 1];
+  head.replaceChildren(document.createTextNode(`${fmtN(lastP.tot)} wallets have played White Rabbit Key since ${fmtDay(pts[0].t)}. `),
+    el("span", "", `${fmtN(lastP.nw)} new today. Wallets, not people; our island bot and the cruise passengers do not count.`));
+  head.dataset.tip = head.textContent;
+  const item = (cls, txt, tip) => { const s = el("span"); s.dataset.tip = tip; const i = el("i", cls); s.append(i, document.createTextNode(txt)); return s; };
+  legend.replaceChildren(item("ln", "players so far", "every wallet that has played up to that day"), item("", "new that day", "wallets whose first move was that day"));
+  legend.querySelector("i.ln").style.background = "var(--ok)"; legend.querySelectorAll("i")[1].style.background = WTAGS.rabbit[1];
+  const f = frame(host, 210), px = f.w - f.L - f.R, py = f.h - f.T - f.B;
+  const sc = niceScale(lastP.tot), t0 = pts[0].t, t1 = Math.max(lastP.t, t0 + 86400), slot = px / ((t1 - t0) / 86400 + 1);
+  const X = t => f.L + slot / 2 + (t - t0) / (t1 - t0) * (px - slot), Y = v => f.h - f.B - v / sc.max * py;
+  yAxis(f, sc, "");
+  xTimeAxis({ ...f, L: f.L + slot / 2, R: f.R + slot / 2 }, t0, t1);
+  const bw = Math.max(1, Math.min(24, slot * .6));
+  pts.forEach(p => { if (p.nw) svgEl("rect", { x: X(p.t) - bw / 2, y: Y(p.nw), width: bw, height: f.h - f.B - Y(p.nw), fill: WTAGS.rabbit[1], "fill-opacity": .55 }, f.svg); });
+  const one = pts.length === 1, d = pts.map((p, i) => `${i ? "L" : "M"}${X(p.t).toFixed(1)},${Y(p.tot).toFixed(1)}`).join("") + (one ? `L${(f.w - f.R).toFixed(1)},${Y(lastP.tot).toFixed(1)}` : "");
+  svgEl("path", { d: d + `L${X(one ? t1 : lastP.t).toFixed(1)},${Y(0)}L${X(t0).toFixed(1)},${Y(0)}Z`, fill: "var(--ok)", "fill-opacity": .08 }, f.svg);
+  svgEl("path", { d, fill: "none", stroke: "var(--ok)", "stroke-width": 1.8 }, f.svg);
+  const rs = svgEl("g", { class: "rs" }, f.svg);
+  restartTimes().filter(t => t >= t0 && t <= t1 + 86400).forEach(t => {
+    const x = Math.min(X(t), f.w - f.R), left = x > f.w - f.R - 50; svgEl("line", { x1: x, x2: x, y1: f.T, y2: f.h - f.B }, rs);
+    const l = svgEl("text", { x: left ? x - 3 : x + 3, y: f.T + 8, "text-anchor": left ? "end" : "start" }, rs); l.textContent = "restart";
+  });
+  const xh = svgEl("line", { class: "xh", y1: f.T, y2: f.h - f.B, visibility: "hidden" }, f.svg);
+  pts.forEach(p => {
+    const x = X(p.t), r = svgEl("rect", { class: "hit", x: x - slot / 2, y: f.T, width: slot, height: py }, f.svg);
+    r.addEventListener("pointermove", ev => { xh.setAttribute("x1", x); xh.setAttribute("x2", x); xh.setAttribute("visibility", "visible");
+      showTip(ev, tipLines([["tv", `${fmtN(p.tot)} White Rabbit Key players`], ["", `${fmtN(p.nw)} new that day`], ["tm", fmtDay(p.t)]])); });
+    r.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); hideTip(); });
+  });
+  table($("tAcc"), [["Day"], ["Players", 1], ["New", 1]], [...pts].reverse().map(p => [fmtDay(p.t), fmtN(p.tot), fmtN(p.nw)]));
 }
 
 /* ------------------------------ render ------------------------------ */
