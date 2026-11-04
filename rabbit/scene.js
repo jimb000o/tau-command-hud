@@ -1393,20 +1393,40 @@
     const k = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
     g.drawImage(im, (w - iw) / 2, (h - ih) / 2, iw, ih);
   }
-  /* life in a painted room: dust in a warm shaft of light by day, a lamp that breathes at night */
+  /* life in a painted room: dust in a warm shaft of light by day (after dark the place's lamps light it: roomLight) */
   function roomLife(g, t, day) {
+    if (day <= 0.2) return;
     g.globalCompositeOperation = "lighter";
-    if (day > 0.2) {
-      g.fillStyle = `rgba(255,232,180,${0.07 * day})`; g.beginPath(); g.moveTo(380, 0); g.lineTo(700, 0); g.lineTo(1100, 900); g.lineTo(640, 900); g.closePath(); g.fill();
-      for (let i = 0; i < 40; i++) {
-        const k = (i * 0.618) % 1, y = (k * 900 + t * 0.008 * (0.5 + (i % 5) * 0.2)) % 900, x = 420 + y * 0.48 + Math.sin(t * 0.0006 + i * 2.3) * 60 + ((i * 37) % 120);
-        g.fillStyle = `rgba(255,240,200,${day * (0.18 + 0.2 * Math.sin(t * 0.002 + i))})`; g.beginPath(); g.arc(x, y, 1.6 + (i % 3) * 0.7, 0, Math.PI * 2); g.fill();
-      }
-    } else {
-      const fl = 0.85 + 0.1 * Math.sin(t * 0.004) + 0.05 * Math.sin(t * 0.017), lg = g.createRadialGradient(800, 260, 0, 800, 260, 900);
-      lg.addColorStop(0, `rgba(255,180,90,${0.2 * fl * (1 - day)})`); lg.addColorStop(1, "rgba(255,180,90,0)"); g.fillStyle = lg; g.fillRect(0, 0, RW, RH);
+    g.fillStyle = `rgba(255,232,180,${0.07 * day})`; g.beginPath(); g.moveTo(380, 0); g.lineTo(700, 0); g.lineTo(1100, 900); g.lineTo(640, 900); g.closePath(); g.fill();
+    for (let i = 0; i < 40; i++) {
+      const k = (i * 0.618) % 1, y = (k * 900 + t * 0.008 * (0.5 + (i % 5) * 0.2)) % 900, x = 420 + y * 0.48 + Math.sin(t * 0.0006 + i * 2.3) * 60 + ((i * 37) % 120);
+      g.fillStyle = `rgba(255,240,200,${day * (0.18 + 0.2 * Math.sin(t * 0.002 + i))})`; g.beginPath(); g.arc(x, y, 1.6 + (i % 3) * 0.7, 0, Math.PI * 2); g.fill();
     }
     g.globalCompositeOperation = "source-over";
+  }
+  /* the light of the hour in a painted place, as on the island: the picture, and whoever stands in it, multiplied with
+     the light of the hour (white at noon, warm at the ends of the day, deep blue at night), with the same blue haze after
+     dark. From dusk the place's lamps are lit: a warm pool round the one you talk to and the room about them, while the
+     corners and the views out stay in the night. The pool is soft, so it is drawn at a quarter of the pixels. */
+  const ROOMLAMP = [255, 200, 146];
+  function roomLight(g, W, H, sky, nt) {
+    const m = sky.mul, n = lampsOn(sky);
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    if (m[0] + m[1] + m[2] < 762) {
+      g.globalCompositeOperation = "multiply";
+      if (n > 0) {
+        const q = 4, c = S.rlm || (S.rlm = document.createElement("canvas")), w = Math.ceil(W / q), h = Math.ceil(H / q);
+        if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+        const lg = c.getContext("2d"); lg.fillStyle = rgb(m); lg.fillRect(0, 0, w, h);
+        const [X, Y, Z] = S.hostAt || [W / 2, H * 0.3, Math.min(W, H) * 0.7], x = X / q, y = Math.min(H * 0.62, Y + Z * 0.36) / q, r = Math.min(W, H) * 0.62 / q;
+        const gr = lg.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, rgb(mix(m, ROOMLAMP, 0.82 * n))); gr.addColorStop(0.35, rgb(mix(m, ROOMLAMP, 0.55 * n))); gr.addColorStop(0.75, rgb(mix(m, ROOMLAMP, 0.14 * n))); gr.addColorStop(1, rgb(m));
+        lg.fillStyle = gr; lg.fillRect(0, 0, w, h);
+        g.drawImage(c, 0, 0, W, H);
+      } else { g.fillStyle = rgb(m); g.fillRect(0, 0, W, H); }
+    }
+    g.globalCompositeOperation = "source-over";
+    if (nt > 0.01) { g.fillStyle = `rgba(12,20,52,${0.16 * nt})`; g.fillRect(0, 0, W, H); }
   }
   /* the bare picture of a place, without people, at noon: what the server's painter repaints (infra/rabbit-art) */
   /* sky and sea in flat bands, the whole world wide, nothing on them */
@@ -1718,6 +1738,7 @@
         const b = creature(w, ART.img.deja, c.x, c.y, c.h, a * e);
         S.roomCat.screen = [(b[0] * sc + ox) / S.K, (b[1] * sc + oy) / S.K, b[2] * sc / S.K, b[3] * sc / S.K];
       }
+      S.hostAt = null;
       if (S.hostFn) {
         if (!S.hostC) { S.hostC = document.createElement("canvas"); S.hostC.width = S.hostC.height = 800; }
         const hg = S.hostC.getContext("2d"); S.hostFn(hg, t);
@@ -1732,12 +1753,12 @@
         let [X, Y, Z] = [hx, hy, hs];
         /* a phone held sideways: the plate stands on the right, the one you talk to in the free room on its left, large */
         if (!phone && S.hostLeft) { const fw = S.hostLeft * S.K; Z = Math.min(fw * 0.95, H * (S.hostTall ? 1.05 : 0.8)); X = fw / 2; Y = (S.hostTall ? H + 6 * S.K : H - 52 * S.K) - Z * 0.99; }
-        w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, X - Z / 2, Y, Z, Z);
+        w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, X - Z / 2, Y, Z, Z); S.hostAt = [X, Y, Z];
       }
       w.setTransform(1, 0, 0, 1, 0, 0);
-      if (painted(S.room)) { const m = mix([255, 255, 255], sky.mul, 0.7); if (m[0] + m[1] + m[2] < 762) { w.globalCompositeOperation = "multiply"; w.fillStyle = rgb(m); w.fillRect(0, 0, W, H); } w.globalCompositeOperation = "source-over"; }
+      if (painted(S.room)) roomLight(w, W, H, sky, nt);
       else if (sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3] * 0.75); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
-      if (sky.light > 0.05) { w.globalCompositeOperation = "lighter"; const lg = w.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.max(W, H) * 0.6); lg.addColorStop(0, `rgba(255,190,110,${0.22 * sky.light})`); lg.addColorStop(1, "rgba(255,190,110,0)"); w.fillStyle = lg; w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
+      if (sky.light > 0.05 && !painted(S.room)) { w.globalCompositeOperation = "lighter"; const lg = w.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.max(W, H) * 0.6); lg.addColorStop(0, `rgba(255,190,110,${0.22 * sky.light})`); lg.addColorStop(1, "rgba(255,190,110,0)"); w.fillStyle = lg; w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
       const [px, py] = S.roomAt || [S.W / 2, S.H / 2], cx = px * S.K, cy = py * S.K, rr = e * Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) * 1.02;
       g.setTransform(1, 0, 0, 1, 0, 0); g.save(); g.beginPath(); g.arc(cx, cy, Math.max(1, rr), 0, Math.PI * 2); g.clip(); g.drawImage(S.world, 0, 0); g.restore();
       if (a < 0.999) { g.strokeStyle = INK; g.lineWidth = 6 * S.K; g.beginPath(); g.arc(cx, cy, Math.max(1, rr), 0, Math.PI * 2); g.stroke(); g.strokeStyle = P.cream; g.lineWidth = 2.5 * S.K; g.stroke(); }

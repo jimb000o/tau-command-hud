@@ -2248,5 +2248,10 @@
     "tag": "Testnet stats",
     "on": "2026-11-04",
     "html": "Testnet stats: the “Active wallets” chart has a new chip, “Players”. It shows how many wallets have played White Rabbit Key on the chain so far, day by day, each counted from its first move, with the new players of each day as bars. Picking a candidate and every move are transactions, so the chain itself is the record; our island bot and the cruise ships’ simulated passengers do not count. Like the active wallets, it keeps counting across testnet restarts. Wallets, not people."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "White Rabbit Key: the places keep the island’s time of day. Step inside in the evening and the light there is the evening’s; after dark it is night inside too: the views out turn dark blue, and a lamp lights the one you talk to and the room around them."
   }
 ]
