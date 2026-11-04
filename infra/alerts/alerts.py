@@ -1347,8 +1347,21 @@ def island_x(r: dict) -> str:
 # Every send records itself here, so the service can say when a channel last worked and why it last failed
 # (posting.json for the site and `up`, a warning in the log after SILENCE_HOURS without a post). Found 2 November 2026:
 # the channel can go quiet for days without one failure in the log when nothing is due, or when the keys are gone.
+# The last good send and the last failure are kept in the state file too (KEPT), so a restart does not forget them: on
+# 4 November 2026 the first check after `up` counted the silence from the service's very first start and warned
+# "SILENT for 28 hours" although both channels had posted shortly before.
 SENT: dict[str, dict] = {"telegram": {}, "x": {}}
 SILENCE_HOURS = float(os.environ.get("SILENCE_HOURS", 26))
+KEPT = ("last_ok", "last_error", "last_error_at")
+
+
+def last_post(sent: dict, name: str, now: float | None = None) -> str:
+    """When the alerts service last posted to a channel, in words, from the state file's record ("" when not recorded yet)."""
+    t = (sent.get(name) or {}).get("last_ok")
+    if not t:
+        return ""
+    s = max(0, (now if now is not None else time.time()) - t)
+    return f"alerts service last posted {round(s / 60)} min ago" if s < 5400 else f"alerts service last posted {round(s / 3600)} h ago"
 
 
 def note_send(name: str, ok: bool, err: str):
@@ -1660,6 +1673,12 @@ class Watcher:
         self.outlets = outlets if outlets is not None else [Telegram(), X()]
         self.state = self.load_state()
         self.dirty_public = True
+        self.started = time.time()   # a channel that never posted is silent from this start on, not from the first start ever
+        for name, d in (self.state.get("sent") or {}).items():   # the last good send and failure, from before a restart
+            if isinstance(d, dict):
+                for k in KEPT:
+                    if k in d:
+                        SENT.setdefault(name, {}).setdefault(k, d[k])
 
     # state: what was seen, what was posted where; survives restarts
     def load_state(self) -> dict:
@@ -1678,6 +1697,7 @@ class Watcher:
         return s
 
     def save_state(self):
+        self.state["sent"] = {name: {k: d[k] for k in KEPT if k in d} for name, d in SENT.items()}
         try:
             os.makedirs(os.path.dirname(STATE_PATH) or ".", exist_ok=True)
             write_atomic(STATE_PATH, json.dumps(self.state, separators=(",", ":")))
@@ -2267,10 +2287,13 @@ class Watcher:
         self.write_posting()
 
     def watch_silence(self, now: float | None = None):
-        """Once an hour: a channel that is on and has not taken a post for SILENCE_HOURS gets a warning in the log and in
-        posting.json, so a quiet channel is noticed before someone asks."""
+        """Once an hour: a channel that is on and has not taken a post from this service for SILENCE_HOURS gets a warning in
+        the log and in posting.json, so a quiet channel is noticed before someone asks. The last good send survives a
+        restart (state "sent"); a channel with none recorded counts from this start. Only this service's own posts count:
+        Agorzilla's evenings, the donation thanks and posts by hand (post_image.py, --test) run in processes of their own."""
         now = now if now is not None else time.time()
         st = self.state.setdefault("silence", {})
+        st.pop("since", None)   # the first start ever, kept by the first version: the cause of the false warning
         if now - st.get("checked", 0) < 3600:
             return
         st["checked"] = now
@@ -2278,13 +2301,12 @@ class Watcher:
             if not o.enabled():
                 continue
             d = SENT.setdefault(o.name, {})
-            last = d.get("last_ok") or st.get("since", now)
+            last = d.get("last_ok") or self.started
             if now - last >= SILENCE_HOURS * 3600:
                 d["silent_hours"] = round((now - last) / 3600)
-                log.warning("%s: SILENT for %s hours (last error: %s)", o.name, d["silent_hours"], d.get("last_error") or "none logged")
+                log.warning("%s: silent, the alerts service has not posted here for %s hours (last error: %s)", o.name, d["silent_hours"], d.get("last_error") or "none logged")
             else:
                 d.pop("silent_hours", None)
-        st.setdefault("since", now)
         self.write_posting()
         self.save_state()
 
@@ -3022,9 +3044,15 @@ def check_channels() -> int:
     post in the channel, Tau HUD's X keys, Agorzilla's X keys. Exit 1 when a channel that should post cannot."""
     code = 0
     agor = {k: os.environ.get("AGORZILLA_" + k, "").strip() for k in X_KEYS}
-    for name, o in (("telegram", Telegram()), ("x @TauHUDcom", X()), ("x @Agorzilla", X(agor, "AGORZILLA_"))):
+    try:   # when the running service last posted to each of its channels (Agorzilla's account is posted by its own service)
+        with open(STATE_PATH) as f:
+            sent = json.load(f).get("sent") or {}
+    except (OSError, ValueError):
+        sent = {}
+    for key, name, o in (("telegram", "telegram", Telegram()), ("x", "x @TauHUDcom", X()), (None, "x @Agorzilla", X(agor, "AGORZILLA_"))):
         ok, why = o.check()
-        print(f"{name}: {'ok' if ok else 'CANNOT POST'}, {why}")
+        last = last_post(sent, key) if key and o.enabled() else ""
+        print(f"{name}: {'ok' if ok else 'CANNOT POST'}, {why}" + (f"; {last}" if last else ""))
         code |= 0 if ok else 1
     return code
 

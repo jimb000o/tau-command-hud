@@ -91,5 +91,32 @@ asyncio.run(w.check_outlets())
 check(pj := json.load(open(os.path.join(TMP, "posting.json"))), "posting.json after the start check")
 check(pj["channels"]["telegram"]["check"]["ok"] and pj["channels"]["x"]["check"]["ok"], "the start check's answers are in posting.json")
 
+# 4 November 2026: after `up` the first check warned "SILENT for 28 hours" although both channels had posted shortly
+# before. The record of the last good send lived only in memory, and a channel without one counted from the service's
+# very first start. Now the state file keeps it, and a channel without one counts from this start.
+w.save_state()
+kept = json.load(open(alerts.STATE_PATH))["sent"]
+check(kept["telegram"]["last_error"] == "HTTP 401: Unauthorized" and kept["x"]["last_ok"], "the state file keeps the last good send and the last failure")
+now = time.time()
+st = json.load(open(alerts.STATE_PATH))
+st["sent"] = {"telegram": {"last_ok": round(now - 6 * 3600)}}   # Telegram posted 6 h ago, X never since the record began
+st["silence"] = {"since": now - 40 * 3600, "checked": 0}        # what the first version kept: its first start, 40 h ago
+json.dump(st, open(alerts.STATE_PATH, "w"))
+for d in alerts.SENT.values():
+    d.clear()                                                   # a new process: nothing in memory
+w2 = alerts.Watcher([tg, x])
+check(alerts.SENT["telegram"].get("last_ok") == round(now - 6 * 3600), "a restart reads the last good send back")
+w2.watch_silence(now)
+check(not alerts.SENT["telegram"].get("silent_hours") and not alerts.SENT["x"].get("silent_hours"),
+      "no false warning after a restart: Telegram posted 6 h ago, X counts from this start, not from the first start ever")
+check("since" not in w2.state["silence"], "the first version's start time is dropped")
+w2.watch_silence(now + 21 * 3600)
+check(alerts.SENT["telegram"].get("silent_hours") == 27 and not alerts.SENT["x"].get("silent_hours"), "Telegram's silence counts from its last post")
+w2.watch_silence(now + 27 * 3600)
+check(alerts.SENT["x"].get("silent_hours") == 27, "X without any post counts from this start")
+check(alerts.last_post({"telegram": {"last_ok": 1000}}, "telegram", 1000 + 2 * 3600) == "alerts service last posted 2 h ago"
+      and alerts.last_post({"telegram": {"last_ok": 1000}}, "telegram", 1000 + 600) == "alerts service last posted 10 min ago"
+      and alerts.last_post({}, "telegram") == "", "the check's line says when the service last posted")
+
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)
