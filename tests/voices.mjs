@@ -13,6 +13,9 @@ const seen = new Set(), list = [...window.RICO.all().map(([who, text]) => ({ who
 /* the show's opener is shouted for joy: make.py reads "how": "hype" */
 const R = window.RICO, hype = new Set(Object.keys(R.SETS).filter(k => /^wake/.test(k)).flatMap(k => R.SETS[k]).map(k => R.L[k]));
 for (const c of list) if (c.who === "rico" && hype.has(c.text)) c.how = "hype";
+/* the Night Line is spoken calm and low, Rico and his callers alike: make.py reads "how": "night" */
+const night = new Set([...(R.NIGHT || []).flatMap(c => c.say.map((t, i) => (i % 2 ? "rico" : c.who) + "|" + t)), ...["nlOpen", "nlRing", "nlBye", "nlClose"].flatMap(k => R.SETS[k] || []).map(k => "rico|" + R.L[k])]);
+for (const c of list) if (night.has(c.who + "|" + c.text)) c.how = "night";
 const json = JSON.stringify(list, null, 1) + "\n", file = new URL("rabbit/voices.json", root);
 if (process.argv.includes("--write")) { writeFileSync(file, json); console.log(`rabbit/voices.json: ${list.length} lines`); }
 else {
