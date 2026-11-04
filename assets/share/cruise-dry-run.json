@@ -2,10 +2,14 @@
  "ship": "expedition",
  "ship_scale": 3,
  "card": [
-  "MS Dry Run · today 16:00",
-  "German time · 40 passengers · 90 minutes ashore",
-  "Made-up passengers, real testnet transactions",
-  "White Rabbit Key"
+  "MS Dry Run · today 16:00 German time",
+  "40 made-up passengers, real transactions on Tau Testnet Alpha",
+  "## Why it matters",
+  "- Real, paced load: at most 12 transactions a minute",
+  "- Tests rarer features: bookings that can be taken back",
+  "- Brakes: no landing on a strained chain, leaves on a stall",
+  "- Every transaction logged with the node's answer, open to all",
+  "White Rabbit Key · community project, not affiliated with IDNI"
  ],
  "telegram": "🚢 <b>Ship ahoy: MS Dry Run drops anchor at White Rabbit Key today at 16:00</b>\n\nThe harbour flag is up. From 15:30 German time you can see her on the horizon, at 16:00 she anchors off the island and the tenders bring 40 curious passengers to the pier. For 90 minutes they walk the island with notebooks: Captain Wren's Old Ship, Hana's school, the dive shop on the reef. Some of them book a dive and change their minds again, on purpose: a booking on Tau Testnet Alpha can be taken back, and the lagoon practises giving coins back.\n\nHonest note: the passengers are made up. Their transactions are real: each passenger has a test wallet, the ship sends at most 12 transactions a minute, and she only lands when the testnet is calm. If it is not, she waits a little and sails on. Every transaction goes into the logbook: https://node.tauhud.com/cruise/log\n\nWatch from the pier in your browser, sound on: https://tauhud.com/rabbit/",
  "x": "Ship ahoy: MS Dry Run anchors at White Rabbit Key today, 16:00 German time. 40 passengers ashore for 90 minutes: the Old Ship, the school, a dive booked and taken back.\n\nThe passengers are made up. Their transactions are real, on Tau Testnet Alpha.\n\n#TauNet $AGRS"

@@ -74,20 +74,28 @@ def place_ship(pic, ship, m, anchor, x0, y0, z, big=1.0):
 
 
 def card(pic, lines):
+    """Title, body lines, accent line last. A body line starting with "## " is a small heading (a gap above it),
+    one starting with "- " a point under it."""
     title, *rest = lines
     body, accent = (rest[:-1], rest[-1]) if rest else ([], "")
-    ft, fb, fa = font(46), font(27, 500), font(27)
+    ft, fb, fh, fa = font(46), font(26, 500), font(22), font(26)
     d0 = ImageDraw.Draw(pic)
-    wid = max([d0.textlength(title, font=ft)] + [d0.textlength(t, font=fb) for t in body] + [d0.textlength(accent, font=fa)])
-    hgt = 40 + 58 + 42 * len(body) + (46 if accent else 0) + 20
+    show = lambda t: "•  " + t[2:] if t.startswith("- ") else t[3:].upper() if t.startswith("## ") else t
+    fnt = lambda t: fh if t.startswith("## ") else fb
+    step = lambda t: 54 if t.startswith("## ") else 40
+    wid = max([d0.textlength(title, font=ft)] + [d0.textlength(show(t), font=fnt(t)) for t in body] + [d0.textlength(accent, font=fa)])
+    hgt = 34 + 64 + sum(step(t) for t in body) + (50 if accent else 0) + 18
     over = Image.new("RGBA", (W, H)); d = ImageDraw.Draw(over)
-    d.rounded_rectangle([56, 56, 56 + wid + 72, 56 + hgt], radius=18, fill=(8, 12, 24, 220))
-    y = 56 + 34
-    d.text((92, y), title, font=ft, fill=(242, 242, 242, 255)); y += 64
+    d.rounded_rectangle([56, 56, 56 + wid + 72, 56 + hgt], radius=18, fill=(8, 12, 24, 225))
+    y = 56 + 30
+    d.text((92, y), title, font=ft, fill=(242, 242, 242, 255)); y += 66
     for t in body:
-        d.text((92, y), t, font=fb, fill=(200, 210, 218, 255)); y += 42
+        if t.startswith("## "):
+            y += 14; d.text((92, y), show(t), font=fh, fill=(120, 220, 140, 255)); y += 40
+        else:
+            d.text((92, y), show(t), font=fb, fill=(205, 214, 222, 255)); y += 40
     if accent:
-        d.text((92, y + 4), accent, font=fa, fill=(120, 220, 140, 255))
+        d.text((92, y + 10), accent, font=fa, fill=(150, 160, 170, 255))
     return Image.alpha_composite(pic, over)
 
 
