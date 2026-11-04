@@ -2293,5 +2293,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "A live counter of who is playing right now. The chip on the island shows how many people have the game open (on phones just the number), the Play menu shows it beside the game’s name, and In numbers shows it among the key numbers of the White Rabbit Key view. Counted by our relay: one browser counts once, a tab left in the background for five minutes stops counting, nobody is identified."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "The troll box is on the island now, as the Coconut Wire: on wide screens it sits on the dark water at the lower left of White Rabbit Key, always open, with the newest messages at the bottom. It is the same room as the troll box on the HUD, with your same name and the same rules. It steps aside while you talk to someone, and smaller screens and phones keep the island to themselves."
   }
 ]
