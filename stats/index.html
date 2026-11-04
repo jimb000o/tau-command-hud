@@ -786,7 +786,7 @@ const WTAGS = {
   other: ["other wallets", "#55555e", "every other wallet: other people, scripts and tools"],
   tauhud: ["Tau HUD wallet", "#7d7d87", "sent from a Tau HUD page through our wallet"],
   agorzilla: ["Agorzilla and Déjà", "#acacb6", "fed Agorzilla or Déjà the café cat"],
-  rabbit: ["White Rabbit Key players", "#ebebee", "played White Rabbit Key on the chain"],
+  rabbit: ["White Rabbit Key players", "#4cc2ff", "played White Rabbit Key on the chain"],
   bot: ["island bot (ours)", "#34343b", "our own server wallets: the island bot’s rivals and the island’s purses"],
   cruise: ["cruise passengers (simulated)", "#ffb347", "simulated passengers of White Rabbit Key’s cruise ships, sent by our server"],
 };
@@ -949,17 +949,17 @@ function playerPanel(W) {
   head.dataset.tip = head.textContent;
   const item = (cls, txt, tip) => { const s = el("span"); s.dataset.tip = tip; const i = el("i", cls); s.append(i, document.createTextNode(txt)); return s; };
   legend.replaceChildren(item("ln", "players so far", "every wallet that has played up to that day"), item("", "new that day", "wallets whose first move was that day"));
-  legend.querySelector("i.ln").style.background = "var(--ok)"; legend.querySelectorAll("i")[1].style.background = WTAGS.rabbit[1];
+  legend.querySelector("i.ln").style.background = WTAGS.rabbit[1]; legend.querySelectorAll("i")[1].style.background = WTAGS.rabbit[1];
   const f = frame(host, 210), px = f.w - f.L - f.R, py = f.h - f.T - f.B;
   const sc = niceScale(lastP.tot), t0 = pts[0].t, t1 = Math.max(lastP.t, t0 + 86400), slot = px / ((t1 - t0) / 86400 + 1);
   const X = t => f.L + slot / 2 + (t - t0) / (t1 - t0) * (px - slot), Y = v => f.h - f.B - v / sc.max * py;
   yAxis(f, sc, "");
   xTimeAxis({ ...f, L: f.L + slot / 2, R: f.R + slot / 2 }, t0, t1);
   const bw = Math.max(1, Math.min(24, slot * .6));
-  pts.forEach(p => { if (p.nw) svgEl("rect", { x: X(p.t) - bw / 2, y: Y(p.nw), width: bw, height: f.h - f.B - Y(p.nw), fill: WTAGS.rabbit[1], "fill-opacity": .55 }, f.svg); });
+  pts.forEach(p => { if (p.nw) svgEl("rect", { x: X(p.t) - bw / 2, y: Y(p.nw), width: bw, height: f.h - f.B - Y(p.nw), fill: WTAGS.rabbit[1], "fill-opacity": .4 }, f.svg); });
   const one = pts.length === 1, d = pts.map((p, i) => `${i ? "L" : "M"}${X(p.t).toFixed(1)},${Y(p.tot).toFixed(1)}`).join("") + (one ? `L${(f.w - f.R).toFixed(1)},${Y(lastP.tot).toFixed(1)}` : "");
-  svgEl("path", { d: d + `L${X(one ? t1 : lastP.t).toFixed(1)},${Y(0)}L${X(t0).toFixed(1)},${Y(0)}Z`, fill: "var(--ok)", "fill-opacity": .08 }, f.svg);
-  svgEl("path", { d, fill: "none", stroke: "var(--ok)", "stroke-width": 1.8 }, f.svg);
+  svgEl("path", { d: d + `L${X(one ? t1 : lastP.t).toFixed(1)},${Y(0)}L${X(t0).toFixed(1)},${Y(0)}Z`, fill: WTAGS.rabbit[1], "fill-opacity": .1 }, f.svg);
+  svgEl("path", { d, fill: "none", stroke: WTAGS.rabbit[1], "stroke-width": 1.8 }, f.svg);
   const rs = svgEl("g", { class: "rs" }, f.svg);
   restartTimes().filter(t => t >= t0 && t <= t1 + 86400).forEach(t => {
     const x = Math.min(X(t), f.w - f.R), left = x > f.w - f.R - 50; svgEl("line", { x1: x, x2: x, y1: f.T, y2: f.h - f.B }, rs);

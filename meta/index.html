@@ -820,7 +820,7 @@ function drawAgorzilla() {
 
 /* where our two sites' transactions started (relay "starts"): Agorzilla's feeding, votes and wishes, Déjà the café cat,
    and for Tau HUD the page that led to the wallet. A ring by site, a ranked list by source; kinds in each row's hover */
-const START_FAM = { agorzilla: ["Agorzilla", "var(--ok)"], deja: ["Déjà", "rgba(57,255,138,.45)"], tauhud: ["Tau HUD", "#fff"], rabbit: ["White Rabbit Key", "rgba(255,255,255,.6)"] };
+const START_FAM = { agorzilla: ["Agorzilla", "var(--ok)"], deja: ["Déjà", "rgba(57,255,138,.45)"], tauhud: ["Tau HUD", "#fff"], rabbit: ["White Rabbit Key", "#4cc2ff"] };
 const KIND_NAMES = { line: "Book lines", ballot: "ballots", meal: "meals", vote: "meals with a vote", wish: "meals with a wish", send: "test AGRS sent", rule: "own rules", vote_net: "network votes", shared: "shared rules", other: "other" };
 const VIA_NAMES = { "": "before 30 Oct", relay: "rule-place turns", direct: "opened directly", wallet: "opened directly", elsewhere: "other sites", agorzilla: "from agorzilla.com", hud: "HUD", start: "Start here", rules: "Rules wall", card: "Tau card", challenge: "Weekly challenge", donate: "Donate" };
 function drawStarts() {
@@ -1062,7 +1062,7 @@ function drawPages() {
 /* where the testnet's transactions come from (relay /api/v1/sources): the whole testnet, whichever site is chosen */
 const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote"], ["rabbit", "White Rabbit Key", "White Rabbit Key, our island game on tauhud.com: the players' lines and ballots, and the rivals' moves and wages the island bot sends. Its wallets count only the players'."], ["idni", "IDNI genesis", "IDNI genesis accounts: sent by the 11 accounts the testnet started with (its genesis file), which IDNI set up and uses for testing. They make most of the testnet's transactions, so a small share for the others can still be many people."], ["other", "others", "everything else: other wallets, scripts and tools"]];
 const TX_COLORS = ["var(--ok)", "#fff", "rgba(255,255,255,.45)", "rgba(255,255,255,.2)"];
-const GROUP_COL = { agorzilla: "var(--ok)", tauhud: "#fff", rabbit: "rgba(255,255,255,.6)", idni: "rgba(255,255,255,.45)", other: "rgba(255,255,255,.2)" };
+const GROUP_COL = { agorzilla: "var(--ok)", tauhud: "#fff", rabbit: "#4cc2ff", idni: "rgba(255,255,255,.45)", other: "rgba(255,255,255,.2)" };
 const share = (a, b) => b && a && 100 * a / b < 1 ? "<1%" : pct(a, b);
 function drawTx() {
   const el = $("txsplit");
