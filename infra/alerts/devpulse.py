@@ -317,7 +317,7 @@ reasons, exit codes, package names, flags or version numbers. Say "rule checks",
 - No hype or marketing words (huge, major, game-changing, finally, exciting, revolutionary), no price talk, no \
 exclamation marks, no emoji, no commit hashes, no names of people.
 - headline: at most 70 characters, a real news headline with subject and verb, present tense, sentence case. It says \
-what happened in the world, not what the code does internally. Do not start with "IDNI" (the line adds it).
+what happened in the world, not what the code does internally. Do not start with "IDNI" or "Testnet" (the line adds "Testnet:").
   Bad: "Block apply refuses rule offers that fail clause checks". Good: "Block makers can no longer slip unchecked rules into blocks".
   Bad: "Node exits with code 1 when its network thread dies". Good: "A node that loses its network now stops instead of running blind".
 - tip: one or two short sentences, at most 140 characters: the background or the practical effect, also in plain words.
