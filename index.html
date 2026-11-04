@@ -1479,7 +1479,18 @@ function markSealed(id, h, ts) {   // a card in Transactions and the waiting dot
   if (ts == null && Number.isFinite(h)) ts = (S.byHeight.get(h) || {}).ts;
   if (el && Number.isFinite(h) && Number.isFinite(ts)) { setAge(el, ts, "sealed", h); const feed = $("feed"); if (el.parentNode === feed && !feed.matches(":hover")) placeCard(feed, el); }
   if (!el || el.classList.contains("sealed") || !Number.isFinite(h)) return;
-  el.classList.add("sealed"); if (m) el.classList.add("listed"); const sp = el.querySelector(".top > span"); if (sp) sp.insertAdjacentHTML("afterbegin", `<b class="sl">ghost ✓ #${h}</b> · `);
+  sealMark(el, h);
+}
+/* "✓ #N" = sealed in block N. "ghost ✓ #N" only while a mempool listing that came at least one poll (3 s) after the block still names it
+   (IDNI #81); the getmempool asked together with that block's getblocks may still be from before the block, so it does not count */
+function sealMark(el, h) {
+  el.classList.add("sealed"); el.dataset.h = h; el.dataset.sealedAt = Date.now();
+  const sp = el.querySelector(".top > span"); if (sp && !sp.querySelector(".sl")) sp.insertAdjacentHTML("afterbegin", `<b class="sl">✓ #${h}</b> · `);
+}
+function ghostMark(el, on) {
+  if (el.classList.contains("listed") === on) return;
+  el.classList.toggle("listed", on); el.title = on ? "Ghost transaction: already in a block, still listed by the node (known bug, IDNI #81)" : "";
+  const sl = el.querySelector(".sl"); if (sl) sl.textContent = `${on ? "ghost " : ""}✓ #${el.dataset.h}`;
 }
 /* the relay compares the listed transactions with the whole chain it keeps (/health-score): how many are in fact sealed,
    and how long the oldest really waiting one has waited since the relay first saw it, not since this page opened */
@@ -2355,19 +2366,21 @@ const feedHold = [];
 const cardAt = d => { const a = d.querySelector(".age[data-at]"); return a ? Number(a.dataset.at) || 0 : 0; };
 function placeCard(feed, d) { const at = cardAt(d); feed.insertBefore(d, [...feed.children].find(c => c !== d && cardAt(c) < at) || null); }
 addEventListener("DOMContentLoaded", () => $("feed").addEventListener("mouseleave", () => { const feed = $("feed"); feedHold.splice(0).forEach(d => placeCard(feed, d)); [...feed.children].forEach(d => placeCard(feed, d)); while (feed.children.length > 40) feed.lastChild.remove(); }));
+const txBody = t => t.transfers && t.transfers.length
+  ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
+  : (t.note || `sender ${acct(t.sender)}`);
 function txCard(t) {
   const d = document.createElement("div");
   const ruleish = /rule/.test(t.type);
   d.className = "tx" + (t.kind === "gov" ? " gov" : ruleish ? " rl" : "") + (t.rejected ? " rej" : "");
   d.id = "tx_" + t.id.slice(0, 16);
   const label = t.rejected ? (t.refLabel || "✕ " + t.rejected) : testChange(t) ? "§ test change · no effect" : (TYPE_LABEL[t.type] || t.type);
-  const body = t.transfers && t.transfers.length
-    ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
-    : (t.note || `sender ${acct(t.sender)}`);
+  const body = txBody(t);
   const txid = S.mode === "live" && t.id && !t.rejected ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id);
   if (t.at == null) { t.at = Date.now() / 1000; if (!t.ageKind) t.ageKind = S.mode === "live" ? "seen" : "sim"; }
-  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="age"></span> · <span class="txid">${txid} · </span>fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
+  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="age"></span> · <span class="txid">${txid} · </span>${t.feeCap ? "fee ≤ " : "fee "}${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
   setAge(d, t.at, t.ageKind || (t.block != null ? "sealed" : "seen"), t.block);
+  if (S.mode === "live" && !t.rejected && Number.isFinite(t.block)) sealMark(d, t.block);   // first seen in its block: sealed, never a ghost
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   if (t.rejected) { bounce(t); S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
@@ -2995,7 +3008,7 @@ function normTx(raw, idHint) {
   if (type === "user_tx" && ops["0"]) type = "rule_deploy";
   return {
     id: idHint || raw.tx_hash || hex(64), type, sender: raw.sender_pubkey || raw.sender || "",
-    kind: /consensus_rule/.test(type) ? "gov" : "", fee: raw.estimated_fee ?? raw.fee_limit ?? "—", transfers,
+    kind: /consensus_rule/.test(type) ? "gov" : "", fee: raw.estimated_fee ?? raw.fee_limit ?? "—", feeCap: raw.estimated_fee == null && raw.fee_limit != null, transfers,   // a block lists the signed fee_limit, a cap, not the fee charged
     // co-signature approvals (approvals.md): a request parks a transfer, a transfer_vote signs or declines it
     to: raw.recipient_pubkey || "", amount: Number(raw.amount) || 0, expireAt: Number(raw.expire_at_height) || 0, approve: raw.approve !== false,
     revisions: Array.isArray(raw.rule_revisions) ? raw.rule_revisions : null, patch: raw.host_contract_patch || null,
@@ -3066,6 +3079,7 @@ function liveMessage(ev) {
         // first seen in the mempool, where the node lists only hash and type: now the block says what the rule work was
         const el = $("tx_" + t.id.slice(0, 16)) || feedHold.find(d => d.id === "tx_" + t.id.slice(0, 16));
         if (el && t.note && !t.transfers.length) { el.querySelector(".mid").textContent = t.note; el.dataset.ex = exKey(() => explainTx(t)); el.dataset.detail = dtKey(() => detailTx(t)); }
+        else if (el && t.transfers.length) { el.querySelector(".mid").innerHTML = txBody(t); el.dataset.ex = exKey(() => explainTx(t)); el.dataset.detail = dtKey(() => detailTx(t)); }
         if (el) markSealed(t.id, b.n, b.ts);
       });
       txs.forEach(t => {
@@ -3095,7 +3109,8 @@ function liveMessage(ev) {
     S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { t.at = Date.now() / 1000; t.ageKind = opening ? "open" : "seen"; LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } const h = sealedAt(t.id); if (h != null) { t.block = typeof h === "number" ? h : t.block; if (typeof h === "number") markSealed(t.id, h); } });
     if (TXST.st.size > 400) { const keep = new Set(S.mempool.map(t => t.id.toLowerCase())); TXST.st.forEach((v, k) => { if (!keep.has(k)) TXST.st.delete(k); }); }
     const listedIds = new Set(S.mempool.map(t => "tx_" + t.id.slice(0, 16)));
-    document.querySelectorAll("#feed .tx.sealed").forEach(el => { const on = listedIds.has(el.id); if (el.classList.contains("listed") !== on) { el.classList.toggle("listed", on); el.title = on ? "Ghost transaction: already in a block, still listed by the node (known bug, IDNI #81)" : ""; } });
+    const ghostNow = Date.now();
+    [...document.querySelectorAll("#feed .tx.sealed"), ...feedHold.filter(el => el.classList.contains("sealed"))].forEach(el => ghostMark(el, listedIds.has(el.id) && ghostNow - Number(el.dataset.sealedAt || 0) > 2000));
     askTxStatus(); pollRelayMem(); scanBack();
     readouts();
   } else if (msg.command === "getgovernance") {
