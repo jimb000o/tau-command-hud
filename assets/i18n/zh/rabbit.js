@@ -2015,4 +2015,10 @@ TauI18n.add({ strings: {
   "So far: {n} payments, {a} bookings, {b} withdrawn.": "目前：{n} 笔付款，{a} 笔预订，{b} 笔撤回。",
   "So far: {n} payments, {m} group bills.": "目前：{n} 笔付款，{m} 张合并账单。",
   "So far: {n} payments.": "目前：{n} 笔付款。",
+  "playing now": "人正在玩",
+  "{n} playing now": "{n} 人正在玩",
+  "{n} playing now, you included: people with White Rabbit Key open, counted live by the relay.": "{n} 人正在玩，包括你：打开着 White Rabbit Key 的人，由中继实时统计。",
+  "{n} campaigns today. Click: the island today.": "今天 {n} 场竞选。点击：今天的岛。",
+  "Click: the island today.": "点击：今天的岛。",
+  "{n} people playing right now.": "此刻有 {n} 人正在玩。",
 } });

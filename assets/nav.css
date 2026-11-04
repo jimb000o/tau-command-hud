@@ -280,6 +280,11 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 /* games that run on the live testnet: the pulsing green dot the site uses for live things, before the name */
 .mi b .tn-live { display: inline-block; width: 7px; height: 7px; margin: 0 8px 1px 0; vertical-align: middle; border-radius: 50%; background: var(--tn-ok); box-shadow: 0 0 7px var(--tn-ok); animation: tnblink 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .mi b .tn-live { animation: none; } }
+/* White Rabbit Key's live counter beside its name: people with the game open now, in the game's pale mint */
+.mi b .tn-play { display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; font: 500 11px var(--tn-font); font-style: normal; color: var(--tn-dim); white-space: nowrap; vertical-align: 1px; }
+.mi b .tn-play[hidden] { display: none; }
+.mi b .tn-play i { width: 6px; height: 6px; border-radius: 50%; background: #b9ffd6; box-shadow: 0 0 6px rgba(185,255,214,.7); }
+.mi b .tn-play b { font: 600 11px var(--tn-font); color: #b9ffd6; font-variant-numeric: tabular-nums; }
 
 /* Radio Coco (assets/radio.js): a switch, monochrome; green only while it plays; a soft glow while it waits for the first click */
 .tnav .tn-radio { display: inline-flex; }

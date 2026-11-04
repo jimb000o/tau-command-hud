@@ -192,6 +192,10 @@ class Isle:
         self.clock = clock
         self.house_on = house
         self.subs = set()
+        # people with the game open right now: the relay counts one browser's tabs and reconnects once (relay.py sets it);
+        # without it, every joined socket counts
+        self.people = None
+        self.here_pushed = -1
         self.week = week_of(clock())
         self.last: dict | None = None
         self.seen: dict[str, dict[str, float]] = {}   # address -> wallet -> when it last signed a transaction from there
@@ -564,7 +568,16 @@ class Isle:
         self.busy(now)
         isl = {k: v for k, v in self.islanders.items() if k != "inforce"}
         return {"day": self.day, "v": self.v, "players": self.players, "islanders": isl, "recent": list(self.recent), "built": self.built,
-                "week": self.week, "last": self.last, "board": self.summary(), "lastHour": sum(1 for t in self.times if t >= now - 3600), "here": len(self.subs), "push": PUSH}
+                "week": self.week, "last": self.last, "board": self.summary(), "lastHour": sum(1 for t in self.times if t >= now - 3600), "here": self.here(), "push": PUSH}
+
+    def here(self) -> int:
+        """People playing now: pages that joined the island and are still open."""
+        if self.people is None:
+            return len(self.subs)
+        try:
+            return self.people()
+        except Exception:   # a count must never break the snapshot
+            return len(self.subs)
 
     def route(self, path: str) -> dict | None:
         if path == "/isle/board":
@@ -580,8 +593,9 @@ class Isle:
             await asyncio.sleep(PUSH)
             try:
                 self.house()
-                if self.v != self.pushed and self.subs:
-                    self.pushed = self.v
+                here = self.here()
+                if (self.v != self.pushed or here != self.here_pushed) and self.subs:   # a move, or someone came or left
+                    self.pushed, self.here_pushed = self.v, here
                     push(self.snapshot())
                 if self.clock() - saved >= 60:
                     saved = self.clock()

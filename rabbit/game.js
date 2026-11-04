@@ -2101,7 +2101,7 @@
         if (m.command === "isle") { if (m.status === "ok" && m.data && m.data.day) onIsle(m.data); else if (m.status === "ok" && m.data && m.data.board && typeof m.data.board === "object") onBoard(m.data.board); return; }   // the shared island: pushes and acks, never an answer someone waits for
         const q = CHAIN.wait.get(m.command); if (q && q.length) q.shift()(m);
       };
-      ws.onerror = ws.onclose = () => { if (CHAIN.ws === ws) CHAIN.ws = null; res(null); };
+      ws.onerror = ws.onclose = () => { if (CHAIN.ws === ws) CHAIN.ws = null; res(null); isleRetry(); };
     });
   }
   async function ask(cmd, ms = 12000) {
@@ -2237,7 +2237,19 @@
   }
   /* the visitor's test wallet address, if this browser has one (never made here: the first signed move makes it) */
   const myPk = () => { try { const k = JSON.parse(store.get(WKEY) || "null"); return k && /^[0-9a-f]{96}$/.test(k.pk || "") ? k.pk : null; } catch (e) { return null; } };
-  function isleJoin() { ISLE.want = true; relay().then(ws => { if (ws) try { ws.send("isle join"); } catch (e) {} }); }
+  function isleJoin() { ISLE.want = true; relay().then(ws => { if (ws) try { ws.send("isle join"); ISLE.wait = 0; } catch (e) {} }); }
+  /* "playing now" counts the games that are open: a dropped socket joins again by itself (15 s, then slower), and a tab
+     left in the background for five minutes leaves the island until someone looks at it again */
+  function isleRetry() {
+    if (!ISLE.want || ISLE.retry) return;
+    ISLE.wait = Math.min(120000, (ISLE.wait || 7500) * 2);
+    ISLE.retry = setTimeout(() => { ISLE.retry = null; if (ISLE.want) isleJoin(); }, ISLE.wait);
+  }
+  document.addEventListener("visibilitychange", () => {
+    clearTimeout(ISLE.idle);
+    if (document.hidden) ISLE.idle = setTimeout(() => { if (!ISLE.want) return; ISLE.want = false; ISLE.away = true; if (CHAIN.ws && CHAIN.ws.readyState === 1) try { CHAIN.ws.send("isle leave"); } catch (e) {} }, 300000);
+    else if (ISLE.away) { ISLE.away = false; isleJoin(); }
+  });
   function onIsle(s) {
     ISLE.s = s; ISLE.at = Date.now();
     isleRule(); isleChip();
@@ -2286,21 +2298,22 @@
   }
   const isleLine = e => e.k === "won" ? F("{x} won a campaign played as {y}", { x: nm(e.c), y: nm(e.x) }) : isleWho(e) + " " + isleText(e);
   const isleAgo = t => { const m = Math.max(0, Math.round((Date.now() / 1000 - t) / 60)); return m < 1 ? T("just now") : m < 120 ? F("{n} min ago", { n: m }) : F("{n} h ago", { n: Math.round(m / 60) }); };
+  /* the live counter: people with the game open right now, you included, counted by the relay (one browser once) */
   function isleChip() {
     const b = $("cvIsle"); if (!b) return;
     const s = ISLE.s; b.hidden = !s; if (!s) return;
-    const n = s.players.campaigns, here = s.here || 0;
-    const t = here > 1 ? F("{n} on the island now", { n: here }) : n ? F("{n} campaigns today", { n }) : T("The island today");
-    b.replaceChildren(el("i", { class: "dot" + (s.lastHour ? " on" : "") }), el("span", { text: t }));
-    b.title = T("Every campaign played today on this island, added up");
+    const n = s.players.campaigns, here = Math.max(1, s.here || 0);
+    b.replaceChildren(el("i", { class: "dot now", "aria-hidden": "true" }), el("b", { class: "num", text: String(here) }), el("span", { class: "lb", text: T("playing now") }));
+    b.title = F("{n} playing now, you included: people with White Rabbit Key open, counted live by the relay.", { n: here }) + "\n" + (n ? F("{n} campaigns today. Click: the island today.", { n }) : T("Click: the island today."));
+    b.setAttribute("aria-label", F("{n} playing now", { n: here }));
   }
   /* on the start card: who else is on the island today */
   function isleIntro() {
     const s = ISLE.s, p = el("p", { class: "cv-isle-intro cv-note" }); if (!s) return p;
     const n = s.players.campaigns, here = s.here || 0;
     p.append(el("b", { text: T("The island today:") }), " ", n
-      ? F("{n} campaigns so far, {m} finished.", { n, m: s.players.finished }) + (here > 1 ? " " + F("{n} people on the island right now.", { n: here }) : "")
-      : T("no visitor has campaigned yet today. The islanders are at it already; yours would be the first campaign."));
+      ? F("{n} campaigns so far, {m} finished.", { n, m: s.players.finished }) + (here > 1 ? " " + F("{n} people playing right now.", { n: here }) : "")
+      : T("no visitor has campaigned yet today. The islanders are at it already; yours would be the first campaign.") + (here > 1 ? " " + F("{n} people playing right now.", { n: here }) : ""));
     const last = isleLast(); if (last) p.append(" ", Fd("{x} governs the island this week.", { x: nm(last.governor) }));
     return p;
   }

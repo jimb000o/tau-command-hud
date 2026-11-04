@@ -628,4 +628,6 @@ TauI18n.add({ strings: {
   "The café's sound: street, room, gramophone. The same switch as Radio Coco elsewhere.": "咖啡馆的声音：街道、店内、留声机。与别处的 Radio Coco 是同一个开关。",
   "The island's sound and Radio Coco. The same switch as on every other page.": "岛上的声音和 Radio Coco。与其他每个页面上的是同一个开关。",
   "Close": "关闭",
+  "playing now": "人正在玩",
+  "People with this game open right now, counted live by the community relay; one browser counts once.": "此刻打开着这个游戏的人，由社区中继实时统计；同一个浏览器只算一次。",
 } });

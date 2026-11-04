@@ -623,4 +623,6 @@ TauI18n.add({ strings: {
   "The café's sound: street, room, gramophone. The same switch as Radio Coco elsewhere.": "カフェの音：通り、店内、蓄音機。ほかのページの Radio Coco と同じスイッチ。",
   "The island's sound and Radio Coco. The same switch as on every other page.": "島の音と Radio Coco。ほかのどのページとも同じスイッチ。",
   "Close": "閉じる",
+  "playing now": "人がプレイ中",
+  "People with this game open right now, counted live by the community relay; one browser counts once.": "いまこのゲームを開いている人。コミュニティ中継がリアルタイムで数えます。1 つのブラウザは 1 人と数えます。",
 } });

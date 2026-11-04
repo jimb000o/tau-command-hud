@@ -437,6 +437,28 @@ async def main():
             seen = json.loads(await asyncio.wait_for(a.recv(), 3))
             check(seen["data"]["online"] == 1, "person still counted once after its other socket closed")
 
+        # playing now: the pages that joined White Rabbit Key's island, one browser counted once, pushed with presence
+        async with connect(url, additional_headers=origin) as a:
+            json.loads(await a.recv())
+            j = await ask(a, "isle join")
+            check(j["status"] == "ok" and j["data"]["here"] == 1, f"isle join: the joiner is playing {j['data'].get('here')}")
+            async with connect(url, additional_headers=origin) as b:
+                await ask(b, "isle join")
+                p = await ask(b, "presence")
+                check(p["data"]["playing"] == {"rabbit": 1}, f"a second tab of the same browser is still one player {p['data'].get('playing')}")
+                async with connect(url, additional_headers={**origin, "X-Forwarded-For": "198.51.100.21"}) as c:
+                    await ask(c, "isle join")
+                    p = await ask(c, "presence")
+                    check(p["data"]["playing"] == {"rabbit": 2}, "another browser on the island: two playing")
+                    body5 = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen("http://127.0.0.1:18766/status", timeout=5).read()))
+                    isl = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen("http://127.0.0.1:18766/isle", timeout=5).read()))
+                    check(body5["playing"] == {"rabbit": 2} and isl["here"] == 2, f"/status and /isle say two playing {body5.get('playing')} {isl.get('here')}")
+                    await ask(c, "isle leave")
+                    p = await ask(c, "presence")
+                    check(p["data"]["playing"] == {"rabbit": 1} and p["data"]["online"] == 2, "isle leave: no longer playing, still online")
+            p = await ask(a, "presence")
+            check(p["data"]["playing"] == {"rabbit": 1}, "a closed tab leaves the browser's other tab playing")
+
         # origin check
         try:
             async with connect(url, additional_headers={"Origin": "https://evil.example"}):

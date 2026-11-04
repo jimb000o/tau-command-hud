@@ -2015,4 +2015,10 @@ TauI18n.add({ strings: {
   "So far: {n} payments, {a} bookings, {b} withdrawn.": "これまで：支払い {n} 件、予約 {a} 件、取り消し {b} 件。",
   "So far: {n} payments, {m} group bills.": "これまで：支払い {n} 件、まとめ払い {m} 件。",
   "So far: {n} payments.": "これまで：支払い {n} 件。",
+  "playing now": "人がプレイ中",
+  "{n} playing now": "{n} 人がプレイ中",
+  "{n} playing now, you included: people with White Rabbit Key open, counted live by the relay.": "あなたを含めて {n} 人がプレイ中：White Rabbit Key を開いている人を、中継がリアルタイムで数えています。",
+  "{n} campaigns today. Click: the island today.": "今日の選挙戦 {n} 件。クリック：今日の島。",
+  "Click: the island today.": "クリック：今日の島。",
+  "{n} people playing right now.": "いま {n} 人がプレイしています。",
 } });
