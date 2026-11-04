@@ -403,9 +403,9 @@
     const pan = p => { if (!A.createStereoPanner) return gain(1); const n = A.createStereoPanner(); n.pan.value = p; return n; };
     const rand = (a, b) => a + Math.random() * (b - a);
     const every = (fn, a, b) => { const go = () => { timers.push(setTimeout(() => { if (level && !document.hidden) fn(); go(); }, rand(a, b) * 1000)); }; go(); };
-    const burst = (t, dur, f, q, v, to, buf = N) => { const s = A.createBufferSource(), g = gain(0); s.buffer = buf; chain(s, filt("bandpass", f, q), g, to);
+    const burst = (t, dur, f, q, v, to, buf = N) => { t = Math.max(t, A.currentTime); const s = A.createBufferSource(), g = gain(0); s.buffer = buf; chain(s, filt("bandpass", f, q), g, to);
       g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.start(t, Math.random() * 2, dur + 0.05); };
-    const tone1 = (t, f, dur, v, to, type = "sine", att = 0.004) => { const o = A.createOscillator(), g = gain(0); o.type = type; o.frequency.value = f; chain(o, g, to);
+    const tone1 = (t, f, dur, v, to, type = "sine", att = 0.004) => { t = Math.max(t, A.currentTime); const o = A.createOscillator(), g = gain(0); o.type = type; o.frequency.value = f; chain(o, g, to);
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.start(t); o.stop(t + dur + 0.05); return o; };
     /* something that passes the window: a panner that travels from one side to the other */
     const passing = (secs, v, from = rand(-0.9, -0.5) * (Math.random() < 0.5 ? -1 : 1)) => { const t = A.currentTime, p = pan(from), g = gain(0); chain(g, p, street);

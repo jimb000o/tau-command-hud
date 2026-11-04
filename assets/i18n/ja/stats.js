@@ -269,4 +269,18 @@ TauI18n.add({ strings: {
   "New": "新規",
   "Window": "期間",
   "IDNI": "IDNI",
+  // White Rabbit Key players over time
+  "Players": "プレイヤー",
+  "White Rabbit Key players so far: every wallet that played the game on the chain, from its first move": "これまでの White Rabbit Key プレイヤー：チェーン上でゲームをプレイしたすべてのウォレット（最初の一手から）",
+  "wallets that played on the chain, so far": "これまでにチェーン上でプレイしたウォレット",
+  "Every wallet that played White Rabbit Key on the chain: picking a candidate and every move are transactions.\nCounted from its first move, kept across chain restarts. Our island bot and the cruise passengers are not players.": "チェーン上で White Rabbit Key をプレイしたすべてのウォレット：候補者を選ぶこともすべての一手もトランザクションです。\n最初の一手から数え、チェーンの再起動後も保持します。私たちの島ボットとクルーズの乗客はプレイヤーに含みません。",
+  "Counted by our relay; it does not answer yet.": "私たちのリレーが数えます。まだ応答がありません。",
+  "No wallet has played White Rabbit Key on the chain yet.": "まだチェーン上で White Rabbit Key をプレイしたウォレットはありません。",
+  "Waiting for the first player.": "最初のプレイヤーを待っています。",
+  "{n} wallets have played White Rabbit Key since {x}.": "{x} 以降、{n} 個のウォレットが White Rabbit Key をプレイしました。",
+  "{n} new today. Wallets, not people; our island bot and the cruise passengers do not count.": "今日の新規は {n} 個。数えているのは人ではなくウォレットです。私たちの島ボットとクルーズの乗客は含みません。",
+  "players so far": "これまでのプレイヤー数",
+  "every wallet that has played up to that day": "その日までにプレイしたすべてのウォレット",
+  "new that day": "その日の新規",
+  "wallets whose first move was that day": "その日に最初の一手を打ったウォレット",
 } });
