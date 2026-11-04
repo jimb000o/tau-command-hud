@@ -65,6 +65,22 @@ TauI18n.add({ strings: {
   "Build pulse": "开发脉搏",
   "Feedback": "反馈",
 
+  /* IDNI's own work, from the build pulse */
+  "IDNI pull request #93": "IDNI 拉取请求 #93",
+  "a faucet in a new genesis, which needs a network reset": "把水龙头写进新的创世块，需要重置网络",
+  "the stop at block 5028 and the restart of 1 November": "第 5028 块的停止与 11 月 1 日的重启",
+  "Open governance again with a vote count one account cannot reach alone.": "重新开放治理，但所需票数不能由一个账户单独达到。",
+  "IDNI at work": "IDNI 正在处理",
+  "IDNI’s own work on it": "IDNI 自己在这上面的工作",
+  "From IDNI’s public git history, checked every 30 minutes by our": "来自 IDNI 公开的 git 历史，每 30 分钟由我们的",
+  "From IDNI’s public git history, checked every 30 minutes by our Build pulse.": "来自 IDNI 公开的 git 历史，每 30 分钟由我们的开发脉搏检查一次。",
+  "fix on IDNI’s main, names #{n}": "IDNI 主分支上的修复，提到 #{n}",
+  "merged by IDNI into main, names #{n}": "已由 IDNI 合并进主分支，提到 #{n}",
+  "IDNI work branch, not on main yet, names #{n}": "IDNI 的工作分支，尚未进入主分支，提到 #{n}",
+  "our node runs it": "我们的节点已在运行",
+  "our node does not run it yet": "我们的节点还没有运行",
+  "Status from the public GitHub API, refreshed every 10 minutes, and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box.": "状态来自公开的 GitHub API（每 10 分钟刷新）以及 IDNI 自己的 git 历史：IDNI 主分支上提到某一项问题编号的修复，会自动把该项标为部分修复。引语出自 Tau Net YouTube 频道上 IDNI 的月度视频。评论由与闲聊箱相同的管理员维护。",
+
   /* relay answers (roadmap.py, chat.py) */
   "At most 600 characters, please.": "请最多 600 个字符。",
   "A little more, please: what do you see, or what would you change?": "请再多写一点：你看到了什么，或者你会怎么改？",
@@ -165,8 +181,8 @@ TauI18n.add({ strings: {
   "One test: send, seal, and gettxstatus says sealed.": "一个测试：发送、封存，然后 gettxstatus 显示已封存。",
 
   "Restarts from block 0 come unannounced": "从第 0 块重启时没有通知",
-  "The testnet has restarted on the same genesis without notice; a mainnet cannot start over.": "测试网曾在同一个创世块上无通知地重启；主网不能从头再来。",
-  "The testnet has started over from block 0 on the same genesis, without a notice and without anything a node can check. Nodes that missed it kept a dead chain.": "测试网曾在同一个创世块上从第 0 块重新开始，没有通知，也没有任何节点可以检查的标记。错过的节点一直停在一条死链上。",
+  "The testnet has started over from block 0 without notice, last on 1 November; a mainnet cannot start over.": "测试网曾无通知地从第 0 块重新开始，最近一次是 11 月 1 日；主网不能从头再来。",
+  "The testnet has started over from block 0 on the same genesis, without a notice beforehand and without anything a node can check. The last time was on 1 November, after the chain had stopped at block 5028. Nodes that missed it kept a dead chain. IDNI’s open pull request #93 plans the next restart, with a new genesis.": "测试网曾在同一个创世块上从第 0 块重新开始，事先没有通知，也没有任何节点可以检查的标记。最近一次是 11 月 1 日，此前链停在了第 5028 块。错过的节点一直停在一条死链上。IDNI 尚未合并的拉取请求 #93 计划下一次重启，并换用新的创世块。",
   "A mainnet cannot start over. The way to upgrade a running chain without a restart is best practised on the testnet first.": "主网不能从头再来。不重启就升级运行中的链，最好先在测试网上练习。",
   "Tau changes its own rules by vote without new node versions. An upgrade that keeps the chain is the same idea for the node software.": "Tau 通过投票改变自己的规则，而无需新的节点版本。保留链的升级是把同样的思路用在节点软件上。",
   "Stats page": "统计页",
@@ -190,8 +206,8 @@ TauI18n.add({ strings: {
   "Pick the number of build jobs from the free memory, or publish a ready-built image.": "按空闲内存选择构建任务数，或发布一个现成的镜像。",
 
   "Rule changes are rarely seen on the live chain": "实时链上很少看到规则变化",
-  "Three proposals so far, two changing nothing, each 3 to 4 days to apply; no live consensus switch yet.": "迄今三个提案，两个没有改变任何东西，每个要 3 到 4 天才生效；还没有实时的共识切换。",
-  "The live chain has seen three rule proposals, two of them changing nothing, each taking 3 to 4 days to apply. The consensus switch IDNI showed in its demos has not run on the public chain.": "实时链上出现过三个规则提案，其中两个没有改变任何东西，每个都要 3 到 4 天才生效。IDNI 在演示中展示的共识切换还没有在公开链上运行过。",
+  "The chain stopped where a rule change passed by one vote was due; open governance is off since 1 November.": "链停在了一项仅凭一票通过的规则变更应当生效的地方；自 11 月 1 日起开放治理已关闭。",
+  "Before the restart of 1 November the live chain had seen three rule proposals, two of them changing nothing, each taking 3 to 4 days to apply. On 31 October the chain stopped at block 5028, the block where a consensus rule change approved by a single vote was due to take effect. IDNI restarted the chain and said it turned off open governance. The consensus switch IDNI showed in its demos has not run on the public chain.": "在 11 月 1 日重启之前，实时链上出现过三个规则提案，其中两个没有改变任何东西，每个都要 3 到 4 天才生效。10 月 31 日，链停在了第 5028 块，正是一项仅凭一票通过的共识规则变更应当生效的那一块。IDNI 重启了链，并表示已关闭开放治理。IDNI 在演示中展示的共识切换还没有在公开链上运行过。",
   "Changing the rules by agreement is what makes Tau different. A mainnet should go live after the public has watched it work many times.": "通过协商改变规则正是 Tau 的不同之处。主网应在公众多次看到它运作之后再上线。",
   "IDNI wants to show outcomes that appeal to people at once. A rule changing live, watched by visitors, is one.": "IDNI 想展示能立刻打动人的成果。一条在访客眼前实时改变的规则就是其中之一。",
   "Proposals page": "提案页",

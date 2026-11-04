@@ -159,4 +159,27 @@ check(res["good.py"]["ok"] and res["picky.py"]["ok"] is False and "anchor not fo
 check(y["ok"] is False and y["patches"]["sha"] == run("rev-parse", "HEAD"), "sync is not ok; the patch check ran on the newest main")
 check(dp.check_patches("IDNI/tau-testnet", "main", y["patches"]["sha"]) is y["patches"], "the patch check runs once per upstream commit")
 
+# ---------- refs: IDNI's own work on an issue moves the Road to mainnet badge ----------
+rf = data["refs"]["items"]
+check([m["sha"] for m in rf["81"]["main"]] == [run("rev-parse", "HEAD")] and rf["81"]["main"][0]["kind"] == "fix"
+      and rf["81"]["main"][0]["runs"] is False, "refs: a fix on main that names #81 is listed, our node does not run it yet")
+check(dp._mentions("docs(#85): explain the cap", "") is None and dp._mentions("test(#85): measure", "") is None,
+      "refs: docs or tests naming an issue never count")
+check(dp._mentions("Merge pull request #86 from x/redial", "fix(network): re-dial bootstrap peers") == ([86], "merged"),
+      "refs: GitHub's merge title names the pull request itself")
+run("checkout", "-q", "-b", "issue/85-90-more-places")
+commit("consensus/approvals.py", "feat: three tier authors", NOW - 600)
+run("checkout", "-q", "-b", "fix/mempool")
+commit("consensus/mempool.py", "fix(#81): drop on apply, keep on reorg", NOW - 500)
+run("checkout", "-q", "main")
+run("checkout", "-q", "-b", "old-work")
+run("checkout", "-q", "main")
+subprocess.run(["git", "-C", path, "fetch", "-q", SRC, "+refs/heads/*:refs/heads/*"], check=True)
+rf = dp.refs_state("IDNI/tau-testnet", path, "main", NOW, None)["items"]
+check([w["branch"] for w in rf["85"]["work"]] == ["issue/85-90-more-places"] and "90" in rf,
+      "refs: a branch named issue/85-90-… is work on #85 and #90")
+check([w["branch"] for w in rf["81"]["work"]] == ["fix/mempool"] and rf["81"]["work"][0]["url"].endswith("/tree/fix/mempool"),
+      "refs: a branch whose own commit names #81 is work on it")
+check(not any(w["branch"] == "old-work" for v in rf.values() for w in v["work"]), "refs: a branch with nothing beyond main is not work")
+
 sys.exit(1 if failed else 0)
