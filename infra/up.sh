@@ -9,7 +9,8 @@
 #              up touch beach 28    the same, from island 28 of the drafts instead of the live island
 #              up keep 27 canoe camp  the same, then island 27 live and those rooms painted anew to match it
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
-#                            up bust --recut salado  cuts the kept painting out again, paints nothing
+#                            up bust --recut salado  cuts the kept painting out again, paints nothing;
+#                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
 set -e
 cd "$(dirname "$(readlink -f "$0")")"
 ln -sf "$(pwd)/up.sh" /usr/local/bin/up 2>/dev/null && chmod +x up.sh 2>/dev/null || true
@@ -147,13 +148,14 @@ if [ "${1:-}" = "keep" ] && [ -n "${2:-}" ]; then
   { echo "island art:"; if grep -qE 'Traceback|Error|error|No painting' "$V"; then grep -E 'Traceback|Error|error|No painting' "$V" | tail -3 | sed 's/^/         /'; else echo "         Island $N live${ROOMS:+, rooms painted anew: $ROOMS} (Ctrl+F5)"; fi; } | tee -a "$NOTE"
 fi
 # a portrait painted anew, only when asked for: up bust salado (or several: up bust salado rico); every painting is kept
-# as it came, so a better cut later paints nothing: up bust --recut salado
+# as it came, so a better cut later paints nothing: up bust --recut salado; pictures painted elsewhere and put in the
+# repository: up bust --from infra/rabbit-art/imports/codex hana lola
 if [ "${1:-}" = "bust" ] && [ -n "${2:-}" ]; then
   shift
-  WHO=$(echo " $* " | sed 's/ --[a-z]*//g; s/^ *//; s/ *$//')
-  case " $* " in *" --recut "*) DID="cut out again from the kept painting";; *) DID="painted anew";; esac
+  WHO=$(echo " $* " | sed 's/ --from [^ ]*//; s/ --[a-z]*//g; s/^ *//; s/ *$//')
+  case " $* " in *" --recut "*) DID="cut out again from the kept painting";; *" --from "*) DID="taken from the pictures in the repository";; *) DID="painted anew";; esac
   sh rabbit-art/paint.sh busts "$@" 2>&1 | tee "$V" || true
-  { echo "portraits:"; if grep -qE 'Traceback|Error|error|painter|No one called|No portrait|o painting kept|GEMINI|Keep an island' "$V"; then grep -E 'Traceback|Error|error|painter|No one called|No portrait|o painting kept|GEMINI|Keep an island' "$V" | tail -3 | sed 's/^/         /'; else echo "         $WHO $DID and live (Ctrl+F5)"; fi; } | tee -a "$NOTE"
+  { echo "portraits:"; if grep -qE 'Traceback|Error|error|painter|No one called|No portrait|No bust|o painting kept|GEMINI|Keep an island' "$V"; then grep -E 'Traceback|Error|error|painter|No one called|No portrait|No bust|o painting kept|GEMINI|Keep an island' "$V" | tail -3 | sed 's/^/         /'; else echo "         $WHO $DID and live (Ctrl+F5)"; fi; } | tee -a "$NOTE"
 fi
 # a new painted island, only when asked for: up island
 if [ "${1:-}" = "island" ]; then

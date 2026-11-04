@@ -2265,6 +2265,11 @@
     "html": "White Rabbit Key: the islanders talk about the cruise ships now, from three days before a ship comes until the evening it leaves, and each of them sees the ships their own way. Rico announces the ships on Radio Coco, and islanders phone in about them."
   },
   {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "White Rabbit Key: Hana’s and Lola’s portraits have proper hands now. Hana holds her exercise books against her side with one hand flat on top, and her pencil sits behind her ear instead of seeming to run on into her cheek. Lola holds her cocktail shaker in one hand and rests the other arm across her waist."
+  },
+  {
     "tag": "HUD",
     "on": "2026-11-04",
     "html": "News line: when IDNI lands a fix or a change on the testnet’s code, it comes onto the news line by itself for a week, with a link to the commit. The hover says whether our node already runs it. Changes to docs, tests and build scripts only stay off the line."

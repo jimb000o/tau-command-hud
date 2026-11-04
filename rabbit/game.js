@@ -490,7 +490,7 @@
     if (G && place) { G.seen = G.seen || {}; if (!G.seen[place]) { G.seen[place] = 1; save(); } setTimeout(locks, 0); }
     /* the conversation always sits in the same place: a plate at the bottom middle, the person standing above it */
     const side = 0;
-    if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "bar" ? 1 : 0.6 }); } SC.glow(place);
+    if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "bar" ? 1 : 0.6 }); }
     const box = el("section", { class: "cv-card talk", "data-place": place || "", role: "dialog", "aria-modal": "false" });
     box._visit = place && build === PLACE[place] ? place : null;   // a visit to a place, not the card after a move
     const close = el("button", { type: "button", class: "cv-x", "aria-label": T("Back to the island"), onclick: () => closeCard(), text: "✕" });
@@ -615,7 +615,7 @@
   if (window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener("change", replaceHost);
   function closeCard(keep) {
     if (UI.card) { UI.card.remove(); UI.card = null; } UI.at = null; $("cvStage").classList.remove("carded"); SC.host(null);
-    if (!keep) { SC.focus(null); SC.glow(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); if (performance.now() > UI.airUntil) { SND.hush(); if (RICO.stop) RICO.stop(); } }   // a line on air is heard to its end
+    if (!keep) { SC.focus(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); if (performance.now() > UI.airUntil) { SND.hush(); if (RICO.stop) RICO.stop(); } }   // a line on air is heard to its end
   }
   /* a card: who speaks, what they say (aloud, in their own voice, when the server has the clip), what you can do;
      the buttons are never read out. A line is text, or a list of parts as RICO.speak takes them. */
@@ -2426,12 +2426,12 @@
     const where = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
     cv.addEventListener("pointermove", e => {
       if (UI.card) { tip.hidden = true; cv.style.cursor = SC.hit(...where(e)) === "deja" ? "pointer" : "default"; return; }
-      const id = SC.hit(...where(e)); SC.glow(SC.places[id] ? id : null); cv.style.cursor = id ? "pointer" : "default";
+      const id = SC.hit(...where(e)); cv.style.cursor = id ? "pointer" : "default";   // only the name and the hand: the painting itself never lights up under the mouse
       if (!id) { tip.hidden = true; return; }
       tip.hidden = false; tip.textContent = id === "rabbit" ? T("The white rabbit: follow it") : id === "agorzilla" ? T("Something moves in the jungle") : id === "deja" ? T("Déjà, the café cat") : T(SC.places[id].name);
       const r = $("cvStage").getBoundingClientRect(); tip.style.left = Math.min(r.width - 180, e.clientX - r.left + 14) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
     });
-    cv.addEventListener("pointerleave", () => { tip.hidden = true; if (!UI.card) SC.glow(null); });
+    cv.addEventListener("pointerleave", () => { tip.hidden = true; });
     cv.addEventListener("click", e => {
       wake();
       if (!G) return;
