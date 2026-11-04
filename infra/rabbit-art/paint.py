@@ -667,7 +667,7 @@ BUSTS = {
     "marisol": 'Marisol: runs the Parasol Café on the terrace. Thirties, sturdy. Warm brown skin, black hair in a messy bun stuck through with a pencil, a red scarf, sun-crinkled eyes. Teal shirt with rolled sleeves, a striped apron, a coffee pot in one hand. Direct, friendly grin. Ex-fisherwoman: talks straight, pours strong coffee, still mends nets between orders.',
     "tobias": "Tobias: harbour master at the pier. Sixties, round and proud. Fair, pink-cheeked skin, grey hair parted with a ruler, bushy grey sideburns. Navy captain's cap with gold braid (too big for him), a crisp white uniform shirt with polished brass buttons and a whistle on a chain, a clipboard. Chest puffed out, self-important smile. Loves a ceremony, a rule and a ribbon to cut.",
     "baako": 'Baako: coconut farmer at the Coconut Works. Forties, big and strong. Deep brown skin, short black hair, a short beard, laugh lines. Frayed straw hat pushed back, mustard-yellow work shirt, a coconut in one big hand, a machete-free tool belt with twine. Broad easy smile. Relaxed, generous, measures time in harvests.',
-    "hana": 'Hana: the schoolteacher. Thirties, slim. Golden-tan skin, a sharp black bob, big round glasses, a pencil behind her ear, a chalk smudge on her cheek. Blue blouse with a white collar, a stack of exercise books. Calm, attentive, one eyebrow ready for a question. Patient, precise, can silence a room by lowering her glasses.',
+    "hana": 'Hana: the schoolteacher. Thirties, slim. Golden-tan skin, a sharp black bob, big round glasses, a yellow pencil tucked behind her ear (only its end shows, above the ear). Blue blouse with a white collar, a little chalk dust on one sleeve, a stack of exercise books held against her side, one hand flat on the top book. Calm, attentive, one eyebrow ready for a question. Patient, precise, can silence a room by lowering her glasses.',
     "rico": 'Rico: host of Radio Coco, the island station. Mid thirties, lanky and always moving. Warm brown skin, a huge round afro, a gap-toothed laugh, eyebrows up like he just heard the best news. Big padded studio headphones round his neck with one cable dangling, a microphone held up like a trophy. Loud coral-pink shirt with a white palm-leaf print, unbuttoned at the collar, a shell necklace. Mid-sentence, mouth open, eyes sparkling. The most extroverted person on the island: talks to everyone as if they were live on air.',
     "lola": 'Lola: runs Bar La Ola on the beach. About thirty, strong shoulders. Brown skin, big dark-red curls held back with a bright yellow hibiscus flower, gold hoop earrings, a beauty mark. Cream off-shoulder blouse, a striped bar towel over one shoulder, a cocktail shaker in hand. One eyebrow raised, a teasing half-smile. Knows every secret on the island and tells none of them for free.',
     "sam": "Old Sam: Old Sam, the lighthouse keeper. Seventies, broad and slow. Deep-tanned, wrinkled skin, bald head, a full bushy white beard, kind sleepy eyes under heavy brows. Dark navy knitted fisherman's jumper with a darned elbow, a brass pocket telescope on a cord, an old pipe (unlit) in the corner of his mouth. Gentle, tired smile. Says little, has seen every storm, keeps the light on for everyone.",
@@ -683,12 +683,14 @@ BUSTS = {
 }
 BUST = ("Paint one character for this game, in exactly the style of the picture: its ink line, painted colours, texture "
         "and warm light, as if painted by the same hand for the same adventure game. {who}. A half figure: from the top of "
-        "the head, with a little space above the hair or hat, down to the hips; both arms and hands in the picture, holding "
-        "their things; facing us, turned very slightly, standing upright in the middle. The body runs on out of the bottom "
-        "edge, which cuts straight across the hips: no rounded or faded bottom, no oval, no vignette. Nothing else in the "
-        "picture, on a plain flat {key} ({hex}) background with no shadow, no floor and no frame; no {key} in the "
-        "person's own colours. Mouth closed in a natural expression. Characterful and funny like a classic adventure game "
-        "cast, with real emotion, but never a caricature of anyone's ethnicity, body or age. No text.")
+        "the head, with a little space above the hair or hat, down to the hips; both arms and hands in the picture, "
+        "holding their things in simple grips that read at a glance: each hand one thumb and four fingers, never "
+        "interlaced, the two hands never on top of each other; facing us, turned very slightly, standing upright in the "
+        "middle. The body runs on out of the bottom edge, which cuts straight across the hips: no rounded or faded bottom, "
+        "no oval, no vignette. Nothing else in the picture, on a plain flat {key} ({hex}) background with no shadow, no "
+        "floor and no frame; no {key} in the person's own colours. Mouth closed in a natural expression. Characterful and "
+        "funny like a classic adventure game cast, with real emotion, but never a caricature of anyone's ethnicity, body "
+        "or age. No text.")
 # the flat colour a portrait is painted on, to be cut away again: magenta, or green for whoever wears pink or coral. A
 # painter's softened magenta comes so close to a pink shirt that the cut took patches out of Salado's (3.11)
 ON_GREEN = {"salado", "rico"}

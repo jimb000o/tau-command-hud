@@ -1455,7 +1455,7 @@
 
   /* ---------- the stage ---------- */
   const S = { c: null, g: null, W: 0, H: 0, K: 1, base: null, world: null, wg: null, hour: 0, hourT: 0, clockAt: -1e9, cam: { x: 800, y: 450, z: 1 }, camT: { x: 800, y: 450, z: 1 },
-    hover: null, glow: null, locked: new Set(), pan: { x: 0, y: 0 }, gather: 0, room: null, roomA: 0, roomT: 0, cat: null, still: false, onFrame: null, last: 0 };
+    hover: null, locked: new Set(), pan: { x: 0, y: 0 }, gather: 0, room: null, roomA: 0, roomT: 0, cat: null, still: false, onFrame: null, last: 0 };
   function size() {
     const r = S.c.getBoundingClientRect(); S.K = Math.min(2, devicePixelRatio || 1);
     S.W = Math.max(1, r.width); S.H = Math.max(1, r.height);
@@ -1675,14 +1675,6 @@
       w.drawImage(S.base, -S.base.e, 0, WW + 2 * S.base.e, WH);
       islandFx(w, t, sky.light);
     }
-    if (S.glow && !wait) {
-      const p = PLACES[S.glow];
-      if (p.poly) {   // the place's own outline (layout "poly"): a soft light along it and a faint fill inside
-        w.save(); w.beginPath(); p.poly.forEach(([x, y], i) => (i ? w.lineTo(x, y) : w.moveTo(x, y))); w.closePath();
-        w.fillStyle = "rgba(255,255,230,.14)"; w.fill();
-        w.shadowColor = "rgba(255,255,220,.9)"; w.shadowBlur = 8; w.strokeStyle = "rgba(255,255,235,.85)"; w.lineWidth = 1.6; w.lineJoin = "round"; w.stroke(); w.restore();
-      } else { const [x, y, bw, bh] = p.box; w.fillStyle = "rgba(255,255,230,.18)"; w.beginPath(); w.ellipse(x + bw / 2, y + bh * 0.85, bw * 0.62, bh * 0.32, 0, 0, Math.PI * 2); w.fill(); }
-    }
     if (!pi && !wait) { flag(w, 470, 470, t, "#3b5f8a", "#fff", "wind"); flag(w, 606, 425, t + 900, "#c0533f", "#fff", "wave"); boat(w, 1110, 770, t); }
     /* palms and people in depth order */
     const items = pi || wait ? [] : PALMS.map(([x, y], i) => [y, () => palm(w, x, y, t, i)]);
@@ -1879,7 +1871,6 @@
     mount, hit, focus, places: PLACES, toScreen, canPan: () => canPan(),
     setHour(h, now) { if (!LIGHT.game) return; S.hourT = h; if (now) S.hour = h; },   // the light follows the clock in Germany (see CLOCK)
     clock: () => { const m = Math.floor(berlinMinutes()); return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); },
-    glow(id) { S.glow = id; },
     host(fn, tall) { S.hostFn = fn; S.hostTall = !!tall; },
     lock(ids) { S.locked = new Set(ids); }, locked: id => S.locked.has(id),   // quarters not open yet cannot be clicked
     hostAt(bottom, left) { S.hostBottom = bottom; S.hostLeft = left || null; },

@@ -85,4 +85,75 @@ text = json.dumps(data)
 check("dev@example.org" not in text and '"author"' not in text, "no author address in the published file")
 check(r["people_12w"] == 1, "people are counted, not named")
 
+# ---------- news and sync ----------
+check(dp.headline("merge: fix(#78) header sync into main") == {"kind": "fix", "text": "Header sync", "issues": [78]},
+      "IDNI's merge title becomes a plain fix line with its issue")
+check(dp.headline("merge: verify every transaction signature at apply")["text"] == "Verify every transaction signature at apply",
+      "a merge without a type is a change")
+check(dp.headline("Fix crash on start") == {"kind": "fix", "text": "Crash on start", "issues": []}, "a plain 'Fix …' title drops the word")
+check(dp.headline("docs(retractable): guide") is None and dp.headline("merge: main into retractable transfers") is None
+      and dp.headline("ci: cache") is None, "docs, CI and merging main into a branch never make news")
+
+PATCHES = os.path.join(TMP, "patches")
+os.makedirs(PATCHES)
+with open(os.path.join(PATCHES, "good.py"), "w") as f:
+    f.write("import pathlib, sys\nassert (pathlib.Path(sys.argv[1]) / 'consensus/engine.py').exists(), 'engine.py anchor not found'\n")
+with open(os.path.join(PATCHES, "picky.py"), "w") as f:
+    f.write("import pathlib, sys\nassert 'old line' in (pathlib.Path(sys.argv[1]) / 'consensus/engine.py').read_text(), 'old line anchor not found exactly once'\n")
+with open(os.path.join(PATCHES, "late.py"), "w") as f:
+    f.write("pass\n")
+dp.PATCHES_DIR = PATCHES
+dp.REMOTE = "file://" + SRC
+commit("docs/guide.md", "merge: the operator guide", NOW - 1800)            # docs only: no news
+commit("Dockerfile.standalone", "ARG TAU_LANG_REF=1111111111111111111111111111111111111111", NOW - 1700)
+run("commit", "-q", "--amend", "-m", "merge: fix(#81) drop sealed txs from the waiting list", ts=NOW - 1700)
+with open(os.environ["DEVPULSE_PINS_FILE"], "w") as f:
+    f.write(f"ARG TAU_TESTNET_REF={pin}\nARG TAU_LANG_REF=c3ea334cd1e6612930ea9f404933211858f0009f\n"
+            "RUN python3 -I /patches/good.py /src\nRUN python3 -I /patches/picky.py /src\nRUN python3 -I /patches/late.py /src\n")
+subprocess.run(["git", "-C", path, "fetch", "-q", SRC, "+refs/heads/*:refs/heads/*"], check=True)
+# the headline writer: no key, no news (a raw commit title is not news)
+dp.HEADLINES = os.path.join(TMP, "headlines.json")
+dp.NEWS_AI_KEY = ""
+data = dp.build(NOW, {})
+check(data["news"] == [] and data["news_ai"].startswith("no key"), "without an AI key no IDNI news is published")
+cands = dp.candidates("IDNI/tau-testnet", path, "main", NOW, None)
+check([c["sha"] for c in cands][:1] == [run("rev-parse", "HEAD")]
+      and not any(c["text"] == "The operator guide" for c in cands) and not any(c["text"] == "Add a test" for c in cands),
+      "candidates: newest first, docs- and test-only commits left out")
+asked = []
+fix_sha = run("rev-parse", "HEAD")[:7]
+core_sha = run("rev-parse", "HEAD~2")[:7]
+
+
+def fake_ai(prompt):
+    asked.append(prompt)
+    return {"items": [{"commits": [fix_sha], "kind": "fix",
+                       "headline": {"en": "Sealed transactions leave the waiting list", "zh": "已封存的交易离开等候列表", "ja": "封印済みの取引が待ちリストから消える"},
+                       "tip": {"en": "Nodes no longer list transactions that a block already sealed.", "zh": "节点不再列出已被区块封存的交易。", "ja": "ノードはブロックに封印済みの取引を表示しなくなります。"}},
+                      {"commits": ["zzzzzzz"], "kind": "change", "headline": {"en": "Invented"}, "tip": {}}],
+            "skip": [core_sha]}
+
+
+dp.ask_ai = fake_ai
+dp.NEWS_AI_KEY = "test"
+data = dp.build(NOW, {})
+news = data["news"]
+check(len(asked) == 1 and "drop sealed txs" in asked[0] and "Diff" in asked[0], "the writer gets each new commit with its message and diff")
+check(len(news) == 1 and news[0]["headline"]["en"] == "Sealed transactions leave the waiting list" and news[0]["kind"] == "fix"
+      and news[0]["shas"] == [run("rev-parse", "HEAD")] and set(news[0]["tip"]) == {"en", "zh", "ja"},
+      "news: the written headline in three languages; an item naming unknown commits is dropped")
+check(news[0]["runs"] is False, "a commit after our pin: our node does not run it yet")
+dp.build(NOW, {})
+check(len(asked) == 1, "each commit goes to the writer once, kept in headlines.json")
+y = data["sync"]
+check(y["testnet"]["ahead"] == 4 and y["testnet"]["behind"][0]["text"] == "Drop sealed txs from the waiting list",
+      "sync: main is 4 commits ahead, newest listed first")
+check(y["tau_lang"] == {"ours": "c3ea334cd1e6612930ea9f404933211858f0009f", "idni": "1111111111111111111111111111111111111111", "same": False},
+      "sync: IDNI's own tau-lang pin is read from Dockerfile.standalone on main")
+res = {r["name"]: r for r in y["patches"]["results"]}
+check(res["good.py"]["ok"] and res["picky.py"]["ok"] is False and "anchor not found" in res["picky.py"]["error"]
+      and res["late.py"]["ok"] is None, "patches: a failing one is named with its reason, the ones after it are not tried")
+check(y["ok"] is False and y["patches"]["sha"] == run("rev-parse", "HEAD"), "sync is not ok; the patch check ran on the newest main")
+check(dp.check_patches("IDNI/tau-testnet", "main", y["patches"]["sha"]) is y["patches"], "the patch check runs once per upstream commit")
+
 sys.exit(1 if failed else 0)

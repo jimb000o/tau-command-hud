@@ -1,5 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "White Rabbit Key: Hana’s and Lola’s portraits have proper hands now. Hana holds her exercise books against her side with one hand flat on top, and her pencil sits behind her ear instead of seeming to run on into her cheek. Lola holds her cocktail shaker in one hand and rests the other arm across her waist.": "ホワイトラビットキー：Hana と Lola の肖像画の手がきちんと描き直されました。Hana は練習帳を脇に抱え、一番上の一冊に片手をそっと置いています。鉛筆は耳の後ろに挟まり、もう頬に突き刺さっているようには見えません。Lola は片手でカクテルシェーカーを持ち、もう片方の腕を腰の前に添えています。",
   "White Rabbit Key: the islanders talk about the cruise ships now, from three days before a ship comes until the evening it leaves, and each of them sees the ships their own way. Rico announces the ships on Radio Coco, and islanders phone in about them.": "ホワイトラビットキー：島の人たちがクルーズ船の話をするようになりました。船が来る三日前から出ていく日の夜まで、それぞれが自分なりの見方で船を語ります。リコは Radio Coco で船を告知し、島民も電話で船の話をしに来ます。",
   "White Rabbit Key: the cruise ships are painted now, like the island. They come in bow first, turn round at anchor and leave with a wake.": "ホワイトラビットキー：クルーズ船も島と同じ手描きの姿になりました。船首を前にして入港し、停泊地で向きを変え、航跡を残して出港します。",
   "# active consensus spec · revision {x1}": "# 有効なコンセンサス仕様 · リビジョン {x1}",
@@ -2201,6 +2202,8 @@ TauI18n.add({ strings: {
   "Rules accounts gave themselves, like a spending limit. Every node checks them on each payment.": "アカウントが自分に課したルール、たとえば支出上限。全ノードが支払いのたびに確かめます。",
   "Visitors who have Tau HUD open at this moment.": "いま Tau HUD を開いている訪問者。",
   "Ghosts in the waiting room": "待合室の幽霊",
+  "News line: IDNI’s news now reads like news. A language model reads each new change in the testnet’s code once, with what it changes, and writes one headline about what it means for people using the testnet, in English, Chinese and Japanese. Raw commit titles no longer run, and changes nobody would notice are left out.": "ニュースライン：IDNI のニュースが本当のニュースらしくなりました。言語モデルがテストネットのコードの新しい変更を、その中身とともに一度ずつ読み、テストネットを使う人にとって何を意味するかを英語・中国語・日本語の見出しにします。コミットのタイトルそのままは流れなくなり、誰も気づかないような変更は省かれます。",
+  "News line: when IDNI lands a fix or a change on the testnet’s code, it comes onto the news line by itself for a week, with a link to the commit. The hover says whether our node already runs it. Changes to docs, tests and build scripts only stay off the line.": "ニュースライン：IDNI がテストネットのコードに修正や変更を入れると、コミットへのリンク付きで 1 週間、自動でニュースラインに流れます。ホバーすると、私たちのノードがすでにそれを動かしているかが分かります。ドキュメント、テスト、ビルドスクリプトだけの変更は流れません。",
   "{n} ghosts in the waiting room": "待合室の幽霊 {n} 件",
   "1 ghost in the waiting room": "待合室の幽霊 1 件",
   "News line: one short ghost line, “Ghosts in the waiting room”, with the live count, instead of two. Hover any item on the line to read in a sentence or two what is behind it.": "ニュースの行：幽霊は2本ではなく、ライブの件数付きの短い1本「待合室の幽霊」になりました。行のどの項目もホバーすると、その背景が一、二文で読めます。",

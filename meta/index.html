@@ -820,7 +820,7 @@ function drawAgorzilla() {
 
 /* where our two sites' transactions started (relay "starts"): Agorzilla's feeding, votes and wishes, Déjà the café cat,
    and for Tau HUD the page that led to the wallet. A ring by site, a ranked list by source; kinds in each row's hover */
-const START_FAM = { agorzilla: ["Agorzilla", "var(--ok)"], deja: ["Déjà", "rgba(57,255,138,.45)"], tauhud: ["Tau HUD", "#fff"], rabbit: ["White Rabbit Key", "rgba(255,255,255,.6)"] };
+const START_FAM = { agorzilla: ["Agorzilla", "var(--ok)"], deja: ["Déjà", "rgba(57,255,138,.45)"], tauhud: ["Tau HUD", "#fff"], rabbit: ["White Rabbit Key", "#b9ffd6"] };
 const KIND_NAMES = { line: "Book lines", ballot: "ballots", meal: "meals", vote: "meals with a vote", wish: "meals with a wish", send: "test AGRS sent", rule: "own rules", vote_net: "network votes", shared: "shared rules", other: "other" };
 const VIA_NAMES = { "": "before 30 Oct", relay: "rule-place turns", direct: "opened directly", wallet: "opened directly", elsewhere: "other sites", agorzilla: "from agorzilla.com", hud: "HUD", start: "Start here", rules: "Rules wall", card: "Tau card", challenge: "Weekly challenge", donate: "Donate" };
 function drawStarts() {
@@ -963,17 +963,22 @@ function drawRabbitPages() {
     (reach != null ? c(fmt(reach), "player wallets", "Different wallets that made a move or cast a ballot in this range. The island bot's four wallets are not counted. A wallet is a key, not a person.") : c(fmt(t.n ? Math.round(t.wallets / t.n) : 0), t.n > 1 ? "player wallets a day" : "player wallets", "Different wallets that made a move or cast a ballot, on average per day. The island bot's four wallets are not counted. A wallet is a key, not a person.")) +
     c(fmt(t.new), "first moves", "Wallets that played on the testnet for the first time.") +
     c(peak < 0 ? "–" : `${String(peak).padStart(2, "0")}:00`, "busiest hour", "The UTC hour with the most moves in this range.") + `</div>`;
-  const bar = (title, tipText, ent, names) => {
+  const bar = (title, tipText, ent, names, tips = {}) => {
     const sum = ent.reduce((a, e) => a + e[1], 0);
     return `<div class="sp"><span data-tip="${esc(T(tipText))}">${esc(T(title))}</span><em class="cnt"> · ${fmt(sum)}</em>` + (sum
-      ? `<div class="split tx">${ent.map(([k, v], i) => `<i style="width:${(100 * v / sum).toFixed(1)}%;background:${TX_COLORS[i]}"></i>`).join("")}</div><div class="splitkey">${ent.map(([k, v], i) => `<span><i class="k" style="background:${TX_COLORS[i]}"></i><span${names === CAND_NAMES ? ' translate="no"' : ""}>${esc(T(names[k] || k))}</span> <b>${pct(v, sum)}</b></span>`).join("")}</div>`
+      ? `<div class="split tx">${ent.map(([k, v], i) => `<i style="width:${(100 * v / sum).toFixed(1)}%;background:${TX_COLORS[i]}"></i>`).join("")}</div><div class="splitkey">${ent.map(([k, v], i) => `<span${tips[k] ? ` data-tip="${esc(T(tips[k]))}"` : ""}><i class="k" style="background:${TX_COLORS[i]}"></i><span${names === CAND_NAMES ? ' translate="no"' : ""}>${esc(T(names[k] || k))}</span> <b>${pct(v, sum)}</b></span>`).join("")}</div>`
       : `<div class="note">${esc(T("No moves in this range yet."))}</div>`) + `</div>`;
   };
-  $("splits").innerHTML = bar("Who made the moves", "The island's moves on the testnet: the rivals' (sent by the island bot), the players' own Book lines and their ballots.", [["rivals", t.rivals], ["lines", t.lines], ["votes", t.votes]], { rivals: "rivals", lines: "players' lines", votes: "ballots" });
-  $("txsplit").innerHTML = bar("Ballots by candidate", "Who the players voted for on the testnet in this range. On the island, the eleventh ballot goes to whoever leads here.", Object.keys(CAND_NAMES).map(k => [k, t.cands[k] || 0]).sort((a, b) => b[1] - a[1]), CAND_NAMES);
+  $("splits").innerHTML = bar("Who made the moves", "The island's moves on the testnet: the rivals' (sent by the island bot), the players' own Book lines and their ballots.", [["rivals", t.rivals], ["lines", t.lines], ["votes", t.votes]], { rivals: "rivals", lines: "players' lines", votes: "ballots" }, {
+    rivals: "Moves of the three rival candidates, sent by our island bot.\nOur own server wallets, not players.",
+    lines: "Book lines players signed in their own test wallet:\n1 test AGRS to the island council or a place's till.",
+    votes: "Votes for a governor: 1 test AGRS from a player's wallet\ninto a candidate's ballot box." });
+  $("txsplit").innerHTML = bar("Ballots by candidate", "Who the players voted for on the testnet in this range. On the island, the eleventh ballot goes to whoever leads here.", Object.keys(CAND_NAMES).map(k => [k, t.cands[k] || 0]).sort((a, b) => b[1] - a[1]), CAND_NAMES, {
+    marisol: "Ballots for Marisol, who cares about fish and roads.", tobias: "Ballots for Tobias, who cares about visitors and music.",
+    baako: "Ballots for Baako, who cares about visitors and roads.", hana: "Ballots for Hana, who cares about the school and quiet." });
   $("starts").innerHTML = "";
   $("cross").innerHTML = tot ? `<div class="sp"><span data-tip="${esc(T("Different wallets that made a move or cast a ballot in White Rabbit Key. A wallet is a key, not a person."))}">${esc(T("Player wallets"))}</span>` +
-    `<div class="splitkey"><span>${esc(T("last 7 days"))} <b>${fmt(tot["7"] || 0)}</b></span><span>${esc(T("last 30 days"))} <b>${fmt(tot["30"] || 0)}</b></span><span>${esc(T("all"))} <b>${fmt(tot.all || 0)}</b></span></div></div>` : "";
+    `<div class="splitkey"><span data-tip="${esc(T("Different wallets that made a move or cast a ballot in the last 7 days."))}">${esc(T("last 7 days"))} <b>${fmt(tot["7"] || 0)}</b></span><span data-tip="${esc(T("Different wallets that made a move or cast a ballot in the last 30 days."))}">${esc(T("last 30 days"))} <b>${fmt(tot["30"] || 0)}</b></span><span data-tip="${esc(T("Every player wallet in the blocks our relay keeps.\nThe island bot's wallets are not counted."))}">${esc(T("all"))} <b>${fmt(tot.all || 0)}</b></span></div></div>` : "";
 }
 
 /* setting up a node, step by step (relay /setup/stats): the install command copied on the Nodes page, the install
@@ -1062,7 +1067,7 @@ function drawPages() {
 /* where the testnet's transactions come from (relay /api/v1/sources): the whole testnet, whichever site is chosen */
 const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote"], ["rabbit", "White Rabbit Key", "White Rabbit Key, our island game on tauhud.com: the players' lines and ballots, and the rivals' moves and wages the island bot sends. Its wallets count only the players'."], ["idni", "IDNI genesis", "IDNI genesis accounts: sent by the 11 accounts the testnet started with (its genesis file), which IDNI set up and uses for testing. They make most of the testnet's transactions, so a small share for the others can still be many people."], ["other", "others", "everything else: other wallets, scripts and tools"]];
 const TX_COLORS = ["var(--ok)", "#fff", "rgba(255,255,255,.45)", "rgba(255,255,255,.2)"];
-const GROUP_COL = { agorzilla: "var(--ok)", tauhud: "#fff", rabbit: "rgba(255,255,255,.6)", idni: "rgba(255,255,255,.45)", other: "rgba(255,255,255,.2)" };
+const GROUP_COL = { agorzilla: "var(--ok)", tauhud: "#fff", rabbit: "#b9ffd6", idni: "rgba(255,255,255,.45)", other: "rgba(255,255,255,.2)" };
 const share = (a, b) => b && a && 100 * a / b < 1 ? "<1%" : pct(a, b);
 function drawTx() {
   const el = $("txsplit");

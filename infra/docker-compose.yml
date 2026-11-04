@@ -186,17 +186,25 @@ services:
   # Build pulse (alerts/devpulse.py): keeps blob-less clones of IDNI's public
   # repositories and writes devpulse.json for tauhud.com/devpulse/ every 30
   # minutes: newest commits, weekly rhythm, code areas, tags, how far upstream
-  # is ahead of the commits our node is built from (read from node/Dockerfile).
+  # is ahead of the commits our node is built from (read from node/Dockerfile),
+  # IDNI's news for the HUD's news line, and whether our node patches still
+  # apply to the newest tau-testnet main (`up` prints it as "idni:").
   devpulse:
     build: ./alerts
     command: ["python", "devpulse.py"]
     environment:
       RELAY_HTTP: http://relay:8080
       TAU_TESTNET_REF: ${TAU_TESTNET_REF}
+      # IDNI news headlines: a language model reads each new merge once and writes what it means (en, zh, ja).
+      # NEWS_AI_KEY (an Anthropic API key) falls back to the troll box's CHAT_AI_KEY; without either, no IDNI news.
+      NEWS_AI_KEY: ${NEWS_AI_KEY:-}
+      CHAT_AI_KEY: ${CHAT_AI_KEY:-}
+      NEWS_AI_MODEL: ${NEWS_AI_MODEL:-claude-sonnet-5-5}
     volumes:
       - alerts_state:/state     # the clones, in /state/devpulse
       - alerts_public:/public   # devpulse.json, served by Caddy
       - ./node/Dockerfile:/pins/Dockerfile:ro
+      - ./node/patches:/pins/patches:ro   # tried on each new upstream main: do our node patches still apply?
     depends_on: [relay]
     mem_limit: 256m
     restart: unless-stopped

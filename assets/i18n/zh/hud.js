@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "White Rabbit Key: Hana’s and Lola’s portraits have proper hands now. Hana holds her exercise books against her side with one hand flat on top, and her pencil sits behind her ear instead of seeming to run on into her cheek. Lola holds her cocktail shaker in one hand and rests the other arm across her waist.": "白兔岛：Hana 和 Lola 的画像终于有了像样的手。Hana 把练习本抱在身侧，一只手平放在最上面那本上，铅笔也稳稳夹在耳后，不再像是一直戳进脸颊里。Lola 一只手握着调酒壶，另一只手臂搭在腰间。",
   "White Rabbit Key: the islanders talk about the cruise ships now, from three days before a ship comes until the evening it leaves, and each of them sees the ships their own way. Rico announces the ships on Radio Coco, and islanders phone in about them.": "白兔岛：岛民们现在会聊起游轮了，从船到港前三天一直聊到它离港的那个晚上，而且每个人对这些船都有自己的看法。Rico 在 Radio Coco 上预告船期，岛民们也会打电话进来聊这些船。",
   "White Rabbit Key: the cruise ships are painted now, like the island. They come in bow first, turn round at anchor and leave with a wake.": "白兔岛：游轮现在也像岛屿一样采用手绘风格。它们船首向前驶来，在锚地转向，离开时留下航迹。",
   "Proposals page: click any event in “Coming up” for a detail sheet, the same as for a proposal: what happens, why it matters, its timeline with block, time and countdown, where to watch it. The page now updates by itself when a block or vote arrives (every few seconds in the simulation), new news flashes once, and “Rules over time” draws the next events of the simulation’s programme ahead of “now” as dashed ghosts, so you see a change coming before it lands.": "提案页面：点击“即将发生”中的任一事件即可打开详情，与提案相同：会发生什么、为何重要、包含区块、时间和倒计时的时间线，以及在哪里观看。页面现在会在新区块或投票到达时自动更新（模拟中每隔几秒），新消息会闪烁一次，“规则随时间变化”会在“现在”之后用虚线预示模拟日程中的下一个事件，让你在变更发生前就看到它。",
@@ -2205,6 +2206,8 @@ TauI18n.add({ strings: {
   "Rules accounts gave themselves, like a spending limit. Every node checks them on each payment.": "账户给自己设的规则，例如支出上限。每个节点在每笔付款时都会检查。",
   "Visitors who have Tau HUD open at this moment.": "此刻正打开 Tau HUD 的访客。",
   "Ghosts in the waiting room": "等候室里的幽灵",
+  "News line: IDNI’s news now reads like news. A language model reads each new change in the testnet’s code once, with what it changes, and writes one headline about what it means for people using the testnet, in English, Chinese and Japanese. Raw commit titles no longer run, and changes nobody would notice are left out.": "快讯：IDNI 的动态现在读起来像真正的新闻了。语言模型会把测试网代码里的每一处新改动连同它的具体内容读一遍，然后用英文、中文和日文写一条标题，说明它对测试网用户意味着什么。原始的提交标题不再出现，没人会注意到的改动也不收录。",
+  "News line: when IDNI lands a fix or a change on the testnet’s code, it comes onto the news line by itself for a week, with a link to the commit. The hover says whether our node already runs it. Changes to docs, tests and build scripts only stay off the line.": "快讯：IDNI 在测试网代码里合入修复或改动后，它会自动在快讯上出现一周，并附上提交链接。悬停时会显示我们的节点是否已经在运行它。只涉及文档、测试和构建脚本的改动不会出现。",
   "{n} ghosts in the waiting room": "等候室里有 {n} 个幽灵",
   "1 ghost in the waiting room": "等候室里有 1 个幽灵",
   "News line: one short ghost line, “Ghosts in the waiting room”, with the live count, instead of two. Hover any item on the line to read in a sentence or two what is behind it.": "快讯：幽灵只剩一条简短的条目“等候室里的幽灵”，附带实时数量，不再是两条。把鼠标悬停在快讯的任一条目上，就能用一两句话了解它背后的内容。",

@@ -1,5 +1,5 @@
 {
-  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; a headline with until (an ISO time in UTC) leaves the line at that time; mode live shows a headline only on the real chain, mode sim only in the simulation, no mode in both; mark ghost puts the chain core's ghost symbol in front and the live ghost count in the text; tip: the short hover text with more context (at most about 140 characters, two lines); picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages.",
+  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; a headline with until (an ISO time in UTC) leaves the line at that time; mode live shows a headline only on the real chain, mode sim only in the simulation, no mode in both; mark ghost puts the chain core's ghost symbol in front and the live ghost count in the text; tip: the short hover text with more context (at most about 140 characters, two lines); picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages. idni: news headlines about what IDNI lands on tau-testnet main come in by themselves for a week (node.tauhud.com/devpulse.json, written per merge by a language model in en, zh and ja); keyed by the first 7 letters of one of its commits, {text, tip} replaces one (zh and ja in hud.js), {skip: true} leaves it out.",
   "move": {
     "en": "left",
     "zh": "left",
@@ -86,5 +86,6 @@
       "href": "https://x.com/TauHUDcom",
       "tip": "Our X account: rule changes, new nodes, the testnet each evening and a weekly review."
     }
-  ]
+  ],
+  "idni": {}
 }

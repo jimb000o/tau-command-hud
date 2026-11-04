@@ -391,6 +391,14 @@ function versions() {
       const st = run.ahead === 0 ? `<span class="ok">newest</span>` : run.ahead == null ? "" : `<span>main is ${plural(run.ahead, "commit")} ahead</span>`;
       line = `<div class="vrow"><span class="k">Our node runs</span><code translate="no">${esc(run.sha.slice(0, 7))}</code>${run.ts ? `<span class="note">${fmtDay(run.ts)}</span>` : ""}${st}</div>` +
         (PIN_NOTE[r.repo] ? `<div class="vrow extra"><span class="k"></span><span class="note">${esc(PIN_NOTE[r.repo])}</span></div>` : "");
+      /* our node patches, tried on each new tau-testnet main by the server: can the next pin bump be built as is? */
+      const pt = r.repo === "IDNI/tau-testnet" && D.sync && D.sync.patches;
+      if (pt && pt.results && pt.results.length) {
+        const bad = pt.results.filter(x => x.ok === false);
+        line += `<div class="vrow"><span class="k">Our node patches</span>` + (bad.length
+          ? `<code translate="no">${esc(bad[0].name)}</code><span>no longer fits main</span>`
+          : `<span class="ok">all ${pt.results.length} fit the newest main</span>`) + `</div>`;
+      }
     }
     const tagLine = tags.length
       ? `<div class="vrow"><span class="k">Newest tag</span><code translate="no">${esc(tags[0].name)}</code><span class="note">${fmtDay(tags[0].ts)}</span></div>` +
