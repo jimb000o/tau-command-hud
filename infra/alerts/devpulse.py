@@ -300,24 +300,33 @@ NEWS_AI_KEY = (os.environ.get("NEWS_AI_KEY") or os.environ.get("CHAT_AI_KEY") or
 NEWS_AI_MODEL = os.environ.get("NEWS_AI_MODEL", "").strip() or "claude-sonnet-5-5"
 HEADLINES = os.environ.get("DEVPULSE_HEADLINES", "") or os.path.join(CLONES, "headlines.json")
 RETRY_AFTER = 2 * 3600
+NEWS_VERSION = 2   # raise when the instructions change: every kept headline is written anew once
 NEWS_SYSTEM = """You write the news line of Tau HUD (tauhud.com), an unofficial community dashboard for Tau Testnet Alpha, \
-made by people not affiliated with IDNI. You get the commits IDNI just merged into the testnet's code: their messages, \
-the commits of merged branches, the files changed, part of the diff, and titles of issues they name.
+made by people not affiliated with IDNI. Its readers are curious people, not developers: they follow the testnet, \
+send test transactions or play games on it, and many have never read its code. You get the commits IDNI just merged \
+into the testnet's code: their messages, the commits of merged branches, the files changed, part of the diff, and \
+titles of issues they name.
 
-Write news headlines a testnet user understands: what changed, and what it means for people who send transactions, \
-run a node or write rules. Rules:
-- Only facts the input shows. Never guess motives, dates, releases, numbers or effects the input does not show. When \
-you cannot tell what a change means for users, say plainly what it does at the level you can verify.
+Your job is to find the point of each change and say it the way a good newspaper would: what is different now, and \
+why it matters for the testnet, its safety, its users or the people running nodes. Rules:
+- Only facts the input shows. Never guess motives, dates, releases, numbers or effects the input does not show. The \
+point of a change is often written in its message ("a proposer could ...", "so that ...", "before, ..."): use it.
+- Plain words only. Never use code names, file names, function names, stream names (like i2, o5, i13), receipt \
+reasons, exit codes, package names, flags or version numbers. Say "rule checks", "signatures", "nodes", "blocks", \
+"a block maker", "syncing", "new nodes joining", "the node restarts itself".
 - No hype or marketing words (huge, major, game-changing, finally, exciting, revolutionary), no price talk, no \
 exclamation marks, no emoji, no commit hashes, no names of people.
-- headline: one line of at most 70 characters, like a newspaper headline with subject and verb, present tense, \
-sentence case. It is not the commit title reworded; it says what happened. Do not start with "IDNI" (the line adds it).
-- tip: one or two short sentences, at most 140 characters, on what it means in practice.
-- Commits that belong to one change become one item.
+- headline: at most 70 characters, a real news headline with subject and verb, present tense, sentence case. It says \
+what happened in the world, not what the code does internally. Do not start with "IDNI" (the line adds it).
+  Bad: "Block apply refuses rule offers that fail clause checks". Good: "Block makers can no longer slip unchecked rules into blocks".
+  Bad: "Node exits with code 1 when its network thread dies". Good: "A node that loses its network now stops instead of running blind".
+- tip: one or two short sentences, at most 140 characters: the background or the practical effect, also in plain words.
+- Several commits that serve one purpose (for example the same kind of check added in three places) become ONE item \
+whose headline names that purpose. Prefer fewer, clearer items.
 - Skip changes nobody using the testnet or running a node would notice: refactors, internal tooling, tests, docs, \
-CI, version bumps of dependencies without a visible effect.
-- zh: Simplified Chinese, ja: Japanese, same meaning, natural wording; keep Tau, tau-testnet, IDNI, AGRS in Latin letters.
-- kind: "fix" when it repairs something that was broken, else "change".
+CI, build scripts, dependency bumps without a visible effect.
+- zh: Simplified Chinese, ja: Japanese, same meaning, natural news wording; keep Tau, tau-testnet, IDNI, AGRS in Latin letters.
+- kind: "fix" when it repairs something that was broken or closes a hole, else "change".
 
 Answer with JSON only, no other text:
 {"items":[{"commits":["<first 7 letters of each commit>"],"kind":"fix","headline":{"en":"","zh":"","ja":""},\
@@ -388,9 +397,12 @@ def load_headlines() -> dict:
     try:
         with open(HEADLINES, encoding="utf-8") as f:
             j = json.load(f)
-        return {"seen": dict(j.get("seen") or {}), "items": list(j.get("items") or []), "failed_at": j.get("failed_at") or 0}
+        if j.get("version") != NEWS_VERSION:   # new instructions: write everything in the window anew
+            return {"seen": {}, "items": [], "failed_at": 0, "version": NEWS_VERSION}
+        return {"seen": dict(j.get("seen") or {}), "items": list(j.get("items") or []), "failed_at": j.get("failed_at") or 0,
+                "version": NEWS_VERSION}
     except (OSError, ValueError):
-        return {"seen": {}, "items": [], "failed_at": 0}
+        return {"seen": {}, "items": [], "failed_at": 0, "version": NEWS_VERSION}
 
 
 _ai_state = {"status": "off"}

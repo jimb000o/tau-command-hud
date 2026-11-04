@@ -145,6 +145,9 @@ check(len(news) == 1 and news[0]["headline"]["en"] == "Sealed transactions leave
 check(news[0]["runs"] is False, "a commit after our pin: our node does not run it yet")
 dp.build(NOW, {})
 check(len(asked) == 1, "each commit goes to the writer once, kept in headlines.json")
+dp.NEWS_VERSION += 1
+dp.build(NOW, {})
+check(len(asked) == 2, "new writing instructions: the kept headlines are written anew once")
 y = data["sync"]
 check(y["testnet"]["ahead"] == 4 and y["testnet"]["behind"][0]["text"] == "Drop sealed txs from the waiting list",
       "sync: main is 4 commits ahead, newest listed first")
