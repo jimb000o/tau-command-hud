@@ -60,6 +60,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
 .panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
+.panel h2 .real { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--text); text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 1px 9px; white-space: nowrap; }
+.panel h2 .real:hover { border-color: rgba(255,255,255,.45); }
+.panel h2 .real i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); flex: none; }
 .col { display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0; }
 
 /* levers */
@@ -297,7 +300,7 @@ html.fit.short .tolive { display: none; }
 
     <!-- the chain -->
     <section class="panel stage" aria-labelledby="hChain">
-      <h2 id="hChain">The chain <small id="chainSub">newest on the right · hover a block, click for its story</small></h2>
+      <h2 id="hChain">The chain <small id="chainSub">newest on the right · hover a block, click for its story</small><a class="real" id="realH" href="/explorer/" hidden data-tnt="The real Tau testnet is at this block right now, read from the node this site runs. The sandbox chain here is made up in your browser and starts again at block #1 each time you open the page. Opens the Explorer."><i></i><span></span></a></h2>
       <div class="lane" id="lane"><svg id="svg" role="img" aria-label="Blocks of the sandbox chain over time"></svg></div>
       <div class="legend">
         <span><i></i>block on the chain</span>
@@ -347,6 +350,14 @@ html.fit.short .tolive { display: none; }
   "use strict";
   const $ = id => document.getElementById(id);
   const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+  /* the real chain height beside the made-up one, so block #85 here is never read as the testnet's height; read from the header's relay poll */
+  const realH = document.getElementById("realH");
+  const showReal = () => {
+    const nav = window.TauNav, st = nav && !nav.sim && nav.chain && nav.chain.st, h = st && st.upstream_connected !== false ? Number(st.height) : 0;
+    realH.hidden = !(h > 0);
+    if (h > 0) realH.querySelector("span").textContent = T(`real testnet: #${h.toLocaleString("en-US")}`);
+  };
+  showReal(); setInterval(showReal, 3000);
   const put = (el, s) => { if (el._t !== s) { el._t = s; el.textContent = s; } };   // only real changes: the Chinese dictionary re-translates every write
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -361,7 +372,7 @@ html.fit.short .tolive { display: none; }
   const HABIT = [4, 9, 6, 16, 5, 28, 8, 12, 7, 22, 10, 14];    // seconds each validator usually takes to vote: some are quick, one is slow
   const sim = (() => { try { if (!window.TauSim || !TauSim.chain) return null; const r = TauSim.chain.rulesAt(TauSim.head()); return { n: r.validators.length, q: r.quorum === "majority" ? "half" : "two", t: TauSim.pace }; } catch (e) { return null; } })();
   const PRESETS = [
-    { k: "testnet", t: "Real testnet today", tip: "One validator, a block about every minute: the testnet as it runs now. Fast to agree, never two blocks at one height, but if that one machine stops, the chain stops.", v: { T: 60, N: 1, q: "two", off: 0, d: 0.5 } },
+    { k: "testnet", t: "Like real testnet today", tip: "Copies the rules of the testnet as it runs now, not its blocks: one validator, a block about every minute. Fast to agree, never two blocks at one height, but if that one machine stops, the chain stops.", v: { T: 60, N: 1, q: "two", off: 0, d: 0.5 } },
     { k: "sim", t: "Simulation now", tip: "The shared simulation on the other pages at this moment: its validators, its threshold, eight seconds per block.", v: { T: sim ? sim.t : 8, N: sim ? sim.n : 4, q: sim ? sim.q : "two", off: 0, d: 0.5 } },
     { k: "fast", t: "Too fast", tip: "Two-second blocks over a slow network: blocks often cross on the way and the chain splits for a moment.", v: { T: 2, N: 6, q: "two", off: 0, d: 1.5 } },
     { k: "outage", t: "Two validators down", tip: "Six validators, two of them offline: gaps where their turn was. Two thirds can still agree, everyone could not.", v: { T: 8, N: 6, q: "two", off: 2, d: 0.5 } },
