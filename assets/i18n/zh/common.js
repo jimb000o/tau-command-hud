@@ -619,6 +619,7 @@ TauI18n.add({ strings: {
   "The chain now: chain state, Explorer, Proposals, Accounts, Rules wall, Stats, Time travel. Road to mainnet: Nodes, Status, Findings, Build pulse.": "链的现状：链状态、区块浏览器、提案、账户、规则墙、统计、时光回溯。通往主网之路：节点、运行状态、问题报告、开发脉搏。",
   "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Chronicle, What is Tau?": "第一步：从这里开始、本页导览、导览、60 秒了解 Tau。阅读与观看：共识日报、编年史、Tau 是什么？",
   "Radio Coco": "Radio Coco",
+  "Open this block in the explorer": "在区块浏览器中打开此区块",
   "Tap for Radio Coco": "点击收听 Radio Coco",
   "Radio Coco plays in another tab. Play it here": "Radio Coco 正在另一个标签页播放。在这里播放",
   "Radio Coco: on. Turn the sound off": "Radio Coco：已开。关闭声音",

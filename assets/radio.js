@@ -168,6 +168,16 @@
     clearTimeout(R.capT); R.capT = setTimeout(() => caption(null), hold * 1000);
     R.next = performance.now() + hold * 1000 + 35000 + Math.random() * 35000;
   }
+  /* "block 4639" in what Rico says opens that block in the explorer, in a new tab */
+  function linkBlocks(el, text) {
+    el.textContent = ""; const re = /(\bblock\s+|区块\s*|ブロック\s*)(\d+(?:,\d{3})*)/gi; let last = 0, m;
+    while ((m = re.exec(text))) {
+      el.append(text.slice(last, m.index));
+      const a = document.createElement("a"); a.className = "blk"; a.href = ROOT + "explorer/?b=" + m[2].replace(/,/g, ""); a.target = "_blank"; a.rel = "noopener";
+      a.title = T("Open this block in the explorer"); a.textContent = m[0]; a.addEventListener("click", e => e.stopPropagation()); el.append(a); last = re.lastIndex;
+    }
+    el.append(text.slice(last));
+  }
   function caption(text) {
     if (!R.cap) {
       R.cap = document.createElement("div"); R.cap.className = "tn-onair"; R.cap.setAttribute("role", "status"); R.cap.setAttribute("aria-live", "polite"); R.cap.hidden = true;
@@ -176,7 +186,7 @@
       document.body.append(R.cap);
     }
     if (!text) { R.cap.hidden = true; return; }
-    R.cap.querySelector("span").textContent = text; R.cap.hidden = false;
+    linkBlocks(R.cap.querySelector("span"), text); R.cap.hidden = false;
   }
 
   /* ---------- clicks ---------- */

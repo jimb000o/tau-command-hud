@@ -1224,10 +1224,20 @@
     let at = 0;
     said.forEach(p => {
       const name = p.who ? p.who[0].toUpperCase() + p.who.slice(1) : "Rico";
-      TURN.timers.push(setTimeout(() => { if (out) out.textContent = name + ": " + p.t; }, at * 1000));
+      TURN.timers.push(setTimeout(() => { if (out) linkBlocks(out, name + ": " + p.t); }, at * 1000));
       at += (secs ? secs * p.v.length / total : Math.max(2.5, p.t.length * 0.06));
     });
     return at;
+  }
+  /* "block 4639" in what Rico says opens that block in the explorer, in a new tab */
+  function linkBlocks(el, text) {
+    el.textContent = ""; const re = /(\bblock\s+|区块\s*|ブロック\s*)(\d+(?:,\d{3})*)/gi; let last = 0, m;
+    while ((m = re.exec(text))) {
+      el.append(text.slice(last, m.index));
+      const a = document.createElement("a"); a.className = "blk"; a.href = "../explorer/?b=" + m[2].replace(/,/g, ""); a.target = "_blank"; a.rel = "noopener";
+      a.title = T("Open this block in the explorer"); a.textContent = m[0]; a.addEventListener("click", e => e.stopPropagation()); el.append(a); last = re.lastIndex;
+    }
+    el.append(text.slice(last));
   }
   function onAir(line, urgent, call) {
     const box = $("cvRadio"); if (!box) return;
@@ -1238,7 +1248,7 @@
     const out = $("cvNews"); out.textContent = ""; let i = 0;
     clearInterval(DJ.type); TURN.timers.forEach(clearTimeout); TURN.timers = [];
     if (call) { const t = turns(parts, 0); clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), t * 1000 + 800); DJ.next = performance.now() + t * 1000 + 30000; }
-    else DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); } }, 28);
+    else DJ.type = setInterval(() => { i = Math.min(line.length, i + 2); out.textContent = line.slice(0, i); if (i >= line.length) { clearInterval(DJ.type); linkBlocks(out, line); } }, 28);
     say(DJ.face, Math.min(6000, 700 + line.length * 45));
     if (!urgent) SND.sfx("jingle");
     if (!call) { clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), Math.min(9000, 2500 + line.length * 60)); DJ.next = performance.now() + 38000 + Math.random() * 30000; }

@@ -2233,5 +2233,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "White Rabbit Key: the cruise ships are painted now, like the island. They come in bow first, turn round at anchor and leave with a wake."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "Radio Coco: when Rico names a block (“up to block 4639”), the words are a link now and open that block in the explorer in a new tab. In the caption at the bottom of every page and on the island’s radio strip."
   }
 ]

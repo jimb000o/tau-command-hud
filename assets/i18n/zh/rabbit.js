@@ -262,6 +262,7 @@ TauI18n.add({ strings: {
   "Dear chain, Radio Coco is still on the air. Are you? Blink twice if you're validating.": "亲爱的链，Radio Coco 还在播。你呢？如果你在验证，就眨两下眼。",
   "({n} empty blocks, up to block {y})": "（{n} 个空区块，截至区块 {y}）",
   "(block {y})": "（区块 {y}）",
+  "Open this block in the explorer": "在区块浏览器中打开此区块",
   "({n} waiting)": "（{n} 笔在等）",
   "Forecast: clear skies, unless somebody sends something.": "预报：晴空万里，除非有人发点什么。",
   "yes": "赞成",
