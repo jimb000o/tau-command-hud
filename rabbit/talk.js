@@ -5,8 +5,10 @@
    "more" is the deeper question that opens once the first one is answered. "when" is one of the facts game.js knows
    ("" always, early, mid, last, myLaw, noLaw, pact, broke, deal, lied, caught, truth, smeared, lead, poor, chart, key,
    drummed, circled, dove, worked, plans, rich, amb, ambFortune, ambReform, ambKingmaker, ambClean, roof, lamp, stoneSet, and every law id in force: night quiet reef harbour boat lunch concerts road copy tax;
-   your dealings with an embassy: southOffer southDeal southOwed southKept, northOffer northDeal northOwed northKept; what has happened to the island: eventBoiler eventStorm eventCoup eventCatch eventRoof).
+   your dealings with an embassy: southOffer southDeal southOwed southKept, northOffer northDeal northOwed northKept; what has happened to the island: eventBoiler eventStorm eventCoup eventCatch eventRoof;
+   the cruise ships, RABBIT_SHIP_WHEN at the end: ship, queen, dryrun, shipSoon shipTomorrow shipToday shipNear, shipHere, shipGone shipCut shipAfter).
    "a+b" holds when both hold, "!a" when a does not, so "last+southOwed+!road" is the last day, the resort's money taken and no road yet.
+   A question with a "when" of its own is offered only while that holds (the cruise ships: "ship").
    Every line is spoken in that islander's voice (infra/rico/make.py, through rico.js all() and rabbit/voices.json),
    so a line never holds a number, a name of the player or anything else that changes. */
 (() => {
@@ -14,6 +16,8 @@
   window.RABBIT_TALK = {
     ama: {
       back: [
+        ["shipNear", "A ship is on its way, I hear. Visitors are welcome under this tree. Groups are a different animal. A visitor sits down. A group takes pictures of people sitting down."],
+        ["shipHere", "The ship is in. The tree is not on the tour, and the tour is not on the tree. We agreed that in council. It may be the only thing we agreed on all year."],
         ["last", "The last day. Suddenly everyone is very polite to me. It happens every election, like the rains."],
         ["broke", "You broke a pact. I am not angry. The Book is not angry either. It simply remembers, which is worse."],
         ["harbour", "The deep harbour is law now. Laws arrive quickly. What they do to the reef comes on the slow boat."],
@@ -23,6 +27,8 @@
         ["", "Back again. This tree has seen more elections than anyone. It never voted once, and it is still the most respected thing on the island."],
       ],
       ask: [
+        { when: "ship", q: "Why is the council tree closed to the tour groups?", a: [["", "Anyone may come and listen, and that holds for a passenger too. But forty people at once do not listen. They look. A council that is looked at starts to perform. We prefer to argue."]],
+          more: { q: "Do you mind the ships, then?", a: [["", "No. This island has always had visitors. Some came to trade, some to stay, some to tell us how to live. The ship stays ninety minutes. That is the most polite kind."]] } },
         { q: "Why does the council meet under a tree?", a: [["", "Because a roof can be locked and a tree cannot. Anyone may come and listen. Most come for the shade and stay for the arguments."]],
           more: { q: "And when nobody agrees?", a: [["", "Then nothing changes, and that is allowed. People think a council is there to decide. It is there so that nobody decides alone."]] } },
         { q: "Who really runs this island?", a: [["deal", "You took an envelope, so you may think the embassies do. They pay for promises. Promises are cheap. Two votes out of three are not."], ["", "Nobody, and that is the point. There is no chief with a master key. What we agreed is on the stone and in the Book, and anyone can read both."]],
@@ -32,6 +38,11 @@
     },
     marisol: {
       back: [
+        ["shipNear+queen", "The Queen Mempool is coming. A hundred and twenty coffees, a hundred and twenty new rumours. I’ve ordered more cups. The rumours bring their own."],
+        ["shipNear+dryrun", "The expedition ship is coming. Forty people who want to know where the coffee grows. I’ve put a little sign on every cup: Baako’s hill. Baako is unbearable already."],
+        ["shipHere+queen", "Look at my square! Hats everywhere. They all ask the same three things: is the water clean, is the fish fresh, is the cat for sale. Yes, yes, and Déjà is not for sale."],
+        ["shipHere+dryrun", "The expedition people order one coffee each and then ask forty questions. I answer, they write it down. By tonight I’ll be a source in somebody’s travel diary."],
+        ["shipGone", "The ship has gone. The square smells of sun cream, and my till is happy. Now, where were we? Ah, yes. Politics."],
         ["ambKingmaker", "Your candidate is still at the bottom. A pact, a few laws, a word on the square. Do you want the story or not?"],
         ["last", "Last day. My feet hurt, my voice is gone, and I still owe three people a coffee. Go on, the square is listening."],
         ["reef", "The reef law passed. The fishermen bought me a coffee for once. I didn’t know they could."],
@@ -42,6 +53,8 @@
         ["", "You again! Good. People trust a face they’ve seen twice. Three times, and they start telling you their problems."],
       ],
       ask: [
+        { when: "ship", q: "Are the cruise ships good for the island?", a: [["", "For my till, yes. For my nets, ask me after the harbour vote. Two ships a week anchor outside the reef. A harbour full of them would fish in my bay."]],
+          more: { q: "So you’re against the harbour?", a: [["", "I’m for whatever keeps the fish and the coffee drinkers. If you find a law that does both, tell me first. I’ll make it my rumour of the week."]] } },
         { q: "What do people here really want?", a: [["", "Fish on the table, a road that doesn’t eat their tyres, and quiet when the baby sleeps. Nobody gets all three at once. That’s politics."]],
           more: { q: "So how do you win them over?", a: [["", "You listen first. Then you write down what you promised, where they can read it. People forgive a slow law. They don’t forgive a promise that changes."]] } },
         { q: "Why run, with a café to look after?", a: [["", "I heard the same complaints over coffee for ten years. At some point you either put up a complaints box or stand for council. The box was more expensive."]] },
@@ -52,6 +65,10 @@
     },
     lola: {
       back: [
+        ["shipNear+queen", "The Queen is on her way. A hundred and twenty thirsty people and one bartender. I’ve hidden the good lemons. Pacts first, passengers second."],
+        ["shipHere+queen", "A table of eight, one bill. One transaction, and it pays my bar, Rico’s song and the Works’ coconut snacks at once. Nobody argues about who had the extra lemonade. I love these people."],
+        ["shipHere+dryrun", "The expedition people order one lemonade and ask where the lemons grow, who witnesses the pacts and why there’s a Book. I told them: the Book, because I forget."],
+        ["shipGone+queen", "They’ve gone. The glasses are washed, the bills are in the Book, and somebody left a hat. Captain Wren has labelled it already."],
         ["broke", "Well, look who’s back. The one who broke a pact. Lemonade’s still free. My smile costs extra today."],
         ["pact", "My favourite kind of customer: one with a pact. You keep yours, I keep pouring."],
         ["last", "Last night before the vote. Suddenly everybody loves everybody. I’ve seen this one before. I know how it ends."],
@@ -60,6 +77,8 @@
         ["", "Back so soon? Sit down. Pacts first, gossip second, lemonade always."],
       ],
       ask: [
+        { when: "ship", q: "Do the passengers come in here?", a: [["", "Sooner or later, every one of them. The bar is where people go when they don’t know anybody. On this island, that’s the bar’s whole job."]],
+          more: { q: "Do they make pacts too?", a: [["", "Not yet. They only stay ninety minutes. A good pact takes longer than that. So does a good lemonade."]] } },
         { q: "Why are pacts made here, not at the council?", a: [["", "Because the council is where you argue and the bar is where you make up. And I’m a good witness. I don’t take sides, I take orders."]],
           more: { q: "What happens when someone breaks one?", a: [["", "Nothing loud. No shouting, no glasses thrown. It just goes into the Book, and the next time that person holds out a hand, everybody looks at it first."]] } },
         { q: "Who comes in here at night?", a: [["", "Fishermen, surveyors, and one ambassador in a very big hat who thinks nobody recognises him. Everybody does. He tips well, so we pretend."]] },
@@ -68,6 +87,10 @@
     },
     rico: {
       back: [
+        ["shipNear+queen", "The Queen Mempool is coming, baby! Named after the chain’s waiting room, where transactions wait for a block. Rico hopes she doesn’t wait as long."],
+        ["shipHere+queen", "Song requests from the Queen, baby! Each one a real transaction on the lagoon. Our relay makes the passengers up, but the coins are signed. Best crowd Rico ever had that doesn’t exist."],
+        ["shipHere+dryrun", "The Wednesday ship never visits the studio, baby. Forty people, and not one song request. They want the lighthouse. Rico will survive. Barely."],
+        ["shipCut", "The ship didn’t stay, baby. It lands only when the lagoon is calm, and it leaves the moment something goes wrong. The logbook says what. Rico read it. Twice."],
         ["caught", "Oof. They read the Book and found your name under that rumour. Rico warned you. Rico still has your coins."],
         ["lied", "My best customer! The rumour’s still out there, baby. So is the Book. I’d start being extra nice to people."],
         ["truth", "You paid for a true line. Rare! Rico played it again for free, just to hear how the truth sounds on air."],
@@ -76,6 +99,8 @@
         ["", "Welcome back to the studio, baby. Mind the cables. The yellow one is the radio. The green one is Rico’s fan."],
       ],
       ask: [
+        { when: "ship", q: "Are the cruise passengers real?", a: [["", "Honest answer, baby: no. Our relay makes them up, and the ship’s card says so. But every coin they pay is a real test transaction in a real block, and anyone can check it."]],
+          more: { q: "Then why send real transactions at all?", a: [["", "To see how the lagoon copes with a crowd. Twelve a minute at most, half when it strains, and the ship leaves the moment the chain stumbles. A dry run before the real party. That’s why the Wednesday ship is called what it’s called."]] } },
         { q: "Do you ever check what you play?", a: [["", "Rico plays, the Book checks. That’s the deal on this island. Rico could lie all day, but every coin has a name on it, and the name goes in the Book."]],
           more: { q: "Then why would anyone pay for a lie?", a: [["", "Because a lie runs faster than a page. For about a day. Then people read, and the lie trips over its own name. Rico has seen it a hundred times. Rico still takes the coins."]] } },
         { q: "Could the council switch you off?", a: [["", "Nobody can. There’s no big red button under the council tree. If people stop listening, that’s the off switch. And so far, baby, they listen."]] },
@@ -84,6 +109,10 @@
     },
     sam: {
       back: [
+        ["shipTomorrow", "A ship tomorrow. Every coin the passengers pay will go in the Book, like everyone else’s. The Book doesn’t care who sailed in. Only who signed."],
+        ["shipHere+dryrun", "Forty strangers climbed my stairs today. They read the Book with their noses very close. One asked if she could add a line. I said: only with a coin, like everyone. She paid two."],
+        ["shipHere+queen", "The Queen’s passengers come up for the view, not for the Book. A few read it anyway. One of them laughed at my poem. Fair."],
+        ["shipGone", "The ship has gone, and the Book is thicker by a ship. Somebody asked me if those passengers were real. I said: the coins are. The Book only ever knew coins."],
         ["lamp", "Your lamp. I read by it now. Half the island reads by it, and the Book has never had so many visitors at night."],
         ["ambClean", "Still clean, as far as I can read. The last days are when most people slip."],
         ["caught", "The Book showed up a rumour this morning. I didn’t do anything. I never do. I just turn the pages, and the pages do the rest."],
@@ -94,6 +123,8 @@
         ["", "Come in, come in. I’ve just dusted the Book. Not that it needs it. Nothing in it ever changes. It only grows."],
       ],
       ask: [
+        { when: "ship", q: "Do the passengers end up in the Book too?", a: [["", "Every coin they pay, with the hour and the wallet, like yours. The passengers are invented, Rico says. But each one has a wallet, and every coin is signed. The Book believes the signature. About the hats it keeps an open mind."]],
+          more: { q: "Doesn’t that bother you?", a: [["", "Out there they count wallets, not people. One person can hold many wallets, and one relay can hold a hundred and sixty. The Book never claimed to know who stands behind a signature. Only that it was signed."]] } },
         { q: "Have you ever wanted to tear out a page?", a: [["", "Once. A very bad poem, written by me, when I was young. It’s still in there. Everyone has read it. That is the price of a record nobody can edit."]],
           more: { q: "Why not make just one exception?", a: [["", "Because the first exception is a key, and somebody will want to borrow it. A Book that one person can change is only a diary with ambitions."]] } },
         { q: "What do people look up most?", a: [["", "Who paid for what. Then who voted how. Then, every single time, whether Marisol really fishes inside the reef. She doesn’t. They check anyway. Checking is the whole idea."]] },
@@ -102,6 +133,15 @@
     },
     tobias: {
       back: [
+        ["shipSoon+queen", "The Queen Mempool, on Saturday! A hundred and twenty passengers. I have started on the welcome speech. So far it welcomes them for eleven minutes, and they have not yet left the boat."],
+        ["shipTomorrow+queen", "Tomorrow at two, the Queen! I have polished the bell, the medal and the pier. The pier objected. It is a very old pier."],
+        ["shipToday", "She comes today! I have been on this pier since dawn, in full uniform. The gulls think I am a statue. Let them. Statues get flowers."],
+        ["shipHere+queen", "Look at them coming up the steps! I gave the speech. The first boat heard all of it. The second heard the end. The third pretended to."],
+        ["shipGone+queen", "She has sailed, and they waved! Well, some waved. Some were taking pictures of Lola. I am counting it as waving."],
+        ["shipSoon+dryrun", "MS Dry Run, on Wednesday. Forty passengers, all of them with notebooks. I am preparing a shorter speech. Short for me, you understand."],
+        ["shipTomorrow+dryrun", "The expedition ship comes tomorrow. Curious people. Curious people ask questions after a speech. I must prepare answers. This is new for me."],
+        ["shipHere+dryrun", "The expedition people asked me what a harbour master does. I told them. All of it. They took notes! Nobody has ever taken notes."],
+        ["shipCut", "She left before her time. Something on the lagoon was not right, Rico says, and the logbook says exactly what. My speech will keep. Speeches keep very well."],
         ["ambFortune", "How is the jar? The hill does not get cheaper, and the election does not wait."],
         ["harbour", "The deep harbour is law! I have already written the opening speech. It runs to forty minutes. The ships will have to wait."],
         ["reef", "No big ships in the bay. Very well. I shall welcome the small ones with twice the ceremony."],
@@ -111,6 +151,8 @@
         ["", "Ah, a visitor to my pier! Every boat that ties up here is greeted by me, personally, with a short speech. Short for me."],
       ],
       ask: [
+        { when: "ship", q: "Are you looking forward to the ships?", a: [["", "Looking forward? I have rehearsed all week. Visitors clap, my friend. Islanders nod. A man needs both."]],
+          more: { q: "And if they don’t clap?", a: [["", "Then I bow anyway. A bow is never wasted. The gulls have seen hundreds."]] } },
         { q: "What does a harbour master actually do?", a: [["", "I write down every boat that comes and goes, with the hour. Rather like Sam with his Book, only with more salt and more dignity."]],
           more: { q: "And if someone lies about their boat?", a: [["", "Then the next harbour’s list says otherwise, and the two lists have a little chat. Lies hate company. Put two honest records side by side, and the fibber has nowhere to anchor."]] } },
         { q: "Why do you want visitors so much?", a: [["", "Visitors clap. The island stopped clapping for me years ago. Also they pay for the music, and music is the only thing on this island louder than me."]] },
@@ -121,6 +163,10 @@
     },
     hana: {
       back: [
+        ["shipNear+dryrun", "The expedition ship always visits the school. The children are preparing questions for the passengers. Hard ones. I have seen the list."],
+        ["shipHere+dryrun", "Forty passengers in my back row. The children asked them: who said it, and where is it written? Two of them had to go and look it up. A very good afternoon."],
+        ["shipGone+dryrun", "They have gone. Before the break the children counted the ship’s transactions in the blocks. Every one matched the logbook. Then they counted again, to be sure. Then it was break."],
+        ["shipHere+queen", "The Queen’s passengers don’t come up to the school. So the children went down to the pier to count them, with a list. Everyone says a hundred and twenty. They want to check."],
         ["roof", "The roof you paid for still holds. When it rains the children look up and say your name, which is more than most governors get."],
         ["ambReform", "The blackboard still has room. Laws, not speeches."],
         ["boat", "The school boat runs every morning now. Attendance is up, and so is seasickness. I write down both."],
@@ -131,6 +177,8 @@
         ["", "Welcome back. Sit at the back, please. The front row is for people who did their homework."],
       ],
       ask: [
+        { when: "ship", q: "What do you think of the cruise ships?", a: [["", "Curious visitors are a gift. Crowds are weather. The Wednesday ship brings questions, the Saturday ship brings hats. I like both, but only one fits in a classroom."]],
+          more: { q: "Would you stop the big ships if you won?", a: [["", "No. I would write down what they cost the reef and what they bring the island, side by side, where everyone can read it. Then the island decides. That is the whole lesson, really."]] } },
         { q: "What do the children learn here?", a: [["", "Reading, sums, and checking. I teach them two questions for anything they hear: who said it, and where is it written. It makes them terrible at believing adverts."]],
           more: { q: "Isn’t that a little cold?", a: [["", "No. Trust is warm. Checking only keeps it from being spent on the wrong people. The children still believe in each other. They only check the grown-ups."]] } },
         { q: "Why run for council?", a: [["", "Because a good law is a lesson that keeps teaching after the teacher goes home. A speech stops when the speaker sits down."]] },
@@ -140,6 +188,10 @@
     },
     kai: {
       back: [
+        ["shipNear+dryrun", "The expedition ship is coming! Divers who read the briefing. The reef will love them. The turtle is already doing her hair."],
+        ["shipHere+dryrun", "Divers everywhere, three sensors each, every reading signed. Some booked their dive and can still change their minds: the coins wait until the hour, then the chain pays us by itself."],
+        ["shipGone+dryrun", "They’ve gone. The sensors signed the water before they came and after they left. Same water. That’s the best review a reef can get."],
+        ["shipHere+queen", "The big one anchors outside the reef. Good. Her anchor alone weighs more than my boat. A few of her people come diving. Most come for a photo of the people diving."],
         ["harbour", "Since the harbour law, the readings look sad. The sensors don’t do politics. They just sign what they see."],
         ["dove", "Our dive is in the Book! Signed, sealed, slightly salty."],
         ["reef", "Big ships out of the bay, and the parrotfish are back. The sensors signed it, I signed it. The parrotfish didn’t, but you could tell."],
@@ -147,6 +199,7 @@
         ["", "Hey, back for more? The reef is open. The coffee machine is not. Priorities."],
       ],
       ask: [
+        { when: "ship", q: "Are the ships bad for the reef?", a: [["", "Two ships a week, anchored outside, are fine. The sensors say so, and they sign it. A harbour full of them, dredged deep? Ask the parrotfish. Better, ask the sensors. They’re more precise."]] },
         { q: "Why sign every reading?", a: [["", "Because the reef can’t talk and people can. Without a signature anyone can say the water is clean. With one, the sensor said it, right then, and nobody can change that later."]],
           more: { q: "Couldn’t someone fake a sensor?", a: [["", "They could try. But every diver carries three sensors, and every reading points back to the one before. To fool us you’d have to fool all three, the same way, at the same moment. The fish would notice first."]] } },
         { q: "What do the embassies want with the bay?", a: [["", "Pim says something deep. A cruise harbour is deep. So is the trench off the north point. I’d love to know which one they mean."]] },
@@ -155,6 +208,10 @@
     },
     baako: {
       back: [
+        ["shipNear+queen", "The Queen is coming! The co-op has picked extra coconuts. One price on the board, the same for islanders and passengers. Noor wanted a passenger price. I said no. She said fine. She did not say it nicely."],
+        ["shipHere+queen", "Coconut snacks on the bar bills! One transaction, and a share comes straight to the Works. The co-op’s book adds it up by itself. I love a sum that does itself."],
+        ["shipHere+dryrun", "The expedition people asked how the press works. I showed them the bicycles, the organ and Noor. They were most afraid of Noor."],
+        ["shipGone", "The ship has sailed, the jar is heavier, and every coin in it has a name. The co-op counted it twice, out loud. The goats left."],
         ["deal", "Ah, you met the ambassadors! Lovely people. Generous. Just remember: the envelope is quiet, the Book is not."],
         ["road", "A road round the island! My coconuts will travel in style. Some of them have never seen the other side."],
         ["worked", "You worked a shift! You smell exactly right. Like someone who earned something."],
@@ -162,6 +219,7 @@
         ["", "Welcome back, friend! Mind the organ. Did I say that already? I say it to everyone. Twice to Tobias."],
       ],
       ask: [
+        { when: "ship", q: "Do the ships help the co-op?", a: [["", "They buy coconuts, so yes. But I tell every farmer: a ship comes twice a week, a neighbour comes every day. Price your coconuts for the neighbour."]] },
         { q: "Why a co-op?", a: [["", "One farmer alone sells at the embassies’ price. Forty farmers together set their own. Every coconut goes into the co-op’s book, and anyone may count them. People do. Loudly."]],
           more: { q: "And the embassy envelopes?", a: [["", "They offered me one. I asked for a receipt. They have not offered again. Try the pier: Tobias gives every envelope a welcome speech."]] } },
         { q: "How does the machine really work?", a: [["", "Three bicycles turn the press, the organ pumps the air, and Noor tells everyone to pedal faster. Nobody understands the organ. It was here before the factory."]] },
@@ -171,6 +229,8 @@
     /* Noor only meets you when you play Baako: she runs the Coconut Works, his co-op brings her the coconuts, and here she is the boss */
     noor: {
       back: [
+        ["shipNear+queen", "The Queen is coming, Baako. Double shift. Soap shaped like little ships. Don’t ask. It sells."],
+        ["shipHere", "Passengers at my gate, Baako. They want to see the organ. Nobody sees the organ. They can see the soap."],
         ["deal", "An embassy envelope, Baako? The co-op’s farmers will ask where it went. I only make soap, and even I asked."],
         ["lied", "Rico played something you paid for. My workers heard it on the night shift. Then they read the Book on the day shift."],
         ["worked", "A candidate on bicycle three. Not bad. Your legs are better than your speeches. Don’t tell anyone I said that."],
@@ -181,6 +241,7 @@
         ["", "You count coconuts, Baako. I count the hours they sit at my gate. Between us, nothing on this island goes uncounted."],
       ],
       ask: [
+        { when: "ship", q: "Is the ship good business?", a: [["", "Ninety minutes of business and a week of sweeping sand out of the press. Ask me in a month. I count hours, Baako, not hats."]] },
         { q: "Who really runs the Works?", a: [["", "I do. You bring the coconuts, I turn them into things people pay for. The co-op owns the farms. The machine owns me."]],
           more: { q: "Then why does everyone think it’s me?", a: [["", "Because you talk to everyone and I talk to the organ. Fine by me. Fewer visitors."]] } },
         { q: "Will you vote for me?", a: [["", "I don’t vote, Baako. I’m not one of the ten. But if I did, I’d want to see your laws first. Speeches don’t make soap."]] },
@@ -190,12 +251,15 @@
     },
     pim: {
       back: [
+        ["shipNear+queen", "The Queen is coming. The North Wind asked me to measure how deep she sits in the water. I did. Then they asked me to measure the bay again. It is still the same size."],
+        ["shipHere+queen", "I measured the Queen from the cliff. Two hundred metres and a bit. The embassy wants to know what the bit would cost to dredge. I said: ask the council. They sighed."],
         ["deal", "Ah. You have signed with an embassy. That is not my business. I only measure. Although it was quite a thick envelope."],
         ["reef", "No big ships in the bay. The embassy asked me to measure the bay again. I did. It is still the same size."],
         ["", "I measured the distance to your feet. Sorry. Habit. Two metres and a bit. The bit is the interesting part."],
         ["", "Oh. Hello again. Please don’t step on the string. That string is the coast, officially."],
       ],
       ask: [
+        { when: "ship", q: "Why does the embassy care about the ships?", a: [["", "Because they anchor outside. The North Wind says a deep harbour would bring them to the pier. I only measure. Whether the island wants them at the pier is not a measurement. It is a vote."]] },
         { q: "Who are you really working for?", a: [["", "The embassies pay, I measure. What they do with the numbers is between them and the council, and the council votes in public. I find that very relaxing."]],
           more: { q: "And if the council says no?", a: [["", "Then I have very accurate maps of a harbour that will never exist. It happens. My drawer is full of them. Some are quite beautiful."]] } },
         { q: "Why do you look so nervous?", a: [["", "I always look like this. My mother says I was born checking a measurement twice. Here it helps. On this island everything gets checked twice, even me."]] },
@@ -204,12 +268,16 @@
     },
     wren: {
       back: [
+        ["shipNear+dryrun", "The expedition ship is coming, dear. They always visit my Old Ship. I’ve labelled the gangway, the rail and the bucket. The bucket was nervous."],
+        ["shipHere+dryrun", "Item four hundred and thirteen, dear: forty passengers, one sun hat each, all the same hat. Item four hundred and fourteen: a question about pirates. There were no pirates. There was paperwork."],
+        ["shipGone+dryrun", "They’ve gone, dear, and one of them left me a postcard. Of my own ship. I’ve labelled it."],
         ["key", "So you found what was behind the waterfall. I knew it, dear. The sea gives things back to the patient ones."],
         ["chart", "Still got my chart, dear? Good. Follow the water, not the path. Paths are made by people in a hurry."],
         ["", "Back already, dear? I’ve just labelled the kettle. It was feeling left out."],
         ["", "Come aboard, dear, and mind the third step. It’s labelled, but nobody reads labels."],
       ],
       ask: [
+        { when: "ship", q: "Do you like the cruise ships?", a: [["", "The small one, very much, dear. Its passengers read the labels. The big one stays out at sea, which suits a liner. Nobody wants a liner reading their labels."]] },
         { q: "What’s the oddest thing the sea gave back?", a: [["", "A ship’s log from a crew who swore they had never been here. The log said otherwise, in their own hand. Records outlive excuses, dear. That’s archaeology in one sentence."]],
           more: { q: "So you trust records more than people?", a: [["", "I trust records about people. People change their minds, which is healthy. Records stop them changing the past, which is healthier."]] } },
         { q: "Why retire on this island?", a: [["", "This island keeps its agreements on a stone and in a Book. I wanted to see how a place lives that remembers everything. Politely, it turns out. Mostly."]] },
@@ -218,12 +286,15 @@
     },
     kiko: {
       back: [
+        ["shipHere", "Big ship out there. Big waves. I built the sides higher this morning. The passengers took pictures of my canoe. Nobody asked if it floats."],
+        ["shipGone", "Ship’s gone. The waves stay a while. Like gossip."],
         ["harbour", "The harbour law passed. Big ships, big waves. I’m building the sides higher."],
         ["last", "Last day before the vote. Everyone’s in a hurry. The wood doesn’t care."],
         ["early", "Morning. The wood is dry, the sea is calm, and nobody has asked me who I vote for. Yet."],
         ["", "Back again. The canoe is one plank further than yesterday. That’s fast, for a canoe."],
       ],
       ask: [
+        { when: "ship", q: "What do you think of the cruise ships?", a: [["", "A big canoe that somebody else paddles. I like the ones I paddle myself."]] },
         { q: "How do you know a canoe is ready?", a: [["", "You put three people in it. If they argue and it still floats, it’s ready."]],
           more: { q: "That sounds like the council.", a: [["", "It is the council. Ama taught me. It isn’t finished when one man says so. It’s finished when it holds everyone."]] } },
         { q: "Where did you see Agorzilla?", a: [["", "Behind the drums, at dusk. Big. Calm. He looked at the canoe like he was checking my work. Then he left. Took a banana. Fair."]] },
@@ -232,6 +303,8 @@
     },
     tano: {
       back: [
+        ["shipTomorrow", "A ship tomorrow. The drums won’t play for it. They play for the island. The passengers may listen from the path, like anyone."],
+        ["shipHere", "Hear the ship’s horn? The drums don’t answer horns. When it has gone, we’ll play. Not for them. For the quiet after."],
         ["stoneSet", "Your stone sits in the circle. It does not vote. It listens, like you did. That is why it stays."],
         ["drummed", "The drums carried your truth across the hills. The hills don’t usually agree on anything. That evening they did."],
         ["circled", "You sat in the circle and listened. Rare, for a candidate. The others noticed. So did I."],
@@ -239,6 +312,7 @@
         ["", "Welcome back. The drums are resting. A drummer rests between the beats. That’s half the music."],
       ],
       ask: [
+        { when: "ship", q: "Why are the drums closed to the tours?", a: [["", "The drums carry what the circle agreed. A tour wants a show. If we played a show, the hills would hear the lie in the rhythm. The hills don’t forgive that."]] },
         { q: "Why can’t anyone bribe a drummer?", a: [["", "Oh, they tried. But every message goes out from three hills, and all three must match what the stone says. You’d have to bribe three drummers and a stone. The stone is very hard to talk to."]],
           more: { q: "And if the three hills disagree?", a: [["", "Then nothing is carried, and everyone comes down to the circle to find out why. Silence is the drums’ way of saying: not yet."]] } },
         { q: "What can the circle decide?", a: [["", "Anything that doesn’t break what we already agreed. Anyone can stand up and show the contradiction. If nobody can, it stands. It’s slow. Slow is how you know it’s real."]] },
@@ -247,6 +321,8 @@
     },
     frost: {
       ask: [
+        { when: "ship", q: "What does the North Wind make of the cruise ships?", a: [["", "Twice a week a ship anchors outside the reef, like a guest left on the doorstep. With a deep harbour she would tie up at the pier. We are not telling you how to vote. We are merely pointing at a very large ship."]],
+          more: { q: "And the reef?", a: [["", "The reef has many admirers on this island. We admire it too. From a respectful depth."]] } },
         { q: "What does the North Wind really want?", a: [["", "A deep harbour. We say so openly. It is even in your Book. Ships need depth, and depth needs a vote. Ours is not a secret. It is merely expensive."]],
           more: { q: "And if the island says no?", a: [["", "Then we wait for the next election. The North Wind is patient. Unfortunately, so is your Book. It remembers who promised and did not deliver."]] } },
         { q: "Why not simply build it?", a: [["", "Because there is nobody here who can sign it for us. No chief, no master key, only a council and a Book. Honestly, it is exhausting. Elsewhere one handshake is enough."]] },
@@ -260,6 +336,12 @@
         ["road", "The road is law. I keep saying it out loud, just to hear it. My guests will arrive like normal people now, in a minibus with the air conditioning on. Nobody has to cry."],
         ["last+southOwed+!road", "Last day, and I still don’t see “A road round the island” in the Book. You have my coins. If it isn’t there tonight, I have to tell the island before the vote. I hate that part. I really do."],
         ["last+southOffer+!road", "Last day, and we never did business, you and me. I respect that. I don’t like it, but I respect it. If you change your mind before the vote, the coins are right here, and the road still needs somebody."],
+        ["shipTomorrow+queen", "Tomorrow at two! I folded a hundred and twenty towels. Then I counted the loungers: eleven. Then I counted the towels again. Optimism is a lot of laundry."],
+        ["shipNear+queen", "The Queen is coming! Her passengers book my spa, and the coins wait in escrow until the hour. If they change their minds, the coins go back. My investors hate that part. I love it. It means they trust me."],
+        ["shipHere+queen", "They’re here! The loungers are full! I sent a photo to my investors. They asked if it’s edited. It isn’t. Well. The light is."],
+        ["shipGone+queen", "They’ve gone. The treatments were paid at their hour, by the chain, all by itself. A few cancelled in time and got their coins back. My investors ask why we let people change their minds. I said: so they come back."],
+        ["shipNear+dryrun", "The Wednesday ship doesn’t come up to the spa. Expedition people. They want a reef, not a cucumber on their eyes. I respect it. I don’t understand it, but I respect it."],
+        ["shipCut+queen", "She didn’t stay. Something on the lagoon wasn’t right, and the captain doesn’t argue with the lagoon. My cucumbers are sliced. Would you like a cucumber?"],
         ["southKept+!road", "You proposed it, I saw it in the Book. The council said no. Fine, that’s the council. You kept your word, and in my business that happens so rarely I don’t know what to do with my hands."],
         ["northDeal+southOffer+!road", "I hear Frost paid you. That’s okay, he pays more, I know. But he wants a harbour full of cruise ships, and I only want a little road. A road is very quiet, compared to a cruise ship. Think about it."],
         ["poor+southOffer+!road", "Running low, hm? Everybody is by now, campaigns are expensive. You know what I’m going to say, so I won’t say it. I’ll just sit here, next to the coins."],
@@ -270,6 +352,8 @@
         ["eventCoup", "About the council tree. That was my investors, not me, I swear on my moustache. I told them you can’t buy a tree on this island. They didn’t listen. Now they’ve met Ama, and they’re very quiet."],
       ],
       ask: [
+        { when: "ship", q: "Is the cruise ship good for the resort?", a: [["", "One ship a week, treatments booked, coins in escrow until the hour. That’s not mass tourism, that’s a reservation. I love a reservation."]],
+          more: { q: "So you want a cruise harbour too?", a: [["", "No, no. Frost wants a harbour full of ships. I want one ship, and a road up to the spa. Very different. Mine is quieter. And it has towels."]] } },
         { q: "Why do you need a road so badly?", a: [["road", "Needed. Past tense! The road is law now, so now I need guests, which is a much nicer problem. You should see my booking calendar. Actually, don’t. Give it a week."],
             ["!road", "Right now there are two ways up to the resort: the jungle path, or my nephew’s wheelbarrow. The guests write about the wheelbarrow in their reviews. Every single one. With a road, the minibus stops at my gate."]],
           more: { q: "And the people who want quiet nights?", a: [["", "I know, I know. Hana already came up here with a list. But my guests want quiet too, that’s what they pay me for. They just want to arrive at the quiet in a minibus."]] } },
@@ -285,4 +369,44 @@
     ...(t.back || []).map(([, s]) => [who, s]),
     ...(t.ask || []).flatMap(q => [...q.a.map(([, s]) => [who, s]), ...(q.more ? q.more.a.map(([, s]) => [who, s]) : [])]),
   ]);
+  /* The cruise ships as the islanders and Rico talk about them (game.js facts() and the radio): which ship and how near,
+     from the relay's timetable (GET /cruise: now, the visit under way; next, the next call; last, the last visit over),
+     counted in days in Germany, as the ships keep German time:
+       queen, dryrun   which ship: Queen Mempool (Saturdays at two) or MS Dry Run (Wednesdays at four)
+       shipSoon        it comes in two or three days    shipTomorrow  tomorrow    shipToday  later today, or in sight
+       shipNear        any of these three
+       shipHere        its passengers are ashore
+       shipGone        it left on time, today           shipCut  it left early or never landed, today (the logbook says why)
+       shipAfter       either of these two
+       ship            any of the above
+     The visit under way counts first, then one that ended today, then the next call. Nothing while the ships are
+     switched off (the relay announces no call then) or the relay cannot be reached: nobody talks about a ship that will not come. */
+  const BERLIN = (() => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", year: "numeric", month: "numeric", day: "numeric" }); } catch (e) { return null; } })();
+  const dayOf = t => {   // the day in Germany as a number: tomorrow is today + 1
+    if (!BERLIN) return Math.floor(t / 86400 + 1 / 24);   // no time zones here: central European winter time
+    const p = {}; BERLIN.formatToParts(new Date(t * 1000)).forEach(x => { p[x.type] = +x.value; });
+    return Date.UTC(p.year, p.month - 1, p.day) / 864e5;
+  };
+  const WHEN = ["ship", "queen", "dryrun", "shipSoon", "shipTomorrow", "shipToday", "shipNear", "shipHere", "shipGone", "shipCut", "shipAfter"];
+  const mark = (ship, w) => {
+    const f = {}; if ((ship !== "queen" && ship !== "dryrun") || !WHEN.includes(w)) return f;
+    f.ship = f[ship] = f[w] = true;
+    if (w === "shipSoon" || w === "shipTomorrow" || w === "shipToday") f.shipNear = true;
+    if (w === "shipGone" || w === "shipCut") f.shipAfter = true;
+    return f;
+  };
+  const shipOf = v => v && (v.ship || (v.style === "liner" ? "queen" : v.style === "expedition" ? "dryrun" : null));
+  window.RABBIT_SHIP_WHEN = Object.assign((c, now) => {
+    if (!c) return {};
+    const v = c.now, today = dayOf(now);
+    if (v && v.phase) {
+      if (v.phase === "landing" || v.phase === "ashore" || v.phase === "boarding") return mark(shipOf(v), "shipHere");
+      if (v.phase === "approach" || v.phase === "waiting") return mark(shipOf(v), "shipToday");
+      if (v.phase === "gone") return mark(shipOf(v), v.why ? "shipCut" : "shipGone");
+    }
+    const l = c.last;
+    if (l && l.end && l.end <= now && dayOf(l.end) === today) return mark(shipOf(l), l.landed && !/^(no landing|left early)/.test(l.note || "") ? "shipGone" : "shipCut");
+    const n = c.next, d = n && n.t0 > now ? dayOf(n.t0) - today : -1;
+    return d === 0 ? mark(shipOf(n), "shipToday") : d === 1 ? mark(shipOf(n), "shipTomorrow") : d === 2 || d === 3 ? mark(shipOf(n), "shipSoon") : {};
+  }, { keys: WHEN, mark });
 })();

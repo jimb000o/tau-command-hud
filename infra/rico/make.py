@@ -224,6 +224,22 @@ MOOD = {
     "Rico! It's Salado, up at the resort. I have guests by the pool and they want something to relax to.": "[on the phone, cheerful]",
     "Maybe a song with a road in it? Not about a road. Just a road, somewhere in the second verse.": "[on the phone, sly]",
     "Ah. No, no. Forget the road, just play something slow. Ciao, Rico!": "[on the phone, backing off quickly]",
+    # the cruise ships: islanders on the phone to Rico, and a few big moments
+    "Rico! Tobias, from the pier. Could you announce my welcome speech? Tomorrow, two o'clock sharp, the moment the Queen ties up.": "[on the phone, pompous, excited]",
+    "A boat is an audience! A small, wet audience.": "[on the phone, undaunted]",
+    "Thirty-nine! Goodbye, Rico!": "[on the phone, triumphant]",
+    "Rico, it's Salado, up at the resort. Tell the passengers the spa is open. And that the jungle path is, ah, scenic.": "[on the phone, cheerful]",
+    "Rico! Don't tell them they can change their minds!": "[on the phone, alarmed]",
+    "Fine. Fine! At least the cucumbers are fresh. Ciao, Rico!": "[on the phone, giving in, still charming]",
+    "Rico, it's Hana. The children want to know: are the passengers on the Wednesday ship real?": "[on the phone, calm, curious]",
+    "Good. Then we will check. All of them.": "[on the phone, firm, pleased]",
+    "It's a lot of passengers. Thank you, Rico.": "[on the phone, dry, warm]",
+    "Rico, it's Ama. Please tell today's visitors that the council tree is not on the tour.": "[on the phone, slowly, warmly]",
+    "One at a time, and quietly. Like everybody else.": "[on the phone, gently firm]",
+    "Especially Tobias. Goodbye, Rico.": "[on the phone, amused]",
+    "They’re here! The loungers are full! I sent a photo to my investors. They asked if it’s edited. It isn’t. Well. The light is.": "[overjoyed, breathless]",
+    "She didn’t stay. Something on the lagoon wasn’t right, and the captain doesn’t argue with the lagoon. My cucumbers are sliced. Would you like a cucumber?": "[deflated, still charming]",
+    "She left before her time. Something on the lagoon was not right, Rico says, and the logbook says exactly what. My speech will keep. Speeches keep very well.": "[disappointed, then bravely pompous]",
 }
 
 
