@@ -2313,5 +2313,10 @@
     "tag": "HUD",
     "on": "2026-11-04",
     "html": "What if: the preset is now called “Like real testnet today”, because it copies the testnet’s rules (one validator, a block about every minute), not its blocks. Beside the sandbox chain the real testnet’s current block now shows, so block #85 in the sandbox is not mistaken for a chain restart."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "A new start for White Rabbit Key on laptops and desktops: the four candidates stand large across the island, painted as you meet them in the game, and the one under your pointer steps forward. The title sits above them, the week, the island ballot and the testnet in a quiet strip below. Phones keep the plate with four faces. Fixed: the island ballot showed 100000 for a candidate whose ballot box had no vote yet; it now shows 0."
   }
 ]
