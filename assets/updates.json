@@ -2322,6 +2322,11 @@
   {
     "tag": "HUD",
     "on": "2026-11-04",
+    "html": "In numbers, Share of the testnet: the panel now leads with our sites’ share of the user transactions, the testnet’s traffic without IDNI’s 11 genesis accounts, which make most of it while IDNI tests. Below it, smaller and with its own bar, the same with everything counted, IDNI’s genesis testing included. Counted in transactions and wallets, not people."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
     "html": "Personal money rules: an account that is one of IDNI's genesis accounts (the 11 the testnet started with) now carries a small “genesis” tag, and its hover says so. Every other account stays unnamed."
   }
 ]

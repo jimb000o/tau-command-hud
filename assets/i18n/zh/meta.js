@@ -366,4 +366,9 @@ TauI18n.add({ strings: {
   "Different wallets that made a move or cast a ballot in the last 30 days.": "最近 30 天内走过一步或投过票的不同钱包。",
   "Every player wallet in the blocks our relay keeps.\nThe island bot's wallets are not counted.": "我们的中继保存的区块中所有玩家钱包。\n不计岛屿机器人的钱包。",
   "People with White Rabbit Key open right now, counted live by the relay: one browser counts once, a tab left in the background for five minutes stops counting. Nobody is identified.": "此刻打开着 White Rabbit Key 的人，由中继实时统计：同一个浏览器只算一次，在后台放了五分钟的标签页不再计入。不识别任何人。",
+  "Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages and White Rabbit Key. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Counted in transactions and wallets, not people.": "本范围内用户交易中来自我们网站的比例：Agorzilla、Tau HUD 各页面和白兔礁。用户交易指测试网上除 IDNI 的 11 个创世账户以外的全部交易；IDNI 测试时，大部分流量来自这些账户。按交易和钱包统计，不是按人。",
+  "of user transactions via our sites": "的用户交易来自我们的网站",
+  "not counting IDNI's genesis testing": "不计 IDNI 创世账户的测试",
+  "With IDNI's genesis testing: our sites {p} of all {n}": "算上 IDNI 创世账户的测试：我们的网站占全部 {n} 笔中的 {p}",
+  "through our sites": "来自我们的网站",
 } });
