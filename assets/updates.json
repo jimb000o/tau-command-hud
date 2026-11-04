@@ -2248,5 +2248,10 @@
     "tag": "Testnet stats",
     "on": "2026-11-04",
     "html": "Testnet stats: the “Active wallets” chart has a new chip, “Players”. It shows how many wallets have played White Rabbit Key on the chain so far, day by day, each counted from its first move, with the new players of each day as bars. Picking a candidate and every move are transactions, so the chain itself is the record; our island bot and the cruise ships’ simulated passengers do not count. Like the active wallets, it keeps counting across testnet restarts. Wallets, not people."
+  },
+  {
+    "tag": "Testnet stats",
+    "on": "2026-11-04",
+    "html": "Testnet stats: the “Active wallets” chart now shows growth. The headline says how much the number of active wallets changed against a week before, each app in the legend carries its own change, and hovering a day shows every app’s change against the day before. The table starts with all wallets, our apps together (White Rabbit Key, Agorzilla and Déjà, Tau HUD wallet), each app and IDNI’s genesis accounts: today, the change in one day and in seven days."
   }
 ]

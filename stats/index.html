@@ -145,6 +145,7 @@ html.fit footer p { margin: 0; }
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
 .panel h2 { margin: 0 0 4px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .panel h2 .ttl { font: inherit; }
+.legend em.gr { font-style: normal; color: #fff; margin-left: 2px; }
 html.fit .p-acc.players h2 small { display: none; }   /* the longer title keeps the chips on one line */
 .panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); }
 .panel h2 .tbl { margin-left: auto; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
@@ -766,12 +767,12 @@ function tile(title, value, unit, line, tipText, scope) {
   if (line) t.append(el("p", "", line));
   return t;
 }
-function table(host, head, rows) {
+function table(host, head, rows, add = false) {
   const t = el("table"), th = el("thead"), tr = el("tr");
   head.forEach(([h, n]) => tr.append(el("th", n ? "n" : "", h))); th.append(tr); t.append(th);
   const tb = el("tbody");
   rows.forEach(r => { const row = el("tr"); r.forEach((c, i) => row.append(el("td", head[i][1] ? "n" : "", c))); tb.append(row); });
-  t.append(tb); host.replaceChildren(t);
+  t.append(tb); if (add) host.append(t); else host.replaceChildren(t);
 }
 
 /* ------------------------------ active wallets ------------------------------ */
@@ -869,8 +870,22 @@ function walletPanel() {
       sp.append(document.createTextNode(W.chainOnly ? "Current chain only, until our relay keeps wallets across restarts." :
         WIN > 1 && dayTs(lastP.k) - dayTs(W.since) < (WIN - 1) * 86400 ? `Counted since ${fmtDay(dayTs(W.since))}, so the window is still filling.` : `Counted since ${fmtDay(dayTs(W.since))}; restarts do not reset it.`)); return sp; })());
   head.dataset.tip = head.textContent;   // the one-screen layout hides the second sentence
-  legend.replaceChildren(...present.map(t => { const s = el("span"); s.dataset.tip = WTAGS[t][2]; const i = el("i"); i.style.background = WTAGS[t][1]; if (t === "bot") i.style.outline = "1px solid #8a8a94"; s.append(i, document.createTextNode(WTAGS[t][0])); return s; }),
-    (() => { const s = el("span"); s.dataset.tip = "the accounts the testnet started with, set up by IDNI"; s.append(el("i", "idni"), document.createTextNode("IDNI genesis accounts")); return s; })());
+  // growth: the window's count today against a week before (or the first recorded day, while there is no week yet)
+  const prevK = dayKey(lastP.t - 86400), wkK = dayKey(lastP.t - 7 * 86400), baseK = W.days[wkK] ? wkK : keys[0];
+  const OURS = ["rabbit", "agorzilla", "tauhud"], sum = (k, ts) => ts.reduce((a, t) => a + val(k, t), 0);
+  const ROWS = [["all", "all wallets", STACK], ["ours", "our apps together", OURS], ...STACK.map(t => [t, WTAGS[t][0], [t]]), ["idni", "IDNI genesis accounts", ["idni"]]];
+  const has = k => k && W.days[k];
+  const grow = (now, was) => was == null ? "–" : now === was ? "±0 %" : !was ? "new" : `${now > was ? "+" : "−"}${fmtN(Math.abs(Math.round((now - was) / was * 100)))} %`;
+  const delta = (now, was) => was == null ? "–" : `${now > was ? "+" : now < was ? "−" : "±"}${fmtN(Math.abs(now - was))}`;
+  const since = baseK === lastP.k ? null : baseK, week = since === wkK, sinceTxt = since ? (week ? "a week ago" : fmtDay(dayTs(since))) : null;
+  const itemOf = (cls, name, tip, ts, style) => { const s = el("span"), i = el("i", cls); Object.assign(i.style, style || {}); s.append(i, document.createTextNode(name)); s.dataset.tip = tip;
+    if (since) { const now = sum(lastP.k, ts), was = sum(since, ts); s.append(el("em", "gr", grow(now, was)));
+      s.dataset.tip = tip + "\n" + (week ? `${fmtN(now)} now, ${fmtN(was)} a week ago.` : `${fmtN(now)} now, ${fmtN(was)} on ${sinceTxt}.`); }
+    return s; };
+  if (since) head.insertBefore(document.createTextNode(week ? `${grow(sum(lastP.k, STACK), sum(since, STACK))} vs a week ago. ` : `${grow(sum(lastP.k, STACK), sum(since, STACK))} vs the first recorded day. `), head.lastChild);
+  head.dataset.tip = head.textContent;
+  legend.replaceChildren(...present.map(t => itemOf("", WTAGS[t][0], WTAGS[t][2], [t], { background: WTAGS[t][1], ...(t === "bot" ? { outline: "1px solid #8a8a94" } : {}) })),
+    itemOf("idni", "IDNI genesis accounts", "the accounts the testnet started with, set up by IDNI", ["idni"]));
   // chart
   const f = frame(host, 210), px = f.w - f.L - f.R, py = f.h - f.T - f.B;
   const sc = niceScale(Math.max(...pts.map(p => Math.max(p.tot, p.idni)))), t0 = pts[0].t, t1 = Math.max(lastP.t, t0 + 86400);
@@ -896,13 +911,18 @@ function walletPanel() {
     const x = X(p.t), r = svgEl("rect", { class: "hit", x: one ? f.L : x - slot / 2, y: f.T, width: one ? px : slot, height: py }, f.svg);
     const show = ev => { xh.setAttribute("x1", x); xh.setAttribute("x2", x); xh.setAttribute("visibility", "visible");
       const nw = (W.new || {})[p.k] || [], nNew = STACK.reduce((a, t) => a + (nw[ti(t)] || 0), 0);
-      showTip(ev, tipLines([["tv", `${fmtN(p.tot)} active wallets`], ...[...present].reverse().filter(t => val(p.k, t)).map(t => ["", `${fmtN(val(p.k, t))} ${WTAGS[t][0]}`]),
-        ["", `${fmtN(p.idni)} IDNI genesis accounts`], ...(nNew ? [["", `${fmtN(nNew)} new that day`]] : []), ["tm", WIN === 1 ? fmtDay(p.t) : `${WIN} days up to ${fmtDay(p.t)}`]])); };
+      const pk = has(dayKey(p.t - 86400)) ? dayKey(p.t - 86400) : null, vs = (now, ts) => pk ? ` · ${delta(now, sum(pk, ts))} (${grow(now, sum(pk, ts))})` : "";
+      showTip(ev, tipLines([["tv", `${fmtN(p.tot)} active wallets`], ...(pk ? [["", `${vs(p.tot, STACK).slice(3)} vs the day before`]] : []), ...[...present].reverse().filter(t => val(p.k, t) || (pk && val(pk, t))).map(t => ["", `${fmtN(val(p.k, t))} ${WTAGS[t][0]}${vs(val(p.k, t), [t])}`]),
+        ["", `${fmtN(p.idni)} IDNI genesis accounts${vs(p.idni, ["idni"])}`], ...(nNew ? [["", `${fmtN(nNew)} new that day`]] : []), ["tm", WIN === 1 ? fmtDay(p.t) : `${WIN} days up to ${fmtDay(p.t)}`]])); };
     r.addEventListener("pointermove", show);
     r.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); hideTip(); });
   });
+  const pv = has(prevK) ? prevK : null, rows = ROWS.filter(([id, , ts]) => id === "all" || id === "ours" || id === "idni" || present.includes(ts[0]));
+  const chg = (now, was) => was == null ? "–" : `${delta(now, was)} (${grow(now, was)})`;
+  table($("tAcc"), [["Wallets"], ["Today", 1], ["± 1 day", 1], [week || !since ? "± 7 days" : `± since ${fmtDay(dayTs(since))}`, 1]],
+    rows.map(([, name, ts]) => { const now = sum(lastP.k, ts); return [name, fmtN(now), chg(now, pv ? sum(pv, ts) : null), chg(now, since ? sum(since, ts) : null)]; }));
   table($("tAcc"), [["Day"], ["Active", 1], ["IDNI", 1], ["New", 1]], [...pts].reverse().map(p => { const nw = (W.new || {})[p.k] || [];
-    return [fmtDay(p.t), fmtN(p.tot), fmtN(p.idni), fmtN(STACK.reduce((a, t) => a + (nw[ti(t)] || 0), 0))]; }));
+    return [fmtDay(p.t), fmtN(p.tot), fmtN(p.idni), fmtN(STACK.reduce((a, t) => a + (nw[ti(t)] || 0), 0))]; }), true);
 }
 
 /* White Rabbit Key players so far (the "Players" chip): /wallets/active `players`, every rabbit-tagged wallet counted
