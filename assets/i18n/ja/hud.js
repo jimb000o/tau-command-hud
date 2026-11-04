@@ -1,5 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "White Rabbit Key: Hana’s and Lola’s portraits have proper hands now. Hana holds her exercise books against her side with one hand flat on top, and her pencil sits behind her ear instead of seeming to run on into her cheek. Lola holds her cocktail shaker in one hand and rests the other arm across her waist.": "ホワイトラビットキー：Hana と Lola の肖像画の手がきちんと描き直されました。Hana は練習帳を脇に抱え、一番上の一冊に片手をそっと置いています。鉛筆は耳の後ろに挟まり、もう頬に突き刺さっているようには見えません。Lola は片手でカクテルシェーカーを持ち、もう片方の腕を腰の前に添えています。",
   "White Rabbit Key: the islanders talk about the cruise ships now, from three days before a ship comes until the evening it leaves, and each of them sees the ships their own way. Rico announces the ships on Radio Coco, and islanders phone in about them.": "ホワイトラビットキー：島の人たちがクルーズ船の話をするようになりました。船が来る三日前から出ていく日の夜まで、それぞれが自分なりの見方で船を語ります。リコは Radio Coco で船を告知し、島民も電話で船の話をしに来ます。",
   "White Rabbit Key: the cruise ships are painted now, like the island. They come in bow first, turn round at anchor and leave with a wake.": "ホワイトラビットキー：クルーズ船も島と同じ手描きの姿になりました。船首を前にして入港し、停泊地で向きを変え、航跡を残して出港します。",
   "# active consensus spec · revision {x1}": "# 有効なコンセンサス仕様 · リビジョン {x1}",
