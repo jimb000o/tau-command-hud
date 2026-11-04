@@ -2233,5 +2233,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "White Rabbit Key: the cruise ships are painted now, like the island. They come in bow first, turn round at anchor and leave with a wake."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "Radio Coco: Rico talks between the songs. When a song ends, the band stops, Rico says a word about the song that just ended and the one coming up, or about the time of day, and then the next song starts. Every night from 23:00 your time comes the Night Line: for one hour, listeners call Rico between the songs with their problems on the lagoon (a lost key, a stuck transfer, a fee limit that is too low, a stranger selling test coins), and he helps. Rico also reports when new nodes join the network and when nodes go quiet; several at once count as one piece of news."
   }
 ]

@@ -1229,8 +1229,9 @@
     });
     return at;
   }
+  /* resolves with the seconds he talks (false when only shown) */
   function onAir(line, urgent, call) {
-    const box = $("cvRadio"); if (!box) return;
+    const box = $("cvRadio"); if (!box) return Promise.resolve(false);
     if (!DJ.face) { DJ.face = portrait("rico", 40); $("cvDJ").append(DJ.face); }
     const parts = typeof line === "string" ? [{ t: line, v: null }] : line;
     line = join(parts);
@@ -1247,15 +1248,16 @@
     /* in a place the strip only shows it, so nobody talks over the one in front of you; at Radio Coco itself Rico
        says it on air whenever he is not talking to you, and you see him say it */
     const atRico = () => UI.card && UI.at === "radio" && UI.card._who === "rico" ? UI.card : null;
-    if (UI.card && !(atRico() && !SND.talking)) return;
-    RICO.speak(parts).then(secs => {
-      if (!secs || DJ.text !== said) return;
+    if (UI.card && !(atRico() && !SND.talking)) return Promise.resolve(false);
+    return RICO.speak(parts).then(secs => {
+      if (!secs || DJ.text !== said) return secs;
       const here = atRico(); if (here && here._f) say(here._f, secs * 1000);
       if (call) turns(parts, secs);
       say(DJ.face, secs * 1000);
       clearTimeout(DJ.off); DJ.off = setTimeout(() => box.classList.remove("live"), secs * 1000 + 800);
       DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 30000);
-    }, () => {});
+      return secs;
+    }, () => false);
   }
   /* Rico does not repeat himself: the lines he said lately are remembered in this browser, across visits, and he picks
      from the ones he has not said. A set is a group of lines that can stand in for each other (rico.js SETS). */
@@ -1292,7 +1294,7 @@
      the simulation the refusals, a consensus switch voted on or in force, and the restart at midnight UTC. */
   const RADAR = { snap: null, busy: false, seen: 0, mode: null, rules: null, ghosts: 0, ghostAt: 0, flagged: {}, news: [] };
   const DJ_S = { s: null, at: 0 };   // Déjà's day as the relay last told it (GET /deja)
-  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "deja", "place", "rival", "cafe", "founders", "unknown", "first", "mixed", "relay", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused", "duet", "record", "solo", "postman", "fresh"];
+  const RANK = ["nowStake", "nowFixed", "toStake", "toFixed", "restart", "midnight", "valIn", "valOut", "nodeMany", "nodeNew", "nodeGoneMany", "nodeGone", "feeUp", "feeDown", "rev", "refusedLaw", "whale", "deja", "place", "rival", "cafe", "founders", "unknown", "first", "mixed", "relay", "ghost", "ghostHalloween", "ghostAfter", "law", "lawSim", "back", "cosign", "lock", "offerYes", "offer", "refusedOwn", "rule", "cosvote", "lawVote", "burst", "refused", "duet", "record", "solo", "postman", "fresh"];
   const KIND = { rule_deploy: "rule", approval_request: "cosign", transfer_vote: "cosvote", retractable_transfer: "lock", retract_transfer: "back", rule_offer: "offer", rule_offer_accept: "offerYes", consensus_rule_vote: "lawVote" };
   const txKind = tx => { const t = tx.tx_type || "user_tx"; return t === "user_tx" && tx.operations && tx.operations["0"] ? "rule_deploy" : t; };
   /* the ghosts by the visitor's calendar: fitting in Halloween week, a nuisance in the first week of November, ordinary news otherwise */
@@ -1407,9 +1409,37 @@
   }
   /* what the relay knows that the blocks do not: the rivals' wallets, the lagoon's average per block and the refusals of
      the last hour, and the title of the builders' latest change (node.tauhud.com/devpulse.json), read every ten minutes */
+  /* nodes joining and leaving (the relay's /peers: only nodes our node has known for ten minutes, so a test that comes
+     and goes in a minute stays out). This browser remembers the nodes it has seen, so a node that joined while you were
+     away is still news when you come back the same day; the very first look only learns them. Several at once are one
+     line; a community node's name is shown beside it. */
+  const NODES = { seen: null, online: null, KEY: "rabbit-nodes-seen" };
+  function nodesRead(j) {
+    if (!j || !Array.isArray(j.peers)) return;
+    const now = Date.now() / 1000, steady = j.peers.filter(p => p && p.id && p.steady), online = new Set(steady.filter(p => p.online).map(p => p.id));
+    if (!NODES.seen) { try { const o = JSON.parse(store.get(NODES.KEY) || "null"); NODES.seen = o && typeof o === "object" ? o : null; } catch (e) { NODES.seen = null; } }
+    const first = !NODES.seen; NODES.seen = NODES.seen || {};
+    const fresh = steady.filter(p => p.online && !NODES.seen[p.id] && now - (Number(p.first_seen) || 0) < 43200);
+    steady.forEach(p => { NODES.seen[p.id] = Math.round(now); });
+    for (const id in NODES.seen) if (now - NODES.seen[id] > 30 * 86400) delete NODES.seen[id];
+    store.set(NODES.KEY, JSON.stringify(NODES.seen));
+    const count = Q("({n} nodes online now)", { n: online.size + 1 });   // and ours
+    if (!first && fresh.length) {
+      const names = fresh.map(p => p.community && p.community.name).filter(Boolean).slice(0, 3), more = [...names.map(x => Q("“{x}”", { x: String(x).slice(0, 40) })), count];
+      if (fresh.length === 1) call("nodeNew", "nodeNew", null, { more });
+      else call("nodeNew", "nodeMany", null, { v: { n: fresh.length }, s: { n: band(fresh.length) }, more });
+    }
+    if (NODES.online) {
+      const gone = [...NODES.online].filter(id => !online.has(id) && id !== j.bootnode);
+      if (gone.length === 1) call("nodeGone", "nodeGone", null, { more: [count] });
+      else if (gone.length > 1) call("nodeGone", "nodeGoneMany", null, { v: { n: gone.length }, s: { n: band(gone.length) }, more: [count] });
+    }
+    NODES.online = online;
+  }
   function srcFetch() {
     if (window.TauSim && TauSim.on) return;
     const get = u => fetch("https://node.tauhud.com/" + u, { cache: "no-store" }).then(r => (r.ok ? r.json() : null));
+    get("peers").then(nodesRead, () => {});
     get("island").then(j => { if (j && j.wallets) { SRC.bots = {}; Object.keys(j.wallets).forEach(k => { SRC.bots[lc(j.wallets[k])] = k; }); } }, () => {});
     get("load").then(j => {
       if (!j || !Array.isArray(j.sealed)) return;
@@ -1662,7 +1692,9 @@
   srcFetch(); setInterval(() => { if (!away()) srcFetch(); }, 600000);
   if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine };   // the headless check (tests)
   setInterval(() => {
-    if (!G || G.over || G.counting || away() || performance.now() < DJ.next) return;
+    if (!G || G.over || G.counting || away() || performance.now() < DJ.next || SND.gap) return;
+    /* the Night Line's hour belongs to the callers between the songs (the show's opener still comes first) */
+    if (ROT.n > 0 && RICO.night && RICO.night()) return;
     /* the show waits for the sound to come on (the first tap), so the opener is heard, not just read; after a while it goes on in text */
     if (ROT.n === 0 && !SND.on && performance.now() < 90000) return;
     if (DJ.opened && DJ.after) { const a = DJ.after; DJ.after = null; onAir(a, 1); return; }
@@ -1672,6 +1704,16 @@
     if (l.wake && SND.on) { SND.sfx("wake"); DJ.next = performance.now() + 60000; setTimeout(() => onAir(l.parts, true), 2000); return; }
     onAir(l.parts, false, l.call);
   }, 2000);
+  /* between two songs the band stops and Rico says a word that fits (rico.js brk): the song that ended and the one
+     coming, or the hour; in the Night Line's hour a listener with a problem. He names the next song, so it is not
+     announced again once it plays. */
+  if (RICO.brk) SND.onbreak = ({ from, to }) => {
+    if (!G || G.over || G.counting) return 0;
+    const b = RICO.brk(from, to, { pick: pickLine }); if (!b) return 0;
+    markSaid(b.k); (b.also || []).forEach(markSaid);
+    DJ.song = to; DJ.songNew = null; DJ.opened = true;
+    return onAir(b.parts, true, b.call).then(secs => { if (secs) DJ.next = Math.max(DJ.next, performance.now() + secs * 1000 + 25000); return secs; });
+  };
   /* the radio plays its songs one after the other (music.js PLAYLIST): when a new one starts, Rico announces it next */
   setInterval(() => { const so = SND.song; if (!so || !so.id || UI.card) return; if (DJ.song && so.id !== DJ.song) DJ.songNew = so.id; DJ.song = so.id; }, 3000);
 
