@@ -2298,5 +2298,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "The troll box is on the island now, as the Coconut Wire: on wide screens it sits on the dark water at the lower left of White Rabbit Key, always open, with the newest messages at the bottom. It is the same room as the troll box on the HUD, with your same name and the same rules. It steps aside while you talk to someone, and smaller screens and phones keep the island to themselves."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "A new start for White Rabbit Key on laptops and desktops: the four candidates stand large across the island, painted as you meet them in the game, and the one under your pointer steps forward. The title sits above them, the week, the island ballot and the testnet in a quiet strip below. Phones keep the plate with four faces. Fixed: the island ballot showed 100000 for a candidate whose ballot box had no vote yet; it now shows 0."
   }
 ]

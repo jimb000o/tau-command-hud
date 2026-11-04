@@ -304,12 +304,13 @@
   }
   /* every portrait on screen is redrawn each frame while visible */
   const FACES = new Set();
-  function portrait(id, size = 96, mood = 0) {
+  /* bare: the whole figure as it stands in a room (no disc behind it), sized by the page's CSS */
+  function portrait(id, size = 96, mood = 0, bare = false) {
     const c = el("canvas", { class: "face", width: size * 2, height: size * 2, "aria-hidden": "true" });
-    c.style.width = c.style.height = size + "px";
-    const f = { c, g: c.getContext("2d"), id, talk: 0, mood }; c._f = f; FACES.add(f); return c;
+    if (!bare) c.style.width = c.style.height = size + "px";
+    const f = { c, g: c.getContext("2d"), id, talk: 0, mood, bare }; c._f = f; FACES.add(f); return c;
   }
-  SC.onFrame(t => { for (const f of FACES) { if (!f.c.isConnected) { FACES.delete(f); continue; } face(f.g, f.id, t, t < f.talk, f.mood); } });
+  SC.onFrame(t => { for (const f of FACES) { if (!f.c.isConnected) { FACES.delete(f); continue; } face(f.g, f.id, t, t < f.talk, f.mood, f.bare); } });
   const say = (c, ms) => { if (c && c._f) c._f.talk = performance.now() + ms; };
 
   /* ---------- the game state, kept in this browser ---------- */
@@ -524,6 +525,10 @@
     FIT.busy = true;
     try {
       box.classList.remove("tight", "tight2", "tight3", "paged", "tall"); box.style.removeProperty("--fz");
+      /* the start card turned between wide and narrow (a window resized, a tablet turned): built again for its new shape */
+      if (box.matches(".intro") && box._wide != null && box._wide !== wideIntro()) { setTimeout(() => { if (UI.card === box) openCard(null, introCard); }, 0); return; }
+      /* wide, the figures take the room that is left (CSS): only the strip of facts tightens, and the pitches go last */
+      if (box.matches(".intro.wide")) { box.classList.toggle("low", $("cvStage").clientHeight < 760); const over = () => box.scrollHeight > box.clientHeight + 3; if (over()) box.classList.add("tight"); if (over()) box.classList.add("tight2"); return; }
       if (innerWidth >= 760) box._tall = false;
       if (box._tall) box.classList.add("tall");
       box.querySelectorAll(".cv-tabs, .cv-pager").forEach(e => e.remove());
@@ -2203,12 +2208,18 @@
       let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
       if (m.command !== "getbalance") return;
       const d = m.data || {}, c = Object.keys(CANDS).find(k => ADDR[k] === String(d.address || "").toLowerCase());
-      if (m.status === "ok" && c) { BAL.n[c] = Math.floor(Number(d.balance) || 0); todo.splice(todo.indexOf(c), 1); }
+      if (m.status === "ok" && c) { BAL.n[c] = votesIn(d.balance); todo.splice(todo.indexOf(c), 1); }
       if (!todo.length) { BAL.state = "ok"; clearTimeout(stop); try { ws.close(); } catch (e) {} ballotLine(); return; }
       setTimeout(ask, m.status === "ok" ? 300 : 1500);
     };
     ws.onerror = () => { BAL.state = "off"; ballotLine(); };
   }
+  /* the testnet runs with its auto-faucet on: an account it has never seen answers getbalance with the faucet's 100,000
+     test AGRS, though nothing was ever sent to it. A ballot box has no key and never sends, and the first vote into it
+     counts from 0, so a box that reads exactly the faucet amount has had no vote yet (a box with real votes would need
+     100,000 of them to read that). */
+  const FAUCET = 100000;
+  const votesIn = bal => { const n = Math.floor(Number(bal) || 0); return n === FAUCET ? 0 : n; };
   /* the visitors' choice: the candidate whose box holds the most, if one leads */
   const visitorsPick = () => { if (BAL.state !== "ok") return null; const s = Object.keys(CANDS).sort((a, b) => (BAL.n[b] || 0) - (BAL.n[a] || 0)); return (BAL.n[s[0]] || 0) > (BAL.n[s[1]] || 0) ? s[0] : null; };
   function ballotLine() {
@@ -2438,20 +2449,33 @@
     G = load();
     if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
     SC.setHour(0, true); hud();
-    openCard(null, box => {
-      box.classList.add("intro");
-      box.append(el("p", { class: "kick", text: T("Sunday night the island elects a governor") }), el("h2", { text: T("White Rabbit Key") }),
-        el("p", { class: "cv-line", text: T("Four islanders stand for governor, and you are one of them. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") }));
-      const pick = el("div", { class: "cv-pick" });
-      Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", onclick: () => begin(c) }, portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96), el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) }))));
-      box.append(el("p", { class: "cv-h", text: T("Which candidate are you?") }), pick);
-      const td = todayIdx();
-      box.append(el("p", { class: "cv-note" }, el("b", { text: T("Your campaign:") }), " ", T("this week, Monday to Sunday. An island day is a real day: three moves, a few minutes. Sunday evening the islanders vote."), " ",
-        td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: play Monday to {x} now, then a day a day.", { x: dayName(td) }),
-        el("br"), el("b", { text: T("The island:") }), " ", Fd("every campaign won is a ballot for its candidate; governor’s count {x}, Monday 00:00 German time.", { x: countIn() })), ballotEl(), isleIntro());
-      /* every move is a real test transaction, always: said plainly here instead of a box to tick */
-      box.append(el("p", { class: "cv-chain" }, el("span", { text: T("Every move is real: it is signed into Tau Testnet Alpha from a test wallet made for you in this browser, and paid to the place where you make it (1 test AGRS, a line on Radio Coco 25). Wages and embassy money come back into that wallet. The rivals’ moves go there too. Test AGRS have no value.") }), " ", el("a", { href: "/wallet/", text: T("Your test wallet") })));
-    });
+    openCard(null, introCard);
+  }
+  /* a laptop or a desktop: the four candidates stand large across the island at dusk, as in a game's opening scene, the
+     facts in a quiet strip below them. A phone, or a screen too low for that, keeps the plate with four small faces. */
+  const wideIntro = () => { const st = $("cvStage"); return !LAND.matches && innerWidth >= 900 && st.clientWidth >= 860 && st.clientHeight >= 480; };
+  function introCard(box) {
+    const wide = wideIntro(), stH = $("cvStage").clientHeight;
+    box.classList.add("intro"); box.classList.toggle("wide", wide); box.classList.toggle("low", wide && stH < 760); box._wide = wide;
+    box.append(el("div", { class: "iv-head" }, el("p", { class: "kick", text: T("Sunday night the island elects a governor") }), el("h2", { text: T("White Rabbit Key") }),
+      el("p", { class: "cv-line", text: T("Four islanders stand for governor, and you are one of them. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") })));
+    const pick = el("div", { class: "cv-pick" });
+    /* wide: a canvas as large as the figure will stand (about half the stage high), drawn at twice that for sharpness */
+    const big = Math.max(240, Math.min(640, Math.round(stH * 0.6)));
+    Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", title: wide ? nm(c) + " · " + T(CANDS[c].role) : null, onclick: () => begin(c) },
+      wide ? el("span", { class: "fig" }, portrait(c, big, 0, true)) : portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96),
+      el("span", { class: "plate" }, el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) })))));
+    box.append(el("div", { class: "iv-cast" }, el("p", { class: "cv-h", text: T("Which candidate are you?") }), pick));
+    const td = todayIdx();
+    const camp = [el("b", { text: T("Your campaign:") }), " ", T("this week, Monday to Sunday. An island day is a real day: three moves, a few minutes. Sunday evening the islanders vote."), " ",
+      td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: play Monday to {x} now, then a day a day.", { x: dayName(td) })];
+    const isle = [el("b", { text: T("The island:") }), " ", Fd("every campaign won is a ballot for its candidate; governor’s count {x}, Monday 00:00 German time.", { x: countIn() })];
+    /* every move is a real test transaction, always: said plainly here instead of a box to tick */
+    const chain = el("p", { class: "cv-chain" }, el("span", { text: T("Every move is real: it is signed into Tau Testnet Alpha from a test wallet made for you in this browser, and paid to the place where you make it (1 test AGRS, a line on Radio Coco 25). Wages and embassy money come back into that wallet. The rivals’ moves go there too. Test AGRS have no value.") }), " ", el("a", { href: "/wallet/", text: T("Your test wallet") }));
+    /* the same words either way; wide they stand in three columns (the week, the island, the chain) */
+    box.append(wide
+      ? el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp), el("div", null, el("p", { class: "cv-note" }, ...isle), ballotEl(), isleIntro()), chain)
+      : el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp, el("br"), ...isle), ballotEl(), isleIntro(), chain));
   }
   function dragHint() {
     if (!matchMedia("(pointer: coarse) and (orientation: portrait)").matches || store.get("rabbit-drag-hint")) return;
