@@ -161,6 +161,15 @@ html.fit .row2 { gap: 12px; min-height: 0; }
 .who .sp .note { color: var(--dim); font-size: 12px; margin-top: 2px; }
 .who .sp .cnt { color: var(--text); font: 600 11px var(--display); letter-spacing: .14em; font-style: normal; }
 .who .sp .note b { color: var(--text); font-weight: 600; }
+/* our share of the user transactions, the number that leads the panel */
+.who .ours { display: flex; align-items: center; gap: 10px; margin: 0 0 2px; }
+.who .ours + .sp { margin-top: 2px; }
+.who .ours b { color: var(--ok); font: 600 30px/1 var(--display); font-variant-numeric: tabular-nums; }
+.who .ours span { color: var(--text); font-size: 13px; line-height: 1.2; }
+.who .ours em { display: block; color: var(--dim); font-size: 11px; font-style: normal; }
+.who .sp.all { margin-top: 4px; }
+.who .sp.all .note { font-size: 11px; }
+.split.thin { height: 3px; margin: 0 0 2px; }
 .kpi.play { border-color: rgba(185,255,214,.35); }
 .kpi.play b { color: #b9ffd6; }
 .kpi.play .pdot { display: inline-block; width: 7px; height: 7px; margin: 0 7px 1px 0; border-radius: 50%; background: #b9ffd6; box-shadow: 0 0 7px rgba(185,255,214,.7); vertical-align: middle; animation: pnow 2.4s ease-in-out infinite; }
@@ -1103,9 +1112,14 @@ function drawTx() {
   const users = all - tot.idni[0], U = TX_GROUPS.filter(([g]) => g !== "idni"), col = g => GROUP_COL[g];
   const tipOf = (g, what) => `${T(what)}\n${fmt(tot[g][0])} ${T("transactions")} · ${fmt(wallets(g))} ${T(n === 1 ? "wallets" : "wallets a day on average")}\n${T("of everything, IDNI's genesis accounts included")}: ${share(tot[g][0], all)}`;
   const ours = tot.agorzilla[0] + tot.tauhud[0] + tot.rabbit[0], idni = TX_GROUPS.find(([g]) => g === "idni");
-  el.innerHTML = `<div class="sp">${head}<em class="cnt"> · ${fmt(users)}</em><div class="split tx">${U.map(([g]) => `<i style="width:${users ? (100 * tot[g][0] / users).toFixed(1) : 0}%;background:${col(g)}"></i>`).join("")}</div>` +
-    `<div class="splitkey">${U.filter(([g]) => g !== "rabbit" || tot.rabbit[0]).map(([g, name, what]) => `<span data-tip="${esc(tipOf(g, what))}"><i class="k" style="background:${col(g)}"></i>${esc(T(name))} <b>${share(tot[g][0], users)}</b></span>`).join("")}</div>` +
-    `<div class="note" data-tip="${esc(tipOf("idni", idni[2]) + `\n${T("all testnet transactions")} ${fmt(all)}, ${T("our two sites")} ${share(ours, all)}`)}">${esc(T("IDNI genesis"))} <b>${fmt(tot.idni[0])}</b> · ${esc(T("all"))} <b>${fmt(all)}</b> · ${esc(T("our sites"))} <b>${share(ours, all)}</b></div></div>`;
+  // the headline: our share of the user transactions (IDNI's genesis testing left out); below, smaller, the same with everything counted
+  const heroTip = `${T("Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages and White Rabbit Key. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Counted in transactions and wallets, not people.")}\n${T("through our sites")} ${fmt(ours)} · ${T("User transactions")} ${fmt(users)}`;
+  const hero = users ? `<div class="ours" data-tip="${esc(heroTip)}"><b>${share(ours, users)}</b><span>${esc(T("of user transactions via our sites"))}<em>${esc(T("not counting IDNI's genesis testing"))}</em></span></div>` : "";
+  const allBar = [[ours, "var(--ok)"], [tot.idni[0], "rgba(255,255,255,.45)"], [tot.other[0], "rgba(255,255,255,.2)"]];
+  el.innerHTML = hero + `<div class="sp">${head}<em class="cnt"> · ${fmt(users)}</em><div class="split tx">${U.map(([g]) => `<i style="width:${users ? (100 * tot[g][0] / users).toFixed(1) : 0}%;background:${col(g)}"></i>`).join("")}</div>` +
+    `<div class="splitkey">${U.filter(([g]) => g !== "rabbit" || tot.rabbit[0]).map(([g, name, what]) => `<span data-tip="${esc(tipOf(g, what))}"><i class="k" style="background:${col(g)}"></i>${esc(T(name))} <b>${share(tot[g][0], users)}</b></span>`).join("")}</div></div>` +
+    `<div class="sp all" data-tip="${esc(tipOf("idni", idni[2]) + `\n${T("all testnet transactions")} ${fmt(all)}, ${T("our two sites")} ${share(ours, all)}`)}"><div class="split thin">${allBar.map(([v, c]) => `<i style="width:${(100 * v / all).toFixed(1)}%;background:${c}"></i>`).join("")}</div>` +
+    `<div class="note">${esc(T(`With IDNI's genesis testing: our sites ${share(ours, all)} of all ${fmt(all)}`)).replace(esc(share(ours, all)), `<b>${esc(share(ours, all))}</b>`).replace(fmt(all), `<b>${fmt(all)}</b>`)}</div></div>`;
 }
 
 function rabbitKpis() {
