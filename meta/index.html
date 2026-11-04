@@ -199,9 +199,21 @@ html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom:
 html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 12px; }
 html.fit #tip { zoom: var(--z); }
 html.fit .wrap > .main { flex: 1 1 0; min-height: 0; gap: 12px; grid-template-columns: minmax(0, 1fr) 440px; }
-html.fit .col { min-height: 0; gap: 12px; grid-template-rows: minmax(0, 1.55fr) minmax(210px, 1fr); }
+html.fit .col { min-height: 0; gap: 12px; grid-template-rows: minmax(0, 1.55fr) minmax(226px, 1fr); }
 html.fit .col.side { grid-template-rows: auto minmax(0, 1fr); }
-html.fit.netv .col:not(.side) { grid-template-rows: minmax(0, 1.2fr) minmax(210px, 1fr); }   /* room for where our transactions started */
+html.fit.netv .col:not(.side) { grid-template-rows: minmax(0, 1fr) minmax(252px, 1fr); }   /* room for where our transactions started */
+/* testnet view on one screen: the share panel gets the wider part, and where our transactions started sits beside the bars as one list, so nothing scrolls */
+html.fit.netv .row2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr); }
+html.fit.wide.netv .row2 { grid-template-columns: minmax(0, 1fr) minmax(0, 2.3fr); }
+html.netv .who { container-type: inline-size; }
+@container (min-width: 440px) {
+  html.netv .whoBody { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0 20px; align-items: start; }
+  html.netv .whoBody > #starts { grid-column: 2; grid-row: 1 / span 4; }
+  html.netv .whoBody > #starts .sp { margin-top: 0; }
+  html.netv .whoBody > #starts .starts { grid-template-columns: 64px minmax(0, 1fr); gap: 4px 12px; }
+  html.netv .whoBody > #starts .starts svg { width: 64px; height: 64px; }
+  html.netv .whoBody > #starts .starts ol { grid-template-columns: minmax(0, 1fr); gap: 1px; min-height: 64px; }
+}
 html.fit .panel { min-height: 0; }
 html.fit .chart { min-height: 0; }
 html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 1fr) 420px 420px; }
@@ -260,10 +272,12 @@ html.fit.wide .col.side { display: contents; }
         </section>
         <section class="panel who">
           <h2><span id="whoTitle">Where it comes from</span> <span class="aside" id="wRange"></span></h2>
-          <div id="splits"></div>
-          <div id="txsplit"></div>
-          <div id="starts"></div>
-          <div id="cross"></div>
+          <div class="whoBody">
+            <div id="splits"></div>
+            <div id="txsplit"></div>
+            <div id="starts"></div>
+            <div id="cross"></div>
+          </div>
         </section>
       </div>
     </div>
@@ -1114,7 +1128,7 @@ function drawTx() {
   const ours = tot.agorzilla[0] + tot.tauhud[0] + tot.rabbit[0], idni = TX_GROUPS.find(([g]) => g === "idni");
   // the headline: our share of the user transactions (IDNI's genesis testing left out); below, smaller, the same with everything counted
   const heroTip = `${T("Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages and White Rabbit Key. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Counted in transactions and wallets, not people.")}\n${T("through our sites")} ${fmt(ours)} · ${T("User transactions")} ${fmt(users)}`;
-  const hero = users ? `<div class="ours" data-tip="${esc(heroTip)}"><b>${share(ours, users)}</b><span>${esc(T("of user transactions via our sites"))}<em>${esc(T("not counting IDNI's genesis testing"))}</em></span></div>` : "";
+  const hero = users && NET() ? `<div class="ours" data-tip="${esc(heroTip)}"><b>${share(ours, users)}</b><span>${esc(T("of user transactions via our sites"))}<em>${esc(T("not counting IDNI's genesis testing"))}</em></span></div>` : "";
   const allBar = [[ours, "var(--ok)"], [tot.idni[0], "rgba(255,255,255,.45)"], [tot.other[0], "rgba(255,255,255,.2)"]];
   el.innerHTML = hero + `<div class="sp">${head}<em class="cnt"> · ${fmt(users)}</em><div class="split tx">${U.map(([g]) => `<i style="width:${users ? (100 * tot[g][0] / users).toFixed(1) : 0}%;background:${col(g)}"></i>`).join("")}</div>` +
     `<div class="splitkey">${U.filter(([g]) => g !== "rabbit" || tot.rabbit[0]).map(([g, name, what]) => `<span data-tip="${esc(tipOf(g, what))}"><i class="k" style="background:${col(g)}"></i>${esc(T(name))} <b>${share(tot[g][0], users)}</b></span>`).join("")}</div></div>` +
