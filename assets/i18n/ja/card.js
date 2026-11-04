@@ -89,4 +89,5 @@ TauI18n.add({ strings: {
   "Agorzilla": "Agorzilla",
   "Tau HUD and this card are free, built in spare time.": "Tau HUD とこのカードは無料で、空き時間に作っています。",
   "Donations are voluntary ›": "寄付は任意です ›",
+  "Favourite on White Rabbit Key": "White Rabbit Key のお気に入り",
 } });

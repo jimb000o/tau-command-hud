@@ -89,4 +89,5 @@ TauI18n.add({ strings: {
   "Agorzilla": "Agorzilla",
   "Tau HUD and this card are free, built in spare time.": "Tau HUD 和这张卡片都免费，用业余时间搭建。",
   "Donations are voluntary ›": "捐赠出于自愿 ›",
+  "Favourite on White Rabbit Key": "White Rabbit Key 最爱",
 } });

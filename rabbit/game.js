@@ -2192,7 +2192,7 @@
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { G.onchain = true; hud(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
+    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
     SC.setHour(0, true); hud();
     openCard(null, box => {
       box.classList.add("intro");
@@ -2215,10 +2215,26 @@
   }
   function begin(c) {
     G = fresh(c); save();
+    signUp();
     news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."), RICO.L.bkWeek);
     isleRule();
     closeCard(); hud();
     welcome();
+  }
+  /* the pick is the campaign's first transaction, with no click of its own: as Old Sam writes the name into the Book, the
+     visitor's test wallet (made here if there is none yet) signs 1 test AGRS to the Book's till. Once it is through, the
+     relay puts that wallet on the players' board and counts which candidate it picked (isle start; its favourite shows
+     on the wallet's Tau card). A campaign from before this was signed once, the next time the page opens. */
+  function signUp() {
+    if (!G || !G.onchain || G.picked || G.over || (!FREE && G.week && G.week !== weekId())) return;
+    const me = G.me;
+    G.picked = "…";
+    mySend(TILL.book, F("{x}, name written into the Book", { x: nm(me) }), h => {
+      if (!G || G.me !== me) return;
+      if (!h) { G.picked = null; return; }
+      G.picked = h; save();
+      const pk = myPk(); if (pk) isleTell("start", gidOf(), me, pk);
+    }, 1, "book");
   }
   /* the first scene of a campaign: Old Sam writes your name into the Book, and says what you stand for and when the island votes */
   const WELCOME = {
@@ -2232,7 +2248,8 @@
     openCard("book", box => {
       box.classList.add("welcome");
       scene(box, "sam", T("Your name in the Book"), T(WELCOME[G.me]), [btn(T("Walk onto the island"), go, { go: true })],
-        el("p", { class: "cv-note" }, el("b", { text: T("You:") }), " ", F("{x}, candidate for governor. Ten islanders vote on Sunday night; win more of them than the other three.", { x: nm(G.me) })));
+        el("p", { class: "cv-note" }, el("b", { text: T("You:") }), " ", F("{x}, candidate for governor. Ten islanders vote on Sunday night; win more of them than the other three.", { x: nm(G.me) })),
+        el("p", { class: "cv-note small" }, el("b", { text: T("On the testnet:") }), " ", T("Sam’s entry is your first transaction, signed by your test wallet in this browser: 1 test AGRS to the Book. It puts your wallet on the players’ board.")));
       box.querySelector(".cv-x").onclick = go;
     });
   }

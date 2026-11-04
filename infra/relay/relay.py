@@ -1799,12 +1799,14 @@ class Relay:
         a = [x.lower() for x in args[1:]]
         if sub == "board":
             return envelope_ok("isle", self.isle.standing(a[0] if a else "-"))
-        if sub == "move" and len(a) in (5, 6):
+        if sub == "start" and len(a) == 3:
+            ok, data = self.isle.start(ip, *a)
+        elif sub == "move" and len(a) in (5, 6):
             ok, data = self.isle.move(ip, *a)
         elif sub == "end" and 3 <= len(a) <= 7:
             ok, data = self.isle.end(ip, *a)
         else:
-            ok, data = False, ("Usage: isle join | leave | board [wallet] | move <game> <as> <kind> <what> <place> [wallet]"
+            ok, data = False, ("Usage: isle join | leave | board [wallet] | start <game> <as> <wallet> | move <game> <as> <kind> <what> <place> [wallet]"
                                " | end <game> <as> <winner> [laws] [wallet] [votes] [goal]")
         return envelope_ok("isle", data) if ok else envelope_error("isle", data, "INVALID_PARAMS")
 
