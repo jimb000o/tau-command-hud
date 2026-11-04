@@ -66,29 +66,27 @@
         fresh: path(e.major.link) === GLOW, tip: gist(e.html), tipRaw: true }));
   }).catch(() => {});
 
-  /* ---------- IDNI's own work: what landed on tau-testnet main in the last week, one line each, from the build pulse
-     (infra/alerts/devpulse.py reads the public git history every 30 minutes; docs-, test- and CI-only changes never
-     come). The line is the commit's own title; ticker.json "idni" can give one a plainer title and hover ({text, tip},
-     zh/ja in hud.js) or leave it out ({skip: true}), keyed by the first 7 letters of the commit. In Chinese and
-     Japanese only lines with such a translated title run. The hover says whether our node runs it yet. ---------- */
+  /* ---------- IDNI's own work: news headlines about what landed on tau-testnet main in the last week, from the build
+     pulse (infra/alerts/devpulse.py reads the public git history every 30 minutes; a language model reads each new
+     merge once, with its diff, and writes what it means in en, zh and ja; housekeeping is skipped). ticker.json "idni"
+     can replace one ({text, tip}, zh/ja in hud.js) or leave it out ({skip: true}), keyed by the first 7 letters of
+     any of its commits. The hover says whether our node runs it yet. ---------- */
   const IDNI_URL = "https://node.tauhud.com/devpulse.json";
   const IDT = {
-    en: { fix: "IDNI fixed: ", change: "IDNI testnet: ", on: "On IDNI’s tau-testnet main since {d}.", runs: "Our node already runs it.", not: "Our node does not run it yet; we update after a test build." },
-    zh: { fix: "IDNI 修复：", change: "IDNI 测试网更新：", on: "{d}起已合入 IDNI 的 tau-testnet 主分支。", runs: "我们的节点已在运行它。", not: "我们的节点还没有运行它；测试构建通过后再更新。" },
-    ja: { fix: "IDNI 修正：", change: "IDNI テストネット更新：", on: "{d}から IDNI の tau-testnet main に入っています。", runs: "私たちのノードはすでに動かしています。", not: "私たちのノードはまだ動かしていません。テストビルドの後に更新します。" },
+    en: { pre: "IDNI: ", runs: "Our node already runs it.", not: "Our node does not run it yet; we update after a test build." },
+    zh: { pre: "IDNI：", runs: "我们的节点已在运行它。", not: "我们的节点还没有运行它；测试构建通过后再更新。" },
+    ja: { pre: "IDNI：", runs: "私たちのノードはすでに動かしています。", not: "私たちのノードはまだ動かしていません。テストビルドの後に更新します。" },
   };
   let IDNI = [], idniAt = 0;
   const loadIdni = () => fetch(IDNI_URL, { cache: "no-cache" }).then(r => r.json()).then(j => {
     const w = IDT[lang] || IDT.en, over = CFG.idni || {}, week = Date.now() - 7 * 864e5;
-    let day = t => new Date(t * 1000).toISOString().slice(0, 10);
-    try { const f = new Intl.DateTimeFormat(lang === "en" ? "en-GB" : lang, { day: "numeric", month: "short" }); day = t => f.format(new Date(t * 1000)); } catch (e) {}
-    IDNI = (Array.isArray(j && j.news) ? j.news : []).filter(n => n && n.sha && n.text && n.ts * 1000 > week).map(n => {
-      const o = over[String(n.sha).slice(0, 7)] || {};
+    IDNI = (Array.isArray(j && j.news) ? j.news : []).filter(n => n && n.headline && n.ts * 1000 > week).map(n => {
+      const key = (n.shas || [n.id]).map(x => String(x).slice(0, 7)).find(k => over[k]), o = key ? over[key] : {};
       if (o.skip) return null;
-      const title = o.text && translated(o.text) ? tr(o.text) : lang === "en" ? String(n.text) : "";
+      const title = o.text && translated(o.text) ? tr(o.text) : String((n.headline || {})[lang] || "");
       if (!title) return null;
-      const tip = (o.tip && translated(o.tip) ? tr(o.tip) : w.on.replace("{d}", day(n.ts))) + (lang === "en" ? " " : "") + (n.runs ? w.runs : w.not);
-      return { kind: "idni", text: (n.kind === "fix" ? w.fix : w.change) + title, href: String(n.url || ""), raw: true, tip, tipRaw: true };
+      const tip = (o.tip && translated(o.tip) ? tr(o.tip) : String((n.tip || {})[lang] || "")) + (lang === "en" ? " " : "") + (n.runs ? w.runs : w.not);
+      return { kind: "idni", text: w.pre + title, href: String(n.url || ""), raw: true, tip: tip.trim(), tipRaw: true };
     }).filter(Boolean).slice(0, 3);
   }).catch(() => {});
 

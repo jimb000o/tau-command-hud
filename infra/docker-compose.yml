@@ -195,6 +195,11 @@ services:
     environment:
       RELAY_HTTP: http://relay:8080
       TAU_TESTNET_REF: ${TAU_TESTNET_REF}
+      # IDNI news headlines: a language model reads each new merge once and writes what it means (en, zh, ja).
+      # NEWS_AI_KEY (an Anthropic API key) falls back to the troll box's CHAT_AI_KEY; without either, no IDNI news.
+      NEWS_AI_KEY: ${NEWS_AI_KEY:-}
+      CHAT_AI_KEY: ${CHAT_AI_KEY:-}
+      NEWS_AI_MODEL: ${NEWS_AI_MODEL:-claude-sonnet-5-5}
     volumes:
       - alerts_state:/state     # the clones, in /state/devpulse
       - alerts_public:/public   # devpulse.json, served by Caddy

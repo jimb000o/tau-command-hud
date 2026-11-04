@@ -111,12 +111,40 @@ with open(os.environ["DEVPULSE_PINS_FILE"], "w") as f:
     f.write(f"ARG TAU_TESTNET_REF={pin}\nARG TAU_LANG_REF=c3ea334cd1e6612930ea9f404933211858f0009f\n"
             "RUN python3 -I /patches/good.py /src\nRUN python3 -I /patches/picky.py /src\nRUN python3 -I /patches/late.py /src\n")
 subprocess.run(["git", "-C", path, "fetch", "-q", SRC, "+refs/heads/*:refs/heads/*"], check=True)
+# the headline writer: no key, no news (a raw commit title is not news)
+dp.HEADLINES = os.path.join(TMP, "headlines.json")
+dp.NEWS_AI_KEY = ""
+data = dp.build(NOW, {})
+check(data["news"] == [] and data["news_ai"].startswith("no key"), "without an AI key no IDNI news is published")
+cands = dp.candidates("IDNI/tau-testnet", path, "main", NOW, None)
+check([c["sha"] for c in cands][:1] == [run("rev-parse", "HEAD")]
+      and not any(c["text"] == "The operator guide" for c in cands) and not any(c["text"] == "Add a test" for c in cands),
+      "candidates: newest first, docs- and test-only commits left out")
+asked = []
+fix_sha = run("rev-parse", "HEAD")[:7]
+core_sha = run("rev-parse", "HEAD~2")[:7]
+
+
+def fake_ai(prompt):
+    asked.append(prompt)
+    return {"items": [{"commits": [fix_sha], "kind": "fix",
+                       "headline": {"en": "Sealed transactions leave the waiting list", "zh": "已封存的交易离开等候列表", "ja": "封印済みの取引が待ちリストから消える"},
+                       "tip": {"en": "Nodes no longer list transactions that a block already sealed.", "zh": "节点不再列出已被区块封存的交易。", "ja": "ノードはブロックに封印済みの取引を表示しなくなります。"}},
+                      {"commits": ["zzzzzzz"], "kind": "change", "headline": {"en": "Invented"}, "tip": {}}],
+            "skip": [core_sha]}
+
+
+dp.ask_ai = fake_ai
+dp.NEWS_AI_KEY = "test"
 data = dp.build(NOW, {})
 news = data["news"]
-check([n["text"] for n in news] == ["Drop sealed txs from the waiting list", "Core change"] and
-      news[0]["kind"] == "fix" and news[0]["issues"] == [81], "news: newest first, docs- and test-only commits left out")
-check(not any(n["text"] == "The operator guide" for n in news), "a docs-only change never makes news")
-check(all(n["runs"] is False for n in news), "commits after our pin: our node does not run them yet")
+check(len(asked) == 1 and "drop sealed txs" in asked[0] and "Diff" in asked[0], "the writer gets each new commit with its message and diff")
+check(len(news) == 1 and news[0]["headline"]["en"] == "Sealed transactions leave the waiting list" and news[0]["kind"] == "fix"
+      and news[0]["shas"] == [run("rev-parse", "HEAD")] and set(news[0]["tip"]) == {"en", "zh", "ja"},
+      "news: the written headline in three languages; an item naming unknown commits is dropped")
+check(news[0]["runs"] is False, "a commit after our pin: our node does not run it yet")
+dp.build(NOW, {})
+check(len(asked) == 1, "each commit goes to the writer once, kept in headlines.json")
 y = data["sync"]
 check(y["testnet"]["ahead"] == 4 and y["testnet"]["behind"][0]["text"] == "Drop sealed txs from the waiting list",
       "sync: main is 4 commits ahead, newest listed first")

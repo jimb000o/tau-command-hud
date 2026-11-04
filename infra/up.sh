@@ -90,6 +90,9 @@ if s is not None:
         print(f"idni:    tau-testnet main is {t.get('ahead')} commits ahead of our node ({short(t.get('pin'))} -> {short(t.get('head'))}):")
         for b in (t.get("behind") or [])[:5]:
             print(f"         {short(b.get('sha'))} {b.get('text')}")
+    ai = s.get("news_ai") or "not running yet"
+    heads = [n.get("headline", {}).get("en") for n in s.get("news") or [] if n.get("headline")]
+    print(f"         news line: {len(heads)} IDNI headlines in 14 days, writer {ai}" + (f"; newest: {heads[0]}" if heads else ""))
     if y and not l.get("same"):
         print(f"         tau-lang: IDNI's build uses {short(l.get('idni'))}, ours {short(l.get('ours'))}")
     if p:

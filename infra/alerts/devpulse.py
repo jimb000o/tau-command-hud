@@ -9,8 +9,9 @@ by Caddy at https://node.tauhud.com/devpulse.json:
   - which code areas moved in the last 4 and 12 weeks
   - tags, and how far each repo's main is ahead of the commit our node runs
   - chain restarts our relay saw, so the page can lay commits beside them
-  - news: what landed on tau-testnet main in the last two weeks (one line per merge or direct commit, docs-, test-
-    and CI-only changes left out), for the news line on tauhud.com; each says whether our node runs it yet
+  - news: what landed on tau-testnet main in the last two weeks as news headlines (en, zh, ja) for the news line on
+    tauhud.com: a language model reads each new merge once (message, branch commits, diff) and writes what it means,
+    groups what belongs together and skips housekeeping; each item says whether our node runs it yet
   - sync: whether our node keeps up with IDNI: how far tau-testnet main is ahead of our pin, whether IDNI's own
     build still uses our tau-lang commit, and whether each of our node patches still applies to the newest main
     (checked once per new upstream commit on a shallow checkout; `up` prints it)
@@ -54,7 +55,7 @@ UA = {"User-Agent": "tauhud-devpulse/1 (+https://tauhud.com)", "Accept": "applic
 # areas below these folders are counted one level deeper (src/boolean_algebras rather than src)
 DEEP = {"src", "tests", "bindings", "scripts", "networks"}
 NEWS_DAYS = int(os.environ.get("DEVPULSE_NEWS_DAYS", 14))
-NEWS_MAX = 6
+NEWS_MAX = 20
 PATCHES_DIR = os.environ.get("DEVPULSE_PATCHES", "/pins/patches")   # infra/node/patches, applied in the Dockerfile's order
 REMOTE = os.environ.get("DEVPULSE_REMOTE", "https://github.com/{repo}.git")
 # commit kinds that never make news: housekeeping around the code, not the code the testnet runs
@@ -269,8 +270,9 @@ def changed_files(path: str, sha: str) -> list[str]:
         return []
 
 
-def news(repo: str, path: str, branch: str, now: int, pin: str | None) -> list[dict]:
-    """One item per merge (or direct commit) on main in the last NEWS_DAYS days, newest first."""
+def candidates(repo: str, path: str, branch: str, now: int, pin: str | None) -> list[dict]:
+    """The commits that may make news: each merge (or direct commit) on main in the last NEWS_DAYS days, newest
+    first, housekeeping left out. Their titles are never published as they are; headlines() writes the news."""
     out = git(path, "log", "--first-parent", branch, f"--since=@{now - NEWS_DAYS * 86400}",
               "--format=%H%x1f%ct%x1f%s%x1f%b%x1e")
     items = []
@@ -290,6 +292,150 @@ def news(repo: str, path: str, branch: str, now: int, pin: str | None) -> list[d
                       "runs": bool(pin) and is_ancestor(path, sha, pin)})
         if len(items) >= NEWS_MAX:
             break
+    return items
+
+
+# ---------- headlines: what the new commits mean, written once per commit by a language model ----------
+NEWS_AI_KEY = (os.environ.get("NEWS_AI_KEY") or os.environ.get("CHAT_AI_KEY") or "").strip()
+NEWS_AI_MODEL = os.environ.get("NEWS_AI_MODEL", "").strip() or "claude-sonnet-5-5"
+HEADLINES = os.environ.get("DEVPULSE_HEADLINES", "") or os.path.join(CLONES, "headlines.json")
+RETRY_AFTER = 2 * 3600
+NEWS_SYSTEM = """You write the news line of Tau HUD (tauhud.com), an unofficial community dashboard for Tau Testnet Alpha, \
+made by people not affiliated with IDNI. You get the commits IDNI just merged into the testnet's code: their messages, \
+the commits of merged branches, the files changed, part of the diff, and titles of issues they name.
+
+Write news headlines a testnet user understands: what changed, and what it means for people who send transactions, \
+run a node or write rules. Rules:
+- Only facts the input shows. Never guess motives, dates, releases, numbers or effects the input does not show. When \
+you cannot tell what a change means for users, say plainly what it does at the level you can verify.
+- No hype or marketing words (huge, major, game-changing, finally, exciting, revolutionary), no price talk, no \
+exclamation marks, no emoji, no commit hashes, no names of people.
+- headline: one line of at most 70 characters, like a newspaper headline with subject and verb, present tense, \
+sentence case. It is not the commit title reworded; it says what happened. Do not start with "IDNI" (the line adds it).
+- tip: one or two short sentences, at most 140 characters, on what it means in practice.
+- Commits that belong to one change become one item.
+- Skip changes nobody using the testnet or running a node would notice: refactors, internal tooling, tests, docs, \
+CI, version bumps of dependencies without a visible effect.
+- zh: Simplified Chinese, ja: Japanese, same meaning, natural wording; keep Tau, tau-testnet, IDNI, AGRS in Latin letters.
+- kind: "fix" when it repairs something that was broken, else "change".
+
+Answer with JSON only, no other text:
+{"items":[{"commits":["<first 7 letters of each commit>"],"kind":"fix","headline":{"en":"","zh":"","ja":""},\
+"tip":{"en":"","zh":"","ja":""}}],"skip":["<first 7 letters>"]}"""
+
+
+def issue_title(repo: str, n: int) -> str:
+    try:
+        url = f"https://api.github.com/repos/{repo}/issues/{n}"
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=20) as r:
+            return str(json.load(r).get("title") or "")
+    except Exception:  # noqa: BLE001 - rate limit or network: the commit speaks for itself
+        return ""
+
+
+def commit_context(repo: str, path: str, sha: str, limit: int = 12000) -> str:
+    """What a model needs to understand one commit on main: message, the commits of a merged branch, files, diff."""
+    msg = git(path, "log", "-1", "--format=%B", sha).strip()
+    parents = git(path, "log", "-1", "--format=%P", sha).split()
+    parts = [f"### commit {sha[:7]} ({datetime.fromtimestamp(int(git(path, 'log', '-1', '--format=%ct', sha)), timezone.utc):%Y-%m-%d})", msg]
+    if len(parents) > 1:
+        branch = git(path, "log", "--no-merges", "--format=- %s%n%b", f"{parents[0]}..{parents[1]}", "-40").strip()
+        parts += ["Commits of the merged branch:", branch[:4000]]
+    issues = sorted({int(x) for x in re.findall(r"#(\d+)", msg)})[:3]
+    for n in issues:
+        t = issue_title(repo, n)
+        if t:
+            parts.append(f"Issue #{n}: {t}")
+    if parents:
+        try:
+            parts += ["Files changed:", git(path, "diff", "--stat=120", "--no-renames", parents[0], sha).strip()[:3000]]
+            diff = git(path, "diff", "--no-renames", "-U2", parents[0], sha, "--", ".",
+                       ":(exclude)tests", ":(exclude)docs", ":(exclude)*.md")
+            parts += ["Diff (code only, may be cut):", diff[:limit]]
+        except subprocess.CalledProcessError as e:
+            parts.append(f"(diff not available: {e})")
+    return "\n".join(parts)
+
+
+def ask_ai(prompt: str) -> dict:
+    body = json.dumps({"model": NEWS_AI_MODEL, "max_tokens": 4000, "system": NEWS_SYSTEM,
+                       "messages": [{"role": "user", "content": prompt}]}).encode()
+    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
+        "x-api-key": NEWS_AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
+    with urllib.request.urlopen(req, timeout=180) as r:
+        j = json.load(r)
+    text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
+    m = re.search(r"\{.*\}", text, re.S)
+    if not m:
+        raise ValueError("no JSON in the answer: " + text[:200])
+    return json.loads(m.group(0))
+
+
+def _lines(d, cap: int) -> dict | None:
+    """{"en", "zh", "ja"}, each a short single line; None when one is missing."""
+    if not isinstance(d, dict):
+        return None
+    out = {}
+    for k in ("en", "zh", "ja"):
+        v = " ".join(str(d.get(k) or "").split())
+        if not v or len(v) > cap:
+            return None
+        out[k] = v
+    return out
+
+
+def load_headlines() -> dict:
+    try:
+        with open(HEADLINES, encoding="utf-8") as f:
+            j = json.load(f)
+        return {"seen": dict(j.get("seen") or {}), "items": list(j.get("items") or []), "failed_at": j.get("failed_at") or 0}
+    except (OSError, ValueError):
+        return {"seen": {}, "items": [], "failed_at": 0}
+
+
+_ai_state = {"status": "off"}
+
+
+def headlines(repo: str, path: str, cands: list[dict], now: int, pin: str | None) -> list[dict]:
+    """News items for the line: new candidate commits go to the model once (grouped, skipped or written up); the
+    answers are kept in HEADLINES, so a commit is never written twice. Without a key nothing is published: a raw
+    commit title is not news."""
+    st = load_headlines()
+    new = [c for c in cands if c["sha"] not in st["seen"]]
+    if not NEWS_AI_KEY:
+        _ai_state["status"] = "no key (NEWS_AI_KEY or CHAT_AI_KEY in infra/.env)"
+    elif new and now - st["failed_at"] >= RETRY_AFTER:
+        try:
+            prompt = (f"New commits on {repo} main (the code Tau Testnet Alpha runs), oldest first:\n\n" +
+                      "\n\n".join(commit_context(repo, path, c["sha"]) for c in reversed(new)))
+            out = ask_ai(prompt[:150000])
+            by7 = {c["sha"][:7]: c for c in new}
+            for it in out.get("items") or []:
+                shas = [by7[x[:7]]["sha"] for x in (it.get("commits") or []) if str(x)[:7] in by7]
+                head, tip = _lines(it.get("headline"), 90), _lines(it.get("tip"), 200)
+                if not shas or not head or not tip:
+                    continue
+                st["items"].append({"id": shas[0], "shas": shas, "ts": max(by7[x[:7]]["ts"] for x in shas),
+                                    "kind": "fix" if it.get("kind") == "fix" else "change", "headline": head, "tip": tip,
+                                    "url": f"https://github.com/{repo}/commit/{max(shas, key=lambda x: by7[x[:7]]['ts'])}"})
+            for c in new:   # written up, skipped or passed over: decided once
+                st["seen"][c["sha"]] = c["ts"]
+            st["failed_at"] = 0
+            _ai_state["status"] = "on"
+        except Exception as e:  # noqa: BLE001 - try again in two hours, nothing half-written is kept
+            log.warning("headlines: %s", e)
+            st["failed_at"] = now
+            _ai_state["status"] = f"failed: {str(e)[:160]}"
+    else:
+        _ai_state["status"] = "on" if not st["failed_at"] else "waiting to retry after a failed try"
+    keep = now - NEWS_DAYS * 86400
+    st["items"] = [i for i in st["items"] if i["ts"] >= keep]
+    st["seen"] = {k: v for k, v in st["seen"].items() if v >= now - 60 * 86400}
+    os.makedirs(os.path.dirname(HEADLINES) or ".", exist_ok=True)
+    write_atomic(HEADLINES, json.dumps(st))
+    items = sorted(st["items"], key=lambda i: -i["ts"])
+    for i in items:
+        i["runs"] = bool(pin) and all(is_ancestor(path, x, pin) for x in i["shas"])
     return items
 
 
@@ -394,7 +540,10 @@ def build(now: int | None = None, trackers: dict | None = None) -> dict:
     if tn:
         try:
             full = (tn.get("runs") or {}).get("sha")
-            data["news"] = news(TESTNET, paths[TESTNET], tn["branch"], now, full if full and len(full) == 40 else None)
+            pin_full = full if full and len(full) == 40 else None
+            cands = candidates(TESTNET, paths[TESTNET], tn["branch"], now, pin_full)
+            data["news"] = headlines(TESTNET, paths[TESTNET], cands, now, pin_full)
+            data["news_ai"] = _ai_state["status"]
             data["sync"] = sync_state(TESTNET, paths[TESTNET], tn["branch"], pin)
         except Exception as e:  # noqa: BLE001
             log.warning("news/sync: %s", e)
