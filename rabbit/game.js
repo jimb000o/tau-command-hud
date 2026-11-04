@@ -1300,9 +1300,6 @@
     L.push({ k: "tips", parts: [Q("{x}, you have {n} coins.", { x: nm(G.me), n: G.coins[G.me] }), V("tips")] });
     isleLines().forEach(l => L.push(l));
     dejaLines().forEach(l => L.push(l));
-    const sh = shipAir(), fresh = sh.filter(l => !SAID.includes(l.k));   // a cruise ship near: news before the rest, until said
-    if (fresh.length && Math.random() < 0.5) return fresh;
-    sh.forEach(l => L.push(l));
     return L;
   }
   /* Rico reads the real testnet (or the simulation, in simulation mode) every minute and a half: the newest blocks and
@@ -1478,14 +1475,17 @@
   const SHIPV = { v: null, next: null, last: null };
   const SHIPAT = { works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };   // places only a painted island's layout brings
   const berlinHM = s => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(s * 1000)); } catch (e) { return new Date(s * 1000).toISOString().slice(11, 16); } };
-  /* &phase=soon, tomorrow or today: no ship on the sea yet, only the islanders and Rico talking about it (shipFacts);
-     &phase=cut: it sailed on without landing */
+  /* &phase=soon, tomorrow, today or close (two hours or less): no ship on the sea yet, only the islanders and Rico
+     talking about it (shipFacts); approach, wait (off the reef, for a calm lagoon), land (the tenders), turn (back aboard),
+     gone; cut: it sailed on without landing (&why=stalled or refused: it left early) */
   function shipPreview(k) {
-    const now = Math.floor(Date.now() / 1000), q = k === "queen", phase = new URLSearchParams(location.search).get("phase");
-    if (phase === "soon" || phase === "tomorrow" || phase === "today") return null;
-    return { ship: k, name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition", phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : "ashore",
-      why: phase === "cut" ? "no landing" : "",
-      t0: phase === "approach" ? now + 90 : now - 1800, end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: q ? 120 : 40,
+    const now = Math.floor(Date.now() / 1000), q = k === "queen", qs = new URLSearchParams(location.search), phase = qs.get("phase");
+    if (phase === "soon" || phase === "tomorrow" || phase === "today" || phase === "close") return null;
+    const why = phase === "cut" ? (/^(stalled|refused)$/.test(qs.get("why") || "") ? qs.get("why") : "no landing") : "";
+    return { ship: k, name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition",
+      phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
+      why, t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
+      end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: q ? 120 : 40,
       ashore: q ? 96 : 34, at: q ? { south: 30, bar: 26, radio: 12, market: 18, works: 6, pier: 4 } : { book: 8, ship: 9, school: 6, dive: 8, pier: 3 },
       sent: { pay: q ? 214 : 96, bill: q ? 5 : 0, book: q ? 21 : 5, cancel: q ? 2 : 1 }, refused: 0, kinds: q ? ["pay", "bill", "book"] : ["pay", "book"], preview: true };
   }
@@ -1497,24 +1497,163 @@
       if (!j) return;
       SRC.ship = new Set([].concat(...Object.values(j.wallets || {})).map(lc));
       SHIPV.v = j.now || null; SHIPV.next = j.next || null; SHIPV.last = j.last || null;
-      shipShow();
+      shipShow(); shipNews(SHIPV.v); shipLoad();
     }, () => {});
   }
   /* the ships' week as the islanders and Rico talk about it (talk.js RABBIT_SHIP_WHEN): from the relay's timetable, or
      from the preview (?ship=queen or dryrun, &phase=soon, tomorrow, today, approach, turn, gone or cut; none: ashore) */
-  const SHIP_SAY = { soon: "shipSoon", tomorrow: "shipTomorrow", today: "shipToday", approach: "shipToday", turn: "shipHere", gone: "shipGone", cut: "shipCut" };
+  const SHIP_SAY = { soon: "shipSoon", tomorrow: "shipTomorrow", today: "shipToday", close: "shipToday", approach: "shipToday", wait: "shipToday", land: "shipHere", turn: "shipHere", gone: "shipGone", cut: "shipCut" };
   function shipFacts() {
     const W = window.RABBIT_SHIP_WHEN, k = QS.get("ship"); if (!W) return {};
     if (k === "dryrun" || k === "queen") return W.mark(k, SHIP_SAY[QS.get("phase")] || "shipHere");
     return W({ now: SHIPV.v, next: SHIPV.next, last: SHIPV.last }, Date.now() / 1000);
   }
-  /* Rico on the ships (rico.js sq_* for the Queen, sd_* for MS Dry Run, s_cut for one that did not stay): one line for
-     where the week stands; djLines puts it on air before the rest of the game talk until he has said it */
-  function shipAir() {
-    const f = shipFacts(); if (!f.ship) return [];
-    const w = f.shipCut ? null : ["Soon", "Tomorrow", "Today", "Here", "Gone"].find(x => f["ship" + x]);
-    const k = w ? (f.queen ? "sq_" : "sd_") + w.toLowerCase() : "s_cut";
-    return RICO.L[k] ? [{ k, parts: [V(k)] }] : [];
+  /* ---------- Rico on the ships: the nearer a ship, the more he talks about it (rico.js SETS ship*) ----------
+     shipStage says where the week stands: soon (in two or three days), tomorrow, today, close (two hours or less), then
+     the visit (approach: in sight; wait: off the reef until the lagoon is calm or busy; land: the tenders; here: ashore;
+     board: the last ten minutes) and the rest of that day (gone, or cut, with the logbook's reason). shipOdds makes that
+     the share of Rico's lines about the ship: about one in twenty-five two or three days before, more and more through
+     the last day, four or five in ten while she is in, fading over the evening after. Before she lands he never says two
+     in a row, in port two at most; now and then a listener calls about her instead.
+     In port he says what the testnet shows, the numbers shown exactly and spoken as a band (rico.js NUMERIC): the
+     passengers' transactions the node has taken so far and those in the newest block, a booking, a withdrawal, a group
+     bill or a refusal since the last look (relay GET /cruise every minute, shipNews), the brakes, how the lagoon copes
+     (GET /load every two minutes while she is in) and where most of the passengers are. A preview (?ship=) has made-up
+     numbers, and every line of it says preview. */
+  const SHIPLIVE = { visit: null, sent: null, refused: 0, brake: "none", ev: [], block: null, load: null, loadAt: 0, top: null, said: {}, recap: null };
+  const SHIP_P = { approach: 0.4, wait: 0.45, land: 0.45, here: 0.4, board: 0.45 };
+  const shipOdds = st => !st ? 0 : SHIP_P[st.stage] != null ? SHIP_P[st.stage]
+    : st.after != null ? 0.05 + 0.3 * Math.exp(-st.after / 1.5) : Math.min(0.35, 0.04 + 0.45 * Math.exp(-st.h / 8));
+  const shipWhy = note => /^no landing/.test(note || "") ? "no landing" : /^left early/.test(note || "") ? (/refused/.test(note) ? "refused" : "stalled") : "";
+  function shipStage() {
+    const f = shipFacts(); if (!f.ship) return null;
+    const now = Date.now() / 1000, ship = f.queen ? "queen" : "dryrun", v = SHIPV.v, pv = QS.get("ship") === ship;
+    const st = { ship, q: ship === "queen", preview: pv }, PH = { approach: "approach", waiting: "wait", landing: "land", ashore: "here", boarding: "board" };
+    if (v && PH[v.phase]) return Object.assign(st, { stage: PH[v.phase], v, h: Math.max(0, (v.t0 - now) / 3600) });
+    if (v && v.phase === "gone") return Object.assign(st, { stage: v.why ? "cut" : "gone", why: v.why || "", v, after: Math.max(0, (now - v.end) / 3600) });
+    if (f.shipAfter) { const l = SHIPV.last || {}; return Object.assign(st, { stage: f.shipCut ? "cut" : "gone", why: shipWhy(l.note), v: SHIPV.last, after: Math.max(0, (now - (l.end || now)) / 3600) }); }
+    const n = SHIPV.next, h = pv ? { soon: 52, tomorrow: 26, today: 5, close: 1.2 }[QS.get("phase")] || 5 : n && n.t0 ? Math.max(0, (n.t0 - now) / 3600) : null;
+    if (h == null) return null;
+    return Object.assign(st, { stage: f.shipToday ? (h <= 2 ? "close" : "today") : f.shipTomorrow ? "tomorrow" : "soon", h, t0: pv ? null : n.t0 });
+  }
+  /* what changed since the last look at the ship in port: bookings, withdrawals, group bills, refusals, the brakes
+     (the first look at a visit only sets the counts, so nobody hears old news) */
+  function shipNews(v) {
+    if (!v || v.preview || !v.visit) return;
+    const L = SHIPLIVE, S = v.sent || {};
+    if (L.visit !== v.visit) { Object.assign(L, { visit: v.visit, sent: { ...S }, refused: v.refused || 0, brake: v.brake || "none", ev: [], block: null, top: null, said: {} }); return; }
+    const was = L.sent || {}, add = k => { if (!L.ev.some(e => e.k === k)) L.ev.push({ k, at: Date.now() }); };
+    if ((S.book || 0) > (was.book || 0)) add("book");
+    if ((S.cancel || 0) > (was.cancel || 0)) add("cancel");
+    if ((S.bill || 0) > (was.bill || 0)) add("bill");
+    if ((v.refused || 0) > L.refused) add(v.refused >= 3 ? "ref3" : "ref1");
+    if (v.brake === "half" && L.brake !== "half") add("half");
+    if (L.brake === "half" && v.brake === "none") add("full");
+    L.sent = { ...S }; L.refused = v.refused || 0; L.brake = v.brake || "none";
+  }
+  /* how the testnet copes while the passengers are ashore (relay GET /load: the verdict of the last ten minutes) */
+  function shipLoad() {
+    const v = SHIPV.v; if (!v || v.preview || !/^(landing|ashore|boarding)$/.test(v.phase) || Date.now() - SHIPLIVE.loadAt < 110000) return;
+    SHIPLIVE.loadAt = Date.now();
+    fetch("https://node.tauhud.com/load", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
+      if (!j || !j.now || !/^(calm|busy|strained)$/.test(j.state)) return;
+      const was = SHIPLIVE.load && SHIPLIVE.load.state;
+      SHIPLIVE.load = { state: j.state, waiting: Number(j.now.waiting) || 0, sealed: Number(j.now.sealed_hour) || 0, cruise: Number(j.now.cruise_hour) || 0, at: Date.now(), changed: !!was && was !== j.state };
+    }, () => {});
+  }
+  /* the passengers' transactions so far, shown beside the spoken band (and on the ship's card) */
+  function shipSoFar(S, K, card) {
+    const book = K.includes("book") || S.book > 0, bill = K.includes("bill") || S.bill > 0, c = { n: S.pay || 0, m: S.bill || 0, a: S.book || 0, b: S.cancel || 0 };
+    return F(card ? (book && bill ? "So far: {n} payments, {m} group bills, {a} bookings, {b} withdrawn." : book ? "So far: {n} payments, {a} bookings, {b} withdrawn." : bill ? "So far: {n} payments, {m} group bills." : "So far: {n} payments.")
+      : book && bill ? "({n} payments, {m} group bills, {a} bookings, {b} withdrawn)" : book ? "({n} payments, {a} bookings, {b} withdrawn)" : bill ? "({n} payments, {m} group bills)" : "({n} payments)", c);
+  }
+  /* the weekday in Germany, in English: a shown line is translated whole, its weekday and place name with it (a filled-in
+     word already in Chinese or Japanese would stop the translation of the line) */
+  const shipDay = t => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "long" }).format(new Date(t * 1000)); } catch (e) { return ""; } };
+  const shipName = st => st.q ? "Queen Mempool" : "MS Dry Run";
+  const LOADQ = { calm: "(testnet calm: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)", busy: "(testnet busy: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)",
+    strained: "(testnet strained: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)" };
+  const LOGQ = "(the logbook: node.tauhud.com/cruise/log)";
+  /* whether Rico can say a line aloud (with the sound on: its clips are there; a line with a band, every band's clip) */
+  const sayable = k => !(SND.on && RICO.voiced) || RICO.voiced(k) !== false;
+  /* a line with a number: shown exactly, spoken as a band ({where}: shown as the block, spoken as the latest block) */
+  const banded = (k, n, h) => ({ t: F(RICO.L[k], h != null ? { n, where: "block " + h } : { n }), v: RICO.fill(RICO.L[k], { n: band(n), ...RICO.BLOCK }) });
+  function shipLine() {
+    const st = shipStage(), p = shipOdds(st); if (!p) return null;
+    const run = ROT.shipAt === ROT.n - 1 ? ROT.shipRun || 0 : 0, port = /^(land|here|board)$/.test(st.stage);
+    if (run >= (port ? 2 : 1) || Math.random() >= p) return null;
+    const l = shipPick(st); if (!l) return null;
+    ROT.shipRun = run + 1; ROT.shipAt = ROT.n; ROT.callLast = !!l.call;
+    if (st.preview && !l.call) l.parts.push(Q("(preview)"));
+    return l;
+  }
+  function shipPick(st) {
+    const stage = st.stage, v = st.v || {}, r = Math.random(), port = /^(land|here|board)$/.test(stage);
+    const line = (keys, ...more) => { keys = (keys || []).filter(k => RICO.L[k]); if (!keys.some(sayable)) return null; const k = pickLine(keys); return { k, parts: [V(k), ...more] }; };
+    const why = () => { const l = line(RICO.SETS.shipWhy); if (l && l.k === "sw5") l.parts.push(Q(LOGQ)); return l; };
+    const pool = n => RICO.SETS[n + (st.q ? "Q" : "D")] || RICO.SETS[n];
+    if (port) { const l = shipPort(st, line); if (l) return l; }
+    /* after the visit: her day in numbers, once */
+    if ((stage === "gone" || stage === "cut") && v.sent) {
+      const S = v.sent, n = Object.values(S).reduce((a, b) => a + (Number(b) || 0), 0), id = v.visit || v.id || v.t0;
+      const rf = typeof v.refused === "number" ? v.refused : Object.values(v.refused || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+      if (n >= 2 && SHIPLIVE.recap !== id && sayable("sl_recap")) {
+        SHIPLIVE.recap = id;
+        return { k: "sl_recap", parts: [banded("sl_recap", n), { t: shipSoFar(S, v.kinds || Object.keys(S).filter(x => S[x] > 0), false), v: null }, ...(rf ? [Q("({n} refused by the node)", { n: rf })] : [])] };
+      }
+    }
+    const CALL = { soon: 0.15, tomorrow: 0.15, today: 0.15, close: 0.15, approach: 0.1, here: 0.2, gone: 0.15, cut: 0.1 }[stage] || 0;
+    const WHY = { soon: 0.35, tomorrow: 0.35, today: 0.35, close: 0.3, approach: 0.2, wait: 0.25, land: 0.15, here: 0.35, gone: 0.15 }[stage] || 0;
+    const when = /^(soon|tomorrow|today|close)$/.test(stage) ? [Q("({x}: {y}, {t} German time)", st.t0 ? { x: shipName(st), y: shipDay(st.t0), t: berlinHM(st.t0) }
+        : { x: shipName(st), y: shipDay(Date.UTC(2026, 10, st.q ? 7 : 4, 12) / 1000), t: st.q ? "14:00" : "16:00" })]   // a preview: the ship's weekday and hour
+      : stage === "approach" ? [Q("Lands at {t}, German time, with {n} simulated passengers.", { t: berlinHM(v.t0), n: v.passengers })]
+      : port && v.passengers ? [Q("{a} of {n} passengers ashore, in port until {t}.", { a: v.ashore || 0, n: v.passengers, t: berlinHM(v.end) })] : [];
+    const own = () => stage === "cut" ? line(RICO.SETS[{ "no landing": "shipCutLand", stalled: "shipCutStall", refused: "shipCutRefused" }[st.why] || "shipCut"], Q(LOGQ))
+      : line(pool({ soon: "shipSoon", tomorrow: "shipTomorrow", today: "shipToday", close: "shipClose", approach: "shipApproach", wait: "shipWait", land: "shipLand", here: "shipHere", board: "shipBoard", gone: "shipGone" }[stage]), ...when);
+    return (r < CALL ? shipCall() : r < CALL + WHY ? why() : null) || own() || why();
+  }
+  /* what Rico reports while the passengers are ashore, the newest first; null: nothing new, so a line of the stage */
+  function shipPort(st, line) {
+    const v = st.v || {}, S = v.sent || {}, L = SHIPLIVE, now = Date.now(), ago = k => now - (L.said[k] || 0);
+    L.ev = L.ev.filter(e => now - e.at < 240000);
+    while (L.ev.length) {
+      const e = L.ev.shift(), keys = { book: RICO.SETS.shipBook, cancel: RICO.SETS.shipCancel, bill: RICO.SETS.shipBill, half: ["ss_strain"], full: ["se_full"], ref1: ["se_ref1"], ref3: ["se_ref3"] }[e.k];
+      const more = e.k === "book" ? [Q("({n} bookings so far)", { n: S.book || 0 })] : e.k === "cancel" ? [Q("({n} withdrawn so far)", { n: S.cancel || 0 })]
+        : e.k === "bill" ? [Q("({n} group bills so far)", { n: S.bill || 0 })] : /^ref/.test(e.k) ? [Q("({n} refused so far)", { n: v.refused || 0 })] : [];
+      const l = line(keys, ...more); if (l) return l;
+    }
+    /* the newest block holds a few of their transactions (the blocks Rico reads anyway, shipSeen) */
+    const b = L.block;
+    if (b && !b.said && now - b.at < 180000 && ago("block") > 120000) {
+      const ks = RICO.SETS.shipBlock.filter(sayable);
+      if (ks.length) { const k = pickLine(ks); b.said = 1; L.said.block = now; return { k, parts: [banded(k, b.n, b.h)] }; }
+    }
+    /* how the lagoon copes: when that changed, or every twelve minutes */
+    const ld = L.load;
+    if (ld && now - ld.at < 300000 && (ld.changed || ago("load") > 720000)) {
+      const l = line(ld.state === "calm" ? RICO.SETS.shipCalm : ld.state === "busy" ? RICO.SETS.shipBusy : ["ss_strain"], Q(LOADQ[ld.state], { n: ld.waiting, m: ld.sealed, a: ld.cruise }));
+      if (l) { ld.changed = false; L.said.load = now; return l; }
+    }
+    /* the tally, every six minutes or so */
+    const total = (S.pay || 0) + (S.bill || 0) + (S.book || 0) + (S.cancel || 0);
+    if (total >= 2 && ago("total") > 360000 && Math.random() < 0.6) {
+      const ks = RICO.SETS.shipTotal.filter(sayable);
+      if (ks.length) { const k = pickLine(ks); L.said.total = now; return { k, parts: [banded(k, total), { t: shipSoFar(S, v.kinds || ["pay"], true), v: null }] }; }
+    }
+    /* where most of them are: when that changed, or every ten minutes */
+    const top = Object.entries(v.at || {}).filter(([id, n]) => id !== "pier" && n >= 2 && RICO.L["sa_" + id]).sort((a, b) => b[1] - a[1])[0];
+    if (st.stage === "here" && top && (top[0] !== L.top || ago("place") > 600000) && Math.random() < 0.7) {
+      const l = line(["sa_" + top[0]], Q("({x}: {n} passengers)", { x: (SC.places[top[0]] || {}).name || SHIPAT[top[0]] || top[0], n: top[1] }));
+      if (l) { L.top = top[0]; L.said.place = now; return l; }
+    }
+    return null;
+  }
+  /* a listener (or an islander) calls about the ship near: each call once, until Rico has said a lot of other things */
+  function shipCall() {
+    if (ROT.callLast) return null;
+    const sf = shipFacts(), keys = RICO.CALLS.map((c, i) => (c.when && /ship|queen|dryrun/.test(c.when) && holds(sf, c.when) ? "call:" + i : null))
+      .filter(x => x && !SAID.includes(x) && sayable(x));
+    return keys.length ? dial(keys[Math.floor(Math.random() * keys.length)]) : null;
   }
   function shipShow() {
     if (SC.ship) SC.ship(SHIPV.v);
@@ -1527,20 +1666,26 @@
       : ph === "gone" ? F("🛳 {x} has left", { x: v.name })
       : F("🛳 {x}: {n} ashore", { x: v.name, n: v.ashore || 0 })) + (v.preview ? " · " + T("preview") : "");
   }
-  /* a ring at the place each passenger transaction in a new block paid (a booking: the place it is for) */
+  /* a ring at the place each passenger transaction in a new block paid (a booking: the place it is for); a block with a
+     few of them is news for Rico's ship report (shipPort) */
   function shipSeen(nb) {
-    if (!SRC.ship.size || !SC.ping) return;
-    for (const b of nb) for (const tx of b.transactions || []) {
-      if (!SRC.ship.has(lc(tx.sender_pubkey))) continue;
-      const k = txKind(tx), tos = k === "user_tx" ? (((tx.operations || {})["1"]) || []).map(op => lc(op && op[1])) : k === "retractable_transfer" ? [lc(tx.recipient_pubkey)] : [];
-      tos.forEach(to => { const j = jarName(to); if (j && j !== "council") SC.ping(j); });
+    if (!SRC.ship.size) return;
+    for (const b of nb) {
+      let n = 0;
+      for (const tx of b.transactions || []) {
+        if (!SRC.ship.has(lc(tx.sender_pubkey))) continue;
+        n++;
+        const k = txKind(tx), tos = k === "user_tx" ? (((tx.operations || {})["1"]) || []).map(op => lc(op && op[1])) : k === "retractable_transfer" ? [lc(tx.recipient_pubkey)] : [];
+        if (SC.ping) tos.forEach(to => { const j = jarName(to); if (j && j !== "council") SC.ping(j); });
+      }
+      if (n >= 2) SHIPLIVE.block = { n, h: b.header.block_number, at: Date.now() };
     }
   }
   function shipCard() {
     const v = SHIPV.v; if (!v) return;
     openCard("pier", box => {
       const S = v.sent || {}, n = Object.values(S).reduce((a, b) => a + (Number(b) || 0), 0), K = v.kinds || ["pay"];
-      const book = K.includes("book") || S.book > 0, bill = K.includes("bill") || S.bill > 0, c = { p: S.pay || 0, g: S.bill || 0, b: S.book || 0, c: S.cancel || 0 };
+      const book = K.includes("book") || S.book > 0, bill = K.includes("bill") || S.bill > 0;
       const where = Object.entries(v.at || {}).filter(([, k]) => k > 0).sort((a, b) => b[1] - a[1])
         .map(([id, k]) => T((SC.places[id] || {}).name || SHIPAT[id] || id) + " " + k).join(" · ");
       const now = v.phase === "approach" ? F("Lands at {t}, German time, with {n} simulated passengers.", { t: berlinHM(v.t0), n: v.passengers })
@@ -1557,8 +1702,7 @@
           bill ? el("li", { text: T("At Bar La Ola a table pays one bill: a single transaction that pays the bar, Radio Coco and the Coconut Works at once.") }) : null,
           el("li", { text: T("At most twelve transactions a minute, only when the island bot has nothing to send; half as many while the testnet strains, and the ship leaves at once if it stalls. Its logbook keeps every one.") }),
           el("li", { text: now }),
-          n || v.phase !== "approach" ? el("li", { text: F(book && bill ? "So far: {p} payments, {g} group bills, {b} bookings, {c} withdrawn." : book ? "So far: {p} payments, {b} bookings, {c} withdrawn."
-            : bill ? "So far: {p} payments, {g} group bills." : "So far: {p} payments.", c) }) : null,
+          n || v.phase !== "approach" ? el("li", { text: shipSoFar(S, K, true) }) : null,
           where ? el("li", { text: where }) : null),
         el("div", { class: "cv-acts" },
           btn(T("The logbook"), () => window.open("https://node.tauhud.com/cruise/log", "_blank", "noopener")),
@@ -1612,7 +1756,7 @@
       for (const tx of txs) {
         const k = txKind(tx), paid = k === "user_tx" ? ((tx.operations || {})["1"] || []).reduce((a, x) => a + (Number(x && x[2]) || 0), 0) : Number(tx.amount) || 0;
         if (paid >= 100000) heard("whale", n);
-        if (KIND[k]) heard(KIND[k], n);
+        if (KIND[k] && !SRC.ship.has(lc(tx.sender_pubkey))) heard(KIND[k], n);   // a passenger's booking or withdrawal: Rico's ship report has it (shipNews)
         else if (k === "consensus_rule_update") heard(s.sim ? "lawSim" : "law", n);
       }
       if (s.sim) for (const d of TauSim.chain.dropped(n) || []) heard(d.type === "consensus_rule_update" ? "refusedLaw" : /o5|own rule|its rule/i.test(d.why || "") ? "refusedOwn" : "refused", n);
@@ -1676,14 +1820,16 @@
   /* a listener phones in: Rico picks up, the caller asks in their own voice (through the telephone), Rico answers */
   /* a call is a little conversation: the caller, Rico, the caller again, a goodbye, and Rico signs off (rico.js CALLS) */
   function phoneIn() {
-    /* when: solo or fresh (the chain), or the cruise ships' week like talk.js ("shipTomorrow+queen") */
-    const sf = shipFacts(), ok = c => !c.when || (c.when === "solo" ? RADAR.solo : c.when === "fresh" ? RADAR.fresh : holds(sf, c.when));
+    /* when: solo or fresh (the chain). The calls about the cruise ships ("shipTomorrow+queen", like talk.js) come with
+       Rico's ship talk instead (shipLine), as often as a ship is near */
+    const ok = c => !c.when || (c.when === "solo" ? RADAR.solo : c.when === "fresh" ? RADAR.fresh : false);
     const keys = RICO.CALLS.map((c, i) => ok(c) ? "call:" + i : null).filter(Boolean);
     if (SND.on && RICO.voiced && !keys.some(x => RICO.voiced(x) !== false)) return null;   // no call has its voices yet: something Rico can say aloud instead
-    /* an islander calling about the ship near goes first, once (with the sound on: once its voices are there) */
-    const ship = keys.filter(x => /ship/.test(RICO.CALLS[+x.slice(5)].when || "") && !SAID.includes(x) && !(SND.on && RICO.voiced && RICO.voiced(x) === false));
-    const k = ship.length ? ship[Math.floor(Math.random() * ship.length)] : pickLine(keys), c = RICO.CALLS[+k.slice(5)];
-    const ring = pickLine(RICO.SETS.ring), bye = pickLine(RICO.SETS.bye); markSaid(ring); if (!c.cut) markSaid(bye);
+    return dial(pickLine(keys));
+  }
+  /* the phone rings, the conversation, Rico's goodbye */
+  function dial(k) {
+    const c = RICO.CALLS[+k.slice(5)], ring = pickLine(RICO.SETS.ring), bye = pickLine(RICO.SETS.bye); markSaid(ring); if (!c.cut) markSaid(bye);
     return { k, parts: RICO.call(c, ring, bye), call: true };
   }
   /* chain news as a host tells it: big moments with a sting before and a word after, small ones now and then */
@@ -1710,6 +1856,8 @@
     ROT.newsLast = false;
     /* a new song on the radio: Rico says what it is */
     if (DJ.songNew && RICO.L["sn_" + DJ.songNew] && !(SND.on && RICO.voiced && RICO.voiced("sn_" + DJ.songNew) === false)) { const k = "sn_" + DJ.songNew; DJ.songNew = null; return { k, parts: [V(k)] }; }
+    /* a cruise ship near: Rico talks about it, the more the nearer it is, and reports from the island while she is in */
+    const sh = shipLine(); if (sh) return sh;
     /* in between: the game, a joke now and then, the phone-in, Tau corner, a word between songs, the jungle legend, the island's habits */
     /* the chain has stood still for an hour or more: Rico talks about it now and then, not only in the weather */
     const st = RADAR.snap;
@@ -1730,7 +1878,7 @@
   readChain(); setInterval(() => { if (!away()) readChain(); }, 90000);
   dejaFetch(); setInterval(() => { if (!away()) dejaFetch(); }, 600000);
   srcFetch(); setInterval(() => { if (!away()) srcFetch(); }, 600000);
-  if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine };   // the headless check (tests)
+  if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine, markSaid, shipStage, shipOdds, shipLine, shipPick, SHIPLIVE, SHIPV, ROT };   // the headless check (tests)
   setInterval(() => {
     if (!G || G.over || G.counting || away() || performance.now() < DJ.next || SND.gap) return;
     /* the Night Line's hour belongs to the callers between the songs (the show's opener still comes first) */

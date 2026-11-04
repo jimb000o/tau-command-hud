@@ -127,10 +127,30 @@ for (const [what, now, c, want] of week) {
   const [w, ship] = want.split(" "), exp = want ? ["ship", ship, w, ...(/Soon|Tomorrow|Today/.test(w) ? ["shipNear"] : []), ...(/Gone|Cut/.test(w) ? ["shipAfter"] : [])].sort().join(" ") : "";
   assert.equal(on, exp, what);
 }
-/* Rico's lines on air about the ships, as game.js shipAir() names them */
+/* Rico on air about the ships (game.js shipLine): the pools he picks from by how near the ship is, the lines for what
+   happens in port, the numbers spoken as a band, and how often he talks about the ship */
 const rico = { addEventListener() {}, removeEventListener() {}, fetch: () => Promise.reject(new Error("offline")), btoa };
 rico.window = rico; vm.runInNewContext(await readFile(root + "rabbit/talk.js", "utf8") + "\n" + await readFile(root + "rabbit/rico.js", "utf8"), rico);
-const shipLines = Object.keys(rico.RICO.L).filter(k => /^s[qd]_|^s_cut$/.test(k));
-assert.deepEqual(shipLines.sort(), ["s_cut", ...["sd_", "sq_"].flatMap(p => ["soon", "tomorrow", "today", "here", "gone"].map(w => p + w))].sort(), "Rico's ship lines");
+const R = rico.RICO, game = await readFile(root + "rabbit/game.js", "utf8"), cruise = await readFile(root + "infra/relay/cruise.py", "utf8");
+for (const st of ["Soon", "Tomorrow", "Today", "Close", "Approach", "Land", "Here", "Gone"]) for (const s of ["Q", "D"]) assert.ok(R.SETS["ship" + st + s]?.length, "ship" + st + s);
+for (const n of ["shipWait", "shipBoard", "shipCut", "shipCutLand", "shipCutStall", "shipCutRefused", "shipWhy", "shipBook", "shipCancel", "shipBill", "shipCalm", "shipBusy", "shipTotal", "shipBlock"]) assert.ok(R.SETS[n]?.length, n);
+for (const [n, keys] of Object.entries(R.SETS)) if (/^ship/.test(n)) for (const k of keys) assert.ok(R.L[k], `SETS.${n}: ${k} is not a line`);
+for (const n of new Set(game.match(/"ship[A-Z]\w*"/g).map(x => x.slice(1, -1)))) if (!/^ship(Soon|Tomorrow|Today|Close|Approach|Wait|Land|Here|Board|Gone)$/.test(n)) assert.ok(R.SETS[n], `game.js picks from SETS.${n}, which rico.js does not have`);
+for (const k of ["se_full", "se_ref1", "se_ref3", "ss_strain", "sl_recap", "sw5"]) assert.ok(R.L[k], k);
+const stops = new Set([...cruise.matchAll(/"stops": \{([^}]*)\}/g)].flatMap(m => [...m[1].matchAll(/"(\w+)":/g)].map(x => x[1])));
+for (const p of stops) assert.ok(R.L["sa_" + p], `no line for the passengers at ${p} (sa_${p})`);
+for (const k of [...R.SETS.shipTotal, ...R.SETS.shipBlock, "sl_recap"]) assert.ok(R.NUMERIC[k] === "count" && R.L[k].includes("{n}"), `${k}: a number spoken as a band`);
+for (const k of R.SETS.shipBlock) assert.ok(R.L[k].includes("{where}"), k);
+/* every band reads as English where it stands ("a handful of of" would not) */
+for (const [k, b] of Object.entries(R.NUMERIC)) for (const n of R.BANDS[b]) { const t = R.fill(R.L[k], { n, ...R.BLOCK }); assert.ok(!/\bof of\b|\bdozen of\b|\bmore of\b/.test(t), `${k}: ${t}`); }
+/* the share of Rico's lines about the ship: it grows as the ship comes nearer, is highest in port, and fades after */
+const odds = game.match(/const SHIP_P = [^\n]*\n  const shipOdds = [^\n]*\n[^\n]*\n/)[0], O = vm.runInNewContext(odds + "; shipOdds");
+const before = [72, 60, 48, 36, 24, 12, 8, 6, 4, 3, 2, 1, 0.5].map(h => O({ stage: "soon", h }));
+for (let i = 1; i < before.length; i++) assert.ok(before[i] >= before[i - 1], "nearer, more often");
+assert.ok(before[0] >= 0.03 && before[0] <= 0.05, "two or three days before: about one line in twenty-five");
+assert.ok(O({ stage: "today", h: 12 }) < 0.2 && O({ stage: "close", h: 1 }) >= 0.3, "the last day ramps up");
+for (const s of ["approach", "wait", "land", "here", "board"]) assert.ok(O({ stage: s }) >= 0.4, s);
+assert.ok(O({ stage: "gone", after: 0 }) > O({ stage: "gone", after: 2 }) && O({ stage: "gone", after: 8 }) <= 0.06, "fades after");
+assert.equal(O(null), 0);
 console.log("Ship assets, fallback selection, heading, turn continuity, waterline transforms and overview clearance passed.");
-console.log("Ship talk: a week of windows in German time, and Rico's ship lines, passed.");
+console.log("Ship talk: a week of windows in German time, Rico's ship pools, bands and odds, passed.");
