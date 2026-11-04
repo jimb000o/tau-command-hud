@@ -175,7 +175,7 @@ TauI18n.add({ strings: {
   "What if": "もしも",
   "Move block time, validators and votes needed, and watch a sandbox chain react.": "ブロック時間、バリデーター、必要票数を動かして、サンドボックスのチェーンの反応を見ます。",
   "Move a lever": "レバーを動かす",
-  "Block time, validators, votes needed, validators offline and network delay. Or start from a preset such as “Real testnet today”.": "ブロック時間、バリデーター、必要票数、オフラインのバリデーター、ネットワークの遅延。または「いまの本物のテストネット」のようなプリセットから始めてください。",
+  "Block time, validators, votes needed, validators offline and network delay. Or start from a preset such as “Like real testnet today”.": "ブロック時間、バリデーター、必要票数、オフラインのバリデーター、ネットワークの遅延。または「いまの本物のテストネット風」のようなプリセットから始めてください。",
   "The chain reacts at once": "チェーンがすぐに反応",
   "Newest block on the right. When a block arrives too late, two blocks land at one height: a short split that the next block settles. It is not the fork Tau avoids, changing the rules never needs one. Hover a block, click it for its story.": "最新のブロックは右側。ブロックが遅れて届くと、1 つの高さに 2 つのブロックが並びます：次のブロックが解決する短い分岐です。これは Tau が避けるフォークではありません。ルールの変更にフォークは決して要りません。ブロックにカーソルを合わせ、クリックするとその物語が表示されます。",
   "Rule changes need votes": "ルール変更には票が必要",

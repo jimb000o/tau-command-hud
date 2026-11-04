@@ -2308,5 +2308,10 @@
     "tag": "HUD",
     "on": "2026-11-04",
     "html": "Live node light: after the node or the relay was offline, the light turns green again by itself as soon as the node answers, without reloading the page. Red now means only that the node or the relay does not answer; a chain that stalls or catches up shows amber."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "What if: the preset is now called “Like real testnet today”, because it copies the testnet’s rules (one validator, a block about every minute), not its blocks. Beside the sandbox chain the real testnet’s current block now shows, so block #85 in the sandbox is not mistaken for a chain restart."
   }
 ]
