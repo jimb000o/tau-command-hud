@@ -176,8 +176,9 @@
     dejaFed: "Déjà has eaten today. Three wallets agreed, and Marisol says she acted surprised.",
     dejaN: "Déjà, the café cat: {n} of three wallets agreed today. One test AGRS says yes; find her.",
     dejaNone: "Nobody has agreed to feed Déjà yet today. Three wallets, one test AGRS each; find her, she is around.",
-    /* the cruise ships (game.js shipAir): Queen Mempool (sq_) and MS Dry Run (sd_) in two or three days, tomorrow, today,
-       ashore and gone; s_cut for one that did not stay. The passengers are made up, their test coins are real */
+    /* the cruise ships (game.js shipLine, SETS ship*): Queen Mempool (sq_), MS Dry Run (sd_) and either (sg_), from two or
+       three days before to the evening after; s_cut and sc_ for one that did not stay, sw_ why and how, sa_ where the passengers
+       are, se_ what just happened, ss_ how the lagoon copes, sl_ the numbers. The passengers are made up, their test coins are real */
     sq_soon: "Saturday at two, the Queen Mempool drops anchor off the island. A hundred and twenty passengers, all made up by our relay, all paying in real test coins. Tobias has started his speech. Pray for the gulls.",
     sq_tomorrow: "Tomorrow at two, the Queen Mempool! Song requests welcome, one transaction each. Rico is warming up his voice, and Lola is hiding the good lemons.",
     sq_today: "Today's the day: the Queen Mempool lands at two, if the lagoon is calm. If it isn't, she waits a little and sails on. A ship that waits for good weather. Smarter than Rico on a Friday.",
@@ -189,6 +190,118 @@
     sd_here: "MS Dry Run is ashore. Notebooks at the lighthouse, the school and the Old Ship. Captain Wren is labelling the passengers faster than they can write.",
     sd_gone: "MS Dry Run has left. The dives they booked pay out by themselves at their hour. No captain needed. Rico finds that very romantic.",
     s_cut: "The cruise ship didn't stay today, folks. She lands only when the lagoon is calm, and she leaves the moment something goes wrong. The logbook says what happened. Rico reads it so you don't have to. But you can.",
+    /* two or three days before */
+    sq_soon2: "Saturday at two: the Queen Mempool. A hundred and twenty passengers, three times the crowd of MS Dry Run. Salado has ordered towels. Lola has ordered a second blender.",
+    sq_soon3: "The Queen Mempool is named after the lagoon's waiting room, where transactions wait for their block. Her passengers' transactions will wait there too, like everybody's. Saturday at two.",
+    sd_soon2: "MS Dry Run on Wednesday. A dry run is a rehearsal: you do it for practice, before it counts. Forty made-up passengers, real test transactions, and the lagoon practises having guests.",
+    sd_soon3: "Wednesday at four, the little expedition ship drops anchor. Captain Wren has dusted the Old Ship. Kai has counted the wetsuits. Old Sam has done nothing. The lighthouse is always ready.",
+    sg_soon1: "Ship talk on the island again. The fishermen say a cruise ship is two or three days out. They once said that about the mainland ferry. This one has a timetable.",
+    sg_soon2: "Rico's cruise forecast: a couple of quiet days, then a ship full of made-up tourists with real test coins. Pack sunscreen. Or don't. The tourists won't. They're made up.",
+    /* tomorrow */
+    sq_tom2: "Tomorrow, the Queen Mempool. At Bar La Ola a table can pay one bill: one transaction, three tills. Lola has been practising her smile. It's going well. Mostly.",
+    sq_tom3: "Tomorrow at two, the Queen. The spa takes bookings, and the coins wait in escrow until the hour. Salado has been practising the word escrow in a soothing voice. It isn't soothing.",
+    sd_tom2: "Tomorrow at four, MS Dry Run. Forty passengers with notebooks. The school has questions for them. They have questions for the school. Somebody will have to answer eventually.",
+    sd_tom3: "Tomorrow, MS Dry Run: the lighthouse, Captain Wren's Old Ship, the school, the reef. Old Sam has polished the Book. It didn't need polishing. He did it anyway.",
+    sg_tom1: "A ship in the bay tomorrow. If the lagoon is calm or merely busy, she lands. If it's rough, she waits ten minutes and sails on. Rico respects a ship that knows when to leave.",
+    sg_tom2: "Ship tomorrow, folks. The passengers aren't real, but every coin they spend goes into a real block. Bring your questions. Rico brings the music.",
+    /* the day itself, more than two hours before */
+    sq_today2: "Queen Mempool day! Tobias has been on the pier since breakfast. The ship hasn't. She keeps her timetable: two o'clock, island time. Tobias keeps his own.",
+    sq_today3: "The Queen comes today. The spa is steamed, the bar is stocked, and Rico has been warned. Twelve transactions a minute at most, so the lagoon keeps breathing. So does Rico.",
+    sd_today2: "MS Dry Run at four today. Hana's class has a list of questions longer than the pier. Captain Wren has a list of answers longer than the class. Somebody bring snacks.",
+    sd_today3: "MS Dry Run today. Some passengers will book a dive and then change their minds, on purpose: the lagoon practises giving coins back. Kai has never been this happy about a cancellation.",
+    sg_today1: "Ship day, folks. Keep an eye on the sea: half an hour before she lands, you'll see her coming, and the island shows the time she lands.",
+    sg_today2: "Ship day. Rico has checked the lagoon twice, the weather once and his hair three times. Priorities.",
+    /* two hours or less before */
+    sq_close1: "Not long now until the Queen Mempool. Salado is folding towels into swans. Lola is folding her arms.",
+    sd_close1: "MS Dry Run is due soon. Captain Wren has put labels on the pier. The pier was fine without labels.",
+    sg_close1: "The ship is due within two hours. Keep the radio on: Rico will tell you when she's in sight.",
+    sg_close2: "The ship is close, folks. She lands only on a calm or busy lagoon. Rico has asked the lagoon nicely. The lagoon doesn't take requests. Rico does.",
+    sg_close3: "Countdown on the island. Tobias has a speech, Salado has towels, Hana has a list and Rico has a microphone. Only one of those is useful. Rico won't say which.",
+    /* in sight, half an hour before */
+    sq_app1: "There she is! The Queen Mempool, on the horizon. Big, white and a little bit smug.",
+    sd_app1: "Ship in sight! MS Dry Run, small and determined, coming round the reef. Captain Wren is already waving a clipboard.",
+    sg_app1: "She's in sight, folks. Within half an hour the tenders start, and every passenger pays the pier one coin on stepping ashore. Tobias is at the very end of the pier. Somebody hold his collar.",
+    sg_app2: "Look out to sea: that's the ship. When she arrives, she checks the lagoon first. Calm or busy, the tenders go. Anything rougher, she waits.",
+    sg_app3: "The ship is coming in. Rico is turning the music down a notch, so you can hear the gulls panic.",
+    /* waiting off the reef for a calm lagoon */
+    sg_wait1: "The ship is waiting off the reef. She lands only when the lagoon is calm or busy, and she gives it ten minutes. Tobias is holding his breath. Not for ten minutes, Tobias.",
+    sg_wait2: "No landing yet: the ship checks the lagoon before she sends anybody ashore. Rico likes a ship with standards. Rico has some too. Mostly about lemonade.",
+    sg_wait3: "Still waiting off the island. The tenders are ready, the lagoon isn't, yet. Ten minutes, then she decides. Rico is playing something soothing for the lagoon.",
+    /* the tenders bring the passengers ashore */
+    sq_land1: "The Queen's tenders are coming in! A hundred and twenty passengers, ten minutes to get them all ashore, one coin each to the pier. Tobias is counting. Out loud.",
+    sd_land1: "MS Dry Run's tenders are at the pier. Forty passengers step ashore, notebooks open. The first question has been asked. It was about the pier.",
+    sg_land1: "The first passengers are ashore! One coin each to the pier, one transaction each, into the next blocks. Watch the pier light up.",
+    sg_land2: "Tenders in, tenders out. For ten minutes the pier is the busiest place on the island. Tobias has never been happier. Or wetter.",
+    sg_land3: "They've landed. From now until boarding, every stop they make is a real test transaction to the till of that place. The same tills you pay when you play. Rico will keep you posted.",
+    /* in port */
+    sq_here2: "Queen passengers everywhere. Some at the spa, some at Lola's, some on the square buying souvenirs they don't need with coins that aren't worth anything. Tourism!",
+    sq_here3: "The Queen is in port. A hundred and twenty made-up guests, and every one of them pays like a real one. Salado wants to know if he can keep them.",
+    sd_here2: "MS Dry Run's passengers are spread over the island: the lighthouse, the Old Ship, the school, the reef. Wherever you see a guide's pennant, there's a group.",
+    sd_here3: "Report from the school: Hana's class is interviewing the passengers. The passengers are made up. The class doesn't mind. The class has questions.",
+    sg_here1: "Ship in port, and the lagoon keeps working: blocks come and go, and the passengers' payments go in with everyone else's. No priority lane for tourists. Not even nice ones.",
+    sg_here2: "Ship in port, folks. Twelve transactions a minute at most, so there's room on the lagoon for you too. Send something. Wave at the tourists.",
+    /* the last ten minutes, back aboard */
+    sg_board1: "Last call! The passengers are heading back to the tenders. No more stops. Whatever they still owe goes out at the usual pace, then it's the long walk to the pier and Tobias waving.",
+    sg_board2: "Ten minutes to go. The tenders are waiting, and the passengers stop shopping and start waving. Rico knows the feeling.",
+    sg_board3: "Back aboard, everyone! If you still see a passenger at Lola's, no, you don't. They're made up.",
+    /* left on time */
+    sq_gone2: "The Queen Mempool is heading for the horizon. Salado is counting towels, Lola is counting coins, and Tobias is counting the days to Saturday.",
+    sd_gone2: "MS Dry Run is off. The rehearsal is over, and the logbook has the whole script. Captain Wren is already writing her review.",
+    sg_gone1: "Ship gone, island quiet. Every coin they paid is in the blocks, and the logbook keeps every one for two weeks. Rico keeps it for one song.",
+    sg_gone2: "That's it for the ship. If you missed it, the logbook has every single transaction. If you missed Tobias's speech, there's no logbook for that. On purpose.",
+    /* never landed, or left early (the logbook says why) */
+    sc_land1: "No landing today. The ship waited her ten minutes off the reef, things weren't right, and she sailed on. The logbook says exactly what. Tobias says a lot more, from the pier.",
+    sc_land2: "The ship came, looked and sailed on. She lands only when the lagoon is right for it, and today it wasn't. Better a missed landing than a jammed lagoon.",
+    sc_stall1: "The ship left early. The lagoon stalled, so she took her passengers back aboard at once. That's the rule: when the chain stops, the ship goes. The logbook says when, to the second.",
+    sc_stall2: "Early departure, folks. The lagoon stopped making blocks, and the ship doesn't stay to watch. Was it the ship? The logbook will tell, either way. Rico won't guess.",
+    sc_ref1: "The ship left early: the node refused too many of the passengers' transactions. Five refusals among the last twenty, and she goes. The logbook has every refusal, with the node's answer.",
+    sc_ref2: "The node said no once too often today, so the ship left before her time. No drama, just rules. Somebody will read the logbook tonight. Rico suspects Hana.",
+    /* what the ships are and how they work, at any time */
+    sw1: "A word on the cruise ships, since half the island keeps asking. The passengers are made up by our relay. What they pay is real: test coins, on the testnet, in real blocks. Fake tourists, real transactions.",
+    sw2: "Why send cruise ships to a testnet? To see how the lagoon copes with a crowd. Better to learn it here, with test coins and made-up tourists, than later with real ones.",
+    sw3: "Ship rule number one: twelve transactions a minute, no more, and only when the island bot has nothing to send. The lagoon stays open for everybody else. Especially you.",
+    sw4: "Ship rule number two: if the lagoon strains, the ship slows to half pace. If it stalls, she takes everybody back aboard and leaves. No captain argues with the lagoon.",
+    sw5: "The ship's logbook is open to anyone, and the address is on your screen. Time, kind, place, amount and the node's answer, for every single transaction. Rico read it. Rico needed a lie-down.",
+    sw6: "The two ships use a hundred and sixty wallets: forty for MS Dry Run, a hundred and twenty for the Queen. Wallets, not people. The stats page counts them apart, so nobody mistakes them for new fans. Rico wishes.",
+    sw7: "Some passengers book ahead, with the right to change their minds. The coins sit in escrow until the hour, then the chain pays the place by itself. Change your mind before that, and the coins go home.",
+    sw8: "At Bar La Ola, a table of Queen passengers pays one bill. One transaction, three tills: the bar, Radio Coco and the Coconut Works. Lola calls it efficient. Noor calls it about time.",
+    sw9: "See the rings on the island while a ship is in? Each one is a passenger's transaction, sealed in a block, at the place it paid. The island lights up where the chain says it should.",
+    sw10: "Want to watch from the engine room? The testnet load page shows the ship's share, minute by minute, next to everybody else's. Honest numbers, no music. Rico is working on the music.",
+    sw11: "Where do the passengers get their coins? From the testnet's faucet, like every new wallet. Nobody prints extra coins for tourists.",
+    sw12: "What the passengers never do: vote, change rules, feed Déjà or touch the players' board. They're tourists. They pay, they look, they leave.",
+    sw13: "A new kind of transaction gets a trial run: five at most on its first visit. Only when that goes cleanly does it get the whole day next time. Even a ship has to earn trust.",
+    /* where most of the passengers are just now (relay GET /cruise: at) */
+    sa_book: "Most passengers are up at the lighthouse right now. Two coins at the till, and Old Sam lets them look at the Book. Reading is free. The stairs are not.",
+    sa_ship: "The biggest group is at Captain Wren's Old Ship. Three coins each, and she tells them which planks are original. All of them, apparently.",
+    sa_school: "The school is the busiest place on the island right now. Six coins a visit, and for once Hana's class gets to ask the questions.",
+    sa_dive: "Most of them are at the dive centre. Twelve coins a dive, and Kai's sensors sign every reading. Nobody has asked the fish to sign anything.",
+    sa_market: "The market square is full of passengers buying souvenirs. Eight coins a stop. Rico has seen the souvenirs. Rico would pay eight coins not to.",
+    sa_works: "A crowd at the Coconut Works. Four coins each, and Noor gives the tour. Baako's co-op brings the coconuts. Noor brings the attitude.",
+    sa_bar: "Bar La Ola is the place to be right now. Five coins a drink. Lola has stopped asking where they're from. Nobody's from anywhere. They're made up.",
+    sa_south: "The spa up at the South Current resort is full. Twenty coins a visit, cucumbers included. Salado is walking between the loungers like a man who just won an argument.",
+    sa_radio: "Most of the passengers are right here at Radio Coco. Twenty-five coins a song request, same price as for everybody. Rico doesn't check. Rico just spins.",
+    /* what just happened (the relay's counts since the last look) */
+    se_book1: "A booking just came in: coins into escrow, paid out at the hour, unless the passenger changes their mind before then. It's allowed. Rico changes his mind every song.",
+    se_book2: "Another passenger booked ahead. The coins wait in escrow, the place waits for its hour, and the chain does the rest. No receptionist needed.",
+    se_cancel1: "Change of plans! A passenger took a booking back before its hour, and the coins went home. A retractable transfer, doing exactly what it says.",
+    se_cancel2: "Somebody withdrew a booking. No form, no phone call, no Salado. One transaction, and the escrow lets go.",
+    se_bill1: "One bill, three tills! A table at Bar La Ola just paid the bar, Radio Coco and the Coconut Works in one transaction. Rico's share is on its way. Test coins. Rico will spend it on nothing.",
+    se_bill2: "Another group bill at Lola's: one transaction, three places paid. Noor wants to know why the Works is on a bar bill. Coconut snacks, Noor. Coconut snacks.",
+    se_full: "The lagoon has caught its breath, and the ship is back to full pace. Twelve a minute at most, as always.",
+    se_ref1: "The node just said no to a passenger's transaction. It happens. The logbook keeps the node's answer, and the ship keeps count.",
+    se_ref3: "Refusals are adding up. Five among the ship's last twenty transactions, and she leaves, no discussion. Rico is watching. So is the lagoon.",
+    /* how the testnet copes with the ship in port (relay GET /load) */
+    ss_calm1: "Lagoon report with the ship in port: calm. Blocks keep coming, and nobody waits long for one. The tourists aren't even making a dent. Rico is a little offended on their behalf.",
+    ss_calm2: "Still calm out there. The lagoon is handling the ship the way Lola handles a Tuesday.",
+    ss_busy1: "The lagoon is busy now. Busy is fine. Busy is what a harbour is for. The blocks are fuller, and the queue still moves.",
+    ss_busy2: "Busy lagoon, folks: a hundred and more transactions in the last ten minutes, and not one of them waited more than a minute for its block. The ship is doing her job. So is the chain.",
+    ss_strain: "The lagoon is straining, so the ship has slowed to half pace. If it stalls, she leaves at once. That's the safety rope, and Rico is holding it.",
+    /* the real numbers, shown exactly and spoken as a band */
+    sl_total1: "Ship report: so far the node has taken {n} transactions from her passengers. Each one is in the logbook, with its time, its place and the node's answer.",
+    sl_total2: "Ship report from the island: {n} passenger transactions so far. Rico would count them for you, but the logbook already did.",
+    sl_block1: "{n} passenger transactions in {where}. Signed, checked, sealed. The lagoon doesn't care that the passengers are made up. It checks the signatures anyway.",
+    sl_block2: "Fresh from the lagoon: {where} holds {n} transactions from the passengers. Watch the island: every place they paid gets a ring.",
+    sl_recap: "The ship's day in numbers: {n} transactions the node took, from the first coin at the pier to the last stop. Every one is in the logbook, for two weeks.",
     /* a mixed wave: many wallets at once, nobody leading */
     dk3: "Why did {n} wallets move at the same minute? Rico has three theories, Old Sam has one, and the Book has none. The Book only says that they did.",
     ghost1: "Ghost report from the harbour: transactions already sealed in a block, but still listed as waiting. The node hasn't noticed they left. Old Sam calls them guests who never go home.",
@@ -538,6 +651,38 @@
     nodeNew: ["nd1", "nd2", "nd3", "nd4", "nd5"], nodeMany: ["ndm1", "ndm2", "ndm3", "ndm4"], nodeGone: ["ngo1", "ngo2", "ngo3"], nodeGoneMany: ["ngm1"],
     nlOpen: ["nlo1", "nlo2", "nlo3"], nlRing: ["nlr1", "nlr2", "nlr3", "nlr4"], nlBye: ["nlb1", "nlb2", "nlb3", "nlb4", "nlb5"], nlClose: ["nlc1", "nlc2"],
     lagoon: ["bld1", "bld2", "bld3", "idea1", "idea2", "idea3", "idea4", "idea5", "idea6"], dunno: ["dk1", "dk2"],
+    /* the cruise ships (game.js shipLine): by how near the ship is, Q the Queen Mempool, D MS Dry Run; what the ships are (shipWhy);
+       what just happened in port (shipBook, shipCancel, shipBill), how the lagoon copes (shipCalm, shipBusy), the numbers (shipTotal, shipBlock) */
+    shipSoonQ: ["sq_soon", "sq_soon2", "sq_soon3", "sg_soon1", "sg_soon2"],
+    shipSoonD: ["sd_soon", "sd_soon2", "sd_soon3", "sg_soon1", "sg_soon2"],
+    shipTomorrowQ: ["sq_tomorrow", "sq_tom2", "sq_tom3", "sg_tom1", "sg_tom2"],
+    shipTomorrowD: ["sd_tomorrow", "sd_tom2", "sd_tom3", "sg_tom1", "sg_tom2"],
+    shipTodayQ: ["sq_today", "sq_today2", "sq_today3", "sg_today1", "sg_today2"],
+    shipTodayD: ["sd_today", "sd_today2", "sd_today3", "sg_today1", "sg_today2"],
+    shipCloseQ: ["sq_close1", "sg_close1", "sg_close2", "sg_close3"],
+    shipCloseD: ["sd_close1", "sg_close1", "sg_close2", "sg_close3"],
+    shipApproachQ: ["sq_app1", "sg_app1", "sg_app2", "sg_app3"],
+    shipApproachD: ["sd_app1", "sg_app1", "sg_app2", "sg_app3"],
+    shipWait: ["sg_wait1", "sg_wait2", "sg_wait3"],
+    shipLandQ: ["sq_land1", "sg_land1", "sg_land2", "sg_land3"],
+    shipLandD: ["sd_land1", "sg_land1", "sg_land2", "sg_land3"],
+    shipHereQ: ["sq_here", "sq_here2", "sq_here3", "sg_here1", "sg_here2"],
+    shipHereD: ["sd_here", "sd_here2", "sd_here3", "sg_here1", "sg_here2"],
+    shipBoard: ["sg_board1", "sg_board2", "sg_board3"],
+    shipGoneQ: ["sq_gone", "sq_gone2", "sg_gone1", "sg_gone2"],
+    shipGoneD: ["sd_gone", "sd_gone2", "sg_gone1", "sg_gone2"],
+    shipCut: ["s_cut"],
+    shipCutLand: ["sc_land1", "sc_land2", "s_cut"],
+    shipCutStall: ["sc_stall1", "sc_stall2", "s_cut"],
+    shipCutRefused: ["sc_ref1", "sc_ref2", "s_cut"],
+    shipWhy: ["sw1", "sw2", "sw3", "sw4", "sw5", "sw6", "sw7", "sw8", "sw9", "sw10", "sw11", "sw12", "sw13"],
+    shipBook: ["se_book1", "se_book2"],
+    shipCancel: ["se_cancel1", "se_cancel2"],
+    shipBill: ["se_bill1", "se_bill2"],
+    shipCalm: ["ss_calm1", "ss_calm2"],
+    shipBusy: ["ss_busy1", "ss_busy2"],
+    shipTotal: ["sl_total1", "sl_total2"],
+    shipBlock: ["sl_block1", "sl_block2"],
   };
   /* the numbers in a wave line are shown exactly and spoken as a band, so every line has its clips: {n} a count of
      transactions or wallets (BANDS.count) or an amount of lagoon coins (BANDS.coins); a count line never says "one" (a
@@ -545,7 +690,7 @@
      block, shown as "block 1234" (a name that starts with b, n, m, a, c, h, g or e would be read as a number or a hash by
      assets/i18n.js). */
   const BANDS = { count: ["a couple of", "a handful of", "a dozen", "dozens of", "a hundred and more"], coins: ["a few hundred", "thousands of", "tens of thousands of", "a hundred thousand and more"] };
-  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", isN: "count", ndm1: "count", ndm2: "count", ndm3: "count", ndm4: "count", ngm1: "count", un1: "coins", un3: "coins" };
+  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", isN: "count", ndm1: "count", ndm2: "count", ndm3: "count", ndm4: "count", ngm1: "count", un1: "coins", un3: "coins", sl_total1: "count", sl_total2: "count", sl_block1: "count", sl_block2: "count", sl_recap: "count" };
   const VARIANTS = { dejaN: [{ n: "one" }, { n: "two" }], isWin: NAMES.map(x => ({ x })), isGov: NAMES.map(x => ({ x })) };   // the other fills a line takes, one clip each
   const BLOCK = { where: "the latest block" };   // how the block is spoken
   /* callers who phone the studio, each in their own voice through the telephone: listeners (ready voices, make.py
@@ -762,6 +907,47 @@
       "It's four stools and a fridge, Rico. Then he asked who the fridge reports to.",
       "Rico hopes you told him the fridge reports to nobody. Some things on this island are still free.",
       "I gave him the bill. That one he understood. Bye, Rico!"] },
+    /* listeners call about the cruise ships while one is near (when: talk.js RABBIT_SHIP_WHEN); game.js shipLine puts them on air */
+    { who: "ozzie", when: "shipNear", say: ["G'day Rico, Ozzie here! I want to go on the cruise. Where do I buy a ticket?",
+      "You can't, mate. The passengers are made up by our relay. The two ships have a hundred and sixty wallets between them, and not a single bunk.",
+      "Made up? Then who's drinking all the cocktails?",
+      "Nobody, Ozzie. The coins are real test coins. The cocktails are imaginary. Lola charges for them anyway.",
+      "Sounds like my last holiday. Cheers, Rico!"] },
+    { who: "bert", when: "ship", say: ["Rico, Bertie from the pier. Who's the captain of that cruise ship? I'd like a word about her anchoring.",
+      "No captain, Bertie. The ship is a program on our relay, with rules: twelve transactions a minute at most, and she leaves the moment the lagoon stalls.",
+      "A ship that follows the rules and leaves on time? That's no ship I ever sailed on.",
+      "Times change, Bertie. Now the logbook is public, too.",
+      "A public logbook. My old captain would've jumped overboard. Mind how you go, lad."] },
+    { who: "dom", when: "ship", say: ["Rico, Dom, from the hammock. New theory: the cruise passengers are all one guy with a hundred and sixty wallets.",
+      "Dom, that's not a theory, that's the brochure. One relay, a hundred and sixty wallets, all made up, and the card on the island says so.",
+      "Wait. So I was right?",
+      "You were right, Dom. Mark the date. Rico is playing you a fanfare.",
+      "First time ever. I need to lie down. I'm already lying down. Later, Rico."] },
+    { who: "nell", when: "ship", say: ["Rico, Nell from the fish stall. These passengers book a dive and then take it back. Can they really do that?",
+      "Until the hour comes, Nell, yes. The coins wait in escrow, and before the hour the passenger can take them back. At the hour, the chain pays the place by itself.",
+      "So if I sell fish like that, they can cancel my fish?",
+      "Only if you sell them with the right to withdraw, Nell. A plain transfer is plain. Fish are final.",
+      "Fish are final. I'm putting that on a sign. Bye, love."] },
+    { who: "mae", when: "shipToday", say: ["Rico dear, it's Auntie Mae. Will the cruise passengers come to the bakery? I've baked three hundred rolls.",
+      "Oh, Auntie. The bakery isn't on their route. They stop at the pier, the bar, the market, the reef and a few more. No bakery.",
+      "Not even for one roll?",
+      "They're made up, Auntie. Made-up people don't eat rolls. Real people do. Rico is on his way.",
+      "Bring a bag, dear. Bring two."] },
+    { who: "vik", when: "shipHere", say: ["Rico, Vik. Is twelve transactions a minute the testnet's limit? Seems low.",
+      "No, Vik, that's the ship's own speed limit, set by our relay. The point is to watch the lagoon, not to flood it.",
+      "So you could go faster?",
+      "We could, and we won't, not without a yes from the people who run the lagoon. Rico doesn't break other people's toys.",
+      "Responsible. Boring. I like it. Bye, Rico."] },
+    { who: "tess", when: "shipGone", say: ["Rico, it's Tess. Somebody online says the cruise ship broke the testnet today. Did it?",
+      "Not today, Tess. She stayed her full time and left on schedule. If the lagoon had stalled, she'd have left at once, and the logbook would say so.",
+      "Then why are people saying it?",
+      "Because a ship that leaves on time isn't news, Tess. Rico reports it anyway. Rico has standards.",
+      "Ha. Good for you. Bye, Rico!"] },
+    { who: "zia", when: "ship", say: ["Rico, it's Zia! Do the cruise passengers have names? I want to write to one.",
+      "Not names, Zia. Wallets. Each passenger is one wallet, a long string of letters and numbers. You could send one a coin, but it won't write back.",
+      "Can I give one a name? Like Gerald?",
+      "Gerald is taken, Zia. Gerald is a founder wallet. Pick another.",
+      "Okay. Then mine is Captain Coconut. Bye, Rico!"] },
   ];
   /* the Night Line's callers (L.nlo*): somebody with a problem on the lagoon, Rico listens and helps; always
      technically right (the testnet as it runs), the humour only around it. Same shape as CALLS: caller first, then Rico,
@@ -1014,7 +1200,10 @@
   async function learn() {
     if (!have || !have.size || !window.crypto || !crypto.subtle) return;
     const l = new Set(), c = new Set();
-    for (const [k, t] of Object.entries(L)) if (!t.includes("{") && have.has(await key("rico", t))) l.add(k);
+    for (const [k, t] of Object.entries(L)) {
+      if (!t.includes("{")) { if (have.has(await key("rico", t))) l.add(k); }
+      else if (NUMERIC[k] && (await Promise.all(BANDS[NUMERIC[k]].map(n => key("rico", fill(t, { n, ...BLOCK }))))).every(x => have.has(x))) l.add(k);   // a band line: every band's clip
+    }
     for (let i = 0; i < CALLS.length; i++) {
       const x = CALLS[i], ks = await Promise.all(x.say.map((t, j) => key(j % 2 ? "rico" : x.who, t)));
       if (ks.every(k => have.has(k))) c.add(i);
@@ -1028,8 +1217,9 @@
   }
   ready = list();
   const again = () => { if (have && !have.size && Date.now() - tried > 30000) ready = list(); return ready; };
-  /* true or false once known; null while the clip list is still loading (or a line with a name in it) */
-  const voiced = k => { if (!VOICED.l) return null; if (/^call:/.test(k)) return VOICED.c.has(+k.slice(5)); if (/^night:/.test(k)) return VOICED.n.has(+k.slice(6)); return L[k] == null || L[k].includes("{") ? null : VOICED.l.has(k); };
+  /* true or false once known; null while the clip list is still loading (or a line with a name in it; a line with a
+     number spoken as a band is known: true once every band has its clip) */
+  const voiced = k => { if (!VOICED.l) return null; if (/^call:/.test(k)) return VOICED.c.has(+k.slice(5)); if (/^night:/.test(k)) return VOICED.n.has(+k.slice(6)); return L[k] == null || (L[k].includes("{") && !NUMERIC[k]) ? null : VOICED.l.has(k); };
   const cache = new Map();
   const clip = k => { if (!cache.has(k)) cache.set(k, fetch(BASE + k + ".mp3").then(r => (r.ok ? r.arrayBuffer() : null), () => null)); return cache.get(k); };
   /* speak a line in someone's voice: all its spoken parts, in order, or nothing at all when one clip is missing */
