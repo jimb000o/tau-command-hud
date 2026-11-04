@@ -2238,5 +2238,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "Radio Coco: Rico talks between the songs. When a song ends, the band stops, Rico says a word about the song that just ended and the one coming up, or about the time of day, and then the next song starts. Every night from 23:00 your time comes the Night Line: for one hour, listeners call Rico between the songs with their problems on the lagoon (a lost key, a stuck transfer, a fee limit that is too low, a stranger selling test coins), and he helps. Rico also reports when new nodes join the network and when nodes go quiet; several at once count as one piece of news."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "Radio Coco: when Rico names a block (“up to block 4639”), the words are a link now and open that block in the explorer in a new tab. In the caption at the bottom of every page and on the island’s radio strip."
   }
 ]

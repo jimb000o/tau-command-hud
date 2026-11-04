@@ -262,6 +262,7 @@ TauI18n.add({ strings: {
   "Dear chain, Radio Coco is still on the air. Are you? Blink twice if you're validating.": "チェーンへ。Radio Coco はまだ放送中。そっちは？ 検証中なら2回まばたきして。",
   "({n} empty blocks, up to block {y})": "（空のブロック {n} 個、ブロック {y} まで）",
   "(block {y})": "（ブロック {y}）",
+  "Open this block in the explorer": "このブロックをエクスプローラーで開く",
   "({n} waiting)": "（{n} 件待ち）",
   "Forecast: clear skies, unless somebody sends something.": "予報：快晴。誰かが何か送らなければ。",
   "yes": "賛成",
