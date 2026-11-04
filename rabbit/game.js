@@ -50,7 +50,7 @@
     wren: { name: "Captain Wren", role: "Marine archaeologist, retired", skin: "#e0b08a", hair: "#b0502a", style: "bob", acc: "cap", accC: "#1f3550", shirt: "#3aa6a0" },
     kai: { name: "Kai", role: "Runs the Reef Proof dive centre", skin: "#c68642", hair: "#111", style: "short", acc: "glasses", accC: "#333", shirt: "#4fd1c5" },
     pim: { name: "Pim", role: "Surveyor, measures for the embassies", skin: "#f3d6c0", hair: "#c9a46a", style: "side", acc: "straw", accC: "#d9b45a", shirt: "#f4f1ea" },
-    noor: { name: "Noor", role: "Foreman of the Coconut Works", skin: "#a8693f", hair: "#1d1410", style: "curls", acc: "glasses", accC: "#333", shirt: "#e9b44c" },
+    noor: { name: "Noor", role: "Runs the Coconut Works; Baako’s co-op brings the coconuts", skin: "#a8693f", hair: "#1d1410", style: "curls", acc: "glasses", accC: "#333", shirt: "#e9b44c" },
     kiko: { name: "Kiko", role: "Builds canoes", skin: "#8d5524", hair: "#111", style: "short", acc: "none", shirt: "#e85d4a" },
     tano: { name: "Tano", role: "Keeps the drums and the circle", skin: "#4a2c1a", hair: "#9a9a9a", style: "short", acc: "beard", accC: "#bdbdbd", shirt: "#c9772e" },
   };
@@ -804,7 +804,8 @@
       ]);
     },
     works(box) {
-      scene(box, G.me === "baako" ? "noor" : "baako", T(SC.places.works.name), T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
+      /* Noor runs the Coconut Works and Baako's co-op supplies it; she is the one you meet when you are Baako yourself, and she is the boss here */
+      scene(box, G.me === "baako" ? "noor" : "baako", T(SC.places.works.name), G.me === "baako" ? T("Baako. Candidate or not, your co-op’s coconuts still come through my gate, and my press still starts at six. Coconuts in, everything out: oil, rope, soap, charcoal. You want a shift, you pedal. And nobody touches the organ. Not even someone on the ballot.") : T("Coconuts in, everything out: oil, rope, soap, charcoal and once, by accident, a rather good jazz record. The machine is three bicycles and a church organ. Do not touch the organ."), [
         btn(T("Work a shift (10 coins)"), () => { did("works"); G.coins[G.me] += 10; write(G.me, T("worked a shift at the Coconut Works: 10 coins, honestly earned"), "talk"); payMe("works", T("The Coconut Works")); SND.sfx("coin"); toast(T("Ten coins, and you smell of coconut for the rest of the day.")); spend(); if (UI.card) openCard("works", PLACE.works); }, { off: !movesLeft(), sub: T("one move") }),
       ]);
     },
@@ -2233,7 +2234,7 @@
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { G.onchain = true; hud(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
+    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
     SC.setHour(0, true); hud();
     openCard(null, box => {
       box.classList.add("intro");
@@ -2256,10 +2257,26 @@
   }
   function begin(c) {
     G = fresh(c); save();
+    signUp();
     news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."), RICO.L.bkWeek);
     isleRule();
     closeCard(); hud();
     welcome();
+  }
+  /* the pick is the campaign's first transaction, with no click of its own: as Old Sam writes the name into the Book, the
+     visitor's test wallet (made here if there is none yet) signs 1 test AGRS to the Book's till. Once it is through, the
+     relay puts that wallet on the players' board and counts which candidate it picked (isle start; its favourite shows
+     on the wallet's Tau card). A campaign from before this was signed once, the next time the page opens. */
+  function signUp() {
+    if (!G || !G.onchain || G.picked || G.over || (!FREE && G.week && G.week !== weekId())) return;
+    const me = G.me;
+    G.picked = "…";
+    mySend(TILL.book, F("{x}, name written into the Book", { x: nm(me) }), h => {
+      if (!G || G.me !== me) return;
+      if (!h) { G.picked = null; return; }
+      G.picked = h; save();
+      const pk = myPk(); if (pk) isleTell("start", gidOf(), me, pk);
+    }, 1, "book");
   }
   /* the first scene of a campaign: Old Sam writes your name into the Book, and says what you stand for and when the island votes */
   const WELCOME = {
@@ -2273,7 +2290,8 @@
     openCard("book", box => {
       box.classList.add("welcome");
       scene(box, "sam", T("Your name in the Book"), T(WELCOME[G.me]), [btn(T("Walk onto the island"), go, { go: true })],
-        el("p", { class: "cv-note" }, el("b", { text: T("You:") }), " ", F("{x}, candidate for governor. Ten islanders vote on Sunday night; win more of them than the other three.", { x: nm(G.me) })));
+        el("p", { class: "cv-note" }, el("b", { text: T("You:") }), " ", F("{x}, candidate for governor. Ten islanders vote on Sunday night; win more of them than the other three.", { x: nm(G.me) })),
+        el("p", { class: "cv-note small" }, el("b", { text: T("On the testnet:") }), " ", T("Sam’s entry is your first transaction, signed by your test wallet in this browser: 1 test AGRS to the Book. It puts your wallet on the players’ board.")));
       box.querySelector(".cv-x").onclick = go;
     });
   }

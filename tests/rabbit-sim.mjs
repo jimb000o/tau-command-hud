@@ -78,7 +78,9 @@ function isleTake(s, ws, out) {
   const P = ISLE.players, a = s.split(" ");
   if (a[1] === "join") { ISLE.subs.add(ws); return isleSnap(); }
   if (/^isle board(?: [0-9a-f]{96})?$/.test(s)) { out.board = (out.board || 0) + 1; return { board: { best: [], busy: [], ever: [], wallets: 0, finished: 0, everWallets: 0, week: "2026-W45", prev: null, me: null } }; }
-  let m = new RegExp(`^isle move ([a-z0-9]{6,16}) (${CANDS}) (${KINDS}) ([a-z]{2,12}|-) ([a-z]+)(?: ([0-9a-f]{96}|-))?$`).exec(s);
+  let m = new RegExp(`^isle start ([a-z0-9]{6,16}) (${CANDS}) ([0-9a-f]{96})$`).exec(s);
+  if (m) { if (!ISLE.games[m[1]]) { ISLE.games[m[1]] = { who: m[2], ended: false }; P.campaigns++; inc(P.as, m[2]); } out.picked = (out.picked || 0) + 1; ISLE.v++; return { counted: true, listed: true }; }
+  m = new RegExp(`^isle move ([a-z0-9]{6,16}) (${CANDS}) (${KINDS}) ([a-z]{2,12}|-) ([a-z]+)(?: ([0-9a-f]{96}|-))?$`).exec(s);
   if (m && PLACES.has(m[5])) {
     const [, g, who, kind, what] = m;
     if (!ISLE.games[g]) { ISLE.games[g] = { who, ended: false }; P.campaigns++; inc(P.as, who); }
@@ -306,6 +308,7 @@ L.push(`On the chain: ${done.length} players, ${done.reduce((a, r) => a + r.sent
 L.push(`Average game: ${(done.reduce((a, r) => a + r.steps, 0) / Math.max(1, done.length)).toFixed(0)} taps, ${(results.reduce((a, r) => a + r.ms, 0) / results.length / 1000).toFixed(1)} s simulated`, "");
 L.push("### The shared island", "");
 const miss = done.filter(r => r.isle !== r.ownIsle);
+L.push(`Picks signed into the testnet and told to the island: **${done.filter(r => r.picked === 1).length}/${done.length}** (each must be exactly 1)`, "");
 L.push(`Campaigns: **${ISLE.players.campaigns}** · finished: **${ISLE.players.finished}** · moves counted: **${ISLE.players.moves}** · pushes sent: ${ISLE.pushes}`, "");
 L.push(`Messages the relay would refuse: **${ISLE.bad.length}**${ISLE.bad.length ? " (" + [...new Set(ISLE.bad)].slice(0, 5).join(" · ") + ")" : ""} · games whose island moves differ from their own Book lines: **${miss.length}**${miss.length ? " (" + miss.slice(0, 5).map(r => `#${r.n} ${r.isle}/${r.ownIsle}`).join(", ") + ")" : ""} · results told: ${done.filter(r => r.isleEnd === 1).length}/${done.length}`, "");
 L.push(`Island laws today: ${Object.entries(ISLE.players.laws).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", ") || "—"} · island winners: ${Object.entries(ISLE.players.wins).map(([k, v]) => `${k} ${v}`).join(", ") || "—"}`, "");
