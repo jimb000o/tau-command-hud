@@ -188,7 +188,8 @@ services:
   # minutes: newest commits, weekly rhythm, code areas, tags, how far upstream
   # is ahead of the commits our node is built from (read from node/Dockerfile),
   # IDNI's news for the HUD's news line, and whether our node patches still
-  # apply to the newest tau-testnet main (`up` prints it as "idni:").
+  # apply to the newest tau-testnet main (`up` prints it as "idni:"), and which
+  # IDNI commits and branches name our issues (moves the Road to mainnet badges).
   devpulse:
     build: ./alerts
     command: ["python", "devpulse.py"]
