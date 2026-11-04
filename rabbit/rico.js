@@ -1064,7 +1064,11 @@
   const BREAK = { "coco>mango": "A", "mango>lowtide": "B", "lowtide>tinroof": "C", "tinroof>hammock": "D", "hammock>moon": "E", "moon>coco": "F" };
   const NIGHT_AT = 23;
   const QS = typeof location !== "undefined" && location.search ? new URLSearchParams(location.search) : null;
-  const night = (hr = new Date().getHours()) => (QS && QS.get("nightline") === "1") || hr === NIGHT_AT;
+  /* one-off extra hours (UTC), e.g. Kilian's first listen on 4 Nov 01:30-02:30 German time; the openers and closers that
+     name eleven o'clock or midnight are skipped then */
+  const EXTRA = [[Date.UTC(2026, 10, 4, 0, 30), Date.UTC(2026, 10, 4, 1, 30)]];
+  const extra = () => EXTRA.some(([a, b]) => Date.now() >= a && Date.now() < b);
+  const night = (hr = new Date().getHours()) => (QS && QS.get("nightline") === "1") || hr === NIGHT_AT || extra();
   const NL = { open: false };
   const BRK_SAID = "rabbit-radio-breaks";
   const brkSaid = () => { try { const a = JSON.parse(localStorage.getItem(BRK_SAID) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
@@ -1077,11 +1081,11 @@
   function brk(from, to, o = {}) {
     const pick = o.pick || pickOwn, hr = o.hr != null ? o.hr : new Date().getHours(), line = k => ({ t: tr(L[k]), v: L[k] });
     if (night(hr)) {
-      if (!NL.open) { NL.open = true; const k = pick(SETS.nlOpen); return { k, parts: [line(k)] }; }
+      if (!NL.open) { NL.open = true; NL.extra = extra() && hr !== NIGHT_AT; const k = pick(NL.extra ? ["nlo2"] : SETS.nlOpen); return { k, parts: [line(k)] }; }
       const k = pick(NIGHT.map((c, i) => "night:" + i)), ring = pick(SETS.nlRing), bye = pick(SETS.nlBye);
       return { k, also: [ring, bye], parts: call(NIGHT[+k.slice(6)], ring, bye), call: true };
     }
-    if (NL.open) { NL.open = false; const k = pick(SETS.nlClose); return { k, parts: [line(k)] }; }
+    if (NL.open) { NL.open = false; if (!NL.extra) { const k = pick(SETS.nlClose); return { k, parts: [line(k)] }; } }
     const x = BREAK[from + ">" + to], pair = x ? Object.keys(L).filter(k => k.startsWith("sb" + x)) : [];
     if (pair.length && Math.random() < 0.65) { const k = pick(pair); return { k, parts: [line(k)] }; }
     const set = Math.random() < 0.25 ? "sbAny" : hr >= 5 && hr < 11 ? "sbAm" : hr >= 11 && hr < 17 ? "sbPm" : hr >= 17 && hr < 22 ? "sbEv" : "sbNt", k = pick(SETS[set]);
